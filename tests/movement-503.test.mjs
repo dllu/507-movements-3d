@@ -245,8 +245,9 @@ test('movement 503 renderer keeps A-F-G rigid while C, D, and B follow their sig
       -state.planetSpinAngleAboutOutwardRadial, 0,
       `planet B signed-axis angle ${sample}`);
     assert.equal(blocks.carrierShaftA.parent, blocks.carrierFG);
-    assert.equal(blocks.carrierIndex.parent, blocks.carrierFG);
-    assert.equal(blocks.shaftAIndex.parent, blocks.carrierFG);
+    // Brown draws no index marks; source presentation removes them.
+    assert.equal(blocks.carrierIndex.parent, null);
+    assert.equal(blocks.shaftAIndex.parent, null);
     model.root.updateMatrixWorld(true);
     vectorNear(blocks.planetB.getWorldPosition(new THREE.Vector3()),
       state.planetCenter, 8e-16, `planet center ${sample}`);

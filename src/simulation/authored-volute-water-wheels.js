@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
-import {poly,circle,polygonClipping,rotate} from './finite-plate-geometry.js';
+import {poly,circle,polygonClipping,rotate,plate,sector} from './finite-plate-geometry.js';
 import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
 import {
   PALETTE,
@@ -329,6 +329,10 @@ function voluteWaterWheel(movement) {
 
   const lowerBuckets = [];
   const lowerBucketProfiles = [];
+  const bucketSectorInnerRadius = 0.42;
+  const bucketSectorOuterRadius = 1.40;
+  const bucketSectorHalfAngle = THREE.MathUtils.degToRad(26);
+  const bucketTilt = 0.35;
   for (let bucketIndex = 0; bucketIndex < lowerBucketCount;
     bucketIndex += 1) {
     const angle = sourcePoseBucketOffset + bucketIndex * lowerBucketPitch;
@@ -336,30 +340,18 @@ function voluteWaterWheel(movement) {
     bucketGroup.rotation.y = angle;
     bucketGroup.userData.role =
       `inclined-lower-escape-bucket-c-${bucketIndex + 1}-of-four`;
-    const points = Array.from({ length: 11 }, (_, pointIndex) => {
-      const progress = pointIndex / 10;
-      const radius = THREE.MathUtils.lerp(0.62, 2.05, progress);
-      const transverse = -0.46 * progress - 0.18 * progress ** 2;
-      return new THREE.Vector3(
-        radius,
-        lowerBucketCenterY,
-        transverse,
-      );
-    });
-    for (let segmentIndex = 0; segmentIndex < points.length - 1;
-      segmentIndex += 1) {
-      const segment = horizontalBoxBetween(
-        points[segmentIndex],
-        points[segmentIndex + 1],
-        0.50,
-        0.09,
-        bucketMaterial,
-      );
-      segment.quaternion.multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1,0,0),.55));
-      segment.userData.role =
-        `inclined-bucket-c-${bucketIndex + 1}-segment-${segmentIndex + 1}`;
-      bucketGroup.add(segment);
-    }
+    // Brown draws each bucket c as a shaded sector round the hub; the plate
+    // is tilted about its radial centre line so it reads as an inclined bucket.
+    const points = Array.from({ length: 11 }, (_, pointIndex) => new THREE.Vector3(
+      THREE.MathUtils.lerp(bucketSectorInnerRadius, bucketSectorOuterRadius, pointIndex / 10),
+      lowerBucketCenterY, 0));
+    const sectorPlate = new THREE.Mesh(plate(sector(bucketSectorInnerRadius,
+      bucketSectorOuterRadius, -bucketSectorHalfAngle, bucketSectorHalfAngle, 48),
+    -0.045, 0.045), bucketMaterial);
+    sectorPlate.rotation.x = -Math.PI / 2 + bucketTilt;
+    sectorPlate.position.y = lowerBucketCenterY;
+    sectorPlate.userData.role = `inclined-sector-bucket-c-${bucketIndex + 1}`;
+    bucketGroup.add(sectorPlate);
     runner.add(bucketGroup);
     lowerBuckets.push(bucketGroup);
     lowerBucketProfiles.push(points.map((point) => point.clone()));
@@ -369,7 +361,8 @@ function voluteWaterWheel(movement) {
       0.12, 72),
     runnerMaterial,
   );
-  const floorSpokes=Array.from({length:8},(_,i)=>poly([[-.10,-.08],[runnerOuterRadius,-.08],[runnerOuterRadius,.08],[-.10,.08]].map(p=>rotate(p,i*Math.PI/4))));
+  // Four slim arms under the buckets carry the rim; the rest of the floor is open.
+  const floorSpokes=Array.from({length:4},(_,i)=>poly([[-.10,-.08],[runnerOuterRadius-.06,-.08],[runnerOuterRadius-.06,.08],[-.10,.08]].map(p=>rotate(p,sourcePoseBucketOffset+i*Math.PI/2))));
   const floorOutline=polygonClipping.union(polygonClipping.difference(poly(circle([0,0],runnerOuterRadius)),poly(circle([0,0],runnerOuterRadius-.12))),poly(circle([0,0],.44)),...floorSpokes);
   runnerFloor.geometry.dispose();runnerFloor.geometry=horizontalPlate(floorOutline,-.06,.06);
   runnerFloor.position.y = -0.67;
@@ -389,15 +382,6 @@ function voluteWaterWheel(movement) {
   shaft.position.y = 1.45;
   shaft.userData.role = 'vertical-output-shaft-of-volute-wheel';
   runner.add(shaft);
-  const rotationMarker = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 0.10, 0.12),
-    whiteMaterial,
-  );
-  rotationMarker.position.set(1.76, 0.70, 0);
-  rotationMarker.userData.role =
-    'visible-clockwise-marker-on-volute-runner';
-  runner.add(rotationMarker);
-
   const outerScrollWall = makeTube(
     scrollOuterWallCurve,
     0.15,
@@ -423,6 +407,22 @@ function voluteWaterWheel(movement) {
   const scrollInner=scrollOuter.map(p=>{const r=Math.hypot(...p);return p.map(v=>v*(runnerOuterRadius+.15)/r);}).reverse();
   const scrollFloor=new THREE.Mesh(horizontalPlate(poly([...scrollOuter,...scrollInner]),-.78,-.74),frameMaterial);scrollFloor.userData.role='fixed-open-annular-volute-floor';root.add(scrollFloor);
   root.add(outerScrollWall, innerScrollWall, scrollWater);
+  // Brown's cast scroll b has a flange round its outer wall with bolt lugs.
+  const flangeRing = (offset) => scrollOuterWallCurve.getPoints(192).map(p => {
+    const r = Math.hypot(p.x, p.z);
+    return [p.x * (r + offset) / r, -p.z * (r + offset) / r];
+  });
+  const lugCenters = Array.from({ length: 11 }, (_, index) => {
+    const p = scrollOuterWallCurve.getPoint(0.04 + 0.92 * index / 10);
+    const r = Math.hypot(p.x, p.z);
+    return [p.x * (r + 0.42) / r, -p.z * (r + 0.42) / r];
+  });
+  const casingFlange = new THREE.Mesh(horizontalPlate(polygonClipping.difference(
+    polygonClipping.union(poly([...flangeRing(0.04), ...flangeRing(0.30).reverse()]),
+      ...lugCenters.map(c => poly(circle(c, 0.17, 48)))),
+    ...lugCenters.map(c => poly(circle(c, 0.06, 32)))), 0.61, 0.73), frameMaterial);
+  casingFlange.userData.role = 'fixed-bolting-flange-and-lugs-of-scroll-casing-b';
+  root.add(casingFlange);
   const voluteStart = scrollFlowCurve.getPoint(0);
   const voluteStartTangent = scrollFlowCurve.getTangent(0).normalize();
   // Brown's inlet is a straight level channel entering across the top of
@@ -576,7 +576,7 @@ function voluteWaterWheel(movement) {
       lowerBuckets,
       outerScrollWall,
       radialVanes,
-      rotationMarker,
+      casingFlange,
       runner,
       runnerFloor,
       runnerHub,

@@ -9,7 +9,6 @@ import {
 } from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const GAUSS_NODES = [
   -0.9602898564975363,
   -0.7966664774136267,
@@ -38,54 +37,6 @@ function cylinderAlongZ(radius, length, material, segments = 40) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(delta.y, delta.x);
-  return beam;
-}
-
-function updateCylinderBetween(cylinder, start, end) {
-  const delta = end.clone().sub(start);
-  const length = delta.length();
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    delta.clone().multiplyScalar(1 / length),
-  );
-  cylinder.scale.set(1, length, 1);
-}
-
-function makeDynamicRod(radius, material, role) {
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, 22),
-    material,
-  );
-  rod.userData.role = role;
-  rod.userData.setEndpoints = (start, end) => {
-    updateCylinderBetween(rod, start, end);
-  };
-  return rod;
-}
-
-function makeTubeThrough(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points,
-    false,
-    'centripetal',
-  );
-  const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, points.length * 3, radius, 10, false),
-    material,
-  );
-  tube.userData.role = role;
-  return tube;
 }
 
 // Back half of a solid of revolution about the vertical axis, closed by its
@@ -323,20 +274,6 @@ function valveReliefGuide(movement) {
     };
   };
 
-  const guideUpperPoints = [];
-  const guideLowerPoints = [];
-  const guideCenterPoints = [];
-  for (let index = 0; index <= 180; index += 1) {
-    const valveX = THREE.MathUtils.lerp(
-      -valveAmplitude - 0.45,
-      valveAmplitude + 0.45,
-      index / 180,
-    );
-    const guide = guidePointsAtValveX(valveX);
-    guideUpperPoints.push(guide.upper);
-    guideLowerPoints.push(guide.lower);
-    guideCenterPoints.push(guide.center);
-  }
   const rollerPathHalfLength = signedCenterPathLength(valveAmplitude);
   const geometry = {
     cycleDuration,
@@ -379,26 +316,25 @@ function valveReliefGuide(movement) {
     metalness: 0.30,
     roughness: 0.42,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
 
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-valve-seat-and-suspended-guide-frame';
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(5.30, 0.20, 1.55),
+    new THREE.BoxGeometry(5.30, 0.40, 1.55),
     frameMaterial,
   );
-  base.position.set(0, -2.30, -0.34);
+  base.position.set(0, -2.38, -0.34);
   base.userData.role = 'fixed-slide-valve-foundation';
   fixedFrame.add(base);
   const valveSeat = new THREE.Mesh(
-    new THREE.BoxGeometry(4.75, 0.18, 1.26),
+    new THREE.BoxGeometry(4.20, 0.18, 1.26),
     darkMaterial,
   );
-  valveSeat.position.set(0, -1.82, 0);
+  valveSeat.position.set(0, -2.09, 0);
   valveSeat.userData.role = 'fixed-horizontal-valve-seat';
   fixedFrame.add(valveSeat);
-  const steamPort = cylinderAlongZ(0.35, 0.30, darkMaterial, 40);
-  steamPort.position.set(0, -2.09, 0);
+  const steamPort = cylinderAlongZ(0.18, 0.30, darkMaterial, 40);
+  steamPort.position.set(0, -2.38, 0);
   steamPort.userData.role = 'stationary-steam-port-below-valve-A';
   fixedFrame.add(steamPort);
   // Brown sections the fixed casing through the rod plane: a hollow cone
@@ -421,7 +357,8 @@ function valveReliefGuide(movement) {
   const chestCoverDepth = 2.0;
   const chestCover = new THREE.Mesh(plate(clip.union(...[-1, 1].map(side =>
     poly([[side * 3.2, 0.19], [side * 1.75, 0.19], [side * 1.75, -0.56],
-      [side * 1.45, -0.56], [side * 1.45, 0.49], [side * 3.2, 0.49]]))),
+      [side * 1.20, -0.56], [side * 1.20, -0.46], [side * 1.45, -0.46],
+      [side * 1.45, 0.49], [side * 3.2, 0.49]]))),
   casingAxisZ - chestCoverDepth, casingAxisZ), casingMaterial);
   chestCover.userData.role = 'fixed-sectioned-chest-cover-and-guide-recess';
   fixedFrame.add(chestCover);
@@ -439,53 +376,51 @@ function valveReliefGuide(movement) {
   guideAssemblyD.userData.role =
     'vertically-adjustable-suspended-two-arc-guide-D';
   guideAssemblyD.userData.adjustmentRange = geometry.guideAdjustmentRange;
-  const upperArcD = makeTubeThrough(
-    guideUpperPoints,
-    guideRailRadius,
-    guideMaterial,
-    'upper-captured-coupler-locus-arc-D',
+  // Brown draws D as one solid casting hung from its screw inside the cone:
+  // a tapered plate whose bell-shaped window narrows to the vertical slot for
+  // B's upper pin and spreads at the foot into the curved slot whose upper
+  // and lower edges are the two arcs D bearing on roller C.
+  const slotHalfWidth = rollerRadius + guideClearance;
+  const bandPoints = (offset) => {
+    const points = [];
+    for (let index = 0; index <= 96; index += 1) {
+      const valveX = THREE.MathUtils.lerp(-valveAmplitude, valveAmplitude,
+        index / 96);
+      const center = rollerCenterAtValveX(valveX);
+      const normal = centerPathUnitNormalAtValveX(valveX);
+      points.push([center.x + normal.x * offset, center.y + normal.y * offset]);
+    }
+    return points;
+  };
+  const endCenters = [-valveAmplitude, valveAmplitude]
+    .map(valveX => rollerCenterAtValveX(valveX));
+  const arcSlot = clip.union(
+    poly([...bandPoints(slotHalfWidth), ...bandPoints(-slotHalfWidth).reverse()]),
+    ...endCenters.map(c => poly(circle([c.x, c.y], slotHalfWidth, 64))),
   );
-  const lowerArcD = makeTubeThrough(
-    guideLowerPoints,
-    guideRailRadius,
-    guideMaterial,
-    'lower-load-bearing-coupler-locus-arc-D',
-  );
-  const guideEndBraces = [0, guideUpperPoints.length - 1].map(index => {
-    const brace = beamBetween(guideLowerPoints[index], guideUpperPoints[index],
-      0.08, 0.15, guideMaterial);
-    brace.userData.role = 'end-web-joining-upper-and-lower-guide-D';
-    return brace;
-  });
-  guideAssemblyD.add(upperArcD, lowerArcD, ...guideEndBraces);
-  for (const side of [-1, 1]) {
-    const endPoint = side < 0
-      ? guideUpperPoints[0]
-      : guideUpperPoints[guideUpperPoints.length - 1];
-    const hanger = beamBetween(
-      new THREE.Vector3(endPoint.x, endPoint.y, 0.46),
-      new THREE.Vector3(side * 0.55, 2.85, 0.46),
-      0.105,
-      0.15,
-      guideMaterial,
-    );
-    hanger.userData.role = 'suspended-vertical-adjustment-hanger-of-D';
-    guideAssemblyD.add(hanger);
-  }
-  // D's casting closes above the upper slot; its adjusting screw rises from
-  // there through the bored casing top to a nut, clear of the upper pin.
-  const guideHead = new THREE.Mesh(
-    new THREE.BoxGeometry(1.30, 0.16, 0.15),
-    guideMaterial,
-  );
-  guideHead.position.set(0, 2.85, 0.46);
-  guideHead.userData.role = 'head-of-suspended-guide-D-above-upper-slot';
-  guideAssemblyD.add(guideHead);
+  const upperPinSlotHalfWidth = 0.155;
+  const upperPinSlotTop = valvePinY + rodLength + 0.21 + 0.03;
+  const windowRight = [[0.80, 0.24], [0.52, 0.42], [0.36, 0.80], [0.26, 1.35],
+    [upperPinSlotHalfWidth, 2.00], [upperPinSlotHalfWidth, upperPinSlotTop]];
+  const rodWindow = poly([...windowRight,
+    ...windowRight.map(([x, y]) => [-x, y]).reverse()]);
+  const upperPinSlotCap = poly(circle([0, upperPinSlotTop], upperPinSlotHalfWidth, 48));
+  const guideHeadY = 3.02;
+  const castingOutline = poly([
+    [-0.90, guideHeadY], [0.90, guideHeadY], [1.30, 0.62], [1.30, -0.22],
+    [1.10, -0.45], [-1.10, -0.45], [-1.30, -0.22], [-1.30, 0.62],
+  ]);
+  const castingDepth = [0.335, 0.625];
+  const slottedCastingD = new THREE.Mesh(plate(clip.difference(castingOutline,
+    arcSlot, rodWindow, upperPinSlotCap), ...castingDepth), guideMaterial);
+  slottedCastingD.userData.role =
+    'suspended-slotted-casting-D-whose-slot-edges-are-both-coupler-locus-arcs';
+  guideAssemblyD.add(slottedCastingD);
   const adjustmentStem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.085, 1.30, 24),
+    new THREE.CylinderGeometry(0.085, 0.085, 4.23 - guideHeadY, 24),
     guideMaterial,
   );
-  adjustmentStem.position.set(0, 3.58, casingAxisZ);
+  adjustmentStem.position.set(0, (4.23 + guideHeadY) / 2, casingAxisZ);
   adjustmentStem.userData.role = 'vertical-adjustment-screw-for-arcs-D';
   guideAssemblyD.add(adjustmentStem);
   const adjustmentNut = new THREE.Mesh(
@@ -497,49 +432,29 @@ function valveReliefGuide(movement) {
   guideAssemblyD.add(adjustmentNut);
   root.add(guideAssemblyD);
 
-  const upperVerticalGuide = new THREE.Group();
-  upperVerticalGuide.userData.role = 'fixed-vertical-slot-for-upper-B-pin';
-  for (const side of [-1, 1]) {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.075, 1.06, 0.21),
-      valveMaterial,
-    );
-    rail.position.set(side * 0.19, 2.20, 0.45);
-    rail.userData.role = 'vertical-slot-side-for-upper-B-pin';
-    upperVerticalGuide.add(rail);
-  }
-  root.add(upperVerticalGuide);
-
   const valveA = new THREE.Group();
   valveA.position.set(0, valvePinY, 0);
   valveA.userData.role = 'horizontally-sliding-valve-A';
   const valveBody = new THREE.Mesh(
-    new THREE.BoxGeometry(1.32, 0.42, 1.08),
+    new THREE.BoxGeometry(1.80, 0.45, 1.08),
     valveMaterial,
   );
-  valveBody.position.y = -0.40;
+  // Brown draws A broad and low on its seat, the pin block rising from it.
+  valveBody.position.y = -0.655;
   valveBody.userData.role = 'flat-slide-valve-A-body-on-seat';
   valveA.add(valveBody);
   const valveNeck = new THREE.Mesh(
-    plate(clip.difference(clip.union(poly(circle([0, 0.12], 0.18, 64)),
-      poly([[-0.28, -0.18], [0.28, -0.18], [0.28, 0.12], [-0.28, 0.12]])),
-      poly(circle([0, 0.12], 0.09, 64))), -0.31, -0.02),
+    plate(clip.difference(clip.union(poly(circle([0, 0], 0.20, 64)),
+      poly([[-0.34, -0.43], [0.34, -0.43], [0.34, 0.06], [-0.34, 0.06]])),
+      poly(circle([0, 0], 0.09, 64))), -0.30, 0.30),
     valveMaterial,
   );
-  valveNeck.position.y = -0.12;
   valveNeck.userData.role = 'valve-A-neck-to-rod-B-pin';
   valveA.add(valveNeck);
   const lowerPinMarker = cylinderAlongZ(0.08, 1.40, darkMaterial);
   lowerPinMarker.position.z = 0.35;
   lowerPinMarker.userData.role = 'lower-axle-joining-B-to-valve-A';
   valveA.add(lowerPinMarker);
-  const valveIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.48, 0.06, 1.12),
-    whiteMaterial,
-  );
-  valveIndex.position.set(0, -0.25, 0.01);
-  valveIndex.userData.role = 'white-valve-A-horizontal-position-index';
-  valveA.add(valveIndex);
   root.add(valveA);
 
   const upperPinSlider = new THREE.Group();
@@ -558,7 +473,8 @@ function valveReliefGuide(movement) {
   upperPinSlider.add(upperPinMarker);
   root.add(upperPinSlider);
 
-  const rodPlaneZ = 0.10;
+  // B runs in front of casting D, as Brown draws it over the slot.
+  const rodPlaneZ = 0.76;
   const rodOutline = clip.union(capsule([0, 0], [rodLength, 0], 0.10, 32),
     poly(circle([0, 0], 0.17, 64)), poly(circle([rodLength, 0], 0.17, 64)),
     poly(circle([rollerFraction * rodLength, 0], 0.27, 64)));
@@ -570,8 +486,8 @@ function valveReliefGuide(movement) {
     rodB.position.set(start.x, start.y, rodPlaneZ);
     rodB.rotation.z = Math.atan2(end.y - start.y, end.x - start.x);
   };
-  const rollerAxle = cylinderAlongZ(0.08, 0.65, darkMaterial);
-  rollerAxle.position.set(rollerFraction * rodLength, 0, 0.20);
+  const rollerAxle = cylinderAlongZ(0.08, 0.54, darkMaterial);
+  rollerAxle.position.set(rollerFraction * rodLength, 0, 0.60 - rodPlaneZ);
   rodB.add(rollerAxle);
   root.add(rodB);
   const rollerC = new THREE.Group();
@@ -580,13 +496,6 @@ function valveReliefGuide(movement) {
     eyeRadius: rollerRadius, boreRadius: 0.09, depth: 0.26 }), rollerMaterial);
   rollerBody.userData.role = 'roller-C-body-captured-between-arcs-D';
   rollerC.add(rollerBody);
-  const rollerIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(rollerRadius * 1.45, 0.055, 0.055),
-    whiteMaterial,
-  );
-  rollerIndex.position.set(rollerRadius * 0.25, 0, 0.19);
-  rollerIndex.userData.role = 'white-roller-C-rotation-index';
-  rollerC.add(rollerIndex);
   root.add(rollerC);
 
   const update = (time) => {
@@ -612,11 +521,8 @@ function valveReliefGuide(movement) {
       chestCover,
       conicalCasing,
       fixedFrame,
-      guideHead,
       recessBack,
       guideAssemblyD,
-      guideEndBraces,
-      lowerArcD,
       rodB,
       rollerC,
       rollerBody,
@@ -626,9 +532,8 @@ function valveReliefGuide(movement) {
       upperSliderBlock,
       lowerPinMarker,
       upperPinMarker,
-      upperArcD,
       upperPinSlider,
-      upperVerticalGuide,
+      slottedCastingD,
       valveA,
       valveSeat,
     },
@@ -718,7 +623,7 @@ function valveReliefGuide(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.25, -2.43, -1.55),
+    new THREE.Vector3(-3.25, -2.58, -1.55),
     new THREE.Vector3(3.25, 4.12, 1.18),
   );
   root.userData.cameraDistanceScale = 1.02;
@@ -727,7 +632,7 @@ function valveReliefGuide(movement) {
   root.userData.reconstruction = { rodPlaneZ,
     assumptions: 'The bored rod sits behind the roller guide; finite axles join the separated members. The existing prescribed input and illustrative roller-spin law do not solve steam loads or clearance take-up.' };
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
-  root.userData.groundFloorY = -2.43;
+  root.userData.groundFloorY = -2.58;
   markShadows(root);
   base.receiveShadow = true;
   update(0);

@@ -1,8 +1,8 @@
 import * as THREE from 'three';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
 import {
   PALETTE,
-  makeGear,
   makePulley,
   makeScrew,
   markShadows,
@@ -554,6 +554,7 @@ function reciprocatingWellLift(movement) {
       frameMaterial,
     );
     post.position.set(x, 1.24, 0.28);
+    post.userData.role = 'fixed-side-post-of-well-frame';
     support.add(post);
   }
   const topBeam = new THREE.Mesh(
@@ -561,6 +562,7 @@ function reciprocatingWellLift(movement) {
     frameMaterial,
   );
   topBeam.position.set(0, 3.72, 0.28);
+  topBeam.userData.role = 'fixed-top-beam-of-well-frame';
   support.add(topBeam);
   const gearBeam = new THREE.Mesh(
     new THREE.BoxGeometry(3.25, 0.15, 0.22),
@@ -584,24 +586,44 @@ function reciprocatingWellLift(movement) {
     darkMaterial,
   );
   windRotor.add(windHub);
-  for (let index = 0; index < 8; index += 1) {
-    const angle = index * FULL_TURN / 8;
-    const blade = new THREE.Mesh(
-      new THREE.BoxGeometry(1.28, 0.07, 0.25),
-      index % 2 === 0
-        ? matte(PALETTE.driver, { metalness: 0.08, roughness: 0.62 })
-        : matte(PALETTE.brass, { metalness: 0.08, roughness: 0.62 }),
-    );
-    blade.position.set(Math.cos(angle) * 0.91, 0, Math.sin(angle) * 0.91);
-    blade.rotation.y = -angle;
-    windRotor.add(blade);
+  // Brown's horizontal wind wheel is a shallow drum of upright vanes between
+  // two annular boards, seen edge-on as a band shaded at its ends.
+  const windMaterial = matte(PALETTE.brass, { metalness: 0.08, roughness: 0.62 });
+  const windInner = 0.92;
+  const windOuter = 1.42;
+  const windHalfHeight = 0.19;
+  for (const y of [-windHalfHeight - 0.02, windHalfHeight + 0.02]) {
+    const board = new THREE.Mesh(plate(polygonClipping.difference(
+      poly(circle([0, 0], windOuter, 128)), poly(circle([0, 0], windInner, 128))),
+    -0.02, 0.02), windMaterial);
+    board.rotation.x = -Math.PI / 2;
+    board.position.y = y;
+    board.userData.role = 'annular-board-of-horizontal-wind-wheel';
+    windRotor.add(board);
   }
-  const windIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(1.30, 0.04, 0.06),
-    matte(PALETTE.white, { roughness: 0.50 }),
-  );
-  windIndex.position.set(0.88, 0.06, 0);
-  windRotor.add(windIndex);
+  for (let index = 0; index < 20; index += 1) {
+    const angle = index * FULL_TURN / 20;
+    const vane = new THREE.Mesh(
+      new THREE.BoxGeometry(windOuter - windInner, 2 * windHalfHeight, 0.035),
+      matte(PALETTE.driver, { metalness: 0.08, roughness: 0.62 }),
+    );
+    // Each vane is set 35 degrees off radial so the wind turns the drum.
+    const mid = (windInner + windOuter) / 2;
+    vane.position.set(Math.cos(angle) * mid, 0, Math.sin(angle) * mid);
+    vane.rotation.y = -angle - 0.61;
+    vane.userData.role = 'upright-vane-of-horizontal-wind-wheel';
+    windRotor.add(vane);
+  }
+  for (let index = 0; index < 4; index += 1) {
+    const angle = index * Math.PI / 2 + Math.PI / 4;
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(windInner - 0.19, 0.06, 0.08),
+      darkMaterial);
+    arm.position.set(Math.cos(angle) * (windInner + 0.19) / 2, -windHalfHeight - 0.02,
+      Math.sin(angle) * (windInner + 0.19) / 2);
+    arm.rotation.y = -angle;
+    arm.userData.role = 'arm-joining-wind-wheel-to-hub';
+    windRotor.add(arm);
+  }
   const upperShaft = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.10, 0.10, 0.82, 24),
     darkMaterial,
@@ -649,13 +671,27 @@ function reciprocatingWellLift(movement) {
 
   const makeWheelAssembly = (side, color) => {
     const center = gearCenters[side];
-    const gear = addRole(makeGear({
-      color,
-      depth: 0.28,
-      radius: wheelPitchRadius,
-      teeth: wheelTeeth,
-      toothHeight: 0.15,
-    }), `${side}-worm-wheel-on-common-axis-with-rope-pulley`);
+    // Brown draws each worm wheel as a star: a small boss ringed by long
+    // square pins that the single-start spiral takes one at a time.
+    const gear = addRole(new THREE.Group(),
+      `${side}-worm-wheel-on-common-axis-with-rope-pulley`);
+    const gearRotor = new THREE.Group();
+    gear.add(gearRotor);
+    gear.userData.rotor = gearRotor;
+    const pinOuterRadius = wheelPitchRadius + 0.075;
+    const pinHalfWidth = 0.045;
+    const starOutline = polygonClipping.difference(polygonClipping.union(
+      poly(circle([0, 0], 0.34, 96)),
+      ...Array.from({ length: wheelTeeth }, (_, index) => {
+        const angle = index * FULL_TURN / wheelTeeth;
+        const c = Math.cos(angle), s = Math.sin(angle);
+        return poly([[0.30, -pinHalfWidth], [pinOuterRadius, -pinHalfWidth],
+          [pinOuterRadius, pinHalfWidth], [0.30, pinHalfWidth]]
+          .map(([x, y]) => [x * c - y * s, x * s + y * c]));
+      })), poly(circle([0, 0], 0.105, 64)));
+    const star = addRole(new THREE.Mesh(plate(starOutline, -0.10, 0.10),
+      matte(color, { metalness: 0.12 })), `${side}-pinned-star-worm-wheel`);
+    gearRotor.add(star);
     gear.position.copy(center);
     root.add(gear);
     const pulley = addRole(makePulley({
@@ -1060,6 +1096,15 @@ function reciprocatingWellLift(movement) {
   root.userData.cameraDirection = new THREE.Vector3(3.0, 3.8, 11.8);
   root.userData.groundFloorY = groundY;
   correctWaterLiftParts(root,459);
+  // Brown's plate stops at the ground line by the well curbs; the lower
+  // bucket hangs out of frame down the well, and the long-lens elevation
+  // shows the wind wheel edge-on. Set after the shared fit, which would
+  // otherwise frame the whole well.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.10, -1.35, -1.65),
+    new THREE.Vector3(3.10, 4.45, 1.65),
+  );
+  root.userData.cameraFov = 12;
   markShadows(root);
   base.receiveShadow = true;
   update(0);

@@ -409,8 +409,17 @@ function dectolOscillatingColumn(movement) {
 
   // Unit-length tapered stream hanging from the orifice; its length follows
   // the top of the cone or raised column below it.
+  // Brown's falling stream is waisted: it necks below the orifice and
+  // spreads again as it meets the plate.
+  const fallingJetProfile = [new THREE.Vector2(0, 0)];
+  for (let i = 0; i <= 24; i += 1) {
+    const u = i / 24;
+    fallingJetProfile.push(new THREE.Vector2(
+      0.24 * (1 - u) + 0.30 * u - 0.10 * Math.sin(Math.PI * u) ** 1.4, -u));
+  }
+  fallingJetProfile.push(new THREE.Vector2(0, -1));
   const fallingJet = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.30, 1, 40).translate(0, -0.5, 0),
+    new THREE.LatheGeometry(fallingJetProfile, 40),
     streamMaterial,
   ), 'unobstructed-descending-stream');
   fallingJet.position.y = chamberFloorY;
@@ -428,11 +437,19 @@ function dectolOscillatingColumn(movement) {
   ), 'thin-water-film-over-fixed-plate');
   root.add(film);
 
+  // The sheet leaving the plate rim bells outward and then falls almost
+  // plumb, as Brown hatches it, rather than as a straight cone.
+  const curtainRadius = (t) => 0.466 + 0.124 * (1 - (1 - t) ** 3);
+  const curtainOuter = [], curtainInner = [];
+  for (let i = 0; i <= 24; i += 1) {
+    const t = i / 24;
+    const y = THREE.MathUtils.lerp(plateTopY + 0.01, lowerWaterY, t);
+    curtainOuter.push([curtainRadius(t) + 0.01, y]);
+    curtainInner.push([curtainRadius(t) - 0.01, y]);
+  }
   const spillCurtain = addRole(new THREE.Mesh(
-    new THREE.LatheGeometry([
-      [0.58, lowerWaterY], [0.60, lowerWaterY], [0.476, plateTopY + 0.01],
-      [0.456, plateTopY + 0.01], [0.58, lowerWaterY],
-    ].map(([r, y]) => new THREE.Vector2(r, y)), 64),
+    new THREE.LatheGeometry([...curtainInner, ...curtainOuter.reverse(),
+      curtainInner[0]].map(([r, y]) => new THREE.Vector2(r, y)), 64),
     streamMaterial.clone(),
   ), 'water-spreading-over-plate-and-descending-in-lower-box');
   root.add(spillCurtain);
@@ -456,8 +473,18 @@ function dectolOscillatingColumn(movement) {
 
   const crownRadius = 0.12;
   const coneBodyHeight = maximumConeHeight - crownRadius;
+  // Brown's checked cone is concave: broad on the plate, drawing in quickly
+  // and rising as a slender column toward the orifice.
+  const coneProfile = [new THREE.Vector2(0, -coneBodyHeight / 2)];
+  for (let i = 0; i <= 24; i += 1) {
+    const t = i / 24;
+    coneProfile.push(new THREE.Vector2(
+      crownRadius + (0.40 - crownRadius) * (1 - t) ** 2.2,
+      -coneBodyHeight / 2 + coneBodyHeight * t));
+  }
+  coneProfile.push(new THREE.Vector2(0, coneBodyHeight / 2));
   const waterCone = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(crownRadius, 0.40, coneBodyHeight, 56),
+    new THREE.LatheGeometry(coneProfile, 56),
     coneMaterial,
   ), 'self-forming-water-cone-on-fixed-circular-plate');
   root.add(waterCone);

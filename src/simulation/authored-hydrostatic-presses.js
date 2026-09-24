@@ -498,7 +498,8 @@ function hydrostaticPress(movement) {
     new THREE.CylinderGeometry(0.15, 0.15, 0.045, 24),
     brassMaterial,
   ), 'functional-small-pump-pressure-delivery-check-disk');
-  deliveryValve.position.set(pumpSliderX - 0.32, pumpCylinderBottomY + 0.13, 0);
+  // The delivery check chamber stands clear of the pump barrel's outer wall.
+  deliveryValve.position.set(pumpSliderX - 0.46, pumpCylinderBottomY + 0.13, 0);
   root.add(deliveryValve);
   const reliefValve = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.16, 0.16, 0.08, 24),

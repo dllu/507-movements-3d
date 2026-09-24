@@ -47,6 +47,13 @@ function cableEndpoints(cable) {
   };
 }
 
+function cablePoints(cable) {
+  const visible = cable.children.filter((segment) => segment.visible);
+  cable.updateWorldMatrix(true, true);
+  return visible.flatMap((segment) => [-0.5, 0.5].map((y) =>
+    new THREE.Vector3(0, y, 0).applyMatrix4(segment.matrixWorld)));
+}
+
 function disposeModel(root) {
   const geometries = new Set();
   const materials = new Set();
@@ -391,16 +398,17 @@ test('movement 492 release ropes remain attached to both lower eyes and one comm
 
     blocks.units.forEach((unit, index) => {
       const release = cableEndpoints(blocks.releaseCords[index]);
-      vectorNear(
-        release.start,
-        new THREE.Vector3(
-          geometry.unitCenterX + state.ropeEyeCenter.x,
-          state.ropeEyeCenter.y,
-          unit.unitZ + geometry.mechanismPlaneZ,
-        ),
-        2e-14,
-        `release rope starts at lower eye ${index + 1} at ${time}`,
+      const eyeCenter = new THREE.Vector3(
+        geometry.unitCenterX + state.ropeEyeCenter.x,
+        state.ropeEyeCenter.y,
+        unit.unitZ + geometry.mechanismPlaneZ,
       );
+      // The rope is bent through the lower eye's bore (0.126) round its bar.
+      assert.ok(release.start.distanceTo(eyeCenter) < 0.40,
+        `release rope starts at lower eye ${index + 1} at ${time}`);
+      assert.ok(Math.min(...cablePoints(blocks.releaseCords[index])
+        .map((point) => point.distanceTo(eyeCenter))) < 0.126 - 0.045,
+      `release rope passes through lower eye ${index + 1} at ${time}`);
       vectorNear(
         release.end,
         new THREE.Vector3(
@@ -417,22 +425,20 @@ test('movement 492 release ropes remain attached to both lower eyes and one comm
         fall.start,
         new THREE.Vector3(
           geometry.unitCenterX - 0.73,
-          3.88,
+          3.88 + state.tackleLift,
           unit.unitZ + geometry.tacklePlaneZ,
         ),
         2e-14,
-        `tackle fall fixed end ${index + 1} at ${time}`,
+        `tackle fall rises with the hook ${index + 1} at ${time}`,
       );
-      vectorNear(
-        fall.end,
-        new THREE.Vector3(
-          geometry.unitCenterX - 0.73,
-          2.98 + state.tackleLift,
-          unit.unitZ + geometry.tacklePlaneZ,
-        ),
-        2e-14,
-        `tackle fall follows hook ${index + 1} at ${time}`,
+      const ringCenter = new THREE.Vector3(
+        geometry.unitCenterX - 0.73,
+        2.92 + state.tackleLift,
+        unit.unitZ + geometry.tacklePlaneZ,
       );
+      assert.ok(Math.min(...cablePoints(unit.fallRope)
+        .map((point) => point.distanceTo(ringCenter))) < 0.31 - 0.10 - 0.055,
+      `tackle fall passes through the hook eye ${index + 1} at ${time}`);
     });
   }
   assert.match(model.root.userData.dynamics.synchronization,

@@ -10,15 +10,15 @@ export function curvedFloatChannel(curve, depth) {
       const t = i / 64, p = curve.getPoint(t), tangent = curve.getTangent(t).normalize();
       if (i === 0) p.addScaledVector(tangent, -extend);
       if (i === 64) p.addScaledVector(tangent, extend);
-      // Brown's floats are slender curved bars; the channel is only as wide as
+      // Brown's floats are single heavy lines; the channel is only as wide as
       // its water passage needs.
-      const width = THREE.MathUtils.lerp(.115, .16, t) - inset;
+      const width = THREE.MathUtils.lerp(.07, .095, t) - inset;
       left.push([p.x - tangent.y * width, p.y + tangent.x * width]);
       right.push([p.x + tangent.y * width, p.y - tangent.x * width]);
     }
     return poly([...left, ...right.reverse()]);
   };
-  const outer = strip(0), port = strip(.035, .05);
+  const outer = strip(0), port = strip(.03, .05);
   return {
     geometry: mergePassageParts([
       plate(outer, -depth / 2, -depth / 2 + .035),

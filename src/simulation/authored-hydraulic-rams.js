@@ -369,7 +369,6 @@ function hydraulicRam(movement) {
     [-0.70, 0, 0.12, 1.52],
     [0.70, 0, 0.12, 1.52],
     [0, -0.70, 1.48, 0.12],
-    [0, 0.70, 1.48, 0.12],
   ]) {
     const wall = new THREE.Mesh(
       new THREE.BoxGeometry(width, 1.18, depth),
@@ -386,6 +385,36 @@ function hydraulicRam(movement) {
   reservoirWater.position.y = 0.36;
   reservoirWater.userData.role = 'small-head-supply-water';
   reservoir.add(reservoirWater);
+
+  // Brown draws the head vessel in section: its near wall is cut away so the
+  // supply water shows. The whole ram stands in the open lower tank, also in
+  // section (floor, end walls and back wall), whose water is drawn behind it.
+  const lowerTank = new THREE.Group();
+  lowerTank.userData.role = 'fixed-sectioned-lower-tank-holding-the-ram';
+  root.add(lowerTank);
+  const tankFloorTop = -1.62;
+  const tankTop = -0.45;
+  const tankWaterLevel = -0.66;
+  const tankParts = [
+    [[-3.45, 2.68], [tankFloorTop - 0.10, tankFloorTop], [-1.0, 0.9]],
+    [[-3.45, -3.35], [tankFloorTop, tankTop], [-1.0, 0.9]],
+    [[2.58, 2.68], [tankFloorTop, tankTop], [-1.0, 0.9]],
+    [[-3.35, 2.58], [tankFloorTop, tankTop], [-1.0, -0.9]],
+  ].map(([[x0, x1], [y0, y1], [z0, z1]]) => {
+    const part = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0),
+      frameMaterial);
+    part.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    part.userData.role = 'fixed-sectioned-lower-tank-wall';
+    lowerTank.add(part);
+    return part;
+  });
+  const tankWater = new THREE.Mesh(
+    new THREE.BoxGeometry(5.93, tankWaterLevel - tankFloorTop, 0.46),
+    waterMaterial,
+  );
+  tankWater.position.set(-0.385, (tankWaterLevel + tankFloorTop) / 2, -0.66);
+  tankWater.userData.role = 'tail-water-standing-in-lower-tank-behind-the-ram';
+  root.add(tankWater);
 
   const drivePathPoints = [
     new THREE.Vector3(-3.05, 1.08, 0),
@@ -510,9 +539,11 @@ function hydraulicRam(movement) {
   leverWeight.userData.role = 'waste-valve-reopening-weight';
   wasteLever.add(leverWeight);
 
+  // The waste efflux is drawn leaving past the lifted disk's rim, clear of
+  // the valve stem, disk and seat ring it used to pass through.
   const wasteOutletPath = [
-    new THREE.Vector3(1.58, -1.12, 0),
-    new THREE.Vector3(1.82, -0.82, 0),
+    new THREE.Vector3(2.05, -0.96, 0),
+    new THREE.Vector3(2.22, -0.84, 0),
     new THREE.Vector3(2.50, -0.82, 0),
   ];
   const wasteOutlet = makeTube(
@@ -699,6 +730,9 @@ function hydraulicRam(movement) {
       outputPipe,
       outputWater,
       reservoir,
+      lowerTank,
+      tankParts,
+      tankWater,
       reservoirBottom,
       reservoirWalls,
       reservoirWater,

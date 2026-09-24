@@ -51,7 +51,7 @@ test('185: finite die fits within the free slot and eccentric rods clear the rot
   disposeObject3D(root);
 });
 
-test('418: rod clears guide rails and roller, axle bores remain open, valve rests on seat', () => {
+test('418: front rod clears slotted casting D and roller, roller and upper block stay inside the slot, bores open, valve rests on seat', () => {
   const { root, update } = createAuthoredValveReliefGuideMovement({ id: 418 });
   const { blocks: b, geometry: g, stateAtTime } = root.userData;
   for (let i = 0; i <= 64; i += 1) {
@@ -59,15 +59,19 @@ test('418: rod clears guide rails and roller, axle bores remain open, valve rest
     update(time); root.updateMatrixWorld(true);
     const state = stateAtTime(time);
     const rod = new THREE.Box3().setFromBufferAttribute(b.rodB.geometry.attributes.position).applyMatrix4(b.rodB.matrixWorld);
-    for (const mesh of [b.upperArcD, b.lowerArcD, b.rollerBody]) {
+    for (const mesh of [b.slottedCastingD, b.rollerBody]) {
       const fixed = new THREE.Box3().setFromObject(mesh);
-      assert.ok(rod.max.z < fixed.min.z - 0.05, 'rear rod clears working guide and roller');
+      assert.ok(rod.min.z > fixed.max.z + 0.05, 'front rod clears working guide and roller');
+    }
+    // The roller rim and the upper slider block lie wholly in casting D's slot.
+    discClears(b.slottedCastingD, state.rollerCenter, g.rollerRadius);
+    for (const [dx, dy] of [[-0.15, -0.21], [0.15, -0.21], [0.15, 0.21], [-0.15, 0.21], [0, 0.21], [0, -0.21]]) {
+      discClears(b.slottedCastingD, state.upperPin.clone().add(new THREE.Vector3(dx, dy, 0)), 0.001);
     }
     discClears(b.rodB, state.lowerPin, 0.08);
     discClears(b.rodB, state.upperPin, 0.08);
     discClears(b.rodB, state.rollerCenter, 0.08);
     discClears(b.rollerBody, state.rollerCenter, 0.08);
-    for (const brace of b.guideEndBraces) discClears(brace, state.rollerCenter, g.rollerRadius);
     discClears(b.upperSliderBlock, state.upperPin, 0.08);
     discClears(b.valveNeck, state.lowerPin, 0.08);
     const body = new THREE.Box3().setFromObject(b.valveBody);

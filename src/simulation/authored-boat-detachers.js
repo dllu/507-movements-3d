@@ -583,20 +583,25 @@ function boatDetachingHooks(movement) {
       unit.lever.rotation.z = state.leverAngleRadian;
       unit.tongue.rotation.z = state.tongueAngleRadian;
       unit.tackleHookAssembly.position.y = state.tackleLift;
-      unit.fallRope.userData.setPoints([
-        new THREE.Vector3(-0.73, 3.88, tacklePlaneZ),
-        new THREE.Vector3(
-          -0.73,
-          2.98 + state.tackleLift,
-          tacklePlaneZ,
-        ),
-      ]);
+      // The fall is bent round the eye's top bar through its hole instead
+      // of ending inside the ring.
+      const barY = 2.92 + 0.31 + state.tackleLift;
+      const loopRadius = 0.10 + 0.055 + 0.012;
+      // The fall rises from the eye and is lifted with the hook.
+      const fallPoints = [new THREE.Vector3(-0.73, barY + 0.65, tacklePlaneZ)];
+      for (let i = 0; i <= 12; i += 1) {
+        const angle = Math.PI / 2 - (FULL_TURN - 1.1) * i / 12;
+        fallPoints.push(new THREE.Vector3(-0.73,
+          barY + loopRadius * Math.sin(angle),
+          tacklePlaneZ + loopRadius * Math.cos(angle)));
+      }
+      unit.fallRope.userData.setPoints(fallPoints);
     }
     pullBar.position.x = state.pullBarX;
     pullBarGrip.position.x = state.pullBarX;
     pullDirectionIndex.position.x = state.pullBarX + 0.38;
     units.forEach((unit, index) => {
-      const start = new THREE.Vector3(
+      const eyeCenter = new THREE.Vector3(
         unitCenterX + state.ropeEyeCenter.x,
         state.ropeEyeCenter.y,
         unit.unitZ + mechanismPlaneZ,
@@ -606,12 +611,40 @@ function boatDetachingHooks(movement) {
         pullBarHeight,
         unit.unitZ,
       );
+      // The rope is bent through the lower eye round its bar on the pull
+      // side, then runs to the bar; it no longer ends inside the ring.
+      const pull = new THREE.Vector3(end.x - eyeCenter.x, end.y - eyeCenter.y, 0)
+        .normalize();
+      // Keep the bend clear of the lever arm that joins the eye.
+      const arm = new THREE.Vector3(unitCenterX + leverPivot.x - eyeCenter.x,
+        leverPivot.y - eyeCenter.y, 0).normalize();
+      const minimumArmAngle = THREE.MathUtils.degToRad(80);
+      const armAngle = Math.acos(THREE.MathUtils.clamp(pull.dot(arm), -1, 1));
+      if (armAngle < minimumArmAngle) {
+        const turn = (minimumArmAngle - armAngle) * Math.sign(arm.x * pull.y - arm.y * pull.x || 1);
+        pull.applyAxisAngle(new THREE.Vector3(0, 0, 1), turn);
+      }
+      const eyeBar = eyeCenter.clone().addScaledVector(pull, 0.20);
+      // Wide enough to clear the lever boss (r 0.18, half-depth 0.105) and
+      // still pass inside its 0.126 bore.
+      const loopRadius = 0.155;
+      const loop = [];
+      // From the free end round through the hole to the outgoing run, which
+      // leaves the bar tangentially toward the pull bar.
+      for (let i = 0; i <= 9; i += 1) {
+        const angle = -Math.PI / 2 - (FULL_TURN - 2.0) * (1 - i / 9);
+        loop.push(eyeBar.clone()
+          .addScaledVector(pull, loopRadius * Math.cos(angle))
+          .add(new THREE.Vector3(0, 0, loopRadius * Math.sin(angle))));
+      }
+      const start = loop.at(-1);
       const control = start.clone().lerp(end, 0.52);
       control.y -= 0.09;
       control.z += 0.06 * (index === 0 ? -1 : 1);
-      releaseCords[index].userData.setPoints(
-        quadraticPoints(start, control, end),
-      );
+      releaseCords[index].userData.setPoints([
+        ...loop.slice(0, -1),
+        ...quadraticPoints(start, control, end, 13),
+      ]);
     });
   };
 

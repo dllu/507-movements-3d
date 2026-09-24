@@ -12548,21 +12548,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: conical casing in section on the chest cover, guide D hung from its screw."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: solid slotted casting D, rod B in front, lipped recess, broad low valve A."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane7-hydraulic-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; the 0.0839 adjusting-screw/upper-pin overlap is fixed. Not a continuous proof."
       },
-      "flaws": "Guide D is an open frame where Brown draws a solid slotted casting; the recess has no inward lips; valve A is smaller and higher than drawn. Valve input and roller loaded-wall convention prescribed; clearance take-up, pressure reversal and friction unvalidated. Guide offsets inferred.",
+      "flaws": "The arc slot droops at its ends because the kinematics are exact, where Brown's curves up. Valve input and roller loaded-wall convention prescribed.",
       "references": [
         "docs/valve-linkage-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12704,13 +12705,14 @@
         "evidence": "docs/steam-engine-421-423-working-solids.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. The new regression queries actual rendered triangle surfaces in both directions over 65 poses for the gland/trunk/rod, sector vane/head/end-wall, valve/chest, rod layering, pins and piston hubs. These selected interfaces show no sampled penetration beyond 0.00002 model units. It also checks actual bored-eye locations against the pins, continuous framing, and fog/ground… Pass-49 relative-motion screen reports 0.2249 solid overlap (bottom-quadrant-cylinder-end-wall x single-common-crank-pin-D-shared-by-both-connecting-rods); unclassified, may be intended contact."
       },
-      "flaws": "The casing top is cropped in the default view. Steam/valve motion prescribed.",
+      "flaws": "Steam/valve motion prescribed; pressure forces, leakage, seal compression, friction and thermodynamic performance unvalidated.",
       "references": [
         "docs/steam-engine-421-423-working-solids.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13099,20 +13101,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: level inlet at the top, short vane stubs a."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: shaded sector buckets c and a bolted scroll flange."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane7-hydraulic-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Buckets c are curved blades where Brown draws shaded sectors; casing lugs and flange are not modelled. Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
+      "flaws": "Tailwater shows as a blue disc through the open floor. Water/air motion and rotor speed prescribed.",
       "references": [
         "docs/fluid-rotor-436-438-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13216,21 +13219,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: flat face-on view with slimmer channels; the water box remains."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: slimmer floats; the stream is a heavy translucent band where Brown draws ruled lines."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/persian-bucket-trip-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Validation combines 10,001 input angles for analytic pin/shoe separation (including actual blocking of the unrotated shoe), 97 poses with bidirectional actual mesh-surface checks against trip hardware, receiver and shaft supports, and 513 poses checking mouth-to-receiver discharge placement. Existing bucket law and object/geometry identity regressions are retained.… Pass-49 relative-motion screen reports 0.0747 solid overlap (null); unclassified, may be intended contact."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Pass-51 screen: 0.0747 → no solid pairs; buckets dipping in the stream are intended."
       },
-      "flaws": "Floats are wider than Brown's lines and the water is drawn as a box. Upright hanging and gravity return imposed.",
+      "flaws": "The stream is a heavy translucent band where Brown draws a few ruled lines. Upright hanging and gravity return imposed.",
       "references": [
         "docs/persian-bucket-trip-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13246,21 +13250,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: across-stream view with axle, trestles and a shallow stream band."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: pointed lozenge pots along the axle."
       },
       "intersections": {
         "status": "known",
         "evidence": "docs/w2h-401-507-review.md",
         "note": "Pass-51 screen: pots dipping in the water 0.275 (intended)."
       },
-      "flaws": "Box pots where Brown draws lozenge pots. Pot filling and wheel speed prescribed.",
+      "flaws": "The stream box remains. Pot filling and wheel speed prescribed.",
       "references": [
         "docs/water-lifting-441-443-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13276,21 +13281,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: closer to the screw axis, thin water sheet."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: the axis reads at ≈40° as in the plate."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/water-lifting-441-443-review.md",
         "note": "Selected finite interfaces sampled in cited review; no global or continuous collision certificate. Screw rotation and water motion illustrative; leakage, hydraulic torque, fluid transport and seal forces not solved. Pass-49 relative-motion screen reports 0.0249 solid overlap (null); unclassified, may be intended contact."
       },
-      "flaws": "The axis is steeper than the plate so the paddle wheel reads flat. Screw rotation and water motion illustrative.",
+      "flaws": "The vertical support post remains; the paddle wheel is a ring with spokes where Brown draws a solid disc. Screw rotation and water motion illustrative.",
       "references": [
         "docs/water-lifting-441-443-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13306,13 +13312,13 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: slab and box removed, flatter camera."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: lower tank in section, head vessel cut away."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/water-mechanism-439-440-444-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The focused test checks actual moving mesh surface samples against stationary solid interiors over 65 poses, checks the rendered 439 stem/anvil constraint and inlet termination, and checks 440 water vertices against compartment boundaries. Repeated state queries and updates preserve all scene object and geometry identities. The finite test is a sampled clearance regression,… Pass-49 relative-motion screen reports 0.0536 solid overlap (right-weight-held-open-waste-impulse-valve/CylinderGeometry x intermittent-waste-efflux-while-right-valve-open); unclassified, may be intended contact."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Pass-51 screen: 0.0536 → seated disk only."
       },
       "flaws": "Bucket/rope motion and water transport prescribed; rope tension, torque, slip, leakage and hydraulic performance unvalidated.",
       "references": [
@@ -13320,7 +13326,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13336,21 +13343,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: rebuilt as Brown's section with channel, upper box, lower box and plate on its stem."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: waisted falling stream and belled sheet."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane7-hydraulic-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no water enters a solid (was 0.29); only intended water-in-water overlaps remain."
       },
-      "flaws": "The water cone is broader and straighter than Brown's column; box depth and cutaway are assumed. Flow bookkeeping is not a conserved fluid/free-surface solution.",
+      "flaws": "Box depth and cutaway are assumed. Flow bookkeeping is not a conserved fluid/free-surface solution.",
       "references": [
         "docs/oscillating-column-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13366,21 +13374,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: rebuilt as Brown's section with the rising column into the upper box."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: concave checked cone and rising column."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane7-hydraulic-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no water enters a solid; the column-inside-water overlap (≤0.153) is intended."
       },
-      "flaws": "The water cone is broader and straighter than Brown's column; box depth and cutaway are assumed. Flow bookkeeping does not validate free surfaces, pressure recovery, water hammer or fluid stability.",
+      "flaws": "Box depth and cutaway are assumed. Flow bookkeeping does not validate free surfaces or pressure recovery.",
       "references": [
         "docs/oscillating-column-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13738,22 +13747,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: pinned star wheels, an edge-on vane wheel, flat long-lens view cut at the well curbs."
       },
       "intersections": {
-        "status": "sampled-clear",
-        "evidence": "docs/well-scoop-gutter-review.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. The scoped regressions check stable object/geometry identities; exact rope tangent directions; finite rope/groove, hub/axle and bucket/receiver clearances; 65-pose bidirectional scoop/ground/journal and gutter/flap/support interfaces; actual notch openings; and a separate 129-pose test that refreshes the changing water surface before checking the scoop floor and sides. These… Pass-49 relative-motion screen reports 0.1049 solid overlap (fixed-tappet-pivot x arm-linking-vibrating-tappet-to-traversing-worm-step); unclassified, may be intended contact."
+        "status": "known",
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Pass-51 screen: tappet pivot/arm 0.118 (pre-existing pair); star pins graze the worm thread by up to 0.030 while engaged."
       },
-      "flaws": "Worm wheels not conjugate-qualified; tappet pads remain axially separated from bucket bails; exchange/tipping prescribed.",
+      "flaws": "Tappet pivot/arm overlap 0.118 and star-pin/worm grazes up to 0.030; worm meshing not conjugate-qualified; the top wheel floats without a frame, as in the plate.",
       "references": [
         "docs/well-scoop-gutter-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13855,20 +13865,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: flat section, pivot post removed; the upper panel reads as a block of water."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: thick plank leaves; the water blocks only loosely follow the section."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/w2h-401-507-review.md",
         "note": "Pass-51 screen: 0.0174 coaxial → clear."
       },
-      "flaws": "Leaves are thinner than Brown's planks and the layout only loosely follows the section. Weir motion prescribed.",
+      "flaws": "The layout only loosely follows Brown's section (water drawn as blocks). Weir motion prescribed.",
       "references": [
         "docs/chain-weir-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13940,21 +13951,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: flat section without foundation or tank front."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: opaque half-section cylinders; lever post on a tank-rim bracket."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Pass-51 screen: 0.0437 (unchanged)."
+        "status": "sampled-clear",
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Pass-51 screen: 0.0437 → seated check disks only."
       },
-      "flaws": "A 0.044 overlap remains; glass ram cylinder; the lever stand passes through the tank.",
+      "flaws": "A translucent pump water column remains. Checks, displacement and return metering prescribed.",
       "references": [
         "docs/hydraulic-force-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13970,21 +13982,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: cupped cast head and J-hook claw in flat section."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: narrower base box, lever and thumb screw no longer ghosted."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Pass-51 screen: 0.0134 (unchanged)."
+        "status": "sampled-clear",
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Pass-51 screen: 0.0134 → 0.0000."
       },
-      "flaws": "A 0.013 overlap remains; the base box is larger than Brown's.",
+      "flaws": "The base is wider than Brown's because it houses the pump. Checks and displacement prescribed.",
       "references": [
         "docs/hydraulic-force-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14000,21 +14013,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: plan-style view of both mains; Brown draws a close plan and elevation of one joint."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: an oblique close-up of the front main's joint that does not resemble Brown's plan and elevation of one joint."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/folding-pipe-family-review.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. These are kinematic reconstructions, not structural or load-bearing qualifications. No ladder latch, hand force, buoyancy, pin friction or joint wear is solved. The 468 installation path and prepared bed are prescribed; hauling forces and seabed contact are not simulated. Its spherical seats include geometric clearance without a modeled gasket, pressure seal or fluid solver.… Pass-49 relative-motion screen reports 0.0425 solid overlap (18-inch-winch-rotor/BoxGeometry x 18-inch-north-bank-winch/BoxGeometry); unclassified, may be intended contact."
       },
-      "flaws": "Brown draws a close plan and elevation of one joint; the model shows both whole mains being hauled. Installation path prescribed.",
+      "flaws": "The default view is a cropped oblique close-up of the mains, not Brown's separate plan and elevation of one flexible joint; winch cable/rotor coaxial fits up to 0.239. Installation path prescribed.",
       "references": [
         "docs/folding-pipe-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14060,21 +14074,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: arched cast standard replaces the gallows."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: bored valve link one plane in front of the lever."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Pass-51 screen: 0.0416 (unchanged)."
+        "status": "sampled-clear",
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Pass-51 screen: 0.0416 → seated hammer face only."
       },
-      "flaws": "A 0.042 overlap remains; the steam pipe and valve gear sit on the right side. Ideal pressure lift.",
+      "flaws": "Steam pipe and valve gear sit on the right. Ideal pressure lift and inelastic impact.",
       "references": [
         "docs/hammer-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14179,20 +14194,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: curved splayed legs and straight risers from the lid; the view is from higher than Brown's."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: near-plumb risers, lower camera, markers removed."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane7-hydraulic-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn fixed supports and context are removed by source presentation. Risers lean about 12° outward where the plate's are vertical; the default view looks down more steeply than the plate. Steady speed comes from assumed pressure/nozzle/drag balance; boiling, transient inertia, pressure losses, rotary seals, leakage and useful load unsolved.",
+      "flaws": "Undrawn fixed supports and context are removed by source presentation. Risers lean ≈5° from plumb. Steady speed from assumed pressure/nozzle/drag balance.",
       "references": [
         "docs/thermal-steam-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14382,8 +14398,8 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: dial and slab removed, level camera."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: low flared feet as drawn."
       },
       "intersections": {
         "status": "known",
@@ -14395,7 +14411,8 @@
         "docs/gas-meter-regulator-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14706,21 +14723,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: one detacher presented as drawn."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: ropes bent through the tackle and lever eyes."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): rope ends sit inside the tackle eye and lever eye by up to 0.0945 (pre-existing, previously undisclosed)."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Pass-51 screen: 0.0945 → 0.034 (rope self-overlap at sharp bends) plus a 0.010 graze on the lever eye boss."
       },
-      "flaws": "Undrawn fixed supports and context are removed by source presentation. The second end unit and common pull bar are reconstructed from the caption but hidden in the plate view. Rope ends sit up to 0.09 inside their eyes. Tongue/tackle actuation prescribed, passive load transfer/friction unsolved.",
+      "flaws": "Undrawn fixed supports and context are removed by source presentation. Rope segments self-overlap 0.034 at bends and graze the lever eye boss by 0.010. Tongue/tackle actuation prescribed.",
       "references": [
         "docs/boat-detacher-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14824,21 +14842,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: plain rolls A, B and a close inverted-U flyer; the rolls read as oblique cylinders where Brown draws end sections."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: rolls A, B end-on as section circles; spindle with pulley and footstep."
       },
       "intersections": {
         "status": "known",
         "evidence": "docs/lane7-hydraulic-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the yarn touches the package and itself by up to 0.023."
       },
-      "flaws": "Undrawn fixed supports and context are removed by source presentation. Rolls are seen obliquely rather than end-on; the lower spindle is shorter than drawn. Yarn is not deposited into the fixed package and may cross decorative turns; package growth/traverse, grip, tension and bobbin drag unsolved.",
+      "flaws": "Undrawn fixed supports and context are removed by source presentation. Yarn touches the package and itself by up to 0.023; package growth, tension and bobbin drag unsolved.",
       "references": [
         "docs/spinning-fan-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15026,21 +15045,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane7-hydraulic-misc-review.md",
-        "note": "Default capture inspected beside the plate: broad shallow C/D and a smaller B on one apex."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: sleeve F as a square block, index marks removed."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane7-hydraulic-misc-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): 0.0070 → none; contact audit regenerated with 0 penetrations."
       },
-      "flaws": "Sleeve F is a cylinder where Brown draws a block. Back-cone flanks approximate; loaded conjugacy, backlash and forces unvalidated.",
+      "flaws": "Back-cone flanks approximate; loaded conjugacy, backlash and forces unvalidated.",
       "references": [
         "docs/movement-503-504-contact.md",
         "docs/epicyclic-source-pose-followup.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane7-hydraulic-misc-review.md"
+        "docs/lane7-hydraulic-misc-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15056,21 +15076,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2h-401-507-review.md",
-        "note": "Default capture inspected beside the plate: flatter camera."
+        "evidence": "docs/w3e-418-504-review.md",
+        "note": "Default capture inspected beside the plate: the train is still framed small and off-centre because the fit covers the arm's full sweep."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/movement-503-504-contact.md",
         "note": "Selected interfaces only; no global/continuous collision certificate. - 503: 409,058 surface queries, zero sampled penetrations; maximum closest-surface gap 0.003011. The back-cone approximation gives contact ratio 1.638936. - 504: 852,549 surface queries, zero sampled penetrations. Maximum closest-surface gaps are 0.000582 for A–B and B–F, 0.000600 for B–E, and 0.000596 for B–G. - Focused tests also check actual 503 hub/sleeve/head surfaces…"
       },
-      "flaws": "Continuous B and source E/F/G order corrected; generated tooth thicknesses/root connections and supports inferred. Loaded backlash/forces unvalidated.",
+      "flaws": "The train is framed small and centred on shaft A because the view covers the arm's full sweep. Generated tooth thicknesses and supports inferred.",
       "references": [
         "docs/movement-503-504-contact.md",
         "docs/epicyclic-source-pose-followup.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2h-401-507-review.md"
+        "docs/w2h-401-507-review.md",
+        "docs/w3e-418-504-review.md"
       ],
       "mujoco": {
         "mode": "none",

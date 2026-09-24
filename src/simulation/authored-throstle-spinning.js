@@ -698,13 +698,42 @@ function fitThrostleToPlate(root) {
   // inside the yarn.
   swap(b.bobbinBarrel, bored(g.windingRadius - 0.03, 0.069, 1.42));
   b.spindleBearing.position.y = g.spindleOrigin.y - 1.75;
+  // Brown's spindle runs well below the bobbin: through the rail bearing to a
+  // small grooved whorl and down to its footstep.
+  const spindleBottomLocal = -3.0;
+  const spindleTopLocal = 1.19;
+  const shaft = b.spindle.userData.rotor.children[0];
+  swap(shaft, new THREE.CylinderGeometry(0.065, 0.065,
+    spindleTopLocal - spindleBottomLocal, 32));
+  b.spindle.position.y = (spindleTopLocal + spindleBottomLocal) / 2;
+  swap(b.whorl, boredLatheGeometry([
+    { radial: 0.26, axial: -0.10 }, { radial: 0.15, axial: 0 },
+    { radial: 0.26, axial: 0.10 },
+  ], 0.067, 64));
+  b.whorl.position.y = -2.40;
+  const footstep = new THREE.Mesh(bored(0.17, 0.069, 0.22),
+    b.spindleBearing.material);
+  footstep.position.set(g.spindleOrigin.x, g.spindleOrigin.y + spindleBottomLocal - 0.03,
+    g.spindleOrigin.z);
+  footstep.userData.role = 'fixed-footstep-bearing-under-spindle';
+  footstep.userData.fixed = true;
+  const footstepFloor = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.05, 48),
+    b.spindleBearing.material);
+  footstepFloor.position.copy(footstep.position);
+  footstepFloor.position.y -= 0.135;
+  footstepFloor.userData.role = 'fixed-footstep-bearing-under-spindle';
+  footstepFloor.userData.fixed = true;
+  root.add(footstep, footstepFloor);
+  b.footstep = footstep;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.0, g.spindleOrigin.y - 1.9, -1.1),
+    new THREE.Vector3(-3.0, g.spindleOrigin.y + spindleBottomLocal - 0.25, -1.1),
     new THREE.Vector3(1.45, g.nipY + 2 * g.rollRadius + 0.3, 1.1),
   );
-  root.userData.groundFloorY = g.spindleOrigin.y - 1.85;
-  // Brown's plate is a plain side elevation along the roll axes.
-  root.userData.cameraDirection = new THREE.Vector3(-0.08, 0.05, 1);
+  root.userData.groundFloorY = g.spindleOrigin.y + spindleBottomLocal - 0.2;
+  // Brown's plate is a plain side elevation along the roll axes; a long lens
+  // keeps the rolls end-on as the section circles he draws.
+  root.userData.cameraDirection = new THREE.Vector3(0, 0, 1);
+  root.userData.cameraFov = 14;
 }
 
 export function createAuthoredThrostleSpinningMovement(movement) {

@@ -1,5 +1,6 @@
 import {correctWeir} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -36,12 +37,14 @@ function selfActingWeir(movement) {
   const streamDirection = new THREE.Vector3(1, 0, 0);
   const upperLength = 2.55;
   const lowerLength = 1.25;
-  const upperThickness = 0.16;
-  const lowerThickness = 0.16;
+  // Brown's leaves are stout planks (about a ninth of the upper leaf's
+  // height), not thin boards; the closed faces meet at x = 0.
+  const upperThickness = 0.26;
+  const lowerThickness = 0.26;
   const upperPivotFromBottom = 0.62;
   const lowerPivotFromBottom = 0.30;
-  const upperPivot = new THREE.Vector3(0.08, 1.40, 0);
-  const lowerPivot = new THREE.Vector3(-0.08, 0.30, 0);
+  const upperPivot = new THREE.Vector3(upperThickness / 2, 1.40, 0);
+  const lowerPivot = new THREE.Vector3(-lowerThickness / 2, 0.30, 0);
   const upperTopLocal = upperLength - upperPivotFromBottom;
   const lowerTopLocal = lowerLength - lowerPivotFromBottom;
   const gateWidth = 2.40;
@@ -560,6 +563,19 @@ function selfActingWeir(movement) {
     update,
   };
   correctWeir(root);
+  // The shared correction bores the leaves at its thin-board thickness;
+  // rebuild them as Brown's planks with the same bored pivot bosses.
+  for (const [body, length, offset, thickness] of [
+    [upperBody, upperBodyHeight, (-upperPivotFromBottom + notchBottomLocal) / 2, upperThickness],
+    [lowerBody, lowerLength, (lowerTopLocal - lowerPivotFromBottom) / 2, lowerThickness],
+  ]) {
+    const plank = poly([[-thickness / 2, offset - length / 2], [thickness / 2, offset - length / 2],
+      [thickness / 2, offset + length / 2], [-thickness / 2, offset + length / 2]]);
+    body.geometry.dispose();
+    body.geometry = plate(polygonClipping.difference(polygonClipping.union(plank,
+      poly(circle([0, 0], 0.16, 64))), poly(circle([0, 0], 0.097, 64))),
+    -gateWidth / 2, gateWidth / 2);
+  }
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.65, groundY - 0.02, -1.86),
     new THREE.Vector3(3.65, 3.58, 1.86),

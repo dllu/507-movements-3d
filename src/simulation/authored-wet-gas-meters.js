@@ -366,13 +366,31 @@ function wetGasMeter(movement) {
   baseRail.position.y = -2.49;
   baseRail.userData.role = 'fixed-bottom-base-rail';
   base.add(baseRail);
+  // Brown's case sits on two low flared humps that hug its lower quarters.
+  const footGroundY = -2.485;
+  const footShape = (side) => {
+    const points = [[1.545, footGroundY], [2.42, footGroundY]];
+    for (let i = 1; i <= 12; i += 1) {
+      const t = i / 12;
+      const x = (1 - t) ** 2 * 2.42 + 2 * (1 - t) * t * 1.98 + t ** 2 * 1.852;
+      const y = (1 - t) ** 2 * footGroundY + 2 * (1 - t) * t * -2.18 + t ** 2 * -1.447;
+      points.push([x, y]);
+    }
+    for (let i = 1; i <= 8; i += 1) {
+      const angle = THREE.MathUtils.degToRad(-38 - 11 * i / 8);
+      points.push([2.356 * Math.cos(angle), 2.356 * Math.sin(angle)]);
+    }
+    return points.map(([x, y]) => new THREE.Vector2(side * x, y));
+  };
   for (const side of [-1, 1]) {
+    const outline = footShape(side);
+    if (side < 0) outline.reverse();
     const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(1.35, 0.50, 1.65),
+      new THREE.ExtrudeGeometry(new THREE.Shape(outline), {
+        depth: 1.40, bevelEnabled: false, curveSegments: 1,
+      }).translate(0, 0, -0.70),
       frameMaterial,
     );
-    foot.position.set(side * 1.45, -2.27, 0);
-    foot.rotation.z = side * 0.18;
     foot.userData.role = side < 0
       ? 'fixed-left-case-foot'
       : 'fixed-right-case-foot';

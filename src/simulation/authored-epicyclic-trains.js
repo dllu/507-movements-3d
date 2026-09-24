@@ -1284,7 +1284,8 @@ function fit503SourceProportions(root) {
     ));
     indicator.position.x = (start + end) / 2;
   }
-  replace(b.carrierSleeve, new THREE.CylinderGeometry(0.24, 0.24, 0.80, 48));
+  // Brown draws F as a square block on A carrying the stub axle of B.
+  replace(b.carrierSleeve, new THREE.BoxGeometry(0.44, 0.80, 0.44));
   replace(b.planetAxle, new THREE.CylinderGeometry(0.105, 0.105, 1.95, 48));
   b.planetAxle.position.x = 0.975;
   replace(b.outerCarrierHead, new THREE.CylinderGeometry(0.20, 0.20, 0.18, 48));
@@ -1831,6 +1832,13 @@ function fergusonMechanicalParadox(movement) {
   root.userData.fidelity = 'authored';
   correctEpicyclicFamily(root, movement.id);
   correctEpicyclic503504(root, movement.id);
+  // Brown's side elevation: the arm swings a full turn about A, but its
+  // screen extent never exceeds its length, so the fit keeps the full x sweep
+  // and only a shallow depth; the whole-sweep box made the train tiny.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-4.31, -1.86, -0.95),
+    new THREE.Vector3(4.31, 1.45, 0.95),
+  );
   markShadows(root);
   return {
     root,

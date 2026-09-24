@@ -29,6 +29,67 @@ function beamBetween(start, end, width, depth, material) {
   return beam;
 }
 
+// Brown's pots are lozenges: spindle-shaped vessels lying axially between
+// the rims, pointed at both ends. The closed finite shell leaves a slot
+// facing the axle (local +y) as the inward mouth.
+function lozengePotGeometry(maxRadius, halfLength, wall, centerY, mouthHalfAngle) {
+  const stations = 40;
+  const arc = 28;
+  const start = Math.PI / 2 + mouthHalfAngle;
+  const sweep = FULL_TURN - 2 * mouthHalfAngle;
+  const loops = [];
+  for (let i = 0; i <= stations; i += 1) {
+    const z = -halfLength + 2 * halfLength * i / stations;
+    const outer = Math.max(maxRadius * (1 - (z / halfLength) ** 2), 0.014);
+    const inner = Math.max(outer - wall, 0.007);
+    const loop = [];
+    for (let j = 0; j <= arc; j += 1) {
+      const angle = start + sweep * j / arc;
+      loop.push([outer * Math.cos(angle), centerY + outer * Math.sin(angle), z]);
+    }
+    for (let j = arc; j >= 0; j -= 1) {
+      const angle = start + sweep * j / arc;
+      loop.push([inner * Math.cos(angle), centerY + inner * Math.sin(angle), z]);
+    }
+    loops.push(loop);
+  }
+  const positions = [];
+  const push = (...points) => points.forEach(point => positions.push(...point));
+  const count = loops[0].length;
+  for (let i = 0; i < stations; i += 1) {
+    for (let j = 0; j < count; j += 1) {
+      const a = loops[i][j], b = loops[i][(j + 1) % count];
+      const c = loops[i + 1][(j + 1) % count], d = loops[i + 1][j];
+      push(a, b, c, a, c, d);
+    }
+  }
+  for (const [loop, flip] of [[loops[0], true], [loops[stations], false]]) {
+    const contour = loop.map(([x, y]) => new THREE.Vector2(x, y));
+    for (const [a, b, c] of THREE.ShapeUtils.triangulateShape(contour, [])) {
+      if (flip === THREE.ShapeUtils.isClockWise(contour)) push(loop[a], loop[b], loop[c]);
+      else push(loop[a], loop[c], loop[b]);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  let volume = 0;
+  for (let k = 0; k < positions.length; k += 9) {
+    const [a, b, c] = [0, 3, 6].map(o => new THREE.Vector3(
+      positions[k + o], positions[k + o + 1], positions[k + o + 2]));
+    volume += a.dot(b.clone().cross(c)) / 6;
+  }
+  if (volume < 0) {
+    const attribute = geometry.getAttribute('position');
+    for (let k = 0; k < attribute.count; k += 3) {
+      const x = attribute.getX(k + 1), y = attribute.getY(k + 1), z = attribute.getZ(k + 1);
+      attribute.setXYZ(k + 1, attribute.getX(k + 2), attribute.getY(k + 2), attribute.getZ(k + 2));
+      attribute.setXYZ(k + 2, x, y, z);
+    }
+  }
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function smoothStep5(value) {
   const clamped = THREE.MathUtils.clamp(value, 0, 1);
   return clamped ** 3 * (clamped * (clamped * 6 - 15) + 10);
@@ -53,6 +114,10 @@ function eisachPotWheel(movement) {
   const potTangentialWidth = 0.58;
   const potRadialDepth = 0.58;
   const potAxialWidth = 1.20;
+  const potLozengeRadius = 0.30;
+  const potLozengeHalfLength = 0.62;
+  const potLozengeCenterY = -0.30;
+  const potMouthHalfAngle = THREE.MathUtils.degToRad(38);
   const potCapacity = 0.0036;
   const pickupStartAngle = THREE.MathUtils.degToRad(220);
   const pickupEndAngle = THREE.MathUtils.degToRad(305);
@@ -276,78 +341,11 @@ function eisachPotWheel(movement) {
     wheel.add(pot);
     pots.push(pot);
 
-    const bottom = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        potTangentialWidth,
-        0.08,
-        potAxialWidth,
-      ),
-      potMaterial,
-    );
-    bottom.position.y = -potRadialDepth;
-    bottom.userData.role = `outer-bottom-of-pot-${index + 1}`;
-    pot.add(bottom);
-    const sideWalls = [-1, 1].map((sign) => {
-      const wall = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          0.08,
-          potRadialDepth,
-          potAxialWidth,
-        ),
-        potMaterial,
-      );
-      wall.position.set(
-        sign * (potTangentialWidth - 0.08) / 2,
-        -potRadialDepth / 2,
-        0,
-      );
-      wall.userData.role = `side-of-rigid-pot-${index + 1}`;
-      pot.add(wall);
-      return wall;
-    });
-    const endWalls = [-1, 1].map((sign) => {
-      const wall = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          potTangentialWidth,
-          potRadialDepth,
-          0.08,
-        ),
-        potMaterial,
-      );
-      wall.position.set(
-        0,
-        -potRadialDepth / 2,
-        sign * (potAxialWidth - 0.08) / 2,
-      );
-      wall.userData.role = `axial-end-of-rigid-pot-${index + 1}`;
-      pot.add(wall);
-      return wall;
-    });
-    const mouthRim = new THREE.Group();
-    mouthRim.userData.role = `inward-facing-mouth-of-pot-${index + 1}`;
-    pot.add(mouthRim);
-    for (const sign of [-1, 1]) {
-      const axialRail = new THREE.Mesh(
-        new THREE.BoxGeometry(0.055, 0.055, potAxialWidth + 0.06),
-        darkMaterial,
-      );
-      axialRail.position.set(
-        sign * (potTangentialWidth + 0.03) / 2,
-        -0.02,
-        0,
-      );
-      mouthRim.add(axialRail);
-      const transverseRail = new THREE.Mesh(
-        new THREE.BoxGeometry(potTangentialWidth + 0.06, 0.055, 0.055),
-        darkMaterial,
-      );
-      transverseRail.position.set(
-        0,
-        -0.02,
-        sign * (potAxialWidth + 0.03) / 2,
-      );
-      mouthRim.add(transverseRail);
-    }
+    const shell = new THREE.Mesh(lozengePotGeometry(potLozengeRadius,
+      potLozengeHalfLength, 0.035, potLozengeCenterY, potMouthHalfAngle),
+    potMaterial);
+    shell.userData.role = `lozenge-pot-${index + 1}-with-inward-facing-mouth`;
+    pot.add(shell);
     const potWater = new THREE.Mesh(
       new THREE.BoxGeometry(
         potTangentialWidth - 0.15,
@@ -361,7 +359,7 @@ function eisachPotWheel(movement) {
     potWater.userData.role = `water-carried-in-rigid-pot-${index + 1}`;
     pot.add(potWater);
     potWaters.push(potWater);
-    pot.userData.parts = { bottom, endWalls, mouthRim, sideWalls };
+    pot.userData.parts = { shell };
 
     const discharge = new THREE.Mesh(
       new THREE.CylinderGeometry(0.085, 0.065, 1, 14),
@@ -502,8 +500,8 @@ function eisachPotWheel(movement) {
   });
 
   const updatePotWater = (water, potState) => {
-    const x = potTangentialWidth / 2 - .085;
-    updateClippedCell(water, [[-x,-potRadialDepth+.045],[x,-potRadialDepth+.045],[x,-.015],[-x,-.015]], potState.potWorldRotation, potState.potFill, .42, potAxialWidth-.17);
+    const x = .10;
+    updateClippedCell(water, [[-x,potLozengeCenterY-.17],[x,potLozengeCenterY-.17],[x,potLozengeCenterY+.05],[-x,potLozengeCenterY+.05]], potState.potWorldRotation, potState.potFill, .22, .56);
     water.visible = potState.potFill > .01;
   };
 

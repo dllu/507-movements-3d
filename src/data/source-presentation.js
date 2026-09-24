@@ -722,7 +722,7 @@ export default {
     note: 'Brown looks across the stream nearly along the wheel plane: the axle runs left to right on its trestles, the pots show between the rims and the trough runs off to the left. No base slab, box bed, current markers or rotation index are drawn.',
   },
   443: {
-    camera: [0.6, 0.16, 0.85],
+    camera: [-0.3, 0.5, 1],
     remove: ['fixed-archimedes-screw-base', 'fixed-stream-bed-around-lower-water-wheel', 'axial-driving-stream-marker-\\d+', 'visible-one-to-one-screw-rotation-index', 'fixed-oblique-bearing-support-1', 'finite-bearing-to-post-bridge-1'],
     note: 'The oblique screw casing with its spiral passage, the paddle wheel at its lower end in the stream and the trough at the top. Brown draws no base slab, bed box, post under the submerged lower bearing, stream markers or rotation stripe.',
   },
@@ -730,6 +730,14 @@ export default {
     camera: [0, 0.02, 1],
     remove: ['fixed-hydraulic-ram-base', 'drive-pipe-flow-marker-\\d+', 'uniform-output-flow-marker-\\d+'],
     note: 'Sectional elevation of the supply, air vessel and jet, as Brown draws it; no base slab or white flow markers are drawn.',
+  },
+  445: {
+    remove: ['descending-flow-tracer', 'rising-column-tracer', 'lower-discharge-flow-tracer'],
+    note: 'Section of the supply channel, the upper box and orifice, the waisted falling stream spreading over the plate on its stem and the sheet falling into the lower box; Brown hatches the water and draws no tracer beads.',
+  },
+  446: {
+    remove: ['descending-flow-tracer', 'rising-column-tracer', 'lower-discharge-flow-tracer'],
+    note: 'The same section with the concave checked cone rising from the plate into the orifice and the raised column spraying in the upper box; no tracer beads are drawn.',
   },
   452: {
     camera: [0.08, 0.05, 1],
@@ -756,6 +764,11 @@ export default {
     remove: ['fixed-cary-pump-foundation', 'fixed-casing-foot-not-drawn-by-brown', 'white-rotor-rotation-index'],
     note: 'Sectional elevation of the cylinder, heart cam a, sliders and pipes F, H; no foundation, feet or white axle index is drawn.',
   },
+  459: {
+    camera: [0, 0.03, 1],
+    remove: ['fixed-foundation-of-reciprocating-well-lift', 'fixed-side-post-of-well-frame', 'fixed-top-beam-of-well-frame'],
+    note: 'Flat elevation: the horizontal wind wheel edge-on as a vaned band, the coupling, the worm between the two pinned star wheels, the ropes, the tipping bucket, the central tappet block and the well curbs; no gallows frame or base slab is drawn.',
+  },
   461: {
     camera: [0, 0.02, 1],
     remove: ['fixed-foundation-below-swinging-gutter-water-lift'],
@@ -780,9 +793,9 @@ export default {
     note: 'Sectional elevation of the jack, ram, pump and lever; no ground plate is drawn.',
   },
   468: {
-    camera: [0, 1, 0.5],
+    camera: [0.15, 0.6, 1],
     remove: ['river-surface-reference-\\d'],
-    note: 'Brown gives a close plan and elevation of one ball-and-socket joint between log frames; the reconstruction shows the whole pair of mains being hauled, viewed from above so the frames, straps and joints read as in his plan. No river-surface strips are drawn.',
+    note: 'Brown gives a close plan and elevation of one ball-and-socket joint between log frames. The default view closes on the middle joint of the front main from above and in front, so its frames, straps, hinge and ball read as in his plan while its flexing reads as in his elevation; zooming out shows both mains being hauled. No river-surface strips are drawn.',
   },
   469: {
     camera: [0, 0.02, 1],
@@ -790,8 +803,9 @@ export default {
     note: 'Sectional elevation of the two tanks, wheel and pipe, as Brown draws it; no thermometers are drawn.',
   },
   474: {
-    remove: ['fixed-hearth-ring-below-boiler', 'fixed-fire-flame-\\d-of-seven', 'fixed-aeolipile-foundation'],
-    note: 'The boiler on its legs, the hollow risers and the revolving sphere; no hearth, fire or foundation is drawn.',
+    camera: [6.8, 2.0, 9.4],
+    remove: ['fixed-hearth-ring-below-boiler', 'fixed-fire-flame-\\d-of-seven', 'fixed-aeolipile-foundation', 'visible-globe-rotation-marker-\\d', 'steam-feed-\\d-marker-\\d+', 'exhaust-\\d-marker-\\d+'],
+    note: 'The boiler on its legs, the upright hollow risers and the revolving sphere, seen from a little above the lid as Brown draws it; no hearth, fire, foundation or white steam beads are drawn.',
   },
   475: {
     remove: ['bilge-water-source-at-foot-of-B', 'stationary-bilge-well-surrounding-suction-B'],
@@ -878,6 +892,10 @@ export default {
   501: {
     remove: ['fixed-barometer-support-base', 'fixed-barometer-back-support', 'bored-glass-retaining-clip', 'scale-board-bracket(?:-tab)?', 'fixed-calibrated-\\d+-through-\\d+-inch-scale-board', 'inch-scale-label-\\d+', 'atmospheric-pressure-arrow-\\d', 'live-inch-reading-index-at-long-column-meniscus'],
     note: 'The bent tube with its mercury and the inch marks at the top of the long leg; no stand, backboard, clips, scale board, numerals, pressure arrows or pointer is drawn.',
+  },
+  503: {
+    remove: ['white-arm-F-G-angular-speed-index', 'white-shaft-A-index-rigid-with-carrier-F-G'],
+    note: 'Elevation of the bevel wheels C, D on shaft A, the block F carrying the stub axle and wheel B, and the head G; Brown draws no index marks.',
   },
   504: {
     camera: [0, 0.03, 1],

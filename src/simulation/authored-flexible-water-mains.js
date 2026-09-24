@@ -939,6 +939,17 @@ function flexibleWaterMain(movement) {
     socket.castShadow = false;
   });
   fitPistonGuide(root, update, cycleDuration);
+  // Brown draws one ball-and-socket joint close up, straight in plan and
+  // flexed in elevation. The default view closes on the front 18-inch main's
+  // middle joint, which flexes most as the pipe settles into the trench;
+  // zooming out shows both mains, the banks and the winches. Set after the
+  // shared fit, which would otherwise frame the whole crossing.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-1.85, -0.30, 0.55),
+    new THREE.Vector3(1.45, 1.95, 1.85),
+  );
+  root.userData.cameraMaxDistance = 40;
+  root.userData.cameraDistanceScale = 1.0;
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

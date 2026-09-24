@@ -285,7 +285,12 @@ test('movement 504 runs continuously, fits the full carrier orbit, and leaves an
     model.root.updateMatrixWorld(true);
     swept.union(new THREE.Box3().setFromObject(model.root));
   }
-  assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
+  // Brown's elevation: the fit keeps the full orbit's screen extent (x, y)
+  // but only a shallow depth, so the side view is not shrunk by the orbit.
+  const fit = model.root.userData.cameraFitBounds;
+  assert.ok(fit.min.x <= swept.min.x && fit.max.x >= swept.max.x);
+  assert.ok(fit.min.y <= swept.min.y && fit.max.y >= swept.max.y);
+  assert.ok(fit.max.z - fit.min.z < 0.5 * (swept.max.z - swept.min.z));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
 

@@ -75,9 +75,12 @@ test('movement 442 has twelve open pots rigidly secured between two wheel rims',
     assert.equal(pot.parent, blocks.wheel);
     assert.equal(blocks.potWaters[index].parent, pot);
     assert.equal(pot.userData.potIndex, index);
-    assert.equal(pot.userData.parts.mouthRim.parent, pot);
-    assert.equal(pot.userData.parts.mouthRim.children.length, 4,
-      'mouth is four rim rails, not a closing plate');
+    assert.equal(pot.userData.parts.shell.parent, pot);
+    const shellBox = new THREE.Box3().setFromBufferAttribute(
+      pot.userData.parts.shell.geometry.attributes.position);
+    assert.ok(shellBox.max.z - shellBox.min.z > 1.8 * (shellBox.max.x - shellBox.min.x),
+      'Brown\'s lozenge pot is long and pointed along the axle');
+    assert.ok(shellBox.max.y < -0.02, 'the inward mouth is an open slot, not a closing wall');
   });
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
@@ -98,7 +101,7 @@ test('movement 442 has twelve open pots rigidly secured between two wheel rims',
   assert.equal(roles.filter((role) =>
     /^rigid-inward-opening-peripheral-pot-/.test(role)).length, 12);
   assert.equal(roles.filter((role) =>
-    /^inward-facing-mouth-of-pot-/.test(role)).length, 12);
+    /^lozenge-pot-\d+-with-inward-facing-mouth$/.test(role)).length, 12);
   assert.ok(roles.includes(
     'fixed-trough-above-stream-receiving-overturned-pots'));
   disposeModel(model.root);

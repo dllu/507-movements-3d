@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "4ee1637be30c5fce512f9039202a9ad591483e833311fc66cc596a5d6bbdfea4"
+      "sha256": "1a31857774bd4b4882d5ed71c6207267bd968ee98a41a3be4e705406817c6340"
     },
     {
       "file": "src/simulation/epicyclic-503-504-contact.js",

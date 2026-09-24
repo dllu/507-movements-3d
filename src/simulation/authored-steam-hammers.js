@@ -7,6 +7,7 @@ import {
   spline,
 } from './finite-plate-geometry.js';
 import * as THREE from 'three';
+import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import {
   PALETTE,
   markShadows,
@@ -554,11 +555,31 @@ function steamHammer(movement) {
   leverAxle.rotation.x = Math.PI / 2;
   valveLever.add(leverAxle);
 
+  // The pitman is a bored link one plane in front of the lever bar and spool,
+  // riding on a finite pin in each, so no member passes through another.
+  const pitmanPlaneOffset = 0.16;
+  const valvePinRadius = 0.03;
   const valvePitman = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 1, 16),
+    boredPlanarLinkGeometry({ length: valvePitmanLength, width: 0.07,
+      eyeRadius: 0.07, boreRadius: valvePinRadius + 0.003, depth: 0.06 }),
     matte(PALETTE.accent, { metalness: 0.28, roughness: 0.46 }),
   ), 'constant-length-valve-pitman');
+  valvePitman.userData.length = valvePitmanLength;
   root.add(valvePitman);
+  const crankPinMesh = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(valvePinRadius, valvePinRadius, 0.26, 20),
+    darkMaterial,
+  ), 'valve-lever-crank-pin');
+  crankPinMesh.rotation.x = Math.PI / 2;
+  crankPinMesh.position.set(valveCrankRadius, 0, 0.10);
+  valveLever.add(crankPinMesh);
+  const spoolPinMesh = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(valvePinRadius, valvePinRadius, 0.18, 20),
+    darkMaterial,
+  ), 'valve-spool-pitman-pin');
+  spoolPinMesh.rotation.x = Math.PI / 2;
+  spoolPinMesh.position.set(0, 0, 0.13);
+  valveSpool.add(spoolPinMesh);
 
   const cylinderInlet = new THREE.Vector3(
     cylinderOuterRadius,
@@ -600,10 +621,11 @@ function steamHammer(movement) {
     steamChamber.visible = state.steamVisible;
     valveLever.rotation.z = state.valve.crankAngle;
     valveSpool.position.copy(state.valve.spoolPin);
-    setRodBetween(
-      valvePitman,
-      state.valve.crankPin,
-      state.valve.spoolPin,
+    valvePitman.position.copy(state.valve.crankPin);
+    valvePitman.position.z += pitmanPlaneOffset;
+    valvePitman.rotation.z = Math.atan2(
+      state.valve.spoolPin.y - state.valve.crankPin.y,
+      state.valve.spoolPin.x - state.valve.crankPin.x,
     );
     steamMaterial.opacity = 0.22 + 0.38 * THREE.MathUtils.clamp(
       state.gaugePressure / staticSupportGaugePressure,

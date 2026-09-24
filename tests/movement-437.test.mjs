@@ -74,8 +74,7 @@ test('movement 437 combines eight upper radial vanes with four lower inclined bu
   assert.equal(blocks.escapeFlowTubes.length, 4);
   assert.equal(blocks.escapeMarkers.length, 12);
   for (const part of [...blocks.radialVanes, ...blocks.lowerBuckets,
-    blocks.runnerFloor, blocks.runnerHub, blocks.shaft,
-    blocks.rotationMarker]) assert.ok(part.parent === blocks.runner, `${part.userData.role} parent`);
+    blocks.runnerFloor, blocks.runnerHub, blocks.shaft]) assert.ok(part.parent === blocks.runner, `${part.userData.role} parent`);
   for (const fixed of [blocks.outerScrollWall, blocks.innerScrollWall,
     blocks.scrollWater, blocks.inletFlume, blocks.inletWater,
     blocks.lowerBasin,
@@ -97,6 +96,11 @@ test('movement 437 combines eight upper radial vanes with four lower inclined bu
     /^upper-radial-vane-a-\d+-of-eight$/.test(role)).length, 8);
   assert.equal(roles.filter((role) =>
     /^inclined-lower-escape-bucket-c-\d+-of-four$/.test(role)).length, 4);
+  assert.equal(roles.filter((role) =>
+    /^inclined-sector-bucket-c-\d+$/.test(role)).length, 4);
+  assert.ok(!roles.some((role) => /marker-on-volute-runner/.test(role)),
+    'Brown draws no rotation marker on the runner');
+  assert.ok(roles.includes('fixed-bolting-flange-and-lugs-of-scroll-casing-b'));
   for (const role of [
     'fixed-outer-wall-of-scroll-casing-b',
     'fixed-inner-wall-of-scroll-casing-b',

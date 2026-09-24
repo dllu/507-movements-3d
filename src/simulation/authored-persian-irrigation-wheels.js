@@ -377,7 +377,7 @@ function persianIrrigationWheel(movement) {
     arm.add(blade);
     const floatWaterMaterial = waterMaterial.clone();
     const floatWater = new THREE.Mesh(
-      new THREE.TubeGeometry(floatCurve, 96, 0.075, 9, false),
+      new THREE.TubeGeometry(floatCurve, 96, 0.035, 9, false),
       floatWaterMaterial,
     );
     floatWater.position.z = 0;
@@ -386,7 +386,7 @@ function persianIrrigationWheel(movement) {
     arm.add(floatWater);
     floatWaters.push(floatWater);
     const channelMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.06, 18, 12),
+      new THREE.SphereGeometry(0.035, 18, 12),
       paleWaterMaterial,
     );
     channelMarker.position.z = 0;
@@ -556,11 +556,14 @@ function persianIrrigationWheel(movement) {
   streamBed.position.set(0, groundY + 0.36, 0);
   streamBed.userData.role = 'fixed-stream-bed-beneath-wheel';
   root.add(streamBed);
+  // Brown rules the stream as open water running off both sides and below
+  // the plate, not as a bounded tank, so the band spans past the frame.
+  const streamBottomY = groundY - 2.2;
   const streamWater = new THREE.Mesh(
-    new THREE.BoxGeometry(7.20, streamSurfaceY-groundY-.47, 2.82),
+    new THREE.BoxGeometry(14.0, streamSurfaceY - streamBottomY, 2.82),
     waterMaterial,
   );
-  streamWater.position.set(0, (streamSurfaceY+groundY+.47)/2, 0);
+  streamWater.position.set(0, (streamSurfaceY + streamBottomY) / 2, 0);
   streamWater.userData.role =
     'moving-stream-partly-immersing-curved-floats';
   root.add(streamWater);

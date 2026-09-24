@@ -42,13 +42,14 @@ function cylinderBetween(start, end, radius, material, role, sides = 32) {
   return cylinder;
 }
 
-// Brown draws both hollow risers as nearly straight uprights standing in the
-// boiler lid near its rim and hooking inward only at the globe's pivot ends.
+// Brown draws both hollow risers as straight uprights standing in the
+// boiler lid near its rim (here within about 5 degrees of plumb, the most the
+// lid radius and the pivot collars allow) and hooking inward only at the globe's pivot ends.
 // The finite working-parts correction bends them in from lid ports near the
 // centre; replace only that lower crank, keeping its reducer, neck, trunnions
 // and bearings.
-const RISER_FOOT_X = 1.34;
-const RISER_UPPER_X = 1.80;
+const RISER_FOOT_X = 1.40;
+const RISER_UPPER_X = 1.60;
 const RISER_UPPER_Y = 2.42;
 const LID_PORT_RADIUS = 0.12;
 function straightenSourceRisers(root) {
@@ -69,7 +70,7 @@ function straightenSourceRisers(root) {
     bend.add(new THREE.CubicBezierCurve3(
       upper,
       new THREE.Vector3(side * RISER_UPPER_X, 2.60, 0),
-      new THREE.Vector3(side * 1.72, 2.72, 0),
+      new THREE.Vector3(side * 1.64, 2.72, 0),
       corner,
     ));
     const neck = new THREE.LineCurve3(

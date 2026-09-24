@@ -637,7 +637,7 @@ function robertsonJack(movement) {
     const baseWaterHeight = 0.52 * state.baseWaterVolume
       / baseInitialWaterVolume;
     baseWater.scale.y = baseWaterHeight;
-    baseWater.position.set(0, -1.00 + baseWaterHeight / 2, 0);
+    baseWater.position.y = -1.00 + baseWaterHeight / 2;
     thumbScrew.rotation.x = state.thumbScrewAngle;
     thumbScrew.position.x = -1.25 - state.thumbScrewRetreat;
     root.userData.updateSolids?.(state);

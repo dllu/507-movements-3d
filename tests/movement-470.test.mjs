@@ -305,8 +305,16 @@ test('movement 470 renderer moves only the rigid assembly and maps valve, chambe
       `valve lever at ${phase}`);
     vectorNear(blocks.valveSpool.position, state.valve.spoolPin, 1e-12,
       `valve spool at ${phase}`);
-    near(blocks.valvePitman.scale.y, geometry.valvePitmanLength, 2e-12,
+    near(blocks.valvePitman.userData.length, geometry.valvePitmanLength, 0,
       `valve pitman at ${phase}`);
+    blocks.valvePitman.updateMatrixWorld(true);
+    const farEye = new THREE.Vector3(geometry.valvePitmanLength, 0, 0)
+      .applyMatrix4(blocks.valvePitman.matrixWorld);
+    near(Math.hypot(farEye.x - state.valve.spoolPin.x, farEye.y - state.valve.spoolPin.y),
+      0, 2e-12, `bored pitman far eye on spool pin at ${phase}`);
+    near(Math.hypot(blocks.valvePitman.position.x - state.valve.crankPin.x,
+      blocks.valvePitman.position.y - state.valve.crankPin.y), 0, 2e-12,
+    `bored pitman near eye on crank pin at ${phase}`);
     assert.equal(blocks.steamChamber.visible, state.steamVisible);
   }
   disposeModel(model.root);

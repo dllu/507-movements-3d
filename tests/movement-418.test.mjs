@@ -41,7 +41,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 418 is one slide valve A, one rod B, one roller C, and exactly two suspended guide arcs D', () => {
+test('movement 418 is one slide valve A, one rod B, one roller C, and one suspended slotted casting D whose slot edges are the two arcs', () => {
   const movement = catalog.movements[417];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -67,8 +67,7 @@ test('movement 418 is one slide valve A, one rod B, one roller C, and exactly tw
   assert.equal(blocks.valveA.parent, model.root);
   assert.equal(blocks.rodB.parent, model.root);
   assert.equal(blocks.rollerC.parent, model.root);
-  assert.equal(blocks.upperArcD.parent, blocks.guideAssemblyD);
-  assert.equal(blocks.lowerArcD.parent, blocks.guideAssemblyD);
+  assert.equal(blocks.slottedCastingD.parent, blocks.guideAssemblyD);
 
   const roles = [];
   const belts = [];
@@ -78,18 +77,16 @@ test('movement 418 is one slide valve A, one rod B, one roller C, and exactly tw
   });
   assert.deepEqual(belts, []);
   assert.equal(roles.filter((role) =>
-    role.endsWith('coupler-locus-arc-D')).length, 2);
+    role.includes('coupler-locus-arc')).length, 1);
+  assert.equal(roles.filter((role) => role.startsWith('white-')).length, 0);
   for (const role of [
     'horizontally-sliding-valve-A',
     'fixed-horizontal-valve-seat',
     'constant-length-relieving-rod-B',
     'roller-C-fixed-one-third-along-rod-B',
     'roller-C-body-captured-between-arcs-D',
-    'upper-captured-coupler-locus-arc-D',
-    'lower-load-bearing-coupler-locus-arc-D',
-    'fixed-vertical-slot-for-upper-B-pin',
+    'suspended-slotted-casting-D-whose-slot-edges-are-both-coupler-locus-arcs',
     'vertical-adjustment-screw-for-arcs-D',
-    'white-roller-C-rotation-index',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
