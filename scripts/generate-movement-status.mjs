@@ -10,6 +10,7 @@ if (data.movements.length !== 507) throw new Error('Expected exactly 507 movemen
 const visualLabels = {yes: 'Yes', unverified: 'Unverified'};
 const physicsLabels = {live: 'Yes — live', baked: 'Yes — baked', 'validation-only': 'No — study only', none: 'No', unknown: 'Unknown'};
 const intersectionLabels = {known: 'Yes — see scope', 'sampled-clear': 'None in scoped checks', unknown: 'Unknown'};
+const assessmentLabels = {reasonable: '✅ Reasonable', minor: '🟡 Minor visible differences', flawed: '❌ Visible flaws'};
 const clean = text => String(text).replaceAll('|', '\\|').replace(/\s+/g, ' ').trim();
 const paths = new Set();
 function evidence(path) {
@@ -19,7 +20,7 @@ function evidence(path) {
   return `[evidence](../${path})`;
 }
 const counts = key => Object.entries(data.movements.reduce((out, row) => {
-  const status = key === 'mujoco' ? row[key].mode : row[key].status;
+  const status = key === 'mujoco' ? row[key].mode : key === 'assessment' ? row.assessment : row[key].status;
   out[status] = (out[status] ?? 0) + 1;
   return out;
 }, {})).map(([status, count]) => `${status}: ${count}`).join('; ');
@@ -29,23 +30,27 @@ const lines = [
     + 'Edit [movement-status.json](movement-status.json), then run `node scripts/generate-movement-status.mjs`. '
     + 'Update affected rows in every progress commit. The family queue selects reusable work; this ledger records each movement’s actual evidence.', '',
   `Last ledger update: **${data.updatedOn}**. Historical evidence was audited from repository review notes and production code.`, '',
+  '- **Assessment:** ✅ Reasonable means the movement looks and works right beside its engraving, with at most invisible modelling limits. 🟡 means small visible differences a careful viewer would notice. ❌ means clear visible or motion defects (wrong shapes, wrong or jerky motion, disconnected or overlapping parts, poor framing). **Visible flaws** lists only what can be seen; **Invisible limits** holds modelling caveats (friction, loads, inferred hidden parts) that do not affect appearance.',
   '- **Visual check:** Yes names the reviewer and means an attributable primary-agent comparison of rendered geometry with the engraving, not original authorship, a test pass, or merely creating a screenshot. Unverified means the record does not establish that attribution; a linked historical review may still exist. A visual check does not mean all flaws were fixed. Changes affecting appearance require a new check.',
   '- **MuJoCo:** live and baked both count as production simulation use. Study only means the installed motion is not MuJoCo-driven. Geometric contact tables and analytically generated animation are not MuJoCo bakes.',
   '- **Self intersections:** includes unintended interpenetration between mechanism parts. Known solver/contact overlap is also disclosed. “None in scoped checks” applies only to the interfaces, phases and tolerances in the cited evidence, not every pair at every instant. Unknown is not clean. Intended joined stock is not itself a defect.',
-  '- **Remaining flaws:** specific open defects or qualification limits; “not established” never means flawless. Evidence links preserve the distinction between old failures, rejected studies and current production.', '',
+  '',
   'For the next pass, group known intersection defects and concrete motion flaws by reusable component. '
     + 'Then fill visual-review and collision-evidence gaps. Update the affected rows after each correction; '
     + 'do not clear other limitations just because one scoped check passed.', '',
+  `Assessment: ${counts('assessment')}.`, '',
   `Visual: ${counts('visual')}.`, '',
   `MuJoCo: ${counts('mujoco')}.`, '',
   `Intersections: ${counts('intersections')}.`, '',
-  '| Movement | Visually checked against engraving (reviewer) | Uses MuJoCo | Self intersections | Remaining flaws / limits |',
-  '| --- | --- | --- | --- | --- |',
+  '| Movement | Assessment | Visible flaws | Visually checked against engraving (reviewer) | Uses MuJoCo | Self intersections | Invisible limits |',
+  '| --- | --- | --- | --- | --- | --- | --- |',
 ];
 for (const [index, row] of data.movements.entries()) {
   if (row.id !== index + 1 || catalog[index].id !== row.id) throw new Error(`Missing, duplicate or unordered ID at row ${index + 1}`);
   if (!(row.visual.status in visualLabels) || !(row.mujoco.mode in physicsLabels) || !(row.intersections.status in intersectionLabels)) throw new Error(`Invalid status: ${row.id}`);
-  if (!row.flaws?.trim()) throw new Error(`Missing residual assessment: ${row.id}`);
+  if (!(row.assessment in assessmentLabels)) throw new Error(`Missing assessment: ${row.id}`);
+  if (row.assessment !== 'reasonable' && !row.visibleFlaws?.trim()) throw new Error(`Assessment without visible flaws: ${row.id}`);
+  if (row.assessment === 'reasonable' && row.visibleFlaws?.trim()) throw new Error(`Reasonable row lists visible flaws: ${row.id}`);
   if (row.mujoco.mode !== 'unknown' && !row.mujoco.evidence) throw new Error(`Missing production-route evidence: ${row.id}`);
   if (row.visual.status === 'yes' && (!row.visual.reviewer || !row.visual.evidence)) throw new Error(`Missing visual attribution: ${row.id}`);
   if (row.intersections.status !== 'unknown' && !row.intersections.evidence) throw new Error(`Missing intersection evidence: ${row.id}`);
@@ -57,7 +62,7 @@ for (const [index, row] of data.movements.entries()) {
     ? 'Yes — contact overlap' : intersectionLabels[row.intersections.status];
   const intersections = `${intersectionLabel} ${evidence(row.intersections.evidence)}`.trim();
   for (const path of row.references ?? []) evidence(path);
-  lines.push(`| [${number}](https://507movements.com/mm_${number}.html) | ${visual} | ${physics} | ${intersections} | ${clean(row.flaws)} |`);
+  lines.push(`| [${number}](https://507movements.com/mm_${number}.html) | ${assessmentLabels[row.assessment]} | ${clean(row.visibleFlaws || '—')} | ${visual} | ${physics} | ${intersections} | ${clean(row.limits || '—')} |`);
 }
 for (const path of paths) {
   if (path.startsWith('/') || path.includes('..') || /^\w+:/.test(path)) throw new Error(`Evidence must be a repository path: ${path}`);
