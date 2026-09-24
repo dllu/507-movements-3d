@@ -173,9 +173,25 @@ test('movement 321 preserves Brown’s G, B, R, T, S, and S-prime landmarks', ()
   planarNear(sourcePointToReferenceFront(plate.rasterInnerSpringAnchorS),
     reference.springGeometry.pointAtMaterialFraction(1),
     tolerance, 'source inner spring anchor S');
-  near(sourcePointToReferenceFront(plate.rasterWeightCenter).y,
-    reference.weightPosition.y, tolerance,
+  // Brown's weight hangs just under G. A full winding turn lifts it one
+  // drum turn above the plate pose, so the model hangs it lower: the wound
+  // weight's top stays clear of G's tooth tips, and at the plate pose it
+  // sits below Brown's station by at most one drum half-turn.
+  const sourceWeightY = sourcePointToReferenceFront(plate.rasterWeightCenter).y;
+  assert.ok(reference.weightPosition.y < sourceWeightY);
+  assert.ok(sourceWeightY - reference.weightPosition.y
+    < geometry.ropeDrumPitchRadius * Math.PI + tolerance,
     'source weight vertical station');
+  const greatWheelTip = new THREE.Box3()
+    .setFromObject(model.root.userData.blocks.greatWheel, true).min.y;
+  for (let sample = 0; sample <= 512; sample += 1) {
+    model.update(8 * sample / 512);
+    model.root.updateMatrixWorld(true);
+    const weightTop = new THREE.Box3()
+      .setFromObject(model.root.userData.blocks.weight, true).max.y;
+    assert.ok(weightTop < greatWheelTip - 0.08,
+      `wound weight reaches G's teeth at sample ${sample}`);
+  }
   assert.deepEqual(sourceReference.primaryScan, {
     archiveIdentifier: 'fivehundredseven00browiala',
     descriptionPage: 79,

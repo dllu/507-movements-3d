@@ -448,6 +448,7 @@ function animalInteriorTreadwheel(movement) {
       legRoots,
       lowerLegs,
       muzzle,
+      neck,
       radialSpokes,
       sideRings,
       supportPosts,
@@ -577,6 +578,134 @@ function animalInteriorTreadwheel(movement) {
   };
 }
 
+// A rounded solid from a side-view outline: the bevel starts inside the
+// outline, so the silhouette is exactly the traced profile.
+function roundedProfile(points, depth, bevel, material) {
+  const shape = new THREE.Shape(points.map(([x, y]) => new THREE.Vector2(x, y)));
+  const geometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: true,
+    bevelOffset: -bevel,
+    bevelSegments: 4,
+    bevelSize: bevel,
+    bevelThickness: bevel * 1.2,
+    curveSegments: 12,
+    depth,
+  });
+  geometry.translate(0, 0, -depth / 2);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Plate 376 engraves a realistic horse: a deep barrel with a rounded croup,
+// a crested neck carried forward and a long head with the nose dropped, and
+// slim jointed legs. The outlines below are that side view in the horse's
+// own frame (head toward -x, back up), drawn to Brown's proportions; the
+// whole horse is tilted nose-up on the rising side as he draws it.
+const HORSE_BARREL = [
+  [-0.62, 0.00], [-0.60, 0.18], [-0.46, 0.36], [-0.34, 0.40], [-0.18, 0.34],
+  [-0.05, 0.31], [0.12, 0.31], [0.28, 0.33], [0.46, 0.37], [0.60, 0.34],
+  [0.70, 0.24], [0.75, 0.09], [0.72, -0.04], [0.64, -0.14], [0.50, -0.22],
+  [0.40, -0.23], [0.30, -0.225], [0.15, -0.25], [-0.10, -0.26],
+  [-0.30, -0.25], [-0.42, -0.225], [-0.54, -0.19], [-0.60, -0.11],
+];
+const HORSE_NECK = [
+  [-0.45, 0.08], [-0.60, 0.10], [-0.78, 0.22], [-0.96, 0.38], [-1.07, 0.52],
+  [-1.11, 0.66], [-1.06, 0.76], [-0.96, 0.77], [-0.80, 0.68], [-0.62, 0.55],
+  [-0.46, 0.44], [-0.34, 0.36], [-0.32, 0.24],
+];
+const HORSE_HEAD = [
+  [-1.00, 0.72], [-1.06, 0.80], [-1.15, 0.78], [-1.22, 0.66], [-1.28, 0.50],
+  [-1.32, 0.39], [-1.33, 0.33], [-1.29, 0.28], [-1.21, 0.29], [-1.12, 0.38],
+  [-1.03, 0.50], [-0.98, 0.62],
+];
+// Leg outlines hang from their hip or knee pivot (y = 0) down the leg. The
+// tops are round about the pivot so a swinging leg never rises into the
+// belly.
+const legTop = (radius) => Array.from({ length: 9 }, (_, index) => {
+  const angle = Math.PI * (1 - index / 8);
+  return [radius * Math.cos(angle), radius * Math.sin(angle)];
+});
+const HORSE_FOREARM = [
+  ...legTop(0.072), [0.066, -0.10], [0.042, -0.30],
+  [0.036, -0.37], [0.012, -0.394], [-0.028, -0.392], [-0.045, -0.36],
+  [-0.058, -0.20], [-0.068, -0.06],
+];
+const HORSE_GASKIN = [
+  ...legTop(0.074), [0.098, -0.10], [0.070, -0.26],
+  [0.074, -0.35], [0.052, -0.39], [0.006, -0.395], [-0.036, -0.375],
+  [-0.050, -0.26], [-0.066, -0.10],
+];
+// The cannon's top is a round knee cap about the knee pivot, so the leg
+// reads as jointed at every bend without reaching into the upper bar.
+const HORSE_CANNON = [
+  ...Array.from({ length: 9 }, (_, index) => {
+    const angle = Math.PI * (1 - index / 8);
+    return [0.029 * Math.cos(angle), 0.029 * Math.sin(angle)];
+  }),
+  [0.028, -0.25], [0.042, -0.30],
+  [0.030, -0.335], [0.004, -0.37], [-0.040, -0.375], [-0.040, -0.345],
+  [-0.030, -0.30], [-0.030, -0.25],
+];
+const HORSE_HOOF = [
+  [-0.085, 0.030], [0.015, 0.030], [0.045, -0.050], [-0.118, -0.050],
+];
+function horseTailOutline() {
+  const spine = [[0.00, 0.00], [0.10, -0.08], [0.18, -0.22], [0.21, -0.38],
+    [0.22, -0.52], [0.27, -0.64]];
+  const widths = [0.07, 0.10, 0.13, 0.13, 0.10, 0.05];
+  const left = [];
+  const right = [];
+  for (let index = 0; index < spine.length; index += 1) {
+    const previous = spine[Math.max(0, index - 1)];
+    const next = spine[Math.min(spine.length - 1, index + 1)];
+    const tangent = new THREE.Vector2(next[0] - previous[0], next[1] - previous[1]).normalize();
+    const normal = new THREE.Vector2(-tangent.y, tangent.x);
+    const half = widths[index] / 2;
+    left.push([spine[index][0] + normal.x * half, spine[index][1] + normal.y * half]);
+    right.push([spine[index][0] - normal.x * half, spine[index][1] - normal.y * half]);
+  }
+  return [...left, ...right.reverse()];
+}
+
+function modelBrownHorse(blocks) {
+  const replaceGeometry = (mesh, geometry) => {
+    mesh.geometry.dispose();
+    mesh.geometry = geometry;
+    mesh.position.set(0, 0, 0);
+    mesh.rotation.set(0, 0, 0);
+    mesh.scale.set(1, 1, 1);
+  };
+  const bodyMaterial = blocks.torso.material;
+  replaceGeometry(blocks.torso, roundedProfile(HORSE_BARREL, 0.28, 0.10, bodyMaterial));
+  blocks.torso.userData.role = 'engraved-horse-barrel-chest-and-croup';
+  replaceGeometry(blocks.neck, roundedProfile(HORSE_NECK, 0.16, 0.07, bodyMaterial));
+  blocks.neck.userData.role = 'engraved-horse-crested-neck';
+  replaceGeometry(blocks.head, roundedProfile(HORSE_HEAD, 0.12, 0.06, bodyMaterial));
+  blocks.head.userData.role = 'engraved-horse-long-head-nose-dropped';
+  // The traced head already includes the muzzle.
+  blocks.muzzle.visible = false;
+  blocks.ears.forEach((ear, index) => {
+    ear.position.set(-1.06, 0.86, index === 0 ? -0.05 : 0.05);
+    ear.rotation.set(0, 0, -0.35);
+  });
+  blocks.eye.position.set(-1.16, 0.64, 0.135);
+  blocks.legRoots.forEach((legRoot, index) => {
+    const front = index % 2 === 0;
+    const upper = blocks.upperLegs[index];
+    const lower = blocks.lowerLegs[index];
+    const hoof = blocks.hooves[index];
+    replaceGeometry(upper, roundedProfile(front ? HORSE_FOREARM : HORSE_GASKIN, 0.07, 0.025, upper.material));
+    replaceGeometry(lower, roundedProfile(HORSE_CANNON, 0.05, 0.02, lower.material));
+    const hoofPosition = hoof.position.clone();
+    replaceGeometry(hoof, roundedProfile(HORSE_HOOF, 0.06, 0.02, hoof.material));
+    hoof.position.copy(hoofPosition);
+  });
+  blocks.tailPivot.position.set(0.765, 0.19, 0);
+  const tailMaterial = blocks.tail.material;
+  replaceGeometry(blocks.tail, roundedProfile(horseTailOutline(), 0.04, 0.012, tailMaterial));
+  blocks.tail.userData.role = 'engraved-horse-flowing-tail';
+}
+
 // Plate 376 draws the horse's back rising about 24 degrees toward its head.
 const animalClimbTilt = THREE.MathUtils.degToRad(24);
 
@@ -613,6 +742,7 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
     upperLeg.position.y = -(height - kneeGap) / 2;
   }
   blocks.tailPivot.position.set(0.722, 0.216, 0);
+  modelBrownHorse(blocks);
   // Hooves on the treads: the tread face is a circle about the fixed axle,
   // so the lowest hoof's height above it depends only on the gait pose.
   // After posing the legs the body is let down along the local radius

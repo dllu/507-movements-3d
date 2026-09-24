@@ -1039,17 +1039,20 @@ function eccentricConeFrictionReverser(movement) {
   nutPost.geometry = presentationView === 'end-view'
     // Seen along the screw from the large end, z is the visible width. The
     // neck and the leg tops stand behind B; below B's rim the foot plate and two
-    // splayed cove legs show at Brown's depths (foot underside 73 px and top
-    // 64 px of B's 55 px radius below B's centre; the legs meet B's outline
-    // 20 px either side of the neck).
+    // splayed cove legs show (Brown: foot underside 73 px and top 64 px of B's
+    // 55 px radius below B's centre, foot 36 px either side). B's offset swings
+    // its rim 26 px lower half a turn later, so at Brown's size the whole stand
+    // vanished behind B. The foot sits 3 px lower and spreads to 48 px either
+    // side, so its ends and the flaring leg roots stay visible beside B's
+    // lowest rim and B never looks unsupported.
     ? splayedLegStandGeometry({
-      bottomY: coneEccentricity - coneLargeRadius * 73 / 55,
-      footHalfZ: 0.8,
-      footTopY: coneEccentricity - coneLargeRadius * 64 / 55,
+      bottomY: coneEccentricity - coneLargeRadius * 76 / 55,
+      footHalfZ: 1.05,
+      footTopY: coneEccentricity - coneLargeRadius * 67 / 55,
       halfDepth: 0.12,
       legTopY: -0.66,
-      legTopZ: 0.46,
-      legWidth: 0.09,
+      legTopZ: 0.55,
+      legWidth: 0.1,
       neckHalfZ: 0.08,
       topY: -0.309,
     })

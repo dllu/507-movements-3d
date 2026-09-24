@@ -204,8 +204,18 @@ function harrisonGoingBarrel(movement) {
     (sourceRasterCarriedClickContactR.y - sourceRasterCenter.y) * sourceScale,
   );
   const barrelFaceRadius = 1.02;
-  const ropeDrumPitchRadius = 0.34;
-  const referenceWeightY = -3.55;
+  // Each cycle the weight falls one drum turn and winding lifts it back, so
+  // it swings half a turn of rope either side of its mean. Brown hangs the
+  // weight just under G's teeth, so at his height the wound weight rose
+  // across the wheel. The drum is kept small (0.2, just outside the bored
+  // barrel arbor) and the weight hangs so that at the top of its travel,
+  // just after winding, it stays 0.1 clear below G's tooth tips (-3.04).
+  // At the plate pose it is therefore 0.67 lower than Brown draws it.
+  const ropeDrumPitchRadius = 0.20;
+  const weightHalfHeight = 0.45;
+  const greatWheelTipClearanceY = -3.14;
+  const referenceWeightY = greatWheelTipClearanceY - weightHalfHeight
+    - ropeDrumPitchRadius * Math.PI;
   const weightX = -ropeDrumPitchRadius;
   const springOuterAnchorRadius = 2.60;
   const springInnerAnchorRadius = 1.98;
@@ -732,7 +742,7 @@ function harrisonGoingBarrel(movement) {
   // The weight's back face stays just in front of the spring's plane when
   // winding lifts it past the hairpin.
   const weight = new THREE.Mesh(
-    new THREE.BoxGeometry(1.18, 0.90, 0.56),
+    new THREE.BoxGeometry(1.18, weightHalfHeight * 2, 0.56),
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.74 }),
   );
   weight.userData.role = 'driving-weight-on-barrel-B';
@@ -991,6 +1001,11 @@ function harrisonGoingBarrel(movement) {
   };
 
   correctGoingBarrel(root);
+  // Frame the lowered weight's lowest point (just before winding).
+  root.userData.cameraFitBounds.min.y = Math.min(
+    root.userData.cameraFitBounds.min.y,
+    referenceWeightY - ropeDrumPitchRadius * Math.PI - weightHalfHeight - 0.05,
+  );
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)

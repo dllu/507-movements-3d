@@ -243,15 +243,24 @@ test('movement 265 maintains exact drum and roller tangency along the generator'
         ) - state.coneRadiusAtContact,
       ),
     );
+    // The rounded tread touches the drum: its tube centre lies one tube
+    // radius out along the drum normal and one body radius below the
+    // roller centre, square to the fixed shaft.
     maximumRollerSurfaceError = Math.max(
       maximumRollerSurfaceError,
       Math.abs(
-        radialDistance(
-          state.contactPoint,
-          state.rollerCenter,
-          state.generatorAxis,
-        ) - geometry.rollerPitchRadius,
+        state.contactPoint.distanceTo(state.treadCenter)
+          - geometry.rollerTreadTubeRadius,
       ),
+      Math.abs(
+        radialDistance(
+          state.treadCenter,
+          state.rollerCenter,
+          state.rollerAxis,
+        ) - geometry.rollerBodyRadius,
+      ),
+      Math.abs(state.treadCenter.clone().sub(state.rollerCenter)
+        .dot(state.rollerAxis)),
     );
     const expectedCenter = contactDefinition.rollerCenterAtAxialPosition(
       state.contactAxialPosition,
@@ -261,7 +270,7 @@ test('movement 265 maintains exact drum and roller tangency along the generator'
       expectedCenter.distanceTo(state.rollerCenter),
     );
     const centerToContact = state.contactPoint.clone()
-      .sub(state.rollerCenter)
+      .sub(state.treadCenter)
       .normalize();
     maximumNormalError = Math.max(
       maximumNormalError,
@@ -274,7 +283,8 @@ test('movement 265 maintains exact drum and roller tangency along the generator'
   // Per-sample axis normalisation adds a few ulps over the straight guide.
   assert.ok(maximumRollerSurfaceError < 5e-16, `roller surface ${maximumRollerSurfaceError}`);
   assert.ok(maximumGuideError < 6e-16);
-  assert.ok(maximumNormalError < 5e-16, `normal ${maximumNormalError}`);
+  // Normalising the short tread-radius offset costs a few more ulps.
+  assert.ok(maximumNormalError < 1e-14, `normal ${maximumNormalError}`);
   disposeModel(model.root);
 });
 
@@ -403,7 +413,7 @@ test('movement 265 renderer binds cone, roller, contact, and guide exactly', () 
   );
   assert.equal(
     roles.filter((role) => role
-      === 'generator-tangent-friction-roller-traversing-concave-drum').length,
+      === 'fixed-slope-friction-roller-traversing-concave-drum').length,
     1,
   );
   assert.equal(
@@ -433,11 +443,11 @@ test('movement 265 renderer binds cone, roller, contact, and guide exactly', () 
     const axle = new THREE.Vector3(0, 0, 1).transformDirection(
       blocks.rollerGuide.matrixWorld,
     );
-    const worldGenerator = state.generatorAxis.clone().transformDirection(
-      model.root.matrixWorld,
-    );
-    near(Math.abs(axle.dot(worldGenerator)), 1, 1e-12,
-      `roller axle tangent to the generator at ${time}`);
+    // Brown's shaft keeps one slope: the generator tangent at his contact.
+    const worldShaft = model.root.userData.geometry.coneGeneratorAxis.clone()
+      .transformDirection(model.root.matrixWorld);
+    near(Math.abs(axle.dot(worldShaft)), 1, 1e-12,
+      `roller axle keeps the fixed source slope at ${time}`);
   }
   disposeModel(model.root);
 });

@@ -162,6 +162,11 @@ function makeDeadbeatPallet(lockPoints, impulsePoints, {
   return root;
 }
 
+// Ratchet tooth of 289, in tooth pitches from the tooth centre line.
+const RATCHET_BACK_ROOT = 0.9;
+const RATCHET_BACK_POWER = 1.8;
+const RATCHET_FRONT_ROOT = 0.05;
+
 function deadbeatAnchorEscapement(movement) {
   const root = new THREE.Group();
 
@@ -200,7 +205,7 @@ function deadbeatAnchorEscapement(movement) {
   const rightLockReferenceAngle = Math.PI / 2 - palletSpanAngle / 2;
   // Forward-raked narrow teeth clear the distinct lock/impulse corners.
   const toothLeanAngle = toothPitch * -0.65;
-  const wheelRootRadius = 2.05;
+  const wheelRootRadius = 1.94;
   const toothTipRadius = sourceRasterWheelTipRadius * sourceScale;
   const wheelInnerRadius = 1.48;
   const wheelDepth = 0.36;
@@ -332,20 +337,32 @@ function deadbeatAnchorEscapement(movement) {
   wheelRotor.userData.role = 'deadbeat-stepping-escape-wheel-rotor';
   escapeWheel.add(wheelRotor);
   const wheelShape = new THREE.Shape();
+  // Brown's teeth are ratchet-shaped and nearly touch at the root: each
+  // rises on a long back slope to a forward-leaning tip and falls on a short
+  // front face. The back slope sags slightly (radius grows as the 1.8 power
+  // of the way along) so the tooth behind a working tip stays out of the
+  // pallet's path; the pallet bake keeps both working faces within 0.0006.
+  // The tips (and hence every locking and impulse contact) are unchanged
+  // from the earlier narrow-spike wheel; the root is 30 px deep as drawn.
   for (let toothIndex = 0; toothIndex < toothCount; toothIndex += 1) {
     const centerAngle = toothIndex * toothPitch;
+    const backRootAngle = centerAngle - toothPitch * RATCHET_BACK_ROOT;
+    const tipAngle = centerAngle - toothLeanAngle;
     const outlinePoints = [
-      new THREE.Vector2(
-        Math.cos(centerAngle - toothPitch * 0.15) * wheelRootRadius,
-        Math.sin(centerAngle - toothPitch * 0.15) * wheelRootRadius,
-      ),
+      ...Array.from({ length: 8 }, (_, step) => {
+        const along = step / 8;
+        const angle = THREE.MathUtils.lerp(backRootAngle, tipAngle, along);
+        const radius = wheelRootRadius
+          + (toothTipRadius - wheelRootRadius) * along ** RATCHET_BACK_POWER;
+        return new THREE.Vector2(Math.cos(angle) * radius, Math.sin(angle) * radius);
+      }),
       new THREE.Vector2(
         Math.cos(centerAngle - toothLeanAngle) * toothTipRadius,
         Math.sin(centerAngle - toothLeanAngle) * toothTipRadius,
       ),
       new THREE.Vector2(
-        Math.cos(centerAngle + toothPitch * 0.15) * wheelRootRadius,
-        Math.sin(centerAngle + toothPitch * 0.15) * wheelRootRadius,
+        Math.cos(centerAngle + toothPitch * RATCHET_FRONT_ROOT) * wheelRootRadius,
+        Math.sin(centerAngle + toothPitch * RATCHET_FRONT_ROOT) * wheelRootRadius,
       ),
     ];
     for (const point of outlinePoints) {
@@ -462,7 +479,62 @@ function deadbeatAnchorEscapement(movement) {
     [220, 178],
     [243, 171],
   ];
-  const anchorOutline = sourceOutlineRaster.map(([x, y]) => (
+  // Brown's arch clears the upper teeth by about 15 px: his wheel is drawn
+  // shorter at the top than at the pallets. The traced inner edge between
+  // the pallet shoulders (133, 251) and (390, 263) is therefore replaced by
+  // a smooth curve about the wheel centre whose radius rises from the
+  // shoulders' own radii to 14 px over the tip circle at the top, leaving
+  // the thin top band Brown draws.
+  const innerStart = sourceOutlineRaster.findIndex(([x, y]) => x === 390 && y === 263);
+  const innerEnd = sourceOutlineRaster.findIndex(([x, y]) => x === 133 && y === 251);
+  const rasterPolar = ([x, y]) => ({
+    angle: Math.atan2(sourceRasterWheelCenter.y - y, x - sourceRasterWheelCenter.x),
+    radius: Math.hypot(x - sourceRasterWheelCenter.x, y - sourceRasterWheelCenter.y),
+  });
+  const shoulderRight = rasterPolar(sourceOutlineRaster[innerStart]);
+  const shoulderLeft = rasterPolar(sourceOutlineRaster[innerEnd]);
+  const topRadius = sourceRasterWheelTipRadius + 14;
+  const smoothInnerEdge = [];
+  for (let sample = 1; sample < 48; sample += 1) {
+    const t = sample / 48;
+    const angle = THREE.MathUtils.lerp(shoulderRight.angle, shoulderLeft.angle, t);
+    const base = THREE.MathUtils.lerp(shoulderRight.radius, shoulderLeft.radius, t);
+    const bump = Math.sin(Math.PI * t) ** 0.7;
+    const radius = base + (topRadius - base) * bump;
+    smoothInnerEdge.push([
+      sourceRasterWheelCenter.x + Math.cos(angle) * radius,
+      sourceRasterWheelCenter.y - Math.sin(angle) * radius,
+    ]);
+  }
+  // The traced outer edge of the arch is a coarse polygon; Brown draws a
+  // smooth curve, so round each outer run by corner cutting (the stem and
+  // pallet-end corners stay fixed).
+  const smoothRun = (points, passes = 4) => {
+    let run = points;
+    for (let pass = 0; pass < passes; pass += 1) {
+      const next = [run[0]];
+      for (let index = 0; index < run.length - 1; index += 1) {
+        const [ax, ay] = run[index];
+        const [bx, by] = run[index + 1];
+        if (index > 0) next.push([0.75 * ax + 0.25 * bx, 0.75 * ay + 0.25 * by]);
+        if (index < run.length - 2) next.push([0.25 * ax + 0.75 * bx, 0.25 * ay + 0.75 * by]);
+      }
+      next.push(run[run.length - 1]);
+      run = next;
+    }
+    return run;
+  };
+  const rightOuterEnd = sourceOutlineRaster.findIndex(([x, y]) => x === 449 && y === 338);
+  const leftOuterStart = sourceOutlineRaster.findIndex(([x, y]) => x === 72 && y === 349);
+  const archOutlineRaster = [
+    ...sourceOutlineRaster.slice(0, 2),
+    ...smoothRun(sourceOutlineRaster.slice(2, rightOuterEnd + 1)),
+    ...sourceOutlineRaster.slice(rightOuterEnd + 1, innerStart + 1),
+    ...smoothInnerEdge,
+    ...sourceOutlineRaster.slice(innerEnd, leftOuterStart),
+    ...smoothRun(sourceOutlineRaster.slice(leftOuterStart)),
+  ];
+  const anchorOutline = archOutlineRaster.map(([x, y]) => (
     new THREE.Vector2(
       (x - sourceRasterAnchorPivot.x) * sourceScale,
       (sourceRasterAnchorPivot.y - y) * sourceScale,

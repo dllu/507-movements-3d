@@ -5049,9 +5049,9 @@
       }
     },
     "265": {
-      "peakAngularSpeed": 4.686980179811478,
-      "peakVisibleAngularSpeed": 4.686980179811478,
-      "sustainedVisibleAngularSpeed": 4.0474820182875035,
+      "peakAngularSpeed": 4.683634939137611,
+      "peakVisibleAngularSpeed": 4.683634939137611,
+      "sustainedVisibleAngularSpeed": 4.035319195809334,
       "floorY": -1.275949852416614,
       "fastestPart": "Group",
       "motionBounds": {
@@ -5061,8 +5061,8 @@
           -1.275949852416614
         ],
         "max": [
-          3.7906294571628107,
-          2.362236851858553,
+          3.833107705228545,
+          2.4700989768182526,
           1.2759498524166135
         ]
       }
@@ -6113,19 +6113,19 @@
       }
     },
     "321": {
-      "peakAngularSpeed": 19.505509324641082,
-      "peakVisibleAngularSpeed": 19.50550932463942,
-      "sustainedVisibleAngularSpeed": 1.8227504663268441,
-      "floorY": -5.068141490278241,
-      "fastestPart": "click-R-carried-by-larger-ratchet-pivot",
+      "peakAngularSpeed": 12.361139258524851,
+      "peakVisibleAngularSpeed": 12.361139258524851,
+      "sustainedVisibleAngularSpeed": 1.1389602249356516,
+      "floorY": -5.296637049414487,
+      "fastestPart": "click-R-carried-by-larger-ratchet",
       "motionBounds": {
         "min": [
           -3.0393736211709297,
-          -5.068141490278241,
+          -5.296637049414487,
           -0.8849999761581421
         ],
         "max": [
-          3.6195293981102776,
+          3.6195295051098872,
           3.0393736211709297,
           1.7600000011920929
         ]
@@ -7159,8 +7159,8 @@
     },
     "376": {
       "peakAngularSpeed": 5.522913702601875,
-      "peakVisibleAngularSpeed": 3.647867221508378,
-      "sustainedVisibleAngularSpeed": 3.6442407642739507,
+      "peakVisibleAngularSpeed": 3.6712841999729737,
+      "sustainedVisibleAngularSpeed": 3.644240764275616,
       "floorY": -2.0999963968860484,
       "fastestPart": "horse-knee-pivot",
       "motionBounds": {
@@ -7189,8 +7189,8 @@
           -1.7100000381469727
         ],
         "max": [
-          1.7220000016689299,
-          1.789403616362766,
+          1.6953599980473517,
+          2.049193524602847,
           1.830000004172325
         ]
       }

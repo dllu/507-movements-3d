@@ -987,9 +987,12 @@ function sideLeverRockshaftParallelMotion(movement) {
   root.userData.hideGround = true;
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
   // Brown's plate crops the lever just left of O and the frame at the top.
+  // The top and bottom bounds follow the swept crosshead (4.89 at the top
+  // of its stroke) and the lever's pin end (-1.36 at the bottom): Brown
+  // draws one pose and crops neither, so both stay in view all cycle.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.8 * sourceScale, -2.3 * sourceScale, -0.90),
-    new THREE.Vector3(13.4 * sourceScale, 11.8 * sourceScale, 0.80),
+    new THREE.Vector3(-1.8 * sourceScale, -3.95 * sourceScale, -0.90),
+    new THREE.Vector3(13.4 * sourceScale, 14.15 * sourceScale, 0.80),
   );
   root.userData.cameraDistanceScale = 0.96;
   update(0);

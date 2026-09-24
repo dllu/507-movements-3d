@@ -8827,7 +8827,8 @@
         "docs/w3d-255-287-review.md",
         "docs/w5b-248-314-review.md",
         "docs/m4-203-321-review.md",
-        "docs/m8-framing-ropes-review.md"
+        "docs/m8-framing-ropes-review.md",
+        "docs/m19-audit-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8836,7 +8837,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "B's offset carries it in front of stand E's legs for part of each turn (Brown's legs lie inside the swept disc); pressing spring not drawn; ideal rolling; the screw returns after three turns.",
+      "limits": "Stand E's foot is about a quarter wider than Brown's measured width so its ends and leg roots show beside B at every pose; pressing spring not drawn; ideal rolling; the screw returns after three turns.",
       "assessment": "reasonable"
     },
     {
@@ -8923,16 +8924,17 @@
         "docs/cone-friction-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/m19-audit-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cone-friction-drives.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "The plate's shaft slope and roller radius disagree, so the profile fit is a compromise; the roller axle tilts and its bearings are not drawn; spring force and slip unsolved.",
+      "limits": "The fixed-slope shaft rises and falls slightly with the roller; bearings and spring not drawn; the profile fit is a compromise; slip unsolved.",
       "assessment": "reasonable"
     },
     {
@@ -9721,14 +9723,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/m19-audit-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-deadbeat-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Finite deadbeat contacts corrected; return forcing, impacts and sustained timekeeping remain prescribed.",
       "assessment": "reasonable"
@@ -10814,7 +10817,8 @@
         "docs/w3b-escapements-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u7-flawed-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/m19-audit-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10822,9 +10826,9 @@
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "At the plate pose the weight hangs 0.67 lower than drawn, so it stays clear of wheel G's teeth after winding.",
       "limits": "Winding takes 1/8 of the cycle because Brown's single wire is too short for a 90° lag.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 322,
@@ -11309,7 +11313,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m19-audit-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11318,7 +11323,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "The plate's own rod scale is inconsistent; the model follows the linkage law. Inferred explanatory piston application; legacy beam/crosshead interfaces not exhaustively qualified.",
+      "limits": "Frame about 20% taller than the plate crop to keep the swept crosshead in view; plate rod scale inconsistent.",
       "assessment": "reasonable"
     },
     {
@@ -12676,7 +12681,8 @@
         "docs/w3c-343-417-review.md",
         "docs/w5c-333-400-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/m19-audit-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12685,7 +12691,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "",
-      "limits": "The horse is a simplified figure.",
+      "limits": "Animal effort and wheel load are not simulated.",
       "assessment": "reasonable"
     },
     {
@@ -12713,7 +12719,8 @@
         "docs/w4c-254-400-review.md",
         "docs/w5c-333-400-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/m19-audit-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12721,9 +12728,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
-      "limits": "The walker is a simplified figure.",
-      "assessment": "reasonable"
+      "visibleFlaws": "The walker is smaller and slimmer-legged than Brown's man.",
+      "limits": "Walker effort and wheel load are not simulated.",
+      "assessment": "minor"
     },
     {
       "id": 378,

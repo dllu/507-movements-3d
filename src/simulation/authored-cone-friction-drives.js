@@ -106,24 +106,37 @@ function traversingRollerConeDrive(movement) {
     coneRadiusAtAxialPosition(axialPosition),
     0,
   );
-  const rollerCenterAtAxialPosition = (axialPosition) => (
-    contactPointAtAxialPosition(axialPosition).addScaledVector(
-      surfaceNormalAtAxialPosition(axialPosition),
-      rollerPitchRadius,
-    )
-  );
-  // Rate of roller-centre travel along the local generator per unit axial
-  // contact travel: d(center)/dx = (1 - rho k / w^3) (1, r').
-  const rollerCenterSpeedPerAxialSpeed = (axialPosition) => {
-    const scale = Math.hypot(1, radiusSlopeAtAxialPosition(axialPosition));
-    return (1 - rollerPitchRadius * profileCurvature / scale ** 3) * scale;
-  };
   const coneGeneratorAxis = generatorAxisAtAxialPosition(
     sourceContactAxialPosition,
   );
   const coneSurfaceNormal = surfaceNormalAtAxialPosition(
     sourceContactAxialPosition,
   );
+  // Brown's roller shaft keeps one slope (the generator tangent at his
+  // contact station). The rounded tread rides the concave drum, so the
+  // shaft only rises and falls parallel to itself, as a spring-pressed
+  // shaft would; its axis never swings. The tread tube's centre stays one
+  // tube radius out along the local drum normal, and the roller centre lies
+  // one body radius beyond it along the fixed shaft normal.
+  const treadCenterAtAxialPosition = (axialPosition) => (
+    contactPointAtAxialPosition(axialPosition).addScaledVector(
+      surfaceNormalAtAxialPosition(axialPosition),
+      rollerTreadTubeRadius,
+    )
+  );
+  const rollerCenterAtAxialPosition = (axialPosition) => (
+    treadCenterAtAxialPosition(axialPosition).addScaledVector(
+      coneSurfaceNormal,
+      rollerBodyRadius,
+    )
+  );
+  // d(center)/dx = (1 - t k / w^3) (1, r') for tread tube radius t.
+  const rollerCenterVelocityPerAxialSpeed = (axialPosition) => {
+    const slope = radiusSlopeAtAxialPosition(axialPosition);
+    const scale = Math.hypot(1, slope);
+    const factor = 1 - rollerTreadTubeRadius * profileCurvature / scale ** 3;
+    return new THREE.Vector3(factor, factor * slope, 0);
+  };
 
   const inputMaterial = matte(PALETTE.driver, {
     metalness: 0.13,
@@ -218,12 +231,12 @@ function traversingRollerConeDrive(movement) {
   coneShaft.userData.role = 'constant-speed-horizontal-cone-input-shaft';
 
   const rollerAssembly = axialRotor(coneGeneratorAxis);
-  // The roller's axle stays tangent to the local generator, so it tilts as
-  // the roller traverses the concave drum.
+  // The roller's axle keeps Brown's fixed slope; the rounded tread follows
+  // the concave drum.
   const roller = rollerAssembly.root;
   const rollerRotor = rollerAssembly.rotor;
   roller.userData.role =
-    'generator-tangent-friction-roller-traversing-concave-drum';
+    'fixed-slope-friction-roller-traversing-concave-drum';
   const rollerBody = cylinderAlongLocalZ({
     depth: rollerWidth,
     material: rollerMaterial,
@@ -238,7 +251,8 @@ function traversingRollerConeDrive(movement) {
     new THREE.TorusGeometry(
       rollerBodyRadius,
       rollerTreadTubeRadius,
-      10,
+      // The drum touches the tread up to ~12 degrees off its lowest point.
+      20,
       88,
     ),
     inkMaterial,
@@ -273,7 +287,8 @@ function traversingRollerConeDrive(movement) {
   });
 
   // Plate 265 draws the roller shaft as one long line running past the
-  // small end; it is the roller's own output axle (bearings undrawn).
+  // small end; it is the roller's own output axle at a fixed slope
+  // (bearings undrawn), sliding endwise with the roller.
   const rollerGuideRear = 0.87;
   const rollerGuideFront = 3.05;
   const rollerGuideLength = rollerGuideRear + rollerGuideFront;
@@ -285,7 +300,7 @@ function traversingRollerConeDrive(movement) {
   });
   rollerGuide.position.z = (rollerGuideFront - rollerGuideRear) / 2;
   rollerGuide.userData.role =
-    'roller-output-axle-tangent-to-local-generator';
+    'fixed-slope-roller-output-axle';
   roller.add(rollerGuide);
 
   const contactMarker = new THREE.Mesh(
@@ -333,15 +348,14 @@ function traversingRollerConeDrive(movement) {
     const contactPoint = contactPointAtAxialPosition(contactAxialPosition);
     const surfaceNormal = surfaceNormalAtAxialPosition(contactAxialPosition);
     const generatorAxis = generatorAxisAtAxialPosition(contactAxialPosition);
-    const rollerCenter = contactPoint.clone().addScaledVector(
-      surfaceNormal,
-      rollerPitchRadius,
-    );
-    const guideVelocity = contactAxialVelocity
-      * rollerCenterSpeedPerAxialSpeed(contactAxialPosition);
-    const rollerCenterVelocity = generatorAxis.clone().multiplyScalar(
-      guideVelocity,
-    );
+    const rollerCenter = rollerCenterAtAxialPosition(contactAxialPosition);
+    const treadCenter = treadCenterAtAxialPosition(contactAxialPosition);
+    const rollerCenterVelocity = rollerCenterVelocityPerAxialSpeed(
+      contactAxialPosition,
+    ).multiplyScalar(contactAxialVelocity);
+    // Endwise slide along the fixed shaft and parallel lift across it.
+    const guideVelocity = rollerCenterVelocity.dot(coneGeneratorAxis);
+    const shaftLiftVelocity = rollerCenterVelocity.dot(coneSurfaceNormal);
     const coneContactTangentialSpeed = coneAngularSpeed
       * coneRadiusAtContact;
     const rollerContactTangentialSpeed = -rollerAngularSpeed
@@ -367,8 +381,11 @@ function traversingRollerConeDrive(movement) {
       rollerAngularAcceleration,
       rollerAngularSpeed,
       rollerCenter,
+      rollerAxis: coneGeneratorAxis,
       rollerCenterVelocity,
       rollerContactTangentialSpeed,
+      shaftLiftVelocity,
+      treadCenter,
       speedRatio: rollerAngularSpeed / coneAngularSpeed,
       surfaceNormal,
       time,
@@ -410,6 +427,7 @@ function traversingRollerConeDrive(movement) {
     generatorAxisAtAxialPosition,
     rollerCenterAtAxialPosition,
     surfaceNormalAtAxialPosition,
+    treadCenterAtAxialPosition,
     rollingLaw:
       'roller-angular-speed=-cone-angular-speed*local-cone-radius/roller-pitch-radius',
   };
@@ -512,8 +530,8 @@ function traversingRollerConeDrive(movement) {
     setSpin(cone, state.coneAngle);
     setSpin(coneShaft, state.coneAngle);
     roller.position.copy(state.rollerCenter);
-    roller.quaternion.setFromUnitVectors(Z_AXIS, state.generatorAxis);
-    roller.userData.axis = state.generatorAxis.clone();
+    roller.quaternion.setFromUnitVectors(Z_AXIS, coneGeneratorAxis);
+    roller.userData.axis = coneGeneratorAxis.clone();
     setSpin(roller, state.rollerAngle);
     contactMarker.position.copy(state.contactPoint);
     cone.userData.angularSpeed = state.coneAngularSpeed;
@@ -533,7 +551,7 @@ function traversingRollerConeDrive(movement) {
   for (const index of [...coneIndices, ...rollerIndices]) index.visible = false;
   root.userData.minimumDisplayCycleSeconds = 8;
   root.userData.cameraFov = 8;
-  root.userData.reconstructionNote = 'The roller traverses the concave drum while its circumferential speed follows the local radius. Its axle stays tangent to the curved generator, so it tilts slightly as it travels; its bearings are not drawn. The traverse is illustrative; sideways sliding is permitted at the contact.';
+  root.userData.reconstructionNote = 'The roller traverses the concave drum while its circumferential speed follows the local radius. Its shaft keeps the plate\'s fixed slope and slides endwise with it; the rounded tread follows the concave drum, so the shaft rises and falls parallel to itself as a spring-pressed shaft would. Its bearings and spring are not drawn. The traverse is illustrative; sideways sliding is permitted at the contact.';
   fitPistonGuide(root, update, traversePeriod);
   markShadows(root);
   return {

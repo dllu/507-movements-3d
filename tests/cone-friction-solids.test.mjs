@@ -58,8 +58,8 @@ test('265: finite roller and hub clear their guide and remain on the cone',()=>{
   for(let i=0;i<=64;i++){
    m.update(i*8/64);m.root.updateMatrixWorld(true);
    for(const part of[b.rollerBody,b.rollerTread,b.rollerHub])assertClear(b.coneBody,part,cache,`265 roller/cone at ${i}`);
-   // The concave drum tilts the roller axle to the local generator.
-   for(const part of[b.rollerBody,b.rollerHub])openBore(part,b.roller.getWorldPosition(new THREE.Vector3()),m.root.userData.kinematics.generatorAxis,.057*.88);
+   // The roller axle keeps Brown's fixed slope.
+   for(const part of[b.rollerBody,b.rollerHub])openBore(part,b.roller.getWorldPosition(new THREE.Vector3()),m.root.userData.kinematics.rollerAxis,.057*.88);
    const point=m.root.localToWorld(m.root.userData.kinematics.contactPoint.clone());
    assert.ok(cone.distance(b.coneBody.worldToLocal(point.clone()))<.001);
    assert.ok(tread.distance(b.rollerTread.worldToLocal(point.clone()))<.002);

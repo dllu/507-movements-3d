@@ -288,27 +288,67 @@ function externalPersonTreadmill(movement) {
   person.userData.role =
     'world-stationary-person-stepping-up-descending-peripheral-boards';
   root.add(person);
+  // Brown's walker, seen from behind: a loose jacket with broad, rounded
+  // shoulders narrowing to the waist and flaring slightly at a hem just
+  // above the hips (so the raised thigh passes under it), a short neck, a
+  // round head in a close cap, bent arms reaching up to the rail, trousers
+  // and shoes. The jacket is a lathe of that back-view outline, flattened
+  // front to back (x).
+  // Below the shoulders the jacket stays inside the thighs' inner faces
+  // (|z| < 0.148), because the stepping thigh swings up beside it.
+  const jacketProfile = [
+    [0, -0.20], [0.16, -0.20], [0.178, -0.15], [0.172, -0.04],
+    [0.165, 0.10], [0.178, 0.26], [0.182, 0.40], [0.255, 0.46],
+    [0.265, 0.50], [0.235, 0.545], [0.16, 0.575], [0.08, 0.60], [0, 0.605],
+  ].map(([radius, y]) => new THREE.Vector2(radius * FIGURE_SCALE, y * FIGURE_SCALE));
   const torso = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.24 * FIGURE_SCALE, 0.64 * FIGURE_SCALE, 8, 18),
+    new THREE.LatheGeometry(jacketProfile, 36),
     personMaterial,
   );
-  torso.position.y = 0.10 * FIGURE_SCALE;
-  torso.scale.z = 0.62;
-  torso.userData.role = 'stylized-person-torso';
+  torso.scale.x = 0.78;
+  torso.userData.role = 'person-jacket-torso-seen-from-behind';
   person.add(torso);
+  const skinMaterial = matte(0xe8b48f, { metalness: 0.0, roughness: 0.8 });
   const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.19 * FIGURE_SCALE, 24, 16),
-    personMaterial,
+    new THREE.SphereGeometry(0.15 * FIGURE_SCALE, 28, 18),
+    skinMaterial,
   );
-  head.position.y = 0.78 * FIGURE_SCALE;
-  head.userData.role = 'stylized-person-head';
+  head.scale.set(0.92, 1.12, 0.88);
+  head.position.y = 0.80 * FIGURE_SCALE;
+  head.userData.role = 'person-head';
   person.add(head);
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.065 * FIGURE_SCALE, 0.075 * FIGURE_SCALE, 0.14 * FIGURE_SCALE, 18),
+    skinMaterial,
+  );
+  neck.position.y = -0.14 * FIGURE_SCALE;
+  neck.userData.role = 'person-neck';
+  head.add(neck);
+  // Brown's close round cap with a band, set on the back of the head.
   const cap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.20 * FIGURE_SCALE, 0.17 * FIGURE_SCALE, 0.10 * FIGURE_SCALE, 24),
+    new THREE.LatheGeometry(
+      [new THREE.Vector2(0, 0), ...Array.from({ length: 12 }, (_, index) => {
+        const angle = Math.PI / 2 * index / 11;
+        return new THREE.Vector2(
+          0.158 * FIGURE_SCALE * Math.cos(angle),
+          0.158 * FIGURE_SCALE * Math.sin(angle),
+        );
+      })],
+      28,
+    ),
     darkMaterial,
   );
-  cap.position.y = 0.95 * FIGURE_SCALE;
+  cap.scale.set(0.95, 1.05, 0.92);
+  cap.position.y = 0.82 * FIGURE_SCALE;
   cap.userData.role = 'source-visible-person-cap';
+  const capBand = new THREE.Mesh(
+    new THREE.TorusGeometry(0.15 * FIGURE_SCALE, 0.018 * FIGURE_SCALE, 8, 36),
+    darkMaterial,
+  );
+  capBand.rotation.x = Math.PI / 2;
+  capBand.position.y = 0.017 * FIGURE_SCALE;
+  capBand.userData.role = 'person-cap-band';
+  cap.add(capBand);
   person.add(cap);
   const arms = [];
   // He faces the drum and holds a rail at head height in front of him,
@@ -318,20 +358,47 @@ function externalPersonTreadmill(movement) {
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Vector3(
       0,
-      0.44 * FIGURE_SCALE,
-      side * 0.17 * FIGURE_SCALE,
+      0.45 * FIGURE_SCALE,
+      side * 0.22 * FIGURE_SCALE,
     );
     const hand = new THREE.Vector3(
       handRailX - personCenterOfMass.x,
       handRailY - personCenterOfMass.y,
       side * 0.39 * FIGURE_SCALE,
     );
-    const arm = tubeBetween(shoulder, hand, 0.065 * FIGURE_SCALE, personMaterial);
+    // Upper arm out and up to an elbow held wide, forearm up to the rail.
+    const elbow = new THREE.Vector3(
+      hand.x * 0.45,
+      0.58 * FIGURE_SCALE,
+      side * 0.43 * FIGURE_SCALE,
+    );
+    const arm = new THREE.Mesh(
+      new THREE.TubeGeometry(
+        new THREE.CatmullRomCurve3([shoulder, elbow, hand], false, 'centripetal'),
+        24,
+        0.058 * FIGURE_SCALE,
+        12,
+        false,
+      ),
+      personMaterial,
+    );
+    for (const [point, radius, material] of [
+      [shoulder, 0.07 * FIGURE_SCALE, personMaterial],
+      [elbow, 0.058 * FIGURE_SCALE, personMaterial],
+      [hand, 0.062 * FIGURE_SCALE, skinMaterial],
+    ]) {
+      const joint = new THREE.Mesh(new THREE.SphereGeometry(radius, 16, 10), material);
+      joint.position.copy(point);
+      joint.userData.role = point === hand ? 'person-hand-gripping-rail' : 'person-arm-joint';
+      arm.add(joint);
+    }
     arm.userData.side = side;
     arm.userData.role = 'person-arm-holding-fixed-safety-rail';
     arms.push(arm);
     person.add(arm);
   }
+  // Brown's striped trousers read darker than the jacket.
+  const trouserMaterial = matte(0x4d5d6c, { metalness: 0.02, roughness: 0.8 });
   const legRoots = [];
   const kneePivots = [];
   const upperLegs = [];
@@ -347,7 +414,7 @@ function externalPersonTreadmill(movement) {
     legRoot.position.set(
       0,
       -0.27 * FIGURE_SCALE,
-      legSide * 0.205 * FIGURE_SCALE,
+      legSide * 0.25 * FIGURE_SCALE,
     );
     legRoot.userData.index = index;
     legRoot.userData.role = 'person-hip-pivot';
@@ -355,8 +422,8 @@ function externalPersonTreadmill(movement) {
     legRoots.push(legRoot);
     // Rounded limbs rather than boxes, like Brown's trousered legs.
     const upperLeg = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.06 * FIGURE_SCALE, upperLegLength - 0.12 * FIGURE_SCALE, 6, 14),
-      personMaterial,
+      new THREE.CapsuleGeometry(0.065 * FIGURE_SCALE, upperLegLength - 0.13 * FIGURE_SCALE, 6, 14),
+      trouserMaterial,
     );
     upperLeg.position.y = -upperLegLength / 2;
     upperLeg.userData.role = 'person-upper-leg';
@@ -369,8 +436,8 @@ function externalPersonTreadmill(movement) {
     legRoot.add(knee);
     kneePivots.push(knee);
     const lowerLeg = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.045 * FIGURE_SCALE, lowerLegLength - 0.09 * FIGURE_SCALE, 6, 14),
-      personMaterial,
+      new THREE.CapsuleGeometry(0.042 * FIGURE_SCALE, lowerLegLength - 0.084 * FIGURE_SCALE, 6, 14),
+      trouserMaterial,
     );
     // Outboard of the thigh by both capsule radii, so the knee does not overlap.
     lowerLeg.position.set(0, -lowerLegLength / 2, legSide * (0.105 * FIGURE_SCALE + 0.004));
@@ -477,23 +544,21 @@ function externalPersonTreadmill(movement) {
     0.085,
     frameMaterial,
   );
-  // Brown draws this side bar as a broad flat plank, not a round rod.
+  // Brown draws this side bar as a broad flat plank, not a round rod. It
+  // stands in front of the drum between the spur wheel and the man: its top
+  // rises above the wheel's right-hand rim, higher than the rail, and it
+  // runs down across the boards to the ground just left of his feet. It
+  // lies in the upright plane x = 1.16, clear of the boards (x <= 1.06),
+  // the rail (x = 1.29) and the man (x >= 1.3 at the rail).
   {
-    const start = new THREE.Vector3(
-      wheelCenter.x - 0.30,
-      wheelCenter.y + wheelRadius + 0.35,
-      drumWidth / 2 + 0.54,
-    );
-    const end = new THREE.Vector3(wheelCenter.x + 1.58, -2.00, start.z);
+    const guardX = 1.16;
+    const start = new THREE.Vector3(guardX, 2.0, 1.48);
+    const end = new THREE.Vector3(guardX, -2.0, -0.52);
+    const along = end.clone().sub(start);
     diagonalGuard.geometry.dispose();
-    diagonalGuard.geometry = new THREE.BoxGeometry(
-      0.22,
-      start.distanceTo(end),
-      0.09,
-    );
+    diagonalGuard.geometry = new THREE.BoxGeometry(0.09, along.length(), 0.22);
     diagonalGuard.position.copy(start).add(end).multiplyScalar(0.5);
-    diagonalGuard.rotation.z = Math.atan2(end.y - start.y, end.x - start.x)
-      - Math.PI / 2;
+    diagonalGuard.rotation.set(Math.atan2(-along.z, -along.y), 0, 0);
   }
   diagonalGuard.userData.role =
     'source-visible-fixed-diagonal-side-frame';
