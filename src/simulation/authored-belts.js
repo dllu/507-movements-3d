@@ -371,7 +371,11 @@ function rightAngleGuides() {
   addKeyedShaft(guideB, 0.32);
   root.userData.mechanism = 'right-angle-guide-pulley-drive';
   root.userData.blocks = { driver, driven, guideA, guideB, belt };
-  root.userData.cameraFov = 18;
+  // Brown draws the weight drum flat, as a square block with no end faces or
+  // ground. A narrow field of view from further off keeps the near-orthographic
+  // elevation, so the off-axis drum no longer swells and shows both ends.
+  root.userData.cameraFov = 9;
+  root.userData.hideGround = true;
   root.userData.beltContacts = [
     { object: driver, radius: driverRadius, axis: X_AXIS.clone(), arc: driverArc },
     { object: driven, radius: drivenRadius, axis: Z_AXIS.clone(), arc: drivenArc },

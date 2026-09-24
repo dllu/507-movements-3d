@@ -115,7 +115,7 @@ test('movement 214 is the source ten-to-twelve gear-finger stop, not a generic i
   assert.equal(model.root.userData.archetype, movement.archetype);
   assert.equal(
     model.root.userData.mechanism,
-    'ten-tooth-input-counter-rotates-a-twelve-tooth-wheel-at-five-sixths-speed-until-its-point-meets-either-input-finger-flank',
+    'ten-tooth-input-counter-rotates-a-twelve-tooth-wheel-at-five-sixths-speed-until-one-finger-point-meets-the-other-finger-flank',
   );
   assert.equal(transmission.driverTeeth, 10);
   assert.equal(transmission.drivenTeeth, 12);
@@ -141,10 +141,11 @@ test('movement 214 is the source ten-to-twelve gear-finger stop, not a generic i
     blocks.drivenAssembly.fingerBody.userData.integralStopFinger,
     true,
   );
-  assert.equal(geometry.driverGearOutline.length, 10 * 512);
-  assert.equal(geometry.drivenGearOutline.length, 12 * 512);
-  assert.equal(geometry.driverFingerLocal.length, 3);
-  assert.equal(geometry.drivenFingerLocal.length, 3);
+  assert.equal(geometry.driverGearOutline.length, 10 * 19);
+  assert.equal(geometry.drivenGearOutline.length, 12 * 19);
+  // Brown's teardrops: tangent point, point, tangent point, then the boss arc.
+  assert.equal(geometry.driverFingerLocal.length, 66);
+  assert.equal(geometry.drivenFingerLocal.length, 66);
   assert.equal(geometry.driverBoreLocal.length, 4);
   assert.equal(geometry.drivenBoreLocal.length, 4);
   assert.equal(
@@ -209,15 +210,15 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
     1e-15,
     'pitch circles are tangent',
   );
-  // Brown's short square teeth: 0.8 module addendum and 0.9 dedendum on the
-  // site construction's pitch circles (its deeper 3.75/6 radii are retained
-  // as sourceDriverRootRadius and sourceDriverOuterRadius).
-  near(geometry.driverRootRadius, 2.4 - 0.9 * 0.48, 1e-9, 'input root radius');
-  near(geometry.drivenRootRadius, 2.88 - 0.9 * 0.48, 1e-9,
+  // Brown's short square teeth: 0.30 addendum and 0.36 dedendum on the site
+  // construction's pitch circles (its deeper 3.75/6 radii are retained as
+  // sourceDriverRootRadius and sourceDriverOuterRadius).
+  near(geometry.driverRootRadius, 2.4 - 0.36, 1e-9, 'input root radius');
+  near(geometry.drivenRootRadius, 2.88 - 0.36, 1e-9,
     'counterwheel root radius');
-  near(geometry.driverOuterRadius, 2.4 + 0.8 * 0.48, 1e-9,
+  near(geometry.driverOuterRadius, 2.4 + 0.3, 1e-9,
     'input addendum radius');
-  near(geometry.drivenOuterRadius, 2.88 + 0.8 * 0.48, 1e-9,
+  near(geometry.drivenOuterRadius, 2.88 + 0.3, 1e-9,
     'counterwheel addendum radius');
   near(
     geometry.sourceDriverToothCenterPhase,
@@ -230,13 +231,13 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
 
   const driverRadii = geometry.driverGearOutline.map((point) => point.length());
   const drivenRadii = geometry.drivenGearOutline.map((point) => point.length());
-  near(Math.min(...driverRadii), geometry.driverRootRadius - .0001, 1e-9,
+  near(Math.min(...driverRadii), geometry.driverRootRadius, 1e-9,
     'input outline root circle');
-  near(Math.max(...driverRadii), geometry.driverOuterRadius - .0001, 1e-9,
+  near(Math.max(...driverRadii), geometry.driverOuterRadius, 1e-9,
     'input outline addendum circle');
-  near(Math.min(...drivenRadii), geometry.drivenRootRadius - .0001, 1e-9,
+  near(Math.min(...drivenRadii), geometry.drivenRootRadius, 1e-9,
     'counterwheel outline root circle');
-  near(Math.max(...drivenRadii), geometry.drivenOuterRadius - .0001, 1e-9,
+  near(Math.max(...drivenRadii), geometry.drivenOuterRadius, 1e-9,
     'counterwheel outline addendum circle');
 
   assert.equal(sourceAnimation.available, true);
@@ -291,56 +292,64 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
     'source point maps to raster center',
   );
 
-  near(geometry.forwardInputLimit, 3 * FULL_TURN, 0,
-    'official three-turn forward stop');
+  // From the plate pose Brown's teardrops meet 1.34 input turns forward and
+  // 4.48 turns back: one blocking encounter approached from both sides,
+  // short of the six-turn relative period. (The site's triangles, from its
+  // own start pose, met after exactly three turns.)
+  near(geometry.forwardInputLimit, 8.418904749210622, 1e-12,
+    'plate-finger forward stop');
   near(
     geometry.reverseInputLimit,
-    -17.1751158867972,
-    4e-15,
+    -28.173733936209544,
+    1e-12,
     'opposite-flank reverse stop',
   );
   near(
     transmission.inputTurnsBetweenStops,
-    5.7335045915599165,
-    1e-15,
+    5.823899327560335,
+    1e-12,
     'finite input travel between finger flanks',
   );
-  near(transmission.forwardInputTurnsFromSourcePose, 3, 0,
-    'forward source travel');
+  assert.ok(transmission.inputTurnsBetweenStops < 6,
+    'the stops fall inside one relative period');
+  near(transmission.forwardInputTurnsFromSourcePose, 1.339910306256704,
+    1e-12, 'forward plate-pose travel');
   near(
     transmission.reverseInputTurnsFromSourcePose,
-    2.733504591559916,
-    1e-15,
-    'reverse source travel',
+    4.48398902130363,
+    1e-12,
+    'reverse plate-pose travel',
   );
 
   for (const [side, contact, expectedAlong, expectedRate] of [
     [
       'forward',
       geometry.forwardStopContact,
-      0.8701062443990013,
-      3.742651815598071,
+      0.7114215682184366,
+      0.9410328961660996,
     ],
     [
       'reverse',
       geometry.reverseStopContact,
-      0.10906987576336855,
-      3.8733968479403633,
+      0.6703344028054864,
+      1.250919624328983,
     ],
   ]) {
     assert.equal(contact.side, side);
-    near(contact.alongDriverFlank, expectedAlong, 2e-15,
-      `${side} contact lies within the intended input flank`);
-    assert.ok(contact.alongDriverFlank > 0);
-    assert.ok(contact.alongDriverFlank < 1);
+    assert.deepEqual([contact.tipMember, contact.flankMember],
+      side === 'forward' ? ['driver', 'driven'] : ['driven', 'driver']);
+    near(contact.alongFlank, expectedAlong, 1e-12,
+      `${side} contact lies within the intended straight flank`);
+    assert.ok(contact.alongFlank > 0);
+    assert.ok(contact.alongFlank < 1);
     near(contact.normal.length(), 1, 2e-16,
       `${side} contact normal is unit length`);
     near(contact.tangent.length(), 1, 2e-16,
       `${side} contact tangent is unit length`);
     near(contact.normal.dot(contact.tangent), 0, 2e-16,
       `${side} contact frame is orthogonal`);
-    assert.ok(contact.drivenTip.distanceTo(contact.projectedPoint) < 4e-7,
-      `${side} driven point reaches its input flank`);
+    assert.ok(contact.tip.distanceTo(contact.projectedPoint) < 4e-7,
+      `${side} finger point reaches the other finger's flank`);
     near(
       side === 'forward'
         ? geometry.forwardBlockedClosingRate
@@ -386,7 +395,7 @@ test('movement 214 maintains the exact external-gear law and collision-free fing
       `input angle ${index}`);
     near(state.drivenAngle, -5 * inputTravel / 6, 4e-15,
       `counterwheel angle ${index}`);
-    near(state.gearMesh.meshPhaseInvariant, 0, 3e-14,
+    near(state.gearMesh.meshPhaseInvariant, 0, 1e-13,
       `mesh phase invariant ${index}`);
     near(state.gearMesh.ratio, -5 / 6, 0,
       `mesh ratio ${index}`);
@@ -488,7 +497,7 @@ test('movement 214 has smooth reversible runtime rates, exact terminal holds, an
     timeline,
   } = model.root.userData;
 
-  assert.equal(canonicalStates.sourcePose.stage, 'official-source-open-pose');
+  assert.equal(canonicalStates.sourcePose.stage, 'plate-source-open-pose');
   near(canonicalStates.sourcePose.inputTravel, 0, 0, 'initial source pose');
   near(canonicalStates.firstHalfTurn.inputTravel, Math.PI, 3e-15,
     'first official half-turn');

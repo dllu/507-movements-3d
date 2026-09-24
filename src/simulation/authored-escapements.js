@@ -1050,7 +1050,10 @@ function sevenToothAnchorEscapement(movement) {
   const sourceScale = 0.0165;
   const sourceWheelCenter = new THREE.Vector2(214, 210);
   const sourcePalletPivot = new THREE.Vector2(264, 354);
-  const sourceBRootContact = new THREE.Vector2(163, 253);
+  // The lower-left star tip touches B's top face at (170, 253), 61.5 raster
+  // pixels from D.  B's outer corner (158, 255) lies beyond that tip; using
+  // the corner as the contact made the star 9% too wide for the anchor.
+  const sourceBRootContact = new THREE.Vector2(170, 253);
   const sourceBFaceEnd = new THREE.Vector2(207, 244);
   const sourceCInnerTip = new THREE.Vector2(290, 185);
   const sourceCOuterTip = new THREE.Vector2(331, 161);
@@ -1062,7 +1065,7 @@ function sevenToothAnchorEscapement(movement) {
   const sourceBRoot = sourceToModel(sourceBRootContact);
   const contactRadius = sourceBRoot.length();
   const wheelMountPhase = Math.atan2(sourceBRoot.y, sourceBRoot.x);
-  const wheelRootRadius = 0.63;
+  const wheelRootRadius = 0.58;
   const wheelDepth = 0.3;
   const wheelPlaneZ = 0.42;
   const palletAmplitude = THREE.MathUtils.degToRad(4);

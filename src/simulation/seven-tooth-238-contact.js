@@ -17,7 +17,12 @@ export function makeSevenTooth238Branch(d, cycle = 0) {
   // that actual cleaned contour, not the more finely sampled baked polygon.
   const contour = d.blocks.escapeWheel.userData.body.geometry.parameters.shapes[0].extractPoints(1).shape;
   const nearest = point => contour.reduce((best, p, i) => p.distanceToSquared(point) < contour[best].distanceToSquared(point) ? i : best, 0);
-  const start = nearest(rotate(new THREE.Vector2(...outline[946]), -base));
+  // The flank runs from just past the last segment's root vertex to tip 0
+  // (vertex 946 of the former 1099-vertex profile).
+  const segment = outline.length / 7;
+  let root = 6 * segment;
+  for (let i = root; i < outline.length; i++) if (Math.hypot(...outline[i]) < Math.hypot(...outline[root])) root = i;
+  const start = nearest(rotate(new THREE.Vector2(...outline[root + 1]), -base));
   const end = nearest(rotate(new THREE.Vector2(...outline[0]), -base));
   const step = contour[(start + 1) % contour.length].lengthSq() > contour[start].lengthSq() ? 1 : -1;
   const vertices = [], facetIndices = [];
@@ -91,7 +96,7 @@ export function finishSevenTooth238Contact(model) {
   d.dynamics.velocityContinuous = false;
   d.dynamics.scheduledHandoffVelocityContinuous = true;
   d.dynamics.facetedFlankImpactsPrescribed = true;
-  d.reconstructionNote = 'B now bears through its finite inner corner on the existing seven-tip wheel flank, releasing at the preserved tip before the drop to C. The prior 4° half-swing, shortened B and 13.1% star-area reconstruction remain. Input oscillation, drops and small impacts at faceted flank joints are prescribed; friction, loaded capture and sustained oscillation are not simulated.';
+  d.reconstructionNote = 'B now bears through its finite inner corner on the existing seven-tip wheel flank, releasing at the preserved tip before the drop to C. The prior 4° half-swing, shortened B and 14.3% star-area reconstruction remain. Input oscillation, drops and small impacts at faceted flank joints are prescribed; friction, loaded capture and sustained oscillation are not simulated.';
   model.update = time => {
     oldUpdate(time); const s = d.stateAtTime(time);
     for (const part of [b.escapeWheel, b.escapeShaft]) { part.userData.rotor.rotation.z = s.wheelAngle; part.userData.angularSpeed = s.wheelAngularSpeed; }

@@ -3200,14 +3200,16 @@ function springPressedRatchetIndex() {
   const fullTurn = Math.PI * 2;
   const toothCount = 11;
   const toothPitch = fullTurn / toothCount;
-  const ratchetRootRadius = 0.7;
+  // Brown's teeth are shallow: roots at about 0.8 of the tip radius, with
+  // short, nearly radial faces that barely overhang.
+  const ratchetRootRadius = 0.8;
   const ratchetOuterRadius = 1;
   const toothOuterStartPhase = 0.28;
-  const toothOuterEndPhase = 1.035;
+  const toothOuterEndPhase = 1.02;
   const stopFaceFraction = 0.3;
-  // With Brown's eleven teeth the pitch is short, so B bears high on the
-  // face to keep its leaf clear of C's stop on the following tooth.
-  const driveFaceFraction = 0.88;
+  // With Brown's eleven shallow teeth the pitch is short, so B bears near
+  // the crest to keep its leaf clear of C's stop on the following tooth.
+  const driveFaceFraction = 0.95;
   const stopFaceWorldAngle = 2.65;
   const baseFaceOuter = new THREE.Vector2(
     Math.cos(toothOuterEndPhase * toothPitch) * ratchetOuterRadius,
@@ -3249,8 +3251,10 @@ function springPressedRatchetIndex() {
   ratchetShaft.userData.radius = 0.09;
   ratchetShaft.userData.role = 'intermittent-output-shaft-A';
 
-  const stopPadRadius = 0.055;
-  const catchPadRadius = 0.06;
+  // Brown's spring ends are thin. With the shallower teeth, pads this small
+  // keep B's catch and C's stop apart as B leaves the face.
+  const stopPadRadius = 0.035;
+  const catchPadRadius = 0.04;
   const facePointAt = (face, fraction) => face.root.clone().lerp(
     face.outer,
     fraction,
@@ -3488,8 +3492,8 @@ function springPressedRatchetIndex() {
   // C rises from the top right corner of Brown's hatched block, which
   // stands just clear of D's rim at the lower left.
   const strongSpringAnchor = new THREE.Vector3(
-    -1.62,
-    -1.2,
+    -1.56,
+    -1.14,
     strongSpringPlaneZ,
   );
   const strongReferenceCurveAt = (tipCenter) => {
@@ -3560,14 +3564,72 @@ function springPressedRatchetIndex() {
   );
   stopPad.userData.radius = stopPadRadius;
   stopPad.userData.strongSpringStopTipC = true;
-  // Brown's hatched block at lower left, with C rising from its corner.
+  // Brown's hatched block at lower left, with C rising from its corner. The
+  // plate shows only a corner of it, about 0.7 R wide above the frame line,
+  // so the slab is kept thin and pale with its section hatched on the face
+  // rather than reading as a deep solid box in front of D.
+  const clampWidth = 1.0;
+  const clampHeight = 1.2;
+  const clampDepth = 0.26;
   const strongSpringClamp = new THREE.Mesh(
-    new THREE.BoxGeometry(1.17, 1.14, 0.5),
-    matte(PALETTE.frame, { metalness: 0.14, roughness: 0.64 }),
+    new THREE.BoxGeometry(clampWidth, clampHeight, clampDepth),
+    matte(PALETTE.paper, { metalness: 0.02, roughness: 0.9 }),
   );
   strongSpringClamp.position.copy(strongSpringAnchor)
-    .add(new THREE.Vector3(-0.545, -0.53, 0));
+    .add(new THREE.Vector3(
+      0.045 - clampWidth / 2,
+      0.045 - clampHeight / 2,
+      0,
+    ));
   strongSpringClamp.userData.fixedStrongSpringClamp = true;
+  {
+    // Diagonal section hatching (lower left to upper right, as engraved),
+    // clipped to the block face.
+    const hatchMaterial = matte(PALETTE.ink, { metalness: 0.1, roughness: 0.6 });
+    const halfWidth = clampWidth / 2;
+    const halfHeight = clampHeight / 2;
+    const hatchSpacing = 0.075;
+    const hatchPositions = [];
+    const hatchIndices = [];
+    const lineHalfThickness = 0.009;
+    for (
+      let offset = -halfWidth - halfHeight + hatchSpacing / 2;
+      offset < halfWidth + halfHeight;
+      offset += hatchSpacing
+    ) {
+      // Line y = x + offset clipped to the face rectangle.
+      const xStart = Math.max(-halfWidth, -halfHeight - offset);
+      const xEnd = Math.min(halfWidth, halfHeight - offset);
+      if (xEnd - xStart < 0.02) continue;
+      const start = [xStart, xStart + offset];
+      const end = [xEnd, xEnd + offset];
+      // Offset perpendicular to the 45-degree line, clamped to the face.
+      const normal = [-Math.SQRT1_2 * lineHalfThickness, Math.SQRT1_2 * lineHalfThickness];
+      const clampPoint = ([x, y]) => [
+        THREE.MathUtils.clamp(x, -halfWidth, halfWidth),
+        THREE.MathUtils.clamp(y, -halfHeight, halfHeight),
+      ];
+      const base = hatchPositions.length / 3;
+      for (const [x, y] of [
+        clampPoint([start[0] + normal[0], start[1] + normal[1]]),
+        clampPoint([start[0] - normal[0], start[1] - normal[1]]),
+        clampPoint([end[0] - normal[0], end[1] - normal[1]]),
+        clampPoint([end[0] + normal[0], end[1] + normal[1]]),
+      ]) hatchPositions.push(x, y, clampDepth / 2 + 0.002);
+      hatchIndices.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    }
+    const hatchGeometry = new THREE.BufferGeometry();
+    hatchGeometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(hatchPositions, 3),
+    );
+    hatchGeometry.setIndex(hatchIndices);
+    hatchGeometry.computeVertexNormals();
+    const hatch = new THREE.Mesh(hatchGeometry, hatchMaterial);
+    hatch.userData.role = 'hatched-section-face-of-fixed-block';
+    hatch.userData.surfaceMarking = true;
+    strongSpringClamp.add(hatch);
+  }
 
   root.add(
     strongSpringClamp,
@@ -8876,36 +8938,60 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   const driverDepth = 0.34;
   const pinionDepth = 0.4;
 
-  // The site's construction animation resolves the geometry Brown only
-  // sketched: the large wheel uses twelve consecutive positions of a
-  // thirty-two-position pitch circle. The small pinion uses twelve of sixteen
-  // positions, while its four missing positions become the guide and locking
-  // pocket. Their 8:4 pitch radii therefore give the exact active ratio 2:1.
-  const driverEquivalentToothCount = 32;
+  // Brown's plate, measured about both centres, fixes the proportions: the
+  // wheel's teeth are fine (about 9 degrees apart, tips at 8.9 and roots at
+  // 8.1 construction units against the plain rim at 9.2), about eleven of them
+  // run up to the pin, and the pinion carries about 20-degree teeth with a
+  // concave lock where four positions are missing. The working construction
+  // below keeps that: a forty-position wheel with eleven installed teeth and
+  // a sixteen-position pinion with twelve teeth, so the active ratio is 5:2
+  // and the pinion makes one turn while the wheel turns 144 degrees. (The
+  // site's animation used twelve coarse teeth over 135 degrees at 2:1.)
+  // The entry pin sits on the wheel's pitch circle, so the guide flank is
+  // the offset epicycloid it traces on the pinion: the pin drives at exactly
+  // the pitch ratio until the first tooth takes over. The plain rim stands
+  // only slightly beyond the tooth tips, as drawn, and every relief on the
+  // wheel is generated by sweeping the pinion outline through the cycle.
+  const driverEquivalentToothCount = 40;
   const pinionEquivalentToothCount = 16;
-  const driverInstalledToothCount = 12;
+  const driverInstalledToothCount = 11;
   const pinionInstalledToothCount = 12;
-  const driverPitchRadius = 8 * constructionScale;
-  const pinionPitchRadius = 4 * constructionScale;
+  const indexingRatio = driverEquivalentToothCount / pinionEquivalentToothCount;
+  const indexArc = fullTurn / indexingRatio;
+  const rawCenterDistance = 12;
+  const rawDriverPitchRadius = rawCenterDistance * indexingRatio
+    / (indexingRatio + 1);
+  const rawPinionPitchRadius = rawCenterDistance / (indexingRatio + 1);
+  const rawModule = 2 * rawPinionPitchRadius / pinionEquivalentToothCount;
+  const rawAddendum = 0.8 * rawModule;
+  const rawDedendum = rawModule;
+  const rawPlainRadius = 9.1;
+  const rawLockRadius = rawPlainRadius + 0.125;
+  const rawDriverRootRadius = rawDriverPitchRadius - rawDedendum;
+  const rawDriverToothOuterRadius = rawDriverPitchRadius + rawAddendum;
+  const rawPinionRootRadius = rawPinionPitchRadius - rawDedendum;
+  const rawPinionToothOuterRadius = rawPinionPitchRadius + rawAddendum;
+  const driverPitchRadius = rawDriverPitchRadius * constructionScale;
+  const pinionPitchRadius = rawPinionPitchRadius * constructionScale;
   const driverPitchAngle = fullTurn / driverEquivalentToothCount;
   const pinionPitchAngle = fullTurn / pinionEquivalentToothCount;
-  const driverRootRadius = 7.3125 * constructionScale;
-  const driverToothOuterRadius = 8.45 * constructionScale;
-  const driverPlainRadius = 9.75 * constructionScale;
-  const pinionRootRadius = 3.3125 * constructionScale;
-  const pinionToothOuterRadius = 4.45 * constructionScale;
-  const pinionLockRadius = 9.875 * constructionScale;
+  const driverRootRadius = rawDriverRootRadius * constructionScale;
+  const driverToothOuterRadius = rawDriverToothOuterRadius * constructionScale;
+  const driverPlainRadius = rawPlainRadius * constructionScale;
+  const pinionRootRadius = rawPinionRootRadius * constructionScale;
+  const pinionToothOuterRadius = rawPinionToothOuterRadius * constructionScale;
+  const pinionLockRadius = rawLockRadius * constructionScale;
   const lockRadialClearance = pinionLockRadius - driverPlainRadius;
   const lockAngularPlay = 2 * Math.asin(
     lockRadialClearance / (2 * centerDistance),
   );
   const driverBoreRadius = constructionScale;
   const pinionBoreRadius = constructionScale;
-  const driverPinRadius = 0.375 * constructionScale;
-  const driverPinLocal = new THREE.Vector2(
-    -7.991211 * constructionScale,
-    0.374897 * constructionScale,
-  );
+  const rawPinRadius = 0.375;
+  const driverPinRadius = rawPinRadius * constructionScale;
+  const rawDriverPinLocal = new THREE.Vector2(-rawDriverPitchRadius, 0);
+  const driverPinLocal = rawDriverPinLocal.clone()
+    .multiplyScalar(constructionScale);
 
   const degreesToRadians = THREE.MathUtils.degToRad;
   const rotateVector2 = (vector, angle) => {
@@ -8916,39 +9002,13 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
       sine * vector.x + cosine * vector.y,
     );
   };
-  const rawPolarPoint = (radius, angleDegrees) => new THREE.Vector2(
-    Math.cos(degreesToRadians(angleDegrees)) * radius,
-    Math.sin(degreesToRadians(angleDegrees)) * radius,
+  const rawPolarPoint = (radius, angle) => new THREE.Vector2(
+    Math.cos(angle) * radius,
+    Math.sin(angle) * radius,
   );
   const scaleRawPoints = (points) => points.map(
     (point) => point.clone().multiplyScalar(constructionScale),
   );
-  const sampleRawArc = ({
-    center,
-    clockwise,
-    end,
-    radius,
-    segments,
-    start,
-  }) => {
-    let resolvedEnd = end;
-    if (clockwise) {
-      while (resolvedEnd >= start) resolvedEnd -= fullTurn;
-    } else {
-      while (resolvedEnd <= start) resolvedEnd += fullTurn;
-    }
-    return Array.from({ length: segments + 1 }, (_, index) => {
-      const angle = THREE.MathUtils.lerp(
-        start,
-        resolvedEnd,
-        index / segments,
-      );
-      return new THREE.Vector2(
-        center.x + Math.cos(angle) * radius,
-        center.y + Math.sin(angle) * radius,
-      );
-    });
-  };
   const appendDistinct = (target, points, tolerance = 0.00001) => {
     for (const point of points) {
       if (target.length === 0 || target.at(-1).distanceTo(point) > tolerance) {
@@ -8956,96 +9016,28 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
       }
     }
   };
-
-  const driverToothTemplate = [
-    [3.29981, 7.3125],
-    [3.29981, 7.517541],
-    [2.85388, 7.828361],
-    [2.06055, 8.13918],
-    [1.0615, 8.45],
-    [-1.0615, 8.45],
-    [-2.06055, 8.13918],
-    [-2.85388, 7.828361],
-    [-3.29981, 7.517541],
-    [-3.29981, 7.3125],
-  ];
-  const driverToothCenterAngles = Array.from(
-    { length: driverInstalledToothCount },
-    (_, index) => degreesToRadians(146.25 - index * 11.25),
+  const signedAngle = (point) => Math.atan2(point.y, point.x);
+  const rawArc = (center, radius, start, end, segments) => Array.from(
+    { length: segments + 1 },
+    (_, index) => rawPolarPoint(
+      radius,
+      THREE.MathUtils.lerp(start, end, index / segments),
+    ).add(center),
   );
-  const driverToothedProfileRaw = [];
-  driverToothCenterAngles.forEach((centerAngle) => {
-    const centerDegrees = THREE.MathUtils.radToDeg(centerAngle);
-    driverToothTemplate.forEach(([angleOffset, radius]) => {
-      driverToothedProfileRaw.push(rawPolarPoint(
-        radius,
-        centerDegrees + angleOffset,
-      ));
-    });
-  });
-  driverToothedProfileRaw.push(rawPolarPoint(7.3125, 14.54981));
-  const driverToothedStartAngle = degreesToRadians(149.54981);
-  const driverToothedEndAngle = degreesToRadians(14.54981);
 
-  const driverOutlineRaw = driverToothedProfileRaw.map((point) => (
-    point.clone()
-  ));
-  appendDistinct(driverOutlineRaw, [
-    new THREE.Vector2(7.077985, 1.837058),
-    new THREE.Vector2(9.4487, 0.776187),
-  ]);
-  appendDistinct(driverOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(9.24447, 0.319798),
-    clockwise: true,
-    end: 0.03458,
-    radius: 0.5,
-    segments: 16,
-    start: 1.150031,
-  }));
-  appendDistinct(driverOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(0, 0),
-    clockwise: true,
-    end: 3.195673,
-    radius: 9.75,
-    segments: 128,
-    start: 0.03458,
-  }));
-  appendDistinct(driverOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(-9.236477, -0.5),
-    clockwise: true,
-    end: 2.358845,
-    radius: 0.5,
-    segments: 16,
-    start: 3.195673,
-  }));
-  appendDistinct(driverOutlineRaw, [
-    new THREE.Vector2(-9.590966, -0.147385),
-    new THREE.Vector2(-6.819949, 2.638362),
-  ]);
-  appendDistinct(driverOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(0, 0),
-    clockwise: true,
-    end: 2.610137,
-    radius: 7.3125,
-    segments: 16,
-    start: 2.772465,
-  }));
+  // Near-square teeth, as Brown draws them: straight flanks leaning 8
+  // degrees off radial, a flat top and a flat root.
+  const flankLean = Math.tan(degreesToRadians(8));
+  const toothHalfThicknessAt = (pitchRadius, toothCount, radius) => (
+    Math.PI * pitchRadius / toothCount / 2 * 0.94
+      + (pitchRadius - radius) * flankLean
+  );
 
-  const pinionToothTemplate = [
-    [5.83106, 3.3125],
-    [5.83106, 3.75877],
-    [5.03293, 3.98918],
-    [3.63032, 4.21959],
-    [1.88467, 4.45],
-    [-1.88467, 4.45],
-    [-3.63032, 4.21959],
-    [-5.03293, 3.98918],
-    [-5.83106, 3.75877],
-    [-5.83106, 3.3125],
-  ];
+  // Pinion: twelve teeth on a sixteen-position circle; the four positions
+  // facing the wheel at rest are cut away by the concave lock arc.
   const pinionToothCenterAngles = Array.from(
     { length: pinionInstalledToothCount },
-    (_, index) => degreesToRadians(-56.25 - index * 22.5),
+    (_, index) => -degreesToRadians(56.25) - index * pinionPitchAngle,
   );
   const pinionMissingToothCenterAngles = [
     -33.75,
@@ -9053,90 +9045,354 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     11.25,
     33.75,
   ].map(degreesToRadians);
+  const pinionLockCornerAngle = Math.acos(
+    (rawCenterDistance ** 2 + rawPinionRootRadius ** 2 - rawLockRadius ** 2)
+      / (2 * rawCenterDistance * rawPinionRootRadius),
+  );
+  const pinionToothPoints = (centerAngle) => {
+    const halfRoot = toothHalfThicknessAt(
+      rawPinionPitchRadius,
+      pinionEquivalentToothCount,
+      rawPinionRootRadius,
+    ) / rawPinionRootRadius;
+    const halfTip = toothHalfThicknessAt(
+      rawPinionPitchRadius,
+      pinionEquivalentToothCount,
+      rawPinionToothOuterRadius,
+    ) / rawPinionToothOuterRadius;
+    // Clockwise order (decreasing angle), matching the outline direction.
+    return [
+      rawPolarPoint(rawPinionRootRadius, centerAngle + halfRoot),
+      ...rawArc(
+        new THREE.Vector2(),
+        rawPinionToothOuterRadius,
+        centerAngle + halfTip,
+        centerAngle - halfTip,
+        2,
+      ),
+      rawPolarPoint(rawPinionRootRadius, centerAngle - halfRoot),
+    ];
+  };
   const pinionToothedProfileRaw = [
-    new THREE.Vector2(2.39025, -2.273396),
+    rawPolarPoint(rawPinionRootRadius, -pinionLockCornerAngle),
   ];
-  pinionToothCenterAngles.forEach((centerAngle) => {
-    const centerDegrees = THREE.MathUtils.radToDeg(centerAngle);
-    pinionToothTemplate.forEach(([angleOffset, radius]) => {
-      pinionToothedProfileRaw.push(rawPolarPoint(
-        radius,
-        centerDegrees + angleOffset,
+  pinionToothCenterAngles.forEach((centerAngle, index) => {
+    const teeth = pinionToothPoints(centerAngle);
+    if (index > 0) {
+      const previousEnd = signedAngle(pinionToothedProfileRaw.at(-1));
+      const nextStart = signedAngle(teeth[0]);
+      let resolvedPrevious = previousEnd;
+      while (resolvedPrevious < nextStart) resolvedPrevious += fullTurn;
+      appendDistinct(pinionToothedProfileRaw, rawArc(
+        new THREE.Vector2(),
+        rawPinionRootRadius,
+        resolvedPrevious,
+        nextStart,
+        3,
       ));
-    });
+    } else {
+      appendDistinct(pinionToothedProfileRaw, rawArc(
+        new THREE.Vector2(),
+        rawPinionRootRadius,
+        -pinionLockCornerAngle,
+        signedAngle(teeth[0]),
+        4,
+      ));
+    }
+    appendDistinct(pinionToothedProfileRaw, teeth);
   });
-  pinionToothedProfileRaw.push(new THREE.Vector2(2.39025, 2.273396));
+  {
+    let lastAngle = signedAngle(pinionToothedProfileRaw.at(-1));
+    while (lastAngle < pinionLockCornerAngle) lastAngle += fullTurn;
+    appendDistinct(pinionToothedProfileRaw, rawArc(
+      new THREE.Vector2(),
+      rawPinionRootRadius,
+      lastAngle,
+      pinionLockCornerAngle,
+      4,
+    ));
+  }
   const pinionOutlineRaw = pinionToothedProfileRaw.map((point) => (
     point.clone()
   ));
-  appendDistinct(pinionOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(12, 0),
-    clockwise: false,
-    end: 3.373894,
-    radius: 9.875,
-    segments: 40,
-    start: 2.909292,
-  }));
+  const pocketCenter = new THREE.Vector2(rawCenterDistance, 0);
+  const pocketHalfAngle = Math.atan2(
+    rawPolarPoint(rawPinionRootRadius, pinionLockCornerAngle).y,
+    rawCenterDistance
+      - rawPolarPoint(rawPinionRootRadius, pinionLockCornerAngle).x,
+  );
+  appendDistinct(pinionOutlineRaw, rawArc(
+    pocketCenter,
+    rawLockRadius,
+    Math.PI - pocketHalfAngle,
+    Math.PI + pocketHalfAngle,
+    40,
+  ));
+  if (pinionOutlineRaw.at(-1).distanceTo(pinionOutlineRaw[0]) < 1e-6) {
+    pinionOutlineRaw.pop();
+  }
 
-  // This is the exact multi-arc guide construction from the official model.
-  // It is rigid with the pinion and replaces the four omitted tooth spaces.
+  // Kinematics shared by the construction and the running model.
+  const pinionAngleAtPhase = (phase) => -Math.min(
+    phase * indexingRatio,
+    fullTurn,
+  );
+  const rawPinionCenter = new THREE.Vector2(-rawCenterDistance, 0);
+
+  // Guide: the pin centre traces an epicycloid on the pinion from the pitch
+  // point. The working flank is that path offset by the pin radius and a
+  // small running clearance on the clockwise (pushed) side.
+  const guideRunningClearance = 0.012;
+  const guideThickness = 0.72;
+  const guideEntryEndPhase = degreesToRadians(21);
+  const rawPinPathInPinion = (phase) => rotateVector2(
+    rotateVector2(rawDriverPinLocal, phase).sub(rawPinionCenter),
+    -pinionAngleAtPhase(phase),
+  );
+  const guideSamples = 48;
+  const guideUpper = [];
+  const guideLower = [];
+  for (let index = 0; index <= guideSamples; index += 1) {
+    const phase = guideEntryEndPhase * (index / guideSamples) ** 1.5;
+    const point = rawPinPathInPinion(phase);
+    let normal = new THREE.Vector2(0, -1);
+    if (phase > 1e-6) {
+      const step = Math.max(phase * 1e-4, 1e-7);
+      const tangent = rawPinPathInPinion(phase + step)
+        .sub(rawPinPathInPinion(phase - step));
+      normal = new THREE.Vector2(tangent.y, -tangent.x).normalize();
+    }
+    guideUpper.push(point.clone().addScaledVector(
+      normal,
+      rawPinRadius + guideRunningClearance,
+    ));
+    guideLower.push(point.clone().addScaledVector(
+      normal,
+      rawPinRadius + guideRunningClearance + guideThickness,
+    ));
+  }
+  const guideRootX = 1.75;
+  const guideRootCenter = new THREE.Vector2(
+    guideRootX,
+    (guideUpper[0].y + guideLower[0].y) / 2,
+  );
+  const guideTipCenter = guideUpper.at(-1).clone()
+    .add(guideLower.at(-1)).multiplyScalar(0.5);
+  const guideTipStart = guideUpper.at(-1).clone().sub(guideTipCenter).angle();
   const guideOutlineRaw = [];
   appendDistinct(guideOutlineRaw, [
-    new THREE.Vector2(1.75, 0),
-    new THREE.Vector2(3.931852, 0),
+    new THREE.Vector2(guideRootX, guideUpper[0].y),
+    ...guideUpper,
   ]);
-  appendDistinct(guideOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(3.931852, -0.25),
-    clockwise: true,
-    end: 1.029601,
-    radius: 0.25,
-    segments: 10,
-    start: Math.PI / 2,
-  }));
-  appendDistinct(guideOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(2, -3.464102),
-    clockwise: true,
-    end: 0.822973,
-    radius: 4,
-    segments: 22,
-    start: 1.029601,
-  }));
-  appendDistinct(guideOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(4.507665, -0.760535),
-    clockwise: false,
-    end: 3.964565,
-    radius: 0.3125,
-    segments: 24,
-    start: 0.822973,
-  }));
-  appendDistinct(guideOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(2, -3.464102),
-    clockwise: false,
-    end: 0.976446,
-    radius: 3.375,
-    segments: 18,
-    start: 0.822973,
-  }));
-  appendDistinct(guideOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(3.749908, -0.875),
-    clockwise: false,
-    end: Math.PI / 2,
-    radius: 0.25,
-    segments: 10,
-    start: 0.976446,
-  }));
+  appendDistinct(guideOutlineRaw, rawArc(
+    guideTipCenter,
+    guideThickness / 2,
+    guideTipStart,
+    guideTipStart - Math.PI,
+    16,
+  ));
   appendDistinct(guideOutlineRaw, [
-    new THREE.Vector2(3.749908, -0.625),
-    new THREE.Vector2(1.75, -0.625),
+    ...guideLower.slice().reverse(),
+    new THREE.Vector2(guideRootX, guideLower[0].y),
   ]);
-  appendDistinct(guideOutlineRaw, sampleRawArc({
-    center: new THREE.Vector2(1.75, -0.3125),
-    clockwise: true,
-    end: -Math.PI * 1.5,
-    radius: 0.3125,
-    segments: 24,
-    start: -Math.PI / 2,
-  }));
+  appendDistinct(guideOutlineRaw, rawArc(
+    guideRootCenter,
+    guideThickness / 2,
+    -Math.PI / 2,
+    -Math.PI * 1.5,
+    16,
+  ).slice(1, -1));
+
+  // Wheel: fine square teeth on the toothed arc, the plain locking rim, and
+  // root-level relief between them. Every point is then limited by the
+  // pinion outline (dilated by a running clearance) swept through the index.
+  const driverToothCenterAngles = Array.from(
+    { length: driverInstalledToothCount },
+    (_, index) => degreesToRadians(153) - index * driverPitchAngle,
+  );
+  const driverToothedStartAngle = driverToothCenterAngles[0]
+    + driverPitchAngle / 2;
+  const driverToothedEndAngle = driverToothCenterAngles.at(-1)
+    - driverPitchAngle / 2;
+  const plainRimLeadAngle = Math.PI - indexArc;
+  const sweepClearance = 0.08;
+  const dilatePolygon = (points, distance) => {
+    let area = 0;
+    points.forEach((point, index) => {
+      const next = points[(index + 1) % points.length];
+      area += point.x * next.y - next.x * point.y;
+    });
+    const sign = area > 0 ? 1 : -1;
+    return points.map((point, index) => {
+      const previous = points[(index - 1 + points.length) % points.length];
+      const next = points[(index + 1) % points.length];
+      const inEdge = point.clone().sub(previous).normalize();
+      const outEdge = next.clone().sub(point).normalize();
+      const inNormal = new THREE.Vector2(inEdge.y, -inEdge.x)
+        .multiplyScalar(sign);
+      const outNormal = new THREE.Vector2(outEdge.y, -outEdge.x)
+        .multiplyScalar(sign);
+      const bisector = inNormal.clone().add(outNormal);
+      if (bisector.lengthSq() < 1e-12) {
+        return point.clone().addScaledVector(inNormal, distance);
+      }
+      bisector.normalize();
+      const scale = Math.min(2, 1 / Math.max(bisector.dot(inNormal), 0.5));
+      return point.clone().addScaledVector(bisector, distance * scale);
+    });
+  };
+  const sweptPinion = dilatePolygon(pinionOutlineRaw, sweepClearance);
+  const raySteps = 3600;
+  const rayStep = fullTurn / raySteps;
+  const sweptLimit = new Float64Array(raySteps).fill(Infinity);
+  const sweepSteps = 1440;
+  const rayCos = Float64Array.from({ length: raySteps }, (_, ray) => (
+    Math.cos(ray * rayStep)
+  ));
+  const raySin = Float64Array.from({ length: raySteps }, (_, ray) => (
+    Math.sin(ray * rayStep)
+  ));
+  const sweptX = new Float64Array(sweptPinion.length);
+  const sweptY = new Float64Array(sweptPinion.length);
+  for (let step = 0; step <= sweepSteps; step += 1) {
+    const phase = indexArc * step / sweepSteps;
+    // Pinion point in the wheel's frame: rotate by the pinion angle about
+    // its centre, then by minus the wheel angle about the wheel centre.
+    const pinionAngle = pinionAngleAtPhase(phase);
+    const pinionCos = Math.cos(pinionAngle);
+    const pinionSin = Math.sin(pinionAngle);
+    const wheelCos = Math.cos(-phase);
+    const wheelSin = Math.sin(-phase);
+    for (let index = 0; index < sweptPinion.length; index += 1) {
+      const { x, y } = sweptPinion[index];
+      const worldX = pinionCos * x - pinionSin * y + rawPinionCenter.x;
+      const worldY = pinionSin * x + pinionCos * y + rawPinionCenter.y;
+      sweptX[index] = wheelCos * worldX - wheelSin * worldY;
+      sweptY[index] = wheelSin * worldX + wheelCos * worldY;
+    }
+    for (let index = 0; index < sweptPinion.length; index += 1) {
+      const next = (index + 1) % sweptPinion.length;
+      const startX = sweptX[index];
+      const startY = sweptY[index];
+      const edgeX = sweptX[next] - startX;
+      const edgeY = sweptY[next] - startY;
+      const startAngle = Math.atan2(startY, startX);
+      let endAngle = Math.atan2(sweptY[next], sweptX[next]);
+      if (endAngle - startAngle > Math.PI) endAngle -= fullTurn;
+      if (startAngle - endAngle > Math.PI) endAngle += fullTurn;
+      const low = Math.ceil(Math.min(startAngle, endAngle) / rayStep);
+      const high = Math.floor(Math.max(startAngle, endAngle) / rayStep);
+      const numerator = startX * edgeY - startY * edgeX;
+      for (let ray = low; ray <= high; ray += 1) {
+        const slot = ((ray % raySteps) + raySteps) % raySteps;
+        const denominator = rayCos[slot] * edgeY - raySin[slot] * edgeX;
+        if (Math.abs(denominator) < 1e-12) continue;
+        const radius = numerator / denominator;
+        if (radius <= 0) continue;
+        if (radius < sweptLimit[slot]) sweptLimit[slot] = radius;
+      }
+    }
+  }
+  const angleWithin = (angle, low, high) => {
+    const span = THREE.MathUtils.euclideanModulo(high - low, fullTurn);
+    return THREE.MathUtils.euclideanModulo(angle - low, fullTurn) <= span;
+  };
+  const pinBossHalfAngle = degreesToRadians(3.5);
+  const driverTargetRadius = (angle) => {
+    if (!angleWithin(angle, driverToothedEndAngle, driverToothedStartAngle)) {
+      return rawPlainRadius;
+    }
+    let nearest = Infinity;
+    driverToothCenterAngles.forEach((centerAngle) => {
+      const offset = Math.abs(THREE.MathUtils.euclideanModulo(
+        angle - centerAngle + Math.PI,
+        fullTurn,
+      ) - Math.PI);
+      nearest = Math.min(nearest, offset);
+    });
+    const halfWidthConstant = toothHalfThicknessAt(
+      rawDriverPitchRadius,
+      driverEquivalentToothCount,
+      0,
+    );
+    return THREE.MathUtils.clamp(
+      halfWidthConstant / (nearest + flankLean),
+      rawDriverRootRadius,
+      rawDriverToothOuterRadius,
+    );
+  };
+  const driverRadiusSamples = Array.from({ length: raySteps }, (_, index) => (
+    Math.min(driverTargetRadius(index * rayStep), sweptLimit[index])
+  ));
+  // Douglas-Peucker thinning keeps the rim and flanks within 0.002 units.
+  const simplifyClosed = (points, tolerance) => {
+    const keep = new Uint8Array(points.length);
+    const stack = [[0, points.length - 1]];
+    keep[0] = 1;
+    keep[points.length - 1] = 1;
+    while (stack.length) {
+      const [first, last] = stack.pop();
+      const a = points[first];
+      const b = points[last];
+      const edge = b.clone().sub(a);
+      const length = Math.max(edge.length(), 1e-12);
+      let worst = -1;
+      let worstDistance = tolerance;
+      for (let index = first + 1; index < last; index += 1) {
+        const offset = points[index].clone().sub(a);
+        const distance = Math.abs(offset.x * edge.y - offset.y * edge.x)
+          / length;
+        if (distance > worstDistance) {
+          worst = index;
+          worstDistance = distance;
+        }
+      }
+      if (worst >= 0) {
+        keep[worst] = 1;
+        stack.push([first, worst], [worst, last]);
+      }
+    }
+    return points.filter((_, index) => keep[index]);
+  };
+  // Clockwise from just past the pin, as the former construction ran.
+  const outlineStartIndex = Math.round(
+    (Math.PI - pinBossHalfAngle) / rayStep,
+  );
+  const driverOutlineDense = Array.from({ length: raySteps }, (_, step) => {
+    const index = THREE.MathUtils.euclideanModulo(
+      outlineStartIndex - step,
+      raySteps,
+    );
+    return rawPolarPoint(driverRadiusSamples[index], index * rayStep);
+  });
+  const driverOutlineRaw = simplifyClosed(driverOutlineDense, 0.002);
+  const driverToothedProfileRaw = driverOutlineRaw.filter((point) => (
+    angleWithin(point.angle(), driverToothedEndAngle, driverToothedStartAngle)
+  ));
+  const plainRimSampleIndices = driverRadiusSamples
+    .map((radius, index) => (radius >= rawPlainRadius - 1e-9 ? index : -1))
+    .filter((index) => index >= 0);
+  // The plain arc runs clockwise from its lead end (near the relock side)
+  // round to the pin; store its start and end as in the former construction.
+  let driverPlainArcStart = null;
+  let driverPlainArcEnd = null;
+  {
+    const plainSet = new Set(plainRimSampleIndices);
+    const leadIndex = Math.round(plainRimLeadAngle / rayStep);
+    let startIndex = leadIndex;
+    while (plainSet.has(THREE.MathUtils.euclideanModulo(startIndex + 1, raySteps))) {
+      startIndex += 1;
+    }
+    let endIndex = leadIndex;
+    while (plainSet.has(THREE.MathUtils.euclideanModulo(endIndex - 1, raySteps))) {
+      endIndex -= 1;
+    }
+    driverPlainArcStart = startIndex * rayStep;
+    driverPlainArcEnd = THREE.MathUtils.euclideanModulo(
+      endIndex * rayStep,
+      fullTurn,
+    );
+  }
 
   const driverOutline = scaleRawPoints(driverOutlineRaw);
   const pinionOutline = scaleRawPoints(pinionOutlineRaw);
@@ -9227,7 +9483,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     driverMaterial,
   );
   driverBody.userData.role =
-    'thirty-two-position-wheel-with-twelve-teeth-and-plain-locking-rim';
+    'forty-position-wheel-with-eleven-teeth-and-plain-locking-rim';
   driverBody.userData.partialGearBody = true;
   const driverEdge = makeProfileTube(
     driverOutline,
@@ -9354,8 +9610,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     pinionShaft,
   );
 
-  const driverPlainArcStart = 0.03458;
-  const driverPlainArcEnd = 3.195673;
   const meshStartAngle = Math.PI - driverToothedStartAngle;
   const meshEndAngle = Math.PI - driverToothedEndAngle;
   const inputAngularSpeed = 0.52;
@@ -9367,7 +9621,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     const completedTurns = Math.floor(relativeAngle / fullTurn);
     const phase = THREE.MathUtils.euclideanModulo(relativeAngle, fullTurn);
     return sourcePinionAngle - completedTurns * fullTurn
-      - Math.min(phase * 2, fullTurn);
+      - Math.min(phase * indexingRatio, fullTurn);
   };
   const closestPointOnGuide = (point) => {
     let minimumDistanceSquared = Infinity;
@@ -9420,10 +9674,27 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   };
   const pinGuideClearanceAtPhase = (phase) => pinGuideStateAtAngles(
     phase,
-    -phase * 2,
+    pinionAngleAtPhase(phase),
   ).clearance;
-  let closestGuideLow = 0;
-  let closestGuideHigh = Math.min(meshStartAngle, 0.18);
+  // The offset flank keeps an almost constant running clearance, so find
+  // the closest pass by a dense scan before refining it.
+  const guideScanEnd = guideEntryEndPhase * 1.25;
+  const guideScanSteps = 4096;
+  let closestScanIndex = 0;
+  let closestScanClearance = Infinity;
+  for (let index = 0; index <= guideScanSteps; index += 1) {
+    const clearance = pinGuideClearanceAtPhase(
+      guideScanEnd * index / guideScanSteps,
+    );
+    if (clearance < closestScanClearance) {
+      closestScanClearance = clearance;
+      closestScanIndex = index;
+    }
+  }
+  let closestGuideLow = guideScanEnd
+    * Math.max(closestScanIndex - 1, 0) / guideScanSteps;
+  let closestGuideHigh = guideScanEnd
+    * Math.min(closestScanIndex + 1, guideScanSteps) / guideScanSteps;
   for (let iteration = 0; iteration < 96; iteration += 1) {
     const firstThird = (closestGuideLow * 2 + closestGuideHigh) / 3;
     const secondThird = (closestGuideLow + closestGuideHigh * 2) / 3;
@@ -9479,10 +9750,10 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     const relativeAngle = driverAngle - sourceDriverAngle;
     const completedInputTurns = Math.floor(relativeAngle / fullTurn);
     const phase = THREE.MathUtils.euclideanModulo(relativeAngle, fullTurn);
-    const indexing = phase < Math.PI;
+    const indexing = phase < indexArc;
     const pinionAngle = pinionAngleAtDriverAngle(driverAngle);
     const pinionAngularSpeed = indexing
-      ? -2 * driverAngularSpeed
+      ? -indexingRatio * driverAngularSpeed
       : 0;
     const contactBoundaryTolerance = 1e-12;
     const gearMeshActive = phase >= meshStartAngle - contactBoundaryTolerance
@@ -9491,9 +9762,9 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     if (phase < meshStartAngle - contactBoundaryTolerance) {
       stage = 'entry-pin-and-guide-transfer';
     } else if (phase <= meshEndAngle + contactBoundaryTolerance) {
-      stage = 'twelve-tooth-indexing-mesh';
+      stage = 'eleven-tooth-indexing-mesh';
     }
-    else if (phase < Math.PI) stage = 'relocking-transition';
+    else if (phase < indexArc) stage = 'relocking-transition';
     else stage = 'plain-rim-locked-dwell';
 
     const driverContactLocalAngle = Math.PI - phase;
@@ -9553,7 +9824,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     const pinGuide = pinGuideStateAtAngles(driverAngle, pinionAngle);
     const pinGuideEngaged = pinGuide.clearance <= guideStrikeTolerance;
     const outputTurns = -(completedInputTurns
-      + Math.min(phase / Math.PI, 1));
+      + Math.min(phase / indexArc, 1));
 
     return {
       completedInputTurns,
@@ -9587,7 +9858,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
           - driverPitchRadius - pinionPitchRadius,
         velocityError: gearMeshActive ? meshVelocityError : null,
       },
-      indexProgress: Math.min(phase / Math.PI, 1),
+      indexProgress: Math.min(phase / indexArc, 1),
       indexing,
       lock: {
         active: !indexing,
@@ -9622,9 +9893,9 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     cycleClosure: inputPeriod,
     firstRegularToothContact: meshStartAngle / inputAngularSpeed,
     lastRegularToothContact: meshEndAngle / inputAngularSpeed,
-    lockEntry: Math.PI / inputAngularSpeed,
-    midDwell: Math.PI * 1.5 / inputAngularSpeed,
-    midIndex: Math.PI / 2 / inputAngularSpeed,
+    lockEntry: indexArc / inputAngularSpeed,
+    midDwell: (indexArc + fullTurn) / 2 / inputAngularSpeed,
+    midIndex: indexArc / 2 / inputAngularSpeed,
     sourcePinStrike: 0,
   };
   const canonicalStates = Object.fromEntries(
@@ -9681,9 +9952,9 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   root.userData.archetype =
     'half-toothed-thirty-two-position-driver-pin-guided-sixteen-position-locking-pinion';
   root.userData.mechanism =
-    'single-entry-pin-starts-a-twelve-tooth-two-to-one-index-before-a-concave-pinion-pocket-locks-on-the-plain-driver-rim';
+    'single-entry-pin-starts-an-eleven-tooth-five-to-two-index-before-a-concave-pinion-pocket-locks-on-the-plain-driver-rim';
   root.userData.variant =
-    'one-output-turn-during-one-half-input-turn-followed-by-one-half-turn-positive-lock-dwell';
+    'one-output-turn-during-two-fifths-of-an-input-turn-followed-by-a-positive-lock-dwell';
   root.userData.blocks = {
     driver,
     driverBody,
@@ -9789,11 +10060,11 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   root.userData.stateAtDriverAngle = stateAtDriverAngle;
   root.userData.stateAtTime = stateAtTime;
   root.userData.transmission = {
-    activeInputFraction: 0.5,
+    activeInputFraction: 1 / indexingRatio,
     direction: 'opposite-during-index-and-locked-during-dwell',
     driverEquivalentToothCount,
     driverInstalledToothCount,
-    indexingSpeedRatio: -2,
+    indexingSpeedRatio: -indexingRatio,
     inputAngularSpeed,
     inputPeriod,
     lockAngularPlay,
@@ -12283,12 +12554,37 @@ function opposedGearFingerWindingStop() {
   const drivenRootRadius = sourceDrivenRootRadius * sourceScale;
   const driverOuterRadius = sourceDriverOuterRadius * sourceScale;
   const drivenOuterRadius = sourceDrivenOuterRadius * sourceScale;
-  const driverFingerLocal = sourceDriverFinger.map((point) => (
-    point.clone().multiplyScalar(sourceScale)
-  ));
-  const drivenFingerLocal = sourceDrivenFinger.map((point) => (
-    point.clone().multiplyScalar(sourceScale)
-  ));
+  // Brown's plate draws teardrop fingers, not the site's long triangles: a
+  // round boss about the square arbor tapering to a point, the input's
+  // pointing up and right (34.5 degrees) and the counterwheel's nearly
+  // upright (plate 79 degrees). Each outline is the convex hull of the boss
+  // circle and the point, so both flanks are the straight tangents. Index 1
+  // is the point; indices 0 and 2 are the tangent points. Lengths and the
+  // counterwheel angle (75 degrees, 4 degrees off the plate) are tuned so
+  // one of the six encounters in the 6-turn relative period blocks solidly
+  // (about 1.1 rad of input overlap) while the other five pass at least
+  // 0.6 clear.
+  const plateFingerBossRadius = 0.78;
+  const plateTeardrop = (length, angle, arcSamples = 64) => {
+    const half = Math.acos(plateFingerBossRadius / length);
+    const onBoss = (theta) => new THREE.Vector2(
+      plateFingerBossRadius * Math.cos(theta),
+      plateFingerBossRadius * Math.sin(theta),
+    );
+    const points = [
+      onBoss(angle - half),
+      new THREE.Vector2(length * Math.cos(angle), length * Math.sin(angle)),
+      onBoss(angle + half),
+    ];
+    for (let index = 1; index < arcSamples; index += 1) {
+      points.push(onBoss(
+        angle + half + (fullTurn - 2 * half) * index / arcSamples,
+      ));
+    }
+    return points;
+  };
+  const driverFingerLocal = plateTeardrop(3.2, THREE.MathUtils.degToRad(34.5));
+  const drivenFingerLocal = plateTeardrop(3.65, THREE.MathUtils.degToRad(75));
   const driverBoreLocal = sourceDriverBore.map((point) => (
     point.clone().multiplyScalar(sourceScale)
   ));
@@ -12333,17 +12629,25 @@ function opposedGearFingerWindingStop() {
       ),
     };
   };
-  const rawFlankDistance = (inputTravel, side) => {
+  // Forward, the input's point meets the counterwheel finger's flank from
+  // tangent point 0 to the point; in reverse, the counterwheel's point meets
+  // the input finger's flank [0, 1]. Both are straight tangent flanks.
+  const stopPairs = {
+    forward: { tipMember: 'driver', flankMember: 'driven' },
+    reverse: { tipMember: 'driven', flankMember: 'driver' },
+  };
+  const stopParts = (inputTravel, side) => {
     const geometry = fingerGeometryAtInputTravel(inputTravel);
-    const drivenTip = geometry.drivenFinger[1];
-    const [firstIndex, secondIndex] = side === 'forward'
-      ? [0, 1]
-      : [1, 2];
-    return signedPointLineDistance(
-      drivenTip,
-      geometry.driverFinger[firstIndex],
-      geometry.driverFinger[secondIndex],
-    );
+    const { tipMember, flankMember } = stopPairs[side];
+    return {
+      firstPoint: geometry[`${flankMember}Finger`][0],
+      secondPoint: geometry[`${flankMember}Finger`][1],
+      tip: geometry[`${tipMember}Finger`][1],
+    };
+  };
+  const rawFlankDistance = (inputTravel, side) => {
+    const { firstPoint, secondPoint, tip } = stopParts(inputTravel, side);
+    return signedPointLineDistance(tip, firstPoint, secondPoint);
   };
   const solveSignedDistanceRoot = (lowerBound, upperBound, side) => {
     let lower = lowerBound;
@@ -12366,28 +12670,21 @@ function opposedGearFingerWindingStop() {
     return (lower + upper) / 2;
   };
 
-  // The official track advances the input through six half-turns, then holds
-  // it at exactly three turns. The opposite stop is the first encounter with
-  // the other flank when the same rigid profiles are run backward.
-  const forwardInputLimit = 3 * fullTurn;
-  const reverseInputLimit = solveSignedDistanceRoot(
-    -2.8 * fullTurn,
-    -2.7 * fullTurn,
-    'reverse',
-  );
+  // The initial pose is the plate's (both fingers up). The site animation
+  // instead starts elsewhere, its triangles meeting after exactly three
+  // turns. With the plate's teardrops the first encounter forward is 1.34
+  // input turns away and the opposite stop 4.48 turns back: the same
+  // blocking encounter approached from its two sides, 1.10 rad short of the
+  // six-turn relative period.
+  const forwardInputLimit = solveSignedDistanceRoot(8.3, 8.5, 'forward');
+  const reverseInputLimit = solveSignedDistanceRoot(-28.25, -28.1, 'reverse');
   const totalInputTravel = forwardInputLimit - reverseInputLimit;
   const sourcePoseInputTravel = 0;
 
   const contactAtLimit = (inputTravel, side) => {
-    const geometry = fingerGeometryAtInputTravel(inputTravel);
-    const drivenTip = geometry.drivenFinger[1];
-    const [firstIndex, secondIndex] = side === 'forward'
-      ? [0, 1]
-      : [1, 2];
-    const firstPoint = geometry.driverFinger[firstIndex];
-    const secondPoint = geometry.driverFinger[secondIndex];
+    const { firstPoint, secondPoint, tip } = stopParts(inputTravel, side);
     const projection = projectPointToLine(
-      drivenTip,
+      tip,
       firstPoint,
       secondPoint,
     );
@@ -12402,14 +12699,16 @@ function opposedGearFingerWindingStop() {
     ));
     const normal = leftNormal.multiplyScalar(interiorSign || 1);
     return {
-      alongDriverFlank: projection.along,
-      contactPoint: drivenTip.clone().add(projection.point).multiplyScalar(0.5),
-      drivenTip,
-      driverFlank: [firstPoint, secondPoint],
+      alongFlank: projection.along,
+      contactPoint: tip.clone().add(projection.point).multiplyScalar(0.5),
+      flank: [firstPoint, secondPoint],
+      flankMember: stopPairs[side].flankMember,
       normal,
       projectedPoint: projection.point,
       side,
       tangent,
+      tip,
+      tipMember: stopPairs[side].tipMember,
     };
   };
   const forwardStopContact = contactAtLimit(forwardInputLimit, 'forward');
@@ -12669,7 +12968,7 @@ function opposedGearFingerWindingStop() {
   );
   forwardContactMarker.visible = false;
   forwardContactMarker.userData.role =
-    'forward-driven-tip-to-input-finger-flank-contact';
+    'forward-input-point-to-counterwheel-finger-flank-contact';
   const reverseContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 20, 14),
     whiteMaterial,
@@ -12681,7 +12980,7 @@ function opposedGearFingerWindingStop() {
   );
   reverseContactMarker.visible = false;
   reverseContactMarker.userData.role =
-    'reverse-driven-tip-to-input-finger-opposite-flank-contact';
+    'reverse-counterwheel-point-to-input-finger-flank-contact';
 
   const rearZ = -0.82;
   const baseY = -4.25;
@@ -12804,10 +13103,10 @@ function opposedGearFingerWindingStop() {
     else if (tryingPastReverseStop) {
       stage = 'reverse-opposite-finger-flank-hard-stop';
     } else if (inputTravel > sourcePoseInputTravel) {
-      stage = 'winding-toward-three-turn-source-stop';
+      stage = 'winding-toward-forward-finger-stop';
     } else if (inputTravel < sourcePoseInputTravel) {
       stage = 'running-down-toward-opposite-flank-stop';
-    } else stage = 'official-source-open-pose';
+    } else stage = 'plate-source-open-pose';
     return {
       atForwardStop: tryingPastForwardStop,
       atReverseStop: tryingPastReverseStop,
@@ -12878,7 +13177,8 @@ function opposedGearFingerWindingStop() {
     };
   };
   const sourceHoldDuration = 1;
-  const forwardMotionDuration = 7;
+  // Keep the site track's winding rate: seven seconds per three input turns.
+  const forwardMotionDuration = 7 * forwardInputLimit / (3 * fullTurn);
   const forwardStopHoldDuration = 1.25;
   const nominalSecondsPerInputRadian = forwardMotionDuration
     / forwardInputLimit;
@@ -12920,7 +13220,7 @@ function opposedGearFingerWindingStop() {
         ),
         direction: 'winding-forward-to-source-terminal-stop',
         phaseTime,
-        timelineSegment: 'official-three-turn-forward-traverse',
+        timelineSegment: 'forward-traverse-to-finger-stop',
       };
     }
     if (phaseTime <= forwardStopHoldEnd) {
@@ -13044,7 +13344,7 @@ function opposedGearFingerWindingStop() {
   root.userData.archetype =
     'ten-tooth-twelve-tooth-opposed-finger-winding-stop';
   root.userData.mechanism =
-    'ten-tooth-input-counter-rotates-a-twelve-tooth-wheel-at-five-sixths-speed-until-its-point-meets-either-input-finger-flank';
+    'ten-tooth-input-counter-rotates-a-twelve-tooth-wheel-at-five-sixths-speed-until-one-finger-point-meets-the-other-finger-flank';
   root.userData.variant =
     'coplanar-spur-pair-with-raised-integral-face-fingers-and-two-hard-limits';
   root.userData.blocks = {

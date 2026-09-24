@@ -5,7 +5,8 @@ export function finishSevenTooth238(root){
  const d=root.userData,b=d.blocks,g=d.geometry,parts={faces:[],mounts:[],attachments:[],profile:data};
  const replace=(mesh,geometry,reset=false)=>{mesh.geometry.dispose();mesh.geometry=geometry;if(reset)mesh.rotation.set(0,0,0);};
  replace(b.escapeWheel.userData.body,plate(clip.difference(poly(data.outline),poly(circle([0,0],.089,128))),-g.wheelDepth/2,g.wheelDepth/2));
- replace(b.escapeWheel.userData.hub,ring(.089,.22,-g.wheelDepth*.725,g.wheelDepth*.725,128),true);
+ // Brown draws D's arbor as a small ringed hole (outer radius ~8 px, 0.13).
+ replace(b.escapeWheel.userData.hub,ring(.089,.14,-g.wheelDepth*.725,g.wheelDepth*.725,128),true);
  b.escapeWheel.userData.tipRidges.forEach(o=>o.visible=false);
  replace(b.escapeWheel.userData.indicator,new THREE.BoxGeometry(.24,.05,.012));b.escapeWheel.userData.indicator.position.set(.39,0,g.wheelDepth/2+.006);
  const source=b.palletBody.geometry.parameters.shapes.extractPoints(32).shape.map(p=>p.toArray());let body=poly(source);
@@ -26,10 +27,12 @@ export function finishSevenTooth238(root){
  replace(b.palletHub,ring(.094,.3,-.14,.14,128),true);
  replace(b.palletIndicator,new THREE.BoxGeometry(.30,.04,.012));b.palletIndicator.position.z=.116;
  b.frameRail.visible=false;b.palletBearingPost.visible=false;
- const bearing=new THREE.Mesh(ring(.094,.24,-.06,.06,128),b.palletHubRing.material);bearing.position.set(g.palletPivot.x,g.palletPivot.y,-.16);bearing.userData.role='bored-fixed-journal-at-A';root.add(bearing);parts.bearing=bearing;
+ const bearing=new THREE.Mesh(ring(.094,.24,-.06,.06,128),b.palletHubRing.material);// The journal sits 0.01 behind the hub's rear face (-0.14) instead of
+ // sharing 0.04 of its length; the arbor still passes fully through it.
+ bearing.position.set(g.palletPivot.x,g.palletPivot.y,-.2);bearing.userData.role='bored-fixed-journal-at-A';root.add(bearing);parts.bearing=bearing;
  d.workingParts=parts;d.hideGround=true;d.minimumDisplayCycleSeconds=6;
  d.sourceAnimation.reason='Animation unavailable: fetched source has no inline add_model or mm_present program.';
- d.reconstructionNote='The source axes, seven star tips and connected B/C carrier are retained. The reconstructed 4° half-swing and 5° impulse shorten B and remove 13.1% of the original star area for finite clearance. C has a supporting working tip, but B approaches a different flank whose loaded impulse is unresolved. Lock, impulse and drop remain prescribed; this is not a dynamically validated escapement. The undimensioned source has no animation.';
+ d.reconstructionNote='The source axes, seven star tips and connected B/C carrier are retained. The reconstructed 4° half-swing and 5° impulse shorten B and remove 14.3% of the plate-scaled star area for finite clearance. C has a supporting working tip, but B approaches a different flank whose loaded impulse is unresolved. Lock, impulse and drop remain prescribed; this is not a dynamically validated escapement. The undimensioned source has no animation.';
  d.contactQualification={completeTransmissionValidated:false,C:{finiteTipNormalCone:true},B:{finiteTipNormalCone:false,closestFlankImpulseValidated:false,witnessCycle:.22,closestGap:.00010332026832988482,normalVelocityMismatch:-.01678671122703923}};
  d.dynamics={forceValidated:false,prescribedOscillationAndDrop:true,velocityContinuous:true,profileAreaLoss:data.qualification.areaLossFraction};
  root.traverse(o=>{if(o.isMesh)for(const material of[].concat(o.material))material.fog=false;});

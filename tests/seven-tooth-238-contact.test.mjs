@@ -23,15 +23,18 @@ test('238 B uses actual wheel flank normals within the finite pallet corner cone
   maxNormalError=Math.max(maxNormalError,Math.abs(c.wheelVelocity.clone().sub(c.palletVelocity).dot(reaction)));
  }
  console.log({maxGap,maxSelectedFacetGap,maxCone,minWheel,minPallet,maxNormalError});
- assert.ok(maxGap<1e-9);assert.ok(maxCone<-.005);assert.ok(minWheel>.7);assert.ok(minPallet>.5);assert.ok(maxNormalError<1e-10);
+ assert.ok(maxGap<1e-9);assert.ok(maxCone<-.005);// The smaller plate-scaled star (tip radius 1.015, was 1.101) shortens both
+ // reaction moment arms (measured 0.608 and 0.454, formerly 0.717 and 0.521).
+ assert.ok(minWheel>.58);assert.ok(minPallet>.43);assert.ok(maxNormalError<1e-10);
 });
 test('238 B corner follows all preserved flank edges and ends at the unchanged tip',()=>{
  const d=create({id:238}).root.userData,g=d.geometry,branch=makeSevenTooth238Branch(d);let previous=-Infinity,maxVelocityError=0;
  for(let i=0;i<=2048;i++){const a=THREE.MathUtils.lerp(g.lowPalletAngle,branch.releaseAngle,i/2048),c=branch.at(a);assert.ok(c.angle>=previous-1e-12);assert.ok(c.ratio>0);previous=c.angle;
   if(i>0&&i<2048){const h=1e-8,left=branch.at(a-h),right=branch.at(a+h);if(left.edgeIndex===right.edgeIndex)maxVelocityError=Math.max(maxVelocityError,Math.abs((right.angle-left.angle)/(2*h)-c.ratio));}}
- assert.ok(maxVelocityError<1e-6);assert.ok(branch.release.point.length()-g.contactRadius<1e-12);assert.ok(branch.release.point.distanceTo(branch.release.wheelPoint.clone().rotateAround(new THREE.Vector2(),branch.release.angle))<1e-12);
- assert.ok(branch.releaseAngle<g.highPalletAngle);assert.ok(g.highPalletAngle-branch.releaseAngle<.00005);assert.ok(Number.isInteger(branch.release.edgeIndex));
- assert.equal(d.workingParts.profile.outline.length,1099);assert.equal(d.bContactBranch.profileUnchanged,true);console.log({initialWheel:branch.initial.angle,releaseWheel:branch.release.angle,releasePallet:branch.releaseAngle,maxVelocityError});
+ assert.ok(maxVelocityError<1e-6);// The cleaned contour stores the tip in Float32, which can round it up by ~2e-8.
+ assert.ok(branch.release.point.length()-g.contactRadius<1e-7);assert.ok(branch.release.point.distanceTo(branch.release.wheelPoint.clone().rotateAround(new THREE.Vector2(),branch.release.angle))<1e-12);
+ assert.ok(branch.releaseAngle<g.highPalletAngle);assert.ok(g.highPalletAngle-branch.releaseAngle<.0001);/* 7.1e-5 rad (0.004°) with the plate-scaled star; was 4.9e-5 */assert.ok(Number.isInteger(branch.release.edgeIndex));
+ assert.equal(d.workingParts.profile.outline.length,1078);assert.equal(d.bContactBranch.profileUnchanged,true);console.log({initialWheel:branch.initial.angle,releaseWheel:branch.release.angle,releasePallet:branch.releaseAngle,maxVelocityError});
 });
 test('238 lock resists attempted advance and both scheduled drops join continuously over repeated turns',()=>{
  const m=create({id:238}),d=m.root.userData,g=d.geometry,w=d.blocks.escapeWheel.userData.body,solid=solidSurface(w.geometry);

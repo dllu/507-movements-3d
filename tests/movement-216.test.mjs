@@ -296,16 +296,26 @@ test('movement 216 preserves the source radii, sector spans, transition teeth, a
     'pinion source/raster transform',
   );
 
-  near(canonicalTimes.midSlowForward, 2, 0, 'slow-stroke midpoint time');
-  near(canonicalTimes.externalToInternalHandoff, 4, 0,
+  // Display time starts at the plate's pose, a quarter input turn after the
+  // site animation's hand-off pose.
+  near(sourceAnimation.displayStartInputAngle, Math.PI / 2, 0,
+    'plate pose input angle');
+  near(sourceAnimation.displayTimeOffset, 2, 0, 'plate pose time offset');
+  near(canonicalTimes.sourcePose, 0, 0, 'plate pose time');
+  near(canonicalTimes.midSlowForward, 0, 0, 'slow-stroke midpoint time');
+  near(canonicalTimes.externalToInternalHandoff, 2, 0,
     'reversal handoff time');
   near(canonicalTimes.cycleClosure, 8, 0, 'cycle closure time');
+  near(canonicalTimes.animationHandoffPose, 6, 0,
+    'site animation hand-off time');
   near(canonicalStates.midSlowForward.pinionAngle, -Math.PI / 2, 1e-15,
     'slow-stroke midpoint pinion pose');
   near(canonicalStates.externalToInternalHandoff.pinionAngle, -Math.PI, 1e-15,
     'reversal pose');
-  near(canonicalStates.cycleClosure.pinionAngle, FULL_TURN, 1e-15,
-    'closure pose');
+  near(canonicalStates.cycleClosure.pinionAngle, FULL_TURN - Math.PI / 2,
+    1e-15, 'closure returns to the plate pose one output turn later');
+  near(canonicalStates.animationHandoffPose.pinionAngle, FULL_TURN, 1e-15,
+    'animation hand-off pose');
   disposeModel(model.root);
 });
 
@@ -491,7 +501,16 @@ test('movement 216 transition teeth remain collision-free and the rear carrier c
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 63, 'the undrawn frame is presented away');
+  // 30 teeth, 16 pinion teeth and the bodies, hubs and shafts remain once
+  // the undrawn frame, rate indices and contact markers are presented away.
+  assert.ok(meshCount >= 55, 'the undrawn frame is presented away');
+  const removedRoles = model.root.userData.sourcePresentation.removedRoles;
+  for (const role of [
+    'compound-input-angular-rate-index',
+    'pinion-variable-rate-index',
+    'slow-forward-external-mesh-contact',
+    'quick-reverse-internal-mesh-contact',
+  ]) assert.ok(removedRoles.includes(role), role);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   disposeModel(model.root);
 });
@@ -504,17 +523,20 @@ test('movement 216 runtime exposes both handoffs and leaves movement 507 authore
     geometry,
   } = model.root.userData;
 
-  model.update(canonicalTimes.sourcePose);
+  // One cycle earlier than the closure, i.e. the site animation's pose.
+  model.update(canonicalTimes.animationHandoffPose - 8);
   near(blocks.compound.userData.rotor.rotation.z, 0, 0,
-    'rendered source compound angle');
+    'rendered animation hand-off compound angle');
   near(blocks.pinion.userData.rotor.rotation.z, 0, 0,
-    'rendered source pinion angle');
+    'rendered animation hand-off pinion angle');
   assert.equal(blocks.externalContactMarker.visible, true);
   assert.equal(blocks.internalContactMarker.visible, true);
   assert.ok(model.root.userData.contacts.externalMesh);
   assert.ok(model.root.userData.contacts.internalMesh);
 
-  model.update(canonicalTimes.midSlowForward);
+  near(canonicalTimes.sourcePose, canonicalTimes.midSlowForward, 0,
+    'plate pose is the slow-stroke midpoint');
+  model.update(canonicalTimes.sourcePose);
   near(blocks.compound.userData.rotor.rotation.z, Math.PI / 2, 1e-15,
     'rendered slow-stroke compound angle');
   near(blocks.pinion.userData.rotor.rotation.z, -Math.PI / 2, 1e-15,
@@ -533,7 +555,7 @@ test('movement 216 runtime exposes both handoffs and leaves movement 507 authore
       .intentionalIdealGearHandoff,
     true,
   );
-  model.update(6);
+  model.update(4);
   near(blocks.compound.userData.rotor.rotation.z, 3 * Math.PI / 2, 2e-15,
     'rendered quick-stroke compound angle');
   near(blocks.pinion.userData.rotor.rotation.z, Math.PI / 2, 4e-15,
@@ -544,7 +566,7 @@ test('movement 216 runtime exposes both handoffs and leaves movement 507 authore
     3 * model.root.userData.transmission.inputAngularSpeed, 0,
     'rendered quick pinion speed');
 
-  model.update(canonicalTimes.cycleClosure);
+  model.update(canonicalTimes.animationHandoffPose);
   near(blocks.compound.userData.rotor.rotation.z, FULL_TURN, 2e-15,
     'rendered compound closure');
   near(blocks.pinion.userData.rotor.rotation.z, FULL_TURN, 2e-15,

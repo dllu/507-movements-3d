@@ -17,43 +17,37 @@ function gap(a,c){
 }
 function pose(u){const s=d.stateAtInputTravel(u);b.driver.userData.rotor.rotation.z=s.driverAngle;b.driven.userData.rotor.rotation.z=s.drivenAngle;b.driverShaft.userData.rotor.rotation.z=s.driverAngle;b.drivenShaft.userData.rotor.rotation.z=s.drivenAngle;model.root.updateMatrixWorld(true);return s;}
 
-test('214 actual generated gear pair clears through complete forward and reverse travel',()=>{
+test('214 square-toothed gear pair clears through complete forward and reverse travel',()=>{
   let minimum=Infinity,maximum=0;
   for(let i=0;i<=96;i++){
     pose(g.reverseInputLimit+(g.forwardInputLimit-g.reverseInputLimit)*i/96);
     const separation=gap(b.driverAssembly.gearBody,b.drivenAssembly.gearBody);
-    assert.ok(Number.isFinite(separation)&&separation>0&&separation<.0012,`${i}: ${separation}`);
+    assert.ok(Number.isFinite(separation)&&separation>.002&&separation<.08,`${i}: ${separation}`);
     minimum=Math.min(minimum,separation);maximum=Math.max(maximum,separation);
   }
-  for(const a of [b.driverAssembly,b.drivenAssembly])assert.match(a.gearBody.geometry.userData.generatedTeeth.toothProfile,/involute-with-root-transition/);
+  for(const a of [b.driverAssembly,b.drivenAssembly])assert.equal(a.gearBody.geometry.userData.generatedTeeth.toothProfile,'square-straight-flank-flat-tip-flat-root');
   console.log({id:214,minimumGearGap:minimum,maximumNearestGearGap:maximum});
 });
 
-test('214 both near tooth flanks transmit opposite shaft torque with consistent virtual work',()=>{
-  const gear=b.driverAssembly.gearBody,mate=b.drivenAssembly.gearBody;
-  const faces=surfaceTriangles(gear.geometry).map(t=>({point:t.getMidpoint(new THREE.Vector3()),normal:t.getNormal(new THREE.Vector3())})).filter(f=>Math.abs(f.normal.z)<.01);
-  let maximumGap=0,maximumWorkResidual=0;
-  for(let i=0;i<=32;i++){
-    pose(2*Math.PI*i/32);
+test('214 square teeth bound the counterwheel play on both flanks through a mesh cycle',()=>{
+  // Straight flanks are not conjugate: the prescribed ratio leaves play that
+  // varies through the mesh. Both flanks must stop the counterwheel within a
+  // small angle, so either rotation direction is transmitted.
+  const gear=b.driverAssembly.gearBody,mate=b.drivenAssembly.gearBody,step=.002;
+  let maximumNear=0,maximumTotal=0;
+  for(let i=0;i<=24;i++){
+    const u=2*Math.PI/10*i/24;pose(u);const base=b.driven.userData.rotor.rotation.z;
+    const play=[];
     for(const sign of[-1,1]){
-      let nearest=Infinity,best;
-      for(const f of faces){
-        const p=gear.localToWorld(f.point.clone()),n=f.normal.clone().transformDirection(gear.matrixWorld);
-        const driverMoment=(p.x-g.driverCenter.x)*n.y-(p.y-g.driverCenter.y)*n.x;
-        const drivenMoment=(p.x-g.drivenCenter.x)*n.y-(p.y-g.drivenCenter.y)*n.x;
-        if(driverMoment*sign<1||drivenMoment*sign> -1)continue;
-        const q=mate.worldToLocal(p.clone()),field=record(mate).field;
-        if(field.box.distanceToPoint(q)>.01)continue;
-        const separation=field.distance(q,.01);
-        if(separation<nearest){nearest=separation;best={driverMoment,drivenMoment};}
-      }
-      assert.ok(nearest<.0012,`${i}: side ${sign} has no close working flank: ${nearest}`);
-      const residual=Math.abs(best.driverMoment+(10/12)*best.drivenMoment)/Math.abs(best.driverMoment);
-      assert.ok(residual<.004,`finite involute virtual work ${residual}`);
-      maximumGap=Math.max(maximumGap,nearest);maximumWorkResidual=Math.max(maximumWorkResidual,residual);
+      let k=1;for(;k<=30;k++){b.driven.userData.rotor.rotation.z=base+sign*k*step;model.root.updateMatrixWorld(true);if(gap(gear,mate)<0)break;}
+      assert.ok(k>1&&k<=30,`${i}: side ${sign} play ${k*step}`);play.push(k*step);
     }
+    b.driven.userData.rotor.rotation.z=base;model.root.updateMatrixWorld(true);
+    maximumNear=Math.max(maximumNear,Math.min(...play));maximumTotal=Math.max(maximumTotal,play[0]+play[1]);
   }
-  console.log({id:214,maximumBothFlankGap:maximumGap,maximumWorkResidual});
+  assert.ok(maximumNear<=.016,`nearer-flank play ${maximumNear}`);
+  assert.ok(maximumTotal<=.048,`total play ${maximumTotal}`);
+  console.log({id:214,maximumNearerFlankPlay:maximumNear,maximumTotalPlay:maximumTotal});
 });
 
 test('214 unbeveled finite fingers clear the gears and retain both actual terminal stops',()=>{

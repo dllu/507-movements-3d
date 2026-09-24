@@ -105,8 +105,8 @@ export default {
   },
   216: {
     camera: [0.15, 0.12, 1],
-    remove: ['mutilated-compound-drive-base-rail', 'common-centerline-bearing-spine', 'mutilated-drive-(?:left|right)-foot', 'fixed-reversing-pinion-bearing'],
-    note: 'Face view of the internal and external mutilated wheels on one shaft and the reversing pinion below; both shafts are drawn cut in section, so their bearings lie outside the drawing and no frame is drawn.',
+    remove: ['mutilated-compound-drive-base-rail', 'common-centerline-bearing-spine', 'mutilated-drive-(?:left|right)-foot', 'fixed-reversing-pinion-bearing', 'compound-input-angular-rate-index', 'pinion-variable-rate-index', 'slow-forward-external-mesh-contact', 'quick-reverse-internal-mesh-contact'],
+    note: 'Face view of the internal and external mutilated wheels on one shaft and the reversing pinion below, opening at the plate\'s pose: the external sector mid-mesh below and the internal teeth round the upper half; both shafts are drawn cut in section, so their bearings lie outside the drawing and no frame is drawn. The white rate indices and contact markers are hidden.',
   },
   217: {
     camera: [0.15, 0.12, 1],

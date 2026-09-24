@@ -32612,8 +32612,14 @@ function compoundMutilatedExternalInternalGearReverser() {
         : null,
     };
   };
+  // Brown's plate shows the external sector's teeth round the lower half,
+  // mid-mesh with the pinion, and the internal teeth round the upper half.
+  // That is a quarter input turn after the site animation's hand-off pose,
+  // so display time starts there; the input-angle law is unchanged.
+  const plateInputAngle = Math.PI / 2;
+  const plateTimeOffset = plateInputAngle / inputAngularSpeed;
   const stateAtTime = (time) => ({
-    ...stateAtInputAngle(inputAngularSpeed * time),
+    ...stateAtInputAngle(inputAngularSpeed * (time + plateTimeOffset)),
     time,
   });
   const solidInterferenceAtInputAngle = (inputAngle) => {
@@ -32670,15 +32676,21 @@ function compoundMutilatedExternalInternalGearReverser() {
       ringPairs,
     };
   };
-  const canonicalTimes = {
-    cycleClosure: sourceCycleDuration,
-    externalToInternalHandoff: sourceCycleDuration / 2,
-    midQuickFirstHalfTurn: sourceCycleDuration * 7 / 12,
-    midSlowForward: sourceCycleDuration / 4,
-    quickFirstHalfTurnComplete: sourceCycleDuration * 2 / 3,
-    quickSecondHalfTurnComplete: sourceCycleDuration * 5 / 6,
-    sourcePose: 0,
-  };
+  // Display loops from the plate pose, so closure returns there one input
+  // turn later; the site animation's hand-off pose falls at 6 s.
+  const canonicalTimes = Object.fromEntries(Object.entries({
+    animationHandoffPose: fullTurn,
+    cycleClosure: plateInputAngle + fullTurn,
+    externalToInternalHandoff: Math.PI,
+    midQuickFirstHalfTurn: fullTurn * 7 / 12,
+    midSlowForward: Math.PI / 2,
+    quickFirstHalfTurnComplete: fullTurn * 2 / 3,
+    quickSecondHalfTurnComplete: fullTurn * 5 / 6,
+    sourcePose: plateInputAngle,
+  }).map(([name, inputAngle]) => [
+    name,
+    (inputAngle - plateInputAngle) / inputAngularSpeed,
+  ]));
   const canonicalStates = Object.fromEntries(
     Object.entries(canonicalTimes).map(([name, time]) => [
       name,
@@ -32795,6 +32807,8 @@ function compoundMutilatedExternalInternalGearReverser() {
   root.userData.sourceAnimation = {
     available: true,
     cyclesPerMinute: 15,
+    displayStartInputAngle: plateInputAngle,
+    displayTimeOffset: plateTimeOffset,
     durationSeconds: sourceCycleDuration,
     externalMeshCycleInterval: [0, 0.5],
     internalMeshCycleInterval: [0.5, 1],
@@ -32810,7 +32824,7 @@ function compoundMutilatedExternalInternalGearReverser() {
     fittedOuterRadius: ringOuterRadius * 70,
     fittedPinionCenter: sourceAnimationPointToRaster(pinionCenter),
     height: 525,
-    sourcePose: 'external-sector-entry-and-internal-sector-exit-handoff',
+    sourcePose: 'plate-pose-external-sector-mid-mesh-internal-teeth-overhead',
     sourceUrl: 'https://507movements.com/mm_216.html',
     width: 525,
   };

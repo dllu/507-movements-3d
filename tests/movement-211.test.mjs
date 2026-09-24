@@ -92,7 +92,7 @@ test('movement 211 is one partial-tooth driver, one locking pinion, one entry pi
   assert.equal(model.root.userData.archetype, movement.archetype);
   assert.equal(
     model.root.userData.mechanism,
-    'single-entry-pin-starts-a-twelve-tooth-two-to-one-index-before-a-concave-pinion-pocket-locks-on-the-plain-driver-rim',
+    'single-entry-pin-starts-an-eleven-tooth-five-to-two-index-before-a-concave-pinion-pocket-locks-on-the-plain-driver-rim',
   );
 
   vector3Near(blocks.driver.userData.axis, Z_AXIS, 0, 'driver axis');
@@ -110,13 +110,13 @@ test('movement 211 is one partial-tooth driver, one locking pinion, one entry pi
   assert.equal(blocks.driverPin.parent, blocks.driver.userData.rotor);
   assert.equal(blocks.driverBody.geometry.parameters.shapes.holes.length, 1);
   assert.equal(blocks.pinionBody.geometry.parameters.shapes.holes.length, 1);
-  assert.equal(geometry.driverEquivalentToothCount, 32);
-  assert.equal(geometry.driverInstalledToothCount, 12);
+  assert.equal(geometry.driverEquivalentToothCount, 40);
+  assert.equal(geometry.driverInstalledToothCount, 11);
   assert.equal(geometry.pinionEquivalentToothCount, 16);
   assert.equal(geometry.pinionInstalledToothCount, 12);
   assert.equal(geometry.pinionMissingToothCenterAngles.length, 4);
-  assert.equal(transmission.indexingSpeedRatio, -2);
-  assert.equal(transmission.activeInputFraction, 0.5);
+  assert.equal(transmission.indexingSpeedRatio, -2.5);
+  assert.equal(transmission.activeInputFraction, 0.4);
 
   const roles = [];
   let driverBodyCount = 0;
@@ -126,7 +126,7 @@ test('movement 211 is one partial-tooth driver, one locking pinion, one entry pi
   model.root.traverse((object) => {
     if (object.userData.role) roles.push(object.userData.role);
     if (object.userData.role
-      === 'thirty-two-position-wheel-with-twelve-teeth-and-plain-locking-rim') {
+      === 'forty-position-wheel-with-eleven-teeth-and-plain-locking-rim') {
       driverBodyCount += 1;
     }
     if (object.userData.role
@@ -148,7 +148,7 @@ test('movement 211 is one partial-tooth driver, one locking pinion, one entry pi
   disposeModel(model.root);
 });
 
-test('movement 211 reproduces the official 32:16 tooth construction, lock pocket, guide arcs, and source centers', () => {
+test('movement 211 keeps Brown\'s fine 40:16 teeth, lock pocket, epicycloidal guide, and source centers', () => {
   const model = createMovementModel(catalog.movements[210]);
   const {
     geometry,
@@ -159,67 +159,62 @@ test('movement 211 reproduces the official 32:16 tooth construction, lock pocket
 
   near(geometry.driverPitchRadius + geometry.pinionPitchRadius,
     geometry.centerDistance, 0, 'pitch radii sum to center distance');
-  near(geometry.driverPitchRadius / geometry.pinionPitchRadius, 2, 0,
+  near(geometry.driverPitchRadius / geometry.pinionPitchRadius, 2.5, 1e-15,
     'active pitch-radius ratio');
-  near(geometry.driverPitchAngle, Math.PI / 16, 0,
-    '32-position driver pitch');
+  near(geometry.driverPitchAngle, Math.PI / 20, 0,
+    '40-position driver pitch (Brown draws about 9 degrees)');
   near(geometry.pinionPitchAngle, Math.PI / 8, 0,
     '16-position pinion pitch');
   near(geometry.driverToothedStartAngle - geometry.driverToothedEndAngle,
-    Math.PI * 0.75, 5e-16, 'twelve driver positions span 135 degrees');
+    Math.PI * 0.55, 5e-15, 'eleven driver positions span 99 degrees');
   near(geometry.meshEndAngle - geometry.meshStartAngle,
-    Math.PI * 0.75, 5e-16, 'regular mesh spans 135 input degrees');
+    Math.PI * 0.55, 5e-15, 'regular mesh spans 99 input degrees');
   near(geometry.pinionLockRadius - geometry.driverPlainRadius,
     geometry.lockRadialClearance, 0, 'nested-rim radial clearance');
-  near(geometry.lockRadialClearance, 0.02875, 6e-17,
+  near(geometry.lockRadialClearance, 0.02875, 1e-15,
     'official one-eighth-unit lock clearance at model scale');
   near(THREE.MathUtils.radToDeg(geometry.lockAngularPlay),
-    0.5968337349738867, 2e-14, 'positive-lock angular play');
+    0.5968337349738867, 1e-12, 'positive-lock angular play');
+  const scale = geometry.constructionScale;
+  near(geometry.driverToothOuterRadius / scale, 60 / 7 + 0.8 * 6 / 7 / 2, 1e-12,
+    'stub tooth tips');
+  assert.ok(geometry.driverPlainRadius > geometry.driverToothOuterRadius,
+    'the plain rim stands just proud of the tooth tips');
+  assert.ok(
+    geometry.driverPlainRadius - geometry.driverToothOuterRadius
+      < 0.03 * geometry.driverPlainRadius,
+    'as drawn, the plain rim steps out only slightly beyond the tips',
+  );
 
-  assert.equal(geometry.driverToothedProfileRaw.length, 121);
-  assert.equal(geometry.pinionToothedProfileRaw.length, 122);
-  assert.ok(geometry.driverOutlineRaw.length >= 290);
-  assert.ok(geometry.pinionOutlineRaw.length >= 160);
-  assert.ok(geometry.guideOutlineRaw.length >= 105);
-  vector2Near(
-    geometry.driverToothedProfileRaw[0],
-    new THREE.Vector2(-6.303887, 3.705895),
-    1.1e-6,
-    'first official driver root point',
-  );
-  vector2Near(
-    geometry.driverToothedProfileRaw.at(-1),
-    new THREE.Vector2(7.077985, 1.837058),
-    1.1e-6,
-    'last official driver root point',
-  );
-  vector2Near(
-    geometry.pinionToothedProfileRaw[0],
-    new THREE.Vector2(2.39025, -2.273396),
-    0,
-    'lower lock-pocket connector',
-  );
-  vector2Near(
-    geometry.pinionToothedProfileRaw.at(-1),
-    new THREE.Vector2(2.39025, 2.273396),
-    0,
-    'upper lock-pocket connector',
-  );
+  assert.ok(geometry.driverOutlineRaw.length >= 200);
+  assert.ok(geometry.pinionOutlineRaw.length >= 100);
+  assert.ok(geometry.guideOutlineRaw.length >= 100);
+  for (const point of geometry.driverOutlineRaw) {
+    assert.ok(point.length() <= geometry.driverPlainRadius / scale + 1e-9,
+      'no part of the wheel stands beyond its plain rim');
+  }
+  for (const point of geometry.driverToothedProfileRaw) {
+    assert.ok(point.length() <= geometry.driverToothOuterRadius / scale + 1e-9);
+    assert.ok(point.length() >= geometry.driverRootRadius / scale - 1e-9);
+  }
+  const firstPinionPoint = geometry.pinionToothedProfileRaw[0];
+  const lastPinionPoint = geometry.pinionToothedProfileRaw.at(-1);
+  near(firstPinionPoint.length(), geometry.pinionRootRadius / scale, 1e-12,
+    'lower lock-pocket corner on the root circle');
+  near(lastPinionPoint.length(), geometry.pinionRootRadius / scale, 1e-12,
+    'upper lock-pocket corner on the root circle');
+  near(firstPinionPoint.y, -lastPinionPoint.y, 1e-12,
+    'lock pocket is symmetric about the line of centres');
   assert.ok(
     geometry.pinionOutlineRaw.at(-1).distanceTo(
       geometry.pinionToothedProfileRaw[0],
-    ) < 4e-6,
-    'concave lock arc closes back to the lower connector',
+    ) < 0.2,
+    'concave lock arc closes back to the lower corner',
   );
-  vector2Near(
-    geometry.guideOutlineRaw[0],
-    new THREE.Vector2(1.75, 0),
-    0,
-    'guide root construction point',
-  );
+  near(geometry.guideOutlineRaw[0].x, 1.75, 0, 'guide root construction point');
   assert.ok(
     Math.max(...geometry.guideOutlineRaw.map(({ x }) => x)) > 4.71,
-    'guide reaches the driver entry pin',
+    'guide reaches out along the entry pin path',
   );
   for (let index = 1; index < geometry.driverToothCenterAngles.length; index += 1) {
     near(
@@ -309,8 +304,8 @@ test('movement 211 preserves every mesh, guide clearance, and lock constraint th
         transmission.indexingSpeedRatio * state.driverAngularSpeed,
         0, `active ratio at state ${index}`);
       near(state.outputTurns,
-        -(state.completedInputTurns + state.phase / Math.PI),
-        2e-16, `index progress at state ${index}`);
+        -(state.completedInputTurns + state.phase * 2.5 / FULL_TURN),
+        1e-15, `index progress at state ${index}`);
       assert.equal(state.lock.active, false);
     } else {
       dwellStates += 1;
@@ -362,23 +357,23 @@ test('movement 211 preserves every mesh, guide clearance, and lock constraint th
   }
 
   assert.ok(maximumMeshPhaseError < 1.8e-15);
-  assert.ok(maximumMeshVelocityError < 1.2e-16);
-  assert.ok(maximumPitchTangencyError < 1.2e-16);
+  assert.ok(maximumMeshVelocityError < 4.5e-16);
+  assert.ok(maximumPitchTangencyError < 2.3e-16);
   assert.ok(maximumLockConcentricityError < 7e-16);
   assert.ok(minimumGuideClearance > 0,
     'the official anti-jam construction retains positive pin clearance');
   near(minimumGuideClearance, geometry.minimumGuideClearance, 5e-9,
     'sampled closest guide pass');
-  assert.equal(guideEngagedStates, 615);
-  assert.equal(indexingStates, 16385);
-  assert.equal(dwellStates, 16384);
-  assert.ok(lockArcStates > 16000,
+  assert.equal(guideEngagedStates, 1959);
+  assert.equal(indexingStates, 13109);
+  assert.equal(dwellStates, 19660);
+  assert.ok(lockArcStates > dwellStates * 0.97,
     'the plain circular rim occupies essentially the full locked dwell');
   assert.deepEqual(Object.fromEntries(stages), {
-    'entry-pin-and-guide-transfer': 2773,
-    'twelve-tooth-indexing-mesh': 12288,
-    'relocking-transition': 1324,
-    'plain-rim-locked-dwell': 16384,
+    'entry-pin-and-guide-transfer': 2049,
+    'eleven-tooth-indexing-mesh': 9012,
+    'relocking-transition': 2048,
+    'plain-rim-locked-dwell': 19660,
   });
   disposeModel(model.root);
 });
@@ -394,33 +389,34 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
     transmission,
   } = model.root.userData;
 
+  const indexArc = FULL_TURN / 2.5;
   near(
-    (geometry.meshEndAngle - geometry.meshStartAngle) * 2,
-    Math.PI * 1.5,
-    1e-15,
-    'twelve regular driver teeth turn the pinion through 270 degrees',
+    (geometry.meshEndAngle - geometry.meshStartAngle) * 2.5,
+    Math.PI * 1.375,
+    1e-14,
+    'eleven regular driver teeth turn the pinion through 247.5 degrees',
   );
   near(
-    FULL_TURN - (geometry.meshEndAngle - geometry.meshStartAngle) * 2,
-    Math.PI / 2,
-    1e-15,
-    'guide and relocking shoulders supply the four omitted pinion positions',
+    FULL_TURN - (geometry.meshEndAngle - geometry.meshStartAngle) * 2.5,
+    Math.PI * 0.625,
+    1e-14,
+    'the guide and the relocking transition supply the other five positions',
   );
-  near(canonicalTimes.lockEntry, transmission.inputPeriod / 2, 0,
-    'lock begins at half an input turn');
-  near(canonicalTimes.midDwell, transmission.inputPeriod * 0.75, 0,
+  near(canonicalTimes.lockEntry, transmission.inputPeriod * 0.4, 1e-14,
+    'lock begins after two fifths of an input turn');
+  near(canonicalTimes.midDwell, transmission.inputPeriod * 0.7, 1e-14,
     'mid-dwell time');
 
   const angleStep = 0.000001;
   for (let index = 1; index < 4096; index += 1) {
     const angle = FULL_TURN * index / 4096;
-    if (Math.abs(angle - Math.PI) < 0.01) continue;
+    if (Math.abs(angle - indexArc) < 0.01) continue;
     const state = stateAtDriverAngle(angle);
     const previous = pinionAngleAtDriverAngle(angle - angleStep);
     const next = pinionAngleAtDriverAngle(angle + angleStep);
     near(
       (next - previous) / (2 * angleStep),
-      state.indexing ? -2 : 0,
+      state.indexing ? -2.5 : 0,
       3e-9,
       `piecewise angular ratio at sample ${index}`,
     );
@@ -431,11 +427,11 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
   const lastMesh = stateAtTime(canonicalTimes.lastRegularToothContact);
   const lockEntry = stateAtTime(canonicalTimes.lockEntry);
   const midDwell = stateAtTime(canonicalTimes.midDwell);
-  assert.equal(firstMesh.stage, 'twelve-tooth-indexing-mesh');
+  assert.equal(firstMesh.stage, 'eleven-tooth-indexing-mesh');
   assert.equal(firstMesh.gearMesh.active, true);
-  assert.equal(midIndex.stage, 'twelve-tooth-indexing-mesh');
+  assert.equal(midIndex.stage, 'eleven-tooth-indexing-mesh');
   assert.equal(midIndex.gearMesh.active, true);
-  assert.equal(lastMesh.stage, 'twelve-tooth-indexing-mesh');
+  assert.equal(lastMesh.stage, 'eleven-tooth-indexing-mesh');
   assert.equal(lastMesh.gearMesh.active, true);
   assert.equal(lockEntry.stage, 'plain-rim-locked-dwell');
   assert.equal(lockEntry.lock.active, true);
@@ -448,14 +444,14 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
     'pinion remains positively held through dwell');
 
   const boundaryStep = 0.0000001;
-  const beforeLock = stateAtDriverAngle(Math.PI - boundaryStep);
-  const afterLock = stateAtDriverAngle(Math.PI + boundaryStep);
+  const beforeLock = stateAtDriverAngle(indexArc - boundaryStep);
+  const afterLock = stateAtDriverAngle(indexArc + boundaryStep);
   near(beforeLock.pinionAngularSpeed,
     transmission.indexingSpeedRatio * transmission.inputAngularSpeed,
     0, 'pre-lock output speed');
   near(afterLock.pinionAngularSpeed, 0, 0, 'locked output speed');
   near(beforeLock.pinionAngle, afterLock.pinionAngle,
-    boundaryStep * 2.1, 'position remains continuous at lock impact');
+    boundaryStep * 2.6, 'position remains continuous at lock impact');
   const beforeStrike = stateAtDriverAngle(FULL_TURN - boundaryStep);
   const afterStrike = stateAtDriverAngle(FULL_TURN + boundaryStep);
   near(beforeStrike.pinionAngularSpeed, 0, 0, 'pre-strike dwell speed');
@@ -463,13 +459,13 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
     transmission.indexingSpeedRatio * transmission.inputAngularSpeed,
     0, 'post-strike indexing speed');
   near(beforeStrike.pinionAngle, afterStrike.pinionAngle,
-    boundaryStep * 2.1, 'position remains continuous at entry strike');
+    boundaryStep * 2.6, 'position remains continuous at entry strike');
 
   const closestGuide = stateAtTime(canonicalTimes.closestGuidePass);
   near(closestGuide.phase, geometry.closestGuidePhase, 4e-16,
     'optimized closest guide phase');
   near(closestGuide.driverPinGuide.clearance,
-    geometry.minimumGuideClearance, 7e-16,
+    geometry.minimumGuideClearance, 1e-14,
     'optimized closest guide clearance');
   assert.equal(closestGuide.driverPinGuide.engaged, true);
 

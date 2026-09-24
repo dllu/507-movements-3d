@@ -66,22 +66,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/belts-1-23-review.md",
-        "note": "Production-route capture inspected beside the engraving after removing undrawn markers, grips and frames."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture inspected beside the plate with a narrow 9° view and no ground; the drum still reads heavier than Brown's block."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/belts-1-23-review.md",
         "note": "Finite guide separation and ribbon checks pass; free ribbon elasticity unqualified. Pass-50 relative-motion screen after boring/keying: see docs/belts-1-23-review.md."
       },
-      "flaws": "The weight drum reads large in perspective. Twisted free ribbon leaves are geometric shapes, not solved elastic equilibrium.",
+      "flaws": "Drum about 14% small relative to the wheel in the plane but reads heavy as a cylinder; belt centred where Brown puts it right of centre. Twisted free ribbon leaves are geometric shapes, not solved elastic equilibrium.",
       "references": [
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/belts-1-23-review.md"
+        "docs/belts-1-23-review.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1544,21 +1545,22 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane1-belts-gears-review.md",
-        "note": "Default capture inspected beside the plate: the web inside ring C is paper-coloured but still reads as a large pale disk."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture inspected beside the plate: C's supporting web is drawn in page colour, so the ring's interior reads blank."
       },
       "intersections": {
         "status": "sampled-clear",
         "evidence": "docs/lane1-belts-gears-review.md",
         "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "The undrawn web carrying ring C remains visible as a pale disk. 17/10/37 involutes differ from the plate's square teeth; hidden cup support is inferred.",
+      "flaws": "The web carrying ring C is painted to the page colour rather than removed. 17/10/37 involutes differ from the plate's square teeth; hidden cup support is inferred.",
       "references": [
         "artifacts/review/055-reconstruction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane1-belts-gears-review.md"
+        "docs/lane1-belts-gears-review.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2071,22 +2073,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: Brown's 11 teeth and the block moved to the plate position; the block reads larger than Brown's hatched corner."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture inspected beside the plate: shallow teeth (root 0.80 R) and a thin hatched block."
       },
       "intersections": {
         "status": "known",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the two intended spring-to-pad welds (0.0595, 0.0329) remain; B clears C's stop by 0.051."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only the two intended spring-to-pad welds, 0.040 and 0.033."
       },
-      "flaws": "Teeth are deeper than drawn (root 0.70 of the radius against ≈0.80); B is a round rod, not Brown's flat band; the fixed block is larger than the plate's hatched corner; two intended spring-to-pad welds remain.",
+      "flaws": "B is a round rod, not Brown's flat band; tooth backs slightly fin-like; the block is a free-standing slab, not the plate's hatched corner; two intended spring-to-pad welds remain.",
       "references": [
         "docs/mujoco-073-spring-study.md",
         "docs/review-progress.md",
         "artifacts/review/073-077-correction-notes.md",
         "docs/minimal-interface-review.md",
         "docs/intermittent-63-211-review.md",
-        "docs/lane2-intermittent-review.md"
+        "docs/lane2-intermittent-review.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -4122,23 +4125,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture of the rebaked bundle inspected beside the plate: traversing bar cut to a short eyed lug; the full rod and slider are still framed below the plate's stub."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-142.md",
-        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit. Pass-49 relative-motion screen reports 0.13 solid overlap (fixed-shoe-retaining-nonrotating-output-slider x finite-connecting-rod-from-planet-crank-to-guide-slider/SphereGeometry); unclassified, may be intended contact."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Production clearance report regenerated (721 samples): no penetrations. show-body-intersections screens only the older synchronous model."
       },
-      "flaws": "Undrawn base, rear post and slider guide are removed by source presentation; the traversing bar is longer than the plate’s stub. Complete output guide, 370-pixel rod and support depths are inferred where engraving truncates them.",
+      "flaws": "Undrawn base, rear post and slider guide are removed by source presentation. The full rod and slider are framed below the plate's truncated stub, so the disk reads smaller than drawn; output guide and support depths inferred.",
       "references": [
         "docs/movement-142.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6201,22 +6205,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Default capture inspected beside the plate with ground and shadow hidden; the toothed arc still follows the site construction."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture inspected beside the plate: fine square teeth on a short arc, rim just proud of the tips, plate-sized pinion."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Pass-51 relative-motion screen at 129 and 517 samples: no solid pairs after the rebuild."
       },
-      "flaws": "The toothed arc follows the site construction (12 teeth over 135°) where the plate has about 11 finer teeth over about 80°, and the plain rim steps out beyond the tooth tips.",
+      "flaws": "Arc spans 99° at 58–157° against the plate's ≈80° at 92–165°; pinion has 16 positions against ≈18; guide tongue curves upward where Brown's is straighter; about 22° of relocking is prescribed.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intermittent-63-211-review.md",
-        "docs/lane2-intermittent-review.md"
+        "docs/lane2-intermittent-review.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6289,20 +6294,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Default capture inspected beside the plate: shorter stub teeth with flat roots; the fingers remain long triangles."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture inspected beside the plate: square straight-flanked teeth and teardrop fingers in the plate's pose."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane2-intermittent-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): only zero-depth stop contact."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; terminal stops are solved tip-on-flank contacts."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Teeth are stubbed involutes rather than Brown's straight-flanked teeth; the fingers keep the site animation's long triangles and pose where Brown draws teardrops pointing up and up-right. Reversal, loads, impact and clearance take-up prescribed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Square teeth are not conjugate, so the ratio is prescribed with up to 0.042 rad of play; teeth narrower than drawn; finger lengths and the 75° counterwheel angle (plate ≈79°) are tuned for one stopping encounter; stop travel differs from the site's three turns; loads and impacts prescribed.",
       "references": [
         "docs/gear-finger-stop-214-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane2-intermittent-review.md"
+        "docs/lane2-intermittent-review.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6347,22 +6353,23 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane1-belts-gears-review.md",
-        "note": "Default capture inspected beside the plate: internal and external partial-tooth wheels with the pinion below; internal teeth cover only the working arc where Brown draws most of the ring."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture inspected beside the plate: opens at the plate's pose with the internal teeth round the upper half; indices and markers hidden."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lane1-belts-gears-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.0014 hand-off tooth overlap is fixed; no solid pairs."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "The pinion bearing lies in front of the drawing's cut and is not modelled. Internal teeth only on the working arc; t=0 follows the site animation's hand-off pose, a quarter turn from the plate's; tooth form comes from the animation, not the plate's square teeth.",
+      "flaws": "22 internal teeth over 165° against about 24 over 180°; the pinion bearing lies in front of the drawing's cut and is not modelled; tooth form comes from the animation; ground shadow shown.",
       "references": [
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
-        "docs/lane1-belts-gears-review.md"
+        "docs/lane1-belts-gears-review.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6979,20 +6986,21 @@
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/lane3-escapements-review.md",
-        "note": "Default capture inspected beside the plate after removing the motion indices; the star reads larger relative to the anchor than drawn."
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Default capture inspected beside the plate: star scaled to the anchor, small arbor boss, journal behind the hub."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/lane3-escapements-review.md",
-        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the pallet hub sits 0.04 inside its fixed journal at A and the anchor body 0.01 against it; B contact is tangent."
+        "status": "sampled-clear",
+        "evidence": "docs/lane9-residuals-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.040 hub/journal and 0.010 body/journal overlaps are fixed; only zero-depth working contact at B."
       },
-      "flaws": "Star wheel about 20% larger relative to the anchor than Brown draws; the bearing fit at A overlaps by 0.04. Oscillator/drop/impacts prescribed and C support retains small clearance rather than solved force transfer.",
+      "flaws": "Brown draws a six-point star; seven are kept per the site title and C's dashed line. Oscillation, drops and impacts prescribed; C support retains small clearance rather than solved force transfer.",
       "references": [
         "docs/seven-tooth-238-loaded-branch-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane3-escapements-review.md"
+        "docs/lane3-escapements-review.md",
+        "docs/lane9-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",

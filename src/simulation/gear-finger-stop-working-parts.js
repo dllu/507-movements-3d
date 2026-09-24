@@ -20,7 +20,7 @@ export function correctGearFingerStop(model){
     replace(assembly.gearBody,extrusion(outline,bore,-g.gearDepth/2,g.gearDepth/2));
     assembly.gearBody.geometry.userData.generatedTeeth={...profiles[teeth],outline:undefined};
     g[`${key}GearOutline`]=outline;
-    // Brown's stubbed teeth replace the site construction's deeper radii.
+    // Brown's short square teeth replace the site construction's deeper radii.
     const radii=outline.map(p=>p.length()),clearance=profiles[teeth].radialClearance;
     g[`${key}RootRadius`]=Math.min(...radii)+clearance;g[`${key}OuterRadius`]=Math.max(...radii)+clearance;
     // Keep the source's stop faces in the same common plane, without bevel
@@ -34,6 +34,9 @@ export function correctGearFingerStop(model){
     replace(arbor,plate(clip.difference(poly(keyed.map(p=>p.toArray())),poly(circle([0,0],.124,96))),-.18,.72));
     arbor.position.z=0;
     assembly.boreRing.visible=false;
+    // Brown outlines each teardrop over its wheel; a lighter tint keeps the
+    // coplanar finger legible against the same-coloured gear face.
+    assembly.fingerBody.material.color.lerp(new THREE.Color(0xfaf9f5),.25);
     // Brown draws no rate index on the fingers.
     assembly.motionIndex.visible=false;
     const old=b.uprights[index];old.visible=false;
@@ -48,7 +51,7 @@ export function correctGearFingerStop(model){
   b.forwardContactMarker.position.z+=.01;
   b.reverseContactMarker.position.z+=.01;
   d.workingSupports=workingSupports;
-  d.reconstructionNote='The 10:12 spur pair uses offline rounded-rack involutes with generated root transitions, stubbed toward the short square teeth Brown draws. A reconstructed 28-degree pressure angle preserves working engagement for these low tooth counts. The source stop fingers and exact opposite rotation are retained. Motion and reversal are prescribed; loading, backlash take-up, friction and impact are not simulated. Keyed joints and hidden support depth are reconstructed.';
+  d.reconstructionNote='The 10:12 spur pair keeps the site construction\'s pitch circles with the square, straight-flanked teeth Brown draws. Square flanks are not conjugate, so the ratio is prescribed and the pair runs with a few hundredths of backlash. The fingers are Brown\'s teardrops, a round boss tapering to a point, in the plate\'s pose; their lengths and the counterwheel finger angle are reconstructed so that one encounter per six-turn period blocks while the others pass clear. Motion and reversal are prescribed; loading, backlash take-up, friction and impact are not simulated. Keyed joints and hidden support depth are reconstructed.';
   d.hideGround=true;d.minimumDisplayCycleSeconds=d.timeline.demonstrationPeriod;
   root.traverse(o=>{for(const m of[].concat(o.material??[]))m.fog=false;});
   const bounds=new THREE.Box3(),point=new THREE.Vector3();

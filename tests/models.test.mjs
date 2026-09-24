@@ -4331,7 +4331,8 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
   assert.ok(Math.abs(midIndex.eventFraction - 0.5) < 1e-12);
   const toothPassMaximumRadius = Math.max(...Array.from({length: 101}, (_, i) =>
     atPhase(geometry.indexStartPhase + geometry.indexPhaseSpan*i/100).stopContact.centerRadius));
-  assert.ok(toothPassMaximumRadius > geometry.restStopContact.centerRadius + 0.2,
+  assert.ok(toothPassMaximumRadius > geometry.restStopContact.centerRadius
+    + (geometry.ratchetOuterRadius - geometry.ratchetRootRadius) * 0.6,
   'C flexes outward over the passing tooth while retaining the stop');
   assert.ok(Math.abs(indexExit.drivenAngle
     - indexEntry.drivenAngle + geometry.toothPitch) < 1e-12);
@@ -4408,7 +4409,8 @@ test('movement 73 lets carried spring B index A one tooth while fixed spring C p
   assert.ok(releaseSlideSamples > 0,
     'the finite-radius catch visibly slides free after the step');
   assert.ok(maximumStopRadius
-    > geometry.restStopContact.centerRadius + 0.2);
+    > geometry.restStopContact.centerRadius
+      + (geometry.ratchetOuterRadius - geometry.ratchetRootRadius) * 0.6);
   assert.ok(maximumStopVelocityError < 3e-7,
     'C and the rotating tooth have matching normal velocity at contact');
 

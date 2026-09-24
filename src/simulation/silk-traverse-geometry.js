@@ -43,7 +43,9 @@ export function makeSilkTraverseGeometry(){
  add(root,'guide-upper-bridge',rect(-.64,railTop,-.30,railTop+.08),.65,.83,PALETTE.frame);
  add(root,'guide-lower-bridge',rect(-.64,-5.96,-.30,railBottom+.03),.65,.83,PALETTE.frame);
  const shoe=new THREE.Mesh(plate(clip.difference(rect(-.41,.67,-.27,.85),rect(-.381,.699,-.299,.821)),0,.26),matte(PALETTE.driven));shoe.rotation.x=Math.PI/2;shoe.position.y=.13;shoe.name='bored-slider-shoe';slider.add(shoe);parts[shoe.name]=shoe;
- add(slider,'traversing-guide-bar',clip.union(rect(-.27,-.06,1.2,.06),circleAt([0,0],.10)),.73,.79,PALETTE.driven);
+ // The plate shows only a short stub below the crank; the guide bar is
+ // kept to a short lug ending in the thread eye rather than a long arm.
+ add(slider,'traversing-guide-bar',clip.difference(clip.union(rect(-.27,-.06,.30,.06),circleAt([0,0],.10),circleAt([.30,0],.09)),circleAt([.30,0],.04)),.73,.79,PALETTE.driven);
  pin(slider,'slider-joint-pin',[0,0],.485,.86,.07);
  add(root,'base',rect(-2.05,-6.08,2.05,-5.96),-.45,.90,PALETTE.frame);
  const update=time=>{const s=silkTraverseAtTime(time);carrier.rotation.z=s.angle;planet.rotation.z=k.ratio*s.angle;rod.position.set(...s.wrist,0);rod.rotation.z=s.rodAngle;slider.position.set(...s.slider,0);root.updateMatrixWorld(true);root.userData.state=s;};

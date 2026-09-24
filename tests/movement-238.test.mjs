@@ -104,7 +104,7 @@ test('movement 238 preserves source axes and B root with an explicitly shortened
 
   assert.deepEqual(plate.rasterWheelCenterD.toArray(), [214, 210]);
   assert.deepEqual(plate.rasterPalletPivotA.toArray(), [264, 354]);
-  assert.deepEqual(plate.rasterBRootContact.toArray(), [163, 253]);
+  assert.deepEqual(plate.rasterBRootContact.toArray(), [170, 253]);
   assert.deepEqual(plate.rasterBFaceEnd.toArray(), [207, 244]);
   assert.deepEqual(plate.rasterCInnerTip.toArray(), [290, 185]);
   assert.deepEqual(plate.rasterCOuterTip.toArray(), [331, 161]);
@@ -126,10 +126,10 @@ test('movement 238 preserves source axes and B root with an explicitly shortened
     2e-15,
     'source A-to-D offset',
   );
-  const sourceBRoot = new THREE.Vector2(-0.8415, -0.7095);
+  const sourceBRoot = new THREE.Vector2(-0.726, -0.7095);
   near(geometry.contactRadius, sourceBRoot.length(), 2e-15,
     'source D-to-B tooth-tip radius');
-  near(geometry.wheelMountPhase, Math.atan2(-0.7095, -0.8415), 2e-15,
+  near(geometry.wheelMountPhase, Math.atan2(-0.7095, -0.726), 2e-15,
     'source star mounting phase');
   const source = model.root.userData.nominalKinematics238.stateAtCycleCoordinate(0);
   assert.equal(source.stage, 'B-root-lock');
@@ -149,11 +149,11 @@ test('movement 238 preserves source axes and B root with an explicitly shortened
     210 - geometry.sourceBTipWorld.y / geometry.sourceScale,
   );
   assert.ok(
-    sourceBTipRaster.distanceTo(plate.rasterBFaceEnd) > 25 && sourceBTipRaster.distanceTo(plate.rasterBFaceEnd) < 27,
+    sourceBTipRaster.distanceTo(plate.rasterBFaceEnd) > 18 && sourceBTipRaster.distanceTo(plate.rasterBFaceEnd) < 20,
     `derived B face end ${sourceBTipRaster.toArray()} is shorter than the drawn face to accommodate finite clearance`,
   );
-  assert.ok(geometry.sourceNearestCTooth.segmentClearance > 0.39);
-  assert.ok(geometry.sourceNearestCTooth.segmentClearance < 0.40);
+  assert.ok(geometry.sourceNearestCTooth.segmentClearance > 0.36);
+  assert.ok(geometry.sourceNearestCTooth.segmentClearance < 0.37);
   disposeModel(model.root);
 });
 
@@ -296,7 +296,7 @@ test('movement 238 has two prescribed positive nominal drops and stationary lock
   }
   const firstMiddle = stateAtCycleCoordinate((first.start + first.end) / 2);
   const secondMiddle = stateAtCycleCoordinate((second.start + second.end) / 2);
-  near(firstMiddle.freeDropState.escapingClearance, 0.19869631963948048,
+  near(firstMiddle.freeDropState.escapingClearance, 0.1832494835615878,
     2e-15, 'B release midpoint clearance');
   near(firstMiddle.freeDropState.approachingClearance,
     firstMiddle.freeDropState.escapingClearance, 2e-15,
