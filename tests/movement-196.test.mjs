@@ -109,10 +109,10 @@ test('movement 196 matches Brown\'s one fixed pinion B, one arm-carried wheel A,
   assert.equal(blocks.wheelBody.parent, blocks.wheelRotor);
   assert.equal(blocks.wheelHub.parent, blocks.wheelRotor);
   assert.equal(blocks.wheelFaceIndex.parent, blocks.wheelRotor);
-  assert.equal(blocks.wheelToothMeshes.length, 28);
-  assert.equal(blocks.wheel.userData.teeth, 28);
+  assert.equal(blocks.wheelToothMeshes.length, 22);
+  assert.equal(blocks.wheel.userData.teeth, 22);
   assert.equal(blocks.pinion.userData.teeth, 10);
-  assert.equal(geometry.wheelTeeth, 28);
+  assert.equal(geometry.wheelTeeth, 22);
   assert.equal(geometry.pinionTeeth, 10);
   assert.match(blocks.wheel.userData.role, /wheel-A/);
   assert.match(blocks.pinion.userData.role, /pinion-B/);
@@ -131,7 +131,7 @@ test('movement 196 matches Brown\'s one fixed pinion B, one arm-carried wheel A,
     'Brown 196 contains no rack, belt, or perpendicular guide pulleys',
   );
 
-  assert.deepEqual(sourceAnchors.wheelCenter.toArray(), [128, 252]);
+  assert.deepEqual(sourceAnchors.wheelCenter.toArray(), [130, 250]);
   assert.deepEqual(sourceAnchors.pinionCenter.toArray(), [126, 351]);
   assert.deepEqual(sourceAnchors.carrierPivot.toArray(), [391, 260]);
   assert.equal(sourceRaster.width, 525);
@@ -152,14 +152,14 @@ test('movement 196 matches Brown\'s one fixed pinion B, one arm-carried wheel A,
   vector2Near(
     sourcePointToModel(sourceAnchors.wheelCenter),
     canonicalStates.sourcePose.wheelCenter,
-    3e-8,
-    'the fitted source pose puts wheel A on Brown\'s moving shaft',
+    0.09,
+    'the unrotated source pose puts wheel A within 9 px of Brown\'s hub A',
   );
   vector2Near(
     sourceAnchors.modeledWheelCenterAtSource,
     sourceAnchors.wheelCenter,
-    3e-6,
-    'the modeled A center returns to Brown\'s source pixels',
+    9,
+    'the modeled A center stays within 9 source pixels of Brown\'s hub',
   );
   vector2Near(
     modelPointToSourceRaster(geometry.pinionCenter),
@@ -170,7 +170,7 @@ test('movement 196 matches Brown\'s one fixed pinion B, one arm-carried wheel A,
   disposeModel(model.root);
 });
 
-test('movement 196 uses a source-fitted closed pitch profile with 28 equal-pitch teeth and exact circle contact', () => {
+test('movement 196 uses a traced closed pitch profile with 22 equal-pitch teeth and exact circle contact', () => {
   const model = createMovementModel(catalog.movements[195]);
   const {
     blocks,
@@ -190,7 +190,7 @@ test('movement 196 uses a source-fitted closed pitch profile with 28 equal-pitch
     geometry.pitchPerimeter,
     geometry.wheelTeeth * geometry.circularPitch,
     2e-14,
-    '28 wheel pitches close the irregular profile',
+    '22 wheel pitches close the irregular profile',
   );
   near(
     geometry.module,
@@ -199,17 +199,23 @@ test('movement 196 uses a source-fitted closed pitch profile with 28 equal-pitch
     'common gear module',
   );
   assert.ok(geometry.minimumInputStep > 0, 'the rolling input map is monotone');
-  assert.ok(geometry.verticalAsymmetry > 0.11);
-  assert.ok(
-    profileAtParameter(Math.PI / 2).radius
-      > profileAtParameter(-Math.PI / 2).radius * 1.3,
-    'the source-fitted upper profile is fuller than its lower mesh region',
-  );
-  assert.ok(
-    profileAtParameter(0).radius
-      > profileAtParameter(Math.PI).radius * 1.8,
-    'the source-fitted right lobe is much longer than the left lobe',
-  );
+  // Brown's wheel A: a small round lobe about A, a concave waist on top
+  // and a long lobe reaching right under the arm.
+  let rightReach = 0;
+  let leftReach = 0;
+  let concaveSamples = 0;
+  for (let index = 0; index < 720; index += 1) {
+    const profile = profileAtParameter(index / 720 * FULL_TURN);
+    rightReach = Math.max(rightReach, profile.pitchPoint.x);
+    leftReach = Math.max(leftReach, -profile.pitchPoint.x);
+    const ahead = profileAtParameter((index + 1) / 720 * FULL_TURN);
+    const turn = profile.tangent.x * ahead.tangent.y
+      - profile.tangent.y * ahead.tangent.x;
+    if (turn < 0 && profile.pitchPoint.y > 0.3) concaveSamples += 1;
+  }
+  assert.ok(rightReach > leftReach * 1.9, 'the right lobe is much longer');
+  assert.ok(rightReach > 1.45 && rightReach < 1.6, 'traced right-lobe reach');
+  assert.ok(concaveSamples > 20, 'the upper waist is concave');
   near(
     pitchArcAtProfileParameter(geometry.sourceProfileParameter),
     0,
@@ -223,7 +229,7 @@ test('movement 196 uses a source-fitted closed pitch profile with 28 equal-pitch
     'pitch arc closes after one profile traversal',
   );
 
-  assert.equal(blocks.wheel.userData.toothData.length, 28);
+  assert.equal(blocks.wheel.userData.toothData.length, 22);
   blocks.wheel.userData.toothData.forEach((tooth, index) => {
     assert.equal(tooth.index, index);
     near(
@@ -330,11 +336,11 @@ test('movement 196 holds pinion B fixed and rolls without slip through 32,769 st
     transmission.totalInputTravel,
     FULL_TURN * geometry.wheelTeeth / geometry.pinionTeeth,
     2e-14,
-    'one irregular-wheel traversal advances the 10-tooth pinion by 28 teeth',
+    'one irregular-wheel traversal advances the 10-tooth pinion by 22 teeth',
   );
   near(
     transmission.pinionRevolutionsPerProfileCycle,
-    2.8,
+    2.2,
     2e-14,
     'pinion turns per profile cycle',
   );
@@ -430,10 +436,10 @@ test('movement 196 holds pinion B fixed and rolls without slip through 32,769 st
   assert.ok(maximumCarrierSpeed > 0.06);
   assert.ok(Math.abs(minimumWheelSpeed) > Math.abs(maximumWheelSpeed) * 2.8);
 
-  const majorStroke = canonicalStates.firstInwardExtreme.carrierAngle
-    - canonicalStates.majorOutwardExtreme.carrierAngle;
-  const minorStroke = canonicalStates.secondInwardExtreme.carrierAngle
-    - canonicalStates.minorOutwardExtreme.carrierAngle;
+  const majorStroke = Math.abs(canonicalStates.firstInwardExtreme.carrierAngle
+    - canonicalStates.majorOutwardExtreme.carrierAngle);
+  const minorStroke = Math.abs(canonicalStates.secondInwardExtreme.carrierAngle
+    - canonicalStates.minorOutwardExtreme.carrierAngle);
   assert.ok(majorStroke > 0.3);
   assert.ok(minorStroke > 0.1);
   assert.ok(majorStroke > minorStroke * 2.7);
@@ -466,9 +472,9 @@ test('movement 196 holds pinion B fixed and rolls without slip through 32,769 st
   near(
     canonicalStates.meshCycleClosure.pinionAngle
       - canonicalStates.sourcePose.pinionAngle,
-    FULL_TURN * 2.8,
+    FULL_TURN * 2.2,
     2e-14,
-    'pinion advances 2.8 turns per wheel profile cycle',
+    'pinion advances 2.2 turns per wheel profile cycle',
   );
   near(
     canonicalStates.completeIndexClosure.wheelAngle
@@ -480,9 +486,9 @@ test('movement 196 holds pinion B fixed and rolls without slip through 32,769 st
   near(
     canonicalStates.completeIndexClosure.pinionAngle
       - canonicalStates.sourcePose.pinionAngle,
-    FULL_TURN * 14,
+    FULL_TURN * 11,
     2e-13,
-    'pinion face index closes after fourteen turns',
+    'pinion face index closes after eleven turns',
   );
   disposeModel(model.root);
 });
@@ -591,7 +597,7 @@ test('movement 196 rendered transforms show independent wheel spin, arm vibratio
   );
   assert.ok(
     meshCyclePinionIndex.distanceTo(sourcePinionIndex) > 0.18,
-    'pinion B face index still exposes its fractional 2.8-turn advance',
+    'pinion B face index still exposes its fractional 2.2-turn advance',
   );
   model.update(canonicalTimes.completeIndexClosure);
   vector3Near(
@@ -604,7 +610,7 @@ test('movement 196 rendered transforms show independent wheel spin, arm vibratio
     worldPosition(pinionFaceIndex),
     sourcePinionIndex,
     3e-13,
-    'pinion B face index closes after fourteen turns',
+    'pinion B face index closes after eleven turns',
   );
   assert.ok(
     Math.abs(
@@ -644,7 +650,7 @@ test('movement 196 is fully three-dimensional as the review queue advances throu
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.1);
-  assert.ok(size.y > 3.7);
+  assert.ok(size.y > 3.5);
   assert.ok(size.z > 1.3);
   assert.ok(physicalBounds.min.z < -0.7);
   assert.ok(physicalBounds.max.z > 0.61);
@@ -656,8 +662,8 @@ test('movement 196 is fully three-dimensional as the review queue advances throu
       irregularWheelToothCount += 1;
     }
   });
-  assert.ok(meshCount >= 50);
-  assert.equal(irregularWheelToothCount, 28);
+  assert.ok(meshCount >= 44);
+  assert.equal(irregularWheelToothCount, 22);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 1.7);

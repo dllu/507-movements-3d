@@ -46,7 +46,10 @@ export function finishReversingMangleGuides(root,update,id) {
   }
   if(cavities[id]) {
     const cavity=poly(cavities[id].points);
-    const toothLand=new THREE.Mesh(plate(clip.difference(disk,cavity,bore),front,.36),b.wheelBody.material);
+    // 192's teeth border a raised hooked land with the pinion running
+    // outside it; 193's pinion runs inside its pitch loop.
+    const land=g.toothLandInsidePitchLoop?clip.difference(clip.intersection(disk,cavity),bore):clip.difference(disk,cavity,bore);
+    const toothLand=new THREE.Mesh(plate(land,front,.36),b.wheelBody.material);
     toothLand.userData.role='generated-conjugate-mangle-cavity';
     b.wheelRotor.add(toothLand);
     const retired=new Set();

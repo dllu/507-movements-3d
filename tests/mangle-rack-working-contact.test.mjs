@@ -97,7 +97,8 @@ test('198 suspension eyes and fixed guide rollers have finite journals and rail 
   for (const roller of b.guideRollers) {
     const field = solidSurface(roller.userData.hub.geometry);
     assert.ok(field.signedDistance(new THREE.Vector3(0.058, 0, 0)) > 0.0029);
-    assert.ok(Math.abs(roller.position.y) - d.geometry.guideRollerRadius - d.geometry.frameHalfHeight - 0.0525 > 0.0019);
-    assert.ok(Math.abs(roller.position.y) - d.geometry.guideRollerRadius - d.geometry.frameHalfHeight - 0.0525 < 0.0021);
+    const edge = roller.userData.verticalSign > 0 ? d.geometry.frameTop : d.geometry.frameHalfHeight;
+    assert.ok(Math.abs(roller.position.y) - d.geometry.guideRollerRadius - edge - 0.0525 > 0.0019);
+    assert.ok(Math.abs(roller.position.y) - d.geometry.guideRollerRadius - edge - 0.0525 < 0.0021);
   }
 });

@@ -17472,8 +17472,12 @@ function progressiveSpeedScrollGears() {
     return (low + high) / 2;
   };
 
+  // Brown's plate puts the upper wheel's long side left of the step and the
+  // lower wheel's long side right of it.  The upper scroll is the uniform
+  // Archimedean driver turning clockwise (driverAngle = -inputAngle) with
+  // its contact at the bottom; the lower scroll follows counter-clockwise.
   const driverPitchPointAtPhi = (phi) => {
-    const angle = Math.PI / 2 - phi;
+    const angle = -Math.PI / 2 + phi;
     const radius = driverPitchRadiusAtPhi(phi);
     return new THREE.Vector2(
       Math.cos(angle) * radius,
@@ -17481,7 +17485,7 @@ function progressiveSpeedScrollGears() {
     );
   };
   const drivenPitchPointAtPhi = (phi) => {
-    const angle = -Math.PI / 2 + drivenAdvanceAtPhi(phi);
+    const angle = Math.PI / 2 - drivenAdvanceAtPhi(phi);
     const radius = drivenPitchRadiusAtPhi(phi);
     return new THREE.Vector2(
       Math.cos(angle) * radius,
@@ -17489,20 +17493,20 @@ function progressiveSpeedScrollGears() {
     );
   };
   const driverPitchDerivativeAtPhi = (phi) => {
-    const angle = Math.PI / 2 - phi;
+    const angle = -Math.PI / 2 + phi;
     const radius = driverPitchRadiusAtPhi(phi);
     return new THREE.Vector2(
-      radialSlope * Math.cos(angle) + radius * Math.sin(angle),
-      radialSlope * Math.sin(angle) - radius * Math.cos(angle),
+      radialSlope * Math.cos(angle) - radius * Math.sin(angle),
+      radialSlope * Math.sin(angle) + radius * Math.cos(angle),
     );
   };
   const drivenPitchDerivativeAtPhi = (phi) => {
-    const angle = -Math.PI / 2 + drivenAdvanceAtPhi(phi);
+    const angle = Math.PI / 2 - drivenAdvanceAtPhi(phi);
     const radius = drivenPitchRadiusAtPhi(phi);
     const ratio = speedRatioAtPhi(phi);
     return new THREE.Vector2(
-      -radialSlope * Math.cos(angle) - radius * ratio * Math.sin(angle),
-      -radialSlope * Math.sin(angle) + radius * ratio * Math.cos(angle),
+      -radialSlope * Math.cos(angle) + radius * ratio * Math.sin(angle),
+      -radialSlope * Math.sin(angle) - radius * ratio * Math.cos(angle),
     );
   };
   const outwardNormal = (point, tangent) => {
@@ -17561,8 +17565,8 @@ function progressiveSpeedScrollGears() {
     assembly.userData.axis = Z_AXIS.clone();
     assembly.userData.rotor = rotor;
     assembly.userData.role = driven
-      ? 'progressively-accelerating-upper-driven-scroll-gear'
-      : 'constant-speed-lower-driver-scroll-gear';
+      ? 'progressively-accelerating-lower-driven-scroll-gear'
+      : 'constant-speed-upper-driver-scroll-gear';
 
     const profile = Array.from({ length: profileSamples + 1 }, (_, index) => {
       const phi = index / profileSamples * fullTurn;
@@ -17632,8 +17636,8 @@ function progressiveSpeedScrollGears() {
       colorMaterial,
     );
     body.userData.role = driven
-      ? 'upper-conjugate-scroll-root-body-with-radial-reset-seam'
-      : 'lower-archimedean-scroll-root-body-with-radial-reset-seam';
+      ? 'lower-conjugate-scroll-root-body-with-radial-reset-seam'
+      : 'upper-archimedean-scroll-root-body-with-radial-reset-seam';
     rotor.add(body);
 
     const rootHalfWidth = circularPitch * 0.27;
@@ -17672,8 +17676,8 @@ function progressiveSpeedScrollGears() {
       tooth.userData.pitchArc = wrappedPitchArc;
       tooth.userData.pitchPoint = pitchPoint.clone();
       tooth.userData.role = driven
-        ? 'upper-scroll-gear-tooth'
-        : 'lower-scroll-gear-tooth';
+        ? 'lower-scroll-gear-tooth'
+        : 'upper-scroll-gear-tooth';
       teeth.push(tooth);
       toothData.push({
         index,
@@ -17695,8 +17699,8 @@ function progressiveSpeedScrollGears() {
     );
     hub.rotation.x = Math.PI / 2;
     hub.userData.role = driven
-      ? 'upper-scroll-gear-hub'
-      : 'lower-scroll-gear-hub';
+      ? 'lower-scroll-gear-hub'
+      : 'upper-scroll-gear-hub';
     rotor.add(hub);
 
     const pitchCurve = new THREE.CatmullRomCurve3(
@@ -17719,8 +17723,8 @@ function progressiveSpeedScrollGears() {
       pitchMaterial,
     );
     pitchLine.userData.role = driven
-      ? 'upper-conjugate-pitch-scroll'
-      : 'lower-archimedean-pitch-scroll';
+      ? 'lower-conjugate-pitch-scroll'
+      : 'upper-archimedean-pitch-scroll';
     rotor.add(pitchLine);
 
     const seam = new THREE.Group();
@@ -17742,8 +17746,8 @@ function progressiveSpeedScrollGears() {
       ));
     }
     seam.userData.role = driven
-      ? 'upper-radial-speed-reset-seam'
-      : 'lower-radial-speed-reset-seam';
+      ? 'lower-radial-speed-reset-seam'
+      : 'upper-radial-speed-reset-seam';
     rotor.add(seam);
 
     const indexPhi = driven ? fullTurn * 0.37 : fullTurn * 0.63;
@@ -17762,8 +17766,8 @@ function progressiveSpeedScrollGears() {
       gearDepth / 2 + 0.055,
     );
     faceIndex.userData.role = driven
-      ? 'white-index-on-upper-variable-speed-output'
-      : 'white-index-on-lower-constant-speed-driver';
+      ? 'white-index-on-lower-variable-speed-output'
+      : 'white-index-on-upper-constant-speed-driver';
     rotor.add(faceIndex);
 
     assembly.userData.body = body;
@@ -17798,14 +17802,14 @@ function progressiveSpeedScrollGears() {
     driven: true,
     toothOriginArc: circularPitch / 2,
   });
-  driver.position.copy(lowerCenter);
-  driven.position.copy(upperCenter);
+  driver.position.copy(upperCenter);
+  driven.position.copy(lowerCenter);
   root.add(driver, driven);
 
   // The plate shows each shaft cut off at the boss face, so the axles stop
   // just proud of the hubs instead of standing out toward the viewer.
-  const driverShaft = addAxle(root, lowerCenter, 1.0, Z_AXIS);
-  const drivenShaft = addAxle(root, upperCenter, 1.0, Z_AXIS);
+  const driverShaft = addAxle(root, upperCenter, 1.0, Z_AXIS);
+  const drivenShaft = addAxle(root, lowerCenter, 1.0, Z_AXIS);
   driverShaft.position.z = drivenShaft.position.z = -0.24;
   driverShaft.userData.role = 'constant-speed-input-shaft';
   drivenShaft.userData.role = 'progressively-accelerating-output-shaft';
@@ -17845,12 +17849,12 @@ function progressiveSpeedScrollGears() {
     return bearing;
   };
   const driverBearing = makeBearingCollar(
-    lowerCenter,
-    'fixed-bearing-for-lower-driver-shaft',
+    upperCenter,
+    'fixed-bearing-for-upper-driver-shaft',
   );
   const drivenBearing = makeBearingCollar(
-    upperCenter,
-    'fixed-bearing-for-upper-output-shaft',
+    lowerCenter,
+    'fixed-bearing-for-lower-output-shaft',
   );
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.068, 20, 14),
@@ -17887,16 +17891,17 @@ function progressiveSpeedScrollGears() {
     const driverPitchRadius = driverPitchRadiusAtPhi(localPhi);
     const drivenPitchRadius = centerDistance - driverPitchRadius;
     const instantaneousSpeedRatio = driverPitchRadius / drivenPitchRadius;
-    const outputAngle = -drivenAdvance;
-    const outputAngularSpeed = -driverAngularSpeed
+    const driverAngle = -inputAngle;
+    const outputAngle = drivenAdvance;
+    const outputAngularSpeed = driverAngularSpeed
       * instantaneousSpeedRatio;
-    const outputAngularAcceleration = -driverAngularSpeed
+    const outputAngularAcceleration = driverAngularSpeed
       * driverAngularSpeed * speedRatioDerivativeAtPhi(localPhi);
     const driverLocalPitchPoint = driverPitchPointAtPhi(localPhi);
     const drivenLocalPitchPoint = drivenPitchPointAtPhi(localPhi);
     const driverWorldRelativePoint = rotateVector2(
       driverLocalPitchPoint,
-      inputAngle,
+      driverAngle,
     );
     const drivenWorldRelativePoint = rotateVector2(
       drivenLocalPitchPoint,
@@ -17904,11 +17909,11 @@ function progressiveSpeedScrollGears() {
     );
     const driverWorldPitchPoint = vector2ToWorld3(
       driverWorldRelativePoint,
-      lowerCenter,
+      upperCenter,
     );
     const drivenWorldPitchPoint = vector2ToWorld3(
       drivenWorldRelativePoint,
-      upperCenter,
+      lowerCenter,
     );
     const contactPoint = driverWorldPitchPoint.clone().add(
       drivenWorldPitchPoint,
@@ -17919,7 +17924,7 @@ function progressiveSpeedScrollGears() {
       .normalize();
     const driverWorldTangent2 = rotateVector2(
       driverLocalTangent,
-      inputAngle,
+      driverAngle,
     );
     const drivenWorldTangent2 = rotateVector2(
       drivenLocalTangent,
@@ -17927,7 +17932,7 @@ function progressiveSpeedScrollGears() {
     );
     const driverContactVelocity2 = velocityAtPlanarPoint(
       driverWorldRelativePoint,
-      driverAngularSpeed,
+      -driverAngularSpeed,
     );
     const drivenContactVelocity2 = velocityAtPlanarPoint(
       drivenWorldRelativePoint,
@@ -17986,6 +17991,8 @@ function progressiveSpeedScrollGears() {
         driverWorldTangent2.y,
         0,
       ),
+      driverAngle,
+      driverAngularVelocity: -driverAngularSpeed,
       inputAngle,
       inputAngularSpeed: driverAngularSpeed,
       instantaneousSpeedRatio,
@@ -18040,8 +18047,8 @@ function progressiveSpeedScrollGears() {
     sourceOrigin.y - point.y / sourceScale,
   );
   const sourceInitialContact = new THREE.Vector2(
-    sourceLowerCenter.x,
-    sourceLowerCenter.y - minimumDriverRadius / sourceScale,
+    sourceUpperCenter.x,
+    sourceUpperCenter.y + minimumDriverRadius / sourceScale,
   );
   const canonicalTimes = {
     sourcePose: 0,
@@ -18146,9 +18153,9 @@ function progressiveSpeedScrollGears() {
 
   const update = (time) => {
     const state = stateAtTime(time);
-    setSpin(driver, state.inputAngle);
+    setSpin(driver, state.driverAngle);
     setSpin(driven, state.outputAngle);
-    setSpin(driverShaft, state.inputAngle);
+    setSpin(driverShaft, state.driverAngle);
     setSpin(drivenShaft, state.outputAngle);
     contactMarker.position.set(
       state.contactPoint.x,
@@ -18178,76 +18185,170 @@ function progressiveSpeedScrollGears() {
 function eccentricVariableSpeedMangleWheel() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
-  const sourceWheelCenter = new THREE.Vector2(261, 264);
-  const sourceEccentricCenter = new THREE.Vector2(252, 268);
-  const sourceOuterPitchRadius = 187;
-  const sourceScale = 1.52 / sourceOuterPitchRadius;
-  const pinionTeeth = 10;
-  const pinionPitchRadius = 0.26;
-  const module = pinionPitchRadius * 2 / pinionTeeth;
-  const circularPitch = Math.PI * module;
-  const mangleTeeth = 85;
-  const outerPitchRadius = 1.52;
-  const innerPitchRadius = 0.82;
-  const connectorRadius = (outerPitchRadius - innerPitchRadius) / 2;
-  const connectorCenterRadius = (outerPitchRadius + innerPitchRadius) / 2;
-  const pitchPerimeter = mangleTeeth * circularPitch;
-  const gapHalfAngle = (
-    fullTurn * (outerPitchRadius + innerPitchRadius)
-      + Math.PI * (outerPitchRadius - innerPitchRadius)
-      - pitchPerimeter
-  ) / (2 * (outerPitchRadius + innerPitchRadius));
-  const gapCenterAngle = 1.295;
-  const rightGapAngle = gapCenterAngle + gapHalfAngle;
-  const leftGapAngle = gapCenterAngle - gapHalfAngle + fullTurn;
-  const mainArcSweep = fullTurn - 2 * gapHalfAngle;
-  const eccentricCenter = new THREE.Vector2(
-    (sourceEccentricCenter.x - sourceWheelCenter.x) * sourceScale,
-    (sourceWheelCenter.y - sourceEccentricCenter.y) * sourceScale,
+  // Brown's toothed path is not a pair of eccentric circles: it is one closed
+  // hooked curve. The pitch knots below were traced from mm_192.png with
+  // scripts/extract-engraving-contours.py plus a normal-profile scan of the
+  // crenellated ink (source pixels, tangent angle in the y-up model frame),
+  // smoothed, and joined by tangent-continuous biarcs. The outer run follows
+  // the rim; at d it turns down the neck, wraps the hub lobe below the shaft,
+  // rises through the right-hand lobe and returns along the rim. The pinion
+  // runs outside this toothed land and its shaft follows the parallel groove
+  // b, d drawn one pinion radius away.
+  const sourceWheelCenter = new THREE.Vector2(261, 263);
+  const sourceScale = 1.52 / 187;
+  const tracedPitchKnots = [
+    [259.62, 452.19, -3.09018],
+    [230.53, 450.74, 2.99339],
+    [202.45, 443.9, 2.81541],
+    [175.71, 432.36, 2.6559],
+    [150.98, 416.89, 2.5114],
+    [128.68, 398.17, 2.37653],
+    [109.07, 376.69, 2.24516],
+    [92.45, 352.82, 2.11151],
+    [79.32, 327.04, 1.97094],
+    [70.04, 299.44, 1.81698],
+    [65.27, 270.72, 1.65399],
+    [65.15, 241.7, 1.49705],
+    [69.49, 213.04, 1.34384],
+    [78.21, 185.23, 1.18966],
+    [91.13, 159.14, 1.03182],
+    [108.06, 135.46, 0.86704],
+    [128.68, 115.0, 0.69453],
+    [152.56, 98.47, 0.51559],
+    [179.26, 87.06, 0.26357],
+    [207.83, 87.1, -0.37846],
+    [226.0, 108.64, -1.26074],
+    [229.87, 137.31, -1.57644],
+    [225.46, 165.84, -1.92119],
+    [207.56, 188.29, -2.48721],
+    [185.57, 207.26, -2.29407],
+    [169.49, 231.48, -2.02499],
+    [160.27, 258.93, -1.76045],
+    [159.22, 287.9, -1.44033],
+    [168.14, 315.41, -1.08174],
+    [185.66, 338.55, -0.77005],
+    [209.27, 355.51, -0.47463],
+    [236.63, 364.64, -0.16849],
+    [265.68, 365.36, 0.11478],
+    [293.8, 358.03, 0.39999],
+    [318.27, 342.5, 0.74585],
+    [335.53, 319.27, 1.10911],
+    [344.27, 291.6, 1.40974],
+    [345.29, 262.73, 1.65405],
+    [340.08, 234.04, 1.81499],
+    [333.39, 205.78, 1.74723],
+    [334.24, 176.96, 1.21324],
+    [354.46, 157.11, 0.41942],
+    [382.84, 153.82, -0.21999],
+    [407.07, 169.07, -0.82723],
+    [422.3, 193.64, -1.1958],
+    [428.87, 222.03, -1.46779],
+    [429.58, 250.94, -1.60522],
+    [427.57, 280.03, -1.67754],
+    [422.99, 308.87, -1.78609],
+    [414.83, 336.59, -1.93511],
+    [402.02, 362.87, -2.11239],
+    [385.07, 386.44, -2.27341],
+    [364.64, 407.17, -2.42389],
+    [341.5, 424.55, -2.57128],
+    [315.84, 438.36, -2.72624],
+    [288.31, 447.84, -2.89666],
+  ];
+  const pinionTeeth = 6;
+  const mangleTeeth = 65;
+  const sourceToModel2 = (x, y) => new THREE.Vector2(
+    (x - sourceWheelCenter.x) * sourceScale,
+    (sourceWheelCenter.y - y) * sourceScale,
   );
+  let pitchKnots = tracedPitchKnots.map(([x, y, angle]) => ({
+    point: sourceToModel2(x, y),
+    tangent: new THREE.Vector2(Math.cos(angle), Math.sin(angle)),
+  }));
+  const knotSignedArea = pitchKnots.reduce((sum, knot, index) => (
+    sum + knot.point.cross(pitchKnots[(index + 1) % pitchKnots.length].point)
+  ), 0) / 2;
+  // Counter-clockwise travel keeps the pinion (right-hand side) outside the
+  // toothed land, where Brown draws the groove.
+  if (knotSignedArea < 0) {
+    pitchKnots = pitchKnots.reverse().map(({ point, tangent }) => ({
+      point,
+      tangent: tangent.clone().multiplyScalar(-1),
+    }));
+  }
+  const arcThrough = (start, tangent, end, kind) => {
+    const chord = end.clone().sub(start);
+    const left = new THREE.Vector2(-tangent.y, tangent.x);
+    const signedOffset = chord.dot(left);
+    const radiusSigned = chord.lengthSq() / (2 * signedOffset);
+    const center = start.clone().addScaledVector(left, radiusSigned);
+    const startAngle = Math.atan2(start.y - center.y, start.x - center.x);
+    let sweep = Math.atan2(
+      (start.x - center.x) * (end.y - center.y)
+        - (start.y - center.y) * (end.x - center.x),
+      (start.x - center.x) * (end.x - center.x)
+        + (start.y - center.y) * (end.y - center.y),
+    );
+    if (radiusSigned > 0 && sweep < 0) sweep += fullTurn;
+    if (radiusSigned < 0 && sweep > 0) sweep -= fullTurn;
+    return {
+      kind,
+      center,
+      radius: Math.abs(radiusSigned),
+      startAngle,
+      sweep,
+    };
+  };
+  const pitchSegments = [];
+  pitchKnots.forEach((knot, index) => {
+    const next = pitchKnots[(index + 1) % pitchKnots.length];
+    // Equal-tangent-length biarc between consecutive traced knots.
+    const chord = next.point.clone().sub(knot.point);
+    const tangentSum = knot.tangent.clone().add(next.tangent);
+    const denominator = 2 * (1 - knot.tangent.dot(next.tangent));
+    const chordDotSum = chord.dot(tangentSum);
+    const handle = denominator < 1e-12
+      ? chord.lengthSq() / (4 * chord.dot(knot.tangent))
+      : (-chordDotSum + Math.sqrt(
+        chordDotSum * chordDotSum + denominator * chord.lengthSq(),
+      )) / denominator;
+    const junction = knot.point.clone().addScaledVector(knot.tangent, handle)
+      .add(next.point.clone().addScaledVector(next.tangent, -handle))
+      .multiplyScalar(0.5);
+    pitchSegments.push(
+      arcThrough(knot.point, knot.tangent, junction, `traced-pitch-biarc-${index}a`),
+    );
+    const firstArc = pitchSegments.at(-1);
+    const junctionTangent = new THREE.Vector2(
+      -Math.sin(firstArc.startAngle + firstArc.sweep),
+      Math.cos(firstArc.startAngle + firstArc.sweep),
+    ).multiplyScalar(Math.sign(firstArc.sweep));
+    pitchSegments.push(
+      arcThrough(junction, junctionTangent, next.point, `traced-pitch-biarc-${index}b`),
+    );
+  });
+  const pitchPerimeter = pitchSegments.reduce(
+    (sum, segment) => sum + segment.radius * Math.abs(segment.sweep),
+    0,
+  );
+  const circularPitch = pitchPerimeter / mangleTeeth;
+  const module = circularPitch / Math.PI;
+  const pinionPitchRadius = module * pinionTeeth / 2;
   const toothHeight = module * 2.05;
   const wheelDepth = 0.28;
-  const wheelRadius = 232 * sourceScale;
+  // Brown's rim sits close outside the groove; keep a finite outer wall.
+  const wheelRadius = 236 * sourceScale;
   const wheelFaceZ = wheelDepth / 2;
   const pinionPlaneZ = .37;
   const pinionAngularSpeed = 3;
-
-  const pitchSegments = [
-    {
-      kind: 'eccentric-outer-internal-arc',
-      center: eccentricCenter.clone(),
-      radius: outerPitchRadius,
-      startAngle: leftGapAngle,
-      sweep: -mainArcSweep,
-    },
-    {
-      kind: 'upper-left-eccentric-reversal',
-      center: eccentricCenter.clone().add(new THREE.Vector2(
-        Math.cos(rightGapAngle) * connectorCenterRadius,
-        Math.sin(rightGapAngle) * connectorCenterRadius,
-      )),
-      radius: connectorRadius,
-      startAngle: rightGapAngle,
-      sweep: -Math.PI,
-    },
-    {
-      kind: 'eccentric-inner-external-arc',
-      center: eccentricCenter.clone(),
-      radius: innerPitchRadius,
-      startAngle: rightGapAngle,
-      sweep: mainArcSweep,
-    },
-    {
-      kind: 'upper-right-eccentric-reversal',
-      center: eccentricCenter.clone().add(new THREE.Vector2(
-        Math.cos(leftGapAngle) * connectorCenterRadius,
-        Math.sin(leftGapAngle) * connectorCenterRadius,
-      )),
-      radius: connectorRadius,
-      startAngle: leftGapAngle + Math.PI,
-      sweep: -Math.PI,
-    },
-  ];
+  let minimumConcavePitchRadius = Infinity;
+  for (const segment of pitchSegments) {
+    if (segment.sweep < 0) {
+      minimumConcavePitchRadius = Math.min(
+        minimumConcavePitchRadius,
+        segment.radius,
+      );
+    }
+  }
 
   const evaluateArc = (segment, progress) => {
     const angle = segment.startAngle + segment.sweep * progress;
@@ -18396,16 +18497,27 @@ function eccentricVariableSpeedMangleWheel() {
     return stateOnSegment(segment, progress);
   };
 
-  // Brown draws the eccentric curve itself and omits the pinion. Its implied
-  // source pose is the pinion on the bottom of the long outer run.
-  const sourceOuterAngle = Math.PI * 3 / 2;
-  const sourceOuterProgress = (
-    leftGapAngle - sourceOuterAngle
-  ) / mainArcSweep;
-  const sourcePathState = stateOnSegment(
-    pitchSegments[0],
-    sourceOuterProgress,
-  );
+  const nearestPitchDistanceTo = (target) => {
+    let best = 0;
+    let bestDistance = Infinity;
+    for (let index = 0; index < 4096; index += 1) {
+      const distance = pitchPerimeter * index / 4096;
+      const gap = stateAtPitchDistance(distance).point.distanceTo(target);
+      if (gap < bestDistance) {
+        bestDistance = gap;
+        best = distance;
+      }
+    }
+    return best;
+  };
+  // Brown omits the pinion. On the outer run it overhangs his rim, so the
+  // source pose places it wholly on the wheel, under the hub lobe (the middle
+  // of the fast inner run).
+  const sourceOuterPitchBottom = new THREE.Vector2(261, 452);
+  const sourceHubLobeBottom = new THREE.Vector2(261, 365);
+  const sourcePathState = stateAtPitchDistance(nearestPitchDistanceTo(
+    sourceToModel2(sourceHubLobeBottom.x, sourceHubLobeBottom.y),
+  ));
   const sourceRawPinionTravel = sourcePathState.pinionTravel;
   const stationaryGuideAngle = sourcePathState.guideAngle;
   const stationaryGuideDirection = new THREE.Vector2(
@@ -18621,8 +18733,24 @@ function eccentricVariableSpeedMangleWheel() {
     }
     return stateOnSegment(segment, (low + high) / 2);
   };
-  const maximumWheelPathState = reversalZeroState(pitchSegments[1]);
-  const minimumWheelPathState = reversalZeroState(pitchSegments[3]);
+  const wheelReversalStates = [];
+  for (const segment of pitchSegments) {
+    const startValue = pathDerivatives(stateOnSegment(segment, 0))
+      .wheelAngleDerivative;
+    const endValue = pathDerivatives(stateOnSegment(segment, 1))
+      .wheelAngleDerivative;
+    if (Math.sign(startValue) !== Math.sign(endValue)) {
+      wheelReversalStates.push(reversalZeroState(segment));
+    }
+  }
+  const [maximumWheelPathState, minimumWheelPathState] = [
+    wheelReversalStates.reduce((best, state) => (
+      -state.guideAngle > -best.guideAngle ? state : best
+    )),
+    wheelReversalStates.reduce((best, state) => (
+      -state.guideAngle < -best.guideAngle ? state : best
+    )),
+  ];
   const maximumWheelInputTravel = forwardTravelFromSourceToRaw(
     maximumWheelPathState.pinionTravel,
   );
@@ -18631,9 +18759,15 @@ function eccentricVariableSpeedMangleWheel() {
   );
   const maximumWheelState = stateAtInputTravel(maximumWheelInputTravel);
   const minimumWheelState = stateAtInputTravel(minimumWheelInputTravel);
-  const slowDirectionInputTravel = THREE.MathUtils.euclideanModulo(
+  // The long outer run turns the wheel slowly one way; the hub-lobe run
+  // returns it quickly.
+  const minimumToMaximumInputTravel = THREE.MathUtils.euclideanModulo(
     maximumWheelPathState.pinionTravel - minimumWheelPathState.pinionTravel,
     totalPinionTravel,
+  );
+  const slowDirectionInputTravel = Math.max(
+    minimumToMaximumInputTravel,
+    totalPinionTravel - minimumToMaximumInputTravel,
   );
   const fastDirectionInputTravel = totalPinionTravel
     - slowDirectionInputTravel;
@@ -18700,7 +18834,9 @@ function eccentricVariableSpeedMangleWheel() {
   pitchGroove.userData.role = 'eccentric-closed-toothed-pitch-channel';
   const guideGrooveOuter = new THREE.Mesh(
     new THREE.TubeGeometry(guideCurve, curveSamples, 0.068, 8, true),
-    inkMaterial,
+    // Rebuilt as the finite wheel face around the groove, which Brown draws
+    // as the same plain face as the land.
+    wheelMaterial,
   );
   guideGrooveOuter.userData.role = 'eccentric-closed-pinion-shaft-guide-groove';
   const guideGrooveRecess = new THREE.Mesh(
@@ -18754,7 +18890,7 @@ function eccentricVariableSpeedMangleWheel() {
   wheelRim.userData.role = 'outer-rim-of-mangle-wheel';
   // Brown draws a broad boss ring around the hatched wheel shaft.
   const wheelHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.34, 0.38, 48),
+    new THREE.CylinderGeometry(0.26, 0.26, 0.38, 48),
     inkMaterial,
   );
   wheelHub.rotation.x = Math.PI / 2;
@@ -18765,7 +18901,10 @@ function eccentricVariableSpeedMangleWheel() {
   );
   wheelIndex.position.set(-1.48, -0.42, wheelFaceZ + 0.085);
   wheelIndex.userData.role = 'white-index-showing-variable-wheel-speed';
-  wheelRotor.add(wheelRim, wheelHub, wheelIndex);
+  // Brown draws the rim as the plain disk edge and no index mark; the
+  // omitted pinion also overhangs that edge on the outer run, so no raised
+  // rim bead is mounted.
+  wheelRotor.add(wheelHub);
 
   const pinion = makeGear({
     teeth: pinionTeeth,
@@ -18804,10 +18943,15 @@ function eccentricVariableSpeedMangleWheel() {
   );
   contactMarker.userData.role = 'active-mangle-pinion-pitch-contact';
 
-  const averageGuideRadius = (
-    outerPitchRadius - pinionPitchRadius
-      + innerPitchRadius + pinionPitchRadius
-  ) / 2;
+  let minimumGuideRadius = Infinity;
+  let maximumGuideRadius = 0;
+  for (let index = 0; index < 2048; index += 1) {
+    const radius = stateAtPitchDistance(pitchPerimeter * index / 2048)
+      .guidePoint.length();
+    minimumGuideRadius = Math.min(minimumGuideRadius, radius);
+    maximumGuideRadius = Math.max(maximumGuideRadius, radius);
+  }
+  const averageGuideRadius = (minimumGuideRadius + maximumGuideRadius) / 2;
   const fixedUniversalPoint2 = stationaryGuideDirection.clone()
     .multiplyScalar(averageGuideRadius);
   const fixedUniversalPoint = new THREE.Vector3(
@@ -18908,20 +19052,15 @@ function eccentricVariableSpeedMangleWheel() {
     point.x / sourceScale + sourceWheelCenter.x,
     sourceWheelCenter.y - point.y / sourceScale,
   );
-  const sourceOuterPitchBottom = new THREE.Vector2(
-    sourceEccentricCenter.x,
-    sourceEccentricCenter.y + sourceOuterPitchRadius,
-  );
   const sourceGuideBottom = modelPointToSourceRaster(sourcePinionCenter);
-  const sourceConnectorCenters = [
-    modelPointToSourceRaster(pitchSegments[1].center),
-    modelPointToSourceRaster(pitchSegments[3].center),
-  ];
   const canonicalInputTravels = {
     sourcePose: 0,
     maximumWheelAngle: maximumWheelInputTravel,
-    innerRunMidpoint: forwardTravelFromSourceToRaw(
-      stateOnSegment(pitchSegments[2], 0.5).pinionTravel,
+    outerRunBottom: forwardTravelFromSourceToRaw(
+      stateAtPitchDistance(nearestPitchDistanceTo(sourceToModel2(
+        sourceOuterPitchBottom.x,
+        sourceOuterPitchBottom.y,
+      ))).pinionTravel,
     ),
     minimumWheelAngle: minimumWheelInputTravel,
     cycleClosure: totalPinionTravel,
@@ -18974,27 +19113,24 @@ function eccentricVariableSpeedMangleWheel() {
   root.userData.evaluateArc = evaluateArc;
   root.userData.geometry = {
     circularPitch,
-    connectorCenterRadius,
-    connectorRadius,
     curveSamples,
-    eccentricCenter: eccentricCenter.clone(),
     fastDirectionInputTravel,
-    gapCenterAngle,
-    gapHalfAngle,
     guideAngleClosureError,
     guidePerimeter,
-    innerPitchRadius,
-    mainArcSweep,
     mangleTeeth,
+    maximumGuideRadius,
+    minimumConcavePitchRadius,
+    minimumGuideRadius,
     module,
-    outerPitchRadius,
     pinionPitchRadius,
     pinionTeeth,
     pitchPerimeter,
     pitchSegments,
     slowDirectionInputTravel,
-    sourceOuterProgress,
     sourceRawPinionTravel,
+    toothLandInsidePitchLoop: true,
+    tracedPitchKnots,
+    wheelReversalCount: wheelReversalStates.length,
     stationaryGuideAngle,
     stationaryGuideDirection: stationaryGuideDirection.clone(),
     toothHeight,
@@ -19007,10 +19143,9 @@ function eccentricVariableSpeedMangleWheel() {
   root.userData.modelPointToSourceRaster = modelPointToSourceRaster;
   root.userData.pathDerivatives = pathDerivatives;
   root.userData.sourceAnchors = {
-    connectorCenters: sourceConnectorCenters,
-    eccentricCenter: sourceEccentricCenter.clone(),
-    guideBottom: sourceGuideBottom,
-    outerPitchBottom: sourceOuterPitchBottom,
+    pinionCenter: sourceGuideBottom,
+    hubLobeBottom: sourceHubLobeBottom.clone(),
+    outerPitchBottom: sourceOuterPitchBottom.clone(),
     wheelCenter: sourceWheelCenter.clone(),
   };
   root.userData.sourceRaster = {
@@ -19097,6 +19232,9 @@ function eccentricVariableSpeedMangleWheel() {
   update(0);
   finish(root, update);
   const model = finishReversingMangleGuides(root, update, 192);
+  // The pinion passes close under the shaft on the hub lobe, so the boss
+  // stays a low ring on the plain face, below the pinion plane.
+  wheelHub.position.z = 0.17 - 0.19;
   // Brown draws the wheel in a flat face view.
   model.cameraDirection = new THREE.Vector3(0.02, 0.015, 1);
   return model;
@@ -25258,7 +25396,8 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
   const sourceScale = 0.01;
-  const sourceWheelCenter = new THREE.Vector2(128, 252);
+  // Hub A of the traced wheel (the arm's moving eye).
+  const sourceWheelCenter = new THREE.Vector2(130, 250);
   const sourcePinionCenter = new THREE.Vector2(126, 351);
   const sourceCarrierPivot = new THREE.Vector2(391, 260);
   const wheelCenterAtSource = new THREE.Vector2(0, 0);
@@ -25274,8 +25413,8 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   const pivotToPinionDistance = carrierPivot.distanceTo(pinionCenter);
 
   const pinionTeeth = 10;
-  const wheelTeeth = 28;
-  const pinionPitchRadius = 0.38;
+  const wheelTeeth = 22;
+  const pinionPitchRadius = 0.412;
   const circularPitch = fullTurn * pinionPitchRadius / pinionTeeth;
   const targetPitchPerimeter = wheelTeeth * circularPitch;
   const module = circularPitch / Math.PI;
@@ -25283,33 +25422,70 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   const dedendum = module * 1.25;
   const totalToothHeight = addendum + dedendum;
   const wheelDepth = 0.34;
-  const sourceProfileParameter = -Math.PI / 2;
+  // Brown's wheel A is an elongated pear: a small round lobe about A, a
+  // shallow waist on top and a long lobe reaching out under the arm.  Its
+  // pitch curve (midway between the drawn tooth tips and roots) was traced
+  // from the plate about hub A, including the lobe's lower-right flank that
+  // the arm hides, and smoothed with six Fourier harmonics per coordinate
+  // (largest deviation from the 30 traced points about 2 source pixels).
+  // The curve is not star-shaped about A, so it is parameterized by a
+  // counter-clockwise curve parameter rather than a polar radius.
+  const tracedPitchX = [
+    0.392524, -1.042785, 0.007748, -0.019845, -0.004951, -0.069462,
+    0.000895, -0.000442, 0.005789, -0.011696, -0.010163, -0.00122,
+    0.005921,
+  ];
+  const tracedPitchY = [
+    0.08475, -0.170075, -0.517522, 0.110123, -0.00254, -0.004178,
+    -0.128383, -0.018713, 0.009662, -0.000203, 0.002639, -0.010588,
+    -0.002007,
+  ];
+  const fourierValue = (coefficients, parameter, order = 0) => {
+    let value = order === 0 ? coefficients[0] : 0;
+    for (let harmonic = 1; 2 * harmonic < coefficients.length; harmonic += 1) {
+      const cosine = coefficients[2 * harmonic - 1];
+      const sine = coefficients[2 * harmonic];
+      const angle = harmonic * parameter;
+      value += order === 0
+        ? cosine * Math.cos(angle) + sine * Math.sin(angle)
+        : harmonic * (sine * Math.cos(angle) - cosine * Math.sin(angle));
+    }
+    return value;
+  };
+  const rawPitchPointAt = (parameter) => new THREE.Vector2(
+    fourierValue(tracedPitchX, parameter),
+    fourierValue(tracedPitchY, parameter),
+  );
+  const rawPitchDerivativeAt = (parameter) => new THREE.Vector2(
+    fourierValue(tracedPitchX, parameter, 1),
+    fourierValue(tracedPitchY, parameter, 1),
+  );
+  // Brown's pose keeps the wheel unrotated with B under its lower flank:
+  // choose the curve point whose pinion-offset center sits on the arm circle.
+  const unrotatedArmResidual = (parameter) => {
+    const point = rawPitchPointAt(parameter);
+    const tangent = rawPitchDerivativeAt(parameter).normalize();
+    const center = pinionCenter.clone()
+      .sub(point)
+      .addScaledVector(new THREE.Vector2(tangent.y, -tangent.x), -pinionPitchRadius);
+    return center.distanceTo(carrierPivot) - carrierLength;
+  };
+  let sourceBracketLow = 0.9;
+  let sourceBracketHigh = 1.2;
+  for (let iteration = 0; iteration < 80; iteration += 1) {
+    const middle = (sourceBracketLow + sourceBracketHigh) / 2;
+    if (unrotatedArmResidual(middle) < 0) sourceBracketLow = middle;
+    else sourceBracketHigh = middle;
+  }
+  const sourceProfileParameter = (sourceBracketLow + sourceBracketHigh) / 2;
   const profileSamples = 8192;
   const profileStep = fullTurn / profileSamples;
-  const firstHarmonic = 0.37;
-  const secondHarmonic = 0.23;
-  // This upward bias is fitted to Brown's A-B shaft spacing. It also captures
-  // the visibly fuller upper half and tight lower mesh of his wheel.
-  const verticalAsymmetry = 0.11875883948349847;
 
-  const rawRadiusAt = (parameter) => 1
-    + firstHarmonic * Math.cos(parameter)
-    + secondHarmonic * Math.cos(2 * parameter)
-    + verticalAsymmetry * Math.sin(parameter);
-  const rawRadiusDerivativeAt = (parameter) => (
-    -firstHarmonic * Math.sin(parameter)
-      - 2 * secondHarmonic * Math.sin(2 * parameter)
-      + verticalAsymmetry * Math.cos(parameter)
-  );
   const rawPitchPoints = Array.from(
     { length: profileSamples + 1 },
     (_, index) => {
       const parameter = sourceProfileParameter + index * profileStep;
-      const radius = rawRadiusAt(parameter);
-      return new THREE.Vector2(
-        radius * Math.cos(parameter),
-        radius * Math.sin(parameter),
-      );
+      return rawPitchPointAt(parameter);
     },
   );
   const rawCumulativePitchArcs = [0];
@@ -25327,19 +25503,16 @@ function fixedPinionIrregularVibratingWheelCarrier() {
   const pitchPerimeter = pitchCumulativeArcs.at(-1);
 
   const profileAtParameter = (parameter) => {
-    const cosine = Math.cos(parameter);
-    const sine = Math.sin(parameter);
-    const radius = rawRadiusAt(parameter) * profileScale;
-    const radiusDerivative = rawRadiusDerivativeAt(parameter) * profileScale;
-    const pitchPoint = new THREE.Vector2(radius * cosine, radius * sine);
-    const pitchDerivative = new THREE.Vector2(
-      radiusDerivative * cosine - radius * sine,
-      radiusDerivative * sine + radius * cosine,
-    );
+    const pitchPoint = rawPitchPointAt(parameter).multiplyScalar(profileScale);
+    const pitchDerivative = rawPitchDerivativeAt(parameter)
+      .multiplyScalar(profileScale);
+    const radius = pitchPoint.length();
+    const radiusDerivative = pitchPoint.dot(pitchDerivative) / radius;
     const pitchSpeed = pitchDerivative.length();
     const tangent = pitchDerivative.clone().divideScalar(pitchSpeed);
+    // The traced curve runs counter-clockwise, so the outward normal is the
+    // tangent turned clockwise even where the waist is concave.
     const outwardNormal = new THREE.Vector2(tangent.y, -tangent.x);
-    if (outwardNormal.dot(pitchPoint) < 0) outwardNormal.negate();
     return {
       outwardNormal,
       parameter,
@@ -25859,8 +26032,11 @@ function fixedPinionIrregularVibratingWheelCarrier() {
       staticGeometry.contactAngleAtPinion,
       local.contactAngleReference,
     ) + cycleIndex * contactAngleCycleChange;
-    const carrierAngle = staticGeometry.carrierAngle
-      + cycleIndex * carrierAngleCycleChange;
+    // The arm hangs left of its pivot, so its angle straddles +/-pi.
+    const carrierAngle = unwrapNear(
+      staticGeometry.carrierAngle,
+      motionTable[0].carrierAngle,
+    ) + cycleIndex * carrierAngleCycleChange;
     const pinionAngle = pinionPhase + inputTravel;
     const pitchArc = local.pitchArc + cycleIndex * pitchPerimeter;
     const first = firstDerivativesAt(local.parameter);
@@ -25967,6 +26143,9 @@ function fixedPinionIrregularVibratingWheelCarrier() {
       });
     }
   }
+  // Both face indices return once the pinion has advanced whole turns.
+  const gcdTeeth = (left, right) => (right === 0 ? left : gcdTeeth(right, left % right));
+  const completeIndexCycles = pinionTeeth / gcdTeeth(wheelTeeth, pinionTeeth);
   const canonicalInputTravels = {
     sourcePose: 0,
     majorOutwardExtreme: carrierExtrema[0].inputTravel,
@@ -25974,7 +26153,7 @@ function fixedPinionIrregularVibratingWheelCarrier() {
     minorOutwardExtreme: carrierExtrema[2].inputTravel,
     secondInwardExtreme: carrierExtrema[3].inputTravel,
     meshCycleClosure: totalInputTravel,
-    completeIndexClosure: totalInputTravel * 5,
+    completeIndexClosure: totalInputTravel * completeIndexCycles,
   };
   const canonicalTimes = Object.fromEntries(Object.entries(
     canonicalInputTravels,
@@ -26108,7 +26287,6 @@ function fixedPinionIrregularVibratingWheelCarrier() {
     carrierPivot: carrierPivot.clone(),
     circularPitch,
     dedendum,
-    firstHarmonic,
     minimumInputStep,
     module,
     pinionCenter: pinionCenter.clone(),
@@ -26118,10 +26296,10 @@ function fixedPinionIrregularVibratingWheelCarrier() {
     pivotToPinionDistance,
     profileSamples,
     profileScale,
-    secondHarmonic,
+    tracedPitchX: [...tracedPitchX],
+    tracedPitchY: [...tracedPitchY],
     sourceProfileParameter,
     targetPitchPerimeter,
-    verticalAsymmetry,
     wheelAngleCycleChange,
     wheelDepth,
     wheelTeeth,
@@ -26150,12 +26328,12 @@ function fixedPinionIrregularVibratingWheelCarrier() {
     carrierAngleMinimum: Math.min(...carrierAngles),
     carrierReversalCount: carrierExtrema.length,
     carrierSwing: Math.max(...carrierAngles) - Math.min(...carrierAngles),
-    completeIndexCycles: 5,
-    completeIndexPeriod: cyclePeriod * 5,
+    completeIndexCycles,
+    completeIndexPeriod: cyclePeriod * completeIndexCycles,
     cyclePeriod,
     pinionAngularSpeed,
     pinionRevolutionsPerProfileCycle: totalInputTravel / fullTurn,
-    profileCyclesPerCompleteIndexClosure: 5,
+    profileCyclesPerCompleteIndexClosure: completeIndexCycles,
     totalInputTravel,
     wheelRevolutionsPerProfileCycle: wheelAngleCycleChange / fullTurn,
   };
@@ -28284,6 +28462,181 @@ function fixedPinionLiftedMangleRack() {
     post.geometry = new THREE.BoxGeometry(0.08, 0.065, 0.66);
     post.position.y = side * 1.1125;
     post.position.z = 0.49;
+  }
+  // Brown draws the rack on one smoothly outlined plate: a rounded lobe at the
+  // upper right and a swept foot at the lower left carry the two rod ends
+  // directly. The outline is traced from mm_198.png (source pixels), then
+  // nudged locally so the modelled pivot centres sit in the traced eyes.
+  {
+    const blocks = root.userData.blocks;
+    const sourceCarrierOutline = [
+      [66, 232], [74, 221], [84, 212], [97, 206], [115, 202], [140, 201],
+      [260, 199], [380, 196], [412, 194], [424, 186], [436, 181], [449, 182],
+      [458, 190], [462, 203], [463, 222], [463, 290], [461, 305], [455, 318],
+      [444, 327], [428, 332], [410, 334], [300, 335], [190, 336], [160, 338],
+      [140, 341], [124, 347], [112, 356], [106, 364], [97, 368], [85, 366],
+      [76, 358], [72, 345], [69, 320], [66, 290], [65, 255],
+    ];
+    const sourceEyes = [
+      [new THREE.Vector2(436, 203), sourceState.carrierTopPivotWorld],
+      [new THREE.Vector2(92, 352), sourceState.carrierBottomPivotWorld],
+    ].map(([drawn, modelled]) => ({
+      drawn,
+      shift: modelPointToSourceRaster(modelled.clone()).sub(drawn),
+    }));
+    const toCarrierLocal = ([x, y]) => {
+      const pixel = new THREE.Vector2(x, y);
+      for (const { drawn, shift } of sourceEyes) {
+        const weight = Math.exp(-(pixel.distanceToSquared(drawn)) / (45 * 45));
+        pixel.addScaledVector(shift, weight);
+      }
+      const world = sourcePointToModel(pixel);
+      return rotate2(
+        new THREE.Vector2(world.x, world.y).sub(sourceState.carrierOrigin),
+        -sourceState.carrierAngle,
+      );
+    };
+    const smoothOutline = new THREE.CatmullRomCurve3(
+      sourceCarrierOutline.map(toCarrierLocal)
+        .map((point) => new THREE.Vector3(point.x, point.y, 0)),
+      true,
+      'centripetal',
+    ).getSpacedPoints(360).slice(0, -1).map((point) => [point.x, point.y]);
+    const pinRadius = 0.135;
+    let carrierPolygon = slotClipping.difference(
+      slotPolygon(smoothOutline),
+      slotCapsule(
+        [0, 0],
+        [straightRackLength, 0],
+        pinionPitchRadius + 0.089,
+        128,
+      ),
+    );
+    for (const pivot of [carrierTopPivotLocal, carrierBottomPivotLocal]) {
+      carrierPolygon = slotClipping.difference(
+        carrierPolygon,
+        slotPolygon(slotCircle([pivot.x, pivot.y], pinRadius + 0.002, 64)),
+      );
+    }
+    blocks.carrierPlate.geometry.dispose();
+    blocks.carrierPlate.geometry = finiteSlotPlate(carrierPolygon, -0.50, -0.3432);
+    blocks.carrierPlate.userData.role =
+      'traced-smooth-rack-carrier-plate-with-rod-eyes';
+    blocks.carrierPlate.userData.sourceOutline = sourceCarrierOutline;
+    // The plate edge replaces the capsule rail and the two stub arms.
+    for (const part of [
+      blocks.outerCarrierRail,
+      blocks.topCarrierArm,
+      blocks.bottomCarrierArm,
+    ]) {
+      part.visible = false;
+      part.userData.retiredByTracedCarrierPlate = true;
+    }
+    // Each rod-end pin now stands in its bored eye in the plate and reaches
+    // the rod plane in front.
+    for (const pin of blocks.carrierPivotMarkers) {
+      pin.geometry.dispose();
+      pin.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, 1.07, 48);
+      pin.position.z = 0.035;
+      pin.userData.seatedInCarrierPlateEye = true;
+    }
+    // The front strap is drawn as a broad round-ended bar with a pin at each
+    // end, reaching past the rack's top and bottom edges.
+    const strapHalfLength = 1.72;
+    const strapHalfWidth = 0.22;
+    const strapX = straightRackLength / 2;
+    const tieZ = new THREE.Box3().setFromObject(blocks.carrierCrossTie);
+    for (const child of [...blocks.carrierCrossTie.children]) {
+      child.geometry?.dispose();
+      blocks.carrierCrossTie.remove(child);
+    }
+    const strap = new THREE.Mesh(
+      finiteSlotPlate(
+        slotCapsule(
+          [strapX, -strapHalfLength + strapHalfWidth],
+          [strapX, strapHalfLength - strapHalfWidth],
+          strapHalfWidth,
+          96,
+        ),
+        tieZ.min.z,
+        tieZ.max.z,
+      ),
+      rackMaterial,
+    );
+    strap.userData.role = 'broad-round-ended-front-strap-of-rack-carrier';
+    const strapPins = [-1, 1].map((side) => {
+      const pin = new THREE.Mesh(
+        slotRing(0.05, 0.1, tieZ.max.z, tieZ.max.z + 0.02, 48),
+        inkMaterial,
+      );
+      pin.position.set(
+        strapX,
+        side * (strapHalfLength - strapHalfWidth),
+        0,
+      );
+      pin.userData.role = 'front-strap-end-rivet';
+      return pin;
+    });
+    blocks.carrierCrossTie.position.set(0, 0, 0);
+    blocks.carrierCrossTie.rotation.set(0, 0, 0);
+    blocks.carrierCrossTie.add(strap, ...strapPins);
+    blocks.carrierCrossTie.userData.setEndpoints = undefined;
+    blocks.carrierStrap = strap;
+
+    // Brown's main frame is not symmetric about the pinion: its top edge
+    // (source y 157) sits just above the carrier's highest lift, while the
+    // lower edge stays at the modelled -frameHalfHeight. The upper pair of
+    // guide rollers follows that edge.
+    const frameTop = sourcePointToModel(
+      new THREE.Vector2(0, sourceRaster.frameTop),
+    ).y;
+    const [topMember, , leftMember, rightMember] = blocks.frameMembers;
+    topMember.userData.setEndpoints(
+      new THREE.Vector3(frameLeft, frameTop, frameZ),
+      new THREE.Vector3(frameRight, frameTop, frameZ),
+    );
+    for (const [member, x] of [[leftMember, frameLeft], [rightMember, frameRight]]) {
+      member.userData.setEndpoints(
+        new THREE.Vector3(x, -frameHalfHeight, frameZ),
+        new THREE.Vector3(x, frameTop, frameZ),
+      );
+    }
+    const geometry = root.userData.geometry;
+    const upperShift = frameHalfHeight - frameTop;
+    blocks.guideRollers.forEach((roller, index) => {
+      if (roller.userData.verticalSign < 0) return;
+      roller.position.y -= upperShift;
+      blocks.guideRollerShafts[index].position.y -= upperShift;
+      geometry.upperGuideRollerY = roller.position.y;
+    });
+    geometry.frameTop = frameTop;
+    geometry.lowerGuideRollerY = geometry.guideRollerY;
+
+    const bounds = new THREE.Box3();
+    const point = new THREE.Vector3();
+    const addVisible = (box) => root.traverse((object) => {
+      if (!object.isMesh || !object.visible || !object.material.visible) return;
+      let hidden = false;
+      object.traverseAncestors((ancestor) => { if (!ancestor.visible) hidden = true; });
+      if (hidden) return;
+      const positions = object.geometry.attributes.position;
+      for (let index = 0; index < positions.count; index += 1) {
+        box.expandByPoint(point.fromBufferAttribute(positions, index)
+          .applyMatrix4(object.matrixWorld));
+      }
+    });
+    for (let sample = 0; sample <= 48; sample += 1) {
+      model.update(cyclePeriod * sample / 48);
+      root.updateMatrixWorld(true);
+      addVisible(bounds);
+    }
+    root.userData.sweptBounds = bounds.expandByScalar(0.05);
+    const pose = new THREE.Box3();
+    model.update(0);
+    root.updateMatrixWorld(true);
+    addVisible(pose);
+    root.userData.cameraFitBounds = pose.expandByScalar(0.12);
+    markShadows(root);
   }
   return model;
 }

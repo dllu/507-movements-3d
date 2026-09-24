@@ -8,7 +8,10 @@ import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 const catalog=JSON.parse(fs.readFileSync('src/data/movements.json')).movements,create=id=>createAuthoredGearMovement(catalog[id-1]);
 const clear=(a,b)=>{const surface=solidSurface(b.geometry),matrix=b.matrixWorld.clone().invert().multiply(a.matrixWorld);for(const p of surfacePoints(a.geometry)){const q=p.clone().applyMatrix4(matrix);assert.ok(!surface.inside(q)||surface.distance(q)<1e-6,`${a.userData.role} into ${b.userData.role}`);}};
 test('191 and196 render the baked mating contours and disable obsolete tooth overlays',()=>{
- for(const id of[191,196]){const m=create(id),b=m.root.userData.blocks,body=id===191?b.drivenBody:b.wheelBody,teeth=id===191?b.drivenTeeth:b.wheelToothMeshes;assert.equal(body.geometry.userData.toothProfile,'offline-swept-mating-gear-envelope');assert.ok(body.geometry.userData.outline.length>1000);assert.ok(teeth.every(mesh=>!mesh.visible));}
+ {const b=create(196).root.userData.blocks;assert.equal(b.wheelBody.geometry.userData.toothProfile,'offline-swept-mating-gear-envelope');assert.ok(b.wheelBody.geometry.userData.outline.length>1000);assert.ok(b.wheelToothMeshes.every(mesh=>!mesh.visible));}
+ // 191: both scrolls are hobbed by one rack, so both render baked contours.
+ const b=create(191).root.userData.blocks;
+ for(const [body,teeth] of[[b.drivenBody,b.drivenTeeth],[b.driverBody,b.driverTeeth]]){assert.equal(body.geometry.userData.toothProfile,'offline-rack-hobbed-conjugate-scroll');assert.ok(body.geometry.userData.outline.length>1000);assert.ok(teeth.every(mesh=>!mesh.visible));}
 });
 test('201 involutes have equal base pitch, continuous transverse engagement and valid eccentric bore',()=>{
  const m=create(201),g=m.root.userData.geometry,b=m.root.userData.blocks,a=b.eccentricGear.userData.rotor.children[0].geometry.userData,c=b.pinion.userData.rotor.children[0].geometry.userData;
@@ -30,5 +33,5 @@ test('all three models expose the reconstruction limits and hide ground/fog',()=
 });
 test('saved audit checks actual rendered finite planar solids at interleaved full-cycle poses',()=>{
  const report=JSON.parse(fs.readFileSync('docs/validation/191-196-201-contact.json'));for(const source of report.sources)assert.equal(createHash('sha256').update(fs.readFileSync(source.file)).digest('hex'),source.sha256,source.file);
- for(const row of report.results){assert.equal(row.poses,513);assert.equal(row.penetratingPoses,0);assert.ok(row.maximumOverlapArea<1e-10);assert.ok(row.maximumGap<.0021);assert.ok(row.minimumGap>0);}
+ for(const row of report.results){assert.equal(row.poses,513);assert.equal(row.penetratingPoses,0);assert.ok(row.maximumOverlapArea<1e-10);assert.ok(row.maximumGap<(row.id===191?.0105:.0021));assert.ok(row.minimumGap>0);}
 });

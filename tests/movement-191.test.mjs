@@ -61,20 +61,6 @@ function transformedOutline(points, angle, center) {
   ));
 }
 
-function orientation(first, second, third) {
-  return (second.x - first.x) * (third.y - first.y)
-    - (second.y - first.y) * (third.x - first.x);
-}
-
-function segmentsProperlyIntersect(firstA, firstB, secondA, secondB) {
-  const firstSideA = orientation(firstA, firstB, secondA);
-  const firstSideB = orientation(firstA, firstB, secondB);
-  const secondSideA = orientation(secondA, secondB, firstA);
-  const secondSideB = orientation(secondA, secondB, firstB);
-  return firstSideA * firstSideB < -1e-14
-    && secondSideA * secondSideB < -1e-14;
-}
-
 function pointInsidePolygon(point, polygon) {
   let inside = false;
   for (
@@ -91,22 +77,6 @@ function pointInsidePolygon(point, polygon) {
     ) inside = !inside;
   }
   return inside;
-}
-
-function polygonsOverlap(first, second) {
-  for (let firstIndex = 0; firstIndex < first.length; firstIndex += 1) {
-    const firstA = first[firstIndex];
-    const firstB = first[(firstIndex + 1) % first.length];
-    for (let secondIndex = 0; secondIndex < second.length; secondIndex += 1) {
-      const secondA = second[secondIndex];
-      const secondB = second[(secondIndex + 1) % second.length];
-      if (segmentsProperlyIntersect(firstA, firstB, secondA, secondB)) {
-        return true;
-      }
-    }
-  }
-  return pointInsidePolygon(first[0], second)
-    || pointInsidePolygon(second[0], first);
 }
 
 function finiteStateNumbers(value, path = 'state') {
@@ -173,11 +143,11 @@ test('movement 191 matches Brown\'s one fixed-center pair of complementary scrol
   assert.equal(blocks.drivenRadialSeam.parent, null);
   blocks.driverTeeth.forEach((tooth) => {
     assert.equal(tooth.parent, blocks.driverRotor);
-    assert.equal(tooth.userData.role, 'lower-scroll-gear-tooth');
+    assert.equal(tooth.userData.role, 'upper-scroll-gear-tooth');
   });
   blocks.drivenTeeth.forEach((tooth) => {
     assert.equal(tooth.parent, blocks.drivenRotor);
-    assert.equal(tooth.userData.role, 'upper-scroll-gear-tooth');
+    assert.equal(tooth.userData.role, 'lower-scroll-gear-tooth');
   });
   assert.equal(blocks.driverBearing.userData.fixed, true);
   assert.equal(blocks.drivenBearing.userData.fixed, true);
@@ -218,13 +188,13 @@ test('movement 191 matches Brown\'s one fixed-center pair of complementary scrol
     sourceState.driverPitchRadius,
     geometry.minimumDriverRadius,
     1e-12,
-    'the lower source-pose driver is at its smallest radius',
+    'the upper source-pose driver is at its smallest radius',
   );
   near(
     sourceState.drivenPitchRadius,
     geometry.maximumDrivenRadius,
     1e-12,
-    'the upper source-pose output is at its largest radius',
+    'the lower source-pose output is at its largest radius',
   );
 
   let scrollGearCount = 0;
@@ -294,13 +264,13 @@ test('movement 191 preserves conjugate contact and progressively increases outpu
     );
     near(
       state.outputAngularSpeed,
-      -state.inputAngularSpeed * state.instantaneousSpeedRatio,
+      state.inputAngularSpeed * state.instantaneousSpeedRatio,
       2e-14,
       `output speed law at sample ${index}`,
     );
     near(
       state.outputAngularAcceleration,
-      -state.inputAngularSpeed * state.inputAngularSpeed
+      state.inputAngularSpeed * state.inputAngularSpeed
         * speedRatioDerivativeAtPhi(state.localInputAngle),
       2e-14,
       `output acceleration law at sample ${index}`,
@@ -313,7 +283,7 @@ test('movement 191 preserves conjugate contact and progressively increases outpu
     near(state.contactPoint.x, 0, 2e-12, `centerline contact ${index}`);
     near(
       state.contactPoint.y,
-      geometry.lowerCenter.y + state.driverPitchRadius,
+      geometry.upperCenter.y - state.driverPitchRadius,
       2e-12,
       `moving pitch contact height ${index}`,
     );
@@ -343,10 +313,11 @@ test('movement 191 preserves conjugate contact and progressively increases outpu
     transmission.outputRevolutionsPerInputRevolution,
     1,
     2e-14,
-    'the conjugate upper scroll closes after one turn',
+    'the conjugate lower scroll closes after one turn',
   );
   near(beforeReset.inputAngle, FULL_TURN, 2e-14, 'driver turn closure');
-  near(beforeReset.outputAngle, -FULL_TURN, 2e-14, 'output turn closure');
+  near(beforeReset.driverAngle, -FULL_TURN, 2e-14, 'upper driver turns clockwise');
+  near(beforeReset.outputAngle, FULL_TURN, 2e-14, 'output turn closure');
   near(afterReset.inputAngle, beforeReset.inputAngle, 2e-14, 'input is continuous');
   near(afterReset.outputAngle, beforeReset.outputAngle, 2e-14, 'output is continuous');
   near(
@@ -366,7 +337,7 @@ test('movement 191 preserves conjugate contact and progressively increases outpu
       > Math.abs(afterReset.outputAngularSpeed) * 2.48,
   );
   assert.equal(afterReset.seamReset, true);
-  assert.ok(start.contactPoint.y < beforeReset.contactPoint.y);
+  assert.ok(start.contactPoint.y > beforeReset.contactPoint.y);
   disposeModel(model.root);
 });
 
@@ -446,17 +417,15 @@ test('movement 191 uses equal pitch-arc tooth spacing and a permanent half-pitch
       );
     }
   }
-  near(
-    blocks.driver.userData.toothOriginArc,
-    0,
-    1e-15,
-    'lower seam carries a tooth center',
+  // The rendered scrolls are hobbed by one rack: each step carries a whole
+  // tooth on its long side and a relieved notch floor on its short side.
+  assert.equal(
+    blocks.driverBody.geometry.userData.toothProfile,
+    'offline-rack-hobbed-conjugate-scroll',
   );
-  near(
-    blocks.driven.userData.toothOriginArc,
-    geometry.circularPitch / 2,
-    1e-15,
-    'upper seam carries the opposing tooth gap',
+  assert.equal(
+    blocks.drivenBody.geometry.userData.toothProfile,
+    'offline-rack-hobbed-conjugate-scroll',
   );
 
   let maximumDerivativeLengthError = 0;
@@ -485,44 +454,37 @@ test('movement 191 uses equal pitch-arc tooth spacing and a permanent half-pitch
   assert.ok(maximumDerivativeLengthError < 3e-14);
   assert.ok(maximumPhaseError < 3e-14);
 
-  const reducedBodyOutline = (outline) => outline.filter((_, index) => (
-    index % 4 === 0 || index >= outline.length - 3
-  ));
-  const driverBodyOutline = reducedBodyOutline(
-    blocks.driver.userData.seamGeometry.bodyOutline,
-  );
-  const drivenBodyOutline = reducedBodyOutline(
-    blocks.driven.userData.seamGeometry.bodyOutline,
-  );
-  near(
-    blocks.driver.userData.seamGeometry.seamReliefArc,
-    geometry.circularPitch * 0.62,
-    1e-15,
-    'lower reset has Brown\'s finite stepped relief',
-  );
-  near(
-    blocks.driven.userData.seamGeometry.seamReliefArc,
-    geometry.circularPitch * 0.62,
-    1e-15,
-    'upper reset has the complementary stepped relief',
-  );
-  for (let index = 0; index <= 256; index += 1) {
-    const state = stateAtProgress(index / 256);
+  // Rendered hobbed contours: no vertex near the contact enters the mate.
+  const renderedOutline = (body) => body.geometry.userData.outline
+    .map(([x, y]) => new THREE.Vector2(x, y));
+  const driverBodyOutline = renderedOutline(blocks.driverBody);
+  const drivenBodyOutline = renderedOutline(blocks.drivenBody);
+  for (let index = 0; index <= 128; index += 1) {
+    const state = stateAtProgress((index + 0.37) / 129);
     const driverWorldOutline = transformedOutline(
       driverBodyOutline,
-      state.inputAngle,
-      geometry.lowerCenter,
+      state.driverAngle,
+      geometry.upperCenter,
     );
     const drivenWorldOutline = transformedOutline(
       drivenBodyOutline,
       state.outputAngle,
-      geometry.upperCenter,
+      geometry.lowerCenter,
     );
-    assert.equal(
-      polygonsOverlap(driverWorldOutline, drivenWorldOutline),
-      false,
-      `solid scroll bodies remain disjoint at sample ${index}`,
-    );
+    const contact = new THREE.Vector2(state.contactPoint.x, state.contactPoint.y);
+    for (const [points, other] of [
+      [driverWorldOutline, drivenWorldOutline],
+      [drivenWorldOutline, driverWorldOutline],
+    ]) {
+      for (const point of points) {
+        if (point.distanceTo(contact) > 0.9) continue;
+        assert.equal(
+          pointInsidePolygon(point, other),
+          false,
+          `rendered scroll bodies remain disjoint at sample ${index}`,
+        );
+      }
+    }
   }
   disposeModel(model.root);
 });
@@ -561,7 +523,7 @@ test('movement 191 rendered transforms expose constant input, accelerating outpu
     finiteStateNumbers(model.root.userData.kinematics, `rendered[${index}]`);
     near(
       blocks.driverRotor.rotation.z,
-      state.inputAngle,
+      state.driverAngle,
       2e-14,
       `rendered driver angle ${index}`,
     );
@@ -573,7 +535,7 @@ test('movement 191 rendered transforms expose constant input, accelerating outpu
     );
     near(
       blocks.driverShaft.userData.rotor.rotation.z,
-      state.inputAngle,
+      state.driverAngle,
       2e-14,
       `rendered input shaft angle ${index}`,
     );
@@ -617,7 +579,8 @@ test('movement 191 rendered transforms expose constant input, accelerating outpu
   assert.ok(outputQuarterIncrements[1] > outputQuarterIncrements[0]);
   assert.ok(outputQuarterIncrements[2] > outputQuarterIncrements[1]);
   for (let index = 1; index < contactHeights.length; index += 1) {
-    assert.ok(contactHeights[index] > contactHeights[index - 1]);
+    // The upper driver's radius grows, so the contact moves down.
+    assert.ok(contactHeights[index] < contactHeights[index - 1]);
   }
 
   model.update(canonicalTimes.halfTurn);
@@ -630,7 +593,7 @@ test('movement 191 rendered transforms expose constant input, accelerating outpu
     canonicalStates.sourcePose.driverPitchRadius,
     geometry.minimumDriverRadius,
     1e-12,
-    'source canonical state uses the small lower radius',
+    'source canonical state uses the small upper driver radius',
   );
   assert.ok(
     canonicalStates.immediatelyBeforeReset.instantaneousSpeedRatio

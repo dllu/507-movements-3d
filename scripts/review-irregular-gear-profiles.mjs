@@ -15,6 +15,15 @@ for(const id of[191,196,201]){
  if(id===196){a=b.wheel;bb=b.pinion;const profile=irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,g.wheelDepth,.070);cutters=[{outline:profile.userData.outline.map(p=>{const angle=-Math.PI/(2*g.pinionTeeth);return[p.x*Math.cos(angle)-p.y*Math.sin(angle),p.x*Math.sin(angle)+p.y*Math.cos(angle)];}),buffer:0}];blank=[{outline:Array.from({length:1024},(_,i)=>{const p=u.profileAtParameter(g.sourceProfileParameter+i*2*Math.PI/1024);return xy(p.pitchPoint.clone().addScaledVector(p.outwardNormal,.85*g.module));}),buffer:0}];}
  if(id===201){a=b.eccentricGear;bb=b.pinion;blank=[{outline:a.userData.rotor.children[0].geometry.userData.outline.map(xy),buffer:0}];cutters=[{outline:bb.userData.rotor.children[0].geometry.userData.outline.map(p=>{const angle=-Math.PI/(2*g.pinionTeeth);return[p.x*Math.cos(angle)-p.y*Math.sin(angle),p.x*Math.sin(angle)+p.y*Math.cos(angle)];}),buffer:0}];}
  const poseAt=time=>{m.update(time);m.root.updateMatrixWorld(true);const mat=a.userData.rotor.matrixWorld.clone().invert().multiply(bb.userData.rotor.matrixWorld),e=mat.elements;return[e[0],e[4],e[1],e[5],e[12],e[13]];};
- result.push({id,period,bore:id===191?g.boreRadius:id===196?g.boreRadius:.13,depth:id===196?g.wheelDepth:.34,blank,cutters,poses:Array.from({length:id===191?8193:2049},(_,i)=>poseAt(period*i/(id===191?8192:2048))),auditPoses:Array.from({length:129},(_,i)=>poseAt(period*(i+.37)/129))});
+ // 191: both scrolls are hobbed by one straight-sided rack rolling along
+ // their pitch spirals (slightly past each seam), so the two tooth forms are
+ // conjugate and match; the Python pass clips each rack pose to its own side
+ // of the stepped seam.
+ const rack=id===191?(()=>{const C=g.centerDistance,a=g.minimumDriverRadius,k=g.radialSlope,span=.7,count=6001;
+  const phis=Array.from({length:count},(_,i)=>-span+i*(2*Math.PI+2*span)/(count-1));
+  const driver=phis.map(phi=>{const r=a+k*phi,t=-Math.PI/2+phi;return[r*Math.cos(t),r*Math.sin(t)];});
+  const driven=phis.map(phi=>{const r=C-a-k*phi,t=Math.PI/2+phi-C/k*Math.log((C-a)/(C-a-k*phi));return[r*Math.cos(t),r*Math.sin(t)];});
+  return{phis,driver,driven,pitch:g.circularPitch,addendum:g.addendum,dedendum:g.dedendum,perimeter:g.pitchPerimeter};})():undefined;
+ result.push({id,rack,period,bore:id===191?g.boreRadius:id===196?g.boreRadius:.13,depth:id===196?g.wheelDepth:.34,blank,cutters,poses:Array.from({length:id===191?8193:2049},(_,i)=>poseAt(period*i/(id===191?8192:2048))),auditPoses:Array.from({length:129},(_,i)=>poseAt(period*(i+.37)/129))});
 }
 fs.writeFileSync('/dev/shm/irregular-profile-input.json',JSON.stringify(result));

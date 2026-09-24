@@ -641,7 +641,9 @@ test('movement 198 rendered transforms keep both rods pinned, the pinion fixed, 
       );
       near(
         roller.position.y,
-        roller.userData.verticalSign * geometry.guideRollerY,
+        roller.userData.verticalSign > 0
+          ? geometry.upperGuideRollerY
+          : -geometry.lowerGuideRollerY,
         1e-15,
         `${name} fixed roller ${index} y`,
       );
@@ -714,7 +716,9 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 15.15);
-  assert.ok(size.y > 7.6, 'the physical frame fills the vertical envelope without oversized pulley index blocks');
+  // Brown's main-frame top edge sits just above the carrier's highest lift,
+  // so the upper rollers stand lower than the lower pair hang.
+  assert.ok(size.y > 7.1, 'the physical frame fills the vertical envelope without oversized pulley index blocks');
   assert.ok(size.z > 1.5);
   assert.ok(physicalBounds.min.z < -0.88);
   assert.ok(physicalBounds.max.z > 0.62);
@@ -741,7 +745,8 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
   });
   // Undrawn white pulley indices and markers are hidden, and the guide
   // rollers are plain discs without spokes.
-  assert.ok(visibleMeshCount >= 86);
+  // The traced carrier plate replaces the capsule rail and two stub arms.
+  assert.ok(visibleMeshCount >= 85);
   assert.equal(rackToothCount, 36);
   assert.equal(suspensionRodCount, 2);
   assert.equal(fixedGuideRollerCount, 4);

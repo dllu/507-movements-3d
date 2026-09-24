@@ -39,7 +39,11 @@ export function correctIrregularGearFamily(root,id,update){
   root.userData.reconstructionNote='A uniform fixed-axis pinion rolls against an inferred two-lobed pitch curve and rocks the carrying arm. The mating teeth are reconstructed around that motion; historical dimensions and load response are unspecified.';
  }else{
   root.userData.profileGenerationBlank=[b.drivenBody,...b.drivenTeeth].map(mesh=>({outline:mesh.geometry.parameters.shapes.extractPoints(64).shape.map(p=>[p.x,p.y]),buffer:mesh.geometry.parameters.options.bevelSize??0}));
+  // Both scrolls are hobbed offline by one rack, so their teeth match; each
+  // step has a whole tooth on its high side and a relieved notch floor after it.
   replace(b.drivenBody,contourGeometry(generated[191].outline,g.boreRadius,g.gearDepth));for(const tooth of b.drivenTeeth)tooth.visible=false;
+  replace(b.driverBody,contourGeometry(generated['191driver'].outline,g.boreRadius,g.gearDepth));for(const tooth of b.driverTeeth)tooth.visible=false;
+  for(const body of[b.drivenBody,b.driverBody])body.geometry.userData.toothProfile='offline-rack-hobbed-conjugate-scroll';
   for(const gear of[b.driver,b.driven]){const hub=gear.userData.rotor.children.find(o=>o.userData.role?.endsWith('scroll-gear-hub'));boreHub(hub,.076);hub.userData.boreRadius=.076;}
   root.userData.reconstructionNote='The lower scroll turns uniformly and accelerates the upper scroll during each turn. The stepped seam requires disengagement and a sudden speed reset: this prescribed repeat is not a smooth, continuously engaged physical drive.';
  }

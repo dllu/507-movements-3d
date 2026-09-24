@@ -104,7 +104,7 @@ test('movement 192 matches Brown\'s eccentric toothed path, shaft groove, and om
 
   assert.equal(blocks.mangleToothObjects.length, 0);
   assert.equal(blocks.toothLand.parent, blocks.wheelRotor);
-  assert.equal(blocks.pinion.userData.teeth, 10);
+  assert.equal(blocks.pinion.userData.teeth, 6);
   assert.equal(blocks.wheel.parent, model.root);
   assert.equal(blocks.wheelRotor.parent, blocks.wheel);
   assert.equal(blocks.wheelBody.parent, blocks.wheelRotor);
@@ -128,58 +128,42 @@ test('movement 192 matches Brown\'s eccentric toothed path, shaft groove, and om
     1e-12,
     'Brown\'s wheel shaft is the authored fixed axis',
   );
-  vector3Near(
-    sourcePointToModel(sourceAnchors.eccentricCenter),
-    new THREE.Vector3(geometry.eccentricCenter.x, geometry.eccentricCenter.y, 0),
-    1e-12,
-    'the tooth and guide curves share Brown\'s eccentric center',
-  );
-  assert.ok(geometry.eccentricCenter.length() > 0.079);
-  assert.ok(geometry.eccentricCenter.length() < 0.081);
+  // The traced pitch knots stay on Brown's crenellated tooth row.
+  assert.equal(geometry.tracedPitchKnots.length, 56);
+  assert.equal(geometry.toothLandInsidePitchLoop, true);
+  for (const [x, y] of geometry.tracedPitchKnots) {
+    const knot = sourcePointToModel(new THREE.Vector2(x, y));
+    let nearest = Infinity;
+    for (let index = 0; index < 4096; index += 1) {
+      const point = model.root.userData.stateAtPitchDistance(
+        geometry.pitchPerimeter * index / 4096,
+      ).point;
+      nearest = Math.min(nearest, point.distanceTo(knot));
+    }
+    assert.ok(nearest < 0.003, `pitch curve passes traced knot ${x},${y}`);
+  }
+  // A hooked path: the rim run reaches near the rim, the hub lobe passes
+  // close under the shaft and the groove stays inside the wheel.
+  assert.ok(geometry.maximumGuideRadius > 1.8);
+  assert.ok(geometry.maximumGuideRadius + 0.064 < geometry.wheelRadius);
+  assert.ok(geometry.minimumGuideRadius < 0.5);
+  assert.ok(geometry.minimumConcavePitchRadius > geometry.pinionPitchRadius + 0.3);
+  assert.equal(geometry.wheelReversalCount, 2);
   vector2Near(
-    modelPointToSourceRaster(new THREE.Vector3(
-      geometry.eccentricCenter.x,
-      geometry.eccentricCenter.y,
-      0,
-    )),
-    sourceAnchors.eccentricCenter,
-    1e-12,
-    'eccentric center maps back to the source raster',
-  );
-  vector2Near(
-    sourceAnchors.outerPitchBottom,
-    new THREE.Vector2(252, 455),
-    1e-12,
-    'source bottom of the outer pitch row',
-  );
-  vector2Near(
-    sourceAnchors.guideBottom,
-    new THREE.Vector2(252, 423.0131578947368),
+    modelPointToSourceRaster(sourcePointToModel(sourceAnchors.hubLobeBottom)),
+    sourceAnchors.hubLobeBottom,
     1e-10,
-    'source bottom of the parallel shaft groove',
-  );
-  vector2Near(
-    sourceAnchors.connectorCenters[0],
-    new THREE.Vector2(200.13229778690356, 133.7290338850538),
-    1e-10,
-    'upper-left reversal center follows the engraving',
-  );
-  vector2Near(
-    sourceAnchors.connectorCenters[1],
-    new THREE.Vector2(366.53919425074656, 180.82360494550593),
-    1e-10,
-    'upper-right reversal center follows the engraving',
+    'source mapping round trip',
   );
   const sourceState = stateAtCycleProgress(0);
   near(sourceState.wheelAngle, 0, 2e-14, 'source wheel pose');
-  vector3Near(
-    sourcePointToModel(sourceAnchors.outerPitchBottom),
-    sourceState.contactPoint,
-    2e-12,
-    'source bottom pitch point is the initial working contact',
+  assert.ok(
+    sourcePointToModel(sourceAnchors.hubLobeBottom)
+      .distanceTo(sourceState.contactPoint) < 0.02,
+    'omitted pinion starts under the hub lobe, wholly on the wheel',
   );
   vector3Near(
-    sourcePointToModel(sourceAnchors.guideBottom),
+    sourcePointToModel(sourceAnchors.pinionCenter),
     sourceState.pinionCenter,
     2e-12,
     'the inferred pinion shaft begins inside Brown\'s guide groove',
@@ -214,7 +198,7 @@ test('movement 192 closes one tangent-continuous eccentric pitch path and its ex
     stateAtPitchDistance,
   } = model.root.userData;
   const { pitchSegments } = geometry;
-  assert.equal(pitchSegments.length, 4);
+  assert.equal(pitchSegments.length, 112);
   near(
     geometry.circularPitch,
     FULL_TURN * geometry.pinionPitchRadius / geometry.pinionTeeth,
@@ -225,56 +209,41 @@ test('movement 192 closes one tangent-continuous eccentric pitch path and its ex
     geometry.pitchPerimeter,
     geometry.circularPitch * geometry.mangleTeeth,
     2e-14,
-    '85 mangle pitches close the eccentric tooth path',
+    '65 mangle pitches close the traced tooth path',
   );
   near(
     geometry.pitchPerimeter,
-    (geometry.outerPitchRadius + geometry.innerPitchRadius)
-      * geometry.mainArcSweep
-      + FULL_TURN * geometry.connectorRadius,
+    pitchSegments.reduce((sum, segment) => sum + segment.radius * Math.abs(segment.sweep), 0),
     2e-14,
-    'four exact circular branches make the pitch perimeter',
+    'tangent-continuous biarcs make the pitch perimeter',
   );
   near(
     geometry.guidePerimeter,
-    geometry.pitchPerimeter - FULL_TURN * geometry.pinionPitchRadius,
-    2e-14,
-    'the inward parallel guide is one pinion circumference shorter',
+    geometry.pitchPerimeter + FULL_TURN * geometry.pinionPitchRadius,
+    2e-13,
+    'the outward parallel guide is one pinion circumference longer',
   );
   near(
     geometry.totalPinionTravel,
     geometry.guidePerimeter / geometry.pinionPitchRadius,
-    3e-14,
+    3e-13,
     'closed guide traversal is the exact pinion input travel',
   );
   near(
     geometry.totalPinionTravel / FULL_TURN,
-    geometry.mangleTeeth / geometry.pinionTeeth - 1,
-    2e-14,
-    'one mangle cycle takes exactly 7.5 pinion revolutions',
+    geometry.mangleTeeth / geometry.pinionTeeth + 1,
+    2e-13,
+    'one mangle cycle takes exactly 11 5/6 pinion revolutions',
   );
   assert.ok(Math.abs(geometry.guideAngleClosureError) < 2e-14);
-  assert.ok(geometry.eccentricCenter.length() > 0);
-  vector2Near(
-    pitchSegments[0].center,
-    geometry.eccentricCenter,
-    1e-14,
-    'outer row is eccentric to the wheel shaft',
-  );
-  vector2Near(
-    pitchSegments[2].center,
-    geometry.eccentricCenter,
-    1e-14,
-    'inner row shares the same eccentric center',
-  );
 
   for (let index = 0; index < pitchSegments.length; index += 1) {
     const current = pitchSegments[index];
     const next = pitchSegments[(index + 1) % pitchSegments.length];
     const end = evaluateArc(current, 1);
     const start = evaluateArc(next, 0);
-    vector2Near(end.point, start.point, 2e-14, `pitch join ${index}`);
-    vector2Near(end.guidePoint, start.guidePoint, 2e-14, `guide join ${index}`);
+    vector2Near(end.point, start.point, 5e-14, `pitch join ${index}`);
+    vector2Near(end.guidePoint, start.guidePoint, 5e-14, `guide join ${index}`);
     assert.ok(end.tangent.dot(start.tangent) > 1 - 2e-14);
     assert.ok(end.rightNormal.dot(start.rightNormal) > 1 - 2e-14);
     assert.ok(current.pinionTravelLength > 0);
@@ -443,16 +412,20 @@ test('movement 192 keeps constant pinion input, exact rolling contact, and varia
   assert.ok(maximumRollingError < 2e-12);
   assert.ok(maximumShaftVelocityError < 2e-12);
   assert.equal(reversalCount, 2);
-  assert.ok(
-    branchMaximumRatios.get('eccentric-outer-internal-arc')
-      - branchMinimumRatios.get('eccentric-outer-internal-arc') > 0.018,
-    'the eccentric outer run has no constant-speed interval',
-  );
-  assert.ok(
-    branchMaximumRatios.get('eccentric-inner-external-arc')
-      - branchMinimumRatios.get('eccentric-inner-external-arc') > 0.062,
-    'the eccentric inner run has no constant-speed interval',
-  );
+  assert.ok(branchMaximumRatios.size > 100, 'every traced biarc is driven');
+  // Isolated stationary samples are smooth ratio extrema; a constant-speed
+  // interval would give a run of them.
+  let constantRun = 0;
+  let longestConstantRun = 0;
+  for (let index = 1; index < 4096; index += 1) {
+    const before = stateAtCycleProgress((index - 1) / 4096).wheelToPinionRatio;
+    const after = stateAtCycleProgress(index / 4096).wheelToPinionRatio;
+    constantRun = Math.abs(after - before) < 1e-7 ? constantRun + 1 : 0;
+    longestConstantRun = Math.max(longestConstantRun, constantRun);
+  }
+  assert.ok(longestConstantRun <= 2, 'the speed varies in every part of the path');
+  assert.ok(transmission.maximumRatio > 0.28 && transmission.maximumRatio < 0.29);
+  assert.ok(transmission.minimumRatio < -0.14 && transmission.minimumRatio > -0.15);
 
   const source = stateAtCycleProgress(0);
   const closure = stateAtCycleProgress(1);
@@ -465,21 +438,21 @@ test('movement 192 keeps constant pinion input, exact rolling contact, and varia
     3e-13,
     'uniform pinion completes the exact cycle travel',
   );
-  assert.ok(transmission.wheelSwing > 5.102);
-  assert.ok(transmission.wheelSwing < 5.103);
-  assert.ok(transmission.maximumWheelAngle > 2.725);
-  assert.ok(transmission.minimumWheelAngle < -2.377);
-  assert.ok(transmission.slowDirectionInputTravel > 30.43);
-  assert.ok(transmission.fastDirectionInputTravel < 16.7);
+  assert.ok(transmission.wheelSwing > 5.738);
+  assert.ok(transmission.wheelSwing < 5.740);
+  assert.ok(transmission.maximumWheelAngle > 3.066);
+  assert.ok(transmission.minimumWheelAngle < -2.672);
+  assert.ok(transmission.slowDirectionInputTravel > 47.6);
+  assert.ok(transmission.fastDirectionInputTravel < 26.8);
   assert.ok(
     transmission.slowDirectionInputTravel
-      > transmission.fastDirectionInputTravel * 1.82,
-    'the larger-radius direction takes substantially longer',
+      > transmission.fastDirectionInputTravel * 1.78,
+    'the rim-side direction takes substantially longer',
   );
   near(
     transmission.pinionRevolutionsPerMangleCycle,
-    7.5,
-    2e-14,
+    71 / 6,
+    2e-13,
     'pinion revolutions per oscillation',
   );
 
@@ -514,7 +487,7 @@ test('movement 192 rendered transforms keep the pinion captured while the wheel 
   const orderedNames = [
     'sourcePose',
     'maximumWheelAngle',
-    'innerRunMidpoint',
+    'outerRunBottom',
     'minimumWheelAngle',
     'cycleClosure',
   ];
@@ -614,9 +587,13 @@ test('movement 192 rendered transforms keep the pinion captured while the wheel 
       1e-15,
       `${name} rendered constant pinion speed`,
     );
-    wheelIndexPositions.push(worldPoint(blocks.wheelIndex));
+    wheelIndexPositions.push(
+      new THREE.Vector3(1, 0, 0).applyQuaternion(
+        blocks.wheelRotor.getWorldQuaternion(new THREE.Quaternion()),
+      ),
+    );
     universalLengths.push(couplingStart.distanceTo(couplingEnd));
-    if (index > 0 && index < orderedNames.length - 1) {
+    if (name === 'maximumWheelAngle' || name === 'minimumWheelAngle') {
       assert.ok(wheelIndexPositions[index].distanceTo(wheelIndexPositions[0]) > 0.35);
     }
   }
@@ -643,10 +620,14 @@ test('movement 192 rendered transforms keep the pinion captured while the wheel 
   assert.ok(Math.max(...universalLengths) - Math.min(...universalLengths) > 0.01);
   assert.ok(canonicalTimes.maximumWheelAngle < canonicalTimes.minimumWheelAngle);
   assert.ok(
+    canonicalTimes.maximumWheelAngle < canonicalTimes.outerRunBottom
+      && canonicalTimes.outerRunBottom < canonicalTimes.minimumWheelAngle,
+  );
+  assert.ok(
     canonicalTimes.minimumWheelAngle - canonicalTimes.maximumWheelAngle
-      < canonicalTimes.cycleClosure
+      > canonicalTimes.cycleClosure
         - canonicalTimes.minimumWheelAngle + canonicalTimes.maximumWheelAngle,
-    'the inner-radius return is faster than the outer-radius drive',
+    'the hub-lobe return is faster than the rim-side drive',
   );
   disposeModel(model.root);
 });
@@ -671,8 +652,8 @@ test('movement 192 is fully three-dimensional and remains distinct as the review
     ]) physicalBounds.expandByObject(object);
   }
   const size = physicalBounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 5.3);
-  assert.ok(size.y > 5.3);
+  assert.ok(size.x > 3.8);
+  assert.ok(size.y > 3.8);
   assert.ok(size.z > 2.25);
   assert.ok(physicalBounds.min.z < -0.70);
   assert.ok(physicalBounds.max.z > 0.77);
@@ -684,7 +665,7 @@ test('movement 192 is fully three-dimensional and remains distinct as the review
       mangleToothCount += 1;
     }
   });
-  assert.ok(meshCount >= 20);
+  assert.ok(meshCount >= 14);
   assert.ok(blocks.toothLand.geometry.attributes.position.count > 1000);
   assert.equal(mangleToothCount, 0);
   assert.ok(model.cameraDirection.x > 0);

@@ -6176,14 +6176,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: white notch rectangle removed."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u3-gears-review.md",
+        "note": "Default capture inspected beside the plate: both scrolls cut by one rack, whole teeth at each step, relieved notch floor, upper wheel driving."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Pass-51 screen: the 0.0246 hub/bearing overlap is fixed."
+        "evidence": "docs/u3-gears-review.md",
+        "note": "show-body-intersections and a 513-pose planar audit: no overlap."
       },
       "references": [
         "docs/irregular-gear-family-review.md",
@@ -6192,7 +6192,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u3-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6200,9 +6201,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "One tooth on each wheel is visibly cut off, leaving a notch Brown does not draw (compare 38); the drive jumps at the scroll seam.",
-      "limits": "",
-      "assessment": "flawed",
+      "visibleFlaws": "",
+      "limits": "Teeth are pointed rather than square; the once-per-turn reset is a prescribed disengagement with a sudden speed change.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -6211,14 +6212,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: shafts end at the universal-joint surfaces."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u3-gears-review.md",
+        "note": "Default capture inspected beside the plate: the hooked toothed path and parallel groove traced from the plate."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w3f-gears-core-review.md",
-        "note": "Pass-51 screen: the 0.083 shaft/yoke and related pairs are fixed."
+        "evidence": "docs/u3-gears-review.md",
+        "note": "Pass-52 screen: clear after lowering the hub (a 0.032 hub/pinion hit during the rebuild was fixed)."
       },
       "references": [
         "docs/reversing-mangle-guides-review.md",
@@ -6227,7 +6228,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u3-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6235,9 +6237,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The groove shape differs substantially from the engraving (Brown's single S-shaped groove round the centre vs two separate C arcs).",
-      "limits": "The input pinion is kept as the working drive though the plate omits it. Prescribed reversal and contact-force selection unvalidated.",
-      "assessment": "flawed",
+      "visibleFlaws": "The working pinion, kept though Brown omits it, overhangs the wheel edge on the rim run.",
+      "limits": "Teeth rounded rather than square; reversal and contact forces not validated.",
+      "assessment": "minor",
       "userReported": "2026-09-24"
     },
     {
@@ -6345,9 +6347,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2a-gears-core-review.md",
-        "note": "Default capture inspected beside the plate: face-on with the plate's tapered pedestal; gear A is less elongated than Brown's."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u3-gears-review.md",
+        "note": "Default capture inspected beside the plate: wheel A's elongated outline traced from the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6360,7 +6362,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u3-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6368,9 +6371,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Wheel A is a nearly round gear where Brown draws an elongated two-lobed gear.",
-      "limits": "Guide clearance may change the loaded path.",
-      "assessment": "flawed",
+      "visibleFlaws": "",
+      "limits": "Wheel centre sits ≈8.5 px below A in the plate pose; the lobe under the arm is inferred.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -6412,9 +6415,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4b-164-253-review.md",
-        "note": "Default capture inspected beside the plate: framed large and face-on; plain disc rollers."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u3-gears-review.md",
+        "note": "Default capture inspected beside the plate: the rack on one smoothly outlined carrier plate with the rods pinned into it."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6427,7 +6430,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
         "docs/w5a-gears-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/u3-gears-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6435,9 +6439,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rods hang on tiny pins instead of forming a solid, smoothly shaped moving frame; the frame also slides partly out of the default view.",
-      "limits": "Rigid links and ideal joints assumed; contact-force selection and reversal dynamics unsolved.",
-      "assessment": "flawed",
+      "visibleFlaws": "",
+      "limits": "The lower-right fixed rod pin sits at the frame edge rather than inset; rigid links and ideal joints assumed.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {

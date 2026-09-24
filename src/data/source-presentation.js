@@ -137,12 +137,12 @@ export default {
     note: 'Flat side elevation: the bench is drawn as a plank section under the work, standard, holder, shoe and screw; no index marks are drawn.',
   },
   191: {
-    remove: ['rear-fixed-bearing-standard', 'fixed-support-foot', '(?:upper|lower)-radial-speed-reset-seam', 'white-index-on-(?:upper-variable-speed-output|lower-constant-speed-driver)'],
+    remove: ['rear-fixed-bearing-standard', 'fixed-support-foot', '(?:upper|lower)-radial-speed-reset-seam', 'white-index-on-(?:lower-variable-speed-output|upper-constant-speed-driver)'],
     note: 'Face view of the two notched wheels; no standard, foot, seam outline or index marks are drawn.',
   },
   192: {
-    remove: ['rear-wheel-bearing-standard', 'fixed-mangle-wheel-support-foot'],
-    note: 'Face view of the mangle wheel and its pinion; no standard or foot is drawn.',
+    remove: ['rear-wheel-bearing-standard', 'fixed-mangle-wheel-support-foot', 'fixed-universal-joint-for-pinion-drive', 'fixed-rear-input-shaft', 'vibrating-telescopic-shaft-through-universal-joint', 'moving-pinion-side-universal-yoke'],
+    note: 'Face view of the hooked toothed land, its parallel groove b, d and the hub; Brown omits the pinion, which is kept as the working drive, but no standard, foot, universal joint or slip shaft (which would stand in front of the wheel) is drawn. The factory still builds the joint for offline checks.',
   },
   193: {
     remove: ['rear-wheel-bearing-standard', 'fixed-mangle-wheel-support-foot'],
