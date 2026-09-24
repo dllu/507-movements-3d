@@ -16867,7 +16867,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
         "docs/m6-402-507-review.md",
-        "docs/m9-410-507-review.md"
+        "docs/m9-410-507-review.md",
+        "docs/m15-final-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16875,9 +16876,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The camera fits the carrier's full turn, so the train is small (about a third of the frame height).",
       "limits": "The camera fits the carrier's full turn, so the train is smaller in frame than on the plate.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 503,
@@ -17044,7 +17045,8 @@
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m6-402-507-review.md",
-        "docs/m9-410-507-review.md"
+        "docs/m9-410-507-review.md",
+        "docs/m15-final-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17052,9 +17054,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The camera fits the arm's full sweep, so the figure is small and sits left of centre for half the cycle; the wheels read as thin strips.",
       "limits": "The camera fits the arm's full sweep; the teeth read as faint serrations at about Brown's hatching pitch.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     }
   ],
   "presentationReview": {
