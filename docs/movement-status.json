@@ -6174,7 +6174,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/u4-catches-review.md",
         "docs/m2-intermittent-review.md",
-        "docs/m12-forced-mixed-review.md"
+        "docs/m12-forced-mixed-review.md",
+        "docs/m14-last-residuals-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6185,9 +6186,9 @@
         "note": "Shared 183–184 unqualified MuJoCo diagnostic; no production motion installed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The lower wing sits about 60° clockwise of Brown's; the weight rods rise from eyes at top-left and bottom-right where Brown hangs them down from pins at mid height.",
-      "limits": "Plate 184 is plate 183 reflected top to bottom; the view is a presentation reflection of the 183 solve at 183's pose.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Plate 184 is plate 183 reflected top to bottom; the view is a presentation reflection of the 183 solve, with the weight arms turned half a turn to Brown's mid-height pins (same torque).",
+      "assessment": "reasonable"
     },
     {
       "id": 185,
@@ -7006,7 +7007,8 @@
         "docs/w3f-gears-core-review.md",
         "docs/w5a-gears-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m1-belts-gears-review.md"
+        "docs/m1-belts-gears-review.md",
+        "docs/m14-last-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7014,8 +7016,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The pinion is a thin slotted web where Brown draws a lantern strip (a lantern-width web would strike the neighbouring pin rings).",
-      "limits": "A 0.0535 pin/pinion-web overlap is geometric (pins must reach the slots over the neighbouring ring).",
+      "visibleFlaws": "Brown's slots are closed at both ends; ours run open across the strip.",
+      "limits": "The pinion is widened inward only (0.26 against Brown's 0.34), since the outer side would strike the neighbouring pin ring.",
       "assessment": "minor"
     },
     {
@@ -9039,16 +9041,17 @@
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
         "docs/lane4-escapements-misc-review.md",
-        "docs/w3d-255-287-review.md"
+        "docs/w3d-255-287-review.md",
+        "docs/m14-last-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-mutilated-racks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The two teeth at each handoff are stubs (Brown's spacing would jam); the closed end sits farther right than drawn; the subject is smaller than on the plate and the rod leaves the view at the stroke limit.",
-      "limits": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The closed end sits farther right than drawn and the subject is smaller than on the plate.",
+      "limits": "The frame's 17-pitch stroke against its 22-pitch length sets the swept size; handoff teeth are relieved at working depth but keep Brown's outline as a web behind the pinion; the rod, which Brown breaks off, leaves the view at the stroke limit.",
       "assessment": "minor"
     },
     {
@@ -9108,7 +9111,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3d-255-287-review.md",
         "docs/m8-framing-ropes-review.md",
-        "docs/m12-forced-mixed-review.md"
+        "docs/m12-forced-mixed-review.md",
+        "docs/m14-last-residuals-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9116,9 +9120,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Teeth are cut deeper than engraved so the pawl hooks clear.",
-      "limits": "The in-view bar return after two vibrations (both pawls lifted, bar slides back over 2.5 s) is a prescribed demonstration reset; Brown draws no pulley bearing.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The in-view bar return after two vibrations is a prescribed demonstration reset; Brown draws no pulley bearing.",
+      "assessment": "reasonable"
     },
     {
       "id": 272,

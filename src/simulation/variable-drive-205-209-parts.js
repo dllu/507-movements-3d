@@ -6,6 +6,12 @@ const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;}
 const ring=(radius,bore,depth)=>boredLatheGeometry([{radial:radius,axial:-depth/2},{radial:radius,axial:depth/2}],bore,64);
 const outlined=(points,depth,bore)=>{const shape=new THREE.Shape(points.map(p=>new THREE.Vector2(...p))),hole=new THREE.Path();hole.absarc(0,0,bore,0,2*Math.PI,false);shape.holes.push(hole);return new THREE.ExtrudeGeometry(shape,{depth,bevelEnabled:false,curveSegments:64}).translate(0,0,-depth/2);};
 const flat=(mesh,bore=null)=>{const p=mesh.geometry.parameters,shape=p.shapes.clone();if(bore!==null){const hole=new THREE.Path();hole.absarc(0,0,bore,0,Math.PI*2,false);shape.holes.push(hole);}replace(mesh,new THREE.ExtrudeGeometry(shape,{depth:p.options.depth,bevelEnabled:false,curveSegments:64}).translate(0,0,-p.options.depth/2));};
+// 208's slotted pinion runs from its outer (working) face at -0.055 inward
+// to +0.205 along its shaft (local z points toward the wheel centre): Brown
+// draws a wide strip, and the inner neighbouring ring stays clear of that
+// inward face at every selector position. The slots are the pin envelope over
+// this whole slab (scripts/export-208-pin-envelope.mjs).
+export const pinion208Slab=Object.freeze([-.055,.205]);
 export function correctVariableDrive(root,id){
  const b=root.userData.blocks;
  if(id===205){
@@ -17,12 +23,14 @@ export function correctVariableDrive(root,id){
   root.userData.reconstructionNote='Two opposed involute cams engage alternating rows of eleven wheel teeth, giving one reverse output turn per eleven input turns. The axial separation and inferred 20-degree profiles reconstruct the source animation.';
  }else if(id===208){
   for(const floor of b.slotFloors)floor.visible=false;
-  b.pinionWeb.userData.generationGeometry=b.pinionWeb.geometry;replace(b.pinionWeb,outlined(pinSlotOutline,.11,.078));for(const tooth of b.pinionTeeth)tooth.visible=false;
+  b.pinionWeb.userData.generationGeometry=b.pinionWeb.geometry;replace(b.pinionWeb,outlined(pinSlotOutline,pinion208Slab[1]-pinion208Slab[0],.078).translate(0,0,(pinion208Slab[0]+pinion208Slab[1])/2));for(const tooth of b.pinionTeeth)tooth.visible=false;
   for(const ring of b.pinionFaceRings)ring.visible=false;
   replace(b.pinWheelDisk,ring(1.58,.072,.18));replace(b.pinWheelHub,ring(.19,.072,.56));
   for(const ringGroup of b.pinRings)for(const pin of ringGroup.children.filter(o=>o.userData.pinWheelPin)){replace(pin,new THREE.CylinderGeometry(.082,.082,.595,22));pin.position.z=(.085+.68)/2;}
   root.userData.geometry.pinStartZ=.085;root.userData.geometry.pinLength=.595;
   replace(b.selectorCollar.children[0],ring(.15,.060,.13));
+  // The selector collar sits beside the widened pinion's inward face.
+  for(const part of b.selectorCollar.children)part.position.x=pinion208Slab[1]+.13/2+.015;
   for(const o of[b.baseRail,...b.baseFeet,...b.outputBearingPosts,...b.outputBearings,b.inputBearing,b.inputBearingPost])o.visible=false;
   root.userData.reconstructionNote='One slotted pinion slides along its shaft to select eleven, sixteen or twenty-one face pins. Selection is performed while stopped and indexed. The running ratios are prescribed; finite slot clearance and load-free transitions are reconstruction assumptions.';
  }else{

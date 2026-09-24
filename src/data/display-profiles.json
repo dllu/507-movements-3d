@@ -3513,17 +3513,17 @@
       "peakAngularSpeed": 0.9012182125287188,
       "peakVisibleAngularSpeed": 0.9012182125287188,
       "sustainedVisibleAngularSpeed": 0.2534916205608342,
-      "floorY": -2.581249952316284,
+      "floorY": -3.606250047683716,
       "fastestPart": "upper-back-weighted-quadrant-valve-handle",
       "motionBounds": {
         "min": [
           -2.693750095367432,
-          -2.581249952316284,
+          -3.606250047683716,
           -0.6599999991059303
         ],
         "max": [
-          1.9641936487314184,
-          3.3062500000000004,
+          1.9862563638659163,
+          2.2437500953674316,
           0.5600000023841858
         ]
       }
@@ -5165,7 +5165,7 @@
     "271": {
       "peakAngularSpeed": 2.859735121135908,
       "peakVisibleAngularSpeed": 2.859735121135908,
-      "sustainedVisibleAngularSpeed": 0.3351433205071892,
+      "sustainedVisibleAngularSpeed": 0.335311990383751,
       "floorY": -2.85000000667572,
       "fastestPart": "free-left-cord-pulley",
       "motionBounds": {
@@ -5175,8 +5175,8 @@
           -0.6899999976158142
         ],
         "max": [
-          2.002039211674672,
-          1.269958955202147,
+          2.0020934161867503,
+          1.2699589211039946,
           1.0399999928474426
         ]
       }

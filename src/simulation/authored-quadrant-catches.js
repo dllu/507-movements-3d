@@ -43,8 +43,8 @@ const boreRadius = 16;
 const shaftRadius = 15;
 const eyeHole = 5;
 const eyePin = 4.2;
-const rodTopY = 38;
-const rodBottomY = 500;
+const rodTop183 = 38;
+const rodBottom183 = 500;
 const weightRodBottom = { upper: 475, lower: 505 };
 
 function interpolateRow(phase) {
@@ -54,10 +54,43 @@ function interpolateRow(phase) {
   return a.map((v, k) => v + (b[k] - v) * f);
 }
 
+// Plate 184 hangs both back-weight rods down from Brown's pins at mid height:
+// the ball-lever handle carries a slender arm down-right from its (upper)
+// hub to a pin clear of the wing, and the wing handle a hidden arm up-left
+// from its hub to a pin behind the piston rod (dashed on the plate); the
+// wing's tip carries no eye. In the unreflected frame these are 183's arms
+// turned about half a turn with the pull reversed, so each weight still
+// turns its handle the same way over the whole solved swing (the lever arm
+// never changes sign). Pin positions are plate-184 pixels relative to each
+// hub, reflected into this frame. Both arms lie in the rear layer W, which
+// holds nothing else of the other handle, so the solve is unchanged.
+function restoreBrown184Weights(upper, lower) {
+  const arm = (pivot, eye) => polygonClipping.union(
+    taperedBar(pivot, eye, 8, 5), circlePoly(eye, 10.5, 48), circlePoly(pivot, 30, 64));
+  const upperEye = [PU[0] - 103, PU[1] + 85], lowerEye = [PL[0] + 97, PL[1] - 107];
+  // The wing is trimmed to its concentric rim and squared off radially at
+  // its tip, which drops 183's eye tab and neck.
+  const tipCut = [[[PU, ...[-100, -70, -44.5].map((a) => [PU[0] + 220 * Math.cos(a * deg), PU[1] + 220 * Math.sin(a * deg)]), PU]]];
+  upper.parts.quadrant = { ...upper.parts.quadrant, poly: polygonClipping.difference(
+    polygonClipping.intersection(upper.parts.quadrant.poly, circlePoly(PU, 137.5, 192)), tipCut) };
+  upper.parts.hub = { ...upper.parts.hub, planes: 'W' + upper.parts.hub.planes };
+  upper.parts.weightArm = { planes: 'W', poly: arm(PU, upperEye) };
+  upper.eye = upperEye;
+  lower.parts.weightArm = { planes: 'W', poly: arm(PL, lowerEye) };
+  lower.eye = lowerEye;
+}
+
+function taperedBar(a, b, w0, w1) {
+  const d = [b[0] - a[0], b[1] - a[1]], n = Math.hypot(...d), u = [-d[1] / n, d[0] / n];
+  return [[[[a[0] + u[0] * w0, a[1] + u[1] * w0], [b[0] + u[0] * w1, b[1] + u[1] * w1],
+    [b[0] - u[0] * w1, b[1] - u[1] * w1], [a[0] - u[0] * w0, a[1] - u[1] * w0], [a[0] + u[0] * w0, a[1] + u[1] * w0]]]];
+}
+
 function sourceHandGear(movementId) {
   const root = new THREE.Group();
   const is184 = movementId === 184;
   const { upper, lower } = quadrantCatchParts();
+  if (is184) restoreBrown184Weights(upper, lower);
   const materials = {
     upper: matte(PALETTE.driven, { metalness: 0.12, roughness: 0.6 }),
     lower: matte(PALETTE.accent, { metalness: 0.14, roughness: 0.58 }),
@@ -77,7 +110,7 @@ function sourceHandGear(movementId) {
     for (const [partName, part] of Object.entries(body.parts)) {
       let poly = partName === 'hub' ? null : polygonClipping.difference(part.poly, bore);
       const [low, high] = span(part.planes);
-      if (eye && partName === (name === 'upper' ? 'quadrant' : 'weightArm')) {
+      if (eye && partName === (name === 'upper' && !is184 ? 'quadrant' : 'weightArm')) {
         poly = polygonClipping.difference(poly, circlePoly(eye, eyeHole, 48));
       }
       const geometry = partName === 'hub'
@@ -108,6 +141,9 @@ function sourceHandGear(movementId) {
 
   // Piston rod: a source-width section with broken ends (it runs beyond the
   // plate), carrying the projecting tappet.
+  // Plate 184 runs the rod from 30 to 490 px (its top and bottom breaks),
+  // which is 416 to -44 in this unreflected frame.
+  const [rodBottomY, rodTopY] = is184 ? [416, -44] : [rodBottom183, rodTop183];
   const rodX0 = 155, rodX1 = 190;
   const rodOutline = [[rodX0, rodBottomY], [rodX0 + 10, rodBottomY - 6], [rodX0 + 21, rodBottomY + 4], [rodX1, rodBottomY - 3],
     [rodX1, rodTopY], [rodX1 - 12, rodTopY + 5], [rodX1 - 22, rodTopY - 4], [rodX0, rodTopY + 3]].map(toModel);
@@ -137,7 +173,7 @@ function sourceHandGear(movementId) {
     const rod = new THREE.Mesh(new THREE.BoxGeometry(8 * sourceScale, 1, layers.rods[1] - layers.rods[0]), materials.pin);
     rod.position.z = (layers.rods[0] + layers.rods[1]) / 2;
     rod.userData.role = `${name}-back-weight-rod`;
-    const eyeZ = span(name === 'upper' ? 'X' : 'W');
+    const eyeZ = span(name === 'upper' && !is184 ? 'X' : 'W');
     const pin = new THREE.Mesh(new THREE.CylinderGeometry(eyePin * sourceScale, eyePin * sourceScale, eyeZ[1] - layers.rods[1], 32), materials.pin);
     pin.rotation.x = Math.PI / 2;
     pin.position.z = (eyeZ[1] + layers.rods[1]) / 2;
@@ -172,10 +208,13 @@ function sourceHandGear(movementId) {
     pistonGroup.position.y = (origin[1] - s.tappetTop) * sourceScale;
     for (const [name, w] of Object.entries(weightRods)) {
       const e = eyeAt(w, name === 'upper' ? s.upperAngle : s.lowerAngle), m = toModel(e);
-      const length = Math.max(0.05, (weightRodBottom[name] - e[1]) * sourceScale);
+      // 183's rods hang down the page; 184's run the other way in the
+      // unreflected frame, so they hang down in the reflected view, cut at
+      // the piston rod's broken end.
+      const length = Math.max(0.05, (is184 ? e[1] - rodTopY : weightRodBottom[name] - e[1]) * sourceScale);
       w.group.position.set(m[0], m[1], 0);
       w.rod.scale.y = length;
-      w.rod.position.y = -length / 2;
+      w.rod.position.y = is184 ? length / 2 : -length / 2;
     }
     root.userData.kinematics = s;
   };
@@ -191,7 +230,7 @@ function sourceHandGear(movementId) {
     : 'ascending-piston-tappet-trips-lower-quadrant-handle-releases-upper-backweighted-quadrant-handle-and-reverses-four-valves';
   root.userData.fidelity = 'authored';
   root.userData.variant = is184 ? 'source-184-reflected-top-of-cylinder-initial-pose' : 'source-183-ascending-stroke-initial-pose';
-  root.userData.reconstructionNote = 'Handle motion is a quasistatic solve: the tappet pushes, the back weights are represented by each handle moving toward its weighted side until a contact or its undrawn valve stop, and concentric quadrant rims hold studs on the opposite handle. Forces, friction and impact are not simulated. 184 is the 183 gear reflected top to bottom, as plate 184 is plate 183 flipped; in that view the tappet stands at the top and descends onto the upper handle.';
+  root.userData.reconstructionNote = 'Handle motion is a quasistatic solve: the tappet pushes, the back weights are represented by each handle moving toward its weighted side until a contact or its undrawn valve stop, and concentric quadrant rims hold studs on the opposite handle. Forces, friction and impact are not simulated. 184 is the 183 gear reflected top to bottom, as plate 184 is plate 183 flipped; in that view the tappet stands at the top and descends onto the upper handle. Its back-weight rods hang down from Brown\'s mid-height pins on slender arms (183\'s arms turned half a turn with the pull reversed, so each weight still turns its handle the same way).';
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraDirection = new THREE.Vector3(0, 0, 18);

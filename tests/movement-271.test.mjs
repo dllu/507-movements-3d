@@ -118,14 +118,14 @@ test('movement 271 records the unavailable animation and measured engraving topo
     anchor: { x: 440, y: 267 },
     nose: { x: 286, y: 284 },
   });
-  // Brown's teeth are small (about 22 at 10.5 px); they are cut 10 px deep
-  // so the finite hooks clear the next ramp at pickup.
+  // Brown's teeth are small (about 22 at 10.5 px) and about 6 px deep; the
+  // slim hook nose clears the next ramp at pickup at that depth.
   assert.deepEqual(plate.rasterRack, {
     approximateToothCount: 22,
     barBottomY: 296,
     barLeftX: 128,
     pitchPixels: 10.5,
-    rootY: 294,
+    rootY: 290,
     tipY: 284,
   });
   assert.deepEqual(plate.rasterLeftPulley,

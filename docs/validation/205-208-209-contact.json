@@ -12,7 +12,7 @@
     },
     {
       "file": "src/simulation/variable-drive-205-209-parts.js",
-      "sha256": "bfc1463fbc8ad2b0803f3c71586ad9208c8a070cc787a19ca0520941324ed331"
+      "sha256": "5a26bf21b727b9cad17357b5951c6471e41ae54b698e1b171209ddfc372f2dd3"
     },
     {
       "file": "src/simulation/generated-variable-drive-205-209.js",
@@ -20,7 +20,7 @@
     },
     {
       "file": "src/simulation/generated-pin-slot-208.js",
-      "sha256": "5a8e7d31cbb4bf6bd3bd818e63e9ec419257e980b0656271bd86cbed4db91fe8"
+      "sha256": "bcac160d3b5ca0fdee7fd7d5b959fb6e9bb9cb5de58e9d48dbfc4274c705c101"
     },
     {
       "file": "src/simulation/bored-lathe-geometry.js",
@@ -65,10 +65,10 @@
   ],
   "pinSlots": {
     "poses": 167,
-    "tested": 976752,
+    "tested": 1036070,
     "inside": 0,
     "maxPenetration": 0,
-    "maxGap": 0.012154190073883225,
-    "maxWorkingGap": 0.001662722252577804
+    "maxGap": 0.0016649400562623355,
+    "maxWorkingGap": 0.0016649400562623355
   }
 }

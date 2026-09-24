@@ -699,3 +699,25 @@ test('movement 269 rack teeth are generated clear of the swept pinion, and the b
   console.log({ id: 269, minimumToothClearance: minimum });
   disposeModel(model.root);
 });
+
+test('movement 269 relieved teeth keep Brown\'s full outline as a web behind the pinion', async () => {
+  const { createAuthoredMutilatedRackMovement } = await import('../src/simulation/authored-mutilated-racks.js');
+  const model = createAuthoredMutilatedRackMovement(catalog.movements[268]);
+  const { blocks, geometry, conjugateTeeth } = model.root.userData;
+  const relieved = blocks.rackTeeth.filter((tooth) => tooth.children.length);
+  assert.equal(relieved.length, conjugateTeeth.rackTeethRelieved);
+  assert.ok(relieved.length >= 6);
+  for (const tooth of relieved) {
+    const web = tooth.children.find((child) => /full-outline-web-behind-pinion$/.test(child.userData.role));
+    assert.ok(web, `tooth ${tooth.userData.index} has a full-outline web`);
+    web.geometry.computeBoundingBox();
+    const box = web.geometry.boundingBox;
+    // Entirely behind the pinion's rear face, so the swept pinion cannot reach it.
+    assert.ok(box.max.z < -geometry.pinionDepth / 2);
+    // Full height from the front: the tip reaches the nominal tip line.
+    const side = tooth.userData.rack === 'upper' ? 1 : -1;
+    const tip = side > 0 ? box.min.y : -box.max.y;
+    assert.ok(Math.abs(tip - (geometry.rackToothRootY - geometry.pinionToothHeight)) < 1e-6);
+  }
+  disposeModel(model.root);
+});

@@ -5,7 +5,7 @@
   ],
   "poses": 65,
   "sources": {
-    "factory": "29a5a8dea90890c6963ba754590dfc0bd01fd22574f2eae9e64e87d4b43d2938",
+    "factory": "5da80aa05fa432ee017d0aee85efacdffe744e005d33bc4856faffcf218c4ad5",
     "parts": "72597021ec00c24e2fa24b30d7d6339babfd134bdd3c239d450d9106d8cb60d2",
     "motion": "ca70d3ce7815f15f2c65bf3365aea71ae6d4f430112e163bb8bb2621c0ee6a52"
   },
@@ -29,7 +29,7 @@
       }
     },
     "184": {
-      "meshes": 20,
+      "meshes": 21,
       "worstPenetration": 0.0005486135450288128,
       "pairs": {
         "upper-handle-stud/lower-handle-lip": {
@@ -38,7 +38,7 @@
         },
         "source-width-sectioned-piston-rod/projecting-piston-rod-tappet": {
           "depth": 1.6689300497141346e-8,
-          "time": 0
+          "time": 2.25
         },
         "upper-handle-catchBoss/lower-handle-stud": {
           "depth": 0.00008621565405691762,

@@ -37,3 +37,29 @@ test('movement 184 shows the 183 gear reflected top to bottom, tappet at the top
   assert.ok(upperFreeStop > 0);
   assert.notEqual(m183.mechanism, d.mechanism);
 });
+
+test('movement 184 hangs both back-weight rods down from Brown\'s mid-height pins', () => {
+  const model = createMovementModel(catalog.movements[183]), d = model.root.userData, b = d.blocks;
+  const at = (o) => o.getWorldPosition(new THREE.Vector3());
+  for (const t of [0, 3, 6, 9, 12, 15]) {
+    model.update(t); model.root.updateMatrixWorld(true);
+    const ballShaft = at(b.lowerShaft), wingShaft = at(b.upperShaft);
+    const ballPin = at(b.lowerWeightPin), wingPin = at(b.upperWeightPin);
+    if (t === 0) {
+      // Plate pose: the ball handle's pin down-right of its (upper) shaft, the
+      // wing handle's pin up-left of its (lower) shaft, both between the shafts.
+      assert.ok(ballPin.x > ballShaft.x && ballPin.y < ballShaft.y && ballPin.y > wingShaft.y);
+      assert.ok(wingPin.x < wingShaft.x && wingPin.y > wingShaft.y && wingPin.y < ballShaft.y);
+    }
+    for (const [rod, pin] of [[b.lowerWeightRod, ballPin], [b.upperWeightRod, wingPin]]) {
+      const box = new THREE.Box3().setFromObject(rod);
+      assert.ok(box.max.y <= pin.y + 1e-6 && box.min.y < pin.y - 1, `rod hangs down from its pin at t=${t}`);
+      // Each weight keeps turning its handle the same way as in 183: the pin
+      // stays on the same side of its shaft through the swing.
+    }
+    assert.ok(ballPin.x > ballShaft.x);
+    assert.ok(wingPin.x < wingShaft.x);
+  }
+  // The wing's tip carries no eye: its only eye hole is on the hidden arm.
+  assert.equal(b.upperWeightArm.userData.role, 'upper-handle-weightArm');
+});

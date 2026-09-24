@@ -182,16 +182,18 @@ function alternatingPawlRatchetBar(movement) {
   const measuredShortNoseAtSource = sourceToModel(sourceShortNosePixels);
   const measuredHandleEndAtSource = sourceToModel(sourceHandleEndPixels);
 
-  // Brown engraves about 22 small teeth, 10.5 px apart; they are cut 10 px deep so the
-  // finite hooks clear the next ramp at pickup. They sit on a
+  // Brown engraves about 22 small teeth, 10.5 px apart and about 6 px deep
+  // (tips at the hook line, 284 px; roots at 290 px). A slim hook nose (0.022)
+  // working 0.04 below the crests clears the next ramp at pickup at that
+  // depth. They sit on a
   // thin bar lying on a table; the short pawl sits eight pitches behind.
   const rackPitch = 10.5 * sourceScale;
   const toothTipY = measuredLongNoseAtSource.y;
-  const noseRadius = 0.035;
-  const contactY = toothTipY - 0.045;
+  const noseRadius = 0.022;
+  const contactY = toothTipY - 0.04;
   const pickupTravel = 0.05;
   const pawlStroke = rackPitch + pickupTravel;
-  const toothRootY = sourceToModel(new THREE.Vector2(432, 294)).y;
+  const toothRootY = sourceToModel(new THREE.Vector2(432, 290)).y;
   const rackBaseBottomY = sourceToModel(new THREE.Vector2(432, 296)).y;
   const longPawlLength = measuredLongAnchorAtSource.distanceTo(
     new THREE.Vector2(measuredLongNoseAtSource.x, contactY),
@@ -835,7 +837,7 @@ function alternatingPawlRatchetBar(movement) {
         barBottomY: 296,
         barLeftX: 128,
         pitchPixels: 10.5,
-        rootY: 294,
+        rootY: 290,
         tipY: 284,
       },
       rasterTable: {

@@ -209,10 +209,6 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     metalness: 0.13,
     roughness: 0.58,
   });
-  const driverDarkMaterial = matte(0xb94733, {
-    metalness: 0.17,
-    roughness: 0.53,
-  });
   const drivenMaterial = matte(PALETTE.driven, {
     metalness: 0.14,
     roughness: 0.57,
@@ -399,7 +395,8 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
         : relieved ? lowerRelievedToothGeometry : lowerRackToothGeometry;
       const tooth = new THREE.Mesh(
         geometry,
-        relieved ? driverDarkMaterial : driverMaterial,
+        // Brown does not mark the handoff teeth; they share the rack colour.
+        driverMaterial,
       );
       tooth.position.x = contactCoordinateMinimum
         + (toothIndex + 0.5) * circularPitch;
@@ -1191,10 +1188,34 @@ function installConjugateReliefTeeth(root) {
     : null;
   const outlines = baked ?? computeOutlines();
   let reliefCount = 0;
+  // Relief in depth: behind the pinion's rear face each relieved tooth keeps
+  // Brown's full straight-flanked outline as a web on a backing strip behind
+  // the rail. From the front every tooth reads full, as drawn; the swept
+  // pinion teeth pass in front of these webs at the handoffs and never reach
+  // the working (front) depth of the relieved outline.
+  const webFront = -g.pinionDepth / 2 - 0.012;
+  const webBack = webFront - 0.05;
+  const backingTop = g.rackToothRootY + 0.12;
+  const reliefWebs = [];
   b.rackTeeth.forEach((tooth, index) => {
     tooth.geometry = plate(outlines[index], -g.rackDepth / 2, g.rackDepth / 2);
-    if (outlines[index].flat(2).length > 5) reliefCount += 1;
+    if (outlines[index].flat(2).length <= 5) return;
+    reliefCount += 1;
+    const side = tooth.userData.rack === 'upper' ? 1 : -1;
+    const full = straightRackTooth({
+      x: 0, side, pitchY: g.pinionPitchRadius, rootY: g.rackToothRootY + 0.02,
+      tipY: g.rackToothRootY - g.pinionToothHeight, circularPitch: g.circularPitch, backlash: g.toothBacklash,
+    });
+    const half = g.circularPitch / 2;
+    const web = new THREE.Mesh(plate(polygonClipping.union(poly(full)), webBack, webFront), tooth.material);
+    const strip = new THREE.Mesh(plate(poly([[-half, side * (g.rackToothRootY + 0.01)], [half, side * (g.rackToothRootY + 0.01)],
+      [half, side * backingTop], [-half, side * backingTop]]), webBack, -g.rackDepth / 2 + 0.01), tooth.material);
+    web.userData.role = `${tooth.userData.rack}-rack-relieved-tooth-full-outline-web-behind-pinion`;
+    strip.userData.role = `${tooth.userData.rack}-rack-relieved-tooth-web-backing-strip`;
+    tooth.add(web, strip);
+    reliefWebs.push(web, strip);
   });
+  b.rackReliefWebs = reliefWebs;
   d.computeRackReliefOutlines = computeOutlines;
   d.rackReliefSignature = reliefSignature;
   d.conjugateTeeth = {

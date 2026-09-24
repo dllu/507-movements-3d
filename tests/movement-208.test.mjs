@@ -639,3 +639,22 @@ test('movement 208 renders rigid indices while 209–213 are distinct and author
   disposeModel(movement213.root);
   disposeModel(model.root);
 });
+
+test('movement 208 pinion is a wide slotted strip that clears the inner neighbouring ring', () => {
+  const model = createMovementModel(catalog.movements[207]);
+  const { blocks, stateAtTime } = model.root.userData;
+  const ringRadii = blocks.pinRings.map((ring) => ring.userData.pitchRadius);
+  for (const time of [0, 5, 10, 15]) {
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(blocks.pinionWeb);
+    // Brown's strip is about 0.34 wide; the pinion is now 0.26 (was 0.11).
+    assert.ok(box.max.x - box.min.x > 0.25);
+    // The widened face points toward the wheel centre and stops short of the
+    // next inner pin ring's pins at every selector position.
+    const selectorX = stateAtTime(time).selectorX;
+    const inner = ringRadii.filter((radius) => radius < -selectorX - 1e-9);
+    if (inner.length) assert.ok(-box.max.x > Math.max(...inner) + 0.082 + 0.02);
+  }
+  disposeModel(model.root);
+});

@@ -46,3 +46,5 @@ node --test tests/movement-205.test.mjs tests/movement-208.test.mjs tests/moveme
 ```
 
 205 and 209 use 4,097 generation poses per input revolution and independent interleaved qualification poses. Their additional sweep clearances are 0.0005 and 0.0007 respectively. 208 uses 513 generation poses per pin pitch for each of three rings, clips cylinder triangles to the ±0.055 axial slab, buffers their silhouettes by 0.001, repeats the cut at sixteen slot angles and simplifies by 0.00015. Generated coordinates are rounded to seven decimals. No browser-time envelope construction or live physics allocation is added.
+
+> Superseded for 208 (2026-09-24): the pinion is now widened inward to 0.26; see docs/m14-last-residuals-review.md.
