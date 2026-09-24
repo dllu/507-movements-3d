@@ -23,24 +23,40 @@ export function makeSelectorRackBaseGeometry() {
     mesh.name = name; mesh.position.fromArray(position); parts[name] = mesh; families[name] = family; blocks[family].add(mesh); return mesh;
   };
   const layers = {frame: [-.06, .06], cam: [-.045, .045], wheel: [-.22, -.12], selector: [.105, .195]};
+  // The end rods run on past Brown's broken-off ends (64 and 1716 source
+  // pixels) so they stay in their guides while the rack walks several teeth.
+  const rodEnds = [-10, 1790];
   const outer = sourcePoly(trace([
     ['moveTo', 526, 421], ['lineTo', 526, 353], ['quadraticCurveTo', 526, 327, 552, 327],
     ['lineTo', 1268, 327], ['quadraticCurveTo', 1293, 327, 1293, 353], ['lineTo', 1293, 421],
-    ['bezierCurveTo', 1360, 433, 1420, 490, 1444, 568], ['lineTo', 1716, 568], ['lineTo', 1716, 611], ['lineTo', 1444, 611],
+    ['bezierCurveTo', 1360, 433, 1420, 490, 1444, 568], ['lineTo', rodEnds[1], 568], ['lineTo', rodEnds[1], 611], ['lineTo', 1444, 611],
     ['bezierCurveTo', 1423, 683, 1383, 744, 1322, 744], ['lineTo', 507, 744],
-    ['bezierCurveTo', 437, 744, 398, 683, 379, 611], ['lineTo', 64, 611], ['lineTo', 64, 569], ['lineTo', 377, 569],
+    ['bezierCurveTo', 437, 744, 398, 683, 379, 611], ['lineTo', rodEnds[0], 611], ['lineTo', rodEnds[0], 569], ['lineTo', 377, 569],
     ['bezierCurveTo', 393, 490, 436, 440, 526, 421],
   ]));
-  const inner = [...measured.upper.flatMap(f => [f.root, f.tip])];
+  // Brown's hand-drawn lower teeth wander in pitch (43 to 63 pixels), which
+  // wedges the single cam between close tips as the rack walks left. Each
+  // measured lower face keeps its own shape and lean but is shifted onto the
+  // row's least-squares uniform pitch; no face moves more than 10 pixels.
+  const uniform = row => {
+    const n = row.length, middle = (n - 1) / 2, mean = row.reduce((sum, f) => sum + f.tip[0], 0) / n;
+    const pitch = row.reduce((sum, f, i) => sum + (i - middle) * (f.tip[0] - mean), 0) / row.reduce((sum, _, i) => sum + (i - middle) ** 2, 0);
+    return row.map((f, i) => {
+      const tip = mean + (i - middle) * pitch, shift = tip - f.tip[0];
+      return {...f, root: [f.root[0] + shift, f.root[1]], tip: [tip, f.tip[1]]};
+    });
+  };
+  const upperFaces = measured.upper, lowerFaces = uniform(measured.lower);
+  const inner = [...upperFaces.flatMap(f => [f.root, f.tip])];
   const rightEnd = trace([
     ['moveTo', ...inner.at(-1)], ['bezierCurveTo', 1292, 486, 1317, 462, 1342, 479],
-    ['bezierCurveTo', 1422, 529, 1429, 650, 1340, 699], ['quadraticCurveTo', 1311, 711, ...measured.lower.at(-1).root],
+    ['bezierCurveTo', 1422, 529, 1429, 650, 1340, 699], ['quadraticCurveTo', 1311, 711, ...lowerFaces.at(-1).root],
   ]);
   inner.push(...rightEnd.slice(1));
-  for (const f of [...measured.lower].reverse()) inner.push(f.root, f.tip);
+  for (const f of [...lowerFaces].reverse()) inner.push(f.root, f.tip);
   inner.push([532, 704], ...trace([
     ['moveTo', 532, 704], ['bezierCurveTo', 451, 708, 419, 643, 429, 572],
-    ['bezierCurveTo', 433, 504, 476, 462, ...measured.upper[0].root],
+    ['bezierCurveTo', 433, 504, 476, 462, ...upperFaces[0].root],
   ]).slice(1));
   profiles.opening = sourcePoly(inner);
   profiles.slots = measured.slots.map(s => rectangle(s.left, s.top, s.right, s.bottom));
@@ -73,16 +89,23 @@ export function makeSelectorRackBaseGeometry() {
   attach('wheelHub', ring(bore, px(39), -.255, -.045, 128), 'cam', PALETTE.driver);
   attach('fixedCamAxle', disk(px(measured.cam.shaftRadius), -.35, .115, 128), 'fixed', PALETTE.muted);
 
+  // Brown's fork holds its pins close to the bridge between the slots, so
+  // the rack could move under two teeth before a pin met a slot end, and its
+  // weight would tip it off the inner pin. The fork is widened about rod A
+  // and its arch raised in proportion, so its pins sit near the slot middles
+  // and the rack can walk about four teeth; rod A and the pins are as drawn.
+  const forkWidth = 1.5, forkX = x => 910.5 + (x - 910.5) * forkWidth, forkY = y => 391 - (391 - y) * forkWidth;
+  const pins = measured.pins.map(([x, y]) => [forkX(x), y]);
   const yoke = sourcePoly(trace([
-    ['moveTo', 782, 391], ['bezierCurveTo', 790, 311, 821, 272, 887, 232], ['lineTo', 887, 86], ['lineTo', 934, 86], ['lineTo', 934, 232],
-    ['bezierCurveTo', 1014, 260, 1044, 310, 1054, 391], ['lineTo', 1014, 391],
-    ['bezierCurveTo', 1002, 308, 973, 268, 923, 268], ['bezierCurveTo', 865, 268, 832, 310, 820, 391], ['lineTo', 782, 391],
+    ['moveTo', forkX(782), 391], ['bezierCurveTo', forkX(790), forkY(311), forkX(821), forkY(272), 887, forkY(232)], ['lineTo', 887, 86], ['lineTo', 934, 86],
+    ['lineTo', 934, forkY(232)], ['bezierCurveTo', forkX(1014), forkY(260), forkX(1044), forkY(310), forkX(1054), 391], ['lineTo', forkX(1014), 391],
+    ['bezierCurveTo', forkX(1002), forkY(308), forkX(973), forkY(268), 923, forkY(268)], ['bezierCurveTo', forkX(865), forkY(268), forkX(832), forkY(310), forkX(820), 391], ['lineTo', forkX(782), 391],
   ]));
-  const pinBores = measured.pins.map(p => poly(circle(source(p), px(measured.pinRadius + .5), 96)));
-  const bosses = measured.pins.map(p => poly(circle(source(p), px(21), 96)));
+  const pinBores = pins.map(p => poly(circle(source(p), px(measured.pinRadius + .5), 96)));
+  const bosses = pins.map(p => poly(circle(source(p), px(21), 96)));
   profiles.selector = clip.difference(clip.union(yoke, ...bosses), ...pinBores);
   attach('governorRodYoke', plate(profiles.selector, ...layers.selector), 'selector', PALETTE.accent);
-  measured.pins.forEach((p, i) => {
+  pins.forEach((p, i) => {
     const position = [...source(p), 0];
     attach('suspensionPin' + i, disk(px(measured.pinRadius), -.082, .21, 96), 'selector', PALETTE.muted, position);
     attach('suspensionFrontHead' + i, disk(px(measured.pinHeadRadius), .21, .235, 96), 'selector', PALETTE.muted, position);
@@ -107,8 +130,9 @@ export function makeSelectorRackBaseGeometry() {
   const standard = clip.union(rectangle(671, 575, 1137, 611), rectangle(671, 575, 689, 1010), rectangle(1119, 575, 1137, 979));
   attach('rearBearingStandard', plate(standard, -.45, -.35), 'fixed', PALETTE.muted);
   const limits = {
-    rackX: [Math.max(...measured.slots.map((s, i) => measured.pins[i][0] - s.right + measured.pinRadius)),
-      Math.min(...measured.slots.map((s, i) => measured.pins[i][0] - s.left - measured.pinRadius))].map(px),
+    // The slot ends and the rack body meeting a guide bound the travel.
+    rackX: [Math.max(...measured.slots.map((s, i) => pins[i][0] - s.right + measured.pinRadius), 184 - 377),
+      Math.min(...measured.slots.map((s, i) => pins[i][0] - s.left - measured.pinRadius), 1618 - 1444)].map(px),
     selectorY: [px(611 - 674), px(568 - 494)],
   };
   const setState = ({camAngle = 0, rackX = 0, selectorY = 0} = {}) => {
@@ -116,7 +140,7 @@ export function makeSelectorRackBaseGeometry() {
     blocks.cam.rotation.z = camAngle; blocks.frame.position.set(rackX, selectorY, 0); blocks.selector.position.y = selectorY;
     root.updateMatrixWorld(true); return root.userData.state = {camAngle, rackX, selectorY};
   };
-  root.userData = {parts, families, blocks, profiles, source: measured, geometry: {layers, limits}, setState,
+  root.userData = {parts, families, blocks, profiles, source: measured, geometry: {layers, limits, pins, forkWidth, rodEnds, upperFaces, lowerFaces}, setState,
     hideGround: true, cameraFov: 8, shadowCameraHalfExtent: 5, shadowBias: -.00003, shadowNormalBias: .003,
     mechanism: 'source-shaped-selector-double-rack-candidate', fidelity: 'candidate',
     qualification: 'Finite source-shaped single cam, complete rear wheel, irregular rack contours, genuine suspension slots and bored pin joints. Thicknesses, hidden guide/bearing hardware, common axis and obscured tooth contours are reconstruction assumptions. This is independent pose control; it supplies no contact-derived motion or force qualification.'};

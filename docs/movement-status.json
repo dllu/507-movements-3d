@@ -1947,14 +1947,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4a-1-160-review.md",
-        "note": "Default capture inspected beside the plate: the spring runs behind the tail; the stop pin is Brown's open circle."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u1-intermittent-review.md",
+        "note": "Default and 12-phase captures inspected beside the plate: Brown's broad hooked pawl with the screwed ring on a spring-carried drop, rebuilt from Brown and Sam Gallagher's animation."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w3g-intermittent-review.md",
-        "note": "Pass-51 screen: leaf/leaf 0.0121, joint spheres 0.0024 and leaf-on-drop 0.0021 → clear."
+        "evidence": "docs/u1-intermittent-review.md",
+        "note": "Pass-52 screen at 257 samples: no overlaps; pins, nose and star clear by more than 1 source px."
       },
       "references": [
         "artifacts/review/063-reconstruction-notes.md",
@@ -1964,17 +1964,18 @@
         "docs/lane2-intermittent-review.md",
         "docs/w2c-intermittent-review.md",
         "docs/w3g-intermittent-review.md",
-        "docs/w4a-1-160-review.md"
+        "docs/w4a-1-160-review.md",
+        "docs/u1-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The pawl shape is wrong; the Sam Gallagher reconstruction (artifacts/review/063-reconstruction-notes.md) is closer to the plate.",
-      "limits": "Pin lift, pawl release and spring snap are scheduled; the pawl nose stops ≈0.09 short of the ideal gap point; centre distance widened (star 0.56 of it against Brown's 0.64) so the pins clear the star points; the arm top sits ≈0.15 above Brown's line (lowering it needs a rebake of the swept cuts).",
-      "assessment": "flawed",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "While the drop rises the pawl nose slides over a tooth tip before dropping into the next space; the drop's leg shows above the disk while lifted.",
+      "limits": "Start pose is 7° of pin rotation from Brown's to show the drop at rest; the star is regular and held only by the pawl.",
+      "assessment": "minor",
       "userReported": "2026-09-24"
     },
     {
@@ -2266,14 +2267,14 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w4a-1-160-review.md",
-        "note": "Default capture inspected beside the plate: a small hatched corner block as drawn."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u1-intermittent-review.md",
+        "note": "Default and phase captures inspected beside the plate: springs B and C bend as smooth cantilevers from their clamps."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/w3g-intermittent-review.md",
-        "note": "Pass-51 screen: the spring-pad welds (0.040/0.033) are gone; the leaves end at the pad surfaces."
+        "evidence": "docs/u1-intermittent-review.md",
+        "note": "Pass-52 screen: only C's stop pad seated on A (0.0000)."
       },
       "references": [
         "docs/mujoco-073-spring-study.md",
@@ -2284,7 +2285,8 @@
         "docs/lane2-intermittent-review.md",
         "docs/lane9-residuals-review.md",
         "docs/w3g-intermittent-review.md",
-        "docs/w4a-1-160-review.md"
+        "docs/w4a-1-160-review.md",
+        "docs/u1-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -2294,10 +2296,10 @@
         ],
         "note": "Isolated spring/ratchet MuJoCo trials; not installed as production playback."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Springs B and C deflect in a wonky, unnatural way.",
-      "limits": "Tooth backs slightly fin-like.",
-      "assessment": "flawed",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "",
+      "limits": "Tooth backs slightly fin-like; C presses B only where the leaves cross.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {
@@ -2623,31 +2625,32 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "reviewPass": 51,
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u1-intermittent-review.md",
+        "note": "Default and nine-phase captures inspected beside the plate: the rack walks two steps each way."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "artifacts/review/084-reconstruction-notes.md",
-        "note": "Latest movement review reports scoped finite-surface/contact or assembly checks passing; historical sampled evidence, not continuous collision certification or a fresh audit."
+        "evidence": "docs/u1-intermittent-review.md",
+        "note": "Screened at 257 samples over the 17.2 s walk: only seated cam/tooth and pin/slot-end contact (0.0000)."
       },
       "references": [
         "artifacts/review/084-reconstruction-notes.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/u1-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/selector-rack.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The rack barely moves relative to its full run of teeth.",
-      "limits": "Source reconstruction retains ideal support/load and hidden-depth assumptions.",
-      "assessment": "flawed",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Fork A is 1.5× wider than drawn so its pins can travel the slots; the rack still uses only about 4 of its 13 teeth.",
+      "limits": "Governor schedule, drag and loads are assumptions.",
+      "assessment": "minor",
       "userReported": "2026-09-24"
     },
     {
@@ -2753,9 +2756,9 @@
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
         "reviewPass": 51,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/w2c-intermittent-review.md",
-        "note": "Default capture inspected beside the plate with padded framing."
+        "reviewedOn": "2026-09-24",
+        "evidence": "docs/u1-intermittent-review.md",
+        "note": "Default capture inspected beside the plate: cam A a true Archimedean spiral with a radial step at C."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2767,17 +2770,18 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2c-intermittent-review.md"
+        "docs/w2c-intermittent-review.md",
+        "docs/u1-intermittent-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/eccentric-two-stop.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The spiral is not a true Archimedean spiral.",
-      "limits": "Hidden axle requires about 11-pixel rear-rim shift; stepped stop feet remain inferred.",
-      "assessment": "flawed",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "",
+      "limits": "The spiral centre sits 9 px off shaft A as Brown's drawing suggests, giving a slight wobble; stepped stop feet inferred.",
+      "assessment": "reasonable",
       "userReported": "2026-09-24"
     },
     {

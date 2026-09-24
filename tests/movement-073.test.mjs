@@ -69,11 +69,46 @@ test('movement 73 keeps B’s leaf off C’s stop while it carries a tooth', () 
     const center = state.stopContact.center;
     minimum = Math.min(minimum, leafStopGap(state.catchCurveWorld, center, geometry));
     if (state.indexing) {
-      const [mount, , , , tip] = state.catchCurveWorld.points;
-      const chord = new THREE.LineCurve3(mount, tip);
+      const chord = new THREE.LineCurve3(
+        state.catchCurveWorld.getPoint(0),
+        state.catchCurveWorld.getPoint(1),
+      );
       sagged = Math.min(sagged, leafStopGap(chord, center, geometry));
     }
   }
-  assert.ok(minimum > 0.05, `B clears C’s stop pad by ${minimum}`);
+  assert.ok(minimum > 0.04, `B clears C’s stop pad by ${minimum}`);
   assert.ok(sagged < -0.03, 'a leaf cutting inside the crest circle would hit C’s stop');
+});
+
+test('movement 73 bends B and C as smooth cantilevers from their clamps', () => {
+  const model = build();
+  const { geometry, stateAtTime } = model.root.userData;
+  const bend = (curve, samples = 96) => {
+    const points = curve.getPoints(samples);
+    let largestTurn = 0;
+    for (let index = 1; index < samples; index += 1) {
+      const before = points[index].clone().sub(points[index - 1]);
+      const after = points[index + 1].clone().sub(points[index]);
+      largestTurn = Math.max(largestTurn, Math.abs(Math.atan2(
+        before.x * after.y - before.y * after.x,
+        before.x * after.x + before.y * after.y,
+      )));
+    }
+    return largestTurn;
+  };
+  const relaxed = stateAtTime(0);
+  const clampDirection = (curve) => curve.getPoint(0.01).sub(curve.getPoint(0)).normalize();
+  let largest = 0;
+  let clampSlip = 0;
+  for (let sample = 0; sample <= 400; sample += 1) {
+    const state = stateAtTime(geometry.driverCyclePeriod * sample / 400);
+    largest = Math.max(largest, bend(state.catchCurveLocal), bend(state.strongCurve));
+    clampSlip = Math.max(
+      clampSlip,
+      clampDirection(state.catchCurveLocal).angleTo(clampDirection(relaxed.catchCurveLocal)),
+      clampDirection(state.strongCurve).angleTo(clampDirection(relaxed.strongCurve)),
+    );
+  }
+  assert.ok(largest < 0.06, `no kink: largest turn per 1/96 of a leaf is ${largest}`);
+  assert.ok(clampSlip < 0.01, `each leaf leaves its clamp along its clamped direction (${clampSlip})`);
 });

@@ -3733,290 +3733,35 @@ test('movement 62 registers its enclosed differential and installed auxiliary be
 
 test('movement 63 snaps a ten-point counter star once for each of three driver pins', () => {
   const model = createMovementModel(catalog.movements[62]);
-  assert.equal(
-    model.root.userData.mechanism,
-    'three-pin-spring-drop-ten-point-star-counter',
-  );
-  assert.equal(model.root.userData.fidelity, 'authored');
-  const {
-    driver,
-    driverShaft,
-    drop,
-    dropPivotShaft,
-    pawl,
-    springClamp,
-    springLeaf,
-    star,
-    starShaft,
-  } = model.root.userData.blocks;
-  const geometry = model.root.userData.geometry;
-
-  assert.equal(geometry.pinCount, 3,
-    'the source driving disk carries three equally spaced lifting pins');
-  assert.equal(geometry.starTeeth, 10,
-    'the source output is a ten-point star rather than a generic ratchet gear');
-  assert.equal(driver.userData.pinCount, geometry.pinCount);
-  assert.equal(driver.userData.pins.length, geometry.pinCount);
-  assert.equal(star.userData.teeth, geometry.starTeeth);
-  assert.equal(star.userData.toothAngles.length, geometry.starTeeth);
-  assert.equal(star.userData.gapAngles.length, geometry.starTeeth);
-  assert.equal(star.userData.gapRadius, geometry.starGapRadius);
-  assert.equal(star.userData.outerRadius, geometry.starOuterRadius);
-  assert.ok(star.userData.outerRadius > star.userData.gapRadius);
-  assert.ok(driver.userData.axis.distanceTo(Z_AXIS) < 1e-12);
-  assert.ok(star.userData.axis.distanceTo(Z_AXIS) < 1e-12);
-  assert.ok(driverShaft.userData.axis.distanceTo(Z_AXIS) < 1e-12);
-  assert.ok(starShaft.userData.axis.distanceTo(Z_AXIS) < 1e-12);
-  assert.ok(drop.userData.axis.distanceTo(Z_AXIS) < 1e-12);
-  assert.ok(pawl.userData.axis.distanceTo(Z_AXIS) < 1e-12);
-  assert.ok(driver.position.distanceTo(geometry.driverCenter) < 1e-12);
-  assert.ok(star.position.distanceTo(geometry.starCenter) < 1e-12);
-  assert.ok(drop.position.distanceTo(geometry.dropPivot) < 1e-12);
-  assert.equal(dropPivotShaft.userData.fixedPivot, true);
-
-  assert.ok(Math.abs(star.userData.gapAngles[0] - geometry.contactAngle) < 1e-12,
-    'one source-shaped star gap begins at the pawl release line');
-  for (let index = 0; index < geometry.starTeeth; index += 1) {
-    const next = (index + 1) % geometry.starTeeth;
-    const toothSpacing = THREE.MathUtils.euclideanModulo(
-      star.userData.toothAngles[next] - star.userData.toothAngles[index],
-      Math.PI * 2,
-    );
-    const gapSpacing = THREE.MathUtils.euclideanModulo(
-      star.userData.gapAngles[next] - star.userData.gapAngles[index],
-      Math.PI * 2,
-    );
-    assert.ok(Math.abs(toothSpacing - geometry.starPitch) < 1e-12);
-    assert.ok(Math.abs(gapSpacing - geometry.starPitch) < 1e-12);
-  }
-
-  for (const [index, pin] of driver.userData.pins.entries()) {
-    assert.equal(pin.parent, driver.userData.rotor);
-    assert.equal(pin.userData.index, index);
-    assert.equal(pin.userData.orbitRadius, geometry.pinOrbitRadius);
-    assert.equal(pin.userData.driverPin, true);
-    assert.ok(Math.abs(Math.hypot(pin.position.x, pin.position.y)
-      - geometry.pinOrbitRadius) < 1e-12);
-    const expectedMountAngle = geometry.pinMountPhase - index * geometry.pinPitch;
-    assert.ok(Math.abs(pin.userData.mountAngle - expectedMountAngle) < 1e-12);
-  }
-  assert.ok(Math.abs(geometry.pinPitch * geometry.pinCount - Math.PI * 2) < 1e-12);
-  assert.ok(Math.abs(geometry.starPitch * geometry.starTeeth - Math.PI * 2) < 1e-12);
-  assert.equal(drop.userData.pawlPivotStud.parent, drop.userData.rotor);
-  assert.equal(drop.userData.strikerStud.parent, drop.userData.rotor);
-  assert.equal(drop.userData.pawlPivotStud.userData.pawlPivotStud, true);
-  assert.equal(drop.userData.strikerStud.userData.dropStrikerStud, true);
-  assert.equal(pawl.userData.length, geometry.pawlLength);
+  const data = model.root.userData;
+  assert.equal(data.mechanism, 'three-pin-spring-drop-ten-point-star-counter');
+  assert.equal(data.fidelity, 'authored');
+  const { driver, drop, pawl, springLeaf, star, stopPin, striker } = data.blocks;
+  for (const part of [driver, drop, pawl, springLeaf, star, stopPin, striker]) assert.ok(part);
+  assert.equal(driver.userData.pins.length, 3, 'three lifting pins');
+  assert.equal(pawl.parent, drop.userData.rotor, 'the pawl is attached to the drop');
+  assert.equal(striker.parent, drop.userData.rotor, 'the striker pin is on the drop');
   assert.equal(springLeaf.userData.flexibleLeafSpring, true);
-  assert.equal(springLeaf.userData.mesh.userData.flatBandSection, true);
-  assert.equal(springClamp.userData.springClamp, true);
-
-  const starFront = star.position.z + star.userData.depth / 2;
-  const pawlBack = geometry.pawlPlaneZ - pawl.userData.depth / 2;
-  const pawlFront = geometry.pawlPlaneZ + pawl.userData.depth / 2;
-  const dropBack = drop.position.z - drop.userData.depth / 2;
-  assert.ok(pawlBack < starFront && pawlFront > starFront,
-    'the pawl occupies the star-wheel face plane instead of floating in front of it');
-  assert.ok(dropBack < pawlFront,
-    'the pawl pivot overlaps the rear spring drop in depth');
-  assert.ok(driver.userData.pinLength > pawlFront - driver.position.z,
-    'the driver pins project through both follower planes');
-
-  assert.ok(geometry.approachEnd < geometry.liftEnd);
-  assert.ok(geometry.liftEnd < geometry.pawlReleaseEnd);
-  assert.ok(geometry.pawlReleaseEnd < geometry.dropReleaseStart,
-    'the pin escapes the pawl before it escapes the drop');
-  assert.ok(geometry.dropReleaseStart < geometry.snapEnd);
-  assert.ok(geometry.snapEnd < 1);
-  assert.ok(geometry.snapEnd - geometry.dropReleaseStart < 0.1,
-    'the spring-powered star advance occupies only a brief part of each pin cycle');
-  assert.ok(Math.abs(geometry.eventPeriod
-    - geometry.pinPitch / geometry.driverAngularSpeed) < 1e-12);
-  assert.ok(geometry.dropLiftAngle > 0 && geometry.dropLiftAngle < Math.PI / 3);
-
-  const atPhase = (phase, eventIndex = 0) => model.root.userData.stateAtTime(
-    (eventIndex + phase) * geometry.eventPeriod,
-  );
-  const approach = atPhase(0.12);
-  assert.equal(approach.stage, 'approach');
-  assert.equal(approach.starLocked, true);
-  assert.equal(approach.starAngularSpeed, 0);
-  assert.equal(approach.dropAngle, 0);
-  assert.equal(approach.pinContactsPawl, false);
-  assert.equal(approach.pinContactsDrop, false);
-  assert.equal(approach.pawlInStarGap, true);
-  assert.ok(approach.pawlGapError < 1e-12);
-
-  const lifting = atPhase((geometry.approachEnd + geometry.liftEnd) / 2);
-  assert.equal(lifting.stage, 'lifting');
-  assert.equal(lifting.starLocked, true);
-  assert.equal(lifting.starAngularSpeed, 0);
-  assert.ok(lifting.dropAngle > 0 && lifting.dropAngle < geometry.dropLiftAngle);
-  assert.ok(lifting.dropAngularSpeed > 0);
-  assert.equal(lifting.pinContactsPawl, true);
-  assert.equal(lifting.pinContactsDrop, true);
-  assert.equal(lifting.pawlInStarGap, false);
-
-  const pawlReleased = atPhase((geometry.liftEnd + geometry.pawlReleaseEnd) / 2);
-  assert.equal(pawlReleased.stage, 'pawl-release');
-  assert.equal(pawlReleased.dropAngle, geometry.dropLiftAngle);
-  assert.equal(pawlReleased.starAngularSpeed, 0);
-  assert.equal(pawlReleased.pinContactsPawl, false,
-    'the driver pin has escaped the pawl');
-  assert.equal(pawlReleased.pinContactsDrop, true,
-    'the same pin still holds the drop up');
-  assert.equal(pawlReleased.pawlInStarGap, false);
-
-  const dropHeld = atPhase(
-    (geometry.pawlReleaseEnd + geometry.dropReleaseStart) / 2,
-  );
-  assert.equal(dropHeld.stage, 'drop-held');
-  assert.equal(dropHeld.dropAngle, geometry.dropLiftAngle);
-  assert.equal(dropHeld.pinContactsPawl, false);
-  assert.equal(dropHeld.pinContactsDrop, true);
-  assert.equal(dropHeld.pawlInStarGap, true,
-    'the freed pawl reaches the next star gap before the drop is released');
-  assert.ok(dropHeld.pawlGapError < 1e-12);
-  assert.ok(Math.abs(dropHeld.starAngle) < 1e-12);
-
-  const snap = atPhase((geometry.dropReleaseStart + geometry.snapEnd) / 2);
-  assert.equal(snap.stage, 'power-snap');
-  assert.equal(snap.dropReleased, true);
-  assert.equal(snap.pinContactsPawl, false);
-  assert.equal(snap.pinContactsDrop, false);
-  assert.equal(snap.starLocked, false);
-  assert.ok(snap.dropAngularSpeed < 0,
-    'the charged spring throws the drop downward');
-  assert.ok(snap.starAngularSpeed < 0);
-  assert.ok(Math.abs(snap.starAngularSpeed)
-    > geometry.driverAngularSpeed * 4,
-  'the output jumps much faster than the continuously rotating input');
-  assert.equal(snap.pawlInStarGap, true);
-  assert.ok(snap.pawlGapError < 1e-12,
-    'the rigid pawl remains in the same material gap throughout the power stroke');
-  assert.ok(snap.starAngle < 0 && snap.starAngle > -geometry.starPitch);
-
-  const settled = atPhase((geometry.snapEnd + 1) / 2);
-  assert.equal(settled.stage, 'settle');
-  assert.equal(settled.starLocked, true);
-  assert.equal(settled.starAngularSpeed, 0);
-  assert.equal(settled.dropAngle, 0);
-  assert.equal(settled.dropAngularSpeed, 0);
-  assert.equal(settled.starAngle, -geometry.starPitch);
-  assert.equal(settled.pawlInStarGap, true);
-  assert.ok(settled.pawlGapError < 1e-12);
-
-  for (const eventIndex of [0, 1, 2, 3, 7]) {
-    const start = atPhase(0, eventIndex);
-    const held = atPhase(
-      (geometry.pawlReleaseEnd + geometry.dropReleaseStart) / 2,
-      eventIndex,
-    );
-    const finish = atPhase((geometry.snapEnd + 1) / 2, eventIndex);
-    const next = atPhase(0, eventIndex + 1);
-    assert.equal(start.eventIndex, eventIndex);
-    assert.equal(start.activePinIndex, eventIndex % geometry.pinCount);
-    assert.ok(Math.abs(start.driverAngle - eventIndex * geometry.pinPitch) < 1e-11);
-    assert.ok(Math.abs(start.starAngle + eventIndex * geometry.starPitch) < 1e-11);
-    assert.equal(held.starAngle, start.starAngle,
-      'the star remains still until the drop pin is released');
-    assert.ok(Math.abs(finish.starAngle - start.starAngle
-      + geometry.starPitch) < 1e-11,
-    'each driver pin advances exactly one star pitch');
-    assert.ok(Math.abs(finish.starAngle - next.starAngle) < 1e-11);
-    assert.ok(Math.abs(finish.dropAngle - next.dropAngle) < 1e-12);
-    assert.ok(Math.abs(finish.pawlAngle - next.pawlAngle) < 1e-12);
+  const { eventPeriod, starPitch } = data.geometry;
+  assert.ok(Math.abs(starPitch - Math.PI / 5) < 1e-12, 'a ten-point star');
+  const stages = new Set();
+  let previous = data.stateAtTime(0);
+  for (let sample = 1; sample <= 1200; sample += 1) {
+    const state = data.stateAtTime(eventPeriod * 3 * sample / 1200);
+    stages.add(state.stage);
+    assert.ok(state.starAngle <= previous.starAngle + 1e-12, 'the star only advances');
+    assert.ok(state.dropAngle >= -1e-12, 'the stop pin limits the drop');
+    assert.ok(state.pawlAngle <= 1e-9, 'the striker stops the pawl rising');
+    assert.ok(state.driverAngle < previous.driverAngle, 'the pin disk turns steadily clockwise');
+    previous = state;
   }
-
-  const afterDriverTurn = model.root.userData.stateAtTime(
-    Math.PI * 2 / geometry.driverAngularSpeed,
-  );
-  assert.ok(Math.abs(afterDriverTurn.driverAngle - Math.PI * 2) < 1e-12);
-  assert.ok(Math.abs(afterDriverTurn.starAngle
-    + geometry.pinCount * geometry.starPitch) < 1e-11,
-  'one driver revolution produces three one-tenth-turn output jumps');
-  assert.ok(Math.abs(afterDriverTurn.starTurns + 3 / 10) < 1e-12);
-  const afterTenDriverTurns = model.root.userData.stateAtTime(
-    Math.PI * 20 / geometry.driverAngularSpeed,
-  );
-  assert.ok(Math.abs(afterTenDriverTurns.starTurns + 3) < 1e-11);
-
-  for (const phase of [
-    0.02,
-    (geometry.approachEnd + geometry.liftEnd) / 2,
-    (geometry.liftEnd + geometry.pawlReleaseEnd) / 2,
-    (geometry.pawlReleaseEnd + geometry.dropReleaseStart) / 2,
-    geometry.dropReleaseStart + (geometry.snapEnd - geometry.dropReleaseStart) * 0.2,
-    geometry.dropReleaseStart + (geometry.snapEnd - geometry.dropReleaseStart) * 0.5,
-    geometry.dropReleaseStart + (geometry.snapEnd - geometry.dropReleaseStart) * 0.8,
-    0.91,
-  ]) {
-    const state = atPhase(phase, 2);
-    assert.ok(state.pawlLengthError < 1e-12,
-      'the attached pawl remains a rigid, fixed-length member');
-    assert.ok(state.dropAngle >= -1e-12
-      && state.dropAngle <= geometry.dropLiftAngle + 1e-12);
-    assert.ok(Math.abs(state.springDeflection
-      - state.dropAngle / geometry.dropLiftAngle) < 1e-12);
-    if (state.pawlInStarGap) {
-      assert.ok(state.pawlGapError < 1e-12);
-      const planarTipRadius = state.pawlTipPosition.clone()
-        .sub(geometry.starCenter)
-        .setZ(0)
-        .length();
-      assert.ok(Math.abs(planarTipRadius - geometry.starGapRadius) < 1e-12);
-      const targetWorldAngle = Math.atan2(
-        state.pawlTipPosition.y - geometry.starCenter.y,
-        state.pawlTipPosition.x - geometry.starCenter.x,
-      );
-      const targetLocalAngle = targetWorldAngle - state.starAngle;
-      const gapPhaseError = Math.abs(
-        THREE.MathUtils.euclideanModulo(
-          targetLocalAngle - geometry.contactAngle + geometry.starPitch / 2,
-          geometry.starPitch,
-        ) - geometry.starPitch / 2,
-      );
-      assert.ok(gapPhaseError < 1e-11,
-        'the pawl tip coincides with an actual rotating star-wheel gap');
-    }
-    if (state.starLocked) assert.equal(state.starAngularSpeed, 0);
+  for (const stage of ['rest', 'lifting-pawl-and-drop', 'lifting-drop', 'star-drive']) {
+    assert.ok(stages.has(stage), `${stage} occurs`);
   }
-
-  for (const phase of [0.12, 0.43, 0.63, 0.71, 0.78, 0.9]) {
-    const time = phase * geometry.eventPeriod;
-    model.update(time, 0.016);
-    const state = model.root.userData.kinematics;
-    assert.equal(driver.userData.rotor.rotation.z, state.driverAngle);
-    assert.equal(driverShaft.userData.rotor.rotation.z, state.driverAngle);
-    assert.equal(star.userData.rotor.rotation.z, state.starAngle);
-    assert.equal(starShaft.userData.rotor.rotation.z, state.starAngle);
-    assert.equal(drop.userData.rotor.rotation.z, state.dropAngle);
-    assert.ok(pawl.position.distanceTo(state.pawlPivotPosition) < 1e-12);
-    assert.equal(pawl.rotation.z, state.pawlAngle);
-    assert.ok(model.root.userData.springPath.anchor.distanceTo(
-      geometry.springAnchor,
-    ) < 1e-12);
-    assert.ok(model.root.userData.springPath.attachment.distanceTo(
-      state.springAttachment,
-    ) < 1e-12);
-    assert.equal(
-      model.root.userData.contacts.activePin.contactsPawl,
-      state.pinContactsPawl,
-    );
-    assert.equal(
-      model.root.userData.contacts.activePin.contactsDrop,
-      state.pinContactsDrop,
-    );
-    assert.equal(model.root.userData.contacts.pawlStar.engaged, state.pawlInStarGap);
-    assert.ok(model.root.userData.contacts.pawlStar.tip.distanceTo(
-      state.pawlTipPosition,
-    ) < 1e-12);
-
-    model.root.updateMatrixWorld(true);
-    const activePin = driver.userData.pins[state.activePinIndex];
-    const activePinCenter = activePin.getWorldPosition(new THREE.Vector3());
-    assert.ok(activePinCenter.distanceTo(state.activePinCenterPosition) < 1e-11,
-      'the reported active driver pin is the physical pin passing the followers');
+  for (let event = 0; event < 3; event += 1) {
+    const turned = data.stateAtTime(eventPeriod * (event + 1.02)).starAngle
+      - data.stateAtTime(eventPeriod * (event + 0.02)).starAngle;
+    assert.ok(Math.abs(turned + starPitch) < 1e-9, 'one point per pin');
   }
   disposeModel(model.root);
 });

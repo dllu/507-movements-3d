@@ -7,8 +7,18 @@ function ramp(time, start, end) {
   return {x: s ** 3 * (10 - 15 * s + 6 * s * s), v: 30 * s * s * (1 - s) ** 2 / h,
     a: 60 * s * (1 - s) * (1 - 2 * s) / (h * h)};
 }
-export function makeSelectorRackDynamics(candidate, {period = 4, gravity = 9.81, damping = [8, .2, .2],
-  pulses = [{heightPixels: 16, rise: [.3, .7], fall: [1.4, 1.75]}, {heightPixels: -28, rise: [2.4, 2.85], fall: [3.8, 4.25]}]} = {}) {
+// The governor lowers rod A (upper rack) for two cam turns, raises it (lower
+// rack) for two, then lowers it for two more: the cam walks the rack right,
+// across the slots' travel to the left, and back. Each ramp falls between the
+// cam's working passes. The 2025 study used period 4 with one pulse each way:
+// [{heightPixels: 16, rise: [.3, .7], fall: [1.4, 1.75]}, {heightPixels: -28, rise: [2.4, 2.85], fall: [3.8, 4.25]}].
+export const SELECTOR_RACK_SCHEDULE = {period: 3, duration: 17.2, pulses: [
+  {heightPixels: -20, rise: [1.65, 2.34], fall: [6.42, 6.9]},
+  {heightPixels: 12, rise: [6.42, 6.9], fall: [10.92, 11.4]},
+  {heightPixels: -20, rise: [10.92, 11.4], fall: [15.48, 15.99]},
+]};
+export function makeSelectorRackDynamics(candidate, {period = SELECTOR_RACK_SCHEDULE.period, gravity = 9.81, damping = [8, .2, .2],
+  pulses = SELECTOR_RACK_SCHEDULE.pulses} = {}) {
   const u = candidate.root.userData, contact = makeSelectorRackPlanarContact(candidate), center = u.frameCentroid;
   const inertia = [1, 1, u.frameMass.normalizedInertia], neutral = -3 / u.source.scale, omega = -2 * Math.PI / period;
   const input = time => {

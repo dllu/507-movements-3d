@@ -13,6 +13,10 @@ export const eccentricTwoStopSource = {
     [385,213],[405,249],[413,285],[409,329],[391,371],[361,405],[319,430],[278,440],[242,438],[203,425],
     [168,405],[141,376],[121,345],[107,302]],
   stopC: {left: 103.5, right: 136.5, top: 261, bottom: 291}, uncertaintyPixels: 3,
+  // Least-squares center of an Archimedean spiral through the traced edge
+  // (0.1-pixel grid search; RMS residual 1.1, maximum 3.2 pixels). Brown
+  // draws the spiral centered about nine pixels from the hatched shaft.
+  spiralCenter: [270.8, 288.7],
 };
 const world = ([x, y]) => [(x - 277) / 100, (282 - y) / 100];
 function fitCircle(points) {
@@ -28,7 +32,35 @@ function fitCircle(points) {
   return {center, radius: Math.sqrt(center[0]**2+center[1]**2-m[2][3])};
 }
 
-export function makeEccentricTwoStopCandidate({footInner = 121, camSegments = 512} = {}) {
+// Cam A's edge is a true Archimedean spiral: its radius grows uniformly with
+// angle through one turn and the stepped offset is radial. The center is the
+// best-fit spiral center of Brown's traced edge; the rise and base radius are
+// the least-squares fit about it, and the step angle is the mean of the traced
+// step ends. The cam still turns about its shaft at the origin.
+export function eccentricTwoStopSpiral(s = eccentricTwoStopSource) {
+  const center = world(s.spiralCenter); let previous = null;
+  const polar = s.cam.map(p => {
+    const [x, y] = world(p).map((v, i) => v - center[i]); let angle = Math.atan2(y, x);
+    if (previous !== null) { while (angle - previous > Math.PI) angle -= 2*Math.PI; while (angle - previous < -Math.PI) angle += 2*Math.PI; }
+    previous = angle; return [angle, Math.hypot(x, y)];
+  });
+  const n = polar.length, st = polar.reduce((v, p) => v + p[0], 0), sr = polar.reduce((v, p) => v + p[1], 0),
+    stt = polar.reduce((v, p) => v + p[0]*p[0], 0), str = polar.reduce((v, p) => v + p[0]*p[1], 0),
+    slope = (n*str - st*sr)/(n*stt - st*st), intercept = (sr - slope*st)/n,
+    stepAngle = (polar[0][0] + polar.at(-1)[0] + 2*Math.PI)/2,
+    innerRadius = intercept + slope*stepAngle, outerRadius = innerRadius - slope*2*Math.PI;
+  // The radius grows as the edge runs clockwise (decreasing angle) from the step.
+  return {center, stepAngle, innerRadius, outerRadius, risePerRadian: -slope,
+    residuals: polar.map(([angle, radius]) => radius - (intercept + slope*angle))};
+}
+export function archimedeanCamOutline(spiral, segments) {
+  return Array.from({length: segments + 1}, (_, i) => {
+    const t = i/segments, angle = spiral.stepAngle - 2*Math.PI*t, radius = spiral.innerRadius + (spiral.outerRadius - spiral.innerRadius)*t;
+    return [spiral.center[0] + radius*Math.cos(angle), spiral.center[1] + radius*Math.sin(angle)];
+  });
+}
+
+export function makeEccentricTwoStopCandidate({footInner = 121, camSegments = 512, spiral = eccentricTwoStopSpiral()} = {}) {
   const s = eccentricTwoStopSource, root = new THREE.Group(), cam = new THREE.Group(), wheel = new THREE.Group(), fixed = new THREE.Group();
   const parts = {}, families = {}, O = world(s.output), rim = fitCircle(s.rim), local = p => world(p).map((x, i) => x - O[i]);
   wheel.position.set(...O, 0); root.add(wheel, cam, fixed);
@@ -41,8 +73,7 @@ export function makeEccentricTwoStopCandidate({footInner = 121, camSegments = 51
   add('wheelRearHub', ring(.142, .28, -.21, -.08, 128), 'wheel', PALETTE.driven);
   add('outputShaft', disk(.14, -.57, -.09, 128), 'wheel', PALETTE.muted);
   add('outputBearing', ring(.142, .25, -.57, -.40, 128), 'fixed', PALETTE.muted, fixed, [...O, 0]);
-  const curve = new THREE.CatmullRomCurve3(s.cam.map(p => new THREE.Vector3(...world(p), 0)), false, 'centripetal');
-  const outline = curve.getPoints(camSegments).map(p => [p.x, p.y]);
+  const outline = archimedeanCamOutline(spiral, camSegments);
   add('camA', conformingPlateMesh(plate(clip.difference(poly(outline), poly(circle([0,0], .202, 128))), .08, .18)), 'cam', PALETTE.driver);
   add('camHub', ring(.202, .33, .13, .23, 128), 'cam', PALETTE.driver);
   add('inputShaft', disk(.20, .08, .51, 128), 'cam', PALETTE.muted);
@@ -60,7 +91,7 @@ export function makeEccentricTwoStopCandidate({footInner = 121, camSegments = 51
     cam.rotation.z = inputAngle; wheel.rotation.z = outputAngle; root.updateMatrixWorld(true);
     return root.userData.state = {inputAngle, outputAngle};
   }
-  root.userData = {parts, families, blocks: {cam, wheel, fixed}, source: s, geometry: {O, rim, footInner, camSegments,
+  root.userData = {parts, families, blocks: {cam, wheel, fixed}, source: s, geometry: {O, rim, footInner, camSegments, spiral,
     camSpan: [.08,.18], bodySpan: [.21,.34], footSpan: [-.015,.25], rearDiskCenterOffset: local(rim.center)},
     hideGround: true, cameraFov: 8, shadowCameraHalfExtent: 3, shadowBias: -.00003, shadowNormalBias: .002,
     mechanism: 'eccentric-two-stop-source-candidate', fidelity: 'candidate',

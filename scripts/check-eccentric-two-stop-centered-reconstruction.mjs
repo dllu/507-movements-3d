@@ -6,7 +6,7 @@ import {auditClutchSourceSolids} from './lib/weighted-clutch-fit-audit.mjs';
 import {nativePlateContours} from './lib/weighted-clutch-native-contours.mjs';
 import {readStudyReport,freezeStudySources,verifyStudySources} from './lib/study-report-io.mjs';
 
-const prefix='artifacts/review/088-centered-reconstruction-check',fineFile='artifacts/review/088-centered-fine.json.gz',coarseFile='artifacts/review/088-centered-coarse.json.gz',
+const stem=process.env.PROBE_STEM??'artifacts/review/088-centered',prefix=stem+'-reconstruction-check',fineFile=stem+'-fine.json.gz',coarseFile=stem+'-coarse.json.gz',
   fine=readStudyReport(fineFile),coarse=readStudyReport(coarseFile),model=makeEccentricTwoStopCenteredCandidate(fine.options),u=model.root.userData,d=makeEccentricTwoStopDynamics(model),
   sources=freezeStudySources([...fine.sources.map(s=>s.file),fineFile,coarseFile,'scripts/check-eccentric-two-stop-centered-reconstruction.mjs',
     'scripts/lib/weighted-clutch-fit-audit.mjs','scripts/lib/weighted-clutch-solid-audit.mjs','tests/helpers/solid-surface.mjs'],prefix);
@@ -55,12 +55,13 @@ const contour=nativePlateContours(u.parts.camA.geometry).sort((a,b)=>b.length-a.
       distance=Math.min(distance,Math.hypot(point[0]-a[0]-f*dx,point[1]-a[1]-f*dy));}
     return distance;
   });
-assert(Math.max(...sourceDistances)<.1);
+// The cam is a fitted Archimedean spiral, not an interpolation of the trace.
+assert(Math.max(...sourceDistances)<3.5);
 const result={movement:88,productionChanged:false,candidateIntegrated:false,mechanicsPassed:false,checksPassed:true,sources,
   states:fine.rows.length,maximumCoordinateDifference,maximumMomentumResidual,maximumGravityResidual,maximumBrakeExcess,maximumImpulseEnergyResidual,
   closure:fine.closure,stoppedIncrements:increments,derivativeChecks,poses,
   source:{camMean:sourceDistances.reduce((a,b)=>a+b,0)/sourceDistances.length,camMaximum:Math.max(...sourceDistances),
-    distances:sourceDistances,registration:'One world-to-source mapping with the measured input at [277,282] and scale 100. No additional cam fit.',
+    distances:sourceDistances,registration:'One world-to-source mapping with the measured input at [277,282] and scale 100. The cam edge is the least-squares Archimedean spiral of the traced points.',spiral:u.geometry.spiral,
     outputAxis:u.geometry.O,rearDiskCenterOffset:u.geometry.rearDiskCenterOffset,rimCenterAdjustmentPixels:u.geometry.rimCenterAdjustmentPixels},
   qualification:'Independent phase-gradient, momentum, dry brake, step-halving, repeated endpoint, source contour and seven full-solid pose checks. The hidden axis, shifted rim center and stepped foot construction are explicit reconstruction assumptions. Continuous clearance and final playback remain separate.'};
 verifyStudySources(sources);fs.writeFileSync(prefix+'.json',JSON.stringify(result,null,2)+'\n',{flag:'wx'});

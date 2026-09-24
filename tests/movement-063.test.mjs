@@ -3,11 +3,14 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
-import bakedCuts from '../src/simulation/baked/intermittent-63-211-snap-counter-cuts.js';
+import bakedMotion from '../src/simulation/baked/intermittent-63-211-snap-counter-cuts.js';
 import {
-  computeSnapCounterCuts,
-  mitredOffset,
-} from '../scripts/lib/intermittent-63-211-snap-counter-cuts.mjs';
+  layout,
+  makeSnapCounterMechanism,
+  ringGap,
+  ringPointGap,
+  snapCounterMotionFingerprint,
+} from '../src/simulation/snap-counter-63-mechanism.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -16,225 +19,119 @@ const catalog = JSON.parse(await readFile(
 const build = () => createMovementModel(
   catalog.movements.find(({ id }) => id === 63),
 );
-
-const rotate = ([x, y], angle) => [
-  x * Math.cos(angle) - y * Math.sin(angle),
-  x * Math.sin(angle) + y * Math.cos(angle),
-];
-const place = (ring, angle, [ox, oy]) => ring.map((point) => {
-  const [x, y] = rotate(point, angle);
-  return [x + ox, y + oy];
-});
-const segmentDistance = (point, a, b) => {
-  const dx = b[0] - a[0];
-  const dy = b[1] - a[1];
-  const t = THREE.MathUtils.clamp(
-    ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / (dx * dx + dy * dy),
-    0,
-    1,
-  );
-  return Math.hypot(point[0] - a[0] - t * dx, point[1] - a[1] - t * dy);
-};
-const inside = (point, ring) => {
-  let result = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
-    const [xi, yi] = ring[i];
-    const [xj, yj] = ring[j];
-    if ((yi > point[1]) !== (yj > point[1])
-      && point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi) result = !result;
-  }
-  return result;
-};
-const edgeDistance = (point, ring) => Math.min(...ring.map((a, index) => (
-  segmentDistance(point, a, ring[(index + 1) % ring.length]))));
-const crosses = (a, b, c, d) => {
-  const side = (p, q, r) => Math.sign((q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]));
-  return side(a, b, c) * side(a, b, d) < 0 && side(c, d, a) * side(c, d, b) < 0;
-};
-const edgesCross = (a, b) => a.some((p, i) => b.some((q, j) => crosses(
-  p, a[(i + 1) % a.length], q, b[(j + 1) % b.length],
-)));
-// Signed planar gap between two rings; when they overlap, minus the deepest
-// vertex penetration.
-const ringGap = (a, b) => {
-  const depth = Math.max(
-    0,
-    ...a.filter((point) => inside(point, b)).map((point) => edgeDistance(point, b)),
-    ...b.filter((point) => inside(point, a)).map((point) => edgeDistance(point, a)),
-  );
-  if (depth > 0 || edgesCross(a, b)) return -depth;
-  return Math.min(
-    ...a.map((point) => edgeDistance(point, b)),
-    ...b.map((point) => edgeDistance(point, a)),
-  );
-};
-const circleGap = (ring, center, radius) => (inside(center, ring) ? -1 : 1)
-  * edgeDistance(center, ring) - radius;
-
-const starSurface = (inputs) => mitredOffset(Array.from(
-  { length: inputs.starTeeth * 2 },
-  (_, index) => {
-    const angle = inputs.starMountPhase + index * Math.PI / inputs.starTeeth;
-    const radius = index % 2 === 0 ? inputs.starOuterRadius : inputs.starGapRadius;
-    return [Math.cos(angle) * radius, Math.sin(angle) * radius];
-  },
-), inputs.starBevel);
-const pinCenters = (inputs, state, driverCenter = inputs.driverCenter) => (
-  Array.from({ length: 3 }, (_, index) => {
-    const angle = inputs.pinMountPhase - index * inputs.pinPitch + state.driverAngle;
-    return [
-      driverCenter[0] + Math.cos(angle) * inputs.pinOrbitRadius,
-      driverCenter[1] + Math.sin(angle) * inputs.pinOrbitRadius,
-    ];
-  }));
-
-const sampleCycle = (model, count, visit) => {
-  const { geometry, stateAtTime } = model.root.userData;
-  for (let index = 0; index <= count; index += 1) {
-    visit(stateAtTime(geometry.eventPeriod * index / count));
-  }
+const zRange = (object) => {
+  object.updateWorldMatrix(true, true);
+  const box = new THREE.Box3().setFromObject(object);
+  return [box.min.z, box.max.z];
 };
 
-test('movement 63 is framed and layered like Brown\'s plate', () => {
+test('movement 63 is framed face on and layered as Brown dashes it', () => {
   const model = build();
   const data = model.root.userData;
-  const { drop, pawl, star } = data.blocks;
+  const { drop, driver, pawl, star, springLeaf } = data.blocks;
   assert.equal(data.mechanism, 'three-pin-spring-drop-ten-point-star-counter');
   assert.equal(data.hideGround, true);
-  for (const role of ['baseRail', 'leftPost', 'rightPost', 'dropBracket', 'starBracket', 'driverBracket']) {
-    assert.equal(data.blocks[role], undefined, `${role} is not drawn by Brown`);
+  assert.ok(model.cameraDirection.clone().normalize().z > 0.98, 'the plate is seen face on');
+  const { z } = data.geometry;
+  assert.ok(z.dropFront < z.diskBack, 'the drop, whose leg Brown dashes, runs behind the pin disk');
+  assert.ok(z.diskFront < z.pawlBack, 'the broad pawl works in front of the disk');
+  assert.ok(z.pinFront < z.starBack, 'the pins end behind the star, so they never meet it');
+  assert.ok(z.pinBack < z.dropFront && z.pinFront > z.pawlBack, 'the pins reach both the leg and the lobe');
+  assert.ok(z.noseFront > z.starBack + 0.1, 'the pawl nose steps forward into the star plane');
+  assert.equal(pawl.parent, drop.userData.rotor, 'the pawl hangs on the drop');
+  assert.equal(driver.userData.pins.length, 3);
+  const [springBack, springFront] = zRange(springLeaf);
+  assert.ok(springBack > z.dropFront - 1e-9 && springFront < z.diskBack, 'the spring lies on the drop tail');
+  assert.ok(zRange(star)[1] > z.starFront - 1e-9);
+});
+
+test('movement 63 plays the baked steady contact solution, which the live solver reproduces', () => {
+  const model = build();
+  const { snapCounter } = model.root.userData;
+  assert.equal(snapCounter.fingerprint, snapCounterMotionFingerprint());
+  assert.equal(bakedMotion.fingerprint, snapCounter.fingerprint, 'rebake after changing the mechanism');
+  assert.equal(snapCounter.motion.live, undefined, 'the baked motion is used');
+  const live = makeSnapCounterMechanism().periodicEvent();
+  for (const key of ['delta', 'rho', 'sigma']) {
+    const error = Math.max(...live[key].map((value, index) => Math.abs(value - bakedMotion[key][index])));
+    assert.ok(error < 1e-6, `${key} matches the live solution (${error})`);
   }
-  const direction = model.cameraDirection.clone().normalize();
-  assert.ok(direction.z > 0.98, 'the plate is seen face on');
-  assert.equal(data.sweptCut.applied, true, 'the baked cuts match the factory inputs');
-  assert.equal(data.sweptCut.fingerprint, bakedCuts.fingerprint);
-
-  const starFront = star.position.z + star.userData.depth / 2 + data.sweptCut.inputs.starBevel;
-  const shankBack = data.geometry.pawlPlaneZ + pawl.userData.depth / 2 - pawl.userData.shankDepth;
-  const pawlFront = data.geometry.pawlPlaneZ + pawl.userData.depth / 2;
-  const noseBack = data.geometry.pawlPlaneZ - pawl.userData.depth / 2;
-  const dropFrontSlabBack = drop.position.z - drop.userData.depth / 2 + drop.userData.rearDepth;
-  assert.ok(shankBack > starFront, 'the pawl shank runs clear in front of the star');
-  assert.ok(noseBack < starFront - 0.05, 'the nose block works in the star plane');
-  assert.ok(dropFrontSlabBack > pawlFront, 'the pawl works under the drop\'s full-outline front slab');
-  assert.ok(drop.position.z - drop.userData.depth / 2 < pawlFront,
-    'only the relieved back of the drop shares the pawl\'s depth');
-
-  const driverDistance = data.geometry.driverCenter.distanceTo(data.geometry.starCenter);
-  assert.ok(
-    driverDistance - data.geometry.pinOrbitRadius - data.geometry.pinRadius
-      > data.geometry.starOuterRadius + data.sweptCut.inputs.starBevel + 0.02,
-    'the pin circle clears the star points it crosses',
-  );
+  assert.ok(live.repeatError < 0.01, 'the second and third events repeat');
+  const pitch = Math.PI * 2 / layout.starTeeth;
+  assert.ok(Math.abs(live.advance + pitch) < 0.002, 'the solved event turns the star one point');
 });
 
-test('movement 63 baked cuts regenerate from the factory inputs', () => {
-  const model = build();
-  const { inputs } = model.root.userData.sweptCut;
-  const regenerated = computeSnapCounterCuts(inputs, model.root.userData.stateAtTime);
-  for (const key of ['pawl', 'pawlNose', 'dropRear']) {
-    assert.deepEqual(regenerated[key], bakedCuts[key], `${key} matches the baked outline`);
-    assert.equal(regenerated[key].length, 1, `${key} is one connected piece`);
+test('movement 63 keeps every working pair clear through a steady event', () => {
+  const mechanism = makeSnapCounterMechanism();
+  const { delta, phaseOffset, rho, sigma, startSigma, stepsPerEvent } = bakedMotion;
+  let pinPawl = Infinity;
+  let pinDrop = Infinity;
+  let noseStar = Infinity;
+  let striker = Infinity;
+  let stop = Infinity;
+  for (let step = 0; step <= stepsPerEvent; step += 1) {
+    const driverAngle = -(phaseOffset + step / stepsPerEvent) * mechanism.pinPitch;
+    const pins = mechanism.pinsAt(driverAngle);
+    const pawl = mechanism.pawlAt(delta[step], rho[step]);
+    const drop = mechanism.dropAt(delta[step]);
+    for (const pin of pins) {
+      pinPawl = Math.min(pinPawl, ringPointGap(pawl, pin) - layout.pinRadius);
+      pinDrop = Math.min(pinDrop, ringPointGap(drop, pin) - layout.pinRadius);
+    }
+    noseStar = Math.min(noseStar, ringGap(
+      mechanism.noseAt(delta[step], rho[step]),
+      mechanism.starAt(startSigma + sigma[step]),
+    ));
+    striker = Math.min(striker, mechanism.strikerGap(delta[step], rho[step]));
+    stop = Math.min(stop, ringPointGap(drop, mechanism.stopPin) - layout.stopPinRadius);
   }
+  assert.ok(pinPawl > 1, `pins clear the pawl (${pinPawl} px)`);
+  assert.ok(pinDrop > 1, `pins clear the drop (${pinDrop} px)`);
+  assert.ok(noseStar > 1, `the nose clears the star (${noseStar} px)`);
+  assert.ok(striker > 0 && striker < 1, `the striker bears on the pawl at rest (${striker} px)`);
+  assert.ok(stop > 0 && stop < 1, `the drop comes to rest just on the stop pin (${stop} px)`);
 });
 
-test('movement 63 keeps its pawl clear of the star, pins and striker through the cycle', () => {
-  const model = build();
-  const { inputs } = model.root.userData.sweptCut;
-  const star = starSurface(inputs);
-  const nose = bakedCuts.pawlNose[0][0];
-  const shank = bakedCuts.pawl[0][0];
-  const worst = { noseStar: Infinity, pinPawl: Infinity, pinStar: Infinity, striker: Infinity };
-  let restStriker = Infinity;
-  sampleCycle(model, 1536, (state) => {
-    const pivot = [state.pawlPivotPosition.x, state.pawlPivotPosition.y];
-    const noseWorld = place(nose, state.pawlAngle, pivot);
-    const shankWorld = place(shank, state.pawlAngle, pivot);
-    const starWorld = place(star, state.starAngle, inputs.starCenter);
-    worst.noseStar = Math.min(worst.noseStar, ringGap(noseWorld, starWorld));
-    for (const pin of pinCenters(inputs, state)) {
-      worst.pinStar = Math.min(worst.pinStar, circleGap(starWorld, pin, inputs.pinRadius));
-      worst.pinPawl = Math.min(
-        worst.pinPawl,
-        circleGap(noseWorld, pin, inputs.pinRadius),
-        circleGap(shankWorld, pin, inputs.pinRadius),
-      );
-    }
-    const striker = place([inputs.strikerLocal], state.dropAngle, inputs.dropPivot)[0];
-    const strikerGap = circleGap(shankWorld, striker, inputs.strikerRadius);
-    worst.striker = Math.min(worst.striker, strikerGap);
-    if (state.stage === 'settle') restStriker = Math.min(restStriker, strikerGap);
-  });
-  assert.ok(worst.noseStar > 0.008 && worst.noseStar < 0.02,
-    `the nose works ${worst.noseStar} from the star's bevelled surface`);
-  assert.ok(worst.pinStar > 0.01, `pins clear the star points by ${worst.pinStar}`);
-  assert.ok(worst.pinPawl > 0.008, `pins clear the pawl by ${worst.pinPawl}`);
-  assert.ok(worst.striker > 0.008, `the striker clears the pawl shank by ${worst.striker}`);
-  assert.ok(restStriker < 0.05, `the pawl rests ${restStriker} from the drop's striker pin`);
-
-  // Negative controls: the uncut nose blank, Brown-proportioned pins at the
-  // former centre distance and a striker set into the pawl's swing all fail.
-  const pawl = model.root.userData.blocks.pawl;
-  const rest = model.root.userData.stateAtTime(0);
-  const restPivot = [rest.pawlPivotPosition.x, rest.pawlPivotPosition.y];
-  assert.ok(ringGap(
-    place(pawl.userData.noseOutline, rest.pawlAngle, restPivot),
-    place(star, rest.starAngle, inputs.starCenter),
-  ) < -0.05);
-  let formerPinStar = Infinity;
-  sampleCycle(model, 512, (state) => {
-    const starWorld = place(star, state.starAngle, inputs.starCenter);
-    for (const pin of pinCenters(inputs, state, [1.05, 0])) {
-      formerPinStar = Math.min(formerPinStar, circleGap(starWorld, pin, inputs.pinRadius));
-    }
-  });
-  assert.ok(formerPinStar < -0.05, `pins at the former centre distance cut the star by ${-formerPinStar}`);
-  let farthest = null;
-  sampleCycle(model, 1024, (state) => {
-    if (!farthest || state.pawlAngle - state.dropAngle > farthest.pawlAngle - farthest.dropAngle) {
-      farthest = state;
-    }
-  });
-  const pivotLocal = model.root.userData.geometry.pawlPivotLocal;
-  const intrudingLocal = rotate(
-    [0.55, 0.12 + inputs.strikerRadius - 0.02],
-    farthest.pawlAngle - farthest.dropAngle,
-  ).map((value, index) => value + (index === 0 ? pivotLocal.x : pivotLocal.y));
-  assert.ok(circleGap(
-    place(shank, farthest.pawlAngle, [farthest.pawlPivotPosition.x, farthest.pawlPivotPosition.y]),
-    place([intrudingLocal], farthest.dropAngle, inputs.dropPivot)[0],
-    inputs.strikerRadius,
-  ) < -0.01, 'a striker set into the pawl swing is detected');
+test('movement 63 lifts, releases the pawl first, then snaps the drop and star', () => {
+  const { delta, rho, sigma, stepsPerEvent } = bakedMotion;
+  const pitch = Math.PI * 2 / layout.starTeeth;
+  const firstLift = delta.findIndex((value) => value > delta[0] + 1e-4);
+  const pawlRelease = rho.findIndex((value, index) => index > firstLift && value < -0.001);
+  const peak = delta.indexOf(Math.max(...delta));
+  const starStart = sigma.findIndex((value) => value < -1e-4);
+  assert.ok(firstLift > 0 && firstLift < pawlRelease, 'the pins lift the pawl with the drop first');
+  assert.ok(delta[pawlRelease] - delta[0] > 0.07,
+    'the pawl rides on the striker while the pin lifts its lobe and the drop');
+  assert.ok(pawlRelease < peak, 'the pin escapes the pawl before it escapes the drop');
+  assert.ok(Math.max(...delta) > 0.3, 'the drop is lifted about twenty degrees');
+  assert.ok(starStart > peak, 'the star stays still until the drop falls');
+  assert.ok((stepsPerEvent - starStart) / stepsPerEvent < 0.1, 'the spring throws the drop and star quickly');
+  for (let index = 1; index <= stepsPerEvent; index += 1) {
+    assert.ok(sigma[index] <= sigma[index - 1] + 1e-9, 'the star only turns forward (clockwise)');
+  }
+  assert.ok(Math.abs(sigma.at(-1) + pitch) < 1e-6, 'each pin turns the star one point');
+  assert.ok(Math.abs(delta.at(-1) - delta[0]) < 1e-6 && Math.abs(rho.at(-1) - rho[0]) < 1e-3,
+    'each event ends where the next begins');
 });
 
-test('movement 63 lifts the pawl point over the star points before it drops', () => {
+test('movement 63 bends the spring with the drop and poses every part from the state', () => {
   const model = build();
-  const { geometry, stateAtTime } = model.root.userData;
-  const center = geometry.starCenter;
-  let crossingRadius = Infinity;
-  let previous = null;
-  sampleCycle(model, 2048, (state) => {
-    const tipRadius = Math.hypot(state.pawlTipPosition.x - center.x, state.pawlTipPosition.y - center.y);
-    if (state.stage === 'lifting' || state.stage === 'pawl-release') {
-      const local = Math.atan2(state.pawlTipPosition.y - center.y, state.pawlTipPosition.x - center.x)
-        - state.starAngle;
-      const fromPoint = Math.abs(THREE.MathUtils.euclideanModulo(
-        local - geometry.starMountPhase + geometry.starPitch / 2,
-        geometry.starPitch,
-      ) - geometry.starPitch / 2);
-      if (fromPoint < 0.05) crossingRadius = Math.min(crossingRadius, tipRadius);
-    }
-    if (previous && previous.stage === state.stage && state.stage !== 'power-snap') {
-      const dt = state.driverAngle - previous.driverAngle;
-      const rate = (state.pawlAngle - previous.pawlAngle) / (dt / geometry.driverAngularSpeed);
-      const mean = (state.pawlAngularSpeed + previous.pawlAngularSpeed) / 2;
-      assert.ok(Math.abs(rate - mean) < 2e-3 + Math.abs(mean) * 2e-3,
-        `pawl angular speed ${mean} matches the swing ${rate} in ${state.stage}`);
-    }
-    previous = state;
-  });
-  assert.ok(crossingRadius > geometry.starOuterRadius + 0.1,
-    `the pawl point passes the star point at radius ${crossingRadius}`);
-  const lifted = stateAtTime(geometry.liftEnd * geometry.eventPeriod - 1e-9);
-  assert.ok(Math.abs(lifted.pawlAngle - geometry.pawlClearanceAngle) < 1e-9);
+  const { blocks, geometry, snapCounter, stateAtTime } = model.root.userData;
+  let previousStar = null;
+  for (const phase of [0, 0.3, 0.5, 0.7, 0.85, 0.95, 0.99, 1.2]) {
+    model.update(phase * geometry.eventPeriod);
+    const state = model.root.userData.kinematics;
+    assert.deepEqual(state, stateAtTime(phase * geometry.eventPeriod));
+    assert.equal(blocks.drop.userData.rotor.rotation.z, state.dropAngle);
+    assert.equal(blocks.pawl.userData.rotor.rotation.z, state.pawlAngle);
+    assert.equal(blocks.star.userData.rotor.rotation.z, state.starAngle);
+    assert.equal(blocks.driver.userData.rotor.rotation.z, state.driverAngle);
+    const end = blocks.springLeaf.userData.curve.getPoint(1);
+    const expected = snapCounter.toWorld(snapCounter.mechanism.rotateAboutHinge(layout.springEnd, state.dropAngle));
+    assert.ok(Math.hypot(end.x - expected.x, end.y - expected.y) < 1e-9, 'the spring end moves with the drop');
+    if (previousStar !== null) assert.ok(state.starAngle <= previousStar + 1e-12);
+    previousStar = state.starAngle;
+  }
+  const oneEvent = stateAtTime(geometry.eventPeriod * 1.05).starAngle - stateAtTime(geometry.eventPeriod * 0.05).starAngle;
+  assert.ok(Math.abs(oneEvent + geometry.starPitch) < 1e-9);
 });

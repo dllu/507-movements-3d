@@ -22,8 +22,8 @@ test('084 uses the measured single cam, complete wheel and open suspension slots
   const radius = Math.max(...Array.from({length: wheel.count}, (_, i) => Math.hypot(wheel.getX(i), wheel.getY(i))));
   near(radius * scale, 231.4045, .001);
   assert.equal(u.source.upper.length, 13); assert.equal(u.source.lower.length, 14);
-  near(u.animationTiming.playbackTimeScale, 1); near(u.playbackDuration, 5.5);
-  m.update(5.5); assert(u.cameraFitBounds.containsBox(new THREE.Box3().setFromObject(m.root, true))); dispose(m);
+  near(u.animationTiming.playbackTimeScale, 1); near(u.playbackDuration, 17.2);
+  m.update(17.2); assert(u.cameraFitBounds.containsBox(new THREE.Box3().setFromObject(m.root, true))); dispose(m);
 });
 
 test('084 parts remain closed solids with consistent face winding', () => {
@@ -45,7 +45,7 @@ test('084 parts remain closed solids with consistent face winding', () => {
 test('084 production preserves reviewed geometry and the exact governor inputs', () => {
   const m = makeSelectorRackDrive(), u = m.root.userData, candidate = makeSelectorRackFreeCandidate(), physics = makeSelectorRackDynamics(candidate);
   for (let i = 0; i <= 180; i++) {
-    const time = 5.5 * i / 180, state = u.stateAtTime(time), input = physics.input(time);
+    const time = u.playbackDuration * i / 180, state = u.stateAtTime(time), input = physics.input(time);
     near(state.camAngle, input.camAngle); near(state.selectorY, input.selectorY);
     if (i % 10) continue;
     m.update(time); candidate.setState(state);
@@ -58,15 +58,22 @@ test('084 production preserves reviewed geometry and the exact governor inputs',
   assert.throws(() => u.stateAtTime(NaN)); assert.throws(() => u.stateAtTime(Infinity)); dispose(m); dispose(candidate);
 });
 
-test('084 selects both directions, retains free tilt and holds its final pose for replay', () => {
-  const m = makeSelectorRackDrive(), u = m.root.userData, first = u.stateAtTime(0), end = u.stateAtTime(5.5);
-  const lower = u.stateAtTime(2.1), upper = u.stateAtTime(4.25);
-  assert(lower.center[0] < first.center[0] - .18); assert(upper.center[0] > first.center[0] + .14);
+test('084 walks the rack along its teeth both ways, retains free tilt and holds its final pose for replay', () => {
+  const m = makeSelectorRackDrive(), u = m.root.userData, first = u.stateAtTime(0), end = u.stateAtTime(17.2);
+  // Two cam turns on the upper rack, two on the lower, two on the upper.
+  const offset = time => (u.stateAtTime(time).center[0] - first.center[0]) * 240;
+  const stops = [4.5, 7, 9, 11.2, 14, 17.2].map(offset);
+  assert(stops[0] > 30 && stops[1] > stops[0] + 30, 'upper rack walks right one step per turn');
+  assert(stops[2] < stops[1] - 50 && stops[3] < stops[2] - 50, 'lower rack walks left one step per turn');
+  assert(stops[4] > stops[3] + 30 && stops[5] > stops[4] + 30, 'upper rack walks right again');
+  assert(stops[1] - stops[3] > 170, 'the rack travels about three tooth pitches');
+  const limits = m.root.userData.geometry.limits.rackX.map(v => v * 240);
+  for (const r of u.profile.knots) {const x = (r[1] - first.center[0]) * 240; assert(x >= limits[0] - .01 && x <= limits[1] + .01);}
   assert(Math.max(...u.profile.knots.map(r => Math.abs(r[3]))) > .001);
   assert.equal(end.finished, true); assert.deepEqual(u.stateAtTime(99), end);
   near(u.stateAtTime(99).selectorY, -3 / 240); assert.deepEqual(u.stateAtTime(0), first);
   const bounds = new THREE.Box3(new THREE.Vector3(...u.sampledMotionBounds.min), new THREE.Vector3(...u.sampledMotionBounds.max));
-  for (const time of [0, .7, 1.3, 1.5, 1.7, 2.1, 2.85, 3.45, 3.7, 4, 4.25, 5.5]) {
+  for (const time of [0, 2.7, 3.2, 4.5, 5.8, 6.6, 7.4, 8.3, 10.4, 11, 12, 14.9, 17.2]) {
     m.update(time); for (const mesh of Object.values(u.parts)) assert(bounds.containsBox(new THREE.Box3().setFromObject(mesh, true)), mesh.name + ' framing');
   }
   dispose(m);
@@ -75,7 +82,7 @@ test('084 selects both directions, retains free tilt and holds its final pose fo
 test('084 working cam, suspension and guides have finite clearance in loaded poses', () => {
   const m = makeSelectorRackDrive(), u = m.root.userData;
   const parts = Object.entries(u.parts).map(([name, mesh]) => ({name, mesh, solid: solidSurface(mesh.geometry), points: surfacePoints(mesh.geometry)}));
-  for (const time of [0, .7, 1.45, 1.5, 1.65, 2.1, 2.85, 3.45, 3.7, 3.8, 4, 4.25, 5.5]) {
+  for (const time of [0, 2.6, 2.9, 3.2, 5.6, 5.9, 6.6, 7.3, 7.6, 10.2, 10.5, 10.9, 12, 12.3, 14.8, 15.2, 17.2]) {
     m.update(time);
     for (let i = 0; i < parts.length; i++) for (let j = i + 1; j < parts.length; j++) {
       if (u.families[parts[i].name] === u.families[parts[j].name]) continue;

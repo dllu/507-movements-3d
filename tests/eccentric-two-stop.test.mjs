@@ -32,14 +32,24 @@ test('088 source cam, solid stepped stops and press-fit shaft seats preserve che
   dispose(candidate);
 });
 
-test('088 traced cam contour matches the engraving waypoints under one source mapping',()=>{
-  const outer=nativePlateContours(u.parts.camA.geometry).sort((a,b)=>b.length-a.length)[0];
+test('088 cam edge is a true Archimedean spiral fitted to the engraving waypoints',()=>{
+  const outer=nativePlateContours(u.parts.camA.geometry).sort((a,b)=>b.length-a.length)[0],sp=u.geometry.spiral;
+  assert.ok(sp.risePerRadian>0&&sp.outerRadius>sp.innerRadius);
+  let onSpiral=0;
+  for(const [x,y]of outer){
+    const dx=x-sp.center[0],dy=y-sp.center[1],r=Math.hypot(dx,dy),
+      sweep=THREE.MathUtils.euclideanModulo(sp.stepAngle-Math.atan2(dy,dx),2*Math.PI),expected=sp.innerRadius+sp.risePerRadian*sweep;
+    // Vertices on the radial step face lie between the two spiral ends.
+    if(Math.abs(r-expected)<2e-5){onSpiral++;continue;}
+    assert.ok(Math.min(sweep,2*Math.PI-sweep)<1e-5&&r>=sp.innerRadius-1e-5&&r<=sp.outerRadius+1e-5,'cam vertex off the spiral');
+  }
+  assert.ok(onSpiral>=u.geometry.camSegments);
   for(const [x,y]of u.source.cam){
     const p=[(x-277)/100,(282-y)/100];let distance=Infinity;
     for(let i=0;i<outer.length;i++){const a=outer[i],b=outer[(i+1)%outer.length],dx=b[0]-a[0],dy=b[1]-a[1],
       t=Math.max(0,Math.min(1,((p[0]-a[0])*dx+(p[1]-a[1])*dy)/(dx*dx+dy*dy)));
       distance=Math.min(distance,Math.hypot(p[0]-a[0]-t*dx,p[1]-a[1]-t*dy));}
-    assert.ok(distance*100<.01,'cam departs from a traced point');
+    assert.ok(distance*100<3.5,'cam departs from a traced point by more than the fit residual');
   }
   assert.deepEqual(u.geometry.O,[.075,.07]);assert.ok(u.geometry.pressFitShaftSeats);
   assert.deepEqual(u.geometry.rearDiskCenterOffset,[0,0]);
