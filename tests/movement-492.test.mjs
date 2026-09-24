@@ -99,11 +99,18 @@ test('movement 492 has one eye-lever detacher at each boat end and no belt', () 
     assert.equal(unit.fallRope.parent, unit.unit);
     assert.notEqual(unit.tackleHookAssembly, unit.tongue);
   }
-  assert.equal(blocks.pullBar.parent, model.root);
-  assert.equal(blocks.pullBarGrip.parent, model.root);
-  assert.ok(blocks.releaseCords.every(
-    (cord) => cord.parent === model.root && cord.userData.isReleaseRope,
-  ));
+  // Brown's plate draws one detacher with its rope running off to the right:
+  // source presentation detaches the second end unit, its rope and the
+  // reconstructed common pull bar, which the model still retains.
+  assert.equal(blocks.units[0].unit.parent, model.root);
+  assert.equal(blocks.units[1].unit.parent, null);
+  assert.equal(blocks.pullBar.parent, null);
+  assert.equal(blocks.pullBarGrip.parent, null);
+  assert.equal(blocks.releaseCords[0].parent, model.root);
+  assert.equal(blocks.releaseCords[1].parent, null);
+  assert.ok(blocks.releaseCords.every((cord) => cord.userData.isReleaseRope));
+  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes(
+    'boat-detaching-apparatus-2'));
 
   const belts = [];
   model.root.traverse((object) => {

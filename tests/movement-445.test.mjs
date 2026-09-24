@@ -49,11 +49,11 @@ test('movement 445 is the all-fixed D’Ectol apparatus in its free-descent sour
   assert.equal(movement.fidelity, 'authored');
   assert.equal(data.archetype, ARCHETYPE);
   assert.equal(data.fidelity, 'authored');
-  assert.equal(blocks.nozzle.parent, model.root);
-  assert.equal(blocks.lowerTube.parent, model.root);
-  assert.equal(blocks.plate.parent, model.root);
-  assert.equal(blocks.plateStem.parent, model.root);
-  assert.equal(blocks.reservoir.parent, model.root);
+  for (const block of [...blocks.upperWalls, blocks.upperFloor,
+    blocks.upperBack, ...blocks.lowerWalls, blocks.lowerTop,
+    blocks.lowerBack, blocks.plate, blocks.plateStem]) {
+    assert.equal(block.parent, model.root);
+  }
   assert.equal(degreesOfFreedom.movingSolidParts, 0);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
@@ -76,13 +76,16 @@ test('movement 445 is the all-fixed D’Ectol apparatus in its free-descent sour
   assert.deepEqual(belts, []);
   assert.deepEqual(ropes, []);
   for (const role of [
-    'fixed-upper-smaller-tube',
-    'fixed-lower-larger-tube',
+    'fixed-supply-conduit-roof',
+    'fixed-supply-conduit-floor',
+    'fixed-upper-box-floor-with-round-orifice',
+    'fixed-lower-box-top-with-round-opening',
+    'fixed-discharge-channel-roof',
     'fixed-circular-plate-concentric-with-upper-orifice',
-    'fixed-circular-plate-support',
+    'fixed-flared-stem-of-circular-plate',
     'constant-supply-water-at-fixed-head',
     'unobstructed-descending-stream',
-    'water-spreading-over-plate-and-descending-in-larger-tube',
+    'water-spreading-over-plate-and-descending-in-lower-box',
     'self-forming-water-cone-on-fixed-circular-plate',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
@@ -122,7 +125,7 @@ test('movement 445 records both Brown plates and discloses its fluid-envelope as
   assert.deepEqual(plate.approximateSmallTubeCenterPixels, [292, 215]);
   assert.equal(evidence.explicitInBrownDescription.length, 8);
   assert.match(evidence.engravingEvidence,
-    /Plate 445 shows the open-flow state.*circular plate on a fixed central stem/);
+    /Plate 445 is a vertical section in the open-flow state.*circular plate on a fixed flared stem/);
   assert.match(evidence.reconstructionDisclosure,
     /no dimensions, flow rate, head.*independently engineered/);
   disposeModel(model.root);
@@ -258,9 +261,9 @@ test('movement 445 cone and upper-column phase joins are C2 continuous', () => {
 test('movement 445 update changes only fluid envelopes and tracers, never the fixed apparatus', () => {
   const model = createMovementModel(catalog.movements[444]);
   const { blocks, geometry, stateAtTime, update } = model.root.userData;
-  const fixedBlocks = [blocks.base, blocks.lowerFloor, blocks.lowerTube,
-    blocks.nozzle, blocks.outletPipe, blocks.plate, blocks.plateStem,
-    blocks.reservoir];
+  const fixedBlocks = [...blocks.upperWalls, blocks.upperFloor,
+    blocks.upperBack, ...blocks.lowerWalls, blocks.lowerTop,
+    blocks.lowerBack, blocks.plate, blocks.plateStem];
   const fixedPositions = fixedBlocks.map((block) => block.position.clone());
   const fixedQuaternions = fixedBlocks.map((block) => block.quaternion.clone());
   const fixedScales = fixedBlocks.map((block) => block.scale.clone());
@@ -273,13 +276,23 @@ test('movement 445 update changes only fluid envelopes and tracers, never the fi
     near(blocks.waterCone.scale.y, state.coneFraction, 0,
       `rendered cone height at ${phase}`);
     near(blocks.waterCone.position.y,
-      geometry.plateTopY + state.coneHeight / 2, 0,
-    `cone remains anchored to plate at ${phase}`);
-    near(blocks.risingColumn.scale.y,
-      Math.max(0.001, state.upperColumnFraction), 0,
-    `rendered upper column at ${phase}`);
-    assert.equal(blocks.risingColumn.visible,
-      state.upperColumnFraction > 0.005);
+      geometry.plateTopY + geometry.coneBodyHeight * state.coneFraction / 2,
+      1e-15, `cone remains anchored to plate at ${phase}`);
+    // The raised column starts on the cone crown and ends at the height the
+    // stored upper column has reached.
+    const crownTop = blocks.coneCrown.position.y
+      + geometry.crownRadius * blocks.coneCrown.scale.y;
+    const columnTop = Math.max(crownTop, geometry.plateTopY
+      + (geometry.reservoirWaterY - geometry.plateTopY)
+        * state.upperColumnFraction);
+    near(blocks.risingColumn.position.y, crownTop, 1e-15,
+      `upper column springs from the cone crown at ${phase}`);
+    assert.equal(blocks.risingColumn.visible, columnTop - crownTop > 1e-3);
+    if (blocks.risingColumn.visible) {
+      near(blocks.risingColumn.position.y + blocks.risingColumn.scale.y,
+        columnTop, 1e-12, `rendered upper column at ${phase}`);
+    }
+    assert.ok(!blocks.risingColumn.visible || state.upperColumnFraction > 0);
     fixedBlocks.forEach((block, index) => {
       vectorNear(block.position, fixedPositions[index], 0,
         `fixed position at ${phase}`);

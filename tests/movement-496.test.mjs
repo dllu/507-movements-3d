@@ -221,10 +221,10 @@ test('movement 496 live yarn is a smooth closed-cycle path fixed to both guides'
       `yarn begins at B nip ${sample}`);
     vectorNear(state.liveYarnPoints.at(-1), state.windingContact, 5e-15,
       `yarn ends on bobbin ${sample}`);
-    assert.ok(state.liveYarnCurve.getLength() > 5.47);
-    assert.ok(state.liveYarnCurve.getLength() < 5.48);
+    assert.ok(state.liveYarnCurve.getLength() > 5.50);
+    assert.ok(state.liveYarnCurve.getLength() < 5.51);
     if (previousEye) {
-      assert.ok(state.flyerEye.distanceTo(previousEye) < 0.009,
+      assert.ok(state.flyerEye.distanceTo(previousEye) < 0.0092,
         `flyer eye motion is continuous ${sample}`);
       assert.ok(state.windingContact.distanceTo(previousContact) < 0.006,
         `winding contact motion is continuous ${sample}`);

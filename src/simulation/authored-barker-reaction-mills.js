@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping,rotate} from './finite-plate-geometry.js';
 import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
@@ -313,8 +314,15 @@ function barkerReactionMill(movement) {
     new THREE.CylinderGeometry(0.42, 0.42, 0.32, 36),
     frameMaterial,
   );
-  lowerBearing.geometry.dispose();lowerBearing.geometry=horizontalTurned([[-.16,0],[-.16,.42],[.16,.42],[.16,.10],[-.032,0]]);
-  lowerBearing.position.y = -1.18;
+  // Brown draws the step as a plain square block with the cone point
+  // seated in its top, not a turned pedestal or a floor plate.
+  {
+    const stepSquare=[[-.44,-.44],[.44,-.44],[.44,.44],[-.44,.44]];
+    const seat=polygonClipping.difference(poly(stepSquare),poly(circle([0,0],.115,96)));
+    const parts=[horizontalPlate(seat,0,.12),horizontalPlate(poly(stepSquare),-.36,0)];
+    lowerBearing.geometry.dispose();lowerBearing.geometry=mergeGeometries(parts);parts.forEach(part=>part.dispose());
+  }
+  lowerBearing.position.y = -1.215;
   lowerBearing.userData.role = 'fixed-lower-bearing-below-reaction-arms';
   root.add(lowerBearing);
 
@@ -333,21 +341,6 @@ function barkerReactionMill(movement) {
   bearingBracket.position.set(1.76, 3.54, -0.32);
   bearingBracket.userData.role = 'fixed-horizontal-upper-bearing-bracket';
   root.add(bearingBracket);
-  const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(7.72, 0.24, 6.72),
-    frameMaterial,
-  );
-  foundation.position.set(0, -1.52, -0.16);
-  foundation.userData.role = 'fixed-reaction-mill-foundation';
-  root.add(foundation);
-  const catchBasin = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.18, 3.18, 0.18, 80),
-    waterMaterial,
-  );
-  catchBasin.position.y = -1.35;
-  catchBasin.userData.role = 'basin-receiving-four-tangential-exhaust-jets';
-  root.add(catchBasin);
-
   const flumeStart = new THREE.Vector3(3.54, 5.42, 0.28);
   const flumeEnd = new THREE.Vector3(0.52, 4.58, 0.10);
   const inletFlume = boxBetween(
@@ -445,8 +438,6 @@ function barkerReactionMill(movement) {
     blocks: {
       armPipes,
       bearingBracket,
-      catchBasin,
-      foundation,
       inletFlume,
       inletHopper,
       inletMarkers,
@@ -480,7 +471,7 @@ function barkerReactionMill(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'A fixed flume supplies a hopper over the central hollow shaft. Water descends inside the rotating shaft, divides equally among four hollow radial arms, follows each bent end, and escapes tangentially from four equally handed nozzles. Every nozzle reaction is opposite its local exhaust direction, so the four moments reinforce and rotate the shaft and arm assembly in the reverse, clockwise direction. The shaft, arms, collars, closed lower cone, internal water column, and marker are one rigid runner; the hopper, inlet, bearings, bracket, wall, and catch basin remain fixed.',
+      'A fixed flume supplies a hopper over the central hollow shaft. Water descends inside the rotating shaft, divides equally among four hollow radial arms, follows each bent end, and escapes tangentially from four equally handed nozzles. Every nozzle reaction is opposite its local exhaust direction, so the four moments reinforce and rotate the shaft and arm assembly in the reverse, clockwise direction. The shaft, arms, collars, closed lower cone, internal water column, and marker are one rigid runner; the hopper, inlet, bearings (the lower one a square step block), bracket and wall remain fixed; Brown draws no floor or catch basin.',
     motion: {
       armPitch,
       cycleDuration,
@@ -532,7 +523,7 @@ function barkerReactionMill(movement) {
         engravingEvidence:
           'Brown’s perspective engraving shows an elevated flume feeding an open hopper atop a vertical hollow shaft, four curved radial outlet arms with visible terminal jets, upper and lower shaft support, and a wall-mounted bearing bracket.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, bore, exact arm levels, nozzle diameter or angle, flow rate, head, jet speed, rotational speed, materials, losses, bearing friction, inertia, or load. Four equally spaced coplanar arms, tangent bends, velocities, equal normalized flow split, clockwise handedness, dimensions, colors, basin, and a six-second cycle are independently engineered; the hollow central shaft, water supply, arm-end exhaust, reaction drive, and opposite rotation are source-grounded.',
+          'Brown gives no dimensions, bore, exact arm levels, nozzle diameter or angle, flow rate, head, jet speed, rotational speed, materials, losses, bearing friction, inertia, or load. Four equally spaced coplanar arms, tangent bends, velocities, equal normalized flow split, clockwise handedness, dimensions, colors and a six-second cycle are independently engineered; the hollow central shaft, water supply, arm-end exhaust, reaction drive, and opposite rotation are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 438',
@@ -561,7 +552,6 @@ function barkerReactionMill(movement) {
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);
-  foundation.receiveShadow = true;
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

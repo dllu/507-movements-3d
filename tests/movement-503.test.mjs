@@ -106,7 +106,7 @@ test('movement 503 records the unavailable official animation and selected two-i
   assert.match(sourceReference.officialEngraving,
     /engravings\/mm_503\.png$/);
   assert.match(sourceReference.reconstructionDisclosure,
-    /official page marks Animated unavailable.*two-wheel-input mode.*equal 24-tooth 45-degree miter gears/is);
+    /official page marks Animated unavailable.*two-wheel-input mode.*equal 48-tooth side wheels C and D and a 28-tooth planet B.*engraving/is);
   assert.match(sourceReference.reconstructionDisclosure,
     /exact average\/difference law.*common pitch apex.*both contact velocities.*constraints/is);
   assert.match(sourceReference.engineeringCorroboration.report,
@@ -116,30 +116,40 @@ test('movement 503 records the unavailable official animation and selected two-i
   disposeModel(model.root);
 });
 
-test('movement 503 gives all three equal miter gears one common apex and orthogonal axes', () => {
+test('movement 503 gives the source-sized side wheels and planet one common apex and orthogonal axes', () => {
   const { model } = movementModel();
   const { geometry, meshes, stateAtTime, transmission } = model.root.userData;
 
-  assert.equal(geometry.sideTeeth, 24);
-  assert.equal(geometry.planetTeeth, 24);
-  near(geometry.pitchConeHalfAngle, Math.PI / 4, 0,
-    '45-degree pitch cone');
-  near(geometry.bevelPitchRadius, 2 * geometry.bevelDepth, 0,
-    'rendered miter-cone radius/depth relation');
+  assert.equal(geometry.sideTeeth, 48);
+  assert.equal(geometry.planetTeeth, 28);
+  near(geometry.planetPitchRadius / geometry.bevelPitchRadius, 28 / 48,
+    1e-15, 'equal module');
+  near(Math.tan(geometry.pitchConeHalfAngle), 48 / 28, 1e-14,
+    'side pitch cone from tooth ratio');
+  near(geometry.pitchConeHalfAngle + geometry.planetPitchConeHalfAngle,
+    Math.PI / 2, 1e-15, 'complementary pitch cones');
+  // Common heel pitch point: each wheel's pitch radius is the other's
+  // heel distance from the apex.
+  near(2 * geometry.bevelDepth, geometry.planetPitchRadius, 1e-15,
+    'side heel distance');
+  near(2 * geometry.planetBevelDepth, geometry.bevelPitchRadius, 1e-15,
+    'planet heel distance');
   near(geometry.pitchApexOffset, 1.5 * geometry.bevelDepth, 0,
     'cone apex offset');
+  near(geometry.planetApexOffset, 1.5 * geometry.planetBevelDepth, 0,
+    'planet cone apex offset');
   for (const mesh of meshes) {
-    near(mesh.axesAngle, Math.PI / 2, 0,
+    near(mesh.axesAngle, Math.PI / 2, 1e-15,
       `${mesh.first}-${mesh.second} orthogonal axes`);
     vectorNear(mesh.pitchConeApex, new THREE.Vector3(), 0,
       `${mesh.first}-${mesh.second} common apex`);
-    assert.deepEqual(mesh.teeth, [24, 24]);
+    assert.deepEqual(mesh.teeth, [48, 28]);
   }
   for (let sample = 0; sample <= 1440; sample += 1) {
     const state = stateAtTime(
       transmission.nominalCarrierPeriod * sample / 1440,
     );
-    near(state.planetCenter.length(), geometry.pitchApexOffset,
+    near(state.planetCenter.length(), geometry.planetApexOffset,
       4e-16, `planet center radius ${sample}`);
     near(state.planetAxisDirection.length(), 1, 2e-16,
       `planet unit axis ${sample}`);
@@ -163,7 +173,8 @@ test('movement 503 carrier is the exact average and planet is the exact half-dif
     transmission.lowerCInputAngularSpeed
       + transmission.upperDInputAngularSpeed
   ) / 2;
-  const expectedPlanetSpeed = (
+  const { geometry } = model.root.userData;
+  const expectedPlanetSpeed = geometry.sideTeeth / geometry.planetTeeth * (
     transmission.lowerCInputAngularSpeed
       - transmission.upperDInputAngularSpeed
   ) / 2;
@@ -202,9 +213,10 @@ test('movement 503 matches 3D pitch-point velocity at both bevel contacts', () =
     const state = stateAtTime(
       transmission.nominalCarrierPeriod * 8 * sample / 2400,
     );
-    near(state.lowerPitchVelocityResidual, 0, 4e-16,
+    // tan(59.7 degrees) contact radius: rounding, not slip.
+    near(state.lowerPitchVelocityResidual, 0, 1e-15,
       `C-B pitch velocity ${sample}`);
-    near(state.upperPitchVelocityResidual, 0, 4e-16,
+    near(state.upperPitchVelocityResidual, 0, 1e-15,
       `D-B pitch velocity ${sample}`);
     near(state.lowerContact.length(),
       state.upperContact.length(), 3e-16,

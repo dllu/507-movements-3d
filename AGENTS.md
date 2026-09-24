@@ -1,5 +1,7 @@
 this project aims to create a full 3D simulation and animation of all the 507 movements in https://507movements.com/
 
+Make each movement match the source engraving as much as you can (i.e. in the initial camera angle, the shapes of parts, and no unnecessary parts not shown in the engraving) by using your vision capabilities.
+
 ## Simulation engine
 
 Use scripted motion for straightforward gears, racks and analytically determined

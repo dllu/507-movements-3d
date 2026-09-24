@@ -5,7 +5,12 @@ import {
   matte,
 } from './primitives.js';
 
-import { correctOscillatingColumnParts } from './oscillating-column-working-parts.js';
+import {
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+} from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -49,24 +54,6 @@ function segmentKinematics(
   };
 }
 
-function horizontalCylinder(radius, length, material, segments = 40) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.z = Math.PI / 2;
-  return cylinder;
-}
-
-function horizontalRing(radius, tubeRadius, material) {
-  const ring = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, tubeRadius, 12, 56),
-    material,
-  );
-  ring.rotation.x = Math.PI / 2;
-  return ring;
-}
-
 function addRole(object, role) {
   object.userData.role = role;
   return object;
@@ -88,13 +75,13 @@ function dectolOscillatingColumn(movement) {
   const maximumUpperStorageVolume = 0.04;
   const coneMinimumFraction = 0.12;
   const coneCollapsedFraction = 0.08;
-  const maximumConeHeight = 0.96;
+  const maximumConeHeight = 1.38;
   const plateTopY = -0.22;
-  const nozzleBottomY = 0.58;
-  const nozzleTopY = 1.63;
-  const reservoirWaterY = 2.19;
-  const lowerWaterY = -1.53;
-  const groundY = -2.08;
+  const nozzleBottomY = 1.08;
+  const nozzleTopY = 1.16;
+  const reservoirWaterY = 2.21;
+  const lowerWaterY = -1.29;
+  const groundY = -1.67;
 
   const coneKinematicsAtPhase = (phaseValue) => {
     const phase = THREE.MathUtils.euclideanModulo(phaseValue, 1);
@@ -254,250 +241,258 @@ function dectolOscillatingColumn(movement) {
     metalness: 0.18,
     roughness: 0.62,
   });
-  const outlineMaterial = matte(PALETTE.ink, {
+  const backMaterial = matte(PALETTE.muted, {
+    metalness: 0.08,
+    roughness: 0.78,
+  });
+  const plateMaterial = matte(PALETTE.accent, {
+    metalness: 0.28,
+    roughness: 0.48,
+  });
+  const stemMaterial = matte(PALETTE.ink, {
     metalness: 0.18,
     roughness: 0.54,
   });
-  const shellMaterial = matte(PALETTE.muted, {
-    opacity: 0.28,
-    roughness: 0.70,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  shellMaterial.depthWrite = false;
   const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.73,
+    opacity: 0.62,
     roughness: 0.34,
     side: THREE.DoubleSide,
     transparent: true,
   });
-  waterMaterial.depthWrite = false;
+  const streamMaterial = waterMaterial.clone();
+  streamMaterial.opacity = 0.40;
   const coneMaterial = waterMaterial.clone();
   coneMaterial.color.setHex(0x2c7f9b);
-  coneMaterial.opacity = 0.84;
+  coneMaterial.opacity = 0.62;
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
 
-  const base = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(7.5, 0.16, 3.3),
+  // Brown draws a vertical section: an L-shaped supply conduit ending in a
+  // small box whose floor has the orifice, and below it a larger box with a
+  // hole in its top, the fixed circular plate on its stem, and a floor-level
+  // discharge channel to the right. The boxes are shown cut on their
+  // mid-plane (z = 0) so the front half is removed, as in the engraving.
+  const wall = (x0, x1, y0, y1, z0, z1, role, material = frameMaterial) => {
+    const mesh = addRole(new THREE.Mesh(
+      new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0),
+      material,
+    ), role);
+    mesh.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    root.add(mesh);
+    return mesh;
+  };
+  // Horizontal plate over the x/z outline (rear half, z <= 0) with a round
+  // hole about the vertical axis, spanning y0..y1.
+  const holedFloor = (x0, x1, zBack, holeRadius, y0, y1) => {
+    const outline = polygonClipping.difference(
+      poly([[x0, 0], [x1, 0], [x1, zBack], [x0, zBack]]),
+      poly(circle([0, 0], holeRadius, 128)),
+    );
+    // Outline v = -z, extruded along y after the rotation.
+    return plate(outline, y0, y1).rotateX(-Math.PI / 2);
+  };
+  // Back wall in the x/y plane, extruded between z0 and z1.
+  const backWall = (points, z0, z1, role) => {
+    const mesh = addRole(
+      new THREE.Mesh(plate(poly(points), z0, z1), backMaterial),
+      role,
+    );
+    root.add(mesh);
+    return mesh;
+  };
+
+  const upperInner = 0.44;
+  const upperOuter = 0.52;
+  const lowerInner = 0.90;
+  const lowerOuter = 0.98;
+  const wallThickness = 0.08;
+  const channelLeftX = -3.2;
+  const channelFloorY = 1.83;
+  const channelRoofY = 2.58;
+  const chamberFloorY = nozzleTopY;
+  const orificeRadius = 0.32;
+  const receiverTopY = 0.21;
+  const receiverHoleRadius = 0.39;
+  const receiverFloorY = -1.59;
+  const outletRoofY = -1.17;
+  const outletRightX = 1.90;
+  const plateRadius = 0.435;
+  const plateThickness = 0.08;
+
+  const upperWalls = [
+    wall(channelLeftX, upperOuter, channelRoofY,
+      channelRoofY + wallThickness, -upperInner, 0,
+      'fixed-supply-conduit-roof'),
+    wall(channelLeftX, -upperOuter, channelFloorY - wallThickness,
+      channelFloorY, -upperInner, 0, 'fixed-supply-conduit-floor'),
+    wall(-upperOuter, -upperInner, nozzleBottomY, channelFloorY,
+      -upperInner, 0, 'fixed-upper-box-left-wall'),
+    wall(upperInner, upperOuter, nozzleBottomY, channelRoofY,
+      -upperInner, 0, 'fixed-upper-box-right-wall'),
+  ];
+  const upperFloor = addRole(new THREE.Mesh(
+    holedFloor(-upperInner, upperInner, upperInner, orificeRadius,
+      nozzleBottomY, chamberFloorY),
     frameMaterial,
-  ), 'absolutely-fixed-foundation');
-  base.position.set(0.15, groundY + 0.08, 0);
-  root.add(base);
+  ), 'fixed-upper-box-floor-with-round-orifice');
+  root.add(upperFloor);
+  const upperBack = backWall([
+    [channelLeftX, channelFloorY - wallThickness],
+    [-upperOuter, channelFloorY - wallThickness],
+    [-upperOuter, nozzleBottomY],
+    [upperOuter, nozzleBottomY],
+    [upperOuter, channelRoofY + wallThickness],
+    [channelLeftX, channelRoofY + wallThickness],
+  ], -upperOuter, -upperInner, 'fixed-rear-wall-of-supply-conduit-and-upper-box');
 
-  const lowerTube = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      1.34,
-      1.34,
-      2.18,
-      64,
-      1,
-      true,
-    ),
-    shellMaterial,
-  ), 'fixed-lower-larger-tube');
-  lowerTube.position.y = -0.78;
-  root.add(lowerTube);
-
-  const lowerTopRim = horizontalRing(1.34, 0.075, outlineMaterial);
-  lowerTopRim.position.y = 0.31;
-  const lowerBottomRim = horizontalRing(1.34, 0.075, outlineMaterial);
-  lowerBottomRim.position.y = -1.87;
-  root.add(lowerTopRim, lowerBottomRim);
-
-  const lowerFloor = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(1.34, 1.34, 0.12, 64),
+  const lowerWalls = [
+    wall(-lowerOuter, -lowerInner, groundY, receiverTopY,
+      -lowerInner, 0, 'fixed-lower-box-left-wall'),
+    wall(lowerInner, lowerOuter, outletRoofY, receiverTopY,
+      -lowerInner, 0, 'fixed-lower-box-right-wall-above-discharge'),
+    wall(-lowerOuter, outletRightX, groundY, receiverFloorY,
+      -lowerInner, 0, 'fixed-lower-box-and-discharge-floor'),
+    wall(lowerOuter, outletRightX, outletRoofY, outletRoofY + wallThickness,
+      -lowerInner, 0, 'fixed-discharge-channel-roof'),
+  ];
+  const lowerTop = addRole(new THREE.Mesh(
+    holedFloor(-lowerInner, lowerInner, lowerInner, receiverHoleRadius,
+      receiverTopY - wallThickness, receiverTopY),
     frameMaterial,
-  ), 'fixed-lower-tube-floor');
-  lowerFloor.position.y = -1.87;
-  root.add(lowerFloor);
+  ), 'fixed-lower-box-top-with-round-opening');
+  root.add(lowerTop);
+  const lowerBack = backWall([
+    [-lowerOuter, groundY],
+    [outletRightX, groundY],
+    [outletRightX, outletRoofY + wallThickness],
+    [lowerOuter, outletRoofY + wallThickness],
+    [lowerOuter, receiverTopY],
+    [-lowerOuter, receiverTopY],
+  ], -lowerOuter, -lowerInner, 'fixed-rear-wall-of-lower-box-and-discharge');
 
-  const outletPipe = addRole(horizontalCylinder(
-    0.28,
-    2.75,
-    shellMaterial,
-  ), 'fixed-lower-discharge-pipe');
-  outletPipe.position.set(2.40, -1.49, 0);
-  root.add(outletPipe);
-  const outletRim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.28, 0.045, 10, 40),
-    outlineMaterial,
-  );
-  outletRim.rotation.y = Math.PI / 2;
-  outletRim.position.set(3.78, -1.49, 0);
-  root.add(outletRim);
-
-  const plate = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.79, 0.79, 0.14, 56),
-    matte(PALETTE.accent, { metalness: 0.28, roughness: 0.48 }),
+  const plate0 = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(plateRadius, plateRadius, plateThickness, 64),
+    plateMaterial,
   ), 'fixed-circular-plate-concentric-with-upper-orifice');
-  plate.position.y = plateTopY - 0.07;
-  root.add(plate);
-  const plateRim = horizontalRing(0.80, 0.055, outlineMaterial);
-  plateRim.position.y = plateTopY;
-  root.add(plateRim);
-
+  plate0.position.y = plateTopY - plateThickness / 2;
+  root.add(plate0);
   const plateStem = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.10, 0.10, 1.43, 24),
-    outlineMaterial,
-  ), 'fixed-circular-plate-support');
-  plateStem.position.y = -1.01;
+    new THREE.LatheGeometry([
+      [0, receiverFloorY], [0.16, receiverFloorY], [0.15, -1.52],
+      [0.09, -1.40], [0.075, -1.20], [0.075, -0.62], [0.10, -0.42],
+      [0.17, -0.32], [0.19, plateTopY - plateThickness],
+      [0, plateTopY - plateThickness],
+    ].map(([r, y]) => new THREE.Vector2(r, y)), 48),
+    stemMaterial,
+  ), 'fixed-flared-stem-of-circular-plate');
   root.add(plateStem);
-  const stemFoot = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.12, 0.22, 32),
-    outlineMaterial,
-  );
-  stemFoot.position.y = -1.76;
-  root.add(stemFoot);
 
-  const nozzle = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      0.43,
-      0.43,
-      nozzleTopY - nozzleBottomY,
-      48,
-      1,
-      true,
-    ),
-    shellMaterial,
-  ), 'fixed-upper-smaller-tube');
-  nozzle.position.y = (nozzleTopY + nozzleBottomY) / 2;
-  root.add(nozzle);
-  for (const y of [nozzleBottomY, nozzleTopY]) {
-    const rim = horizontalRing(0.43, 0.055, outlineMaterial);
-    rim.position.y = y;
-    root.add(rim);
-  }
-
-  const reservoir = addRole(new THREE.Group(),
-    'fixed-constantly-supplied-upper-reservoir');
-  root.add(reservoir);
-  const reservoirBack = new THREE.Mesh(
-    new THREE.BoxGeometry(4.25, 1.35, 0.13),
-    frameMaterial,
-  );
-  reservoirBack.position.set(-1.10, 2.23, -0.90);
-  reservoir.add(reservoirBack);
-  const reservoirLeft = new THREE.Mesh(
-    new THREE.BoxGeometry(0.13, 1.35, 1.86),
-    frameMaterial,
-  );
-  reservoirLeft.position.set(-3.16, 2.23, 0);
-  reservoir.add(reservoirLeft);
-  const reservoirRight = reservoirLeft.clone();
-  reservoirRight.position.x = 0.96;
-  reservoir.add(reservoirRight);
-  const reservoirFloorLeft = new THREE.Mesh(
-    new THREE.BoxGeometry(2.67, 0.14, 1.86),
-    frameMaterial,
-  );
-  reservoirFloorLeft.position.set(-1.78, 1.61, 0);
-  reservoir.add(reservoirFloorLeft);
-  const reservoirFloorRight = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.14, 1.86),
-    frameMaterial,
-  );
-  reservoirFloorRight.position.set(0.70, 1.61, 0);
-  reservoir.add(reservoirFloorRight);
-  const reservoirFrontRail = new THREE.Mesh(
-    new THREE.BoxGeometry(4.25, 0.13, 0.13),
-    outlineMaterial,
-  );
-  reservoirFrontRail.position.set(-1.10, 1.61, 0.90);
-  reservoir.add(reservoirFrontRail);
-
+  // Water bodies stand a hair off the wall faces they rest against so the
+  // coplanar faces do not z-fight.
+  const skin = 0.004;
   const reservoirWater = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(3.93, 0.53, 1.60),
+    new THREE.BoxGeometry(upperInner - skin - channelLeftX,
+      reservoirWaterY - channelFloorY - skin, upperInner - skin),
     waterMaterial,
   ), 'constant-supply-water-at-fixed-head');
-  reservoirWater.position.set(-1.10, 1.92, 0);
+  reservoirWater.position.set((channelLeftX + upperInner - skin) / 2,
+    (channelFloorY + skin + reservoirWaterY) / 2, -(upperInner - skin) / 2);
   root.add(reservoirWater);
-  const reservoirSurface = new THREE.Mesh(
-    new THREE.BoxGeometry(3.95, 0.035, 1.63),
-    coneMaterial,
-  );
-  reservoirSurface.position.set(-1.10, reservoirWaterY, 0);
-  root.add(reservoirSurface);
 
   const nozzleWater = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.33, 0.33, 1.05, 40),
+    new THREE.BoxGeometry(2 * (upperInner - skin),
+      channelFloorY - chamberFloorY - skin, upperInner - skin),
     waterMaterial,
-  ), 'water-within-fixed-upper-smaller-tube');
-  nozzleWater.position.y = (nozzleTopY + nozzleBottomY) / 2;
+  ), 'water-within-fixed-upper-box-over-orifice');
+  nozzleWater.position.set(0, (channelFloorY + skin + chamberFloorY) / 2,
+    -(upperInner - skin) / 2);
   root.add(nozzleWater);
 
+  // Unit-length tapered stream hanging from the orifice; its length follows
+  // the top of the cone or raised column below it.
   const fallingJet = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.27, 0.36, nozzleBottomY - plateTopY, 40),
-    waterMaterial,
+    new THREE.CylinderGeometry(0.24, 0.30, 1, 40).translate(0, -0.5, 0),
+    streamMaterial,
   ), 'unobstructed-descending-stream');
-  fallingJet.position.y = (nozzleBottomY + plateTopY) / 2;
+  fallingJet.position.y = chamberFloorY;
   root.add(fallingJet);
 
+  const filmInner = 0.405;
+  const filmOuter = 0.455;
+  const film = addRole(new THREE.Mesh(
+    new THREE.LatheGeometry([
+      [filmInner, plateTopY], [filmOuter, plateTopY],
+      [filmOuter, plateTopY + 0.02], [filmInner, plateTopY + 0.02],
+      [filmInner, plateTopY],
+    ].map(([r, y]) => new THREE.Vector2(r, y)), 64),
+    streamMaterial,
+  ), 'thin-water-film-over-fixed-plate');
+  root.add(film);
+
   const spillCurtain = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      0.76,
-      1.13,
-      1.22,
-      56,
-      1,
-      true,
-    ),
-    waterMaterial,
-  ), 'water-spreading-over-plate-and-descending-in-larger-tube');
-  spillCurtain.position.y = -0.88;
+    new THREE.LatheGeometry([
+      [0.58, lowerWaterY], [0.60, lowerWaterY], [0.476, plateTopY + 0.01],
+      [0.456, plateTopY + 0.01], [0.58, lowerWaterY],
+    ].map(([r, y]) => new THREE.Vector2(r, y)), 64),
+    streamMaterial.clone(),
+  ), 'water-spreading-over-plate-and-descending-in-lower-box');
   root.add(spillCurtain);
 
+  const stemClearance = 0.175;
   const lowerWater = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(1.23, 1.23, 0.20, 56),
+    holedFloor(-lowerInner + skin, lowerInner, lowerInner - skin,
+      stemClearance, receiverFloorY + skin, lowerWaterY),
     waterMaterial,
   ), 'lower-receiver-water-flowing-to-discharge');
-  lowerWater.position.y = lowerWaterY;
   root.add(lowerWater);
 
-  const outletWater = addRole(horizontalCylinder(
-    0.20,
-    2.84,
+  const outletWater = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(outletRightX - lowerInner,
+      lowerWaterY - receiverFloorY - skin, lowerInner - skin),
     waterMaterial,
   ), 'periodic-lower-discharge');
-  outletWater.position.set(2.43, -1.49, 0);
+  outletWater.position.set((lowerInner + outletRightX) / 2,
+    (lowerWaterY + receiverFloorY + skin) / 2, -(lowerInner - skin) / 2);
   root.add(outletWater);
 
+  const crownRadius = 0.12;
+  const coneBodyHeight = maximumConeHeight - crownRadius;
   const waterCone = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      0.12,
-      0.72,
-      maximumConeHeight,
-      56,
-      1,
-      false,
-    ),
+    new THREE.CylinderGeometry(crownRadius, 0.40, coneBodyHeight, 56),
     coneMaterial,
   ), 'self-forming-water-cone-on-fixed-circular-plate');
   root.add(waterCone);
-
+  const crownProfile = [new THREE.Vector2(0, 0)];
+  for (let i = 0; i <= 12; i += 1) {
+    const angle = Math.PI / 2 * i / 12;
+    crownProfile.push(new THREE.Vector2(
+      crownRadius * Math.cos(angle),
+      crownRadius * Math.sin(angle),
+    ));
+  }
   const coneCrown = addRole(new THREE.Mesh(
-    new THREE.SphereGeometry(0.24, 32, 18),
+    new THREE.LatheGeometry(crownProfile, 48),
     coneMaterial,
-  ), 'water-cone-crown-entering-small-tube');
+  ), 'water-cone-crown-entering-orifice');
   root.add(coneCrown);
 
-  const risingColumnMaximumHeight = reservoirWaterY - plateTopY + 0.16;
+  // Unit-length raised column above the cone crown; it ends at the upper
+  // water surface where the spray plume sits.
   const risingColumn = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      0.21,
-      0.29,
-      risingColumnMaximumHeight,
-      40,
-    ),
+    new THREE.CylinderGeometry(0.12, 0.16, 1, 40).translate(0, 0.5, 0),
     coneMaterial,
-  ), 'checked-water-column-rising-through-upper-tube');
+  ), 'checked-water-column-rising-through-orifice');
   root.add(risingColumn);
+  const plumeRadius = 0.42;
+  const plumeScale = [0.95, 0.40, 0.80];
   const topPlume = addRole(new THREE.Mesh(
-    new THREE.SphereGeometry(0.42, 32, 18),
+    new THREE.SphereGeometry(plumeRadius, 32, 18),
     coneMaterial,
-  ), 'raised-water-column-turning-into-upper-reservoir');
-  topPlume.scale.set(1.18, 0.48, 0.82);
-  topPlume.position.set(0, reservoirWaterY + 0.08, 0);
+  ), 'raised-water-column-spraying-in-upper-box');
+  topPlume.position.set(0, reservoirWaterY + plumeRadius * plumeScale[1], 0);
   root.add(topPlume);
+
+  const upperColumnTopY = (fraction) => plateTopY
+    + (reservoirWaterY - plateTopY) * fraction;
 
   const descendingMarkers = Array.from({ length: 7 }, (_, index) => {
     const marker = addRole(new THREE.Mesh(
@@ -526,112 +521,117 @@ function dectolOscillatingColumn(movement) {
     root.add(marker);
     return marker;
   });
+  const descendingCurves = descendingMarkers.map((_, index) => {
+    const angle = index * 2.39996;
+    const curve = new THREE.CatmullRomCurve3([
+      [0.10, 1.60], [0.10, 1.12], [0.18, 0.40], [0.26, -0.02],
+      [0.50, -0.15], [0.54, -0.42], [0.58, -1.20], [0.56, -1.45],
+    ].map(([r, y]) => new THREE.Vector3(
+      r * Math.cos(angle),
+      y,
+      r * Math.sin(angle),
+    )), false, 'centripetal');
+    curve.arcLengthDivisions = 512;
+    curve.updateArcLengths();
+    return curve;
+  });
+  const parts = {
+    descendingCurves,
+    film,
+    fixed: [
+      ...upperWalls, upperFloor, upperBack, ...lowerWalls, lowerTop,
+      lowerBack, plate0, plateStem,
+    ],
+    markerTravelTurns: 0,
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
     const coneScale = state.coneFraction;
-    waterCone.scale.set(
-      0.90 + 0.10 * coneScale,
-      coneScale,
-      0.90 + 0.10 * coneScale,
-    );
-    waterCone.position.y = plateTopY
-      + maximumConeHeight * coneScale / 2;
-    coneCrown.position.y = plateTopY + state.coneHeight;
-    coneCrown.scale.setScalar(0.48 + 0.52 * coneScale);
-    coneCrown.visible = coneScale > 0.18;
+    const radial = 0.90 + 0.10 * coneScale;
+    waterCone.scale.set(radial, coneScale, radial);
+    waterCone.position.y = plateTopY + coneBodyHeight * coneScale / 2;
+    const coneTopY = plateTopY + coneBodyHeight * coneScale;
+    const crownGate = THREE.MathUtils.smoothstep(coneScale, 0.12, 0.22);
+    coneCrown.position.y = coneTopY;
+    coneCrown.scale.setScalar(radial * crownGate);
+    coneCrown.visible = crownGate > 0;
+    const crownTopY = coneTopY + crownRadius * radial * crownGate;
 
     const columnFraction = state.upperColumnFraction;
+    const columnTopY = Math.max(crownTopY, upperColumnTopY(columnFraction));
+    const columnLength = columnTopY - crownTopY;
+    risingColumn.position.y = crownTopY;
     risingColumn.scale.set(
       0.84 + 0.16 * columnFraction,
-      Math.max(0.001, columnFraction),
+      Math.max(1e-4, columnLength),
       0.84 + 0.16 * columnFraction,
     );
-    risingColumn.position.y = plateTopY
-      + risingColumnMaximumHeight * columnFraction / 2;
-    risingColumn.visible = columnFraction > 0.005;
-    topPlume.visible = columnFraction > 0.94;
+    risingColumn.visible = columnLength > 1e-3;
+    const plumeGate = smoothStep5((columnFraction - 0.94) / 0.06);
+    topPlume.visible = plumeGate > 0;
     topPlume.scale.set(
-      1.18 * smoothStep5((columnFraction - 0.94) / 0.06),
-      0.48 * smoothStep5((columnFraction - 0.94) / 0.06),
-      0.82 * smoothStep5((columnFraction - 0.94) / 0.06),
+      plumeScale[0] * plumeGate,
+      plumeScale[1] * plumeGate,
+      plumeScale[2] * plumeGate,
     );
+    topPlume.position.y = reservoirWaterY
+      + plumeRadius * plumeScale[1] * plumeGate;
 
     const relativeDownFlow = state.downwardFlowRate / supplyFlowRate;
-    fallingJet.scale.set(
-      THREE.MathUtils.clamp(0.56 + 0.44 * relativeDownFlow, 0.40, 1.30),
-      1,
-      THREE.MathUtils.clamp(0.56 + 0.44 * relativeDownFlow, 0.40, 1.30),
+    const jetLength = chamberFloorY - columnTopY;
+    // Keep the stream clear of the orifice lip even when a short stream's
+    // flared foot lies inside the orifice.
+    const orificeDepth = chamberFloorY - nozzleBottomY;
+    const jetRadial = Math.min(
+      THREE.MathUtils.clamp(0.56 + 0.44 * relativeDownFlow, 0.40, 1.20),
+      (orificeRadius - 0.01) / (0.24 + 0.06 * Math.min(
+        1,
+        orificeDepth / Math.max(jetLength, 1e-6),
+      )),
     );
-    spillCurtain.scale.set(
-      THREE.MathUtils.clamp(0.70 + 0.30 * relativeDownFlow, 0.55, 1.30),
-      1,
-      THREE.MathUtils.clamp(0.70 + 0.30 * relativeDownFlow, 0.55, 1.30),
-    );
-    outletWater.scale.y = THREE.MathUtils.clamp(
-      0.72 + 0.28 * relativeDownFlow,
-      0.62,
-      1.30,
-    );
+    fallingJet.scale.set(jetRadial, Math.max(1e-4, jetLength), jetRadial);
+    fallingJet.visible = jetLength > 1e-3;
+    spillCurtain.material.opacity = 0.20
+      + 0.13 * Math.min(1.5, relativeDownFlow);
 
-    const phaseDistance = state.phase * (
-      0.40 + Math.max(0, relativeDownFlow)
-    );
+    // Integral of Q_down = Q_supply - dV_storage/dt, so tracer travel never
+    // reverses or jumps when the prescribed flow changes.
+    const turn = sourcePhase + time / cycleDuration
+      - state.upperStorageVolume / (supplyFlowRate * cycleDuration);
+    const progress = (value) => THREE.MathUtils.euclideanModulo(value, 1);
     descendingMarkers.forEach((marker, index) => {
-      const travel = THREE.MathUtils.euclideanModulo(
-        index / descendingMarkers.length + phaseDistance,
-        1,
-      );
-      if (travel < 0.42) {
-        const local = travel / 0.42;
-        marker.position.set(0, THREE.MathUtils.lerp(
-          nozzleBottomY - 0.08,
-          plateTopY + 0.05,
-          local,
-        ), 0.29);
-      } else {
-        const local = (travel - 0.42) / 0.58;
-        const angle = index * 2.39996;
-        const radius = THREE.MathUtils.lerp(0.73, 1.10, local);
-        marker.position.set(
-          radius * Math.cos(angle),
-          THREE.MathUtils.lerp(plateTopY - 0.10, lowerWaterY, local),
-          radius * Math.sin(angle),
-        );
-      }
-      marker.visible = relativeDownFlow > 0.36;
+      const u = progress(turn + index / descendingMarkers.length);
+      marker.position.copy(descendingCurves[index].getPointAt(u));
+      marker.visible = true;
+      marker.scale.setScalar(0.72 * Math.sin(Math.PI * u)
+        * Math.min(1, Math.sqrt(Math.max(0, relativeDownFlow))));
     });
-
-    risingMarkers.forEach((marker, index) => {
-      const travel = THREE.MathUtils.euclideanModulo(
-        index / risingMarkers.length - state.phase * 1.8,
-        1,
-      );
-      marker.position.set(
-        0.19 * Math.sin(index * 1.7),
-        THREE.MathUtils.lerp(
-          plateTopY + 0.20,
-          reservoirWaterY + 0.03,
-          travel,
-        ),
-        0.16,
-      );
-      marker.visible = state.upperStorageVolumeRate > 0.002
-        && travel < columnFraction;
-    });
-
     outletMarkers.forEach((marker, index) => {
-      const travel = THREE.MathUtils.euclideanModulo(
-        index / outletMarkers.length + state.phase * relativeDownFlow,
-        1,
-      );
+      const u = progress(turn + index / outletMarkers.length);
       marker.position.set(
-        THREE.MathUtils.lerp(1.18, 3.72, travel),
-        -1.49,
-        0.20,
+        THREE.MathUtils.lerp(0.30, 1.85, u),
+        (receiverFloorY + lowerWaterY) / 2,
+        -0.45,
       );
+      marker.scale.setScalar(0.78 * Math.sin(Math.PI * u));
     });
-    root.userData.updateFluidInterfaces?.(time, state);
+    risingMarkers.forEach((marker, index) => {
+      const u = progress(columnFraction * 1.6 + index / risingMarkers.length);
+      marker.position.set(
+        0.06 * Math.sin(index * 1.7),
+        plateTopY + 0.12 + u * Math.max(0, columnTopY - plateTopY - 0.18),
+        0.06,
+      );
+      const riseGate = Math.min(
+        1,
+        Math.max(0, state.upperStorageVolumeRate) / 0.055,
+      );
+      marker.visible = riseGate > 0;
+      marker.scale.setScalar(0.72 * Math.sin(Math.PI * u) * riseGate
+        * Math.min(1, columnFraction * 5));
+    });
+    parts.markerTravelTurns = turn;
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -661,11 +661,13 @@ function dectolOscillatingColumn(movement) {
     };
   const geometry = {
     columnRiseEndPhase,
+    coneBodyHeight,
     coneBreakStartPhase,
     coneBuildEndPhase,
     coneCollapseEndPhase,
     coneCollapsedFraction,
     coneMinimumFraction,
+    crownRadius,
     cycleDuration,
     freeDescentEndPhase,
     groundY,
@@ -690,26 +692,26 @@ function dectolOscillatingColumn(movement) {
     },
     archetype,
     blocks: {
-      base,
       coneCrown,
       descendingMarkers,
       fallingJet,
-      lowerFloor,
-      lowerTube,
+      lowerBack,
+      lowerTop,
+      lowerWalls,
       lowerWater,
-      nozzle,
       nozzleWater,
       outletMarkers,
-      outletPipe,
       outletWater,
-      plate,
+      plate: plate0,
       plateStem,
-      reservoir,
       reservoirWater,
       risingColumn,
       risingMarkers,
       spillCurtain,
       topPlume,
+      upperBack,
+      upperFloor,
+      upperWalls,
       waterCone,
     },
     coneKinematicsAtPhase,
@@ -732,7 +734,7 @@ function dectolOscillatingColumn(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'Every solid part is fixed. Water supplied at constant head descends through the smaller upper tube and spreads over the concentric circular plate inside the larger lower tube. The impinging water gradually forms a cone on the plate; when the cone reaches into the small tube it checks the downward flow, so continuing supply raises the upper water column. The cone then gives way, the stored column surges downward around the plate, and unobstructed descent begins again.',
+      'Every solid part is fixed. Water supplied at constant head through a horizontal conduit descends from the orifice in the floor of a small upper box and spreads over the concentric circular plate inside a larger lower box. The impinging water gradually forms a cone on the plate; when the cone reaches into the orifice it checks the downward flow, so continuing supply raises the upper water column. The cone then gives way, the stored column surges downward around the plate, and unobstructed descent begins again.',
     motion: {
       cycleDuration,
       inputAngularSpeed,
@@ -769,10 +771,10 @@ function dectolOscillatingColumn(movement) {
           'the supply regulates this periodically renewed action',
         ],
         engravingEvidence: movement.id === 446
-          ? 'Plate 446 shows the checked-flow state: a filled upper reservoir, a raised central water column through the narrow throat, the self-formed water cone reaching upward from the fixed circular plate, a broader lower receiver, the plate support, and a low side discharge.'
-          : 'Plate 445 shows the open-flow state: a filled upper reservoir, a narrow downward throat, a broader lower receiver, a circular plate on a fixed central stem, water spreading down around that plate, and a low side discharge.',
+          ? 'Plate 446 is a vertical section in the checked-flow state: a horizontal supply conduit entering from the left and turning down into a small box with an orifice in its floor, the self-formed water column rising from the fixed circular plate through the opening in the top of a larger lower box and spraying up inside the small box, water still spilling round the plate, the flared stem, and a floor-level discharge channel to the right.'
+          : 'Plate 445 is a vertical section in the open-flow state: a horizontal supply conduit entering from the left and turning down into a small box with an orifice in its floor, a stream falling through the opening in the top of a larger lower box onto a circular plate on a fixed flared stem, water spreading down round the plate, and a floor-level discharge channel to the right.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, flow rate, head, plate clearance, cone profile, storage volume, pressure, loss coefficients, collapse threshold, cycle time, or transient timing. The dimensions, colors, transparent cutaway, tracer positions, 5.6-second phase schedule, quintic envelopes, and storage amplitude are independently engineered. The fixed topology, constant supply, cone buildup, throat check, upper-column rise, cone failure, and periodic renewal are source-grounded.',
+          'Brown gives no dimensions, flow rate, head, plate clearance, cone profile, storage volume, pressure, loss coefficients, collapse threshold, cycle time, or transient timing. Box proportions follow the engraving’s section; depths, the mid-plane cutaway, colors, tracer positions, 5.6-second phase schedule, quintic envelopes, and storage amplitude are independently engineered. The fixed topology, constant supply, cone buildup, throat check, upper-column rise, cone failure, and periodic renewal are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       pairedPlate: 'Brown 1868, Movements 445 and 446',
@@ -791,15 +793,35 @@ function dectolOscillatingColumn(movement) {
     upperStorageKinematicsAtPhase,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.35, groundY, -1.78),
-    new THREE.Vector3(3.95, 2.95, 1.78),
+    new THREE.Vector3(channelLeftX, groundY, -lowerOuter),
+    new THREE.Vector3(outletRightX, channelRoofY + wallThickness, 0.45),
   );
-  root.userData.cameraDistanceScale = 1.07;
-  root.userData.cameraDirection = new THREE.Vector3(6.8, 4.7, 10.5);
-  root.userData.groundFloorY = groundY;
+  root.userData.cameraDistanceScale = 1;
+  root.userData.cameraDirection = new THREE.Vector3(0.10, 0.12, 1);
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = 5.6;
+  root.userData.oscillatingColumnParts = parts;
+  root.userData.reconstructionNote =
+    'All solid parts remain fixed, as in the engraving, which is drawn as a section; the boxes are cut on their mid-plane. Cone buildup, checking, raised-column storage and collapse are prescribed fluid envelopes; pressure recovery, free-surface instability and the historical device’s operating threshold are not solved.';
+  root.userData.dynamics.fluidModel =
+    'The upper-storage scalar balance is exact, while the visible fluid envelopes are illustrative. This is not a CFD solution: cone volume, pressure-wave propagation, turbulence, entrained air, breakup and losses are not solved.';
   markShadows(root);
-  base.receiveShadow = true;
-  correctOscillatingColumnParts(root);
+  root.traverse((object) => {
+    for (const material of [].concat(object.material ?? [])) {
+      material.fog = false;
+      if (material.transparent) {
+        material.depthWrite = false;
+        object.castShadow = false;
+        object.receiveShadow = false;
+      }
+    }
+  });
+  for (const marker of [
+    ...descendingMarkers, ...risingMarkers, ...outletMarkers,
+  ]) {
+    marker.castShadow = false;
+    marker.receiveShadow = false;
+  }
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

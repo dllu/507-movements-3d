@@ -1,6 +1,7 @@
 import { plate, poly, circle, capsule, polygonClipping as clip } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import * as THREE from 'three';
+import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   markShadows,
@@ -85,6 +86,37 @@ function makeTubeThrough(points, radius, material, role) {
   );
   tube.userData.role = role;
   return tube;
+}
+
+// Back half of a solid of revolution about the vertical axis, closed by its
+// two section faces in the z = 0 plane: Brown draws the casing in section.
+function sectionedHalfLathe(profile, segments = 72) {
+  const points = profile.map(([r, y]) => new THREE.Vector2(r, y));
+  const lathe = new THREE.LatheGeometry([...points, points[0]], segments,
+    Math.PI / 2, Math.PI).toNonIndexed();
+  const shape = new THREE.Shape(points);
+  const right = new THREE.ShapeGeometry(shape).toNonIndexed();
+  const left = right.clone();
+  left.scale(-1, 1, 1);
+  const leftPositions = left.getAttribute('position');
+  for (let index = 0; index < leftPositions.count; index += 3) {
+    for (const attributeName of ['position', 'normal', 'uv']) {
+      const attribute = left.getAttribute(attributeName);
+      for (let component = 0; component < attribute.itemSize; component += 1) {
+        const first = attribute.getComponent(index + 1, component);
+        attribute.setComponent(index + 1, component,
+          attribute.getComponent(index + 2, component));
+        attribute.setComponent(index + 2, component, first);
+      }
+    }
+  }
+  const merged = mergeGeometries([lathe, right, left]);
+  [lathe, right, left].forEach(part => part.dispose());
+  merged.deleteAttribute('normal');
+  const welded = mergeVertices(merged, 1e-6);
+  merged.dispose();
+  welded.computeVertexNormals();
+  return welded;
 }
 
 function gaussIntegrate(start, end, evaluate) {
@@ -366,23 +398,40 @@ function valveReliefGuide(movement) {
   valveSeat.userData.role = 'fixed-horizontal-valve-seat';
   fixedFrame.add(valveSeat);
   const steamPort = cylinderAlongZ(0.35, 0.30, darkMaterial, 40);
-  steamPort.position.set(0, -1.90, 0);
+  steamPort.position.set(0, -2.09, 0);
   steamPort.userData.role = 'stationary-steam-port-below-valve-A';
   fixedFrame.add(steamPort);
-  for (const side of [-1, 1]) {
-    const lower = new THREE.Vector3(side * 1.46, -0.72, -0.38);
-    const upper = new THREE.Vector3(side * 0.72, 2.72, -0.38);
-    const post = beamBetween(lower, upper, 0.18, 0.26, frameMaterial);
-    post.userData.role = 'fixed-tapered-guide-support-standard';
-    fixedFrame.add(post);
-  }
-  const crown = new THREE.Mesh(
-    new THREE.BoxGeometry(1.62, 0.18, 0.56),
-    frameMaterial,
+  // Brown sections the fixed casing through the rod plane: a hollow cone
+  // with a bored top and a foot flange stands on the hatched chest cover,
+  // whose recess below encloses guide D. Only the half behind the section
+  // plane (the mechanism plane z = 0.48) is modelled, as the plate shows it.
+  const casingAxisZ = 0.48;
+  const casingMaterial = matte(PALETTE.frame, {
+    metalness: 0.24,
+    roughness: 0.55,
+    side: THREE.DoubleSide,
+  });
+  const conicalCasing = new THREE.Mesh(sectionedHalfLathe([
+    [0.12, 3.64], [0.98, 3.64], [1.45, 0.49], [1.93, 0.49],
+    [1.93, 0.70], [1.62, 0.70], [1.16, 3.92], [0.12, 3.92],
+  ]), casingMaterial);
+  conicalCasing.position.z = casingAxisZ;
+  conicalCasing.userData.role = 'fixed-sectioned-conical-casing-over-guide-D';
+  fixedFrame.add(conicalCasing);
+  const chestCoverDepth = 2.0;
+  const chestCover = new THREE.Mesh(plate(clip.union(...[-1, 1].map(side =>
+    poly([[side * 3.2, 0.19], [side * 1.75, 0.19], [side * 1.75, -0.56],
+      [side * 1.45, -0.56], [side * 1.45, 0.49], [side * 3.2, 0.49]]))),
+  casingAxisZ - chestCoverDepth, casingAxisZ), casingMaterial);
+  chestCover.userData.role = 'fixed-sectioned-chest-cover-and-guide-recess';
+  fixedFrame.add(chestCover);
+  const recessBack = new THREE.Mesh(
+    new THREE.BoxGeometry(2.9, 1.05, 0.30),
+    casingMaterial,
   );
-  crown.position.set(0, 2.72, -0.38);
-  crown.userData.role = 'fixed-guide-support-crown';
-  fixedFrame.add(crown);
+  recessBack.position.set(0, -0.035, casingAxisZ - chestCoverDepth + 0.15);
+  recessBack.userData.role = 'fixed-back-wall-of-guide-recess';
+  fixedFrame.add(recessBack);
   root.add(fixedFrame);
 
   const guideAssemblyD = new THREE.Group();
@@ -415,7 +464,7 @@ function valveReliefGuide(movement) {
       : guideUpperPoints[guideUpperPoints.length - 1];
     const hanger = beamBetween(
       new THREE.Vector3(endPoint.x, endPoint.y, 0.46),
-      new THREE.Vector3(side * 0.66, 2.45, 0.46),
+      new THREE.Vector3(side * 0.55, 2.85, 0.46),
       0.105,
       0.15,
       guideMaterial,
@@ -423,15 +472,27 @@ function valveReliefGuide(movement) {
     hanger.userData.role = 'suspended-vertical-adjustment-hanger-of-D';
     guideAssemblyD.add(hanger);
   }
-  const adjustmentStem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.085, 0.085, 0.74, 24),
+  // D's casting closes above the upper slot; its adjusting screw rises from
+  // there through the bored casing top to a nut, clear of the upper pin.
+  const guideHead = new THREE.Mesh(
+    new THREE.BoxGeometry(1.30, 0.16, 0.15),
     guideMaterial,
   );
-  adjustmentStem.position.set(0, 2.63, 0.46);
+  guideHead.position.set(0, 2.85, 0.46);
+  guideHead.userData.role = 'head-of-suspended-guide-D-above-upper-slot';
+  guideAssemblyD.add(guideHead);
+  const adjustmentStem = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.085, 0.085, 1.30, 24),
+    guideMaterial,
+  );
+  adjustmentStem.position.set(0, 3.58, casingAxisZ);
   adjustmentStem.userData.role = 'vertical-adjustment-screw-for-arcs-D';
   guideAssemblyD.add(adjustmentStem);
-  const adjustmentNut = cylinderAlongZ(0.17, 0.14, rollerMaterial, 6);
-  adjustmentNut.position.set(0, 2.82, 0.46);
+  const adjustmentNut = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.20, 0.20, 0.16, 6),
+    rollerMaterial,
+  );
+  adjustmentNut.position.set(0, 4.00, casingAxisZ);
   adjustmentNut.userData.role = 'guide-D-height-adjustment-nut';
   guideAssemblyD.add(adjustmentNut);
   root.add(guideAssemblyD);
@@ -548,7 +609,11 @@ function valveReliefGuide(movement) {
     blocks: {
       adjustmentNut,
       adjustmentStem,
+      chestCover,
+      conicalCasing,
       fixedFrame,
+      guideHead,
+      recessBack,
       guideAssemblyD,
       guideEndBraces,
       lowerArcD,
@@ -653,8 +718,8 @@ function valveReliefGuide(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.78, -2.43, -1.18),
-    new THREE.Vector3(2.78, 3.04, 1.18),
+    new THREE.Vector3(-3.25, -2.43, -1.55),
+    new THREE.Vector3(3.25, 4.12, 1.18),
   );
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(1.2, 0.6, 12);

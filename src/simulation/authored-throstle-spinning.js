@@ -12,7 +12,8 @@ const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
-import { correctSpinningFanParts, throstleYarnCurve } from './spinning-fan-working-parts.js';
+import { correctSpinningFanParts } from './spinning-fan-working-parts.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 
 function addRole(object, role) {
   object.userData.role = role;
@@ -71,15 +72,17 @@ function makeFlutedRoll({
   roll.position.copy(center);
   const material = matte(color, { metalness: 0.2, roughness: 0.5 });
   const body = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(radius * 0.91, radius * 0.91, length, 48),
+    new THREE.CylinderGeometry(radius, radius, length, 48),
     material,
   ), `${role}-body`);
   body.rotation.x = Math.PI / 2;
   roll.add(body);
   const ribMaterial = matte(color, { metalness: 0.23, roughness: 0.45 });
   const ribs = [];
-  for (let index = 0; index < 16; index += 1) {
-    const angle = index / 16 * Math.PI * 2;
+  // Brown sections A and B as plain smooth rolls; no flutes are drawn.
+  const fluteCount = 0;
+  for (let index = 0; index < fluteCount; index += 1) {
+    const angle = index / fluteCount * Math.PI * 2;
     const rib = addRole(new THREE.Mesh(
       new THREE.BoxGeometry(0.075, 0.10, length * 0.96),
       ribMaterial,
@@ -118,10 +121,12 @@ function throstleDrawingAndTwisting(movement) {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
   const cycleDuration = 6;
-  const rollRadius = 0.46;
+  // Plate proportions: equal A and B rolls about 0.45 of the flyer width,
+  // their centres 1.85 roll diameters apart.
+  const rollRadius = 0.40;
   const rollLength = 1.55;
   const nipY = 2.4;
-  const backCenterX = -2.05;
+  const backCenterX = -1.36;
   const frontCenterX = 0.12;
   const backTurnsPerCycle = 1;
   const frontTurnsPerCycle = 2;
@@ -201,7 +206,7 @@ function throstleDrawingAndTwisting(movement) {
     metalness: 0.0,
     roughness: 0.92,
   });
-  const inputFiberStart = new THREE.Vector3(-3.72, nipY, 0);
+  const inputFiberStart = new THREE.Vector3(-2.90, nipY, 0);
   const backNip = new THREE.Vector3(backCenterX, nipY, 0);
   const frontNip = new THREE.Vector3(frontCenterX, nipY, 0);
   const inputSliver = cylinderBetween(
@@ -221,9 +226,9 @@ function throstleDrawingAndTwisting(movement) {
     'roving-attenuated-between-slower-A-and-faster-B',
   );
 
-  const spindleOrigin = new THREE.Vector3(0.42, -0.3, 0);
+  const spindleOrigin = new THREE.Vector3(0.42, -0.62, 0);
   const topGuideLocal = new THREE.Vector3(0, 1.46, 0);
-  const flyerEyeLocal = new THREE.Vector3(0.74, -0.58, 0);
+  const flyerEyeLocal = new THREE.Vector3(0.86, -0.66, 0);
   const windingContactLocal = new THREE.Vector3(
     windingRadius,
     -0.24,
@@ -240,20 +245,20 @@ function throstleDrawingAndTwisting(movement) {
     metalness: 0.24,
     roughness: 0.45,
   });
-  const leftArm = tubeThrough([
+  // Brown's flyer is a close inverted U: a low arch just over the bobbin,
+  // parallel legs beside the package and a small eye at each foot.
+  const flyerArmPoints = (side) => [
     new THREE.Vector3(0, 1.24, 0),
-    new THREE.Vector3(-0.38, 1.12, 0),
-    new THREE.Vector3(-0.72, 0.66, 0),
-    new THREE.Vector3(-0.77, -0.18, 0),
-    new THREE.Vector3(-0.74, -0.72, 0),
-  ], 0.075, flyerMaterial, 'left-arm-of-rotating-throstle-flyer');
-  const rightArm = tubeThrough([
-    new THREE.Vector3(0, 1.24, 0),
-    new THREE.Vector3(0.38, 1.12, 0),
-    new THREE.Vector3(0.72, 0.66, 0),
-    new THREE.Vector3(0.77, -0.18, 0),
-    flyerEyeLocal.clone(),
-  ], 0.075, flyerMaterial, 'yarn-guiding-arm-of-rotating-throstle-flyer');
+    new THREE.Vector3(side * 0.42, 1.18, 0),
+    new THREE.Vector3(side * 0.76, 0.96, 0),
+    new THREE.Vector3(side * 0.86, 0.55, 0),
+    new THREE.Vector3(side * 0.86, -0.40, 0),
+    new THREE.Vector3(side * 0.86, flyerEyeLocal.y + 0.12, 0),
+  ];
+  const leftArm = tubeThrough(flyerArmPoints(-1), 0.075, flyerMaterial,
+    'left-arm-of-rotating-throstle-flyer');
+  const rightArm = tubeThrough(flyerArmPoints(1), 0.075, flyerMaterial,
+    'yarn-guiding-arm-of-rotating-throstle-flyer');
   const spindle = makeShaft({
     axis: Y_AXIS,
     color: PALETTE.ink,
@@ -277,7 +282,13 @@ function throstleDrawingAndTwisting(movement) {
     matte(PALETTE.ink, { metalness: 0.26, roughness: 0.43 }),
   ), 'yarn-eye-at-end-of-flyer-arm');
   flyerArmEye.position.copy(flyerEyeLocal);
+  const flyerLeftFootEye = addRole(new THREE.Mesh(
+    new THREE.TorusGeometry(0.12, 0.032, 10, 30),
+    flyerArmEye.material,
+  ), 'eye-at-foot-of-left-flyer-arm');
+  flyerLeftFootEye.position.set(-flyerEyeLocal.x, flyerEyeLocal.y, 0);
   flyerAssembly.add(
+    flyerLeftFootEye,
     leftArm,
     rightArm,
     spindle,
@@ -399,6 +410,37 @@ function throstleDrawingAndTwisting(movement) {
     liveYarn,
   );
 
+  // The yarn leaves the B nip, follows the right side of the lower B roll,
+  // drops to the top eye, leaves the slotted neck, runs beside the right
+  // flyer leg, threads its foot eye and winds on at the package.
+  const lowerFrontRollCenter = rollCenters.frontBottom;
+  const yarnWrapRadius = rollRadius + 0.058;
+  const yarnWrapPoints = [0, 1, 2, 3].map((index) => {
+    const angle = index * Math.PI / 6;
+    return new THREE.Vector3(
+      lowerFrontRollCenter.x + yarnWrapRadius * Math.sin(angle),
+      lowerFrontRollCenter.y + yarnWrapRadius * Math.cos(angle),
+      0,
+    );
+  });
+  yarnWrapPoints[0] = frontNip.clone();
+  const sourceYarnCurve = (angle, eye, contact) => {
+    const rotate = (x, y, z) => new THREE.Vector3(x, y, z)
+      .applyAxisAngle(Y_AXIS, angle).add(spindleOrigin);
+    return new THREE.CatmullRomCurve3([
+      ...yarnWrapPoints,
+      new THREE.Vector3(0.52, 1.30, 0),
+      new THREE.Vector3(topGuide.x, topGuide.y + 0.16, 0),
+      topGuide.clone(),
+      rotate(0, 1.37, 0), rotate(0.22, 1.37, 0),
+      rotate(0.46, 1.30, 0.15), rotate(0.80, 1.00, 0.16),
+      rotate(0.88, 0.55, 0.16), rotate(0.88, -0.40, 0.16),
+      rotate(flyerEyeLocal.x, flyerEyeLocal.y, 0.15), eye,
+      rotate(flyerEyeLocal.x - 0.03, flyerEyeLocal.y + 0.05, -0.13),
+      contact,
+    ], false, 'centripetal');
+  };
+
   const stateAtTime = (time) => {
     const backRollAngle = backAngularSpeed * time;
     const frontRollAngle = frontAngularSpeed * time;
@@ -411,8 +453,8 @@ function throstleDrawingAndTwisting(movement) {
     const windingContact = spindleOrigin.clone().add(
       windingContactLocal.clone().applyAxisAngle(Y_AXIS, flyerAngle),
     );
-    const liveYarnCurve = throstleYarnCurve(frontNip, topGuide, spindleOrigin,
-      flyerAngle, flyerEye, windingContact);
+    const liveYarnCurve = sourceYarnCurve(flyerAngle, flyerEye,
+      windingContact);
     const backMaterialVelocity = X_AXIS.clone().multiplyScalar(
       backDeliverySpeed,
     );
@@ -466,6 +508,7 @@ function throstleDrawingAndTwisting(movement) {
     draftedFiber,
     drawingRolls,
     flyerArmEye,
+    flyerLeftFootEye,
     flyerArms: [leftArm, rightArm],
     flyerAssembly,
     flyerTopEye,
@@ -619,11 +662,49 @@ function throstleDrawingAndTwisting(movement) {
   root.userData.fidelity = 'authored';
   markShadows(root);
   correctSpinningFanParts(root, 496);
+  fitThrostleToPlate(root);
   return {
     root,
     update,
     cameraDirection: root.userData.cameraDirection,
   };
+}
+
+// Applied after the finite working-parts correction: keep its bored bearings,
+// neck and spindle, but restore smooth full-radius rolls, Brown's close
+// inverted-U flyer leg and a barrel inside the winding radius.
+function fitThrostleToPlate(root) {
+  const b = root.userData.blocks;
+  const g = root.userData.geometry;
+  const bored = (radius, bore, height) => boredLatheGeometry([
+    { radial: radius, axial: -height / 2 },
+    { radial: radius, axial: height / 2 },
+  ], bore, 64);
+  const swap = (mesh, geometry) => {
+    mesh.geometry.dispose();
+    mesh.geometry = geometry;
+  };
+  for (const roll of b.drawingRolls) {
+    swap(roll.userData.body, bored(g.rollRadius, 0.069, g.rollLength));
+    for (const rib of roll.userData.ribs) {
+      rib.removeFromParent();
+      rib.geometry.dispose();
+    }
+    roll.userData.ribs = [];
+  }
+  swap(b.flyerArms[1], new THREE.TubeGeometry(
+    b.flyerArms[1].userData.centerline, 64, 0.075, 10, false));
+  // Wound yarn centreline lies on the winding radius; the barrel sits just
+  // inside the yarn.
+  swap(b.bobbinBarrel, bored(g.windingRadius - 0.03, 0.069, 1.42));
+  b.spindleBearing.position.y = g.spindleOrigin.y - 1.75;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.0, g.spindleOrigin.y - 1.9, -1.1),
+    new THREE.Vector3(1.45, g.nipY + 2 * g.rollRadius + 0.3, 1.1),
+  );
+  root.userData.groundFloorY = g.spindleOrigin.y - 1.85;
+  // Brown's plate is a plain side elevation along the roll axes.
+  root.userData.cameraDirection = new THREE.Vector3(-0.08, 0.05, 1);
 }
 
 export function createAuthoredThrostleSpinningMovement(movement) {

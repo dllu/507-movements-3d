@@ -67,7 +67,8 @@ function voluteWaterWheel(movement) {
   const lowerBucketCount = 4;
   const radialVanePitch = FULL_TURN / radialVaneCount;
   const lowerBucketPitch = FULL_TURN / lowerBucketCount;
-  const runnerInnerRadius = 0.52;
+  // Brown's vanes a are short radial stubs in the outer ring of the wheel.
+  const runnerInnerRadius = 1.60;
   const runnerOuterRadius = 2.25;
   const radialVaneCenterRadius =
     (runnerInnerRadius + runnerOuterRadius) / 2;
@@ -77,7 +78,7 @@ function voluteWaterWheel(movement) {
   const sourcePoseVaneOffset = 0;
   const sourcePoseBucketOffset = Math.PI / 4;
   const shaftRadius = 0.21;
-  const voluteStartAngle = THREE.MathUtils.degToRad(142);
+  const voluteStartAngle = THREE.MathUtils.degToRad(90);
   const voluteSweepAngle = THREE.MathUtils.degToRad(326);
   const voluteStartRadius = 3.42;
   const voluteEndRadius = 2.50;
@@ -424,9 +425,12 @@ function voluteWaterWheel(movement) {
   root.add(outerScrollWall, innerScrollWall, scrollWater);
   const voluteStart = scrollFlowCurve.getPoint(0);
   const voluteStartTangent = scrollFlowCurve.getTangent(0).normalize();
+  // Brown's inlet is a straight level channel entering across the top of
+  // the case from the left and running into the scroll along its tangent.
+  const inletDirection = new THREE.Vector3(voluteStartTangent.x, 0,
+    voluteStartTangent.z).normalize();
   const inletUpstream = voluteStart.clone()
-    .addScaledVector(voluteStartTangent, -2.30)
-    .add(new THREE.Vector3(0, 0.26, 0));
+    .addScaledVector(inletDirection, -1.95);
   const inletFlume = boxBetween(
     inletUpstream,
     voluteStart,

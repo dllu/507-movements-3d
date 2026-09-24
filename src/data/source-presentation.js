@@ -347,8 +347,7 @@ export default {
     note: 'The flywheel and crank B, spring A, pitman and treadle; no frame is drawn.',
   },
   418: {
-    remove: ['fixed-tapered-guide-support-standard'],
-    note: 'The casing, guide D, valve A, rod B and roller C; no outside standards are drawn.',
+    note: 'Section of the conical casing on the chest cover with its recess, the suspended guide D on its adjusting screw, valve A, rod B and roller C.',
   },
   421: {
     remove: ['marine-trunk-engine-foundation', 'rear-crankshaft-support-column', 'rear-crankshaft-bearing-arm'],
@@ -493,12 +492,12 @@ export default {
     note: 'Side elevation of the capstan, pawls and bars, as Brown draws it.',
   },
   492: {
-    remove: ['fixed-boat-deck-carrying-fore-and-aft-standards', 'fixed-boat-side-rail-(1|2)'],
-    note: 'The disengaging hooks, tongues and levers on their standards; no boat deck or rails are drawn.',
+    remove: ['fixed-boat-deck-carrying-fore-and-aft-standards', 'fixed-boat-side-rail-(1|2)', 'boat-detaching-apparatus-2', 'release-rope-attached-to-lower-lever-2', 'reconstructed-common-crossbar-pulling-both-release-ropes', 'common-pull-grip-for-one-operator', 'white-index-showing-release-pull-direction'],
+    note: 'One disengaging hook, its tongue and eye lever on the threaded standard, the release rope running off to the right; no second end unit, common pull bar, boat deck or rails are drawn.',
   },
   496: {
-    remove: ['fixed-throstle-bed', 'fixed-drawing-roll-bearing-standard', '(?:upper|lower)-(?:back|front)-drawing-roll-[AB]-visible-index'],
-    note: 'The drawing rolls A, B and the flyer spindle; no bed, standards or roll indices are drawn.',
+    remove: ['fixed-throstle-bed', 'fixed-drawing-roll-bearing-standard', 'fixed-bearing-for-drawing-roll', 'roll-bearing-bridge', '(?:upper|lower)-(?:back|front)-drawing-roll-[AB]-visible-index'],
+    note: 'Side elevation of the plain drawing rolls A, B in section and the flyer spindle with its inverted-U flyer and bobbin; no bed, standards, roll bearings or roll indices are drawn.',
   },
   501: {
     remove: ['fixed-barometer-support-base', 'fixed-barometer-back-support'],

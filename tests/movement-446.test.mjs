@@ -49,11 +49,11 @@ test('movement 446 is the same all-fixed D’Ectol apparatus at the raised check
   assert.equal(movement.fidelity, 'authored');
   assert.equal(data.archetype, ARCHETYPE);
   assert.equal(data.fidelity, 'authored');
-  assert.equal(blocks.nozzle.parent, model.root);
-  assert.equal(blocks.lowerTube.parent, model.root);
-  assert.equal(blocks.plate.parent, model.root);
-  assert.equal(blocks.plateStem.parent, model.root);
-  assert.equal(blocks.reservoir.parent, model.root);
+  for (const block of [...blocks.upperWalls, blocks.upperFloor,
+    blocks.upperBack, ...blocks.lowerWalls, blocks.lowerTop,
+    blocks.lowerBack, blocks.plate, blocks.plateStem]) {
+    assert.equal(block.parent, model.root);
+  }
   assert.equal(degreesOfFreedom.movingSolidParts, 0);
   assert.equal(degreesOfFreedom.waterConeIndependent, false);
   assert.equal(degreesOfFreedom.upperColumnIndependent, false);
@@ -74,13 +74,13 @@ test('movement 446 is the same all-fixed D’Ectol apparatus at the raised check
   });
   assert.deepEqual(forbiddenTransmissions, []);
   for (const role of [
-    'fixed-upper-smaller-tube',
-    'fixed-lower-larger-tube',
+    'fixed-upper-box-floor-with-round-orifice',
+    'fixed-lower-box-top-with-round-opening',
     'fixed-circular-plate-concentric-with-upper-orifice',
     'self-forming-water-cone-on-fixed-circular-plate',
-    'water-cone-crown-entering-small-tube',
-    'checked-water-column-rising-through-upper-tube',
-    'raised-water-column-turning-into-upper-reservoir',
+    'water-cone-crown-entering-orifice',
+    'checked-water-column-rising-through-orifice',
+    'raised-water-column-spraying-in-upper-box',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -110,7 +110,7 @@ test('movement 446 source record describes its distinct checked-flow engraving a
   assert.deepEqual(plate.approximateRaisedColumnTopPixels, [294, 113]);
   assert.equal(evidence.explicitInBrownDescription.length, 8);
   assert.match(evidence.engravingEvidence,
-    /Plate 446 shows the checked-flow state.*raised central water column/);
+    /Plate 446 is a vertical section in the checked-flow state.*water column rising from the fixed circular plate/);
   assert.match(evidence.reconstructionDisclosure,
     /no dimensions, flow rate, head.*independently engineered/);
   disposeModel(model.root);
@@ -178,9 +178,9 @@ test('movement 446 remains exactly mass balanced despite its nonzero source-phas
 test('movement 446 renders the checked cone and raised column at time zero while every solid remains fixed', () => {
   const model = createMovementModel(catalog.movements[445]);
   const { blocks, geometry, stateAtTime, update } = model.root.userData;
-  const fixedBlocks = [blocks.base, blocks.lowerFloor, blocks.lowerTube,
-    blocks.nozzle, blocks.outletPipe, blocks.plate, blocks.plateStem,
-    blocks.reservoir];
+  const fixedBlocks = [...blocks.upperWalls, blocks.upperFloor,
+    blocks.upperBack, ...blocks.lowerWalls, blocks.lowerTop,
+    blocks.lowerBack, blocks.plate, blocks.plateStem];
   const fixedPositions = fixedBlocks.map((block) => block.position.clone());
   const fixedScales = fixedBlocks.map((block) => block.scale.clone());
 
@@ -188,8 +188,9 @@ test('movement 446 renders the checked cone and raised column at time zero while
   update(0);
   near(source.phase, geometry.sourcePhase, 0, 'source cycle phase');
   near(blocks.waterCone.scale.y, 1, 0, 'full source cone rendered');
-  near(blocks.risingColumn.scale.y, 1, 0,
-    'full raised source column rendered');
+  near(blocks.risingColumn.position.y + blocks.risingColumn.scale.y,
+    geometry.reservoirWaterY, 1e-12,
+    'full raised source column reaches the upper water surface');
   assert.equal(blocks.risingColumn.visible, true);
   assert.equal(blocks.topPlume.visible, true);
 
@@ -218,8 +219,8 @@ test('movements 445 and 446 share fixed topology but retain distinct source pose
 
   assert.notEqual(model445.root.userData.archetype,
     model446.root.userData.archetype);
-  assert.equal(model445.root.userData.blocks.nozzle.geometry.type,
-    model446.root.userData.blocks.nozzle.geometry.type);
+  assert.equal(model445.root.userData.blocks.upperFloor.geometry.type,
+    model446.root.userData.blocks.upperFloor.geometry.type);
   near(model445.root.userData.geometry.nozzleBottomY,
     model446.root.userData.geometry.nozzleBottomY, 0,
   'shared small-tube topology');

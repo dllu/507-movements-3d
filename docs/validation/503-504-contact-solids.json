@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "fb613b6f96103e3d9848baf95a320b627691af5234dbc073434a2259b52e1618"
+      "sha256": "6722c4a55cecfb39a8d8a07cbf4c23713b183a4165c9bcf437c9495b757b37d2"
     },
     {
       "file": "src/simulation/epicyclic-503-504-contact.js",
@@ -34,20 +34,20 @@
     {
       "id": 503,
       "poses": 33,
-      "queries": 409058,
+      "queries": 539316,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "lower-loose-bevel-wheel-C-input-free-radial-bevel-planet-B",
-          "maximumSampledGap": 0.0030106159645328047,
-          "minimumSampledGap": 0.0029701729786556262
+          "maximumSampledGap": 0.001991630432637385,
+          "minimumSampledGap": 0.0019728029332055125
         },
         {
           "pair": "upper-loose-bevel-wheel-D-input-free-radial-bevel-planet-B",
-          "maximumSampledGap": 0.003010615964532891,
-          "minimumSampledGap": 0.0029701729786556262
+          "maximumSampledGap": 0.0019916304326373425,
+          "minimumSampledGap": 0.00197280293320561
         }
       ]
     },

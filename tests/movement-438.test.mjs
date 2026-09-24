@@ -76,8 +76,7 @@ test('movement 438 feeds four equally handed bent outlet arms through one centra
     ...blocks.nozzleCollars]) assert.equal(rotating.parent, blocks.runner);
   for (const fixed of [blocks.inletHopper, blocks.inletWaterBowl,
     blocks.upperBearing, blocks.lowerBearing, blocks.bearingBracket,
-    blocks.wall, blocks.inletFlume, blocks.inletStream, blocks.catchBasin,
-    blocks.foundation]) assert.equal(fixed.parent, model.root);
+    blocks.wall, blocks.inletFlume, blocks.inletStream]) assert.equal(fixed.parent, model.root);
 
   const roles = [];
   const belts = [];
@@ -96,8 +95,11 @@ test('movement 438 feeds four equally handed bent outlet arms through one centra
     'fixed-open-hopper-feeding-central-hollow-shaft',
     'reaction-mill-runner-rotating-opposite-four-exhaust-jets',
     'fixed-horizontal-upper-bearing-bracket',
-    'basin-receiving-four-tangential-exhaust-jets',
   ]) assert.ok(roles.includes(role), role);
+  // Brown draws neither a floor plate nor a catch basin under the arms.
+  for (const role of ['fixed-reaction-mill-foundation',
+    'basin-receiving-four-tangential-exhaust-jets'])
+    assert.ok(!roles.includes(role), role);
   disposeModel(model.root);
 });
 
@@ -300,8 +302,7 @@ test('movement 438 update rotates only the reaction runner and keeps water marke
   const { blocks, geometry, stateAtTime } = model.root.userData;
   const fixedBlocks = [blocks.inletHopper, blocks.inletWaterBowl,
     blocks.upperBearing, blocks.lowerBearing, blocks.bearingBracket,
-    blocks.wall, blocks.inletFlume, blocks.inletStream,
-    blocks.catchBasin, blocks.foundation];
+    blocks.wall, blocks.inletFlume, blocks.inletStream];
   const fixedTransforms = fixedBlocks.map((block) => ({
     position: block.position.clone(),
     quaternion: block.quaternion.clone(),

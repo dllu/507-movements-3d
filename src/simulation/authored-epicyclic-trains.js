@@ -2,6 +2,14 @@ import { correctEpicyclic503504 } from './epicyclic-503-504-contact.js';
 import { correctCompoundEpicyclic } from './compound-epicyclic-corrections.js';
 import { correctEpicyclicFamily } from './epicyclic-family-corrections.js';
 import * as THREE from 'three';
+import { bevelBodyGeometry } from './bevel-geometry.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import {
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -781,13 +789,24 @@ function compoundOutputEpicyclic(movement) {
 
 function bevelDifferentialEpicyclic(movement) {
   const root = new THREE.Group();
-  const sideTeeth = 24;
-  const planetTeeth = 24;
-  const bevelPitchRadius = 1.20;
-  const bevelDepth = 0.60;
-  const pitchConeHalfAngle = Math.PI / 4;
+  // Brown draws C and D as broad, shallow wheels about 1.7 times the
+  // diameter of B, whose rim meets theirs: C/D heel pitch radius equals B's
+  // distance from A and vice versa, giving one common apex.
+  // planetTeeth is a multiple of four so B presents a tooth space to both
+  // C and D a quarter turn from its mounting index.
+  const sideTeeth = 48;
+  const planetTeeth = 28;
+  const bevelPitchRadius = 1.60;
+  const planetPitchRadius = bevelPitchRadius * planetTeeth / sideTeeth;
+  const bevelDepth = planetPitchRadius / 2;
+  const planetBevelDepth = bevelPitchRadius / 2;
+  const pitchConeHalfAngle = Math.atan2(bevelPitchRadius, planetPitchRadius);
+  const planetPitchConeHalfAngle = Math.PI / 2 - pitchConeHalfAngle;
   const pitchApexOffset = bevelDepth * 1.5;
+  const planetApexOffset = planetBevelDepth * 1.5;
   const representativePitchCoordinate = 0.72;
+  const representativeRadialCoordinate =
+    representativePitchCoordinate * Math.tan(pitchConeHalfAngle);
   const lowerCInputAngularSpeed = 0.95;
   const upperDInputAngularSpeed = 0.35;
   const carrierAngularSpeed = (
@@ -923,11 +942,11 @@ function bevelDifferentialEpicyclic(movement) {
   const planetB = makeBevelGear({
     axis: X_AXIS.clone().negate(),
     color: PALETTE.accent,
-    depth: bevelDepth,
-    radius: bevelPitchRadius,
+    depth: planetBevelDepth,
+    radius: planetPitchRadius,
     teeth: planetTeeth,
   });
-  planetB.position.set(pitchApexOffset, 0, 0);
+  planetB.position.set(planetApexOffset, 0, 0);
   planetB.userData.axisDirectionInCarrier = X_AXIS.clone().negate();
   planetB.userData.freeOnCarrierAxle = true;
   planetB.userData.isGear = true;
@@ -944,7 +963,7 @@ function bevelDifferentialEpicyclic(movement) {
       ? 'representative-lower-C-B-pitch-cone-contact'
       : 'representative-upper-D-B-pitch-cone-contact');
     marker.position.set(
-      representativePitchCoordinate,
+      representativeRadialCoordinate,
       side * representativePitchCoordinate,
       0,
     );
@@ -976,10 +995,13 @@ function bevelDifferentialEpicyclic(movement) {
     ...Object.values(labels),
   );
 
+  // Mesh phases in side-wheel angle: the planet turns planetTeeth/sideTeeth
+  // of a side-wheel pitch for each of its own pitch angles.
+  const planetToSide = planetTeeth / sideTeeth;
   const lowerMeshPhaseConstant =
-    lowerCMountPhase - planetMountPhase;
+    lowerCMountPhase - planetToSide * planetMountPhase;
   const upperMeshPhaseConstant =
-    upperDMountPhase + planetMountPhase;
+    upperDMountPhase + planetToSide * planetMountPhase;
   const stateAtTime = (time) => {
     const lowerCCommonAxisAngle = lowerCMountPhase
       + lowerCInputAngularSpeed * time;
@@ -997,13 +1019,13 @@ function bevelDifferentialEpicyclic(movement) {
       Y_AXIS,
       radial,
     );
-    const planetCenter = radial.clone().multiplyScalar(pitchApexOffset);
+    const planetCenter = radial.clone().multiplyScalar(planetApexOffset);
     const planetAxisDirection = radial.clone().negate();
     const lowerContact = radial.clone()
-      .multiplyScalar(representativePitchCoordinate)
+      .multiplyScalar(representativeRadialCoordinate)
       .addScaledVector(Y_AXIS, -representativePitchCoordinate);
     const upperContact = radial.clone()
-      .multiplyScalar(representativePitchCoordinate)
+      .multiplyScalar(representativeRadialCoordinate)
       .addScaledVector(Y_AXIS, representativePitchCoordinate);
     const lowerAngularVelocity = Y_AXIS.clone().multiplyScalar(
       lowerCInputAngularSpeed,
@@ -1045,7 +1067,7 @@ function bevelDifferentialEpicyclic(movement) {
     ).addScaledVector(Y_AXIS, -pitchApexOffset);
     const planetPitchApex = planetCenter.clone().addScaledVector(
       planetAxisDirection,
-      pitchApexOffset,
+      planetApexOffset,
     );
     return {
       carrierAngle,
@@ -1061,10 +1083,10 @@ function bevelDifferentialEpicyclic(movement) {
         .distanceTo(lowerContactVelocityB),
       meshPhaseResiduals: {
         CB: lowerCCommonAxisAngle - carrierAngle
-          - planetSpinAngleAboutOutwardRadial
+          - planetToSide * planetSpinAngleAboutOutwardRadial
           - lowerMeshPhaseConstant,
         DB: upperDCommonAxisAngle - carrierAngle
-          + planetSpinAngleAboutOutwardRadial
+          + planetToSide * planetSpinAngleAboutOutwardRadial
           - upperMeshPhaseConstant,
       },
       orbitalTangent,
@@ -1123,20 +1145,25 @@ function bevelDifferentialEpicyclic(movement) {
     bevelPitchRadius,
     pitchApexOffset,
     pitchConeHalfAngle,
+    planetApexOffset,
+    planetBevelDepth,
+    planetPitchConeHalfAngle,
+    planetPitchRadius,
     planetTeeth,
     representativePitchCoordinate,
+    representativeRadialCoordinate,
     sideTeeth,
   };
   root.userData.meshes = [
     {
-      axesAngle: Math.PI / 2,
+      axesAngle: pitchConeHalfAngle + planetPitchConeHalfAngle,
       first: 'C',
       pitchConeApex: new THREE.Vector3(),
       second: 'B',
       teeth: [sideTeeth, planetTeeth],
     },
     {
-      axesAngle: Math.PI / 2,
+      axesAngle: pitchConeHalfAngle + planetPitchConeHalfAngle,
       first: 'D',
       pitchConeApex: new THREE.Vector3(),
       second: 'B',
@@ -1159,7 +1186,7 @@ function bevelDifferentialEpicyclic(movement) {
     officialEngraving: './engravings/mm_503.png',
     officialInlineModelUrl: movement.sourceUrl,
     reconstructionDisclosure:
-      'The official page marks Animated unavailable. Brown fixes two loose coaxial bevel wheels C and D, radial free planet B, carrier F-G rigid with shaft A, and either two-wheel or carrier-plus-wheel input modes, but gives no tooth counts, cone dimensions, speeds, or timing. This model selects Brown’s two-wheel-input mode with equal 24-tooth 45-degree miter gears, C=0.95 rad/s, D=0.35 rad/s, independently authored dimensions, supports, labels, and colors. The exact average/difference law, common pitch apex, and both contact velocities are constraints; the selected rates and appearance are reconstruction choices.',
+      'The official page marks Animated unavailable. Brown fixes two loose coaxial bevel wheels C and D, radial free planet B, carrier F-G rigid with shaft A, and either two-wheel or carrier-plus-wheel input modes, but gives no tooth counts, cone dimensions, speeds, or timing. This model selects Brown’s two-wheel-input mode with equal 48-tooth side wheels C and D and a 28-tooth planet B, sized from the engraving’s broad shallow side wheels (pitch cones about 59.4 and 30.6 degrees), C=0.95 rad/s, D=0.35 rad/s, independently authored dimensions, labels, and colors. The exact average/difference law, common pitch apex, and both contact velocities are constraints; the selected tooth counts, rates and appearance are reconstruction choices.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.stateAtTime = stateAtTime;
@@ -1201,11 +1228,75 @@ function bevelDifferentialEpicyclic(movement) {
   root.userData.fidelity = 'authored';
   correctEpicyclicFamily(root, movement.id);
   correctEpicyclic503504(root, movement.id);
+  fit503SourceProportions(root);
   markShadows(root);
   return {
     root,
     update,
     cameraDirection: new THREE.Vector3(0.3, 0.3, 16),
+  };
+}
+
+// The shared corrections assume one bevel depth; B is now a smaller, deeper
+// cone, so its bored body, the hubs, sleeve F and arm G are refitted here.
+function fit503SourceProportions(root) {
+  const b = root.userData.blocks;
+  const g = root.userData.geometry;
+  const replace = (mesh, geometry) => {
+    mesh.geometry.dispose();
+    mesh.geometry = geometry;
+  };
+  const annulus = (inner, outer, low, high) => boredLatheGeometry(
+    [{ radial: outer, axial: low }, { radial: outer, axial: high }],
+    inner,
+    64,
+  ).rotateX(Math.PI / 2);
+  const planetRotor = b.planetB.userData.rotor;
+  const planetBody = planetRotor.children[0];
+  replace(planetBody, bevelBodyGeometry(
+    b.planetB.userData.toothMeshes[0].geometry,
+    0.106,
+  ).rotateX(Math.PI).translate(0, 0, 1.5 * g.planetBevelDepth));
+  planetBody.userData.boreRadius = 0.106;
+  // Local z is measured from each wheel's origin toward its apex. The side
+  // bosses stand outside the back faces, as Brown draws them round A; B's
+  // boss runs inward from its toe toward F.
+  const hubs = [
+    [b.lowerC, 0.116, 0.34, -0.46, 0.19],
+    [b.upperD, 0.116, 0.34, -0.46, 0.19],
+    [b.planetB, 0.106, 0.30, -0.50, 0.40],
+  ];
+  for (const [gear, bore, outer, low, high] of hubs) {
+    const rotor = gear.userData.rotor;
+    const hub = rotor.children.find((object) => object.userData.boreRadius
+      && !object.userData.bevelGearBody && object !== rotor.children[0]);
+    replace(hub, annulus(bore, outer, low, high));
+    hub.userData.boreRadius = bore;
+    const indicator = rotor.children.find((object) => (
+      object.geometry?.type === 'BoxGeometry'
+    ));
+    const start = outer + 0.03;
+    const end = gear.userData.radius * 0.72;
+    replace(indicator, new THREE.BoxGeometry(
+      end - start,
+      Math.max(0.04, gear.userData.radius * 0.05),
+      0.024,
+    ));
+    indicator.position.x = (start + end) / 2;
+  }
+  replace(b.carrierSleeve, new THREE.CylinderGeometry(0.24, 0.24, 0.80, 48));
+  replace(b.planetAxle, new THREE.CylinderGeometry(0.105, 0.105, 1.95, 48));
+  b.planetAxle.position.x = 0.975;
+  replace(b.outerCarrierHead, new THREE.CylinderGeometry(0.20, 0.20, 0.18, 48));
+  b.outerCarrierHead.position.x = 1.81;
+  b.carrierIndex.position.set(1.81, 0.22, 0);
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-1.98, -1.70, -1.98),
+    new THREE.Vector3(1.98, 1.70, 1.98),
+  );
+  root.userData.sampledMotionBounds = {
+    max: root.userData.cameraFitBounds.max.toArray(),
+    min: root.userData.cameraFitBounds.min.toArray(),
   };
 }
 
@@ -2163,12 +2254,51 @@ function fixedAnnulusSimplePlanetary(movement) {
   update(0);
   root.userData.fidelity = 'authored';
   correctEpicyclicFamily(root, movement.id);
+  fit505SourceArm(root);
   markShadows(root);
   return {
     root,
     update,
     cameraDirection: new THREE.Vector3(0.3, 0.2, 16),
   };
+}
+
+// Brown's arm D is one slender bar with a broad central eye round A's boss,
+// reaching about half the ring radius beyond C; there is no separate handle.
+// The central eye is bored to clear the sun's output sleeve (outer .166).
+function fit505SourceArm(root) {
+  const b = root.userData.blocks;
+  const g = root.userData.geometry;
+  const replace = (mesh, geometry) => {
+    mesh.geometry.dispose();
+    mesh.geometry = geometry;
+  };
+  const armEnd = 3.72;
+  const outline = polygonClipping.union(
+    poly([[0, -0.145], [armEnd, -0.145], [armEnd, 0.145], [0, 0.145]]),
+    poly(circle([0, 0], 0.34, 96)),
+    poly(circle([g.planetCenterRadius, 0], 0.23, 64)),
+    poly(circle([armEnd, 0], 0.145, 48)),
+  );
+  replace(b.carrierBar, plate(polygonClipping.difference(
+    outline,
+    poly(circle([0, 0], 0.171, 96)),
+    poly(circle([g.planetCenterRadius, 0], 0.091, 64)),
+  ), 0.45, 0.61));
+  b.carrierBar.position.set(0, 0, 0);
+  const pivot = b.carrierPivots[0];
+  replace(pivot, boredLatheGeometry([
+    { radial: 0.28, axial: -0.15 },
+    { radial: 0.28, axial: 0.15 },
+  ], 0.171, 96));
+  pivot.userData.boreRadius = 0.171;
+  b.carrierHandle.removeFromParent();
+  b.carrierHandle.geometry.dispose();
+  b.carrierIndex.position.x = 2.9;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.90, -3.90, -0.72),
+    new THREE.Vector3(3.90, 3.90, 1.04),
+  );
 }
 
 function dualEndDrivenCompoundBevelDifferential(movement) {

@@ -1,4 +1,6 @@
 import { correctAeolipile } from './thermal-steam-working-parts.js';
+import { circle, plate, poly, polygonClipping, turned } from './finite-plate-geometry.js';
+import { curvedPipeWall, mergePassageParts } from './finite-fluid-passages.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -38,6 +40,70 @@ function cylinderBetween(start, end, radius, material, role, sides = 32) {
   );
   cylinder.userData.role = role;
   return cylinder;
+}
+
+// Brown draws both hollow risers as nearly straight uprights standing in the
+// boiler lid near its rim and hooking inward only at the globe's pivot ends.
+// The finite working-parts correction bends them in from lid ports near the
+// centre; replace only that lower crank, keeping its reducer, neck, trunnions
+// and bearings.
+const RISER_FOOT_X = 1.34;
+const RISER_UPPER_X = 1.80;
+const RISER_UPPER_Y = 2.42;
+const LID_PORT_RADIUS = 0.12;
+function straightenSourceRisers(root) {
+  const d = root.userData;
+  const b = d.blocks;
+  const g = d.geometry;
+  const lean = (RISER_UPPER_X - RISER_FOOT_X) / (RISER_UPPER_Y - 0.30);
+  const portCenterX = RISER_FOOT_X + lean * (0.42 - 0.30);
+  for (let i = 0; i < 2; i += 1) {
+    const side = i ? 1 : -1;
+    const corner = new THREE.Vector3(side * 1.55, g.globeCenter.y, 0);
+    const upper = new THREE.Vector3(side * RISER_UPPER_X, RISER_UPPER_Y, 0);
+    const bend = new THREE.CurvePath();
+    bend.add(new THREE.LineCurve3(
+      new THREE.Vector3(side * RISER_FOOT_X, 0.30, 0),
+      upper,
+    ));
+    bend.add(new THREE.CubicBezierCurve3(
+      upper,
+      new THREE.Vector3(side * RISER_UPPER_X, 2.60, 0),
+      new THREE.Vector3(side * 1.72, 2.72, 0),
+      corner,
+    ));
+    const neck = new THREE.LineCurve3(
+      new THREE.Vector3(side * 1.48, g.globeCenter.y, 0),
+      new THREE.Vector3(side * 1.08, g.globeCenter.y, 0),
+    );
+    const full = new THREE.CurvePath();
+    full.add(bend);
+    full.add(new THREE.LineCurve3(corner, g.globeCenter.clone()));
+    d.flowPaths.feedCurves[i] = full;
+    // Same reducer and neck as the finite correction.
+    const reducer = turned(
+      [[1.48, 0.055], [1.48, 0.075], [1.55, 0.13], [1.55, 0.09]],
+      128,
+    ).rotateY(side * Math.PI / 2).translate(0, g.globeCenter.y, 0);
+    const pipe = b.fixedFeedPipes[i];
+    pipe.geometry.dispose();
+    pipe.geometry = mergePassageParts([
+      curvedPipeWall(bend, 0.09, 0.13, 112),
+      reducer,
+      curvedPipeWall(neck, 0.055, 0.075, 8),
+    ]);
+    const core = b.fixedFeedSteamCores[i];
+    core.geometry.dispose();
+    core.geometry = new THREE.TubeGeometry(full, 128, 0.045, 12, false);
+  }
+  const lid = polygonClipping.difference(
+    poly(circle([0, 0], 1.52, 256)),
+    ...[-1, 1].map((side) =>
+      poly(circle([side * portCenterX, 0], LID_PORT_RADIUS, 96))),
+  );
+  b.boilerLid.geometry.dispose();
+  b.boilerLid.geometry = plate(lid, -0.08, 0.08).rotateX(-Math.PI / 2);
+  d.geometry.riserLidPortCenterX = portCenterX;
 }
 
 function heroAeolipile(movement) {
@@ -594,26 +660,33 @@ function heroAeolipile(movement) {
     root.add(flame);
     flames.push(flame);
   }
+  // Brown's four cabriole legs leave the lower flank of the boiler, splay
+  // outward, drop nearly vertically and turn their feet out again.
+  const legProfile = [
+    [1.22, -1.08],
+    [1.66, -1.27],
+    [1.84, -1.62],
+    [1.83, -1.98],
+    [2.08, -2.16],
+  ];
   const standLegs = [];
   for (let index = 0; index < 4; index += 1) {
     const angle = Math.PI / 4 + index * Math.PI / 2;
-    const upper = new THREE.Vector3(
-      Math.cos(angle) * 0.90,
-      -1.56,
-      Math.sin(angle) * 0.90,
+    const legCurve = new THREE.CatmullRomCurve3(
+      legProfile.map(([radius, height]) => new THREE.Vector3(
+        Math.cos(angle) * radius,
+        height,
+        Math.sin(angle) * radius,
+      )),
+      false,
+      'centripetal',
     );
-    const lower = new THREE.Vector3(
-      Math.cos(angle) * 1.38,
-      -2.13,
-      Math.sin(angle) * 1.38,
-    );
-    const leg = cylinderBetween(
-      upper,
-      lower,
-      0.095,
+    const leg = makeTube(
+      legCurve,
+      0.115,
       frameMaterial,
       `fixed-boiler-stand-leg-${index + 1}-of-four`,
-      24,
+      48,
     );
     root.add(leg);
     standLegs.push(leg);
@@ -808,6 +881,7 @@ function heroAeolipile(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.3, 9.4);
   root.userData.groundFloorY = -2.42;
   correctAeolipile(root);
+  straightenSourceRisers(root);
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);

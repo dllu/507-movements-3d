@@ -10,7 +10,7 @@ import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 for(const[id,create]of[[436,wheel],[437,outward],[438,inward]])test(`${id}: actual moving walls and shafts clear stationary guides, supports and bores`,()=>{
   const model=create({id}),u=model.root.userData,b=u.blocks;
   try{
-    const fixed=id===436?[b.fixedGuideAssembly,b.casing,...b.casingPosts,...b.casingRings,b.foundation,b.upperBeam,b.upperBearing,b.lowerBearing]:id===437?[b.innerScrollWall,b.outerScrollWall,b.scrollFloor,b.upperBearing,b.bearingBeam,...b.bearingPosts,b.casingFloor]:[b.upperBearing,b.lowerBearing,b.bearingBracket,b.inletHopper,b.wall,b.foundation];
+    const fixed=id===436?[b.fixedGuideAssembly,b.casing,...b.casingPosts,...b.casingRings,b.foundation,b.upperBeam,b.upperBearing,b.lowerBearing]:id===437?[b.innerScrollWall,b.outerScrollWall,b.scrollFloor,b.upperBearing,b.bearingBeam,...b.bearingPosts,b.casingFloor]:[b.upperBearing,b.lowerBearing,b.bearingBracket,b.inletHopper,b.wall];
     const targets=[];for(const group of fixed)group.traverse(mesh=>{if(mesh.isMesh&&!mesh.material.transparent)targets.push({mesh,surface:solidSurface(mesh.geometry)});});
     const moving=[];(b.rotor??b.runner).traverse(mesh=>{if(mesh.isMesh){const all=surfacePoints(mesh.geometry);moving.push({mesh,points:all.filter((_,i)=>i%Math.max(1,Math.floor(all.length/900))===0)});}});
     for(let frame=0;frame<=64;frame++){

@@ -15,8 +15,12 @@ test('503 loose hubs and gear faces clear the rigid carrier sleeve and outer hea
 });
 test('503 common-apex back-cone involutes have working contact ratio above one',()=>{
  const m=create(503),b=m.root.userData.blocks,g=m.root.userData.geometry;
- for(const gear of[b.lowerC,b.upperD,b.planetB]){const apex=new THREE.Vector3(0,0,g.pitchApexOffset).applyQuaternion(gear.quaternion).add(gear.position);assert.ok(apex.length()<1e-12);assert.equal(gear.userData.pitchConeAngle,Math.PI/4);}
- const tooth=b.lowerC.userData.toothMeshes[0].geometry,u=tooth.userData,r=g.bevelPitchRadius/Math.cos(Math.PI/4),alpha=Math.PI/9,module=2*g.bevelPitchRadius/g.sideTeeth,ratio=(2*Math.sqrt((r+.45*u.height)**2-(r*Math.cos(alpha))**2)-2*r*Math.sin(alpha))/(Math.PI*module*Math.cos(alpha));assert.ok(ratio>1.5);disposeObject3D(m.root);
+ for(const[gear,offset,angle]of[[b.lowerC,g.pitchApexOffset,g.pitchConeHalfAngle],[b.upperD,g.pitchApexOffset,g.pitchConeHalfAngle],[b.planetB,g.planetApexOffset,g.planetPitchConeHalfAngle]]){const apex=new THREE.Vector3(0,0,offset).applyQuaternion(gear.quaternion).add(gear.position);assert.ok(apex.length()<1e-12);assert.ok(Math.abs(gear.userData.pitchConeAngle-angle)<1e-14);}
+ // Tredgold virtual spur pair on the common back cone: unequal virtual radii.
+ const alpha=Math.PI/9,module=2*g.bevelPitchRadius/g.sideTeeth,side=b.lowerC.userData.toothMeshes[0].geometry.userData,planet=b.planetB.userData.toothMeshes[0].geometry.userData;
+ assert.ok(Math.abs(2*g.planetPitchRadius/g.planetTeeth-module)<1e-15);
+ const r1=g.bevelPitchRadius/Math.cos(g.pitchConeHalfAngle),r2=g.planetPitchRadius/Math.cos(g.planetPitchConeHalfAngle),approach=Math.sqrt((r1+.45*side.height)**2-(r1*Math.cos(alpha))**2)+Math.sqrt((r2+.45*planet.height)**2-(r2*Math.cos(alpha))**2)-(r1+r2)*Math.sin(alpha);
+ assert.ok(Math.abs(side.height-planet.height)<1e-12);assert.ok(approach/(Math.PI*module*Math.cos(alpha))>1.5);disposeObject3D(m.root);
 });
 test('504 uses one continuous visible B with equal base pitch at all three working pressure angles',()=>{
  const m=create(504),u=m.root.userData,b=u.blocks,p=u.workingProfiles;

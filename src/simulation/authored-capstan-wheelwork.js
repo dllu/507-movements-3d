@@ -1,5 +1,6 @@
 import { correctCapstanWheelwork } from './capstan-entwistle-corrections.js';
 import * as THREE from 'three';
+import { plate, poly, circle, capsule, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeGear,
@@ -371,10 +372,12 @@ function capstanWheelwork(movement) {
     'forty-five-tooth-internal-annulus-rigid-with-barrel';
   barrelRotor.add(annulusGear);
   const annulusIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 0.035, 0.46),
+    new THREE.BoxGeometry(0.18, 0.035, 0.15),
     whiteMaterial,
   );
-  annulusIndex.position.set(0, gearPlaneY + gearDepth / 2 + 0.05, 2.72);
+  // On the plain rim outside the tooth roots, clear of the carried pinions.
+  annulusIndex.position.set(0, gearPlaneY + gearDepth / 2 + 0.05,
+    (annulusPitchRadius + module * 1.25 + annulusOuterRadius) / 2);
   annulusIndex.userData.role = 'white-annulus-output-rotation-index';
   barrelRotor.add(annulusIndex);
 
@@ -938,10 +941,57 @@ function capstanWheelwork(movement) {
   root.userData.cameraDirection = new THREE.Vector3(7.8, 6.2, 10.4);
   root.userData.groundFloorY = 0;
   correctCapstanWheelwork(root);
+  addSourceBandAndLevers(root, frameMaterial);
   markShadows(root);
   foundation.receiveShadow = true;
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };
+}
+
+// Brown's plan draws a band close outside the annulus whose two ends leave it
+// tangentially as flat levers ending in eyes, the lower one hooked. The caption
+// does not explain them, so they are presented as one fixed, non-working
+// strap in the plate's positions.
+function addSourceBandAndLevers(root, material) {
+  const g = root.userData.geometry;
+  const bandInner = g.annulusOuterRadius + 0.12;
+  const bandOuter = bandInner + 0.14;
+  const eyes = [[2.92, -3.70], [2.84, 3.48]];
+  const outline = clip.union(
+    clip.difference(poly(circle([0, 0], bandOuter, 180)),
+      poly(circle([0, 0], bandInner, 180))),
+    capsule([-0.25, -bandOuter + 0.05], [1.05, -3.52], 0.11, 24),
+    capsule([1.05, -3.52], eyes[0], 0.065, 24),
+    capsule([-0.10, bandOuter - 0.05], [0.45, 3.45], 0.08, 24),
+    capsule([-0.62, 3.45], eyes[1], 0.07, 24),
+    capsule([-0.62, 3.45], [-0.84, 3.66], 0.07, 24),
+    ...eyes.map(eye => poly(circle(eye, 0.21, 48))),
+  );
+  const strap = clip.difference(outline,
+    ...eyes.map(eye => poly(circle(eye, 0.095, 48))));
+  // Plate (right, down) axes are the screen axes of the plan camera
+  // (1, 12, 3); the root is turned -90 degrees about y: local (x, z) = (Z, -X).
+  const view = Math.hypot(1, 3);
+  const local = strap.map(polygon => polygon.map(ring =>
+    ring.map(([right, down]) => {
+      const X = (3 * right + down) / view;
+      const Z = (-right + 3 * down) / view;
+      return [Z, -X];
+    })));
+  const band = new THREE.Mesh(
+    plate(local, -g.gearDepth / 2 + 0.04, g.gearDepth / 2 - 0.04)
+      .rotateX(Math.PI / 2),
+    material,
+  );
+  band.position.y = g.gearPlaneY;
+  band.userData.role = 'fixed-outside-band-with-two-eyed-levers';
+  root.add(band);
+  root.userData.blocks.outsideBand = band;
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.95, 0.25, -3.95),
+    new THREE.Vector3(3.95, 1.14, 3.95),
+  );
+  return band;
 }
 
 export function createAuthoredCapstanWheelworkMovement(movement) {

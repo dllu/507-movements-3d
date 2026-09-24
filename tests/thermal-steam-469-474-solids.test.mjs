@@ -56,5 +56,5 @@ test('474: fixed steam necks and rotary trunnions clear bored stationary collars
     assert.ok(separation(m,b.rotatingTrunnions[i],b.stationaryBearingCollars[i],24)>.003);
   }
   const lid=solidSurface(b.boilerLid.geometry);b.boilerLid.updateMatrix();const inverse=b.boilerLid.matrix.clone().invert();
-  for(const x of [-.67,.67])for(const y of [.35,.42,.49])assert.equal(lid.inside(new THREE.Vector3(x,y,0).applyMatrix4(inverse)),false,'open boiler feed port');
+  const portX=m.root.userData.geometry.riserLidPortCenterX;for(const x of [-portX,portX])for(const y of [.35,.42,.49])assert.equal(lid.inside(new THREE.Vector3(x,y,0).applyMatrix4(inverse)),false,'open boiler feed port');
 });
