@@ -14,31 +14,31 @@
     "samples": 601
   },
   "summary": {
-    "minimumLift": -0.31268860198900184,
-    "maximumLift": 0.09867028546199544,
-    "minimumLag": 0.2027262806024055,
-    "maximumLag": 0.8182405609481123,
-    "minimumContactAngle": -0.888356248720763,
-    "maximumContactAngle": -0.226805932796319,
-    "minimumTrackEndMargin": 0.411643751279237,
+    "minimumLift": -0.3102447285744311,
+    "maximumLift": 0.09837742661964557,
+    "minimumLag": 0.2109695625226209,
+    "maximumLag": 0.8179579214060766,
+    "minimumContactAngle": -0.8883547195349966,
+    "maximumContactAngle": -0.22824458635620282,
+    "minimumTrackEndMargin": 0.4116452804650035,
     "minimumContactCount": 0,
-    "samplesWithoutContact": 29,
-    "maximumSeparation": 0.0000031635783790673333,
-    "maximumPenetration": 0.00007359844741017252,
+    "samplesWithoutContact": 27,
+    "maximumSeparation": 0.000002305827374232683,
+    "maximumPenetration": 0.00007267884270309444,
     "closure": {
       "position": [
-        -0.000006456711886926314,
-        -0.009598096294947567,
-        0.03366927104606532,
-        0.4207327874799658,
-        -0.420747966807844
+        1.8413875579881278e-7,
+        0.0019443700989520973,
+        -0.0076172662616755815,
+        0.08464690094914218,
+        -0.08464974323352514
       ],
       "velocity": [
-        -0.00041099132151578566,
-        -0.020693596940815382,
-        0.06419793745225677,
-        0.5338754174334195,
-        -0.5338754174334195
+        0.0000013776779523855254,
+        0.0004783537527480587,
+        -0.0018071281510023685,
+        -0.014481626506268531,
+        0.01448086748140405
       ]
     }
   },
@@ -57,7 +57,7 @@
     },
     {
       "file": "src/simulation/mujoco-fan-governor/geometry.js",
-      "sha256": "0aff9f7a0e0a5b3e507d1413464eaeb3dfbc9bfa5df2e40fe65c49da4e4161e6"
+      "sha256": "22923198ec21529c1388290037b1e9573b983335bb9537d2bcaa941250a0a4c2"
     },
     {
       "file": "src/simulation/mujoco-fan-governor/source.js",
@@ -73,7 +73,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

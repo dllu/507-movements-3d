@@ -133,8 +133,10 @@ test('048 insertion, locking, release and coast conserve output angle across eve
       assert.ok(state.dogOverlap > -1e-12);
       assert.ok(Math.abs(state.relativeAngle - motion.contactPhase) < 2e-12);
     }
-    if (state.dogOverlap > 1e-10 && !state.locked) {
-      assert.equal(state.mode, 'waiting', 'coasting starts only after the dogs withdraw');
+    // The rounded crests may still overlap axially after release; the
+    // penetration test below checks that they clear while the output coasts.
+    if (state.flankOverlap > 1e-10 && !state.locked) {
+      assert.equal(state.mode, 'waiting', 'coasting starts only after the axial driving flanks separate');
       assert.ok(state.relativeAngle < motion.contactPhase);
       assert.ok(state.relativeAngle > -motion.contactPhase);
     }
@@ -184,7 +186,8 @@ test('048 all six working flanks make real contact while engaged', () => {
   for (let pose = 0; pose <= 64; pose += 1) {
     const phase = g.lockPhase + 0.001 + (g.releasePhase - g.lockPhase - 0.002) * pose / 64;
     model.update(g.cycleDuration * (phase - g.sourcePhase)); model.root.updateMatrixWorld(true);
-    const overlap = model.root.userData.clutchState.dogOverlap, axial = 0.87 - overlap / 2;
+    // Centre of the engaged axial band: the rounded crests above it carry no drive.
+    const overlap = model.root.userData.clutchState.flankOverlap, axial = 0.69 + g.jawHeight - g.crestDepth - overlap / 2;
     for (let dog = 0; dog < g.jawCount; dog += 1) for (const radius of [0.25, 0.4, 0.5]) {
       const angle = g.jawPhase + (dog - g.jawFraction / 2) * tau / g.jawCount;
       const contact = new THREE.Vector3(radius * Math.cos(angle), radius * Math.sin(angle), axial).applyMatrix4(inputBody.matrixWorld);

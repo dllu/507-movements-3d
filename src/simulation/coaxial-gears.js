@@ -4,18 +4,21 @@ import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { makeInvoluteInternalGear, PALETTE, matte, markShadows } from './primitives.js';
 
 export function makeCoaxialDifferentSpeeds({ gearALoadPhase = 0.000928, gearCLoadPhase = -0.000417,
-  pressureAngle = 25 * Math.PI / 180, internalAddendum = 0.08, internalDedendum = 0.105 } = {}) {
+  pressureAngle = 25 * Math.PI / 180, internalAddendum = 0.075, internalDedendum = 0.105,
+  externalAddendum = 0.85, externalDedendum = 1.25 } = {}) {
   const root = new THREE.Group(), p = { module: 0.1, gearATeeth: 17, pinionTeeth: 10, gearCTeeth: 37,
     inputSpeed: Math.PI, gearDepth: 0.18, pinionDepth: 0.18, ringDepth: 0.22, ringZ: -0.02,
     outerRadius: 2.075, outputShaftRadius: 0.26, pinionShaftRadius: 0.13, backplateFront: -0.13,
-    pressureAngle, internalAddendum, internalDedendum, gearALoadPhase, gearCLoadPhase, frameAngle: Math.atan2(16.5, 227.5) };
+    pressureAngle, internalAddendum, internalDedendum, externalAddendum, externalDedendum, gearALoadPhase, gearCLoadPhase, frameAngle: Math.atan2(16.5, 227.5) };
   root.rotation.z = p.frameAngle;
   p.centerDistance = p.module * (p.gearATeeth + p.pinionTeeth) / 2;
   p.gearAPhase = Math.PI / 2 + gearALoadPhase; p.pinionPhase = -Math.PI / 20; p.gearCPhase = p.pinionTeeth * p.pinionPhase / p.gearCTeeth + gearCLoadPhase;
   const rotor = () => { const group = new THREE.Group(), member = new THREE.Group(); group.add(member); group.userData.rotor = member; root.add(group); return group; };
   const gearA = rotor(), pinionB = rotor(); pinionB.position.x = -p.centerDistance;
-  const gearAMesh = new THREE.Mesh(roundedRackGear({ teeth: p.gearATeeth, module: p.module, depth: p.gearDepth, boreRadius: p.outputShaftRadius, pressureAngle }), matte(PALETTE.driven));
-  const pinionMesh = new THREE.Mesh(roundedRackGear({ teeth: p.pinionTeeth, module: p.module, depth: p.pinionDepth, boreRadius: p.pinionShaftRadius, pressureAngle }), matte(PALETTE.driver));
+  const gearAMesh = new THREE.Mesh(roundedRackGear({ teeth: p.gearATeeth, module: p.module, depth: p.gearDepth, boreRadius: p.outputShaftRadius, pressureAngle,
+    addendum: externalAddendum, dedendum: externalDedendum }), matte(PALETTE.driven));
+  const pinionMesh = new THREE.Mesh(roundedRackGear({ teeth: p.pinionTeeth, module: p.module, depth: p.pinionDepth, boreRadius: p.pinionShaftRadius, pressureAngle,
+    addendum: externalAddendum, dedendum: externalDedendum }), matte(PALETTE.driver));
   gearA.userData.rotor.add(gearAMesh); pinionB.userData.rotor.add(pinionMesh);
   const gearC = makeInvoluteInternalGear({ teeth: p.gearCTeeth, module: p.module, pitchRadius: p.gearCTeeth * p.module / 2,
     outerRadius: p.outerRadius, depth: p.ringDepth, color: PALETTE.accent, chamfer: 0, backlash: 0.0008,

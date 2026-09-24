@@ -33,10 +33,10 @@ export function makeEndlessRackGeometry(options={}){
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.guide.visible=!enabled;guideOutline.visible=Boolean(enabled);};
  Object.assign(root.userData,{source,parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002,setSectionView});setSectionView(true);
  markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-f.L-f.H,f.L+f.H])for(const y of [-f.H,f.H]){blocks.rack.position.x=x;blocks.pinion.position.y=blocks.carrier.position.y=y;root.updateMatrixWorld(true);for(const [n,mesh]of Object.entries(parts))if(n!=='rod')bounds.union(new THREE.Box3().setFromObject(mesh,true));}blocks.rack.position.x=f.rackOffset;blocks.pinion.position.y=blocks.carrier.position.y=f.H;root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
- // Brown's broken-off beams nearly fill the plate. Fit their width with a
- // margin; the rack's ends run partly out of frame at the extremes of its
- // long sweep rather than shrinking the subject to the whole sweep.
- const fit=bounds.clone();fit.min.x=Math.max(fit.min.x,-3.1);fit.max.x=Math.min(fit.max.x,3.1);root.userData.cameraFitBounds=fit;
+ // Brown draws the whole toothed rack body; only its end rods and the beams
+ // are broken off at the plate edges. Fit the rack body's full sweep (the
+ // rods are excluded above) so it never leaves the frame.
+ root.userData.cameraFitBounds=bounds.clone();
  // Brown draws the endless rack and its guides as a flat elevation and
  // breaks the rack's rod off at both edges, so the fit follows the rack and
  // beams while the long rod ends may leave the frame.

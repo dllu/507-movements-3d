@@ -2,28 +2,44 @@ import { expansionEccentricOutline as trace } from '../data/expansion-eccentric-
 
 // The cam must bear on both fork rollers at once, as Brown's positive
 // expansion eccentric does. Its edge is a smooth radial Fourier curve about
-// the shaft (engraving pixels) fitted jointly to the visible ink landmarks
-// and to two-roller conjugacy with the fork pivoting at the measured eye, the
-// rollers at their measured centres moved 4 pixels apart each. Over a
-// turn the lower roller sits within -0.037..0.616 pixels of the cam
-// while the upper roller touches it; visible landmarks fit to 4.84 pixels RMS
-// (11.23 maximum). The traced outline's dimples, which no two-roller
-// fork can follow, are smoothed away. Design: pass-51 lane u2 optimizer.
+// the shaft (engraving pixels). It starts from a fit of the eccentric and the
+// three lobes to the visible ink landmarks (odd harmonics, so the breadth
+// across the two rollers stays nearly constant) and is then corrected
+// iteratively for two-roller conjugacy with the fork pivoting at the measured
+// eye and the rollers at their measured centres moved 4 pixels apart each.
+// Over a turn the lower roller sits within -0.026..1.216 pixels of the cam
+// while the upper roller touches it; visible landmarks fit to 3.93 pixels
+// RMS (8.90 maximum). The rounded three-lobed edge keeps Brown's lobes and
+// swings the rollers through 39 pixels a turn (the earlier smoothed cam gave
+// 28); the traced outline's sharper dimples, which no two-roller fork can
+// follow, are not kept. Design: pass-51 lane m3-mujoco-cams.
 export const expansionEccentricSpread = 4;
 export const expansionEccentricCoefficients = [
-  78.1814565134,
-  11.5253312204,
-  3.6878300112,
-  0.149068084,
-  -0.0702779228,
-  -1.3617431385,
-  2.0448886584,
-  -0.1432852424,
-  0.0928010455,
-  0.1034123751,
-  0.1618266564,
-  -0.0157742096,
-  -0.0255234897,
+  77.720491,
+  13.305481,
+  3.987685,
+  0.227362,
+  -0.379537,
+  -3.008065,
+  5.536802,
+  -0.320232,
+  0.311695,
+  0.04689,
+  0.102686,
+  -0.167941,
+  -0.230691,
+  -0.031237,
+  -0.119506,
+  -0.025029,
+  -0.023546,
+  0.0647,
+  -0.020479,
+  0.047664,
+  0.009167,
+  0.020034,
+  -0.003314,
+  -0.000143,
+  0.024905,
 ];
 export function expansionEccentricRadius(angle) {
   const c = expansionEccentricCoefficients;let r = c[0];

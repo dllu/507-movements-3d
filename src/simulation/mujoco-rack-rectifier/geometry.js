@@ -7,7 +7,7 @@ import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
 export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSamples=64,pawlRadius=.014,ratchetPhase=s.ratchet.phase}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isInteger(ratchetSamples)||ratchetSamples<16||!Number.isFinite(pawlRadius)||pawlRadius<=0||!Number.isFinite(ratchetPhase))throw new RangeError('Invalid 116 geometry options');
- const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.pinion.module,R=s.pinion.teeth*m/2,pitch=Math.PI*m,cutterR=R+s.pinion.profileShift*m,alpha=Math.PI/9,corner=.12*m,clearance=.001,rootY=cutterR+.95*m,tipY=cutterR-1.25*m+clearance,amplitude=R*Math.PI/2;
+ const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.pinion.module,R=s.pinion.teeth*m/2,pitch=Math.PI*m,cutterR=R+s.pinion.profileShift*m,alpha=14.5*Math.PI/180,corner=.12*m,clearance=.001,rackAddendum=1.25,rackDedendum=0.62,rootY=cutterR+rackDedendum*m,tipY=cutterR-rackAddendum*m+clearance,amplitude=R*Math.PI/2;
  const f={source:s,axis:s.axis,pitchRadius:R,cutterPitchRadius:cutterR,pitch,module:m,pressureAngle:alpha,rootY,rackTipY:tipY,amplitude,origins:s.pinion.origins,counts:{upper:12,lower:12},samples,cutterSteps,ratchetSamples,pawlRadius,ratchetPhase,gearZ:.18,pawlZ:.38,pawlPivot:s.pawlPivot};
  for(const n of ['frame','upper','lower','output','upperPawl','lowerPawl']){blocks[n]=new THREE.Group();root.add(blocks[n]);}
  const add=(name,g,family,color)=>{const mesh=new THREE.Mesh(g,matte(color,{metalness:.18,roughness:.55}));mesh.name=name;blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;},local=([x,y])=>[(x-s.axis[0])/100,(s.axis[1]-y)/100];
@@ -15,8 +15,13 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
  const inner=[],left=local([115,s.axis[1]])[0],right=local([390,s.axis[1]])[0],leftEnd=local([s.frame.leftInner,s.axis[1]])[0],rightEnd=local([s.frame.rightInner,s.axis[1]])[0];
  for(let i=0;i<=128;i++){const a=-Math.PI/2+Math.PI*i/128;inner.push([right+(rightEnd-right)*Math.cos(a),rootY*Math.sin(a)]);}for(let i=0;i<=128;i++){const a=Math.PI/2+Math.PI*i/128;inner.push([left+(left-leftEnd)*Math.cos(a),rootY*Math.sin(a)]);}
  const body=clip.difference(poly(path.getPoints(24).map(p=>local(p.toArray()))),poly(inner));
- const circleY=tipY+corner,circleX=pitch/4-1.25*m*Math.tan(alpha)-corner*(1/Math.cos(alpha)-Math.tan(alpha)),tooth=[[-(pitch/4+(.95*m-clearance)*Math.tan(alpha)),rootY]];
- for(let i=0;i<=16;i++){const a=Math.PI+alpha+(Math.PI/2-alpha)*i/16;tooth.push([-circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([circleX,tipY]);for(let i=1;i<=16;i++){const a=-Math.PI/2+(Math.PI/2-alpha)*i/16;tooth.push([circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([pitch/4+(.95*m-clearance)*Math.tan(alpha),rootY]);
+ // Brown draws square-looking teeth. A 14.5 degree pressure angle keeps the
+ // flanks steep; the +1-shifted pinion is cut short (addendum .42, dedendum
+ // 1.35) to leave broad flat lands, and the rack teeth (addendum 1.25,
+ // dedendum .62) reach past the pitch point so contact still overlaps
+ // (ratio about 1.35).
+ const circleY=tipY+corner,circleX=pitch/4-rackAddendum*m*Math.tan(alpha)-corner*(1/Math.cos(alpha)-Math.tan(alpha)),tooth=[[-(pitch/4+(rackDedendum*m-clearance)*Math.tan(alpha)),rootY]];
+ for(let i=0;i<=16;i++){const a=Math.PI+alpha+(Math.PI/2-alpha)*i/16;tooth.push([-circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([circleX,tipY]);for(let i=1;i<=16;i++){const a=-Math.PI/2+(Math.PI/2-alpha)*i/16;tooth.push([circleX+corner*Math.cos(a),circleY+corner*Math.sin(a)]);}tooth.push([pitch/4+(rackDedendum*m-clearance)*Math.tan(alpha),rootY]);
  // Brown draws one solid pinion: the front one is a single strong colour that
  // stands apart from its brass ratchet, the rear one a muted grey behind it.
  const rackShapes={};for(const [name,side,z,color]of [['upper',1,-f.gearZ,PALETTE.muted],['lower',-1,f.gearZ,PALETTE.driver]]){
@@ -24,7 +29,7 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
   // Each rack and its full outer frame slab form one connected solid.
   rackShapes[name]=clip.union(body,...rack);
   add(name+'Rack',plate(rackShapes[name],z-.08,z+.08),'frame',PALETTE.driven);
-  const g=roundedRackGear({teeth:s.pinion.teeth,module:m,depth:.16,boreRadius:s.shaftRadius+.002,addendum:.8,dedendum:1.25,profileShift:s.pinion.profileShift,tipRadius:corner,samples,cutterSteps});g.rotateZ(s.pinion.phase);g.translate(0,0,z);add(name,g,name,color);
+  const g=roundedRackGear({teeth:s.pinion.teeth,module:m,depth:.16,boreRadius:s.shaftRadius+.002,addendum:.42,dedendum:1.35,pressureAngle:alpha,profileShift:s.pinion.profileShift,tipRadius:corner,samples,cutterSteps});g.rotateZ(s.pinion.phase);g.translate(0,0,z);add(name,g,name,color);
  }
  // Three disjoint axial interiors meet at welded faces.
  add('middleFrame',plate(body,-.10,.10),'frame',PALETTE.driven);

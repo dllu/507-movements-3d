@@ -41,13 +41,21 @@ export function makeJawClutch() {
   const outputProfile = [[1.47, boreRadius], [1.47, boreRadius], [1.47, 0.54], [1.47, 0.54],
     ...shoulder, [2.35, 0.45],
     [2.35, 0.29], [2.60, 0.29], [2.60, 0.46], [2.72, 0.46], [2.72, boreRadius]];
-  // Brown draws the jaws as rounded waves: each crest rolls over in a cosine
-  // from the top of its axial driving flank (no flat land), and the white
-  // phase stripe the shared jaw generator paints on the rim is not drawn.
+  // Brown draws the jaws as symmetric rounded waves. Each tooth is a
+  // half-ellipse crest on two short axial flanks, so both sides of every wave
+  // read alike; only the axial bands carry the drive. The spaces stay flat:
+  // the mating crests reach within 0.01 of them. The white phase stripe the
+  // shared jaw generator paints on the rim is not drawn.
+  const toothStations = [{ u: 0, height: 0 }], crestBase = p.jawHeight - p.crestDepth;
+  for (let i = 0; i <= 32; i += 1) {
+    const t = Math.PI * i / 32;
+    toothStations.push({ u: p.jawFraction * (1 - Math.cos(t)) / 2, height: crestBase + p.crestDepth * Math.sin(t) });
+  }
+  for (let i = 0; i < 48; i += 1) toothStations.push({ u: p.jawFraction + (1 - p.jawFraction) * i / 48, height: 0 });
   const inputBody = new THREE.Mesh(unpainted(jawClutchGeometry(inputProfile, { movingIndices: [3, 4], direction: 1,
-    phase: jawPhase, ...p, topFraction: 0, boreRadius, color: PALETTE.accent }), PALETTE.accent), solidMaterial());
+    phase: jawPhase, ...p, topFraction: 0, toothStations, boreRadius, color: PALETTE.accent }), PALETTE.accent), solidMaterial());
   const outputBody = new THREE.Mesh(unpainted(jawClutchGeometry(outputProfile, { movingIndices: [1, 2], direction: -1,
-    phase: jawPhase + motion.pitch / 2, ...p, topFraction: 0, boreRadius, keyHalfWidth, keywayTop,
+    phase: jawPhase + motion.pitch / 2, ...p, topFraction: 0, toothStations, boreRadius, keyHalfWidth, keywayTop,
     smoothProfileIndices: shoulder.map((_, i) => i + 4), color: PALETTE.driven }), PALETTE.driven), solidMaterial());
   const gearBody = new THREE.Mesh(boredSpurGeometry({ teeth: gearTeeth, module, depth: gearDepth, boreRadius }),
     matte(PALETTE.accent, { metalness: 0.16, roughness: 0.61 }));

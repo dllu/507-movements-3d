@@ -40,14 +40,20 @@ export function makeBeltGovernorSolids({beltSeamSpacing=2.4}={}){
   add(name+'ElbowPin',disk(.06,-.09,.25,64),name+'Upper',PALETTE.ink,[0,-g.elbowArm,0]);
   add(name+'SleevePin',disk(.05,-.10,.25,64),'sleeve',PALETTE.ink,[sign*g.sleeveRadius,0,0]);
  }
- // Source frame stands in front of the belt: Brown draws two nested,
- // slender inverted-U brackets (outer legs under the top bar, an inner U
- // below it) with a true open center, not a broad legged table.
- const box=(x0,x1,y0,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
+ // Brown draws two nested, slender inverted-U brackets (outer legs under the
+ // top bar, an inner U below it) with a true open center, not a broad legged
+ // table. The belt and pulleys pass in front of their legs, so the legs stand
+ // in the spindle plane, between the belt's two runs, and the top bars part
+ // round the spindle with running clearance (hidden behind it from the
+ // front). Only the outer bar's right end deepens forward to seat the bell
+ // crank's pedestal.
+ const box=(x0,x1,y0,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]),bore=.116,topY0=pixelY(383)-.13,topY1=pixelY(383)+.13;
  const frameShape=clip.union(box(-2.047,-1.867,pixelY(517),pixelY(390)),box(1.967,2.147,pixelY(517),pixelY(390)),
-  box(-1.636,-1.476,pixelY(510),pixelY(412)),box(1.566,1.726,pixelY(510),pixelY(412)),box(-1.636,1.726,pixelY(422),pixelY(412)));
- add('frame',plate(frameShape,.98,1.16),'fixed',PALETTE.frame);
- add('frameTop',new THREE.BoxGeometry(4.194,.26,.5),'fixed',PALETTE.frame,[.05,pixelY(383),.91]);
+  box(-1.636,-1.476,pixelY(510),pixelY(412)),box(1.566,1.726,pixelY(510),pixelY(412)),
+  box(-1.636,-bore,pixelY(422),pixelY(412)),box(bore,1.726,pixelY(422),pixelY(412)));
+ add('frame',plate(frameShape,-.09,.09),'fixed',PALETTE.frame);
+ add('frameTop',plate(clip.union(box(-2.047,-bore,topY0,topY1),box(bore,2.147,topY0,topY1)),-.09,.09),'fixed',PALETTE.frame);
+ add('frameTopSeat',plate(box(g.bellX-.5,2.147,topY0,topY1),.09,1.16),'fixed',PALETTE.frame);
  const mount=poly([[g.bellX-.43,pixelY(378)],[g.bellX+.43,pixelY(378)],[g.bellX+.24,g.bellY-.20],[g.bellX-.24,g.bellY-.20]]);
  add('bellPedestal',plate(mount,.34,1.16),'fixed',PALETTE.frame);
  add('bellBearing',ring(.106,.25,.32,.65,96),'fixed',PALETTE.frame,[g.bellX,g.bellY,0]);

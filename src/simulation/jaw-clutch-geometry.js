@@ -60,10 +60,18 @@ export function boredSpurGeometry({ teeth, module, depth, boreRadius,
 export function jawClutchGeometry(profile, { movingIndices, direction, phase = 0, jawCount = 6,
   jawFraction = 0.36, jawHeight = 0.18, boreRadius, keyHalfWidth = 0, keywayTop = 0,
   smoothProfileIndices = [], color, hand = direction, topFraction = 0.16, relief = 'cosine',
-  symmetric = false, frontRadialSegments = 1 }) {
+  symmetric = false, frontRadialSegments = 1, toothStations = null }) {
   const pitch = 2 * Math.PI / jawCount, half = jawFraction / 2;
   const stations = [];
-  if (symmetric) {
+  if (toothStations) {
+    // Caller-supplied tooth outline: {u, height} over one pitch, u in [0, 1),
+    // with the tooth's leading flank at u = 0; the closing station repeats
+    // the first height one revolution on.
+    for (let tooth = 0; tooth < jawCount; tooth += 1) {
+      for (const { u, height } of toothStations) stations.push({ angle: (tooth - half + u) * pitch, height });
+    }
+    stations.push({ angle: (jawCount - half) * pitch, height: toothStations[0].height });
+  } else if (symmetric) {
     for (let i = 0; i <= jawCount * 64; i += 1) {
       const u = (i % 64) / 64;
       stations.push({ angle: i * pitch / 64, height: jawHeight * Math.abs(2 * u - 1) });
@@ -166,7 +174,7 @@ export function jawClutchGeometry(profile, { movingIndices, direction, phase = 0
   geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
   geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
   geometry.computeBoundingBox(); geometry.computeBoundingSphere();
-  geometry.userData = { profile, movingIndices, stations, direction, phase, hand, topFraction, relief, symmetric, frontRadialSegments, jawCount, jawFraction, jawHeight,
+  geometry.userData = { profile, movingIndices, stations, direction, phase, hand, topFraction, relief, symmetric, frontRadialSegments, customToothStations: Boolean(toothStations), jawCount, jawFraction, jawHeight,
     boreRadius, keyHalfWidth, keywayTop, frontTriangleStart, frontTriangleCount };
   return geometry;
 }

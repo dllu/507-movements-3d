@@ -21,8 +21,22 @@ export function makeFanGovernorGeometry({segments=160}={}){
  add('shaft',new THREE.CylinderGeometry(s.shaftRadius,s.shaftRadius,6.35,64).translate(0,.325,0),'shaft','ink');
  add('shaft-base-hub',tube(.131,.38,-1.45,-1.15),'shaft','driver');
  add('track-foundation-ring',tube(g.radius-g.halfWidth-.04,g.radius+g.halfWidth+.04,g.foundation-.12,g.foundation),'shaft','driver');
- for(let i=0;i<4;i++)add('foundation-spoke-'+i,new THREE.BoxGeometry(1.20,.12,.16)
-  .translate(.94,g.foundation-.06,0).rotateY(i*Math.PI/2),'shaft','driver');
+ // Brown draws one curved dish beneath the arms, not two blocks on spokes.
+ // Visual-only rim segments close the ring between the working ramps: each
+ // rises smoothly from the flat foot of one ramp to the crest of the next.
+ // The rollers work only on the ramps (contact stays below angle -0.2), so
+ // these segments and the solid floor carry no contact and leave the native
+ // motion unchanged.
+ const crest=g.base+g.curvature*g.startAngle**2,backStart=g.endAngle,backEnd=Math.PI+g.startAngle;
+ for(let side=0;side<2;side++)for(let i=0;i<segments/2;i++){
+  const step=(backEnd-backStart)/(segments/2),start=backStart+i*step,end=start+step,vertices=[];
+  for(const angle of [start,end])for(const r of [g.radius-g.halfWidth,g.radius+g.halfWidth]){
+   const u=(angle-backStart)/(backEnd-backStart),top=g.base+(crest-g.base)*u*u*(3-2*u);
+   for(const y of [g.foundation,top])vertices.push(new THREE.Vector3(r*Math.cos(angle+side*Math.PI),y,-r*Math.sin(angle+side*Math.PI)));
+  }
+  add(`dish_${side}_${i}`,new ConvexGeometry(vertices),'shaft','driver');
+ }
+ add('dish-floor',tube(.37,g.radius-g.halfWidth+.02,g.foundation-.12,g.foundation),'shaft','driver');
  add('lower-bearing',tube(.133,.29,-2.25,-1.85),'fixed','frame');
  add('loose-crosshead-sleeve',tube(.14,.40,-.30,.30),'crosshead','driven');
  // Radius/height profile traced approximately from the bulb and neck.

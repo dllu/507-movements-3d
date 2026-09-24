@@ -8,30 +8,30 @@
     "rod"
   ],
   "period": 8,
-  "loopStart": 23.928,
-  "loopEnd": 31.928,
+  "loopStart": 23.998,
+  "loopEnd": 31.998,
   "turns": [
     6.283185307179586,
     0,
-    -15.982593433270807,
-    -15.825221383622399,
+    -16.117643714983814,
+    -36.76399442352259,
     0
   ],
   "bounds": {
     "min": [
-      -1.2661026471378807,
-      -3.107492263991644,
+      -1.2736530424480672,
+      -3.1661368676024586,
       -0.660000023841858
     ],
     "max": [
-      4.379793351943682,
-      2.0521689631575435,
+      4.411139215345233,
+      2.110600480374036,
       0.48000001668930053
     ]
   },
   "focus": [
-    1.5568453524029005,
-    -0.5276616504170502,
+    1.5687430864485827,
+    -0.5277681936142113,
     -0.09000000357627871
   ],
   "cameraDirection": [
@@ -40,7 +40,7 @@
     15
   ],
   "source": {
-    "reportSha256": "0744a20c2e213bfd2f5e211c766b1e8e11f43a2a7e31e385234c18b69ecc3597",
+    "reportSha256": "b58471b95cac327c2ce8b22be8eaaccb956391639518deff0cde76ca24f29196",
     "simulationSources": [
       {
         "file": "src/data/expansion-eccentric-outline.js",
@@ -48,7 +48,7 @@
       },
       {
         "file": "src/simulation/expansion-eccentric-profile.js",
-        "sha256": "d590a7ad356b2cbdfeb86443d46e84aede1b65c2f44fe5f3758f222916ec0877"
+        "sha256": "ce771457350376fce4a065efb34748121b9b9408fe1dc44166a2f3e03f656e78"
       },
       {
         "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
@@ -83,11 +83,11 @@
       "spread": 4,
       "samples": 384
     },
-    "maximumLoopSeamPixels": 0.001422695372600021,
-    "maximumLoopVelocitySeamPixelsPerSecond": 0.014220486687291768,
-    "maximumPenetrationPixels": 0.021800688642520383
+    "maximumLoopSeamPixels": 0.000059886756324199764,
+    "maximumLoopVelocitySeamPixelsPerSecond": 0.02176127206544561,
+    "maximumPenetrationPixels": 0.025693524858610983
   },
-  "samples": 15965,
-  "bytes": 1011302,
-  "assetSha256": "52eacf732456c906dffbd891314e7647f801cdedc2aed5ef7fa114a107bfc84a"
+  "samples": 16000,
+  "bytes": 1016626,
+  "assetSha256": "05442857c1a289ee2916455b7348deb3b8dacf51c8ba006408af78e58395711b"
 }

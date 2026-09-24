@@ -23,7 +23,7 @@ test('163 serialized bake follows native balls and fork after the free spindle p
 });
 test('163 bake keeps native travel, repeat belt marks, bounds and exact restart',()=>{
  const v=makeBeltGovernorModel(bundle);try{
-  let meshes=0;v.root.traverse(o=>{if(o.isMesh){meshes++;assert.equal(o.material.fog,false);}});assert.equal(meshes,50);for(const name of ['flatBelt','upperPulley','middlePulley','lowerPulley'])assert.equal(v.root.getObjectByName(name).receiveShadow,false);assert.ok(bundle.positionClosure<1e-6);assert.ok(bundle.velocityClosure<1e-6);
+  let meshes=0;v.root.traverse(o=>{if(o.isMesh){meshes++;assert.equal(o.material.fog,false);}});assert.equal(meshes,51);for(const name of ['flatBelt','upperPulley','middlePulley','lowerPulley'])assert.equal(v.root.getObjectByName(name).receiveShadow,false);assert.ok(bundle.positionClosure<1e-6);assert.ok(bundle.velocityClosure<1e-6);
   assert.ok(Math.abs(bundle.turns[12]/bundle.beltSeamSpacing-Math.round(bundle.turns[12]/bundle.beltSeamSpacing))<1e-12);
   const initial=JSON.stringify(v.root.userData.state),snapshot=()=>{v.root.updateMatrixWorld(true);const a=[];v.root.traverse(o=>{if(o.isMesh&&o.name!=='middlePulley')a.push(...o.matrixWorld.elements);});return a;};
   v.update(.371*bundle.period);const first=snapshot();v.update(100.371*bundle.period);const repeat=snapshot();assert.ok(Math.max(...first.map((x,i)=>Math.abs(x-repeat[i])))<1e-9);

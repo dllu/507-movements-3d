@@ -91,7 +91,7 @@
     },
     {
       "file": "src/simulation/mujoco-fan-governor/geometry.js",
-      "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
+      "sha256": "22923198ec21529c1388290037b1e9573b983335bb9537d2bcaa941250a0a4c2"
     },
     {
       "file": "src/simulation/mujoco-fan-governor/physics.js",
@@ -103,7 +103,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

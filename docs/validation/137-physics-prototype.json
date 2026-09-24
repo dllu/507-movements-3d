@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/expansion-eccentric-profile.js",
-      "sha256": "d590a7ad356b2cbdfeb86443d46e84aede1b65c2f44fe5f3758f222916ec0877"
+      "sha256": "ce771457350376fce4a065efb34748121b9b9408fe1dc44166a2f3e03f656e78"
     },
     {
       "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
@@ -33,9 +33,9 @@
         "spread": 4,
         "samples": 192
       },
-      "penetration": 0.000323057543170191,
-      "min": -0.03604710169634155,
-      "max": 0.0395508607692291,
+      "penetration": 0.00024011827746878156,
+      "min": -0.0509587342569096,
+      "max": 0.05520653006645756,
       "resets": 0
     },
     "time-refined": {
@@ -45,9 +45,9 @@
         "spread": 4,
         "samples": 192
       },
-      "penetration": 0.00026989674797239793,
-      "min": -0.03604736042195799,
-      "max": 0.03955099569654919,
+      "penetration": 0.0002109073219140889,
+      "min": -0.05095873087512295,
+      "max": 0.05520661257870895,
       "resets": 0
     },
     "mesh-refined": {
@@ -57,9 +57,9 @@
         "spread": 4,
         "samples": 384
       },
-      "penetration": 0.0003100573580805399,
-      "min": -0.03605313072807429,
-      "max": 0.03953885590399206,
+      "penetration": 0.00033559803078270223,
+      "min": -0.050980121944367095,
+      "max": 0.05520571131274003,
       "resets": 0
     },
     "fine": {
@@ -69,27 +69,27 @@
         "spread": 4,
         "samples": 384
       },
-      "penetration": 0.00021800688642520383,
-      "min": -0.03605280629443359,
-      "max": 0.0395389485298302,
+      "penetration": 0.00025693524858610983,
+      "min": -0.05098036537263543,
+      "max": 0.05520583016957162,
       "resets": 0
     }
   },
   "comparisons": {
     "time-refined": {
-      "maximumForkAngleDifference": 0.00004430605599276341,
-      "maximumRollerPositionDifferencePixels": 0.01626032254934417,
-      "maximumRodAngleDifference": 0.0034524194597934776
+      "maximumForkAngleDifference": 0.000025827310588810715,
+      "maximumRollerPositionDifferencePixels": 0.009478622986093532,
+      "maximumRodAngleDifference": 0.001051376828317574
     },
     "mesh-refined": {
-      "maximumForkAngleDifference": 0.00004749805956549141,
-      "maximumRollerPositionDifferencePixels": 0.01743178786053535,
-      "maximumRodAngleDifference": 0.00381404249817492
+      "maximumForkAngleDifference": 0.00007651989835237571,
+      "maximumRollerPositionDifferencePixels": 0.028082802695321887,
+      "maximumRodAngleDifference": 0.005775310161838987
     },
     "fine": {
-      "maximumForkAngleDifference": 0.000047570032927754524,
-      "maximumRollerPositionDifferencePixels": 0.01745820208448591,
-      "maximumRodAngleDifference": 0.0034819593036003686
+      "maximumForkAngleDifference": 0.00007658392048200124,
+      "maximumRollerPositionDifferencePixels": 0.028106298816894457,
+      "maximumRodAngleDifference": 0.006712146438517044
     }
   },
   "settledComparisonSeconds": [

@@ -45,10 +45,9 @@ export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude
  root.rotation.z=s.tilt;Object.assign(root.userData,{source:s,parts,families,blocks,cells,profile:{amplitude,pitchRadius:R,pitch,clearance,rootY,tipY,under,baseTop,baseBottom,upperTop,samples,cutterSteps},hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002});
  markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-amplitude,amplitude]){blocks.carrier.position.x=blocks.pinion.position.x=x;blocks.rack.position.x=2*x;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}for(const b of Object.values(blocks))b.position.set(0,0,0);root.updateMatrixWorld(true);bounds.expandByScalar(.05);
  root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
- // Frame Brown's pose: the fixed rack, bed and pinion fill the view, and the
- // upper rack, which slides twice the pitman stroke, runs partly out of frame
- // at the extremes instead of shrinking the whole subject to its sweep.
- const rest=new THREE.Box3().setFromObject(root,true),fit=bounds.clone();fit.min.x=rest.min.x-.8;fit.max.x=rest.max.x+.8;root.userData.cameraFitBounds=fit;
+ // Brown draws both racks whole, so keep the upper rack, which slides twice
+ // the pitman stroke, in frame through its full sweep.
+ root.userData.cameraFitBounds=bounds.clone();
  // Brown draws the racks and pinion as a flat elevation.
  return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.02,.01,1)};
 }

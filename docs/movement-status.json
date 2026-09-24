@@ -1545,7 +1545,8 @@
         "docs/lane1-belts-gears-review.md",
         "docs/w2b-belts-clutches-review.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1553,7 +1554,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Jaws keep a straight driving side rather than the plate's symmetric waves.",
+      "visibleFlaws": "The spaces between the rounded jaw crests are flat where Brown's troughs are rounded.",
       "limits": "Jaw engagement is an ideal rigid impact.",
       "assessment": "minor"
     },
@@ -1767,7 +1768,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane1-belts-gears-review.md",
         "docs/lane9-residuals-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1775,8 +1777,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Involute teeth where the plate draws square teeth.",
-      "limits": "The web carrying ring C is painted to the page colour rather than removed.",
+      "visibleFlaws": "The teeth are short involutes with flat tips, near but not quite Brown's square teeth.",
+      "limits": "Square teeth cannot mesh, and a 10-tooth pinion undercuts below a 25° pressure angle.",
       "assessment": "minor"
     },
     {
@@ -3036,7 +3038,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3044,9 +3047,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The lower stem is a straight rod running across the disk centre, where Brown's stem ends in a loop that clears the shaft.",
-      "limits": "Production MuJoCo model is presented without its reconstructed frame and stem guides; the synchronous registry model keeps them. Ideal guides and finite slot clearance; small intended wrist/yoke soft contact remains.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The upper stem is longer than Brown's so it can reach its reconstructed guide; the undrawn lower stem guide is removed.",
+      "assessment": "reasonable"
     },
     {
       "id": 94,
@@ -3071,7 +3074,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3079,9 +3083,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The disk is drawn as a translucent plate so the spiral groove shows through, where Brown dashes the hidden groove.",
-      "limits": "Crank adjustment uses reconstructed groove and bolt/slot fits.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The hidden groove is shown by display-only ink dashes on the opaque plate.",
+      "assessment": "reasonable"
     },
     {
       "id": 95,
@@ -3709,7 +3713,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3717,9 +3722,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "At the leftward end of its stroke the table runs clear of the right-hand roller, leaving that end unsupported.",
-      "limits": "Shallow involute teeth, passive rollers, guides and depths inferred; soft-contact force convergence unqualified.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Stroke limited by Brown's roller spacing (±0.28) so the table stays on both rollers.",
+      "assessment": "reasonable"
     },
     {
       "id": 114,
@@ -3810,7 +3815,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3818,9 +3824,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The pinion teeth are pointed star points where the plate draws square teeth.",
-      "limits": "Pawl springs and resisting conditions inferred.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Short 14.5° involute teeth stand in for square teeth; output speed within ±0.03 rad/s of uniform.",
+      "assessment": "reasonable"
     },
     {
       "id": 117,
@@ -3880,7 +3886,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3h-mujoco-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3888,7 +3895,7 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The sliding rack runs out of frame at its stroke ends.",
+      "visibleFlaws": "Subject is small in the square view because the upper rack travels twice the stroke.",
       "limits": "Native doubled stroke uses regular involutes and ideal bearings/guides.",
       "assessment": "minor"
     },
@@ -3915,7 +3922,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3h-mujoco-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3923,9 +3931,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The sliding rack runs out of frame at its stroke ends.",
-      "limits": "Tooth count, guide and depth reconstruction remain.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The camera fits the whole sweep; only the broken-off end rods leave the frame, as Brown draws them.",
+      "assessment": "reasonable"
     },
     {
       "id": 120,
@@ -3949,7 +3957,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w4a-1-160-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u7-flawed-review.md"
+        "docs/u7-flawed-review.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3957,9 +3966,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The jaws no longer meet: closing them fully needs ≈47° of relative rotation, which Brown's geometry cannot give with the segments centred.",
-      "limits": "",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Closing swings both jaws about 25°, so the lower loop passes behind the gears.",
+      "assessment": "reasonable"
     },
     {
       "id": 121,
@@ -4518,7 +4527,8 @@
         "docs/intersection-screen-pass50.md",
         "docs/lane5-cams-catches-review.md",
         "docs/u2-cams-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4526,7 +4536,7 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The cam is a smooth rounded blob without the plate's distinct dimpled lobes, so the fork moves only a few pixels per turn and the valve motion is barely perceptible.",
+      "visibleFlaws": "Brown's sharper dimples are rounded into three lobes, since no two-roller fork can follow them.",
       "limits": "Roller spread and hidden arcs inferred.",
       "assessment": "minor",
       "userReported": "2026-09-24"
@@ -4858,7 +4868,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4866,7 +4877,7 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The inclined planes are two chunky notched blocks on a turntable where Brown draws a curved dish beneath the arms.",
+      "visibleFlaws": "The dish rim rises unevenly on two ramps where Brown draws a symmetric concave arc.",
       "limits": "Reshaping the ramps needs a new physics bake; mesh refinement changes the governor transient by up to 0.04267 units.",
       "assessment": "minor"
     },
@@ -4967,7 +4978,8 @@
         "docs/w2d-cranks-screws-review.md",
         "docs/w3h-mujoco-review.md",
         "docs/w5d-mixed-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -4978,9 +4990,9 @@
         "note": "Offline passive contact validation exists; production remains analytical."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The cam stack is shown in perspective as a ribbed barrel of many dark-rimmed discs, busier than Brown's plain end view.",
-      "limits": "Cam-face/depth interpretation unresolved.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Cams shaded in graded colours.",
+      "assessment": "reasonable"
     },
     {
       "id": 151,
@@ -5175,7 +5187,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5183,9 +5196,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "When the slotted lever stands upright its slotted end runs off the top of the frame, and the output rod runs off the bottom.",
+      "visibleFlaws": "",
       "limits": "Engraving proportions differ from the 2D oracle; ideal linkage constraints.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 157,
@@ -5413,7 +5426,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m3-mujoco-cams-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5421,9 +5435,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The grey bracket legs stand in front of the belt and pulley stack, cutting across them.",
+      "visibleFlaws": "",
       "limits": "Reduced finite-width belt traction model.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 164,

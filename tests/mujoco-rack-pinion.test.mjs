@@ -38,22 +38,26 @@ for(const mode of ['pinion','rack'])test('113 '+mode+' input drives its mate thr
    meshError=Math.max(meshError,Math.abs(d.qpos[1]+f.pitchRadius*d.qpos[0]));inputError=Math.max(inputError,Math.abs(d.qpos[1]-p.description.input(d.time).position));lift=Math.max(lift,Math.abs(d.qpos[2]));lo=Math.min(lo,d.qpos[1]);hi=Math.max(hi,d.qpos[1]);step=Math.max(step,Math.abs(d.qpos[1]-before));
    const contacts=d.contact;try{for(let j=0;j<contacts.size();j++){const c=contacts.get(j);try{penetration=Math.max(penetration,-c.dist);}finally{c.delete();}}}finally{contacts.delete();}
   }
-  assert(lo<-.69&&hi>.69);assert(meshError<.0015);assert(inputError<.01);assert(lift<.001);assert(penetration<.001);assert(step<.002);
+  assert(lo<-f.amplitude+.01&&hi>f.amplitude-.01);assert(meshError<.0015);assert(inputError<.01);assert(lift<.001);assert(penetration<.001);assert(step<.002);
   t.diagnostic(JSON.stringify({mode,meshErrorPixels:100*meshError,inputErrorPixels:100*inputError,liftPixels:100*lift,penetrationPixels:100*penetration,maxStepPixels:100*step}));
   v.reset();for(let i=0;i<p.model.ngeom;i++)if((p.model.geom_contype[i]&3)!==0){p.model.geom_contype[i]=0;p.model.geom_conaffinity[i]=0;}
-  v.update(1.5);if(mode==='rack'){assert(p.data.qpos[1]>.69);assert(Math.abs(f.pitchRadius*p.data.qpos[0])<.001,'unpowered pinion stays within 0.1 pixel at its pitch circle');}else{assert(p.data.qpos[0]<-1.3);assert(Math.abs(p.data.qpos[1])<.001,'unpowered rack stays within 0.1 pixel despite roller settling');}
+  v.update(1.5);if(mode==='rack'){assert(p.data.qpos[1]>f.amplitude-.01);assert(Math.abs(f.pitchRadius*p.data.qpos[0])<.001,'unpowered pinion stays within 0.1 pixel at its pitch circle');}else{assert(p.data.qpos[0]<-.95*f.amplitude/f.pitchRadius);assert(Math.abs(p.data.qpos[1])<.001,'unpowered rack stays within 0.1 pixel despite roller settling');}
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());
 });
-test('113 rollers coast after the slide departs, with no prescribed rotation',()=>{
- const v=makeMujocoRackPinion(mujoco);
- try{v.update(1.5);const {qpos,qvel}=v.physics.data;assert(Math.abs(qvel[1])<.03);assert(Math.abs(qvel[3])>1);assert(Math.abs(qvel[4])<.2);assert(qpos[3]<-3);}
- finally{v.dispose();}
+test('113 both rollers stay under the table and roll with it, with no prescribed rotation',()=>{
+ const v=makeMujocoRackPinion(mujoco),p=v.physics,f=v.root.userData.profile,flat=[f.left+.06,f.right-.07];let cover=Infinity,slip=0;
+ try{
+  for(let i=1;i<=Math.round(6/p.timestep);i++){p.step();const {qpos,qvel}=p.data;
+   cover=Math.min(cover,f.rollers[0].x-(flat[0]+qpos[1]),flat[1]+qpos[1]-f.rollers[1].x);
+   for(const [k,r]of f.rollers.entries())slip=Math.max(slip,Math.abs(qvel[1]+r.radius*qvel[3+k]));}
+  assert(cover>.04,'the flat underside covers both roller tops through the stroke');assert(slip<.02,'passive rollers roll with the table');
+ }finally{v.dispose();}
 });
 test('113 restart, backward seeking and input switching own exact native state',()=>{
  const v=makeMujocoRackPinion(mujoco),p=v.physics;
  try{
   v.update(2);const state=[...p.data.qpos,...p.data.qvel];v.reset();for(let i=1;i<=120;i++)v.update(i/60);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);v.update(.5);v.update(2);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
-  v.root.userData.setConfiguration('rack');assert.equal(p.model.actuator_gainprm[0],0);assert.equal(p.model.actuator_gainprm[10],2000);assert.deepEqual(Array.from(p.data.qpos),[0,0,0,0,0]);v.update(1.5);assert(p.data.qpos[0]<-1.3);
+  v.root.userData.setConfiguration('rack');assert.equal(p.model.actuator_gainprm[0],0);assert.equal(p.model.actuator_gainprm[10],2000);assert.deepEqual(Array.from(p.data.qpos),[0,0,0,0,0]);v.update(1.5);const f=v.root.userData.profile;assert(p.data.qpos[0]<-.95*f.amplitude/f.pitchRadius);
   v.root.userData.setConfiguration('pinion');v.update(2);assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
  }finally{v.dispose();}
 });

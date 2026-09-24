@@ -1,10 +1,21 @@
 import * as THREE from 'three';
 
 export function makeJawClutchMotion() {
-  const p = { cycleDuration: 12, jawCount: 6, jawFraction: 0.36, jawHeight: 0.18,
-    stroke: 0.54, overlap: 0.12, grooveLeft: 2.35, grooveRight: 2.60,
+  // Brown's jaws are symmetric rounded waves. Each tooth rises on two short
+  // axial flanks to a rounded crest (crestDepth deep); only the axial bands
+  // carry drive. The tips meet at shift
+  // `overlap`; the axial bands engage once the dogs are 2 * crestDepth deep.
+  const p = { cycleDuration: 12, jawCount: 6, jawFraction: 0.36, jawHeight: 0.23,
+    crestDepth: 0.08,
+    stroke: 0.54, overlap: 0.22, grooveLeft: 2.35, grooveRight: 2.60,
     followerRadius: 0.075, followerZ: 0.3375, leverLength: 1.15,
-    pivotX: 2.525, pivotY: -1.25, lockPhase: 0.34, releasePhase: 0.72 };
+    pivotX: 2.525, pivotY: -1.25, lockPhase: 0.34, withdrawStart: 0.65, withdrawEnd: 0.86 };
+  const smoothInverse = (s) => { let u = s; for (let i = 0; i < 60; i += 1) u -= (u * u * (3 - 2 * u) - s) / Math.max(6 * u * (1 - u), 1e-9); return u; };
+  // Release when the rounded crests reach the ends of the axial bands, while
+  // the collar is already withdrawing at speed: the coasting output then
+  // lags the input only as fast as the crests clear one another.
+  p.releasePhase = p.withdrawStart + (p.withdrawEnd - p.withdrawStart)
+    * smoothInverse((p.overlap - 2 * p.crestDepth) / p.stroke);
   const pitch = 2 * Math.PI / p.jawCount, driveSpeed = -4 * pitch / p.cycleDuration;
   const contactPhase = (0.5 - p.jawFraction) * pitch;
   const lockedAdvance = (p.releasePhase - p.lockPhase) * p.cycleDuration * driveSpeed;
@@ -20,8 +31,7 @@ export function makeJawClutchMotion() {
     else if (phase < 0.335) { shift = p.overlap * (1 - smooth((phase - 0.275) / 0.06)); side = 'left'; }
     else if (phase < 0.60) { shift = 0; side = 'left'; }
     else if (phase < 0.65) { shift = 0; play = smooth((phase - 0.60) / 0.05); side = 'free'; }
-    else if (phase < p.releasePhase) shift = p.overlap * smooth((phase - 0.65) / (p.releasePhase - 0.65));
-    else if (phase < 0.86) shift = p.overlap + (p.stroke - p.overlap) * smooth((phase - p.releasePhase) / (0.86 - p.releasePhase));
+    else if (phase < p.withdrawEnd) shift = p.stroke * smooth((phase - p.withdrawStart) / (p.withdrawEnd - p.withdrawStart));
     else shift = p.stroke;
     const inputAngle = driveSpeed * time;
     const waitingAngle = driveSpeed * (cycle + p.lockPhase) * p.cycleDuration + contactPhase + 2 * pitch * cycle;
@@ -45,6 +55,7 @@ export function makeJawClutchMotion() {
     return { time, phase, cycle, shift, inputAngle, inputAngularSpeed: driveSpeed,
       outputAngle, outputAngularSpeed, mode, locked: mode === 'locked',
       dogOverlap: Math.max(0, p.overlap - shift), tipGap: Math.max(0, shift - p.overlap),
+      flankOverlap: Math.max(0, p.overlap - 2 * p.crestDepth - shift),
       relativeAngle: THREE.MathUtils.euclideanModulo(outputAngle - inputAngle + pitch / 2, pitch) - pitch / 2,
       leverAngle, followerPoint, followerSide: side };
   };

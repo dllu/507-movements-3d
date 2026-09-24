@@ -19,9 +19,9 @@
     "assumptions": "Source-sized ideal hinges and collar bearing; cranked fork slides radially in an annular sleeve groove. Inferred masses, damping and depths. Reduced finite-width belt contact: regularized Coulomb traction with equal opposite pulley reactions, inferred tension and load. Belt axial shape follows the fork; belt bending, axial friction, remote gearing and hydraulic feedback are not modeled."
   },
   "poses": 65,
-  "meshes": 49,
-  "pairs": 1061,
-  "queries": 20722352,
+  "meshes": 50,
+  "pairs": 1106,
+  "queries": 21172986,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers during twenty native seconds with 0.25 rad/s speed variation. Same rigid-family joins excluded. Includes soft-contact penetration and native joint-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
@@ -32,7 +32,7 @@
     },
     {
       "file": "src/simulation/mujoco-belt-governor/solids.js",
-      "sha256": "2529d9aeff98f2b8286f5065049bec49abd7a3d556259b1a04602e5b24e5da0c"
+      "sha256": "2e80dc572aaa60ee26f13dc0924edd033bb042317bff9704555396ce9ffcb84d"
     },
     {
       "file": "src/simulation/mujoco-belt-governor/update-solids.js",

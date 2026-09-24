@@ -9,7 +9,7 @@
     },
     {
       "file": "src/simulation/mujoco-fan-governor/geometry.js",
-      "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
+      "sha256": "22923198ec21529c1388290037b1e9573b983335bb9537d2bcaa941250a0a4c2"
     },
     {
       "file": "src/simulation/mujoco-fan-governor/source.js",
@@ -21,19 +21,19 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     },
     {
       "file": "docs/validation/147-speed-cycle-fine.json",
-      "sha256": "f800fdeffb5c19e3fcd6505eff1463cfe88b531dc993f8165bf0ea13286bc8d0"
+      "sha256": "c39c4b4577af89270d89b355751f00684cf1d71231eaf060bdb7001d8e6dedb2"
     }
   ],
   "sampleHash": "2035e92b68fb32a61e7fb7bd07e552795132f770d08330d68abe2e8dd2798e8a",
   "summary": {
     "poses": 65,
-    "parts": 346,
-    "pairs": 6325,
-    "checks": 371112950,
+    "parts": 663,
+    "pairs": 12348,
+    "checks": 874318102,
     "maximumWorkingPenetration": 0,
     "failingPairs": 0
   },

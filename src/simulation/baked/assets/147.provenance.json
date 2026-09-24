@@ -37,7 +37,7 @@
     },
     {
       "file": "src/simulation/mujoco-fan-governor/geometry.js",
-      "sha256": "bb920da79741e867edbf12b82428defac4345b01280563aef570ac8a0ee60ea6"
+      "sha256": "22923198ec21529c1388290037b1e9573b983335bb9537d2bcaa941250a0a4c2"
     },
     {
       "file": "src/simulation/mujoco-fan-governor/cycle.js",
@@ -45,16 +45,16 @@
     },
     {
       "file": "docs/validation/147-speed-cycle-fine.json",
-      "sha256": "f800fdeffb5c19e3fcd6505eff1463cfe88b531dc993f8165bf0ea13286bc8d0"
+      "sha256": "c39c4b4577af89270d89b355751f00684cf1d71231eaf060bdb7001d8e6dedb2"
     },
     {
       "file": "docs/validation/147-candidate-assembly.json",
-      "sha256": "836eb3a0701428b394313bb4104517124c595c5d3f04b242c543e9e26b88cb3e"
+      "sha256": "6b5e223983eb00dfd56ed15a832258bdf483856d58319b7bdc149cb288585fcb"
     }
   ],
   "sampleHash": "2035e92b68fb32a61e7fb7bd07e552795132f770d08330d68abe2e8dd2798e8a",
-  "bytes": 1834140,
-  "sha256": "5e0597254dcdaba122f8c3816f5e200df7ebe1433e239267f5d5e913e1af2443",
+  "bytes": 1927538,
+  "sha256": "0073b716de2aa827859f730e53ae6e8c02735e78339e7667171fa63702fa4877",
   "samples": 601,
   "meshes": 9
 }

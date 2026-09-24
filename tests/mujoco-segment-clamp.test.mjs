@@ -61,22 +61,22 @@ test('120 a long stroke closes against native jaw contact and reopens over two c
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());
 });
 
-test('120 default stroke keeps both segments centred on their meshing pinions',t=>{
+test('120 default stroke closes the jaws against native contact with both segments on their pinions',t=>{
  const v=makeMujocoSegmentClamp(mujoco),p=v.physics,f=v.root.userData.profile,pinion=Math.atan2(f.input[1],f.input[0]);
  try{
-  let external=0,internal=0,error=0,jaw=0;const pairs=new Set();
+  let external=0,internal=0,error=0,input=0;const pairs=new Set(),jawCycles=new Set();
   for(let i=0;i<10/p.timestep;i++){
    p.step();const q=p.data.qpos;assert([...q,...p.data.qvel].every(Number.isFinite));
-   external=Math.max(external,Math.abs(q[1]));internal=Math.max(internal,Math.abs(q[2]));
+   external=Math.max(external,Math.abs(q[1]));internal=Math.max(internal,Math.abs(q[2]));input=Math.max(input,q[0]);
    error=Math.max(error,100*Math.abs(q[1]+f.externalRatio*q[0])*f.externalTeeth*f.externalModule/2,100*Math.abs(q[2]-f.internalRatio*q[0])*f.internalTeeth*f.internalModule/2);
-   const cs=p.data.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{const pair=Array.from(c.geom).map(id=>p.geomGroups[id]).sort().join('/');if(pair==='leftJaw/rightJaw')jaw++;else pairs.add(pair);}finally{c.delete();}}}finally{cs.delete();}
+   const cs=p.data.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{const pair=Array.from(c.geom).map(id=>p.geomGroups[id]).sort().join('/');if(pair==='leftJaw/rightJaw')jawCycles.add(Math.floor(p.data.time/5));else pairs.add(pair);}finally{c.delete();}}}finally{cs.delete();}
   }
-  // Each jaw swings no more than about 13 degrees, the pinion stays at least
-  // 20 degrees inside both working tooth arcs, and the jaws never cross.
-  assert(external>.18&&external<.23);assert(internal>.2&&internal<.24);
+  // The jaws meet in every cycle and stop the shaft short of its command; the
+  // pinions stay inside both working tooth arcs throughout.
+  assert.deepEqual([...jawCycles],[0,1]);assert(input>1.68&&input<1.72);
   const deg=Math.PI/180,marginExternal=Math.min(pinion-(-123*deg-external),-39*deg-external-pinion),marginInternal=Math.min(pinion-(-119*deg+internal),-61*deg+internal-pinion);
-  assert(marginExternal>30*deg);assert(marginInternal>20*deg);
-  assert.equal(jaw,0);assert.equal(pairs.size,2);assert(error<.15);assert(Math.abs(p.data.qpos[0])<.01);
+  assert(marginExternal>15*deg);assert(marginInternal>5*deg);
+  assert.equal(pairs.size,2);assert(error<.15);assert(Math.abs(p.data.qpos[0])<.01);
   t.diagnostic(JSON.stringify({externalDegrees:external/deg,internalDegrees:internal/deg,marginExternal:marginExternal/deg,marginInternal:marginInternal/deg,maximumRollingErrorPixels:error}));
  }finally{v.dispose();}
 });

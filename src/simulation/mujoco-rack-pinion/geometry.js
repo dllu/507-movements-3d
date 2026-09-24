@@ -5,7 +5,9 @@ import {plate,poly,polygonClipping,turned,disk,ring} from '../finite-plate-geome
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
-export function makeRackPinionGeometry({samples=96,cutterSteps=2048,amplitude=.7}={}) {
+// The table's stroke stays within Brown's roller spacing: at either end of
+// its travel both rollers remain under its flat underside (margin 0.056).
+export function makeRackPinionGeometry({samples=96,cutterSteps=2048,amplitude=.28}={}) {
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isFinite(amplitude)||amplitude<=0||amplitude>1)throw new RangeError('Invalid 113 geometry options');
  const root=new THREE.Group(),parts={},families={},blocks={},cells={},m=s.module,R=s.teeth*m/2,pitch=Math.PI*m,alpha=Math.PI/9,corner=.08*m,clearance=.001;
  const local=([x,y])=>[(Math.cos(s.tilt)*(x-s.axis[0])+Math.sin(s.tilt)*(s.axis[1]-y))/100,(-Math.sin(s.tilt)*(x-s.axis[0])+Math.cos(s.tilt)*(s.axis[1]-y))/100];

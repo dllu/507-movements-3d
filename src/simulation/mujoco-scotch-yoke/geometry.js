@@ -26,14 +26,26 @@ export function makeScotchYokeGeometry() {
   const stemX=x(source.stemX),stemRadius=px(source.stemRadius),stemZ=.36,guideHalfLength=.11;
   const guideCenter=Math.max(...roots.map(Math.abs))+crankRadius+guideHalfLength+.07;
   const stemEnd=guideCenter+guideHalfLength+crankRadius+.04,postX=1.96,postHalfWidth=.06;
+  // Brown's lower stem ends in a loop drawn round the shaft at the plate's
+  // pose. The loop rides with the yoke in the stem plane, in front of the
+  // shaft end and hub (which stop at z=.18), so it frames the shaft end at
+  // that pose and slides clear across the disk elsewhere in the stroke.
+  const loopY=-crankRadius*Math.sin(source.phase),loopInner=.19,loopOuter=.27;
+  attach('stemLoop',plate(clip.difference(clip.union(poly(circle([stemX,loopY],loopOuter,128)),
+    poly([[stemX-stemRadius,loopY],[stemX+stemRadius,loopY],[stemX+stemRadius,roots[1]+.01],[stemX-stemRadius,roots[1]+.01]])),
+  poly(circle([stemX,loopY],loopInner,128))),stemZ-stemRadius,stemZ+stemRadius),'yoke',PALETTE.driven);
   for(const [i,sign] of [1,-1].entries()) {
-    const ends=[roots[i],sign*stemEnd].sort((a,b)=>a-b);
+    const ends=[i?loopY-loopOuter+.01:roots[i],sign*stemEnd].sort((a,b)=>a-b);
     const stem=attach('stem'+i,disk(stemRadius,...ends,96),'yoke',PALETTE.driven,[stemX,0,stemZ]);stem.rotation.x=-Math.PI/2;
+    // One reconstructed guide (upper stem) carries the ideal slide; a lower
+    // guide would stand in the loop's path. Neither is drawn by Brown.
+    const postTop=guideCenter+guideHalfLength,postBottom=-.07;
+    attach('post'+i,new THREE.BoxGeometry(2*postHalfWidth,postTop-postBottom,.18),'frame',PALETTE.muted,[sign*postX,(postTop+postBottom)/2,-.57]);
+    if(i)continue;
     const guideProfile=clip.difference(clip.union(poly(circle([0,0],.25,128)),
       poly([[-.08,0],[.08,0],[.08,.93],[-.08,.93]])),poly(circle([0,0],stemRadius+.005,96)));
     const guide=attach('guide'+i,plate(guideProfile,-guideHalfLength,guideHalfLength),'frame',PALETTE.muted,[stemX,sign*guideCenter,stemZ]);guide.rotation.x=-Math.PI/2;
     attach('crossbar'+i,new THREE.BoxGeometry(2*(postX-postHalfWidth),2*guideHalfLength,.18),'frame',PALETTE.muted,[0,sign*guideCenter,-.57]);
-    attach('post'+i,new THREE.BoxGeometry(2*postHalfWidth,2*(guideCenter+guideHalfLength),.18),'frame',PALETTE.muted,[sign*postX,0,-.57]);
   }
   const rear=clip.difference(clip.union(poly(circle([0,0],.29,128)),
     poly([[-postX+postHalfWidth,-.07],[postX-postHalfWidth,-.07],[postX-postHalfWidth,.07],[-postX+postHalfWidth,.07]])),poly(circle([0,0],shaftRadius+.003,128)));

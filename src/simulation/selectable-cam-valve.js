@@ -75,7 +75,15 @@ export function makeSelectableCamValve(){
   // proud: the lever runs in the 0.06 gap beside a cam's face.
   const copy=record.outline.clone();copy.scale.z=-1;copy.position.z=.016;copy.userData={...record.outline.userData,role:record.outline.userData.role.replace('outline','front-outline'),presentationOnly:true};
   record.outline.parent.add(copy);
+  // Brown draws each cam once, by its front edge. The rear-face outlines
+  // doubled every cam into a ribbed barrel in the end view; hide them.
+  record.outline.visible=false;
  }
+ // The keyed hub standing just proud of the stack read as a heavy black ring
+ // round the hatched section; Brown draws a plain ring there. Colour it like
+ // the cam sleeve it is keyed into.
+ {let sleeve,hub;root.traverse(o=>{if(o.userData.role==='continuous-common-heel-selection-sleeve')sleeve=o;if(o.userData.role==='keyed-hub-rigid-with-all-four-cams')hub=o;});
+  if(sleeve&&hub)hub.material=sleeve.material;}
  const rod=new THREE.Group(),slider=new THREE.Group();root.add(rod,slider);
  const rodOutline=clip.union(poly(circle([0,0],.17,96)),poly([[-.09,0],[.09,0],[.09,-.34],[.045,-.34],[.045,-rodLength],[-.045,-rodLength],[-.045,-.34],[-.09,-.34]]),poly(circle([0,-pinDistance],.12,96)));
  add('pinned-valve-rod',plate(clip.difference(rodOutline,poly(circle([0,0],.074,96)),poly(circle([0,-pinDistance],.064,96))),-.08,.08),rod,'brass');
