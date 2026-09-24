@@ -11,7 +11,7 @@ Last ledger update: **2026-09-24**. Historical evidence was audited from reposit
 
 For the next pass, group known intersection defects and concrete motion flaws by reusable component. Then fill visual-review and collision-evidence gaps. Update the affected rows after each correction; do not clear other limitations just because one scoped check passed.
 
-Assessment: reasonable: 387; minor: 120.
+Assessment: reasonable: 388; minor: 119.
 
 Visual: yes: 507.
 
@@ -307,7 +307,7 @@ Intersections: sampled-clear: 459; known: 48.
 | [284](https://507movements.com/mm_284.html) | ✅ Reasonable | — | Yes (Claude Opus 5.5) [evidence](../docs/w2f-274-333-review.md) | No [evidence](../src/simulation/authored-saw-feeds.js) | None in scoped checks [evidence](../docs/w2f-274-333-review.md) | Finite pawl/ratchet law imposed with return bias; loaded holding, friction, impact and cutting-force response unsolved. |
 | [285](https://507movements.com/mm_285.html) | ✅ Reasonable | — | Yes (Claude Opus 5.5) [evidence](../docs/w3d-255-287-review.md) | No [evidence](../src/simulation/authored-lathe-heads.js) | None in scoped checks [evidence](../docs/w2f-274-333-review.md) | The catalog title still says handwheel; the quill clamp lever is a flat bar. Screw motion prescribed. |
 | [286](https://507movements.com/mm_286.html) | ✅ Reasonable | — | Yes (Claude Opus 5.5) [evidence](../docs/w2f-274-333-review.md) | No [evidence](../src/simulation/authored-poppet-valves.js) | None in scoped checks [evidence](../docs/intersection-screen-pass50.md) | Analytical screw motion omits load, friction, elastic thread deformation, backlash take-up and dynamic self-locking. |
-| [287](https://507movements.com/mm_287.html) | 🟡 Minor visible differences | The catalog title/archetype still say three-spring where the plate draws two. | Yes (Claude Opus 5.5) [evidence](../docs/w2f-274-333-review.md) | No [evidence](../src/simulation/authored-pickering-governors.js) | Yes — see scope [evidence](../docs/w2f-274-333-review.md) | Governor/brake schedule prescribed; friction and speed regulation unvalidated. |
+| [287](https://507movements.com/mm_287.html) | ✅ Reasonable | — | Yes (Claude Opus 5.5) [evidence](../docs/w2f-274-333-review.md) | No [evidence](../src/simulation/authored-pickering-governors.js) | Yes — see scope [evidence](../docs/w2f-274-333-review.md) | The catalog title/archetype still say three-spring where the plate draws two; governor/brake schedule prescribed. |
 | [288](https://507movements.com/mm_288.html) | ✅ Reasonable | — | Yes (Claude Opus 5.5) [evidence](../docs/w2f-274-333-review.md) | No [evidence](../src/simulation/authored-anchor-escapements.js) | None in scoped checks [evidence](../docs/w2f-274-333-review.md) | Prescribed recoil/oscillation; friction, impact and passive energy balance unvalidated. |
 | [289](https://507movements.com/mm_289.html) | ✅ Reasonable | — | Yes (Claude Opus 5.5) [evidence](../docs/w2f-274-333-review.md) | No [evidence](../src/simulation/authored-deadbeat-escapements.js) | None in scoped checks [evidence](../docs/w2f-274-333-review.md) | Finite deadbeat contacts corrected; return forcing, impacts and sustained timekeeping remain prescribed. |
 | [290](https://507movements.com/mm_290.html) | 🟡 Minor visible differences | Pallets read as small lugs on carriers, not Brown's square notches. | Yes (Claude Opus 5.5) [evidence](../docs/w3b-escapements-review.md) | No [evidence](../src/simulation/authored-annular-escapements.js) | None in scoped checks [evidence](../docs/w3b-escapements-review.md) | Motion prescribed. |

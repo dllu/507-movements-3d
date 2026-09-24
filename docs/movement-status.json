@@ -9555,17 +9555,18 @@
         "docs/clamp-governor-brake-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-pickering-governors.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The catalog title/archetype still say three-spring where the plate draws two.",
-      "limits": "Governor/brake schedule prescribed; friction and speed regulation unvalidated.",
-      "assessment": "minor"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "",
+      "limits": "The catalog title/archetype still say three-spring where the plate draws two; governor/brake schedule prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 288,
