@@ -6,11 +6,11 @@
     },
     {
       "file": "src/simulation/expansion-eccentric-profile.js",
-      "sha256": "61796123c63d6a7fcc1d16570ca5a23973525be1b9758183f4656ffe842b0951"
+      "sha256": "d590a7ad356b2cbdfeb86443d46e84aede1b65c2f44fe5f3758f222916ec0877"
     },
     {
       "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
-      "sha256": "251c5095f4752e7a79a3acaf8ff5e884cbb73887a0f24224f5e5e1fb76276991"
+      "sha256": "44c29a9c18ca76ab3bd9e9e215d1958699c05c7f7b7e708a56e09dd3155da662"
     },
     {
       "file": "src/simulation/mujoco/simulation.js",
@@ -30,71 +30,71 @@
       "options": {
         "timestep": 0.0005,
         "period": 8,
-        "spread": 12,
+        "spread": 4,
         "samples": 192
       },
-      "penetration": 0.0006219250384216779,
-      "min": -0.021598640485371447,
-      "max": 0.08714734722472259,
+      "penetration": 0.000323057543170191,
+      "min": -0.03604710169634155,
+      "max": 0.0395508607692291,
       "resets": 0
     },
     "time-refined": {
       "options": {
         "timestep": 0.00025,
         "period": 8,
-        "spread": 12,
+        "spread": 4,
         "samples": 192
       },
-      "penetration": 0.000661283920920408,
-      "min": -0.0215985515339916,
-      "max": 0.08715198829172054,
+      "penetration": 0.00026989674797239793,
+      "min": -0.03604736042195799,
+      "max": 0.03955099569654919,
       "resets": 0
     },
     "mesh-refined": {
       "options": {
         "timestep": 0.0005,
         "period": 8,
-        "spread": 12,
+        "spread": 4,
         "samples": 384
       },
-      "penetration": 0.0008045463223044225,
-      "min": -0.02160350111672084,
-      "max": 0.08715700311836477,
+      "penetration": 0.0003100573580805399,
+      "min": -0.03605313072807429,
+      "max": 0.03953885590399206,
       "resets": 0
     },
     "fine": {
       "options": {
         "timestep": 0.00025,
         "period": 8,
-        "spread": 12,
+        "spread": 4,
         "samples": 384
       },
-      "penetration": 0.0007254944064269964,
-      "min": -0.02160362462723751,
-      "max": 0.08715161599921965,
+      "penetration": 0.00021800688642520383,
+      "min": -0.03605280629443359,
+      "max": 0.0395389485298302,
       "resets": 0
     }
   },
   "comparisons": {
     "time-refined": {
-      "maximumForkAngleDifference": 0.00008799255626416869,
-      "maximumRollerPositionDifferencePixels": 0.03229326814894991,
-      "maximumRodAngleDifference": 0.00016278985085944192
+      "maximumForkAngleDifference": 0.00004430605599276341,
+      "maximumRollerPositionDifferencePixels": 0.01626032254934417,
+      "maximumRodAngleDifference": 0.0034524194597934776
     },
     "mesh-refined": {
-      "maximumForkAngleDifference": 0.0004200458979617661,
-      "maximumRollerPositionDifferencePixels": 0.15415684455196815,
-      "maximumRodAngleDifference": 0.0007732180315640005
+      "maximumForkAngleDifference": 0.00004749805956549141,
+      "maximumRollerPositionDifferencePixels": 0.01743178786053535,
+      "maximumRodAngleDifference": 0.00381404249817492
     },
     "fine": {
-      "maximumForkAngleDifference": 0.00038399992555297486,
-      "maximumRollerPositionDifferencePixels": 0.14092797267794177,
-      "maximumRodAngleDifference": 0.0007323819585709282
+      "maximumForkAngleDifference": 0.000047570032927754524,
+      "maximumRollerPositionDifferencePixels": 0.01745820208448591,
+      "maximumRodAngleDifference": 0.0034819593036003686
     }
   },
   "settledComparisonSeconds": [
     8,
     19.99
   ],
-  "caveat": "Separate timestep and tessellation sensitivity checks; inferred contour closure, roller spacing and inertial properties remain reconstruction assumptions."
+  "caveat": "Separate timestep and tessellation sensitivity checks, compared at equal cam angle; inferred contour closure, roller spacing and inertial properties remain reconstruction assumptions."
 }

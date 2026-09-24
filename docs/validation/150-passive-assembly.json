@@ -2,28 +2,28 @@
   "movement": 150,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 native-physics poses in the third demonstration, spanning all selections. Soft carrier/roller contact reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 57,
-    "pairs": 1138,
+    "parts": 61,
+    "pairs": 1262,
     "poses": 65,
-    "checks": 21979484,
+    "checks": 27934174,
     "failingPairs": 0
   },
   "failures": {},
   "workingContacts": {
-    "throw-1-working-cam-plate-15/working-roller-tread-on-selected-cam-47": {
+    "throw-1-working-cam-plate-15/working-roller-tread-on-selected-cam-51": {
       "firstPose": 10,
       "points": 9,
-      "maximumDepth": 0.000013415894371091905
+      "maximumDepth": 0.000014772512922625263
     },
-    "throw-3-working-cam-plate-24/working-roller-tread-on-selected-cam-47": {
+    "throw-3-working-cam-plate-26/working-roller-tread-on-selected-cam-51": {
       "firstPose": 42,
-      "points": 16,
-      "maximumDepth": 0.00002616643346622999
+      "points": 15,
+      "maximumDepth": 0.000025660333001943015
     },
-    "throw-4-working-cam-plate-30/working-roller-tread-on-selected-cam-47": {
+    "throw-4-working-cam-plate-33/working-roller-tread-on-selected-cam-51": {
       "firstPose": 59,
-      "points": 9,
-      "maximumDepth": 0.00002434172551140579
+      "points": 10,
+      "maximumDepth": 0.00002412668554717524
     }
   },
   "sources": [
@@ -33,7 +33,7 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "5cdc665ad6e2f58e889ac750860ac5d0099bd6e07a7338cc1bbe46b1df040a9a"
+      "sha256": "131ad0809a8b63440e5a86c4daa4416eee147ed3430074f0d7d1dd7f6b99425a"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",

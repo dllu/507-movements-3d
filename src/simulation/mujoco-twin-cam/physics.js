@@ -1,6 +1,6 @@
 import {makeTwinCamGeometry} from './geometry.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
-import {twinCamSource as g,twinCamContours,twinCamLevers} from './source.js';
+import {twinCamSource as g,twinCamContours,twinCamLevers,twinCamRestAngles} from './source.js';
 export function makeTwinCamPhysics(mujoco,{timestep=.0005,period=g.period,gravity=9.81,rodDamping=.002,guided=true}={}){
  const visual=makeTwinCamGeometry({guided}),mass=visual.root.userData.mass;visual.dispose();
  const density=1/mass.lever0.volume;
@@ -31,7 +31,15 @@ export function makeTwinCamPhysics(mujoco,{timestep=.0005,period=g.period,gravit
  <actuator><position joint="shaft" kp="100000" kv="1000"/></actuator></mujoco>`;
  const omega=2*Math.PI/period;
  const physics=createMujocoSimulation(mujoco,{xml,initialize:({data})=>{
-  data.qpos.set([0,twinCamLevers[0].angle,0,-twinCamLevers[0].angle,twinCamLevers[1].angle,0,-twinCamLevers[1].angle]);data.qvel[0]=omega;
+  // Start each lever resting on its cam, with the rod vertical and the
+  // guided slider at the rod's lower pin.
+  const angles=twinCamRestAngles(),rods=angles.map((a,i)=>{
+   const l=twinCamLevers[i],tilt=guided?Math.asin((l.guideX-l.attachment*Math.cos(a))/l.rodPinDistance):0;
+   return {rod:tilt-a,slide:l.attachment*Math.sin(a)-l.rodPinDistance*Math.cos(tilt)-l.guideY};
+  });
+  data.qpos.set([0,angles[0],0,rods[0].rod,angles[1],0,rods[1].rod]);
+  if(guided)rods.forEach((r,i)=>{data.qpos[7+i]=r.slide;});
+  data.qvel[0]=omega;
  },beforeStep:({data,time})=>{data.ctrl[0]=omega*time+.01*omega;}});
  return Object.assign(physics,{description:{xml,contours,levers:twinCamLevers,mass,density,options:{timestep,period,gravity,rodDamping,guided},assumptions:'Visible moving geometry integrated at common density, normalized to upper lever mass 1. Ordinary pinned rods connect to inferred vertical output sliders when guided=true; guides are not depicted in the source. Assumed hinge damping and no external output load. Only the cam shaft is driven.'},
   state:()=>({time:physics.data.time,velocity:Array.from(physics.data.qvel),shaft:physics.data.qpos[0],upper:physics.data.qpos[1],upperRoll:physics.data.qpos[2],upperRod:physics.data.qpos[3],lower:physics.data.qpos[4],lowerRoll:physics.data.qpos[5],lowerRod:physics.data.qpos[6],upperSlide:guided?physics.data.qpos[7]:0,lowerSlide:guided?physics.data.qpos[8]:0})});

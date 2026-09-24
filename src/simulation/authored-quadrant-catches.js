@@ -20,9 +20,11 @@ const layers = Object.freeze({
   rods: [-0.66, -0.58],
   W: [-0.52, -0.40],
   R: [-0.36, -0.16],
-  A: [-0.12, 0.02],
-  X: [0.04, 0.18],
-  Y: [0.20, 0.34],
+  X: [-0.14, -0.06],
+  A: [-0.04, 0.04],
+  M: [0.06, 0.12],
+  N: [0.14, 0.20],
+  Y: [0.22, 0.34],
   B: [0.36, 0.50],
 });
 const span = (planes) => {
@@ -160,7 +162,7 @@ function sourceHandGear(movementId) {
     return {
       phase, tappetTop, upperAngle, lowerAngle,
       upperLatchedByLowerQuadrant: upperAngle < 2,
-      lowerLatchedByUpperQuadrant: lowerAngle > 53 && upperAngle > 34,
+      lowerLatchedByUpperQuadrant: lowerAngle > 50 && upperAngle > 34,
     };
   };
   const update = (time) => {
@@ -198,6 +200,9 @@ function sourceHandGear(movementId) {
   root.traverse((o) => { for (const m of [].concat(o.material ?? [])) m.fog = false; });
   root.userData.materialsIgnoreSceneFog = true;
   markShadows(root);
+  // The hidden catch features sit within drawn outlines; they cast no shadow
+  // onto the plates they hide behind or in front of.
+  for (const key of ['upperCatchBoss', 'upperStud', 'lowerStud', 'lowerLip']) blocks[key].castShadow = false;
   const box = new THREE.Box3(), point = new THREE.Vector3();
   for (let i = 0; i <= 72; i++) {
     update(period * i / 72); root.updateMatrixWorld(true);

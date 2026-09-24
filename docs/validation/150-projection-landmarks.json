@@ -10,27 +10,27 @@
         15
       ],
       "fov": 36,
-      "rmsPixels": 16.554730622801998,
+      "rmsPixels": 12.814098323721709,
       "errors": [
         {
           "name": "shaft section",
-          "pixels": 22.40909715714619
+          "pixels": 16.00905262972076
         },
         {
           "name": "lever pivot",
-          "pixels": 7.4188834833399335
+          "pixels": 5.010067263358795
         },
         {
           "name": "roller",
-          "pixels": 28.110553670148363
+          "pixels": 23.128605615201245
         },
         {
           "name": "upper rod pin",
-          "pixels": 0.7197283745430313
+          "pixels": 2.031499582900549
         },
         {
           "name": "rod end",
-          "pixels": 4.729357869149423
+          "pixels": 0.7454199532111828
         }
       ]
     },
@@ -42,27 +42,27 @@
         15
       ],
       "fov": 18,
-      "rmsPixels": 10.16081893245197,
+      "rmsPixels": 7.747088946067771,
       "errors": [
         {
           "name": "shaft section",
-          "pixels": 15.379004712531074
+          "pixels": 11.381973144986482
         },
         {
           "name": "lever pivot",
-          "pixels": 3.5780060814433505
+          "pixels": 2.327147995496409
         },
         {
           "name": "roller",
-          "pixels": 15.590048569471573
+          "pixels": 12.643370394266434
         },
         {
           "name": "upper rod pin",
-          "pixels": 1.4856646238882354
+          "pixels": 0.299434996298884
         },
         {
           "name": "rod end",
-          "pixels": 4.651717924629339
+          "pixels": 2.27541841903185
         }
       ]
     },
@@ -74,27 +74,27 @@
         15
       ],
       "fov": 18,
-      "rmsPixels": 2.2384421089522197,
+      "rmsPixels": 1.7817020056439052,
       "errors": [
         {
           "name": "shaft section",
-          "pixels": 3.554699716432134
+          "pixels": 2.715908209100319
         },
         {
           "name": "lever pivot",
-          "pixels": 1.157871841746238
+          "pixels": 1.0072992347111887
         },
         {
           "name": "roller",
-          "pixels": 2.49424470380194
+          "pixels": 1.9681254763823548
         },
         {
           "name": "upper rod pin",
-          "pixels": 1.0451466838595127
+          "pixels": 0.9871686003937428
         },
         {
           "name": "rod end",
-          "pixels": 1.939837587664035
+          "pixels": 1.6228004497413455
         }
       ]
     }
@@ -106,7 +106,7 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "5cdc665ad6e2f58e889ac750860ac5d0099bd6e07a7338cc1bbe46b1df040a9a"
+      "sha256": "131ad0809a8b63440e5a86c4daa4416eee147ed3430074f0d7d1dd7f6b99425a"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",

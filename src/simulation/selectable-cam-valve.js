@@ -47,10 +47,34 @@ export function makeSelectableCamValve(){
  // Thin paper faces with ink section lines replace the dark ends; they turn
  // with the shaft and add no working surface.
  let shaft;root.traverse(o=>{if(o.userData.role==='long-keyed-shaft-through-sliding-cam-series')shaft=o;});
- for(const side of [-1,1]){
-  // Source presentation turns the model end for end: local -Z faces the viewer.
-  const face=hatchedSectionFace(shaft.geometry.parameters.radiusTop,{name:'hatched-shaft-end-'+(side<0?'front':'rear')});
-  face.position.z=side*shaft.geometry.parameters.height/2;if(side<0)face.rotation.y=Math.PI;shaft.parent.add(face);
+ // Brown cuts the shaft flush with the front of the cam series, the hatched
+ // section sitting inside the smallest cam. The viewer-side end (local -Z
+ // after source presentation) now stops just ahead of the carrier hub at its
+ // forward limit, instead of standing about 0.8 proud of the stack (which
+ // read as an oversized, offset hatched disc). The rear end is unchanged.
+ // The shaft mesh is turned so its geometry Y runs along the parent's Z.
+ {
+  const {radiusTop:radius,height,radialSegments}=shaft.geometry.parameters,rear=height/2,box=new THREE.Box3(),toShaftParent=new THREE.Matrix4();
+  let hubFront=Infinity;
+  for(let i=0;i<=256;i++){legacyUpdate(g.demonstrationPeriod*i/256);root.updateMatrixWorld(true);toShaftParent.copy(shaft.parent.matrixWorld).invert();
+   b.slidingCarrier.traverse(o=>{if(o.isMesh&&o.userData.role==='keyed-hub-rigid-with-all-four-cams'){box.setFromObject(o).applyMatrix4(toShaftParent);hubFront=Math.min(hubFront,box.min.z);}});}
+  const front=Math.max(-rear,hubFront-.02);
+  shaft.geometry.dispose();shaft.geometry=new THREE.CylinderGeometry(radius,radius,rear-front,radialSegments).translate(0,(rear+front)/2,0);
+  g.shaftFrontZ=front;
+  for(const side of [-1,1]){
+   // Source presentation turns the model end for end: local -Z faces the viewer.
+   const face=hatchedSectionFace(radius,{name:'hatched-shaft-end-'+(side<0?'front':'rear')});
+   face.position.z=side<0?front:rear;if(side<0)face.rotation.y=Math.PI;shaft.parent.add(face);
+  }
+ }
+ // Brown outlines each cam; the profile outlines lay only on the faces
+ // turned away from the viewer, so the stack read as blurred discs.
+ // Presentation-only copies outline the viewer-side faces (no mass).
+ for(const record of b.camRecords){
+  // Mirrored onto the viewer-side face and sunk so it stands only 0.008
+  // proud: the lever runs in the 0.06 gap beside a cam's face.
+  const copy=record.outline.clone();copy.scale.z=-1;copy.position.z=.016;copy.userData={...record.outline.userData,role:record.outline.userData.role.replace('outline','front-outline'),presentationOnly:true};
+  record.outline.parent.add(copy);
  }
  const rod=new THREE.Group(),slider=new THREE.Group();root.add(rod,slider);
  const rodOutline=clip.union(poly(circle([0,0],.17,96)),poly([[-.09,0],[.09,0],[.09,-.34],[.045,-.34],[.045,-rodLength],[-.045,-rodLength],[-.045,-.34],[-.09,-.34]]),poly(circle([0,-pinDistance],.12,96)));

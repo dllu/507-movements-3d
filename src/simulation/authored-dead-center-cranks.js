@@ -286,23 +286,28 @@ function brownellDeadCenterCrank(movement) {
   const root = new THREE.Group();
   const wheelCenter = new THREE.Vector2(-0.22, 1.06);
   const wheelRadius = 1.62;
-  const crankRadius = 0.78;
+  // Plate proportions: the wrist sits about a third of the wheel radius from
+  // the centre and the treadle's rear arm is roughly three wrist radii, so the
+  // treadle rocks through a shallow ~36 degree arc about horizontal.
+  const crankRadius = 0.45;
   const crossingLeadPhase = 0.04;
   const slideTravel = crankRadius * Math.tan(
     FULL_TURN * crossingLeadPhase,
   );
   const slideHalfLength = 1.18;
-  const slideHalfHeight = 0.235;
+  const slideHalfHeight = 0.19;
   const slideDepth = 0.17;
   const slotCenterX = 0.72;
   const slotHalfStraight = 0.30;
   const slotRadius = 0.075;
   const guidePinRadius = 0.058;
-  const treadlePivot = new THREE.Vector2(0.70, -2.19);
-  const treadleRearArm = 1.09;
+  const treadlePivot = new THREE.Vector2(1.00, -2.19);
+  const treadleRearArm = 1.50;
   const treadleForwardArm = 1.73;
-  const pitmanLength = 3.62;
+  const pitmanLength = 3.34;
   const cycleDuration = 6;
+  const springOuterRadius = 0.44;
+  const springTurns = 1.6;
   const advanceStart = 0.82;
   const advanceEnd = 1 - crossingLeadPhase;
   const springReturnStart = crossingLeadPhase;
@@ -396,17 +401,17 @@ function brownellDeadCenterCrank(movement) {
 
   const voluteSpring = makeVoluteRibbon({
     innerRadius: 0.21,
-    outerRadius: 0.61,
+    outerRadius: springOuterRadius,
     sampleCount: 96,
     slideHalfHeight,
     slideRadius: crankRadius,
-    turns: 2.18,
+    turns: springTurns,
     width: 0.075,
   });
   voluteSpring.position.z = .225;
   faceplate.add(voluteSpring);
   const springAnchor = cylinderAlongZ(.045,.15,inkMaterial);
-  const anchorAngle = Math.PI/2-2.18*FULL_TURN;
+  const anchorAngle = Math.PI/2-springTurns*FULL_TURN;
   springAnchor.position.set(.21*Math.cos(anchorAngle),.21*Math.sin(anchorAngle),.18);
   faceplate.add(springAnchor);
   const springSlideAttachment = cylinderAlongZ(.045,.14,inkMaterial);
@@ -440,8 +445,9 @@ function brownellDeadCenterCrank(movement) {
   wristBoss.position.z = 0.06;
   wristBoss.userData.role = 'wrist-boss-rigidly-fixed-to-slide-A';
   tangentSlide.add(wristBoss);
-  const wristPin = cylinderAlongZ(0.075, 1.02, inkMaterial, 32);
-  wristPin.position.z = .35;
+  // The pin's rear end stops in front of spring B's plane (z .225).
+  const wristPin = cylinderAlongZ(0.075, 0.94, inkMaterial, 32);
+  wristPin.position.z = .39;
   wristPin.userData.role = 'crank-wrist-pin-fixed-on-tangent-slide';
   tangentSlide.add(wristPin);
 
@@ -602,7 +608,7 @@ function brownellDeadCenterCrank(movement) {
       slideAdvance,
       slideLaw,
       slideVelocity,
-      springDeflectionAngle: Math.asin(slideAdvance / 0.61),
+      springDeflectionAngle: Math.asin(slideAdvance / springOuterRadius),
       springReturnActive:
         slideLaw.stage === 'volute-spring-return-to-stop',
       treadleAngle,
@@ -817,7 +823,7 @@ function brownellDeadCenterCrank(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.15, -2.78, -0.65),
-    new THREE.Vector3(2.80, 2.78, 0.92),
+    new THREE.Vector3(2.95, 2.78, 0.92),
   );
   root.userData.cameraDistanceScale = 1.09;
   root.userData.cameraDirection = new THREE.Vector3(1.1, .6, 14);

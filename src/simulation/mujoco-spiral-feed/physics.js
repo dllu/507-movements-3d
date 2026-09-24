@@ -1,13 +1,34 @@
 import {rigidFamilyInertia} from '../mujoco/mass.js';
 import {createMujocoSimulation} from '../mujoco/simulation.js';
-import {convexPlateCells} from '../mujoco/convex-plate.js';
 const vec=v=>v.map(x=>Number(x.toPrecision(12))).join(' ');
 
-export function makeSpiralFeedPhysics(mujoco,visual,{timestep=.0005,period=12,friction=.15,contactTime=.004,settlingTime=.5,load=0}={}) {
+// The rail is a thin strip between two sampled offset curves. Each contact
+// cell spans `group` consecutive inner/outer quads; its vertices all lie on
+// the rendered strip and its polygon area equals theirs. The strip's outer
+// (convex) side is exact. MuJoCo's hull of a cell also fills the chord of its
+// concave inner side: at 3072 segments and three quads per cell that sliver
+// is at most 0.02 engraving pixel deep. Building the cells directly replaces
+// the generic triangle-merging decomposition (several seconds on this plate),
+// and grouping cuts MuJoCo's per-element model construction cost, which grows
+// faster than linearly: the model now builds in about a second, not twenty.
+function spiralStripCells(geometry,f,group) {
+  geometry.computeBoundingBox();
+  const {min:{z:low},max:{z:high}}=geometry.boundingBox,q=p=>p.map(Math.fround),cells=[];
+  for(let i=0;i<f.segments;i+=group) {
+    const end=Math.min(f.segments,i+group);
+    let cell=[...f.inner.slice(i,end+1),...f.outer.slice(i,end+1).reverse()].map(q);
+    let area=0;for(let n=0;n<cell.length;n++){const a=cell[n],b=cell[(n+1)%cell.length];area+=a[0]*b[1]-a[1]*b[0];}
+    if(area<0)cell=cell.reverse();
+    cells.push(cell);
+  }
+  return {cells,low,high,group,triangleCount:2*f.segments};
+}
+
+export function makeSpiralFeedPhysics(mujoco,visual,{timestep=.0005,period=12,friction=.15,contactTime=.004,settlingTime=.5,load=0,contactGroup=1}={}) {
   const u=visual.root.userData,f=u.profile,names=['input','follower','roller'];
   const mass=Object.fromEntries(names.map(n=>[n,rigidFamilyInertia(u.parts,u.families,n)])),density=1/mass.input.volume;
   const inertial=n=>`<inertial pos="${vec(mass[n].centroid)}" mass="${mass[n].volume*density}" fullinertia="${vec(mass[n].inertia.map(x=>x*density))}"/>`;
-  const collision=convexPlateCells(u.parts.rail.geometry),assets=[];
+  const collision=spiralStripCells(u.parts.rail.geometry,f,contactGroup),assets=[];
   const rail=collision.cells.map((cell,i)=>{
     const name='rail'+i,vertices=[collision.low,collision.high].flatMap(z=>cell.flatMap(p=>[...p,z]));
     assets.push(`<mesh name="${name}" vertex="${vec(vertices)}"/>`);
@@ -36,5 +57,5 @@ export function makeSpiralFeedPhysics(mujoco,visual,{timestep=.0005,period=12,fr
     data.time=0;const speed=driveAt(0).velocity;data.qvel.set([speed,-derivative*speed,speed*(initial+f.rollerRadius)/f.rollerRadius]);data.ctrl[0]=.02*speed;
   },beforeStep:({data,time})=>{const d=driveAt(time);data.ctrl[0]=d.angle+.02*d.velocity;}});
   const bodies=Object.fromEntries(names.map(n=>[n,physics.id('mjOBJ_BODY',n)]));
-  return Object.assign(physics,{bodies,description:{xml,collision,mass,density,driveAt,options:{timestep,period,friction,contactTime,settlingTime,load}}});
+  return Object.assign(physics,{bodies,description:{xml,collision,mass,density,driveAt,options:{timestep,period,friction,contactTime,settlingTime,load,contactGroup}}});
 }

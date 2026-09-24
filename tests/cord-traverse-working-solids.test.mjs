@@ -54,12 +54,14 @@ test('352 and 358 deform closed cords without replacing geometry or growing scen
   for(let i=0;i<=12;i++){m.update(i);assert.equal(meshes(m.root).length,count);cords.forEach((c,j)=>{assert.equal(c.userData.mesh.geometry,geometry[j]);assert.ok(solidSurface(c.userData.mesh.geometry).inside(c.userData.curve.getPointAt(.413)),'closed cord contains its centerline');});}
  }
 });
-test('358 follows the unchanged ten-turn carriage law while retaining the complete track and travel marks',()=>{
+test('358 follows the six-turn carriage law while retaining the complete track and travel marks',()=>{
  const m=models.get(358),d=m.root.userData,b=d.blocks;
- assert.equal(d.geometry.revolutionCount,10);assert.equal(d.cameraMaxDistance,4.8*d.geometry.carriageStroke);
+ assert.equal(d.geometry.revolutionCount,6);assert.equal(d.cameraMaxDistance,10*d.geometry.anchorHalfSpan);
  assert.ok(b.track.children.filter(o=>o.userData.role==='rail-travel-reference-mark').length>=20);
  for(let i=0;i<=24;i++){m.update(i/2);m.root.updateMatrixWorld(true);assert.ok(Math.abs(b.carriage.getWorldPosition(new T.Vector3()).y)<1e-12);assert.ok(Math.abs(b.carriage.position.x-d.currentState.carriagePosition)<1e-12);}
  const size=d.cameraFitBounds.getSize(new T.Vector3());assert.ok(size.y<6&&size.y<d.geometry.trackHalfLength,'carriage closeup excludes remote track ends');
+ // The fixed cord eyes never swing into the carriage-following closeup.
+ for(let i=0;i<=64;i++){m.update(d.geometry.cyclePeriod*i/64);for(const x of[-d.geometry.anchorHalfSpan,d.geometry.anchorHalfSpan])assert.ok(Math.abs(x-d.currentState.carriagePosition)>1.4*size.y,'cord eye stays outside the closeup');}
 });
 test('352 adjacent finite rope turns stay separated through the changing wound packs',()=>{
  const m=models.get(352),d=m.root.userData;

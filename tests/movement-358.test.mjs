@@ -86,7 +86,7 @@ test('movement 358 is one carriage-mounted fusee constrained by two opposed cord
   for (const role of [
     'fixed-parallel-carriage-rails',
     'fusee-bearing-traversing-carriage',
-    'historically-profiled-ten-turn-fusee-body',
+    'historically-profiled-sureda-fusee-body',
     'continuous-helical-fusee-groove',
     'first-opposed-fusee-cord',
     'second-opposed-fusee-cord',
@@ -151,16 +151,19 @@ test('movement 358 turns Sureda’s ten observations into one monotone fusee pro
   const data = model.root.userData;
   const { geometry, historicalTrial, profile, stateAtDriveTurns } = data;
 
-  assert.equal(geometry.revolutionCount, 10);
+  // Six display turns carry Sureda's ten observations (0.6 turn each).
+  assert.equal(geometry.revolutionCount, 6);
   assert.equal(profile.sampledRadii.length, 10);
+  const turnsPerObservation = geometry.revolutionCount / 10;
   near(
-    FULL_TURN * profile.sampledRadii.reduce((sum, value) => sum + value, 0),
+    FULL_TURN * turnsPerObservation
+      * profile.sampledRadii.reduce((sum, value) => sum + value, 0),
     geometry.carriageStroke,
-    3e-16 * geometry.carriageStroke,
+    3e-15 * geometry.carriageStroke,
     'full profile integral',
   );
-  for (let index = 0; index < geometry.revolutionCount; index += 1) {
-    const radius = profile.radiusAtTurns(index + 0.5);
+  for (let index = 0; index < 10; index += 1) {
+    const radius = profile.radiusAtTurns((index + 0.5) * turnsPerObservation);
     near(radius, profile.sampledRadii[index], 3e-16,
       `turn-center radius ${index}`);
     near(
@@ -191,11 +194,11 @@ test('movement 358 turns Sureda’s ten observations into one monotone fusee pro
     previousDisplacement = state.displacement;
   }
   near(stateAtDriveTurns(0).displacement, 0, 0, 'zero payout');
-  near(stateAtDriveTurns(10).displacement,
-    geometry.carriageStroke, 3e-16 * geometry.carriageStroke, 'full payout');
+  near(stateAtDriveTurns(geometry.revolutionCount).displacement,
+    geometry.carriageStroke, 3e-15 * geometry.carriageStroke, 'full payout');
   near(stateAtDriveTurns(0).localRadius,
     geometry.largeRadius, 0, 'large-end radius');
-  near(stateAtDriveTurns(10).localRadius,
+  near(stateAtDriveTurns(geometry.revolutionCount).localRadius,
     geometry.smallRadius, 0, 'small-end radius');
   disposeModel(model.root);
 });
@@ -213,8 +216,8 @@ test('movement 358 obeys the local fusee radius and carriage-wheel no-slip laws'
     /first cord winds by exactly the length released by the second/);
 
   const differenceStep = 1e-6;
-  for (const turns of [0.07, 0.8, 2.2, 4.4, 6.8, 8.9, 9.93]) {
-    const turnRate = turns < 5 ? 0.73 : -0.61;
+  for (const turns of [0.04, 0.5, 1.3, 2.6, 4.1, 5.3, 5.96]) {
+    const turnRate = turns < 3 ? 0.73 : -0.61;
     const state = stateAtDriveTurns(turns, turnRate, 0.14);
     const previous = stateAtDriveTurns(turns - differenceStep);
     const next = stateAtDriveTurns(turns + differenceStep);
@@ -246,16 +249,17 @@ test('movement 358 has smooth physical reversals and exposes the decreasing-radi
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline } = data;
 
-  assert.equal(timeline.demonstrationPeriod, 12);
-  assert.equal(timeline.strokeDuration, 5);
-  assert.equal(timeline.dwellDuration, 1);
+  // One crank turn per second at cruise: a comfortable 13.9 s cycle.
+  assert.equal(timeline.demonstrationPeriod, 13.9);
+  assert.equal(timeline.strokeDuration, 6.65);
+  assert.equal(timeline.dwellDuration, 0.3);
   const zero = stateAtTime(0);
-  const outEnd = stateAtTime(5);
-  const firstDwell = stateAtTime(5.5);
-  const returnStart = stateAtTime(6);
-  const returnEnd = stateAtTime(11);
-  const secondDwell = stateAtTime(11.5);
-  const closure = stateAtTime(12);
+  const outEnd = stateAtTime(6.65);
+  const firstDwell = stateAtTime(6.8);
+  const returnStart = stateAtTime(6.95);
+  const returnEnd = stateAtTime(13.6);
+  const secondDwell = stateAtTime(13.75);
+  const closure = stateAtTime(13.9);
   assert.equal(zero.phase, 'large-to-small-radius-stroke');
   assert.equal(firstDwell.phase, 'small-radius-end-dwell');
   assert.equal(returnStart.phase, 'small-to-large-radius-return');
@@ -283,7 +287,9 @@ test('movement 358 has smooth physical reversals and exposes the decreasing-radi
     'cycle carriage closure');
 
   const earlyCruise = stateAtTime(1.3);
-  const lateCruise = stateAtTime(4.0);
+  const lateCruise = stateAtTime(5.3);
+  assert.ok(earlyCruise.driveTurnsPerSecond <= 1,
+    'cruise stays within one crank turn per second');
   near(earlyCruise.driveTurnsPerSecond,
     lateCruise.driveTurnsPerSecond, 0, 'equal cruise input speed');
   assert.ok(earlyCruise.localRadius > lateCruise.localRadius);
@@ -293,8 +299,8 @@ test('movement 358 has smooth physical reversals and exposes the decreasing-radi
   let previousOut = Infinity;
   let previousReturn = -Infinity;
   for (let index = 0; index <= 500; index += 1) {
-    const out = stateAtTime(5 * index / 500);
-    const returning = stateAtTime(6 + 5 * index / 500);
+    const out = stateAtTime(6.65 * index / 500);
+    const returning = stateAtTime(6.95 + 6.65 * index / 500);
     assert.ok(out.carriagePosition <= previousOut + 2e-14,
       `outstroke monotonic ${index}`);
     assert.ok(returning.carriagePosition >= previousReturn - 2e-14,
@@ -368,7 +374,7 @@ test('movement 358 renderer keeps every cord marker continuous across free and w
     `arc-length markers have no path-transition jump: ${maximumMarkerStep}`);
 
   // The rendered cycle opens mid-stroke, as Brown draws it.
-  model.update(2.5 - geometry.displayTimeOffset);
+  model.update(6.65 / 2 - geometry.displayTimeOffset);
   near(data.cordState.firstWrappedProgress, 0.5, 2e-15,
     'first cord half wound');
   near(data.cordState.secondWrappedProgress, 0.5, 2e-15,

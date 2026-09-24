@@ -9788,9 +9788,9 @@ test('movement 98 drives one pivoted arm with one fixed pin in one endless groov
   } = model.root.userData.blocks;
   const geometry = model.root.userData.geometry;
   const profiles = model.root.userData.profiles;
-  // Source presentation mirrors the rear view of 98 to keep Brown's layout;
-  // check the mechanism in its own unmirrored frame.
-  assert.deepEqual(model.root.userData.sourcePresentation.scale, [-1, 1, 1]);
+  // Source presentation views 98 from the arm side with Brown's layout and
+  // no mirror; the mechanism is checked in its own frame.
+  assert.equal(model.root.userData.sourcePresentation.scale, null);
   model.root.scale.set(1, 1, 1);
   model.root.updateMatrixWorld(true);
 
@@ -31534,7 +31534,7 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
     new Set(guideShoes.map(({ userData }) => userData.side)),
     new Set(['left', 'right']),
   );
-  assert.equal(attachmentLugs.length, 6);
+  assert.equal(attachmentLugs.length, 2);
   assert.equal(guideRails.length, 2);
   assert.equal(guideShoes.length, 2);
   assert.equal(bearingSupports.length, 2);

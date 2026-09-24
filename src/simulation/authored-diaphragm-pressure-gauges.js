@@ -188,8 +188,24 @@ function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, in
     region([[1266, 489], [1302, 489], [1302, 502], [1266, 502]]),
     region([[1300, 600], [1366, 600], [1366, 610], [1300, 610]]),
   );
-  const caseSection = addRole(new THREE.Mesh(plate(caseRegion, -0.10, 0.10), frameMaterial),
+  // Brown draws the cut walls white with fine diagonal hatching.
+  const cutMaterial = frameMaterial.clone();
+  cutMaterial.color.set(0xe9e5dc);
+  const caseSection = addRole(new THREE.Mesh(plate(caseRegion, -0.10, 0.10), cutMaterial),
     'fixed-case-of-diaphragm-gauge-in-section');
+  const hatchStrokes = [];
+  {
+    const xs = caseRegion.flat(2).map((p) => p[0]), ys = caseRegion.flat(2).map((p) => p[1]);
+    const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+    const rise = y1 - y0, pitch = 0.075, width = 0.016;
+    for (let x = x0 - rise; x < x1; x += pitch) {
+      hatchStrokes.push(poly([[x, y0], [x + width, y0], [x + width + rise, y1], [x + rise, y1]]));
+    }
+  }
+  const caseHatching = addRole(new THREE.Mesh(
+    plate(clip.intersection(caseRegion, clip.union(...hatchStrokes)), 0.10, 0.104), inkMaterial),
+  'section-hatching-on-cut-case-walls');
+  caseSection.add(caseHatching);
   const glass = addRole(new THREE.Mesh(plate(region([[1213, 236], [1217, 236], [1217, 498], [1213, 498]]), -0.06, 0.06), inkMaterial),
     'front-glass-in-section');
   const dial = addRole(new THREE.Mesh(plate(region([[1221, 262], [1224, 262], [1224, 474], [1221, 474]]), -0.06, 0.06), inkMaterial),

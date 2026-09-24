@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import {matte, PALETTE, markShadows} from '../primitives.js';
-import {expansionEccentricProfile} from '../expansion-eccentric-profile.js';
+import {expansionEccentricProfile,expansionEccentricSpread} from '../expansion-eccentric-profile.js';
 
 /** Traced front outlines; hidden depths, fork-support depth and roller spacing inferred. */
-export function makeExpansionEccentricGeometry({samples=384,spread=12}={}) {
+export function makeExpansionEccentricGeometry({samples=384,spread=expansionEccentricSpread}={}) {
   const root=new THREE.Group(),cam=new THREE.Group(),fork=new THREE.Group();
   root.add(cam,fork);fork.position.set(3.67,-.04,0);
   const bore=(shape,x,y,r)=>{const p=new THREE.Path();p.absarc(x,y,r,0,2*Math.PI,true);shape.holes.push(p);};

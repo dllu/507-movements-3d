@@ -27,7 +27,7 @@ try{
    }
   }
  }
- const report={movement:148,status:full?'candidate-complete-assembly':'candidate-frame-assembly',method:'Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. '+(full?'Includes both complete gears, hubs, shafts, rear frame, oblong rocker, short crank and pins.':'Includes the traced rocker, short crank, eccentric mounting arm, pins and rear-supported stub shaft. Does not include either complete gear, their bearings or the fixed frame.'),
+ const report={movement:148,status:full?'candidate-complete-assembly':'candidate-frame-assembly',method:'Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. '+(full?'Includes both complete gears, hubs, shafts, rear frame, gear-face oblong groove walls, rocking lever with its groove pin, and pivots.':'Includes the gear-face groove walls, rocking lever, groove pin, pivot and stub shaft; not the gears or fixed frame.'),
   summary:{poses:65,parts:parts.length,pairs:pairs.length,checks,failingPairs:Object.keys(failures).length},failures,
   sources:['scripts/review-geared-crank-frame-assembly.mjs','src/simulation/geared-crank-frame.js','src/simulation/geared-crank-source.js','src/simulation/finite-plate-geometry.js','tests/helpers/solid-surface.mjs',...(full?['src/simulation/geared-crank.js','src/simulation/primitives.js']:[])].map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')}))};
  fs.writeFileSync(full?'docs/validation/148-assembly.json':'docs/validation/148-frame-assembly.json',JSON.stringify(report,null,2)+'\n');console.log(report.summary);

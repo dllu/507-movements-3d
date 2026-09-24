@@ -425,8 +425,72 @@ function woodworthPlanerFeed(movement) {
     };
   };
 
+  // Brown hatches the plank's face. Diagonal grain strokes on the front face
+  // travel with the fed stock (pitch divides the per-cycle feed, so the cycle
+  // closes seamlessly) and are clipped at the ends of the observation window.
+  const grainPitch = feedTravelPerCycle / 40;
+  const grainSlant = plankThickness * 0.55;
+  const grainWidth = 0.028;
+  const grainBottomY = boardBottomY + 0.04;
+  const grainTopY = boardTopY - 0.075;
+  const grainZ = plankWidth / 2 + 0.003;
+  const grainCount = Math.ceil((workpieceLength + grainSlant) / grainPitch) + 2;
+  const grainPositions = new Float32Array(grainCount * 4 * 3);
+  const grainIndices = [];
+  for (let index = 0; index < grainCount; index += 1) {
+    const v = index * 4;
+    grainIndices.push(v, v + 1, v + 2, v, v + 2, v + 3);
+  }
+  const grainGeometry = new THREE.BufferGeometry();
+  const grainAttribute = new THREE.BufferAttribute(grainPositions, 3);
+  grainAttribute.setUsage(THREE.DynamicDrawUsage);
+  grainGeometry.setAttribute('position', grainAttribute);
+  grainGeometry.setAttribute('normal', new THREE.BufferAttribute(
+    new Float32Array(grainCount * 4 * 3).map((_, i) => (i % 3 === 2 ? 1 : 0)), 3));
+  grainGeometry.setIndex(grainIndices);
+  const plankGrain = new THREE.Mesh(grainGeometry, matte(0x6b4a1e, {
+    roughness: 0.8,
+    side: THREE.DoubleSide,
+  }));
+  plankGrain.userData.role = 'plank-front-face-grain-hatching-moving-with-feed';
+  plankGrain.castShadow = false;
+  plankGrain.receiveShadow = false;
+  root.add(plankGrain);
+  const halfWindow = workpieceLength / 2;
+  const clampX = (x) => THREE.MathUtils.clamp(x, -halfWindow, halfWindow);
+  // Irregular spacing and weight, repeating once per cycle's feed, make the
+  // travel unambiguous (a uniform hatch could read as standing still).
+  const grainStationsPerCycle = 40;
+  const grainJitter = Array.from({length: grainStationsPerCycle}, (_, j) => ({
+    shift: 0.32 * grainPitch * Math.sin(2.3 * j + 0.7 * Math.sin(5.1 * j)),
+    width: grainWidth * (0.7 + 0.8 * (0.5 + 0.5 * Math.sin(3.7 * j + 1.3))),
+  }));
+  const updateGrain = (offset) => {
+    const firstStation = Math.floor((-halfWindow - grainSlant - offset) / grainPitch) - 1;
+    for (let index = 0; index < grainCount; index += 1) {
+      const station = firstStation + index;
+      const jitter = grainJitter[positiveModulo(station, grainStationsPerCycle)];
+      const x = station * grainPitch + jitter.shift + offset;
+      const w = jitter.width;
+      const corners = [
+        [x, grainBottomY], [x + w, grainBottomY],
+        [x + w + grainSlant, grainTopY], [x + grainSlant, grainTopY],
+      ];
+      corners.forEach(([cx, cy], corner) => {
+        const offsetIndex = (index * 4 + corner) * 3;
+        grainPositions[offsetIndex] = clampX(cx);
+        grainPositions[offsetIndex + 1] = cy;
+        grainPositions[offsetIndex + 2] = grainZ;
+      });
+    }
+    grainAttribute.needsUpdate = true;
+    grainGeometry.computeBoundingSphere();
+    grainGeometry.computeBoundingBox();
+  };
+
   const update = (time) => {
     const state = stateAtTime(time);
+    updateGrain(state.workpieceOffset);
     upperRoller.userData.rotor.rotation.z = state.upperAngle;
     lowerRoller.userData.rotor.rotation.z = state.lowerAngle;
     workpiece.position.x = state.workpieceOffset;

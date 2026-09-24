@@ -13,19 +13,19 @@
     },
     {
       "file": "src/simulation/geared-crank.js",
-      "sha256": "fe69172e0f93d07c80b3ad89c843083dce729656290a8c2dd8e932d12b1dc398"
+      "sha256": "d862ee064c002afbe14fea3a23cfaf257a80fbfd0e2235205e6e3c96b46189bb"
     },
     {
       "file": "src/simulation/geared-crank-source.js",
-      "sha256": "7b7794214728115a42c81591ba88dca96135cd3671d29da612db3d2436a01098"
+      "sha256": "4bdedb1d4048815dece332a47168c27a284f4ccc12a925b8d5027c62c169eeda"
     },
     {
       "file": "src/simulation/geared-crank-frame.js",
-      "sha256": "8b305283ea231d42d4e8919b11a0bdf8f93b1eac383a7a8aeb03d00eb4079798"
+      "sha256": "8dbfe08d6596afb46ee7d42bdaf09d501c089bbcb4a978bc7ae2f5825dc1c1e7"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
     }
   ]
 }

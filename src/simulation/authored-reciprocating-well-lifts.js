@@ -54,6 +54,44 @@ function transitionProfile(phase, startPhase, endPhase, startValue, endValue) {
   };
 }
 
+// A lift that cruises at constant speed between smootherstep ramps. The wind
+// wheel's display rate is capped by its sustained speed, which a pure
+// smootherstep lift pushes to nearly twice its mean.
+function cruiseProfile(phase, startPhase, endPhase, startValue, endValue,
+  rampFraction = LIFT_RAMP_FRACTION) {
+  const duration = endPhase - startPhase;
+  const u = THREE.MathUtils.clamp((phase - startPhase) / duration, 0, 1);
+  const ramp = rampFraction;
+  const area = 1 - ramp;
+  const integral = (x) => x ** 4 * (x * x - 3 * x + 2.5);
+  let progress;
+  let first;
+  let second;
+  if (u <= ramp) {
+    const x = u / ramp;
+    progress = ramp * integral(x) / area;
+    first = smootherStep(x) / area;
+    second = smootherStepDerivative(x) / (ramp * area);
+  } else if (u < 1 - ramp) {
+    progress = (u - ramp / 2) / area;
+    first = 1 / area;
+    second = 0;
+  } else {
+    const x = (u - (1 - ramp)) / ramp;
+    progress = (1 - 1.5 * ramp + ramp * (x - integral(x))) / area;
+    first = (1 - smootherStep(x)) / area;
+    second = -smootherStepDerivative(x) / (ramp * area);
+  }
+  const delta = endValue - startValue;
+  return {
+    firstDerivativeByPhase: delta * first / duration,
+    secondDerivativeByPhase: delta * second / duration ** 2,
+    value: startValue + delta * progress,
+  };
+}
+
+const LIFT_RAMP_FRACTION = 0.15;
+
 function profileRate(profile, phaseSpeed) {
   return profile.firstDerivativeByPhase * phaseSpeed;
 }
@@ -92,7 +130,10 @@ function reciprocatingWellLift(movement) {
   const axialPitch = FULL_TURN * wheelPitchRadius / wheelTeeth;
   const wormLength = 1.12;
   const pulleyRadius = 0.62;
-  const pulleyTravelAngle = Math.PI * 1.5;
+  // A third of a turn per lift: four worm turns, so at the display's
+  // one-turn-per-second ceiling a full two-bucket cycle takes about 12 s,
+  // and the lowered bucket stays within view at the well mouth.
+  const pulleyTravelAngle = FULL_TURN / 3;
   const bucketStroke = pulleyRadius * pulleyTravelAngle;
   const engagementShift = 0.075;
   const wheelCenterX = wheelPitchRadius + wormPitchRadius
@@ -197,7 +238,7 @@ function reciprocatingWellLift(movement) {
       mode = 'left-high-bucket-dumps-and-trips-worm-toward-right-wheel';
       engagedWheel = null;
     } else if (phase < rightLiftEndPhase) {
-      ropeProfile = transitionProfile(
+      ropeProfile = cruiseProfile(
         phase,
         exchangeLeftEndPhase,
         rightLiftEndPhase,
@@ -251,7 +292,7 @@ function reciprocatingWellLift(movement) {
       mode = 'right-high-bucket-dumps-and-trips-worm-toward-left-wheel';
       engagedWheel = null;
     } else {
-      ropeProfile = transitionProfile(
+      ropeProfile = cruiseProfile(
         phase,
         exchangeRightEndPhase,
         1,
@@ -530,11 +571,14 @@ function reciprocatingWellLift(movement) {
   ), 'transparent-well-shaft-beneath-opposed-buckets');
   well.position.set(0, -1.93, ropeZ);
   root.add(well);
+  // A thin water surface stands where the lowered bucket's bottom dips
+  // 0.14 into it at the end of each descent.
+  const wellWaterTop = lowBailY - bucketCenterOffset - bucketHeight / 2 + 0.14;
   const wellWater = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(3.92, 0.16, 1.72),
+    new THREE.BoxGeometry(3.92, 0.10, 1.72),
     waterMaterial,
   ), 'well-water-filling-the-low-bucket');
-  wellWater.position.set(0, -3.42, ropeZ);
+  wellWater.position.set(0, wellWaterTop - 0.05, ropeZ);
   root.add(wellWater);
   for (const x of [-2.30, 2.30]) {
     const wall = new THREE.Mesh(
@@ -624,12 +668,14 @@ function reciprocatingWellLift(movement) {
     arm.userData.role = 'arm-joining-wind-wheel-to-hub';
     windRotor.add(arm);
   }
+  // The wind-wheel shaft turns with the wheel (one body with its hub) and
+  // ends on the coupling block's top face instead of entering it.
   const upperShaft = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.10, 0.10, 0.82, 24),
+    new THREE.CylinderGeometry(0.10, 0.10, 0.63, 24),
     darkMaterial,
   ), 'fixed-axis-upper-wind-wheel-shaft');
-  upperShaft.position.set(0, 3.76, 0.03);
-  root.add(upperShaft);
+  upperShaft.position.set(0, 3.855 - 4.18, 0);
+  windRotor.add(upperShaft);
 
   const flexibleCoupling = addRole(new THREE.Group(),
     'flexible-coupling-permitting-small-lateral-worm-vibration');
@@ -651,12 +697,23 @@ function reciprocatingWellLift(movement) {
     'laterally-rocking-lower-shaft-carrying-one-single-start-worm');
   wormCarrier.position.copy(carrierTop);
   root.add(wormCarrier);
+  // The shaft runs from just below the coupling block (clear of it and its
+  // cross pin through the carrier's small rocking angle) to the worm's top;
+  // a short stub below the worm turns in the step's bore.
+  const wormTop = -carrierCenterDistance + wormLength / 2;
+  const wormBottom = -carrierCenterDistance - wormLength / 2;
   const lowerShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, 1.72, 24),
+    new THREE.CylinderGeometry(0.075, 0.075, -0.12 - wormTop, 24),
     darkMaterial,
   );
-  lowerShaft.position.y = -0.86;
+  lowerShaft.position.y = (-0.12 + wormTop) / 2;
   wormCarrier.add(lowerShaft);
+  const lowerStub = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.075, 0.075, 0.10, 24),
+    darkMaterial,
+  );
+  lowerStub.position.y = wormBottom - 0.05;
+  wormCarrier.add(lowerStub);
   const worm = addRole(makeScrew({
     axis: Y_AXIS,
     color: PALETTE.accent,
@@ -678,8 +735,10 @@ function reciprocatingWellLift(movement) {
     const gearRotor = new THREE.Group();
     gear.add(gearRotor);
     gear.userData.rotor = gearRotor;
-    const pinOuterRadius = wheelPitchRadius + 0.075;
-    const pinHalfWidth = 0.045;
+    // Pin tips stop 0.035 short of the old length so the thread's crest
+    // clears them as it passes (it grazed them by 0.030).
+    const pinOuterRadius = wheelPitchRadius + 0.040;
+    const pinHalfWidth = 0.035;
     const starOutline = polygonClipping.difference(polygonClipping.union(
       poly(circle([0, 0], 0.34, 96)),
       ...Array.from({ length: wheelTeeth }, (_, index) => {
@@ -835,8 +894,13 @@ function reciprocatingWellLift(movement) {
     'central-vibrating-tappet-struck-by-each-ascending-bucket');
   tappet.position.copy(tappetPivot);
   root.add(tappet);
+  // The bar turns on the fixed pivot through a bore (no coaxial overlap).
   const tappetBar = new THREE.Mesh(
-    new THREE.BoxGeometry(2 * tappetHalfLength, 0.13, 0.22),
+    plate(polygonClipping.difference(
+      poly([[-tappetHalfLength, -0.065], [tappetHalfLength, -0.065],
+        [tappetHalfLength, 0.065], [-tappetHalfLength, 0.065]]),
+      poly(circle([0, 0], 0.122, 64)),
+    ), -0.11, 0.11),
     matte(PALETTE.accent, { metalness: 0.16, roughness: 0.54 }),
   );
   tappet.add(tappetBar);
@@ -908,12 +972,17 @@ function reciprocatingWellLift(movement) {
     );
     tappet.rotation.z = state.tappetAngle;
     selectorBearing.position.copy(state.lowerBearing);
+    // The crank point sits above the pivot, so the arm to the worm step
+    // no longer runs down through the fixed pivot axle (0.118 overlap).
     const tappetCrank = new THREE.Vector3(
-      tappetPivot.x + Math.sin(state.tappetAngle) * 0.32,
-      tappetPivot.y - Math.cos(state.tappetAngle) * 0.32,
+      tappetPivot.x - Math.sin(state.tappetAngle) * 0.32,
+      tappetPivot.y + Math.cos(state.tappetAngle) * 0.32,
       tappetPivot.z,
     );
-    setRodBetween(selectorLink, tappetCrank, state.lowerBearing);
+    // The arm meets the step's lower face, clear of the shaft end above it.
+    const stepFoot = state.lowerBearing.clone().add(new THREE.Vector3(
+      Math.sin(state.carrierAngle) * 0.11, -Math.cos(state.carrierAngle) * 0.11, 0));
+    setRodBetween(selectorLink, tappetCrank, stepFoot);
     root.userData.updateSolids?.(state);
   };
 
@@ -1096,12 +1165,13 @@ function reciprocatingWellLift(movement) {
   root.userData.cameraDirection = new THREE.Vector3(3.0, 3.8, 11.8);
   root.userData.groundFloorY = groundY;
   correctWaterLiftParts(root,459);
-  // Brown's plate stops at the ground line by the well curbs; the lower
-  // bucket hangs out of frame down the well, and the long-lens elevation
-  // shows the wind wheel edge-on. Set after the shared fit, which would
-  // otherwise frame the whole well.
+  // Brown's plate stops at the ground line by the well curbs, and the
+  // long-lens elevation shows the wind wheel edge-on. The frame reaches just
+  // below the lowered bucket at the well mouth (bail at lowBailY, bottom
+  // about 1.16 lower), so neither bucket leaves the view. Set after the
+  // shared fit, which would otherwise frame the whole well.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.10, -1.35, -1.65),
+    new THREE.Vector3(-3.10, lowBailY - bucketCenterOffset - bucketHeight / 2 - 0.12, -1.65),
     new THREE.Vector3(3.10, 4.45, 1.65),
   );
   root.userData.cameraFov = 12;

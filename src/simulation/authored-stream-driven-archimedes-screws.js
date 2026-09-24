@@ -329,12 +329,13 @@ function streamDrivenArchimedesScrew(movement) {
   waterWheel.userData.role =
     'lower-stream-wheel-rigidly-fixed-to-screw-shaft';
   rotor.add(waterWheel);
-  // Brown draws the wheel as one solid disc with the paddle boards set
-  // round its edge, not a spoked double rim.
+  // Brown draws the wheel as one plain solid disc with thin flat boards set
+  // behind it round its edge, standing out past the rim, not a spoked
+  // double rim or a ring of blocks.
   const wheelRims = [0].map((offset) => {
     const rim = new THREE.Mesh(
       horizontalRing(centralShaftRadius + 0.004, waterWheelRadius, -0.06, 0.06),
-      darkMaterial,
+      wheelMaterial,
     );
     rim.position.y = offset;
     rim.userData.role = 'lower-water-wheel-solid-disc';
@@ -347,11 +348,13 @@ function streamDrivenArchimedesScrew(movement) {
     const paddleCarrier = new THREE.Group();
     paddleCarrier.rotation.y = angle;
     waterWheel.add(paddleCarrier);
+    // A flat board in the plane of the axis: radial 0.56, axial 0.40,
+    // 0.06 thick, seated on the disc's lower face (joined stock).
     const paddle = new THREE.Mesh(
-      new THREE.BoxGeometry(0.52, 0.34, 0.68),
+      new THREE.BoxGeometry(0.56, 0.40, 0.06),
       wheelMaterial,
     );
-    paddle.position.x = waterWheelRadius;
+    paddle.position.set(waterWheelRadius + 0.03, -0.06 - 0.20, 0);
     paddle.userData.role = `stream-driven-lower-paddle-${index + 1}`;
     paddleCarrier.add(paddle);
     paddles.push(paddle);
@@ -448,11 +451,12 @@ function streamDrivenArchimedesScrew(movement) {
   base.position.set(0, groundY + 0.12, 0);
   base.userData.role = 'fixed-archimedes-screw-base';
   root.add(base);
+  // Thin enough to clear the lowest paddle board's sweep.
   const streamBed = new THREE.Mesh(
-    new THREE.BoxGeometry(4.10, 0.22, 4.92),
+    new THREE.BoxGeometry(4.10, 0.08, 4.92),
     frameMaterial,
   );
-  streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.34, 0);
+  streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.28, 0);
   streamBed.userData.role = 'fixed-stream-bed-around-lower-water-wheel';
   root.add(streamBed);
   // Brown rules the stream surface with broken strokes running with the

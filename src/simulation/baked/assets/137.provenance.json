@@ -8,30 +8,30 @@
     "rod"
   ],
   "period": 8,
-  "loopStart": 23.748,
-  "loopEnd": 31.748,
+  "loopStart": 23.928,
+  "loopEnd": 31.928,
   "turns": [
     6.283185307179586,
     0,
-    -16.53920144901207,
-    -0.0010939776528261988,
+    -15.982593433270807,
+    -15.825221383622399,
     0
   ],
   "bounds": {
     "min": [
-      -1.333687878750618,
-      -3.3566744040140226,
+      -1.2661026471378807,
+      -3.107492263991644,
       -0.660000023841858
     ],
     "max": [
-      4.474204714286234,
-      1.9954786497613335,
+      4.379793351943682,
+      2.0521689631575435,
       0.48000001668930053
     ]
   },
   "focus": [
-    1.570258417767808,
-    -0.6805978771263446,
+    1.5568453524029005,
+    -0.5276616504170502,
     -0.09000000357627871
   ],
   "cameraDirection": [
@@ -40,7 +40,7 @@
     15
   ],
   "source": {
-    "reportSha256": "50780e8e9457a435ad51782b1866f8a05f713824bd9a3a69752558b1578b0804",
+    "reportSha256": "0744a20c2e213bfd2f5e211c766b1e8e11f43a2a7e31e385234c18b69ecc3597",
     "simulationSources": [
       {
         "file": "src/data/expansion-eccentric-outline.js",
@@ -48,11 +48,11 @@
       },
       {
         "file": "src/simulation/expansion-eccentric-profile.js",
-        "sha256": "61796123c63d6a7fcc1d16570ca5a23973525be1b9758183f4656ffe842b0951"
+        "sha256": "d590a7ad356b2cbdfeb86443d46e84aede1b65c2f44fe5f3758f222916ec0877"
       },
       {
         "file": "src/simulation/mujoco-expansion-eccentric/physics.js",
-        "sha256": "251c5095f4752e7a79a3acaf8ff5e884cbb73887a0f24224f5e5e1fb76276991"
+        "sha256": "44c29a9c18ca76ab3bd9e9e215d1958699c05c7f7b7e708a56e09dd3155da662"
       },
       {
         "file": "src/simulation/mujoco/simulation.js",
@@ -70,24 +70,24 @@
     "geometrySources": [
       {
         "file": "src/simulation/mujoco-expansion-eccentric/geometry.js",
-        "sha256": "13deba81049abf2499e329a5d524e788d13406e51a675bb623c67a67e151298f"
+        "sha256": "093f0b26873abb018af17c669a60c8d5fb96972c08b34705ff46bc7e8a1179b2"
       },
       {
         "file": "scripts/bake-expansion-eccentric.mjs",
-        "sha256": "f93729869eb0e5ea0237da684d9ff82c4d554472e47e7c6e7354e589d59014d4"
+        "sha256": "a8e9e390cb3ad61159c7ab6555bf00730d33693a0058979d0cd584434058f6e9"
       }
     ],
     "options": {
       "timestep": 0.00025,
       "period": 8,
-      "spread": 12,
+      "spread": 4,
       "samples": 384
     },
-    "maximumLoopSeamPixels": 0.0016659767381480353,
-    "maximumLoopVelocitySeamPixelsPerSecond": 0.016929171946064754,
-    "maximumPenetrationPixels": 0.07254944064269964
+    "maximumLoopSeamPixels": 0.001422695372600021,
+    "maximumLoopVelocitySeamPixelsPerSecond": 0.014220486687291768,
+    "maximumPenetrationPixels": 0.021800688642520383
   },
-  "samples": 15875,
-  "bytes": 1017225,
-  "assetSha256": "2a9793e91f6fa6313e3c731369d939cea2ea13144369266fc455979759124e3d"
+  "samples": 15965,
+  "bytes": 1011302,
+  "assetSha256": "52eacf732456c906dffbd891314e7647f801cdedc2aed5ef7fa114a107bfc84a"
 }

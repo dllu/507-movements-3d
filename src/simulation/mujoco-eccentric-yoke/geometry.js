@@ -31,7 +31,7 @@ export function makeEccentricYokeGeometry() {
   const radius = source.sheaveRadius/scale, shaftRadius = source.shaftRadius/scale;
   const depth = .24, clearance = .001, baseTop = -2.15;
   const yokePoint = ([x,y]) => [(x-cx)/scale,(sy-y)/scale];
-  const rodRoots = source.rodRoots.map(x => (x-cx)/scale);
+  const rodRoots = source.rodRoots.map(x => (x-cx)/scale), rodTips = source.rodTips.map(x => (x-cx)/scale);
   const tracedHole = outline(source.inner.map(yokePoint));
   // Brown draws both yoke outlines as smooth ovals. Each is an ellipse split
   // at its waist by a straight run: the inner run is the machined working
@@ -69,9 +69,14 @@ export function makeEccentricYokeGeometry() {
   const guideHalfLength = .11, guideCenter = Math.max(...rodRoots.map(Math.abs))+eccentricity+guideHalfLength+.07;
   const rodEnd = guideCenter+guideHalfLength+eccentricity+.04, rodRadius = source.rodRadius/scale;
   for (const [i,sign] of [-1,1].entries()) {
-    const ends = [rodRoots[i],sign*rodEnd].sort((a,b)=>a-b);
-    const rod = attach('rod'+i,disk(rodRadius,...ends,96),'yoke',PALETTE.brass);
-    rod.rotation.y = Math.PI/2;
+    // Brown breaks the stubs off at rodTips. The run on to the hidden guide
+    // is a separate coaxial piece of the same rigid yoke (same total mass),
+    // removed by source presentation with the guides it enters.
+    const tip = rodTips[i];
+    for (const [name,ends] of [['rod'+i,[rodRoots[i],tip]],['rodExtension'+i,[tip,sign*rodEnd]]]) {
+      const rod = attach(name,disk(rodRadius,...ends.sort((a,b)=>a-b),96),'yoke',PALETTE.brass);
+      rod.rotation.y = Math.PI/2;
+    }
     const support = clip.difference(clip.union(poly(circle([0,0],.29,96)),
       poly([[-.10,baseTop],[.10,baseTop],[.10,0],[-.10,0]])),poly(circle([0,0],rodRadius+.005,96)));
     const guide = attach('guide'+i,plate(support,-guideHalfLength,guideHalfLength),'frame',PALETTE.muted,[sign*guideCenter,0,0]);
@@ -85,7 +90,7 @@ export function makeEccentricYokeGeometry() {
   blocks.yoke.position.x = offset[0];
   Object.assign(root.userData,{parts,families,blocks,source,hideGround:true,
     profiles:{tracedHole,hole,outer,yoke:yokeProfile},
-    geometry:{offset,eccentricity,radius,shaftRadius,depth,clearance,workingHalfHeight,rodRoots,rodEnd,rodRadius,guideCenter,guideHalfLength,baseTop}});
+    geometry:{offset,eccentricity,radius,shaftRadius,depth,clearance,workingHalfHeight,rodRoots,rodTips,rodEnd,rodRadius,guideCenter,guideHalfLength,baseTop}});
   markShadows(root); root.updateMatrixWorld(true);
   return {root,focus:new THREE.Vector3(0,-.15,0),cameraDirection:new THREE.Vector3(.7,.4,10)};
 }

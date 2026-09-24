@@ -19,6 +19,8 @@ export function correctWaterLiftParts(root,id) {
       replace(pulley.userData.tread,boredLatheGeometry(profile,R*.80,128));
       replace(pulley.userData.hub,boredLatheGeometry([{axial:-.19575,radial:R*.26},{axial:.19575,radial:R*.26}],.104,64));
       for(const o of pulley.userData.rotor.children)if(o.geometry?.type==='TorusGeometry')o.visible=false;
+      // Brown draws no white index patches; the ropes run over the tread one.
+      for(const o of [...pulley.userData.rotor.children])if(o.geometry?.type==='BoxGeometry'&&o.material?.color?.getHex()===0xfaf9f5){o.removeFromParent();o.geometry.dispose();o.material.dispose();}
       const journal=boredJournal(.18,.104,.18,b.base.material);journal.position.copy(assembly.axle.position);journal.position.z=.29;root.add(journal);
     }
     for(const bucket of [b.leftBucket,b.rightBucket]) {
@@ -28,7 +30,8 @@ export function correctWaterLiftParts(root,id) {
     const profile={inner:g.wormPitchRadius*.68,outer:g.wormPitchRadius+.045,low:-g.wormLength/2,high:g.wormLength/2,width:.080,phase:-g.wormLength/2,lead:g.axialPitch/(2*Math.PI)};
     replace(b.worm.userData.thread,helicalThread(profile,threadAngles(profile,96)));
     b.worm.userData.threadCaps.forEach(o=>o.visible=false);
-    replace(b.selectorBearing,horizontalTurned([[-.11,.080],[-.11,.17],[.11,.17],[.11,.080]]));
+    // The step lies wholly below the worm's lower end (it had enclosed it).
+    replace(b.selectorBearing,horizontalTurned([[-.11,.080],[-.11,.17],[-.006,.17],[-.006,.080]]));
     d.updateSolids=state=>{b.selectorBearing.rotation.z=state.carrierAngle;};
     for(const [trough,sign]of [[b.leftTrough,-1],[b.rightTrough,1]]){trough.position.x=sign*2.64;trough.position.y=-.80;trough.rotation.z=0;}
     b.well.material.opacity=.10;
@@ -91,7 +94,8 @@ export function correctWaterLiftParts(root,id) {
       replace(flap,plate(face,-.10,.10));flap.position.set(0,0,0);
       const pin=add(mount,new THREE.CylinderGeometry(.027,.027,.44,32),wallMaterial,'fixed-elbow-flap-hinge');pin.rotation.x=Math.PI/2;pin.position.z=-.01;
     }
-    const spine=clip.difference(clip.union(capsule([-1.3,-2.55],[1.4,2.75],.07,32),poly(circle([0,0],.24,64))),poly(circle([0,0],.164,64)));
+    const lean=([x,y])=>[x-(g.stackLean??0)*y,y];
+    const spine=clip.difference(clip.union(capsule(lean([-1.3,-2.55]),lean([1.4,2.75]),.07,32),poly(circle([0,0],.24,64))),poly(circle([0,0],.164,64)));
     b.spine=add(b.swingingGutter,plate(spine,-.31,-.20),wallMaterial,'bored-rigid-gutter-back-spine');
     replace(b.pivotAxle,new THREE.CylinderGeometry(.16,.16,.66,48));b.pivotAxle.position.z=-.56;
     b.journal=boredJournal(.25,.164,.20,b.base.material);b.journal.position.copy(g.gutterPivot);b.journal.position.z=-.70;root.add(b.journal);

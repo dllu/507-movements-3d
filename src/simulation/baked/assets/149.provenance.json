@@ -14,10 +14,10 @@
   "turns": [
     6.283185307179586,
     0,
-    -14.357827652555443,
+    -16.69123300843475,
     0,
     0,
-    -15.777234882127203,
+    -17.385947271786563,
     0,
     0,
     0
@@ -32,13 +32,13 @@
       -0.9800000190734863
     ],
     "max": [
-      5.846186662865579,
+      5.6862312617944895,
       1.4172738591918066,
       0.9899999964237214
     ]
   },
   "focus": [
-    2.742456401836886,
+    2.6624787013013416,
     -0.7853630284424268,
     0.004999988675117528
   ],
@@ -54,7 +54,7 @@
     },
     {
       "file": "src/simulation/mujoco-twin-cam/source.js",
-      "sha256": "0e04031e64eb8c7b0f1ce4b3b684c18e2534a4931108a412946d9a08a1acf284"
+      "sha256": "30a42913e9ef4fd53c07b5ef136f75afb6f2fba82d8730f61beb8787f071d87d"
     },
     {
       "file": "src/simulation/mujoco-twin-cam/geometry.js",
@@ -62,7 +62,7 @@
     },
     {
       "file": "src/simulation/mujoco-twin-cam/physics.js",
-      "sha256": "bdbfe802fbdb58321b53cb13ce12c8040dbf2d5dcab8c93de6139c2093a56cd9"
+      "sha256": "94887a37287c95a119099471f265cf4efdcac33388abd6476fda67d978c37f5a"
     },
     {
       "file": "src/simulation/mujoco/mass.js",
@@ -70,25 +70,25 @@
     },
     {
       "file": "docs/validation/149-guided-fine.json",
-      "sha256": "31cab625e64d157ac30ec3dcfa603e18a31b41bce0c8963384385b47246f994a"
+      "sha256": "8d1589f579b29c9924c97ed2bd7d5ddf7d479d784841625be912c031a6ae3308"
     },
     {
       "file": "docs/validation/149-guided-assembly.json",
-      "sha256": "791fcff6530ca0cdccae0dbe0e572c9ffdf00de3a7dcfe26c5d784a08758ae03"
+      "sha256": "4e57f2f66afdc8f4b22da71d837e47cd2fbb3d7008a678080352c65aff2d9568"
     }
   ],
   "closure": {
-    "shaft": -0.000002340747315088265,
-    "upper": -0.0000012329132803579057,
+    "shaft": -8.414139784918007e-8,
+    "upper": -6.92677300240252e-8,
     "upperRoll": 0,
-    "upperRod": 9.212826147242392e-7,
-    "lower": -7.346235756516828e-8,
+    "upperRod": 5.442998204929772e-8,
+    "lower": 0.000002607025146897108,
     "lowerRoll": 0,
-    "lowerRod": 7.663763975859772e-8,
-    "upperSlide": -0.0000034182954236775323,
-    "lowerSlide": -2.1507023542297055e-7
+    "lowerRod": -0.00000261897085596487,
+    "upperSlide": -1.932348562827535e-7,
+    "lowerSlide": 0.000007635884785472946
   },
-  "bytes": 452628,
-  "sha256": "191193c16da3227860dae3c5ca122a0c603f5a2bff6ae40dbd5dfce75c34ca0f",
+  "bytes": 515011,
+  "sha256": "9c14168a0b9ebc61e3089fa85390aa809f61d2191d711e773c16008808bde9ac",
   "samples": 601
 }

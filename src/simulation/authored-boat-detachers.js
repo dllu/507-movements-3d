@@ -542,7 +542,9 @@ function boatDetachingHooks(movement) {
   const releaseCords = units.map((unit, index) => {
     const cord = addRole(makeDynamicCable({
       color: ropeMaterialColor,
-      maxSegments: 24,
+      // Exactly the pieces used: spare (hidden) pieces were left stacked at
+      // the origin, where they overlapped one another.
+      maxSegments: 36,
       radius: 0.045,
     }), `release-rope-attached-to-lower-lever-${index + 1}`);
     cord.userData.isBelt = false;
@@ -631,8 +633,11 @@ function boatDetachingHooks(movement) {
       const loop = [];
       // From the free end round through the hole to the outgoing run, which
       // leaves the bar tangentially toward the pull bar.
-      for (let i = 0; i <= 9; i += 1) {
-        const angle = -Math.PI / 2 - (FULL_TURN - 2.0) * (1 - i / 9);
+      // Finely sampled, so adjacent straight rope pieces meet at shallow
+      // bends (coarse bends overlapped by 0.034 at their inner corners).
+      const loopSteps = 24;
+      for (let i = 0; i <= loopSteps; i += 1) {
+        const angle = -Math.PI / 2 - (FULL_TURN - 2.0) * (1 - i / loopSteps);
         loop.push(eyeBar.clone()
           .addScaledVector(pull, loopRadius * Math.cos(angle))
           .add(new THREE.Vector3(0, 0, loopRadius * Math.sin(angle))));

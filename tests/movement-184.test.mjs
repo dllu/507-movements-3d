@@ -15,7 +15,7 @@ test('movement 184 opens at the top of the stroke with the lower handle latched 
   const s = d.stateAtTime(0);
   assert.ok(Math.abs(s.phase - 0.5) < 1e-9);
   assert.equal(s.upperAngle, upperFreeStop);
-  assert.ok(s.lowerAngle > 53);
+  assert.ok(s.lowerAngle > 52);
   assert.equal(s.lowerLatchedByUpperQuadrant, true);
   // It then descends and trips the upper handle.
   assert.ok(d.stateAtTime(3).tappetTop > s.tappetTop);

@@ -12,28 +12,28 @@
   },
   "summary": {
     "samples": 1201,
-    "minProfileGap": -0.00004169743298015893,
-    "maxProfileGap": 0.00022520652676616404,
-    "maxPinError": 1.8283823788770282e-8,
-    "maxPenetration": 0.00004165360533754993,
-    "missingContact": 180,
-    "maxLeverError": 0.0001538850552429416,
-    "maxSliderError": 0.00030626660332999656,
-    "maxShaftError": 0.0015153093478375013,
-    "maxSelectorError": 0.0025333603904597046,
+    "minProfileGap": -0.00004171409712960816,
+    "maxProfileGap": 0.0009482180072704072,
+    "maxPinError": 1.828282935590288e-8,
+    "maxPenetration": 0.000041670267369611794,
+    "missingContact": 176,
+    "maxLeverError": 0.0003134886571745099,
+    "maxSliderError": 0.0006302131707851544,
+    "maxShaftError": 0.00145242815315072,
+    "maxSelectorError": 0.0025334385051115627,
     "closure": {
-      "carrier": 1.1442231051539409e-9,
-      "lever": -1.3526957332032907e-12,
-      "rod": 1.0453859999870474e-12,
-      "slider": 2.658069064638178e-12
+      "carrier": -4.187474256234225e-10,
+      "lever": 1.412203687323199e-13,
+      "rod": -1.0969003483296547e-13,
+      "slider": -2.784923272623318e-13
     },
     "velocityClosure": [
-      -3.684795335523461e-8,
-      -4.455736131937024e-11,
-      9.568173779325728e-10,
-      1.4960209782088896e-7,
-      -7.395186633202266e-10,
-      -1.879525870877863e-9
+      -6.808413388625922e-9,
+      1.6319603150053244e-11,
+      -7.418367049122354e-11,
+      2.8356490489045427e-8,
+      5.740472854010026e-11,
+      1.460392778929176e-10
     ]
   },
   "sources": [
@@ -47,7 +47,7 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "5cdc665ad6e2f58e889ac750860ac5d0099bd6e07a7338cc1bbe46b1df040a9a"
+      "sha256": "131ad0809a8b63440e5a86c4daa4416eee147ed3430074f0d7d1dd7f6b99425a"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",

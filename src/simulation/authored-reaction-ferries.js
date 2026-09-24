@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctReactionFerry} from './reaction-ferry-parts.js';
+import {ruledWaterLines, ruledWaterMaterial} from './ruled-water-lines.js';
 import {
   PALETTE,
   markShadows,
@@ -208,13 +209,23 @@ function reactionFerry(movement) {
   farBank.position.z = -riverHalfWidth - 0.62;
   root.add(farBank);
 
-  for (const bank of [nearBank, farBank]) {
-    const edge = new THREE.Mesh(
-      new THREE.BoxGeometry(10.0, 0.08, 0.12),
-      darkMaterial,
-    );
-    edge.position.set(0, 0.19, bank.position.z > 0 ? -0.57 : 0.57);
-    bank.add(edge);
+  // Brown draws each shore as a band of ruled strokes, heavy at the bank and
+  // lighter toward mid-stream, and leaves the channel between as blank paper:
+  // no solid water sheet or bank blocks. The river volume stays (hidden) for
+  // the immersion checks; each bank carries its ruled band at the surface.
+  river.visible = false;
+  for (const [bank, sign, seed] of [[nearBank, 1, 4471], [farBank, -1, 4472]]) {
+    const band = (rows, spacing, thickness, offset, bandSeed) => ruledWaterLines({
+      xMin: -5.0, xMax: 5.0, surfaceY: -offset, rows, spacing, thickness,
+      depth: 0.012, dash: [1.4, 4.2], gap: [0.06, 0.32], seed: bandSeed,
+    }).rotateX(sign * Math.PI / 2)
+      .translate(0, waterY + 0.012 - bank.position.y, sign * riverHalfWidth - bank.position.z);
+    bank.geometry.dispose();
+    bank.geometry = band(6, 0.07, 0.042, 0, seed);
+    bank.material = ruledWaterMaterial();
+    const lighter = new THREE.Mesh(band(7, 0.13, 0.026, 0.44, seed + 10), bank.material);
+    lighter.userData.role = 'fixed-ruled-water-along-bank';
+    bank.add(lighter);
   }
 
   // Brown draws one feathered current arrow just above the line, between the
@@ -358,6 +369,10 @@ function reactionFerry(movement) {
     rope.scale.set(1, ropeVector.length(), 1);
     ropeStartMarker.position.copy(anchorPoint);
     ropeEndMarker.position.copy(state.bowPoint);
+    // Each swivel turns with the line, so its blind bore faces the rope.
+    const ropeDirection = ropeVector.clone().normalize();
+    ropeStartMarker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), ropeDirection);
+    ropeEndMarker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), ropeDirection.negate());
   };
 
   const sourceState = stateAtInputAngle(0);

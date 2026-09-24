@@ -274,7 +274,9 @@ test('movement 401 sliding wrist never reverses around the faceplate and clears 
     > 5 * Math.abs(
       deadCenterDemonstration.conventionalDeadCenterMomentArm,
     ));
-  assert.ok(Math.abs(deadCenterDemonstration.actualSourceMomentArm) > 0.15);
+  // The lead is a fixed fraction of the (plate-proportioned) wrist radius.
+  assert.ok(Math.abs(deadCenterDemonstration.actualSourceMomentArm)
+    > 0.25 * data.geometry.crankRadius);
   disposeModel(model.root);
 });
 

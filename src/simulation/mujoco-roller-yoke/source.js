@@ -1,4 +1,8 @@
-// Original-engraving ink fit and conjugate pitch reconstruction.
+// Original-engraving ink fit and conjugate pitch reconstruction. The pitch
+// curve keeps only the first and third harmonics, with the third limited to
+// 2.5 source pixels (refit in /dev/shm/u2 with scripts/fit-roller-yoke-cam.mjs
+// data): the fitted 5th and 7th harmonics made the yoke jerk and surge, so the
+// cam is deliberately smoothed at the cost of a 3.7-pixel RMS ink residual.
 export default {
   "axis": [
     129.817384168008,
@@ -11,23 +15,13 @@ export default {
   "coefficients": [
     [
       1,
-      0.047698363060908536,
-      -0.2018932946911837
+      0.064365234375,
+      -0.203300110057
     ],
     [
       3,
-      0.0553981545354251,
-      0.045140447923281445
-    ],
-    [
-      5,
-      -0.004438199150415061,
-      0.014736844784416957
-    ],
-    [
-      7,
-      -0.017508733976891323,
-      -0.009342063077363204
+      0.0154496536258,
+      0.0196547246952
     ]
   ],
   "rollerMidpointY": 193.27837331177517,

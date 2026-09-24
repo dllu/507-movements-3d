@@ -55,14 +55,23 @@ export function correctEjectorTrapParts(root,id,update) {
     // The conical shoulder reaches a conformal finite seat at the existing
     // maximum prescribed lift. It previously missed the toroidal seat entirely.
     replace(b.annularSeat,horizontalTurned([[1.10,.90],[1.70,.74],[1.70,.48],[1.50,.48],[1.10,.80]]));b.annularSeat.position.y=0;b.annularSeat.rotation.set(0,0,0);
-    const outer=[[-.04,.98],[.54,.88],[.775,.80],[1.175,.48],[1.20,.40],[2.835,.40],[2.98,.36],[3.12,.22],[3.18,0]];
-    const inner=[[3.12,0],[3.06,.20],[2.94,.30],[2.80,.33],[1.20,.33],[1.10,.41],[.72,.73],[.50,.81],[-.04,.91]];
+    // Brown's D: a slender hollow stem closed at the top, the collar a a that
+    // closes on the seat, a narrow waist (the letter D) and a dished foot
+    // flaring out to the flange that clamps the diaphragm. The seat-closing
+    // cone (0.775..1.175) and stem are unchanged; the waist and dish replace
+    // the former broad bell.
+    const outer=[[-.05,.98],[.02,.97],[.10,.86],[.20,.70],[.30,.58],[.40,.52],[.55,.50],[.62,.56],[.72,.76],[.775,.80],[1.175,.48],[1.20,.40],[2.835,.40],[2.98,.36],[3.12,.22],[3.18,0]];
+    const inner=[[3.12,0],[3.06,.20],[2.94,.30],[2.80,.33],[1.20,.33],[1.10,.41],[.80,.62],[.70,.60],[.60,.44],[.50,.43],[.40,.45],[.30,.51],[.20,.63],[.10,.79],[.02,.90],[-.05,.93]];
     replace(b.valveStem,horizontalTurned([...outer,...inner]));b.valveStem.position.y=0;
     for(const o of[b.valveTop,b.valveShoulder,b.valveReservoir,b.valveNeck])o.visible=false;
-    // Finite diaphragm thickness; its lowest point remains on the bridge as
-    // the retained thermal law changes its bow by scaling about the rim.
-    const lower=[],upper=[];for(let i=0;i<=48;i++){const r=.94*i/48,y=-.20*(1-(r/.94)**2)**2;lower.push([y,r]);upper.unshift([y+.012,r]);}
+    replace(b.workingFluidReservoir,new THREE.SphereGeometry(.62,48,24));b.workingFluidReservoir.scale.y=.20;b.workingFluidReservoir.position.y=.05;
+    // Finite diaphragm; its lowest point remains on the bridge as the
+    // retained thermal law changes its bow by scaling about the rim. It thins
+    // to the clamped edge, which stays flush between D's flange above and a
+    // flat clamp ring below (the torus rim overlapped it by 0.072).
+    const lower=[],upper=[];for(let i=0;i<=48;i++){const r=.94*i/48,y=-.20*(1-(r/.94)**2)**2;lower.push([y,r]);upper.unshift([y+.012*(1-(r/.94)**8),r]);}
     replace(b.flexibleDiaphragm,horizontalTurned([...lower,...upper]));
+    replace(b.diaphragmRim,horizontalTurned([[-.06,.925],[-.06,1.0],[0,1.0],[0,.925]]));b.diaphragmRim.rotation.set(0,0,0);
     replace(b.bridgeCap,new THREE.SphereGeometry(.10,48,32));b.bridgeCap.position.y=-.35;
     for(const leg of b.bridgeLegs){replace(leg,new THREE.BoxGeometry(.16,1.27,.30));leg.position.y=-1.045;}
     for(const stream of b.condensateStreams)stream.visible=false;

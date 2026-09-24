@@ -208,6 +208,32 @@ function buildPlateJointFigure(materials, name) {
       group.add(log);
     }
     const tieX = side < 0 ? -1.05 : 1.30;
+    // Brown marks each cross-tie end on the logs' outer faces with a
+    // square crossed by an X, and draws bolt holes along the logs' tops.
+    const tieEnd = clip.union(
+      clip.difference(poly([[-0.10, -0.10], [0.10, -0.10], [0.10, 0.10], [-0.10, 0.10]]),
+        poly([[-0.078, -0.078], [0.078, -0.078], [0.078, 0.078], [-0.078, 0.078]])),
+      ...[1, -1].map((k) => poly([[-0.09, -0.09 * k - 0.014], [-0.09, -0.09 * k + 0.014],
+        [0.09, 0.09 * k + 0.014], [0.09, 0.09 * k - 0.014]])),
+    );
+    for (const z of [-1, 1]) {
+      const face = z * (f.logCenterZ + f.logHalfWidth);
+      const mark = addRole(new THREE.Mesh(
+        plate(tieEnd, z > 0 ? face : face - 0.006, z > 0 ? face + 0.006 : face),
+        materials.iron,
+      ), `plate-${name}-crossed-tie-end-mark`);
+      mark.position.set(tieX, f.logCenterY, 0);
+      group.add(mark);
+      for (const fraction of [0.2, 0.5, 0.8]) {
+        const bolt = addRole(new THREE.Mesh(
+          new THREE.CylinderGeometry(0.04, 0.04, 0.012, 20),
+          materials.iron,
+        ), `plate-${name}-log-bolt-head`);
+        bolt.position.set(start + (end - start) * fraction,
+          f.logCenterY + f.logHalfWidth + 0.006, z * f.logCenterZ);
+        group.add(bolt);
+      }
+    }
     const tieBottom = f.logCenterY + 0.02;
     const tie = addRole(new THREE.Mesh(
       new THREE.BoxGeometry(0.22, f.tieTopY - tieBottom,

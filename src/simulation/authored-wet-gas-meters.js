@@ -741,6 +741,23 @@ function wetGasMeter(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.8, 3.2, 11.8);
   root.userData.groundFloorY = -2.72;
   correctGasMeterParts(root,481,update);
+  // Brown's section shows one level water line just above the centre with gas
+  // above it. Water is drawn distinctly below that line; each chamber's gas
+  // tint is clipped to the space above the stationary surface, so the fill
+  // never reads as a vertical gas/water split while the drum turns.
+  caseWater.material.opacity = 0.30;
+  const waterSurfaceClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), -waterSurfaceY);
+  for (const material of gasPocketMaterials) material.clippingPlanes = [waterSurfaceClip];
+  root.userData.localClippingEnabled = true;
+  const surfaceHalfWidth = Math.sqrt((caseRadiusSceneUnit - 0.11) ** 2 - waterSurfaceY ** 2);
+  const waterSurfaceLine = new THREE.Mesh(
+    new THREE.PlaneGeometry(2 * surfaceHalfWidth, 0.035),
+    matte(PALETTE.fluid, { roughness: 0.3, side: THREE.DoubleSide }),
+  );
+  waterSurfaceLine.position.set(0, waterSurfaceY - 0.0175, (caseDepthSceneUnit - 0.12) / 2 + 0.002);
+  waterSurfaceLine.userData.role = 'stationary-level-water-surface-line';
+  root.add(waterSurfaceLine);
+  root.userData.blocks.waterSurfaceLine = waterSurfaceLine;
   // Brown's plate is a flat end section of case and drum.
   root.userData.cameraDirection.set(0.05, 0.08, 15);
   root.userData.cameraFov = 10;

@@ -6,7 +6,7 @@ import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
 
 export function makeEndlessGrooveGeometry(options={}) {
-  const {diskOpacity=.72}=options;
+  const {diskOpacity=1}=options;
   const root=new THREE.Group(),parts={},families={},blocks={},profile=makeEndlessGrooveProfile(options),f=profile;
   const attach=(name,geometry,family,color,position=[0,0,0])=>{
     if(!blocks[family]){blocks[family]=new THREE.Group();root.add(blocks[family]);}
@@ -14,9 +14,11 @@ export function makeEndlessGrooveGeometry(options={}) {
     mesh.name=name;mesh.position.fromArray(position);blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;
   };
   const shaftRadius=source.shaftRadius/100,pivotShaftRadius=source.pivotShaftRadius/100;
-  // Brown views the disk from its own side and dashes the grooved arm behind
-  // it; source presentation mirrors and reverses the view, so the translucent
-  // disk stands in for those hidden lines. Physics is unaffected.
+  // Viewed from the arm side (+z) the opaque disk lies behind the grooved
+  // arm, with the plate's layout and without a mirror; the default section
+  // view lifts the arm's front cover to show the pin in its groove. (Brown
+  // views from the disk side and dashes the arm; the arm-in-front view is
+  // the requested presentation.) Physics is unaffected.
   const diskMesh=attach('disk',ring(shaftRadius,source.diskRadius/100,-.50,-.30,256),'input',PALETTE.driver);
   if(diskOpacity<1)Object.assign(diskMesh.material,{transparent:true,opacity:diskOpacity,depthWrite:false});diskMesh.renderOrder=1;
   attach('rearHub',ring(shaftRadius,source.hubRadius/100,-.62,-.50,128),'input',PALETTE.driver);

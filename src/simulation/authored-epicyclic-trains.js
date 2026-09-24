@@ -1833,15 +1833,16 @@ function fergusonMechanicalParadox(movement) {
   correctEpicyclicFamily(root, movement.id);
   correctEpicyclic503504(root, movement.id);
   // Brown's side elevation shows the arm at rest along +x, from A's pedestal
-  // to the outer end D. The default view crops to that pose; the arm's full
-  // turn about A is kept separately as sweptBounds.
+  // to the outer end D. The view frames the arm's full turn about A so the
+  // carried wheels never leave it; in the near-orthographic side view the
+  // sweep's depth barely projects, so the fit box uses a shallower depth.
   root.userData.sweptBounds = new THREE.Box3(
     new THREE.Vector3(-4.31, -1.86, -4.31),
     new THREE.Vector3(4.31, 1.45, 4.31),
   );
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.00, -1.72, -1.00),
-    new THREE.Vector3(4.22, 0.84, 1.00),
+    new THREE.Vector3(-4.31, -1.86, -2.2),
+    new THREE.Vector3(4.31, 1.45, 2.2),
   );
   markShadows(root);
   return {

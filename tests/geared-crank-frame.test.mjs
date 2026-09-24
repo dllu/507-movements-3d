@@ -1,35 +1,42 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Vector3} from 'three';
-import {gearedCrankState,gearedCrankSource as g,gearedCrankLengths as l,sourcePoint} from '../src/simulation/geared-crank-source.js';
-import {makeGearedCrankFrame} from '../src/simulation/geared-crank-frame.js';
+import {gearedCrankState,gearedCrankSource as g,grooveRadius,sourcePoint} from '../src/simulation/geared-crank-source.js';
+import {makeGearedCrankFrame,gearedCrankGroove as G} from '../src/simulation/geared-crank-frame.js';
 import {solidSurface} from './helpers/solid-surface.mjs';
-test('148 candidate keeps source eccentric and fixed pivot and closes a complete turn',()=>{
- const first=gearedCrankState(0);assert.ok(first.wrist.distanceTo(sourcePoint(g.eccentric))<1e-12);
- assert.ok(first.joint.distanceTo(sourcePoint(g.joint))<1e-12);let previous=first;
- for(let i=0;i<=1024;i++){
-  const s=gearedCrankState(8*i/1024);
-  assert.ok(Math.abs(s.wrist.distanceTo(s.joint)-l.coupler)<1e-12);
-  assert.ok(Math.abs(s.pivot.distanceTo(s.joint)-l.output)<1e-12);
-  assert.ok(s.closureHeight>.56);
-  assert.ok(Math.abs(s.rockerAngle-previous.rockerAngle)<.01);
-  assert.ok(Math.abs(s.couplerAngle-previous.couplerAngle)<.03);previous=s;
+test('148 lever pin starts at the drawn pin and runs once round the gear groove per turn',()=>{
+ const first=gearedCrankState(0);assert.ok(first.pin.distanceTo(sourcePoint(g.pin))<.02);
+ let previous=first,travel=0,low=Infinity,high=-Infinity;
+ for(let i=1;i<=2048;i++){
+  const s=gearedCrankState(8*i/2048),local=s.pin.clone().rotateAround({x:0,y:0},-s.rotation);
+  assert.ok(Math.abs(local.length()-grooveRadius(Math.atan2(local.y,local.x)))<1e-9,'pin left the groove centre line');
+  assert.ok(Math.abs(s.pivot.distanceTo(s.pin)-first.pivot.distanceTo(first.pin))<1e-12);
+  assert.ok(Math.abs(s.leverAngle-previous.leverAngle)<.004,'lever jumps');
+  travel+=Math.atan2(Math.sin(s.grooveAngle-previous.grooveAngle),Math.cos(s.grooveAngle-previous.grooveAngle));
+  low=Math.min(low,s.leverAngle);high=Math.max(high,s.leverAngle);previous=s;
  }
- assert.ok(first.joint.distanceTo(previous.joint)<1e-12);
+ assert.ok(Math.abs(Math.abs(travel)-2*Math.PI)<1e-6,'pin does not go round the groove once per turn');
+ assert.ok(high-low>.3,'lever does not rock');
+ assert.ok(Math.abs(previous.leverAngle-first.leverAngle)<1e-9);
 });
-test('148 candidate real crank and frame bores clear their joining pins',()=>{
+test('148 groove walls, lever bore and pin clear each other throughout the turn',()=>{
  const v=makeGearedCrankFrame();
  try{
-  const parts=v.root.userData.parts,crank=parts['bored-short-crank'],frame=parts['oblong-rocking-frame'];
-  const c=solidSurface(crank.geometry),f=solidSurface(frame.geometry);let minimum=Infinity;
-  for(let i=0;i<=64;i++){
-   const s=v.update(i*8/64),ci=crank.matrixWorld.clone().invert(),fi=frame.matrixWorld.clone().invert();
+  const parts=v.root.userData.parts,walls=['oblong-groove-outer-wall','oblong-groove-inner-wall'].map(n=>[parts[n],solidSurface(parts[n].geometry)]);
+  const lever=parts['rocking-lever'],leverSolid=solidSurface(lever.geometry);let pinClearance=Infinity,pivotClearance=Infinity;
+  for(let i=0;i<=128;i++){
+   const s=v.update(i*8/128);
    for(let j=0;j<96;j++){
-    const a=2*Math.PI*j/96,dx=.12*Math.cos(a),dy=.12*Math.sin(a);
-    for(const center of [s.wrist,s.joint])minimum=Math.min(minimum,c.signedDistance(new Vector3(center.x+dx,center.y+dy,.27).applyMatrix4(ci)));
-    minimum=Math.min(minimum,f.signedDistance(new Vector3(s.joint.x+dx,s.joint.y+dy,.475).applyMatrix4(fi)));
+    const a=2*Math.PI*j/96;
+    for(const z of [-.05,0,.05]){
+     const point=new Vector3(s.pin.x+G.pinRadius*Math.cos(a),s.pin.y+G.pinRadius*Math.sin(a),z);
+     for(const [mesh,solid] of walls)pinClearance=Math.min(pinClearance,solid.signedDistance(point.clone().applyMatrix4(mesh.matrixWorld.clone().invert())));
+    }
+    const pivot=new Vector3(s.pivot.x+.16*Math.cos(a),s.pivot.y+.16*Math.sin(a),.15);
+    pivotClearance=Math.min(pivotClearance,leverSolid.signedDistance(pivot.applyMatrix4(lever.matrixWorld.clone().invert())));
    }
   }
-  assert.ok(minimum>.0027,`minimum pin clearance ${minimum}`);
+  assert.ok(pinClearance>.004,`pin-to-groove clearance ${pinClearance}`);
+  assert.ok(pivotClearance>.002,`pivot clearance ${pivotClearance}`);
  }finally{v.dispose();}
 });

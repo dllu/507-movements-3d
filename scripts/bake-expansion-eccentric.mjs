@@ -4,12 +4,13 @@ import assert from 'node:assert/strict';
 import {gzipSync} from 'node:zlib';
 import {BufferGeometry,Box3,Vector3} from 'three';
 import {makeExpansionEccentricGeometry} from '../src/simulation/mujoco-expansion-eccentric/geometry.js';
+import {expansionEccentricSpread} from '../src/simulation/expansion-eccentric-profile.js';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 const hash=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 const file=process.env.REPORT??'/dev/shm/137-fine.json',r=JSON.parse(fs.readFileSync(file));
 for(const s of r.sources)assert.equal(hash(s.file),s.sha256,s.file);
 assert.equal(r.resets,0);assert(r.penetration<.001);
-assert.deepEqual(r.options,{timestep:.00025,period:8,spread:12,samples:384});
+assert.deepEqual(r.options,{timestep:.00025,period:8,spread:expansionEccentricSpread,samples:384});
 const {rows}=r,period=8,cycle=4000;let best;
 for(let i=8001;i+cycle+1<rows.length;i++){
  const end=i+cycle,a=rows[i],b=rows[end];

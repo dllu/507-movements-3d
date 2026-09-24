@@ -1,4 +1,4 @@
-import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
+import {correctCordTraverseParts, retainTraverseCord} from './cord-traverse-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -103,16 +103,21 @@ function makeFuseeProfile({ revolutionCount, stroke }) {
     (sum, value) => sum + value,
     0,
   );
-  const radiusScale = stroke / (FULL_TURN * observedTotal);
+  // Each observation governs revolutionCount / 10 groove turns (one turn
+  // each in Sureda's ten-turn original); the payout still integrates to
+  // the stroke.
+  const turnsPerObservation = revolutionCount / SUREDA_TRAVEL_LINES.length;
+  const radiusScale = stroke
+    / (FULL_TURN * observedTotal * turnsPerObservation);
   const sampledRadii = SUREDA_TRAVEL_LINES.map(
     (distance) => distance * radiusScale,
   );
   const knots = [
     { radius: sampledRadii[0], turn: 0 },
-    { radius: sampledRadii[0], turn: 0.5 },
+    { radius: sampledRadii[0], turn: 0.5 * turnsPerObservation },
     ...sampledRadii.slice(1).map((radius, index) => ({
       radius,
-      turn: index + 1.5,
+      turn: (index + 1.5) * turnsPerObservation,
     })),
     { radius: sampledRadii.at(-1), turn: revolutionCount },
   ];
@@ -181,6 +186,7 @@ function makeFuseeProfile({ revolutionCount, stroke }) {
     radiusScale,
     sampledRadii,
     totalArea,
+    turnsPerObservation,
   };
 }
 
@@ -221,7 +227,7 @@ function makeProfiledFuseeBody({
     new THREE.LatheGeometry(lathePoints, 72),
     material,
   );
-  body.userData.role = 'historically-profiled-ten-turn-fusee-body';
+  body.userData.role = 'historically-profiled-sureda-fusee-body';
   return body;
 }
 
@@ -258,18 +264,64 @@ function makeStaticGroove({
   return groove;
 }
 
+// Colors a retained tube as a two-strand laid rope. The lay is fixed in the
+// cord material: its coordinate is the arc length from the fixed far end.
+function addRopeLay(cord, color, segments, lay = 0.15) {
+  const mesh = cord.userData.mesh;
+  const geometry = mesh.geometry;
+  const count = geometry.attributes.position.count;
+  const colors = new THREE.BufferAttribute(new Float32Array(count * 3), 3)
+    .setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('color', colors);
+  const light = new THREE.Color(color);
+  const dark = light.clone().multiplyScalar(0.3);
+  const mixed = new THREE.Color();
+  mesh.material = mesh.material.clone();
+  mesh.material.color.set(0xffffff);
+  mesh.material.vertexColors = true;
+  const paint = () => {
+    const length = cord.userData.length;
+    for (let i = 0; i <= segments; i += 1) {
+      const fromFixedEnd = length * (1 - i / segments);
+      for (let j = 0; j <= 10; j += 1) {
+        const phase = 2 * (fromFixedEnd / lay + j / 10);
+        const shade = 0.5 + 0.5 * Math.cos(FULL_TURN * phase);
+        mixed.copy(light).lerp(dark, shade ** 2);
+        colors.setXYZ(i * 11 + j, mixed.r, mixed.g, mixed.b);
+      }
+    }
+    for (const vertex of [count - 2, count - 1]) colors.setXYZ(vertex, dark.r, dark.g, dark.b);
+    colors.needsUpdate = true;
+  };
+  const setCurve = cord.userData.setCurve;
+  cord.userData.setCurve = (curve) => {
+    setCurve(curve);
+    paint();
+  };
+  paint();
+}
+
 function fuseeCarriageTraverse(movement) {
   const root = new THREE.Group();
 
-  const revolutionCount = 10;
+  // Sureda's fusee has ten turns, one per observation; at the display's
+  // one-turn-per-second crank ceiling that needed a 28 s cycle. Six turns
+  // carry the same radius law over the groove (each observation spans 0.6
+  // turn), so a full out-and-return cycle takes about 14 s.
+  const revolutionCount = 6;
   // Brown's plan draws a stubby fusee (large diameter about 1.2 times its
-  // length); a 28-unit stroke gives Sureda's radii that proportion.
-  const carriageStroke = 28;
+  // length); 2.8 units of stroke per turn gives Sureda's radii that
+  // proportion.
+  const carriageStroke = 2.8 * revolutionCount;
   const fuseeHeight = 1.52;
   const fuseeCenterY = 0.93;
   const fuseeTopY = fuseeCenterY + fuseeHeight / 2;
   const fuseeBottomY = fuseeCenterY - fuseeHeight / 2;
   const trackHalfLength = carriageStroke / 2 + 1.42;
+  // The fixed cord ends stay at least this far from the fusee at either end
+  // of the stroke, outside the carriage-following view, so their eyes never
+  // pop into the frame beside the fusee.
+  const anchorHalfSpan = carriageStroke / 2 + 7.5;
   const wheelRadius = 0.42;
   // Brown's plan: the carriage frame bars run along the traverse, the two
   // wheel axles lie parallel to the fusee shaft, and each axle carries one
@@ -282,12 +334,14 @@ function fuseeCarriageTraverse(movement) {
   const crankRadius = 1.3;
   // The rendered cycle starts mid-stroke, where Brown draws the band
   // crossing the middle of the fusee and both remote anchors lie off-plate.
-  const displayTimeOffset = 2.5;
   const contactPhase = Math.PI / 2;
-  const cyclePeriod = 12;
-  const strokeDuration = 5;
-  const dwellDuration = 1;
-  const rampDuration = 0.72;
+  // The cruise turns the crank at 6 / (6.65 - 0.6) = 0.99 turn per second,
+  // just inside the display's sustained-rotation ceiling.
+  const strokeDuration = 6.65;
+  const dwellDuration = 0.3;
+  const rampDuration = 0.6;
+  const cyclePeriod = 2 * (strokeDuration + dwellDuration);
+  const displayTimeOffset = strokeDuration / 2;
   const profile = makeFuseeProfile({
     revolutionCount,
     stroke: carriageStroke,
@@ -469,12 +523,12 @@ function fuseeCarriageTraverse(movement) {
 
   const fixedAnchors = [];
   const leftAnchor = new THREE.Vector3(
-    -trackHalfLength,
+    -anchorHalfSpan,
     fuseeBottomY,
     smallRadius,
   );
   const rightAnchor = new THREE.Vector3(
-    trackHalfLength,
+    anchorHalfSpan,
     fuseeTopY,
     largeRadius,
   );
@@ -807,6 +861,7 @@ function fuseeCarriageTraverse(movement) {
       revolutionCount,
       smallRadius,
       trackHalfLength,
+      anchorHalfSpan,
       wheelRadius,
     },
     historicalTrial: {
@@ -900,6 +955,18 @@ function fuseeCarriageTraverse(movement) {
   );
   root.userData.groundFloorY = -0.88;
   correctCordTraverseParts(root,358,update);
+  // The carriage-following view holds the carriage still, so the traverse
+  // reads through the fixed bands sliding past it. Brown draws each band as
+  // a laid rope; a helical lay fixed in the material (measured from its fixed
+  // far end) makes that sliding visible.
+  for (const [cord, color] of [[leftCord, PALETTE.belt], [rightCord, PALETTE.accent]]) {
+    retainTraverseCord(cord, 0.018, 1200);
+    addRopeLay(cord, color, 1200);
+    cord.userData.mesh.userData.role = cord === leftCord
+      ? 'finite-fusee-cord-1' : 'finite-fusee-cord-2';
+  }
+  root.userData.cameraMaxDistance = 5 * (2 * anchorHalfSpan);
+  update(0);
   markShadows(root);
   return {
     cameraDirection: root.userData.cameraDirection,

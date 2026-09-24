@@ -40,6 +40,16 @@ export function correctReactionFerry(root){
  const anchorEye=b.anchor.children[1];replace(anchorEye,hollowPipeBall(.135,.105,.098,64));anchorEye.position.set(0,0,0);anchorEye.rotation.set(0,0,0);
  replace(b.bowRing,hollowPipeBall(.135,.105,.080,64));b.bowRing.position.set(0,0,0);b.bowRing.rotation.set(0,0,0);
  b.ropeStartMarker.userData.role='anchor-rope-swivel-ball';b.ropeEndMarker.userData.role='bow-rope-swivel-ball';
+ // The line ends seated in a blind bore to each swivel ball's centre instead
+ // of running through the solid ball (a 0.098 overlap before).
+ {
+  const radius=b.ropeStartMarker.geometry.parameters.radius,bore=b.rope.geometry.parameters.radiusTop+.002,top=Math.sqrt(radius*radius-bore*bore),points=[];
+  const a0=Math.atan2(top,bore);
+  for(let i=0;i<=32;i++){const a=-Math.PI/2+(a0+Math.PI/2)*i/32;points.push(new T.Vector2(radius*Math.cos(a),radius*Math.sin(a)));}
+  points[0].x=0;points.push(new T.Vector2(bore,0),new T.Vector2(0,0));
+  const geometry=new T.LatheGeometry(points,48);
+  b.ropeStartMarker.geometry.dispose();b.ropeStartMarker.geometry=geometry;b.ropeEndMarker.geometry=geometry;
+ }
  // A slim mounting foot joins the bow socket to the hull behind the line entry.
  const bowFoot=add(b.boat,new T.BoxGeometry(.20,.09,.10),post.material,'bow-swivel-mount',new T.Vector3(.13,-.17,0));
  d.ferryWorkingParts={post,bearing,tiller,bladeBracket,anchorPost,anchorEye,bowFoot};

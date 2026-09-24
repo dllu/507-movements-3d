@@ -6977,22 +6977,69 @@ function reuleauxCarrierDiskValveMotion() {
   lowerRod.userData.role = 'lower-valve-rod-rigid-with-yoke';
   follower.add(upperRod, lowerRod);
 
+  // Brown draws each rod's nut as a hexagon seen face-on: three flats seated
+  // on the yoke, their chamfered ends arching away from the yoke toward the
+  // rod. The nut is a hexagonal prism whose outboard end is cut by a cone, so
+  // each flat ends in an arch that dips toward its corners.
+  const nutCorner = 40 * sourceScale;
+  const nutApothem = nutCorner * Math.sqrt(3) / 2;
+  const nutHeight = 50 * sourceScale;
+  const nutChamferDrop = 12 * sourceScale;
+  const hexNutGeometry = () => {
+    const rings = 12;
+    const sides = 72;
+    const boundary = (angle) => {
+      // Hexagon with a flat facing +Z (the viewer) after the X rotation.
+      const sector = Math.PI / 3;
+      const local = ((angle - Math.PI / 2 + sector / 2) % sector + sector)
+        % sector - sector / 2;
+      const r = nutApothem / Math.cos(local);
+      return [r * Math.cos(angle), r * Math.sin(angle)];
+    };
+    const top = (x, y) => {
+      const radius = Math.hypot(x, y);
+      return nutHeight - Math.max(0, radius - nutApothem)
+        / (nutCorner - nutApothem) * nutChamferDrop;
+    };
+    const positions = [];
+    const vertex = (x, y, h) => positions.push(x, h, y);
+    const quad = (a, b, c, d) => {
+      vertex(...a); vertex(...c); vertex(...b);
+      vertex(...a); vertex(...d); vertex(...c);
+    };
+    for (let j = 0; j < sides; j++) {
+      const a0 = 2 * Math.PI * j / sides;
+      const a1 = 2 * Math.PI * (j + 1) / sides;
+      const b0 = boundary(a0);
+      const b1 = boundary(a1);
+      // Outboard chamfer/crown surface over concentric rings.
+      for (let i = 0; i < rings; i++) {
+        const s0 = i / rings;
+        const s1 = (i + 1) / rings;
+        const p = (b, t) => [b[0] * t, b[1] * t, top(b[0] * t, b[1] * t)];
+        quad(p(b0, s0), p(b0, s1), p(b1, s1), p(b1, s0));
+      }
+      // Side flat up to the arched chamfer line.
+      quad([b0[0], b0[1], 0], [b1[0], b1[1], 0],
+        [b1[0], b1[1], top(...b1)], [b0[0], b0[1], top(...b0)]);
+      // Flat seat on the yoke.
+      vertex(0, 0, 0); vertex(b0[0], b0[1], 0); vertex(b1[0], b1[1], 0);
+    }
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position',
+      new THREE.Float32BufferAttribute(positions, 3));
+    geometry.computeVertexNormals();
+    return geometry;
+  };
+  const nutGeometry = hexNutGeometry();
   const attachmentLugs = [];
   for (const signY of [-1, 1]) {
-    for (const signX of [-1, 0, 1]) {
-      const lug = new THREE.Mesh(
-        new THREE.CapsuleGeometry(0.17, 0.52, 6, 14),
-        drivenMaterial,
-      );
-      lug.position.set(
-        signX * 0.44,
-        signY * (outerHalfHeight + 0.40),
-        0.40,
-      );
-      lug.userData.role = 'three-lobed-valve-rod-yoke-attachment';
-      lug.userData.side = signY < 0 ? 'lower' : 'upper';
-      attachmentLugs.push(lug);
-    }
+    const lug = new THREE.Mesh(nutGeometry, drivenMaterial);
+    lug.position.set(0, signY * (outerHalfHeight - 0.03), 0.40);
+    if (signY < 0) lug.rotation.x = Math.PI;
+    lug.userData.role = 'hex-nut-valve-rod-yoke-attachment';
+    lug.userData.side = signY < 0 ? 'lower' : 'upper';
+    attachmentLugs.push(lug);
   }
   follower.add(...attachmentLugs);
 

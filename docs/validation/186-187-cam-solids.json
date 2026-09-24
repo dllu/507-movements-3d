@@ -1,15 +1,31 @@
 {
-  "status": "sampled-contact-neighborhood-clear",
-  "scope": "Corrected cam toe, axial neck, handle plate and shoulder against every other rigid family. Same-body joins, indices and floating markers excluded. This is sampled rendered-solid evidence, not whole-assembly or continuous collision proof.",
-  "method": "Bidirectional triangle vertices, edge midpoints and centroids against independent surface-containment BVHs, with bounding-box rejection. The toe tangency test separately verifies finite axial overlap and rejects missing contact.",
+  "status": "sampled-assembly-clear",
+  "scope": "Movements 186-189: every visible mesh against every mesh of another declared rigid body over 129 poses of one cycle; penetrations under 0.0025 units (seated contact) are ignored, and the 186 strap and its riveted blade are one joined spring. Sampled rendered-solid evidence, not continuous collision proof.",
+  "method": "Bidirectional triangle vertices, edge midpoints and centroids against independent surface-containment BVHs, with bounding-box rejection.",
   "sources": [
     {
       "file": "scripts/review-gab-cam-solids.mjs",
-      "sha256": "2baf8e6e052feed8d3c13fb9dd6fc3c1789ca856801990813595af1543dc4c25"
+      "sha256": "102fc9e061c2101f33fa015f61b438ea8549d672c2d517591797158bb3171b8f"
     },
     {
       "file": "src/simulation/authored-gab-disengagers.js",
-      "sha256": "801f61550351f49900140b53d7ecba7878381c0e5e46666506d81e9c495a9778"
+      "sha256": "1804b3f84a62bf77248b15e3b6ea9f22f2774eaa5594e804dcc632328c89fefa"
+    },
+    {
+      "file": "src/simulation/gab-disengager-186.js",
+      "sha256": "2c008ed0414a67e68caf0c4be2c3e752867a2493ef3ca60447fabfb25c1e6f37"
+    },
+    {
+      "file": "src/simulation/gab-disengager-187.js",
+      "sha256": "b81f4625dd250824998b644aa796bc775611118f40100c20af3ebed0b48915b5"
+    },
+    {
+      "file": "src/simulation/gab-disengager-188.js",
+      "sha256": "022aeb0725dbf7ae6132318b0c5535fee5e925fe0d3c8535e375f200fb6829fc"
+    },
+    {
+      "file": "src/simulation/gab-disengager-189.js",
+      "sha256": "23c59bc54b39e4808d299069bbf6642a1f1dd2812e58af54410655140750ff47"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
@@ -20,17 +36,37 @@
     {
       "id": 186,
       "poses": 129,
-      "meshes": 16,
-      "pairs": 51,
-      "queries": 1737732,
+      "bodies": 4,
+      "meshes": 13,
+      "pairs": 55,
+      "queries": 4139616,
       "intersections": {}
     },
     {
       "id": 187,
       "poses": 129,
+      "bodies": 3,
+      "meshes": 6,
+      "pairs": 11,
+      "queries": 1528788,
+      "intersections": {}
+    },
+    {
+      "id": 188,
+      "poses": 129,
+      "bodies": 4,
       "meshes": 11,
-      "pairs": 24,
-      "queries": 389012,
+      "pairs": 33,
+      "queries": 5680514,
+      "intersections": {}
+    },
+    {
+      "id": 189,
+      "poses": 129,
+      "bodies": 4,
+      "meshes": 16,
+      "pairs": 73,
+      "queries": 1668744,
       "intersections": {}
     }
   ]

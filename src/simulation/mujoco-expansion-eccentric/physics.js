@@ -1,7 +1,7 @@
-import { expansionEccentricProfile, expansionForkLimits } from '../expansion-eccentric-profile.js';
+import { expansionEccentricProfile, expansionForkLimits, expansionEccentricSpread } from '../expansion-eccentric-profile.js';
 import { createMujocoSimulation } from '../mujoco/simulation.js';
 
-export function makeExpansionEccentricPhysics(mujoco, {timestep=.0005,period=8,spread=12,samples=192}={}) {
+export function makeExpansionEccentricPhysics(mujoco, {timestep=.0005,period=8,spread=expansionEccentricSpread,samples=192}={}) {
   const profile=expansionEccentricProfile(samples),scale=.01;
   const vec=values=>values.flat().map(v=>Number(v.toPrecision(12))).join(' ');
   const assets=profile.map((p,i)=>{

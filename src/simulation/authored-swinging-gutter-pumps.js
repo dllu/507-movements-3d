@@ -86,12 +86,17 @@ function swingingGutterPump(movement) {
   const gutterPivot = new THREE.Vector3(0, 0.90, 0);
   const branchHalfWidth = 1.55;
   const rowLevels = Object.freeze([-2.05, -1.15, -0.25, 0.65, 1.55, 2.45]);
-  const bottomScoopLocal = new THREE.Vector3(-branchHalfWidth, -2.55, 0);
-  const outletLocal = new THREE.Vector3(-2.55, rowLevels.at(-1), 0);
+  // Brown's stack leans: the stages stay horizontal while each elbow column
+  // steps left going up (about 0.3 across per unit of rise), so the rigid
+  // path is sheared, not rotated, from an upright ladder.
+  const stackLean = 0.30;
+  const leaned = (x, y) => new THREE.Vector3(x - stackLean * y, y, 0);
+  const bottomScoopLocal = leaned(-branchHalfWidth, -2.55);
+  const outletLocal = leaned(-2.55, rowLevels.at(-1));
   const localPathPoints = [bottomScoopLocal.clone()];
   for (const rowY of rowLevels) {
-    localPathPoints.push(new THREE.Vector3(branchHalfWidth, rowY, 0));
-    localPathPoints.push(new THREE.Vector3(-branchHalfWidth, rowY, 0));
+    localPathPoints.push(leaned(branchHalfWidth, rowY));
+    localPathPoints.push(leaned(-branchHalfWidth, rowY));
   }
   localPathPoints.push(outletLocal.clone());
   const segmentLengths = localPathPoints.slice(0, -1).map(
@@ -457,6 +462,7 @@ function swingingGutterPump(movement) {
   const sourceState = stateAtInputAngle(0);
   const geometry = {
     branchHalfWidth,
+    stackLean,
     cycleDuration,
     groundY,
     gutterPivot,

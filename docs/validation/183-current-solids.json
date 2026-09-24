@@ -5,44 +5,44 @@
   ],
   "poses": 65,
   "sources": {
-    "factory": "b59c6ade977eadb8d56943d8ef9065e668611b1750f045c1aaf4cfe556b635a3",
-    "parts": "5f249a9fd2cf303cec08b5e0edcba00ae67b1a6fca3f29689bcaef5f7ab6b33c",
-    "motion": "67a6e88dad7aa4b72b63ec023f0fecb556f279836ec4bb881cac45e612567818"
+    "factory": "caa1eca3b2808f4d8dd3f4e18aa38063805ff3ce0ab4dbe9df613ee5b8658169",
+    "parts": "808e6cfaaa5964f376bf0a708a0beacd39ec6251da31bf6b2d29c69c7bf1af75",
+    "motion": "d1cb2588d727c94f9b0aadd9b42f28b17a3731d2f5248e5f73caa23335740e07"
   },
   "results": {
     "183": {
-      "meshes": 19,
-      "worstPenetration": 0.00020188511584518586,
+      "meshes": 20,
+      "worstPenetration": 0.0005486135450288128,
       "pairs": {
-        "upper-handle-stud/lower-handle-quadrant": {
-          "depth": 0.00020188511584518586,
-          "time": 13.5
+        "upper-handle-stud/lower-handle-lip": {
+          "depth": 0.0005486135450288128,
+          "time": 14.34375
         },
         "source-width-sectioned-piston-rod/projecting-piston-rod-tappet": {
           "depth": 1.6689300497141346e-8,
           "time": 0
         },
-        "upper-handle-quadrant/lower-handle-stud": {
-          "depth": 0.00019074417914281052,
-          "time": 6.46875
+        "upper-handle-catchBoss/lower-handle-stud": {
+          "depth": 0.00008621565405691762,
+          "time": 6.1875
         }
       }
     },
     "184": {
-      "meshes": 19,
-      "worstPenetration": 0.00019938490234195293,
+      "meshes": 20,
+      "worstPenetration": 0.0005316366183879893,
       "pairs": {
-        "upper-handle-quadrant/lower-handle-stud": {
-          "depth": 0.00019074417914281052,
-          "time": 16.875
+        "upper-handle-catchBoss/lower-handle-stud": {
+          "depth": 0.0000853533118380195,
+          "time": 0.84375
         },
         "source-width-sectioned-piston-rod/projecting-piston-rod-tappet": {
           "depth": 1.6689300497141346e-8,
           "time": 3.09375
         },
-        "upper-handle-stud/lower-handle-quadrant": {
-          "depth": 0.00019938490234195293,
-          "time": 11.25
+        "upper-handle-stud/lower-handle-lip": {
+          "depth": 0.0005316366183879893,
+          "time": 10.96875
         }
       }
     }

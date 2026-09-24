@@ -285,8 +285,8 @@ test('movement 504 runs continuously, fits the full carrier orbit, and leaves an
     model.root.updateMatrixWorld(true);
     swept.union(new THREE.Box3().setFromObject(model.root));
   }
-  // Brown's elevation: the default view crops to the arm at rest along +x
-  // (A's pedestal to end D); the full turn is recorded as sweptBounds.
+  // Brown's elevation: the default view frames the arm's full turn about A
+  // (recorded as sweptBounds) in x and y; its depth is a shallow fit proxy.
   assert.ok(model.root.userData.sweptBounds.containsBox(swept));
   model.update(0);
   model.root.updateMatrixWorld(true);
@@ -298,7 +298,10 @@ test('movement 504 runs continuously, fits the full carrier orbit, and leaves an
   });
   const fit = model.root.userData.cameraFitBounds;
   assert.ok(fit.containsBox(pose), JSON.stringify([pose.min, pose.max]));
-  assert.ok(fit.max.x - fit.min.x < 0.7 * (swept.max.x - swept.min.x));
+  for (const axis of ['x', 'y']) {
+    assert.ok(fit.min[axis] <= swept.min[axis] + 1e-6 && fit.max[axis] >= swept.max[axis] - 1e-6, axis);
+  }
+  assert.ok(fit.max.x - fit.min.x < 1.05 * (swept.max.x - swept.min.x));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
 

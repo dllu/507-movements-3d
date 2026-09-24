@@ -2,10 +2,10 @@
   "movement": 150,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 poses spanning all selections. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 57,
-    "pairs": 1138,
+    "parts": 61,
+    "pairs": 1262,
     "poses": 65,
-    "checks": 21961090,
+    "checks": 27951972,
     "failingPairs": 0
   },
   "failures": {},
@@ -16,7 +16,7 @@
     },
     {
       "file": "src/simulation/selectable-cam-valve.js",
-      "sha256": "5cdc665ad6e2f58e889ac750860ac5d0099bd6e07a7338cc1bbe46b1df040a9a"
+      "sha256": "131ad0809a8b63440e5a86c4daa4416eee147ed3430074f0d7d1dd7f6b99425a"
     },
     {
       "file": "src/simulation/authored-selectable-cams.js",

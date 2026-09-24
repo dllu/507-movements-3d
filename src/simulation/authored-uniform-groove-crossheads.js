@@ -276,50 +276,50 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   inputRotor.userData.role = 'one-rigid-input-rotor';
   input.add(inputRotor);
 
-  // Brown draws the disk as an open outline with the stem and groove dashed
-  // through it; a translucent body stands in for those hidden lines.
-  const diskGlassMaterial = matte(PALETTE.driver, {
+  // Brown draws the disk as a broad ring (outer edge and raised rim) in
+  // front, with the groove and stem dashed behind it.  The view is taken
+  // from the crosshead side instead, so the groove the figure explains
+  // stays visible: the disk is opaque behind the crosshead and its raised
+  // rim faces the viewer, reading as Brown's ring.
+  const diskMaterial = matte(PALETTE.driver, {
     metalness: 0.16,
     roughness: 0.59,
   });
-  diskGlassMaterial.transparent = true;
-  diskGlassMaterial.opacity = 0.38;
-  diskGlassMaterial.depthWrite = false;
   const diskBody = cylinderAlongZ(
     diskRadius,
     diskDepth,
-    diskGlassMaterial,
+    diskMaterial,
     128,
   );
   diskBody.position.z = diskCenterZ;
   diskBody.userData.role = 'ten-source-unit-solid-crank-disk';
   inputRotor.add(diskBody);
 
+  const rimDepth = 0.06;
   const diskRim = new THREE.Mesh(
-    new THREE.TorusGeometry(diskRadius - 0.034, 0.043, 10, 128),
+    new THREE.TorusGeometry(diskRadius - 0.034, 0.034, 10, 128),
     darkMaterial,
   );
-  diskRim.position.z = diskFrontZ + 0.014;
+  diskRim.position.z = diskFrontZ + rimDepth;
   diskRim.userData.role = 'visible-outline-of-input-disk';
   inputRotor.add(diskRim);
-  // Brown draws the disk's far face as a broad raised rim; the presentation
-  // mirrors depth so this face, with the stem dashed behind it, faces out.
+  // Brown's broad raised rim, on the face toward the crosshead.
   const diskFaceRim = new THREE.Mesh(
     boredLatheGeometry([
-      { radial: diskRadius, axial: -0.03 },
-      { radial: diskRadius, axial: 0.03 },
+      { radial: diskRadius, axial: -rimDepth / 2 },
+      { radial: diskRadius, axial: rimDepth / 2 },
     ], diskRadius * 0.79, 128),
-    diskGlassMaterial,
+    diskMaterial,
   );
   diskFaceRim.rotation.x = Math.PI / 2;
-  diskFaceRim.position.z = diskCenterZ - diskDepth / 2 - 0.029;
-  diskFaceRim.userData.role = 'raised-rim-on-far-face-of-input-disk';
+  diskFaceRim.position.z = diskFrontZ + rimDepth / 2;
+  diskFaceRim.userData.role = 'raised-rim-on-crosshead-face-of-input-disk';
   inputRotor.add(diskFaceRim);
   const diskFaceRimEdge = new THREE.Mesh(
-    new THREE.TorusGeometry(diskRadius * 0.79 + 0.02, 0.028, 8, 128),
+    new THREE.TorusGeometry(diskRadius * 0.79 + 0.02, 0.022, 8, 128),
     darkMaterial,
   );
-  diskFaceRimEdge.position.z = diskFaceRim.position.z - 0.02;
+  diskFaceRimEdge.position.z = diskFrontZ + rimDepth;
   diskFaceRimEdge.userData.role = 'inner-edge-of-raised-disk-rim';
   inputRotor.add(diskFaceRimEdge);
 
@@ -559,13 +559,13 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
       guideCheeks.push(cheek);
     }
     // Brown draws each guide as one block across the stem: a bridge joins
-    // the cheeks on the face the presentation turns toward the viewer.
+    // the cheeks on the face toward the viewer.
     const bridge = new THREE.Mesh(
       new THREE.BoxGeometry(guideHalfWidth * 2, guideHalfHeight * 2, 0.07),
       frameMaterial,
     );
     bridge.position.set(0, shaftCenter.y + sideY * guideCenter,
-      stemPlaneZ - 0.21 + 0.035);
+      stemPlaneZ + 0.21 - 0.035);
     bridge.userData.role = 'fixed-guide-bridge-across-output-stem';
     guideBridges.push(bridge);
   }
@@ -1029,11 +1029,20 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
 
   update(0);
   fitPistonGuide(root, update, inputCyclePeriod);
-  // Brown crops the stems at the plate edges, framing the crosshead and disk.
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(shaftCenter.x - 3.4, shaftCenter.y - 3.3, -0.9),
-    new THREE.Vector3(shaftCenter.x + 3.4, shaftCenter.y + 3.7, 0.9),
-  );
+  // Brown crops the stems at the plate edges; the view instead keeps the
+  // whole stroke of both stem ends in frame, around the disk, crosshead and
+  // guides the plate draws (the removed rear frame is not fitted).
+  const sweptBounds = new THREE.Box3();
+  for (let index = 0; index <= 64; index += 1) {
+    update(inputCyclePeriod * index / 64);
+    root.updateMatrixWorld(true);
+    for (const part of [input, yoke, ...guideCheeks, ...guideBridges]) {
+      sweptBounds.union(new THREE.Box3().setFromObject(part));
+    }
+  }
+  update(0);
+  root.userData.sweptBounds = sweptBounds.clone();
+  root.userData.cameraFitBounds = sweptBounds.clone().expandByScalar(0.04);
   markShadows(root);
   for (const line of grooveEdges) {
     line.castShadow = false;

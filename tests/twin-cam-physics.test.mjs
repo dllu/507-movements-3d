@@ -30,7 +30,9 @@ test('149 compiled moving bodies use common-density visible mesh masses',()=>{
   }
  }finally{p.dispose();}
 });
-test('149 traced cam controls produce convex outlines',()=>{
+test('149 both cams are the same smooth convex outline',()=>{
+ const [a,b]=twinCamContours(),radii=c=>c.map(p=>Math.hypot(...p)).sort((x,y)=>x-y);
+ radii(a).forEach((r,i)=>assert.ok(Math.abs(r-radii(b)[i])<1e-12));
  for(const p of twinCamContours()){
   let sign=0;
   for(let i=0;i<p.length;i++){
@@ -58,7 +60,8 @@ test('149 traced cams drive free gravity-return levers through repeated turns',(
    }
   }
   assert.ok(p.data.qpos[0]>6*Math.PI-.01);
-  assert.ok(high[0]-low[0]>.25&&high[1]-low[1]>.18);
+  // Both cams share one profile, so both levers swing through the same angle.
+  assert.ok(high[0]-low[0]>.21&&high[1]-low[1]>.21);assert.ok(Math.abs((high[0]-low[0])-(high[1]-low[1]))<.002);
  }finally{p.dispose();}
 });
 test('149 lever coordinates are not prescribed when contact and gravity are removed',()=>{

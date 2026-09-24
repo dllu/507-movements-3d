@@ -29,23 +29,19 @@ export function makeGearedCrank(){
  add('large-bored-hub',ring(.183,.53,-.38,.16,96),blocks.drive,'driven');
  add('gear-shaft-retainer',disk(.42,.17,.185,96),blocks.fixed,'brass');
  add('pinion-bored-hub',ring(.183,.25,-.38,.12,96),blocks.pinion,'driver');
- for(let i=0;i<8;i++)add('gear-spoke-'+i,plate(capsule([.34,0],[3.67,0],.055,24),-.28,-.12).rotateZ(Math.PI/48+i*Math.PI/4),blocks.drive,'driven');
+ for(let i=0;i<8;i++)add('gear-spoke-'+i,plate(capsule([.34,0],[3.67,0],.055,24),-.28,-.07).rotateZ(Math.PI/48+i*Math.PI/4),blocks.drive,'driven');
  add('pinion-shaft',disk(.18,-.8,.18,64).translate(-5.1,0,0),blocks.fixed,'ink');
  const panel=points=>poly(points.map(p=>sourcePoint(p).toArray()));
  add('left-frame-panel',plate(panel([[32,215],[85,215],[101,240],[128,255],[139,280],[133,323],[99,340],[85,359],[32,359]]),-.85,-.59),blocks.fixed,'frame');
  add('right-frame-panel',plate(panel([[414,252],[435,238],[457,215],[500,215],[500,357],[457,357],[435,337],[414,323]]),-.85,-.59),blocks.fixed,'frame');
  add('rear-frame-rail',plate(capsule([-5.4,0],[6.3,0],.13,32),-.85,-.59),blocks.fixed,'frame');
- const pivot=sourcePoint(g.pivot),joint=sourcePoint(g.joint),wrist=sourcePoint(g.eccentric);
- for(const [name,r,low,high,x,y] of [
-  ['rocker-pivot',.16,-.70,.58,pivot.x,pivot.y],
-  ['frame-joint-pin',.12,.195,.58,joint.x-pivot.x,joint.y-pivot.y],
-  ['eccentric-pin',.12,.12,.37,wrist.x,wrist.y],
- ]){parts[name].geometry.dispose();parts[name].geometry=disk(r,low,high,64).translate(x,y,0);}
+ const pivot=sourcePoint(g.pivot);
+ parts['rocker-pivot'].geometry.dispose();parts['rocker-pivot'].geometry=disk(.16,-.70,.58,64).translate(pivot.x,pivot.y,0);
  const update=time=>{const state=v.update(time);blocks.pinion.rotation.z=Math.PI*time;root.updateMatrixWorld(true);root.userData.state=state;};
  const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(8*i/128);bounds.union(new THREE.Box3().setFromObject(root,true));}bounds.expandByScalar(.03);
- Object.assign(root.userData,{mechanism:'spur-geared-oblong-frame-crank-rocker',fidelity:'authored',simulationBackend:'analytic',reconstructionStatus:'rebuilt',supportsRestart:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
+ Object.assign(root.userData,{mechanism:'spur-geared-oblong-groove-rocking-lever',fidelity:'authored',simulationBackend:'analytic',reconstructionStatus:'rebuilt',supportsRestart:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
   animationTiming:{authoredCyclePeriod:8,displayCycleDuration:8,playbackTimeScale:1},
-  reconstructionNote:'The spur gears drive an eccentric pin and a short crank connected to the oblong rocking frame. The upper joint is shifted 14 pixels from the drawing to permit a complete input revolution. Frame attachment, rear supports and axial depths are reconstructed; the oblong is treated as a structural member, not a working groove.'});
+  reconstructionNote:'The oblong is a groove on the large gear\'s face. The pin on the long lever runs round it as the gears turn, so the lever, pivoted on the right-hand bracket, rocks back and forth; the short arm and eye are carried by the lever. Groove depth, walls, rear supports and axial depths are reconstructed.'});
  markShadows(root);update(0);
  return {root,update,reset:()=>update(0),focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.05,.03,15),dispose:v.dispose};
 }

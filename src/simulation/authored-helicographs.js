@@ -736,17 +736,17 @@ function screwHelicograph(movement) {
     idealPaperContactY: drawingPlaneY, radialThreadClearance: .004, axialFlankClearance: .003 };
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
   update(0);
-  // Plate crop: Brown draws the point at the left and the screw running
-  // right with the wheel on it. Fit that opening pose; the arm swings out of
-  // the frame on the left while it points away during its turns.
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.60, -0.12, -1.05),
-    new THREE.Vector3(5.20, 2.18, 1.05),
-  );
-  // The whole revolution, kept separately from the plate crop above.
+  // The whole revolution, so the screw and wheel stay in view as the arm
+  // turns round the point (Brown draws one pose: point left, screw right).
   root.userData.sweptBounds = new THREE.Box3(
     new THREE.Vector3(-5.35, -0.12, -5.35),
     new THREE.Vector3(5.35, 2.18, 5.35),
+  );
+  // In the near-orthographic side view the sweep's depth does not project;
+  // a shallow depth proxy keeps the box corners from inflating the fit.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-5.35, -0.12, -1.05),
+    new THREE.Vector3(5.35, 2.18, 1.05),
   );
   root.userData.groundFloorY = -0.10;
   markShadows(root);

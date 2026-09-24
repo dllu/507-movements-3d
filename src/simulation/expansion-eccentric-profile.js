@@ -1,18 +1,42 @@
-import * as THREE from 'three';
 import { expansionEccentricOutline as trace } from '../data/expansion-eccentric-outline.js';
 
+// The cam must bear on both fork rollers at once, as Brown's positive
+// expansion eccentric does. Its edge is a smooth radial Fourier curve about
+// the shaft (engraving pixels) fitted jointly to the visible ink landmarks
+// and to two-roller conjugacy with the fork pivoting at the measured eye, the
+// rollers at their measured centres moved 4 pixels apart each. Over a
+// turn the lower roller sits within -0.037..0.616 pixels of the cam
+// while the upper roller touches it; visible landmarks fit to 4.84 pixels RMS
+// (11.23 maximum). The traced outline's dimples, which no two-roller
+// fork can follow, are smoothed away. Design: pass-51 lane u2 optimizer.
+export const expansionEccentricSpread = 4;
+export const expansionEccentricCoefficients = [
+  78.1814565134,
+  11.5253312204,
+  3.6878300112,
+  0.149068084,
+  -0.0702779228,
+  -1.3617431385,
+  2.0448886584,
+  -0.1432852424,
+  0.0928010455,
+  0.1034123751,
+  0.1618266564,
+  -0.0157742096,
+  -0.0255234897,
+];
+export function expansionEccentricRadius(angle) {
+  const c = expansionEccentricCoefficients;let r = c[0];
+  for (let k = 1; 2 * k < c.length; k++) r += c[2*k-1]*Math.cos(k*angle) + c[2*k]*Math.sin(k*angle);
+  return r;
+}
 export function expansionEccentricProfile(samples = 384) {
-  const points = [
-    ...trace.visibleRuns[0], [92,302], [80,300], [68,302],
-    ...trace.visibleRuns[1], [72,152], [82,153], [94,149],
-  ].map(([x,y]) => new THREE.Vector3(x-trace.shaft[0], trace.shaft[1]-y, 0));
-  const curve = new THREE.CatmullRomCurve3(points, true, 'centripetal');
   return Array.from({length:samples},(_,i)=>{
-    const p=curve.getPoint(i/samples);return [p.x,p.y];
+    const a=2*Math.PI*i/samples,r=expansionEccentricRadius(a);return [r*Math.cos(a),r*Math.sin(a)];
   });
 }
 
-export function expansionForkLimits(profile, driverAngle, {upperRadius=31,lowerRadius=32,spread=0} = {}) {
+export function expansionForkLimits(profile, driverAngle, {upperRadius=31,lowerRadius=32,spread=expansionEccentricSpread} = {}) {
   const c=Math.cos(driverAngle),s=Math.sin(driverAngle);
   const polygon=profile.map(([x,y])=>[c*x-s*y,s*x+c*y]);
   const pivot=[trace.forkPivot[0]-trace.shaft[0],trace.shaft[1]-trace.forkPivot[1]];

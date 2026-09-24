@@ -7,18 +7,14 @@ import {solidSurface} from './helpers/solid-surface.mjs';
 
 for (const id of [186, 187, 188, 189]) test(`${id}: rendered joint plates clear their actual shafts and pins throughout playback`, () => {
   const model = createAuthoredGabDisengagerMovement({id});
-  const b = model.root.userData.blocks;
-  const pairs = id === 188 ? [[b.valvePinBoss, b.valvePin], [b.valveCarrierWeb, b.valvePin]] : [
-    [b.valveArm, b.valveShaft], [b.valveArm, b.valvePin], [b.valveShaftFace, b.valveShaft],
-  ];
-  if (id === 189) pairs.push(
-    [b.hangerLink, b.crankPin], [b.hangerLink, b.rodHangerPin],
-    [b.operatingHandleStem, b.operatingPivotPin],
-    [b.operatingCrankArm, b.operatingPivotPin], [b.operatingCrankArm, b.crankPin],
-    [b.operatingPivotFace, b.operatingPivotPin], [b.rodHangerBoss, b.rodHangerPin],
-    [b.rodRightTail, b.rodHangerPin], [b.frameValveBearing, b.valveShaft],
-    [b.frameOperatingBearing, b.operatingPivotPin],
-  );
+  // Every pinned joint the model declares: the plate must be bored for the
+  // pin that actually passes through it.
+  const pairs = model.root.userData.jointChecks;
+  assert.ok(Array.isArray(pairs) && pairs.length >= 4, `${id}: joint list`);
+  for (const [plate, pin] of pairs) {
+    assert.ok(plate?.isMesh && pin?.isMesh, `${id}: joint meshes`);
+    assert.equal(pin.geometry.type, 'CylinderGeometry', `${id}: ${pin.userData.role} is a round pin`);
+  }
   const checks = pairs.map(([plate, pin]) => ({plate, pin, surface: solidSurface(plate.geometry)}));
   try {
     assert.equal(model.root.userData.hideGround, true);

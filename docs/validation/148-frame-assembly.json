@@ -1,27 +1,27 @@
 {
   "movement": 148,
   "status": "candidate-frame-assembly",
-  "method": "Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. Includes the traced rocker, short crank, eccentric mounting arm, pins and rear-supported stub shaft. Does not include either complete gear, their bearings or the fixed frame.",
+  "method": "Bidirectional mesh vertices, edge midpoints and face centers against actual solids. Excludes same rigid family joins. Sampled check, not swept-volume proof. Includes the gear-face groove walls, rocking lever, groove pin, pivot and stub shaft; not the gears or fixed frame.",
   "summary": {
     "poses": 65,
-    "parts": 10,
-    "pairs": 36,
-    "checks": 1307540,
+    "parts": 8,
+    "pairs": 21,
+    "checks": 3648540,
     "failingPairs": 0
   },
   "failures": {},
   "sources": [
     {
       "file": "scripts/review-geared-crank-frame-assembly.mjs",
-      "sha256": "a9a3e85526d259d4287de1cafa0b10e25dbf3b63da2ff6e5dac603a5878c653d"
+      "sha256": "a76e7cb4b1ec19560ddb39a7d6fbcd7591d0d862721b4a01bcdd00a7a7fb1756"
     },
     {
       "file": "src/simulation/geared-crank-frame.js",
-      "sha256": "8b305283ea231d42d4e8919b11a0bdf8f93b1eac383a7a8aeb03d00eb4079798"
+      "sha256": "8dbfe08d6596afb46ee7d42bdaf09d501c089bbcb4a978bc7ae2f5825dc1c1e7"
     },
     {
       "file": "src/simulation/geared-crank-source.js",
-      "sha256": "7b7794214728115a42c81591ba88dca96135cd3671d29da612db3d2436a01098"
+      "sha256": "4bdedb1d4048815dece332a47168c27a284f4ccc12a925b8d5027c62c169eeda"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -29,7 +29,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

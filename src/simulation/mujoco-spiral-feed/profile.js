@@ -1,7 +1,7 @@
 import source from './source.js';
 import {rotate,poly} from '../finite-plate-geometry.js';
 
-export function makeSpiralFeedProfile({segments=3072,clearance=.0005}={}) {
+export function makeSpiralFeedProfile({segments=2048,clearance=.0005}={}) {
   const [a,b,c,d]=source.spiral.map(x=>x/100),halfWidth=source.railWidth/200;
   const radius=t=>a+b*t+c*Math.cos(t)+d*Math.sin(t),derivative=t=>b-c*Math.sin(t)+d*Math.cos(t);
   const at=t=>rotate([radius(t),0],-Math.PI/2-t);
@@ -26,8 +26,12 @@ export function makeSpiralFeedProfile({segments=3072,clearance=.0005}={}) {
   let rollerRadius=Math.PI*b-halfWidth-clearance;
   // Bound a constant-diameter roller over every pitch, including the inner
   // turns where the finite spiral slope makes the normal spacing smallest.
+  const fits=(q,r)=>contactRadius(q,-halfWidth-r,1).r-contactRadius(q,halfWidth+r,0).r>=2*clearance;
   for(let i=0;i<=720;i++) {
     const q=range[0]+(range[1]-range[0])*i/720;
+    // Most pitches already admit the current bound; bisect only where the
+    // spacing is tighter (this keeps model construction fast).
+    if(fits(q,rollerRadius))continue;
     let low=0,high=rollerRadius;
     for(let j=0;j<24;j++) {
       const r=(low+high)/2,lower=contactRadius(q,halfWidth+r,0).r,upper=contactRadius(q,-halfWidth-r,1).r;

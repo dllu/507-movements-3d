@@ -13,7 +13,7 @@ test('117 closed hardware retains a conjugate, regular cam and a stem long enoug
  try{
   assert.equal(Object.keys(u.parts).length,27);
   for(const [n,m]of Object.entries(u.parts)){const a=inspectWeightedClutchSolid(m.geometry);assert(a.volume>0,n);assert.equal(a.components,1,n);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,n);}
-  for(let i=0;i<2048;i++){const phi=2*Math.PI*i/2048,a=p.at(phi),b=p.at(phi+Math.PI);assert(Math.abs(a.radius+b.radius-2*s.meanPitchRadius)<2e-15);assert(Math.abs(Math.hypot(a.point[0]-a.radius*Math.cos(phi),a.point[1]-a.radius*Math.sin(phi))-s.rollerRadius)<2e-15);assert(1-s.rollerRadius*a.curvature>.34);}
+  for(let i=0;i<2048;i++){const phi=2*Math.PI*i/2048,a=p.at(phi),b=p.at(phi+Math.PI);assert(Math.abs(a.radius+b.radius-2*s.meanPitchRadius)<2e-15);assert(Math.abs(Math.hypot(a.point[0]-a.radius*Math.cos(phi),a.point[1]-a.radius*Math.sin(phi))-s.rollerRadius)<2e-15);assert(1-s.rollerRadius*a.curvature>.34);assert(Math.abs(a.second)<.5,'the smoothed cam must not jerk the yoke');}
   const g=u.geometry;assert(g.stemEnd+p.maximum<g.guideCenter-g.guideHalf-.1);assert(g.stemLowerTop+p.minimum>g.guideCenter+g.guideHalf+.2);assert(u.hideGround);
  }finally{disposeObject3D(v.root);}
 });
@@ -32,13 +32,17 @@ test('117 uses four native coordinates and one cam actuator; compiled cam cells 
  }finally{v.dispose();}
 });
 
-test('117 native contacts drive the yoke and independently turn both rollers over two cam cycles',t=>{
+// With the smoothed cam the yoke never accelerates downward faster than
+// gravity, so the weight stays on the upper roller: the lower roller follows
+// in light contact and turns only slowly. Test 5 checks that it drives the
+// yoke whenever it carries the load.
+test('117 native contacts drive the yoke and turn both rollers over two cam cycles',t=>{
  const v=makeMujocoRollerYoke(mujoco),p=v.physics,u=v.root.userData;let error=0,penetration=0,lo=Infinity,hi=-Infinity;
  try{
   for(let i=0;i<10/p.timestep;i++){p.step();const d=p.data,q=n=>d.qpos[p.joints[n].q];assert([...d.qpos,...d.qvel].every(Number.isFinite));assert(Math.abs(d.time-(i+1)*p.timestep)<1e-8);const expected=u.profile.at(Math.PI/2-q('input')).radius-u.source.meanPitchRadius;error=Math.max(error,Math.abs(q('yoke')-expected));lo=Math.min(lo,q('yoke'));hi=Math.max(hi,q('yoke'));for(const n of ['yoke','upper','lower'])assert.equal(d.qfrc_actuator[p.joints[n].v],0);
    const cs=d.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{penetration=Math.max(penetration,-c.dist);}finally{c.delete();}}}finally{cs.delete();}
   }
-  assert(error<.00015);assert(penetration<.00015);assert(lo<-.248&&hi>.248);assert(p.data.qpos[p.joints.upper.q]>30);assert(p.data.qpos[p.joints.lower.q]>20);t.diagnostic(JSON.stringify({motionErrorPixels:error*100,penetrationPixels:penetration*100,range:[lo,hi]}));
+  assert(error<.00015);assert(penetration<.00015);assert(lo<-.22&&hi>.22);assert(p.data.qpos[p.joints.upper.q]>30);assert(p.data.qpos[p.joints.lower.q]>2);t.diagnostic(JSON.stringify({motionErrorPixels:error*100,penetrationPixels:penetration*100,range:[lo,hi]}));
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());
 });
 

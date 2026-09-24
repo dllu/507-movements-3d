@@ -5,20 +5,20 @@
   "summary": {
     "poses": 61,
     "parts": 33,
-    "checks": 7765012,
+    "checks": 8251474,
     "failingPairs": 0
   },
   "failures": {},
   "workingContacts": {
     "cam0/roller0": {
       "firstTime": 0.005,
-      "points": 53,
-      "maximumDepth": 0.0003436768153924176
+      "points": 57,
+      "maximumDepth": 0.00011416582105455711
     },
     "cam1/roller1": {
       "firstTime": 0.10500000000000001,
       "points": 55,
-      "maximumDepth": 0.00032674963807380856
+      "maximumDepth": 0.00013839168502121726
     }
   },
   "sources": [
@@ -32,11 +32,11 @@
     },
     {
       "file": "src/simulation/mujoco-twin-cam/physics.js",
-      "sha256": "bdbfe802fbdb58321b53cb13ce12c8040dbf2d5dcab8c93de6139c2093a56cd9"
+      "sha256": "94887a37287c95a119099471f265cf4efdcac33388abd6476fda67d978c37f5a"
     },
     {
       "file": "src/simulation/mujoco-twin-cam/source.js",
-      "sha256": "0e04031e64eb8c7b0f1ce4b3b684c18e2534a4931108a412946d9a08a1acf284"
+      "sha256": "30a42913e9ef4fd53c07b5ef136f75afb6f2fba82d8730f61beb8787f071d87d"
     },
     {
       "file": "src/simulation/mujoco/mass.js",
@@ -44,11 +44,11 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     },
     {
       "file": "src/simulation/baked/assets/149.json.gz",
-      "sha256": "191193c16da3227860dae3c5ca122a0c603f5a2bff6ae40dbd5dfce75c34ca0f"
+      "sha256": "9c14168a0b9ebc61e3089fa85390aa809f61d2191d711e773c16008808bde9ac"
     },
     {
       "file": "src/simulation/baked/twin-cam.js",

@@ -25,13 +25,13 @@ export default {
   },
   90: {
     camera: [0, 0, 1],
-    remove: ['guide\\d', 'shaftSupport', 'base'],
-    note: 'Flat front elevation of the oval yoke with its two rod stubs broken off, the eccentric disk and the hatched shaft; no pedestal, rod guides or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
+    remove: ['guide\\d', 'rodExtension\\d', 'shaftSupport', 'base'],
+    note: 'Flat front elevation of the oval yoke with its two rod stubs broken off at Brown\'s lengths, the eccentric disk and the hatched shaft; no pedestal, rod guides, rod runs into the guides or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
   },
   91: {
     camera: [0, 0, 1],
-    remove: ['guide\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
-    note: 'Flat front elevation of the yoke with its upper and lower rods broken off, the triangular eccentric and the hatched shaft; no guide frame, collars or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
+    remove: ['guide\\d', 'rodExtension\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
+    note: 'Flat front elevation of the yoke with its upper and lower rods broken off at Brown\'s lengths, the triangular eccentric and the hatched shaft; no guide frame, collars or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
   },
   93: {
     remove: ['guide\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
@@ -52,9 +52,8 @@ export default {
     note: 'Flat face view of the heart cam on its shaft and the roller-ended bar running off to the right; no return spring, spring seat, bar guides or frame are drawn. Only the production MuJoCo model is presented; its physics keeps the inferred return spring and ideal guide.',
   },
   98: {
-    camera: [0, 0, -1],
-    scale: [-1, 1, 1],
-    note: 'Viewed from the disk side, the grooved arm dashed behind the disk and its sectioned pivot shaft on the right; mirrored so the rear view keeps the plate layout. The disk is translucent in place of the dashed hidden lines; no frame is drawn (the factory omits it).',
+    camera: [0, 0, 1],
+    note: 'Front view with Brown\'s layout (pivot shaft on the right) and the same rotation sense, taken from the arm side without a mirror: the grooved arm in front, its cover lifted in section to show the crank pin in the endless groove, and the opaque disk behind it (Brown views from the disk side and dashes the arm). No frame is drawn (the factory omits it).',
   },
   105: {
     remove: ['anvil', 'blank'],
@@ -113,22 +112,18 @@ export default {
   },
   186: {
     camera: [0.03, 0.02, 1],
-    remove: ['fixed-frame-supporting-valve-rockshaft'],
-    note: 'The rockshaft, gab lever, eccentric rod and spring loop handle; no frame is drawn.',
+    note: 'The rockshaft, valve rocker, eccentric rod, claw lever with its notch-a drop and the spring loop handle; no frame is drawn.',
   },
   187: {
     camera: [0.03, 0.02, 1],
-    remove: ['fixed-frame-supporting-the-valve-rockshaft'],
-    note: 'The rockshaft, valve lever, eccentric rod and upper handle; no frame is drawn.',
+    note: 'The rockshaft, valve arm, eccentric rod with its lower handle, and the pivoted upper cam handle; no frame is drawn.',
   },
   188: {
     camera: [0.03, 0.02, 1],
-    remove: ['fixed-frame-and-valve-carrier-guide'],
-    note: 'The eccentric rod with its loop handle a and leaf spring; no frame or guide is drawn.',
+    note: 'The eccentric rod with its loop handle, leaf spring at a and valve pin; no frame is drawn.',
   },
   189: {
     camera: [0.03, 0.02, 1],
-    remove: ['fixed-support-frame-behind-source-linkage'],
     note: 'The rockshaft, forked eccentric rod and the bell crank with its vertical rod; no frame is drawn.',
   },
   190: {
@@ -438,9 +433,8 @@ export default {
     note: 'Plan of the carriage: the fusee on its shaft in the carriage frame with the crank at the large end, the cross-member and bed carrying the two edge-on wheels on their axles, and the band crossing the fusee; no guide rail or travel ticks are drawn under the wheels.',
   },
   354: {
-    scale: [1, 1, -1],
     remove: ['fixed-rear-support-rail', 'fixed-bracket-carrying-output-guide', 'fixed-input-bearing-bracket', 'fixed-bearing-for-input-shaft', 'visible-radial-index-on-input-disk', 'visible-linear-index-on-output-stem'],
-    note: 'The rimmed disk in front, the grooved crosshead and its stem dashed behind it, the stems cropped at the plate edges through their guides; no support rails, brackets, bearing or white indices are drawn. The depth mirror puts the disk in front as Brown draws it; the disk is translucent in place of his dashed hidden lines, so it reads as his open ring with the stem through it.',
+    note: 'Brown\'s layout taken from the crosshead side: the grooved crosshead and stem in front of the opaque disk, whose raised rim reads as his ring (Brown views from the disk side and dashes the groove and stem behind it). Both stems are framed through their guides over the whole stroke; no support rails, brackets, bearing or white indices are drawn.',
   },
   363: {
     camera: [0, 0.03, 1],
@@ -538,9 +532,9 @@ export default {
     note: 'End elevation of the broad arched strap frame with its crossbars, the two winding rolls and the brush cylinder between them, the cloth running on its S path; no white indices or cloth stripes are drawn.',
   },
   384: {
-    camera: [0, 0.1, 1],
+    camera: [0, 0.36, 1],
     remove: ['stationary-drawing-and-transfer-paper', 'white-wheel-spin-index-on-(?:near-face|tread)', 'stationary-reference-index'],
-    note: 'Side view of the point, screw-threaded arm and small milled wheel; no paper or white indices are drawn.',
+    note: 'Side view (raised about 20° so the arm still reads when it turns toward the viewer) of the point, screw-threaded arm and small milled wheel, framed on the arm\'s whole sweep round the point; no paper or white indices are drawn.',
   },
   385: {
     remove: ['fixed-wall-beside-door-opening', 'fixed-vertical-door-jamb', 'fixed-door-frame-lintel', '(frame|door)-pin-socket-bracket', 'moving-door-panel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', 'one-of-three-fixed-axis-door-hinge-barrels', '(frame|door)-side-socket-fixed-to-support', '(frame|door)-side-socket-upper-lip', '(frame|door)-side-white-pin-turn-index', 'white-toggle-height-index', 'white-weight-height-index'],
@@ -950,8 +944,8 @@ export default {
     note: 'Elevation of the bevel wheels C, D on shaft A, the block F carrying the stub axle and wheel B, and the head G; Brown draws no index marks.',
   },
   504: {
-    camera: [0, 0.03, 1],
-    note: 'Side elevation of the wheels A, B, the pinions and the arm, as Brown draws it.',
+    camera: [0, 0.3, 1],
+    note: 'Side elevation of the wheels A, B, the pinions and the arm as Brown draws it, raised about 17° so the arm\'s turn about A reads and framed on that whole turn.',
   },
   507: {
     camera: [0.02, 0.03, 1],
