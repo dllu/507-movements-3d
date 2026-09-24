@@ -5502,14 +5502,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-marine-valve-gears.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Operator reversing selection prescribed; hidden crank/rocker and diagnostic valve output inferred, no pressure/load simulation.",
       "assessment": "reasonable"
@@ -5533,14 +5534,15 @@
         "docs/movement-172.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-curve-generators.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Engraved dotted curve inconsistent with measured linkage; hidden guide and ideal constraints inferred.",
       "assessment": "reasonable"
@@ -5568,14 +5570,15 @@
         "docs/user-display-followup-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/tappet-silk-traverse.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Finite 71.825-second adjustment visibly resets at replay boundary; ideal nut/guide constraints, tooth geometry and depths inferred.",
       "assessment": "reasonable"
@@ -5601,14 +5604,15 @@
         "docs/validation/174-assembly-clearance.json",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/bench-clamp.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Operator withdrawal, board guidance, masses/damping and depths inferred; material contact properties not historical measurements.",
       "assessment": "reasonable"
@@ -5634,14 +5638,15 @@
         "docs/validation/175-assembly-clearance.json",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-stroke-cranks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Rigid branch transfer requires crank pin 32.37 pixels from drawing; transition prescribed rather than passive dynamics.",
       "assessment": "reasonable"
@@ -5665,14 +5670,15 @@
         "docs/movement-176.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-engine-couplings.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Equal-throw coupling, selected ring angle and fitted joints idealized; hidden supports/depths inferred.",
       "assessment": "reasonable"
@@ -5696,14 +5702,15 @@
         "docs/movement-177.md",
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-engine-couplings.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Released output and ring angle prescribed; disengagement under load is not passively simulated.",
       "assessment": "reasonable"
@@ -5729,14 +5736,15 @@
         "docs/validation/178-current-solids.json",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2d-cranks-screws-review.md"
+        "docs/w2d-cranks-screws-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-variable-cranks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Production crank ratio differs from the oracle; loads, friction and backlash not solved.",
       "assessment": "reasonable"
@@ -5762,7 +5770,8 @@
         "docs/validation/179-current-solids.json",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5772,7 +5781,7 @@
         ],
         "note": "Offline shaft/stop MuJoCo check; production remains prescribed."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Engine/manual valve response not simulated; bearing resistance and depths inferred despite isolated stop-contact study.",
       "assessment": "reasonable"
@@ -5798,14 +5807,15 @@
         "docs/validation/180-assembly-clearance.json",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/single-clamp.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Board orientation/operator guidance, friction, inertia and force/damping inferred; timing parameter-dependent.",
       "assessment": "reasonable"
@@ -5833,15 +5843,16 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/diagonal-catch.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The lower finger edge lies ≈20 px past 181's horn tip (the two plates disagree); the upper arm is ≈20 px off near its hub; eyes read as solid discs.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The lower finger and upper arm sit about 20 px off the plate's outline (Brown's 181 and 182 disagree); eyes read as solid discs.",
       "limits": "",
       "assessment": "minor"
     },
@@ -5868,15 +5879,16 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/diagonal-catch.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Same passive catch as 181, phase shifted; the lower finger and upper arm differ from the plate by ≈20 px; eyes read as solid discs.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Same catch as 181, phase-shifted: lower finger and upper arm about 20 px off the plate; eyes read as solid discs.",
       "limits": "",
       "assessment": "minor"
     },
@@ -5901,7 +5913,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane5-cams-catches-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5911,8 +5924,8 @@
         ],
         "note": "Unqualified MuJoCo transfer diagnostic; no production motion installed."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The catchers look very different from the engraving. The upper hook is a round knob, not Brown's curl; the lower nose reaches slightly over the rod; the upper stud shows through the open area left of the lower web.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The catchers look very different from the engraving: the upper hook is a round knob, not Brown's curl; the lower nose reaches over the rod; the upper stud shows through the open area left of the lower web.",
       "limits": "Weight-driven motion is a quasistatic solve; forces are not solved.",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -5938,7 +5951,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane5-cams-catches-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5948,8 +5962,8 @@
         ],
         "note": "Shared 183–184 unqualified MuJoCo diagnostic; no production motion installed."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Brown's two plates are not rigid rotations of each other, so 184's swings are smaller than drawn; the upper hook is a round knob.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Swings are smaller than drawn (Brown's two plates are not rigid rotations of each other); the upper hook is a round knob rather than a curl.",
       "limits": "Weight-driven motion is a quasistatic solve.",
       "assessment": "minor"
     },
@@ -5973,14 +5987,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-locomotive-valve-gears.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "The valve head passes over the wall in the front view. Valve input and roller loaded-wall convention prescribed.",
       "assessment": "reasonable"
@@ -6005,16 +6020,17 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane5-cams-catches-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gab-disengagers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Looks wrong and runs far too fast. The rocker shoulder sits ≈13 px left of the arm; the catch tang is solid where Brown draws a thin spring; latch and cam motion prescribed.",
-      "limits": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Runs about nine times too fast (a full 18 s cycle is squeezed into 2 s). The brown spring loop is an open wire with a loose free end that flops between shapes; the rocker shoulder sits left of the arm and the catch tang is solid where Brown draws a thin spring.",
+      "limits": "Latch and cam motion prescribed.",
       "assessment": "flawed",
       "userReported": "2026-09-24"
     },
@@ -6037,15 +6053,16 @@
         "docs/movement-186-189.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane5-cams-catches-review.md"
+        "docs/lane5-cams-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gab-disengagers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Looks wrong and runs far too fast.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Runs about eight times too fast (16 s cycle in 2 s): the latch snaps up and down while the rod barely moves. The latch arm is a straight flat bar where Brown's curves round the eye.",
       "limits": "Hidden shoulder contact inferred; spring capture and gab drive prescribed.",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -6071,15 +6088,16 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/lane5-cams-catches-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gab-disengagers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Runs too fast, and the loop is disconnected at a.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Runs about nine times too fast. The spring loop is visibly broken at a (its hooked end hangs apart from the stub below it), the loop flops between two shapes, and the yellow hook hangs below the rod.",
       "limits": "The cam rail hangs below the rod at the engaged pose (matching Brown's dashed edge would reverse the latch).",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -6104,15 +6122,16 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane5-cams-catches-review.md"
+        "docs/lane5-cams-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gab-disengagers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Runs too fast.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Runs about nine times too fast (18 s cycle in 2 s); the lever and bell-crank jerk through their swing.",
       "limits": "Spring capture and gab-drive contact prescribed.",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -6138,14 +6157,15 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-clamps.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "The plank has no grain; the post through the plank is not drawn. Screw motion prescribed.",
       "assessment": "reasonable"
@@ -6171,15 +6191,16 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "A tooth is oddly cut off (compare 38, which looks right). The drive jumps at the scroll seam, needing disengagement or compliance.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "One tooth on each wheel is visibly cut off, leaving a notch Brown does not draw (compare 38); the drive jumps at the scroll seam.",
       "limits": "",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -6205,15 +6226,16 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The groove shape differs substantially from the engraving and needs tracing.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The groove shape differs substantially from the engraving (Brown's single S-shaped groove round the centre vs two separate C arcs).",
       "limits": "The input pinion is kept as the working drive though the plate omits it. Prescribed reversal and contact-force selection unvalidated.",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -6237,14 +6259,15 @@
         "docs/reversing-mangle-guides-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Finite generated rack/guide geometry corrected; prescribed reversal, passive contact-force selection, friction and impacts remain unvalidated.",
       "assessment": "reasonable"
@@ -6270,7 +6293,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/w5a-gears-intermittent-review.md"
+        "docs/w5a-gears-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6302,16 +6326,17 @@
         "docs/feed-worm-195-207-finite-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Generated scalloped valleys differ from schematic spaces; finite running gaps, backlash take-up, friction and loaded sharing unvalidated.",
-      "limits": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The upper wheel's teeth are scalloped notches cut into the face where Brown draws square slots.",
+      "limits": "Finite running gaps, backlash take-up, friction and loaded sharing unvalidated.",
       "assessment": "minor"
     },
     {
@@ -6334,15 +6359,16 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Wheel A differs substantially in shape from the engraving. Gear A is less elongated than Brown's two-lobed gear (a longer lobe changes the tested carrier motion).",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Wheel A is a nearly round gear where Brown draws an elongated two-lobed gear.",
       "limits": "Guide clearance may change the loaded path.",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -6367,17 +6393,18 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "A 0.070 overlap remains in the unpresented model.",
-      "limits": "Guide clearance may change the loaded path.",
-      "assessment": "minor"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The default view cannot contain the travelling rack frame: for much of the cycle a third of the frame and slot slides out past the edge of the view.",
+      "limits": "Guide clearance may change the loaded path; a 0.070 overlap remains in the unpresented model.",
+      "assessment": "flawed"
     },
     {
       "id": 198,
@@ -6399,7 +6426,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/w5a-gears-intermittent-review.md"
+        "docs/w5a-gears-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6407,7 +6435,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rods hang on tiny pins instead of being solid parts of a smoothly shaped moving frame.",
+      "visibleFlaws": "The rods hang on tiny pins instead of forming a solid, smoothly shaped moving frame; the frame also slides partly out of the default view.",
       "limits": "Rigid links and ideal joints assumed; contact-force selection and reversal dynamics unsolved.",
       "assessment": "flawed",
       "userReported": "2026-09-24"
@@ -6432,7 +6460,8 @@
         "docs/partial-lantern-native-study.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6442,10 +6471,10 @@
         ],
         "note": "Experimental MuJoCo rack study rejected on refinement; production uses source kinematics."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Near reversal the nearest finite contact retards instead of drives; useful assisting face is about 0.0918 away.",
-      "limits": "Native study did not qualify a bake.",
-      "assessment": "minor"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "",
+      "limits": "Near reversal the nearest finite contact retards instead of drives (assisting face about 0.0918 away); native study did not qualify a bake.",
+      "assessment": "reasonable"
     },
     {
       "id": 200,
@@ -6465,14 +6494,15 @@
       "references": [
         "docs/movement-200-226.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Back-cone tooth flanks approximate exact bevel conjugacy; mounting depths and some tooth counts inferred. Load, friction and dynamic backlash unsolved.",
       "assessment": "reasonable"
@@ -6499,14 +6529,15 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Prescribed kinematics and small running gaps do not establish loaded transfer.",
       "assessment": "reasonable"
@@ -6530,14 +6561,15 @@
         "docs/movement-202-264.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "The worm is more flared than the plate's and the wheel teeth are small.",
       "limits": "Worm-end relief uses a coarse generated field.",
       "assessment": "minor"
@@ -6562,17 +6594,18 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-linkages.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
-      "limits": "The slot needs a 180° sweep to cover the pin's stroke, which makes the broad C body; a narrow J arm like Brown's needs a different slot law. Analytical slot/linkage motion retained.",
-      "assessment": "reasonable"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The slotted arm is a broad C where Brown draws a narrow J hook.",
+      "limits": "The slot needs a 180° sweep to cover the pin's stroke; a narrow J arm needs a different slot law.",
+      "assessment": "minor"
     },
     {
       "id": 204,
@@ -6592,14 +6625,15 @@
       "references": [
         "docs/skew-friction-204-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Ideal circumferential rolling permits longitudinal sliding; friction capacity, load transmission, slip and power loss not solved.",
       "assessment": "reasonable"
@@ -6626,14 +6660,15 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "The idle flank carries backlash. Generated working profiles follow prescribed timing.",
       "assessment": "reasonable"
@@ -6662,7 +6697,8 @@
         "docs/lane2-intermittent-review.md",
         "docs/w2c-intermittent-review.md",
         "docs/w3g-intermittent-review.md",
-        "docs/w5a-gears-intermittent-review.md"
+        "docs/w5a-gears-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6670,8 +6706,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Teeth less hooked than Brown's; contact exact by construction; the catalog archetype still says forty-four teeth.",
-      "limits": "",
+      "visibleFlaws": "Teeth are less hooked than Brown's.",
+      "limits": "Contact exact by construction; the catalog archetype still says forty-four teeth.",
       "assessment": "minor"
     },
     {
@@ -6693,14 +6729,15 @@
         "docs/movement-195-207.md",
         "docs/feed-worm-195-207-finite-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Source tooth/depth details inferred; finite running gaps, loaded backlash, friction and load sharing unvalidated.",
       "assessment": "reasonable"
@@ -6727,7 +6764,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2a-gears-core-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/w5a-gears-intermittent-review.md"
+        "docs/w5a-gears-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6735,8 +6773,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "A 0.0535 pin/pinion-web overlap is geometric: the pins must reach the slots at z≈0.57 while the web edge sits at 0.43–0.60 over the neighbouring ring; the pinion is a thin slotted web rather than Brown's lantern strip.",
-      "limits": "",
+      "visibleFlaws": "The pinion is a thin slotted web rather than Brown's lantern strip.",
+      "limits": "A 0.0535 pin/pinion-web overlap is geometric (pins must reach the slots over the neighbouring ring).",
       "assessment": "minor"
     },
     {
@@ -6758,14 +6796,15 @@
         "docs/variable-drive-205-209-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Generated teeth follow prescribed eccentric rolling; load-induced motion, friction, compliance and backlash take-up unsolved.",
       "assessment": "reasonable"
@@ -6788,14 +6827,15 @@
       "references": [
         "docs/slot-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Analytical slot/linkage motion retained; running clearances, friction, impact, load response and broader assembly contacts unvalidated.",
       "assessment": "reasonable"
@@ -6823,16 +6863,17 @@
         "docs/intermittent-63-211-review.md",
         "docs/lane2-intermittent-review.md",
         "docs/lane9-residuals-review.md",
-        "docs/w3g-intermittent-review.md"
+        "docs/w3g-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Arc spans 99° at 58–157° against the plate's ≈80° at 92–165° (Brown's arc with ≈18 pinion positions does not close kinematically); pinion has 16 positions; guide tongue curves upward where Brown's is straighter; ≈22° of relocking is prescribed.",
-      "limits": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The toothed arc spans about 99° where Brown's spans about 80°; the pinion has 16 positions; the guide tongue curves upward where Brown's is straighter.",
+      "limits": "Brown's arc does not close kinematically; about 22° of relocking is prescribed.",
       "assessment": "minor"
     },
     {
@@ -6854,14 +6895,15 @@
         "docs/geneva-212-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Finite branch corrected; capture torque tends to zero, velocity-changing handoffs and reverse assisting bias remain prescribed/unvalidated.",
       "assessment": "reasonable"
@@ -6888,16 +6930,17 @@
         "docs/visual-review-pass-49.md",
         "docs/w2c-intermittent-review.md",
         "docs/w3g-intermittent-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The five stop teeth are rounded pin-cut notches: square teeth of Brown's height cannot pass the pin (the only square profile that solved was ≈40% of Brown's height).",
-      "limits": "Frictional retention and load capacity prescribed.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The five stop teeth are rounded pin-cut notches where Brown draws square teeth.",
+      "limits": "Square teeth of Brown's height cannot pass the pin; frictional retention and load capacity prescribed.",
       "assessment": "minor"
     },
     {
@@ -6921,16 +6964,17 @@
         "docs/visual-review-pass-49.md",
         "docs/lane2-intermittent-review.md",
         "docs/lane9-residuals-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Square teeth are not conjugate, so the ratio is prescribed with up to 0.042 rad of play; teeth narrower than drawn; finger lengths and the 75° counterwheel angle (plate ≈79°) are tuned for one stopping encounter; stop travel differs from the site's three turns; loads and impacts prescribed.",
-      "limits": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Teeth are narrower than drawn and the counterwheel angle differs slightly from the plate.",
+      "limits": "Square teeth are not conjugate, so the ratio is prescribed with up to 0.042 rad play; finger lengths tuned for one stopping encounter; stop travel differs from the site's three turns.",
       "assessment": "minor"
     },
     {
@@ -6954,16 +6998,17 @@
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
         "docs/w2c-intermittent-review.md",
-        "docs/w3g-intermittent-review.md"
+        "docs/w3g-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The concave locks meet the slot mouths in pointed horns where Brown draws rounded ears (rounding breaks the handoff contact checks).",
-      "limits": "Reverse motion needs assisting bias.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The concave locks meet the slot mouths in pointed horns where Brown draws rounded ears.",
+      "limits": "Rounding breaks the handoff contact checks; reverse motion needs assisting bias.",
       "assessment": "minor"
     },
     {
@@ -6989,16 +7034,17 @@
         "docs/intersection-screen-pass50.md",
         "docs/lane1-belts-gears-review.md",
         "docs/lane9-residuals-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "22 internal teeth over 165° where Brown draws teeth round the whole ring (24 over 180° leaves no hand-off gap); tooth form comes from the animation.",
-      "limits": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Internal teeth cover about half the ring where Brown draws them further round.",
+      "limits": "24 teeth over 180° would leave no hand-off gap; tooth form comes from the animation.",
       "assessment": "minor"
     },
     {
@@ -7021,17 +7067,18 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane4-escapements-misc-review.md"
+        "docs/lane4-escapements-misc-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-wool-comber.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The unpresented 218 model keeps a 0.03 F-hub/rocker-bearing coaxial overlap.",
-      "limits": "The groove is the exact path of stud A, not Brown's symmetric heart with double walls: a lever about H cannot sweep the captioned 240° through a heart-shaped groove, so caption and heart cannot both be met with the drawn linkage.",
-      "assessment": "minor"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The groove is a lopsided single-walled loop, not Brown's symmetric double-walled heart, and no follower is shown, so the spinning disc visibly drives nothing.",
+      "limits": "The groove is the exact path of stud A: a lever about H cannot sweep the captioned 240° through a heart-shaped groove; a 0.03 hub/bearing overlap remains in the unpresented 218 model.",
+      "assessment": "flawed"
     },
     {
       "id": 218,
@@ -7053,7 +7100,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/w5a-gears-intermittent-review.md"
+        "docs/w5a-gears-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7061,8 +7109,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Nine V-notches where Brown draws eight square ones: the wheel advances a third of a turn per cycle, so the notch count must be a multiple of three; square notches would leave ≈0.13 backlash.",
-      "limits": "Cam projection touches the release boss at one instant.",
+      "visibleFlaws": "Nine V-notches where Brown draws eight square ones.",
+      "limits": "The wheel advances a third of a turn per cycle, so the notch count must be a multiple of three; square notches would leave about 0.13 backlash. Cam projection touches the release boss at one instant.",
       "assessment": "minor"
     },
     {
@@ -7087,7 +7135,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3f-gears-core-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/w5a-gears-intermittent-review.md"
+        "docs/w5a-gears-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7119,14 +7168,15 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3f-gears-core-review.md"
+        "docs/w3f-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-offset-crank-slots.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Roller sits on an ideal slot constraint despite running clearance; friction and support depths unvalidated.",
       "assessment": "reasonable"
@@ -7151,17 +7201,18 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-elliptical-idler-gears.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
-      "limits": "The dashed path sits on a faint carrier plate Brown does not draw. Gear motion prescribed; loaded mesh and backlash unvalidated.",
-      "assessment": "reasonable"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "A translucent beige carrier plate lies over the gears and washes out the blue wheels, and the orbiting wheel B runs off the top of the default view mid-cycle while the bottom of the view stays empty.",
+      "limits": "Gear motion prescribed; loaded mesh and backlash unvalidated.",
+      "assessment": "flawed"
     },
     {
       "id": 222,
@@ -7183,14 +7234,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-elliptical-idler-gears.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Gear motion prescribed; finite running gaps do not establish loaded mesh, backlash take-up, elastic tooth response or exact historical profiles.",
       "assessment": "reasonable"
@@ -7214,14 +7266,15 @@
         "docs/variable-idler-gear-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-stepped-sector-gears.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Gear motion prescribed; finite running gaps do not establish loaded mesh or backlash.",
       "assessment": "reasonable"
@@ -7246,14 +7299,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2e-181-271-review.md"
+        "docs/w2e-181-271-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-expanding-pulleys.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Generated finite tooth profiles preserve imposed ratios; loaded mesh, clearance take-up and exact historical tooth sections unvalidated.",
       "assessment": "reasonable"
@@ -7278,14 +7332,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Pawl return bias and wheel holding imposed; initial hinge reaction requires suitable gravity/spring bias. Passive engagement and load capacity unvalidated.",
       "assessment": "reasonable"
@@ -7309,14 +7364,15 @@
         "docs/movement-200-226.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2a-gears-core-review.md"
+        "docs/w2a-gears-core-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Back-cone tooth flanks approximate exact bevel conjugacy; mounting depths and some tooth counts inferred. Load, friction and dynamic backlash unsolved.",
       "assessment": "reasonable"
@@ -7342,14 +7398,15 @@
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "Links standing across the teeth read as thin wires edge-on.",
       "limits": "Chain follows a prescribed path.",
       "assessment": "minor"
@@ -7375,7 +7432,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
         "docs/w3f-gears-core-review.md",
-        "docs/w5a-gears-intermittent-review.md"
+        "docs/w5a-gears-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7406,14 +7464,15 @@
         "docs/chain-drive-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2b-belts-clutches-review.md"
+        "docs/w2b-belts-clutches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "The chain end jumps one link as links pass the cut-off.",
       "limits": "Chain follows a prescribed path; tension and pickup unsolved.",
       "assessment": "minor"
@@ -7437,14 +7496,15 @@
         "docs/coupling-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cranks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Analytical coupling motion omits joint play, friction and load response; hidden depths and running clearances inferred.",
       "assessment": "reasonable"
@@ -7469,15 +7529,16 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cranks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Link lengths are approximate and the rod lies over the output crank at the default pose.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Link lengths are approximate and the rod lies over the output crank at the default pose; the linkage folds nearly flat mid-cycle.",
       "limits": "Exact linkage law retained.",
       "assessment": "minor"
     },
@@ -7501,7 +7562,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -7511,7 +7573,7 @@
         ],
         "note": "Trial MuJoCo passive branch jammed; no playback data installed."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Short tip/contact corrected with inferred rocking A carrier; carrier lift, bias and holding prescribed after unsuccessful native trial.",
       "assessment": "reasonable"
@@ -7536,14 +7598,15 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2c-intermittent-review.md",
-        "docs/w3g-intermittent-review.md"
+        "docs/w3g-intermittent-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Stop withdrawal, wheel strokes and reseating prescribed.",
       "assessment": "reasonable"
@@ -7569,16 +7632,17 @@
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/lane3-escapements-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Flags A are about 0.23 of the radius long against Brown's 0.44 (the verge law fixes their length); the view looks down more steeply than the plate.",
-      "limits": "Prescribed verge motion with ideal drops; impact and friction unsolved.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Flags A are about half Brown's length; the view looks down more steeply than the plate.",
+      "limits": "The verge law fixes the flag length; prescribed verge motion with ideal drops.",
       "assessment": "minor"
     },
     {
@@ -7601,16 +7665,17 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The return spring is welded into its anchors (0.089).",
-      "limits": "Tappet return and holding preload prescribed.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The return spring runs into its anchors.",
+      "limits": "Spring embedded about 0.089 in the anchors; tappet return and holding preload prescribed.",
       "assessment": "minor"
     },
     {
@@ -7632,14 +7697,15 @@
         "docs/alternating-pawl-236-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Prescribed return bias and output holding; source initial lever tilt/tip placement approximate.",
       "assessment": "reasonable"
@@ -7666,14 +7732,15 @@
         "docs/visual-review-pass-49.md",
         "docs/w2c-intermittent-review.md",
         "docs/w3g-intermittent-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Prescribed crest hold and drop; passive holding, impact and bias unsolved.",
       "assessment": "reasonable"
@@ -7698,14 +7765,15 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane3-escapements-review.md",
-        "docs/lane9-residuals-review.md"
+        "docs/lane9-residuals-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Brown draws a six-point star; seven are kept per the site title and C's dashed line. Oscillation, drops and impacts prescribed; C support retains small clearance rather than solved force transfer.",
       "assessment": "reasonable"
@@ -7730,14 +7798,15 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane1-belts-gears-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gears-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "The break line is smoother than Brown's jagged edge.",
       "limits": "Stops seated by prescription; gravity seating and holding strength unsolved.",
       "assessment": "minor"
@@ -7762,14 +7831,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Selected stops clear, but free-run path may separate by 0.0816; passive lift/drop and opening bias unvalidated.",
       "assessment": "reasonable"
@@ -7793,14 +7863,15 @@
         "docs/single-tooth-241-contact-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Finite indexing contacts corrected; sharp entry/seating velocity transitions, click bias, impact and load holding remain prescribed.",
       "assessment": "reasonable"
@@ -7824,14 +7895,15 @@
         "docs/band-drive-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Taut-band geometry does not solve tension, friction, driving torque, dissipation or stopping under load.",
       "assessment": "reasonable"
@@ -7856,14 +7928,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2b-belts-clutches-review.md"
+        "docs/w2b-belts-clutches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Ideal neutral-line belt rolling omits elasticity, traction limits and loaded slip; finite thickness and contact force remain approximate.",
       "assessment": "reasonable"
@@ -7887,17 +7960,18 @@
         "docs/clamp-governor-brake-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-belts.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
-      "limits": "Clamp actuation/contact preload prescribed; frictional holding strength, elasticity and loaded slip unvalidated.",
-      "assessment": "reasonable"
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Nothing in the view visibly moves: the plain pulley shows no rotation and the lever and scale pan stay still, so the animation looks frozen.",
+      "limits": "Brake friction, torque balance and dissipation not solved.",
+      "assessment": "minor"
     },
     {
       "id": 245,
@@ -7918,14 +7992,15 @@
         "docs/pipe-coupling-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-joints.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Assembly timing and bayonet clearances inferred; loaded retention, friction, insertion force and seal behavior unsolved.",
       "assessment": "reasonable"
@@ -7951,14 +8026,15 @@
         "docs/visual-review-pass-49.md",
         "docs/lane8-escapements-engines-review.md",
         "docs/w2e-181-271-review.md",
-        "docs/w4b-164-253-review.md"
+        "docs/w4b-164-253-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-drawing-instruments.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Manual tracing prescribed; joint clearance, drawing force and friction unvalidated.",
       "assessment": "reasonable"
@@ -7985,15 +8061,16 @@
         "docs/visual-review-pass-49.md",
         "docs/lane8-escapements-engines-review.md",
         "docs/w2e-181-271-review.md",
-        "docs/w3a-catches-review.md"
+        "docs/w3a-catches-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-sounding-weights.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The subject is framed tiny and high because the frame includes the weight's drop to the seabed line.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The subject is framed small and high because the view includes the weight's drop to the seabed line.",
       "limits": "Detent actuation, drag and impact idealized.",
       "assessment": "minor"
     },
@@ -10222,14 +10299,15 @@
         "docs/pendulum-interface-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-conical-pendulums.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Ideal spherical seat and conical-pendulum law omit friction, bearing forces and transient motion; joint depths inferred.",
       "assessment": "reasonable"
@@ -10254,14 +10332,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-compensation-pendulums.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Zero-thickness glass and wire adjustment thread remain illustrative; jar clamp/adjuster mating and thermal transient response unqualified.",
       "assessment": "reasonable"
@@ -10286,14 +10365,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-compensation-pendulums.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Lower adjustment thread illustrative; piecewise straight bars and curve/weight alignment prescribed, with stresses and bonded-layer compatibility unsolved.",
       "assessment": "reasonable"
@@ -10317,14 +10397,15 @@
         "docs/watch-balance-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-watch-regulators.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Spring ribbon deformed kinematically; elastic strip shape, stress, conserved length, curb friction and passive rate response unvalidated.",
       "assessment": "reasonable"
@@ -10350,14 +10431,15 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-compensation-balances.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "The steel arm root is seated 0.049 into the bar end. Spring ribbon deformed kinematically.",
       "assessment": "reasonable"
@@ -10383,14 +10465,15 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-maintaining-power.js",
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Prescribed output/load and click bias.",
       "assessment": "reasonable"
@@ -10416,17 +10499,18 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-going-barrels.js",
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Spring segment joins overlap 0.034 at bends.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The spring S is drawn as a thin black wire that writhes into a different kinked tangle every moment, sweeping across the wheel; it looks nothing like Brown's smooth coiled spring and its segments overlap at the bends.",
       "limits": "Prescribed output/load, click bias and winding energy.",
-      "assessment": "minor"
+      "assessment": "flawed"
     },
     {
       "id": 322,
@@ -10446,14 +10530,15 @@
       "references": [
         "docs/drawing-ruler-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-parallel-rulers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Manual drawing motion and linkage geometry prescribed; joint play, paper contact force, friction and manufacturing tolerances unvalidated.",
       "assessment": "reasonable"
@@ -10476,14 +10561,15 @@
       "references": [
         "docs/drawing-ruler-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-parallel-rulers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Manual drawing motion and linkage geometry prescribed; joint play, paper contact force, friction and manufacturing tolerances unvalidated.",
       "assessment": "reasonable"
@@ -10506,14 +10592,15 @@
       "references": [
         "docs/drawing-ruler-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-compound-parallel-rulers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Manual drawing motion and linkage geometry prescribed; joint play, paper contact force, friction and manufacturing tolerances unvalidated.",
       "assessment": "reasonable"
@@ -10536,14 +10623,15 @@
       "references": [
         "docs/drawing-ruler-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-compound-parallel-rulers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Manual drawing motion and linkage geometry prescribed; joint play, paper contact force, friction and manufacturing tolerances unvalidated.",
       "assessment": "reasonable"
@@ -10569,16 +10657,17 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane6-engines-misc-review.md"
+        "docs/lane6-engines-misc-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-steam-engine-guides.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry.",
-      "limits": "Pressure, sealing, friction and inertia unvalidated.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The default view crops the flywheel rim and top of the column.",
+      "limits": "The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry.",
       "assessment": "minor"
     },
     {
@@ -10601,16 +10690,17 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-steam-engine-guides.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Proportions follow the plate rather than the official animation (longer rod, larger flywheel); the collared shaft stub on the right column is omitted.",
-      "limits": "Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The default view crops the flywheel top and the cylinder base; the collared shaft stub on the right column is omitted.",
+      "limits": "Proportions follow the plate rather than the official animation (longer rod, larger flywheel).",
       "assessment": "minor"
     },
     {
@@ -10633,16 +10723,17 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-328-343-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-cartwright-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "The flywheel shaft has no bearing because none is drawn; the default pose keeps the official phase rather than the plate's; the cover and gland sit slightly low to clear the crosshead at the bottom of its stroke.",
-      "limits": "Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The flywheel shaft has no bearing because none is drawn; the cover and gland sit slightly low.",
+      "limits": "The default pose keeps the official phase rather than the plate's.",
       "assessment": "minor"
     },
     {
@@ -10665,14 +10756,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-epicyclic-piston-guides.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Rigid piston/link constraints prescribed; pressure, sealing, friction and inertia unvalidated.",
       "assessment": "reasonable"
@@ -10696,14 +10788,15 @@
         "docs/piston-guide-328-330-review.md",
         "docs/minimal-interface-review.md",
         "docs/engines-328-343-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-forked-piston-guides.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "The crank's sideways offset cannot be checked from the side view; the gland sits about 12 px low to clear the fork at bottom dead centre; fork and rim proportions are assumed; the column and cylinder end below the crop with no base. Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
       "assessment": "reasonable"
@@ -10728,14 +10821,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w4c-254-400-review.md"
+        "docs/w4c-254-400-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-slotted-crosshead-engines.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Rigid piston/link constraints prescribed; pressure, sealing, friction, inertia and untested support interfaces remain unvalidated.",
       "assessment": "reasonable"
@@ -10761,14 +10855,15 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane8-escapements-engines-review.md"
+        "docs/lane8-escapements-engines-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-marine-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Stroke reduced to fit the drawn cylinder; D–E 4 against the plate's ≈4.6. Inferred explanatory piston application.",
       "assessment": "reasonable"
@@ -10795,7 +10890,8 @@
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/w5c-333-400-review.md"
+        "docs/w5c-333-400-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10803,7 +10899,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Brown's beam is steeper than the official stroke allows.",
+      "visibleFlaws": "Brown's beam is steeper than the model's stroke allows.",
       "limits": "Legacy beam/crosshead interfaces partly approximate.",
       "assessment": "minor"
     },
@@ -10827,14 +10923,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-beam-engine-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Plate proportions differ from the official animation. Articulated chain prescribed without tension/contact solve; broader legacy joints unqualified.",
       "assessment": "reasonable"
@@ -10860,14 +10957,15 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane8-escapements-engines-review.md"
+        "docs/lane8-escapements-engines-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-beam-engine-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "B sits at 7.22 against the plate's 7.97 so E stays straight. Legacy beam/crosshead interfaces remain partly approximate.",
       "assessment": "reasonable"
@@ -10892,14 +10990,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-marine-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "The plate's own rod scale is inconsistent; the model follows the linkage law. Inferred explanatory piston application; legacy beam/crosshead interfaces not exhaustively qualified.",
       "assessment": "reasonable"
@@ -10924,14 +11023,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-vibrating-rod-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "The beam runs off the plate edge as drawn. Analytical linkage closures retained; approximate straightness and inferred dimensions are not exact historical reproduction. Steam loads, joint play and friction unsolved.",
       "assessment": "reasonable"
@@ -10956,14 +11056,15 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-vibrating-rod-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
+      "updatedOn": "2026-09-24",
       "visibleFlaws": "",
       "limits": "Analytical linkage closures retained; approximate straightness and inferred dimensions are not exact historical reproduction. Steam loads, joint play and friction unsolved.",
       "assessment": "reasonable"
@@ -10989,7 +11090,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w5c-333-400-review.md"
+        "docs/w5c-333-400-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11022,16 +11124,17 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/lane8-escapements-engines-review.md"
+        "docs/lane8-escapements-engines-review.md",
+        "docs/visual-assessment-pass52.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-direct-action-parallel-motions.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "Brown's ≈31° beam tilt is beyond the ±18° swing and his ≈6° pillar lean is not reproduced.",
-      "limits": "Steam loads, joint play and friction unsolved.",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Brown's steep beam tilt and pillar lean are not reproduced.",
+      "limits": "Brown's about 31° tilt is beyond the ±18° swing. Steam loads, joint play and friction unsolved.",
       "assessment": "minor"
     },
     {
