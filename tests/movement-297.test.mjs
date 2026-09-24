@@ -74,7 +74,7 @@ test('movement 297 is one eight-trundle lantern cage controlled by one two-palle
   assert.equal(blocks.palletBBody.parent, blocks.palletB);
   assert.equal(blocks.palletCBody.parent, blocks.palletC);
   assert.equal(blocks.sidePlates.length, 2);
-  assert.equal(blocks.sidePlateSpokes.length, 8);
+  assert.equal(blocks.sidePlateSpokes.length, 0, 'Brown draws plain discs without spokes');
   assert.equal(blocks.trundles.length, 8);
   assert.equal(blocks.wheelHubs.length, 2);
   vectorNear(blocks.lanternWheel.userData.axis,

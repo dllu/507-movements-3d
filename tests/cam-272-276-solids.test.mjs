@@ -25,20 +25,17 @@ function assertClearCycle(model, pairs, samples = 128) {
   }
 }
 
-test('272: visible annular working face is tangent to the finite shoe', () => {
+test('272: visible wavy working band stays tangent to the finite shoe without entering it', () => {
   const model = createAuthoredBeveledCamMovement({id: 272}), {blocks: b, geometry: g} = model.root.userData;
   try {
     const vertices = b.bevelFace.geometry.attributes.position;
-    const normal = new THREE.Vector3(-1, g.bevelTiltCoefficient, 0).normalize();
     for (let frame = 0; frame <= 256; frame++) {
       model.update(frame * model.root.userData.timeline.cyclePeriod / 256);model.root.updateMatrixWorld(true);
       const center = b.contactShoe.getWorldPosition(new THREE.Vector3()).applyMatrix4(b.camRotor.matrixWorld.clone().invert());
-      for (let i = 0; i < vertices.count; i++) {
-        const face = new THREE.Vector3().fromBufferAttribute(vertices, i);
-        const gap = center.clone().sub(face).dot(normal) - g.shoeRadius;
-        assert.ok(Math.abs(gap) < 7e-8, `visible face and shoe disagree by ${gap}`);
-        assert.ok(gap - .012 < -.0119, 'former raised face intersects the same shoe');
-      }
+      let closest = Infinity;
+      for (let i = 0; i < vertices.count; i++) closest = Math.min(closest, center.distanceTo(new THREE.Vector3().fromBufferAttribute(vertices, i)));
+      assert.ok(closest >= g.shoeRadius, `visible face vertex enters the shoe by ${g.shoeRadius - closest}`);
+      assert.ok(closest < g.shoeRadius + g.contactClearance + 0.02, `shoe leaves the visible face: ${closest}`);
     }
     assertClearCycle(model, [[b.contactShoe, b.camBody], [b.followerRod, b.camBody]]);
   } finally {disposeObject3D(model.root);}

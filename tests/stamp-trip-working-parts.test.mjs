@@ -49,13 +49,17 @@ test('351 has nearby upward-driving involute faces throughout the lift',()=>{
  console.log({id:351,maximumDrivingGap:maximumGap});
 });
 
-test('351 explicitly retains the unresolved release and pickup as a partial reconstruction',()=>{
- const m=stamp({id:351}),d=m.root.userData,b=d.blocks;assert.equal(d.reconstructionStatus,'partial');assert.match(d.reconstructionNote,/intersects.*final tooth/);assert.match(d.reconstructionNote,/entry interference/);
- const solid=solidSurface(b.rackTeeth[2].geometry);let minimum=0;
+test('351 release follows the withdrawing final tooth and pickup lifts the resting rack without interpenetration',()=>{
+ const m=stamp({id:351}),d=m.root.userData,b=d.blocks;assert.equal(d.reconstructionStatus,'partial');assert.match(d.reconstructionNote,/follows the withdrawing final tooth/);assert.match(d.reconstructionNote,/entering tooth lifts/);
+ // The former imposed fall cut 0.11293 into this tooth at this phase.
+ const solid=solidSurface(b.rackTeeth[2].geometry);let minimum=1;
  m.update(4*(.64453125-d.geometry.initialCyclePhase));m.root.updateMatrixWorld(true);
  for(const p of surfacePoints(b.gearTeeth[5].geometry)){const world=b.gearTeeth[5].localToWorld(p.clone());minimum=Math.min(minimum,solid.signedDistance(b.rackTeeth[2].worldToLocal(world),.2));}
- // Diagnostic evidence, not a clearance exemption for the accepted lift.
- console.log({id:351,unresolvedWithdrawalPenetration:-minimum});
+ assert.ok(minimum>-1e-4,`withdrawal penetration ${-minimum}`);
+ let worst=1,before=d.stateAtTime(0);
+ for(let i=1;i<=2048;i++){const s=d.stateAtTime(4*i/2048);worst=Math.min(worst,d.stampCarriedContact.clearanceAt(s.driverAngle,s.rackDisplacement));assert.ok(Math.abs(s.rackDisplacement-before.rackDisplacement)<.06,`rack jump at ${i}`);before=s;}
+ assert.ok(worst>0,`finite tooth clearance ${worst}`);
+ console.log({id:351,withdrawalGap:minimum,cycleToothClearance:worst});
 });
 
 test('353 finite wipers, rounded helve, impact face, supports and journals clear through release and strike',()=>{

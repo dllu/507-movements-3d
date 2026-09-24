@@ -1,4 +1,5 @@
 import {stampMeshParameters,correctStampParts} from './stamp-trip-working-parts.js';
+import { plate, polygonClipping } from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -116,7 +117,11 @@ function gravityDropStamp(movement) {
     (_, index) => index,
   );
 
-  const rackBarBottomY = -6.33;
+  // The rack rides the withdrawing final tooth above the pitch-line stroke,
+  // so the smooth lower rod is long enough for the head and collar to stay
+  // below the lower guide at the carried apex.
+  const lowerRodExtension = 0.36;
+  const rackBarBottomY = -6.33 - lowerRodExtension;
   const rackBarTopY = 3.62;
   const rackBarLength = rackBarTopY - rackBarBottomY;
   const rackToothBaseY = wheelCenter.y + workingMesh.rackOffset;
@@ -125,7 +130,7 @@ function gravityDropStamp(movement) {
   const rackToothThickness = rackToothPitch * 0.38;
   const upperGuideY = 3.42;
   const lowerGuideY = -2.36;
-  const stampFaceRestY = -7.02;
+  const stampFaceRestY = -7.02 - lowerRodExtension;
   const workpieceTopY = stampFaceRestY;
   const anvilTopY = workpieceTopY - 0.13;
   const impactPoint = new THREE.Vector3(
@@ -448,7 +453,7 @@ function gravityDropStamp(movement) {
     new THREE.BoxGeometry(0.88, 0.24, 0.68),
     rackMaterial,
   );
-  lowerCollar.position.set(rackCenterX, -6.32, 0);
+  lowerCollar.position.set(rackCenterX, -6.32 - lowerRodExtension, 0);
   lowerCollar.userData.role = 'moving-lower-collar-above-stamp-head';
 
   const dieShape = new THREE.Shape();
@@ -948,10 +953,252 @@ function gravityDropStamp(movement) {
   };
 }
 
+// Signed clearance between two convex-or-simple polygons ([x, y] rings):
+// the least vertex-to-boundary distance in both directions, negative when
+// any vertex lies inside the other outline.
+function ringSignedDistance(point, ring) {
+  let best = Infinity;
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+    const [ax, ay] = ring[j];
+    const [bx, by] = ring[i];
+    if ((by > point[1]) !== (ay > point[1])
+      && point[0] < (ax - bx) * (point[1] - by) / (ay - by) + bx) inside = !inside;
+    const dx = bx - ax;
+    const dy = by - ay;
+    const lengthSquared = dx * dx + dy * dy;
+    const t = lengthSquared > 0
+      ? Math.min(1, Math.max(0, ((point[0] - ax) * dx + (point[1] - ay) * dy) / lengthSquared))
+      : 0;
+    best = Math.min(best, Math.hypot(point[0] - ax - t * dx, point[1] - ay - t * dy));
+  }
+  return inside ? -best : best;
+}
+
+// The analytic lift is exact contact, but after release the imposed
+// ballistic path passed through the still-withdrawing final tooth, and the
+// next tooth tip entered the resting rack early. After release the rack is
+// stepped under gravity and projected to the nearest height clear of every
+// finite tooth outline (an inelastic contact), so the withdrawing tooth keeps
+// lifting it until the tooth tip leaves; the free fall then continues
+// ballistically from that later, higher release. At pickup the entering
+// tooth lifts the resting rack to the least clear height.
+function carryRackOnFiniteTeeth(model) {
+  const { root } = model;
+  const d = root.userData;
+  const b = d.blocks;
+  const g = d.geometry;
+  const clearance = 0.0005;
+  const gravity = d.dynamics.gravity;
+  const period = g.cyclePeriod;
+  const toRing = (ring, angle, dx = 0, dy = 0) => ring.slice(0, -1).map(([x, y]) => [
+    x * Math.cos(angle) - y * Math.sin(angle) + dx,
+    x * Math.sin(angle) + y * Math.cos(angle) + dy,
+  ]);
+  // The corrected tooth wedges reach the pinion centre and fill the shaft
+  // passage; start them just inside the root disk instead.
+  const toothPolygons = b.gearTeeth[0].geometry.userData.plate.polygons;
+  const rootRadius = d.stampTripParts.mesh.rootRadius;
+  const core = Array.from({ length: 96 }, (_, k) => [
+    (rootRadius - 0.03) * Math.cos(k * Math.PI / 48),
+    (rootRadius - 0.03) * Math.sin(k * Math.PI / 48),
+  ]);
+  const trimmed = plate(
+    polygonClipping.difference(toothPolygons, [[[...core, core[0]]]]),
+    -g.gearDepth / 2,
+    g.gearDepth / 2,
+  );
+  const sharedToothGeometry = b.gearTeeth[0].geometry;
+  for (const tooth of b.gearTeeth) tooth.geometry = trimmed;
+  sharedToothGeometry.dispose();
+  const pinionTeeth = b.gearTeeth.map((tooth) => {
+    const ring = toRing(tooth.geometry.userData.plate.polygons[0][0], tooth.rotation.z);
+    const centre = ring.reduce((sum, [x, y]) => [sum[0] + x / ring.length, sum[1] + y / ring.length], [0, 0]);
+    return { centreAngle: Math.atan2(centre[1], centre[0]), ring };
+  });
+  // rackToothGeometry is rotated -90 degrees about z after extrusion.
+  const rackTeeth = b.rackTeeth.map((tooth) => {
+    const ring = toRing(
+      tooth.geometry.userData.plate.polygons[0][0], -Math.PI / 2,
+      tooth.position.x + b.rack.position.x, tooth.position.y,
+    );
+    ring.minY = Math.min(...ring.map((p) => p[1]));
+    ring.maxY = Math.max(...ring.map((p) => p[1]));
+    return ring;
+  });
+  const pinionCentre = [b.pinion.position.x, b.pinion.position.y];
+  const tipReach = g.pitchRadius + 0.3;
+  const ringGap = (from, to) => {
+    let best = Infinity;
+    for (const point of from) best = Math.min(best, ringSignedDistance(point, to));
+    return best;
+  };
+  const clearanceAt = (driverAngle, displacement) => {
+    let best = 1;
+    for (const tooth of pinionTeeth) {
+      // Only teeth facing the rack side of the pinion can reach the rack.
+      const facing = Math.cos(tooth.centreAngle + driverAngle);
+      if (facing > -0.5) continue;
+      const world = toRing(tooth.ring, driverAngle, pinionCentre[0], pinionCentre[1]);
+      const minY = Math.min(...world.map((p) => p[1])) - 0.05;
+      const maxY = Math.max(...world.map((p) => p[1])) + 0.05;
+      for (const rackRing of rackTeeth) {
+        const low = rackRing.minY + displacement;
+        const high = rackRing.maxY + displacement;
+        if (high < minY || low > maxY) continue;
+        const moved = rackRing.map(([x, yy]) => [x, yy + displacement]);
+        best = Math.min(best, ringGap(world, moved), ringGap(moved, world));
+      }
+    }
+    return best;
+  };
+  void tipReach;
+  const nearestClear = (driverAngle, displacement, directions = [1, -1]) => {
+    if (clearanceAt(driverAngle, displacement) >= clearance) return displacement;
+    const step = 0.0005;
+    for (let k = 1; k <= 2000; k += 1) {
+      for (const direction of directions) {
+        const value = displacement + direction * step * k;
+        if (clearanceAt(driverAngle, value) < clearance) continue;
+        let low = value - direction * step;
+        let high = value;
+        for (let iteration = 0; iteration < 24; iteration += 1) {
+          const middle = (low + high) / 2;
+          if (clearanceAt(driverAngle, middle) >= clearance) high = middle;
+          else low = middle;
+        }
+        return high;
+      }
+    }
+    throw new Error('351: rack cannot clear the pinion');
+  };
+
+  const analyticStateAtTime = d.stateAtTime;
+  // The entering tooth's trailing flank reaches the rack 0.0033 deep if the
+  // stamp rests at the lift datum; the workpiece and anvil sit a little
+  // lower so the stamp rests clear and the tooth then picks it up.
+  const restDisplacement = -0.008;
+  for (const fixedPart of [b.anvil, b.workpiece]) fixedPart.position.y += restDisplacement;
+  // Step the release window (shifted time 0 is the analytic release).
+  const dt = 0.002;
+  const releaseTable = [];
+  let y = analyticStateAtTime(0).rackDisplacement;
+  let v = analyticStateAtTime(0).rackVelocity;
+  let time = 0;
+  releaseTable.push({ carried: false, time, v, y });
+  for (;;) {
+    time += dt;
+    const angle = analyticStateAtTime(time).driverAngle;
+    let candidateV = v - gravity * dt;
+    let candidate = y + candidateV * dt;
+    if (candidate < restDisplacement) {
+      candidate = restDisplacement;
+      candidateV = 0;
+    }
+    const projected = nearestClear(angle, candidate);
+    const carried = projected !== candidate;
+    if (carried) candidateV = (projected - y) / dt;
+    candidate = projected;
+    y = candidate;
+    v = candidateV;
+    releaseTable.push({ carried, time, v, y });
+    if (!carried && v < 0 && clearanceAt(angle, y) > 0.05) break;
+    if (time > period * 0.4) throw new Error('351: rack never leaves the final tooth');
+  }
+  const freeStart = releaseTable.at(-1);
+  const fallTime = (freeStart.v + Math.sqrt(freeStart.v ** 2
+    + 2 * gravity * (freeStart.y - restDisplacement))) / gravity;
+  const impactTime = freeStart.time + fallTime;
+  const impactVelocity = freeStart.v - gravity * fallTime;
+  if (impactTime > period * 0.35) throw new Error('351: carried rack lands too late');
+
+  const stateAtTime = (rawTime) => {
+    const state = analyticStateAtTime(rawTime);
+    const t = THREE.MathUtils.euclideanModulo(rawTime, period);
+    let displacement;
+    let velocity;
+    let stage;
+    let freeFlight = false;
+    let lowerStopEngaged = false;
+    let carriedByTooth = false;
+    if (t < freeStart.time) {
+      const position = t / dt;
+      const index = Math.min(Math.floor(position), releaseTable.length - 2);
+      const f = position - index;
+      const a = releaseTable[index];
+      const c = releaseTable[index + 1];
+      displacement = a.y + (c.y - a.y) * f;
+      velocity = (c.y - a.y) / dt;
+      carriedByTooth = a.carried || c.carried;
+      freeFlight = !carriedByTooth;
+      stage = carriedByTooth
+        ? 'released-rack-follows-withdrawing-final-tooth'
+        : velocity > 0
+          ? 'released-stamp-coasts-upward-under-gravity'
+          : 'released-stamp-falls-ballistically';
+    } else if (t < impactTime) {
+      const tau = t - freeStart.time;
+      displacement = freeStart.y + freeStart.v * tau - 0.5 * gravity * tau ** 2;
+      velocity = freeStart.v - gravity * tau;
+      freeFlight = true;
+      stage = velocity > 0
+        ? 'released-stamp-coasts-upward-under-gravity'
+        : 'released-stamp-falls-ballistically';
+    } else {
+      // Rest and the analytic lift, nudged up by an entering tooth tip.
+      const base = state.gearEngaged ? state.rackDisplacement : restDisplacement;
+      displacement = nearestClear(state.driverAngle, base, [1]);
+      carriedByTooth = displacement !== base && !state.gearEngaged;
+      velocity = state.gearEngaged ? state.rackVelocity : 0;
+      lowerStopEngaged = !state.gearEngaged && displacement === restDisplacement;
+      stage = state.gearEngaged
+        ? state.stage
+        : carriedByTooth
+          ? 'entering-tooth-lifts-resting-rack'
+          : 'stamp-rests-on-lower-impact-stop-during-blank-sector';
+    }
+    return {
+      ...state,
+      anvilClearance: displacement,
+      carriedByTooth,
+      freeFlight,
+      lowerStopEngaged,
+      rackDisplacement: displacement,
+      rackVelocity: velocity,
+      stage,
+      stampFaceY: state.stampFaceY - state.rackDisplacement + displacement,
+    };
+  };
+  d.stateAtTime = stateAtTime;
+  d.analyticStateAtTime = analyticStateAtTime;
+  const analyticUpdate = model.update;
+  model.update = (updateTime) => {
+    analyticUpdate(updateTime);
+    const state = stateAtTime(updateTime);
+    b.rack.position.y = state.rackDisplacement;
+    b.rackPitchContactAnchor.position.y = b.pinion.position.y - state.rackDisplacement;
+    d.kinematics = state;
+  };
+  model.update(0);
+  // Full carried travel: the higher apex and the lowered rest.
+  d.cameraFitBounds.min.y -= 0.40;
+  d.cameraFitBounds.max.y += 0.40;
+  d.reconstructionNote = 'Six compatible involute teeth lift a straight rack. After release the rack is stepped under gravity and held to the nearest height clear of the finite teeth, so it follows the withdrawing final tooth before falling from that later release; the entering tooth lifts the resting rack at pickup. This inelastic kinematic projection is not solved contact dynamics: rebound, tooth elasticity and impact forces are not solved. A longer lower rod keeps the head below the lower guide at the carried apex.';
+  d.stampCarriedContact = {
+    carriedImpactTime: impactTime,
+    carriedImpactVelocity: impactVelocity,
+    clearance,
+    clearanceAt,
+    freeFallStartTime: freeStart.time,
+    restDisplacement,
+  };
+}
+
 export function createAuthoredStampMovement(movement) {
   if (movement.id !== 351) return null;
   const model = gravityDropStamp(movement);
   correctStampParts(model);
+  carryRackOnFiniteTeeth(model);
   markShadows(model.root);
   return model;
 }

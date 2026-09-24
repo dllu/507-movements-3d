@@ -6383,22 +6383,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: cam alone with e at twelve o'clock; the groove is not Brown's symmetric heart."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-217-218.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. This is an analytical geometry correction, not a validated passive MuJoCo model. Output rotation, catch lift and return are still prescribed. In particular, the rear cam projection touches the catch boss only at the release instant; its finite profile has not been shown to supply the whole lifting stroke. Gravity/spring return, output holding torque during dwell, loads and… Pass-49 relative-motion screen reports 0.1573 solid overlap (outer-heart-cam-land-with-actual-groove-hole x H-detaching-roller-shaft); unclassified, may be intended contact."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs in the presented cam."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The groove does not follow the plate’s heart cam C, D, B, e, and movement 218’s notch wheel F is included. Cam projection only touches release boss at one instant; complete lifting stroke and dwell holding are not established.",
+      "flaws": "The groove is the exact path of stud A, not Brown's symmetric heart with double walls: a lever about H cannot sweep the captioned 240° through a heart-shaped groove, so caption and heart cannot both be met with the drawn linkage. The unpresented 218 model keeps a 0.03 F-hub/rocker-bearing coaxial overlap.",
       "references": [
         "docs/movement-217-218.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7870,24 +7871,25 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: square-toothed pinion in the frame; the subject reads small and rack teeth near every handoff are visibly cut back."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/intersection-screen-pass50.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the frame end, input rod and shaft now clear the gear. The rack and gear teeth still overlap by up to 0.069 during the three rack handoffs, where the gear blends between opposite rolling laws."
+        "status": "sampled-clear",
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.0685 rack/tooth overlap is fixed by swept-pinion relief (minimum clearance 0.0038, generator-checked by test)."
       },
-      "flaws": "The frame's closed end sits farther right than Brown draws it so the gear can reach the last rack teeth; the rack and gear teeth overlap by up to 0.069 during handoffs. Faithful; added gear stand. Finite rack/tooth handoff not audited.",
+      "flaws": "Rack teeth near every handoff are cut back unlike the plate; the frame's closed end sits farther right than drawn; the default framing leaves the subject small.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7959,22 +7961,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: side elevation of the wavy-edged conical cam with its rod and guides."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/movement-272-276.md",
-        "note": "Selected interfaces only; no global/continuous collision certificate. This is a bounded analytical and finite-geometry correction. 272's assumed gravity preload has not been qualified against friction, loads or separation dynamics. 276's analytical yoke and roller motion ignores compliance, wear and load-dependent clearance take-up. The pitch curve is an idealization of the source's lobed form, not an exact recovered historical cam. These checks… Pass-49 relative-motion screen reports 0.0699 solid overlap (solid-circular-disk-with-oblique-front-face x visible-bevel-to-shoe-contact-marker); unclassified, may be intended contact."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs; contact solved numerically."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The cam is a bevelled cylinder where the plate draws a wavy-profiled plate. Finite cam/roller geometry approximates tangency with running clearance; follower loading, friction, elasticity and passive response unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Gravity preload is assumed; friction and follower loads are not simulated.",
       "references": [
         "docs/movement-272-276.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8102,24 +8105,25 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/intersection-screen-pass50.md",
-        "note": "Re-inspected: the earlier default view was an oblique end view on a base rail; it is now Brown's side elevation without the undrawn base, posts and white indices."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: rigid dog a on a bored eye, six-tooth ratchet b, leaf spring c under the hatched block; receiver lock and base removed."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the cylinder body, ratchet and hub are now bored over the arbor, and the undrawn posts are removed. Remaining overlaps: dog A's pivot pin 0.139 in its unbored stretchable link; dog A into ratchet B 0.126; the lock into its spring 0.12 and into the cylinder 0.07–0.091; spring C into dog A 0.095."
+        "status": "sampled-clear",
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Pass-51 relative-motion screen at 0.01 and 0.005 spacing: the 0.139 dog/ratchet/spring overlaps are fixed."
       },
-      "flaws": "Dog A is a stretchable box-and-sphere link without a pivot bore; the dog, ratchet, spring and lock overlap by up to 0.139. Broadly faithful; dog a and spring c small at default distance. Finite dog/ratchet contact not audited.",
+      "flaws": "An undrawn detent is assumed; the hook works lower than drawn; ratchet teeth are shallow; the hammer stroke is 30° instead of 42.3°; the spring turns as a rigid piece.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8536,21 +8540,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: arms G and H follow the plate; the full wheel is shown where Brown crops it."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/annular-stud-family-review.md",
-        "note": "Known residual: Smaller finite stud/pallet handoff interference remains despite corrected load side and arm clearance."
+        "status": "sampled-clear",
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "2049-pose stud sweep +0.00021 clearance (was −0.0016); pass-51 relative-motion screen (0.01 spacing, 129 poses) clear."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Only one gravity arm is modelled where the plate draws arms G and H from F. Smaller finite stud/pallet handoff interference remains despite corrected load side and arm clearance.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The full wheel is shown where Brown crops it; studs are cylinders where Brown draws triangles; timing is prescribed.",
       "references": [
         "docs/annular-stud-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8682,23 +8687,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: plain bored disc with light pins; arm A is drawn solid where Brown dashes it."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/lantern-297-finite-contact-review.md",
-        "note": "16,001 finite-circle poses and 141 bidirectional actual-mesh poses clear; scoped joint and ring checks pass. Raw native overlap is removed by disclosed offline projection. No exhaustive all-body proof."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): no solid pairs."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The wheel has spokes where the plate draws a plain disc with pin holes. Prescribed arm and drive torque; B shifted 0.25 model units and swing enlarged to ±18°. Native soft overlap corrected offline; timestep paths differ by 0.374°. Passive regulation and impact loads unvalidated.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. Arm A is drawn solid in front where Brown dashes it as hidden. Prescribed arm and drive torque; B shifted 0.25 model units and swing enlarged to ±18°. Passive regulation and impact loads unvalidated.",
       "references": [
         "docs/lantern-escapement-review.md",
         "docs/remaining-movement-passes.md",
         "docs/lantern-297-finite-contact-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -8900,23 +8906,24 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/intersection-screen-pass50.md",
-        "note": "Front elevation re-inspected after removing the undrawn base, white indices and contact marker; the thin V pallet still differs from Brown's broad plate."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: broad pallet plate hanging from a collet disk with two screws, pins on the wheel face, flat elevation."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/remaining-movement-passes.md",
-        "note": "No movement-specific finite-interface review located; absence of a report is not clearance evidence. Pass-50 relative-motion screen (0.01 spacing, 129 poses): the upper bearing plate and pin-wheel hub are now bored, the spokes start at the hub and the bracket stops at the plate rim. Remaining: the preferred-B pins and rivets pass 0.120 through the outer arm-to-bit bridge and 0.079 through the inner offset post and working block; the pallet working faces are open meshes and cannot be targets."
+        "status": "sampled-clear",
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.1193 pin/pallet intrusion is fixed; pallet bits carved by every pin pose."
       },
-      "flaws": "The preferred-B pins pass through the outer pallet bridge by 0.120 and the inner pallet by 0.079. Thin V pallet instead of Brown’s broad plate on a disk. Finite pin/pallet intersections not audited.",
+      "flaws": "Goodrich's pin size makes the 4°/2° impulse/drop split impossible: pins roll over a rounded tip giving ≈0.9°/1.2° lift; pallets 6° apart where Brown draws ≈13°; A pins face the direction of motion; locks are thin slivers; motion prescribed.",
       "references": [
         "docs/verge-crown-family-review.md",
         "docs/review-progress.md",
         "docs/remaining-movement-passes.md",
         "docs/minimal-interface-review.md",
-        "docs/intersection-screen-pass50.md"
+        "docs/intersection-screen-pass50.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9018,22 +9025,23 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: rebuilt with pendulum pieces P, P and web, the hooked wheel under a screwed cock, lever Q, click C with stop pins and pallet I, at the drawn instant."
       },
       "intersections": {
         "status": "sampled-clear",
-        "evidence": "docs/detached-chronometer-review.md",
-        "note": "Selected finite interfaces sampled in the cited review; broader pairs and continuous-time collision freedom unverified. **308:** The corrected catch's motion is prescribed. The old C–Q click law does not physically drive it: the midpoint unlocking contact gap is about 0.06243. The impulse tube I still follows pin centers instead of a compatible finite contact surface. Bounded swept-profile experiments rejected… Pass-49 relative-motion screen reports 0.1182 solid overlap (sixty-pin-wheel-bearing x pendulum-P-rod); unclassified, may be intended contact."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Finite 2D outlines solved at 0.002 clearance (interpolated playback ≥0.00075); pass-51 relative-motion screen (0.01 spacing, 129 poses) clear."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. The view does not reproduce the plate: a face-on pin wheel, long pendulum rod and bob replace the curved pendulum pieces P, P and the small hooked wheel under a cock. Catch motion is prescribed; retained C-Q click law leaves about 0.06243 unlocking gap and does not physically drive the corrected catch.",
+      "flaws": "Inferred, not drawn: the nib on pallet I, the lock pin on Q, C's round tip, pivot studs and pendulum translation. The lock has no draw, so the wheel creeps ≈3.5° as Q lifts. Q's banking and C's spring are prescribed; impulse energy is not simulated.",
       "references": [
         "docs/detached-chronometer-review.md",
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10292,21 +10300,22 @@
       "visual": {
         "status": "yes",
         "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
+        "reviewPass": 51,
         "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Default capture inspected beside the plate: rack and pinion as drawn, but the rod and its guide blocks are much slimmer than Brown's collars."
       },
       "intersections": {
-        "status": "known",
-        "evidence": "docs/stamp-trip-family-review.md",
-        "note": "Known residual: Gravity release intersects final tooth by 0.11293; next pickup interferes about 0.00273. Native trial not installed."
+        "status": "sampled-clear",
+        "evidence": "docs/lane4-escapements-misc-review.md",
+        "note": "Pass-51 relative-motion screen (0.01 spacing, 129 poses): the 0.139 tooth/rack and 0.104 coaxial pairs are fixed; minimum cycle tooth clearance 0.00049."
       },
-      "flaws": "Undrawn fixed supports are removed by source presentation. Gravity release intersects final tooth by 0.11293; next pickup interferes about 0.00273. Native trial not installed.",
+      "flaws": "Undrawn fixed supports are removed by source presentation. The rod and its guide blocks are much slimmer than Brown's broad collars. Rack contact after release is inelastic and prescribed, not solved.",
       "references": [
         "docs/stamp-trip-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/lane4-escapements-misc-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",

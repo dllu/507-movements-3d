@@ -583,8 +583,13 @@ function groovedCamWoolComberRollerMotion(movementId) {
     };
   };
 
+  // Plate 218 is drawn at D; plate 217 draws the cam alone with e at twelve
+  // o'clock, so 217 starts from that cam orientation.
+  const displayStartInputTravel = outputPlateFocus
+    ? sourcePoseInputTravel
+    : positiveModulo(-grooveOrientationOffset, FULL_TURN);
   const stateAtTime = (time) => stateAtInputTravel(
-    sourcePoseInputTravel + inputTravelAngularSpeed * time,
+    displayStartInputTravel + inputTravelAngularSpeed * time,
     inputTravelAngularSpeed,
     0,
   );
@@ -930,23 +935,17 @@ function groovedCamWoolComberRollerMotion(movementId) {
     );
   }
 
+  const timeToTravel = (travel) => positiveModulo(
+    travel - displayStartInputTravel,
+    FULL_TURN,
+  ) / inputTravelAngularSpeed;
   const canonicalTimes = Object.freeze({
-    sourcePoseD: 0,
-    midForward: (
-      (backwardEndPhase + forwardEndPhase) / 2 * FULL_TURN
-        - sourcePoseInputTravel
-    ) / inputTravelAngularSpeed,
-    eCatchRelease: (
-      forwardEndPhase * FULL_TURN - sourcePoseInputTravel
-    ) / inputTravelAngularSpeed,
-    midDwellReturn: (
-      (forwardEndPhase + 1) / 2 * FULL_TURN
-        - sourcePoseInputTravel
-    ) / inputTravelAngularSpeed,
-    nextCReengagement: (
-      FULL_TURN - sourcePoseInputTravel
-    ) / inputTravelAngularSpeed,
-    nextD: inputCycleDuration,
+    sourcePoseD: timeToTravel(sourcePoseInputTravel),
+    midForward: timeToTravel((backwardEndPhase + forwardEndPhase) / 2 * FULL_TURN),
+    eCatchRelease: timeToTravel(forwardEndPhase * FULL_TURN),
+    midDwellReturn: timeToTravel((forwardEndPhase + 1) / 2 * FULL_TURN),
+    nextCReengagement: timeToTravel(FULL_TURN) || inputCycleDuration,
+    nextD: timeToTravel(sourcePoseInputTravel) + inputCycleDuration,
   });
 
   const blocks = {

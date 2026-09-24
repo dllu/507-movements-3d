@@ -1,15 +1,16 @@
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
-  PALETTE,
-  makeBeam,
-  makeDynamicCable,
-  makeDynamicLink,
-  markShadows,
-  matte,
-} from './primitives.js';
+  capsule,
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+} from './finite-plate-geometry.js';
+import { PALETTE, markShadows, matte } from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
+let solvedColtCycle = null;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -54,66 +55,108 @@ function torusAroundX(radius, tube, material, segments = 52) {
 }
 
 function quinticWindow(value, start, end) {
-  if (value <= start) {
-    return { acceleration: 0, position: 0, velocity: 0 };
-  }
-  if (value >= end) {
-    return { acceleration: 0, position: 1, velocity: 0 };
-  }
-  const duration = end - start;
-  const parameter = (value - start) / duration;
-  const parameter2 = parameter * parameter;
-  const oneMinus = 1 - parameter;
-  return {
-    acceleration: 60 * parameter * oneMinus * (1 - 2 * parameter)
-      / duration ** 2,
-    position: parameter2 * parameter
-      * (10 - 15 * parameter + 6 * parameter2),
-    velocity: 30 * parameter2 * oneMinus ** 2 / duration,
+  if (value <= start) return 0;
+  if (value >= end) return 1;
+  const parameter = (value - start) / (end - start);
+  return parameter ** 3 * (10 - 15 * parameter + 6 * parameter ** 2);
+}
+
+// One closed annular face ratchet. `height(phase)` is the axial tooth height
+// above the cylinder's rear face; `faces` are the radial driving-face phases
+// where the height drops from `high` to `low`. Local X is the axial direction,
+// and a phase is measured from local +Y toward local +Z. Vertices on every
+// radial face are shared with both neighbouring wall columns, so the solid is
+// watertight without T-junctions.
+function faceRatchetGeometry({
+  faces,
+  height,
+  high,
+  innerRadius,
+  low,
+  outerRadius,
+  samplesPerTooth,
+}) {
+  const positions = [];
+  const indices = [];
+  const vertex = (radius, phase, axial) => {
+    positions.push(axial, radius * Math.cos(phase), radius * Math.sin(phase));
+    return positions.length / 3 - 1;
   };
-}
-
-function cubicBezierPoint(start, controlA, controlB, end, parameter) {
-  const oneMinus = 1 - parameter;
-  return new THREE.Vector3()
-    .addScaledVector(start, oneMinus ** 3)
-    .addScaledVector(controlA, 3 * oneMinus ** 2 * parameter)
-    .addScaledVector(controlB, 3 * oneMinus * parameter ** 2)
-    .addScaledVector(end, parameter ** 3);
-}
-
-function ratchetStarShape({ contactPhase, rootRadius, teeth, tipRadius }) {
-  const shape = new THREE.Shape();
-  const pitch = FULL_TURN / teeth;
-  let first = true;
-  const appendPolarPoint = (radius, phase) => {
-    // The shape is extruded along local Z and then quarter-turned so that its
-    // polar plane becomes global YZ around the cylinder's X axis.
-    const x = -radius * Math.sin(phase);
-    const y = radius * Math.cos(phase);
-    if (first) {
-      shape.moveTo(x, y);
-      first = false;
-    } else {
-      shape.lineTo(x, y);
+  // Columns between consecutive sample phases; each face phase is a column
+  // boundary carrying both the low and high top vertices.
+  const pitch = FULL_TURN / faces.length;
+  const stations = [];
+  faces.forEach((face) => {
+    for (let index = 0; index < samplesPerTooth; index += 1) {
+      stations.push(face + pitch * index / samplesPerTooth);
     }
-  };
-  for (let index = 0; index < teeth; index += 1) {
-    const phase = contactPhase + index * pitch;
-    appendPolarPoint(rootRadius, phase - pitch * 0.48);
-    appendPolarPoint(tipRadius, phase);
-    appendPolarPoint(rootRadius, phase + pitch * 0.42);
+  });
+  const count = stations.length;
+  const station = stations.map((phase, index) => {
+    const isFace = index % samplesPerTooth === 0;
+    const tops = isFace ? [low, high] : [height(phase)];
+    return {
+      bottomInner: vertex(innerRadius, phase, 0),
+      bottomOuter: vertex(outerRadius, phase, 0),
+      isFace,
+      phase,
+      topInner: tops.map((axial) => vertex(innerRadius, phase, axial)),
+      topOuter: tops.map((axial) => vertex(outerRadius, phase, axial)),
+    };
+  });
+  const push = (a, b, c) => indices.push(a, b, c);
+  for (let index = 0; index < count; index += 1) {
+    const left = station[index];
+    const right = station[(index + 1) % count];
+    // The column starts at the low top of a face station and ends at the high
+    // top of the next face station (or the only top of a plain station).
+    const leftTop = 0;
+    const rightTop = right.isFace ? 1 : 0;
+    const li = left.topInner[leftTop];
+    const lo = left.topOuter[leftTop];
+    const ri = right.topInner[rightTop];
+    const ro = right.topOuter[rightTop];
+    // Top surface (normal +X).
+    push(li, lo, ro);
+    push(li, ro, ri);
+    // Bottom (normal -X).
+    push(left.bottomInner, right.bottomOuter, left.bottomOuter);
+    push(left.bottomInner, right.bottomInner, right.bottomOuter);
+    // Outer wall (normal outward). Its right edge passes through the low
+    // face vertex when the next station is a face.
+    const outerRight = right.isFace
+      ? [right.bottomOuter, right.topOuter[0], right.topOuter[1]]
+      : [right.bottomOuter, right.topOuter[0]];
+    push(lo, left.bottomOuter, outerRight[0]);
+    for (let k = 0; k < outerRight.length - 1; k += 1) {
+      push(lo, outerRight[k], outerRight[k + 1]);
+    }
+    const innerRight = right.isFace
+      ? [right.bottomInner, right.topInner[0], right.topInner[1]]
+      : [right.bottomInner, right.topInner[0]];
+    push(li, innerRight[0], left.bottomInner);
+    for (let k = 0; k < innerRight.length - 1; k += 1) {
+      push(li, innerRight[k + 1], innerRight[k]);
+    }
+    if (right.isFace) {
+      // Radial driving face from the high end of this tooth down to the low
+      // land of the next one.
+      push(right.topInner[0], right.topOuter[1], right.topOuter[0]);
+      push(right.topInner[0], right.topInner[1], right.topOuter[1]);
+    }
   }
-  shape.closePath();
-  return shape;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 function coltCylinderRatchet(movement) {
   const root = new THREE.Group();
 
-  // Source measurements use the hammer pivot as the 2D origin. Brown's side
-  // view collapses the cylinder's depth, so the ratchet contact is completed
-  // in 3D from the six-chamber geometry and the 1836 Colt patent description.
+  // Source measurements use the hammer pivot as the 2D origin (model units
+  // per raster pixel = sourceScale; raster y is downward).
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
   const sourceScale = 0.011;
@@ -123,20 +166,21 @@ function coltCylinderRatchet(movement) {
   const sourceRasterCylinderRearTop = new THREE.Vector2(112, 98);
   const sourceRasterCylinderFrontBottom = new THREE.Vector2(7, 469);
   const sourceRasterCylinderRearBottom = new THREE.Vector2(112, 469);
-  const sourceRasterSpringAnchor = new THREE.Vector2(166, 132);
-  const sourceRasterRatchetContactProjection = new THREE.Vector2(128, 247);
+  const sourceRasterSpringRoot = new THREE.Vector2(168, 217);
+  const sourceRasterSpringTip = new THREE.Vector2(183, 318);
+  const sourceRasterSpringBlock = [
+    [142, 131], [158, 134], [172, 142], [184, 155], [192, 171],
+    [197, 190], [198, 209], [197, 222], [152, 209], [146, 205],
+  ];
 
   const sourcePointToModel = ({ x, y }) => new THREE.Vector2(
     (x - sourceRasterHammerPivot.x) * sourceScale,
     (sourceRasterHammerPivot.y - y) * sourceScale,
   );
+  const rasterToModel = ([x, y]) => sourcePointToModel({ x, y }).toArray();
 
-  const cylinderFrontX = sourcePointToModel(
-    sourceRasterCylinderFrontTop,
-  ).x;
-  const cylinderRearX = sourcePointToModel(
-    sourceRasterCylinderRearTop,
-  ).x;
+  const cylinderFrontX = sourcePointToModel(sourceRasterCylinderFrontTop).x;
+  const cylinderRearX = sourcePointToModel(sourceRasterCylinderRearTop).x;
   const cylinderLength = cylinderRearX - cylinderFrontX;
   const cylinderCenterX = (cylinderFrontX + cylinderRearX) / 2;
   const cylinderTopY = sourcePointToModel(sourceRasterCylinderRearTop).y;
@@ -145,323 +189,463 @@ function coltCylinderRatchet(movement) {
   ).y;
   const cylinderCenterY = (cylinderTopY + cylinderBottomY) / 2;
   const cylinderRadius = (cylinderTopY - cylinderBottomY) / 2;
-  const dogPivotLocal = new THREE.Vector3(
-    sourcePointToModel(sourceRasterDogPivot).x,
-    sourcePointToModel(sourceRasterDogPivot).y,
-    -0.5,
-  );
-  const ratchetDepth = 0.18;
-  const ratchetContactX = cylinderRearX + ratchetDepth;
-  const ratchetTipRadius = 0.72;
-  const ratchetRootRadius = 0.39;
+  const dogPivotRest = sourcePointToModel(sourceRasterDogPivot);
+
+  // Ratchet b: six sawtooth teeth standing on the cylinder's rear face.
+  // Each tooth has a radial driving face, a short flat land behind it and a
+  // back that ramps axially up to the next face, so the dog can ride back
+  // over it when the hammer falls.
   const ratchetTeeth = 6;
   const ratchetPitch = FULL_TURN / ratchetTeeth;
+  const ratchetBase = 0.07;
+  const ratchetToothDepth = 0.1;
+  const ratchetLand = 0.7;
+  const ratchetInnerRadius = 0.03;
+  const ratchetOuterRadius = 0.8;
+  const ratchetLandX = cylinderRearX + ratchetBase;
+  const ratchetCrestX = ratchetLandX + ratchetToothDepth;
+  const toothHeight = (relative) => {
+    const fraction = relative / ratchetPitch;
+    if (fraction <= ratchetLand) return ratchetBase;
+    return ratchetBase + ratchetToothDepth
+      * (fraction - ratchetLand) / (1 - ratchetLand);
+  };
 
-  // These three values are the unique source-side branch that makes the
-  // rigid hand close at both ends of one tooth pitch and arrive at an exact
-  // toggle at full cock. The resulting path is monotonic over the whole
-  // 42.3068 degree hammer stroke.
-  const ratchetContactPhase = THREE.MathUtils.degToRad(
-    303.7738209155182,
-  );
-  const hammerStroke = THREE.MathUtils.degToRad(42.30677570906087);
-  const dogLength = 1.8144064091349419;
-  const resetClearance = 0.34;
+  // Planar layout across the page (z toward the viewer). The dog works on
+  // the ratchet beside the cylinder axis, where its lift turns the teeth;
+  // the tumbler lies behind the dog.
+  const dogPlaneZ = 0.17;
+  const dogThickness = 0.06;
+  const dogLow = dogPlaneZ - dogThickness / 2;
+  const dogHigh = dogPlaneZ + dogThickness / 2;
+  const hammerHalfDepth = 0.26;
+  const hammerBevel = 0.02;
+  const hammerZ = dogLow - 0.02 - hammerHalfDepth - hammerBevel;
+  const pinRadius = 0.055;
+  const boreRadius = 0.064;
+  const clearance = 0.005;
+
+  // Hammer motion law: rest, cock, hold at full cock, fall, rest.
+  const hammerStroke = THREE.MathUtils.degToRad(30);
   const inputCyclePeriod = 4;
-  const inputCycleRate = 1 / inputCyclePeriod;
   const fullCylinderPeriod = ratchetTeeth * inputCyclePeriod;
   const cockStart = 0.16;
   const cockEnd = 0.52;
   const fallStart = 0.62;
   const fallEnd = 0.90;
-  const unlockStart = 0.08;
-  const unlockEnd = 0.15;
-  const relockStart = cockEnd;
-  const relockEnd = 0.59;
-  const lockRetractionDistance = 0.34;
+  const hammerAngleAt = (normalized) => (normalized < fallStart
+    ? -hammerStroke * quinticWindow(normalized, cockStart, cockEnd)
+    : -hammerStroke * (1 - quinticWindow(normalized, fallStart, fallEnd)));
 
-  const dogBaseAtHammerAngle = (hammerAngle) => new THREE.Vector3(
-    Math.cos(hammerAngle) * dogPivotLocal.x
-      - Math.sin(hammerAngle) * dogPivotLocal.y,
-    Math.sin(hammerAngle) * dogPivotLocal.x
-      + Math.cos(hammerAngle) * dogPivotLocal.y,
-    dogPivotLocal.z,
+  // Dog a outline, drawn in the rest pose (world XY) and then expressed
+  // relative to its pivot on the tumbler.
+  const hookTop = [ratchetLandX + clearance, cylinderCenterY - 0.17];
+  const hookUnder = [ratchetCrestX + 0.03, hookTop[1] - 0.065];
+  // The hook's short top face ends just clear of the tooth crests; above it
+  // the dog's upper arm rises beside the ratchet as in Brown's plate, set
+  // back far enough that the arm never reaches the teeth when the dog leans
+  // over at full cock.
+  const hookShoulder = [ratchetCrestX + 0.035, hookTop[1]];
+  const eyeRadius = 0.19;
+  const pivot = [dogPivotRest.x, dogPivotRest.y];
+  const dogRasterRightEdge = [[149, 238], [156, 268], [186, 334], [224, 373]];
+  const dogRightEdge = dogRasterRightEdge.map(rasterToModel);
+  const dogRasterUpperLeft = [143, 240];
+  const dogRasterLeftEdge = [[198, 383], [160, 349]];
+  const dogWorldOutline = polygonClipping.union(
+    poly([
+      [hookTop[0], hookTop[1] - 0.02],
+      hookTop,
+      hookShoulder,
+      rasterToModel(dogRasterUpperLeft),
+      ...dogRightEdge,
+      [pivot[0], pivot[1]],
+      ...dogRasterLeftEdge.map(rasterToModel),
+      hookUnder,
+    ]),
+    [[circle(pivot, eyeRadius, 96)]],
   );
-  const dogBaseDerivativeAtHammerAngle = (hammerAngle) => (
-    new THREE.Vector3(
-      -Math.sin(hammerAngle) * dogPivotLocal.x
-        - Math.cos(hammerAngle) * dogPivotLocal.y,
-      Math.cos(hammerAngle) * dogPivotLocal.x
-        - Math.sin(hammerAngle) * dogPivotLocal.y,
-      0,
-    )
+  const toLocal = ([x, y]) => [x - pivot[0], y - pivot[1]];
+  const dogLocalPolygons = polygonClipping.difference(
+    dogWorldOutline.map((polygon) => polygon.map((ring) => ring.map(toLocal))),
+    [[circle([0, 0], boreRadius, 96)]],
   );
-  const dogBaseSecondDerivativeAtHammerAngle = (hammerAngle) => (
-    new THREE.Vector3(
-      -Math.cos(hammerAngle) * dogPivotLocal.x
-        + Math.sin(hammerAngle) * dogPivotLocal.y,
-      -Math.sin(hammerAngle) * dogPivotLocal.x
-        - Math.cos(hammerAngle) * dogPivotLocal.y,
-      0,
-    )
-  );
-  const ratchetPointAtWorldPhase = (phase, x = ratchetContactX) => (
-    new THREE.Vector3(
-      x,
-      cylinderCenterY + ratchetTipRadius * Math.cos(phase),
-      ratchetTipRadius * Math.sin(phase),
-    )
-  );
-  const ratchetPointDerivativeAtWorldPhase = (phase) => (
-    new THREE.Vector3(
-      0,
-      -ratchetTipRadius * Math.sin(phase),
-      ratchetTipRadius * Math.cos(phase),
-    )
-  );
-  const ratchetPointSecondDerivativeAtWorldPhase = (phase) => (
-    new THREE.Vector3(
-      0,
-      -ratchetTipRadius * Math.cos(phase),
-      -ratchetTipRadius * Math.sin(phase),
-    )
-  );
+  const dogOuterRing = dogLocalPolygons[0][0].slice(0, -1);
+  const densify = (ring, spacing) => {
+    const points = [];
+    ring.forEach((point, index) => {
+      const next = ring[(index + 1) % ring.length];
+      const steps = Math.max(1, Math.ceil(Math.hypot(
+        next[0] - point[0],
+        next[1] - point[1],
+      ) / spacing));
+      for (let step = 0; step < steps; step += 1) {
+        points.push([
+          point[0] + (next[0] - point[0]) * step / steps,
+          point[1] + (next[1] - point[1]) * step / steps,
+        ]);
+      }
+    });
+    return points;
+  };
+  // Only the hook end can reach the ratchet.
+  const dogBoundary = densify(dogOuterRing, 0.01).filter(([x, y]) => (
+    x + pivot[0] < ratchetCrestX + 0.25 && y + pivot[1] > hookTop[1] - 0.45
+  ));
+  const dogZs = [dogLow, dogHigh];
 
-  const engagedClosureAtHammerAngle = (hammerAngle) => {
-    const dogBase = dogBaseAtHammerAngle(hammerAngle);
-    const xDifference = ratchetContactX - dogBase.x;
-    const yDifference = dogBase.y - cylinderCenterY;
-    const zDifference = dogBase.z;
-    const projectedRadius = Math.hypot(yDifference, zDifference);
-    const projectedPhase = Math.atan2(zDifference, yDifference);
-    const cosineArgument = THREE.MathUtils.clamp((
-      xDifference ** 2
-      + projectedRadius ** 2
-      + ratchetTipRadius ** 2
-      - dogLength ** 2
-    ) / (2 * ratchetTipRadius * projectedRadius), -1, 1);
-    let worldPhase = projectedPhase + Math.acos(cosineArgument);
-    while (worldPhase < ratchetContactPhase - Math.PI) {
-      worldPhase += FULL_TURN;
-    }
-    while (worldPhase > ratchetContactPhase + Math.PI) {
-      worldPhase -= FULL_TURN;
-    }
-
-    const dogTip = ratchetPointAtWorldPhase(worldPhase);
-    const difference = dogBase.clone().sub(dogTip);
-    const baseFirst = dogBaseDerivativeAtHammerAngle(hammerAngle);
-    const baseSecond = dogBaseSecondDerivativeAtHammerAngle(hammerAngle);
-    const tipFirst = ratchetPointDerivativeAtWorldPhase(worldPhase);
-    const tipSecond = ratchetPointSecondDerivativeAtWorldPhase(worldPhase);
-    const firstHammerPartial = 2 * difference.dot(baseFirst);
-    const firstPhasePartial = -2 * difference.dot(tipFirst);
-    const secondHammerPartial = 2 * (
-      baseFirst.lengthSq() + difference.dot(baseSecond)
-    );
-    const mixedPartial = -2 * baseFirst.dot(tipFirst);
-    const secondPhasePartial = 2 * tipFirst.lengthSq()
-      - 2 * difference.dot(tipSecond);
-    const phasePerHammer = -firstHammerPartial / firstPhasePartial;
-    const phaseSecondPerHammer = -(
-      secondHammerPartial
-      + 2 * mixedPartial * phasePerHammer
-      + secondPhasePartial * phasePerHammer ** 2
-    ) / firstPhasePartial;
-
-    return {
-      cosineArgument,
-      dogBase,
-      dogLengthError: dogBase.distanceTo(dogTip) - dogLength,
-      dogTip,
-      phasePerHammer,
-      phaseSecondPerHammer,
-      worldPhase,
-    };
+  const dogWorldPoint = (local, hammerAngle, dogAngle) => {
+    const ch = Math.cos(hammerAngle);
+    const sh = Math.sin(hammerAngle);
+    const px = ch * pivot[0] - sh * pivot[1];
+    const py = sh * pivot[0] + ch * pivot[1];
+    const angle = hammerAngle + dogAngle;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return [px + c * local[0] - s * local[1], py + s * local[0] + c * local[1]];
   };
 
-  const resetDogTip = (hammerAngle, resetProgress) => {
-    const dogBase = dogBaseAtHammerAngle(hammerAngle);
-    const easedProgress = resetProgress ** 3 * (
-      10 - 15 * resetProgress + 6 * resetProgress ** 2
+  // Signed clearance of one world point from the ratchet solid, using the
+  // tooth height field and the radial faces. Positive is clear.
+  const ratchetClearance = (x, y, z, cylinderAngle, faceZero) => {
+    const dy = y - cylinderCenterY;
+    const radius = Math.hypot(dy, z);
+    const radialOut = Math.max(
+      radius - ratchetOuterRadius,
+      ratchetInnerRadius - radius,
     );
-    const targetPhase = ratchetContactPhase
-      + ratchetPitch * (1 - easedProgress);
-    const clearanceShape = 16 * resetProgress ** 2
-      * (1 - resetProgress) ** 2;
-    const axialClearance = resetClearance * clearanceShape;
-    const tipX = ratchetContactX + axialClearance;
-    const xDistance = tipX - dogBase.x;
-    const planarReach = Math.sqrt(Math.max(
-      dogLength ** 2 - xDistance ** 2,
-      0,
-    ));
-    const target = ratchetPointAtWorldPhase(targetPhase, tipX);
-    const planarDirection = new THREE.Vector2(
-      target.y - dogBase.y,
-      target.z - dogBase.z,
-    ).normalize();
-    return {
-      axialClearance,
-      dogBase,
-      dogTip: new THREE.Vector3(
-        tipX,
-        dogBase.y + planarDirection.x * planarReach,
-        dogBase.z + planarDirection.y * planarReach,
+    if (radialOut > 0.05) return x - cylinderRearX;
+    const phase = Math.atan2(z, dy) - cylinderAngle - faceZero;
+    const relative = THREE.MathUtils.euclideanModulo(phase, ratchetPitch);
+    const vertical = x - (cylinderRearX + toothHeight(relative));
+    const behindFace = Math.max(
+      radius * Math.sin(Math.min(relative, Math.PI / 2)),
+      x - ratchetCrestX,
+    );
+    return Math.max(Math.min(vertical, behindFace), radialOut);
+  };
+  const dogRatchetClearance = (hammerAngle, dogAngle, cylinderAngle, faceZero) => {
+    const ch = Math.cos(hammerAngle);
+    const sh = Math.sin(hammerAngle);
+    const px = ch * pivot[0] - sh * pivot[1];
+    const py = sh * pivot[0] + ch * pivot[1];
+    const c = Math.cos(hammerAngle + dogAngle);
+    const s = Math.sin(hammerAngle + dogAngle);
+    let minimum = Infinity;
+    for (const [lx, ly] of dogBoundary) {
+      const x = px + c * lx - s * ly;
+      if (x > ratchetCrestX + 0.05) continue;
+      const y = py + s * lx + c * ly;
+      for (const z of dogZs) {
+        minimum = Math.min(
+          minimum,
+          ratchetClearance(x, y, z, cylinderAngle, faceZero),
+        );
+      }
+    }
+    return minimum;
+  };
+
+  // Spring c: a stiff leaf hanging from the hatched block. It is carried as
+  // a rigid leaf turning a little about its root (the root is a round end,
+  // so the turn never moves it into the block) and always bears on the dog's
+  // right edge.
+  const springRoot = rasterToModel([
+    sourceRasterSpringRoot.x,
+    sourceRasterSpringRoot.y,
+  ]);
+  const springTipRest = rasterToModel([
+    sourceRasterSpringTip.x,
+    sourceRasterSpringTip.y,
+  ]);
+  const springRadius = 0.032;
+  const springTipRadius = 0.026;
+  const springLength = Math.hypot(
+    springTipRest[0] - springRoot[0],
+    springTipRest[1] - springRoot[1],
+  );
+  const springRestAngle = Math.atan2(
+    springTipRest[1] - springRoot[1],
+    springTipRest[0] - springRoot[0],
+  );
+  // Leaf centreline in its own frame (root at origin, along +X), bowed a
+  // little like Brown's leaf.
+  const springCenterline = Array.from({ length: 9 }, (_, index) => {
+    const u = index / 8;
+    return [springLength * u, -0.05 * Math.sin(Math.PI * u)];
+  });
+  const springLocalPolygons = springCenterline.slice(0, -1).reduce(
+    (shape, point, index) => polygonClipping.union(
+      shape,
+      capsule(
+        point,
+        springCenterline[index + 1],
+        springRadius + (springTipRadius - springRadius) * (index + 1) / 8,
+        24,
       ),
-      targetPhase,
+    ),
+    [[circle([0, 0], springRadius, 48)]],
+  );
+  // Signed 2D clearance of the spring leaf from the dog's right edge (the
+  // only part of the dog the leaf can reach), both in the same plane.
+  const dogEdgeLocal = [
+    rasterToModel(dogRasterUpperLeft),
+    ...dogRightEdge,
+  ].map(toLocal);
+  const springSamples = Array.from({ length: 25 }, (_, index) => {
+    const u = index / 24;
+    return {
+      point: [springLength * u, -0.05 * Math.sin(Math.PI * u)],
+      radius: springRadius + (springTipRadius - springRadius) * u,
     };
+  });
+  const springDogClearance = (hammerAngle, dogAngle, springAngle) => {
+    const edge = dogEdgeLocal.map((local) => (
+      dogWorldPoint(local, hammerAngle, dogAngle)
+    ));
+    const region = [
+      ...edge,
+      [edge.at(-1)[0] - 3, edge.at(-1)[1]],
+      [edge[0][0] - 3, edge[0][1]],
+    ];
+    const c = Math.cos(springAngle);
+    const s = Math.sin(springAngle);
+    let minimum = Infinity;
+    for (const { point: [lx, ly], radius } of springSamples) {
+      const px = springRoot[0] + c * lx - s * ly;
+      const py = springRoot[1] + s * lx + c * ly;
+      // Distance to the dog's upper and right edges; the sign comes from a
+      // region bounded by those edges and closed far to the left, which
+      // contains the whole dog near the leaf.
+      let nearest = Infinity;
+      for (let k = 0; k < edge.length - 1; k += 1) {
+        const [ax, ay] = edge[k];
+        const [bx, by] = edge[k + 1];
+        const dx = bx - ax;
+        const dy = by - ay;
+        const t = THREE.MathUtils.clamp(
+          ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy),
+          0,
+          1,
+        );
+        nearest = Math.min(
+          nearest,
+          Math.hypot(px - ax - t * dx, py - ay - t * dy),
+        );
+      }
+      let inside = false;
+      for (let a = 0, b = region.length - 1; a < region.length; b = a, a += 1) {
+        const [xa, ya] = region[a];
+        const [xb, yb] = region[b];
+        if ((ya > py) !== (yb > py)
+          && px < (xb - xa) * (py - ya) / (yb - ya) + xa) inside = !inside;
+      }
+      const signed = inside ? -nearest : nearest;
+      minimum = Math.min(minimum, signed - radius);
+    }
+    return minimum;
+  };
+
+  // Projection helpers: move a coordinate from `value` toward `target` in
+  // steps no larger than `step`, stopping at the last pose whose clearance is
+  // at least `required`; if the start already violates, back off away from
+  // the target until clear.
+  const project = (value, target, step, clearanceAt, required) => {
+    const direction = Math.sign(target - value) || 1;
+    if (clearanceAt(value) < required) {
+      // Nearest clear pose on either side.
+      let good = value;
+      const bad = value;
+      for (let offset = 1e-7; offset < 2; offset *= 1.5) {
+        if (clearanceAt(value - direction * offset) >= required) {
+          good = value - direction * offset;
+          break;
+        }
+        if (clearanceAt(value + direction * offset) >= required) {
+          good = value + direction * offset;
+          break;
+        }
+      }
+      let badSide = bad;
+      for (let k = 0; k < 22; k += 1) {
+        const middle = (good + badSide) / 2;
+        if (clearanceAt(middle) >= required) good = middle;
+        else badSide = middle;
+      }
+      return good;
+    }
+    const limit = direction > 0
+      ? Math.min(target, value + step)
+      : Math.max(target, value - step);
+    if (clearanceAt(limit) >= required) return limit;
+    let good = value;
+    let bad = limit;
+    for (let k = 0; k < 22; k += 1) {
+      const middle = (good + bad) / 2;
+      if (clearanceAt(middle) >= required) good = middle;
+      else bad = middle;
+    }
+    return good;
+  };
+
+  // Precompute one periodic cycle. The dog is pressed toward the ratchet
+  // (positive dog angle) by spring c; while cocking, the hammer lifts the dog
+  // and its hook pushes the radial face of the tooth above it, turning the
+  // cylinder only as far as needed to keep clearance. During the fall the
+  // cylinder is held, the hook's sloped underside rides up the next tooth's
+  // back and the dog snaps back onto the land behind that tooth.
+  const cycleSamples = 600;
+  const dogSpringTarget = 1.5;
+  const dogReturnStep = 0.004;
+  const springTarget = springRestAngle - 0.4;
+  const solveCycle = (start, faceZero) => {
+    let { cylinder, dog } = start;
+    const table = [];
+    for (let index = 0; index <= cycleSamples; index += 1) {
+      const normalized = index / cycleSamples;
+      const hammer = hammerAngleAt(normalized);
+      // The hook can only ever push a face forward; the cylinder never
+      // turns back.
+      const pushCylinder = () => {
+        // The hook drives only while the hammer is drawn back or held; on the
+        // fall the cylinder is held and never dragged along.
+        if (!(normalized > cockStart && normalized < fallStart)) return;
+        const clearAt = (angle) => dogRatchetClearance(
+          hammer,
+          dog,
+          angle,
+          faceZero,
+        );
+        if (clearAt(cylinder) >= clearance) return;
+        // Only a hook resting against a face can be cleared by a small turn;
+        // any other overlap is resolved by the dog.
+        let good = cylinder - 0.005;
+        while (clearAt(good) < clearance) {
+          good -= 0.005;
+          if (good < cylinder - 0.04) return;
+        }
+        let bad = cylinder;
+        for (let k = 0; k < 26; k += 1) {
+          const middle = (good + bad) / 2;
+          if (clearAt(middle) >= clearance) good = middle;
+          else bad = middle;
+        }
+        cylinder = good;
+      };
+      for (let pass = 0; pass < 2; pass += 1) {
+        pushCylinder();
+        dog = project(
+          dog,
+          dogSpringTarget,
+          dogReturnStep,
+          (angle) => dogRatchetClearance(hammer, angle, cylinder, faceZero),
+          clearance,
+        );
+      }
+      pushCylinder();
+      table.push({ cylinder, dog, hammer });
+    }
+    return table;
+  };
+  const solveTables = () => {
+    // Cycle one starts from an arbitrary tooth phase; its end state is the
+    // periodic fixed point (the hook always comes to rest the same distance
+    // behind the next face), so cycle two is the periodic table.
+    const firstFaceZero = Math.atan2(dogPlaneZ, hookTop[1] - cylinderCenterY)
+      - 0.12;
+    const warmup = solveCycle({ cylinder: 0, dog: 0 }, firstFaceZero);
+    const periodic = solveCycle(warmup.at(-1), firstFaceZero);
+    // Spring c only follows the dog, so it is solved once over the
+    // periodic cycle; it starts and ends bearing on the same rest pose.
+    let spring = springRestAngle;
+    periodic.forEach((entry) => {
+      spring = project(
+        spring,
+        springTarget,
+        0.02,
+        (angle) => springDogClearance(entry.hammer, entry.dog, angle),
+        clearance,
+      );
+      entry.spring = spring;
+    });
+    const cylinderOrigin = periodic[0].cylinder;
+    const cycleStepError = periodic.at(-1).cylinder - cylinderOrigin
+      + ratchetPitch;
+    const cylinderTable = Float64Array.from(periodic, (entry, index) => {
+      // Remove the bisection residual from the driven interval only, so
+      // one cock advances exactly one pitch.
+      const driveFraction = THREE.MathUtils.clamp(
+        (index / cycleSamples - cockStart) / (cockEnd - cockStart),
+        0,
+        1,
+      );
+      return entry.cylinder - cylinderOrigin - cycleStepError * driveFraction;
+    });
+    const dogTable = Float64Array.from(periodic, (entry) => entry.dog);
+    const springTable = Float64Array.from(periodic, (entry) => entry.spring);
+    const cycleClosureErrors = {
+      cylinderStep: cycleStepError,
+      dog: dogTable[cycleSamples] - dogTable[0],
+      spring: springTable[cycleSamples] - springTable[0],
+    };
+    dogTable[cycleSamples] = dogTable[0];
+    springTable[cycleSamples] = springTable[0];
+    return {
+      cycleClosureErrors,
+      ratchetFaceZero: firstFaceZero + cylinderOrigin,
+      tables: { cylinder: cylinderTable, dog: dogTable, spring: springTable },
+    };
+  };
+  // The solved cycle depends only on the fixed geometry, so it is computed
+  // once per session.
+  const solved = solvedColtCycle ??= solveTables();
+  const { cycleClosureErrors, ratchetFaceZero, tables } = solved;
+
+  const sample = (array, normalized) => {
+    const position = normalized * cycleSamples;
+    const index = Math.min(Math.floor(position), cycleSamples - 1);
+    const fraction = position - index;
+    return array[index] + (array[index + 1] - array[index]) * fraction;
   };
 
   const stateAtNormalizedCycle = (normalizedCycle, indexNumber) => {
-    const cockMotion = quinticWindow(normalizedCycle, cockStart, cockEnd);
-    const fallMotion = quinticWindow(normalizedCycle, fallStart, fallEnd);
-    let hammerAngle;
-    let hammerAngularSpeed;
-    let hammerAngularAcceleration;
-    if (normalizedCycle < fallStart) {
-      hammerAngle = -hammerStroke * cockMotion.position;
-      hammerAngularSpeed = -hammerStroke * cockMotion.velocity
-        * inputCycleRate;
-      hammerAngularAcceleration = -hammerStroke * cockMotion.acceleration
-        * inputCycleRate ** 2;
-    } else {
-      hammerAngle = -hammerStroke * (1 - fallMotion.position);
-      hammerAngularSpeed = hammerStroke * fallMotion.velocity
-        * inputCycleRate;
-      hammerAngularAcceleration = hammerStroke * fallMotion.acceleration
-        * inputCycleRate ** 2;
-    }
-
-    const driving = normalizedCycle >= cockStart
-      && normalizedCycle <= cockEnd;
-    const ready = normalizedCycle < cockStart || normalizedCycle > fallEnd;
-    const resetting = normalizedCycle >= fallStart
-      && normalizedCycle <= fallEnd;
-    let cylinderIncrement;
-    let cylinderAngularSpeed = 0;
-    let cylinderAngularAcceleration = 0;
-    let dogBase;
-    let dogTip;
-    let dogAxialClearance = 0;
-    let dogLengthError;
-    let ratchetWorldPhase;
-    let phasePerHammer = 0;
-    let phaseSecondPerHammer = 0;
-
-    if (driving) {
-      const closure = engagedClosureAtHammerAngle(hammerAngle);
-      ({
-        dogBase,
-        dogLengthError,
-        dogTip,
-        phasePerHammer,
-        phaseSecondPerHammer,
-        worldPhase: ratchetWorldPhase,
-      } = closure);
-      cylinderIncrement = ratchetWorldPhase - ratchetContactPhase;
-      cylinderAngularSpeed = phasePerHammer * hammerAngularSpeed;
-      cylinderAngularAcceleration = phaseSecondPerHammer
-        * hammerAngularSpeed ** 2
-        + phasePerHammer * hammerAngularAcceleration;
-    } else if (ready) {
-      cylinderIncrement = normalizedCycle > fallEnd ? ratchetPitch : 0;
-      const closure = engagedClosureAtHammerAngle(0);
-      dogBase = closure.dogBase;
-      dogTip = closure.dogTip;
-      dogLengthError = closure.dogLengthError;
-      ratchetWorldPhase = ratchetContactPhase;
-    } else if (resetting) {
-      cylinderIncrement = ratchetPitch;
-      const reset = resetDogTip(hammerAngle, fallMotion.position);
-      ({ axialClearance: dogAxialClearance, dogBase, dogTip } = reset);
-      dogLengthError = dogBase.distanceTo(dogTip) - dogLength;
-      ratchetWorldPhase = reset.targetPhase;
-    } else {
-      cylinderIncrement = ratchetPitch;
-      const closure = engagedClosureAtHammerAngle(-hammerStroke);
-      dogBase = closure.dogBase;
-      dogTip = closure.dogTip;
-      dogLengthError = closure.dogLengthError;
-      ratchetWorldPhase = ratchetContactPhase + ratchetPitch;
-    }
-
-    const cylinderAngle = indexNumber * ratchetPitch + cylinderIncrement;
-    const unlockMotion = quinticWindow(
-      normalizedCycle,
-      unlockStart,
-      unlockEnd,
+    const hammerAngle = hammerAngleAt(normalizedCycle);
+    const cylinderIncrement = -sample(tables.cylinder, normalizedCycle);
+    const cylinderAngle = -(indexNumber * ratchetPitch + cylinderIncrement);
+    const dogAngle = sample(tables.dog, normalizedCycle);
+    const springAngle = sample(tables.spring, normalizedCycle);
+    const hammerCos = Math.cos(hammerAngle);
+    const hammerSin = Math.sin(hammerAngle);
+    const dogBase = new THREE.Vector3(
+      hammerCos * pivot[0] - hammerSin * pivot[1],
+      hammerSin * pivot[0] + hammerCos * pivot[1],
+      dogPlaneZ,
     );
-    const relockMotion = quinticWindow(
-      normalizedCycle,
-      relockStart,
-      relockEnd,
+    const [tipX, tipY] = dogWorldPoint(
+      toLocal(hookTop),
+      hammerAngle,
+      dogAngle,
     );
-    let lockEngagement;
-    if (normalizedCycle < unlockStart) lockEngagement = 1;
-    else if (normalizedCycle < unlockEnd) {
-      lockEngagement = 1 - unlockMotion.position;
-    } else if (normalizedCycle < relockStart) lockEngagement = 0;
-    else if (normalizedCycle < relockEnd) {
-      lockEngagement = relockMotion.position;
-    } else lockEngagement = 1;
-    const lockRetraction = (1 - lockEngagement) * lockRetractionDistance;
-    const nearestIndex = Math.round(cylinderAngle / ratchetPitch);
-    const indexAlignmentError = cylinderAngle
-      - nearestIndex * ratchetPitch;
-
-    const dogDirection = dogTip.clone().sub(dogBase).normalize();
-    const dogBaseVelocity = dogBaseDerivativeAtHammerAngle(hammerAngle)
-      .multiplyScalar(hammerAngularSpeed);
-    const ratchetContactVelocity = ratchetPointDerivativeAtWorldPhase(
-      ratchetWorldPhase,
-    ).multiplyScalar(cylinderAngularSpeed);
-    const dogTipVelocity = driving
-      ? ratchetContactVelocity.clone()
-      : new THREE.Vector3();
-    const rigidLengthVelocityError = driving
-      ? dogTipVelocity.clone().sub(dogBaseVelocity).dot(dogDirection)
-      : 0;
-
     let stage;
-    if (normalizedCycle < unlockStart) stage = 'source-ready-cylinder-locked';
-    else if (normalizedCycle < cockStart) stage = 'receiver-lock-retracting';
+    if (normalizedCycle <= cockStart) stage = 'rest-dog-behind-ratchet-tooth';
     else if (normalizedCycle <= cockEnd) {
       stage = 'hammer-cocking-dog-driving-one-ratchet-step';
-    } else if (normalizedCycle < fallStart) {
-      stage = 'full-cock-cylinder-indexed-and-locking';
-    } else if (normalizedCycle <= fallEnd) {
-      stage = 'hammer-falling-spring-dog-clearing-next-tooth';
-    } else stage = 'rest-ready-on-next-ratchet-tooth';
-
+    } else if (normalizedCycle < fallStart) stage = 'full-cock-cylinder-indexed';
+    else if (normalizedCycle <= fallEnd) {
+      stage = 'hammer-falling-dog-riding-over-next-tooth';
+    } else stage = 'rest-dog-behind-ratchet-tooth';
     return {
       cylinderAngle,
-      cylinderAngularAcceleration,
-      cylinderAngularSpeed,
       cylinderIncrement,
-      dogAxialClearance,
+      dogAngle,
       dogBase,
-      dogBaseVelocity,
-      dogDirection,
-      dogLengthError,
-      dogTip,
-      dogTipVelocity,
-      driving,
+      dogTip: new THREE.Vector3(tipX, tipY, dogPlaneZ),
+      driving: normalizedCycle > cockStart && normalizedCycle <= cockEnd,
       hammerAngle,
-      hammerAngularAcceleration,
-      hammerAngularSpeed,
-      indexAlignmentError,
       indexNumber,
-      lockEngagement,
-      lockRetraction,
       normalizedCycle,
-      phasePerHammer,
-      phaseSecondPerHammer,
-      ratchetContactVelocity,
-      ratchetWorldPhase,
-      ready,
-      resetting,
-      rigidLengthVelocityError,
+      resetting: normalizedCycle >= fallStart && normalizedCycle <= fallEnd,
+      springAngle,
       stage,
     };
   };
@@ -473,14 +657,9 @@ function coltCylinderRatchet(movement) {
     ) / inputCyclePeriod;
     return stateAtNormalizedCycle(normalizedCycle, indexNumber);
   };
-  const stateAtInputPhase = (phase) => {
-    const indexNumber = Math.floor(phase / FULL_TURN);
-    const normalizedCycle = THREE.MathUtils.euclideanModulo(
-      phase,
-      FULL_TURN,
-    ) / FULL_TURN;
-    return stateAtNormalizedCycle(normalizedCycle, indexNumber);
-  };
+  const stateAtInputPhase = (phase) => stateAtTime(
+    phase / FULL_TURN * inputCyclePeriod,
+  );
 
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.14,
@@ -490,7 +669,10 @@ function coltCylinderRatchet(movement) {
     metalness: 0.15,
     roughness: 0.58,
   });
-  const dogMaterialColor = PALETTE.accent;
+  const dogMaterial = matte(PALETTE.accent, {
+    metalness: 0.18,
+    roughness: 0.52,
+  });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.24,
     roughness: 0.47,
@@ -499,9 +681,13 @@ function coltCylinderRatchet(movement) {
     metalness: 0.13,
     roughness: 0.68,
   });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
+  const springMaterial = matte(PALETTE.brass, {
+    metalness: 0.3,
+    roughness: 0.45,
+  });
 
-  const cylinderArborRadius = 0.15;
+  const cylinderArborRadius = 0.09;
+  const cylinderBoreRadius = 0.102;
   const cylinder = new THREE.Group();
   cylinder.position.set(cylinderCenterX, cylinderCenterY, 0);
   cylinder.userData.axis = X_AXIS.clone();
@@ -516,19 +702,14 @@ function coltCylinderRatchet(movement) {
     boredLatheGeometry([
       { axial: -cylinderLength / 2, radial: cylinderRadius },
       { axial: cylinderLength / 2, radial: cylinderRadius },
-    ], cylinderArborRadius + 0.012, 72),
+    ], cylinderBoreRadius, 72),
     drivenMaterial,
   );
   cylinderBody.rotation.z = Math.PI / 2;
   cylinderBody.userData.role = 'six-chamber-cylinder-body';
   cylinderRotor.add(cylinderBody);
   const cylinderEndRings = [-1, 1].map((side) => {
-    const ring = torusAroundX(
-      cylinderRadius * 0.985,
-      0.055,
-      darkMaterial,
-      64,
-    );
+    const ring = torusAroundX(cylinderRadius * 0.985, 0.055, darkMaterial, 64);
     ring.position.x = side * cylinderLength / 2;
     ring.userData.role = side > 0
       ? 'rear-cylinder-edge-ring'
@@ -553,71 +734,31 @@ function coltCylinderRatchet(movement) {
     return strip;
   });
 
-  const ratchetShape = ratchetStarShape({
-    contactPhase: ratchetContactPhase,
-    rootRadius: ratchetRootRadius,
-    teeth: ratchetTeeth,
-    tipRadius: ratchetTipRadius,
-  });
-  const ratchetBore = new THREE.Path(Array.from({ length: 36 }, (_, index) => {
-    const angle = -index / 36 * Math.PI * 2;
-    return new THREE.Vector2(
-      Math.cos(angle) * (cylinderArborRadius + 0.012),
-      Math.sin(angle) * (cylinderArborRadius + 0.012),
-    );
-  }));
-  ratchetBore.closePath();
-  ratchetShape.holes.push(ratchetBore);
+  const ratchetFaces = Array.from(
+    { length: ratchetTeeth },
+    (_, index) => ratchetFaceZero + index * ratchetPitch,
+  );
   const ratchet = new THREE.Mesh(
-    centeredExtrusion(ratchetShape, ratchetDepth, 0.008),
+    faceRatchetGeometry({
+      faces: ratchetFaces,
+      height: (phase) => toothHeight(THREE.MathUtils.euclideanModulo(
+        phase - ratchetFaceZero,
+        ratchetPitch,
+      )),
+      high: ratchetBase + ratchetToothDepth,
+      innerRadius: ratchetInnerRadius,
+      low: ratchetBase,
+      outerRadius: ratchetOuterRadius,
+      samplesPerTooth: 48,
+    }),
     drivenMaterial,
   );
-  ratchet.rotation.y = Math.PI / 2;
-  ratchet.position.x = cylinderLength / 2 + ratchetDepth / 2;
+  ratchet.position.x = cylinderLength / 2;
   ratchet.userData.role = 'six-tooth-face-ratchet-b';
   cylinderRotor.add(ratchet);
-  const ratchetHub = new THREE.Mesh(
-    boredLatheGeometry([
-      { axial: -ratchetDepth * 0.66, radial: 0.31 },
-      { axial: ratchetDepth * 0.66, radial: 0.31 },
-    ], cylinderArborRadius + 0.012, 36),
-    darkMaterial,
-  );
-  ratchetHub.rotation.z = Math.PI / 2;
-  ratchetHub.position.x = cylinderLength / 2 + ratchetDepth / 2;
-  ratchetHub.userData.role = 'ratchet-and-cylinder-common-hub';
-  cylinderRotor.add(ratchetHub);
-  const cylinderRotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.035, 0.64, 0.07),
-    whiteMaterial,
-  );
-  cylinderRotationIndex.position.set(
-    cylinderLength / 2 + ratchetDepth + 0.025,
-    1.06,
-    0,
-  );
-  cylinderRotationIndex.userData.role = 'white-cylinder-step-index';
-  cylinderRotor.add(cylinderRotationIndex);
-
-  const lockingWards = Array.from({ length: ratchetTeeth }, (_, index) => {
-    const phase = Math.PI + index * ratchetPitch;
-    const ward = new THREE.Mesh(
-      new THREE.BoxGeometry(0.055, 0.14, 0.20),
-      darkMaterial,
-    );
-    ward.position.set(
-      cylinderLength / 2 + 0.035,
-      cylinderRadius * 0.86 * Math.cos(phase),
-      cylinderRadius * 0.86 * Math.sin(phase),
-    );
-    ward.rotation.x = phase;
-    ward.userData.role = `cylinder-locking-ward-${index + 1}`;
-    cylinderRotor.add(ward);
-    return ward;
-  });
 
   const hammer = new THREE.Group();
-  hammer.position.z = dogPivotLocal.z;
+  hammer.position.z = hammerZ;
   hammer.userData.axis = Z_AXIS.clone();
   hammer.userData.role = 'fixed-pivot-hammer-and-tumbler';
   const hammerRotor = new THREE.Group();
@@ -643,11 +784,15 @@ function coltCylinderRatchet(movement) {
     const point = sourcePointToModel({ x, y });
     if (index === 0) hammerShape.moveTo(point.x, point.y);
     else hammerShape.lineTo(point.x, point.y);
-    hammerOutlinePoints.push(new THREE.Vector3(point.x, point.y, 0.31));
+    hammerOutlinePoints.push(new THREE.Vector3(
+      point.x,
+      point.y,
+      hammerHalfDepth + hammerBevel + 0.001,
+    ));
   });
   hammerShape.closePath();
   const hammerBody = new THREE.Mesh(
-    centeredExtrusion(hammerShape, 0.52, 0.02),
+    centeredExtrusion(hammerShape, hammerHalfDepth * 2, hammerBevel),
     driverMaterial,
   );
   hammerBody.userData.role = 'source-profiled-hammer-tumbler-body';
@@ -658,208 +803,135 @@ function coltCylinderRatchet(movement) {
   );
   hammerOutline.userData.role = 'dark-hammer-profile-outline';
   hammerRotor.add(hammerOutline);
-  const hammerShaft = cylinderAlongZ(0.23, 1.14, darkMaterial, 36);
+  const hammerShaft = cylinderAlongZ(0.23, 0.62, darkMaterial, 36);
   hammerShaft.userData.role = 'hammer-pivot-shaft';
   hammerRotor.add(hammerShaft);
-  const hammerHub = cylinderAlongZ(0.40, 0.63, driverMaterial, 40);
-  hammerHub.userData.role = 'hammer-tumbler-pivot-hub';
-  hammerRotor.add(hammerHub);
-  const hammerRotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 0.07, 0.032),
-    whiteMaterial,
+
+  // The dog pin is fixed in the tumbler and carries a small retaining head
+  // in front of the dog's eye.
+  const pinFront = dogHigh + 0.012;
+  const pinBack = hammerZ + hammerHalfDepth - 0.1;
+  const dogPivotPin = cylinderAlongZ(
+    pinRadius,
+    pinFront - pinBack,
+    darkMaterial,
+    40,
   );
-  hammerRotationIndex.position.set(0.55, 0.10, 0.31);
-  hammerRotationIndex.userData.role = 'white-hammer-cocking-index';
-  hammerRotor.add(hammerRotationIndex);
-  const dogPivotPin = cylinderAlongZ(0.14, 0.75, darkMaterial, 30);
-  dogPivotPin.position.set(dogPivotLocal.x, dogPivotLocal.y, 0);
-  dogPivotPin.userData.role = 'dog-a-pivot-on-hammer-tumbler';
+  dogPivotPin.position.set(
+    pivot[0],
+    pivot[1],
+    (pinFront + pinBack) / 2 - hammerZ,
+  );
+  dogPivotPin.userData.role = 'dog-a-pivot-pin-on-hammer-tumbler';
   hammerRotor.add(dogPivotPin);
+  const dogPinHead = cylinderAlongZ(0.1, 0.03, darkMaterial, 40);
+  dogPinHead.position.set(pivot[0], pivot[1], pinFront + 0.015 - hammerZ);
+  dogPinHead.userData.role = 'dog-a-pivot-pin-head';
+  hammerRotor.add(dogPinHead);
 
-  const dog = makeDynamicLink({
-    color: dogMaterialColor,
-    depth: 0.19,
-    jointRadius: 0.13,
-    thickness: 0.20,
-  });
-  dog.userData.role = 'spring-biased-rigid-indexing-dog-a';
+  const dog = new THREE.Group();
+  dog.userData.axis = Z_AXIS.clone();
+  dog.userData.role = 'pivoted-rigid-indexing-dog-a';
+  const dogBody = new THREE.Mesh(
+    plate(dogLocalPolygons, dogLow, dogHigh),
+    dogMaterial,
+  );
+  dogBody.userData.role = 'bored-planar-dog-a-lever';
+  dog.add(dogBody);
+  dog.userData.boreRadius = boreRadius;
+  dog.userData.pinRadius = pinRadius;
   root.add(dog);
-  const dogTipIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
-  dogTipIndex.userData.role = 'white-dog-ratchet-contact-index';
-  root.add(dogTipIndex);
 
-  const springAnchor = new THREE.Vector3(
-    sourcePointToModel(sourceRasterSpringAnchor).x,
-    sourcePointToModel(sourceRasterSpringAnchor).y,
-    -0.34,
-  );
-  const spring = makeDynamicCable({
-    color: PALETTE.brass,
-    maxSegments: 14,
-    radius: 0.038,
-  });
-  spring.userData.role = 'cantilever-leaf-spring-c-holding-dog-to-ratchet';
-  root.add(spring);
+  const springBlockOutline = sourceRasterSpringBlock.map(rasterToModel);
   const springAnchorBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 0.58, 0.34),
+    plate(poly(springBlockOutline), dogLow - 0.06, dogHigh + 0.06),
     frameMaterial,
   );
-  springAnchorBlock.position.copy(springAnchor);
-  springAnchorBlock.position.y += 0.16;
-  springAnchorBlock.position.z -= 0.12;
-  springAnchorBlock.userData.role = 'fixed-spring-c-anchor';
+  springAnchorBlock.userData.role = 'fixed-hatched-spring-c-block';
   root.add(springAnchorBlock);
-
-  const lockBoltEngagedY = cylinderCenterY - cylinderRadius - 0.17;
-  const lockBolt = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.48, 0.24),
-    frameMaterial,
+  const springPivot = new THREE.Group();
+  springPivot.position.set(springRoot[0], springRoot[1], 0);
+  springPivot.userData.axis = Z_AXIS.clone();
+  springPivot.userData.role = 'spring-c-root-in-block';
+  const spring = new THREE.Mesh(
+    plate(springLocalPolygons, dogLow + 0.012, dogHigh - 0.012),
+    springMaterial,
   );
-  lockBolt.position.set(
-    cylinderRearX + 0.035,
-    lockBoltEngagedY,
+  spring.userData.role = 'leaf-spring-c-holding-dog-to-ratchet';
+  springPivot.add(spring);
+  root.add(springPivot);
+
+  // The arbor stops inside the cylinder; the ratchet closes the bore behind.
+  const cylinderShaft = cylinderAlongX(
+    cylinderArborRadius,
+    cylinderRearX - cylinderFrontX - 0.01,
+    darkMaterial,
+    30,
+  );
+  cylinderShaft.position.set(
+    (cylinderRearX - 0.01 + cylinderFrontX) / 2,
+    cylinderCenterY,
     0,
   );
-  lockBolt.userData.role =
-    'receiver-lock-required-to-hold-cylinder-during-dog-reset';
-  root.add(lockBolt);
-  const lockSpring = new THREE.Mesh(
-    new THREE.TorusGeometry(0.16, 0.035, 7, 24, Math.PI),
-    matte(PALETTE.brass, { roughness: 0.55 }),
-  );
-  lockSpring.rotation.z = Math.PI / 2;
-  lockSpring.position.set(
-    cylinderRearX + 0.035,
-    lockBoltEngagedY - 0.38,
-    0,
-  );
-  lockSpring.userData.role = 'receiver-lock-return-spring';
-  root.add(lockSpring);
-
-  const cylinderShaft = cylinderAlongX(cylinderArborRadius, cylinderLength + 0.64,
-    darkMaterial, 30);
-  cylinderShaft.position.set(cylinderCenterX, cylinderCenterY, 0);
   cylinderShaft.userData.role = 'fixed-cylinder-arbor';
   root.add(cylinderShaft);
-  const cylinderBearing = torusAroundX(0.24, 0.065, frameMaterial, 36);
-  cylinderBearing.position.set(cylinderFrontX - 0.16, cylinderCenterY, 0);
-  cylinderBearing.userData.role = 'fixed-front-cylinder-arbor-bearing';
-  root.add(cylinderBearing);
-
-  const baseY = -1.30;
-  const frameZ = -1.42;
-  const base = makeBeam(
-    new THREE.Vector3(-3.58, baseY, frameZ),
-    new THREE.Vector3(2.60, baseY, frameZ),
-    { color: PALETTE.frame, depth: 0.28, thickness: 0.20 },
-  );
-  base.userData.role = 'fixed-colt-indexing-display-base';
-  const hammerPost = makeBeam(
-    new THREE.Vector3(0, baseY, frameZ),
-    new THREE.Vector3(0, 0, frameZ),
-    { color: PALETTE.frame, depth: 0.23, thickness: 0.18 },
-  );
-  hammerPost.userData.role = 'fixed-rear-hammer-bearing-post';
-  const hammerBearingArm = makeBeam(
-    new THREE.Vector3(0, 0, frameZ),
-    new THREE.Vector3(0, 0, dogPivotLocal.z - 0.42),
-    { color: PALETTE.frame, depth: 0.22, thickness: 0.17 },
-  );
-  hammerBearingArm.userData.role = 'fixed-hammer-bearing-arm';
-  const cylinderPost = makeBeam(
-    new THREE.Vector3(cylinderCenterX, baseY, frameZ),
-    new THREE.Vector3(cylinderCenterX, cylinderCenterY, frameZ),
-    { color: PALETTE.frame, depth: 0.23, thickness: 0.18 },
-  );
-  cylinderPost.userData.role = 'fixed-cylinder-arbor-support-post';
-  root.add(base, cylinderPost, hammerBearingArm, hammerPost);
 
   const sourceState = stateAtTime(0);
   const sourceIdealizationPixelErrors = {
-    cylinderFrontBottom: new THREE.Vector2(
-      cylinderFrontX,
-      cylinderBottomY,
-    ).distanceTo(sourcePointToModel(sourceRasterCylinderFrontBottom))
+    cylinderFrontBottom: new THREE.Vector2(cylinderFrontX, cylinderBottomY)
+      .distanceTo(sourcePointToModel(sourceRasterCylinderFrontBottom))
       / sourceScale,
-    cylinderFrontTop: new THREE.Vector2(
-      cylinderFrontX,
-      cylinderTopY,
-    ).distanceTo(sourcePointToModel(sourceRasterCylinderFrontTop))
+    cylinderFrontTop: new THREE.Vector2(cylinderFrontX, cylinderTopY)
+      .distanceTo(sourcePointToModel(sourceRasterCylinderFrontTop))
       / sourceScale,
-    cylinderRearBottom: new THREE.Vector2(
-      cylinderRearX,
-      cylinderBottomY,
-    ).distanceTo(sourcePointToModel(sourceRasterCylinderRearBottom))
+    cylinderRearBottom: new THREE.Vector2(cylinderRearX, cylinderBottomY)
+      .distanceTo(sourcePointToModel(sourceRasterCylinderRearBottom))
       / sourceScale,
-    cylinderRearTop: new THREE.Vector2(
-      cylinderRearX,
-      cylinderTopY,
-    ).distanceTo(sourcePointToModel(sourceRasterCylinderRearTop))
+    cylinderRearTop: new THREE.Vector2(cylinderRearX, cylinderTopY)
+      .distanceTo(sourcePointToModel(sourceRasterCylinderRearTop))
       / sourceScale,
-    dogPivot: new THREE.Vector2(
-      sourceState.dogBase.x,
-      sourceState.dogBase.y,
-    ).distanceTo(sourcePointToModel(sourceRasterDogPivot)) / sourceScale,
+    dogPivot: new THREE.Vector2(sourceState.dogBase.x, sourceState.dogBase.y)
+      .distanceTo(sourcePointToModel(sourceRasterDogPivot)) / sourceScale,
     hammerPivot: new THREE.Vector2(0, 0).distanceTo(
       sourcePointToModel(sourceRasterHammerPivot),
     ) / sourceScale,
-    ratchetContactProjection: new THREE.Vector2(
-      sourceState.dogTip.x,
-      sourceState.dogTip.y,
-    ).distanceTo(sourcePointToModel(
-      sourceRasterRatchetContactProjection,
-    )) / sourceScale,
-    springAnchor: new THREE.Vector2(
-      springAnchor.x,
-      springAnchor.y,
-    ).distanceTo(sourcePointToModel(sourceRasterSpringAnchor)) / sourceScale,
   };
 
   root.userData.archetype = movement.archetype;
   root.userData.blocks = {
-    base,
     chamberStrips,
     cylinder,
-    cylinderBearing,
     cylinderBody,
     cylinderEndRings,
-    cylinderPost,
-    cylinderRotationIndex,
     cylinderRotor,
     cylinderShaft,
     dog,
+    dogBody,
+    dogPinHead,
     dogPivotPin,
-    dogTipIndex,
     hammer,
-    hammerBearingArm,
     hammerBody,
-    hammerHub,
     hammerOutline,
-    hammerPost,
-    hammerRotationIndex,
     hammerRotor,
     hammerShaft,
-    lockBolt,
-    lockingWards,
-    lockSpring,
     ratchet,
-    ratchetHub,
     spring,
     springAnchorBlock,
+    springPivot,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.78, -1.55, -2.28),
-    // The source-profiled hammer sweeps farther right when fully cocked than
-    // it does in Brown's illustrated rest pose. Include that whole envelope
-    // so no mechanically important pose is cropped by the fitted camera.
+    // The hammer sweeps farther right when fully cocked than in Brown's rest
+    // pose; include that whole envelope.
     new THREE.Vector3(4.56, 4.08, 2.26),
   );
   root.userData.geometry = {
+    boreRadius,
+    clearance,
     cockEnd,
     cockStart,
+    cycleClosureErrors,
+    cycleSamples,
     cylinderBottomY,
     cylinderCenterX,
     cylinderCenterY,
@@ -868,36 +940,37 @@ function coltCylinderRatchet(movement) {
     cylinderRadius,
     cylinderRearX,
     cylinderTopY,
-    dogLength,
-    dogPivotLocal: dogPivotLocal.clone(),
+    dogPivotRest: dogPivotRest.clone(),
+    dogPlaneZ,
+    dogThickness,
     fallEnd,
     fallStart,
     fullCylinderPeriod,
     hammerStroke,
+    hammerZ,
     inputCyclePeriod,
-    lockRetractionDistance,
-    ratchetContactPhase,
-    ratchetContactX,
-    ratchetDepth,
+    pinRadius,
+    ratchetBase,
+    ratchetCrestX,
+    ratchetFaceZero,
+    ratchetInnerRadius,
+    ratchetLand,
+    ratchetLandX,
+    ratchetOuterRadius,
     ratchetPitch,
-    ratchetRootRadius,
     ratchetTeeth,
-    ratchetTipRadius,
-    relockEnd,
-    relockStart,
-    resetClearance,
+    ratchetToothDepth,
     sourceScale,
-    unlockEnd,
-    unlockStart,
+    springRoot,
   };
   root.userData.mechanism =
-    'one pivoted hammer and tumbler carries one rigid dog a; spring c biases that dog into one six-tooth face ratchet b on the cylinder, each cocking stroke advances exactly one chamber, the receiver lock holds the indexed cylinder, and the spring lets the dog clear and reset over the next tooth during the hammer fall';
+    'one pivoted hammer and tumbler carries one rigid bored dog a on a pin; spring c presses that dog into one six-tooth face ratchet b on the back of the cylinder, each cocking stroke pushes one radial tooth face through exactly one chamber, and on the hammer fall the dog rides back over the next tooth and drops behind it';
   root.userData.movement = movement;
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
     reason:
-      'The official Movement 277 page marks its animation unavailable. The one-step cocking drive, spring-biased lateral dog reset, and separate cylinder-holding lock were reconstructed independently from Brown’s public-domain plate and Colt patent USX9430.',
+      'The official Movement 277 page marks its animation unavailable. The one-step cocking drive and the dog’s return over the next tooth were reconstructed independently from Brown’s public-domain plate and Colt patent USX9430.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourcePointToModel = sourcePointToModel;
@@ -907,9 +980,8 @@ function coltCylinderRatchet(movement) {
       imageHeight: sourceImageHeight,
       imageWidth: sourceImageWidth,
       inferredTopology:
-        'one hammer/tumbler, one pivoted dog a, one leaf spring c, one six-step face ratchet b fixed to the cylinder, and a mechanically required receiver lock omitted from the small detail',
+        'one hammer/tumbler, one pivoted dog a, one leaf spring c in its hatched block, and one six-tooth face ratchet b fixed to the cylinder; no cylinder lock is drawn, so the cylinder is taken as held by friction/an undrawn detent while the dog resets',
       measurementUncertaintyPixels: 5,
-      ratchetContactProjectionUncertaintyPixels: 18,
       rasterCylinderFrontBottom: {
         x: sourceRasterCylinderFrontBottom.x,
         y: sourceRasterCylinderFrontBottom.y,
@@ -926,27 +998,20 @@ function coltCylinderRatchet(movement) {
         x: sourceRasterCylinderRearTop.x,
         y: sourceRasterCylinderRearTop.y,
       },
-      rasterDogPivot: {
-        x: sourceRasterDogPivot.x,
-        y: sourceRasterDogPivot.y,
-      },
+      rasterDogPivot: { x: sourceRasterDogPivot.x, y: sourceRasterDogPivot.y },
       rasterHammerPivot: {
         x: sourceRasterHammerPivot.x,
         y: sourceRasterHammerPivot.y,
       },
-      rasterRatchetContactProjection: {
-        x: sourceRasterRatchetContactProjection.x,
-        y: sourceRasterRatchetContactProjection.y,
-      },
-      rasterSpringAnchor: {
-        x: sourceRasterSpringAnchor.x,
-        y: sourceRasterSpringAnchor.y,
+      rasterSpringRoot: {
+        x: sourceRasterSpringRoot.x,
+        y: sourceRasterSpringRoot.y,
       },
       sourceIdealizationPixelErrors,
     },
     primaryPatent: {
       evidence:
-        'The patent states that drawing back the hammer makes the lifter act on a ratchet tooth until the next chamber aligns; on the hammer fall the lifter moves laterally past the next tooth while the cylinder key holds the new index.',
+        'The patent states that drawing back the hammer makes the lifter act on a ratchet tooth until the next chamber aligns; on the hammer fall the lifter passes back over the next tooth while the cylinder key holds the new index.',
       patentDate: '1836-02-25',
       patentNumber: 'USX9430',
       title: 'Revolving Gun',
@@ -959,6 +1024,8 @@ function coltCylinderRatchet(movement) {
       illustrationPage: 70,
       publicationYear: 1908,
     },
+    reconstruction:
+      'Brown draws the hook high on the ratchet; a dog pivoted on the tumbler can only turn a face ratchet a full sixth when it works near the cylinder axis, so the hook sits lower and a little beside the axis. The cylinder is held during the dog reset by an undrawn detent, not modelled.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.stateAtInputPhase = stateAtInputPhase;
@@ -970,77 +1037,43 @@ function coltCylinderRatchet(movement) {
     sourceTime: 0,
   };
   root.userData.transmission = {
+    clearanceFunctions: {
+      dogRatchet: (state) => dogRatchetClearance(
+        state.hammerAngle,
+        state.dogAngle,
+        state.cylinderAngle,
+        ratchetFaceZero,
+      ),
+      springDog: (state) => springDogClearance(
+        state.hammerAngle,
+        state.dogAngle,
+        state.springAngle,
+      ),
+    },
     cylinderStepPerCock: ratchetPitch,
-    dogLength,
-    engagedClosureAtHammerAngle,
     fullCylinderPeriod,
     hammerStroke,
     inputCyclePeriod,
     ratchetTeeth,
     resetLaw:
-      'the dog remains rigid, clears axially under spring deflection on hammer fall, and returns to the next symmetry-equivalent tooth while the receiver lock holds the cylinder',
+      'the rigid dog rides up the next tooth back against spring c while the cylinder is held, then drops onto the land behind that tooth',
     stateAtInputPhase,
     stateAtTime,
     stepLaw:
-      'one monotonic rigid-dog closure from rest contact to a zero-speed full-cock toggle advances cylinderAngle by exactly 2*pi/6',
-  };
-
-  const updateSpring = (state) => {
-    const dogSpringPoint = state.dogBase.clone().lerp(state.dogTip, 0.58);
-    const controlA = springAnchor.clone().add(new THREE.Vector3(
-      0.06,
-      -0.78,
-      0.02,
-    ));
-    const controlB = dogSpringPoint.clone().add(new THREE.Vector3(
-      0.22 + state.dogAxialClearance * 0.32,
-      0.52,
-      0.10,
-    ));
-    const points = Array.from({ length: 15 }, (_, index) => (
-      cubicBezierPoint(
-        springAnchor,
-        controlA,
-        controlB,
-        dogSpringPoint,
-        index / 14,
-      )
-    ));
-    spring.userData.setPoints(points);
-    spring.userData.anchor = springAnchor.clone();
-    spring.userData.contactPoint = dogSpringPoint;
+      'the hook pushes one radial tooth face while the hammer is drawn back; the cylinder turns only as far as the finite clearance requires, exactly one sixth per cock',
   };
 
   const update = (time) => {
     const state = stateAtTime(time);
     hammerRotor.rotation.z = state.hammerAngle;
-    hammer.userData.angularAcceleration = state.hammerAngularAcceleration;
-    hammer.userData.angularSpeed = state.hammerAngularSpeed;
     cylinderRotor.rotation.x = state.cylinderAngle;
-    cylinder.userData.angularAcceleration = state.cylinderAngularAcceleration;
-    cylinder.userData.angularSpeed = state.cylinderAngularSpeed;
-    dog.userData.setEndpoints(state.dogBase, state.dogTip);
-    dog.userData.axialClearance = state.dogAxialClearance;
-    dog.userData.lengthError = state.dogLengthError;
-    dogTipIndex.position.copy(state.dogTip);
-    lockBolt.position.y = lockBoltEngagedY - state.lockRetraction;
-    lockBolt.userData.engagement = state.lockEngagement;
-    updateSpring(state);
+    dog.position.copy(state.dogBase).setZ(0);
+    dog.rotation.z = state.hammerAngle + state.dogAngle;
+    springPivot.rotation.z = state.springAngle;
     root.userData.contacts = {
-      cylinderLock: {
-        alignmentError: state.indexAlignmentError,
-        engagement: state.lockEngagement,
-        retraction: state.lockRetraction,
-      },
       dogRatchet: {
         active: state.driving,
-        axialClearance: state.dogAxialClearance,
         contactPoint: state.dogTip.clone(),
-        dogLengthError: state.dogLengthError,
-        rigidLengthVelocityError: state.rigidLengthVelocityError,
-        surfaceVelocityError: state.driving
-          ? state.dogTipVelocity.clone().sub(state.ratchetContactVelocity)
-          : null,
       },
     };
     root.userData.kinematics = state;

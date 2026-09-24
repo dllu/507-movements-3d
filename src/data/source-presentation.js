@@ -110,8 +110,8 @@ export default {
   },
   217: {
     camera: [0.15, 0.12, 1],
-    remove: ['rear-frame-post', 'rear-frame-top', 'base'],
-    note: 'Face view of the grooved heart cam C, D, B, e with the notch wheel F and catch G; no frame is drawn.',
+    remove: ['rear-frame-post', 'rear-frame-top', 'base', 'F-.*', 'H-.*', 'A-.*', 'hinged-catch-G', '.*contact.*marker', 'cam-rotation-index-at-e', 'rear-projection-lifting-catch-at-e', 'cam-frame-bearing'],
+    note: 'Face view of the grooved cam C, D, B, e alone, as Brown draws it; the notch wheel F, lever, stud A and catch G belong to plate 218, and no frame is drawn.',
   },
   233: {
     remove: ['lantern-stop-rear-support-frame-beam'],
@@ -144,8 +144,8 @@ export default {
     note: 'Front section through the rod, the weight and the catch, with the probe foot below; the sea bottom is not drawn, so only a plain contact slab (seen edge-on) is kept for the probe to strike and the released weight to rest on.',
   },
   272: {
-    remove: ['fixed-base-beneath-beveled-cam', 'fixed-post-supporting-cam-shaft-bearing', 'fixed-backing-rail-for-inclined-guides', 'fixed-bracket-from-backing-rail-to-rod-guide'],
-    note: 'The bevelled cam on its shaft and the inclined rod in its guides; no base, post or backing rail is drawn.',
+    remove: ['fixed-base-beneath-beveled-cam', 'fixed-post-supporting-cam-shaft-bearing', 'fixed-backing-rail-for-inclined-guides', 'fixed-bracket-from-backing-rail-to-rod-guide', 'fixed-bearing-for-horizontal-cam-shaft'],
+    note: 'Side elevation of the disk with its bevelled rim and wavy face on the shaft, and the inclined rod in its guides; no base, post, shaft bearings or backing rail are drawn.',
   },
   276: {
     remove: ['fixed-(?:left|right)-guide-support-post', 'fixed-equal-diameter-cam-display-base', 'fixed-cam-bearing-arm', 'fixed-rear-cam-bearing-post'],
@@ -228,8 +228,8 @@ export default {
     note: 'The bottle plate, broken off at its neck, with its stepped slot, pallets A/B and stops D/E, and the long-tooth wheel with its backward pins; no clock frame or bracket is drawn.',
   },
   308: {
-    remove: ['clock-frame-upright', 'sixty-pin-wheel-bearing-bracket', 'pendulum-crutch-bearing-bracket', 'Q-detent-bearing-bracket'],
-    note: 'The pin wheel, click C, detent Q and pendulum P; no clock frame upright or bearing brackets are drawn.',
+    remove: [],
+    note: 'Front elevation of the pendulum pieces P, P and their web carrying pallet I, click C and its two stop pins, with the six-toothed hooked escape wheel under its screwed cock and lever Q; no clock frame or pendulum suspension is drawn.',
   },
   313: {
     remove: ['fixed-watch-frame-base', 'escape-wheel-arbor-standard', 'balance-staff-standard'],
@@ -546,12 +546,10 @@ export default {
   },
   277: {
     camera: [-0.12, 0.05, 1],
-    remove: ['fixed-colt-indexing-display-base', 'fixed-cylinder-arbor-support-post', 'fixed-hammer-bearing-arm', 'fixed-rear-hammer-bearing-post', 'white-(?:cylinder-step|hammer-cocking|dog-ratchet-contact)-index'],
-    note: 'Side elevation of the cylinder, ratchet b, dog a, spring c and hammer; no base or bearing posts are drawn.',
+    note: 'Side elevation of the cylinder, ratchet b, dog a, spring c in its hatched block and hammer; the model builds no base, bearing posts, cylinder lock or index markers because the plate draws none.',
   },
   304: {
     camera: [0.05, 0.05, 1],
-    remove: ['white-index-on-pin-wheel-(?:spoke|pallet-arbor)', 'white-active-pin-wheel-contact', 'pin-wheel-clock-frame-base'],
-    note: 'Front elevation of the pin wheel, pallets and right standard; the base, white indices and contact marker are not drawn.',
+    note: 'Flat front elevation of the pin wheel and the broad pallet plate hung from its round collet in front of the pins; Brown draws no frame, base, index or contact marker, and the model builds none.',
   },
 };

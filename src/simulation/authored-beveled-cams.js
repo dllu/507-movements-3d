@@ -67,125 +67,125 @@ function sleeveAlongDirection({
   return sleeve;
 }
 
-function wedgeDiskGeometry({
-  backX,
-  frontX,
-  radius,
-  segments,
-  tiltCoefficient,
-}) {
+// Brown's plate 272 shows a thick disk whose circumference is bevelled to a
+// cone narrowing toward the rear, and whose front face is a trough: seen from
+// the side its edge is the wavy line joining the cone to the face. The face
+// height depends only on the cam-local y coordinate, x = H(y), so the side
+// silhouette of the face is exactly that wavy rim line.
+function troughFaceX(y, profile) {
+  return profile.centerX - profile.depth * (y / profile.referenceRadius) ** 2;
+}
+
+function rimRadiusAtAngle(angle, profile) {
+  // Intersect the trough with the cone rho = backRadius + (backX - x) * slope.
+  const c2 = Math.cos(angle) ** 2;
+  const quadratic = profile.depth * profile.slope * c2
+    / profile.referenceRadius ** 2;
+  const constant = profile.backRadius
+    + profile.slope * (profile.backX - profile.centerX);
+  if (quadratic < 1e-12) return constant;
+  return (1 - Math.sqrt(1 - 4 * quadratic * constant)) / (2 * quadratic);
+}
+
+function wavyConeDiskGeometry(profile, segments, rings = 24) {
   const positions = [];
-  const frontCenterIndex = 0;
-  positions.push(frontX, 0, 0);
-  const backCenterIndex = 1;
-  positions.push(backX, 0, 0);
-  const frontRingStart = positions.length / 3;
-  for (let index = 0; index < segments; index += 1) {
-    const angle = FULL_TURN * index / segments;
-    const y = Math.cos(angle) * radius;
-    const z = Math.sin(angle) * radius;
-    positions.push(frontX + tiltCoefficient * y, y, z);
+  const indices = [];
+  const facePoint = (angle, fraction) => {
+    const rho = rimRadiusAtAngle(angle, profile) * fraction;
+    const y = rho * Math.cos(angle);
+    return [troughFaceX(y, profile), y, rho * Math.sin(angle)];
+  };
+  positions.push(troughFaceX(0, profile), 0, 0);
+  for (let ring = 1; ring <= rings; ring += 1) {
+    for (let index = 0; index < segments; index += 1) {
+      positions.push(...facePoint(FULL_TURN * index / segments, ring / rings));
+    }
   }
   const backRingStart = positions.length / 3;
   for (let index = 0; index < segments; index += 1) {
     const angle = FULL_TURN * index / segments;
     positions.push(
-      backX,
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius,
+      profile.backX,
+      profile.backRadius * Math.cos(angle),
+      profile.backRadius * Math.sin(angle),
     );
   }
-  const indices = [];
+  const backCenter = positions.length / 3;
+  positions.push(profile.backX, 0, 0);
+  const ringStart = (ring) => 1 + (ring - 1) * segments;
   for (let index = 0; index < segments; index += 1) {
     const next = (index + 1) % segments;
-    const front = frontRingStart + index;
-    const frontNext = frontRingStart + next;
-    const back = backRingStart + index;
-    const backNext = backRingStart + next;
-    indices.push(frontCenterIndex, frontNext, front);
-    indices.push(backCenterIndex, back, backNext);
-    indices.push(front, frontNext, back);
-    indices.push(frontNext, backNext, back);
+    indices.push(0, ringStart(1) + index, ringStart(1) + next);
+    for (let ring = 1; ring < rings; ring += 1) {
+      const a = ringStart(ring) + index;
+      const b = ringStart(ring) + next;
+      const c = ringStart(ring + 1) + index;
+      const d = ringStart(ring + 1) + next;
+      indices.push(a, c, d, a, d, b);
+    }
+    const rimA = ringStart(rings) + index;
+    const rimB = ringStart(rings) + next;
+    const backA = backRingStart + index;
+    const backB = backRingStart + next;
+    indices.push(rimA, backA, backB, rimA, backB, rimB);
+    indices.push(backCenter, backB, backA);
+  }
+  // Wind every triangle outward.
+  for (let offset = 0; offset < indices.length; offset += 3) {
+    [indices[offset + 1], indices[offset + 2]] = [indices[offset + 2], indices[offset + 1]];
   }
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(positions, 3),
-  );
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   geometry.userData.closedSolid = true;
   return geometry;
 }
 
-function bevelSurfaceGeometry({
-  frontX,
-  innerRadius,
-  outerRadius,
-  outwardOffset,
-  segments,
-  tiltCoefficient,
-}) {
-  const localNormal = new THREE.Vector3(
-    -1,
-    tiltCoefficient,
-    0,
-  ).normalize();
+function troughFaceBandGeometry(profile, segments, innerFraction, rings = 10) {
   const positions = [];
-  for (const radius of [innerRadius, outerRadius]) {
+  const indices = [];
+  for (let ring = 0; ring <= rings; ring += 1) {
+    const fraction = innerFraction + (1 - innerFraction) * ring / rings;
     for (let index = 0; index < segments; index += 1) {
       const angle = FULL_TURN * index / segments;
-      const y = Math.cos(angle) * radius;
-      const z = Math.sin(angle) * radius;
-      positions.push(
-        frontX + tiltCoefficient * y + localNormal.x * outwardOffset,
-        y + localNormal.y * outwardOffset,
-        z,
-      );
+      const rho = rimRadiusAtAngle(angle, profile) * fraction;
+      const y = rho * Math.cos(angle);
+      positions.push(troughFaceX(y, profile), y, rho * Math.sin(angle));
     }
   }
-  const indices = [];
-  for (let index = 0; index < segments; index += 1) {
-    const next = (index + 1) % segments;
-    const inner = index;
-    const innerNext = next;
-    const outer = segments + index;
-    const outerNext = segments + next;
-    indices.push(inner, outerNext, outer);
-    indices.push(inner, innerNext, outerNext);
+  for (let ring = 0; ring < rings; ring += 1) {
+    for (let index = 0; index < segments; index += 1) {
+      const next = (index + 1) % segments;
+      const a = ring * segments + index;
+      const b = ring * segments + next;
+      const c = (ring + 1) * segments + index;
+      const d = (ring + 1) * segments + next;
+      indices.push(a, c, d, a, d, b);
+    }
+  }
+  for (let offset = 0; offset < indices.length; offset += 3) {
+    [indices[offset + 1], indices[offset + 2]] = [indices[offset + 2], indices[offset + 1]];
   }
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(positions, 3),
-  );
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
   geometry.computeVertexNormals();
   return geometry;
 }
 
-function makeWavyEdge({
-  frontX,
-  material,
-  radius,
-  role,
-  segments,
-  tiltCoefficient,
-}) {
+function makeWavyRimEdge(profile, material, role, segments) {
   const points = Array.from({ length: segments }, (_, index) => {
     const angle = FULL_TURN * index / segments;
-    const y = Math.cos(angle) * radius;
-    return new THREE.Vector3(
-      frontX + tiltCoefficient * y,
-      y,
-      Math.sin(angle) * radius,
-    );
+    const rho = rimRadiusAtAngle(angle, profile);
+    const y = rho * Math.cos(angle);
+    return new THREE.Vector3(troughFaceX(y, profile), y, rho * Math.sin(angle));
   });
   const edge = new THREE.Mesh(
     new THREE.TubeGeometry(
       new THREE.CatmullRomCurve3(points, true, 'centripetal'),
       segments * 2,
-      0.035,
+      0.025,
       8,
       true,
     ),
@@ -199,83 +199,114 @@ function beveledDiskInclinedFollower(movement) {
   const root = new THREE.Group();
   const camCenter = new THREE.Vector3(0, 0, 0);
   const camOuterRadius = 2.02;
-  const bevelInnerRadius = 1.42;
   const camFrontX = -0.78;
   const camBackX = 0.48;
-  const bevelTiltCoefficient = 0.18;
-  const bevelAngle = Math.atan(bevelTiltCoefficient);
-  const bevelSurfaceOffset = 0;
+  // The trough is 0.36 deep between the side rim (x = -0.42) and the top and
+  // bottom rim (x = -0.78), measured from the plate's wavy edge.
+  const troughDepth = 0.36;
+  const followerDirection = new THREE.Vector3(-0.839, 0.544, 0).normalize();
+  // The circumference is bevelled parallel to the inclined rod.
+  const bevelSlope = -followerDirection.y / followerDirection.x;
+  const bevelAngle = Math.atan(bevelSlope);
+  const faceProfile = {
+    backRadius: camOuterRadius - bevelSlope * (camBackX - camFrontX),
+    backX: camBackX,
+    centerX: camFrontX + troughDepth,
+    depth: troughDepth,
+    referenceRadius: camOuterRadius,
+    slope: bevelSlope,
+  };
+  const camBackRadius = faceProfile.backRadius;
   const camSegments = 128;
+  const workingBandInnerFraction = 0.62;
   const shaftRadius = 0.13;
   const shaftLength = 5.7;
   const hubRadius = 0.34;
-  const hubLength = 1.54;
-  const shoeRadius = 0.12;
-  const rodRadius = 0.105;
+  const hubLength = 0.36;
+  const shoeRadius = 0.16;
+  const rodRadius = 0.15;
   const rodLength = 4.05;
   const translationIndexDistance = 3.15;
   const guideRunningClearance = 0.025;
   const guideInnerRadius = rodRadius + guideRunningClearance;
-  const guideOuterRadius = 0.29;
+  const guideOuterRadius = 0.34;
   const guideLength = 0.42;
   const guideDistances = [1.18, 2.55];
-  const sourceSurfacePoint = new THREE.Vector3(-0.5064, 1.52, 0);
-  const followerDirection = new THREE.Vector3(-0.839, 0.544, 0).normalize();
-  const planeNormalMagnitude = Math.sqrt(
-    1 + bevelTiltCoefficient ** 2,
+  const sourceContactRadius = 1.84;
+  // Nominal running clearance covering the faceted rendered face.
+  const contactClearance = 0.0005;
+  const faceX = (y) => troughFaceX(y, faceProfile);
+  const faceSlope = (y) => -2 * troughDepth * y / camOuterRadius ** 2;
+  const sourceSurfacePoint = new THREE.Vector3(
+    faceX(sourceContactRadius),
+    sourceContactRadius,
+    0,
   );
   const sourceOutwardNormal = new THREE.Vector3(
     -1,
-    bevelTiltCoefficient,
+    faceSlope(sourceContactRadius),
     0,
   ).normalize();
   const sourceShoeCenter = sourceSurfacePoint.clone().addScaledVector(
     sourceOutwardNormal,
-    shoeRadius,
+    shoeRadius + contactClearance,
   );
   const driverAngularSpeed = -0.82;
   const cyclePeriod = FULL_TURN / Math.abs(driverAngularSpeed);
   const sourceDriverAngle = 0;
-  const boundaryEpsilon = 1e-11;
+  const boundaryEpsilon = 1e-7;
+
+  // The face is a cylinder along the cam-local z axis, so the nearest face
+  // point to a local point lies in its own local (x, y) section: solve the
+  // one-dimensional nearest point on x = H(y) by Newton iteration.
+  const nearestFacePoint = (local) => {
+    let y = local.y;
+    for (let iteration = 0; iteration < 30; iteration += 1) {
+      const x = faceX(y);
+      const slope = faceSlope(y);
+      const curvature = -2 * troughDepth / camOuterRadius ** 2;
+      const gradient = (x - local.x) * slope + (y - local.y);
+      const hessian = slope ** 2 + (x - local.x) * curvature + 1;
+      const step = gradient / hessian;
+      y -= step;
+      if (Math.abs(step) < 1e-15) break;
+    }
+    const point = new THREE.Vector3(faceX(y), y, local.z);
+    const signedDistance = point.distanceTo(local)
+      * (local.x < faceX(local.y) ? 1 : -1);
+    return { point, signedDistance };
+  };
+  const toCamLocal = (point, driverAngle) => point.clone()
+    .applyAxisAngle(X_AXIS, -driverAngle);
+  const shoeGapAt = (driverAngle, displacement) => {
+    const center = sourceShoeCenter.clone().addScaledVector(
+      followerDirection,
+      displacement,
+    );
+    return nearestFacePoint(toCamLocal(center, driverAngle)).signedDistance
+      - shoeRadius - contactClearance;
+  };
+  const solveDisplacement = (driverAngle) => {
+    let low = -1.2;
+    let high = 0.6;
+    for (let iteration = 0; iteration < 200; iteration += 1) {
+      const middle = (low + high) / 2;
+      if (shoeGapAt(driverAngle, middle) > 0) high = middle;
+      else low = middle;
+      if (high - low < 1e-15) break;
+    }
+    return (low + high) / 2;
+  };
+  const derivativeStep = 1e-4;
 
   const stateAtDriverAngle = (driverAngle) => {
-    const cosine = Math.cos(driverAngle);
-    const sine = Math.sin(driverAngle);
-    const pointProjection = cosine * sourceShoeCenter.y
-      + sine * sourceShoeCenter.z;
-    const directionProjection = cosine * followerDirection.y
-      + sine * followerDirection.z;
-    const pointProjectionDerivative = -sine * sourceShoeCenter.y
-      + cosine * sourceShoeCenter.z;
-    const directionProjectionDerivative = -sine * followerDirection.y
-      + cosine * followerDirection.z;
-    const numerator = sourceShoeCenter.x
-      - bevelTiltCoefficient * pointProjection
-      - camFrontX
-      + shoeRadius * planeNormalMagnitude;
-    const denominator = followerDirection.x
-      - bevelTiltCoefficient * directionProjection;
-    const numeratorDerivative = -bevelTiltCoefficient
-      * pointProjectionDerivative;
-    const denominatorDerivative = -bevelTiltCoefficient
-      * directionProjectionDerivative;
-    const numeratorSecondDerivative = bevelTiltCoefficient
-      * pointProjection;
-    const denominatorSecondDerivative = bevelTiltCoefficient
-      * directionProjection;
-    const quotientDerivativeNumerator = numeratorDerivative * denominator
-      - numerator * denominatorDerivative;
-    const displacement = -numerator / denominator;
-    const displacementPerRadian = -quotientDerivativeNumerator
-      / denominator ** 2;
-    const displacementSecondPerRadian = -(
-      numeratorSecondDerivative * denominator
-        - numerator * denominatorSecondDerivative
-    ) / denominator ** 2
-      + 2 * quotientDerivativeNumerator * denominatorDerivative
-        / denominator ** 3;
-    const displacementSpeed = displacementPerRadian
-      * driverAngularSpeed;
+    const displacement = solveDisplacement(driverAngle);
+    const before = solveDisplacement(driverAngle - derivativeStep);
+    const after = solveDisplacement(driverAngle + derivativeStep);
+    const displacementPerRadian = (after - before) / (2 * derivativeStep);
+    const displacementSecondPerRadian = (after - 2 * displacement + before)
+      / derivativeStep ** 2;
+    const displacementSpeed = displacementPerRadian * driverAngularSpeed;
     const displacementAcceleration = displacementSecondPerRadian
       * driverAngularSpeed ** 2;
     const shoeCenter = sourceShoeCenter.clone().addScaledVector(
@@ -288,27 +319,19 @@ function beveledDiskInclinedFollower(movement) {
     const shoeAcceleration = followerDirection.clone().multiplyScalar(
       displacementAcceleration,
     );
-    const planeGradient = new THREE.Vector3(
-      1,
-      -bevelTiltCoefficient * cosine,
-      -bevelTiltCoefficient * sine,
-    );
-    const outwardNormal = planeGradient.clone().multiplyScalar(
-      -1 / planeNormalMagnitude,
-    );
-    const contactPoint = shoeCenter.clone().addScaledVector(
-      outwardNormal,
-      -shoeRadius,
-    );
-    const localContactPoint = contactPoint.clone()
-      .applyAxisAngle(X_AXIS, -driverAngle);
-    const contactRadius = Math.hypot(
-      localContactPoint.y,
+    const nearest = nearestFacePoint(toCamLocal(shoeCenter, driverAngle));
+    const localContactPoint = nearest.point;
+    const contactPoint = localContactPoint.clone()
+      .applyAxisAngle(X_AXIS, driverAngle);
+    const outwardNormal = shoeCenter.clone().sub(contactPoint).normalize();
+    const contactRadius = Math.hypot(localContactPoint.y, localContactPoint.z);
+    const localContactAngle = Math.atan2(
       localContactPoint.z,
+      localContactPoint.y,
     );
     const camSurfaceVelocity = new THREE.Vector3().crossVectors(
       X_AXIS,
-      contactPoint.clone().sub(camCenter),
+      contactPoint,
     ).multiplyScalar(driverAngularSpeed);
     const relativeVelocity = shoeVelocity.clone().sub(camSurfaceVelocity);
     const normalizedDriverAngle = THREE.MathUtils.euclideanModulo(
@@ -316,19 +339,15 @@ function beveledDiskInclinedFollower(movement) {
       FULL_TURN,
     );
     const atDeadCenter = Math.abs(displacementPerRadian) < boundaryEpsilon;
+    const outerDead = Math.abs(Math.sin(driverAngle)) < 0.5;
     return {
       atDeadCenter,
-      bevelPlaneError: Math.abs(
-        localContactPoint.x
-          - bevelTiltCoefficient * localContactPoint.y
-          - camFrontX,
-      ),
+      bevelPlaneError: Math.abs(localContactPoint.x - faceX(localContactPoint.y)),
       camSurfaceVelocity,
       contactPoint,
       contactRadius,
-      contactRadiusInnerClearance: contactRadius - bevelInnerRadius,
-      contactRadiusOuterClearance: camOuterRadius - contactRadius,
-      denominator,
+      contactRadiusOuterClearance: rimRadiusAtAngle(localContactAngle, faceProfile)
+        - contactRadius,
       displacement,
       displacementAcceleration,
       displacementPerRadian,
@@ -341,23 +360,16 @@ function beveledDiskInclinedFollower(movement) {
       normalVelocityError: relativeVelocity.dot(outwardNormal),
       normalizedDriverAngle,
       outwardNormal,
-      planeGradient,
       relativeVelocity,
       shoeAcceleration,
       shoeCenter,
-      shoePlaneGap: Math.abs(
-        shoeCenter.x
-          - bevelTiltCoefficient * (
-            cosine * shoeCenter.y + sine * shoeCenter.z
-          )
-          - camFrontX
-          + shoeRadius * planeNormalMagnitude,
-      ),
+      shoePlaneGap: Math.abs(shoeCenter.distanceTo(contactPoint) - shoeRadius
+        - contactClearance),
       shoeVelocity,
-      stage: atDeadCenter && Math.cos(driverAngle) > 0
-        ? 'rod-inner-dead-center'
+      stage: atDeadCenter && outerDead
+        ? 'rod-outer-dead-center'
         : atDeadCenter
-          ? 'rod-outer-dead-center'
+          ? 'rod-inner-dead-center'
           : displacementSpeed > 0
             ? 'rod-moving-outward-along-inclined-guides'
             : 'rod-moving-inward-toward-beveled-cam',
@@ -366,8 +378,8 @@ function beveledDiskInclinedFollower(movement) {
   const stateAtTime = (time) => stateAtDriverAngle(
     sourceDriverAngle + driverAngularSpeed * time,
   );
-  const innerDeadCenter = stateAtDriverAngle(0);
-  const outerDeadCenter = stateAtDriverAngle(Math.PI);
+  const outerDeadCenter = stateAtDriverAngle(0);
+  const innerDeadCenter = stateAtDriverAngle(Math.PI / 2);
   const outputStroke = outerDeadCenter.displacement
     - innerDeadCenter.displacement;
 
@@ -409,48 +421,32 @@ function beveledDiskInclinedFollower(movement) {
   root.add(camAssembly);
 
   const camBody = new THREE.Mesh(
-    wedgeDiskGeometry({
-      backX: camBackX,
-      frontX: camFrontX,
-      radius: camOuterRadius,
-      segments: camSegments,
-      tiltCoefficient: bevelTiltCoefficient,
-    }),
+    wavyConeDiskGeometry(faceProfile, camSegments),
     driverMaterial,
   );
-  camBody.userData.role = 'solid-circular-disk-with-oblique-front-face';
+  camBody.userData.role = 'solid-disk-with-bevelled-rim-and-wavy-trough-face';
   camRotor.add(camBody);
   const bevelFace = new THREE.Mesh(
-    bevelSurfaceGeometry({
-      frontX: camFrontX,
-      innerRadius: bevelInnerRadius,
-      outerRadius: camOuterRadius,
-      outwardOffset: bevelSurfaceOffset,
-      segments: camSegments,
-      tiltCoefficient: bevelTiltCoefficient,
-    }),
+    troughFaceBandGeometry(faceProfile, camSegments, workingBandInnerFraction),
     bevelMaterial,
   );
-  bevelFace.userData.innerRadius = bevelInnerRadius;
-  bevelFace.userData.outerRadius = camOuterRadius;
-  bevelFace.userData.role = 'annular-oblique-working-bevel-surface';
+  bevelFace.userData.innerFraction = workingBandInnerFraction;
+  bevelFace.userData.role = 'wavy-working-band-of-trough-face';
   camRotor.add(bevelFace);
-  const frontWavyEdge = makeWavyEdge({
-    frontX: camFrontX,
-    material: darkMaterial,
-    radius: camOuterRadius,
-    role: 'wavy-front-boundary-of-beveled-cam',
-    segments: camSegments,
-    tiltCoefficient: bevelTiltCoefficient,
-  });
+  const frontWavyEdge = makeWavyRimEdge(
+    faceProfile,
+    darkMaterial,
+    'wavy-edge-where-face-meets-bevelled-rim',
+    camSegments,
+  );
   camRotor.add(frontWavyEdge);
   const rearEdge = new THREE.Mesh(
-    new THREE.TorusGeometry(camOuterRadius, 0.035, 8, camSegments),
+    new THREE.TorusGeometry(camBackRadius, 0.025, 8, camSegments),
     darkMaterial,
   );
   rearEdge.rotation.y = Math.PI / 2;
   rearEdge.position.x = camBackX;
-  rearEdge.userData.role = 'circular-rear-boundary-of-beveled-cam';
+  rearEdge.userData.role = 'circular-rear-boundary-of-bevelled-rim';
   camRotor.add(rearEdge);
   const shaft = cylinderAlongX(
     shaftRadius,
@@ -460,7 +456,9 @@ function beveledDiskInclinedFollower(movement) {
   );
   shaft.userData.role = 'continuous-horizontal-input-shaft';
   camRotor.add(shaft);
+  // Brown draws the clamping collar behind the disk only.
   const hub = cylinderAlongX(hubRadius, hubLength, darkMaterial, 48);
+  hub.position.x = camBackX + hubLength / 2 - 0.02;
   hub.userData.role = 'cam-clamping-hub-on-horizontal-shaft';
   camRotor.add(hub);
   const rotationIndex = new THREE.Mesh(
@@ -469,7 +467,7 @@ function beveledDiskInclinedFollower(movement) {
   );
   rotationIndex.position.set(
     camBackX + 0.045,
-    camOuterRadius * 0.72,
+    camBackRadius * 0.6,
     0,
   );
   rotationIndex.userData.role = 'white-index-on-visible-rear-cam-face';
@@ -615,14 +613,14 @@ function beveledDiskInclinedFollower(movement) {
   );
   root.userData.geometry = {
     bevelAngle,
-    bevelInnerRadius,
-    bevelSurfaceOffset,
-    bevelTiltCoefficient,
+    bevelSlope,
+    camBackRadius,
     camBackX,
     camCenter: camCenter.clone(),
     camFrontX,
     camOuterRadius,
     camSegments,
+    contactClearance,
     followerDirection: followerDirection.clone(),
     guideDistances: [...guideDistances],
     guideInnerRadius,
@@ -632,7 +630,7 @@ function beveledDiskInclinedFollower(movement) {
     hubLength,
     hubRadius,
     outputStroke,
-    planeNormalMagnitude,
+    faceProfile: { ...faceProfile },
     rodLength,
     rodRadius,
     shaftLength,
@@ -641,9 +639,11 @@ function beveledDiskInclinedFollower(movement) {
     sourceShoeCenter: sourceShoeCenter.clone(),
     sourceSurfacePoint: sourceSurfacePoint.clone(),
     translationIndexDistance,
+    troughDepth,
+    workingBandInnerFraction,
   };
   root.userData.mechanism =
-    'one-horizontal-shaft-rotates-one-circular-disk-whose-annular-front-circumference-is-cut-as-an-oblique-bevel; one-gravity-preloaded-rod-slides-only-along-two-fixed-inclined-guides-while-its-rounded-shoe-follows-the-rotating-bevel-plane';
+    'one-horizontal-shaft-rotates-one-circular-disk-whose-circumference-is-bevelled-parallel-to-the-rod-and-whose-front-face-is-a-wavy-trough; one-gravity-preloaded-rod-slides-only-along-two-fixed-inclined-guides-while-its-rounded-shoe-follows-the-wavy-face-twice-per-turn';
   root.userData.movement = movement;
   root.userData.sourceAnimation = {
     available: false,
@@ -692,6 +692,8 @@ function beveledDiskInclinedFollower(movement) {
     },
     sourceUrl: movement.sourceUrl,
   };
+  root.userData.faceXAtLocalY = faceX;
+  root.userData.rimRadiusAtAngle = (angle) => rimRadiusAtAngle(angle, faceProfile);
   root.userData.stateAtDriverAngle = stateAtDriverAngle;
   root.userData.stateAtTime = stateAtTime;
   root.userData.timeline = {
@@ -701,7 +703,8 @@ function beveledDiskInclinedFollower(movement) {
   };
   root.userData.transmission = {
     contactLaw:
-      'intersection-of-the-fixed-follower-centerline-with-the-rotating-shoe-offset-bevel-plane',
+      'rounded-shoe-held-at-its-radius-from-the-rotating-trough-face-along-the-fixed-rod-axis',
+    strokesPerRevolution: 2,
     followerMotion: 'reciprocating-rectilinear-along-one-fixed-inclined-axis',
     inputMotion: 'continuous-rotation-about-one-fixed-horizontal-axis',
     outputStroke,
@@ -751,10 +754,16 @@ function beveledDiskInclinedFollower(movement) {
   });
   markShadows(root);
   bevelFace.castShadow = false;
+  // Brown draws neither index marks nor a contact marker.
+  for (const marker of [rotationIndex, translationIndex, contactMarker]) marker.visible = false;
+  // Side elevation like the plate: shaft across the view, rod in its plane,
+  // seen a little from the front so the wavy face shows.
+  root.userData.cameraFov = 10;
+  root.userData.reconstructionNote = 'The disk rim is a cone parallel to the rod and the front face a trough whose edge is Brown\'s wavy line, so the rod rises and falls twice per turn. The shoe/face contact is solved numerically on the finite trough; the gravity preload is assumed and friction and loads are not simulated.';
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(-6.3, 4.5, 10.8),
+    cameraDirection: new THREE.Vector3(-0.12, 0.07, 1),
   };
 }
 

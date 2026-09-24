@@ -37,10 +37,10 @@ test('292: finite pallet reactions oppose drive and the remaining handoff error 
       }
     }
   }
-  // This deliberately records an open finite-offset cusp; it is not a zero-
-  // penetration qualification. The old inward backing penetrated by .058.
-  assert.ok(minimum > -.0017, `handoff penetration ${minimum}`);
-  assert.ok(maximumActive < .0017, `working-face separation ${maximumActive}`);
+  // The offset-curve cusp at the lock/impulse handoff is relieved by the
+  // sampled stud discs (it cut .0016 deep; the old inward backing .058).
+  assert.ok(minimum > 0, `handoff penetration ${minimum}`);
+  assert.ok(maximumActive < .001, `working-face separation ${maximumActive}`);
   assert.ok(maximumReaction < -.5, `reaction must resist clockwise drive: ${maximumReaction}`);
   assert.ok(mountMinimum > .08, `axial mount / stud gap ${mountMinimum}`);
   console.log({ minimum, maximumActive, maximumReaction, mountMinimum });
@@ -55,7 +55,8 @@ test('292: finite arms clear both pin rows and mount solidly to the working bloc
     const bridge = group.children.find(o => o.userData.role.endsWith('arm-to-working-pallet-bridge'));
     const body = index === 0 ? b.frontPalletBody : b.rearPalletBody;
     for (const part of [arm, bridge]) {
-      assert.ok(Math.abs(part.position.z) - part.geometry.parameters.depth / 2 > .815 + .04);
+      part.geometry.computeBoundingBox(); const halfDepth = (part.geometry.boundingBox.max.z - part.geometry.boundingBox.min.z) / 2;
+      assert.ok(Math.abs(part.position.z) - halfDepth > .815 + .04);
     }
     for (const [a, target] of [[mount, body], [mount, bridge], [arm, bridge], [arm, b.palletPivotHub]]) {
       const field = solidSurface(target.geometry), transform = target.matrixWorld.clone().invert().multiply(a.matrixWorld);

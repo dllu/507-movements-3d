@@ -651,3 +651,52 @@ test('movement 269 closes exactly and leaves movement 507 authored', () => {
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 269 rack teeth are generated clear of the swept pinion, and the baked relief matches its generator', async () => {
+  const { createAuthoredMutilatedRackMovement } = await import('../src/simulation/authored-mutilated-racks.js');
+  const model = createAuthoredMutilatedRackMovement(catalog.movements[268]);
+  const { blocks, conjugateTeeth, computeRackReliefOutlines, geometry } = model.root.userData;
+  assert.equal(conjugateTeeth.bakedRelief, true, 'production uses the baked relief');
+  const computed = computeRackReliefOutlines();
+  blocks.rackTeeth.forEach((tooth, index) => {
+    assert.deepEqual(tooth.geometry.userData.plate.polygons, computed[index],
+      `baked relief of rack tooth ${index} is stale`);
+  });
+  const ringDistance = ([px, py], ring) => {
+    let best = Infinity;
+    let inside = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+      const [ax, ay] = ring[j];
+      const [bx, by] = ring[i];
+      if ((by > py) !== (ay > py) && px < (ax - bx) * (py - by) / (ay - by) + bx) inside = !inside;
+      const dx = bx - ax;
+      const dy = by - ay;
+      const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy)));
+      best = Math.min(best, Math.hypot(px - ax - t * dx, py - ay - t * dy));
+    }
+    return inside ? -best : best;
+  };
+  const pinionRing = blocks.pinionToothMeshes[0].geometry.userData.plate.polygons[0][0].slice(0, -1);
+  let minimum = Infinity;
+  for (let sample = 0; sample <= 1600; sample += 1) {
+    const state = model.root.userData.stateAtTime(8 * sample / 1600);
+    const pinion = blocks.pinionToothMeshes.map((tooth) => {
+      const angle = tooth.rotation.z + state.pinionAngleUnwrapped;
+      return pinionRing.map(([x, y]) => [x * Math.cos(angle) - y * Math.sin(angle), x * Math.sin(angle) + y * Math.cos(angle)]);
+    });
+    for (const tooth of blocks.rackTeeth) {
+      const x0 = tooth.position.x + state.frameX;
+      if (Math.abs(x0) > geometry.pinionOuterRadius + 0.3) continue;
+      for (const polygon of tooth.geometry.userData.plate.polygons) {
+        const ring = polygon[0].slice(0, -1).map(([x, y]) => [x + x0, y]);
+        for (const gear of pinion) {
+          for (const point of gear) minimum = Math.min(minimum, ringDistance(point, ring));
+          for (const point of ring) minimum = Math.min(minimum, ringDistance(point, gear));
+        }
+      }
+    }
+  }
+  assert.ok(minimum > 0, `rack and pinion teeth interpenetrate by ${-minimum}`);
+  console.log({ id: 269, minimumToothClearance: minimum });
+  disposeModel(model.root);
+});

@@ -95,5 +95,5 @@ for (const [id, make] of [[290, annular], [292, stud]]) test(`${id}: stable geom
   }
   for (const [o, geometry, array] of resources) { assert.equal(o.geometry, geometry); assert.equal(o.geometry.attributes.position.array, array); }
   assert.equal(d.hideGround, true); assert.equal(d.minimumDisplayCycleSeconds, 4);
-  assert.match(d.reconstructionNote, id === 290 ? /prescribed.*idealized/ : /interference remains unresolved/);
+  assert.match(d.reconstructionNote, id === 290 ? /prescribed.*idealized/ : /handoff cusp is relieved.*prescribed/);
 });

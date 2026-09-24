@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { createAuthoredWoolComberMovement } from '../src/simulation/authored-wool-comber.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -104,9 +105,28 @@ function nearestPolylineDistance(point, points) {
   return minimum;
 }
 
+test('movement 217 presents only the cam that Brown draws on plate 217', () => {
+  const model = createMovementModel(catalog.movements[216]);
+  const { blocks, sourcePresentation } = model.root.userData;
+  assert.equal(blocks.camRotor.parent, model.root);
+  for (const part of [blocks.notchWheel, blocks.rockerBody, blocks.followerRoller, blocks.catchHook]) {
+    let attached = false;
+    for (let node = part; node; node = node.parent) if (node === model.root) attached = true;
+    assert.equal(attached, false, `${part.userData.role} belongs to plate 218`);
+  }
+  assert.ok(sourcePresentation.removedRoles.includes('F-nine-notch-detaching-roller-wheel'));
+  // The cam starts with e at twelve o'clock, as engraved.
+  model.update(0);
+  const e = model.root.userData.groovePointAtPhase(model.root.userData.motion.forwardEndPhase)
+    .clone().rotateAround(new THREE.Vector2(), blocks.camRotor.rotation.z);
+  assert.ok(Math.abs(Math.atan2(e.x, e.y)) < 1e-9);
+  disposeModel(model.root);
+});
+
 test('movement 217 reconstructs Brown plates 217 and 218 as one mechanism', () => {
   const movement = catalog.movements[216];
-  const model = createMovementModel(movement);
+  // The complete factory model; plate 217's presentation shows the cam only.
+  const model = createAuthoredWoolComberMovement(movement);
   const {
     archetype,
     blocks,
@@ -462,7 +482,7 @@ test('movement 217 runtime matches D, shares 218, and leaves 269 authored', () =
 
   model.update(canonicalTimes.sourcePoseD);
   const sourceState = model.root.userData.kinematics;
-  near(sourceState.phase, motion.backwardEndPhase, 3e-17,
+  near(sourceState.phase, motion.backwardEndPhase, 1e-12,
     'source pose is D');
   near(sourceState.rockerAngle, -FULL_TURN / 3, 5e-16,
     'D rocker angle');
@@ -513,7 +533,7 @@ test('movement 217 runtime matches D, shares 218, and leaves 269 authored', () =
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 12.4);
   assert.ok(size.y > 12.4);
-  assert.ok(size.z > 1.9, 'the cam wheel uses depth without the undrawn frame');
+  assert.ok(size.z > 0.3, 'the presented cam keeps its grooved depth without the undrawn frame');
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
 
   const movement218 = createMovementModel(catalog.movements[217]);

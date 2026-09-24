@@ -410,7 +410,7 @@ test('movement 292 renderer binds both axial planes, contacts, cycle, and next d
       `rendered pallet assembly at ${phase}`);
     near(blocks.wheelRotor.rotation.z, expected.wheelAngle, 0,
       `rendered stud wheel at ${phase}`);
-    assert.equal(blocks.contactMarker.visible, expected.contactActive);
+    assert.equal(blocks.contactMarker.visible, false, 'no undrawn contact marker');
     assert.equal(model.root.userData.contacts.mode, expected.contactMode);
     assert.equal(model.root.userData.contacts.activeStudIndex,
       expected.activeStudIndex);

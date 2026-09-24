@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { correctLanternWorkingParts } from './lantern-working-parts.js';
 import { installLanternFinitePlayback297 } from './lantern-finite-playback-parts.js';
+import { ring } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -1014,10 +1015,42 @@ function lanternWheelEscapement(movement) {
   root.userData.fidelity = 'authored';
   correctLanternWorkingParts(root, update);
   const finiteUpdate = installLanternFinitePlayback297(root);
+  // Brown draws the wheel as a plain disc pierced by the eight pins, with a
+  // hub ring and no spokes: make both end plates solid bored discs.
+  const blocks = root.userData.blocks;
+  for (const endPlate of blocks.sidePlates) {
+    endPlate.geometry.dispose();
+    endPlate.geometry = ring(0.166, wheelOuterRadius,
+      -sidePlateDepth / 2, sidePlateDepth / 2, 192);
+    endPlate.userData.role = endPlate.userData.role.replace('end-ring', 'plain-disc');
+  }
+  for (const spoke of blocks.sidePlateSpokes) {
+    spoke.removeFromParent();
+    spoke.geometry.dispose();
+  }
+  blocks.sidePlateSpokes = [];
+  const workingPairs = root.userData.lanternWorkingParts.pairs;
+  root.userData.lanternWorkingParts.pairs = workingPairs.filter(
+    ([a, b]) => a.parent && b.parent,
+  );
+  // The pin ends read as separate circles on the plate's plain disc.
+  const pinMaterial = matte(PALETTE.white, { metalness: 0.22, roughness: 0.45 });
+  pinMaterial.fog = false;
+  for (const trundle of blocks.trundles) trundle.material = pinMaterial;
+  // Neither the index marks nor a contact marker appear on the plate.
+  blocks.wheelIndex.visible = false;
+  blocks.rimIndex.visible = false;
+  const plainDiscUpdate = (time) => {
+    finiteUpdate(time);
+    blocks.contactMarker.visible = false;
+  };
+  plainDiscUpdate(0);
+  root.userData.reconstructionNote = 'The eight-trundle wheel has plain bored end discs, as drawn, and bored supports. '
+    + (root.userData.reconstructionNote ?? '').replace(/^The eight-trundle wheel has connected end rings, spokes and bored supports\. /, '');
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
-    update: finiteUpdate,
+    update: plainDiscUpdate,
   };
 }
 

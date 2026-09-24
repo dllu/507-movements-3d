@@ -89,7 +89,8 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   );
   assert.equal(archetype, movement.archetype);
   assert.match(mechanism, /one-horizontal-shaft-rotates-one-circular-disk/);
-  assert.match(mechanism, /oblique-bevel/);
+  assert.match(mechanism, /circumference-is-bevelled-parallel-to-the-rod/);
+  assert.match(mechanism, /front-face-is-a-wavy-trough/);
   assert.match(mechanism, /one-gravity-preloaded-rod/);
   assert.match(mechanism, /two-fixed-inclined-guides/);
   assert.equal(transmission.inputMotion,
@@ -118,12 +119,12 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   assert.equal(blocks.followerGuides.length, 2);
   assert.ok(blocks.followerGuides.every((guide) => guide.parent === model.root));
   assert.equal(blocks.shaftBearings.length, 2);
-  assert.ok(blocks.shaftBearings.every((bearing) => bearing.parent === model.root));
+  assert.ok(blocks.shaftBearings.every((bearing) => bearing.parent === null), 'Brown draws no shaft bearings');
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
-    role === 'solid-circular-disk-with-oblique-front-face').length, 1);
+    role === 'solid-disk-with-bevelled-rim-and-wavy-trough-face').length, 1);
   assert.equal(roles.filter((role) =>
     role === 'straight-output-rod-sliding-only-along-its-axis').length, 1);
   assert.equal(roles.filter((role) =>
@@ -201,269 +202,144 @@ test('movement 272 records the unavailable animation and measured source plate',
     'engraved shaft passes through the cam center',
   );
   const sourceState = stateAtDriverAngle(0);
-  vectorNear(sourceState.contactPoint, geometry.sourceSurfacePoint, 0,
+  vectorNear(sourceState.contactPoint, geometry.sourceSurfacePoint, 1e-9,
     'source-pose point of contact');
-  vectorNear(sourceState.shoeCenter, geometry.sourceShoeCenter, 0,
+  vectorNear(sourceState.shoeCenter, geometry.sourceShoeCenter, 1e-9,
     'source-pose shoe center');
   disposeModel(model.root);
 });
 
-test('movement 272 source pose and dead centers follow the oblique bevel exactly', () => {
+test('movement 272 source pose touches the top of the wavy face and the rod rises and falls twice per turn', () => {
   const model = createMovementModel(catalog.movements[271]);
   const {
+    faceXAtLocalY,
     geometry,
     stateAtDriverAngle,
     transmission,
   } = model.root.userData;
   const source = stateAtDriverAngle(0);
+  const inner = stateAtDriverAngle(Math.PI / 2);
   const opposite = stateAtDriverAngle(Math.PI);
-  const normal = new THREE.Vector3(
-    -1,
-    geometry.bevelTiltCoefficient,
-    0,
-  ).normalize();
 
-  near(geometry.bevelAngle, Math.atan(0.18), 0, 'bevel angle');
-  near(THREE.MathUtils.radToDeg(geometry.bevelAngle),
-    10.203973721731684, 2e-14, 'bevel angle in degrees');
-  near(
-    geometry.sourceSurfacePoint.x
-      - geometry.bevelTiltCoefficient * geometry.sourceSurfacePoint.y,
-    geometry.camFrontX,
-    2e-16,
-    'source point lies on the front bevel plane',
-  );
-  vectorNear(
-    geometry.sourceShoeCenter,
-    geometry.sourceSurfacePoint.clone().addScaledVector(
-      normal,
-      geometry.shoeRadius,
-    ),
-    2e-16,
-    'rounded shoe center is one radius outside the bevel',
-  );
-  near(source.displacement, 0, 0, 'inner dead-center displacement');
-  near(source.displacementSpeed, 0, 0, 'inner dead-center speed');
-  assert.equal(source.atDeadCenter, true);
-  assert.equal(source.stage, 'rod-inner-dead-center');
-  near(opposite.displacement, 0.7486551197153658, 1e-15,
-    'outer dead-center displacement');
-  near(opposite.displacementSpeed, 0, 5e-17,
-    'outer dead-center speed');
-  assert.equal(opposite.atDeadCenter, true);
-  assert.equal(opposite.stage, 'rod-outer-dead-center');
-  near(geometry.outputStroke,
-    opposite.displacement - source.displacement, 0,
-    'full follower stroke');
+  // The rim cone is parallel to the inclined rod.
+  near(Math.tan(geometry.bevelAngle), -geometry.followerDirection.y
+    / geometry.followerDirection.x, 1e-15, 'rim bevel parallels the rod');
+  near(geometry.sourceSurfacePoint.x,
+    faceXAtLocalY(geometry.sourceSurfacePoint.y), 1e-15,
+    'source point lies on the trough face');
+  near(geometry.sourceShoeCenter.distanceTo(geometry.sourceSurfacePoint),
+    geometry.shoeRadius + geometry.contactClearance, 1e-15,
+    'shoe center one radius plus running clearance off the face');
+  near(source.displacement, 0, 1e-12, 'outer dead-center displacement');
+  near(source.displacementSpeed, 0, 1e-9, 'outer dead-center speed');
+  assert.equal(source.stage, 'rod-outer-dead-center');
+  near(inner.displacement, -geometry.outputStroke, 1e-12,
+    'inner dead center a quarter turn later');
+  near(inner.displacementSpeed, 0, 1e-9, 'inner dead-center speed');
+  assert.equal(inner.stage, 'rod-inner-dead-center');
+  near(opposite.displacement, source.displacement, 1e-12,
+    'second outer dead center half a turn later');
+  assert.ok(geometry.outputStroke > 0.3 && geometry.outputStroke < 0.4);
   near(transmission.outputStroke, geometry.outputStroke, 0,
     'reported transmission stroke');
-  assert.ok(source.contactRadius > geometry.bevelInnerRadius);
-  assert.ok(opposite.contactRadius < geometry.camOuterRadius);
-  assert.ok(geometry.camFrontX
-    + geometry.bevelTiltCoefficient * geometry.camOuterRadius
-    < geometry.camBackX,
-  'the sloped front never crosses the flat back face');
+  assert.equal(transmission.strokesPerRevolution, 2);
+  assert.ok(geometry.faceProfile.centerX < geometry.camBackX,
+    'the trough never reaches the flat back face');
   disposeModel(model.root);
 });
 
-test('movement 272 renders a closed wedge disk and a continuous annular bevel', () => {
+test('movement 272 renders a closed cone-rimmed disk whose front vertices lie on the trough', () => {
   const model = createMovementModel(catalog.movements[271]);
-  const { blocks, geometry } = model.root.userData;
+  const { blocks, faceXAtLocalY, geometry, rimRadiusAtAngle } = model.root.userData;
   const body = blocks.camBody.geometry;
-  const bevel = blocks.bevelFace.geometry;
-  const bodyPositions = body.getAttribute('position');
-  const bevelPositions = bevel.getAttribute('position');
-
+  const positions = body.getAttribute('position');
   assert.equal(body.userData.closedSolid, true);
-  assert.equal(bodyPositions.count, 2 + 2 * geometry.camSegments);
-  assert.equal(body.index.count / 3, 4 * geometry.camSegments);
-  assert.deepEqual(
-    [...undirectedEdgeHistogram(body).entries()],
-    [[2, 6 * geometry.camSegments]],
-    'every body edge belongs to exactly two triangles',
-  );
-  near(bodyPositions.getX(0), geometry.camFrontX, 1e-7,
-    'front center x');
-  near(bodyPositions.getX(1), geometry.camBackX, 1e-7,
-    'back center x');
-  for (let index = 0; index < geometry.camSegments; index += 1) {
-    const frontIndex = 2 + index;
-    const backIndex = 2 + geometry.camSegments + index;
-    near(
-      bodyPositions.getX(frontIndex)
-        - geometry.bevelTiltCoefficient * bodyPositions.getY(frontIndex),
-      geometry.camFrontX,
-      2e-7,
-      `front ring plane at vertex ${index}`,
-    );
-    near(bodyPositions.getX(backIndex), geometry.camBackX, 2e-8,
-      `flat rear face at vertex ${index}`);
-    near(
-      Math.hypot(
-        bodyPositions.getY(frontIndex),
-        bodyPositions.getZ(frontIndex),
-      ),
-      geometry.camOuterRadius,
-      2e-7,
-      `front boundary radius at vertex ${index}`,
-    );
+  assert.deepEqual([...undirectedEdgeHistogram(body).keys()], [2],
+    'every body edge belongs to exactly two triangles');
+  let front = 0;
+  let back = 0;
+  for (let index = 0; index < positions.count; index += 1) {
+    const x = positions.getX(index);
+    const y = positions.getY(index);
+    const z = positions.getZ(index);
+    if (Math.abs(x - geometry.camBackX) < 1e-6) {
+      back += 1;
+      assert.ok(Math.hypot(y, z) <= geometry.camBackRadius + 1e-6);
+    } else {
+      front += 1;
+      near(x, faceXAtLocalY(y), 2e-6, `front vertex ${index} on trough`);
+      assert.ok(Math.hypot(y, z)
+        <= rimRadiusAtAngle(Math.atan2(z, y)) + 1e-5);
+    }
   }
-
-  assert.equal(bevelPositions.count, 2 * geometry.camSegments);
-  assert.equal(bevel.index.count / 3, 2 * geometry.camSegments);
-  const offsetPlaneValue = -geometry.bevelSurfaceOffset
-    * geometry.planeNormalMagnitude;
-  for (let index = 0; index < bevelPositions.count; index += 1) {
-    near(
-      bevelPositions.getX(index)
-        - geometry.bevelTiltCoefficient * bevelPositions.getY(index)
-        - geometry.camFrontX,
-      offsetPlaneValue,
-      2e-7,
-      `visible bevel offset at vertex ${index}`,
-    );
+  assert.ok(front > 3000 && back === geometry.camSegments + 1);
+  near(rimRadiusAtAngle(0), geometry.camOuterRadius, 1e-12,
+    'top and bottom rim reach the drawn outer radius');
+  assert.ok(rimRadiusAtAngle(Math.PI / 2) < rimRadiusAtAngle(0) - 0.2,
+    'the side rim is lower where the trough is shallow');
+  const band = blocks.bevelFace.geometry.getAttribute('position');
+  for (let index = 0; index < band.count; index += 1) {
+    near(band.getX(index), faceXAtLocalY(band.getY(index)), 2e-6,
+      `working band vertex ${index}`);
   }
   assert.equal(blocks.frontWavyEdge.geometry.parameters.closed, true);
-  assert.equal(blocks.frontWavyEdge.geometry.parameters.tubularSegments,
-    2 * geometry.camSegments);
   assert.equal(blocks.rearEdge.geometry.type, 'TorusGeometry');
   disposeModel(model.root);
 });
 
-test('movement 272 maintains exact shoe contact throughout a full revolution', () => {
+test('movement 272 keeps the rounded shoe on the trough face throughout a revolution', () => {
   const model = createMovementModel(catalog.movements[271]);
-  const {
-    geometry,
-    stateAtDriverAngle,
-  } = model.root.userData;
-  let minimumDenominatorMagnitude = Infinity;
-  let minimumInnerClearance = Infinity;
-  let minimumOuterClearance = Infinity;
-  let minimumDisplacement = Infinity;
-  let maximumDisplacement = -Infinity;
-  let maximumNormalVelocityError = 0;
+  const { geometry, stateAtDriverAngle } = model.root.userData;
+  let minimumRimClearance = Infinity;
+  let minimum = Infinity;
+  let maximum = -Infinity;
   const stages = new Set();
-
-  for (let sample = 0; sample <= 16384; sample += 1) {
-    const state = stateAtDriverAngle(FULL_TURN * sample / 16384);
+  for (let sample = 0; sample <= 4096; sample += 1) {
+    const state = stateAtDriverAngle(FULL_TURN * sample / 4096);
     assert.ok(Number.isFinite(state.displacement));
-    assert.ok(state.denominator < 0);
-    assert.ok(state.bevelPlaneError < 8e-16,
-      `bevel plane at sample ${sample}`);
-    assert.ok(state.shoePlaneGap < 5e-16,
-      `shoe offset plane at sample ${sample}`);
-    assert.ok(Math.abs(state.normalVelocityError) < 4e-16,
-      `zero separating velocity at sample ${sample}`);
-    near(state.shoeCenter.distanceTo(state.contactPoint),
-      geometry.shoeRadius, 5e-16,
-      `rounded shoe radius at sample ${sample}`);
-    near(
-      Math.hypot(state.localContactPoint.y, state.localContactPoint.z),
-      state.contactRadius,
-      3e-16,
-      `local contact radius at sample ${sample}`,
-    );
-    const centerlineOffset = state.shoeCenter.clone()
-      .sub(geometry.sourceShoeCenter);
-    assert.ok(
-      new THREE.Vector3().crossVectors(
-        centerlineOffset,
-        geometry.followerDirection,
-      ).length() < 3e-16,
-      `shoe remains on one guide axis at sample ${sample}`,
-    );
-    assert.ok(state.contactRadiusInnerClearance >= 0.099999999999999,
-      `inner annulus clearance at sample ${sample}`);
-    assert.ok(state.contactRadiusOuterClearance >= 0.05018,
-      `outer annulus clearance at sample ${sample}`);
-    minimumDenominatorMagnitude = Math.min(
-      minimumDenominatorMagnitude,
-      Math.abs(state.denominator),
-    );
-    minimumInnerClearance = Math.min(
-      minimumInnerClearance,
-      state.contactRadiusInnerClearance,
-    );
-    minimumOuterClearance = Math.min(
-      minimumOuterClearance,
-      state.contactRadiusOuterClearance,
-    );
-    minimumDisplacement = Math.min(minimumDisplacement, state.displacement);
-    maximumDisplacement = Math.max(maximumDisplacement, state.displacement);
-    maximumNormalVelocityError = Math.max(
-      maximumNormalVelocityError,
-      Math.abs(state.normalVelocityError),
-    );
+    assert.ok(state.bevelPlaneError < 1e-12, `contact on face at ${sample}`);
+    assert.ok(state.shoePlaneGap < 1e-9, `shoe radius at ${sample}`);
+    assert.ok(Math.abs(state.normalVelocityError) < 2e-6,
+      `no separating velocity at ${sample}`);
+    const offset = state.shoeCenter.clone().sub(geometry.sourceShoeCenter);
+    assert.ok(new THREE.Vector3().crossVectors(offset,
+      geometry.followerDirection).length() < 1e-15,
+    `shoe remains on the guide axis at ${sample}`);
+    minimumRimClearance = Math.min(minimumRimClearance,
+      state.contactRadiusOuterClearance);
+    minimum = Math.min(minimum, state.displacement);
+    maximum = Math.max(maximum, state.displacement);
     stages.add(state.stage);
   }
-  assert.ok(minimumDenominatorMagnitude > 0.741);
-  near(minimumInnerClearance, 0.1, 2e-15,
-    'minimum inner annulus clearance');
-  near(minimumOuterClearance, 0.050185772466182055, 2e-15,
-    'minimum outer annulus clearance');
-  near(minimumDisplacement, 0, 0, 'minimum follower displacement');
-  near(maximumDisplacement, geometry.outputStroke, 2e-15,
-    'maximum follower displacement');
-  assert.ok(maximumNormalVelocityError < 4e-16);
-  assert.deepEqual(stages, new Set([
-    'rod-inner-dead-center',
-    'rod-moving-inward-toward-beveled-cam',
-    'rod-outer-dead-center',
-    'rod-moving-outward-along-inclined-guides',
-  ]));
+  assert.ok(minimumRimClearance > 0.15, `contact stays inside the rim: ${minimumRimClearance}`);
+  near(maximum, 0, 1e-12, 'outer dead center');
+  near(minimum, -geometry.outputStroke, 1e-9, 'inner dead center');
+  assert.ok(stages.has('rod-moving-inward-toward-beveled-cam'));
+  assert.ok(stages.has('rod-moving-outward-along-inclined-guides'));
   disposeModel(model.root);
 });
 
-test('movement 272 analytic follower rates are smooth and match finite differences', () => {
+test('movement 272 follower rates match finite differences and repeat every half turn', () => {
   const model = createMovementModel(catalog.movements[271]);
-  const {
-    stateAtDriverAngle,
-    timeline,
-  } = model.root.userData;
-  const angleStep = 1e-5;
-
+  const { stateAtDriverAngle, timeline } = model.root.userData;
+  const angleStep = 1e-3;
   for (const angle of [0.17, 0.63, 1.21, 2.04, 2.71, 3.43, 4.18, 5.39]) {
     const before = stateAtDriverAngle(angle - angleStep);
     const state = stateAtDriverAngle(angle);
     const after = stateAtDriverAngle(angle + angleStep);
-    const finiteFirst = (after.displacement - before.displacement)
-      / (2 * angleStep);
-    const finiteSecond = (after.displacement
-      - 2 * state.displacement
-      + before.displacement) / angleStep ** 2;
-    near(state.displacementPerRadian, finiteFirst, 5e-11,
+    near(state.displacementPerRadian,
+      (after.displacement - before.displacement) / (2 * angleStep), 1e-6,
       `first derivative at angle ${angle}`);
-    near(state.displacementSecondPerRadian, finiteSecond, 9e-6,
-      `second derivative at angle ${angle}`);
     near(state.displacementSpeed,
-      state.displacementPerRadian * timeline.driverAngularSpeed,
-      0, `time speed at angle ${angle}`);
-    near(state.displacementAcceleration,
-      state.displacementSecondPerRadian * timeline.driverAngularSpeed ** 2,
-      0, `time acceleration at angle ${angle}`);
+      state.displacementPerRadian * timeline.driverAngularSpeed, 0,
+      `time speed at angle ${angle}`);
     vectorNear(state.shoeVelocity,
       model.root.userData.geometry.followerDirection.clone()
         .multiplyScalar(state.displacementSpeed),
       0, `shoe velocity at angle ${angle}`);
+    near(stateAtDriverAngle(angle + Math.PI).displacement, state.displacement,
+      1e-12, `half-turn periodicity at ${angle}`);
   }
-
-  const firstQuarter = stateAtDriverAngle(Math.PI / 2);
-  const secondQuarter = stateAtDriverAngle(3 * Math.PI / 2);
-  assert.ok(firstQuarter.displacementSpeed < 0);
-  assert.equal(firstQuarter.stage, 'rod-moving-inward-toward-beveled-cam');
-  assert.ok(secondQuarter.displacementSpeed > 0);
-  assert.equal(secondQuarter.stage,
-    'rod-moving-outward-along-inclined-guides');
-  near(stateAtDriverAngle(0).displacementSpeed, 0, 0,
-    'inner dead-center speed');
-  near(stateAtDriverAngle(Math.PI).displacementSpeed, 0, 5e-17,
-    'outer dead-center speed');
-  const seamBefore = stateAtDriverAngle(-1e-7);
-  const seamAfter = stateAtDriverAngle(FULL_TURN - 1e-7);
-  near(seamBefore.displacement, seamAfter.displacement, 2e-16,
-    'periodic displacement across angle seam');
-  near(seamBefore.displacementSpeed, seamAfter.displacementSpeed, 2e-16,
-    'periodic speed across angle seam');
   disposeModel(model.root);
 });
 
@@ -567,13 +443,13 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  // The undrawn base, post and backing rail are presented away.
-  assert.equal(meshCount, 15);
+  // The undrawn base, posts, shaft bearings and backing rail are presented away.
+  assert.equal(meshCount, 13);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);
   assert.ok(size.y > 5.8);
-  assert.ok(size.z > 4.1);
+  assert.ok(size.z > 3.5, 'the side rim is lower where the trough is shallow');
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   assert.ok(model.cameraDirection.x < 0, 'default view exposes the working bevel and shoe');
   disposeModel(model.root);
@@ -606,10 +482,10 @@ test('movement 272 closes one exact revolution and leaves movement 507 authored'
     'closed rod speed');
   vectorNear(closure.shoeCenter, start.shoeCenter, 0,
     'closed shoe center');
-  vectorNear(closure.contactPoint, start.contactPoint, 6e-18,
+  vectorNear(closure.contactPoint, start.contactPoint, 1e-12,
     'closed contact point');
-  near(half.displacement, model.root.userData.geometry.outputStroke, 1e-15,
-    'half-cycle outer dead center');
+  near(half.displacement, start.displacement, 1e-12,
+    'half-cycle is the second outer dead center');
   assert.equal(half.stage, 'rod-outer-dead-center');
   near(animationTiming.authoredCyclePeriod, timeline.cyclePeriod, 0,
     'authored cycle period');
@@ -623,7 +499,7 @@ test('movement 272 closes one exact revolution and leaves movement 507 authored'
   model.update(timeline.cyclePeriod);
   vectorNear(blocks.follower.position, sourceShoe, 0,
     'rendered shoe closure');
-  vectorNear(blocks.contactMarker.position, sourceContact, 6e-18,
+  vectorNear(blocks.contactMarker.position, sourceContact, 1e-12,
     'rendered contact closure');
 
   const movement507 = catalog.movements[506];
