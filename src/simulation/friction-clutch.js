@@ -29,7 +29,7 @@ export function makeFrictionClutch() {
   const makeMember = (profile, color, keyed) => {
     const group = makeRotor();
     const geometry = turnedClutchGeometry(profile, { boreRadius, keyHalfWidth: keyed ? keyHalfWidth : 0,
-      keywayTop: keyed ? keywayTop : 0, color, paintIndex: true });
+      keywayTop: keyed ? keywayTop : 0, color });
     const material = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.15, roughness: 0.62,
       clippingPlanes: planes, clipShadows: true });
     const body = new THREE.Mesh(geometry, material);

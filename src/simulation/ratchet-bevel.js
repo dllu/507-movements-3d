@@ -45,7 +45,7 @@ export function makeRatchetBevel() {
     const body = turned(profile, color), toothMeshes = [];
     group.userData.rotor.add(body);
     for (let i = 0; i < teeth; i += 1) {
-      const mesh = new THREE.Mesh(toothGeometry, matte(i === 0 ? PALETTE.white : color, { metalness: 0.16, roughness: 0.58 }));
+      const mesh = new THREE.Mesh(toothGeometry, matte(color, { metalness: 0.16, roughness: 0.58 }));
       mesh.rotation.z = i * 2 * Math.PI / teeth;
       mesh.userData = { bevelTooth: true, index: i }; toothMeshes.push(mesh); group.userData.rotor.add(mesh);
     }

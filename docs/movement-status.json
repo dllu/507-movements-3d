@@ -1578,7 +1578,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1671,7 +1672,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1868,7 +1870,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1900,7 +1903,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1932,7 +1936,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1965,7 +1970,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1998,7 +2004,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2475,7 +2482,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane2-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/u6-107-76-review.md"
+        "docs/u6-107-76-review.md",
+        "docs/m16-markers-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2483,7 +2491,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The struck arm is bent 17° at C and D sits at the rim's outer edge, departures from the plate needed for the mechanism to work.",
+      "visibleFlaws": "The struck arm is bent 17° at C and D sits at the rim's outer edge (needed for the mechanism to work); the subject sits smaller than on the plate to leave room for segment D's orbit round the ratchet axle.",
       "limits": "About half the swing is dead travel from the rest stop.",
       "assessment": "minor"
     },

@@ -19,10 +19,10 @@ export function makeTwoSpeedSelector() {
     const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, high - low, 512), matte(color));
     mesh.rotation.x = Math.PI / 2; mesh.position.z = (low + high) / 2; return mesh;
   };
-  add('driverDrum', turned(p.pulleyRadius, 0.1325, -0.80, 0.925, PALETTE.driver, true), driver);
+  add('driverDrum', turned(p.pulleyRadius, 0.1325, -0.80, 0.925, PALETTE.driver), driver);
   add('driverShaft', cylinder(0.1325, -1.395, 1.625, PALETTE.muted), driver);
   add('loosePulley', turned(p.pulleyRadius, 0.1485, p.laneZs[0] - p.pulleyWidth / 2,
-    p.laneZs[0] + p.pulleyWidth / 2, PALETTE.muted, true), loose);
+    p.laneZs[0] + p.pulleyWidth / 2, PALETTE.muted), loose);
   const colors = [PALETTE.brass, PALETTE.accent];
   for (let i = 0; i < p.inputTeeth.length; i += 1) {
     const low = i === 0 ? -1.925 : p.laneZs[i + 1] - p.pulleyWidth / 2;
@@ -30,7 +30,7 @@ export function makeTwoSpeedSelector() {
     add(`inputShaft${i}`, i === 0 ? cylinder(p.shaftRadii[i], low, high, PALETTE.muted)
       : turned(p.shaftRadii[i], p.sleeveBores[i], low, high, PALETTE.muted), inputs[i]);
     add(`inputPulley${i}`, turned(p.pulleyRadius, p.shaftRadii[i], p.laneZs[i + 1] - p.pulleyWidth / 2,
-      p.laneZs[i + 1] + p.pulleyWidth / 2, colors[i], true), inputs[i]);
+      p.laneZs[i + 1] + p.pulleyWidth / 2, colors[i]), inputs[i]);
     const gear = (name, teeth, bore, color, parent, phase) => {
       const mesh = add(name, new THREE.Mesh(selectorGearGeometry({ teeth, module: p.module,
         depth: p.gearDepths[i], boreRadius: bore, backlash: p.toothBacklash, pressureAngle: p.pressureAngle }), matte(color)), parent);
@@ -43,23 +43,17 @@ export function makeTwoSpeedSelector() {
   const curve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.beltPitchRadius, p.beltPitchRadius, 0);
   const segments = 2048, length = curve.getLength();
   const beltGeometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-  const colorsBuffer = new Float32Array(beltGeometry.attributes.position.count * 3);
+  // Brown draws the band plain: one paper colour, no travelling stitch marks.
+  const paper = new THREE.Color(0xd9cead), colorsBuffer = new Float32Array(beltGeometry.attributes.position.count * 3);
+  for (let i = 0; i < colorsBuffer.length; i += 3) paper.toArray(colorsBuffer, i);
   beltGeometry.setAttribute('color', new THREE.BufferAttribute(colorsBuffer, 3));
   const belt = add('belt', new THREE.Mesh(beltGeometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 })));
   belt.userData = { curve, length, crossSection: 'rectangular', width: p.beltWidth, thickness: p.beltThickness, isYarn: true };
-  const paper = new THREE.Color(0xd9cead), stitch = new THREE.Color(0x8d7b58);
   const update = time => {
     const state = motion.atTime(time); driver.rotation.z = state.driverAngle; output.rotation.z = state.outputAngle;
     loose.rotation.z = state.looseAngle; inputs.forEach((group, i) => { group.rotation.z = state.inputAngles[i]; });
     belt.position.z = state.beltZ;
-    for (let i = 0; i < beltGeometry.attributes.color.count; i += 1) {
-      const u = (Math.floor(i / 2) % (segments + 1)) / segments;
-      const phase = 12 * (u - state.beltDistance / length), distance = Math.abs(phase - Math.round(phase));
-      const mix = Math.max(0, 1 - distance / 0.025) * 0.55;
-      beltGeometry.attributes.color.setXYZ(i, paper.r + (stitch.r - paper.r) * mix,
-        paper.g + (stitch.g - paper.g) * mix, paper.b + (stitch.b - paper.b) * mix);
-    }
-    beltGeometry.attributes.color.needsUpdate = true; root.userData.kinematics = state;
+    root.userData.kinematics = state;
   };
   root.userData = { geometry: p, parts, blocks: { driver, output, loose, inputs }, motion,
     hideGround: true, cameraFov: 7, fullCameraDirection: new THREE.Vector3(-8, 3, 6),

@@ -33,7 +33,7 @@ export function makePinClutch() {
     followerRadius: 0.030, followerBore: 0.031 };
   const root = new THREE.Group(), driver = rotorFrame(), output = rotorFrame();
   const driverBody = turned([[-0.55, p.driverBore], [-0.55, p.driverHubRadius], [-0.20, p.driverHubRadius],
-    [-0.20, p.driverRadius], [0.20, p.driverRadius], [0.20, p.driverBore]], PALETTE.driver, { paintIndex: true });
+    [-0.20, p.driverRadius], [0.20, p.driverRadius], [0.20, p.driverBore]], PALETTE.driver);
   const studs = [-1, 1].map((side) => {
     const part = turned([[p.driverFaceX, 0], [p.driverFaceX, p.studRadius], [p.studTipX, p.studRadius], [p.studTipX, 0]],
       PALETTE.brass, { angularSegments: p.pinSegments });
@@ -47,7 +47,7 @@ export function makePinClutch() {
   const outputHub = turned([[p.outputThickness, p.shaftRadius], [p.outputThickness, 0.28], [p.grooveLeft, 0.28],
     [p.grooveLeft, p.grooveRadius], [p.grooveRight, p.grooveRadius], [p.grooveRight, p.collarRadius],
     [0.82, p.collarRadius], [0.82, p.shaftRadius]], PALETTE.driven);
-  const shaft = turned([[-1.9, 0], [-1.9, p.shaftRadius], [2.30, p.shaftRadius], [2.30, 0]], PALETTE.ink, { paintIndex: true });
+  const shaft = turned([[-1.9, 0], [-1.9, p.shaftRadius], [2.30, p.shaftRadius], [2.30, 0]], PALETTE.ink);
   const knob = turned([[1.55, p.shaftRadius], [1.55, 0.15], [1.73, 0.27], [2.06, 0.27], [2.22, 0.15], [2.22, p.shaftRadius]], PALETTE.driven);
   output.userData.rotor.add(outputDisk, outputHub, shaft, knob);
   // The common shaft and right disk slide together. The left disk is loose

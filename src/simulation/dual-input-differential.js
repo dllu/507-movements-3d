@@ -66,10 +66,13 @@ export function makeDualInputDifferential() {
   add('outerSpindleCollar', drum(0.095, p.planetSpindleRadius, [p.planetHubEnd + 0.006, p.planetHubEnd + 0.026], PALETTE.brass), planetAxis, 'carrier');
   add('sidePulley', drum(p.pulleyRadius, p.sideHubRadius, p.pulleySpans[3], PALETTE.muted), side, 'side');
   const mainCurve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.driverPitchRadius, p.pulleyPitchRadius, 0);
-  const segments = 2048;
+  const segments = 2048, paper = new THREE.Color(0xd9cead);
   const bandGeometry = curve => {
     const geometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-    geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count * 3), 3));
+    // Brown draws the bands plain: one paper colour, no travelling stitch marks.
+    const colors = new Float32Array(geometry.attributes.position.count * 3);
+    for (let j = 0; j < colors.length; j += 3) paper.toArray(colors, j);
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     return geometry;
   };
   const band = (name, curve) => {
@@ -101,7 +104,6 @@ export function makeDualInputDifferential() {
     }
     root.userData.configuration = configuration;
   };
-  const paper = new THREE.Color(0xd9cead), stitch = new THREE.Color(0x8d7b58);
   const sectionPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
   for (const [i, mesh] of sectioned.entries()) for (const sign of [-1, 1]) {
     const shape = new THREE.Shape(mesh.userData.profile.map(([z, r]) => new THREE.Vector2(z, sign * r)));
@@ -121,15 +123,6 @@ export function makeDualInputDifferential() {
     driver.rotation.z = state.driverAngle; output.rotation.z = state.outputAngle;
     loose.rotation.z = state.looseAngle; carrier.rotation.z = state.carrierAngle; side.rotation.z = state.sideAngle;
     planet.rotation.z = -Math.PI / p.planetTeeth + state.planetAngle; belt.position.z = state.beltZ;
-    for (const [mesh, distance] of [[belt, state.beltDistance], [sideBelt, state.sideBeltDistance]]) {
-      const color = mesh.geometry.attributes.color;
-      for (let j = 0; j < color.count; j += 1) {
-        const u = (Math.floor(j / 2) % (segments + 1)) / segments, phase = 12 * (u - distance / mesh.userData.length);
-        const mix = Math.max(0, 1 - Math.abs(phase - Math.round(phase)) / 0.025) * 0.55;
-        color.setXYZ(j, paper.r + (stitch.r - paper.r) * mix, paper.g + (stitch.g - paper.g) * mix, paper.b + (stitch.b - paper.b) * mix);
-      }
-      color.needsUpdate = true;
-    }
     root.userData.kinematics = state;
   };
   root.userData = { geometry: p, parts, families, blocks: { driver, output, loose, carrier, side, planet, planetAxis },

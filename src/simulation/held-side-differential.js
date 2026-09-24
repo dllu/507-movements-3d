@@ -77,10 +77,12 @@ export function makeHeldSideDifferential() {
   weight.position.set(-brakePitch, -p.brakeTailLength - 0.10, p.brakeBandZ);
   const curve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.beltPitchRadius, p.beltPitchRadius, 0);
   const segments = 2048, geometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-  geometry.setAttribute('color', new THREE.BufferAttribute(new Float32Array(geometry.attributes.position.count * 3), 3));
+  // Brown draws the band plain: one paper colour, no travelling stitch marks.
+  const paper = new THREE.Color(0xd9cead), beltColors = new Float32Array(geometry.attributes.position.count * 3);
+  for (let j = 0; j < beltColors.length; j += 3) paper.toArray(beltColors, j);
+  geometry.setAttribute('color', new THREE.BufferAttribute(beltColors, 3));
   const belt = add('belt', new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 })), root, 'belt');
   belt.userData = { curve, length: curve.getLength(), crossSection: 'rectangular', width: p.beltWidth, thickness: p.beltThickness, isYarn: true };
-  const paper = new THREE.Color(0xd9cead), stitch = new THREE.Color(0x8d7b58);
   const sectionPlane = new THREE.Plane(new THREE.Vector3(1, 0, 0), 0);
   for (const [i, mesh] of sectioned.entries()) for (const sign of [-1, 1]) {
     const shape = new THREE.Shape(mesh.userData.profile.map(([z, r]) => new THREE.Vector2(z, sign * r)));
@@ -100,13 +102,7 @@ export function makeHeldSideDifferential() {
     driver.rotation.z = state.driverAngle; output.rotation.z = state.outputAngle;
     loose.rotation.z = state.looseAngle; carrier.rotation.z = state.carrierAngle; brake.rotation.z = state.brakeAngle;
     planet.rotation.z = -Math.PI / p.planetTeeth + state.planetAngle; belt.position.z = state.beltZ;
-    const color = geometry.attributes.color;
-    for (let j = 0; j < color.count; j += 1) {
-      const u = (Math.floor(j / 2) % (segments + 1)) / segments, phase = 12 * (u - state.beltDistance / belt.userData.length);
-      const mix = Math.max(0, 1 - Math.abs(phase - Math.round(phase)) / 0.025) * 0.55;
-      color.setXYZ(j, paper.r + (stitch.r - paper.r) * mix, paper.g + (stitch.g - paper.g) * mix, paper.b + (stitch.b - paper.b) * mix);
-    }
-    color.needsUpdate = true; root.userData.kinematics = state;
+    root.userData.kinematics = state;
   };
   root.userData = { geometry: p, parts, families, blocks: { driver, output, loose, carrier, brake, planet, planetAxis },
     gears: { outputGear, brakeGear, planetGear }, motion, sectioned, sectionCaps, setSectionView,

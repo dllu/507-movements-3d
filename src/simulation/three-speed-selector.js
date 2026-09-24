@@ -43,23 +43,17 @@ export function makeThreeSpeedSelector() {
   const curve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.beltPitchRadius, p.beltPitchRadius, 0);
   const segments = 2048, length = curve.getLength();
   const beltGeometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-  const colorsBuffer = new Float32Array(beltGeometry.attributes.position.count * 3);
+  // Brown draws the band plain: one paper colour, no travelling stitch marks.
+  const paper = new THREE.Color(0xd9cead), colorsBuffer = new Float32Array(beltGeometry.attributes.position.count * 3);
+  for (let i = 0; i < colorsBuffer.length; i += 3) paper.toArray(colorsBuffer, i);
   beltGeometry.setAttribute('color', new THREE.BufferAttribute(colorsBuffer, 3));
   const belt = add('belt', new THREE.Mesh(beltGeometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 })));
   belt.userData = { curve, length, crossSection: 'rectangular', width: p.beltWidth, thickness: p.beltThickness, isYarn: true };
-  const paper = new THREE.Color(0xd9cead), stitch = new THREE.Color(0x8d7b58);
   const update = time => {
     const state = motion.atTime(time); driver.rotation.z = state.driverAngle; output.rotation.z = state.outputAngle;
     loose.rotation.z = state.looseAngle; inputs.forEach((group, i) => { group.rotation.z = state.inputAngles[i]; });
     belt.position.z = state.beltZ;
-    for (let i = 0; i < beltGeometry.attributes.color.count; i += 1) {
-      const u = (Math.floor(i / 2) % (segments + 1)) / segments;
-      const phase = 12 * (u - state.beltDistance / length), distance = Math.abs(phase - Math.round(phase));
-      const mix = Math.max(0, 1 - distance / 0.025) * 0.55;
-      beltGeometry.attributes.color.setXYZ(i, paper.r + (stitch.r - paper.r) * mix,
-        paper.g + (stitch.g - paper.g) * mix, paper.b + (stitch.b - paper.b) * mix);
-    }
-    beltGeometry.attributes.color.needsUpdate = true; root.userData.kinematics = state;
+    root.userData.kinematics = state;
   };
   root.userData = { geometry: p, parts, blocks: { driver, output, loose, inputs }, motion,
     hideGround: true, cameraFov: 7, fullCameraDirection: new THREE.Vector3(-8, 3, 6),

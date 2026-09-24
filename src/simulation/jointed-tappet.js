@@ -101,8 +101,11 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
         mesh.material.clippingPlanes=id==='section'?sectionPlanes:[];mesh.material.clipShadows=true;mesh.material.needsUpdate=true;
       }
       for(const section of sections)section.root.visible=id==='section';
-      root.userData.cameraFitBounds=id==='section'?new THREE.Box3(new THREE.Vector3(-1.12,-1.43,-.46),new THREE.Vector3(2.45,1.22,.266)):
-        new THREE.Box3(new THREE.Vector3(-driverOuter,-driverOuter,-.46),new THREE.Vector3(driverOuter,driverOuter,.266));
+      // Segment D is cut in the driver's own frame, so it orbits the common
+      // axle with the wheel; both views fit that swept disc (every other part
+      // lies inside it) rather than Brown's static crop, which the segment
+      // would leave for most of the turn.
+      root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-driverOuter,-driverOuter,-.46),new THREE.Vector3(driverOuter,driverOuter,.266));
     };
   root.userData={parts,families,blocks,contact,masses,setState,setConfiguration,sections,
     geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studRadius,studOrbit,studOverlap,strikeKink,strikeArmStart:[0,0],barRadius,end,restQ,CstopRadius,CstopOrbit,Cstop,CstopAngle,

@@ -48,7 +48,7 @@ function makeFork(axis, reference, direction, length, color, p) {
   body.userData.curvedFork = true;
   const eyes = [-1, 1].map((side) => eye(p, color, side));
   const shaft = turned([[p.shaftInnerDistance, 0], [p.shaftInnerDistance, p.shaftRadius],
-    [length, p.shaftRadius], [length, 0]], color, { paintIndex: true });
+    [length, p.shaftRadius], [length, 0]], color);
   if (direction < 0) shaft.rotation.y = Math.PI;
   shaft.userData.shaft = true;
   rotor.add(body, ...eyes, shaft);
