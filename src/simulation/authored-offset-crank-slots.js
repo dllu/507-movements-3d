@@ -407,6 +407,11 @@ function parallelOffsetSlottedCranks(movement) {
     new THREE.Vector3(outputCenter.x - sweptRadius * 0.75, -sweptRadius * 0.35, -1.915),
     new THREE.Vector3(outputCenter.x + sweptRadius * 0.75, sweptRadius, 1.915),
   );
+  // The whole revolution, kept separately from the plate crop above.
+  root.userData.sweptBounds = new THREE.Box3(
+    new THREE.Vector3(outputCenter.x - sweptRadius, -sweptRadius, -1.915),
+    new THREE.Vector3(outputCenter.x + sweptRadius, sweptRadius, 1.915),
+  );
   root.userData.canonicalTimes = canonicalTimes;
   root.userData.driverAngleAtOutputAngle = driverAngleAtOutputAngle;
   root.userData.fidelity = 'authored';

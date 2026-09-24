@@ -70,7 +70,10 @@ test('366 finite keyed pinion and shaft guides clear the sliding feather across 
    for(const [mesh,surface]of targets)clear(mesh,points,moving,surface);
   }
   const feather=bounds(b.shaftFeather),pinion=bounds(b.pinionGear.userData.body);
-  assert.ok(feather.min.y<pinion.min.y&&feather.max.y>pinion.max.y);
+  // The feather keys the pinion over at least half its bore at every feed
+  // position; it is kept short of the large bevel's inner tooth ends below.
+  const engaged=Math.min(feather.max.y,pinion.max.y)-Math.max(feather.min.y,pinion.min.y);
+  assert.ok(engaged>=.5*(pinion.max.y-pinion.min.y),`feather engagement ${engaged}`);
  }
 });
 

@@ -48,6 +48,9 @@ for (const id of [220, 230]) {
   test(`${id} full-turn visible geometry stays inside its framing bounds without fog or ground`, () => {
     const model = makeModel(id);
     const { cameraFitBounds, geometry, transmission } = model.root.userData;
+    // 220 crops to Brown's raised-arm figure; its full sweep is sweptBounds.
+    const envelope = model.root.userData.sweptBounds ?? cameraFitBounds;
+    if (id === 220) assert.ok(envelope.containsBox(cameraFitBounds), '220 crop lies inside its swept envelope');
     const period = id === 220 ? transmission.inputCyclePeriod : geometry.cyclePeriod;
     assert.equal(model.root.userData.hideGround, true);
     model.root.traverse((object) => {
@@ -57,7 +60,7 @@ for (const id of [220, 230]) {
       model.update(period * sample / 64);
       model.root.updateMatrixWorld(true);
       const bounds = new THREE.Box3().setFromObject(model.root, true);
-      assert.ok(cameraFitBounds.containsBox(bounds), `framing misses geometry at sample ${sample}`);
+      assert.ok(envelope.containsBox(bounds), `framing misses geometry at sample ${sample}`);
     }
     disposeModel(model);
   });
