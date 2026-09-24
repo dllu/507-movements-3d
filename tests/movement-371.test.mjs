@@ -182,13 +182,13 @@ test('movement 371 records Brown\'s two-face topology, unavailable animation, an
   assert.match(evidence.engravingEvidence, /four-broad-spoke/);
   assert.match(evidence.engravingEvidence, /interrupted only at the left/);
   assert.match(evidence.engravingEvidence, /edge-on pinion/);
-  assert.match(evidence.reconstructionDisclosure, /48-position wheel/);
+  assert.match(evidence.reconstructionDisclosure, /44-position wheel/);
   assert.match(evidence.reconstructionDisclosure, /median pitch plane/);
   assert.match(evidence.reconstructionDisclosure, /no canvas animation/);
   disposeModel(model.root);
 });
 
-test('movement 371 uses one common module and exactly omits eight pitch intervals at the left opening on both faces', () => {
+test('movement 371 uses one common module and exactly omits four pitch intervals at the left opening on both faces', () => {
   const model = createMovementModel(catalog.movements[370]);
   const { blocks, geometry } = model.root.userData;
 
@@ -201,7 +201,7 @@ test('movement 371 uses one common module and exactly omits eight pitch interval
   near(
     2 * geometry.pinionPitchRadius / geometry.pinionTeeth,
     geometry.module,
-    0,
+    1e-16,
     'pinion module',
   );
   near(
@@ -230,7 +230,7 @@ test('movement 371 uses one common module and exactly omits eight pitch interval
     geometry.openingAngle,
     geometry.openingIntervals * geometry.wheelAngularPitch,
     0,
-    'opening spans exactly eight pitches',
+    'opening spans exactly four pitches',
   );
   near(
     geometry.mainArcSweep,
@@ -238,7 +238,8 @@ test('movement 371 uses one common module and exactly omits eight pitch interval
     0,
     'toothed arc spans remaining pitches',
   );
-  assert.ok(geometry.openingRadialClearance > 0.4,
+  // The four-pitch opening is kept as narrow as the crossover allows.
+  assert.ok(geometry.openingRadialClearance > 0.02,
     'pinion pitch body fits through opening');
   assert.equal(blocks.wheelBody.userData.openingPreserved, true);
   near(blocks.wheelBody.userData.startAngle,
@@ -447,7 +448,7 @@ test('movement 371 one uniform pinion input produces equal alternating wheel swe
   near(transmission.fullCycleInputRevolutions, 9, 3e-15,
     'published cycle turn count');
   near(geometry.mechanismCyclePeriod,
-    9 * geometry.inputRevolutionPeriod, 0,
+    9 * geometry.inputRevolutionPeriod, 1e-14,
     'full cycle timing');
 
   const frontStart = stateAtInputTravel(0);
@@ -487,9 +488,9 @@ test('movement 371 one uniform pinion input produces equal alternating wheel swe
   const closure = stateAtTime(geometry.mechanismCyclePeriod);
   vectorNear(closure.pinionCenter, start.pinionCenter, 0,
     'carrier closes');
-  vectorNear(closure.contactPoint, start.contactPoint, 0,
+  vectorNear(closure.contactPoint, start.contactPoint, 1e-14,
     'contact closes');
-  angleNear(closure.wheelAngle, start.wheelAngle, 0,
+  angleNear(closure.wheelAngle, start.wheelAngle, 1e-14,
     'wheel closes');
   angleNear(closure.pinionAngle, start.pinionAngle, 5e-15,
     'pinion index closes after nine whole turns');

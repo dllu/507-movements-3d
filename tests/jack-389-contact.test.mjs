@@ -16,7 +16,7 @@ function sweep(model,checks,period,poses=65,tolerance=1e-6){for(let i=0;i<poses;
  model.update(period*i/(poses-1));model.root.updateMatrixWorld(true);
  for(const [moving,points,targets]of checks)for(const [target,surface]of targets)clear(moving,points,target,surface,tolerance);
 }}
-test('389 finite pawls clear every rendered rack tooth throughout power, return and released reset',()=>{
+test('389 finite pawls clear every rendered rack tooth throughout power, return and reversed lowering strokes',()=>{
  const model=createMovementModel(catalog[388]),d=model.root.userData,b=d.blocks;
  sweep(model,checks([[b.driveBody,[b.rackBody,...b.rackTeeth]],[b.holdingPawlBody,[b.rackBody,...b.rackTeeth]],[b.eccentricStrap,[b.rackBody,...b.rackTeeth]],[b.driveBody,[b.holdingPawlBody]]]),d.timeline.cycleDuration,257);
  assert.equal(d.hideGround,true);

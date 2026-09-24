@@ -4,16 +4,18 @@ import {plate,poly,circle,ring,capsule,polygonClipping as clip} from './finite-p
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const hull=points=>{const p=points.sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(a,b,c)=>(b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0]),half=list=>{const out=[];for(const q of list){while(out.length>1&&cross(out.at(-2),out.at(-1),q)<=0)out.pop();out.push(q);}return out.slice(0,-1);};return [...half(p),...half(p.slice().reverse())];};
 const rect=(w,h)=>poly([[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]]);
-export function stampMeshParameters(radius,teeth){
+// Without an explicit addendum the teeth are cut to a contact ratio of one.
+export function stampMeshParameters(radius,teeth,explicitAddendum){
  const pressureAngle=RACK_PRESSURE_ANGLE,base=radius*Math.cos(pressureAngle),pitch=2*Math.PI*radius/teeth;
+ const ratioFor=a=>(a/Math.sin(pressureAngle)+Math.sqrt((radius+a)**2-base**2)-radius*Math.sin(pressureAngle))/(pitch*Math.cos(pressureAngle));
  let low=.001,high=radius*.3;
- for(let i=0;i<64;i++){const a=(low+high)/2,contactRatio=(a/Math.sin(pressureAngle)+Math.sqrt((radius+a)**2-base**2)-radius*Math.sin(pressureAngle))/(pitch*Math.cos(pressureAngle));if(contactRatio>1)high=a;else low=a;}
- const addendum=(low+high)/2,approach=addendum/Math.sin(pressureAngle),pitchContactAngle=approach/base;
- return{addendum,pressureAngle,baseRadius:base,rootRadius:radius-addendum-.006,tipRadius:radius+addendum,contactRatio:1,
+ for(let i=0;i<64;i++){const a=(low+high)/2;if(ratioFor(a)>1)high=a;else low=a;}
+ const addendum=explicitAddendum??(low+high)/2,approach=addendum/Math.sin(pressureAngle),pitchContactAngle=approach/base;
+ return{addendum,pressureAngle,baseRadius:base,rootRadius:radius-addendum-.006,tipRadius:radius+addendum,contactRatio:explicitAddendum===undefined?1:ratioFor(addendum),
   gearBaseAngle:Math.PI+Math.PI/(2*teeth)+pitchContactAngle,rackOffset:pitch/4-radius*pitchContactAngle};
 }
 export function correctStampParts(model){
- const {root}=model,d=root.userData,b=d.blocks,g=d.geometry,p=stampMeshParameters(g.pitchRadius,g.virtualToothCount);
+ const {root}=model,d=root.userData,b=d.blocks,g=d.geometry,p=stampMeshParameters(g.pitchRadius,g.virtualToothCount,g.meshAddendum);
  const complete=rackPinionGeometry({radius:g.pitchRadius,teeth:g.virtualToothCount,addendum:p.addendum,depth:g.gearDepth,bore:.108,backlash:.001});
  const shape=poly(complete.userData.outline.map(v=>v.toArray())),half=Math.PI/g.virtualToothCount,
   wedge=poly([[0,0],[2*Math.cos(half),-2*Math.sin(half)],[2*Math.cos(half),2*Math.sin(half)]]),tooth=plate(clip.intersection(shape,wedge),-g.gearDepth/2,g.gearDepth/2);complete.dispose();

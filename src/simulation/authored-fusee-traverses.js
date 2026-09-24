@@ -304,11 +304,11 @@ function addRopeLay(cord, color, segments, lay = 0.15) {
 function fuseeCarriageTraverse(movement) {
   const root = new THREE.Group();
 
-  // Sureda's fusee has ten turns, one per observation; at the display's
-  // one-turn-per-second crank ceiling that needed a 28 s cycle. Six turns
-  // carry the same radius law over the groove (each observation spans 0.6
-  // turn), so a full out-and-return cycle takes about 14 s.
-  const revolutionCount = 6;
+  // Sureda's fusee has ten turns, one per observation, and Brown's plan
+  // hatches about eleven grooves; ten turns keep both. At the display's
+  // one-turn-per-second crank ceiling a full out-and-return cycle takes
+  // about 22 s.
+  const revolutionCount = 10;
   // Brown's plan draws a stubby fusee (large diameter about 1.2 times its
   // length); 2.8 units of stroke per turn gives Sureda's radii that
   // proportion.
@@ -335,9 +335,9 @@ function fuseeCarriageTraverse(movement) {
   // The rendered cycle starts mid-stroke, where Brown draws the band
   // crossing the middle of the fusee and both remote anchors lie off-plate.
   const contactPhase = Math.PI / 2;
-  // The cruise turns the crank at 6 / (6.65 - 0.6) = 0.99 turn per second,
+  // The cruise turns the crank at 10 / (10.7 - 0.6) = 0.99 turn per second,
   // just inside the display's sustained-rotation ceiling.
-  const strokeDuration = 6.65;
+  const strokeDuration = 10.7;
   const dwellDuration = 0.3;
   const rampDuration = 0.6;
   const cyclePeriod = 2 * (strokeDuration + dwellDuration);

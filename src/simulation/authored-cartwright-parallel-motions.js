@@ -960,18 +960,28 @@ function CartwrightParallelMotion(movement) {
     };
   };
 
+  // Brown draws both cranks A turned inward and below their shafts, the
+  // crosshead just past the bottom of its stroke. One full input turn from the
+  // official start advances the wheels 0.4 turn (144 degrees, exactly twelve
+  // teeth) to that pose while the flywheel and pinion return to their start.
+  const plateStartInputAngle = FULL_TURN;
+  const plateStartOutputPhase = equalGearRatio;
   const stateAtTime = (time) => {
     const elapsed = Number.isFinite(Number(time)) ? Number(time) : 0;
-    return stateAtInputAngle(elapsed * inputAngularSpeed);
+    return stateAtInputAngle(plateStartInputAngle
+      + elapsed * inputAngularSpeed);
   };
+  const outputTimeAt = (officialPhase) => outputCyclePeriod
+    * positiveModulo(officialPhase - plateStartOutputPhase, 1);
   const canonicalTimes = {
     assemblyCycleClosure: assemblyClosurePeriod,
-    bottomDeadCenter: outputCyclePeriod * 0.25,
+    bottomDeadCenter: outputTimeAt(0.25),
     cycleClosure: assemblyClosurePeriod,
     firstOutputClosure: outputCyclePeriod,
-    oppositeMidStroke: outputCyclePeriod * 0.50,
+    oppositeMidStroke: outputTimeAt(0.50),
+    officialStart: outputTimeAt(0),
     sourceStart: 0,
-    topDeadCenter: outputCyclePeriod * 0.75,
+    topDeadCenter: outputTimeAt(0.75),
   };
   const canonicalStates = Object.fromEntries(
     Object.entries(canonicalTimes).map(([name, time]) => [
@@ -1198,7 +1208,7 @@ function CartwrightParallelMotion(movement) {
       rightGearInitialTurn: 0,
     },
     officialKeyframes: [0, 0.25, 0.50, 0.75, 1].map((phase) => {
-      const state = stateAtTime(outputCyclePeriod * phase);
+      const state = stateAtInputAngle(outputCyclePeriod * phase * inputAngularSpeed);
       return {
         crossheadY: state.crossheadY / sourceScale,
         leftCrankPin: state.leftCrankPin.clone().multiplyScalar(

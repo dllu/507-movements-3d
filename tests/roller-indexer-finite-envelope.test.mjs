@@ -51,15 +51,16 @@ test('364 actual wheel surfaces remain outside conservative finite roller cylind
     model.root.updateMatrixWorld(true);
     for (const roller of blocks.rollerBodies) {
       const transform = roller.matrixWorld.clone().invert().multiply(blocks.outputWheel.matrixWorld);
-      const bounds = new THREE.Box3(new THREE.Vector3(-.126, -.176, -.126),
-        new THREE.Vector3(.126, .176, .126)).applyMatrix4(
+      const r = data.geometry.rollerRadius + .001;
+      const bounds = new THREE.Box3(new THREE.Vector3(-r, -.176, -r),
+        new THREE.Vector3(r, .176, r)).applyMatrix4(
         blocks.outputWheel.matrixWorld.clone().invert().multiply(roller.matrixWorld));
       for (const point of points) {
         if (!bounds.containsPoint(point)) continue;
         sample.copy(point).applyMatrix4(transform);
         // A full ideal cylinder contains the faceted, bored rendered roller.
         // Clearance outside it is a conservative reverse-direction check.
-        const radial = Math.hypot(sample.x, sample.z) - .125;
+        const radial = Math.hypot(sample.x, sample.z) - data.geometry.rollerRadius;
         const axial = Math.abs(sample.y) - .175;
         const gap = Math.hypot(Math.max(radial, 0), Math.max(axial, 0))
           + Math.min(Math.max(radial, axial), 0);

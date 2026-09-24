@@ -279,35 +279,34 @@ test('movement 389 power contact is exact while the upper stop ratchets and then
   disposeModel(model.root);
 });
 
-test('movement 389 loop reset is smooth, non-operating, and visibly releases both pawls', () => {
+test('movement 389 lowers the rack by the lifting strokes reversed, never dropping it', () => {
   const model = createMovementModel(catalog.movements[388]);
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline, transmission } = data;
   const raised = stateAtTime(timeline.events.resetStarts);
-  const resetMiddle = stateAtTime(
-    timeline.events.resetStarts + timeline.resetDuration / 2,
-  );
   const lowered = stateAtTime(timeline.events.bottomDwellStarts);
 
-  assert.match(timeline.note, /explicitly non-operating/);
-  assert.match(transmission.resetLaw, /outside normal jack operation/);
+  assert.match(timeline.note, /lowering strokes/);
+  assert.match(transmission.resetLaw, /reverses the eccentric/);
+  near(timeline.resetDuration, timeline.operatingDuration, 0, 'lowering takes as long as lifting');
   near(raised.rackDisplacement,
     geometry.liftStrokeCount * geometry.toothPitch, 0,
-    'raised reset boundary');
-  near(raised.rackSpeed, 0, 0, 'raised reset boundary speed');
-  near(resetMiddle.rackDisplacement,
-    geometry.liftStrokeCount * geometry.toothPitch / 2 + geometry.resetClearanceLift, 3e-15,
-    'staged reset midpoint retains its unloaded clearance lift');
-  assert.ok(resetMiddle.rackSpeed < 0);
-  assert.equal(resetMiddle.drivingEngaged, false);
-  assert.equal(resetMiddle.holdingEngaged, false);
-  near(resetMiddle.driveClearance, geometry.resetClearance, 0,
-    'released driving pawl clearance');
-  assert.ok(resetMiddle.holdingAngle < geometry.holdingBaseAngle);
-  near(lowered.rackDisplacement, 0, 0, 'lower reset boundary');
-  near(lowered.rackSpeed, 0, 0, 'lower reset boundary speed');
-  near(lowered.rackAcceleration, 0, 0,
-    'lower reset boundary acceleration');
+    'raised lowering boundary');
+  near(raised.rackSpeed, 0, 0, 'raised lowering boundary speed');
+  // Every lowering pose mirrors a lifting pose, with speeds reversed.
+  for (let sample = 1; sample < 400; sample += 1) {
+    const offset = timeline.resetDuration * sample / 400;
+    const down = stateAtTime(timeline.events.resetStarts + offset);
+    const up = stateAtTime(timeline.operatingDuration - offset);
+    near(down.rackDisplacement, up.rackDisplacement, 1e-12, 'mirrored rack');
+    near(down.rackSpeed, -up.rackSpeed, 1e-12, 'reversed rack speed');
+    near(down.eccentricAngle, up.eccentricAngle, 1e-12, 'mirrored eccentric');
+    near(down.holdingAngle, up.holdingAngle, 1e-12, 'mirrored stop pawl');
+    assert.equal(down.drivingEngaged || down.holdingEngaged
+      || down.stage.includes('overtravel'), true, 'the rack is always carried by a pawl');
+  }
+  near(lowered.rackDisplacement, 0, 0, 'lower boundary');
+  near(lowered.rackSpeed, 0, 0, 'lower boundary speed');
   disposeModel(model.root);
 });
 

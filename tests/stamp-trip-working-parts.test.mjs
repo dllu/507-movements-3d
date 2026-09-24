@@ -53,8 +53,9 @@ test('351 release follows the withdrawing final tooth and pickup lifts the resti
  const m=stamp({id:351}),d=m.root.userData,b=d.blocks;assert.equal(d.reconstructionStatus,'partial');assert.match(d.reconstructionNote,/follows the withdrawing final tooth/);assert.match(d.reconstructionNote,/entering tooth lifts/);
  // The former imposed fall cut 0.11293 into this tooth at this phase.
  const solid=solidSurface(b.rackTeeth[2].geometry);let minimum=1;
- m.update(4*(.64453125-d.geometry.initialCyclePhase));m.root.updateMatrixWorld(true);
- for(const p of surfacePoints(b.gearTeeth[5].geometry)){const world=b.gearTeeth[5].localToWorld(p.clone());minimum=Math.min(minimum,solid.signedDistance(b.rackTeeth[2].worldToLocal(world),.2));}
+ // Just after release: the last sector tooth against the rack tooth it last drove.
+ const last=b.gearTeeth.at(-1);m.update(4*(d.geometry.engagementFraction+.04453125-d.geometry.initialCyclePhase));m.root.updateMatrixWorld(true);
+ for(const p of surfacePoints(last.geometry)){const world=last.localToWorld(p.clone());minimum=Math.min(minimum,solid.signedDistance(b.rackTeeth[2].worldToLocal(world),.2));}
  assert.ok(minimum>-1e-4,`withdrawal penetration ${-minimum}`);
  let worst=1,before=d.stateAtTime(0);
  for(let i=1;i<=2048;i++){const s=d.stateAtTime(4*i/2048);worst=Math.min(worst,d.stampCarriedContact.clearanceAt(s.driverAngle,s.rackDisplacement));assert.ok(Math.abs(s.rackDisplacement-before.rackDisplacement)<.06,`rack jump at ${i}`);before=s;}

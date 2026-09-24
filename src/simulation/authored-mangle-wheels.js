@@ -138,11 +138,12 @@ function dualFaceGapTransferMangleWheel(movement) {
   const root = new THREE.Group();
 
   // The tooth numbers are engineered because Brown gives no dimensions.  A
-  // 48-position wheel with an eight-pitch opening matches the plate closely;
-  // the forty remaining intervals and ten-tooth pinion also make the complete
+  // 44-position wheel with a four-pitch opening keeps the gap as narrow as
+  // the ten-tooth pinion's crossover allows (Brown's is narrower still); the
+  // forty remaining intervals and ten-tooth pinion also make the complete
   // alternating cycle close after exactly nine uniform pinion revolutions.
-  const wheelPositionCount = 48;
-  const openingIntervals = 8;
+  const wheelPositionCount = 44;
+  const openingIntervals = 4;
   const mainToothIntervals = wheelPositionCount - openingIntervals;
   const pinionTeeth = 10;
   const wheelPitchRadius = 1.72;
@@ -158,7 +159,9 @@ function dualFaceGapTransferMangleWheel(movement) {
   const firstTerminalAngle = openingCenterAngle + openingHalfAngle;
   const mainArcSweep = mainToothIntervals * wheelAngularPitch;
   const secondTerminalAngle = firstTerminalAngle + mainArcSweep;
-  const mainRunInputAngle = mainArcSweep / pitchRatio;
+  // Equal to mainArcSweep / pitchRatio, written in whole pinion turns so the
+  // branch boundaries fall on exact multiples of a turn.
+  const mainRunInputAngle = mainToothIntervals / pinionTeeth * FULL_TURN;
   const terminalCrossoverInputAngle = Math.PI;
   const rearRunStart = mainRunInputAngle
     + terminalCrossoverInputAngle;
@@ -541,10 +544,13 @@ function dualFaceGapTransferMangleWheel(movement) {
     'schematic-mobile-cross-slide-for-pinion-shaft';
   pinionCarrier.add(carrierBridge);
 
+  // The crossbars seat against the carrier collar at its front and rear
+  // stations (pinion pitch radius either side of the median plane).
+  const guideCrossbarZ = pinionPitchRadius + 0.18 + 0.055 - 0.003;
   const guideRails = [];
   for (const y of [-0.43, 0.43]) {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, 0.12, 1.18),
+      new THREE.BoxGeometry(0.12, 0.12, 2 * guideCrossbarZ),
       frameMaterial,
     );
     rail.position.set(-2.46, y, 0);
@@ -556,7 +562,7 @@ function dualFaceGapTransferMangleWheel(movement) {
   }
 
   const guideCrossbars = [];
-  for (const z of [-0.59, 0.59]) {
+  for (const z of [-guideCrossbarZ, guideCrossbarZ]) {
     const crossbar = new THREE.Mesh(
       new THREE.BoxGeometry(0.12, 0.98, 0.11),
       frameMaterial,
@@ -767,7 +773,7 @@ function dualFaceGapTransferMangleWheel(movement) {
         engravingEvidence:
           'the plate shows a four-broad-spoke circular wheel, two concentric rim outlines, a long radial series of face teeth interrupted only at the left, a small edge-on pinion at the upper terminal of that opening, and its horizontal radial shaft continuing left',
         reconstructionDisclosure:
-          'the 48-position wheel, eight-pitch opening, ten-tooth pinion, thin median pitch plane, terminal-rollover contact law, carrier guide, colors, dimensions, and three-second input period are engineered because Brown gives no numerical specification or tooth section and the official page has no canvas animation',
+          'the 44-position wheel, four-pitch opening, ten-tooth pinion, thin median pitch plane, terminal-rollover contact law, carrier guide, colors, dimensions, and three-second input period are engineered because Brown gives no numerical specification or tooth section and the official page has no canvas animation',
       },
       officialPage: 'https://507movements.com/mm_371.html',
       primaryScan: {
@@ -789,7 +795,7 @@ function dualFaceGapTransferMangleWheel(movement) {
       fullCycleInputRevolutions:
         mechanismCycleInputAngle / FULL_TURN,
       openingLaw:
-        'the eight omitted wheel pitches form the left opening; at each terminal the pinion center and contact point follow the exact circle-circle rollover solution while moving continuously between front and rear',
+        'the four omitted wheel pitches form the left opening; at each terminal the pinion center and contact point follow the exact circle-circle rollover solution while moving continuously between front and rear',
       pitchContactPlane:
         'the two opposed face-tooth flanks are idealized about the wheel median plane because the source supplies no axial tooth section',
       terminalRolloverLaw:

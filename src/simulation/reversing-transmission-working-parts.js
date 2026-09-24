@@ -23,11 +23,11 @@ export function finishMangle371(root,update){
  replace(b.wheelHub,ring(.11,.31,-.15,.15,96),true);
  b.guideShoes=[];
  for(const y of[-.43,.43]){
-  const shoe=new THREE.Mesh(plate(clip.difference(rectangle(-.15,-.115,.15,.115),rectangle(-.123,-.064,.045,.064)),-.10,.10),b.carrierBridge.material);
+  const shoe=new THREE.Mesh(plate(clip.difference(rectangle(-.15,-.115,.15,.115),rectangle(-.130,-.064,.052,.064)),-.10,.10),b.carrierBridge.material);
   shoe.position.set(-.72,y,0);shoe.userData.role='bored-cross-slide-shoe-with-radial-float';b.pinionCarrier.add(shoe);b.guideShoes.push(shoe);
  }
  for(const marker of[b.frontContactMarker,b.rearContactMarker,b.terminalContactMarker])marker.userData.referenceOnly=true;
- d.reconstructionNote='The initial rear-face terminal matches the source opening below the shaft. Bored journals, radial-float guide shoes and a connected four-window web are finite reconstructions. Finite tooth bars are cut offline against both face runs and terminal rollovers; open root rails replace the interfering solid median disk. The 60-degree opening is wider than the engraving. Motion remains prescribed by the ideal pitch law, with finite backlash and unqualified passive crossover loads; pitch points are hidden rather than presented as contact witnesses.';
+ d.reconstructionNote='The initial rear-face terminal matches the source opening below the shaft. Bored journals, radial-float guide shoes and a connected four-window web are finite reconstructions. Finite tooth bars are cut offline against both face runs and terminal rollovers; open root rails replace the interfering solid median disk. The 33-degree opening, the narrowest the pinion crossover clears, is still wider than the engraving. Motion remains prescribed by the ideal pitch law, with finite backlash and unqualified passive crossover loads; pitch points are hidden rather than presented as contact witnesses.';
  const wrapped=time=>{update(time);for(const marker of[b.frontContactMarker,b.rearContactMarker,b.terminalContactMarker])marker.visible=false;};
  installMangle371Profiles(root);
  return finishView(root,wrapped,Math.max(3,d.geometry.inputRevolutionPeriod),new THREE.Vector3(.35,.2,15),d.geometry.mechanismCyclePeriod);

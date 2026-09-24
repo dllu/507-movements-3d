@@ -1,5 +1,5 @@
 import {writeFile} from 'node:fs/promises';
-const R=1.52,pitch=Math.PI/4,half=pitch*.36,gap=1.10,centerRadius=1.04,rollerRadius=.125,rollerLength=.35;
+const R=1.52,pitch=Math.PI/4,half=pitch*.36,gap=1.10,centerRadius=1.04,rollerRadius=.078,rollerLength=.35;
 const height=2*(gap*Math.tan(half)+.035),vertical=64,clearance=.002,states=[];
 for(let i=0;i<=384;i++){
  const phi=-pitch/2+pitch*i/384,u=Math.max(0,Math.min(1,(Math.tan(phi)+Math.tan(half))/(2*Math.tan(half)))),f=u*u*u*(10-15*u+6*u*u),a=f*pitch;

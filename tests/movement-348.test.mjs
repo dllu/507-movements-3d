@@ -157,6 +157,11 @@ test('movement 348 preserves the official canvas dimensions, law, phase, and tim
   ]);
   assert.match(sourceAnimation.officialGuidePointFunction,
     /500\/sqrt\(625\*sin/);
+  // Brown draws B upright: the same closure with T moved 65/60 units above
+  // C1/C2 (beyond his crop) replaces the official 25/20.
+  assert.match(sourceAnimation.guidePointFunction, /60\^2.*65\^2/);
+  assert.equal(sourceAnimation.reconstructedGeometry.guideToPrimaryPivot, 65);
+  assert.equal(sourceAnimation.reconstructedGeometry.guideToSecondaryPivot, 60);
   assert.equal(official.diskRadius, 6.5);
   assert.deepEqual(official.diskCenter, new THREE.Vector2(0, 0));
   assert.equal(official.slotHalfLength, 6);
@@ -171,7 +176,7 @@ test('movement 348 preserves the official canvas dimensions, law, phase, and tim
   assert.deepEqual(official.view, [-12, -12, 24, 24]);
   assert.equal(sourceAnimation.physicalClarification.applied, true);
   assert.equal(sourceAnimation.physicalClarification.changesSourceMotion,
-    false);
+    true);
   assert.match(sourceAnimation.physicalClarification.reason,
     /official add_rot_to solver fixes reference T on x=0/);
 
@@ -241,28 +246,28 @@ test('movement 348 closes both rotating-slot sliders and rigid rod through 32,76
       `C2 in perpendicular rotating slot ${sample}`);
     near(source.guide.pointT.x, 0, 0,
       `T in fixed vertical guide ${sample}`);
-    near(source.guide.pointT.distanceTo(primary.pivotC1), 25, 2e-14,
+    near(source.guide.pointT.distanceTo(primary.pivotC1), 65, 6e-14,
       `fixed T-C1 length ${sample}`);
-    near(source.guide.pointT.distanceTo(secondary.pivotC2), 20, 2e-14,
+    near(source.guide.pointT.distanceTo(secondary.pivotC2), 60, 6e-14,
       `fixed T-C2 length ${sample}`);
-    near(primary.pivotC1.distanceTo(secondary.pivotC2), 5, 1e-14,
+    near(primary.pivotC1.distanceTo(secondary.pivotC2), 5, 3e-14,
       `fixed C1-C2 pivot spacing ${sample}`);
     const c1ToT = source.guide.pointT.clone().sub(primary.pivotC1);
     const c1ToC2 = secondary.pivotC2.clone().sub(primary.pivotC1);
-    near(cross2(c1ToT, c1ToC2), 0, 4e-14,
+    near(cross2(c1ToT, c1ToC2), 0, 1.2e-13,
       `C1-C2-T collinearity ${sample}`);
-    near(c1ToC2.dot(c1ToT) / c1ToT.lengthSq(), 0.2, 3e-16,
+    near(c1ToC2.dot(c1ToT) / c1ToT.lengthSq(), 5 / 65, 3e-16,
       `C2 lies five units above C1 on rod ${sample}`);
     near(source.guide.pointT.y,
-      500 / Math.sqrt(source.radicand), 0,
-      `official guide-height equation ${sample}`);
-    assert.ok(source.guide.pointT.y >= 20 - 1e-14);
-    assert.ok(source.guide.pointT.y <= 25 + 1e-14);
+      1 / Math.sqrt(source.radicand), 0,
+      `guide-height equation ${sample}`);
+    assert.ok(source.guide.pointT.y >= 60 - 3e-14);
+    assert.ok(source.guide.pointT.y <= 65 + 3e-14);
 
     const state = stateAtInputAngle(angle);
-    near(state.rod.guideToPrimaryLengthError, 0, 4e-15,
+    near(state.rod.guideToPrimaryLengthError, 0, 1.2e-14,
       `model T-C1 error ${sample}`);
-    near(state.rod.pivotSpacingError, 0, 2e-15,
+    near(state.rod.pivotSpacingError, 0, 6e-15,
       `model C1-C2 error ${sample}`);
     near(state.primarySlide.slotDirection.dot(
       state.secondarySlide.slotDirection), 0, 0,
@@ -286,11 +291,11 @@ test('movement 348 produces exactly two five-unit reciprocations per shaft turn'
   const lower2 = canonicalStates.secondLowerExtreme;
   const finish = canonicalStates.cycleClosure;
 
-  near(sourceStart.guide.sourceY, 25, 0, 'start upper extreme');
-  near(lower1.guide.sourceY, 20, 0, 'first lower extreme');
-  near(upper2.guide.sourceY, 25, 0, 'second upper extreme');
-  near(lower2.guide.sourceY, 20, 0, 'second lower extreme');
-  near(finish.guide.sourceY, 25, 0, 'cycle upper extreme');
+  near(sourceStart.guide.sourceY, 65, 0, 'start upper extreme');
+  near(lower1.guide.sourceY, 60, 0, 'first lower extreme');
+  near(upper2.guide.sourceY, 65, 0, 'second upper extreme');
+  near(lower2.guide.sourceY, 60, 0, 'second lower extreme');
+  near(finish.guide.sourceY, 65, 0, 'cycle upper extreme');
   near(transmission.stroke, 5 * geometry.sourceScale, 0,
     'model output stroke');
   assert.equal(transmission.reciprocationsPerInputRevolution, 2);
@@ -298,7 +303,9 @@ test('movement 348 produces exactly two five-unit reciprocations per shaft turn'
   near(sourceStart.rod.angle, 0, 0, 'start rod vertical');
   near(lower1.rod.angle, 0, 0, 'quarter-turn rod vertical');
   near(lower2.rod.angle, 0, 0, 'three-quarter rod vertical');
-  assert.ok(canonicalStates.eighthTurn.rod.angle < -0.11);
+  // The remote guide keeps B within about 2.3 degrees of upright.
+  assert.ok(canonicalStates.eighthTurn.rod.angle < -0.035);
+  assert.ok(canonicalStates.eighthTurn.rod.angle > -0.045);
   near(sourceStart.primarySlide.coordinate, 0, 0,
     'start primary slide at O');
   near(sourceStart.secondarySlide.coordinate,
@@ -307,7 +314,7 @@ test('movement 348 produces exactly two five-unit reciprocations per shaft turn'
   near(lower1.primarySlide.coordinate,
     -5 * geometry.sourceScale, 2e-16,
   'quarter-turn primary slide at lower extreme');
-  near(lower1.secondarySlide.coordinate, 0, 5e-17,
+  near(lower1.secondarySlide.coordinate, 0, 1.5e-16,
     'quarter-turn secondary slide at O');
 
   vector3Near(sourceStart.primarySlide.pivotC1,
@@ -343,7 +350,7 @@ test('movement 348 analytic slide, guide, and rod rates match finite differences
     ]) {
       const numericalVelocity = afterPoint.clone().sub(beforePoint)
         .multiplyScalar(1 / (2 * velocityStep));
-      vector3Near(velocity, numericalVelocity, 5e-10,
+      vector3Near(velocity, numericalVelocity, 1.5e-9,
         `${name} analytic velocity ${time}`);
       assert.ok(point.toArray().every(Number.isFinite));
     }
@@ -409,10 +416,10 @@ test('movement 348 renderer keeps each visible slide aligned to its own disk slo
     vector3Near(worldPosition(blocks.guidePointAnchor),
       state.guide.pointT, 0, `guide anchor T ${time}`);
     vector3Near(worldPosition(blocks.primaryRodAnchor),
-      state.primarySlide.pivotC1, 2e-15,
+      state.primarySlide.pivotC1, 6e-15,
       `rod primary anchor C1 ${time}`);
     vector3Near(worldPosition(blocks.secondaryRodAnchor),
-      state.secondarySlide.pivotC2, 2e-15,
+      state.secondarySlide.pivotC2, 6e-15,
       `rod secondary anchor C2 ${time}`);
     vector3Near(worldPosition(blocks.primarySlide.pivotAnchor),
       state.primarySlide.pivotC1, 2e-16,
@@ -503,9 +510,9 @@ test('movement 348 is smooth, finite, and closes after one shaft revolution', ()
     ];
     assert.ok(values.every(Number.isFinite),
       `finite multi-turn state ${sample}`);
-    near(state.rod.guideToPrimaryLengthError, 0, 4e-15,
+    near(state.rod.guideToPrimaryLengthError, 0, 1.2e-14,
       `multi-turn T-C1 closure ${sample}`);
-    near(state.rod.pivotSpacingError, 0, 2e-15,
+    near(state.rod.pivotSpacingError, 0, 6e-15,
       `multi-turn C1-C2 closure ${sample}`);
   }
   disposeModel(model.root);

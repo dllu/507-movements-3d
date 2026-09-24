@@ -92,8 +92,9 @@ test('354: finite wrist clears the actual milled groove including both reversal 
   for (const time of times) {
     update(time); root.updateMatrixWorld(true);
     clearsPin(b.crankWrist, [b.yokeBody]);
-    clearsPin(b.wristCap, b.islandRetainer.children.slice(0, 2));
-    assert.ok(bounds(b.islandRetainer.children[2]).min.z > bounds(b.wristCap).max.z);
+    // Posts first, then the raised strap.
+    clearsPin(b.wristCap, b.islandRetainer.children.slice(0, -1));
+    assert.ok(bounds(b.islandRetainer.children.at(-1)).min.z > bounds(b.wristCap).max.z);
     const pin = bounds(b.crankWrist), yoke = bounds(b.yokeBody);
     assert.ok(pin.min.z < yoke.min.z && pin.max.z > yoke.max.z);
   }

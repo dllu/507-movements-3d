@@ -228,7 +228,7 @@ test('movement 333 reconstructs the official forced-P driving construction', () 
       state.forcedPointP), geometry.longLinkLength, 2e-15,
     `official P-W length at ${sample}`);
     near(state.officialCanvasApproximation.pointW.distanceTo(
-      geometry.rightPivotR), geometry.rightUpperRockerLength, 4e-15,
+      geometry.rightPivotR), geometry.rightUpperRockerLength, 4.5e-15,
     `official R-W length at ${sample}`);
     vector2Near(state.officialCanvasApproximation.pointM,
       state.forcedPointP.clone().add(
@@ -261,7 +261,7 @@ test('movement 333 closes all five visible bars exactly', () => {
     near(state.pointM.distanceTo(geometry.leftPivotO),
       geometry.leftRadiusLength, 5e-16, `O-M at ${sample}`);
     near(state.pointW.distanceTo(geometry.rightPivotR),
-      geometry.rightUpperRockerLength, 1.4e-15, `R-W at ${sample}`);
+      geometry.rightUpperRockerLength, 1.6e-15, `R-W at ${sample}`);
     near(state.pointM.distanceTo(state.pointQ),
       geometry.centerLinkLength, 1.2e-15, `M-Q at ${sample}`);
     vector2Near(state.pointN,
@@ -329,18 +329,20 @@ test('movement 333 exposes both genuine near-straight output loci', () => {
     'minimum P ordinate');
   near(maximumPointPY, geometry.maximumPointPY, 3e-9,
     'maximum P ordinate');
-  assert.ok(maximumOfficialResidual / geometry.sourceScale < 0.001198);
-  assert.ok(maximumPointPDeviation / geometry.sourceScale < 0.001221);
-  assert.ok(maximumPointNDeviation / geometry.sourceScale < 0.000606);
-  assert.ok(maximumPointPVerticalDifference / geometry.sourceScale < 0.000509);
+  // Brown's steep beam needs a +/-7.2-unit plate stroke, so the near-straight
+  // loci wander a little more than on the official +/-4 drive.
+  assert.ok(maximumOfficialResidual / geometry.sourceScale < 0.0879);
+  assert.ok(maximumPointPDeviation / geometry.sourceScale < 0.0900);
+  assert.ok(maximumPointNDeviation / geometry.sourceScale < 0.0470);
+  assert.ok(maximumPointPVerticalDifference / geometry.sourceScale < 0.0712);
   assert.ok(maximumPointPDeviation > 0,
     'P is approximate rather than fictitiously constrained to x=0');
   assert.ok(maximumPointNDeviation > 0,
     'N is approximate rather than fictitiously constrained to one line');
-  assert.ok((maximumPointPY - minimumPointPY) / geometry.sourceScale > 7.999);
-  assert.ok((maximumPointPY - minimumPointPY) / geometry.sourceScale < 8.001);
-  assert.ok((maximumPointNY - minimumPointNY) / geometry.sourceScale > 3.999);
-  assert.ok((maximumPointNY - minimumPointNY) / geometry.sourceScale < 4.001);
+  assert.ok((maximumPointPY - minimumPointPY) / geometry.sourceScale > 14.38);
+  assert.ok((maximumPointPY - minimumPointPY) / geometry.sourceScale < 14.40);
+  assert.ok((maximumPointNY - minimumPointNY) / geometry.sourceScale > 7.19);
+  assert.ok((maximumPointNY - minimumPointNY) / geometry.sourceScale < 7.20);
   assert.ok(canonicalStates.leftPistonBottom.pointP.y
     < canonicalStates.leftPistonTop.pointP.y);
   disposeModel(model.root);

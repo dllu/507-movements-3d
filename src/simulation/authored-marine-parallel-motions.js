@@ -1860,7 +1860,11 @@ function doubleParallelMotion(movement) {
   const centerLinkMidpointDistance = sourceCenterLinkMidpointDistance
     * sourceScale;
   const rightLowerRadiusLength = sourceRightLowerRadiusLength * sourceScale;
-  const addedPistonHalfStroke = sourceAddedPistonHalfStroke * sourceScale;
+  // Brown draws the beam tipped about 30 degrees with P some 6.4 units above
+  // O, far beyond the official +/-4 drive. The plate half-stroke keeps the
+  // official bars and pivots and swings the beam to about 29 degrees.
+  const plateAddedPistonHalfStroke = 7.2;
+  const addedPistonHalfStroke = plateAddedPistonHalfStroke * sourceScale;
   const nominalCenterOutputX = sourceNominalCenterOutputX * sourceScale;
   const zero = new THREE.Vector2();
 
@@ -2153,7 +2157,8 @@ function doubleParallelMotion(movement) {
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role = 'two-fixed-pedestals-O-and-R';
-  const makePedestal = (point, name, low, high, pinLow, pinHigh) => {
+  const makePedestal = (point, name, low, high, pinLow, pinHigh,
+    footInFront = false) => {
     const group = new THREE.Group();
     group.position.set(point.x, point.y, 0);
     group.userData.fixed = true;
@@ -2182,7 +2187,8 @@ function doubleParallelMotion(movement) {
         [x0 - 0.22 * s, -1.02 * s], [x0 - 0.28 * s, -1.02 * s]]));
     }
     const foot = new THREE.Mesh(plate(clip.union(poly(groundLine),
-      ...hatchStrokes), low - 0.08, low), darkMaterial);
+      ...hatchStrokes), footInFront ? low : low - 0.08,
+    footInFront ? high : low), darkMaterial);
     foot.userData.fixed = true;
     foot.userData.role = `${name}-hatched-ground`;
     group.add(bearing, bore, foot);
@@ -2192,8 +2198,10 @@ function doubleParallelMotion(movement) {
     return group;
   };
   // O sits in front of its radius bar because P's rod sweeps past O behind.
+  // Its ground line shares the lug's plane, in front of the radius bar that
+  // dips below O at the plate stroke's lower end.
   const leftPedestalO = makePedestal(leftPivotO, 'left-pivot-O',
-    0.47, 0.62, 0.26, 0.62);
+    0.47, 0.62, 0.26, 0.62, true);
   const rightPedestalR = makePedestal(rightPivotR, 'right-pivot-R',
     0.18, 0.48, 0.18, 1.08);
   fixedFrame.add(leftPedestalO, rightPedestalR);
@@ -2514,7 +2522,7 @@ function doubleParallelMotion(movement) {
       'the source identifies the plate as two parallel motions combining elements of 343 and 341; its two orange piston rods are explanatory additions of uncertain original application',
     officialPageAnimatedTabDisabled: false,
     reconstructionDifference:
-      'the official canvas forces P to x=0 and inherits a rounded-dimension O-M residual; this model closes every visible bar exactly and retains the sub-0.0013-unit lateral deviations of P and N',
+      'the official canvas forces P to x=0 and inherits a rounded-dimension O-M residual; this model closes every visible bar exactly, drives P through Brown\'s steeper +/-7.2-unit plate stroke instead of the official +/-4, and retains the resulting sub-0.09-unit lateral deviations of P and N',
     referenceScope:
       'official fixed pivots, five bar lengths, both ternary midpoint stations, branch choices, explanatory outputs, and 15 rpm timing',
     sourceUrl: movement.sourceUrl,
@@ -2560,8 +2568,8 @@ function doubleParallelMotion(movement) {
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
   // Brown's plate frames O and R at the edges with the beam near the top.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.0 * sourceScale, -7.6 * sourceScale, -0.30),
-    new THREE.Vector3(16.8 * sourceScale, 5.2 * sourceScale, 1.10),
+    new THREE.Vector3(-2.2 * sourceScale, -9.4 * sourceScale, -0.30),
+    new THREE.Vector3(17.4 * sourceScale, 8.6 * sourceScale, 1.10),
   );
   root.userData.cameraDistanceScale = 0.96;
   update(0);

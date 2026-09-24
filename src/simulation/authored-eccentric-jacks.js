@@ -276,13 +276,12 @@ function eccentricPawlJack(movement) {
   const strokeDuration = 2.2;
   const operatingDuration = liftStrokeCount * strokeDuration;
   const raisedDwellDuration = 0.7;
-  const resetDuration = 2.2;
+  const resetDuration = operatingDuration;
   const bottomDwellDuration = 0.5;
   const cycleDuration = operatingDuration + raisedDwellDuration
     + resetDuration + bottomDwellDuration;
   const returnClearance = 0.24;
   const parkFraction=.75;
-  const resetClearance = 0.33;
 
   const camCenterAtAngle = (angle) => new THREE.Vector3(
     eccentricShaft.x - eccentricity * Math.cos(angle),
@@ -338,7 +337,6 @@ function eccentricPawlJack(movement) {
     holdingVerticalOffset,
     -holdingHorizontalOffset,
   );
-  const holdingReleaseAngle = 0.60;
   const holdOutline=pawlPolygon(holdingPawlLength);
   const crestRetreat=firstClearRetreat(a=>clearRackPawl(holdOutline,holdingPivot,holdingBaseAngle-a,rackTriangles,toothPitch-1e-7),0,.85);
 
@@ -567,34 +565,19 @@ function eccentricPawlJack(movement) {
       holdingEngaged = true;
       stage = 'three-pitch-raised-load-dwell';
     } else if (wrappedTime < bottomDwellStarts) {
-      const resetProgress=(wrappedTime-resetStarts)/resetDuration;
-      const lift=liftStrokeCount*toothPitch,clearanceLift=.10;
-      let from,to,u,duration,release;
-      if(resetProgress<.1){from=lift;to=lift+clearanceLift;u=resetProgress/.1;duration=.1;release=0;}
-      else if(resetProgress<.2){from=to=lift+clearanceLift;u=0;duration=.1;release=quinticState((resetProgress-.1)/.1).value;}
-      else if(resetProgress<.8){from=lift+clearanceLift;to=clearanceLift;u=(resetProgress-.2)/.6;duration=.6;release=1;}
-      else if(resetProgress<.9){from=to=clearanceLift;u=0;duration=.1;release=1-quinticState((resetProgress-.8)/.1).value;}
-      else{from=clearanceLift;to=0;u=(resetProgress-.9)/.1;duration=.1;release=0;}
-      const reset=quinticState(u);
-      rackDisplacement=from+(to-from)*reset.value;
-      rackSpeed=(to-from)*reset.rate/(duration*resetDuration);
-      rackAcceleration=(to-from)*reset.acceleration/(duration*resetDuration)**2;
-      eccentricAngle = parkedAngle;
-      driveClearance = parkedClearance+(resetClearance-parkedClearance)*release;
-      holdingAngle = holdingBaseAngle - holdingReleaseAngle*release;
-      holdingEngaged = false;
-      stage = 'disclosed-demonstration-reset-both-pawls-released';
+      // Lowering: the operator reverses the eccentric, so the lifting strokes
+      // play backward. The strap pawl lets the rack down one pitch per turn
+      // while the stop pawl is held clear of each descending tooth; every pose
+      // is a lifting pose, so the finite clearances carry over unchanged.
+      const mirrored = stateAtTime(operatingDuration - (wrappedTime - resetStarts));
+      return {
+        ...mirrored,
+        eccentricAngularSpeed: -mirrored.eccentricAngularSpeed,
+        rackSpeed: -mirrored.rackSpeed,
+        stage: `lowering-reversed-${mirrored.stage}`,
+      };
     } else {
-      rackDisplacement = 0;
-      const recovery=quinticState((wrappedTime-bottomDwellStarts)/bottomDwellDuration);
-      const recoveryPhase=parkFraction+(1-parkFraction)*recovery.value;
-      eccentricAngle=cycleStartAngle+FULL_TURN*recoveryPhase;
-      driveClearance=returnRetreat(recoveryPhase);
-      eccentricAngularSpeed=FULL_TURN*(1-parkFraction)*recovery.rate/bottomDwellDuration;
-      holdingEngaged = true;
-      strokeIndex = 0;
-      strokeProgress = 0;
-      stage = 'lowered-jack-dwell';
+      return {...stateAtTime(0), eccentricAngularSpeed: 0, rackSpeed: 0, rackAcceleration: 0, stage: 'lowered-jack-dwell'};
     }
 
     const camCenter = camCenterAtAngle(eccentricAngle);
@@ -753,18 +736,17 @@ function eccentricPawlJack(movement) {
         'the lifting pawl is rigid from strap center to rack nose and is laterally spring-retracted only on its return',
         'the upper stop follows a prescribed continuous clearance branch, reseats during overtravel, and carries the settled rack during lifting-pawl return; gravity, preload and handoff forces are not solved',
         'rack, saddle and load are rigid; pivots are frictionless and tooth impact, deformation, force, friction and inertia are omitted',
-        'three operating strokes followed by the clearly identified released-pawl reset, plus all dimensions, timing, easing, materials, depth and camera, are reconstruction decisions',
+        'three lifting strokes followed by three reversed lowering strokes (the stop pawl held clear by hand), plus all dimensions, timing, easing, materials, depth and camera, are reconstruction decisions',
       ],
       sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
       treatment:
-        'geometrically closed eccentric-follower power strokes with exact one-pitch ratchet storage and a separate non-operating loop reset',
+        'geometrically closed eccentric-follower power strokes with exact one-pitch ratchet storage, then the same strokes reversed to let the rack down a pitch at a time',
     },
     fidelity: 'authored',
     geometry: {
       drivePawlLength,
       seatingOvertravel,
       returnUndershoot,
-      resetClearanceLift: 0.10,
       rackToothCount: 18,
       cycleStartAngle,
       returnEndFraction,
@@ -790,7 +772,6 @@ function eccentricPawlJack(movement) {
       rackDepth,
       rackFaceX,
       rackLength,
-      resetClearance,
       returnClearance,
       stopBaseToothIndex,
       stopSeatY,
@@ -840,7 +821,7 @@ function eccentricPawlJack(movement) {
         engravingEvidence:
           'the plate shows a load saddle on a vertically guided one-sided rack, a lower circular eccentric strap with an integral pointed lifting pawl, and a separately fixed-pivot upper pawl bearing on the same tooth row',
         reconstructionDisclosure:
-          'no official animation is available; eccentricity, rigid follower closure, tooth pitch, pawl lift and clearance, three-stroke timing, released-pawl reset, absolute geometry, materials, depth, indexes, and camera are independently engineered',
+          'no official animation is available; eccentricity, rigid follower closure, tooth pitch, pawl lift and clearance, three-stroke timing, reversed lowering strokes, absolute geometry, materials, depth, indexes, and camera are independently engineered',
       },
       officialPage: movement.sourceUrl,
       primaryScan: {
@@ -865,7 +846,7 @@ function eccentricPawlJack(movement) {
       resetDuration,
       strokeDuration,
       note:
-        'three true eccentric lifting strokes are followed by a raised dwell and an explicitly non-operating staged reset that lifts the unloaded rack, retracts both pawls, lowers it, and reseats; this reset exists only to loop the demonstration smoothly',
+        'three true eccentric lifting strokes are followed by a raised dwell and three lowering strokes, the lifting strokes played backward with the eccentric reversed, so the rack comes down one pitch per turn on the strap pawl while the stop pawl is held clear by hand',
     },
     transmission: {
       driveFollowerLaw:
@@ -875,7 +856,7 @@ function eccentricPawlJack(movement) {
       indexingLaw:
         'one follower excursion covers rack pitch plus seating overtravel and return undershoot; each completed eccentric turn stores exactly one additional pitch',
       resetLaw:
-        'the demonstration reset is outside normal jack operation and uses an external unloaded clearance lift, released descent and controlled reseating',
+        'lowering reverses the eccentric: the strap pawl carries the rack down one pitch per turn and the stop pawl is held clear of each descending tooth (the prescribed lifting clearances, time-reversed)',
     },
   };
 

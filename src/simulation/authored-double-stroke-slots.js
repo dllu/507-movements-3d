@@ -185,22 +185,28 @@ function makeSlotSlide({
 function snyderDoubleStrokeSlotDrive(movement) {
   const root = new THREE.Group();
 
-  // These are the exact coordinates and equations in the official canvas
-  // model. A is centered at O. Its local x and y slots are perpendicular.
-  // C1 is 25 units below the constrained reference T on rod B, and C2 is
-  // 20 units below T, so the two pivoted slides remain exactly 5 units apart.
+  // The disk, slots, slides and 5-unit pivot spacing are the official canvas
+  // model's. A is centered at O. Its local x and y slots are perpendicular.
+  // The official solver puts the constrained reference T on rod B only 25
+  // units above C1 (20 above C2), which rocks B up to 6.5 degrees; Brown's B
+  // stands upright beside the disk and is broken off above it. The same
+  // closure with T 65 units above C1 (60 above C2), far beyond Brown's crop,
+  // keeps the 5-unit double stroke and the pins' sideways travel while
+  // holding B within 2.4 degrees of upright.
   const sourceDiskCenter = new THREE.Vector2(0, 0);
   const sourceDiskRadius = 6.5;
   const sourceSlotHalfLength = 6;
   const sourceSlotWidth = 1.2;
   const sourceSlideLength = 1.5;
   const sourceSlideWidth = 1.2;
-  const sourceGuideToPrimaryPivot = 25;
-  const sourceGuideToSecondaryPivot = 20;
+  const sourceGuideToPrimaryPivot = 65;
+  const sourceGuideToSecondaryPivot = 60;
+  const officialGuideToPrimaryPivot = 25;
+  const officialGuideToSecondaryPivot = 20;
   const sourcePivotSpacing = sourceGuideToPrimaryPivot
     - sourceGuideToSecondaryPivot;
   const sourceRodHalfWidth = 1;
-  const sourceRodBottomY = -26.5;
+  const sourceRodBottomY = -(sourceGuideToPrimaryPivot + 1.5);
   const sourceCyclesPerMinute = 15;
   const cyclePeriod = 60 / sourceCyclesPerMinute;
   const inputAngularSpeed = FULL_TURN / cyclePeriod;
@@ -237,39 +243,46 @@ function snyderDoubleStrokeSlotDrive(movement) {
     const secondarySlotDirectionSecondDerivative =
       secondarySlotDirection.clone().multiplyScalar(-1);
 
-    const radicand = 625 * sine ** 2 + 400 * cosine ** 2;
-    const radicandDerivative = 450 * sine * cosine;
-    const radicandSecondDerivative = 450
+    // Closure: T=(0,T_y), C1=T-L1*u in slot x, C2=T-L2*u in slot y gives
+    // T_y^2 (cos^2/L1^2 + sin^2/L2^2) = 1 (the official law at L1=25, L2=20).
+    const inversePrimarySquared = 1 / sourceGuideToPrimaryPivot ** 2;
+    const inverseSecondarySquared = 1 / sourceGuideToSecondaryPivot ** 2;
+    const radicand = inverseSecondarySquared * sine ** 2
+      + inversePrimarySquared * cosine ** 2;
+    const radicandDerivative = 2
+      * (inverseSecondarySquared - inversePrimarySquared) * sine * cosine;
+    const radicandSecondDerivative = 2
+      * (inverseSecondarySquared - inversePrimarySquared)
       * (cosine ** 2 - sine ** 2);
-    const guideY = 500 / Math.sqrt(radicand);
-    const guideYDerivative = -250 * radicandDerivative
+    const guideY = 1 / Math.sqrt(radicand);
+    const guideYDerivative = -0.5 * radicandDerivative
       / radicand ** 1.5;
     const guideYSecondDerivative =
-      -250 * radicandSecondDerivative / radicand ** 1.5
-      + 375 * radicandDerivative ** 2 / radicand ** 2.5;
+      -0.5 * radicandSecondDerivative / radicand ** 1.5
+      + 0.75 * radicandDerivative ** 2 / radicand ** 2.5;
 
-    // The lower source intersection selected by c_l_int simplifies to
-    // lambda=-T_y sin(theta)/4. Interpolating 20/25 of the way back to T
-    // gives C2, whose coordinate in the perpendicular slot is
-    // mu=T_y cos(theta)/5.
-    const primaryCoordinate = -guideY * sine / 4;
+    // C1 lies at lambda=-T_y sin(theta) d/L2 along slot x and C2 at
+    // mu=T_y cos(theta) d/L1 along slot y, where d=L1-L2 is the spacing.
+    const primaryRatio = sourcePivotSpacing / sourceGuideToSecondaryPivot;
+    const secondaryRatio = sourcePivotSpacing / sourceGuideToPrimaryPivot;
+    const primaryCoordinate = -guideY * sine * primaryRatio;
     const primaryCoordinateDerivative = -(
       guideYDerivative * sine + guideY * cosine
-    ) / 4;
+    ) * primaryRatio;
     const primaryCoordinateSecondDerivative = -(
       guideYSecondDerivative * sine
         + 2 * guideYDerivative * cosine
         - guideY * sine
-    ) / 4;
-    const secondaryCoordinate = guideY * cosine / 5;
+    ) * primaryRatio;
+    const secondaryCoordinate = guideY * cosine * secondaryRatio;
     const secondaryCoordinateDerivative = (
       guideYDerivative * cosine - guideY * sine
-    ) / 5;
+    ) * secondaryRatio;
     const secondaryCoordinateSecondDerivative = (
       guideYSecondDerivative * cosine
         - 2 * guideYDerivative * sine
         - guideY * cosine
-    ) / 5;
+    ) * secondaryRatio;
 
     const guidePointT = new THREE.Vector2(0, guideY);
     const guidePointTDerivative = new THREE.Vector2(
@@ -599,8 +612,10 @@ function snyderDoubleStrokeSlotDrive(movement) {
   );
   shaftBearing.userData.role = 'fixed-central-shaft-bearing-O';
 
-  const guideMinimumY = diskCenter.y + 19 * sourceScale;
-  const guideMaximumY = diskCenter.y + 26 * sourceScale;
+  const guideMinimumY = diskCenter.y
+    + (sourceGuideToSecondaryPivot - 1) * sourceScale;
+  const guideMaximumY = diskCenter.y
+    + (sourceGuideToPrimaryPivot + 1) * sourceScale;
   const guideCenterY = (guideMinimumY + guideMaximumY) / 2;
   const guideHalfGap = 0.136;
   const guideRailThickness = 0.105;
@@ -770,7 +785,7 @@ function snyderDoubleStrokeSlotDrive(movement) {
   );
   rodCenterIndex.position.set(
     0,
-    -22.5 * sourceScale,
+    -(sourceGuideToPrimaryPivot - 2.5) * sourceScale,
     rodDepth / 2 + 0.018,
   );
   rodCenterIndex.userData.role = 'rod-B-white-rocking-index';
@@ -981,7 +996,9 @@ function snyderDoubleStrokeSlotDrive(movement) {
   root.userData.cameraDistanceScale = 1.12;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-1.82, 0, -1.10),
-    new THREE.Vector3(1.82, guideMaximumY + 0.20, 0.78),
+    // Brown breaks B off above the disk; the frame stops there, not at the
+    // remote guide.
+    new THREE.Vector3(1.82, diskCenter.y + 26 * sourceScale + 0.20, 0.78),
   );
   root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
@@ -1016,13 +1033,15 @@ function snyderDoubleStrokeSlotDrive(movement) {
     ],
     officialGuidePointFunction:
       'T=(0,500/sqrt(625*sin(theta)^2+400*cos(theta)^2))',
+    guidePointFunction:
+      'T=(0,1/sqrt(sin(theta)^2/60^2+cos(theta)^2/65^2)); the official law with T moved from 25/20 to 65/60 units above C1/C2',
     officialGeometry: {
       diskCenter: sourceDiskCenter,
       diskRadius: sourceDiskRadius,
-      guideToPrimaryPivot: sourceGuideToPrimaryPivot,
-      guideToSecondaryPivot: sourceGuideToSecondaryPivot,
+      guideToPrimaryPivot: officialGuideToPrimaryPivot,
+      guideToSecondaryPivot: officialGuideToSecondaryPivot,
       pivotSpacing: sourcePivotSpacing,
-      rodBottomY: sourceRodBottomY,
+      rodBottomY: -26.5,
       rodHalfWidth: sourceRodHalfWidth,
       slideLength: sourceSlideLength,
       slideWidth: sourceSlideWidth,
@@ -1032,9 +1051,14 @@ function snyderDoubleStrokeSlotDrive(movement) {
     },
     physicalClarification: {
       applied: true,
-      changesSourceMotion: false,
+      changesSourceMotion: true,
       reason:
-        'the official add_rot_to solver fixes reference T on x=0 while Brown crops rod B above the disk; the rendered pin-in-vertical-slot makes that required external one-coordinate guide explicit',
+        'the official add_rot_to solver fixes reference T on x=0 25 units above C1, rocking B up to 6.5 degrees where Brown draws it upright; the same one-coordinate guide is moved to 65 units above C1, beyond Brown\'s crop above the disk, so B stays within 2.4 degrees of upright with the same 5-unit double stroke',
+    },
+    reconstructedGeometry: {
+      guideToPrimaryPivot: sourceGuideToPrimaryPivot,
+      guideToSecondaryPivot: sourceGuideToSecondaryPivot,
+      rodBottomY: sourceRodBottomY,
     },
     referenceScope:
       'official crossed-slot disk, two pivoted rectangular slides, rigid rod dimensions, exact analytic guide law, source phase, 525-square view, and 15-cpm timing',
@@ -1072,13 +1096,13 @@ function snyderDoubleStrokeSlotDrive(movement) {
   root.userData.stateAtTime = stateAtTime;
   root.userData.transmission = {
     exactConstruction:
-      'C1=lambda(cos(theta),sin(theta)), lambda=-T_y sin(theta)/4; C2=mu(-sin(theta),cos(theta)), mu=T_y cos(theta)/5; |C2-C1|=5',
+      'C1=lambda(cos(theta),sin(theta)), lambda=-T_y sin(theta)/12; C2=mu(-sin(theta),cos(theta)), mu=T_y cos(theta)/13; |C2-C1|=5',
     guideLaw:
-      'T_y=500/sqrt(625*sin(theta)^2+400*cos(theta)^2)',
+      'T_y=1/sqrt(sin(theta)^2/60^2+cos(theta)^2/65^2)',
     input:
       'uniform rotation of central shaft and crossed-slot disk A',
     output:
-      'T_y alternates exactly between 25 and 20 source units twice per shaft revolution; rigid rod B simultaneously rocks',
+      'T_y alternates exactly between 65 and 60 source units twice per shaft revolution; rigid rod B rocks within 2.4 degrees',
     reciprocationsPerInputRevolution: 2,
     slideOrientationLaw:
       'the primary slide stays parallel to disk local x; the secondary stays at theta+pi/2, exactly perpendicular to it; both pivot freely relative to rod B',

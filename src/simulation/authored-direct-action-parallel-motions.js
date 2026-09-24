@@ -1002,6 +1002,11 @@ function jogglingPillarParallelMotion(movement) {
   const sourceScale = 0.38;
   const sourceHiddenCrankPivot = new THREE.Vector2(-7.799671, -6);
   const sourceHiddenCrankRadius = 2.499197;
+  // Brown tips the beam about 31 degrees with D high and leans the pillar;
+  // the official 2.5-unit hidden crank swings it only +/-18 degrees. A
+  // 3.7-unit hidden crank (still a Grashof crank-rocker) tips it 30.3 degrees
+  // at the plate pose; the exact four-bar keeps C within 0.05 unit of its line.
+  const plateHiddenCrankRadius = 3.7;
   const sourceHiddenCrankPinLocal = new THREE.Vector2(2.499197, 0);
   const sourceHiddenCrankPhaseOffset = FULL_TURN * 0.25;
   const sourceHiddenConnectingRodLength = 16.005141;
@@ -1038,7 +1043,7 @@ function jogglingPillarParallelMotion(movement) {
 
   const hiddenCrankPivot = sourceHiddenCrankPivot.clone()
     .multiplyScalar(sourceScale);
-  const hiddenCrankRadius = sourceHiddenCrankRadius * sourceScale;
+  const hiddenCrankRadius = plateHiddenCrankRadius * sourceScale;
   const hiddenConnectingRodLength = sourceHiddenConnectingRodLength
     * sourceScale;
   const hiddenRockerCenter = sourceHiddenRockerCenter.clone()
@@ -1814,7 +1819,7 @@ function jogglingPillarParallelMotion(movement) {
       'the official hidden crank-rocker phase law vibrates pillar B-F through B',
     mechanism: 1,
     output:
-      'coupler extension C carries the piston through a near-vertical five-unit stroke',
+      'coupler extension C carries the piston through a near-vertical 8.7-unit plate stroke',
   };
   root.userData.fidelity = 'authored';
   root.userData.geometry = geometry;
@@ -1871,7 +1876,7 @@ function jogglingPillarParallelMotion(movement) {
         'the canvas 4.742772-unit bar is only aimed at A and is too short to close the visible four-bar; the corrected length makes the negative-B reversal an exact external tangent',
     },
     reconstructionDifference:
-      'the model closes corrected E-A exactly; the official drawn radius endpoint misses canvas A by up to 0.064 source unit, while the corrected physical C stays within 0.082 source unit of canvas C',
+      'the model closes corrected E-A exactly and drives the official hidden crank-rocker with a 3.7-unit crank (official 2.5) so the beam reaches Brown\'s ~30-degree tilt; at the official amplitude the official drawn radius endpoint misses canvas A by up to 0.064 source unit (0.42 at the plate amplitude), and physical C stays within 0.05 unit of its straight line',
     referenceScope:
       'official hidden crank-rocker timing, beam stations D-B-A-C, pillar F-B, fixed pivots F and E, drawn radius length and its closure defect, piston rod, view, and 15 rpm timing',
     sourceUrl: movement.sourceUrl,
@@ -1886,7 +1891,7 @@ function jogglingPillarParallelMotion(movement) {
       pillarLength: sourcePillarLength,
       pillarPivotF: sourcePillarPivotF,
       pillarToBeamRatio:
-        'plate F-B / D-C = 307 / 421 px = 0.73 (official 10 / 16 = 0.62); the model pillar is 12 units; Brown also leans the pillar about 6 degrees, which is not reproduced',
+        'plate F-B / D-C = 307 / 421 px = 0.73 (official 10 / 16 = 0.62); the model pillar is 12 units; at the plate pose the model beam tilts 30.3 degrees and the pillar leans 4.3 degrees, where Brown draws about 31 and 6-7',
     },
     officialAnimationView: {
       canvasHeight: officialCanvasHeight,
@@ -1911,9 +1916,9 @@ function jogglingPillarParallelMotion(movement) {
     exactRigidConstraints:
       '|F-B|=12.001672 (plate; official 10.002006384), |D-B|=|B-C|=8, |B-A|=4.25, and corrected |E-A|=4.789956 in source units',
     input:
-      'the official hidden crank-rocker law supplies the oscillation of B about F; no hidden member is presented as part of the visible four-bar',
+      'the official hidden crank-rocker law, with its crank enlarged to 3.7 units for Brown\'s steep beam, supplies the oscillation of B about F; no hidden member is presented as part of the visible four-bar',
     output:
-      'the beam coupler point C carries the piston on a near-vertical five-unit stroke',
+      'the beam coupler point C carries the piston on a near-vertical 8.7-unit plate stroke',
   };
 
   update(0);
@@ -1921,8 +1926,8 @@ function jogglingPillarParallelMotion(movement) {
   // Brown's view: beam end D at the left, the wall at E on the right, the
   // pillar shaft F at the foot, and both vertical rods cut by the margin.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.55, -1.66, -0.30),
-    new THREE.Vector3(4.00, 5.40, 1.00),
+    new THREE.Vector3(-3.55, -1.50, -0.30),
+    new THREE.Vector3(4.50, 6.15, 1.00),
   );
   root.userData.cameraDistanceScale = 0.96;
   markShadows(root);

@@ -38,6 +38,10 @@ function tubeBetween(start, end, radius, material) {
   );
 }
 
+// Brown's walker stands about as tall as the drum's radius plus his legs;
+// the earlier full-size mannequin rose far above the drum.
+const FIGURE_SCALE = 0.8;
+
 function externalPersonTreadmill(movement) {
   const root = new THREE.Group();
 
@@ -66,18 +70,20 @@ function externalPersonTreadmill(movement) {
   const personCenterOfMass = wheelCenter.clone().add(
     // Brown's man climbs on the descending side toward the far end of the
     // drum, right of the diagonal side bar in the level side view.
-    new THREE.Vector3(2.15, 1.55, -0.45),
+    // Scaled to Brown's figure, whose cap only just rises above the drum
+    // top and whose feet are on the boards near axle height.
+    new THREE.Vector3(2.15, 0.95 + 0.27 * FIGURE_SCALE, -0.45),
   );
   const personWeight = new THREE.Vector3(0, -personMass * gravity, 0);
   const personWeightTorque = personCenterOfMass.clone()
     .sub(wheelCenter).cross(personWeight).z;
   const outputPower = personWeightTorque * wheelAngularSpeed;
   const legPhaseOffsets = [0, Math.PI];
-  const upperLegLength = 0.70;
-  const lowerLegLength = 0.65;
+  const upperLegLength = 0.70 * FIGURE_SCALE;
+  const lowerLegLength = 0.65 * FIGURE_SCALE;
   const gaitGeometry = { treadPitch, treadRadius, treadCount, wheelStartAngle,
     wheelPeriod, hipX: personCenterOfMass.x - wheelCenter.x,
-    hipY: personCenterOfMass.y - wheelCenter.y - 0.27,
+    hipY: personCenterOfMass.y - wheelCenter.y - 0.27 * FIGURE_SCALE,
     upperLength: upperLegLength, lowerLength: lowerLegLength };
 
   const stateAtTime = (time) => {
@@ -283,44 +289,44 @@ function externalPersonTreadmill(movement) {
     'world-stationary-person-stepping-up-descending-peripheral-boards';
   root.add(person);
   const torso = new THREE.Mesh(
-    new THREE.CapsuleGeometry(0.24, 0.64, 8, 18),
+    new THREE.CapsuleGeometry(0.24 * FIGURE_SCALE, 0.64 * FIGURE_SCALE, 8, 18),
     personMaterial,
   );
-  torso.position.y = 0.10;
+  torso.position.y = 0.10 * FIGURE_SCALE;
   torso.scale.z = 0.62;
   torso.userData.role = 'stylized-person-torso';
   person.add(torso);
   const head = new THREE.Mesh(
-    new THREE.SphereGeometry(0.19, 24, 16),
+    new THREE.SphereGeometry(0.19 * FIGURE_SCALE, 24, 16),
     personMaterial,
   );
-  head.position.y = 0.78;
+  head.position.y = 0.78 * FIGURE_SCALE;
   head.userData.role = 'stylized-person-head';
   person.add(head);
   const cap = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.20, 0.17, 0.10, 24),
+    new THREE.CylinderGeometry(0.20 * FIGURE_SCALE, 0.17 * FIGURE_SCALE, 0.10 * FIGURE_SCALE, 24),
     darkMaterial,
   );
-  cap.position.y = 0.95;
+  cap.position.y = 0.95 * FIGURE_SCALE;
   cap.userData.role = 'source-visible-person-cap';
   person.add(cap);
   const arms = [];
   // He faces the drum and holds a rail at head height in front of him,
   // Brown's topmost horizontal line running the length of the drum.
-  const handRailY = personCenterOfMass.y + 0.82;
-  const handRailX = personCenterOfMass.x - 0.30;
+  const handRailY = personCenterOfMass.y + 0.82 * FIGURE_SCALE;
+  const handRailX = personCenterOfMass.x - 0.30 * FIGURE_SCALE;
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Vector3(
       0,
-      0.44,
-      side * 0.17,
+      0.44 * FIGURE_SCALE,
+      side * 0.17 * FIGURE_SCALE,
     );
     const hand = new THREE.Vector3(
       handRailX - personCenterOfMass.x,
       handRailY - personCenterOfMass.y,
-      side * 0.39,
+      side * 0.39 * FIGURE_SCALE,
     );
-    const arm = tubeBetween(shoulder, hand, 0.065, personMaterial);
+    const arm = tubeBetween(shoulder, hand, 0.065 * FIGURE_SCALE, personMaterial);
     arm.userData.side = side;
     arm.userData.role = 'person-arm-holding-fixed-safety-rail';
     arms.push(arm);
@@ -340,15 +346,16 @@ function externalPersonTreadmill(movement) {
     const legSide = index === 0 ? 1 : -1;
     legRoot.position.set(
       0,
-      -0.27,
-      legSide * 0.205,
+      -0.27 * FIGURE_SCALE,
+      legSide * 0.205 * FIGURE_SCALE,
     );
     legRoot.userData.index = index;
     legRoot.userData.role = 'person-hip-pivot';
     person.add(legRoot);
     legRoots.push(legRoot);
+    // Rounded limbs rather than boxes, like Brown's trousered legs.
     const upperLeg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.12, upperLegLength, 0.10),
+      new THREE.CapsuleGeometry(0.06 * FIGURE_SCALE, upperLegLength - 0.12 * FIGURE_SCALE, 6, 14),
       personMaterial,
     );
     upperLeg.position.y = -upperLegLength / 2;
@@ -362,18 +369,19 @@ function externalPersonTreadmill(movement) {
     legRoot.add(knee);
     kneePivots.push(knee);
     const lowerLeg = new THREE.Mesh(
-      new THREE.BoxGeometry(0.10, lowerLegLength, 0.08),
+      new THREE.CapsuleGeometry(0.045 * FIGURE_SCALE, lowerLegLength - 0.09 * FIGURE_SCALE, 6, 14),
       personMaterial,
     );
-    lowerLeg.position.set(0, -lowerLegLength / 2, legSide * 0.092);
+    // Outboard of the thigh by both capsule radii, so the knee does not overlap.
+    lowerLeg.position.set(0, -lowerLegLength / 2, legSide * (0.105 * FIGURE_SCALE + 0.004));
     lowerLeg.userData.role = 'person-lower-leg';
     knee.add(lowerLeg);
     lowerLegs.push(lowerLeg);
     const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30, 0.10, 0.08),
+      new THREE.BoxGeometry(0.30 * FIGURE_SCALE, 0.10, 0.08 * FIGURE_SCALE),
       darkMaterial,
     );
-    foot.position.set(-0.04, -lowerLegLength - 0.05, 0);
+    foot.position.set(-0.04 * FIGURE_SCALE, -lowerLegLength - 0.05, 0);
     foot.userData.role = 'person-foot-above-peripheral-step';
     knee.add(foot);
     feet.push(foot);
@@ -515,7 +523,7 @@ function externalPersonTreadmill(movement) {
       kneePivots[index].rotation.z = leg.lowerAngle;
       const ankleRotation = leg.soleAngle - leg.upperAngle - leg.lowerAngle;
       feet[index].rotation.z = ankleRotation;
-      feet[index].position.set(-0.04, -0.05, 0).applyAxisAngle(Z_AXIS, ankleRotation);
+      feet[index].position.set(-0.04 * FIGURE_SCALE, -0.05, 0).applyAxisAngle(Z_AXIS, ankleRotation);
       feet[index].position.y -= lowerLegLength;
     }
     root.userData.currentState = state;
@@ -581,6 +589,9 @@ function externalPersonTreadmill(movement) {
       gaitAngularSpeed,
       gaitCyclesPerWheelTurn,
       gaitGeometry,
+      figureScale: FIGURE_SCALE,
+      upperLegLength,
+      lowerLegLength,
       legPhaseOffsets,
       personCenterOfMass,
       personStationAngle,

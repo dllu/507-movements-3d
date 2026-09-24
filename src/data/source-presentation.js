@@ -518,7 +518,7 @@ export default {
   381: {
     camera: [1, 0.012, 0],
     remove: ['white-.*', 'workpiece-longitudinal-grain-line'],
-    note: "End elevation matching Brown's upper transverse section: the bed, the flush dovetailed cheeks and wedges, and the board standing on edge between them; Brown's lower figure, the plan of the diverging cheeks and wedges, is the top view. The white datums and grain lines are not drawn.",
+    note: "Both of Brown's figures: above, the end elevation matching his transverse section (the bed, the flush dovetailed cheeks and wedges, and the board standing on edge between them); below, a display copy of the same parts turned to show his plan of the cheeks diverging from the throat at the left, the wedges driven along them and the board between. The white datums and grain lines are not drawn.",
   },
   382: {
     remove: ['white-stem-height-and-yaw-index', 'white-mirror-orientation-index'],
@@ -592,8 +592,8 @@ export default {
   },
   400: {
     camera: [0, 0.08, 1],
-    remove: ['fixed-four-motion-feed-base', 'fixed-camshaft-bearing-support', 'fixed-work-plate-(?:left|right)-of-feed-dog-slot', 'fixed-horizontal-guide-for-carrier-A', 'white-.*'],
-    note: 'Side elevation of the forked bar A running out to the feeder, B\'s toothed end beyond it, cam C on its shaft and the return spring; no base, bearing supports, work plate, guides or white indices are drawn.',
+    remove: ['fixed-four-motion-feed-base', 'fixed-camshaft-bearing-support', 'bored-fixed-camshaft-bearing', 'fixed-work-plate-(?:left|right)-of-feed-dog-slot', 'fixed-horizontal-guide-for-carrier-A', 'white-.*'],
+    note: 'Side elevation of the forked bar A running out to the feeder, B\'s toothed end beyond it, the thin cam C on its long bare shaft and the return spring; no base, bearings or their supports, work plate, guides or white indices are drawn.',
   },
   401: {
     remove: ['fixed-floor-base', 'fixed-wheel-shaft-standard', 'fixed-treadle-pivot-standard'],

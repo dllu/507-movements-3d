@@ -55,16 +55,21 @@ function gravityDropStamp(movement) {
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
 
-  // The engraving has six teeth over a six-tenths arc and a four-tenths
-  // toothless sector. Treating the visible pitch as one tenth-turn makes the
-  // rack and sector close exactly at every tooth handoff.
-  const virtualToothCount = 10;
-  const sectorToothCount = 6;
+  // The engraving has eight teeth at about twenty-degree spacing over the
+  // upper-left of a large pinion whose remaining arc is blank. Treating the
+  // pitch as one eighteenth-turn makes the rack and sector close exactly at
+  // every tooth handoff; the rack's fine teeth then match Brown's pitch.
+  const virtualToothCount = 18;
+  const sectorToothCount = 8;
   const missingToothCount = virtualToothCount - sectorToothCount;
   const toothPitchAngle = fullTurn / virtualToothCount;
   const engagementFraction = sectorToothCount / virtualToothCount;
-  const pitchRadius = 0.92;
-  const workingMesh = stampMeshParameters(pitchRadius, virtualToothCount);
+  const pitchRadius = 1.30;
+  // Brown's square teeth stand about three-quarters of a pitch deep; involute
+  // teeth that deep (contact ratio about 1.3) replace the shallow
+  // contact-ratio-one teeth.
+  const meshAddendum = 0.13;
+  const workingMesh = stampMeshParameters(pitchRadius, virtualToothCount, meshAddendum);
   const rackToothPitch = pitchRadius * toothPitchAngle;
   const rackStroke = sectorToothCount * rackToothPitch;
   const cyclesPerMinute = 15;
@@ -98,7 +103,7 @@ function gravityDropStamp(movement) {
     + 0.5 * fallingMass * rackLiftVelocity ** 2;
   const impactKineticEnergy = 0.5 * fallingMass * impactVelocity ** 2;
 
-  const wheelCenter = new THREE.Vector2(1.20, 0.30);
+  const wheelCenter = new THREE.Vector2(0.28 + pitchRadius, 0.30);
   const rackCenterX = 0;
   const rackBarWidth = 0.20;
   const rackToothRootX = rackCenterX + rackBarWidth / 2;
@@ -120,17 +125,17 @@ function gravityDropStamp(movement) {
   // The rack rides the withdrawing final tooth above the pitch-line stroke,
   // so the smooth lower rod is long enough for the head and collar to stay
   // below the lower guide at the carried apex.
-  const lowerRodExtension = 0.36;
+  const lowerRodExtension = 0.80;
   const rackBarBottomY = -6.33 - lowerRodExtension;
   const rackBarTopY = 3.62;
   const rackBarLength = rackBarTopY - rackBarBottomY;
   const rackToothBaseY = wheelCenter.y + workingMesh.rackOffset;
-  const firstRackToothIndex = -7;
-  const lastRackToothIndex = 5;
+  const firstRackToothIndex = -(sectorToothCount + 1);
+  const lastRackToothIndex = 4;
   const rackToothThickness = rackToothPitch * 0.38;
   const upperGuideY = 3.42;
   const lowerGuideY = -2.36;
-  const stampFaceRestY = -7.02 - lowerRodExtension;
+  const stampFaceRestY = -7.02 - lowerRodExtension - 1.37;
   const workpieceTopY = stampFaceRestY;
   const anvilTopY = workpieceTopY - 0.13;
   const impactPoint = new THREE.Vector3(
@@ -288,7 +293,7 @@ function gravityDropStamp(movement) {
   const pinion = new THREE.Group();
   pinion.position.set(wheelCenter.x, wheelCenter.y, gearPlaneZ);
   pinion.userData.role =
-    'continuous-clockwise-six-tooth-mutilated-pinion-on-horizontal-shaft';
+    'continuous-clockwise-eight-tooth-mutilated-pinion-on-horizontal-shaft';
   const gearBody = cylinderAlongZ(
     gearRootRadius,
     gearDepth,
@@ -365,7 +370,7 @@ function gravityDropStamp(movement) {
     (sectorToothCount + 0.1) * toothPitchAngle;
   blankSectorIndicator.position.z = gearDepth / 2 + 0.033;
   blankSectorIndicator.userData.role =
-    'face-arc-identifying-four-position-toothless-sector';
+    'face-arc-identifying-ten-position-toothless-sector';
   const pinionPitchContactAnchor = new THREE.Object3D();
   pinionPitchContactAnchor.position.z = jointPlaneZ - gearPlaneZ;
   pinionPitchContactAnchor.userData.role =
@@ -643,7 +648,7 @@ function gravityDropStamp(movement) {
       releaseMechanicalEnergy,
       risingAfterRelease: freeFlight && rackVelocity > 0,
       stage: gearEngaged
-        ? 'six-tooth-sector-raises-rack-and-stamp'
+        ? 'toothed-sector-raises-rack-and-stamp'
         : freeFlight
           ? rackVelocity > 0
             ? 'released-stamp-coasts-upward-under-gravity'
@@ -763,6 +768,8 @@ function gravityDropStamp(movement) {
   };
 
   root.userData.archetype =
+    // Catalog archetype identifier (src/data/movements.json); the sector now
+    // carries Brown's eight teeth.
     'gravity-drop-stamp-with-six-tooth-mutilated-pinion';
   root.userData.blocks = {
     anvil,
@@ -851,6 +858,7 @@ function gravityDropStamp(movement) {
     jointPlaneZ,
     lastRackToothIndex,
     lowerGuideY,
+    meshAddendum,
     missingToothCount,
     pitchLineX,
     pitchRadius,
@@ -879,7 +887,7 @@ function gravityDropStamp(movement) {
     workpieceTopY,
   };
   root.userData.mechanism =
-    'continuous-clockwise-horizontal-shaft-carries-one-six-tooth-mutilated-pinion-which-raises-one-single-sided-vertical-rack-and-heavy-stamp-for-six-pitches-then-its-four-position-blank-sector-releases-the-rack-to-coast-rise-fall-under-gravity-impact-the-lower-stop-and-dwell-before-reengagement';
+    'continuous-clockwise-horizontal-shaft-carries-one-eight-tooth-mutilated-pinion-which-raises-one-single-sided-vertical-rack-and-heavy-stamp-for-eight-pitches-then-its-ten-position-blank-sector-releases-the-rack-to-coast-rise-fall-under-gravity-impact-the-lower-stop-and-dwell-before-reengagement';
   root.userData.sourceAnimation = {
     available: false,
     officialCanvasModelPresent: false,
@@ -897,7 +905,7 @@ function gravityDropStamp(movement) {
       virtualToothCount,
     },
     referenceScope:
-      'engraving topology, six visible sector teeth, four-position blank arc, clockwise lift direction, single-sided rack, two rack guides, long rod, and heavy stamp head',
+      'engraving topology, eight visible sector teeth, ten-position blank arc, clockwise lift direction, single-sided rack, two rack guides, long rod, and heavy stamp head',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -905,7 +913,7 @@ function gravityDropStamp(movement) {
       imageHeight: 525,
       imageWidth: 525,
       inferredTopology:
-        'six consecutive teeth on a ten-position pinion lift a single-sided vertical rack; its remaining four-position blank sector releases the guided rack and stamp',
+        'eight consecutive teeth on an eighteen-position pinion lift a single-sided vertical rack; its remaining ten-position blank sector releases the guided rack and stamp',
       measurementUncertaintyPixels: 7,
       rasterGearCenter: new THREE.Vector2(305, 216),
       rasterGearOuterRadius: 70,
@@ -931,7 +939,7 @@ function gravityDropStamp(movement) {
     engagedVelocityConstraint:
       'rackVelocity = -driverAngularVelocity * pitchRadius',
     lift:
-      'six installed pinion teeth raise the rack exactly six rack pitches per shaft revolution',
+      'eight installed pinion teeth raise the rack exactly eight rack pitches per shaft revolution',
     meshPhaseConstraint:
       'gearContactCoordinate + rackContactCoordinate = -0.5 while engaged',
   };
@@ -1074,10 +1082,12 @@ function carryRackOnFiniteTeeth(model) {
   };
 
   const analyticStateAtTime = d.stateAtTime;
-  // The entering tooth's trailing flank reaches the rack 0.0033 deep if the
-  // stamp rests at the lift datum; the workpiece and anvil sit a little
-  // lower so the stamp rests clear and the tooth then picks it up.
-  const restDisplacement = -0.008;
+  // With the plate's fine pitch the entering tooth sweeps across about two
+  // rack pitches before the pitch point, so a stamp resting at the lift datum
+  // would sit in its path. The workpiece and anvil sit a quarter unit lower:
+  // the entering tooth's tip then meets the next rack tooth from below and
+  // picks the stamp up continuously into the pitch-line lift.
+  const restDisplacement = -0.25;
   for (const fixedPart of [b.anvil, b.workpiece]) fixedPart.position.y += restDisplacement;
   // Step the release window (shifted time 0 is the analytic release).
   const dt = 0.002;
@@ -1110,7 +1120,7 @@ function carryRackOnFiniteTeeth(model) {
     + 2 * gravity * (freeStart.y - restDisplacement))) / gravity;
   const impactTime = freeStart.time + fallTime;
   const impactVelocity = freeStart.v - gravity * fallTime;
-  if (impactTime > period * 0.35) throw new Error('351: carried rack lands too late');
+  if (impactTime > period * (1 - g.engagementFraction) * 0.8) throw new Error('351: carried rack lands too late');
 
   const stateAtTime = (rawTime) => {
     const state = analyticStateAtTime(rawTime);
@@ -1177,13 +1187,16 @@ function carryRackOnFiniteTeeth(model) {
     const state = stateAtTime(updateTime);
     b.rack.position.y = state.rackDisplacement;
     b.rackPitchContactAnchor.position.y = b.pinion.position.y - state.rackDisplacement;
+    // Publish the carried stop state: an entering tooth lifts the rack off
+    // the lowered stop before the analytic pickup.
+    d.contacts.stampAtLowerStop.engaged = state.lowerStopEngaged;
     d.kinematics = state;
   };
   model.update(0);
   // Full carried travel: the higher apex and the lowered rest.
   d.cameraFitBounds.min.y -= 0.40;
   d.cameraFitBounds.max.y += 0.40;
-  d.reconstructionNote = 'Six compatible involute teeth lift a straight rack. After release the rack is stepped under gravity and held to the nearest height clear of the finite teeth, so it follows the withdrawing final tooth before falling from that later release; the entering tooth lifts the resting rack at pickup. This inelastic kinematic projection is not solved contact dynamics: rebound, tooth elasticity and impact forces are not solved. A longer lower rod keeps the head below the lower guide at the carried apex.';
+  d.reconstructionNote = 'Eight compatible involute teeth lift a straight rack. After release the rack is stepped under gravity and held to the nearest height clear of the finite teeth, so it follows the withdrawing final tooth before falling from that later release; the entering tooth lifts the resting rack at pickup. This inelastic kinematic projection is not solved contact dynamics: rebound, tooth elasticity and impact forces are not solved. A longer lower rod keeps the head below the lower guide at the carried apex.';
   d.stampCarriedContact = {
     carriedImpactTime: impactTime,
     carriedImpactVelocity: impactVelocity,
@@ -1194,37 +1207,84 @@ function carryRackOnFiniteTeeth(model) {
   };
 }
 
-// Brown draws a broad rod (about two-thirds of the pinion's pitch radius)
+// Brown draws a broad rod (about three-quarters of the pinion's pitch radius)
 // between two broad collars, the rack teeth running only from just below the
-// pinion up to the top collar. The rod is widened away from its teeth, the
-// collars broadened, the head recentred, the unused rack teeth hidden and the
-// rod shortened above the highest working tooth. The two C guides move below
-// the pinion so the shortened rod stays in both at rest and at full lift; the
-// plate does not draw them and source presentation removes them.
+// pinion up to the top collar, and the rod continuing above that collar off
+// the plate. At the raised pose each collar sits about three pitch radii from
+// the pinion axis, and the six-sided head below the lower collar is about one
+// pitch radius tall, flat-topped and widest a third of the way down. The rod
+// is widened away from its teeth, the collars broadened, the head reshaped
+// and recentred, the unused rack teeth hidden and the rod ended a short stub
+// above the top collar. The two C guides move below the pinion so the rod
+// stays in both at rest and at full lift; the plate does not draw them (nor
+// the anvil or workpiece) and source presentation removes them.
 function matchBrownStampProportions(model) {
   const d = model.root.userData, b = d.blocks, g = d.geometry;
-  const rodWidth = 0.62;
+  const rodWidth = 0.95;
   const right = b.rackBar.geometry.parameters.width / 2 + b.rackBar.position.x;
   const left = right - rodWidth;
   const centerX = (left + right) / 2;
-  const workingTeeth = b.rackTeeth.filter(tooth => tooth.userData.index >= -6 && tooth.userData.index <= 1);
+  const collarWidth = 2.35;
+  const topCollarHeight = 0.64;
+  // Brown's top collar overhangs the rod on the pinion side, so it must stay
+  // above the pinion's tip circle even at the stamp's lowered rest; the rack
+  // teeth (all in mesh phase) run on up to it as he draws them.
+  const collarRight = centerX + collarWidth / 2;
+  const tipRadius = d.stampTripParts.mesh.tipRadius;
+  const pinionTopAtCollar = g.wheelCenter.y
+    + Math.sqrt(Math.max(0, tipRadius ** 2 - (g.wheelCenter.x - collarRight) ** 2));
+  const restDisplacement = d.stampCarriedContact.restDisplacement;
+  const topCollarBottom = pinionTopAtCollar - restDisplacement + 0.06;
+  const workingTeeth = b.rackTeeth.filter(tooth => tooth.userData.index >= -g.sectorToothCount
+    && tooth.position.y + g.rackToothPitch / 2 < topCollarBottom - 0.02);
   for (const tooth of b.rackTeeth) tooth.visible = workingTeeth.includes(tooth);
-  const highestToothTop = Math.max(...workingTeeth.map(tooth => tooth.position.y)) + g.rackToothPitch / 2;
-  const rodTop = highestToothTop + 0.16;
+  const rodTop = topCollarBottom + topCollarHeight + 0.55;
   const rodBottom = g.rackBarBottomY;
   b.rackBar.geometry.dispose();
   b.rackBar.geometry = new THREE.BoxGeometry(rodWidth, rodTop - rodBottom, g.rackDepth * 0.72);
   b.rackBar.position.set(centerX, (rodTop + rodBottom) / 2, b.rackBar.position.z);
-  const collarWidth = 1.40;
   b.topRodCap.geometry.dispose();
-  b.topRodCap.geometry = new THREE.BoxGeometry(collarWidth, 0.40, 0.51);
-  b.topRodCap.position.set(centerX, rodTop + 0.20, b.topRodCap.position.z);
+  b.topRodCap.geometry = new THREE.BoxGeometry(collarWidth, topCollarHeight, 0.51);
+  b.topRodCap.position.set(centerX, topCollarBottom + topCollarHeight / 2, b.topRodCap.position.z);
   b.lowerCollar.geometry.dispose();
-  b.lowerCollar.geometry = new THREE.BoxGeometry(collarWidth, 0.46, 0.68);
+  b.lowerCollar.geometry = new THREE.BoxGeometry(collarWidth, 0.72, 0.68);
   b.lowerCollar.position.x = centerX;
   b.lowerCollar.position.y -= 0.11;
-  b.stampDie.position.x = centerX;
+  // Head: flat top 1.40 wide, widest 1.66 a third down, flat face 1.08 wide.
+  const faceY = g.stampFaceRestY;
+  const headHeight = 1.30;
+  const headShape = new THREE.Shape();
+  headShape.moveTo(-0.54, -headHeight / 2);
+  headShape.lineTo(0.54, -headHeight / 2);
+  headShape.lineTo(0.83, 0.22);
+  headShape.lineTo(0.70, headHeight / 2);
+  headShape.lineTo(-0.70, headHeight / 2);
+  headShape.lineTo(-0.83, 0.22);
+  headShape.closePath();
+  b.stampDie.geometry.dispose();
+  b.stampDie.geometry = centeredExtrusion(headShape, 0.72);
+  b.stampDie.position.set(centerX, faceY + headHeight / 2, b.stampDie.position.z);
+  b.dieFace.geometry.dispose();
+  b.dieFace.geometry = centeredExtrusion(rectangularShape(1.04, 0.055), 0.74);
   b.dieFace.position.x = centerX;
+  // Brown's narrow neck joins the lower collar to the head.
+  const collarBottom = b.lowerCollar.position.y - 0.36;
+  const headTop = faceY + headHeight;
+  const neck = new THREE.Mesh(
+    new THREE.BoxGeometry(0.52, collarBottom - headTop + 0.02, 0.44),
+    b.rackBar.material,
+  );
+  neck.position.set(centerX, (collarBottom + headTop) / 2, 0);
+  neck.userData.role = 'narrow-neck-between-lower-collar-and-stamp-head';
+  b.rack.add(neck);
+  b.stampNeck = neck;
+  // The shaft ends just proud of the pinion hub, as Brown's boss does,
+  // instead of standing far out in front of the face.
+  const shaftBack = b.inputShaft.position.z - 0.74;
+  const shaftFront = g.gearPlaneZ + 0.36 + 0.06;
+  b.inputShaft.geometry.dispose();
+  b.inputShaft.geometry = new THREE.CylinderGeometry(0.105, 0.105, shaftFront - shaftBack, 28);
+  b.inputShaft.position.z = (shaftFront + shaftBack) / 2;
   const guideYs = [-0.95, -2.36];
   b.guideAssemblies.forEach(({ guide, frontLip, rearLip, leftJaw }, index) => {
     guide.position.y = guideYs[index];
@@ -1235,12 +1295,22 @@ function matchBrownStampProportions(model) {
       lip.position.x = (left - 0.20 + right - 0.02) / 2;
     }
   });
+  // The undrawn anvil is not needed: the thin workpiece is the lower stop.
+  b.anvil.visible = false;
   g.brownRodWidth = rodWidth;
   g.brownRodTopLocalY = rodTop;
-  d.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.95, -8.0, -0.65),
-    new THREE.Vector3(2.4, rodTop + g.rackStroke + 1.0, 1),
-  );
+  // Frame the swept silhouette of every visible part over the cycle.
+  const bounds = new THREE.Box3();
+  const period = g.cyclePeriod;
+  for (let i = 0; i <= 256; i += 1) {
+    model.update(period * i / 256);
+    model.root.updateMatrixWorld(true);
+    model.root.traverseVisible((object) => {
+      if (object.isMesh) bounds.expandByObject(object);
+    });
+  }
+  d.sweptBounds = bounds.clone();
+  d.cameraFitBounds = bounds.clone().expandByVector(new THREE.Vector3(0.05, 0.05, 0.05));
   model.update(0);
 }
 

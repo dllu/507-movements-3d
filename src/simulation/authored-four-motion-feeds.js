@@ -342,8 +342,9 @@ function makeCompoundCam({
   cam.add(faceRim);
 
   const shaft = cylinderAlongAxis(
-    0.15,
-    axialBaseFront + axialStroke - backFace + 0.90,
+    0.12,
+    // Brown's shaft runs well out either side of the thin cam.
+    axialBaseFront + axialStroke - backFace + 1.90,
     new THREE.Vector3(1, 0, 0),
     darkMaterial,
     30,
@@ -454,7 +455,7 @@ function makeCarrierA({
   const projection = new THREE.Group();
   projection.userData.role = 'downward-carrier-projection-following-axial-cam-face';
   // The face button runs 0.50 above the cam axis; the legs rise to the rails.
-  const rearX = axialBaseFront + 0.93, contactY = camCenterY + 0.50;
+  const rearX = axialBaseFront + 0.60, contactY = camCenterY + 0.50;
   const legTop = pivotY + 0.37;
   for (const z of [-0.25, 0.25]) {
     const leg = new THREE.Mesh(new THREE.BoxGeometry(0.16, legTop - contactY, 0.13), carrierMaterial);
@@ -462,8 +463,8 @@ function makeCarrierA({
   }
   const bridge = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.14, 0.63), carrierMaterial);
   bridge.position.set(rearX, contactY, 0);projection.add(bridge);
-  const neck = cylinderAlongAxis(0.045, 0.85, new THREE.Vector3(1, 0, 0), darkMaterial, 24);
-  neck.position.set(axialBaseFront + 0.505, contactY, 0);projection.add(neck);
+  const neck = cylinderAlongAxis(0.045, rearX - axialBaseFront - 0.08, new THREE.Vector3(1, 0, 0), darkMaterial, 24);
+  neck.position.set((rearX + axialBaseFront + 0.08) / 2, contactY, 0);projection.add(neck);
   carrier.add(projection);
   const projectionContact = new THREE.Mesh(new THREE.SphereGeometry(0.08, 40, 24), darkMaterial);
   projectionContact.position.set(axialBaseFront + 0.08, contactY, 0);
@@ -556,14 +557,17 @@ function fourMotionFeed(movement) {
   // radial profile selects B's pivot angle while its variable front face
   // selects A's translation. The profiles use the same angular schedule.
   const cycleDuration = 6;
-  const feedStroke = 0.68;
+  // Brown's cam C is thin along its shaft (about half its diameter). B's pad
+  // slides across the periphery by one feed stroke and the front face adds
+  // one more, so the stroke is shortened to keep the cam that narrow.
+  const feedStroke = 0.32;
   const radialLift = 0.29;
   // Brown's cam C is small beside the bars: its radius is reduced and its
   // axis raised by the same amount, so every working contact keeps its height.
   const camBaseRadius = 0.60;
   const camCenterY = 0.05;
-  const camBackFace = 0.15;
-  const camAxialBaseFront = 1.12;
+  const camBackFace = 0.30;
+  const camAxialBaseFront = 0.75; // exact in float32, so the rest face sits at carrier zero
   const camProfileSampleCount = 720;
   const pivotX = -2.58;
   const pivotY = 0.88;

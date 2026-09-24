@@ -90,7 +90,9 @@ function orthogonalRollerGrooveIndexer(movement) {
   const driverShaftLength = 1.55;
   const rollerRadialCenter = 1.04;
   const rollerLength = 0.35;
-  const rollerRadius = 0.125;
+  // Brown draws slender spool rollers, about a sixth of the pin-wheel radius
+  // across, so the grooves read as narrow oblique cuts.
+  const rollerRadius = 0.078;
   const rollerInnerRadius = rollerRadialCenter - rollerLength / 2;
   const rollerOuterRadius = rollerRadialCenter + rollerLength / 2;
   const grooveCenterRadius = outputRadius;
@@ -494,6 +496,51 @@ function orthogonalRollerGrooveIndexer(movement) {
     'large-horizontal-output-wheel-with-cylindrical-working-face';
   outputRotor.add(outputWheel);
   const outputEndRims = []; // The closed profiled end faces include the groove mouths.
+  // Brown rules the drum face into panels: a vertical line stands where one
+  // groove leaves the top and the next enters the bottom. Each line is a
+  // flush dark strip over the intact face between those two groove mouths.
+  const panelLineMaterial = matte(PALETTE.ink, { roughness: 0.7 });
+  const panelLineHalfAngle = 0.011 / grooveData.radius;
+  const panelLines = [];
+  {
+    const {angular, vertical, height, angles, values, pitch} = grooveData;
+    const rowIntact = (row) => {
+      for (let i = 0; i < angular; i += 1) {
+        if (values[row * angular + i] >= grooveData.radius - 1e-8) continue;
+        const delta = positiveModulo(angles[row * angular + i] + pitch / 2, pitch) - pitch / 2;
+        if (Math.abs(delta) < panelLineHalfAngle + 0.004) return false;
+      }
+      return true;
+    };
+    let first = 0;
+    while (first < vertical && !rowIntact(first)) first += 1;
+    let last = vertical;
+    while (last > first && !rowIntact(last)) last -= 1;
+    const bottom = -height / 2 + height * (first + 1) / vertical;
+    const top = -height / 2 + height * (last - 1) / vertical;
+    for (let index = 0; index < grooveCount; index += 1) {
+      const angle = Math.PI - index * pitch;
+      const line = new THREE.Mesh(
+        new THREE.CylinderGeometry(
+          grooveData.radius + 0.0008,
+          grooveData.radius + 0.0008,
+          top - bottom,
+          2,
+          1,
+          true,
+          Math.PI / 2 - angle - panelLineHalfAngle,
+          2 * panelLineHalfAngle,
+        ),
+        panelLineMaterial,
+      );
+      line.position.y = (top + bottom) / 2;
+      line.castShadow = false;
+      line.userData.surfacePaint = true;
+      line.userData.role = 'engraved-panel-line-between-oblique-grooves';
+      outputWheel.add(line);
+      panelLines.push(line);
+    }
+  }
   const outputShaft = new THREE.Mesh(
     new THREE.CylinderGeometry(0.105, 0.105, 3.20, 32),
     darkMaterial,

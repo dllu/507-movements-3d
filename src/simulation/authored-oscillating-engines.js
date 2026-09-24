@@ -1213,10 +1213,11 @@ function invertedPendulumEngine(movement) {
       0.18 * sourceScale),
     poly(circle([cylinderPivot.x, cylinderPivot.y], 0.55 * sourceScale, 96)),
   );
+  // The block runs on below the frame, as Brown's runs off the plate.
   const lowerBlockOutline = clip.union(
     poly([
       [-2.9 * sourceScale, -0.49 * sourceScale], [3.0 * sourceScale, -0.49 * sourceScale],
-      [3.0 * sourceScale, -2.6 * sourceScale], [-2.9 * sourceScale, -2.6 * sourceScale],
+      [3.0 * sourceScale, -6.0 * sourceScale], [-2.9 * sourceScale, -6.0 * sourceScale],
     ]),
     poly(circle([crankCenter.x, crankCenter.y - 0.35 * sourceScale], 0.95 * sourceScale, 96)),
   );
@@ -1511,11 +1512,13 @@ function invertedPendulumEngine(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
-  // Brown's crop: just above the trunnion boss, cutting through the crank block.
+  // Brown's crop: just above the trunnion boss, cutting through the crank
+  // block. The lower edge sits just under the crank's swept silhouette so the
+  // crank stays whole through the turn while the block is still cut as drawn.
   root.userData.sweptBounds = root.userData.cameraFitBounds;
   root.userData.cameraDistanceScale = 0.96;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.5 * sourceScale, -1.0 * sourceScale, -1.2),
+    new THREE.Vector3(-5.5 * sourceScale, -3.0 * sourceScale, -1.2),
     new THREE.Vector3(5.7 * sourceScale, 11.0 * sourceScale, 1.5),
   );
   markShadows(root);

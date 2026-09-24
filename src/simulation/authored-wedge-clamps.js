@@ -325,12 +325,42 @@ function boweryJoinersClamp(movement) {
   throatDatum.userData.role = 'white-narrow-throat-datum';
   root.add(throatDatum);
 
+  // Brown's plate draws two figures: the transverse section above and, below
+  // it, the plan of the diverging cheeks and wedges. The default camera looks
+  // along the bed at the section, so a display copy of the same parts is
+  // turned to face the camera top-first and set below it at the same scale,
+  // throat to the left as in the plan. It shares geometry and follows the
+  // working wedges; it is a view, not a second clamp.
+  const planDisplay = new THREE.Group();
+  planDisplay.userData.role = 'plan-view-display-copy-of-clamp';
+  planDisplay.userData.displayCopy = true;
+  planDisplay.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+    new THREE.Vector3(0, 0, -1),
+    new THREE.Vector3(1, 0, 0),
+    new THREE.Vector3(0, -1, 0),
+  ));
+  const planGap = 0.62;
+  planDisplay.position.set(0, bed.position.y - bedThickness / 2 - planGap - bedHalfWidth, 0);
+  const planCopy = (part) => {
+    const copy = new THREE.Mesh(part.geometry, part.material);
+    copy.position.copy(part.position);
+    copy.quaternion.copy(part.quaternion);
+    copy.userData.role = `plan-view-display-copy-of-${part.userData.role}`;
+    copy.userData.displayCopy = true;
+    planDisplay.add(copy);
+    return copy;
+  };
+  const planParts = [bed, ...cheeks, workpiece].map(planCopy);
+  const planWedges = wedges.map(planCopy);
+  root.add(planDisplay);
+
   const update = (time) => {
     const state = stateAtTime(time);
     for (let index = 0; index < wedges.length; index += 1) {
       const wedgeState = state.wedgeStates[index];
       wedges[index].position.x = wedgeState.axialDisplacement;
       wedges[index].position.z = wedgeState.lateralDisplacement;
+      planWedges[index].position.copy(wedges[index].position);
       wedgeContactStrips[index].position.x =
         (wedgeMinimumX + wedgeMaximumX) / 2
           + wedgeState.axialDisplacement;
@@ -357,6 +387,9 @@ function boweryJoinersClamp(movement) {
       cheeks,
       dovetailLips,
       grainLines,
+      planDisplay,
+      planParts,
+      planWedges,
       throatDatum,
       wedgeContactStrips,
       wedges,
@@ -484,6 +517,11 @@ function boweryJoinersClamp(movement) {
   root.userData.cameraFov = 5;
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
+  // The section above would shade the plan copy below it; Brown's plan is unshaded.
+  planDisplay.traverse((object) => {
+    object.castShadow = false;
+    object.receiveShadow = false;
+  });
   return {
     cameraDirection: new THREE.Vector3(5.8, 6.7, 8.8),
     root,

@@ -151,8 +151,8 @@ test('movement 358 turns Sureda’s ten observations into one monotone fusee pro
   const data = model.root.userData;
   const { geometry, historicalTrial, profile, stateAtDriveTurns } = data;
 
-  // Six display turns carry Sureda's ten observations (0.6 turn each).
-  assert.equal(geometry.revolutionCount, 6);
+  // Ten display turns carry Sureda's ten observations (one turn each).
+  assert.equal(geometry.revolutionCount, 10);
   assert.equal(profile.sampledRadii.length, 10);
   const turnsPerObservation = geometry.revolutionCount / 10;
   near(
@@ -216,8 +216,9 @@ test('movement 358 obeys the local fusee radius and carriage-wheel no-slip laws'
     /first cord winds by exactly the length released by the second/);
 
   const differenceStep = 1e-6;
-  for (const turns of [0.04, 0.5, 1.3, 2.6, 4.1, 5.3, 5.96]) {
-    const turnRate = turns < 3 ? 0.73 : -0.61;
+  // Sample stations between the profile knots at (k + 0.5) turns.
+  for (const turns of [0.04, 0.83, 2.17, 4.33, 6.83, 8.83, 9.93]) {
+    const turnRate = turns < geometry.revolutionCount / 2 ? 0.73 : -0.61;
     const state = stateAtDriveTurns(turns, turnRate, 0.14);
     const previous = stateAtDriveTurns(turns - differenceStep);
     const next = stateAtDriveTurns(turns + differenceStep);
@@ -249,17 +250,19 @@ test('movement 358 has smooth physical reversals and exposes the decreasing-radi
   const data = model.root.userData;
   const { geometry, stateAtTime, timeline } = data;
 
-  // One crank turn per second at cruise: a comfortable 13.9 s cycle.
-  assert.equal(timeline.demonstrationPeriod, 13.9);
-  assert.equal(timeline.strokeDuration, 6.65);
+  // One crank turn per second at cruise over ten turns: a 22 s cycle.
+  assert.equal(timeline.demonstrationPeriod, 22);
+  assert.equal(timeline.strokeDuration, 10.7);
   assert.equal(timeline.dwellDuration, 0.3);
+  const stroke = timeline.strokeDuration;
+  const dwell = timeline.dwellDuration;
   const zero = stateAtTime(0);
-  const outEnd = stateAtTime(6.65);
-  const firstDwell = stateAtTime(6.8);
-  const returnStart = stateAtTime(6.95);
-  const returnEnd = stateAtTime(13.6);
-  const secondDwell = stateAtTime(13.75);
-  const closure = stateAtTime(13.9);
+  const outEnd = stateAtTime(stroke);
+  const firstDwell = stateAtTime(stroke + dwell / 2);
+  const returnStart = stateAtTime(stroke + dwell);
+  const returnEnd = stateAtTime(2 * stroke + dwell);
+  const secondDwell = stateAtTime(2 * stroke + 1.5 * dwell);
+  const closure = stateAtTime(2 * (stroke + dwell));
   assert.equal(zero.phase, 'large-to-small-radius-stroke');
   assert.equal(firstDwell.phase, 'small-radius-end-dwell');
   assert.equal(returnStart.phase, 'small-to-large-radius-return');
@@ -287,7 +290,7 @@ test('movement 358 has smooth physical reversals and exposes the decreasing-radi
     'cycle carriage closure');
 
   const earlyCruise = stateAtTime(1.3);
-  const lateCruise = stateAtTime(5.3);
+  const lateCruise = stateAtTime(stroke - 1.35);
   assert.ok(earlyCruise.driveTurnsPerSecond <= 1,
     'cruise stays within one crank turn per second');
   near(earlyCruise.driveTurnsPerSecond,
@@ -299,8 +302,8 @@ test('movement 358 has smooth physical reversals and exposes the decreasing-radi
   let previousOut = Infinity;
   let previousReturn = -Infinity;
   for (let index = 0; index <= 500; index += 1) {
-    const out = stateAtTime(6.65 * index / 500);
-    const returning = stateAtTime(6.95 + 6.65 * index / 500);
+    const out = stateAtTime(stroke * index / 500);
+    const returning = stateAtTime(stroke + dwell + stroke * index / 500);
     assert.ok(out.carriagePosition <= previousOut + 2e-14,
       `outstroke monotonic ${index}`);
     assert.ok(returning.carriagePosition >= previousReturn - 2e-14,
@@ -374,7 +377,7 @@ test('movement 358 renderer keeps every cord marker continuous across free and w
     `arc-length markers have no path-transition jump: ${maximumMarkerStep}`);
 
   // The rendered cycle opens mid-stroke, as Brown draws it.
-  model.update(6.65 / 2 - geometry.displayTimeOffset);
+  model.update(data.timeline.strokeDuration / 2 - geometry.displayTimeOffset);
   near(data.cordState.firstWrappedProgress, 0.5, 2e-15,
     'first cord half wound');
   near(data.cordState.secondWrappedProgress, 0.5, 2e-15,

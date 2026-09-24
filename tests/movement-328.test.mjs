@@ -542,7 +542,7 @@ test('movement 328 closes exactly and leaves movement 507 as the next draft', ()
     'right crank A closure');
   near(closure.crossheadY, start.crossheadY, 9e-16,
     'crosshead closure');
-  near(closure.unwrappedInputAngle, 10 * Math.PI, 0,
+  near(closure.unwrappedInputAngle - start.unwrappedInputAngle, 10 * Math.PI, 0,
     'five unwrapped input turns in the indexed assembly cycle');
 
   const movement507 = catalog.movements[506];

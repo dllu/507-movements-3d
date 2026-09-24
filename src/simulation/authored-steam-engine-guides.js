@@ -1265,7 +1265,7 @@ function verticalPlanedSlotPistonGuide(movement) {
   // standard's foot on the lower edge.
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-11.9 * sourceScale, -24.4 * sourceScale, -0.75),
-    new THREE.Vector3(14.1 * sourceScale, 2.4 * sourceScale, 0.90),
+    new THREE.Vector3(14.1 * sourceScale, 3.4 * sourceScale, 0.90),
   );
   root.userData.cameraDistanceScale = 0.96;
   markShadows(root);
@@ -1568,6 +1568,34 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
     bearingHousing,
     bearingBore,
   );
+
+  // Brown draws a short fixed shaft stub with a collar standing out from the
+  // right column's outer face, about six units below the crossbeam.
+  {
+    const stubY = -6.0 * sourceScale;
+    const stubStartX = rightGuideBarA.userData.centerX + columnWidth / 2;
+    const stubEndX = 11.0 * sourceScale;
+    const stubRadius = 0.62 * sourceScale;
+    const stub = new THREE.Mesh(
+      new THREE.CylinderGeometry(stubRadius, stubRadius, stubEndX - stubStartX, 32),
+      frameMaterial,
+    );
+    stub.rotation.z = Math.PI / 2;
+    stub.position.set((stubStartX + stubEndX) / 2, stubY, frameCenterZ);
+    stub.userData.fixed = true;
+    stub.userData.role = 'right-column-fixed-shaft-stub';
+    const collarRadius = 1.25 * sourceScale;
+    const collarWidth = 0.6 * sourceScale;
+    const collar = new THREE.Mesh(
+      new THREE.CylinderGeometry(collarRadius, collarRadius, collarWidth, 40),
+      darkMaterial,
+    );
+    collar.rotation.z = Math.PI / 2;
+    collar.position.set(stubStartX + 1.6 * sourceScale, stubY, frameCenterZ);
+    collar.userData.fixed = true;
+    collar.userData.role = 'right-column-shaft-stub-collar';
+    fixedFrame.add(stub, collar);
+  }
 
   const rotorParts = makeFlywheelCrankRotor({
     crankDepth,

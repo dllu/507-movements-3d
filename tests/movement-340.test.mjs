@@ -175,9 +175,9 @@ test('movement 340 preserves the official source construction and view', () => {
   assert.equal(official.nominalPistonLineX, 7.799671);
   assert.equal(official.pistonRodLength, 16.005141);
 
-  near(geometry.hiddenCrankRadius,
-    official.hiddenCrankRadius * geometry.sourceScale, 0,
-  'scaled hidden crank');
+  // Brown's ~31-degree beam needs a 3.7-unit hidden crank (official 2.5).
+  near(geometry.hiddenCrankRadius, 3.7 * geometry.sourceScale, 0,
+    'scaled plate hidden crank');
   near(geometry.hiddenConnectingRodLength,
     official.hiddenConnectingRodLength * geometry.sourceScale, 0,
   'scaled hidden connecting rod');
@@ -225,7 +225,7 @@ test('movement 340 preserves the official source construction and view', () => {
   disposeModel(model.root);
 });
 
-test('movement 340 retains the exact official hidden crank-rocker phase law', () => {
+test('movement 340 retains the official hidden crank-rocker phase law at plate amplitude', () => {
   const model = createMovementModel(catalog.movements[339]);
   const { canonicalStates, geometry, stateAtTime } = model.root.userData;
 
@@ -337,10 +337,11 @@ test('movement 340 repairs the canvas radius defect and improves C straightness'
     /too short to close/);
   near(geometry.physicalRadiusBarLength, 4.789956 * scale, 0,
     'scaled corrected E-A radius');
-  assert.ok(minimumCanvasGap / scale > 0.0471);
-  assert.ok(minimumCanvasGap / scale < 0.0473);
-  assert.ok(maximumCanvasGap / scale > 0.0636);
-  assert.ok(maximumCanvasGap / scale < 0.0638);
+  // At the plate amplitude the aimed canvas bar meets A only near the level
+  // beam and misses it by up to 0.42 unit at the steep plate tilt.
+  assert.ok(minimumCanvasGap / scale < 1e-5);
+  assert.ok(maximumCanvasGap / scale > 0.4212);
+  assert.ok(maximumCanvasGap / scale < 0.4213);
   near(maximumCanvasGap, geometry.maximumCanvasRadiusEndpointGap, 0,
     'stored maximum source radius-end gap');
   near(maximumPhysicalADifference,
@@ -349,31 +350,32 @@ test('movement 340 repairs the canvas radius defect and improves C straightness'
   near(maximumPhysicalCDifference,
     geometry.maximumPhysicalPointCDifferenceFromCanvas, 0,
   'stored maximum physical C correction');
-  assert.ok(maximumPhysicalCDifference / scale < 0.082);
-  assert.ok(geometry.maximumCanvasLateralDeviation / scale > 0.0161);
-  assert.ok(geometry.maximumCanvasLateralDeviation / scale < 0.0164);
-  assert.ok(geometry.maximumLateralDeviation / scale < 0.00063);
+  assert.ok(maximumPhysicalCDifference / scale < 1.013);
+  assert.ok(geometry.maximumCanvasLateralDeviation / scale > 0.4862);
+  assert.ok(geometry.maximumCanvasLateralDeviation / scale < 0.4863);
+  assert.ok(geometry.maximumLateralDeviation / scale < 0.0498);
   assert.ok(geometry.maximumCanvasLateralDeviation
-    > geometry.maximumLateralDeviation * 20);
+    > geometry.maximumLateralDeviation * 9.7);
   near(minimumC, geometry.minimumPistonY, 0,
     'stored lower piston extent');
   near(maximumC, geometry.maximumPistonY, 0,
     'stored upper piston extent');
-  assert.ok(geometry.outputStroke / scale > 4.99999);
-  assert.ok(geometry.outputStroke / scale < 5.00001);
+  assert.ok(geometry.outputStroke / scale > 8.6827);
+  assert.ok(geometry.outputStroke / scale < 8.6828);
   disposeModel(model.root);
 });
 
 test('movement 340 analytic rates and tangent limits match finite differences', () => {
   const model = createMovementModel(catalog.movements[339]);
   const { geometry, stateAtTime } = model.root.userData;
-  const h = 2e-4;
+  // Fourth-order central differences: the plate-amplitude drive makes the
+  // second-order stencil's truncation and roundoff exceed these tolerances.
+  const h = 1e-3;
   const samples = [0.13, 0.61, 1.0, 1.53, 2.18, 2.70, 3.53];
 
   for (const time of samples) {
-    const previous = stateAtTime(time - h);
-    const state = stateAtTime(time);
-    const next = stateAtTime(time + h);
+    const [minusTwo, previous, state, next, plusTwo] = [-2, -1, 0, 1, 2]
+      .map((k) => stateAtTime(time + k * h));
     assert.equal(state.rateMethod, 'analytic-two-circle-constraints');
     for (const [pointName, velocityName, accelerationName] of [
       ['hiddenCrankPin', 'hiddenCrankPinVelocity',
@@ -383,26 +385,34 @@ test('movement 340 analytic rates and tangent limits match finite differences', 
       ['pointA', 'pointAVelocity', 'pointAAcceleration'],
       ['pointC', 'pointCVelocity', 'pointCAcceleration'],
     ]) {
-      const finiteVelocity = next[pointName].clone()
-        .sub(previous[pointName]).multiplyScalar(1 / (2 * h));
-      const finiteAcceleration = next[pointName].clone()
-        .add(previous[pointName])
-        .addScaledVector(state[pointName], -2)
-        .multiplyScalar(1 / h ** 2);
+      const finiteVelocity = minusTwo[pointName].clone()
+        .addScaledVector(previous[pointName], -8)
+        .addScaledVector(next[pointName], 8)
+        .addScaledVector(plusTwo[pointName], -1)
+        .multiplyScalar(1 / (12 * h));
+      const finiteAcceleration = minusTwo[pointName].clone()
+        .multiplyScalar(-1)
+        .addScaledVector(previous[pointName], 16)
+        .addScaledVector(state[pointName], -30)
+        .addScaledVector(next[pointName], 16)
+        .addScaledVector(plusTwo[pointName], -1)
+        .multiplyScalar(1 / (12 * h ** 2));
       vector2Near(state[velocityName], finiteVelocity, 8e-8,
         `${pointName} velocity at ${time}`);
       vector2Near(state[accelerationName], finiteAcceleration, 8e-6,
         `${pointName} acceleration at ${time}`);
     }
     for (const linkName of ['pillar', 'beam', 'radiusBar']) {
-      const finiteAngularVelocity = angleDifference(
-        next[linkName].angle,
-        previous[linkName].angle,
-      ) / (2 * h);
+      const angle = (other) => angleDifference(other[linkName].angle,
+        state[linkName].angle);
+      const finiteAngularVelocity = (angle(minusTwo) - 8 * angle(previous)
+        + 8 * angle(next) - angle(plusTwo)) / (12 * h);
       const finiteAngularAcceleration = (
-        next[linkName].angularVelocity
-          - previous[linkName].angularVelocity
-      ) / (2 * h);
+        minusTwo[linkName].angularVelocity
+          - 8 * previous[linkName].angularVelocity
+          + 8 * next[linkName].angularVelocity
+          - plusTwo[linkName].angularVelocity
+      ) / (12 * h);
       near(state[linkName].angularVelocity, finiteAngularVelocity, 2e-8,
         `${linkName} angular velocity at ${time}`);
       near(state[linkName].angularAcceleration,
@@ -412,8 +422,9 @@ test('movement 340 analytic rates and tangent limits match finite differences', 
   }
 
   let tangent = stateAtTime(0);
-  for (let sample = 1; sample <= 16384; sample += 1) {
-    const state = stateAtTime(geometry.cyclePeriod * sample / 16384);
+  // The plate-amplitude beam crosses the tangent quickly: search finely.
+  for (let sample = 1; sample <= 65536; sample += 1) {
+    const state = stateAtTime(geometry.cyclePeriod * sample / 65536);
     if (Math.abs(state.radiusConstraintDeterminant)
       < Math.abs(tangent.radiusConstraintDeterminant)) tangent = state;
   }
@@ -510,7 +521,8 @@ test('movement 340 renderer binds D, B, A, C, F, and E in real layers', () => {
   assert.notEqual(blocks.pillar, blocks.radiusBar);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 7.1);
+  // At the plate's 30-degree tilt the beam spans less width than when level.
+  assert.ok(size.x > 6.6);
   assert.ok(size.y > 8.3);
   assert.ok(size.z > 1.4,
     'wall, pillar, rods, beam, radius bar and bracket occupy real depth');

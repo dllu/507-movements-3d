@@ -189,7 +189,9 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   const sourceYokeEndCenter = 7.25;
   const sourceYokeOuterHalfHeight = 3.5;
   const sourceStemHalfWidth = 1;
-  const sourceStemEnd = 23;
+  // Brown's stems run off the plate; 26 (not 23) keeps each stem end outside
+  // the guide-to-guide frame even at the far end of the stroke.
+  const sourceStemEnd = 26;
   const sourceGuideCenter = 13.25;
   const sourceGuideHalfWidth = 2.5;
   const sourceGuideHalfHeight = 0.75;
@@ -423,19 +425,24 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   yokeBody.userData.role = 'source-proportioned-capsule-crosshead-plate';
   yoke.add(yokeBody);
   // A raised retaining strap ties the groove's inner island to the outer
-  // crosshead without crossing the wrist's working depth.
+  // crosshead without crossing the wrist's working depth. It is cut to the
+  // stem's width and runs the crosshead's full height on the stem's line, so
+  // it reads as Brown's stem passing straight across the crosshead (he dashes
+  // the stem right through the figure) rather than as an extra bar.
   const islandRetainer = new THREE.Group();
   islandRetainer.userData.role = 'raised-retainer-joining-groove-island-to-crosshead';
   const retainerZ = wristFrontZ + wristCapDepth + 0.12;
   const outerStation = yokeOuterHalfHeight - 0.065;
-  for (const y of [0, outerStation]) {
+  const strapWidth = 2 * stemHalfWidth;
+  for (const y of [-outerStation, 0, outerStation]) {
     const post = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.07,
       retainerZ - yokeFrontZ + 0.06), drivenMaterial);
     post.position.set(0, y, (retainerZ + yokeFrontZ) / 2);
     islandRetainer.add(post);
   }
-  const strap = new THREE.Mesh(new THREE.BoxGeometry(0.10, outerStation + 0.07, 0.06), drivenMaterial);
-  strap.position.set(0, outerStation / 2, retainerZ);
+  const strap = new THREE.Mesh(new THREE.BoxGeometry(strapWidth,
+    2 * yokeOuterHalfHeight, 0.06), drivenMaterial);
+  strap.position.set(0, 0, retainerZ);
   islandRetainer.add(strap);
   yoke.add(islandRetainer);
 
@@ -1029,14 +1036,16 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
 
   update(0);
   fitPistonGuide(root, update, inputCyclePeriod);
-  // Brown crops the stems at the plate edges; the view instead keeps the
-  // whole stroke of both stem ends in frame, around the disk, crosshead and
-  // guides the plate draws (the removed rear frame is not fitted).
+  // Brown crops both stems at the plate edges, so the view is fitted to the
+  // swept disk and crosshead and to the two guides he draws; the stems run
+  // off the frame through their guides as they do on the plate (the removed
+  // rear frame is not fitted).
+  const stemParts = new Set([upperStem, lowerStem, ...stemIndexes]);
   const sweptBounds = new THREE.Box3();
   for (let index = 0; index <= 64; index += 1) {
     update(inputCyclePeriod * index / 64);
     root.updateMatrixWorld(true);
-    for (const part of [input, yoke, ...guideCheeks, ...guideBridges]) {
+    for (const part of [input, ...yoke.children.filter(child => !stemParts.has(child)), ...guideCheeks, ...guideBridges]) {
       sweptBounds.union(new THREE.Box3().setFromObject(part));
     }
   }

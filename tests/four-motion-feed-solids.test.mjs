@@ -69,8 +69,9 @@ test('400: both finite cam contacts remain near tangent and carry the required o
         }
       }
     }
-    assert.ok(nominalPenetration > .03, 'restoring the nominal point-follower law must fail finite contact');
-    assert.ok(largestTimingShift > .06 && largestTimingShift < .071, 'finite contact correction is real and bounded');
+    // The thin plate-width cam (0.32 feed stroke) gives a 0.0158 nominal penetration and 0.0196 timing shift.
+    assert.ok(nominalPenetration > .012, 'restoring the nominal point-follower law must fail finite contact');
+    assert.ok(largestTimingShift > .017 && largestTimingShift < .022, 'finite contact correction is real and bounded');
   } finally {disposeObject3D(model.root);}
 });
 

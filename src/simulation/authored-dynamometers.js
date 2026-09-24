@@ -202,10 +202,12 @@ function hoopReactionDynamometer(movement) {
   const outputStartLocalAngle = THREE.MathUtils.degToRad(14);
   const planetStartLocalAngle = THREE.MathUtils.degToRad(6);
   // Brown draws the hoop edgewise as a broad flat band standing in front of
-  // the gears; its bore clears the carried gears' back cones.
-  const hoopInnerRadius = 1.55;
-  const hoopOuterRadius = 1.78;
-  const hoopAxialWidth = 0.70;
+  // the gears, only a little taller than the gear box. Its bore must still
+  // clear the carried miters' tooth corners (1.333 from the shaft axis in the
+  // hoop plane), so it is kept as tight as that allows.
+  const hoopInnerRadius = 1.36;
+  const hoopOuterRadius = 1.50;
+  const hoopAxialWidth = 0.62;
   const hoopRadius = (hoopInnerRadius + hoopOuterRadius) / 2;
   const hoopTubeRadius = (hoopOuterRadius - hoopInnerRadius) / 2;
   const bandAttachmentPoint = new THREE.Vector3(0, 0, hoopOuterRadius);
@@ -453,8 +455,8 @@ function hoopReactionDynamometer(movement) {
   inputSleeveRotor.userData.role =
     'loose-input-sleeve-turning-independently-around-output-shaft';
   root.add(inputSleeveRotor);
-  const inputSleeve = cylinderAlongX(0.16, 0.61, brassMaterial, 30);
-  inputSleeve.position.x = 1.19;
+  const inputSleeve = cylinderAlongX(0.16, 0.47, brassMaterial, 30);
+  inputSleeve.position.x = 1.125;
   inputSleeve.userData.role =
     'visible-loose-bearing-sleeve-between-input-gear-and-shaft';
   inputSleeveRotor.add(inputSleeve);
@@ -853,7 +855,8 @@ function hoopReactionDynamometer(movement) {
   // Brown's plate: two tall standards carry the shaft through their upper
   // ends, the shaft stubs standing just outside them, and a turned stretcher
   // with a central ball ties them below the hoop; both run off the plate foot.
-  const postX = 1.9, postHalfWidth = 0.18, postTop = 0.58, postBottom = -3.9;
+  // The standards stand close outside the gear bosses, as Brown draws them.
+  const postX = 1.55, postHalfWidth = 0.18, postTop = 0.58, postBottom = -3.9;
   // Brown's teeth are uniform; the white index tooth is not drawn.
   for (const gear of [inputGear, outputGear, topPlanetGear, bottomPlanetGear]) {
     const teeth = gear.userData.toothMeshes;
@@ -880,6 +883,27 @@ function hoopReactionDynamometer(movement) {
     post.position.set(side * postX, 0, 0);
     shaftBearings[index].position.set(side * postX, 0, 0);
   });
+  // The loose sleeve ends short of the nearer standard's bearing.
+  inputSleeve.geometry.dispose();
+  inputSleeve.geometry = boredLatheGeometry([
+    { axial: -0.235, radial: 0.16 },
+    { axial: 0.235, radial: 0.16 },
+  ], 0.092, 64);
+  // Shaft stubs stand just outside the standards.
+  outputShaft.geometry.dispose();
+  outputShaft.geometry = new THREE.CylinderGeometry(0.09, 0.09, 2 * (postX + 0.36), 28);
+  // Carrier arms and cross braces end in the tighter hoop's bore.
+  const armOuterEnd = hoopInnerRadius + 0.07;
+  for (const arm of carrierArms) {
+    arm.geometry.dispose();
+    arm.geometry = new THREE.CylinderGeometry(0.068, 0.068, armOuterEnd - 0.215, 48);
+    arm.position.y = Math.sign(arm.position.y) * (armOuterEnd + 0.215) / 2;
+  }
+  for (const arm of carrierCrossArms) {
+    arm.geometry.dispose();
+    arm.geometry = new THREE.BoxGeometry(0.14, 0.14, armOuterEnd - 0.23);
+    arm.position.z = Math.sign(arm.position.z) * (armOuterEnd + 0.23) / 2;
+  }
   outputShaftIndex.geometry.dispose();
   outputShaftIndex.geometry = new THREE.BoxGeometry(0.14, 0.012, 0.026);
   outputShaftIndex.position.set(-2.16, 0.088, 0);
@@ -908,8 +932,8 @@ function hoopReactionDynamometer(movement) {
   root.userData.blocks.stretcher = stretcher;
   root.userData.blocks.stretcherBall = stretcherBall;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.7, -3.3, -0.4),
-    new THREE.Vector3(2.7, 1.85, 0.4),
+    new THREE.Vector3(-2.05, -3.0, -0.4),
+    new THREE.Vector3(2.05, 1.6, 0.4),
   );
   root.userData.groundFloorY = postBottom;
   root.userData.cameraFov = 16;

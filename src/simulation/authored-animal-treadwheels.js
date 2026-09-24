@@ -61,7 +61,10 @@ function animalInteriorTreadwheel(movement) {
     .cross(animalWeight).z;
   const outputPower = animalWeightTorque * wheelAngularSpeed;
   const legPhaseOffsets = [0, Math.PI, Math.PI, 0];
-  const upperLegBaseAngles = [-0.10, 0.12, 0.08, -0.14];
+  // Brown's horse climbs the rising side: its body is tilted nose-up, the
+  // forelegs reach forward onto the rising treads and the hind legs push
+  // down onto the lowest ones. Base angles are in the tilted body frame.
+  const upperLegBaseAngles = [-1.15, -0.06, -0.98, 0.04];
   const upperLegAmplitude = 0.29;
   const lowerLegBaseAngle = 0.20;
   const lowerLegAmplitude = 0.34;
@@ -260,7 +263,7 @@ function animalInteriorTreadwheel(movement) {
   animal.add(torso);
   const neck = tubeBetween(
     new THREE.Vector3(-0.43, 0.18, 0),
-    new THREE.Vector3(-0.72, 0.55, 0),
+    new THREE.Vector3(-0.80, 0.37, 0),
     0.18,
     animalMaterial,
   );
@@ -271,25 +274,25 @@ function animalInteriorTreadwheel(movement) {
     animalMaterial,
   );
   head.scale.set(1.34, 0.72, 0.74);
-  head.position.set(-0.88, 0.60, 0);
+  head.position.set(-0.94, 0.40, 0);
   head.rotation.z = -0.16;
   head.userData.role = 'stylized-horse-head-facing-up-tread';
   animal.add(head);
   const muzzle = new THREE.Mesh(
     new THREE.SphereGeometry(0.16, 24, 14),
-    animalDarkMaterial,
+    animalMaterial,
   );
-  muzzle.scale.set(1.30, 0.62, 0.68);
-  muzzle.position.set(-1.14, 0.55, 0);
+  muzzle.scale.set(1.15, 0.72, 0.70);
+  muzzle.position.set(-1.14, 0.34, 0);
   muzzle.userData.role = 'horse-muzzle';
   animal.add(muzzle);
   const ears = [];
   for (const z of [-0.10, 0.10]) {
     const ear = new THREE.Mesh(
-      new THREE.ConeGeometry(0.075, 0.25, 14),
+      new THREE.ConeGeometry(0.05, 0.17, 14),
       animalDarkMaterial,
     );
-    ear.position.set(-0.80, 0.86, z);
+    ear.position.set(-0.84, 0.62, z);
     ear.rotation.z = -0.18;
     ear.userData.role = 'horse-ear';
     ears.push(ear);
@@ -299,7 +302,7 @@ function animalInteriorTreadwheel(movement) {
     new THREE.SphereGeometry(0.035, 14, 10),
     darkMaterial,
   );
-  eye.position.set(-1.00, 0.67, wheelWidth * 0.27);
+  eye.position.set(-1.06, 0.47, wheelWidth * 0.27);
   eye.userData.role = 'horse-eye';
   animal.add(eye);
 
@@ -574,19 +577,25 @@ function animalInteriorTreadwheel(movement) {
   };
 }
 
+// Plate 376 draws the horse's back rising about 24 degrees toward its head.
+const animalClimbTilt = THREE.MathUtils.degToRad(24);
+
 export function createAuthoredAnimalTreadwheelMovement(movement) {
   if (movement.id !== 376) return null;
   const model = animalInteriorTreadwheel(movement);
   const { blocks } = model.root.userData;
-  // The swinging legs used to plunge up to 0.36 through the tread circle.
-  // Brown's horse stands a little left of and below the axle; placing it
-  // there with legs at 0.76 scale keeps every hoof inside the tread-board
-  // faces (radius 1.657) through the whole gait while the torso clears the
-  // axle.
-  blocks.animal.position.set(-0.15, -0.52, 0.03);
-  for (const legRoot of blocks.legRoots) legRoot.scale.setScalar(0.76);
+  // Brown's horse climbs the rising side left of and below the axle: the
+  // body is tilted nose-up, the forelegs reach forward to the rising treads
+  // and the hind legs stand on the lowest ones. The leg scales keep every
+  // hoof inside the tread-board faces (radius 1.657) through the whole gait
+  // (the forehooves reach 1.648) while the torso clears the axle.
+  blocks.animal.position.set(-0.20, -0.55, 0.03);
+  blocks.animal.rotation.z = -animalClimbTilt;
+  const legScales = [0.84, 0.86, 0.84, 0.86];
+  blocks.legRoots.forEach((legRoot, index) => legRoot.scale.setScalar(legScales[index]));
   model.root.userData.animalPlacement = {
-    legScale: 0.76,
+    legScales,
+    climbTilt: animalClimbTilt,
     maximumHoofRadius: 'kept below the 1.657 tread-board face radius',
   };
   // Joints: the hips hang just below the torso shell, the upper-leg bars
@@ -617,7 +626,10 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
   const lowestHoofGap = () => {
     blocks.animal.updateMatrixWorld(true);
     let gap = Infinity;
-    for (const hoof of blocks.hooves) {
+    // The hind hooves stand on the lowest treads and carry the body; the
+    // forehooves reach onto the rising side, where the tread face is nearly
+    // vertical, so they are posed to stay just inside it instead.
+    for (const hoof of [blocks.hooves[1], blocks.hooves[3]]) {
       if (!hoof.geometry.boundingBox) hoof.geometry.computeBoundingBox();
       const { min, max } = hoof.geometry.boundingBox;
       for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) {
@@ -640,7 +652,7 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
       - blocks.animal.position.y;
   };
   model.root.userData.animalPlacement.hoofContact =
-    'body lowered each frame until the lowest hoof rests on the tread face';
+    'body lowered each frame until the lower hind hoof rests on the tread face; the forehooves reach the rising side without penetrating it';
   model.root.userData.workingPartsReview.qualification = 'The leg animation and balanced mean weight torque remain prescribed. The body bobs so the lowest hoof rests on the tread-face circle; hoof loads and slip remain unqualified.';
   model.update(0);
   finishRunnerTread(model, 376);

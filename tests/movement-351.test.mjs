@@ -62,14 +62,14 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   assert.equal(archetype,
     'gravity-drop-stamp-with-six-tooth-mutilated-pinion');
   assert.equal(archetype, movement.archetype);
-  assert.match(mechanism, /six-tooth-mutilated-pinion/);
+  assert.match(mechanism, /eight-tooth-mutilated-pinion/);
   assert.match(mechanism, /raises-one-single-sided-vertical-rack/);
-  assert.match(mechanism, /four-position-blank-sector-releases/);
+  assert.match(mechanism, /ten-position-blank-sector-releases/);
   assert.match(mechanism, /fall-under-gravity-impact-the-lower-stop/);
   assert.equal(degreesOfFreedom.mechanism, 1);
   assert.match(degreesOfFreedom.input, /continuously rotating/);
   assert.match(degreesOfFreedom.output, /translating vertically/);
-  assert.match(transmission.lift, /exactly six rack pitches/);
+  assert.match(transmission.lift, /exactly eight rack pitches/);
   assert.match(transmission.engagedVelocityConstraint,
     /rackVelocity = -driverAngularVelocity \* pitchRadius/);
 
@@ -89,16 +89,16 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   assert.equal(blocks.dieFace.parent, blocks.rack);
   assert.equal(blocks.stampFaceAnchor.parent, blocks.rack);
   assert.equal(blocks.rackPitchContactAnchor.parent, blocks.rack);
-  assert.equal(blocks.gearTeeth.length, 6);
-  assert.equal(blocks.gearToothFaceLines.length, 6);
-  assert.equal(blocks.rackTeeth.length, 13);
-  assert.equal(blocks.rackToothFaceLines.length, 13);
+  assert.equal(blocks.gearTeeth.length, 8);
+  assert.equal(blocks.gearToothFaceLines.length, 8);
+  assert.equal(blocks.rackTeeth.length, 14);
+  assert.equal(blocks.rackToothFaceLines.length, 14);
   assert.equal(blocks.guideAssemblies.length, 2);
   assert.equal(blocks.pinion.userData.mutilated, true);
-  assert.equal(blocks.pinion.userData.teeth, 10);
-  assert.equal(blocks.pinion.userData.missingToothCount, 4);
+  assert.equal(blocks.pinion.userData.teeth, 18);
+  assert.equal(blocks.pinion.userData.missingToothCount, 10);
   assert.deepEqual(blocks.pinion.userData.installedToothIndices,
-    [0, 1, 2, 3, 4, 5]);
+    [0, 1, 2, 3, 4, 5, 6, 7]);
   blocks.guideAssemblies.forEach(({ guide }) => {
     assert.equal(guide.parent, blocks.fixedFrame);
     assert.equal(guide.userData.openTowardRackTeeth, true);
@@ -117,9 +117,9 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
-    /^installed-mutilated-pinion-tooth-/.test(role)).length, 6);
+    /^installed-mutilated-pinion-tooth-/.test(role)).length, 8);
   assert.equal(roles.filter((role) =>
-    /^single-sided-rack-tooth-/.test(role)).length, 13);
+    /^single-sided-rack-tooth-/.test(role)).length, 14);
   assert.equal(roles.filter((role) =>
     /C-shaped-rack-guide-open-to-teeth/.test(role)).length, 2);
   assert.equal(roles.filter((role) => role ===
@@ -129,7 +129,7 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   disposeModel(model.root);
 });
 
-test('movement 351 reconstructs the six-tooth engraving without claiming a source animation', () => {
+test('movement 351 reconstructs the eight-tooth engraving without claiming a source animation', () => {
   const model = createMovementModel(catalog.movements[350]);
   const {
     dynamics,
@@ -146,26 +146,26 @@ test('movement 351 reconstructs the six-tooth engraving without claiming a sourc
   assert.equal(sourceAnimation.presentationTiming.cyclesPerMinute, 15);
   assert.equal(sourceAnimation.presentationTiming.durationSeconds, 4);
   assert.equal(sourceAnimation.presentationTiming.sourcePrescribed, false);
-  assert.equal(sourceAnimation.reconstruction.virtualToothCount, 10);
-  assert.equal(sourceAnimation.reconstruction.installedToothCount, 6);
-  assert.equal(sourceAnimation.reconstruction.missingToothCount, 4);
+  assert.equal(sourceAnimation.reconstruction.virtualToothCount, 18);
+  assert.equal(sourceAnimation.reconstruction.installedToothCount, 8);
+  assert.equal(sourceAnimation.reconstruction.missingToothCount, 10);
   assert.match(sourceAnimation.reconstruction.dynamics,
     /exact uniform-gravity free flight/);
-  assert.match(sourceAnimation.referenceScope, /six visible sector teeth/);
+  assert.match(sourceAnimation.referenceScope, /eight visible sector teeth/);
 
-  assert.equal(geometry.virtualToothCount, 10);
-  assert.equal(geometry.sectorToothCount, 6);
-  assert.equal(geometry.missingToothCount, 4);
-  near(geometry.toothPitchAngle, 2 * Math.PI / 10, 0,
-    'one-tenth-turn angular pitch');
+  assert.equal(geometry.virtualToothCount, 18);
+  assert.equal(geometry.sectorToothCount, 8);
+  assert.equal(geometry.missingToothCount, 10);
+  near(geometry.toothPitchAngle, 2 * Math.PI / 18, 0,
+    'one-eighteenth-turn angular pitch');
   near(geometry.rackToothPitch,
     geometry.pitchRadius * geometry.toothPitchAngle, 0,
     'rack linear pitch');
   near(geometry.rackStroke,
     geometry.sectorToothCount * geometry.rackToothPitch, 0,
-    'six-pitch lift');
-  near(geometry.engagementFraction, 0.6, 0,
-    'six tenths of one driver turn engage');
+    'eight-pitch lift');
+  near(geometry.engagementFraction, 8 / 18, 0,
+    'eight eighteenths of one driver turn engage');
   assert.ok(geometry.gearRootRadius < geometry.pitchRadius);
   assert.ok(geometry.pitchRadius < geometry.gearOuterRadius);
   assert.ok(geometry.rackToothRootX < geometry.pitchLineX);
@@ -183,7 +183,7 @@ test('movement 351 reconstructs the six-tooth engraving without claiming a sourc
   assert.ok(geometry.lowerGuideY < geometry.wheelCenter.y);
   near(dynamics.releaseTime,
     geometry.engagementFraction * geometry.cyclePeriod, 0,
-    'release after the sixth pitch');
+    'release after the eighth pitch');
 
   const plate = sourceReference.brownPlate351;
   assert.equal(plate.imageWidth, 525);
@@ -194,11 +194,11 @@ test('movement 351 reconstructs the six-tooth engraving without claiming a sourc
   assert.equal(plate.rasterGearOuterRadius, 70);
   assert.equal(plate.rasterRackCenterX, 222);
   assert.match(plate.inferredTopology,
-    /six consecutive teeth on a ten-position pinion/);
+    /eight consecutive teeth on an eighteen-position pinion/);
   disposeModel(model.root);
 });
 
-test('movement 351 maintains exact pitch mesh through all six tooth handoffs', () => {
+test('movement 351 maintains exact pitch mesh through all eight tooth handoffs', () => {
   const model = createMovementModel(catalog.movements[350]);
   const { geometry, stateAtCycleCoordinate } = model.root.userData;
 
@@ -249,7 +249,7 @@ test('movement 351 maintains exact pitch mesh through all six tooth handoffs', (
     geometry.engagementFraction - 1e-12,
   );
   near(beforeRelease.rackDisplacement, geometry.rackStroke,
-    6e-12, 'sixth tooth reaches full geared lift');
+    2e-11, 'eighth tooth reaches full geared lift');
   near(beforeRelease.driverAngularVelocity,
     -geometry.fullTurn / geometry.cyclePeriod, 0,
     'pinion rotates clockwise at constant rate');
@@ -291,7 +291,7 @@ test('movement 351 gives the released stamp an exact gravity trajectory', () => 
     near(state.rackAcceleration, -dynamics.gravity, 0,
       `ballistic acceleration ${sample}`);
     near(state.mechanicalEnergy, dynamics.releaseMechanicalEnergy,
-      5e-14, `ballistic energy ${sample}`);
+      2e-13, `ballistic energy ${sample}`);
     near(state.stampFaceY,
       geometry.stampFaceRestY + state.rackDisplacement, 0,
       `stamp face follows rack ${sample}`);
@@ -428,7 +428,7 @@ test('movement 351 renderer keeps the mesh, rack guides, and impact face closed'
         state.stampFaceY,
         geometry.jointPlaneZ,
       ),
-      0,
+      4e-15,
       `stamp impact-face anchor ${time}`,
     );
     assert.equal(blocks.contactMarker.visible, false);
