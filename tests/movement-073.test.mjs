@@ -35,7 +35,7 @@ test('movement 73 shows only D, A, springs B and C and C’s fixed block', () =>
     meshes += 1;
     assert.notEqual(object.material.color.getHex(), 0xffffff);
   });
-  assert.equal(meshes, 11);
+  assert.equal(meshes, 12, 'ten parts plus the hatched section face of C’s block');
   for (const name of ['baseRail', 'centerPost', 'shaftBridge', 'springPost']) {
     assert.equal(blocks[name], undefined);
   }
