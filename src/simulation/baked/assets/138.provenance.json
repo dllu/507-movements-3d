@@ -64,7 +64,7 @@
     "geometrySources": [
       {
         "file": "src/simulation/authored-cams.js",
-        "sha256": "49368442352c80e246596c73e923b398136c7398051416bd3dff40361320b5ee"
+        "sha256": "207498765d09b3d5384da3ff7449e3a285bd54e3b03d91a67154c454bdc5df08"
       },
       {
         "file": "src/simulation/mujoco-variable-cam/geometry.js",
@@ -86,6 +86,6 @@
     "maximumPenetrationPixels": 0.06265592250778432
   },
   "samples": 9301,
-  "bytes": 420146,
-  "assetSha256": "04ad5b3da1a7d73d7cabe991fe0864c3ff12fcf2dd6cf4b30b1d8ef3038129f8"
+  "bytes": 420135,
+  "assetSha256": "682192486f8ce79db118afd7f0f08b7da55d904a276a518648fbe07ef53a8104"
 }
