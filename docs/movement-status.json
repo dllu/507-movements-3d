@@ -7008,7 +7008,8 @@
         "docs/w5a-gears-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
-        "docs/m14-last-residuals-review.md"
+        "docs/m14-last-residuals-review.md",
+        "docs/m15-final-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7017,7 +7018,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "Brown's slots are closed at both ends; ours run open across the strip.",
-      "limits": "The pinion is widened inward only (0.26 against Brown's 0.34), since the outer side would strike the neighbouring pin ring.",
+      "limits": "The pinion is widened inward only (0.26 against Brown's 0.34), since the outer side would strike the neighbouring pin ring. Closed slot ends are impossible: at the mouths the engaged pins span −0.082…+0.40 along the shaft, so a closed outer end would be in the outer neighbouring ring's path and a closed inner end past the inner ring (+0.23).",
       "assessment": "minor"
     },
     {
@@ -9042,7 +9043,8 @@
         "docs/intersection-screen-pass50.md",
         "docs/lane4-escapements-misc-review.md",
         "docs/w3d-255-287-review.md",
-        "docs/m14-last-residuals-review.md"
+        "docs/m14-last-residuals-review.md",
+        "docs/m15-final-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9050,8 +9052,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The closed end sits farther right than drawn and the subject is smaller than on the plate.",
-      "limits": "The frame's 17-pitch stroke against its 22-pitch length sets the swept size; handoff teeth are relieved at working depth but keep Brown's outline as a web behind the pinion; the rod, which Brown breaks off, leaves the view at the stroke limit.",
+      "visibleFlaws": "The closed end sits about 3 pitches farther right than drawn, and the subject fills less of the stage than the plate does.",
+      "limits": "The frame's 17-pitch stroke against its 22-pitch length sets the swept size; handoff teeth are relieved at working depth but keep Brown's outline as a web behind the pinion; the rod, which Brown breaks off, leaves the view at the stroke limit. The gear tip must pass about 3.1 pitches beyond the last tooth to roll the last lower pair, which sets the closed end; a tooth pitch renders at 19.3 px against Brown's 20.3 px.",
       "assessment": "minor"
     },
     {
@@ -9311,7 +9313,8 @@
         "docs/w3d-255-287-review.md",
         "docs/w5b-248-314-review.md",
         "docs/m4-203-321-review.md",
-        "docs/m8-framing-ropes-review.md"
+        "docs/m8-framing-ropes-review.md",
+        "docs/m15-final-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9320,7 +9323,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "The hook works about 0.86 below Brown's tip and the ratchet teeth are shallow.",
-      "limits": "A dog in the page plane can turn the face ratchet a full sixth only within about 0.35 of the axis for the hammer's roughly 0.6 lift.",
+      "limits": "A dog in the page plane can turn the face ratchet a full sixth only within about 0.35 of the axis for the hammer's roughly 0.6 lift. Tilting the dog cannot help, because the hammer moves it parallel to the page; at Brown's tip, cocking moves the tip mostly away from the ratchet (+1.75 across, +0.78 up).",
       "assessment": "minor"
     },
     {
@@ -12932,7 +12935,8 @@
         "docs/w4c-254-400-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/m15-final-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12941,7 +12945,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "The whole 1.5-turn sweep is framed, so the figure reads small next to the plate pose.",
-      "limits": "Radial advance causes axial scrub; hand force and slip unvalidated.",
+      "limits": "Radial advance causes axial scrub; hand force and slip unvalidated. No camera elevation narrows the 10.06-wide sweep; the fit already equals the sweep.",
       "assessment": "minor"
     },
     {
@@ -16936,7 +16940,8 @@
         "docs/u5-341-507-review.md",
         "docs/m6-402-507-review.md",
         "docs/m9-410-507-review.md",
-        "docs/m13-rebuilds-review.md"
+        "docs/m13-rebuilds-review.md",
+        "docs/m15-final-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16945,7 +16950,7 @@
       },
       "updatedOn": "2026-09-24",
       "visibleFlaws": "Keeping the arm's full turn in view needs about ±4 units about C while the resting train lies to the right, so it reads small and off-centre; Brown draws one static pose and crops nothing.",
-      "limits": "Generated tooth thicknesses and supports inferred.",
+      "limits": "Generated tooth thicknesses and supports inferred. A different rest pose leaves the whole-turn frame unchanged; the fit already follows the swept outline.",
       "assessment": "minor"
     },
     {
