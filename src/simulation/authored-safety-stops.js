@@ -157,7 +157,7 @@ function otisSafetyStop(movement) {
   const hoistEnd = 3.4;
   const normalLowerEnd = 4.5;
   const catchTime = 5.7;
-  const upperRopeAnchor = new THREE.Vector3(0, 4.28, 0.58);
+  const upperRopeAnchor = new THREE.Vector3(0, 5.2, 0.58);
   const maximumRopeGap = 0.48;
 
   const leftLowerJointAtAngle = (angle) => new THREE.Vector3(
@@ -320,7 +320,8 @@ function otisSafetyStop(movement) {
       platformY + pinEyeY + ropeEyeOffset,
       0.58,
     );
-    const breakCenter = ropeEye.clone().lerp(upperRopeAnchor, 0.53);
+    // The break lies above Brown's crop, which shows only the stub a.
+    const breakCenter = ropeEye.clone().lerp(upperRopeAnchor, 0.85);
     const halfGap = maximumRopeGap * springRelease / 2;
     const upperBrokenEnd = breakCenter.clone().add(new THREE.Vector3(
       -halfGap * 0.58,
@@ -425,8 +426,10 @@ function otisSafetyStop(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.44 });
 
-  const rackHeight = 8.0;
-  const rackCenterY = 0.30;
+  // Brown crops the uprights A just above the rope eye and below the legs
+  // of B; the hoistway beyond them is not drawn.
+  const rackHeight = 6.3;
+  const rackCenterY = 0.1;
   const leftUpright = new THREE.Mesh(
     new THREE.BoxGeometry(0.46, rackHeight, 0.74),
     frameMaterial,
@@ -465,7 +468,7 @@ function otisSafetyStop(movement) {
   const leftToothGeometry = makeRackToothGeometry(-1);
   const rightToothGeometry = makeRackToothGeometry(1);
   const rackTeeth = [];
-  for (let index = -5; index <= 8; index += 1) {
+  for (let index = -4; index <= 7; index += 1) {
     const seatY = catchSeatY + index * rackPitch;
     const leftTooth = new THREE.Mesh(leftToothGeometry, darkMaterial);
     leftTooth.position.set(0, seatY, 0.22);
@@ -489,7 +492,7 @@ function otisSafetyStop(movement) {
     { color: PALETTE.frame, depth: 0.38, thickness: 0.24 },
   );
   base.userData.role = 'fixed-hoistway-display-base';
-  root.add(topCrosshead, base);
+  // Neither the hoistway crosshead nor a base is drawn; they stay detached.
 
   const carriage = new THREE.Group();
   carriage.userData.axis = new THREE.Vector3(0, 1, 0);
@@ -502,30 +505,26 @@ function otisSafetyStop(movement) {
   const platformBottomY = sourcePointToModel(
     sourceRasterPlatformLeftBottom,
   ).y;
-  const platformTop = makeBeam(
-    new THREE.Vector3(platformLeftX, platformTopY, -0.46),
-    new THREE.Vector3(platformRightX, platformTopY, -0.46),
-    { color: PALETTE.driver, depth: 0.34, thickness: 0.20 },
+  // B is drawn as an inverted U: a broad head with two legs, open below.
+  const platformLegWidth = 0.48;
+  const platformLegOutset = 0.19; // clears the uprights' inner faces
+  const platformHeadBottomY = sourcePointToModel({ x: 264, y: 197 }).y;
+  const platformShape = new THREE.Shape([
+    new THREE.Vector2(platformLeftX - platformLegOutset, platformBottomY),
+    new THREE.Vector2(platformLeftX - platformLegOutset, platformTopY),
+    new THREE.Vector2(platformRightX + platformLegOutset, platformTopY),
+    new THREE.Vector2(platformRightX + platformLegOutset, platformBottomY),
+    new THREE.Vector2(platformRightX + platformLegOutset - platformLegWidth, platformBottomY),
+    new THREE.Vector2(platformRightX + platformLegOutset - platformLegWidth, platformHeadBottomY),
+    new THREE.Vector2(platformLeftX - platformLegOutset + platformLegWidth, platformHeadBottomY),
+    new THREE.Vector2(platformLeftX - platformLegOutset + platformLegWidth, platformBottomY),
+  ]);
+  const platformTop = new THREE.Mesh(
+    centeredExtrusion(platformShape, 0.34, 0.01),
+    driverMaterial,
   );
-  platformTop.userData.role = 'platform-B-upper-cross-member';
-  const platformBottom = makeBeam(
-    new THREE.Vector3(platformLeftX, platformBottomY, -0.46),
-    new THREE.Vector3(platformRightX, platformBottomY, -0.46),
-    { color: PALETTE.driver, depth: 0.34, thickness: 0.20 },
-  );
-  platformBottom.userData.role = 'platform-B-lower-cross-member';
-  const platformLeftSide = makeBeam(
-    new THREE.Vector3(platformLeftX, platformTopY, -0.46),
-    new THREE.Vector3(platformLeftX, platformBottomY, -0.46),
-    { color: PALETTE.driver, depth: 0.34, thickness: 0.20 },
-  );
-  platformLeftSide.userData.role = 'platform-B-left-side-member';
-  const platformRightSide = makeBeam(
-    new THREE.Vector3(platformRightX, platformTopY, -0.46),
-    new THREE.Vector3(platformRightX, platformBottomY, -0.46),
-    { color: PALETTE.driver, depth: 0.34, thickness: 0.20 },
-  );
-  platformRightSide.userData.role = 'platform-B-right-side-member';
+  platformTop.position.z = -0.46;
+  platformTop.userData.role = 'platform-B-inverted-u-head-and-legs';
   const pivotSupport = makeBeam(
     new THREE.Vector3(platformLeftX, leftPivot.y, -0.34),
     new THREE.Vector3(platformRightX, rightPivot.y, -0.34),
@@ -534,9 +533,6 @@ function otisSafetyStop(movement) {
   pivotSupport.userData.role = 'platform-fixed-elbow-lever-pivot-support';
   carriage.add(
     platformTop,
-    platformBottom,
-    platformLeftSide,
-    platformRightSide,
     pivotSupport,
   );
 
@@ -693,7 +689,7 @@ function otisSafetyStop(movement) {
     );
     guide.position.set(
       side * 1.84,
-      sourceLeftLowerJoint.y + verticalSide * 0.17,
+      sourceLeftLowerJoint.y + verticalSide * 0.2,
       0.30,
     );
     guide.userData.role = `${side < 0 ? 'left' : 'right'}-pawl-guide-${
@@ -726,7 +722,6 @@ function otisSafetyStop(movement) {
   const topRopeAnchor = cylinderAlongZ(0.15, 0.64, darkMaterial);
   topRopeAnchor.position.copy(upperRopeAnchor);
   topRopeAnchor.userData.role = 'fixed-upper-rope-support';
-  root.add(topRopeAnchor);
 
   const catchMarkers = [-1, 1].map((side) => {
     const marker = new THREE.Mesh(
@@ -817,10 +812,7 @@ function otisSafetyStop(movement) {
     pinAssembly,
     pinMotionIndex,
     pivotSupport,
-    platformBottom,
-    platformLeftSide,
     platformPositionIndex,
-    platformRightSide,
     platformTop,
     rackTeeth,
     rightLever,
@@ -838,8 +830,8 @@ function otisSafetyStop(movement) {
     verticalPin,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.12, -3.92, -2.10),
-    new THREE.Vector3(3.12, 4.58, 2.10),
+    new THREE.Vector3(-3.12, -3.12, -2.10),
+    new THREE.Vector3(3.12, 3.8, 2.10),
   );
   root.userData.geometry = {
     catchSeatY,
@@ -1149,6 +1141,12 @@ function otisSafetyStop(movement) {
 export function createAuthoredSafetyStopMovement(movement) {
   if (movement.id !== 278) return null;
   const result = finishOtis278Parts(otisSafetyStop(movement));
+  // Brown draws no index marks on the pin, platform or rack seats.
+  const whiteIndices = [];
+  result.root.traverse((object) => {
+    if (/^white-/.test(object.userData.role ?? '')) whiteIndices.push(object);
+  });
+  for (const object of whiteIndices) object.removeFromParent();
   result.root.userData.fidelity = 'authored';
   return result;
 }

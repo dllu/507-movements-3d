@@ -427,10 +427,6 @@ function compensationBalance(movement) {
     metalness: 0.26,
     roughness: 0.46,
   });
-  const whiteMaterial = matte(PALETTE.white, {
-    metalness: 0.02,
-    roughness: 0.44,
-  });
 
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-compensation-balance-frame';
@@ -504,14 +500,8 @@ function compensationBalance(movement) {
       brassMaterial, 24);
     clampScrew.position.set(0, 0.32, 0);
     clampScrew.userData.role = 'compensation-weight-clamp-screw';
-    const witness = new THREE.Mesh(
-      new THREE.SphereGeometry(0.10, 22, 14),
-      whiteMaterial,
-    );
-    witness.position.set(0, 0, weightDepth / 2 + 0.09);
-    witness.userData.role = 'white-compensation-weight-motion-index';
-    group.add(block, clampSlot, clampScrew, witness);
-    return { block, clampScrew, group, witness };
+    group.add(block, clampSlot, clampScrew);
+    return { block, clampScrew, group };
   };
   const rightWeight = makeCompensationWeight(1);
   const leftWeight = makeCompensationWeight(-1);
@@ -528,14 +518,8 @@ function compensationBalance(movement) {
       balanceMaterial, 32);
     nut.position.y = side * 0.18;
     nut.userData.role = 'timing-regulation-screw-nut';
-    const crossSlot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30, 0.035, 0.055),
-      whiteMaterial,
-    );
-    crossSlot.position.set(0, side * 0.32, 0.15);
-    crossSlot.userData.role = 'white-timing-screw-index-slot';
-    group.add(stem, nut, crossSlot);
-    return { crossSlot, group, nut, stem };
+    group.add(stem, nut);
+    return { group, nut, stem };
   };
   const topTimingScrew = makeTimingScrew(1);
   const bottomTimingScrew = makeTimingScrew(-1);

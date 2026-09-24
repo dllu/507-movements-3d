@@ -367,7 +367,8 @@ function claytonSlidingJournalBox(movement) {
   crosshead.add(leftSlotFace, rightSlotFace);
   const crossheadRod = new THREE.Group();
   for (const side of [-1, 1]) {
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(rodHalfLength - slotHalfWidth, 0.28, 0.32), drivenMaterial);
+    // Brown's rod is a heavy bar, about a sixth of the yoke's width.
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(rodHalfLength - slotHalfWidth, 0.66, 0.32), drivenMaterial);
     arm.position.set(side * (rodHalfLength + slotHalfWidth) / 2, crossheadRodY, -0.02);
     crossheadRod.add(arm);
   }
@@ -390,7 +391,7 @@ function claytonSlidingJournalBox(movement) {
       );
       block.position.set(
         side * guideCenterX,
-        crossheadRodY + verticalSide * 0.24,
+        crossheadRodY + verticalSide * 0.43,
         -0.02,
       );
       block.userData.role = `${side < 0 ? 'left' : 'right'}-fixed-crosshead-guide-${
@@ -769,6 +770,18 @@ function claytonSlidingJournalBox(movement) {
 
   update(0);
   fitPistonGuide(root, update, cyclePeriod);
+  // Brown frames the crosshead yoke closely and breaks both rods off just
+  // beyond it; the reconstructed rod guides lie outside that field and are
+  // presented away. No phase indices are drawn.
+  const whiteIndices = [];
+  root.traverse((object) => {
+    if (/^white-/.test(object.userData.role ?? '')) whiteIndices.push(object);
+  });
+  for (const object of whiteIndices) object.removeFromParent();
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.9, outerBottomY - 0.2, -1.0),
+    new THREE.Vector3(2.9, outerTopY + 0.2, 1.0),
+  );
   markShadows(root);
   return {
     root,

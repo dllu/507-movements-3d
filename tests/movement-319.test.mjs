@@ -419,9 +419,15 @@ test('movement 319 renderer keeps brass outside steel and binds all four radial 
     }
 
     for (const index of [0, 31, 63, 95, 111]) {
+      // Brown draws no balance spring, so source presentation detaches the
+      // segments; their kinematic law is still checked in the root frame.
       const segment = blocks.springSegments[index];
-      springStart.set(0, -0.5, 0).applyMatrix4(segment.matrixWorld);
-      springEnd.set(0, 0.5, 0).applyMatrix4(segment.matrixWorld);
+      assert.equal(segment.parent, null);
+      segment.updateMatrix();
+      const segmentWorld = model.root.matrixWorld.clone()
+        .multiply(segment.matrix);
+      springStart.set(0, -0.5, 0).applyMatrix4(segmentWorld);
+      springEnd.set(0, 0.5, 0).applyMatrix4(segmentWorld);
       vectorNear(springStart,
         expected.balanceSpringPoint(
           blocks.springSamples[index].parameter,

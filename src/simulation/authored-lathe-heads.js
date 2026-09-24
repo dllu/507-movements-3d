@@ -355,6 +355,21 @@ function latheTailstockScrewFeed(movement) {
   );
   leftColumn.position.set(-1.98, -1.674, 0);
   leftColumn.userData.role = 'front-tailstock-casting-column';
+  // Brown draws one solid casting pierced by an octagonal window rather than
+  // two separate columns and a bridge; keep those three blocks as one mesh.
+  {
+    const chamfer = 0.34;
+    const [wl, wr, wb, wt] = [-1.62, 1.14, -2.28, -0.86];
+    const casting = polygonClipping.difference(
+      rectangle(-2.19, -2.898, 1.76, -0.62),
+      poly([[wl + chamfer, wb], [wr - chamfer, wb], [wr, wb + chamfer], [wr, wt - chamfer],
+        [wr - chamfer, wt], [wl + chamfer, wt], [wl, wt - chamfer], [wl, wb + chamfer]]),
+    );
+    leftColumn.geometry.dispose();
+    leftColumn.geometry = plate(casting, -0.57, 0.57);
+    leftColumn.position.set(0, 0, 0);
+    leftColumn.userData.role = 'octagonal-window-tailstock-casting';
+  }
   frame.add(leftColumn);
   const rightColumn = new THREE.Mesh(
     new THREE.BoxGeometry(0.46, 2.458, 1.14),
@@ -362,14 +377,12 @@ function latheTailstockScrewFeed(movement) {
   );
   rightColumn.position.set(1.53, -1.669, 0);
   rightColumn.userData.role = 'rear-tailstock-casting-column';
-  frame.add(rightColumn);
   const lowerBridge = new THREE.Mesh(
     new THREE.BoxGeometry(3.28, 0.36, 1.14),
     frameMaterial,
   );
   lowerBridge.position.set(-0.18, -2.42, 0);
   lowerBridge.userData.role = 'tailstock-casting-lower-window-bridge';
-  frame.add(lowerBridge);
   const baseClampBolt = new THREE.Mesh(
     new THREE.CylinderGeometry(0.16, 0.16, 1.96, 30),
     darkMaterial,
@@ -462,7 +475,6 @@ function latheTailstockScrewFeed(movement) {
   );
   wheelIndex.position.set(0.10, handwheelRadius, 0);
   wheelIndex.userData.role = 'white-handwheel-rotation-index';
-  handwheel.add(wheelIndex);
 
   const thrustCollar = cylinderAlongX(0.32, 0.18, darkMaterial, 34);
   thrustCollar.position.x = housingMaximumX + 0.18;
@@ -526,7 +538,7 @@ function latheTailstockScrewFeed(movement) {
   quill.add(quillKey);
   const quillIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.06, 0.08, 0.20),
-    whiteMaterial,
+    drivenMaterial,
   );
   quillIndex.position.set(-0.72, 0.37, 0);
   quillIndex.userData.role = 'white-quill-translation-index';
@@ -597,7 +609,6 @@ function latheTailstockScrewFeed(movement) {
     whiteMaterial,
   );
   threadContactMarker.userData.role = 'active-screw-nut-contact-marker';
-  root.add(threadContactMarker);
 
   root.userData.archetype =
     'handwheel-retained-leadscrew-keyed-tailstock-quill-center-feed';
@@ -833,6 +844,7 @@ function latheTailstockScrewFeed(movement) {
   };
 
   root.userData.hideGround = true;
+  root.userData.cameraFov = 8;
   root.userData.solidReview = { externalProfile, threadCrestRadius, threadRadialClearance,
     flankClearance: 0.002, qualification: 'Prescribed screw lead law; inferred square threads, running clearance and bored keyed guides. No passive force or friction validation.' };
   root.traverse(object => { for (const material of object.material ? [].concat(object.material) : []) material.fog = false; });
@@ -841,7 +853,8 @@ function latheTailstockScrewFeed(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(-4.2, 3.7, 15.8),
+    // Brown draws a flat side elevation with the handwheel edge-on.
+    cameraDirection: new THREE.Vector3(0, 0, 16),
   };
 }
 

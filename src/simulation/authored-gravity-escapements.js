@@ -5630,12 +5630,18 @@ function bloxamGravityEscapement(movement) {
   };
 }
 
+const GRAVITY_ESCAPEMENT_BUILDERS = {
+  309: mudgeGravityEscapement,
+  310: singleThreeLeggedGravityEscapement,
+  311: doubleThreeLeggedGravityEscapement,
+  312: bloxamGravityEscapement,
+};
+
 export function createAuthoredGravityEscapementMovement(movement) {
-  switch (movement.id) {
-    case 309: return mudgeGravityEscapement(movement);
-    case 310: return singleThreeLeggedGravityEscapement(movement);
-    case 311: return doubleThreeLeggedGravityEscapement(movement);
-    case 312: return bloxamGravityEscapement(movement);
-    default: return null;
-  }
+  const build = GRAVITY_ESCAPEMENT_BUILDERS[movement.id];
+  if (!build) return null;
+  const model = build(movement);
+  // Brown draws all four as front elevations without a ground line.
+  model.root.userData.hideGround = true;
+  return model;
 }

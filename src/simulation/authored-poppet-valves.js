@@ -98,8 +98,9 @@ function rockShaftToeAndPoppetLifter(movement) {
   const sourceRasterLifterBlockRight = new THREE.Vector2(470, 177);
   const sourceRasterLifterTopLeft = new THREE.Vector2(56, 164);
   const sourceRasterLifterBlockTop = new THREE.Vector2(405, 91);
-  const sourceRasterValveRodTop = new THREE.Vector2(424, 36);
-  const sourceRasterValveRodBottom = new THREE.Vector2(424, 476);
+  // Brown's rod runs through the middle of the lifter block (425-455 px).
+  const sourceRasterValveRodTop = new THREE.Vector2(440, 36);
+  const sourceRasterValveRodBottom = new THREE.Vector2(440, 476);
   const sourceRasterUpperGuideCenter = new THREE.Vector2(424, 86);
   const sourceRasterLowerGuideCenter = new THREE.Vector2(424, 454);
   const observedCanvasLiftPixels = 40;
@@ -368,7 +369,6 @@ function rockShaftToeAndPoppetLifter(movement) {
   );
   toeNoseIndex.position.set(sourceToeNose.x + 0.08, sourceToeNose.y - 0.085, 0.27);
   toeNoseIndex.userData.role = 'white-toe-nose-index';
-  toe.add(toeNoseIndex);
   const rockShaft = cylinderAlongZ(0.31, 1.06, darkMaterial, 38);
   rockShaft.position.z = 0.04;
   rockShaft.userData.role = 'fixed-axis-rock-shaft';
@@ -434,11 +434,12 @@ function rockShaftToeAndPoppetLifter(movement) {
   const rodTopY = sourceRodTopY - highPoseOffset;
   const rodBottomY = sourceRodBottomY - highPoseOffset;
   const valveRod = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075,
-      rodTopY - rodBottomY, 24),
+    new THREE.CylinderGeometry(0.21, 0.21,
+      rodTopY - rodBottomY, 40),
     drivenMaterial,
   );
-  valveRod.position.set(valveRodX, (rodTopY + rodBottomY) / 2, 0);
+  // Set back so the lifter block is drawn over the rod, as on the plate.
+  valveRod.position.set(valveRodX, (rodTopY + rodBottomY) / 2, -0.08);
   valveRod.userData.role = 'vertical-poppet-valve-lifting-rod';
   lifter.add(valveRod);
   const poppetHead = new THREE.Mesh(
@@ -454,7 +455,6 @@ function rockShaftToeAndPoppetLifter(movement) {
   );
   valveIndex.position.set(valveRodX, 2.30 - highPoseOffset, 0.24);
   valveIndex.userData.role = 'white-valve-lift-index';
-  lifter.add(valveIndex);
 
   const fixedGuides = new THREE.Group();
   fixedGuides.userData.role = 'fixed-collinear-valve-rod-guides-and-seat';
@@ -473,11 +473,11 @@ function rockShaftToeAndPoppetLifter(movement) {
     const guideY = role.startsWith('upper') ? rodTopY - 0.08 : center.y - highPoseOffset / 2 + 0.08;
     guide.position.set(valveRodX, guideY, 0);
     guide.userData.role = role;
-    fixedGuides.add(guide);
     const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.10, 0.75), frameMaterial);
     bracket.position.set(valveRodX + 0.20, guideY, -0.375);
     bracket.userData.role = `${role}-rear-bracket`;
-    fixedGuides.add(bracket);
+    // Brown draws the lifting rod alone, broken off above and below; its
+    // guides and standard are off the plate, so they are not rendered.
   }
   const guidePost = new THREE.Mesh(
     new THREE.BoxGeometry(0.28, 8.4, 0.44),
@@ -485,7 +485,6 @@ function rockShaftToeAndPoppetLifter(movement) {
   );
   guidePost.position.set(valveRodX + 0.34, -0.80, -0.75);
   guidePost.userData.role = 'fixed-valve-rod-guide-standard';
-  fixedGuides.add(guidePost);
   const valveSeat = new THREE.Mesh(
     ring(0.44, 0.62, 0, 0.12, 96),
     frameMaterial,
@@ -514,7 +513,6 @@ function rockShaftToeAndPoppetLifter(movement) {
   );
   contactMarker.position.z = 0.48;
   contactMarker.userData.role = 'active-toe-lifter-contact-marker';
-  root.add(contactMarker);
 
   root.userData.archetype =
     'rockshaft-curved-toe-clearance-lifter-guided-poppet-valve';
@@ -538,8 +536,11 @@ function rockShaftToeAndPoppetLifter(movement) {
     workingFlank,
   };
   root.userData.cameraDistanceScale = 1.06;
+  root.userData.cameraFov = 8;
+  // Crop at Brown's lower break of the lifting rod; the inferred valve, seat
+  // and base below it stay out of view as on the plate.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.75, -4.9, -0.9),
+    new THREE.Vector3(-5.75, -3.2, -0.9),
     new THREE.Vector3(2.25, 3.95, 0.9),
   );
   root.userData.geometry = {
@@ -712,7 +713,8 @@ function rockShaftToeAndPoppetLifter(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.6, 4.8, 13.2),
+    // Brown draws a flat elevation along the rock-shaft axis.
+    cameraDirection: new THREE.Vector3(0, 0, 14),
   };
 }
 

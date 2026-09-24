@@ -83,7 +83,8 @@ test('movement 276 is one equal-diameter cam inside one two-roller translating y
   assert.equal(blocks.leftRoller.parent, blocks.yoke);
   assert.equal(blocks.rightRoller.parent, blocks.yoke);
   assert.equal(blocks.straightGuides.length, 2);
-  assert.ok(blocks.straightGuides.every((guide) => guide.parent === model.root));
+  // Brown draws no bar guides; source presentation detaches them.
+  assert.ok(blocks.straightGuides.every((guide) => guide.parent === null));
   vectorNear(blocks.cam.userData.axis, Z_AXIS, 0, 'cam axis');
   vectorNear(blocks.yoke.userData.axis, X_AXIS, 0, 'bar axis');
   vectorNear(blocks.leftRoller.userData.axis, Z_AXIS, 0,
@@ -96,7 +97,7 @@ test('movement 276 is one equal-diameter cam inside one two-roller translating y
   assert.equal(roles.filter((role) =>
     /captive-follower-roller$/.test(role)).length, 2);
   assert.equal(roles.filter((role) =>
-    /^fixed-(left|right)-straight-bar-guide$/.test(role)).length, 2);
+    /^fixed-(left|right)-straight-bar-guide$/.test(role)).length, 0);
   assert.equal(roles.filter((role) =>
     /roller-radius-inward-offset/.test(role)).length, 1);
   assert.equal(roles.filter((role) =>

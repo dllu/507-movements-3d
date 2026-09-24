@@ -75,7 +75,8 @@ test('movement 278 is the bilateral rope-tension-released Otis elevator safety s
   vectorNear(blocks.carriage.userData.axis, Y_AXIS, 0, 'platform guide axis');
   assert.equal(blocks.leftUpright.parent, model.root);
   assert.equal(blocks.rightUpright.parent, model.root);
-  assert.equal(blocks.rackTeeth.length, 28);
+  // Pass 51 cropped the uprights to Brown's view: 12 seats per side.
+  assert.equal(blocks.rackTeeth.length, 24);
   assert.ok(blocks.rackTeeth.every((tooth) => tooth.parent === model.root));
   assert.equal(blocks.leftLever.parent, blocks.carriage);
   assert.equal(blocks.rightLever.parent, blocks.carriage);
@@ -104,7 +105,7 @@ test('movement 278 is the bilateral rope-tension-released Otis elevator safety s
   assert.equal(roles.filter((role) => /guided-safety-pawl-d$/.test(role))
     .length, 2);
   assert.equal(roles.filter((role) => /upward-hook-rack-tooth/.test(role))
-    .length, 28);
+    .length, 24);
   assert.equal(roles.filter((role) => /belt|pulley/.test(role)).length, 0);
   disposeModel(model.root);
 });
@@ -452,11 +453,22 @@ test('movement 278 update binds platform travel, mirrored levers, spring, split 
       expected.caught);
   }
 
+  // Like Brown's stub a, the hoisting rope runs off the top of the crop;
+  // every other part stays framed.
+  const ropes = new Set([blocks.upperRope, blocks.lowerRope]);
   const renderedBounds = new THREE.Box3();
   for (let index = 0; index <= 128; index += 1) {
     model.update(timeline.cyclePeriod * index / 128);
     model.root.updateMatrixWorld(true);
-    renderedBounds.union(new THREE.Box3().setFromObject(model.root, true));
+    for (const child of model.root.children) {
+      if (!ropes.has(child)) {
+        renderedBounds.union(new THREE.Box3().setFromObject(child, true));
+      }
+    }
+    assert.ok(cameraFitBounds.containsPoint(
+      model.root.userData.kinematics.ropeEye));
+    assert.ok(model.root.userData.kinematics.lowerBrokenEnd.y
+      > cameraFitBounds.max.y);
   }
   assert.equal(cameraFitBounds.containsBox(renderedBounds), true);
   disposeModel(model.root);

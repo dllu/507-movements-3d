@@ -78,7 +78,9 @@ test('movement 290 is one fixed seven-tooth wheel inside one annular pendulum', 
   assert.equal(blocks.leftPallet.parent, blocks.annularPendulum);
   assert.equal(blocks.rightConnector.parent, blocks.annularPendulum);
   assert.equal(blocks.leftConnector.parent, blocks.annularPendulum);
-  assert.equal(blocks.contactMarker.parent, model.root);
+  // Source presentation detaches the contact marker Brown does not draw;
+  // the factory still positions it for metadata consumers.
+  assert.equal(blocks.contactMarker.parent, null);
   vectorNear(blocks.annularPendulum.userData.axis,
     new THREE.Vector3(0, 0, 1), 0, 'pendulum axis');
   vectorNear(blocks.escapeWheel.userData.axis,

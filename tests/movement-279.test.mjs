@@ -240,7 +240,8 @@ test('movement 279 keeps its output rod captured by both fixed guides', () => {
   let minimumCoverage = Infinity;
 
   assert.equal(blocks.crossheadRod.parent, blocks.crosshead);
-  assert.ok(blocks.guideBlocks.every((guide) => guide.parent === model.root));
+  // The reconstructed rod guides lie beyond Brown's crop and are presented away.
+  assert.ok(blocks.guideBlocks.every((guide) => guide.parent === null));
   assert.ok(blocks.guidePosts.every((post) => post.parent === null),
     'the undrawn guide posts are presented away');
   for (let index = 0; index <= 4096; index += 1) {
@@ -296,7 +297,7 @@ test('movement 279 analytic velocities and accelerations match finite difference
   disposeModel(model.root);
 });
 
-test('movement 279 renderer binds every moving member and visible motion index', () => {
+test('movement 279 renderer binds every moving member without motion indices', () => {
   const model = createMovementModel(catalog.movements[278]);
   const {
     animationTiming,
@@ -306,9 +307,10 @@ test('movement 279 renderer binds every moving member and visible motion index',
   assert.equal(animationTiming.authoredCyclePeriod, 4);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
-  assert.equal(blocks.wristRotationIndex.parent, blocks.crankRotor);
-  assert.equal(blocks.crossheadMotionIndex.parent, blocks.crosshead);
-  assert.equal(blocks.boxMotionIndex.parent, blocks.journalBox);
+  // Brown draws no motion indices; pass 51 removed them.
+  assert.equal(blocks.wristRotationIndex.parent, null);
+  assert.equal(blocks.crossheadMotionIndex.parent, null);
+  assert.equal(blocks.boxMotionIndex.parent, null);
 
   for (const time of [0, 0.37, 1.04, 1.73, 2.42, 3.18, 4]) {
     const expected = stateAtTime(time);

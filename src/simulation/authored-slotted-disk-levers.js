@@ -144,9 +144,11 @@ function slottedDiskLeverRackAndWeight(movement) {
   const sectorAngularPitch = FULL_TURN / sectorEquivalentToothCount;
   const rackPitch = sectorPitchRadius * sectorAngularPitch;
   const sectorToothCount = 7;
-  const rackToothCount = 22;
+  // Brown cuts only a short run of teeth into the middle of the long guided
+  // bar: 7 sector teeth plus the 2.4-pitch stroke and a tooth of margin.
+  const rackToothCount = 12;
   const toothHeight = 0.16;
-  const rackLength = rackPitch * (rackToothCount + 1.4);
+  const rackLength = rackPitch * 23.4;
   const rackDepth = 0.32;
   const rackBodyHeight = 0.24;
   const rackPitchY = leverPivot.y - sectorPitchRadius;
@@ -600,8 +602,9 @@ function slottedDiskLeverRackAndWeight(movement) {
   for(const x of [leftFoot.x,rightFoot.x]) {
     frame.add(makeBeam(new THREE.Vector3(x,0,-.48),new THREE.Vector3(Math.sign(x)*.18,0,-.48),
       {color:PALETTE.frame,radius:.085}));
-    const y=leverPivot.y+Math.sqrt((guideRadius-.145)**2-(x-leverPivot.x)**2);
-    frame.add(makeBeam(new THREE.Vector3(x,frameTopY,-.42),new THREE.Vector3(x,y,-.12),
+    // Strut meets the guide's inner rim behind the plate, clear of the slot.
+    const y=leverPivot.y+Math.sqrt((guideRadius-.19)**2-(x-leverPivot.x)**2);
+    frame.add(makeBeam(new THREE.Vector3(x,frameTopY,-.42),new THREE.Vector3(x,y,-.2),
       {color:PALETTE.frame,radius:.08}));
   }
   const diskIndex = makeBeam(
@@ -611,14 +614,14 @@ function slottedDiskLeverRackAndWeight(movement) {
   );
   diskIndex.userData.role = 'white-disk-phase-and-crank-radius-index';
   diskIndex.position.z=-.04;
-  diskRotor.add(diskIndex);
+  // Brown draws the crank radius only dashed behind the disk; no front index.
   const drivePin = cylinderAlongZ(drivePinRadius, 0.62, accentMaterial, 32);
   drivePin.position.set(crankRadius, 0, 0.27);
   drivePin.userData.role = 'disk-fixed-pin-sliding-in-lever-slot';
   diskRotor.add(drivePin);
-  const drivePinHead = cylinderAlongZ(0.105, 0.06, whiteMaterial, 32);
+  const drivePinHead = cylinderAlongZ(0.105, 0.06, darkMaterial, 32);
   drivePinHead.position.set(crankRadius, 0, 0.61);
-  drivePinHead.userData.role = 'white-visible-drive-pin-head';
+  drivePinHead.userData.role = 'visible-drive-pin-head';
   diskRotor.add(drivePinHead);
 
   const lever = new THREE.Group();
@@ -680,9 +683,9 @@ function slottedDiskLeverRackAndWeight(movement) {
   for(const x of [leftFoot.x,rightFoot.x])frame.add(makeBeam(
     new THREE.Vector3(x,leverPivot.y,-.33),new THREE.Vector3(leverPivot.x+Math.sign(x)*.23,leverPivot.y,-.33),
     {color:PALETTE.frame,radius:.085}));
-  const pivotCap = cylinderAlongZ(0.075, 0.07, whiteMaterial, 30);
+  const pivotCap = cylinderAlongZ(0.075, 0.07, darkMaterial, 30);
   pivotCap.position.set(leverPivot.x, leverPivot.y, 0.58);
-  pivotCap.userData.role = 'white-fixed-lever-pivot-index';
+  pivotCap.userData.role = 'fixed-lever-pivot-cap';
   root.add(pivotCap);
 
   const guideMinimumAngle = minimumLeverAngle - 0.09;
@@ -696,8 +699,9 @@ function slottedDiskLeverRackAndWeight(movement) {
   root.add(topGuide);
   const guideSlot = new THREE.Object3D();
   guideSlot.userData.role='upper-guide-arcuate-slot';
-  const guidePin = cylinderAlongZ(0.085, 0.62, whiteMaterial, 30);
-  guidePin.position.set(guideRadius, 0, -.05);
+  // Runs from inside the guide plate (world z -0.15) through the lever face.
+  const guidePin = cylinderAlongZ(0.085, 0.43, darkMaterial, 30);
+  guidePin.position.set(guideRadius, 0, -.115);
   guidePin.userData.role = 'lever-pin-traversing-concentric-guide';
   lever.add(guidePin);
   const cordEye = cylinderAlongZ(.045,.32,darkMaterial);
@@ -739,7 +743,6 @@ function slottedDiskLeverRackAndWeight(movement) {
   );
   rackIndex.position.set(rackPitch / 2, rackToothRootY - 0.08, 0.18);
   rackIndex.userData.role = 'white-rack-translation-index';
-  rack.add(rackIndex);
   for (const x of [leftFoot.x, rightFoot.x]) {
     const guide = new THREE.Group();
     guide.userData.role = 'fixed-rack-slide-guide';
@@ -785,7 +788,6 @@ function slottedDiskLeverRackAndWeight(movement) {
   );
   pulleyIndex.position.set(pulleyRunningRadius * 0.46, 0, 0.105);
   pulleyIndex.userData.role = 'white-pulley-no-slip-speed-index';
-  pulleyRotor.add(pulleyIndex);
 
   const ropePlaneZ = 0.59;
   const cord = new THREE.Group();
@@ -827,7 +829,6 @@ function slottedDiskLeverRackAndWeight(movement) {
   );
   weightIndex.position.set(0, 0, 0.01);
   weightIndex.userData.role = 'white-weight-translation-index';
-  weight.add(weightIndex);
 
   root.userData.archetype =
     'eccentric-disk-pin-slotted-lever-sector-rack-cord-weight';

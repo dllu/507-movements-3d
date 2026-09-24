@@ -160,36 +160,40 @@ export default {
     note: 'Side elevation of the disk with its bevelled rim and wavy face on the shaft, and the inclined rod in its guides; no base, post, shaft bearings or backing rail are drawn.',
   },
   276: {
-    remove: ['fixed-(?:left|right)-guide-support-post', 'fixed-equal-diameter-cam-display-base', 'fixed-cam-bearing-arm', 'fixed-rear-cam-bearing-post'],
-    note: 'The three-lobed cam between the rollers of the sliding bar; no base, posts or bearing arm are drawn.',
+    remove: ['fixed-(?:left|right)-guide-support-post', 'fixed-equal-diameter-cam-display-base', 'fixed-cam-bearing-arm', 'fixed-rear-cam-bearing-post', 'fixed-(?:left|right)-straight-bar-guide'],
+    note: 'Face-on elevation of the three-lobed cam between the rollers of the level sliding bar; no base, posts, bearing arm or bar guides are drawn.',
   },
   279: {
-    remove: ['fixed-(?:left|right)-crosshead-guide-post', 'fixed-crosshead-display-base'],
-    note: 'The Clayton journal box in its sliding frame on the rod; no base or posts are drawn.',
+    remove: ['fixed-(?:left|right)-crosshead-guide-post', 'fixed-crosshead-display-base', '(?:left|right)-fixed-crosshead-guide-(?:upper|lower)'],
+    note: 'Close face view of the Clayton journal box in its slotted crosshead, the rod broken off on both sides; no base, posts or rod guides are drawn.',
+  },
+  280: {
+    remove: ['fixed-windlass-display-base'],
+    note: 'Face view of the plain windlass wheel, the rim-travelling jaw block, the coupler and the hand lever on the framed posts, which run off the bottom of the plate; no base is drawn and the ratchet is hidden behind the wheel.',
   },
   288: {
-    remove: ['rear-clock-plate-standard', 'fixed-clock-frame-base'],
-    note: 'Face view of the escape wheel and anchor H, L, K; no clock plate or base is drawn.',
+    remove: ['rear-clock-plate-standard', 'fixed-clock-frame-base', 'white-index-on-(?:escape-wheel-tooth-zero|rocking-anchor-crutch)', 'visible-nonconcentric-working-face', 'white-marker-on-active-tooth-pallet-contact'],
+    note: 'Face view of the escape wheel and anchor H, L, K; no clock plate, base, index marks or highlighted pallet faces are drawn.',
   },
   289: {
-    remove: ['rear-deadbeat-clock-plate-standard', 'fixed-deadbeat-clock-frame-base'],
-    note: 'Face view of the dead-beat wheel A and anchor; no clock plate or base is drawn.',
+    remove: ['rear-deadbeat-clock-plate-standard', 'fixed-deadbeat-clock-frame-base', 'white-index-on-deadbeat-(?:wheel-tooth-zero|anchor-stem-L)', '(?:left-H|right-K)-(?:concentric-locking|impulse)-face', 'white-marker-on-active-deadbeat-contact'],
+    note: 'Face view of the dead-beat wheel A and anchor; no clock plate, base, index marks or highlighted pallet faces are drawn.',
   },
   290: {
-    remove: ['rear-clock-frame-standard', 'fixed-annular-escapement-frame-base'],
-    note: 'Face view of the wheel D inside the annular pallet frame; no clock plate or base is drawn.',
+    remove: ['rear-clock-frame-standard', 'fixed-annular-escapement-frame-base', 'white-index-on-(?:seven-tooth-wheel|pendulum-rod-K)', 'white-marker-on-active-annular-pendulum-contact', '(?:right-inward-pallet-A|left-inward-pallet-B)-nonconcentric-recoil-face-visible-working-edge'],
+    note: 'Face view of the seven hooked teeth of wheel D inside the annular pallet frame; no clock plate, base or index marks are drawn.',
   },
   291: {
-    remove: ['fixed-watch-plate-base', 'fixed-balance-arbor-standard', 'fixed-escape-wheel-arbor-standard'],
-    note: 'The escape wheel B, balance a and detent; no watch plate, standards or base is drawn.',
+    remove: ['fixed-watch-plate-base', 'fixed-balance-arbor-standard', 'fixed-escape-wheel-arbor-standard', 'balance-wheel-rim', 'balance-spoke-[123]', 'white-index-inside-escape-wheel-B', 'white-marker-on-(?:stop-d-locking|tooth-to-notch-g-impulse)-contact', 'visible-working-side-of-impulse-notch-g'],
+    note: 'The escape wheel B, balance a drawn as a plain notched disc, and the detent with its springs; no watch plate, standards, base, balance rim and spokes, or index marks are drawn.',
   },
   292: {
     remove: ['fixed-rear-clock-plate-standard', 'fixed-large-clock-frame-base'],
     note: 'The wheel, gravity arms and pallets; no clock plate or base is drawn.',
   },
   293: {
-    remove: ['fixed-rear-duplex-watch-plate-standard', 'fixed-duplex-watch-frame-base', 'rear-bridge-between-watch-journals'],
-    note: 'The duplex wheel and roller; no watch plate, bridge or base is drawn.',
+    remove: ['fixed-rear-duplex-watch-plate-standard', 'fixed-duplex-watch-frame-base', 'rear-bridge-between-watch-journals', 'white-index-on-duplex-(?:impulse-pin-zero|balance)', 'white-marker-on-active-duplex-(?:lock-or-notch|impulse)-contact'],
+    note: 'Close-up of the top of the duplex wheel: roller A and pallet B over a short rim arc with the long teeth and crown pins a; no watch plate, bridge, base or index marks are drawn.',
   },
   294: {
     rotate: [0, 0, 2.77],
@@ -205,6 +209,10 @@ export default {
     ],
     note: 'Brown draws only the cylinder in perspective (295 shows the wheel); the escape wheel, balance and watch frame are not drawn.',
   },
+  295: {
+    remove: ['white-index-on-cylinder-wheel-pallet-zero', 'white-source-label-marker-for-pallet-[abc]'],
+    note: 'Flat close-up of the top of the wheel: the wedge pallets a, b, c on their swept-back arms over the rim arc and the cylinder A, B between them; no index or label marks are drawn.',
+  },
   296: {
     remove: ['fixed-rear-lever-watch-plate-standard', 'fixed-lever-escapement-frame-base', 'rear-bridge-between-watch-journals'],
     note: 'Face view of the escape wheel A and lever B, C; no watch plate, bridge or base is drawn.',
@@ -215,7 +223,7 @@ export default {
   },
   299: {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
-    camera: [0.1, 0.14, -1],
+    camera: [0.02, 0.06, -1],
     remove: ['weighted-horizontal-foliot-regulator'],
     note: 'Nearly edge-on view along the verge: the crown band with its raked teeth, the verge journal end-on above it and the two pallets about 100° apart, the steep one on the left and the shallow one on the right. Brown crops the foliot out of the detail, so it is not shown.',
   },
@@ -226,6 +234,10 @@ export default {
   301: {
     remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],
     note: 'Side elevation along the balance staff: the two wheels edge-on on their common arbor and the level D pallet below with the staff end-on; no witness marks are drawn.',
+  },
+  303: {
+    remove: ['white-Graham-wheel-index', 'white-pendulum-swing-witness', 'white-active-Graham-contact', '(?:left-D|right-E)-(?:concentric-locking|impulse)-face'],
+    note: 'Face view of the Graham wheel with its four crossings as a leaning X under anchor D, C, E, the pendulum rod marked only by the dot F; no frame, bob, index marks or highlighted pallet faces are drawn.',
   },
   305: {
     remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket'],
@@ -244,32 +256,60 @@ export default {
     note: 'Front elevation of the pendulum pieces P, P and their web carrying pallet I, click C and its two stop pins, with the six-toothed hooked escape wheel under its screwed cock and lever Q; no clock frame or pendulum suspension is drawn.',
   },
   313: {
-    remove: ['fixed-watch-frame-base', 'escape-wheel-arbor-standard', 'balance-staff-standard'],
-    note: 'The escape wheel, balance V and spring detent D; no watch frame is drawn.',
+    remove: ['fixed-watch-frame-base', 'escape-wheel-arbor-standard', 'balance-staff-standard', 'escape-wheel-spoke-[1-4]-of-4', 'impulse-roller-with-crescent-tooth-passage', 'impulse-roller-spoke-[1-3]-of-3', 'visible-index-on-(?:clockwise-escape-wheel|balance-roller)', 'visible-radial-working-face-of-pallet-P', 'visible-contact-marker-at-(?:lock-T|sole-impulse-pallet-P)'],
+    note: 'The flat escape wheel with four broad crossings, the roller drawn as a plain disc notched at pallet P with the discharging roller V, and spring detent D; no watch frame, open roller ring, spokes or index marks are drawn.',
   },
   314: {
-    remove: ['fixed-wheel-to-lever-frame-member', 'fixed-lever-to-balance-frame-member', 'fixed-frame-member-behind-banking-tail', 'fixed-lever-chronometer-frame-base'],
-    note: 'The escape wheel, locking lever A, B and balance roller C with its banking pins; no frame is drawn.',
+    remove: ['fixed-wheel-to-lever-frame-member', 'fixed-lever-to-balance-frame-member', 'fixed-frame-member-behind-banking-tail', 'fixed-lever-chronometer-frame-base', 'white-index-on-lever-chronometer-(?:wheel|balance)', 'white-marker-on-.*', '(?:.*-)?working-(?:lock-)?face-of-.*'],
+    note: 'The windowed escape wheel, locking lever A, B and the plain balance disk C behind the lever, with its banking pins; no frame, index dots or face highlights are drawn.',
   },
   309: {
-    remove: ['fixed-Mudge-escapement-frame'],
-    note: 'Front elevation of the wheel, the two pallet arms from their arbors C and the fork pins P, Q; no clock frame, crossbars or bearing brackets are drawn.',
+    remove: ['fixed-Mudge-escapement-frame', 'pendulum-rod-between-P-and-Q', 'pendulum-bob', '(?:.*-)?white-.*witness'],
+    note: 'Front elevation of the wheel, the two pallet arms from their arbors C and the fork pins P, Q, with only the small suspension eye between the arbors; Brown omits the pendulum rod and bob, and no clock frame, crossbars, bearing brackets or index marks are drawn.',
+  },
+  310: {
+    remove: ['pendulum-bob', 'single-wheel-bearing-bracket', '(?:.*-)?white-.*witness', '(?:.*-)?beat-pin-tip-witness'],
+    note: 'Front elevation of the lyre-shaped gravity legs under the T crossbar, the three-legged wheel with its fly and stops D, E; the pendulum rod runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
+  },
+  311: {
+    remove: ['pendulum-bob', 'double-wheel-bearing-bracket', '(?:.*-)?white-.*witness', '(?:.*-)?beat-pin-tip-witness'],
+    note: 'Front elevation of the diamond of gravity legs, the double three-legged wheel and the long fly; the pendulum rod runs out of the bottom of the plate with no bob, and no wheel bracket or index marks are drawn.',
   },
   312: {
-    remove: ['fixed-bloxam-support-frame', 'bloxam-pendulum-bob', '(left-A-E|right-B-F)-anti-double-impulse-reinforcement-wire', 'documented-point-two-inch-primitive-diameter-ring'],
+    remove: ['fixed-bloxam-support-frame', 'bloxam-pendulum-bob', '(left-A-E|right-B-F)-anti-double-impulse-reinforcement-wire', 'documented-point-two-inch-primitive-diameter-ring', '(?:.*-)?white-.*witness'],
     note: 'Front elevation of the two wheels and the gravity arms hung from C with fork pins E, F; the trapezoid outline is the arms themselves, and no separate support frame is drawn. The pendulum is only a dashed line and no bob is drawn.',
   },
+  315: {
+    remove: ['fixed-bearing-bridge-post', 'fixed-upper-spindle-bearing', 'nonphysical-wrist-orbit-reference-circle', 'white-crank-rotation-index', 'white-spindle-rotation-index', 'white-pendulum-orientation-index'],
+    note: 'Perspective view of the top hanger, the inclined rod and cylindrical bob, the single crank arm on the spindle, the loose bearing bar, the bevel collar and the foot; no bearing posts, orbit circle or index marks are drawn.',
+  },
   316: {
-    remove: ['fixed-upper-suspension-plate'],
-    note: 'The jar pendulum, its suspension bracket and adjusting screw; no upper suspension plate is drawn.',
+    remove: ['fixed-mercurial-pendulum-suspension-frame', 'moving-pendulum-pivot-hub', 'white-pendulum-swing-index', 'white-mercury-level-motion-index', 'nonphysical-fixed-center-of-oscillation-datum-ring', 'white-fixed-center-of-oscillation-marker'],
+    note: 'The jar pendulum, its stirrup and adjusting screw, the rod running out of the top of the plate; no suspension plate, pivot, level indices or datum ring are drawn.',
   },
   317: {
-    remove: ['fixed-upper-suspension-plate'],
-    note: 'The rod, compound bar C, weights W and bob M; no upper suspension plate is drawn.',
+    remove: ['fixed-compound-pendulum-suspension-frame', 'moving-pendulum-pivot-hub', 'main-bob-central-rod-hub', 'white-main-weight-motion-index', 'white-end-weight-motion-index', 'white-fixed-center-of-oscillation-marker', 'nonphysical-fixed-center-of-oscillation-datum'],
+    note: 'The rod running out of the top of the plate, compound bar C, weights W and bob M; no suspension plate, pivot, hub or white indices are drawn.',
+  },
+  318: {
+    remove: ['fixed-stud-R-support'],
+    note: 'The three-armed balance, spring with stud R and curb pins P on the regulator lever, pointer T over the graduated SLOW/FAST band; no stud bracket is drawn.',
+  },
+  319: {
+    remove: ['temperature-softening-balance-spring-segment', 'fixed-outer-balance-spring-stud', 'fixed-balance-spring-stud-bracket'],
+    note: 'The compensation balance alone: bar t-a-t\' with timing screws and the compound arms carrying weights b, b\'; no balance spring or stud is drawn.',
   },
   320: {
-    remove: ['fixed-clock-frame'],
-    note: 'The pulleys P and p, the weights and the endless chain; no clock frame is drawn.',
+    remove: ['fixed-clock-frame', '.*-symmetric-rotation-index', 'chain-link-index-marker'],
+    note: 'The pulleys P and p, the weights and the endless chain; no clock frame, rotation indices or chain markers are drawn.',
+  },
+  321: {
+    remove: ['fixed-clock-frame-and-T-bearing', 'great-wheel-G-symmetric-rotation-index', 'barrel-B-symmetric-rotation-index', 'maintaining-spring-material-index'],
+    note: 'Great wheel G, the ratchets, click R, spring S-S\', detent T pivoted at its eye and the weight on barrel B; no frame beam or white indices are drawn.',
+  },
+  329: {
+    remove: ['white-index-fast-with-plate-C', 'white-index-on-carrier-crank-C', 'white-index-on-translating-piston-rod-A'],
+    note: 'Flywheel with plate C, wheel B inside the fixed internal gear D, piston rod A and the A-frame legs, cropped at the cylinder cover as the plate is; no white indices are drawn.',
   },
   348: {
     remove: ['fixed-shaft-pedestal-leg-\\d', 'fixed-base', 'fixed-base-edge', 'fixed-external-guide-rail-(left|right)', 'fixed-external-guide-support-\\d', 'fixed-external-guide-top-bridge', 'fixed-rear-shaft-bearing-bridge'],

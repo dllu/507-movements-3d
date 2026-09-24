@@ -848,6 +848,12 @@ function equalDiameterCam(movement) {
   };
   update(0);
   root.userData.hideGround = true;
+  // Brown draws no phase indices on the cam, bar or rollers.
+  const whiteIndices = [];
+  root.traverse((object) => {
+    if (/^white-|-white-/.test(object.userData.role ?? '')) whiteIndices.push(object);
+  });
+  for (const object of whiteIndices) object.removeFromParent();
   root.traverse(object => {
     for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
   });
@@ -855,7 +861,8 @@ function equalDiameterCam(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(5.0, 3.5, 10.4),
+    // Brown's figure is a face-on elevation with the bar level.
+    cameraDirection: new THREE.Vector3(0.3, 0.2, 12),
   };
 }
 

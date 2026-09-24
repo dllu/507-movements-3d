@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
-import {plate,poly,circle,capsule,sector,polygonClipping as clip} from './finite-plate-geometry.js';
+import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const rect=(w,h,x=0,y=0)=>poly([[x-w/2,y-h/2],[x+w/2,y-h/2],[x+w/2,y+h/2],[x-w/2,y+h/2]]);
 const tube=(r,b,l)=>boredCylinderGeometry(r,b,l);
@@ -15,7 +15,9 @@ export function correctEpicyclicGuide(root){
   replace(b.centralBore,tube(.155,.153,.12));b.centralBore.position.z=-.31;
   const web=new THREE.Mesh(plate(clip.difference(rect(2*g.fixedRingOuterRadius,.12),poly(circle([0,0],.156,64))),-.04,.04),b.centralBearing.material);
   web.position.z=-.31;web.userData.role='fixed-bored-web-joining-annulus-and-main-journal';b.fixedFrame.add(web);b.bearingWeb=web;
-  for(const boss of b.sideBearings){replace(boss,new THREE.CylinderGeometry(.21,.21,.42,40));boss.position.z=-.14;}
+  // The side bosses sit just outside the orbit of wheel B's tips (radius
+  // 1.75), still seated on the back of annulus D's rim.
+  for(const boss of b.sideBearings){replace(boss,new THREE.CylinderGeometry(.21,.21,.42,40));boss.position.z=-.14;boss.position.x=Math.sign(boss.position.x)*1.975;}
   // Keep the carried pin ahead of the fixed rear web, and the wrist pin
   // ahead of the fixed ring teeth at the two piston dead centers.
   replace(b.inputShaft,new THREE.CylinderGeometry(.1512,.1512,.87,40));b.inputShaft.position.z=-.455;
@@ -25,10 +27,11 @@ export function correctEpicyclicGuide(root){
   const hub=b.planetGearB.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');replace(hub,tube(hub.geometry.parameters.radiusTop,.078,hub.geometry.parameters.height));b.planetHub=hub;
   replace(b.wristBoss,tube(.21,.108,.25));replace(b.wristRing,tube(.1512,.108,.045).rotateX(Math.PI/2));
   // Extend the engraving's cropped cylinder to contain the complete source
-  // stroke, with a front inspection opening and a real rod gland.
+  // stroke as a closed bored barrel (Brown draws no opening) with a real
+  // rod gland; the default view crops it below the cover as the plate does.
   const top=-2.835,bottom=g.pistonHeadBottomLocalY-g.pistonStroke/2-.09,inner=.637,outer=.71;
   replace(b.pistonHead,new THREE.CylinderGeometry(.63,.63,g.pistonHeadTopLocalY-g.pistonHeadBottomLocalY,64));
-  replace(b.cylinderBody,plate(sector(inner,outer,Math.PI*5/6,Math.PI*13/6,96),-top,-bottom).rotateX(Math.PI/2));
+  replace(b.cylinderBody,tube(outer,inner,top-bottom).translate(0,(top+bottom)/2,0));
   b.cylinderBody.position.set(0,0,g.pistonPlaneZ);
   passageY(b.cylinderTop,1.68,1.5,.17,.163,.1575);b.cylinderTop.position.z=g.pistonPlaneZ;
   passageY(b.gland,.42,.40,.1635,.156,.35);b.gland.position.set(0,-2.54,g.pistonPlaneZ);

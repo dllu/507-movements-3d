@@ -391,9 +391,10 @@ test('movement 283 renderer binds the one rotor and both rack-piston trains', ()
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
   assert.equal(model.root.userData.cameraDistanceScale, 1.02);
-  assert.equal(blocks.leftRackIndex.parent, blocks.leftRack);
-  assert.equal(blocks.rightRackIndex.parent, blocks.rightRack);
-  assert.equal(blocks.handleGripCap.parent, blocks.pinionRotor);
+  for (const index of [blocks.leftRackIndex, blocks.rightRackIndex,
+    blocks.handleGripCap]) {
+    assert.equal(index.parent, null, 'undrawn white index removed');
+  }
 
   for (const time of [0, 0.34, 0.79, 1.29, 1.72, 2.18, 2.64, 3.13,
     3.58, 4]) {

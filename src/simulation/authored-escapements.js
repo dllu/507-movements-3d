@@ -3885,12 +3885,15 @@ function oldFashionedClockVergeEscapement(movement) {
     vergeStaff,
   };
   // Brown's 299 is a nearly orthographic detail: the verge journal end-on
-  // over the crown band and its teeth. Frame the whole band edge-on (local
-  // crown height -0.4..1.3, the full diameter across the verge) in this
-  // unpresented world frame, with a narrow field.
+  // over the crown band and its teeth, cropped to the few teeth either side
+  // of the verge. Fit only that central stretch of the band (local crown
+  // height -0.4..1.3, about 1.5 either side of the verge) in this
+  // unpresented world frame, with a narrow field, so the outer teeth run off
+  // the frame as Brown's band does.
+  root.userData.hideGround = true;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.4 * displayScale, -2.3 * displayScale, -2.3 * displayScale),
-    new THREE.Vector3(1.3 * displayScale, 2.3 * displayScale, 2.3 * displayScale),
+    new THREE.Vector3(-0.4 * displayScale, -1.5 * displayScale, -1.5 * displayScale),
+    new THREE.Vector3(1.3 * displayScale, 1.5 * displayScale, 1.5 * displayScale),
   );
   root.userData.cameraFov = 12;
   root.userData.canonicalTimes = {
@@ -4160,6 +4163,7 @@ function makeDebaufreRatchetWheel({
   outerRadius,
   rimRadius,
   toothCount,
+  yokeArc = false,
 }) {
   const root = new THREE.Group();
   const rotor = new THREE.Group();
@@ -4241,6 +4245,24 @@ function makeDebaufreRatchetWheel({
     rotor.add(spoke);
   }
 
+  // Brown's 300 closes the two spokes with a broad arc just inside the rim,
+  // so the boss, spokes and arc read as one triangular sector yoke.
+  let yoke = null;
+  if (yokeArc) {
+    const arcOuter = rimRadius - rimWidth - 0.14;
+    const arcInner = arcOuter - 0.2;
+    const [arcStart, arcEnd] = spokeAngles;
+    const arcShape = new THREE.Shape();
+    arcShape.absarc(0, 0, arcOuter, arcStart, arcEnd, false);
+    arcShape.absarc(0, 0, arcInner, arcEnd, arcStart, true);
+    yoke = new THREE.Mesh(
+      debaufrePrism(arcShape, depth * 0.8, 48),
+      wheelMaterial,
+    );
+    yoke.userData.role = 'debaufre-ratchet-wheel-sector-yoke-arc';
+    rotor.add(yoke);
+  }
+
   const toothMeshes = [];
   const toothTips = [];
   for (let index = 0; index < toothCount; index += 1) {
@@ -4284,6 +4306,7 @@ function makeDebaufreRatchetWheel({
   root.userData.outerRadius = outerRadius;
   root.userData.rim = rim;
   root.userData.spokes = spokes;
+  root.userData.yoke = yoke;
   root.userData.teeth = toothCount;
   root.userData.toothMeshes = toothMeshes;
   root.userData.toothPitch = toothPitch;
@@ -4319,7 +4342,9 @@ function debaufreFrictionalRestEscapement(
   const wheelDepth = 0.15;
   const palletRadius = 0.8;
   const escapeArborRadius = 0.15;
-  const spacerDrumRadius = 0.72;
+  // 301's side elevation draws the drum edge; 300's front elevation shows
+  // none, so there it shrinks to hide behind the lobed boss.
+  const spacerDrumRadius = presentation === 'side' ? 0.72 : 0.42;
   const balanceStaffRadius = 0.12;
   const balanceStaffLength = 5.9;
   const palletColletRadius = 0.3;
@@ -4398,6 +4423,7 @@ function debaufreFrictionalRestEscapement(
     outerRadius: wheelContactRadius,
     rimRadius: wheelRimRadius,
     toothCount,
+    yokeArc: presentation === 'front',
   });
   frontWheel.position.set(0, wheelCenterY, wheelPlaneOffset);
   frontWheel.userData.pairMember = 'front';
@@ -4893,7 +4919,9 @@ function debaufreFrictionalRestEscapement(
       new THREE.Vector3(-3.75, palletBottom, -1.45),
       new THREE.Vector3(3.75, wheelTop, 1.45),
     );
-    cameraDirection = new THREE.Vector3(2.4, 1.8, 12.4);
+    // Brown's 300 is a front elevation drawn without a ground line.
+    root.userData.hideGround = true;
+    cameraDirection = new THREE.Vector3(1.2, 0.9, 12.4);
   }
   root.userData.canonicalTimes = {
     cycleClosure: cyclePeriod,

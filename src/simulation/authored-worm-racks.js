@@ -1,4 +1,5 @@
 import { correctWormRack } from './differential-thread-solids.js';
+import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -116,7 +117,9 @@ function wormDrivenRack(movement) {
   const sourceScale = 0.016;
   const sourceRasterWormAxisX = 285;
   const sourceRasterWormCenterY = 329;
-  const sourceRasterRackSpineCenter = new THREE.Vector2(195.5, 248);
+  // Pass 51: the spine runs from the plate's left outline (x 194) to the
+  // tooth roots (x 222), so its centre is at x 208 and the teeth are short.
+  const sourceRasterRackSpineCenter = new THREE.Vector2(208, 248);
   const sourceRasterRackTop = new THREE.Vector2(195, 62);
   const sourceRasterRackBottom = new THREE.Vector2(196, 433);
   const sourceRasterRackToothTip = new THREE.Vector2(244, 267);
@@ -124,22 +127,23 @@ function wormDrivenRack(movement) {
   const sourceRasterWormShaftBottom = new THREE.Vector2(285, 443);
 
   const wormAxisX = 0.55;
-  const wormCoreRadius = 0.39;
+  const wormCoreRadius = 0.51;
   const wormThreadRadius = 0.66;
-  const wormThreadTubeRadius = 0.16; // Square-thread axial half-width (legacy metadata key).
+  const wormThreadTubeRadius = 0.13; // Square-thread axial half-width (legacy metadata key).
+  const wormThreadOuterRadius = 0.88;
   const threadFlankClearance = .003;
   const wormThreadMinimumY = -1.45;
   const wormThreadMaximumY = 1.45;
   const wormShaftMinimumY = -1.824;
   const wormShaftMaximumY = 1.808;
-  const wormShaftRadius = 0.105;
+  const wormShaftRadius = 0.15;
   const wormHandedness = 1;
 
   const rackToothPitch = 0.64;
   const wormLead = rackToothPitch;
   const leadPerRadian = wormHandedness * wormLead / FULL_TURN;
   const wormWaveNumber = wormHandedness * FULL_TURN / wormLead;
-  const rackToothThickness = 0.314;
+  const rackToothThickness = 0.374;
   const rackToothHalfThickness = rackToothThickness / 2;
   const rackToothDepth = 0.38;
   const rackToothTipX = wormAxisX
@@ -148,7 +152,7 @@ function wormDrivenRack(movement) {
   const rackSpineCenterX = wormAxisX
     + (sourceRasterRackSpineCenter.x - sourceRasterWormAxisX)
       * sourceScale;
-  const rackSpineWidth = 0.17;
+  const rackSpineWidth = 0.448;
   const rackSpineDepth = 0.42;
   const rackSpineTopY = (
     sourceRasterWormCenterY - sourceRasterRackTop.y
@@ -528,7 +532,7 @@ function wormDrivenRack(movement) {
   const sourceState = stateAtPhase(0);
   const sourceIdealizationPixelErrors = {
     rackBottom: new THREE.Vector2(
-      rackSpineCenterX,
+      rackSpineCenterX - rackSpineWidth / 2,
       rackSpineBottomY,
     ).distanceTo(sourcePointToModel(sourceRasterRackBottom)) / sourceScale,
     rackCenter: new THREE.Vector2(
@@ -542,7 +546,7 @@ function wormDrivenRack(movement) {
     ).distanceTo(sourcePointToModel(sourceRasterRackToothTip))
       / sourceScale,
     rackTop: new THREE.Vector2(
-      rackSpineCenterX,
+      rackSpineCenterX - rackSpineWidth / 2,
       rackSpineTopY,
     ).distanceTo(sourcePointToModel(sourceRasterRackTop)) / sourceScale,
     wormShaftBottom: new THREE.Vector2(
@@ -733,13 +737,37 @@ function wormDrivenRack(movement) {
     root.userData.kinematics = state;
   };
   correctWormRack(root);
+  matchWormRackToPlate(root, wormThreadOuterRadius);
   update(0);
   markShadows(root);
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(1.8, 1.4, 12),
+    cameraDirection: new THREE.Vector3(0.9, 0.7, 12),
   };
+}
+
+// Brown draws a broad rack bar with short square teeth, and a large worm hub
+// carrying thin thread fins on a plain shaft; no collars or indices.
+function matchWormRackToPlate(root, outerRadius) {
+  const blocks = root.userData.blocks;
+  const geometry = root.userData.geometry;
+  const external = {
+    ...root.userData.threadProfiles.external,
+    outer: outerRadius,
+    width: 2 * geometry.wormThreadTubeRadius,
+  };
+  blocks.wormThread.geometry.dispose();
+  blocks.wormThread.geometry = helicalThread(external, threadAngles(external, 128))
+    .rotateX(-Math.PI / 2);
+  root.userData.threadProfiles = { external };
+  for (const object of [
+    ...blocks.collars,
+    blocks.rotationIndex,
+    blocks.translationIndex,
+    blocks.contactIndex,
+    blocks.threadIndex,
+  ]) object.removeFromParent();
 }
 
 export function createAuthoredWormRackMovement(movement) {

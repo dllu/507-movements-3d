@@ -74,7 +74,9 @@ test('movement 288 is one 30-tooth recoil wheel and one two-pallet anchor', () =
   assert.equal(blocks.leftPallet.parent, blocks.anchor);
   assert.equal(blocks.rightPallet.parent, blocks.anchor);
   assert.equal(blocks.anchorPivotHub.parent, blocks.anchor);
-  assert.equal(blocks.contactMarker.parent, model.root);
+  // Source presentation detaches the contact marker Brown does not draw;
+  // the factory still positions it for metadata consumers.
+  assert.equal(blocks.contactMarker.parent, null);
   assert.equal(blocks.spokeMeshes.length, 3);
   vectorNear(blocks.anchor.userData.axis,
     new THREE.Vector3(0, 0, 1), 0, 'anchor axis');
@@ -85,8 +87,12 @@ test('movement 288 is one 30-tooth recoil wheel and one two-pallet anchor', () =
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
     role === 'thirty-backward-raked-escape-wheel-teeth').length, 1);
+  // The white face highlights are construction aids Brown does not draw;
+  // source presentation removes them and the solid pallets carry the faces.
   assert.equal(roles.filter((role) =>
-    role === 'visible-nonconcentric-working-face').length, 2);
+    role === 'visible-nonconcentric-working-face').length, 0);
+  assert.equal(roles.filter((role) =>
+    role === 'solid-pallet-behind-working-face').length, 2);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });

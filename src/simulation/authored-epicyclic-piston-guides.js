@@ -152,7 +152,8 @@ function makeCarrierFlywheel({
   shaft.userData.role = 'live-shaft-fast-with-plate-C';
   const hub = cylinderAlongZ(
     hubRadius,
-    flywheelDepth * 1.34,
+    // Ends short of the fixed main bearing's rear face (z=-0.37).
+    flywheelDepth * 1.20,
     driverMaterial,
     44,
   );
@@ -321,9 +322,11 @@ function FixedAnnulusAndFrame({
           -20.15 * sourceScale,
         ),
         0.10,
-        0.34,
+        0.26,
         frameMaterial,
-        -0.28,
+        // Kept ahead of the flywheel rim and arms (back face z=-0.37 against
+        // the rim's -0.40) so the rotating wheel never passes through them.
+        -0.24,
       );
       leg.userData.fixed = true;
       leg.userData.role = `${sideName}-A-frame-support-leg`;
@@ -497,6 +500,13 @@ function EpicyclicPistonRodGuide(movement) {
     dedendum: gearModule*1.25,
     chamfer: 0,
   });
+  // Brown draws no white face index on wheel B; drop the generic gear's one.
+  const planetFaceIndex = planetGearB.userData.rotor.children.at(-1);
+  if (planetFaceIndex?.geometry?.type === 'BoxGeometry') {
+    planetFaceIndex.removeFromParent();
+    planetFaceIndex.geometry.dispose();
+    planetFaceIndex.material.dispose();
+  }
   const planetToothIndexOffset = Math.PI / sourcePlanetTeeth;
   planetGearB.userData.rotor.rotation.z = planetToothIndexOffset;
   planetGearB.position.set(carrierCrankRadius, 0, gearPlaneZ);
@@ -607,8 +617,15 @@ function EpicyclicPistonRodGuide(movement) {
   const stateAtCarrierAngle = (
     unwrappedCarrierAngle,
     angularVelocity = carrierAngularSpeed,
+    poseOffset = 0,
   ) => {
-    const carrierAngle = positiveModulo(unwrappedCarrierAngle, FULL_TURN);
+    // The unwrapped angle and phase count turns from the demonstration start;
+    // the pose offset is applied to the wrapped angle so a whole turn closes
+    // exactly.
+    const carrierAngle = positiveModulo(
+      positiveModulo(unwrappedCarrierAngle, FULL_TURN) + poseOffset,
+      FULL_TURN,
+    );
     const sine = Math.sin(carrierAngle);
     const cosine = Math.cos(carrierAngle);
     const radialUnit = new THREE.Vector2(cosine, sine);
@@ -623,7 +640,7 @@ function EpicyclicPistonRodGuide(movement) {
       -carrierCrankRadius * angularVelocity ** 2,
     );
     const planetUnwrappedAngle = -unwrappedCarrierAngle;
-    const planetAngle = positiveModulo(planetUnwrappedAngle, FULL_TURN);
+    const planetAngle = positiveModulo(-carrierAngle, FULL_TURN);
     const planetAngularVelocity = -angularVelocity;
     const planetAngularAcceleration = 0;
     const wristRadiusVector = new THREE.Vector2(
@@ -716,16 +733,29 @@ function EpicyclicPistonRodGuide(movement) {
     };
   };
 
+  // Brown's plate shows wheel B up and to the left of the shaft, with wrist A
+  // high on its stroke and the flywheel arms upright; the demonstration clock
+  // starts at that carrier angle rather than the official canvas's zero.
+  const sourcePoseCarrierAngle = Math.atan2(236 - 194, 214 - 264);
   const stateAtTime = (time) => {
     const elapsed = Number.isFinite(Number(time)) ? Number(time) : 0;
-    return stateAtCarrierAngle(elapsed * carrierAngularSpeed);
+    return stateAtCarrierAngle(
+      elapsed * carrierAngularSpeed,
+      carrierAngularSpeed,
+      sourcePoseCarrierAngle,
+    );
   };
+  const timeAtCarrierAngle = (angle) => positiveModulo(
+    (angle - sourcePoseCarrierAngle) / carrierAngularSpeed,
+    cyclePeriod,
+  );
   const canonicalTimes = {
     cycleClosure: cyclePeriod,
-    lowerDeadCenter: cyclePeriod * 0.75,
-    oppositeMidStroke: cyclePeriod * 0.50,
-    sourceStartMidStroke: 0,
-    upperDeadCenter: cyclePeriod * 0.25,
+    lowerDeadCenter: timeAtCarrierAngle(Math.PI * 1.5),
+    oppositeMidStroke: timeAtCarrierAngle(Math.PI),
+    plateStart: 0,
+    sourceStartMidStroke: timeAtCarrierAngle(0),
+    upperDeadCenter: timeAtCarrierAngle(Math.PI / 2),
   };
   const canonicalStates = Object.fromEntries(
     Object.entries(canonicalTimes).map(([name, time]) => [
@@ -938,7 +968,7 @@ function EpicyclicPistonRodGuide(movement) {
       planetWristRadius: sourcePlanetPitchRadius,
     },
     officialKeyframes: [0, 0.25, 0.50, 0.75, 1].map((phase) => {
-      const state = stateAtTime(cyclePeriod * phase);
+      const state = stateAtCarrierAngle(FULL_TURN * phase);
       return {
         carrierAngle: state.carrierAngle,
         phase,
@@ -1006,6 +1036,13 @@ function EpicyclicPistonRodGuide(movement) {
   markShadows(root);
   correctEpicyclicGuide(root);
   finishPistonGuides(root,update);
+  // Frame the plate's crop: the flywheel fills the view, the A-frame legs run
+  // out of the bottom, and only the cylinder cover and top are seen.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-3.42, -3.80, -0.80),
+    new THREE.Vector3(3.42, 3.22, 1.00),
+  );
+  root.userData.cameraDistanceScale = 1.0;
   return {
     cameraDirection: new THREE.Vector3(.8,.4,15),
     root,

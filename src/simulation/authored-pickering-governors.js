@@ -126,8 +126,8 @@ function pickeringThreeSpringGovernor(movement) {
   // Brown supplies one front elevation and marks this movement's animation
   // unavailable. Measurements below therefore come from the 525 px public-
   // domain plate. Pickering's patent US36621A supplies the topology hidden by
-  // that elevation: three equally spaced leaves, a keyed sliding sleeve, and
-  // weights clamped at the middle of each leaf. No geometry is copied from an
+  // that elevation: a keyed sliding sleeve and weights clamped at the middle of
+  // each leaf. The patent's third leaf is omitted because Brown draws two. No geometry is copied from an
   // animation.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
@@ -469,7 +469,6 @@ function pickeringThreeSpringGovernor(movement) {
     sleeveBody,
     thrustRingUpper,
     thrustRingLower,
-    sleeveIndex,
     featherKey,
   );
 
@@ -479,7 +478,10 @@ function pickeringThreeSpringGovernor(movement) {
     minimumDeflection,
     minimumSpanState.halfSpan,
   );
-  const baseAngles = [0, FULL_TURN / 3, 2 * FULL_TURN / 3];
+  // Brown's elevation draws two diametrically opposed spring-and-ball
+  // profiles and nothing between them; the plate is followed here although
+  // Pickering's patent section shows three equally spaced leaves.
+  const baseAngles = [0, FULL_TURN / 2];
   const springAssemblies = baseAngles.map((baseAngle, index) => {
     const springPlane = new THREE.Group();
     springPlane.rotation.y = baseAngle;
@@ -520,7 +522,7 @@ function pickeringThreeSpringGovernor(movement) {
       0,
     );
     ballIndex.userData.role = `white-orbit-index-on-weight-${index + 1}`;
-    springPlane.add(spring, ball, ballClampPin, ballIndex);
+    springPlane.add(spring, ball, ballClampPin);
     governorRotor.add(springPlane);
     return {
       ball,
@@ -567,7 +569,6 @@ function pickeringThreeSpringGovernor(movement) {
 
   governorRotor.add(
     spindle,
-    spindleIndex,
     upperHead,
     slidingSleeve,
   );
@@ -880,13 +881,13 @@ function pickeringThreeSpringGovernor(movement) {
   root.userData.archetype =
     'three-leaf-spring-pickering-governor-keyed-sliding-sleeve';
   root.userData.mechanism =
-    'three equally spaced flat leaf springs rotate with the spindle; each centrifugal weight is clamped at its spring midpoint, the upper spring ends are fixed to the spindle collar, and the lower ends raise one keyed nonrotating-relative-to-spindle sliding sleeve as speed increases';
+    'two diametrically opposed flat leaf springs, as drawn on Brown\u2019s plate (the patent uses three), rotate with the spindle; each centrifugal weight is clamped at its spring midpoint, the upper spring ends are fixed to the spindle collar, and the lower ends raise one keyed nonrotating-relative-to-spindle sliding sleeve as speed increases';
   root.userData.transmission = {
-    ballCount: 3,
-    feedback: 'higher spindle speed bows all three springs outward and raises the common sleeve; lower speed lets their elasticity retract the balls and depress the sleeve',
+    ballCount: 2,
+    feedback: 'higher spindle speed bows both springs outward and raises the common sleeve; lower speed lets their elasticity retract the balls and depress the sleeve',
     lowerSleeveRelativeRotation: 0,
     output: 'axial displacement of the keyed lower sleeve',
-    springCount: 3,
+    springCount: 2,
   };
   root.userData.blocks = {
     bearingHousing,
@@ -977,7 +978,7 @@ function pickeringThreeSpringGovernor(movement) {
     plate287: {
       imageHeight: sourceImageHeight,
       imageWidth: sourceImageWidth,
-      inferredTopology: 'the two visible profiles are the front projection of the patent’s three equally spaced spring-and-weight assemblies around one vertical spindle',
+      inferredTopology: 'the plate draws exactly two spring-and-weight profiles, modelled as two diametrically opposed assemblies; the patent’s third equally spaced assembly is not drawn and is omitted',
       measurementUncertaintyPixels: 7,
       rasterBallHalfHeight: sourceRasterBallHalfHeight,
       rasterBallHalfWidth: sourceRasterBallHalfWidth,
@@ -1049,5 +1050,7 @@ export function createAuthoredPickeringGovernorMovement(movement) {
   if (movement.id !== 287) return null;
   const model = pickeringThreeSpringGovernor(movement);
   correctClampParts(model, 287);
+  // Brown draws a flat front elevation across the two spring planes.
+  model.cameraDirection = new THREE.Vector3(0, 0.3, 14);
   return model;
 }

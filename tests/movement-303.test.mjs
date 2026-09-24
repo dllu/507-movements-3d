@@ -72,7 +72,9 @@ test('movement 303 is one clockwise deadbeat wheel and one pendulum-carried two-
   assert.equal(blocks.escapeWheel.parent, model.root);
   assert.equal(blocks.anchor.parent, model.root);
   assert.equal(blocks.fixedFrame.parent, model.root);
-  assert.equal(blocks.contactMarker.parent, model.root);
+  // Source presentation detaches the contact marker Brown does not draw;
+  // the factory still positions it for metadata consumers.
+  assert.equal(blocks.contactMarker.parent, null);
   assert.equal(blocks.wheelRotor.parent, blocks.escapeWheel);
   assert.equal(blocks.toothedRim.parent, blocks.wheelRotor);
   assert.equal(blocks.wheelHub.parent, blocks.wheelRotor);
@@ -80,7 +82,8 @@ test('movement 303 is one clockwise deadbeat wheel and one pendulum-carried two-
   assert.equal(blocks.rightPallet.parent, blocks.anchor);
   assert.equal(blocks.pendulumRod.parent, blocks.anchor);
   assert.equal(blocks.pendulumBob.parent, blocks.anchor);
-  assert.equal(blocks.pendulumIndex.parent, blocks.anchor);
+  // Brown marks F only as a dot; the white swing witness is not presented.
+  assert.equal(blocks.pendulumIndex.parent, null);
   assert.equal(blocks.anchorArms.length, 2);
   assert.ok(blocks.anchorArms.every((arm) => arm.parent === blocks.anchor));
   assert.equal(blocks.spokeMeshes.length, 4);
@@ -93,10 +96,14 @@ test('movement 303 is one clockwise deadbeat wheel and one pendulum-carried two-
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
     role === 'thirty-forward-leaning-deadbeat-teeth').length, 1);
+  // The white face highlights are construction aids Brown does not draw;
+  // source presentation removes them and the solid pallets carry the faces.
   assert.equal(roles.filter((role) =>
-    /(?:left-D|right-E)-concentric-locking-face$/.test(role)).length, 2);
+    /(?:left-D|right-E)-concentric-locking-face$/.test(role)).length, 0);
   assert.equal(roles.filter((role) =>
-    /(?:left-D|right-E)-impulse-face$/.test(role)).length, 2);
+    /(?:left-D|right-E)-impulse-face$/.test(role)).length, 0);
+  assert.equal(roles.filter((role) =>
+    /^(?:left|right)-anchor-arm-and-pallet-[DE]$/.test(role)).length, 2);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   near(cameraDistanceScale, 1.08, 0, 'source-complete camera scale');
   vectorNear(cameraFitBounds.min,

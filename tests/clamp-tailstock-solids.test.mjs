@@ -60,10 +60,8 @@ for(const [id,create] of [[190,createAuthoredClampMovement],[285,createAuthoredL
       }
       if(id===285) {
         const baseTop=new THREE.Box3().setFromObject(b.base).max.y;
-        for(const role of ['front-tailstock-casting-column','rear-tailstock-casting-column']) {
-          const column=b.frame.children.find(object=>object.userData.role===role);
-          assert.ok(Math.abs(new THREE.Box3().setFromObject(column).min.y-baseTop)<1e-6,'casting columns meet the base');
-        }
+        const casting=b.frame.children.find(object=>object.userData.role==='octagonal-window-tailstock-casting');
+        assert.ok(Math.abs(new THREE.Box3().setFromObject(casting).min.y-baseTop)<1e-6,'window casting meets the base');
       }
     } finally {disposeObject3D(model.root);}
   });

@@ -1093,11 +1093,20 @@ function duplexEscapement(movement) {
   }
   root.userData.fidelity = 'authored';
   correctDuplexLeverInterfaces(root, 293, update);
-  return correctDuplex293Contact({
+  const corrected = correctDuplex293Contact({
     cameraDirection: root.userData.cameraDirection,
     root,
     update,
   });
+  // Brown's 293 is a close-up of the wheel's top: roller A and pallet B over
+  // a short rim arc with three long teeth and the crown pins a. Frame that arc
+  // rather than the whole wheel.
+  corrected.root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.40, 0.10, -0.40),
+    new THREE.Vector3(2.40, 2.70, 0.40),
+  );
+  corrected.root.userData.cameraDistanceScale = 1.45;
+  return corrected;
 }
 
 export function createAuthoredDuplexEscapementMovement(movement) {

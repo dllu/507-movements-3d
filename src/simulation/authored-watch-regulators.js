@@ -403,11 +403,6 @@ function watchRegulator(movement) {
     metalness: 0.30,
     roughness: 0.46,
   });
-  const whiteMaterial = matte(PALETTE.white, {
-    metalness: 0.02,
-    roughness: 0.44,
-  });
-
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-watch-regulator-frame';
   const backPlate = new THREE.Mesh(
@@ -489,18 +484,11 @@ function watchRegulator(movement) {
   const balanceStaff = cylinderAlongZ(0.15, 1.65, darkMaterial, 32);
   balanceStaff.position.z = 0.42;
   balanceStaff.userData.role = 'balance-wheel-staff';
-  const balanceIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.105, 22, 14),
-    whiteMaterial,
-  );
-  balanceIndex.position.set(0, balanceOuterRadius, 0.28);
-  balanceIndex.userData.role = 'white-balance-rate-index';
   balanceAssembly.add(
     balanceRim,
     ...balanceSpokes,
     balanceHub,
     balanceStaff,
-    balanceIndex,
   );
 
   const regulatorCarrier = new THREE.Group();
@@ -622,45 +610,46 @@ function watchRegulator(movement) {
   );
   studBracket.userData.role = 'fixed-stud-R-support';
 
+  // Brown draws the rate scale as a graduated band: three concentric arcs
+  // from SLOW to FAST crossed by radial divisions, the pointer tip T reaching
+  // the outer arc.  No end balls or separate tick heads are drawn.
   const dialStartAngle = -Math.PI / 2 - 0.79;
   const dialEndAngle = -Math.PI / 2 + 0.79;
-  const dialRadius = pointerRadius + 0.28;
-  const dialPoints = Array.from({ length: 65 }, (_, index) => {
-    const angle = THREE.MathUtils.lerp(
-      dialStartAngle,
-      dialEndAngle,
-      index / 64,
-    );
-    return new THREE.Vector3(
-      dialRadius * Math.cos(angle),
-      dialRadius * Math.sin(angle),
-      0.10,
-    );
-  });
-  const dialArc = tubeThrough(
-    dialPoints,
-    0.055,
+  const dialInnerRadius = pointerRadius - 0.98;
+  const dialRadius = pointerRadius + 0.10;
+  const dialArcRadii = [dialInnerRadius, pointerRadius - 0.48, dialRadius];
+  const dialArcs = dialArcRadii.map((radius) => tubeThrough(
+    Array.from({ length: 65 }, (_, index) => {
+      const angle = THREE.MathUtils.lerp(
+        dialStartAngle,
+        dialEndAngle,
+        index / 64,
+      );
+      return new THREE.Vector3(
+        radius * Math.cos(angle),
+        radius * Math.sin(angle),
+        0.10,
+      );
+    }),
+    0.035,
     frameMaterial,
     'fixed-slow-fast-regulator-scale-arc',
-  );
+  ));
+  const dialArc = dialArcs.at(-1);
   const dialTicks = Array.from({ length: 13 }, (_, index) => {
     const angle = THREE.MathUtils.lerp(
       dialStartAngle,
       dialEndAngle,
       index / 12,
     );
-    const major = index === 0 || index === 6 || index === 12;
+    const tickRadius = (dialInnerRadius + dialRadius) / 2;
     const tick = new THREE.Mesh(
-      new THREE.BoxGeometry(0.045, major ? 0.42 : 0.28, 0.07),
-      index === 0
-        ? balanceMaterial
-        : index === 12
-          ? activeSpringMaterial
-          : frameMaterial,
+      new THREE.BoxGeometry(0.04, dialRadius - dialInnerRadius, 0.05),
+      frameMaterial,
     );
     tick.position.set(
-      dialRadius * Math.cos(angle),
-      dialRadius * Math.sin(angle),
+      tickRadius * Math.cos(angle),
+      tickRadius * Math.sin(angle),
       0.10,
     );
     tick.rotation.z = angle - Math.PI / 2;
@@ -672,18 +661,6 @@ function watchRegulator(movement) {
     tick.userData.role = 'fixed-regulator-rate-scale-tick';
     return tick;
   });
-  const slowMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 22, 14),
-    balanceMaterial,
-  );
-  slowMarker.position.copy(dialPoints[0]);
-  slowMarker.userData.role = 'slow-end-of-regulator-scale';
-  const fastMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 22, 14),
-    activeSpringMaterial,
-  );
-  fastMarker.position.copy(dialPoints.at(-1));
-  fastMarker.userData.role = 'fast-end-of-regulator-scale';
 
   root.add(
     fixedFrame,
@@ -691,10 +668,8 @@ function watchRegulator(movement) {
     regulatorCarrier,
     fixedStudR,
     studBracket,
-    dialArc,
+    ...dialArcs,
     ...dialTicks,
-    slowMarker,
-    fastMarker,
   );
 
   const setSpringSegment = (segment, start, end) => {
@@ -764,15 +739,14 @@ function watchRegulator(movement) {
     backPlate,
     balanceAssembly,
     balanceHub,
-    balanceIndex,
     balanceRim,
     balanceSpokes,
     balanceStaff,
     curbBridge,
     curbPins,
     dialArc,
+    dialArcs,
     dialTicks,
-    fastMarker,
     fixedFrame,
     fixedRing,
     fixedStudR,
@@ -781,7 +755,6 @@ function watchRegulator(movement) {
     regulatorArm,
     regulatorCarrier,
     regulatorRing,
-    slowMarker,
     springSamples,
     springSegments,
     studBracket,

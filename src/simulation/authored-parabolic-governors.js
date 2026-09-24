@@ -243,14 +243,17 @@ function parabolicGovernor(movement) {
   // Its centerline is offset inward by the rail and roller radii to obtain
   // the exact anti-friction-wheel center path.
   const guideStart = new THREE.Vector2(1.44, topGuidePinY);
-  const guideControl = new THREE.Vector2(1.32, 2.75);
-  const guideEnd = new THREE.Vector2(0.46, 0.65);
+  // Pass 51 refit the control and end to Brown's bulging inner band edge
+  // (least squares over eight measured edge points) while keeping the wheel
+  // centre on the plate's L at the source phase.
+  const guideControl = new THREE.Vector2(2.158, 2.975);
+  const guideEnd = new THREE.Vector2(0.311, 0.903);
   const guideRadius = 0.085;
   const rollerRadius = 0.235;
   const rollerWidth = 0.36;
   const guideToRollerCenter = guideRadius + rollerRadius;
-  const minimumGuideParameter = 0.52;
-  const maximumGuideParameter = 0.78;
+  const minimumGuideParameter = 0.59;
+  const maximumGuideParameter = 0.868;
   const meanGuideParameter = (
     minimumGuideParameter + maximumGuideParameter
   ) / 2;
@@ -1032,12 +1035,104 @@ function parabolicGovernor(movement) {
   update(0);
   markShadows(root);
   correctParabolicGovernor(root);
+  shapeLyreGuidesToPlate(root);
   update(0);
   return {
     root,
     update,
     cameraDirection: root.userData.cameraDirection,
   };
+}
+
+// Brown draws each guide B as a broad lyre band: it curls over its top pin
+// and bulges outward; its inner edge is the working parabola the wheel L
+// rolls on, and both guides end in a block on the spindle below L. The white
+// phase indices and the lower bearing's rear post are not drawn and are
+// removed.
+function shapeLyreGuidesToPlate(root) {
+  const blocks = root.userData.blocks;
+  const geometry = root.userData.geometry;
+  const material = blocks.sideAssemblies[0].guide.material;
+  const guidePoint = (t) => new THREE.Vector2(
+    (1 - t) ** 2 * geometry.guideStart.x + 2 * t * (1 - t) * geometry.guideControl.x
+      + t * t * geometry.guideEnd.x,
+    (1 - t) ** 2 * geometry.guideStart.y + 2 * t * (1 - t) * geometry.guideControl.y
+      + t * t * geometry.guideEnd.y,
+  );
+  // Outer band edge measured on the right half of the 525 px plate; low down
+  // it turns in towards the spindle block early enough to clear the raised
+  // ball, where Brown's resting pose leaves it hugging the ball's top.
+  const outer = new THREE.SplineCurve([
+    new THREE.Vector2(1.47, 3.9),
+    new THREE.Vector2(1.63, 3.97),
+    new THREE.Vector2(1.81, 3.94),
+    new THREE.Vector2(1.94, 3.8),
+    new THREE.Vector2(2.0, 3.56),
+    new THREE.Vector2(2.01, 3.26),
+    new THREE.Vector2(1.95, 2.81),
+    new THREE.Vector2(1.815, 2.36),
+    new THREE.Vector2(1.66, 2.02),
+    new THREE.Vector2(1.46, 1.72),
+    new THREE.Vector2(1.25, 1.45),
+    new THREE.Vector2(1.0, 1.2),
+    new THREE.Vector2(0.72, 0.98),
+    new THREE.Vector2(0.44, 0.83),
+    new THREE.Vector2(0.3, 0.8),
+  ]).getPoints(72);
+  const innerEdge = Array.from({ length: 61 }, (_, i) => guidePoint(1 - i / 60));
+  const shape = new THREE.Shape([...outer, ...innerEdge]);
+  const depth = 0.11;
+  const bandGeometry = new THREE.ExtrudeGeometry(shape, {
+    bevelEnabled: false,
+    curveSegments: 1,
+    depth,
+  });
+  bandGeometry.translate(0, 0, -depth / 2);
+  blocks.shoulderCurves.forEach((shoulder, sideIndex) => {
+    const sign = sideIndex === 0 ? 1 : -1;
+    const shoulderCurve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(sign * 0.1, 4.24, 0),
+      new THREE.Vector3(sign * 0.62, 4.2, 0),
+      new THREE.Vector3(sign * 1.05, 3.92, 0),
+      new THREE.Vector3(sign * geometry.guideStart.x, geometry.guideStart.y, 0),
+    ]);
+    shoulder.geometry.dispose();
+    shoulder.geometry = new THREE.TubeGeometry(shoulderCurve, 40, 0.095, 12, false);
+  });
+  blocks.sideAssemblies.forEach((assembly, sideIndex) => {
+    const band = new THREE.Mesh(bandGeometry, material);
+    band.userData.role = `outer-lyre-band-of-guide-arm-B-${sideIndex + 1}`;
+    assembly.side.add(band);
+    assembly.band = band;
+  });
+  const hubShape = new THREE.Shape([
+    new THREE.Vector2(-0.3, -0.15),
+    new THREE.Vector2(0.3, -0.15),
+    new THREE.Vector2(0.3, 0.15),
+    new THREE.Vector2(-0.3, 0.15),
+  ]);
+  hubShape.holes.push(new THREE.Path().absarc(0, 0, geometry.spindleRadius + 0.002, 0, Math.PI * 2, true));
+  const hubGeometry = new THREE.ExtrudeGeometry(hubShape, {
+    bevelEnabled: false,
+    curveSegments: 40,
+    depth: 0.82,
+  });
+  hubGeometry.rotateX(-Math.PI / 2);
+  const hub = new THREE.Mesh(hubGeometry, material);
+  hub.position.y = 0.3;
+  hub.userData.role = 'spindle-block-joining-guide-arms-B';
+  blocks.governorRotor.add(hub);
+  blocks.guideHub = hub;
+  const removed = [blocks.spindleIndex, blocks.lowerBearing.children[1]];
+  blocks.sleeveAssembly.traverse((object) => {
+    if (/^white-/.test(object.userData.role ?? '')) removed.push(object);
+  });
+  for (const assembly of blocks.sideAssemblies) {
+    removed.push(...assembly.roller.userData.blocks.faceIndices,
+      assembly.flyball.userData.blocks.orbitIndex);
+  }
+  for (const object of removed) object.removeFromParent();
+  markShadows(root);
 }
 
 export function createAuthoredParabolicGovernorMovement(movement) {

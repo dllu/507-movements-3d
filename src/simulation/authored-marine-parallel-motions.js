@@ -1868,9 +1868,15 @@ function doubleParallelMotion(movement) {
     inputTravel,
     resolvedInputAngularSpeed = inputAngularSpeed,
     inputAngularAcceleration = 0,
+    poseOffset = 0,
   ) => {
+    // Unwrapped travel counts from the demonstration start; the pose offset
+    // is applied to the wrapped angle so one turn closes exactly.
     const unwrappedInputAngle = inputTravel;
-    const inputAngle = positiveModulo(unwrappedInputAngle, FULL_TURN);
+    const inputAngle = positiveModulo(
+      positiveModulo(unwrappedInputAngle, FULL_TURN) + poseOffset,
+      FULL_TURN,
+    );
     const sine = Math.sin(inputAngle);
     const cosine = Math.cos(inputAngle);
     const forcedPointP = new THREE.Vector2(
@@ -2049,11 +2055,16 @@ function doubleParallelMotion(movement) {
     };
   };
 
+  // Brown's plate draws P raised and the beam falling toward W, which the
+  // official canvas reaches half a cycle after its t=0. The demonstration
+  // clock starts at the plate's pose; the official 15 rpm law is unchanged.
+  const sourcePoseInputOffset = Math.PI;
   const stateAtTime = (time) => {
     const state = stateAtInputTravel(
       inputAngularSpeed * time,
       inputAngularSpeed,
       0,
+      sourcePoseInputOffset,
     );
     state.phase = positiveModulo(time, cyclePeriod) / cyclePeriod;
     state.time = time;
@@ -2061,10 +2072,10 @@ function doubleParallelMotion(movement) {
   };
 
   const canonicalTimes = {
-    leftPistonBottom: 0,
-    sourceQuarter: cyclePeriod / 4,
-    leftPistonTop: cyclePeriod / 2,
-    sourceThreeQuarter: cyclePeriod * 3 / 4,
+    leftPistonTop: 0,
+    sourceThreeQuarter: cyclePeriod / 4,
+    leftPistonBottom: cyclePeriod / 2,
+    sourceQuarter: cyclePeriod * 3 / 4,
     cycleClosure: cyclePeriod,
   };
   const canonicalStates = Object.fromEntries(

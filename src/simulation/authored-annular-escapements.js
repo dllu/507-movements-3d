@@ -144,7 +144,8 @@ function annularPendulumEscapement(movement) {
   const toothPitch = FULL_TURN / toothCount;
   const halfToothPitch = toothPitch / 2;
   const toothRootRadius = 1.32;
-  const toothCrownRadius = 1.51;
+  // The back leaves the point just inside it so the tip stays a clear hook.
+  const toothBackRadius = 1.56;
   const toothTipRadius = sourceRasterWheelTipRadius * sourceScale;
   const wheelDepth = 0.38;
   const annulusMajorRadius = (
@@ -290,21 +291,22 @@ function annularPendulumEscapement(movement) {
         Math.cos(centerAngle - toothPitch * 0.37) * toothTipRadius,
         Math.sin(centerAngle - toothPitch * 0.37) * toothTipRadius,
       ),
-      ...Array.from({ length: 5 }, (_, sample) => {
+      // Brown's teeth are hooked ratchet teeth whose curved backs fall
+      // from each point to the next root, not a flat crown with a spike.
+      ...Array.from({ length: 16 }, (_, sample) => {
+        const along = (sample + 1) / 16;
         const angle = THREE.MathUtils.lerp(
-          centerAngle - toothPitch * 0.26,
-          centerAngle + toothPitch * 0.40,
-          sample / 4,
+          centerAngle - toothPitch * 0.37,
+          centerAngle + toothPitch * 0.49,
+          along,
         );
+        const radius = toothRootRadius
+          + (toothBackRadius - toothRootRadius) * (1 - along) ** 1.35;
         return new THREE.Vector2(
-          Math.cos(angle) * toothCrownRadius,
-          Math.sin(angle) * toothCrownRadius,
+          Math.cos(angle) * radius,
+          Math.sin(angle) * radius,
         );
       }),
-      new THREE.Vector2(
-        Math.cos(centerAngle + toothPitch * 0.49) * toothRootRadius,
-        Math.sin(centerAngle + toothPitch * 0.49) * toothRootRadius,
-      ),
     ];
     for (const point of outlinePoints) {
       if (toothIndex === 0 && point === outlinePoints[0]) {
@@ -807,7 +809,7 @@ function annularPendulumEscapement(movement) {
     sourceScale,
     suspensionPivot: suspensionPivot.clone(),
     toothCount,
-    toothCrownRadius,
+    toothBackRadius,
     toothLeanAngle,
     toothProfileTipOffset: -toothPitch * 0.37,
     toothPitch,

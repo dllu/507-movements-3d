@@ -77,7 +77,7 @@ test('movement 321 is Harrison’s complete spring maintaining-power barrel', ()
   assert.match(transmission.outputContinuity,
     /strictly positive constant angular velocity/);
 
-  assert.equal(blocks.fixedFrame.parent, model.root);
+  assert.ok(blocks.fixedFrame.parent === null, 'source presentation removes the undrawn frame beam');
   assert.equal(blocks.greatWheel.parent, model.root);
   assert.equal(blocks.largeRatchet.parent, model.root);
   assert.equal(blocks.barrel.parent, model.root);

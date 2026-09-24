@@ -74,7 +74,7 @@ test('movement 286 is one rocking toe lifting one guided poppet-valve train', ()
   assert.equal(blocks.followerShoe.parent, blocks.lifter);
   assert.equal(blocks.valveRod.parent, blocks.lifter);
   assert.equal(blocks.poppetHead.parent, blocks.lifter);
-  assert.equal(blocks.valveIndex.parent, blocks.lifter);
+  assert.equal(blocks.valveIndex.parent, null, 'undrawn white index removed');
   assert.equal(blocks.valveSeat.parent, blocks.fixedGuides);
   vectorNear(blocks.toe.userData.axis, Z_AXIS, 0, 'toe axis');
 
@@ -127,8 +127,8 @@ test('movement 286 records bounded canvas behavior and independent plate geometr
   assert.deepEqual(plate.rasterToeArcMiddle, { x: 220, y: 199 });
   assert.deepEqual(plate.rasterToeArcInner, { x: 331, y: 224 });
   assert.deepEqual(plate.rasterLifterLeft, { x: 56, y: 177 });
-  assert.deepEqual(plate.rasterValveRodTop, { x: 424, y: 36 });
-  assert.deepEqual(plate.rasterValveRodBottom, { x: 424, y: 476 });
+  assert.deepEqual(plate.rasterValveRodTop, { x: 440, y: 36 });
+  assert.deepEqual(plate.rasterValveRodBottom, { x: 440, y: 476 });
   assert.match(plate.inferredTopology, /rock about the shaded shaft/);
   assert.match(plate.inferredTopology, /flat-bottomed lifter/);
   vectorNear(sourcePointToModel(plate.rasterRockShaftCenter),

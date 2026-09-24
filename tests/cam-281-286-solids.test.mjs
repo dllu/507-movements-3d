@@ -77,17 +77,18 @@ test('286: finite shoe rests on the curved toe instead of straddling the contact
       assert.ok(gap - .0225 < -.0224, 'former centered shoe overlaps the same finite toe');
     }
     assert.ok(activeSamples > 200 && maximumFacetGap > 0);
-    assertClearCycle(model, [b.toeBody, b.workingFlank, b.toeNoseIndex].flatMap(toe =>
+    assertClearCycle(model, [b.toeBody, b.workingFlank].flatMap(toe =>
       [b.followerShoe, b.lifterBody].map(lifter => [toe, lifter])));
   } finally {disposeObject3D(model.root);}
 });
 
-test('286: rod guides clear the stroke and the finite valve closes onto its seat', () => {
+test('286: undrawn rod guides are omitted and the finite valve closes onto its seat', () => {
   const model = createAuthoredPoppetValveMovement({id: 286}), u = model.root.userData, b = u.blocks;
   try {
+    // Brown draws the rod alone; its guides and standard are not rendered.
     const guides = b.fixedGuides.children.filter(mesh => /guide$/.test(mesh.userData.role));
-    assert.equal(guides.length, 2);
-    for (const guide of guides) assert.equal(guide.position.z, b.valveRod.position.z, 'actual guide bore is coaxial with rod');
+    assert.equal(guides.length, 0);
+    assert.equal(b.guidePost.parent, null);
     for (let frame = 0; frame <= 128; frame++) {
       model.update(frame * u.geometry.cyclePeriod / 128);model.root.updateMatrixWorld(true);
       const head = new THREE.Box3().setFromObject(b.poppetHead), seat = new THREE.Box3().setFromObject(b.valveSeat);

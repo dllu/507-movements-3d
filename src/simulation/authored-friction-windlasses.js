@@ -602,15 +602,28 @@ function frictionWindlass(movement) {
   handLever.userData.axis = Z_AXIS.clone();
   handLever.userData.role = 'alternating-long-hand-lever';
   root.add(handLever);
+  // The lever turns on its fulcrum pin through a bored boss; the arms start
+  // at the boss rim instead of passing through the pin.
+  const bossOuterRadius = 0.36;
+  const bossShape = new THREE.Shape().absarc(0, 0, bossOuterRadius, 0, FULL_TURN, false);
+  bossShape.holes.push(new THREE.Path().absarc(0, 0, 0.226, 0, FULL_TURN, true));
+  const leverBoss = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(bossShape, { bevelEnabled: false, curveSegments: 48, depth: 0.24 })
+      .translate(0, 0, -0.12),
+    driverMaterial,
+  );
+  leverBoss.userData.role = 'bored-boss-of-long-hand-lever-on-fulcrum';
+  handLever.add(leverBoss);
+  const fromBoss = (end) => end.clone().setLength(bossOuterRadius - 0.04);
   const inputCrankArm = makeBeam(
-    new THREE.Vector3(0, 0, 0),
+    fromBoss(new THREE.Vector3(inputCrankLength, 0, 0)),
     new THREE.Vector3(inputCrankLength, 0, 0),
     { color: PALETTE.driver, depth: 0.22, thickness: 0.25 },
   );
   inputCrankArm.userData.role = 'short-arm-rigid-with-long-hand-lever';
   handLever.add(inputCrankArm);
   const upperHandleSegment = makeBeam(
-    new THREE.Vector3(0, 0, 0),
+    fromBoss(localHandleElbow),
     localHandleElbow,
     { color: PALETTE.driver, depth: 0.24, thickness: 0.23 },
   );
@@ -756,9 +769,11 @@ function frictionWindlass(movement) {
     },
   );
 
+  // The post stops just under the barrel it carries rather than passing
+  // through it.
   const wheelPost = makeBeam(
     new THREE.Vector3(0, -2.12, -0.90),
-    new THREE.Vector3(0, -0.20, -0.90),
+    new THREE.Vector3(0, -0.70, -0.90),
     { color: PALETTE.frame, depth: 0.32, thickness: 0.28 },
   );
   wheelPost.userData.role = 'fixed-windlass-wheel-bearing-post';
@@ -1035,5 +1050,32 @@ export function createAuthoredFrictionWindlassMovement(movement) {
   if (movement.id !== 280) return null;
   const result = frictionWindlass(movement);
   result.root.userData.fidelity = 'authored';
-  return finishFrictionFamily(correctFriction280(result), 280);
+  const finished = finishFrictionFamily(
+    hideBackstopBehindWheel(correctFriction280(result)), 280);
+  // Nearly square to the wheel face so the rear ratchet stays hidden.
+  finished.cameraDirection = new THREE.Vector3(0.15, 0.4, 12);
+  return finished;
+}
+
+// Brown draws the windlass wheel as a plain rim; the "common ratchet-wheel"
+// of the caption is not visible, so it and its pawls sit behind the wheel
+// web (the pawl arms still show beyond the rim, as the plate's two links
+// do). The white phase index is not drawn.
+function hideBackstopBehindWheel(model) {
+  const blocks = model.root.userData.blocks;
+  const rearPlane = -0.65;
+  blocks.ratchetWheel.position.z = rearPlane;
+  blocks.ratchetCarrier.position.z = rearPlane + 0.07;
+  for (const object of [
+    blocks.upperPawl,
+    blocks.lowerPawl,
+    ...blocks.holdingPawlPivotPins,
+  ]) object.position.z = rearPlane;
+  const whiteIndices = [];
+  model.root.traverse((object) => {
+    if (/^white-/.test(object.userData.role ?? '')) whiteIndices.push(object);
+  });
+  for (const object of whiteIndices) object.removeFromParent();
+  model.update(0);
+  return model;
 }

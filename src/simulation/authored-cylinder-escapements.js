@@ -1581,6 +1581,15 @@ function shapePlate295Wheel(model) {
   root.userData.cameraFov = 12;
   model.cameraDirection = new THREE.Vector3(0.12, 0.08, 12);
   root.userData.cameraDirection = model.cameraDirection;
+  // Brown draws only the top of the wheel: a shallow rim arc with three
+  // pallets a, b, c and the cylinder over them. Frame that arc, not the
+  // whole wheel and its spokes.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-1.45, 0.55, -0.50),
+    new THREE.Vector3(1.45, 1.85, 0.10),
+  );
+  root.userData.cameraDistanceScale = 2.0;
+  root.userData.hideGround = true;
   return model;
 }
 

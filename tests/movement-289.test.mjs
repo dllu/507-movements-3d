@@ -75,8 +75,12 @@ test('movement 289 is one 30-tooth deadbeat wheel and one two-pallet anchor', ()
   assert.equal(blocks.leftPallet.parent, blocks.anchor);
   assert.equal(blocks.rightPallet.parent, blocks.anchor);
   assert.equal(blocks.anchorPivotHub.parent, blocks.anchor);
-  assert.equal(blocks.contactMarker.parent, model.root);
-  assert.equal(blocks.spokeMeshes.length, 4);
+  // Source presentation detaches the contact marker Brown does not draw;
+  // the factory still positions it for metadata consumers.
+  assert.equal(blocks.contactMarker.parent, null);
+  // Brown's wheel A is a web pierced by four lens windows, not spokes.
+  assert.equal(blocks.spokeMeshes.length, 0);
+  assert.equal(blocks.toothedRim.geometry.parameters.shapes.holes.length, 5);
   vectorNear(blocks.anchor.userData.axis,
     new THREE.Vector3(0, 0, 1), 0, 'anchor axis');
   vectorNear(blocks.escapeWheel.userData.axis,
@@ -86,10 +90,14 @@ test('movement 289 is one 30-tooth deadbeat wheel and one two-pallet anchor', ()
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
     role === 'thirty-deadbeat-escape-wheel-teeth').length, 1);
+  // The white face highlights are construction aids Brown does not draw;
+  // source presentation removes them and the solid pallets carry the faces.
   assert.equal(roles.filter((role) =>
-    /concentric-locking-face$/.test(role)).length, 2);
+    /concentric-locking-face$/.test(role)).length, 0);
   assert.equal(roles.filter((role) =>
-    /^(?:left-H|right-K)-impulse-face$/.test(role)).length, 2);
+    /^(?:left-H|right-K)-impulse-face$/.test(role)).length, 0);
+  assert.equal(roles.filter((role) =>
+    /^(?:left-H|right-K)-deadbeat-pallet-solid$/.test(role)).length, 2);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });

@@ -410,7 +410,10 @@ test('movement 318 renderer binds wheel, lever, curb pins, spring boundary, and 
     near(blocks.regulatorCarrier.rotation.z,
       expected.regulatorAngle, 0,
     `rendered regulator angle at ${time}`);
-    blocks.balanceIndex.getWorldPosition(indexWorld);
+    // Brown draws no white rate bead; bind the same rim point of the balance.
+    assert.equal(blocks.balanceIndex, undefined);
+    indexWorld.set(0, geometry.balanceOuterRadius, 0.28);
+    blocks.balanceAssembly.localToWorld(indexWorld);
     blocks.pointer.getWorldPosition(pointerWorld);
     blocks.curbPins[0].getWorldPosition(leftPinWorld);
     blocks.curbPins[1].getWorldPosition(rightPinWorld);

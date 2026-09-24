@@ -36,7 +36,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 287 is Pickering’s complete three-leaf-spring governor', () => {
+test('movement 287 is Pickering’s leaf-spring governor with the plate’s two springs', () => {
   const movement = catalog.movements[286];
   const model = createMovementModel(movement);
   const {
@@ -56,11 +56,11 @@ test('movement 287 is Pickering’s complete three-leaf-spring governor', () => 
   assert.equal(archetype,
     'three-leaf-spring-pickering-governor-keyed-sliding-sleeve');
   assert.equal(archetype, movement.archetype);
-  assert.match(mechanism, /three equally spaced flat leaf springs/);
+  assert.match(mechanism, /two diametrically opposed flat leaf springs/);
   assert.match(mechanism, /weight is clamped at its spring midpoint/);
   assert.match(mechanism, /keyed nonrotating-relative-to-spindle/);
-  assert.equal(transmission.ballCount, 3);
-  assert.equal(transmission.springCount, 3);
+  assert.equal(transmission.ballCount, 2);
+  assert.equal(transmission.springCount, 2);
   assert.equal(transmission.lowerSleeveRelativeRotation, 0);
   assert.match(transmission.output, /axial displacement/);
 
@@ -69,9 +69,9 @@ test('movement 287 is Pickering’s complete three-leaf-spring governor', () => 
   assert.equal(blocks.spindle.parent, blocks.governorRotor);
   assert.equal(blocks.upperHead.parent, blocks.governorRotor);
   assert.equal(blocks.slidingSleeve.parent, blocks.governorRotor);
-  assert.equal(blocks.springAssemblies.length, 3);
-  assert.equal(blocks.upperAnchorClamps.length, 3);
-  assert.equal(blocks.lowerAnchorClamps.length, 3);
+  assert.equal(blocks.springAssemblies.length, 2);
+  assert.equal(blocks.upperAnchorClamps.length, 2);
+  assert.equal(blocks.lowerAnchorClamps.length, 2);
   vectorNear(blocks.governorRotor.userData.axis,
     new THREE.Vector3(0, 1, 0), 0, 'vertical governor axis');
   for (const [index, assembly] of blocks.springAssemblies.entries()) {
@@ -79,7 +79,7 @@ test('movement 287 is Pickering’s complete three-leaf-spring governor', () => 
     assert.equal(assembly.spring.parent, assembly.springPlane);
     assert.equal(assembly.ball.parent, assembly.springPlane);
     assert.equal(assembly.ballClampPin.parent, assembly.springPlane);
-    near(assembly.baseAngle, index * Math.PI * 2 / 3, 0,
+    near(assembly.baseAngle, index * Math.PI, 0,
       `spring ${index + 1} azimuth`);
     assert.equal(blocks.upperAnchorClamps[index].parent,
       blocks.governorRotor);
@@ -90,9 +90,11 @@ test('movement 287 is Pickering’s complete three-leaf-spring governor', () => 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
-    /inextensible-compound-curved-flat-leaf-spring/.test(role)).length, 3);
+    /inextensible-compound-curved-flat-leaf-spring/.test(role)).length, 2);
   assert.equal(roles.filter((role) =>
-    /centrifugal-weight-on-leaf-midpoint/.test(role)).length, 3);
+    /centrifugal-weight-on-leaf-midpoint/.test(role)).length, 2);
+  assert.equal(roles.some((role) => /^white-/.test(role)), false,
+    'undrawn white indices removed');
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -134,7 +136,7 @@ test('movement 287 records the static plate and Pickering patent independently',
     new THREE.Vector2(294, 391));
   assert.deepEqual(plate.rasterBallLeft, new THREE.Vector2(179, 230));
   assert.deepEqual(plate.rasterBallRight, new THREE.Vector2(351, 230));
-  assert.match(plate.inferredTopology, /three equally spaced/);
+  assert.match(plate.inferredTopology, /exactly two spring-and-weight profiles/);
   vectorNear(sourcePointToModel({ x: 263, y: 78 }),
     new THREE.Vector2(0, geometry.topAnchorY), 0,
     'source top-axis reference');
@@ -283,7 +285,7 @@ test('movement 287 differentiates ball spread and sleeve lift consistently', () 
   disposeModel(model.root);
 });
 
-test('movement 287 keeps three rotating weights exactly 120 degrees apart', () => {
+test('movement 287 keeps two rotating weights exactly 180 degrees apart', () => {
   const model = createMovementModel(catalog.movements[286]);
   const { stateAtTime } = model.root.userData;
   const epsilon = 1e-5;
@@ -291,8 +293,8 @@ test('movement 287 keeps three rotating weights exactly 120 degrees apart', () =
     const before = stateAtTime(time - epsilon);
     const state = stateAtTime(time);
     const after = stateAtTime(time + epsilon);
-    assert.equal(state.ballStates.length, 3);
-    for (let index = 0; index < 3; index += 1) {
+    assert.equal(state.ballStates.length, 2);
+    for (let index = 0; index < 2; index += 1) {
       const ball = state.ballStates[index];
       near(Math.hypot(ball.position.x, ball.position.z),
         state.ballOrbitRadius, 5e-16,
@@ -309,15 +311,15 @@ test('movement 287 keeps three rotating weights exactly 120 degrees apart', () =
         .multiplyScalar(1 / (2 * epsilon));
       vectorNear(ball.acceleration, numericalAcceleration, 8e-7,
         `ball acceleration ${index} at ${time}`);
-      const next = state.ballStates[(index + 1) % 3];
+      const next = state.ballStates[(index + 1) % 2];
       const radial = new THREE.Vector2(ball.position.x, ball.position.z)
         .normalize();
       const nextRadial = new THREE.Vector2(
         next.position.x,
         next.position.z,
       ).normalize();
-      near(radial.dot(nextRadial), -0.5, 9e-15,
-        `120-degree spacing ${index} at ${time}`);
+      near(radial.dot(nextRadial), -1, 9e-15,
+        `180-degree spacing ${index} at ${time}`);
     }
   }
   disposeModel(model.root);

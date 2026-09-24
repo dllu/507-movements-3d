@@ -273,7 +273,7 @@ test('movement 282 sector and rack retain exact pitch-line rolling', () => {
   'common circular pitch');
   assert.equal(geometry.sectorEquivalentToothCount, 16);
   assert.equal(geometry.sectorToothCount, 7);
-  assert.equal(geometry.rackToothCount, 22);
+  assert.equal(geometry.rackToothCount, 12);
   for (let index = 0; index <= 8192; index += 1) {
     const state = stateAtDiskAngle(FULL_TURN * index / 8192);
     near(state.rackVelocity.x, state.rackPitchTangentialSpeed, 0,
@@ -431,10 +431,11 @@ test('movement 282 renderer follows all constraints and closes before 283', () =
   assert.equal(animationTiming.authoredCyclePeriod, 4);
   assert.equal(animationTiming.targetCycleDuration, 2);
   assertReadableTiming(animationTiming);
-  assert.equal(blocks.diskIndex.parent, blocks.diskRotor);
   assert.equal(blocks.guidePin.parent, blocks.lever);
-  assert.equal(blocks.pulleyIndex.parent, blocks.pulleyRotor);
-  assert.equal(blocks.weightIndex.parent, blocks.weight);
+  for (const index of [blocks.diskIndex, blocks.pulleyIndex,
+    blocks.rackIndex, blocks.weightIndex]) {
+    assert.equal(index.parent, null, 'undrawn white index removed');
+  }
 
   for (const time of [0, 0.37, 0.82, 1.26, 1.73, 2.19, 2.67, 3.14,
     3.62, 4]) {

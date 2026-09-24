@@ -95,8 +95,11 @@ test('movement 320 is Brown’s one-chain maintaining-power train', () => {
     role === 'single-endless-maintaining-power-chain').length, 1);
   assert.equal(roles.filter((role) =>
     role === 'single-endless-chain-body').length, 1);
+  // Source presentation drops the undrawn white chain markers and indices.
   assert.equal(roles.filter((role) =>
-    role === 'chain-link-index-marker').length, 21);
+    role === 'chain-link-index-marker').length, 0);
+  assert.equal(roles.filter((role) =>
+    /-symmetric-rotation-index$/.test(role)).length, 0);
   assert.equal(roles.filter((role) =>
     role === 'ratchet-wheel-riding-on-arbor-p').length, 1);
   assert.equal(roles.filter((role) =>

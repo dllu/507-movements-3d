@@ -608,7 +608,58 @@ function arnoldFreeEscapement(movement) {
     drivenMaterial,
   );
   impulseArm.userData.role = 'balance-arm-to-impulse-notch-g';
+  // Brown draws balance a as a plain disc with the notch h, g where the
+  // tooth enters; the open rim and spokes are not drawn. The disc lies behind
+  // the wheel plane, bored for the fixed journal, so no working plane moves.
+  const balanceNotchAngle = Math.atan2(impulseCenter.y, impulseCenter.x);
+  const balanceNotchHalfAngle = THREE.MathUtils.degToRad(24);
+  const balanceDiscRadius = balanceRadius + 0.10;
+  const balanceDiscShape = new THREE.Shape();
+  const balanceDiscSteps = 72;
+  for (let step = 0; step <= balanceDiscSteps; step += 1) {
+    const angle = balanceNotchAngle + balanceNotchHalfAngle
+      + (FULL_TURN - 2 * balanceNotchHalfAngle) * step / balanceDiscSteps;
+    const x = Math.cos(angle) * balanceDiscRadius;
+    const y = Math.sin(angle) * balanceDiscRadius;
+    if (step === 0) balanceDiscShape.moveTo(x, y);
+    else balanceDiscShape.lineTo(x, y);
+  }
+  balanceDiscShape.lineTo(
+    Math.cos(balanceNotchAngle) * impulseCenter.length() * 0.80,
+    Math.sin(balanceNotchAngle) * impulseCenter.length() * 0.80,
+  );
+  balanceDiscShape.closePath();
+  const balanceDiscBore = new THREE.Path();
+  for (let step = 0; step < 40; step += 1) {
+    const angle = -FULL_TURN * step / 40;
+    if (step === 0) balanceDiscBore.moveTo(0.104, 0);
+    else balanceDiscBore.lineTo(Math.cos(angle) * 0.104, Math.sin(angle) * 0.104);
+  }
+  balanceDiscBore.closePath();
+  balanceDiscShape.holes.push(balanceDiscBore);
+  const balanceDisc = new THREE.Mesh(
+    centeredExtrusion(balanceDiscShape, 0.08, 0.004),
+    drivenMaterial,
+  );
+  balanceDisc.position.z = -0.54;
+  balanceDisc.userData.role = 'plain-notched-balance-disc-behind-wheel-plane';
+  const balanceDiscCollarShape = new THREE.Shape();
+  for (let step = 0; step < 40; step += 1) {
+    const angle = FULL_TURN * step / 40;
+    if (step === 0) balanceDiscCollarShape.moveTo(0.20, 0);
+    else balanceDiscCollarShape.lineTo(Math.cos(angle) * 0.20, Math.sin(angle) * 0.20);
+  }
+  balanceDiscCollarShape.closePath();
+  balanceDiscCollarShape.holes.push(balanceDiscBore);
+  const balanceDiscCollar = new THREE.Mesh(
+    centeredExtrusion(balanceDiscCollarShape, 0.12, 0.004),
+    darkMaterial,
+  );
+  balanceDiscCollar.position.z = -0.46;
+  balanceDiscCollar.userData.role = 'collar-joining-balance-disc-to-arbor';
   balance.add(
+    balanceDisc,
+    balanceDiscCollar,
     balanceRim,
     balanceHub,
     studArm,
@@ -1720,16 +1771,56 @@ function earnshawSpringDetentEscapement(movement) {
     'single-wheel-rotor-whose-long-teeth-both-lock-and-impulse';
   escapeWheel.add(wheelRotor);
 
+  // Brown draws a flat wheel: a narrow rim and four broad crossings leaving
+  // rounded quadrant windows, not a round-wire rim on thin spokes.
+  const wheelWebShape = new THREE.Shape();
+  for (let step = 0; step < 120; step += 1) {
+    const angle = FULL_TURN * step / 120;
+    const x = Math.cos(angle) * (wheelRootRadius + 0.02);
+    const y = Math.sin(angle) * (wheelRootRadius + 0.02);
+    if (step === 0) wheelWebShape.moveTo(x, y);
+    else wheelWebShape.lineTo(x, y);
+  }
+  wheelWebShape.closePath();
+  const crossingHalfWidth = 0.17;
+  const windowOuterRadius = wheelRootRadius * 0.80;
+  const windowCorner = 0.12;
+  for (let quadrant = 0; quadrant < 4; quadrant += 1) {
+    const turn = quadrant * Math.PI / 2;
+    const local = [
+      ...Array.from({ length: 17 }, (_, sample) => {
+        const angle = THREE.MathUtils.lerp(
+          Math.asin(crossingHalfWidth / windowOuterRadius),
+          Math.PI / 2 - Math.asin(crossingHalfWidth / windowOuterRadius),
+          sample / 16,
+        );
+        return new THREE.Vector2(
+          Math.cos(angle) * windowOuterRadius,
+          Math.sin(angle) * windowOuterRadius,
+        );
+      }),
+      new THREE.Vector2(crossingHalfWidth, crossingHalfWidth + windowCorner),
+      new THREE.Vector2(crossingHalfWidth + windowCorner, crossingHalfWidth),
+    ].map((point) => rotate2(point, turn));
+    const window = new THREE.Path();
+    window.moveTo(local[0].x, local[0].y);
+    for (const point of local.slice(1)) window.lineTo(point.x, point.y);
+    window.closePath();
+    wheelWebShape.holes.push(window);
+  }
+  const wheelHubOpening = new THREE.Path();
+  for (let step = 0; step < 48; step += 1) {
+    const angle = -FULL_TURN * step / 48;
+    if (step === 0) wheelHubOpening.moveTo(0.24, 0);
+    else wheelHubOpening.lineTo(Math.cos(angle) * 0.24, Math.sin(angle) * 0.24);
+  }
+  wheelHubOpening.closePath();
+  wheelWebShape.holes.push(wheelHubOpening);
   const wheelRim = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      wheelRootRadius * 0.92,
-      0.14,
-      10,
-      92,
-    ),
+    centeredExtrusion(wheelWebShape, 0.26, 0.006),
     wheelMaterial,
   );
-  wheelRim.userData.role = 'open-escape-wheel-rim';
+  wheelRim.userData.role = 'flat-escape-wheel-web-with-four-crossings';
   wheelRotor.add(wheelRim);
   const escapeTeeth = [];
   for (let index = 0; index < toothCount; index += 1) {
@@ -1978,7 +2069,37 @@ function earnshawSpringDetentEscapement(movement) {
   balanceIndex.userData.role = 'visible-index-on-balance-roller';
   const balanceShaft = cylinderAlongZ(0.105, 1.08, darkMaterial, 30);
   balanceShaft.userData.role = 'balance-staff-through-both-rollers';
+  // Brown draws the roller as a plain disc whose edge runs out to pallet P,
+  // with a V notch at P; the open ring and its spokes are not drawn. The
+  // disc sits behind the wheel and detent so the working planes are unchanged.
+  const rollerDiscRadius = palletOuterRadius + 0.03;
+  const rollerNotchHalfAngle = THREE.MathUtils.degToRad(22);
+  const rollerDiscShape = new THREE.Shape();
+  const rollerNotchStart = impulsePalletLocalAngle + rollerNotchHalfAngle;
+  const rollerDiscSteps = 72;
+  for (let step = 0; step <= rollerDiscSteps; step += 1) {
+    const angle = rollerNotchStart
+      + (FULL_TURN - 2 * rollerNotchHalfAngle) * step / rollerDiscSteps;
+    const point = new THREE.Vector2(
+      Math.cos(angle) * rollerDiscRadius,
+      Math.sin(angle) * rollerDiscRadius,
+    );
+    if (step === 0) rollerDiscShape.moveTo(point.x, point.y);
+    else rollerDiscShape.lineTo(point.x, point.y);
+  }
+  rollerDiscShape.lineTo(
+    Math.cos(impulsePalletLocalAngle) * palletInnerRadius * 0.92,
+    Math.sin(impulsePalletLocalAngle) * palletInnerRadius * 0.92,
+  );
+  rollerDiscShape.closePath();
+  const rollerDisc = new THREE.Mesh(
+    centeredExtrusion(rollerDiscShape, 0.08, 0.004),
+    balanceMaterial,
+  );
+  rollerDisc.position.z = -0.49;
+  rollerDisc.userData.role = 'plain-notched-roller-disc-behind-working-planes';
   balanceRotor.add(
+    rollerDisc,
     impulseRollerHub,
     impulsePallet,
     dischargingRoller,

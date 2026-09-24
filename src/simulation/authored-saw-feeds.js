@@ -147,7 +147,6 @@ function makeSawtoothRatchet({
   );
   indicator.position.set(0, outerRadius * 0.63, depth / 2 + 0.025);
   indicator.userData.role = 'white-ratchet-rotation-index';
-  rotor.add(indicator);
 
   root.userData.axis = Z_AXIS.clone();
   root.userData.body = rim;
@@ -598,7 +597,7 @@ function crankRockerAdjustableSawFeed(movement) {
     );
     foot.position.set(x, -2.35, -0.4);
     foot.userData.role = 'saw-feed-frame-foot';
-    frame.add(foot);
+    // Brown's elevation breaks both posts off without feet.
   }
 
   const pinion = makeGear({
@@ -682,7 +681,6 @@ function crankRockerAdjustableSawFeed(movement) {
   );
   rackIndex.position.set(-rackPitch / 2, pinionPitchRadius + 0.27, -0.13);
   rackIndex.userData.role = 'white-carriage-feed-translation-index';
-  carriage.add(rackIndex);
 
   const bellCrank = new THREE.Group();
   bellCrank.position.set(bellCrankPivot.x, bellCrankPivot.y, 0);
@@ -766,7 +764,10 @@ function crankRockerAdjustableSawFeed(movement) {
   const rockerJointIndex = cylinderAlongZ(0.12, 0.32, whiteMaterial, 28);
   rockerJointIndex.position.set(rockerLength, 0, 0.58);
   rockerJointIndex.userData.role = 'white-rocker-joint-index';
-  bellCrank.add(rockerJointIndex);
+  const rockerJointPin = cylinderAlongZ(0.1, 0.44, darkMaterial, 28);
+  rockerJointPin.position.set(rockerLength, 0, 0.68);
+  rockerJointPin.userData.role = 'rocker-to-connecting-rod-joint-pin';
+  bellCrank.add(rockerJointPin);
   const bellCrankBearing = cylinderAlongZ(0.18, 0.82, darkMaterial, 34);
   bellCrankBearing.position.set(bellCrankPivot.x, bellCrankPivot.y, 0.28);
   bellCrankBearing.userData.role = 'fixed-bell-crank-fulcrum-a';
@@ -798,7 +799,6 @@ function crankRockerAdjustableSawFeed(movement) {
   );
   crankIndex.position.set(crankRadius * 0.56, 0, 0.72);
   crankIndex.userData.role = 'white-input-crank-rotation-index';
-  inputCrank.add(crankIndex);
   const inputBearing = cylinderAlongZ(0.23, 0.86, darkMaterial, 36);
   inputBearing.position.set(inputShaft.x, inputShaft.y, 0.25);
   inputBearing.userData.role = 'fixed-lower-input-shaft-bearing';
@@ -838,7 +838,6 @@ function crankRockerAdjustableSawFeed(movement) {
   );
   pawlIndex.position.set(pawlLength * 0.73, 0.11, 0.11);
   pawlIndex.userData.role = 'white-pawl-motion-index';
-  pawl.add(pawlIndex);
   root.add(pawl);
 
   const holdingPawlPivot = sourcePointToModel(
@@ -872,14 +871,13 @@ function crankRockerAdjustableSawFeed(movement) {
   );
   pawlContactMarker.position.z = 0.72;
   pawlContactMarker.userData.role = 'active-pawl-ratchet-contact-marker';
-  root.add(pawlContactMarker);
+  // Contact markers stay as unrendered state; Brown draws no white beads.
   const rackContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.055, 20, 13),
     whiteMaterial,
   );
   rackContactMarker.position.set(0, pinionPitchRadius, 0.18);
   rackContactMarker.userData.role = 'pinion-rack-pitch-contact-marker';
-  root.add(rackContactMarker);
 
   const oneCycleStart = stateAtTime(0);
   const oneCycleEnd = stateAtTime(inputCyclePeriod);
@@ -1084,12 +1082,14 @@ function crankRockerAdjustableSawFeed(movement) {
     const state = stateAtTime(time);
     inputCrank.rotation.z = state.inputAngle;
     bellCrank.rotation.z = state.rockerAngle;
+    // The rod runs in front of the crank plate and rocker arm (z 0.71-0.89),
+    // clear of the input journal, so only the pins pass through its eyes.
     connectingRod.userData.setEndpoints(
-      new THREE.Vector3(state.crankPin.x, state.crankPin.y, 0.48),
+      new THREE.Vector3(state.crankPin.x, state.crankPin.y, 0.80),
       new THREE.Vector3(
         state.rockerJoint.x,
         state.rockerJoint.y,
-        0.48,
+        0.80,
       ),
     );
     pawl.position.set(
@@ -1139,7 +1139,8 @@ function crankRockerAdjustableSawFeed(movement) {
   return {
     root,
     update,
-    cameraDirection: new THREE.Vector3(6.2, 4.4, 14),
+    // Brown draws a flat front elevation.
+    cameraDirection: new THREE.Vector3(0, 0, 14),
   };
 }
 

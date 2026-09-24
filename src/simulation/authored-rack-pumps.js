@@ -258,12 +258,12 @@ function handRockedPinionAndPumpRacks(movement) {
     roughness: 0.5,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.44 });
-  const glassMaterial = matte(0x85b4c3, {
-    metalness: 0.02,
-    opacity: 0.22,
-    roughness: 0.38,
+  // Brown draws the pump barrels as opaque metal tubes broken off below
+  // the bedplate, so the pistons and most of the barrel run out of view.
+  const glassMaterial = matte(PALETTE.frame, {
+    metalness: 0.18,
+    roughness: 0.5,
     side: THREE.DoubleSide,
-    transparent: true,
   });
 
   const baseTopY = sourcePointToModel(sourceRasterBaseLeft).y;
@@ -377,8 +377,8 @@ function handRockedPinionAndPumpRacks(movement) {
     );
     cylinder.position.set(x, pumpCylinderCenterY, 0.23);
     cylinder.userData.role = side < 0
-      ? 'left-transparent-air-pump-barrel'
-      : 'right-transparent-air-pump-barrel';
+      ? 'left-air-pump-barrel'
+      : 'right-air-pump-barrel';
     pumpCylinders.push(cylinder);
     root.add(cylinder);
     for (const y of [pumpCylinderTop, pumpCylinderBottom]) {
@@ -419,11 +419,20 @@ function handRockedPinionAndPumpRacks(movement) {
   const hub=pinionRotor.children[1];hub.geometry.dispose();
   hub.geometry=boredCylinderGeometry(.32,.153,.52);
   pinionRotor.children[2].visible=false;
+  // makeGear's white phase indicator is not drawn by Brown.
+  pinionRotor.remove(pinionRotor.children[3]);
   pinionRotor.userData.role = 'rigid-pinion-and-handle-rotor';
+  // The handle is carried on the pinion's front face, so it sweeps in front
+  // of both racks and their guides instead of through them.
+  const handleZ = 0.62;
+  const handleBossPoint = sourceHandleRoot.clone().multiplyScalar(
+    0.6 / sourceHandleRoot.length(),
+  );
   const handleCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(sourceHandleRoot.x, sourceHandleRoot.y, 0.30),
-    new THREE.Vector3(-1.08, 1.24, 0.30),
-    new THREE.Vector3(sourceHandleGrip.x, sourceHandleGrip.y, 0.30),
+    new THREE.Vector3(handleBossPoint.x, handleBossPoint.y, handleZ),
+    new THREE.Vector3(sourceHandleRoot.x, sourceHandleRoot.y, handleZ),
+    new THREE.Vector3(-1.08, 1.24, handleZ),
+    new THREE.Vector3(sourceHandleGrip.x, sourceHandleGrip.y, handleZ),
   ]);
   const handle = new THREE.Mesh(
     new THREE.TubeGeometry(handleCurve, 48, 0.095, 12, false),
@@ -431,14 +440,17 @@ function handRockedPinionAndPumpRacks(movement) {
   );
   handle.userData.role = 'manual-handle-rigid-to-pinion';
   pinionRotor.add(handle);
-  const handleGrip = cylinderAlongZ(0.145, 0.62, darkMaterial, 32);
-  handleGrip.position.set(sourceHandleGrip.x, sourceHandleGrip.y, 0.30);
+  const handleBoss = cylinderAlongZ(0.14, 0.16, driverMaterial, 32);
+  handleBoss.position.set(handleBossPoint.x, handleBossPoint.y, 0.56);
+  handleBoss.userData.role = 'handle-boss-on-pinion-face';
+  pinionRotor.add(handleBoss);
+  const handleGrip = cylinderAlongZ(0.145, 0.54, darkMaterial, 32);
+  handleGrip.position.set(sourceHandleGrip.x, sourceHandleGrip.y, 0.72);
   handleGrip.userData.role = 'manual-handle-grip';
   pinionRotor.add(handleGrip);
   const handleGripCap = cylinderAlongZ(0.09, 0.055, whiteMaterial, 30);
   handleGripCap.position.set(sourceHandleGrip.x, sourceHandleGrip.y, 0.64);
   handleGripCap.userData.role = 'white-handle-endpoint-index';
-  pinionRotor.add(handleGripCap);
   const pinionAxle = cylinderAlongZ(0.15, 0.82, darkMaterial, 34);
   pinionAxle.position.set(0, 0, 0.29);
   pinionAxle.userData.role = 'fixed-pinion-axis';
@@ -532,7 +544,6 @@ function handRockedPinionAndPumpRacks(movement) {
     index.userData.role = side < 0
       ? 'white-left-rack-translation-index'
       : 'white-right-rack-translation-index';
-    rack.add(index);
     return {
       body,
       index,
@@ -827,6 +838,8 @@ function handRockedPinionAndPumpRacks(movement) {
 
   root.userData.cameraFov=8;
   fitPistonGuide(root,update,cyclePeriod);
+  // Crop at Brown's break line about 2.0 units below the bedplate top.
+  root.userData.cameraFitBounds.min.y=baseTopY-2.0;
   markShadows(root);
   return {
     root,

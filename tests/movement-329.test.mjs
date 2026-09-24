@@ -517,13 +517,16 @@ test('movement 329 closes exactly and leaves movement 507 as the next draft', ()
     'one unwrapped carrier turn');
   near(closure.planetUnwrappedAngle, -Math.PI * 2, 0,
     'one opposite unwrapped planet turn');
+  // The demonstration starts at Brown's plate pose (carrier about 140
+  // degrees), so the rendered closure returns to that pose, not to zero.
+  assert.ok(Math.abs(start.carrierAngle - 2.4429) < 1e-3);
   model.update(canonicalTimes.cycleClosure);
-  near(blocks.inputCarrierC.rotation.z, 0, 0,
+  near(blocks.inputCarrierC.rotation.z, start.carrierAngle, 0,
     'rendered carrier closure');
-  near(blocks.planetGearB.rotation.z, 0, 0,
+  near(blocks.planetGearB.rotation.z, start.planetAngle, 0,
     'rendered planet closure');
   vector3Near(blocks.pistonAssembly.position,
-    new THREE.Vector3(), 0, 'rendered piston closure');
+    new THREE.Vector3(0, start.pistonY, 0), 0, 'rendered piston closure');
 
   const movement507 = catalog.movements[506];
   const model507 = createMovementModel(movement507);

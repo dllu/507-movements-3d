@@ -1,5 +1,6 @@
 import {correctDetachedChronometer} from './detached-chronometer-working-parts.js';
 import * as THREE from 'three';
+import {plate,poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -506,12 +507,50 @@ function leverChronometerEscapement(movement) {
   wheelRotor.userData.role =
     'alternating-long-and-short-advance-escape-wheel-rotor';
   escapeWheel.add(wheelRotor);
+  // Brown draws a solid web pierced by four rounded windows, leaving a
+  // broad cross, rather than a thin rim on four wire spokes.
+  const chaikin = (points, passes) => {
+    let ring = points;
+    for (let pass = 0; pass < passes; pass += 1) {
+      ring = ring.flatMap((point, index) => {
+        const next = ring[(index + 1) % ring.length];
+        return [
+          [point[0] * 0.75 + next[0] * 0.25, point[1] * 0.75 + next[1] * 0.25],
+          [point[0] * 0.25 + next[0] * 0.75, point[1] * 0.25 + next[1] * 0.75],
+        ];
+      });
+    }
+    return ring;
+  };
+  const wheelArmHalfWidth = 0.24;
+  const wheelWindows = [0, 1, 2, 3].flatMap((quadrant) => {
+    const angle = quadrant * FULL_TURN / 4;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    const rawWindow = polygonClipping.difference(
+      polygonClipping.intersection(
+        poly(circle([0, 0], wheelInnerRadius - 0.02, 96)),
+        poly([
+          [wheelArmHalfWidth, wheelArmHalfWidth],
+          [4, wheelArmHalfWidth],
+          [4, 4],
+          [wheelArmHalfWidth, 4],
+        ]),
+      ),
+      poly(circle([0, 0], 0.62, 64)),
+    );
+    return rawWindow.map(([outer]) => poly(chaikin(
+      outer.slice(0, -1),
+      4,
+    ).map(([x, y]) => [x * cos - y * sin, x * sin + y * cos])));
+  });
+  const wheelWeb = polygonClipping.difference(
+    poly(circle([0, 0], wheelToothRootRadius, 180)),
+    poly(circle([0, 0], 0.34, 48)),
+    ...wheelWindows,
+  );
   const wheelRim = new THREE.Mesh(
-    centeredExtrusion(
-      annularShape(wheelToothRootRadius, wheelInnerRadius),
-      wheelDepth,
-      0.006,
-    ),
+    plate(wheelWeb, -wheelDepth / 2, wheelDepth / 2),
     driverMaterial,
   );
   wheelRim.userData.role = 'lever-chronometer-escape-wheel-rim';
@@ -537,22 +576,6 @@ function leverChronometerEscapement(movement) {
     wheelRotor.add(tooth);
   }
   const wheelSpokes = [];
-  for (let index = 0; index < 4; index += 1) {
-    const angle = index * FULL_TURN / 4;
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(2.23, 0.18, wheelDepth * 0.80),
-      driverMaterial,
-    );
-    spoke.position.set(
-      Math.cos(angle) * 1.115,
-      Math.sin(angle) * 1.115,
-      0,
-    );
-    spoke.rotation.z = angle;
-    spoke.userData.role = `lever-chronometer-wheel-spoke-${index + 1}`;
-    wheelSpokes.push(spoke);
-    wheelRotor.add(spoke);
-  }
   const wheelHub = cylinderAlongZ(0.34, 0.76, darkMaterial, 36);
   wheelHub.userData.role = 'lever-chronometer-escape-wheel-hub';
   const wheelShaft = cylinderAlongZ(0.11, 1.45, darkMaterial, 30);
@@ -780,29 +803,23 @@ function leverChronometerEscapement(movement) {
   balanceStaff.position.z = 0.48;
   balanceStaff.userData.role = 'balance-staff-for-lever-chronometer';
   const balanceRimRadius = sourceRasterBalanceOuterRadius * sourceScale;
-  const balanceRim = new THREE.Mesh(
-    new THREE.TorusGeometry(balanceRimRadius, 0.095, 12, 72),
-    drivenMaterial,
+  // Brown draws the balance as a plain disk behind the lever, not a spoked
+  // rim; its radius stops short of the lever arbor, which sits at its edge.
+  const balanceDiskRadius = Math.min(
+    balanceRimRadius,
+    balanceToLeverDistance - 0.14,
   );
-  balanceRim.position.z = balancePlaneZ;
+  const balanceDiskDepth = 0.10;
+  const balanceDiskZ = -0.28;
+  const balanceRim = cylinderAlongZ(
+    balanceDiskRadius,
+    balanceDiskDepth,
+    drivenMaterial,
+    96,
+  );
+  balanceRim.position.z = balanceDiskZ;
   balanceRim.userData.role = 'lever-chronometer-balance-wheel-rim';
   const balanceSpokes = [];
-  for (let index = 0; index < 3; index += 1) {
-    const angle = index * FULL_TURN / 3;
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(balanceRimRadius * 0.92, 0.105, 0.12),
-      drivenMaterial,
-    );
-    spoke.position.set(
-      Math.cos(angle) * balanceRimRadius * 0.46,
-      Math.sin(angle) * balanceRimRadius * 0.46,
-      balancePlaneZ,
-    );
-    spoke.rotation.z = angle;
-    spoke.userData.role = `lever-chronometer-balance-spoke-${index + 1}`;
-    balanceSpokes.push(spoke);
-    balance.add(spoke);
-  }
   const balanceIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.095, 18, 14),
     indexMaterial,

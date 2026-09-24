@@ -70,14 +70,18 @@ test('movement 316 is the complete glass-jar mercurial compensation pendulum', (
     massModel.rod.mass + massModel.glassJar.mass
       + massModel.mercury.mass);
 
-  assert.equal(blocks.fixedFrame.parent, model.root);
+  // Brown draws the rod running out of the top of the plate: source
+  // presentation removes the undrawn suspension frame and pivot hub.
+  assert.equal(blocks.fixedFrame.parent, null);
+  assert.equal(blocks.movingPivotHub.parent, null);
   assert.equal(blocks.pendulumCarrier.parent, model.root);
   assert.equal(blocks.jarAssembly.parent, blocks.pendulumCarrier);
   assert.equal(blocks.rod.parent, blocks.pendulumCarrier);
   assert.equal(blocks.threadHelix.parent, blocks.pendulumCarrier);
   assert.equal(blocks.glassJar.parent, blocks.jarAssembly);
   assert.equal(blocks.mercuryColumn.parent, blocks.jarAssembly);
-  assert.equal(blocks.mercurySurface.parent, blocks.jarAssembly);
+  // The white level disc is an index Brown does not draw.
+  assert.equal(blocks.mercurySurface.parent, null);
   assert.equal(blocks.adjusterHandle.parent, blocks.jarAssembly);
   assert.equal(blocks.shoulderHangers.length, 2);
   assert.equal(blocks.sideClamps.length, 2);
@@ -399,7 +403,6 @@ test('movement 316 renderer exposes the moving level and fixed effective-length 
   const jarWorld = new THREE.Vector3();
   const mercuryWorld = new THREE.Vector3();
   const surfaceWorld = new THREE.Vector3();
-  const datumWorld = new THREE.Vector3();
 
   assert.equal(blocks.glassJar.material.transparent, true);
   assert.ok(blocks.glassJar.material.opacity < 0.5);
@@ -408,6 +411,11 @@ test('movement 316 renderer exposes the moving level and fixed effective-length 
   assert.equal(blocks.centerOfOscillationMarker.userData
     .nonPhysicalReference, true);
   assert.equal(blocks.compensationDatumRing.castShadow, false);
+  // The non-physical datum, marker and level disc are not drawn by Brown.
+  for (const part of [blocks.compensationDatumRing,
+    blocks.centerOfOscillationMarker, blocks.mercurySurface]) {
+    assert.equal(part.parent, null);
+  }
   assert.equal(model.root.userData.groundFloorY, -5.30);
   assert.ok(model.root.userData.cameraFitBounds.isBox3);
   assert.ok(model.root.userData.cameraFitBounds.max.x > 4);
@@ -435,16 +443,15 @@ test('movement 316 renderer exposes the moving level and fixed effective-length 
       `rendered mercury height at ${time}`);
     blocks.glassJar.getWorldPosition(jarWorld);
     blocks.mercuryColumn.getWorldPosition(mercuryWorld);
-    blocks.mercurySurface.getWorldPosition(surfaceWorld);
-    blocks.centerOfOscillationMarker.getWorldPosition(datumWorld);
+    // The live mercury top is the upper face of the rendered column.
+    surfaceWorld.set(0, 0.5, 0);
+    blocks.mercuryColumn.localToWorld(surfaceWorld);
     vectorNear(jarWorld, expected.glassJarCenter.position, 2e-15,
       `rendered jar center at ${time}`);
     vectorNear(mercuryWorld, expected.mercuryCenter.position, 2e-15,
       `rendered mercury center at ${time}`);
     vectorNear(surfaceWorld, expected.mercuryTop.position, 2e-15,
       `rendered mercury top at ${time}`);
-    vectorNear(datumWorld, expected.centerOfOscillation.position, 2e-15,
-      `rendered effective-length datum at ${time}`);
     near(model.root.userData.compensationState
       .centerOfOscillationError, 0, 3e-15,
     `published compensation at ${time}`);

@@ -357,32 +357,60 @@ function deadbeatAnchorEscapement(movement) {
     }
   }
   wheelShape.closePath();
-  const wheelOpening = new THREE.Path();
-  wheelOpening.absarc(0, 0, wheelInnerRadius, 0, FULL_TURN, true);
-  wheelShape.holes.push(wheelOpening);
+  // Brown draws wheel A as a solid web pierced by four lens-shaped windows
+  // between curved crossings, not an open rim on straight spokes. The
+  // windows sit square to the plate at the initial wheel pose (rotor at
+  // about 165.65 degrees).
+  const lensOuterRadius = wheelInnerRadius;
+  const lensInnerRadius = 0.86;
+  const lensHalfAngle = THREE.MathUtils.degToRad(38);
+  const lensOffset = THREE.MathUtils.degToRad(14.35);
+  for (let windowIndex = 0; windowIndex < 4; windowIndex += 1) {
+    const middle = lensOffset + windowIndex * Math.PI / 2;
+    const lens = new THREE.Path();
+    const samples = 24;
+    const points = [];
+    for (let sample = 0; sample <= samples; sample += 1) {
+      const along = -1 + 2 * sample / samples;
+      const angle = middle + lensHalfAngle * along;
+      points.push(new THREE.Vector2(
+        Math.cos(angle) * lensOuterRadius,
+        Math.sin(angle) * lensOuterRadius,
+      ));
+    }
+    for (let sample = samples - 1; sample >= 1; sample -= 1) {
+      const along = -1 + 2 * sample / samples;
+      const angle = middle + lensHalfAngle * along;
+      const radius = lensOuterRadius - (lensOuterRadius - lensInnerRadius)
+        * Math.cos(along * Math.PI / 2);
+      points.push(new THREE.Vector2(
+        Math.cos(angle) * radius,
+        Math.sin(angle) * radius,
+      ));
+    }
+    lens.moveTo(points[0].x, points[0].y);
+    for (const point of points.slice(1)) lens.lineTo(point.x, point.y);
+    lens.closePath();
+    wheelShape.holes.push(lens);
+  }
+  const wheelBore = new THREE.Path();
+  for (let step = 0; step < 48; step += 1) {
+    const angle = -FULL_TURN * step / 48;
+    const x = Math.cos(angle) * 0.36;
+    const y = Math.sin(angle) * 0.36;
+    if (step === 0) wheelBore.moveTo(x, y);
+    else wheelBore.lineTo(x, y);
+  }
+  wheelBore.closePath();
+  wheelShape.holes.push(wheelBore);
   const toothedRim = new THREE.Mesh(
     centeredExtrusion(wheelShape, wheelDepth, 0.006),
     driverMaterial,
   );
   toothedRim.userData.role = 'thirty-deadbeat-escape-wheel-teeth';
   wheelRotor.add(toothedRim);
+  // The crossings are part of the pierced web above; no separate spokes.
   const spokeMeshes = [];
-  for (let spokeIndex = 0; spokeIndex < 4; spokeIndex += 1) {
-    const angle = Math.PI / 4 + spokeIndex * Math.PI / 2;
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(1.58, 0.25, wheelDepth * 0.82),
-      driverMaterial,
-    );
-    spoke.position.set(
-      Math.cos(angle) * 0.82,
-      Math.sin(angle) * 0.82,
-      0,
-    );
-    spoke.rotation.z = angle;
-    spoke.userData.role = `deadbeat-escape-wheel-spoke-${spokeIndex + 1}`;
-    spokeMeshes.push(spoke);
-    wheelRotor.add(spoke);
-  }
   const wheelHub = cylinderAlongZ(0.39, 0.74, darkMaterial, 38);
   wheelHub.userData.role = 'deadbeat-escape-wheel-arbor-hub-v';
   wheelRotor.add(wheelHub);
@@ -1033,7 +1061,8 @@ function grahamDeadbeatPendulumEscapement(movement) {
   const toothLeanAngle = toothPitch * 0.16;
   const toothTipRadius = sourceRasterWheelTipRadius * sourceScale;
   const wheelRootRadius = 2.05;
-  const wheelInnerRadius = 1.48;
+  // Brown's rim is a narrow band inside the teeth (about 0.84 of the root).
+  const wheelInnerRadius = 1.72;
   const wheelDepth = 0.34;
   const anchorDepth = 0.4;
 
@@ -1195,7 +1224,14 @@ function grahamDeadbeatPendulumEscapement(movement) {
   }
   wheelShape.closePath();
   const wheelOpening = new THREE.Path();
-  wheelOpening.absarc(0, 0, wheelInnerRadius, 0, FULL_TURN, true);
+  for (let step = 0; step < 120; step += 1) {
+    const angle = -FULL_TURN * step / 120;
+    const x = Math.cos(angle) * wheelInnerRadius;
+    const y = Math.sin(angle) * wheelInnerRadius;
+    if (step === 0) wheelOpening.moveTo(x, y);
+    else wheelOpening.lineTo(x, y);
+  }
+  wheelOpening.closePath();
   wheelShape.holes.push(wheelOpening);
   const toothedRim = new THREE.Mesh(
     centeredExtrusion(wheelShape, wheelDepth, GRAHAM_303_ANCHOR.wheelBevel),
@@ -1204,15 +1240,17 @@ function grahamDeadbeatPendulumEscapement(movement) {
   toothedRim.userData.role = 'thirty-forward-leaning-deadbeat-teeth';
   wheelRotor.add(toothedRim);
   const spokeMeshes = [];
+  // Brown draws the four crossings as a leaning X (about 55, 145, 235 and
+  // 325 degrees) at the plate's pose, not an upright cross.
   for (let spokeIndex = 0; spokeIndex < 4; spokeIndex += 1) {
-    const angle = Math.PI / 4 + spokeIndex * Math.PI / 2;
+    const angle = THREE.MathUtils.degToRad(100) + spokeIndex * Math.PI / 2;
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(1.72, 0.22, wheelDepth * 0.78),
+      new THREE.BoxGeometry(wheelInnerRadius + 0.06, 0.22, wheelDepth * 0.78),
       wheelMaterial,
     );
     spoke.position.set(
-      Math.cos(angle) * 0.88,
-      Math.sin(angle) * 0.88,
+      Math.cos(angle) * (wheelInnerRadius + 0.06) / 2,
+      Math.sin(angle) * (wheelInnerRadius + 0.06) / 2,
       0,
     );
     spoke.rotation.z = angle;
@@ -1326,11 +1364,12 @@ function grahamDeadbeatPendulumEscapement(movement) {
     anchorMaterial,
   );
   pendulumRod.userData.role = 'pendulum-rod-C';
+  // Brown marks F only as a dot on the rod; no bob is drawn.
   const pendulumBob = new THREE.Mesh(
-    new THREE.SphereGeometry(0.34, 28, 18),
-    anchorMaterial,
+    new THREE.SphereGeometry(0.12, 20, 12),
+    darkMaterial,
   );
-  pendulumBob.scale.z = 0.35;
+  pendulumBob.scale.z = 0.6;
   pendulumBob.position.set(0, -pendulumRodLength, pendulumZ);
   pendulumBob.userData.role = 'pendulum-point-F-bob';
   const pendulumIndex = new THREE.Mesh(
@@ -1810,6 +1849,8 @@ function grahamDeadbeatPendulumEscapement(movement) {
   };
   root.userData.wheelAngleAtHalfLanding = wheelAngleAtHalfLanding;
   root.userData.cameraDistanceScale = 1.08;
+  // Brown's plate is a flat face view without a ground line.
+  root.userData.hideGround = true;
 
   update(0);
   markShadows(root);
@@ -1819,7 +1860,7 @@ function grahamDeadbeatPendulumEscapement(movement) {
   }
   root.userData.fidelity = 'authored';
   return {
-    cameraDirection: new THREE.Vector3(1.2, 0.9, 13.4),
+    cameraDirection: new THREE.Vector3(0.3, 0.25, 13.4),
     root,
     update,
   };

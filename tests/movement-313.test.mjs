@@ -86,7 +86,9 @@ test('movement 313 is the common Earnshaw spring-detent chronometer escapement',
   assert.equal(blocks.escapeWheel.parent, model.root);
   assert.equal(blocks.wheelRotor.parent, blocks.escapeWheel);
   assert.equal(blocks.balanceRotor.parent, model.root);
-  assert.equal(blocks.impulseRollerRim.parent, blocks.balanceRotor);
+  // Brown draws the roller as a plain notched disc; the open ring is kept
+  // for metadata but not presented.
+  assert.equal(blocks.impulseRollerRim.parent, null);
   assert.equal(blocks.impulsePallet.parent, blocks.balanceRotor);
   assert.equal(blocks.impulsePalletArm.parent, blocks.impulsePallet);
   assert.equal(blocks.dischargingRoller.parent, blocks.balanceRotor);

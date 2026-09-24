@@ -73,11 +73,18 @@ test('movement 317 is Brown’s complete compound-bar compensation pendulum', ()
     massModel.rod.mass + massModel.mainBob.mass
       + 2 * massModel.eachEndWeight.mass);
 
-  assert.equal(blocks.fixedFrame.parent, model.root);
+  // Brown draws the rod running out of the top of the plate: source
+  // presentation removes the undrawn suspension frame and pivot hub.
+  assert.equal(blocks.fixedFrame.parent, null);
+  assert.equal(blocks.movingPivotHub.parent, null);
   assert.equal(blocks.pendulumCarrier.parent, model.root);
   assert.equal(blocks.compoundBar.parent, blocks.pendulumCarrier);
   assert.equal(blocks.mainBob.parent, blocks.pendulumCarrier);
-  assert.equal(blocks.mainBobWitness.parent, blocks.mainBob);
+  // White motion indices and the bob hub are not drawn on the plate.
+  assert.equal(blocks.mainBobWitness.parent, null);
+  assert.equal(blocks.mainBobHub.parent, null);
+  assert.equal(blocks.leftEndWeight.witness.parent, null);
+  assert.equal(blocks.rightEndWeight.witness.parent, null);
   assert.equal(blocks.rod.parent, blocks.pendulumCarrier);
   assert.equal(blocks.leftEndWeight.group.parent,
     blocks.pendulumCarrier);
@@ -99,7 +106,7 @@ test('movement 317 is Brown’s complete compound-bar compensation pendulum', ()
   assert.equal(roles.filter((role) =>
     role === 'end-weight-W-set-screw').length, 2);
   assert.equal(roles.filter((role) =>
-    role === 'white-end-weight-motion-index').length, 2);
+    role === 'white-end-weight-motion-index').length, 0);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -408,13 +415,15 @@ test('movement 317 renderer keeps brass below steel and binds the live bar, weig
   const bobWorld = new THREE.Vector3();
   const leftWorld = new THREE.Vector3();
   const rightWorld = new THREE.Vector3();
-  const datumWorld = new THREE.Vector3();
 
   assert.equal(blocks.compensationDatum.userData.nonPhysicalReference,
     true);
   assert.equal(blocks.centerOfOscillationMarker.userData
     .nonPhysicalReference, true);
   assert.equal(blocks.compensationDatum.castShadow, false);
+  // The non-physical datum and marker are not drawn by Brown.
+  assert.equal(blocks.compensationDatum.parent, null);
+  assert.equal(blocks.centerOfOscillationMarker.parent, null);
   assert.equal(model.root.userData.groundFloorY, -7.55);
   assert.ok(model.root.userData.cameraFitBounds.isBox3);
   assert.ok(model.root.userData.cameraFitBounds.max.x > 5);
@@ -442,7 +451,6 @@ test('movement 317 renderer keeps brass below steel and binds the live bar, weig
     blocks.mainBob.getWorldPosition(bobWorld);
     blocks.leftEndWeight.group.getWorldPosition(leftWorld);
     blocks.rightEndWeight.group.getWorldPosition(rightWorld);
-    blocks.centerOfOscillationMarker.getWorldPosition(datumWorld);
     vectorNear(barCenterWorld, expected.barCenter.position, 3e-15,
       `rendered bar center at ${time}`);
     vectorNear(bobWorld, expected.mainBobCenter.position, 3e-15,
@@ -451,10 +459,6 @@ test('movement 317 renderer keeps brass below steel and binds the live bar, weig
       `rendered left W at ${time}`);
     vectorNear(rightWorld, expected.rightWeight.position, 3e-15,
       `rendered right W at ${time}`);
-    vectorNear(datumWorld, expected.centerOfOscillation.position.clone()
-      .add(new THREE.Vector3(0, 0, geometry.mainBobDepth / 2 + 0.20)),
-    3e-15,
-      `rendered effective-length datum at ${time}`);
     near(model.root.userData.compensationState
       .centerOfOscillationError, 0, 4e-15,
     `published compensation at ${time}`);
