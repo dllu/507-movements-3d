@@ -54,7 +54,7 @@ const HIP_OFFSET = { x: 2.5, y: 0.75 };
 // Boards are met 12 degrees above the horizontal and left about 19
 // degrees below it, so the feet work near axle height as Brown draws.
 const TOUCHDOWN_DEGREES = 18;
-const LEAN_ANGLE = THREE.MathUtils.degToRad(18);
+const LEAN_ANGLE = THREE.MathUtils.degToRad(0);
 const ANKLE_EASE_START = THREE.MathUtils.degToRad(60);
 const ANKLE_EASE_SPAN = THREE.MathUtils.degToRad(3);
 // Hips stand just outboard of the jacket's lower half-width.
@@ -372,8 +372,8 @@ function externalPersonTreadmill(movement) {
   capBand.userData.role = 'person-cap-band';
   cap.add(capBand);
   person.add(cap);
-  // Brown's climber leans in toward the drum from the hips. The jacket,
-  // head, cap and arms are turned together about the hip line; the legs
+  // Brown's walker stands upright (LEAN_ANGLE is zero). The jacket, head,
+  // cap and arms could be turned together about the hip line; the legs
   // hang from the unmoved hip pivots.
   const leanPivot = new THREE.Vector2(0, -0.27 * FIGURE_SCALE);
   const leanPoint = (x, y, angle = LEAN_ANGLE) => {
@@ -392,11 +392,11 @@ function externalPersonTreadmill(movement) {
   };
   for (const part of [torso, head, cap]) applyLean(part);
   const arms = [];
-  // He faces the drum and grips a rail at chin height just in front of his
-  // leaning face: Brown's topmost horizontal line along the drum.
+  // He faces the drum and reaches up to a rail just above and in front of
+  // his cap: Brown's topmost horizontal line along the drum.
   const leanedHead = leanPoint(0, 0.80 * FIGURE_SCALE);
-  const handRailY = personCenterOfMass.y + leanedHead.y - 0.06 * FIGURE_SCALE;
-  const handRailX = personCenterOfMass.x + leanedHead.x - 0.24 * FIGURE_SCALE;
+  const handRailY = personCenterOfMass.y + leanedHead.y + 0.25 * FIGURE_SCALE;
+  const handRailX = personCenterOfMass.x + leanedHead.x - 0.18 * FIGURE_SCALE;
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Vector3(
       0,
@@ -418,8 +418,8 @@ function externalPersonTreadmill(movement) {
     // Upper arm out and up to an elbow held wide, forearm up to the rail.
     const elbow = new THREE.Vector3(
       hand.x * 0.45,
-      0.50 * FIGURE_SCALE,
-      side * 0.40 * FIGURE_SCALE,
+      0.72 * FIGURE_SCALE,
+      side * 0.42 * FIGURE_SCALE,
     );
     const arm = new THREE.Mesh(
       new THREE.TubeGeometry(

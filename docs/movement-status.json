@@ -12728,8 +12728,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The walker crouches with his knees forward toward the boards, where Brown's man stands upright with one knee raised; long legs need the hips about a unit out from the drum for the knees to clear the boards.",
-      "limits": "Walker effort and wheel load are not simulated.",
+      "visibleFlaws": "His standing leg reaches forward to the boards instead of standing under him; the drum has 14 radial boards where Brown draws about 25 level treads.",
+      "limits": "Walker effort and wheel load are not simulated; in the air the ankle turn is eased at about 63°.",
       "assessment": "minor"
     },
     {

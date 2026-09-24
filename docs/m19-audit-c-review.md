@@ -48,3 +48,18 @@ No docs/validation report fingerprints these files.
 - **377:** The standing leg reaches forward to the drum instead of standing straight under him. The hip must stand about a unit out from the boards so the long bent knee clears them. The shoe turn in the air is eased rather than following the gait's sole angle.
 
 **Follow-up tests (all pass):** movement-321, maintaining-clock-interfaces, maintaining-clock-bake, movement-377, treadmill-gait-solids, treadwheel-working-solids.
+
+## Posture pass (377)
+
+**Asked for:** Brown's upright stance, with the torso vertical, the standing foot directly under the hips and the other knee raised.
+
+**Result:** the torso is now upright (lean 0, was 18°). The hands grip a rail just above and in front of the cap, with the elbows raised. The legs, gait timing and board clearances are unchanged.
+
+**Forced residual: the standing foot cannot be under the hips.**
+- Each sole sits on a radial board. The next board up (25.7° higher) has its tip at r = 1.68, overhanging the foot.
+- So the standing shin must leave the ankle leaning at least about 20° away from the drum. A knee bent toward the drum always drives the shin into that board.
+- A sweep confirmed it. Hips from x = 1.8 to 2.1 and y = 1.2 to 1.8 above the axis, legs from 0.74/0.70 to 0.84/0.80, and touchdown from 22° to 30° all either exceed leg reach or push the shin 0.03–0.23 into the board above.
+- The hip must therefore stand about a unit out from the boards (2.5, 0.75), and the legs reach forward to them.
+- Brown's drum has about 25 level, stair-like treads, where a foot can sit under the man. Matching that would mean redesigning the drum's 14 radial boards (their count is pinned by tests and the mechanism description), so it was not done here.
+
+**Checks:** intersections clear (0.01 spacing, 129 poses). movement-377, treadmill-gait-solids and treadwheel-working-solids pass.
