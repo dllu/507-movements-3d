@@ -67,3 +67,64 @@ No docs/validation report fingerprints these files.
 ## Integration note (lead)
 
 The 24-tread drum redesign for 377 was not accepted (kept in git stash "377-drum-redesign-rejected"): it stood the walker on the drum top, well above Brown's axle-height station, and his thigh and shin segments separated visibly at the knee. 377 keeps the committed upright walker on radial boards and stays minor.
+
+## Lane m20-377: redesigned drum, knee and view (377)
+
+**Brown's view.** Brown draws the tread lines level, running from the top of the drum to the ground on the right. The man stands on them with his back to the viewer. Those lines can only be level if the drum is seen across its axis, so the right side of the plate is the drum's front face. The spur wheel is drawn face-on anyway: Brown combines an end view of the wheel with a view across the drum.
+
+A level camera cannot place the man at Brown's height, for two reasons:
+- Where the drum face is vertical (at axle height), level treads stack into a ladder. A raised knee has to swing forward into the treads above the foot. The leg therefore has to reach forward, which is the current flaw.
+- Treads can only form a usable stair above the axle. From a level camera, a man standing there looks perched on the top of the drum (the rejected stash).
+
+A drum is a cylinder, so a view across it can be raised without tilting the tread lines. Raising the camera by the station's angle brings the station down to axle level in the picture. The reading chosen here does that with a small station angle and a matching camera tilt.
+
+**Drum.** The 14 radial boards and 28 end lugs are replaced by a closed barrel shell (radius 1.60) carrying **24 cross-width treads**, each 0.28 deep and 0.06 thick.
+- The treads are turned from radial so that each is exactly level at the walking station, 15° above the horizontal. There they form a steep stair.
+- The end rings and diameter braces now sit inside the ends of the shell. The spokes join the rings directly, so `treadwheel-working-parts.js` no longer lengthens them.
+- The rail's near post moved past the end of the drum (the posts are hidden in the presentation anyway).
+- The side plank moved out to the plane x = 1.34, clear of the larger drum. Its top now rises above the rail, as Brown draws it.
+
+**Walker.**
+- **Stance:** the standing leg is 96% straight at lift-off and leans 0.10 out.
+- **Feet:** the toes and ball of each shoe stand on the tread, with the heel past its edge (ankle 0.095 beyond the tread tip), as a treadwheel is climbed. The shin therefore clears the tread above.
+- **Proportions:** legs 0.52/0.50 with fuller trousers (thigh 0.10, shin 0.08); upper body at scale 1.1. Brown's man has short legs under a long jacket.
+- **Rail:** the rail is at cap height in front of the face, with the elbows held out.
+- **Plate pose:** the +z leg (screen left) is the raised one at the plate pose, as Brown draws it.
+- **Knee swivel:** as the knee bends, the leg's plane turns outward about the hip–ankle line, by up to 45° at a right-angle bend. The raised knee therefore goes up and out to its own side, clear of the tread noses, instead of forward into them. The hip and ankle do not move, so the leg lengths stay exact.
+- **Gait:** 12 gait cycles per wheel turn, locked to the treads. The gait helper takes an optional `footPoint`, `soleAngleAt`, `swingOut` and `swingUp`. Planted soles lie flat on their treads. The ankle is eased toward about 70° only in the air; stance ankle turns stay under 35°, so nothing jumps at touchdown or lift-off.
+
+**Knee (closed and continuous).** The thigh and shin are lathe-turned trouser legs, and each ends in a knee ball of the thigh's radius. Every frame, both are cut by the plane that bisects the knee angle: vertices past the plane slide back along the limb axis onto it. The two meet exactly on that plane, so the joint is a rounded mitre with no gap and no overlap at any bend. The meshes are updated in place, so the geometry objects are kept. The screen reports thigh × shin as deforming contact at 0.0000.
+
+**View.** The presentation camera is now `[1, 0.28, 0.5]`, about 63° round from the axis and raised about 15°. From it:
+- the treads read as near-level lines running off to the right;
+- the man, seen from behind, stands on them with his standing foot at axle level and his raised knee lifted to the left;
+- his cap is at the rail, just above the drum top;
+- the side plank crosses between the wheel and the man.
+
+The wheel is seen as a narrow ellipse, not face-on (the compromise noted above).
+
+**Checks.**
+- **Intersections:** clear at 0.01 spacing and 129 poses. The only row is the thigh/shin mitre, as deforming contact at 0.0000.
+- **Tests:** movement-377, treadmill-gait-solids, treadwheel-working-solids and source-presentation all pass (19/19).
+
+**Test changes.** Each follows from the design change:
+- 24 treads, no lugs, and a shell parented to the rotor; 12 gait cycles.
+- Leg lengths 0.52/0.50.
+- The sole test now asserts toes and ball on the tread and the heel overhanging, with at least a third of the sole on the tread.
+- The clearance cache is keyed by geometry version, because the limbs are cut per frame.
+- The touchdown test uses `gaitCyclesPerWheelTurn`.
+
+**Residuals.**
+- The spur wheel is seen obliquely (a narrow ellipse), where Brown draws it face-on. This cannot be avoided if the tread lines are to stay level and the man is to be seen from behind.
+- The tread lines slope a few degrees because the camera is raised.
+- From the raised camera, the level treads show their top faces as planks. Brown draws single lines, and about twice as many.
+- The raised knee turns out to the side more than Brown's does, which is forced by the full-width treads.
+- The standing leg leans 0.10 out from the treads.
+- The heel overhangs the tread edge.
+- Head and arms stand about a head above the drum top; Brown's cap is level with it.
+
+**Display profile.** The swept bounds changed: the plank top is at y = 3.2 and the figure is higher. The stored profile for 377 needs re-measuring.
+
+### Lead note on m20
+
+The m20 barrel version (stash "377-m20-barrel-rejected") was also not accepted: the view reads better, but the walker squats with his raised knee flared out sideways, which looks less like Brown's upright man than the committed version. 377 stays minor.
