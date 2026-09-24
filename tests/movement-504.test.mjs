@@ -283,7 +283,8 @@ test('movement 504 runs continuously, fits the full carrier orbit, and leaves an
   for (let sample = 0; sample <= 1080; sample += 1) {
     model.update(period * sample / 1080);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    // Precise: the actual surfaces, not per-mesh boxes of rotated parts.
+    swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
   // Brown's elevation: the default view frames the arm's full turn about A
   // (recorded as sweptBounds) in x and y; its depth is a shallow fit proxy.
@@ -293,8 +294,8 @@ test('movement 504 runs continuously, fits the full carrier orbit, and leaves an
   const pose = new THREE.Box3();
   model.root.traverseVisible((object) => {
     if (!object.isMesh) return;
-    object.geometry.computeBoundingBox();
-    pose.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+    // Actual vertices: rotated gears' box corners overstate the pose.
+    pose.union(new THREE.Box3().setFromObject(object, true));
   });
   const fit = model.root.userData.cameraFitBounds;
   assert.ok(fit.containsBox(pose), JSON.stringify([pose.min, pose.max]));

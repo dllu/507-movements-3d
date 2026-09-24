@@ -218,8 +218,9 @@ test('movement 410 fitted equal-offset cheeks put the marker on the workpiece ce
     maximumMarkerY = Math.max(maximumMarkerY, state.markerWorld.y);
   }
   assert.ok(fittedSamples > 12000);
-  assert.ok(minimumMarkerY < -2.24);
-  assert.ok(maximumMarkerY > 0.33);
+  // Short traverse on Brown's cropped plank.
+  assert.ok(minimumMarkerY < -1.75);
+  assert.ok(maximumMarkerY > -0.45);
   assert.ok(minimumMarkerY > -geometry.workpieceHalfLength);
   assert.ok(maximumMarkerY < geometry.workpieceHalfLength);
   disposeModel(model.root);

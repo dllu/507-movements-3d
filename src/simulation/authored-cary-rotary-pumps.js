@@ -77,7 +77,8 @@ function caryRotaryPump(movement) {
   const pistonCount = 2;
   const separatorCenterAngle = -Math.PI / 2;
   const separatorHalfAngle = THREE.MathUtils.degToRad(18);
-  const separatorClearance = 0.035;
+  // The chamber wall's running clearance over the retracted bar end at E.
+  const separatorClearance = 0.003;
   const groundY = -3.78;
 
   const camRadiusAtAngle = (angle) => caryFollowerLaw(angle).radius;
@@ -524,14 +525,14 @@ function caryRotaryPump(movement) {
       fullFluidPressureLeakagePistonSealFrictionCamContactForceTorqueAndCavitationModeled:
         false,
       camContactModel:
-        'Each finite roller follows a reconstructed heart cam with an extended working dwell and a retracted dwell around E. Quintic transitions maintain continuous velocity and acceleration; the opposite piston stays extended while one crosses the separator.',
+        'Each finite roller of the one rigid bar c-c follows a reconstructed constant-width heart cam with an extended working dwell at the top and a retracted dwell around E. Harmonic flanks keep velocity continuous (acceleration steps at the dwell ends, as a heart cam\u2019s do); the opposite end stays extended while one crosses E.',
       flowModel:
         'The source arrows establish F-to-L suction and M-to-H discharge. The displayed swept-rate is only an ideal annular geometric diagnostic; pressure, leakage, port timing, trapped volume and hydraulic efficiency are not predicted.',
     },
     fidelity: 'authored',
     geometry,
     mechanism:
-      'Axle A and annular drum B rotate clockwise together around a stationary heart-shaped cam a. Two rigid pistons c, c slide in opposite radial guides carried by the drum. Each inner follower stays on the fixed cam, so at bottom port separator E that piston retracts to its drum seat while the opposite piston reaches the inner casing wall. Repetition draws supply from pipe F through port L behind a passing piston and drives captured water ahead through port M into discharge pipe H.',
+      'Axle A and annular drum B rotate clockwise together around a stationary heart-shaped cam a. The pistons c, c are the two ends of one rigid bar sliding in opposite radial guides of the drum; its two rollers bear on opposite sides of the constant-width cam, so at bottom E one end retracts to its drum seat while the other reaches the far side of the eccentric chamber, whose wall is the curve the bar ends trace. Repetition draws supply from pipe F through port L behind a passing piston and drives captured water ahead through port M into discharge pipe H.',
     motion: {
       cycleDuration,
       inputAngularSpeed,
@@ -578,7 +579,7 @@ function caryRotaryPump(movement) {
         engravingEvidence:
           'Brown’s section shows clockwise arrows on drum B, a stationary heart profile around axle A, two collinear opposed piston blades through rotating radial guides, inlet F rising into L on the lower-left, fixed separator E below the cam, port M on the lower-right, and the curved H discharge passage ending in a downward arrow.',
         reconstructionDisclosure:
-          'Brown gives no cam equation, casing depth, drum speed, slider length, separator clearance, port timing, pressure, leakage, friction, torque or absolute timing. Those values, the finite-roller offset cam with a 24-degree retraction dwell and 40-degree quintic transitions, transparent cutaway, colors and 6.2-second cycle are independently engineered. Fixed cam a, rotating A/B assembly, two opposed radial pistons, bottom retraction/opposite wall contact, separator E and F-L/M-H routing are source-grounded.',
+          'Brown gives no cam equation, casing depth, drum speed, slider length, separator clearance, port timing, pressure, leakage, friction, torque or absolute timing. Those values, the finite-roller offset constant-width cam with 20-degree dwells and harmonic flanks, the chamber curve derived from it, cutaway, colors and 6.2-second cycle are independently engineered. Fixed cam a, rotating A/B assembly, one rigid bar with opposed pistons c, c, the eccentric chamber, bottom retraction/opposite wall contact, separator E and F-L/M-H routing are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 456',
@@ -587,7 +588,7 @@ function caryRotaryPump(movement) {
     stateAtTime,
     transmission: {
       camLaw:
-        'Roller-center radius has a 24-degree half-width lower dwell, 40-degree quintic transitions and a circular working dwell; the solid cam is its inward normal offset by the 0.11 roller radius.',
+        'Roller-center radius r has 20-degree half-width dwells at E and opposite it joined by harmonic flanks, with r(t)+r(t+pi) constant so both rollers of the rigid bar stay on the cam; the solid cam is its inward normal offset by the 0.11 roller radius.',
       conjugateOpposition:
         'When either piston retracts at bottom E, the opposite piston stays at its maximum working radius; both piston radii follow the same stationary cam.',
       separatorConstraint:
@@ -627,6 +628,9 @@ function caryRotaryPump(movement) {
   inletShell.geometry.dispose();
   inletShell.geometry = new THREE.BoxGeometry(0.66, 1.58, 0.06)
     .translate(0, 0, -0.3834);
+  // F was moved up and left to meet port L beside E.
+  inletArrow.position.x += -0.13;
+  inletArrow.position.y += 0.75;
   markShadows(root);
   base.receiveShadow = true;
   update(0);

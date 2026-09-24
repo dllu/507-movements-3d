@@ -36,7 +36,8 @@ function oldRotaryPump(movement) {
   const casingInnerRadius = 2.35;
   const casingOuterRadius = 2.62;
   const casingDepth = 0.76;
-  const rotorRadius = 0.92;
+  // Brown's hexagonal ring rotor is about half the casing radius.
+  const rotorRadius = oldPumpContactGeometry.rotorRadius;
   const valveLength = casingInnerRadius - rotorRadius;
   const valveCount = 2;
   const maximumFoldAngle = oldPumpContactGeometry.maximumFold;
@@ -54,10 +55,18 @@ function oldRotaryPump(movement) {
 
   const tipRadiusForFoldFraction = fraction => Math.sqrt(rotorRadius**2+valveLength**2+2*rotorRadius*valveLength*Math.cos(maximumFoldAngle*fraction));
 
+  // Nearest radius at which a ray from the axis enters the square block.
   const abutmentInnerRadiusAtAngle = (angle) => {
-    const [x,y]=oldPumpContactGeometry.center,r=oldPumpContactGeometry.radius;
-    const along=x*Math.cos(angle)+y*Math.sin(angle),cross=x*Math.sin(angle)-y*Math.cos(angle);
-    return along>0&&Math.abs(cross)<r?Math.min(casingInnerRadius,along-Math.sqrt(r*r-cross*cross)):casingInnerRadius;
+    const c = Math.cos(angle), s = Math.sin(angle), ring = oldPumpContactGeometry.block;
+    let nearest = casingInnerRadius;
+    for (let i = 0; i < ring.length - 1; i += 1) {
+      const [ax, ay] = ring[i], [bx, by] = ring[i + 1], ex = bx - ax, ey = by - ay;
+      const denominator = c * ey - s * ex;
+      if (Math.abs(denominator) < 1e-14) continue;
+      const t = (ax * ey - ay * ex) / denominator, u = (ax * s - ay * c) / denominator;
+      if (t > 0 && u >= 0 && u <= 1) nearest = Math.min(nearest, t);
+    }
+    return nearest;
   };
 
   const stateAtInputAngle = (
@@ -576,6 +585,8 @@ function oldRotaryPump(movement) {
   }
   rearCover.material = matte(PALETTE.white, { roughness: 0.8 });
   rearCover.material.fog = false;
+  // The hollow ring's rear end plate reads as the same blank paper.
+  root.userData.blocks.rotorRearWeb.material = rearCover.material;
   for (const [shell, width, height] of [
     [inlet.children[0], 0.78, 1.42],
     [outlet.children[0], 1.48, 0.78],
@@ -586,6 +597,9 @@ function oldRotaryPump(movement) {
   }
   markShadows(root);
   base.receiveShadow = true;
+  // Brown's section carries no cast shadows on the blank back of the case.
+  rearCover.receiveShadow = false;
+  root.userData.blocks.rotorRearWeb.receiveShadow = false;
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

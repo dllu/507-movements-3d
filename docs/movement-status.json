@@ -13792,7 +13792,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13800,9 +13801,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The cheeks read small on a whole plank, where Brown crops close to them.",
-      "limits": "Manual instrument operation prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Manual instrument operation prescribed; the plank is cut short with broken ends as Brown crops it.",
+      "assessment": "reasonable"
     },
     {
       "id": 411,
@@ -14061,7 +14062,8 @@
         "docs/w3e-418-504-review.md",
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14069,9 +14071,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The slot curves a little less than Brown's, because C stays one-third along B.",
+      "visibleFlaws": "",
       "limits": "The slot follows exact kinematics. Valve input and roller loaded-wall convention prescribed.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 419,
@@ -14553,7 +14555,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14561,9 +14564,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "12 blades where Brown draws about 16.",
+      "visibleFlaws": "",
       "limits": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 434,
@@ -14887,7 +14890,8 @@
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/w5d-mixed-review.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14895,9 +14899,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Flat paddle boards where Brown draws boxy floats.",
+      "visibleFlaws": "",
       "limits": "The shaft bracket is reconstructed. Water raising and stream torque illustrative.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 444,
@@ -15281,7 +15285,8 @@
         "docs/w2h-401-507-review.md",
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15289,9 +15294,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Round abutment lobe where Brown draws a square hatched block, a solid octagonal rotor where he draws a hollow ring, and light-grey shadow blotches inside the case.",
-      "limits": "Contact branch has velocity corners; hold/return prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Square-block contact branch has velocity corners and a small forward shaft moment as the tip clears the corner; hold/return prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 456,
@@ -15315,7 +15320,8 @@
         "docs/w2h-401-507-review.md",
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15323,9 +15329,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Two sliders rather than one rigid bar, which could not follow this cam inside a round casing.",
-      "limits": "Vane motion imposed with assumed return load.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "One rigid bar c-c rides a constant-width heart cam; harmonic cam flanks and assumed loads prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 457,
@@ -15414,7 +15420,8 @@
         "docs/w3e-418-504-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15422,9 +15429,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The wind wheel stops at each exchange; letting the worm run on swept it through the stopped pins.",
-      "limits": "Worm meshing not qualified.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Bucket and tappet trip motion prescribed; the buckets start and stop abruptly at pick-up, as a running worm picking up a stopped wheel must; worm meshing not qualified.",
+      "assessment": "reasonable"
     },
     {
       "id": 460,
@@ -16177,7 +16184,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16185,9 +16193,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The chamber's round outlet F is not modelled and the casing reads as a light open frame rather than Brown's solid section.",
+      "visibleFlaws": "",
       "limits": "Quasi-static balance omits inertia, friction, capillarity and seal transients.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 483,
@@ -16211,7 +16219,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16219,9 +16228,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Bellows are narrower than Brown's.",
+      "visibleFlaws": "",
       "limits": "Bellows/spring/valve timing prescribed; not gas-tight.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 484,
@@ -16278,7 +16287,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16286,9 +16296,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The tail is a round disc where Brown draws a long loop, and the view is a little high.",
+      "visibleFlaws": "",
       "limits": "Prescribed rotor speed.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 486,
@@ -16837,7 +16847,8 @@
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16845,9 +16856,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The carrier's full turn is framed, so the train reads small.",
-      "limits": "Shallow engagement coverage unqualified; canvas-derived wheel proportions differ from engraving.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The camera fits the carrier's full turn, so the train is smaller in frame than on the plate.",
+      "assessment": "reasonable"
     },
     {
       "id": 503,
@@ -16908,7 +16919,8 @@
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17010,7 +17022,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/m9-410-507-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17018,9 +17031,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The arm's full sweep is framed, so the train sits small and left of centre; teeth are coarser than Brown's hatching.",
-      "limits": "Wheel-C spokes and hidden support depths inferred. Approximate bevel flanks.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The camera fits the arm's full sweep; the teeth read as faint serrations at about Brown's hatching pitch.",
+      "assessment": "reasonable"
     }
   ],
   "presentationReview": {

@@ -42,7 +42,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 433 is a horizontal twelve-scoop runner rigidly fixed to a vertical shaft beneath an elevated flume', () => {
+test('movement 433 is a horizontal sixteen-board runner rigidly fixed to a vertical shaft beneath an elevated flume', () => {
   const movement = catalog.movements[432];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -63,8 +63,8 @@ test('movement 433 is a horizontal twelve-scoop runner rigidly fixed to a vertic
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.jetFlowIndependent, false);
   assert.equal(degreesOfFreedom.shaftAndRunnerIndependent, false);
-  assert.equal(geometry.bladeCount, 12);
-  assert.equal(blocks.bladeGroups.length, 12);
+  assert.equal(geometry.bladeCount, 16);
+  assert.equal(blocks.bladeGroups.length, 16);
   for (const blade of blocks.bladeGroups) assert.equal(blade.parent, blocks.rotor);
   for (const rotating of [blocks.hub, blocks.hubRing, blocks.shaft,
     blocks.rotationMarker]) assert.equal(rotating.parent, blocks.rotor);
@@ -83,8 +83,8 @@ test('movement 433 is a horizontal twelve-scoop runner rigidly fixed to a vertic
   });
   assert.deepEqual(belts, []);
   assert.equal(roles.filter((role) =>
-    /^horizontal-overshot-scoop-blade-\d+-of-twelve$/.test(role)).length,
-  12);
+    /^horizontal-overshot-scoop-blade-\d+-of-sixteen$/.test(role)).length,
+  16);
   for (const role of [
     'horizontal-runner-turning-with-vertical-output-shaft',
     'rotating-vertical-output-shaft',
@@ -124,7 +124,7 @@ test('movement 433 records the sparse static source honestly and discloses uncer
   assert.deepEqual(plate.upperBearingApproximatePixels, [256, 82]);
   assert.deepEqual(plate.nozzleOutletApproximatePixels, [384, 244]);
   assert.deepEqual(plate.approximateImpactPixels, [305, 350]);
-  assert.equal(plate.approximateBladeCount, 12);
+  assert.equal(plate.approximateBladeCount, 16);
   assert.deepEqual(evidence.explicitInBrownDescription,
     ['the mechanism is a horizontal overshot water-wheel']);
   assert.match(evidence.engravingEvidence,
@@ -244,11 +244,12 @@ test('movement 433 jet engagement transfers smoothly between neighboring scoops 
     }
     previous = sharing.shares;
   }
-  assert.ok(maximumShareStep < 2.3e-4);
+  // Scales with blade count (16 blades share each turn).
+  assert.ok(maximumShareStep < 3.1e-4);
   const source = jetSharesAtWheelAngle(0).shares;
   const closure = jetSharesAtWheelAngle(FULL_TURN).shares;
-  source.forEach((share, index) => near(closure[index], share, 0,
-    `blade ${index + 1} engagement cycle closure`));
+  source.forEach((share, index) => near(closure[index], share, 1e-30,
+    `blade ${index + 1} engagement cycle closure`)); // denormal residue at 16 blades
   disposeModel(model.root);
 });
 

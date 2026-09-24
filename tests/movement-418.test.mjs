@@ -236,15 +236,15 @@ test('movement 418 roller spin is integrated from exact guide-path travel and ha
     near(state.rollerAngularSpeed * geometry.rollerRadius,
       -state.signedPathSpeed, 1.2e-16, 'rolling speed');
     near(state.rollerAngularAcceleration * geometry.rollerRadius,
-      -state.signedPathAcceleration, 1.2e-16, 'rolling acceleration');
+      -state.signedPathAcceleration, 3e-16, 'rolling acceleration'); // one ulp near 1.3
   }
   assert.ok(maximumSlipResidual < 1.2e-16);
   near(stateAtInputAngle(0).rollerAngle, 0, 0,
     'zero-reference roller angle');
   near(Math.abs(stateAtInputAngle(Math.PI / 2).rollerAngularSpeed),
-    0, 3e-16, 'right reversal rolling speed');
+    0, 5e-16, 'right reversal rolling speed'); // scales with 1/rollerRadius
   near(Math.abs(stateAtInputAngle(Math.PI * 3 / 2).rollerAngularSpeed),
-    0, 9e-16, 'left reversal rolling speed');
+    0, 1.5e-15, 'left reversal rolling speed'); // scales with 1/rollerRadius
   disposeModel(model.root);
 });
 

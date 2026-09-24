@@ -89,7 +89,8 @@ function valveReliefGuide(movement) {
   const valvePinY = -1.12;
   const rodLength = 3.50;
   const rollerFraction = 1 / 3;
-  const rollerRadius = 0.22;
+  // Brown's roller and slot are slender beside the rod boss.
+  const rollerRadius = 0.16;
   const guideRailRadius = 0.075;
   const guideClearance = 0.018;
   const guideCenterlineOffset = rollerRadius
@@ -384,7 +385,9 @@ function valveReliefGuide(movement) {
   // Brown's slot is a long slender arc, square-ended and reaching well past
   // C's travel, separated from the bell-shaped window above by a thin web.
   // Both edges follow the exact roller locus, extended beyond the stroke.
-  const slotEndValveX = 1.45;
+  // Ends at a third of B's length each side of centre, as Brown draws
+  // them; the exact locus then droops about as far as his slot does.
+  const slotEndValveX = 1.75;
   const bandPoints = (offset, end = slotEndValveX) => {
     const points = [];
     for (let index = 0; index <= 96; index += 1) {
@@ -399,7 +402,7 @@ function valveReliefGuide(movement) {
     ...bandPoints(-slotHalfWidth).reverse()]);
   const upperPinSlotHalfWidth = 0.155;
   const upperPinSlotTop = valvePinY + rodLength + 0.21 + 0.03;
-  const windowFoot = bandPoints(slotHalfWidth + 0.12, 1.52)
+  const windowFoot = bandPoints(slotHalfWidth + 0.12, 1.82)
     .filter(([x]) => x >= 0);
   const [footX, footY] = windowFoot.at(-1);
   const windowRight = [...windowFoot, [footX, footY + 0.12],
@@ -410,11 +413,11 @@ function valveReliefGuide(movement) {
   const upperPinSlotCap = poly(circle([0, upperPinSlotTop], upperPinSlotHalfWidth, 48));
   const guideHeadY = 3.02;
   // Brown's casting foot arches up under the slot, parallel to it.
-  const castingFoot = bandPoints(-(slotHalfWidth + 0.16), 1.62).reverse();
+  const castingFoot = bandPoints(-(slotHalfWidth + 0.16), 1.92).reverse();
   const castingOutline = poly([
-    [-0.90, guideHeadY], [0.90, guideHeadY], [1.30, 0.62],
-    [1.30, castingFoot[0][1]], ...castingFoot,
-    [-1.30, castingFoot.at(-1)[1]], [-1.30, 0.62],
+    [-0.90, guideHeadY], [0.90, guideHeadY], [1.38, 0.62],
+    [1.38, castingFoot[0][1]], ...castingFoot,
+    [-1.38, castingFoot.at(-1)[1]], [-1.38, 0.62],
   ]);
   const castingDepth = [0.335, 0.625];
   const slottedCastingD = new THREE.Mesh(plate(clip.difference(castingOutline,

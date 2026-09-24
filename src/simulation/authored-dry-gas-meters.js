@@ -218,8 +218,9 @@ function dryGasMeter(movement) {
   const chamberDeadVolumeCubicMetre = 0.00060;
   const volumePerMeterCycleCubicMetre = 2
     * chamberStrokeVolumeCubicMetre;
-  const minimumBellowsLengthSceneUnit = 0.82;
-  const maximumBellowsLengthSceneUnit = 1.72;
+  // Brown's two bellows nearly fill the case between its end boards.
+  const minimumBellowsLengthSceneUnit = 1.15;
+  const maximumBellowsLengthSceneUnit = 2.35;
   const bellowsLengthStrokeSceneUnit = maximumBellowsLengthSceneUnit
     - minimumBellowsLengthSceneUnit;
   const bellowsLengthMidpointSceneUnit = (

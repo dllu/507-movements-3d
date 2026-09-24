@@ -1053,6 +1053,60 @@ function powersMercuryRegulator(movement) {
     roughness: 0.95,
     side: THREE.DoubleSide,
   });
+  // Brown's case is a solid hatched section: thick walls running down from
+  // the dome into the outer quicksilver channels, and a floor. Show the cut
+  // faces of the walls (trough wall to case wall) and floor.
+  sectionFace([
+    ...mirrored(2.14, 2.86, -1.98, 1.84),
+    box(-2.86, 2.86, -1.98, -1.78),
+  ], troughFaceMaterial, 'section-face-of-solid-regulator-case');
+  // The outlet chamber inside cup H: open at the top above the quicksilver,
+  // its round outlet F in the back wall and the delivery pipe leaving its
+  // left side under the outer channel, as Brown draws it.
+  const chamberX0 = -1.70, chamberX1 = 0.12, chamberTop = 0.0;
+  const chamberFloor = -1.78, chamberBack = -0.72, chamberWall = 0.12;
+  const outletY = -1.30, outletX = -1.22;
+  const chamberMaterial = matte(PALETTE.frame, { roughness: 0.6 });
+  const chamberBackWall = new THREE.Mesh(plate(polygonClipping.difference(
+    box(chamberX0, chamberX1, chamberFloor, chamberTop),
+    poly(Array.from({ length: 48 }, (_, i) => [
+      outletX + 0.13 * Math.cos(i * Math.PI / 24),
+      outletY + 0.24 * Math.sin(i * Math.PI / 24)]))),
+  chamberBack, chamberBack + chamberWall), housingShell.material);
+  chamberBackWall.userData.role = 'fixed-outlet-chamber-back-wall-with-round-outlet-F';
+  const chamberSides = new THREE.Mesh(plate(polygonClipping.union(
+    box(chamberX0, chamberX0 + chamberWall, chamberFloor, chamberTop),
+    box(chamberX1 - chamberWall, chamberX1, chamberFloor, chamberTop),
+    box(chamberX0, chamberX1, chamberFloor, chamberFloor + chamberWall),
+  ), chamberBack, SECTION_Z - 0.006), chamberMaterial);
+  chamberSides.userData.role = 'fixed-outlet-chamber-side-walls-and-bottom';
+  // Dark passage seen through F.
+  const outletPassage = new THREE.Mesh(plate(poly(Array.from({ length: 48 }, (_, i) => [
+    outletX + 0.14 * Math.cos(i * Math.PI / 24),
+    outletY + 0.25 * Math.sin(i * Math.PI / 24)])), chamberBack - 0.10, chamberBack - 0.04), darkMaterial);
+  outletPassage.userData.role = 'dark-passage-behind-round-outlet-F';
+  root.add(chamberBackWall, chamberSides, outletPassage);
+  sectionFace([
+    box(chamberX0, chamberX0 + chamberWall, chamberFloor, chamberTop),
+    box(chamberX1 - chamberWall, chamberX1, chamberFloor, chamberTop),
+    box(chamberX0, chamberX1, chamberFloor, chamberFloor + chamberWall),
+  ], troughFaceMaterial, 'section-face-of-outlet-chamber');
+  blocks.outletChamber = { back: chamberBackWall, sides: chamberSides, passage: outletPassage };
+  // The delivery pipe runs from the chamber's left wall out through the case
+  // wall below the outer channel (the case wall's pipe hole moves with it).
+  {
+    const pipeStart = -3.22, pipeEnd = chamberX0;
+    outletPipeF.position.set((pipeStart + pipeEnd) / 2, outletY, 0);
+    outletPipeF.scale.y = (pipeEnd - pipeStart) / 0.84;
+    outletFlangeF.position.set(-3.19, outletY, 0);
+    const left = blocks.housingPosts[0];
+    left.geometry.dispose();
+    left.geometry = plate(polygonClipping.difference(
+      box(-1.20, 1.20, -1.84, 1.84),
+      poly(Array.from({ length: 64 }, (_, i) => [
+        0.275 * Math.cos(i * Math.PI / 32), outletY + 0.275 * Math.sin(i * Math.PI / 32)]))),
+    -0.09, 0.09).rotateY(Math.PI / 2);
+  }
   root.userData.localClippingEnabled = true;
   markShadows(root);
   housingShell.receiveShadow = false;

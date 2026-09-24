@@ -238,7 +238,7 @@ test('movement 455 second valve repeats the first valve fold exactly one half-tu
     const angle = Math.PI * sample / 20000;
     const first = stateAtInputAngle(angle).valves[0];
     const secondLater = stateAtInputAngle(angle + Math.PI).valves[1];
-    near(secondLater.foldFraction, first.foldFraction, 3e-14,
+    near(secondLater.foldFraction, first.foldFraction, 2e-13, // steeper square-block branch
       `half-turn fold repeat at ${sample}`);
     near(secondLater.flapAngle, first.flapAngle, 4e-14,
       `half-turn flap-angle repeat at ${sample}`);

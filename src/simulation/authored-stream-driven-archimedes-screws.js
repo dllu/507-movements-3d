@@ -372,14 +372,15 @@ function streamDrivenArchimedesScrew(movement) {
     const paddleCarrier = new THREE.Group();
     paddleCarrier.rotation.y = angle;
     waterWheel.add(paddleCarrier);
-    // A flat board in the plane of the axis: radial 0.62, axial 0.50,
-    // 0.08 thick, joined through the disc rim.
+    // Brown's floats are boxes, not thin boards: radial 0.66, axial 0.62,
+    // 0.28 thick, joined through the disc rim and standing mostly on its
+    // far (downstream) face.
     const paddle = new THREE.Mesh(
-      new THREE.BoxGeometry(0.62, 0.50, 0.08),
+      new THREE.BoxGeometry(0.66, 0.62, 0.28),
       wheelMaterial,
     );
     // Brown's boards stand through the disc edge, showing on both faces.
-    paddle.position.set(waterWheelRadius + 0.03, 0, 0);
+    paddle.position.set(waterWheelRadius + 0.03, -0.20, 0);
     paddle.userData.role = `stream-driven-lower-paddle-${index + 1}`;
     paddleCarrier.add(paddle);
     paddles.push(paddle);
@@ -482,10 +483,11 @@ function streamDrivenArchimedesScrew(movement) {
   const upperBracketArms = [bracketArm, bracketStud, headSleeve];
 
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(8.20, 0.24, 5.20),
+    // Thin (and hidden in the plate view) so the lowest box float clears it.
+    new THREE.BoxGeometry(8.20, 0.04, 5.20),
     frameMaterial,
   );
-  base.position.set(0, groundY + 0.12, 0);
+  base.position.set(0, groundY + 0.02, 0);
   base.userData.role = 'fixed-archimedes-screw-base';
   root.add(base);
   // Thin enough to clear the lowest paddle board's sweep.
@@ -493,7 +495,7 @@ function streamDrivenArchimedesScrew(movement) {
     new THREE.BoxGeometry(4.10, 0.03, 4.92),
     frameMaterial,
   );
-  streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.255, 0);
+  streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.06, 0);
   streamBed.userData.role = 'fixed-stream-bed-around-lower-water-wheel';
   root.add(streamBed);
   // Brown rules the stream surface with broken strokes running with the

@@ -369,9 +369,17 @@ test('movement 507 is continuous, fits every carrier pose, and completes the aut
   for (let sample = 0; sample <= 1080; sample += 1) {
     model.update(carrierPeriod * sample / 1080);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    // Precise: the actual surfaces, not per-mesh boxes of rotated parts.
+    swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
-  assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
+  // The flat front view fits the orbit's visible silhouette (x, y); its
+  // depth is a shallow proxy, while sweptBounds holds the whole orbit.
+  assert.ok(model.root.userData.sweptBounds.containsBox(swept));
+  const fit = model.root.userData.cameraFitBounds;
+  for (const axis of ['x', 'y']) {
+    assert.ok(fit.min[axis] <= swept.min[axis] && fit.max[axis] >= swept.max[axis], axis);
+  }
+  assert.ok(fit.max.x - fit.min.x < 1.02 * (swept.max.x - swept.min.x));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
 

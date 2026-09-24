@@ -296,7 +296,8 @@ test('movement 502 runs continuously through carrier revolutions, fits its orbit
   for (let sample = 0; sample <= 1080; sample += 1) {
     model.update(period * sample / 1080);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    // Precise: the actual surfaces, not per-mesh boxes of rotated parts.
+    swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
   // The default view frames the carrier's full turn (recorded as
   // sweptBounds) so B and F never leave it.
@@ -307,8 +308,8 @@ test('movement 502 runs continuously through carrier revolutions, fits its orbit
   const pose = new THREE.Box3();
   model.root.traverseVisible((object) => {
     if (!object.isMesh) return;
-    object.geometry.computeBoundingBox();
-    pose.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
+    // Actual vertices: rotated gears' box corners overstate the pose.
+    pose.union(new THREE.Box3().setFromObject(object, true));
   });
   assert.ok(model.root.userData.cameraFitBounds.containsBox(pose));
   assert.ok(model.root.userData.cameraFitBounds.getSize(new THREE.Vector3()).x < 1.05 * (swept.max.x - swept.min.x));

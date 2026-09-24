@@ -732,16 +732,38 @@ function commonWindmill(movement) {
   // stand beside the tower, and draws a large oval tail vane trailing to the
   // right.
   {
+    // Brown's tail is one long loop: narrow where it leaves the dome and
+    // swelling to a round end, rising slightly as it trails away. The loop
+    // springs straight from the cap, so no separate beam shows.
     const vane = root.userData.blocks.tailVane;
-    const oval = new THREE.Shape();
-    oval.absellipse(0, 0, 1.20, 0.62, 0, Math.PI * 2, false, 0);
+    const tailLength = 2.30, endRadius = 0.46, rootHalf = 0.05, rise = 0.14;
+    const beta = Math.asin(endRadius / tailLength);
+    const loop = [[0, rootHalf]];
+    for (let i = 0; i <= 64; i += 1) {
+      const angle = Math.PI / 2 + beta - (Math.PI + 2 * beta) * i / 64;
+      loop.push([tailLength + endRadius * Math.cos(angle), endRadius * Math.sin(angle)]);
+    }
+    loop.push([0, -rootHalf]);
+    const tilt = ([u, v]) => new THREE.Vector2(
+      u * Math.cos(rise) - v * Math.sin(rise), u * Math.sin(rise) + v * Math.cos(rise));
+    const loopShape = new THREE.Shape(loop.map(tilt));
+    // Brown draws the loop as an outline: open it to a narrow band.
+    const band = 0.07, innerRoot = 0.45, innerRadius = endRadius - band;
+    const innerBeta = Math.asin(innerRadius / (tailLength - innerRoot));
+    const inner = [[innerRoot, 0]];
+    for (let i = 0; i <= 64; i += 1) {
+      const angle = -(Math.PI / 2 + innerBeta) + (Math.PI + 2 * innerBeta) * i / 64;
+      inner.push([tailLength + innerRadius * Math.cos(angle), innerRadius * Math.sin(angle)]);
+    }
+    loopShape.holes.push(new THREE.Path(inner.map(tilt)));
     vane.geometry.dispose();
-    vane.geometry = new THREE.ExtrudeGeometry(oval, {
+    vane.geometry = new THREE.ExtrudeGeometry(loopShape, {
       bevelEnabled: false,
       curveSegments: 48,
       depth: 0.06,
     }).translate(0, 0, -0.03).rotateY(Math.PI / 2);
-    vane.position.set(0, 1.52, -2.95);
+    vane.position.set(0, 1.36, -0.46);
+    root.userData.blocks.tailRod.visible = false;
     // Fit the tower, swept sails and tail only (no wind arrows or beads).
     root.userData.cameraFitBounds.set(
       new THREE.Vector3(-2.15, -2.05, -4.25),
@@ -792,14 +814,15 @@ function commonWindmill(movement) {
     // The tower door and windows face the viewer while the cap has turned the
     // windshaft toward the left front, so the four sails open out beside the
     // tower nearly face-on, as in the plate.
-    const facing = THREE.MathUtils.degToRad(34);
+    const facing = THREE.MathUtils.degToRad(44);
     const yaw = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), facing);
     const { door, windows } = root.userData.blocks;
     for (const opening of [door, ...windows]) {
       opening.position.applyQuaternion(yaw);
       opening.quaternion.premultiply(yaw);
     }
-    root.userData.cameraDirection.set(Math.sin(facing) * 10, 3.4, Math.cos(facing) * 10);
+    // Brown looks almost level at the mill: the ground ellipse is flat.
+    root.userData.cameraDirection.set(Math.sin(facing) * 10, 2.0, Math.cos(facing) * 10);
   }
   markShadows(root);
   for (const sail of sails) sail.panel.castShadow = false;

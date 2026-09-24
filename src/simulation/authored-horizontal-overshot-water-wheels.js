@@ -55,7 +55,8 @@ function horizontalOvershotWaterWheel(movement) {
   const root = new THREE.Group();
   const cycleDuration = 5.4;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const bladeCount = 12;
+  // Brown draws about sixteen narrow boards.
+  const bladeCount = 16;
   const bladePitch = FULL_TURN / bladeCount;
   const bladeInnerRadius = 0.54;
   const bladeOuterRadius = 2.72;
@@ -254,7 +255,7 @@ function horizontalOvershotWaterWheel(movement) {
     const bladeGroup = new THREE.Group();
     bladeGroup.rotation.y = localAngle;
     bladeGroup.userData.role =
-      `horizontal-overshot-scoop-blade-${bladeIndex + 1}-of-twelve`;
+      `horizontal-overshot-scoop-blade-${bladeIndex + 1}-of-sixteen`;
     const bladeFloor = new THREE.Mesh(
       new THREE.BoxGeometry(bladeRadialLength, 0.11, 0.58),
       bucketMaterial,
@@ -277,7 +278,7 @@ function horizontalOvershotWaterWheel(movement) {
     // so their faces show from his raised viewpoint; no scoop lips.
     bladeFloor.geometry.dispose();
     bladeFloor.geometry = horizontalVane([new THREE.Vector3(bladeInnerRadius, 0, 0),
-      new THREE.Vector3(bladeOuterRadius, 0, 0)], .04, -.36, .36).rotateX(-.62);
+      new THREE.Vector3(bladeOuterRadius, 0, 0)], .04, -.28, .28).rotateX(-.62);
     bladeFloor.position.y = .16;
     catchingLip.visible = false;
     rotor.add(bladeGroup);
@@ -552,7 +553,7 @@ function horizontalOvershotWaterWheel(movement) {
     geometry,
     jetSharesAtWheelAngle,
     mechanism:
-      'A fixed elevated flume sends a falling jet obliquely onto the upper faces of scoop-like radial blades carried by a horizontal runner. The jet’s horizontal component is tangent to the wheel at impact, so its momentum produces positive torque about the vertical shaft; water then spills downward into the surrounding basin. All twelve scoops, hub, shaft, and visible marker rotate as one body about the vertical axis, while the flume, jet contact point, basin, and upper and lower bearings remain fixed.',
+      'A fixed elevated flume sends a falling jet obliquely onto the upper faces of scoop-like radial blades carried by a horizontal runner. The jet’s horizontal component is tangent to the wheel at impact, so its momentum produces positive torque about the vertical shaft; water then spills downward into the surrounding basin. All sixteen scoops, hub, shaft, and visible marker rotate as one body about the vertical axis, while the flume, jet contact point, basin, and upper and lower bearings remain fixed.',
     motion: {
       bladePitch,
       cycleDuration,
@@ -580,7 +581,7 @@ function horizontalOvershotWaterWheel(movement) {
     },
     sourceReference: {
       brownPlate433: {
-        approximateBladeCount: 12,
+        approximateBladeCount: 16,
         approximateImpactPixels: [305, 350],
         approximateRunnerOuterRadiusPixels: 202,
         imageHeight: 525,

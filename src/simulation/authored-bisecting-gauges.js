@@ -86,8 +86,9 @@ function bisectingGauge(movement) {
   const fittedMarkerOffset = Math.sqrt(
     equalLinkLength ** 2 - (fittedCheekSpacing / 2) ** 2,
   );
-  const traverseStartY = 1.82;
-  const traverseEndY = -0.76;
+  // A short traverse keeps the gauge on Brown's closely cropped plank.
+  const traverseStartY = 1.10;
+  const traverseEndY = -0.30;
   const crossbarMinimumX = fixedCheekX - 0.62;
   const crossbarMaximumX = fittedAdjustableCheekX + 0.78;
   const crossbarLength = crossbarMaximumX - crossbarMinimumX;
@@ -797,23 +798,27 @@ function bisectingGauge(movement) {
     },
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.36, -2.84, -0.43),
-    new THREE.Vector3(2.42, 2.84, 1.10),
-  );
-  root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(6.0, 4.5, 12.5);
   root.userData.groundFloorY = -2.84;
   // Plate cleanup: Brown's board runs on past the gauge in both directions
   // and carries only a dark bisecting line; no end-grain bars, white
   // indices, slotted white thumb head or witness strip are drawn.
+  // Brown shows only a short piece of the plank, both ends broken off in
+  // ragged lines just beyond the cheeks and the marking point.
+  const plankNear = -2.36, plankFar = 2.70;
+  const raggedEnd = (y, sign) => Array.from({ length: 15 }, (_, i) => {
+    const x = workpieceHalfWidth - 2 * workpieceHalfWidth * i / 14;
+    const edge = i === 0 || i === 14 ? 0 : 1;
+    return [sign * x, y + edge * sign * (0.09 * Math.sin(i * 2.3) + 0.05 * Math.sin(i * 5.1))];
+  });
+  const plankOutline = [...raggedEnd(plankNear, 1), ...raggedEnd(plankFar, -1)];
   workpiece.geometry.dispose();
-  workpiece.geometry = new THREE.BoxGeometry(workpieceHalfWidth * 2, workpieceHalfLength + 3.80, 0.22);
-  workpiece.position.y = (3.80 - workpieceHalfLength) / 2;
+  workpiece.geometry = platePrism(poly(plankOutline), -0.11, 0.11);
+  workpiece.position.y = 0;
   exactCenterline.material = darkMaterial;
   exactCenterline.geometry.dispose();
-  exactCenterline.geometry = new THREE.BoxGeometry(0.030, workpieceHalfLength + 3.80, 0.004);
-  exactCenterline.position.set(0, workpiece.position.y, -0.178);
+  exactCenterline.geometry = new THREE.BoxGeometry(0.030, plankFar - plankNear - 0.30, 0.004);
+  exactCenterline.position.set(0, (plankNear + plankFar) / 2, -0.178);
   for (const bar of endGrainBars) bar.visible = false;
   fittedCenterWitness.visible = false;
   markerIndex.visible = false;
@@ -831,7 +836,14 @@ function bisectingGauge(movement) {
   correctBisectingGauge(root);
   archBrownCheeks(root);
   // Isometric view from the adjustable cheek's side and the near board end.
-  return finishDrawingGauge(root,update,cycleDuration,new THREE.Vector3(1,1.05,1));
+  const framed = finishDrawingGauge(root,update,cycleDuration,new THREE.Vector3(1,1.05,1));
+  // World frame (board face up): fit the gauge's swept silhouette, not the
+  // whole plank; Brown crops the plank close to the cheeks.
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(-2.30, -0.18, -1.60),
+    new THREE.Vector3(2.45, 1.20, 2.04),
+  );
+  return framed;
 }
 
 // Brown's cheeks are tall blocks with a segmental arched top, the cross-bar

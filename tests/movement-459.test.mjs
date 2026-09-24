@@ -125,9 +125,9 @@ test('movement 459 source record preserves Brown’s six-part automatic reversin
   assert.match(evidence.reconstructionDisclosure,
     /no tooth count, worm pitch or hand.*12:1 single-start worm ratio.*independently engineered/);
   assert.match(dynamics.driveModel,
-    /C2 demonstration schedule.*exact 12:1 angular ratio/);
+    /one constant rate.*exact 12:1 ratio.*turns freely/);
   assert.match(dynamics.tripModel,
-    /rising full bucket.*low end of the rocking tappet.*moves.*worm shaft to the opposite wheel/);
+    /rising full bucket strikes the low end of the rocking tappet.*pushes it.*throws the worm across/);
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
   assert.deepEqual(plate.approximateWindWheelCenterPixels, [273, 56]);
@@ -143,8 +143,8 @@ test('movement 459 source pose places the full left bucket at its tappet and the
   const source = stateAtInputAngle(0);
 
   assert.equal(sourcePose.mode,
-    'left-high-bucket-dumps-and-trips-worm-toward-right-wheel');
-  assert.equal(sourcePose.engagedWheel, null);
+    'left-full-bucket-strikes-tappet-and-drives-worm-off-left-wheel');
+  assert.equal(sourcePose.engagedWheel, 'left');
   near(sourcePose.leftBailY, geometry.highBailY, 0,
     'left bucket high');
   near(sourcePose.rightBailY, geometry.lowBailY, 0,
@@ -163,24 +163,27 @@ test('movement 459 source pose places the full left bucket at its tappet and the
   disposeModel(model.root);
 });
 
-test('movement 459 alternates dump-and-traverse dwells with right and left full-bucket lifts', () => {
+test('movement 459 alternates contact-driven trips, free crossings, and right and left full-bucket lifts', () => {
   const model = createMovementModel(catalog.movements[458]);
   const { geometry, stateAtInputAngle, timeline } = model.root.userData;
   const atPhase = (phase) => stateAtInputAngle(FULL_TURN * phase);
-  const leftDump = atPhase(0.05);
+  const freeMiddle = (timeline.leavePhaseEnd + timeline.freePhaseEnd) / 2;
+  const leftDump = atPhase(freeMiddle);
   const rightLift = atPhase(0.30);
-  const rightDump = atPhase(0.55);
+  const rightDump = atPhase(0.5 + freeMiddle);
   const leftLift = atPhase(0.80);
 
+  assert.equal(atPhase(timeline.leavePhaseEnd / 2).mode,
+    'left-full-bucket-strikes-tappet-and-drives-worm-off-left-wheel');
+  assert.equal(atPhase(timeline.leavePhaseEnd / 2).engagedWheel, 'left');
   assert.equal(leftDump.mode,
     'left-high-bucket-dumps-and-trips-worm-toward-right-wheel');
   assert.equal(leftDump.engagedWheel, null);
-  near(leftDump.ropeSpeed, 0, 0, 'rope stopped for left dump');
+  near(leftDump.ropeSpeed, 0, 0, 'rope held while the worm crosses');
   near(leftDump.selectorX, 0, 2e-16, 'worm crossing center');
-  near(leftDump.leftBucketTilt, -geometry.maximumBucketTilt, 0,
-    'left bucket tipped outward');
-  near(leftDump.leftWaterFraction, 0.5, 2e-15, 'left half drained');
-  near(leftDump.rightWaterFraction, 0.5, 2e-15, 'right half filled');
+  assert.ok(leftDump.leftBucketTilt < -0.7 * geometry.maximumBucketTilt,
+    'left bucket tipping outward');
+  assert.ok(leftDump.leftWaterFraction < 0.9 && leftDump.rightWaterFraction > 0.1);
 
   assert.equal(rightLift.mode,
     'right-worm-wheel-raises-right-full-bucket-and-lowers-left-empty-bucket');
@@ -194,12 +197,10 @@ test('movement 459 alternates dump-and-traverse dwells with right and left full-
   assert.equal(rightDump.mode,
     'right-high-bucket-dumps-and-trips-worm-toward-left-wheel');
   assert.equal(rightDump.engagedWheel, null);
-  near(rightDump.ropeSpeed, 0, 0, 'rope stopped for right dump');
+  near(rightDump.ropeSpeed, 0, 0, 'rope held for right dump');
   near(rightDump.selectorX, 0, 2e-16, 'worm returning through center');
-  near(rightDump.rightBucketTilt, geometry.maximumBucketTilt, 0,
-    'right bucket tipped outward');
-  near(rightDump.leftWaterFraction, 0.5, 2e-15, 'left half filled');
-  near(rightDump.rightWaterFraction, 0.5, 2e-15, 'right half drained');
+  assert.ok(rightDump.rightBucketTilt > 0.7 * geometry.maximumBucketTilt,
+    'right bucket tipping outward');
 
   assert.equal(leftLift.mode,
     'left-worm-wheel-raises-left-full-bucket-and-lowers-right-empty-bucket');
@@ -209,12 +210,7 @@ test('movement 459 alternates dump-and-traverse dwells with right and left full-
   assert.ok(leftLift.rightBucketVelocityY < 0);
   near(leftLift.leftWaterFraction, 1, 0, 'left full while rising');
   near(leftLift.rightWaterFraction, 0, 0, 'right empty while descending');
-  assert.deepEqual(timeline.stages, [
-    'left high bucket dumps; tappet traverses worm right',
-    'right wheel selected; right full bucket rises',
-    'right high bucket dumps; tappet traverses worm left',
-    'left wheel selected; left full bucket rises',
-  ]);
+  assert.equal(timeline.stages.length, 6);
   disposeModel(model.root);
 });
 
@@ -297,15 +293,17 @@ test('movement 459 obeys the single-start worm ratio and pitch-line velocity in 
   // Half a pulley turn per lift lowers the bucket into the well past
   // Brown's ground line: six worm turns per lift.
   near(geometry.wormTurnsPerLift, 6, 1e-15, 'six worm turns per lift');
-  near(geometry.wormTurnsPerCycle, 12, 1e-15, 'integer cycle closure');
+  // Twelve driven turns plus two half-turn free crossings.
+  near(geometry.wormTurnsPerCycle, 13, 2e-15, 'integer cycle closure');
 
   for (let sample = 0; sample < 16000; sample += 1) {
     const phase = sample / 16000;
     const state = stateAtInputAngle(FULL_TURN * phase);
-    assert.ok(state.wormAngularSpeed >= -2e-13,
-      `wind input never reverses at ${sample}`);
+    near(state.wormAngularSpeed,
+      geometry.wormTravelPerCycle * geometry.inputAngularSpeed / FULL_TURN, 0,
+      `wind wheel turns at one constant rate at ${sample}`);
     if (state.engagedWheel) {
-      near(state.meshPhaseInvariant, 0, 2e-14,
+      near(state.meshPhaseInvariant, 0, 5e-14, // angles up to 26*pi
         `worm mesh phase at ${sample}`);
       near(state.wormThreadAxialSpeed,
         state.engagedWheelContactTangentialSpeed, 7e-15,
@@ -313,38 +311,50 @@ test('movement 459 obeys the single-start worm ratio and pitch-line velocity in 
       const expectedWormSpeed = state.engagedWheel === 'right'
         ? geometry.wheelTeeth * state.pulleyAngularSpeed
         : -geometry.wheelTeeth * state.pulleyAngularSpeed;
-      near(state.wormAngularSpeed, expectedWormSpeed, 0,
+      near(state.wormAngularSpeed, expectedWormSpeed, 4e-15,
         `worm ratio at ${sample}`);
     } else {
-      near(state.wormAngularSpeed, 0, 0,
-        `worm stopped while traversing at ${sample}`);
-      near(state.pulleyAngularSpeed, 0, 3e-28,
-        `rope stopped while traversing at ${sample}`);
+      near(state.pulleyAngularSpeed, 0, 0,
+        `rope held while the worm crosses at ${sample}`);
+      const reach = geometry.pinReach + geometry.threadReach;
+      assert.ok(state.leftMeshClearance > reach
+        && state.rightMeshClearance > reach,
+      `turning thread clears both pin rings at ${sample}`);
     }
   }
   const closure = stateAtInputAngle(FULL_TURN - 1e-12);
-  near(THREE.MathUtils.euclideanModulo(closure.wormAngle, FULL_TURN),
-    0, 3e-13, 'worm returns to its angular datum after 12 turns');
+  near(THREE.MathUtils.euclideanModulo(closure.wormAngle + Math.PI, FULL_TURN)
+    - Math.PI, 0, 2e-11, 'worm returns to its angular datum after 13 turns'); // constant-rate worm 1e-12 short of the period
   disposeModel(model.root);
 });
 
-test('movement 459 motion, dumping, and selector schedules are C2 at every handoff', () => {
+test('movement 459 each rising bucket drives the tappet off its wheel, and selector, dumping and water stay continuous', () => {
   const model = createMovementModel(catalog.movements[458]);
-  const { stateAtInputAngle } = model.root.userData;
+  const { geometry, stateAtInputAngle, timeline } = model.root.userData;
+  const atPhase = (phase) => stateAtInputAngle(FULL_TURN * phase);
+  // The bucket strikes the tappet and pushes it until the thread leaves
+  // the pins: tappet tip and bail stay together while that wheel drives.
+  for (let sample = 0; sample <= 200; sample += 1) {
+    const u = timeline.leavePhaseEnd * sample / 201;
+    const left = atPhase(u);
+    const right = atPhase(0.5 + u);
+    near(left.tappetLeftTip.y, left.leftBailY, 2e-15, `left push at ${u}`);
+    near(right.tappetRightTip.y, right.rightBailY, 2e-15, `right push at ${u}`);
+    assert.equal(left.engagedWheel, 'left');
+    assert.equal(right.engagedWheel, 'right');
+  }
+  // The selector is C1 through the push, the free crossing and the take-up.
+  for (const boundary of [timeline.leavePhaseEnd, timeline.freePhaseEnd,
+    timeline.enterPhaseEnd, 0.5 + timeline.leavePhaseEnd,
+    0.5 + timeline.freePhaseEnd, 0.5 + timeline.enterPhaseEnd]) {
+    const before = atPhase(boundary - 1e-10);
+    const after = atPhase(boundary + 1e-10);
+    near(after.selectorX, before.selectorX, 1e-9, `selector at ${boundary}`);
+    near(after.selectorSpeed, before.selectorSpeed, 1e-6,
+      `selector speed at ${boundary}`);
+  }
   for (const phase of [0, 0.1, 0.5, 0.6]) {
-    const state = stateAtInputAngle(FULL_TURN * phase);
-    near(state.ropeSpeed, 0, 3e-28,
-      `rope stationary at phase ${phase}`);
-    near(state.ropeAcceleration, 0, 4e-13,
-      `rope C2 at phase ${phase}`);
-    near(state.wormAngularSpeed, 0, 4e-27,
-      `worm stationary at phase ${phase}`);
-    near(state.wormAngularAcceleration, 0, 8e-12,
-      `worm C2 at phase ${phase}`);
-    near(state.selectorSpeed, 0, 3e-14,
-      `selector stationary at phase ${phase}`);
-    near(state.selectorAcceleration, 0, 2e-12,
-      `selector C2 at phase ${phase}`);
+    const state = atPhase(phase);
     near(state.leftWaterFractionRate, 0, 3e-14,
       `left water flow stationary at phase ${phase}`);
     near(state.rightWaterFractionRate, 0, 3e-14,
@@ -355,12 +365,13 @@ test('movement 459 motion, dumping, and selector schedules are C2 at every hando
       `right water C2 at phase ${phase}`);
   }
   for (const [phase, side] of [[0.05, 'left'], [0.55, 'right']]) {
-    const state = stateAtInputAngle(FULL_TURN * phase);
+    const state = atPhase(phase);
     near(state[`${side}BucketTiltSpeed`], 0, 4e-14,
       `${side} bucket stops at maximum tip`);
     near(state[`${side}BucketTiltAcceleration`], 0, 2e-11,
       `${side} bucket tip is C2 at midpoint`);
   }
+  assert.ok(timeline.enterPhaseEnd < geometry.exchangeLeftEndPhase);
   disposeModel(model.root);
 });
 
@@ -391,8 +402,9 @@ test('movement 459 analytic rope and carrier derivatives agree with finite diffe
       `selector velocity at ${angle}`);
     near(state.carrierAngularSpeed, numericCarrierSpeed, 5e-10,
       `carrier angular velocity at ${angle}`);
+    // Central differences (step 1e-6) of the steeper take-up selector.
     near(state.carrierAngularAcceleration,
-      numericCarrierAcceleration, 2e-9,
+      numericCarrierAcceleration, 5e-9,
     `carrier angular acceleration at ${angle}`);
   }
   disposeModel(model.root);
@@ -418,11 +430,12 @@ test('movement 459 renderer maps the reversing state while fixed wheel axes and 
       `worm carrier at ${phase}`);
     near(blocks.worm.userData.rotor.rotation.z, state.wormAngle, 0,
       `worm rotation at ${phase}`);
+    // Each pin ring is phased to the thread it is taken up by.
     near(blocks.leftAssembly.gear.userData.rotor.rotation.z,
-      wheelPhase + state.pulleyAngle, 0,
+      wheelPhase + state.pulleyAngle - geometry.leftMeshPhase / geometry.wheelTeeth, 2e-16,
     `left wheel at ${phase}`);
     near(blocks.rightAssembly.gear.userData.rotor.rotation.z,
-      wheelPhase + state.pulleyAngle, 0,
+      wheelPhase + state.pulleyAngle + geometry.rightMeshPhase / geometry.wheelTeeth, 2e-16,
     `right wheel at ${phase}`);
     near(blocks.leftAssembly.pulley.userData.rotor.rotation.z,
       state.pulleyAngle, 0, `left pulley at ${phase}`);

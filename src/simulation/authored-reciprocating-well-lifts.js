@@ -134,7 +134,10 @@ function reciprocatingWellLift(movement) {
   // down the well past Brown's ground line, where his plate crops the rope.
   const pulleyTravelAngle = FULL_TURN / 2;
   const bucketStroke = pulleyRadius * pulleyTravelAngle;
-  const engagementShift = 0.075;
+  // The worm swings far enough that, midway, its thread crest (0.045 above
+  // pitch) clears the pin tips (0.040 above pitch) of both wheels, so the
+  // wind-driven worm can keep turning while it crosses between them.
+  const engagementShift = 0.12;
   const wheelCenterX = wheelPitchRadius + wormPitchRadius
     + engagementShift;
   const carrierTop = new THREE.Vector3(0, 3.43, 0.03);
@@ -158,7 +161,6 @@ function reciprocatingWellLift(movement) {
   const rightRopeX = wheelCenterX + pulleyRadius;
   const innerRopeSpan = 2 * wheelCenterX;
   const highBailY = 0.58;
-  const lowBailY = highBailY - bucketStroke;
   const bucketHeight = 0.68;
   const bucketRadius = 0.34;
   const bucketHandleRise = 0.48;
@@ -169,11 +171,42 @@ function reciprocatingWellLift(movement) {
   const tappetAngleMagnitude = Math.asin(
     (tappetPivot.y - highBailY) / tappetHalfLength,
   );
+  // Continuous wind: the worm turns at one constant rate. A rising bucket
+  // strikes the tappet at highBailY and, still lifted by its wheel, pushes
+  // the tappet (and the worm step) until the thread leaves that wheel's
+  // pins; the worm then crosses a free window (half a worm turn, rope held)
+  // and is taken by the opposite wheel, which starts the other bucket.
+  // Pin tips reach 0.030 past the pitch circle (the worm's 6-degree swing
+  // makes a longer pin graze the thread flank).
+  const pinReach = 0.030;
+  const threadReach = 0.045;
+  const freeSelectorHalfWidth = engagementShift - pinReach - threadReach - 0.005;
+  const leaveRise = tappetHalfLength * (Math.sin(tappetAngleMagnitude)
+    - Math.sin(tappetAngleMagnitude * freeSelectorHalfWidth / engagementShift));
+  const lowBailY = highBailY - bucketStroke + 2 * leaveRise;
+  const freeWormTurns = 0.5;
+  const freeWindowPhase = 0.5 * freeWormTurns
+    / (wheelTeeth * pulleyTravelAngle / (wormStarts * FULL_TURN) + freeWormTurns);
+  const ropePhaseRate = bucketStroke / (0.5 - freeWindowPhase);
+  const leavePhaseEnd = leaveRise / ropePhaseRate;
+  const freePhaseEnd = leavePhaseEnd + freeWindowPhase;
+  const enterPhaseDuration = 0.036;
+  const enterPhaseEnd = freePhaseEnd + enterPhaseDuration;
+  // Thread phase at which each wheel's pins sit in the thread; each wheel's
+  // pin ring is set at that phase (see update), so the wheel taken up after
+  // the free window meets the turning thread in step.
+  const cycleWormTravel = 2 * wheelTeeth * pulleyTravelAngle / wormStarts
+    + 2 * freeWormTurns * FULL_TURN / wormStarts;
+  const rightMeshPhase = cycleWormTravel * freePhaseEnd
+    + wheelTeeth * leaveRise / pulleyRadius;
+  const leftMeshPhase = cycleWormTravel * leavePhaseEnd
+    - wheelTeeth * leaveRise / pulleyRadius;
   const fixedRopeLength = Math.PI * pulleyRadius + innerRopeSpan;
   const totalRopeLength = wheelCenterY - highBailY
     + fixedRopeLength + wheelCenterY - lowBailY;
   const wormTravelPerLift = wheelTeeth * pulleyTravelAngle / wormStarts;
-  const wormTravelPerCycle = 2 * wormTravelPerLift;
+  const wormTravelPerCycle = 2 * wormTravelPerLift
+    + 2 * freeWormTurns * FULL_TURN / wormStarts;
   const wormTurnsPerLift = wormTravelPerLift / FULL_TURN;
   const wormTurnsPerCycle = wormTravelPerCycle / FULL_TURN;
   const groundY = -3.72;
@@ -187,122 +220,126 @@ function reciprocatingWellLift(movement) {
       inputAngle / FULL_TURN,
       1,
     );
-    const phase = [0, exchangeLeftEndPhase, rightLiftEndPhase,
-      exchangeRightEndPhase].find(
-      (boundary) => Math.abs(rawPhase - boundary) < 1e-12,
-    ) ?? rawPhase;
+    const phase = rawPhase;
     const phaseSpeed = inputSpeed / FULL_TURN;
     const phaseAcceleration = inputAcceleration / FULL_TURN;
+    const half = phase < 0.5 ? 0 : 1;
+    const local = phase - 0.5 * half;
+    const mirror = half ? -1 : 1;
+    // Selector (worm step) in the first half; the second half mirrors it.
+    const leaveSelector = (u) => {
+      const scale = engagementShift / tappetAngleMagnitude;
+      const qRate = ropePhaseRate / tappetHalfLength;
+      const q = (highBailY + ropePhaseRate * u - tappetPivot.y)
+        / tappetHalfLength;
+      const root = Math.sqrt(1 - q * q);
+      return {
+        firstDerivativeByPhase: scale * qRate / root,
+        secondDerivativeByPhase: scale * qRate ** 2 * q / root ** 3,
+        value: scale * Math.asin(q),
+      };
+    };
+    const leaveEndSlope = leaveSelector(leavePhaseEnd).firstDerivativeByPhase;
+    const hermite = (u, start, duration, x0, x1, m0, m1) => {
+      const t = (u - start) / duration;
+      const t2 = t * t;
+      const t3 = t2 * t;
+      const value = (2 * t3 - 3 * t2 + 1) * x0 + (t3 - 2 * t2 + t) * duration * m0
+        + (-2 * t3 + 3 * t2) * x1 + (t3 - t2) * duration * m1;
+      const first = ((6 * t2 - 6 * t) * x0 + (3 * t2 - 4 * t + 1) * duration * m0
+        + (-6 * t2 + 6 * t) * x1 + (3 * t2 - 2 * t) * duration * m1) / duration;
+      const second = ((12 * t - 6) * x0 + (6 * t - 4) * duration * m0
+        + (-12 * t + 6) * x1 + (6 * t - 2) * duration * m1) / duration ** 2;
+      return {
+        firstDerivativeByPhase: first,
+        secondDerivativeByPhase: second,
+        value,
+      };
+    };
+    let firstHalfSelector;
+    if (local < leavePhaseEnd) firstHalfSelector = leaveSelector(local);
+    else if (local < freePhaseEnd) {
+      firstHalfSelector = hermite(local, leavePhaseEnd, freeWindowPhase,
+        -freeSelectorHalfWidth, freeSelectorHalfWidth,
+        leaveEndSlope, leaveEndSlope);
+    } else if (local < enterPhaseEnd) {
+      firstHalfSelector = hermite(local, freePhaseEnd, enterPhaseDuration,
+        freeSelectorHalfWidth, engagementShift, leaveEndSlope, 0);
+    } else firstHalfSelector = fixedProfile(engagementShift);
+    const selectorProfile = {
+      firstDerivativeByPhase: mirror * firstHalfSelector.firstDerivativeByPhase,
+      secondDerivativeByPhase: mirror * firstHalfSelector.secondDerivativeByPhase,
+      value: mirror * firstHalfSelector.value,
+    };
+    // Rope: driven at the worm ratio whenever a wheel is engaged.
+    const linear = (value, rate) => ({
+      firstDerivativeByPhase: rate,
+      secondDerivativeByPhase: 0,
+      value,
+    });
+    const topRope = bucketStroke - 2 * leaveRise;
     let ropeProfile;
-    let selectorProfile;
+    let engagedWheel;
+    let mode;
+    if (phase < leavePhaseEnd) {
+      ropeProfile = linear(-ropePhaseRate * phase, -ropePhaseRate);
+      engagedWheel = 'left';
+      mode = 'left-full-bucket-strikes-tappet-and-drives-worm-off-left-wheel';
+    } else if (phase < freePhaseEnd) {
+      ropeProfile = fixedProfile(-leaveRise);
+      engagedWheel = null;
+      mode = 'left-high-bucket-dumps-and-trips-worm-toward-right-wheel';
+    } else if (phase < 0.5) {
+      ropeProfile = linear(-leaveRise + ropePhaseRate * (phase - freePhaseEnd),
+        ropePhaseRate);
+      engagedWheel = 'right';
+      mode = 'right-worm-wheel-raises-right-full-bucket-and-lowers-left-empty-bucket';
+    } else if (phase < 0.5 + leavePhaseEnd) {
+      ropeProfile = linear(topRope + ropePhaseRate * (phase - 0.5),
+        ropePhaseRate);
+      engagedWheel = 'right';
+      mode = 'right-full-bucket-strikes-tappet-and-drives-worm-off-right-wheel';
+    } else if (phase < 0.5 + freePhaseEnd) {
+      ropeProfile = fixedProfile(topRope + leaveRise);
+      engagedWheel = null;
+      mode = 'right-high-bucket-dumps-and-trips-worm-toward-left-wheel';
+    } else {
+      ropeProfile = linear(topRope + leaveRise
+        - ropePhaseRate * (phase - 0.5 - freePhaseEnd), -ropePhaseRate);
+      engagedWheel = 'left';
+      mode = 'left-worm-wheel-raises-left-full-bucket-and-lowers-right-empty-bucket';
+    }
     let leftWaterProfile;
     let rightWaterProfile;
     let leftTiltProfile = fixedProfile(0);
     let rightTiltProfile = fixedProfile(0);
-    let mode;
-    let engagedWheel;
     if (phase < exchangeLeftEndPhase) {
-      ropeProfile = fixedProfile(0);
-      selectorProfile = transitionProfile(
-        phase,
-        0,
-        exchangeLeftEndPhase,
-        -engagementShift,
-        engagementShift,
-      );
       leftWaterProfile = transitionProfile(
-        phase,
-        0,
-        exchangeLeftEndPhase,
-        1,
-        0,
-      );
+        phase, 0, exchangeLeftEndPhase, 1, 0);
       rightWaterProfile = transitionProfile(
-        phase,
-        0,
-        exchangeLeftEndPhase,
-        0,
-        1,
-      );
+        phase, 0, exchangeLeftEndPhase, 0, 1);
       const middle = exchangeLeftEndPhase / 2;
       leftTiltProfile = phase < middle
         ? transitionProfile(phase, 0, middle, 0, -maximumBucketTilt)
-        : transitionProfile(
-          phase,
-          middle,
-          exchangeLeftEndPhase,
-          -maximumBucketTilt,
-          0,
-        );
-      mode = 'left-high-bucket-dumps-and-trips-worm-toward-right-wheel';
-      engagedWheel = null;
+        : transitionProfile(phase, middle, exchangeLeftEndPhase,
+          -maximumBucketTilt, 0);
     } else if (phase < rightLiftEndPhase) {
-      ropeProfile = cruiseProfile(
-        phase,
-        exchangeLeftEndPhase,
-        rightLiftEndPhase,
-        0,
-        bucketStroke,
-      );
-      selectorProfile = fixedProfile(engagementShift);
       leftWaterProfile = fixedProfile(0);
       rightWaterProfile = fixedProfile(1);
-      mode = 'right-worm-wheel-raises-right-full-bucket-and-lowers-left-empty-bucket';
-      engagedWheel = 'right';
     } else if (phase < exchangeRightEndPhase) {
-      ropeProfile = fixedProfile(bucketStroke);
-      selectorProfile = transitionProfile(
-        phase,
-        rightLiftEndPhase,
-        exchangeRightEndPhase,
-        engagementShift,
-        -engagementShift,
-      );
       leftWaterProfile = transitionProfile(
-        phase,
-        rightLiftEndPhase,
-        exchangeRightEndPhase,
-        0,
-        1,
-      );
+        phase, rightLiftEndPhase, exchangeRightEndPhase, 0, 1);
       rightWaterProfile = transitionProfile(
-        phase,
-        rightLiftEndPhase,
-        exchangeRightEndPhase,
-        1,
-        0,
-      );
+        phase, rightLiftEndPhase, exchangeRightEndPhase, 1, 0);
       const middle = (rightLiftEndPhase + exchangeRightEndPhase) / 2;
       rightTiltProfile = phase < middle
-        ? transitionProfile(
-          phase,
-          rightLiftEndPhase,
-          middle,
-          0,
-          maximumBucketTilt,
-        )
-        : transitionProfile(
-          phase,
-          middle,
-          exchangeRightEndPhase,
-          maximumBucketTilt,
-          0,
-        );
-      mode = 'right-high-bucket-dumps-and-trips-worm-toward-left-wheel';
-      engagedWheel = null;
+        ? transitionProfile(phase, rightLiftEndPhase, middle,
+          0, maximumBucketTilt)
+        : transitionProfile(phase, middle, exchangeRightEndPhase,
+          maximumBucketTilt, 0);
     } else {
-      ropeProfile = cruiseProfile(
-        phase,
-        exchangeRightEndPhase,
-        1,
-        bucketStroke,
-        0,
-      );
-      selectorProfile = fixedProfile(-engagementShift);
       leftWaterProfile = fixedProfile(1);
       rightWaterProfile = fixedProfile(0);
-      mode = 'left-worm-wheel-raises-left-full-bucket-and-lowers-right-empty-bucket';
-      engagedWheel = 'left';
     }
 
     const ropeDisplacement = ropeProfile.value;
@@ -315,29 +352,10 @@ function reciprocatingWellLift(movement) {
     const pulleyAngle = ropeDisplacement / pulleyRadius;
     const pulleyAngularSpeed = ropeSpeed / pulleyRadius;
     const pulleyAngularAcceleration = ropeAcceleration / pulleyRadius;
-    let wormAngle;
-    let wormAngularSpeed;
-    let wormAngularAcceleration;
-    if (phase < exchangeLeftEndPhase) {
-      wormAngle = 0;
-      wormAngularSpeed = 0;
-      wormAngularAcceleration = 0;
-    } else if (phase < rightLiftEndPhase) {
-      wormAngle = wheelTeeth * pulleyAngle / wormStarts;
-      wormAngularSpeed = wheelTeeth * pulleyAngularSpeed / wormStarts;
-      wormAngularAcceleration =
-        wheelTeeth * pulleyAngularAcceleration / wormStarts;
-    } else if (phase < exchangeRightEndPhase) {
-      wormAngle = wormTravelPerLift;
-      wormAngularSpeed = 0;
-      wormAngularAcceleration = 0;
-    } else {
-      wormAngle = wormTravelPerLift
-        + wheelTeeth * (pulleyTravelAngle - pulleyAngle) / wormStarts;
-      wormAngularSpeed = -wheelTeeth * pulleyAngularSpeed / wormStarts;
-      wormAngularAcceleration =
-        -wheelTeeth * pulleyAngularAcceleration / wormStarts;
-    }
+    // The wind wheel and worm never stop.
+    const wormAngle = wormTravelPerCycle * phase;
+    const wormAngularSpeed = wormTravelPerCycle * phaseSpeed;
+    const wormAngularAcceleration = wormTravelPerCycle * phaseAcceleration;
 
     const selectorX = selectorProfile.value;
     const selectorSpeed = profileRate(selectorProfile, phaseSpeed);
@@ -452,11 +470,14 @@ function reciprocatingWellLift(movement) {
       : engagedWheel === 'left'
         ? pulleyAngularSpeed * wheelPitchRadius
         : 0;
+    const wrap = (angle) => THREE.MathUtils.euclideanModulo(angle + Math.PI,
+      FULL_TURN) - Math.PI;
     const meshPhaseInvariant = engagedWheel === 'right'
-      ? wormStarts * wormAngle - wheelTeeth * pulleyAngle
+      ? wrap(wormStarts * wormAngle - wheelTeeth * pulleyAngle
+        - rightMeshPhase)
       : engagedWheel === 'left'
-        ? wormStarts * wormAngle + wheelTeeth * pulleyAngle
-          - 2 * wheelTeeth * pulleyTravelAngle
+        ? wrap(wormStarts * wormAngle + wheelTeeth * pulleyAngle
+          - leftMeshPhase)
         : null;
     return {
       activeContactClearance: engagedWheel === 'left'
@@ -708,10 +729,11 @@ function reciprocatingWellLift(movement) {
   lowerShaft.position.y = (-0.12 + wormTop) / 2;
   wormCarrier.add(lowerShaft);
   const lowerStub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, 0.10, 24),
+    // Short enough to stay clear of the tappet arm meeting the step below.
+    new THREE.CylinderGeometry(0.075, 0.075, 0.06, 24),
     darkMaterial,
   );
-  lowerStub.position.y = wormBottom - 0.05;
+  lowerStub.position.y = wormBottom - 0.03;
   wormCarrier.add(lowerStub);
   const worm = addRole(makeScrew({
     axis: Y_AXIS,
@@ -734,10 +756,10 @@ function reciprocatingWellLift(movement) {
     const gearRotor = new THREE.Group();
     gear.add(gearRotor);
     gear.userData.rotor = gearRotor;
-    // Pin tips stop 0.035 short of the old length so the thread's crest
-    // clears them as it passes (it grazed them by 0.030).
-    const pinOuterRadius = wheelPitchRadius + 0.040;
-    const pinHalfWidth = 0.035;
+    // Short, slender pins (tips 0.030 past the pitch circle, 0.056 wide) so
+    // the thread's crest and flanks clear them on the swung worm.
+    const pinOuterRadius = wheelPitchRadius + pinReach;
+    const pinHalfWidth = 0.028;
     const starOutline = polygonClipping.difference(polygonClipping.union(
       poly(circle([0, 0], 0.34, 96)),
       ...Array.from({ length: wheelTeeth }, (_, index) => {
@@ -945,8 +967,10 @@ function reciprocatingWellLift(movement) {
     windRotor.rotation.y = state.wormAngle;
     wormCarrier.rotation.z = state.carrierAngle;
     setSpin(worm, state.wormAngle);
-    setSpin(leftAssembly.gear, wheelPhase + state.pulleyAngle);
-    setSpin(rightAssembly.gear, wheelPhase + state.pulleyAngle);
+    setSpin(leftAssembly.gear, wheelPhase + state.pulleyAngle
+      - leftMeshPhase / wheelTeeth);
+    setSpin(rightAssembly.gear, wheelPhase + state.pulleyAngle
+      + rightMeshPhase / wheelTeeth);
     setSpin(leftAssembly.pulley, state.pulleyAngle);
     setSpin(rightAssembly.pulley, state.pulleyAngle);
     setVerticalExtent(leftRopeLeg, state.leftBailY, wheelCenterY);
@@ -998,24 +1022,36 @@ function reciprocatingWellLift(movement) {
     cycleDuration,
     engagedCarrierAngle,
     engagementShift,
+    enterPhaseEnd,
     exchangeLeftEndPhase,
     exchangeRightEndPhase,
     fixedRopeLength,
+    freePhaseEnd,
+    freeSelectorHalfWidth,
+    freeWindowPhase,
+    freeWormTurns,
     groundY,
     highBailY,
     innerRopeSpan,
     inputAngularSpeed,
+    leavePhaseEnd,
+    leaveRise,
+    leftMeshPhase,
     leftRopeX,
     lowBailY,
     maximumBucketTilt,
+    pinReach,
     pulleyRadius,
     pulleyTravelAngle,
     pulleyCenters,
     rightLiftEndPhase,
+    rightMeshPhase,
     rightRopeX,
+    ropePhaseRate,
     tappetAngleMagnitude,
     tappetHalfLength,
     tappetPivot,
+    threadReach,
     totalRopeLength,
     wheelCenterX,
     wheelCenterY,
@@ -1071,9 +1107,9 @@ function reciprocatingWellLift(movement) {
       aerodynamicWindTorqueBucketImpactGearToothComplianceBacklashRopeElasticityBearingFrictionAndWaterSloshModeled:
         false,
       driveModel:
-        'A C2 demonstration schedule starts and stops the wind wheel with the bucket travel. During each engaged lift the single-start worm and selected 12-tooth wheel obey the exact 12:1 angular ratio; during each stopped exchange the bucket-driven tappet traverses the worm through the disengaged gap.',
+        'The wind wheel and worm turn at one constant rate. Whenever a wheel is engaged the single-start worm and that 12-tooth wheel obey the exact 12:1 ratio, so the buckets start and stop with the engagement (velocity steps, as a worm taking up a stopped wheel must). Midway through each exchange the thread crest clears both pin rings and the worm turns freely for half a turn while the rope is held; each wheel\u2019s pin ring is phased so the turning thread takes it up in step.',
       tripModel:
-        'The rising full bucket reaches the low end of the rocking tappet exactly at its high rope endpoint. The ensuing dwell tips and empties that bucket, fills the opposite low bucket, and moves the flexible lower worm shaft to the opposite wheel before motion resumes.',
+        'The rising full bucket strikes the low end of the rocking tappet at highBailY and, still lifted by its wheel, pushes it: tappet tip and bail stay together until the worm step has carried the thread off that wheel\u2019s pins. The tappet then throws the worm across the free window to the other wheel; meanwhile the high bucket tips and empties and the low bucket fills.',
     },
     fidelity: 'authored',
     geometry,
@@ -1126,7 +1162,7 @@ function reciprocatingWellLift(movement) {
         engravingEvidence:
           'Brown shows the horizontal wind rotor and vertical coupled spiral above two equal side-by-side toothed wheels, a rear hanging rope leg outside each wheel, an elevated left bucket dumping into a trough, a low right rope end, and a central rocking tappet linked upward to the spiral support.',
         reconstructionDisclosure:
-          'Brown gives no tooth count, worm pitch or hand, pulley diameter, rope route behind the wheel faces, bucket stroke, shaft swing, impact law, fill time, wind speed or absolute timing. The exact single-rope topology follows the singular rope and its two bucket extremities; equal coaxial pulley radii, a 12:1 single-start worm ratio, symmetric discharge troughs, C2 stops and trips, water display, colors and 9-second cycle are independently engineered.',
+          'Brown gives no tooth count, worm pitch or hand, pulley diameter, rope route behind the wheel faces, bucket stroke, shaft swing, impact law, fill time, wind speed or absolute timing. The exact single-rope topology follows the singular rope and its two bucket extremities; equal coaxial pulley radii, a 12:1 single-start worm ratio, symmetric discharge troughs, contact-coupled trips, a half-turn free window, water display, colors and 9-second cycle are independently engineered.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 459',
@@ -1137,16 +1173,21 @@ function reciprocatingWellLift(movement) {
       exchangeLeftEndPhase,
       exchangeRightEndPhase,
       rightLiftEndPhase,
+      leavePhaseEnd,
+      freePhaseEnd,
+      enterPhaseEnd,
       stages: [
-        'left high bucket dumps; tappet traverses worm right',
-        'right wheel selected; right full bucket rises',
-        'right high bucket dumps; tappet traverses worm left',
-        'left wheel selected; left full bucket rises',
+        'left full bucket strikes and pushes tappet; worm leaves left wheel',
+        'worm turns free across the window; left bucket dumps, right fills',
+        'right wheel taken up; right full bucket rises',
+        'right full bucket strikes and pushes tappet; worm leaves right wheel',
+        'worm turns free across the window; right bucket dumps, left fills',
+        'left wheel taken up; left full bucket rises',
       ],
     },
     transmission: {
       activeMesh:
-        'Right lift: theta_worm=N*theta_pulley. Left lift: theta_worm+N*theta_pulley=2*N*theta_travel. The opposite-side worm contacts therefore reverse a common positive worm input.',
+        'Right wheel engaged: theta_worm-N*theta_pulley=phi_R. Left wheel engaged: theta_worm+N*theta_pulley=phi_L (mod 2*pi). The opposite-side worm contacts therefore reverse a common, constant positive worm input.',
       contactVelocity:
         'With axial pitch p=2*pi*R_wheel/N, worm axial thread speed and the selected wheel pitch-line speed are identical during either engaged lift.',
       constantRopeLength:

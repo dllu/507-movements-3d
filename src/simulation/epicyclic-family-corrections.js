@@ -61,7 +61,8 @@ export function correctEpicyclicFamily(root,id){
   spindle(b.carrierC,0,g.outerOutputCenterRadius,.36,.09,.64,'z',b.compoundSleeve.material);
   // Brown draws the carrier upright (B over F over A/D); the view frames the
   // carrier's full turn about A so B and F never leave it. The white speed index is not drawn.
-  root.userData.sweptBounds=new THREE.Box3(new THREE.Vector3(-4.08,-4.08,-.76),new THREE.Vector3(4.08,4.08,.83));
+  // Actual swept surfaces reach +/-3.753; fit them, not a looser square.
+  root.userData.sweptBounds=new THREE.Box3(new THREE.Vector3(-3.77,-3.77,-.76),new THREE.Vector3(3.77,3.77,.83));
   root.userData.cameraFitBounds=root.userData.sweptBounds.clone();
   b.carrierIndex.visible=false;
  }else if(id===503){
