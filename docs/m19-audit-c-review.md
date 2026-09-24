@@ -63,3 +63,7 @@ No docs/validation report fingerprints these files.
 - Brown's drum has about 25 level, stair-like treads, where a foot can sit under the man. Matching that would mean redesigning the drum's 14 radial boards (their count is pinned by tests and the mechanism description), so it was not done here.
 
 **Checks:** intersections clear (0.01 spacing, 129 poses). movement-377, treadmill-gait-solids and treadwheel-working-solids pass.
+
+## Integration note (lead)
+
+The 24-tread drum redesign for 377 was not accepted (kept in git stash "377-drum-redesign-rejected"): it stood the walker on the drum top, well above Brown's axle-height station, and his thigh and shin segments separated visibly at the knee. 377 keeps the committed upright walker on radial boards and stays minor.
