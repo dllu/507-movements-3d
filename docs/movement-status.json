@@ -10826,9 +10826,9 @@
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "At the plate pose the weight hangs 0.67 lower than drawn, so it stays clear of wheel G's teeth after winding.",
-      "limits": "Winding takes 1/8 of the cycle because Brown's single wire is too short for a 90° lag.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The weight hangs 0.28 lower than Brown's box because the model's G is slightly larger; winding takes 1/8 of the cycle and the spring recovers in 1/12, because Brown's single wire is too short for a longer lag.",
+      "assessment": "reasonable"
     },
     {
       "id": 322,
@@ -12728,7 +12728,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The walker is smaller and slimmer-legged than Brown's man.",
+      "visibleFlaws": "The walker crouches with his knees forward toward the boards, where Brown's man stands upright with one knee raised; long legs need the hips about a unit out from the drum for the knees to clear the boards.",
       "limits": "Walker effort and wheel load are not simulated.",
       "assessment": "minor"
     },

@@ -173,14 +173,14 @@ test('movement 321 preserves Brown’s G, B, R, T, S, and S-prime landmarks', ()
   planarNear(sourcePointToReferenceFront(plate.rasterInnerSpringAnchorS),
     reference.springGeometry.pointAtMaterialFraction(1),
     tolerance, 'source inner spring anchor S');
-  // Brown's weight hangs just under G. A full winding turn lifts it one
-  // drum turn above the plate pose, so the model hangs it lower: the wound
-  // weight's top stays clear of G's tooth tips, and at the plate pose it
-  // sits below Brown's station by at most one drum half-turn.
+  // Brown's weight hangs just under G. The plate pose follows winding
+  // closely, so the wound weight rises only 5/24 of a drum turn above
+  // it: the plate-pose weight sits within that lift (plus the measuring
+  // tolerance) of Brown's station, and its top never reaches G's tips.
   const sourceWeightY = sourcePointToReferenceFront(plate.rasterWeightCenter).y;
-  assert.ok(reference.weightPosition.y < sourceWeightY);
-  assert.ok(sourceWeightY - reference.weightPosition.y
-    < geometry.ropeDrumPitchRadius * Math.PI + tolerance,
+  assert.ok(Math.abs(sourceWeightY - reference.weightPosition.y)
+    < geometry.ropeDrumPitchRadius * FULL_TURN
+      * (1 - geometry.windingStartPhase) + tolerance,
     'source weight vertical station');
   const greatWheelTip = new THREE.Box3()
     .setFromObject(model.root.userData.blocks.greatWheel, true).min.y;
@@ -290,7 +290,7 @@ test('movement 321 holds the larger ratchet with T while B winds and the spring 
       'ratcheting-over-reversing-barrel-teeth');
     assert.equal(state.clickTMode,
       'engaged-holding-large-ratchet-against-fallback');
-    near(state.largeRatchetAngle, Math.PI, 3e-15,
+    near(state.largeRatchetAngle, FULL_TURN * geometry.windingStartPhase, 3e-15,
       `T holds larger ratchet at ${sample}`);
     near(state.largeRatchetAngularVelocity, 0, 0,
       `held ratchet speed at ${sample}`);
@@ -448,6 +448,14 @@ test('movement 321 draws S-S-prime as Brown’s single hairpin wire that opens a
         }
       }
     }
+  }
+  // Also sample the exact end of winding, where the lag peaks.
+  {
+    const spring = stateAtTime(geometry.demonstrationPeriod
+      * geometry.windingEndPhase).springGeometry;
+    maximumOpening = Math.max(maximumOpening, spring.opening);
+    maximumSweep = Math.max(maximumSweep, spring.sweep);
+    minimumSweep = Math.min(minimumSweep, spring.sweep);
   }
   // Brown's hairpin while going; it opens toward the chord while T holds
   // the larger ratchet and G runs 45 degrees ahead, then closes again.

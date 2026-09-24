@@ -34,3 +34,17 @@ All passed:
 - movement-376, movement-377, treadwheel-working-solids, treadmill-gait-solids, source-presentation
 
 No docs/validation report fingerprints these files.
+
+## Follow-up (321, 377)
+
+| ID | Change | Intersections | Proposed |
+|---|---|---|---|
+| 321 | **Measurement:** Brown's weight box top (raster 451) is only 13 px below his G's lowest teeth (438). Our G reaches that height, so the weight has to be near the top of its travel at the plate pose. **Why the old setup could not:** the lift from the plate pose (t = 0, R just re-engaged) to the post-winding top equals the rope paid out during winding and recovery. That was half a drum turn (0.63). **Fix:** winding still takes an eighth of the cycle, keeping the spring's 45° lag and its visible hairpin opening. It now starts on a whole larger-ratchet tooth (19/24 to 22/24 of the cycle). The spring recovers in the last twelfth. The lift is now 5/24 of a drum turn (0.26). At the plate pose the weight's top hangs 0.34 below G's tips (Brown: 0.19 below his G), and at the top of its travel it clears the tips by 0.08. The plate-pose centre is 0.28 below Brown's station (was 0.67). **Tests:** the landmark test now checks the station within the new lift and tolerance, and that the weight's top never reaches G. The canonical times are computed from the phases. The hairpin test also samples the exact end of winding. | known (seated spring ends 0.091 only) | reasonable |
+| 377 | **Scale:** the figure is scaled up to Brown's man. The jacket, head and arms use scale 1.2 (was 0.8). The trouser legs are full: thigh 0.74 long with radius 0.09, shin 0.70 with radius 0.075. A trouser seat joins the hips. **Knee:** thigh and shin are now coplanar, with a lay-figure knee. The thigh ends in a knee ball, and the shin's top sits just under it. Past a right-angle bend, the shin's top slides down just far enough to clear the thigh; the pivots, lengths and ankle stay exact. **Lean and rail:** the upper body leans 18° toward the drum about the hip line. The hands grip the rail at chin height in front of the face. **Gait:** the stepping band moves lower (touchdown 18°, was 30°). The hip stands at (2.5, 0.75) from the axis; a sweep showed this is the closest station where the long legs clear every board. The board phase at t = 0 is set (wheel start 14.4°) so the plate pose has one leg at the end of its stance and the other knee raised onto a higher board. The stepping stays locked to the boards. **Ankle:** in the air, the ankle turn is eased from 60° toward 63° (the raw gait reaches 79°), so the shoe clears the cuff. Planted soles still lie flat on their boards. **Helper:** `treadmill-gait.js` (used only by 377) takes an optional `touchdownAngle`. **Tests:** the pinned leg lengths are updated. The touchdown-continuity test now uses the actual touchdown angle; it had hard-coded 40° and missed the stance edges. | clear → clear | reasonable |
+
+**Follow-up residuals:**
+
+- **321:** The weight hangs 0.28 lower than Brown's box centre, because our G is 0.2 larger at the bottom than his.
+- **377:** The standing leg reaches forward to the drum instead of standing straight under him. The hip must stand about a unit out from the boards so the long bent knee clears them. The shoe turn in the air is eased rather than following the gait's sole angle.
+
+**Follow-up tests (all pass):** movement-321, maintaining-clock-interfaces, maintaining-clock-bake, movement-377, treadmill-gait-solids, treadwheel-working-solids.

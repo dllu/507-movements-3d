@@ -39,7 +39,7 @@ test('377 finite soles and legs clear all boards throughout 1401 wheel poses',()
       const board=b.treadBoards[state.treadIndex], foot=b.feet[j];
       // The actual sole corners, not nominal ankle metadata, lie just above
       // the working face and within its finite radial and axial extents.
-      for(const x of [-.12,.12])for(const z of[-.064,.064]) { // the 0.8-scale sole
+      for(const x of [-.14,.14])for(const z of[-.055,.055]) { // the sole's corners
         const p=board.worldToLocal(foot.localToWorld(new T.Vector3(x,-.05,z)));
         assert.ok(Math.abs(p.y-.053)<1e-7,'sole/board fit');
         assert.ok(Math.abs(p.x)<.180001 && Math.abs(p.z)<1.102001,'sole is supported by board');
@@ -59,9 +59,9 @@ test('377 free feet and shins clear the body and rail, without deforming limb le
     for(let j=0;j<2;j++) {
       const hip=b.legRoots[j].getWorldPosition(new T.Vector3());
       const knee=b.kneePivots[j].getWorldPosition(new T.Vector3());
-      // Limbs are Brown-scaled (0.8 of the earlier 0.70/0.65 mannequin).
+      // Brown's long legs: 0.74 thigh and 0.70 shin.
       const ankle=b.kneePivots[j].localToWorld(new T.Vector3(0,-data.geometry.lowerLegLength,0));
-      assert.ok(Math.abs(data.geometry.upperLegLength-.56)<1e-12&&Math.abs(data.geometry.lowerLegLength-.52)<1e-12);
+      assert.ok(Math.abs(data.geometry.upperLegLength-.74)<1e-12&&Math.abs(data.geometry.lowerLegLength-.70)<1e-12);
       assert.ok(Math.abs(hip.distanceTo(knee)-data.geometry.upperLegLength)<1e-12);
       assert.ok(Math.abs(knee.distanceTo(ankle)-data.geometry.lowerLegLength)<1e-12);
     }
@@ -69,7 +69,7 @@ test('377 free feet and shins clear the body and rail, without deforming limb le
 });
 test('377 touchdown and lift-off preserve joint position and velocity in both time directions',()=>{
   const g=data.geometry, step=1e-7;
-  const offset=(40*Math.PI/180-g.wheelStartAngle-g.treadPitch)/(2*g.treadPitch);
+  const offset=(g.gaitGeometry.touchdownAngle-g.wheelStartAngle-g.treadPitch)/(2*g.treadPitch);
   for(const index of[0,1])for(let cycle=-2;cycle<=8;cycle++)for(const edge of[0,.60]) {
     const time=(cycle+edge-offset-index/2)*g.wheelPeriod/7;
     const before=data.stateAtTime(time-step).legStates[index],after=data.stateAtTime(time+step).legStates[index];

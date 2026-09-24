@@ -183,12 +183,16 @@ function harrisonGoingBarrel(movement) {
   const sourceScale = 0.0145;
 
   const demonstrationPeriod = 8;
-  // Winding takes an eighth of the demonstration period: G runs 45 degrees
-  // ahead of the held larger ratchet, which Brown's short curved wire S-S'
-  // can take up by opening its hairpin (a quarter turn would need a wire
-  // longer than the chord between its anchors).
-  const windingStartPhase = 0.50;
-  const windingEndPhase = 0.625;
+  // Going fills most of the cycle. Winding takes an eighth: G runs 45
+  // degrees ahead of the held larger ratchet, which Brown's short curved
+  // wire S-S' takes up by opening its hairpin (a quarter turn would need a
+  // wire longer than the chord between its anchors). The spring recovers in
+  // the last twelfth, as the re-engaged weight quickly recharges it.
+  // Winding starts on a whole tooth of the larger ratchet (19 of 24) so T
+  // seats, and the short recovery keeps the weight near its wound height at
+  // the plate pose (see below).
+  const windingStartPhase = 19 / 24;
+  const windingEndPhase = 22 / 24;
   const greatWheelToothCount = 48;
   const greatWheelPitchRadius = 2.95;
   const largeRatchetToothCount = 24;
@@ -204,18 +208,22 @@ function harrisonGoingBarrel(movement) {
     (sourceRasterCarriedClickContactR.y - sourceRasterCenter.y) * sourceScale,
   );
   const barrelFaceRadius = 1.02;
-  // Each cycle the weight falls one drum turn and winding lifts it back, so
-  // it swings half a turn of rope either side of its mean. Brown hangs the
-  // weight just under G's teeth, so at his height the wound weight rose
-  // across the wheel. The drum is kept small (0.2, just outside the bored
-  // barrel arbor) and the weight hangs so that at the top of its travel,
-  // just after winding, it stays 0.1 clear below G's tooth tips (-3.04).
-  // At the plate pose it is therefore 0.67 lower than Brown draws it.
+  // Each cycle the weight falls one drum turn and winding lifts it back.
+  // Brown hangs it just under G (his box top is 13 px below G's lowest
+  // teeth), so the plate pose must be close to the wound top of travel. The
+  // plate pose (t = 0) is the moment R has re-engaged after winding. Between
+  // the end of winding and then, B turns only the winding lag plus G's
+  // recovery advance (5/24 of a turn), so the small drum (0.2, just
+  // outside the bored barrel arbor) lifts the weight 0.26 above its plate
+  // height. The weight's top hangs 0.34 below G's tips at the plate pose
+  // (Brown: 0.19 below his slightly smaller G) and stays 0.08 clear of them
+  // at the top of its travel.
   const ropeDrumPitchRadius = 0.20;
   const weightHalfHeight = 0.45;
-  const greatWheelTipClearanceY = -3.14;
+  const greatWheelTipClearanceY = -3.12;
+  const windingOvershootAngle = FULL_TURN * (1 - windingStartPhase);
   const referenceWeightY = greatWheelTipClearanceY - weightHalfHeight
-    - ropeDrumPitchRadius * Math.PI;
+    - ropeDrumPitchRadius * windingOvershootAngle;
   const weightX = -ropeDrumPitchRadius;
   const springOuterAnchorRadius = 2.60;
   const springInnerAnchorRadius = 1.98;
@@ -395,10 +403,10 @@ function harrisonGoingBarrel(movement) {
       const shaped = smootherstep(windingProgress);
       const shapedFirst = smootherstepFirst(windingProgress);
       const shapedSecond = smootherstepSecond(windingProgress);
-      largeRatchetLocalAngle = Math.PI;
+      largeRatchetLocalAngle = FULL_TURN * windingStartPhase;
       largeRatchetPhaseRate = 0;
       largeRatchetPhaseAcceleration = 0;
-      barrelAngle = Math.PI - FULL_TURN * shaped;
+      barrelAngle = FULL_TURN * windingStartPhase - FULL_TURN * shaped;
       barrelPhaseRate = -FULL_TURN * shapedFirst
         / (windingEndPhase - windingStartPhase);
       barrelPhaseAcceleration = -FULL_TURN * shapedSecond
@@ -899,11 +907,12 @@ function harrisonGoingBarrel(movement) {
   );
   root.userData.canonicalTimes = {
     cycleClosure: demonstrationPeriod,
-    goingMidStroke: demonstrationPeriod * 0.25,
+    goingMidStroke: demonstrationPeriod * windingStartPhase / 2,
     windingBegins: demonstrationPeriod * windingStartPhase,
-    windingMidStroke: demonstrationPeriod * 0.625,
+    windingMidStroke: demonstrationPeriod
+      * (windingStartPhase + windingEndPhase) / 2,
     windingEnds: demonstrationPeriod * windingEndPhase,
-    springRecoveryMidStroke: demonstrationPeriod * 0.875,
+    springRecoveryMidStroke: demonstrationPeriod * (windingEndPhase + 1) / 2,
   };
   root.userData.geometry = {
     barrelFaceRadius,
@@ -1004,7 +1013,8 @@ function harrisonGoingBarrel(movement) {
   // Frame the lowered weight's lowest point (just before winding).
   root.userData.cameraFitBounds.min.y = Math.min(
     root.userData.cameraFitBounds.min.y,
-    referenceWeightY - ropeDrumPitchRadius * Math.PI - weightHalfHeight - 0.05,
+    referenceWeightY - ropeDrumPitchRadius * FULL_TURN * windingStartPhase
+      - weightHalfHeight - 0.05,
   );
   update(0);
   root.traverse((object) => {

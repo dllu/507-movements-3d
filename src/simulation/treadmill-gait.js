@@ -3,10 +3,10 @@
 // the free foot goes around the outside of the next board before landing.
 export function treadmillLegState(time, index, geometry) {
   const { treadPitch, treadRadius, treadCount, wheelStartAngle, wheelPeriod,
-    hipX, hipY, upperLength, lowerLength } = geometry;
+    hipX, hipY, upperLength, lowerLength,
+    touchdownAngle = 30 * Math.PI / 180 } = geometry;
   const speed = 2 * Math.PI / wheelPeriod;
   const cycle = 2 * treadPitch;
-  const touchdownAngle = 30 * Math.PI / 180;
   const stanceFraction = 0.60;
   const phase = (speed * time + touchdownAngle - wheelStartAngle - treadPitch)
     / cycle + index / 2;

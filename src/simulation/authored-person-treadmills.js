@@ -38,9 +38,27 @@ function tubeBetween(start, end, radius, material) {
   );
 }
 
-// Brown's walker stands about as tall as the drum's radius plus his legs;
-// the earlier full-size mannequin rose far above the drum.
-const FIGURE_SCALE = 0.8;
+// Brown's walker is a tall, broad man: his standing foot is on a board a
+// little below axle height, his raised knee is lifted onto the next board
+// up, and his hands grip the rail at chin height near the top of the drum.
+// FIGURE_SCALE sizes his jacket, head and arms; the legs have their own
+// lengths and full trouser radii.
+const FIGURE_SCALE = 1.2;
+const UPPER_LEG_LENGTH = 0.74;
+const LOWER_LEG_LENGTH = 0.70;
+const THIGH_RADIUS = 0.09;
+const SHIN_RADIUS = 0.075;
+// Hip station relative to the drum axis; the standing leg is nearly
+// straight at the lowest planted board and the stepping knee rises high.
+const HIP_OFFSET = { x: 2.5, y: 0.75 };
+// Boards are met 12 degrees above the horizontal and left about 19
+// degrees below it, so the feet work near axle height as Brown draws.
+const TOUCHDOWN_DEGREES = 18;
+const LEAN_ANGLE = THREE.MathUtils.degToRad(18);
+const ANKLE_EASE_START = THREE.MathUtils.degToRad(60);
+const ANKLE_EASE_SPAN = THREE.MathUtils.degToRad(3);
+// Hips stand just outboard of the jacket's lower half-width.
+const HIP_HALF_SPACING = 0.182 * FIGURE_SCALE + THIGH_RADIUS + 0.01;
 
 function externalPersonTreadmill(movement) {
   const root = new THREE.Group();
@@ -53,7 +71,10 @@ function externalPersonTreadmill(movement) {
   const treadPitch = FULL_TURN / treadCount;
   const wheelPeriod = 4;
   const wheelAngularSpeed = -FULL_TURN / wheelPeriod;
-  const wheelStartAngle = THREE.MathUtils.degToRad(6);
+  // The boards' phase at the plate pose is chosen so that, as Brown draws
+  // him, one leg is straight at the end of its stance while the other knee
+  // is raised with its foot just set on a higher board.
+  const wheelStartAngle = THREE.MathUtils.degToRad(14.4);
   const gaitCyclesPerWheelTurn = treadCount / 2;
   const gaitAngularSpeed = Math.abs(wheelAngularSpeed)
     * gaitCyclesPerWheelTurn;
@@ -72,19 +93,20 @@ function externalPersonTreadmill(movement) {
     // drum, right of the diagonal side bar in the level side view.
     // Scaled to Brown's figure, whose cap only just rises above the drum
     // top and whose feet are on the boards near axle height.
-    new THREE.Vector3(2.15, 0.95 + 0.27 * FIGURE_SCALE, -0.45),
+    new THREE.Vector3(HIP_OFFSET.x, HIP_OFFSET.y + 0.27 * FIGURE_SCALE, -0.45),
   );
   const personWeight = new THREE.Vector3(0, -personMass * gravity, 0);
   const personWeightTorque = personCenterOfMass.clone()
     .sub(wheelCenter).cross(personWeight).z;
   const outputPower = personWeightTorque * wheelAngularSpeed;
   const legPhaseOffsets = [0, Math.PI];
-  const upperLegLength = 0.70 * FIGURE_SCALE;
-  const lowerLegLength = 0.65 * FIGURE_SCALE;
+  const upperLegLength = UPPER_LEG_LENGTH;
+  const lowerLegLength = LOWER_LEG_LENGTH;
   const gaitGeometry = { treadPitch, treadRadius, treadCount, wheelStartAngle,
     wheelPeriod, hipX: personCenterOfMass.x - wheelCenter.x,
     hipY: personCenterOfMass.y - wheelCenter.y - 0.27 * FIGURE_SCALE,
-    upperLength: upperLegLength, lowerLength: lowerLegLength };
+    upperLength: upperLegLength, lowerLength: lowerLegLength,
+    touchdownAngle: THREE.MathUtils.degToRad(TOUCHDOWN_DEGREES) };
 
   const stateAtTime = (time) => {
     const wheelTravel = wheelAngularSpeed * time;
@@ -350,27 +372,54 @@ function externalPersonTreadmill(movement) {
   capBand.userData.role = 'person-cap-band';
   cap.add(capBand);
   person.add(cap);
+  // Brown's climber leans in toward the drum from the hips. The jacket,
+  // head, cap and arms are turned together about the hip line; the legs
+  // hang from the unmoved hip pivots.
+  const leanPivot = new THREE.Vector2(0, -0.27 * FIGURE_SCALE);
+  const leanPoint = (x, y, angle = LEAN_ANGLE) => {
+    const dx = x - leanPivot.x;
+    const dy = y - leanPivot.y;
+    return new THREE.Vector2(
+      leanPivot.x + dx * Math.cos(angle) - dy * Math.sin(angle),
+      leanPivot.y + dx * Math.sin(angle) + dy * Math.cos(angle),
+    );
+  };
+  const applyLean = (object) => {
+    const point = leanPoint(object.position.x, object.position.y);
+    object.position.x = point.x;
+    object.position.y = point.y;
+    object.rotation.z += LEAN_ANGLE;
+  };
+  for (const part of [torso, head, cap]) applyLean(part);
   const arms = [];
-  // He faces the drum and holds a rail at head height in front of him,
-  // Brown's topmost horizontal line running the length of the drum.
-  const handRailY = personCenterOfMass.y + 0.82 * FIGURE_SCALE;
-  const handRailX = personCenterOfMass.x - 0.30 * FIGURE_SCALE;
+  // He faces the drum and grips a rail at chin height just in front of his
+  // leaning face: Brown's topmost horizontal line along the drum.
+  const leanedHead = leanPoint(0, 0.80 * FIGURE_SCALE);
+  const handRailY = personCenterOfMass.y + leanedHead.y - 0.06 * FIGURE_SCALE;
+  const handRailX = personCenterOfMass.x + leanedHead.x - 0.24 * FIGURE_SCALE;
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Vector3(
       0,
       0.45 * FIGURE_SCALE,
       side * 0.22 * FIGURE_SCALE,
     );
-    const hand = new THREE.Vector3(
+    // The arm is built unleaned and turned with the body, so its hand is
+    // placed at the rail point turned back by the lean.
+    const handInBody = leanPoint(
       handRailX - personCenterOfMass.x,
       handRailY - personCenterOfMass.y,
-      side * 0.39 * FIGURE_SCALE,
+      -LEAN_ANGLE,
+    );
+    const hand = new THREE.Vector3(
+      handInBody.x,
+      handInBody.y,
+      side * 0.33 * FIGURE_SCALE,
     );
     // Upper arm out and up to an elbow held wide, forearm up to the rail.
     const elbow = new THREE.Vector3(
       hand.x * 0.45,
-      0.58 * FIGURE_SCALE,
-      side * 0.43 * FIGURE_SCALE,
+      0.50 * FIGURE_SCALE,
+      side * 0.40 * FIGURE_SCALE,
     );
     const arm = new THREE.Mesh(
       new THREE.TubeGeometry(
@@ -392,13 +441,47 @@ function externalPersonTreadmill(movement) {
       joint.userData.role = point === hand ? 'person-hand-gripping-rail' : 'person-arm-joint';
       arm.add(joint);
     }
+    applyLean(arm);
     arm.userData.side = side;
     arm.userData.role = 'person-arm-holding-fixed-safety-rail';
     arms.push(arm);
     person.add(arm);
   }
+  // Coplanar thigh and shin meet like a lay figure's knee: the shin's top
+  // sphere sits just below the thigh's knee ball. When the knee folds past
+  // a right angle, the shin's top slides down its own axis just far enough
+  // to stay clear of the thigh (the ankle end never moves), so the pivots
+  // and limb lengths stay exact.
+  const shinTopClearance = THIGH_RADIUS + SHIN_RADIUS + 0.006;
+  // The trouser cuff stops just above the ankle and the shoe's top just
+  // below it, so the shoe can turn on the ankle.
+  const shinBottomCenter = lowerLegLength - SHIN_RADIUS - 0.04;
+  const shinNominalCylinder = shinBottomCenter - shinTopClearance;
+  const placeShin = (lowerLeg, bend) => {
+    const interior = Math.PI - bend;
+    const top = interior >= Math.PI / 2
+      ? shinTopClearance
+      : shinTopClearance / Math.sin(interior);
+    const cylinder = shinBottomCenter - top;
+    lowerLeg.scale.y = (cylinder + 2 * SHIN_RADIUS)
+      / (shinNominalCylinder + 2 * SHIN_RADIUS);
+    lowerLeg.position.set(0, -(top + shinBottomCenter) / 2, 0);
+  };
   // Brown's striped trousers read darker than the jacket.
   const trouserMaterial = matte(0x4d5d6c, { metalness: 0.02, roughness: 0.8 });
+  // A trouser seat joins the two hips under the jacket's hem, inboard of
+  // the thighs (which swing outside half-width HIP_HALF_SPACING - radius).
+  const seatHalfWidth = HIP_HALF_SPACING - THIGH_RADIUS - 0.012;
+  const seatRadius = 0.12;
+  const seat = new THREE.Mesh(
+    new THREE.CapsuleGeometry(seatRadius, 2 * (seatHalfWidth - seatRadius), 8, 18)
+      .rotateX(Math.PI / 2),
+    trouserMaterial,
+  );
+  seat.scale.x = 0.95;
+  seat.position.set(0, -0.27 * FIGURE_SCALE + 0.03, 0);
+  seat.userData.role = 'person-trouser-seat-joining-hips';
+  person.add(seat);
   const legRoots = [];
   const kneePivots = [];
   const upperLegs = [];
@@ -414,15 +497,17 @@ function externalPersonTreadmill(movement) {
     legRoot.position.set(
       0,
       -0.27 * FIGURE_SCALE,
-      legSide * 0.25 * FIGURE_SCALE,
+      legSide * HIP_HALF_SPACING,
     );
     legRoot.userData.index = index;
     legRoot.userData.role = 'person-hip-pivot';
     person.add(legRoot);
     legRoots.push(legRoot);
     // Rounded limbs rather than boxes, like Brown's trousered legs.
+    // The thigh's rounded ends are centred on the hip and knee pivots, so
+    // its lower end is the knee.
     const upperLeg = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.065 * FIGURE_SCALE, upperLegLength - 0.13 * FIGURE_SCALE, 6, 14),
+      new THREE.CapsuleGeometry(THIGH_RADIUS, upperLegLength, 8, 16),
       trouserMaterial,
     );
     upperLeg.position.y = -upperLegLength / 2;
@@ -435,20 +520,20 @@ function externalPersonTreadmill(movement) {
     knee.userData.role = 'person-knee-pivot';
     legRoot.add(knee);
     kneePivots.push(knee);
+    // The shin hangs in the thigh's plane, its top just under the knee
+    // (see placeShin); its lower end reaches the ankle.
     const lowerLeg = new THREE.Mesh(
-      new THREE.CapsuleGeometry(0.042 * FIGURE_SCALE, lowerLegLength - 0.084 * FIGURE_SCALE, 6, 14),
+      new THREE.CapsuleGeometry(SHIN_RADIUS, shinNominalCylinder, 8, 16),
       trouserMaterial,
     );
-    // Outboard of the thigh by both capsule radii, so the knee does not overlap.
-    lowerLeg.position.set(0, -lowerLegLength / 2, legSide * (0.105 * FIGURE_SCALE + 0.004));
     lowerLeg.userData.role = 'person-lower-leg';
     knee.add(lowerLeg);
     lowerLegs.push(lowerLeg);
     const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.30 * FIGURE_SCALE, 0.10, 0.08 * FIGURE_SCALE),
+      new THREE.BoxGeometry(0.28, 0.07, 0.11).translate(0, -0.015, 0),
       darkMaterial,
     );
-    foot.position.set(-0.04 * FIGURE_SCALE, -lowerLegLength - 0.05, 0);
+    foot.position.set(-0.035, -lowerLegLength - 0.05, 0);
     foot.userData.role = 'person-foot-above-peripheral-step';
     knee.add(foot);
     feet.push(foot);
@@ -586,9 +671,21 @@ function externalPersonTreadmill(movement) {
       const leg = state.legStates[index];
       legRoots[index].rotation.z = leg.upperAngle;
       kneePivots[index].rotation.z = leg.lowerAngle;
-      const ankleRotation = leg.soleAngle - leg.upperAngle - leg.lowerAngle;
+      placeShin(lowerLegs[index], leg.lowerAngle);
+      // A planted sole lies on its board (the ankle turns at most 59 degrees
+      // then). In the air the sole's prescribed angle would turn the ankle
+      // to 79 degrees; it is eased smoothly toward 63, as a real ankle
+      // stops, so the shoe stays clear of the trouser cuff.
+      const rawAnkle = Math.atan2(
+        Math.sin(leg.soleAngle - leg.upperAngle - leg.lowerAngle),
+        Math.cos(leg.soleAngle - leg.upperAngle - leg.lowerAngle),
+      );
+      const ankleRotation = rawAnkle <= ANKLE_EASE_START
+        ? rawAnkle
+        : ANKLE_EASE_START + ANKLE_EASE_SPAN
+          * Math.tanh((rawAnkle - ANKLE_EASE_START) / ANKLE_EASE_SPAN);
       feet[index].rotation.z = ankleRotation;
-      feet[index].position.set(-0.04 * FIGURE_SCALE, -0.05, 0).applyAxisAngle(Z_AXIS, ankleRotation);
+      feet[index].position.set(-0.035, -0.05, 0).applyAxisAngle(Z_AXIS, ankleRotation);
       feet[index].position.y -= lowerLegLength;
     }
     root.userData.currentState = state;

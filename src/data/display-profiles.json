@@ -6113,19 +6113,19 @@
       }
     },
     "321": {
-      "peakAngularSpeed": 12.361139258524851,
-      "peakVisibleAngularSpeed": 12.361139258524851,
-      "sustainedVisibleAngularSpeed": 1.1389602249356516,
-      "floorY": -5.296637049414487,
+      "peakAngularSpeed": 12.361139258520414,
+      "peakVisibleAngularSpeed": 12.361139258520414,
+      "sustainedVisibleAngularSpeed": 0.785398163399645,
+      "floorY": -5.276637049414488,
       "fastestPart": "click-R-carried-by-larger-ratchet",
       "motionBounds": {
         "min": [
           -3.0393736211709297,
-          -5.296637049414487,
+          -5.276637049414488,
           -0.8849999761581421
         ],
         "max": [
-          3.6195295051098872,
+          3.6195151204816494,
           3.0393736211709297,
           1.7600000011920929
         ]
@@ -7177,19 +7177,19 @@
       }
     },
     "377": {
-      "peakAngularSpeed": 61.18929565081857,
-      "peakVisibleAngularSpeed": 61.18929565081857,
-      "sustainedVisibleAngularSpeed": 20.645515725402337,
+      "peakAngularSpeed": 30.125528812066722,
+      "peakVisibleAngularSpeed": 30.125528812066722,
+      "sustainedVisibleAngularSpeed": 16.708649696252735,
       "floorY": -2.0799999986588955,
       "fastestPart": "person-knee-pivot",
       "motionBounds": {
         "min": [
-          -2.3556525396917265,
+          -2.355652143997895,
           -2.0799999986588955,
           -1.7100000381469727
         ],
         "max": [
-          1.6953599980473517,
+          1.9964727959332227,
           2.049193524602847,
           1.830000004172325
         ]
