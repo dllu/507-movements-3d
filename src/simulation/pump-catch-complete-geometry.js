@@ -40,7 +40,7 @@ export function makePumpCatchCompleteGeometry(){
   add('pumpOutputRod',verticalCylinder(.035,-3.35,-.16),'pump');
   add('ropeLoadFerrule',ring(ropeRadius+.001,.085,-.12,0,96).rotateX(Math.PI/2),'pump',PALETTE.brass);
   const lowerTop=-ropeLength-.16;
-  add('pumpLowerBed',verticalPlate(clip.difference(rectangle(-.38,.38,-.18,.18),poly(circle([0,0],.045,96))),-5.05,lowerTop),'fixed',PALETTE.muted,[-radius,0,z]);
+  add('pumpLowerBed',verticalPlate(clip.difference(rectangle(-.46,.46,-.18,.18),poly(circle([0,0],.045,96))),-5.05,lowerTop),'fixed',PALETTE.muted,[-radius,0,z]);
   // Beneath the lower bed hangs the pump barrel that the rod works, with a
   // gland at its mouth and a closed foot: the rod no longer ends in mid-air.
   add('pumpBarrelGland',ring(.045,.25,5.05,5.12,96).rotateX(Math.PI/2),'fixed',PALETTE.muted,[-radius,0,z]);
@@ -50,6 +50,11 @@ export function makePumpCatchCompleteGeometry(){
   const topProfile=clip.difference(rectangle(-radius-.43,-radius+.43,-.65,-.30),rectangle(-radius-.085,-radius+.085,z-ropeRadius-.0225,.20));
   add('pumpGuideCrossbar',verticalPlate(topProfile,-1.90,-1.75),'fixed');
   for(const [name,x]of [['Left',-.40],['Right',.40]])add('pumpGuidePillar'+name,verticalCylinder(.022,floor,-1.75),'fixed',PALETTE.muted,[-radius+x,0,z]);
+  // Two stout hangers continue the pillar lines from the crossbar down to the
+  // lower bed, so the bed and the pump barrel under it are carried by the
+  // frame rather than by the thin guide rods alone. They stand outside the
+  // crosshead's width.
+  for(const [name,x]of [['Left',-.40],['Right',.40]])add('pumpBarrelHanger'+name,verticalCylinder(.04,lowerTop,-1.90),'fixed',PALETTE.muted,[-radius+x,0,z]);
 
   const rope=add('pumpRope',new THREE.BufferGeometry(),'rope',0xb99b63,[0,0,0],model.root);
   rope.material.metalness=0;rope.material.roughness=.93;

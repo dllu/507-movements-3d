@@ -245,6 +245,14 @@ export const CUTAWAY_SPECS = {
     },
     hide: ['carbonic-acid-gas-column-from-deep-shaft', 'trapped-gas-inside-water-sealed-bell'],
   },
+  // Pass 56: the boxes of 445/446 are already rear half-sections (z <= 0);
+  // the revolved water (stream, film, spreading bell, cone and column) and
+  // the fixed plate on its stem are cut on the same plane, so no water hangs
+  // outside the cut boxes.
+  445: {
+    cut: ['fixed-circular-plate-concentric-with-upper-orifice', 'fixed-flared-stem-of-circular-plate'],
+    water: ['unobstructed-descending-stream', 'thin-water-film-over-fixed-plate', 'water-spreading-over-plate-and-descending-in-lower-box', 'self-forming-water-cone-on-fixed-circular-plate', 'water-cone-crown-entering-orifice', 'checked-water-column-rising-through-orifice', 'raised-water-column-spraying-in-upper-box'],
+  },
   475: {
     cut: ['stationary-cutaway-mixing-chamber-D', 'stationary-suction-pipe-B-rising-from-bilge', 'stationary-vertical-discharge-pipe-C'],
     water: [/^water-/, 'free-water-surface-in-B-D-C'],
@@ -382,7 +390,11 @@ export const CUTAWAY_SPECS = {
     // solid behind its channels and the body is a full annulus (not a thin
     // dark outline ring), ported where the pipes join: see
     // sectionFourWayCockParts in four-way-cock-parts.js.
-    cut: [/cock-body/, /brown-port-pipe$/, /close-fitting(-rotary-cock)?-plug$/],
+    // Pass 56: the port pipes stay whole round bored pipes (cut in half they
+    // read as broken troughs), so nothing is cut: the body is a whole annulus
+    // notched for the pipes, and the plug's passages are open channels in its
+    // front face, which Brown's figure shows.
+    cut: [],
     hide: [/fluid-core$/],
     colors: {'fixed-annular-four-port-cock-body-surrounding-turning-plug': 0x59605f, 'second-plate-figure-annular-cock-body': 0x59605f},
   },

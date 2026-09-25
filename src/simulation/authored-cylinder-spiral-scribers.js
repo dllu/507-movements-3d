@@ -1,5 +1,6 @@
 import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   makeGear,
@@ -581,6 +582,73 @@ function spiralCylinderScriber(movement) {
   spiralTrace.userData.role =
     'mechanically-derived-spiral-line-fixed-on-cylinder-surface';
   cylinderRotor.add(spiralTrace);
+  // The spiral is a real groove cut into the cylinder along the same helix,
+  // not a painted hairline: the cylinder's surface dips in a rounded channel
+  // (0.028 deep, 0.09 wide) whose centre follows the helix, with rounded
+  // ends. The former hairline tube is kept only as a hidden reference.
+  {
+    const grooveDepth = 0.028, grooveHalfWidth = 0.045;
+    const unwrappedRun = cylinderRadius * cylinderAngularTravel;
+    const lineLength = Math.hypot(unwrappedRun, rackStroke);
+    const ux = unwrappedRun / lineLength, uy = rackStroke / lineLength;
+    const grooveDistance = (angle, y) => {
+      // Unwrapped coordinates relative to the helix start, taking the angle
+      // branch nearest the helix at this height.
+      const along = THREE.MathUtils.clamp((y - scribingBottomY) / rackStroke, 0, 1);
+      const helixAngle = cylinderStartAngle + cylinderAngularTravel * along;
+      let delta = angle - helixAngle;
+      delta -= FULL_TURN * Math.round(delta / FULL_TURN);
+      const px = cylinderRadius * (helixAngle + delta - cylinderStartAngle);
+      const py = y - scribingBottomY;
+      const t = THREE.MathUtils.clamp(px * ux + py * uy, 0, lineLength);
+      return Math.hypot(px - t * ux, py - t * uy);
+    };
+    const around = 360, along = 320;
+    const positions = [], indices = [];
+    for (let j = 0; j <= along; j += 1) {
+      const y = -cylinderHeight / 2 + cylinderHeight * j / along;
+      for (let i = 0; i <= around; i += 1) {
+        const angle = FULL_TURN * i / around;
+        const d = grooveDistance(angle, y) / grooveHalfWidth;
+        const r = cylinderRadius - (d < 1 ? grooveDepth * Math.sqrt(1 - d * d) : 0);
+        positions.push(r * Math.cos(angle), y, r * Math.sin(angle));
+      }
+    }
+    for (let j = 0; j < along; j += 1) {
+      for (let i = 0; i < around; i += 1) {
+        const a0 = j * (around + 1) + i, a1 = a0 + 1, b0 = a0 + around + 1, b1 = b0 + 1;
+        indices.push(a0, b0, a1, a1, b0, b1);
+      }
+    }
+    const side = new THREE.BufferGeometry();
+    side.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    side.setIndex(indices);
+    side.computeVertexNormals();
+    // Weld the seam normals so the surface shades continuously round it.
+    const normals = side.attributes.normal;
+    for (let j = 0; j <= along; j += 1) {
+      const first = j * (around + 1), last = first + around;
+      const n = new THREE.Vector3().fromBufferAttribute(normals, first)
+        .add(new THREE.Vector3().fromBufferAttribute(normals, last)).normalize();
+      normals.setXYZ(first, n.x, n.y, n.z);
+      normals.setXYZ(last, n.x, n.y, n.z);
+    }
+    const caps = [-1, 1].map((sign) => {
+      const cap = new THREE.CircleGeometry(cylinderRadius, around);
+      cap.rotateX(-sign * Math.PI / 2);
+      cap.translate(0, sign * cylinderHeight / 2, 0);
+      cap.deleteAttribute('uv');
+      return cap.toNonIndexed();
+    });
+    const grooved = mergeGeometries([side.toNonIndexed(), ...caps]);
+    grooved.computeBoundingBox();
+    grooved.computeBoundingSphere();
+    cylinder.geometry.dispose();
+    cylinder.geometry = grooved;
+    cylinder.userData.helicalGroove = { depth: grooveDepth, halfWidth: grooveHalfWidth };
+    spiralTrace.visible = false;
+    spiralTrace.userData.retiredPaintedLine = true;
+  }
 
   const driverBevel = makePitchConeGear({
     axis: X_AXIS,
@@ -737,8 +805,9 @@ function spiralCylinderScriber(movement) {
     darkMaterial,
   );
   stylusTip.rotation.z = Math.PI / 2;
+  // The point runs down into the helical groove, 0.006 above its floor.
   stylusTip.position.set(
-    stylusContactX + 0.11,
+    stylusContactX + 0.11 - 0.022,
     0,
     cylinderCenter.z,
   );

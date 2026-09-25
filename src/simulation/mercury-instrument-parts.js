@@ -85,6 +85,21 @@ export function correctMercuryInstrument(root, id, update) {
     b.pressureConnection.userData.centerline = path;
     replace(b.boilerFlange, wall(bore, .42, -.08, .08));
     b.boilerFlange.position.y = inletY;
+    // Pass 56: the pipe's flange is bolted to the head of the boiler it comes
+    // from, just beyond Brown's crop: a flat head bored for the pipe and the
+    // start of the round shell behind it.
+    {
+      const boilerMaterial = b.base.material;
+      const head = new THREE.Mesh(wall(bore, 1.48, 0, .12), boilerMaterial);
+      head.userData.role = 'boiler-head-carrying-pressure-pipe-flange';
+      const shell = new THREE.Mesh(wall(1.40, 1.48, .12, 2.7), boilerMaterial);
+      shell.userData.role = 'boiler-shell-beyond-plate-crop';
+      for (const part of [head, shell]) {
+        part.rotation.z = Math.PI / 2;part.position.set(-3.80, inletY, 0);
+        part.userData.beyondPlateCrop = true;root.add(part);
+      }
+      b.boiler = {head, shell};
+    }
     b.valveStem.position.y = inletY + .46;
     b.valveHandle.position.y = inletY + .785;
     for (const rotation of [0, Math.PI / 2]) {

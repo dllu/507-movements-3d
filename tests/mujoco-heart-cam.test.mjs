@@ -76,7 +76,7 @@ test('096 ten turns preserve spring clearance, passive traverse and complete cam
         if(distance>.16&&distance<Math.PI-.16)uniformSpeedError=Math.max(uniformSpeedError,Math.abs((last[1]-first[1])/.05-f.law(mid).derivative*(-last[0]+first[0])/.05));}
       if(i<=8000&&i%250===0){v.sync();const a=auditClutchSourceSolids(v);checks+=a.checks;poses++;assert.deepEqual(a.topologyIssues,[]);
         for(const issue of a.issues){assert.ok([issue.from,issue.to].every(n=>['cam','roller'].includes(n)),JSON.stringify(issue));solidPenetration=Math.max(solidPenetration,-issue.gap);}
-        for(const mesh of Object.values(u.parts)){const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
+        for(const mesh of Object.values(u.parts).filter(m=>!m.userData.beyondPlateCrop)){const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
       }
     }
     t.diagnostic(JSON.stringify({maximumTraverseErrorPixels:error*100,maximumNativePenetrationPixels:penetration*100,maximumSampledPenetrationPixels:solidPenetration*100,uniformSpeedErrorOver50ms:uniformSpeedError,contacts,poses,surfaceChecks:checks}));

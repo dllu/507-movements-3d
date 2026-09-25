@@ -5,6 +5,7 @@ import {triangularEccentricEnvelope} from './envelope.js';
 import {cubicPolyline} from '../cubic-polyline.js';
 import {plate,poly,circle,disk,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
+import {wallGuide} from '../wall-guide-hardware.js';
 
 export {THREE};
 
@@ -88,28 +89,36 @@ export function makeTriangularEccentricGeometry({chordTolerance=.00001}={}) {
     const ys=[holeY[i],sign*bearingHalfSpacing].sort((a,b)=>a-b);
     attach('liner'+i,new THREE.BoxGeometry(2*bearingHalfWidth,ys[1]-ys[0],bodyDepth),'yoke',PALETTE.brass,[0,(ys[0]+ys[1])/2,0]);
   }
-  const guideHalfLength=.11,guideCenter=Math.max(...rodRoots.map(Math.abs))+profile.amplitude+guideHalfLength+.07;
-  const rodEnd=guideCenter+guideHalfLength+profile.amplitude+.04,postX=1.76,postHalfWidth=.06;
+  // The rods work in fixed guides. Each guide sits just past the plate's
+  // edge, beyond the stub Brown breaks off at rodTips, and is carried from
+  // behind by a narrow web on one plain upright tie bar. The bar runs behind
+  // the rods (hidden by them in the plate's view) and also carries the
+  // shaft's rear bearing, so guides and bearing form one frame.
+  const guideHalfLength=.11,guideCenter=Math.max(...rodTips.map(Math.abs))+guideHalfLength+.5;
+  // At full retraction the rod end still fills half the guide bore; at
+  // full extension it passes out beyond the guide.
+  const rodEnd=guideCenter+profile.amplitude+.01,guideZWall=-.62,tieHalfWidth=.13;
   for(const [i,sign] of [1,-1].entries()) {
-    // Brown breaks the rods off at rodTips; the run on to the hidden guide is
-    // a separate coaxial piece of the same rigid yoke (same total mass),
-    // removed by source presentation with the guides it enters.
+    // The stub Brown draws and its run on into the guide are coaxial pieces
+    // of the same rigid yoke.
     for(const [name,ends] of [['rod'+i,[rodRoots[i],rodTips[i]]],['rodExtension'+i,[rodTips[i],sign*rodEnd]]]) {
       const rod=attach(name,disk(rodRadius,...ends.sort((a,b)=>a-b),96),'yoke',PALETTE.driven);rod.rotation.x=-Math.PI/2;
     }
-    const guideProfile=clip.difference(clip.union(poly(circle([0,0],.27,128)),
-      poly([[-.08,0],[.08,0],[.08,.49],[-.08,.49]])),poly(circle([0,0],rodRadius+.005,96)));
-    const guide=attach('guide'+i,plate(guideProfile,-guideHalfLength,guideHalfLength),'frame',PALETTE.muted,[0,sign*guideCenter,0]);
-    guide.rotation.x=-Math.PI/2;
-    attach('crossbar'+i,new THREE.BoxGeometry(2*(postX-postHalfWidth),2*guideHalfLength,.18),'frame',PALETTE.muted,[0,sign*guideCenter,-.58]);
-    attach('post'+i,new THREE.BoxGeometry(2*postHalfWidth,2*(guideCenter+guideHalfLength),.18),'frame',PALETTE.muted,[sign*postX,0,-.58]);
+    for(const mesh of wallGuide({name:'guide'+i,axis:'y',halfLength:guideHalfLength,boreRadius:rodRadius+.005,outerRadius:.26,zWall:guideZWall})) {
+      mesh.position.y+=sign*guideCenter;
+      attach(mesh.name,mesh.geometry,'frame',PALETTE.muted,mesh.position.toArray()).rotation.copy(mesh.rotation);
+    }
   }
-  const shaftSupport=clip.difference(clip.union(poly(circle([0,0],.29,128)),
-    poly([[-postX+postHalfWidth,-.07],[postX-postHalfWidth,-.07],[postX-postHalfWidth,.07],[-postX+postHalfWidth,.07]])),poly(circle([0,0],radius+.002,128)));
-  attach('shaftSupport',plate(shaftSupport,-.67,-.49),'frame',PALETTE.muted);
+  const tieEnd=guideCenter+guideHalfLength;
+  // A round boss carries the bar round the shaft bore.
+  attach('guideTieBar',plate(clip.difference(clip.union(poly([[-tieHalfWidth,-tieEnd],[tieHalfWidth,-tieEnd],[tieHalfWidth,tieEnd],[-tieHalfWidth,tieEnd]]),
+    poly(circle([0,0],.26,128))),poly(circle([0,0],radius+.002,128))),guideZWall-.07,guideZWall),'frame',PALETTE.muted);
+  attach('shaftSupport',ring(radius+.002,.24,guideZWall,-.49,128),'frame',PALETTE.muted);
+  // Runs and supports past Brown's crop stay out of the plate-framing fit.
+  for(const [name,mesh] of Object.entries(parts))if(/^(rodExtension|guide\d|shaftSupport)/.test(name))mesh.userData.beyondPlateCrop=true;
   blocks.input.rotation.z=source.phase;blocks.yoke.position.y=profile.amplitude;
   Object.assign(root.userData,{parts,families,blocks,source,profile,envelope,hideGround:true,profiles:{outer,hole,tracedHole,tracedOuter,idealHole,cam:outline},
-    geometry:{originY,chordTolerance,depth,bodyDepth,clearance,bearingHalfSpacing,bearingHalfWidth,holeY,rodRoots,rodTips,rodRadius,rodEnd,guideHalfLength,guideCenter}});
+    geometry:{originY,chordTolerance,depth,bodyDepth,clearance,bearingHalfSpacing,bearingHalfWidth,holeY,rodRoots,rodTips,rodRadius,rodEnd,guideHalfLength,guideCenter,guideZWall}});
   markShadows(root);root.updateMatrixWorld(true);
   return {root,focus:new THREE.Vector3(0,0,0),cameraDirection:new THREE.Vector3(.6,.3,10)};
 }

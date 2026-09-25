@@ -10,6 +10,7 @@ import {
   setSpin,
 } from './primitives.js';
 import { makeLaidRopeMesh } from './laid-rope.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -109,7 +110,10 @@ function pendulumTreeSaw(movement) {
   const pulleyStartAngles = [0.19, -0.27];
   // Centred under the mean blade span (0.34..3.08 over the stroke), as
   // Brown draws the log beneath the middle of the saw.
-  const logCenter = new THREE.Vector3(1.71, -1.24, 0);
+  // The log lies back along its axis so the saw's cut (z = 0.34) is 0.22
+  // from its near end: the short end piece in front of the kerf keeps the
+  // blade's cut readable from the front and the sides.
+  const logCenter = new THREE.Vector3(1.71, -1.24, 0.34 + 0.10 + 0.22 - 2.62 / 2);
   const logRadius = 0.67;
   const logLength = 2.62;
 
@@ -513,8 +517,9 @@ function pendulumTreeSaw(movement) {
   {
     // The bow saw runs in the plane z = 0.34 (blade and set teeth span
     // 0.293..0.394).
-    const kerfCenterZ = 0.34;
-    const kerfHalfWidth = 0.07;
+    // log-local z of the saw plane (world z = 0.34).
+    const kerfCenterZ = 0.34 - logCenter.z;
+    const kerfHalfWidth = 0.10;
     const kerfFloorY = 0.28;
     const ends = [
       [-logLength / 2, kerfCenterZ - kerfHalfWidth],
@@ -559,6 +564,31 @@ function pendulumTreeSaw(movement) {
     ring.userData.role = 'tree-end-growth-ring';
     growthRings.push(ring);
     log.add(ring);
+  }
+
+  // The log lies on two plain sleepers bedded on a ground plank, so it is
+  // carried rather than hanging below the frame's feet.
+  const logSupports = [];
+  {
+    const plankTop = logCenter.y - logRadius - 0.02;
+    const plank = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.07, logLength + 0.2), frameMaterial);
+    plank.position.set(logCenter.x, plankTop - 0.035, logCenter.z);
+    plank.userData.role = 'ground-plank-under-log';
+    root.add(plank);
+    logSupports.push(plank);
+    for (const dz of [-0.85, 0.55]) {
+      // A block hollowed to the log's round (4 mm clear), so it cradles the
+      // log without cutting it: a rectangle less the log's circle.
+      const half = 0.62, rise = 0.28, centerY = logRadius + 0.02;
+      const section = polygonClipping.difference(
+        poly([[-half, 0], [half, 0], [half, rise], [-half, rise]]),
+        poly(circle([0, centerY], logRadius + 0.004, 96)));
+      const chock = new THREE.Mesh(plate(section, 0, 0.2), frameMaterial);
+      chock.position.set(logCenter.x, plankTop, logCenter.z + dz - 0.1);
+      chock.userData.role = 'sleeper-cradling-log';
+      root.add(chock);
+      logSupports.push(chock);
+    }
   }
 
   const groundRails = [];
@@ -761,7 +791,7 @@ function pendulumTreeSaw(movement) {
 
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.70, -2.04, -1.55),
+    new THREE.Vector3(-4.70, -2.04, -2.10),
     new THREE.Vector3(4.10, 2.55, 1.65),
   );
   root.userData.groundFloorY = -2.00;

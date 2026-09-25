@@ -1,4 +1,6 @@
 // Deterministic planar sweep of the production rigid-link path. No browser work.
+// 227 is not swept: its clean analytic profile (cleanSprocketProfile227 in
+// chain-drive-working-parts.js) is verified clear of the same link sweep in tests.
 import fs from 'node:fs';
 import {createAuthoredBeltMovement as create} from '../src/simulation/authored-belts.js';
 import {poly,circle,capsule,rotate,polygonClipping as clip} from '../src/simulation/finite-plate-geometry.js';
@@ -13,10 +15,15 @@ function simplify(ring){
  return [...reduce(p.slice(0,half+1)).slice(0,-1),...reduce([...p.slice(half),p[0]])];
 }
 const transform=(shape,a,t=[0,0])=>shape.map(p=>p.map(r=>r.map(v=>{const q=rotate(v,a);return q.map((x,i)=>Math.round((x+t[i])*1e9)/1e9);}))); 
-for(const id of [227,228,229]){
+for(const id of [228,229]){
  const model=create({id}),d=model.root.userData,g=d.geometry,b=d.blocks,period=id===227?g.toothStep:g.chainNodeStep,half=period/2,
-  center=id===229?0:g.toothCenterPhase,wedge=poly([[0,0],rotate([5,0],center-half),rotate([5,0],center+half)]);
- let shape=id===228?clip.intersection(poly(circle([0,0],g.toothTipRadius,384)),wedge):clip.intersection([d.chainDriveParts.originalWheelPolygons],wedge);
+  center=id===229?0:g.toothCenterPhase,overlap=id===229?1e-6:0,wedge=poly([[0,0],rotate([5,0],center-half-overlap),rotate([5,0],center+half+overlap)]);
+ // 229: Brown's wheel is a polygon with a straight flat under each plate
+ // link and a notch for each link tooth. Sweep a regular 14-gon whose flats
+ // lie 0.001 inside the plates' lower edges, with corners at the joints.
+ const flatGon=()=>{const apothem=g.pitchRadius*Math.cos(g.chainNodeStep/2)-g.linkHalfHeight-.001,corner=apothem/Math.cos(g.chainNodeStep/2);
+  return poly(Array.from({length:g.wheelPitchCount},(_,i)=>rotate([corner,0],g.leftTangentAngle+i*g.chainNodeStep)));};
+ let shape=id===228?clip.intersection(poly(circle([0,0],g.toothTipRadius,384)),wedge):clip.intersection(id===229?flatGon():[d.chainDriveParts.originalWheelPolygons],wedge);
  let localCut;
  if(id===227){
   // Flat plate links: solid round-ended bars (their eyes are filled by the

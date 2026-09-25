@@ -42,6 +42,11 @@ export function createAuthoredCurveGeneratorMovement(movement) {
     const post=add('guideFramePost',plate(poly([[x-.05,y-.04],[x+.05,y-.04],[x+.05,y+.04],[x-.05,y+.04]]),-.24,.36),PALETTE.frame,'fixed');
     delete parts.guideFramePost;parts[`guideFramePost${Object.keys(parts).filter(n=>n.startsWith('guideFramePost')).length}`]=post;
   }
+  // The back bar is bolted to the framing behind the mechanism by two
+  // flanges: one behind the crank-shaft boss (the shaft's bearing) and one
+  // behind the guide frame's closed end.
+  add('shaftBearingFlange',plate(clip.difference(poly([[-.42,-.42],[.42,-.42],[.42,.42],[-.42,.42]]),hole([0,0],.1)),-.48,-.40),PALETTE.frame,'fixed');
+  add('guideFrameFlange',plate(poly([[gx1-.9,gy-.45],[gx1+.08,gy-.45],[gx1+.08,gy+.45],[gx1-.9,gy+.45]]),-.48,-.40),PALETTE.frame,'fixed');
   // Brown's dashed egg is the tracer's path in his notation; it is not drawn.
   const update=time=>{const s=eggAtTime(time);rotor.rotation.z=s.angle;rod.position.set(...s.crank,0);
     rod.rotation.z=s.rodAngle;slider.position.set(...s.wrist,0);root.userData.kinematics=s;};

@@ -688,6 +688,10 @@ function diaphragmPressureGauge(movement) {
     inkMaterial,
     sectorMaterial,
   });
+  // Pass 56: Brown's section is a separate figure: stand it clear of the
+  // gauge (a 1.86 gap instead of the old 0.26) so that in rotated views its cut
+  // back half does not read as a half-drum stuck to the gauge's side.
+  sectionView.group.position.x += 1.6;
   root.add(sectionView.group);
 
   const stateAtTime = (time) => {

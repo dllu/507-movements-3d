@@ -82,12 +82,16 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
     blocks.weight,
   ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
   assert.ok(blocks.doorPinAssembly.parent === blocks.doorAssembly, 'door pin parent');
+  // The pins' supports stay: the door with its socket block and hinge
+  // knuckles; only the handle and face trim are removed.
   for (const component of [
-    blocks.doorHandle,
     blocks.doorPanel,
     blocks.doorSocketBracket,
-    ...blocks.doorTrim,
     ...blocks.hingeBarrels,
+  ]) assert.ok(component.parent !== null, `${component.userData.role} carries a pin or the door`);
+  for (const component of [
+    blocks.doorHandle,
+    ...blocks.doorTrim,
   ]) assert.ok(component.parent === null, `source presentation removes ${component.userData.role}`);
   assert.ok(blocks.doorPinRotor.parent === blocks.doorPinAssembly, 'blocks.doorPinRotor parent');
   assert.ok(blocks.framePinRotor.parent === blocks.framePinAssembly, 'blocks.framePinRotor parent');
@@ -116,6 +120,9 @@ test('movement 385 is one real door hinge with door and frame socket pins, a two
     'moving-door-panel',
     'frame-side-socket-fixed-to-support',
     'door-side-socket-fixed-to-support',
+  ]) assert.ok(roles.includes(role), `${role} supports the pins`);
+  for (const role of [
+    'fixed-door-frame-lintel',
     'white-toggle-height-index',
     'white-weight-height-index',
   ]) assert.ok(!roles.includes(role), `source presentation removes ${role}`);

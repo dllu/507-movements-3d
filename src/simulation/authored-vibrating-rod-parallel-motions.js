@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { glandCylinder, pinWallBracket } from './beyond-crop-hardware.js';
+import { flangeColumn, glandCylinder, pinWallBracket } from './beyond-crop-hardware.js';
 import { makeBoredLinkRod as makeRigidRod } from './bored-link-rod.js';
 import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import {
@@ -382,6 +382,10 @@ function midpointVibratingRodParallelMotion(movement) {
       flange: 0.5, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
     pinWallBracket({ x: radiusPivotF.x, y: radiusPivotF.y, pinRadius: 0.23 * sourceScale, zPin: 0.53, zWall: -0.55, beyondPlateCrop: true,
       flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F' }),
+    // F's small flange is carried at the head of a plain column standing on
+    // the engine-house floor (level with the cylinder's foot).
+    flangeColumn({ x: radiusPivotF.x, yTop: radiusPivotF.y + 0.08, yFloor: -7.9, zWall: -0.55, width: 0.24,
+      beyondPlateCrop: true, role: 'fixed-floor-column-carrying-radius-pin-F-flange' }),
   );
   root.add(fixedFrame);
 
@@ -1043,6 +1047,10 @@ function upperRadiusVibratingRodParallelMotion(movement) {
       flange: 0.4, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
     pinWallBracket({ x: radiusPivotF.x, y: radiusPivotF.y, pinRadius: 0.20 * sourceScale, zPin: 0.53, zWall: -0.55, beyondPlateCrop: true,
       flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F' }),
+    // F's small flange is carried at the head of a plain column standing on
+    // the engine-house floor (level with the cylinder's foot).
+    flangeColumn({ x: radiusPivotF.x, yTop: radiusPivotF.y + 0.08, yFloor: -6.85, zWall: -0.55, width: 0.24,
+      beyondPlateCrop: true, role: 'fixed-floor-column-carrying-radius-pin-F-flange' }),
   );
   root.add(fixedFrame);
 

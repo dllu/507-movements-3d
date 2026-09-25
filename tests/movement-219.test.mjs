@@ -100,10 +100,13 @@ test('movement 219 is one eccentric crown wheel and one keyed long pinion', () =
   assert.equal(blocks.crownRing.parent, blocks.crownAssembly.userData.rotor);
   assert.equal(blocks.crownHub.parent, blocks.crownAssembly.userData.rotor);
   assert.equal(blocks.crownShaft.parent, blocks.crownAssembly.userData.rotor);
-  // Brown draws a solid web with one slot inside the rim, not spokes.
+  // Brown draws an open rim with one broad cross-bar through the arbor boss,
+  // not spokes or a solid web.
   assert.equal(blocks.crownSpokes.length, 0);
   assert.equal(blocks.crownWeb.parent, blocks.crownAssembly.userData.rotor);
-  assert.equal(blocks.crownWeb.geometry.parameters.shapes.holes.length, 2);
+  assert.equal(blocks.crownWeb.geometry.parameters.shapes.holes.length, 1);
+  blocks.crownWeb.geometry.computeBoundingBox();
+  assert.ok(blocks.crownWeb.geometry.boundingBox.max.y < 0.47);
   assert.equal(blocks.crownTeeth.length, geometry.crownTeethCount);
   assert.ok(blocks.crownTeeth.every(
     (tooth) => tooth.parent === blocks.crownAssembly.userData.rotor,

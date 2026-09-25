@@ -16,7 +16,6 @@ export function makeEccentricStrap() {
   const materials = Object.fromEntries(Object.entries({input:PALETTE.driver,strap:PALETTE.driven,
     liner:PALETTE.brass,fastener:PALETTE.accent,shaft:PALETTE.ink,fixed:PALETTE.frame})
     .map(([name,color]) => [name,matte(color,{metalness:.18,roughness:.6})]));
-  materials.face=matte(new THREE.Color(PALETTE.driver).lerp(new THREE.Color(PALETTE.white),.12),{metalness:.18,roughness:.6});
   materials.collar=matte(PALETTE.muted,{metalness:.3,roughness:.55});
   const input = new THREE.Group(), strap = new THREE.Group(), outputSlide = new THREE.Group(), fixed = new THREE.Group();
   root.add(input,strap,outputSlide,fixed);
@@ -70,7 +69,9 @@ export function makeEccentricStrap() {
   const sheaveBody=sheave('eccentric-bearing-journal',bearingRadius,-.22,.22);
   sheave('rear-retaining-flange',flangeRadius,-.25,-.22);
   sheave('front-retaining-flange',flangeRadius,.22,.25);
-  sheave('raised-sheave-face',source.faceRadius/100,.25,.27,'face');
+  // The raised boss Brown draws inside the strap is cast with the sheave:
+  // same material, so it reads as a low step, not a pale inset disc.
+  sheave('raised-sheave-face',source.faceRadius/100,.25,.27);
   const shaftCap=add('shaft-collar',ring(shaftRadius,source.collarRadius/100,.27,.365,256),input,'collar','input');
 
   const flangeThickness=(source.flange.right-source.flange.left)/200;

@@ -510,6 +510,16 @@ function beveledDiskInclinedFollower(movement) {
     return bracket;
   });
 
+  // The backing rail stands on the base through one plain upright behind the
+  // lower guide, clear of the disk and the shaft.
+  const guideRiser = makeBeam(
+    guideBackingStart.clone().setY(-2.58),
+    guideBackingStart.clone(),
+    { color: PALETTE.frame, depth: 0.24, thickness: 0.15 },
+  );
+  guideRiser.userData.role = 'fixed-upright-from-base-to-guide-backing-rail';
+  root.add(guideRiser);
+
   const bearingPositions = [-2.28, 2.28];
   const shaftBearings = bearingPositions.map((x, index) => {
     const bearing = sleeveAlongDirection({
@@ -535,7 +545,8 @@ function beveledDiskInclinedFollower(movement) {
   const bearingPosts = shaftBearings.map((bearing, index) => {
     const post = makeBeam(
       new THREE.Vector3(bearing.position.x, -2.58, -0.72),
-      new THREE.Vector3(bearing.position.x, 0, -0.18),
+      // The post meets the bearing's underside, clear of the shaft.
+      new THREE.Vector3(bearing.position.x, -0.26, -0.1),
       { color: PALETTE.frame, depth: 0.25, thickness: 0.17 },
     );
     post.userData.index = index;
@@ -565,6 +576,7 @@ function beveledDiskInclinedFollower(movement) {
     followerRod,
     guideBackingRail,
     guideBrackets,
+    guideRiser,
     hub,
     rotationIndex,
     shaft,

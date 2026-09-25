@@ -549,6 +549,18 @@ function waterBucketReciprocator(movement) {
   flume.position.set(bucketRopeX+.33+1.65*Math.cos(.30),1.80+1.65*Math.sin(.30),0.02);
   flume.rotation.z = 0.30;
   flume.userData.role = 'fixed-flume-providing-continuous-water-fall';
+  // Pass 56: the flume's upper end rests on one plain post standing on the
+  // ground (widened to reach it), so it no longer floats.
+  {
+    const startX = bucketRopeX + .33, postX = startX + 3.30 * Math.cos(.30) - 0.30;
+    const underside = 1.80 + Math.tan(.30) * (postX + 0.13 - startX) - 0.11 / Math.cos(.30);
+    const groundTop = ground.position.y + 0.12;
+    const flumePost = new THREE.Mesh(new THREE.BoxGeometry(0.26, underside - groundTop, 0.40), frameMaterial);
+    flumePost.position.set(postX, (underside + groundTop) / 2, 0.02);
+    flumePost.userData.role = 'fixed-post-carrying-upper-end-of-flume';
+    root.add(flumePost);
+    ground.geometry.dispose();ground.geometry = new THREE.BoxGeometry(7.90, 0.24, 3.28);ground.position.x = 0.80;
+  }
   root.add(flume);
   // The fall from the flume lip is one translucent stream narrowing as it
   // speeds up (unit length along y, stretched to the bucket's water).
@@ -747,9 +759,11 @@ function waterBucketReciprocator(movement) {
     valveLiftAtPhase,
     waterFillAtPhase,
   };
+  // Brown's crop: pulley, bucket, weight and spout; the gallows and flume
+  // post that carry them run off the edges of the frame.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.12, -3.56, -1.72),
-    new THREE.Vector3(4.54, 4.72, 1.72),
+    new THREE.Vector3(-1.35, -3.30, -0.70),
+    new THREE.Vector3(4.50, 4.25, 0.70),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(5.6, 3.7, 11.2);

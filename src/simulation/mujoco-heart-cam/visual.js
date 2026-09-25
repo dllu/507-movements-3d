@@ -14,7 +14,7 @@ export function makeMujocoHeartCam(mujoco,options={}) {
   const playback=createPhysicsPlayback(physics,sync);let disposed=false;const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
   const bounds=new THREE.Box3(new THREE.Vector3(-1.70,-1.7,-.84),new THREE.Vector3(3.98,1.7,.5));
   Object.assign(u,{mechanism:'mujoco-heart-cam',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'The cam outline is corrected by up to 11 engraving pixels for the roller and smooth reversals. The bar is shifted up 6 pixels to align with the shaft and extended through inferred guides; an added return spring maintains contact.',
+    reconstructionNote:'The cam outline is corrected by up to 11 engraving pixels for the roller and smooth reversals. The bar is shifted up 6 pixels to align with the shaft and runs on past Brown’s break into inferred guides just beyond the plate edge; an added return spring (not displayed) maintains contact.',
     cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},
     qualification:'Only the cam shaft is actuated. Native contact drives the bar and roller against an ideal linear spring; the visible coil follows its compression. Axle, guides, depth and spring properties are inferred.'});

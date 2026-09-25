@@ -1604,6 +1604,43 @@ function leverChronometerEscapement(movement) {
       arborFront - hubBack, 48);
     arbor.position.z = (hubBack + arborFront) / 2;
     leverBearing.position.z = arborFront - 0.10;
+    // The lever's front journal is carried by a flat L-shaped cock that runs
+    // out to the right, clear of the swinging tail, and down to the right
+    // banking pin, whose head it is screwed to; the pins stand in the bridge
+    // behind the tail. This replaces the loose rear post that stopped short
+    // of the lever pivot.
+    {
+      const cockZ = leverBearing.position.z;
+      const rightPin = bankingPins[1];
+      const pinCenter = bankingPinCenters.right;
+      const pinBack = framePlaneZ;
+      const pinFront = cockZ + 0.06;
+      rightPin.geometry.dispose();
+      rightPin.geometry = new THREE.CylinderGeometry(0.10, 0.10, pinFront - pinBack, 24);
+      rightPin.position.z = (pinFront + pinBack) / 2;
+      const cockX = pinCenter.x + 0.48;
+      const corners = [
+        new THREE.Vector3(leverPivot.x + 0.22, leverPivot.y, cockZ),
+        new THREE.Vector3(cockX, leverPivot.y, cockZ),
+        new THREE.Vector3(cockX, pinCenter.y, cockZ),
+        new THREE.Vector3(pinCenter.x, pinCenter.y, cockZ),
+      ];
+      const cockParts = [];
+      for (let i = 0; i < 3; i++) {
+        const a = corners[i].clone(), c = corners[i + 1].clone();
+        const d = c.clone().sub(a).normalize().multiplyScalar(0.11);
+        if (i > 0) a.sub(d);
+        if (i < 2) c.add(d);
+        const part = beamBetween(a, c, 0.22, 0.12, frameMaterial);
+        part.userData.role = 'fixed-front-cock-carrying-lever-journal';
+        cockParts.push(part);
+      }
+      bankingArm.removeFromParent();
+      bankingArm.geometry.dispose();
+      fixedFrame.add(...cockParts);
+      root.userData.blocks.leverCock = cockParts;
+      delete root.userData.blocks.bankingArm;
+    }
     // Locking nibs: the part of each pallet strip that stays outside radius
     // (tip - 0.28) from the wheel axis at both lever banks, extruded back into
     // the wheel plane; the rest of each long curved pallet stays in front.
@@ -1739,6 +1776,10 @@ function leverChronometerEscapement(movement) {
         .applyMatrix4(leverBearing.matrixWorld)
         .expandByScalar(0.15),
     );
+    for (const part of root.userData.blocks.leverCock ?? []) {
+      root.userData.cameraFitBounds.union(
+        new THREE.Box3().setFromObject(part).expandByScalar(0.1));
+    }
   }
   return {
     cameraDirection: root.userData.cameraDirection,

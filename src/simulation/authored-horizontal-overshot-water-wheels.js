@@ -375,6 +375,22 @@ function horizontalOvershotWaterWheel(movement) {
     parts.forEach(part => part.dispose());
   }
   root.add(flume);
+  // Pass 56: the spout is carried from the overhead beam by one plain timber
+  // brace from the beam's end to the spout's underside, where the spout
+  // passes closest below it.
+  {
+    root.updateMatrixWorld(true);
+    const beamEnd = overheadBeam.localToWorld(new THREE.Vector3(3.55, -0.14, -0.18));
+    const axis = nozzlePoint.clone().sub(flumeUpstreamPoint).normalize();
+    let best = null;
+    for (let t = -spoutExtension + 0.3; t <= 0.6; t += 0.01) {
+      const point = flumeUpstreamPoint.clone().addScaledVector(axis, t).add(new THREE.Vector3(0, -0.10, 0));
+      const d = Math.hypot(point.x - beamEnd.x, point.z - beamEnd.z);
+      if (!best || d < best.d) best = {d, point};
+    }
+    const brace = boxBetween(beamEnd, best.point, 0.12, 0.12, frameMaterial, 'timber-brace-carrying-spout-from-overhead-beam');
+    root.add(brace);
+  }
   const flumeWaterStart = flumeUpstreamPoint.clone()
     .add(new THREE.Vector3(0, 0.14, 0));
   const flumeWaterEnd = nozzlePoint.clone()

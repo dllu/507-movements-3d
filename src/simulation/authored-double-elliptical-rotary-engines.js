@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {plate,poly,circle,polygonClipping} from './finite-plate-geometry.js';
+import {portedCasingGeometry, roundPortPipeGeometry} from './round-port-pipes.js';
 import {
   PALETTE,
   markShadows,
@@ -390,14 +391,18 @@ function doubleEllipticalRotaryEngine(movement) {
   // Brown's casing is one oval (stadium) round both bores, with short
   // induction and eduction necks at the top and bottom centre.
   const neckTop = outerHousingRadius + 0.85;
+  // Pass 56: the necks are round bored pipes; each bore opens through the
+  // oval wall into the throat between the bores by a square hole in the
+  // wall's middle layer only, so the wall stays whole in front and behind.
   const outerSection=polygonClipping.union(poly(circle([-halfCenterDistance,0],outerHousingRadius,1024)),
     poly(circle([halfCenterDistance,0],outerHousingRadius,1024)),
-    rectangle(-halfCenterDistance,-outerHousingRadius,halfCenterDistance,outerHousingRadius),
-    rectangle(-0.525,-neckTop,0.525,neckTop));
+    rectangle(-halfCenterDistance,-outerHousingRadius,halfCenterDistance,outerHousingRadius));
   const cavitySection=polygonClipping.union(poly(circle([-halfCenterDistance,0],innerHousingRadius+0.00006,1024)),
-    poly(circle([halfCenterDistance,0],innerHousingRadius+0.00006,1024)),rectangle(-0.26,-neckTop-0.01,0.26,neckTop+0.01));
+    poly(circle([halfCenterDistance,0],innerHousingRadius+0.00006,1024)));
   const housingSection=polygonClipping.difference(outerSection,cavitySection);
-  rearHousing.geometry.dispose();rearHousing.geometry=plate(housingSection,-0.66,0.68);
+  const portZ = 0.01, portBore = 0.26, portOuter = 0.475;
+  rearHousing.geometry.dispose();rearHousing.geometry=portedCasingGeometry(housingSection,-0.66,0.68,portZ,portBore,
+    [rectangle(-portBore,0,portBore,neckTop),rectangle(-portBore,-neckTop,portBore,0)]);
   rearHousing.userData.role =
     'fixed-double-lobed-cylinder-around-both-elliptical-pistons';
   root.add(rearHousing);
@@ -437,9 +442,11 @@ function doubleEllipticalRotaryEngine(movement) {
       frameMaterial,
     );
     // Only the stub standing proud of the oval, clear of the piston sweep.
-    neck.geometry.dispose();neck.geometry=plate(polygonClipping.difference(rectangle(-0.525,-0.475,0.525,0.475),
-      rectangle(-0.26,-0.485,0.26,0.485)),-0.48,0.48);
-    neck.position.set(0, side * (neckTop - 0.475), -0.10);
+    // The pipe foot sits just above the bores' highest point under the pipe
+    // and below the flat top of the oval.
+    const footY = Math.sqrt((innerHousingRadius + 0.00006) ** 2 - (halfCenterDistance - portOuter) ** 2) + 0.008;
+    neck.geometry.dispose();neck.geometry=roundPortPipeGeometry(new THREE.Vector3(0, side * footY, portZ),
+      new THREE.Vector3(0, side * neckTop, portZ), portBore, portOuter);
     neck.userData.role = side > 0
       ? 'top-center-steam-induction-neck'
       : 'bottom-center-steam-eduction-neck';

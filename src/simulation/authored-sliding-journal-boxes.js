@@ -366,9 +366,12 @@ function claytonSlidingJournalBox(movement) {
   );
   crossheadBody.userData.role = 'source-profiled-crosshead-yoke-body';
   crosshead.add(crossheadBody);
+  // The guide lips are part of the yoke casting: in the yoke's own colour,
+  // their faces flush with the slot sides no longer z-fight into a dark
+  // cross-hatched grid.
   const leftSlotFace = new THREE.Mesh(
     new THREE.BoxGeometry(0.055, slotTopY - slotBottomY, 0.45),
-    darkMaterial,
+    drivenMaterial,
   );
   leftSlotFace.position.set(
     -slotHalfWidth - 0.0275,

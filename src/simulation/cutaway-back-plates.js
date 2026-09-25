@@ -12,12 +12,15 @@ export function addBackCover(root, roles, {thickness = 0.12, material, role = 'f
   const inverse = new THREE.Matrix4().copy(root.matrixWorld).invert();
   const polygons = [];let back = Infinity, found = null;
   root.traverse(o => {
-    if (!o.isMesh || !roles.includes(o.userData?.role) || o.geometry.type !== 'ExtrudeGeometry') return;
+    // Layered (ported) casings carry their full outline shapes in userData.
+    if (!o.isMesh || !roles.includes(o.userData?.role)) return;
+    const outlineShapes = o.geometry.type === 'ExtrudeGeometry' ? o.geometry.parameters.shapes : o.geometry.userData?.outlineShapes;
+    if (!outlineShapes) return;
     found ??= o;
     const toRoot = new THREE.Matrix4().multiplyMatrices(inverse, o.matrixWorld);
     o.geometry.computeBoundingBox();
     const box = o.geometry.boundingBox.clone().applyMatrix4(toRoot);back = Math.min(back, box.min.z);
-    for (const shape of [].concat(o.geometry.parameters.shapes)) {
+    for (const shape of [].concat(outlineShapes)) {
       const points = shape.extractPoints(24).shape.map(p => new THREE.Vector3(p.x, p.y, 0).applyMatrix4(toRoot));
       polygons.push([[...points.map(p => [p.x, p.y]), [points[0].x, points[0].y]]]);
     }

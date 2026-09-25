@@ -363,11 +363,21 @@ function overshotWaterWheel(movement) {
   shaft.userData.role = 'main-water-wheel-shaft-in-fixed-bearings';
   root.add(shaft);
   const bearingParts=wheelBearings(root,shaft,frameMaterial,-3.85);
+  // Pass 56: Brown's elevation is a section through the pit, so the near
+  // side is cut away: the wheel's shaft ends at the hub in front and runs
+  // back to the one far bearing on its pedestal and footing behind the race.
+  for (const key of ['bearings', 'bearingPedestals']) {
+    bearingParts[key] = bearingParts[key].filter((part) => {
+      if (part.position.z < 0) return true;
+      part.removeFromParent();part.geometry.dispose();return false;
+    });
+  }
+  shaft.geometry.dispose();shaft.geometry=new THREE.CylinderGeometry(shaftRadius,shaftRadius,1.75,64);shaft.position.z=-0.225;
   const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(8.20, 0.30, 1.72),
+    new THREE.BoxGeometry(1.00, 0.30, 0.60),
     frameMaterial,
   );
-  foundation.position.set(0, -4.00, -0.32);
+  foundation.position.set(0, -4.00, -0.94);
   foundation.userData.role = 'fixed-overshot-wheel-foundation';
   root.add(foundation);
 

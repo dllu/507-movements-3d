@@ -1525,12 +1525,29 @@ function rockingBeamTieRodFlywheelMotion() {
   // Brown draws the ground as an inked line with diagonal hatching below,
   // broken only by the wheel pit: engraving notation for a cut solid, so
   // render each ledge as a plain solid ground block (no hatch texture).
-  for (const ledge of [leftFloorLedge, rightFloorLedge]) {
-    const { width, height, depth } = ledge.geometry.parameters;
-    const block = groundBlock(width, height, depth, { spacing: 0.09 });
+  // The ground is one continuous solid with Brown's pit under the wheel,
+  // cut in section on the wheel's mid-plane (the plate is a section there):
+  // the left block carries the pit, the right block the slider bed, and they
+  // meet flush. The bearing post behind the wheel stands on the pit floor.
+  const groundTopY = floorY + 0.02;
+  const groundBottomY = -flywheelOuterRadius - 0.30;
+  const pitHalfWidth = flywheelOuterRadius + 0.16;
+  const pitFloorY = -flywheelOuterRadius - 0.14;
+  const groundBackZ = -1.35;
+  const groundFrontZ = 0;
+  const groundJoinX = pitHalfWidth + 0.35;
+  for (const [ledge, outline] of [
+    [leftFloorLedge, [[-2.64, groundBottomY], [groundJoinX, groundBottomY], [groundJoinX, groundTopY],
+      [pitHalfWidth, groundTopY], [pitHalfWidth, pitFloorY], [-pitHalfWidth, pitFloorY],
+      [-pitHalfWidth, groundTopY], [-2.64, groundTopY]]],
+    [rightFloorLedge, [[groundJoinX, groundBottomY], [4.95, groundBottomY], [4.95, groundTopY], [groundJoinX, groundTopY]]],
+  ]) {
+    const block = groundBlock(1, 1, 1);
     ledge.geometry.dispose();
-    ledge.geometry = block.geometry;
-    ledge.material = block.material;
+    ledge.geometry = plate(poly(outline), groundBackZ, groundFrontZ);
+    ledge.geometry.clearGroups();
+    ledge.material = block.material[2];
+    ledge.position.set(0, 0, 0);
     ledge.castShadow = false;
     ledge.receiveShadow = true;
   }
@@ -1557,7 +1574,7 @@ function rockingBeamTieRodFlywheelMotion() {
   flywheelBearingPost.position.set(0, floorY / 2, -0.54);
   flywheelBearingPost.geometry.dispose();
   flywheelBearingPost.geometry = plate(clip.difference(clip.union(
-    poly([[-.21,floorY],[.21,floorY],[.21,0],[-.21,0]]), poly(circle([0,0],.24,64))),
+    poly([[-.21,-flywheelOuterRadius-.14],[.21,-flywheelOuterRadius-.14],[.21,0],[-.21,0]]), poly(circle([0,0],.24,64))),
     poly(circle([0,0],.133,64))), -.75, -.33);
   flywheelBearingPost.position.set(0,0,0);
   flywheelBearingPost.userData.role = 'fixed-bearing-post-behind-flywheel';
@@ -1584,19 +1601,26 @@ function rockingBeamTieRodFlywheelMotion() {
   );
   beamPivotBackColumn.userData.role =
     'fixed-rear-column-supporting-beam-axis-clear-of-slider';
+  // Presented plate: the beam shaft runs back into a plain flange on the
+  // framing behind the mechanism (hidden behind the beam's hub), in place of
+  // a column Brown does not draw.
+  const beamShaftFlange = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.42, 0.12), frameMaterial);
+  beamShaftFlange.position.set(beamPivot.x, beamPivot.y, -1.10);
+  beamShaftFlange.userData.role = 'fixed-rear-flange-carrying-beam-shaft';
   const beamColumnFoot = new THREE.Mesh(
     new THREE.BoxGeometry(1.02, 0.15, 0.74),
     frameMaterial,
   );
   beamColumnFoot.position.set(
     beamPivot.x,
-    floorY + 0.03,
+    floorY + 0.02 + 0.075,
     beamBackColumnCenterZ,
   );
   beamColumnFoot.userData.role = 'fixed-foot-of-rear-beam-pivot-column';
   beamColumnFoot.geometry.dispose();
   beamColumnFoot.geometry = new THREE.BoxGeometry(1.02,.15,.46);
   fixedFrame.add(
+    beamShaftFlange,
     beamColumnFoot,
     beamPivotBackColumn,
     flywheelBearingPost,

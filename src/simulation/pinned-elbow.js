@@ -43,6 +43,12 @@ export function makePinnedElbow(){
  place('pivotAxle',disk(.238,-.85,.65,128),'fixed',g.pivot,PALETTE.ink);
  place('pivotBearing',ring(.242,.38,-.78,-.54,128),'fixed',g.pivot,PALETTE.frame);
  place('pivotRetainer',ring(.238,.30,.524,.61,128),'fixed',g.pivot,PALETTE.ink);
+ // The disk and bell-crank bearings are flanged to the framing behind the
+ // mechanism (the plane of the guide's back arms), so nothing floats when the
+ // undrawn posts and base are left out of the presented plate.
+ place('diskBearingFlange',plate(clip.difference(rectangle(-.42,.42,-.42,.42),poly(circle([0,0],.168,96))),-.90,-.78),'fixed',[0,0],PALETTE.frame);
+ place('pivotBearingFlange',plate(clip.difference(rectangle(-.46,.46,-.46,.46),poly(circle([0,0],.242,96))),-.90,-.78),'fixed',g.pivot,PALETTE.frame);
+ place('guideFlange',plate(rectangle(-.44,.44,guideLow,guideHigh),-.90,-.76),'fixed',[g.guideX,0],PALETTE.frame);
  add('base',plate(rectangle(-1.90,g.guideX+.60,baseY-.12,baseY),-.92,-.66),'fixed',PALETTE.frame);
  add('diskPost',plate(rectangle(-.12,.12,baseY,.05),-.90,-.78),'fixed',PALETTE.frame);
  add('pivotPost',plate(rectangle(g.pivot[0]-.12,g.pivot[0]+.12,baseY,g.pivot[1]+.05),-.90,-.78),'fixed',PALETTE.frame);

@@ -1,5 +1,6 @@
 import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -169,13 +170,6 @@ function bourdonPressureGauge(movement) {
     metalness: 0.23,
     roughness: 0.60,
   });
-  const dialMaterial = matte(PALETTE.paper, {
-    opacity: 0.78,
-    roughness: 0.88,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  dialMaterial.depthWrite = false;
   const pressureMaterial = matte(PALETTE.driver, {
     opacity: 0.36,
     roughness: 0.48,
@@ -238,11 +232,23 @@ function bourdonPressureGauge(movement) {
     return (lower + upper) / 2;
   };
 
+  // Pass 56: an opaque paper dial plate behind the working parts, closed by
+  // a plain metal case back, instead of a translucent face with nothing
+  // behind it.
   const dialFace = addRole(new THREE.Mesh(
-    new THREE.CircleGeometry(3.22, 96),
-    dialMaterial,
-  ), 'translucent-dial-face-exposing-working-parts');
-  dialFace.position.z = -0.43;
+    new THREE.CylinderGeometry(3.40, 3.40, 0.08, 96).rotateX(Math.PI / 2),
+    matte(PALETTE.paper, { roughness: 0.88 }),
+  ), 'opaque-dial-plate-behind-working-parts');
+  dialFace.position.z = -0.46;
+  const caseBack = addRole(new THREE.Mesh(
+    mergeGeometries([
+      new THREE.CylinderGeometry(3.48, 3.48, 0.08, 96).rotateX(Math.PI / 2).translate(0, 0, -0.54).toNonIndexed(),
+      new THREE.LatheGeometry([[3.40, -0.50], [3.48, -0.50], [3.48, -0.34], [3.40, -0.34], [3.40, -0.50]]
+        .map(([r, y]) => new THREE.Vector2(r, y)), 96).rotateX(Math.PI / 2).toNonIndexed(),
+    ]),
+    frameMaterial,
+  ), 'closed-metal-back-of-gauge-case');
+  root.add(caseBack);
   const outerRim = addRole(new THREE.Mesh(
     new THREE.TorusGeometry(3.32, 0.16, 16, 96),
     frameMaterial,

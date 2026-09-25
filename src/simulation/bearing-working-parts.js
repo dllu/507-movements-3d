@@ -249,6 +249,20 @@ vPosition = vec3( position );
   lower.userData.role = 'lower-return-sheave-assembly';
   lower.add(sheave, journal);
   journal.position.y = -legs;
+  // The fixed journal runs back out of the sheave into a plain floor
+  // standard behind the rope's plane, so the return sheave is carried
+  // (beyond the plate's crop, seen only when the view is turned).
+  const standardZ = -0.66, reach = g.pulleyOuterRadius + 0.5;
+  journal.geometry.dispose();
+  journal.geometry = new THREE.CylinderGeometry(0.3, 0.3, g.pulleyRimDepth / 2 + 0.1 - standardZ + 0.08, 48);
+  journal.position.z = (g.pulleyRimDepth / 2 + 0.1 + standardZ - 0.08) / 2;
+  const standard = new THREE.Mesh(new THREE.BoxGeometry(0.62, reach, 0.16), b.innerRace.material);
+  standard.position.set(0, -legs - reach / 2, standardZ);
+  standard.userData.role = 'fixed-floor-standard-carrying-lower-return-sheave-journal';
+  const standardFoot = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.14, 0.9), b.innerRace.material);
+  standardFoot.position.set(0, -legs - reach - 0.07, standardZ);
+  standardFoot.userData.role = 'foot-of-lower-return-sheave-standard';
+  lower.add(standard, standardFoot);
   root.add(lower);
   b.lowerReturnSheave = sheave;
   b.lowerReturnAssembly = lower;

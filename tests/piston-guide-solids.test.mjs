@@ -105,7 +105,15 @@ for(const id of [328,330])test(`${id}: full-stroke swept bounds, plate crop and 
    m.update(period*i/32);m.root.updateMatrixWorld(true);
    assert.ok(m.root.userData.sweptBounds.containsBox(box(m.root)));
   }
-  assert.ok(m.root.userData.cameraDistanceScale<1);
-  assert.ok(!m.root.userData.sweptBounds.equals(m.root.userData.cameraFitBounds));
+  if(id===328){
+   // 328 frames the whole flywheel and the whole cylinder down to its bed
+   // plate rather than Brown's crop, so neither reads as broken off.
+   const fit=m.root.userData.cameraFitBounds;let cylinder,flywheel;
+   m.root.traverse(o=>{if(o.userData.role==='fixed-upright-cylinder-below-piston-rod-B')cylinder=o;if(o.userData.role==='Cartwright-input-flywheel-rim')flywheel=o;});
+   for(const part of [cylinder,flywheel]){const b=new THREE.Box3().setFromObject(part);assert.ok(fit.min.y<=b.min.y+1e-6&&fit.max.y>=b.max.y-1e-6,part.userData.role);}
+  }else{
+   assert.ok(m.root.userData.cameraDistanceScale<1);
+   assert.ok(!m.root.userData.sweptBounds.equals(m.root.userData.cameraFitBounds));
+  }
  }finally{disposeMovementModel(m);}
 });

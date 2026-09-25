@@ -25,13 +25,11 @@ export default {
   },
   90: {
     camera: [0, 0, 1],
-    remove: ['guide\\d', 'rodExtension\\d', 'shaftSupport', 'base'],
-    note: 'Flat front elevation of the oval yoke with its two rod stubs broken off at Brown\'s lengths, the eccentric disk and the hatched shaft; no pedestal, rod guides, rod runs into the guides or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
+    note: 'Flat front elevation of the oval yoke with its two rods, the eccentric disk and the shaft. Brown breaks the rods off; they run on whole into fixed guides just past the plate edge, carried from behind by webs on one plain tie bar (hidden behind the rods) that also holds the shaft\'s rear bearing. No pedestal is drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
   },
   91: {
     camera: [0, 0, 1],
-    remove: ['guide\\d', 'rodExtension\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
-    note: 'Flat front elevation of the yoke with its upper and lower rods broken off at Brown\'s lengths, the triangular eccentric and the hatched shaft; no guide frame, collars or shaft bearing are drawn. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
+    note: 'Flat front elevation of the yoke with its upper and lower rods, the triangular eccentric and the shaft. Brown breaks the rods off; they run on whole into fixed guides just past the plate edge, carried from behind by webs on one plain upright tie bar (hidden behind the rods) that also holds the shaft\'s rear bearing. Only the production MuJoCo model is presented; its physics keeps ideal guides and bearings.',
   },
   93: {
     remove: ['guide\\d', 'crossbar\\d', 'post\\d', 'shaftSupport'],
@@ -43,13 +41,12 @@ export default {
   },
   95: {
     camera: [0, 0, 1],
-    remove: ['guide', 'upperBracket', 'post', 'lowerBracket'],
-    note: 'Flat side elevation: the inclined disk edge-on, the forked rod and roller above it, the shaft bearing bolted to a hatched wall corner; no rod guide or gantry is drawn.',
+    note: 'Flat side elevation: the inclined disk edge-on, the forked rod and roller above it, the shaft bearing bolted to the wall corner. Brown crops the rod at the top; it runs on whole into a fixed guide just above the plate edge, carried by a web on a slender post that stands on the wall top behind the disk, directly behind the rod. No gantry is drawn.',
   },
   96: {
     camera: [0, 0, 1],
-    remove: ['spring', 'springSeat', 'guide\\d', 'rearFrame'],
-    note: 'Flat face view of the heart cam on its shaft and the roller-ended bar running off to the right; no return spring, spring seat, bar guides or frame are drawn. Only the production MuJoCo model is presented; its physics keeps the inferred return spring and ideal guide.',
+    remove: ['spring', 'springSeat'],
+    note: 'Flat face view of the heart cam on its shaft and the roller-ended bar. Brown breaks the bar off to the right; it runs on whole into two fixed guides just past the plate edge, carried from behind by webs on a plain rear frame bar (hidden behind the bar) that also holds the cam shaft\'s rear bearing. No return spring or spring seat is drawn. Only the production MuJoCo model is presented; its physics keeps the inferred return spring and ideal guide.',
   },
   98: {
     camera: [0, 0, 1],
@@ -86,12 +83,11 @@ export default {
     note: 'The lazy tongs with their input and output rods; no white depth indices are drawn on the pins.',
   },
   145: {
-    remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-bearing-post-behind-flywheel', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index'],
-    note: 'Side elevation of the spoked flywheel in its pit, the tied rod to the small standard, the upright rod and the one-armed beam turning on the hatched shaft at its right end; no beam column, wheel post, rail or index marks are drawn.',
+    remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index'],
+    note: 'Side elevation of the spoked flywheel in its pit, the tied rod to the small standard, the upright rod and the one-armed beam turning on the hatched shaft at its right end; no beam column, wheel post, rail or index marks are drawn. The ground is one solid with the pit, cut in section on the wheel plane; a slim post behind the wheel (standing on the pit floor) carries the wheel shaft, and the beam shaft runs back into a flange on the framing behind, hidden by the beam\'s hub.',
   },
   149: {
-    remove: ['rear-bearing-frame', 'guide\\d--?1', 'guide-back\\d', 'slider\\d', 'slider-pin\\d', 'slider-retainer\\d'],
-    note: 'The two cams, the two levers on their common pivot and the two rods broken off below; no rear bearing bar, rod guides or slides are drawn.',
+    note: 'The two cams, the two levers on their common pivot and the two rods broken off below; no rear bearing bar, rod guides or slides are drawn. The model keeps them as minimal supports: the bar behind carries the lever pivot and cam shaft, and the whole rods run down to slides in guides carried back to that bar.',
   },
   150: {
     rotate: [0, Math.PI, 0],
@@ -117,8 +113,8 @@ export default {
     note: 'The disk, slotted bell crank, link and the output rod running off below the plate; the rod is whole, its guided crosshead, guide rails and base lying beyond the plate\'s view. No disk or pivot posts are drawn.',
   },
   157: {
-    remove: ['base', 'diskPost', 'pivotPost', 'guidePost', 'guideBack', 'guideRail.*', 'guideBackArm.*', 'guideStandoff.*'],
-    note: 'The disk, rod, bell crank, link and output rod; no base, posts or guide rails are drawn.',
+    remove: ['base', 'diskPost', 'pivotPost', 'guidePost', 'guideBackArm.*'],
+    note: 'The disk, rod, bell crank, link and output rod; no base, posts or guide rails are drawn. The model keeps a minimal output guide channel and flanged bearings for the disk and bell crank, all carried by framing behind the mechanism, so the output crosshead and the pivots do not float.',
   },
   171: {
     remove: ['white-index-on-eccentric-sheave', 'white-index-on-link-die'],
@@ -171,8 +167,8 @@ export default {
     note: 'Flat face view of the frame between its four plain guide rollers, the endless rack, the pinion and the two suspension links.',
   },
   201: {
-    remove: ['fixed-base-rail', 'fixed-rear-support-post', 'fixed-(?:output-pivot|input-shaft)-bearing-bridge', 'engraving-label-A', 'rod-guide-support-bracket'],
-    note: 'The eccentric gears, belt, pulley and rod A; no base, post, bearing bridges or guide bracket are drawn, and the letter A is left to the caption rather than modelled.',
+    remove: ['fixed-base-rail', 'fixed-rear-support-post', 'fixed-(?:output-pivot|input-shaft)-bearing-bridge', 'engraving-label-A', 'rod-guide-support-bracket', 'fixed-guide-bushing-around-rod-A'],
+    note: 'The eccentric gears, belt, pulley and rod A; no base, post, bearing bridges or guide bracket are drawn, and the letter A is left to the caption rather than modelled. Rod A, broken off below the lever on the plate, runs on whole through two plain bored guides carried back to the framing behind.',
   },
   203: {
     note: 'Face view of the hooked arm with its J-shaped slot and the straight arm whose pinned end passes behind it (dashed on the plate); the factory draws no index marks.',
@@ -267,8 +263,7 @@ export default {
     note: 'Framework A with studs D, flange B with its three hooks, the drum and the rope; Brown recommends a drum spring but draws none, so the hook and drum springs, speed indices, stud supports and an outline rim round A are not shown.',
   },
   272: {
-    remove: ['fixed-base-beneath-beveled-cam', 'fixed-post-supporting-cam-shaft-bearing', 'fixed-backing-rail-for-inclined-guides', 'fixed-bracket-from-backing-rail-to-rod-guide', 'fixed-bearing-for-horizontal-cam-shaft'],
-    note: 'Side elevation of the disk with its bevelled rim and wavy face on the shaft, and the inclined rod in its guides; no base, post, shaft bearings or backing rail are drawn.',
+    note: 'Side elevation of the disk with its bevelled rim and wavy face on the shaft, and the inclined rod in its guides. Brown draws no frame; a plain base behind the disk carries the two shaft bearings on posts and, through one upright, the backing rail and brackets that hold the rod guides, so no guide floats.',
   },
   276: {
     remove: ['fixed-(?:left|right)-guide-support-post', 'fixed-equal-diameter-cam-display-base', 'fixed-cam-bearing-arm', 'fixed-rear-cam-bearing-post', 'fixed-(?:left|right)-straight-bar-guide'],
@@ -463,8 +458,8 @@ export default {
     note: 'Plan of the carriage: the fusee on its shaft in the carriage frame with the crank at the large end, the cross-member and bed carrying the two edge-on wheels on their axles, and the band crossing the fusee; no guide rail or travel ticks are drawn under the wheels.',
   },
   354: {
-    remove: ['fixed-rear-support-rail', 'fixed-bracket-carrying-output-guide', 'fixed-input-bearing-bracket', 'fixed-bearing-for-input-shaft', 'visible-radial-index-on-input-disk', 'visible-linear-index-on-output-stem'],
-    note: 'Brown\'s layout taken from the crosshead side: the grooved crosshead and stem in front of the opaque disk, whose raised rim reads as his ring (Brown views from the disk side and dashes the groove and stem behind it). Both stems are framed through their guides over the whole stroke; no support rails, brackets, bearing or white indices are drawn.',
+    remove: ['visible-radial-index-on-input-disk', 'visible-linear-index-on-output-stem'],
+    note: 'Brown\'s layout taken from the crosshead side: the grooved crosshead and stem in front of the opaque disk, whose raised rim reads as his ring (Brown views from the disk side and dashes the groove and stem behind it). Both stems are framed through their guides over the whole stroke. Brown draws no frame; a plain rear frame of two rails behind the disk carries both stem guides on brackets and the input shaft\'s bearing, so the guides do not float. No white indices are drawn.',
   },
   363: {
     camera: [0, 0.03, 1],
@@ -473,8 +468,8 @@ export default {
   },
   364: {
     camera: [0, 0.06, 1],
-    remove: ['fixed-two-axis-bearing-stand', 'white-face-index-showing-continuous-driver-angle-and-rate', 'white-index-showing-free-friction-roller-bearing-spin', 'white-top-face-index-showing-output-dwell-and-index-rate', 'white-marker-identifying-one-of-eight-oblique-output-grooves'],
-    note: 'Side elevation of the pin wheel face-on beside the helically grooved drum on its upright shaft; no stand, bed or white indices and groove marker are drawn.',
+    remove: ['fixed-two-axis-bearing-stand', 'white-face-index-showing-continuous-driver-angle-and-rate', 'white-index-showing-free-friction-roller-bearing-spin', 'white-top-face-index-showing-output-dwell-and-index-rate', 'white-marker-identifying-one-of-eight-oblique-output-grooves', 'engraved-panel-line-between-oblique-grooves'],
+    note: 'Side elevation of the pin wheel face-on beside the helically grooved drum on its upright shaft; no stand, bed or white indices and groove marker are drawn, and Brown\'s short hatch dividers between the grooves are notation, not painted ticks on the rim.',
   },
   273: {
     remove: ['(?:input|output)-slider-[A-D]-moving-on-(?:horizontal|vertical)-axis-white-translation-index', 'shared-through-pin-[A-D]-white-motion-index'],
@@ -567,23 +562,23 @@ export default {
     note: 'Side view (raised about 20° so the arm still reads when it turns toward the viewer) of the point, screw-threaded arm and small milled wheel, framed on the arm\'s whole sweep round the point; no paper or white indices are drawn.',
   },
   385: {
-    remove: ['fixed-wall-beside-door-opening', 'fixed-vertical-door-jamb', 'fixed-door-frame-lintel', '(frame|door)-pin-socket-bracket', 'moving-door-panel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', 'one-of-three-fixed-axis-door-hinge-barrels', '(frame|door)-side-socket-fixed-to-support', '(frame|door)-side-socket-upper-lip', '(frame|door)-side-white-pin-turn-index', 'white-toggle-height-index', 'white-weight-height-index'],
-    note: 'The two long upright pins, the toggle links and the small pear weight hung from the apex; the door, its frame, the pin sockets and white indices are not drawn.',
+    remove: ['fixed-vertical-door-jamb', 'fixed-door-frame-lintel', 'one-of-four-door-face-trim-bars', 'door-opening-handle', '(frame|door)-side-white-pin-turn-index', 'white-toggle-height-index', 'white-weight-height-index'],
+    note: 'The two long upright pins, the toggle links and the small pear weight hung from the apex. Brown crops the pins; their sockets stand on bored blocks on the door top and on the wall beside the opening, and the door hangs on plain knuckle hinges. No lintel, jamb, trim, handle or white indices are drawn.',
   },
   387: {
     note: 'Side elevation of both of Brown\'s figures: the wharf ladder level at high water above and inclined to the boat at low water below (a display copy half a tide cycle out of phase); the factory omits the undrawn white rail and tread indices.',
   },
   388: {
-    remove: ['fixed-planer-feed-roller-bearing-frame', 'white-.*'],
-    note: 'The smooth and toothed rollers and the board between them; no bearing frame or white indices are drawn.',
+    remove: ['white-.*'],
+    note: 'The smooth and toothed rollers and the board between them, seen in section through the shafts: the near bearings are cut away, and the rollers run in the far bearing blocks on arms from a standard behind. No white indices are drawn.',
   },
   389: {
     remove: ['white-.*', 'fixed-front-rack-guide-strap', 'wide-jack-foot'],
     note: 'Section of the cast jack stand, flaring into stepped feet either side of the rack, with the eccentric strap pawl and upper stop; the white indices, the front rack straps cut away by the section and the sole plate are not drawn. The eccentric shaft and stop-pawl pin run in bearing bosses carried by a rear spine and bridges from the stand, kept behind the rack and pawls so the default view still reads as the plate.',
   },
   390: {
-    remove: ['fixed-two-shaft-rectifier-bearing-frame', 'white-.*', 'piece-A-rigid-radial-web', '.*-fixed-material-marker'],
-    note: 'The semicircular piece A on fulcrum a, flywheel B and bands C, D; no bearing frame, web inside A, band markers or white indices are drawn.',
+    remove: ['fixed-rocker-pivot-frame-side', 'white-.*', 'piece-A-rigid-radial-web', '.*-fixed-material-marker'],
+    note: 'The semicircular piece A on fulcrum a, flywheel B and bands C, D. One plain upright behind the flywheel on a small foot carries the flywheel shaft and the fixed fulcrum pin; no web inside A, band markers or white indices are drawn.',
   },
   391: {
     remove: ['fixed-frame-carrying-guide-grooves-and-output-bearing', '(?:.*-)?white-.*', 'reciprocating-input-piston-rod'],
@@ -633,8 +628,8 @@ export default {
     note: 'The faceplate wheel, tangent slide A, B, pitman and treadle; no floor or standards are drawn.',
   },
   402: {
-    remove: ['fixed-rear-bearing-frame-bar-\\d', '.*-white-balance-angular-index', 'white-escape-wheel-angular-index', '.*-balance-spoke-\\d', 'escape-wheel-spoke-\\d', 'visible-active-escape-tooth-pallet-contact'],
-    note: 'Face view of the two open balance rims (their joining webs only a faint film) crossing so both racks show, with their pinions, the lever B carrying both toothed sectors and anchor A, and the escape wheel; no frame bars, spokes or white indices are drawn.',
+    remove: ['fixed-rear-bearing-frame-bar-\\d', '.*-white-balance-angular-index', 'white-escape-wheel-angular-index', '.*-balance-spoke-[23]', 'escape-wheel-spoke-\\d', 'visible-active-escape-tooth-pallet-contact'],
+    note: 'Face view of the two open balance rims, each joined to its arbor by one slim two-armed bar as in a watch balance, crossing so both racks show, with their pinions, the lever B carrying both toothed sectors and anchor A, and the escape wheel; no frame bars or white indices are drawn.',
   },
   403: {
     remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', 'laid-out-(?:chord-line|versed-sine)', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],
@@ -678,8 +673,8 @@ export default {
     note: 'Face view of scroll plate A with the sliding pinion B on its feathered shaft; no shaft index is drawn.',
   },
   415: {
-    remove: ['fixed-coaxial-wheel-and-lever-bearing-frame', 'wheel-D-spoke-fast-with-rim-and-hub', 'white-wheel-D-intermittent-rotation-index', 'white-lever-A-oscillation-index', 'selectable-(?:left-pawl-B|right-pawl-C)-white-rim-contact-index', 'fixed-horizontal-input-slider-guide', 'horizontally-guided-oscillating-input-slider'],
-    note: 'The plain disc wheel D, lever A with its pawls B and C and crank E, and the rod D running off to the right; no frame, spokes, slider guide or white indices are drawn.',
+    remove: ['fixed-coaxial-wheel-and-lever-bearing-frame', 'wheel-D-spoke-fast-with-rim-and-hub', 'white-wheel-D-intermittent-rotation-index', 'white-lever-A-oscillation-index', 'selectable-(?:left-pawl-B|right-pawl-C)-white-rim-contact-index', 'white-input-slider-joint-index'],
+    note: 'The plain disc wheel D, lever A with its pawls B and C and crank E, and the rod D running off to the right to the slider that drives it in its guide, just beyond Brown\'s crop; no frame, spokes or white indices are drawn.',
   },
   416: {
     camera: [0.2, 0.06, 1],
@@ -716,7 +711,7 @@ export default {
   },
   425: {
     camera: [0.08, 0.05, 1],
-    remove: ['visible-center-marker-of-eccentric-piston-C', 'instantaneous-sealing-contact-between-C-and-D', 'right-to-chamber-induction-flow-indicator', 'chamber-to-left-eduction-flow-indicator'],
+    remove: ['visible-center-marker-of-eccentric-piston-C', 'instantaneous-sealing-contact-between-C-and-D', 'right-to-chamber-induction-flow-indicator', 'chamber-to-left-eduction-flow-indicator', 'right-induction-port', 'left-eduction-port'],
     note: 'Front elevation of the casing with its two port necks and the abutment guide, eccentric piston C on shaft B and abutment D, as Brown draws it; no centre or contact markers or flow spheres are drawn.',
   },
   426: {
@@ -741,8 +736,8 @@ export default {
   },
   430: {
     camera: [0.08, 0.05, 1],
-    remove: ['fixed-overshot-wheel-foundation', 'shaft-connected-bearing-pedestal', 'falling-feed-water-droplet-\\d+'],
-    note: 'Side elevation of the overshot wheel under the headrace, in its masonry pit whose breast falls from the flume and curves close round the lower left of the wheel to the tail floor, as Brown draws it; no bed plate, pedestals or rotation marker are drawn. The feed pours as one sheet; no droplet beads ride it.',
+    remove: ['falling-feed-water-droplet-\\d+'],
+    note: 'Side elevation of the overshot wheel under the headrace, in its masonry pit whose breast falls from the flume and curves close round the lower left of the wheel to the tail floor, as Brown draws it: a section through the pit, so the shaft runs back to one far bearing on a pedestal behind the race. No rotation marker is drawn. The feed pours as one sheet; no droplet beads ride it.',
   },
   431: {
     camera: [0.08, 0.05, 1],
@@ -786,7 +781,7 @@ export default {
   },
   439: {
     camera: [0.08, 0.05, 1],
-    remove: ['fixed-overhead-pulley-support-beam', 'bored-pulley-shaft-hanger', 'fixed-pulley-support-post', 'fixed-ground-beneath-bucket', 'ground-anvil-opening-bucket-valve', 'visible-oscillating-pulley-rotation-marker', 'material-marker-moving-continuously-on-single-rope', 'continuous-fall-water-marker-\\d+'],
+    remove: ['visible-oscillating-pulley-rotation-marker', 'material-marker-moving-continuously-on-single-rope', 'continuous-fall-water-marker-\\d+'],
     note: 'The pulley, rope, bucket with its projecting valve stem, counterweight and water stream; no gallows frame, ground, striking anvil, white pulley stripe or rope marker is drawn. No flow beads in the falling stream.',
   },
   440: {
@@ -870,8 +865,11 @@ export default {
     note: 'Elevation of the serpentine swinging gutters, drawn as slender pipes with elbow boxes, over the ruled water they dip into; no foundation slab or water block is drawn.',
   },
   462: {
-    remove: ['fixed-frame-supporting-upper-powered-chain-wheel'],
-    note: 'The chain wheels, disks, pipe and spout; no frame is drawn.',
+    note: 'The chain wheels, disks, pipe and spout, with two plain posts behind the chain standing in the reservoir and carrying both wheel axles.',
+  },
+  463: {
+    remove: ['(?:upper|lower)-leaf-transverse-reinforcement-\\d'],
+    note: 'The two hinged leaves of the weir as plain planks, as Brown draws them in section; no dark straps across their faces.',
   },
   464: {
     remove: ['external-water-pour-into-open-upper-basin'],
@@ -935,8 +933,8 @@ export default {
     note: 'Section of bell A in tank B with the two pipes, and bands over the two pulleys to weights C; no flow beads are drawn.',
   },
   480: {
-    remove: ['(?:right-inlet|left-outlet)-gas-marker-\\d+'],
-    note: 'Section of bell A in tank B on the central telescoping tubes a and b with the two pipes; no flow beads are drawn.',
+    remove: ['(?:right-inlet|left-outlet)-gas-marker-\\d+', 'fixed-base-securing-tube-b-to-tank'],
+    note: 'Section of bell A in tank B on the central telescoping tubes a and b with the two pipes; tube b passes through the tank floor as Brown draws it. No flow beads are drawn.',
   },
   481: {
     remove: ['dial-work-registering-known-volume-per-drum-revolution', 'fixed-bottom-base-rail', 'visible-index-on-front-face-of-drum', 'central-inlet-gas-marker-\\d+'],
@@ -971,8 +969,8 @@ export default {
     note: 'Section of the stone with the lewis in its hole and the shackle on the rope; no hoist eye, arrow or contact indices are drawn.',
   },
   498: {
-    remove: ['fixed-gauge-support-base', 'fixed-gauge-back-support', 'bored-glass-retaining-clip', 'clip-tab-to-scale-board', 'equal-level-zero-datum-across-both-legs', 'live-reading-index-at-right-mercury-surface', 'boiler-or-apparatus-connection-flange'],
-    note: 'The bent tube, its mercury, the scale marks beside the open leg and the cocked pipe from the boiler; no base, post, datum bar or pointer is drawn. The marks sit on a plain scale board carried by two bands round the open leg, so they neither float nor read mirrored from behind.',
+    remove: ['fixed-gauge-support-base', 'fixed-gauge-back-support', 'bored-glass-retaining-clip', 'clip-tab-to-scale-board', 'equal-level-zero-datum-across-both-legs', 'live-reading-index-at-right-mercury-surface'],
+    note: 'The bent tube, its mercury, the scale marks beside the open leg and the cocked pipe from the boiler, its flange bolted to the boiler head just beyond Brown\'s crop; no base, post, datum bar or pointer is drawn. The marks sit on a plain scale board carried by two bands round the open leg, so they neither float nor read mirrored from behind.',
   },
   487: {
     remove: ['fixed-bearing-A-frame-\\d-leg-(left|right)', 'fixed-bearing-base-rail-\\d', 'fixed-water-volume-intersecting-lower-paddles', 'fixed-waterline-plane', 'fixed-backward-water-path-\\d', 'backward-water-marker-\\d-\\d', 'fixed-(?:negative-x-backward-water-direction|positive-x-forward-vessel-thrust)-arrow', 'white-shaft-rotation-index', 'white-index-fixed-to-first-paddle'],

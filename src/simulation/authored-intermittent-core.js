@@ -19744,10 +19744,12 @@ function threeAlternativeRatchetStops(movement) {
       new THREE.Vector3(springAnchor.x + 1, springAnchor.y, leafSpringPlaneZ),
     ]),
     {
-      band: { halfWidthAt: () => 0.052, endTrim: 0.075 },
+      // Brown's band is about 25 plate pixels (0.35) broad, widening into a
+      // leaf at its anchored root; the steel is thin across the plate.
+      band: { halfWidthAt: (u) => 0.15 + 0.08 * Math.max(0, 1 - u / 0.2) ** 2, endTrim: 0.075 },
       color: PALETTE.frame,
       planeZ: leafSpringPlaneZ,
-      radius: 0.035,
+      radius: 0.025,
       tubularSegments: 64,
     },
   );

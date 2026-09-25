@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 import data from './baked/seven-tooth-238-profiles.js';
 import{plate,poly,circle,capsule,ring,polygonClipping as clip}from'./finite-plate-geometry.js';
+// Depth of each pallet block behind its working face (in the plate plane).
+const FACE_DEPTH={B:{tip:.16,root:.16},C:{tip:.0605,root:.16}};
+const convexHull=points=>{const p=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lower=[],upper=[];
+ for(const q of p){while(lower.length>1&&cross(lower.at(-2),lower.at(-1),q)<=0)lower.pop();lower.push(q);}
+ for(const q of p.reverse()){while(upper.length>1&&cross(upper.at(-2),upper.at(-1),q)<=0)upper.pop();upper.push(q);}
+ return [...lower.slice(0,-1),...upper.slice(0,-1)];};
 export function finishSevenTooth238(root){
  const d=root.userData,b=d.blocks,g=d.geometry,parts={faces:[],mounts:[],attachments:[],profile:data};
  const replace=(mesh,geometry,reset=false)=>{mesh.geometry.dispose();mesh.geometry=geometry;if(reset)mesh.rotation.set(0,0,0);};
@@ -12,7 +18,7 @@ export function finishSevenTooth238(root){
  const source=b.palletBody.geometry.parameters.shapes.extractPoints(32).shape.map(p=>p.toArray());let body=poly(source);
  for(const [side,pallet]of[['B',b.bPallet],['C',b.cPallet]]){
   const face=d.faceAt(side,0),a=face.rootPoint.clone().sub(g.palletPivot),z=face.tipPoint.clone().sub(g.palletPivot),n=face.normal;
-  const outline=[a.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0605),a.clone().addScaledVector(n,-.0605)].map(p=>p.toArray());
+  const outline=[a.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-FACE_DEPTH[side].tip),a.clone().addScaledVector(n,-FACE_DEPTH[side].root)].map(p=>p.toArray());
   const material=pallet.face.children[0].material;for(const child of pallet.face.children)child.geometry?.dispose();pallet.face.clear();
   // The face reaches back through the wheel's whole depth (z = .27) and sits
   // on a broader web of the anchor behind the wheel, so B and C read as
@@ -36,7 +42,11 @@ export function finishSevenTooth238(root){
  const wheelBackPlane=g.palletPlaneZ-g.wheelDepth/2-.01;
  for(const attachment of parts.attachments){const face=d.faceAt(attachment.side,0),a=face.rootPoint.clone().sub(g.palletPivot),z=face.tipPoint.clone().sub(g.palletPivot),n=face.normal;
   const pad=[a.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.16),a.clone().addScaledVector(n,-.16)].map(p=>p.toArray());
-  body=clip.union(body,poly(pad),capsule(attachment.mid,attachment.carrier,.13,24));}
+  // Each pad is joined to the carrier by a broad web (the convex hull of the
+  // pad and a disc at the carrier), so C reads as the anchor's hooked end
+  // rather than a block on a thin nib.
+  const hullPoints=[...pad,...Array.from({length:24},(_,i)=>[attachment.carrier[0]+.15*Math.cos(i*Math.PI/12),attachment.carrier[1]+.15*Math.sin(i*Math.PI/12)])];
+  body=clip.union(body,poly(pad),poly(convexHull(hullPoints)));}
  replace(b.palletBody,plate(clip.difference(body,poly(circle([0,0],.094,128))),-.11,wheelBackPlane));
  replace(b.palletHub,ring(.094,.3,-.14,.14,128),true);
  replace(b.palletIndicator,new THREE.BoxGeometry(.30,.04,.012));b.palletIndicator.position.z=.116;

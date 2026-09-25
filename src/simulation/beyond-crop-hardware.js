@@ -43,3 +43,21 @@ export function glandCylinder({ x, topY, z, length, glandRadius, boreRadius, out
   cylinder.userData.beyondPlateCrop = true;
   return cylinder;
 }
+
+// A plain column on the framing plane behind the mechanism, standing on the
+// floor below the plate's crop and carrying a small fixed pin's wall flange
+// at its head, so the flange is not left floating.
+export function flangeColumn({ x, yTop, yFloor, zWall, width = 0.24, material, role, beyondPlateCrop = false }) {
+  const mat = material ?? matte(PALETTE.frame, { metalness: 0.15, roughness: 0.65 });
+  const group = new THREE.Group();
+  group.userData.role = role;
+  group.userData.beyondPlateCrop = beyondPlateCrop;
+  const column = new THREE.Mesh(new THREE.BoxGeometry(width, yTop - yFloor, 0.08), mat);
+  column.position.set(x, (yTop + yFloor) / 2, zWall - 0.04);
+  column.userData.role = `${role}-shaft`;
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(width * 3, 0.1, 0.5), mat);
+  foot.position.set(x, yFloor + 0.05, zWall - 0.04);
+  foot.userData.role = `${role}-foot`;
+  group.add(column, foot);
+  return group;
+}

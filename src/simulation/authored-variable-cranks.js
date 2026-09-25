@@ -3727,6 +3727,19 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     backing.position.set(fixedDiskCenter.x, fixedDiskCenter.y, -.62);
     backing.userData.role = 'integral-rear-web-of-fixed-guide';
     root.add(backing);root.userData.blocks.guideBacking = backing;
+    // The fixed guide disk is bolted by a plain square flange (hidden behind
+    // it in the plate's view) to the framing behind the mechanism.
+    // Its lower edge stops 0.05 above the input shaft, which passes behind.
+    const flangeBottom = shaftOffset.y + shaftRadius + .05;
+    const guideFlange = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.2 - flangeBottom, .08), frameMaterial);
+    guideFlange.position.set(fixedDiskCenter.x, fixedDiskCenter.y + (1.2 + flangeBottom) / 2, -.72);
+    guideFlange.userData.role = 'rear-flange-carrying-fixed-guide-disk';
+    root.add(guideFlange);root.userData.blocks.guideFlange = guideFlange;
+    // Brown's inner circles on the fixed disk are ink edges, not raised rings.
+    for (const outline of [innerBossOuterOutline, innerBossInnerOutline]) {
+      outline.removeFromParent();
+      outline.geometry.dispose();
+    }
     // Brown draws only the connecting rod, broken off at raster (37.5,157.5)
     // left of its eye at (295,77). The break is drawing notation: the rod is
     // whole, running on to its eye on the tool slide, which moves between its

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { pinWallBracket } from './beyond-crop-hardware.js';
+import { makeHaulingHand } from './hauling-hand.js';
 import { PALETTE, matte, markShadows } from './primitives.js';
 import { bevelToothGeometry } from './bevel-geometry.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
@@ -125,11 +127,23 @@ export function makeReversingClutch() {
   shoeShape.closePath(); hole(shoeShape, 0, 0, p.followerBore);
   const shoe = plate(shoeShape, p.shoeFrontZ - p.shoeBackZ, (p.shoeFrontZ + p.shoeBackZ) / 2, PALETTE.brass);
   const pivot = new THREE.Group(), pivotPin = pin(p.pivotRadius, 0.165, 0.237), pivotCaps = [pin(0.042, 0.177, 0.192), pin(0.042, 0.228, 0.246)];
-  pivot.add(pivotPin, ...pivotCaps); pivot.position.set(p.pivotX, p.pivotY, 0);
+  // The fixed fulcrum pin's shank runs back, between the two bevel wheels
+  // and below the clutch, to a small flange on the framing behind them.
+  const fulcrumBracket = pinWallBracket({ x: 0, y: 0, pinRadius: p.pivotRadius, zPin: 0.165, zWall: -1.05,
+    flange: 0.16, role: 'fulcrum-pin-wall-bracket' });
+  pivot.add(pivotPin, ...pivotCaps, fulcrumBracket); pivot.position.set(p.pivotX, p.pivotY, 0);
+  // Brown crops the hanging operating rod. It tapers over his drawn length,
+  // then runs on at even width to the operator's hand just below the plate.
+  const rodRunLength = 1.45, gripDepth = 1.3;
   const rod = new THREE.Group(), rodShape = new THREE.Shape();
-  rodShape.moveTo(-0.015, -p.rodLength); rodShape.lineTo(0.015, -p.rodLength); rodShape.lineTo(0.030, 0);
-  rodShape.absarc(0, 0, 0.030, 0, Math.PI, false); rodShape.closePath(); hole(rodShape, 0, 0, p.handleBore);
+  rodShape.moveTo(-0.015, -rodRunLength); rodShape.lineTo(0.015, -rodRunLength); rodShape.lineTo(0.015, -p.rodLength);
+  rodShape.lineTo(0.030, 0); rodShape.absarc(0, 0, 0.030, 0, Math.PI, false); rodShape.lineTo(-0.015, -p.rodLength);
+  rodShape.closePath(); hole(rodShape, 0, 0, p.handleBore);
   const rodBody = plate(rodShape, p.rodDepth, p.rodZ, PALETTE.frame); rod.add(rodBody);
+  const hand = makeHaulingHand(new THREE.Vector3(0, 1, 0), 0.02);
+  hand.getObjectByName('loose-rope-tail')?.removeFromParent();
+  hand.scale.setScalar(0.5); hand.position.set(0, -gripDepth, p.rodZ); rod.add(hand);
+  hand.userData.beyondPlateCrop = true; rodBody.userData.beyondPlateCropBelowY = -1.1416;
   root.add(leftGear, rightGear, inputGear, shaft, verticalShaft, sliding, lever, shoe, pivot, rod);
   const update = (time) => {
     const s = motion.stateAtTime(time);
@@ -145,7 +159,12 @@ export function makeReversingClutch() {
     fullCameraDirection: new THREE.Vector3(4, 3, 8),
     geometry: p, stateAtTime: motion.stateAtTime, rawStateAtTime: motion.rawStateAtTime,
     blocks: { leftGear, rightGear, inputGear, shaft, verticalShaft, sliding, lever, shoe, pivot, rod },
+    // Carried by the rod and the fixed pivot respectively; not separate bodies.
+    beyondCrop: { hand, fulcrumBracket },
     parts: { leftCrown, rightCrown, leftSlidingCrown, rightSlidingCrown, core, shaftBody, feather, verticalShaftBody,
       leverBody, followerPin, followerCaps, handlePin, handleCaps, pivotPin, pivotCaps, rodBody } };
+  // Frame Brown's plate: the measured swept box with the rod to his crop.
+  // The rod's run on to the hand and the fulcrum bracket stay out of the fit.
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.32, -1.1416, -1.0047), new THREE.Vector3(1.32, 1.34, 1.0047));
   update(0); markShadows(root); return { root, update, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }

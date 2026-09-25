@@ -318,10 +318,12 @@ function fuseeCarriageTraverse(movement) {
   const fuseeTopY = fuseeCenterY + fuseeHeight / 2;
   const fuseeBottomY = fuseeCenterY - fuseeHeight / 2;
   const trackHalfLength = carriageStroke / 2 + 1.42;
-  // The fixed cord ends stay at least this far from the fusee at either end
-  // of the stroke, outside the carriage-following view, so their eyes never
-  // pop into the frame beside the fusee.
-  const anchorHalfSpan = carriageStroke / 2 + 7.5;
+  // The fixed cord ends stand just beyond the ends of the stroke: at each
+  // end of the traverse the near anchor stand comes up at the edge of the
+  // carriage-following view, so the cord is seen to run to a real fixed
+  // attachment. (The cord's free length equals the stroke, so at mid-stroke
+  // both anchors are necessarily far off.)
+  const anchorHalfSpan = carriageStroke / 2 + 3.2;
   const wheelRadius = 0.42;
   // Brown's plan: the carriage frame bars run along the traverse, the two
   // wheel axles lie parallel to the fusee shaft, and each axle carries one

@@ -7,6 +7,7 @@ import {
   matte,
 } from './primitives.js';
 import {castFootGeometry} from './rotary-engine-cast-feet.js';
+import {portedCasingGeometry, roundPortPipeGeometry} from './round-port-pipes.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -303,7 +304,14 @@ function eccentricShaftRadialPistonEngine(movement) {
     ),
     frameMaterial,
   );
-  cylinderA.geometry.dispose();cylinderA.geometry=ring(cylinderRadius+0.00006,cylinderOuterRadius,-0.38,0.98,1024);
+  // Pass 56: the two ports are round bored pipes; each bore opens through
+  // the wall by a square hole in the wall's middle layer only.
+  const portZ = 0.30, portBore = 0.22, portOuter = 0.34, portX = 1.58, portTopY = 4.32;
+  const portHoles = [-1, 1].map((side) => poly([[side * portX - portBore, 2.4], [side * portX + portBore, 2.4],
+    [side * portX + portBore, 3.7], [side * portX - portBore, 3.7]]));
+  cylinderA.geometry.dispose();cylinderA.geometry=portedCasingGeometry(polygonClipping.difference(
+    poly(circle([0,0],cylinderOuterRadius,1024)),poly(circle([0,0],cylinderRadius+0.00006,1024))),
+    -0.38,0.98,portZ,portBore,portHoles);
   cylinderA.position.z = 0;
   cylinderA.userData.role =
     'fixed-circular-cylinder-concentric-with-guide-rings';
@@ -326,11 +334,14 @@ function eccentricShaftRadialPistonEngine(movement) {
   root.add(foundation);
 
   for (const side of [-1, 1]) {
+    // The pipe foot sits just above the bore's highest point under the pipe
+    // and below the casing's outer surface at the pipe's far side.
+    const footY = Math.sqrt((cylinderRadius + 0.00006) ** 2 - (portX - portOuter) ** 2) + 0.008;
     const neck = new THREE.Mesh(
-      new THREE.BoxGeometry(0.68, 1.56, 0.68),
+      roundPortPipeGeometry(new THREE.Vector3(side * portX, footY, portZ),
+        new THREE.Vector3(side * portX, portTopY, portZ), portBore, portOuter),
       frameMaterial,
     );
-    neck.position.set(side * 1.58, 3.54, -0.05);
     neck.userData.role = side < 0
       ? 'left-cylinder-port-neck'
       : 'right-cylinder-port-neck';

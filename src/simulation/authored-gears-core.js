@@ -1,3 +1,4 @@
+import {wallGuide} from './wall-guide-hardware.js';
 import {correctFeedWormAssembly} from './feed-worm-assembly-parts.js';
 import { correctSkewFrictionParts } from './skew-friction-working-parts.js';
 import { makeMiterGear, makeCircularAnnulusGeometry } from './miter-gear.js';
@@ -218,7 +219,9 @@ function makeCrownWheel({
 
   const baseFace = -bodyThickness / 2;
   const tipFace = baseFace - toothHeight;
-  const toothMaterial = matte(PALETTE.ink, { metalness: 0.2, roughness: 0.55 });
+  // The teeth are cut from the wheel itself, so they share the body's
+  // material and read as one crown wheel rather than a dark toothed rim.
+  const toothMaterial = body.material;
   const pinionMesh = pinion.userData.rotor.children.find((part) => part.geometry?.type === 'ExtrudeGeometry');
   const toothGeometry = crownToothGeometry({
     profile: pinionMesh.geometry.parameters.shapes.getPoints(),
@@ -1937,22 +1940,26 @@ export function wormAndWheel(options = {}) {
   return finish(root, update, new THREE.Vector3(0.16, 0.10, 10));
 }
 
-function makeRoughFrictionWheel({ color, radius, width = 0.4 }) {
+function makeRoughFrictionWheel({ color, radius, width = 0.4, faced = false }) {
   const root = new THREE.Group();
   const rotor = new THREE.Group();
   root.add(rotor);
   root.userData.rotor = rotor;
-  const treadDepth = 0.08;
+  const treadDepth = faced ? 0.08 : 0;
+  const faceMaterial = matte(color, { metalness: 0.08, roughness: 0.76 });
+  // Brown: "one is sometimes faced with leather". Only the faced wheel
+  // wears a leather band round its rim; the other is its own rough metal.
   const tread = new THREE.Mesh(
     new THREE.CylinderGeometry(radius, radius, width, 192),
-    matte(PALETTE.ink, { metalness: 0.03, roughness: 0.96 }),
+    // Brown: the surfaces are made rough, so both treads are matte.
+    matte(faced ? 0x8a5b36 : color, { metalness: faced ? 0 : 0.08, roughness: 0.93 }),
   );
   tread.rotation.x = Math.PI / 2;
   tread.userData.frictionTread = true;
+  tread.userData.role = faced ? 'leather-facing-on-friction-wheel-rim' : 'rough-friction-wheel-body';
   rotor.add(tread);
 
-  const faceMaterial = matte(color, { metalness: 0.08, roughness: 0.76 });
-  for (const side of [-1, 1]) {
+  for (const side of faced ? [-1, 1] : []) {
     const face = new THREE.Mesh(
       new THREE.CylinderGeometry(
         radius - treadDepth,
@@ -1996,6 +2003,7 @@ function frictionWheels() {
   const contactPoint = new THREE.Vector3(0, 0, 0);
   const driver = makeRoughFrictionWheel({
     color: PALETTE.driver,
+    faced: true,
     radius: driverRadius,
     width: 0.26,
   });
@@ -30226,6 +30234,20 @@ function eccentricGearCarriedPinionRocker() {
   );
   guideBracket.userData.role = 'rod-guide-support-bracket';
   rodGuide.add(guideRing, guideBracket);
+  // Brown breaks rod A off below the lever. It runs on whole to its lower
+  // end, through two plain bored guides (at the old bushing and just past the
+  // plate's crop), each carried straight back by a web to a flange on the
+  // framing behind (z = -0.9); the rod stays engaged in both over its stroke.
+  rodStem.scale.z = 2.9 / 1.75; // the shaft root maps its local z onto the rod axis
+  rodStem.position.y = -0.78 - (2.9 - 1.75) / 2;
+  for (const [label, y] of [['Upper', guideY], ['Lower', guideY - 1.2]]) {
+    const holder = new THREE.Group();
+    holder.position.set(rodGuideX, y, 0.36);
+    holder.add(...wallGuide({ name: `rodA${label}Guide`, axis: 'y', halfLength: 0.1, boreRadius: 0.064,
+      outerRadius: 0.14, zWall: -0.9 - 0.36, material: matte(PALETTE.frame, { metalness: 0.14, roughness: 0.62 }) }));
+    holder.userData.role = `fixed-${label.toLowerCase()}-bored-guide-of-rod-A`;
+    rodGuide.add(holder);
+  }
 
   const letterA = new THREE.Group();
   letterA.position.set(rodGuideX - 0.43, guideY - 0.46, 0.34);

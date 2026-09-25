@@ -6590,7 +6590,36 @@ function singleWrappedRopeDrumDrive() {
     );
     coil.userData.role = 'rope-coiled-on-reel';
     reelRotor.add(barrel, ...flanges, axle);
-    reel.add(reelRotor, coil);
+    // Each reel turns in a plain two-cheek stand: bored cheeks carry the
+    // axle ends outside the flanges and stand on one foot, level with the
+    // drum pedestal's foot.
+    const cheekThickness = 0.06;
+    const cheekHalfWidth = shaftHoleRadius + 0.1;
+    const cheekBottom = pedestalBottomY + 0.08 - reel.position.y;
+    const cheekShape = new THREE.Shape();
+    cheekShape.moveTo(-cheekHalfWidth * 1.5, cheekBottom);
+    cheekShape.lineTo(cheekHalfWidth * 1.5, cheekBottom);
+    cheekShape.lineTo(cheekHalfWidth, 0);
+    cheekShape.absarc(0, 0, cheekHalfWidth, 0, Math.PI, false);
+    cheekShape.lineTo(-cheekHalfWidth * 1.5, cheekBottom);
+    const cheekBore = new THREE.Path();
+    cheekBore.absarc(0, 0, shaftHoleRadius + 0.003, 0, fullTurn, true);
+    cheekShape.holes.push(cheekBore);
+    const cheekGeometry = centeredExtrusion(cheekShape, cheekThickness, 0);
+    const cheekOffset = coilWidth / 2 + 0.08 + 0.02 + cheekThickness / 2;
+    const cheeks = [1, -1].map((face) => {
+      const cheek = new THREE.Mesh(cheekGeometry, frameMaterial);
+      cheek.position.z = barrel.position.z + face * cheekOffset;
+      cheek.userData.role = 'bored-cheek-of-reel-stand';
+      return cheek;
+    });
+    const reelFoot = new THREE.Mesh(
+      new THREE.BoxGeometry(3.2 * cheekHalfWidth, 0.16, 2 * cheekOffset + cheekThickness + 0.1),
+      frameMaterial,
+    );
+    reelFoot.position.set(0, pedestalBottomY - reel.position.y, barrel.position.z);
+    reelFoot.userData.role = 'foot-of-reel-stand';
+    reel.add(reelRotor, coil, ...cheeks, reelFoot);
     reel.userData.rotor = reelRotor;
     root.add(lead, reel);
     return { lead, reel, reelRotor, coil, coilLength: coilCurve.getLength(), side };
@@ -7835,9 +7864,9 @@ function alternatingPlaneLinkChainPulley(movement) {
   );
   // Brown's pulley is a round body with six concave-flanked teeth standing
   // out through the edge-on links; the flat links rest on the arcs between
-  // them. The blank is broad at the pitch circle so the offline sweep
-  // (chain-drive-profiles.js) carves each flank to the flat links' end loops,
-  // which the tooth drives. (The animation's petals survive only as numbers.)
+  // them. This blank is replaced in correctChainDrive by the clean analytic
+  // profile (cleanSprocketProfile227), whose notches hug the flat links' end
+  // loops, which the tooth drives. (The animation's petals survive only as numbers.)
   const toothValleyRadius = 1.66;
   // Brown's teeth are broad-based with concave flanks; the offline sweep
   // trims this blank to clear the plate-link ends.

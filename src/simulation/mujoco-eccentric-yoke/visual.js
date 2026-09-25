@@ -25,10 +25,13 @@ export function makeMujocoEccentricYoke(mujoco,options={}) {
   const playback = createPhysicsPlayback(physics,sync);
   let disposed = false;
   const dispose = () => {if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
-  const x = u.geometry.rodEnd+u.geometry.eccentricity+.02;
+  // Frame Brown's plate: the stubs to his break line over the full stroke
+  // with a margin. The guides and rod runs past the plate edge stay out of
+  // the fit (visible on zoom-out or rotation).
+  const x = Math.max(...u.geometry.rodTips.map(Math.abs))+2*u.geometry.eccentricity+.02;
   Object.assign(u,{mechanism:'mujoco-eccentric-elongated-yoke',simulationBackend:'mujoco',physics,
     fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'The guides, rod extensions and depth are reconstructed. The yoke’s working faces are made straight to clear the eccentric’s full sweep.',
+    reconstructionNote:'The guides (just past the plate edge, carried from behind), the rod runs into them, the rear shaft bearing and depth are reconstructed. The yoke’s working faces are made straight to clear the eccentric’s full sweep.',
     cameraFitBounds:new THREE.Box3(new THREE.Vector3(-x,-2.32,-.88),new THREE.Vector3(x,2.02,.32)),
     sampledMotionBounds:{min:[-x,-2.32,-.88],max:[x,2.02,.32]},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},

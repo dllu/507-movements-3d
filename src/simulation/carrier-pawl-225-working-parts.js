@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { groundBlock } from './ground-block.js';
 import { circle, plate, ring } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { nearest390Outline } from './dual-band-pawl-contact.js';
@@ -58,14 +59,25 @@ export function installCarrierPawl225(root) {
   const floorPin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.70, 64), dark);
   floorPin.rotation.x = Math.PI / 2; floorPin.position.set(g.carrierPivot.x, g.carrierPivot.y, 0.30);
   floorPin.userData.role = 'actual-fixed-carrier-floor-shaft'; root.add(floorPin);
-  const start = -Math.acos(0.10 / 0.19);
-  const bearing = Array.from({ length: 65 }, (_, i) => {
-    const angle = start + (Math.PI - 2 * start) * i / 64;
-    return [0.19 * Math.cos(angle), 0.19 * Math.sin(angle)];
-  });
-  bearing.push([-0.10, -0.27], [0.10, -0.27]);
-  replace(b.bottomBearing, plate([[bearing, circle([0, 0], 0.074, 64)]], -0.12, 0.18));
+  // Brown's bell-shaped lug: a rounded head about the floor pin flaring down
+  // in concave sides to a broad foot on the hatched ground, which is modelled
+  // as a plain ground block (its top 0.314 below the pin, as drawn).
+  const groundDrop = 0.314, head = 0.2, foot = 0.42, flare = -0.55;
+  const bearing = [];
+  for (let i = 0; i <= 48; i++) { const angle = flare + (Math.PI - 2 * flare) * i / 48; bearing.push([head * Math.cos(angle), head * Math.sin(angle)]); }
+  const [lx, ly] = bearing.at(-1);
+  for (let i = 1; i <= 16; i++) { const t = i / 16, u = t * t; bearing.push([lx + (-foot - lx) * u, ly + (-groundDrop - ly) * t]); }
+  const [rx, ry] = bearing[0];
+  for (let i = 0; i <= 15; i++) { const t = 1 - i / 16, u = t * t; bearing.push([rx + (foot - rx) * u, ry + (-groundDrop - ry) * t]); }
+  replace(b.bottomBearing, plate([[bearing.reverse(), circle([0, 0], 0.074, 64)]], -0.12, 0.18));
   b.bottomBearing.position.z = 0;
+  b.bottomBearing.material = matte(PALETTE.frame);
+  // Kept inside the framed view (right edge x 2.85, bottom y -2.65).
+  const groundLeft = g.carrierPivot.x - 0.9, groundRight = 2.84;
+  const ground = groundBlock(groundRight - groundLeft, 0.22, 0.8, { name: 'hatched-ground-under-carrier-lug' });
+  ground.material = ground.material[2];
+  ground.position.set((groundLeft + groundRight) / 2, g.carrierPivot.y - groundDrop - 0.11, 0.05);
+  root.add(ground);
   replace(b.ratchet.userData.hub, ring(0.108, 0.32, -0.1988, 0.1988, 96));
   const index = b.ratchet.userData.indicator;
   replace(index, new THREE.BoxGeometry(0.04, 0.65, 0.012));

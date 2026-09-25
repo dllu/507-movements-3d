@@ -15,7 +15,7 @@ export function correctDoorCloserParts(model){
   const socket=find(root,`${prefix}-socket-fixed-to-support`),pin=find(root,`${prefix}-vertical-turning-pin`),rotor=pin.parent;
   replace(socket,ring(.19,.089,.25));
   // Brown draws each pin as a long upright bar below its eye.
-  const bottom=socket.position.y-.55,top=g.endpointY-.18;
+  const bottom=2.40,top=g.endpointY-.18;
   replace(pin,new T.CylinderGeometry(.085,.085,top-bottom,64));pin.position.y=(top+bottom)/2;
   const oldEye=find(root,`${prefix}-link-end-eye`),oldTab=find(root,`${prefix}-pin-orientation-yoke`),index=find(root,`${prefix}-white-pin-turn-index`);
   oldEye.visible=false;oldTab.visible=false;
@@ -27,6 +27,24 @@ export function correctDoorCloserParts(model){
   const jointPin=axle(fork,pin.material,`${prefix}-transverse-toggle-pin`);jointPin.position.z=.065;
   const cap=add(fork,ring(.115,.077,.025).rotateX(Math.PI/2),pin.material,`${prefix}-transverse-pin-retainer`);cap.position.z=.2325;
   forks.push({fork,ears,bridge,jointPin,cap,verticalPin:pin,socket});
+ }
+ // The pins stand in bored socket blocks fixed on the top edge of the door
+ // and on the wall beside the opening; the door hangs on three knuckles with
+ // leaves on the wall and on the door, clear of each other.
+ {
+  const top=2.30,blockTop=2.60,t=g.doorThickness;
+  const block=()=>plate(clip.difference(poly([[-.22,-.20],[.22,-.20],[.22,.20],[-.22,.20]]),poly(circle([0,0],.089,96))),top,blockTop).rotateX(-Math.PI/2);
+  for(const[role,x]of[['frame-pin-socket-bracket',-g.framePinOffset],['door-pin-socket-bracket',g.doorPinRadius]]){const o=find(root,role);replace(o,block());o.position.set(x,0,0);}
+  // The socket rings sit on the blocks; the long pins stand clear above them.
+  for(const{socket}of forks){socket.position.y=blockTop+.125;}
+  for(const prefix of['frame-side','door-side'])find(root,`${prefix}-socket-upper-lip`).position.y=blockTop+.25;
+  const wall=find(root,'fixed-wall-beside-door-opening');replace(wall,new T.BoxGeometry(2.13,top,t));wall.position.set(-1.185,top/2,-t/2);
+  const door=find(root,'moving-door-panel');replace(door,new T.BoxGeometry(g.doorWidth-.12,top,t));door.position.set(.06+g.doorWidth/2,top/2,-t/2);
+  const barrels=[];root.traverse(o=>{if(o.userData.role==='one-of-three-fixed-axis-door-hinge-barrels')barrels.push(o);});
+  for(const barrel of barrels){
+   const wallLeaf=add(wall.parent,new T.BoxGeometry(.10,.30,.07),barrel.material,'fixed-hinge-leaf-on-wall');wallLeaf.position.set(-.163,barrel.position.y,-.065);
+   const doorLeaf=add(door.parent,new T.BoxGeometry(.10,.30,.07),barrel.material,'door-hinge-leaf-on-door');doorLeaf.position.set(.163,barrel.position.y,-.065);
+  }
  }
  // Both rigid links retain their analytic endpoints but occupy separate axial
  // layers on a common transverse axis; only rigid transforms change at runtime.

@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
+import {replaceWithLaidRope} from './laid-rope.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const add=(p,g,m,role)=>{const o=new T.Mesh(g,m);o.userData.role=role;p.add(o);return o;};
 // Fixed Gauss quadrature of a unit-speed curve whose curvature tapers to zero
@@ -73,17 +74,42 @@ export function correctDrawingTemplateParts(root,id,update){
   replace(b.baseBar,plate(clip.difference(base,capsule([g.slotLeft+.075,-.02],[g.slotRight-.075,-.02],.075,32)),-.19,.19));b.slot.visible=false;
   replace(b.slideBlock,plate(clip.difference(poly([[-.19,-.065],[.19,-.065],[.19,.065],[-.19,.065]]),poly(circle([0,0],.047,48))),-.22,.22));b.slideBlock.position.z=-.24;
   b.slideRetainers=[-.475,.005].map(z=>{const o=add(b.slide,plate(clip.difference(poly([[-.23,-.105],[.23,-.105],[.23,.105],[-.23,.105]]),poly(circle([0,0],.048,48))),-.025,.025),b.slideBlock.material,'finite-slot-slide-retaining-cheek');o.position.z=z;return o;});
-  const pin=b.slide.children.find(o=>o.userData.role==='slide-pin-carrying-cord-loop');replace(pin,new T.CylinderGeometry(.045,.045,.52,40));
-  // The loop round the pin is a few turns of the same cord: taking up cord
-  // winds it on the pin, so the working run shortens without stretching.
-  replace(b.cordLoop,new T.TorusGeometry(.090,.040,12,64));
+  // The pin is a winding peg: the cord's end is made fast at its outer end
+  // and its free run leaves the innermost turn. Turning the peg by its thumb
+  // wing takes up cord, so the free run shortens while the whole cord (turns
+  // on the peg plus free run) keeps one length.
+  const pin=b.slide.children.find(o=>o.userData.role==='slide-pin-carrying-cord-loop');replace(pin,new T.CylinderGeometry(.045,.045,.70,40));pin.position.z=.09;
+  b.pinWing=add(b.slide,new T.BoxGeometry(.20,.05,.04),pin.material,'winding-peg-thumb-wing');b.pinWing.position.z=.46;
+  const wrapRadius=.085,pitch=.084,anchorZ=.62,tipZ=.33,turnLength=Math.hypot(2*Math.PI*wrapRadius,pitch);
+  const wound=(pinCenter,tip,turns)=>{
+   const L=tip.distanceTo(pinCenter),beta=Math.atan2(tip.y-pinCenter.y,tip.x-pinCenter.x),phi=beta-Math.acos(wrapRadius/L),z=anchorZ-pitch*turns;
+   const leave=new T.Vector3(pinCenter.x+wrapRadius*Math.cos(phi),pinCenter.y+wrapRadius*Math.sin(phi),z);
+   const u=new T.Vector3(tip.x-leave.x,tip.y-leave.y,0).normalize(),end=new T.Vector3(tip.x,tip.y,tipZ).addScaledVector(u,-.139);
+   return {phi,leave,end,span:end.distanceTo(leave)};
+  };
+  const relaxed=d.pointOnWorkingEdge(1,g.minimumBend),pinCenter=g.slidePin;
+  // One turn stays on the peg when the bar is most relaxed.
+  const cordTotal=turnLength+wound(pinCenter,relaxed,1).span;
+  const turnsFor=tip=>{let n=1;for(let i=0;i<8;i++)n=(cordTotal-wound(pinCenter,tip,n).span)/turnLength;return n;};
+  class Helix extends T.Curve{constructor(){super();this.a0=0;this.turns=1;this.cx=0;this.cy=0;}getPoint(t,out=new T.Vector3()){const a=this.a0+2*Math.PI*this.turns*t;return out.set(this.cx+wrapRadius*Math.cos(a),this.cy+wrapRadius*Math.sin(a),anchorZ-pitch*this.turns*t);}}
+  const helix=new Helix();
+  b.cordLoop.position.set(0,0,0);b.cordLoop.rotation.set(0,0,0);
   const [clamp,roller]=b.fulcrumPiece.children;roller.visible=false;
   const envelope=d.pathAtBend(1).innerPoints.filter(p=>p.y<=.46).map(p=>[p.x+.004,p.y]);
   replace(clamp,plate(poly([...envelope,[-1.93,envelope.at(-1)[1]],[-1.93,0]]),-.08,.30));clamp.position.set(0,0,0);
   b.fixedTab=add(root,new T.BoxGeometry(g.barDepth,.20,g.barThickness),b.elasticBar.material,'elastic-bar-root-fixed-tab');b.fixedTab.position.set(g.leftSpringingX+g.barDepth/2,-.10,.12);
   b.tipEye=add(root,plate(clip.difference(poly(circle([0,0],.14,64)),poly(circle([0,0],.089,64))),.03,.21),b.elasticBar.material,'bored-pencil-clamp-at-elastic-bar-tip');
   const collar=b.pencil.children.find(o=>o.userData.role==='white-cord-and-bar-tip-connection-collar');replace(collar,new T.TorusGeometry(.113,.026,12,64));
-  d.updateWorkingParts=state=>{b.tipEye.position.set(state.tip.x,state.tip.y,0);const start=new T.Vector3(state.slidePin.x,state.slidePin.y,.33),end=new T.Vector3(state.tip.x,state.tip.y,.33),u=end.clone().sub(start).normalize();b.cord.userData.setEndpoints(start.addScaledVector(u,.09),end.addScaledVector(u,-.139),-state.cordTakeUp);b.cordLoop.rotation.z=-state.cordTakeUp/.09;};
+  d.updateWorkingParts=state=>{
+   b.tipEye.position.set(state.tip.x,state.tip.y,0);
+   const turns=turnsFor(state.tip),w=wound(state.slidePin,state.tip,turns);
+   helix.cx=state.slidePin.x;helix.cy=state.slidePin.y;helix.turns=turns;helix.a0=w.phi-2*Math.PI*turns;
+   const helixLength=turns*turnLength;
+   replaceWithLaidRope(b.cordLoop,helix,{radius:.04,tubularSegments:1024});
+   b.cord.userData.setEndpoints(w.leave,w.end,-helixLength);
+   b.pinWing.rotation.z=helix.a0;
+   d.cordWinding={turns,helixLength,freeRun:w.span,total:helixLength+w.span,designTotal:cordTotal};
+  };
  }
  d.minimumDisplayCycleSeconds=g.cycleDuration;d.workingPartsReview={status:'selected-finite-interfaces',residual:id===406?'The parabola uses the exact ideal point-thread law. Finite cord wraps are a visible thickness allowance, not an exactly constant finite-radius cord length or a tension/friction solve.':'The inextensible template uses a prescribed tapering-curvature family. Its selected arch has no crown overshoot; intermediate shapes are not a solved elastic equilibrium under the changing cord direction.'};
  fitPistonGuide(root,update,g.cycleDuration);d.cameraDirection=new T.Vector3(.7,.5,15);

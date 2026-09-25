@@ -65,9 +65,13 @@ function reactionFerry(movement) {
   // The anchor lies on the river bed; its ring is the fixed centre of the
   // ferry's plan-view arc. The line rises from the ring to the bow, so its
   // true length is the plan radius combined with that constant rise.
-  const anchorPoint = new THREE.Vector3(-3.72, -0.72, 0);
+  // Pass 56: the river is deeper (bed at -2.0) and the bed is solid earth,
+  // so the anchor reads as lying on the bed well below the surface; the bow
+  // stays at its old height, so the line rises the full depth to it.
+  const riverBedY = -2.0;
+  const anchorPoint = new THREE.Vector3(-3.72, riverBedY + 0.176, 0);
   const tetherLength = 2.92;
-  const bowRise = 0.90;
+  const bowRise = 0.18 - anchorPoint.y;
   const ropeLength = Math.hypot(tetherLength, bowRise);
   const maximumTraverseAngle = THREE.MathUtils.degToRad(30);
   const maximumRudderAngle = THREE.MathUtils.degToRad(24);
@@ -194,7 +198,7 @@ function reactionFerry(movement) {
   // The river is a translucent water body between the banks, from its
   // surface down to a bed below the rudder; the banks are solid earth rising
   // a little above the water.
-  const bedY = groundY - 0.42;
+  const bedY = riverBedY;
   const river = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(10.0, waterY - bedY, riverHalfWidth * 2),
     waterMaterial,
@@ -210,6 +214,12 @@ function reactionFerry(movement) {
   ), 'fixed-river-bank');
   nearBank.position.set(0, (bankTopY + bedY) / 2, riverHalfWidth + 0.62);
   root.add(nearBank);
+  const riverBed = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(10.0, 0.20, riverHalfWidth * 2 + 0.01),
+    bankMaterial,
+  ), 'fixed-river-bed-under-anchor');
+  riverBed.position.set(0, bedY - 0.10, 0);
+  root.add(riverBed);
   const farBank = nearBank.clone();
   farBank.userData.role = 'fixed-river-bank';
   farBank.position.z = -riverHalfWidth - 0.62;
@@ -333,6 +343,11 @@ function reactionFerry(movement) {
     ropeEndMarker.position.copy(state.bowPoint);
     // Each swivel turns with the line, so its blind bore faces the rope.
     const ropeDirection = ropeVector.clone().normalize();
+    // The anchor eye and bow ring are swivels too: their ports turn to face
+    // the line (it rises steeply from the bed to the bow).
+    anchor.children[1]?.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), ropeDirection);
+    bowRing.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0),
+      ropeDirection.clone().applyQuaternion(boat.quaternion.clone().invert()));
     ropeStartMarker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), ropeDirection);
     ropeEndMarker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), ropeDirection.negate());
   };

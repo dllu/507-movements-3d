@@ -542,6 +542,21 @@ function tippingWaterMeter(movement) {
     return rail;
   });
 
+  // Pass 56: the inlet flume's upper end rests on one plain post, clear of
+  // the trough's sweep, standing on a short sill run out from the base.
+  const flumePostX = 3.25;
+  const flumeUnderside = streamOutletY + Math.tan(flumeAngle) * (flumePostX + 0.12 - streamX)
+    - 0.04 / Math.cos(flumeAngle);
+  const baseTop = groundY + 0.25;
+  const flumePost = new THREE.Mesh(new THREE.BoxGeometry(0.24, flumeUnderside - baseTop, 0.30), frameMaterial);
+  flumePost.position.set(flumePostX, (flumeUnderside + baseTop) / 2, 0);
+  flumePost.userData.role = 'fixed-post-carrying-upper-end-of-inlet-flume';
+  root.add(flumePost);
+  const flumeSill = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.25, 0.40), frameMaterial);
+  flumeSill.position.set(2.85 + 0.31 - 0.005, groundY + 0.125, 0);
+  flumeSill.userData.role = 'fixed-sill-under-flume-post';
+  root.add(flumeSill);
+
   const fallingWater = new THREE.Mesh(
     new THREE.CylinderGeometry(0.105, 0.105, 1, 20),
     waterMaterial,

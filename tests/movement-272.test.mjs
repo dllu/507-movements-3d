@@ -117,7 +117,10 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   assert.equal(blocks.followerGuides.length, 2);
   assert.ok(blocks.followerGuides.every((guide) => guide.parent === model.root));
   assert.equal(blocks.shaftBearings.length, 2);
-  assert.ok(blocks.shaftBearings.every((bearing) => bearing.parent === null), 'Brown draws no shaft bearings');
+  // Brown draws no frame; a plain base, posts and shaft bearings carry the
+  // shaft and, through one upright, the rod guides, so nothing floats.
+  assert.ok(blocks.shaftBearings.every((bearing) => bearing.parent === model.root), 'shaft bearings carry the shaft');
+  assert.equal(blocks.guideRiser.parent, model.root);
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
@@ -439,9 +442,10 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  // The undrawn base, posts, shaft bearings and backing rail are presented
-  // away, and the disk carries no dark edge tubes.
-  assert.equal(meshCount, 11);
+  // The plain supporting frame (base, posts, shaft bearings, backing rail,
+  // brackets and riser) is kept so nothing floats; the disk carries no dark
+  // edge tubes.
+  assert.equal(meshCount, 34);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);

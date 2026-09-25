@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {portedCasingGeometry, roundPortPipeGeometry} from './round-port-pipes.js';
 import { addBackCover } from './cutaway-back-plates.js';
 import {capsule,circle,plate,poly,polygonClipping,sector,spline} from './finite-plate-geometry.js';
 import {
@@ -363,19 +364,30 @@ function eccentricRotaryEngine(movement) {
       rect(-2.17, -guideRailOuterX, flangeBottom, flangeTop),
       rect(-2.17, -1.83, flangeBottom - 0.24, flangeBottom),
       poly([[-2.40, -2.98], [-3.15, -cylinderOuterRadius], [-2.20, -cylinderOuterRadius]].map(m)),
-      rect(-portOuterX - portWallThickness, -portOuterX, 2.6, flangeTop),
-      rect(-portInnerX, -portInnerX + portWallThickness, 2.6, flangeTop),
     );
     return polygonClipping.difference(solid,
       poly(circle([0, 0], cylinderOuterRadius, 1536)),
-      rect(-portOuterX, -portInnerX, 2.0, flangeTop + 1),
       poly([[-9, -9], [9, -9], [9, -cylinderOuterRadius], [-9, -cylinderOuterRadius]]));
   };
-  const neckLeft = new THREE.Mesh(plate(casingHalf(1), -0.41, 0.63), frameMaterial);
+  // Pass 56: each port neck is a round bored pipe standing on the cylinder
+  // and rising through the flange; its bore opens at the flange top by a
+  // square hole in the flange's middle layer only.
+  const portZ = 0.11, portBore = (portOuterX - portInnerX) / 2, portPipeOuter = portBore + portWallThickness;
+  const portCenterX = (portInnerX + portOuterX) / 2;
+  const portHole = side => poly([[side * portInnerX, 2.0], [side * portOuterX, 2.0], [side * portOuterX, flangeTop + 1], [side * portInnerX, flangeTop + 1]]);
+  const neckLeft = new THREE.Mesh(portedCasingGeometry(casingHalf(1), -0.41, 0.63, portZ, portBore, [portHole(-1)]), frameMaterial);
   neckLeft.userData.role = 'left-half-of-pear-casing-with-eduction-neck-of-cylinder-A';
-  const neckRight = new THREE.Mesh(plate(casingHalf(-1), -0.41, 0.63), frameMaterial);
+  const neckRight = new THREE.Mesh(portedCasingGeometry(casingHalf(-1), -0.41, 0.63, portZ, portBore, [portHole(1)]), frameMaterial);
   neckRight.userData.role = 'right-half-of-pear-casing-with-induction-neck-of-cylinder-A';
   root.add(neckLeft, neckRight);
+  const portFootY = Math.sqrt(cylinderOuterRadius ** 2 - (portCenterX + portPipeOuter) ** 2) + 0.005;
+  const portPipes = [-1, 1].map((side) => {
+    const pipe = new THREE.Mesh(roundPortPipeGeometry(new THREE.Vector3(side * portCenterX, portFootY, portZ),
+      new THREE.Vector3(side * portCenterX, flangeTop, portZ), portBore, portPipeOuter), frameMaterial);
+    pipe.userData.role = side < 0 ? 'left-round-eduction-port-pipe' : 'right-round-induction-port-pipe';
+    root.add(pipe);
+    return pipe;
+  });
 
   const guideTower = new THREE.Group();
   guideTower.userData.role = 'fixed-vertical-guide-for-sliding-abutment-D';
@@ -390,11 +402,13 @@ function eccentricRotaryEngine(movement) {
       : 'right-guide-rail-for-abutment-D';
     guideTower.add(rail);
   }
+  // The cap is flush with the rails' outer faces and depth, so it reads as
+  // the top of one guide rather than a separate block above it.
   const guideCap = new THREE.Mesh(
-    new THREE.BoxGeometry(1.34, 0.24, 0.72),
+    new THREE.BoxGeometry(0.88, 0.24, 0.92),
     frameMaterial,
   );
-  guideCap.position.set(0, 6.22, 0.25);
+  guideCap.position.set(0, 6.219, 0.25);
   guideCap.userData.role = 'cap-of-abutment-D-guide';
   guideTower.add(guideCap);
   root.add(guideTower);

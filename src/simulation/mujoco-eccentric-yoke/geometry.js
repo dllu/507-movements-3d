@@ -3,6 +3,7 @@ import source from './source.js';
 import {cubicPolyline} from '../cubic-polyline.js';
 import {plate, poly, circle, capsule, disk, ring, polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE, matte, markShadows} from '../primitives.js';
+import {wallGuide} from '../wall-guide-hardware.js';
 
 export {THREE};
 
@@ -64,31 +65,39 @@ export function makeEccentricYokeGeometry() {
   // plain end of the shaft itself (no hatch notation).
   attach('collar',ring(shaftRadius+.001,source.collarRadius/scale,depth/2,.28,128),'input',PALETTE.driver);
 
-  const guideHalfLength = .11, guideCenter = Math.max(...rodRoots.map(Math.abs))+eccentricity+guideHalfLength+.07;
+  // The rods work in fixed guides (Brown's text). Each guide sits just past
+  // the plate's edge, beyond the stub Brown breaks off at rodTips, and is
+  // carried from behind by a narrow web on one plain tie bar. The bar runs
+  // behind the rods (hidden by them in the plate's view) and also carries
+  // the shaft's rear bearing, so guides and bearing form one frame.
+  const guideHalfLength = .11, guideCenter = Math.max(...rodTips.map(Math.abs))+guideHalfLength+.50;
   const rodEnd = guideCenter+guideHalfLength+eccentricity+.04, rodRadius = source.rodRadius/scale;
+  const guideZWall = -.62, tieHalfHeight = .12;
   for (const [i,sign] of [-1,1].entries()) {
-    // Brown breaks the stubs off at rodTips. The run on to the hidden guide
-    // is a separate coaxial piece of the same rigid yoke (same total mass),
-    // removed by source presentation with the guides it enters.
+    // The stub Brown draws and its run on into the guide are coaxial pieces
+    // of the same rigid yoke.
     const tip = rodTips[i];
     for (const [name,ends] of [['rod'+i,[rodRoots[i],tip]],['rodExtension'+i,[tip,sign*rodEnd]]]) {
       const rod = attach(name,disk(rodRadius,...ends.sort((a,b)=>a-b),96),'yoke',PALETTE.brass);
       rod.rotation.y = Math.PI/2;
     }
-    const support = clip.difference(clip.union(poly(circle([0,0],.29,96)),
-      poly([[-.10,baseTop],[.10,baseTop],[.10,0],[-.10,0]])),poly(circle([0,0],rodRadius+.005,96)));
-    const guide = attach('guide'+i,plate(support,-guideHalfLength,guideHalfLength),'frame',PALETTE.muted,[sign*guideCenter,0,0]);
-    guide.rotation.y = Math.PI/2;
+    for (const mesh of wallGuide({name:'guide'+i,axis:'x',halfLength:guideHalfLength,boreRadius:rodRadius+.005,
+      outerRadius:.24,zWall:guideZWall})) {
+      mesh.position.x += sign*guideCenter;
+      attach(mesh.name,mesh.geometry,'frame',PALETTE.muted,mesh.position.toArray()).rotation.copy(mesh.rotation);
+    }
   }
-  const bearing = clip.difference(clip.union(poly(circle([0,0],.38,128)),
-    poly([[-.12,baseTop],[.12,baseTop],[.12,0],[-.12,0]])),poly(circle([0,0],shaftRadius+.002,128)));
-  attach('shaftSupport',plate(bearing,-.73,-.48),'frame',PALETTE.muted);
-  const baseHalfWidth = guideCenter+.32;
-  attach('base',new THREE.BoxGeometry(2*baseHalfWidth,.15,1.14),'frame',PALETTE.muted,[0,baseTop-.075,-.29]);
+  const tieEnd = guideCenter+guideHalfLength;
+  // A round boss (hidden behind the sheave) carries the bar round the bore.
+  attach('guideTieBar',plate(clip.difference(clip.union(poly([[-tieEnd,-tieHalfHeight],[tieEnd,-tieHalfHeight],[tieEnd,tieHalfHeight],[-tieEnd,tieHalfHeight]]),
+    poly(circle([0,0],.38,128))),poly(circle([0,0],shaftRadius+.002,128))),guideZWall-.07,guideZWall),'frame',PALETTE.muted);
+  attach('shaftSupport',ring(shaftRadius+.002,.36,guideZWall,-.50,128),'frame',PALETTE.muted);
+  // Runs and supports past Brown's crop stay out of the plate-framing fit.
+  for(const [name,mesh] of Object.entries(parts))if(/^(rodExtension|guide\d|shaftSupport)/.test(name))mesh.userData.beyondPlateCrop=true;
   blocks.yoke.position.x = offset[0];
   Object.assign(root.userData,{parts,families,blocks,source,hideGround:true,
     profiles:{tracedHole,hole,outer,yoke:yokeProfile},
-    geometry:{offset,eccentricity,radius,shaftRadius,depth,clearance,workingHalfHeight,rodRoots,rodTips,rodEnd,rodRadius,guideCenter,guideHalfLength,baseTop}});
+    geometry:{offset,eccentricity,radius,shaftRadius,depth,clearance,workingHalfHeight,rodRoots,rodTips,rodEnd,rodRadius,guideCenter,guideHalfLength,guideZWall,baseTop}});
   markShadows(root); root.updateMatrixWorld(true);
   return {root,focus:new THREE.Vector3(0,-.15,0),cameraDirection:new THREE.Vector3(.7,.4,10)};
 }

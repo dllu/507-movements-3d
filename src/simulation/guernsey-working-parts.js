@@ -117,19 +117,12 @@ export function correctGuernseyWorkingParts(root) {
     }
     replace(beam, plate(shape, -depth/2, depth/2));
   }
-  // Brown draws both balances as open rims (no arms) whose crossing shows the
-  // other rim and both racks through them. A bored web replaces the three
-  // crossed spokes (kept hidden in the blocks for the bore checks) so each rim
-  // still joins its arbor, but it is a faint glazed film so it reads open.
-  const webMaterial = b.upperBalance.rim.material.clone();
-  Object.assign(webMaterial, { transparent: true, opacity: .1, depthWrite: false });
+  // Brown draws both balances as open rims whose crossing shows the other rim
+  // and both racks through them. Pass 56: no glazed film stands in for a web;
+  // each rim joins its arbor by a slim bored two-armed bar (the presentation
+  // keeps one of the three bars), so the wheels stay open and every part is
+  // opaque.
   for (const balance of [b.upperBalance, b.leftBalance]) {
-    balance.spokes.forEach(spoke => { spoke.visible = false; });
-    const rimRadius = balance.rim.geometry.parameters.radius;
-    const web = new THREE.Mesh(ring(.074, rimRadius - .05, -.035, .035, 128), webMaterial);
-    web.castShadow = true; web.receiveShadow = false;
-    web.userData.role = `${balance.balance.userData.role.replace('-counter-oscillating-balance-wheel', '')}-plain-balance-disc-web`;
-    balance.balance.add(web); balance.web = web; balance.spokes.push(web);
     balance.angularIndex.visible = false;
   }
   root.traverse(o => { for (const m of [o.material].flat().filter(Boolean)) m.fog = false; });

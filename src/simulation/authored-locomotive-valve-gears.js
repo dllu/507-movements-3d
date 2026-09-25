@@ -1,4 +1,4 @@
-import { plate, poly, circle, capsule, sector, polygonClipping as clip } from './finite-plate-geometry.js';
+import { plate, poly, circle, capsule, sector, ring, polygonClipping as clip } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import * as THREE from 'three';
 import {
@@ -922,7 +922,10 @@ function locomotiveStephensonExpansionLinkValveGear() {
       thickness: 0.105,
     },
   );
-  const reversingPivotShaft = cylinderAlongZ(0.14, 1.32, darkMaterial, 30);
+  // The axis stops just proud of the handle hub instead of standing well
+  // out in front; its back end is carried by a lug on the wall.
+  const reversingPivotShaft = cylinderAlongZ(0.14, 0.88, darkMaterial, 30);
+  reversingPivotShaft.position.z = -0.22;
   reversingPivotShaft.userData.role = 'fixed-reversing-handle-axis';
   const reversingAnchorPin = cylinderAlongZ(0.095, 0.46, darkMaterial, 26);
   reversingAnchorPin.position.x = reversingShortArmLength;
@@ -1094,7 +1097,11 @@ function locomotiveStephensonExpansionLinkValveGear() {
   outputRocker.userData.axis = Z_AXIS.clone();
   outputRocker.userData.role =
     'fixed-axis-two-arm-rocker-from-die-to-valve-rod';
-  const outputRockerShaft = cylinderAlongZ(0.13, 1.82, darkMaterial, 30);
+  // The rockshaft runs from its bearing boss (z 0.63..0.80, in front of the
+  // eccentric-rod pin that swings close by) to just proud of the rocker arms
+  // and die pin, not far out in front of them.
+  const outputRockerShaft = cylinderAlongZ(0.13, 0.58, darkMaterial, 30);
+  outputRockerShaft.position.z = -0.05;
   outputRockerShaft.userData.role = 'fixed-output-rockshaft';
   const lowerRockerArm = makeBeam(
     new THREE.Vector3(0, 0, 0),
@@ -1494,6 +1501,49 @@ function locomotiveStephensonExpansionLinkValveGear() {
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
   root.remove(fixedFrame, cameraEnvelope);
+  // Minimal supports, so no fixed part floats: a bed under the slide valve
+  // standing out from the wall face (the valve head slides on it and the
+  // gland barrel sits on it), a lug on the wall carrying the reversing-handle
+  // axis, a bearing boss round the output rockshaft tied by a bar to a front
+  // bearing on the common eccentric shaft (Brown draws a bracket at the rocker
+  // pivot), and a flanged rear bearing on that shaft.
+  const wallSupports = new THREE.Group();
+  wallSupports.userData.role = 'minimal-supports-on-sectioned-wall';
+  const supportBox = (role, [x0, y0, z0], [x1, y1, z1]) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), frameMaterial);
+    mesh.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    mesh.userData.role = role;
+    wallSupports.add(mesh);
+    return mesh;
+  };
+  supportBox('slide-valve-bed-on-wall', [-2.25, 1.405, -0.5], [-1.13, 1.505, 1.14]);
+  supportBox('reversing-axis-lug-on-wall', [-2.08, 1.61, -0.5], [-1.64, 2.44, 0.02]);
+  const bossAround = (role, center, inner, outer, z0, z1) => {
+    const boss = new THREE.Mesh(ring(inner, outer, z0, z1, 64), frameMaterial);
+    boss.position.set(center.x, center.y, 0);
+    boss.userData.role = role;
+    wallSupports.add(boss);
+    return boss;
+  };
+  // The rockshaft boss sits in the free layer just in front of every link
+  // pin (z 0.63..0.80) and is tied by a straight bar to a front bearing on the
+  // common eccentric shaft, as Brown's line from the rocker bracket runs
+  // toward the shaft.
+  const tieZ0 = 0.63, tieZ1 = 0.80;
+  bossAround('output-rockshaft-bearing-boss', outputRockerPivot, 0.133, 0.25, tieZ0, tieZ1);
+  bossAround('common-shaft-front-bearing', shaftCenter, 0.14, 0.3, tieZ0, tieZ1);
+  {
+    const dx = shaftCenter.x - outputRockerPivot.x, dy = shaftCenter.y - outputRockerPivot.y;
+    const length = Math.hypot(dx, dy);
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(length - 0.4, 0.12, tieZ1 - tieZ0), frameMaterial);
+    bar.position.set((shaftCenter.x + outputRockerPivot.x) / 2, (shaftCenter.y + outputRockerPivot.y) / 2, (tieZ0 + tieZ1) / 2);
+    bar.rotation.z = Math.atan2(dy, dx);
+    bar.userData.role = 'output-rockshaft-bearing-bar-to-shaft-bearing';
+    wallSupports.add(bar);
+  }
+  bossAround('common-shaft-rear-bearing', shaftCenter, 0.14, 0.3, -1.33, -1.12);
+  supportBox('common-shaft-rear-bearing-flange', [shaftCenter.x - 0.45, shaftCenter.y - 0.45, -1.43], [shaftCenter.x + 0.45, shaftCenter.y + 0.45, -1.33]);
+  root.add(wallSupports);
   // Brown draws no index marks, and each eccentric shows one strap outline
   // over its sheave, not a second painted rim.
   for (const mark of [

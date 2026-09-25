@@ -329,7 +329,7 @@ function mercurialBarometer(movement) {
     -0.0525,
   );
   const scaleSpine = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.035, scaleTopY - scaleBottomY, 0.045),
+    new THREE.BoxGeometry(0.012, scaleTopY - scaleBottomY, 0.045),
     inkMaterial,
   ), 'vertical-inch-scale-spine');
   scaleSpine.position.set(1.05, (scaleBottomY + scaleTopY) / 2, 0.01);
@@ -341,7 +341,9 @@ function mercurialBarometer(movement) {
     const tick = addRole(new THREE.Mesh(
       new THREE.BoxGeometry(
         wholeInch ? 0.42 : (halfInch ? 0.32 : 0.23),
-        0.026,
+        // Fine engraved lines: at 0.021 per tenth a 0.026 tick merged its
+        // neighbours into one black block.
+        wholeInch ? 0.010 : 0.006,
         0.045,
       ),
       inkMaterial,

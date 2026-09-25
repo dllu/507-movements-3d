@@ -3,7 +3,7 @@ import {gunzipSync} from 'node:zlib';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {Box3,Vector3} from 'three';
-import {makeFanGovernorModel} from '../src/simulation/baked/fan-governor.js';
+import {makeFanGovernorModel,fanGovernorTubTop} from '../src/simulation/baked/fan-governor.js';
 import {makeFanGovernorGeometry} from '../src/simulation/mujoco-fan-governor/geometry.js';
 import {solidSurface} from './helpers/solid-surface.mjs';
 const bundle=JSON.parse(gunzipSync(fs.readFileSync(new URL('../src/simulation/baked/assets/147.json.gz',import.meta.url))));
@@ -29,9 +29,37 @@ test('147 baked bodies stay framed, ignore fog, and reset deterministically',()=
  const model=makeFanGovernorModel(bundle);
  try{
   const bounds=model.root.userData.cameraFitBounds.clone().expandByScalar(1e-6);let count=0;
-  model.root.traverse(o=>{if(o.isMesh){count++;assert.equal(o.material.fog,false);}});assert.equal(count,9);
+  model.root.traverse(o=>{if(o.isMesh){count++;assert.equal(o.material.fog,false);}});assert.equal(count,11);
   for(let i=0;i<=64;i++){model.update(bundle.period*i/64);assert.ok(bounds.containsBox(new Box3().setFromObject(model.root,true)));}
   model.reset();const initial=structuredClone(model.root.userData.state);
   model.update(123);model.reset();assert.deepEqual(model.root.userData.state,initial);
  }finally{model.dispose();model.dispose();}
+});
+
+test('147 displayed trough is straight-sided and its humps carry the rollers exactly where they run',()=>{
+ const model=makeFanGovernorModel(bundle);
+ try{
+  const {blocks:b}=model.root.userData,trough=b.shaft.getObjectByName('tub-trough');
+  assert.ok(trough&&b.shaft.getObjectByName('tub-ring'));
+  let worst=0,lowestArm=Infinity;
+  for(let i=0;i<=600;i++){
+   model.update(bundle.period*i/600);
+   for(const roller of [b.roller0,b.roller1]){
+    const c=roller.getWorldPosition(new Vector3()).applyMatrix4(b.shaft.matrixWorld.clone().invert());
+    // Fold to the ramp's own angle; the baked ramp there is base+curvature*a^2.
+    const angle=Math.atan2(-c.z,c.x),a=((angle+2.2)%Math.PI+Math.PI)%Math.PI-2.2;
+    assert.ok(a>-1&&a<0,`roller outside the working flank at ${a}`);
+    worst=Math.max(worst,Math.abs(fanGovernorTubTop(angle)-(-.55+.6*a*a)));
+   }
+   lowestArm=Math.min(lowestArm,model.root.userData.state.lift-.09);
+  }
+  // Where the rollers run, the displayed hump is exactly the baked ramp.
+  assert.ok(worst<1e-12,`roller/hump offset ${worst}`);
+  // And the displayed solid keeps the rollers seated within the bake's tolerance.
+  const ring=solidSurface(b.shaft.getObjectByName('tub-ring').geometry);let gap=0;
+  for(let i=0;i<=300;i++){model.update(bundle.period*i/300);for(const roller of [b.roller0,b.roller1]){const c=roller.getWorldPosition(new Vector3()).applyMatrix4(b.shaft.matrixWorld.clone().invert());gap=Math.max(gap,Math.abs(ring.distance(c)-.21));}}
+  assert.ok(gap<.0005,`roller seating ${gap}`);
+  // The flat rim stays below the arms at all lifts.
+  trough.geometry.computeBoundingBox();assert.ok(trough.geometry.boundingBox.max.y<lowestArm);
+ }finally{model.dispose();}
 });

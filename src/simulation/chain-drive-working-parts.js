@@ -3,12 +3,37 @@ import profiles from './chain-drive-profiles.js';
 import {plate,ring,polygonClipping as clip} from './finite-plate-geometry.js';
 const TAPER_SIDE_228=1;
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
+// 227: Brown's pulley is a clean, regular six-pointed wheel. Each tooth
+// stands through an edge-on loop link; the flat plate links lie on straight
+// flats between the teeth. The profile is analytic: a flat under each plate
+// link, a concave notch hugging each plate link's round end at the joint (the
+// driving face, 0.0008 clear), and concave flanks rising to a sharp point.
+export function cleanSprocketProfile227(g,options={}){
+ const R=g.pitchRadius,half=g.chainNodeStep/2,e=g.plateLinkEndRadius+(options.clearance??.0008),
+  tip=options.tipRadius??2.62,depart=(options.departDegrees??38)*Math.PI/180,tipHalf=options.tipHalfWidth??.2,
+  arcSteps=24,curveSteps=40,outer=[];
+ const P=(a,r)=>[Math.cos(a)*r,Math.sin(a)*r],rot=(p,a)=>[p[0]*Math.cos(a)-p[1]*Math.sin(a),p[0]*Math.sin(a)+p[1]*Math.cos(a)];
+ // Upper half of the tooth at angle 0: joint N at +half; the valley flat
+ // faces direction +2*half; the notch runs from the flat's tangent point
+ // (psi = 2*half+pi) round the joint to the departure psi0+depart.
+ const N=P(half,R),psi0=2*half+Math.PI,psi1=psi0+depart,D=[N[0]+e*Math.cos(psi1),N[1]+e*Math.sin(psi1)],
+  t=[-Math.sin(psi1),Math.cos(psi1)],k=(D[1]-tipHalf)/-t[1],C=[D[0]+k*t[0],D[1]+k*t[1]],T=[tip,0];
+ const upper=[];// from the tip down to the valley flat
+ for(let i=0;i<=curveSteps;i++){const s=1-i/curveSteps,a=(1-s)*(1-s),b=2*s*(1-s),c=s*s;upper.push([a*D[0]+b*C[0]+c*T[0],a*D[1]+b*C[1]+c*T[1]]);}
+ for(let i=1;i<=arcSteps;i++){const psi=psi1-(psi1-psi0)*i/arcSteps;upper.push([N[0]+e*Math.cos(psi),N[1]+e*Math.sin(psi)]);}
+ const tooth=[...upper.slice().reverse().map(p=>[p[0],-p[1]]),...upper.slice(1)];
+ for(let n=0;n<g.sprocketToothCount;n++)for(const p of tooth)outer.push(rot(p,g.toothCenterPhase+n*g.toothStep));
+ outer.push(outer[0]);
+ const hole=[];for(let i=0;i<=96;i++)hole.push(P(-i/96*2*Math.PI,g.shaftHoleRadius));
+ return [[outer.map(p=>p.map(v=>+v.toFixed(8))),hole.map(p=>p.map(v=>+v.toFixed(8)))]];
+}
 export function correctChainDrive(model,id){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry;
  const wheel=id===227?b.sprocket:id===229?b.wheel:null;
  const originalWheelPolygons=wheel?[wheel.geometry.parameters.shapes.extractPoints(64).shape.map(p=>p.toArray())]:null;
  d.chainDriveParts={originalWheelPolygons};
- if(profiles[id]){
+ if(id===227)replace(wheel,plate(cleanSprocketProfile227(g),-g.sprocketDepth/2,g.sprocketDepth/2));
+ else if(profiles[id]){
   if(wheel)replace(wheel,plate(profiles[id],-(g.sprocketDepth??g.wheelDepth)/2,(g.sprocketDepth??g.wheelDepth)/2));
   else {
    // 228: Brown draws slender triangular wedges standing on the rim. Keep

@@ -244,27 +244,24 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   crownHub.userData.role = 'eccentric-crown-wheel-arbor-hub';
   crownRotor.add(crownHub);
 
-  // Brown draws the face inside the toothed rim as a solid web plate, cut
-  // by one slot that runs from the arbor boss through the wheel's geometric
-  // centre toward the far rim. No spokes or crossbars are drawn.
+  // Brown draws the wheel as an open toothed rim with one broad cross-bar
+  // through the arbor boss, running from rim to rim along the line through
+  // the wheel's geometric centre. No spokes or solid web.
   const spokeAngles = [];
   const crownSpokes = [];
   const webDepth = 0.17;
-  const webSlotHalfWidth = 0.15;
-  const webSlotStart = 0.62;
-  const webSlotEnd = eccentricity + crownInnerRadius - 0.42;
+  const barHalfWidth = 0.46;
+  const barRadius = crownInnerRadius + 0.06;
+  const barEndAngle = Math.asin(barHalfWidth / barRadius);
   const webShape = new THREE.Shape();
-  webShape.absarc(eccentricity, 0, crownInnerRadius + 0.06, 0, FULL_TURN, false);
+  webShape.moveTo(eccentricity + barRadius * Math.cos(-barEndAngle), barRadius * Math.sin(-barEndAngle));
+  webShape.absarc(eccentricity, 0, barRadius, -barEndAngle, barEndAngle, false);
+  webShape.lineTo(eccentricity - barRadius * Math.cos(barEndAngle), barHalfWidth);
+  webShape.absarc(eccentricity, 0, barRadius, Math.PI - barEndAngle, Math.PI + barEndAngle, false);
+  webShape.closePath();
   const webBore = new THREE.Path();
   webBore.absarc(0, 0, 0.345, 0, FULL_TURN, true);
   webShape.holes.push(webBore);
-  const webSlot = new THREE.Path();
-  webSlot.moveTo(webSlotStart, -webSlotHalfWidth);
-  webSlot.absarc(webSlotStart, 0, webSlotHalfWidth, -Math.PI / 2, -3 * Math.PI / 2, true);
-  webSlot.lineTo(webSlotEnd, webSlotHalfWidth);
-  webSlot.absarc(webSlotEnd, 0, webSlotHalfWidth, Math.PI / 2, -Math.PI / 2, true);
-  webSlot.closePath();
-  webShape.holes.push(webSlot);
   const webGeometry = new THREE.ExtrudeGeometry(webShape, {
     bevelEnabled: false,
     curveSegments: 96,
@@ -273,16 +270,19 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   });
   webGeometry.translate(0, 0, spokeZ - webDepth / 2);
   const crownWeb = new THREE.Mesh(webGeometry, driverMaterial);
-  crownWeb.userData.role = 'crown-wheel-solid-web-with-slot';
+  crownWeb.userData.role = 'crown-wheel-cross-bar-through-arbor-boss';
   crownRotor.add(crownWeb);
 
+  // Brown's vertical arbor is long: it runs well down below the wheel to a
+  // footstep bearing just beyond the plate's view.
+  const arborBottomZ = -3.8;
   const crownShaft = makeShaft({
     axis: Z_AXIS,
     color: PALETTE.ink,
-    length: 2.65,
+    length: 0.405 - arborBottomZ,
     radius: 0.105,
   });
-  crownShaft.position.z = -0.92;
+  crownShaft.position.z = (0.405 + arborBottomZ) / 2;
   crownShaft.userData.role = 'eccentric-crown-wheel-vertical-arbor';
   crownRotor.add(crownShaft);
 
@@ -319,6 +319,38 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   pinionShaft.position.set(shaftCenterX, 0, pinionCenterZ);
   pinionShaft.userData.role = 'fixed-axis-rotating-splined-pinion-shaft';
   root.add(pinionShaft);
+
+  // Supports beyond the plate, on the floor level: a foot plate carries the
+  // arbor's footstep bearing and a standard whose bored head carries the
+  // pinion shaft near its outer end.
+  const supportMaterial = matte(PALETTE.frame, { metalness: 0.12, roughness: 0.68 });
+  const supports = new THREE.Group();
+  supports.userData.role = 'floor-footstep-and-pinion-shaft-standard';
+  const floorTopZ = arborBottomZ - 0.02;
+  const standardX = shaftCenterX + shaftLength / 2 - 0.45;
+  const floor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.16), supportMaterial);
+  floor.position.set(0, 0, floorTopZ - 0.08);
+  floor.userData.role = 'foot-plate-of-arbor-footstep';
+  const standardFoot = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.16), supportMaterial);
+  standardFoot.position.set(standardX, 0, floorTopZ - 0.08);
+  standardFoot.userData.role = 'foot-of-pinion-shaft-standard';
+  const footstepShape = new THREE.Shape().absarc(0, 0, 0.26, 0, FULL_TURN, false);
+  footstepShape.holes.push(new THREE.Path().absarc(0, 0, 0.108, 0, FULL_TURN, true));
+  const footstep = new THREE.Mesh(new THREE.ExtrudeGeometry(footstepShape, { bevelEnabled: false, depth: 0.3, curveSegments: 48 }), supportMaterial);
+  footstep.position.z = floorTopZ;
+  footstep.userData.role = 'footstep-bearing-of-crown-arbor';
+  const headShape = new THREE.Shape().absarc(0, 0, 0.22, 0, FULL_TURN, false);
+  headShape.holes.push(new THREE.Path().absarc(0, 0, shaftRadius + 0.004, 0, FULL_TURN, true));
+  const standardHead = new THREE.Mesh(new THREE.ExtrudeGeometry(headShape, { bevelEnabled: false, depth: 0.24, curveSegments: 48 }), supportMaterial);
+  standardHead.rotation.y = Math.PI / 2;
+  standardHead.position.set(standardX - 0.12, 0, pinionCenterZ);
+  standardHead.userData.role = 'bored-head-of-pinion-shaft-standard';
+  const standardHeight = pinionCenterZ - 0.2 - floorTopZ;
+  const standard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, standardHeight), supportMaterial);
+  standard.position.set(standardX, 0, floorTopZ + standardHeight / 2);
+  standard.userData.role = 'pinion-shaft-standard';
+  supports.add(floor, standardFoot, footstep, standardHead, standard);
+  root.add(supports);
 
   const splineLength = pinionDepth;
   const splineCenterX = pinionAxialCenterX;

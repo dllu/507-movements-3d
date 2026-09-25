@@ -317,9 +317,8 @@ function diaphragmForcePump(movement) {
   ), 'fixed-circular-clamping-ring-around-diaphragm-edge');
   chamberRim.position.set(diaphragmCenterX, diaphragmRimY, 0);
   root.add(chamberRim);
-  const clampRing = horizontalRing(1.17, 0.055, leverMaterial);
-  clampRing.position.copy(chamberRim.position);
-  root.add(clampRing);
+  // Pass 56: the diaphragm's edge is held in the rim flange itself; no
+  // separate coloured ring stands proud of it.
 
   const chamberRails = addRole(new THREE.Group(),
     'fixed-cutaway-diaphragm-chamber-outline');
@@ -735,5 +734,19 @@ function diaphragmForcePump(movement) {
 
 export function createAuthoredDiaphragmPumpMovement(movement) {
   if (movement.id !== 454) return null;
-  return applyCutawayFor(diaphragmForcePump(movement), movement.id);
+  const model = applyCutawayFor(diaphragmForcePump(movement), movement.id);
+  // Pass 56: the diaphragm is cut on the same plane as its chamber (it is
+  // rebuilt every frame, so by a clipping plane), so its edge no longer
+  // stands out in front of the cut casing.
+  const plane = model.root.userData.cutawayPresentation?.plane;
+  if (plane) {
+    const normal = new THREE.Vector3(...plane.normal).normalize();
+    const clip = new THREE.Plane(normal.clone().negate(), normal.dot(new THREE.Vector3(...plane.point)));
+    model.root.traverse((o) => {
+      if (!o.isMesh || o.userData.role !== 'single-flexible-diaphragm-clamped-at-rim-and-driven-at-center') return;
+      o.material = o.material.clone();o.material.side = THREE.DoubleSide;o.material.clippingPlanes = [clip];
+    });
+    model.root.userData.localClippingEnabled = true;
+  }
+  return model;
 }

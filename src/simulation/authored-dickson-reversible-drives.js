@@ -756,15 +756,30 @@ function dicksonReversibleDrive(movement) {
   sliderPin.userData.role = 'white-input-slider-joint-index';
   inputSlider.add(sliderPin);
   root.add(inputSlider);
-  const inputGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(1.65, 0.11, 0.48),
-    frameMaterial,
-  );
-  inputGuide.position.set(2.65, inputGuideY, -0.05);
+  // Rod D runs in front of the rim of wheel D (Brown draws it crossing over
+  // the rim) to the slider that drives it, just beyond the plate's crop. The
+  // slider runs between the two bars of a fixed channel guide.
+  const inputRodZ = 0.80;
+  inputSlider.position.z = inputRodZ;
+  const inputGuide = new THREE.Group();
   inputGuide.userData.role = 'fixed-horizontal-input-slider-guide';
+  for (const side of [-1, 1]) {
+    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.70, 0.10, 0.34), frameMaterial);
+    bar.position.set(2.65, inputGuideY + side * 0.186, inputRodZ);
+    bar.userData.role = 'input-slider-guide-bar';
+    inputGuide.add(bar);
+  }
+  const guideEnd = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.472, 0.34), frameMaterial);
+  guideEnd.position.set(3.55, inputGuideY, inputRodZ);
+  guideEnd.userData.role = 'input-slider-guide-end-bridge';
+  inputGuide.add(guideEnd);
   root.add(inputGuide);
-  const leverInputPin = cylinderAlongZ(0.11, 0.51, whiteMaterial, 24);
+  const inputRodEye = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.045, 16, 48), leverMaterial);
+  inputRodEye.userData.role = 'rod-D-eye-round-lever-tail-pin';
+  root.add(inputRodEye);
+  const leverInputPin = cylinderAlongZ(0.11, inputRodZ + 0.06 - 0.095, whiteMaterial, 24);
   leverInputPin.position.copy(inputPinLocal);
+  leverInputPin.position.z = (inputRodZ + 0.06 + 0.095) / 2;
   leverInputPin.userData.role = 'white-input-pin-on-tail-of-lever-A';
   leverRotor.add(leverInputPin);
 
@@ -777,7 +792,14 @@ function dicksonReversibleDrive(movement) {
     cPawl.rotation.z = state.cPawlAngle;
     bCord.userData.setRoute(state.bCord);
     cCord.userData.setRoute(state.cCord);
-    inputRod.userData.setEndpoints(state.inputPin, state.inputSlider);
+    {
+      // Rod D ends in an eye round the lever-tail pin and butts on the slider.
+      const pin = state.inputPin.clone().setZ(inputRodZ);
+      const end = state.inputSlider.clone().setZ(inputRodZ).add(new THREE.Vector3(-0.176, 0, 0));
+      const along = end.clone().sub(pin).normalize();
+      inputRodEye.position.copy(pin);
+      inputRod.userData.setEndpoints(pin.addScaledVector(along, 0.206), end);
+    }
     inputSlider.position.x = state.inputSlider.x;
     const bContactScale = state.bPawlContactGap < 1e-7 ? 1.28 : 0.72;
     const cContactScale = state.cPawlContactGap < 1e-7 ? 1.28 : 0.72;

@@ -29,10 +29,6 @@ export function makeCrossedGovernorSolids() {
   add('crossPin', disk(.10, -.30, .30, 96), 'rotor', PALETTE.ink);
   const arcRadius = 127 * g.scale;
   add('spreadBow', plate(sector(arcRadius - .075, arcRadius + .075, -Math.PI / 2 - .66, -Math.PI / 2 + .66, 128), .22, .32), 'rotor', PALETTE.brass);
-  for (let i = -2; i <= 2; i++) {
-    const a = -Math.PI / 2 + i * .025;
-    add('bowTick' + i, plate(sector(arcRadius - .067, arcRadius + .067, a - .003, a + .003, 2), .322, .326), 'rotor', PALETTE.ink);
-  }
   for (const sign of [-1, 1]) {
     const name = sign < 0 ? 'left' : 'right', arm = group(name + 'Arm', rotor), link = group(name + 'Link', rotor);
     const z = sign * g.layer, linkZ = sign * .275;

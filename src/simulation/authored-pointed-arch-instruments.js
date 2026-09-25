@@ -1,6 +1,6 @@
 import {correctDrawingTemplateParts,pointedTemplateParameters,taperedBendIntegrals} from './drawing-template-parts.js';
 import * as THREE from 'three';
-import { LaidRopeGeometry, replaceWithLaidRope } from './laid-rope.js';
+import { replaceWithLaidRope } from './laid-rope.js';
 import {
   PALETTE,
   markShadows,
@@ -764,22 +764,14 @@ function pointedArchInstrument(movement) {
   updateBarGeometry(1);
   update(0);
   correctDrawingTemplateParts(root,407,update);
-  // The loop round the slide pin is the same cord: a closed laid-rope ring
-  // on the helper's finite loop radius.
+  // The turns on the winding peg are the same cord as the free run
+  // (drawing-template-parts.js rebuilds both each update).
   {
     const loop = root.userData.blocks.cordLoop;
-    const loopRadius = loop.geometry.parameters.radius;
-    const loopTube = loop.geometry.parameters.tube;
-    const circle = new THREE.EllipseCurve(0, 0, loopRadius, loopRadius);
-    const ring = new THREE.CatmullRomCurve3(
-      circle.getSpacedPoints(96).slice(0, -1).map((p) => new THREE.Vector3(p.x, p.y, 0)),
-      true,
-    );
-    loop.geometry.dispose();
-    loop.geometry = new LaidRopeGeometry(ring, 128, loopTube, 8, true);
     loop.material = root.userData.blocks.cord.material;
     loop.userData.crossSection = 'laid-rope';
   }
+  update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 

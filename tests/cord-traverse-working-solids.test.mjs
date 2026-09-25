@@ -68,8 +68,12 @@ test('358 follows the ten-turn carriage law while retaining the complete track a
  assert.ok(b.track.children.filter(o=>o.userData.role==='rail-travel-reference-mark').length>=20);
  for(let i=0;i<=24;i++){m.update(i/2);m.root.updateMatrixWorld(true);assert.ok(Math.abs(b.carriage.getWorldPosition(new T.Vector3()).y)<1e-12);assert.ok(Math.abs(b.carriage.position.x-d.currentState.carriagePosition)<1e-12);}
  const size=d.cameraFitBounds.getSize(new T.Vector3());assert.ok(size.y<6&&size.y<d.geometry.trackHalfLength,'carriage closeup excludes remote track ends');
- // The fixed cord eyes never swing into the carriage-following closeup.
- for(let i=0;i<=64;i++){m.update(d.geometry.cyclePeriod*i/64);for(const x of[-d.geometry.anchorHalfSpan,d.geometry.anchorHalfSpan])assert.ok(Math.abs(x-d.currentState.carriagePosition)>1.4*size.y,'cord eye stays outside the closeup');}
+ // The fixed cord anchors stand just beyond the stroke: at each end of the
+ // traverse the near anchor comes up at the edge of the carriage closeup
+ // (never inside the carriage), so the cord visibly ends at a fixed stand.
+ let nearest=Infinity;
+ for(let i=0;i<=64;i++){m.update(d.geometry.cyclePeriod*i/64);for(const x of[-d.geometry.anchorHalfSpan,d.geometry.anchorHalfSpan]){const gap=Math.abs(x-d.currentState.carriagePosition);nearest=Math.min(nearest,gap);assert.ok(gap>size.y/2,'cord anchor stays outside the carriage closeup');}}
+ assert.ok(nearest<size.y/2+1,'near cord anchor reaches the closeup edge at the stroke end');
 });
 test('352 adjacent finite rope turns stay separated through the changing wound packs',()=>{
  const m=models.get(352),d=m.root.userData;

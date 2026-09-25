@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
 import {replaceWithLaidRope} from './laid-rope.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
@@ -14,6 +15,13 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
+
+function mergeBoxes(boxes) {
+  const parts = boxes.map(([w, h, d, x, y, z]) => new THREE.BoxGeometry(w, h, d).translate(x, y, z).toNonIndexed());
+  const merged = mergeGeometries(parts);
+  parts.forEach((part) => part.dispose());
+  return merged;
+}
 
 function addRole(object, role) {
   object.userData.role = role;
@@ -572,13 +580,6 @@ function reciprocatingWellLift(movement) {
     transparent: true,
   });
   waterMaterial.depthWrite = false;
-  const wellMaterial = matte(PALETTE.muted, {
-    opacity: 0.27,
-    roughness: 0.76,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  wellMaterial.depthWrite = false;
 
   const base = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(7.4, 0.14, 3.2),
@@ -587,10 +588,13 @@ function reciprocatingWellLift(movement) {
   base.position.set(0, groundY + 0.07, 0);
   root.add(base);
 
+  // Pass 56: the shaft is Brown's section, not a glazed box: an opaque back
+  // wall and floor between the two side walls, open toward the viewer; the
+  // side walls end at the section plane just in front of the water.
   const well = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(4.20, 3.48, 2.0),
-    wellMaterial,
-  ), 'transparent-well-shaft-beneath-opposed-buckets');
+    mergeBoxes([[4.24, 3.48, 0.12, 0, 0, -1.06], [4.24, 0.12, 2.12, 0, -1.80, 0]]),
+    matte(PALETTE.muted, { roughness: 0.82 }),
+  ), 'well-shaft-back-wall-and-floor-beneath-opposed-buckets');
   well.position.set(0, -1.93, ropeZ);
   root.add(well);
   // The well water stands where the lowered bucket's bottom dips 0.14 into
@@ -606,10 +610,10 @@ function reciprocatingWellLift(movement) {
   root.add(wellWater);
   for (const x of [-2.30, 2.30]) {
     const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(0.36, 2.78, 2.35),
+      new THREE.BoxGeometry(0.36, 2.78, 2.075),
       frameMaterial,
     );
-    wall.position.set(x, -2.27, ropeZ);
+    wall.position.set(x, -2.27, ropeZ - 0.1375);
     root.add(wall);
   }
 

@@ -720,12 +720,9 @@ function slidingFourThrowCamValveGear() {
     carrierTranslationForCam(index)
   ));
 
-  const driverMaterials = [
-    matte(0xf09a69, { metalness: 0.10, roughness: 0.61 }),
-    matte(0xe97a54, { metalness: 0.11, roughness: 0.59 }),
-    matte(PALETTE.driver, { metalness: 0.13, roughness: 0.56 }),
-    matte(0xb94734, { metalness: 0.15, roughness: 0.54 }),
-  ];
+  // The four cams are one casting: one plain colour, no shade banding.
+  const camMaterial = matte(PALETTE.driver, { metalness: 0.13, roughness: 0.56 });
+  const driverMaterials = [camMaterial, camMaterial, camMaterial, camMaterial];
   const drivenMaterial = matte(PALETTE.driven, {
     metalness: 0.12,
     roughness: 0.62,

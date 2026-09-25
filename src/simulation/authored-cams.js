@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {makeEccentricStrap} from './eccentric-strap.js';
 import {groundBlock} from './ground-block.js';
+import {wallGuide} from './wall-guide-hardware.js';
 import {
   PALETTE,
   makeBeam,
@@ -6736,28 +6737,54 @@ function reuleauxCarrierDiskValveMotion() {
   upperRailLiner.userData.side = 'upper';
   follower.add(lowerRailLiner, upperRailLiner);
 
-  const upperRodLength = upperRodOuterCoordinate - rodAttachmentCoordinate;
+  // Brown crops both rods at the plate edge. They run on whole into fixed
+  // guides just past the stroke (each boss clear of the nut at full stroke),
+  // and reach through the boss at either end of the stroke.
+  const nutTopCoordinate = outerHalfHeight - 0.03 + 50 * sourceScale;
+  const rodGuideHalfLength = 0.2;
+  const upperGuideCenter = Math.max(upperRodOuterCoordinate + 0.06,
+    nutTopCoordinate + outputAmplitude + 0.08) + rodGuideHalfLength;
+  const lowerGuideCenter = Math.max(lowerRodOuterCoordinate + 0.06,
+    nutTopCoordinate + outputAmplitude + 0.08) + rodGuideHalfLength;
+  const upperRodOuterEnd = upperGuideCenter + rodGuideHalfLength + outputAmplitude + 0.12;
+  const lowerRodOuterEnd = lowerGuideCenter + rodGuideHalfLength + outputAmplitude + 0.12;
+  const upperRodLength = upperRodOuterEnd - rodAttachmentCoordinate;
   const upperRod = new THREE.Mesh(
     new THREE.CylinderGeometry(rodRadius, rodRadius, upperRodLength, 28),
     drivenMaterial,
   );
   upperRod.position.set(
     0,
-    (rodAttachmentCoordinate + upperRodOuterCoordinate) / 2,
+    (rodAttachmentCoordinate + upperRodOuterEnd) / 2,
     0.4,
   );
   upperRod.userData.role = 'upper-valve-rod-rigid-with-yoke';
-  const lowerRodLength = lowerRodOuterCoordinate - rodAttachmentCoordinate;
+  const lowerRodLength = lowerRodOuterEnd - rodAttachmentCoordinate;
   const lowerRod = new THREE.Mesh(
     new THREE.CylinderGeometry(rodRadius, rodRadius, lowerRodLength, 28),
     drivenMaterial,
   );
   lowerRod.position.set(
     0,
-    -(rodAttachmentCoordinate + lowerRodOuterCoordinate) / 2,
+    -(rodAttachmentCoordinate + lowerRodOuterEnd) / 2,
     0.4,
   );
   lowerRod.userData.role = 'lower-valve-rod-rigid-with-yoke';
+  const rodGuides = [[1, upperGuideCenter], [-1, lowerGuideCenter]].map(([sign, center]) => {
+    const guide = new THREE.Group();
+    guide.position.set(0, shaftCenter.y + sign * center, 0.4);
+    guide.add(...wallGuide({
+      name: sign > 0 ? 'upperRodGuide' : 'lowerRodGuide',
+      axis: 'y',
+      halfLength: rodGuideHalfLength,
+      boreRadius: rodRadius + 0.004,
+      outerRadius: rodRadius + 0.14,
+      zWall: rearFrameZ - 0.4,
+      material: frameMaterial,
+    }));
+    guide.userData.role = sign > 0 ? 'fixed-guide-of-upper-valve-rod' : 'fixed-guide-of-lower-valve-rod';
+    return guide;
+  });
   follower.add(upperRod, lowerRod);
 
   // Brown draws each rod's nut as a hexagon seen face-on: three flats seated
@@ -6873,6 +6900,23 @@ function reuleauxCarrierDiskValveMotion() {
   );
   rearBearing.position.set(shaftCenter.x, shaftCenter.y, rearFrameZ);
   rearBearing.userData.role = 'fixed-rear-bearing-of-carrier-disk';
+  // The shaft turns in a short bearing behind the disk, flanged to the same
+  // framing that carries the rod guides.
+  const shaftBearing = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(bearingShape, {depth: .19, bevelEnabled: false, curveSegments: 64}).translate(0, 0, -.095),
+    frameMaterial,
+  );
+  shaftBearing.position.set(shaftCenter.x, shaftCenter.y, -.6);
+  shaftBearing.userData.role = 'shaft-bearing-behind-carrier-disk';
+  const shaftFlangeShape = new THREE.Shape();
+  shaftFlangeShape.moveTo(-.6, -.6); shaftFlangeShape.lineTo(.6, -.6); shaftFlangeShape.lineTo(.6, .6); shaftFlangeShape.lineTo(-.6, .6); shaftFlangeShape.closePath();
+  shaftFlangeShape.holes.push(bearingBore);
+  const shaftFlange = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(shaftFlangeShape, {depth: .07, bevelEnabled: false, curveSegments: 64}).translate(0, 0, -.035),
+    frameMaterial,
+  );
+  shaftFlange.position.set(shaftCenter.x, shaftCenter.y, rearFrameZ - .035);
+  shaftFlange.userData.role = 'flange-of-shaft-bearing';
 
   const baseY = guideMinimumY - 0.12;
   const baseRail = makeBeam(
@@ -6918,6 +6962,9 @@ function reuleauxCarrierDiskValveMotion() {
     ...guideRails,
     ...bearingSupports,
     rearBearing,
+    shaftBearing,
+    shaftFlange,
+    ...rodGuides,
     input,
     follower,
     lowerContactMarker,

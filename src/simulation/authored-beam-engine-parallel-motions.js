@@ -3,7 +3,7 @@ import { makeBoredLinkRod } from './bored-link-rod.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import * as THREE from 'three';
-import { glandCylinder, pinWallBracket } from './beyond-crop-hardware.js';
+import { glandCylinder, pinWallBracket, flangeColumn } from './beyond-crop-hardware.js';
 import {
   PALETTE,
   markShadows,
@@ -1761,6 +1761,10 @@ function stationaryBeamEngineParallelMotion(movement) {
       flange: 0.6, role: 'fixed-wall-bracket-of-beam-shaft-O', beyondPlateCrop: true }),
     pinWallBracket({ x: fixedRadiusPivotF.x, y: fixedRadiusPivotF.y, pinRadius: fixedPinRadius, zPin: pivotFShaftLow,
       zWall: -0.55, flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F', beyondPlateCrop: true }),
+    // F's small flange is carried at the head of a plain column standing on
+    // the engine-house floor (level with the cylinder's foot).
+    flangeColumn({ x: fixedRadiusPivotF.x, yTop: fixedRadiusPivotF.y + 0.08, yFloor: -7.4, zWall: -0.55,
+      width: 0.24, role: 'fixed-floor-column-carrying-radius-pin-F-flange', beyondPlateCrop: true }),
   );
   root.add(fixedFrame);
 

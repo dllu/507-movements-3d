@@ -472,8 +472,10 @@ test('movement 328 has a spatial engine frame and is distinct from 327', () => {
   const crop = model.root.userData.cameraFitBounds;
   const capBox = new THREE.Box3().setFromObject(blocks.cylinderTop);
   assert.ok(crop.min.y < capBox.min.y, 'plate crop includes the cylinder top');
-  assert.ok(crop.min.y > new THREE.Box3().setFromObject(blocks.cylinderBody).min.y,
-    'plate crop shows only the top of the cylinder');
+  // The view frames the whole cylinder (and flywheel) rather than Brown's
+  // crop, so the cylinder does not read as broken off at the canvas edge.
+  assert.ok(crop.min.y <= new THREE.Box3().setFromObject(blocks.cylinderBody).min.y,
+    'the view frames the whole cylinder');
   assert.ok(crop.min.x < bedBox.min.x && crop.max.x > capBox.max.x);
   assert.equal(blocks.crossheadPins.length, 2);
   assert.equal(blocks.inputFlywheelSpokes.length, 4);

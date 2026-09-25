@@ -1412,6 +1412,26 @@ function diskEngine(movement) {
   rodBow.userData.role = 'moving-bow-linking-the-rod-end-collars';
   diskAssembly.add(rodBow);
   Object.assign(root.userData.blocks, { casingPedestal, rightStandard, rodBow, rodCollars });
+  // The chamber is a half-section on z = 0; the disk, its seal and slot lips
+  // inside it are cut on the same fixed plane (as Brown draws the disk as a
+  // section line), so no half of the disk hangs outside the housing. The
+  // ball, rod, bow and collars stay whole, in front of the cut.
+  {
+    const localCut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+    const worldCut = localCut.clone();
+    const clipped = [];
+    root.traverse((object) => {
+      if (!object.isMesh) return;
+      if (!/^(?:nutating-circular-piston-disc|moving-disc-peripheral-seal|moving-radial-slot-lip)/.test(object.userData.role ?? '')) return;
+      object.material = object.material.clone();
+      object.material.clippingPlanes = [worldCut];
+      object.material.side = THREE.DoubleSide;
+      object.onBeforeRender = () => { worldCut.copy(localCut).applyMatrix4(root.matrixWorld); };
+      clipped.push(object);
+    });
+    root.userData.localClippingEnabled = true;
+    root.userData.sectionClippedParts = clipped.map((object) => object.userData.role);
+  }
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(crankCenter.x - 2.0, 0.1, -0.4),
     new THREE.Vector3(bowRadius + 0.5, ballCenter.y + bowRadius + 0.2, 0.4),

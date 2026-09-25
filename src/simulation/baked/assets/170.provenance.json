@@ -72,7 +72,7 @@
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/solids.js",
-      "sha256": "9d071b518f46404fc68dc937748fb2771af93ae6dbe52a689f55dfc838510f9a"
+      "sha256": "aac993c54f9e6b4bdbd6932ef8aa8a70ca6e91e6dca7cd5edb6ee2790a3731da"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/update-solids.js",
@@ -92,7 +92,7 @@
     },
     {
       "file": "src/simulation/clutch-section-geometry.js",
-      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+      "sha256": "e1278ea943497a8a63668838508c0f18f660d0d6da7c92416b3c53b09436b6ca"
     },
     {
       "file": "src/simulation/primitives.js",
@@ -100,6 +100,6 @@
     }
   ],
   "samples": 481,
-  "bytes": 408395,
-  "sha256": "c89a5849f70d455b2359efb379b76822bf8328926e45fe69c0ff62cc302c518b"
+  "bytes": 404355,
+  "sha256": "13ae0cfd13fc8719eec94493f74af90e7cd2a987e292e9c88e3a1ba9cd03f21e"
 }

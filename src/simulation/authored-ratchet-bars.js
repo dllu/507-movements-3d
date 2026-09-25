@@ -7,6 +7,7 @@ import {
 
 import { makeSteppedRatchetPawl, finishRatchetBarSupports, pawlReturnLift } from './ratchet-bar-working-parts.js';
 import { ring } from './finite-plate-geometry.js';
+import { makeLaidRopeMesh } from './laid-rope.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -900,7 +901,7 @@ function alternatingPawlRatchetBar(movement) {
   // down the left edge of the plate; the pulley's bearing is not drawn.
   const pulleyCenter = sourceToModel(new THREE.Vector2(38, 319));
   const pulleyRadius = 26 * sourceScale;
-  const cordRadius = 0.025;
+  const cordRadius = 0.035;
   const cordCenterRadius = pulleyRadius + cordRadius;
   const cordY = pulleyCenter.y + cordCenterRadius;
   const cordBottomY = -2.85;
@@ -928,35 +929,73 @@ function alternatingPawlRatchetBar(movement) {
   );
   pulleyAxle.position.set(pulleyCenter.x, pulleyCenter.y, 0.02);
   pulleyAxle.userData.role = 'fixed-left-pulley-axle';
-  const cordSpan = new THREE.Mesh(
-    new THREE.CylinderGeometry(cordRadius, cordRadius, 1, 16)
-      .rotateZ(Math.PI / 2).translate(0.5, 0, 0),
-    cordMaterial,
-  );
-  cordSpan.position.set(pulleyCenter.x, cordY, 0.02);
-  cordSpan.userData.role = 'cord-from-bar-end-to-pulley';
-  const cordWrap = new THREE.Mesh(
-    new THREE.TorusGeometry(cordCenterRadius, cordRadius, 10, 32, Math.PI / 2)
-      .rotateZ(Math.PI / 2),
-    cordMaterial,
-  );
-  cordWrap.position.set(pulleyCenter.x, pulleyCenter.y, 0.02);
-  cordWrap.userData.role = 'cord-wrapped-over-pulley';
-  const cordDrop = new THREE.Mesh(
-    new THREE.CylinderGeometry(cordRadius, cordRadius, pulleyCenter.y - cordBottomY, 16),
-    cordMaterial,
-  );
-  cordDrop.position.set(
-    pulleyCenter.x - cordCenterRadius,
-    (pulleyCenter.y + cordBottomY) / 2,
-    0.02,
-  );
-  cordDrop.userData.role = 'cord-hanging-from-pulley';
-  root.add(leftPulley, pulleyAxle, cordSpan, cordWrap, cordDrop);
+  // Brown hatches the cord as laid rope. One continuous laid rope runs from
+  // the bar's end over the pulley and down to a hanging weight that keeps it
+  // taut; the weight hangs just below Brown's crop at the plate's bottom edge
+  // and lowers by the bar's travel as the bar is drawn toward the pulley.
+  const weightHookStartY = cordBottomY - 0.1;
+  const ropeLength0 = (barLeftX - pulleyCenter.x) + Math.PI / 2 * cordCenterRadius
+    + (pulleyCenter.y - weightHookStartY);
+  const cordPath = (displacement) => {
+    const barEnd = barLeftX + displacement;
+    const spanLength = barEnd - pulleyCenter.x;
+    const dropBottom = pulleyCenter.y
+      - (ropeLength0 - spanLength - Math.PI / 2 * cordCenterRadius);
+    const path = new THREE.CurvePath();
+    path.add(new THREE.LineCurve3(
+      new THREE.Vector3(barEnd, cordY, 0.02),
+      new THREE.Vector3(pulleyCenter.x, cordY, 0.02)));
+    const arc = new THREE.Curve();
+    arc.getPoint = (t, target = new THREE.Vector3()) => {
+      const angle = Math.PI / 2 + t * Math.PI / 2;
+      return target.set(pulleyCenter.x + cordCenterRadius * Math.cos(angle),
+        pulleyCenter.y + cordCenterRadius * Math.sin(angle), 0.02);
+    };
+    path.add(arc);
+    path.add(new THREE.LineCurve3(
+      new THREE.Vector3(pulleyCenter.x - cordCenterRadius, pulleyCenter.y, 0.02),
+      new THREE.Vector3(pulleyCenter.x - cordCenterRadius, dropBottom, 0.02)));
+    return {path, dropBottom};
+  };
+  const cordSpan = makeLaidRopeMesh(cordPath(0).path, cordMaterial, {radius: cordRadius});
+  cordSpan.userData.role = 'laid-cord-from-bar-end-over-pulley-to-hanging-weight';
+  const hangingWeight = new THREE.Group();
+  hangingWeight.userData.role = 'hanging-weight-keeping-the-cord-taut';
+  const weightBody = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.22, 0.46, 40),
+    matte(PALETTE.ink, { metalness: 0.25, roughness: 0.46 }));
+  weightBody.position.y = -0.42;
+  weightBody.userData.role = 'cast-iron-hanging-weight';
+  const weightEye = new THREE.Mesh(new THREE.TorusGeometry(0.06, 0.018, 10, 28),
+    weightBody.material);
+  weightEye.position.y = -0.078 - 0.002;
+  weightEye.userData.role = 'eye-of-hanging-weight-tied-to-cord';
+  const weightShank = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.12, 12),
+    weightBody.material);
+  weightShank.position.y = -0.2;
+  weightShank.userData.role = 'shank-of-hanging-weight';
+  hangingWeight.add(weightBody, weightEye, weightShank);
+  hangingWeight.position.set(pulleyCenter.x - cordCenterRadius, weightHookStartY, 0.02);
+  // A plain strap bolted to the table's end carries the pulley's axle
+  // behind the wheel.
+  pulleyAxle.geometry.dispose();
+  pulleyAxle.geometry = new THREE.CylinderGeometry(0.07, 0.07, 0.52, 32).rotateX(Math.PI / 2);
+  pulleyAxle.position.z = -0.04;
+  const tableEndX = -5.346;
+  const pulleyStrap = new THREE.Mesh(
+    new THREE.BoxGeometry(tableEndX - pulleyCenter.x + 0.14, 0.2, 0.1),
+    matte(PALETTE.frame, { metalness: 0.13, roughness: 0.68 }));
+  pulleyStrap.position.set((tableEndX + pulleyCenter.x - 0.14) / 2, pulleyCenter.y, -0.25);
+  pulleyStrap.userData.role = 'strap-from-table-end-carrying-pulley-axle';
+  root.add(hangingWeight, pulleyStrap);
+  // Frame the weight at the cord's end through the bar's whole travel.
+  root.userData.cameraFitBounds.min.y = weightHookStartY - 0.76 - 0.7;
+  root.userData.cameraFitBounds.min.x = Math.min(root.userData.cameraFitBounds.min.x,
+    pulleyCenter.x - cordCenterRadius - 0.26);
+  root.add(leftPulley, pulleyAxle, cordSpan);
   Object.assign(root.userData.blocks, {
-    cordDrop,
     cordSpan,
-    cordWrap,
+    hangingWeight,
+    pulleyStrap,
     leftPulley,
     pulleyAxle,
   });
@@ -970,7 +1009,9 @@ function alternatingPawlRatchetBar(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     rack.position.x = state.renderedBarDisplacement;
-    cordSpan.scale.x = barLeftX + state.renderedBarDisplacement - pulleyCenter.x;
+    const cord = cordPath(state.renderedBarDisplacement);
+    cordSpan.userData.setCurve(cord.path, 0);
+    hangingWeight.position.y = cord.dropBottom;
     leftPulley.rotation.z = -state.renderedBarDisplacement / cordCenterRadius;
     leverRotor.rotation.z = state.leverAngle;
     longPawl.position.x = state.longAnchor.x;

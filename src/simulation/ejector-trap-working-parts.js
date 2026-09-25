@@ -73,7 +73,9 @@ export function correctEjectorTrapParts(root,id,update) {
     // D and C as the vacuum draws it up, fills them while the ejector
     // discharges through C, and falls back when the steam is shut off.
     {
-      const water=waterVolumeMaterial(),bilge=-2.91,dBottom=-1.16,dTop=1.56,outlet=3.40,rB=.395,rC=.465,rD=y=>radius(y)-.07;
+      // Pass 56: a clearer water tint so the half-section (the nozzle, the cut
+      // rim and the rear wall) reads through the water filling the rear half.
+      const water=waterVolumeMaterial({opacity:.24}),bilge=-2.91,dBottom=-1.16,dTop=1.56,outlet=3.40,rB=.395,rC=.465,rD=y=>radius(y)-.07;
       const column=(r,role)=>{const o=add(root,new THREE.CylinderGeometry(r,r,1,64,1,true).translate(0,.5,0),water,role);o.renderOrder=1;return o;};
       const inB=column(rB,'water-rising-in-suction-pipe-B'),inC=column(rC,'water-rising-in-discharge-pipe-C');
       inB.position.y=bilge;inC.position.y=dTop;

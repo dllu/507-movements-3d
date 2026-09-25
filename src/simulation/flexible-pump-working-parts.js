@@ -120,9 +120,11 @@ export function correctFlexiblePumpParts(root,id) {
     normalizedLink(b.connectingRod,g.connectingRodLength,.144);
     replace(lever.children[2],new THREE.CylinderGeometry(.14,.14,.96,32));
     const lowerPin=plateJoint(b.centerClamp,b.connectingRod.material,.14,g.linkEyeHeight);replace(lowerPin,new THREE.CylinderGeometry(.14,.14,.30,32));
-    const rim=polygonClipping.difference(poly(circle([0,0],1.31,128)),poly(circle([0,0],g.diaphragmRadius,128)));
-    replace(b.chamberRim,horizontalPlate(rim,-.055,.055));b.chamberRim.rotation.set(0,0,0);
-    const floor=polygonClipping.difference(poly(circle([0,0],1.31,128)),poly(circle([0,-.38],.44,96)));
+    // Pass 56: the rim and floor stand proud of the wall as plain flanges in
+    // the casing's own colour, so no coincident faces z-fight at the wall.
+    const rim=polygonClipping.difference(poly(circle([0,0],1.34,128)),poly(circle([0,0],g.diaphragmRadius,128)));
+    replace(b.chamberRim,horizontalPlate(rim,-.055,.055));b.chamberRim.rotation.set(0,0,0);b.chamberRim.material=b.chamberBottom.material;
+    const floor=polygonClipping.difference(poly(circle([0,0],1.34,128)),poly(circle([0,-.38],.44,96)));
     replace(b.chamberBottom,horizontalPlate(floor,-.07,.07));
     replace(b.chamberShell,pumpPortedWall(1.25,1.31,-(g.diaphragmRimY-g.chamberBottomY)/2,(g.diaphragmRimY-g.chamberBottomY)/2,[{side:1,y:.34-b.chamberShell.position.y,halfHeight:.30,halfWidth:.68}]));
     for(const key of['suctionPipe','deliveryBranch','deliveryRiser']){const pipe=b[key].shell;replace(pipe,curvedPipeWall(pipe.userData.curve,pipe.geometry.parameters.radius-.045,pipe.geometry.parameters.radius,72));}

@@ -754,9 +754,11 @@ test('movement 185 rendered transforms keep every analytical joint visibly attac
   const physicalSize = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(physicalSize.x > 10.75, 'notched quadrant plate and eccentric straps span the plate width');
   assert.ok(physicalSize.y > 6.0);
-  assert.ok(physicalSize.z > 3.19);
+  // The fixed rockshaft and reversing axis stop just proud of their arms;
+  // the common eccentric shaft sets the depth.
+  assert.ok(physicalSize.z > 2.65);
   assert.ok(physicalBounds.min.z < -1.32);
-  assert.ok(physicalBounds.max.z > 1.86);
+  assert.ok(physicalBounds.max.z > 1.32);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 3.3);

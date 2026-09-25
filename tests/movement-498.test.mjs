@@ -226,7 +226,13 @@ test('movement 498 starts and closes at rest, fits every pose, and leaves moveme
   for (let sample = 0; sample <= 720; sample += 1) {
     model.update(geometry.cycleDuration * sample / 720);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    // The boiler head and shell the pipe's flange is bolted to lie just
+    // beyond Brown's crop.
+    model.root.traverse((object) => {
+      if (!object.isMesh) return;
+      for (let parent = object; parent; parent = parent.parent) if (parent.userData.beyondPlateCrop) return;
+      swept.union(new THREE.Box3().setFromObject(object));
+    });
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
   assert.ok(Number.isFinite(swept.min.x));

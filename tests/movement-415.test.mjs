@@ -475,8 +475,15 @@ test('movement 415 update binds D, A, B, C, E, cords, input rod, and slider to o
       'selector E update');
     near(blocks.inputSlider.position.x, state.inputSlider.x, 0,
       'input slider update');
-    near(blocks.inputRod.scale.y, geometry.inputRodLength, 9e-16,
-      'input rod rendered length');
+    // Pin-to-slider-pin distance is the constant rod length; the rendered
+    // shank runs from the eye round the lever pin to the slider's face.
+    near(state.inputPin.distanceTo(state.inputSlider), geometry.inputRodLength, 1e-12,
+      'input rod pin-to-pin length');
+    const shankEnd = state.inputSlider.clone().setZ(0).add(new THREE.Vector3(-0.176, 0, 0));
+    const shankStart = state.inputPin.clone().setZ(0).addScaledVector(
+      shankEnd.clone().sub(state.inputPin.clone().setZ(0)).normalize(), 0.206);
+    near(blocks.inputRod.scale.y, shankStart.distanceTo(shankEnd), 1e-12,
+      'input rod rendered shank');
     near(blocks.bCord.userData.renderedLength,
       geometry.bCordMaterialLength, 4e-16,
       'B cord rendered length');

@@ -587,6 +587,61 @@ function watchRegulator(movement) {
     },
   );
 
+  // The spring is drawn as one continuous flat ribbon swept through every
+  // sample, collet to stud R, so it reads as a single spiral rather than a
+  // chain of separate straight pieces. The per-sample segments stay as
+  // hidden interface proxies for the curb-pin checks.
+  const springRibbonCount = springSamples.length;
+  const springRibbonGeometry = new THREE.BufferGeometry();
+  springRibbonGeometry.setAttribute('position', new THREE.BufferAttribute(
+    new Float32Array(springRibbonCount * 4 * 3), 3));
+  {
+    const index = [];
+    for (let i = 0; i < springRibbonCount - 1; i += 1) {
+      for (let k = 0; k < 4; k += 1) {
+        const a0 = i * 4 + k, a1 = i * 4 + (k + 1) % 4;
+        const b0 = a0 + 4, b1 = a1 + 4;
+        index.push(a0, b0, a1, a1, b0, b1);
+      }
+    }
+    const last = (springRibbonCount - 1) * 4;
+    index.push(0, 1, 2, 0, 2, 3, last, last + 2, last + 1, last, last + 3, last + 2);
+    springRibbonGeometry.setIndex(index);
+  }
+  const springRibbon = new THREE.Mesh(springRibbonGeometry, activeSpringMaterial);
+  springRibbon.userData.role = 'continuous-flat-spiral-balance-spring';
+  springRibbon.frustumCulled = false;
+  root.add(springRibbon);
+  // The inner coils carry a heavier section (Brown's bold spiral), easing to
+  // the 0.014 strip on the terminal coil that must pass between the curb pins.
+  const ribbonHalfWidths = springSamples.map((sample) => {
+    const toJoin = (innerSpiralLength - sample.arcLength) / (0.12 * innerSpiralLength);
+    // It also eases back to the plain strip where it is pinned in the collet.
+    const fromCollet = sample.arcLength / 0.6;
+    return 0.007 + 0.009 * THREE.MathUtils.clamp(Math.min(toJoin, fromCollet), 0, 1);
+  });
+  const setSpringRibbon = (points, halfHeight = 0.06) => {
+    const array = springRibbonGeometry.attributes.position.array;
+    for (let i = 0; i < points.length; i += 1) {
+      const before = points[Math.max(0, i - 1)], after = points[Math.min(points.length - 1, i + 1)];
+      const tx = after.x - before.x, ty = after.y - before.y;
+      const length = Math.hypot(tx, ty) || 1;
+      const nx = -ty / length, ny = tx / length;
+      const p = points[i];
+      const corners = [[1, 1], [1, -1], [-1, -1], [-1, 1]];
+      for (let k = 0; k < 4; k += 1) {
+        const o = (i * 4 + k) * 3;
+        array[o] = p.x + corners[k][0] * ribbonHalfWidths[i] * nx;
+        array[o + 1] = p.y + corners[k][0] * ribbonHalfWidths[i] * ny;
+        array[o + 2] = p.z + corners[k][1] * halfHeight;
+      }
+    }
+    springRibbonGeometry.attributes.position.needsUpdate = true;
+    springRibbonGeometry.computeVertexNormals();
+    springRibbonGeometry.computeBoundingBox();
+    springRibbonGeometry.computeBoundingSphere();
+  };
+
   const outerStudPosition = new THREE.Vector3(
     springOuterRadius * Math.cos(outerStudAngle),
     springOuterRadius * Math.sin(outerStudAngle),
@@ -740,7 +795,9 @@ function watchRegulator(movement) {
       // One spring, one material: the active length is not colour-coded.
       segment.material = activeSpringMaterial;
       segment.userData.active = isActive;
+      segment.visible = false;
     }
+    setSpringRibbon(springSamples.map(renderedSpringPoint));
     root.userData.regulatorState = {
       activeSpringLength: state.activeSpringLength,
       balanceAngularFrequency: state.naturalAngularFrequency,
@@ -782,6 +839,7 @@ function watchRegulator(movement) {
     regulatorCarrier,
     regulatorRing,
     springSamples,
+    springRibbon,
     springSegments,
     studBracket,
   };
@@ -920,7 +978,7 @@ function watchRegulator(movement) {
   });
   root.userData.materialsIgnoreSceneFog = true;
   markShadows(root);
-  for (const object of springSegments) {
+  for (const object of [...springSegments, springRibbon]) {
     object.castShadow = false;
     object.receiveShadow = false;
   }

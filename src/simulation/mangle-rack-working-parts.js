@@ -34,10 +34,15 @@ function finish197(root) {
     const reach = g.straightRackLength / 2 + g.guideRailCenterRadius;
     // The mount rises from the frame's end member itself (0.11 wide, centred
     // on outerFrameHalfWidth), so it no longer pokes out past the short ends.
-    const support = mesh(new THREE.BoxGeometry(g.outerFrameHalfWidth - reach + 0.055, 0.13, 0.13), PALETTE.driven, 'front-end-guide-mount');
-    support.position.set(side * (g.outerFrameHalfWidth + 0.055 + reach) / 2, 0, 0.48);
-    const post = mesh(new THREE.BoxGeometry(0.11, 0.13, 0.97), PALETTE.driven, 'axial-end-guide-frame-mount');
-    post.position.set(side * g.outerFrameHalfWidth, 0, 0.035);
+    // A flat bracket carries each guide arc at its apex from a standard that
+    // stands on the solid frame plate just inside the end member, so nothing
+    // reaches past the frame's short ends. The standard clears the pinion's
+    // furthest reach at the end turns (3.575 from the frame centre) by 0.025.
+    const inner = 3.6, outer = g.outerFrameHalfWidth - 0.08;
+    const support = mesh(new THREE.BoxGeometry(outer - reach, 0.3, 0.13), PALETTE.driven, 'front-end-guide-mount');
+    support.position.set(side * (outer + reach) / 2, 0, 0.48);
+    const post = mesh(new THREE.BoxGeometry(outer - inner, 0.3, 0.9), PALETTE.driven, 'axial-end-guide-frame-mount');
+    post.position.set(side * (outer + inner) / 2, 0, 0.066);
     const web = mesh(new THREE.BoxGeometry(g.outerFrameHalfWidth - g.straightRackLength / 2, 0.13, 0.18), PALETTE.driven, 'rear-rack-frame-web');
     web.position.set(side * (g.outerFrameHalfWidth + g.straightRackLength / 2) / 2, 0, -0.32);
     b.rackAssembly.add(support, post, web);

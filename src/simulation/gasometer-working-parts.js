@@ -105,7 +105,14 @@ export function correctGasometerWorkingParts(root, id) {
       b.bellRopeLugs[i].position.y -= 0.075;
     });
   } else {
-    replace(b.fixedTubeShell, tube(0.297, 0.245, 5.54));
+    // Pass 56: tube b passes through a bore in the tank floor down to the
+    // same depth as the two pipes (Brown draws it through the bottom); no
+    // separate base collar sits on the floor.
+    const tubeTop = b.fixedTubeShell.position.y + 5.54 / 2, tubeBottom = -2.48;
+    replace(b.fixedTubeShell, tube(0.297, 0.245, tubeTop - tubeBottom));
+    b.fixedTubeShell.position.y = (tubeTop + tubeBottom) / 2;
+    replace(b.tankBottom, plate(polygonClipping.difference(poly(circle([0, 0], tankRadius, 96)),
+      ...[-0.68, 0.68].map(x => poly(circle([x, 0], 0.157, 48))), poly(circle([0, 0], 0.299, 64))), -0.09, 0.09).rotateX(Math.PI / 2));
     replace(b.movingTubeShell, tube(0.4455, 0.351, 3.04));
     // The tinted gas volume also has to leave the guide sleeve empty.
     const radius = 1.78, hole = 0.50, end = Math.acos(hole / radius);

@@ -320,9 +320,12 @@ function FixedAnnulusAndFrame({
           side * fixedRingOuterRadius + offset,
           -0.10,
         ),
+        // Brown's legs run off the plate's foot; they continue on the same
+        // line down to the bed plate the cylinder stands on (y = -6.842).
         new THREE.Vector2(
-          side * 14.1 * sourceScale + offset,
-          -20.15 * sourceScale,
+          side * fixedRingOuterRadius + offset + (side * 14.1 * sourceScale
+            - side * fixedRingOuterRadius) * (6.842 - 0.10) / (20.15 * sourceScale - 0.10),
+          -6.842,
         ),
         0.10,
         0.26,
@@ -1039,11 +1042,22 @@ function EpicyclicPistonRodGuide(movement) {
   markShadows(root);
   correctEpicyclicGuide(root);
   finishPistonGuides(root,update);
-  // Frame the plate's crop: the flywheel fills the view, the A-frame legs run
-  // out of the bottom, and only the cylinder cover and top are seen.
+  // Brown crops the flywheel and shows only the cylinder cover; the view
+  // frames the whole flywheel, the A-frame legs and the whole cylinder down
+  // to its base.
+  {
+    // A plain bed plate carries the cylinder base and the A-frame feet.
+    let material = null;
+    root.traverse((o) => { if (!material && /A-frame-support-leg/.test(o.userData.role ?? '')) material = o.material; });
+    const bed = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.16, 1.95), material);
+    bed.position.set(0, -6.842 - 0.08, 0.52);
+    bed.userData.fixed = true;
+    bed.userData.role = 'fixed-bed-plate-under-cylinder-and-A-frame';
+    root.add(bed);
+  }
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.42, -3.80, -0.80),
-    new THREE.Vector3(3.42, 3.22, 1.00),
+    new THREE.Vector3(-4.5, -7.05, -0.80),
+    new THREE.Vector3(4.5, 4.5, 1.00),
   );
   root.userData.cameraDistanceScale = 1.0;
   return {

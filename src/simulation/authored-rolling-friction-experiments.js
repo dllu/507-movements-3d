@@ -521,24 +521,25 @@ function rollingCarriageFrictionExperiment(movement) {
   remotePulley.userData.role = 'driving-pulley-of-endless-belt-beyond-plate-crop';
   remotePulley.userData.beyondPlateCrop = true;
   root.add(remotePulley);
-  // The driving pulley is keyed on an overhead line shaft carried by a
-  // hanger from a ceiling beam, all beyond the plate's crop.
+  // The driving pulley is keyed on a short shaft carried by a plain floor
+  // standard behind the belt, standing on the same floor as the test rig's
+  // legs, all beyond the plate's crop (no floating ceiling plate).
   const hangerMaterial = matte(PALETTE.frame, { roughness: 0.7 });
   const lineShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 24), matte(PALETTE.ink, { roughness: 0.5 }));
   lineShaft.rotation.x = Math.PI / 2;
   lineShaft.position.set(remoteCenter.x, remoteCenter.y, beltPlaneZ - 0.35);
-  lineShaft.userData.role = 'overhead-line-shaft-beyond-plate-crop';
-  const hangerTop = remoteCenter.y + drivePulleyRadius + 0.75;
-  const hangerStrap = new THREE.Mesh(new THREE.BoxGeometry(0.12, hangerTop - remoteCenter.y, 0.08), hangerMaterial);
-  hangerStrap.position.set(remoteCenter.x, (hangerTop + remoteCenter.y) / 2, beltPlaneZ - 0.72);
-  hangerStrap.userData.role = 'line-shaft-hanger-beyond-plate-crop';
+  lineShaft.userData.role = 'driving-pulley-shaft-beyond-plate-crop';
+  const floorY = -2.168;
+  const hangerStrap = new THREE.Mesh(new THREE.BoxGeometry(0.16, remoteCenter.y - floorY, 0.08), hangerMaterial);
+  hangerStrap.position.set(remoteCenter.x, (remoteCenter.y + floorY) / 2, beltPlaneZ - 0.72);
+  hangerStrap.userData.role = 'floor-standard-carrying-driving-pulley-shaft-beyond-plate-crop';
   const hangerBearing = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.14, 24), hangerMaterial);
   hangerBearing.rotation.x = Math.PI / 2;
   hangerBearing.position.set(remoteCenter.x, remoteCenter.y, beltPlaneZ - 0.72);
-  hangerBearing.userData.role = 'line-shaft-hanger-bearing-beyond-plate-crop';
-  const ceilingBeam = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.22, 1.5), hangerMaterial);
-  ceilingBeam.position.set(remoteCenter.x, hangerTop + 0.11, beltPlaneZ - 0.35);
-  ceilingBeam.userData.role = 'ceiling-beam-carrying-line-shaft-beyond-plate-crop';
+  hangerBearing.userData.role = 'standard-bearing-of-driving-pulley-shaft-beyond-plate-crop';
+  const ceilingBeam = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.12, 0.7), hangerMaterial);
+  ceilingBeam.position.set(remoteCenter.x, floorY + 0.06, beltPlaneZ - 0.72);
+  ceilingBeam.userData.role = 'foot-of-driving-pulley-standard-beyond-plate-crop';
   for (const part of [lineShaft, hangerStrap, hangerBearing, ceilingBeam]) {
     part.userData.beyondPlateCrop = true;
     root.add(part);

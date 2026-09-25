@@ -1073,6 +1073,47 @@ function eccentricConeFrictionReverser(movement) {
   }
   nutPost.position.set(nutAxialPosition, 0, 0);
   nutPost.userData.role = 'source-footed-standard-E-carrying-nut';
+  // Supports the plates leave undrawn. A second standard like E carries a
+  // plain bush on screw D beyond the nut, so B is an overhung body on a
+  // two-bearing shaft rather than cantilevered from E alone; in the end view
+  // it stands exactly behind E. The screw's crests run in the bush over the
+  // whole 0.57 traverse (thread spans 1.81..5.71 at worst, bush 5.35..5.55).
+  const tailBearingX = 5.45;
+  const tailStandard = new THREE.Mesh(nutPost.geometry.clone(), nutPost.material);
+  tailStandard.position.set(tailBearingX, 0, 0);
+  tailStandard.userData.role = 'inferred-tail-standard-carrying-bush-for-screw-D';
+  const tailBush = annularCollarAlongX({
+    depth: 0.2, innerRadius: .204, material: frameMaterial, outerRadius: 0.31});
+  tailBush.position.set(tailBearingX, 0, 0);
+  tailBush.userData.role = 'inferred-plain-bush-on-screw-D-crests';
+  frame.add(tailStandard, tailBush);
+  // Roller C's short axle is carried by a light arm to a sliding sleeve on a
+  // round post standing behind B, clear of B's largest swept radius
+  // (1.48): C rises and falls freely while its axis stays parallel to D. The
+  // arm runs from the axle end beyond C's small-end face, 0.29 or more
+  // above B's surface.
+  const postZ = -1.66, armX = 0.22, postBottom = -1.34, postTop = 1.98;
+  const rollerPost = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.055, 0.055, postTop - postBottom, 28), frameMaterial);
+  rollerPost.position.set(rollerAxialCenter + armX, (postTop + postBottom) / 2, postZ);
+  rollerPost.userData.role = 'inferred-vertical-guide-post-for-roller-C';
+  const rollerPostFoot = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.46), frameMaterial);
+  rollerPostFoot.position.set(rollerAxialCenter + armX, postBottom + 0.035, postZ - 0.05);
+  rollerPostFoot.userData.role = 'foot-of-roller-C-guide-post';
+  frame.add(rollerPost, rollerPostFoot);
+  rollerAxle.geometry.dispose();
+  rollerAxle.geometry = cylinderAlongX(0.065, 0.36, darkMaterial, 30).geometry;
+  rollerAxle.position.x = 0.07;
+  const rollerSleeve = new THREE.Mesh(boredCylinderGeometry(0.105, 0.059, 0.24), frameMaterial);
+  rollerSleeve.position.set(armX, 0, postZ);
+  rollerSleeve.userData.role = 'sleeve-sliding-on-roller-C-guide-post';
+  const rollerArm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.09, -postZ - 0.1), frameMaterial);
+  rollerArm.position.set(armX, 0, (postZ + 0.1) / 2);
+  rollerArm.userData.role = 'arm-joining-roller-C-axle-to-guide-sleeve';
+  rollerCarriage.add(rollerSleeve, rollerArm);
+  Object.assign(root.userData.blocks, {
+    rollerArm, rollerPost, rollerPostFoot, rollerSleeve, tailBush, tailStandard});
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraFov = presentationView === 'end-view' ? 2 : 8;
   root.userData.reconstructionNote = 'The eccentric cone, at Brown\'s offset of about a quarter of its radius, drives roller C at a changing speed and lifts and lowers it once per turn; as the contact spirals toward the small end each fall is longer than the rise before it. As in the plates, the spring or weight that presses roller C on the cone and the guide of C are not drawn; the height of C follows the cone. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';

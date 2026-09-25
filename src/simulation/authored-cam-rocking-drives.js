@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { recess398Cam, finishGrooveDrive } from './groove-drive-working-parts.js';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
+import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -615,6 +616,48 @@ function camRockingDrive(movement) {
       return support;
     });
   root.add(base);
+
+  // Pass 56: Brown draws no frame, but the two shafts and the guides must be
+  // carried. One plain frame plate stands behind both discs (hidden by them
+  // in Brown's view) on two legs and feet; journals from the cam and the
+  // output wheel run in its bored bosses, and two pairs of brackets hold the
+  // crosshead guides from behind, clear of the roller and crosshead.
+  const frameZ = [-0.80, -0.62];
+  const camCenterX = sourceOffsetX;
+  const legBottomY = -3.20;
+  const frameOutline = clip.union(
+    poly([[camCenterX, -0.52], [outputCenter.x, -0.52], [outputCenter.x, 0.52], [camCenterX, 0.52]]),
+    poly(circle([camCenterX, 0], 0.55, 64)),
+    poly(circle([outputCenter.x, 0], 0.55, 64)),
+    ...[camCenterX, outputCenter.x].map((x) => poly([[x - 0.2, legBottomY], [x + 0.2, legBottomY], [x + 0.2, 0], [x - 0.2, 0]])),
+  );
+  const rearFrame = new THREE.Mesh(
+    plate(clip.difference(frameOutline, poly(circle([camCenterX, 0], 0.165, 64)), poly(circle([outputCenter.x, 0], 0.165, 64))), frameZ[0], frameZ[1]),
+    frameMaterial,
+  );
+  rearFrame.userData.role = 'rear-frame-plate-carrying-both-shafts';
+  root.add(rearFrame);
+  const feet = [camCenterX, outputCenter.x].map((x) => {
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.16, 0.50), frameMaterial);
+    foot.position.set(x, legBottomY - 0.08, (frameZ[0] + frameZ[1]) / 2);
+    foot.userData.role = 'rear-frame-foot';
+    root.add(foot);
+    return foot;
+  });
+  const guideBrackets = [];
+  for (const x of [-0.90, 0.35]) for (const y of [-0.44, 0.44]) {
+    const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.15, 0.85 + 0.005), frameMaterial);
+    bracket.position.set(x, y, (frameZ[1] + 0.23) / 2);
+    bracket.userData.role = 'crosshead-guide-bracket-to-rear-frame';
+    root.add(bracket);
+    guideBrackets.push(bracket);
+  }
+  for (const [parent, z0] of [[cam, -0.47], [outputWheel, -0.18]]) {
+    const journal = cylinderAlongZ(0.16, z0 - frameZ[0] + 0.02, darkMaterial, 32);
+    journal.position.z = (z0 + 0.02 + frameZ[0]) / 2;
+    journal.userData.role = 'shaft-journal-in-rear-frame';
+    parent.add(journal);
+  }
 
   const finiteDifferencePhase = 1e-5;
   const stateAtTime = (time) => {

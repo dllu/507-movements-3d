@@ -53,6 +53,9 @@ export function makeSelectableCamValve(){
  // plate's hatched circle at source scale (0.56 = 35 plate pixels).
  // The shaft mesh is turned so its geometry Y runs along the parent's Z.
  let shaft;root.traverse(o=>{if(o.userData.role==='long-keyed-shaft-through-sliding-cam-series')shaft=o;});
+ // Plain turned steel, so its end reads as the shaft's own face rather than
+ // a black cap over the cams.
+ shaft.material=matte(PALETTE.muted,{roughness:.5,metalness:.3});shaft.material.fog=false;
  {
   const {radiusTop:radius,radialSegments}=shaft.geometry.parameters,box=new THREE.Box3(),toShaftParent=new THREE.Matrix4();
   let hubFront=Infinity,hubRear=-Infinity;
@@ -95,7 +98,9 @@ export function makeSelectableCamValve(){
  {
   const ux=p.x-guideX,uy=p.y-(high-.12),len=Math.hypot(ux,uy),nx=-uy/len*.13,ny=ux/len*.13;
   const strap=poly([[guideX+nx,high-.12+ny],[p.x+nx,p.y+ny],[p.x-nx,p.y-ny],[guideX-nx,high-.12-ny]]);
-  add('output-guide-bracket',plate(clip.union(poly([[guideX-.23,low],[guideX+.23,low],[guideX+.23,high],[guideX-.23,high]]),strap,poly(circle([p.x,p.y],.24,96))),bracketLow,bracketHigh),b.fixedFrame,'frame');
+  // An open slot in the bracket clears the lower pin's retainer over the stroke.
+  const slot=poly([[guideX-.105,low-.01],[guideX+.105,low-.01],[guideX+.105,high-.09],[guideX-.105,high-.09]]);
+  add('output-guide-bracket',plate(clip.difference(clip.union(poly([[guideX-.23,low],[guideX+.23,low],[guideX+.23,high],[guideX-.23,high]]),strap,poly(circle([p.x,p.y],.24,96))),slot),bracketLow,bracketHigh),b.fixedFrame,'frame');
   add('fulcrum-standoff',disk(.2,leverPlane+.07,bracketLow,96).translate(p.x,p.y,0),b.fixedFrame,'frame');
  }
  const update=time=>{legacyUpdate(time);const s=stateAtTime(time);rod.position.set(s.valve.top.x,s.valve.top.y,rodZ);rod.rotation.z=s.valve.angle;slider.position.set(s.valve.bottom.x,s.valve.bottom.y,rodZ);root.userData.kinematics=s;root.updateMatrixWorld(true);};

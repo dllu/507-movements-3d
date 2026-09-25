@@ -151,57 +151,37 @@ function makeRollerFrame({
   const standards = [];
   const arms = [];
   const bearingZ = rollerWidth / 2 + 0.20;
-  const standardX = 1.82;
 
-  for (const side of [-1, 1]) {
-    const z = side * bearingZ;
-    const standard = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, upperCenter.y + 1.71, 0.25),
+  // Brown's view is a section through the shafts, so no near bearings are
+  // built. The far bearings are deep bored bosses on one upright standing on
+  // a foot directly behind the rollers, clear of the shaft ends and hidden
+  // behind the rollers in Brown's view. (The shafts overhang these bearings.)
+  const rearStandardZ = -(bearingZ + 0.325);
+  const standard = new THREE.Mesh(
+    new THREE.BoxGeometry(0.48, upperCenter.y + 1.71, 0.14),
+    material,
+  );
+  standard.position.set(0, (upperCenter.y - 1.21) / 2, rearStandardZ);
+  standard.userData.role = 'fixed-planer-feed-frame-standard';
+  group.add(standard);
+  standards.push(standard);
+  for (const center of [lowerCenter, upperCenter]) {
+    const bore = center.y === lowerCenter.y ? 0.164 : 0.154;
+    const block = new THREE.Mesh(
+      boredBlockGeometry(0.48, 0.48, 0.355, bore),
       material,
     );
-    standard.position.set(
-      standardX,
-      (upperCenter.y - 1.21) / 2,
-      z,
-    );
-    standard.userData.role = 'fixed-planer-feed-frame-standard';
-    group.add(standard);
-    standards.push(standard);
-
-    for (const center of [lowerCenter, upperCenter]) {
-      const bore = center.y === lowerCenter.y ? 0.164 : 0.154;
-      const arm = new THREE.Mesh(boredPlanarLinkGeometry({ length: standardX,
-        width: 0.18, eyeRadius: 0.23, boreRadius: bore, depth: 0.17 }), material);
-      arm.position.set(0, center.y, z);
-      arm.userData.role = 'fixed-bearing-support-arm';
-      group.add(arm);
-      arms.push(arm);
-
-      const block = new THREE.Mesh(
-        boredBlockGeometry(0.48, 0.48, 0.20, bore),
-        material,
-      );
-      block.position.set(0, center.y, z);
-      block.userData.role = 'roller-shaft-bearing-block';
-      group.add(block);
-      bearingBlocks.push(block);
-
-      const ring = new THREE.Mesh(
-        boredRollGeometry(0.245, 0.045, bore).rotateX(Math.PI / 2),
-        matte(PALETTE.ink, { metalness: 0.26, roughness: 0.47 }),
-      );
-      ring.position.set(0, center.y, side * (bearingZ + 0.105));
-      ring.userData.role = 'roller-shaft-bearing-ring';
-      group.add(ring);
-      bearingRings.push(ring);
-    }
+    block.position.set(0, center.y, -bearingZ - 0.0775);
+    block.userData.role = 'roller-shaft-bearing-block';
+    group.add(block);
+    bearingBlocks.push(block);
   }
 
   const base = new THREE.Mesh(
-    new THREE.BoxGeometry(4.25, 0.24, rollerWidth + 1.03),
+    new THREE.BoxGeometry(1.10, 0.24, 0.70),
     material,
   );
-  base.position.set(0.32, -1.58, 0);
+  base.position.set(0, -1.58, rearStandardZ + 0.20);
   base.userData.role = 'planer-feed-frame-base';
   group.add(base);
 

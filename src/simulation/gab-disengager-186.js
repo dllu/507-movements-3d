@@ -225,9 +225,12 @@ export function springHandleGabDisengager() {
   // ---------- spring handle strap (deformable, in rod coordinates) ----------
   const J = [369, 266]; // the strap leaves its riveted pad just below and right of c
   const tipY = NOTCH.flatY + STRAP_WIDTH / 2 / S + CONTACT_GAP / S;
-  const restPx = [J, [390, 280], [404, 294], [414, 313], [422.3, 335], [437, 382], [452, 432], [462, 465], [460, 486], [449, 493], [434, 487], [418, 466],
-    [404, 428], [394, 388], [391, 360], [397, 343], [410, 333], [428, 326.5], [445, 322.4], [456, tipY + 0.15],
-    [466, tipY], [476, tipY]];
+  // Brown's loop is a narrow U hung from the diagonal bar: its return leg
+  // rises on the outer side of the bar (never crossing it) and turns into
+  // the tongue that bears on the drop.
+  const restPx = [J, [390, 280], [404, 294], [414, 313], [422.3, 335], [437, 382], [446, 436], [448, 470], [456, 490], [467, 488], [475, 466],
+    [479, 432], [477, 396], [469, 368], [461, 348], [456, 334], [456, tipY + 3],
+    [462, tipY], [476, tipY]];
   const STRAP_POINTS = 121;
   const restCurve = new THREE.CatmullRomCurve3(restPx.map((p) => new THREE.Vector3(...P(...p), 0)), false, 'centripetal');
   const restPoints = restCurve.getSpacedPoints(STRAP_POINTS - 1).map((p) => [p.x, p.y]);
@@ -250,7 +253,7 @@ export function springHandleGabDisengager() {
     const f = clamp01((s - cumulative[i]) / (cumulative[i + 1] - cumulative[i]));
     return THREE.MathUtils.lerp(restAngle[i], restAngle[i + 1], f);
   };
-  const sLegLow = arcAt([418, 466]), sLegHigh = arcAt([394, 388]);
+  const sLegLow = arcAt([477, 450]), sLegHigh = arcAt([469, 368]);
   const strapWeights = cumulative.map((s) => ({
     seat: smoother((s - (strapLength - 6 * S)) / (5 * S)),
     z: THREE.MathUtils.lerp(Z.strapFront, Z.strapBack, smoother((s - sLegLow) / (sLegHigh - sLegLow))),

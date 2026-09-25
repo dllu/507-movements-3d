@@ -38,7 +38,10 @@ test('095 finite contact face, radial axle and guide contain the complete workin
     assert.ok(envelope<g.radius*Math.cos(Math.PI/8));
     const maxHeight=u.expectedHeight(0),minHeight=u.expectedHeight(Math.PI);
     assert.ok(maxHeight+.225<g.guideY-g.guideHalfLength);
-    assert.ok(minHeight+(u.source.rollerCenter[1]-u.source.rodTop)/100>g.guideY+g.guideHalfLength);
+    // The rod runs past Brown's crop and stays in its guide at every height.
+    assert.ok(g.rodTop>(u.source.rollerCenter[1]-u.source.rodTop)/100);
+    assert.ok(g.guideY-g.guideHalfLength>g.plateTop);
+    assert.ok(minHeight+g.rodTop>g.guideY+g.guideHalfLength);
     assert.ok(g.rollerHalfWidth<.0625);assert.ok(g.pinRadius+.001<g.rollerRadius);
   } finally {v.dispose();}
 });
@@ -70,7 +73,7 @@ test('095 ten turns keep the roller, fork and complete support hardware clear',t
       if(i<=4000&&i%125===0){v.sync();const audit=auditClutchSourceSolids(v);checks+=audit.checks;poses++;
         assert.deepEqual(audit.topologyIssues,[]);
         for(const issue of audit.issues){assert.ok([issue.from,issue.to].every(n=>['roller','disk'].includes(n)),JSON.stringify(issue));solidPenetration=Math.max(solidPenetration,-issue.gap);}
-        for(const mesh of Object.values(u.parts)) {const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
+        for(const mesh of Object.values(u.parts).filter(m=>!m.userData.beyondPlateCrop)) {const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
       }
     }
     t.diagnostic(JSON.stringify({maximumHeightErrorPixels:error*100,maximumNativePenetrationPixels:penetration*100,maximumSampledPenetrationPixels:solidPenetration*100,contacts,minSpin,maxSpin,poses,surfaceChecks:checks}));

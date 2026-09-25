@@ -85,13 +85,15 @@ test('091 native contact preserves stroke, dwell and clearances for ten turns',t
       if(i%250===0) {
         assert.ok(y+g.rodRoots[0]<g.guideCenter-g.guideHalfLength-.06);
         assert.ok(y+g.rodRoots[1]>-g.guideCenter+g.guideHalfLength+.06);
-        assert.ok(y+g.rodEnd>g.guideCenter+g.guideHalfLength+.025);
-        assert.ok(y-g.rodEnd<-g.guideCenter-g.guideHalfLength-.025);
+        // Each rod end stays at least half-way into its guide bore.
+        assert.ok(y+g.rodEnd>g.guideCenter-1e-3);
+        assert.ok(y-g.rodEnd<-g.guideCenter+1e-3);
       }
       if(i<=4000&&i%250===0) {
         v.sync();const audit=auditClutchSourceSolids(v);assert.deepEqual(audit.topologyIssues,[]);checks+=audit.checks;
         for(const issue of audit.issues){assert.ok([issue.from,issue.to].every(n=>['cam','liner0','liner1'].includes(n)),JSON.stringify(issue));solidPenetration=Math.max(solidPenetration,-issue.gap);}
-        for(const mesh of Object.values(u.parts)) {
+        // Rod runs and guides past Brown's crop are deliberately outside the fit.
+        for(const mesh of Object.values(u.parts).filter(m=>!m.userData.beyondPlateCrop)) {
           const pos=mesh.geometry.attributes.position;
           for(let k=0;k<pos.count;k++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,k).applyMatrix4(mesh.matrixWorld)),mesh.name+' leaves bounds');
         }

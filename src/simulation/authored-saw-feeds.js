@@ -576,18 +576,22 @@ function crankRockerAdjustableSawFeed(movement) {
   leftPost.position.set(leftTop.x, (leftTop.y + leftBottom.y) / 2, -0.42);
   leftPost.userData.role = 'left-fixed-bellcrank-and-output-bearing-post';
   frame.add(leftPost);
+  // The right post rises to the underside of the carriage slide (top at
+  // -0.27) so the slide rests on both posts instead of ending in mid-air.
+  const rightPostTop = -0.49;
   const rightPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, 1.72, 0.52),
+    new THREE.BoxGeometry(0.52, rightPostTop - rightBottom.y, 0.52),
     frameMaterial,
   );
-  rightPost.position.set(rightBottom.x, rightBottom.y + 0.86, -0.42);
+  rightPost.position.set(rightBottom.x, (rightPostTop + rightBottom.y) / 2, -0.42);
   rightPost.userData.role = 'right-fixed-input-crank-bearing-post';
   frame.add(rightPost);
+  // Its front face stops 0.01 behind the feed pinion's back face.
   const carriageGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(7.2, 0.22, 0.42),
+    new THREE.BoxGeometry(7.2, 0.22, 0.36),
     frameMaterial,
   );
-  carriageGuide.position.set(2.2, -0.38, -0.42);
+  carriageGuide.position.set(2.2, -0.38, -0.45);
   carriageGuide.userData.role = 'fixed-horizontal-carriage-slide';
   frame.add(carriageGuide);
   for (const x of [-1.45, 4.85]) {

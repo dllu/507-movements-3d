@@ -142,7 +142,15 @@ export function correctDualBandInterfaces(root) {
     replace(wheel,new THREE.ExtrudeGeometry(shape,{depth:.10,bevelEnabled:false,curveSegments:32}).translate(0,0,-.05));
   }
   const post=b.frame.children.find(o=>o.userData.role==='fixed-flywheel-shaft-bearing-post');
-  const outline=clip.union(poly([[-.125,-.765],[.125,-.765],[.125,.765],[-.125,.765]]),poly(circle([0,.78],.18,64)));
+  // One upright behind the flywheel carries both the flywheel shaft (bored
+  // boss) and the fixed fulcrum pin a (boss at its head), standing on a small
+  // foot; nothing else of a frame is drawn.
+  const pinY=b.pivotPin.position.y+.78;
+  const outline=clip.union(poly([[-.125,-.765],[.125,-.765],[.125,pinY],[-.125,pinY]]),poly(circle([0,.78],.18,64)),poly(circle([0,pinY],.20,64)));
   replace(post,plate(clip.difference(outline,poly(circle([0,.78],.108,64))),-.14,.14));
+  const pinBack=post.position.z-.10,pinFront=b.pivotPin.position.z+.55;
+  replace(b.pivotPin,new THREE.CylinderGeometry(.13,.13,pinFront-pinBack,32).rotateX(Math.PI/2));b.pivotPin.rotation.set(0,0,0);b.pivotPin.position.z=(pinFront+pinBack)/2;
+  const base=b.frame.children.find(o=>o.userData.role==='rectifier-frame-base');
+  replace(base,new THREE.BoxGeometry(.90,.22,.40));base.position.set(0,-1.61,post.position.z-.08);
   root.userData.finiteInterfaceReview={qualification:'Finite loose-pulley grooves, shaft journals and fast-wheel bores. The original prescribed pawl lift is not a finite-contact solution; the undersized pawls remain a measured follow-up.'};
 }

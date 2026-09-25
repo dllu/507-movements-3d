@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {circle, plate, poly, polygonClipping, ring} from './finite-plate-geometry.js';
-import {castFootGeometry, portNeckFillets} from './rotary-engine-cast-feet.js';
+import {castFootGeometry} from './rotary-engine-cast-feet.js';
+import {portedCasingGeometry, roundPortPipeGeometry, squarePortHole} from './round-port-pipes.js';
 import {
   PALETTE,
   markShadows,
@@ -267,17 +268,17 @@ function rubberLinedRotaryEngine(movement) {
   // Brown's casing is round but blends in concave fillets into the two port
   // necks; the bore stays the exact circle the liner E rests on.
   const portHalfHeight = 0.52;
-  const portPassages = [poly([[-4.5,-0.24],[-2.9,-0.24],[-2.9,0.24],[-4.5,0.24]]),
-    poly([[2.9,-0.24],[4.5,-0.24],[4.5,0.24],[2.9,0.24]])];
+  // The front lips lie in front of the port pipes, so they stay whole.
   const cutRing = (inner, outer, low, high) => plate(polygonClipping.difference(
-    poly(circle([0,0],outer,1024)), poly(circle([0,0],inner,1024)), ...portPassages), low, high);
-  rearHousing.geometry.dispose();rearHousing.geometry=plate(polygonClipping.difference(
-    polygonClipping.union(poly(circle([0,0],housingOuterRadius,1024)),
-      ...portNeckFillets(housingOuterRadius,portHalfHeight,-1).map(p=>[p]),
-      ...portNeckFillets(housingOuterRadius,portHalfHeight,1).map(p=>[p])),
-    poly(circle([0,0],housingInnerRadius,1024)),
-    // The port passages open through the wall to the space outside E.
-    ...portPassages),-0.42,0.90);
+    poly(circle([0,0],outer,1024)), poly(circle([0,0],inner,1024))), low, high);
+  // Pass 56: each port is a round bored pipe; its bore opens through the wall
+  // to the space outside E by a square hole in the wall's middle layer only.
+  const portZ = 0.24, portBore = 0.24;
+  rearHousing.geometry.dispose();rearHousing.geometry=portedCasingGeometry(polygonClipping.difference(
+    poly(circle([0,0],housingOuterRadius,1024)),
+    poly(circle([0,0],housingInnerRadius,1024))),-0.42,0.90,portZ,portBore,
+    [squarePortHole([-1,0],housingInnerRadius-0.1,housingOuterRadius+0.1,portBore),
+      squarePortHole([1,0],housingInnerRadius-0.1,housingOuterRadius+0.1,portBore)]);
   rearHousing.position.z = 0;
   rearHousing.userData.role =
     'fixed-rigid-cylinder-surrounding-flexible-lining';
@@ -308,12 +309,10 @@ function rubberLinedRotaryEngine(movement) {
   foundation.userData.role = 'fixed-cast-foot-under-cylinder';
   root.add(foundation);
   for (const side of [-1, 1]) {
-    // Each port is an open neck: two walls either side of the passage.
+    // Each port is a round bored pipe run into the casing wall up to its bore.
     const port = new THREE.Mesh(
-      plate(polygonClipping.difference(
-        poly([[3.30, -portHalfHeight], [4.39, -portHalfHeight], [4.39, portHalfHeight], [3.30, portHalfHeight]]),
-        poly([[3.36, -0.24], [4.45, -0.24], [4.45, 0.24], [3.36, 0.24]]),
-      ).map(polygon => polygon.map(r => r.map(([x, y]) => [side * x, y]))), -0.42, 0.90),
+      roundPortPipeGeometry(new THREE.Vector3(side * housingInnerRadius, 0, portZ),
+        new THREE.Vector3(side * 4.39, 0, portZ), portBore, portHalfHeight),
       frameMaterial,
     );
     port.userData.role = side < 0

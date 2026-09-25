@@ -614,15 +614,100 @@ function pileDriverReleasingHooks(movement) {
   weightAssembly.add(...pivotPins, ...pivotIndexes);
   root.add(weightAssembly);
 
-  // Brown draws the hoisting rope as a plain cord: the shared laid rope.
+  // Brown draws the hoisting rope running up out of the plate above B. It is
+  // the shared laid rope, whole: up over a sheave carried on the top tie and
+  // back to a winding drum beside it, where its end is coiled on the barrel.
+  const hoistRopeRadius = 0.12;
   const rope = makeDynamicCable({
-    color: PALETTE.ink,
+    color: PALETTE.belt,
     laid: true,
-    maxSegments: 2,
-    radius: 0.075,
+    maxSegments: 256,
+    radius: hoistRopeRadius,
   });
   rope.userData.role = 'vertical-hoisting-rope-through-slot-b';
   root.add(rope);
+  const tieTopY = upperTie.position.y + 0.3;
+  const sheaveRadius = 0.4;
+  const sheaveCenter = new THREE.Vector3(0, tieTopY + 0.62, 0.08 - sheaveRadius);
+  const drumRadius = 0.4;
+  const drumCenter = new THREE.Vector3(0, sheaveCenter.y, -1.4);
+  const coilPitch = 2 * hoistRopeRadius * 1.08;
+  const coilTurns = 3;
+  // Fixed part of the rope: coil on the drum (deepest turn first), the run
+  // from the drum top to the sheave top and the arc down the sheave's front.
+  const fixedRopePoints = [];
+  for (let i = coilTurns * 48; i >= 0; i -= 1) {
+    const phi = i / 48 * Math.PI * 2;
+    fixedRopePoints.push(new THREE.Vector3(-coilPitch * i / 48,
+      drumCenter.y + drumRadius * Math.cos(phi), drumCenter.z - drumRadius * Math.sin(phi)));
+  }
+  for (let i = 0; i <= 12; i += 1) {
+    const phi = Math.PI / 2 * i / 12;
+    fixedRopePoints.push(new THREE.Vector3(0,
+      sheaveCenter.y + sheaveRadius * Math.cos(phi), sheaveCenter.z + sheaveRadius * Math.sin(phi)));
+  }
+  let fixedRopeLength = 0;
+  for (let i = 1; i < fixedRopePoints.length; i += 1) fixedRopeLength += fixedRopePoints[i].distanceTo(fixedRopePoints[i - 1]);
+  const winch = new THREE.Group();
+  winch.userData.role = 'hoisting-sheave-and-winding-drum-on-top-tie';
+  const sheaveRotor = new THREE.Group();
+  sheaveRotor.position.copy(sheaveCenter);
+  const drumRotor = new THREE.Group();
+  drumRotor.position.copy(drumCenter);
+  const alongX = (radius, length, material) => {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 48), material);
+    mesh.rotation.z = Math.PI / 2;
+    return mesh;
+  };
+  const sheaveBody = alongX(sheaveRadius - hoistRopeRadius, 0.26, frameMaterial);
+  sheaveBody.userData.role = 'hoisting-rope-sheave';
+  const sheaveFlanges = [-1, 1].map((side) => {
+    const flange = alongX(sheaveRadius + 0.06, 0.05, frameMaterial);
+    flange.position.x = side * (hoistRopeRadius + 0.03);
+    flange.userData.role = 'hoisting-rope-sheave-flange';
+    return flange;
+  });
+  sheaveRotor.add(sheaveBody, ...sheaveFlanges);
+  const barrelLength = coilPitch * coilTurns + 2 * hoistRopeRadius + 0.04;
+  const barrel = alongX(drumRadius - hoistRopeRadius - 0.005, barrelLength, frameMaterial);
+  barrel.position.x = -coilPitch * coilTurns / 2;
+  barrel.userData.role = 'winding-drum-barrel';
+  const drumFlanges = [-1, 1].map((side) => {
+    const flange = alongX(drumRadius + 0.14, 0.06, frameMaterial);
+    flange.position.x = barrel.position.x + side * (barrelLength / 2 + 0.03);
+    flange.userData.role = 'winding-drum-flange';
+    return flange;
+  });
+  drumRotor.add(barrel, ...drumFlanges);
+  const cheekInnerX = [hoistRopeRadius + 0.12, -coilPitch * coilTurns - hoistRopeRadius - 0.12];
+  const axleLength = cheekInnerX[0] - cheekInnerX[1] + 0.3;
+  // Each axle is fast in its sheave or drum and turns in bored cheeks.
+  const axles = [[sheaveRotor, sheaveCenter], [drumRotor, drumCenter]].map(([rotor, center]) => {
+    const axle = alongX(0.06, axleLength, darkMaterial);
+    axle.position.set((cheekInnerX[0] + cheekInnerX[1]) / 2 - center.x, 0, 0);
+    axle.userData.role = 'axle-turning-in-top-cheeks';
+    rotor.add(axle);
+    return axle;
+  });
+  const cheekShape = new THREE.Shape();
+  cheekShape.moveTo(-2.0, 0);
+  cheekShape.lineTo(0.2, 0);
+  cheekShape.lineTo(0.2, sheaveCenter.y - tieTopY + 0.25);
+  cheekShape.lineTo(-2.0, sheaveCenter.y - tieTopY + 0.25);
+  cheekShape.closePath();
+  for (const center of [sheaveCenter, drumCenter]) {
+    cheekShape.holes.push(new THREE.Path().absarc(center.z, center.y - tieTopY, 0.064, 0, Math.PI * 2, true));
+  }
+  const cheeks = cheekInnerX.map((x, index) => {
+    const cheek = new THREE.Mesh(new THREE.ExtrudeGeometry(cheekShape, { depth: 0.08, bevelEnabled: false }), frameMaterial);
+    // Shape x runs along z, shape y up; the extrusion is along x.
+    cheek.rotation.y = -Math.PI / 2;
+    cheek.position.set(index === 0 ? x + 0.08 : x, tieTopY, 0);
+    cheek.userData.role = 'winch-cheek-standing-on-top-tie';
+    return cheek;
+  });
+  winch.add(sheaveRotor, drumRotor, ...cheeks);
+  root.add(winch);
 
   const guideContactMarkers = [-1, 1].map((side) => {
     const marker = new THREE.Mesh(
@@ -1133,10 +1218,14 @@ function pileDriverReleasingHooks(movement) {
     // The rope ends on top of its eye ring (0.34 ring + 0.085 tube). Its lay
     // is fixed to that lower end, so it rises with the head.
     const ropeEndY = state.liftHeadY + 1.24 + 0.425;
+    const hangingLength = sheaveCenter.y - ropeEndY;
     rope.userData.setPoints([
-      new THREE.Vector3(0, ropeTopY, 0.08),
+      ...fixedRopePoints,
       new THREE.Vector3(0, ropeEndY, 0.08),
-    ], ropeTopY - ropeEndY);
+    ], fixedRopeLength + hangingLength);
+    // The sheave and drum turn with the rope.
+    sheaveRotor.rotation.x = hangingLength / sheaveRadius;
+    drumRotor.rotation.x = hangingLength / drumRadius;
     const guidePoints = [
       state.guideContactPoints.left,
       state.guideContactPoints.right,

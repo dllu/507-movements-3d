@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { LaidRopeGeometry } from './laid-rope.js';
 import { makeCrownRatchetGeometry, capstanPawlLeadAngle, capstanPawlDimensions, capstanPawlProfile } from './capstan-pawl-contact.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { capstanHeadGeometry, capstanSocketRimGeometry, capstanPackingProgress, capstanPawlArmGeometry, capstanPawlCheekGeometry } from './capstan-finite-parts.js';
 import {
   PALETTE,
@@ -400,7 +401,9 @@ function commonCapstan(movement) {
   const pipeX = freeCableEndX + 1.25;
   const bendRadius = 0.36;
   const pipeTopY = -0.62;
-  const deckY = -1.95; // the underside of the capstan foot
+  // Pass 56: the deck is Brown's ground line under the ratchet; the deck
+  // pipe stands on it and the cable runs down through it.
+  const deckY = -1.61;
   const leadCurve = new THREE.CurvePath();
   const pipeBottom = new THREE.Vector3(pipeX, deckY + 0.3, freeEnd.z);
   const bendBottom = new THREE.Vector3(pipeX, freeEnd.y - bendRadius, freeEnd.z);
@@ -432,6 +435,17 @@ function commonCapstan(movement) {
   deckPipe.position.set(pipeX, 0, freeEnd.z);
   for (const part of [cableLead, deckPipe]) part.userData.beyondPlateCrop = true;
   root.add(cableLead, deckPipe);
+  const deck = addRole(new THREE.Mesh(
+    plate(polygonClipping.difference(
+      poly([[-2.4, -2.3], [pipeX + 0.7, -2.3], [pipeX + 0.7, 2.3], [-2.4, 2.3]]),
+      poly(circle([pipeX, -freeEnd.z], 0.1, 48)),
+      poly(circle([0, 0], 0.145, 48)),
+    ), deckY - 0.2, deckY).rotateX(-Math.PI / 2),
+    supportMaterial,
+  ), 'fixed-deck-under-capstan-and-deck-pipe');
+  // Brown's ground line; the plank runs on beyond his crop to the deck pipe.
+  deck.userData.beyondPlateCrop = true;
+  root.add(deck);
 
   const update = (time) => {
     const state = stateAtTime(time);

@@ -15,7 +15,8 @@ const poses=[0,.04,.25,1,1.25,1.345,1.75,2.5,3.245,3.47,3.6525,3.75,4.0167,4.25,
 
 test('086 completes the measured loose wheel and input band with real shaft and pump guide passages',()=>{
  const model=makePumpCatchDrive(),u=model.root.userData,h=u.completeHardware;
- assert.equal(Object.keys(u.parts).length,45);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
+ // 45 parts plus the two barrel hangers from the guide crossbar to the lower bed.
+ assert.equal(Object.keys(u.parts).length,47);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
  assert.notEqual(u.blocks.wheel,u.blocks.cam);assert.equal(u.blocks.catch.parent,u.blocks.wheel);
  near(h.radius,(u.source.center[0]-u.source.visibleRope.x)/u.source.scale);
  near(h.ropeRadius,u.source.visibleRope.width/(2*u.source.scale));

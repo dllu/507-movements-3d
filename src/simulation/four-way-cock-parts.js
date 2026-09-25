@@ -85,7 +85,7 @@ export function makeBrownPortPipes(material,{start=1.80,length=.62,bend=2.4,bore
  return group;
 }
 
-// Pass 55: prepare Brown's section as ONE clean cutaway on z = 0. The plug is
+// Pass 55/56: prepare Brown's figure (pass 56: no cut; see cutaway-presentations). The plug is
 // solid behind rectangular passage channels (open only toward the cut face),
 // and the body is a full annulus ported where the pipes join, instead of a
 // thin dark outline ring. The cut itself is applied by cutaway-presentations.
@@ -100,13 +100,15 @@ export function sectionFourWayCockParts(root){
   }
   return poly([...sides[0],...sides[1].reverse()]);
  });
- const disk=poly(circle([0,0],g.plugRadius,256)),open=clip.difference(disk,...strips),r=g.pipeRadius;
+ const disk=poly(circle([0,0],g.plugRadius,256)),open=clip.difference(disk,...strips),r=.30;
  const annulus=clip.difference(poly(circle([0,0],g.bodyOuterRadius,256)),poly(circle([0,0],g.bodyInnerRadius,256)),rectangle(-r,-3,r,3),rectangle(-3,-r,3,r));
  const byRole=role=>{let found=null;root.traverse(o=>{if(!found&&o.userData?.role===role)found=o;});return found;};
  // Channels are .14 deep below the cut face; the plug is solid behind them.
  const depth=d.plugChannelDepth=.14;
  for(const role of['close-fitting-rotary-cock-plug','second-plate-figure-close-fitting-plug'])
   byRole(role).geometry=mergePassageParts([plate(disk,-g.plugDepth/2,-depth),plate(open,-depth,g.plugDepth/2)]);
- for(const role of['fixed-annular-four-port-cock-body-surrounding-turning-plug','second-plate-figure-annular-cock-body'])
-  byRole(role).geometry=plate(annulus,-g.bodyDepth/2,g.bodyDepth/2);
+ for(const role of['fixed-annular-four-port-cock-body-surrounding-turning-plug','second-plate-figure-annular-cock-body']){
+  const body=byRole(role);body.geometry=plate(annulus,-g.bodyDepth/2,g.bodyDepth/2);
+  body.material=body.material.clone();body.material.color.set(0x59605f);
+ }
 }

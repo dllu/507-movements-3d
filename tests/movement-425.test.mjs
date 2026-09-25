@@ -89,8 +89,8 @@ test('movement 425 is one shaft-fast eccentric piston C in fixed cylinder A with
     'circular-body-of-eccentric-piston-C',
     'outer-sealing-tongue-of-piston-C-that-passes-abutment-D',
     'fixed-vertical-guide-for-sliding-abutment-D',
-    'right-induction-port',
-    'left-eduction-port',
+    'right-round-induction-port-pipe',
+    'left-round-eduction-port-pipe',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

@@ -290,9 +290,18 @@ test('movement 407 update binds the dynamic ribbon, tip pencil, and both cord en
     const cordPath = blocks.cord.geometry.parameters.path;
     const cordStart = blocks.cord.localToWorld(cordPath.getPoint(0));
     const cordEnd = blocks.cord.localToWorld(cordPath.getPoint(1));
-    const origin=new THREE.Vector3(state.slidePin.x,state.slidePin.y,.33),tip=new THREE.Vector3(state.tip.x,state.tip.y,.33),direction=tip.clone().sub(origin).normalize();
-    vectorNear(cordStart,origin.clone().addScaledVector(direction,.09),1e-13,'cord winds on from the pin loop');
+    // The free run leaves the last turn on the winding peg tangentially and
+    // meets the outside of the pencil loop; turns plus free run keep one length.
+    const helixPath = blocks.cordLoop.geometry.parameters.path;
+    vectorNear(cordStart,helixPath.getPoint(1),1e-12,'free run leaves the peg turns');
+    const radial=new THREE.Vector2(cordStart.x-state.slidePin.x,cordStart.y-state.slidePin.y);
+    near(radial.length(),.085,1e-12,'free run leaves on the wrap radius');
+    near(radial.dot(new THREE.Vector2(cordEnd.x-cordStart.x,cordEnd.y-cordStart.y)),0,1e-12,'free run is tangent to the peg');
+    const tip=new THREE.Vector3(state.tip.x,state.tip.y,.33),direction=new THREE.Vector3(tip.x-cordStart.x,tip.y-cordStart.y,0).normalize();
     vectorNear(cordEnd,tip.clone().addScaledVector(direction,-.139),1e-13,'cord meets outside of pencil loop');
+    const winding=data.cordWinding;
+    near(winding.total,winding.designTotal,1e-9,'inextensible cord keeps one length');
+    near(cordEnd.distanceTo(cordStart),winding.freeRun,1e-12,'rendered free run');
     const collar = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'white-cord-and-bar-tip-connection-collar');
     vectorNear(collar.getWorldPosition(new THREE.Vector3()), tip,

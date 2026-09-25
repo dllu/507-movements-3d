@@ -37547,11 +37547,12 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
     rightFloorLedge,
   ]) assert.equal(fixedPart.parent, fixedFrame);
   // Brown draws no beam column, wheel post, slider rail or index marks;
-  // source presentation removes them.
+  // source presentation removes them, keeping a slim post behind the wheel
+  // (the beam shaft runs back into a flange) so neither shaft floats.
+  assert.equal(flywheelBearingPost.parent, fixedFrame);
   for (const undrawn of [
     beamColumnFoot,
     beamPivotBackColumn,
-    flywheelBearingPost,
     sliderGuideRail,
     flywheelRotationIndex,
     beamMotionIndex,

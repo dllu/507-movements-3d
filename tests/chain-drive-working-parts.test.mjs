@@ -91,3 +91,17 @@ for(const id of [227,228,229])test(`${id}: stable buffers, readable timing, comp
  assert.ok(triangles<(id===228?60000:50000));assert.equal(d.hideGround,true);assert.equal(d.minimumDisplayCycleSeconds,4);assert.match(d.reconstructionNote,/prescribed/);assert.match(d.reconstructionNote,/not solved/);
  for(const geometry of new Set(saved.map(row=>row[1]).filter(g=>g.userData.plate))){let volume=0;const p=geometry.attributes.position;for(let i=0;i<p.count;i+=3){const[a,b,c]=[0,1,2].map(j=>new THREE.Vector3().fromBufferAttribute(p,i+j));volume+=a.dot(b.cross(c))/6;}assert.ok(volume>0,'inverted plate winding');}
 });
+
+test('227: the sprocket is a clean, regular six-pointed analytic profile', () => {
+ const m=create({id:227}),g=m.root.userData.geometry,[[outer]]=m.root.userData.blocks.sprocket.geometry.userData.plate.polygons;
+ const radius=p=>Math.hypot(p[0],p[1]),tips=outer.slice(0,-1).filter(p=>radius(p)>2.6199);
+ assert.equal(tips.length,6);
+ for(const [i,tip] of tips.entries()){
+  assert.ok(Math.abs(radius(tip)-2.62)<1e-6);
+  const turn=((Math.atan2(tip[1],tip[0])-g.toothCenterPhase)/g.toothStep%1+1)%1;
+  assert.ok(Math.min(turn,1-turn)<1e-6,`tooth ${i} is off its six-fold station`);
+ }
+ // Six-fold symmetric: every vertex rotated by one tooth step lies on the outline.
+ const key=p=>p.map(v=>v.toFixed(5)).join(),set=new Set(outer.map(key)),c=Math.cos(g.toothStep),s=Math.sin(g.toothStep);
+ for(const p of outer)assert.ok(set.has(key([p[0]*c-p[1]*s,p[0]*s+p[1]*c])));
+});

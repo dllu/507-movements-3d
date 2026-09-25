@@ -87,7 +87,8 @@ test('090 finite solids, running clearances and complete camera envelope hold th
       assert.ok(x+g.rodRoots[0]>-g.guideCenter+g.guideHalfLength+.06);
       assert.ok(x+g.rodEnd>g.guideCenter+g.guideHalfLength+.025);
       assert.ok(x-g.rodEnd<-g.guideCenter-g.guideHalfLength-.025);
-      for(const mesh of Object.values(u.parts)) {
+      // Rod runs and guides past Brown's crop are deliberately outside the fit.
+      for(const mesh of Object.values(u.parts).filter(m=>!m.userData.beyondPlateCrop)) {
         const p=mesh.geometry.attributes.position;
         for(let i=0;i<p.count;i++)assert.ok(u.cameraFitBounds.containsPoint(
           new THREE.Vector3().fromBufferAttribute(p,i).applyMatrix4(mesh.matrixWorld)),mesh.name+' leaves camera bounds');

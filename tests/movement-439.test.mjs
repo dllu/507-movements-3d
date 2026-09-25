@@ -94,11 +94,13 @@ test('movement 439 has one rope over one pulley joining a valved bucket to one c
     'bottom-valve-opened-by-ground-contact',
     'bucket-return-counterweight',
   ]) assert.ok(roles.includes(role), role);
-  // Brown draws no anvil: the model keeps it for the valve-strike law, and
-  // the source presentation removes it from the displayed scene.
+  // The valve opens by striking the ground: the gallows, the ground and its
+  // small striking block are presented so the pulley and valve are carried.
   assert.equal(blocks.strikeAnvil.userData.role,
     'ground-anvil-opening-bucket-valve');
-  assert.equal(roles.includes('ground-anvil-opening-bucket-valve'), false);
+  for (const role of ['ground-anvil-opening-bucket-valve', 'fixed-ground-beneath-bucket',
+    'bored-pulley-shaft-hanger', 'fixed-post-carrying-upper-end-of-flume'])
+    assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
 

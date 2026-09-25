@@ -21,11 +21,20 @@ export function makeLinkedVariableCrank() {
   add('mainPin', disk(.10, -.12, .24, 96), 'main', PALETTE.ink, [g.mainRadius, 0, 0]);
   const linkShape = clip.difference(clip.union(hole([0, 0], .18), hole([g.linkLength, 0], .18), capsule([0, 0], [g.linkLength, 0], .065)), hole([0, 0], .104), hole([g.linkLength, 0], .104));
   add('connectingLink', plate(linkShape, .02, .20), 'link', PALETTE.brass);
-  add('mainShaft', disk(.10, -.40, -.08, 96), 'fixed', PALETTE.ink, [...g.mainPivot, 0]);
+  // Both crank shafts run back into plain bearings flanged to the framing
+  // behind the mechanism (z = -0.55), so neither floats. The small crank sits
+  // just behind the pitman, where its sweep clears the link and main pin.
+  add('mainShaft', disk(.10, -.55, -.08, 96), 'fixed', PALETTE.ink, [...g.mainPivot, 0]);
+  const bearing = (name, center, front) => {
+    add(name, plate(clip.difference(hole([0, 0], .2), hole([0, 0], .104)), -.47, front), 'fixed', PALETTE.muted, [...center, 0]);
+    add(name + 'Flange', plate(clip.difference(hole([0, 0], .27), hole([0, 0], .104)), -.55, -.47), 'fixed', PALETTE.muted, [...center, 0]);
+  };
+  bearing('mainShaftBearing', g.mainPivot, -.30);
+  bearing('auxiliaryShaftBearing', [0, 0], -.06);
   const auxiliaryShape = clip.difference(clip.union(hole([0, 0], .19), hole([g.radius, 0], .15), capsule([0, 0], [g.radius, 0], .09)),
     hole([0, 0], .104), hole([g.radius, 0], .104));
-  add('auxiliaryCrank', plate(auxiliaryShape, .58, .76), 'auxiliary', PALETTE.brass);
-  add('auxiliaryShaft', disk(.10, .50, .90, 96), 'fixed', PALETTE.ink);
+  add('auxiliaryCrank', plate(auxiliaryShape, .215, .295), 'auxiliary', PALETTE.brass);
+  add('auxiliaryShaft', disk(.10, -.55, .295, 96), 'fixed', PALETTE.ink);
   const L = g.leftSpan, R = g.rightSpan;
   // Brown's pitman is a slender tapered bar with a modest boss at the
   // auxiliary pin, not a broad plate.
@@ -33,7 +42,7 @@ export function makeLinkedVariableCrank() {
     hole([-L, 0], .14), hole([0, 0], .22), hole([R, 0], .20));
   add('pitman', plate(clip.difference(pitmanOutline, hole([-L, 0], .104), hole([0, 0], .104), hole([R, 0], .114)), .30, .46), 'pitman', PALETTE.driver);
   add('pitmanEndPin', disk(.10, 0, .50, 96), 'pitman', PALETTE.ink, [-L, 0, 0]);
-  add('auxiliaryPin', disk(.10, .28, .80, 96), 'pitman', PALETTE.ink);
+  add('auxiliaryPin', disk(.10, .215, .52, 96), 'pitman', PALETTE.ink);
   add('wristPin', disk(.11, 0, .50, 96), 'pitman', PALETTE.ink, [R, 0, 0]);
   // Brown crops the power rocker 1.36 from its wrist. It is whole: it runs
   // on to its fixed fulcrum pin, carried by a bearing block, beyond the
@@ -71,7 +80,7 @@ export function makeLinkedVariableCrank() {
     simulationBackend: 'analytic', fidelity: 'authored', reconstructionStatus: 'reconstructed', supportsRestart: true,
     hideGround: true, cameraFitBounds: bounds, cameraFov: 8,
     animationTiming: {authoredCyclePeriod: g.period, displayCycleDuration: g.period, playbackTimeScale: 1},
-    reconstructionNote: 'The added link replaces the slotted crank of movement 168. Rigid closure uses measured shaft spacing and pitman spans. The power rocker runs whole to an inferred fulcrum pin and bearing block below the drawing; depths, clearances and the four-second cycle are inferred.'});
+    reconstructionNote: 'The added link replaces the slotted crank of movement 168. Rigid closure uses measured shaft spacing and pitman spans. The power rocker runs whole to an inferred fulcrum pin and bearing block below the drawing; both crank shafts turn in inferred rear bearings; depths, clearances and the four-second cycle are inferred.'});
   return {root, update, reset: () => update(0), focus: bounds.getCenter(new THREE.Vector3()),
     cameraDirection: new THREE.Vector3(.01, .01, 15), dispose: () => disposeObject3D(root)};
 }

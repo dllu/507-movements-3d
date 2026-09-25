@@ -1,5 +1,5 @@
 {
-  "bakedAssetHash": "7b3dd43d26421f8ae824defb920ececb0e4861f2a46a16f163fe45ac9a514a1a",
+  "bakedAssetHash": "13ae0cfd13fc8719eec94493f74af90e7cd2a987e292e9c88e3a1ba9cd03f21e",
   "movement": 170,
   "status": "baked-solid-diagnostic",
   "parameters": {
@@ -19,16 +19,16 @@
     "linkLayer": 0.275
   },
   "poses": 129,
-  "meshes": 88,
-  "pairs": 2459,
-  "queries": 54375472,
+  "meshes": 83,
+  "pairs": 2229,
+  "queries": 48881488,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the settled native cycle, phased near the engraving. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
   "sources": [
     {
       "file": "src/simulation/baked/assets/170.json.gz",
-      "sha256": "7b3dd43d26421f8ae824defb920ececb0e4861f2a46a16f163fe45ac9a514a1a"
+      "sha256": "13ae0cfd13fc8719eec94493f74af90e7cd2a987e292e9c88e3a1ba9cd03f21e"
     },
     {
       "file": "src/simulation/baked/crossed-governor.js",
@@ -44,7 +44,7 @@
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/solids.js",
-      "sha256": "9d071b518f46404fc68dc937748fb2771af93ae6dbe52a689f55dfc838510f9a"
+      "sha256": "aac993c54f9e6b4bdbd6932ef8aa8a70ca6e91e6dca7cd5edb6ee2790a3731da"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/update-solids.js",
@@ -68,15 +68,15 @@
     },
     {
       "file": "src/simulation/clutch-section-geometry.js",
-      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+      "sha256": "e1278ea943497a8a63668838508c0f18f660d0d6da7c92416b3c53b09436b6ca"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

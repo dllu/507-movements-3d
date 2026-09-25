@@ -2173,14 +2173,43 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
       'y = r*sin(beta) - sqrt(L^2 - r^2*cos(beta)^2), beta = theta + pi/2',
   };
 
+  // Now that the whole cylinder is in view, the guide columns run on down to
+  // a plain bed plate on which the cylinder stands.
+  {
+    const cylinderBox = new THREE.Box3().setFromObject(cylinderBody);
+    const bedTop = cylinderBox.min.y, bedHeight = 0.2;
+    for (const guide of [leftGuideBarA, rightGuideBarA]) {
+      const columnBox = new THREE.Box3().setFromObject(guide.userData.body);
+      const lower = new THREE.Mesh(
+        new THREE.BoxGeometry(columnBox.max.x - columnBox.min.x,
+          columnBox.min.y - bedTop + 0.02, columnBox.max.z - columnBox.min.z),
+        guide.userData.body.material,
+      );
+      lower.position.set((columnBox.min.x + columnBox.max.x) / 2,
+        (columnBox.min.y + 0.02 + bedTop) / 2, (columnBox.min.z + columnBox.max.z) / 2);
+      lower.userData.fixed = true;
+      lower.userData.role = `${guide.userData.role}-column-foot`;
+      guide.add(lower);
+    }
+    const bed = new THREE.Mesh(
+      new THREE.BoxGeometry(3.5, bedHeight, cylinderBox.max.z - (-0.3) + 0.1),
+      cylinderBody.material,
+    );
+    bed.position.set(0, bedTop - bedHeight / 2, (cylinderBox.max.z + 0.1 - 0.3) / 2);
+    bed.userData.fixed = true;
+    bed.userData.role = 'fixed-engine-bed-under-cylinder-and-columns';
+    root.add(bed);
+    root.userData.blocks.engineBed = bed;
+  }
   finishGuidePresentation(root, update, cyclePeriod);
-  // Brown crops the plate to the crank above and the cylinder cover below,
-  // with the flywheel rim cut off at the sides.
+  // Brown crops the plate to the crank above and the cylinder cover below;
+  // the view frames the whole flywheel and the whole cylinder instead, so
+  // neither reads as broken off at the canvas edge.
   root.userData.sweptBounds = root.userData.cameraFitBounds;
-  root.userData.cameraDistanceScale = 0.96;
+  root.userData.cameraDistanceScale = 1.0;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-12.6 * sourceScale, -23.6 * sourceScale - 0.35, -0.75),
-    new THREE.Vector3(12.6 * sourceScale, 2.4 * sourceScale, 0.90),
+    new THREE.Vector3(-3.2, -8.35, -0.75),
+    new THREE.Vector3(3.2, 3.2, 0.90),
   );
   markShadows(root);
   return {

@@ -22,10 +22,12 @@ export function makeMujocoTriangularEccentric(mujoco,options={}) {
   };
   const playback=createPhysicsPlayback(physics,sync);let disposed=false;
   const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
-  const y=u.geometry.rodEnd+u.profile.amplitude+.03;
+  // Frame Brown's plate: the stubs to his break line over the full stroke.
+  // The guides and rod runs past the plate edge stay out of the fit.
+  const y=Math.max(...u.geometry.rodTips.map(Math.abs))+2*u.profile.amplitude+.05;
   Object.assign(u,{mechanism:'mujoco-triangular-eccentric-valve-motion',simulationBackend:'mujoco',physics,
     fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'The cam is fitted as a constant-width profile. Frame clearance, guides, rod extensions and depth are reconstructed.',
+    reconstructionNote:'The cam is fitted as a constant-width profile. Frame clearance, the guides just past the plate edge (carried from behind), the rod runs into them, the rear shaft bearing and depth are reconstructed.',
     cameraFitBounds:new THREE.Box3(new THREE.Vector3(-1.85,-y,-.79),new THREE.Vector3(1.85,y,.34)),
     sampledMotionBounds:{min:[-1.85,-y,-.79],max:[1.85,y,.34]},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},

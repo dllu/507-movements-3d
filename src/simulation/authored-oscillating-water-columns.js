@@ -5,6 +5,7 @@ import {
   matte,
 } from './primitives.js';
 import {waterFountainGeometry, waterJetMaterial} from './water-volume.js';
+import {applyCutawayFor} from './cutaway-presentations.js';
 
 import {
   circle,
@@ -858,5 +859,5 @@ function dectolOscillatingColumn(movement) {
 
 export function createAuthoredOscillatingWaterColumnMovement(movement) {
   if (movement.id !== 445 && movement.id !== 446) return null;
-  return dectolOscillatingColumn(movement);
+  return applyCutawayFor(dectolOscillatingColumn(movement), 445);
 }

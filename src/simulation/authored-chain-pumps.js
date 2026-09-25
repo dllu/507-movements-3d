@@ -277,20 +277,25 @@ function chainPump(movement) {
   const support = addRole(new THREE.Group(),
     'fixed-frame-supporting-upper-powered-chain-wheel');
   root.add(support);
+  // Pass 56: two posts stand on the reservoir floor behind the chain and
+  // carry both fixed axles in cross beams (Brown draws no frame).
+  const postTop = topWheelCenter.y + 0.18;
   for (const x of [-1.45, 1.45]) {
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 3.55, 0.22),
+      new THREE.BoxGeometry(0.18, postTop - groundY, 0.22),
       frameMaterial,
     );
-    post.position.set(x, 1.55, -0.58);
+    post.position.set(x, (postTop + groundY) / 2, -0.58);
     support.add(post);
   }
-  const topBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(3.25, 0.18, 0.26),
-    frameMaterial,
-  );
-  topBeam.position.set(0, topWheelCenter.y, -0.58);
-  support.add(topBeam);
+  for (const center of [topWheelCenter, bottomWheelCenter]) {
+    const beam = new THREE.Mesh(
+      new THREE.BoxGeometry(3.25, 0.18, 0.26),
+      frameMaterial,
+    );
+    beam.position.set(0, center.y, -0.58);
+    support.add(beam);
+  }
 
   const makeWheel = (center, material, side) => {
     const rotor = addRole(new THREE.Group(),
