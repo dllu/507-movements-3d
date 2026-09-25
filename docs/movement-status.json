@@ -876,7 +876,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/gears-24-46-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -884,9 +885,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The radial grooves cut right through the rim, so the wheel is six loose sectors. Square notches show around the rim from the side and back. Brown's rim is a continuous circle.",
       "limits": "Zero-clearance ideal slot constraint; roller spin during central disengagement is prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 28,
@@ -1261,7 +1262,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/gears-24-46-review.md",
         "docs/lane1-belts-gears-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1269,9 +1271,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The large wheel is a solid disc with four short slits that look like floating holes. Brown draws an annular band broken into arcs by radial gaps, with a channel around the gear.",
       "limits": "The arm's sun-end stud needs a front bracket that is neither drawn nor modelled. Square teeth are not a conjugate profile (about 0.005 running backlash). Bearing loads are not solved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 40,
@@ -1449,7 +1451,8 @@
         "docs/minimal-interface-review.md",
         "docs/gears-24-46-review.md",
         "docs/w2a-gears-core-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1457,9 +1460,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Brown's hatched cross-section is modelled as a free-standing painted slab beside the wheels. From rotated views it reads as a board floating in space with nothing connecting it to the wheels.",
       "limits": "Grooved friction faces are geometrically reconstructed; traction and pressure sharing remain idealized.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 46,
@@ -1512,7 +1515,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1520,9 +1524,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The clutch halves are flat extrusions of Brown's half-section, not revolved bodies. Seen from the side they shrink to a thin hatched slab with a round shaft through it.",
       "limits": "Annular friction clutch uses assumed friction/load behavior; source dimensions and material calibration are unverified.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 48,
@@ -1738,7 +1742,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1746,9 +1751,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The gold part A is a collection of disconnected curved fragments, a thin wire rectangle and a stub. They stick out past the rim and pass into it. Brown draws a single solid block.",
       "limits": "Quasistatic selected-guide reaction and inferred crossover geometry; loaded inertia/impact unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 55,
@@ -1774,7 +1779,8 @@
         "docs/lane9-residuals-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m3-mujoco-cams-review.md",
-        "docs/m10-48-147-review.md"
+        "docs/m10-48-147-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1782,9 +1788,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "From behind, the page-coloured web of C hides gears A and B completely, so the whole mechanism looks like a thin gold arc and a hub. Coverage from the back is 0.02 against 0.30 from the front.",
       "limits": "Stub teeth keep a 25° involute taper (the 10-tooth pinion needs about 25° to avoid undercut); Brown's square teeth cannot mesh.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 56,
@@ -2650,7 +2656,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2658,9 +2665,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The rack-rod rises completely out of its lower guide for part of the cycle, leaving the grey guide block floating alone below the rod end.",
       "limits": "Integrated contact reconstruction retains source, load and ideal-support assumptions.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 82,
@@ -3055,7 +3062,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m3-mujoco-cams-review.md"
+        "docs/m3-mujoco-cams-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3063,9 +3071,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The stem's small round eye goes around the crank shaft only at one instant. For the rest of the stroke the solid upper stem slides across the crank hub. Brown's lower stem has an elongated slot around the shaft.",
       "limits": "The upper stem is longer than Brown's so it can reach its reconstructed guide; the undrawn lower stem guide is removed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 94,
@@ -3564,7 +3572,8 @@
         "docs/w2d-cranks-screws-review.md",
         "docs/w3h-mujoco-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m10-48-147-review.md"
+        "docs/m10-48-147-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3572,9 +3581,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The grooved drum is an open hollow tube with no end cap or hub. From above you can see inside, and the shaft stands in empty space. The groove lands stick out as thin fins in the side view.",
       "limits": "Crossings sit 3.2 px lower than the ink fit so the top turn-around fits under the rim; the double-start groove (three turns per traverse), shoe, depths and ideal bearings are reconstructed; soft-contact penetration is fragile to small changes in settings.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 109,
@@ -3941,7 +3950,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/w3h-mujoco-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m3-mujoco-cams-review.md"
+        "docs/m3-mujoco-cams-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3949,9 +3959,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The slotted vertical guide bar is drawn only as hairline outlines with no body, so from oblique views it reads as floating wire lines. Brown draws a solid bar in front of the rack.",
       "limits": "The camera fits the whole sweep; only the broken-off end rods leave the frame, as Brown draws them.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 120,
