@@ -17,3 +17,29 @@ Specific findings:
 - **001:** a thin belt where the plate draws a rope like 270's.
 
 Fix lanes: p53-no-hidden-lines, p53-parts, p53-no-crop and p53-style. A rotated-view audit of all 507 movements goes to /dev/shm/audit53.
+
+## Rotated-view audit 382–507
+
+- **382** (minor): Blocky stair-stepped dark shadow patch on the lower mirror glass under the hinge link (shadow aliasing reads as a jagged cut-out).
+- **391** (minor): Elbow lever C and spring d never move and never reach the right rack's pin in any phase; nothing carries the pin over the guide's upper angle, as the caption requires. Brown's short link from C down toward A' is also missing.
+- **395** (minor): The casing ports/pipes Brown draws running out past both circles are missing. The plug passages are thin relief strips on the front face only, so the back of each plug is a blank disc.
+- **414** (flawed): The spiral rack A has no disc or web behind it. The hub's short black stubs don't reach the spiral, so the spiral floats unattached around the hub. Brown draws the spiral teeth cut on a wheel face.
+- **421** (minor): The cylinder housing is only two flat side walls, open front and back. The piston's round blue flange sticks out through the open sides.
+- **423** (minor): The casing is a thin round-tube wireframe. The quadrant cylinder arcs end in mid-air and never close the sector cylinders, while Brown draws a thick sectioned casting. Pistons B are needle-thin wedges.
+- **425** (minor): The two port necks are small open half-pipe scraps perched on a bare ring casing. Brown draws a pear-shaped double-walled casing whose ports rise into the top.
+- **434** (minor): A stray L-shaped bracket hangs under the base plate and ends in mid-air.
+- **435** (minor): Same stray L-shaped bracket as 434 under the base plate, ending in mid-air.
+- **436** (minor): Water is drawn as stiff light-blue sticks poking up above and down below the wheel. They read as stray rods.
+- **438** (minor): A small pale sliver floats beside the tube just below the collar, attached to nothing.
+- **443** (minor): The upper bearing/crank is a wavy grey wire that ends in mid-air. The float wheel is a flat cog-like disc with tiny paddles, unlike Brown's large bucket-paddle wheel.
+- **451** (minor): The air vessel is a faceted octagonal 'gem' instead of Brown's rounded dome, and the left inlet is a J-hook rather than his S-bend.
+- **463** (minor): The water hatch-line planes cut straight through the gate leaves in oblique views, and a stray yellow disc lies on the bed.
+- **465** (minor): Brown's operator standing on the rocking beam, and the hand-bar he holds, are missing.
+- **466** (minor): The pump cistern hangs in mid-air about a sixth of the frame height above the floor the press stands on (Brown puts both on the same ground). A stray orange tab sticks out of the cistern's left wall.
+- **470** (minor): The valve chest hangs off the right leg. A black vertical rod stub stands above it and ends in mid-air, and the steam pipe exits right, whereas Brown's enters from the left and his valve rod runs down the right leg.
+- **475** (minor): The chamber D bulb is visibly low-poly: a faceted polygon outline instead of a smooth pear shape.
+- **479** (minor): The guide posts pass through the tank's black rim flange, and at mid-stroke the counterweight balls pass through that flange.
+- **482** (minor): The centre guide boss on top of the dome is a long fin running the full depth of the casing, not Brown's small central knob.
+- **485** (minor): The tail vane is an empty wire loop with no sheet.
+- **493** (minor): The lewis mortise is cut as a slot running the full depth of the stone, open at the front and back faces, rather than a dovetailed pocket.
+- **494** (flawed): The stone hangs fixed in mid-air (no ground) while the nippers open and close. At phase 0 and ~0.75 the tips stand clear of the stone's sides, so nothing holds it; the tongs never visibly bite.
