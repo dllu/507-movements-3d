@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {LaidRopeGeometry, replaceWithLaidRope} from './laid-rope.js';
 import {correctSteeringSolids} from './steering-spatial-parts.js';
 import {
@@ -759,6 +760,40 @@ function ropeSteering(movement) {
   });
   correctSteeringSolids(root);
   addHandwheelHandles(root);
+  // Pass 57: the feet stand on a plain pale deck under the whole gear
+  // (Brown's plan view looks straight down on it), set just below the
+  // handwheel handles' lowest sweep (-3.06), so the posts, pedestals and
+  // their feet are carried down 0.36 to it. The deck is bored for the rudder
+  // stock, which now runs on through it.
+  {
+    const b = root.userData.blocks, deckTop = -3.16, deckBottom = -3.28, drop = 0.36;
+    const lengthen = (mesh) => {
+      const p = mesh.geometry.parameters;
+      mesh.geometry.dispose();mesh.geometry = new THREE.BoxGeometry(p.width, p.height, p.depth + drop);
+      mesh.position.z -= drop / 2;
+    };
+    for (const guide of [b.upperGuide, b.lowerGuide]) {lengthen(guide.post);guide.foot.position.z -= drop;}
+    for (const pedestal of b.wheelPedestals) lengthen(pedestal);
+    root.traverse((o) => {if (o.userData.role === 'handwheel-pedestal-foot') o.position.z -= drop;});
+    const rect = (x0, y0, x1, y1) => [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]];
+    const stockCenter = new THREE.Vector3();
+    b.rudderShaft.getWorldPosition(stockCenter);
+    const outline = polygonClipping.difference(rect(-3.95, -3.30, 3.75, 3.30),
+      poly(circle([stockCenter.x, stockCenter.y], 0.125, 48)));
+    b.deck.geometry.dispose();
+    b.deck.geometry = plate(outline, deckBottom, deckTop);
+    b.deck.position.set(0, 0, 0);
+    b.deck.visible = true;
+    b.deck.material = b.deck.material.clone();b.deck.material.color.set(0xe4dccb);
+    b.deck.userData.role = 'fixed-deck-carrying-steering-gear';
+    const stockTop = b.rudderShaft.position.z + 1.31;
+    b.rudderShaft.geometry.dispose();
+    b.rudderShaft.geometry = new THREE.CylinderGeometry(0.12, 0.12, stockTop - (-3.46 - b.tiller.position.z), 40);
+    b.rudderShaft.position.z = (stockTop + (-3.46 - b.tiller.position.z)) / 2;
+    root.userData.cameraFitBounds.min.set(-3.97, -3.32, -3.48);
+    root.userData.cameraFitBounds.max.y = 3.32;
+    root.userData.groundFloorY = -3.32;
+  }
   root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);
   update(0);

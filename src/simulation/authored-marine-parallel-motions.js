@@ -2607,11 +2607,113 @@ function doubleParallelMotion(movement) {
   };
 }
 
+// Plain supports Brown leaves undrawn, kept behind the moving parts: every
+// fixed pivot and member is carried to one frame instead of ending on
+// nothing. Boxes are given as [x0, x1, y0, y1, z0, z1] in model units.
+function addPlainSupports(result, id) {
+  const root = result.root;
+  root.updateMatrixWorld(true);
+  const byRole = (role) => {
+    let found = null;
+    root.traverse((object) => { if (object.userData.role === role) found = object; });
+    return found;
+  };
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.14, roughness: 0.64 });
+  const steelMaterial = matte(PALETTE.muted, { metalness: 0.35, roughness: 0.45 });
+  const box = ([x0, x1, y0, y1, z0, z1], role, material = frameMaterial) => {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), material);
+    mesh.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+    mesh.userData.fixed = true;
+    mesh.userData.role = role;
+    return mesh;
+  };
+  const lengthenShaft = (shaft, back) => {
+    // The shaft runs back from its front face into the support behind.
+    const front = shaft.position.z + shaft.geometry.parameters.height / 2;
+    const radius = shaft.geometry.parameters.radiusTop;
+    shaft.geometry.dispose();
+    shaft.geometry = new THREE.CylinderGeometry(radius, radius, front - back, 40);
+    shaft.position.z = (front + back) / 2;
+    shaft.material = steelMaterial;
+    return { radius };
+  };
+  const supports = new THREE.Group();
+  supports.userData.fixed = true;
+  supports.userData.role = 'plain-undrawn-supports';
+  if (id === 332) {
+    // Shaft A runs back into a boss on a flat tie bar that joins it to the
+    // vessel wall behind the side lever.
+    const shaft = byRole('fixed-sectioned-side-lever-shaft-A');
+    const low = -0.60, high = -0.45;
+    lengthenShaft(shaft, low + 0.02);
+    const tie = new THREE.Mesh(plate(clip.union(
+      poly(circle([0, 0], 0.34, 48)),
+      poly([[0, -0.13], [2.35, 0.5], [2.35, 0.76], [0, 0.13]]),
+    ), low, high), frameMaterial);
+    tie.userData.fixed = true;
+    tie.userData.role = 'plain-back-tie-carrying-shaft-A-from-vessel';
+    supports.add(tie);
+  } else if (id === 336) {
+    // A bed bar level with the cylinder's bottom flange runs left behind
+    // the side lever; a pedestal on it takes shaft O, and a column at its
+    // far end carries the diagonal member's flange.
+    const shaft = byRole('fixed-sectioned-side-lever-shaft-O');
+    const low = -0.62, high = -0.30;
+    lengthenShaft(shaft, low + 0.02);
+    const flange = byRole('fixed-flange-of-diagonal-frame-member-beyond-plate');
+    const flangeBox = new THREE.Box3().setFromObject(flange);
+    const columnX = (flangeBox.min.x + flangeBox.max.x) / 2;
+    supports.add(
+      box([columnX - 0.3, 1.45, -0.64, -0.42, low, high], 'plain-bed-bar-from-cylinder-flange'),
+      box([columnX - 0.18, columnX + 0.18, -0.42, (flangeBox.min.y + flangeBox.max.y) / 2, low, high],
+        'plain-column-carrying-diagonal-member-flange'),
+    );
+    const pedestal = new THREE.Mesh(plate(clip.union(
+      poly(circle([0, 0], 0.3, 48)),
+      poly([[-0.24, -0.42], [0.24, -0.42], [0.24, 0], [-0.24, 0]]),
+    ), low, high), frameMaterial);
+    pedestal.userData.fixed = true;
+    pedestal.userData.role = 'plain-pedestal-carrying-shaft-O-on-bed-bar';
+    supports.add(pedestal);
+  } else if (id === 333) {
+    // The lugs stand on frame blocks (not pale ground slabs) carried by two
+    // posts down to a cross bar on the P cylinder's head, beyond the crop.
+    const cylinder = byRole('closed-cylinder-receiving-P-rod-beyond-plate');
+    const cylinderTop = cylinder.position.y;
+    for (const name of ['left-pivot-O', 'right-pivot-R']) {
+      const foot = byRole(`${name}-solid-ground-block`);
+      const bearing = byRole(`${name}-fixed-bearing-bracket`);
+      const pedestal = foot.parent;
+      const footBox = new THREE.Box3().setFromObject(foot);
+      const bearingBox = new THREE.Box3().setFromObject(bearing);
+      // O's block and post keep the lug's plane, in front of the O-M
+      // radius bar that dips below O; R's stand behind the R-W rocker.
+      const low = name === 'left-pivot-O' ? bearingBox.min.z : 0.12;
+      const high = bearingBox.max.z;
+      const block = box([footBox.min.x, footBox.max.x, footBox.min.y, footBox.max.y, low, high],
+        `${name}-frame-block-under-lug`);
+      block.position.sub(pedestal.position);
+      pedestal.add(block);
+      foot.removeFromParent();
+      foot.geometry.dispose();
+      const x = pedestal.position.x;
+      supports.add(box([x - 0.2, x + 0.2, cylinderTop, footBox.min.y, low, name === 'left-pivot-O' ? high : 0.46],
+        `${name}-frame-post-down-to-cylinder-cross-bar`));
+    }
+    const rightX = byRole('right-pivot-R-fixed-bearing-bracket').parent.position.x;
+    supports.add(box([-0.2, rightX + 0.2, cylinderTop - 0.2, cylinderTop, 0.12, 0.62],
+      'frame-cross-bar-on-P-cylinder-head-joining-both-posts'));
+  }
+  root.add(supports);
+  root.userData.plainSupports = supports;
+  return result;
+}
+
 export function createAuthoredMarineParallelMotion(movement) {
   switch (movement.id) {
-    case 332: return sideLeverMarineParallelMotion(movement);
-    case 333: return doubleParallelMotion(movement);
-    case 336: return sideLeverRockshaftParallelMotion(movement);
+    case 332: return addPlainSupports(sideLeverMarineParallelMotion(movement), 332);
+    case 333: return addPlainSupports(doubleParallelMotion(movement), 333);
+    case 336: return addPlainSupports(sideLeverRockshaftParallelMotion(movement), 336);
     default: return null;
   }
 }

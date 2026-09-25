@@ -97,7 +97,10 @@ export function makeSpringSectorGeometry() {
   attach('inputRod', rodGeometry,
     'rod', PALETTE.accent, [0, 0, wheelPitchRadius]);
   attach('inputPin', disk(21.8 / scale, -.153, .138, 128), 'shaft', PALETTE.muted, [...pin, wheelPitchRadius]);
-  attach('rockshaft', disk(24 / scale, -wheelPitchRadius - .5, wheelPitchRadius + .058, 128), 'shaft', PALETTE.muted);
+  // The rockshaft runs back past the rear sector into a long sleeve bearing on
+  // one plain standard behind the crown wheel (see the fixed supports below).
+  const rockshaftBack = -2.15;
+  attach('rockshaft', disk(24 / scale, rockshaftBack, wheelPitchRadius + .058, 128), 'shaft', PALETTE.muted);
   const body = attach('wheelBody', ring(24 / scale, wheelOuterRadius, wheelBottom, wheelTop, 256), 'wheel', PALETTE.driven);
   body.rotation.x = -Math.PI / 2;
   const wheelPitch = 2 * Math.PI / wheelTeeth, crownPhase = Math.PI / 2;
@@ -166,6 +169,24 @@ export function makeSpringSectorGeometry() {
   const outputBearing=attach('outputBearing',ring(.111,.28,floor+.12,-3.40,128),'fixed',PALETTE.frame);
   outputBearing.rotation.x=-Math.PI/2;
   attach('base',new THREE.BoxGeometry(7.05,.12,4.3),'fixed',PALETTE.frame,[1.1,floor+.06,0]);
+  // Presented supports (Brown draws no frame): the rockshaft turns in one long
+  // sleeve bearing on a plain standard standing straight down behind the crown
+  // wheel, clear of its rim, so it hides behind the sectors, wheel and axle in
+  // the plate's side view. The standard's foot, the output bearing and the
+  // input guide posts stand on small floor plates instead of the full base.
+  const sleeveFront = -wheelPitchRadius - .30, standardZ = [rockshaftBack + .03, sleeveFront - .03];
+  attach('rockshaftSleeveBearing', ring(.111, .2, rockshaftBack + .03, sleeveFront, 128), 'fixed', PALETTE.frame);
+  const standardTop = -.19;
+  attach('rockshaftStandard', new THREE.BoxGeometry(.2, standardTop - floor - .12, standardZ[1] - standardZ[0]), 'fixed', PALETTE.frame,
+    [0, (floor + .12 + standardTop) / 2, (standardZ[0] + standardZ[1]) / 2]);
+  // One floor plate runs under the standard and the output bearing.
+  attach('rockshaftStandardFloorPlate', new THREE.BoxGeometry(.8, .12, .3 - standardZ[0] + .02), 'fixed', PALETTE.frame,
+    [0, floor + .06, (standardZ[0] - .02 + .3) / 2]);
+  for (const along of [-.30, .7]) {
+    const center = localInput(along, -.284);
+    attach('inputGuidePostFoot' + along, new THREE.BoxGeometry(.5, .12, .5), 'fixed', PALETTE.frame,
+      [center[0], floor + .06, wheelPitchRadius + .10]);
+  }
   const setState = ({shaftAngle = 0, wheelAngle = 0, lifts = [0, 0]} = {}) => {
     if (lifts.some(lift => lift < -.06 || lift > .18)) throw Error('Sector guide travel exceeded');
     blocks.wheel.rotation.y = wheelAngle; blocks.shaft.rotation.z = shaftAngle;

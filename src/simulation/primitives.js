@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { bevelBodyGeometry, bevelToothGeometry } from './bevel-geometry.js';
 import { beltFrameAt, flatBeltGeometry } from './belt-geometry.js';
 import { LaidRopeGeometry, replaceWithLaidRope } from './laid-rope.js';
+import { creaseLatheNormals } from './crease-normals.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 
 export const PALETTE = Object.freeze({
   ink: 0x252a2d,
@@ -70,18 +72,20 @@ export function makePulley({
   spokes = 4,
   axis = new THREE.Vector3(0, 0, 1),
   bore = 0,
+  rotationIndicator,
 } = {}) {
   const root = rotorRoot(axis);
   const rotor = root.userData.rotor;
   const material = matte(color);
   const darkMaterial = matte(PALETTE.ink, { metalness: 0.2, roughness: 0.55 });
-  const annulus = (inner, outer, length, segments) => new THREE.LatheGeometry([
+  // Flat faces, tread and bore keep their own normals (hard edges).
+  const annulus = (inner, outer, length, segments) => creaseLatheNormals(new THREE.LatheGeometry([
     new THREE.Vector2(inner, -length / 2),
     new THREE.Vector2(outer, -length / 2),
     new THREE.Vector2(outer, length / 2),
     new THREE.Vector2(inner, length / 2),
     new THREE.Vector2(inner, -length / 2),
-  ], segments);
+  ], segments));
 
   const spokeDepth = width * 0.62;
   const innerRadius = radius * 0.82;
@@ -137,40 +141,11 @@ export function makePulley({
     spokeMeshes.push(spoke);
   }
 
-  // A small index patch on the tread keeps rotation legible when the pulley
-  // is viewed edge-on and its face spokes are hidden.
-  const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      Math.max(0.04, radius * 0.08),
-      Math.max(0.07, radius * 0.14),
-      width * 0.62,
-    ),
-    matte(PALETTE.white, { roughness: 0.5 }),
-  );
-  indicator.position.x = radius - Math.max(0.04, radius * 0.08) / 2 + 0.001;
-  rotor.add(indicator);
-
-  // Put the more legible index on both faces as well as the tread. The two
-  // face marks remain visible from either side and make pulley ratios easy to
-  // compare without waiting for a spoke to pass a particular angle.
-  const faceInner = bore > 0 ? Math.max(radius * 0.34, boredHubRadius + 0.005) : radius * 0.34;
-  const faceIndicators = [-1, 1].map((side) => {
-    const faceIndicator = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        bore > 0 ? radius * 0.76 - faceInner : radius * 0.42,
-        radius * 0.065,
-        0.008,
-      ),
-      matte(PALETTE.white, { roughness: 0.5 }),
-    );
-    faceIndicator.position.set(
-      bore > 0 ? (radius * 0.76 + faceInner) / 2 : radius * 0.55,
-      0,
-      side * ((spokes > 0 ? spokeDepth : width) / 2 + 0.004),
-    );
-    rotor.add(faceIndicator);
-    return faceIndicator;
-  });
+  // Plain sheaves and drums carry the shared quadrant rotation cue; spoked
+  // pulleys show their turning through the spokes. The old white tread and
+  // face index marks are gone (Brown draws none).
+  if (rotationIndicator ?? spokes === 0) applyRotationIndicator(rotor, { frame: rotor });
+  const faceIndicators = [];
 
   root.userData.faceIndicators = faceIndicators;
   root.userData.hub = hub;
@@ -694,12 +669,12 @@ export function makeSteppedPulley({
   color = PALETTE.driver,
   reverse = false,
   axis = new THREE.Vector3(0, 0, 1),
+  rotationIndicator = true,
 } = {}) {
   const root = rotorRoot(axis);
   const rotor = root.userData.rotor;
   const ordered = reverse ? [...radii].reverse() : radii;
   const material = matte(color, { metalness: 0.1 });
-  const indicatorMaterial = matte(PALETTE.white, { roughness: 0.5 });
   ordered.forEach((radius, index) => {
     const step = new THREE.Mesh(
       new THREE.CylinderGeometry(radius, radius, stepWidth, 80),
@@ -710,21 +685,9 @@ export function makeSteppedPulley({
     rotor.add(step);
     step.userData.role = 'stepped-pulley-tread';
 
-    // A single index stripe makes both the direction and rate of rotation
-    // legible even when a stepped pulley is viewed nearly face-on.
-    for (const side of [-1, 1]) {
-      const indicator = new THREE.Mesh(
-        new THREE.BoxGeometry(radius * 0.7, radius * 0.035, 0.004),
-        indicatorMaterial,
-      );
-      indicator.position.set(
-        radius * 0.35,
-        0,
-        step.position.z + side * (stepWidth / 2 + 0.002),
-      );
-      rotor.add(indicator);
-    }
   });
+  // The shared quadrant cue shows each step's rate (see rotation-indicator.js).
+  if (rotationIndicator) applyRotationIndicator(rotor, { frame: rotor });
   root.userData.radii = ordered;
   root.userData.stepWidth = stepWidth;
   return markShadows(root);
@@ -738,6 +701,7 @@ export function makeConePulley({
   profile = 'linear',
   reverse = false,
   axis = new THREE.Vector3(0, 0, 1),
+  rotationIndicator = true,
 } = {}) {
   const root = rotorRoot(axis);
   const rotor = root.userData.rotor;
@@ -757,7 +721,7 @@ export function makeConePulley({
   }
   points.push(new THREE.Vector2(0, length / 2));
   const body = new THREE.Mesh(
-    new THREE.LatheGeometry(points, 64),
+    creaseLatheNormals(new THREE.LatheGeometry(points, 64)),
     matte(color, { metalness: 0.12, roughness: 0.64 }),
   );
   body.rotation.x = Math.PI / 2;
@@ -768,23 +732,8 @@ export function makeConePulley({
   );
   shaft.rotation.x = Math.PI / 2;
   rotor.add(shaft);
-  const indicatorMaterial = matte(PALETTE.white, { roughness: 0.48 });
-  const positions = [];
-  const indices = [];
-  for (let i = 0; i <= segments; i += 1) {
-    const radius = radiusAt(i / segments) + 0.0008;
-    for (const angle of [-0.025, 0.025]) {
-      positions.push(radius * Math.cos(angle), radius * Math.sin(angle), -length / 2 + length * i / segments);
-    }
-    if (i < segments) indices.push(2 * i, 2 * i + 1, 2 * i + 3, 2 * i, 2 * i + 3, 2 * i + 2);
-  }
-  const indicatorGeometry = new THREE.BufferGeometry();
-  indicatorGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  indicatorGeometry.setIndex(indices);
-  indicatorGeometry.computeVertexNormals();
-  const indicator = new THREE.Mesh(indicatorGeometry, indicatorMaterial);
-  indicator.userData.role = 'cone-surface-index';
-  rotor.add(indicator);
+  // The shared quadrant cue replaces the old white surface stripe.
+  if (rotationIndicator) applyRotationIndicator(body, { frame: rotor });
   root.userData.radiusAt = radiusAt;
   root.userData.length = length;
   root.userData.body = body;

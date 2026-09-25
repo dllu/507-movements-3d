@@ -71,7 +71,15 @@ export function correctGasMeterParts(root,id,update) {
   const holes=[slot([-1.94,-.61],[1.94,-.61],.10)];
   for(const tube of[b.inletTube,b.leftBranchTube,b.rightBranchTube,b.outletTube])replace(tube.mesh,curvedPipeWall(tube.curve,tube===b.inletTube||tube===b.outletTube?.14:.11,tube===b.inletTube||tube===b.outletTube?.20:.16,72,24));
   for(const[tube,side,port]of[[b.leftBranchTube,-1,-.76],[b.rightBranchTube,1,.76]]){
-   tube.curve.points=[new THREE.Vector3(port,1.15,0),new THREE.Vector3(side*1.70,.72,-.85),new THREE.Vector3(side*2.90,.10,-.85),new THREE.Vector3(side*2.90,-.45,0),new THREE.Vector3(side*2.45,-.45,0)];tube.curve.updateArcLengths();replace(tube.mesh,curvedPipeWall(tube.curve,.11,.16,80,24));
+   // Pass 57: the branch runs down behind and outside the bellows end plate
+   // (radius 0.11, no Catmull overshoot through the case side) and ends at an
+   // elbow fitting whose short stub enters the plate's bore, so nothing pokes
+   // through the side panel.
+   tube.curve.points=[new THREE.Vector3(port,1.10,0),new THREE.Vector3(port,.92,-.05),new THREE.Vector3(side*1.70,.66,-.85),new THREE.Vector3(side*2.55,.32,-.92),new THREE.Vector3(side*2.87,0,-.72),new THREE.Vector3(side*2.87,-.30,-.18),new THREE.Vector3(side*2.87,-.45,0)];tube.curve.curveType='centripetal';tube.curve.updateArcLengths();replace(tube.mesh,curvedPipeWall(tube.curve,.07,.11,96,24));
+   const stub=new THREE.Mesh(curvedPipeWall(new THREE.LineCurve3(new THREE.Vector3(side*2.87,-.45,0),new THREE.Vector3(side*2.45,-.45,0)),.07,.11,4,24),tube.mesh.material);
+   stub.userData.role='fixed-branch-stub-into-bellows-end-plate';tube.mesh.parent.add(stub);
+   const elbow=new THREE.Mesh(new THREE.SphereGeometry(.12,32,16),tube.mesh.material);elbow.position.set(side*2.87,-.45,0);
+   elbow.userData.role='fixed-branch-elbow-fitting';tube.mesh.parent.add(elbow);
    const crossing=tube.curve.getPoints(120).filter(p=>p.y>.64&&p.y<1.17);for(const p of crossing)holes.push(poly(circle([p.x,-p.z],.18,32)));
   }
   holes.push(slot([0,.10],[0,-1.5],.23));

@@ -832,6 +832,27 @@ function brownellDeadCenterCrank(movement) {
   root.userData.groundFloorY = -2.73;
   markShadows(root);
   fitPistonGuide(root, update, cycleDuration);
+  // Pass 57: Brown draws no frame. The two fixed bearings are carried on
+  // plain standards behind the moving parts, each cradling its bearing in a
+  // round seat and standing on a foot on a floor below the treadle's sweep.
+  // Added after the camera fit so the default framing stays on the subject.
+  {
+    const floorY = -2.95, footTop = floorY + 0.08;
+    const cradle = (center, radius, halfWidth) => clip.difference(
+      poly([[center.x - halfWidth, footTop], [center.x + halfWidth, footTop], [center.x + halfWidth, center.y], [center.x - halfWidth, center.y]]),
+      poly(circle([center.x, center.y], radius + 0.0005, 64)));
+    const parts = [
+      [plate(cradle(wheelCenter, 0.24, 0.18), -0.74, -0.50), 'fixed-standard-cradling-faceplate-shaft-bearing'],
+      [new THREE.BoxGeometry(0.96, 0.08, 0.56).translate(wheelCenter.x, floorY + 0.04, -0.62), 'fixed-faceplate-standard-foot'],
+      [plate(cradle(treadlePivot, 0.16, 0.14), -0.39, 0.10), 'fixed-pedestal-cradling-treadle-fulcrum-bearing'],
+      [new THREE.BoxGeometry(0.60, 0.08, 0.65).translate(treadlePivot.x, floorY + 0.04, -0.145), 'fixed-treadle-pedestal-foot'],
+    ];
+    for (const [geometry, role] of parts) {
+      const mesh = new THREE.Mesh(geometry, frameMaterial);
+      mesh.userData.role = role;mesh.castShadow = true;mesh.receiveShadow = true;
+      root.add(mesh);
+    }
+  }
   return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 

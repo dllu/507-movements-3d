@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {addDrawingBoard} from './drawing-board-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -686,6 +687,19 @@ function cyclograph(movement) {
   root.userData.cameraFov = 8;
   root.userData.cameraDirection = new THREE.Vector3(0, .8, 12);
   fitPistonGuide(root, update, cycleDuration);
+  // Pass 57: the arc is traced on a drawing board whose top face is the
+  // drawing plane (the arc line's underside). The guide pins stand in bores
+  // through it and their washers seat on it; the rules ride above it.
+  const boardTop = -0.075 - 0.026;
+  addDrawingBoard(root, {
+    min: [-3.35, -0.55], max: [3.35, 2.15], top: boardTop,
+    holes: [leftGuidePin, rightGuidePin].map((p) => [p.x, p.y, GUIDE_RADIUS + 0.0005]), holeDepth: 0.10,
+  });
+  for (const {pin, washer} of guidePins) {
+    washer.position.z = boardTop + 0.0375;
+    pin.geometry.dispose();pin.geometry = new THREE.CylinderGeometry(GUIDE_RADIUS, GUIDE_RADIUS, 0.46 - (boardTop - 0.099), 28);
+    pin.position.z = (0.46 + boardTop - 0.099) / 2;
+  }
   return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 

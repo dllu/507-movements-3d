@@ -23,7 +23,11 @@ test('084 uses the measured single cam, complete wheel and open suspension slots
   near(radius * scale, 231.4045, .001);
   assert.equal(u.source.upper.length, 13); assert.equal(u.source.lower.length, 14);
   near(u.animationTiming.playbackTimeScale, 1); near(u.playbackDuration, 17.2);
-  m.update(17.2); assert(u.cameraFitBounds.containsBox(new THREE.Box3().setFromObject(m.root, true))); dispose(m);
+  // The floor supports below Brown's crop stay out of the plate framing.
+  m.update(17.2); m.root.updateMatrixWorld(true);
+  const framed = new THREE.Box3();
+  for (const child of m.root.children) if (!child.userData.beyondPlateCrop) framed.expandByObject(child, true);
+  assert(u.cameraFitBounds.containsBox(framed)); dispose(m);
 });
 
 test('084 parts remain closed solids with consistent face winding', () => {

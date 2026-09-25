@@ -31,6 +31,7 @@ export function makeSlottedBarGeometry(options={}) {
   const hanger=clip.union(rectangle(ceiling[0][0],ceilingY,ceiling[1][0],ceilingY+.05),
     poly([[178,138],[235,138],[220,162],[191,162]].map(f.world)),poly(circle([0,0],.17,128)));
   attach('hanger',plate(clip.difference(hanger,poly(circle([0,0],source.shaftRadius/100+.002,128))),-.42,-.28),'frame',PALETTE.muted);
+  const guideXs=[];
   const permutation=new THREE.Matrix4().set(0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,1);
   for(const [index,guide] of source.guides.entries()) {
     const [left,top]=f.world([guide[0],guide[2]]),[right,bottom]=f.world([guide[1],guide[3]]);
@@ -38,8 +39,18 @@ export function makeSlottedBarGeometry(options={}) {
     const section=clip.difference(rectangle(bottom,-.32,top,.28),rectangle(f.barY-f.barHalfHeight-.003,-.243,f.barY+f.barHalfHeight+.003,-.077));
     attach('guide'+index,plate(section,left,right).applyMatrix4(permutation),'frame',PALETTE.muted);
     for(const [side,y] of [[0,top-.17],[1,bottom+.17]])attach('bolt'+index+side,disk(.068,.28,.31,64),'frame',PALETTE.ink,[(left+right)/2,y,0]);
+    // Each guide is bolted to a plain strap hanging from the ceiling beam
+    // behind it (Brown draws the bolts but not what they fasten to).
+    attach('guideStrap'+index,new THREE.BoxGeometry(.16,ceilingY+.02-bottom,.10),'frame',PALETTE.muted,[(left+right)/2,(ceilingY+.02+bottom)/2,-.37]);
+    guideXs.push(left,right);
   }
+  // Brown's hatched ceiling is a solid beam spanning both guides, not a
+  // sheet; the pivot hanger hangs from its underside.
+  attach('ceilingBeam',new THREE.BoxGeometry(Math.max(...guideXs)-Math.min(...guideXs)+.2,.24,.95),'frame',PALETTE.muted,
+    [(Math.max(...guideXs)+Math.min(...guideXs))/2,ceilingY+.02+.12,-.125]);
   blocks.lever.rotation.z=f.sourceAngle;blocks.bar.position.set(f.initialX,f.barY,0);
   Object.assign(root.userData,{parts,families,blocks,source,profile:f,hideGround:true,geometry:{outline,bodyEnds,handleEnd}});
+  // The ceiling beam and guide straps run past the plate's framing.
+  for(const [name,mesh] of Object.entries(parts))if(/^(ceilingBeam|guideStrap)/.test(name))mesh.userData.beyondPlateCrop=true;
   markShadows(root);root.updateMatrixWorld(true);return {root,focus:new THREE.Vector3(.1,-1.2,0),cameraDirection:new THREE.Vector3(1,.6,10)};
 }

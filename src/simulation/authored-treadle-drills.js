@@ -11,6 +11,7 @@ import {boredCylinderGeometry,boredJournal,fitPistonGuide} from './piston-guide-
 import {makeBoredLinkRod} from './bored-link-rod.js';
 import {circle,plate,poly,polygonClipping as clip} from './finite-plate-geometry.js';
 import {bevelToothGeometry} from './bevel-geometry.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -402,7 +403,7 @@ function treadleBevelDrillingMachine(movement) {
     for(let i=0;i<keyedIndices.length;i+=3){va.fromArray(keyedPositions,keyedIndices[i]*3);vb.fromArray(keyedPositions,keyedIndices[i+1]*3);vc.fromArray(keyedPositions,keyedIndices[i+2]*3);volume+=va.dot(vb.cross(vc));}
     if(volume<0){for(let i=0;i<keyedIndices.length;i+=3)[keyedIndices[i+1],keyedIndices[i+2]]=[keyedIndices[i+2],keyedIndices[i+1]];keyedBody.setIndex(keyedIndices);}
   }
-  keyedBody.computeVertexNormals();
+  creaseIndexedNormals(keyedBody);
   pinionGear.userData.body.geometry.dispose();pinionGear.userData.body.geometry=keyedBody;
   // The fixed upper bearing supports a rotating keyed hub. The feather can
   // therefore traverse it without sweeping through a stationary round bore.

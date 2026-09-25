@@ -148,6 +148,12 @@ export function correctEjectorTrapParts(root,id,update) {
     replace(b.valveStem,horizontalTurned([...outer,...inner]));b.valveStem.position.y=0;
     for(const o of[b.valveTop,b.valveShoulder,b.valveReservoir,b.valveNeck])o.visible=false;
     replace(b.workingFluidReservoir,new THREE.SphereGeometry(.62,48,24));b.workingFluidReservoir.scale.y=.20;b.workingFluidReservoir.position.y=.05;
+    // Pass 57: the sealed liquid fills D's whole cavity (inner profile inset
+    // 0.006) from the diaphragm up to the closed top, so the cut shows liquid
+    // filling the hollow valve rather than a free-standing bar.
+    const cavity=inner.filter(([y])=>y>=0).map(([y,r])=>[y,Math.max(0,r-.006)]);
+    const liquid=[[0,0],[0,.90],...cavity.slice().reverse().map(([y,r])=>[Math.min(y,3.114),r])];
+    replace(b.workingFluidColumn,horizontalTurned(liquid.filter((p,i,a)=>i===0||p[0]!==a[i-1][0]||p[1]!==a[i-1][1])));b.workingFluidColumn.position.y=0;
     // Finite diaphragm; its lowest point remains on the bridge as the
     // retained thermal law changes its bow by scaling about the rim. It thins
     // to the clamped edge, which stays flush between D's flange above and a

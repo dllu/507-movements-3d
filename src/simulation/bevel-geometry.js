@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { creaseLatheNormals } from './crease-normals.js';
 
 /**
  * Straight bevel teeth developed on the back cone using a virtual spur gear.
@@ -124,7 +125,8 @@ export function bevelBodyGeometry(toothGeometry, boreRadius = 0) {
     new THREE.Vector2(boreRadius, root.z),
     new THREE.Vector2(boreRadius, root.z * innerScale),
   ];
-  const geometry = new THREE.LatheGeometry(profile, 96);
+  // Keep the back cone, face and bore as separate hard-edged faces.
+  const geometry = creaseLatheNormals(new THREE.LatheGeometry(profile, 96));
   // Lathe's +Y axis becomes +Z, keeping the cone apex at the origin.
   geometry.rotateX(Math.PI / 2);
   return geometry;

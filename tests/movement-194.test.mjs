@@ -105,11 +105,13 @@ test('movement 194 matches Brown\'s one face-pin circle, one pinion, groove guid
   assert.equal(blocks.wheel.parent, model.root);
   assert.equal(blocks.wheelRotor.parent, blocks.wheel);
   assert.equal(blocks.wheelBody.parent, blocks.wheelRotor);
-  // Brown draws the pins standing free, so the pitch-circle line and the
-  // captioned universal joint (end-on in front of the pinion) are presented
-  // away; the factory still builds them.
+  // Brown draws the pins standing free, so the pitch-circle line is
+  // presented away. The factory's ball-ended placeholder joint is replaced by
+  // the captioned jointed shaft (two Hooke joints and a slip shaft).
   assert.equal(blocks.singlePitchArc.parent, null);
   assert.equal(blocks.fixedUniversalCross.parent, null);
+  assert.equal(blocks.universalDrive.parent, model.root);
+  assert.equal(blocks.universalSpiderFixed.userData.role, 'universal-joint-cross-at-input');
   assert.equal(blocks.guideGrooveOuter.parent, blocks.wheelRotor);
   assert.equal(blocks.guideGrooveRecess.parent, blocks.wheelRotor);
   assert.equal(blocks.fixedUniversalCross.userData.fixed, true);
@@ -649,7 +651,7 @@ test('movement 194 is fully three-dimensional and remains distinct as the review
       facePinSeatCount += 1;
     }
   });
-  assert.ok(meshCount >= 63, "the undrawn standard, foot, index, pitch line and joint are presented away");
+  assert.ok(meshCount >= 63, "the undrawn index and pitch line are presented away");
   assert.equal(facePinCount, 25);
   assert.equal(facePinSeatCount, 25);
   assert.ok(model.cameraDirection.x > 0);

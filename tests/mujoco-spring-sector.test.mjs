@@ -114,7 +114,7 @@ test('083 visible hardware remains closed and clear at both reversals and both d
     let checks = 0, softContacts = 0;
     for (const time of [0, 1, 2, 3, 4]) {
       v.update(time); const audit = auditClutchSourceSolids(v); checks += audit.checks;
-      assert.equal(audit.topology.length, 84); assert.deepEqual(audit.topologyIssues, []);
+      assert.equal(audit.topology.length, 89); assert.deepEqual(audit.topologyIssues, []);
       for (const issue of audit.issues) {
         assert.ok(([issue.from, issue.to].some(name => /^(front|rear)Sector$/.test(name))) &&
           ([issue.from, issue.to].some(name => /^wheelTooth\d+$/.test(name))), JSON.stringify(issue));

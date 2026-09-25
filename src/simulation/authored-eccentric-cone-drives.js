@@ -232,7 +232,9 @@ function eccentricConeFrictionReverser(movement) {
   const screwThreadXEnd = 6.28;
   const rightScrewCoreXStart = 2.24;
   const rightScrewCoreXEnd = 6.46;
-  const leftInputJournalXStart = -3.24;
+  // Long enough to stay in its bush on the head standard over the whole
+  // 0.57 traverse.
+  const leftInputJournalXStart = -4.1;
   const leftInputJournalXEnd = -2.2;
   const nutAxialPosition = 2.82;
   // Brown's side view sets roller C a quarter of the way from the large end.
@@ -1087,6 +1089,19 @@ function eccentricConeFrictionReverser(movement) {
   tailBush.position.set(tailBearingX, 0, 0);
   tailBush.userData.role = 'inferred-plain-bush-on-screw-D-crests';
   frame.add(tailStandard, tailBush);
+  // The same standard at the head carries a plain bush on D's input
+  // journal beyond B's large end, so B is not cantilevered from the screw
+  // standards: the journal (screw x -4.1..-2.2) keeps in the bush
+  // (-3.75..-3.55) over the traverse, and B's large end stays 0.78 clear.
+  const headBearingX = -3.65;
+  const headStandard = new THREE.Mesh(nutPost.geometry.clone(), nutPost.material);
+  headStandard.position.set(headBearingX, 0, 0);
+  headStandard.userData.role = 'inferred-head-standard-carrying-bush-for-journal-of-D';
+  const headBush = annularCollarAlongX({
+    depth: 0.2, innerRadius: screwCoreRadius + 0.006, material: frameMaterial, outerRadius: 0.31});
+  headBush.position.set(headBearingX, 0, 0);
+  headBush.userData.role = 'inferred-plain-bush-on-input-journal-of-D';
+  frame.add(headStandard, headBush);
   // Roller C's short axle is carried by a light arm to a sliding sleeve on a
   // round post standing behind B, clear of B's largest swept radius
   // (1.48): C rises and falls freely while its axis stays parallel to D. The
@@ -1113,7 +1128,8 @@ function eccentricConeFrictionReverser(movement) {
   rollerArm.userData.role = 'arm-joining-roller-C-axle-to-guide-sleeve';
   rollerCarriage.add(rollerSleeve, rollerArm);
   Object.assign(root.userData.blocks, {
-    rollerArm, rollerPost, rollerPostFoot, rollerSleeve, tailBush, tailStandard});
+    rollerArm, rollerPost, rollerPostFoot, rollerSleeve, tailBush, tailStandard,
+    headBush, headStandard});
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraFov = presentationView === 'end-view' ? 2 : 8;
   root.userData.reconstructionNote = 'The eccentric cone, at Brown\'s offset of about a quarter of its radius, drives roller C at a changing speed and lifts and lowers it once per turn; as the contact spirals toward the small end each fall is longer than the rise before it. As in the plates, the spring or weight that presses roller C on the cone and the guide of C are not drawn; the height of C follows the cone. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';

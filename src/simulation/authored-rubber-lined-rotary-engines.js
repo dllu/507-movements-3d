@@ -354,11 +354,21 @@ function rubberLinedRotaryEngine(movement) {
   centralHub.position.z = 0.28;
   centralHub.userData.role = 'central-carrier-hub-fast-on-shaft-B';
   rotor.add(centralHub);
-  const shaftB = cylinderAlongZ(0.27, 1.32, darkMaterial, 36);
-  shaftB.position.z = 0.44;
+  // Pass 57: B runs back through a bore in the back head (Brown's view only
+  // removes the front head) into a blind bearing boss on its outer face.
+  const shaftB = cylinderAlongZ(0.27, 1.639, darkMaterial, 36);
+  shaftB.position.z = (1.10 - 0.539) / 2;
   shaftB.userData.role = 'main-shaft-B-in-fixed-cylinder-bearings';
   // The carrier hub and arms are fast on B, so B turns with them.
   rotor.add(shaftB);
+  const backHead = new THREE.Mesh(plate(polygonClipping.difference(poly(circle([0,0],housingInnerRadius-0.0005,1024)),
+    poly(circle([0,0],0.274,96))),-0.42,-0.30), frameMaterial);
+  backHead.userData.role = 'fixed-back-head-closing-cylinder';
+  const backBoss = new THREE.Mesh(plate(polygonClipping.difference(poly(circle([0,0],0.50,96)),poly(circle([0,0],0.274,96))),-0.54,-0.42), frameMaterial);
+  backBoss.userData.role = 'fixed-back-bearing-boss-for-shaft-B';
+  const backBossCap = new THREE.Mesh(plate(poly(circle([0,0],0.50,96)),-0.60,-0.54), frameMaterial);
+  backBossCap.userData.role = 'fixed-back-bearing-boss-cap';
+  for (const part of [backHead, backBoss, backBossCap]) {part.castShadow = true;part.receiveShadow = true;root.add(part);}
 
   const rollerParts = [];
   for (let rollerIndex = 0; rollerIndex < rollerCount;

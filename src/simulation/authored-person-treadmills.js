@@ -663,6 +663,36 @@ function externalPersonTreadmill(movement) {
     railPosts.push(post);
     fixedFrame.add(post);
   }
+  // The rail is fixed at both ends: its near end runs on to the top of the
+  // diagonal side plank and is bolted to it by a short bracket; its far end,
+  // beyond the drum's end ring, stands on a plain post down to the ground.
+  const railNearZ = 1.48;
+  const railGroundY = -2.05;
+  const railFarZ = handRailStart.z;
+  // The tube's open ends lie inside the bracket and the post.
+  handRail.geometry.dispose();
+  handRail.geometry = tubeBetween(
+    handRailStart.clone().setZ(railFarZ),
+    handRailEnd.clone().setZ(railNearZ),
+    0.055,
+    darkMaterial,
+  ).geometry;
+  const railBracket = new THREE.Mesh(
+    new THREE.BoxGeometry(handRailX + 0.07 - 1.12, handRailY + 0.08 - 1.92, 0.16),
+    frameMaterial,
+  );
+  railBracket.position.set((handRailX + 0.07 + 1.12) / 2, (handRailY + 0.08 + 1.92) / 2, railNearZ);
+  railBracket.userData.role = 'bracket-bolting-hand-rail-to-top-of-side-plank';
+  const railFarPost = new THREE.Mesh(
+    new THREE.BoxGeometry(0.12, handRailY - railGroundY, 0.12),
+    frameMaterial,
+  );
+  railFarPost.position.set(handRailX, (handRailY + railGroundY) / 2, railFarZ);
+  railFarPost.userData.role = 'plain-post-under-far-end-of-hand-rail';
+  const railFarFoot = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.08, 0.4), frameMaterial);
+  railFarFoot.position.set(handRailX, railGroundY + 0.04, railFarZ);
+  railFarFoot.userData.role = 'foot-of-hand-rail-post';
+  fixedFrame.add(railBracket, railFarPost, railFarFoot);
 
   const update = (time) => {
     const state = stateAtTime(time);

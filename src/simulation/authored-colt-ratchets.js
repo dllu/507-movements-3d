@@ -7,6 +7,7 @@ import {
 } from './finite-plate-geometry.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const FULL_TURN = Math.PI * 2;
 let solvedColtCycle = null;
@@ -263,7 +264,7 @@ function faceRatchetGeometry({
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
-  geometry.computeVertexNormals();
+  creaseIndexedNormals(geometry);
   return geometry;
 }
 
@@ -315,7 +316,8 @@ function coltCylinderRatchet(movement) {
   const ratchetBase = 0.07;
   const ratchetToothDepth = 0.1;
   const ratchetLand = 0.7;
-  const ratchetInnerRadius = 0.03;
+  // Bored through for the cylinder arbor.
+  const ratchetInnerRadius = 0.102;
   const ratchetOuterRadius = 0.8;
   const ratchetLandX = cylinderRearX + ratchetBase;
   const ratchetCrestX = ratchetLandX + ratchetToothDepth;
@@ -1267,31 +1269,26 @@ function coltCylinderRatchet(movement) {
   mainspringClamp.userData.role = 'fixed-mainspring-root-block';
   mainspringFrame.add(mainspringClamp);
 
-  // Undrawn by Brown: the lock plate (frame side) that carries the tumbler
-  // arbor, spring c's block and the mainspring's root block. It is kept to
-  // narrow straps behind the working parts, joining those three mounts.
-  const strap = (a, b, halfWidth) => {
-    const dx = b[0] - a[0];
-    const dy = b[1] - a[1];
-    const length = Math.hypot(dx, dy);
-    const nx = -dy / length * halfWidth;
-    const ny = dx / length * halfWidth;
-    return [[[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny],
-      [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny], [a[0] + nx, a[1] + ny]]];
-  };
+  // The lock plate (frame side) behind the working parts: one plain plate
+  // that carries the tumbler arbor, spring c's block, the mainspring's root
+  // block and, through a lug standing forward beside the ratchet, the
+  // cylinder arbor. Its outline is the hull round those mounts, kept
+  // clear of the ratchet's crests on the left.
   const blockFoot = rasterToModel([176, 200]);
   const clampCentre = [
     mainspringRoot[0] - 0.28 * Math.cos(mainspringAngle),
     mainspringRoot[1] - 0.28 * Math.sin(mainspringAngle),
   ];
+  const arborLugCentre = [-1.64, cylinderCenterY];
+  const arborLugHalf = [0.22, 0.3];
   const lockPlateOutline = polygonClipping.difference(
-    polygonClipping.union(
-      [[circle([0, 0], 0.5, 72)]],
-      strap([0, 0], blockFoot, 0.2),
-      [[circle(blockFoot, 0.24, 48)]],
-      strap([0, 0], clampCentre, 0.2),
-      [[circle(clampCentre, 0.3, 48)]],
-    ),
+    poly(hullOfCircles([
+      [[0, 0], 0.55],
+      [blockFoot, 0.3],
+      [clampCentre, 0.35],
+      [arborLugCentre, 0.24],
+      ...springBlockOutline.map((point) => [point, 0.08]),
+    ])),
     [[circle([0, 0], 0.235, 72)]],
   );
   const lockPlate = new THREE.Mesh(
@@ -1300,16 +1297,32 @@ function coltCylinderRatchet(movement) {
   );
   lockPlate.userData.role = 'undrawn-lock-plate-carrying-arbor-and-springs';
   root.add(lockPlate);
+  // The lug stands from the plate to just behind the dog's plane and takes
+  // the rear end of the cylinder arbor.
+  const arborLug = new THREE.Mesh(
+    plate(poly([
+      [arborLugCentre[0] - arborLugHalf[0], arborLugCentre[1] - arborLugHalf[1]],
+      [arborLugCentre[0] + arborLugHalf[0], arborLugCentre[1] - arborLugHalf[1]],
+      [arborLugCentre[0] + arborLugHalf[0], arborLugCentre[1] + arborLugHalf[1]],
+      [arborLugCentre[0] - arborLugHalf[0], arborLugCentre[1] + arborLugHalf[1]],
+    ]), lockPlateFront, dogLow - 0.03),
+    frameMaterial,
+  );
+  arborLug.userData.role = 'lock-plate-lug-carrying-cylinder-arbor';
+  root.add(arborLug);
 
-  // The arbor stops inside the cylinder; the ratchet closes the bore behind.
+  // The arbor runs from inside the cylinder out through the ratchet's
+  // centre bore into the lug.
+  const arborRearX = arborLugCentre[0] + 0.1;
+  const arborFrontX = cylinderRearX - cylinderTotalLength + 0.01;
   const cylinderShaft = cylinderAlongX(
     cylinderArborRadius,
-    cylinderTotalLength - 0.01,
+    arborRearX - arborFrontX,
     darkMaterial,
     30,
   );
   cylinderShaft.position.set(
-    cylinderRearX - (cylinderTotalLength + 0.01) / 2,
+    (arborRearX + arborFrontX) / 2,
     cylinderCenterY,
     0,
   );
@@ -1355,6 +1368,7 @@ function coltCylinderRatchet(movement) {
     hammerStirrupPin,
     mainspring,
     lockPlate,
+    arborLug,
     mainspringClamp,
     mainspringFrame,
     ratchet,

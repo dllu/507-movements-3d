@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {ring} from './finite-plate-geometry.js';
+import {circle, plate, poly, polygonClipping, ring} from './finite-plate-geometry.js';
 import {sphereFaceSupport} from './sphere-face-support.js';
 import {
   PALETTE,
@@ -1041,8 +1041,45 @@ function fourMotionFeed(movement) {
   root.traverse(object => {
     for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
   });
+  addFourMotionFeedSupports(root, frameMaterial);
   update(0);
   return { root, update };
+}
+
+// Pass 57: Brown draws no frame. A plain back bar behind the rails carries
+// two C-guides round the rear rail of A (open toward the fork, so A slides
+// only in the feed direction) and a strap holding the spring stop; a pillar
+// grounds it. The camshaft runs in two bored pedestals on the same floor.
+function addFourMotionFeedSupports(root, material) {
+  const floorY = -1.20, barBack = -1.02, barFront = -0.92;
+  const railLow = 1.25, railHigh = 1.49, railInner = -0.19, railOuter = -0.31;
+  const shaftY = 0.05, shaftRadius = 0.12;
+  const add = (geometry, role) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.role = role;mesh.castShadow = true;mesh.receiveShadow = true;
+    root.add(mesh);
+    return mesh;
+  };
+  const box = (x0, x1, y0, y1, z0, z1) => new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0)
+    .translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  // Extrude a (z, y) outline along x from x0 to x1 (shape x = -world z).
+  const alongX = (outline, x0, x1) => plate(outline, x0, x1).rotateY(Math.PI / 2);
+  const zy = (z0, z1, y0, y1) => poly([[-z1, y0], [-z0, y0], [-z0, y1], [-z1, y1]]);
+  add(box(-1.62, 0.55, railLow, railHigh, barBack, barFront), 'fixed-back-bar-behind-carrier-A');
+  const guide = polygonClipping.difference(zy(barFront - 0.001, railInner, railLow - 0.06, railHigh + 0.06),
+    zy(railOuter - 0.008, railInner + 0.01, railLow - 0.008, railHigh + 0.008));
+  for (const [x0, x1] of [[-0.95, -0.65], [0.15, 0.45]]) add(alongX(guide, x0, x1), 'fixed-c-guide-round-rear-rail-of-A');
+  // The spring stop hangs from a strap running over the rear rail.
+  add(alongX(zy(barFront - 0.001, 0.15, 1.52, 1.60), -1.56, -1.36), 'fixed-strap-carrying-return-spring-stop');
+  add(box(-1.05, -0.85, floorY + 0.08, railLow + 0.001, barBack, barFront), 'fixed-back-bar-pillar');
+  add(box(-1.25, -0.65, floorY, floorY + 0.08, barBack - 0.18, barFront + 0.18), 'fixed-back-bar-foot');
+  const pedestal = polygonClipping.difference(
+    polygonClipping.union(zy(-0.20, 0.20, floorY + 0.08, shaftY + 0.01), poly(circle([0, shaftY], 0.23, 48))),
+    poly(circle([0, shaftY], shaftRadius + 0.0005, 48)));
+  for (const [x0, x1] of [[-0.55, -0.35], [1.80, 2.00]]) {
+    add(alongX(pedestal, x0, x1), 'fixed-bored-camshaft-pedestal');
+    add(box(x0 - 0.12, x1 + 0.12, floorY, floorY + 0.08, -0.34, 0.34), 'fixed-camshaft-pedestal-foot');
+  }
 }
 
 export function createAuthoredFourMotionFeedMovement(movement) {

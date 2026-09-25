@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {ring} from './finite-plate-geometry.js';
+import {ring, plate, poly, circle, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -438,13 +438,16 @@ function rockShaftToeAndPoppetLifter(movement) {
   const sourceRodBottomY = sourcePointToModel(sourceRasterValveRodBottom).y;
   const rodTopY = sourceRodTopY - highPoseOffset;
   const rodBottomY = sourceRodBottomY - highPoseOffset;
+  // The rod runs on above Brown's break (still inside the view's crop) so
+  // it keeps in its upper guide over the whole lift.
+  const rodRunTopY = rodTopY + 0.7;
   const valveRod = new THREE.Mesh(
     new THREE.CylinderGeometry(0.21, 0.21,
-      rodTopY - rodBottomY, 40),
+      rodRunTopY - rodBottomY, 40),
     drivenMaterial,
   );
   // Set back so the lifter block is drawn over the rod, as on the plate.
-  valveRod.position.set(valveRodX, (rodTopY + rodBottomY) / 2, -0.08);
+  valveRod.position.set(valveRodX, (rodRunTopY + rodBottomY) / 2, -0.08);
   valveRod.userData.role = 'vertical-poppet-valve-lifting-rod';
   lifter.add(valveRod);
   const poppetHead = new THREE.Mesh(
@@ -512,6 +515,58 @@ function rockShaftToeAndPoppetLifter(movement) {
     fixedGuides.add(support);
   }
 
+  // Undrawn supports, kept behind the working parts: one plain back bar
+  // standing on the base behind the rod (hidden by it in Brown's view)
+  // carries two bored guides that keep the rod upright above and below the
+  // lifter's sweep, and an arm to a bored bearing for the rock shaft.
+  const supportBack = -0.72;
+  const supportFront = -0.56;
+  const rodAxisZ = -0.08;
+  const rodGuideYs = [rodTopY + 0.3, -3.0];
+  const backBarTop = rodGuideYs[0] + 0.2;
+  const backBarBottom = base.position.y + 0.10;
+  const backBar = new THREE.Mesh(
+    new THREE.BoxGeometry(0.38, backBarTop - backBarBottom, supportFront - supportBack),
+    frameMaterial,
+  );
+  backBar.position.set(valveRodX, (backBarTop + backBarBottom) / 2, (supportBack + supportFront) / 2);
+  backBar.userData.role = 'plain-back-bar-carrying-rod-guides-and-rock-shaft-bearing';
+  fixedGuides.add(backBar);
+  const rodGuides = rodGuideYs.map((y, index) => {
+    const guide = new THREE.Mesh(ring(0.225, 0.34, -0.07, 0.07, 64), frameMaterial);
+    guide.rotation.x = Math.PI / 2;
+    guide.position.set(valveRodX, y, rodAxisZ);
+    guide.userData.role = index === 0 ? 'upper-bored-valve-rod-guide' : 'lower-bored-valve-rod-guide';
+    const web = new THREE.Mesh(
+      new THREE.BoxGeometry(0.2, 0.14, supportFront - (rodAxisZ - 0.3)),
+      frameMaterial,
+    );
+    web.position.set(valveRodX, y, (supportFront + rodAxisZ - 0.3) / 2);
+    web.userData.role = 'web-joining-rod-guide-to-back-bar';
+    fixedGuides.add(guide, web);
+    return guide;
+  });
+  // The rock shaft's bearing: a bored boss behind the toe on an arm from
+  // the back bar. The shaft runs back into it.
+  const shaftBearingFront = -0.3;
+  const bearingArm = new THREE.Mesh(
+    plate(polygonClipping.difference(
+      polygonClipping.union(
+        poly([[0, -0.2], [valveRodX, -0.2], [valveRodX, 0.2], [0, 0.2]]),
+        poly(circle([0, 0], 0.5, 64)),
+      ),
+      poly(circle([0, 0], 0.315, 64)),
+    ), supportBack, supportFront),
+    frameMaterial,
+  );
+  bearingArm.userData.role = 'back-arm-carrying-rock-shaft-bearing';
+  const shaftBearing = new THREE.Mesh(ring(0.315, 0.5, supportFront, shaftBearingFront, 64), frameMaterial);
+  shaftBearing.userData.role = 'bored-rock-shaft-bearing-boss';
+  fixedGuides.add(bearingArm, shaftBearing);
+  rockShaft.geometry.dispose();
+  rockShaft.geometry = cylinderAlongZ(0.31, 0.57 - (supportBack + 0.02), darkMaterial, 38).geometry;
+  rockShaft.position.z = (0.57 + supportBack + 0.02) / 2;
+
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 20, 13),
     whiteMaterial,
@@ -522,9 +577,13 @@ function rockShaftToeAndPoppetLifter(movement) {
   root.userData.archetype =
     'rockshaft-curved-toe-clearance-lifter-guided-poppet-valve';
   root.userData.blocks = {
+    backBar,
     base,
+    bearingArm,
     contactMarker,
     fixedGuides,
+    rodGuides,
+    shaftBearing,
     followerShoe,
     guidePost,
     lifter,

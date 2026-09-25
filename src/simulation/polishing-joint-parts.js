@@ -49,8 +49,15 @@ export function correctLensPolisher(root){
   const b=root.userData.blocks,g=root.userData.geometry,cup=b.cupRotor,d=cup.userData;
   const bearing=b.frame.children.find(o=>o.userData.role==='fixed-bearing-around-upright-rotating-shaft');
   replace(bearing,tube(.24,.32,.112));bearing.position.z=0;b.upperBearing=bearing;
-  const bracketShape=clip.difference(rectangle(.44,1.08),poly(circle([0,.415],.112,64)));
+  // Pass 57: the bearing arm runs back past the lens and the cup's sweep
+  // (radius 1.43) to a plain pillar standing on the table's rear edge, so the
+  // shaft's bearing no longer ends in mid-air. Shape y maps to world z - 0.415.
+  const pillarNear=-1.47,pillarFar=-1.67;
+  const bracketShape=clip.difference(rectangle(.44,.54-(pillarFar+.415),0,(.54+pillarFar+.415)/2),poly(circle([0,.415],.112,64)));
   const bracket=new THREE.Mesh(plate(bracketShape,-.125,.125).rotateX(Math.PI/2),b.frame.children[0].material);bracket.position.set(0,3.86,-.415);b.frame.add(bracket);b.bearingBridge=bracket;
+  const tableTop=b.frame.children[0].position.y+.12,pillarTop=3.86-.125;
+  const pillar=new THREE.Mesh(new THREE.BoxGeometry(.22,pillarTop-tableTop,pillarNear-pillarFar),b.frame.children[0].material);
+  pillar.position.set(0,(pillarTop+tableTop)/2,(pillarNear+pillarFar)/2);pillar.userData.role='fixed-pillar-carrying-shaft-bearing-arm';b.frame.add(pillar);b.bearingPillar=pillar;
   replace(b.handwheel,tube(.72,.23,.112));
   // A compact captured ball fits above the glass; an annular cup opening
   // makes room for its spherical socket without a sphere piercing the pad.

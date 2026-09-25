@@ -3,6 +3,7 @@ import { dualBeltSpeedsMotion } from './dual-belt-speeds-motion.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { flatBeltGeometry } from './belt-geometry.js';
 import { PALETTE, matte, markShadows, beltCurveOpen } from './primitives.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 
 export function makeDualBeltSpeeds() {
   const motion = dualBeltSpeedsMotion(), p = motion.parameters;
@@ -28,6 +29,12 @@ export function makeDualBeltSpeeds() {
     add(name, turned(p.lowerRadius, loose ? p.looseBore : p.outputShaftRadius,
       p.laneZs[lane] - p.pulleyWidths[lane] / 2, p.laneZs[lane] + p.pulleyWidths[lane] / 2,
       loose ? PALETTE.muted : PALETTE.driven), parent);
+  }
+  // Plain turned pulleys carry the shared quadrant rotation cue, so the fast
+  // and loose pulleys' different rates read from any side.
+  for (const [name, frame] of [['largeDriver', driver], ['smallDriver', driver], ['looseLeftPulley', looseLeft],
+    ['fixedLeftPulley', output], ['fixedRightPulley', output], ['looseRightPulley', looseRight]]) {
+    applyRotationIndicator(parts[name], { frame });
   }
   // Brown draws the bands plain: the shared flat-belt look (belt colour),
   // with no travelling stitch marks.

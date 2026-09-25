@@ -259,6 +259,7 @@ test('movement 272 renders a closed cone-rimmed disk whose front vertices lie on
     'every body edge belongs to exactly two triangles');
   let front = 0;
   let back = 0;
+  let land = 0;
   for (let index = 0; index < positions.count; index += 1) {
     const x = positions.getX(index);
     const y = positions.getY(index);
@@ -266,6 +267,10 @@ test('movement 272 renders a closed cone-rimmed disk whose front vertices lie on
     if (Math.abs(x - geometry.camBackX) < 1e-6) {
       back += 1;
       assert.ok(Math.hypot(y, z) <= geometry.camBackRadius + 1e-6);
+    } else if (Math.abs(x - faceXAtLocalY(y) - geometry.camRimLandWidth) < 2e-6
+      && Math.abs(Math.hypot(y, z) - rimRadiusAtAngle(Math.atan2(z, y))) < 1e-5) {
+      // The rim land's back edge, one land width behind the face's rim.
+      land += 1;
     } else {
       front += 1;
       near(x, faceXAtLocalY(y), 2e-6, `front vertex ${index} on trough`);
@@ -274,6 +279,8 @@ test('movement 272 renders a closed cone-rimmed disk whose front vertices lie on
     }
   }
   assert.ok(front > 3000 && back === geometry.camSegments + 1);
+  assert.equal(land, geometry.camSegments, 'one rim-land ring behind the wavy edge');
+  assert.ok(geometry.camRimLandWidth > 0.1, 'the rim is a band, not a knife edge');
   near(rimRadiusAtAngle(0), geometry.camOuterRadius, 1e-12,
     'top and bottom rim reach the drawn outer radius');
   assert.ok(rimRadiusAtAngle(Math.PI / 2) < rimRadiusAtAngle(0) - 0.2,
@@ -444,8 +451,8 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
   // The plain supporting frame (base, posts, shaft bearings, backing rail,
   // brackets and riser) is kept so nothing floats; the disk carries no dark
-  // edge tubes.
-  assert.equal(meshCount, 34);
+  // edge tubes. The plate has a hub on each face.
+  assert.equal(meshCount, 35);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);

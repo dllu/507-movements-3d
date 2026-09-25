@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { pinWallBracket } from './beyond-crop-hardware.js';
+import { flangeColumn, pinWallBracket } from './beyond-crop-hardware.js';
 import { markShadows, matte, PALETTE } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { pinClutchMotion } from './pin-clutch-motion.js';
@@ -58,10 +58,11 @@ export function makePinClutch() {
   outline.lineTo(-0.063, p.leverLength); outline.absarc(0, p.leverLength, 0.063, Math.PI, 0, true);
   outline.lineTo(0.061, 0.22); outline.quadraticCurveTo(0.07, 0.13, 0.20, 0.065);
   // Brown breaks the handle off near the plate edge. It runs on at even
-  // width, just past the edge, to a round-ended grip for the hand.
-  const handleEnd = p.handleLength + 0.62, handleHalfWidth = 0.03;
-  outline.lineTo(p.handleLength, handleHalfWidth); outline.lineTo(handleEnd, handleHalfWidth);
-  outline.absarc(handleEnd, 0, handleHalfWidth, Math.PI / 2, -Math.PI / 2, true);
+  // width, just past the edge, into a turned round grip for the hand.
+  const handleEnd = p.handleLength + 0.62, handleHalfWidth = 0.03, gripLength = 0.3;
+  const gripStart = handleEnd - gripLength;
+  outline.lineTo(p.handleLength, handleHalfWidth); outline.lineTo(gripStart, handleHalfWidth);
+  outline.lineTo(gripStart, -handleHalfWidth);
   outline.lineTo(p.handleLength, -handleHalfWidth); outline.lineTo(0.12, -0.09); outline.quadraticCurveTo(0.05, -0.13, 0, -0.13);
   outline.quadraticCurveTo(-0.13, -0.13, -0.13, 0); outline.closePath();
   outline.holes.push(polygon(0, 0, p.pivotBore, 128), polygon(0, p.leverLength, p.followerRadius, 128));
@@ -70,7 +71,10 @@ export function makePinClutch() {
   const followerCap = turned([[0.030, 0], [0.030, 0.043], [0.055, 0.043], [0.055, 0]], PALETTE.brass);
   const followerBackCap = turned([[-0.155, 0], [-0.155, 0.043], [-0.135, 0.043], [-0.135, 0]], PALETTE.brass);
   followerPin.position.y = p.leverLength; followerCap.position.y = p.leverLength; followerBackCap.position.y = p.leverLength;
-  lever.add(leverBody, followerPin, followerCap, followerBackCap); lever.position.set(p.leverPivotX, p.leverPivotY, p.leverZ);
+  const grip = turned([[0, 0], [0, 0.042], [0.06, 0.056], [gripLength - 0.07, 0.058], [gripLength - 0.02, 0.048],
+    [gripLength, 0.03], [gripLength, 0]], PALETTE.brass);
+  grip.rotation.y = Math.PI / 2; grip.position.x = gripStart; grip.userData.role = 'lever-handle-grip';
+  lever.add(leverBody, grip, followerPin, followerCap, followerBackCap); lever.position.set(p.leverPivotX, p.leverPivotY, p.leverZ);
   const shoeWidth = p.grooveRight - p.grooveLeft - 2 * p.shoeClearance;
   const shoeShape = new THREE.Shape([new THREE.Vector2(-shoeWidth / 2, -p.shoeHeight / 2),
     new THREE.Vector2(shoeWidth / 2, -p.shoeHeight / 2), new THREE.Vector2(shoeWidth / 2, p.shoeHeight / 2),
@@ -86,7 +90,11 @@ export function makePinClutch() {
   // flange on the framing, below the disks and clear of the sleeve.
   const fulcrumBracket = pinWallBracket({ x: 0, y: 0, pinRadius: p.pivotRadius, zPin: 0.27, zWall: -0.62,
     flange: 0.24, role: 'fulcrum-pin-wall-bracket' });
-  pivot.add(pivotPin, ...pivotCaps, fulcrumBracket); root.add(driver, output, lever, shoe, pivot);
+  // The flange stands on a plain column with a foot on the floor below the
+  // disks, so it does not hang off the pin.
+  const fulcrumColumn = flangeColumn({ x: 0, yTop: -0.12, yFloor: -1.32 - p.leverPivotY, zWall: -0.62,
+    width: 0.2, role: 'fulcrum-bracket-column' });
+  pivot.add(pivotPin, ...pivotCaps, fulcrumBracket, fulcrumColumn); root.add(driver, output, lever, shoe, pivot);
   const update = (time) => {
     const state = motion.stateAtTime(time);
     driver.userData.rotor.rotation.z = state.driverAngle;
@@ -96,8 +104,8 @@ export function makePinClutch() {
   };
   root.userData = { fidelity: 'authored', mechanism: 'two-stud-clutch-with-loaded-hole-walls-and-bell-crank',
     cameraFov: 17, hideGround: true, fullCameraDirection: new THREE.Vector3(5, 3, 8),
-    geometry: { ...p, handleEnd, handleHalfWidth }, blocks: { driver, output, lever, shoe, pivot }, beyondCrop: { fulcrumBracket },
-    parts: { driverBody, studs, outputDisk, outputHub, shaft, knob, leverBody, followerPin, followerCap, followerBackCap, pivotPin, pivotCaps },
+    geometry: { ...p, handleEnd, handleHalfWidth }, blocks: { driver, output, lever, shoe, pivot }, beyondCrop: { fulcrumBracket, fulcrumColumn },
+    parts: { driverBody, studs, outputDisk, outputHub, shaft, knob, leverBody, grip, followerPin, followerCap, followerBackCap, pivotPin, pivotCaps },
     stateAtTime: motion.stateAtTime };
   // Frame Brown's plate: the measured swept box with the handle to his break.
   // Its run on to the grip and the fulcrum bracket stay out of the fit.

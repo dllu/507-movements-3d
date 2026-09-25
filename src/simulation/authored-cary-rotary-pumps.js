@@ -616,10 +616,14 @@ function caryRotaryPump(movement) {
     }
     const center = box.getCenter(new THREE.Vector3()), height = box.max.y - box.min.y;
     for (const child of inletF.children) child.visible = false;
+    // Pass 57: the pipe runs up into the casing wall; its top face lies
+    // inside the wall across the whole pipe (outer surface above it, bore
+    // below), so the joint is closed and its bore meets the wall's port hole.
+    const bottom = center.y - height / 2, top = -1.51 - inletF.position.y;
     const pipe = new THREE.Mesh(latheSectionGeometry([
-      [0.25, -height / 2], [0.34, -height / 2], [0.34, height / 2], [0.25, height / 2],
+      [0.25, bottom], [0.34, bottom], [0.34, top], [0.25, top],
     ], { phiStart: 0, phiLength: Math.PI * 2, segments: 48 }), frameMaterial);
-    pipe.position.set(center.x, center.y, 0);
+    pipe.position.set(center.x, 0, 0);
     pipe.userData.role = 'whole-round-suction-pipe-F';
     inletF.add(pipe);
   }

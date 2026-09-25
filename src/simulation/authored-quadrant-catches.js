@@ -6,6 +6,8 @@ import {
 } from './quadrant-catch-finite-parts.js';
 import { quadrantCatchMotion } from './baked/quadrant-catch-motion.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
+import { glandCylinder } from './beyond-crop-hardware.js';
+import { backBar, footPillar, pinBoss, slideSleeve, supportMaterial } from './back-plate-support.js';
 
 // Brown 183/184: two back-weighted valve handles on fixed shafts, each with a
 // cast quadrant. The piston-rod tappet lifts the lower handle on the up
@@ -45,7 +47,6 @@ const eyeHole = 5;
 const eyePin = 4.2;
 const rodTop183 = 38;
 const rodBottom183 = 500;
-const weightRodBottom = { upper: 475, lower: 505 };
 
 function interpolateRow(phase) {
   const { rows, samples } = quadrantCatchMotion;
@@ -139,21 +140,15 @@ function sourceHandGear(movementId) {
     blocks[`${name}Shaft`] = shaft;
   }
 
-  // Piston rod: a source-width section, carrying the projecting tappet.
-  // Plate 184 runs the rod from 30 to 490 px (its top and bottom breaks),
-  // which is 416 to -44 in this unreflected frame. Brown's breaks are a
-  // drawing convention: the rod is modelled whole with square ends that run
-  // on past the plate (and the view) by `beyondPlate` pixels each way.
+  // Piston rod: a source-width section carrying the projecting tappet, so it
+  // moves with the tappet. Plate 184 runs the rod from 30 to 490 px (its top
+  // and bottom breaks), which is 416 to -44 in this unreflected frame.
+  // Brown's breaks are a drawing convention: the rod is modelled whole, built
+  // below once the framing is known, running from a guide above the view down
+  // into the steam cylinder below it.
   const [rodBottomY, rodTopY] = is184 ? [416, -44] : [rodBottom183, rodTop183];
-  const beyondPlate = 260;
   const rodX0 = 155, rodX1 = 190;
-  const rodOutline = [[rodX0, rodBottomY + beyondPlate], [rodX1, rodBottomY + beyondPlate],
-    [rodX1, rodTopY - beyondPlate], [rodX0, rodTopY - beyondPlate]].map(toModel);
   const plateRodCorners = [[rodX0, rodBottomY], [rodX1, rodTopY]].map(toModel);
-  const pistonRod = new THREE.Mesh(plate([[[...rodOutline, rodOutline[0]]]], ...layers.R), materials.piston);
-  pistonRod.userData.role = 'source-width-sectioned-piston-rod';
-  pistonRod.userData.runsPastCrop = true;
-  root.add(pistonRod);
   const pistonGroup = new THREE.Group();
   pistonGroup.userData.role = 'vertically-reciprocating-piston-tappet';
   pistonGroup.userData.axis = new THREE.Vector3(0, 1, 0);
@@ -168,9 +163,12 @@ function sourceHandGear(movementId) {
   tappet.userData.role = 'projecting-piston-rod-tappet';
   pistonGroup.add(tappet);
   root.add(pistonGroup);
+  // View-frame sign: 184 is shown reflected top to bottom.
+  const sgn = is184 ? -1 : 1;
 
   // Back-weight rods hang from the eyes and run on past the plate edge.
   const weightRods = {};
+  const weightHeight = 0.55;
   for (const [name, body] of [['upper', upper], ['lower', lower]]) {
     const group = new THREE.Group();
     group.userData.role = `${name}-back-weight-rod-hanging-from-eye`;
@@ -183,9 +181,14 @@ function sourceHandGear(movementId) {
     pin.rotation.x = Math.PI / 2;
     pin.position.z = (eyeZ[1] + layers.rods[1]) / 2;
     pin.userData.role = `${name}-back-weight-rod-eye-pin`;
-    group.add(rod, pin);
+    // The back weight itself hangs on the rod's lower end, just past the view.
+    const weight = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, weightHeight, 40), materials.pin);
+    weight.position.z = rod.position.z;
+    weight.userData.role = `${name}-back-weight`;
+    weight.userData.runsPastCrop = true;
+    group.add(rod, pin, weight);
     root.add(group);
-    weightRods[name] = { group, rod, pin, eye: body.eye, pivot: body.pivot };
+    weightRods[name] = { group, rod, pin, weight, eye: body.eye, pivot: body.pivot, length: 1 };
     blocks[`${name}WeightRod`] = rod;
     blocks[`${name}WeightPin`] = pin;
   }
@@ -214,18 +217,18 @@ function sourceHandGear(movementId) {
     for (const [name, w] of Object.entries(weightRods)) {
       const e = eyeAt(w, name === 'upper' ? s.upperAngle : s.lowerAngle), m = toModel(e);
       // 183's rods hang down the page; 184's run the other way in the
-      // unreflected frame, so they hang down in the reflected view, running
-      // on as far as the piston rod does.
-      const length = Math.max(0.05, (is184 ? e[1] - rodTopY + beyondPlate
-        : weightRodBottom[name] - e[1] + beyondPlate) * sourceScale);
+      // unreflected frame, so they hang down in the reflected view. Each rod
+      // has a fixed length, so its weight rises and falls with the eye.
+      const length = w.length;
       w.group.position.set(m[0], m[1], 0);
       w.rod.scale.y = length;
-      w.rod.position.y = is184 ? length / 2 : -length / 2;
+      w.rod.position.y = -sgn * length / 2;
+      w.weight.position.y = -sgn * (length + weightHeight / 2);
     }
     root.userData.kinematics = s;
   };
 
-  root.userData.blocks = { ...blocks, upperHandle, lowerHandle, pistonGroup, pistonRod, tappet };
+  root.userData.blocks = { ...blocks, upperHandle, lowerHandle, pistonGroup, tappet };
   root.userData.geometry = { layers, origin, sourceScale, cyclePeriod: period, initialPhase, boreRadius, shaftRadius, pinRadius, eyeHole, eyePin };
   root.userData.stateAtTime = stateAtTime;
   root.userData.archetype = is184
@@ -266,6 +269,63 @@ function sourceHandGear(movementId) {
     root.add(mirror);
     root.userData.blocks.plate184Reflection = mirror;
   }
+  // Brown draws only the handles, shafts, tappet and rods. The rods run
+  // on to real ends past the view: each back-weight rod to its weight, the
+  // piston rod up through a guide and down into the steam cylinder. Both
+  // shafts are carried in bosses on one plain back bar (behind the rear
+  // weight-rod layer) that stands on the engine floor beside the cylinder
+  // and carries the piston-rod guide on an arm above the view. Everything
+  // here is in the (reflected) view frame, below and above Brown's crop.
+  function addWorkingSupports() {
+    const view = (unreflectedY) => sgn * unreflectedY;
+    const tappetView = [], eyeView = { upper: [], lower: [] };
+    for (let i = 0; i <= 144; i++) {
+      const s = stateAtTime(period * i / 144);
+      tappetView.push(view((origin[1] - s.tappetTop) * sourceScale));
+      for (const [name, w] of Object.entries(weightRods)) {
+        eyeView[name].push(view(toModel(eyeAt(w, name === 'upper' ? s.upperAngle : s.lowerAngle))[1]));
+      }
+    }
+    const fit = root.userData.cameraFitBounds;
+    // Weight rods end just below the view at the plate pose.
+    for (const [name, w] of Object.entries(weightRods)) w.length = eyeView[name][0] - (fit.min.y - 0.35);
+    const lowestWeight = Math.min(...Object.entries(weightRods).map(([name, w]) =>
+      Math.min(...eyeView[name]) - w.length - weightHeight));
+    const tvMin = Math.min(...tappetView), tvMax = Math.max(...tappetView);
+    const guideY = fit.max.y + 0.7, glandY = lowestWeight - 0.35, floorY = glandY - (tvMax - tvMin) - 1.4;
+    const above = guideY + 0.35 - tvMin, below = tvMax - (glandY - 0.45);
+    const rodLocal = [sgn * above, -sgn * below];
+    const rodOutline = [[rodX0, 0], [rodX1, 0]].map((p) => toModel(p)[0]);
+    const rodGeometry = plate([[[[rodOutline[0], rodLocal[1]], [rodOutline[1], rodLocal[1]],
+      [rodOutline[1], rodLocal[0]], [rodOutline[0], rodLocal[0]], [rodOutline[0], rodLocal[1]]]]], ...layers.R);
+    const pistonRod = new THREE.Mesh(rodGeometry, materials.piston);
+    pistonRod.userData.role = 'source-width-sectioned-piston-rod';
+    pistonRod.userData.runsPastCrop = true;
+    pistonGroup.add(pistonRod);
+    root.userData.blocks.pistonRod = pistonRod;
+
+    const mat = supportMaterial(), zFront = layers.rods[0] - 0.06, rodX = (rodOutline[0] + rodOutline[1]) / 2;
+    mat.fog = false;
+    const rodZ = (layers.R[0] + layers.R[1]) / 2, rodWidth = rodOutline[1] - rodOutline[0];
+    const shafts = [blocks.upperShaft, blocks.lowerShaft].map((o) => o.getWorldPosition(new THREE.Vector3()));
+    const barX = (shafts[0].x + shafts[1].x) / 2;
+    const support = new THREE.Group();
+    support.userData.role = 'fixed-back-bar-carrying-handle-shafts-rod-guide-and-cylinder';
+    support.add(
+      backBar([new THREE.Vector2(rodX, guideY), new THREE.Vector2(barX, guideY), new THREE.Vector2(barX, floorY + 0.1)],
+        { zFront, width: 0.36, material: mat, role: 'fixed-back-bar-behind-handle-shafts' }),
+      ...shafts.map((p) => pinBoss({ x: p.x, y: p.y, radius: 0.27, zBack: zFront, zFront: -0.56, material: mat, role: 'fixed-handle-shaft-boss' })),
+      slideSleeve({ center: new THREE.Vector3(rodX, guideY, rodZ), axis: 'y', length: 0.4, innerWidth: rodWidth + 0.03,
+        innerDepth: layers.R[1] - layers.R[0] + 0.03, zWall: zFront, material: mat, role: 'fixed-piston-rod-guide' }),
+      glandCylinder({ x: rodX, topY: glandY, z: rodZ, length: glandY - floorY, glandRadius: 0.27, boreRadius: 0.5,
+        outerRadius: 0.62, material: mat, role: 'fixed-steam-cylinder-below-view' }),
+      footPillar({ x: barX, yTop: floorY + 0.1, yFloor: floorY, z: zFront - 0.05, width: 0.36, footWidth: 1.2, material: mat,
+        role: 'fixed-back-bar-foot' }),
+    );
+    support.traverse((o) => { o.userData.runsPastCrop = true; if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+    root.add(support);
+    root.userData.blocks.workingSupport = support;
+  }
   const box = new THREE.Box3(), point = new THREE.Vector3();
   for (let i = 0; i <= 72; i++) {
     update(period * i / 72); root.updateMatrixWorld(true);
@@ -275,8 +335,10 @@ function sourceHandGear(movementId) {
     });
   }
   // Frame Brown's plate: the rods count only as far as his breaks.
-  for (const [x, y] of plateRodCorners) box.expandByPoint(point.set(x, y, 0).applyMatrix4(pistonRod.parent.matrixWorld));
+  const viewFrame = root.userData.blocks.plate184Reflection ?? root;
+  for (const [x, y] of plateRodCorners) box.expandByPoint(point.set(x, y, 0).applyMatrix4(viewFrame.matrixWorld));
   root.userData.cameraFitBounds = box.expandByScalar(0.1);
+  addWorkingSupports();
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };
 }

@@ -232,6 +232,43 @@ function makeWharf({
   return markShadows(group);
 }
 
+// Open boat hull shell along x: U-shaped (superellipse) sections (half-width w, depth d
+// below the sheer) that pinch to points at bow and stern, with an inner
+// surface one wall thickness in and a rim along the sheer.
+function openBoatHullGeometry({bow, stern, beam, sheerY, sheerRise, sternRise = sheerRise, depth, wall, rows = 48, columns = 24}) {
+  const center = (bow + stern) / 2, half = (stern - bow) / 2;
+  const section = (i, inner) => {
+    const t = -1 + 2 * i / rows, x = center + half * t;
+    const w = Math.max(0, beam * Math.sqrt(Math.max(0, 1 - t ** 4)) - (inner ? wall : 0));
+    const d = Math.max(0, depth * Math.sqrt(Math.max(0, 1 - t * t)) - (inner ? wall : 0));
+    const top = sheerY + (t < 0 ? sheerRise : sternRise) * t ** 6;
+    return Array.from({length: columns + 1}, (_, j) => {
+      // Superellipse section (exponent 4): full-bodied sides, rounded bilge.
+      const phi = Math.PI * j / columns, c = Math.cos(phi), s = Math.sin(phi);
+      return new THREE.Vector3(x, top - d * Math.sqrt(s), w * Math.sign(c) * Math.sqrt(Math.abs(c)));
+    });
+  };
+  const outer = Array.from({length: rows + 1}, (_, i) => section(i, false));
+  const inner = Array.from({length: rows + 1}, (_, i) => section(i, true));
+  const positions = [];
+  // Wound so the outer, inner and rim faces all face outward.
+  const quad = (a, b, c, d) => {for (const p of [a, c, b, a, d, c]) positions.push(p.x, p.y, p.z);};
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < columns; j++) {
+      quad(outer[i][j], outer[i + 1][j], outer[i + 1][j + 1], outer[i][j + 1]);
+      quad(inner[i][j], inner[i][j + 1], inner[i + 1][j + 1], inner[i + 1][j]);
+    }
+    for (const j of [0, columns]) {
+      const [a, b, c, d] = [outer[i][j], outer[i + 1][j], inner[i + 1][j], inner[i][j]];
+      if (j === 0) quad(a, d, c, b);else quad(a, b, c, d);
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function makeFloatAssembly({
   endFrame,
   floatMaterial,
@@ -241,24 +278,46 @@ function makeFloatAssembly({
   group.userData.role = 'tide-following-floating-end-assembly';
   group.add(endFrame);
 
-  const hull = new THREE.Mesh(
-    new THREE.BoxGeometry(1.22, 0.32, railHalfWidth * 2 + 0.68),
-    floatMaterial,
-  );
-  hull.position.set(-0.34, -0.40, 0);
-  hull.rotation.z = -0.05;
-  hull.userData.role = 'floating-pontoon-hull';
+  // Pass 57: Brown's small open boat instead of a pontoon slab. The hull is
+  // an open shell with a rounded bottom and a sheer that rises to pointed
+  // ends; a thwart across it carries the two end-frame posts, which are run
+  // down onto it. The boat extends left of the posts as Brown draws it.
+  const posts = endFrame.userData.posts;
+  const postOuterZ = Math.max(...posts.map((post) => Math.abs(post.position.z) + 0.09));
+  const bow = -2.0, stern = 0.55, center = (bow + stern) / 2, half = (stern - bow) / 2;
+  const wall = 0.06, sheerY = -0.145, depth = 0.62;
+  // The thwart (x within +-0.12 of the posts) must reach past the posts.
+  const thwartS = (0.12 - center) / half;
+  const beam = (postOuterZ + 0.03 + wall) / Math.sqrt(1 - thwartS ** 4) + 0.01;
+  const hull = new THREE.Mesh(openBoatHullGeometry({
+    // The stern stays low: the ladder's stringers swing over it.
+    bow, stern, beam, sheerY, sheerRise: 0.35, sternRise: 0.06, depth, wall,
+  }), floatMaterial);
+  hull.userData.role = 'floating-open-boat-hull';
   group.add(hull);
-
-  const keel = cylinderAlongZ(
-    0.24,
-    railHalfWidth * 2 + 0.42,
+  // The thwart spans between the inner walls just below the post feet.
+  const thwartTop = -0.24, thwartBottom = -0.30;
+  const innerHalfWidthAt = (x, y) => {
+    const t = (x - center) / half, w = beam * Math.sqrt(1 - t ** 4) - wall;
+    const d = depth * Math.sqrt(1 - t * t) - wall;
+    const f = Math.min(1, Math.max(0, (sheerY + (t < 0 ? 0.35 : 0.06) * t ** 6 - y) / d));
+    return w * (1 - f ** 4) ** 0.25;
+  };
+  const thwartHalf = Math.min(innerHalfWidthAt(-0.12, thwartBottom), innerHalfWidthAt(0.12, thwartBottom)) - 0.004;
+  const thwart = new THREE.Mesh(
+    new THREE.BoxGeometry(0.24, thwartTop - thwartBottom, thwartHalf * 2),
     floatMaterial,
-    28,
   );
-  keel.position.set(-0.34, -0.56, 0);
-  keel.userData.role = 'floating-pontoon-rounded-keel';
-  group.add(keel);
+  thwart.position.set(0, (thwartTop + thwartBottom) / 2, 0);
+  thwart.userData.role = 'boat-thwart-carrying-end-frame-posts';
+  group.add(thwart);
+  for (const post of posts) {
+    const box = new THREE.Box3().setFromBufferAttribute(post.geometry.attributes.position);
+    const top = post.position.y + box.max.y, bottom = thwartTop;
+    post.geometry.dispose();
+    post.geometry = new THREE.BoxGeometry(box.max.x - box.min.x, top - bottom, box.max.z - box.min.z);
+    post.position.y = (top + bottom) / 2;
+  }
 
   return markShadows(group);
 }

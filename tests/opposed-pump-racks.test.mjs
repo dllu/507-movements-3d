@@ -22,8 +22,9 @@ test('127 keeps the engraved proportions and equal opposite rack travel through 
    assert(Math.abs(leftY+rightY-d.leftY-d.rightY)<1e-12);
    assert(Math.abs((rightY-d.rightY)-d.radius*angle)<1e-12);
    min=Math.min(min,rightY);max=Math.max(max,rightY);
-   // All rack solids fit inside the explicit full-cycle camera bounds.
-   for(const rack of u.blocks.racks){const box=new THREE.Box3().setFromObject(rack);assert(u.cameraFitBounds.containsBox(box));}
+   // Both toothed racks fit inside the explicit full-cycle camera bounds
+   // (their run-ons, piston rods and guides continue past Brown's crop).
+   for(const rack of u.blocks.racks){const box=new THREE.Box3().setFromObject(rack.children[0]);assert(u.cameraFitBounds.containsBox(box));}
   }
   assert(Math.abs(max-min-2*d.radius*Math.PI/3)<1e-10);
   assert.equal(u.hideGround,true);assert.equal(u.simulationBackend,'analytical');

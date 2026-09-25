@@ -1034,6 +1034,39 @@ function harrisonGoingBarrel(movement) {
   };
 
   correctGoingBarrel(root);
+  // Brown draws no frame; a plain back bar hidden behind G (only its end
+  // behind T shows) carries the arbor's rear bearing and the stud boss
+  // round T's journal pin, so neither the arbor nor T ends on nothing.
+  {
+    const frameMaterial = matte(PALETTE.frame, { metalness: 0.16, roughness: 0.58 });
+    const tPin = new THREE.Vector2(3.48, 2.83);
+    const barLow = -0.86;
+    const barHigh = -0.72;
+    const backBar = new THREE.Mesh(plate(polygonClipping.difference(
+      polygonClipping.union(
+        poly(circle([0, 0], 0.42, 64)),
+        poly(circle([tPin.x, tPin.y], 0.2, 48)),
+        poly((() => {
+          const d = tPin.clone().normalize().multiplyScalar(0.15);
+          return [[-d.y, d.x], [tPin.x - d.y, tPin.y + d.x], [tPin.x + d.y, tPin.y - d.x], [d.y, -d.x]];
+        })()),
+      ),
+      poly(circle([0, 0], 0.225, 64)),
+      poly(circle([tPin.x, tPin.y], 0.085, 32)),
+    ), barLow, barHigh), frameMaterial);
+    backBar.userData.role = 'plain-back-bar-carrying-arbor-bearing-and-T-stud';
+    const arborBearing = new THREE.Mesh(plate(polygonClipping.difference(
+      poly(circle([0, 0], 0.4, 64)), poly(circle([0, 0], 0.225, 64))), barHigh, -0.53), frameMaterial);
+    arborBearing.userData.role = 'bored-rear-bearing-of-going-barrel-arbor';
+    const tStud = new THREE.Mesh(plate(polygonClipping.difference(
+      poly(circle([tPin.x, tPin.y], 0.17, 48)), poly(circle([tPin.x, tPin.y], 0.085, 32))), barHigh, -0.3), frameMaterial);
+    tStud.userData.role = 'bored-stud-boss-round-T-journal-pin';
+    const supports = new THREE.Group();
+    supports.userData.role = 'plain-back-supports-for-arbor-and-T';
+    supports.add(backBar, arborBearing, tStud);
+    root.add(supports);
+    Object.assign(root.userData.blocks, { backBar, arborBearing, tStud });
+  }
   // The laid rope already runs round the exposed groove; the helper's
   // separate wrap stays only as a reference.
   root.userData.blocks.ropeWrap.visible = false;

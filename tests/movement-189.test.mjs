@@ -33,8 +33,12 @@ test('189 is the authored bell-crank hanger modification of 186', () => withMode
   assert.match(u.mechanism, /bell-crank.*hanging-link.*gab.*valve-pin/);
   assert.equal(u.hideGround, true);
   assert.equal(u.rigidBodies.length, 4);
-  // No support frame: the plate draws the stud eye only.
-  model.root.traverse((object) => assert.doesNotMatch(String(object.userData.role ?? ''), /frame|bearing|support/));
+  // Brown draws the stud eye only: the plain frame (columns, bearings and the
+  // bracket carrying the stud) lies behind the moving parts or off the view.
+  u.blocks.frame.traverse((object) => { if (object.isMesh) assert.equal(object.userData.runsPastCrop, true); });
+  const frameBox = new THREE.Box3().setFromObject(u.blocks.frame);
+  const movingBox = new THREE.Box3().setFromObject(u.blocks.rodBody);
+  assert.ok(frameBox.max.z < movingBox.min.z, 'frame behind the rod');
   for (const [plate, pin] of u.jointChecks) {
     assert.ok(plate.isMesh && plate.geometry.userData.bores?.length > 0, `${plate.userData.role} has real bores`);
     assert.equal(pin.geometry.type, 'CylinderGeometry');
@@ -82,9 +86,13 @@ test('189 joints stay connected and the gab captures then clears the pin', () =>
     near2(world2(b.hangerLink), crank, 1e-9, `hanger upper eye on crank pin @${time}`);
     near2(world2(b.hangerLink, hangerEnd), rodPin, 1e-9, `hanger lower eye on rod pin @${time}`);
     assert.ok(Math.abs(crank.distanceTo(g.bellPivot) - g.crankLocal.length()) < 1e-9);
-    // The forked end follows the eccentric's own path whether engaged or not.
+    // The strap end rides the eccentric sheave: exactly while the rod rocks
+    // about it (released), and within the strap's running clearance while
+    // the gab steers it (engaged).
     const eccentric = world2(b.eccentricRod, new THREE.Vector3(g.eccentricLocal.x, g.eccentricLocal.y, 0));
-    near2(eccentric, u.poseAt(FULL_TURN * s.eccentricTurns, 0).eccentric, 1e-9, `eccentric end @${time}`);
+    const sheave = world2(b.eccentricSheave, new THREE.Vector3(0, g.eccentricThrow, 0));
+    near2(eccentric, sheave, s.handleFraction === 0 ? 0.012 : 1e-9, `strap on sheave @${time}`);
+    assert.ok(Math.abs(eccentric.y - sheave.y) < 1e-9, `strap level with sheave @${time}`);
     const pin = world2(b.valvePin);
     if (s.handleFraction === 0) {
       engagedSamples++;
@@ -142,9 +150,10 @@ test('189 motion is smooth, closes on itself and plays at a natural pace', () =>
   assert.ok(turnsFrac(g.liftWindow[0]) < 1e-6 && turnsFrac(g.lowerWindow[1]) < 1e-6);
   // Loop closure and the plate pose at t = 0.
   const a = u.stateAtTime(0), z = u.stateAtTime(16 - 1e-7);
-  assert.ok(a.gab.distanceTo(z.gab) < 1e-6 && Math.abs(a.psi - z.psi) < 1e-9);
+  // (The free-hanging crank follows the running eccentric, so psi moves.)
+  assert.ok(a.gab.distanceTo(z.gab) < 1e-6 && Math.abs(a.psi - z.psi) < 1e-7);
   assert.equal(a.stage, 'engaged-eccentric-rod-driving-valve-lever');
-  assert.ok(a.gabEngaged && a.psi === 0 && Math.abs(a.rocker) < 1e-12);
+  assert.ok(a.gabEngaged && Math.abs(a.psi) < 1e-12 && Math.abs(a.rocker) < 1e-12);
   // Velocity continuity of every visible point path (no jumps or kinks).
   const dt = 1 / 480, track = (t) => {
     const s = u.stateAtTime(t);

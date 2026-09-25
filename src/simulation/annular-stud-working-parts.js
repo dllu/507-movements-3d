@@ -185,7 +185,7 @@ export function correctAnnularStudEscapement(root, id, update) {
   for (let i = 0; i <= 32; i++) {
     update(g.pendulumPeriod * i / 32); root.updateMatrixWorld(true);
     root.traverseVisible(o => {
-      const a = o.geometry?.attributes.position;
+      const a = o.userData.cameraFitExclude ? null : o.geometry?.attributes.position;
       if (a) for (let j = 0; j < a.count; j++) bounds.expandByPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld));
     });
   }

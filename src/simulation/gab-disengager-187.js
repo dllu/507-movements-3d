@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   FULL_TURN, capsule, cylinderAlongZ, smootherstepLaw, circle, poly, plate, polygonClipping, PALETTE, markShadows, matte,
+  eccentricRodEnd, eccentricRodPose, gabRodFrame,
 } from './gab-disengager-shared.js';
 
 // Brown 187 ("Modifications of 186"): a two-handle gab disengager.
@@ -22,6 +23,12 @@ import {
 // rolls onto the pin top and pries the rod up until the gab clears the pin.
 // The cam outline is the envelope of the pin in the handle frame, so it
 // touches the pin throughout the lift without penetrating it.
+//
+// Brown draws no frame. Beyond the view the rod runs on to its strap round
+// the eccentric; the eccentric shaft and the rockshaft turn in bearings on
+// plain floor-standing columns (the rockshaft's hidden behind the valve arm).
+// Lifted, the rod turns about the stopped sheave, so the pin's place in the
+// rod frame (and hence the cam envelope) includes that small turn.
 export function twoHandleGabDisengager() {
   const root = new THREE.Group();
   const s = 0.018; // model units per source pixel
@@ -44,6 +51,10 @@ export function twoHandleGabDisengager() {
   const maximumLift = 40 * s; // gab depth 36.8 px plus ~3 px clearance
   const maximumHandleAngle = THREE.MathUtils.degToRad(35);
   const camClearance = 0.0002; // above the 96-gon sag of the swept pin circles
+  const rodLength = 16; // gab to the off-plate eccentric strap centre
+  const strapLocal = [-rodLength, P(0, 241.25)[1]];
+  const rodPose = eccentricRodPose(strapLocal);
+  const zWall = -0.8;
 
   // Depth layers, front (+z) to back.
   const Z = {
@@ -54,7 +65,7 @@ export function twoHandleGabDisengager() {
   const cyclePeriod = 16;
   const runHalf = 4.75; // engaged running spans -4.75 .. +4.75 s about t = 0
   const runRamp = 1.75;
-  const runTurns = 3;
+  const runTurns = 2; // even, so the eccentric stops where it started (sheave on top)
   const lift = {start: 5.25, end: 7.25};
   const lower = {start: 9.0, end: 11.0};
   const runProfile = (() => {
@@ -121,7 +132,8 @@ export function twoHandleGabDisengager() {
   const designLift = (psi) => maximumLift * psi / maximumHandleAngle;
   // Pin centre in the upper-handle frame (origin at its pivot) for a rod lift L.
   const pinInHandleFrame = (psi, L = liftAtHandleAngle(psi)) => {
-    const v = [-pivotRest[0], -pivotRest[1] - L];
+    const pinInRod = rodPose.pinInRodLifted(L).pin;
+    const v = [pinInRod[0] - pivotRest[0], pinInRod[1] - pivotRest[1]];
     const c = Math.cos(-psi), sn = Math.sin(-psi);
     return [c * v[0] - sn * v[1], sn * v[0] + c * v[1]];
   };
@@ -240,8 +252,9 @@ export function twoHandleGabDisengager() {
   const valveArm = new THREE.Mesh(plate(armShape, Z.arm[0], Z.arm[1]), armMaterial);
   valveArm.userData.role = 'valve-arm-with-rockshaft-boss-neck-and-round-pin-eye';
   const shaftMaterial = matte(PALETTE.muted, {metalness: 0.2, roughness: 0.6});
-  const valveShaft = cylinderAlongZ(shaftRadius, 0.5, shaftMaterial, 48);
-  valveShaft.position.z = Z.arm[1] - 0.25 - 0.001; // front face flush: Brown's hatched section
+  // Front face flush (Brown's hatched section); it runs back into its bearing.
+  const valveShaft = cylinderAlongZ(shaftRadius, Z.arm[1] - 0.001 - (zWall + 0.01), shaftMaterial, 48);
+  valveShaft.position.z = (Z.arm[1] - 0.001 + zWall + 0.01) / 2;
   valveShaft.userData.role = 'sectioned-valve-rockshaft';
   // Brown hatches the cut rockshaft; the model shows its plain steel end.
   const valvePinLength = Z.rod[1] - Z.arm[0] - 0.002;
@@ -277,7 +290,11 @@ export function twoHandleGabDisengager() {
   const upperHandleBody = new THREE.Mesh(plate(handleShape, Z.handle[0], Z.handle[1]), handleMaterial);
   upperHandleBody.userData.role = 'upper-handle-grip-and-spiral-cam-behind-crown';
   upperHandle.add(upperHandleBody);
-  eccentricRod.add(rodBody, rodForkLines, pivotPin, upperHandle);
+  const eccentric = eccentricRodEnd({
+    strapLocal, restGab: [0, 0], throw: eccentricThrow, fromX: P(-300, 0)[0] + 0.05, halfHeight: 16.75 * s,
+    z: Z.rod, rodMaterial, sheaveMaterial: shaftMaterial, shaftBack: zWall + 0.01,
+  });
+  eccentricRod.add(rodBody, rodForkLines, pivotPin, upperHandle, eccentric.strap);
   root.add(valveRocker, eccentricRod);
 
   // Plate-square camera envelope (x 0-525, y 40-300 raster).
@@ -300,14 +317,20 @@ export function twoHandleGabDisengager() {
     const armAngle = Math.asin(eccentricThrow * Math.sin(input.angle) / armLength);
     const armRate = eccentricThrow * Math.cos(input.angle) * input.rate / (armLength * Math.cos(armAngle));
     const pin = [shaftCenter[0] + armLength * Math.sin(armAngle), shaftCenter[1] - armLength * Math.cos(armAngle)];
-    // Engaged, the gab rides the pin; lifted, the eccentric is stopped with the arm plumb.
-    const rodOffset = [pin[0], pin[1] + gabLift];
-    const pinInGab = [pin[0] - rodOffset[0], pin[1] - rodOffset[1]];
+    // Engaged, the gab rides the pin and the rod turns about it to keep its
+    // strap on the sheave; lifted, the eccentric is stopped with the arm plumb
+    // and the rod turns about the sheave centre.
+    const sheaveCentre = eccentric.centre(input.angle);
+    const rodAngle = rodPose.angleFor(pin[1] + gabLift, sheaveCentre);
+    const rodOffset = [gabLift > 0 ? rodPose.gabXAbout(sheaveCentre, rodAngle) : pin[0], pin[1] + gabLift];
+    const cosine = Math.cos(rodAngle), sine = Math.sin(rodAngle);
+    const relative = [pin[0] - rodOffset[0], pin[1] - rodOffset[1]];
+    const pinInGab = [cosine * relative[0] + sine * relative[1], -sine * relative[0] + cosine * relative[1]];
     const pinTop = pinInGab[1] + pinRadius;
     return {
       time, stage: stageAt(time), inputAngle: input.angle, inputRate: input.rate,
       armAngle, armRate, handleAngle, handleRate: maximumHandleAngle * handle.rate, gabLift,
-      rodOffset, pin, pinInGab,
+      rodOffset, rodAngle, pin, pinInGab,
       gabEngaged: gabLift === 0,
       gabClearance: rodBottomY - pinTop, // > 0 once the slot's mouth is above the pin
       camGap: camGapAt(handleAngle),
@@ -318,6 +341,8 @@ export function twoHandleGabDisengager() {
     const state = stateAtTime(time);
     valveRocker.rotation.z = state.armAngle;
     eccentricRod.position.set(state.rodOffset[0], state.rodOffset[1], 0);
+    eccentricRod.rotation.z = state.rodAngle;
+    eccentric.setAngle(state.inputAngle);
     upperHandle.rotation.z = state.handleAngle;
     root.userData.kinematics = state;
   };
@@ -348,6 +373,21 @@ export function twoHandleGabDisengager() {
     [valveArm, valveShaft], [valveArm, valvePin], [rodBody, pivotPin], [upperHandleBody, pivotPin],
   ];
   root.userData.rigidBodies = [valveRocker, eccentricRod, upperHandle];
+
+  // Past the view: the eccentric and its column, and the rockshaft's column.
+  const frame = gabRodFrame({
+    eccentric: {x: eccentric.O.x, y: eccentric.O.y, shaftRadius: eccentric.shaftRadius, zFront: Z.rod[0] - 0.02},
+    rockshaft: {x: shaftCenter[0], y: shaftCenter[1], shaftRadius, zFront: Z.arm[0] - 0.02},
+    floorY: P(0, 520)[1], zWall,
+  });
+  root.add(eccentric.sheave, frame);
+  Object.assign(root.userData.blocks, {eccentricStrap: eccentric.strap, eccentricSheave: eccentric.sheave, frame});
+  root.userData.geometry.rodLength = rodLength;
+  root.userData.geometry.eccentricCentre = eccentric.O.toArray();
+  // Frame Brown's plate (the envelope): the whole rod, its eccentric and the
+  // frame run on past his break.
+  cameraEnvelope.updateMatrixWorld(true);
+  root.userData.cameraFitBounds = new THREE.Box3().setFromObject(cameraEnvelope);
 
   update(0);
   markShadows(root);

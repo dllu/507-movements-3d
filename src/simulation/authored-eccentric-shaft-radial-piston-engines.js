@@ -399,11 +399,23 @@ function eccentricShaftRadialPistonEngine(movement) {
   hubRotor.add(hubRotationMarker);
   root.add(hubRotor);
 
-  const shaftB = cylinderAlongZ(0.31, 1.24, darkMaterial, 36);
+  // Pass 57: Brown's view removes only the front head. The back head closes
+  // the casing flush with its rear face, bored for shaft B, which runs on
+  // into a blind bearing boss on the head's outer face.
+  const shaftB = cylinderAlongZ(0.31, 1.549, darkMaterial, 36);
   shaftB.position.copy(shaftCenter);
-  shaftB.position.z = 0.43;
+  shaftB.position.z = (1.05 - 0.499) / 2;
   shaftB.userData.role = 'main-shaft-B-in-fixed-eccentric-bearings';
   root.add(shaftB);
+  const shaftXY = [shaftCenter.x, shaftCenter.y];
+  const backHead = new THREE.Mesh(plate(polygonClipping.difference(poly(circle([0,0],cylinderRadius,1024)),
+    poly(circle(shaftXY,0.314,96))),-0.38,-0.27), frameMaterial);
+  backHead.userData.role = 'fixed-back-head-closing-cylinder';
+  const backBoss = new THREE.Mesh(mergeGeometries([
+    plate(polygonClipping.difference(poly(circle(shaftXY,0.56,96)),poly(circle(shaftXY,0.314,96))),-0.50,-0.38),
+    plate(poly(circle(shaftXY,0.56,96)),-0.56,-0.50)].map(g=>{g.deleteAttribute('uv');return g;})), frameMaterial);
+  backBoss.userData.role = 'fixed-back-bearing-boss-for-shaft-B';
+  for (const part of [backHead, backBoss]) {part.castShadow = true;part.receiveShadow = true;root.add(part);}
 
   const makePiston = (name) => {
     const group = new THREE.Group();

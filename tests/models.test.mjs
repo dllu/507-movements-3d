@@ -4,6 +4,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { beltCurveCrossed, beltCurveOpen } from '../src/simulation/primitives.js';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { hasRotationIndicator, rotationIndicatorFrame } from '../src/simulation/rotation-indicator.js';
 import { assertReadableTiming } from './helpers/display-timing.mjs';
 
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
@@ -175,6 +176,9 @@ test('movements 1 and 2 use one no-slip belt with the correct direction', () => 
 
     if (crossed) {
       const [firstSpan, , secondSpan] = belt.userData.curve.curves;
+      // The crossed rope is taut: both runs are straight common tangents.
+      assert.equal(firstSpan.isLineCurve3, true, 'movement 2 first run is straight');
+      assert.equal(secondSpan.isLineCurve3, true, 'movement 2 second run is straight');
       assert.ok(
         Math.abs(firstSpan.getPoint(0.5).z - secondSpan.getPoint(0.5).z)
           > 2 * 0.065,
@@ -192,10 +196,7 @@ test('movement 2 pulleys carry no face or tread index marks, as Brown draws none
   );
   assert.equal(pulleys.length, 2);
   for (const pulley of pulleys) {
-    assert.equal(pulley.userData.faceIndicators.length, 2);
-    for (const mark of pulley.userData.faceIndicators) {
-      assert.equal(mark.parent, null, 'the generic face index is detached from the rotor');
-    }
+    assert.equal(pulley.userData.faceIndicators.length, 0, 'makePulley builds no face index marks');
     assert.ok(pulley.userData.rotor.children.every((part) => !part.material?.color?.equals?.(new THREE.Color(0xfaf9f5))),
       'no white tread patch remains on the rotor');
   }
@@ -647,9 +648,15 @@ test('movement 11 uses a tangent-continuous twisted belt without guide pulleys',
   });
   assert.equal(belts.length, 1);
   const curve = belts[0].userData.curve;
-  assert.equal(curve.curves.length, 4, 'two contact arcs alternate with two twisted free spans');
-  assert.equal(curve.curves[0].isCubicBezierCurve3, true);
-  assert.equal(curve.curves[2].isCubicBezierCurve3, true);
+  assert.equal(curve.curves.length, 4, 'two contact arcs alternate with two taut free spans');
+  // Taut belt: both free spans are straight lines, each lying in the
+  // mid-plane of the pulley it runs onto (the quarter-turn rule).
+  assert.equal(curve.curves[0].isLineCurve3, true);
+  assert.equal(curve.curves[2].isLineCurve3, true);
+  assert.ok(Math.abs(curve.curves[0].v1.z - contacts[1].object.position.z) < 1e-12
+    && Math.abs(curve.curves[0].v2.z - contacts[1].object.position.z) < 1e-12, 'right run lies in the pulley plane');
+  assert.ok(Math.abs(curve.curves[2].v1.x - curve.curves[2].v2.x) < 1e-12, 'left run lies in the drum belt plane');
+  assert.ok(Math.abs(curve.curves[2].v2.x - curve.curves[3].center.x) < 1e-12, 'left run meets the drum in its belt plane');
   assertTangentContinuous(curve, 'movement 11 twisted belt');
   const samples = curve.getSpacedPoints(100);
   const xRange = Math.max(...samples.map(({ x }) => x)) - Math.min(...samples.map(({ x }) => x));
@@ -2939,14 +2946,14 @@ test('movement 38 follows the source three-sector ratios and fixed-center constr
 
 test('movement 39 couples a rocking planet and finite connecting rod to two sun turns per orbit', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { sun, planet, carrier, arm, connectingRod, flywheel, sunShaft, planetShaft } = model.root.userData.blocks;
+  const { sun, planet, carrier, arm, connectingRod, ringSegments, sunShaft, planetShaft } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
   assert.equal(model.root.userData.mechanism, 'watts-equal-gear-sun-and-planet');
   assert.equal(sun.userData.teeth, 24);
   assert.equal(planet.userData.teeth, 24);
-  assert.equal(flywheel.parent, sun.userData.rotor);
-  assert.equal(flywheel.userData.webSlitCount, 4, 'plate 39 parts the flywheel web with four slits');
-  assert.equal(flywheel.geometry.parameters.shapes.holes.length, 4);
+  assert.equal(ringSegments.parent, model.root, 'plate 39 draws a fixed ring round the gears');
+  assert.equal(ringSegments.userData.segmentCount, 4, 'the ring is an open ring of four separate segments');
+  assert.equal(ringSegments.geometry.parameters.shapes.length, 4);
   assert.equal(arm.geometry.parameters.shapes.holes.length, 2);
   assert.equal(connectingRod.userData.wholeRod, true, 'the rod is modelled whole to its upper eye');
   assert.ok(Math.abs(new THREE.Box3().setFromObject(connectingRod).max.y - (g.rodLength + g.rodWidth / 2)) < 0.02);
@@ -17381,6 +17388,11 @@ test('movement 109 cuts a change-gear-selected thread from a guided lead screw',
 
 test('movement 110 selects one opposite-hand half-nut for each traverse direction', () => {
   const model = createMovementModel(catalog.movements[109]);
+  // Source presentation lays 110 flat for Brown's plan view (p57-a); check
+  // the mechanism in its own frame, as for movement 150.
+  assert.deepEqual(model.root.userData.sourcePresentation.rotate, [-Math.PI / 2, 0, 0]);
+  model.root.quaternion.identity();
+  model.root.updateMatrixWorld(true);
   const {
     armBaseCollars,
     leftArm,
@@ -17399,7 +17411,6 @@ test('movement 110 selects one opposite-hand half-nut for each traverse directio
     rollerBearings,
     rollerCore,
     rollerEndCollars,
-    rollerRotationIndex,
     rollerRotor,
     rollerShaft,
     selectorCarriage,
@@ -17438,10 +17449,22 @@ test('movement 110 selects one opposite-hand half-nut for each traverse directio
     leftThread,
     rightThread,
     rollerCore,
-    rollerRotationIndex,
     rollerShaft,
     ...rollerEndCollars,
   ]) assert.equal(component.parent, rollerRotor);
+  // Brown draws no roller index: the plain core and its collars carry the
+  // shared quadrant rotation cue, and no white index mark rides the roller.
+  for (const part of [rollerCore, ...rollerEndCollars]) {
+    assert.equal(hasRotationIndicator(part), true,
+      'the plain roller core and collars carry the shared rotation cue');
+  }
+  rollerRotor.traverse((part) => {
+    if (!part.isMesh) return;
+    assert.notEqual(part.material.color?.getHex(), 0xffffff,
+      'no white index mark is left on the roller');
+    assert.doesNotMatch(part.userData.role ?? '', /index/,
+      'no index mark is left on the roller');
+  });
   for (const component of [
     leftArm,
     leftHalfNut,
@@ -17889,12 +17912,21 @@ test('movement 110 selects one opposite-hand half-nut for each traverse directio
     }
 
     model.root.updateMatrixWorld(true);
-    const rollerIndexPosition = rollerRotationIndex.getWorldPosition(
-      new THREE.Vector3()
+    // The white roller index was replaced by the shared quadrant rotation
+    // cue (p58-indicator). Follow one of the cue's quadrant boundaries, taken
+    // from its own spin frame, instead of the removed index block.
+    const rollerCueFrame = rotationIndicatorFrame(rollerCore.material);
+    const rollerCueCentre = new THREE.Vector3().applyMatrix4(
+      rollerCueFrame.clone().invert()
     );
+    const rollerCueBoundary = new THREE.Vector3(1, 0, 0).applyMatrix4(
+      rollerCueFrame.clone().invert()
+    );
+    const rollerIndexPosition = rollerCore.localToWorld(rollerCueBoundary)
+      .sub(rollerCore.localToWorld(rollerCueCentre));
     const rollerIndexDirection = new THREE.Vector3(
       0,
-      rollerIndexPosition.y - geometry.rollerAxisY,
+      rollerIndexPosition.y,
       rollerIndexPosition.z,
     ).normalize();
     const expectedRollerIndexDirection = new THREE.Vector3(
@@ -17905,7 +17937,7 @@ test('movement 110 selects one opposite-hand half-nut for each traverse directio
     assert.ok(rollerIndexDirection.dot(
       expectedRollerIndexDirection
     ) > 1 - 1e-12,
-    'the white center index makes the uniform roller spin visible');
+    'the roller\'s rotation cue turns with the uniform roller spin');
     const selectorIndexPosition = selectorIndex.getWorldPosition(
       new THREE.Vector3()
     );

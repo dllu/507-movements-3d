@@ -22,7 +22,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
+      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
     },
     {
       "file": "src/simulation/variable-sector-parts.js",

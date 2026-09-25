@@ -401,6 +401,27 @@ function annularPendulumEscapement(movement) {
     drivenMaterial,
   );
   lowerRod.userData.role = 'lower-pendulum-rod-K';
+  // Brown crops K; the rod runs on past his crop to the pendulum's bob.
+  // Both stay outside the default framing, which keeps Brown's crop.
+  const lowerRodRunOn = beamBetween(
+    lowerRodEnd.clone(),
+    lowerRodEnd.clone().add(new THREE.Vector3(0, -2.2, 0)),
+    0.18,
+    pendulumDepth,
+    drivenMaterial,
+  );
+  lowerRodRunOn.userData.role = 'lower-pendulum-rod-K-beyond-crop';
+  lowerRodRunOn.userData.cameraFitExclude = true;
+  // A plain lens bob threaded on K's lower end.
+  const bobRadius = 0.85;
+  const pendulumBob = new THREE.Mesh(
+    new THREE.SphereGeometry(bobRadius, 48, 24),
+    drivenMaterial,
+  );
+  pendulumBob.scale.set(1, 1, 0.34);
+  pendulumBob.position.copy(lowerRodEnd).add(new THREE.Vector3(0, -2.2 - bobRadius + 0.25, 0));
+  pendulumBob.userData.role = 'lens-bob-on-pendulum-rod-K';
+  pendulumBob.userData.cameraFitExclude = true;
   const rightFacePoints = palletFacePoints(1);
   const leftFacePoints = palletFacePoints(-1);
   const rightPallet = makeProfiledPallet(rightFacePoints, {
@@ -463,6 +484,8 @@ function annularPendulumEscapement(movement) {
     annulus,
     upperRod,
     lowerRod,
+    lowerRodRunOn,
+    pendulumBob,
     rightConnector,
     leftConnector,
     rightPallet,

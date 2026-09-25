@@ -14,6 +14,7 @@ import { spanishBartonFourToOne, spanishBartonFiveToOne } from './authored-barto
 import { makeHoistLoad, makeSheaveHanger, makeTackleCase } from './hoist-hardware.js';
 import { LAID_ROPE, LaidRopeGeometry, makeLaidRopeMesh } from './laid-rope.js';
 import { makeHaulingHand } from './hauling-hand.js';
+import { backBar, bearingBoss, footPillar, freezeFitBoundsWithout } from './back-plate-support.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -222,6 +223,42 @@ class AxialWrapCurve3 extends THREE.Curve {
   }
 }
 
+// A taut crossed rope: both free runs are straight common tangents of the
+// pulleys. So that the strands pass at the crossover, the run leaving the
+// upper pulley lies wholly in front of the pulley mid-plane and the other
+// wholly behind it; the rope shifts across the wide tread over each wrap
+// (smoothly, with no axial slope where it meets a run).
+class AxialShiftWrapCurve3 extends CircularArcCurve3 {
+  constructor(arc, from, to) {
+    super(arc.center, arc.radialStart, arc.axis, arc.sweep);
+    this.from = from;
+    this.to = to;
+    this.arcLength = Math.abs(arc.sweep) * arc.radialStart.length();
+  }
+
+  getPoint(t, target = new THREE.Vector3()) {
+    super.getPoint(t, target);
+    return target.addScaledVector(this.axis, (this.to - this.from) * smoothStep01(t) + this.from);
+  }
+
+  getTangent(t, target = new THREE.Vector3()) {
+    super.getTangent(t, target).multiplyScalar(this.arcLength);
+    return target.addScaledVector(this.axis, (this.to - this.from) * 6 * t * (1 - t)).normalize();
+  }
+}
+
+function tautCrossedRopeCurve(centerA, centerB, radius, offset) {
+  const [firstSpan, secondArc, secondSpan, firstArc] = beltCurveCrossed(centerA, centerB, radius, radius).curves;
+  const at = (point, z) => point.clone().setZ(z);
+  const curve = new THREE.CurvePath();
+  curve.add(new THREE.LineCurve3(at(firstSpan.start, offset), at(firstSpan.end, offset)));
+  curve.add(new AxialShiftWrapCurve3(secondArc, offset, -offset));
+  curve.add(new THREE.LineCurve3(at(secondSpan.start, -offset), at(secondSpan.end, -offset)));
+  curve.add(new AxialShiftWrapCurve3(firstArc, -offset, offset));
+  curve.userData = { crossoverLift: offset, selfIntersectionAvoidance: 'straight-runs-in-offset-planes' };
+  return curve;
+}
+
 function simpleBeltTransmission(crossed = false) {
   const root = new THREE.Group();
   const upperCenter = new THREE.Vector2(0, 2.05);
@@ -235,9 +272,10 @@ function simpleBeltTransmission(crossed = false) {
   const driven = makePulley({ radius: pulleyRadius, width: 0.30, color: PALETTE.driven });
   driver.position.set(upperCenter.x, upperCenter.y, 0);
   driven.position.set(lowerCenter.x, lowerCenter.y, 0);
+  // Pass 58: the crossed rope of 2 is taut, its runs straight tangents.
   const belt = makeMovingBelt(
     crossed
-      ? beltCurveCrossed(upperCenter, lowerCenter, radius, radius)
+      ? tautCrossedRopeCurve(upperCenter, lowerCenter, radius, ropeRadius + 0.018)
       : beltCurveOpen(upperCenter, lowerCenter, radius, radius),
     { radius: ropeRadius, laid: true, markerCount: 0 },
   );
@@ -1534,12 +1572,41 @@ function addHookStaple(parent, shoulder, { width = 2.4, offset = 0, x = 0 } = {}
   return { staple, ceiling, underside: stapleY + 0.097 };
 }
 
+// On a quarter-turn belt each run must approach its pulley in that pulley's
+// mid-plane. Pass 58 makes both runs of 11 taut straight lines: the drum's
+// belt plane touches the pulley's pitch circle at its left (so the left run is
+// vertical, as Brown draws it), and the drum stands forward of the pulley
+// plane by its pitch radius, so the pulley's plane touches the drum's pitch
+// cylinder where the right run leaves it. Each run leaves its pulley at the
+// delivery angle; the belt eases across the tread just before it leaves, so
+// the path stays smooth. A tangent-continuous wrap ending in a skewed
+// tangent to the pitch cylinder.
+class SkewedDeliveryWrapCurve3 extends CircularArcCurve3 {
+  constructor(arc, offsetAxis, amplitude) {
+    super(arc.center, arc.radialStart, arc.axis, arc.sweep);
+    this.offsetAxis = offsetAxis.clone().normalize();
+    this.amplitude = amplitude;
+    this.arcLength = Math.abs(arc.sweep) * arc.radialStart.length();
+  }
+
+  getPoint(t, target = new THREE.Vector3()) {
+    super.getPoint(t, target);
+    return target.addScaledVector(this.offsetAxis, this.amplitude * (t ** 8 - t ** 7));
+  }
+
+  getTangent(t, target = new THREE.Vector3()) {
+    super.getTangent(t, target).multiplyScalar(this.arcLength);
+    return target.addScaledVector(this.offsetAxis, this.amplitude * (8 * t ** 7 - 7 * t ** 6)).normalize();
+  }
+}
+
 function rightAngleWithoutGuides() {
   const root = new THREE.Group();
-  const topCenter = new THREE.Vector3(-0.68, 2.25, 0);
-  const bottomCenter = new THREE.Vector3(0, -2.25, 0);
   const topPitchRadius = 0.76;
   const bottomPitchRadius = 0.96;
+  const beltPlaneX = -bottomPitchRadius;
+  const topCenter = new THREE.Vector3(beltPlaneX, 2.25, topPitchRadius);
+  const bottomCenter = new THREE.Vector3(0, -2.25, 0);
   const driver = makePulley({
     radius: topPitchRadius - 0.012,
     width: 1.44,
@@ -1557,71 +1624,29 @@ function rightAngleWithoutGuides() {
   driver.position.copy(topCenter);
   driven.position.copy(bottomCenter);
 
-  const topVerticalComponent = -0.32;
-  const topAxialComponent = Math.sqrt(1 - topVerticalComponent ** 2);
-  const bottomVerticalComponent = 0.04;
-  const bottomLateralComponent = Math.sqrt(1 - bottomVerticalComponent ** 2);
-  const topFront = topCenter.clone().add(new THREE.Vector3(
-    0,
-    topPitchRadius * topVerticalComponent,
-    topPitchRadius * topAxialComponent,
-  ));
-  const topBack = topCenter.clone().add(new THREE.Vector3(
-    0,
-    topPitchRadius * topVerticalComponent,
-    -topPitchRadius * topAxialComponent,
-  ));
-  const bottomRight = bottomCenter.clone().add(new THREE.Vector3(
-    bottomPitchRadius * bottomLateralComponent,
-    bottomPitchRadius * bottomVerticalComponent,
-    0,
-  ));
-  const bottomLeft = bottomCenter.clone().add(new THREE.Vector3(
-    -bottomPitchRadius * bottomLateralComponent,
-    bottomPitchRadius * bottomVerticalComponent,
-    0,
-  ));
-  const topArc = circularArcThrough(
-    topCenter,
-    topBack,
-    topFront,
-    X_AXIS,
-    new THREE.Vector3().crossVectors(X_AXIS, topBack.clone().sub(topCenter)).normalize(),
-  );
-  const bottomArc = circularArcThrough(
-    bottomCenter,
-    bottomLeft,
-    bottomRight,
-    Z_AXIS,
-    new THREE.Vector3()
-      .crossVectors(Z_AXIS, bottomLeft.clone().sub(bottomCenter))
-      .normalize(),
-  );
-  const tangentSpan = (start, end, startTangent, endTangent) => {
-    const handleLength = start.distanceTo(end) * 0.34;
-    return new TangentCubicBezierCurve3(
-      start,
-      start.clone().addScaledVector(startTangent, handleLength),
-      end.clone().addScaledVector(endTangent, -handleLength),
-      end,
-    );
-  };
-  const frontSpan = tangentSpan(
-    topFront,
-    bottomLeft,
-    topArc.getTangent(1),
-    bottomArc.getTangent(0),
-  );
-  const backSpan = tangentSpan(
-    bottomRight,
-    topBack,
-    bottomArc.getTangent(1),
-    topArc.getTangent(0),
-  );
+  // The right run leaves the drum's back line (in the pulley plane) and
+  // meets the pulley's right side; the left run leaves the pulley's left
+  // point (in the drum's belt plane) and meets the drum's front.
+  const drumDelivery = new THREE.Vector3(beltPlaneX, topCenter.y, 0);
+  const pulleyDelivery = new THREE.Vector3(beltPlaneX, bottomCenter.y, 0);
+  const bottomRight = tangentPointsFromExternal(bottomCenter, drumDelivery, bottomPitchRadius, Z_AXIS)
+    .reduce((best, point) => (point.x > best.x ? point : best));
+  const topFront = tangentPointsFromExternal(topCenter, pulleyDelivery, topPitchRadius, X_AXIS)
+    .reduce((best, point) => (point.z > best.z ? point : best));
+  const rightRun = new THREE.LineCurve3(drumDelivery, bottomRight);
+  const leftRun = new THREE.LineCurve3(pulleyDelivery, topFront);
+  const rightDirection = bottomRight.clone().sub(drumDelivery).normalize();
+  const leftDirection = topFront.clone().sub(pulleyDelivery).normalize();
+  const bottomCircle = circularArcThrough(bottomCenter, bottomRight, pulleyDelivery, Z_AXIS, rightDirection);
+  const topCircle = circularArcThrough(topCenter, topFront, drumDelivery, X_AXIS, leftDirection);
+  const bottomArc = new SkewedDeliveryWrapCurve3(bottomCircle, Z_AXIS,
+    Math.abs(bottomCircle.sweep) * bottomPitchRadius * leftDirection.z / leftDirection.y);
+  const topArc = new SkewedDeliveryWrapCurve3(topCircle, X_AXIS,
+    Math.abs(topCircle.sweep) * topPitchRadius * rightDirection.x / -rightDirection.y);
   const beltCurve = new THREE.CurvePath();
-  beltCurve.add(frontSpan);
+  beltCurve.add(rightRun);
   beltCurve.add(bottomArc);
-  beltCurve.add(backSpan);
+  beltCurve.add(leftRun);
   beltCurve.add(topArc);
   const belt = makeMovingBelt(beltCurve, {
     width: 0.16, thickness: 0.024, markerCount: 0,
@@ -2008,7 +2033,9 @@ function singleMovableHoist() {
     ceilingUnderside - 0.17,
     ropeZ,
   );
-  const baseEffortLength = 0.98;
+  // The fall ends in plate 12's hauling hand just beyond Brown's crop of it,
+  // not in mid-air at the crop line.
+  const baseEffortLength = 1.3;
   const makeRopePath = (travel) => {
     const movableCenter = movableBase.clone().add(new THREE.Vector3(0, travel, ropeZ));
     const movableLeftContact = movableCenter.clone().add(new THREE.Vector3(-movablePitchRadius, 0, 0));
@@ -2055,9 +2082,11 @@ function singleMovableHoist() {
   const movableHanger = makeSheaveHanger({ radius: movablePitchRadius, width: 0.32, direction: -1 });
   const anchorEye = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.025, 12, 40), matte(PALETTE.ink));
   anchorEye.position.copy(anchor).add(new THREE.Vector3(0, 0.085, 0));
-  root.add(fixedPulley, movablePulley, rope, weight, fixedHanger, movableHanger, anchorEye);
+  const hand = makeHaulingHand(effortDirection, 0.04);
+  hand.userData.role = 'hauling-hand-beyond-plate-crop';
+  root.add(fixedPulley, movablePulley, rope, weight, fixedHanger, movableHanger, anchorEye, hand);
   root.userData.blocks = { fixedPulley, movablePulley, fixedHanger, movableHanger,
-    rope, weight, support, anchorEye };
+    rope, weight, support, anchorEye, hand };
   root.userData.cameraFov = 18;
   root.userData.mechanism = 'single-movable-pulley-hoist';
   root.userData.fixedContact = {
@@ -2080,6 +2109,7 @@ function singleMovableHoist() {
     // Constant length measured from the free end: each arc-length coordinate
     // is a fixed piece of rope, so the lay is not shifted along the path.
     rope.userData.updateDistance(0);
+    hand.position.copy(path.effortEnd);
     movablePulley.position.copy(path.movableCenter).setZ(0);
     movableHanger.position.copy(movablePulley.position);
     weight.position.copy(movableHanger.position).add(movableHanger.userData.attachment)
@@ -2114,6 +2144,14 @@ function singleMovableHoist() {
       supportingSegments: 2,
     };
   };
+  // Fit the swept silhouette including the hand and its tail.
+  const fit = new THREE.Box3();
+  for (let i = 0; i < 24; i += 1) {
+    update(i * 2 * Math.PI / (0.66 * 24));
+    root.updateMatrixWorld(true);
+    fit.union(new THREE.Box3().setFromObject(root, true));
+  }
+  root.userData.cameraFitBounds = fit;
   update(0);
   return { root, update, cameraDirection: new THREE.Vector3(0.3, 0.15, 10) };
 }
@@ -2749,14 +2787,33 @@ function compensatedMovableDrive() {
     suspension,
     weight,
   );
-  const driverAxle = addKeyedShaft(driver, 0.80);
+  const driverAxle = addKeyedShaft(driver, 0.88);
   const movableAxle = addKeyedShaft(movable, 0.80);
   const compensatorAxle = addAxle(
     root,
     new THREE.Vector3(compensatorBase.x, compensatorBase.y, 0.07),
     1.02,
   );
-  const guideAxles = guides.map((guide) => addAxle(root, guide.position, 0.42));
+  // Brown draws no frame. The guide pulleys B turn on axles run back to a
+  // plain back bar behind the mechanism, standing on a pillar behind the
+  // counterweight; the fixed driver's shaft runs in a bearing boss on its own
+  // pillar. Both pillars stand on feet at a floor below the driven pulley.
+  const supportBack = -0.45;
+  const floorY = -2.4;
+  const guideAxles = guides.map((guide) => {
+    const front = guide.position.z + 0.21;
+    return addAxle(root, new THREE.Vector3(guide.position.x, guide.position.y, (front + supportBack) / 2),
+      front - supportBack);
+  });
+  const guideBar = backBar(guideCenters.map((c) => ({ x: c.x, y: c.y })), { zFront: supportBack, width: 0.3, role: 'guide-pulley-back-bar' });
+  const guidePillar = footPillar({ x: guideCenters[1].x, yTop: guideCenters[1].y, yFloor: floorY,
+    z: supportBack - 0.05, width: 0.2, role: 'guide-pulley-pillar' });
+  const driverPad = backBar([{ x: driverCenter.x, y: driverCenter.y }], { zFront: supportBack, width: 0.4, role: 'driver-shaft-pad' });
+  const driverBearing = bearingBoss({ x: driverCenter.x, y: driverCenter.y, boreRadius: 0.078, outerRadius: 0.16,
+    zBack: supportBack, zFront: -0.33, role: 'driver-shaft-bearing' });
+  const driverPillar = footPillar({ x: driverCenter.x, yTop: driverCenter.y, yFloor: floorY,
+    z: supportBack - 0.05, width: 0.24, role: 'driver-shaft-pillar' });
+  root.add(guideBar, guidePillar, driverPad, driverBearing, driverPillar);
   const hanger = new THREE.Group();
   const shoulder = compensatorRadius + 0.10;
   for (const z of [-0.36, ropePlane]) {
@@ -2873,6 +2930,10 @@ function compensatedMovableDrive() {
     };
   };
   update(0);
+  // Frame Brown's view: the added bar, pillars and bearing stay out of the
+  // fit, so the pillars run off below the plate's crop.
+  freezeFitBoundsWithout(root, update, 2 * Math.PI / frequency,
+    [guideBar, guidePillar, driverPad, driverBearing, driverPillar]);
   return {
     root,
     cameraDirection: new THREE.Vector3(0.3, 0.15, 10),

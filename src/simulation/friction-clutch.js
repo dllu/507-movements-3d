@@ -56,6 +56,9 @@ export function makeFrictionClutch() {
     section.remove(caps[1]);
     section.userData.caps = [caps[0]];
     caps[0].material = caps[0].material.clone();
+    // The horizontal faces are turned a quarter, so render both sides: the
+    // cut face must read solid from above and below as well as from the front.
+    caps[0].material.side = THREE.DoubleSide;
     caps[0].material.clippingPlanes = [new THREE.Plane(keep === 'y' ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1), 0)];
     section.position.x = offsetX;
   }
@@ -96,7 +99,15 @@ export function makeFrictionClutch() {
   const leverBody = new THREE.Mesh(new THREE.ExtrudeGeometry(leverShape,
     { depth: leverDepth, bevelEnabled: false, curveSegments: 16 }).translate(0, 0, leverBackZ),
   matte(PALETTE.frame, { metalness: 0.15, roughness: 0.61 }));
-  lever.add(leverBody);
+  // The handle ends in a turned grip for the hand, and the pivot pin is
+  // carried by a bracket plate on a short pillar standing on the floor below
+  // the clutch (Brown draws no frame for either).
+  const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.036, 0.042, 0.24, 24),
+    matte(PALETTE.brass, { metalness: 0.1, roughness: 0.66 }));
+  grip.rotation.z = Math.PI / 2;
+  grip.position.set(handleLength + 0.022 + 0.004 + 0.12, 0, leverBackZ + leverDepth / 2);
+  grip.userData.role = 'lever-handle-grip';
+  lever.add(leverBody, grip);
   Object.assign(lever.userData, { body: leverBody, pivotBore, followerBore, handleLength, leverLength: p.leverLength,
     leverBackZ, leverDepth });
 
@@ -113,7 +124,18 @@ export function makeFrictionClutch() {
   const followerPin = pin(0.016, -0.040, 0.10), pivotPin = pin(0.023, -0.13, 0.10);
   pivotPin.position.x = lever.position.x;
   pivotPin.position.y = lever.position.y;
-  root.add(input, output, shaft, inputSection, outputSection, inputFloor, outputFloor, lever, follower, followerPin, pivotPin);
+  const pivotSupport = new THREE.Group();
+  pivotSupport.userData.role = 'lever-pivot-bracket';
+  const supportMat = matte(PALETTE.frame, { metalness: 0.15, roughness: 0.65 });
+  const floorY = -1.12, bracketFront = -0.13, bracketDepth = 0.07;
+  const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.16, lever.position.y + 0.08 - floorY, bracketDepth), supportMat);
+  bracket.position.set(lever.position.x, (lever.position.y + 0.08 + floorY) / 2, bracketFront - bracketDepth / 2);
+  bracket.userData.role = 'lever-pivot-bracket-post';
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.05, 0.36), supportMat);
+  foot.position.set(lever.position.x, floorY + 0.025, bracketFront - bracketDepth / 2);
+  foot.userData.role = 'lever-pivot-bracket-foot';
+  pivotSupport.add(bracket, foot);
+  root.add(input, output, shaft, inputSection, outputSection, inputFloor, outputFloor, lever, follower, followerPin, pivotPin, pivotSupport);
   const setSectionView = (enabled) => {
     for (const member of [input, output]) {
       member.userData.body.material.clippingPlanes = enabled ? planes : [];

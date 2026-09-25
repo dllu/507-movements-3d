@@ -1,4 +1,5 @@
 import {wallGuide} from './wall-guide-hardware.js';
+import { backBar, backPlate, bearingBoss, footPillar, freezeFitBoundsWithout, supportMaterial } from './back-plate-support.js';
 import {correctFeedWormAssembly} from './feed-worm-assembly-parts.js';
 import { correctSkewFrictionParts } from './skew-friction-working-parts.js';
 import { makeMiterGear, makeCircularAnnulusGeometry } from './miter-gear.js';
@@ -21,6 +22,7 @@ import { sectorPressWebShape } from './sector-press-web.js';
 import {makePinnedEyeRod} from './pinned-eye-rod.js';
 import sectorPressTeeth from '../data/sector-press-teeth.js';
 import * as THREE from 'three';
+import { applyRotationIndicator } from './rotation-indicator.js';
 import sourcePresentation from '../data/source-presentation.js';
 import { makeFuseeMotion, fuseeParameters } from './fusee-motion.js';
 import { groovedFuseeGeometry } from './fusee-geometry.js';
@@ -1081,6 +1083,9 @@ function brushWheels() {
   rollerFaceIndicator.position.set(rollerRadius * 0.36, 0, 0.175);
   roller.userData.rotor.add(rollerFaceIndicator);
   root.add(disk, roller);
+  // The plain disk carries the shared quadrant rotation cue (the makePulley
+  // roller has its own).
+  applyRotationIndicator(disk.userData.rotor, { axis: 'auto' });
 
   // The plate's lower shaft is about 0.21 in radius and runs about 2.2
   // below the boss; the upper wheel's shaft is about 0.11.
@@ -2015,6 +2020,8 @@ function frictionWheels() {
   driver.position.copy(driverCenter);
   driven.position.copy(drivenCenter);
   root.add(driver, driven);
+  // Plain friction wheels carry the shared quadrant rotation cue.
+  for (const wheel of [driver, driven]) applyRotationIndicator(wheel.userData.rotor, { axis: 'auto' });
   const driverShaft = makeShaft({ length: 0.5, radius: 0.16, axis: Z_AXIS });
   const drivenShaft = makeShaft({ length: 0.5, radius: 0.16, axis: Z_AXIS });
   driverShaft.position.copy(driverCenter);
@@ -3480,74 +3487,70 @@ function sunAndPlanet() {
   };
   const sun = makeSourceGear(PALETTE.driven, true);
   const planet = makeSourceGear(PALETTE.driver, false);
-  const flywheelRadius = 1.27;
-  const flywheelInnerRadius = 1.10;
-  const flywheelHubRadius = 0.48;
-  // Plate 39 draws the flywheel as a continuous rim around four broad web
-  // quarters parted by narrow radial slits, not four thin spokes. The web
-  // is set back from the rim face, giving the drawn rim/web line.
-  const webRecess = 0.04;
-  const flywheelShape = new THREE.Shape();
-  // The web runs under the rim, which closes the outer ends of the slits.
-  flywheelShape.absarc(0, 0, flywheelInnerRadius + 0.05, 0, 2 * Math.PI, false);
-  const slitHalfWidth = 0.065;
-  // The gaps run from just outside the hub flange to the rim, so the band
-  // between gear and rim reads as four separate arcs from every side; the
-  // rim and the narrow hub ring keep the wheel one rigid body.
-  const slitInnerRadius = 0.53;
+  // Brown's fixed ring round the gears: a continuous outer rim and, inside
+  // it, four separate quarter segments parted by open radial gaps (an open
+  // four-part ring, not a disk). The segments are set back from the rim face
+  // (the drawn rim/segment line), flare into the rim with fillets, and stop
+  // just inside the sun's tooth roots, so the middle of the ring is open
+  // round the sun shaft. The ring is fixed: it is carried from behind by a
+  // spacer at its foot on the sun-shaft pillar and does not turn.
+  const ringRadius = 1.27;
+  const ringInnerRadius = 1.10;
+  const ringHubRadius = 0.6;
+  const segmentRecess = 0.04;
+  const gapHalfWidth = 0.07;
+  const segmentOuterRadius = ringInnerRadius + 0.05;
+  const fillet = 0.07;
+  const ringZ = -0.225;
+  const ringShapes = [];
   for (let quadrant = 0; quadrant < 4; quadrant += 1) {
-    const angle = quadrant * Math.PI / 2;
-    const along = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
-    const across = new THREE.Vector2(-along.y, along.x);
-    const point = (radial, lateral) => along.clone().multiplyScalar(radial)
-      .addScaledVector(across, lateral);
-    // Brown rounds each web arc's corners where it meets the rim, so the
-    // gap flares into the rim with a fillet on both sides.
-    const fillet = 0.07, filletAngle = Math.asin((slitHalfWidth + fillet) / flywheelInnerRadius);
-    const straightEnd = Math.sqrt(flywheelInnerRadius ** 2 - (slitHalfWidth + fillet) ** 2) - fillet;
-    const corner = (side) => [point(Math.sqrt(flywheelInnerRadius ** 2 - slitHalfWidth ** 2) - 0.004, side * slitHalfWidth),
-      point(Math.sqrt(flywheelInnerRadius ** 2 - (slitHalfWidth + fillet) ** 2), side * (slitHalfWidth + fillet))];
-    const hole = new THREE.Path();
-    const start = point(slitInnerRadius, -slitHalfWidth);
-    const outerStart = point(straightEnd, -slitHalfWidth);
-    hole.moveTo(start.x, start.y);
-    hole.lineTo(outerStart.x, outerStart.y);
-    const [controlA, endA] = corner(-1);
-    hole.quadraticCurveTo(controlA.x, controlA.y, endA.x, endA.y);
-    hole.absarc(0, 0, flywheelInnerRadius, angle - filletAngle, angle + filletAngle, false);
-    const [controlB] = corner(1), outerEnd = point(straightEnd, slitHalfWidth);
-    hole.quadraticCurveTo(controlB.x, controlB.y, outerEnd.x, outerEnd.y);
-    const end = point(slitInnerRadius, slitHalfWidth);
-    hole.lineTo(end.x, end.y);
-    hole.closePath();
-    flywheelShape.holes.push(hole);
+    const a0 = quadrant * Math.PI / 2, a1 = a0 + Math.PI / 2;
+    const pointAt = (angle, radial, lateral) => new THREE.Vector2(
+      Math.cos(angle) * radial - Math.sin(angle) * lateral,
+      Math.sin(angle) * radial + Math.cos(angle) * lateral);
+    const polar = (radius, angle) => new THREE.Vector2(radius * Math.cos(angle), radius * Math.sin(angle));
+    const innerHalf = Math.asin(gapHalfWidth / ringHubRadius);
+    const straightEnd = Math.sqrt(ringInnerRadius ** 2 - (gapHalfWidth + fillet) ** 2) - fillet;
+    const filletAngle = Math.asin((gapHalfWidth + fillet) / ringInnerRadius);
+    const cornerRadial = Math.sqrt(ringInnerRadius ** 2 - gapHalfWidth ** 2) - 0.004;
+    const shape = new THREE.Shape();
+    const startPoint = pointAt(a0, Math.sqrt(ringHubRadius ** 2 - gapHalfWidth ** 2), gapHalfWidth);
+    shape.moveTo(startPoint.x, startPoint.y);
+    const e0 = pointAt(a0, straightEnd, gapHalfWidth);
+    shape.lineTo(e0.x, e0.y);
+    const c0 = pointAt(a0, cornerRadial, gapHalfWidth), f0 = polar(ringInnerRadius, a0 + filletAngle);
+    shape.quadraticCurveTo(c0.x, c0.y, f0.x, f0.y);
+    const o0 = polar(segmentOuterRadius, a0 + filletAngle);
+    shape.lineTo(o0.x, o0.y);
+    shape.absarc(0, 0, segmentOuterRadius, a0 + filletAngle, a1 - filletAngle, false);
+    const f1 = polar(ringInnerRadius, a1 - filletAngle);
+    shape.lineTo(f1.x, f1.y);
+    const c1 = pointAt(a1, cornerRadial, -gapHalfWidth), e1 = pointAt(a1, straightEnd, -gapHalfWidth);
+    shape.quadraticCurveTo(c1.x, c1.y, e1.x, e1.y);
+    const i1 = pointAt(a1, Math.sqrt(ringHubRadius ** 2 - gapHalfWidth ** 2), -gapHalfWidth);
+    shape.lineTo(i1.x, i1.y);
+    shape.absarc(0, 0, ringHubRadius, a1 - innerHalf, a0 + innerHalf, true);
+    shape.closePath();
+    ringShapes.push(shape);
   }
-  const flywheelGeometry = new THREE.ExtrudeGeometry(flywheelShape, {
-    depth: 0.10 - webRecess, bevelEnabled: true, bevelSegments: 1,
+  const ringMaterial = matte(0x5e6666, { metalness: 0.18, roughness: 0.61 });
+  const ringSegments = new THREE.Mesh(new THREE.ExtrudeGeometry(ringShapes, {
+    depth: 0.10 - segmentRecess, bevelEnabled: true, bevelSegments: 1,
     bevelSize: 0.003, bevelOffset: -0.003, bevelThickness: 0.003, curveSegments: 64,
-  });
-  flywheelGeometry.translate(0, 0, -0.225);
-  const flywheel = new THREE.Mesh(flywheelGeometry,
-    matte(0x5e6666, { metalness: 0.18, roughness: 0.61 }));
+  }).translate(0, 0, ringZ), ringMaterial);
+  ringSegments.userData.role = 'fixed-ring-four-segments';
+  ringSegments.userData.segmentCount = 4;
   const rimShape = new THREE.Shape();
-  rimShape.absarc(0, 0, flywheelRadius, 0, 2 * Math.PI, false);
+  rimShape.absarc(0, 0, ringRadius, 0, 2 * Math.PI, false);
   const rimBore = new THREE.Path();
-  rimBore.absarc(0, 0, flywheelInnerRadius, 0, 2 * Math.PI, true);
+  rimBore.absarc(0, 0, ringInnerRadius, 0, 2 * Math.PI, true);
   rimShape.holes.push(rimBore);
-  const rimGeometry = new THREE.ExtrudeGeometry(rimShape, {
+  const ringRim = new THREE.Mesh(new THREE.ExtrudeGeometry(rimShape, {
     depth: 0.10, bevelEnabled: true, bevelSegments: 1,
     bevelSize: 0.003, bevelOffset: -0.003, bevelThickness: 0.003, curveSegments: 96,
-  });
-  rimGeometry.translate(0, 0, -0.225);
-  const flywheelRim = new THREE.Mesh(rimGeometry,
-    matte(0x5e6666, { metalness: 0.18, roughness: 0.61 }));
-  flywheelRim.userData.flywheelRim = true;
-  sun.userData.rotor.add(flywheelRim);
-  flywheel.userData.webSlitCount = 4;
-  flywheel.userData.slitHalfWidth = slitHalfWidth;
-  flywheel.userData.slitInnerRadius = slitInnerRadius;
-  flywheel.userData.annularFlywheel = true;
-  sun.userData.rotor.add(flywheel);
+  }).translate(0, 0, ringZ), ringMaterial);
+  ringRim.userData.role = 'fixed-ring-rim';
+  root.add(ringSegments, ringRim);
 
   const carrier = new THREE.Group();
   const armShape = new THREE.Shape();
@@ -3607,8 +3610,58 @@ function sunAndPlanet() {
   rodBoss.position.z = 0.2;
   planet.userData.rotor.add(rodBoss);
   const sunShaftFront = 0.14;
-  const sunShaft = makeShaft({ length: sunShaftFront + 0.27, radius: axleRadius, axis: Z_AXIS });
-  sunShaft.position.z = (sunShaftFront - 0.27) / 2;
+  // Brown draws no frame. The sun shaft runs back into a bearing boss on a
+  // plain pillar behind the fixed ring; the rod's upper wrist pin works in a
+  // crosshead sliding between vertical guide bars on a back bar, which
+  // stands on its own pillar. Both pillars stand on feet at a floor below
+  // the planet's orbit, behind every moving part.
+  const supportFront = -0.3;
+  const supportFloor = -2.5;
+  const sunShaftBack = supportFront + 0.002;
+  const sunShaft = makeShaft({ length: sunShaftFront - sunShaftBack, radius: axleRadius, axis: Z_AXIS });
+  sunShaft.position.z = (sunShaftFront + sunShaftBack) / 2;
+  const sunBearing = bearingBoss({ x: 0, y: 0, boreRadius: axleRadius + 0.004, outerRadius: 0.2,
+    zBack: supportFront, zFront: -0.24, role: 'sun-shaft-bearing' });
+  const sunPad = backBar([{ x: 0, y: 0 }], { zFront: supportFront, width: 0.5, role: 'sun-shaft-pad' });
+  const sunPillar = footPillar({ x: 0, yTop: 0, yFloor: supportFloor, z: supportFront - 0.05,
+    width: 0.3, role: 'sun-shaft-pillar' });
+  const guideBottom = 2.2, guideTop = 6.05;
+  const crossheadWidth = 0.44, crossheadHeight = 0.5, crossheadBack = -0.12, crossheadFront = 0.15;
+  const crossheadShape = new THREE.Shape();
+  crossheadShape.moveTo(-crossheadWidth / 2, -crossheadHeight / 2);
+  crossheadShape.lineTo(crossheadWidth / 2, -crossheadHeight / 2);
+  crossheadShape.lineTo(crossheadWidth / 2, crossheadHeight / 2);
+  crossheadShape.lineTo(-crossheadWidth / 2, crossheadHeight / 2);
+  crossheadShape.closePath();
+  const crossheadBore = new THREE.Path();
+  crossheadBore.absarc(0, 0, axleRadius + 0.006, 0, 2 * Math.PI, true);
+  crossheadShape.holes.push(crossheadBore);
+  const crosshead = new THREE.Mesh(new THREE.ExtrudeGeometry(crossheadShape, {
+    depth: crossheadFront - crossheadBack, bevelEnabled: false, curveSegments: 32,
+  }).translate(0, 0, crossheadBack), matte(PALETTE.muted, { metalness: 0.16, roughness: 0.6 }));
+  crosshead.userData.role = 'wrist-pin-crosshead';
+  const guideSupport = new THREE.Group();
+  guideSupport.userData.role = 'crosshead-guide';
+  const railWidth = 0.09;
+  for (const side of [-1, 1]) {
+    const rail = new THREE.Mesh(new THREE.BoxGeometry(railWidth, guideTop - guideBottom, crossheadFront - supportFront),
+      supportMaterial());
+    rail.position.set(upperGuideX + side * (crossheadWidth / 2 + 0.004 + railWidth / 2),
+      (guideTop + guideBottom) / 2, (crossheadFront + supportFront) / 2);
+    rail.userData.role = 'crosshead-guide-bar';
+    guideSupport.add(rail);
+  }
+  guideSupport.add(backPlate({ minX: upperGuideX - crossheadWidth / 2 - 0.004 - railWidth,
+    maxX: upperGuideX + crossheadWidth / 2 + 0.004 + railWidth, minY: guideBottom, maxY: guideTop,
+    zFront: supportFront, role: 'crosshead-guide-back-bar' }));
+  guideSupport.add(footPillar({ x: upperGuideX, yTop: guideBottom, yFloor: supportFloor,
+    z: supportFront - 0.05, width: 0.3, role: 'crosshead-guide-pillar' }));
+  // The fixed ring's foot sits on a spacer block on the sun-shaft pillar.
+  const ringSpacer = new THREE.Mesh(new THREE.BoxGeometry(0.24, ringRadius - ringInnerRadius, ringZ - supportFront),
+    supportMaterial());
+  ringSpacer.position.set(0, -(ringRadius + ringInnerRadius) / 2, (ringZ + supportFront) / 2);
+  ringSpacer.userData.role = 'fixed-ring-spacer';
+  root.add(sunBearing, sunPad, sunPillar, crosshead, guideSupport, ringSpacer);
   const armStud = makeShaft({ length: 0.12, radius: axleRadius, axis: Z_AXIS });
   armStud.position.z = 0.31;
   armStud.userData.role = 'arm-sun-end-stud';
@@ -3619,12 +3672,12 @@ function sunAndPlanet() {
   const orbitPeriod = 2 * Math.PI / carrierAngularSpeed;
   root.userData.mechanism = 'watts-equal-gear-sun-and-planet';
   root.userData.blocks = { sun, planet, carrier, arm, connectingRod, rodBoss,
-    flywheel, flywheelRim, sunShaft, planetShaft, armStud };
+    ringSegments, ringRim, sunShaft, planetShaft, armStud };
   root.userData.geometry = {
     teeth, module, pitchRadius, angularPitch, circularPitch: Math.PI * module,
     centerDistance, sunCenter, sunPhase, planetPhase, gearDepth, flangeRadius,
     axleRadius, bearingRadius, armRadius, rodLength, visibleRodLength, rodWidth,
-    upperGuideX, flywheelRadius, flywheelInnerRadius, flywheelHubRadius,
+    upperGuideX, ringRadius, ringInnerRadius, ringHubRadius, gapHalfWidth,
     orbitPeriod, cycleDuration: orbitPeriod, carrierAngularSpeed,
   };
   const update = (time) => {
@@ -3642,6 +3695,7 @@ function sunAndPlanet() {
     planetShaft.position.set(px, py, 0.1275);
     connectingRod.position.set(px, py, 0);
     connectingRod.rotation.z = rodAngle;
+    crosshead.position.set(upperGuideX, py + dy, 0);
     carrier.rotation.z = carrierAngle;
     setSpin(sun, sunAngle);
     setSpin(sunShaft, sunAngle);
@@ -3662,7 +3716,8 @@ function sunAndPlanet() {
   update(0);
   // The rod is modelled whole, so the fixed opening camera fits the swept
   // motion envelope (the whole rod through the cycle), not Brown's crop at
-  // the wheels.
+  // the wheels. The added pillars and crosshead guide stay out of that fit.
+  freezeFitBoundsWithout(root, update, orbitPeriod, [sunBearing, sunPad, sunPillar, crosshead, guideSupport, ringSpacer]);
   root.userData.cameraFov = 18;
   return finish(root, update, new THREE.Vector3(0.04, 0.22, 10));
 }
@@ -4115,6 +4170,8 @@ function groovedFrictionGears() {
   // V-grooves on paper. The model shows the grooves on the wheels' own rims,
   // meshing at their contact, so no separate section sectors are built.
   root.add(driver, driven, driverShaft, drivenShaft);
+  // The grooved friction wheels carry the shared quadrant rotation cue.
+  for (const wheel of [driver, driven]) applyRotationIndicator(wheel.userData.rotor, { axis: 'auto' });
   const interfaceProfile = driver.userData.profile.map((point, i) => ({
     axialPosition: point.axialPosition, driverRadius: point.radius,
     drivenRadius: driven.userData.profile[i].radius, wave: point.wave }));
@@ -4234,6 +4291,8 @@ function fuseeDrive() {
   const fuseeShaft = makeShaft({ length: 2.45, radius: 0.108, axis: Y_AXIS });
   fuseeShaft.position.copy(fuseeCenter).setY(0.10);
   root.add(springBox, spring, fusee, chain, barrelShaft, fuseeShaft);
+  // The plain barrel and the turned fusee carry the shared quadrant rotation cue.
+  for (const rotor of [barrelRotor, fuseeRotor]) applyRotationIndicator(rotor, { axis: 'auto' });
   // Match the visible barrel hook and the three lower courses. Retaining a
   // reserve wrap at full wind lets the three-turn fusee match Brown's broad
   // steps without requiring the chain to leave the barrel hook unsupported.
@@ -30498,6 +30557,35 @@ function eccentricGearCarriedPinionRocker() {
   };
   update(0);
   correctIrregularGearFamily(root, 201, update);
+  {
+    // Brown draws no frame. One plain back bar (front face z = -0.9, where
+    // rod A's two guide webs end) stands on a foot below the view behind rod
+    // A, runs across behind the big pulley to the pivot shaft and up behind
+    // the carrier to the input shaft; each shaft sits in a boss on it. Added
+    // after framing, so the view is unchanged.
+    const mat = supportMaterial();
+    const zWall = -0.9;
+    const rodBottom = sampledExtrema.rodYMinimum - 0.78 - 2.9 / 2;
+    const floorY = rodBottom - 0.35;
+    const v = (x, y) => new THREE.Vector2(x, y);
+    const frame = new THREE.Group();
+    frame.userData.role = 'fixed-back-bar-carrying-shafts-and-rod-A-guides';
+    frame.add(
+      // Up behind the carrier's mean line, then across behind the input gear.
+      backBar([v(rodGuideX, floorY + 0.1), v(rodGuideX, carrierPivot.y), v(carrierPivot.x, carrierPivot.y),
+        v(carrierPivot.x - 0.2, 2.2), v(driverShaftCenter.x, driverShaftCenter.y)], { zFront: zWall, width: 0.18,
+        thickness: 0.1, material: mat, role: 'fixed-back-bar-behind-rod-pulley-and-gear' }),
+      bearingBoss({ x: carrierPivot.x, y: carrierPivot.y, boreRadius: 0.109, outerRadius: 0.22, zBack: zWall - 0.1,
+        zFront: -0.7, material: mat, role: 'fixed-boss-for-pivot-shaft' }),
+      bearingBoss({ x: driverShaftCenter.x, y: driverShaftCenter.y, boreRadius: 0.099, outerRadius: 0.18,
+        zBack: zWall - 0.1, zFront: -0.5, material: mat, role: 'fixed-bearing-for-input-shaft' }),
+      footPillar({ x: rodGuideX, yTop: floorY + 0.1, yFloor: floorY, z: zWall - 0.05, width: 0.24, depth: 0.1,
+        footWidth: 0.9, footDepth: 0.6, material: mat, role: 'fixed-back-bar-foot' }),
+    );
+    frame.traverse((o) => { if (o.isMesh) { o.userData.fixed = true; o.castShadow = o.receiveShadow = true; o.material.fog = false; } });
+    root.add(frame);
+    root.userData.blocks.backFrame = frame;
+  }
   // Brown draws the train as a flat front elevation.
   return finish(root, update, new THREE.Vector3(0.03, 0.02, 1));
 }

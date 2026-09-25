@@ -12,7 +12,7 @@ const disable=(p,names)=>{for(let i=0;i<p.model.ngeom;i++)if(names.includes(Obje
 test('116 uses closed source-proportioned hardware with separate pinions and six-tooth ratchets',()=>{
  const v=makeRackRectifierGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,14);
+  assert.equal(Object.keys(u.parts).length,33);
   for(const [name,mesh]of Object.entries(u.parts)){const a=inspectWeightedClutchSolid(mesh.geometry);assert(a.volume>0,name);assert.equal(a.components,1,name);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,name);}
   for(const n of ['upper','lower']){assert.equal(u.parts[n].geometry.userData.teeth,13);assert(Math.abs(u.parts[n].geometry.userData.profileShift-1)<1e-12);}
   assert.equal(u.profile.source.ratchet.teeth,6);assert.deepEqual(u.profile.counts,{upper:12,lower:12});assert(u.hideGround);

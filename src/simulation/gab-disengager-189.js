@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import {
   FULL_TURN, Z_AXIS, circle, cylinderAlongZ, makeBoredPlanarLink, markShadows, matte, PALETTE,
-  plate, pointInPose, poly, polygonClipping, rotate2, smootherstepLaw,
+  plate, pointInPose, poly, polygonClipping, rotate2, smootherstepLaw, eccentricRodEnd, eccentricRodPose, gabRodFrame,
 } from './gab-disengager-shared.js';
+import {backBar, pinBoss} from './back-plate-support.js';
 
 // Movement 189, "another modification of 186": a bell crank (its long upright
 // arm is the vertical operating rod, its short arm points right) hangs a link
@@ -11,7 +12,13 @@ import {
 // about its forked eccentric end so the downward gab leaves the valve-lever
 // pin. Lowering the arm drops the gab back over the pin. All anchors are
 // measured on public/engravings/mm_189.png (525 px) with the gab pin centre as
-// origin; the plate draws no support for the bell-crank stud, so none is built.
+// origin. Brown breaks the rod off at the left; it runs on whole to its strap
+// round the eccentric (the rod's own end, about which it rocks when lifted).
+// Brown draws no frame: the eccentric shaft and the rockshaft turn in bearings
+// on plain floor columns, and a bracket from the rockshaft bearing carries the
+// bell-crank stud, all behind the moving parts. Engaged, the eccentric sets
+// the rod's small tilt about the pin and the free-hanging bell crank follows
+// through the link; lifted, the handle holds the crank.
 const PX = 0.016;
 const RASTER_ORIGIN = Object.freeze({x: 342, y: 401});
 const fromRaster = (x, y) => new THREE.Vector2((x - RASTER_ORIGIN.x) * PX, (RASTER_ORIGIN.y - y) * PX);
@@ -19,7 +26,7 @@ const toRaster = (p) => new THREE.Vector2(RASTER_ORIGIN.x + p.x / PX, RASTER_ORI
 
 export const SOURCE_RASTER_189 = Object.freeze({
   gabPin: [342, 401], valvePivot: [330.5, 274], bellPivot: [402, 236], crankPin: [472, 236],
-  rodPin: [472, 401], handleTop: [401.5, 28], eccentricJoint: [30, 400], rodTip: [520, 408],
+  rodPin: [472, 401], handleTop: [401.5, 28], eccentricJoint: [-658, 400], rodTip: [520, 408],
 });
 
 const PERIOD = 16;
@@ -100,30 +107,52 @@ export function bellCrankHangerGabDisengager() {
   const rodBottomY = (RASTER_ORIGIN.y - 416) * PX; // rod lower edge at the gab
   const clearMargin = 0.08;
 
-  // Engaged: the gab sits on the valve pin, the crank is at rest and the
-  // hanger fixes the rod angle. The remote eccentric end follows from it.
+  const zWall = -0.7;
+  // The pin's horizontal travel is |valvePinLocal.y| * rocker angle to first order.
+  const eccentricThrow = Math.abs(valvePinLocal.y) * rockerAmplitude;
+  const rodPose = eccentricRodPose(eccLocal.toArray());
+  // True eccentric: sheave centre E(theta) = O + e (sin, cos), with the rod's
+  // strap centre on top of it (theta = 0) at the plate pose.
+  const eccentricO = eccLocal.clone().add(new THREE.Vector2(0, -eccentricThrow));
+  const sheaveCentre = (theta) => eccentricO.clone().add(new THREE.Vector2(
+    eccentricThrow * Math.sin(theta), eccentricThrow * Math.cos(theta)));
+  const crankAngleFor = (rodPin) => {
+    const crankPin = circleIntersectionNear(bellPivot, crankLocal.length(), rodPin, hangerLength, R.crankPin);
+    return Math.atan2(crankPin.y - bellPivot.y, crankPin.x - bellPivot.x) - Math.atan2(crankLocal.y, crankLocal.x);
+  };
+  // Engaged: the gab sits on the valve pin and the rod tilts about it to keep
+  // its strap centre level with the sheave centre; the hanging link then sets
+  // the free bell crank's small swing.
   const engagedPose = (theta) => {
     const rocker = rockerAmplitude * Math.sin(theta);
     const pin = pointInPose(valvePivot, rocker, valvePinLocal);
-    const rodPin = circleIntersectionNear(pin, rodPinLocal.length(), R.crankPin, hangerLength,
-      rodPinLocal.clone().add(pin));
-    const rodAngle = Math.atan2(rodPin.y - pin.y, rodPin.x - pin.x) - Math.atan2(rodPinLocal.y, rodPinLocal.x);
-    return {rocker, pin, rodAngle, eccentric: pin.clone().add(rotate2(rodAngle, eccLocal))};
+    const rodAngle = rodPose.angleFor(pin.y, sheaveCentre(theta));
+    const rodPin = pin.clone().add(rotate2(rodAngle, rodPinLocal));
+    return {rocker, pin, rodAngle, rodPin, psi: crankAngleFor(rodPin),
+      eccentric: pin.clone().add(rotate2(rodAngle, eccLocal))};
   };
-  // General pose: the eccentric end keeps its running path, the bell crank
-  // turned by psi places the hanger, and the rigid rod follows both.
-  const poseAt = (theta, psi) => {
+  const restPsi = engagedPose(0).psi;
+  // General pose: engaged (released = 0) as above; released, the rod rocks
+  // about the true sheave centre, the crank held at psi places the hanger.
+  const poseAt = (theta, psi = null, released = 0) => {
     const nominal = engagedPose(theta);
+    if (!released) {
+      const gab = nominal.pin.clone();
+      return {theta, psi: nominal.psi, rocker: nominal.rocker, pin: nominal.pin, gab, rodAngle: nominal.rodAngle,
+        rodPin: nominal.rodPin, crankPin: bellPivot.clone().add(rotate2(nominal.psi, crankLocal)),
+        eccentric: nominal.eccentric, sheave: sheaveCentre(theta), pinInRod: new THREE.Vector2(),
+        pinClearanceBelowRod: rodBottomY - pinRadius};
+    }
+    const eccentric = sheaveCentre(theta);
     const crankPin = bellPivot.clone().add(rotate2(psi, crankLocal));
-    const rodPin = circleIntersectionNear(nominal.eccentric, eccToRodPin, crankPin, hangerLength,
+    const rodPin = circleIntersectionNear(eccentric, eccToRodPin, crankPin, hangerLength,
       rotate2(nominal.rodAngle, rodPinLocal).add(nominal.pin).add(crankPin).sub(R.crankPin));
     const rel = rodPinLocal.clone().sub(eccLocal);
-    const rodAngle = Math.atan2(rodPin.y - nominal.eccentric.y, rodPin.x - nominal.eccentric.x) - Math.atan2(rel.y, rel.x);
-    const gab = nominal.eccentric.clone().sub(rotate2(rodAngle, eccLocal));
-    const rocker = psi > 0 ? 0 : nominal.rocker;
-    const pin = pointInPose(valvePivot, rocker, valvePinLocal);
+    const rodAngle = Math.atan2(rodPin.y - eccentric.y, rodPin.x - eccentric.x) - Math.atan2(rel.y, rel.x);
+    const gab = eccentric.clone().sub(rotate2(rodAngle, eccLocal));
+    const pin = pointInPose(valvePivot, 0, valvePinLocal);
     const pinInRod = rotate2(-rodAngle, pin.clone().sub(gab));
-    return {theta, psi, rocker, pin, gab, rodAngle, rodPin, crankPin, eccentric: nominal.eccentric, pinInRod,
+    return {theta, psi, rocker: 0, pin, gab, rodAngle, rodPin, crankPin, eccentric, sheave: eccentric, pinInRod,
       // Positive once the pin top is below the rod's lower edge.
       pinClearanceBelowRod: rodBottomY - (pinInRod.y + pinRadius)};
   };
@@ -131,7 +160,7 @@ export function bellCrankHangerGabDisengager() {
   // eccentric angle of the free run.
   const clearanceAt = (psi) => {
     let worst = Infinity;
-    for (let i = 0; i < 180; i++) worst = Math.min(worst, poseAt(FULL_TURN * i / 180, psi).pinClearanceBelowRod);
+    for (let i = 0; i < 180; i++) worst = Math.min(worst, poseAt(FULL_TURN * i / 180, psi, 1).pinClearanceBelowRod);
     return worst;
   };
   let lo = 0.05, hi = 1.2;
@@ -141,7 +170,10 @@ export function bellCrankHangerGabDisengager() {
   const stateAtTime = (time) => {
     const input = eccentricTurnsAt(time);
     const handleFraction = handleFractionAt(time);
-    const pose = poseAt(FULL_TURN * input.turns, maximumCrankAngle * handleFraction);
+    const theta = FULL_TURN * input.turns;
+    // The handle carries the crank from its free engaged angle to the hold.
+    const pose = handleFraction === 0 ? poseAt(theta)
+      : poseAt(theta, THREE.MathUtils.lerp(restPsi, maximumCrankAngle, handleFraction), 1);
     const stage = STAGES.find(([end]) => input.t < end)?.[1] ?? STAGES[0][1];
     return {...pose, time, stage, eccentricTurns: input.turns, eccentricSpeed: input.speed, handleFraction,
       gabLift: pose.gab.y, gabEngaged: handleFraction === 0 && pose.gab.distanceTo(pose.pin) < 1e-9,
@@ -174,8 +206,9 @@ export function bellCrankHangerGabDisengager() {
   valveArm.userData.role = 'valve-lever-boss-tapered-arm-and-pin-disc';
   valveArm.geometry.userData.bores = [{x: 0, y: 0, radius: shaftBore},
     {x: valvePinLocal.x, y: valvePinLocal.y, radius: pinBore}];
-  const valveShaft = cylinderAlongZ(shaftRadius, .40, shaftMaterial, 40);
-  valveShaft.position.z = -.35;
+  // Its front end is Brown's section; it runs back into its bearing.
+  const valveShaft = cylinderAlongZ(shaftRadius, -.15 - (zWall + .01), shaftMaterial, 40);
+  valveShaft.position.z = (-.15 + zWall + .01) / 2;
   valveShaft.userData.role = 'valve-rockshaft-section-in-lever-boss';
   const valvePin = cylinderAlongZ(pinRadius, .48, hangerMaterial, 36);
   valvePin.position.set(valvePinLocal.x, valvePinLocal.y, -.14);
@@ -217,7 +250,11 @@ export function bellCrankHangerGabDisengager() {
   const rodHangerPin = cylinderAlongZ(.07, .37, pinMaterial, 28);
   rodHangerPin.position.set(rodPinLocal.x, rodPinLocal.y, -.085);
   rodHangerPin.userData.role = 'pin-joining-hanger-to-eccentric-rod-eye';
-  eccentricRod.add(rodBody, rodHangerPin);
+  const eccentric = eccentricRodEnd({
+    strapLocal: eccLocal.toArray(), restGab: [0, 0], throw: eccentricThrow, fromX: fromRaster(-300, 0).x + .05,
+    halfHeight: 17 * PX, z: [-.10, .10], rodMaterial, sheaveMaterial: shaftMaterial, shaftBack: zWall + .01,
+  });
+  eccentricRod.add(rodBody, rodHangerPin, eccentric.strap);
 
   // Bell crank: upright operating arm, pivot eye, tapered short arm, crank eye.
   const bellCrank = new THREE.Group();
@@ -238,7 +275,8 @@ export function bellCrankHangerGabDisengager() {
   crankPin.position.set(crankLocal.x, crankLocal.y, -.095);
   crankPin.userData.role = 'pin-joining-crank-eye-to-hanger';
   bellCrank.add(bellCrankPlate, crankPin);
-  // Fixed stud of the bell crank; it ends behind the crank, unsupported as drawn.
+  // Fixed stud of the bell crank, carried from behind by a boss on the
+  // bracket from the rockshaft bearing.
   const pivotPin = cylinderAlongZ(.125, .24, pinMaterial, 30);
   pivotPin.position.set(bellPivot.x, bellPivot.y, -.04);
   pivotPin.userData.role = 'fixed-bell-crank-stud';
@@ -249,7 +287,16 @@ export function bellCrankHangerGabDisengager() {
     boreRadius: .08, depth: .14}, hangerMaterial);
   hangerLink.userData.role = 'hanging-link-from-crank-to-eccentric-rod';
 
-  root.add(valveRocker, eccentricRod, bellCrank, pivotPin, hangerLink);
+  const frame = gabRodFrame({
+    eccentric: {x: eccentric.O.x, y: eccentric.O.y, shaftRadius: eccentric.shaftRadius, zFront: -.12},
+    rockshaft: {x: valvePivot.x, y: valvePivot.y, shaftRadius, zFront: -.40},
+    floorY: fromRaster(0, 600).y, zWall,
+    extra: [({mat}) => backBar([valvePivot, bellPivot], {zFront: zWall, width: .3, material: mat,
+      role: 'fixed-bracket-from-rockshaft-bearing-to-bell-crank-stud'}),
+    ({mat}) => pinBoss({x: bellPivot.x, y: bellPivot.y, radius: .2, zBack: zWall - .1, zFront: -.16, material: mat,
+      role: 'fixed-bell-crank-stud-boss'})],
+  });
+  root.add(valveRocker, eccentricRod, bellCrank, pivotPin, hangerLink, eccentric.sheave, frame);
 
   const cameraEnvelope = new THREE.Mesh(new THREE.BoxGeometry(8.6, 8.6, .8),
     new THREE.MeshBasicMaterial({colorWrite: false, depthWrite: false, transparent: true, opacity: 0}));
@@ -264,6 +311,7 @@ export function bellCrankHangerGabDisengager() {
     eccentricRod.position.set(s.gab.x, s.gab.y, 0);
     eccentricRod.rotation.z = s.rodAngle;
     bellCrank.rotation.z = s.psi;
+    eccentric.setAngle(FULL_TURN * s.eccentricTurns);
     hangerLink.userData.setEndpoints(new THREE.Vector3(s.crankPin.x, s.crankPin.y, -.19),
       new THREE.Vector3(s.rodPin.x, s.rodPin.y, -.19));
     root.userData.kinematics = s;
@@ -281,6 +329,7 @@ export function bellCrankHangerGabDisengager() {
     handleTopLocal: handleTopLocal.clone(), rodPinLocal: rodPinLocal.clone(), eccentricLocal: eccLocal.clone(),
     hangerLength, rockerAmplitude, pinRadius, notchHalfWidth, rodBottomY, clearMargin, maximumCrankAngle,
     liftWindow: LIFT, lowerWindow: LOWER, speedKeys: SPEED_KEYS, eccentricTurnsPerCycle: 4,
+    eccentricThrow, eccentricCentre: eccentricO.clone(), restCrankAngle: restPsi,
   };
   Object.assign(root.userData, {
     fidelity: 'authored',
@@ -293,12 +342,17 @@ export function bellCrankHangerGabDisengager() {
     jointChecks,
     rigidBodies: [valveRocker, eccentricRod, bellCrank, hangerLink],
     blocks: {valveRocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin, eccentricRod, rodBody,
-      rodHangerPin, bellCrank, bellCrankPlate, crankPin, pivotPin, hangerLink, cameraEnvelope},
+      rodHangerPin, bellCrank, bellCrankPlate, crankPin, pivotPin, hangerLink, cameraEnvelope,
+      eccentricStrap: eccentric.strap, eccentricSheave: eccentric.sheave, frame},
     stateAtTime, poseAt, eccentricTurnsAt, handleFractionAt,
     sourcePointFromRaster: (p) => fromRaster(p.x, p.y), sourceRasterFromPoint: toRaster,
     cameraDistanceScale: 1,
   });
 
+  // Frame Brown's plate (the envelope); the whole rod, its eccentric and the
+  // frame run on past his break.
+  cameraEnvelope.updateMatrixWorld(true);
+  root.userData.cameraFitBounds = new THREE.Box3().setFromObject(cameraEnvelope);
   update(0);
   markShadows(root);
   cameraEnvelope.castShadow = cameraEnvelope.receiveShadow = false;

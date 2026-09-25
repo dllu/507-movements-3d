@@ -1,5 +1,8 @@
 import * as THREE from 'three';
 import sourcePresentation from '../data/source-presentation.js';
+import rotationIndicators from '../data/rotation-indicators.js';
+import { applyRotationIndicatorByRole } from './rotation-indicator.js';
+import { creaseNormalsIn } from './crease-normals.js';
 
 // Presents a constructed model the way Brown's engraving does: an optional
 // whole-model rotation into the plate's upright orientation, an optional
@@ -12,6 +15,12 @@ export function applySourcePresentation(model, movement) {
   // Brown draws no index marks on any pulley: the generic tread and face
   // marks of every makePulley sheave are hidden for all movements.
   hidePulleyIndexMarks(model.root);
+  // Featureless turning parts carry the shared quadrant rotation cue.
+  if (rotationIndicators[movement.id]) applyRotationIndicatorByRole(model.root, rotationIndicators[movement.id]);
+  // Lathed parts and few-sided prisms authored directly with three's
+  // generators would otherwise shade their flat faces and shoulders as domes
+  // (see crease-normals.js).
+  creaseNormalsIn(model.root);
   if (!entry) return model;
   const root = model.root;
   if (entry.hideWhiteMarks) hideWhiteMarks(root);
@@ -67,11 +76,15 @@ const isWhite = (material) => Boolean(material?.color?.equals(WHITE));
 function hidePulleyIndexMarks(root) {
   root.traverse((object) => {
     const marks = object.userData.faceIndicators;
-    if (!Array.isArray(marks)) return;
-    for (const mark of marks) mark.visible = false;
-    for (const child of object.userData.rotor?.children ?? []) {
-      if (child.isMesh && !child.userData.role && child.geometry?.type === 'BoxGeometry'
-        && isWhite(child.material)) child.visible = false;
+    if (Array.isArray(marks)) for (const mark of marks) mark.visible = false;
+    // The shared pulley and gear builders' white index blocks (tread and face
+    // marks on a rotor, without a role) are hidden everywhere: Brown draws
+    // none, and plain turning bodies carry the quadrant cue instead.
+    const rotor = object.userData.rotor;
+    if (!rotor?.isObject3D || (!Array.isArray(marks) && !object.userData.teeth)) return;
+    for (const child of rotor.children) {
+      if (child.isMesh && !child.userData.role && !child.userData.sourceDrawn
+        && child.geometry?.type === 'BoxGeometry' && isWhite(child.material)) child.visible = false;
     }
   });
 }

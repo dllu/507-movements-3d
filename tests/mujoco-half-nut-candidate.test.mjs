@@ -10,7 +10,7 @@ const mujoco=await loadMujoco();
 test('110 candidate has closed solids and actual tapered thread tips',()=>{
  const v=makeHalfNutGeometry(),u=v.root.userData;
  try {
-  assert.equal(Object.keys(u.parts).length,20);
+  assert.equal(Object.keys(u.parts).length,22);
   for(const [name,m]of Object.entries(u.parts)) {
    const a=inspectWeightedClutchSolid(m.geometry);assert(a.volume>0,name);assert.equal(a.unmatchedEdges+a.degenerate+a.wrongNormals+a.nonfinite,0,name);
    assert.equal(a.components,name.endsWith('NutThread')?8:1,name);

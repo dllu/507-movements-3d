@@ -3,6 +3,7 @@ import profiles from './baked/mangle-rack-working-profiles.js';
 import { capsule, circle, plate, poly, polygonClipping, ring, sector } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { PALETTE, matte, markShadows } from './primitives.js';
+import { backBar, footPillar, supportMaterial } from './back-plate-support.js';
 
 const capsuleOutline = (length, radius) => capsule([0, 0], [length, 0], radius, 128);
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
@@ -29,7 +30,9 @@ function finish197(root) {
   for (const rim of b.rackPinRims) { replace(rim, ring(0.065, 0.086, -0.007, 0.007, 64)); rim.position.z = 0.27; }
   for (const [guide, side] of [[b.leftEndGuide, -1], [b.rightEndGuide, 1]]) {
     const start = side > 0 ? -Math.PI / 2 : Math.PI / 2;
-    replace(guide, plate(sector(g.guideRailCenterRadius - g.guideRailRadius, g.guideRailCenterRadius + g.guideRailRadius, start, start + Math.PI, 128), 0.415, 0.545));
+    // A deep cast guide (from just in front of the pinion to the collar's
+    // plane), not a thin blade.
+    replace(guide, plate(sector(g.guideRailCenterRadius - g.guideRailRadius, g.guideRailCenterRadius + g.guideRailRadius, start, start + Math.PI, 128), 0.325, 0.545));
     guide.position.set(side * g.straightRackLength / 2, 0, 0);
     const reach = g.straightRackLength / 2 + g.guideRailCenterRadius;
     // The mount rises from the frame's end member itself (0.11 wide, centred
@@ -39,9 +42,12 @@ function finish197(root) {
     // reaches past the frame's short ends. The standard clears the pinion's
     // furthest reach at the end turns (3.575 from the frame centre) by 0.025.
     const inner = 3.6, outer = g.outerFrameHalfWidth - 0.08;
-    const support = mesh(new THREE.BoxGeometry(outer - reach, 0.3, 0.13), PALETTE.driven, 'front-end-guide-mount');
-    support.position.set(side * (outer + reach) / 2, 0, 0.48);
-    const post = mesh(new THREE.BoxGeometry(outer - inner, 0.3, 0.9), PALETTE.driven, 'axial-end-guide-frame-mount');
+    // The bracket ends on the standard's centre, well inside the end member,
+    // so it never reads as poking past the frame's short end.
+    const supportEnd = outer - 0.05;
+    const support = mesh(new THREE.BoxGeometry(supportEnd - reach, 0.3, 0.22), PALETTE.driven, 'front-end-guide-mount');
+    support.position.set(side * (supportEnd + reach) / 2, 0, 0.435);
+    const post = mesh(new THREE.BoxGeometry(outer - inner, 0.5, 0.9), PALETTE.driven, 'axial-end-guide-frame-mount');
     post.position.set(side * (outer + inner) / 2, 0, 0.066);
     const web = mesh(new THREE.BoxGeometry(g.outerFrameHalfWidth - g.straightRackLength / 2, 0.13, 0.18), PALETTE.driven, 'rear-rack-frame-web');
     web.position.set(side * (g.outerFrameHalfWidth + g.straightRackLength / 2) / 2, 0, -0.32);
@@ -63,9 +69,65 @@ function finish197(root) {
     replace(shaftMesh, new THREE.CylinderGeometry(radius, radius, 0.73, 22).translate(0, 0.335, 0));
   }
   replace(b.shaftGuideFollower, ring(0.075, g.guideFollowerOuterRadius, -0.065, 0.065, 128));
+  addFrameAndShaftSupports(root);
   const slider = poly([[-0.285, -0.115], [0.285, -0.115], [0.285, 0.115], [-0.285, 0.115]]);
   replace(b.shaftSlider, plate(polygonClipping.difference(slider, poly(circle([0, 0], 0.076, 64))), -0.08, 0.08));
 }
+// Brown draws no support. The square frame slides on a rail across its back,
+// held in a fixed channel block at mid-width (always hidden behind the frame's
+// plate); the pinion shaft, free to rise and fall, turns in a bearing carriage
+// that slides on a vertical round rail in front of the shaft end. Both stand
+// on one foot on the floor below the frame.
+function addFrameAndShaftSupports(root) {
+  const { blocks: b, geometry: g } = root.userData;
+  const mat = supportMaterial(), steel = matte(PALETTE.muted, { metalness: 0.25, roughness: 0.5 });
+  const floorY = -g.outerFrameHalfHeight - 0.42;
+  // Rail on the frame's back (moves with it), full plate width.
+  const railHalfHeight = 0.09, railZ = [-0.57, -0.47];
+  const rail = mesh(new THREE.BoxGeometry(2 * (g.outerFrameHalfWidth - 0.1), 2 * railHalfHeight, railZ[1] - railZ[0]), PALETTE.driven, 'frame-back-slide-rail');
+  rail.position.set(0, 0, (railZ[0] + railZ[1]) / 2);
+  b.rackAssembly.add(rail);
+  // Fixed channel: jaws above and below the rail and a back plate, 0.6 long.
+  const channel = new THREE.Group();
+  channel.userData.role = 'fixed-channel-guiding-frame-rail';
+  const jaw = (y) => { const m = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.06, 0.12), mat); m.position.set(0, y, -0.535); m.userData.role = 'fixed-channel-jaw'; return m; };
+  const back = new THREE.Mesh(new THREE.BoxGeometry(0.6, 2 * railHalfHeight + 0.16, 0.08), mat);
+  back.position.set(0, 0, railZ[0] - 0.045);
+  back.userData.role = 'fixed-channel-back';
+  channel.add(jaw(railHalfHeight + 0.034), jaw(-railHalfHeight - 0.034), back);
+  // Front: vertical round rail with the shaft's bearing carriage.
+  let low = Infinity, high = -Infinity;
+  for (let i = 0; i <= 96; i++) { const y = root.userData.stateAtTime(root.userData.transmission.cyclePeriod * i / 96).pinionCenter.y; low = Math.min(low, y); high = Math.max(high, y); }
+  const railX = 0, frontZ = 0.86, postRadius = 0.05;
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, high + 0.45 - (floorY + 0.1), 32), steel);
+  post.position.set(railX, (high + 0.45 + floorY + 0.1) / 2, frontZ);
+  post.userData.role = 'fixed-vertical-rail-for-shaft-carriage';
+  const carriage = new THREE.Group();
+  carriage.userData.role = 'pinion-shaft-bearing-carriage-rising-and-falling';
+  const boss = new THREE.Mesh(ring(0.077, 0.15, 0.565, 0.68, 64), mat);
+  boss.userData.role = 'carriage-bearing-on-shaft-end';
+  const sleeve = new THREE.Mesh(ring(postRadius + 0.004, postRadius + 0.05, -0.16, 0.16, 48), mat);
+  sleeve.rotation.x = -Math.PI / 2;
+  sleeve.position.z = frontZ;
+  sleeve.userData.role = 'carriage-sleeve-on-rail';
+  const web = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.24, frontZ - postRadius - 0.03 - 0.66), mat);
+  web.position.set(0, 0, (frontZ - postRadius - 0.03 + 0.66) / 2);
+  web.userData.role = 'carriage-web';
+  // The web runs beside the rail (the sleeve wraps it), so offset it.
+  web.position.y = 0;
+  carriage.add(boss, sleeve, web);
+  const standard = new THREE.Group();
+  standard.userData.role = 'fixed-standards-on-one-foot';
+  standard.add(
+    backBar([new THREE.Vector2(0, floorY + 0.1), new THREE.Vector2(0, 0)], { zFront: railZ[0] - 0.085, width: 0.24, thickness: 0.1, material: mat, role: 'fixed-channel-post' }),
+    footPillar({ x: 0, yTop: floorY + 0.1, yFloor: floorY, z: 0.15, width: 0.24, depth: 0.1, footWidth: 0.9, footDepth: 1.9, material: mat, role: 'fixed-foot-under-frame' }),
+  );
+  for (const o of [channel, post, standard]) o.traverse((m) => { if (m.isMesh) { m.userData.fixed = true; m.userData.runsPastCrop = true; } });
+  root.add(channel, post, carriage, standard);
+  Object.assign(b, { frameBackRail: rail, frameChannel: channel, shaftRail: post, shaftCarriage: carriage, supportStandard: standard });
+  g.supportFloorY = floorY;
+}
+
 function finish198(root) {
   const { blocks: b, geometry: g } = root.userData, data = profiles[198], length = g.straightRackLength;
   boredPinion(b, 198);
@@ -129,7 +191,14 @@ function finish198(root) {
 
 export function finishMangleRackWorkingParts(root, update, id) {
   if (id === 197) finish197(root); else finish198(root);
-  const wrappedUpdate = time => { update(time); if (id === 197) root.userData.blocks.shaftGuideFollower.position.z = 0.48; };
+  const wrappedUpdate = time => {
+    update(time);
+    if (id === 197) {
+      const b = root.userData.blocks;
+      b.shaftGuideFollower.position.z = 0.48;
+      b.shaftCarriage.position.set(0, b.pinion.position.y, 0);
+    }
+  };
   const d = root.userData;
   d.minimumDisplayCycleSeconds = 9;
   d.hideGround = true;
@@ -140,7 +209,7 @@ export function finishMangleRackWorkingParts(root, update, id) {
   d.finiteWorkingProfile = profiles[id];
   const bounds = new THREE.Box3(), point = new THREE.Vector3();
   for (let i = 0; i <= 48; i++) { wrappedUpdate(d.transmission.cyclePeriod * i / 48); root.updateMatrixWorld(true); root.traverse(o => {
-    if (!o.isMesh || !o.visible || !o.material.visible) return;
+    if (!o.isMesh || !o.visible || !o.material.visible || o.userData.runsPastCrop) return;
     const p = o.geometry.attributes.position;
     for (let j = 0; j < p.count; j++) bounds.expandByPoint(point.fromBufferAttribute(p, j).applyMatrix4(o.matrixWorld));
   }); }
@@ -151,7 +220,7 @@ export function finishMangleRackWorkingParts(root, update, id) {
   d.sweptBounds = bounds.expandByScalar(0.05);
   const pose = new THREE.Box3();
   wrappedUpdate(0); root.updateMatrixWorld(true); root.traverse(o => {
-    if (!o.isMesh || !o.visible || !o.material.visible) return;
+    if (!o.isMesh || !o.visible || !o.material.visible || o.userData.runsPastCrop) return;
     const p = o.geometry.attributes.position;
     for (let j = 0; j < p.count; j++) pose.expandByPoint(point.fromBufferAttribute(p, j).applyMatrix4(o.matrixWorld));
   });
@@ -159,7 +228,12 @@ export function finishMangleRackWorkingParts(root, update, id) {
   // 197's square frame travels most of its own length; fitting only the
   // source pose let a third of the frame slide out of view. Frame the whole
   // travel of the presented frame instead.
-  if (id === 197) { d.cameraFitBounds = d.sweptBounds.clone(); d.cameraDistanceScale = 1; }
+  if (id === 197) {
+    d.cameraFitBounds = d.sweptBounds.clone(); d.cameraDistanceScale = 1;
+    // A long lens, for Brown's flat face view: the guide brackets standing in
+    // front of the frame no longer project past its short ends.
+    d.cameraFov = 16;
+  }
   root.traverse(o => { for (const material of [].concat(o.material ?? [])) material.fog = false; });
   wrappedUpdate(0); markShadows(root);
   // Brown draws the rack pins as plain circles on the rack face; their long

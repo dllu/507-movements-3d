@@ -75,7 +75,7 @@ test('101 ten complete swings retain both guides and separate the finite hardwar
       if(i<=6000&&i%200===0) {
         v.sync();const a=auditClutchSourceSolids(v);checks+=a.checks;poses++;assert.deepEqual(a.topologyIssues,[]);
         for(const issue of a.issues){assert.ok([issue.from,issue.to].includes('pin')&&[issue.from,issue.to].includes('lever'),JSON.stringify(issue));visiblePenetration=Math.max(visiblePenetration,-issue.gap);}
-        for(const mesh of Object.values(u.parts)){const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
+        for(const mesh of Object.values(u.parts)){if(mesh.userData.beyondPlateCrop)continue;const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
       }
     }
     // Native position extrema define complete strokes; independently bound

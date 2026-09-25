@@ -299,8 +299,10 @@ test('movement 479 ropes remain taut and exact while equal pulleys turn in oppos
   const { blocks, geometry, stateAtTime, transmission } =
     model.root.userData;
 
-  assert.equal(blocks.pulleys[0].userData.faceIndicators.length, 2);
-  assert.equal(blocks.pulleys[1].userData.faceIndicators.length, 2);
+  // makePulley builds no white index marks; the plain pulleys carry the
+  // shared quadrant rotation cue at presentation instead.
+  assert.equal(blocks.pulleys[0].userData.faceIndicators.length, 0);
+  assert.equal(blocks.pulleys[1].userData.faceIndicators.length, 0);
   near(blocks.pulleys[0].userData.radius,
     geometry.pulleyRadiusSceneUnit, 0, 'left pulley radius');
   near(blocks.pulleys[1].userData.radius,

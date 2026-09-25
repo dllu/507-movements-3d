@@ -23,7 +23,7 @@ test('076 locates C, the hinged end B, the holding pawl and D on a complete coax
   near(Math.hypot(...restEnd)+p.barRadius+p.studRadius-p.studOrbit,.05,1e-12);
   assert.ok(p.studOrbit+p.studRadius<=p.driverOuter&&p.studOrbit-p.studRadius>=p.driverInner,'D must stay on the rim');
   assert.deepEqual(u.blocks.driver.position.toArray(),[0,0,0]);assert.deepEqual(u.blocks.wheel.position.toArray(),[0,0,0]);
-  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,24);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
+  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,26);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
   assert.match(u.idealConstraints,/reconstruction assumptions/);near(u.profile.physics.load,3);assert.deepEqual(u.profile.physics.damping,[3,.008,100,.003]);
   for(const family of ['driver','wheel','tappet','dog','holding']){
     near(u.masses[family].volume*u.profile.physics.density,u.profile.physics.mass[family].mass,1e-10);

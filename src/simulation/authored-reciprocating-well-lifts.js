@@ -973,6 +973,23 @@ function reciprocatingWellLift(movement) {
     pad.position.x = x;
     tappet.add(pad);
   }
+  // Pass 57: a crank lug rises from the tappet's hub to the pin that carries
+  // the arm to the worm step, so the arm ends on the tappet, not in mid-air.
+  {
+    const lugOutline = polygonClipping.difference(
+      polygonClipping.union(poly(circle([0, 0], 0.20, 64)),
+        poly([[-0.08, 0], [0.08, 0], [0.08, 0.32], [-0.08, 0.32]]),
+        poly(circle([0, 0.32], 0.13, 48))),
+      poly(circle([0, 0], 0.122, 64)), poly(circle([0, 0.32], 0.085, 32)));
+    // The lug lies behind the arm's plane; a crank pin from it carries the
+    // arm's lower end (a pin joint).
+    const lug = new THREE.Mesh(plate(lugOutline, -0.20, -0.08), tappetBar.material);
+    lug.userData.role = 'tappet-crank-lug-carrying-worm-step-arm';
+    const crankPin = new THREE.Mesh(new THREE.CylinderGeometry(0.084, 0.084, 0.26, 32).rotateX(Math.PI / 2), darkMaterial);
+    crankPin.position.set(0, 0.32, -0.07);
+    crankPin.userData.role = 'tappet-crank-pin-carrying-worm-step-arm';
+    tappet.add(lug, crankPin);
+  }
   const tappetPivotAxle = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.12, 0.12, 0.56, 24),
     darkMaterial,
@@ -1046,7 +1063,9 @@ function reciprocatingWellLift(movement) {
     // The arm meets the step's lower face, clear of the shaft end above it.
     const stepFoot = state.lowerBearing.clone().add(new THREE.Vector3(
       Math.sin(state.carrierAngle) * 0.11, -Math.cos(state.carrierAngle) * 0.11, 0));
-    setRodBetween(selectorLink, tappetCrank, stepFoot);
+    // The arm's lower end bears on the crank pin's surface.
+    const armDirection = stepFoot.clone().sub(tappetCrank).normalize();
+    setRodBetween(selectorLink, tappetCrank.clone().addScaledVector(armDirection, 0.086), stepFoot);
     root.userData.updateSolids?.(state);
   };
 

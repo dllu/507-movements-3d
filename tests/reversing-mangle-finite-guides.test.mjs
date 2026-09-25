@@ -63,7 +63,8 @@ for(const id of [192,193,194]) {
    for(let i=0;i<=64;i++){
      const time=d.transmission.cyclePeriod*i/64;d.stateAtTime(time);model.update(time);model.root.updateMatrixWorld(true);
      model.root.traverseVisible(object=>{
-       const positions=object.geometry?.attributes.position;if(!positions)return;
+       // The jointed pinion drive and its frame stand outside the framed wheel.
+       const positions=object.geometry?.attributes.position;if(!positions||object.userData.runsPastCrop)return;
        for(let j=0;j<positions.count;j++)assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(positions,j).applyMatrix4(object.matrixWorld)), 'actual visible swept vertex stays framed');
      });
    }

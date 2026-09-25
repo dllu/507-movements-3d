@@ -96,7 +96,9 @@ for (const [id, make] of [[290, annular], [292, stud]]) test(`${id}: stable geom
   if (id === 292) assert.equal(d.cameraFitCropsSource, true);
   for (let i = 0; i <= 64; i++) {
     m.update(d.geometry.pendulumPeriod * i / 64); m.root.updateMatrixWorld(true);
-    for (const object of framed) object.traverseVisible(o => { const a = o.geometry?.attributes.position; if (a) for (let j = 0; j < a.count; j++)
+    // Parts deliberately beyond the crop (290's rod K run-on and bob) are
+    // flagged cameraFitExclude.
+    for (const object of framed) object.traverseVisible(o => { const a = o.userData.cameraFitExclude ? null : o.geometry?.attributes.position; if (a) for (let j = 0; j < a.count; j++)
       assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld)), `${id}: ${o.userData.role} framed`); });
   }
   for (const [o, geometry, array] of resources) { assert.equal(o.geometry, geometry); assert.equal(o.geometry.attributes.position.array, array); }

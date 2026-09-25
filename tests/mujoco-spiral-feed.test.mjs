@@ -96,7 +96,7 @@ test('099 ten feed cycles retain contact and separate all other finite hardware'
       if(i<=24000&&i%750===0) {
         v.sync();const audit=auditClutchSourceSolids(v);checks+=audit.checks;poses++;assert.deepEqual(audit.topologyIssues,[]);
         for(const issue of audit.issues){assert.ok([issue.from,issue.to].includes('roller')&&[issue.from,issue.to].includes('rail'),JSON.stringify(issue));solidPenetration=Math.max(solidPenetration,-issue.gap);}
-        for(const mesh of Object.values(u.parts)){const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
+        for(const mesh of Object.values(u.parts)){if(mesh.userData.beyondPlateCrop)continue;const pos=mesh.geometry.attributes.position;for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);}
       }
     }
     t.diagnostic(JSON.stringify({maximumEnvelopeErrorPixels:error*100,maximumNativePenetrationPixels:penetration*100,maximumSampledPenetrationPixels:solidPenetration*100,contactSurfaceErrorPixels:contactSurfaceError*100,

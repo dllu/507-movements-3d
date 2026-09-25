@@ -286,6 +286,7 @@ function studEscapement(movement) {
     roughness: 0.68,
   });
   const indexMaterial = matte(PALETTE.white, { roughness: 0.40 });
+  const studMaterial = matte(PALETTE.muted, { metalness: 0.35, roughness: 0.42 });
 
   const escapeWheel = new THREE.Group();
   escapeWheel.position.set(wheelCenter.x, wheelCenter.y, 0);
@@ -347,12 +348,14 @@ function studEscapement(movement) {
         Math.sin(vertexAngle) * studRadius,
       );
     }));
+    // Steel studs set in the wheel, so from either face they read as
+    // standing studs rather than marks on the rim.
     const stud = new THREE.Mesh(
       new THREE.ExtrudeGeometry(studShape, {
         bevelEnabled: false,
         depth: studLength,
       }).translate(0, 0, -studLength / 2),
-      driverMaterial,
+      studMaterial,
     );
     stud.rotation.z = angle;
     stud.position.set(
@@ -1844,7 +1847,8 @@ function lePautePinWheelEscapement(movement) {
     0.4 * (pinRadius - preferredChordDepth),
     0.32 * pinRadius,
   );
-  const rivetBackZ = -wheelDepth / 2 - 0.05;
+  // The stem is set in a blind hole in the rim: the back face stays plain.
+  const rivetBackZ = -wheelDepth / 2 + 0.06;
   const rivetFrontZ = wheelDepth / 2 + 0.03;
   const pinGroupZ = wheelDepth / 2 + pinLength / 2;
   const pinMeshes = [];
@@ -1881,7 +1885,7 @@ function lePautePinWheelEscapement(movement) {
     body.userData.role = profile === 'preferred-B'
       ? 'preferred-B-relieved-arc-working-body'
       : 'legacy-A-semicircular-working-body';
-    // The replaceable stem passes through the rim and is secured behind it.
+    // The replaceable stem screws into a blind hole in the rim.
     const rivet = cylinderAlongZ(
       rivetRadius,
       rivetFrontZ - rivetBackZ,

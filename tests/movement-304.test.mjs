@@ -303,9 +303,11 @@ test('movement 304 builds replaceable half-round A and relieved B pins whose arc
     const stem = pin.children.find(({ userData }) =>
       userData.role === 'replaceable-pin-rivet-stem');
     assert.ok(stem, 'replaceable stem');
-    // The stem passes through the rim and is secured behind it.
+    // The stem is screwed into a blind hole in the rim, so the rim's back
+    // face stays plain (no ring of stem ends).
     const stemBox = worldBox(stem);
-    assert.ok(stemBox.min.z < -geometry.wheelDepth / 2);
+    assert.ok(stemBox.min.z > -geometry.wheelDepth / 2 + 0.02);
+    assert.ok(stemBox.min.z < geometry.wheelDepth / 2 - 0.1, 'stem seated deep in the rim');
     assert.ok(stemBox.max.z < geometry.workingPlaneZ - geometry.palletDepth / 2);
     assert.equal(pin.userData.role, expectedProfile === 'preferred-B'
       ? 'replaceable-preferred-relieved-B-pin'

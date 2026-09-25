@@ -19,7 +19,10 @@ test('153 interpolated baked motion tracks passive native dynamics between sampl
 test('153 bake preserves bounds, fog settings, periodic closure and exact restart',()=>{
  const v=makeStudReverserModel(bundle);try{
   const initial=JSON.stringify(v.root.userData.state);
-  for(let i=0;i<129;i++){v.update(12*(i+.317)/129);assert.ok(v.root.userData.cameraFitBounds.clone().expandByScalar(1e-5).containsBox(new THREE.Box3().setFromObject(v.root,true)));}
+  // The plain back support (behind and below the recorded bounds) is not framed.
+  const moving=()=>{const box=new THREE.Box3();v.root.traverse(o=>{if(o.isMesh&&!o.userData.runsPastCrop)box.expandByObject(o,true);});return box;};
+  assert.ok(v.root.userData.backSupport?.parent===v.root);
+  for(let i=0;i<129;i++){v.update(12*(i+.317)/129);assert.ok(v.root.userData.cameraFitBounds.clone().expandByScalar(1e-5).containsBox(moving()));}
   v.root.traverse(o=>{if(o.material)assert.equal(o.material.fog,false);});
   v.update(12-1e-8);const before=v.root.userData.state.qpos;v.update(12+1e-8);const after=v.root.userData.state.qpos;for(const name of bundle.names)assert.ok(Math.abs(before[name]-after[name])<1e-6,name);
   v.reset();assert.equal(JSON.stringify(v.root.userData.state),initial);

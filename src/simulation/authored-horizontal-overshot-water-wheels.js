@@ -429,21 +429,36 @@ function horizontalOvershotWaterWheel(movement) {
   // bundle of streamline tubes.
   const jetAcross = new THREE.Vector3()
     .crossVectors(impactTangent, new THREE.Vector3(0, 1, 0)).normalize();
+  // The visible sheet stops where it reaches the floats' upper edges
+  // (y = 0.41, with the sheet's half-thickness) instead of running on through them to the impact point.
+  let jetEndT = 1;
+  for (let lo = 0, hi = 1, i = 0; i < 40; i++) {
+    const mid = (lo + hi) / 2;
+    if (jetCurve.getPoint(mid).y > 0.53) lo = mid; else hi = mid;
+    jetEndT = (lo + hi) / 2;
+  }
+  class JetToFloats extends THREE.Curve {
+    getPoint(t, target = new THREE.Vector3()) {
+      return jetCurve.getPoint(t * jetEndT, target);
+    }
+  }
   jet.geometry.dispose();
-  jet.geometry = waterJetGeometry(jetCurve, {
+  jet.geometry = waterJetGeometry(new JetToFloats(), {
     radius: 0.045, endRadius: 0.06, width: 0.2, endWidth: 0.3,
     widthAxis: jetAcross, segments: 40,
   });
   jet.material = waterJetMaterial({ opacity: 0.5 });
-  // Past the blades the water breaks into the falling spray Brown draws
-  // under the runner: the same sheet continuing down and thinning out.
+  // The jet ends on the struck floats. The spent water leaves their lower
+  // edges as the falling spray Brown draws under the runner: a sheet that
+  // starts just below the floats (whose undersides are at y = -0.09) and
+  // thins out as it falls, so no water passes through the floats.
   const spillCurve = new THREE.QuadraticBezierCurve3(
-    impactPoint.clone().add(new THREE.Vector3(0, -0.05, 0)),
-    impactPoint.clone().addScaledVector(impactTangent, 0.75)
-      .add(new THREE.Vector3(0, -0.35, 0)),
-    impactPoint.clone().addScaledVector(impactTangent, 1.15)
+    new THREE.Vector3(impactPoint.x, -0.13, impactPoint.z),
+    impactPoint.clone().addScaledVector(impactTangent, 0.30)
+      .setY(-0.55),
+    impactPoint.clone().addScaledVector(impactTangent, 0.55)
       .addScaledVector(impactRadial, 0.2)
-      .add(new THREE.Vector3(0, -1.55, 0)),
+      .setY(-1.55),
   );
   const spill = new THREE.Mesh(
     waterJetGeometry(spillCurve, {

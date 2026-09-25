@@ -82,13 +82,16 @@ test('286: finite shoe rests on the curved toe instead of straddling the contact
   } finally {disposeObject3D(model.root);}
 });
 
-test('286: undrawn rod guides are omitted and the finite valve closes onto its seat', () => {
+test('286: the rod runs in two bored guides on a back bar and the finite valve closes onto its seat', () => {
   const model = createAuthoredPoppetValveMovement({id: 286}), u = model.root.userData, b = u.blocks;
   try {
-    // Brown draws the rod alone; its guides and standard are not rendered.
+    // Brown draws the rod alone; the rod still needs guiding, so two plain
+    // bored guides on one back bar hold it (the old standard stays unbuilt).
     const guides = b.fixedGuides.children.filter(mesh => /guide$/.test(mesh.userData.role));
-    assert.equal(guides.length, 0);
+    assert.equal(guides.length, 2);
     assert.equal(b.guidePost.parent, null);
+    assert.equal(b.backBar.parent, b.fixedGuides);
+    assert.equal(b.shaftBearing.parent, b.fixedGuides);
     for (let frame = 0; frame <= 128; frame++) {
       model.update(frame * u.geometry.cyclePeriod / 128);model.root.updateMatrixWorld(true);
       const head = new THREE.Box3().setFromObject(b.poppetHead), seat = new THREE.Box3().setFromObject(b.valveSeat);

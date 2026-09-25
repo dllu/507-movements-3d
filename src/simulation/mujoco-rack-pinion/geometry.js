@@ -4,6 +4,7 @@ import {roundedRackGear} from '../coaxial-gear-geometry.js';
 import {plate,poly,polygonClipping,turned,disk,ring} from '../finite-plate-geometry.js';
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
+import {backBar,footPillar} from '../back-plate-support.js';
 export {THREE};
 // The table's stroke stays within Brown's roller spacing: at either end of
 // its travel both rollers remain under its flat underside (margin 0.056).
@@ -37,6 +38,20 @@ export function makeRackPinionGeometry({samples=96,cutterSteps=2048,amplitude=.2
   profile.rollers.push({name,x,y,radius,z:.275,halfDepth:.125});blocks[name].position.set(x,y,0);
   add(name,turned([[.15,0],[.15,radius],[.4,radius],[.4,rim],[.388,rim],[.388,0]],96),name,PALETTE.frame);
  }
+ // Brown draws no frame. Each support roller turns on its own axle in a
+ // bearing on a plain back bar behind the rack; the bar also carries the
+ // pinion shaft's rear bearing and stands on a pillar below the pinion.
+ blocks.fixed=new THREE.Group();root.add(blocks.fixed);
+ const barFront=-.35,axleRadius=.06,floorY=-1.05;
+ for(const r of profile.rollers){
+  add(r.name+'Axle',disk(axleRadius,barFront+.004,.151,64),r.name,PALETTE.ink);
+  add(r.name+'Bearing',ring(axleRadius+.003,.16,barFront,-.2,64).translate(r.x,r.y,0),'fixed',PALETTE.frame);
+ }
+ add('pinionShaftTail',disk(shaftRadius,barFront+.004,-.229,96),'pinion',PALETTE.ink);
+ add('pinionShaftBearing',ring(shaftRadius+.003,shaftRadius+.13,barFront,-.26,96),'fixed',PALETTE.frame);
+ const bar=backBar(profile.rollers.flatMap((r,i)=>i?[{x:0,y:0},{x:r.x,y:r.y}]:[{x:r.x,y:r.y}]),{zFront:barFront,width:.26,role:'rollerBackBar'});
+ const pillar=footPillar({x:0,yTop:0,yFloor:floorY,z:barFront-.05,width:.24,footDepth:.5,role:'rollerBackBarPillar'});
+ for(const group of [bar,pillar]){group.updateMatrixWorld(true);for(const part of [...group.children])add(part.name+part.id,part.geometry.applyMatrix4(part.matrixWorld),'fixed',PALETTE.frame);}
  for(const name of ['pinion','rack','rail']){const c=convexPlateCells(parts[name].geometry);cells[name]=c.cells.map(poly=>[c.low,c.high].flatMap(z=>poly.map(p=>[...p,z])));}
  root.rotation.z=s.tilt;Object.assign(root.userData,{parts,families,blocks,cells,profile,hideGround:true,shadowCameraHalfExtent:4,shadowBias:-.00002,shadowNormalBias:.0005});
  markShadows(root);root.updateMatrixWorld(true);return {root,focus:new THREE.Vector3(0,.3,0),cameraDirection:new THREE.Vector3(1.5,1,10)};

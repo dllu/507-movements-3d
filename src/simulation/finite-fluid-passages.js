@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {creaseIndexedNormals} from './crease-normals.js';
 
 export function mergePassageParts(parts) {
   const normalized=parts.map(g=>{const n=g.index?g.toNonIndexed():g;for(const name of Object.keys(n.attributes))if(!['position','normal'].includes(name))n.deleteAttribute(name);return n;});
@@ -22,5 +23,5 @@ export function curvedPipeWall(curve,inner,outer,segments=64,sides=24) {
     const a=j,b=(j+1)%sides,c=segments*sides+j,d=segments*sides+(j+1)%sides;
     indices.push(a,offset+b,b,a,offset+a,offset+b,c,d,offset+d,c,offset+d,offset+c);
   }
-  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();return g;
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);return creaseIndexedNormals(g);
 }

@@ -19,7 +19,9 @@ test('movement 184 shows the 183 gear reflected top to bottom, tappet at the top
   const reflection = d.blocks.plate184Reflection;
   assert.ok(reflection && reflection.parent === model.root);
   assert.deepEqual(reflection.scale.toArray(), [1, -1, 1]);
-  assert.equal(model.root.children.length, 1);
+  // Besides the reflected gear, the root holds only the fixed supports
+  // (built in the view frame, beyond the plate's crop).
+  assert.deepEqual(model.root.children, [reflection, d.blocks.workingSupport]);
   const s = d.stateAtTime(0), s183 = m183.stateAtTime(0);
   assert.equal(s.phase, s183.phase);
   assert.equal(s.upperAngle, s183.upperAngle);

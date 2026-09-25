@@ -11,7 +11,7 @@ const mujoco=await loadMujoco();
 test('115 has seven closed solids and equal shifted involute pinions',()=>{
  const v=makeEqualRacksGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,7);
+  assert.equal(Object.keys(u.parts).length,29);
   for(const [name,mesh]of Object.entries(u.parts)){
    const a=inspectWeightedClutchSolid(mesh.geometry);assert(a.volume>0,name);assert.equal(a.components,1,name);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,name);
   }

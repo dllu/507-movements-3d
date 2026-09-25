@@ -5,6 +5,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -192,7 +193,7 @@ function makeAxialNotchedVBody({
     new THREE.Float32BufferAttribute(positions, 3),
   );
   geometry.setIndex(indices);
-  geometry.computeVertexNormals();
+  creaseIndexedNormals(geometry);
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   geometry.userData.boreRadius = boreRadius;

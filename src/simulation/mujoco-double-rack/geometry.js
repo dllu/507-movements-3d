@@ -5,6 +5,7 @@ import {roundedRackGear} from '../coaxial-gear-geometry.js';
 import {plate,poly,circle,polygonClipping,disk,ring} from '../finite-plate-geometry.js';
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
+import {addStubGuides} from '../rack-frame-guides.js';
 export {THREE};
 // The sector phase leaves clearance at both frame ends. The engraving
 // places the right-facing sector too near the middle of the available stroke.
@@ -42,5 +43,14 @@ export function makeDoubleRackGeometry({samples=96,cutterSteps=2048,module=.0725
  const racks=[];for(const side of [-1,1])for(let i=0;i<9;i++)racks.push(poly(tooth.map(([x,y])=>[x+rackOrigin+i*pitch+(side===1?upperOffset:0),side*y])));
  const frame=plate(polygonClipping.union(body,...racks),-.12,.12);frame.translate(frameOffset,0,0);add('frame',frame,'frame',PALETTE.driven);
  for(const n of ['pinion','frame']){const c=convexPlateCells(parts[n].geometry);cells[n]=c.cells.map(poly=>[c.low,c.high].flatMap(z=>poly.map(p=>[...p,z])));}
+ // Brown breaks the frame's end stubs off. They run on whole into fixed
+ // guides past the frame's reach (as for 90 and 91). The guides and the
+ // pinion shaft's rear bearing stand on plain posts to a floor below, so no
+ // tie bar crosses the open frame window.
+ blocks.fixed=new THREE.Group();root.add(blocks.fixed);
+ addStubGuides({add,movingFamily:'frame',travel:{left:1.15,right:.7},zWall:-.45,floorY:-1.3,
+  stubs:[{tipX:local([15,0])[0]+frameOffset,y:local([0,(281.5+305.3)/2])[1],halfHeight:(305.3-281.5)/200,halfDepth:.12,sign:-1},
+   {tipX:local([503,0])[0]+frameOffset,y:local([0,292.5])[1],halfHeight:(305-280)/200,halfDepth:.12,sign:1}],
+  shafts:[{x:0,y:0,radius:shaftRadius,back:-.2,family:'pinion'}]});
  Object.assign(root.userData,{parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:4,shadowBias:-.00002,shadowNormalBias:.0005});markShadows(root);root.updateMatrixWorld(true);return{root,focus:new THREE.Vector3(0,0,0),cameraDirection:new THREE.Vector3(1.5,1,10)};
 }

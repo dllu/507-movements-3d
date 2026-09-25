@@ -12,7 +12,7 @@ export function makeTemperatureBevel({axis,phase,color,role}){
   const toothGeometry=bevelToothGeometry({...TEMPERATURE_BEVEL,flankSegments:24,tipSegments:8}),material=matte(color,{metalness:.24,roughness:.48});
   const body=new THREE.Mesh(bevelBodyGeometry(toothGeometry,TEMPERATURE_BEVEL.boreRadius),material);body.userData.role='bored-conical-bevel-body';rotor.add(body);
   const hub=new THREE.Mesh(ring(TEMPERATURE_BEVEL.boreRadius,.11,.18,.39,128),material);hub.userData.role='bored-bevel-shaft-hub';rotor.add(hub);
-  const teeth=Array.from({length:TEMPERATURE_BEVEL.teeth},(_,i)=>{const tooth=new THREE.Mesh(toothGeometry,i===0?matte(PALETTE.white):material);tooth.rotation.z=i*2*Math.PI/TEMPERATURE_BEVEL.teeth;tooth.userData.bevelTooth=true;tooth.userData.toothIndex=i;rotor.add(tooth);return tooth;});
+  const teeth=Array.from({length:TEMPERATURE_BEVEL.teeth},(_,i)=>{const tooth=new THREE.Mesh(toothGeometry,material);tooth.rotation.z=i*2*Math.PI/TEMPERATURE_BEVEL.teeth;tooth.userData.bevelTooth=true;tooth.userData.toothIndex=i;rotor.add(tooth);return tooth;});
   root.userData={role,rotor,body,hub,toothMeshes:teeth,phase,...TEMPERATURE_BEVEL,toothProfile:'back-cone-involute-approximation'};
   return root;
 }

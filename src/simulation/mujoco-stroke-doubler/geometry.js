@@ -52,6 +52,27 @@ export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude
  // Brown draws both racks whole, so keep the upper rack, which slides twice
  // the pitman stroke, in frame through its full sweep.
  root.userData.cameraFitBounds=bounds.clone();
+ // Added after the framing bounds, which keep Brown's view.
+ // Brown draws no drive or guide. The pitman's end pin carries a plain tail
+ // rod that slides in a fixed guide on a post standing on the floor beyond
+ // the bed's end (the pitman translates, so its driver is a guided rod, not
+ // a crank), and the upper rack runs in two fixed clips whose back cheeks
+ // are posts rising from the bed behind the racks.
+ const tailY=end[1],tailZ=.26,tailRadius=.05,gap=.15,guideLength=.3,guideStart=end[0]-endEye-amplitude-gap;
+ const tailEnd=guideStart-guideLength-amplitude-.05;
+ add('tailRod',disk(tailRadius,tailEnd,end[0]-endEye+.03,48).rotateY(Math.PI/2).translate(0,tailY,tailZ),'carrier',PALETTE.brass);
+ add('tailGuide',ring(tailRadius+.004,tailRadius+.09,guideStart-guideLength,guideStart,64).rotateY(Math.PI/2).translate(0,tailY,tailZ),'fixed',PALETTE.frame);
+ const guideX=guideStart-guideLength/2,postTop=tailY-tailRadius-.06;
+ add('tailGuidePost',new THREE.BoxGeometry(.14,postTop-baseBottom,.12).translate(guideX,(postTop+baseBottom)/2,tailZ),'fixed',PALETTE.frame);
+ add('tailGuideFoot',new THREE.BoxGeometry(.5,.08,.5).translate(guideX,baseBottom+.04,tailZ),'fixed',PALETTE.frame);
+ const clipTop=Math.max(upperTop,atLine('upperTop'))+.035,cheekBottom=upperTop-.13;
+ for(const [i,x] of [-1,1].entries()){
+  add('rackClipCap'+i,new THREE.BoxGeometry(.24,.06,.39).translate(x,clipTop+.03,-.005),'fixed',PALETTE.frame);
+  add('rackClipCheek'+i,new THREE.BoxGeometry(.24,clipTop+.06-cheekBottom,.05).translate(x,(clipTop+.06+cheekBottom)/2,.155),'fixed',PALETTE.frame);
+  add('rackClipPost'+i,new THREE.BoxGeometry(.24,clipTop+.06-baseTop,.07).translate(x,(clipTop+.06+baseTop)/2,-.165),'fixed',PALETTE.frame);
+ }
+ for(const name of Object.keys(parts))if(/^(tail|rackClip)/.test(name))parts[name].castShadow=parts[name].receiveShadow=true;
+ root.updateMatrixWorld(true);
  // Brown draws the racks and pinion as a flat elevation.
  return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.02,.01,1)};
 }

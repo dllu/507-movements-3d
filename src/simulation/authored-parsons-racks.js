@@ -1,5 +1,6 @@
 import {finishParsons394} from './reversing-transmission-working-parts.js';
 import * as THREE from 'three';
+import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -903,7 +904,44 @@ function parsonsEndlessRackDrive(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.2, 4.6, 12.8);
   root.userData.groundFloorY = -1.95;
   update(0);
-  return finishParsons394(root, update);
+  const finished = finishParsons394(root, update);
+  addParsonsBackBar(root, frameMaterial);
+  return finished;
+}
+
+// Pass 57: Brown draws no frame. The pinion shaft and the input rod are
+// carried on one plain back bar behind the rack: a bored boss takes the rear
+// end of the pinion shaft, a bracket standing forward from the bar carries a
+// guide slotted for the rod's small transverse shift, and a pillar with a
+// foot grounds the bar. The parts are added after the camera fit, so the
+// default framing stays on Brown's subject.
+function addParsonsBackBar(root, material) {
+  const barFront = -0.93, barBack = -1.05, floorY = root.userData.groundFloorY;
+  const guideX0 = 4.67, guideX1 = 4.89, rodShift = 0.10, rodRadius = 0.11;
+  const parts = [];
+  const add = (geometry, role) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.role = role;mesh.castShadow = true;mesh.receiveShadow = true;
+    root.add(mesh);parts.push(mesh);
+    return mesh;
+  };
+  const box = (x0, x1, y0, y1, z0, z1) => new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0)
+    .translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+  add(box(-0.45, guideX1, -0.30, 0.30, barBack, barFront), 'fixed-back-bar-carrying-pinion-shaft-and-rod-guide');
+  add(new THREE.LatheGeometry([new THREE.Vector2(0.096, 0), new THREE.Vector2(0.22, 0), new THREE.Vector2(0.22, 0.13), new THREE.Vector2(0.096, 0.13), new THREE.Vector2(0.096, 0)], 48)
+    .rotateX(Math.PI / 2).translate(0, 0, barFront), 'fixed-bored-boss-for-pinion-shaft-rear-end');
+  // Guide: a block round the rod with a vertical slot for the shift, on an
+  // arm running back to the bar (shape x = -world z, shape y = world y).
+  const slot = polygonClipping.union(
+    ...[-rodShift, rodShift].map((y) => poly(circle([0, y], rodRadius + 0.005, 48))),
+    poly([[-(rodRadius + 0.005), -rodShift], [rodRadius + 0.005, -rodShift], [rodRadius + 0.005, rodShift], [-(rodRadius + 0.005), rodShift]]));
+  const guideShape = polygonClipping.difference(polygonClipping.union(
+    poly([[-0.24, -0.42], [0.24, -0.42], [0.24, 0.42], [-0.24, 0.42]]),
+    poly([[0.20, -0.16], [-barFront, -0.16], [-barFront, 0.16], [0.20, 0.16]])), slot);
+  add(plate(guideShape, guideX0, guideX1).rotateY(Math.PI / 2), 'fixed-slotted-rod-guide-on-back-bar');
+  add(box(2.10, 2.50, floorY + 0.10, -0.30, barBack, barFront), 'fixed-back-bar-pillar');
+  add(box(1.85, 2.75, floorY, floorY + 0.10, barBack - 0.20, barFront + 0.20), 'fixed-back-bar-foot');
+  root.userData.blocks.backBar = parts;
 }
 
 export function createAuthoredParsonsRackMovement(movement) {

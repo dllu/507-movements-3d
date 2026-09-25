@@ -87,7 +87,7 @@ function rimRadiusAtAngle(angle, profile) {
   return (1 - Math.sqrt(1 - 4 * quadratic * constant)) / (2 * quadratic);
 }
 
-function wavyConeDiskGeometry(profile, segments, rings = 24) {
+function wavyConeDiskGeometry(profile, segments, rings = 24, landWidth = 0) {
   const positions = [];
   const indices = [];
   const facePoint = (angle, fraction) => {
@@ -100,6 +100,13 @@ function wavyConeDiskGeometry(profile, segments, rings = 24) {
     for (let index = 0; index < segments; index += 1) {
       positions.push(...facePoint(FULL_TURN * index / segments, ring / rings));
     }
+  }
+  // Brown's rim is a band of real thickness: a cylindrical land runs back
+  // from the face's wavy edge before the bevel narrows to the rear face.
+  const landRingStart = positions.length / 3;
+  for (let index = 0; index < segments; index += 1) {
+    const [x, y, z] = facePoint(FULL_TURN * index / segments, 1);
+    positions.push(x + landWidth, y, z);
   }
   const backRingStart = positions.length / 3;
   for (let index = 0; index < segments; index += 1) {
@@ -125,9 +132,12 @@ function wavyConeDiskGeometry(profile, segments, rings = 24) {
     }
     const rimA = ringStart(rings) + index;
     const rimB = ringStart(rings) + next;
+    const landA = landRingStart + index;
+    const landB = landRingStart + next;
     const backA = backRingStart + index;
     const backB = backRingStart + next;
-    indices.push(rimA, backA, backB, rimA, backB, rimB);
+    indices.push(rimA, landA, landB, rimA, landB, rimB);
+    indices.push(landA, backA, backB, landA, backB, landB);
     indices.push(backCenter, backB, backA);
   }
   // Wind every triangle outward.
@@ -197,6 +207,7 @@ function beveledDiskInclinedFollower(movement) {
   };
   const camBackRadius = faceProfile.backRadius;
   const camSegments = 128;
+  const camRimLandWidth = 0.18;
   const workingBandInnerFraction = 0.62;
   const shaftRadius = 0.13;
   const shaftLength = 5.7;
@@ -400,14 +411,20 @@ function beveledDiskInclinedFollower(movement) {
   root.add(camAssembly);
 
   const camBody = new THREE.Mesh(
-    wavyConeDiskGeometry(faceProfile, camSegments),
+    wavyConeDiskGeometry(faceProfile, camSegments, 24, camRimLandWidth),
     driverMaterial,
   );
   camBody.userData.role = 'solid-disk-with-bevelled-rim-and-wavy-trough-face';
   camRotor.add(camBody);
+  // The working band is the plate's own face, in the plate's colour (a
+  // coincident skin kept for the contact checks, drawn in front of it).
+  const workingBandMaterial = driverMaterial.clone();
+  workingBandMaterial.polygonOffset = true;
+  workingBandMaterial.polygonOffsetFactor = -1;
+  workingBandMaterial.polygonOffsetUnits = -1;
   const bevelFace = new THREE.Mesh(
     troughFaceBandGeometry(faceProfile, camSegments, workingBandInnerFraction),
-    bevelMaterial,
+    workingBandMaterial,
   );
   bevelFace.userData.innerFraction = workingBandInnerFraction;
   bevelFace.userData.role = 'wavy-working-band-of-trough-face';
@@ -427,6 +444,13 @@ function beveledDiskInclinedFollower(movement) {
   hub.position.x = camBackX + hubLength / 2 - 0.02;
   hub.userData.role = 'cam-clamping-hub-on-horizontal-shaft';
   camRotor.add(hub);
+  // A boss on the face side too, so the shaft passes through a hub on
+  // both faces of the plate.
+  const frontHubLength = 0.3;
+  const frontHub = cylinderAlongX(hubRadius, frontHubLength + 0.04, darkMaterial, 48);
+  frontHub.position.x = faceProfile.centerX - frontHubLength / 2 + 0.02;
+  frontHub.userData.role = 'cam-front-hub-on-horizontal-shaft';
+  camRotor.add(frontHub);
   const rotationIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.105, 24, 16),
     whiteMaterial,
@@ -578,6 +602,7 @@ function beveledDiskInclinedFollower(movement) {
     guideBrackets,
     guideRiser,
     hub,
+    frontHub,
     rotationIndex,
     shaft,
     shaftBearings,
@@ -596,6 +621,7 @@ function beveledDiskInclinedFollower(movement) {
     camFrontX,
     camOuterRadius,
     camSegments,
+    camRimLandWidth,
     contactClearance,
     followerDirection: followerDirection.clone(),
     guideDistances: [...guideDistances],

@@ -95,7 +95,9 @@ test('opening flat bands clear the actual pulley flanges as well as the treads',
       const positions = mesh.geometry.attributes.position;
       for (const pulley of pulleys) {
         const inverse = pulley.userData.rotor.matrixWorld.clone().invert();
-        const flanges = pulley.userData.rotor.children.filter((object) => object.geometry?.type === 'TorusGeometry');
+        // Retired ink-outline rims are hidden placeholders, not flanges.
+        const flanges = pulley.userData.rotor.children.filter((object) => object.geometry?.type === 'TorusGeometry'
+          && !object.userData.retiredInkOutline);
         for (let i = 0; i < positions.count; i += 1) {
           const point = new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
           for (const flange of flanges) {

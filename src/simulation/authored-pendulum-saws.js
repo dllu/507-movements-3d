@@ -110,12 +110,12 @@ function pendulumTreeSaw(movement) {
   const pulleyStartAngles = [0.19, -0.27];
   // Centred under the mean blade span (0.34..3.08 over the stroke), as
   // Brown draws the log beneath the middle of the saw.
-  // The log lies back along its axis so the saw's cut (z = 0.34) is 0.22
-  // from its near end: the short end piece in front of the kerf keeps the
-  // blade's cut readable from the front and the sides.
-  const logCenter = new THREE.Vector3(1.71, -1.24, 0.34 + 0.10 + 0.22 - 2.62 / 2);
+  // The log lies end-on to the viewer, centred on the saw's plane
+  // (z = 0.34), so the saw works in a kerf across the middle of the log
+  // between the two frame posts.
+  const logCenter = new THREE.Vector3(1.71, -1.24, 0.34);
   const logRadius = 0.67;
-  const logLength = 2.62;
+  const logLength = 2.0;
 
   const stateAtTime = (time) => {
     const pendulumPhase = pendulumAngularFrequency * time;
@@ -554,18 +554,12 @@ function pendulumTreeSaw(movement) {
   cutFace.position.z = logLength / 2 + 0.006;
   cutFace.userData.role = 'visible-tree-end-grain';
   log.add(cutFace);
-  const growthRings = [];
-  for (const radius of [0.20, 0.39, 0.56]) {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(radius, 0.018, 7, 48),
-      darkMaterial,
-    );
-    ring.position.z = logLength / 2 + 0.018;
-    ring.userData.role = 'tree-end-growth-ring';
-    growthRings.push(ring);
-    log.add(ring);
-  }
-
+  // The far end is sawn too: the same plain end grain.
+  const farCutFace = cutFace.clone();
+  farCutFace.position.z = -logLength / 2 - 0.006;
+  farCutFace.rotation.y = Math.PI;
+  farCutFace.userData.role = 'far-tree-end-grain';
+  log.add(farCutFace);
   // The log lies on two plain sleepers bedded on a ground plank, so it is
   // carried rather than hanging below the frame's feet.
   const logSupports = [];
@@ -576,7 +570,7 @@ function pendulumTreeSaw(movement) {
     plank.userData.role = 'ground-plank-under-log';
     root.add(plank);
     logSupports.push(plank);
-    for (const dz of [-0.85, 0.55]) {
+    for (const dz of [-0.62, 0.62]) {
       // A block hollowed to the log's round (4 mm clear), so it cradles the
       // log without cutting it: a rectangle less the log's circle.
       const half = 0.62, rise = 0.28, centerY = logRadius + 0.02;
@@ -660,7 +654,6 @@ function pendulumTreeSaw(movement) {
       frameFeet,
       framePosts,
       groundRails,
-      growthRings,
       log,
       pendulum,
       pendulumBase,

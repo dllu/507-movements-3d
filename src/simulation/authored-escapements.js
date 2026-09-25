@@ -2,6 +2,8 @@ import { DEBAUFRE_300_301_PALLET } from './baked/debaufre-300-301-pallet.js';
 import { finishSevenTooth238Contact } from './seven-tooth-238-contact.js';
 import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
 import * as THREE from 'three';
+import { ring } from './finite-plate-geometry.js';
+import { backBar, freezeFitBoundsWithout, supportMaterial } from './back-plate-support.js';
 import {
   PALETTE,
   makeBeam,
@@ -11,6 +13,7 @@ import {
   matte,
   setSpin,
 } from './primitives.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -4387,7 +4390,7 @@ function debaufreHeightfieldSolid(xs, zs, topAt, bottom) {
     new THREE.Float32BufferAttribute(positions, 3),
   );
   geometry.setIndex(index);
-  geometry.computeVertexNormals();
+  creaseIndexedNormals(geometry);
   return geometry;
 }
 
@@ -5421,8 +5424,50 @@ function debaufreFrictionalRestEscapement(
 }
 
 // Brown draws 234 floating on the page with no ground, so no ground shadow.
+// He draws no frame either. A plain U-frame in the verge's own vertical plane
+// carries S in a bored cock at each end (past the wheel, clear of the flags)
+// and the crown-wheel arbor in a foot bearing on the bar joining their feet
+// under the arbor end. The view is framed without it.
 function hideGroundFor234(model) {
-  model.root.userData.hideGround = true;
+  const root = model.root, g = root.userData.geometry;
+  root.userData.hideGround = true;
+  const mat = supportMaterial();
+  const vergeZ = g.axialLayers.vergeAxis;
+  let spindleHalf = 0, arborBottom = 0, arborRadius = 0;
+  root.traverse((o) => {
+    if (o.userData.role === 'oscillating-spindle-S') spindleHalf = o.geometry.parameters.height / 2;
+    if (o.userData.role === 'vertical-crown-wheel-arbor') {
+      const box = new THREE.Box3().setFromObject(o);
+      arborBottom = box.min.z; arborRadius = (box.max.x - box.min.x) / 2;
+    }
+  });
+  const cockX = spindleHalf - 0.2, baseZ = arborBottom - 0.3;
+  const frame = new THREE.Group();
+  frame.userData.role = 'fixed-plain-u-frame-for-verge-and-arbor';
+  for (const side of [-1, 1]) {
+    // Bored cock round S (axis x), on a post down to the base bar.
+    const cock = new THREE.Mesh(ring(0.079, 0.16, -0.12, 0.12, 48), mat);
+    cock.rotation.y = Math.PI / 2;
+    cock.position.set(side * cockX, 0, vergeZ);
+    cock.userData.role = 'fixed-verge-cock-bearing';
+    frame.add(cock);
+  }
+  // Post from each cock down to the base, and the base bar under the arbor
+  // (a bar in the verge's plane: local frame x, z; backBar draws in x-y, so
+  // turn it into x-z).
+  const plane = new THREE.Group();
+  plane.rotation.x = Math.PI / 2;
+  plane.add(backBar([new THREE.Vector2(-cockX, vergeZ - 0.15), new THREE.Vector2(-cockX, baseZ),
+    new THREE.Vector2(cockX, baseZ), new THREE.Vector2(cockX, vergeZ - 0.15)],
+    { zFront: 0.06, width: 0.13, thickness: 0.12, material: mat, role: 'fixed-verge-posts-and-base-bar' }));
+  frame.add(plane);
+  const foot = new THREE.Mesh(ring(arborRadius + 0.004, arborRadius + 0.14, baseZ + 0.1, arborBottom + 0.35, 64), mat);
+  foot.userData.role = 'fixed-arbor-foot-bearing';
+  frame.add(foot);
+  frame.traverse((o) => { if (o.isMesh) { o.userData.fixed = true; o.castShadow = o.receiveShadow = true; o.material.fog = false; } });
+  freezeFitBoundsWithout(root, model.update, g.cyclePeriod, []);
+  root.add(frame);
+  root.userData.blocks = { ...(root.userData.blocks ?? {}), vergeFrame: frame };
   return model;
 }
 

@@ -38,6 +38,9 @@ for (const id of [197, 198]) {
       model.root.traverse(o => {
         if (!o.isMesh || !o.visible || !o.material.visible) return;
         assert.equal(o.material.fog, false);
+        // 197's fixed supports (frame channel, shaft rail, foot) stand below
+        // and behind the framed frame and are left out of its framing.
+        if (o.userData.runsPastCrop) return;
         for (let j = 0; j < o.geometry.attributes.position.count; j++) {
           point.fromBufferAttribute(o.geometry.attributes.position, j).applyMatrix4(o.matrixWorld);
           assert.ok(d.sweptBounds.containsPoint(point), `${o.userData.role} ${point.toArray()}`);

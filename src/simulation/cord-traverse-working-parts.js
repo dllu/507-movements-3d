@@ -2,6 +2,7 @@ import * as T from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {LaidRopeGeometry,replaceWithLaidRope} from './laid-rope.js';
+import {creaseIndexedNormals} from './crease-normals.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const add=(p,g,m,role)=>{const o=new T.Mesh(g,m);o.userData.role=role;p.add(o);return o;};
 const ring=(radius,bore,length)=>boredLatheGeometry([{axial:-length/2,radial:radius},{axial:length/2,radial:radius}],bore,80);
@@ -13,7 +14,7 @@ function sectionSolid(section,count=256,axis='x'){
  let volume=0;const a=new T.Vector3(),b=new T.Vector3(),c=new T.Vector3();
  for(let i=0;i<indices.length;i+=3){a.fromArray(positions,indices[i]*3);b.fromArray(positions,indices[i+1]*3);c.fromArray(positions,indices[i+2]*3);volume+=a.dot(b.cross(c));}
  if(volume<0)for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
- const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();g.computeBoundingBox();g.computeBoundingSphere();return g;
+ const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setIndex(indices);creaseIndexedNormals(g);g.computeBoundingBox();g.computeBoundingSphere();return g;
 }
 // Brown draws these cords as laid rope: keep the shared three-strand rope,
 // reusing its buffers as the cord deforms. The lay is fixed from each cord's

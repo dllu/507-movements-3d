@@ -65,7 +65,16 @@ test('movement 500 is a rim-fixed corrugated disk A driving sector e and one poi
   assert.equal(blocks.diaphragm.userData.radius,
     geometry.diaphragmRadius);
   assert.equal(blocks.sectorTeeth.length, 5);
-  assert.equal(blocks.scaleTicks.length, 11);
+  // Brown's dial is graduated all round: 60 graduations, every fifth long,
+  // centred on the pointer spindle, which sits on the dial axis.
+  assert.equal(blocks.scaleTicks.length, 60);
+  assert.equal(blocks.scaleTicks.filter((tick) => tick.userData.major).length, 12);
+  near(geometry.pinionCenter.x, 0, 1e-15, 'pointer spindle on dial axis x');
+  near(geometry.pinionCenter.y, 0, 1e-15, 'pointer spindle on dial axis y');
+  for (const tick of blocks.scaleTicks) {
+    assert.ok(tick.geometry.parameters.width <= 0.032, 'fine cut graduation, not a marker block');
+    near(Math.hypot(tick.position.x, tick.position.y) > 2.6 ? 1 : 0, 1, 0, 'graduation lies in the scale band');
+  }
   assert.equal(blocks.connectingRod.parent, model.root);
   assert.equal(blocks.sector.parent, model.root);
   assert.equal(blocks.pinion.parent, model.root);
@@ -102,7 +111,7 @@ test('movement 500 records the unavailable official animation and Schaffer diaph
   assert.match(sourceReference.historicalEngineeringCorroboration.url,
     /library\.imarest\.org.*7\.pdf/);
   assert.match(sourceReference.reconstructionDisclosure,
-    /official page marks Animated unavailable.*31:10 pitch ratio.*explicit reconstruction choices/i);
+    /official page marks Animated unavailable.*31:8 pitch ratio.*graduated all round.*explicit reconstruction choices/i);
   disposeModel(model.root);
 });
 
@@ -164,18 +173,23 @@ test('movement 500 exact spatial rod converts axial diaphragm travel into sector
   near(initial.sectorAngle, 0, 0, 'zero-pressure sector angle');
   near(maximum.sectorAngle, geometry.maximumSectorAngle, 0,
     'maximum-pressure sector angle');
-  assert.ok(maximum.sectorAngle > 0.34);
-  assert.ok(maximum.sectorAngle < 0.36);
+  assert.ok(maximum.sectorAngle > 0.94);
+  assert.ok(maximum.sectorAngle < 0.96);
   disposeModel(model.root);
 });
 
 test('movement 500 sector and pinion satisfy the external pitch equation and carry the pointer', () => {
   const { model } = movementModel();
   const { geometry, stateAtTime, transmission } = model.root.userData;
-  near(transmission.gearRatio, 3.1, 5e-16,
-    '31:10 gear ratio');
+  near(transmission.gearRatio, 3.875, 5e-16,
+    '31:8 gear ratio');
   assert.equal(transmission.sectorEquivalentTeeth, 31);
-  assert.equal(transmission.pinionTeeth, 10);
+  assert.equal(transmission.pinionTeeth, 8);
+  const sweep = geometry.maximumSectorAngle * transmission.gearRatio;
+  assert.ok(sweep > THREE.MathUtils.degToRad(200) && sweep < THREE.MathUtils.degToRad(220),
+    `pointer sweeps about 210 degrees of the full dial (${sweep})`);
+  near(geometry.pointerZeroAngle, Math.PI / 2 + sweep / 2, 1e-15,
+    'sweep centred on the top of the dial');
   assert.equal(transmission.pointerTurnsWithPinion, true);
   for (let sample = 0; sample <= 900; sample += 1) {
     const state = stateAtTime(geometry.cycleDuration * sample / 900);
@@ -185,7 +199,7 @@ test('movement 500 sector and pinion satisfy the external pitch equation and car
     near(state.pinionAngularVelocity,
       -state.sectorAngularVelocity * transmission.gearRatio, 0,
       `pinion speed ${sample}`);
-    near(state.pointerAngle, 2.35 + state.pinionAngle, 0,
+    near(state.pointerAngle, geometry.pointerZeroAngle + state.pinionAngle, 0,
       `pointer keyed to pinion ${sample}`);
     near(state.gearPitchVelocityResidual, 0, 3e-17,
       `no-slip pitch speed ${sample}`);
@@ -222,6 +236,37 @@ test('movement 500 renderer follows the diaphragm, exact rod, sector, pinion, an
       0.10 + 0.48 * state.pressureFraction, 0,
       `rendered inlet pressure ${sample}`);
   }
+  disposeModel(model.root);
+});
+
+test('movement 500 section figure carries the motion from disk A to its pointer', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtTime, transmission } = model.root.userData;
+  const section = blocks.sectionView;
+  const sweep = geometry.maximumSectorAngle * transmission.gearRatio;
+  const pointerDirection = () => new THREE.Vector3(0, 1, 0)
+    .applyQuaternion(section.spindleGroup.getWorldQuaternion(new THREE.Quaternion()));
+  let rodLength = null;
+  let previous = null;
+  const zeroDirection = (model.update(0), model.root.updateMatrixWorld(true), pointerDirection());
+  for (let sample = 0; sample <= 64; sample += 1) {
+    const time = geometry.cycleDuration * 0.5 * sample / 64;
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const state = section.spindleGroup.parent.userData.sectionState;
+    rodLength ??= state.rodLength;
+    near(state.rodLength, rodLength, 1e-9, `section rod keeps its length ${sample}`);
+    if (previous !== null) assert.ok(state.sectorAngle >= previous - 1e-12, `sector e follows pressure ${sample}`);
+    previous = state.sectorAngle;
+    // The pointer turns on the spindle with the crown-driven pinion.
+    assert.equal(section.pinion.parent, section.spindleGroup, 'pinion on the pointer spindle');
+    assert.equal(section.needle.parent, section.spindleGroup, 'pointer on the pointer spindle');
+  }
+  model.update(geometry.cycleDuration / 2);
+  model.root.updateMatrixWorld(true);
+  const turned = Math.acos(THREE.MathUtils.clamp(zeroDirection.dot(pointerDirection()), -1, 1));
+  // A 211-degree sweep reads as 149 degrees between the end directions.
+  near(turned, Math.PI * 2 - sweep, 1e-6, 'section pointer sweeps the face pointer angle');
   disposeModel(model.root);
 });
 

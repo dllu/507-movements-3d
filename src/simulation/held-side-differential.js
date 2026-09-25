@@ -73,8 +73,11 @@ export function makeHeldSideDifferential() {
   const curb = add('frictionBand', new THREE.Mesh(flatBeltGeometry(brakeCurve, { width: p.brakeBandWidth,
     thickness: p.brakeBandThickness, segments: 2048, closed: false }), matte(PALETTE.ink)), root, 'restraint');
   curb.position.z = p.brakeBandZ;
-  const weight = add('brakeWeight', new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.23), matte(PALETTE.ink)), root, 'restraint');
-  weight.position.set(-brakePitch, -p.brakeTailLength - 0.10, p.brakeBandZ);
+  // "Weighted at the end": both tails run down into one hanging weight
+  // below Brown's crop, so neither leg ends in mid-air.
+  const weightWidth = 2 * brakePitch + 0.2, weightHeight = 0.3;
+  const weight = add('brakeWeight', new THREE.Mesh(new THREE.BoxGeometry(weightWidth, weightHeight, 0.26), matte(PALETTE.ink)), root, 'restraint');
+  weight.position.set(0, -p.brakeTailLength - weightHeight / 2, p.brakeBandZ);
   const curve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.beltPitchRadius, p.beltPitchRadius, 0);
   const segments = 2048, geometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
   // Brown draws the band as a plain flat belt: the shared belt colour, no

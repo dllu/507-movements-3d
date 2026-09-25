@@ -11,7 +11,7 @@ const mujoco = await loadMujoco();
 test('114 has closed oriented solids and a relieved half-pinion', () => {
   const v = makeDoubleRackGeometry(), u = v.root.userData;
   try {
-    assert.equal(Object.keys(u.parts).length, 4);
+    assert.equal(Object.keys(u.parts).length, 23);
     for (const [name, mesh] of Object.entries(u.parts)) {
       const s = inspectWeightedClutchSolid(mesh.geometry);
       assert(s.volume > 0, name);

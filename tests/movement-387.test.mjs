@@ -101,7 +101,8 @@ test('movement 387 is a tide-driven two-stringer ladder with seven independently
   for (const role of [
     'fixed-masonry-wharf-and-guard-rail',
     'tide-following-floating-end-assembly',
-    'floating-pontoon-hull',
+    'floating-open-boat-hull',
+    'boat-thwart-carrying-end-frame-posts',
     'rigid-lower-ladder-stringer',
     'parallel-upper-handrail-bar',
     'world-horizontal-pivoted-wharf-ladder-tread',

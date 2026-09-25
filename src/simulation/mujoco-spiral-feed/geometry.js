@@ -44,11 +44,20 @@ export function makeSpiralFeedGeometry(options={}) {
     poly([[-barWidth/2-.003,-barDepth/2-.003],[barWidth/2+.003,-barDepth/2-.003],[barWidth/2+.003,barDepth/2+.003],[-barWidth/2-.003,barDepth/2+.003]]));
   attach('guide',plate(guideShape,-guideHalfLength,guideHalfLength),'frame',PALETTE.muted,guideCenter).rotation.x=Math.PI/2;
   const railXs=source.rails.map(x=>(x-source.axis[0])/100),railTop=(source.axis[1]-source.railTop)/100,railEnd=(source.axis[1]-source.railEnd)/100-.06;
-  for(const [i,x] of railXs.entries())attach('frameRail'+i,new THREE.BoxGeometry(.035,railTop-railEnd,.10),'frame',PALETTE.muted,[x,(railTop+railEnd)/2,-.51]);
-  attach('frameCrossbar',new THREE.BoxGeometry(railXs[1]-railXs[0]+.035,.10,.10),'frame',PALETTE.muted,[(railXs[0]+railXs[1])/2,guideCenter[1],-.51]);
+  // Brown's two frame uprights run on past his crop to a floor below the
+  // rod's lowest reach, each standing on a foot; the crossbar carrying the
+  // guide spans them at the guide.
+  const floorY=-4.4,railWidth=.09;
+  for(const [i,x] of railXs.entries()){
+    attach('frameRail'+i,new THREE.BoxGeometry(railWidth,railTop-floorY,.10),'frame',PALETTE.muted,[x,(railTop+floorY)/2,-.51]);
+    attach('frameFoot'+i,new THREE.BoxGeometry(.4,.1,.6),'frame',PALETTE.muted,[x,floorY+.05,-.51]);
+  }
+  attach('frameCrossbar',new THREE.BoxGeometry(railXs[1]-railXs[0]+railWidth,.16,.10),'frame',PALETTE.muted,[(railXs[0]+railXs[1])/2,guideCenter[1],-.51]);
   for(const [i,x] of [-.35,.35].entries())attach('guideBracket'+i,new THREE.BoxGeometry(.10,.22,.53),'frame',PALETTE.muted,[x,guideCenter[1],-.195]);
-  const spine=clip.difference(clip.union(capsule([0,0],[0,guideCenter[1]],.07,32),poly(circle([0,0],.37,128))),poly(circle([0,0],shaftRadius+.003,128)));
+  const spine=clip.difference(clip.union(capsule([0,0],[0,guideCenter[1]],.1,32),poly(circle([0,0],.37,128))),poly(circle([0,0],shaftRadius+.003,128)));
   attach('bearingSpine',plate(spine,-.72,-.56),'frame',PALETTE.muted);
+  // The uprights run on below the plate's framing to their feet.
+  for(const [name,mesh] of Object.entries(parts))if(/^frame(Rail|Foot)/.test(name))mesh.userData.beyondPlateCrop=true;
   const initialRadius=f.middleRadius(0);blocks.follower.position.y=-initialRadius;blocks.roller.position.y=-initialRadius;
   const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.eye.visible=!enabled;parts.head.visible=!enabled;for(const mesh of Object.values(sectionMeshes))mesh.visible=Boolean(enabled);};
   Object.assign(root.userData,{parts,families,blocks,source,profile,hideGround:true,setSectionView,sectionMeshes,

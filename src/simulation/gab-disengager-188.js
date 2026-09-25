@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {
   cylinderAlongZ, smootherstepLaw, circle, poly, plate, polygonClipping, PALETTE, markShadows, matte,
+  eccentricRodEnd, eccentricRodPose, gabRodFrame,
 } from './gab-disengager-shared.js';
 
 // Brown 188 ("Modifications of 186"): the eccentric rod carries, on one
@@ -13,6 +14,12 @@ import {
 // whose head stays seated under the limb at a, flexes up with it and props
 // the handle in the lifted position; pressing the leaf back lowers the rod
 // onto the pin again. All working contacts are touching with a small gap.
+//
+// Brown draws only the pin. It is carried on a valve arm hanging up from a
+// rockshaft below the view (so it swings on a slight arc), and the rod runs on
+// past his break to its strap round the eccentric. The eccentric shaft and the
+// rockshaft turn in bearings on plain floor-standing columns. Lifted, the rod
+// turns about the stopped sheave, so the toe contact is solved with that turn.
 const PX = 0.017; // model units per plate pixel (525 px engraving)
 const PIN_RASTER = [394, 322];
 const R = ([x, y]) => new THREE.Vector2((x - PIN_RASTER[0]) * PX, (PIN_RASTER[1] - y) * PX);
@@ -22,10 +29,11 @@ const GAP = 0.002;
 const PERIOD = 16;
 const RUN_HALF = 4.5; // running window [-4.5, 4.5] s about t = 0
 const RUN_EASE = 1.0;
-const RUN_TURNS_HALF = 1.5; // eccentric turns in each half window
+const RUN_TURNS_HALF = 1; // whole turns, so the eccentric stops where it started (sheave on top)
 const LIFT = [5.0, 7.2];
 const LOWER = [9.2, 11.2];
 const STROKE = 0.22; // eccentric throw at the gab, model units
+const ECC_THROW = STROKE;
 
 // Rod z layers: front plate [-.12,.12]; handle behind it; leaf further back.
 const Z = {
@@ -45,11 +53,23 @@ const clearance = 1.5 * PX;
 const requiredLift = pinRadius - rodBottomY + clearance;
 const pivotPinRadius = 5 * PX;
 const pivotBoreRadius = pivotPinRadius + 0.3 * PX;
+const ROD_LENGTH = 16; // gab to the off-plate eccentric strap centre
+const STRAP_LOCAL = [-ROD_LENGTH, R([0, 316]).y]; // on the rod's centreline
+const rodPose = eccentricRodPose(STRAP_LOCAL);
+const ARM_LENGTH = 230 * PX; // valve arm: rockshaft below the pin, past the view
+const Z_WALL = -0.95;
+const ARM_Z = [-0.8, -0.66];
 
-// Toe-on-pin contact: rod lift h for handle angle theta (clockwise on the plate).
+// Toe-on-pin contact: rod lift h for handle angle theta (clockwise on the
+// plate). The rod turns about the stopped sheave as it rises, so the pin's
+// place in the rod frame is rodPose.pinInRodLifted(h).
 function liftAtAngle(theta) {
   const c = toeCenterRest.clone().sub(pivot).rotateAround(new THREE.Vector2(), -theta).add(pivot);
-  return Math.sqrt(contactDistance ** 2 - c.x ** 2) - c.y;
+  const gap = (h) => Math.hypot(c.x - rodPose.pinInRodLifted(h).pin[0], c.y - rodPose.pinInRodLifted(h).pin[1]) - contactDistance;
+  if (gap(0) >= 0) return 0;
+  let lo = 0, hi = 1;
+  for (let i = 0; i < 80; i++) { const mid = (lo + hi) / 2; if (gap(mid) < 0) lo = mid; else hi = mid; }
+  return hi;
 }
 const maximumAngle = (() => {
   let lo = 0, hi = 0.8;
@@ -196,10 +216,22 @@ export function stateAtTime188(time) {
   } else stage = 'settled';
   const rodLift = theta > 0 ? liftAtAngle(theta) : 0;
   const toe = toeCenterRest.clone().sub(pivot).rotateAround(new THREE.Vector2(), -theta).add(pivot);
-  const pinInRod = new THREE.Vector2(0, -rodLift); // pin centre in the rod frame
+  const lifted = rodPose.pinInRodLifted(rodLift);
+  const pinInRod = new THREE.Vector2(...lifted.pin); // pin centre in the rod frame
   const leaf = leafPath(theta);
+  // The valve arm swings the pin on a slight arc about the rockshaft below.
+  const armAngle = Math.asin(rodX / ARM_LENGTH);
+  const pinY = ARM_LENGTH * (Math.cos(armAngle) - 1);
+  // Strap end on the sheave: engaged, the rod turns about the gab (on the
+  // pin); lifted (eccentric stopped, phase 0), about the sheave centre.
+  const phase = Math.abs(tau) <= RUN_HALF ? eccentricPhase(tau).phase : 0;
+  const sheave = new THREE.Vector2(STRAP_LOCAL[0] + ECC_THROW * Math.sin(phase),
+    STRAP_LOCAL[1] - ECC_THROW + ECC_THROW * Math.cos(phase));
+  const rodAngle = rodLift > 0 ? lifted.beta : rodPose.angleFor(pinY, sheave);
+  const gabX = rodLift > 0 ? lifted.gab[0] : rodX;
   return {
-    time, stage, rodX, rodSpeed, rodLift, handleAngle: theta, handleRate: thetaRate, pinX: rodX,
+    time, stage, rodX, rodSpeed, rodLift, handleAngle: theta, handleRate: thetaRate, pinX: rodX, pinY,
+    armAngle, eccentricPhase: phase, rodAngle, gabX, gabY: pinY + rodLift,
     toeGap: toe.distanceTo(pinInRod) - pinRadius - toeRadius,
     pinTopBelowRodBottom: rodBottomY - (pinInRod.y + pinRadius),
     pinInGab: rodLift < 1e-9,
@@ -323,11 +355,15 @@ export function loopHandlePinCamGabDisengager() {
 
   rod.add(rodFront, rodRail, pivotPin, clipTop, clipFront, clipBack, clipScrew, leaf, handle);
   root.add(rod, pinGroup);
+  let valveArm = null, eccentric = null; // built after framing
 
   function update(time) {
     const state = stateAtTime188(time);
-    rod.position.set(state.rodX, state.rodLift, 0);
-    pinGroup.position.set(state.pinX, 0, 0);
+    rod.position.set(state.gabX, state.gabY, 0);
+    rod.rotation.z = state.rodAngle;
+    pinGroup.position.set(state.pinX, state.pinY, 0);
+    if (valveArm) valveArm.rotation.z = -state.armAngle;
+    eccentric?.setAngle(state.eccentricPhase);
     handle.rotation.z = -state.handleAngle;
     writeLeaf(leaf.geometry, leafPath(state.handleAngle).path);
     root.userData.kinematics = state;
@@ -344,7 +380,42 @@ export function loopHandlePinCamGabDisengager() {
   // Frame Brown's plate: the complete rod counts only as far as his break.
   bounds.min.x = Math.max(bounds.min.x, R([15, 0]).x - 0.02);
 
+  // Past the view (added after framing): the valve arm on its rockshaft below
+  // the pin, the rod's strap round the eccentric, and the plain frame.
+  const armMaterial = matte(PALETTE.driven, {metalness: 0.15, roughness: 0.58});
+  const shaftMaterial = matte(PALETTE.muted, {metalness: 0.2, roughness: 0.6});
+  const shaftRadius = 16 * PX, bossRadius = 30 * PX, eyeRadius = 26 * PX;
+  valveArm = new THREE.Group();
+  valveArm.position.set(0, -ARM_LENGTH, 0);
+  valveArm.userData.role = 'valve-arm-on-rockshaft-below-view-carrying-gab-pin';
+  const armShape = polygonClipping.difference(polygonClipping.union(
+    poly(circle([0, 0], bossRadius, 96)), poly(circle([0, ARM_LENGTH], eyeRadius, 96)),
+    poly([[-bossRadius * 0.7, 0], [bossRadius * 0.7, 0], [eyeRadius * 0.7, ARM_LENGTH], [-eyeRadius * 0.7, ARM_LENGTH]]),
+  ), poly(circle([0, 0], shaftRadius + 0.004, 96)), poly(circle([0, ARM_LENGTH], pinRadius + 0.004, 96)));
+  const valveArmPlate = extrude(armShape, ARM_Z, armMaterial, 'valve-arm-with-rockshaft-boss-and-pin-eye');
+  valveArmPlate.geometry.userData.bores = [{x: 0, y: 0, radius: shaftRadius + 0.004}, {x: 0, y: ARM_LENGTH, radius: pinRadius + 0.004}];
+  const rockshaft = cylinderAlongZ(shaftRadius, ARM_Z[1] + 0.06 - (Z_WALL + 0.01), shaftMaterial, 40);
+  rockshaft.position.z = (ARM_Z[1] + 0.06 + Z_WALL + 0.01) / 2;
+  rockshaft.userData.role = 'valve-rockshaft';
+  valveArm.add(valveArmPlate, rockshaft);
+  // The pin runs back through the arm's eye.
+  valvePin.geometry.dispose();
+  valvePin.geometry = new THREE.CylinderGeometry(pinRadius, pinRadius, 0.18 - (ARM_Z[0] - 0.01), 48);
+  valvePin.position.z = (0.18 + ARM_Z[0] - 0.01) / 2;
+  eccentric = eccentricRodEnd({
+    strapLocal: STRAP_LOCAL, restGab: [0, 0], throw: ECC_THROW, fromX: R([-300, 0]).x + 0.05, halfHeight: 19 * PX,
+    z: Z.rod, rodMaterial, sheaveMaterial: shaftMaterial, shaftBack: Z_WALL + 0.01,
+  });
+  rod.add(eccentric.strap);
+  const frame = gabRodFrame({
+    eccentric: {x: eccentric.O.x, y: eccentric.O.y, shaftRadius: eccentric.shaftRadius, zFront: Z.rod[0] - 0.02},
+    rockshaft: {x: 0, y: -ARM_LENGTH, shaftRadius, zFront: ARM_Z[0] - 0.02},
+    floorY: -ARM_LENGTH - 1.2, zWall: Z_WALL,
+  });
+  root.add(valveArm, eccentric.sheave, frame);
+
   const blocks = {rodFront, rodRail, pivotPin, clipTop, clipFront, clipBack, clipScrew, leaf, handleBody, lug, valvePin,
+    valveArm, valveArmPlate, rockshaft, eccentricStrap: eccentric.strap, eccentricSheave: eccentric.sheave, frame,
     // Aliases for the pre-rewrite shared joint test (pin versus plates).
     valvePinBoss: handleBody, valveCarrierWeb: rodFront};
   Object.assign(root.userData, {
@@ -354,11 +425,13 @@ export function loopHandlePinCamGabDisengager() {
     hideGround: true,
     blocks,
     rigidBodies: [rod, handle, pinGroup, leaf],
-    jointChecks: [[rodFront, pivotPin], [handleBody, pivotPin], [rodFront, valvePin], [handleBody, valvePin]],
+    jointChecks: [[rodFront, pivotPin], [handleBody, pivotPin], [rodFront, valvePin], [handleBody, valvePin],
+      [valveArmPlate, valvePin], [valveArmPlate, rockshaft]],
     geometry: {
       cyclePeriod: PERIOD, pixel: PX, pinRaster: PIN_RASTER, pivotRaster, leafHeadRaster, stroke: STROKE,
       maximumHandleAngle: maximumAngle, requiredLift, pinRadius, toeRadius, gabRadius, contactGap: GAP,
       leafLength, leafFreeRest, leafFreeHeld, lift: LIFT, lower: LOWER, runHalf: RUN_HALF,
+      rodLength: ROD_LENGTH, armLength: ARM_LENGTH, eccentricCentre: eccentric.O.toArray(),
     },
     animationTiming: {authoredCyclePeriod: PERIOD},
     minimumDisplayCycleSeconds: PERIOD,
@@ -368,7 +441,7 @@ export function loopHandlePinCamGabDisengager() {
     sourcePointFromRaster: (p) => R(p),
     cameraFitBounds: bounds,
     cameraDistanceScale: 1.0,
-    reconstructionNote: 'One rigid loop handle pivoted on the rod; its toe behind the crown presses the valve pin out of the gab. A clip-guided leaf spring stands under the limb end at a and props the lifted handle. No frame is drawn.',
+    reconstructionNote: 'One rigid loop handle pivoted on the rod; its toe behind the crown presses the valve pin out of the gab. A clip-guided leaf spring stands under the limb end at a and props the lifted handle. Brown draws no frame: the pin rides on a valve arm from a rockshaft below the view, and the rod runs on to its eccentric; both shafts turn in bearings on plain floor columns off the view.',
   });
 
   update(0);

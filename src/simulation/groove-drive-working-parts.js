@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {circle,poly,plate,polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
+import {creaseIndexedNormals} from './crease-normals.js';
 const TAU=2*Math.PI;
 export function finishGrooveDrive(root,period){root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=period;root.traverse(o=>{for(const m of [].concat(o.material??[]))m.fog=false;});}
 export function cam398Outline(arcs,scale,offset){
@@ -37,5 +38,5 @@ export function radialGroovedWheelGeometry(data,bore=.108){
     const k=(i+1)%N,lo=i,lk=k,hi=vertical*N+i,hk=vertical*N+k,bi=base+i,bk=base+k,ti=base+N+i,tk=base+N+k;
     indices.push(lo,bi,lk,lk,bi,bk,hi,hk,ti,hk,tk,ti,bi,ti,bk,bk,ti,tk);
   }
-  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.userData={grooveCount:8,boreRadius:bore,clearance:data.clearance};return geometry;
+  const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);creaseIndexedNormals(geometry);geometry.computeBoundingBox();geometry.computeBoundingSphere();geometry.userData={grooveCount:8,boreRadius:bore,clearance:data.clearance};return geometry;
 }

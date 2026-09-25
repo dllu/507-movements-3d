@@ -4,6 +4,7 @@ import {roundedRackGear} from '../coaxial-gear-geometry.js';
 import {plate,poly,polygonClipping,disk} from '../finite-plate-geometry.js';
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
+import {addStubGuides} from '../rack-frame-guides.js';
 export {THREE};
 export function makeEqualRacksGeometry({samples=96,cutterSteps=2048,amplitude=.75,addendum=.8,dedendum=1.25}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isFinite(amplitude)||amplitude<=0||amplitude>1||![addendum,dedendum].every(x=>Number.isFinite(x)&&x>0))throw new RangeError('Invalid 115 geometry options');
@@ -34,5 +35,17 @@ export function makeEqualRacksGeometry({samples=96,cutterSteps=2048,amplitude=.7
  for(const n of ['upper','lower','frame']){const c=convexPlateCells(parts[n].geometry);cells[n]=c.cells.map(poly=>[c.low,c.high].flatMap(z=>poly.map(p=>[...p,z])));}
  root.rotation.z=s.tilt;Object.assign(root.userData,{parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:4,shadowBias:-.00002,shadowNormalBias:.0005});markShadows(root);root.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(root,true);bounds.expandByVector(new THREE.Vector3(amplitude*Math.abs(Math.cos(s.tilt))+.04,amplitude*Math.abs(Math.sin(s.tilt))+.04,.04));root.userData.cameraFitBounds=bounds;root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
+ // Brown breaks the frame's end stubs off. They run on whole into fixed
+ // guides past the frame's reach (as for 90 and 91). The guides and both
+ // shafts' rear bearings stand on plain posts to a floor below, so no tie
+ // bar crosses the open frame window. They are added after the framing
+ // bounds, which keep Brown's view.
+ blocks.fixed=new THREE.Group();root.add(blocks.fixed);
+ const stubY=(a,b)=>local([0,(a+b)/2])[1];
+ addStubGuides({add,movingFamily:'frame',travel:{left:amplitude+.04,right:amplitude+.04},zWall:-.45,floorY:-1.9,
+  stubs:[{tipX:local([8,289.5])[0],y:stubY(272,307),halfHeight:(307-272)/200,halfDepth:.07,sign:-1},
+   {tipX:local([518,281])[0],y:stubY(262,300),halfHeight:(300-262)/200,halfDepth:.07,sign:1}],
+  shafts:['upper','lower'].map((name,i)=>({x:0,y:(i?-1:1)*O,radius:s.circles[name].radius/100,back:-.22,family:name}))});
+ markShadows(blocks.fixed);root.updateMatrixWorld(true);
  return{root,focus:new THREE.Vector3(0,0,0),cameraDirection:new THREE.Vector3(1.5,1,10)};
 }

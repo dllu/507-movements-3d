@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {bevelToothGeometry} from '../bevel-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 import {disposeObject3D} from '../dispose-model.js';
+import {creaseLatheNormals} from '../crease-normals.js';
 
 // Source-sized candidate. Tooth counts are inferred; the engraved lower train
 // is an equal-ratio reversing set, with different visible face widths.
@@ -26,7 +27,7 @@ export function makeWaterGovernorBevels(){
   // A shallow conical backplate rises toward the bore, as drawn behind the teeth.
   const r=geometry.userData.root;
   const profile=[[parameters.bore,r.z*innerScale],[r.radius*innerScale,r.z*innerScale],[r.radius,r.z],[parameters.bore,r.z+backRise],[parameters.bore,r.z*innerScale]].map(p=>new THREE.Vector2(...p));
-  const bodyGeometry=new THREE.LatheGeometry(profile,96);bodyGeometry.rotateX(Math.PI/2);
+  const bodyGeometry=creaseLatheNormals(new THREE.LatheGeometry(profile,96));bodyGeometry.rotateX(Math.PI/2);
   const body=new THREE.Mesh(bodyGeometry,material);body.name=name+'Body';rotor.add(body);parts[body.name]=body;families[body.name]=name;
   for(let i=0;i<teeth;i++){const tooth=new THREE.Mesh(geometry,material);tooth.name=name+'Tooth'+i;tooth.rotation.z=2*Math.PI*i/teeth;rotor.add(tooth);parts[tooth.name]=tooth;families[tooth.name]=name;}
  }

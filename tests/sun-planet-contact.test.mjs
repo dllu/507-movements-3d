@@ -81,9 +81,9 @@ test('039 actual square-tooth flanks clear with bounded backlash while the plane
   console.log('039 maximum sampled working gap', largestGap);
 });
 
-test('039 has clear carrier bores and separate planes for the flywheel, gears, rod and arm', () => {
+test('039 has clear carrier bores and separate planes for the fixed ring, gears, rod and arm', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { sun, planet, carrier, arm, connectingRod, rodBoss, flywheel, planetShaft, sunShaft, armStud } = model.root.userData.blocks;
+  const { sun, planet, carrier, arm, connectingRod, rodBoss, ringSegments: flywheel, planetShaft, sunShaft, armStud } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
   const initialRodTransform = new THREE.Matrix4();
   for (let sample = 0; sample < 65; sample += 1) {
@@ -93,7 +93,7 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
     for (const part of [planet, planetShaft]) {
       const bounds = new THREE.Box3().setFromObject(part);
       assert.ok(bounds.min.z - wheelBounds.max.z > 0.0169,
-        'all orbiting parts, including the rear shaft tip, clear the flywheel');
+        'all orbiting parts, including the rear shaft tip, clear the fixed ring');
     }
     const armBounds = new THREE.Box3().setFromObject(arm);
     // Pass 54 models the rod whole with a wrist pin in its upper eye that runs
@@ -140,30 +140,31 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
         'the actual rod mesh remains rigidly attached to the planet');
     }
   }
-  assert.equal(flywheel.geometry.parameters.shapes.holes.length, 4,
-    'the recessed web is one solid with four real radial slits');
+  assert.equal(flywheel.geometry.parameters.shapes.length, 4, 'the ring has four separate segments');
 });
 
-test('039 flywheel web is parted by four narrow slits, not opened into thin spokes', () => {
+test('039 fixed ring is Brown\'s open four-part ring: a rim and four separate segments round an open middle', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { flywheel, flywheelRim } = model.root.userData.blocks;
+  const { ringSegments, ringRim, sun } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
-  const slitArea = (hole) => Math.abs(THREE.ShapeUtils.area(hole.getPoints(48)));
-  const webArea = Math.PI * (g.flywheelInnerRadius ** 2 - g.flywheelHubRadius ** 2);
-  const openArea = flywheel.geometry.parameters.shapes.holes.reduce((sum, hole) => sum + slitArea(hole), 0);
-  assert.ok(openArea / webArea < 0.12, `plate 39 web is mostly solid (open fraction ${openArea / webArea})`);
-  // Negative control: the replaced four-spoke web left most of the annulus open.
-  const spokeHalfAngle = Math.asin(0.085 / g.flywheelInnerRadius);
-  const oldOpenFraction = 1 - 4 * 2 * spokeHalfAngle / (2 * Math.PI);
-  assert.ok(oldOpenFraction > 0.8);
-  const rimBounds = new THREE.Box3().setFromObject(flywheelRim);
-  const webBounds = new THREE.Box3().setFromObject(flywheel);
-  assert.ok(rimBounds.max.z - webBounds.max.z > 0.035, 'the web is recessed behind the rim face');
-  for (const hole of flywheel.geometry.parameters.shapes.holes) {
-    const radii = hole.getPoints(48).map((point) => point.length());
-    assert.ok(Math.max(...radii) <= g.flywheelInnerRadius + 1e-9, 'each slit stops at the continuous rim');
-    const innerEnd = Math.min(...radii);
-    assert.ok(innerEnd > g.flangeRadius && innerEnd < g.pitchRadius - 1.1 * g.module,
-      'each slit ends inward behind the solid sun-gear body, outside its hub flange');
+  const shapes = ringSegments.geometry.parameters.shapes;
+  assert.equal(shapes.length, 4, 'four separate segments, not one slit disk');
+  for (const shape of shapes) {
+    assert.equal(shape.holes.length, 0);
+    const radii = shape.getPoints(48).map((point) => point.length());
+    assert.ok(Math.min(...radii) > g.flangeRadius && Math.min(...radii) < g.pitchRadius - 1.1 * g.module,
+      'each segment stops inward behind the sun-gear body, leaving the middle open round the hub flange');
+    assert.ok(Math.max(...radii) < g.ringRadius, 'each segment runs under the continuous rim');
   }
+  // Brown's gaps are about as wide as a tenth of the ring radius.
+  assert.ok(2 * g.gapHalfWidth / g.ringRadius > 0.1 && 2 * g.gapHalfWidth / g.ringRadius < 0.13);
+  const rimBounds = new THREE.Box3().setFromObject(ringRim);
+  const segmentBounds = new THREE.Box3().setFromObject(ringSegments);
+  assert.ok(rimBounds.max.z - segmentBounds.max.z > 0.035, 'the segments are recessed behind the rim face');
+  // The ring is fixed: it is not carried by the sun and does not move.
+  assert.equal(ringRim.parent, model.root); assert.equal(ringSegments.parent, model.root);
+  model.update(0, 0); model.root.updateMatrixWorld(true);
+  const start = ringSegments.matrixWorld.clone();
+  model.update(g.orbitPeriod * 0.37, 0); model.root.updateMatrixWorld(true);
+  assert.ok(ringSegments.matrixWorld.equals(start) && sun.userData.rotor.rotation.z !== 0);
 });

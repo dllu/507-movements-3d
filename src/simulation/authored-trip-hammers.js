@@ -1362,6 +1362,39 @@ export function createAuthoredTripHammerMovement(movement) {
   if (movement.id !== 353) return null;
   const model = firstOrderTripHammer(movement);
   correctTripHammerParts(model);
+  addHelveStandard(model);
   markShadows(model.root);
   return model;
+}
+
+// Brown draws no standard under the helve's fulcrum; a plain post behind
+// the helve carries the fulcrum's bearing bridge down to a foot level with
+// the cam post's base, so the fulcrum does not hang in the air.
+function addHelveStandard(model) {
+  const root = model.root;
+  root.updateMatrixWorld(true);
+  const b = root.userData.blocks;
+  const find = (role) => {
+    let found = null;
+    root.traverse((object) => { if (object.userData.role === role) found = object; });
+    return found;
+  };
+  const bridgeBox = new THREE.Box3().setFromObject(find('fixed-first-order-lever-bearing-bridge'));
+  const groundY = new THREE.Box3().setFromObject(find('fixed-base-block-under-cam-post')).min.y;
+  const material = b.postBase.material;
+  const x = (bridgeBox.min.x + bridgeBox.max.x) / 2;
+  const back = bridgeBox.min.z;
+  const front = back + 0.2;
+  const footTop = groundY + 0.2;
+  const post = new THREE.Mesh(
+    new THREE.BoxGeometry(0.32, bridgeBox.max.y - footTop, front - back), material);
+  post.position.set(x, (bridgeBox.max.y + footTop) / 2, (front + back) / 2);
+  post.userData.fixed = true;
+  post.userData.role = 'plain-post-under-helve-fulcrum-bridge';
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, 0.5), material);
+  foot.position.set(x, groundY + 0.1, (front + back) / 2 + 0.06);
+  foot.userData.fixed = true;
+  foot.userData.role = 'plain-foot-of-helve-fulcrum-post';
+  root.add(post, foot);
+  Object.assign(b, { helvePost: post, helvePostFoot: foot });
 }

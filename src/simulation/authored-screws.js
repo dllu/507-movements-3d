@@ -7,6 +7,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 
 const X_AXIS = new THREE.Vector3(1, 0, 0);
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -5067,23 +5068,16 @@ function selectableHalfNutTraverseMotion() {
     return collar;
   });
 
-  const rollerRotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 0.12, 0.04),
-    indexMaterial,
-  );
-  rollerRotationIndex.position.set(
-    0,
-    rollerCoreRadius + 0.055,
-    0,
-  );
-  rollerRotationIndex.userData.role = 'white-index-on-plain-center-of-roller';
+  // Brown draws no index mark; the plain core and its thrust collars carry
+  // the shared quadrant rotation cue so the uniform spin reads.
+  applyRotationIndicator(rollerCore);
+  for (const collar of rollerEndCollars) applyRotationIndicator(collar);
   rollerRotor.add(
     rollerShaft,
     rollerCore,
     leftThread,
     rightThread,
     ...rollerEndCollars,
-    rollerRotationIndex,
   );
 
   const selectorCarriage = new THREE.Group();
@@ -5524,7 +5518,6 @@ function selectableHalfNutTraverseMotion() {
     rollerBearings,
     rollerCore,
     rollerEndCollars,
-    rollerRotationIndex,
     rollerRotor,
     rollerShaft,
     selectorCarriage,

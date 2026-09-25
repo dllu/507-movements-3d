@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {circle, poly, polygonClipping, turned} from './finite-plate-geometry.js';
+import {circle, plate as extrudedOutline, poly, polygonClipping, turned} from './finite-plate-geometry.js';
 import {horizontalPlate} from './horizontal-turbine-solids.js';
 import {curvedPipeWall} from './finite-fluid-passages.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
@@ -98,7 +98,26 @@ export function correctMercuryInstrument(root, id, update) {
         part.rotation.z = Math.PI / 2;part.position.set(-3.80, inletY, 0);
         part.userData.beyondPlateCrop = true;root.add(part);
       }
-      b.boiler = {head, shell};
+      // Pass 57: the shell is closed by its far head (it no longer reads as
+      // an open cup from behind) and stands on two saddle standards with
+      // feet on the floor under the gauge (y = -3.47), all beyond the crop.
+      const farHead = new THREE.Mesh(wall(0, 1.48, 2.7, 2.82), boilerMaterial);
+      farHead.userData.role = 'boiler-far-head-beyond-plate-crop';
+      farHead.rotation.z = Math.PI / 2;farHead.position.set(-3.80, inletY, 0);
+      farHead.userData.beyondPlateCrop = true;root.add(farHead);
+      const arc = (r, a0, a1, n = 48) => Array.from({length: n + 1}, (_, i) => {const a = a0 + (a1 - a0) * i / n;return [r * Math.cos(a), inletY + r * Math.sin(a)];});
+      const floorY = -3.47, cradle = poly([...arc(1.482, -Math.PI * 5 / 6, -Math.PI / 6), ...arc(1.70, -Math.PI / 6, -Math.PI * 5 / 6)]);
+      const saddleOutline = polygonClipping.union(cradle,
+        poly([[-.16, floorY + .10], [.16, floorY + .10], [.16, inletY - 1.60], [-.16, inletY - 1.60]]),
+        poly([[-.62, floorY], [.62, floorY], [.62, floorY + .10], [-.62, floorY + .10]]));
+      const saddles = [-5.5, -6.3].map((x) => {
+        const saddle = new THREE.Mesh(extrudedOutline(saddleOutline, -.08, .08), boilerMaterial);
+        saddle.rotation.y = Math.PI / 2;saddle.position.x = x;
+        saddle.userData.role = 'boiler-saddle-standard-beyond-plate-crop';
+        saddle.userData.beyondPlateCrop = true;root.add(saddle);
+        return saddle;
+      });
+      b.boiler = {head, shell, farHead, saddles};
     }
     b.valveStem.position.y = inletY + .46;
     b.valveHandle.position.y = inletY + .785;

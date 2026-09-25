@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { crownCut } from '../data/contact-profiles.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const cache = new Map();
 
@@ -120,7 +121,8 @@ export function crownToothGeometry({
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
-  geometry.computeVertexNormals();
+  // Hard edges between the cut face, the sector sides and the backing face.
+  creaseIndexedNormals(geometry);
   geometry.userData = { profileKey: key, cuttingClearance, radialSteps, angularSteps, rotationSteps,
     innerRadius, outerRadius, pitch, heights: Array.from(heights), surfaceCount };
   cache.set(key, geometry);

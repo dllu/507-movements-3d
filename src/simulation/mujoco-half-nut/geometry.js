@@ -30,10 +30,17 @@ export function makeHalfNutGeometry(options={}) {
   contact('roller',name+'Root',[angles.slice(0,-1).flatMap(a=>[p.low,p.high].map(z=>[f.coreRadius*Math.cos(a),f.coreRadius*Math.sin(a),z]))]);
   contact('roller',name+'Thread',threadContactCells(p,f.segments));
  }
+ // Brown's plate is a plan view: gravity runs along -z, so one half-nut lies
+ // over the roller and the other under it (the source presentation turns the
+ // model so). His two frames are the tops of the end standards: each runs
+ // down (-z) to a foot on the floor below the lower half-nut.
+ const standardFoot=-1.3;
  for(const name of ['left','right']) {
-  const shape=clip.difference(rectangle(f.y(e[name+'FrameBottom']),-f.frameHalfDepth,f.y(e[name+'FrameTop']),f.frameHalfDepth),
+  const bottom=f.y(e[name+'FrameBottom']),top=f.y(e[name+'FrameTop']),left=f.x(e[name+'FrameLeft']),right=f.x(e[name+'FrameRight']);
+  const shape=clip.difference(rectangle(bottom,standardFoot,top,f.frameHalfDepth),
    clip.union(poly(circle([f.spacing,0],f.shaftRadius+f.clearance,64)),poly(circle([0,0],f.rodRadius+f.clearance,64))));
-  add(name+'Frame',alongX(plate(shape,f.x(e[name+'FrameLeft']),f.x(e[name+'FrameRight']))),'frame',PALETTE.frame);
+  add(name+'Frame',alongX(plate(shape,left,right)),'frame',PALETTE.frame);
+  add(name+'FrameFoot',new THREE.BoxGeometry(right-left+.5,top-bottom+.4,.1).translate((left+right)/2,(top+bottom)/2,standardFoot-.05),'frame',PALETTE.frame);
  }
  add('rod',cylinder(f.rodRadius,...f.source.rodEnds.map(f.x)),'carriage',PALETTE.driven);
  for(const [i,nut]of f.nuts.entries()) {

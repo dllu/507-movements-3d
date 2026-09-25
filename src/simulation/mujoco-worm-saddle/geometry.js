@@ -47,10 +47,13 @@ export function makeWormSaddleGeometry(cut,options={}) {
     rootRadius:f.wormRoot,tipRadius:f.wormTip,rootHalfWidth:f.rootHalfWidth,tipHalfWidth:f.tipHalfWidth,
     phase:f.phase-f.center-f.pitch*Math.round((f.phase-f.center)/f.pitch),angularSteps:options.wormSegments??256};
   add('worm',cleanPeriodicSeams(cylindricalWormGeometry(wormParameters).rotateY(Math.PI/2).translate(f.center,0,0)),'worm',PALETTE.driver);
-  for(const [name,low,high] of [['leftJournal',f.low-.10,f.low],['rightJournal',f.high,f.high+.10]])add(name,disk(f.wormRoot,low,high,256).rotateY(Math.PI/2),'worm',PALETTE.driver);
+  for(const [name,low,high] of [['leftJournal',f.low-.2,f.low],['rightJournal',f.high,f.high+.15]])add(name,disk(f.wormRoot,low,high,256).rotateY(Math.PI/2),'worm',PALETTE.driver);
   const wheelAngle=Math.PI/2+(f.lead*Math.PI/2-f.phase)/f.pitchRadius;
   add('wheel',saddleWheelGeometry(f,cut).rotateZ(wheelAngle),'wheel',PALETTE.driven);
-  add('shaft',disk(f.shaftRadius,-f.depth/2-.025,.43,cut.angularSteps*f.teeth),'wheel',PALETTE.driven);
+  // The wheel's shaft is steel, turning in the pedestal's bore, with a
+  // retaining collar outside the bore (Brown hatches its section there).
+  add('shaft',disk(f.shaftRadius,-f.depth/2-.025,.43,cut.angularSteps*f.teeth),'wheel',PALETTE.ink);
+  add('shaftCollar',ring(f.shaftRadius,f.shaftRadius+.06,.405,.45,256),'wheel',PALETTE.ink);
   const footLeft=f.world([f.foot.left,0])[0],footRight=f.world([f.foot.right,0])[0],footTop=f.world([0,f.foot.top])[1],footBottom=f.world([0,f.foot.bottom])[1];
   add('foot',plate(rectangle(footLeft,footBottom,footRight,footTop),-.18,.48),'carriage',PALETTE.accent);
   const r=f.bearingRadius,outline=[...cubic([-.36,footTop],[-.26,footTop],[-r,-.52],[-r,0]),
@@ -66,6 +69,17 @@ export function makeWormSaddleGeometry(cut,options={}) {
   const xyz=new THREE.Matrix4().set(0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,1);
   add('guideKey',plate(key,footLeft+.04,footRight-.04).applyMatrix4(xyz),'carriage',PALETTE.accent);
   add('bed',plate(section,f.world([f.bed.left,0])[0],f.world([f.bed.right,0])[0]).applyMatrix4(xyz),'frame',PALETTE.frame);
+  // Brown draws no bearings for the screw. Each journal turns in a bored boss
+  // on a plain standard standing on its own foot just past the bed's ends.
+  const standardFloor=bedBottom;
+  for(const [i,[lo,hi]] of [[f.low-.2,f.low-.04],[f.high+.02,f.high+.15]].entries()){
+    add('wormBearing'+i,ring(f.wormRoot+.004,f.wormRoot+.11,lo,hi,128).rotateY(Math.PI/2).translate(0,f.distance,0),'frame',PALETTE.frame);
+    add('wormStandard'+i,new THREE.BoxGeometry(hi-lo,f.distance-f.wormRoot-.08-standardFloor,.22)
+      .translate((lo+hi)/2,(f.distance-f.wormRoot-.08+standardFloor)/2,0),'frame',PALETTE.frame);
+    add('wormStandardFoot'+i,new THREE.BoxGeometry(.5,.08,.6).translate((lo+hi)/2,standardFloor+.04,0),'frame',PALETTE.frame);
+    // The standards stand just past the plate's framing.
+    for(const name of ['wormBearing','wormStandard','wormStandardFoot'])parts[name+i].userData.beyondPlateCrop=true;
+  }
   blocks.worm.position.y=f.distance;
   Object.assign(root.userData,{profile:f,cut,parts,families,blocks,wheelAngle,wormParameters,outline,hideGround:true,
     shadowCameraHalfExtent:3,shadowBias:-.00002,shadowNormalBias:.001});markShadows(root);root.updateMatrixWorld(true);

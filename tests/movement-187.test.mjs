@@ -43,9 +43,12 @@ test('187: catalog entry, authored contract and real-time display pace', () => w
   }
   model.root.traverse((object) => {
     for (const material of [object.material].flat()) if (material) assert.equal(material.fog, false);
-    // Brown draws no frame, bearings, markers or index dots.
-    assert.doesNotMatch(object.userData.role ?? '', /frame|marker|index|bearing|base/);
+    // Brown draws no markers or index dots; the frame and bearings carrying
+    // the eccentric and rockshaft stand behind the valve arm or outside the
+    // plate's view.
+    assert.doesNotMatch(object.userData.role ?? '', /marker|index/);
   });
+  u.blocks.frame.traverse((o) => { if (o.isMesh) assert.equal(o.userData.runsPastCrop, true); });
   const others = [186, 188, 189].map((id) => createMovementModel(catalog.movements[id - 1]));
   try {
     for (const other of others) {

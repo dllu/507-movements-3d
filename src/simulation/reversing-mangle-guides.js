@@ -3,6 +3,7 @@ import cavities from './baked/reversing-mangle-cavities.js';
 import {markShadows, PALETTE} from './primitives.js';
 import {circle, poly, plate, polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
+import {addMangleUniversalDrive} from './mangle-universal-drive.js';
 
 function area(points) {
   return Math.abs(points.reduce((sum,p,i)=>{const q=points[(i+1)%points.length];return sum+p[0]*q[1]-p[1]*q[0];},0));
@@ -88,8 +89,30 @@ export function finishReversingMangleGuides(root,update,id) {
     }
   }
   d.cameraFitBounds=bounds.expandByScalar(.03);
+  // The captioned jointed pinion shaft and the plain frame (added after
+  // framing): Hooke joints at the input bearing and on the pinion shaft join a
+  // telescopic slip shaft; the input shaft turns in a bearing on an arm from a
+  // column beside the wheel, and a standard behind the wheel carries its shaft.
+  // They replace the factory's ball-ended placeholder joint and its standard.
+  for(const key of ['universalSlipShaft','fixedUniversalCross','rearInputShaft','movingUniversalJoint','framePost','frameFoot'])
+    b[key]?.parent?.remove(b[key]);
+  const box=(o)=>new THREE.Box3().setFromObject(o);
+  root.updateMatrixWorld(true);
+  const fixedPoint=b.fixedUniversalCross.position;
+  let maxDeviation=0;
+  for(let pose=0;pose<=128;pose++){update(d.transmission.cyclePeriod*pose/128);const c=d.kinematics.pinionCenter;maxDeviation=Math.max(maxDeviation,Math.hypot(c.x-fixedPoint.x,c.y-fixedPoint.y));}
+  update(0);root.updateMatrixWorld(true);
+  const universal=addMangleUniversalDrive(root,{fixedPoint,pinionShaftTop:box(b.pinionShaft).max.z,maxDeviation,
+    wheelRadius:g.wheelRadius,wheelShaftBack:box(b.wheelShaft).min.z,wheelBackZ:Math.min(box(b.wheelRotor).min.z,-.21)});
+  Object.assign(b,{universalDrive:universal.drive,universalFrame:universal.frame,...Object.fromEntries(Object.entries(universal.blocks).map(([k,v])=>['universal'+k[0].toUpperCase()+k.slice(1),v]))});
+  d.universalDrive={fixedJoint:universal.J1.clone(),jointSpan:universal.span,maxDeviation};
+  const baseUpdate=update;
+  update=(time)=>{baseUpdate(time);universal.update(d.kinematics.pinionCenter,d.kinematics.pinionAngle);};
   update(0);
   d.cameraDistanceScale=1.04;
+  // A long lens, as 192's: Brown's flat face view, and the jointed shaft
+  // standing end-on in front of the wheel is not enlarged by perspective.
+  d.cameraFov??=16;
   markShadows(root);
   return {root,update,cameraDirection:new THREE.Vector3(1.6,.9,16)};
 }

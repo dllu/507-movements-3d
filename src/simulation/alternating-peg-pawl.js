@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {PALETTE,matte,markShadows} from './primitives.js';
 import {add,sub,rotate,poly,circle,capsule,plate,disk,ring,polygonClipping as clip,familyMass} from './finite-plate-geometry.js';
 import {makeAlternatingPegGeometry} from './alternating-peg-geometry.js';
+import {backBar,footPillar,pinBoss} from './back-plate-support.js';
 
 export function makeAlternatingPegPawlDrive(){
  const {pinRadius=.049,headRadius=.1,lowerHeadRadius=headRadius,mouthRadius=.070,upperFace=Math.PI/3,lowerFace=-Math.PI/4,mouthAngle=130*Math.PI/180,lowerMouthAngle=null,seatPhase}=profile.geometry;
@@ -41,6 +42,15 @@ export function makeAlternatingPegPawlDrive(){
  attach('leverBody',plate(leverShape,.21,.29),'lever',PALETTE.driver);
  attach('fixedPivotA',disk(.041,-.15,.34),'fixed',PALETTE.muted,[...p.A,0]);
  attach('fixedPivotCap',disk(.061,.34,.35),'fixed',PALETTE.muted,[...p.A,0]);
+ // Brown draws no frame. Lever A's fixed pin and the wheel axle each run back
+ // into a boss on a plain pillar standing on a foot, behind the lever and the
+ // wheel respectively.
+ const supports=new THREE.Group();supports.name='backPillarSupports';
+ supports.add(backBar([{x:0,y:0}],{zFront:-.32,width:.34,role:'axle-pad'}),backBar([{x:p.A[0],y:p.A[1]}],{zFront:-.32,width:.2,role:'lever-pivot-pad'}),
+  pinBoss({x:p.A[0],y:p.A[1],radius:.065,zBack:-.32,zFront:-.15,role:'lever-pivot-boss'}),
+  footPillar({x:0,yTop:0,yFloor:-1.35,z:-.37,width:.2,footDepth:.4,role:'axle-pillar'}),
+  footPillar({x:p.A[0],yTop:p.A[1],yFloor:-1.35,z:-.37,width:.14,footDepth:.4,role:'lever-pivot-pillar'}));
+ blocks.fixed.add(supports);
  const determinant=Math.cos(upperFace)*Math.sin(lowerFace)-Math.sin(upperFace)*Math.cos(lowerFace),
   corner=[pinRadius*(Math.sin(lowerFace)-Math.sin(upperFace))/determinant,pinRadius*(Math.cos(upperFace)-Math.cos(lowerFace))/determinant],
   arc=(a,b)=>Array.from({length:97},(_,i)=>{const t=i/96,r=pinRadius+(mouthRadius-pinRadius)*t*t*(3-2*t);return rotate([r,0],a+(b-a)*t);}),

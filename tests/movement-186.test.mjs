@@ -37,10 +37,14 @@ test('186 is Brown\'s spring-handle gab disengager, authored at a natural pace',
       const [a, b] = timeline[key];
       assert.ok(b - a >= 1.5 && b - a <= 2.5, `${key} takes 1.5-2.5 s`);
     }
-    // No frame: Brown draws only the rocker, rod, lever and spring handle.
+    // Brown draws only the rocker, rod, lever and spring handle. The eccentric
+    // and the plain column-and-beam frame carrying it and the rockshaft stand
+    // outside the plate's view (the hanger hides behind the rocker boss).
     const roles = [];
     model.root.traverse((o) => o.isMesh && roles.push(o.userData.role));
-    assert.ok(!roles.some((r) => /frame|bracket|base|post|ledge|shoulder/.test(r ?? '')), roles.join());
+    assert.ok(!roles.some((r) => /bracket|base|post|ledge|shoulder/.test(r ?? '')), roles.join());
+    d.blocks.frame.traverse((o) => { if (o.isMesh) assert.equal(o.userData.runsPastCrop, true); });
+    assert.ok(d.blocks.eccentricSheave.position.x < d.cameraFitBounds.min.x - 5);
     assert.ok(d.geometry.strapWidth >= 13 * d.geometry.sourceUnitsPerPixel, 'Brown\'s broad strap');
     assert.equal(d.rigidBodies.length, 4);
     assert.ok(d.jointChecks.length >= 9);

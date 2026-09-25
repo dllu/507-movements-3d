@@ -1470,23 +1470,18 @@ function graduatedArcParallelRuler(movement) {
     upperBlade.add(tick);
     return tick;
   });
-  // Graduations are incised, not painted: the thin ivory strip lies on the
-  // blade's face and each division is a narrow groove cut into its top
-  // layer from the reading edge (major divisions longer). The painted
-  // tick bars stay only as hidden calibration references.
+  // The ivory strip is shown plain: at this scale Brown's hatched
+  // divisions read only as faint marks (painted or finely incised alike),
+  // so no division is drawn. The tick bars stay as hidden calibration
+  // references for the arc's incidence reading.
   {
     const bottom = bladeThickness / 2, base = bottom + 0.018, top = bottom + 0.032;
     const zCenter = -bladeWidth / 2 + 0.078, halfWidth = 0.0675;
     const x0 = (scaleMinimumX + scaleMaximumX) / 2 - scaleLength / 2;
     const x1 = x0 + scaleLength;
     const strip = poly([[x0, zCenter - halfWidth], [x1, zCenter - halfWidth], [x1, zCenter + halfWidth], [x0, zCenter + halfWidth]]);
-    let face = strip;
+    const face = strip;
     for (const tick of scaleTicks) {
-      const length = tick.geometry.parameters.depth;
-      const x = tick.position.x;
-      face = polygonClipping.difference(face, poly([
-        [x - 0.009, zCenter - halfWidth - 0.01], [x + 0.009, zCenter - halfWidth - 0.01],
-        [x + 0.009, zCenter - halfWidth + length], [x - 0.009, zCenter - halfWidth + length]]));
       tick.visible = false;
       tick.userData.retiredPaintedTick = true;
     }
@@ -1498,8 +1493,7 @@ function graduatedArcParallelRuler(movement) {
     merged.computeVertexNormals();
     ivoryScale.geometry.dispose();
     ivoryScale.geometry = merged;
-    // Ivory, not paper white: a warm cream strip whose cut divisions show by
-    // their own shading.
+    // Ivory, not paper white: a plain warm cream strip.
     ivoryScale.material = ivoryMaterial.clone();
     ivoryScale.material.color.set(0xe3d6b4);
     ivoryScale.position.set(0, 0, 0);

@@ -2,6 +2,7 @@ import profile from '../data/jointed-tappet-profile.js';
 import {sampleJointedTappetMotion} from './jointed-tappet-motion.js';
 import * as THREE from 'three';
 import{PALETTE,matte,markShadows}from'./primitives.js';
+import{backBar,footPillar}from'./back-plate-support.js';
 import{makeJointedTappetContactProfile}from'./jointed-tappet-contact.js';
 import{add,sub,rotate,poly,circle,capsule,sector,spline,plate,disk,ring,polygonClipping as clip,familyMass}from'./finite-plate-geometry.js';
 
@@ -80,8 +81,21 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
     holdingShape=clip.difference(clip.union(poly([...outer,...inner.slice(0,-1).reverse()]),poly(circle([0,0],.106)),poly(circle(holdingNose,p.noseRadius))),poly(circle([0,0],.039)));
   attach('holdingBody',plate(holdingShape,.19,.25),'holding',PALETTE.brass);
   attach('holdingNose',disk(p.noseRadius,-.061,.19),'holding',PALETTE.brass,[...holdingNose,0]);
-  attach('holdingPivotPin',disk(.036,-.14,.253),'fixed',PALETTE.muted,[...p.PH,0]);
+  // Brown draws no frame. Both fixed pivots stand on one fixed bracket plate
+  // clamped on the fixed common axle, in the gap between the count wheel and
+  // the coaxial driver (the driver's spokes and stud sweep everything behind
+  // and around them); the axle itself runs back past the driver into a boss
+  // on a plain pillar standing on a foot below the large wheel.
+  const bracketBack=-.192,bracketFront=-.157;
+  attach('holdingPivotPin',disk(.036,bracketFront,.253),'fixed',PALETTE.muted,[...p.PH,0]);
   attach('holdingPivotCap',disk(.049,.253,.263),'fixed',PALETTE.muted,[...p.PH,0]);
+  attach('fixedPivotCShank',disk(.053,bracketFront,.053),'fixed',PALETTE.muted,[...p.C,0]);
+  attach('fixedPivotBracket',plate(clip.difference(clip.union(capsule([0,0],p.PH,.075),capsule([0,0],p.C,.075),poly(circle([0,0],.2))),
+    poly(circle([0,0],axleRadius))),bracketBack,bracketFront),'fixed',PALETTE.frame);
+  const axleSupport=new THREE.Group();axleSupport.name='axleBackSupport';
+  axleSupport.add(backBar([{x:0,y:0}],{zFront:-.46,width:.36,role:'axle-pad'}),
+    footPillar({x:0,yTop:0,yFloor:-2.75,z:-.51,width:.24,footDepth:.5,role:'axle-pillar'}));
+  blocks.fixed.add(axleSupport);
   const masses=Object.fromEntries(['driver','wheel','tappet','dog','holding'].map(family=>[family,familyMass(parts,families,family)]));
   const setState=({q=0,alpha=0,theta=p.wheelStart,driverAngle=0,holdingAngle=contact.closeH(theta).angle-H0.angle}={})=>{
     blocks.driver.rotation.z=driverAngle;blocks.wheel.rotation.z=theta;blocks.tappet.rotation.z=q;

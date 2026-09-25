@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { rackGeneratedOutline } from './noncircular-gear-geometry.js';
 import { conicalStudCut as savedCut } from '../data/conical-stud-profile.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const turn = 2 * Math.PI;
 const cache = new Map();
@@ -247,7 +248,8 @@ export function conicalStudHeadGeometry(parameters, index) {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
-  geometry.computeVertexNormals();
+  // Hard edges where the cut cap meets the stud's side wall and back.
+  creaseIndexedNormals(geometry);
   geometry.userData.generatedStudHead = true;
   geometry.userData.cut = cut;
   return geometry;

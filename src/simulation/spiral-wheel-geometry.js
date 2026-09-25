@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { spiralCut } from '../data/contact-profiles.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const cache = new Map();
 
@@ -105,7 +106,8 @@ export function spiralWheelGeometry({
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
   geometry.setIndex(indices);
-  geometry.computeVertexNormals();
+  // Hard edges between the tooth flanks, tips and the flat end faces.
+  creaseIndexedNormals(geometry);
   geometry.userData = { profileKey: key, axialSteps, angularSteps, circumferenceSteps, clearance,
     depth, pitch, radii: Array.from(radii), rootRadius: Math.min(...radii), outerRadius };
   cache.set(key, geometry);

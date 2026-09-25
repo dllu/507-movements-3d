@@ -1,5 +1,6 @@
 import {correctDrawingTemplateParts} from './drawing-template-parts.js';
 import * as THREE from 'three';
+import {addDrawingBoard} from './drawing-board-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -647,6 +648,34 @@ function parabolaDrawingInstrument(movement) {
   });
   update(0);
   correctDrawingTemplateParts(root,406,update);
+  // Pass 57: the parabola is traced on a plain drawing board whose top face
+  // is the drawing plane at the pencil point. The traced line lies on it, the
+  // straightedge and the square's stock stand on it, and the focus pin stands
+  // in a bore through it with its collar seated on the face.
+  {
+    const boardTop = -0.26;
+    addDrawingBoard(root, {
+      min: [-2.95, -3.35], max: [2.95, 0.95], top: boardTop,
+      holes: [[focusPin.position.x, focusPin.position.y, 0.0705]], holeDepth: 0.115,
+    });
+    // The traced line is a thin drawn stroke lying on the board, so the
+    // pencil point meets it without sinking into a raised tube.
+    targetParabola.scale.z = 0.3;
+    targetParabola.position.z = boardTop + 0.0075 + 0.145 * 0.3;
+    straightedge.geometry.dispose();
+    straightedge.geometry = new THREE.BoxGeometry(5.33, straightedgeHeight, 0.15 - boardTop);
+    straightedge.position.z = (0.15 + boardTop) / 2;
+    directrixHighlight.visible = false;
+    const stockTop = square.position.z + stock.position.z + stock.geometry.parameters.depth / 2;
+    const stockGeometry = stock.geometry.parameters;
+    stock.geometry.dispose();
+    stock.geometry = new THREE.BoxGeometry(stockGeometry.width, stockGeometry.height, stockTop - boardTop - 0.001);
+    stock.position.z = (stockTop + boardTop + 0.001) / 2 - square.position.z;
+    focusAxle.geometry.dispose();
+    focusAxle.geometry = new THREE.CylinderGeometry(0.070, 0.070, 0.33 + 0.37, 28);
+    focusAxle.position.z = (0.33 - 0.37) / 2 - focusPin.position.z;
+    focusCollar.position.z = boardTop + 0.085 - focusPin.position.z;
+  }
   return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 

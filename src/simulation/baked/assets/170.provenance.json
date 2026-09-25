@@ -84,7 +84,7 @@
     },
     {
       "file": "src/simulation/bevel-geometry.js",
-      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+      "sha256": "9dfaf2b3b969a16ce7a6cabadee57fa6bb6d1e51b9e61f6f9f511ed77dba365c"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -96,10 +96,10 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
+      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
     }
   ],
   "samples": 481,
-  "bytes": 404355,
-  "sha256": "13ae0cfd13fc8719eec94493f74af90e7cd2a987e292e9c88e3a1ba9cd03f21e"
+  "bytes": 406550,
+  "sha256": "f964d5f2f102cf93399932cf905b88635db75e656ef9d8faa388a42e5ae0e77b"
 }

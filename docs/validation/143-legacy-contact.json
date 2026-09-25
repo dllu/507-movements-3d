@@ -5,11 +5,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-screws.js",
-      "sha256": "1434827df10e7fbcabfd85b70e2fab8ba1ef8a4783f60869f97b85bae6c7da1b"
+      "sha256": "7a321dac46e6d93ba548397d682c5ccdb5b2af2c84665e53f0bb878b8f1f1191"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
     },
     {
       "file": "scripts/review-sliding-worm-contact.mjs",
@@ -17,7 +17,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ],
   "summary": {

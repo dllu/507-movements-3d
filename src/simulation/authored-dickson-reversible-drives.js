@@ -158,6 +158,39 @@ function updateCylinderBetween(cylinder, start, end) {
 // the constant-material-length route (crank pin, sag point, pawl eye). Its
 // start is tied to the crank pin, so arc length from there is a material
 // coordinate and the lay needs no extra travel.
+// Circular arc of length `length` from `start` to `end`, bulging toward
+// `toward` (in the plane of the chord and that point). A taut cord is the
+// straight chord.
+class CordSag extends THREE.Curve {
+  constructor(start, end, length, toward) {
+    super();
+    this.start = start.clone();this.end = end.clone();
+    const chord = end.clone().sub(start), c = chord.length();
+    const mid = start.clone().add(end).multiplyScalar(0.5);
+    let side = toward.clone().sub(mid);
+    side.addScaledVector(chord, -side.dot(chord) / (c * c));
+    this.straight = side.lengthSq() < 1e-12 || length <= c * (1 + 1e-9);
+    if (this.straight) return;
+    side.normalize();
+    // Half-angle t of the arc: sin(t) / t = c / length.
+    let lo = 1e-9, hi = Math.PI;
+    for (let i = 0; i < 60; i++) {const t = (lo + hi) / 2;if (Math.sin(t) / t > c / length) lo = t;else hi = t;}
+    const t = (lo + hi) / 2, radius = length / (2 * t);
+    this.center = mid.clone().addScaledVector(side, -radius * Math.cos(t));
+    this.v = side.clone();
+    this.radius = radius;this.halfAngle = t;
+    this.axisX = chord.clone().normalize();
+  }
+  getPoint(s, target = new THREE.Vector3()) {
+    if (this.straight) return target.copy(this.start).lerp(this.end, s);
+    // The start lies at angle pi/2 + t from the centre, the end at pi/2 - t.
+    const angle = Math.PI / 2 + this.halfAngle - 2 * this.halfAngle * s;
+    return target.copy(this.center)
+      .addScaledVector(this.axisX, this.radius * Math.cos(angle))
+      .addScaledVector(this.v, this.radius * Math.sin(angle));
+  }
+}
+
 function makeDynamicCord(material, role) {
   const cord = new THREE.Group();
   cord.userData.role = role;
@@ -165,13 +198,12 @@ function makeDynamicCord(material, role) {
   rope.userData.role = `${role}-laid-cord`;
   cord.add(rope);
   cord.userData.rope = rope;
+  // Pass 57: the slack is a smooth circular sag of the cord's material
+  // length on the bend side, not two straight runs meeting at a corner.
   cord.userData.setRoute = (route) => {
-    const path = new THREE.CurvePath();
-    path.add(new THREE.LineCurve3(route.start.clone(), route.bend.clone()));
-    path.add(new THREE.LineCurve3(route.bend.clone(), route.end.clone()));
+    const path = new CordSag(route.start, route.end, route.materialLength, route.bend);
     replaceWithLaidRope(rope, path, { radius: 0.024 });
-    cord.userData.renderedLength = route.start.distanceTo(route.bend)
-      + route.bend.distanceTo(route.end);
+    cord.userData.renderedLength = path.straight ? route.start.distanceTo(route.end) : 2 * path.halfAngle * path.radius;
   };
   return cord;
 }

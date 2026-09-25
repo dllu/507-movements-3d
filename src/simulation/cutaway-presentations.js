@@ -150,12 +150,16 @@ const unnamedDarkTorus = (mesh, role) => !role && mesh.geometry.type === 'TorusG
 
 export const CUTAWAY_SPECS = {
   450: {
-    cut: [/^fixed-(suction-pipe|force-pump-cylinder|delivery-pipe|outlet-check-valve-chamber)/],
+    // The piston and the checks with their seats lie inside the sectioned
+    // barrel and valve chamber, so they are cut on the same plane.
+    cut: [/^fixed-(suction-pipe|force-pump-cylinder|delivery-pipe|outlet-check-valve-chamber|suction-check-seat|outlet-check-seat)/,
+      'solid-force-pump-piston-with-no-through-valve', 'suction-check-opening-only-on-piston-upstroke', 'outlet-check-opening-only-on-piston-downstroke'],
     water: [/water/],
     hide: [/^fixed-cutaway-.*outline$/, unnamedDarkTorus],
   },
   451: {
-    cut: [/^fixed-(suction-pipe|solid-piston-force-pump-cylinder|air-chamber-inlet-neck|pump-to-air-chamber-delivery-pipe)/, 'globular-outlet-air-chamber', 'selected-side-outlet-from-air-chamber'],
+    cut: [/^fixed-(suction-pipe|solid-piston-force-pump-cylinder|air-chamber-inlet-neck|pump-to-air-chamber-delivery-pipe|suction-check-seat|pump-delivery-check-seat)/, 'globular-outlet-air-chamber', 'selected-side-outlet-from-air-chamber',
+      'solid-piston-feeding-air-chamber-on-downstroke', 'suction-check-opening-on-upstroke', 'delivery-check-opening-on-piston-downstroke'],
     water: [/water/, 'constant-flow-through-selected-air-chamber-outlet'],
     hide: [/^fixed-cutaway-.*outline$/, unnamedDarkTorus, 'elastic-air-cushion-maintaining-constant-outlet'],
   },

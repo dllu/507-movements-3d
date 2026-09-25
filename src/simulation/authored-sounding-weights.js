@@ -748,11 +748,13 @@ function seabedTriggeredSoundingWeight(movement) {
   const bodyAssembly = new THREE.Group();
   bodyAssembly.userData.axis = new THREE.Vector3(0, 1, 0);
   bodyAssembly.userData.role = 'recoverable-hollow-sounding-rod';
+  // Brown breaks the rod off at the top of the plate; it runs on whole to
+  // its line eye just above the view.
   const housingTop = new THREE.Mesh(
-    new THREE.CylinderGeometry(housingRadius, housingRadius, 1.9, 72),
+    new THREE.CylinderGeometry(housingRadius, housingRadius, 3.3, 72),
     housingMaterial,
   );
-  housingTop.position.y = 2.85;
+  housingTop.position.y = 3.55;
   housingTop.userData.role = 'solid-upper-sounding-rod';
   // Brown draws a longitudinal section, so the rod is shown as its back half
   // (the front 206 degrees open). The bell crank, probe pad and catch nose
@@ -996,11 +998,51 @@ function seabedTriggeredSoundingWeight(movement) {
     ],
   });
   slingHand.scale.setScalar(0.8);
-  slingHand.position.set(0, 10.6, slingPlaneZ);
+  // Set off to one side of the sounding line, which stays on the rod.
+  slingHand.position.set(1.1, 10.6, slingPlaneZ);
   slingHand.userData.role = 'reload-sling-hauling-hand-above-plate';
   resetSling.add(slingMain, slingBasket, slingHook, slingHand);
   setMaterialOpacity(resetSling, 0);
   root.add(resetSling);
+
+  // The sounding line: tied through an eye on the rod's top end (above
+  // Brown's crop) and paid out and hauled in through the leadsman's hand
+  // above, in every phase: the rod is lowered and recovered on it, and it
+  // stays tied while the sling brings the weight back.
+  const rodTopLocalY = housingTop.position.y + 1.65;
+  const lineEye = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.04, 12, 32), darkMaterial);
+  lineEye.position.set(0, rodTopLocalY + 0.13, 0);
+  lineEye.userData.role = 'sounding-line-eye-on-rod-top';
+  const lineEyeShank = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.06, 20), darkMaterial);
+  lineEyeShank.position.set(0, rodTopLocalY + 0.02, 0);
+  lineEyeShank.userData.role = 'sounding-line-eye-shank';
+  bodyAssembly.add(lineEye, lineEyeShank);
+  const lineRadius = 0.045;
+  const lineHandY = 11.6;
+  // Its own material: the reload sling fades in and out, the line does not.
+  const lineMaterial = matte(PALETTE.belt, { roughness: 0.76 });
+  const soundingLine = makeLaidRopeMesh(slingPlaceholder, lineMaterial, { radius: lineRadius, tubularSegments: 96 });
+  soundingLine.userData.role = 'sounding-line-tied-to-rod';
+  const lineKnot = new THREE.Mesh(new THREE.SphereGeometry(lineRadius * 1.7, 16, 12), lineMaterial);
+  lineKnot.userData.role = 'sounding-line-knot-at-eye';
+  const lineHand = makeHaulingHand(new THREE.Vector3(0, -1, 0), lineRadius / 0.8, {
+    armDirection: new THREE.Vector3(-0.35, 1, 0),
+    tailPoints: [
+      new THREE.Vector3(0, -0.15, 0),
+      new THREE.Vector3(0, 0.24, 0),
+      new THREE.Vector3(0.12, 0.45, 0),
+      new THREE.Vector3(0.35, 0.5, 0),
+      new THREE.Vector3(0.55, 0.3, 0),
+      new THREE.Vector3(0.6, -0.1, 0),
+    ],
+  });
+  lineHand.scale.setScalar(0.8);
+  lineHand.position.set(0, lineHandY, 0);
+  lineHand.userData.role = 'leadsman-hand-on-sounding-line';
+  const soundingLineGroup = new THREE.Group();
+  soundingLineGroup.userData.role = 'sounding-line-and-leadsman-hand';
+  soundingLineGroup.add(soundingLine, lineKnot, lineHand);
+  root.add(soundingLineGroup);
 
   root.userData.archetype =
     'seabed-triggered-sounding-weight-release-with-sliding-probe-and-latched-bell-crank';
@@ -1020,8 +1062,11 @@ function seabedTriggeredSoundingWeight(movement) {
     probeFoot,
     probePusher,
     probeShaft,
+    lineEye,
+    lineHand,
     resetSling,
     seabed,
+    soundingLine,
     seabedSlab,
     weightAssembly,
     weightSectionFaces: weightParts.sectionFaces,
@@ -1173,6 +1218,10 @@ function seabedTriggeredSoundingWeight(movement) {
     slingBasket.userData.setCurve(basket);
     slingMain.userData.setCurve(new THREE.LineCurve3(slingJunction, slingHand.position.clone()));
     slingHook.position.copy(slingJunction);
+    // The line leaves the top of the eye, knotted there.
+    const eyeTop = new THREE.Vector3(0, state.bodyPositionY + rodTopLocalY + 0.13 + 0.13, 0);
+    lineKnot.position.copy(eyeTop);
+    soundingLine.userData.setCurve(new THREE.LineCurve3(eyeTop, lineHand.position.clone()));
     resetSling.visible = state.resetSlingOpacity > 0;
     setMaterialOpacity(resetSling, state.resetSlingOpacity);
 

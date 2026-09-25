@@ -458,6 +458,65 @@ function squarePistonEngine(movement) {
     'bottom-C-port-admission-indicator',
   );
 
+  // Pass 57: the ports are passages cut through the walls instead of dark
+  // slabs laid on them. Each of A's side walls has a slot through it, closed
+  // outside by a steam chest; B's top and bottom walls (which move with B,
+  // as Brown's end ports do) each have a slot through them. A's walls are
+  // deepened so B and C lie within the casing's depth, the translucent back
+  // is an opaque back cover, and shaft b runs into a bored boss on a front
+  // arm from A's top wall (the front cover is removed by Brown's section).
+  {
+    const portZ = pistonBParts.group.position.z, portHalfZ = 0.15;
+    const aBack = -0.41, aFront = 0.80;
+    const aDepth = aFront - aBack, aCenterZ = (aFront + aBack) / 2;
+    for (const port of [leftPort, rightPort, topPort, bottomPort]) port.visible = false;
+    const rect = (x0, y0, x1, y1) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+    // A's walls: deeper; side walls slotted along x (shape x = -local z).
+    cylinderA.group.position.z = aCenterZ;
+    for (const wall of [cylinderA.top, cylinderA.bottom]) {
+      const p = wall.geometry.parameters;
+      wall.geometry.dispose();wall.geometry = new THREE.BoxGeometry(p.width, p.height, aDepth);
+    }
+    const sideHalfY = cylinderInnerHalfHeight + housingWallThickness, slotLocalZ = portZ - aCenterZ;
+    for (const wall of [cylinderA.left, cylinderA.right]) {
+      const shape = polygonClipping.difference(rect(-aDepth / 2, -sideHalfY, aDepth / 2, sideHalfY),
+        rect(-slotLocalZ - portHalfZ, -sidePortHeight / 2, -slotLocalZ + portHalfZ, sidePortHeight / 2));
+      wall.geometry.dispose();
+      wall.geometry = plate(shape, -housingWallThickness / 2, housingWallThickness / 2).rotateY(Math.PI / 2);
+    }
+    for (const side of [-1, 1]) {
+      const chest = new THREE.Mesh(new THREE.BoxGeometry(0.24, sidePortHeight + 0.30, 2 * portHalfZ + 0.24), frameMaterial);
+      chest.position.set(side * (housingOuterWidth / 2 + 0.12), 0, portZ);
+      chest.userData.role = `fixed-${side < 0 ? 'left' : 'right'}-steam-chest-over-side-port`;
+      root.add(chest);
+    }
+    // B's top and bottom walls: slotted along y (shape y = -local z).
+    for (const wall of [pistonBParts.top, pistonBParts.bottom]) {
+      const p = wall.geometry.parameters;
+      const shape = polygonClipping.difference(rect(-p.width / 2, -p.depth / 2, p.width / 2, p.depth / 2),
+        rect(-endPortWidth / 2, -portHalfZ, endPortWidth / 2, portHalfZ));
+      wall.geometry.dispose();
+      wall.geometry = plate(shape, -p.height / 2, p.height / 2).rotateX(-Math.PI / 2);
+    }
+    cylinderBack.visible = false;
+    const backCover = new THREE.Mesh(new THREE.BoxGeometry(housingOuterWidth, housingOuterHeight, 0.12), frameMaterial);
+    backCover.position.z = aBack - 0.06;
+    backCover.userData.role = 'fixed-back-cover-of-cylinder-A';
+    root.add(backCover);
+    const armFront = 1.52, armBack = 1.40, top = housingOuterHeight / 2;
+    mainShaftB.geometry.dispose();
+    mainShaftB.geometry = new THREE.CylinderGeometry(0.24, 0.24, armFront - 0.01 - 0.96, 32);
+    mainShaftB.position.z = (armFront - 0.01 + 0.96) / 2;
+    const arm = new THREE.Mesh(plate(polygonClipping.difference(
+      polygonClipping.union(rect(-0.16, 0, 0.16, top), poly(circle([0, 0], 0.40, 64))),
+      poly(circle([0, 0], 0.2405, 64))), armBack, armFront), frameMaterial);
+    arm.userData.role = 'fixed-front-arm-with-bearing-for-shaft-b';
+    const standoff = new THREE.Mesh(new THREE.BoxGeometry(0.32, housingWallThickness, armBack - aFront), frameMaterial);
+    standoff.position.set(0, top - housingWallThickness / 2, (armBack + aFront) / 2);
+    standoff.userData.role = 'fixed-standoff-joining-front-arm-to-cylinder-A';
+    root.add(arm, standoff);
+  }
+
   const update = (time) => {
     const state = stateAtTime(time);
     pistonBParts.group.position.x = state.pistonBCenter.x;

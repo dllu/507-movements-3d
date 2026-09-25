@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
-import {smootherstepLaw} from './gab-disengager-shared.js';
+import {eccentricRodEnd, gabRodFrame, smootherstepLaw} from './gab-disengager-shared.js';
 import {PALETTE, markShadows, matte} from './primitives.js';
 
 // Brown 186: spring-handle gab-disengaging gear, traced from the 525 px plate.
@@ -20,7 +20,10 @@ import {PALETTE, markShadows, matte} from './primitives.js';
 // 71 px reach from c fixes the lever turn (about 29 degrees) needed for the
 // 42 px lift. The eccentric stops (rocker at mid-travel, the plate pose)
 // while the gab is lifted, since the claw rests on the pin.
-// Brown draws no frame, so none is built.
+// Brown draws no frame. Beyond the view the rod runs on to its strap round
+// the eccentric, whose shaft turns in a bearing on a plain column; a beam from
+// that column's head carries a hanger down to the rockshaft's rear bearing
+// (hidden behind the rocker boss in the plate's view).
 
 const S = 0.015; // model units per source pixel
 const ORIGIN = [270, 250]; // valve (gab) pin centre in the plate
@@ -39,7 +42,7 @@ const BORE_GAP = 0.0015;
 const CONTACT_GAP = 0.002; // claw foot / pin and strap tip / drop, visually touching
 const FOOT_Y_PX = 250 - 19 - CONTACT_GAP / S;
 const Z = {
-  rocker: [-0.36, -0.06], shaft: [-0.6, 0], lever: [-0.62, -0.4],
+  rocker: [-0.36, -0.06], shaft: [-0.79, 0], lever: [-0.62, -0.4],
   rodBack: [0, 0.2], rodFront: [0.2, 0.28], blade: [-0.042, -0.002],
   strapFront: -0.022, strapBack: -0.51, strapDepth: 0.04, pin: [-0.64, 0.3], pinC: [-0.64, 0.3],
 };
@@ -47,6 +50,7 @@ const SHAFT = P(260, 62);
 const C = P(341, 242); // lever pivot c on the rod
 const ROCKER_AMPLITUDE = 0.07; // rad, about 4 degrees each way
 const ROD_LENGTH = 16; // model units to the off-plate eccentric strap
+const Z_WALL = -0.8; // plain frame plane behind every moving part
 const HOLD_LIFT = 42 * S; // rod bottom clears the 38 px pin by 4 px
 const STRAP_WIDTH = 14 * S; // Brown's broad double-line strap
 
@@ -195,6 +199,14 @@ export function springHandleGabDisengager() {
   const rivetHead = cylinder(7 * S, [-0.066, Z.blade[0]], mats.ink, 'spring-handle-rivet-head', 24);
   rivetHead.position.x = RIVET[0]; rivetHead.position.y = RIVET[1];
   rod.add(rodBody, rodFace, pinC, blade, rivet, rivetHead);
+  // The rod's far end: strap round the eccentric. The pin's travel is
+  // -pinLocal.y * rocker angle to first order, which fixes the throw.
+  const eccentric = eccentricRodEnd({
+    strapLocal: [-ROD_LENGTH, 0], restGab: [0, 0], throw: -pinLocal[1] * ROCKER_AMPLITUDE,
+    fromX: P(-300, 0)[0] + 0.05, halfHeight: 19 * S, z: [Z.rodBack[0], Z.rodFront[1]], rodMaterial: mats.rod,
+    sheaveMaterial: mats.shaft, shaftBack: Z_WALL + 0.01,
+  });
+  rod.add(eccentric.strap);
 
   // ---------- cam lever (local origin at pin c) ----------
   const lever = new THREE.Group();
@@ -268,9 +280,11 @@ export function springHandleGabDisengager() {
   // ---------- kinematics ----------
   const footLocalY = P(0, FOOT_Y_PX)[1] - C[1];
   const footX = [P(245, 0)[0] - C[0], P(285, 0)[0] - C[0]];
+  // Lifted, the rod turns about the stopped sheave centre, so the gab also
+  // draws ROD_LENGTH (1 - cos beta) toward it.
   const pinInLever = (theta, lift) => {
     const beta = Math.asin(lift / ROD_LENGTH);
-    return rot(-theta, sub(rot(-beta, [0, -lift]), C));
+    return rot(-theta, sub(rot(-beta, [ROD_LENGTH * (1 - Math.cos(beta)), -lift]), C));
   };
   const footClearance = (theta, lift) => footLocalY - pinInLever(theta, lift)[1] - PIN_R;
   const liftForAngle = (theta) => {
@@ -302,9 +316,13 @@ export function springHandleGabDisengager() {
     // Local upward deflection (px) of the tongue's end into notch a.
     const tipOffsetPx = [0, TIP_SEAT_PX * seated];
     const lift = liftForAngle(theta);
-    const beta = Math.asin(lift / ROD_LENGTH);
     const pin = add(SHAFT, rot(rockerAngle, pinLocal));
-    const gab = add(pin, [0, lift]);
+    // The strap end rides the eccentric: engaged, the rod turns about the gab
+    // (on the pin) to keep its strap centre level with the sheave centre;
+    // lifted (sheave stopped), it turns about the sheave centre.
+    const sheaveCentre = eccentric.centre(alpha);
+    const beta = eccentric.angleFor(pin[1] + lift, sheaveCentre);
+    const gab = [lift > 0 ? eccentric.gabXAbout(sheaveCentre, beta) : pin[0], pin[1] + lift];
     let stage = 'engaged-running';
     if (t >= T.run) stage = 'engaged-stopped';
     if (t >= T.pull[0]) stage = 'pulling-handle-lifting-rod';
@@ -400,6 +418,7 @@ export function springHandleGabDisengager() {
     rocker.rotation.z = state.rockerAngle;
     rod.position.set(...state.gab, 0);
     rod.rotation.z = state.rodAngle;
+    eccentric.setAngle(state.eccentricAngle);
     lever.position.set(...state.pivotC, 0);
     lever.rotation.z = state.rodAngle + state.leverAngle;
     strap.userData.setPoints(strapPointsInRod(state).map(([x, y, z]) => new THREE.Vector3(x, y, z)));
@@ -417,6 +436,13 @@ export function springHandleGabDisengager() {
   fitBounds.expandByScalar(0.08);
   // Frame Brown's plate: the complete rod counts only as far as his break.
   fitBounds.min.x = Math.max(fitBounds.min.x, P(23, 0)[0] - 0.08);
+  // Past the view: the eccentric and the plain frame.
+  const frame = gabRodFrame({
+    eccentric: {x: eccentric.O.x, y: eccentric.O.y, shaftRadius: eccentric.shaftRadius, zFront: Z.rodBack[0] - 0.02},
+    rockshaft: {x: SHAFT[0], y: SHAFT[1], shaftRadius: 29 * S, zFront: Z.rocker[0] - 0.02},
+    floorY: P(0, 540)[1], beamY: fitBounds.max.y + 3, zWall: Z_WALL,
+  });
+  root.add(eccentric.sheave, frame);
 
   Object.assign(root.userData, {
     fidelity: 'authored',
@@ -436,7 +462,7 @@ export function springHandleGabDisengager() {
     geometry: {
       cyclePeriod: T.period, timeline: T, sourceUnitsPerPixel: S, sourceOrigin: ORIGIN, pinRadius: PIN_R,
       pivotCRadius: PIN_C_R, rivetRadius: RIVET_R, contactGap: CONTACT_GAP, rockerAmplitude: ROCKER_AMPLITUDE,
-      rodLength: ROD_LENGTH, holdLift: HOLD_LIFT, thetaHold, shaft: SHAFT, pivotC: C,
+      rodLength: ROD_LENGTH, eccentricThrow: eccentric.e, eccentricCentre: eccentric.O.toArray(), holdLift: HOLD_LIFT, thetaHold, shaft: SHAFT, pivotC: C,
       rivet: RIVET, footLocalY, footX, notch: NOTCH, tipRestY: tipY, strapWidth: STRAP_WIDTH, strapDepth: Z.strapDepth,
       strapJunction: P(...J), strapLength, barBendIndex: bendIndex, barLength: bendLength, rootBend: ROOT_BEND, layers: Z,
       strapRestPoints: restPoints.map((p) => [...p]),
@@ -445,6 +471,7 @@ export function springHandleGabDisengager() {
       valveRocker: rocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin,
       eccentricRod: rod, rodBody, rodFace, pinC, blade, rivet, rivetHead,
       camLever: lever, leverBody, leverNubs, springStrap: strap,
+      eccentricStrap: eccentric.strap, eccentricSheave: eccentric.sheave, frame,
     },
     jointChecks: [
       [valveArm, valveShaft], [valveArm, valvePin], [rodBody, valvePin], [rodFace, valvePin],

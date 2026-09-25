@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import face from '../data/face-worm-195.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {markShadows} from './primitives.js';
+import {creaseIndexedNormals} from './crease-normals.js';
 
 export function faceWorm195Geometry(){
  const {radialSteps:R,angularSteps:A,innerRadius,outerRadius,back,heights,teeth}=face;
@@ -14,7 +15,7 @@ export function faceWorm195Geometry(){
  for(let r=0;r<R;r++)for(let a=0;a<A;a++){const k=r*S+a;quad(k,k+S,k+S+1,k+1);}
  for(let a=0;a<A;a++){quad(a+N,a+N+1,R*S+a+N+1,R*S+a+N);quad(a,a+1,a+1+N,a+N);const k=R*S+a;quad(k,k+N,k+1+N,k+1);}
  for(let r=0;r<R;r++){const k=r*S;quad(k,k+N,k+S+N,k+S);const j=k+A;quad(j,j+S,j+S+N,j+N);}
- const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();g.userData={profile:'finite-worm-swept-face-sector',...face};return g;
+ const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);creaseIndexedNormals(g);g.userData={profile:'finite-worm-swept-face-sector',...face};return g;
 }
 function bored(mesh,radius,bore,length,replaced){
  replaced.add(mesh.geometry);

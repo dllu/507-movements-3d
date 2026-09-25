@@ -903,7 +903,49 @@ function dryGasMeter(movement) {
       1,
     );
 
+  // Pass 57: the over-centre spring is a close-wound coil hooked on a stud
+  // on the crosshead and on the rocker's tip pin, instead of a zigzag wire
+  // whose lower end hung in front of the crosshead.
+  const crossheadSpringStud = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.035, 0.10, 16).rotateX(Math.PI / 2),
+    darkMaterial,
+  ), 'crosshead-stud-carrying-over-center-spring');
+  crossheadSpringStud.position.set(0, 1.00, 0.72);
+  commonCrosshead.add(crossheadSpringStud);
+  const overCenterSpringCoil = addRole(new THREE.Mesh(new THREE.BufferGeometry(), valveMaterial),
+    'over-center-coil-spring-from-crosshead-stud-to-rocker-pin');
+  root.add(overCenterSpringCoil);
+  for (const segment of overCenterSpringSegments) segment.visible = false;
+  class SpringCoil extends THREE.Curve {
+    constructor(start, end) {
+      super();
+      this.start = start;this.axis = end.clone().sub(start);
+      const helper = Math.abs(this.axis.z) < 0.9 * this.axis.length() ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+      this.u = new THREE.Vector3().crossVectors(this.axis, helper).normalize();
+      this.v = new THREE.Vector3().crossVectors(this.axis, this.u).normalize();
+    }
+    getPoint(t, target = new THREE.Vector3()) {
+      // Straight leads over the first and last 8%, then 9 turns of radius 0.055.
+      const lead = 0.08, s = THREE.MathUtils.clamp((t - lead) / (1 - 2 * lead), 0, 1);
+      const radius = 0.055 * Math.sin(Math.PI / 2 * Math.min(1, Math.min(s, 1 - s) * 12));
+      const angle = 2 * Math.PI * 9 * s;
+      return target.copy(this.start).addScaledVector(this.axis, t)
+        .addScaledVector(this.u, radius * Math.cos(angle)).addScaledVector(this.v, radius * Math.sin(angle));
+    }
+  }
   const updateSpring = (start, end) => {
+    // Same topology every frame: copy into the retained geometry in place.
+    const coil = new THREE.TubeGeometry(new SpringCoil(start, end), 360, 0.016, 8, false);
+    const kept = overCenterSpringCoil.geometry;
+    if (!kept.attributes.position) {
+      for (const name of ['position', 'normal', 'uv']) kept.setAttribute(name, coil.attributes[name].clone());
+      kept.setIndex(coil.index.clone());
+    } else {
+      kept.attributes.position.array.set(coil.attributes.position.array);kept.attributes.position.needsUpdate = true;
+      kept.attributes.normal.array.set(coil.attributes.normal.array);kept.attributes.normal.needsUpdate = true;
+    }
+    kept.computeBoundingBox();kept.computeBoundingSphere();
+    coil.dispose();
     const direction = end.clone().sub(start);
     const normal = new THREE.Vector3(-direction.y, direction.x, 0);
     if (normal.lengthSq() < 1e-12) normal.set(1, 0, 0);

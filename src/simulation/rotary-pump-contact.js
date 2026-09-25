@@ -4,6 +4,7 @@ import oldProfile from './old-pump-contact-profile.js';
 import * as THREE from 'three';
 import {capsule,circle,poly,plate,polygonClipping} from './finite-plate-geometry.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
+import {portedCasingGeometry,squarePortHole} from './round-port-pipes.js';
 
 // Cary's pistons c, c are one rigid bar through the drum. Its two rollers
 // bear on opposite sides of the fixed heart cam a, so the cam has constant
@@ -75,10 +76,27 @@ export function correctCaryPump(root) {
   const wall=[],outer=[];
   for(let i=0;i<720;i++){const a=i*2*Math.PI/720,r=caryWallRadius(a,g.pistonLength);wall.push([r*Math.cos(a),r*Math.sin(a)]);outer.push([(r+.30)*Math.cos(a),(r+.30)*Math.sin(a)]);}
   const outletAngle=-Math.PI/3,rot=([x,y])=>[x*Math.cos(outletAngle)-y*Math.sin(outletAngle),x*Math.sin(outletAngle)+y*Math.cos(outletAngle)];
-  const port=poly([[1.3,-.35],[2.8,-.35],[2.8,.35],[1.3,.35]].map(rot));
-  const inletPort=poly([[-1.18,-3.2],[-.52,-3.2],[-.52,-1.0],[-1.18,-1.0]]);
   const packing=poly([...Array.from({length:17},(_,i)=>{const a=-Math.PI/2-.14+.28*i/16;return[1.575*Math.cos(a),1.575*Math.sin(a)];}),...Array.from({length:17},(_,i)=>{const a=-Math.PI/2+.14-.28*i/16;return[1.74*Math.cos(a),1.74*Math.sin(a)];})]);
-  replace(b.casing,plate(polygonClipping.difference(poly(outer),poly(wall),port,inletPort,packing),-g.casingDepth/2,g.casingDepth/2));
+  // Pass 57: the ports pierce only the wall's middle layer (square holes of
+  // half-width 0.29 round the pipes' bores), so the wall stays whole in front
+  // of and behind each round pipe and no open notch shows at the joints.
+  const portHalf=.29,outletU=[Math.cos(outletAngle),Math.sin(outletAngle)];
+  const holes=[squarePortHole(outletU,1.3,2.8,portHalf),poly([[-.85-portHalf,-3.2],[-.85+portHalf,-3.2],[-.85+portHalf,-1.0],[-.85-portHalf,-1.0]])];
+  replace(b.casing,portedCasingGeometry(polygonClipping.difference(poly(outer),poly(wall),packing),-g.casingDepth/2,g.casingDepth/2,0,portHalf,holes));
+  // Brown's section removes only the front head. The back head closes the
+  // casing behind the drum's rear spider: a rim flush with the casing's rear
+  // face, recessed round the spider, and a plate bored for axle A, which
+  // runs on into a blind bearing boss.
+  {
+    const back=-g.casingDepth/2,envelope=poly(outer),material=[].concat(b.casing.material)[0];
+    const parts=[
+      ['fixed-back-head-rim-round-drum-spider',plate(polygonClipping.difference(envelope,poly(circle([0,0],1.50,256))),back-.07,back)],
+      ['fixed-back-head-closing-casing',plate(polygonClipping.difference(envelope,poly(circle([0,0],.234,96))),back-.17,back-.07)],
+      ['fixed-back-bearing-boss-for-axle-A',plate(polygonClipping.difference(poly(circle([0,0],.40,96)),poly(circle([0,0],.234,96))),-.74,back-.17)],
+      ['fixed-back-bearing-boss-cap',plate(poly(circle([0,0],.40,96)),-.80,-.74)],
+    ];
+    b.backHead=parts.map(([role,geometry])=>{const mesh=new THREE.Mesh(geometry,material);mesh.userData.role=role;mesh.castShadow=mesh.receiveShadow=true;root.add(mesh);return mesh;});
+  }
   replace(b.portSeparatorE,plate(polygonClipping.difference(packing,poly(wall)),-g.casingDepth*.45,g.casingDepth*.45));b.portSeparatorE.position.set(0,0,0);
   d.caryWallRadiusAtAngle=angle=>caryWallRadius(angle,g.pistonLength);
   // H leaves M through the wall's throat, then climbs the right side.

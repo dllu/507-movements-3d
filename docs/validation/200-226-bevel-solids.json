@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "461e81ce5455671801107935a8118be58e0e3d06b26fca5e2ac35605dcb0d5c2"
+      "sha256": "15eceaf4b6f4aab079455271bd6b7a255369933c84b531c40088989b93e4e28a"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -18,11 +18,11 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
+      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
     },
     {
       "file": "src/simulation/bevel-geometry.js",
-      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+      "sha256": "9dfaf2b3b969a16ce7a6cabadee57fa6bb6d1e51b9e61f6f9f511ed77dba365c"
     },
     {
       "file": "src/simulation/bored-lathe-geometry.js",

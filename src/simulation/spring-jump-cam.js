@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { backBar, bearingBoss, pinBoss, supportMaterial } from './back-plate-support.js';
+import { wallGuide } from './wall-guide-hardware.js';
 import { makeJumpCamMotion } from './spring-jump-cam-motion.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { cylindricalWormGeometry, wormWheelGeometry } from './worm-gear-geometry.js';
@@ -131,8 +133,31 @@ export function makeSpringJumpCam(options = {}) {
     clampTop.push(new THREE.Vector2(attr.getX(j), attr.getY(j) - p.contactClearance));
   }
   const clampShape = new THREE.Shape(clampTop); clampShape.lineTo(clampTop.at(-1).x, 2.67); clampShape.lineTo(clampTop[0].x, 2.67); clampShape.closePath();
-  const clamp = add('springClamp', extrusion(clampShape, 0.24), PALETTE.muted, root, 'fixed');
-  clamp.position.z = p.followerZ + p.followerDepth / 2 - 0.12;
+  // Brown hatches the clamp as fixed framing but draws no frame for the
+  // other fixed parts. The clamp block runs back to a plain back bar behind
+  // the mechanism that carries the follower's fulcrum boss, the wheel
+  // shaft's bearing and the worm shaft's two bearings. The bar runs behind
+  // the lever and the wheel, so it is hidden in the plate's view.
+  const supportFront = -0.5;
+  const clampFront = p.followerZ + p.followerDepth / 2 + 0.12;
+  const clamp = add('springClamp', extrusion(clampShape, clampFront - supportFront), PALETTE.muted, root, 'fixed');
+  clamp.position.z = supportFront;
+  const [pivotX, pivotY] = p.followerPivot, wormY = -p.wormCenterDistance, bearingX = 1.275;
+  const supports = new THREE.Group(); supports.name = 'backBarSupports';
+  const clampX = (clampTop[0].x + clampTop.at(-1).x) / 2;
+  supports.add(backBar([{ x: clampX, y: 2.8 }, { x: pivotX, y: pivotY }, { x: 0, y: pivotY }, { x: 0, y: wormY }],
+    { zFront: supportFront, width: 0.2, role: 'back-bar' }));
+  supports.add(backBar([{ x: -bearingX, y: wormY }, { x: bearingX, y: wormY }], { zFront: supportFront, width: 0.3, role: 'worm-bearing-bar' }));
+  supports.add(pinBoss({ x: pivotX, y: pivotY, radius: 0.06, zBack: supportFront, zFront: 0.655, role: 'fulcrum-boss' }));
+  supports.add(bearingBoss({ x: 0, y: 0, boreRadius: p.shaftRadius + 0.004, outerRadius: 0.44, zBack: supportFront,
+    zFront: -0.14, role: 'wheel-shaft-bearing' }));
+  for (const side of [-1, 1]) {
+    const [boss, web] = wallGuide({ name: 'wormShaftBearing', axis: 'x', halfLength: 0.1, boreRadius: 0.079,
+      outerRadius: 0.17, zWall: supportFront, material: supportMaterial() });
+    const bearing = new THREE.Group(); bearing.add(boss, web); bearing.position.set(side * bearingX, wormY, 0);
+    supports.add(bearing);
+  }
+  root.add(supports);
   wormMount.rotation.z = Math.PI; wormAxis.position.y = p.wormCenterDistance; wormAxis.rotation.y = Math.PI / 2;
   add('wormThread', cylindricalWormGeometry({ pitchRadius: p.wormPitchRadius, module: p.module,
     length: p.wormLength, pressureAngle: p.pressureAngle, angularSteps: 640 }), PALETTE.driver, worm, 'worm');

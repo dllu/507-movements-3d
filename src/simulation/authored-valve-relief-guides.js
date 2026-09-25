@@ -8,6 +8,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const FULL_TURN = Math.PI * 2;
 const GAUSS_NODES = [
@@ -67,8 +68,8 @@ function sectionedHalfLathe(profile, segments = 72) {
   merged.deleteAttribute('normal');
   const welded = mergeVertices(merged, 1e-6);
   merged.dispose();
-  welded.computeVertexNormals();
-  return welded;
+  // Hard edges where the section's cut faces meet the cone.
+  return creaseIndexedNormals(welded);
 }
 
 function gaussIntegrate(start, end, evaluate) {

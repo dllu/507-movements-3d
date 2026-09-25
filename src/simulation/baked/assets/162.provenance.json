@@ -72,7 +72,7 @@
     },
     {
       "file": "docs/validation/162-loop-qualification.json",
-      "sha256": "0ebb37f0b3dfaa44129d1d03f16dd13f1c290413de75a2b60b54f7fc537ebc43"
+      "sha256": "4c8332dba5aa8e8968cd7dae55e09022141f0585944c327db51bb449b0e1b0d2"
     },
     {
       "file": "src/simulation/mujoco-water-governor/physics.js",
@@ -96,11 +96,11 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/bevel-train.js",
-      "sha256": "dd67587fc8de97882b567d318a5f435bacac5057cdfb8fef94d56648f7e2f5c8"
+      "sha256": "04e0124eed28e162bc3553f5bc7cef01aea7f9c17207d7f3f91e3fe5f18cd05a"
     },
     {
       "file": "src/simulation/bevel-geometry.js",
-      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+      "sha256": "9dfaf2b3b969a16ce7a6cabadee57fa6bb6d1e51b9e61f6f9f511ed77dba365c"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -108,11 +108,11 @@
     },
     {
       "file": "src/simulation/clutch-section-geometry.js",
-      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+      "sha256": "e1278ea943497a8a63668838508c0f18f660d0d6da7c92416b3c53b09436b6ca"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
+      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
@@ -196,6 +196,6 @@
   "maximumNativeError": 0.00007317514991340812,
   "nativeSamples": 83553,
   "samples": 1490,
-  "bytes": 451758,
-  "sha256": "2e2fa6d3f7241cb5d8194ed4e5e9565a80759db6f46d00c1d26795d573f51d24"
+  "bytes": 462195,
+  "sha256": "1ee4b89bcc16d930c83cba480839b600399af724c8258bf99e73c59c804ce55c"
 }

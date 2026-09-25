@@ -123,11 +123,20 @@ export function correctLiftPumpParts(root, id) {
     if(oldHinge)oldHinge.visible=false;
   }
   // Brown's section as ONE clean cutaway on the plane facing the camera:
-  // opaque walls with plain cut faces; the bucket, checks and rods stay whole.
-  // The water is cut on the same plane so none stands in front of the walls.
-  const shells=[b.barrel,b.suctionPipe,b.spout,b.deliveryPipe,b.deliveryBell,b.topCover,b.stuffingBox?.children[0]].filter(Boolean);
+  // opaque walls with plain cut faces. The bucket, its packing, the checks
+  // and their seats lie inside the sectioned barrel, so they are cut on the
+  // same plane (they only translate in y or turn about z, so the plane stays
+  // put); rods, pins and the yoke stay whole. The water is cut on the same
+  // plane so none stands in front of the walls. 448's side spout lies
+  // outside the barrel and stays a whole pipe (a cut half-pipe read as a
+  // trough from the side).
+  const shells=[b.barrel,b.suctionPipe,modern?b.spout:null,b.deliveryPipe,b.deliveryBell,b.topCover,b.stuffingBox?.children[0],
+    b.pistonBody,b.pistonValveSeat,b.pistonValveDisk,b.footValveSeat,b.footValveDisk,
+    b.deliveryFlapSeat,b.deliveryFlap,b.flapHinge,b.flapLug].filter(Boolean);
+  if(b.flapBearings)b.flapBearings[1].visible=false; // its cut-away half would float in front of the section
   const waters=[b.suctionWater,b.lowerChamberWater,b.upperChamberWater,b.spoutWater,b.deliveryWater].filter(Boolean);
   for(const mesh of shells)sectionMeshInPlace(mesh,root);
+  if(!modern){b.spout.material=b.barrel.material[0];b.spout.castShadow=b.spout.receiveShadow=true;}
   for(const mesh of waters){const m=mesh.material;sectionMeshInPlace(mesh,root);mesh.material=[m,m];}
   for(const rails of [b.barrelRearFrame,b.barrelRails])if(rails)rails.visible=false;
   d.updateSolids=()=>{if(!modern)b.connectingRod.position.z=.27;};

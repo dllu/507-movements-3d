@@ -41,8 +41,13 @@ test('188 catalog entry, authored contract and real-time display timing', () => 
       assert.ok(plateMesh.isMesh);
       assert.equal(pin.geometry.type, 'CylinderGeometry');
     }
-    // No undrawn frame, guide or carrier survives in the model.
-    model.root.traverse((o) => assert.doesNotMatch(o.userData.role ?? '', /frame|guide|carrier/));
+    // No undrawn guide or carrier in the plate's view: the valve arm, the
+    // eccentric and the plain frame carrying both shafts stand below or past
+    // the view (off the framed bounds).
+    model.root.traverse((o) => assert.doesNotMatch(o.userData.role ?? '', /guide|carrier/));
+    d.blocks.frame.traverse((o) => { if (o.isMesh) assert.equal(o.userData.runsPastCrop, true); });
+    model.update(0); model.root.updateMatrixWorld(true);
+    assert.ok(d.blocks.valveArm.position.y < d.cameraFitBounds.min.y - 1.5, 'rockshaft below the view');
     for (const other of [187, 189]) withModel((m) => {
       assert.equal(m.root.userData.fidelity, 'authored');
       assert.notEqual(m.root.userData.mechanism, d.mechanism);
@@ -91,10 +96,11 @@ test('188 cycle: running with the pin in the gab, stop, lift, held clear, lower,
     assert.equal(s0.rodX, 0);
     assert.equal(s0.handleAngle, 0);
     assert.ok(s0.pinInGab);
-    // Running: two strokes of the eccentric each way of t = 0, at >= 2 s per turn.
+    // Running: one whole turn of the eccentric each way of t = 0 (so it stops
+    // where it started, its sheave on top), at >= 2 s per turn.
     let turns = 0;
     for (let t = -4.4; t < 4.4; t += 0.01) if (S(t).rodX * S(t + 0.01).rodX < 0) turns += 0.5;
-    assert.ok(turns >= 2.5, `eccentric turns ${turns}`);
+    assert.ok(turns >= 1.5, `eccentric turns ${turns}`);
     for (let t = -4.5; t <= 4.5; t += 0.05) {
       const s = S(t);
       assert.ok(Math.abs(s.rodX) <= g.stroke + 1e-12);

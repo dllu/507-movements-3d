@@ -78,7 +78,11 @@ export class LaidRopeGeometry extends THREE.BufferGeometry {
 
     const strands = LAID_ROPE.strands;
     const perStrand = (along + 1) * around + (closed ? 0 : 2);
-    const count = strands * perStrand;
+    // Open ropes give each strand end a flat cap with its own rim ring (kept
+    // after all strands, so each strand's layout stays as it was); sharing
+    // the side wall's ring would shade the flat caps as domes.
+    const capRings = closed ? 0 : strands * 2 * around;
+    const count = strands * perStrand + capRings;
     this.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
     this.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
     const uv = new Float32Array(count * 2);
@@ -100,11 +104,14 @@ export class LaidRopeGeometry extends THREE.BufferGeometry {
       if (!closed) {
         const startCap = base + (along + 1) * around;
         const endCap = startCap + 1;
-        const lastRing = base + along * around;
+        const startRing = strands * perStrand + 2 * k * around;
+        const endRing = startRing + around;
         for (let j = 0; j < around; j += 1) {
           const next = (j + 1) % around;
-          index.push(startCap, base + next, base + j);
-          index.push(endCap, lastRing + j, lastRing + next);
+          index.push(startCap, startRing + next, startRing + j);
+          index.push(endCap, endRing + j, endRing + next);
+          uv[2 * (startRing + j) + 1] = uv[2 * (endRing + j) + 1] = j / around;
+          uv[2 * (endRing + j)] = 1;
         }
       }
     }
@@ -171,6 +178,17 @@ export class LaidRopeGeometry extends THREE.BufferGeometry {
           const cap = 3 * (base + (along + 1) * around + (i === 0 ? 0 : 1));
           const T = frames.tangents[i];
           const sign = i === 0 ? -1 : 1;
+          const ring = strands * perStrand + (2 * k + (i === 0 ? 0 : 1)) * around;
+          for (let j = 0; j < around; j += 1) {
+            const from = 3 * (base + i * around + j);
+            const to = 3 * (ring + j);
+            positions[to] = positions[from];
+            positions[to + 1] = positions[from + 1];
+            positions[to + 2] = positions[from + 2];
+            normals[to] = sign * T.x;
+            normals[to + 1] = sign * T.y;
+            normals[to + 2] = sign * T.z;
+          }
           positions[cap] = sx;
           positions[cap + 1] = sy;
           positions[cap + 2] = sz;

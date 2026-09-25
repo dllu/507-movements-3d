@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {addDrawingBoard} from './drawing-board-parts.js';
 const turn=2*Math.PI,cordRadius=.012,pencilRadius=.085,cordZ0=.16,cordZ1=.36;
 // External tangents with a fixed clockwise winding sense. Lifting the
 // attachment heights monotonically along the unfolded path separates strands.
@@ -28,6 +29,12 @@ export function installHyperbolaFiniteGeometry(root){
  const wrap=new THREE.Mesh(wrapGeometry(),b.focusCord.material);wrap.userData.role='continuous-finite-cord-wrapped-around-pencil';root.add(wrap);b.pencilWrap=wrap;
  Object.assign(root.userData,{hideGround:true,cameraFov:8,cameraDirection:new THREE.Vector3(0,0,1),minimumDisplayCycleSeconds:8,cameraFitBounds:new THREE.Box3(new THREE.Vector3(-2.8,-3.35,-.28),new THREE.Vector3(2.8,2.3,.80)),reconstructionNote:'The exact hyperbola follows an ideal point-string construction. The displayed finite cord is illustrative: its prescribed winding requires changing length, so it is not an inextensible string.'});
  root.userData.sampledMotionBounds={min:root.userData.cameraFitBounds.min.toArray(),max:root.userData.cameraFitBounds.max.toArray()};
+ // Pass 57: both branches are traced on a plain drawing board whose top face
+ // is the drawing plane (the traced lines' undersides, the pencil point). The
+ // two focus pins stand with their collars in bores through it.
+ root.updateMatrixWorld(true);
+ const foci=[b.upperFocusPin,b.lowerFocusPin].map(pin=>pin.collar.getWorldPosition(new THREE.Vector3()));
+ b.drawingBoard=addDrawingBoard(root,{min:[-2.62,-2.62],max:[2.62,2.62],top:-.17,holes:foci.map(f=>[f.x,f.y,.1705]),holeDepth:.075});
  root.traverse(o=>{for(const m of(Array.isArray(o.material)?o.material:[o.material]))if(m)m.fog=false;});
  const update=state=>{
   const p=hyperbolaCordPath(state);b.focusCord.userData.setEndpoints(p.start,p.entry);b.ruleCord.userData.setEndpoints(p.exit,p.end);

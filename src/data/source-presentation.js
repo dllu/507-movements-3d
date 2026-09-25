@@ -8,8 +8,8 @@
 // profiles (scripts/measure-display-profiles.mjs ID) after changing an entry.
 export default {
   83: {
-    remove: ['base', '(?:front|rear)RockshaftBearing', 'outputBearing', 'inputGuidePost.*', 'input(?:Upper|Lower)Guide', 'inputFork(?:Back|Front|Bridge)', 'remotePin(?:Head|Nut)?', 'inputStem'],
-    note: 'Side elevation of rod A, rockshaft B, the pierced ratchet sectors C and the crown wheel D on its upright shaft, rod A broken off to the upper right; no frame, posts, base, bearings or rod guide are drawn. Only the production MuJoCo model is presented; its physics keeps the reconstructed supports and input guide, and the synchronous registry model keeps them visible for offline checks.',
+    remove: ['base', '(?:front|rear)RockshaftBearing'],
+    note: 'Side elevation of rod A, rockshaft B, the pierced ratchet sectors C and the crown wheel D on its upright shaft, rod A broken off to the upper right; no frame, posts, base, bearings or rod guide are drawn. The presented supports are minimal: the rockshaft turns in one long sleeve bearing on a plain standard hidden behind the wheel, the upright shaft in its floor bearing, and rod A ends at its pinned slider in a guide on two posts past the plate edge, each on a small floor plate; the full reconstructed base and the two outboard rockshaft standards are not shown. Only the production MuJoCo model is presented; its physics uses ideal joints.',
   },
   85: {
     remove: ['strikingBed'],
@@ -62,6 +62,11 @@ export default {
   109: {
     camera: [0, 0, 1],
     note: 'Flat front elevation of the lead screw and the cut work between the top and bottom rails, the carriage arm reaching across and the change gears at the foot.',
+  },
+  110: {
+    rotate: [-Math.PI / 2, 0, 0],
+    camera: [0, 1, 0.12],
+    note: 'Plan view looking down on the divided roller with its right- and left-hand screws, the parallel spindle below it on the page, the arms and half-nuts, the two end frames and the hand lever. Brown\'s text puts one half-nut over the roller and the other under it, so the model lies flat: the near half-nut rides on top of the roller, the far one beneath it, and the frames are the tops of end standards running down to the floor.',
   },
   134: {
     remove: ['rear-fixed-pedestal-supporting-drum-axis', 'fixed-foot-of-drum-bearing-pedestal', 'fixed-bearing-behind-drum-hub', 'one-of-eight-source-rim-separator-plates'],
@@ -122,19 +127,19 @@ export default {
   },
   186: {
     camera: [0.03, 0.02, 1],
-    note: 'The rockshaft, valve rocker, eccentric rod, claw lever with its notch-a drop and the spring loop handle; no frame is drawn.',
+    note: 'The rockshaft, valve rocker, eccentric rod, claw lever with its notch-a drop and the spring loop handle; no frame is drawn. Past the view the rod runs on to its strap round the eccentric, whose shaft turns in a bearing on a plain column; a beam from that column carries a hanger (hidden behind the rocker boss) to the rockshaft\'s rear bearing.',
   },
   187: {
     camera: [0.03, 0.02, 1],
-    note: 'The rockshaft, valve arm, eccentric rod with its lower handle, and the pivoted upper cam handle; no frame is drawn.',
+    note: 'The rockshaft, valve arm, eccentric rod with its lower handle, and the pivoted upper cam handle; no frame is drawn. Past the view the rod runs on to its strap round the eccentric; the eccentric shaft and the rockshaft turn in bearings on plain floor columns (the rockshaft\'s hidden behind the valve arm).',
   },
   188: {
     camera: [0.03, 0.02, 1],
-    note: 'The eccentric rod with its loop handle, leaf spring at a and valve pin; no frame is drawn.',
+    note: 'The eccentric rod with its loop handle, leaf spring at a and valve pin; no frame is drawn. The pin rides on a valve arm from a rockshaft below the view, and the rod runs on to its strap round the eccentric; both shafts turn in bearings on plain floor columns.',
   },
   189: {
     camera: [0.03, 0.02, 1],
-    note: 'The rockshaft, forked eccentric rod and the bell crank with its vertical rod; no frame is drawn.',
+    note: 'The rockshaft, forked eccentric rod and the bell crank with its vertical rod; no frame is drawn. Past the view the rod runs on to its strap round the eccentric; the eccentric shaft and the rockshaft turn in bearings on plain floor columns, and a bracket behind from the rockshaft bearing carries the bell-crank stud.',
   },
   190: {
     camera: [0, 0.01, 1],
@@ -146,21 +151,19 @@ export default {
     note: 'Face view of the two notched wheels; no standard, foot, seam outline or index marks are drawn.',
   },
   192: {
-    remove: ['rear-wheel-bearing-standard', 'fixed-mangle-wheel-support-foot', 'fixed-universal-joint-for-pinion-drive', 'fixed-rear-input-shaft', 'vibrating-telescopic-shaft-through-universal-joint', 'moving-pinion-side-universal-yoke'],
-    note: 'Face view of the hooked toothed land, its parallel groove b, d and the hub; Brown omits the pinion, which is kept as the working drive, but no standard, foot, universal joint or slip shaft (which would stand in front of the wheel) is drawn. The factory still builds the joint for offline checks.',
+    note: 'Face view of the hooked toothed land, its parallel groove b, d and the hub. Brown omits the pinion; it is kept as the working drive on the captioned jointed shaft: Hooke joints at a fixed input bearing and on the pinion shaft join a telescopic slip shaft standing end-on in front of the wheel. The input bearing sits on an arm from a plain column beside the wheel, and a standard behind the wheel carries its shaft, each on its own foot below the view.',
   },
   193: {
-    remove: ['rear-wheel-bearing-standard', 'fixed-mangle-wheel-support-foot'],
-    note: 'Face view of the concentric mangle wheel and its pinion; no standard or foot is drawn.',
+    note: 'Face view of the concentric mangle wheel and its pinion on its jointed shaft (Hooke joints and a telescopic slip shaft to a fixed input bearing in front of the wheel, carried on an arm from a plain column beside it); a standard behind the wheel carries its shaft, each on its own foot below the view.',
   },
   194: {
-    remove: ['rear-wheel-bearing-standard', 'fixed-equal-speed-mangle-wheel-support-foot', 'white-index-showing-equal-opposite-wheel-speeds', 'single-coincident-inner-outer-pitch-arc', 'fixed-universal-joint-required-by-brown', 'fixed-rear-unidirectional-input-shaft', 'large-travel-telescopic-shaft-through-universal-joint', 'moving-pinion-side-universal-yoke'],
-    note: 'Face view of the pin mangle wheel and its pinion on a plain face with its hub boss; the pins stand free with no pitch-circle line, and the pinion shows only its shaft end. No standard, foot, index mark or the captioned universal joint and slip shaft (which would stand end-on in front of the pinion) are drawn; the factory still builds the joint (its blocks remain for offline checks).',
+    remove: ['white-index-showing-equal-opposite-wheel-speeds', 'single-coincident-inner-outer-pitch-arc'],
+    note: 'Face view of the pin mangle wheel and its pinion on a plain face with its hub boss; the pins stand free with no pitch-circle line and no index mark is drawn. The caption requires the pinion shaft to be jointed: Hooke joints at a fixed input bearing and on the pinion shaft join a telescopic slip shaft standing end-on in front of the pinion. The input bearing sits on an arm from a plain column beside the wheel, and a standard behind the wheel carries its shaft, each on its own foot below the view.',
   },
   197: {
     camera: [0.02, 0.01, 1],
     remove: ['(?:left|right)-fixed-vertical-shaft-slide-rail', 'rear-rack-frame-web', 'bearing-carriage-free-to-rise-and-fall'],
-    note: 'Flat face view of the square frame as one solid plate, the capsule rack with its round pins on its face, the two end guides on their side mounts and the pinion on its front-driven shaft; the shaft\'s rise-and-fall bearing lies outside the drawing and is not modelled.',
+    note: 'Flat face view of the square frame as one solid plate, the capsule rack with its round pins on its face, the two end guides on their side mounts and the pinion on its front-driven shaft. Brown draws no support: the frame slides on a rail across its back in a fixed channel hidden behind it, and the rising and falling pinion shaft turns in a carriage on a thin vertical rail in front, both standing on one foot below the frame.',
   },
   198: {
     camera: [0.02, 0.01, 1],
@@ -442,8 +445,8 @@ export default {
     note: 'The slotted link with its two pins, the short bar with its riser and guides a, a; the lower pin\'s drive is only a dotted line on the plate, so no input guide, shoe, dashes, base, pin post or indices are drawn.',
   },
   351: {
-    remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop', '(?:upper|lower)-guide-.*'],
-    note: 'The broad rack rod between its two broad collars, the stamp head below and the mutilated pinion; no base, anvil, workpiece or rod guides are drawn.',
+    remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop', '(?:upper|lower)-guide-white-motion-index'],
+    note: 'The broad rack rod between its two broad collars, the stamp head below and the mutilated pinion; no base, anvil or workpiece is drawn. Brown draws no rod guides either, but the rack rod must be guided, so its two open C-guides are kept, carried with the pinion bearing on one plain back bar.',
   },
   355: {
     camera: [7, 10, 12],
@@ -516,7 +519,7 @@ export default {
     note: 'Front elevation of the four bevel wheels with the broad hoop standing edgewise in front, the shaft through two tall standards tied by a turned stretcher; the weighing band, weights, base and white indices are not drawn.',
   },
   374: {
-    remove: ['fixed-base-of-treadle-drive-demonstrator', 'fixed-standard-supporting-upper-shaft', 'right-hand-fixed-treadle-pivot-standard', 'white-index-showing-continuous-output-shaft-rotation', 'white-face-spin-index', 'broad-foot-pad-at-free-end-of-treadle'],
+    remove: ['fixed-base-of-treadle-drive-demonstrator', 'fixed-standard-supporting-upper-shaft', 'right-hand-fixed-treadle-pivot-standard', 'white-index-showing-continuous-output-shaft-rotation', 'broad-foot-pad-at-free-end-of-treadle'],
     note: 'The eccentric pulley, band and the diagonal treadle rising leftward from its right-hand fulcrum past the roller; no base, standards, foot pad or white index are drawn.',
   },
   375: {
@@ -633,7 +636,7 @@ export default {
   },
   403: {
     remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', 'laid-out-(?:chord-line|versed-sine)', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],
-    note: 'The two sloping rules crossed at the pencil and braced by the third rule, sliding against the two pins at the chord ends; no end indices, painted working edges, white pin caps or laid-out chord and versed-sine construction lines are drawn.',
+    note: 'The two sloping rules crossed at the pencil and braced by the third rule, sliding against the two pins at the chord ends, which stand in a plain drawing board carrying the traced arc; no end indices, painted working edges, white pin caps or laid-out chord and versed-sine construction lines are drawn.',
   },
   404: {
     remove: ['(?:left|right)-white-roller-angular-index', 'white-screw-handwheel-angular-index', 'given-required-arc-point-[123]'],
@@ -641,11 +644,11 @@ export default {
   },
   405: {
     remove: ['rule-distance-index-\\d+', '(?:upper-focus-rule-pivot|lower-focus-fixed-thread-loop-pin)-white-center-index', 'given-(?:upper|lower)-hyperbola-vertex'],
-    note: 'The rule pivoted at the upper focus, the thread from its free end round the pencil to the lower focus, and both branches; Brown\'s dotted axes are notation and are not drawn, nor are rule graduations, centre indices or vertex points.',
+    note: 'The rule pivoted at the upper focus, the thread from its free end round the pencil to the lower focus, and both branches traced on a plain drawing board in which the focus pins stand; Brown\'s dotted axes are notation and are not drawn, nor are rule graduations, centre indices or vertex points.',
   },
   406: {
     remove: ['fixed-drawing-board-presentational-support-not-source-hardware', 'fixed-drawing-board-border', 'square-blade-distance-index-\\d+', 'white-focus-center-index', 'given-(?:base-endpoint-[12]|parabola-vertex)', 'given-parabola-base-chord', 'dashed-parabola-axis-parallel-to-square-blade'],
-    note: 'The straightedge, square, thread and pencil describing the parabola; no drawing board, base chord, dashed axis, blade graduations or given points are drawn.',
+    note: 'The straightedge, square, thread and pencil describing the parabola on a plain drawing board (the pencil point, focus pin, straightedge and stock stand on it); no bordered board, directrix edge stripe, base chord, dashed axis, blade graduations or given points are drawn.',
   },
   407: {
     remove: ['fixed-drawing-board-presentational-support-not-source-hardware', 'fixed-drawing-board-border', 'mirrored-right-jamb-reference-for-complete-arch', 'mirrored-right-half-completing-pointed-arch', 'given-right-springing-point', 'given-left-springing-point', 'given-pointed-arch-apex', 'white-upper-edge-of-horizontal-bar-on-springing-line', 'white-slide-position-index', 'upper-working-edge-tangent-to-jamb-and-meeting-apex'],
@@ -660,8 +663,8 @@ export default {
     note: 'The two slotted legs crossed at the sliding pivot with its set screw; no point indices, span witnesses or painted graduation ticks are shown.',
   },
   411: {
-    remove: ['ground-travel-index-\\d+', '(?:left-ground-driven|right-no-slip)-survey-wheel-white-no-slip-rotation-index', '(?:major|minor)-(?:axial|circumferential)-paper-section-ruling'],
-    note: 'Elevation of the arched carriage on its two spoked wheels with the pendulum, the recording drum and the push handle on the ground line; no travel ticks, wheel indices or ruled paper grid are drawn.',
+    remove: ['ground-travel-index-\\d+', '(?:left-ground-driven|right-no-slip)-survey-wheel-white-no-slip-rotation-index', '(?:major|minor)-(?:axial|circumferential)-paper-section-ruling', 'white-pendulum-axis-index'],
+    note: 'Elevation of the arched carriage on its two spoked wheels with the pendulum, the recording drum and the push handle on the ground line; no travel ticks, wheel indices, pivot dot or ruled paper grid are drawn.',
   },
   413: {
     camera: [-0.12, 0.04, 1],

@@ -318,9 +318,7 @@ function chainPump(movement) {
       const angle = index * FULL_TURN / wheelPocketCount;
       const spoke = new THREE.Mesh(
         new THREE.BoxGeometry(pitchRadius * 1.60, 0.075, 0.16),
-        index === 0
-          ? matte(PALETTE.white, { roughness: 0.48 })
-          : darkMaterial,
+        darkMaterial,
       );
       spoke.position.set(
         Math.cos(angle) * pitchRadius * 0.36,

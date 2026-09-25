@@ -3,6 +3,7 @@ import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {circle,poly,plate,polygonClipping as clip} from './finite-plate-geometry.js';
 import {makeBoredPlanarLink} from './bored-planar-link.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
+import {applyRotationIndicator} from './rotation-indicator.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const ring=(r,b,l)=>boredLatheGeometry([{axial:-l/2,radial:r},{axial:l/2,radial:r}],b,72);
 const add=(parent,geometry,material,role)=>{const m=new T.Mesh(geometry,material);m.userData.role=role;parent.add(m);return m;};
@@ -13,7 +14,7 @@ function bandSheave(pulley,r,bore){
  const profile=[[-.105,r+.018],[-.053,r+.018],[-.043,r-.043],[.043,r-.043],[.053,r+.018],[.105,r+.018]].map(([axial,radial])=>({axial,radial}));
  const geometry=bore>0?boredLatheGeometry(profile,bore,128):new T.LatheGeometry([new T.Vector2(0,profile[0].axial),...profile.map(p=>new T.Vector2(p.radial,p.axial)),new T.Vector2(0,profile.at(-1).axial)],128);
  const body=add(rotor,geometry,material,'finite-recessed-band-sheave');body.rotation.x=Math.PI/2;body.position.z=.16;pulley.userData.workingGroove=body;
- const index=add(rotor,new T.BoxGeometry(r*.42,r*.045,.010),pulley.userData.faceIndicators[1].material,'white-face-spin-index');index.position.set(r*.48,0,.272);
+ applyRotationIndicator(body,{frame:rotor});
 }
 export function correctReciprocatingCordParts(root,id,update){
  const d=root.userData,b=d.blocks,g=d.geometry;

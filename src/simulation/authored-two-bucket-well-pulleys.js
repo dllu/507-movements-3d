@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {replaceWithLaidRope} from './laid-rope.js';
+import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {correctWellBucketParts} from './well-bucket-working-parts.js';
 import {
   PALETTE,
@@ -646,6 +647,24 @@ function twoBucketWellPulley(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.0, 4.7, 10.8);
   root.userData.groundFloorY = groundY;
   correctWellBucketParts(root,458);
+  // Pass 57: Brown's shelf on the left post, where a bucket is set down: a
+  // board through a notch round the post, carried by a bracket under its
+  // outer end on the post's outer face.
+  {
+    root.updateMatrixWorld(true);
+    const post = new THREE.Box3().setFromObject(frame.children[0]);
+    const shelfLow = 0.96, shelfHigh = 1.14, shelfZ0 = post.min.z - 0.15, shelfZ1 = post.max.z + 0.15;
+    const outline = polygonClipping.difference(
+      poly([[post.min.x - 0.56, -shelfZ1], [post.max.x + 0.30, -shelfZ1], [post.max.x + 0.30, -shelfZ0], [post.min.x - 0.56, -shelfZ0]]),
+      poly([[post.min.x - 0.001, -post.max.z - 0.001], [post.max.x + 0.001, -post.max.z - 0.001], [post.max.x + 0.001, -post.min.z + 0.001], [post.min.x - 0.001, -post.min.z + 0.001]]));
+    // Shape (x, -z) extruded along y.
+    const shelf = new THREE.Mesh(plate(outline, shelfLow, shelfHigh).rotateX(-Math.PI / 2), frameMaterial);
+    shelf.userData.role = 'fixed-shelf-on-left-post';
+    const bracket = new THREE.Mesh(plate(poly([[post.min.x, shelfLow], [post.min.x - 0.44, shelfLow], [post.min.x, shelfLow - 0.48]]),
+      (post.min.z + post.max.z) / 2 - 0.05, (post.min.z + post.max.z) / 2 + 0.05), frameMaterial);
+    bracket.userData.role = 'fixed-bracket-under-shelf-on-left-post';
+    frame.add(shelf, bracket);
+  }
   markShadows(root);
   base.receiveShadow = true;
   update(0);

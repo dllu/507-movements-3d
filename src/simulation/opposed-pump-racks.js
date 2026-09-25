@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import {makeGear,makeBeam,matte,PALETTE,markShadows} from './primitives.js';
+import {backBar,bearingBoss,footPillar,slideSleeve,supportMaterial} from './back-plate-support.js';
+import {glandCylinder} from './beyond-crop-hardware.js';
 
 // One world unit is 100 engraving pixels. The irregular drawing is regularized
 // to an 18-tooth, 20-degree involute pinion and its conjugate straight racks.
@@ -56,6 +58,41 @@ export function makeOpposedPumpRacks(){
   const g=new THREE.ExtrudeGeometry(s,{depth:d.depth,bevelEnabled:false,curveSegments:1});g.translate(0,0,-d.depth/2);
   const mesh=new THREE.Mesh(g,matte(PALETTE.driven));rack.add(mesh);root.add(rack);return rack;
  });
+ // Brown crops both racks. Each is "attached to the piston of a pump": its
+ // lower end carries a piston rod into a closed pump barrel standing on the
+ // floor below the plate, and its upper end runs on into a fixed guide above
+ // the plate. The guides hang on two plain upright bars hidden behind the
+ // racks, tied across by a bar that carries the pinion shaft's rear bearing.
+ const zWall=-.52,fixedParts=new THREE.Group();fixedParts.name='pumpFrame';root.add(fixedParts);
+ const shaftRadius=.1;
+ const shaftFront=d.depth/2+.02,shaftBack=zWall+.004;
+ const shaft=new THREE.Mesh(new THREE.CylinderGeometry(shaftRadius,shaftRadius,shaftFront-shaftBack,40).rotateX(Math.PI/2),matte(PALETTE.ink));
+ shaft.position.z=(shaftFront+shaftBack)/2;shaft.name='pinionShaft';rotor.add(shaft);
+ fixedParts.add(bearingBoss({x:0,y:0,boreRadius:shaftRadius+.004,outerRadius:.24,zBack:zWall,zFront:-.4,role:'pinion-shaft-rear-bearing'}));
+ const travelDown=d.radius*d.amplitude*1.5,travelUp=d.radius*d.amplitude*.5;
+ const rackX=d.radius+d.dedendum+d.rackWidth/2,guideTops=[],barrelTops=[];
+ for(const [i,side,y0,length,up,down] of [[0,-1,d.leftY,d.rackLength,travelUp,travelDown],[1,1,d.rightY,d.rightRackLength,travelDown,travelUp]]){
+  const rack=racks[i],x=side*rackX,top=length/2,bottom=-length/2;
+  // Upper run-on (rack-local y) and its fixed guide (world y; the rack's
+  // modelled pose is y0).
+  const guideStart=y0+top+up+.12,guideEnd=guideStart+.3,runTop=top+up+.12+.3+down+.05;
+  const run=new THREE.Mesh(new THREE.BoxGeometry(.16,runTop-top+.02,.16).translate(x,(runTop+top-.02)/2,0),matte(PALETTE.driven));
+  run.name='rackRunOn'+i;rack.add(run);
+  fixedParts.add(slideSleeve({center:new THREE.Vector3(x,(guideStart+guideEnd)/2,0),axis:'y',length:.3,innerWidth:.172,innerDepth:.172,wall:.05,zWall,role:'rack-guide-'+i}));
+  guideTops.push(guideEnd);
+  // Piston rod into the pump barrel below.
+  const lowest=y0-down+bottom,highest=y0+up+bottom,barrelTop=lowest-.12,rodLength=highest-barrelTop+.2,barrelLength=rodLength+(highest-lowest)+.25;
+  const rod=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,rodLength+.02,32),matte(PALETTE.muted));
+  rod.position.set(x,bottom-rodLength/2+.01,0);rod.name='pistonRod'+i;rack.add(rod);
+  const barrel=glandCylinder({x,topY:barrelTop,z:0,length:barrelLength,glandRadius:.1,boreRadius:.26,outerRadius:.32,role:'pump-barrel-'+i});
+  barrel.material=supportMaterial();fixedParts.add(barrel);
+  fixedParts.add(footPillar({x,yTop:barrelTop-barrelLength,yFloor:barrelTop-barrelLength-.1,z:0,width:.64,footDepth:.8,role:'pump-barrel-foot-'+i}));
+  fixedParts.add(new THREE.Mesh(new THREE.BoxGeometry(.4,.5,-.3-zWall).translate(x,barrelTop-.4,(-.3+zWall)/2),supportMaterial()));
+  barrelTops.push(barrelTop);
+ }
+ for(const side of [-1,1])fixedParts.add(backBar([{x:side*rackX,y:Math.min(...barrelTops)-.4},{x:side*rackX,y:Math.max(...guideTops)}],{zFront:zWall,width:.24,role:'pump-frame-upright'}));
+ fixedParts.add(backBar([{x:-rackX,y:0},{x:rackX,y:0}],{zFront:zWall,width:.14,role:'pump-frame-tie'}));
+ for(const o of fixedParts.children)o.userData.beyondPlateCrop=true;
  const stateAtTime=time=>{
   const angle=d.amplitude*(Math.sin(2*Math.PI*time/d.period-Math.PI/6)+.5);
   return {angle,leftY:d.leftY-d.radius*angle,rightY:d.rightY+d.radius*angle};
