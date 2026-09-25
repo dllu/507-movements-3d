@@ -364,7 +364,7 @@ export default {
   },
   305: {
     remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket'],
-    note: 'The bottle-shaped pendulum plate, one part with its eye, rod, two eccentric adjusting bushes and the escapement opening cut to Brown\'s two D windows, and the single-pin disc behind it; no clock frame or brackets are drawn.',
+    note: 'The bottle-shaped pendulum plate, one part with its eye, rod, two eccentric adjusting bushes and the Z-shaped escapement opening cut as one outline to Brown\'s windows, and the disc with its single ruby pin behind it, shown with the pendulum upright; no clock frame or brackets are drawn.',
   },
   306: {
     remove: ['rear-frame-cross-bridge', 'bored-back-strut-joining-wheel-arbor-to-frame-bridge'],

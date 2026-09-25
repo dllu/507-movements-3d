@@ -18,7 +18,7 @@ export function correctSinglePinParts(root){
  const housing=role(root,'fixed-single-pin-disc-arbor');replace(housing,bore(.16,.118,.2));housing.position.z=g.diskZ-g.diskDepth/2-.11;
  const arborEnd=g.diskFront,arborLength=arborEnd-(housing.position.z-.1);shaft(b.diskHub,.115,arborLength,arborEnd-arborLength/2);
  replace(b.disk,bore(g.diskRadius,.118,g.diskDepth));
- d.workingPartsReview={scope:'Pendulum plate with the escapement opening cut to Brown\'s shape: concentric dead edges and straight upright impulse edges, the pin standing from the disc behind the plate, bored eye, disc and arbor bush.',qualification:'Upright impulse contact and positive work are checked against the actual opening edges. Prescribed release/landing has a small corner interference and short gaps from the dead faces; passive operation is not qualified.',contactMarkersSuppressed:true};
+ d.workingPartsReview={scope:'Pendulum plate with the escapement opening cut to Brown\'s shape: concentric dead edges and straight upright impulse edges, the pin standing from the disc behind the plate, bored eye, disc and arbor bush.',qualification:'The disc is driven until the pin meets the actual opening edges: it rests on the concentric dead faces, rolls round the neck corner and pushes the upright face, with positive work, all solved against the plate. Only the short drop onto the opposite dead face is prescribed; the pendulum law is prescribed and forces are not solved, so passive operation is not qualified.',contactMarkersSuppressed:true};
 }
 
 // Movement 306 only; 307 builds its own finite parts.

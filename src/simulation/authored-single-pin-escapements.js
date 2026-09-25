@@ -62,22 +62,52 @@ function smootherStep(value) {
   return x ** 3 * (x * (x * 6 - 15) + 10);
 }
 
+function bisect(predicate, low, high, iterations = 64) {
+  // Returns the boundary between `low` (predicate false) and `high` (true).
+  let lo = low;
+  let hi = high;
+  for (let index = 0; index < iterations; index += 1) {
+    const middle = (lo + hi) / 2;
+    if (predicate(middle)) hi = middle;
+    else lo = middle;
+  }
+  return { high: hi, low: lo };
+}
+
+// A dead face: an arc about the pendulum pivot (the pivot is the origin of
+// the pendulum frame) where the pin works, |x| up to `working`; beyond it the
+// slope eases to level so the window keeps Brown's straight edge.
+function deadFaceCurve(radius, working = 0.22, ease = 0.2) {
+  return (x) => {
+    const u = Math.abs(x);
+    if (u <= working) return -Math.sqrt(radius ** 2 - u ** 2);
+    const base = -Math.sqrt(radius ** 2 - working ** 2);
+    const slope = working / Math.sqrt(radius ** 2 - working ** 2);
+    const run = Math.min(u - working, ease);
+    return base + slope * (run - run * run / (2 * ease));
+  };
+}
+
 // Brown's bottle-shaped pendulum plate as one part, in the pendulum frame
 // (pivot at the origin, raster scale `scale`): the eye round the pivot, the
 // straight rod, the bottle's belly and flat foot, the two adjustment holes,
-// and the escapement opening cut directly to Brown's shape. The opening is
-// his two D-shaped windows, upper-left and lower-right, joined at the disc
-// arbor. Their working edges are the pallets: the upper-right solid's lower
-// edge and the lower-left solid's upper edge are dead faces concentric with
-// the pivot; the two upright edges beside the arbor are the impulse faces.
+// and the escapement opening cut as one outline to Brown's shape. The opening
+// is his Z: an upper-left and a lower-right window, each a quarter circle
+// joined to a straight top (or bottom) edge, sharing a horizontal band at the
+// disc arbor. Its edges are the pallets: the band's upper edge (right of the
+// neck) and lower edge (left of the neck) are the dead faces, arcs about the
+// pivot; the two upright edges at the neck are the impulse faces.
 function macdowallPlateShape({
   adjustmentCenters,
   adjustmentRadius,
-  lowerDeadFaceRadius,
-  pinRadius,
+  ceilingRadius,
+  floorRadius,
+  neckHalfWidth,
   pivotBoreRadius,
   scale,
-  upperDeadFaceRadius,
+  windowBottom,
+  windowReach,
+  windowTop,
 }) {
   // Brown's outline half-widths (raster pixels, to the ink centre) against
   // raster y below the pivot at y 35.
@@ -112,48 +142,41 @@ function macdowallPlateShape({
     shape.holes.push(hole);
   }
 
-  // The escapement opening. D-window sizes from Brown: 80 by 50 pixels, the
-  // outer corners rounded as quarter ellipses.
-  const reach = 74.5 * scale;
-  const flat = 33 * scale;
-  const height = 50 * scale;
-  // The dead faces are arcs about the pivot where the pin works (|x| up to
-  // `working`); beyond it their slope eases to level, so the windows keep
-  // Brown's straight horizontal edges.
-  const working = 0.4;
-  const ease = 0.25;
-  const deadFace = (radius) => (x) => {
-    const u = Math.abs(x);
-    if (u <= working) return -Math.sqrt(radius ** 2 - u ** 2);
-    const base = -Math.sqrt(radius ** 2 - working ** 2);
-    const slope = working / Math.sqrt(radius ** 2 - working ** 2);
-    const run = Math.min(u - working, ease);
-    return base + slope * (run - run * run / (2 * ease));
-  };
-  const ceiling = deadFace(upperDeadFaceRadius);
-  const floor = deadFace(lowerDeadFaceRadius);
+  // The escapement opening, one clockwise outline: along the ceiling (upper
+  // dead face) from the upper neck corner, round the lower-right window's
+  // quarter circle, back along its bottom, up the lower impulse face to the
+  // lower neck corner, along the floor (lower dead face), round the
+  // upper-left window's quarter circle, along its top and down the upper
+  // impulse face to the start.
+  const ceiling = deadFaceCurve(ceilingRadius);
+  const floor = deadFaceCurve(floorRadius);
+  const c = neckHalfWidth;
   const points = [];
-  const steps = 48;
+  const steps = 64;
   for (let index = 0; index <= steps; index += 1) {
-    const x = pinRadius + (reach - pinRadius) * index / steps;
+    const x = c + (windowReach - c) * index / steps;
     points.push([x, ceiling(x)]);
   }
-  const rightTop = ceiling(reach);
-  for (let index = 1; index <= 24; index += 1) {
-    const t = Math.PI / 2 * index / 24;
-    points.push([flat + (reach - flat) * Math.cos(t), rightTop - height * Math.sin(t)]);
+  const rightRadius = ceiling(windowReach) - windowBottom;
+  const rightCenter = [windowReach - rightRadius, ceiling(windowReach)];
+  for (let index = 1; index <= 32; index += 1) {
+    const t = Math.PI / 2 * index / 32;
+    points.push([rightCenter[0] + rightRadius * Math.cos(t),
+      rightCenter[1] - rightRadius * Math.sin(t)]);
   }
-  points.push([-pinRadius, rightTop - height]);
+  points.push([-c, windowBottom]);
   for (let index = 0; index <= steps; index += 1) {
-    const x = -pinRadius - (reach - pinRadius) * index / steps;
+    const x = -c - (windowReach - c) * index / steps;
     points.push([x, floor(x)]);
   }
-  const leftBottom = floor(-reach);
-  for (let index = 1; index <= 24; index += 1) {
-    const t = Math.PI / 2 * index / 24;
-    points.push([-flat - (reach - flat) * Math.cos(t), leftBottom + height * Math.sin(t)]);
+  const leftRadius = windowTop - floor(-windowReach);
+  const leftCenter = [-windowReach + leftRadius, floor(-windowReach)];
+  for (let index = 1; index <= 32; index += 1) {
+    const t = Math.PI / 2 * index / 32;
+    points.push([leftCenter[0] - leftRadius * Math.cos(t),
+      leftCenter[1] + leftRadius * Math.sin(t)]);
   }
-  points.push([pinRadius, leftBottom + height]);
+  points.push([c, windowTop]);
   const opening = new THREE.Path(points.map(([x, y]) => new THREE.Vector2(x, y)));
   opening.closePath();
   shape.holes.push(opening);
@@ -163,43 +186,58 @@ function macdowallPlateShape({
 function macdowallSinglePinEscapement(movement) {
   const root = new THREE.Group();
 
-  // Brown's small open circle is the eccentric ruby pin and the adjacent
-  // filled circle is the disc arbor. The dashed lower semicircle is the disc
-  // hidden behind the pendulum-carried pallet plate. Contemporary accounts
-  // identify this as C. Macdowall's 1851 single-pin dead escapement.
+  // Plate 305: the hatched circle in the neck of the Z opening is the pin and
+  // the small open ring 21 px to its left is the disc arbor; the disc (its
+  // edge seen in both windows, dashed where the plate hides it) is centred
+  // on that ring. The Z opening itself is point-symmetric about the neck
+  // centre on the pendulum centreline. Contemporary accounts identify this as
+  // C. Macdowall's 1851 single-pin dead escapement.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
   const sourceRasterPendulumPivot = new THREE.Vector2(264, 35);
-  const sourceRasterDiskCenter = new THREE.Vector2(260, 380);
-  const sourceRasterRubyPin = new THREE.Vector2(241, 380);
-  const sourceRasterUpperPalletCorner = new THREE.Vector2(268, 340);
-  const sourceRasterLowerPalletCorner = new THREE.Vector2(268, 419);
-  const sourceRasterLeftDeadFaceEnd = new THREE.Vector2(191, 389);
-  const sourceRasterRightDeadFaceEnd = new THREE.Vector2(338, 370);
+  const sourceRasterOpeningCenter = new THREE.Vector2(264, 380);
+  const sourceRasterDiskCenter = new THREE.Vector2(240, 380);
+  const sourceRasterRubyPin = new THREE.Vector2(261, 380);
+  const sourceRasterUpperPalletCorner = new THREE.Vector2(270, 370);
+  const sourceRasterLowerPalletCorner = new THREE.Vector2(259, 388);
+  const sourceRasterLeftDeadFaceEnd = new THREE.Vector2(190, 388);
+  const sourceRasterRightDeadFaceEnd = new THREE.Vector2(340, 370);
   const sourceRasterLeftAdjustment = new THREE.Vector2(224, 479);
   const sourceRasterRightAdjustment = new THREE.Vector2(297, 479);
-  const sourceRasterDirectionArrow = new THREE.Vector2(279, 394);
+  const sourceRasterDirectionArrow = new THREE.Vector2(287, 392);
+  const sourcePinOrbitPixels = 21;
+  const sourcePinRadiusPixels = 8.7;
+  const sourceDiskRadiusPixels = 36;
 
   const sourceScale = 4.5
-    / (sourceRasterDiskCenter.y - sourceRasterPendulumPivot.y);
+    / (sourceRasterOpeningCenter.y - sourceRasterPendulumPivot.y);
   const palletPivot = new THREE.Vector2(0, 4.30);
   const sourcePointToModel = ({ x, y }) => new THREE.Vector2(
     palletPivot.x + (x - sourceRasterPendulumPivot.x) * sourceScale,
     palletPivot.y + (sourceRasterPendulumPivot.y - y) * sourceScale,
   );
+  // The disc arbor stands on the pendulum centreline at the centre of the
+  // opening's symmetry, so both beats are alike (Brown draws the arbor ring
+  // 24 px left of it, which would put the escapement out of beat).
   const diskCenter = new THREE.Vector2(0, -0.20);
   const centerDistance = palletPivot.distanceTo(diskCenter);
 
-  // The ninth-edition Encyclopaedia Britannica construction rule limits the
-  // eccentricity to 1/60 of the distance between the disc and pallet axes in
-  // order to hold the angle of escape to about one degree.
-  const eccentricityRatio = 1 / 60;
-  const pinOrbitRadius = centerDistance * eccentricityRatio;
-  const pinRadius = 0.024;
+  // Brown's proportions: the pin's orbit (21 px) and diameter (17 px) and
+  // the disc (36 px) as he draws them. This is much larger than the 1:60
+  // eccentricity of the period construction rule, so the angle of escape is
+  // about 3.5 degrees rather than 1.
+  const pinOrbitRadius = sourcePinOrbitPixels * sourceScale;
+  const eccentricityRatio = pinOrbitRadius / centerDistance;
+  const pinRadius = sourcePinRadiusPixels * sourceScale;
+  const diskRadius = sourceDiskRadiusPixels * sourceScale;
+  // Half the horizontal gap between the two upright faces at the neck. Brown
+  // draws about 5.5 px (0.072); after leaving the upper face the pin must
+  // land with its centre clear over the floor (x <= -c), which leaves a thin
+  // margin at 0.07, so the neck is narrowed to 0.05 (3.8 px).
+  const neckHalfWidth = 0.05;
   // Depth, back to front: the disc behind the pendulum plate, its pin
   // standing forward through the plate's opening, whose edges are the
-  // pallets. Brown's disc (about 36 pixels) is seen through the windows.
-  const diskRadius = 0.44;
+  // pallets.
   const diskDepth = 0.22;
   const palletDepth = 0.25;
   const plateZ = 0.02;
@@ -207,24 +245,35 @@ function macdowallSinglePinEscapement(movement) {
   const diskZ = plateBack - 0.01 - diskDepth / 2;
   const diskFront = diskZ + diskDepth / 2;
   const pinFront = plateZ + palletDepth / 2 + 0.02;
-  // The pin is set into the arbor's end, which lies flush with the disc face.
-  const pinSeat = 0.03;
+  // The pin is set into the disc face.
+  const pinSeat = 0.06;
   const pinLength = pinFront - diskFront + pinSeat;
   const workingPlaneZ = (pinFront + diskFront - pinSeat) / 2;
   const contactMarkerZ = pinFront + 0.1;
 
   const pendulumPeriod = 4;
   const halfBeatDuration = pendulumPeriod / 2;
-  const pendulumAmplitude = THREE.MathUtils.degToRad(3.6);
+  const pendulumAmplitude = THREE.MathUtils.degToRad(5.5);
   const escapeAngle = Math.atan(pinOrbitRadius / centerDistance);
-  const contactAngle = escapeAngle * 0.92;
-  const releasePhase = Math.acos(escapeAngle / pendulumAmplitude) / Math.PI;
-  const impulseStartHalfPhase = Math.acos(
-    contactAngle / pendulumAmplitude,
-  ) / Math.PI;
-  const impulseEndHalfPhase = 1 - impulseStartHalfPhase;
-  const landingPhase = 1 - releasePhase;
-  const faceEquationScale = centerDistance / pinOrbitRadius;
+  // The clock starts with the pendulum upright, as Brown draws it, in the
+  // middle of the upper impulse.
+  const timeOrigin = halfBeatDuration / 2;
+  // Share of a half-beat taken by the free drop from the impulse face onto
+  // the opposite dead face (prescribed; in a clock it is almost instant).
+  const dropSpan = 0.05;
+
+  // Pendulum frame: the pivot at the origin, the arbor on the centreline at
+  // (0, -centerDistance). The pin locks with its centre at 9 or 3 o'clock
+  // (clockwise it presses up on the ceiling or down on the floor), so both
+  // dead faces lie at the same lock-centre radius from the pivot, one pin
+  // radius inside and outside it.
+  const lockCenterRadius = Math.hypot(centerDistance, pinOrbitRadius);
+  const upperDeadFaceRadius = lockCenterRadius - pinRadius;
+  const lowerDeadFaceRadius = lockCenterRadius + pinRadius;
+  const ceilingCorner = new THREE.Vector2(neckHalfWidth,
+    -Math.sqrt(upperDeadFaceRadius ** 2 - neckHalfWidth ** 2));
+  const floorCorner = new THREE.Vector2(-neckHalfWidth,
+    -Math.sqrt(lowerDeadFaceRadius ** 2 - neckHalfWidth ** 2));
 
   const pendulumMotionAtHalfPhase = (halfBeatIndex, halfPhase) => {
     const direction = positiveModulo(halfBeatIndex, 2) === 0 ? -1 : 1;
@@ -238,85 +287,140 @@ function macdowallSinglePinEscapement(movement) {
         * angularFrequency * Math.sin(argument),
     };
   };
-  const canonicalImpulseWheelAngle = (side, palletAngle) => {
-    const argument = THREE.MathUtils.clamp(
-      faceEquationScale * Math.sin(palletAngle),
-      -1,
-      1,
-    );
-    return side === 'upper'
-      ? palletAngle + Math.acos(argument)
-      : palletAngle - Math.acos(argument);
-  };
-  const impulseAdvanceForAngle = (side, palletAngle) => (
-    side === 'upper'
-      ? Math.PI - canonicalImpulseWheelAngle(side, palletAngle)
-      : -canonicalImpulseWheelAngle(side, palletAngle)
+  const pendulumAngleAt = (upperBeat, halfPhase) => (
+    (upperBeat ? -1 : 1) * pendulumAmplitude * Math.cos(Math.PI * halfPhase)
   );
-  const impulseStartAdvance = {
-    lower: impulseAdvanceForAngle('lower', contactAngle),
-    upper: impulseAdvanceForAngle('upper', -contactAngle),
-  };
-  const impulseEndAdvance = {
-    lower: impulseAdvanceForAngle('lower', -contactAngle),
-    upper: impulseAdvanceForAngle('upper', contactAngle),
-  };
 
-  const phaseWindowProgress = (phase, start, end) => (
-    (phase - start) / (end - start)
-  );
+  // Pin centre in the pendulum frame for disc angle `theta` (0 = pin at 3
+  // o'clock) and pendulum angle `phi`.
+  const pinLocalAt = (theta, phi) => {
+    const x = pinOrbitRadius * Math.cos(theta);
+    const y = -centerDistance + pinOrbitRadius * Math.sin(theta);
+    return rotate2(new THREE.Vector2(x, y), -phi);
+  };
+  // Signed distances (negative inside) from a pendulum-frame point to the
+  // two solids that meet at the neck: the upper-right one (x >= c, inside
+  // the ceiling radius) and the lower-left one (x <= -c, outside the floor
+  // radius).
+  const upperSolidDistance = (p) => {
+    const rho = p.length();
+    const c = neckHalfWidth;
+    if (p.x >= c) {
+      if (rho <= upperDeadFaceRadius) return Math.max(rho - upperDeadFaceRadius, c - p.x);
+      if (p.x * upperDeadFaceRadius / rho >= c) return rho - upperDeadFaceRadius;
+      return p.distanceTo(ceilingCorner);
+    }
+    if (p.y >= ceilingCorner.y) return c - p.x;
+    return p.distanceTo(ceilingCorner);
+  };
+  const lowerSolidDistance = (p) => {
+    const rho = p.length();
+    const c = neckHalfWidth;
+    if (p.x <= -c) {
+      if (rho >= lowerDeadFaceRadius) return Math.max(lowerDeadFaceRadius - rho, p.x + c);
+      return lowerDeadFaceRadius - rho;
+    }
+    if (p.y <= floorCorner.y) return p.x + c;
+    return p.distanceTo(floorCorner);
+  };
+  const pinClearanceAt = (theta, phi) => {
+    const p = pinLocalAt(theta, phi);
+    return Math.min(upperSolidDistance(p), lowerSolidDistance(p)) - pinRadius;
+  };
+  const beatStartTheta = (upperBeat) => (upperBeat ? Math.PI : 0);
+  const locked = (upperBeat, phi) => {
+    const x = pinLocalAt(beatStartTheta(upperBeat), phi).x;
+    return upperBeat ? x >= neckHalfWidth : x <= -neckHalfWidth;
+  };
+  // How far the driven disc can turn from its lock before the pin meets the
+  // plate, with the pendulum at `phi`: the pin is driven clockwise and only
+  // the opening's edges hold it.
+  const scanStep = 0.004;
+  const blockedAdvance = (upperBeat, phi) => {
+    if (locked(upperBeat, phi)) return 0;
+    const theta0 = beatStartTheta(upperBeat);
+    const blocked = (advance) => pinClearanceAt(theta0 - advance, phi) < -1e-12;
+    let previous = 0;
+    for (let advance = scanStep; ; advance += scanStep) {
+      const bounded = Math.min(advance, Math.PI);
+      if (blocked(bounded)) return bisect(blocked, previous, bounded).low;
+      if (bounded >= Math.PI) return Math.PI;
+      previous = bounded;
+    }
+  };
+  // Beat events, in half-beat phase: release from the dead face, and the
+  // moment the pin leaves the impulse face and drops onto the opposite dead
+  // face.
+  const beatEvents = (upperBeat) => {
+    const edgeRelease = bisect(
+      (u) => !locked(upperBeat, pendulumAngleAt(upperBeat, u)), 0, 1,
+    ).high;
+    // Just past the corner the pin's centre is no longer over the dead face,
+    // but the room it has to turn first shrinks slightly (by ~1e-5 rad)
+    // before it grows, because the corner is not on the pin's radial line.
+    // The pin stays where it is until that minimum, so the disc never backs
+    // up; release is taken there.
+    const advanceAt = (u) => blockedAdvance(upperBeat,
+      pendulumAngleAt(upperBeat, u));
+    let lo = edgeRelease;
+    let hi = edgeRelease + 0.02;
+    for (let index = 0; index < 80; index += 1) {
+      const m1 = lo + (hi - lo) / 3;
+      const m2 = hi - (hi - lo) / 3;
+      if (advanceAt(m1) <= advanceAt(m2)) hi = m2;
+      else lo = m1;
+    }
+    const release = (lo + hi) / 2;
+    const drop = bisect(
+      (u) => blockedAdvance(upperBeat, pendulumAngleAt(upperBeat, u)) >= Math.PI,
+      release, 1,
+    ).high;
+    const dropAdvance = blockedAdvance(upperBeat,
+      pendulumAngleAt(upperBeat, drop - 1e-9));
+    return { drop, dropAdvance, edgeRelease, release, releaseAdvance: advanceAt(release) };
+  };
+  const events = { lower: beatEvents(false), upper: beatEvents(true) };
+
   const rawStateAtTime = (time) => {
-    const halfCoordinate = time / halfBeatDuration;
+    const halfCoordinate = (time + timeOrigin) / halfBeatDuration;
     const halfBeatIndex = Math.floor(halfCoordinate);
     const halfPhase = halfCoordinate - halfBeatIndex;
     const upperBeat = positiveModulo(halfBeatIndex, 2) === 0;
     const impulseSide = upperBeat ? 'upper' : 'lower';
-    const startingRest = upperBeat ? 'upper-left' : 'lower-right';
-    const endingRest = upperBeat ? 'lower-right' : 'upper-left';
+    const startingRest = upperBeat ? 'ceiling' : 'floor';
+    const endingRest = upperBeat ? 'floor' : 'ceiling';
     const pendulum = pendulumMotionAtHalfPhase(halfBeatIndex, halfPhase);
+    const beat = events[impulseSide];
     const wheelAngleAtBeatStart = Math.PI - halfBeatIndex * Math.PI;
     let beatAdvance;
     let contactKind;
     let mode;
+    let restFace = null;
 
-    if (halfPhase < releasePhase) {
+    if (halfPhase < beat.release) {
       beatAdvance = 0;
       contactKind = 'dead-rest';
       mode = `${startingRest}-dead-rest`;
-    } else if (halfPhase < impulseStartHalfPhase) {
-      const progress = phaseWindowProgress(
-        halfPhase,
-        releasePhase,
-        impulseStartHalfPhase,
-      );
-      beatAdvance = impulseStartAdvance[impulseSide]
-        * smootherStep(progress);
-      contactKind = 'free';
-      mode = `${startingRest}-release-drop`;
-    } else if (halfPhase <= impulseEndHalfPhase) {
-      beatAdvance = impulseAdvanceForAngle(
-        impulseSide,
-        pendulum.angle,
-      );
-      contactKind = 'upright-impulse';
-      mode = `${impulseSide}-upright-impulse`;
-    } else if (halfPhase < landingPhase) {
-      const progress = phaseWindowProgress(
-        halfPhase,
-        impulseEndHalfPhase,
-        landingPhase,
-      );
-      beatAdvance = THREE.MathUtils.lerp(
-        impulseEndAdvance[impulseSide],
-        Math.PI,
-        smootherStep(progress),
-      );
+      restFace = startingRest;
+    } else if (halfPhase < beat.drop) {
+      beatAdvance = blockedAdvance(upperBeat, pendulum.angle);
+      const p = pinLocalAt(beatStartTheta(upperBeat) - beatAdvance,
+        pendulum.angle);
+      const onFace = upperBeat
+        ? p.y >= ceilingCorner.y
+        : p.y <= floorCorner.y;
+      contactKind = onFace ? 'upright-impulse' : 'corner-impulse';
+      mode = `${impulseSide}-${onFace ? 'upright' : 'corner'}-impulse`;
+    } else if (halfPhase < beat.drop + dropSpan) {
+      beatAdvance = THREE.MathUtils.lerp(beat.dropAdvance, Math.PI,
+        smootherStep((halfPhase - beat.drop) / dropSpan));
       contactKind = 'free';
       mode = `${endingRest}-landing-drop`;
     } else {
       beatAdvance = Math.PI;
       contactKind = 'dead-rest';
       mode = `${endingRest}-dead-rest`;
+      restFace = endingRest;
     }
 
     const wheelAngle = wheelAngleAtBeatStart - beatAdvance;
@@ -336,6 +440,7 @@ function macdowallSinglePinEscapement(movement) {
       pendulumAngularAcceleration: pendulum.angularAcceleration,
       pendulumAngularSpeed: pendulum.angularSpeed,
       pinCenter,
+      restFace,
       startingRest,
       upperBeat,
       wheelAngle,
@@ -348,49 +453,37 @@ function macdowallSinglePinEscapement(movement) {
   );
   const palletWorldPoint = (localPoint, palletAngle) => palletPivot.clone()
     .add(rotate2(localPoint, palletAngle));
-  const lockCenterRadius = Math.hypot(centerDistance, pinOrbitRadius);
-  const upperDeadFaceRadius = lockCenterRadius - pinRadius;
-  const lowerDeadFaceRadius = lockCenterRadius + pinRadius;
 
   const addContactState = (state) => {
     let activeFace = null;
     let contactError = null;
-    let contactPoint = null;
     let contactPointLocal = null;
     const pinCenterLocal = palletLocalPoint(
       state.pinCenter,
       state.pendulumAngle,
     );
-
+    const upper = state.impulseSide === 'upper';
     if (state.contactKind === 'upright-impulse') {
-      const faceX = state.impulseSide === 'upper'
-        ? pinRadius
-        : -pinRadius;
+      const faceX = upper ? neckHalfWidth : -neckHalfWidth;
       contactPointLocal = new THREE.Vector2(faceX, pinCenterLocal.y);
-      contactPoint = palletWorldPoint(
-        contactPointLocal,
-        state.pendulumAngle,
-      );
-      contactError = Math.abs(pinCenterLocal.x);
       activeFace = `${state.impulseSide}-upright-impulse-face`;
+    } else if (state.contactKind === 'corner-impulse') {
+      contactPointLocal = (upper ? ceilingCorner : floorCorner).clone();
+      activeFace = `${state.impulseSide}-neck-corner`;
     } else if (state.contactKind === 'dead-rest') {
-      const activeRest = state.halfPhase < releasePhase
-        ? state.startingRest
-        : state.endingRest;
-      const upperRest = activeRest === 'upper-left';
-      const faceRadius = upperRest
+      const faceRadius = state.restFace === 'ceiling'
         ? upperDeadFaceRadius
         : lowerDeadFaceRadius;
-      contactPointLocal = pinCenterLocal.clone()
-        .setLength(faceRadius);
-      contactPoint = palletWorldPoint(
-        contactPointLocal,
-        state.pendulumAngle,
-      );
+      contactPointLocal = pinCenterLocal.clone().setLength(faceRadius);
+      activeFace = `${state.restFace}-concentric-dead-face`;
+    }
+    const contactPoint = contactPointLocal
+      ? palletWorldPoint(contactPointLocal, state.pendulumAngle)
+      : null;
+    if (contactPoint) {
       contactError = Math.abs(
         contactPoint.distanceTo(state.pinCenter) - pinRadius,
       );
-      activeFace = `${activeRest}-concentric-dead-face`;
     }
     return {
       ...state,
@@ -503,14 +596,21 @@ function macdowallSinglePinEscapement(movement) {
   ]);
   const adjustmentRadius = 22 * sourceScale;
   const pivotBoreRadius = 0.076;
+  // Brown's windows reach 74.5 px either side of the neck and 40 px above
+  // (upper-left) or below (lower-right) the arbor.
+  const windowReach = 74.5 * sourceScale;
+  const windowHalfHeight = 40 * sourceScale;
   const { opening: escapementOpening, shape: plateShape } = macdowallPlateShape({
     adjustmentCenters,
     adjustmentRadius,
-    lowerDeadFaceRadius: lockCenterRadius + pinRadius,
-    pinRadius,
+    ceilingRadius: upperDeadFaceRadius,
+    floorRadius: lowerDeadFaceRadius,
+    neckHalfWidth,
     pivotBoreRadius,
     scale: sourceScale,
-    upperDeadFaceRadius: lockCenterRadius - pinRadius,
+    windowBottom: localDiskCenterY - windowHalfHeight,
+    windowReach,
+    windowTop: localDiskCenterY + windowHalfHeight,
   });
   const plateGeometry = new THREE.ExtrudeGeometry(plateShape, {
     bevelEnabled: false,
@@ -524,53 +624,41 @@ function macdowallSinglePinEscapement(movement) {
   plate.userData.escapementOpening = escapementOpening;
   palletAssembly.add(plate);
 
+  // Hidden references for the working stretch of each dead face: the arc
+  // about the pivot from the neck corner outwards.
   const deadFacePoints = (rest) => {
-    const upper = rest === 'upper-left';
-    const centerVector = new THREE.Vector2(
-      upper ? -pinOrbitRadius : pinOrbitRadius,
-      -centerDistance,
-    );
-    const centerAngle = Math.atan2(centerVector.y, centerVector.x);
+    const upper = rest === 'ceiling';
     const faceRadius = upper ? upperDeadFaceRadius : lowerDeadFaceRadius;
     return Array.from({ length: 33 }, (_, index) => {
-      const offset = THREE.MathUtils.lerp(
-        -pendulumAmplitude * 1.18,
-        pendulumAmplitude * 1.18,
-        index / 32,
-      );
-      const angle = centerAngle + offset;
-      return new THREE.Vector2(
-        Math.cos(angle) * faceRadius,
-        Math.sin(angle) * faceRadius,
-      );
+      const x = (upper ? 1 : -1) * (neckHalfWidth + 0.36 * index / 32);
+      return new THREE.Vector2(x, -Math.sqrt(faceRadius ** 2 - x ** 2));
     });
   };
-  const upperDeadPoints = deadFacePoints('upper-left');
-  const lowerDeadPoints = deadFacePoints('lower-right');
+  const upperDeadPoints = deadFacePoints('ceiling');
+  const lowerDeadPoints = deadFacePoints('floor');
   const upperDeadEdge = edgeTube(
     upperDeadPoints,
     workingPlaneZ + palletDepth * 0.22,
     0.025,
     faceMaterial,
-    'upper-left-concentric-horizontal-dead-face',
+    'ceiling-concentric-horizontal-dead-face',
   );
   const lowerDeadEdge = edgeTube(
     lowerDeadPoints,
     workingPlaneZ + palletDepth * 0.22,
     0.025,
     faceMaterial,
-    'lower-right-concentric-horizontal-dead-face',
+    'floor-concentric-horizontal-dead-face',
   );
   palletAssembly.add(upperDeadEdge, lowerDeadEdge);
 
-  const impulseFaceHeight = pinOrbitRadius * 1.36;
   const upperImpulsePoints = [
-    new THREE.Vector2(-pinRadius, localDiskCenterY - 0.02),
-    new THREE.Vector2(-pinRadius, localDiskCenterY + impulseFaceHeight),
+    ceilingCorner.clone(),
+    new THREE.Vector2(neckHalfWidth, localDiskCenterY + windowHalfHeight),
   ];
   const lowerImpulsePoints = [
-    new THREE.Vector2(pinRadius, localDiskCenterY - impulseFaceHeight),
-    new THREE.Vector2(pinRadius, localDiskCenterY + 0.02),
+    new THREE.Vector2(-neckHalfWidth, localDiskCenterY - windowHalfHeight),
+    floorCorner.clone(),
   ];
   const upperImpulseEdge = edgeTube(
     upperImpulsePoints,
@@ -619,7 +707,8 @@ function macdowallSinglePinEscapement(movement) {
   disk.position.z = diskZ;
   disk.userData.role = 'very-small-solid-escape-disc';
   wheelRotor.add(disk);
-  // The arbor ends at the disc's face, behind the pin and the plate.
+  // The arbor ends at the disc's face, behind the plate; its end is Brown's
+  // small ring at the disc centre.
   const diskHub = cylinderAlongZ(0.115, 0.6, darkMaterial);
   diskHub.position.z = diskFront - 0.3;
   diskHub.userData.role = 'single-pin-disc-arbor';
@@ -676,30 +765,28 @@ function macdowallSinglePinEscapement(movement) {
     upperImpulseEdge,
     wheelRotor,
   };
-  root.userData.cameraDistanceScale = 1.06;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.05, -2.05, -0.95),
-    new THREE.Vector3(2.05, 4.80, 1.05),
-  );
   root.userData.fidelity = 'authored';
   root.userData.geometry = {
     centerDistance,
-    contactAngle,
+    ceilingCorner: ceilingCorner.clone(),
     contactMarkerZ,
     diskCenter: diskCenter.clone(),
     diskDepth,
     diskFront,
     diskRadius,
     diskZ,
+    dropSpan,
     eccentricityRatio,
     escapeAngle,
-    faceEquationScale,
+    events: {
+      lower: { ...events.lower },
+      upper: { ...events.upper },
+    },
+    floorCorner: floorCorner.clone(),
     halfBeatDuration,
-    impulseEndHalfPhase,
-    impulseStartHalfPhase,
-    landingPhase,
     lockCenterRadius,
     lowerDeadFaceRadius,
+    neckHalfWidth,
     palletDepth,
     palletPivot: palletPivot.clone(),
     plateZ,
@@ -709,37 +796,38 @@ function macdowallSinglePinEscapement(movement) {
     pinLength,
     pinOrbitRadius,
     pinRadius,
-    releasePhase,
+    pinSeat,
+    sourceDiskRadiusPixels,
     sourceImageHeight,
     sourceImageWidth,
+    sourcePinOrbitPixels,
+    sourcePinRadiusPixels,
     sourceScale,
+    timeOrigin,
     upperDeadFaceRadius,
+    windowHalfHeight,
+    windowReach,
     workingPlaneZ,
   };
-  root.userData.impulseAdvanceForAngle = impulseAdvanceForAngle;
-  root.userData.impulseFaceCenterlineError = (side, palletAngle) => {
-    const canonicalWheelAngle = canonicalImpulseWheelAngle(
-      side,
-      palletAngle,
-    );
-    const center = pinCenterAtWheelAngle(canonicalWheelAngle);
-    return palletLocalPoint(center, palletAngle).x;
-  };
-  root.userData.mechanism = 'Macdowall single-pin dead escapement: one ruby pin near a very small disc arbor alternates between the upper-left and lower-right horizontal concentric dead rests; after each release it impulses the adjoining upright face and the disc completes exactly one clockwise half-turn per pendulum beat.';
+  root.userData.pinClearanceAt = pinClearanceAt;
+  root.userData.pinLocalAt = pinLocalAt;
+  root.userData.mechanism = 'Macdowall single-pin dead escapement: one ruby pin on a small disc behind the pendulum plate alternately rests on the ceiling and the floor of the Z opening, dead faces concentric with the pendulum pivot; after each release it rolls round the neck corner, impulses the upright face above or below the neck and drops onto the opposite dead face, so the disc completes exactly one clockwise half-turn per pendulum beat.';
   root.userData.palletFaces = {
     lower: {
+      corner: floorCorner.clone(),
       deadFacePoints: lowerDeadPoints,
       deadFaceRadius: lowerDeadFaceRadius,
-      impulseCenterlineX: 0,
-      impulseFaceX: -pinRadius,
-      position: 'lower-right',
+      impulseCenterlineX: -neckHalfWidth + pinRadius,
+      impulseFaceX: -neckHalfWidth,
+      position: 'lower-left solid: floor and the upright face below the neck',
     },
     upper: {
+      corner: ceilingCorner.clone(),
       deadFacePoints: upperDeadPoints,
       deadFaceRadius: upperDeadFaceRadius,
-      impulseCenterlineX: 0,
-      impulseFaceX: pinRadius,
-      position: 'upper-left',
+      impulseCenterlineX: neckHalfWidth - pinRadius,
+      impulseFaceX: neckHalfWidth,
+      position: 'upper-right solid: ceiling and the upright face above the neck',
     },
   };
   root.userData.palletLocalPoint = palletLocalPoint;
@@ -752,7 +840,7 @@ function macdowallSinglePinEscapement(movement) {
     officialCanvasModelPresent: false,
     officialPageAnimatedTabDisabled: true,
     reason: 'The official Movement 305 page marks Animated unavailable and supplies only Brown’s static plate and description.',
-    referenceScope: 'Brown fixes the bottle-profile pendulum plate, opposed L-shaped pallet opening, tiny single-pin disc, clockwise arrow, and two lower adjustments. The period Macdowall description fixes the single ruby pin, one-half-turn-per-beat rate, upright impulse faces, horizontal dead faces, and 1:60 eccentricity limit.',
+    referenceScope: 'Brown fixes the bottle-profile pendulum plate, the Z-shaped escapement opening, the small disc with its single pin (orbit 21 px, pin 17 px across), the clockwise arrow and the two lower adjustments. The period Macdowall description fixes the single ruby pin, one-half-turn-per-beat rate, upright impulse faces and horizontal dead faces; its 1:60 eccentricity limit is not followed because Brown draws the pin about four times further out.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourcePointToModel = sourcePointToModel;
@@ -771,7 +859,8 @@ function macdowallSinglePinEscapement(movement) {
     plate305: {
       imageHeight: sourceImageHeight,
       imageWidth: sourceImageWidth,
-      inferredTopology: 'one eccentric ruby pin on a tiny disc works through a Z-like opening formed by an upper-left and a lower-right L pallet in the pendulum plate',
+      inferredTopology: 'one eccentric ruby pin on a small disc works through a Z-like opening: an upper-left and a lower-right window sharing a band at the arbor, the neck between them bounded by two upright faces',
+      rasterOpeningCenter: sourceRasterOpeningCenter.clone(),
       measurementUncertaintyPixels: 5,
       officialAnimationAvailable: false,
       rasterDirectionArrow: sourceRasterDirectionArrow.clone(),
@@ -805,22 +894,22 @@ function macdowallSinglePinEscapement(movement) {
   root.userData.timeline = {
     demonstrationPeriod: pendulumPeriod,
     schedule: [
-      'upper-left-concentric-dead-rest',
-      'short-clockwise-release-drop',
+      'ceiling-concentric-dead-rest',
+      'upper-neck-corner-impulse',
       'upper-upright-face-impulse',
-      'short-clockwise-landing-drop-to-lower-right-rest',
-      'lower-right-concentric-dead-rest',
-      'short-clockwise-release-drop',
+      'short-clockwise-drop-to-floor-rest',
+      'floor-concentric-dead-rest',
+      'lower-neck-corner-impulse',
       'lower-upright-face-impulse',
-      'short-clockwise-landing-drop-to-upper-left-rest',
+      'short-clockwise-drop-to-ceiling-rest',
     ],
   };
   root.userData.transmission = {
-    deadFaces: 'two circular rests concentric with the pendulum pivot, seen nearly horizontal at the disc',
+    deadFaces: 'the ceiling and floor of the opening\'s band, arcs concentric with the pendulum pivot, seen nearly horizontal at the disc',
     direction: 'clockwise in Brown’s front elevation',
     discAdvancePerBeatRadians: Math.PI,
     discTurnsPerPendulumCycle: 1,
-    impulseFaces: 'the two upright faces flanking the Z-like pallet opening',
+    impulseFaces: 'the two upright faces at the neck of the Z opening, above and below the band, with the neck corners',
     pinCount: 1,
     recoil: 'none while either dead face is engaged',
   };

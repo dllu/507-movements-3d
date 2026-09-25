@@ -363,3 +363,103 @@ Fix lanes: p53-no-hidden-lines, p53-parts, p53-no-crop and p53-style. A rotated-
 - **499** (minor): Dial face is translucent and there is no case back, so the mechanism shows through from behind.
 - **500** (flawed): Brown's section figure is modelled as a literal half-cut body beside the gauge; the dial is translucent and the bezel ring stands off from it.
 - **501** (minor): Brass index ring on the tube; the scale card floats beside the tube.
+
+## Pass-56 verification audit (rotated views, after pass 55)
+
+- **26** (minor): Crown wheel's teeth are separate near-black pieces ringed around a plain blue disk, reading as a black toothed rim rather than one wheel as Brown draws it
+- **32** (minor): Both friction wheels wear thick near-black tyres that read as dark outline rims around the faces (Brown's text faces only one wheel)
+- **48** (minor): Clutch shifter: the vertical operating rod stops in mid-air at the old crop line, and the bell-crank fulcrum pin floats with no bracket
+- **52** (minor): Clutch lever's fulcrum pin floats with no bracket; the handle tapers to a sharp spike where Brown's lever runs on to a rod off the plate
+- **53** (minor): Clutch shifter: the hanging operating rod ends flat in mid-air at the old crop line; the bell-crank fulcrum pin has no support
+- **86** (minor): The pump barrel added below the bed hangs free in space; only the moving pump rods reach it and nothing holds it
+- **89** (minor): A thin pale disc laid over the eccentric's front face gives a washed-out, translucent-looking inset with a darker ring around it (contour-like rim)
+- **90** (minor): The yoke's rod stubs end abruptly in mid-air at Brown's break line, with no guides for the reciprocating yoke
+- **91** (minor): The frame's rod stubs end abruptly in mid-air at Brown's break line, with no guides for the reciprocating frame
+- **95** (minor): The vertical rod rising from the fork ends in mid-air at the old crop line with no guide or attachment
+- **96** (minor): The follower rod ends in mid-air at Brown's break line on the right, with no guide or attachment
+- **134** (minor): the two added end drums for the rope float in mid-air with no axle bracket or frame (rope ends now attach, but to unsupported drums)
+- **135** (minor): the yoke's rods end free top and bottom with no guides; nothing carries the reciprocating yoke
+- **142** (minor): default view still crops the valve rod and the added two-post guide stand at the bottom edge; the rod runs far below Brown's short tapered end
+- **145** (minor): ground is two separate thin slabs with the wheel hanging in the open gap between them (Brown's pit under the wheel is not modelled); the left slab floats detached from everything
+- **146** (minor): the yoke's upper and lower rods end free with no guides; nothing carries the reciprocating yoke
+- **147** (minor): the orange tub is a lopsided saddle shape unlike Brown's straight-sided hatched trough; the paddle-arm axle runs straight into its sloping wall, and its faces show fine vertical streaking
+- **149** (minor): the arms' pivot shaft floats with no bearing, and the two drop rods end in free eyes in mid-air
+- **150** (minor): the cone is a stack of discs each painted a different shade (pale to dark stripes), reading as marker banding; a large plain black cap covers its face
+- **156** (minor): default view crops the valve rod and its guide stand at the bottom frame edge
+- **157** (minor): the output rod ends at a small loose block in mid-air (no guide or driven part), and the bell-crank pivot stub has no support
+- **166** (minor): default view crops the rod's slide at the right frame edge (at mid-stroke the rod runs off the frame)
+- **168** (minor): default view crops the long blue lever at the top frame edge (its bracket is off-frame); crank shafts still have no bearings
+- **169** (minor): default view crops the long blue lever at the bottom-left frame edge; crank shafts still have no bearings
+- **170** (minor): five dark tick marks (bowTick) are painted across the centre of the gold bow where it crosses the spindle (engraving hatching/marker ticks)
+- **172** (minor): the grey slotted guide frame floats with no support and the crank shafts have no bearings (unchanged)
+- **178** (minor): two thin raised contour rings (source-three/two-point-seven-five-radius-outline) still sit on the fixed disk face as outline lines; the disk still has no support and the tool slide sits cropped at the left frame edge
+- **181** (minor): default view crops the piston rod and weight rods at the top/bottom edges (maxNdc 2.64); zoomed out the long piston rod has no guide or cylinder and ends free above
+- **182** (minor): default view crops the piston rod and weight rods at the top/bottom edges (maxNdc 2.86)
+- **185** (minor): the blue valve block at the end of the valve rod floats in air beside the wall (no valve chest/guide), and the reverse-lever and link fulcrum shafts are loose black bars with no bracket or bearing
+- **186** (minor): default view crops the eccentric rod at the left frame edge (maxNdc 1.94); the free end of the spring-handle loop crosses its own band
+- **197** (minor): a thin bar still pokes out through both short ends of the frame into empty space, and the guide arcs are thin free-standing blades with no connection to the plate (unchanged)
+- **201** (minor): the vertical rod A ends in mid-air below the lever with no guide or attachment (old crop line)
+- **219** (minor): pinion shaft has no bearing (floats); wheel shown as solid slotted disc where Brown draws a rim with a cross-bar; vertical shaft stub much shorter than Brown's long shaft
+- **225** (minor): lever foot pivots on a bare black stub, no ground block/bracket Brown draws
+- **227** (flawed): the sprocket outline is a jagged raster trace: the lower half has stair-step notches, small stray bumps and uneven concave flanks, and the teeth are lopsided, unlike Brown's clean six-pointed wheel with smooth arcs
+- **229** (minor): the wheel's teeth are rounded scallop lobes where Brown draws sharp notched ratchet-like teeth; chain legs still run off the lower corners of the default view
+- **236** (minor): pawl b and c tips still end in short gold cross-pins jutting sideways into the air beyond the pawl; the lever's fulcrum a has no stud or frame
+- **238** (minor): pallets B and C are still separate thin rectangular plates perched on the frame tips (C on a thin tapering nib reads as a stray stub), where Brown draws them as the hooked ends of the frame; the edge beside B is a slightly jagged trace
+- **240** (minor): spring is a round grey wire, Brown draws a flat leaf spring
+- **241** (minor): the single driving tooth is still a thin curved sliver much slighter than Brown's broad curled tooth
+- **251** (minor): the hoisting line is a thin black wire (not laid rope) that runs up through the crosshead and stops just above it in mid-air with no drum or attachment
+- **263** (minor): Cone B is cantilevered from the single screw standard: its left shaft end hangs free with no bearing, and friction wheel C sits on a short bare axle stub with no bearing or frame, so both float (262's end view draws a stand under B).
+- **262** (minor): Same model as 263: the stand seen under B in the end view is actually the far screw standard; the cone itself and wheel C's stub axle have no support.
+- **271** (minor): The thin blue cord/strip leaving the left roller drops a short way and ends in mid-air at Brown's crop line, with no weight or attachment; it is a hairline tube rather than laid rope.
+- **272** (minor): The two grey guide bushings on the sloping rod are free-floating rings with no bracket or frame, and the rod's upper end just stops in mid-air where Brown breaks it off.
+- **279** (minor): The inner faces of the frame opening carry a fine dark cross-hatched grid texture (reads as hatch notation or shadow acne), visible down the slot sides.
+- **278** (minor): The two toothed posts A stand free with no base, tie or frame, floating from every rotated view; the hoisting rope still leaves the canvas with no visible hoist.
+- **284** (minor): The grey guide bar under the rack ends in mid-air at its right end; the short right-hand post stops below it and carries only the crank, so the bar floats unsupported there.
+- **314** (minor): The lever's stand is a spindly thin-rod T-foot, and its thin vertical grey post stops short beside the lever without reaching or carrying the lever pivot, so it reads as a stray rod standing free.
+- **327** (minor): The flywheel is still cut by the top canvas edge and the cylinder by the bottom edge in the default, oblique, r60, rm60 and back views, reading as broken off at Brown's crop line.
+- **328** (minor): The cylinder under the parallel motion runs off the bottom of the canvas in the default, oblique and rotated views, reading as broken off at Brown's crop line.
+- **329** (minor): The cylinder column runs off the bottom of the canvas in the default, oblique, r60, rm60 and back views, reading as broken off at Brown's crop line.
+- **335** (minor): The piston rod runs off the bottom of the canvas in the default and back views (its cylinder only shows from oblique/r60), and the radius-rod anchor is a tiny free-floating block.
+- **337** (minor): The beam runs off the right canvas edge and the piston rod off the bottom in the default, r60 and back views; the radius-rod anchor is a small grey stub floating in space.
+- **338** (minor): The beam runs off the left canvas edge and the piston rod off the bottom in the default, obl, r60 and back views; the radius-rod anchor is a small grey stub floating in space (top view).
+- **347** (minor): In the half-section, the wobbling disc sticks well out through the cut plane of the chamber, so from the top and r60/rm60 views half the disc hangs outside the housing; the left support post is cut by the canvas edge in the default view.
+- **354** (minor): The vertical slide bar runs off both the top and bottom canvas edges in every view, and its grey guide blocks float with no frame holding them.
+- **358** (minor): The long diagonal cord is still a hairline strand that leaves the top of the canvas in every view with no visible upper attachment, and it crosses the cone without engaging it.
+- **364** (minor): Short thin dark vertical tick lines are painted on the drum rim between the helical grooves (copies of Brown's hatch dividers), reading as marker ticks or cracks rather than geometry.
+- **367** (minor): A flat white strip with black tick marks sits on the upper ruler (Brown's hatch between the pivots rendered as a printed scale), reading as tick notation rather than a part.
+- **368** (minor): The spiral on the drum is a hairline black line painted on the surface rather than a groove or ridge, and the vertical rack runs off the top canvas edge in the default, r60, rm60 and back views.
+- **373** (minor): The drive belt runs off the top-left of the canvas in the default, oblique and rm60 views; where its far pulley is visible (r60) it hangs from a small grey plate floating in the air with no ceiling or frame.
+- **378** (minor): At mid-stroke the saw teeth and lower frame bar sink into the solid log with no kerf, and the log lies loose below the frame feet with no carriage or ground under it.
+- **382** (minor): Mirror front carries a single J-shaped raised step instead of Brown's rounded inner rim with a separate D-shaped panel.
+- **385** (minor): The two vertical pins end as short black stubs in mid-air; neither the door nor the frame they are fixed to is present, so the linkage floats.
+- **388** (minor): Both rollers hang on short axle stubs with no bearings or frame.
+- **390** (minor): Fulcrum pin a and the flywheel shaft end in air with no bearing or frame.
+- **395** (minor): Port stubs are open half-round troughs that stop short of the ring and read as split/broken pipes; there is no casing body round the plug.
+- **398** (minor): Crosshead guide bars and both wheel shafts float with no frame or bearings.
+- **402** (minor): Balance wheels still render as pale translucent discs inside the rims.
+- **407** (flawed): Cord lengthens about 1.6x between phases while the slide stays put (inextensible cord stretching as the arch straightens).
+- **415** (minor): Drive rod D runs out past the rim and ends in mid-air at the old crop line.
+- **425** (minor): From behind/above the steam passages are separate slab fins with open slots between them, and the abutment guide's top cap hovers above its housing with a visible gap.
+- **427** (minor): Inlet and outlet ports are solid square posts with no bore, not pipes.
+- **428** (minor): Side ports are pairs of flat parallel slabs (a pipe drawn in section) rather than pipes.
+- **429** (minor): Top and bottom ports are still pairs of flat plates with an open slot between them, not pipes.
+- **430** (minor): Wheel axle has no bearings or frame; the wheel hangs inside the breast unsupported.
+- **433** (minor): Spout trough floats with no support (still present).
+- **439** (minor): Pulley has no hanger or bracket and the supply trough floats, ending square in mid-air.
+- **440** (minor): Supply trough floats above the tilting trough with no support, its upper end square in mid-air.
+- **445** (minor): Lower chamber is a half-section but the falling water bell and disc are whole, so half of the water hangs outside the cut box in open air; thin black gap under the upper channel's top plate.
+- **446** (minor): Same as 445: the revolved water bell protrudes outside the half-cut lower box into open air.
+- **447** (minor): Anchor lies on the water surface instead of the river bed; boat is a flat lozenge.
+- **454** (minor): From behind, the casing top and bottom rims show jagged dark dashes (z-fighting), and the orange diaphragm lip pokes out past the casing wall.
+- **459** (minor): Well shaft is still a pale translucent panel/box.
+- **462** (minor): Upper and lower chain wheels have no bearings or frame; axles float.
+- **463** (minor): Dark horizontal bars across the gate faces (straps not in the plate) read as marker stripes.
+- **475** (minor): At mid-cycle the water fills the whole chamber volume including the cut-away half, so the sectioned chamber reads as a closed translucent teal body.
+- **480** (minor): Dark wedge with fine vertical comb stripes (artefact) under the central pipe b at the tank floor; pipe b stops at the floor instead of passing through as drawn.
+- **491** (minor): Capstan and ratchet ring stand on nothing (no deck), and the rope's black cleat post also floats.
+- **498** (minor): Supply pipe beyond the cock ends open in mid-air at the old crop line.
+- **499** (minor): Dial face is translucent with no case back, so the mechanism shows through from behind (still present).
+- **500** (minor): The section figure is a second half-cut copy of the case set beside the gauge; in rotated views it reads as a stray half-drum stuck to the gauge's side.
+- **501** (minor): Scale card carries a thick solid black bar with ticks (a black block), not Brown's fine graduations.
+
+Default-view crops of whole parts that run past Brown's framing are not counted as flaws (the viewer can rotate and zoom; AGENTS.md asks for the engraving's initial camera).
