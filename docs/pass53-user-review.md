@@ -552,3 +552,69 @@ Default-view crops of whole parts that run past Brown's framing are not counted 
 - **483** (minor): A lens-shaped part pokes out through the right side wall of the case. An orange zigzag wire from valve B ends loose in mid-air.
 - **490** (minor): The pulley bracket bars end in T-caps in mid-air and the wheel bearings and tiller have no deck or hull, so the whole gear floats (still present).
 - **498** (minor): The supply vessel is an open cup: from behind you look into it and see the port hole. It floats with no support.
+
+## Pass-59 verification audit (rotated views, rotation cue, flat shading; after pass 58)
+
+- **28** (minor): Quadrant cue on the turntable's top face is a harsh near-black/grey checkerboard, not the subtle part-tone cue (face does not read as the blue disc).
+- **56** (minor): Yellow stepped cone pulley of the speed motion has plain faces (front and back) with no quadrant rotation cue.
+- **58** (minor): Grey loose pulley at the end of the lower pulley stack has a plain end face with no quadrant rotation cue (the band runs on it per caption).
+- **61** (minor): Upper orange drum, lower yellow and grey pulleys show plain end faces with no quadrant rotation cue (60's equivalent pulleys have it).
+- **62** (minor): Grey loose pulleys on the lower shaft have plain end faces with no quadrant rotation cue.
+- **70** (minor): Driving wheel C shows a plain featureless front face with no quadrant rotation cue; its turning is invisible from the default view.
+- **86** (flawed): The two horizontal drive lines Brown draws as laid rope are rendered as plain flat tan belts to an added pulley.
+- **89** (minor): Orange eccentric sheave face inside the strap is plain with no quadrant rotation cue.
+- **90** (minor): Orange eccentric disc in the yoke has a plain face with no quadrant rotation cue.
+- **95** (minor): Rotating oblique disk has a plain top face with no quadrant rotation cue, so its spin is invisible.
+- **158** (flawed): Crank throw is too large for the treadle: the treadle swings from level to ~50 degrees and rises up across the front of the disk face; Brown's treadle stays nearly level with a short crank
+- **238** (flawed): Pallets B and C are separate rectangular box blocks stuck onto the frame corner and arm tip, protruding past the frame outline instead of being pallet faces formed in the frame
+- **181** (minor): Upper rocker's catch nose beside the hub is a jagged stepped/notched polygon fragment that reads as construction scrap
+- **182** (minor): Same jagged stepped catch-nose fragment on the upper rocker as 181
+- **153** (minor): Stud end faces are stark white inside black rims, reading as white index dots on the disk
+- **154** (minor): Stud end faces are stark white inside black rims, reading as white index dots on the disk
+- **168** (minor): The grey shaft bearing bosses float free behind the cranks, tied to no frame
+- **169** (minor): The grey shaft bearing bosses float free behind the cranks, tied to no frame
+- **196** (minor): Pinion B's 'fixed axis' is a bare stub with no bearing or support
+- **209** (minor): Forked catch is built from thin round wire tubes with a loose wire ring round the shaft, unlike Brown's solid flat forked horn
+- **226** (minor): Frame A is a spindly thin wire rectangle (Brown draws a broad flat frame) and it reads as a bare wire loop when rotated
+- **244** (minor): Scale-pan suspension cords are plain black tubes, not the laid-rope look
+- **250** (minor): Quadrant rotation cue bands painted on the spoked orange shaft wheel's rim (spoked wheel needs no cue; reads as marker stripes)
+- **254** (minor): Forks are spindly thin round wires, much slighter than Brown's chunky flat forks
+- **262** (minor): Friction cone B is a plain featureless rotating cone with no quadrant rotation cue (end face and flank plain in every view).
+- **263** (minor): Same cone B as 262 shows no quadrant rotation cue on its flank or end faces.
+- **272** (minor): Beveled disk cam reads as a smooth domed lens/bowl (dome gradient across the face) rather than Brown's thin disk with a curved edge, and its plain faces carry no rotation cue.
+- **277** (flawed): Brown's lower-right stirrup/link between hammer and mainspring is missing (spring just bears on the hammer); a large invented dark wedge-shaped frame plate dominates the back view and the hatched stop above dog a is a plain grey block.
+- **281** (minor): Grooved disk's plain back face has no rotation cue, so from behind the rotating disk looks static.
+- **282** (minor): Crank disk is a plain orange disk with no quadrant rotation cue, and its black hub shows a speckled z-fighting pattern.
+- **288** (minor): The yellow pallets are small flake-like tabs sticking out sideways from the anchor tips (one on a thin stub) instead of shaped pallet faces; they look like stray protruding bits.
+- **291** (minor): Balance (blue disk) is a featureless oscillating disk with no quadrant rotation cue.
+- **296** (minor): Balance disk D is a plain blue disk with no quadrant rotation cue.
+- **314** (minor): Balance disk is a plain blue disk with no quadrant rotation cue.
+- **315** (minor): The spindle drive is a smooth yellow cone with no teeth or rotation cue where Brown draws a toothed pinion; the two grey bearing slabs float with nothing connecting them to a frame.
+- **320** (minor): Upper pulley P (blue) and the orange going-wheel pulley are plain disks with no quadrant rotation cue (the lower pulleys have it).
+- **323** (minor): A small white square collar sits in the middle of the axle (Brown's knob B) and reads as a leftover white index marker.
+- **334** (minor): A black strip runs along the back edge of rack B, which reads as a decorative dark rim.
+- **346** (minor): Table top slab and cylinder cap are solid black, so the table edge reads as a black outline rim.
+- **348** (minor): A thin seam line crosses the plain back face of disk A (a lone edge/z-fighting line with no quadrant tone change).
+- **352** (minor): Windlass barrels and the two top sheaves are plain featureless rotating parts with no quadrant rotation cue.
+- **354** (minor): Crank disk is plain on both faces with no quadrant rotation cue.
+- **358** (minor): The four blue guide sheaves on the right frame are plain disks with no rotation cue.
+- **361** (minor): The large left wheel and the belt pulleys have no quadrant rotation cue, and the large wheel's face shades like a dome.
+- **362** (minor): Upper drum (blue) is a plain rotating cylinder with no quadrant rotation cue on its faces or tread.
+- **373** (minor): Wagon wheels spin on the moving large wheel but are plain orange disks with no rotation cue.
+- **481** (flawed): Water fills only the thin annulus between case and drum; the drum's compartments are dry and see-through to a grey back disc (Brown fills to above the centre). Pale rectangular chips float near the hub, and the partitions are four thin curved vanes rather than Brown's hooked chambers around the inlet a.
+- **494** (flawed): The tong points never bite the stone. The left jaw tip hangs in the air beside the block, and both tips stay clear of it through the whole cycle, so the stone is never gripped or lifted.
+- **413** (minor): Plain friction wheels A and the lower wheel are featureless turning discs without the quadrant rotation cue
+- **415** (minor): Wheel D is a plain featureless rim/drum without the quadrant rotation cue
+- **411** (minor): Plain white paper drum turns without the quadrant rotation cue
+- **393** (minor): The polishing cup and its top disc spin on the universal joint, but they are plain domes and discs without the quadrant cue, so the cup's own rotation cannot be seen
+- **428** (minor): Smooth rollers A spin without the quadrant rotation cue
+- **490** (minor): Yellow rope guide sheaves are plain discs without the quadrant rotation cue
+- **495** (minor): Plain orange drive pulley A lacks the quadrant rotation cue
+- **492** (minor): The pull rope ends in a disembodied hand and cuff floating in mid-air
+- **471** (minor): From behind, crank disc A and cylinder B hang in the open frame window with no visible shaft bearing or guide connecting them to the frame
+- **469** (minor): The Archimedean screw is a plain opaque grey tube with no helix visible, where Brown shows the spiral. Pale irregular blotches mottle the water in both cisterns.
+- **445** (minor): The walled neck between flume and turbine case is missing; the water column crosses an open air gap between them
+- **446** (minor): Same as 445: the walled neck between flume and case is missing, so the water jet crosses open air
+- **436** (minor): Bottom step/bridge is a thin wavy sheet with blotchy mottled shading, unlike Brown's angular trough
+- **433** (minor): From behind, the water jet passes straight through the vanes and hub and fades out below
+- **421** (minor): Speckled shadow-acne pattern on the black gland/port blocks
