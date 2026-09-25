@@ -362,6 +362,9 @@ function rockShaftToeAndPoppetLifter(movement) {
     accentMaterial,
   );
   workingFlank.userData.role = 'curved-toe-working-flank';
+  // The toe's own edge is its working flank; the proud accent tube read as a
+  // marker line along it and is not drawn.
+  workingFlank.visible = false;
   toe.add(workingFlank);
   const toeNoseIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 18, 12),
@@ -417,9 +420,11 @@ function rockShaftToeAndPoppetLifter(movement) {
     new THREE.BoxGeometry(
       lifterBlockRight.x - lifterLeft.x,
       0.045,
-      0.42,
+      0.34,
     ),
-    darkMaterial,
+    // The flat underside of the lifter itself: same material and depth, not
+    // a dark outline strip standing out past its faces.
+    drivenMaterial,
   );
   followerShoe.position.set(
     (lifterLeft.x + lifterBlockRight.x) / 2,

@@ -492,7 +492,12 @@ test('movement 492 closes smoothly, remains in finite bounds, and leaves movemen
   for (let sample = 0; sample <= 480; sample += 1) {
     model.update(geometry.cycleDuration * sample / 480);
     model.root.updateMatrixWorld(true);
-    swept.union(new THREE.Box3().setFromObject(model.root));
+    // The rope leads and hands beyond Brown's crop are outside the framed plate.
+    model.root.traverse((object) => {
+      if (!object.isMesh) return;
+      for (let parent = object; parent; parent = parent.parent) if (parent.userData.beyondPlateCrop) return;
+      swept.union(new THREE.Box3().setFromObject(object));
+    });
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
   assert.ok(Number.isFinite(swept.min.x));

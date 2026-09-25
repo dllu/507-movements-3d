@@ -83,12 +83,13 @@ test('movement 435 keeps sixteen outer guides a fixed around a separate twenty-b
     blocks.runnerShaft, blocks.rotationMarker, ...blocks.runnerSupportArms]) {
     assert.equal(rotating.parent, blocks.runner);
   }
-  for (const fixed of [blocks.fixedGuideAssembly, blocks.casingFloor,
-    blocks.centralDischarge]) assert.equal(fixed.parent, model.root);
+  for (const fixed of [blocks.fixedGuideAssembly, blocks.casingFloor])
+    assert.equal(fixed.parent, model.root);
   // Streamline tubes, flow particles and the hose-like supply ring are flow
-  // notation; source presentation does not show them.
+  // notation, and the discharge ring hung free under the open centre; source
+  // presentation does not show them.
   for (const notation of [blocks.outerSupplyRing, ...blocks.flowPathTubes,
-    ...blocks.flowMarkers]) assert.equal(notation.parent, null);
+    ...blocks.flowMarkers, blocks.centralDischarge]) assert.equal(notation.parent, null);
   assert.ok(geometry.guideInnerRadius > geometry.runnerOuterRadius,
     'fixed outer guides clear the revolving inner runner');
 
@@ -106,7 +107,6 @@ test('movement 435 keeps sixteen outer guides a fixed around a separate twenty-b
   for (const role of [
     'fixed-outer-warren-guide-assembly-a',
     'clockwise-inner-warren-runner-b',
-    'water-discharging-downward-at-turbine-center',
     'vertical-output-shaft-of-inner-runner-b',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);

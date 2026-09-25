@@ -86,11 +86,12 @@ test('378/416/420 state queries and playback preserve meshes, geometry and reada
 });
 
 
-test('416 retains the broad source planar curl and 420 support actually meets its overhead arm',()=>{
+test('416 draws Brown\'s helical spring A between its eyes and 420 support actually meets its overhead arm',()=>{
   const m=models[1],spring=m.root.userData.blocks.spring;m.update(0);
   const bounds=spring.geometry.boundingBox,size=bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x>1.3 && size.y>1.3,'broad curl around the fixed spring anchor');
-  assert.ok(Math.abs(size.z-.07)<1e-7,'finite planar strip, not an axial coil');
+  // Local x runs from the fixed eye to the crank eye; the coil is round about it.
+  assert.ok(Math.abs(size.x-(spring.userData.attachmentDistance-.34))<.02,'coil spans the eye-to-eye distance less the two eye radii');
+  assert.ok(Math.abs(size.y-size.z)<.01&&size.z>.25&&size.z<.4,'round helical coil, not a planar strip');
   assert.equal(spring.geometry.userData.deforming,true);
   const b=models[2].root.userData.blocks.fixedBellSupport;
   const post=b.children.find(o=>o.userData.role==='fixed-bell-support-post');

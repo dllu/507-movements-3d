@@ -903,6 +903,18 @@ function oscillatingMarineEngineStephensonValveGear() {
   trunnionFace.position.set(trunnionCenter.x, trunnionCenter.y, 0);
   trunnionFace.userData.role = 'front-trunnion-bearing-face';
   root.add(trunnionShaft, trunnionFace);
+  // Brown's guide columns and trunnion run off the plate into the engine
+  // framing. A minimal foot bar under both columns and a flat bracket behind
+  // the trunnion shaft tie them together so neither floats.
+  const guideFootTop = lowerGuideCenterY - lowerGuideLength / 2;
+  const guideFoot = new THREE.Mesh(new THREE.BoxGeometry(2 * lowerGuideHalfX + .3, .18, .52), frameMaterial);
+  guideFoot.position.set(trunnionCenter.x, trunnionCenter.y + guideFootTop - .09, -.21);
+  guideFoot.userData.role = 'fixed-foot-bar-under-slide-guide-columns';
+  const trunnionBracket = new THREE.Mesh(plate(clip.union(poly(circle([0, 0], .44, 128)),
+    poly([[-.2, guideFootTop], [.2, guideFootTop], [.2, 0], [-.2, 0]])), -.47, -.37), frameMaterial);
+  trunnionBracket.position.set(trunnionCenter.x, trunnionCenter.y, 0);
+  trunnionBracket.userData.role = 'fixed-bracket-behind-trunnion-shaft';
+  root.add(guideFoot, trunnionBracket);
 
   const cameraEnvelope = new THREE.Mesh(
     new THREE.BoxGeometry(6.4, 9.4, 3.4),

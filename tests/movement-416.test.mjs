@@ -80,7 +80,7 @@ test('movement 416 is one full-turn crank B, one pitman, one rocking treadle, an
     if (object.userData.role) roles.push(object.userData.role);
     if (object.userData.isBelt) belts.push(object);
     if (object.userData.role
-      === 'preloaded-planar-curled-spring-A') {
+      === 'helical-spring-A-between-fixed-eye-and-crank-eye') {
       springs.push(object);
     }
   });
@@ -92,8 +92,8 @@ test('movement 416 is one full-turn crank B, one pitman, one rocking treadle, an
     'white-crank-B-pin-and-spring-attachment',
     'rocking-foot-treadle-input',
     'constant-length-pitman-from-crank-B-to-treadle',
-    'preloaded-planar-curled-spring-A',
-    'fixed-inner-end-of-curled-spring-A',
+    'helical-spring-A-between-fixed-eye-and-crank-eye',
+    'fixed-pin-A-carrying-spring-fixed-eye',
   ]) assert.ok(roles.includes(role), role);
   // Brown draws a plain flywheel disc and a slim treadle bar.
   for (const role of [

@@ -1284,6 +1284,21 @@ function longStoppingToothEscapement(movement) {
     fixedFrame.add(bearing);
   }
 
+  // The pendulum hangs on a fixed suspension pin through its bored eye (far
+  // above Brown's crop), held in a small cock behind the plate, with a
+  // retaining head in front.
+  {
+    const pin = cylinderAlongZ(0.118, 0.54, darkMaterial);
+    pin.position.set(palletPivot.x, palletPivot.y, -0.06);
+    pin.userData.role = 'fixed-pendulum-suspension-pin';
+    const head = cylinderAlongZ(0.18, 0.04, darkMaterial);
+    head.position.set(palletPivot.x, palletPivot.y, palletDepth / 2 + 0.03);
+    head.userData.role = 'suspension-pin-retaining-head';
+    const cock = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.9, 0.15), frameMaterial);
+    cock.position.set(palletPivot.x, palletPivot.y + 0.15, -palletDepth / 2 - 0.02 - 0.075);
+    cock.userData.role = 'fixed-suspension-cock-behind-pendulum';
+    fixedFrame.add(pin, head, cock);
+  }
   const palletAssembly = new THREE.Group();
   palletAssembly.position.set(palletPivot.x, palletPivot.y, 0);
   palletAssembly.userData.axis = Z_AXIS.clone();

@@ -65,9 +65,10 @@ test('movement 228 is one twelve-pitch pulley carrying one ladder-rung chain', (
   assert.equal(new Set(blocks.teeth).size, 12);
   assert.equal(blocks.chain.userData.parallelSideLinkRows, 2);
   assert.equal(blocks.chain.userData.hasTransverseRungs, true);
-  assert.equal(blocks.sections.length, 21);
-  assert.equal(blocks.sideLinks.length, 42);
-  assert.equal(blocks.rungs.length, 21);
+  // Ten tail sections per leg run the chain down into its navel pipes.
+  assert.equal(blocks.sections.length, 27);
+  assert.equal(blocks.sideLinks.length, 54);
+  assert.equal(blocks.rungs.length, 27);
   assert.equal(sourceAnimation.available, false);
   assert.equal(sourceAnimation.officialPageHasCanvasAnimation, false);
   disposeModel(model.root);
@@ -140,8 +141,8 @@ test('movement 228 keeps every rigid ladder section exact through 32,769 states'
   for (let index = 0; index <= 32768; index += 1) {
     const inputAngle = index / 32768 * FULL_TURN;
     const state = stateAtInputAngle(inputAngle);
-    assert.equal(state.nodes.length, 22);
-    assert.equal(state.chainSections.length, 21);
+    assert.equal(state.nodes.length, 28);
+    assert.equal(state.chainSections.length, 27);
     assert.equal(state.engagements.length, 6);
     state.chainSections.forEach((section) => {
       maximumLinkLengthError = Math.max(
@@ -240,7 +241,7 @@ test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', 
         `boundary ${boundary} rung ${node.materialIndex} velocity is continuous`,
       );
     });
-    assert.equal(commonNodes, 21);
+    assert.equal(commonNodes, 27);
 
     model.update((angle - epsilon) / geometry.inputAngularSpeed);
     const renderedBefore = new Map(blocks.sections.map((section) => [
@@ -270,7 +271,7 @@ test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', 
       assert.ok(prior.position.distanceTo(next.position) < 4.2e-9);
       assert.ok(prior.quaternion.angleTo(next.quaternion) < 3.1e-8);
     });
-    assert.equal(commonRenderedSections, 20);
+    assert.equal(commonRenderedSections, 26);
   }
 
   let previousAdvance = Number.NEGATIVE_INFINITY;

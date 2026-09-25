@@ -23,7 +23,6 @@ export function makeSilkTraverseGeometry(){
  add(root,'visible-stud-cap',circleAt([0,0],.24),.08,.17,PALETTE.frame);
  pin(root,'fixed-sun-collar',[0,0],.06,.08,.16);
  add(root,'rear-bearing',bore(circleAt([0,0],.16),[[0,0]],.079),-.45,-.30,PALETTE.frame);
- add(root,'rear-post',rect(-.09,-5.96,.09,-.12),-.42,-.32,PALETTE.frame);
  pin(carrier,'planet-axle',k.orbit,-.18,.285,.078);
  const hex=poly(circle(k.orbit,.115,6));add(carrier,'planet-axle-nut',hex,.285,.325,PALETTE.ink);
  const crank=clip.union(capsule([0,0],k.crank,.17,32),rect(-.17,-.20,.19,.23),circleAt(k.crank,.18));
@@ -37,15 +36,20 @@ export function makeSilkTraverseGeometry(){
  let minimum=Infinity,maximum=-Infinity;for(let i=0;i<=3000;i++){const s=silkTraverseAtTime(k.period*i/3000);minimum=Math.min(minimum,s.slider[1]);maximum=Math.max(maximum,s.slider[1]);}
  const railBottom=minimum-.25,railTop=maximum+.25;
  add(root,'output-guide-rail',rect(-.38,railBottom,-.30,railTop),.70,.82,PALETTE.frame);
- add(root,'guide-support-post',rect(-.64,-5.96,-.56,railTop+.08),.65,.83,PALETTE.frame);
+ // A modest one-piece bracket carries both the stud and the guide: the rear
+ // post drops from the stud's bearing to a short cross-arm beneath the rail,
+ // and a post the rail's own length holds the rail. Brown crops all of it.
+ const armTop=railBottom,armBottom=railBottom-.14;
+ add(root,'rear-post',rect(-.09,armBottom,.09,-.12),-.42,-.32,PALETTE.frame);
+ add(root,'guide-support-post',rect(-.64,armBottom,-.56,railTop+.08),.65,.83,PALETTE.frame);
  add(root,'guide-upper-bridge',rect(-.64,railTop,-.30,railTop+.08),.65,.83,PALETTE.frame);
- add(root,'guide-lower-bridge',rect(-.64,-5.96,-.30,railBottom+.03),.65,.83,PALETTE.frame);
+ add(root,'guide-lower-bridge',rect(-.64,armTop,-.30,railBottom+.03),.65,.83,PALETTE.frame);
+ add(root,'guide-cross-arm',rect(-.64,armBottom,.09,armTop),-.42,.83,PALETTE.frame);
  const shoe=new THREE.Mesh(plate(clip.difference(rect(-.41,.67,-.27,.85),rect(-.381,.699,-.299,.821)),0,.26),matte(PALETTE.driven));shoe.rotation.x=Math.PI/2;shoe.position.y=.13;shoe.name='bored-slider-shoe';slider.add(shoe);parts[shoe.name]=shoe;
  // The plate shows only a short stub below the crank; the guide bar is
  // kept to a short lug ending in the thread eye rather than a long arm.
  add(slider,'traversing-guide-bar',clip.difference(clip.union(rect(-.27,-.06,.30,.06),circleAt([0,0],.10),circleAt([.30,0],.09)),circleAt([.30,0],.04)),.73,.79,PALETTE.driven);
  pin(slider,'slider-joint-pin',[0,0],.485,.86,.07);
- add(root,'base',rect(-2.05,-6.08,2.05,-5.96),-.45,.90,PALETTE.frame);
  const update=time=>{const s=silkTraverseAtTime(time);carrier.rotation.z=s.angle;planet.rotation.z=k.ratio*s.angle;rod.position.set(...s.wrist,0);rod.rotation.z=s.rodAngle;slider.position.set(...s.slider,0);root.updateMatrixWorld(true);root.userData.state=s;};
  update(0);markShadows(root);root.traverse(o=>{if(o.material)o.material.fog=false;});
  Object.assign(root.userData,{parts,blocks,guide:{minimum,maximum,railBottom,railTop},assumptions:'The engraving truncates the rod. Its 370-pixel length, vertical output guide, supports and all axial depths are reconstructed.'});

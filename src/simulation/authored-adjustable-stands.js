@@ -61,7 +61,7 @@ function adjustableMirrorStand(movement) {
   const tiltPhaseOffset = -Math.PI / 2;
   // The frame stands far enough behind the hinge that its lower edge clears
   // the socket collar and set screw at full inclination.
-  const mirrorCenterLocal = new THREE.Vector3(0, 0.62, -1.18);
+  const mirrorCenterLocal = new THREE.Vector3(0, 0.62, -0.90);
   const mirrorOuterWidth = 2.48;
   const mirrorOuterHeight = 2.86;
   // The glass fills the broad frame's rounded opening (0.30 border).
@@ -372,7 +372,8 @@ function adjustableMirrorStand(movement) {
   // to Brown's raised rounded plate on the frame's back; it stands the
   // frame off far enough that its lower edge swings clear of the socket
   // collar and screw.
-  const mirrorBackBossFront = 0.20;
+  const mirrorBackPocketFloor = 0.0;
+  const mirrorBackBossFront = 0.30;
   const mirrorBackBracket = new THREE.Mesh(
     new THREE.BoxGeometry(.30,.22,mirrorCenterLocal.z*-1-mirrorBackBossFront-.135),
     mirrorFrameMaterial,
@@ -418,21 +419,49 @@ function adjustableMirrorStand(movement) {
   );
   mirrorGlass.userData.role = 'glass-or-camera-mounting-plane';
   mirrorAssembly.add(mirrorGlass);
-  // The back board closing the frame behind the glass, and Brown's raised
-  // rounded plate on it that carries the hinge neck.
+  // Brown's frame back: the broad rim stands round a recessed rounded
+  // pocket (the back board, sunk below the rim), and a raised vertical bar
+  // with a rounded lower end runs down the pocket right of centre. The
+  // hinge lug is cast on that bar.
   const mirrorBackBoard = new THREE.Mesh(
     plate(roundedRectangle(mirrorGlassWidth, mirrorGlassHeight, 0.176),
-      -0.03, 0.10),
+      -0.03, mirrorBackPocketFloor),
     mirrorFrameMaterial,
   );
-  mirrorBackBoard.userData.role = 'mirror-back-board';
+  mirrorBackBoard.userData.role = 'mirror-back-board-recessed-pocket-floor';
   mirrorAssembly.add(mirrorBackBoard);
+  const barTop = mirrorGlassHeight / 2 - 0.13;
+  const barBottom = -mirrorGlassHeight / 2 + 0.34;
+  const barHalfWidth = 0.34;
+  const barCenterX = 0.18;
+  const barOutline = [];
+  barOutline.push([barCenterX + barHalfWidth, barTop - 0.10]);
+  for (let index = 0; index <= 8; index += 1) {
+    const angle = Math.PI / 2 * index / 8;
+    barOutline.push([
+      barCenterX + barHalfWidth - 0.10 + 0.10 * Math.cos(angle),
+      barTop - 0.10 + 0.10 * Math.sin(angle),
+    ]);
+  }
+  for (let index = 0; index <= 8; index += 1) {
+    const angle = Math.PI / 2 + Math.PI / 2 * index / 8;
+    barOutline.push([
+      barCenterX - barHalfWidth + 0.10 + 0.10 * Math.cos(angle),
+      barTop - 0.10 + 0.10 * Math.sin(angle),
+    ]);
+  }
+  for (let index = 0; index <= 24; index += 1) {
+    const angle = Math.PI + Math.PI * index / 24;
+    barOutline.push([
+      barCenterX + barHalfWidth * Math.cos(angle),
+      barBottom + barHalfWidth + barHalfWidth * Math.sin(angle),
+    ]);
+  }
   const mirrorBackBoss = new THREE.Mesh(
-    plate(roundedRectangle(0.80, 1.80, 0.32), 0.10, mirrorBackBossFront),
+    plate(poly(barOutline), mirrorBackPocketFloor, mirrorBackBossFront),
     mirrorFrameMaterial,
   );
-  mirrorBackBoss.position.y = -0.28;
-  mirrorBackBoss.userData.role = 'raised-rounded-plate-on-mirror-back';
+  mirrorBackBoss.userData.role = 'raised-rounded-end-bar-on-mirror-back';
   mirrorAssembly.add(mirrorBackBoss);
   const mirrorNormalIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.055, 0.64, 0.055),

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {correctBalancePumps} from './fountain-balance-working-parts.js';
 import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
 import {
@@ -832,5 +833,5 @@ function balancePumps(movement) {
 
 export function createAuthoredBalancePumpMovement(movement) {
   if (movement.id !== 465) return null;
-  return balancePumps(movement);
+  return applyCutawayFor(balancePumps(movement), movement.id);
 }

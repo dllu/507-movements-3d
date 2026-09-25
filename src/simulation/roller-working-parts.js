@@ -90,14 +90,14 @@ function correctExperiment(root) {
   for (const wheel of b.carriageWheels) rebuildWheel(wheel, g.carriageWheelRadius, .066, .14, 0);
   const pulleyRotor = b.drivePulley.userData.rotor, material = pulleyRotor.children[0].material;
   for (const child of [...pulleyRotor.children]) {pulleyRotor.remove(child); child.geometry.dispose();}
-  // A real groove at the belt plane: the .034-radius cord touches its bottom
-  // and clears both walls, including the straight tangent runs.
+  // A real flat-belt channel at the belt plane.
   const z = g.beltPlaneZ - b.drivePulley.position.z;
   // Brown's pulley is an open wheel: a grooved rim on four curved-sided
   // arms around a hub, like the web of 371.
   const rimInner = .40;
-  const profile = [[z - .09,rimInner],[z - .09,.53],[z - .045,.53],
-    [z - .038,.466],[z + .038,.466],[z + .045,.53],[z + .09,.53],[z + .09,rimInner]];
+  // The channel is as broad as Brown's flat belt (0.16) and shallow.
+  const profile = [[z - .11,rimInner],[z - .11,.53],[z - .095,.53],
+    [z - .088,.466],[z + .088,.466],[z + .095,.53],[z + .11,.53],[z + .11,rimInner]];
   b.workingPulley = mesh(pulleyRotor, turned(profile, 256), material, 'bored-pulley-with-finite-belt-channel');
   const openings = [];
   const openingRim = rimInner - .012, halfSpan = Math.PI / 4 - Math.asin(.05 / openingRim), apex = .20;

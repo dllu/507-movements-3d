@@ -636,8 +636,10 @@ function lazyTongsRectilinearAmplifier() {
   // The engraving has one plain, narrow pedestal, without lateral braces.
   for (const extra of [leftGusset, rightGusset, bearingBlock, fixedBearingRing]) extra.visible = false;
   baseFoot.geometry.dispose();
-  baseFoot.geometry = new THREE.BoxGeometry(pedestalWidth, 0.10, pedestalDepth);
-  baseFoot.position.y = fixedBaseY + .05;
+  // Brown stands the post on a ground line: seat it on a plain foot plate
+  // rather than ending the post in the air.
+  baseFoot.geometry = new THREE.BoxGeometry(pedestalWidth * 3.4, 0.10, pedestalDepth + 0.5);
+  baseFoot.position.y = fixedBaseY - .05;
 
   const linkageGroup = new THREE.Group();
   linkageGroup.userData.role = 'ten-member-four-bay-lazy-tongs-linkage';

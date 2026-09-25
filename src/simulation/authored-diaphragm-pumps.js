@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import { correctFlexiblePumpParts } from './flexible-pump-working-parts.js';
 import {
   PALETTE,
@@ -734,5 +735,5 @@ function diaphragmForcePump(movement) {
 
 export function createAuthoredDiaphragmPumpMovement(movement) {
   if (movement.id !== 454) return null;
-  return diaphragmForcePump(movement);
+  return applyCutawayFor(diaphragmForcePump(movement), movement.id);
 }

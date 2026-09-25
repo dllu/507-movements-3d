@@ -1,6 +1,7 @@
 import { plate, poly, circle, capsule, polygonClipping as clip } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
@@ -329,11 +330,24 @@ function valveReliefGuide(movement) {
   fixedFrame.add(base);
   const valveSeat = new THREE.Mesh(
     new THREE.BoxGeometry(4.20, 0.18, 1.26),
-    darkMaterial,
+    frameMaterial,
   );
   valveSeat.position.set(0, -2.09, 0);
   valveSeat.userData.role = 'fixed-horizontal-valve-seat';
   fixedFrame.add(valveSeat);
+  // The seat is the floor of the valve chest: a back wall and two end walls
+  // (cut at the same section plane as the casing) join it to the chest
+  // cover above, so it no longer floats below the chest.
+  const chestBackWall = new THREE.Mesh(new THREE.BoxGeometry(4.20, 1.44, 0.10), frameMaterial);
+  chestBackWall.position.set(0, -1.28, -0.61);
+  chestBackWall.userData.role = 'fixed-valve-chest-back-wall';
+  fixedFrame.add(chestBackWall);
+  for (const side of [-1, 1]) {
+    const endWall = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.44, 1.14), frameMaterial);
+    endWall.position.set(side * 2.04, -1.28, -0.09);
+    endWall.userData.role = 'fixed-valve-chest-end-wall';
+    fixedFrame.add(endWall);
+  }
   const steamPort = cylinderAlongZ(0.18, 0.30, darkMaterial, 40);
   steamPort.position.set(0, -2.38, 0);
   steamPort.userData.role = 'stationary-steam-port-below-valve-A';
@@ -654,5 +668,5 @@ function valveReliefGuide(movement) {
 
 export function createAuthoredValveReliefGuideMovement(movement) {
   if (movement.id !== 418) return null;
-  return valveReliefGuide(movement);
+  return applyCutawayFor(valveReliefGuide(movement), movement.id);
 }

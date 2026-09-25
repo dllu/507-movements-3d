@@ -261,6 +261,11 @@ function commonWindmill(movement) {
     transparent: true,
   });
   sailMaterial.depthWrite = false;
+  // Brown's lattice sails are timber frames: a wood tone, not black edging.
+  const sailFrameMaterial = matte(0x7a5a34, {
+    metalness: 0.02,
+    roughness: 0.8,
+  });
   const hubMaterial = matte(PALETTE.driven, {
     metalness: 0.30,
     roughness: 0.35,
@@ -306,9 +311,11 @@ function commonWindmill(movement) {
     capMaterial,
   ), 'domed-windmill-head-covering-windshaft-bearings');
   dome.position.y = 0.95;
+  // The curb ring under the cap is part of the cap casting (its colour),
+  // not a dark band.
   const capRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.75, 0.055, 12, 48),
-    darkMaterial,
+    capMaterial,
   );
   capRing.rotation.x = Math.PI / 2;
   capRing.position.y = 0.95;
@@ -405,7 +412,7 @@ function commonWindmill(movement) {
       );
       const edge = new THREE.Mesh(
         new THREE.TubeGeometry(curve, bladeSegments, 0.026, 8, false),
-        darkMaterial,
+        sailFrameMaterial,
       );
       edge.userData.role =
         `longitudinal-perimeter-${chordFraction < 0 ? 'leading' : 'trailing'}-sail-${sailIndex + 1}`;
@@ -417,7 +424,7 @@ function commonWindmill(movement) {
         bladePointScene(radialFraction, -1),
         bladePointScene(radialFraction, 1),
         0.026,
-        darkMaterial,
+        sailFrameMaterial,
         `${radialFraction === 0 ? 'root' : 'tip'}-perimeter-sail-${sailIndex + 1}`,
         10,
       );
@@ -441,7 +448,7 @@ function commonWindmill(movement) {
       );
       const rib = new THREE.Mesh(
         new THREE.TubeGeometry(curve, bladeSegments, 0.014, 7, false),
-        darkMaterial,
+        sailFrameMaterial,
       );
       rib.userData.role =
         `longitudinal-lattice-rib-${chordFraction}-sail-${sailIndex + 1}`;
@@ -454,7 +461,7 @@ function commonWindmill(movement) {
         bladePointScene(radialFraction, -1),
         bladePointScene(radialFraction, 1),
         0.013,
-        darkMaterial,
+        sailFrameMaterial,
         `cross-lattice-rib-${ribIndex}-sail-${sailIndex + 1}`,
         7,
       );
@@ -798,8 +805,8 @@ function commonWindmill(movement) {
       stock.geometry.dispose();
       stock.geometry = new THREE.BoxGeometry(0.115, tipRadiusSceneUnit, 0.105);
       stock.position.y = tipRadiusSceneUnit / 2;
-      // Drawn as one more dark lattice bar, as Brown shades it.
-      stock.material = darkMaterial;
+      // One more timber lattice bar, in the sail frame's wood tone.
+      stock.material = sailFrameMaterial;
     }
     {
       const { door, windows } = root.userData.blocks;

@@ -392,11 +392,53 @@ function commonCapstan(movement) {
   cable.userData.isSingleContinuousCable = true;
   root.add(cable);
 
+  // Brown crops the hauled part at the plate edge. Just beyond it the cable
+  // turns down into a deck pipe standing on the deck line, so it has a real
+  // lead rather than an end in mid-air. The lead is fixed geometry whose lay
+  // runs with the cable's haul.
+  const freeEnd = cableCurve.getPoint(0);
+  const pipeX = freeCableEndX + 1.25;
+  const bendRadius = 0.36;
+  const pipeTopY = -0.62;
+  const deckY = -1.95; // the underside of the capstan foot
+  const leadCurve = new THREE.CurvePath();
+  const pipeBottom = new THREE.Vector3(pipeX, deckY + 0.3, freeEnd.z);
+  const bendBottom = new THREE.Vector3(pipeX, freeEnd.y - bendRadius, freeEnd.z);
+  leadCurve.add(new THREE.LineCurve3(pipeBottom, bendBottom));
+  const bend = new THREE.Curve();
+  bend.getPoint = (t, target = new THREE.Vector3()) => {
+    const angle = Math.PI * t / 2;
+    return target.set(
+      pipeX - bendRadius + bendRadius * Math.cos(angle),
+      freeEnd.y - bendRadius + bendRadius * Math.sin(angle),
+      freeEnd.z,
+    );
+  };
+  leadCurve.add(bend);
+  leadCurve.add(new THREE.LineCurve3(
+    new THREE.Vector3(pipeX - bendRadius, freeEnd.y, freeEnd.z), freeEnd.clone()));
+  const leadLength = leadCurve.getLength();
+  const cableLead = addRole(new THREE.Mesh(
+    new LaidRopeGeometry(leadCurve, 160, ropeRadius, 9, false),
+    ropeMaterial,
+  ), 'cable-lead-into-deck-pipe-beyond-plate');
+  const deckPipe = addRole(new THREE.Mesh(
+    new THREE.LatheGeometry([
+      [0.1, deckY], [0.24, deckY], [0.24, deckY + 0.06], [0.16, deckY + 0.06],
+      [0.16, pipeTopY - 0.08], [0.24, pipeTopY], [0.2, pipeTopY], [0.1, pipeTopY - 0.1],
+    ].map(([x, y]) => new THREE.Vector2(x, y)), 48),
+    darkMaterial,
+  ), 'deck-pipe-receiving-hauled-cable');
+  deckPipe.position.set(pipeX, 0, freeEnd.z);
+  for (const part of [cableLead, deckPipe]) part.userData.beyondPlateCrop = true;
+  root.add(cableLead, deckPipe);
+
   const update = (time) => {
     const state = stateAtTime(time);
     capstanRotor.rotation.y = state.capstanRotationY;
     pawl.rotation.z = state.pawlClosure.pawlPitchAngleRadian;
     cable.geometry.setTravel(state.cableDistanceHauled);
+    cableLead.geometry.setTravel(state.cableDistanceHauled + leadLength);
   };
 
   const maximumAxialPitchPerRadian = helixRise / (wrapAngle - 0.125);

@@ -5,6 +5,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -408,11 +409,19 @@ function commonLiftPump(movement) {
     flowMaterial,
   ), 'water-running-over-spout-on-each-upstroke');
   root.add(spoutWater);
+  // The water leaving the spout lip falls as one translucent stream that
+  // thins and breaks up as it drops (it does not end in a flat cut).
   const dischargeStream = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.14, 0.10, 0.78, 28),
-    flowMaterial,
+    waterJetGeometry(new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(0, 0, 0),
+      new THREE.Vector3(-0.12, -0.17, 0),
+      new THREE.Vector3(-0.2, -1.64, 0),
+    ), { radius: 0.13, endRadius: 0.08, segments: 32, fadeStart: 0.55, flare: 1.4 }),
+    waterJetMaterial(),
   ), 'intermittent-spout-discharge-stream');
-  dischargeStream.position.set(-2.12, 1.37, 0);
+  dischargeStream.renderOrder = 2;
+  // Hung from the spout lip, so it scales from there with the discharge.
+  dischargeStream.position.set(-2.12, 1.76, 0);
   root.add(dischargeStream);
 
   const valveFlowMarkers = Array.from({ length: 4 }, (_, index) => {
@@ -473,7 +482,7 @@ function commonLiftPump(movement) {
     dischargeStream.visible = dischargeFraction > 0.002;
     dischargeStream.scale.set(
       0.45 + 0.55 * dischargeFraction,
-      0.30 + 0.70 * dischargeFraction,
+      0.45 + 0.55 * dischargeFraction,
       0.45 + 0.55 * dischargeFraction,
     );
     const transferVisible = state.pistonTransferFlowRate > 0.002;

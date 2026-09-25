@@ -74,14 +74,16 @@ export function correctDrawingTemplateParts(root,id,update){
   replace(b.slideBlock,plate(clip.difference(poly([[-.19,-.065],[.19,-.065],[.19,.065],[-.19,.065]]),poly(circle([0,0],.047,48))),-.22,.22));b.slideBlock.position.z=-.24;
   b.slideRetainers=[-.475,.005].map(z=>{const o=add(b.slide,plate(clip.difference(poly([[-.23,-.105],[.23,-.105],[.23,.105],[-.23,.105]]),poly(circle([0,0],.048,48))),-.025,.025),b.slideBlock.material,'finite-slot-slide-retaining-cheek');o.position.z=z;return o;});
   const pin=b.slide.children.find(o=>o.userData.role==='slide-pin-carrying-cord-loop');replace(pin,new T.CylinderGeometry(.045,.045,.52,40));
-  replace(b.cordLoop,new T.TorusGeometry(.080,.025,12,64));
+  // The loop round the pin is a few turns of the same cord: taking up cord
+  // winds it on the pin, so the working run shortens without stretching.
+  replace(b.cordLoop,new T.TorusGeometry(.090,.040,12,64));
   const [clamp,roller]=b.fulcrumPiece.children;roller.visible=false;
   const envelope=d.pathAtBend(1).innerPoints.filter(p=>p.y<=.46).map(p=>[p.x+.004,p.y]);
   replace(clamp,plate(poly([...envelope,[-1.93,envelope.at(-1)[1]],[-1.93,0]]),-.08,.30));clamp.position.set(0,0,0);
   b.fixedTab=add(root,new T.BoxGeometry(g.barDepth,.20,g.barThickness),b.elasticBar.material,'elastic-bar-root-fixed-tab');b.fixedTab.position.set(g.leftSpringingX+g.barDepth/2,-.10,.12);
   b.tipEye=add(root,plate(clip.difference(poly(circle([0,0],.14,64)),poly(circle([0,0],.089,64))),.03,.21),b.elasticBar.material,'bored-pencil-clamp-at-elastic-bar-tip');
   const collar=b.pencil.children.find(o=>o.userData.role==='white-cord-and-bar-tip-connection-collar');replace(collar,new T.TorusGeometry(.113,.026,12,64));
-  d.updateWorkingParts=state=>{b.tipEye.position.set(state.tip.x,state.tip.y,0);const start=new T.Vector3(state.slidePin.x,state.slidePin.y,.33),end=new T.Vector3(state.tip.x,state.tip.y,.33),u=end.clone().sub(start).normalize();b.cord.userData.setEndpoints(start.addScaledVector(u,.105),end.addScaledVector(u,-.139));};
+  d.updateWorkingParts=state=>{b.tipEye.position.set(state.tip.x,state.tip.y,0);const start=new T.Vector3(state.slidePin.x,state.slidePin.y,.33),end=new T.Vector3(state.tip.x,state.tip.y,.33),u=end.clone().sub(start).normalize();b.cord.userData.setEndpoints(start.addScaledVector(u,.09),end.addScaledVector(u,-.139),-state.cordTakeUp);b.cordLoop.rotation.z=-state.cordTakeUp/.09;};
  }
  d.minimumDisplayCycleSeconds=g.cycleDuration;d.workingPartsReview={status:'selected-finite-interfaces',residual:id===406?'The parabola uses the exact ideal point-thread law. Finite cord wraps are a visible thickness allowance, not an exactly constant finite-radius cord length or a tension/friction solve.':'The inextensible template uses a prescribed tapering-curvature family. Its selected arch has no crown overshoot; intermediate shapes are not a solved elastic equilibrium under the changing cord direction.'};
  fitPistonGuide(root,update,g.cycleDuration);d.cameraDirection=new T.Vector3(.7,.5,15);

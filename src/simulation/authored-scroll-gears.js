@@ -704,7 +704,9 @@ function scrollGear(movement) {
     depth: 0.10,
     innerRadius: 0.34,
     material: matte(0x9fb6c1, { metalness: 0.12, roughness: 0.55 }),
-    outerRadius: 2.235,
+    // A plain margin beyond the outermost tooth so the scroll's end never
+    // reads as overhanging the wheel in oblique views.
+    outerRadius: 2.36,
   });
   scrollWeb.position.z = 0.509;
   scrollWeb.userData.role = 'scroll-wheel-A-face-web-joining-spiral-to-hub';

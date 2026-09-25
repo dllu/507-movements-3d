@@ -40,16 +40,7 @@ export function makeSilkTraverseAssembly(bundle) {
  add('screwThread',cylindricalWormGeometry({length:3.78,module:lead/Math.PI,
   pitchRadius:.11,rootRadius:.10,tipRadius:.12,rootHalfWidth:.045,
   tipHalfWidth:.025,pressureAngle:Math.PI/9,angularSteps:96}),PALETTE.brass,'screw',screw);
- // A dark index tooth is legible even in the source view, where the cheeks are edge-on.
- contact.parts.tooth2.material.color.set(PALETTE.ink);
- // Paint on both wheel cheeks remains visible as the carrier turns.
- for (const side of [-1,1]) {
-  const mark=new THREE.Mesh(new THREE.PlaneGeometry(.32,.055),matte(PALETTE.ink));
-  mark.material.fog=false;mark.name='wheel-rotation-mark'+side;
-  mark.rotation.y=side*Math.PI/2;mark.rotation.z=Math.PI/2;
-  mark.position.set(side*(.055*(bundle.parameters.axialScale??1)+.0002),.27,0);
-  mark.userData.visualIndicator=true;wheel.add(mark);
- }
+ // No index tooth or painted stripe: Brown draws a plain star wheel.
  for(const [name,low,high]of [['lowerShaft',-2.3,-1.84],['upperShaft',1.84,bundle.parameters.station]]){
   add(name,alongX(plate(round(.066),low,high)),PALETTE.ink,'screw',carrier);
  }

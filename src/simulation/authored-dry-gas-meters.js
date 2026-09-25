@@ -1,5 +1,6 @@
 import {correctGasMeterParts} from './gas-meter-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -1241,5 +1242,5 @@ function dryGasMeter(movement) {
 
 export function createAuthoredDryGasMeterMovement(movement) {
   if (movement.id !== 483) return null;
-  return dryGasMeter(movement);
+  return applyCutawayFor(dryGasMeter(movement), movement.id);
 }

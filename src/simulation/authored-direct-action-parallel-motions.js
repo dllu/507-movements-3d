@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { glandCylinder, pinWallBracket } from './beyond-crop-hardware.js';
 import { makeBoredLinkRod as makeRigidRod } from './bored-link-rod.js';
 import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import { capsule, circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
@@ -1922,7 +1923,66 @@ function jogglingPillarParallelMotion(movement) {
   };
 
   update(0);
-  fitPistonGuide(root, update, cyclePeriod);
+  // Beyond Brown's crop nothing floats. F's shaft runs back to a flange on
+  // the framing behind the pillar. The piston rod from C runs straight down
+  // through the gland of its cylinder; the rod from D (whose end swings on an
+  // arc) runs into a barrel rocking on a trunnion below, like an air-pump
+  // barrel. All of this lies outside the plate's view.
+  fixedFrame.add(pinWallBracket({ x: pillarPivotF.x, y: pillarPivotF.y, pinRadius: pillarShaftRadius,
+    zPin: pillarPlaneZ - 0.26, zWall: -0.55, flange: 0.8, role: 'fixed-wall-bracket-of-pillar-shaft-F',
+    beyondPlateCrop: true }));
+  const rodHalfWidth = 0.30 * sourceScale;
+  const drawnRodLength = sourcePistonRodLength * sourceScale;
+  const rodSamples = Array.from({ length: 97 }, (_, i) => {
+    update(cyclePeriod * i / 96);
+    return [inputRodParts.group.position.clone(), pistonParts.group.position.clone()];
+  });
+  const extendRod = (parts, wholeLength, material) => {
+    const extension = new THREE.Mesh(plate(poly([[-rodHalfWidth, -wholeLength], [rodHalfWidth, -wholeLength],
+      [rodHalfWidth, -drawnRodLength], [-rodHalfWidth, -drawnRodLength]]), rodPlaneZ - 0.07, rodPlaneZ + 0.07), material);
+    extension.userData.role = 'rod-running-on-below-the-plate-crop';
+    extension.userData.beyondPlateCrop = true;
+    parts.group.add(extension);
+  };
+  // C: straight into a fixed cylinder.
+  const cTop = Math.max(...rodSamples.map(([, c]) => c.y));
+  const cBottom = Math.min(...rodSamples.map(([, c]) => c.y));
+  const cX = rodSamples.reduce((sum, [, c]) => sum + c.x, 0) / rodSamples.length;
+  const cylinderTopY = -3.0;
+  extendRod(pistonParts, cTop - cylinderTopY + 0.3, outputMaterial);
+  root.add(glandCylinder({ x: cX, topY: cylinderTopY, z: rodPlaneZ, length: cTop - cBottom + 0.7,
+    glandRadius: rodHalfWidth + 0.08, boreRadius: 0.4, outerRadius: 0.52, role: 'piston-cylinder-below-plate-crop' }));
+  // D: into a barrel rocking about a trunnion.
+  const trunnion = new THREE.Vector3(rodSamples.reduce((sum, [d]) => sum + d.x, 0) / rodSamples.length, -7.4, rodPlaneZ);
+  const distances = rodSamples.map(([d]) => d.distanceTo(trunnion));
+  const barrelLength = Math.max(...distances) - Math.min(...distances) + 0.75;
+  const inputRodLength = Math.max(...distances) - barrelLength + 0.35;
+  extendRod(inputRodParts, inputRodLength, pillarMaterial);
+  const barrel = new THREE.Group();
+  barrel.position.copy(trunnion);
+  barrel.userData.role = 'rocking-barrel-receiving-rod-D-beyond-plate';
+  barrel.userData.beyondPlateCrop = true;
+  // Its closed foot carries the trunnion pin.
+  const barrelBody = glandCylinder({ x: 0, topY: barrelLength, z: 0, length: barrelLength + 0.2,
+    glandRadius: rodHalfWidth + 0.08, boreRadius: 0.4, outerRadius: 0.52, role: 'rocking-barrel-body' });
+  // The pin turns with the barrel and bears on the bracket's front face.
+  const trunnionPin = cylinderAlongZ(0.14, 1.3, darkMaterial, 24);
+  trunnionPin.userData.role = 'rocking-barrel-trunnion-pin';
+  barrel.add(barrelBody, trunnionPin);
+  const trunnionBracket = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.9, 0.2), darkMaterial);
+  trunnionBracket.position.set(trunnion.x, trunnion.y - 0.3, rodPlaneZ - 0.75);
+  trunnionBracket.userData.role = 'fixed-trunnion-bracket-of-rocking-barrel';
+  trunnionBracket.userData.beyondPlateCrop = true;
+  root.add(barrel, trunnionBracket);
+  const updateWithEnds = (time) => {
+    update(time);
+    const d = inputRodParts.group.position;
+    const angle = Math.atan2(trunnion.x - d.x, d.y - trunnion.y);
+    inputRodParts.group.rotation.z = angle;
+    barrel.rotation.z = angle;
+  };
+  updateWithEnds(0);
+  fitPistonGuide(root, updateWithEnds, cyclePeriod);
   // Brown's view: beam end D at the left, the wall at E on the right, the
   // pillar shaft F at the foot, and both vertical rods cut by the margin.
   root.userData.cameraFitBounds = new THREE.Box3(
@@ -1934,7 +1994,7 @@ function jogglingPillarParallelMotion(movement) {
   return {
     cameraDirection: new THREE.Vector3(0.45, 0.28, 14),
     root,
-    update,
+    update: updateWithEnds,
   };
 }
 

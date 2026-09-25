@@ -1,5 +1,6 @@
 import { correctOldPump, oldPumpFoldAtHingeAngle, oldPumpContactGeometry } from './rotary-pump-contact.js';
 import * as THREE from 'three';
+import { latheSectionGeometry } from './cutaway-section.js';
 import {
   PALETTE,
   markShadows,
@@ -568,6 +569,22 @@ function oldRotaryPump(movement) {
     shell.geometry.dispose();
     shell.geometry = new THREE.BoxGeometry(width + inward, height, 0.06)
       .translate(-inward / 2, 0, -0.38);
+  }
+  // Pass 55: Brown's apertures are pipes. Whole round pipe walls replace the
+  // three-sided section troughs (back plate plus two side walls), which read
+  // as broken open channels when the view is turned.
+  for (const [group, alongX, length, offset] of [
+    [inlet, false, 1.46, -3.01],
+    [outlet, true, outletLength + 0.04, 0],
+  ]) {
+    for (const child of group.children) child.visible = false;
+    const pipe = new THREE.Mesh(latheSectionGeometry([
+      [0.34, -length / 2], [0.44, -length / 2], [0.44, length / 2], [0.34, length / 2],
+    ], { phiStart: 0, phiLength: Math.PI * 2, segments: 48 }), group.children[2].material);
+    if (alongX) pipe.rotation.z = -Math.PI / 2;
+    else pipe.position.y = offset;
+    pipe.userData.role = group === inlet ? 'whole-round-inlet-pipe' : 'whole-round-outlet-pipe';
+    group.add(pipe);
   }
   markShadows(root);
   base.receiveShadow = true;

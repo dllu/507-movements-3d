@@ -167,6 +167,8 @@ function rakedSawToothGeometry({
   for (let i = 1; i <= rakeSegments; i += 1) angles.push(foot + rakeAngle * i / rakeSegments);
   const topZ = (angle) => rootZ + (tipZ - rootZ)
     * Math.max(0, (angle - start) / backAngle) ** backExponent;
+  const topSlope = (angle) => (tipZ - rootZ) * backExponent
+    * Math.max(1e-9, (angle - start) / backAngle) ** (backExponent - 1) / backAngle;
   const bottomZ = (angle) => (angle <= foot
     ? baseZ
     : baseZ + (tipZ - baseZ) * Math.min(1, (angle - foot) / rakeAngle));
@@ -204,8 +206,19 @@ function rakedSawToothGeometry({
     const in0 = out0.clone().negate(), in1 = out1.clone().negate();
     quad(polar(innerRadius, a0, b0), polar(innerRadius, a1, b1), polar(innerRadius, a1, t1), polar(innerRadius, a0, t0),
       outward.clone().negate(), [in0, in1, in1, in0]);
-    quad(polar(outerRadius, a0, t0), polar(outerRadius, a1, t1), polar(innerRadius, a1, t1), polar(innerRadius, a0, t0), up);
-    quad(polar(outerRadius, a0, b0), polar(outerRadius, a1, b1), polar(innerRadius, a1, b1), polar(innerRadius, a0, b0), down);
+    // Smooth analytic normals on the curved back and the raked face: flat
+    // per-strip normals read as fine striping on these nearly edge-on faces.
+    // Normal of (r cos a, r sin a, z(a)) is (z' sin a, -z' cos a, r).
+    const surfaceNormal = (radius, angle, slope, sign) => new THREE.Vector3(
+      slope * Math.sin(angle), -slope * Math.cos(angle), radius,
+    ).normalize().multiplyScalar(sign);
+    const bottomSlope = mid <= foot ? 0 : (tipZ - baseZ) / rakeAngle;
+    quad(polar(outerRadius, a0, t0), polar(outerRadius, a1, t1), polar(innerRadius, a1, t1), polar(innerRadius, a0, t0), up,
+      [surfaceNormal(outerRadius, a0, topSlope(a0), 1), surfaceNormal(outerRadius, a1, topSlope(a1), 1),
+        surfaceNormal(innerRadius, a1, topSlope(a1), 1), surfaceNormal(innerRadius, a0, topSlope(a0), 1)]);
+    quad(polar(outerRadius, a0, b0), polar(outerRadius, a1, b1), polar(innerRadius, a1, b1), polar(innerRadius, a0, b0), down,
+      [surfaceNormal(outerRadius, a0, bottomSlope, -1), surfaceNormal(outerRadius, a1, bottomSlope, -1),
+        surfaceNormal(innerRadius, a1, bottomSlope, -1), surfaceNormal(innerRadius, a0, bottomSlope, -1)]);
   }
   const tangent = (angle) => new THREE.Vector3(-Math.sin(angle), Math.cos(angle), 0);
   quad(polar(innerRadius, start, baseZ), polar(outerRadius, start, baseZ), polar(outerRadius, start, rootZ), polar(innerRadius, start, rootZ),
@@ -4106,6 +4119,11 @@ function oldFashionedClockVergeEscapement(movement) {
     new THREE.Vector3(1.5 * displayScale, 1.5 * displayScale, 1.55 * displayScale),
   );
   root.userData.cameraFov = 12;
+  // The raked tooth faces lie nearly edge-on to the key light; a tight shadow
+  // map with normal-offset bias removes the fine acne striping on them.
+  root.userData.shadowCameraHalfExtent = 4;
+  root.userData.shadowBias = -0.0006;
+  root.userData.shadowNormalBias = 0.025;
   root.userData.canonicalTimes = {
     cycleClosure: cyclePeriod,
     firstFreeDropMidpoint: cyclePeriod * (

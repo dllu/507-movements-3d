@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {replaceWithLaidRope} from './laid-rope.js';
 import {correctWaterSealedPump} from './water-sealed-pump-parts.js';
 import {
@@ -603,6 +604,10 @@ function waterSealedBellPump(movement) {
     leverMaterial,
   ), 'right-hand-operating-lever');
   root.add(leftLever, rightLever);
+  // Brown draws stout laid ropes (about as thick as the levers' ends);
+  // the suspension ropes still pass freely through the lug eyes (bore 0.068).
+  const suspensionRopeRadius = 0.045;
+  const pullRopeRadius = 0.05;
   const leftSuspensionRope = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.026, 0.026, 1, 12),
     ropeMaterial,
@@ -651,13 +656,13 @@ function waterSealedBellPump(movement) {
       leftSuspensionRope,
       state.leftInnerEnd,
       state.leftBellLug,
-      0.026,
+      suspensionRopeRadius,
     );
     setRopeBetween(
       rightSuspensionRope,
       state.rightInnerEnd,
       state.rightBellLug,
-      0.026,
+      suspensionRopeRadius,
     );
     const leftGrip = new THREE.Vector3(
       state.leftOuterEnd.x,
@@ -669,8 +674,8 @@ function waterSealedBellPump(movement) {
       0.20,
       state.rightOuterEnd.z,
     );
-    setRopeBetween(leftPullRope, state.leftOuterEnd, leftGrip, 0.025);
-    setRopeBetween(rightPullRope, state.rightOuterEnd, rightGrip, 0.025);
+    setRopeBetween(leftPullRope, state.leftOuterEnd, leftGrip, pullRopeRadius);
+    setRopeBetween(rightPullRope, state.rightOuterEnd, rightGrip, pullRopeRadius);
     handGrips[0].position.copy(leftGrip);
     handGrips[1].position.copy(rightGrip);
 
@@ -896,5 +901,5 @@ function waterSealedBellPump(movement) {
 
 export function createAuthoredWaterSealedAirPumpMovement(movement) {
   if (movement.id !== 473) return null;
-  return waterSealedBellPump(movement);
+  return applyCutawayFor(waterSealedBellPump(movement), movement.id);
 }

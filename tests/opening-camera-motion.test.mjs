@@ -22,14 +22,30 @@ test('reviewed opening models and 043 stay in one fixed camera through their com
       const engine = { model, camera, controls, container: { clientWidth: 1000 * aspect, clientHeight: 1000 } };
       MovementEngine.prototype.fitCamera.call(engine, model.cameraDirection);
       const point = new THREE.Vector3();
+      const rootLocal = new THREE.Vector3();
+      const rootInverse = new THREE.Matrix4();
       // Use different sample times from the profile generator, without
       // refitting the camera at each pose.
       for (let sample = 0; sample <= 37; sample += 1) {
         model.update(period * sample / 37, sample === 0 ? 0 : period / 37);
         model.root.updateMatrixWorld(true);
+        rootInverse.copy(model.root.matrixWorld).invert();
         model.root.traverseVisible((object) => {
           const positions = object.geometry?.attributes.position;
           if (!positions) return;
+          // Parts flagged userData.beyondPlateCrop (e.g. the pass-55 hauling
+          // hands on 14-22) deliberately run past Brown's framing, and the
+          // camera fit skips them. A lengthened fall is flagged with
+          // beyondPlateCropBelowY: only its stretch below that frame bottom
+          // runs past; its vertices above it are still checked. Every other
+          // part is checked vertex by vertex as before.
+          let beyondCrop = false;
+          let beyondBelowY = -Infinity;
+          for (let node = object; node; node = node.parent) {
+            if (node.userData.beyondPlateCrop) beyondCrop = true;
+            if (Number.isFinite(node.userData.beyondPlateCropBelowY)) beyondBelowY = node.userData.beyondPlateCropBelowY;
+          }
+          if (beyondCrop) return;
           if (object.isInstancedMesh) {
             object.computeBoundingBox();
             for (const x of [object.boundingBox.min.x, object.boundingBox.max.x]) {
@@ -44,7 +60,9 @@ test('reviewed opening models and 043 stay in one fixed camera through their com
             return;
           }
           for (let i = 0; i < positions.count; i += 1) {
-            point.fromBufferAttribute(positions, i).applyMatrix4(object.matrixWorld).project(camera);
+            point.fromBufferAttribute(positions, i).applyMatrix4(object.matrixWorld);
+            if (rootLocal.copy(point).applyMatrix4(rootInverse).y < beyondBelowY) continue;
+            point.project(camera);
             assert.ok(Math.abs(point.x) < 1 && Math.abs(point.y) < 1 && Math.abs(point.z) < 1,
               'movement ' + id + ', aspect ' + aspect + ', sample ' + sample + ' stays inside the frame');
           }

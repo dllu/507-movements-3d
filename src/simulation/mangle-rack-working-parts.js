@@ -32,9 +32,11 @@ function finish197(root) {
     replace(guide, plate(sector(g.guideRailCenterRadius - g.guideRailRadius, g.guideRailCenterRadius + g.guideRailRadius, start, start + Math.PI, 128), 0.415, 0.545));
     guide.position.set(side * g.straightRackLength / 2, 0, 0);
     const reach = g.straightRackLength / 2 + g.guideRailCenterRadius;
-    const support = mesh(new THREE.BoxGeometry(g.outerFrameHalfWidth - reach + 0.13, 0.13, 0.13), PALETTE.driven, 'front-end-guide-mount');
-    support.position.set(side * (g.outerFrameHalfWidth + reach) / 2, 0, 0.48);
-    const post = mesh(new THREE.BoxGeometry(0.13, 0.13, 0.97), PALETTE.driven, 'axial-end-guide-frame-mount');
+    // The mount rises from the frame's end member itself (0.11 wide, centred
+    // on outerFrameHalfWidth), so it no longer pokes out past the short ends.
+    const support = mesh(new THREE.BoxGeometry(g.outerFrameHalfWidth - reach + 0.055, 0.13, 0.13), PALETTE.driven, 'front-end-guide-mount');
+    support.position.set(side * (g.outerFrameHalfWidth + 0.055 + reach) / 2, 0, 0.48);
+    const post = mesh(new THREE.BoxGeometry(0.11, 0.13, 0.97), PALETTE.driven, 'axial-end-guide-frame-mount');
     post.position.set(side * g.outerFrameHalfWidth, 0, 0.035);
     const web = mesh(new THREE.BoxGeometry(g.outerFrameHalfWidth - g.straightRackLength / 2, 0.13, 0.18), PALETTE.driven, 'rear-rack-frame-web');
     web.position.set(side * (g.outerFrameHalfWidth + g.straightRackLength / 2) / 2, 0, -0.32);

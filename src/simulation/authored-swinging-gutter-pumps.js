@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
-import { waterVolumeMaterial } from './water-volume.js';
+import { waterJetGeometry, waterJetMaterial, waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -10,7 +10,6 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function addRole(object, role) {
   object.userData.role = role;
@@ -60,14 +59,6 @@ function positiveHalfWave(angle, sign, speed, acceleration) {
 
 function rotateLocal(local, angle) {
   return local.clone().applyAxisAngle(Z_AXIS, angle);
-}
-
-function setRodBetween(mesh, start, end) {
-  const delta = end.clone().sub(start);
-  const length = Math.max(0.001, delta.length());
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.scale.y = length;
-  mesh.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
 }
 
 function setBeamBetween(mesh, start, end) {
@@ -419,14 +410,23 @@ function swingingGutterPump(movement) {
   outletMouth.position.copy(outletLocal);
   swingingGutter.add(outletMouth);
 
-  const dischargeJets = Array.from({ length: 4 }, (_, index) => {
-    const jet = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.032, 1, 10),
-      waterMaterial,
-    ), `top-discharge-jet-${index + 1}`);
-    root.add(jet);
-    return jet;
-  });
+  // The raised water leaves the open top end as one translucent jet that
+  // curves down and opens into the fan of spray Brown draws, rather than a
+  // bundle of thin strands.
+  const dischargeJets = [addRole(new THREE.Mesh(
+    waterJetGeometry(new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(-0.06, 0, 0),
+      new THREE.Vector3(-0.5, 0.02, 0),
+      new THREE.Vector3(-0.92, -0.42, 0),
+    ), {
+      radius: 0.05, endRadius: 0.07, width: 0.13, endWidth: 0.26,
+      widthAxis: new THREE.Vector3(0, 0, 1), segments: 32,
+      fadeStart: 0.45, flare: 1.7,
+    }),
+    waterJetMaterial(),
+  ), 'top-discharge-jet-1')];
+  dischargeJets[0].renderOrder = 2;
+  root.add(dischargeJets[0]);
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -444,18 +444,13 @@ function swingingGutterPump(movement) {
     }
     root.userData.updateSolids?.();
     const dischargeVisible = state.outletDischargeFraction > 1e-4;
-    for (let index = 0; index < dischargeJets.length; index += 1) {
-      const jet = dischargeJets[index];
+    for (const jet of dischargeJets) {
       jet.visible = dischargeVisible;
       if (!dischargeVisible) continue;
-      const start = state.outlet.clone();
-      start.z += (index - 1.5) * 0.10;
-      const end = start.clone().add(new THREE.Vector3(
-        -0.62 - index * 0.08,
-        -0.30 - index * 0.08,
-        0,
-      ));
-      setRodBetween(jet, start, end);
+      jet.position.copy(state.outlet);
+      const reach = 0.35 + 0.65 * THREE.MathUtils.smoothstep(
+        state.outletDischargeFraction, 0, 1);
+      jet.scale.set(reach, reach, 1);
     }
   };
 
@@ -596,6 +591,10 @@ function swingingGutterPump(movement) {
     const outside=clip.union(...segments.map(([a,c])=>capsule(a,c,.12,12)),...g.junctionLocalPoints.map(p=>square(p,.255)));
     const openEnds=[g.localPathPoints[0],g.localPathPoints.at(-1)].map(p=>poly(circle([p.x,p.y],.20,64)));
     for(const [mesh,geometry] of [[b.conduitBack,plate(outside,-.22,-.18)],[b.conduitWalls,plate(clip.difference(outside,inside,...openEnds),-.18,.18)]]){mesh.geometry.dispose();mesh.geometry=geometry;}
+    // The gutter walls are the same timber as the gutter (a shade darker),
+    // not black bands that read as outline rims round each channel.
+    b.conduitWalls.material=b.conduitBack.material.clone();
+    b.conduitWalls.material.color.multiplyScalar(.82);
     // The pool below is a translucent water body (correctWaterLiftParts
     // sizes it from the surface down), and each slug fills the gutter bore.
     b.reservoir.material=waterVolumeMaterial();

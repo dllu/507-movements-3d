@@ -359,6 +359,30 @@ function textileDressingElements(movement) {
     bearingBlocks.push(bearing);
     fixedFrame.add(bearing);
   }
+  // The machine has a matching side frame at the other end of the rolls,
+  // so every shaft runs in a bearing at both ends (Brown's end elevation
+  // shows the two frames in line).
+  const nearArch = new THREE.Mesh(arch.geometry.clone().translate(0, 0, 2.24), frameMaterial);
+  nearArch.userData.role = 'source-arched-side-frame-far-end-pair';
+  fixedFrame.add(nearArch);
+  for (const foot of [...frameFeet]) {
+    const pair = foot.clone();
+    pair.position.z = -foot.position.z;
+    frameFeet.push(pair);
+    fixedFrame.add(pair);
+  }
+  for (const bar of [...bearingBars]) {
+    const pair = bar.clone();
+    pair.position.z = -bar.position.z;
+    bearingBars.push(pair);
+    fixedFrame.add(pair);
+  }
+  for (const bearing of [...bearingBlocks]) {
+    const pair = bearing.clone();
+    pair.position.z = -bearing.position.z;
+    bearingBlocks.push(pair);
+    fixedFrame.add(pair);
+  }
 
   const windingRollers = [];
   for (let index = 0; index < 2; index += 1) {

@@ -133,8 +133,11 @@ function buildSourceOscillatingEngine(o) {
   shaftEndCap.position.z = frontWebHigh + 0.01;
   shaftEndCap.userData.role = `${o.rolePrefix}front-web-shaft-centre-boss`;
   const pinFront = frontWebHigh + 0.03;
-  const crankPin = cylinderAlongZ(pinRadius, pinFront - crankLow, darkMaterial, 30);
-  crankPin.position.set(r, 0, (pinFront + crankLow) / 2);
+  // The pin's rear end stops 0.02 inside the rear web instead of lying
+  // coplanar with its back face (which z-fought as a speckled patch).
+  const pinBack = crankLow + 0.02;
+  const crankPin = cylinderAlongZ(pinRadius, pinFront - pinBack, darkMaterial, 30);
+  crankPin.position.set(r, 0, (pinFront + pinBack) / 2);
   crankPin.userData.role = `${o.rolePrefix}crank-pin-P-carried-by-crank`;
   const crankPinAnchor = new THREE.Object3D();
   crankPinAnchor.position.set(r, 0, axisZ);

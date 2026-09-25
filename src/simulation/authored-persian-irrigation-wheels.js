@@ -358,7 +358,8 @@ function persianIrrigationWheel(movement) {
 
   // Brown draws a light circular rim through the float tips and bucket
   // pivots.
-  const outerRim = new THREE.Mesh(ring(bucketPivotRadius - 0.03, bucketPivotRadius + 0.03, -0.03, 0.03), darkMaterial);
+  // A plain wooden hoop in the wheel's colour (not a dark outline ring).
+  const outerRim = new THREE.Mesh(ring(bucketPivotRadius - 0.05, bucketPivotRadius + 0.05, -0.05, 0.05), wheelMaterial);
   outerRim.userData.role = 'light-outer-rim-through-bucket-pivots';
   wheel.add(outerRim);
   const arms = [];

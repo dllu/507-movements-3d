@@ -1,5 +1,6 @@
 import {correctEjectorTrapParts, ejectorOperatingStage} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -581,5 +582,5 @@ function brearBilgeEjector(movement) {
 
 export function createAuthoredBilgeEjectorMovement(movement) {
   if (movement.id !== 475) return null;
-  return brearBilgeEjector(movement);
+  return applyCutawayFor(brearBilgeEjector(movement), movement.id);
 }

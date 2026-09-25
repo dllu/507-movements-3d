@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
-import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, makePlanarCurledSpring } from './spring-pivot-family-parts.js';
+import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily } from './spring-pivot-family-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -65,6 +65,70 @@ function findPeriodicRoots(evaluate, samples = 7200) {
     previousValue = value;
   }
   return roots;
+}
+
+// Brown's spring A is a helical spring: a close wire coil between an eye
+// on the fixed pivot A and an eye on crank pin B. Its centre line is rebuilt
+// each frame for the current eye distance (the coils open and close; the
+// wire section stays round), with short straight legs from each eye to the
+// coil.
+function makeHelicalEyeSpring(material, {coilRadius = 0.13, wireRadius = 0.026, turns = 9, legLength = 0.34, eyeRadius = 0.17} = {}) {
+  const coilSamples = turns * 20;
+  const lineCount = coilSamples + 5;
+  const sides = 8;
+  const positions = new Float32Array(lineCount * sides * 3);
+  const indices = [];
+  for (let i = 0; i < lineCount - 1; i += 1) for (let j = 0; j < sides; j += 1) {
+    const a = i * sides + j, b = i * sides + (j + 1) % sides, c = b + sides, d = a + sides;
+    indices.push(a, d, b, b, d, c);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.userData.deforming = true;
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.frustumCulled = false;
+  mesh.userData.role = 'helical-spring-A-between-fixed-eye-and-crank-eye';
+  const line = Array.from({length: lineCount}, () => new THREE.Vector3());
+  const tangent = new THREE.Vector3(), normal = new THREE.Vector3(), binormal = new THREE.Vector3();
+  mesh.userData.setEndpoints = (start, end) => {
+    const length = start.distanceTo(end);
+    mesh.position.copy(start);
+    mesh.rotation.set(0, 0, Math.atan2(end.y - start.y, end.x - start.x));
+    const coilStart = legLength, coilEnd = length - legLength;
+    // The legs are welded to the outside of each eye ring, clear of the pin.
+    line[0].set(eyeRadius, 0, 0);
+    line[1].set((eyeRadius + coilStart) * 0.5, 0, 0);
+    line[2].set(coilStart, coilRadius * 0.55, 0);
+    for (let i = 0; i <= coilSamples; i += 1) {
+      const u = i / coilSamples, angle = u * turns * Math.PI * 2;
+      line[3 + i].set(coilStart + (coilEnd - coilStart) * u, coilRadius * Math.cos(angle), coilRadius * Math.sin(angle));
+    }
+    line[lineCount - 2].set((coilEnd + length - eyeRadius) * 0.5, 0, 0);
+    line[lineCount - 1].set(length - eyeRadius, 0, 0);
+    normal.set(0, 0, 1);
+    for (let i = 0; i < lineCount; i += 1) {
+      tangent.copy(line[Math.min(lineCount - 1, i + 1)]).sub(line[Math.max(0, i - 1)]).normalize();
+      normal.addScaledVector(tangent, -normal.dot(tangent));
+      if (normal.lengthSq() < 1e-8) normal.set(0, 1, 0).addScaledVector(tangent, -tangent.y);
+      normal.normalize();
+      binormal.crossVectors(tangent, normal);
+      for (let j = 0; j < sides; j += 1) {
+        const angle = j / sides * Math.PI * 2, c = Math.cos(angle) * wireRadius, s = Math.sin(angle) * wireRadius;
+        const k = (i * sides + j) * 3;
+        positions[k] = line[i].x + normal.x * c + binormal.x * s;
+        positions[k + 1] = line[i].y + normal.y * c + binormal.y * s;
+        positions[k + 2] = line[i].z + normal.z * c + binormal.z * s;
+      }
+    }
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+    mesh.userData.attachmentDistance = length;
+    mesh.userData.terminalPoint = end.clone();
+  };
+  return mesh;
 }
 
 function springAssistedTreadle(movement) {
@@ -314,7 +378,7 @@ function springAssistedTreadle(movement) {
     new THREE.BoxGeometry(6.50, 0.20, 1.06),
     frameMaterial,
   );
-  base.position.set(-0.18, -2.34, -0.55);
+  base.position.set(-0.18, -2.34, -0.66);
   base.userData.role = 'fixed-treadle-machine-foundation';
   fixedFrame.add(base);
   const wheelPost = beamBetween(
@@ -336,7 +400,7 @@ function springAssistedTreadle(movement) {
   fixedFrame.add(wheelPost, wheelBrace);
   const wheelBearing = cylinderAlongZ(0.24, 0.45, frameMaterial, 34);
   wheelBearing.position.copy(wheelCenter);
-  wheelBearing.position.z = -0.46;
+  wheelBearing.position.z = -0.51;
   boreZCylinder(wheelBearing,.24,.114,.45);
   wheelBearing.userData.role = 'fixed-crankshaft-bearing';
   fixedFrame.add(wheelBearing);
@@ -346,6 +410,11 @@ function springAssistedTreadle(movement) {
   boreZCylinder(treadleBearing,.18,.114,.40);
   treadleBearing.userData.role = 'fixed-treadle-pivot-bearing';
   fixedFrame.add(treadleBearing);
+  // A short pedestal carries the treadle pivot bearing on the slab.
+  const treadlePedestal = new THREE.Mesh(new THREE.BoxGeometry(0.22, treadlePivot.y - 0.14 - (-2.24), 0.25), frameMaterial);
+  treadlePedestal.position.set(treadlePivot.x, (treadlePivot.y - 0.14 - 2.24) / 2, -0.46);
+  treadlePedestal.userData.role = 'fixed-treadle-pivot-pedestal';
+  fixedFrame.add(treadlePedestal);
   const springBracket = cylinderAlongZ(0.25, 0.42, frameMaterial, 34);
   springBracket.position.copy(springAnchor);
   springBracket.position.z = 0.05;
@@ -353,7 +422,7 @@ function springAssistedTreadle(movement) {
   const springStandard=new THREE.Mesh(new THREE.BoxGeometry(.14,2.83,.16),frameMaterial);
   springStandard.position.set(springAnchor.x,-.835,-.22);
   springStandard.userData.role='fixed-spring-anchor-standard';fixedFrame.add(springStandard);
-  springBracket.userData.role = 'fixed-curled-spring-A-anchor-bracket';
+  springBracket.userData.role = 'fixed-spring-A-anchor-bracket';
   fixedFrame.add(springBracket);
   root.add(fixedFrame);
 
@@ -418,13 +487,13 @@ function springAssistedTreadle(movement) {
   const pitman = makeBoredPlanarLink({length:pitmanLength,width:.15,eyeRadius:.19,boreRadius:.134,depth:.10},darkMaterial);
   pitman.userData.role = 'constant-length-pitman-from-crank-B-to-treadle';
   root.add(pitman);
-  const spring = makePlanarCurledSpring(springMaterial);
+  const spring = makeHelicalEyeSpring(springMaterial);
   root.add(spring);
   const springAnchorEye=addZJournal(root,.18,.114,.06,springMaterial,springAnchor,'spring-fixed-end-pivot-eye');
   const springCrankEye=addZJournal(root,.18,.134,.06,springMaterial,springAnchor,'spring-crank-end-pivot-eye');
   const springAnchorPin = cylinderAlongZ(0.11, 1.20, darkMaterial, 28);
   springAnchorPin.position.copy(springAnchor).setZ(.65);
-  springAnchorPin.userData.role = 'fixed-inner-end-of-curled-spring-A';
+  springAnchorPin.userData.role = 'fixed-pin-A-carrying-spring-fixed-eye';
   root.add(springAnchorPin);
   // Ends inside the crank hub so the pitman sweeps clear in front of it.
   const crankShaft = cylinderAlongZ(0.11, 1.02, darkMaterial, 30);
@@ -533,7 +602,7 @@ function springAssistedTreadle(movement) {
         engravingEvidence:
           'Brown’s plate shows one flywheel and crank B, a long pitman from B to a rocking treadle, and a separately anchored spring A whose free end reaches the crankpin.',
         reconstructionDisclosure:
-          'Brown fixes the crank, pitman, treadle, spring attachment, and intended dead-center assistance but gives no link lengths, pivot locations, spring rate, preload, dimensions, speed, or force values. The exact crank-rocker proportions, full-turn timing, broad expanding planar spring curl and its prescribed terminal deformation, and neutral spring length halfway between the two toggle lengths are independently engineered. The latter makes the modeled linear spring pull at one dead center and push at the other so both tangential torques have the same sign.',
+          'Brown fixes the crank, pitman, treadle, spring attachment, and intended dead-center assistance but gives no link lengths, pivot locations, spring rate, preload, dimensions, speed, or force values. The exact crank-rocker proportions, full-turn timing, helical coil of the spring (drawn between an eye on the fixed pin A and an eye on crank pin B, its coils opening and closing with the eye distance; no guide rod is modelled), and neutral spring length halfway between the two toggle lengths are independently engineered. The latter makes the modeled linear spring pull at one dead center and push at the other so both tangential torques have the same sign.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 416',

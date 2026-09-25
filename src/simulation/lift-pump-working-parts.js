@@ -3,6 +3,7 @@ import {horizontalRing, horizontalTurned, horizontalPlate} from './horizontal-tu
 import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {circle, capsule, poly, plate, polygonClipping} from './finite-plate-geometry.js';
+import {sectionMeshInPlace} from './cutaway-section.js';
 
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
 
@@ -121,6 +122,14 @@ export function correctLiftPumpParts(root, id) {
     const oldHinge=root.children.find(o=>o.geometry?.type==='CylinderGeometry'&&o.position.x===.40);
     if(oldHinge)oldHinge.visible=false;
   }
+  // Brown's section as ONE clean cutaway on the plane facing the camera:
+  // opaque walls with plain cut faces; the bucket, checks and rods stay whole.
+  // The water is cut on the same plane so none stands in front of the walls.
+  const shells=[b.barrel,b.suctionPipe,b.spout,b.deliveryPipe,b.deliveryBell,b.topCover,b.stuffingBox?.children[0]].filter(Boolean);
+  const waters=[b.suctionWater,b.lowerChamberWater,b.upperChamberWater,b.spoutWater,b.deliveryWater].filter(Boolean);
+  for(const mesh of shells)sectionMeshInPlace(mesh,root);
+  for(const mesh of waters){const m=mesh.material;sectionMeshInPlace(mesh,root);mesh.material=[m,m];}
+  for(const rails of [b.barrelRearFrame,b.barrelRails])if(rails)rails.visible=false;
   d.updateSolids=()=>{if(!modern)b.connectingRod.position.z=.27;};
   d.animationTiming.targetCycleDuration=g.cycleDuration;
   d.minimumDisplayCycleSeconds=g.cycleDuration;

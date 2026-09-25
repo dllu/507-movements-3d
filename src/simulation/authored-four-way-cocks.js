@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import {cockPassagePath, correctFourWayCock, makeBrownPortPipes} from './four-way-cock-parts.js';
+import {applyCutawayFor} from './cutaway-presentations.js';
+import {cockPassagePath, correctFourWayCock, makeBrownPortPipes, sectionFourWayCockParts} from './four-way-cock-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -819,5 +820,7 @@ function fourWaySteamCock(movement) {
 
 export function createAuthoredFourWayCockMovement(movement) {
   if (movement.id !== 395) return null;
-  return fourWaySteamCock(movement);
+  const model = fourWaySteamCock(movement);
+  sectionFourWayCockParts(model.root);
+  return applyCutawayFor(model, movement.id);
 }

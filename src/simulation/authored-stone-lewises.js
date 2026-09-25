@@ -395,6 +395,10 @@ function stoneLewis(movement) {
     stone.add(wall);
     return wall;
   });
+  // The bore liners share faces with the stone's own hole and cut face;
+  // in the stone's material those coincident faces cannot flicker into
+  // dashed marks along the hole edges.
+  for (const liner of [boreBottom, ...boreWalls]) liner.material = stoneMaterial;
 
   const makePacking = (side) => {
     const packing = addRole(new THREE.Group(),

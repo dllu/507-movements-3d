@@ -1,5 +1,6 @@
 import { correctCompensationJournals } from './pendulum-journal-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   makeBeam,
@@ -1798,7 +1799,7 @@ function compoundBarCompensationPendulum(movement) {
 
 export function createAuthoredCompensationPendulumMovement(movement) {
   if (movement.id === 316) {
-    return mercurialCompensationPendulum(movement);
+    return applyCutawayFor(mercurialCompensationPendulum(movement), 316);
   }
   if (movement.id === 317) {
     return compoundBarCompensationPendulum(movement);

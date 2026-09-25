@@ -415,7 +415,11 @@ function doubleEllipticalRotaryEngine(movement) {
   );
   innerHousingWall.geometry.dispose();outerHousingWall.geometry.dispose();
   innerHousingWall.geometry=plate(housingSection,0.68,0.70);
-  outerHousingWall.geometry=plate(housingSection,-0.68,-0.66);
+  // Brown's casing is one piece: its back cover is the whole oval with its
+  // necks, so the two bores and the port channels are closed behind and the
+  // casing is cut only on the front plane of the section.
+  outerHousingWall.geometry=plate(outerSection,-0.68,-0.52);
+  outerHousingWall.userData.role='fixed-solid-back-cover-of-double-lobed-casing';
   root.add(innerHousingWall, outerHousingWall);
 
   const foundation = new THREE.Mesh(
@@ -493,13 +497,15 @@ function doubleEllipticalRotaryEngine(movement) {
   rightRotor.add(...rightPackingStrips);
   root.add(rightRotor);
 
-  const leftShaft = cylinderAlongZ(shaftRadius, 1.22, darkMaterial, 36);
+  const leftShaft = cylinderAlongZ(shaftRadius, 1.78, darkMaterial, 36);
   leftShaft.position.copy(leftCenter);
-  leftShaft.position.z = 0.57;
+  // Set into the solid back cover, so the fixed shaft is carried by the casing.
+  leftShaft.position.z = 0.29;
   leftShaft.userData.role = 'left-piston-shaft-in-fixed-bearing';
-  const rightShaft = cylinderAlongZ(shaftRadius, 1.22, darkMaterial, 36);
+  const rightShaft = cylinderAlongZ(shaftRadius, 1.78, darkMaterial, 36);
   rightShaft.position.copy(rightCenter);
-  rightShaft.position.z = 0.57;
+  // Set into the solid back cover, so the fixed shaft is carried by the casing.
+  rightShaft.position.z = 0.29;
   rightShaft.userData.role = 'right-piston-shaft-in-fixed-bearing';
   root.add(leftShaft, rightShaft);
 

@@ -47,7 +47,11 @@ export function makeCrankSliderGeometry() {
   const [top,upper,lower,bottom]=source.guideY.map(y=>point([0,y])[1]),left=point([source.guideLeft,0])[0],innerLeft=point([source.guideInnerLeft,0])[0],right=point([source.guideRight,0])[0];
   const clearance=.002,shoeY=[lower-offset+clearance,upper-offset-clearance];
   attach('shoe',new THREE.BoxGeometry(.34,shoeY[1]-shoeY[0],.20),'slider',PALETTE.driven,[0,(shoeY[0]+shoeY[1])/2,-.02]);
-  const guide=poly([[left,bottom],[right,bottom],[right,lower],[innerLeft,lower],[innerLeft,upper],[right,upper],[right,top],[left,top]]);
+  // Brown breaks the guide off at the right; the real guide runs on a little
+  // past that line and is closed by an end bar, so its bars do not stop in
+  // open space. The slot (and the stroke limit `right`) are unchanged.
+  const guideEnd=right+.6,endBar=.12;
+  const guide=clip.difference(poly([[left,bottom],[guideEnd+endBar,bottom],[guideEnd+endBar,top],[left,top]]),poly([[innerLeft,lower],[guideEnd,lower],[guideEnd,upper],[innerLeft,upper]]));
   attach('guide',plate(guide,-.15,.06),'frame',PALETTE.muted);
   const rear=clip.difference(clip.union(poly(circle([0,0],.205,128)),poly([[0,-.065],[innerLeft,-.065],[innerLeft,.065],[0,.065]]),
     poly([[left,bottom],[innerLeft,bottom],[innerLeft,top],[left,top]])),poly(circle([0,0],shaftRadius+.003,128)));
@@ -58,7 +62,7 @@ export function makeCrankSliderGeometry() {
   };
   const initial=atAngle(phase);blocks.input.rotation.z=phase;blocks.rod.position.set(...initial.pin,0);blocks.rod.rotation.z=initial.rodAngle;blocks.slider.position.set(initial.slider,offset,0);
   Object.assign(root.userData,{parts,families,blocks,source,atAngle,hideGround:true,
-    geometry:{r,length,offset,phase,outerRadius,shaftRadius,crankPinRadius,wristPinRadius,clearance,left,innerLeft,right,top,upper,lower,bottom,shoeY,opening}});
+    geometry:{r,length,offset,phase,outerRadius,shaftRadius,crankPinRadius,wristPinRadius,clearance,left,innerLeft,right,guideEnd,top,upper,lower,bottom,shoeY,opening}});
   markShadows(root);root.updateMatrixWorld(true);
   return {root,focus:new THREE.Vector3(1,0,0),cameraDirection:new THREE.Vector3(.5,.4,10)};
 }

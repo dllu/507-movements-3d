@@ -2,11 +2,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-differential-drives.js",
-      "sha256": "298d00814419100ba75d3f452d835f6c5e5becc5db1e8cfb35bfc5dba2c52354"
+      "sha256": "86b07c540a9934e20d92cb40596e0ee7bf2e93ec81865e08344884419d234a33"
     },
     {
       "file": "src/simulation/authored-differential-screws.js",
-      "sha256": "d60d0c1980f85d85e7fe812c103b58f30b7c237817385ff6fed3eaa58906ff93"
+      "sha256": "fb7b3f3b7c25b350a0cab7d1aef3d73149267af7f4e96ff93a58af377ba3cd3d"
     },
     {
       "file": "src/simulation/authored-worm-racks.js",
@@ -14,11 +14,11 @@
     },
     {
       "file": "src/simulation/differential-thread-solids.js",
-      "sha256": "cc831611db422a2999bf92b56ba843f027a66e14776fab01c993061538684434"
+      "sha256": "fdd773f1f70fffde1549d97cc82c5c3b3fd338c5c034315168fc9b2301bf5724"
     },
     {
       "file": "src/simulation/mujoco-screw/thread-geometry.js",
-      "sha256": "6b2ffc3165135dd59e8b822b27f2aecbb84fe53880cc62507ae5412c65942be2"
+      "sha256": "226c91213d15b75ed4f8d2fd9e928754a48594d506286f615b621ed98c8c91c2"
     },
     {
       "file": "src/simulation/bored-lathe-geometry.js",
@@ -69,14 +69,14 @@
       "pairs": [
         {
           "pair": "coarse-thread",
-          "maximumSampledGap": 0.0016217691715037885,
-          "minimumSampledGap": 0.001480960031057605,
+          "maximumSampledGap": 0.0017934732046062899,
+          "minimumSampledGap": 0.0017190873808811532,
           "activePoses": 33
         },
         {
           "pair": "fine-thread",
-          "maximumSampledGap": 0.0017562896987951503,
-          "minimumSampledGap": 0.001592498227493006,
+          "maximumSampledGap": 0.0018452247937153197,
+          "minimumSampledGap": 0.0017825892137916727,
           "activePoses": 33
         }
       ]
@@ -84,16 +84,16 @@
     {
       "id": 275,
       "poses": 33,
-      "queries": 352283,
+      "queries": 350081,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,
       "pairs": [
         {
           "pair": "rack-0",
-          "maximumSampledGap": 0.010143261960561478,
+          "maximumSampledGap": 0.002307862871303976,
           "minimumSampledGap": 0.0022962986799945004,
-          "activePoses": 8
+          "activePoses": 6
         },
         {
           "pair": "rack-1",
@@ -133,9 +133,9 @@
         },
         {
           "pair": "rack-7",
-          "maximumSampledGap": 0.0150009130269666,
+          "maximumSampledGap": 0.0029674912851588063,
           "minimumSampledGap": 0.0029648146157965384,
-          "activePoses": 5
+          "activePoses": 3
         },
         {
           "pair": "rack-8",

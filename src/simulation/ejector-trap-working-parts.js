@@ -3,7 +3,7 @@ import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-
 import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {curvedPipeWall} from './finite-fluid-passages.js';
 import {mirroredForkWall} from './mirrored-fork-pipe.js';
-import {waterVolumeMaterial} from './water-volume.js';
+import {waterFountainGeometry,waterJetMaterial,waterVolumeMaterial} from './water-volume.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
@@ -39,12 +39,18 @@ export function ejectorOperatingStage(phase) {
 // The free discharge issuing from the open mouth of C: a translucent water
 // column the width of the bore, slightly swelling as it slows, with a rounded
 // crown. Its height follows the discharge fraction of the state.
-function dischargeJet(root,mouthY,bore,height,role) {
-  const profile=[new THREE.Vector2(bore*.98,0)];
-  for(let i=1;i<=12;i++){const z=.78*i/12;profile.push(new THREE.Vector2(bore*(.98+.16*z),z));}
-  for(let i=1;i<=10;i++){const a=i/10*Math.PI/2;profile.push(new THREE.Vector2(bore*1.105*Math.cos(a),.78+.22*Math.sin(a)));}
-  const jet=add(root,new THREE.LatheGeometry(profile,64),waterVolumeMaterial(),role);jet.renderOrder=1;jet.position.y=mouthY-.02;
-  return fraction=>{jet.visible=fraction>1e-3;jet.scale.y=Math.max(1e-4,(height+.02)*fraction);};
+// The discharge wells up out of the open mouth of C and spills over its lip
+// as a thin sheet running down round the outside of the pipe, thinning out:
+// water attached to the mouth, not a cap standing on it. It grows with the
+// discharge fraction (vertical scale), keeping its clearance to the lip.
+function dischargeJet(root,mouthY,bore,outer,role,sector={}) {
+  const apex=.2,fallY=-.85,thickness=.03,columnRadius=bore*.98,r0=columnRadius*.72;
+  // Fraction of the crown where its inner skin passes the mouth plane.
+  const s0=Math.sqrt(apex/(apex+thickness-fallY));
+  const crownRadius=r0+(outer+.05+thickness-r0)/s0;
+  const jet=add(root,waterFountainGeometry({nozzleY:-.04,apexY:apex,columnRadius,crownRadius,fallY,crownThickness:thickness,fadeStart:.5,crownAlpha:.8,...sector}),waterJetMaterial({opacity:.42}),role);
+  jet.renderOrder=2;jet.position.y=mouthY;
+  return fraction=>{jet.visible=fraction>1e-3;jet.scale.y=Math.max(1e-4,fraction);};
 }
 
 export function correctEjectorTrapParts(root,id,update) {
@@ -75,7 +81,9 @@ export function correctEjectorTrapParts(root,id,update) {
       // fixed vertex topology so no geometry is reallocated per frame.
       const rows=49,segments=64,lathe=new THREE.LatheGeometry(Array.from({length:rows},(_,j)=>new THREE.Vector2(rD(dBottom),dBottom+j*(dTop-dBottom)/(rows-1))),segments);
       const inD=add(root,lathe,water,'water-filling-mixing-chamber-D');inD.renderOrder=1;
-      const surface=add(root,new THREE.CircleGeometry(1,64).rotateX(-Math.PI/2),water,'free-water-surface-in-B-D-C');surface.renderOrder=1;
+      // B, D and C are cut on z = 0 (cutaway presentation): the free surface and
+      // the discharge keep only the half behind the cut, like the walls.
+      const surface=add(root,new THREE.CircleGeometry(1,64,0,Math.PI).rotateX(-Math.PI/2),water,'free-water-surface-in-B-D-C');surface.renderOrder=1;
       const sweepD=level=>{
         const position=lathe.getAttribute('position'),top=Math.min(level,dTop);
         for(let i=0;i<=segments;i++){const a=i/segments*2*Math.PI,c=Math.sin(a),e=Math.cos(a);
@@ -83,7 +91,7 @@ export function correctEjectorTrapParts(root,id,update) {
         position.needsUpdate=true;lathe.computeVertexNormals();lathe.computeBoundingSphere();lathe.computeBoundingBox();
       };
       b.waterFill=[inD,inB,inC];b.waterSurface=surface;
-      const jet=dischargeJet(root,outlet,rC,.55,'free-discharge-issuing-from-mouth-of-C');b.dischargeJet=root.children.at(-1);
+      const jet=dischargeJet(root,outlet,rC,.54,'free-discharge-issuing-from-mouth-of-C',{thetaStart:Math.PI,thetaLength:Math.PI});b.dischargeJet=root.children.at(-1);
       d.updateWorkingParts=(time,state)=>{
         jet(state.dischargeFraction);
         const level=state.waterLevelY;
@@ -120,7 +128,7 @@ export function correctEjectorTrapParts(root,id,update) {
     Object.assign(b.steamPipe.material,{transparent:false,opacity:1});
     // The opaque fork hides the water inside; its working shows as the
     // discharge issuing from the open mouth of C while the siphon runs.
-    const jet=dischargeJet(root,3.42,.38,.55,'free-discharge-issuing-from-mouth-of-C');b.dischargeJet=root.children.at(-1);
+    const jet=dischargeJet(root,3.42,.38,.46,'free-discharge-issuing-from-mouth-of-C');b.dischargeJet=root.children.at(-1);
     d.updateWorkingParts=(time,state)=>jet(state.dischargeFraction);
   } else if(id===477) {
     replace(b.inletPipeA,horizontalRing(.66,.74,-1.04,1.04,64));

@@ -127,12 +127,10 @@ function rectangularAnnularGeometry({
   const bore = new THREE.Path();
   bore.absarc(0, 0, boreRadius, 0, FULL_TURN, true);
   shape.holes.push(bore);
+  // Square-edged, so the bearing sits flush on its upright with no chamfer
+  // seam where the two blocks meet.
   const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize: 0.025,
-    bevelOffset: -0.025,
-    bevelThickness: 0.025,
+    bevelEnabled: false,
     curveSegments: 48,
     depth,
     steps: 1,
@@ -324,11 +322,15 @@ function twoPitchDifferentialScrew(movement) {
     metalness: 0.12,
     roughness: 0.65,
   });
+  // As wide and deep as the bearing and flush with its underside (y -0.51),
+  // so bearing and standard read as one upright.
+  const movingStandardTop = -0.51;
+  const movingStandardBottom = baseY + 0.11 + 0.07;
   const movingStandard = new THREE.Mesh(
-    new THREE.BoxGeometry(0.40, 0.58, 0.66),
+    new THREE.BoxGeometry(movingBearingDepth, movingStandardTop - movingStandardBottom, 0.7),
     movingStandardMaterial,
   );
-  movingStandard.position.y = -0.76;
+  movingStandard.position.y = (movingStandardTop + movingStandardBottom) / 2;
   movingStandard.userData.role =
     'movable-bearing-standard-rigidly-joining-bearing-to-sliding-foot';
   const footTopY = movingFoot.position.y + 0.07;
@@ -343,8 +345,8 @@ function twoPitchDifferentialScrew(movement) {
       new THREE.ExtrudeGeometry(shape, {
         bevelEnabled: false,
         curveSegments: 12,
-        depth: 0.66,
-      }).translate(0.199, 0, -0.33),
+        depth: 0.7,
+      }).translate(movingBearingDepth / 2 - 0.001, 0, -0.35),
       movingStandardMaterial,
     );
     fillet.scale.x = side;
@@ -690,7 +692,7 @@ function twoPitchDifferentialScrew(movement) {
     plankTopY - 0.11, 0);
   plank.userData.role = 'source-solid-plank-carrying-both-bearings';
   const uprightBottom = plankTopY;
-  const uprightTop = -0.516;
+  const uprightTop = -0.51; // flush with the fixed bearing's underside
   const fixedUpright = new THREE.Mesh(
     new THREE.BoxGeometry(
       fixedBearingDepth,

@@ -308,10 +308,17 @@ function sectorPistonEngine(movement) {
   chest.position.copy(valveCenter);
   chest.userData.role = 'fixed-valve-D-chest';
   fixedValveChest.add(chest);
-  const valveGuide = new THREE.Mesh(new THREE.BoxGeometry(1.80, 0.08, 0.72), darkMaterial);
-  valveGuide.position.copy(valveCenter).add(new THREE.Vector3(0, -0.25, 0));
+  // The seat lies inside the chest cavity on its floor (no faces shared
+  // with the chest walls, so nothing flickers as a comb along the side).
+  const valveGuide = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.04, 0.60), frameMaterial);
+  valveGuide.position.copy(valveCenter).add(new THREE.Vector3(0, -0.19, 0));
   valveGuide.userData.role = 'horizontal-guide-for-slide-valve-D';
   fixedValveChest.add(valveGuide);
+  // The chest is cut on the same front plane; its back cover stays.
+  const chestBack = new THREE.Mesh(new THREE.BoxGeometry(1.80, 0.80, 0.04), frameMaterial);
+  chestBack.position.copy(valveCenter).add(new THREE.Vector3(0, 0, -0.36));
+  chestBack.userData.role = 'solid-back-cover-of-valve-D-chest';
+  fixedValveChest.add(chestBack);
   root.add(fixedValveChest);
 
   const slideValveD = new THREE.Group();
@@ -388,9 +395,18 @@ function sectorPistonEngine(movement) {
   const casingA = new THREE.Mesh(plate(polygonClipping.difference(
     poly(casingOuter), poly(casingInner),
     poly(circle([rockshaftCenter.x, rockshaftCenter.y], 0.40, 96)),
-  ), -0.04, 0.64), frameMaterial);
+  ), -0.40, 0.64), frameMaterial);
   casingA.userData.role = 'cast-vase-casing-of-sector-cylinder-A-with-foot';
   root.add(casingA);
+  // One clean half-section: the casing keeps its solid back cover and is
+  // cut on the plane of its front face, so B, C and the chamber show
+  // through the cut without an open frame behind them.
+  const casingBack = new THREE.Mesh(plate(polygonClipping.difference(
+    poly(casingOuter),
+    poly(circle([rockshaftCenter.x, rockshaftCenter.y], 0.40, 96)),
+  ), -0.40, -0.28), frameMaterial);
+  casingBack.userData.role = 'solid-back-cover-of-sector-casing-A';
+  root.add(casingBack);
 
   const clockwiseAdmissionIndicator = new THREE.Mesh(
     new THREE.SphereGeometry(0.12, 22, 16),

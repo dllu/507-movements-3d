@@ -3,7 +3,7 @@ import {loadBakedBundle,makeBakedRigidMovement} from './playback.js';
 import {groundBlock} from '../ground-block.js';
 import {weightedCordGeometry,updateWeightedCord} from '../mujoco-weighted-bell-crank/sync.js';
 // Presentation only (the baked physics keeps its supports and return stop):
-// Brown hangs the top pulley with no gallows, stands the disk and the bell
+// Brown hangs the top pulley with no gallows (a minimal rear post now carries its axle stub), stands the disk and the bell
 // crank on front pedestals, and draws two thin base plates on hatched ground.
 // Hide the merged rear frame (base rail, rear posts, pulley gallows and stop)
 // and draw those source supports in front of the studs and lever arms.
@@ -38,6 +38,13 @@ function presentSourceSupports(root,g){
  extrude(post,.68,.80,frame,'front-bell-crank-post');
  for(const [x,y,name] of [[cx,cy,'disk-axle-end'],[lp.x,lp.y,'bell-crank-pin-end']]){const c=new THREE.Shape();c.absarc(...w(x,y).toArray(),10*s,0,2*Math.PI,false);extrude(c,.80,.83,ink,name);}
  for(const [x0,x1] of [[74,226],[226,371]]){const plate=new THREE.Shape(),a=w(x0,baseTop),b=w(x1,baseBottom);plate.moveTo(a.x,a.y);plate.lineTo(b.x,a.y);plate.lineTo(b.x,b.y);plate.lineTo(a.x,b.y);plate.closePath();extrude(plate,-.30,.80,frame,'base-plate');}
+ // The top pulley's axle stub needs a carrier: a plain post rises from the
+ // ground block behind the hanging weight (clear of its path) to a bored
+ // head round the stub's rear end. Brown's crop shows no support there.
+ {const px=3.962,py=3.43,foot=w(0,baseBottom).y,post=new THREE.Shape();
+  post.moveTo(px-.12,foot);post.lineTo(px+.12,foot);post.lineTo(px+.12,py);post.absarc(px,py,.2,0,Math.PI,false);post.lineTo(px-.12,foot);
+  const bore=new THREE.Path();bore.absarc(px,py,.1,0,2*Math.PI,true);post.holes.push(bore);
+  extrude(post,-.42,-.24,frame,'pulley-axle-rear-post');}
  const left=w(6,baseBottom),right=w(514,baseBottom),depth=26*s;
  // The hatched ground is a cut solid under the base plates, not a sheet of strokes.
  const ground=groundBlock(right.x-left.x,depth,1.2,{name:'fixed-ground-block'});ground.position.set((left.x+right.x)/2,left.y-depth/2,.25);group.add(ground);

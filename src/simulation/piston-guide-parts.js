@@ -17,7 +17,8 @@ export function fitPistonGuide(root,update,period) {
   const bounds=new THREE.Box3();
   for(let i=0;i<=64;i++) {
     update(period*i/64);root.updateMatrixWorld(true);
-    bounds.union(new THREE.Box3().setFromObject(root));
+    // Parts run on past Brown's crop (userData.beyondPlateCrop) stay out of the fit.
+    root.traverse(o=>{if(!o.isMesh)return;for(let p=o;p;p=p.parent)if(p.userData.beyondPlateCrop)return;bounds.union(new THREE.Box3().setFromObject(o));});
   }
   root.userData.cameraFitBounds=bounds.expandByScalar(.03);
   root.userData.cameraDistanceScale=1.02;

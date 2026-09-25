@@ -24,10 +24,14 @@ export function makeSlottedElbow(){
  add('leverSleeve',ring(.304,.45,.24,.30,128),'lever',PALETTE.driven);
  place('outputPin',disk(.20,.52,.88,128),'lever',outputLocal,PALETTE.ink);
  place('outputRetainer',ring(.20,.24,.824,.88,128),'lever',outputLocal,PALETTE.ink);
- // Brown breaks the rod off 205 raster pixels below its eye; its guided
- // lower end (the kinematic rod length) lies beyond the drawing.
+ // Brown breaks the rod off 205 raster pixels below its eye; the break is
+ // drawing notation. The whole rod runs on to its eye on the guided
+ // crosshead's pin (the kinematic rod length), below the plate's view.
  const drawnRodLength=205*source.scale;
- const rodShape=clip.difference(clip.union(poly(circle([0,0],.42,128)),poly([[0,-.21],[.95,-.21],[1.05,-.10],[drawnRodLength-.04,-.10],[drawnRodLength+.03,-.03],[drawnRodLength,.02],[drawnRodLength+.04,.10],[1.05,.10],[.95,.21],[0,.21]])),poly(circle([0,0],.204,128)));
+ const rodEnd=g.rodLength;
+ const rodShape=clip.difference(clip.union(poly(circle([0,0],.42,128)),poly(circle([rodEnd,0],.22,96)),poly([[0,-.21],[.95,-.21],[1.05,-.10],[rodEnd,-.10],[rodEnd,.10],[1.05,.10],[.95,.21],[0,.21]])),poly(circle([0,0],.204,128)),poly(circle([rodEnd,0],.104,96)));
+ // The default view frames the drawn part of the rod only.
+ const drawnRodProxy=new THREE.Mesh(plate(poly([[0,-.21],[drawnRodLength+.04,-.21],[drawnRodLength+.04,.21],[0,.21]]),.66,.82));
  add('connectingRod',plate(rodShape,.66,.82),'rod',PALETTE.brass);
  add('crosshead',plate(rectangle(-.28,.28,-.16,.16),.32,.62),'slider',PALETTE.brass);
  add('sliderPin',disk(.10,.62,.88,128),'slider',PALETTE.ink);
@@ -54,7 +58,7 @@ export function makeSlottedElbow(){
  const update=time=>{if(disposed)throw new Error('Movement has been disposed');const s=slottedElbowState(time,g);blocks.input.rotation.z=s.driverAngle;blocks.lever.position.set(...g.pivot,0);blocks.lever.rotation.z=s.slotAngle;blocks.rod.position.set(...s.output,0);blocks.rod.rotation.z=s.rodAngle;blocks.slider.position.set(...s.slider,0);root.userData.state=s;root.updateMatrixWorld(true);};
  Object.assign(root.userData,{blocks,parts,families,geometry:g,source,hideGround:true,cameraFov:18,supportsRestart:true,mechanism:'source-slotted-elbow-variable-reciprocator',fidelity:'authored',reconstructionStatus:'reconstructed',reconstructionNote:'The disk pin slides along the elbow slot, and the pinned rod moves the guided output. The linkage follows the engraving; the rod is drawn broken off as on the plate, and its lower length, guide and rear supports are reconstructed off the drawing. Motion uses ideal pin and slot constraints.',animationTiming:{authoredCyclePeriod:g.period,displayCycleDuration:g.period,playbackTimeScale:1}});
  root.traverse(o=>{if(o.material)o.material.fog=false;});
- markShadows(root);const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(g.period*i/128);for(const name of ['input','lever','rod'])bounds.union(new THREE.Box3().setFromObject(blocks[name],true));}bounds.expandByScalar(.03);root.userData.cameraFitBounds=bounds;
+ markShadows(root);const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(g.period*i/128);for(const name of ['input','lever'])bounds.union(new THREE.Box3().setFromObject(blocks[name],true));drawnRodProxy.position.copy(blocks.rod.position);drawnRodProxy.rotation.copy(blocks.rod.rotation);drawnRodProxy.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(drawnRodProxy,true));}drawnRodProxy.geometry.dispose();bounds.expandByScalar(.03);root.userData.cameraFitBounds=bounds;
  // Fit the whole swept linkage: an authored box alone crops to the initial pose,
  // which let the upright slotted end and the lowest rod stub leave the view.
  root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};root.userData.shadowCameraHalfExtent=8;update(0);

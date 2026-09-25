@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   makeShaft,
@@ -411,5 +412,5 @@ function centrifugalFanBlower(movement) {
 
 export function createAuthoredFanBlowerMovement(movement) {
   if (movement.id !== 497) return null;
-  return centrifugalFanBlower(movement);
+  return applyCutawayFor(centrifugalFanBlower(movement), movement.id);
 }

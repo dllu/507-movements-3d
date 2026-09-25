@@ -705,20 +705,22 @@ function snyderDoubleStrokeSlotDrive(movement) {
   diskRim.userData.retiredInkOutline = true;
 
   const slotFloors = [0, Math.PI / 2].map((angle, index) => {
+    // A plain slot bottom in the disk's own material, its edges let into
+    // the slot walls: the slots read as grooves in A rather than openings
+    // onto a flat bright floor.
     const floor = new THREE.Mesh(
       new THREE.BoxGeometry(
-        slotHalfLength * 2,
-        slotHalfWidth * 2,
+        slotHalfLength * 2 + 0.02,
+        slotHalfWidth * 2 + 0.02,
         0.025,
       ),
-      edgeMaterial,
+      diskMaterial,
     );
     floor.rotation.z = angle;
     floor.position.z = -diskDepth / 2 + 0.016;
     floor.userData.role =
       `dark-recess-behind-through-slot-${index + 1}`;
-    // The slots are open through the disk, as Brown leaves them white.
-    floor.visible = false;
+    floor.visible = true;
     diskAssembly.add(floor);
     return floor;
   });

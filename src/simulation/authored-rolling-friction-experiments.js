@@ -464,8 +464,9 @@ function rollingCarriageFrictionExperiment(movement) {
     previous = next;
   }
   beltPath.add(new THREE.LineCurve3(lowerTangent, lowerFreeEnd));
-  const beltWidth = 0.07;
-  const beltThickness = 0.05;
+  // A true flat belt: broad across the pulley face (0.22), thin radially.
+  const beltWidth = 0.16;
+  const beltThickness = 0.03;
   const beltBand = new THREE.Mesh(
     flatBeltGeometry(beltPath, {
       width: beltWidth,
@@ -520,6 +521,28 @@ function rollingCarriageFrictionExperiment(movement) {
   remotePulley.userData.role = 'driving-pulley-of-endless-belt-beyond-plate-crop';
   remotePulley.userData.beyondPlateCrop = true;
   root.add(remotePulley);
+  // The driving pulley is keyed on an overhead line shaft carried by a
+  // hanger from a ceiling beam, all beyond the plate's crop.
+  const hangerMaterial = matte(PALETTE.frame, { roughness: 0.7 });
+  const lineShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 24), matte(PALETTE.ink, { roughness: 0.5 }));
+  lineShaft.rotation.x = Math.PI / 2;
+  lineShaft.position.set(remoteCenter.x, remoteCenter.y, beltPlaneZ - 0.35);
+  lineShaft.userData.role = 'overhead-line-shaft-beyond-plate-crop';
+  const hangerTop = remoteCenter.y + drivePulleyRadius + 0.75;
+  const hangerStrap = new THREE.Mesh(new THREE.BoxGeometry(0.12, hangerTop - remoteCenter.y, 0.08), hangerMaterial);
+  hangerStrap.position.set(remoteCenter.x, (hangerTop + remoteCenter.y) / 2, beltPlaneZ - 0.72);
+  hangerStrap.userData.role = 'line-shaft-hanger-beyond-plate-crop';
+  const hangerBearing = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.14, 24), hangerMaterial);
+  hangerBearing.rotation.x = Math.PI / 2;
+  hangerBearing.position.set(remoteCenter.x, remoteCenter.y, beltPlaneZ - 0.72);
+  hangerBearing.userData.role = 'line-shaft-hanger-bearing-beyond-plate-crop';
+  const ceilingBeam = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.22, 1.5), hangerMaterial);
+  ceilingBeam.position.set(remoteCenter.x, hangerTop + 0.11, beltPlaneZ - 0.35);
+  ceilingBeam.userData.role = 'ceiling-beam-carrying-line-shaft-beyond-plate-crop';
+  for (const part of [lineShaft, hangerStrap, hangerBearing, ceilingBeam]) {
+    part.userData.beyondPlateCrop = true;
+    root.add(part);
+  }
   belt.userData.crossSection = 'flat';
   belt.userData.width = beltWidth;
   belt.userData.thickness = beltThickness;

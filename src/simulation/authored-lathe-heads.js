@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import { plate, poly, circle, polygonClipping, ring } from './finite-plate-geometry.js';
 import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import {
@@ -859,5 +860,5 @@ export function createAuthoredLatheHeadMovement(movement) {
   if (movement.id !== 285) return null;
   const result = latheTailstockScrewFeed(movement);
   result.root.userData.fidelity = 'authored';
-  return result;
+  return applyCutawayFor(result, movement.id);
 }

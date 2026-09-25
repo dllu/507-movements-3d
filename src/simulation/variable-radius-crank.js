@@ -33,10 +33,18 @@ export function makeVariableRadiusCrank() {
   add('slotPin', disk(.072, -.02, .50, 96), 'pitman', PALETTE.ink, [-L, 0, 0]);
   add('auxiliaryPin', disk(.10, .28, .80, 96), 'pitman', PALETTE.ink);
   add('wristPin', disk(.11, 0, .50, 96), 'pitman', PALETTE.ink, [R, 0, 0]);
-  // Only the source-visible lower length is drawn; the hidden pivot closes
-  // the rigid rocker mathematically, without an invented external frame.
-  const rockerOutline = clip.union(hole([0, 0], .20), poly([[0, -.14], [1.36, -.18], [1.36, .18], [0, .14]]));
-  add('powerRocker', plate(clip.difference(rockerOutline, hole([0, 0], .114)), .02, .20), 'rocker', PALETTE.driven);
+  // Brown crops the power rocker (the reciprocating moving power) 1.36 above
+  // its wrist. It is whole: it runs on to its fixed fulcrum pin, carried by a
+  // bearing block, beyond the plate's view.
+  const Lr = g.rockerLength;
+  const rockerOutline = clip.union(hole([0, 0], .20), hole([Lr, 0], .26),
+    poly([[0, -.14], [1.36, -.18], [Lr, -.2], [Lr, .2], [1.36, .18], [0, .14]]));
+  add('powerRocker', plate(clip.difference(rockerOutline, hole([0, 0], .114), hole([Lr, 0], .124)), .02, .20), 'rocker', PALETTE.driven);
+  add('rockerFulcrumPin', disk(.12, -.22, .26, 96), 'fixed', PALETTE.ink, [...g.rockerPivot, 0]);
+  add('rockerFulcrumBearing', plate(clip.difference(clip.union(hole([0, 0], .34), poly([[-.34, 0], [.34, 0], [.42, .62], [-.42, .62]])),
+    hole([0, 0], .124)), -.20, 0), 'fixed', PALETTE.muted, [...g.rockerPivot, 0]);
+  // The default view frames Brown's drawn length of the rocker only.
+  const drawnRocker = new THREE.Mesh(plate(poly([[0, -.2], [1.36, -.2], [1.36, .2], [0, .2]]), .02, .20));
   const update = time => {
     const angle = g.phase + 2 * Math.PI * time / g.period, s = variableRadiusCrankAtAngle(angle, g);
     blocks.main.position.set(...g.mainPivot, 0); blocks.main.rotation.z = s.mainAngle;
@@ -47,7 +55,14 @@ export function makeVariableRadiusCrank() {
   };
   // Brown's dashed pin orbits are construction notation and are not drawn.
   const bounds = new THREE.Box3();
-  for (let i = 0; i <= 128; i++) { update(g.period * i / 128); bounds.union(new THREE.Box3().setFromObject(root, true)); }
+  for (let i = 0; i <= 128; i++) {
+    update(g.period * i / 128);
+    for (const name of ['main', 'auxiliary', 'pitman']) bounds.union(new THREE.Box3().setFromObject(blocks[name], true));
+    for (const name of ['mainShaft', 'auxiliaryShaft']) bounds.union(new THREE.Box3().setFromObject(parts[name], true));
+    drawnRocker.position.copy(blocks.rocker.position); drawnRocker.rotation.copy(blocks.rocker.rotation); drawnRocker.updateMatrixWorld(true);
+    bounds.union(new THREE.Box3().setFromObject(drawnRocker, true));
+  }
+  drawnRocker.geometry.dispose();
   bounds.expandByScalar(.04); update(0); markShadows(root);
   // The initial fit measures posed vertices only; an unrendered envelope of
   // the whole swing keeps the rocker inside the frame later in the cycle.
@@ -59,7 +74,7 @@ export function makeVariableRadiusCrank() {
     simulationBackend: 'analytic', fidelity: 'authored', reconstructionStatus: 'reconstructed', supportsRestart: true,
     hideGround: true, cameraFitBounds: bounds, cameraFov: 8,
     animationTiming: {authoredCyclePeriod: g.period, displayCycleDuration: g.period, playbackTimeScale: 1},
-    reconstructionNote: 'Rigid linkage closure uses the engraved unequal pitman spans. The power rocker continues to an inferred pivot above the drawing. The later animation validates the closure method with its own dimensions; depths, clearances and the four-second cycle are inferred.'});
+    reconstructionNote: 'Rigid linkage closure uses the engraved unequal pitman spans. The power rocker runs whole to an inferred fulcrum pin and bearing block above the drawing. The later animation validates the closure method with its own dimensions; depths, clearances and the four-second cycle are inferred.'});
   return {root, update, reset: () => update(0), focus: bounds.getCenter(new THREE.Vector3()),
     cameraDirection: new THREE.Vector3(.01, .01, 15), dispose: () => disposeObject3D(root)};
 }

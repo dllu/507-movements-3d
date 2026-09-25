@@ -256,6 +256,46 @@ function intermittentShuttleDrive(movement) {
     fixedFrame.add(guide);
     return guide;
   });
+  // Minimal fixed supports in place of the long undrawn rails and bed:
+  // Brown's grounded boss under the rocker pivot (a lug on a short ground
+  // sill), one standard behind the mechanism carrying the crank bearing,
+  // and a short channel guide on that standard. The guide sits where the
+  // shuttle bar overlaps it at every point of its stroke, and its lower
+  // lip stays behind the slider pin's path.
+  {
+    const standardX = crankCenter.x;
+    const sill = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.20, 1.20), frameMaterial);
+    sill.position.set(0.30, rockerPivot.y - 0.45, 0.15);
+    sill.userData.role = 'fixed-ground-sill-under-rocker-foot';
+    const lug = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.30, 0.20), frameMaterial);
+    lug.position.set(rockerPivot.x, rockerPivot.y - 0.20, -0.24);
+    lug.userData.role = 'fixed-grounded-rocker-pivot-lug';
+    const lowerStandard = new THREE.Mesh(new THREE.BoxGeometry(0.24, crankCenter.y - 0.28 - (rockerPivot.y - 0.35), 0.16), frameMaterial);
+    lowerStandard.position.set(standardX, (crankCenter.y - 0.28 + rockerPivot.y - 0.35) / 2, -0.28);
+    lowerStandard.userData.role = 'fixed-rear-standard-to-crank-bearing';
+    const guideBottom = guideY + 0.27 - 0.23;
+    const guideTop = guideY + 0.27 + 0.23;
+    const upperStandard = new THREE.Mesh(new THREE.BoxGeometry(0.24, guideTop - (crankCenter.y + 0.28), 0.16), frameMaterial);
+    upperStandard.position.set(standardX, (guideTop + crankCenter.y + 0.28) / 2, -0.28);
+    upperStandard.userData.role = 'fixed-rear-standard-to-shuttle-guide';
+    const guideLeft = 0.20;
+    const guideRight = 1.60;
+    const guideWidth = guideRight - guideLeft;
+    const guideCenterX = (guideLeft + guideRight) / 2;
+    const guideSpacer = new THREE.Mesh(new THREE.BoxGeometry(0.40, guideTop - guideBottom, 0.40), frameMaterial);
+    guideSpacer.position.set(standardX, (guideTop + guideBottom) / 2, -0.16);
+    guideSpacer.userData.role = 'fixed-shuttle-guide-bracket';
+    const guideBack = new THREE.Mesh(new THREE.BoxGeometry(guideWidth, guideTop - guideBottom, 0.12), frameMaterial);
+    guideBack.position.set(guideCenterX, (guideTop + guideBottom) / 2, 0.10);
+    guideBack.userData.role = 'fixed-shuttle-guide-channel-back';
+    const topLip = new THREE.Mesh(new THREE.BoxGeometry(guideWidth, 0.08, 0.38), frameMaterial);
+    topLip.position.set(guideCenterX, guideY + 0.27 + 0.15, 0.35);
+    topLip.userData.role = 'fixed-shuttle-guide-channel-top-lip';
+    const bottomLip = new THREE.Mesh(new THREE.BoxGeometry(guideWidth, 0.08, 0.12), frameMaterial);
+    bottomLip.position.set(guideCenterX, guideY + 0.27 - 0.15, 0.22);
+    bottomLip.userData.role = 'fixed-shuttle-guide-channel-bottom-lip';
+    fixedFrame.add(sill, lug, lowerStandard, upperStandard, guideSpacer, guideBack, topLip, bottomLip);
+  }
   root.add(markShadows(fixedFrame));
 
   const stateAtTime = (time) => {

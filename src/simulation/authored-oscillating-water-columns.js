@@ -4,6 +4,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {waterFountainGeometry, waterJetMaterial} from './water-volume.js';
 
 import {
   circle,
@@ -509,13 +510,17 @@ function dectolOscillatingColumn(movement) {
     coneMaterial,
   ), 'checked-water-column-rising-through-orifice');
   root.add(risingColumn);
-  const plumeRadius = 0.42;
-  const plumeScale = [0.95, 0.40, 0.80];
+  // Where the column breaks the upper surface it heaves up and falls back
+  // as a translucent crown thinning into spray, as Brown draws it.
   const topPlume = addRole(new THREE.Mesh(
-    new THREE.SphereGeometry(plumeRadius, 32, 18),
-    coneMaterial,
+    waterFountainGeometry({
+      nozzleY: -0.04, apexY: 0.24, columnRadius: 0.13, crownRadius: 0.34,
+      fallY: -0.03, crownThickness: 0.03, fadeStart: 0.5,
+    }),
+    waterJetMaterial({ color: 0x2c7f9b, opacity: 0.45 }),
   ), 'raised-water-column-spraying-in-upper-box');
-  topPlume.position.set(0, reservoirWaterY + plumeRadius * plumeScale[1], 0);
+  topPlume.renderOrder = 2;
+  topPlume.position.set(0, reservoirWaterY, 0);
   root.add(topPlume);
 
   const upperColumnTopY = (fraction) => plateTopY
@@ -597,13 +602,7 @@ function dectolOscillatingColumn(movement) {
     risingColumn.visible = columnLength > 1e-3;
     const plumeGate = smoothStep5((columnFraction - 0.94) / 0.06);
     topPlume.visible = plumeGate > 0;
-    topPlume.scale.set(
-      plumeScale[0] * plumeGate,
-      plumeScale[1] * plumeGate,
-      plumeScale[2] * plumeGate,
-    );
-    topPlume.position.y = reservoirWaterY
-      + plumeRadius * plumeScale[1] * plumeGate;
+    topPlume.scale.set(plumeGate, plumeGate, plumeGate);
 
     const relativeDownFlow = state.downwardFlowRate / supplyFlowRate;
     const jetLength = chamberFloorY - columnTopY;

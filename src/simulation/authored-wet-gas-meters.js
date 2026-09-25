@@ -1,5 +1,6 @@
 import {correctGasMeterParts} from './gas-meter-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -793,5 +794,5 @@ function wetGasMeter(movement) {
 
 export function createAuthoredWetGasMeterMovement(movement) {
   if (movement.id !== 481) return null;
-  return wetGasMeter(movement);
+  return applyCutawayFor(wetGasMeter(movement), movement.id);
 }

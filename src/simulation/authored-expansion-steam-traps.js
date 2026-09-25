@@ -1,5 +1,6 @@
 import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -627,7 +628,6 @@ function rayExpansionSteamTrap(movement) {
   }
 
   const coolPipeColor = new THREE.Color(PALETTE.driven);
-  const hotPipeColor = new THREE.Color(PALETTE.driver);
   const markerProgressAtTime = (time, markerIndex) => {
     const state = stateAtTime(time);
     return THREE.MathUtils.euclideanModulo(
@@ -662,10 +662,9 @@ function rayExpansionSteamTrap(movement) {
     pipeFreeEndRim.position.set(state.pipeEndX, pipeAxisY, 0);
     valvePlungerA.position.set(state.valveTipX, pipeAxisY, 0);
     leverD.rotation.z = state.leverAngle;
-    pipeMaterial.color.copy(coolPipeColor).lerp(
-      hotPipeColor,
-      state.heatingFraction,
-    );
+    // Colour is not a signal: pipe A keeps one colour; its expansion shows
+    // only as the free end's travel.
+    pipeMaterial.color.copy(coolPipeColor);
     waterMaterial.opacity = 0.06 + 0.44 * state.flowFraction;
     flowLineMaterial.opacity = 0.03 + 0.42 * state.flowFraction;
     updateFlowCurves(state.pipeEndX);
@@ -884,5 +883,5 @@ function rayExpansionSteamTrap(movement) {
 
 export function createAuthoredExpansionSteamTrapMovement(movement) {
   if (movement.id !== 478) return null;
-  return rayExpansionSteamTrap(movement);
+  return applyCutawayFor(rayExpansionSteamTrap(movement), movement.id);
 }

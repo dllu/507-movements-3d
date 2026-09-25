@@ -379,39 +379,44 @@ function animalInteriorTreadwheel(movement) {
   const supportPosts = [];
   for (const side of [-1, 1]) {
     const bearing = cylinderAlongZ(0.22, 0.28, frameMaterial, 30);
-    bearing.position.z = side * 0.82;
+    // 0.16 further out than first built: the riveted rim band and its rivet
+    // heads reach z 0.82, so the standards stand clear of them.
+    bearing.position.z = side * 0.98;
     bearing.userData.fixed = true;
-    bearing.userData.role = 'fixed-side-bearing-for-treadwheel-axle';
+    // The camera-side (front) frame would cover Brown's face view; only the
+    // rear bearing standard is presented (see source-presentation 376).
+    const face = side > 0 ? '-front' : '';
+    bearing.userData.role = `fixed-side-bearing-for-treadwheel-axle${face}`;
     fixedBearings.push(bearing);
     root.add(bearing);
     const post = new THREE.Mesh(
       new THREE.BoxGeometry(0.22, 2.22, 0.30),
       frameMaterial,
     );
-    post.position.set(1.86, -1.08, side * 0.84);
+    post.position.set(1.86, -1.08, side * 1.0);
     post.userData.fixed = true;
-    post.userData.role = 'fixed-bearing-standard-outside-wheel-cage';
+    post.userData.role = `fixed-bearing-standard-outside-wheel-cage${face}`;
     supportPosts.push(post);
     root.add(post);
     const arm = new THREE.Mesh(
       new THREE.BoxGeometry(1.92, 0.18, 0.30),
       frameMaterial,
     );
-    arm.position.set(0.93, 0, side * 0.84);
+    arm.position.set(0.93, 0, side * 1.0);
     arm.userData.fixed = true;
-    arm.userData.role = 'fixed-overhung-arm-carrying-wheel-bearing';
+    arm.userData.role = `fixed-overhung-arm-carrying-wheel-bearing${face}`;
     bearingArms.push(arm);
     root.add(arm);
   }
   const baseRails = [];
-  for (const z of [-0.86, 0.86]) {
+  for (const z of [-1.02, 1.02]) {
     const rail = new THREE.Mesh(
       new THREE.BoxGeometry(4.82, 0.18, 0.34),
       frameMaterial,
     );
     rail.position.set(0, -2.17, z);
     rail.userData.fixed = true;
-    rail.userData.role = 'fixed-base-rail-for-treadwheel-frame';
+    rail.userData.role = `fixed-base-rail-for-treadwheel-frame${z > 0 ? '-front' : ''}`;
     baseRails.push(rail);
     root.add(rail);
   }

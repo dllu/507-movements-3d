@@ -72,16 +72,21 @@ test('movement 376 is one internal animal treadwheel with a rigid cage, sixteen 
   assert.match(degreesOfFreedom.note, /one rigid rotor/);
   assert.match(degreesOfFreedom.note, /gait visualization/);
 
+  // Brown draws no trestle; only the rear standard (behind the wheel) is kept
+  // so the axle is carried, and the camera-side frame and index are removed.
   for (const component of [
     blocks.animal,
-    ...blocks.fixedBearings,
+    blocks.fixedBearings[0],
+    blocks.baseRails[0],
+    blocks.bearingArms[0],
+    blocks.supportPosts[0],
     blocks.wheelRotor,
   ]) assert.equal(component.parent, model.root);
-  // Brown draws no trestle, base rails or white index.
   for (const component of [
-    ...blocks.baseRails,
-    ...blocks.bearingArms,
-    ...blocks.supportPosts,
+    blocks.fixedBearings[1],
+    blocks.baseRails[1],
+    blocks.bearingArms[1],
+    blocks.supportPosts[1],
     blocks.wheelIndex,
   ]) assert.equal(component.parent, null);
   for (const component of [

@@ -14,7 +14,7 @@ import { promisify } from 'node:util';
 const args = process.argv.slice(2);
 const value = (name) => args.find((arg) => arg.startsWith(`${name}=`))?.slice(name.length + 1);
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url))).movements;
-const FLUID = /water|fluid|steam|gas(?!ket)|mercury|air(?!-?tight)|flow|stream|jet|spray|plume|smoke|flame|liquid|ink-trace|trace|glow|shadow|envelope|highlight|ghost/i;
+const FLUID = /water|fluid|steam|gas(?!ket)|mercury|quicksilver|air(?!-?tight)|flow|stream|jet|spray|plume|smoke|flame|liquid|ink-trace|trace|glow|shadow|envelope|highlight|ghost/i;
 
 function expandIds(text) {
   return text.split(',').flatMap((part) => {

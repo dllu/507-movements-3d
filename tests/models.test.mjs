@@ -3477,8 +3477,11 @@ test('movement 47 couples an annular tongue to a recessed clutch box with a fixe
   assert.equal(model.root.userData.mechanism, 'annular-tongue-friction-clutch-with-fixed-section');
   assert.equal(model.root.userData.localClippingEnabled, true);
   assert.equal(model.root.userData.sectionView, true);
-  assert.equal(input.userData.body.material.clippingPlanes.length, 1, 'a half-body cutaway, not a thin slab');
-  assert.equal(output.userData.body.material.clippingPlanes.length, 1, 'a half-body cutaway, not a thin slab');
+  // Pass 55: one quarter cutaway (upper near quarter removed), not a thin slab.
+  for (const member of [input, output]) {
+    assert.equal(member.userData.body.material.clippingPlanes.length, 2, 'a quarter cutaway, not a thin slab');
+    assert.equal(member.userData.body.material.clipIntersection, true, 'only the region beyond both planes is removed');
+  }
   assert.equal(feather.userData.shaftFeather, true);
   assert.ok(g.shaftRight - g.shaftLeft < 2.05, 'the shaft matches the engraving diameter scale');
   assert.ok(g.shaftRadius < g.boreRadius);

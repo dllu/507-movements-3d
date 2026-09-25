@@ -79,8 +79,10 @@ export function makePullPawlGeometry({phase=1.115052755202599,rootRadius=.872,ro
  attach('rockerAxleCap',disk(.051,.46,.48),'fixed',PALETTE.muted,[...A,0]);
 
  const leverOuter=[['M',432,223],['Q',391,226,391,257],['Q',388,290,431,295],['L',742,301],
-  ['Q',766,315,790,289],['L',817,295],['Q',842,303,867,301],['L',1213,309],['L',1187,282],
-  ['Q',1220,272,1228,261],['L',861,252],['Q',833,243,802,255],['L',787,250],['Q',776,231,758,233],['L',432,223]],
+  ['Q',766,315,790,289],['L',817,295],['Q',842,303,867,301],['L',1213,309],
+  // Brown's swallowtail break notch is drawing notation: finish the hand
+  // lever with a whole rounded end.
+  ['Q',1247,306,1246,285],['Q',1245,263,1228,261],['L',861,252],['Q',833,243,802,255],['L',787,250],['Q',776,231,758,233],['L',432,223]],
   leverLocal=v=>sub(source(v),A),leverShape=clip.difference(poly(sourceContour(leverOuter,leverLocal)),
    poly(circle([0,0],.036)),...Object.values(arms).map(v=>poly(circle(v,.037))));
  attach('rockerB',plate(leverShape,.355,.435),'lever',PALETTE.driver);

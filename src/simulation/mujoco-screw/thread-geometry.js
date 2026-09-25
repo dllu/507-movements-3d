@@ -26,7 +26,10 @@ export function threadAngles(p,segments,extra=[]) {
 }
 
 export function threadStations(p,angles) {
-  const range=[(p.low-p.width/2-p.phase)/p.lead,(p.high+p.width/2-p.phase)/p.lead].sort((a,b)=>a-b),stations=[];
+  // squareEnds: the thread stops with a full-section radial face inside
+  // [low, high] instead of running out as a wedge clipped by the end planes.
+  const inset=p.squareEnds?-p.width/2:p.width/2;
+  const range=[(p.low-inset-p.phase)/p.lead,(p.high+inset-p.phase)/p.lead].sort((a,b)=>a-b),stations=[];
   for(let turn=Math.floor(range[0]/tau)-1;turn<=Math.ceil(range[1]/tau)+1;turn++)for(const phase of angles.slice(0,-1)) {
     const angle=phase+turn*tau;if(angle<range[0]-1e-9||angle>range[1]+1e-9)continue;
     const center=p.phase+p.lead*angle;
@@ -50,6 +53,10 @@ export function helicalThread(p,angles) {
       mesh.quad([point(p.inner,a.angle,a[z]),point(p.outer,a.angle,a[z]),point(p.outer,b.angle,b[z]),point(p.inner,b.angle,b[z])],
         [n(p.inner,a.angle),n(p.outer,a.angle),n(p.outer,b.angle),n(p.inner,b.angle)]);
     }
+  }
+  if(p.squareEnds&&stations.length>1)for(const [s,sign] of [[stations[0],-1],[stations.at(-1),1]]){
+    const n=[-sign*Math.sin(mod(s.angle)),sign*Math.cos(mod(s.angle)),0];
+    mesh.quad([point(p.inner,s.angle,s.low),point(p.outer,s.angle,s.low),point(p.outer,s.angle,s.high),point(p.inner,s.angle,s.high)],[n,n,n,n]);
   }
   const geometry=mesh.finish();geometry.userData.thread={...p,angles};return geometry;
 }

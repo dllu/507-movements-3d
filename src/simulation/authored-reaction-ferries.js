@@ -62,8 +62,13 @@ function reactionFerry(movement) {
   const root = new THREE.Group();
   const cycleDuration = 6.2;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const anchorPoint = new THREE.Vector3(-3.72, 0.18, 0);
+  // The anchor lies on the river bed; its ring is the fixed centre of the
+  // ferry's plan-view arc. The line rises from the ring to the bow, so its
+  // true length is the plan radius combined with that constant rise.
+  const anchorPoint = new THREE.Vector3(-3.72, -0.72, 0);
   const tetherLength = 2.92;
+  const bowRise = 0.90;
+  const ropeLength = Math.hypot(tetherLength, bowRise);
   const maximumTraverseAngle = THREE.MathUtils.degToRad(30);
   const maximumRudderAngle = THREE.MathUtils.degToRad(24);
   const boatCenterFromBow = 1.40;
@@ -105,6 +110,7 @@ function reactionFerry(movement) {
       radial,
       tetherLength,
     );
+    bowPoint.y += bowRise;
     const boatCenter = bowPoint.clone().addScaledVector(
       radial,
       boatCenterFromBow,
@@ -335,6 +341,8 @@ function reactionFerry(movement) {
   const geometry = {
     anchorPoint: anchorPoint.clone(),
     boatCenterFromBow,
+    bowRise,
+    ropeLength,
     cycleDuration,
     groundY,
     inputAngularSpeed,
@@ -450,7 +458,7 @@ function reactionFerry(movement) {
     stateAtTime,
     transmission: {
       circularConstraint:
-        'bow=anchor+L*(cos(theta),0,sin(theta)); therefore the rope length L is exact and the anchor is exactly the center of the path.',
+        'bow=anchor+L*(cos(theta),0,sin(theta))+(0,h,0) with the anchor on the river bed a constant h below the bow; the rope length sqrt(L^2+h^2) is exact and the anchor is exactly the plan centre of the path.',
       steering:
         'delta_rudder=delta_max*cos(inputAngle), reversing smoothly at the two bank-side extrema of theta=theta_max*sin(inputAngle).',
     },

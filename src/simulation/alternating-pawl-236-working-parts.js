@@ -19,6 +19,9 @@ export function installAlternatingPawl236(root) {
     const low = -0.08, high = plane + 0.06;
     replace(contactFinger, new THREE.CylinderGeometry(g.pawlNoseRadius, g.pawlNoseRadius, high - low, 192));
     contactFinger.position.z = (low + high) / 2 - plane;
+    // The toe is part of the pawl: same material, so it reads as the pawl's
+    // cranked nose reaching the wheel plane, not a separate black cross-pin.
+    contactFinger.material = body.material;
     const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 0.94 - (plane - 0.14), 64), pivotHub.material);
     pin.rotation.x = Math.PI / 2;
     pin.position.z = (0.94 + plane - 0.14) / 2 - plane;

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import { horizontalRing } from './horizontal-turbine-solids.js';
@@ -806,5 +807,5 @@ function streamDrivenArchimedesScrew(movement) {
 
 export function createAuthoredStreamDrivenArchimedesScrewMovement(movement) {
   if (movement.id !== 443) return null;
-  return streamDrivenArchimedesScrew(movement);
+  return applyCutawayFor(streamDrivenArchimedesScrew(movement), movement.id);
 }

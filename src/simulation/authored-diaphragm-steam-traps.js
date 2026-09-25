@@ -1,6 +1,7 @@
 import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
@@ -594,7 +595,6 @@ function thermalDiaphragmSteamTrap(movement) {
   }
 
   const coolLiquidColor = new THREE.Color(PALETTE.driver);
-  const hotLiquidColor = new THREE.Color(0xf1a33d);
   const displayedDiaphragmApexY = -0.05
     - baselineDiaphragmDepthSceneUnit;
 
@@ -615,10 +615,9 @@ function thermalDiaphragmSteamTrap(movement) {
       baselineDiaphragmDepthSceneUnit + displayedLift
     ) / baselineDiaphragmDepthSceneUnit;
 
-    liquidMaterial.color.copy(coolLiquidColor).lerp(
-      hotLiquidColor,
-      state.heatingFraction,
-    );
+    // Colour is not a signal: the working liquid keeps one colour while
+    // its expansion shows only as the valve's lift.
+    liquidMaterial.color.copy(coolLiquidColor);
     condensateMaterial.opacity = 0.05 + 0.30 * state.flowFraction;
 
     for (const entry of condensateMarkers) {
@@ -828,5 +827,5 @@ function thermalDiaphragmSteamTrap(movement) {
 
 export function createAuthoredDiaphragmSteamTrapMovement(movement) {
   if (movement.id !== 477) return null;
-  return thermalDiaphragmSteamTrap(movement);
+  return applyCutawayFor(thermalDiaphragmSteamTrap(movement), movement.id);
 }

@@ -4,6 +4,15 @@ import{makeTiltHammerMotion}from'./tilt-hammer-motion.js';
 import{turnedClutchGeometry}from'./clutch-section-geometry.js';
 import{matte,markShadows}from'./primitives.js';
 
+// Brown ends the bloom's tail in a jagged break line; the traced contour kept that zigzag, which extrudes
+// into stepped layers. Model the whole bar with a plain cut end by dropping the break-line vertices
+// between the tail's upper and lower edges.
+function finishedWorkpiece(d){
+  const[outer,...holes]=d.polygons[0];
+  const lower=outer.findIndex((q,i)=>i>0&&q[0]>-2.46&&q[1]<1.345);
+  return{...d,polygons:[[[outer[0],...outer.slice(lower)],...holes],...d.polygons.slice(1)]};
+}
+
 export function makeFourLobeTiltHammer(){
   const motion=makeTiltHammerMotion(profile),p=motion.parameters,root=new THREE.Group();
   const input=new THREE.Group(),hammer=new THREE.Group(),fixed=new THREE.Group();root.add(input,hammer,fixed);
@@ -19,7 +28,7 @@ export function makeFourLobeTiltHammer(){
   for(const descriptor of profile.parts){
     const d=descriptor.shape;let geometry;
     if(d.kind==='turned')geometry=turnedClutchGeometry(d.profile,d);
-    else if(d.kind==='plate')geometry=plate(d);
+    else if(d.kind==='plate')geometry=plate(descriptor.name==='workpiece'?finishedWorkpiece(d):d);
     else{
       const ring=[];
       for(let lobe=0;lobe<4;lobe++)for(let i=0;i<=d.segments;i++){

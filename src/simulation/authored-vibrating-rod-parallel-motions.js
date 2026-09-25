@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { glandCylinder, pinWallBracket } from './beyond-crop-hardware.js';
 import { makeBoredLinkRod as makeRigidRod } from './bored-link-rod.js';
 import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import {
@@ -374,6 +375,14 @@ function midpointVibratingRodParallelMotion(movement) {
   radiusShaft.userData.fixed = true;
   radiusShaft.userData.role = 'fixed-pin-at-radius-pivot-F';
   fixedFrame.add(beamShaft, radiusShaft);
+  // Neither fixed pin floats: each runs back to a small flange on the engine
+  // framing behind the mechanism, hidden behind its boss in the plate view.
+  fixedFrame.add(
+    pinWallBracket({ x: 0, y: 0, pinRadius: beamShaftRadius, zPin: 0.04 - 0.31, zWall: -0.55, beyondPlateCrop: true,
+      flange: 0.5, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
+    pinWallBracket({ x: radiusPivotF.x, y: radiusPivotF.y, pinRadius: 0.23 * sourceScale, zPin: 0.53, zWall: -0.55, beyondPlateCrop: true,
+      flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F' }),
+  );
   root.add(fixedFrame);
 
   const beam = new THREE.Group();
@@ -461,19 +470,33 @@ function midpointVibratingRodParallelMotion(movement) {
     outputMaterial, 34);
   crossheadBoss.position.z = outputPlaneZ;
   crossheadBoss.userData.role = 'piston-crosshead-boss-at-C';
+    // Brown breaks the rod off below C; it is whole, running down through the
+  // gland of its cylinder below the plate's view over the whole stroke.
+  const cylinderTopY337 = -5.3;
   const visiblePistonRodLength = 10 * sourceScale;
+  const wholePistonRodLength = 0.18 - cylinderTopY337 + 0.3;
   const pistonRod = new THREE.Mesh(
     new THREE.BoxGeometry(0.30 * sourceScale, visiblePistonRodLength, 0.12),
     outputMaterial,
   );
   pistonRod.position.set(0, -visiblePistonRodLength / 2, outputPlaneZ);
   pistonRod.userData.role = 'vertical-piston-rod-continuing-below-C';
+  const pistonRodBeyondCrop = new THREE.Mesh(
+    new THREE.BoxGeometry(0.30 * sourceScale, wholePistonRodLength - visiblePistonRodLength, 0.12),
+    outputMaterial,
+  );
+  pistonRodBeyondCrop.position.set(0, -(visiblePistonRodLength + wholePistonRodLength) / 2, outputPlaneZ);
+  pistonRodBeyondCrop.userData.role = 'piston-rod-running-on-into-its-cylinder';
+  pistonRodBeyondCrop.userData.beyondPlateCrop = true;
+  root.add(glandCylinder({ x: -2.713, topY: cylinderTopY337, z: outputPlaneZ, length: 2.6,
+    glandRadius: 0.1, boreRadius: 0.3, outerRadius: 0.42, role: 'piston-cylinder-below-plate-crop' }));
   const outputAnchor = new THREE.Object3D();
   outputAnchor.position.z = outputPlaneZ;
   outputAnchor.userData.role = 'analytic-piston-point-C';
   output.add(
     crossheadBoss,
     pistonRod,
+    pistonRodBeyondCrop,
     outputAnchor,
   );
   root.add(output);
@@ -1013,6 +1036,14 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   radiusShaft.userData.fixed = true;
   radiusShaft.userData.role = 'fixed-pin-at-upper-radius-pivot-F';
   fixedFrame.add(beamShaft, radiusShaft);
+  // Neither fixed pin floats: each runs back to a small flange on the engine
+  // framing behind the mechanism, hidden behind its boss in the plate view.
+  fixedFrame.add(
+    pinWallBracket({ x: 0, y: 0, pinRadius: beamShaftRadius, zPin: 0.04 - 0.31, zWall: -0.55, beyondPlateCrop: true,
+      flange: 0.4, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
+    pinWallBracket({ x: radiusPivotF.x, y: radiusPivotF.y, pinRadius: 0.20 * sourceScale, zPin: 0.53, zWall: -0.55, beyondPlateCrop: true,
+      flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F' }),
+  );
   root.add(fixedFrame);
 
   const beam = new THREE.Group();
@@ -1096,19 +1127,33 @@ function upperRadiusVibratingRodParallelMotion(movement) {
     outputMaterial, 34);
   outputBoss.position.z = 0.57;
   outputBoss.userData.role = 'piston-crosshead-boss-at-L';
+  // Brown breaks the rod off below L; it is whole, running down through the
+  // gland of its cylinder below the plate's view over the whole stroke.
+  const cylinderTopY338 = -4.3;
   const visiblePistonRodLength = 3.2 * sourceScale;
+  const wholePistonRodLength = 0.01 - cylinderTopY338 + 0.3;
   const pistonRod = new THREE.Mesh(
     new THREE.BoxGeometry(0.28 * sourceScale, visiblePistonRodLength, 0.12),
     outputMaterial,
   );
   pistonRod.position.set(0, -visiblePistonRodLength / 2, 0.57);
   pistonRod.userData.role = 'vertical-piston-rod-continuing-below-L';
+  const pistonRodBeyondCrop = new THREE.Mesh(
+    new THREE.BoxGeometry(0.28 * sourceScale, wholePistonRodLength - visiblePistonRodLength, 0.12),
+    outputMaterial,
+  );
+  pistonRodBeyondCrop.position.set(0, -(visiblePistonRodLength + wholePistonRodLength) / 2, 0.57);
+  pistonRodBeyondCrop.userData.role = 'piston-rod-running-on-into-its-cylinder';
+  pistonRodBeyondCrop.userData.beyondPlateCrop = true;
+  root.add(glandCylinder({ x: 3.836, topY: cylinderTopY338, z: 0.57, length: 2.55,
+    glandRadius: 0.12, boreRadius: 0.3, outerRadius: 0.42, role: 'piston-cylinder-below-plate-crop' }));
   const outputAnchor = new THREE.Object3D();
   outputAnchor.position.z = 0.57;
   outputAnchor.userData.role = 'analytic-piston-point-L';
   output.add(
     outputBoss,
     pistonRod,
+    pistonRodBeyondCrop,
     outputAnchor,
   );
   root.add(output);

@@ -1,5 +1,6 @@
 import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {plate, poly, circle, polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -918,5 +919,5 @@ function diaphragmPressureGauge(movement) {
 
 export function createAuthoredDiaphragmPressureGaugeMovement(movement) {
   if (movement.id !== 500) return null;
-  return diaphragmPressureGauge(movement);
+  return applyCutawayFor(diaphragmPressureGauge(movement), movement.id);
 }

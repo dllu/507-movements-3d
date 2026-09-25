@@ -3,7 +3,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-eccentric-crown-gears.js",
-      "sha256": "145a3a600158172c59ba4345f4b3a78e23041b41146dd1c5a529e3fb86863cb7"
+      "sha256": "b454f14c0f73b4465499792bf3830469df36e82679409922ba821776f7be2ecd"
     },
     {
       "file": "src/simulation/authored-expanding-pulleys.js",
@@ -11,7 +11,7 @@
     },
     {
       "file": "src/simulation/authored-scroll-gears.js",
-      "sha256": "a50c5d15e63c04e8c4923372790dcbeed45dadb9d2c1acc4ee3c98f37f097a4f"
+      "sha256": "6b95afe222435b676ca8721b109e0c0aa38509144e34d21f1a77df8921cbe553"
     },
     {
       "file": "src/simulation/variable-face-gear-parts.js",
@@ -50,10 +50,10 @@
     {
       "id": 219,
       "poses": 17,
-      "tested": 1575508,
+      "tested": 1523852,
       "inside": 0,
       "maxPenetration": 0,
-      "maxWorkingGap": 0.00310805718314524,
+      "maxWorkingGap": 0.0029378007877607472,
       "categories": {
         "gear": 0
       }

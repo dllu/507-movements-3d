@@ -3,6 +3,7 @@ import {plate, poly, circle, polygonClipping, spline} from './finite-plate-geome
 import {mergePassageParts} from './finite-fluid-passages.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -1472,5 +1473,5 @@ function grimshawCompressedAirHammer(movement) {
 
 export function createAuthoredCompressedAirHammerMovement(movement) {
   if (movement.id !== 472) return null;
-  return grimshawCompressedAirHammer(movement);
+  return applyCutawayFor(grimshawCompressedAirHammer(movement), movement.id);
 }

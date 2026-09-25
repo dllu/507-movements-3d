@@ -1,6 +1,7 @@
 import {makeTemperatureBevel,temperatureBevelPhases} from './temperature-bevel-pair.js';
 import { correctTemperatureAirMachine } from './thermal-steam-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   makeGear,
@@ -182,14 +183,12 @@ function temperatureAirMachine(movement) {
     roughness: 0.72,
   });
   const coldInitialColor = new THREE.Color(0x3e83a4);
-  const warmInitialColor = new THREE.Color(0xd57949);
-  const equilibriumColor = new THREE.Color(0x6c9297);
   const coldWaterMaterial = matte(coldInitialColor, {
     transparent: true,
     opacity: 0.43,
     roughness: 0.24,
   });
-  const warmWaterMaterial = matte(warmInitialColor, {
+  const warmWaterMaterial = matte(coldInitialColor, {
     transparent: true,
     opacity: 0.43,
     roughness: 0.24,
@@ -670,10 +669,9 @@ function temperatureAirMachine(movement) {
       bubble.scale.setScalar(scale);
       bubble.visible = bubbleState.visible;
     });
-    coldWaterMaterial.color.copy(equilibriumColor)
-      .lerp(coldInitialColor, state.temperatureContrast);
-    warmWaterMaterial.color.copy(equilibriumColor)
-      .lerp(warmInitialColor, state.temperatureContrast);
+    // Colour is not a signal: both cisterns hold plain water of one colour.
+    coldWaterMaterial.color.copy(coldInitialColor);
+    warmWaterMaterial.color.copy(coldInitialColor);
     updateThermometer(
       thermometerColumns[0],
       state.coldTemperatureKelvin,
@@ -880,5 +878,5 @@ function temperatureAirMachine(movement) {
 
 export function createAuthoredTemperatureAirMachineMovement(movement) {
   if (movement.id !== 469) return null;
-  return temperatureAirMachine(movement);
+  return applyCutawayFor(temperatureAirMachine(movement), movement.id);
 }

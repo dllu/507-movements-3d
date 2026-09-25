@@ -6,6 +6,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -397,14 +398,17 @@ function overshotWaterWheel(movement) {
       0.14,
     ),
   ];
-  // The feed is a sheet of water the width of the flume water pouring off
-  // its end into the buckets (a flattened tube, not a round hose).
+  // The feed is one translucent sheet of water the width of the flume water
+  // pouring off its end into the buckets (not a round hose).
   const feedWater = new THREE.Mesh(
-    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
-      feedPathPoints.map((point) => point.clone().setZ(0)), false, 'centripetal'), 48, 0.09, 16, false)
-      .scale(1, 1, 0.44 / 0.09).translate(0, 0, 0.14),
-    waterMaterial,
+    waterJetGeometry(new THREE.CatmullRomCurve3(
+      feedPathPoints.map((point) => point.clone().setZ(0)), false, 'centripetal'), {
+      radius: 0.07, endRadius: 0.09, width: 0.44, endWidth: 0.46,
+      widthAxis: new THREE.Vector3(0, 0, 1), segments: 48, fadeStart: 0.88, flare: 1.15,
+    }).translate(0, 0, 0.14),
+    waterJetMaterial(),
   );
+  feedWater.renderOrder = 2;
   feedWater.userData.role = 'continuous-top-fed-water-stream-onto-wheel';
   root.add(feedWater);
   const feedCurve = new THREE.CatmullRomCurve3(

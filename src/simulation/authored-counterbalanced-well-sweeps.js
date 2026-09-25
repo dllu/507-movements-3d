@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {correctWellBucketParts} from './well-bucket-working-parts.js';
 import {LaidRopeGeometry} from './laid-rope.js';
 import {
@@ -606,5 +607,5 @@ function counterbalancedWellSweep(movement) {
 
 export function createAuthoredCounterbalancedWellSweepMovement(movement) {
   if (movement.id !== 457) return null;
-  return counterbalancedWellSweep(movement);
+  return applyCutawayFor(counterbalancedWellSweep(movement), movement.id);
 }

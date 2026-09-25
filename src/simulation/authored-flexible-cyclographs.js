@@ -94,8 +94,8 @@ function flexibleBarCyclograph(movement) {
   const root = new THREE.Group();
   const supportHalfSpan = 2.70;
   const supportY = 0.43;
-  const maximumSagitta = 1.34;
-  const minimumSagitta = 0.67;
+  const maximumSagitta = 0.92;
+  const minimumSagitta = 0.50;
   const maximumCircleCenter = new THREE.Vector2(
     0,
     supportY + (

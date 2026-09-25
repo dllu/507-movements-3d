@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -452,8 +453,8 @@ function eccentricPawlJack(movement) {
     const bridge=new THREE.Mesh(new THREE.BoxGeometry(pivot.x-radius-.07,.16,.24),frameMaterial);
     bridge.position.set((pivot.x-radius-.07)/2,pivot.y,-.51);bridge.userData.role='fixed-rear-pawl-support-bridge';root.add(bridge);fixedSupports.push(bridge);
   }
-  const supportSpine=new THREE.Mesh(new THREE.BoxGeometry(.25,holdingPivot.y+1,.24),frameMaterial);
-  supportSpine.position.set(-.12,(holdingPivot.y-1)/2,-.51);supportSpine.userData.role='fixed-rear-pawl-support-spine';root.add(supportSpine);fixedSupports.push(supportSpine);
+  const supportSpine=new THREE.Mesh(new THREE.BoxGeometry(.25,holdingPivot.y+.6,.24),frameMaterial);
+  supportSpine.position.set(-.12,(holdingPivot.y-.6)/2,-.51);supportSpine.userData.role='fixed-rear-pawl-support-spine';root.add(supportSpine);fixedSupports.push(supportSpine);
   for(const y of [.35,1.15]){
     const cheek=new THREE.Mesh(new THREE.BoxGeometry(.44,.18,.12),frameMaterial);cheek.position.set(-.04,y,.35);cheek.userData.role='fixed-front-rack-guide-strap';root.add(cheek);fixedSupports.push(cheek);
     const web=new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.88),frameMaterial);web.position.set(-.39,y,-.03);web.userData.role='fixed-rack-guide-strap-web';root.add(web);fixedSupports.push(web);
@@ -879,5 +880,5 @@ function eccentricPawlJack(movement) {
 
 export function createAuthoredEccentricJackMovement(movement) {
   if (movement.id !== 389) return null;
-  return eccentricPawlJack(movement);
+  return applyCutawayFor(eccentricPawlJack(movement), movement.id);
 }

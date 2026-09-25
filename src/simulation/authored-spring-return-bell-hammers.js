@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { makeLaidRopeMesh } from './laid-rope.js';
+import { makeHaulingHand } from './hauling-hand.js';
 import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, bellLipSphereGap } from './spring-pivot-family-parts.js';
 import {
   PALETTE,
@@ -366,7 +367,9 @@ function springReturnBellHammer(movement) {
   // past the end of the plank. It is tied into the tail end and hangs
   // plumb; its top rides with the tail, so it needs no lay travel.
   const pullCordRadius = 0.035;
-  const pullCordLength = 1.62;
+  // Brown's cord runs off the bottom of the plate; it continues past the
+  // plank end to a ringer's hand just below the default view.
+  const pullCordLength = 3.35;
   const pullCordMaterial = matte(PALETTE.belt, { roughness: 0.78 });
   const pullCordPath = (hammerAngle) => {
     const angle = hammerAngle + tailDirection;
@@ -389,6 +392,13 @@ function springReturnBellHammer(movement) {
   });
   pullCord.userData.role = 'twisted-pull-cord-hanging-from-hammer-tail';
   root.add(pullCord);
+  const pullHand = makeHaulingHand(new THREE.Vector3(0, 1, 0), pullCordRadius / 0.75);
+  pullHand.scale.setScalar(0.75);
+  pullHand.userData.role = 'ringer-hand-on-pull-cord-below-plate';
+  root.add(pullHand);
+  const placePullHand = (hammerAngle) => {
+    pullHand.position.copy(pullCordPath(hammerAngle).getPoint(1));
+  };
 
   const springHeel = new THREE.Mesh(
     new THREE.BoxGeometry(0.58, 0.34, 0.66),
@@ -463,12 +473,17 @@ function springReturnBellHammer(movement) {
   const fixedBellSupport = new THREE.Group();
   fixedBellSupport.userData.role = 'fixed-overhead-bell-support';
   const supportPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.20, bellTopY + 0.34 + 1.72, 0.28),
+    new THREE.BoxGeometry(0.20, bellTopY + 0.34 + 1.67, 0.28),
     frameMaterial,
   );
-  supportPost.position.set(3.12, (bellTopY + 0.34 - 1.72) / 2, -0.38);
+  supportPost.position.set(3.12, (bellTopY + 0.34 - 1.67) / 2, -0.38);
   supportPost.userData.role = 'fixed-bell-support-post';
   fixedBellSupport.add(supportPost);
+  // The post stands on its own foot plate on the floor the plank rests on.
+  const supportFoot = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.22, 0.62), frameMaterial);
+  supportFoot.position.set(3.12, -1.78, -0.38);
+  supportFoot.userData.role = 'fixed-bell-support-post-foot';
+  fixedBellSupport.add(supportFoot);
   const supportArm = new THREE.Mesh(
     new THREE.BoxGeometry(1.18, 0.18, 0.28),
     frameMaterial,
@@ -486,6 +501,7 @@ function springReturnBellHammer(movement) {
     const state = stateAtTime(time);
     hammer.rotation.z = state.hammerAngle;
     pullCord.userData.setCurve(pullCordPath(state.hammerAngle), 0);
+    placePullHand(state.hammerAngle);
     springContactPad.position.copy(state.springContact);
     returnLeafSpring.userData.setCurve(
       springBase,

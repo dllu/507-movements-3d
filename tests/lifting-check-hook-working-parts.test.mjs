@@ -131,6 +131,7 @@ for(const id of [251,253])test(`${id} stable geometry buffers, outward new plate
   for(let i=0;i<=16;i++){m.update((id===251?10:12)*i/16);m.root.updateMatrixWorld(true);meshes.forEach((mesh,j)=>{
     assert.equal(mesh.geometry.attributes.position.array,buffers[j]);assert.ok(mesh.castShadow&&mesh.receiveShadow);
     for(const mat of Array.isArray(mesh.material)?mesh.material:[mesh.material])assert.equal(mat.fog,false);
+    if(mesh.userData.beyondPlateCrop)return;
     const p=mesh.geometry.attributes.position;for(let k=0;k<p.count;k++){const v=new THREE.Vector3().fromBufferAttribute(p,k).applyMatrix4(mesh.matrixWorld);assert.ok(d.cameraFitBounds.clone().expandByScalar(.001).containsPoint(v),`${mesh.userData.role} outside: ${v.toArray()}`);}
   });}
   assert.ok(d.hideGround);assert.ok(d.minimumDisplayCycleSeconds>=10);assert.ok(m.cameraDirection);

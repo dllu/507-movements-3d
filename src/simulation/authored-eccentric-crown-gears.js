@@ -637,7 +637,10 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   };
   update(0);
   correctVariableFaceGear(root, 219);
-  replaceSpurWithLantern(root, drivenMaterial);
+  // Brown draws a solid long fluted pinion (grooved barrel, star-shaped end),
+  // which is the generated spur itself; the former lantern-stave cage read as
+  // an open wireframe, so the spur body is shown directly.
+  pinion.userData.role = 'long-fluted-crown-pinion';
   // Brown draws no phase stripe, sliding collar or pitch marker.
   pinion.userData.rotor.children[1].visible = false;
   pinion.userData.rotor.children[3].visible = false;

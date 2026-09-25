@@ -3728,28 +3728,22 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     backing.userData.role = 'integral-rear-web-of-fixed-guide';
     root.add(backing);root.userData.blocks.guideBacking = backing;
     // Brown draws only the connecting rod, broken off at raster (37.5,157.5)
-    // left of its eye at (295,77). The tool slide, its guide, end stops and
-    // stroke witness lie beyond the drawing: the slide group stays as the
-    // kinematic output point but carries no visible solids.
-    for (const object of [...outputGuideRails, ...outputGuideEndStops, outputStrokeWitness, inputRotationIndex]) {
+    // left of its eye at (295,77). The break is drawing notation: the rod is
+    // whole, running on to its eye on the tool slide, which moves between its
+    // guide rails and end stops beyond the drawing. The default view frames
+    // the drawn part only.
+    for (const object of [outputStrokeWitness, inputRotationIndex]) {
       object.removeFromParent();
       object.geometry.dispose();
-    }
-    for (const child of [...outputSlide.children]) {
-      if (!child.isMesh) continue;
-      child.removeFromParent();
-      child.geometry.dispose();
     }
     const drawnRodLength = sourceRasterPointToModel(new THREE.Vector2(295, 77))
       .distanceTo(sourceRasterPointToModel(new THREE.Vector2(37.5, 157.5)));
     const rodStart = -0.5 + .32 / connectingRodLength;
     const rodEnd = -0.5 + drawnRodLength / connectingRodLength;
-    connectingRodBeam.geometry.dispose();
-    connectingRodBeam.geometry = new THREE.BoxGeometry(rodEnd - rodStart,
-      connectingRodThickness, connectingRodDepth)
-      .translate((rodStart + rodEnd) / 2, 0, 0);
-    connectingRodOutputEye.removeFromParent();
-    connectingRodOutputEye.geometry.dispose();
+    const drawnRod = new THREE.Mesh(new THREE.BoxGeometry(rodEnd - rodStart,
+      connectingRodThickness, connectingRodDepth).translate((rodStart + rodEnd) / 2, 0, 0));
+    connectingRodBeam.add(drawnRod);
+    const beyondDrawing = new Set([connectingRodBeam, connectingRodOutputEye, outputSlide, ...outputGuideRails, ...outputGuideEndStops]);
     root.userData.geometry.drawnConnectingRodLength = drawnRodLength;
     root.remove(cameraEnvelope);
     cameraEnvelope.geometry.dispose();
@@ -3757,13 +3751,20 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
     const bounds = new THREE.Box3();
     for (let i = 0; i <= 180; i++) {
       update(cyclePeriod*i/180);root.updateMatrixWorld(true);
-      bounds.union(new THREE.Box3().setFromObject(root, true));
+      root.traverse((object) => {
+        if (!object.isMesh || object === drawnRod) return;
+        for (let parent = object; parent; parent = parent.parent) if (beyondDrawing.has(parent)) return;
+        bounds.union(new THREE.Box3().setFromObject(object, true));
+      });
+      bounds.union(new THREE.Box3().setFromObject(drawnRod, true));
     }
+    drawnRod.removeFromParent();
+    drawnRod.geometry.dispose();
     root.userData.cameraFitBounds = bounds.expandByScalar(.08);
     root.userData.cameraFov = 8;
     root.userData.sourceFit = 'engraving';
     root.userData.reconstructionStatus = 'reconstructed';
-    root.userData.reconstructionNote = 'The eccentric circular guide varies the crank reach. Dimensions follow the engraving; the connecting rod is drawn broken off as on the plate, and its full length and the remote tool guide are inferred off the drawing from its visible direction. Pins, guide fits and steady input speed are ideal constraints.';
+    root.userData.reconstructionNote = 'The eccentric circular guide varies the crank reach. Dimensions follow the engraving; the connecting rod runs whole past the plate break to the tool slide in its guide, both inferred off the drawing from the visible rod direction. Pins, guide fits and steady input speed are ideal constraints.';
   }
   update(0);
   root.traverse((object) => {

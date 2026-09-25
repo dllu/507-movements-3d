@@ -1,5 +1,6 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   plate,
   poly,
@@ -927,5 +928,5 @@ function atmosphericHammer(movement) {
 
 export function createAuthoredAtmosphericHammerMovement(movement) {
   if (movement.id !== 471) return null;
-  return atmosphericHammer(movement);
+  return applyCutawayFor(atmosphericHammer(movement), movement.id);
 }

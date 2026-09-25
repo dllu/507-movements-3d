@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping,rotate,plate} from './finite-plate-geometry.js';
 import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
@@ -742,5 +743,5 @@ function jonvalTurbine(movement) {
 
 export function createAuthoredJonvalTurbineMovement(movement) {
   if (movement.id !== 436) return null;
-  return jonvalTurbine(movement);
+  return applyCutawayFor(jonvalTurbine(movement), movement.id);
 }

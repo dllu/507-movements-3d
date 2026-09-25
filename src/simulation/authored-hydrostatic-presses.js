@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {correctHydraulicForceParts} from './hydraulic-force-parts.js';
 import {
   PALETTE,
@@ -765,5 +766,5 @@ function hydrostaticPress(movement) {
 
 export function createAuthoredHydrostaticPressMovement(movement) {
   if (movement.id !== 466) return null;
-  return hydrostaticPress(movement);
+  return applyCutawayFor(hydrostaticPress(movement), movement.id);
 }

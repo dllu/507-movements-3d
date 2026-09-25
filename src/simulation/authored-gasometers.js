@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   makePulley,
@@ -1544,7 +1545,7 @@ function centerGuidedGasometer(movement) {
 }
 
 export function createAuthoredGasometerMovement(movement) {
-  if (movement.id === 479) return singleLiftCounterweightedGasometer(movement);
-  if (movement.id === 480) return centerGuidedGasometer(movement);
+  if (movement.id === 479) return applyCutawayFor(singleLiftCounterweightedGasometer(movement), movement.id);
+  if (movement.id === 480) return applyCutawayFor(centerGuidedGasometer(movement), movement.id);
   return null;
 }

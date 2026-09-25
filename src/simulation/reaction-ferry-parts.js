@@ -14,9 +14,19 @@ export function correctReactionFerry(root){
  const outline=poly(b.hull.geometry.parameters.shapes.getPoints(64).map(p=>[p.x,p.y*.65]));
  const wells=[rectangle(.92,-.27,1.38,.27),rectangle(1.67,-.27,2.14,.27)];
  const postHole=poly(circle([g.sternFromBow,0],.075,64));
+ // The lower hull narrows from the gunwale outline down to a narrower
+ // flat bottom, so the boat has flared sides and a fine bow rather
+ // than reading as a flat lozenge. The stern stays upright where the rudder
+ // stock passes through its notch.
+ const beamAt=x=>x<=2.0?.62:x>=2.4?1:.62+.38*(x-2.0)/.4;
+ const loftHull=(z0,z1)=>{
+  const g=plate(clip.difference(outline,postHole),z0,z1),pos=g.attributes.position;
+  for(let i=0;i<pos.count;i++)if(Math.abs(pos.getZ(i)-z1)<1e-9)pos.setY(i,pos.getY(i)*beamAt(pos.getX(i)));
+  pos.needsUpdate=true;g.computeVertexNormals();return g;
+ };
  replace(b.hull,mergePassageParts([
   plate(clip.difference(outline,...wells,postHole,poly(circle([0,0],.14,64))),0,.17),
-  plate(clip.difference(outline,postHole),.17,.34),
+  loftHull(.17,.34),
  ]));
  b.hull.position.y=-.03;
  replace(b.deck,plate(clip.difference(rectangle(.77,-.3445,2.39,.3445),...wells),0,.1));
@@ -37,7 +47,16 @@ export function correctReactionFerry(root){
  const bearing=add(b.boat,horizontalRing(.075,.135,-.07,.07,64),post.material,'bored-rudder-stock-bearing',new T.Vector3(g.sternFromBow,-.20,0));
  // Inferred compact swivels join the taut line to fixed anchor and bow.
  // The anchor stock runs down to the river bed, so the fixed centre is held.
- const anchorPost=b.anchor.children[0];replace(anchorPost,new T.CylinderGeometry(.12,.15,1.0,32));anchorPost.position.y=-.625;
+ // Brown's anchor lies on the bed: shank from the ring upstream to the
+ // crown, two curved arms with flukes, and a short stock at the ring end.
+ const anchorPost=b.anchor.children[0];replace(anchorPost,new T.CylinderGeometry(.07,.08,1.05,24));anchorPost.rotation.set(0,0,Math.PI/2);anchorPost.position.set(-.64,-.07,0);anchorPost.userData.role='anchor-shank-lying-on-river-bed';
+ for(const [index,side] of [[2,1],[3,-1]]){const arm=b.anchor.children[index];arm.visible=false;}
+ {const crown=new T.Vector3(-1.16,-.07,0);for(const side of[1,-1]){
+   const curve=new T.QuadraticBezierCurve3(crown,new T.Vector3(-1.18,-.07,side*.34),new T.Vector3(-.80,-.07,side*.46));
+   add(b.anchor,new T.TubeGeometry(curve,16,.055,8,false),anchorPost.material,'anchor-arm');
+   const fluke=add(b.anchor,new T.ConeGeometry(.12,.26,3),anchorPost.material,'anchor-fluke',new T.Vector3(-.80,-.07,side*.46));fluke.rotation.set(0,0,-Math.PI/2);fluke.scale.set(1,1,.45);}
+  const stock=add(b.anchor,new T.CylinderGeometry(.045,.045,.70,16),anchorPost.material,'anchor-stock',new T.Vector3(-.20,-.07,0));stock.rotation.x=Math.PI/2;
+  add(b.anchor,new T.SphereGeometry(.085,16,10),anchorPost.material,'anchor-crown',crown);}
  const anchorEye=b.anchor.children[1];replace(anchorEye,hollowPipeBall(.135,.105,.098,64));anchorEye.position.set(0,0,0);anchorEye.rotation.set(0,0,0);
  replace(b.bowRing,hollowPipeBall(.135,.105,.080,64));b.bowRing.position.set(0,0,0);b.bowRing.rotation.set(0,0,0);
  b.ropeStartMarker.userData.role='anchor-rope-swivel-ball';b.ropeEndMarker.userData.role='bow-rope-swivel-ball';

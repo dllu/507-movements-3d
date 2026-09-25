@@ -60,8 +60,13 @@ test('490 nonneighbor pieces of the rendered rope remain spatially disjoint',()=
       boxes.push(box);
     }
     // The audit concerns distinct rope reaches and successive barrel turns.
+    // Boxes that meet get a narrow-phase check on the rope centreline: the
+    // two centreline chords must stay a full rope diameter apart.
+    const centers=geometry._laid.centers,chord=new THREE.Line3(),other=new THREE.Line3(),p=new THREE.Vector3(),q=new THREE.Vector3();
+    const chordDistance=(i,j)=>{chord.set(centers[i],centers[i+1]);other.set(centers[j],centers[j+1]);let d=Infinity;
+      for(let t=0;t<=8;t++){chord.at(t/8,p);other.closestPointToPoint(p,true,q);d=Math.min(d,p.distanceTo(q));}return d;};
     for(let i=0;i<segments;i++)for(let j=i+neighbor;j<segments;j++)
-      if(boxes[i].intersectsBox(boxes[j]))assert.fail(
-        `nonneighbor rope cells ${i}/${j} require a narrow-phase check at pose ${pose}/32`);
+      if(boxes[i].intersectsBox(boxes[j])&&chordDistance(i,j)<2*g.ropeRadius)assert.fail(
+        `nonneighbor rope cells ${i}/${j} overlap at pose ${pose}/32`);
   }
 });

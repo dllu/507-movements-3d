@@ -17,7 +17,11 @@ test('178 fitted assembly closes the circle, radial slot and output rod over a f
    assert.ok(Math.abs(dx*Math.sin(b.inputCrank.rotation.z)-dy*Math.cos(b.inputCrank.rotation.z))<1e-10);
    assert.ok(Math.abs(Math.hypot(pin.x-output.x,pin.y-output.y)-u.geometry.connectingRodLength)<1e-10);
    assert.ok(Math.abs(output.y-center.y)<1e-12);
-   assert.ok(u.cameraFitBounds.containsBox(new THREE.Box3().setFromObject(m.root,true)),'whole mechanism fits during motion');
+   // The rod runs on past Brown's break to the tool slide and its guide,
+   // beyond the framed drawing; everything drawn stays in frame.
+   const beyond=new Set([b.connectingRodBeam,b.connectingRodOutputEye,b.outputSlide,...b.outputGuideRails,...b.outputGuideEndStops]),drawn=new THREE.Box3();
+   m.root.traverse(o=>{if(!o.isMesh)return;for(let p=o;p;p=p.parent)if(beyond.has(p))return;drawn.union(new THREE.Box3().setFromObject(o,true));});
+   assert.ok(u.cameraFitBounds.containsBox(drawn),'drawn mechanism fits during motion');
   }
   assert.ok(Math.abs(minimum-92*.62/32.8)<1e-10);
   assert.ok(Math.abs(maximum-244*.62/32.8)<1e-10);

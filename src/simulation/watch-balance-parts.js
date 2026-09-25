@@ -22,11 +22,17 @@ export function correctWatchRegulator(root){
   replace(b.balanceHub,tube(g.balanceHubRadius,.52,.152));
   replace(b.balanceStaff,new THREE.CylinderGeometry(.15,.15,1.99,32));b.balanceStaff.position.z=.28;
   b.springCollet=collet(b.balanceAssembly,g.springInnerRadius+.002,.152,g.springPlaneZ,b.balanceHub.material);
-  replace(b.fixedRing,tube(.62,.20,.49).rotateX(Math.PI/2));b.fixedRing.position.z=.98;
-  replace(b.regulatorRing,tube(.76,.16,.622).rotateX(Math.PI/2));
-  replace(b.regulatorArm,new THREE.BoxGeometry(.18,g.pointerRadius-.66,.16));
-  b.regulatorArm.position.y=-(g.pointerRadius+.66)/2;
-  g.fixedRingInnerRadius=.49;g.fixedRingOuterRadius=.62;
+  // Brown's regulator ring is small (about a third of the spring's radius):
+  // keep the fixed ring and the lever's ring close round the staff so the
+  // balance spring shows as one spiral from the collet out to stud R.
+  replace(b.fixedRing,tube(.28,.20,.17).rotateX(Math.PI/2));b.fixedRing.position.z=.98;
+  replace(b.regulatorRing,tube(.40,.16,.282).rotateX(Math.PI/2));
+  replace(b.regulatorArm,new THREE.BoxGeometry(.18,g.pointerRadius-.38,.16));
+  b.regulatorArm.position.y=-(g.pointerRadius+.38)/2;
+  g.fixedRingInnerRadius=.17;g.fixedRingOuterRadius=.28;
+  // The rate scale is a plain silvered sector: no engraved grid of arcs and
+  // divisions (tick notation).
+  for(const line of [...(b.dialArcs??[]),...(b.dialTicks??[])])line.visible=false;
   // A flat ribbon fits between the actual .02-wide curb opening; the previous .09 wire did not.
   for(const segment of b.springSegments)replace(segment,new THREE.BoxGeometry(.014,1,.12));
   root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-3.95,-5.30,-.85),new THREE.Vector3(3.95,3.70,1.40));

@@ -30,6 +30,18 @@ export function createAuthoredCurveGeneratorMovement(movement) {
   const [gx0,gx1]=[3.55,6.75],gy=g.guideY;
   add('guideFrame',plate(clip.difference(poly([[gx0,gy-.37],[gx1,gy-.37],[gx1,gy+.37],[gx0,gy+.37]]),
     poly([[gx0+.1,gy-.29],[gx1-.1,gy-.29],[gx1-.1,gy+.29],[gx0+.1,gy+.29]])),.36,.50),PALETTE.frame,'fixed');
+  // Brown draws neither the crank shaft's bearing nor what holds the guide
+  // frame. A slim fixed back bar behind the moving parts carries the shaft
+  // end, runs behind the rod's mean line (mostly hidden by it) and joins an
+  // open ring under the guide frame, which stands on two posts at its closed right end.
+  const frameRing=clip.difference(poly([[gx0,gy-.37],[gx1,gy-.37],[gx1,gy+.37],[gx0,gy+.37]]),
+    poly([[gx0+.1,gy-.29],[gx1-.1,gy-.29],[gx1-.1,gy+.29],[gx0+.1,gy+.29]]));
+  add('backBar',plate(clip.union(hole([0,0],.32),capsule([0,0],[gx0+.05,gy],.08),frameRing),-.40,-.24),PALETTE.frame,'fixed');
+  // Posts only at the closed right end: the rod sweeps past the left end.
+  for(const [x,y] of [[gx1-.05,gy-.33],[gx1-.05,gy+.33]]){
+    const post=add('guideFramePost',plate(poly([[x-.05,y-.04],[x+.05,y-.04],[x+.05,y+.04],[x-.05,y+.04]]),-.24,.36),PALETTE.frame,'fixed');
+    delete parts.guideFramePost;parts[`guideFramePost${Object.keys(parts).filter(n=>n.startsWith('guideFramePost')).length}`]=post;
+  }
   // Brown's dashed egg is the tracer's path in his notation; it is not drawn.
   const update=time=>{const s=eggAtTime(time);rotor.rotation.z=s.angle;rod.position.set(...s.crank,0);
     rod.rotation.z=s.rodAngle;slider.position.set(...s.wrist,0);root.userData.kinematics=s;};

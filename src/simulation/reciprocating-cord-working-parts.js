@@ -57,6 +57,13 @@ export function correctReciprocatingCordParts(root,id,update){
    const bottom=-3.34,top=g.upperGuideTop;
    const post=add(b.frame,new T.BoxGeometry(.16,top-bottom,.20),frameMaterial,'rear-saw-guide-standard');post.position.set(x,(top+bottom)/2,-.78);
   }
+  // The spring's fixed end is clamped to a plain bracket arm carried by the
+  // right-hand rear standard (raised to the spring line); the arm runs
+  // behind the leaf so the default view still reads as the plate.
+  {const anchor=g.springFixedEnd,armZ=-.78,top=g.upperGuideTop;
+   const riser=add(b.frame,new T.BoxGeometry(.16,anchor.y+.08-top,.20),frameMaterial,'rear-standard-riser-to-spring-bracket');riser.position.set(.38,(anchor.y+.08+top)/2,armZ);
+   const arm=add(b.frame,new T.BoxGeometry(anchor.x+.10-.30,.16,.16),frameMaterial,'fixed-spring-bracket-arm');arm.position.set((anchor.x+.10+.30)/2,anchor.y,armZ);
+   const clampLength=anchor.z-.02-(armZ-.08);const clamp=add(b.frame,new T.CylinderGeometry(.10,.10,clampLength,28),frameMaterial,'spring-bracket-clamp-stud');clamp.rotation.x=Math.PI/2;clamp.position.set(anchor.x,anchor.y,armZ-.08+clampLength/2);}
   for(const rail of b.guideRails){const join=add(b.frame,new T.BoxGeometry(.105,.14,.82),frameMaterial,'guide-cheek-to-rear-standard');join.position.set(rail.position.x,rail.position.y,-.38);}
   const post=role(root,'fixed-crankshaft-bearing-standard');replace(post,new T.BoxGeometry(.24,.86,.30));post.position.y=-2.93;
   const journal=add(b.frame,ring(.25,.104,.30),frameMaterial,'bored-fixed-crankshaft-journal');journal.rotation.x=Math.PI/2;journal.position.set(0,g.crankCenter.y,-.45);

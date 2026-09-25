@@ -315,7 +315,12 @@ test('movement 491 remains in finite swept bounds and leaves spinning movement 5
   for (let sample = 0; sample <= 720; sample += 1) {
     model.update(geometry.operatingPeriod * sample / 720);
     model.root.updateMatrixWorld(true);
-    union.union(new THREE.Box3().setFromObject(model.root));
+    // The cable lead and deck pipe beyond Brown's crop are outside the plate frame.
+    model.root.traverse((object) => {
+      if (!object.isMesh) return;
+      for (let parent = object; parent; parent = parent.parent) if (parent.userData.beyondPlateCrop) return;
+      union.union(new THREE.Box3().setFromObject(object));
+    });
   }
   assert.ok(model.root.userData.cameraFitBounds.containsBox(union));
   assert.ok(Number.isFinite(union.min.x));

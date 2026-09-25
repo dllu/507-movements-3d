@@ -453,7 +453,7 @@ function cyclograph(movement) {
   brace.userData.role = 'third-straight-rule-fastened-across-as-brace';
   carriage.add(brace);
   const bracePins = [leftBracePoint, rightBracePoint].map((position, index) => {
-    const pin = cylinderAlongZ(0.085, .59, whiteMaterial, 28);
+    const pin = cylinderAlongZ(0.085, .59, darkMaterial, 28);
     pin.position.set(position.x, position.y, .225);
     pin.userData.role = `fixed-brace-fastener-${index + 1}`;
     carriage.add(pin);

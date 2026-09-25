@@ -162,10 +162,10 @@ function makeBalance({
   const balance = new THREE.Group();
   balance.userData.role =
     'oscillating-balance-B-with-roller-h-pin-i-and-direct-pallet-j';
-  // Brown draws balance B as a plain broad rim, two concentric circles with
-  // no arms, whose edge passes just short of escape-wheel staff a (his rim
-  // radius is 0.82 of the centre distance).  Arms would sweep through that
-  // staff over the 120-degree vibration.
+  // Brown draws balance B as a plain broad rim, two concentric circles,
+  // whose edge passes just short of escape-wheel staff a (his rim radius is
+  // 0.82 of the centre distance).  He draws no arms; one plain arm (below)
+  // carries the rim on its staff.
   const rimOuterRadius = balanceRadius * 0.87;
   const rim = new THREE.Mesh(boredLatheGeometry([
     { axial: -0.08, radial: rimOuterRadius },
@@ -175,6 +175,16 @@ function makeBalance({
   rim.position.z = -0.28;
   rim.userData.role = 'balance-wheel-B-rim';
   balance.add(rim);
+  // The rim is carried on its staff by one plain diametral arm lying in the
+  // rim's own plane, behind the escape wheel (the wheel staff stands outside
+  // the rim, so nothing crosses the arm's sweep).
+  const rimArm = new THREE.Mesh(
+    new THREE.BoxGeometry(2 * (rimOuterRadius - 0.11), 0.14, 0.10),
+    material,
+  );
+  rimArm.position.z = -0.28;
+  rimArm.userData.role = 'balance-wheel-B-arm-to-staff';
+  balance.add(rimArm);
   const hub = cylinderAlongZ(0.18, 0.72, darkMaterial, 32);
   hub.position.z = 0.03;
   hub.userData.role = 'balance-staff-b';

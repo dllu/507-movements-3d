@@ -1,6 +1,7 @@
 import {correctGasMeterParts} from './gas-meter-working-parts.js';
 import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -1144,5 +1145,5 @@ function powersMercuryRegulator(movement) {
 
 export function createAuthoredMercuryGasRegulatorMovement(movement) {
   if (movement.id !== 482) return null;
-  return powersMercuryRegulator(movement);
+  return applyCutawayFor(powersMercuryRegulator(movement), movement.id);
 }

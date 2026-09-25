@@ -2,12 +2,12 @@ import * as THREE from 'three';
 import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   markShadows,
   matte,
 } from './primitives.js';
+import {waterFountainGeometry, waterJetMaterial} from './water-volume.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -585,45 +585,21 @@ function hydraulicRam(movement) {
   outputWater.userData.role =
     'continuous-uniform-upward-efflux-from-air-cushion';
   root.add(outputWater);
-  const fountainTop = new THREE.Mesh(
-    new THREE.TorusGeometry(0.48, 0.07, 10, 48, Math.PI),
-    paleWaterMaterial,
-  );
-  fountainTop.position.set(chamberCenter.x, 3.62, 0);
-  fountainTop.rotation.z = Math.PI;
-  fountainTop.userData.role = 'continuous-high-level-water-jet-crown';
   // Brown's jet: a solid column rising well above the nozzle that breaks into
-  // a plume of arcs falling away on every side; droplets run down the arcs.
+  // a plume falling away on every side. One translucent water column and a
+  // thin falling crown thinning into spray at its rim, not a bundle of
+  // streamline tubes and droplets.
   const jetBaseY = 2.90, jetTopY = 4.05;
-  const sprayArcs = [];
-  for (let index = 0; index < 14; index += 1) {
-    const azimuth = (index + 0.5) * FULL_TURN / 14;
-    const reach = 0.55 + 0.25 * ((index * 5) % 7) / 6;
-    const out = new THREE.Vector3(Math.cos(azimuth), 0, Math.sin(azimuth) * 0.6);
-    const top = new THREE.Vector3(chamberCenter.x, jetTopY, 0);
-    sprayArcs.push(new THREE.QuadraticBezierCurve3(top,
-      top.clone().addScaledVector(out, reach * 0.55).add(new THREE.Vector3(0, 0.34, 0)),
-      top.clone().addScaledVector(out, reach).add(new THREE.Vector3(0, -0.95 - 0.2 * (index % 3), 0))));
-  }
-  {
-    const parts = [new THREE.CylinderGeometry(0.075, 0.105, jetTopY - jetBaseY, 20)
-      .translate(chamberCenter.x, (jetBaseY + jetTopY) / 2, 0),
-      ...sprayArcs.map(curve => new THREE.TubeGeometry(curve, 24, 0.022, 5, false))];
-    fountainTop.geometry.dispose();
-    const flat = parts.map(part => part.toNonIndexed());
-    fountainTop.geometry = mergeGeometries(flat);
-    [...parts, ...flat].forEach(part => part.dispose());
-    fountainTop.position.set(0, 0, 0);
-    fountainTop.rotation.set(0, 0, 0);
-  }
+  const fountainTop = new THREE.Mesh(
+    waterFountainGeometry({
+      nozzleY: jetBaseY - 0.02, apexY: jetTopY, columnRadius: 0.1,
+      crownRadius: 0.55, fallY: 2.75, crownThickness: 0.035, fadeStart: 0.78,
+    }).translate(chamberCenter.x, 0, 0),
+    waterJetMaterial({ color: 0x8bdae6, opacity: 0.5 }),
+  );
+  fountainTop.renderOrder = 2;
+  fountainTop.userData.role = 'continuous-high-level-water-jet-crown';
   root.add(fountainTop);
-  const sprayDroplets = Array.from({ length: 28 }, (_, index) => {
-    const droplet = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 8), paleWaterMaterial);
-    droplet.userData.role = `falling-jet-spray-droplet-${index + 1}`;
-    root.add(droplet);
-    return droplet;
-  });
-
   const driveMarkers = [];
   for (let index = 0; index < 11; index += 1) {
     const marker = new THREE.Mesh(
@@ -699,11 +675,6 @@ function hydraulicRam(movement) {
         state.deliveryValveOpen
           * Math.sqrt(Math.sin(Math.PI * progress)),
       );
-    });
-    sprayDroplets.forEach((droplet, index) => {
-      const progress = THREE.MathUtils.euclideanModulo(time * 0.9 + index * 0.37, 1);
-      droplet.position.copy(sprayArcs[index % sprayArcs.length].getPoint(progress));
-      droplet.scale.setScalar(0.5 + 0.5 * Math.sin(Math.PI * progress));
     });
     outputMarkers.forEach((marker, index) => {
       const progress = THREE.MathUtils.euclideanModulo(

@@ -264,8 +264,10 @@ function pileDriverReleasingHooks(movement) {
   const frame = new THREE.Group();
   frame.userData.fixed = true;
   frame.userData.role = 'fixed-pile-driver-frame-with-converging-slot-b';
-  // The rails run from the top frame down to the pile-head level.
+  // The rails run from the top frame down to the pile-head level, and on
+  // (below Brown's crop through W) to the ground, where each stands on a foot.
   const railTopY = 6.15;
+  const groundY = pileHeadTopY - 1.9;
   const railHeight = railTopY - pileHeadTopY;
   const railWidth = 0.58;
   const rails = [-1, 1].map((side) => {
@@ -283,6 +285,22 @@ function pileDriverReleasingHooks(movement) {
     return rail;
   });
   frame.add(...rails);
+  const railExtensions = [-1, 1].map((side) => {
+    const extension = new THREE.Mesh(new THREE.BoxGeometry(railWidth, pileHeadTopY - groundY - 0.3, 1.25), frameMaterial);
+    extension.position.set(side * (frameRailInnerHalfWidth + railWidth / 2), (pileHeadTopY + groundY + 0.3) / 2, -0.32);
+    extension.userData.fixed = true;
+    extension.userData.role = `${side < 0 ? 'left' : 'right'}-guide-rail-below-plate-crop`;
+    return extension;
+  });
+  frame.add(...railExtensions);
+  const railFeet = [-1, 1].map((side) => {
+    const foot = new THREE.Mesh(new THREE.BoxGeometry(railWidth + 0.5, 0.3, 1.9), frameMaterial);
+    foot.position.set(side * (frameRailInnerHalfWidth + railWidth / 2 + 0.12), groundY + 0.15, -0.32);
+    foot.userData.fixed = true;
+    foot.userData.role = `${side < 0 ? 'left' : 'right'}-guide-rail-foot-below-plate-crop`;
+    return foot;
+  });
+  frame.add(...railFeet);
 
   const leftTopBeam = extrudedPolygon([
     // Brown draws one plain top beam pierced by the tapered slot B; its
@@ -356,20 +374,26 @@ function pileDriverReleasingHooks(movement) {
     new THREE.BoxGeometry(5.1, 0.45, 2.05),
     darkMaterial,
   );
-  anvil.position.y = pileHeadTopY - 0.225;
+  // Now shown, the anvil sits just under the weight's lowest face (the
+  // weight's side notches reach 0.045 below its nominal bottom).
+  anvil.position.y = pileHeadTopY - 0.225 - 0.05;
   anvil.userData.fixed = true;
   anvil.userData.role = 'pile-head-impact-anvil';
   const pile = new THREE.Mesh(
     new THREE.BoxGeometry(2.6, 1.45, 1.65),
     frameMaterial,
   );
-  pile.position.y = pileHeadTopY - 1.175;
+  pile.position.y = pileHeadTopY - 1.175 - 0.05;
   pile.userData.fixed = true;
   pile.userData.role = 'pile-below-impact-head';
   // Brown's plate is cropped through W; the pile and its head lie below the
-  // crop, so they stay as the impact reference but are not displayed.
-  anvil.visible = false;
-  pile.visible = false;
+  // crop. They are shown (the weight falls onto them), but the default view
+  // is fitted to the drawn parts only.
+  const belowCrop = [anvil, pile, ...railFeet, ...railExtensions];
+  for (const part of belowCrop) {
+    part.visible = false;
+    part.userData.beyondPlateCrop = true;
+  }
   pileHead.add(anvil, pile);
   root.add(frame, pileHead);
 
@@ -1165,6 +1189,7 @@ function pileDriverReleasingHooks(movement) {
     });
   }
   root.userData.cameraFitBounds = fitBounds.expandByScalar(0.02);
+  for (const part of belowCrop) part.visible = true;
   update(0);
   markShadows(root);
   return {

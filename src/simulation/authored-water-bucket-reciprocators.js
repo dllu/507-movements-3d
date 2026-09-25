@@ -7,6 +7,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -406,13 +407,16 @@ function waterBucketReciprocator(movement) {
   laidRope.userData.role = 'single-laid-rope-counterweight-over-pulley-to-bucket';
   ropeAssembly.add(laidRope);
   for (const piece of [leftRopeStrand, rightRopeStrand, upperRopeArc]) piece.visible = false;
+  // The rope is tied to the top of the bucket's bail, a fixed rise above
+  // the attachment reference the kinematics carry.
+  const bailRise = 0.30;
   const layRope = (counterweightY, bucketY) => {
     const path = new THREE.CurvePath();
     path.add(new THREE.LineCurve3(
       new THREE.Vector3(counterweightRopeX, counterweightY, 0), ropeArcPoints[0].clone()));
     path.add(ropeArcCurve);
     path.add(new THREE.LineCurve3(
-      ropeArcPoints.at(-1).clone(), new THREE.Vector3(bucketRopeX, bucketY, 0)));
+      ropeArcPoints.at(-1).clone(), new THREE.Vector3(bucketRopeX, bucketY + bailRise, 0)));
     replaceWithLaidRope(laidRope, path, {radius: 0.045, tubularSegments: 256});
   };
   const ropeMarker = new THREE.Mesh(
@@ -450,6 +454,27 @@ function waterBucketReciprocator(movement) {
   bucketWater.position.y = -0.57;
   bucketWater.userData.role = 'variable-water-load-in-bucket';
   bucket.add(bucketWater);
+  // Brown's bail: an arched iron handle from two ears on the shell up to the
+  // rope's end. Its plane is turned 50 degrees from the drawing plane so the
+  // falling stream beside the rope clears the wire.
+  {
+    const bailDirection = new THREE.Vector3(Math.cos(0.87), 0, Math.sin(0.87));
+    const earY = -0.25, earRadius = 0.62;
+    const bailPoints = Array.from({length: 33}, (_, index) => {
+      const angle = Math.PI * index / 32;
+      return bailDirection.clone().multiplyScalar(earRadius * Math.cos(angle))
+        .setY(earY + (bailRise - earY) * Math.sin(angle));
+    });
+    const bail = new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(bailPoints), 48, 0.035, 8, false), darkMaterial);
+    bail.userData.role = 'bucket-bail-carrying-rope-end';
+    bucket.add(bail);
+    for (const side of [-1, 1]) {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.06, 12, 8), bucketMaterial);
+      ear.position.copy(bailDirection).multiplyScalar(side * earRadius).setY(earY);
+      ear.userData.role = 'bucket-bail-ear';
+      bucket.add(ear);
+    }
+  }
   const valve = new THREE.Group();
   valve.userData.role = 'bottom-valve-opened-by-ground-contact';
   bucket.add(valve);
@@ -525,10 +550,14 @@ function waterBucketReciprocator(movement) {
   flume.rotation.z = 0.30;
   flume.userData.role = 'fixed-flume-providing-continuous-water-fall';
   root.add(flume);
+  // The fall from the flume lip is one translucent stream narrowing as it
+  // speeds up (unit length along y, stretched to the bucket's water).
   const fallingWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.12, 0.12, 4.70, 20),
-    waterMaterial,
+    waterJetGeometry(new THREE.LineCurve3(new THREE.Vector3(0, 2.35, 0),
+      new THREE.Vector3(0, -2.35, 0)), { radius: 0.13, endRadius: 0.09, segments: 12 }),
+    waterJetMaterial(),
   );
+  fallingWater.renderOrder = 2;
   fallingWater.position.set(bucketRopeX+.33, -.55, 0.06);
   fallingWater.userData.role =
     'continuous-vertical-water-stream-through-bucket-station';

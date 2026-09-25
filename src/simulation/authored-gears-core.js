@@ -25408,6 +25408,24 @@ function curvedSlotRockerVariableVelocitySlide() {
   // The arm's swept envelope extends well below its engraved source pose.
   // Fit the complete stroke below; the source has no freestanding support frame.
   root.remove(baseRail, pivotPost, pivotBrace, pivotBearing, ...guideSupports, ...baseFeet);
+  // Without that frame the two guide blocks and the input shaft floated. A
+  // slim flat strap directly behind the bar (hidden by it in Brown's view)
+  // joins both guide blocks and a bored boss round the shaft's rear end.
+  {
+    const strapOutline = slotClipping.union(
+      slotPolygon([[sliderX - 0.18, guideYs[0] - 0.125], [sliderX + 0.18, guideYs[0] - 0.125],
+        [sliderX + 0.18, guideYs[1] + 0.125], [sliderX - 0.18, guideYs[1] + 0.125]]),
+      slotPolygon(slotCircle([0, 0], 0.34, 96)),
+      slotPolygon([[0, -0.2], [sliderX, -0.2], [sliderX, 0.2], [0, 0.2]]),
+    );
+    const rearStrap = new THREE.Mesh(
+      finiteSlotPlate(slotClipping.difference(strapOutline, slotPolygon(slotCircle([0, 0], 0.215, 96))), -0.76, -0.6),
+      frameMaterial,
+    );
+    rearStrap.userData.fixed = true;
+    rearStrap.userData.role = 'fixed-rear-strap-joining-guides-and-shaft-boss';
+    root.add(rearStrap);
+  }
   root.userData.hideGround = true;
   root.userData.cameraDistanceScale = 1.02;
   root.userData.reconstruction = { slotClearance,

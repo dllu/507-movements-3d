@@ -5,7 +5,7 @@
   "sources": [
     {
       "file": "src/simulation/silk-traverse-geometry.js",
-      "sha256": "f07f45737de0514422b9aa5ab6bd86fe54b520140362673afa8526804a38a665"
+      "sha256": "ef69f250a4c111eb9ef7dc30ef5e75986a24155930f85c1d7f6f5628b7e7c8c2"
     },
     {
       "file": "src/simulation/silk-traverse-gears.js",

@@ -59,6 +59,20 @@ export function correctSteeringSolids(root) {
   rudderShaft.userData.role='rudder-stock-under-tiller';b.tiller.add(rudderShaft);b.rudderShaft=rudderShaft;
   replace(b.deck,new THREE.BoxGeometry(7.5,6.3,.12));b.deck.position.set(-.05,0,-2.78);
   b.deck.visible=false;
+  // Brown's plan shows no deck. Each post and pedestal ends on its own foot
+  // plate bolted to the (undrawn) deck, so none stops in mid-air.
+  const footTop=-2.72;
+  const addFoot=(parent,x,y,role)=>{const foot=new THREE.Mesh(new THREE.BoxGeometry(.52,.52,.08),b.wheelPedestals[0].material);foot.position.set(x,y,footTop-.04);foot.userData.role=role;parent.add(foot);return foot;};
+  for(const guide of [b.upperGuide,b.lowerGuide]){
+    const localFoot=footTop-guide.fixed.position.z,postTop=-.15;
+    guide.post.geometry.dispose();guide.post.geometry=new THREE.BoxGeometry(.18,.25,postTop-localFoot);guide.post.position.z=(postTop+localFoot)/2;
+    guide.foot=addFoot(guide.fixed,0,0,'guide-sheave-support-foot');guide.foot.position.z=localFoot-.04;
+  }
+  for(const pedestal of b.wheelPedestals){
+    const top=pedestal.position.z+1.235;
+    pedestal.geometry.dispose();pedestal.geometry=new THREE.BoxGeometry(.24,.30,top-footTop);pedestal.position.z=(top+footTop)/2;
+    addFoot(root,pedestal.position.x,pedestal.position.y,'handwheel-pedestal-foot');
+  }
   root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-3.90,-3.25,-3.00),new THREE.Vector3(3.80,3.25,2.65));
   root.userData.cameraDirection=new THREE.Vector3(.2,.4,16);
   root.userData.cameraDistanceScale=1.02;root.userData.cameraFov=12;

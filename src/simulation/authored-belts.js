@@ -12,7 +12,8 @@ import { whitePulleys } from './authored-white-pulleys.js';
 import { twoFixedOneMovable } from './authored-fixed-tackle.js';
 import { spanishBartonFourToOne, spanishBartonFiveToOne } from './authored-bartons.js';
 import { makeHoistLoad, makeSheaveHanger, makeTackleCase } from './hoist-hardware.js';
-import { LaidRopeGeometry, makeLaidRopeMesh } from './laid-rope.js';
+import { LAID_ROPE, LaidRopeGeometry, makeLaidRopeMesh } from './laid-rope.js';
+import { makeHaulingHand } from './hauling-hand.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -1796,96 +1797,167 @@ function fixedHoist() {
   return { root, update, cameraDirection: new THREE.Vector3(0.3, 0.15, 10) };
 }
 
-// Plate 12's hauling hand: a fist bored for the rope (no rope overlap), a
-// thumb over the fingers, a forearm and cuff entering from the lower left,
-// and the loose rope tail hanging below the fist. The group origin is the
-// rope's effort end; local +X runs up the rope toward the pulley.
-function makeHaulingHand(ropeDirection, ropeRadius) {
-  const hand = new THREE.Group();
-  hand.name = 'plate-12-hauling-hand';
-  const skin = matte(0xe2b48e, { roughness: 0.8 });
-  const grip = new THREE.Group();
-  grip.rotation.z = Math.atan2(ropeDirection.y, ropeDirection.x);
-  const bore = ropeRadius + 0.014;
-  const section = new THREE.Shape();
-  const [y0, y1, z0, z1, r] = [-0.12, 0.2, -0.115, 0.115, 0.07];
-  section.moveTo(y0 + r, z0);
-  section.lineTo(y1 - r, z0);
-  section.quadraticCurveTo(y1, z0, y1, z0 + r);
-  section.lineTo(y1, z1 - r);
-  section.quadraticCurveTo(y1, z1, y1 - r, z1);
-  section.lineTo(y0 + r, z1);
-  section.quadraticCurveTo(y0, z1, y0, z1 - r);
-  section.lineTo(y0, z0 + r);
-  section.quadraticCurveTo(y0, z0, y0 + r, z0);
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, bore, 0, Math.PI * 2, true);
-  section.holes.push(hole);
-  const fistLength = 0.3;
-  const fistGeometry = new THREE.ExtrudeGeometry(section, {
-    depth: fistLength - 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.012,
-    bevelSegments: 3, curveSegments: 20,
+// Brown crops both legs of the chain pulleys 227-229. The chain is endless in
+// use, so just beyond the plate each leg drops through a chain (navel) pipe
+// in a deck plate, as a ship's cable goes down to its locker: links leave
+// view inside the pipes instead of stopping in mid-air. `legs` gives each
+// pipe's mouth (on the leg axis) and its downstream direction; the pipe bore
+// is sized from the links actually passing that leg.
+function addChainNavelPipes(result, legs, { pipeLength = 1.6, wall = 0.05, clearance = 0.06 } = {}) {
+  const { root } = result;
+  const links = [];
+  root.traverse((object) => { if (object.userData.chainLink || object.userData.chainSection) links.push(object); });
+  const frames = legs.map(({ mouth, direction }) => {
+    const axis = direction.clone().normalize();
+    const depth = Z_AXIS.clone();
+    const across = new THREE.Vector3().crossVectors(depth, axis).normalize();
+    const basis = new THREE.Matrix4().makeBasis(across, depth, axis).setPosition(mouth);
+    return { axis, basis, inverse: basis.clone().invert(), half: new THREE.Vector2() };
   });
-  // Cyclic axis swap: extrusion (z) -> grip X, shape x -> Y, shape y -> Z.
-  fistGeometry.translate(0, 0, -(fistLength - 0.06) / 2);
-  fistGeometry.applyMatrix4(new THREE.Matrix4().set(
-    0, 0, 1, 0,
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 0, 1));
-  const fist = new THREE.Mesh(fistGeometry, skin);
-  fist.name = 'hand-fist';
-  // Knuckle ridges across the fingers on the side away from the wrist.
-  for (let i = 0; i < 4; i += 1) {
-    const knuckle = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10), skin);
-    knuckle.scale.set(1, 0.8, 0.9);
-    knuckle.position.set(-0.105 + i * 0.07, -0.115, 0.05);
-    knuckle.name = 'hand-knuckle';
-    grip.add(knuckle);
+  const period = root.userData.animationTiming?.authoredCyclePeriod ?? 4;
+  const corner = new THREE.Vector3();
+  for (let i = 0; i < 24; i += 1) {
+    result.update(period * i / 24, 0);
+    root.updateMatrixWorld(true);
+    for (const link of links) {
+      if (!link.visible) continue;
+      link.traverse((mesh) => {
+        const position = mesh.isMesh ? mesh.geometry.attributes.position : null;
+        if (!position) return;
+        for (const frame of frames) {
+          const toFrame = frame.inverse.clone().multiply(mesh.matrixWorld);
+          for (let k = 0; k < position.count; k += 1) {
+            corner.fromBufferAttribute(position, k).applyMatrix4(toFrame);
+            // Only material inside the pipe's first stretch sizes its bore.
+            if (corner.z < -0.2 || corner.z > pipeLength || Math.abs(corner.x) > 1.2) continue;
+            frame.half.x = Math.max(frame.half.x, Math.abs(corner.x));
+            frame.half.y = Math.max(frame.half.y, Math.abs(corner.y));
+          }
+        }
+      });
+    }
   }
-  // An elongated sphere, not a capsule grip handle.
-  const thumb = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), skin);
-  thumb.scale.set(0.036, 0.1, 0.036);
-  thumb.position.set(0.12, 0.02, 0.118);
-  thumb.rotation.z = Math.PI / 2 - 0.5;
-  thumb.name = 'hand-thumb';
-  grip.add(fist, thumb);
-  // Brown's fist is about 0.45 of the sheave diameter; the rope bore scales
-  // with it, so the rope stays clear.
-  const body = new THREE.Group();
-  body.scale.setScalar(1.35);
-  body.add(grip);
-  hand.add(body);
-  // Forearm, leaving the heel of the fist steeply toward the lower left.
-  const wrist = new THREE.Vector3(-0.03, 0.17, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), grip.rotation.z);
-  const armDirection = new THREE.Vector3(-0.62, -0.78, 0).normalize();
-  const armLength = 0.5;
-  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.115, armLength, 20), skin);
-  arm.position.copy(wrist).addScaledVector(armDirection, armLength / 2);
-  arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), armDirection);
-  arm.name = 'hand-forearm';
-  const cuffMaterial = matte(0xe9e1d2, { roughness: 0.85 });
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 0.16, 20), cuffMaterial);
-  cuff.position.copy(wrist).addScaledVector(armDirection, armLength + 0.07);
-  cuff.quaternion.copy(arm.quaternion);
-  cuff.name = 'hand-cuff';
-  // The loose end of the rope below the fist, drooping toward vertical.
-  const tailPoints = [
-    ropeDirection.clone().multiplyScalar(0.15),
-    ropeDirection.clone().multiplyScalar(-0.24),
-    new THREE.Vector3(-0.27, -0.42, 0),
-    new THREE.Vector3(-0.3, -0.7, 0),
-    new THREE.Vector3(-0.27, -1.0, 0),
-    new THREE.Vector3(-0.2, -1.25, 0),
-  ];
-  const tail = new THREE.Mesh(
-    new LaidRopeGeometry(new THREE.CatmullRomCurve3(tailPoints), 48, ropeRadius, 8, false),
-    matte(PALETTE.belt, { roughness: 0.76 }));
-  tail.name = 'loose-rope-tail';
-  body.add(arm, cuff);
-  hand.add(tail);
-  markShadows(hand);
-  return hand;
+  result.update(0, 0);
+  const material = matte(PALETTE.frame, { metalness: 0.14, roughness: 0.68 });
+  material.fog = false;
+  const group = new THREE.Group();
+  group.userData.role = 'chain-navel-pipes-and-deck-beyond-plate-crop';
+  const holes = [];
+  frames.forEach((frame, index) => {
+    const hx = frame.half.x + clearance;
+    const hy = frame.half.y + clearance;
+    const rect = (x, y) => poly([[-x, -y], [x, -y], [x, y], [-x, y]]);
+    const section = polygonClipping.difference(rect(hx + wall, hy + wall), rect(hx, hy));
+    const pipe = new THREE.Mesh(plate(section, 0, pipeLength), material);
+    pipe.applyMatrix4(frame.basis);
+    pipe.userData.role = `chain-navel-pipe-${index + 1}`;
+    pipe.userData.bore = [2 * hx, 2 * hy];
+    group.add(pipe);
+    holes.push({ center: legs[index].mouth, hx: hx + wall, hy: hy + wall, axis: frame.axis });
+  });
+  // A deck plate joins the pipe mouths, cut through where each pipe passes.
+  const deckY = Math.max(...legs.map(({ mouth }) => mouth.y));
+  const xs = holes.flatMap(({ center, hx }) => [center.x - hx - 0.35, center.x + hx + 0.35]);
+  const zs = holes.flatMap(({ center, hy }) => [center.z - hy - 0.35, center.z + hy + 0.35]);
+  const [x0, x1, z0, z1] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+  const deckOutline = poly([[x0, -z1], [x1, -z1], [x1, -z0], [x0, -z0]]);
+  const openings = holes.map(({ center, hx, hy, axis }) => {
+    // The pipe's outer section where it meets the deck's top face.
+    const slope = Math.abs(axis.y) > 1e-6 ? Math.abs(axis.x / axis.y) : 0;
+    const halfX = hx / Math.max(Math.abs(axis.y), 0.2) + 0.01 + slope * 0.13;
+    return poly([[center.x - halfX, -(center.z + hy)], [center.x + halfX, -(center.z + hy)],
+      [center.x + halfX, -(center.z - hy)], [center.x - halfX, -(center.z - hy)]]);
+  });
+  const deckThickness = 0.12;
+  const deck = new THREE.Mesh(
+    plate(polygonClipping.difference(deckOutline, ...openings), deckY - deckThickness, deckY)
+      .rotateX(-Math.PI / 2),
+    material,
+  );
+  deck.userData.role = 'deck-plate-carrying-chain-pipes';
+  group.add(deck);
+  root.add(group);
+  markShadows(group);
+  root.userData.chainNavelPipes = { deckY, pipeLength, bores: frames.map((frame) => frame.half.clone()) };
+  return group;
+}
+
+// Brown crops the hauling part of each tackle (14-22). Rather than stopping
+// the rope in mid-air at that crop, the fall runs on a little past the plate
+// frame into plate 12's hauling hand. The rope's own free leaf is lengthened
+// (same segment count) so the hand grips a continuous rope; the camera keeps
+// the pre-hand swept bounds, so the default view still frames Brown's crop.
+function addTackleHaulingHand(result, { clearance = 0.45, scale = 0.8, sampleFrequency = 0.5 } = {}) {
+  const { root } = result;
+  const originalUpdate = result.update;
+  const fit = new THREE.Box3();
+  let highestEffort = -Infinity;
+  const period = 2 * Math.PI / sampleFrequency;
+  for (let i = 0; i < 32; i += 1) {
+    originalUpdate(i * period / 32, 0);
+    root.updateMatrixWorld(true);
+    fit.union(new THREE.Box3().setFromObject(root, true));
+    highestEffort = Math.max(highestEffort, root.userData.attachments.effort.y);
+  }
+  if (!root.userData.cameraFitBounds?.isBox3) root.userData.cameraFitBounds = fit;
+  const frameBottom = root.userData.cameraFitBounds.min.y;
+  originalUpdate(0, 0);
+  const effort = root.userData.attachments?.effort;
+  // Lengthen the fall until even its highest grip lies clear below the frame.
+  let extension = 0;
+  let rope = null;
+  root.traverse((object) => {
+    const curve = object.userData.curve;
+    if (!rope && object.userData.setCurve && curve?.getPoint
+      && curve.getPoint(1).distanceTo(effort) < 1e-6) rope = object;
+  });
+  if (!rope) throw new Error('No hauling rope ends at the tackle effort attachment.');
+  const fallTangent = rope.userData.curve.getTangent(1);
+  extension = Math.max(0.3, (highestEffort - frameBottom + clearance) / Math.max(0.3, -fallTangent.y));
+  const setCurve = rope.userData.setCurve;
+  rope.userData.setCurve = (curve) => {
+    const extended = new THREE.CurvePath();
+    const parts = curve.curves ?? [curve];
+    const last = parts.at(-1);
+    if (last.isLineCurve3) {
+      const tip = last.v2.clone().addScaledVector(last.getTangent(1), extension);
+      extended.curves.push(...parts.slice(0, -1), new THREE.LineCurve3(last.v1.clone(), tip));
+    } else {
+      const end = curve.getPoint(1);
+      extended.curves.push(...parts, new THREE.LineCurve3(end, end.clone().addScaledVector(curve.getTangent(1), extension)));
+    }
+    setCurve(extended);
+  };
+  rope.userData.setCurve(rope.userData.curve);
+  const up = rope.userData.curve.getTangent(1).negate();
+  up.z = 0;
+  up.normalize();
+  const radius = rope.userData.thickness / 2;
+  const hand = makeHaulingHand(up, radius / scale);
+  hand.scale.setScalar(scale);
+  hand.userData.role = 'hauling-hand-beyond-plate-crop';
+  // Both run past Brown's framing on purpose: the hand wholly, the fall only
+  // below the pre-hand frame bottom (everything above it is the original rope).
+  hand.userData.beyondPlateCrop = true;
+  rope.userData.beyondPlateCropBelowY = frameBottom;
+  root.add(hand);
+  const update = (time, delta) => {
+    originalUpdate(time, delta);
+    const grip = rope.userData.curve.getPoint(1);
+    hand.position.copy(grip);
+    // The hand is now the effort attachment (the rope's real end).
+    const attachments = root.userData.attachments;
+    const cropEnd = attachments.effort.clone();
+    for (const [key, value] of Object.entries(attachments)) {
+      if (value?.isVector3 && value.distanceTo(cropEnd) < 1e-9) attachments[key] = grip.clone();
+      if (Array.isArray(value)) {
+        attachments[key] = value.map((point) => (point?.isVector3 && point.distanceTo(cropEnd) < 1e-9 ? grip.clone() : point));
+      }
+    }
+  };
+  update(0, 0);
+  root.userData.haulingHand = hand;
+  return { ...result, update };
 }
 
 function singleMovableHoist() {
@@ -6453,6 +6525,86 @@ function singleWrappedRopeDrumDrive() {
     rope,
     pitchContactMarker,
   );
+  // Brown crops both free spans at the plate edge. Beyond it each span runs on
+  // to a small storage reel, which pays rope out on the left and takes it up
+  // on the right, so the rope has real ends. Each lead is a whole number of
+  // strand periods long so the lay runs continuously into the drawn spans.
+  // Keep the default view on Brown's crop: frame what was there before the
+  // reels were added.
+  root.updateMatrixWorld(true);
+  root.userData.cameraFitBounds = new THREE.Box3().setFromObject(root, true);
+  const reelPitchRadius = 0.36;
+  const reelTurns = 4;
+  const strandPeriod = LAID_ROPE.layPerDiameter * 2 * ropeRadius / LAID_ROPE.strands;
+  const reelLeadLength = Math.ceil(1.75 / strandPeriod) * strandPeriod;
+  const reels = [-1, 1].map((side) => {
+    const span = side < 0 ? ropeCurve.leftSpan : ropeCurve.rightSpan;
+    const cropEnd = side < 0 ? span.v1.clone() : span.v2.clone();
+    const outward = span.v2.clone().sub(span.v1).normalize().multiplyScalar(side);
+    const tangentPoint = cropEnd.clone().addScaledVector(outward, reelLeadLength);
+    const lead = makeDynamicMovingBelt(
+      side < 0 ? new THREE.LineCurve3(tangentPoint, cropEnd) : new THREE.LineCurve3(cropEnd, tangentPoint),
+      { closed: false, color: PALETTE.driven, markerCount: 0, radius: ropeRadius, laid: true },
+    );
+    lead.userData.role = side < 0 ? 'rope-lead-from-pay-out-reel' : 'rope-lead-to-take-up-reel';
+    const reel = new THREE.Group();
+    reel.position.set(tangentPoint.x, tangentPoint.y + reelPitchRadius, tangentPoint.z);
+    reel.userData.role = side < 0 ? 'pay-out-rope-reel-beyond-plate' : 'take-up-rope-reel-beyond-plate';
+    const reelRotor = new THREE.Group();
+    // The coil's centreline runs reelTurns rope diameters along the axis;
+    // with the rope itself it spans one diameter more.
+    const coilWidth = (reelTurns + 1) * 2 * ropeRadius;
+    // The barrel sits just inside the coil (the laid strands are faceted).
+    const barrel = cylinderAlongZ(reelPitchRadius - ropeRadius - 0.03, coilWidth + 0.06, frameMaterial, 32);
+    barrel.position.z = -side * reelTurns * ropeRadius;
+    const flangeGeometry = new THREE.CylinderGeometry(reelPitchRadius + 0.2, reelPitchRadius + 0.2, 0.05, 40);
+    const flanges = [1, -1].map((face) => {
+      const flange = new THREE.Mesh(flangeGeometry, frameMaterial);
+      flange.rotation.x = Math.PI / 2;
+      flange.position.z = barrel.position.z + face * (coilWidth / 2 + 0.03 + 0.025);
+      return flange;
+    });
+    const axle = cylinderAlongZ(shaftHoleRadius, coilWidth + 0.5, inkMaterial, 24);
+    axle.position.z = barrel.position.z;
+    // The stored rope: a close helix of turns around the barrel, starting at
+    // the lead's tangent point under the reel.
+    const coilPoints = [];
+    const coilSamples = reelTurns * 48;
+    for (let i = 0; i <= coilSamples; i += 1) {
+      const turn = i / 48;
+      const angle = -Math.PI / 2 + side * 2 * Math.PI * turn;
+      coilPoints.push(new THREE.Vector3(
+        reelPitchRadius * Math.cos(angle),
+        reelPitchRadius * Math.sin(angle),
+        -side * 2 * ropeRadius * turn,
+      ));
+    }
+    // Run each coil in the rope's own direction (into the drum on the left,
+    // away from it on the right). The coil stays put while its lay travels,
+    // as a turning reel's stored turns would appear.
+    if (side < 0) coilPoints.reverse();
+    const coilCurve = new THREE.CatmullRomCurve3(coilPoints);
+    const coil = new THREE.Mesh(
+      new LaidRopeGeometry(coilCurve, coilSamples, ropeRadius, 8, false),
+      matte(PALETTE.driven, { roughness: 0.72 }),
+    );
+    coil.userData.role = 'rope-coiled-on-reel';
+    reelRotor.add(barrel, ...flanges, axle);
+    reel.add(reelRotor, coil);
+    reel.userData.rotor = reelRotor;
+    root.add(lead, reel);
+    return { lead, reel, reelRotor, coil, coilLength: coilCurve.getLength(), side };
+  });
+  const updateReels = (ropeTravel) => {
+    for (const { lead, reelRotor, coil, coilLength, side } of reels) {
+      // Material flows left to right; both reel bottoms move with it.
+      reelRotor.rotation.z = ropeTravel / reelPitchRadius;
+      const leadTravel = side < 0 ? ropeTravel : ropeTravel - nominalVisibleRopeLength;
+      lead.userData.updateDistance(leadTravel);
+      coil.geometry.setTravel(side < 0 ? leadTravel + coilLength : leadTravel - reelLeadLength);
+    }
+  };
+  root.userData.ropeReels = reels.map(({ reel }) => reel);
 
   const stateAtDrumKinematics = ({
     drumAngle,
@@ -6643,6 +6795,7 @@ function singleWrappedRopeDrumDrive() {
     drum.userData.angularAcceleration = state.angularAcceleration;
     rope.userData.materialTravel = state.ropeTravel;
     rope.userData.updateDistance(state.ropeTravel);
+    updateReels(state.ropeTravel);
     ropeMarkers.forEach((marker, index) => {
       const materialDistance = materialDistanceAtTime(
         time,
@@ -7656,7 +7809,8 @@ function alternatingPlaneLinkChainPulley(movement) {
   const linkLoopHalfWidth = sourceLinkHalfWidth * sourceScale * 1.25;
   const linkWireRadius = sourceLinkHalfWidth * sourceScale * 0.25;
   const chainTailLinkCount = 7;
-  const visibleMinimumY = wheelCenter.y + sourceViewBox.bottom * sourceScale - 0.2;
+  // Links leave view inside the navel pipes below the plate (addChainNavelPipes).
+  const visibleMinimumY = -5.62;
   const inputAngularSpeed = fullTurn / 4;
   const cyclePeriod = fullTurn / inputAngularSpeed;
 
@@ -8247,9 +8401,11 @@ function ladderRungChainPulley() {
   const sideLinkWireRadius = 0.038;
   const rungRadius = 0.055;
   const rungLength = 1.18;
-  const chainTailLinkCount = 7;
+  // Long enough to run down into the navel pipes well below the plate.
+  const chainTailLinkCount = 10;
   const maximumRenderedSections = chainTailLinkCount * 2 + 7;
-  const visibleMinimumY = -3.56;
+  // Links leave view inside the navel pipes below the plate (addChainNavelPipes).
+  const visibleMinimumY = -8.17;
   const inputAngularSpeed = fullTurn / 4;
   const cyclePeriod = fullTurn / inputAngularSpeed;
 
@@ -9472,8 +9628,10 @@ function toothedLinkChainWheel() {
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
 
-  const drawnLeftLegDepth = 1.12;
-  const drawnRightLegDepth = 0.7;
+  // The legs run on past Brown's crop into navel pipes whose mouths lie at
+  // y = -4 (addChainNavelPipes); each leg is cut inside its pipe.
+  const drawnLeftLegDepth = (0.46 + 4.32) / 2.16;
+  const drawnRightLegDepth = (0.46 + 4.32) / 2.16;
   // Brown draws short legs: the left one ends about a pitch radius below the
   // wheel centre and the right one runs off the plate well above the wheel
   // bottom. The full chain keeps running beyond these cut-offs; rather than
@@ -11709,14 +11867,27 @@ export function createAuthoredBeltMovement(movement) {
     case 129: result = chineseDifferentialWindlass(); break;
     case 134: result = singleWrappedRopeDrumDrive(); break;
     case 141: result = endlessBandSaw(); break;
-    case 227: result = alternatingPlaneLinkChainPulley(movement); correctChainDrive(result, 227); break;
-    case 228: result = ladderRungChainPulley(); correctChainDrive(result, 228); break;
-    case 229: result = toothedLinkChainWheel(); correctChainDrive(result, 229); break;
+    case 227: result = alternatingPlaneLinkChainPulley(movement); correctChainDrive(result, 227);
+      addChainNavelPipes(result, [-2, 2].map((x) => ({ mouth: new THREE.Vector3(x, -5.45, 0), direction: new THREE.Vector3(0, -1, 0) }))); break;
+    case 228: result = ladderRungChainPulley(); correctChainDrive(result, 228);
+      addChainNavelPipes(result, [-2.05, 2.05].map((x) => ({ mouth: new THREE.Vector3(x, -8, 0), direction: new THREE.Vector3(0, -1, 0) }))); break;
+    case 229: {
+      result = toothedLinkChainWheel(); correctChainDrive(result, 229);
+      const g = result.root.userData.geometry;
+      const legMouth = (point, direction) => point.clone().addScaledVector(direction, (point.y + 4) / -direction.y);
+      const down = g.incomingDirection.clone().negate();
+      addChainNavelPipes(result, [
+        { mouth: legMouth(g.leftTangentPoint, down), direction: down },
+        { mouth: legMouth(g.rightTangentPoint, g.outgoingDirection), direction: g.outgoingDirection.clone() },
+      ]);
+      break;
+    }
     case 242: result = leverContractedCraneBandBrake(movement); break;
     case 243: result = horizontalDriverToTwinVerticalShafts(movement); break;
     case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); addProny244ShaftSection(result.root); layProny244Cables(result.root); break;
     default: return null;
   }
+  if (movement.id >= 14 && movement.id <= 22) result = addTackleHaulingHand(result);
   if (UNDRAWN_WHITE_INDEX_IDS.has(movement.id)) removeUndrawnWhiteIndexMarks(result.root, movement.id);
   markShadows(result.root);
   result.root.traverse((object) => {

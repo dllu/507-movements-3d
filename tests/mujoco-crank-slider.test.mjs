@@ -46,7 +46,12 @@ test('092 ten turns preserve measured offset, ordinary pins and finite hardware 
         assert.deepEqual(a.topologyIssues,[]);assert.deepEqual(a.issues,[]);
         for(const mesh of Object.values(u.parts)) {
           const pos=mesh.geometry.attributes.position;
-          for(let j=0;j<pos.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld)),mesh.name);
+          for(let j=0;j<pos.count;j++){
+            const point=new THREE.Vector3().fromBufferAttribute(pos,j).applyMatrix4(mesh.matrixWorld);
+            // The guide runs on past Brown's break line to its closed end.
+            if(mesh.name==='guide'&&point.x>g.right)continue;
+            assert.ok(u.cameraFitBounds.containsPoint(point),mesh.name);
+          }
         }
       }
     }

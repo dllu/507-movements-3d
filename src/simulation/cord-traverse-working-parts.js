@@ -1,6 +1,7 @@
 import * as T from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
+import {LaidRopeGeometry,replaceWithLaidRope} from './laid-rope.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const add=(p,g,m,role)=>{const o=new T.Mesh(g,m);o.userData.role=role;p.add(o);return o;};
 const ring=(radius,bore,length)=>boredLatheGeometry([{axial:-length/2,radial:radius},{axial:length/2,radial:radius}],bore,80);
@@ -14,21 +15,15 @@ function sectionSolid(section,count=256,axis='x'){
  if(volume<0)for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(positions,3));g.setIndex(indices);g.computeVertexNormals();g.computeBoundingBox();g.computeBoundingSphere();return g;
 }
+// Brown draws these cords as laid rope: keep the shared three-strand rope,
+// reusing its buffers as the cord deforms. The lay is fixed from each cord's
+// anchored start.
 export function retainTraverseCord(group,radius,segments){
  const mesh=group.userData.mesh;
- replace(mesh,new T.TubeGeometry(group.userData.curve,segments,radius,10,false));
- const geometry=mesh.geometry,baseCount=geometry.attributes.position.count;
- for(const name of['position','normal']){const old=geometry.attributes[name].array,data=new Float32Array(old.length+6);data.set(old);geometry.setAttribute(name,new T.BufferAttribute(data,3).setUsage(T.DynamicDrawUsage));}
- const index=Array.from(geometry.index.array);for(let j=0;j<10;j++)index.push(baseCount,j,j+1,baseCount+1,segments*11+j+1,segments*11+j);geometry.setIndex(index);
- const p=geometry.attributes.position,n=geometry.attributes.normal;
+ replace(mesh,new LaidRopeGeometry(group.userData.curve,segments,radius,8,false));
  group.userData.setCurve=curve=>{
-  const frames=curve.computeFrenetFrames(segments,false),point=new T.Vector3();
-  for(let i=0;i<=segments;i++){
-   curve.getPointAt(i/segments,point);
-   for(let j=0;j<=10;j++){const a=2*Math.PI*j/10,c=-Math.cos(a),s=Math.sin(a),normal=frames.normals[i].clone().multiplyScalar(c).addScaledVector(frames.binormals[i],s),k=i*11+j;n.setXYZ(k,normal.x,normal.y,normal.z);p.setXYZ(k,point.x+radius*normal.x,point.y+radius*normal.y,point.z+radius*normal.z);}
-  }
-  for(const [vertex,u,sign]of[[baseCount,0,-1],[baseCount+1,1,1]]){curve.getPointAt(u,point);p.setXYZ(vertex,point.x,point.y,point.z);const tangent=curve.getTangentAt(u);n.setXYZ(vertex,sign*tangent.x,sign*tangent.y,sign*tangent.z);}
-  p.needsUpdate=true;n.needsUpdate=true;geometry.computeBoundingBox();geometry.computeBoundingSphere();group.userData.curve=curve;group.userData.length=curve.getLength();group.userData.updateDistance(0);
+  replaceWithLaidRope(mesh,curve,{radius,tubularSegments:segments});
+  group.userData.curve=curve;group.userData.length=curve.getLength();group.userData.updateDistance(0);
  };
 }
 function groovedSheave(pulley,R,bore,width){
@@ -76,7 +71,7 @@ export function correctCordTraverseParts(root,id,update){
   for(const bearing of b.carriage.children.filter(o=>o.userData.role==='carriage-mounted-fusee-shaft-bearing')){replace(bearing,ring(.14,.047,.14));bearing.rotation.set(0,0,0);const support=add(b.carriage,new T.BoxGeometry(.20,.10,.34),bearing.material,'fusee-journal-to-bearing-frame');support.position.set(0,bearing.position.y,-.26);}
   const lowerCross=add(b.carriage,new T.BoxGeometry(barLength,.13,.13),b.carriageBed.material,'lower-fusee-bearing-crossmember');lowerCross.position.set(0,-.25,wheelZ);
   for(const cord of[b.firstCord,b.secondCord])for(const marker of cord.userData.markers)marker.visible=false;
-  for(const [i,cord]of[b.firstCord,b.secondCord].entries()){retainTraverseCord(cord,.014,480);cord.userData.mesh.userData.role=`finite-fusee-cord-${i+1}`;}
+  for(const [i,cord]of[b.firstCord,b.secondCord].entries()){retainTraverseCord(cord,.03,480);cord.userData.mesh.userData.role=`finite-fusee-cord-${i+1}`;}
   const rail=b.track.children.find(o=>o.userData.role==='fixed-carriage-guide-rail'),railTop=rail.position.z+.05;
   for(let x=-Math.floor(g.trackHalfLength);x<=Math.floor(g.trackHalfLength);x+=.5){const mark=add(b.track,new T.BoxGeometry(.05,Number.isInteger(x)?.36:.24,.012),rail.material,'rail-travel-reference-mark');mark.position.set(x,rail.position.y,railTop-.106);}
   root.rotation.z=Math.PI/2;d.followCarriage=true;d.cameraMaxDistance=4.8*g.carriageStroke;

@@ -497,34 +497,93 @@ function centrifugalMineDrumCheckHooks(movement) {
   // in two opaque strands from its sides, not a translucent flat band.
   const ropeRadius = 0.135;
   const ropeWrapRadius = ropeDrumRadius + ropeRadius;
-  const ropeStrandLength = 5.9;
+  // Brown crops both strands below the frame disc. Rather than ending in
+  // mid-air, they run on down the shaft to a return sheave beyond the crop,
+  // so the travelling rope is one endless loop with no loose ends.
+  const ropeStrandLength = 8.6;
   const ropeMaterial = matte(0x3b3632, { roughness: 0.9 });
-  // One continuous laid rope: up the left strand, over the drum top and down
-  // the right strand. Brown hatches it as a laid rope.
+  // One continuous laid rope: up the left strand, over the drum top, down
+  // the right strand and back round the return sheave. Brown hatches it as a
+  // laid rope.
+  const ropeArc = (centerY, from, to) => {
+    const arc = new THREE.Curve();
+    arc.getPoint = (t, target = new THREE.Vector3()) => {
+      const angle = from + (to - from) * t;
+      return target.set(
+        ropeWrapRadius * Math.cos(angle),
+        centerY + ropeWrapRadius * Math.sin(angle),
+        ropeDrumPlaneZ,
+      );
+    };
+    return arc;
+  };
   const ropePath = new THREE.CurvePath();
   ropePath.add(new THREE.LineCurve3(
     new THREE.Vector3(-ropeWrapRadius, -ropeStrandLength, ropeDrumPlaneZ),
     new THREE.Vector3(-ropeWrapRadius, 0, ropeDrumPlaneZ),
   ));
-  const ropeWrap = new THREE.Curve();
-  ropeWrap.getPoint = (t, target = new THREE.Vector3()) => {
-    const angle = Math.PI * (1 - t);
-    return target.set(
-      ropeWrapRadius * Math.cos(angle),
-      ropeWrapRadius * Math.sin(angle),
-      ropeDrumPlaneZ,
-    );
-  };
-  ropePath.add(ropeWrap);
+  ropePath.add(ropeArc(0, Math.PI, 0));
   ropePath.add(new THREE.LineCurve3(
     new THREE.Vector3(ropeWrapRadius, 0, ropeDrumPlaneZ),
     new THREE.Vector3(ropeWrapRadius, -ropeStrandLength, ropeDrumPlaneZ),
   ));
+  ropePath.add(ropeArc(-ropeStrandLength, 0, -Math.PI));
   const hoistingRope = makeLaidRopeMesh(ropePath, ropeMaterial, {
     radius: ropeRadius,
+    closed: true,
     tubularSegments: 256,
     radialSegments: 10,
   });
+  // The return sheave matches the drum and turns with the rope; a plain
+  // bearing standard carries its axle from the shaft floor.
+  const returnSheave = new THREE.Group();
+  returnSheave.position.y = -ropeStrandLength;
+  returnSheave.userData.role = 'return-sheave-beyond-plate-crop';
+  const returnSheaveBody = makeAxialCylinder({
+    depth: 0.7,
+    material: drumMaterial,
+    radius: ropeDrumRadius,
+    role: 'return-sheave-body',
+    segments: 72,
+  });
+  returnSheaveBody.position.z = ropeDrumPlaneZ;
+  returnSheave.add(returnSheaveBody);
+  for (const side of [-1, 1]) {
+    const rim = new THREE.Mesh(
+      new THREE.TorusGeometry(ropeDrumRadius + 0.08, 0.075, 12, 72),
+      drumMaterial,
+    );
+    rim.position.z = ropeDrumPlaneZ + side * 0.33;
+    rim.userData.role = 'return-sheave-rim';
+    returnSheave.add(rim);
+  }
+  // The axle turns with the sheave and runs back into a boss on the
+  // standard's front face.
+  const axleBack = -0.04;
+  const axleFront = ropeDrumPlaneZ + 0.45;
+  const returnAxle = makeAxialCylinder({
+    depth: axleFront - axleBack,
+    material: inkMaterial,
+    radius: 0.22,
+    role: 'return-sheave-axle',
+    segments: 40,
+  });
+  returnAxle.position.set(0, 0, (axleFront + axleBack) / 2);
+  returnSheave.add(returnAxle);
+  const returnStandard = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, ropeWrapRadius + 0.9, 0.36),
+    frameMaterial,
+  );
+  returnStandard.position.set(0, -ropeStrandLength - (ropeWrapRadius + 0.9) / 2, -0.22);
+  returnStandard.userData.role = 'return-sheave-bearing-standard';
+  const returnFoot = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.18, 1.1), frameMaterial);
+  returnFoot.position.set(0, -ropeStrandLength - ropeWrapRadius - 0.99, 0.2);
+  returnFoot.userData.role = 'return-sheave-standard-foot';
+  root.add(returnSheave, returnStandard, returnFoot);
+  // These run on past Brown's frame; the camera still fits the plate.
+  for (const part of [hoistingRope, returnSheave, returnStandard, returnFoot]) {
+    part.traverse((object) => { object.userData.beyondPlateCrop = true; });
+  }
   hoistingRope.userData.role = 'one-hoisting-rope-over-drum-hanging-in-two-strands';
   root.add(hoistingRope);
 
@@ -1027,6 +1086,7 @@ function centrifugalMineDrumCheckHooks(movement) {
     // The rope moves with the drum surface; positive drum turn runs the
     // top of the drum toward the left strand, against the path direction.
     hoistingRope.userData.setTravel(-ropeWrapRadius * state.ropeDrumAngle);
+    returnSheave.rotation.z = state.ropeDrumAngle;
     hooks.forEach((hook) => {
       hook.rotation.z = state.hookAngle;
     });

@@ -14393,6 +14393,8 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   const toothOuterEndPhase = 0.25;
   const ratchetMountPhase = driveStart.contactAngle - workingFlank.angle;
   const pawlReturnLift = -0.25;
+  let returnOutlineCache = null;
+  let returnEndGapsCache = null;
   const cyclesPerSecond = 0.25;
   const cyclePeriod = 1 / cyclesPerSecond;
   const sourceCycleCoordinate = 0.25;
@@ -14451,19 +14453,44 @@ function vibratingCarrierSinglePawlRatchet(movement) {
     } else {
       wheelAngle = (cycleIndex + 1) * toothPitch;
       wheelAngularSpeed = 0;
-      pawlAngle = THREE.MathUtils.lerp(
-        driveEnd.pawlAngle,
-        driveStart.pawlAngle,
-        progress,
-      ) + pawlReturnLift * Math.sin(Math.PI * local) ** 2;
-      pawlAngularSpeed = (driveStart.pawlAngle - driveEnd.pawlAngle) * progressRate
-        + pawlReturnLift * 2 * Math.PI * Math.sin(Math.PI * local)
-          * Math.cos(Math.PI * local) * 2 * cyclesPerSecond;
+      // On the return stroke the weighted pawl drags back over the teeth: its
+      // nose rides the wheel outline a hair clear, dropping into each gap it
+      // passes. At both ends the target clearance equals the drive stroke's
+      // own running gap (about 0.0002), so the pose joins the drive stroke
+      // exactly instead of pressing the nose to zero clearance; the sin^2
+      // ramp and quintic blend keep the angular speed continuous there.
+      const returnOutline = () => (returnOutlineCache ??= ratchet.userData.profilePoints.map(p => p.toArray()));
+      returnEndGapsCache ??= [
+        carrierPawlClearance225(driveEnd.pawlContactCenter, toothPitch, returnOutline(), pawlNoseRadius),
+        carrierPawlClearance225(driveStart.pawlContactCenter, 0, returnOutline(), pawlNoseRadius),
+      ];
+      const returnPawlAngle = (localValue) => {
+        const pivot = carrierTopAt(THREE.MathUtils.lerp(carrierEndAngle, carrierStartAngle, quintic(localValue)));
+        const base = THREE.MathUtils.lerp(driveEnd.pawlAngle, driveStart.pawlAngle, quintic(localValue));
+        const endGap = THREE.MathUtils.lerp(returnEndGapsCache[0], returnEndGapsCache[1], quintic(localValue));
+        const target = endGap + (0.003 - endGap) * Math.sin(Math.PI * localValue) ** 2;
+        const clearanceAt = (angle) => carrierPawlClearance225(pivot.clone().add(new THREE.Vector2(
+          Math.cos(angle) * pawlLength, Math.sin(angle) * pawlLength)), wheelAngle, returnOutline(), pawlNoseRadius);
+        let low = base - pawlReturnLift * 0.6, high = base + pawlReturnLift;
+        if (clearanceAt(low) >= target) return low;
+        if (clearanceAt(high) < target) return high;
+        for (let step = 0; step < 48; step += 1) {
+          const middle = (low + high) / 2;
+          if (clearanceAt(middle) >= target) high = middle; else low = middle;
+        }
+        return high;
+      };
+      pawlAngle = returnPawlAngle(local);
+      // A 1e-6 central difference (bisection bracket ~1e-15 rad) keeps the
+      // one-sided window at the stroke ends from biasing the joining speed.
+      const step = 1e-6;
+      pawlAngularSpeed = (returnPawlAngle(Math.min(1, local + step)) - returnPawlAngle(Math.max(0, local - step)))
+        / (Math.min(1, local + step) - Math.max(0, local - step)) * 2 * cyclesPerSecond;
       pawlContactCenter = pawlPivot.clone().add(new THREE.Vector2(
         Math.cos(pawlAngle) * pawlLength,
         Math.sin(pawlAngle) * pawlLength,
       ));
-      returnClearance = carrierPawlClearance225(pawlContactCenter, wheelAngle, ratchet.userData.profilePoints.map(p => p.toArray()), pawlNoseRadius);
+      returnClearance = carrierPawlClearance225(pawlContactCenter, wheelAngle, returnOutline(), pawlNoseRadius);
     }
     const workingAngle = ratchetMountPhase + wheelAngle - cycleIndex * toothPitch;
     const contactNormal = workingFlank.normal.clone().rotateAround(new THREE.Vector2(), workingAngle);
@@ -18191,8 +18218,8 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     pawl.userData.tipMarker = tipMarker;
     return markShadows(pawl);
   };
-  const longPawlPlaneZ = 0.47;
-  const shortPawlPlaneZ = 0.59;
+  const longPawlPlaneZ = 0.30;
+  const shortPawlPlaneZ = 0.42;
   const longPawl = makeSourcePawl({
     depth: 0.13,
     length: longPawlLength,
@@ -19707,11 +19734,23 @@ function threeAlternativeRatchetStops(movement) {
   const springAnchor = sourceToWorld(sourceSpringAnchor);
   const springAnchorShaft = springStopBlock.pivotShaft;
   springAnchorShaft.userData.role = 'spring-pawl-leaf-fixed-anchor';
-  const leafSpring = makeDynamicCable({
-    color: PALETTE.frame,
-    maxSegments: 28,
-    radius: 0.052,
-  });
+  // Brown draws a flat leaf spring (a broad double-lined band), not a round
+  // wire: sweep a thin rectangular leaf whose face lies in the plate plane.
+  // Just in front of the spring stop's pivot ring (z to 0.47), which the leaf crosses at its clamped root.
+  const leafSpringPlaneZ = stopLayerZ + stopDepth / 2 + 0.12;
+  const leafSpring = makeDynamicLeafSpring(
+    new THREE.CatmullRomCurve3([
+      new THREE.Vector3(springAnchor.x, springAnchor.y, leafSpringPlaneZ),
+      new THREE.Vector3(springAnchor.x + 1, springAnchor.y, leafSpringPlaneZ),
+    ]),
+    {
+      band: { halfWidthAt: () => 0.052, endTrim: 0.075 },
+      color: PALETTE.frame,
+      planeZ: leafSpringPlaneZ,
+      radius: 0.035,
+      tubularSegments: 64,
+    },
+  );
   leafSpring.userData.role = 'spring-pawl-curved-leaf-spring';
   root.add(leafSpring);
   const springBearingLocal = sourceToWorld(sourceSpringJoint)
@@ -20013,12 +20052,12 @@ function threeAlternativeRatchetStops(movement) {
       controlPoints.map((point) => new THREE.Vector3(
         point.x,
         point.y,
-        stopLayerZ + stopDepth / 2 + 0.01,
+        leafSpringPlaneZ,
       )),
       false,
       'centripetal',
     );
-    leafSpring.userData.setPoints(curve.getPoints(28));
+    leafSpring.userData.setCurve(curve);
     leafSpring.userData.bearingPoint = bearing;
   };
   const update = (time) => {
@@ -20255,8 +20294,10 @@ function singleToothContinuousRatchetIndex(movement) {
   driverRotor.add(driverDisk);
   const driverToothShape = new THREE.Shape();
   driverToothShape.moveTo(driverContactRadius, 0);
-  driverToothShape.quadraticCurveTo(0.86, -0.13, 0.74, -0.18);
-  driverToothShape.quadraticCurveTo(0.6, -0.2, 0.53, -0.13);
+  // Brown's tooth is a broad tapered horn rising from the disk; the leading
+  // (working) edge and tip are unchanged, the trailing side is broadened.
+  driverToothShape.quadraticCurveTo(0.86, -0.2, 0.72, -0.29);
+  driverToothShape.quadraticCurveTo(0.58, -0.35, 0.47, -0.25);
   driverToothShape.lineTo(0.54, -0.09);
   driverToothShape.quadraticCurveTo(0.68, -0.13, 0.78, -0.1);
   driverToothShape.quadraticCurveTo(0.87, -0.07, driverContactRadius, 0);

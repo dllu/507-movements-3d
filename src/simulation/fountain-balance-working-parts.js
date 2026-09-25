@@ -4,9 +4,8 @@ import {horizontalPlate,horizontalRing,horizontalTurned} from './horizontal-turb
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {portedBarrel} from './lift-pump-working-parts.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {PALETTE,matte} from './primitives.js';
-import {waterVolumeMaterial} from './water-volume.js';
+import {waterFountainGeometry,waterJetMaterial,waterVolumeMaterial} from './water-volume.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const rectangle=(w,h,cx=0,cy=0)=>poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]]);
 const add=(parent,geometry,material,role)=>{const mesh=new THREE.Mesh(geometry,material);mesh.userData.role=role;parent.add(mesh);return mesh;};
@@ -66,30 +65,15 @@ export function correctFountain(root){
  replace(b.centralRiserWater,new THREE.CylinderGeometry(.055,.055,g.nozzleY-2.075,28));b.centralRiserWater.position.set(0,(g.nozzleY+2.035)/2,0);
  replace(b.nozzle,horizontalTurned([[-.10,.060],[-.10,.095],[.10,.075],[.10,.060]]));
  replace(b.jetColumn,new THREE.CylinderGeometry(.016,.028,1,16));
- // Brown draws the jet as a willow plume: fine streaks leave the nozzle
- // tip, lean out on both sides to lower crowns and fall back, steeper than
- // they rose. Each side's streaks are fixed
- // in shape (unit head) and scaled with the pressure head H.
- const nominalHead=d.stateAtTime(0).idealJetHeight,streakRadius=.012/nominalHead;
+ // Brown draws the jet as a willow plume rising from the spire tip and
+ // falling back on every side: one translucent column and falling crown that
+ // thins into spray, fixed in shape (unit head) and scaled with the pressure
+ // head H. The left spray mesh carries the column and the left half of the
+ // crown, the right one the right half.
+ const nominalHead=d.stateAtTime(0).idealJetHeight;
  b.fountainSprays.forEach((spray,i)=>{
-   const sign=i===0?-1:1,parts=[];
-   for(const[reach,crown]of[[.05,1],[.14,.96],[.24,.89],[.34,.79],[.44,.67],[.53,.54]])for(const azimuth of[-.5,0,.5]){
-     if(azimuth!==0&&reach<.1)continue;
-     const direction=new THREE.Vector3(sign*Math.cos(azimuth),0,Math.sin(azimuth));
-     const drop=.20+.05*Math.sin(7*reach+3*azimuth),fall=.68*reach;
-     const endX=reach+fall*Math.sqrt(1+drop/crown),points=[];
-     for(let k=0;k<=160;k++){
-       const x=endX*k/160,w=x<reach?(x-reach)/reach:(x-reach)/fall;
-       points.push(direction.clone().multiplyScalar(x).setY(crown*(1-w*w)));
-     }
-     const lengths=[0];for(let k=1;k<points.length;k++)lengths.push(lengths[k-1]+points[k].distanceTo(points[k-1]));
-     const at=l=>{let k=1;while(k<lengths.length-1&&lengths[k]<l)k++;const t=(l-lengths[k-1])/Math.max(1e-9,lengths[k]-lengths[k-1]);return points[k-1].clone().lerp(points[k],Math.min(1,t));};
-     // Each streak is one continuous falling jet (no engraved dashes).
-     const total=lengths.at(-1);
-     const curve=new THREE.CatmullRomCurve3(Array.from({length:25},(_,k)=>at((total-.02)*k/24)));
-     parts.push(new THREE.TubeGeometry(curve,48,streakRadius,6,false));
-   }
-   replace(spray,mergeGeometries(parts));parts.forEach(part=>part.dispose());
+   replace(spray,waterFountainGeometry({nozzleY:-.04,apexY:1,columnRadius:.04/nominalHead,crownRadius:.9,fallY:-.25,crownThickness:.035,fadeStart:.62,
+     thetaStart:i===0?Math.PI/2:-Math.PI/2,thetaLength:Math.PI,radialSegments:24,column:i===0,cutColumn:false}));
    spray.position.set(0,g.nozzleY,0);
  });
  const pour=new THREE.CatmullRomCurve3([new THREE.Vector3(-1.52,g.topBasinBottomY+1.10,.20),new THREE.Vector3(-1.46,g.topBasinBottomY+.80,.12),new THREE.Vector3(-1.31,g.topBasinBottomY+.50,.04),new THREE.Vector3(-1.18,g.topBasinBottomY+g.topWaterVolume/g.topArea,0)]);
@@ -119,7 +103,7 @@ function sectionFountain(root){
  for(const o of[b.lowerVessel,b.intermediateVessel,b.topBasin,b.rightDrainOuter,b.leftAirPipe,b.airCore,b.centralRiser,b.nozzle])hide(o);
  // Flows toggled by the playback keep their visibility state; only their
  // 3D volumes stop drawing. The plume gets its own material.
- const sprayMaterial=b.jetColumn.material.clone();
+ const sprayMaterial=waterJetMaterial();
  for(const spray of b.fountainSprays)spray.material=sprayMaterial;
  b.jetColumn.material.visible=false;b.rightDrainWater.material.visible=false;
  const back=-.35,cut=0,wall=.07;
@@ -167,7 +151,7 @@ function sectionFountain(root){
  return{spireTipY:spireTip,update(state,opacity){
    footMaterial.clippingPlanes[0].constant=state.lowerWaterSurfaceY;
    bowlMaterial.clippingPlanes[0].constant=state.intermediateWaterSurfaceY;
-   sprayMaterial.opacity=Math.min(1,opacity+.25);
+   sprayMaterial.opacity=Math.min(.5,opacity+.05);
  }};
 }
 

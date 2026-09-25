@@ -1255,6 +1255,16 @@ function verticalPlanedSlotPistonGuide(movement) {
     new THREE.Vector3(-11.9 * sourceScale, -24.4 * sourceScale, -0.75),
     new THREE.Vector3(14.1 * sourceScale, 3.4 * sourceScale, 0.90),
   );
+  // Fit the whole flywheel as well: cropped by the canvas in every view it
+  // read as a broken-off wheel.
+  {
+    let rim = null;
+    root.updateMatrixWorld(true);
+    root.traverse((object) => {
+      if (object.isMesh && /flywheel-rim/.test(object.userData.role ?? '')) rim = object;
+    });
+    if (rim) root.userData.cameraFitBounds.union(new THREE.Box3().setFromObject(rim).expandByScalar(0.05));
+  }
   root.userData.cameraDistanceScale = 0.96;
   markShadows(root);
   return {
@@ -1406,7 +1416,9 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   const guideCapsuleWidth = 1.2 * sourceScale;
   const sourceTopSliderY = sourceCrankRadius - sourceConnectingRodLength;
   const guideCapsuleUpperY = (sourceTopSliderY + 0.4) * sourceScale;
-  const guideCapsuleLowerY = (sourceTopSliderY - 6.4) * sourceScale;
+  // Long enough that the rollers stay on the straps at the bottom of the
+  // stroke (they ran 0.1 past the old lower ends).
+  const guideCapsuleLowerY = (sourceTopSliderY - 7.4) * sourceScale;
   const makeGuideBar = (side) => {
     const group = new THREE.Group();
     const contactX = side * guideContactHalfSpacing;
@@ -1477,7 +1489,10 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
       {axial: 1.45, radial: 3.3 * sourceScale}], .20, 64),
     frameMaterial,
   );
-  cylinderBody.position.set(0, -6.30, crossheadPlaneZ);
+  // The cylinder stands 0.35 lower than first built, so the crosshead and
+  // rollers stop clear above its cover at the bottom of the stroke.
+  const cylinderDrop = 0.35;
+  cylinderBody.position.set(0, -6.30 - cylinderDrop, crossheadPlaneZ);
   cylinderBody.userData.fixed = true;
   cylinderBody.userData.role = 'fixed-upright-engine-cylinder-below-crosshead';
   const cylinderTopCap = new THREE.Mesh(
@@ -1485,7 +1500,7 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
       {axial: .065, radial: 4.2 * sourceScale}], .115, 64),
     darkMaterial,
   );
-  cylinderTopCap.position.set(0, -24 * sourceScale, crossheadPlaneZ);
+  cylinderTopCap.position.set(0, -24 * sourceScale - cylinderDrop, crossheadPlaneZ);
   cylinderTopCap.userData.fixed = true;
   cylinderTopCap.userData.role = 'fixed-cylinder-top-and-piston-rod-gland';
   const gland = new THREE.Mesh(
@@ -1493,7 +1508,7 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
       {axial: .095, radial: 2.1 * sourceScale}], .115, 64),
     accentMaterial,
   );
-  gland.position.set(0, -23.45 * sourceScale, crossheadPlaneZ);
+  gland.position.set(0, -23.45 * sourceScale - cylinderDrop, crossheadPlaneZ);
   gland.userData.fixed = true;
   gland.userData.role = 'fixed-piston-rod-stuffing-box';
 
@@ -2164,7 +2179,7 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   root.userData.sweptBounds = root.userData.cameraFitBounds;
   root.userData.cameraDistanceScale = 0.96;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-12.6 * sourceScale, -23.6 * sourceScale, -0.75),
+    new THREE.Vector3(-12.6 * sourceScale, -23.6 * sourceScale - 0.35, -0.75),
     new THREE.Vector3(12.6 * sourceScale, 2.4 * sourceScale, 0.90),
   );
   markShadows(root);

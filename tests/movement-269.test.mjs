@@ -202,12 +202,19 @@ test('movement 269 matches the measured source proportions and source pose', () 
         / plate.rasterPinionOuterRadius,
     'source frame right reach',
   );
+  // The closed end stands past the last tooth and clears the gear tips at
+  // the (shortened) stroke limit.
+  assert.ok(
+    geometry.frameRight - geometry.frameRightBridgeWidth
+      - geometry.rackLayoutMaximum >= geometry.circularPitch * 0.25 - 1e-12,
+    'closed end at least a quarter pitch past the last tooth',
+  );
   near(
     geometry.frameRight - geometry.frameRightBridgeWidth
       - geometry.contactCoordinateMaximum,
-    geometry.circularPitch * 0.25,
+    geometry.pinionOuterRadius + 0.05,
     1e-12,
-    'closed end a quarter pitch past the last tooth',
+    'closed end clears the gear tips at the stroke limit',
   );
   near(
     geometry.frameRightBridgeWidth / geometry.circularPitch,
@@ -250,12 +257,22 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
   near(geometry.circularPitch,
     geometry.pinionPitchRadius * geometry.pinionAngularPitch,
     1e-15, 'common circular pitch');
+  // The stroke spans the two middle groups (4 + 7 teeth) plus 0.6 pitch into
+  // each end group, so the gear stays inside the frame.
   near(
     geometry.contactCoordinateMaximum - geometry.contactCoordinateMinimum,
+    (11 + 2 * 0.6) * geometry.circularPitch,
+    2e-15,
+    'frame stroke within the yoke',
+  );
+  near(
+    geometry.rackLayoutMaximum - geometry.rackLayoutMinimum,
     17 * geometry.circularPitch,
     2e-15,
-    'seventeen-pitch frame stroke',
+    'seventeen-pitch rack layout',
   );
+  assert.ok(geometry.contactCoordinateMinimum - geometry.pinionOuterRadius > geometry.frameLeft,
+    'gear stays inside the open end');
   near(geometry.pinionOuterRadius,
     geometry.pinionPitchRadius + geometry.pinionToothHeight / 2,
     1e-15, 'pinion outer radius');
@@ -283,7 +300,7 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
   for (const [index, tooth] of blocks.rackTeeth.entries()) {
     near(
       tooth.position.x,
-      geometry.contactCoordinateMinimum
+      geometry.rackLayoutMinimum
         + (index + 0.5) * geometry.circularPitch,
       1e-15,
       `rack tooth ${index} pitch position`,
@@ -294,7 +311,10 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
       tooth.userData.relievedForHandoff,
       expectedRelieved.includes(index),
     );
-    if (!tooth.userData.relievedForHandoff) {
+    // Outer teeth of the end groups lie beyond the stroke and never mesh.
+    const inStroke = tooth.position.x >= geometry.contactCoordinateMinimum
+      && tooth.position.x <= geometry.contactCoordinateMaximum;
+    if (!tooth.userData.relievedForHandoff && inStroke) {
       const state = stateAtContactCoordinate(tooth.position.x, 1, 0);
       assert.equal(state.handoffActive, false);
       assert.equal(state.activeRack, tooth.userData.rack);
@@ -313,7 +333,7 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
     }
   }
 
-  let expectedStart = geometry.contactCoordinateMinimum;
+  let expectedStart = geometry.rackLayoutMinimum;
   let expectedTheta = -geometry.pinionAngularPitch / 2;
   for (const group of rackSequence) {
     near(group.start, expectedStart, 2e-15, `${group.id} start`);
@@ -325,8 +345,8 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
     expectedStart = group.end;
     expectedTheta = group.endTheta;
   }
-  near(expectedStart, geometry.contactCoordinateMaximum,
-    2e-15, 'rack sequence closes at the right limit');
+  near(expectedStart, geometry.rackLayoutMaximum,
+    2e-15, 'rack sequence closes at the right end of the layout');
   disposeModel(model.root);
 });
 
@@ -483,7 +503,7 @@ test('movement 269 obeys analytic no-slip rates and alternates output direction'
       assert.equal(state.activeFullDepthContactCount, 0);
     }
   }
-  assert.ok(activeSamples > 3000);
+  assert.ok(activeSamples > 2400);
   assert.ok(handoffSamples > 500);
   assert.ok(maximumTangentialError < 5e-16);
   assert.ok(maximumAngularSpeedDerivativeError < 2e-8);
@@ -731,7 +751,7 @@ test('movement 269 relieved teeth keep Brown\'s full outline as a web behind the
   disposeModel(model.root);
 });
 
-test('movement 269 gear tips pass in front of the joggled closed end', () => {
+test('movement 269 gear tips stay clear of the closed end', () => {
   const model = createMovementModel(catalog.movements[268]);
   const { blocks, geometry, timeline, transmission } = model.root.userData;
   const closedEnd = [
@@ -744,11 +764,11 @@ test('movement 269 gear tips pass in front of the joggled closed end', () => {
   blocks.pinionRotor.traverse((object) => {
     if (object.isMesh) pinionMeshes.push(object);
   });
-  // Brown's quarter pitch: the bridge's inner face is that close to the last tooth.
+  // The bridge's inner face stands 0.05 clear of the gear tips at the stroke limit.
   near(
     blocks.rightBridge.position.x - geometry.frameRightBridgeWidth / 2
       - geometry.contactCoordinateMaximum,
-    geometry.circularPitch * 0.25,
+    geometry.pinionOuterRadius + 0.05,
     1e-12,
     'bridge inner face',
   );
@@ -769,7 +789,7 @@ test('movement 269 gear tips pass in front of the joggled closed end', () => {
       }
     }
   }
-  // At the stroke limit the tips overlap the bridge in the front view, in front of it.
+  // At the stroke limit the tips stay short of the bridge even in the front view.
   model.update(transmission.timeForContactCoordinate(
     geometry.contactCoordinateMaximum,
     'increasing',
@@ -780,7 +800,6 @@ test('movement 269 gear tips pass in front of the joggled closed end', () => {
   for (const tooth of blocks.pinionToothMeshes) {
     teethBox.union(new THREE.Box3().setFromObject(tooth, true));
   }
-  assert.ok(teethBox.max.x > bridgeBox.max.x, 'tips sweep past the whole closed end');
-  assert.ok(teethBox.min.z > bridgeBox.max.z + 0.05, 'tips pass in front of the bridge');
+  assert.ok(teethBox.max.x < bridgeBox.min.x - 0.03, 'tips stop short of the closed end');
   disposeModel(model.root);
 });

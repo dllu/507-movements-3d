@@ -737,9 +737,8 @@ function watchRegulator(movement) {
         sampleStart.arcLength + sampleEnd.arcLength
       ) / 2;
       const isActive = midpointArcLength <= state.activeSpringLength;
-      segment.material = isActive
-        ? activeSpringMaterial
-        : inactiveSpringMaterial;
+      // One spring, one material: the active length is not colour-coded.
+      segment.material = activeSpringMaterial;
       segment.userData.active = isActive;
     }
     root.userData.regulatorState = {

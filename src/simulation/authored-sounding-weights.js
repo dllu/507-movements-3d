@@ -1,5 +1,7 @@
 import { finishSounding247Parts } from './release-mechanism-working-parts.js';
 import * as THREE from 'three';
+import { makeLaidRopeMesh } from './laid-rope.js';
+import { makeHaulingHand } from './hauling-hand.js';
 import {
   PALETTE,
   makeBeam,
@@ -964,27 +966,39 @@ function seabedTriggeredSoundingWeight(movement) {
   resetSling.userData.external = true;
   resetSling.userData.role =
     'visible-external-sling-used-only-for-nonautomatic-loop-reload';
-  const slingMain = makeDynamicCable({
-    color: PALETTE.accent,
-    maxSegments: 3,
-    radius: 0.026,
-  });
-  const slingLeft = makeDynamicCable({
-    color: PALETTE.accent,
-    maxSegments: 3,
-    radius: 0.026,
-  });
-  const slingRight = makeDynamicCable({
-    color: PALETTE.accent,
-    maxSegments: 3,
-    radius: 0.026,
-  });
+  // Brown draws no reload gear: the loop reset is our addition, so it is
+  // kept to a plain basket sling of the same laid rope. The rope passes
+  // under the ball in a plane behind the rod (clear of the front cutaway),
+  // both parts meet at a hook, and the fall runs up out of the plate to a
+  // hauling hand, as in plate 12.
+  const slingRopeRadius = 0.05;
+  const slingPlaneZ = -0.62;
+  const slingMaterial = matte(PALETTE.belt, { roughness: 0.76 });
+  const slingPlaceholder = new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
+  const slingMain = makeLaidRopeMesh(slingPlaceholder, slingMaterial, { radius: slingRopeRadius, tubularSegments: 96 });
+  slingMain.userData.role = 'external-reload-sling-fall';
+  const slingBasket = makeLaidRopeMesh(slingPlaceholder, slingMaterial, { radius: slingRopeRadius, tubularSegments: 160 });
+  slingBasket.userData.role = 'external-reload-basket-sling-under-weight';
   const slingHook = new THREE.Mesh(
-    new THREE.SphereGeometry(0.085, 20, 12),
-    matte(PALETTE.accent, { metalness: 0.16, roughness: 0.5 }),
+    new THREE.TorusGeometry(0.1, 0.035, 10, 24),
+    matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
   );
   slingHook.userData.role = 'external-reload-sling-hook';
-  resetSling.add(slingMain, slingLeft, slingRight, slingHook);
+  const slingHand = makeHaulingHand(new THREE.Vector3(0, -1, 0), slingRopeRadius / 0.8, {
+    armDirection: new THREE.Vector3(0.35, 1, 0),
+    tailPoints: [
+      new THREE.Vector3(0, -0.15, 0),
+      new THREE.Vector3(0, 0.24, 0),
+      new THREE.Vector3(-0.12, 0.45, 0),
+      new THREE.Vector3(-0.35, 0.5, 0),
+      new THREE.Vector3(-0.55, 0.3, 0),
+      new THREE.Vector3(-0.6, -0.1, 0),
+    ],
+  });
+  slingHand.scale.setScalar(0.8);
+  slingHand.position.set(0, 10.6, slingPlaneZ);
+  slingHand.userData.role = 'reload-sling-hauling-hand-above-plate';
+  resetSling.add(slingMain, slingBasket, slingHook, slingHand);
   setMaterialOpacity(resetSling, 0);
   root.add(resetSling);
 
@@ -1133,20 +1147,31 @@ function seabedTriggeredSoundingWeight(movement) {
       ),
     ]);
 
-    // The sling runs in front of the rod (radius 0.43), not through it.
+    // The basket passes under the ball behind the rod (radius 0.43).
     const slingJunction = new THREE.Vector3(
       0,
       state.weightCenterY + weightOuterRadius + 0.38,
-      0.62,
+      slingPlaneZ,
     );
-    const slingAnchor = new THREE.Vector3(0, 8.68, 0.62);
-    const shoulderY = state.weightCenterY
-      + Math.sqrt((weightOuterRadius + 0.03) ** 2 - 0.82 ** 2 - 0.18 ** 2);
-    const leftShoulder = new THREE.Vector3(-0.82, shoulderY, 0.18);
-    const rightShoulder = new THREE.Vector3(0.82, shoulderY, 0.18);
-    slingMain.userData.setPoints([slingAnchor, slingJunction]);
-    slingLeft.userData.setPoints([slingJunction, leftShoulder]);
-    slingRight.userData.setPoints([slingJunction, rightShoulder]);
+    const basketRadius = Math.sqrt((weightOuterRadius + slingRopeRadius + 0.03) ** 2 - slingPlaneZ ** 2);
+    const junctionRise = slingJunction.y - state.weightCenterY;
+    const tangentAngle = Math.acos(basketRadius / junctionRise);
+    const basketPoint = (angle) => new THREE.Vector3(
+      basketRadius * Math.cos(angle),
+      state.weightCenterY + basketRadius * Math.sin(angle),
+      slingPlaneZ,
+    );
+    const basket = new THREE.CurvePath();
+    const basketStart = Math.PI / 2 + tangentAngle;
+    const basketEnd = Math.PI * 2.5 - tangentAngle;
+    basket.add(new THREE.LineCurve3(slingJunction.clone(), basketPoint(basketStart)));
+    const basketArc = new THREE.Curve();
+    basketArc.getPoint = (t, target = new THREE.Vector3()) => target.copy(
+      basketPoint(basketStart + (basketEnd - basketStart) * t));
+    basket.add(basketArc);
+    basket.add(new THREE.LineCurve3(basketPoint(basketEnd), slingJunction.clone()));
+    slingBasket.userData.setCurve(basket);
+    slingMain.userData.setCurve(new THREE.LineCurve3(slingJunction, slingHand.position.clone()));
     slingHook.position.copy(slingJunction);
     resetSling.visible = state.resetSlingOpacity > 0;
     setMaterialOpacity(resetSling, state.resetSlingOpacity);

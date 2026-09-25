@@ -151,7 +151,10 @@ test('movement 225 maintains drive contact and return clearance for 32,769 state
   near(maximumContactError, model.root.userData.geometry.workingFlank.clearance, 1e-15, 'finite flank running clearance');
   assert.ok(maximumNormalVelocityError < 1e-15);
   assert.ok(maximumTangentialSliding > 0.022);
-  assert.ok(maximumReturnClearance > 0.45);
+  // The weighted pawl rides back over the teeth a hair clear (0.003 at mid
+  // stroke), dropping into each gap, rather than lifting well above them.
+  assert.ok(maximumReturnClearance > 0.002 && maximumReturnClearance < 0.0035,
+    `return clearance ${maximumReturnClearance}`);
   near(lastWheelAngle, Math.PI / 10, 0, 'one-cycle index');
   disposeModel(model.root);
 });
@@ -178,7 +181,7 @@ test('movement 225 has smooth drive, dwell, click-over, and accumulated indexing
   near(driveEnd.wheelAngle, geometry.toothPitch, 0, 'indexed tooth');
   near(returnMiddle.wheelAngle, driveEnd.wheelAngle, 0,
     'return-stroke wheel dwell');
-  assert.ok(returnMiddle.returnClearance > 0.45);
+  near(returnMiddle.returnClearance, 0.003, 1e-6, 'pawl rides the teeth mid-return');
   near(nextDrive.returnClearance, 0, 0, 'pawl reseated at closure');
   const oneBefore = stateAtCycleCoordinate(0.25);
   const threeAfter = stateAtCycleCoordinate(3.25);

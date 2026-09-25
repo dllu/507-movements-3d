@@ -1,5 +1,6 @@
 import {correctChainPump} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
@@ -603,5 +604,5 @@ function chainPump(movement) {
 
 export function createAuthoredChainPumpMovement(movement) {
   if (movement.id !== 462) return null;
-  return chainPump(movement);
+  return applyCutawayFor(chainPump(movement), movement.id);
 }

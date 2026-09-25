@@ -543,8 +543,12 @@ function sideLeverRockshaftParallelMotion(movement) {
     [5.2, 5.0], [4.9, 6.2], [4.34, 7.35],
   ].map(([x, y]) => [x * s, y * s])), standardLow, standardHigh),
   frameMaterial), 'fixed-standard-on-cylinder-carrying-rockshaft-F');
-  const diagonalStart = new THREE.Vector2(-1.6, 11.2);
+  // Brown breaks this member off at the upper left. It is whole: it runs on
+  // beyond the plate to a flange bolted to the engine framing there.
+  const diagonalDrawnStart = new THREE.Vector2(-1.6, 11.2);
   const diagonalEnd = new THREE.Vector2(6.9, 6.2);
+  const diagonalOutward = diagonalDrawnStart.clone().sub(diagonalEnd).normalize();
+  const diagonalStart = diagonalDrawnStart.clone().addScaledVector(diagonalOutward, 7);
   const diagonalNormal = diagonalEnd.clone().sub(diagonalStart).normalize()
     .rotateAround(new THREE.Vector2(), Math.PI / 2).multiplyScalar(0.40);
   const diagonalFrame = fixedPart(new THREE.Mesh(plate(poly([
@@ -554,6 +558,13 @@ function sideLeverRockshaftParallelMotion(movement) {
     diagonalStart.clone().sub(diagonalNormal),
   ].map((point) => [point.x * s, point.y * s])), standardLow, standardHigh),
   frameMaterial), 'fixed-diagonal-engine-frame-member');
+  const diagonalFlange = fixedPart(new THREE.Mesh(plate(poly([
+    diagonalStart.clone().addScaledVector(diagonalNormal, 3),
+    diagonalStart.clone().addScaledVector(diagonalNormal, -3),
+    diagonalStart.clone().addScaledVector(diagonalNormal, -3).addScaledVector(diagonalOutward, 0.6),
+    diagonalStart.clone().addScaledVector(diagonalNormal, 3).addScaledVector(diagonalOutward, 0.6),
+  ].map((point) => [point.x * s, point.y * s])), standardLow - 0.12, standardHigh + 0.12),
+  frameMaterial), 'fixed-flange-of-diagonal-frame-member-beyond-plate');
   const rockshaftSupports = [rockshaftStandard, diagonalFrame];
   const rockshaftBearings = [rockshaftStandard];
 
@@ -2310,12 +2321,19 @@ function doubleParallelMotion(movement) {
   leftPiston.userData.role = 'cut-off-rod-guided-by-point-P';
   leftPiston.userData.rotationDegreesOfFreedom = 0;
   const leftPistonPlaneZ = -0.10;
+  // Brown cuts this rod off below P. It is whole: it runs down through the
+  // gland of a closed cylinder standing below the plate's view, deep enough
+  // for P's full stroke (the P locus is straight to a small fraction of the
+  // gland clearance).
+  const pistonCylinderTopY = -4.6;
+  const pistonCylinderLength = 4.8;
+  const leftPistonRodLength = addedPistonHalfStroke - pistonCylinderTopY + 0.3;
   const leftPistonRod = new THREE.Mesh(plate(clip.union(
-    poly([[-0.22 * s, 0], [0.22 * s, 0], [0.22 * s, -3.0 * s],
-      [-0.22 * s, -3.15 * s]]),
+    poly([[-0.22 * s, 0], [0.22 * s, 0], [0.22 * s, -leftPistonRodLength],
+      [-0.22 * s, -leftPistonRodLength]]),
     poly(circle([0, 0], 0.50 * s, 40)),
   ), leftPistonPlaneZ - 0.05, leftPistonPlaneZ + 0.05), outputMaterial);
-  leftPistonRod.userData.role = 'left-P-rod-shown-cut-off-as-in-the-plate';
+  leftPistonRod.userData.role = 'left-P-rod-running-into-its-cylinder';
   const leftPistonPointAnchor = new THREE.Object3D();
   leftPistonPointAnchor.position.z = leftPistonPlaneZ;
   leftPistonPointAnchor.userData.role = 'analytic-left-P-rod-joint';
@@ -2326,6 +2344,14 @@ function doubleParallelMotion(movement) {
     output: leftPiston,
   };
   root.add(leftPiston);
+  const pistonCylinder = new THREE.Mesh(new THREE.LatheGeometry([
+    [0.12, 0], [0.12, -0.2], [0.36, -0.2], [0.36, -pistonCylinderLength + 0.2], [0.001, -pistonCylinderLength + 0.2],
+    [0.001, -pistonCylinderLength], [0.5, -pistonCylinderLength], [0.5, 0], [0.12, 0],
+  ].map(([x, y]) => new THREE.Vector2(x, y)), 48), matte(PALETTE.frame, { metalness: 0.15, roughness: 0.62 }));
+  pistonCylinder.position.set(0, pistonCylinderTopY, leftPistonPlaneZ);
+  pistonCylinder.userData.role = 'closed-cylinder-receiving-P-rod-beyond-plate';
+  pistonCylinder.userData.beyondPlateCrop = true;
+  root.add(pistonCylinder);
 
   const pinOn = (parent, name, x, low, high) => {
     const pin = cylinderAlongZ(pinRadius[name], high - low, whiteMaterial, 30);

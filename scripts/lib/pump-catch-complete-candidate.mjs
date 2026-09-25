@@ -35,10 +35,13 @@ export function makePumpCatchCompleteCandidate(){
   const pump=new THREE.Group();model.root.add(pump);u.blocks.pump=pump;
   const crosshead=clip.difference(rectangle(-.31,.31,-.12,.12),...[-.25,.25].map(x=>poly(circle([x,0],.03,96))));
   add('pumpCrosshead',verticalPlate(crosshead,-.16,0),'pump',PALETTE.brass);
-  add('pumpOutputRod',verticalCylinder(.035,-.60,-.16),'pump');
+  add('pumpOutputRod',verticalCylinder(.035,-3.35,-.16),'pump');
   add('ropeLoadFerrule',ring(ropeRadius+.001,.085,-.12,0,96).rotateX(Math.PI/2),'pump',PALETTE.brass);
   const lowerTop=-ropeLength-.16;
   add('pumpLowerBed',verticalPlate(clip.difference(rectangle(-.38,.38,-.18,.18),poly(circle([0,0],.045,96))),-5.05,lowerTop),'fixed',PALETTE.muted,[-radius,0,z]);
+  add('pumpBarrelGland',ring(.045,.25,5.05,5.12,96).rotateX(Math.PI/2),'fixed',PALETTE.muted,[-radius,0,z]);
+  add('pumpBarrel',ring(.045,.19,5.12,8.2,96).rotateX(Math.PI/2),'fixed',PALETTE.muted,[-radius,0,z]);
+  add('pumpBarrelFoot',disk(.25,8.2,8.32,96).rotateX(Math.PI/2),'fixed',PALETTE.muted,[-radius,0,z]);
   for(const [name,x]of [['Left',-.25],['Right',.25]])add('pumpGuide'+name,verticalCylinder(.025,lowerTop,-1.90),'fixed',PALETTE.muted,[-radius+x,0,z]);
   const topProfile=clip.difference(rectangle(-radius-.43,-radius+.43,-.65,-.30),rectangle(-radius-.085,-radius+.085,z-ropeRadius-.0225,.20));
   add('pumpGuideCrossbar',verticalPlate(topProfile,-1.90,-1.75),'fixed');

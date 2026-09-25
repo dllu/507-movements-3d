@@ -29,7 +29,15 @@ export function finishSevenTooth238(root){
   for(let i=0;i<source.length;i++){const a=source[i],z=source[(i+1)%source.length],dx=z[0]-a[0],dy=z[1]-a[1],u=Math.max(0,Math.min(1,((mid.x-a[0])*dx+(mid.y-a[1])*dy)/(dx*dx+dy*dy))),p=[a[0]+u*dx,a[1]+u*dy],r=Math.hypot(mid.x-p[0],mid.y-p[1]);if(r<distance){distance=r;closest=p;}}
   body=clip.union(body,capsule(mid.toArray(),closest,.08,24));parts.attachments.push({side,mid:mid.toArray(),carrier:closest});
  }
- replace(b.palletBody,plate(clip.difference(body,poly(circle([0,0],.094,128))),-.11,.11));
+ // Brown draws B and C as the anchor's own edges (C its hooked end). The
+ // anchor body is therefore one solid plate up to just behind the wheel,
+ // with a pad under each working face, so the faces rise straight out of it
+ // instead of perching as separate blocks on thin nibs.
+ const wheelBackPlane=g.palletPlaneZ-g.wheelDepth/2-.01;
+ for(const attachment of parts.attachments){const face=d.faceAt(attachment.side,0),a=face.rootPoint.clone().sub(g.palletPivot),z=face.tipPoint.clone().sub(g.palletPivot),n=face.normal;
+  const pad=[a.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.16),a.clone().addScaledVector(n,-.16)].map(p=>p.toArray());
+  body=clip.union(body,poly(pad),capsule(attachment.mid,attachment.carrier,.13,24));}
+ replace(b.palletBody,plate(clip.difference(body,poly(circle([0,0],.094,128))),-.11,wheelBackPlane));
  replace(b.palletHub,ring(.094,.3,-.14,.14,128),true);
  replace(b.palletIndicator,new THREE.BoxGeometry(.30,.04,.012));b.palletIndicator.position.z=.116;
  b.frameRail.visible=false;b.palletBearingPost.visible=false;

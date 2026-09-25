@@ -638,6 +638,14 @@ function frictionWindlass(movement) {
     { color: PALETTE.driver, depth: 0.24, thickness: 0.23 },
   );
   lowerHandleSegment.userData.role = 'lower-bent-hand-lever-segment';
+  // A solid knee at the bend fills the open mitre between the two straight
+  // segments, so the lever reads as one bent bar.
+  const handleKnee = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.115, 0.115, 0.24, 40).rotateX(Math.PI / 2),
+    upperHandleSegment.material ?? driverMaterial,
+  );
+  handleKnee.position.copy(localHandleElbow);
+  handleKnee.userData.role = 'solid-knee-at-hand-lever-bend';
   // Brown draws a turned wooden handle: a collar at the lever end, a slim
   // neck, then a pear-shaped swell closing in a rounded end.
   const gripLength = localGripTop.distanceTo(localGripBottom);
@@ -656,7 +664,7 @@ function frictionWindlass(movement) {
     localGripBottom.clone().sub(localGripTop).normalize(),
   );
   handGrip.userData.role = 'free-end-turned-hand-grip';
-  handLever.add(upperHandleSegment, lowerHandleSegment, handGrip);
+  handLever.add(upperHandleSegment, lowerHandleSegment, handleKnee, handGrip);
   const handlePivotPin = cylinderAlongZ(0.22, 0.90, darkMaterial, 36);
   handlePivotPin.position.copy(handlePivot);
   handlePivotPin.position.z = 0.28;

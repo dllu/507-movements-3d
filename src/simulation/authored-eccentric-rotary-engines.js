@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { addBackCover } from './cutaway-back-plates.js';
 import {capsule,circle,plate,poly,polygonClipping,sector,spline} from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -674,5 +675,12 @@ function eccentricRotaryEngine(movement) {
 
 export function createAuthoredEccentricRotaryEngineMovement(movement) {
   if (movement.id !== 425) return null;
-  return eccentricRotaryEngine(movement);
+  const model = eccentricRotaryEngine(movement);
+  // Pass 55: Brown's face section removes only the front cover; the back
+  // cover closes the casing and passages so they are not open rings.
+  addBackCover(model.root, ['fixed-annular-cutaway-body-of-cylinder-A',
+    'left-half-of-pear-casing-with-eduction-neck-of-cylinder-A',
+    'right-half-of-pear-casing-with-induction-neck-of-cylinder-A'],
+    { alsoCover: ['left-guide-rail-for-abutment-D', 'right-guide-rail-for-abutment-D'] });
+  return model;
 }

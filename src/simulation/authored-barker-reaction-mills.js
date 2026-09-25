@@ -8,6 +8,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -357,12 +358,16 @@ function barkerReactionMill(movement) {
     new THREE.Vector3(0.32, 4.42, 0.08),
     new THREE.Vector3(0, 4.13, 0),
   );
-  const inletStream = makeTube(
-    inletStreamCurve,
-    0.13,
-    waterMaterial,
-    'water-falling-from-flume-into-shaft-hopper',
+  const jetMaterial = waterJetMaterial();
+  const inletStream = new THREE.Mesh(
+    waterJetGeometry(inletStreamCurve, {
+      radius: 0.07, endRadius: 0.09, width: 0.16, endWidth: 0.12, segments: 32,
+      widthAxis: new THREE.Vector3(0, 0, 1),
+    }),
+    jetMaterial,
   );
+  inletStream.renderOrder = 2;
+  inletStream.userData.role = 'water-falling-from-flume-into-shaft-hopper';
   root.add(inletStream);
   const inletMarkers = [];
   for (let markerIndex = 0; markerIndex < 5; markerIndex += 1) {
@@ -405,8 +410,18 @@ function barkerReactionMill(movement) {
       point.y -= jetDrop * progress ** 2;
       return point.applyMatrix4(runnerFromModel);
     });
-    const jet = makeTube(new THREE.CatmullRomCurve3(points), 0.055, waterMaterial,
-      `continuous-tangential-water-jet-from-arm-${armIndex + 1}`);
+    // One translucent jet that opens into the drooping spray fan Brown
+    // draws at each nozzle, not a solid hose.
+    const jet = new THREE.Mesh(
+      waterJetGeometry(new THREE.CatmullRomCurve3(points), {
+        radius: 0.05, endRadius: 0.07, width: 0.05, endWidth: 0.2,
+        widthAxis: new THREE.Vector3(0, 1, 0), segments: 32,
+        fadeStart: 0.5, flare: 1.5,
+      }),
+      jetMaterial,
+    );
+    jet.renderOrder = 2;
+    jet.userData.role = `continuous-tangential-water-jet-from-arm-${armIndex + 1}`;
     runner.add(jet);
     return jet;
   });

@@ -71,9 +71,10 @@ function makeDynamicCord(radius, material) {
   // rebuilt along the straight run between its two moving ends.
   const cord = new THREE.Mesh(new THREE.BufferGeometry(), material);
   cord.userData.crossSection = 'laid-rope';
-  cord.userData.setEndpoints = (start, end) => {
+  cord.userData.setEndpoints = (start, end, travel = 0) => {
     replaceWithLaidRope(cord, new THREE.LineCurve3(start.clone(), end.clone()), {
       radius,
+      travel,
       // Enough samples for the longest run, so the buffers never reallocate.
       tubularSegments: 1024,
     });
@@ -427,7 +428,7 @@ function pointedArchInstrument(movement) {
     return marker;
   });
 
-  const cord = makeDynamicCord(0.027, matte(PALETTE.belt, { roughness: 0.78 }));
+  const cord = makeDynamicCord(0.04, matte(PALETTE.belt, { roughness: 0.78 }));
   cord.userData.role =
     'single-working-cord-from-elastic-bar-tip-to-slide-pin';
   root.add(cord);
@@ -466,28 +467,32 @@ function pointedArchInstrument(movement) {
   );
   root.add(pencil);
 
+  // The bar is only partly released between settings: straightened fully it
+  // would lie along the jamb, its pencil clamp over the jamb reference.
+  const minimumBend = 0.4;
+  const bendSpan = 1 - minimumBend;
   const bendLawAtCyclePhase = (cyclePhase) => {
     if (cyclePhase < 0.5) {
       const local = cyclePhase * 2;
       return {
-        acceleration: smootherStepSecondDerivative(local)
+        acceleration: bendSpan * smootherStepSecondDerivative(local)
           * 4 / cycleDuration ** 2,
         direction: 'cord-drawn-in-and-elastic-bar-bending-to-apex',
-        rate: smootherStepDerivative(local) * 2 / cycleDuration,
-        value: smootherStep(local),
+        rate: bendSpan * smootherStepDerivative(local) * 2 / cycleDuration,
+        value: minimumBend + bendSpan * smootherStep(local),
       };
     }
     const local = (cyclePhase - 0.5) * 2;
     return {
-      acceleration: -smootherStepSecondDerivative(local)
+      acceleration: -bendSpan * smootherStepSecondDerivative(local)
         * 4 / cycleDuration ** 2,
       direction: 'cord-released-and-elastic-bar-relaxing',
-      rate: -smootherStepDerivative(local) * 2 / cycleDuration,
-      value: 1 - smootherStep(local),
+      rate: -bendSpan * smootherStepDerivative(local) * 2 / cycleDuration,
+      value: 1 - bendSpan * smootherStep(local),
     };
   };
 
-  const relaxedTip = pointOnWorkingEdge(1, 0);
+  const relaxedTip = pointOnWorkingEdge(1, minimumBend);
   const relaxedCordLength = relaxedTip.distanceTo(slidePin);
   const stateAtTime = (time) => {
     const cycleCoordinate = time / cycleDuration;
@@ -662,6 +667,7 @@ function pointedArchInstrument(movement) {
       halfSpan,
       leftSpringingX,
       maximumTurningAngle,
+      minimumBend,
       relaxedCordLength,
       rightSpringingX,
       rise,

@@ -7,6 +7,8 @@ import {
 } from './primitives.js';
 
 import {boreCurvedLink} from './spatial-linkage-parts.js';
+import {LaidRopeGeometry} from './laid-rope.js';
+import {makeHaulingHand} from './hauling-hand.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -555,6 +557,47 @@ function boatDetachingHooks(movement) {
     root.add(cord);
     return cord;
   });
+  // Brown crops the tackle fall above the hook and the release rope to the
+  // right. Beyond the plate each runs on to a hand: a man on the davit holds
+  // the tackle fall (it rises with the hook), and the release rope is pulled
+  // by hand. The leads are rigid lengths of the same laid rope that move
+  // with their rope ends.
+  const leadMaterial = matte(ropeMaterialColor, { roughness: 0.76 });
+  const fallLeadLength = 2.9;
+  const releaseLeadLength = 2.3;
+  const ropeEnds = units.map((unit, index) => {
+    const fallLead = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(
+      new THREE.Vector3(-0.73, 3.88 + fallLeadLength, tacklePlaneZ),
+      new THREE.Vector3(-0.73, 3.88, tacklePlaneZ)), 48, 0.055, 8, false), leadMaterial),
+    `tackle-fall-lead-beyond-plate-${index + 1}`);
+    const fallHand = makeHaulingHand(new THREE.Vector3(0, -1, 0), 0.055 / 0.8, {
+      armDirection: new THREE.Vector3(0.3, 1, 0),
+      tailPoints: [
+        new THREE.Vector3(0, -0.15, 0), new THREE.Vector3(0, 0.24, 0),
+        new THREE.Vector3(-0.15, 0.45, 0), new THREE.Vector3(-0.4, 0.45, 0),
+        new THREE.Vector3(-0.55, 0.15, 0), new THREE.Vector3(-0.58, -0.25, 0),
+      ],
+    });
+    fallHand.scale.setScalar(0.8);
+    addRole(fallHand, `hand-holding-tackle-fall-${index + 1}`);
+    unit.unit.add(fallLead, fallHand);
+    const releaseLead = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(
+      new THREE.Vector3(), new THREE.Vector3(releaseLeadLength, 0, 0)), 48, 0.045, 8, false),
+    leadMaterial), `release-rope-lead-beyond-plate-${index + 1}`);
+    const releaseHand = makeHaulingHand(new THREE.Vector3(-1, 0, 0), 0.045 / 0.8, {
+      armDirection: new THREE.Vector3(0.78, -0.62, 0),
+      tailPoints: [
+        new THREE.Vector3(-0.15, 0, 0), new THREE.Vector3(0.24, 0, 0),
+        new THREE.Vector3(0.36, -0.2, 0), new THREE.Vector3(0.4, -0.55, 0),
+        new THREE.Vector3(0.36, -0.9, 0),
+      ],
+    });
+    releaseHand.scale.setScalar(0.8);
+    addRole(releaseHand, `hand-pulling-release-rope-${index + 1}`);
+    root.add(releaseLead, releaseHand);
+    for (const part of [fallHand, fallLead, releaseHand, releaseLead]) part.userData.beyondPlateCrop = true;
+    return { fallHand, fallLead, releaseHand, releaseLead };
+  });
   const pullBar = addRole(cylinderAlongZ(
     0.105,
     3.55,
@@ -604,6 +647,10 @@ function boatDetachingHooks(movement) {
     }
     pullBar.position.x = state.pullBarX;
     pullBarGrip.position.x = state.pullBarX;
+    ropeEnds.forEach(({ fallHand, fallLead, releaseHand, releaseLead }, index) => {
+      fallLead.position.y = state.tackleLift;
+      fallHand.position.set(-0.73, 3.88 + fallLeadLength + state.tackleLift, tacklePlaneZ);
+    });
     pullDirectionIndex.position.x = state.pullBarX + 0.38;
     units.forEach((unit, index) => {
       const eyeCenter = new THREE.Vector3(
@@ -653,6 +700,14 @@ function boatDetachingHooks(movement) {
         ...loop.slice(0, -1),
         ...quadraticPoints(start, control, end, 13),
       ]);
+      // The lead continues straight along the cord's end tangent.
+      const leadDirection = end.clone().sub(control).normalize();
+      const { releaseHand, releaseLead } = ropeEnds[index];
+      releaseLead.position.copy(end);
+      releaseLead.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), leadDirection);
+      releaseHand.position.copy(end).addScaledVector(leadDirection, releaseLeadLength);
+      // The fist was built for a rope running in -x; turn it onto the lead.
+      releaseHand.rotation.z = Math.atan2(leadDirection.y, leadDirection.x);
     });
   };
 

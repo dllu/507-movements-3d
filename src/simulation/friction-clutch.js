@@ -16,10 +16,11 @@ export function makeFrictionClutch() {
   const outputProfile = [[0.572, boreRadius], [0.572, 0.800], [0.168, 0.800],
     [0.168, 0.884], [0.729, 0.884], [0.729, 0.25], [p.grooveLeft, 0.25],
     [p.grooveLeft, 0.182], [p.grooveRight, 0.182], [p.grooveRight, 0.25], [1.222, 0.25], [1.222, boreRadius]];
-  // Brown's half-section is shown as a clean cutaway: only the near half of
-  // each turned member is cut away at the axial plane, so turned views show
-  // round bodies of revolution behind the hatched section face.
-  const planes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)];
+  // Brown's half-section is shown as ONE clean quarter cutaway: only the
+  // upper near quarter (y > 0, z > 0) of each turned member is removed, so the
+  // upper half shows Brown's section face while the lower half and every
+  // turned view keep whole round bodies. Both exposed cut faces are capped.
+  const planes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0), new THREE.Plane(new THREE.Vector3(0, -1, 0), 0)];
   const makeRotor = () => {
     const group = new THREE.Group(), rotor = new THREE.Group();
     group.quaternion.setFromUnitVectors(Z_AXIS, X_AXIS);
@@ -33,7 +34,7 @@ export function makeFrictionClutch() {
     const geometry = turnedClutchGeometry(profile, { boreRadius, keyHalfWidth: keyed ? keyHalfWidth : 0,
       keywayTop: keyed ? keywayTop : 0, color });
     const material = new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.15, roughness: 0.62,
-      clippingPlanes: planes, clipShadows: true });
+      clippingPlanes: planes, clipIntersection: true, clipShadows: true });
     const body = new THREE.Mesh(geometry, material);
     group.userData.rotor.add(body);
     Object.assign(group.userData, { body, profile, boreRadius, keyHalfWidth: keyed ? keyHalfWidth : 0,
@@ -45,13 +46,21 @@ export function makeFrictionClutch() {
   const inputSection = makeClutchSections(inputProfile, { boreRadius, color: PALETTE.driver });
   const outputSection = makeClutchSections(outputProfile, { boreRadius, keyHalfWidth, keywayTop,
     color: PALETTE.driven });
-  for (const section of [inputSection, outputSection]) {
+  // Horizontal cut faces (plane y = 0, z > 0): the same section turned a
+  // quarter about the shaft; the keyway angle is shifted to match.
+  const inputFloor = makeClutchSections(inputProfile, { boreRadius, color: PALETTE.driver });
+  const outputFloor = makeClutchSections(outputProfile, { boreRadius, keyHalfWidth, keywayTop,
+    color: PALETTE.driven });
+  for (const [section, keep] of [[inputSection, 'y'], [outputSection, 'y'], [inputFloor, 'z'], [outputFloor, 'z']]) {
     const { caps } = section.userData;
     section.remove(caps[1]);
     section.userData.caps = [caps[0]];
+    caps[0].material = caps[0].material.clone();
+    caps[0].material.clippingPlanes = [new THREE.Plane(keep === 'y' ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(0, 0, 1), 0)];
+    section.position.x = offsetX;
   }
-  inputSection.position.x = offsetX;
-  outputSection.position.x = offsetX;
+  inputFloor.rotation.x = outputFloor.rotation.x = Math.PI / 2;
+  inputFloor.userData.setAngle(-Math.PI / 2);
   const shaft = makeRotor();
   const shaftProfile = [[-0.404, 0], [-0.404, 0.070], [-0.159, 0.070],
     [-0.159, shaftRadius], [1.636, shaftRadius], [1.636, 0]];
@@ -104,20 +113,21 @@ export function makeFrictionClutch() {
   const followerPin = pin(0.016, -0.040, 0.10), pivotPin = pin(0.023, -0.13, 0.10);
   pivotPin.position.x = lever.position.x;
   pivotPin.position.y = lever.position.y;
-  root.add(input, output, shaft, inputSection, outputSection, lever, follower, followerPin, pivotPin);
+  root.add(input, output, shaft, inputSection, outputSection, inputFloor, outputFloor, lever, follower, followerPin, pivotPin);
   const setSectionView = (enabled) => {
     for (const member of [input, output]) {
       member.userData.body.material.clippingPlanes = enabled ? planes : [];
       member.userData.body.material.needsUpdate = true;
     }
     inputSection.visible = enabled; outputSection.visible = enabled;
+    inputFloor.visible = enabled; outputFloor.visible = enabled;
     root.userData.sectionView = enabled;
     root.userData.hideGround = enabled;
   };
   root.userData = { fidelity: 'authored', mechanism: 'annular-tongue-friction-clutch-with-fixed-section', localClippingEnabled: true,
     sectionView: true, hideGround: true, setSectionView, motion,
     fullCameraDirection: new THREE.Vector3(5.4, 3.6, 8),
-    blocks: { input, output, shaft, feather, inputSection, outputSection, lever, follower, followerPin, pivotPin },
+    blocks: { input, output, shaft, feather, inputSection, outputSection, inputFloor, outputFloor, lever, follower, followerPin, pivotPin },
     geometry: { inputProfile, outputProfile, offsetX, shaftRadius, boreRadius, keyHalfWidth, keywayTop,
       ...p, outputPhase, handleLength, shaftLeft: -0.404, shaftShoulder: -0.159, shaftRight: 1.636,
       sectionBackZ: -0.08, cycleMeaning: 'engage-drive-release-and-coast' } };
@@ -130,6 +140,8 @@ export function makeFrictionClutch() {
     output.position.x = offsetX + state.shift;
     outputSection.position.x = offsetX + state.shift;
     outputSection.userData.setAngle(state.outputAngle);
+    outputFloor.position.x = offsetX + state.shift;
+    outputFloor.userData.setAngle(state.outputAngle - Math.PI / 2);
     lever.rotation.z = -state.leverAngle;
     follower.position.copy(state.followerPoint).add(new THREE.Vector3(offsetX, 0, 0));
     followerPin.position.x = follower.position.x; followerPin.position.y = follower.position.y;
@@ -140,7 +152,7 @@ export function makeFrictionClutch() {
   update(0);
   root.userData.cameraFov = 17;
   markShadows(root);
-  for (const section of [inputSection, outputSection]) section.traverse((part) => {
+  for (const section of [inputSection, outputSection, inputFloor, outputFloor]) section.traverse((part) => {
     part.castShadow = false; part.receiveShadow = false;
   });
   return { root, update, cameraDirection: new THREE.Vector3(0.025, 0.025, 10) };

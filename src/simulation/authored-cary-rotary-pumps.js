@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { latheSectionGeometry } from './cutaway-section.js';
 import { caryFollowerLaw, correctCaryPump } from './rotary-pump-contact.js';
 import {
   PALETTE,
@@ -604,6 +605,24 @@ function caryRotaryPump(movement) {
   inletShell.geometry.dispose();
   inletShell.geometry = new THREE.BoxGeometry(0.66, 1.58, 0.06)
     .translate(0, 0, -0.3834);
+  // Pass 55: pipe F is a whole round pipe matching pipe H, not a three-sided
+  // section trough (back plate plus two side walls).
+  {
+    const [, , wallA, wallB] = inletF.children;
+    const box = new THREE.Box3();
+    for (const wall of [wallA, wallB]) {
+      wall.geometry.computeBoundingBox();
+      box.union(wall.geometry.boundingBox.clone().translate(wall.position));
+    }
+    const center = box.getCenter(new THREE.Vector3()), height = box.max.y - box.min.y;
+    for (const child of inletF.children) child.visible = false;
+    const pipe = new THREE.Mesh(latheSectionGeometry([
+      [0.25, -height / 2], [0.34, -height / 2], [0.34, height / 2], [0.25, height / 2],
+    ], { phiStart: 0, phiLength: Math.PI * 2, segments: 48 }), frameMaterial);
+    pipe.position.set(center.x, center.y, 0);
+    pipe.userData.role = 'whole-round-suction-pipe-F';
+    inletF.add(pipe);
+  }
   markShadows(root);
   base.receiveShadow = true;
   update(0);

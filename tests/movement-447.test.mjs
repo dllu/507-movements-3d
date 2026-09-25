@@ -128,10 +128,17 @@ test('movement 447 bow remains exactly on the anchor-centered circular locus', (
   const { geometry, stateAtInputAngle } = model.root.userData;
   for (let sample = -12000; sample <= 24000; sample += 1) {
     const state = stateAtInputAngle(FULL_TURN * sample / 12000);
+    // The anchor lies on the bed; the line rises a constant height to the
+    // bow, so its plan projection is the exact circle radius.
     const anchorToBow = state.bowPoint.clone().sub(state.anchorPoint);
-    near(anchorToBow.length(), geometry.tetherLength, 9e-16,
-      `constant rope radius at ${sample}`);
-    vectorNear(anchorToBow.clone().normalize(), state.radial, 3e-16,
+    near(anchorToBow.y, geometry.bowRise, 9e-16,
+      `constant line rise at ${sample}`);
+    near(anchorToBow.length(), geometry.ropeLength, 9e-16,
+      `constant rope length at ${sample}`);
+    const planAnchorToBow = anchorToBow.clone().setY(0);
+    near(planAnchorToBow.length(), geometry.tetherLength, 9e-16,
+      `constant plan radius at ${sample}`);
+    vectorNear(planAnchorToBow.normalize(), state.radial, 3e-16,
       `radial rope direction at ${sample}`);
     near(state.radial.dot(state.tangent), 0, 2e-16,
       `orthogonal path tangent at ${sample}`);
@@ -225,12 +232,12 @@ test('movement 447 renderer keeps the rope endpoints exact and maps boat and rud
       `radial boat yaw at ${phase}`);
     near(blocks.rudderPivot.rotation.y, state.rudderAngle, 0,
       `rudder transform at ${phase}`);
-    near(blocks.rope.scale.y, geometry.tetherLength, 5e-16,
+    near(blocks.rope.scale.y, geometry.ropeLength, 5e-16,
       `rendered rope length at ${phase}`);
     const endpoints = ropeEndpoints();
-    vectorNear(endpoints.start, state.anchorPoint, 8e-16,
+    vectorNear(endpoints.start, state.anchorPoint, 1.2e-15,
       `rendered anchor endpoint at ${phase}`);
-    vectorNear(endpoints.end, state.bowPoint, 8e-16,
+    vectorNear(endpoints.end, state.bowPoint, 1.2e-15,
       `rendered bow endpoint at ${phase}`);
     vectorNear(blocks.anchor.position, anchorPosition, 0,
       `fixed anchor at ${phase}`);

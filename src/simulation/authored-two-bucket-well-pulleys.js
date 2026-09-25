@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {replaceWithLaidRope} from './laid-rope.js';
 import {correctWellBucketParts} from './well-bucket-working-parts.js';
 import {
@@ -657,5 +658,5 @@ function twoBucketWellPulley(movement) {
 
 export function createAuthoredTwoBucketWellPulleyMovement(movement) {
   if (movement.id !== 458) return null;
-  return twoBucketWellPulley(movement);
+  return applyCutawayFor(twoBucketWellPulley(movement), movement.id);
 }

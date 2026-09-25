@@ -84,6 +84,25 @@ function correctProny(root) {
     const bridge=add(root,new THREE.BoxGeometry(.10,.12,.50),b.stopPost.children[0].material,'stop-block-to-rear-standard');
     bridge.position.set(stop.position.x,stop.position.y,.045);return bridge;
   });
+  // The stops' rear standard stood on nothing: carry it down to a plain foot
+  // below the scale pan (clear of the pan and its cords), and hang the scale
+  // ring on a short pin in a lug under the beam end instead of leaving it
+  // floating below the beam.
+  {
+    root.updateMatrixWorld(true);
+    const postBox=new THREE.Box3().setFromObject(b.stopPost),panBox=new THREE.Box3().setFromObject(b.scalePan);
+    const footTop=panBox.min.y-.25,x=(postBox.min.x+postBox.max.x)/2,z=(postBox.min.z+postBox.max.z)/2;
+    const standard=add(root,new THREE.BoxGeometry(postBox.max.x-postBox.min.x,postBox.min.y-footTop+.01,postBox.max.z-postBox.min.z),b.stopPost.children[0].material,'stop-standard-lower-length');
+    standard.position.set(x,(postBox.min.y+footTop)/2,z);
+    const foot=add(root,new THREE.BoxGeometry(.5,.1,.5),b.stopPost.children[0].material,'stop-standard-foot');
+    foot.position.set(x,footTop-.05,z);
+    const eye=b.hangerEye,tube=eye.geometry.parameters.tube,inner=eye.geometry.parameters.radius-tube,pinRadius=.03;
+    const pinY=eye.position.y+inner-pinRadius,beamBottom=g.leverCenterY-.07;
+    const pin=add(root,new THREE.CylinderGeometry(pinRadius,pinRadius,.17,32).rotateX(Math.PI/2),eye.material,'scale-ring-hook-pin');
+    pin.position.set(eye.position.x,pinY,eye.position.z+.005);
+    const lug=add(root,new THREE.BoxGeometry(.1,beamBottom-pinY+.01,.05),b.stopPost.children[0].material,'scale-ring-hook-lug-under-beam');
+    lug.position.set(eye.position.x,(beamBottom+pinY)/2,eye.position.z-tube-.035);
+  }
   root.userData.minimumDisplayCycleSeconds=g.cyclePeriod;
   root.userData.workingClampReview={
     interfaces:'Unbeveled finite friction liners tangent to the drum, connected fixed stops, an open suspension eye and flush rotation index.',

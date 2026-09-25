@@ -87,11 +87,19 @@ export function makeSelectableCamValve(){
  add('valve-slide',plate(clip.difference(poly([[-.16,-.14],[.16,-.14],[.16,.14],[-.16,.14]]),poly(circle([0,0],.064,96))),-.29,-.11),slider,'driven');
  add('lower-pin',disk(.06,-.29,.10,96),slider,'ink');add('lower-pin-retainer',disk(.09,.10,.13,96),slider,'ink');
  const ys=Array.from({length:257},(_,i)=>stateAtTime(g.demonstrationPeriod*i/256).valve.bottom.y),low=Math.min(...ys)-.19,high=Math.max(...ys)+.19;
- for(const side of [-1,1])add('output-guide-'+side,plate(poly([[side*.205-.025,low],[side*.205+.025,low],[side*.205+.025,high],[side*.205-.025,high]]),rodZ-.32,rodZ-.09).translate(guideX,0,0),b.fixedFrame,'frame');
- add('output-guide-back',plate(poly([[guideX-.23,g.baseY+.095],[guideX+.23,g.baseY+.095],[guideX+.23,high],[guideX-.23,high]]),rodZ-.38,rodZ-.32),b.fixedFrame,'frame');
- add('output-guide-foot',new THREE.BoxGeometry(.24,.19,3.60).translate(guideX,g.baseY,0),b.fixedFrame,'frame');
+ // The valve slide runs between two guide bars. Brown draws no guide, so it
+ // is kept minimal: the bars stand on a flat bracket behind the rod whose
+ // strap runs up to a standoff on the lever's fixed fulcrum, so nothing floats.
+ const bracketLow=rodZ+.10,bracketHigh=rodZ+.16,p=g.leverPivot;
+ for(const side of [-1,1])add('output-guide-'+side,plate(poly([[side*.205-.025,low],[side*.205+.025,low],[side*.205+.025,high],[side*.205-.025,high]]),rodZ-.32,bracketLow).translate(guideX,0,0),b.fixedFrame,'frame');
+ {
+  const ux=p.x-guideX,uy=p.y-(high-.12),len=Math.hypot(ux,uy),nx=-uy/len*.13,ny=ux/len*.13;
+  const strap=poly([[guideX+nx,high-.12+ny],[p.x+nx,p.y+ny],[p.x-nx,p.y-ny],[guideX-nx,high-.12-ny]]);
+  add('output-guide-bracket',plate(clip.union(poly([[guideX-.23,low],[guideX+.23,low],[guideX+.23,high],[guideX-.23,high]]),strap,poly(circle([p.x,p.y],.24,96))),bracketLow,bracketHigh),b.fixedFrame,'frame');
+  add('fulcrum-standoff',disk(.2,leverPlane+.07,bracketLow,96).translate(p.x,p.y,0),b.fixedFrame,'frame');
+ }
  const update=time=>{legacyUpdate(time);const s=stateAtTime(time);rod.position.set(s.valve.top.x,s.valve.top.y,rodZ);rod.rotation.z=s.valve.angle;slider.position.set(s.valve.bottom.x,s.valve.bottom.y,rodZ);root.userData.kinematics=s;root.updateMatrixWorld(true);};
- Object.assign(root.userData,{stateAtTime,reconstructionStatus:'candidate',reconstructionNote:'The lever uses ordinary pin joints. A reconstructed lower slide guides the valve output vertically while the connecting rod tilts. The lower guide and supporting frame are not shown in the engraving.',valveGeometry:{guideX,rodLength,pinDistance,rodZ,low,high},valveParts:parts,valveBodies:{rod,slider}});
+ Object.assign(root.userData,{stateAtTime,reconstructionStatus:'candidate',reconstructionNote:'The lever uses ordinary pin joints. A reconstructed lower slide guides the valve output vertically while the connecting rod tilts. The minimal lower guide, its bracket and the fulcrum standoff are not shown in the engraving.',valveGeometry:{guideX,rodLength,pinDistance,rodZ,low,high},valveParts:parts,valveBodies:{rod,slider}});
  root.userData.stateAtCyclePhase=phase=>stateAtTime(phase*g.demonstrationPeriod);
  const operatingState=root.userData.operatingStateAtDriveAngle;
  root.userData.operatingStateAtDriveAngle=(index,angle)=>withValve(operatingState(index,angle));

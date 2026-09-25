@@ -2327,8 +2327,10 @@ function earnshawSpringDetentEscapement(movement) {
     - lockingDrawAngle;
   lockingStoneT.userData.role =
     'undercut-ten-degree-jewel-locking-pallet-T';
+  // A solid round boss (the pipe) on the detent carries the stone; the
+  // former torus looped round T like a knot.
   const lockingPipe = new THREE.Mesh(
-    new THREE.TorusGeometry(0.15, 0.045, 9, 36),
+    new THREE.CylinderGeometry(0.15, 0.15, 0.12, 36).rotateX(Math.PI / 2),
     detentMaterial,
   );
   lockingPipe.userData.role = 'detent-pipe-carrying-locking-stone-T';
@@ -2536,7 +2538,7 @@ function earnshawSpringDetentEscapement(movement) {
     lockingPipe.position.set(
       movingLockPoint.x + lockNormal.x * detentPipeOffset,
       movingLockPoint.y + lockNormal.y * detentPipeOffset,
-      -0.15,
+      -0.135,
     );
     const movingHeelPoint = bankingHeelBase.clone().addScaledVector(
       detentDisplacement,

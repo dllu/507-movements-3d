@@ -42,9 +42,14 @@ export function correctDifferentialThreads(root,id){
   root.userData.reconstructionNote='Two unequal gear reductions turn the screw and its axially fixed nut at different speeds. Their relative rotation produces the slow axial feed. The displayed reversal and thread proportions are reconstructed.';
  }else if(id===266){
   const profiles={};
+  // Brown's screw is a stout shaft with a shallow square thread; on the thin
+  // 0.102 core the deep thread read as loose ribbons. Thicken the core (0.15)
+  // so the thread is 0.055 deep.
+  const core=.15;g.threadRootRadius=core;
+  {const p=b.shaftCore.geometry.parameters;replace(b.shaftCore,new THREE.CylinderGeometry(core,core,p.height,48));}
   for(const [key,pitch,start,end,bearing,x,depth]of[['fixed',g.fixedThreadPitch,g.fixedThreadStart,g.fixedThreadEnd,b.fixedBearing,g.fixedBearingX,g.fixedBearingDepth],['moving',g.movingThreadPitch,g.movingThreadStart,g.movingThreadEnd,b.movingBearing,g.movingBearingInitialX,g.movingBearingDepth]]){
-   const external={inner:g.shaftCoreRadius,outer:.205,low:start,high:end,width:pitch/2,lead:pitch/(2*Math.PI),phase:start};
-   const internal={inner:g.shaftCoreRadius+.002,outer:.226,low:-depth/2,high:depth/2,width:pitch/2-.004,lead:external.lead,phase:start+pitch/2-x};
+   const external={inner:core,outer:.205,low:start,high:end,width:pitch/2,lead:pitch/(2*Math.PI),phase:start};
+   const internal={inner:core+.002,outer:.226,low:-depth/2,high:depth/2,width:pitch/2-.004,lead:external.lead,phase:start+pitch/2-x};
    replace(b[`${key}Thread`],thread(external));b[`${key}Thread`].material.color.copy(b.shaftCore.material.color);
    const mesh=new THREE.Mesh(thread(internal,'x'),b[`${key}BearingBody`].material);mesh.userData.role=`${key}-matching-internal-square-thread`;bearing.add(mesh);b[`${key}InternalThread`]=mesh;
    for(const collar of b[`${key}BearingCollars`])replace(collar,annulus(.208,.28,.025).rotateX(Math.PI/2));
@@ -58,7 +63,7 @@ export function correctDifferentialThreads(root,id){
 }
 export function correctWormRack(root){
  const b=root.userData.blocks,g=root.userData.geometry,pitch=g.rackToothPitch,lead=pitch/(2*Math.PI);
- const profile={inner:g.wormCoreRadius,outer:.78,low:g.wormThreadMinimumY,high:g.wormThreadMaximumY,width:.32,lead,phase:g.sourceActiveToothY};
+ const profile={inner:g.wormCoreRadius,outer:.78,low:g.wormThreadMinimumY,high:g.wormThreadMaximumY,width:.32,lead,phase:g.sourceActiveToothY,squareEnds:true};
  replace(b.wormThread,thread(profile,'y'));
  b.wormThread.material.color.copy(b.wormCore.material.color);b.wormThread.userData.profile='integral-square-thread';
  // Helicoidal rack flanks match the actual square-thread worm across the

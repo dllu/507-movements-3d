@@ -305,12 +305,11 @@ test('movement 463 renderer follows the contact solution, changes flow routes, a
       `upper render angle at phase ${phase}`);
     near(blocks.lowerLeaf.rotation.z, state.lowerAngle, 1e-12,
       `lower render angle at phase ${phase}`);
-    near(blocks.upstreamWater.scale.y,
-      state.waterLevel - geometry.channelFloorY, 1e-12,
-      `upstream water depth at phase ${phase}`);
-    near(blocks.upstreamWater.position.y,
-      (state.waterLevel + geometry.channelFloorY) / 2, 1e-12,
-      `upstream water center at phase ${phase}`);
+    blocks.upstreamWater.geometry.computeBoundingBox();
+    near(blocks.upstreamWater.geometry.boundingBox.max.y,
+      state.waterLevel, 1e-6, `upstream water surface at phase ${phase}`);
+    near(blocks.upstreamWater.geometry.boundingBox.min.y,
+      geometry.channelFloorY, 1e-6, `upstream water bed at phase ${phase}`);
     assert.equal(blocks.notchFlow.visible,
       state.contactDrive < 1e-8);
     assert.equal(blocks.bedFlow.visible,

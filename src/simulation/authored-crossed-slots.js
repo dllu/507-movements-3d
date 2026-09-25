@@ -653,6 +653,43 @@ function equalOppositeCrossedSlotTraverse(movement) {
     sweptBounds.union(new THREE.Box3().setFromObject(root));
   }
   root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.02);
+  // Beyond the framed plate the parts Brown breaks off are whole: slot C's
+  // rails run on to an end block that closes the slot; the broken standard
+  // continues down as a post; and D's stem runs down through a guide bush
+  // carried on an arm from that post.
+  const railExtension = 2.4;
+  for (const rail of [topRail, bottomRail]) {
+    rail.geometry.dispose();
+    rail.geometry = new THREE.BoxGeometry(railLength + railExtension, railThickness, fixedFrameDepth);
+    rail.position.x = railCenterX + railExtension / 2;
+  }
+  const slotEndBlock = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 2 * fixedSlotHalfHeight + 2 * railThickness, fixedFrameDepth),
+    frameMaterial,
+  );
+  slotEndBlock.position.set(railCenterX + railLength / 2 + railExtension + 0.25, pinY, fixedFramePlaneZ);
+  slotEndBlock.userData.role = 'fixed-end-block-closing-slot-c-beyond-plate';
+  const bushTopY = -9;
+  const standardPost = new THREE.Mesh(new THREE.BoxGeometry(0.7, pinY - 2.6 - (bushTopY - 1.1), fixedFrameDepth), frameMaterial);
+  standardPost.position.set(-7.4, (pinY - 2.6 + bushTopY - 1.1) / 2, fixedFramePlaneZ);
+  standardPost.userData.role = 'fixed-standard-continuing-below-its-drawn-break';
+  const bushArm = new THREE.Mesh(new THREE.BoxGeometry(7.05 - 0.33, 0.3, 0.3), frameMaterial);
+  bushArm.position.set(-(7.05 + 0.33) / 2, bushTopY - 0.25, movingYokePlaneZ);
+  bushArm.userData.role = 'fixed-arm-carrying-stem-guide-bush';
+  const bushArmRoot = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.3, movingYokePlaneZ - fixedFramePlaneZ - fixedFrameDepth / 2 + 0.15), frameMaterial);
+  bushArmRoot.position.set(-7.05 + 0.15, bushTopY - 0.25, (movingYokePlaneZ + fixedFramePlaneZ + fixedFrameDepth / 2 + 0.15) / 2 - 0.075);
+  bushArmRoot.userData.role = 'fixed-arm-root-on-standard';
+  const stemBush = new THREE.Mesh(new THREE.LatheGeometry([
+    [0.16, -0.25], [0.33, -0.25], [0.33, 0.25], [0.16, 0.25], [0.16, -0.25],
+  ].map(([x, y]) => new THREE.Vector2(x, y)), 40), frameMaterial);
+  stemBush.position.set(0, bushTopY - 0.25, movingYokePlaneZ);
+  stemBush.userData.role = 'fixed-guide-bush-for-piece-d-stem';
+  fixedSlotFrame.add(slotEndBlock, standardPost, bushArm, bushArmRoot, stemBush);
+  // The stem is long enough to stay in its bush over the whole stroke.
+  const stemLength = 9.2;
+  inputStem.geometry.dispose();
+  inputStem.geometry = new THREE.CylinderGeometry(0.13, 0.13, stemLength, 24);
+  inputStem.position.y = -0.65 - stemLength / 2;
   update(0);
   markShadows(root);
   return {

@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { addBackCover } from './cutaway-back-plates.js';
+import { latheSectionGeometry } from './cutaway-section.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {plate,poly,circle,polygonClipping,ring} from './finite-plate-geometry.js';
 import {
@@ -793,5 +795,23 @@ function radialPistonRotaryEngine(movement) {
 
 export function createAuthoredRadialPistonRotaryEngineMovement(movement) {
   if (movement.id !== 426) return null;
-  return radialPistonRotaryEngine(movement);
+  const model = radialPistonRotaryEngine(movement);
+  // Pass 55: Brown's face section removes only the front cover; the back
+  // cover closes the casing, and each steam port D is a whole round pipe
+  // rather than two flat slabs (a pipe drawn in section).
+  addBackCover(model.root, ['fixed-upper-body-of-cylinder', 'fixed-lower-body-of-cylinder',
+    'fixed-cast-foot-under-cylinder', 'left-fixed-port-body', 'right-fixed-port-body']);
+  model.root.traverse((object) => {
+    const role = object.userData?.role;
+    if (role !== 'left-steam-port-D-passage' && role !== 'right-steam-port-D-passage') return;
+    object.geometry.computeBoundingBox();
+    const box = object.geometry.boundingBox, length = box.max.x - box.min.x;
+    const center = box.getCenter(new THREE.Vector3());
+    const pipe = latheSectionGeometry([[0.30, -length / 2], [0.46, -length / 2], [0.46, length / 2], [0.30, length / 2]],
+      { phiStart: 0, phiLength: Math.PI * 2, segments: 48 });
+    pipe.rotateZ(-Math.PI / 2).translate(center.x, center.y, center.z);
+    object.geometry.dispose();
+    object.geometry = pipe;
+  });
+  return model;
 }

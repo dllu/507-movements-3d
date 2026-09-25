@@ -303,7 +303,7 @@ test('movement 481 rotating rear and front ports follow the exact drum angle whi
   disposeModel(model.root);
 });
 
-test('movement 481 renderer binds chamber gas indications and the reduced dial to one state', () => {
+test('movement 481 renderer binds the reduced dial to the state; gas pockets are not drawn', () => {
   const { model } = movementModel();
   const { blocks, geometry, stateAtTime } = model.root.userData;
 
@@ -314,12 +314,10 @@ test('movement 481 renderer binds chamber gas indications and the reduced dial t
       `dial pointer at ${time}`);
     for (let index = 0; index < geometry.chamberCount; index += 1) {
       const fillFraction = state.chamberStates[index].fillFraction;
-      near(blocks.gasPockets[index].material.opacity,
-        0.035 + 0.34 * fillFraction,
-        0, `gas opacity ${index} at ${time}`);
-      assert.equal(blocks.gasPockets[index].visible,
-        fillFraction > 1e-5,
-        `gas visibility ${index} at ${time}`);
+      // Pass 55: no tinted gas stands in for the section (colour is not a
+      // signal); the pockets stay in the drum but are never drawn.
+      assert.equal(blocks.gasPockets[index].material.visible, false,
+        `gas pocket ${index} (fill ${fillFraction}) is not drawn at ${time}`);
       assert.equal(blocks.gasPockets[index].parent, blocks.drum);
       assert.equal(blocks.partitions[index].parent, blocks.drum);
     }

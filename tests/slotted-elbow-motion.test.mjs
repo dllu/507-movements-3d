@@ -28,9 +28,10 @@ test('156 rendered pin joints follow the solved linkage without changing geometr
    for(const [part,local,expected]of [[u.parts.crankPin,new Vector3(),s.pin],[u.parts.outputPin,new Vector3(),s.output],[u.blocks.rod,new Vector3(u.geometry.rodLength,0,0),s.slider],[u.parts.sliderPin,new Vector3(),s.slider]]){
     const p=part.localToWorld(local);assert.ok(Math.hypot(p.x-expected[0],p.y-expected[1])<1e-12);
    }
-   // Fit the drawn members; the base, posts, guide and slider are removed
-   // by source presentation.
-   for(const name of ['input','lever','rod'])assert.ok(u.cameraFitBounds.containsBox(new Box3().setFromObject(u.blocks[name],true)));
+   // Fit the drawn members; the whole rod runs on below Brown's break to its
+   // guided crosshead, so only its drawn length is framed.
+   for(const name of ['input','lever'])assert.ok(u.cameraFitBounds.containsBox(new Box3().setFromObject(u.blocks[name],true)));
+   assert.ok(u.cameraFitBounds.containsPoint(u.blocks.rod.localToWorld(new Vector3(205*u.source.scale,0,.74))));
    assert.deepEqual(Object.values(u.parts).map(p=>p.geometry),geometries);
   }
   v.root.traverse(o=>{if(o.material)assert.equal(o.material.fog,false);});assert.equal(u.hideGround,true);

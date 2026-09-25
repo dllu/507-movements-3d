@@ -207,14 +207,15 @@ test('movement 407 keeps one fixed base point, one vertical base tangent, and on
   assert.equal(maximumBaseResidual, 0);
   assert.equal(maximumTangencyResidual, 0);
   assert.ok(maximumPolylineResidual < 6.9e-6);
-  near(minimumBend, 0, 0, 'minimum bend');
+  // The bar is only partly released between settings (never onto the jamb).
+  near(minimumBend, geometry.minimumBend, 1e-15, 'minimum bend');
   near(maximumBend, 1, 0, 'maximum bend');
   near(minimumCordLength,
     geometry.apex.y - geometry.slidePin.y, 0,
   'vertical cord at apex');
   near(maximumCordLength, geometry.relaxedCordLength, 0,
     'relaxed working cord length');
-  near(minimumTakeUp, 0, 0, 'no take-up when straight');
+  near(minimumTakeUp, 0, 1e-12, 'no take-up at the least bend');
   near(maximumTakeUp,geometry.relaxedCordLength-(geometry.apex.y-geometry.slidePin.y),1e-14,"complete cord take-up");
   disposeModel(model.root);
 });
@@ -290,7 +291,7 @@ test('movement 407 update binds the dynamic ribbon, tip pencil, and both cord en
     const cordStart = blocks.cord.localToWorld(cordPath.getPoint(0));
     const cordEnd = blocks.cord.localToWorld(cordPath.getPoint(1));
     const origin=new THREE.Vector3(state.slidePin.x,state.slidePin.y,.33),tip=new THREE.Vector3(state.tip.x,state.tip.y,.33),direction=tip.clone().sub(origin).normalize();
-    vectorNear(cordStart,origin.clone().addScaledVector(direction,.105),1e-13,'cord meets outside of slide loop');
+    vectorNear(cordStart,origin.clone().addScaledVector(direction,.09),1e-13,'cord winds on from the pin loop');
     vectorNear(cordEnd,tip.clone().addScaledVector(direction,-.139),1e-13,'cord meets outside of pencil loop');
     const collar = blocks.pencil.children.find(({ userData }) =>
       userData.role === 'white-cord-and-bar-tip-connection-collar');

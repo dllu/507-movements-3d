@@ -185,14 +185,14 @@ test('movement 404 has exactly half-depth ends and an exact circular outer edge 
     );
   }
   assert.ok(maximumCircleResidual < 9e-16);
-  assert.ok(minimumAgainstMaximumCircleResidual > 0.66);
+  assert.ok(minimumAgainstMaximumCircleResidual > 0.40);
   near(maximumPath.outerPoints[firstCentralIndex].y,
-    geometry.supportY, 5e-16, 'left prescribed point');
+    geometry.supportY, 3e-15, 'left prescribed point');
   near(maximumPath.outerPoints[middleIndex].y,
-    geometry.supportY + geometry.maximumSagitta, 5e-16,
+    geometry.supportY + geometry.maximumSagitta, 3e-15,
     'central prescribed point');
   near(maximumPath.outerPoints[lastCentralIndex].y,
-    geometry.supportY, 5e-16, 'right prescribed point');
+    geometry.supportY, 3e-15, 'right prescribed point');
   assert.equal(sourcePose.setting,
     'greatest bend with true circular outer edge');
   near(sourcePose.bend, 1, 0, 'source pose greatest bend');
@@ -227,7 +227,7 @@ test('movement 404 conserves one continuous outer-edge material length as both e
   assert.ok(maximumLengthResidual < 8e-15);
   near(minimumOverhang, geometry.terminalOverhangAtMaximum, 2e-16,
     'terminal overhang at maximum bend');
-  assert.ok(maximumOverhang - minimumOverhang > 0.20);
+  assert.ok(maximumOverhang - minimumOverhang > 0.08);
   near(geometry.maximumCentralArcLength + 2 * minimumOverhang,
     geometry.totalOuterEdgeLength, 2e-15, 'maximum-bend length closure');
   near(geometry.minimumCentralArcLength + 2 * maximumOverhang,

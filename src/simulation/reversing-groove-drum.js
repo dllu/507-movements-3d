@@ -82,6 +82,34 @@ export function makeReversingGrooveDrum() {
   const stem = add('studStem', new THREE.CylinderGeometry(.055, .055, stemLength, 48), 'rod', PALETTE.ink, [g.studCenterRadius + stemLength / 2, 0, 0]);
   stem.rotation.z = Math.PI / 2;
   add('studTip', new THREE.SphereGeometry(g.studRadius, 48, 32), 'rod', PALETTE.ink, [g.studCenterRadius, 0, 0]);
+  // Brown draws the drum's shaft ends and the rod without their supports.
+  // A minimal fixed frame keeps them from floating: a bored arm at each drum
+  // end carries the shaft, the upper arm also holds a long guide bush for the
+  // rod (above the stud seat's highest point and below the rod's lowest top),
+  // and a back rail behind the drum ties the two arms together.
+  const frame = new THREE.Group(); frame.name = 'fixed-bearing-frame'; root.add(frame);
+  const frameMaterial = matte(PALETTE.frame); frameMaterial.fog = false;
+  const addFixed = (name, geometry) => {
+    const mesh = new THREE.Mesh(geometry, frameMaterial); mesh.name = name; frame.add(mesh);
+    parts[name] = mesh; families[name] = 'fixed'; return mesh;
+  };
+  const armTop = 2.70, armBottom = 2.40, railZ = -.95, bore = (x, r) => { const p = new THREE.Path(); p.absarc(x, 0, r, 0, Math.PI * 2, true); return p; };
+  // Shapes are drawn in (x, -z) and extruded upward along y.
+  const armShape = withRod => {
+    const shape = new THREE.Shape();
+    const pts = withRod
+      ? [[-.25, .25], [-.25, -railZ], [.25, -railZ], [.25, .25], [g.rodX + .2, .25], [g.rodX + .2, -.25], [-.25, -.25]]
+      : [[-.25, -.25], [-.25, -railZ], [.25, -railZ], [.25, -.25]];
+    shape.moveTo(...pts[0]); for (const p of pts.slice(1)) shape.lineTo(...p); shape.closePath();
+    shape.holes.push(bore(0, .11)); if (withRod) shape.holes.push(bore(g.rodX, g.rodRadius + .01));
+    return shape;
+  };
+  const extrudeUp = (shape, y0, y1) => new THREE.ExtrudeGeometry(shape, {depth: y1 - y0, bevelEnabled: false, curveSegments: 40}).rotateX(-Math.PI / 2).translate(0, y0, 0);
+  addFixed('upperBearingArm', extrudeUp(armShape(true), armBottom, armTop));
+  addFixed('lowerBearingArm', extrudeUp(armShape(false), -armTop, -armBottom));
+  const bush = new THREE.Shape(); bush.absarc(g.rodX, 0, .2, 0, Math.PI * 2, false); bush.holes.push(bore(g.rodX, g.rodRadius + .01));
+  addFixed('rodGuideBush', extrudeUp(bush, 1.85, armBottom));
+  addFixed('backRail', new THREE.BoxGeometry(.3, 2 * armTop, .25).translate(0, 0, railZ + .125));
   const update = time => {
     const state = grooveDrumState(time, g);
     rotor.rotation.y = state.drumAngle; rod.position.y = state.rodY;

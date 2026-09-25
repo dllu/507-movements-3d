@@ -27,10 +27,12 @@ test('395 sectioned passages are open through plug and housing at both indexed p
    const path=channel.userData.curve;
    for(let i=0;i<=64;i++){
     const p=path.getPoint(i/64);
-    for(const z of[-.12,.12])assert.equal(plug.inside(p.clone().setZ(z)),false,'passage is cut into both plug faces');
-    if(p.length()<g.plugRadius-1e-5)assert.equal(plug.inside(p),true,'finite mid-plane web');
+    // Pass 55: one clean cutaway on z = 0; each channel is open toward the
+    // cut face and the plug is solid behind it (no tinted fluid cores).
+    for(const z of[-.07,.12])assert.equal(plug.inside(p.clone().setZ(z)),false,'passage open toward the cut face');
+    if(p.length()<g.plugRadius-1e-5)assert.equal(plug.inside(p.clone().setZ(-(g.plugDepth/2+d.plugChannelDepth)/2)),true,'solid plug floor behind the channel');
    }
-   for(const p of surfacePoints(channel.userData.flowCore.geometry))assert.ok(plug.signedDistance(p,.01)>-2e-6,'flow core clears the plug');
+   assert.equal(channel.userData.flowCore.visible,false,'no tinted fluid core stands in for the passage');
   }
   for(const a of[0,Math.PI/2,Math.PI,3*Math.PI/2])for(let r=g.bodyInnerRadius+.01;r<g.bodyOuterRadius;r+=.02)assert.equal(housing.inside(new T.Vector3(r*Math.cos(a),r*Math.sin(a),0)),false,'open housing mouth');
   const pipes=Object.values(b.pipes).map(p=>p.children[0]);

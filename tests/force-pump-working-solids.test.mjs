@@ -54,7 +54,8 @@ test('451 rendered water and air stay inside the chamber and preserve the prescr
       }
     }
     const expected=state.chamberWaterVolume/d.geometry.chamberTotalInternalVolume;
-    const rendered=actualVolume(b.chamberWater.geometry)/d.chamberEnvelope.total;
+    // Pass 55: the water is cut in half on the camera plane with the walls.
+    const rendered=(b.chamberWater.userData.cutawaySection?2:1)*actualVolume(b.chamberWater.geometry)/d.chamberEnvelope.total;
     assert.ok(Math.abs(rendered-expected)<.004,`water fraction ${rendered}/${expected}`);
     const renderedAir=actualVolume(b.compressedAir.geometry)/d.chamberEnvelope.total;
     assert.ok(Math.abs(renderedAir-(1-expected))<.004,`air fraction ${renderedAir}/${1-expected}`);

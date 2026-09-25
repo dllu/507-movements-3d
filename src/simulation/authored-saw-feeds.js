@@ -666,12 +666,14 @@ function crankRockerAdjustableSawFeed(movement) {
   carriageBed.position.set(0, pinionPitchRadius + 0.55, -0.36);
   carriageBed.userData.role = 'sawing-machine-translating-bed';
   carriage.add(carriageBed);
-  for (const y of [pinionPitchRadius + 0.88, pinionPitchRadius + 1.06]) {
+  // Brown's double line along the top of the bed is its raised top rail: one
+  // strip seated on the bed (the former two dark rods floated above it).
+  {
     const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(rackLength + 0.62, 0.08, 0.11),
-      darkMaterial,
+      new THREE.BoxGeometry(rackLength + 0.62, 0.14, 0.11),
+      drivenMaterial,
     );
-    rail.position.set(0, y, -0.14);
+    rail.position.set(0, pinionPitchRadius + 0.82 + 0.07, -0.14);
     rail.userData.role = 'saw-bed-top-guide-rail';
     carriage.add(rail);
   }

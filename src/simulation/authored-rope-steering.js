@@ -118,7 +118,9 @@ function ropeSteering(movement) {
   const cycleAngularFrequency = FULL_TURN / cycleDuration;
   const upperRopePlaneZ = drumRadius;
   const lowerRopePlaneZ = drumRadius;
-  const ropeRadius = 0.025;
+  // Brown hatches a stout tiller rope; this still seats in the guide grooves
+  // and packs the barrel helix (closest turns 0.097 apart) without touching.
+  const ropeRadius = 0.042;
   const visibleFullWrapCount = 5;
 
   // The barrel axis lies across the plan (X), unlike the guide axes (Z).

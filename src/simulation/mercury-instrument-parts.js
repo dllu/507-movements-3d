@@ -31,6 +31,27 @@ function retainingClip(xs, radius, y, material) {
   return mesh;
 }
 
+// The scale board stands behind the glass leg it reads: a deeper board
+// with a round groove in which that leg lies, so the board is carried by
+// the tube (and the tube by the board) without bands or clips.
+function grooveScaleBoard(board, legX, glassRadius) {
+  board.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(board);
+  const grooveRadius = glassRadius + .02;
+  const left = legX - glassRadius - .14, right = box.max.x;
+  const front = box.max.z, back = -(glassRadius + .10);
+  const section = polygonClipping.difference(
+    poly([[left, -back], [right, -back], [right, -front], [left, -front]]),
+    poly(circle([legX, 0], grooveRadius, 96)),
+  );
+  const shape = new THREE.Shape(section[0][0].map(([x, y]) => new THREE.Vector2(x, y)));
+  const geometry = new THREE.ExtrudeGeometry(shape, {depth: box.max.y - box.min.y, bevelEnabled: false, curveSegments: 1})
+    .rotateX(-Math.PI / 2).translate(0, box.min.y, 0);
+  replace(board, geometry);
+  board.position.set(0, 0, 0); board.rotation.set(0, 0, 0); board.scale.set(1, 1, 1);
+  board.userData.grooveForGlassLeg = {legX, grooveRadius};
+}
+
 export function correctMercuryInstrument(root, id, update) {
   const d = root.userData, b = d.blocks, g = d.geometry;
   const fluidRadius = id === 498 ? g.innerBoreRadius : g.innerTubeRadius;
@@ -87,13 +108,8 @@ export function correctMercuryInstrument(root, id, update) {
     for (const y of [1.05, 2.40]) {
       const tab = new THREE.Mesh(new THREE.BoxGeometry(.28, .06, .28), b.tubeClamps[0].material);
       tab.position.set(1.12, y, -.40); tab.userData.role = 'clip-tab-to-scale-board'; root.add(tab);
-      // The scale board is carried by the open leg: a band round the glass
-      // with a short strap into the board's edge.
-      const band = new THREE.Mesh(wall(g.glassOuterRadius + .004, g.glassOuterRadius + .05, -.045, .045), b.tubeClamps[0].material);
-      band.position.set(g.legCenterX, y, 0); band.userData.role = 'scale-board-band-round-open-leg'; root.add(band);
-      const strap = new THREE.Mesh(new THREE.BoxGeometry(.25, .09, .07), b.tubeClamps[0].material);
-      strap.position.set(1.085, y, -.065); strap.userData.role = 'scale-board-strap-from-open-leg-band'; root.add(strap);
     }
+    grooveScaleBoard(b.scaleBoard, g.legCenterX, g.glassOuterRadius);
   } else {
     replace(b.glassLongLeg, wall(bore, g.glassOuterRadius, -.5, .5));
     replace(b.glassShortLower, wall(bore, g.glassOuterRadius, g.bendTangentY, -3.65));
@@ -138,14 +154,7 @@ export function correctMercuryInstrument(root, id, update) {
     scaleBracket.position.set(.63, 4.55, -.45); scaleBracket.userData.role = 'scale-board-bracket'; root.add(scaleBracket);
     const scaleTab = new THREE.Mesh(new THREE.BoxGeometry(.1, .06, .25), b.retainingClips[0].material);
     scaleTab.position.set(1.20, 4.55, -.365); scaleTab.userData.role = 'scale-board-bracket-tab'; root.add(scaleTab);
-    // The inch-scale board is carried by the long leg: a band round the
-    // glass with a short strap into the board's edge.
-    const boardLeft = b.scaleBoard.position.x - b.scaleBoard.geometry.parameters.width / 2;
-    const band = new THREE.Mesh(wall(g.glassOuterRadius + .004, g.glassOuterRadius + .05, -.04, .04), b.retainingClips[0].material);
-    band.position.set(g.legCenterX, b.scaleBoard.position.y, 0); band.userData.role = 'scale-board-band-round-long-leg'; root.add(band);
-    const strapLeft = g.legCenterX + g.glassOuterRadius + .02;
-    const strap = new THREE.Mesh(new THREE.BoxGeometry(boardLeft + .06 - strapLeft, .08, .07), b.retainingClips[0].material);
-    strap.position.set((boardLeft + .06 + strapLeft) / 2, b.scaleBoard.position.y, -.07); strap.userData.role = 'scale-board-strap-from-long-leg-band'; root.add(strap);
+    grooveScaleBoard(b.scaleBoard, g.legCenterX, g.glassOuterRadius);
   }
   d.minimumDisplayCycleSeconds = g.cycleDuration;
   d.reconstructionNote = 'Finite glass walls and open pressure passages; constant-area working reservoir agrees with the existing volume-conserving hydrostatic law. Pressure is prescribed slowly, with no fluid inertia, capillary correction, heat transfer or valve-flow dynamics.';

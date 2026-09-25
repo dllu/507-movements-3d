@@ -757,6 +757,11 @@ function differentialScrewDrive(movement) {
   // tests but do not render them.
   inputShaftIndex.visible = false;
   screwEndIndex.visible = false;
+  // Nor the white radial index stripes the gear helper paints on each face.
+  for (const gear of [longPinionF, pinionB, wheelD, wheelE]) {
+    const stripe = gear.userData.rotor?.children[3];
+    if (stripe?.isMesh && stripe.material.color.getHex() === PALETTE.white) stripe.visible = false;
+  }
   update(0);
   markShadows(root);
   return {

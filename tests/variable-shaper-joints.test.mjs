@@ -7,9 +7,10 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 test('178 rod has through bores, fully engaged pins and retaining heads',()=>{
  const m=createAuthoredVariableCrankMovement({id:178}),b=m.root.userData.blocks;
  try{
-  // Brown breaks the rod off before its output end, so only the slider eye is drawn.
-  assert.equal(b.connectingRodOutputEye.parent,null,'output eye lies beyond the drawn break');
-  for(const[eye,pin,head]of [[b.connectingRodSliderEye,b.sliderFrontBoss,b.wristRetainer]]){
+  // Brown breaks the rod off before its output end; the whole rod carries its
+  // output eye on the tool slide's pin beyond the drawing.
+  assert.ok(b.connectingRodOutputEye.parent,'output eye stays on the whole rod');
+  for(const[eye,pin,head]of [[b.connectingRodSliderEye,b.sliderFrontBoss,b.wristRetainer],[b.connectingRodOutputEye,b.outputPin,b.outputRetainer]]){
    const surface=solidSurface(eye.geometry);
    assert.equal(surface.inside(new THREE.Vector3(0,0,0)),false,'pin bore is open');
    assert.equal(surface.inside(new THREE.Vector3(.35,0,0)),true,'eye has a solid annulus');

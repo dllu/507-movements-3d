@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import { correctFlexiblePumpParts } from './flexible-pump-working-parts.js';
 import {
   PALETTE,
@@ -748,5 +749,5 @@ function doubleLanternBellowsPump(movement) {
 
 export function createAuthoredLanternBellowsPumpMovement(movement) {
   if (movement.id !== 453) return null;
-  return doubleLanternBellowsPump(movement);
+  return applyCutawayFor(doubleLanternBellowsPump(movement), movement.id);
 }

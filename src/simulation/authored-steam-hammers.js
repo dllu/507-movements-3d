@@ -7,6 +7,9 @@ import {
   spline,
 } from './finite-plate-geometry.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
+import {solidMaterial} from './cutaway-section.js';
+import {portedBarrel} from './lift-pump-working-parts.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import {
   PALETTE,
@@ -808,5 +811,16 @@ function steamHammer(movement) {
 
 export function createAuthoredSteamHammerMovement(movement) {
   if (movement.id !== 470) return null;
-  return steamHammer(movement);
+  return applyCutawayFor(steamHammer(movement), movement.id, {
+    // Whole opaque cylinder wall between the heads, ported where the steam
+    // passage from the valve chest enters (Brown draws the exterior).
+    prepare(root) {
+      root.traverse((object) => {
+        if (object.userData?.role !== 'fixed-upper-front-cutaway-steam-cylinder') return;
+        object.geometry.dispose();
+        object.geometry = portedBarrel(0.378, 0.44, 1.25, 3.10, 1.335, 0.075, 1);
+        object.material = solidMaterial([].concat(object.material)[0]);
+      });
+    },
+  });
 }

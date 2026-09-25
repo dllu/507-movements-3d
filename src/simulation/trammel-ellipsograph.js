@@ -23,7 +23,30 @@ export function makeTrammelEllipsograph(){
  }
  // The trace is an annotation, not a raised rail or moving contact ball.
  b.traceMarker.removeFromParent();b.traceMarker.geometry.dispose();
- b.ellipseTrace.material.color.set(PALETTE.ink);b.ellipseTrace.castShadow=false;b.ellipseTrace.receiveShadow=false;
+ // Brown's ellipse is the pencil's line on the paper. Model the paper as a
+ // plain drawing board under the instrument, the ellipse as a thin flat ink
+ // line lying on it, and give the grooved cross-piece a solid base resting on
+ // the board so neither the line nor the cross floats.
+ const paperTop=.045,crossFloor=.148,wallBase=.2,ea=b.ellipseTrace.userData.semiMajor,eb=b.ellipseTrace.userData.semiMinor;
+ const ellipse=(ra,rb)=>Array.from({length:360},(_,i)=>[ra*Math.cos(i/360*2*Math.PI),rb*Math.sin(i/360*2*Math.PI)]);
+ b.ellipseTrace.geometry.dispose();
+ b.ellipseTrace.geometry=plate(clip.difference(poly(ellipse(ea+.02,eb+.02)),poly(ellipse(ea-.02,eb-.02))),paperTop,paperTop+.004).rotateX(-Math.PI/2);
+ b.ellipseTrace.material.color.set(PALETTE.ink);b.ellipseTrace.castShadow=false;b.ellipseTrace.receiveShadow=true;
+ const boardMaterial=matte(PALETTE.paper,{roughness:.9});boardMaterial.fog=false;
+ add('drawing-board-under-ellipse',new THREE.BoxGeometry(2*ea+.8,.1,2*eb+.8).translate(0,paperTop-.05,0),root,boardMaterial).castShadow=false;
+ {
+  const box=new THREE.Box3(),walls=[],floors=[];root.updateMatrixWorld(true);
+  const toRoot=new THREE.Matrix4().copy(root.matrixWorld).invert();
+  root.traverse(o=>{const r=o.userData?.role??'';if(!o.isMesh)return;
+   if(/groove-side-wall|solid-corner-around|closed-(?:horizontal|vertical)-groove-end/.test(r)){box.setFromObject(o).applyMatrix4(toRoot);walls.push(box.clone());}
+   if(/recessed-(?:horizontal|vertical)-groove-floor/.test(r)){box.setFromObject(o).applyMatrix4(toRoot);floors.push(box.clone());}});
+  // Local frame: x across, z = minus the screen y, y up from the paper.
+  const rect=bx=>poly([[bx.min.x,-bx.max.z],[bx.max.x,-bx.max.z],[bx.max.x,-bx.min.z],[bx.min.x,-bx.min.z]]);
+  const outline=clip.union(...walls.map(rect),...floors.map(rect));
+  let wallMesh;root.traverse(o=>{if(!wallMesh&&o.isMesh&&/groove-side-wall/.test(o.userData?.role??''))wallMesh=o;});
+  add('cross-piece-solid-base-on-board',plate(outline,paperTop,crossFloor).rotateX(-Math.PI/2),root,wallMesh.material);
+  add('cross-piece-base-under-groove-walls',plate(clip.difference(outline,...floors.map(rect)),crossFloor,wallBase).rotateX(-Math.PI/2),root,wallMesh.material);
+ }
  root.rotation.x=Math.PI/2;
  const update=time=>{legacyUpdate(time);const s=u.kinematics;shoes[0].position.set(s.horizontalStud.position.x,0,s.horizontalStud.position.z);shoes[1].position.set(s.verticalStud.position.x,0,s.verticalStud.position.z);root.updateMatrixWorld(true);};
  Object.assign(b,{guideShoes:shoes});

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -554,5 +555,5 @@ function trunkEngine(movement) {
 
 export function createAuthoredTrunkEngineMovement(movement) {
   if (movement.id !== 421) return null;
-  return trunkEngine(movement);
+  return applyCutawayFor(trunkEngine(movement), movement.id);
 }

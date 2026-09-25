@@ -273,6 +273,12 @@ function undershotWaterWheel(movement) {
   shaft.userData.role = 'undershot-wheel-main-shaft-in-fixed-bearings';
   root.add(shaft);
   const bearingParts=wheelBearings(root,shaft,frameMaterial,-3.2);
+  // The front pedestal stands beyond the race bed's front edge on its own
+  // footing at bed level.
+  const frontPedestalFooting = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.28, 0.56), frameMaterial);
+  frontPedestalFooting.position.set(0, -3.34, 0.94);
+  frontPedestalFooting.userData.role = 'front-bearing-pedestal-footing';
+  root.add(frontPedestalFooting);
 
   const channelBed = new THREE.Mesh(
     new THREE.BoxGeometry(9.05, 0.28, 1.72),

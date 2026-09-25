@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctForcePumpParts} from './force-pump-working-parts.js';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -1404,7 +1405,7 @@ function airChamberForcePump(movement) {
 }
 
 export function createAuthoredForcePumpMovement(movement) {
-  if (movement.id === 450) return ordinaryForcePump(movement);
-  if (movement.id === 451) return airChamberForcePump(movement);
+  if (movement.id === 450) return applyCutawayFor(ordinaryForcePump(movement), 450);
+  if (movement.id === 451) return applyCutawayFor(airChamberForcePump(movement), 451);
   return null;
 }

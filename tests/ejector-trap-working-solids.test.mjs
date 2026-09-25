@@ -35,12 +35,13 @@ test('477 finite hollow valve seats on the actual conical annulus and opens on c
  const m=c({id:477}),d=m.root.userData,b=d.blocks;
  try{
   const valve=solidSurface(b.valveStem.geometry),seat=solidSurface(b.annularSeat.geometry),point=new T.Vector3(.60,1.35,0);
-  assert.equal(seat.inside(new T.Vector3(.3,1.35,0)),false,'open central bore');
-  assert.equal(seat.inside(new T.Vector3(.8,1.35,0)),true,'finite seat material with outward winding');
+  // Pass 55: seat and valve are cut on z = 0; probe the kept half.
+  assert.equal(seat.inside(new T.Vector3(.3,1.35,-.05)),false,'open central bore');
+  assert.equal(seat.inside(new T.Vector3(.8,1.35,-.05)),true,'finite seat material with outward winding');
   const gap=t=>{m.update(t);m.root.updateMatrixWorld(true);return valve.signedDistance(b.valveStem.worldToLocal(point.clone()),1);};
   assert.ok(gap(0)>.10);assert.ok(Math.abs(gap(d.geometry.cycleDuration/2))<1e-6);assert.ok(gap(d.geometry.cycleDuration)>.10);
-  assert.equal(valve.inside(new T.Vector3(0,2,0)),false,'valve contains the working liquid in a real hollow');
-  assert.equal(valve.inside(new T.Vector3(.36,2,0)),true,'finite valve stem wall');
+  assert.equal(valve.inside(new T.Vector3(0,2,-.05)),false,'valve contains the working liquid in a real hollow');
+  assert.equal(valve.inside(new T.Vector3(.36,2,-.05)),true,'finite valve stem wall');
  }finally{disposeObject3D(m.root);}
 });
 
