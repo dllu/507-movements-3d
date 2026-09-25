@@ -24,7 +24,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -32,9 +33,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "A thin flat belt where the plate draws a rope like 270's.",
       "limits": "Prescribed no-slip band; elastic tension and friction are not solved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 2,
@@ -2044,7 +2045,8 @@
         "docs/u1-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m2-intermittent-review.md",
-        "docs/m22-dashed-hidden-review.md"
+        "docs/m22-dashed-hidden-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2052,9 +2054,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The pawl is cut off in a weird way when the view is rotated (an undrawn zone hides part of the drop, drawn with a dashed outline), and the pawl outline has several steps where Brown's and Gallagher's are simple.",
       "limits": "The leg is a solid working body for the pins but is drawn as Brown's dashed hidden outline inside a zone that rides with the pawl; start pose is 7° of pin rotation from Brown's; the star is regular and held only by the pawl.",
-      "assessment": "reasonable",
+      "assessment": "flawed",
       "userReported": "2026-09-24"
     },
     {
@@ -2485,7 +2487,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/u6-107-76-review.md",
         "docs/m16-markers-review.md",
-        "docs/m21-269-76-review.md"
+        "docs/m21-269-76-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2493,9 +2496,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The struck arm is bent 17° at C and D sits at the rim's outer edge (needed for the mechanism to work).",
+      "visibleFlaws": "The large wheel is a truncated arc where it should be a whole wheel; part B's tip is oddly shaped compared with the engraving; the struck arm is bent 17° at C.",
       "limits": "The view crops where Brown crops, so segment D, a broken-off piece of the large wheel, leaves the view for most of each turn; about half the swing is dead travel from the rest stop.",
-      "assessment": "minor"
+      "assessment": "flawed"
     },
     {
       "id": 77,
@@ -8794,7 +8797,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3d-255-287-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m22-dashed-hidden-review.md"
+        "docs/m22-dashed-hidden-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8802,7 +8806,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The dashed drum circle on B's face is about half the size of Brown's inner circle.",
+      "visibleFlaws": "Black rims on some edges; dashed hidden-line notation on B's face (engraving notation, not a 3D part).",
       "limits": "The drum and cord lie behind B, so Brown's strand to the inner circle is drawn as a dashed hidden line (a strand in front of B would be cut by the crank pin every turn); a larger drum would change the take-up law; disk timing and demonstration reset are prescribed.",
       "assessment": "minor"
     },
@@ -9165,17 +9169,18 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/lane4-escapements-misc-review.md"
+        "docs/lane4-escapements-misc-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-beveled-cams.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Black rims on some edges.",
       "limits": "Gravity preload is assumed; friction and follower loads are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 273,
@@ -9294,7 +9299,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9302,9 +9308,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Black rims on some edges.",
       "limits": "Necks ≈7 px shallower than drawn.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 277,
@@ -9333,7 +9339,8 @@
         "docs/w5b-248-314-review.md",
         "docs/m4-203-321-review.md",
         "docs/m8-framing-ropes-review.md",
-        "docs/m15-final-review.md"
+        "docs/m15-final-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9341,9 +9348,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The hook works about 0.86 below Brown's tip and the ratchet teeth are shallow.",
+      "visibleFlaws": "The linkage to the right of the hammer is missing; spring C swells in width as it deflects; the hook works about 0.86 below Brown's tip and the ratchet teeth are shallow.",
       "limits": "A dog in the page plane can turn the face ratchet a full sixth only within about 0.35 of the axis for the hammer's roughly 0.6 lift. Tilting the dog cannot help, because the hammer moves it parallel to the page; at Brown's tip, cocking moves the tip mostly away from the ratchet (+1.75 across, +0.78 up).",
-      "assessment": "minor"
+      "assessment": "flawed"
     },
     {
       "id": 278,
@@ -10277,17 +10284,18 @@
         "docs/pin-escapement-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-single-pin-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "The pendulum hole is cut round and partly refilled with two jagged, protruding pieces; the movement differs cosmetically from the plate a great deal.",
       "limits": "Release-corner contact ≈0.0006 and dead-face separation up to 0.00970; upright impulse alone qualified.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 306,
