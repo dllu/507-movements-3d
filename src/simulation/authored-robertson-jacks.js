@@ -48,52 +48,21 @@ function smootherStepSecondDerivative(value) {
   return 60 * x * (1 - x) * (1 - 2 * x);
 }
 
-// Brown hatches the cut faces of his section with parallel 45-degree lines.
-// A thin paper face with ink stripes lies on the cut plane z = 0, facing +Z,
-// in front of the back half-shells. Presentation only: no working surface.
-function hatchedSectionPolygons(polygons, name, { spacing = 0.07,
-  width = 0.014, slope = 1 } = {}) {
-  const group = new THREE.Group();
-  group.name = name;
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let minY = Infinity;
-  let maxY = -Infinity;
-  for (const polygon of polygons) for (const ring of polygon) {
-    for (const [x, y] of ring) {
-      minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-      minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-    }
-  }
-  const bands = [];
-  // Lines x - slope*y = c at 45 degrees, spaced perpendicular by `spacing`
-  // (slope -1 hatches the other way, as Brown does for adjoining parts).
-  const step = spacing * Math.SQRT2;
-  const w = width * Math.SQRT2 / 2;
-  const low = Math.min(minX - slope * minY, minX - slope * maxY);
-  const high = Math.max(maxX - slope * minY, maxX - slope * maxY);
-  for (let c = Math.floor(low / step) * step; c <= high; c += step) {
-    bands.push(poly([[c + slope * minY - w, minY], [c + slope * minY + w, minY],
-      [c + slope * maxY + w, maxY], [c + slope * maxY - w, maxY]]));
-  }
-  const lines = polygonClipping.intersection(polygonClipping.union(...bands),
-    polygons);
-  const materials = [PALETTE.paper, PALETTE.ink].map((color) => {
-    const material = matte(color, { roughness: 0.65, metalness: 0.05 });
-    material.fog = false;
-    return material;
-  });
-  const face = new THREE.Mesh(plate(polygons, 0, 0.004), materials[0]);
-  face.name = `${name}-face`;
-  const ink = new THREE.Mesh(plate(lines, 0.004, 0.007), materials[1]);
-  ink.name = `${name}-lines`;
-  for (const object of [face, ink]) {
-    object.userData.presentationOnly = true;
-    object.castShadow = false;
-    object.receiveShadow = true;
-    group.add(object);
-  }
-  return group;
+// Brown hatches the cut faces of his section with parallel 45-degree lines:
+// notation for cut solid. The cut face is modelled as a plain solid face on
+// the cut plane z = 0, facing +Z, a slightly darker shade of the part's own
+// material, in front of the back half-shells. Presentation only: it adds no
+// working surface.
+function plainSectionFace(polygons, name, material) {
+  const faceMaterial = matte(material.color.clone().multiplyScalar(0.88),
+    { roughness: 0.7, metalness: 0.08 });
+  faceMaterial.fog = false;
+  const face = new THREE.Mesh(plate(polygons, 0, 0.004), faceMaterial);
+  face.name = name;
+  face.userData.presentationOnly = true;
+  face.castShadow = false;
+  face.receiveShadow = true;
+  return face;
 }
 const rectangle = (x0, y0, x1, y1) => poly([[x0, y0], [x1, y0], [x1, y1],
   [x0, y1]]);
@@ -431,7 +400,7 @@ function robertsonJack(movement) {
   const sideY = (cavity.minY + cavity.maxY) / 2;
   const sideHeight = cavity.maxY - cavity.minY;
   // Brown sections the base, ram and cylinder through their axes: only the
-  // back halves (z < 0) are built, and hatched faces close the cut.
+  // back halves (z < 0) are built, and plain cut faces close the cut.
   const leftWall = plate(polygonClipping.difference(
     poly([[0, cavity.minY], [baseHalfDepth, cavity.minY],
       [baseHalfDepth, cavity.maxY], [0, cavity.maxY]]),
@@ -462,7 +431,7 @@ function robertsonJack(movement) {
     waterMaterial, 'water-reservoir-inside-hollow-base');
   baseWater.position.set((cavity.minX + cavity.maxX) / 2, 0,
     -(cavity.halfDepth - 0.01) / 2);
-  const baseSection = hatchedSectionPolygons(polygonClipping.union(
+  const baseSection = plainSectionFace(polygonClipping.union(
     rectangle(baseLeftX, groundY, baseRightX, cavity.minY),
     polygonClipping.difference(
       rectangle(baseLeftX, cavity.minY, baseLeftX + baseWall, cavity.maxY),
@@ -471,7 +440,7 @@ function robertsonJack(movement) {
     rectangle(baseRightX - baseWall, cavity.minY, baseRightX, cavity.maxY),
     rectangle(baseLeftX, cavity.maxY, -baseTopHoleRadius, baseTopY),
     rectangle(baseTopHoleRadius, cavity.maxY, baseRightX, baseTopY),
-  ), 'hatched-cut-face-of-hollow-base');
+  ), 'cut-face-of-hollow-base', frameMaterial);
   hollowBase.add(baseSection);
 
   // Hollow ram with a window at its foot for the pump barrel.
@@ -488,7 +457,7 @@ function robertsonJack(movement) {
     horizontalPlate(sector(0.105, fixedRamRadius, 0, Math.PI),
       fixedRamTopY - ramCapThickness, fixedRamTopY),
   ]), fixedRamMaterial, 'sectioned-hollow-ram-body-with-pump-window');
-  const ramSection = hatchedSectionPolygons(polygonClipping.union(
+  const ramSection = plainSectionFace(polygonClipping.union(
     rectangle(fixedRamBoreRadius, fixedRamBaseY, fixedRamRadius,
       fixedRamTopY),
     rectangle(-fixedRamRadius, windowTopY, -fixedRamBoreRadius,
@@ -497,7 +466,7 @@ function robertsonJack(movement) {
       fixedRamTopY),
     rectangle(0.105, fixedRamTopY - ramCapThickness, fixedRamRadius,
       fixedRamTopY),
-  ), 'hatched-cut-face-of-ram', { slope: -1 });
+  ), 'cut-face-of-ram', fixedRamMaterial);
   fixedRam.add(ramSection);
   const internalPipeWall = mesh(fixedRam,
     horizontalRing(0.077, 0.10, pipeBottomY, fixedRamTopY + 0.06),
@@ -679,7 +648,7 @@ function robertsonJack(movement) {
   'cast-J-claw-hook-on-moving-cylinder');
   const shapePolygon = (shape, dy) => poly(shape.getPoints(24)
     .map((point) => [point.x, point.y + dy]));
-  const cylinderSection = hatchedSectionPolygons(polygonClipping.union(
+  const cylinderSection = plainSectionFace(polygonClipping.union(
     rectangle(cylinderInnerRadius, movingCylinderBottomY,
       cylinderOuterRadius, movingCylinderTopY),
     rectangle(-cylinderOuterRadius, movingCylinderBottomY,
@@ -688,7 +657,7 @@ function robertsonJack(movement) {
       cylinderOuterRadius, drawnCapTopY + drop + 0.001),
     shapePolygon(headShape, drop),
     shapePolygon(hookShape, drop),
-  ), 'hatched-cut-face-of-rising-cylinder-head-and-claw');
+  ), 'cut-face-of-rising-cylinder-head-and-claw', movingMaterial);
   movingCylinder.add(cylinderSection);
 
   const pressureChamber = mesh(root,
@@ -973,7 +942,7 @@ function robertsonJack(movement) {
   for (const object of [baseWater, internalPressurePipe, pressureChamber,
     returnWater]) object.castShadow = false;
   for (const section of [baseSection, ramSection, cylinderSection]) {
-    for (const face of section.children) face.castShadow = false;
+    section.castShadow = false;
   }
   update(0);
   return {

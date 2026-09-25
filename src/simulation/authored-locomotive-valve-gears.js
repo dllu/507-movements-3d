@@ -1031,7 +1031,9 @@ function locomotiveStephensonExpansionLinkValveGear() {
       bandOutline = clip.difference(bandOutline, poly(cut));
     }
     quadrantBand.geometry.dispose();
-    quadrantBand.geometry = plate(bandOutline, -0.07, 0.07);
+    // The plate is carried by the engine wall: it runs back to seat on the
+    // wall's front face (z = -0.5), which it overlaps across the top band.
+    quadrantBand.geometry = plate(bandOutline, -0.16, 0.07);
     for (const notch of quadrantNotches) {
       notch.removeFromParent();
       notch.userData.role += '-cut-into-quadrant-plate';
@@ -1040,16 +1042,15 @@ function locomotiveStephensonExpansionLinkValveGear() {
   root.add(reversingQuadrant);
 
   // Brown sections the engine wall under the reversing handle: a hatched
-  // top band and a hatched right-hand band, open inside. It stands behind
-  // every moving part.
+  // top band and a hatched right-hand band, open inside. The hatching is
+  // notation for the cut solid; the wall is modelled as plain solid bands
+  // standing behind every moving part.
   const sectionedWall = new THREE.Group();
-  sectionedWall.userData.role = 'fixed-hatched-sectioned-engine-wall';
+  sectionedWall.userData.role = 'fixed-sectioned-engine-wall';
   {
     const wallFrontZ = -0.5;
     const wallBackZ = -1.0;
-    // Light section face so Brown's hatch lines read as drawn.
     const wallMaterial = matte(0xcfcabf, { roughness: 0.8 });
-    const hatchMaterial = matte(PALETTE.ink, { roughness: 0.6 });
     const topLeft = sourcePointFromRaster(new THREE.Vector2(60, 86));
     const bottomRight = sourcePointFromRaster(new THREE.Vector2(187, 220));
     const bandBottom = sourcePointFromRaster(new THREE.Vector2(0, 105)).y;
@@ -1065,31 +1066,9 @@ function locomotiveStephensonExpansionLinkValveGear() {
       );
       band.position.set((x0 + x1) / 2, (y0 + y1) / 2, (wallFrontZ + wallBackZ) / 2);
       band.userData.role = bandIndex === 0
-        ? 'hatched-top-band-of-sectioned-wall'
-        : 'hatched-right-band-of-sectioned-wall';
+        ? 'top-band-of-sectioned-wall'
+        : 'right-band-of-sectioned-wall';
       sectionedWall.add(band);
-      // 45-degree hatch lines x - y = c, clipped to the band rectangle.
-      const spacing = 0.11;
-      for (let c = x0 - y1 + spacing / 2; c < x1 - y0; c += spacing) {
-        const start = [Math.max(x0, c + y0), 0];
-        start[1] = start[0] - c;
-        const end = [Math.min(x1, c + y1), 0];
-        end[1] = end[0] - c;
-        const length = Math.hypot(end[0] - start[0], end[1] - start[1]);
-        if (length < 0.03) continue;
-        const stroke = new THREE.Mesh(
-          new THREE.BoxGeometry(length, 0.026, 0.01),
-          hatchMaterial,
-        );
-        stroke.position.set(
-          (start[0] + end[0]) / 2,
-          (start[1] + end[1]) / 2,
-          wallFrontZ + 0.006,
-        );
-        stroke.rotation.z = Math.PI / 4;
-        stroke.userData.role = 'sectioned-wall-hatch-stroke';
-        sectionedWall.add(stroke);
-      }
     });
   }
   root.add(sectionedWall);

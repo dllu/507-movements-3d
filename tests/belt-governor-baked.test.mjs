@@ -23,11 +23,11 @@ test('163 serialized bake follows native balls and fork after the free spindle p
 });
 test('163 bake keeps native travel, repeat belt marks, bounds and exact restart',()=>{
  const v=makeBeltGovernorModel(bundle);try{
-  let meshes=0;v.root.traverse(o=>{if(o.isMesh){meshes++;assert.equal(o.material.fog,false);}});assert.equal(meshes,51);for(const name of ['flatBelt','upperPulley','middlePulley','lowerPulley'])assert.equal(v.root.getObjectByName(name).receiveShadow,false);assert.ok(bundle.positionClosure<1e-6);assert.ok(bundle.velocityClosure<1e-6);
+  let meshes=0;v.root.traverse(o=>{if(o.isMesh){meshes++;assert.equal(o.material.fog,false);}});assert.equal(meshes,53);assert.ok(v.root.getObjectByName('beltReturnBeyondCrop')&&v.root.getObjectByName('drivingDrumBeyondCrop'),'endless belt continues past the crop');v.root.traverse(o=>{if(o.name.startsWith('beltSeam'))assert.equal(o.visible,false,'no painted belt seams');});for(const name of ['flatBelt','upperPulley','middlePulley','lowerPulley'])assert.equal(v.root.getObjectByName(name).receiveShadow,false);assert.ok(bundle.positionClosure<1e-6);assert.ok(bundle.velocityClosure<1e-6);
   assert.ok(Math.abs(bundle.turns[12]/bundle.beltSeamSpacing-Math.round(bundle.turns[12]/bundle.beltSeamSpacing))<1e-12);
   const initial=JSON.stringify(v.root.userData.state),snapshot=()=>{v.root.updateMatrixWorld(true);const a=[];v.root.traverse(o=>{if(o.isMesh&&o.name!=='middlePulley')a.push(...o.matrixWorld.elements);});return a;};
   v.update(.371*bundle.period);const first=snapshot();v.update(100.371*bundle.period);const repeat=snapshot();assert.ok(Math.max(...first.map((x,i)=>Math.abs(x-repeat[i])))<1e-9);
-  for(let i=0;i<129;i++){v.update(bundle.period*(i+.273)/129);assert.ok(v.root.userData.cameraFitBounds.containsBox(new THREE.Box3().setFromObject(v.root,true)));}
+  for(let i=0;i<129;i++){v.update(bundle.period*(i+.273)/129);const framed=new THREE.Box3();v.root.updateMatrixWorld(true);v.root.traverse(o=>{if(o.isMesh&&o.visible&&!o.name.endsWith('BeyondCrop'))framed.union(new THREE.Box3().setFromObject(o,true));});assert.ok(v.root.userData.cameraFitBounds.containsBox(framed));}
   const seamState=()=>{const rigid=[],marks=[];v.root.traverse(o=>{if(o.name.startsWith('beltSeam')){if(o.visible)marks.push(o.getWorldPosition(new THREE.Vector3()));}else if(o.isMesh)rigid.push(...o.matrixWorld.elements);});return{rigid,marks};};
   v.update(bundle.period-1e-8);const before=seamState();v.update(bundle.period+1e-8);const after=seamState();assert.ok(Math.max(...before.rigid.map((x,i)=>Math.abs(x-after.rigid[i])))<1e-6);
   for(const point of before.marks.filter(p=>p.x<4.47))assert.ok(after.marks.some(p=>p.distanceTo(point)<1e-6),'interior seam pattern remains continuous; new marks enter at the cut ends');
@@ -43,7 +43,7 @@ test('163 serialized geometry and world transforms match the clearance-audited s
  try{
   const time=.371*bundle.period;original.update(beltGovernorState(sampleBakedMotion(bundle,time),bundle.geometry));baked.update(time);
   for(const [name,mesh]of Object.entries(original.root.userData.parts)){
-   const actual=baked.root.getObjectByName(name);assert.ok(actual,name);const actualPositions=actual.geometry.attributes.position.array,expectedPositions=mesh.geometry.attributes.position.array;assert.equal(actualPositions.length,expectedPositions.length);assert.ok(actualPositions.every((x,i)=>x===expectedPositions[i]),name+' positions (JSON normalizes signed zero)');assert.deepEqual(actual.geometry.index?.array,mesh.geometry.index?.array,name+' triangles');assert.equal(actual.visible,mesh.visible);
+   const actual=baked.root.getObjectByName(name);assert.ok(actual,name);const actualPositions=actual.geometry.attributes.position.array,expectedPositions=mesh.geometry.attributes.position.array;assert.equal(actualPositions.length,expectedPositions.length);assert.ok(actualPositions.every((x,i)=>x===expectedPositions[i]),name+' positions (JSON normalizes signed zero)');assert.deepEqual(actual.geometry.index?.array,mesh.geometry.index?.array,name+' triangles');assert.equal(actual.visible,name.startsWith('beltSeam')?false:mesh.visible);
    assert.ok(Math.max(...actual.matrixWorld.elements.map((x,i)=>Math.abs(x-mesh.matrixWorld.elements[i])))<1e-12,name+' transform');
   }
  }finally{original.dispose();baked.dispose();}

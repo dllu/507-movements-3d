@@ -22,6 +22,6 @@ test('173 baked assembly retains nut lead, horizontal guide and reset through it
  }
  for(const cycle of [1,2,10]){m.update(g.duration*cycle+.5);assert.ok(Math.abs(m.root.userData.kinematics.wheel-stateAtTime(.5).wheel)<1e-10);}
  m.update(g.duration+.01);const before=m.root.userData.kinematics.carrier;m.update(g.duration+.1);assert.ok(m.root.userData.kinematics.carrier>before);m.reset();assert.deepEqual(m.root.userData.kinematics,initial);
- assert.equal(Object.keys(parts).length,39);assert.equal(m.root.userData.hideGround,true);
+ assert.equal(Object.keys(parts).length,40);assert.equal(m.root.userData.hideGround,true);
  }finally{m.dispose();}
 });

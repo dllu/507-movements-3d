@@ -36,9 +36,13 @@ export function makeStrokeDoublerGeometry({samples=96,cutterSteps=2048,amplitude
   const x0=local([a,340])[0],x1=local([b,340])[0];add('support'+i,plate(capsule([x0+radius,cy],[x1-radius,cy],radius,48),-.10,.10),'fixed',PALETTE.frame);
  }
  const rodTop=x=>s.lines.rodTop.intercept+s.lines.rodTop.slope*x,rodBottom=x=>s.lines.rodBottom.intercept+s.lines.rodBottom.slope*x;
- const rod=poly([[19,rodTop(19)],[s.axis[0],rodTop(s.axis[0])],[s.axis[0],rodBottom(s.axis[0])],[26,rodBottom(26)],[21,rodBottom(21)-1],[28,rodTop(28)+4],[18,rodTop(18)+3]].map(local));
- const pitman=clip.difference(clip.union(rod,poly(circle([0,0],s.eyeRadius,128))),poly(circle([0,0],s.pinRadius,96)));
+ // Brown breaks the pitman off at the plate edge. Model it whole: the rod
+ // ends in a rounded crank-end eye on its pin (the crank lies off the plate).
+ const endX=28,end=local([endX,(rodTop(endX)+rodBottom(endX))/2]),endEye=.10,endPin=.045;
+ const rod=poly([[endX,rodTop(endX)],[s.axis[0],rodTop(s.axis[0])],[s.axis[0],rodBottom(s.axis[0])],[endX,rodBottom(endX)]].map(local));
+ const pitman=clip.difference(clip.union(rod,poly(circle([0,0],s.eyeRadius,128)),poly(circle(end,endEye,96))),poly(circle([0,0],s.pinRadius,96)),poly(circle(end,endPin+.004,64)));
  add('pitman',plate(pitman,.20,.32),'carrier',PALETTE.brass);
+ add('crankPin',disk(endPin,.15,.37,48),'carrier',PALETTE.ink,[end[0],end[1],0]);
  add('eye',ring(s.pinRadius,s.eyeRadius,.32,.36,128),'carrier',PALETTE.brass);
  add('spindle',disk(s.pinRadius,-.15,.40,96),'carrier',PALETTE.ink);
  for(const name of ['pinion','upperRack','lowerRack']){const c=convexPlateCells(parts[name].geometry);cells[name]=c.cells.map(points=>[c.low,c.high].flatMap(z=>points.map(p=>[...p,z])));}

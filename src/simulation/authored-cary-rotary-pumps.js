@@ -443,25 +443,6 @@ function caryRotaryPump(movement) {
   ], 'fixed-discharge-pipe-H-connected-from-port-M',
   'water-routed-from-port-M-through-discharge-H', 0.35);
 
-  const inletArrow = addRole(new THREE.ArrowHelper(
-    new THREE.Vector3(0, 1, 0),
-    new THREE.Vector3(-0.72, -3.57, casingDepth * 0.57),
-    0.82,
-    PALETTE.ink,
-    0.24,
-    0.15,
-  ), 'source-direction-up-suction-F-to-port-L');
-  root.add(inletArrow);
-  const dischargeArrow = addRole(new THREE.ArrowHelper(
-    new THREE.Vector3(0, -1, 0),
-    new THREE.Vector3(3.86, 1.89, casingDepth * 0.57),
-    0.76,
-    PALETTE.ink,
-    0.24,
-    0.15,
-  ), 'source-direction-down-outlet-of-discharge-H');
-  root.add(dischargeArrow);
-
   const update = (time) => {
     const state = stateAtTime(time);
     drum.rotation.z = state.rotorAngle;
@@ -505,12 +486,10 @@ function caryRotaryPump(movement) {
       base,
       casing,
       dischargeH,
-      dischargeArrow,
       drum,
       drumShell,
       fixedHeartCam,
       frontCover,
-      inletArrow,
       inletF,
       pistons,
       portSeparatorE,
@@ -608,14 +587,11 @@ function caryRotaryPump(movement) {
   root.userData.groundFloorY = groundY;
   correctCaryPump(root);
   // Brown's section is drawn clear: no water or front cover washes over the
-  // cam and sliders. Drum B and pipe H are solid walls; the rear spider stays
-  // a faint backing so the fixed cam reads against it.
+  // cam and sliders. Drum B, pipe H and the rear spider carrying the drum
+  // are solid (opaque) parts; Brown's flow arrows are not modelled.
   for (const object of [frontCover, annularWater, inletWater, dischargeH.water]) {
     object.visible = false;
   }
-  const spiderMaterial = drumMaterial.clone();
-  spiderMaterial.opacity = 0.22;
-  root.userData.blocks.rearSpider.material = spiderMaterial;
   drumMaterial.transparent = false;
   drumMaterial.opacity = 1;
   drumMaterial.depthWrite = true;
@@ -628,9 +604,6 @@ function caryRotaryPump(movement) {
   inletShell.geometry.dispose();
   inletShell.geometry = new THREE.BoxGeometry(0.66, 1.58, 0.06)
     .translate(0, 0, -0.3834);
-  // F was moved up and left to meet port L beside E.
-  inletArrow.position.x += -0.13;
-  inletArrow.position.y += 0.75;
   markShadows(root);
   base.receiveShadow = true;
   update(0);

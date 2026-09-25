@@ -1088,7 +1088,7 @@ function sourceScaledSingleEngineReverser() {
   {
     // Brown draws this foundation as a ground line with diagonal hatching:
     // notation for a cut solid. Keep the slab's extent and render it as a
-    // solid ground block with a faint side hatch.
+    // plain solid ground block (no hatch texture).
     const width = 170 * sourceScale;
     const height = 21 * sourceScale;
     const block = groundBlock(width, height, .5, {spacing: .16, name: 'engraved-foundation-under-hand-lever'});

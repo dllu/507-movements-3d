@@ -3,7 +3,7 @@ import {createDiagonalCatchScaffold} from '../authored-diagonal-catches.js';
 import {diagonalCatchProfile,diagonalLatchFinger} from './catch-profile.js';
 import {plate,poly,circle,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {disposeObject3D} from '../dispose-model.js';
-import {makeDiagonalCatchUpdater} from './update-solids.js';
+import {makeDiagonalCatchUpdater,DIAGONAL_CATCH_ROD_EDGE_Y} from './update-solids.js';
 
 function lowerBacking(finger){
  const local=([x,y])=>[(x-271)*.0125-finger.fit.pivot[0],(234-y)*.0125-finger.fit.pivot[1]];
@@ -36,7 +36,7 @@ export function createDiagonalCatchAssembly(){
   const patch=new THREE.Mesh(plate(finger.polygons,front-.1,front+.1),handleMaterial);
   patch.userData.role=side+'-finite-catching-finger';body.add(patch);
   // Plate 182 reveals the upper horn above the hub. In the closed position
-  // its end falls behind the sectioned piston rod. The offset is inferred;
+  // its end falls behind the piston rod. The offset is inferred;
   // the already-qualified front catching face remains in the catch plane.
   const horn=side==='upper'?[[219,50],[232,57],[233,68],[267,84],[252,109],[231,122],[219,89]].map(([x,y])=>{
    const dx=(x-270)*.0125-finger.fit.pivot[0],dy=(236-y)*.0125-finger.fit.pivot[1],a=-finger.fit.angle;
@@ -61,12 +61,14 @@ export function createDiagonalCatchAssembly(){
    stem.userData.role=side+'-finger-axial-web-'+index;body.add(stem);
   }
  }
- // Brown draws every rod eye as an open ring round a small pin and every
- // fixed shaft as a hatched section inside its boss. Drop the extra dark
- // tori at the arm ends, slim the hinge pins and show the shaft heads light
- // with section hatching so none of them reads as a solid black disc.
+ // Brown's plates draw rod eyes, shaft ends and the tappet face with ink
+ // notation (dark eye outlines, section hatching, broken rod ends). The model
+ // shows the parts themselves: plain steel shaft heads, rods and eyes of one
+ // steel, a whole piston rod that travels with its tappet, and each back-weight
+ // rod hanging whole from its eye to the weight it carries below the picture.
  const steel=new THREE.MeshStandardMaterial({color:'#c3c7c1',roughness:.55,metalness:.15});
- const sectionLines=new THREE.LineBasicMaterial({color:'#3a3f3c'});
+ const rodSteel=new THREE.MeshStandardMaterial({color:'#7d8581',roughness:.5,metalness:.2});
+ const iron=new THREE.MeshStandardMaterial({color:'#4a5150',roughness:.7,metalness:.1});
  const eyes=[];root.traverse(o=>{if(o.isMesh&&/back-weight-eye$/.test(o.userData.role??''))eyes.push(o);});
  for(const eye of eyes)remove(eye);
  root.traverse(o=>{
@@ -74,46 +76,43 @@ export function createDiagonalCatchAssembly(){
   if(o.userData.role==='back-weight-rod-hinge-pin'){
    const p=o.geometry.parameters;o.geometry.dispose();
    o.geometry=new THREE.CylinderGeometry(.06,.06,p.height,40);o.material=steel;
-  }else if(/fixed-round-head$/.test(o.userData.role??'')){
-   o.material=steel;
-   const r=o.geometry.parameters.radiusTop*.92,z=o.geometry.parameters.height/2+.002,pts=[];
-   for(let c=-r*.75;c<=r*.75+1e-9;c+=r*.3){
-    // 45° chords across the section face, in the head's local frame
-    // (cylinderAlongZ rotates +Y to +Z, so local y is the axial direction).
-    const h=Math.sqrt(Math.max(0,r*r-c*c)),s=Math.SQRT1_2;
-    const u=[(c+h)*s,(c-h)*s],v=[(c-h)*s,(c+h)*s];
-    pts.push(new THREE.Vector3(u[0],z,-u[1]),new THREE.Vector3(v[0],z,-v[1]));
-   }
-   const hatch=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),sectionLines);
-   hatch.name=o.userData.role+'-section-hatching';o.add(hatch);
-  }
+  }else if(/fixed-round-head$/.test(o.userData.role??''))o.material=steel;
+  else if(/-bored-rod-eye$/.test(o.userData.role??''))o.material=rodSteel;
  });
  const groups={upper:b.upperHandle,lower:b.lowerHandle,catch:b.catchGroup,piston:b.pistonGroup,
   upperWeight:b.upperWeightAssembly,lowerWeight:b.lowerWeightAssembly,catchWeight:b.catchWeightAssembly};
  for(const [name,object]of Object.entries(groups))object.name='body:'+name;
- // The engraving hatches the projecting tappet's end face. Surface marks make
- // its translation legible head-on without adding a floating contact marker.
- const hatchPoints=[],halfWidth=(g.tappetShoeRightX-g.tappetShoeLeftX)/2-.025,halfHeight=.225;
- for(let offset=-.3;offset<=.300001;offset+=.1){
-  const left=Math.max(-halfWidth,-halfHeight-offset),right=Math.min(halfWidth,halfHeight-offset);
-  if(right>left)for(const x of [left,right])hatchPoints.push(new THREE.Vector3(b.tappet.position.x+x,x+offset,.2805));
- }
  // The shoe is fixed to the rod's front face (z=-.27): seat it there rather
- // than burying .01 of it in the sectioned rod it slides past.
+ // than burying .01 of it in the rod it slides past.
  {const p=b.tappet.geometry.parameters;b.tappet.geometry.dispose();
   b.tappet.geometry=new THREE.BoxGeometry(p.width,p.height,.55);b.tappet.position.z=.005;}
- b.tappet.material=b.tappet.material.clone();b.tappet.material.color.set('#f59a76');
- const hatching=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(hatchPoints),new THREE.LineBasicMaterial({color:'#49352d'}));
- hatching.name='tappet-face-hatching';b.pistonGroup.add(hatching);
+ b.tappet.material=b.tappet.material.clone();b.tappet.material.color.set('#c9563d');
+ // Whole piston rod with square ends, long enough that neither end enters
+ // Brown's picture over the stroke (piston y -1.64..1.96).
+ {const top=(234-23)*.0125+1.65+.8,bottom=(234-500)*.0125-1.96-.8;
+  b.pistonRod.geometry.dispose();
+  b.pistonRod.geometry=new THREE.BoxGeometry(33*.0125,top-bottom,.17);b.pistonRod.geometry.translate(0,(top+bottom)/2,0);
+  b.pistonRod.position.y=0;b.pistonRod.userData.role='whole-piston-rod';delete b.pistonRod.userData.sectioned;}
+ root.updateMatrixWorld(true);
+ for(const name of ['upperWeight','lowerWeight','catchWeight']){
+  const group=groups[name],rod=group.children.find(o=>o.isMesh&&/vertical-rod/.test(o.userData.role??''));
+  const anchor={upperWeight:b.upperHandleWeightAnchor,lowerWeight:b.lowerHandleWeightAnchor,catchWeight:b.catchWeightAnchor}[name];
+  const eyeY=root.worldToLocal(anchor.getWorldPosition(new THREE.Vector3())).y;
+  // Fixed rod length: its lower end stays below the drawing edge in every pose.
+  const length=eyeY-.14-DIAGONAL_CATCH_ROD_EDGE_Y+2.4,p=rod.geometry.parameters;
+  // The weight (radius .16) clears the piston rod by about .03 at its closest.
+  rod.geometry.dispose();rod.geometry=new THREE.BoxGeometry(p.width,length,p.depth);
+  rod.scale.set(1,1,1);rod.position.y=-.14-length/2;rod.material=rodSteel;
+  const weight=new THREE.Mesh(new THREE.CylinderGeometry(.16,.16,1,40),iron);
+  weight.position.y=-.14-length-.5;weight.userData.role=name+'-cast-back-weight';group.add(weight);
+ }
  const parts={},families={};
  root.traverse(o=>{if(o.isMesh){
-  const name=o===b.pistonRod?'sectioned-piston-rod':(o.userData.role??'part')+'#'+Object.keys(parts).length;o.name=name;parts[name]=o;
+  const name=o===b.pistonRod?'piston-rod':(o.userData.role??'part')+'#'+Object.keys(parts).length;o.name=name;parts[name]=o;
   o.castShadow=true;o.receiveShadow=true;
   let parent=o;while(parent&&!parent.name.startsWith('body:'))parent=parent.parent;
   families[name]=parent?.name.slice(5)??'fixed';
  }});
- // The section mesh needs a stable runtime name in serialized playback.
- b.pistonRod.userData.sectioned=true;
  root.userData={parts,families,blocks:groups,geometry:g,hideGround:true,materialsIgnoreSceneFog:true,
   cameraFov:8,cameraDistanceScale:1.02,supportsRestart:true,reconstructionStatus:'under-review',
   simulationBackend:'offline-projected-mujoco-candidate',mechanism:'passive-diagonal-catch',

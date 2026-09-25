@@ -549,13 +549,35 @@ function firstOrderTripHammer(movement) {
   helveOutline.userData.role = 'dark-source-profile-helve-outline';
 
   // Brown's head is a straight-sided block with a rounded top.
-  const headBottomLeft = new THREE.Vector2(-3.79, 0.04);
-  const headBottomRight = new THREE.Vector2(-3.18, -0.17);
+  const sourceHeadBottomLeft = new THREE.Vector2(-3.79, 0.04);
+  const sourceHeadBottomRight = new THREE.Vector2(-3.18, -0.17);
   const headUp = new THREE.Vector2(0.29, 1.86).normalize();
-  const headHalfWidth = headBottomLeft.distanceTo(headBottomRight) / 2;
-  const headArcCenter = headBottomLeft.clone().add(headBottomRight)
+  const headHalfWidth = sourceHeadBottomLeft.distanceTo(
+    sourceHeadBottomRight,
+  ) / 2;
+  const headArcCenter = sourceHeadBottomLeft.clone()
+    .add(sourceHeadBottomRight)
     .multiplyScalar(0.5).addScaledVector(headUp, 1.62);
-  const headAcross = headBottomRight.clone().sub(headBottomLeft).normalize();
+  const headAcross = sourceHeadBottomRight.clone().sub(sourceHeadBottomLeft)
+    .normalize();
+  // The striking face is dressed through the strike point square to the
+  // anvil at the impact angle, so the face lands flat on the anvil (Brown's
+  // raised-pose sketch slopes it about 15 degrees less).
+  const impactFaceDirection = new THREE.Vector2(
+    Math.cos(-impactHammerAngle),
+    Math.sin(-impactHammerAngle),
+  );
+  const faceOnHeadSide = (sideBottom) => {
+    // Solve sideBottom + s * headUp = strikePointLocal + t * faceDirection.
+    const determinant = headUp.x * -impactFaceDirection.y
+      + impactFaceDirection.x * headUp.y;
+    const delta = strikePointLocal.clone().sub(sideBottom);
+    const along = (delta.x * -impactFaceDirection.y
+      + impactFaceDirection.x * delta.y) / determinant;
+    return sideBottom.clone().addScaledVector(headUp, along);
+  };
+  const headBottomLeft = faceOnHeadSide(sourceHeadBottomLeft);
+  const headBottomRight = faceOnHeadSide(sourceHeadBottomRight);
   const headPoints = [
     headBottomRight.clone(),
     ...Array.from({ length: 17 }, (_, index) => {

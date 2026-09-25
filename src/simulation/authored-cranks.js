@@ -4152,14 +4152,13 @@ function crankAndSlottedLeverQuickReturnMotion() {
   const extensionStartX = Math.sqrt(
     leverPivotRadius ** 2 - outputHalfWidth ** 2,
   );
+  // Brown draws the tail as a round rod broken off with an oblique cut.
+  // Model it whole: a round rod ending in a rounded end at the output point.
   const outputExtension = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      outputLength - extensionStartX,
-      outputHalfWidth * 2,
-      leverDepth,
-    ),
+    new THREE.CylinderGeometry(outputHalfWidth, outputHalfWidth, outputLength - extensionStartX, 40),
     drivenMaterial,
   );
+  outputExtension.rotation.z = -Math.PI / 2;
   outputExtension.position.set(
     (outputLength + extensionStartX) / 2,
     0,
@@ -4168,17 +4167,14 @@ function crankAndSlottedLeverQuickReturnMotion() {
   outputExtension.userData.role = 'rigid-output-arm-of-quick-return-lever';
   rocker.add(outputExtension);
 
-  const outputTipShape = new THREE.Shape();
-  outputTipShape.moveTo(outputLength, -outputHalfWidth);
-  outputTipShape.lineTo(outputLength + outputTipLength, 0);
-  outputTipShape.lineTo(outputLength, outputHalfWidth);
-  outputTipShape.closePath();
   const outputTip = new THREE.Mesh(
-    centeredExtrusion(outputTipShape, leverDepth, 0.012),
+    new THREE.SphereGeometry(outputHalfWidth, 40, 16, 0, Math.PI * 2, 0, Math.PI / 2),
     drivenMaterial,
   );
-  outputTip.position.z = leverCenterZ;
-  outputTip.userData.role = 'pointed-tool-end-of-rocking-quick-return-output';
+  outputTip.rotation.z = -Math.PI / 2;
+  outputTip.scale.set(1, outputTipLength / outputHalfWidth, 1);
+  outputTip.position.set(outputLength, 0, leverCenterZ);
+  outputTip.userData.role = 'rounded-end-of-round-quick-return-output-rod';
   rocker.add(outputTip);
 
   const pivotHub = cylinderAlongZ(

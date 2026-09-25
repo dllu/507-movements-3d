@@ -15,7 +15,7 @@
     },
     {
       "file": "src/simulation/variable-face-gear-parts.js",
-      "sha256": "882e4355a2a7d8f334de53f4503d7071d440169422fde5e1658d0452f02e94c3"
+      "sha256": "4b6f7fd27f3a6b02bf0466e5f11c40276ac167d07ca60565e1e314297ec38154"
     },
     {
       "file": "src/simulation/generated-variable-face-gears.js",

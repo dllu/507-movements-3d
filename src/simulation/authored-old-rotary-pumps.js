@@ -406,34 +406,6 @@ function oldRotaryPump(movement) {
     outlet.add(wall);
   }
 
-  const inletArrow = addRole(new THREE.ArrowHelper(
-    new THREE.Vector3(0, 1, 0),
-    new THREE.Vector3(0, -3.52, casingDepth * 0.58),
-    0.82,
-    PALETTE.ink,
-    0.24,
-    0.15,
-  ), 'upward-flow-direction-at-lower-entrance');
-  root.add(inletArrow);
-  const outletDirection = new THREE.Vector3(
-    Math.cos(outletAngle),
-    Math.sin(outletAngle),
-    0,
-  );
-  const outletArrow = addRole(new THREE.ArrowHelper(
-    outletDirection,
-    new THREE.Vector3(
-      2.42 * Math.cos(outletAngle),
-      2.42 * Math.sin(outletAngle),
-      casingDepth * 0.58,
-    ),
-    0.90,
-    PALETTE.ink,
-    0.24,
-    0.15,
-  ), 'outward-flow-direction-at-upper-exit');
-  root.add(outletArrow);
-
   const update = (time) => {
     const state = stateAtTime(time);
     rotor.rotation.z = state.rotorAngle;
@@ -476,9 +448,7 @@ function oldRotaryPump(movement) {
       casing,
       frontCover,
       inlet,
-      inletArrow,
       outlet,
-      outletArrow,
       rotor,
       rotorBody,
       shaft,
@@ -587,13 +557,17 @@ function oldRotaryPump(movement) {
   rearCover.material.fog = false;
   // The hollow ring's rear end plate reads as the same blank paper.
   root.userData.blocks.rotorRearWeb.material = rearCover.material;
-  for (const [shell, width, height] of [
-    [inlet.children[0], 0.78, 1.42],
-    [outlet.children[0], 1.48, 0.78],
+  // The outlet's back wall reaches in to the casing bore, closing the port
+  // cut through the ring (the background showed through there).
+  const outletReach = outlet.position.length() - outletLength / 2
+    - casingInnerRadius - 0.01;
+  for (const [shell, width, height, inward] of [
+    [inlet.children[0], 0.78, 1.42, 0],
+    [outlet.children[0], 1.48, 0.78, outletReach],
   ]) {
     shell.geometry.dispose();
-    shell.geometry = new THREE.BoxGeometry(width, height, 0.06)
-      .translate(0, 0, -0.38);
+    shell.geometry = new THREE.BoxGeometry(width + inward, height, 0.06)
+      .translate(-inward / 2, 0, -0.38);
   }
   markShadows(root);
   base.receiveShadow = true;

@@ -453,7 +453,7 @@ function pointedArchInstrument(movement) {
   pencilPoint.userData.role = 'pencil-point-on-drawing-board';
   const connectionCollar = new THREE.Mesh(
     new THREE.TorusGeometry(0.12, 0.026, 10, 36),
-    whiteMaterial,
+    accentMaterial,
   );
   connectionCollar.position.z = 0.33;
   connectionCollar.userData.role =

@@ -106,7 +106,10 @@ test('movement 197 matches Brown\'s moving square frame, eleven-pin rack, two en
   assert.equal(blocks.rackAssembly.parent, model.root);
   assert.equal(blocks.pinion.parent, model.root);
   assert.equal(blocks.pinionShaft.parent, model.root);
-  assert.equal(blocks.shaftSlider.parent, model.root);
+  // The shaft's rise-and-fall bearing lies outside the drawing: the shaft is
+  // driven from the front, so no carriage stands behind the solid frame plate.
+  assert.equal(blocks.shaftSlider.parent, null);
+  assert.equal(blocks.rackAssembly.children.filter((o) => o.userData.role === 'solid-plate-of-reciprocating-square-frame').length, 1);
   assert.equal(blocks.rackPlate.parent, blocks.rackAssembly);
   assert.equal(blocks.leftEndGuide.parent, blocks.rackAssembly);
   assert.equal(blocks.rightEndGuide.parent, blocks.rackAssembly);

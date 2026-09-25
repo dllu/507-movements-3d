@@ -164,7 +164,8 @@ function mercurialBarometer(movement) {
     metalness: 0.18,
     roughness: 0.65,
   });
-  const scaleMaterial = matte(PALETTE.paper, {
+  // An ivory scale board, distinct from the page, carries the marks.
+  const scaleMaterial = matte(0xe6dcc3, {
     roughness: 0.88,
   });
   const inkMaterial = matte(PALETTE.ink, {
@@ -315,20 +316,23 @@ function mercurialBarometer(movement) {
   };
   const scaleBottomY = rightSurfaceForReading(27.8);
   const scaleTopY = rightSurfaceForReading(31.2);
+  // Brown draws only the inch marks beside the long leg: they are carried
+  // on a narrow board just behind the tube plane (front face at z -0.0025),
+  // held to the leg by a band (see mercury-instrument-parts.js).
   const scaleBoard = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(1.08, scaleTopY - scaleBottomY + 0.20, 0.10),
+    new THREE.BoxGeometry(0.58, scaleTopY - scaleBottomY + 0.20, 0.10),
     scaleMaterial,
   ), 'fixed-calibrated-28-through-31-inch-scale-board');
   scaleBoard.position.set(
-    1.48,
+    1.23,
     (scaleBottomY + scaleTopY) / 2,
-    -0.27,
+    -0.0525,
   );
   const scaleSpine = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.035, scaleTopY - scaleBottomY, 0.045),
     inkMaterial,
   ), 'vertical-inch-scale-spine');
-  scaleSpine.position.set(1.05, (scaleBottomY + scaleTopY) / 2, -0.19);
+  scaleSpine.position.set(1.05, (scaleBottomY + scaleTopY) / 2, 0.01);
   const scaleTicks = [];
   for (let tenths = 280; tenths <= 310; tenths += 1) {
     const reading = tenths / 10;
@@ -345,14 +349,14 @@ function mercurialBarometer(movement) {
     tick.position.set(
       wholeInch ? 1.25 : (halfInch ? 1.20 : 1.155),
       rightSurfaceForReading(reading),
-      -0.18,
+      0.02,
     );
     tick.userData.valueInches = reading;
     scaleTicks.push(tick);
   }
   const scaleLabels = [28, 29, 30, 31].map((reading) => {
     const label = makeTwoDigitLabel(reading, inkMaterial);
-    label.position.set(1.73, rightSurfaceForReading(reading), -0.17);
+    label.position.set(1.73, rightSurfaceForReading(reading), 0.03);
     label.scale.setScalar(0.52);
     return label;
   });

@@ -12,8 +12,12 @@ export function makeSingleClampSolids(){
  bodies.jaw.position.set(...p.pivot,.08);
  add('jaw',plate(clip.difference(poly(p.points.map(v=>v.toArray())),round(.13)),-.12,.12),PALETTE.driven,'jaw');
  const screwCenters=[[192,180],[192,450]],holes=screwCenters.map(c=>round(.075,source(...c)));
- add('fixed-side',plate(clip.difference(poly(p.fixedSide.map(c=>source(...c))),...holes),.23,.65),PALETTE.muted,'fixed');
- add('board',plate(poly(p.board.map(c=>source(...c))),-.04,.28),PALETTE.driver,'board');
+ // Brown ends the stile and board in zigzag break lines. Model them whole
+ // with square ends at the drawn break (their bounding rectangles).
+ const box=points=>{const xs=points.map(c=>c[0]),ys=points.map(c=>c[1]),[x0,x1,y0,y1]=[Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)];
+  return poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]].map(c=>source(...c)));};
+ add('fixed-side',plate(clip.difference(box(p.fixedSide),...holes),.23,.65),PALETTE.muted,'fixed');
+ add('board',plate(box(p.board),-.04,.28),PALETTE.driver,'board');
  for(const [name,center,radius,shaftRadius,bottom,top,angle]of [
   ['pivot',p.pivot,.348,.125,-.25,.25,Math.PI/2],
   ...screwCenters.map((c,i)=>['fixed'+i,source(...c),.18,.07,-.25,.69,1.08])]){

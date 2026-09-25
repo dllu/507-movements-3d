@@ -10,6 +10,7 @@ import {
 import {boredJournal, fitPistonGuide} from './piston-guide-parts.js';
 import {makeBoredLinkRod} from './bored-link-rod.js';
 import {replaceWithLaidRope} from './laid-rope.js';
+import {groundBlock} from './ground-block.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -478,12 +479,13 @@ function selfRockingCradle(movement) {
   // small caps on the post heads: no white index dots.
   const pinMaterial = matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 });
 
-  // Brown's floor is a hatched ground line, not a slab.
-  const ground = new THREE.Mesh(
-    new THREE.BoxGeometry(6.8, 0.05, 0.50),
-    groundMaterial,
-  );
-  ground.position.set(0, groundY - .025, -0.02);
+  // Brown's floor is a hatched ground line: notation for the solid floor.
+  // Model the floor itself as a plain ground block deep enough to carry both
+  // the rocking cradle E and the rear drive standard.
+  const groundDepth = 0.24;
+  const ground = groundBlock(6.8, groundDepth, 1.40,
+    { name: 'fixed-floor-beneath-rocking-cradle-E' });
+  ground.position.set(0, groundY - groundDepth / 2, -0.44);
   ground.userData.role = 'fixed-floor-beneath-rocking-cradle-E';
   root.add(ground);
 
@@ -785,7 +787,7 @@ function selfRockingCradle(movement) {
   );
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(1.1, .6, 14);
-  root.userData.groundFloorY = groundY - 0.23;
+  root.userData.groundFloorY = groundY - groundDepth - 0.01;
   markShadows(root);
   ground.receiveShadow = true;
   fitPistonGuide(root, update, cycleDuration);

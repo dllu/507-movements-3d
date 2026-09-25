@@ -11365,18 +11365,21 @@ function pronyBrakeDynamometer(movement) {
     return weight;
   });
 
+  // Each stop block runs back from the lever's plane to the fixed post
+  // behind it (front face z = -0.11), so C and C' are carried by the post.
+  const stopBack = -0.115, stopFront = leverPlaneZ + 0.17;
   const upperStop = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, stopHeight, 0.34),
+    new THREE.BoxGeometry(0.42, stopHeight, stopFront - stopBack),
     matte(PALETTE.ink, { metalness: 0.14, roughness: 0.6 }),
   );
-  upperStop.position.set(stopX, upperStopCenterY, leverPlaneZ);
+  upperStop.position.set(stopX, upperStopCenterY, (stopFront + stopBack) / 2);
   upperStop.userData.fixed = true;
   upperStop.userData.role = 'upper-horizontal-position-stop-C-prime';
   const lowerStop = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, stopHeight, 0.34),
+    new THREE.BoxGeometry(0.42, stopHeight, stopFront - stopBack),
     upperStop.material,
   );
-  lowerStop.position.set(stopX, lowerStopCenterY, leverPlaneZ);
+  lowerStop.position.set(stopX, lowerStopCenterY, (stopFront + stopBack) / 2);
   lowerStop.userData.fixed = true;
   lowerStop.userData.role = 'lower-horizontal-position-stop-C';
   const stopPost = makeBeam(
@@ -11637,8 +11640,9 @@ function removeUndrawnWhiteIndexMarks(root) {
 }
 
 // Brown draws A's shaft cut in section: a hatched circle inside the smooth
-// pulley. The hatching turns with the shaft, the only visible sign of the
-// drum's rotation (the lever and scale stay balanced at rest by design).
+// pulley. The hatching is notation; the model shows the plain shaft end, so
+// the drum's steady rotation has no visible cue (the lever and scale stay
+// balanced at rest by design).
 // The shaft's front stub is set back flush with the hub face, as a section.
 // Brown draws the four scale-pan cords as plain cord lines: render each as
 // the shared laid rope along its final (static) span, in place of the plain
@@ -11664,26 +11668,14 @@ function addProny244ShaftSection(root) {
   const hubFrontZ = 0.35;
   blocks.drumShaft.position.z = hubFrontZ - 0.63;
   const radius = 0.165;
+  // Brown hatches the cut end of shaft A; the model shows the plain end of
+  // the shaft itself, in the shaft's own material (no hatch strokes).
   const face = new THREE.Mesh(
     plate(poly(circle([0, 0], radius, 96)), hubFrontZ + 0.002, hubFrontZ + 0.01),
-    matte(0xe9e1d2, { roughness: 0.85 }));
-  face.userData.role = 'hatched-shaft-section-A-face';
-  const strips = [];
-  const direction = [Math.SQRT1_2, Math.SQRT1_2];
-  const normal = [-Math.SQRT1_2, Math.SQRT1_2];
-  for (let offset = -0.13; offset <= 0.1301; offset += 0.052) {
-    const half = 0.011;
-    const corner = (u, v) => [direction[0] * u + normal[0] * v, direction[1] * u + normal[1] * v];
-    strips.push(...poly([corner(-0.3, offset - half), corner(0.3, offset - half),
-      corner(0.3, offset + half), corner(-0.3, offset + half)]));
-  }
-  const hatch = new THREE.Mesh(
-    plate(polygonClipping.intersection(poly(circle([0, 0], radius - 0.012, 96)), polygonClipping.union(...strips.map((strip) => [strip]))),
-      hubFrontZ + 0.01, hubFrontZ + 0.014),
-    matte(PALETTE.ink));
-  hatch.userData.role = 'hatched-shaft-section-A-hatching';
-  rotor.add(face, hatch);
-  blocks.shaftSection = { face, hatch };
+    blocks.drumShaft.userData.rotor.children[0].material);
+  face.userData.role = 'shaft-A-plain-end-face';
+  rotor.add(face);
+  blocks.shaftSection = { face };
 }
 
 export function createAuthoredBeltMovement(movement) {

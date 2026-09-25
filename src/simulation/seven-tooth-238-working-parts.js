@@ -14,9 +14,15 @@ export function finishSevenTooth238(root){
   const face=d.faceAt(side,0),a=face.rootPoint.clone().sub(g.palletPivot),z=face.tipPoint.clone().sub(g.palletPivot),n=face.normal;
   const outline=[a.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0605),a.clone().addScaledVector(n,-.0605)].map(p=>p.toArray());
   const material=pallet.face.children[0].material;for(const child of pallet.face.children)child.geometry?.dispose();pallet.face.clear();
-  const mesh=new THREE.Mesh(plate(poly(outline),g.palletPlaneZ-.09,g.palletPlaneZ+.09),material);mesh.userData.role=`${side}-finite-one-sided-lock-and-impulse-face`;pallet.face.add(mesh);pallet.faceIndex.visible=false;parts.faces.push(mesh);
+  // The face reaches back through the wheel's whole depth (z = .27) and sits
+  // on a broader web of the anchor behind the wheel, so B and C read as
+  // blocks of the anchor rather than tabs perched on pins.
+  const wheelBack=g.palletPlaneZ-g.wheelDepth/2-.01;// .01 behind the wheel's back face
+  const mesh=new THREE.Mesh(plate(poly(outline),wheelBack,g.palletPlaneZ+.09),material);mesh.userData.role=`${side}-finite-one-sided-lock-and-impulse-face`;pallet.face.add(mesh);pallet.faceIndex.visible=false;parts.faces.push(mesh);
   const mid=a.clone().lerp(z,.5).addScaledVector(n,-.0305),tangent=z.clone().sub(a).normalize(),half=Math.min(.06,face.length*.2);
-  replace(pallet.standoff,plate(capsule(mid.clone().addScaledVector(tangent,-half).toArray(),mid.clone().addScaledVector(tangent,half).toArray(),.023,16),.05,g.palletPlaneZ+.02),true);pallet.standoff.position.set(0,0,0);parts.mounts.push(pallet.standoff);
+  void half;void tangent;
+  const web=[a.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.0005),z.clone().addScaledVector(n,-.16),a.clone().addScaledVector(n,-.16)].map(p=>p.toArray());
+  replace(pallet.standoff,plate(poly(web),.05,wheelBack),true);pallet.standoff.position.set(0,0,0);pallet.standoff.material=material;parts.mounts.push(pallet.standoff);
   // A rear-layer strap joins each complete working face to the engraved
   // carrier; C's old standoff ended in empty space beside the outline.
   let closest,distance=Infinity;

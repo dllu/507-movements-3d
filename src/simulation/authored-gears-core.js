@@ -320,11 +320,9 @@ function spurGears() {
     rotor.remove(oldRing);
     oldRing.geometry.dispose();
     oldRing.material.dispose();
+    // Brown's web circle is engraving shading, not a painted ring: the
+    // faces stay plain.
     const radius = gear.userData.pitchRadius;
-    const ring = new THREE.Mesh(new THREE.RingGeometry(radius * 0.75 - 0.012, radius * 0.75 + 0.012, 96),
-      matte(PALETTE.ink, { polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
-    ring.position.z = 0.19 + 0.008 + 0.0001;
-    rotor.add(ring);
     // The plate draws a plain boss ring about 0.43 of the pitch radius around
     // a sectioned shaft about 0.26 of it. The shaft is keyed to its wheel.
     const hub = rotor.children.find((part) => part.geometry?.type === 'CylinderGeometry');
@@ -1467,7 +1465,7 @@ function makeProfiledNoncircularGear({
   depth = 0.3,
   showIndicator = true,
   generatedTeeth = false,
-  showInset = true,
+  showInset = false,
   hubRadius = 0.19,
   pitchPoints,
   teeth = 48,
@@ -3363,6 +3361,8 @@ function variableSectorGears() {
     const joint = new THREE.Line(new THREE.BufferGeometry().setFromPoints([start, end]),
       new THREE.LineBasicMaterial({ color: PALETTE.ink }));
     joint.userData.radialSectorJoint = true;
+    // An ink line on the front face only is engraving notation, not a part.
+    retireInkOutline(joint);
     gear.userData.rotor.add(joint);
   }
   const collars = [];
@@ -3566,21 +3566,33 @@ function sunAndPlanet() {
   arm.userData.centerDistanceArm = true;
   carrier.add(arm);
 
+  // Brown breaks the rod off above the wheels. Model it whole: it runs the
+  // full rod length to a rounded upper eye on its wrist pin (the beam or
+  // crosshead the pin belongs to lies outside the plate and is not drawn).
   const rodShape = new THREE.Shape();
   rodShape.moveTo(-rodWidth / 2, 0);
-  rodShape.lineTo(-rodWidth / 2, visibleRodLength + 0.065);
-  rodShape.bezierCurveTo(-0.07, visibleRodLength - 0.025,
-    0.05, visibleRodLength - 0.04, rodWidth / 2, visibleRodLength + 0.005);
+  rodShape.lineTo(-rodWidth / 2, rodLength);
+  rodShape.absarc(0, rodLength, rodWidth / 2, Math.PI, 0, true);
   rodShape.lineTo(rodWidth / 2, 0);
   rodShape.absarc(0, 0, rodWidth / 2, 0, -Math.PI, true);
   rodShape.closePath();
+  const wristBore = new THREE.Path();
+  wristBore.absarc(0, rodLength, axleRadius + 0.006, 0, 2 * Math.PI, false);
+  rodShape.holes.push(wristBore);
   const rodGeometry = new THREE.ExtrudeGeometry(rodShape, {
     depth: 0.08, bevelEnabled: false, curveSegments: 32,
   });
   rodGeometry.translate(0, 0, 0.16);
   const connectingRod = new THREE.Mesh(rodGeometry, matte(PALETTE.frame, { roughness: 0.64 }));
   connectingRod.userData.rigidToPlanet = true;
-  connectingRod.userData.croppedContinuation = true;
+  connectingRod.userData.wholeRod = true;
+  const wristPin = makeShaft({ length: 0.2, radius: axleRadius, axis: Z_AXIS });
+  // The pin runs back from the rod's front face (to the undrawn beam or
+  // crosshead behind it), so nothing on the rod stands in front of the
+  // arm's plane: the plate draws the arm over the rod.
+  wristPin.position.set(0, rodLength, 0.135);
+  wristPin.userData.role = 'upper-wrist-pin-in-rod-eye';
+  connectingRod.add(wristPin);
   const rodBoss = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.08, 64),
     matte(PALETTE.frame, { roughness: 0.6 }));
   rodBoss.rotation.x = Math.PI / 2;
@@ -3640,6 +3652,9 @@ function sunAndPlanet() {
     };
   };
   update(0);
+  // The rod is modelled whole, so the fixed opening camera fits the swept
+  // motion envelope (the whole rod through the cycle), not Brown's crop at
+  // the wheels.
   root.userData.cameraFov = 18;
   return finish(root, update, new THREE.Vector3(0.04, 0.22, 10));
 }
@@ -4071,87 +4086,6 @@ function makeVGroovedFrictionWheel(options) {
   return root;
 }
 
-function revolvedSectionSector(outline, axisY, side, sweep = 35 * Math.PI / 180, steps = 24) {
-  // Section points (x, y) lie in z = 0; each revolves about the line
-  // y = axisY, z = 0 through the sector angle towards -z.
-  let ring = outline.map((point) => new THREE.Vector2(point.x, point.y));
-  if (THREE.ShapeUtils.isClockWise(ring)) ring = ring.reverse();
-  const n = ring.length, positions = [], indices = [];
-  for (let step = 0; step <= steps; step += 1) {
-    const phi = sweep * step / steps;
-    for (const point of ring) {
-      const r = side * (axisY - point.y);
-      positions.push(point.x, axisY - side * r * Math.cos(phi), -r * Math.sin(phi));
-    }
-  }
-  for (let step = 0; step < steps; step += 1) for (let i = 0; i < n; i += 1) {
-    const a = step * n + i, b = step * n + (i + 1) % n, c = b + n, d = a + n;
-    indices.push(a, c, b, a, d, c);
-  }
-  const faces = THREE.ShapeUtils.triangulateShape(ring, []);
-  for (const [a, b, c] of faces) {
-    indices.push(a, b, c);
-    indices.push(steps * n + a, steps * n + c, steps * n + b);
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setIndex(indices);
-  const flat = geometry.toNonIndexed();
-  flat.computeVertexNormals();
-  return flat;
-}
-
-function makeGroovedSection(profile, top, bottom) {
-  const root = new THREE.Group();
-  const scale = 1.35, gap = 0.006;
-  // The engraving enlarges only part of the wheel. Crop the middle four
-  // grooves and show their true axial section as a separate reference detail.
-  const points = profile.slice(1, -1).map((p) => new THREE.Vector2(p.axialPosition * scale, -p.wave * scale));
-  const left = points[0].x, right = points.at(-1).x;
-  const parts = [];
-  for (const [upper, color] of [[true, PALETTE.driver], [false, PALETTE.driven]]) {
-    const interfacePoints = points.map((p) => p.clone().add(new THREE.Vector2(0, upper ? gap / 2 : -gap / 2)));
-    const outline = [new THREE.Vector2(left, upper ? top : bottom),
-      new THREE.Vector2(right, upper ? top : bottom), ...[...interfacePoints].reverse()];
-    // The section is the cut face of an enlarged sector of each wheel: the
-    // outline is revolved 35 degrees behind the plane about an axis at the
-    // section's outer edge, so turned views show real grooved wheel sectors
-    // meeting at their rims instead of a painted board.
-    const geometry = revolvedSectionSector(outline, upper ? top + 0.002 : bottom - 0.002, upper ? 1 : -1);
-    geometry.translate(0, 0, 0.04);
-    const body = new THREE.Mesh(geometry, matte(color, { metalness: 0.04, roughness: 0.75 }));
-    body.userData.sectionBody = true;
-    root.add(body);
-    parts.push(body);
-    // Clip diagonal hatch lines to the actual section polygon.
-    const vertices = [];
-    for (let intercept = bottom + left - 1; intercept < top + right + 1; intercept += 0.10) {
-      const intersections = [];
-      for (let i = 0; i < outline.length; i += 1) {
-        const a = outline[i], b = outline[(i + 1) % outline.length];
-        const da = a.x + a.y - intercept, db = b.x + b.y - intercept;
-        if ((da > 0) === (db > 0)) continue;
-        intersections.push(a.clone().lerp(b, da / (da - db)));
-      }
-      intersections.sort((a, b) => a.x - b.x);
-      for (let i = 0; i + 1 < intersections.length; i += 2) {
-        const a = intersections[i], b = intersections[i + 1];
-        vertices.push(a.x, a.y, 0.041, b.x, b.y, 0.041);
-      }
-    }
-    const hatchGeometry = new THREE.BufferGeometry();
-    hatchGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-    const hatching = new THREE.LineSegments(hatchGeometry,
-      new THREE.LineBasicMaterial({ color: 0x535a59, transparent: true, opacity: 0.48 }));
-    hatching.userData.sectionHatching = true;
-    root.add(hatching);
-  }
-  root.position.x = 2.27;
-  root.userData = { role: 'enlarged-axial-section-reference', isSectionView: true,
-    enlargement: scale, displayedGrooves: 4, interfacePoints: points, gap, parts };
-  return root;
-}
-
 function groovedFrictionGears() {
   const root = new THREE.Group();
   const driverPitchRadius = 0.98, drivenPitchRadius = 1.4;
@@ -4169,9 +4103,10 @@ function groovedFrictionGears() {
   const drivenShaft = makeShaft({ length: 2.50, radius: 0.13, axis: X_AXIS });
   driverShaft.position.copy(driverCenter);
   drivenShaft.position.copy(drivenCenter);
-  const section = makeGroovedSection(driver.userData.profile,
-    2 * driverPitchRadius + grooveAmplitude, -2 * drivenPitchRadius + 0.38);
-  root.add(driver, driven, driverShaft, drivenShaft, section);
+  // Brown's enlarged section beside the wheels explains the interlocking
+  // V-grooves on paper. The model shows the grooves on the wheels' own rims,
+  // meshing at their contact, so no separate section sectors are built.
+  root.add(driver, driven, driverShaft, drivenShaft);
   const interfaceProfile = driver.userData.profile.map((point, i) => ({
     axialPosition: point.axialPosition, driverRadius: point.radius,
     drivenRadius: driven.userData.profile[i].radius, wave: point.wave }));
@@ -4189,7 +4124,7 @@ function groovedFrictionGears() {
   const driverAngularSpeed = 1.1, drivenAngularSpeed = -driverAngularSpeed * driverPitchRadius / drivenPitchRadius;
   const inputPeriod = 2 * Math.PI / driverAngularSpeed;
   root.userData.mechanism = 'five-groove-force-closed-friction-wheels';
-  root.userData.blocks = { driven, drivenShaft, driver, driverShaft, section };
+  root.userData.blocks = { driven, drivenShaft, driver, driverShaft };
   root.userData.geometry = { centerDistance, contactSamples, driverCenter, drivenCenter, driverPhase, drivenPhase,
     driverPitchRadius, drivenPitchRadius, faceWidth, grooveAmplitude, grooveCount, interfaceProfile,
     inputPeriod, cycleDuration: inputPeriod, cycleMeaning: 'one-upper-wheel-turn' };
@@ -4214,12 +4149,11 @@ function groovedFrictionGears() {
       speedRatio: drivenAngularSpeed / driverAngularSpeed };
   };
   update(0);
+  // Frame the two turning wheels and their shafts (their bounds do not change
+  // as they turn).
+  root.userData.cameraFitBounds = new THREE.Box3().setFromObject(root);
   root.userData.cameraFov = 18;
-  const model = finish(root, update, new THREE.Vector3(0.025, 0.055, 10));
-  section.traverse((part) => {
-    if (part.isMesh) { part.castShadow = false; part.receiveShadow = false; }
-  });
-  return model;
+  return finish(root, update, new THREE.Vector3(0.025, 0.055, 10));
 }
 
 function fuseeDrive() {
@@ -20838,7 +20772,8 @@ function singleCircleEqualSpeedMangleWheel() {
       Math.sin(angle) * toothPitchRadius,
       wheelFaceZ + 0.052,
     );
-    const pinRoot = new THREE.Mesh(pinRootGeometry, inkMaterial);
+    // The seat is the pin's own stepped root, not a dark outline round it.
+    const pinRoot = new THREE.Mesh(pinRootGeometry, pinTopMaterial);
     pinRoot.position.copy(position);
     pinRoot.rotation.z = angle - Math.PI / 2;
     pinRoot.userData.index = index;
@@ -21220,17 +21155,13 @@ function singleCircleEqualSpeedMangleWheel() {
   fitRadialPinManglePinion(root);
   const model = finishReversingMangleGuides(root, update, 194);
   discloseRadialPinMangleContact(root);
-  // Brown draws the wheel face plain, with the groove as a narrow channel:
-  // the lands (outer wall with its central hub lobe) take the wheel colour
-  // and only the groove floor reads dark.
+  // Brown draws the wheel face plain, with the groove as a narrow channel.
+  // Lands, groove floor and backing are one wheel in one colour (a black
+  // backing read as a rim stripe and an all-black back face); the groove
+  // reads by its walls and shading.
   {
     const blocks = root.userData.blocks;
     const faceMaterial = blocks.wheelBody.material;
-    blocks.guideGrooveOuter.material.dispose();
-    blocks.guideGrooveOuter.material = faceMaterial;
-    blocks.guideGrooveRecess.material = faceMaterial;
-    blocks.wheelBody.material = matte(PALETTE.ink, { metalness: 0.2, roughness: 0.55 });
-    blocks.wheelBody.material.fog = false;
     blocks.wheelHub.material = faceMaterial;
     // The long through-shaft otherwise throws a dark index-like stripe
     // across the face; the plate shows only the cut shaft end in the boss,
@@ -28737,6 +28668,29 @@ function fixedPinionLiftedMangleRack() {
     });
     geometry.frameTop = frameTop;
     geometry.lowerGuideRollerY = geometry.guideRollerY;
+    // Brown's main frame is one solid plate within its border, not a wire
+    // outline. The fixed pinion shaft and its rear bearing pass through a
+    // horizontal slot cut along the frame's travel.
+    {
+      const frame = blocks.outerFrame, cyclePeriod = root.userData.transmission.cyclePeriod;
+      let low = Infinity, high = -Infinity;
+      for (let sample = 0; sample <= 96; sample += 1) {
+        model.update(cyclePeriod * sample / 96);
+        low = Math.min(low, -frame.position.x);
+        high = Math.max(high, -frame.position.x);
+      }
+      const inset = 0.05, slotHalf = 0.235;
+      const outline = slotPolygon([[frameLeft + inset, -frameHalfHeight + inset], [frameRight - inset, -frameHalfHeight + inset],
+        [frameRight - inset, frameTop - inset], [frameLeft + inset, frameTop - inset]]);
+      const framePlate = new THREE.Mesh(
+        finiteSlotPlate(slotClipping.difference(outline, slotCapsule([low, 0], [high, 0], slotHalf, 64)), -0.80, -0.64),
+        frameMaterial,
+      );
+      framePlate.userData.role = 'solid-slotted-plate-of-main-frame';
+      frame.add(framePlate);
+      blocks.framePlate = framePlate;
+      model.update(0);
+    }
 
     const bounds = new THREE.Box3();
     const point = new THREE.Vector3();

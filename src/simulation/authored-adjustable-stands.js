@@ -223,10 +223,14 @@ function adjustableMirrorStand(movement) {
   base.add(socketCollar);
   // A finite side opening connects the bored socket to its radial screw boss.
   socketCollar.geometry.dispose();
-  socketCollar.geometry = plate(sector(socketBoreRadius,.38,.44,2*Math.PI-.44,96),-.12,.12).rotateX(-Math.PI/2);
+  // The side opening, the boss and the set screw share one yaw: the screw
+  // was turned 0.5 rad toward the front (pass 54), so the bored boss and
+  // the collar opening turn with it and the screw stays in its bore.
+  const socketScrewYaw = -0.5;
+  socketCollar.geometry = plate(sector(socketBoreRadius,.38,.44,2*Math.PI-.44,96),-.12,.12).rotateX(-Math.PI/2).rotateY(socketScrewYaw);
   const socketBoss = new THREE.Mesh(boredCylinderGeometry(.14,.081,.32),frameMaterial);
-  socketBoss.rotation.z = Math.PI/2;
-  socketBoss.position.set(.34,.63,0);
+  socketBoss.rotation.set(0,socketScrewYaw,Math.PI/2);
+  socketBoss.position.set(.34*Math.cos(socketScrewYaw),.63,-.34*Math.sin(socketScrewYaw));
   socketBoss.userData.role='bored-radial-set-screw-boss';
   base.add(socketBoss);
   const socketBoreWitness = new THREE.Mesh(
@@ -243,6 +247,9 @@ function adjustableMirrorStand(movement) {
 
   const socketSetScrew = new THREE.Group();
   socketSetScrew.position.set(0, 0.63, 0);
+  // Turned a little toward the front (still on Brown's right-hand side) so
+  // the frame's lower edge swings well clear of the knob at mid-tilt.
+  socketSetScrew.rotation.y = socketScrewYaw;
   socketSetScrew.userData.fixed = true;
   socketSetScrew.userData.lockedDegreesOfFreedom = [
     'stem vertical translation',
@@ -360,10 +367,18 @@ function adjustableMirrorStand(movement) {
   );
   centerHingeBarrel.geometry.dispose();
   centerHingeBarrel.geometry=boredCylinderGeometry(.155,.080,.32);
-  // Dark iron, not the frame's orange: seen against the glass, an orange
-  // bracket read as blocks showing through the mirror.
-  const mirrorBackBracket = new THREE.Mesh(new THREE.BoxGeometry(.28,.14,1.03),darkMaterial);
-  mirrorBackBracket.position.z=-.665;
+  // The hinge is on the back of the mirror (the glass faces away from the
+  // stand). A short neck of the frame casting runs from the hinge barrel
+  // to Brown's raised rounded plate on the frame's back; it stands the
+  // frame off far enough that its lower edge swings clear of the socket
+  // collar and screw.
+  const mirrorBackBossFront = 0.20;
+  const mirrorBackBracket = new THREE.Mesh(
+    new THREE.BoxGeometry(.30,.22,mirrorCenterLocal.z*-1-mirrorBackBossFront-.135),
+    mirrorFrameMaterial,
+  );
+  mirrorBackBracket.position.z=(mirrorCenterLocal.z+mirrorBackBossFront-.135)/2;
+  mirrorBackBracket.userData.role='mirror-back-neck-to-hinge-barrel';
   mirrorTiltPivot.add(mirrorBackBracket);
   centerHingeBarrel.userData.role =
     'mirror-side-center-hinge-barrel';
@@ -396,13 +411,29 @@ function adjustableMirrorStand(movement) {
   const mirrorGlass = new THREE.Mesh(
     plate(
       roundedRectangle(mirrorGlassWidth, mirrorGlassHeight, 0.176),
-      -0.0525,
-      0.0225,
+      -0.10,
+      -0.03,
     ),
     glassMaterial,
   );
   mirrorGlass.userData.role = 'glass-or-camera-mounting-plane';
   mirrorAssembly.add(mirrorGlass);
+  // The back board closing the frame behind the glass, and Brown's raised
+  // rounded plate on it that carries the hinge neck.
+  const mirrorBackBoard = new THREE.Mesh(
+    plate(roundedRectangle(mirrorGlassWidth, mirrorGlassHeight, 0.176),
+      -0.03, 0.10),
+    mirrorFrameMaterial,
+  );
+  mirrorBackBoard.userData.role = 'mirror-back-board';
+  mirrorAssembly.add(mirrorBackBoard);
+  const mirrorBackBoss = new THREE.Mesh(
+    plate(roundedRectangle(0.80, 1.80, 0.32), 0.10, mirrorBackBossFront),
+    mirrorFrameMaterial,
+  );
+  mirrorBackBoss.position.y = -0.28;
+  mirrorBackBoss.userData.role = 'raised-rounded-plate-on-mirror-back';
+  mirrorAssembly.add(mirrorBackBoss);
   const mirrorNormalIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.055, 0.64, 0.055),
     whiteMaterial,

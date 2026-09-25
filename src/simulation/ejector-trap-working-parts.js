@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
 import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {curvedPipeWall} from './finite-fluid-passages.js';
+import {mirroredForkWall} from './mirrored-fork-pipe.js';
+import {waterVolumeMaterial} from './water-volume.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
@@ -23,6 +25,28 @@ function portedMeridian(levels,outer,inner,open=()=>false) {
 }
 const sweepShape=(curve,r)=>{const points=curve.getPoints(40);return clip.union(...points.slice(1).map((p,i)=>capsule([points[i].x,points[i].y],[p.x,p.y],r,12)));};
 
+// The start, run and stop loop shared by the jet ejectors 475 and 476. The
+// steam purges the air (the water still at the bilge), the vacuum draws the
+// water up to the mouth of C, the ejector runs full and discharges through C,
+// and at shut-off the discharge collapses and the water falls back. Smoothstep
+// ramps are prescribed; no priming transient is integrated.
+export function ejectorOperatingStage(phase) {
+  const s=THREE.MathUtils.smoothstep,running=phase<.85;
+  const stage=phase<.08?'purging-air-from-D-and-C':phase<.40?'water-rising-to-the-mouth-of-C':running?'running-discharging-through-C':'steam-off-water-falling-back';
+  return {stage,steamSupplyOpen:running,levelFraction:running?s(phase,.08,.40):1-s(phase,.85,1),
+    dischargeFraction:running?s(phase,.40,.48):1-s(phase,.85,.89)};
+}
+// The free discharge issuing from the open mouth of C: a translucent water
+// column the width of the bore, slightly swelling as it slows, with a rounded
+// crown. Its height follows the discharge fraction of the state.
+function dischargeJet(root,mouthY,bore,height,role) {
+  const profile=[new THREE.Vector2(bore*.98,0)];
+  for(let i=1;i<=12;i++){const z=.78*i/12;profile.push(new THREE.Vector2(bore*(.98+.16*z),z));}
+  for(let i=1;i<=10;i++){const a=i/10*Math.PI/2;profile.push(new THREE.Vector2(bore*1.105*Math.cos(a),.78+.22*Math.sin(a)));}
+  const jet=add(root,new THREE.LatheGeometry(profile,64),waterVolumeMaterial(),role);jet.renderOrder=1;jet.position.y=mouthY-.02;
+  return fraction=>{jet.visible=fraction>1e-3;jet.scale.y=Math.max(1e-4,(height+.02)*fraction);};
+}
+
 export function correctEjectorTrapParts(root,id,update) {
   const d=root.userData,b=d.blocks,g=d.geometry;
   if(id===475) {
@@ -36,22 +60,68 @@ export function correctEjectorTrapParts(root,id,update) {
     const levels=[...Array.from({length:61},(_,i)=>-1.16+2.72*i/60).filter(y=>Math.abs(y+.20)>.02&&Math.abs(y-.34)>.02),-.20,.34].sort((a,b)=>a-b);
     replace(b.chamber,portedMeridian(levels,radius,y=>radius(y)-.065,(a,y)=>y>-.20&&y<.34&&Math.cos(a)>.976));
     replace(b.suctionPipe,horizontalRing(.40,.47,-.895,.895,64));
+    // The water itself shows the ejector working (the streamline tubes and
+    // markers are flow notation and are not presented). Translucent water
+    // bodies in the bores of B, D and C follow the state's water level: it
+    // stands at the bilge while the steam purges the air, rises through B,
+    // D and C as the vacuum draws it up, fills them while the ejector
+    // discharges through C, and falls back when the steam is shut off.
+    {
+      const water=waterVolumeMaterial(),bilge=-2.91,dBottom=-1.16,dTop=1.56,outlet=3.40,rB=.395,rC=.465,rD=y=>radius(y)-.07;
+      const column=(r,role)=>{const o=add(root,new THREE.CylinderGeometry(r,r,1,64,1,true).translate(0,.5,0),water,role);o.renderOrder=1;return o;};
+      const inB=column(rB,'water-rising-in-suction-pipe-B'),inC=column(rC,'water-rising-in-discharge-pipe-C');
+      inB.position.y=bilge;inC.position.y=dTop;
+      // D's pear-shaped body is re-swept in place up to the level, with a
+      // fixed vertex topology so no geometry is reallocated per frame.
+      const rows=49,segments=64,lathe=new THREE.LatheGeometry(Array.from({length:rows},(_,j)=>new THREE.Vector2(rD(dBottom),dBottom+j*(dTop-dBottom)/(rows-1))),segments);
+      const inD=add(root,lathe,water,'water-filling-mixing-chamber-D');inD.renderOrder=1;
+      const surface=add(root,new THREE.CircleGeometry(1,64).rotateX(-Math.PI/2),water,'free-water-surface-in-B-D-C');surface.renderOrder=1;
+      const sweepD=level=>{
+        const position=lathe.getAttribute('position'),top=Math.min(level,dTop);
+        for(let i=0;i<=segments;i++){const a=i/segments*2*Math.PI,c=Math.sin(a),e=Math.cos(a);
+          for(let j=0;j<rows;j++){const y=dBottom+j*(top-dBottom)/(rows-1),r=rD(y);position.setXYZ(i*rows+j,r*c,y,r*e);}}
+        position.needsUpdate=true;lathe.computeVertexNormals();lathe.computeBoundingSphere();lathe.computeBoundingBox();
+      };
+      b.waterFill=[inD,inB,inC];b.waterSurface=surface;
+      const jet=dischargeJet(root,outlet,rC,.55,'free-discharge-issuing-from-mouth-of-C');b.dischargeJet=root.children.at(-1);
+      d.updateWorkingParts=(time,state)=>{
+        jet(state.dischargeFraction);
+        const level=state.waterLevelY;
+        inB.scale.y=Math.max(1e-4,Math.min(level,dBottom)-bilge);inB.visible=level>bilge+1e-3;
+        inD.visible=level>dBottom+1e-3;if(inD.visible)sweepD(level);
+        inC.scale.y=Math.max(1e-4,Math.min(level,outlet)-dTop);inC.visible=level>dTop+1e-3;
+        const r=level<dBottom?rB:level<dTop?rD(level):rC;
+        surface.position.y=level;surface.scale.set(r,1,r);surface.visible=level>bilge+1e-3;
+      };
+    }
     replace(b.dischargePipe,horizontalRing(.47,.54,-.94,.94,64));
     replace(b.steamPipe,curvedPipeWall(d.flowPaths.steamPipeCurve,.105,.20,90,32));
+    Object.assign(b.steamPipe.material,{transparent:false,opacity:1});
     replace(b.nozzle,horizontalRing(.125,.19,-.11,.11,64));
   } else if(id===476) {
     const steamCurve=d.flowPaths.steamPipeCurve;
     for(let i=0;i<steamCurve.points.length-1;i++)steamCurve.points[i].z=i===5?-.35:-.72;
     steamCurve.points[5].set(0,.68,0);steamCurve.updateArcLengths();d.flowPaths.steamFlowCurve.updateArcLengths();replace(b.steamCore,new THREE.TubeGeometry(steamCurve,92,.070,16,false));
-    const steamPort=sweepShape(new THREE.CatmullRomCurve3(steamCurve.getPoints(96).filter(p=>p.z>-.64)),.20);
     const branches=d.flowPaths.branchShellCurves;
-    const outlet=new THREE.LineCurve3(new THREE.Vector3(0,1.2,0),new THREE.Vector3(0,3.42,0));
-    const outside=clip.intersection(clip.union(...branches.map(c=>sweepShape(c,.46)),sweepShape(outlet,.54),...[-1,1].map(s=>poly([[s*1.38-.46,-2.86],[s*1.38+.46,-2.86],[s*1.38+.46,-2.52],[s*1.38-.46,-2.52]]))),poly([[-4,-2.86],[4,-2.86],[4,3.42],[-4,3.42]]));
-    const inside=clip.union(...branches.map(c=>sweepShape(c,.38)),sweepShape(outlet,.47),...[-1,1].map(s=>poly([[s*1.38-.38,-2.9],[s*1.38+.38,-2.9],[s*1.38+.38,-2.5],[s*1.38-.38,-2.5]])),poly([[-.47,3.2],[.47,3.2],[.47,3.7],[-.47,3.7]]),steamPort);
-    replace(b.suctionBranches[0],plate(clip.difference(outside,inside),-.48,.48));
+    // Brown draws the fork as round opaque pipes (A is dashed where it runs
+    // behind B): one hollow wall, the left leg B running on through the fork
+    // into the stem C on x = 0, cut at the symmetry plane and mirrored, so
+    // the legs merge into C with a flared neck and a clean crotch.
+    const leg=branches[0].points.filter(p=>p.x<-.9).map(p=>p.clone());
+    leg.unshift(leg[0].clone().setY(-2.86));
+    const halfCurve=new THREE.CatmullRomCurve3([...leg,new THREE.Vector3(-.45,.95,0),new THREE.Vector3(-.12,1.32,0),new THREE.Vector3(0,1.75,0),new THREE.Vector3(0,2.3,0),new THREE.Vector3(0,3.42,0)],false,'centripetal');
+    // Pipe A passes up through the crotch wall in a port of its own size.
+    const aPath=d.flowPaths.steamPipeCurve.getSpacedPoints(200),probe=new THREE.Line3();
+    const onA=p=>{for(let i=0;i<aPath.length-1;i++){probe.set(aPath[i],aPath[i+1]);if(probe.closestPointToPoint(p,true,new THREE.Vector3()).distanceTo(p)<.168)return true;}return false;};
+    replace(b.suctionBranches[0],mirroredForkWall(halfCurve,.38,.46,{cut:onA}));
+    b.suctionBranches[0].material=b.suctionBranches[0].material.clone();Object.assign(b.suctionBranches[0].material,{transparent:false,opacity:1,depthWrite:true,side:THREE.DoubleSide});
     b.suctionBranches[1].visible=false;b.dischargePipe.visible=false;
-    b.forkBack=add(root,plate(clip.difference(outside,steamPort),-.55,-.49),b.suctionBranches[0].material,'finite-back-of-open-fork-cutaway');
     replace(b.steamPipe,curvedPipeWall(d.flowPaths.steamPipeCurve,.092,.17,92,32));
+    Object.assign(b.steamPipe.material,{transparent:false,opacity:1});
+    // The opaque fork hides the water inside; its working shows as the
+    // discharge issuing from the open mouth of C while the siphon runs.
+    const jet=dischargeJet(root,3.42,.38,.55,'free-discharge-issuing-from-mouth-of-C');b.dischargeJet=root.children.at(-1);
+    d.updateWorkingParts=(time,state)=>jet(state.dischargeFraction);
   } else if(id===477) {
     replace(b.inletPipeA,horizontalRing(.66,.74,-1.04,1.04,64));
     replace(b.outletPipeB,horizontalRing(.68,.76,-.725,.725,64));

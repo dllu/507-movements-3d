@@ -40,6 +40,10 @@ export function makeCordTreadleSolids(){
  add('pulleyBearing',ring(.144,.28,-.96,.494,128),'fixed',PALETTE.frame,g.guide);
  add('pulleyMount',plate(poly([[-.35,-.45],[.35,-.45],[.35,.45],[-.35,.45]]),-1.10,-.96),'fixed',PALETTE.frame,g.guide);
  add('floor',plate(imagePoly([[22,457],[512,457],[512,464],[22,464]]),-1.15,.90),'fixed',PALETTE.frame);
+ // The pulley's rear mounting pad stands on a slim post from the floor, in
+ // the pad's plane behind every moving part (Brown crops the pulley's hanger).
+ {const floorTop=parts.floor.geometry.boundingBox?.max.y??(parts.floor.geometry.computeBoundingBox(),parts.floor.geometry.boundingBox.max.y);
+  add('pulleyPost',plate(poly([[g.guide[0]-.1,floorTop],[g.guide[0]+.1,floorTop],[g.guide[0]+.1,g.guide[1]-.45],[g.guide[0]-.1,g.guide[1]-.45]]),-1.10,-.96),'fixed',PALETTE.frame);}
  // The flexible cord is secured at the center of a rounded anchor head. The
  // short embedded cord end is an intended fastening, not a free sliding contact.
  // Closed lathe profiles avoid overlapping primitive volumes in mass integration.

@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import source from './source.js';
 import {cubicPolyline} from '../cubic-polyline.js';
 import {plate, poly, circle, capsule, disk, ring, polygonClipping as clip} from '../finite-plate-geometry.js';
-import {hatchedSectionFace} from '../section-hatch.js';
 import {PALETTE, matte, markShadows} from '../primitives.js';
 
 export {THREE};
@@ -61,9 +60,8 @@ export function makeEccentricYokeGeometry() {
   const sheaveProfile = clip.difference(poly(circle(offset,radius,256)),poly(circle([0,0],shaftRadius+.001,128)));
   attach('sheave',plate(sheaveProfile,-depth/2,depth/2),'input',PALETTE.driver);
   attach('shaft',disk(shaftRadius,-.82,.30,128),'input',PALETTE.ink);
-  // Brown hatches the exposed shaft end as a section. Presentation only: it
-  // is not a mass-bearing part.
-  {const face=hatchedSectionFace(shaftRadius);face.position.z=.30;blocks.input.add(face);}
+  // Brown hatches the exposed shaft end as a section; the model shows the
+  // plain end of the shaft itself (no hatch notation).
   attach('collar',ring(shaftRadius+.001,source.collarRadius/scale,depth/2,.28,128),'input',PALETTE.driver);
 
   const guideHalfLength = .11, guideCenter = Math.max(...rodRoots.map(Math.abs))+eccentricity+guideHalfLength+.07;

@@ -33,8 +33,8 @@ function correctSkewRollers(root) {
     // Brown draws plain roller ends; the face dots are not shown.
     index.visible = false;
   }
-  // Brown shades the stock and rollers with dark lengthwise hatching, so the
-  // feed and spin cues are painted as dark grain streaks rather than white.
+  // Painted feed and spin streaks. The 365 factory hides them: Brown's
+  // lengthwise hatching is engraving notation, not surface marking.
   const grain = new THREE.MeshStandardMaterial({color: 0x23262b, roughness: .6, metalness: .1});
   for (const index of b.rollerTreadIndexes) {
     paintCylinder(index, g.rollerRadius, g.rollerBodyLength * .62, 0, .10);

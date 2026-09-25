@@ -1,7 +1,7 @@
 {
   "movement": 172,
   "poses": 129,
-  "meshes": 7,
+  "meshes": 8,
   "pairs": [
     [
       "shaft",
@@ -44,6 +44,10 @@
       "slider"
     ],
     [
+      "crank",
+      "guideFrame"
+    ],
+    [
       "crankPin",
       "rod"
     ],
@@ -60,6 +64,10 @@
       "slider"
     ],
     [
+      "crankPin",
+      "guideFrame"
+    ],
+    [
       "rod",
       "wristPin"
     ],
@@ -68,15 +76,31 @@
       "slider"
     ],
     [
+      "rod",
+      "guideFrame"
+    ],
+    [
       "tracer",
       "wristPin"
     ],
     [
       "tracer",
       "slider"
+    ],
+    [
+      "tracer",
+      "guideFrame"
+    ],
+    [
+      "wristPin",
+      "guideFrame"
+    ],
+    [
+      "slider",
+      "guideFrame"
     ]
   ],
-  "queries": 3626190,
+  "queries": 4052148,
   "intersections": {},
   "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. Nonphysical line witness excluded. Sampled clearance only.",
   "sources": [
@@ -86,7 +110,7 @@
     },
     {
       "file": "src/simulation/authored-curve-generators.js",
-      "sha256": "e5772970348fd952787a7db47eaec64fbdb2103afa681c5bc802060cdad79a65"
+      "sha256": "d7e9e17447dfb6a3717de2f93785a62ba09c9d86b6b8c86eb522c0ed1110634f"
     },
     {
       "file": "src/simulation/egg-curve-motion.js",

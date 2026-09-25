@@ -391,7 +391,11 @@ function twoBucketWellPulley(movement) {
   const laidRope = addRole(new THREE.Mesh(new THREE.BufferGeometry(), ropeMaterial),
     'single-laid-rope-over-sheave-between-both-bails');
   continuousRope.add(laidRope);
-  for (const piece of [upperArc, leftRopeLeg, rightRopeLeg]) piece.visible = false;
+  for (const piece of [upperArc, leftRopeLeg, rightRopeLeg]) {
+    // Pinned hidden: the leg updates would otherwise show the plain tubes
+    // again beside the laid rope.
+    Object.defineProperty(piece, 'visible', { configurable: true, get: () => false, set: () => {} });
+  }
   const layRope = (leftY, rightY) => {
     const path = new THREE.CurvePath();
     path.add(new THREE.LineCurve3(new THREE.Vector3(-pulleyRadius, leftY, 0), arcPoints[0].clone()));

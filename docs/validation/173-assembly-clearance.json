@@ -1,7 +1,7 @@
 {
   "movement": 173,
   "poses": 129,
-  "meshes": 39,
+  "meshes": 40,
   "pairs": [
     [
       "hub",
@@ -57,6 +57,10 @@
     ],
     [
       "hub",
+      "frameWeb"
+    ],
+    [
+      "hub",
       "footNeck"
     ],
     [
@@ -125,6 +129,10 @@
     ],
     [
       "tooth0",
+      "frameWeb"
+    ],
+    [
+      "tooth0",
       "footNeck"
     ],
     [
@@ -193,6 +201,10 @@
     ],
     [
       "tooth1",
+      "frameWeb"
+    ],
+    [
+      "tooth1",
       "footNeck"
     ],
     [
@@ -261,6 +273,10 @@
     ],
     [
       "tooth2",
+      "frameWeb"
+    ],
+    [
+      "tooth2",
       "footNeck"
     ],
     [
@@ -329,6 +345,10 @@
     ],
     [
       "tooth3",
+      "frameWeb"
+    ],
+    [
+      "tooth3",
       "footNeck"
     ],
     [
@@ -397,6 +417,10 @@
     ],
     [
       "tooth4",
+      "frameWeb"
+    ],
+    [
+      "tooth4",
       "footNeck"
     ],
     [
@@ -465,6 +489,10 @@
     ],
     [
       "tooth5",
+      "frameWeb"
+    ],
+    [
+      "tooth5",
       "footNeck"
     ],
     [
@@ -533,6 +561,10 @@
     ],
     [
       "tooth6",
+      "frameWeb"
+    ],
+    [
+      "tooth6",
       "footNeck"
     ],
     [
@@ -601,6 +633,10 @@
     ],
     [
       "tooth7",
+      "frameWeb"
+    ],
+    [
+      "tooth7",
       "footNeck"
     ],
     [
@@ -669,6 +705,10 @@
     ],
     [
       "tooth8",
+      "frameWeb"
+    ],
+    [
+      "tooth8",
       "footNeck"
     ],
     [
@@ -737,6 +777,10 @@
     ],
     [
       "tooth9",
+      "frameWeb"
+    ],
+    [
+      "tooth9",
       "footNeck"
     ],
     [
@@ -805,6 +849,10 @@
     ],
     [
       "tooth10",
+      "frameWeb"
+    ],
+    [
+      "tooth10",
       "footNeck"
     ],
     [
@@ -873,6 +921,10 @@
     ],
     [
       "tooth11",
+      "frameWeb"
+    ],
+    [
+      "tooth11",
       "footNeck"
     ],
     [
@@ -941,6 +993,10 @@
     ],
     [
       "tooth12",
+      "frameWeb"
+    ],
+    [
+      "tooth12",
       "footNeck"
     ],
     [
@@ -1009,6 +1065,10 @@
     ],
     [
       "tooth13",
+      "frameWeb"
+    ],
+    [
+      "tooth13",
       "footNeck"
     ],
     [
@@ -1077,6 +1137,10 @@
     ],
     [
       "tooth14",
+      "frameWeb"
+    ],
+    [
+      "tooth14",
       "footNeck"
     ],
     [
@@ -1145,6 +1209,10 @@
     ],
     [
       "tooth15",
+      "frameWeb"
+    ],
+    [
+      "tooth15",
       "footNeck"
     ],
     [
@@ -1213,6 +1281,10 @@
     ],
     [
       "tooth16",
+      "frameWeb"
+    ],
+    [
+      "tooth16",
       "footNeck"
     ],
     [
@@ -1281,6 +1353,10 @@
     ],
     [
       "tooth17",
+      "frameWeb"
+    ],
+    [
+      "tooth17",
       "footNeck"
     ],
     [
@@ -1385,6 +1461,10 @@
     ],
     [
       "disk",
+      "frameWeb"
+    ],
+    [
+      "disk",
       "footNeck"
     ],
     [
@@ -1441,6 +1521,10 @@
     ],
     [
       "channelRail-1",
+      "frameWeb"
+    ],
+    [
+      "channelRail-1",
       "footNeck"
     ],
     [
@@ -1497,6 +1581,10 @@
     ],
     [
       "channelRail1",
+      "frameWeb"
+    ],
+    [
+      "channelRail1",
       "footNeck"
     ],
     [
@@ -1553,6 +1641,10 @@
     ],
     [
       "lowerBearing",
+      "frameWeb"
+    ],
+    [
+      "lowerBearing",
       "footNeck"
     ],
     [
@@ -1609,6 +1701,10 @@
     ],
     [
       "upperBearing",
+      "frameWeb"
+    ],
+    [
+      "upperBearing",
       "footNeck"
     ],
     [
@@ -1653,6 +1749,10 @@
     ],
     [
       "screwThread",
+      "frameWeb"
+    ],
+    [
+      "screwThread",
       "footNeck"
     ],
     [
@@ -1697,6 +1797,10 @@
     ],
     [
       "lowerShaft",
+      "frameWeb"
+    ],
+    [
+      "lowerShaft",
       "footNeck"
     ],
     [
@@ -1741,6 +1845,10 @@
     ],
     [
       "upperShaft",
+      "frameWeb"
+    ],
+    [
+      "upperShaft",
       "footNeck"
     ],
     [
@@ -1777,6 +1885,10 @@
     ],
     [
       "nut",
+      "frameWeb"
+    ],
+    [
+      "nut",
       "footNeck"
     ],
     [
@@ -1813,6 +1925,10 @@
     ],
     [
       "wrist",
+      "frameWeb"
+    ],
+    [
+      "wrist",
       "footNeck"
     ],
     [
@@ -1841,6 +1957,10 @@
     ],
     [
       "yoke",
+      "frameWeb"
+    ],
+    [
+      "yoke",
       "footNeck"
     ],
     [
@@ -1866,6 +1986,10 @@
     [
       "guideRod",
       "guideFoot"
+    ],
+    [
+      "guideRod",
+      "frameWeb"
     ],
     [
       "guideRod",
@@ -1884,7 +2008,7 @@
       "tappetSupport"
     ]
   ],
-  "queries": 73111628,
+  "queries": 73089938,
   "intersections": {},
   "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All physical meshes classified; standalone contact has a separate dense audit. Sampled clearance only.",
   "sources": [
@@ -1894,7 +2018,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "5fdbb631e06f949e46a537fd7cc16b12dce5745768e200e47e7a0497bab90fdb"
+      "sha256": "2a3873288ee493acb7e162ec567f167722055b47f70efc06cb3d45dadb2b972c"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",
@@ -1914,7 +2038,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

@@ -32,6 +32,10 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  add('pulleyMount',plate(poly([[-.32,-.38],[.32,-.38],[.32,.38],[-.32,.38]]),-.60,-.48),'fixed',PALETTE.frame);
  add('floor',plate(imagePoly([[16,459],[466,459],[466,465],[16,465]]),-.62,.84),'fixed',PALETTE.frame);
  add('springClamp',plate(imagePoly([[26,181],[35,174],[48,194],[39,202]]),-.55,.08),'fixed',PALETTE.frame);
+ // Brown crops the bow's fixed end and the pulley's hanger. Slim posts from
+ // the floor, in the back plane, carry the end block and the pulley's pad.
+ add('springClampPost',plate(imagePoly([[31,196],[43,196],[43,459],[31,459]]),-.55,-.45),'fixed',PALETTE.frame);
+ add('pulleyPost',plate(poly([[-.1,-.38],[.1,-.38],[.1,pixel([0,459])[1]],[-.1,pixel([0,459])[1]]]),-.60,-.48),'fixed',PALETTE.frame);
  // Rounded fastening heads contain only the terminal cord material. Their
  // hidden shoulders/stems and the separated endpoint depths are inferred.
  const anchor=(name,family,point,low,high)=>{

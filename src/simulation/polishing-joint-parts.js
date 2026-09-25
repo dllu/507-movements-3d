@@ -22,6 +22,11 @@ export function correctMirrorPolisher(root){
   const eccentricShape=clip.difference(poly(circle([0,0],.34,96)),poly(circle([-g.eccentricity,0],.122,64)));
   replace(b.eccentricDisk,plate(eccentricShape,-.06,.06).rotateX(-Math.PI/2));
   replace(b.mirrorBacking,plate(clip.difference(rectangle(g.mirrorSize+.10,g.mirrorSize+.10),poly(circle([0,0],.107,64))),-.075,.075));
+  // Brown's mirror is one plain square plate: a silvered block, not a white
+  // panel inset in a dark border.
+  b.mirrorFace.visible=false;b.mirrorBacking.material=b.mirrorFace.material.clone();b.mirrorBacking.material.color.set(0xc3c9cb);
+  // Brown draws no crank or mirror index marks; they stay as hidden references.
+  b.mirrorIndex.visible=false;b.shaftIndex.visible=false;
   b.clickCarrier.position.z=.22;b.carrierPivot.visible=false;
   const carrierShape=clip.difference(clip.union(rectangle(g.carrierPivotRadius,.085,g.carrierPivotRadius/2),poly(circle([0,0],.14,48)),poly(circle([g.carrierPivotRadius,0],.13,48))),poly(circle([0,0],.107,48)),poly(circle([g.carrierPivotRadius,0],.082,48)));
   replace(b.carrierArm,plate(carrierShape,-.02,.02));b.carrierArm.position.set(0,0,-.115);

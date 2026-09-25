@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -313,11 +314,6 @@ function selfAdjustingWharfLadder(movement) {
     metalness: 0,
     roughness: 0.44,
   });
-  const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.42,
-    roughness: 0.36,
-    transparent: true,
-  });
 
   const wharf = makeWharf({
     dockLower,
@@ -353,10 +349,14 @@ function selfAdjustingWharfLadder(movement) {
   });
   root.add(floatAssembly);
 
+  // The tide is a body of water from its surface (the mesh origin, which
+  // follows the level) down to the bed at the wharf foot, not a thin sheet.
+  const tideBedY = -1.06;
   const water = new THREE.Mesh(
-    new THREE.BoxGeometry(7.2, 0.035, railHalfWidth * 2 + 2.8),
-    waterMaterial,
+    new THREE.BoxGeometry(7.2, 1, railHalfWidth * 2 + 2.8).translate(0, -0.5, 0),
+    waterVolumeMaterial(),
   );
+  water.renderOrder = 1;
   water.position.x = dockLower.x - 3.45;
   water.userData.role = 'moving-tide-water-level-reference';
   water.castShadow = false;
@@ -590,6 +590,7 @@ function selfAdjustingWharfLadder(movement) {
     const state = stateAtTime(time);
     floatAssembly.position.copy(state.floatLower);
     water.position.y = state.waterLevel;
+    water.scale.y = Math.max(0.001, state.waterLevel - tideBedY);
 
     for (let index = 0; index < 2; index += 1) {
       const side = index === 0 ? -1 : 1;

@@ -997,11 +997,41 @@ function leverChronometerEscapement(movement) {
     );
     bankingContactPoints[name] = contact;
     bankingPinCenters[name] = position;
-    const pin = cylinderAlongZ(0.10, 0.86, frameMaterial, 24);
-    pin.position.set(position.x, position.y, leverPlaneZ);
+    // The pin runs from in front of the lever tail back into the banking
+    // bridge on the frame plane.
+    const pinFront = leverPlaneZ + 0.43;
+    const pinBack = framePlaneZ;
+    const pin = cylinderAlongZ(0.10, pinFront - pinBack, frameMaterial, 24);
+    pin.position.set(position.x, position.y, (pinFront + pinBack) / 2);
     pin.userData.role = `fixed-${name}-banking-pin-for-locking-lever`;
     return pin;
   });
+  // Brown draws only the two pin heads; they stand in a small bridge behind
+  // the tail, carried by an arm from the lever's bearing (both hidden behind
+  // the lever in the plate's view).
+  const bankingBridge = beamBetween(
+    new THREE.Vector3(bankingPinCenters.left.x, bankingPinCenters.left.y,
+      framePlaneZ),
+    new THREE.Vector3(bankingPinCenters.right.x, bankingPinCenters.right.y,
+      framePlaneZ),
+    0.20,
+    0.20,
+    frameMaterial,
+  );
+  bankingBridge.userData.role = 'fixed-banking-pin-bridge';
+  const bankingMid = bankingPinCenters.left.clone()
+    .add(bankingPinCenters.right).multiplyScalar(0.5);
+  const bankingArmStart = leverPivot.clone().add(
+    bankingMid.clone().sub(leverPivot).normalize().multiplyScalar(0.28),
+  );
+  const bankingArm = beamBetween(
+    new THREE.Vector3(bankingArmStart.x, bankingArmStart.y, framePlaneZ),
+    new THREE.Vector3(bankingMid.x, bankingMid.y, framePlaneZ),
+    0.12,
+    0.16,
+    frameMaterial,
+  );
+  bankingArm.userData.role = 'fixed-banking-bridge-arm-from-lever-bearing';
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(10.7, 0.24, 0.88),
     frameMaterial,
@@ -1016,6 +1046,8 @@ function leverChronometerEscapement(movement) {
     leverBearing,
     balanceBearing,
     ...bankingPins,
+    bankingBridge,
+    bankingArm,
     base,
   );
 
@@ -1364,6 +1396,8 @@ function leverChronometerEscapement(movement) {
     balanceRim,
     balanceSpokes,
     balanceStaff,
+    bankingArm,
+    bankingBridge,
     bankingPins,
     bankingTail,
     base,

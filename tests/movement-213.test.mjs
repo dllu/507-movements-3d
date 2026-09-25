@@ -739,12 +739,33 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
   assert.ok(sweptSize.x > 5.6);
   assert.ok(sweptSize.y > 7.2);
   assert.ok(sweptSize.z > 1.7, 'the separated planes use depth without the undrawn frame');
-  let meshCount = 0;
+  // Pass 54 removed the two orphaned rear bearing tori too, so a mesh-count
+  // floor no longer describes the design. Check the parts themselves: the
+  // undrawn frame, bearings, white indices and contact markers are out of
+  // the presented tree, and every mesh left in it is either a working part
+  // or a hidden retired outline.
+  const presented = (object) => {
+    for (let parent = object; parent; parent = parent.parent) {
+      if (parent === model.root) return true;
+    }
+    return false;
+  };
+  for (const removed of [blocks.baseRail, blocks.upright, ...blocks.bearingArms,
+    ...blocks.bearings, ...blocks.feet, blocks.driverIndex, blocks.stopWheelIndex,
+    blocks.activeContactMarker, blocks.stopContactMarker]) {
+    assert.equal(presented(removed), false,
+      `the undrawn frame, white indices and contact markers are presented away (${removed.userData.role})`);
+  }
   model.root.traverse((object) => {
-    if (object.isMesh) meshCount += 1;
+    if (object.isMesh && /speed-index|motion-index|contact-marker|base-rail|bearing-upright|bearing-arm|transverse-foot/.test(object.userData.role ?? '')) {
+      assert.equal(object.visible, false, `${object.userData.role} is not presented`);
+    }
   });
+  for (const part of [blocks.driverBody, blocks.facePin, blocks.stopWheelBody, blocks.frictionDrum]) {
+    assert.ok(presented(part) && part.visible, `${part.userData.role} stays presented`);
+  }
   // The dark ratchet outline Brown only inks is retired.
-  assert.ok(meshCount >= 18, 'the undrawn frame, white indices and contact markers are presented away');
+  assert.equal(blocks.stopWheelOutline.visible, false);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

@@ -6,6 +6,7 @@ import {portedBarrel} from './lift-pump-working-parts.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {PALETTE,matte} from './primitives.js';
+import {waterVolumeMaterial} from './water-volume.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const rectangle=(w,h,cx=0,cy=0)=>poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]]);
 const add=(parent,geometry,material,role)=>{const mesh=new THREE.Mesh(geometry,material);mesh.userData.role=role;parent.add(mesh);return mesh;};
@@ -66,8 +67,8 @@ export function correctFountain(root){
  replace(b.nozzle,horizontalTurned([[-.10,.060],[-.10,.095],[.10,.075],[.10,.060]]));
  replace(b.jetColumn,new THREE.CylinderGeometry(.016,.028,1,16));
  // Brown draws the jet as a willow plume: fine streaks leave the nozzle
- // tip, lean out on both sides to lower crowns and break into dashes as
- // they fall back, steeper than they rose. Each side's streaks are fixed
+ // tip, lean out on both sides to lower crowns and fall back, steeper than
+ // they rose. Each side's streaks are fixed
  // in shape (unit head) and scaled with the pressure head H.
  const nominalHead=d.stateAtTime(0).idealJetHeight,streakRadius=.012/nominalHead;
  b.fountainSprays.forEach((spray,i)=>{
@@ -83,12 +84,10 @@ export function correctFountain(root){
      }
      const lengths=[0];for(let k=1;k<points.length;k++)lengths.push(lengths[k-1]+points[k].distanceTo(points[k-1]));
      const at=l=>{let k=1;while(k<lengths.length-1&&lengths[k]<l)k++;const t=(l-lengths[k-1])/Math.max(1e-9,lengths[k]-lengths[k-1]);return points[k-1].clone().lerp(points[k],Math.min(1,t));};
-     const total=lengths.at(-1),apexLength=lengths[Math.round(160*reach/endX)]+.06,pieces=[[0,apexLength]];
-     for(let l=apexLength+.05;l<total-.02;l+=.12)pieces.push([l,Math.min(total,l+.07)]);
-     for(const[l0,l1]of pieces){
-       const curve=new THREE.CatmullRomCurve3(Array.from({length:9},(_,k)=>at(l0+(l1-l0)*k/8)));
-       parts.push(new THREE.TubeGeometry(curve,l1-l0>.3?24:3,streakRadius,6,false));
-     }
+     // Each streak is one continuous falling jet (no engraved dashes).
+     const total=lengths.at(-1);
+     const curve=new THREE.CatmullRomCurve3(Array.from({length:25},(_,k)=>at((total-.02)*k/24)));
+     parts.push(new THREE.TubeGeometry(curve,48,streakRadius,6,false));
    }
    replace(spray,mergeGeometries(parts));parts.forEach(part=>part.dispose());
    spray.position.set(0,g.nozzleY,0);
@@ -151,17 +150,17 @@ function sectionFountain(root){
  addMesh(plate(clip.union(mass,pipeOuter),back-.04,back),backMaterial,'far-inner-face-of-hollow-cast-frame');
  const feet=[-1,1].map(sign=>poly(Array.from({length:25},(_,i)=>{const a=Math.PI*i/24;return[sign*2.05+.17*Math.cos(a),-.05-.12*Math.sin(a)];})));
  addMesh(plate(clip.union(...feet),back,cut),wallMaterial,'claw-foot-of-cast-frame');
- // Horizontal ruled lines: Brown's water in section.
- const ruled=(region,y0,y1)=>{const bands=[];for(let y=y0+.02;y<y1;y+=.055)bands.push(rect(-3,y,3,y+.016));return clip.intersection(clip.union(...bands),region);};
- const lineMaterial=matte(PALETTE.fluid,{roughness:.6});
- const levelMaterial=()=>{const m=lineMaterial.clone();m.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0),0)];return m;};
+ // Water in section: translucent bodies filling the cut hollows from the
+ // far inner face to the cut plane (Brown rules them; we show the water).
+ const waterMaterial=waterVolumeMaterial();
+ const levelMaterial=()=>{const m=waterMaterial.clone();m.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,-1,0),0)];return m;};
  const footMaterial=levelMaterial(),bowlMaterial=levelMaterial();
- const lines=(region,y0,y1,material,role)=>addMesh(plate(ruled(region,y0,y1),cut-.012,cut-.002),material,role);
- lines(clip.difference(tableHollow,pipeOuter),tableFloor,tableTop-wall,lineMaterial,'ruled-water-in-top-trough');
- lines(rect(1.47,footTop-.07,1.95,tableFloor+.05),footTop-.07,tableFloor+.05,lineMaterial,'ruled-water-in-right-hollow-leg');
- lines(pipeInner,pipeFoot,spireTip,lineMaterial,'ruled-water-in-jet-pipe-and-spire');
- lines(foot,footFloor,footTop,footMaterial,'ruled-water-in-hollow-foot');
- lines(poly([[-1.208,3.2],...bowlInner.slice().reverse().slice(1,-1),[1.208,3.2]]),1.99,3.2,bowlMaterial,'ruled-water-in-hung-bowl');
+ const water=(region,y0,y1,material,role)=>{const m=addMesh(plate(clip.intersection(region,rect(-3,y0,3,y1)),back+.002,cut-.002),material,role);m.renderOrder=1;return m;};
+ water(clip.difference(tableHollow,pipeOuter),tableFloor,tableTop-wall,waterMaterial,'water-in-top-trough');
+ water(rect(1.47,footTop-.07,1.95,tableFloor+.05),footTop-.07,tableFloor+.05,waterMaterial,'water-in-right-hollow-leg');
+ water(pipeInner,pipeFoot,spireTip,waterMaterial,'water-in-jet-pipe-and-spire');
+ water(foot,footFloor,footTop,footMaterial,'water-in-hollow-foot');
+ water(poly([[-1.208,3.2],...bowlInner.slice().reverse().slice(1,-1),[1.208,3.2]]),1.99,3.2,bowlMaterial,'water-in-hung-bowl');
  group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;for(const m of[].concat(o.material))m.fog=false;}});
  d.localClippingEnabled=true;
  d.sectionFrame={group,spireTipY:spireTip};

@@ -40,6 +40,21 @@ function finish197(root) {
     web.position.set(side * (g.outerFrameHalfWidth + g.straightRackLength / 2) / 2, 0, -0.32);
     b.rackAssembly.add(support, post, web);
   }
+  // Brown's square frame is one solid plate: the capsule rack sits on its
+  // face and the C-shaped end guides stand off it on the side mounts. The
+  // pinion shaft is driven from the front, so nothing passes through it.
+  // The plate takes a pale tint of the frame's blue so the rack and guides
+  // on its face stay legible, as on Brown's white plate.
+  const plateHalfWidth = g.outerFrameHalfWidth - 0.05, plateHalfHeight = g.outerFrameHalfHeight - 0.05;
+  const backPlate = mesh(plate(poly([[-plateHalfWidth, -plateHalfHeight], [plateHalfWidth, -plateHalfHeight],
+    [plateHalfWidth, plateHalfHeight], [-plateHalfWidth, plateHalfHeight]]), -0.47, -0.384), 0x9db8c7, 'solid-plate-of-reciprocating-square-frame');
+  b.rackAssembly.add(backPlate);
+  {
+    const shaftMesh = b.pinionShaft.userData.rotor.children[0];
+    const radius = shaftMesh.geometry.parameters.radiusTop;
+    // Shaft runs from the pinion hub's back face (z = -0.11) forward past the collar.
+    replace(shaftMesh, new THREE.CylinderGeometry(radius, radius, 0.73, 22).translate(0, 0.335, 0));
+  }
   replace(b.shaftGuideFollower, ring(0.075, g.guideFollowerOuterRadius, -0.065, 0.065, 128));
   const slider = poly([[-0.285, -0.115], [0.285, -0.115], [0.285, 0.115], [-0.285, 0.115]]);
   replace(b.shaftSlider, plate(polygonClipping.difference(slider, poly(circle([0, 0], 0.076, 64))), -0.08, 0.08));

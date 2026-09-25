@@ -3,7 +3,7 @@ import { curvedFloatChannel, portedFloatHub } from './water-lifting-solids.js';
 import { horizontalTurned } from './horizontal-turbine-solids.js';
 import { ring, capsule, plate } from './finite-plate-geometry.js';
 import { makePersianBucketTrip } from './persian-bucket-trip.js';
-import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
+import { waterVolume } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -563,14 +563,10 @@ function persianIrrigationWheel(movement) {
   streamBed.position.set(0, groundY + 0.36, 0);
   streamBed.userData.role = 'fixed-stream-bed-beneath-wheel';
   root.add(streamBed);
-  // Brown rules the stream as broken horizontal strokes from the surface
-  // down, across the width of the plate and behind the lowest bucket, not as
-  // a water body.
-  const streamWater = new THREE.Mesh(
-    ruledWaterLines({ xMin: -3.75, xMax: 3.75, surfaceY: streamSurfaceY, rows: 9, spacing: 0.2, thickness: 0.04, seed: 441 }),
-    ruledWaterMaterial(),
-  );
-  streamWater.position.set(0, 0, -1.30);
+  // The stream is a translucent water body from its surface to the bed,
+  // across the plate's width and the wheel's depth; the lowest floats and
+  // bucket dip into it.
+  const streamWater = waterVolume({ xMin: -3.75, xMax: 3.75, surfaceY: streamSurfaceY, bottomY: streamSurfaceY - 1.75, zMin: -1.5, zMax: 1.5 });
   streamWater.userData.role =
     'moving-stream-partly-immersing-curved-floats';
   root.add(streamWater);

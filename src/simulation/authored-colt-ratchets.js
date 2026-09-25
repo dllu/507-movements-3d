@@ -988,7 +988,19 @@ function coltCylinderRatchet(movement) {
   );
   hammerBody.userData.role = 'source-profiled-hammer-tumbler-body';
   hammerRotor.add(hammerBody);
-  const hammerShaft = cylinderAlongZ(0.23, 0.62, darkMaterial, 36);
+  // The tumbler arbor runs back through the hammer into a bore in the lock
+  // plate behind (Brown's hatched circle is its cut end, shown as a plain
+  // steel face standing just proud of the hammer).
+  const lockPlateFront = hammerZ - hammerHalfDepth - hammerBevel - 0.25;
+  const lockPlateBack = lockPlateFront - 0.08;
+  const hammerShaftFront = hammerZ + hammerHalfDepth + hammerBevel + 0.03;
+  const hammerShaft = cylinderAlongZ(
+    0.23,
+    hammerShaftFront - lockPlateBack,
+    matte(PALETTE.muted, { metalness: 0.3, roughness: 0.5 }),
+    36,
+  );
+  hammerShaft.position.z = (hammerShaftFront + lockPlateBack) / 2 - hammerZ;
   hammerShaft.userData.role = 'hammer-pivot-shaft';
   hammerRotor.add(hammerShaft);
 
@@ -1029,10 +1041,11 @@ function coltCylinderRatchet(movement) {
 
   const springBlockOutline = sourceRasterSpringBlock.map(rasterToModel);
   const springAnchorBlock = new THREE.Mesh(
-    plate(poly(springBlockOutline), dogLow - 0.06, dogHigh + 0.06),
+    // The block stands out from the lock plate behind to the dog's plane.
+    plate(poly(springBlockOutline), lockPlateFront, dogHigh + 0.06),
     frameMaterial,
   );
-  springAnchorBlock.userData.role = 'fixed-hatched-spring-c-block';
+  springAnchorBlock.userData.role = 'fixed-spring-c-block-on-lock-plate';
   root.add(springAnchorBlock);
   const springPivot = new THREE.Group();
   springPivot.position.set(springRoot[0], springRoot[1], 0);
@@ -1254,6 +1267,40 @@ function coltCylinderRatchet(movement) {
   mainspringClamp.userData.role = 'fixed-mainspring-root-block';
   mainspringFrame.add(mainspringClamp);
 
+  // Undrawn by Brown: the lock plate (frame side) that carries the tumbler
+  // arbor, spring c's block and the mainspring's root block. It is kept to
+  // narrow straps behind the working parts, joining those three mounts.
+  const strap = (a, b, halfWidth) => {
+    const dx = b[0] - a[0];
+    const dy = b[1] - a[1];
+    const length = Math.hypot(dx, dy);
+    const nx = -dy / length * halfWidth;
+    const ny = dx / length * halfWidth;
+    return [[[a[0] + nx, a[1] + ny], [b[0] + nx, b[1] + ny],
+      [b[0] - nx, b[1] - ny], [a[0] - nx, a[1] - ny], [a[0] + nx, a[1] + ny]]];
+  };
+  const blockFoot = rasterToModel([176, 200]);
+  const clampCentre = [
+    mainspringRoot[0] - 0.28 * Math.cos(mainspringAngle),
+    mainspringRoot[1] - 0.28 * Math.sin(mainspringAngle),
+  ];
+  const lockPlateOutline = polygonClipping.difference(
+    polygonClipping.union(
+      [[circle([0, 0], 0.5, 72)]],
+      strap([0, 0], blockFoot, 0.2),
+      [[circle(blockFoot, 0.24, 48)]],
+      strap([0, 0], clampCentre, 0.2),
+      [[circle(clampCentre, 0.3, 48)]],
+    ),
+    [[circle([0, 0], 0.235, 72)]],
+  );
+  const lockPlate = new THREE.Mesh(
+    plate(lockPlateOutline, lockPlateBack, lockPlateFront),
+    frameMaterial,
+  );
+  lockPlate.userData.role = 'undrawn-lock-plate-carrying-arbor-and-springs';
+  root.add(lockPlate);
+
   // The arbor stops inside the cylinder; the ratchet closes the bore behind.
   const cylinderShaft = cylinderAlongX(
     cylinderArborRadius,
@@ -1307,6 +1354,7 @@ function coltCylinderRatchet(movement) {
     hammerShaft,
     hammerStirrupPin,
     mainspring,
+    lockPlate,
     mainspringClamp,
     mainspringFrame,
     ratchet,

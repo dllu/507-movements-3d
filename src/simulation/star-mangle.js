@@ -45,7 +45,8 @@ export function makeStarMangle({ profiles: data = profileData, contactMap = mapD
   for (let i = 0; i < p.toothCount; i += 1) {
     const profile = profileMap.get(i) ?? generic;
     if (!geometryCache.has(profile)) geometryCache.set(profile, radialToothGeometry(profile, { outerRadius: 1.78 }));
-    const tooth = new THREE.Mesh(geometryCache.get(profile), matte(i === 0 || i === p.toothCount - 1 ? PALETTE.brass : PALETTE.driven));
+    // The two teeth beside A are ordinary teeth of the wheel, not highlighted.
+    const tooth = new THREE.Mesh(geometryCache.get(profile), matte(PALETTE.driven));
     tooth.rotation.z = p.firstTerminal + i * p.wheelPitch;
     tooth.userData = { radialTooth: true, index: i, terminal: i === 0 || i === p.toothCount - 1 };
     wheel.add(tooth); teeth.push(tooth);

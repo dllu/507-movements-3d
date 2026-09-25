@@ -1,5 +1,6 @@
 import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
 import * as THREE from 'three';
+import { plate, polygonClipping } from './finite-plate-geometry.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -540,24 +541,59 @@ function redirectedChineseWindlass(movement) {
   const frameRearZ = -0.33;
   const frameBottomY = -3.18;
   const frameCrownY = 3.72;
+  // The legs and the arched head share one square section (0.22 in plane,
+  // 0.27 deep): each leg's top 0.5 unit is part of the head piece, so the
+  // arch runs into the legs with no gap or change of section.
+  const legSection = { color: PALETTE.frame, depth: 0.27, thickness: 0.22 };
+  const legTop = (side) => new THREE.Vector2(side * 0.66, frameCrownY - 0.32);
+  const legFoot = (side) => new THREE.Vector2(side * 3.0, frameBottomY);
+  const legAxis = (side) => legTop(side).sub(legFoot(side)).normalize();
+  const legJoin = (side) => legTop(side).addScaledVector(legAxis(side), -0.5);
   const leftLeg = makeBeam(
     new THREE.Vector3(-3.0, frameBottomY, frameRearZ),
-    new THREE.Vector3(-0.66, frameCrownY - 0.32, frameRearZ),
-    { color: PALETTE.frame, depth: 0.27, thickness: 0.22 },
+    new THREE.Vector3(legJoin(-1).x, legJoin(-1).y, frameRearZ),
+    legSection,
   );
   leftLeg.userData.role = 'left-inclined-A-frame-leg';
   const rightLeg = makeBeam(
     new THREE.Vector3(3.0, frameBottomY, frameRearZ),
-    new THREE.Vector3(0.66, frameCrownY - 0.32, frameRearZ),
-    { color: PALETTE.frame, depth: 0.27, thickness: 0.22 },
+    new THREE.Vector3(legJoin(1).x, legJoin(1).y, frameRearZ),
+    legSection,
   );
   rightLeg.userData.role = 'right-inclined-A-frame-leg';
+  const crownCenter = [0, frameCrownY - 0.30];
+  const crownMid = 0.66;
+  const crownHalf = legSection.thickness / 2;
+  const crownArc = [];
+  for (let index = 0; index <= 48; index += 1) {
+    const angle = Math.PI * index / 48;
+    crownArc.push([crownCenter[0] + (crownMid + crownHalf) * Math.cos(angle),
+      crownCenter[1] + (crownMid + crownHalf) * Math.sin(angle)]);
+  }
+  for (let index = 48; index >= 0; index -= 1) {
+    const angle = Math.PI * index / 48;
+    crownArc.push([crownCenter[0] + (crownMid - crownHalf) * Math.cos(angle),
+      crownCenter[1] + (crownMid - crownHalf) * Math.sin(angle)]);
+  }
+  const legHead = (side) => {
+    const axis = legAxis(side);
+    const normal = new THREE.Vector2(-axis.y, axis.x).multiplyScalar(crownHalf);
+    const low = legJoin(side);
+    const high = legTop(side).addScaledVector(axis, 0.06);
+    return [[[low.x + normal.x, low.y + normal.y],
+      [high.x + normal.x, high.y + normal.y],
+      [high.x - normal.x, high.y - normal.y],
+      [low.x - normal.x, low.y - normal.y],
+      [low.x + normal.x, low.y + normal.y]]];
+  };
   const crown = new THREE.Mesh(
-    new THREE.TorusGeometry(0.66, 0.16, 10, 48, Math.PI),
-    frameMaterial,
+    plate(polygonClipping.union(
+      [[[...crownArc, crownArc[0]]]],
+      legHead(-1),
+      legHead(1),
+    ), frameRearZ - legSection.depth / 2, frameRearZ + legSection.depth / 2),
+    leftLeg.children[0].material,
   );
-  crown.position.set(0, frameCrownY - 0.30, frameRearZ);
-  crown.rotation.z = 0;
   crown.userData.role = 'arched-A-frame-crown';
   // Each sheave hangs from a short hook bracket on the inside of its leg.
   const legXAtY = (y) => 3.0 - (y - frameBottomY)

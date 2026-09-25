@@ -24,8 +24,12 @@ export function createAuthoredCurveGeneratorMovement(movement) {
     hole([g.length*g.fraction,0],.046)),.13,.27),PALETTE.driven,'rod',rod);
   const tracer=add('tracer',disk(.04,.21,.4),PALETTE.brass,'rod',rod);tracer.position.x=g.length*g.fraction;
   add('wristPin',disk(.14,.07,.57),PALETTE.ink,'slider',slider);
-  const crosshead=clip.union(hole([0,0],.32),poly([[0,-.34],[.38,-.34],[.47,-.2],[.47,.16],[.34,.22],[.34,.34],[0,.34]]));
-  add('slider',plate(clip.difference(crosshead,hole([0,0],.146)),.36,.50),PALETTE.frame,'slider',slider);
+  // Brown breaks the fixed end off with a jagged mark. Model a whole
+  // crosshead block riding in a closed fixed guide frame along guideY.
+  add('slider',plate(clip.difference(poly([[-.34,-.28],[.34,-.28],[.34,.28],[-.34,.28]]),hole([0,0],.146)),.36,.50),PALETTE.frame,'slider',slider);
+  const [gx0,gx1]=[3.55,6.75],gy=g.guideY;
+  add('guideFrame',plate(clip.difference(poly([[gx0,gy-.37],[gx1,gy-.37],[gx1,gy+.37],[gx0,gy+.37]]),
+    poly([[gx0+.1,gy-.29],[gx1-.1,gy-.29],[gx1-.1,gy+.29],[gx0+.1,gy+.29]])),.36,.50),PALETTE.frame,'fixed');
   // Brown's dashed egg is the tracer's path in his notation; it is not drawn.
   const update=time=>{const s=eggAtTime(time);rotor.rotation.z=s.angle;rod.position.set(...s.crank,0);
     rod.rotation.z=s.rodAngle;slider.position.set(...s.wrist,0);root.userData.kinematics=s;};

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import source from './source.js';
 import {makeQuickReturnProfile} from './profile.js';
-import {plate,poly,circle,capsule,disk,ring,rotate,spline,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {plate,poly,circle,capsule,disk,ring,rotate,turned,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
 
@@ -28,9 +28,19 @@ export function makeQuickReturnGeometry(options={}) {
   const bodyStart=f.local(source.body),bodyAngle=-source.body[2]-f.sourceAngle,axis=rotate([1,0],bodyAngle);
   const length=-bodyStart.reduce((s,v,i)=>s+v*axis[i],0),bodyEnd=bodyStart.map((v,i)=>v+length*axis[i]);
   const bore=poly(circle([0,0],pivotShaftRadius+.002,128)),boss=poly(circle([0,0],source.pivotRadius/100,128));
-  const output=[source.output[0],...spline(source.output.slice(1,-1)),source.output.at(-1)];
-  const outline=clip.difference(clip.union(capsule(bodyStart,bodyEnd,source.body[3]/100,128),boss,poly(output.map(f.local))),bore);
+  const outline=clip.difference(clip.union(capsule(bodyStart,bodyEnd,source.body[3]/100,128),boss),bore);
   attach('lever',plate(clip.difference(outline,f.slot),0,.18),'rocker',PALETTE.driven);
+  // Brown draws the tail as a round rod broken off with an oblique cut. Model
+  // it whole: a round rod on the drawn tail centreline with a rounded end
+  // at the drawn tip. Its diameter follows the drawn tail width.
+  {const o=source.output,a=f.local([(o[0][0]+o.at(-1)[0])/2,(o[0][1]+o.at(-1)[1])/2]),b=f.local([496,330]);
+   const dx=b[0]-a[0],dy=b[1]-a[1],angle=Math.atan2(dy,dx),r=Math.hypot(o[0][0]-o.at(-1)[0],o[0][1]-o.at(-1)[1])/200;
+   const start=source.pivotRadius/100-.04,end=Math.hypot(...b),length=end-start-r;
+   // One closed turned solid: straight shank then a hemispherical end.
+   const profile=[[start,0],[start,r]];
+   for(let i=0;i<=16;i++){const t=i/16*Math.PI/2;profile.push([start+length+r*Math.sin(t),r*Math.cos(t)]);}
+   const shape=turned(profile,96).rotateY(Math.PI/2).rotateZ(angle);
+   attach('tailRod',shape,'rocker',PALETTE.driven,[0,0,.09]);}
   attach('pivotBoss',plate(clip.difference(boss,bore),.18,.24),'rocker',PALETTE.driven);
   attach('pivotShaft',disk(pivotShaftRadius,-.85,.26,128),'frame',PALETTE.ink,[...f.pivot,0]);
   const rearOutline=clip.union(capsule([0,0],f.pivot,.075,32),poly(circle([0,0],.27,96)),poly(circle(f.pivot,.28,96)));

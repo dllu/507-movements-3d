@@ -2948,7 +2948,8 @@ test('movement 39 couples a rocking planet and finite connecting rod to two sun 
   assert.equal(flywheel.userData.webSlitCount, 4, 'plate 39 parts the flywheel web with four slits');
   assert.equal(flywheel.geometry.parameters.shapes.holes.length, 4);
   assert.equal(arm.geometry.parameters.shapes.holes.length, 2);
-  assert.equal(connectingRod.userData.croppedContinuation, true);
+  assert.equal(connectingRod.userData.wholeRod, true, 'the rod is modelled whole to its upper eye');
+  assert.ok(Math.abs(new THREE.Box3().setFromObject(connectingRod).max.y - (g.rodLength + g.rodWidth / 2)) < 0.02);
   for (const part of [sun, planet, sunShaft, planetShaft]) assert.ok(part.userData.axis.distanceTo(Z_AXIS) < 1e-12);
   assert.ok(Math.abs(g.centerDistance - 2 * g.pitchRadius) < 1e-12);
   assert.ok(Math.abs(g.rodLength - 3 * g.centerDistance) < 1e-12);
@@ -3355,11 +3356,12 @@ test('movement 44 meshes four separated and staggered rows with unequal source d
   disposeModel(model.root);
 });
 
-test('movement 45 reconstructs five complementary grooves, unequal wheels and an enlarged section', () => {
+test('movement 45 reconstructs five complementary grooves on unequal wheels without floating section sectors', () => {
   const model = createMovementModel(catalog.movements[44]);
   assert.equal(model.root.userData.mechanism, 'five-groove-force-closed-friction-wheels');
   const { driver, driven, driverShaft, drivenShaft, section } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
+  assert.equal(section, undefined, 'the grooves show on the wheel rims; no separate section sectors float beside them');
   assert.equal(g.grooveCount, 5);
   assert.ok(Math.abs(g.driverPitchRadius / g.drivenPitchRadius - 0.7) < 1e-12);
   assert.ok(Math.abs(g.centerDistance - g.driverPitchRadius - g.drivenPitchRadius) < 1e-12);
@@ -3384,15 +3386,6 @@ test('movement 45 reconstructs five complementary grooves, unequal wheels and an
   }
   assert.ok(driverShaft.userData.axis.distanceTo(X_AXIS) < 1e-12);
   assert.ok(drivenShaft.userData.axis.distanceTo(X_AXIS) < 1e-12);
-  assert.equal(section.userData.isSectionView, true);
-  assert.equal(section.userData.displayedGrooves, 4);
-  assert.equal(section.userData.interfacePoints.length, 9);
-  assert.equal(section.userData.parts.length, 2);
-  for (const [index, point] of section.userData.interfacePoints.entries()) {
-    const source = g.interfaceProfile[index + 1];
-    assert.ok(Math.abs(point.x - source.axialPosition * section.userData.enlargement) < 1e-12);
-    assert.ok(Math.abs(point.y + source.wave * section.userData.enlargement) < 1e-12);
-  }
   for (const [i, point] of g.interfaceProfile.entries()) {
     assert.ok(Math.abs(point.driverRadius + point.drivenRadius - g.centerDistance) < 1e-12);
     assert.ok(Math.abs(point.driverRadius - g.driverPitchRadius - point.wave) < 1e-12);
@@ -3405,18 +3398,9 @@ test('movement 45 reconstructs five complementary grooves, unequal wheels and an
         - g.faceWidth / 10) < 1e-12);
     }
   }
-  const sectionTransform = new THREE.Matrix4();
   for (let sample = 0; sample < 65; sample += 1) {
     model.update(g.inputPeriod * sample / 64, 0);
     model.root.updateMatrixWorld(true);
-    if (sample === 0) sectionTransform.copy(section.matrixWorld);
-    assert.deepEqual(section.matrixWorld.elements, sectionTransform.elements,
-      'the enlarged section is a stationary reference illustration');
-    const sectionBounds = new THREE.Box3().setFromObject(section, true);
-    for (const part of [driver, driven, driverShaft, drivenShaft]) {
-      assert.ok(sectionBounds.min.x - new THREE.Box3().setFromObject(part, true).max.x > 0.23,
-        'the separate section clears the actual machine');
-    }
     const state = model.root.userData.kinematics;
     assert.ok(Math.abs(state.speedRatio + 0.7) < 1e-12);
     assert.ok(Math.abs(state.nominalRollingError) < 1e-12);
@@ -31009,8 +30993,9 @@ test('movement 134 carries one rope smoothly through one full drum wrap at presc
   assert.equal(frontInnerOutline.parent, drumRotor);
   assert.equal(drumRotationIndex.parent, drumRotor);
   assert.ok(spokes.every((spoke) => spoke.parent === drumRotor));
+  // Brown's rim joints are not painted as face strips: presentation detaches them.
   assert.ok(rimSeparators.every(
-    (separator) => separator.parent === drumRotor
+    (separator) => separator.parent === null
   ));
   assert.equal(rope.parent, model.root);
   assert.equal(ropeMesh.parent, rope);

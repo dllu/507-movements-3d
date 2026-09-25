@@ -124,10 +124,11 @@ function makeSlotSlide({
   );
   block.userData.role = `${role}-rectangular-block`;
 
+  // A plain steel pin, not a white dot on rod B.
   const pivotPin = cylinderAlongZ(
     blockWidth * 0.25,
     frontFaceZ + blockDepth * 0.72,
-    whiteMaterial,
+    matte(PALETTE.muted, { metalness: 0.3, roughness: 0.5 }),
     30,
   );
   pivotPin.position.z = frontFaceZ / 2;
@@ -144,6 +145,8 @@ function makeSlotSlide({
   );
   pivotRing.position.z = frontFaceZ + 0.026;
   pivotRing.userData.role = `${role}-front-pivot-index`;
+  // An index ring round the pin head; Brown draws none.
+  pivotRing.visible = false;
 
   // The working block remains inside the disk slot. This thin face shares
   // its pose and is carried forward along the same pivot pin so the slot
@@ -714,6 +717,8 @@ function snyderDoubleStrokeSlotDrive(movement) {
     floor.position.z = -diskDepth / 2 + 0.016;
     floor.userData.role =
       `dark-recess-behind-through-slot-${index + 1}`;
+    // The slots are open through the disk, as Brown leaves them white.
+    floor.visible = false;
     diskAssembly.add(floor);
     return floor;
   });
@@ -722,6 +727,9 @@ function snyderDoubleStrokeSlotDrive(movement) {
     const edge = new THREE.Group();
     edge.rotation.z = angle;
     edge.userData.role = 'cross-slot-machined-edge';
+    // Black lining strips over the slot walls read as outlines (and
+    // z-fought into a ladder); the walls are the disk's own faces.
+    edge.visible = false;
     for (const direction of [-1, 1]) {
       const strip = new THREE.Mesh(new THREE.BoxGeometry(
         slotHalfLength - slotHalfWidth, 0.024, diskDepth + 0.025), edgeMaterial);

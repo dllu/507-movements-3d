@@ -644,68 +644,13 @@ function skewRollerHelicalRodFeed(movement) {
   };
 }
 
-// Brown hatches the stock and rollers with broken lengthwise grain lines. A
-// seeded streak texture reproduces that hatching; because the streaks have
-// finite lengths, the rod's texture offset shows its feed and the rotating
-// meshes show the spin without the undrawn marker patches.
-function lengthwiseGrainTexture(seed, width = 128, height = 256, streaks = 300) {
-  let state = seed >>> 0;
-  const random = () => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 4294967296;
-  };
-  const pixels = new Uint8Array(width * height * 4).fill(255);
-  for (let index = 0; index < streaks; index += 1) {
-    const column = Math.floor(random() * width);
-    const start = Math.floor(random() * height);
-    const length = 18 + Math.floor(random() * 90);
-    const shade = 95 + Math.floor(random() * 70);
-    for (let step = 0; step < length; step += 1) {
-      const row = (start + step) % height;
-      const offset = (row * width + column) * 4;
-      pixels[offset] = pixels[offset + 1] = pixels[offset + 2] =
-        Math.min(pixels[offset], shade);
-    }
-  }
-  const texture = new THREE.DataTexture(pixels, width, height, THREE.RGBAFormat);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.magFilter = THREE.LinearFilter;
-  texture.minFilter = THREE.LinearFilter;
-  texture.generateMipmaps = false;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function applyLengthwiseGrain(model) {
-  const root = model.root;
-  const {blocks: b, geometry: g} = root.userData;
-  const rodTexture = lengthwiseGrainTexture(365);
-  rodTexture.repeat.set(1, g.rodBodyLength / 2.2);
-  // Cylinder groups are side, top, bottom: only the side carries the grain.
-  const plainRod = b.rodBody.material;
-  const grainedRod = plainRod.clone();
-  grainedRod.map = rodTexture;
-  b.rodBody.material = [grainedRod, plainRod, plainRod];
+// Brown shades the stock and rollers with broken lengthwise hatch lines:
+// engraving notation, not surface markings. The rod and rollers keep plain
+// surfaces; the undrawn marker patches and tread indexes stay hidden.
+function hideUndrawnMarkers(model) {
+  const {blocks: b} = model.root.userData;
   for (const marker of b.rodMarkers) marker.visible = false;
   for (const index of b.rollerTreadIndexes) index.visible = false;
-  b.rollerBodies.forEach((body, index) => {
-    const texture = lengthwiseGrainTexture(3650 + index, 128, 128, 110);
-    const grained = body.material.clone();
-    grained.map = texture;
-    body.material = [grained, body.material, body.material];
-  });
-  const updateWorkingParts = root.userData.updateWorkingParts;
-  root.userData.updateWorkingParts = (state) => {
-    updateWorkingParts?.(state);
-    rodTexture.offset.y = -state.rodAxialDisplacement / g.rodBodyLength
-      * rodTexture.repeat.y;
-  };
-  root.userData.lengthwiseGrain = {
-    rodTexture,
-    note: 'seeded broken lengthwise streaks after Brown\'s hatching; the rod texture offset carries the exact axial feed',
-  };
   model.update(0);
 }
 
@@ -713,6 +658,6 @@ export function createAuthoredSkewRollerFeedMovement(movement) {
   if (movement.id !== 365) return null;
   const model = skewRollerHelicalRodFeed(movement);
   correctRollerParts(model, 365);
-  applyLengthwiseGrain(model);
+  hideUndrawnMarkers(model);
   return model;
 }

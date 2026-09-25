@@ -391,6 +391,26 @@ function barkerReactionMill(movement) {
     }
   }
 
+  // Each nozzle throws one continuous water jet that leaves tangentially and
+  // falls away; it turns with the runner (the markers are not presented).
+  const jetState = stateAtInputAngle(0);
+  runner.rotation.y = jetState.runnerAngle;
+  runner.updateMatrix();
+  const runnerFromModel = runner.matrix.clone().invert();
+  const exhaustJets = jetState.nozzles.map((nozzle, armIndex) => {
+    const points = Array.from({ length: 17 }, (_, k) => {
+      const progress = k / 16;
+      const point = nozzle.nozzlePoint.clone()
+        .addScaledVector(nozzle.jetDirection, jetVisibleLength * progress);
+      point.y -= jetDrop * progress ** 2;
+      return point.applyMatrix4(runnerFromModel);
+    });
+    const jet = makeTube(new THREE.CatmullRomCurve3(points), 0.055, waterMaterial,
+      `continuous-tangential-water-jet-from-arm-${armIndex + 1}`);
+    runner.add(jet);
+    return jet;
+  });
+
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
@@ -437,6 +457,7 @@ function barkerReactionMill(movement) {
       'barker-reaction-mill-with-four-tangential-nozzles-fed-through-central-hollow-shaft-rotating-opposite-exhaust',
     blocks: {
       armPipes,
+      exhaustJets,
       bearingBracket,
       inletFlume,
       inletHopper,

@@ -1,6 +1,7 @@
 import { makeBoredLinkRod } from './bored-link-rod.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import * as THREE from 'three';
+import { groundBlock } from './ground-block.js';
 import {
   PALETTE,
   markShadows,
@@ -2168,7 +2169,7 @@ function doubleParallelMotion(movement) {
     group.userData.fixed = true;
     group.userData.role = `fixed-${name}-pedestal`;
     // Brown draws each fixed pivot as a small half-round lug standing on a
-    // ground line with diagonal hatching below, not a pedestal block.
+    // ground line (Brown hatches it; modelled as a plain ground block).
     const bearing = new THREE.Mesh(plate(clip.difference(clip.union(
       poly(circle([0, 0], 0.52 * s, 48)),
       poly([[-0.52 * s, 0], [0.52 * s, 0], [0.78 * s, -0.62 * s],
@@ -2182,19 +2183,14 @@ function doubleParallelMotion(movement) {
     bore.position.z = (pinLow + pinHigh) / 2;
     bore.userData.fixed = true;
     bore.userData.role = `${name}-fixed-bearing-pin`;
-    const groundLine = [[-1.65 * s, -0.62 * s], [1.65 * s, -0.62 * s],
-      [1.65 * s, -0.70 * s], [-1.65 * s, -0.70 * s]];
-    const hatchStrokes = [];
-    for (let i = 0; i < 11; i += 1) {
-      const x0 = -1.35 * s + i * 0.30 * s;
-      hatchStrokes.push(poly([[x0, -0.70 * s], [x0 + 0.06 * s, -0.70 * s],
-        [x0 - 0.22 * s, -1.02 * s], [x0 - 0.28 * s, -1.02 * s]]));
-    }
-    const foot = new THREE.Mesh(plate(clip.union(poly(groundLine),
-      ...hatchStrokes), footInFront ? low : low - 0.08,
-    footInFront ? high : low), darkMaterial);
+    // Brown's hatched ground line under each lug is notation for the cut
+    // solid ground: the lug stands on a plain solid ground block.
+    const footLow = footInFront ? low : low - 0.08;
+    const footHigh = footInFront ? high : high;
+    const foot = groundBlock(3.3 * s, 0.40 * s, footHigh - footLow,
+      { name: `${name}-solid-ground-block` });
+    foot.position.set(0, -0.82 * s, (footLow + footHigh) / 2);
     foot.userData.fixed = true;
-    foot.userData.role = `${name}-hatched-ground`;
     group.add(bearing, bore, foot);
     group.userData.bearing = bearing;
     group.userData.bore = bore;

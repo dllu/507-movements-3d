@@ -143,6 +143,36 @@ function makeHalfTubeSidePiece({
     : 'right-upper-complement-forming-full-pole-end';
   group.add(endFillShell);
 
+  // Brown's poles are solid timber: each end of the side piece is closed by
+  // a solid plug filling the bore (the rounds fold only between the ends).
+  const endPlugLength = 0.06;
+  const endPlugs = [];
+  const addEndPlug = (plugSide, endSign, recess = 0) => {
+    const plug = new THREE.Mesh(
+      halfAnnularRailGeometry({
+        innerRadius: 0.0005,
+        length: endPlugLength,
+        outerRadius: innerRadius - 0.001,
+        side: plugSide,
+      }),
+      material,
+    );
+    plug.position.set(
+      -side * closedHalfGap,
+      endSign * ((length - endPlugLength) / 2 - recess),
+      0,
+    );
+    plug.userData.role = 'solid-end-plug-closing-pole-bore';
+    group.add(plug);
+    endPlugs.push(plug);
+  };
+  // The full pole end (shell and complement halves); the shell's other end,
+  // which the opposite piece's complement closes against, is plugged a
+  // little below its face so the passing complement clears it.
+  addEndPlug(side, side);
+  addEndPlug(-side, side);
+  addEndPlug(side, -side, 0.09);
+
   const pivotPins = [];
   const pivotIndexes = [];
   for (let index = 0; index < pivotOffsets.length; index += 1) {
@@ -190,6 +220,7 @@ function makeHalfTubeSidePiece({
 
   group.userData.endIndex = endIndex;
   group.userData.endFillShell = endFillShell;
+  group.userData.endPlugs = endPlugs;
   group.userData.pivotIndexes = pivotIndexes;
   group.userData.pivotPins = pivotPins;
   group.userData.shell = shell;

@@ -71,8 +71,9 @@ test('movement 299 is one clock verge, weighted foliot, and perpendicular crown 
   // The foliot is built on the verge, but Brown's cropped detail does not
   // show it, so the source presentation detaches it.
   assert.equal(blocks.foliot.parent, null);
+  // Brown draws no rotation witness mark on the crown wheel either.
   assert.deepEqual(model.root.userData.sourcePresentation.removedRoles,
-    ['weighted-horizontal-foliot-regulator']);
+    ['crown-wheel-rotation-witness', 'weighted-horizontal-foliot-regulator']);
   assert.equal(blocks.foliotBar.parent, blocks.foliot);
   assert.equal(blocks.rightPallet.pallet.parent, blocks.verge);
   assert.equal(blocks.leftPallet.pallet.parent, blocks.verge);

@@ -463,7 +463,7 @@ function centrifugalMineDrumCheckHooks(movement) {
   const ropeDrumRims = [-1, 1].map((side) => {
     const rim = new THREE.Mesh(
       new THREE.TorusGeometry(ropeDrumRadius + 0.08, 0.075, 12, 72),
-      inkMaterial,
+      drumMaterial,
     );
     rim.position.z = ropeDrumPlaneZ + side * 0.33;
     rim.userData.role = `rope-drum-${side < 0 ? 'rear' : 'front'}-rim`;

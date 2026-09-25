@@ -1522,7 +1522,7 @@ function rockingBeamTieRodFlywheelMotion() {
   rightFloorLedge.userData.role = 'fixed-right-ground-ledge-and-slider-bed';
   // Brown draws the ground as an inked line with diagonal hatching below,
   // broken only by the wheel pit: engraving notation for a cut solid, so
-  // render each ledge as a solid ground block with a faint side hatch.
+  // render each ledge as a plain solid ground block (no hatch texture).
   for (const ledge of [leftFloorLedge, rightFloorLedge]) {
     const { width, height, depth } = ledge.geometry.parameters;
     const block = groundBlock(width, height, depth, { spacing: 0.09 });

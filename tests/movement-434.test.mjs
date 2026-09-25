@@ -83,10 +83,13 @@ test('movement 434 keeps six inner guide shutes fixed while a separate sixteen-b
     blocks.rotationMarker, ...blocks.runnerSupportArms]) {
     assert.equal(rotating.parent, blocks.runner);
   }
-  for (const fixed of [blocks.fixedGuideAssembly, blocks.casingFloor,
-    blocks.dischargeRing, ...blocks.flowPathTubes]) {
+  for (const fixed of [blocks.fixedGuideAssembly, blocks.casingFloor]) {
     assert.equal(fixed.parent, model.root);
   }
+  // Streamline tubes, flow particles and the hose-like discharge ring are
+  // flow notation; source presentation does not show them.
+  for (const notation of [blocks.dischargeRing, ...blocks.flowPathTubes,
+    ...blocks.flowMarkers]) assert.equal(notation.parent, null);
   assert.ok(geometry.runnerInnerRadius > geometry.guideOuterRadius,
     'stationary guide assembly clears the revolving runner');
 
@@ -105,7 +108,6 @@ test('movement 434 keeps six inner guide shutes fixed while a separate sixteen-b
     'fixed-inner-fourneyron-guide-assembly-A',
     'clockwise-outer-fourneyron-runner-B',
     'central-water-inlet-to-fixed-guides',
-    'circumferential-outward-water-discharge',
     'vertical-output-shaft-of-outer-runner',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);

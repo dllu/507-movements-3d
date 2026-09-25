@@ -71,7 +71,9 @@ test('movement 400 is one compound cam, forked carrier A, pivoted feed bar B, fe
     'carrier-A-fork-cheek-around-B-pivot',
     'feed-bar-B-pivoted-in-fork-A-and-carrying-the-toothed-feeder',
     'spur-or-feeder-carried-at-end-of-bar-B',
-    'preloaded-carrier-return-spring-pulling-bar-A-rearward',
+    'preloaded-carrier-return-spring-pushing-bar-A-rearward',
+    'carrier-A-left-cross-leg-bearing-return-spring',
+    'fixed-return-spring-stop-inside-fork-A',
   ]) assert.ok(roles.includes(role), role);
   assert.equal(roles.filter((role) => role === 'upward-feed-dog-tooth').length,
     6);
@@ -206,9 +208,12 @@ test('movement 400 executes the four-motion sequence without dragging fabric bac
   for (let sample = 0; sample <= 30000; sample += 1) {
     const phase = sample / 30000;
     const state = stateAtTime(timeline.cycleDuration * phase);
-    assert.ok(state.springLength >= geometry.springBaseLength - 2e-16);
+    // The spring inside fork A is compressed by the forward stroke.
+    assert.ok(state.springLength <= geometry.springBaseLength + 2e-16);
     near(state.springExtension, state.carrierX, 0,
-      'spring extension equals carrier stroke');
+      'spring deflection equals carrier stroke');
+    near(state.springLength, geometry.springBaseLength - state.carrierX, 1e-15,
+      'compressed length');
     if (phase >= 0.10 && phase <= 0.36) {
       assert.ok(state.carrierX >= previousForwardX - 2e-15);
       previousForwardX = state.carrierX;

@@ -548,7 +548,9 @@ function ropeSteering(movement) {
       const amplitude=bowAmplitude(start.distanceTo(end),slack), result=[];
       for(let i=0;i<=32;i++){
         const u=i/32,point=start.clone().lerp(end,u);
-        point.z+=amplitude*Math.sin(Math.PI*u)**2;
+        // The slack hangs under gravity (down, away from the plan view),
+        // not bowed up toward the viewer.
+        point.z-=amplitude*Math.sin(Math.PI*u)**2;
         result.push(point);
       }
       result.push(...route.points.slice(2));

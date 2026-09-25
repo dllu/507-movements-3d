@@ -95,10 +95,11 @@ test('movement 323 is one rolling parallel ruler with a common axle and two nick
     role.endsWith('equal-nicked-wheel-A')).length, 2);
   assert.equal(roles.filter((role) =>
     role.endsWith('paper-gripping-edge-nick')).length, 30);
+  // Brown draws no white nick or face rotation indices.
   assert.equal(roles.filter((role) =>
-    role.endsWith('white-rolling-index-nick')).length, 2);
+    role.endsWith('white-rolling-index-nick')).length, 0);
   assert.equal(roles.filter((role) =>
-    role.endsWith('white-face-rotation-index')).length, 4);
+    role.endsWith('white-face-rotation-index')).length, 0);
   assert.equal(roles.filter((role) =>
     role === 'fixed-axle-C-journal-bearing-on-ruler-B').length, 4);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);

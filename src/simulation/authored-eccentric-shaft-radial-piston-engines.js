@@ -351,9 +351,12 @@ function eccentricShaftRadialPistonEngine(movement) {
   guideRingOuter.position.z = 1.12;
   guideRingOuter.userData.role =
     'outer-fixed-head-ring-keeping-pistons-radial';
-  // Brown marks the guide only by one dotted circle round B: keep the inner
-  // ring as that circle and leave the outer ring unpainted.
+  // Brown marks the head rings only by one dotted circle round B: they sit on
+  // the cylinder head, which the open view omits. A bare wire circle in front
+  // of the drum is notation, so neither ring is drawn; the pistons' guide pins
+  // remain as the rings' followers.
   guideRingOuter.visible = false;
+  guideRingInner.visible = false;
   root.add(guideRingInner, guideRingOuter);
 
   const hubRotor = new THREE.Group();

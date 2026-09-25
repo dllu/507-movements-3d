@@ -14,17 +14,18 @@ test('ideal slack illustration preserves endpoints, cord length and pulley tange
   assert.ok(s.points.flat().every(Number.isFinite));
  }
  const slack=idealCordShape(Math.PI/2,.34520362);assert.ok(slack.slack>1);
- // Slack falls onto the bar's downhill side as a small loop: it stays
- // clear of the resting bar in the plate view (bar half-depth .085 plus cord
- // radius .045) and never bows out sideways beyond the bar's reach.
+ // Slack bows the outgoing run into one smooth arc on the bar's downhill
+ // side: it stays clear of the resting bar in the plate view (bar half-depth
+ // .085 plus cord radius .045) and never doubles back into a curl.
  const eye=slack.points.at(-1),bar=[Math.cos(.34520362),Math.sin(.34520362)];
  for(const p of slack.points){const d=[p[0]-eye[0],p[1]-eye[1]];if(Math.hypot(...d)<.14)continue;assert.ok(-d[0]*bar[1]+d[1]*bar[0]>.13,`cord at ${p} crosses the bar`);}
  const exit=slack.controls[0],run=[eye[0]-exit[0],eye[1]-exit[1]],runLength=Math.hypot(...run);
  const lateral=p=>((p[0]-exit[0])*run[1]-(p[1]-exit[1])*run[0])/runLength;
  const outgoing=slack.points.filter(p=>p[1]<exit[1]-1e-9&&Math.abs(p[0]-exit[0])<3);
  assert.ok(Math.min(...outgoing.map(p=>lateral(p)))>-.05,'slack never bows out away from the incoming run');
- assert.ok(Math.min(...slack.points.map(p=>p[1]))<eye[1]-.02,'slack sags below the eye on the bar\'s downhill side');
- assert.ok(Math.min(...slack.points.map(p=>p[1]))>eye[1]-.5,'the sag stays small');
+ const top=slack.points.reduce((best,p,i,a)=>p[1]>a[best][1]?i:best,0),tail=slack.points.slice(top);
+ for(let i=1;i<tail.length;i++)assert.ok(tail[i][1]<=tail[i-1][1]+1e-9,'the slack arc descends monotonically: no curl');
+ assert.ok(Math.min(...slack.points.map(p=>p[1]))>=eye[1]-1e-9,'the cord meets its eye from above');
 });
 test('ideal profile repeats with mechanism phase and reports native tendon extension',()=>{
  const a=idealCordShape(Math.PI/2,.34520362),b=idealCordShape(Math.PI/2+2*Math.PI,.34520362);

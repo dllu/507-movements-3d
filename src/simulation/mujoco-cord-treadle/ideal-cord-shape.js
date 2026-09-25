@@ -3,12 +3,11 @@ const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
 const distance=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]));
 // The massless/slack ideal has no unique shape. This is a geometric
 // illustration, not a prediction of equilibrium or finite-rope vibration.
-// Slack falls: the outgoing run leaves the pulley tangentially, drops toward
-// the treadle, and its surplus length settles as a small loop just above the
-// bar on its downhill side before the cord returns along the bar and meets its
-// eye from above. The cord therefore never crosses the bar in the plate view
-// and never bows sideways. `amplitude` is how far the loop reaches downhill
-// of the eye along the bar.
+// Slack bows the outgoing run into one smooth arc toward the bar's downhill
+// side (the incoming run's side), then the cord comes down onto its eye from
+// above. The arc never doubles back, so the cord never curls into a loop or
+// crosses the bar in the plate view. `amplitude` is the arc's lateral reach
+// at mid-run.
 const LOOP_CLEARANCE=.18,LOOP_BLEND=.3,SMOOTHING=9;
 function chaikin(points,iterations){
  let result=points;
@@ -27,8 +26,11 @@ export function idealCordShape(disk,treadle,{segments=256,bakedAmplitude=null,ge
  // profile is continuous with the taut straight run.
  const downhill=[-Math.cos(treadle),-Math.sin(treadle)],up=[-Math.sin(treadle),Math.cos(treadle)];
  const clearance=LOOP_CLEARANCE*Math.min(1,slack/LOOP_BLEND),above=[p3[0]+up[0]*clearance,p3[1]+up[1]*clearance];
- const drop=[p0[0]+direction[0]*.85*runLength,p0[1]+direction[1]*.85*runLength];
- const polyline=amplitude=>chaikin([p0,drop,[above[0]+downhill[0]*amplitude,above[1]+downhill[1]*amplitude],above,p3],SMOOTHING);
+ // Lateral unit normal of the run on the bar's downhill side.
+ let side=[-direction[1],direction[0]];if(side[0]*downhill[0]+side[1]*downhill[1]<0)side=side.map(v=>-v);
+ const reach=Math.hypot(above[0]-p0[0],above[1]-p0[1]),mid=[p0[0]+(above[0]-p0[0])*.55,p0[1]+(above[1]-p0[1])*.55];
+ const drop=[p0[0]+direction[0]*.15*reach,p0[1]+direction[1]*.15*reach];
+ const polyline=amplitude=>chaikin([p0,drop,[mid[0]+side[0]*amplitude,mid[1]+side[1]*amplitude],above,p3],SMOOTHING);
  const polylineLength=points=>points.slice(1).reduce((sum,p,i)=>sum+distance(p,points[i]),0);
  const length=amplitude=>polylineLength(polyline(amplitude));
  let amplitude=0;

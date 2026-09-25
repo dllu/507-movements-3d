@@ -180,19 +180,8 @@ export function bellCrankHangerGabDisengager() {
   const valvePin = cylinderAlongZ(pinRadius, .48, hangerMaterial, 36);
   valvePin.position.set(valvePinLocal.x, valvePinLocal.y, -.14);
   valvePin.userData.role = 'valve-lever-pin-caught-by-eccentric-rod-gab';
-  // Brown hatches the cut rockshaft: thin ink strokes just proud of its face.
-  const hatch = new THREE.Group();
-  hatch.userData.role = 'valve-rockshaft-section-hatching';
-  for (let i = -3; i <= 3; i++) {
-    const offset = i * shaftRadius / 3.6, chord = 2 * Math.sqrt(shaftRadius ** 2 - offset ** 2) * .94;
-    const stroke = new THREE.Mesh(new THREE.BoxGeometry(chord, .018, .006), pinMaterial);
-    const angle = Math.PI / 3;
-    stroke.position.set(-offset * Math.sin(angle), offset * Math.cos(angle), -.144);
-    stroke.rotation.z = angle;
-    stroke.userData.role = 'valve-rockshaft-section-hatching';
-    hatch.add(stroke);
-  }
-  valveRocker.add(valveArm, valveShaft, hatch, valvePin);
+  // Brown hatches the cut rockshaft; the model shows its plain steel end.
+  valveRocker.add(valveArm, valveShaft, valvePin);
 
   // Eccentric rod: Brown breaks it off at the left (a drawing convention; it
   // runs on whole past the view), forked slot, bar, raised crown over the gab,

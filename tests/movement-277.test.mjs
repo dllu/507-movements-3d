@@ -89,10 +89,16 @@ test('movement 277 builds only the plate’s hammer, pivoted dog a, spring c wit
   assert.equal(roles.filter((role) => role === 'six-tooth-face-ratchet-b').length, 1);
   assert.equal(roles.filter((role) => role === 'bored-planar-dog-a-lever').length, 1);
   assert.equal(roles.filter((role) => role === 'leaf-spring-c-holding-dog-to-ratchet').length, 1);
-  assert.equal(roles.filter((role) => role === 'fixed-hatched-spring-c-block').length, 1);
-  // Brown draws no lock, base, posts, bearings or index markers.
+  assert.equal(roles.filter((role) => role === 'fixed-spring-c-block-on-lock-plate').length, 1);
+  // The only undrawn support is one strap-form lock plate carrying the
+  // tumbler arbor, spring c's block and the mainspring root.
+  assert.equal(roles.filter((role) => role === 'undrawn-lock-plate-carrying-arbor-and-springs').length, 1);
+  assert.equal(blocks.lockPlate.parent, model.root);
+  // Otherwise Brown draws no lock, base, posts, bearings or index markers.
+  const otherRoles = roles.filter((role) => role !== 'undrawn-lock-plate-carrying-arbor-and-springs'
+    && role !== 'fixed-spring-c-block-on-lock-plate');
   for (const pattern of [/(?:^|-)lock(?:-|$)/, /base/, /post/, /bearing/, /white/, /index-marker|-index$/, /belt|pulley/]) {
-    assert.equal(roles.filter((role) => pattern.test(role)).length, 0, `${pattern} absent`);
+    assert.equal(otherRoles.filter((role) => pattern.test(role)).length, 0, `${pattern} absent`);
   }
   assert.equal(model.root.userData.sourcePresentation.removedRoles.length, 0);
   disposeModel(model.root);

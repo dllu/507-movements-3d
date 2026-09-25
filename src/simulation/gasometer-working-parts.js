@@ -6,6 +6,7 @@ const tube = (radius, bore, height, segments = 72) => boredLatheGeometry([
   { radial: radius, axial: -height / 2 },
   { radial: radius, axial: height / 2 },
 ], bore, segments);
+const INK = 0x252a2d;
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
 
 // A closed meridian: outer ellipsoid, aperture edge, inner ellipsoid, equator.
@@ -32,6 +33,26 @@ function addMesh(parent, geometry, material, role, position) {
   if (position) mesh.position.copy(position);
   parent.add(mesh);
   return mesh;
+}
+
+// Brown draws no separate black rings: the bell seams go, and the lips on
+// the tank and tubes take the metal of the part they finish.
+function plainGasometerRims(root, b) {
+  for (const rim of [b.bellBottomRim, b.bellCrownBand]) if (rim) rim.visible = false;
+  const opaque = (mesh) => mesh.isMesh && mesh.visible && mesh.geometry?.type !== 'TorusGeometry'
+    && !mesh.material.transparent && mesh.material.color?.getHex() !== INK;
+  const rims = [];
+  root.traverse((mesh) => {
+    if (mesh.isMesh && mesh.visible && mesh.geometry?.type === 'TorusGeometry' && mesh.material.color?.getHex() === INK) rims.push(mesh);
+  });
+  for (const rim of rims) {
+    const body = rim === b.tankTopRim ? b.tankBottom : rim.parent.children.find(opaque);
+    if (!body) { rim.visible = false; continue; }
+    rim.material = body.material;
+    const { radius, tube: tubeRadius, radialSegments, tubularSegments } = rim.geometry.parameters;
+    replace(rim, new THREE.TorusGeometry(radius, Math.min(tubeRadius, 0.05), radialSegments, tubularSegments));
+  }
+  root.userData.plainRims = rims.map((rim) => rim.userData.role);
 }
 
 export function correctGasometerWorkingParts(root, id) {
@@ -99,6 +120,7 @@ export function correctGasometerWorkingParts(root, id) {
   b.tankWall.material.opacity = 0.16;
   b.outerAnnularWater.material.opacity = 0.20;
   b.gasDome.material.opacity = 0.08;
+  plainGasometerRims(root, b);
   root.userData.gasometerWorkingParts = parts;
   root.userData.minimumDisplayCycleSeconds = 8;
   root.userData.hideGround = true;

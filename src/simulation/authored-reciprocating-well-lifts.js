@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
 import {replaceWithLaidRope} from './laid-rope.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
@@ -592,14 +593,16 @@ function reciprocatingWellLift(movement) {
   ), 'transparent-well-shaft-beneath-opposed-buckets');
   well.position.set(0, -1.93, ropeZ);
   root.add(well);
-  // A thin water surface stands where the lowered bucket's bottom dips
-  // 0.14 into it at the end of each descent.
+  // The well water stands where the lowered bucket's bottom dips 0.14 into
+  // it at the end of each descent, and fills the shaft down to its floor.
   const wellWaterTop = lowBailY - bucketCenterOffset - bucketHeight / 2 + 0.14;
+  const wellFloorY = -1.93 - 3.48 / 2;
   const wellWater = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(3.92, 0.10, 1.72),
-    waterMaterial,
+    waterVolumeGeometry({ xMin: -1.96, xMax: 1.96, surfaceY: 0, bottomY: wellFloorY - wellWaterTop, zMin: -0.86, zMax: 0.86 }),
+    waterVolumeMaterial(),
   ), 'well-water-filling-the-low-bucket');
-  wellWater.position.set(0, wellWaterTop - 0.05, ropeZ);
+  wellWater.renderOrder = 1;
+  wellWater.position.set(0, wellWaterTop, ropeZ);
   root.add(wellWater);
   for (const x of [-2.30, 2.30]) {
     const wall = new THREE.Mesh(
@@ -840,7 +843,11 @@ function reciprocatingWellLift(movement) {
   const laidRope = addRole(new THREE.Mesh(new THREE.BufferGeometry(), ropeMaterial),
     'single-laid-rope-over-both-pulleys-between-both-bails');
   continuousRope.add(laidRope);
-  for (const piece of [leftUpperArc, rightUpperArc, innerRope, leftRopeLeg, rightRopeLeg]) piece.visible = false;
+  for (const piece of [leftUpperArc, rightUpperArc, innerRope, leftRopeLeg, rightRopeLeg]) {
+    // Pinned hidden: the leg updates would otherwise show the plain tubes
+    // again beside the laid rope.
+    Object.defineProperty(piece, 'visible', { configurable: true, get: () => false, set: () => {} });
+  }
   const layRope = (leftY, rightY) => {
     const arc = (center, first) => {
       const curve = new THREE.Curve();

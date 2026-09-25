@@ -143,7 +143,7 @@ export function springHandleGabDisengager() {
     lever: matte(PALETTE.accent, {roughness: 0.55}),
     strap: matte(PALETTE.brass, {roughness: 0.5, metalness: 0.2}),
     pin: matte(0xc9b27a, {roughness: 0.45, metalness: 0.25}),
-    shaft: matte(PALETTE.white, {roughness: 0.6}),
+    shaft: matte(PALETTE.muted, {roughness: 0.6, metalness: 0.2}),
     ink: matte(PALETTE.ink, {roughness: 0.7}),
   };
 
@@ -160,24 +160,11 @@ export function springHandleGabDisengager() {
   const valveArm = plateMesh(polygonClipping.difference(rockerOutline,
     poly(circle([0, 0], 29 * S + BORE_GAP, 96)), poly(circle(pinLocal, PIN_R + BORE_GAP, 96))), Z.rocker, mats.rocker, 'valve-rocker-arm');
   const valveShaft = cylinder(29 * S, Z.shaft, mats.shaft, 'rockshaft');
-  // Brown's hatched shaft section, as raised ink strips on the shaft end.
-  const stripes = [];
-  for (let k = -6; k <= 6; k++) {
-    const o = k * 4.6 * S, w = 0.8 * S, d = [Math.SQRT1_2, Math.SQRT1_2], n = [-Math.SQRT1_2, Math.SQRT1_2];
-    const e = 40 * S;
-    stripes.push(poly([
-      [n[0] * (o - w) - d[0] * e, n[1] * (o - w) - d[1] * e],
-      [n[0] * (o - w) + d[0] * e, n[1] * (o - w) + d[1] * e],
-      [n[0] * (o + w) + d[0] * e, n[1] * (o + w) + d[1] * e],
-      [n[0] * (o + w) - d[0] * e, n[1] * (o + w) - d[1] * e],
-    ]));
-  }
-  const hatch = plateMesh(polygonClipping.intersection(polygonClipping.union(...stripes), poly(circle([0, 0], 27.5 * S, 96))),
-    [Z.shaft[1], Z.shaft[1] + 0.004], mats.ink, 'rockshaft-section-hatching');
+  // Brown hatches the cut rockshaft; the model shows its plain steel end.
   const valvePin = cylinder(PIN_R, Z.pin, mats.pin, 'valve-gab-pin');
   valvePin.position.x = pinLocal[0];
   valvePin.position.y = pinLocal[1];
-  rocker.add(valveArm, valveShaft, hatch, valvePin);
+  rocker.add(valveArm, valveShaft, valvePin);
 
   // ---------- eccentric rod (local origin at the gab centre) ----------
   const rod = new THREE.Group();
@@ -452,7 +439,7 @@ export function springHandleGabDisengager() {
       strapRestPoints: restPoints.map((p) => [...p]),
     },
     blocks: {
-      valveRocker: rocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin, hatch,
+      valveRocker: rocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin,
       eccentricRod: rod, rodBody, rodFace, pinC, blade, rivet, rivetHead,
       camLever: lever, leverBody, leverNubs, springStrap: strap,
     },

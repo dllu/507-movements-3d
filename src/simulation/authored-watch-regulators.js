@@ -612,29 +612,53 @@ function watchRegulator(movement) {
 
   // Brown draws the rate scale as a graduated band: three concentric arcs
   // from SLOW to FAST crossed by radial divisions, the pointer tip T reaching
-  // the outer arc.  No end balls or separate tick heads are drawn.
+  // the outer arc.  It is a solid graduated plate standing on the movement
+  // plate behind the balance (the rim passes in front of its upper arc, as
+  // Brown draws); the arcs and divisions are shallow dark engraved lines on
+  // its face.  No end balls or separate tick heads are drawn.
   const dialStartAngle = -Math.PI / 2 - 0.79;
   const dialEndAngle = -Math.PI / 2 + 0.79;
   const dialInnerRadius = pointerRadius - 0.98;
   const dialRadius = pointerRadius + 0.10;
+  const dialPlateBack = backPlate.position.z;
+  const dialPlateFront = -balanceRimTubeRadius - 0.025;
+  const dialLineHeight = 0.012;
+  const sectorGeometry = (inner, outer, start, end, low, high) => {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, outer, start, end, false);
+    shape.absarc(0, 0, inner, end, start, true);
+    shape.closePath();
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      bevelEnabled: false,
+      curveSegments: 64,
+      depth: high - low,
+    });
+    geometry.translate(0, 0, low);
+    return geometry;
+  };
+  const scaleLineMaterial = matte(PALETTE.ink, {
+    metalness: 0.2,
+    roughness: 0.6,
+  });
+  const dialPlate = new THREE.Mesh(
+    sectorGeometry(dialInnerRadius - 0.06, dialRadius + 0.06,
+      dialStartAngle - 0.03, dialEndAngle + 0.03,
+      dialPlateBack, dialPlateFront),
+    // A silvered scale plate so the engraved lines read.
+    matte(0xc8c4ba, { metalness: 0.25, roughness: 0.55 }),
+  );
+  dialPlate.userData.role = 'fixed-slow-fast-regulator-scale-plate';
   const dialArcRadii = [dialInnerRadius, pointerRadius - 0.48, dialRadius];
-  const dialArcs = dialArcRadii.map((radius) => tubeThrough(
-    Array.from({ length: 65 }, (_, index) => {
-      const angle = THREE.MathUtils.lerp(
-        dialStartAngle,
-        dialEndAngle,
-        index / 64,
-      );
-      return new THREE.Vector3(
-        radius * Math.cos(angle),
-        radius * Math.sin(angle),
-        0.10,
-      );
-    }),
-    0.035,
-    frameMaterial,
-    'fixed-slow-fast-regulator-scale-arc',
-  ));
+  const dialArcs = dialArcRadii.map((radius) => {
+    const arc = new THREE.Mesh(
+      sectorGeometry(radius - 0.02, radius + 0.02, dialStartAngle,
+        dialEndAngle, dialPlateFront - 0.004,
+        dialPlateFront + dialLineHeight),
+      scaleLineMaterial,
+    );
+    arc.userData.role = 'fixed-slow-fast-regulator-scale-arc';
+    return arc;
+  });
   const dialArc = dialArcs.at(-1);
   const dialTicks = Array.from({ length: 13 }, (_, index) => {
     const angle = THREE.MathUtils.lerp(
@@ -644,13 +668,14 @@ function watchRegulator(movement) {
     );
     const tickRadius = (dialInnerRadius + dialRadius) / 2;
     const tick = new THREE.Mesh(
-      new THREE.BoxGeometry(0.04, dialRadius - dialInnerRadius, 0.05),
-      frameMaterial,
+      new THREE.BoxGeometry(0.035, dialRadius - dialInnerRadius,
+        dialLineHeight + 0.004),
+      scaleLineMaterial,
     );
     tick.position.set(
       tickRadius * Math.cos(angle),
       tickRadius * Math.sin(angle),
-      0.10,
+      dialPlateFront + (dialLineHeight - 0.004) / 2,
     );
     tick.rotation.z = angle - Math.PI / 2;
     tick.userData.setting = index === 0
@@ -668,6 +693,7 @@ function watchRegulator(movement) {
     regulatorCarrier,
     fixedStudR,
     studBracket,
+    dialPlate,
     ...dialArcs,
     ...dialTicks,
   );
@@ -745,6 +771,7 @@ function watchRegulator(movement) {
     curbBridge,
     curbPins,
     dialArc,
+    dialPlate,
     dialArcs,
     dialTicks,
     fixedFrame,

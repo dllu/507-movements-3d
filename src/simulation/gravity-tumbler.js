@@ -49,10 +49,8 @@ export function makeGravityTumbler(options = {}) {
   collar.position.z = p.collarLowZ;
   const tumbler = add('tumblerPlate', plate.geometry, PALETTE.brass, weight, 'weight');
   tumbler.position.z = p.plateLowZ;
-  // Brown draws wheel B dotted behind E. E's face is translucent so B and the
-  // worm read through it as those hidden lines while E swings round in front.
-  tumbler.material = matte(PALETTE.brass, { metalness: 0.15, roughness: 0.64, opacity: 0.72, transparent: true });
-  tumbler.material.depthWrite = false;
+  // Brown dots wheel B behind E; E stays opaque and the viewer rotates to see B.
+  tumbler.material = matte(PALETTE.brass, { metalness: 0.15, roughness: 0.64 });
   wormMount.rotation.z = Math.PI; wormAxis.position.y = p.wormCenterDistance; wormAxis.rotation.y = Math.PI / 2;
   worm.position.z = -p.wormOffset;
   add('wormThread', cylindricalWormGeometry({ pitchRadius: p.wormPitchRadius, module: p.module,

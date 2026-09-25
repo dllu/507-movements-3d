@@ -359,7 +359,7 @@ test('movement 463 has finite render bounds in both poses and movement 507 remai
   for (const phase of [0, 0.59]) {
     model463.update(phase * model463.root.userData.geometry.cycleDuration);
     model463.root.updateMatrixWorld(true);
-    const bounds = new THREE.Box3().setFromObject(model463.root);
+    const bounds = new THREE.Box3().setFromObject(model463.root, true);
     for (const value of [bounds.min.x, bounds.min.y, bounds.min.z,
       bounds.max.x, bounds.max.y, bounds.max.z]) {
       assert.ok(Number.isFinite(value));

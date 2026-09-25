@@ -42,13 +42,13 @@ export function makeFrictionClutch() {
   };
   const input = makeMember(inputProfile, PALETTE.driver, false);
   const output = makeMember(outputProfile, PALETTE.driven, true);
-  const inputSection = makeClutchSections(inputProfile, { boreRadius, color: PALETTE.driver, hatchSign: 1 });
+  const inputSection = makeClutchSections(inputProfile, { boreRadius, color: PALETTE.driver });
   const outputSection = makeClutchSections(outputProfile, { boreRadius, keyHalfWidth, keywayTop,
-    color: PALETTE.driven, hatchSign: -1 });
+    color: PALETTE.driven });
   for (const section of [inputSection, outputSection]) {
-    const { caps, hatches } = section.userData;
-    section.remove(caps[1], hatches[1]);
-    section.userData.caps = [caps[0]]; section.userData.hatches = [hatches[0]];
+    const { caps } = section.userData;
+    section.remove(caps[1]);
+    section.userData.caps = [caps[0]];
   }
   inputSection.position.x = offsetX;
   outputSection.position.x = offsetX;
@@ -58,8 +58,9 @@ export function makeFrictionClutch() {
   const shaftBody = new THREE.Mesh(turnedClutchGeometry(shaftProfile, { color: PALETTE.ink }),
     new THREE.MeshStandardMaterial({ vertexColors: true, metalness: 0.22, roughness: 0.5 }));
   const keyBottom = 0.109, keyTop = 0.148, keyLeft = 0.49, keyRight = 1.54, featherHalfWidth = 0.022;
+  // The feather is the shaft's own steel, not a brass stripe along it.
   const feather = new THREE.Mesh(new THREE.BoxGeometry(featherHalfWidth * 2, keyTop - keyBottom, keyRight - keyLeft),
-    matte(PALETTE.brass, { metalness: 0.18, roughness: 0.59 }));
+    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.5 }));
   feather.position.set(0, (keyTop + keyBottom) / 2, (keyLeft + keyRight) / 2);
   feather.userData.shaftFeather = true;
   shaft.userData.rotor.add(shaftBody, feather);

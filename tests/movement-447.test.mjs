@@ -82,8 +82,9 @@ test('movement 447 has one fixed anchor, one taut rope, a ferry, and a stream-de
     'operator-reversed-rudder-pivot',
     'stream-deflecting-rudder-blade',
     'river-current-driving-rudder-downstream',
-    'fixed-downstream-current-arrow-drawn-by-brown',
   ]) assert.ok(roles.includes(role), role);
+  // Brown's current arrow is notation: no arrow object is modelled.
+  assert.ok(!roles.some((role) => /arrow/.test(role)));
   disposeModel(model.root);
 });
 

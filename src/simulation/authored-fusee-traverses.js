@@ -782,7 +782,9 @@ function fuseeCarriageTraverse(movement) {
     makeCordCurve(initialState, 'right'),
     {
       closed: false,
-      color: PALETTE.accent,
+      // Both cords share Brown's one band colour: side by side in the groove
+      // they read as the single band crossing the fusee.
+      color: PALETTE.belt,
       markerCount: 9,
       radius: 0.034,
       tubularSegments: 192,

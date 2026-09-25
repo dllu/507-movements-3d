@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { makeSheaveHanger } from './hoist-hardware.js';
 import { PALETTE, circularArcThrough, makeDynamicMovingBelt, makeSteppedPulley,
-  matte, setSpin } from './primitives.js';
+  setSpin } from './primitives.js';
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
 
@@ -57,7 +57,11 @@ export function whitePulleys() {
       step.geometry.setIndex([...caps, ...runningFaces]);
       step.geometry.addGroup(0, caps.length, 0);
       step.geometry.addGroup(caps.length, runningFaces.length, 1);
-      step.material = [step.material, matte(PALETTE.ink)];
+      // Groove and rim are the step's own metal, a shade darker so the
+      // groove reads, not an ink outline round each step.
+      const grooveMaterial = step.material.clone();
+      grooveMaterial.color.multiplyScalar(0.72);
+      step.material = [step.material, grooveMaterial];
       step.userData.pitchRadius = radius;
     });
     for (const indicator of pulley.userData.rotor.children) {

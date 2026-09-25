@@ -728,12 +728,14 @@ function seabedTriggeredSoundingWeight(movement) {
 
   const seabed = new THREE.Group();
   // Brown draws no sea bottom. The probe and the dropped weight still need
-  // a contact plane, so it is kept as a thin line just wider than the weight.
+  // something to land on: a solid bed of sediment, whose top is the contact
+  // plane, rather than a thin sheet.
+  const seabedDepth = 0.9;
   const seabedSlab = new THREE.Mesh(
-    new THREE.BoxGeometry(3.4, 0.03, 0.5),
+    new THREE.BoxGeometry(4.2, seabedDepth, 2.4),
     seabedMaterial,
   );
-  seabedSlab.position.y = seabedY - 0.015;
+  seabedSlab.position.y = seabedY - seabedDepth / 2;
   seabedSlab.userData.role = 'sea-bottom-contact-plane';
   const seabedRings = [];
   seabed.add(seabedSlab);

@@ -35,8 +35,13 @@ assert.ok(Object.values(report.controls).every(Boolean));
 for(const source of report.sources)assert.equal(hash(source.file),source.sha256,source.file);
 const input='/dev/shm/181-contact-motion.json',motion=JSON.parse(fs.readFileSync(input)),model=createDiagonalCatchAssembly();
 try{
- const bounds=new THREE.Box3();
- for(let i=0;i<motion.keys.length;i+=10){model.update(motion.keys[i].slice(1));bounds.union(new THREE.Box3().setFromObject(model.root));}
+ // Frame Brown's picture: the whole piston rod, back-weight rods and weights
+ // run past its upper and lower edges, so only their in-picture spans count.
+ const bounds=new THREE.Box3(),window=new THREE.Box3(new THREE.Vector3(-Infinity,(234-500)*.0125,-Infinity),new THREE.Vector3(Infinity,(234-23)*.0125,Infinity));
+ const extends_=/^(piston-rod|.*-vertical-rod#|.*-cast-back-weight#)/;
+ for(let i=0;i<motion.keys.length;i+=10){model.update(motion.keys[i].slice(1));
+  model.root.traverse(o=>{if(!o.isMesh)return;const box=new THREE.Box3().setFromObject(o);
+   if(extends_.test(o.name)){box.intersect(window);if(box.isEmpty())return;}bounds.union(box);});}
  bounds.expandByScalar(.06);model.update(motion.keys[0].slice(1));
  model.root.traverse(o=>{o.userData={};});
  const sources=['scripts/bake-diagonal-catch.mjs','src/simulation/mujoco-diagonal-catch/assembly.js',

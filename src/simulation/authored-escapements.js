@@ -1509,15 +1509,20 @@ function sevenToothAnchorEscapement(movement) {
     const definition = faceDefinitions[side];
     const rootLocal = definition.rootNeutral.clone().sub(palletPivot);
     const tipLocal = definition.tipNeutral.clone().sub(palletPivot);
+    // Brown draws B and C as edges of the anchor itself. Each working face is
+    // a block of the anchor standing on its front face (z = 0.11) and
+    // reaching the wheel plane, rather than a separate tab on a pin.
+    const faceBack = palletBodyDepth / 2, faceFront = palletPlaneZ + palletFaceDepth / 2;
     const face = makeBeam(
-      new THREE.Vector3(rootLocal.x, rootLocal.y, palletPlaneZ),
-      new THREE.Vector3(tipLocal.x, tipLocal.y, palletPlaneZ),
+      new THREE.Vector3(rootLocal.x, rootLocal.y, (faceBack + faceFront) / 2),
+      new THREE.Vector3(tipLocal.x, tipLocal.y, (faceBack + faceFront) / 2),
       {
-        color,
-        depth: palletFaceDepth,
+        color: PALETTE.driver,
+        depth: faceFront - faceBack,
         thickness: palletFaceThickness,
       },
     );
+    void color;
     face.userData.role = `${side}-straight-working-pallet-face`;
     const faceIndex = makeBeam(
       new THREE.Vector3(rootLocal.x, rootLocal.y, palletPlaneZ + 0.1),

@@ -96,7 +96,19 @@ test('039 has clear carrier bores and separate planes for the flywheel, gears, r
         'all orbiting parts, including the rear shaft tip, clear the flywheel');
     }
     const armBounds = new THREE.Box3().setFromObject(arm);
-    const rodBounds = new THREE.Box3().setFromObject(connectingRod);
+    // Pass 54 models the rod whole with a wrist pin in its upper eye that runs
+    // back to the undrawn beam. The layering below concerns the rod body where
+    // it crosses the wheels; the pin, a rod length above them, is checked
+    // separately to stay clear of the arm and the sun shaft in the plate plane.
+    connectingRod.geometry.computeBoundingBox();
+    const rodBounds = connectingRod.geometry.boundingBox.clone().applyMatrix4(connectingRod.matrixWorld);
+    const wristPin = connectingRod.children.find((child) => child.userData.role === 'upper-wrist-pin-in-rod-eye');
+    const pinBounds = new THREE.Box3().setFromObject(wristPin);
+    for (const part of [arm, sunShaft, armStud, flywheel]) {
+      assert.ok(pinBounds.min.y > new THREE.Box3().setFromObject(part).max.y + 0.1,
+        'the upper wrist pin stays a rod length clear of the wheels and arm');
+    }
+    assert.ok(armBounds.min.z - pinBounds.max.z > 0.0049, 'the wrist pin does not stand out in front of the arm plane');
     const bossBounds = new THREE.Box3().setFromObject(rodBoss);
     // Plate 39 draws the arm over the rod. The rod crosses the sun axis once
     // per orbit, so it runs between the gears and the arm, in front of the

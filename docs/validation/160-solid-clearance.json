@@ -1,8 +1,8 @@
 {
   "movement": 160,
   "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers; 129 settled-cycle poses, dynamic leaf rebuilt at each. Same rigid moving-body pairs once, fixed-frame unions excluded. Only named root clamp and fastening unions classified as intentional. Band reviewed separately. Finite sampling, not continuous collision proof.",
-  "parts": 18,
-  "pairs": 117,
+  "parts": 20,
+  "pairs": 135,
   "poses": 129,
   "checks": 2920786,
   "failures": {},
@@ -26,11 +26,15 @@
   "sources": [
     {
       "file": "scripts/review-spring-treadle-solids.mjs",
-      "sha256": "4498100ae1eecb5a05e8f7424d0e3a3c85136ae38ef89697f5d6e2d257dcc639"
+      "sha256": "556d95af1b14a72f8aa66f25d64d12309a2921cfdf494f8139900bd10e24cdc0"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/solids.js",
-      "sha256": "239506741b6b73698eb26df0ba33d3a6e8494cb88b99be0a279044163da16443"
+      "sha256": "7f34fe753de2b2f34ec98fd64bc96b88b9210c43c4c384909809640e45a52869"
+    },
+    {
+      "file": "src/simulation/curve-tube-buffer.js",
+      "sha256": "85c6fe8c2a2fdd0cee88f93014946e9eb178631c6b3c55471bd542fd9e6cee1a"
     },
     {
       "file": "/dev/shm/160-coupled-0.000125.json",
@@ -38,7 +42,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

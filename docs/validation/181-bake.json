@@ -22,33 +22,33 @@
   "bounds": {
     "min": [
       -2.5548711316844464,
-      -3.4097860431671143,
+      -3.3850000000000002,
       -0.8260000029206276
     ],
     "max": [
       2.045156282127867,
-      2.7224999046325684,
-      0.8270000016689301
+      2.6975000000000002,
+      0.8249999976158142
     ]
   },
   "focus": [
     -0.25485742477828977,
-    -0.34364306926727295,
-    0.0004999993741512387
+    -0.34375,
+    -0.0005000026524066836
   ],
   "inputHash": "186ae7de358aa4361e0fb7a141f4afa8da2f319469898ba989fc580518df6ef1",
   "sources": [
     {
       "file": "scripts/bake-diagonal-catch.mjs",
-      "sha256": "8e5c42739d24e88675bd6e42618da2bad3d14630aab6b0973b0756da8e29fc98"
+      "sha256": "ea3b54f4008ff747035ed32f0363031433648faa119173a5ee9b55b7c93d4f58"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/assembly.js",
-      "sha256": "ad0aa47fa01e2fcd1429644d43d32c2b44face15da502d0dc29bbe1ed65f9733"
+      "sha256": "2af57d19adfc8e3c17cacb36cd5d75edd317e3c0bfd967eae7ebc2c1e773fb4a"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/update-solids.js",
-      "sha256": "36bfc2a8a8b836c67ab234de177fcabacd751c7383281cf405988bc9c4be594c"
+      "sha256": "d2e3cfcffc91eed5bd67e72de33ced3d6989673d17eba2c131da0162448c9795"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/catch-profile.js",
@@ -68,10 +68,10 @@
     }
   ],
   "keys": 9001,
-  "bytes": 524181,
-  "sha256": "aa2d16a25702119e923c76375f07924307641db8b0da616b6e029ff1e75c4b73",
+  "bytes": 515394,
+  "sha256": "5b22c87366fa995a3523e0fda11b7c864d28371ee71dbbf7d7935d16e0042f56",
   "compactKeysModule": "src/simulation/baked/diagonal-catch-keys.js",
   "compactKeys": 777,
-  "compactKeysSha256": "911610719691bc9dea2295535595a50f7c428a6e189c82878bd3c9d56de5cc7c",
+  "compactKeysSha256": "17082b5025398edc82755be92d4117f67de1bed1974f0ac0924e5e316fcd19c3",
   "status": "baked-assembly-source-review-open"
 }

@@ -4,14 +4,13 @@ import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
 import {hollowPipeBall} from './folding-joint-parts.js';
 import {mergePassageParts} from './finite-fluid-passages.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
-import {bowDrillTube} from './mujoco-bow-drill/geometry.js';
+import {LaidRopeGeometry} from './laid-rope.js';
 const rectangle=(x0,y0,x1,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const add=(parent,geometry,material,role,position)=>{const o=new T.Mesh(geometry,material);o.userData.role=role;if(position)o.position.copy(position);parent.add(o);return o;};
 
 export function correctReactionFerry(root){
  const d=root.userData,b=d.blocks,g=d.geometry;
- b.river.position.y=g.waterY-.09;
  const outline=poly(b.hull.geometry.parameters.shapes.getPoints(64).map(p=>[p.x,p.y*.65]));
  const wells=[rectangle(.92,-.27,1.38,.27),rectangle(1.67,-.27,2.14,.27)];
  const postHole=poly(circle([g.sternFromBow,0],.075,64));
@@ -37,7 +36,8 @@ export function correctReactionFerry(root){
  const rudderTip=b.rudderPivot.children[2];b.rudderPivot.remove(rudderTip);rudderTip.geometry.dispose();
  const bearing=add(b.boat,horizontalRing(.075,.135,-.07,.07,64),post.material,'bored-rudder-stock-bearing',new T.Vector3(g.sternFromBow,-.20,0));
  // Inferred compact swivels join the taut line to fixed anchor and bow.
- const anchorPost=b.anchor.children[0];replace(anchorPost,new T.CylinderGeometry(.12,.15,.42,32));anchorPost.position.y=-.335;
+ // The anchor stock runs down to the river bed, so the fixed centre is held.
+ const anchorPost=b.anchor.children[0];replace(anchorPost,new T.CylinderGeometry(.12,.15,1.0,32));anchorPost.position.y=-.625;
  const anchorEye=b.anchor.children[1];replace(anchorEye,hollowPipeBall(.135,.105,.098,64));anchorEye.position.set(0,0,0);anchorEye.rotation.set(0,0,0);
  replace(b.bowRing,hollowPipeBall(.135,.105,.080,64));b.bowRing.position.set(0,0,0);b.bowRing.rotation.set(0,0,0);
  b.ropeStartMarker.userData.role='anchor-rope-swivel-ball';b.ropeEndMarker.userData.role='bow-rope-swivel-ball';
@@ -51,13 +51,13 @@ export function correctReactionFerry(root){
   const geometry=new T.LatheGeometry(points,48);
   b.ropeStartMarker.geometry.dispose();b.ropeStartMarker.geometry=geometry;b.ropeEndMarker.geometry=geometry;
  }
- // Brown draws the line slack: a thin rope with two gentle plan-view waves.
+ // Brown draws the line slack: a laid rope with two gentle plan-view waves.
  // Its chord stays the tether length, and both ends run straight into the
  // swivel bores; tension and sag are not modelled.
  {
   const L=g.tetherLength,n=161,amplitude=.075,points=[];
   for(let i=0;i<n;i++){const s=i/(n-1),w=Math.sin(Math.PI*s)**2;points.push([amplitude*Math.sin(4*Math.PI*s)*w,(s-.5)*L,0]);}
-  const geometry=bowDrillTube(points,points.map(()=>.034),{sides:14});geometry.scale(1,1/L,1);
+  const geometry=new LaidRopeGeometry(points.map(p=>new T.Vector3(...p)),160,.04,8);geometry.scale(1,1/L,1);
   b.rope.geometry.dispose();b.rope.geometry=geometry;
  }
  // A slim mounting foot joins the bow socket to the hull behind the line entry.

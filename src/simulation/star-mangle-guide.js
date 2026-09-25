@@ -108,9 +108,11 @@ export function starMangleCrabEnd(motion, firstCrossover, { collarOffset = 0.265
 // both crossovers (runs of wheel-frame collar centres in (-y, z)); the thin crab
 // shells above remain inside it as the exact collar-retaining linings. The
 // two radial bars pass over the pinion's swept faces to feet on the inner rim.
+// Its walls and bars are as thin and close as the pinion's swept volume allows
+// (moving parts reach |z| = 0.424 over the bars), to keep A compact.
 export function starMangleCrabBlock(collarRuns, { collarRadius = 0.10, clearance = 0.003,
-  halfWidth = 0.40, halfHeight = 0.585, radialStart = 1.76, radialEnd = 1.90,
-  barWidth = 0.16, barInner = 1.27, barOuter = 1.82, barLow = 0.505, barHigh = 0.575, footOuter = 1.36, footLow = 0.10 } = {}) {
+  halfWidth = 0.38, halfHeight = 0.52, radialStart = 1.76, radialEnd = 1.90,
+  barWidth = 0.14, barInner = 1.27, barOuter = 1.82, barLow = 0.455, barHigh = 0.51, footOuter = 1.36, footLow = 0.10 } = {}) {
   const radius = collarRadius + clearance, capsules = [];
   const circle = (s, z) => Array.from({ length: 40 }, (_, i) => {
     const a = 2 * Math.PI * i / 40; return [s + radius * Math.cos(a), z + radius * Math.sin(a)];

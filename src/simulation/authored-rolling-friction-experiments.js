@@ -478,6 +478,48 @@ function rollingCarriageFrictionExperiment(movement) {
   beltBand.userData.role = 'one-flat-belt-entering-from-left-with-half-wrap';
   beltBand.userData.crossSection = 'flat';
   belt.add(beltBand);
+  // Brown crops the belt at the plate's left edge; it is endless, running on
+  // up-left past the crop round a driving pulley of the same size, so no
+  // strand stops in mid-air. That run and pulley lie outside the framed view.
+  const remoteDistance = 7;
+  const remoteCenter = new THREE.Vector3(
+    drivePulleyCenter.x - beltDirection.x * remoteDistance,
+    drivePulleyCenter.y - beltDirection.y * remoteDistance,
+    beltPlaneZ,
+  );
+  const normalAngle = Math.atan2(beltNormal.y, beltNormal.x);
+  const remotePoint = (angle) => new THREE.Vector3(
+    remoteCenter.x + drivePulleyRadius * Math.cos(angle),
+    remoteCenter.y + drivePulleyRadius * Math.sin(angle),
+    beltPlaneZ,
+  );
+  const returnPath = new THREE.CurvePath();
+  const remoteLower = remotePoint(normalAngle + Math.PI);
+  returnPath.add(new THREE.LineCurve3(lowerFreeEnd, remoteLower));
+  let remotePrevious = remoteLower;
+  for (let step = 1; step <= wrapSteps; step += 1) {
+    const next = remotePoint(normalAngle + Math.PI - Math.PI * step / wrapSteps);
+    returnPath.add(new THREE.LineCurve3(remotePrevious, next));
+    remotePrevious = next;
+  }
+  returnPath.add(new THREE.LineCurve3(remotePrevious, upperFreeEnd));
+  const returnBand = new THREE.Mesh(
+    flatBeltGeometry(returnPath, { width: beltWidth, thickness: beltThickness, closed: false, segments: 512 }),
+    beltBand.material,
+  );
+  returnBand.userData.role = 'endless-belt-return-run-beyond-plate-crop';
+  returnBand.userData.beyondPlateCrop = true;
+  belt.add(returnBand);
+  const remotePulley = new THREE.Mesh(
+    new THREE.CylinderGeometry(drivePulleyRadius - beltThickness / 2 - 0.002,
+      drivePulleyRadius - beltThickness / 2 - 0.002, 0.14, 64),
+    drivePulley.userData.tread?.material ?? beltBand.material,
+  );
+  remotePulley.rotation.x = Math.PI / 2;
+  remotePulley.position.copy(remoteCenter);
+  remotePulley.userData.role = 'driving-pulley-of-endless-belt-beyond-plate-crop';
+  remotePulley.userData.beyondPlateCrop = true;
+  root.add(remotePulley);
   belt.userData.crossSection = 'flat';
   belt.userData.width = beltWidth;
   belt.userData.thickness = beltThickness;
@@ -1120,7 +1162,7 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
     model.update(root.userData.minimumDisplayCycleSeconds * i / 64);
     root.updateMatrixWorld(true);
     root.traverseVisible((o) => {
-      if (!o.geometry) return;
+      if (!o.geometry || o.userData.beyondPlateCrop) return;
       o.geometry.computeBoundingBox();
       bounds.union(o.geometry.boundingBox.clone().applyMatrix4(o.matrixWorld));
     });

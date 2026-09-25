@@ -397,12 +397,15 @@ function overshotWaterWheel(movement) {
       0.14,
     ),
   ];
-  const feedWater = makeTube(
-    feedPathPoints,
-    0.14,
+  // The feed is a sheet of water the width of the flume water pouring off
+  // its end into the buckets (a flattened tube, not a round hose).
+  const feedWater = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+      feedPathPoints.map((point) => point.clone().setZ(0)), false, 'centripetal'), 48, 0.09, 16, false)
+      .scale(1, 1, 0.44 / 0.09).translate(0, 0, 0.14),
     waterMaterial,
-    'continuous-top-fed-water-stream-onto-wheel',
   );
+  feedWater.userData.role = 'continuous-top-fed-water-stream-onto-wheel';
   root.add(feedWater);
   const feedCurve = new THREE.CatmullRomCurve3(
     feedPathPoints,

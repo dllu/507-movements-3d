@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ring, plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { makeCellWaterGeometry, updateClippedCell } from './clipped-fluid-cell.js';
-import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
+import { waterVolume } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -432,15 +432,11 @@ function eisachPotWheel(movement) {
   streamBed.position.set(0, groundY + 0.34, 0);
   streamBed.userData.role = 'fixed-river-bed-under-pot-wheel';
   root.add(streamBed);
-  // Brown rules the stream as broken strokes running with the current under
-  // the wheel, not as a water box: thin lines lying in the surface plane.
-  const streamWater = new THREE.Mesh(
-    ruledWaterLines({ xMin: -3.85, xMax: 3.85, surfaceY: 1.30, rows: 13, spacing: 0.215, thickness: 0.035, depth: 0.012, dash: [0.5, 1.6], gap: [0.15, 0.5], seed: 442 }).rotateX(-Math.PI / 2),
-    ruledWaterMaterial(),
-  );
-  streamWater.position.set(0, streamSurfaceY, 0);
+  // The stream is a translucent water body running with the current under
+  // the wheel, from its surface down to the bed; the lowest pots dip in.
+  const streamWater = waterVolume({ xMin: -3.85, xMax: 3.85, surfaceY: streamSurfaceY, bottomY: groundY + 0.44, zMin: -1.30, zMax: 1.30 });
   streamWater.userData.role =
-    'rightward-stream-surface-lines-partly-immersing-peripheral-pots';
+    'rightward-stream-partly-immersing-peripheral-pots';
   root.add(streamWater);
   const currentMarkers = [];
   for (let index = 0; index < 15; index += 1) {

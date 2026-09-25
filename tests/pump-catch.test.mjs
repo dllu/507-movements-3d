@@ -86,9 +86,8 @@ test('086 retains startup, repeats a settled four-second cycle and keeps the inp
  }
  const seam=(profile.repeat.start+profile.repeat.period)/rate,delta=1e-7,a=u.stateAtTime(seam-delta),b=u.stateAtTime(seam+delta);
  for(let k=0;k<3;k++)near(a.q[k],b.q[k],1e-5);
- model.update(seam-delta);const offset=u.parts.inputDriveBand.material.map.offset.x;
- model.update(seam+delta);near(u.parts.inputDriveBand.material.map.offset.x-offset,
-  2*delta*rate*profile.angularSpeed*u.rearDrive.radius/u.rearDrive.bandLength*32,1e-12);
+ // The band is plain leather: no stripe texture (Brown's hatching is notation).
+ assert.equal(u.parts.inputDriveBand.material.map,null);
  dispose(model);
 });
 

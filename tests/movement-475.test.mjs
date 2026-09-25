@@ -57,7 +57,7 @@ test('movement 475 is one stationary A-D-B-C Brear bilge ejector with two fluid 
   assert.match(model.root.userData.mechanism,
     /Bilge water consequently rises through B.*leaves continuously through C/s);
   assert.match(model.root.userData.mechanism,
-    /only the two fluid marker populations advance/);
+    /only the two fluid marker populations advance in the offline model, and the presented water level rises/);
   assert.equal(degreesOfFreedom.mechanicalMovingParts, 0);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 0);
   assert.equal(degreesOfFreedom.prescribedAdvectiveFlowPhases, 2);
@@ -66,15 +66,17 @@ test('movement 475 is one stationary A-D-B-C Brear bilge ejector with two fluid 
   assert.equal(blocks.waterMarkers.length,
     geometry.waterPathCount * geometry.waterMarkersPerPath);
 
-  for (const removed of [blocks.bilgeBasin, blocks.bilgeWater]) {
+  // The bilge well and the flow notation (streamlines, steam core and jet,
+  // markers) are not presented; the water fills B, D and C instead.
+  for (const removed of [blocks.bilgeBasin, blocks.bilgeWater,
+    blocks.steamJet, blocks.steamPipeCore, ...blocks.waterStreams,
+    ...blocks.steamMarkers, ...blocks.waterMarkers]) {
     assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
   }
   for (const block of [
     blocks.chamber, blocks.dischargeCollar, blocks.dischargePipe,
-    blocks.nozzle, blocks.steamJet, blocks.steamPipe,
-    blocks.steamPipeCore, blocks.suctionCollar, blocks.suctionPipe,
-    ...blocks.waterStreams, ...blocks.steamMarkers,
-    ...blocks.waterMarkers]) assert.ok(block.parent === model.root, `${block.userData.role} parent`);
+    blocks.nozzle, blocks.steamPipe, blocks.suctionCollar, blocks.suctionPipe,
+    ...blocks.waterFill]) assert.ok(block.parent === model.root, `${block.userData.role} parent`);
 
   const roles = [];
   const belts = [];
@@ -89,7 +91,7 @@ test('movement 475 is one stationary A-D-B-C Brear bilge ejector with two fluid 
     'stationary-vertical-discharge-pipe-C',
     'stationary-steam-pipe-A-turning-upward-inside-D',
     'upward-steam-nozzle-A-coaxial-with-discharge-C',
-    'free-primary-steam-jet-entraining-water-upward',
+    'water-filling-mixing-chamber-D',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -376,6 +378,45 @@ test('movement 475 renderer holds every solid fixed and advances steam and water
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod,
     geometry.cycleDuration);
   assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
+  disposeModel(model.root);
+});
+
+// Pass 54: with the flow notation not presented, the water itself shows the
+// process. The design changed (a start, run and stop loop of the water
+// level), so this checks the level follows the state through B, D and C.
+test('movement 475 water level rises through B, D and C, holds while running and falls back', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const [inD, inB, inC] = blocks.waterFill;
+  const at = (phase) => {
+    model.update(phase * geometry.cycleDuration);
+    return stateAtTime(phase * geometry.cycleDuration);
+  };
+  let state = at(0.04);
+  assert.equal(state.stage, 'purging-air-from-D-and-C');
+  near(state.waterLevelY, -2.91, 1e-12, 'water at the bilge during purge');
+  assert.equal(inB.visible || inD.visible || inC.visible, false);
+  assert.equal(blocks.dischargeJet.visible, false, 'no discharge before the water reaches C');
+  let previous = -Infinity;
+  for (const phase of [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]) {
+    state = at(phase);
+    assert.ok(state.waterLevelY > previous, 'level rises while priming');
+    near(blocks.waterSurface.position.y, state.waterLevelY, 1e-12, 'free surface');
+    previous = state.waterLevelY;
+  }
+  state = at(0.6);
+  assert.equal(state.stage, 'running-discharging-through-C');
+  near(state.waterLevelY, 3.40, 1e-12, 'full to the mouth of C');
+  assert.ok(inB.visible && inD.visible && inC.visible);
+  near(inB.scale.y, -1.16 + 2.91, 1e-12, 'B full');
+  near(inC.scale.y, 3.40 - 1.56, 1e-12, 'C full');
+  assert.equal(blocks.dischargeJet.visible, true, 'the discharge issues from the mouth of C');
+  assert.ok(blocks.dischargeJet.scale.y > 0.5);
+  state = at(0.92);
+  assert.equal(state.steamSupplyOpen, false);
+  assert.equal(blocks.dischargeJet.visible, false, 'the discharge stops at shut-off');
+  assert.ok(state.waterLevelY < 3.40 && state.waterLevelY > -2.91, 'falling back');
+  near(stateAtTime(geometry.cycleDuration).waterLevelY, stateAtTime(0).waterLevelY, 1e-12, 'loop closes');
   disposeModel(model.root);
 });
 

@@ -7877,7 +7877,7 @@ function toothedAxialFaceCamSpringFollower() {
   const groundLeftX = wheelCenter.x + baseBackX + (20 - sourceBaseBackX) * sourceScale;
   // The hatched ground is a cut solid: one block the upright stands on.
   const groundBlockRight = fixedGuideX + postWidth / 2;
-  const ground = groundBlock(groundBlockRight - groundLeftX, hatchDepth, 0.3, {name: 'engraved-hatched-ground-block'});
+  const ground = groundBlock(groundBlockRight - groundLeftX, hatchDepth, 0.3, {name: 'fixed-ground-block'});
   ground.position.set((groundLeftX + groundBlockRight) / 2, groundY - hatchDepth / 2, plateZ);
   sourcePlate.add(upperPost, gusset, ground);
   root.add(sourcePlate);

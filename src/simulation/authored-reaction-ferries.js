@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {correctReactionFerry} from './reaction-ferry-parts.js';
-import {ruledWaterLines, ruledWaterMaterial} from './ruled-water-lines.js';
+import {waterVolumeMaterial} from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -166,13 +166,7 @@ function reactionFerry(movement) {
   );
 
   const bankMaterial = matte(0xa49a83, { roughness: 0.92 });
-  const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.68,
-    roughness: 0.30,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  waterMaterial.depthWrite = false;
+  const waterMaterial = waterVolumeMaterial();
   const hullMaterial = matte(PALETTE.driver, {
     metalness: 0.10,
     roughness: 0.62,
@@ -191,75 +185,32 @@ function reactionFerry(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
 
+  // The river is a translucent water body between the banks, from its
+  // surface down to a bed below the rudder; the banks are solid earth rising
+  // a little above the water.
+  const bedY = groundY - 0.42;
   const river = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(10.0, 0.18, riverHalfWidth * 2),
+    new THREE.BoxGeometry(10.0, waterY - bedY, riverHalfWidth * 2),
     waterMaterial,
   ), 'river-current-driving-rudder-downstream');
-  river.position.set(0, waterY - 0.10, 0);
+  river.position.set(0, (waterY + bedY) / 2, 0);
+  river.renderOrder = 1;
   root.add(river);
 
+  const bankTopY = waterY + 0.10;
   const nearBank = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(10.0, 0.34, 1.25),
+    new THREE.BoxGeometry(10.0, bankTopY - bedY, 1.25),
     bankMaterial,
   ), 'fixed-river-bank');
-  nearBank.position.set(0, groundY + 0.17, riverHalfWidth + 0.62);
+  nearBank.position.set(0, (bankTopY + bedY) / 2, riverHalfWidth + 0.62);
   root.add(nearBank);
   const farBank = nearBank.clone();
   farBank.userData.role = 'fixed-river-bank';
   farBank.position.z = -riverHalfWidth - 0.62;
   root.add(farBank);
 
-  // Brown draws each shore as a band of ruled strokes, heavy at the bank and
-  // lighter toward mid-stream, and leaves the channel between as blank paper:
-  // no solid water sheet or bank blocks. The river volume stays (hidden) for
-  // the immersion checks; each bank carries its ruled band at the surface.
-  river.visible = false;
-  for (const [bank, sign, seed] of [[nearBank, 1, 4471], [farBank, -1, 4472]]) {
-    const band = (rows, spacing, thickness, offset, bandSeed) => ruledWaterLines({
-      xMin: -5.0, xMax: 5.0, surfaceY: -offset, rows, spacing, thickness,
-      depth: 0.012, dash: [1.4, 4.2], gap: [0.06, 0.32], seed: bandSeed,
-    }).rotateX(sign * Math.PI / 2)
-      .translate(0, waterY + 0.012 - bank.position.y, sign * riverHalfWidth - bank.position.z);
-    bank.geometry.dispose();
-    bank.geometry = band(6, 0.07, 0.042, 0, seed);
-    bank.material = ruledWaterMaterial();
-    const lighter = new THREE.Mesh(band(7, 0.13, 0.026, 0.44, seed + 10), bank.material);
-    lighter.userData.role = 'fixed-ruled-water-along-bank';
-    bank.add(lighter);
-  }
-
-  // Brown draws one feathered current arrow just above the line, between the
-  // anchor and the bow; it is kept as a flat dark mark on the water surface.
-  const currentArrow = addRole(new THREE.Group(),
-    'fixed-downstream-current-arrow-drawn-by-brown');
-  currentArrow.position.set(-2.80, waterY + 0.03, -0.66);
-  const arrowShaft = new THREE.Mesh(
-    new THREE.BoxGeometry(1.14, 0.03, 0.045),
-    darkMaterial,
-  );
-  arrowShaft.position.x = 0.57;
-  currentArrow.add(arrowShaft);
-  const arrowHead = new THREE.Mesh(
-    new THREE.ConeGeometry(0.11, 0.28, 3),
-    darkMaterial,
-  );
-  arrowHead.rotation.z = -Math.PI / 2;
-  arrowHead.scale.z = 0.25;
-  arrowHead.position.x = 1.26;
-  currentArrow.add(arrowHead);
-  for (const x of [0.04, 0.14, 0.24]) {
-    for (const side of [-1, 1]) {
-      const feather = new THREE.Mesh(
-        new THREE.BoxGeometry(0.19, 0.03, 0.03),
-        darkMaterial,
-      );
-      feather.position.set(x + 0.06, 0, side * 0.055);
-      feather.rotation.y = side * 0.75;
-      currentArrow.add(feather);
-    }
-  }
-  root.add(currentArrow);
-  const flowArrows = [currentArrow];
+  // Brown's feathered current arrow is notation, not a part: not modelled.
+  const flowArrows = [];
 
   const anchor = addRole(new THREE.Group(),
     'fixed-anchor-center-of-ferry-arc');

@@ -391,9 +391,10 @@ function selfRecordingLevel(movement) {
   const handle = new THREE.Group();
   handle.userData.role = 'left-hand-push-handle-fixed-to-carriage';
   // The plate's hands hold one diagonal round bar that crosses the end of
-  // the horizontal bar outside the arch.
-  const gripStart = new THREE.Vector3(-2.62, 0.98, 0.17);
-  const gripEnd = new THREE.Vector3(-1.22, 1.78, 0.17);
+  // the horizontal bar outside the arch; it lies on the brace and runs up
+  // to the arch, which carry it.
+  const gripStart = new THREE.Vector3(-2.62, 0.68, 0.17);
+  const gripEnd = new THREE.Vector3(-1.22, 1.48, 0.17);
   const handleGrip = new THREE.Mesh(
     new THREE.CylinderGeometry(0.075, 0.075, gripStart.distanceTo(gripEnd), 30),
     darkMaterial,

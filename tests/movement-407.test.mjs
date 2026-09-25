@@ -93,11 +93,14 @@ test('movement 407 is one elastic arch bar, one slotted base and locked slide, o
     'cord-loop-around-slide-pin',
     'base-fulcrum-piece-maintaining-tangency-to-jamb',
     'single-inextensible-elastic-wood-arch-bar-fixed-at-left-springing',
-    'upper-working-edge-tangent-to-jamb-and-meeting-apex',
     'pencil-secured-at-elastic-bar-and-cord-connection',
     'selected-left-half-of-pointed-arch',
   ]) assert.ok(roles.includes(role), role);
   assert.ok(!roles.includes('mirrored-right-half-completing-pointed-arch'), 'source presentation removes the undrawn mirrored half');
+  for (const role of ['upper-working-edge-tangent-to-jamb-and-meeting-apex', 'white-slide-position-index',
+    'given-left-springing-point', 'given-pointed-arch-apex']) {
+    assert.ok(!roles.includes(role), `source presentation removes the ${role} notation`);
+  }
   disposeModel(model.root);
 });
 

@@ -243,34 +243,30 @@ export function twoHandleGabDisengager() {
   const valveShaft = cylinderAlongZ(shaftRadius, 0.5, shaftMaterial, 48);
   valveShaft.position.z = Z.arm[1] - 0.25 - 0.001; // front face flush: Brown's hatched section
   valveShaft.userData.role = 'sectioned-valve-rockshaft';
-  // Brown hatches the cut rockshaft: 45-degree ink strips just proud of its face.
-  const stripes = [];
-  for (let k = -4; k <= 4; k++) {
-    const o = k * 4.2 * s, w = 0.75 * s, e = 30 * s, d = Math.SQRT1_2;
-    stripes.push(poly([[-d * (o - w) - d * e, d * (o - w) - d * e], [-d * (o - w) + d * e, d * (o - w) + d * e],
-      [-d * (o + w) + d * e, d * (o + w) + d * e], [-d * (o + w) - d * e, d * (o + w) - d * e]]));
-  }
-  const shaftHatch = new THREE.Mesh(plate(polygonClipping.intersection(polygonClipping.union(...stripes),
-    poly(circle([0, 0], shaftRadius - 1.2 * s, 96))), Z.arm[1] - 0.001, Z.arm[1] + 0.003), darkMaterial);
-  shaftHatch.userData.role = 'valve-rockshaft-section-hatching';
+  // Brown hatches the cut rockshaft; the model shows its plain steel end.
   const valvePinLength = Z.rod[1] - Z.arm[0] - 0.002;
   const valvePin = cylinderAlongZ(pinRadius, valvePinLength, pinMaterial, 64);
   valvePin.position.set(pinLocal[0], pinLocal[1], Z.arm[0] + valvePinLength / 2);
   valvePin.userData.role = 'gab-pin-on-valve-arm';
-  valveRocker.add(valveArm, valveShaft, shaftHatch, valvePin);
+  valveRocker.add(valveArm, valveShaft, valvePin);
 
   const eccentricRod = new THREE.Group();
   eccentricRod.userData.role = 'eccentric-rod-with-crown-gab-and-integral-lower-handle';
-  const rodBody = new THREE.Mesh(plate(rodShape, Z.rod[0], Z.rod[1]), rodMaterial);
+  // Brown's forked strap end: two engraved lines along the rod end mark the
+  // seams where the strap meets the rod. The front 0.012 of the rod is a
+  // skin with those seams cut through it as fine grooves (real joints, not
+  // ink strokes painted on the face).
+  const seamDepth = 0.012;
+  const rodBody = new THREE.Mesh(plate(rodShape, Z.rod[0], Z.rod[1] - seamDepth), rodMaterial);
   rodBody.userData.role = 'eccentric-rod-crown-gab-slot-and-lower-handle';
-  // Brown's forked strap end: two engraved lines along the broken-off rod end.
   const forkLines = polygonClipping.union(...[
     [[29.5, 226], [29.5, 256]],
     [[31, 233.5], [100, 233.5], [106, 230], [111, 225.5]],
     [[33, 246], [97, 246], [104, 250], [110, 256.5]],
-  ].flatMap((line) => line.slice(1).map((b, i) => capsule(P(...line[i]), P(...b), 0.8 * s, 8))));
-  const rodForkLines = new THREE.Mesh(plate(forkLines, Z.rod[1] - 0.001, Z.rod[1] + 0.003), darkMaterial);
-  rodForkLines.userData.role = 'eccentric-rod-forked-end-engraved-lines';
+  ].flatMap((line) => line.slice(1).map((b, i) => capsule(P(...line[i]), P(...b), 0.6 * s, 8))));
+  const rodForkLines = new THREE.Mesh(plate(polygonClipping.difference(rodShape, forkLines),
+    Z.rod[1] - seamDepth, Z.rod[1]), rodMaterial);
+  rodForkLines.userData.role = 'eccentric-rod-front-skin-with-forked-strap-seams';
   const pivotLength = Z.rod[1] - Z.handle[0] - 0.002;
   const pivotPin = cylinderAlongZ(pivotRadius, pivotLength, darkMaterial, 32);
   pivotPin.position.set(pivotRest[0], pivotRest[1], Z.handle[0] + 0.001 + pivotLength / 2);
@@ -346,7 +342,7 @@ export function twoHandleGabDisengager() {
   };
   root.userData.blocks = {
     valveRocker, valveArm, valveShaft, valveShaftFace: valveArm, valvePin,
-    eccentricRod, rodBody, rodForkLines, pivotPin, upperHandle, upperHandleBody, cameraEnvelope, shaftHatch,
+    eccentricRod, rodBody, rodForkLines, pivotPin, upperHandle, upperHandleBody, cameraEnvelope,
   };
   root.userData.jointChecks = [
     [valveArm, valveShaft], [valveArm, valvePin], [rodBody, pivotPin], [upperHandleBody, pivotPin],

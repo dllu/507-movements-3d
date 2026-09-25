@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
-import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
+import { waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -437,7 +437,7 @@ function swingingGutterPump(movement) {
       const end = localPathPoints[index + 1];
       const waterEnd = start.clone().lerp(end, fraction);
       setBeamBetween(waterSlugs[index], start, waterEnd);
-      waterSlugs[index].position.z = 0.02;
+      waterSlugs[index].position.z = 0;
     }
     for (let index = 0; index < flaps.length; index += 1) {
       flaps[index].flap.rotation.z = state.flapAngles[index];
@@ -596,12 +596,11 @@ function swingingGutterPump(movement) {
     const outside=clip.union(...segments.map(([a,c])=>capsule(a,c,.12,12)),...g.junctionLocalPoints.map(p=>square(p,.255)));
     const openEnds=[g.localPathPoints[0],g.localPathPoints.at(-1)].map(p=>poly(circle([p.x,p.y],.20,64)));
     for(const [mesh,geometry] of [[b.conduitBack,plate(outside,-.22,-.18)],[b.conduitWalls,plate(clip.difference(outside,inside,...openEnds),-.18,.18)]]){mesh.geometry.dispose();mesh.geometry=geometry;}
-    // Brown rules the water below as close horizontal strokes, not a
-    // translucent slab.
-    b.reservoir.geometry.dispose();
-    b.reservoir.geometry=ruledWaterLines({xMin:-3.45,xMax:3.45,surfaceY:0,rows:12,spacing:.1,thickness:.03,dash:[.7,2.2],gap:[.06,.22],seed:461});
-    b.reservoir.material=ruledWaterMaterial();
-    b.reservoir.position.set(0,reservoirSurfaceY,-.9);
+    // The pool below is a translucent water body (correctWaterLiftParts
+    // sizes it from the surface down), and each slug fills the gutter bore.
+    b.reservoir.material=waterVolumeMaterial();
+    b.reservoir.renderOrder=1;
+    for(const slug of b.waterSlugs){slug.geometry.dispose();slug.geometry=new THREE.BoxGeometry(1,.15,.32);}
   }
   markShadows(root);
   base.receiveShadow = true;

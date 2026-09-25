@@ -61,13 +61,11 @@ export function makePumpCatchRearDriveGeometry({model=makePumpCatchCoreGeometry(
     for(const v of row)uv.push(...v);
   }
   flat.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
-  const pixels=new Uint8Array(128*32*4);for(let y=0;y<32;y++)for(let x=0;x<128;x++){
-    const stripe=((x+2*y)%128)<14,c=stripe?[75,69,55]:[155,143,111],i=(y*128+x)*4;pixels.set([...c,255],i);
-  }
-  const texture=new THREE.DataTexture(pixels,128,32,THREE.RGBAFormat);texture.colorSpace=THREE.SRGBColorSpace;texture.wrapS=THREE.RepeatWrapping;texture.wrapT=THREE.RepeatWrapping;texture.repeat.x=32;texture.needsUpdate=true;
-  band.material.map=texture;band.material.roughness=.85;band.material.metalness=0;
+  // Brown hatches the band runs: engraving notation. The flat leather band
+  // is plain (no stripe texture).
+  band.material.map=null;band.material.color.set(0x9b8f6f);band.material.roughness=.85;band.material.metalness=0;
   const coreSetState=model.setState,setState=state=>{
-    const result=coreSetState(state);remote.rotation.z=result.camAngle;texture.offset.x=result.camAngle*radius/bandLength*texture.repeat.x;model.root.updateMatrixWorld(true);return result;
+    const result=coreSetState(state);remote.rotation.z=result.camAngle;model.root.updateMatrixWorld(true);return result;
   };
   model.setState=setState;u.setState=setState;u.rearDrive={corePartNames,radius,halfWidth,contactRadius,innerRadius,outerRadius,separation,low,high,bandLength,segments,
     maximumRadialRenderingGap:innerRadius-contactRadius*Math.cos(Math.PI/segments),

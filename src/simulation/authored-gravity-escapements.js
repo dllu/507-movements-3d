@@ -1123,6 +1123,19 @@ function mudgeGravityEscapement(movement) {
 
   const leftPallet = makeGravityPallet(-1);
   const rightPallet = makeGravityPallet(1);
+  // Brown's small circle above the two arbors C: the fixed suspension stud
+  // of the (undrawn) pendulum, seen end-on. It runs back to the same rear
+  // plane as the pallet arbors, so it reads as one of the frame's pivots.
+  const suspensionPinRearZ = -0.62;
+  const suspensionPinFrontZ = palletPlaneZ
+    + leftPallet.arborHub.position.z
+    + leftPallet.arborHub.geometry.parameters.height / 2;
+  const suspensionPin = cylinderAlongZ(0.07,
+    suspensionPinFrontZ - suspensionPinRearZ, darkMaterial, 24);
+  suspensionPin.position.set(pendulumPivot.x, pendulumPivot.y,
+    (suspensionPinFrontZ + suspensionPinRearZ) / 2);
+  suspensionPin.userData.role = 'fixed-pendulum-suspension-stud-end';
+  root.add(suspensionPin);
 
   const pendulumAssembly = new THREE.Group();
   pendulumAssembly.position.set(

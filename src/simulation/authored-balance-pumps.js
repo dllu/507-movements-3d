@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {correctBalancePumps} from './fountain-balance-working-parts.js';
-import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
+import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -761,8 +761,8 @@ function balancePumps(movement) {
   root.userData.groundFloorY = groundY;
   correctBalancePumps(root);
   {
-    // Brown sets the pumps in a well between two masonry banks and rules its
-    // water with a few strokes: no foundation slab, water box or rim.
+    // Brown sets the pumps in a well between two masonry banks: no
+    // foundation slab or rim.
     const bankMaterial = foundation.material;
     foundation.geometry.dispose();
     const banks = [-1, 1].map((side) => {
@@ -782,10 +782,13 @@ function balancePumps(movement) {
     foundation.geometry = merged;
     foundation.material = bankMaterial;
     foundation.position.set(0, 0, 0);
+    // The well between the banks holds a translucent body of water from its
+    // surface to the well floor, into which both pump inlets dip.
     reservoir.geometry.dispose();
-    reservoir.geometry = ruledWaterLines({ xMin: -1.93, xMax: 1.93, surfaceY: 0, rows: 4, spacing: 0.1, thickness: 0.03, dash: [0.6, 1.8], gap: [0.06, 0.2], seed: 465 });
-    reservoir.material = ruledWaterMaterial();
-    reservoir.position.set(0, reservoirSurfaceY, -0.95);
+    reservoir.geometry = waterVolumeGeometry({ xMin: -1.95, xMax: 1.95, surfaceY: 0, bottomY: groundY - reservoirSurfaceY, zMin: -1.2, zMax: 1.2 });
+    reservoir.material = waterVolumeMaterial();
+    reservoir.renderOrder = 1;
+    reservoir.position.set(0, reservoirSurfaceY, 0);
     reservoirRim.visible = false;
   }
   {

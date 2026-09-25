@@ -9,8 +9,13 @@ import sourcePresentation from '../data/source-presentation.js';
 // bounds ignore them, and disposes only resources no remaining part uses.
 export function applySourcePresentation(model, movement) {
   const entry = sourcePresentation[movement.id];
+  // Brown draws no index marks on any pulley: the generic tread and face
+  // marks of every makePulley sheave are hidden for all movements.
+  hidePulleyIndexMarks(model.root);
   if (!entry) return model;
   const root = model.root;
+  if (entry.hideWhiteMarks) hideWhiteMarks(root);
+  if (entry.plainRims?.length) plainRims(root, entry.plainRims);
   root.updateMatrixWorld(true);
   const unpresentedWorld = root.matrixWorld.clone();
   if (entry.rotate) {
@@ -54,6 +59,54 @@ export function applySourcePresentation(model, movement) {
     scale: entry.scale ?? null,
   };
   return model;
+}
+
+const WHITE = new THREE.Color(0xfaf9f5);
+const isWhite = (material) => Boolean(material?.color?.equals(WHITE));
+
+function hidePulleyIndexMarks(root) {
+  root.traverse((object) => {
+    const marks = object.userData.faceIndicators;
+    if (!Array.isArray(marks)) return;
+    for (const mark of marks) mark.visible = false;
+    for (const child of object.userData.rotor?.children ?? []) {
+      if (child.isMesh && !child.userData.role && child.geometry?.type === 'BoxGeometry'
+        && isWhite(child.material)) child.visible = false;
+    }
+  });
+}
+
+// White index stripes, chips and painted index teeth: white single-material
+// meshes are hidden and white faces of multi-material meshes take the
+// part's own material. Parts Brown draws white carry userData.sourceDrawn.
+function hideWhiteMarks(root) {
+  root.traverse((object) => {
+    if (!object.isMesh || object.userData.sourceDrawn) return;
+    if (Array.isArray(object.material)) {
+      const base = object.material.find((material) => !isWhite(material));
+      if (base) object.material = object.material.map((material) => (isWhite(material) ? base : material));
+    } else if (isWhite(object.material)) object.visible = false;
+  });
+}
+
+// Black outline rims take the metal of the part they finish: each entry is
+// [rim role pattern, role pattern of the part lending its material].
+function plainRims(root, pairs) {
+  for (const [rimPattern, sourcePattern] of pairs) {
+    const rimRegex = new RegExp(`^(?:${rimPattern})$`), sourceRegex = new RegExp(`^(?:${sourcePattern})$`);
+    let source = null;
+    const rims = [];
+    root.traverse((object) => {
+      if (!object.isMesh) return;
+      const role = object.userData.role || object.name || '';
+      if (rimRegex.test(role)) rims.push(object);
+      else if (!source && sourceRegex.test(role)) source = object;
+    });
+    for (const rim of rims) {
+      if (source) rim.material = source.material;
+      else rim.visible = false;
+    }
+  }
 }
 
 // Older factories name parts without assigning a role.

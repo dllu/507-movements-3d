@@ -133,22 +133,25 @@ function correctRollerBearing(root) {
 }
 
 // Brown hatches both hanging legs of 270 as a laid rope. Replace the flat
-// band by three helical strands laid round the same centreline (straight
-// legs and the semicircular wrap), touching the tread at the rope's inner
-// side. The lay travels with the rope: the strand phase at arc length s is
-// 2π(s - v t)/lay, and the lay divides one pulley circumference so the
-// pattern closes with every turn. The buffer keeps the rope at zero travel
-// (a fixed solid for clearance checks); the vertex shader shifts the lay.
+// band by three helical strands laid round the same centreline, touching the
+// tread at the rope's inner side. Brown crops the legs; the rope is endless,
+// running down past the plate's edge round an equal lower sheave, so no
+// strand ends in mid-air. The lay travels with the rope: the strand phase at
+// arc length s is 2π(s - v t)/lay, the lay divides one pulley circumference
+// and the loop length is a whole number of lays, so the pattern closes. The
+// buffer keeps the rope at zero travel (a fixed solid for clearance checks);
+// the vertex shader shifts the lay.
 function twistedRope(root) {
   const {blocks: b, geometry: g} = root.userData;
-  const rc = g.beltCenterlineRadius, legs = g.beltLegLength;
+  const rc = g.beltCenterlineRadius;
   const ropeRadius = g.beltThickness / 2;
   const strandRadius = ropeRadius / (1 + 1 / Math.sin(Math.PI / 3));
   const layRadius = ropeRadius - strandRadius;
   const loop = 2 * Math.PI * g.pulleyOuterRadius;
   const strandLay = loop / Math.round(loop / 0.13);
   const lay = 3 * strandLay;
-  const arc = Math.PI * rc, length = 2 * legs + arc;
+  const arc = Math.PI * rc;
+  const legs = (Math.round((2 * 9 + 2 * arc) / lay) * lay - 2 * arc) / 2, length = 2 * legs + 2 * arc;
   const along = Math.ceil(length / 0.018), around = 10, strands = 3;
   const frame = (s) => {
     if (s <= legs) return {x: -rc, y: -legs + s, nx: -1, ny: 0};
@@ -156,10 +159,13 @@ function twistedRope(root) {
       const angle = Math.PI - (s - legs) / rc;
       return {x: rc * Math.cos(angle), y: rc * Math.sin(angle), nx: Math.cos(angle), ny: Math.sin(angle)};
     }
-    return {x: rc, y: legs + arc - s, nx: 1, ny: 0};
+    if (s <= 2 * legs + arc) return {x: rc, y: legs + arc - s, nx: 1, ny: 0};
+    const angle = -(s - 2 * legs - arc) / rc;
+    return {x: rc * Math.cos(angle), y: -legs + rc * Math.sin(angle), nx: Math.cos(angle), ny: Math.sin(angle)};
   };
-  // Each strand is a closed tube: a ring per station plus an end-cap centre.
-  const count = strands * ((along + 1) * around + 2);
+  // Each strand is a closed ring of stations; the last station repeats the
+  // first, where the whole-lay loop length makes the strands meet.
+  const count = strands * (along + 1) * around;
   const positions = new Float32Array(count * 3), normals = new Float32Array(count * 3);
   const ropeS = new Float32Array(count), ropeStrand = new Float32Array(count), ropeAround = new Float32Array(count);
   const ropeRing = new Float32Array(count).fill(1);
@@ -182,20 +188,6 @@ function twistedRope(root) {
         n++;
       }
     }
-    // End caps: fan from each end's strand centre.
-    const first = n - (along + 1) * around, last = n - around;
-    for (const [end, ring, s] of [[n, first, 0], [n + 1, last, length]]) {
-      const f = frame(s), phase = 2 * Math.PI * (s / lay + k / strands);
-      const cn = layRadius * Math.cos(phase);
-      positions.set([f.x + f.nx * cn, f.y + f.ny * cn, layRadius * Math.sin(phase)], 3 * end);
-      normals.set([0, -1, 0], 3 * end);
-      ropeS[end] = s; ropeStrand[end] = k; ropeRing[end] = 0;
-      for (let j = 0; j < around; j++) {
-        const a = ring + j, c = ring + (j + 1) % around;
-        if (s === 0) index.push(end, c, a); else index.push(end, a, c);
-      }
-    }
-    n += 2;
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -222,7 +214,8 @@ void ropeFrame(float s, out vec2 c, out vec2 nrm) {
   float legs = ${legs.toFixed(8)}, rc = ${rc.toFixed(8)}, arc = ${arc.toFixed(8)};
   if (s <= legs) { c = vec2(-rc, -legs + s); nrm = vec2(-1.0, 0.0); }
   else if (s <= legs + arc) { float a = 3.14159265358979 - (s - legs) / rc; nrm = vec2(cos(a), sin(a)); c = rc * nrm; }
-  else { c = vec2(rc, legs + arc - s); nrm = vec2(1.0, 0.0); }
+  else if (s <= 2.0 * legs + arc) { c = vec2(rc, legs + arc - s); nrm = vec2(1.0, 0.0); }
+  else { float a = -(s - 2.0 * legs - arc) / rc; nrm = vec2(cos(a), sin(a)); c = vec2(0.0, -legs) + rc * nrm; }
 }
 void main() {`)
       .replace('#include <beginnormal_vertex>', `vec2 ropeC; vec2 ropeN; ropeFrame(ropeS, ropeC, ropeN);
@@ -239,10 +232,30 @@ vPosition = vec3( position );
   };
   material.customProgramCacheKey = () => 'laid-rope-270';
   b.belt.userData.role = 'single-laid-three-strand-rope-with-exact-straight-to-semicircular-tangent-path';
-  b.belt.userData.ropeLay = {lay, layRadius, ropeRadius, strandRadius, strands};
+  b.belt.userData.ropeLay = {lay, layRadius, ropeRadius, strandRadius, strands, loopLegLength: legs, closed: true};
+  // The lower return sheave the endless rope runs round, below the plate's
+  // crop: a plain grooved disc on its own journal, turning with the pulley.
+  const sheave = new THREE.Group();
+  sheave.position.y = -legs;
+  sheave.userData.role = 'lower-return-sheave-of-endless-rope-below-plate-crop';
+  for (const part of [b.pulleyRim, b.pulleyFrontFlange, b.pulleyRearFlange]) sheave.add(part.clone());
+  const web = new THREE.Mesh(ring(0.3, g.pulleyWebOuterRadius, -g.pulleyDepth / 2, g.pulleyDepth / 2, 128), b.pulleyWeb.material);
+  web.userData.role = 'lower-return-sheave-web';
+  const journal = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, g.pulleyRimDepth + 0.2, 48), b.innerRace.material);
+  journal.rotation.x = Math.PI / 2;
+  journal.userData.role = 'lower-return-sheave-journal';
+  sheave.add(web);
+  const lower = new THREE.Group();
+  lower.userData.role = 'lower-return-sheave-assembly';
+  lower.add(sheave, journal);
+  journal.position.y = -legs;
+  root.add(lower);
+  b.lowerReturnSheave = sheave;
+  b.lowerReturnAssembly = lower;
   const speed = root.userData.transmission?.beltLinearSpeed ?? 0;
   root.userData.layRopeAtTime = (time) => {
     travel.value = ((speed * time) % lay + lay) % lay;
+    sheave.rotation.z = b.pulleyRotor.rotation.z;
   };
 }
 
@@ -309,6 +322,9 @@ function addAssembledView(model) {
   starMesh.position.z = b.innerRace.position.z + g.innerRaceDepth / 2;
   starMesh.userData.role = 'assembled-view-fluted-journal-end';
   figure.add(b.belt.clone(), pulleyRotor, cover, journal, starMesh);
+  const lowerSheave = b.lowerReturnAssembly?.clone();
+  if (lowerSheave) figure.add(lowerSheave);
+  const lowerRotor = lowerSheave?.children.find((part) => part.userData.role === 'lower-return-sheave-of-endless-rope-below-plate-crop');
   root.add(figure);
   Object.assign(b, {assembledCover: cover, assembledFigure: figure, assembledPulleyRotor: pulleyRotor});
   root.userData.bearingInterpretation.consolidatedView =
@@ -317,6 +333,7 @@ function addAssembledView(model) {
   model.update = (time) => {
     baseUpdate(time);
     pulleyRotor.rotation.z = b.pulleyRotor.rotation.z;
+    if (lowerRotor) lowerRotor.rotation.z = b.pulleyRotor.rotation.z;
     cover.rotation.z = b.rollerCarrier.rotation.z;
     for (const marker of b.beltMarkers) marker.visible = false;
   };
@@ -342,5 +359,9 @@ export function correctBearingParts(model, id) {
     addAssembledView(model);
   }
   fitPistonGuide(model.root, model.update, model.root.userData.minimumDisplayCycleSeconds);
+  // Frame Brown's crop: the rope runs on below it to the lower return sheave.
+  if (model.root.userData.blocks.lowerReturnAssembly) {
+    model.root.userData.cameraFitBounds.min.y = -model.root.userData.geometry.beltLegLength - .03;
+  }
   model.cameraDirection = new THREE.Vector3(.45, .55, 15);
 }

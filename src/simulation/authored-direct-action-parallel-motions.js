@@ -2535,9 +2535,12 @@ function grasshopperBeamEngine(movement) {
   ), crankPlaneZ - 0.06, crankPlaneZ + 0.06), beamMaterial);
   crankArm.userData.role = 'crank-arm-to-P';
   const crankDisk = crankArm;
+  // The shaft end stands 0.02 proud of the crank face (a coplanar end
+  // z-fights with the crank boss), still clear of the rod plane in front.
+  const crankShaftFront = crankPlaneZ + 0.08;
   const crankShaft = cylinderAlongZ(shaftRadius,
-    crankPlaneZ + 0.06 - (pedestalPlaneZ - 0.22), darkMaterial, 34);
-  crankShaft.position.z = (crankPlaneZ + 0.06 + pedestalPlaneZ - 0.22) / 2;
+    crankShaftFront - (pedestalPlaneZ - 0.22), darkMaterial, 34);
+  crankShaft.position.z = (crankShaftFront + pedestalPlaneZ - 0.22) / 2;
   crankShaft.userData.role = 'crank-shaft-in-plummer-pedestal';
   const crankPinAnchor = new THREE.Object3D();
   crankPinAnchor.position.set(crankRadius, 0, crankPlaneZ);

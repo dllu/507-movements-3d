@@ -110,37 +110,14 @@ export function clutchSectionPolygons(profile, { planeZ = 0, angle = 0, boreRadi
   return polygons;
 }
 
-function hatchSegments(polygons, sign, z, spacing = 0.025) {
-  const positions = [];
-  for (const polygon of polygons) {
-    const coordinates = polygon.map((p) => p.y - sign * p.x);
-    for (let line = Math.ceil(Math.min(...coordinates) / spacing); line * spacing < Math.max(...coordinates); line += 1) {
-      const offset = line * spacing, crossings = [];
-      for (let i = 0; i < polygon.length; i += 1) {
-        const a = polygon[i], b = polygon[(i + 1) % polygon.length];
-        const da = a.y - sign * a.x - offset, db = b.y - sign * b.x - offset;
-        if ((da <= 0 && db > 0) || (db <= 0 && da > 0)) crossings.push(a.clone().lerp(b, da / (da - db)));
-      }
-      crossings.sort((a, b) => a.x - b.x);
-      for (let i = 0; i + 1 < crossings.length; i += 2) {
-        positions.push(crossings[i].x, crossings[i].y, z, crossings[i + 1].x, crossings[i + 1].y, z);
-      }
-    }
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  return geometry;
-}
-
 export function makeClutchSections(profile, { boreRadius, keyHalfWidth = 0, keywayTop = 0,
-  color, backZ = -0.08, hatchSign = 1 } = {}) {
+  color, backZ = -0.08 } = {}) {
   const root = new THREE.Group();
-  const capColor = new THREE.Color(color).lerp(new THREE.Color(0xf2eee3), 0.33);
+  // Plain cut face, a slightly darker shade of the part (no hatching).
+  const capColor = new THREE.Color(color).multiplyScalar(0.85);
   const material = new THREE.MeshBasicMaterial({ color: capColor });
-  const lineMaterial = new THREE.LineBasicMaterial({ color: new THREE.Color(color).multiplyScalar(0.56) });
   const caps = [0, backZ].map(() => new THREE.Mesh(new THREE.BufferGeometry(), material));
-  const hatches = [0, backZ].map(() => new THREE.LineSegments(new THREE.BufferGeometry(), lineMaterial));
-  root.add(...caps, ...hatches);
+  root.add(...caps);
   let previous = '';
   const setAngle = (angle) => {
     const polygons = [0, backZ].map((planeZ) => clutchSectionPolygons(profile,
@@ -162,11 +139,10 @@ export function makeClutchSections(profile, { boreRadius, keyHalfWidth = 0, keyw
         for (let j = 0; j < geometry.attributes.normal.count; j += 1) geometry.attributes.normal.setZ(j, -1);
       }
       caps[i].geometry.dispose(); caps[i].geometry = geometry;
-      hatches[i].geometry.dispose(); hatches[i].geometry = hatchSegments(polygons[i], hatchSign, z + (i === 0 ? 0.0003 : -0.0003));
     }
     root.userData.polygons = polygons;
   };
-  root.userData = { sectionFaces: true, caps, hatches, setAngle, backZ, profile, boreRadius, keyHalfWidth, keywayTop };
+  root.userData = { sectionFaces: true, caps, setAngle, backZ, profile, boreRadius, keyHalfWidth, keywayTop };
   setAngle(0);
   return root;
 }

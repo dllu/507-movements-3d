@@ -245,14 +245,15 @@ test('movement 254 has a positive fork gap but does not invent an unspecified ch
   disposeModel(model.root);
 });
 
-test('movement 254 renderer rotates one rigid member with legible speed indexes', () => {
+test('movement 254 renderer rotates one rigid member without painted speed indexes', () => {
   const model = createMovementModel(catalog.movements[253]);
   const { blocks, stateAtTime } = model.root.userData;
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
 
-  assert.equal(roles.filter((role) => role === 'white-shaft-end-speed-index').length, 1);
-  assert.equal(roles.filter((role) => role === 'white-one-pocket-per-turn-index').length, 1);
+  // Brown draws no speed or pocket index marks.
+  assert.equal(roles.filter((role) => role === 'white-shaft-end-speed-index').length, 0);
+  assert.equal(roles.filter((role) => role === 'white-one-pocket-per-turn-index').length, 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
   for (const time of [0, 0.4, 1.1, 2.3, 3.7, 4.9, 7.25]) {
     model.update(time);

@@ -2010,18 +2010,13 @@ function snapActionStarCounter() {
   );
   dropBody.userData.springDropBody = true;
   const [strikerX, strikerY] = localRing([mechanism.striker], hinge)[0];
-  // Brown draws the striker, like the stop pin, as an open circle.
-  const openPinMaterial = matte(PALETTE.white, { metalness: 0.12, roughness: 0.5 });
+  // Brown draws the striker as an open circle; it is a plain steel stud
+  // riveted through the drop.
+  const openPinMaterial = matte('#c3c7c1', { metalness: 0.2, roughness: 0.5 });
   const striker = cylinder(L.strikerRadius * k, z.dropBack + 0.01, z.pawlFront + 0.012, openPinMaterial, 24);
   striker.position.x = strikerX;
   striker.position.y = strikerY;
   striker.userData.dropStrikerStud = true;
-  const strikerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(L.strikerRadius * k - 0.01, 0.01, 8, 28),
-    inkMaterial,
-  );
-  strikerRim.position.set(strikerX, strikerY, z.pawlFront + 0.012);
-  strikerRim.userData.surfaceMarking = true;
   const [pivotX, pivotY] = localRing([L.pawlPivot], hinge)[0];
   const screwShank = cylinder(L.screwShankRadius * k, z.dropBack + 0.01, z.pawlFront, inkMaterial);
   screwShank.position.x = pivotX;
@@ -2038,7 +2033,7 @@ function snapActionStarCounter() {
   slot.rotation.z = -1.05;
   slot.position.set(pivotX, pivotY, z.screwHeadFront + 0.004);
   slot.userData.surfaceMarking = true;
-  drop.userData.rotor.add(dropBody, striker, strikerRim, screwShank, screwHead, slot);
+  drop.userData.rotor.add(dropBody, striker, screwShank, screwHead, slot);
   drop.userData.role = 'spring-carried-drop';
 
   // The broad hooked pawl hangs on the screw: one plate with Brown's smooth
@@ -2083,20 +2078,37 @@ function snapActionStarCounter() {
   springLeaf.userData.flexibleLeafSpring = true;
   springLeaf.userData.role = 'flat-leaf-spring-carrying-drop';
 
-  // Brown's fixed stop pin under the tail, drawn as an open circle.
-  const stopPin = cylinder(L.stopPinRadius * k, z.dropBack - 0.06, z.dropFront + 0.03, openPinMaterial, 28);
-  stopPin.position.x = toWorld(mechanism.stopPin).x;
-  stopPin.position.y = toWorld(mechanism.stopPin).y;
-  const stopPinRim = new THREE.Mesh(
-    new THREE.TorusGeometry(L.stopPinRadius * k - 0.012, 0.012, 8, 32),
-    inkMaterial,
-  );
-  stopPinRim.position.set(stopPin.position.x, stopPin.position.y, z.dropFront + 0.03);
-  stopPinRim.userData.surfaceMarking = true;
+  // Brown's fixed stop pin under the tail. Brown draws it and the striker as
+  // open circles; the model shows plain steel pins. The stop pin stands on a
+  // slim fixed strap behind the drop, which also carries the clamp block
+  // holding the leaf spring's end (Brown breaks the spring off at the plate
+  // edge; the clamp gives it a real, held end).
+  const steelPinMaterial = matte('#c3c7c1', { metalness: 0.2, roughness: 0.5 });
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.1, roughness: 0.7 });
+  const strapBack = z.dropBack - 0.18, strapFront = z.dropBack - 0.10;
+  const stopPin = cylinder(L.stopPinRadius * k, strapFront, z.dropFront + 0.03, steelPinMaterial, 28);
+  const stopPoint = toWorld(mechanism.stopPin), clampPoint = toWorld(L.springClamp);
+  stopPin.position.x = stopPoint.x;
+  stopPin.position.y = stopPoint.y;
   stopPin.userData.fixed = true;
   stopPin.userData.role = 'fixed-drop-stop-pin';
+  const strapWidth = 0.1, strapVector = stopPoint.clone().sub(clampPoint);
+  const strapShape = new THREE.Shape();
+  strapShape.absarc(0, 0, strapWidth / 2, Math.PI / 2, 3 * Math.PI / 2, false);
+  strapShape.absarc(strapVector.length(), 0, strapWidth / 2 + 0.02, -Math.PI / 2, Math.PI / 2, false);
+  strapShape.closePath();
+  const strap = slab(strapShape, strapBack, strapFront, frameMaterial);
+  strap.position.x = clampPoint.x;
+  strap.position.y = clampPoint.y;
+  strap.rotation.z = Math.atan2(strapVector.y, strapVector.x);
+  strap.userData.fixed = true;
+  strap.userData.role = 'fixed-strap-carrying-stop-pin-and-spring-clamp';
+  const clampBlock = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, springPlaneZ + 0.05 - strapFront), frameMaterial);
+  clampBlock.position.set(clampPoint.x, clampPoint.y, (springPlaneZ + 0.05 + strapFront) / 2);
+  clampBlock.userData.fixed = true;
+  clampBlock.userData.role = 'fixed-clamp-block-holding-leaf-spring-end';
 
-  root.add(stopPin, stopPinRim, star, driver, drop, springLeaf);
+  root.add(strap, clampBlock, stopPin, star, driver, drop, springLeaf);
 
   // The steady contact solution for one pin event, baked offline.
   const fingerprint = snapCounterMotionFingerprint();
@@ -2513,15 +2525,12 @@ function internalGuardTappetStudIndex() {
     flatExtrusion(plateOutline, plateDepth, [circlePath(driverShaftRadius + 0.01)]),
     driverMaterial,
   );
-  // Brown draws B as an outline with its rim, tappet and the interior studs
-  // dashed behind it; a translucent plate lets them read through.
+  // Brown dashes B's rim, tappet and the interior studs behind the plate;
+  // the plate is opaque and the viewer rotates to see them.
   driverBody.material = matte(PALETTE.driver, {
     metalness: 0.1,
-    opacity: 0.38,
     roughness: 0.64,
-    transparent: true,
   });
-  driverBody.material.depthWrite = false;
   driverBody.position.z = plateBackZ;
   driverBody.userData.driverWheelBBody = true;
   driverBody.userData.role = 'B-front-plate-carrying-guard-rim';
@@ -3184,13 +3193,14 @@ function springPressedRatchetIndex() {
   stopPad.userData.strongSpringStopTipC = true;
   // Brown's small hatched block at lower left, with C rising from its
   // corner: about two thirds of D's radius square, its top level with D's
-  // lower rim. It is kept pale with its section hatched on the face.
+  // lower rim. Brown's hatching marks it as a cut solid; the model shows
+  // the plain fixed block.
   const clampWidth = 1.0;
   const clampHeight = 1.1;
   const clampDepth = 0.26;
   const strongSpringClamp = new THREE.Mesh(
     new THREE.BoxGeometry(clampWidth, clampHeight, clampDepth),
-    matte(PALETTE.paper, { metalness: 0.02, roughness: 0.9 }),
+    matte(PALETTE.frame, { metalness: 0.08, roughness: 0.8 }),
   );
   strongSpringClamp.position.copy(strongSpringAnchor)
     .add(new THREE.Vector3(
@@ -3199,54 +3209,6 @@ function springPressedRatchetIndex() {
       0,
     ));
   strongSpringClamp.userData.fixedStrongSpringClamp = true;
-  {
-    // Diagonal section hatching (lower left to upper right, as engraved),
-    // clipped to the block face.
-    const hatchMaterial = matte(PALETTE.ink, { metalness: 0.1, roughness: 0.6 });
-    const halfWidth = clampWidth / 2;
-    const halfHeight = clampHeight / 2;
-    const hatchSpacing = 0.075;
-    const hatchPositions = [];
-    const hatchIndices = [];
-    const lineHalfThickness = 0.009;
-    for (
-      let offset = -halfWidth - halfHeight + hatchSpacing / 2;
-      offset < halfWidth + halfHeight;
-      offset += hatchSpacing
-    ) {
-      // Line y = x + offset clipped to the face rectangle.
-      const xStart = Math.max(-halfWidth, -halfHeight - offset);
-      const xEnd = Math.min(halfWidth, halfHeight - offset);
-      if (xEnd - xStart < 0.02) continue;
-      const start = [xStart, xStart + offset];
-      const end = [xEnd, xEnd + offset];
-      // Offset perpendicular to the 45-degree line, clamped to the face.
-      const normal = [-Math.SQRT1_2 * lineHalfThickness, Math.SQRT1_2 * lineHalfThickness];
-      const clampPoint = ([x, y]) => [
-        THREE.MathUtils.clamp(x, -halfWidth, halfWidth),
-        THREE.MathUtils.clamp(y, -halfHeight, halfHeight),
-      ];
-      const base = hatchPositions.length / 3;
-      for (const [x, y] of [
-        clampPoint([start[0] + normal[0], start[1] + normal[1]]),
-        clampPoint([start[0] - normal[0], start[1] - normal[1]]),
-        clampPoint([end[0] - normal[0], end[1] - normal[1]]),
-        clampPoint([end[0] + normal[0], end[1] + normal[1]]),
-      ]) hatchPositions.push(x, y, clampDepth / 2 + 0.002);
-      hatchIndices.push(base, base + 1, base + 2, base, base + 2, base + 3);
-    }
-    const hatchGeometry = new THREE.BufferGeometry();
-    hatchGeometry.setAttribute(
-      'position',
-      new THREE.Float32BufferAttribute(hatchPositions, 3),
-    );
-    hatchGeometry.setIndex(hatchIndices);
-    hatchGeometry.computeVertexNormals();
-    const hatch = new THREE.Mesh(hatchGeometry, hatchMaterial);
-    hatch.userData.role = 'hatched-section-face-of-fixed-block';
-    hatch.userData.surfaceMarking = true;
-    strongSpringClamp.add(hatch);
-  }
 
   root.add(
     strongSpringClamp,

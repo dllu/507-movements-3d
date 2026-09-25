@@ -3,7 +3,6 @@ import {createAuthoredSelectableCamMovement} from './authored-selectable-cams.js
 import {plate,poly,circle,disk,ring,polygonClipping as clip} from './finite-plate-geometry.js';
 import {matte,PALETTE,markShadows} from './primitives.js';
 import {disposeObject3D} from './dispose-model.js';
-import {hatchedSectionFace} from './section-hatch.js';
 
 export function makeSelectableCamValve(){
  const model=createAuthoredSelectableCamMovement({id:150}),{root}=model,b=root.userData.blocks,g=root.userData.geometry;
@@ -44,29 +43,24 @@ export function makeSelectableCamValve(){
  b.followerRoller.tread.geometry.dispose();b.followerRoller.tread.geometry=ring(.094,g.rollerRadius,-g.rollerWidth/2,g.rollerWidth/2,96);b.followerRoller.tread.rotation.set(0,0,0);
  b.followerAxle.geometry.dispose();b.followerAxle.geometry=disk(.09,g.workingCamPlaneZ-leverPlane-.15,.017,96);b.followerAxle.rotation.set(0,0,0);b.followerAxle.position.z=0;
  add('roller-axle-retainer',disk(.13,.017,.027,96).translate(g.leverLength,0,0),b.lever,'brass');
- // Brown sections the shaft end nearest the viewer with parallel hatching.
- // Thin paper faces with ink section lines replace the dark ends; they turn
- // with the shaft and add no working surface.
- let shaft;root.traverse(o=>{if(o.userData.role==='long-keyed-shaft-through-sliding-cam-series')shaft=o;});
- // Brown cuts the shaft flush with the front of the cam series, the hatched
- // section sitting inside the smallest cam. The viewer-side end (local -Z
- // after source presentation) now stops just ahead of the carrier hub at its
- // forward limit, instead of standing about 0.8 proud of the stack (which
- // read as an oversized, offset hatched disc). The rear end is unchanged.
+ // Brown cuts the shaft flush with the front of the cam series, its hatched
+ // section sitting inside the smallest cam. The hatching is engraving
+ // notation: the model shows the plain end of the shaft itself. Both ends
+ // stop just beyond the keyed hub at its sliding limits (the viewer-side end,
+ // local -Z after source presentation, ahead of its forward limit; the rear
+ // end behind its rearward limit), so the shaft no longer stands about 0.5
+ // proud of the rear of the stack. The shaft radius already matches the
+ // plate's hatched circle at source scale (0.56 = 35 plate pixels).
  // The shaft mesh is turned so its geometry Y runs along the parent's Z.
+ let shaft;root.traverse(o=>{if(o.userData.role==='long-keyed-shaft-through-sliding-cam-series')shaft=o;});
  {
-  const {radiusTop:radius,height,radialSegments}=shaft.geometry.parameters,rear=height/2,box=new THREE.Box3(),toShaftParent=new THREE.Matrix4();
-  let hubFront=Infinity;
+  const {radiusTop:radius,radialSegments}=shaft.geometry.parameters,box=new THREE.Box3(),toShaftParent=new THREE.Matrix4();
+  let hubFront=Infinity,hubRear=-Infinity;
   for(let i=0;i<=256;i++){legacyUpdate(g.demonstrationPeriod*i/256);root.updateMatrixWorld(true);toShaftParent.copy(shaft.parent.matrixWorld).invert();
-   b.slidingCarrier.traverse(o=>{if(o.isMesh&&o.userData.role==='keyed-hub-rigid-with-all-four-cams'){box.setFromObject(o).applyMatrix4(toShaftParent);hubFront=Math.min(hubFront,box.min.z);}});}
-  const front=Math.max(-rear,hubFront-.02);
+   b.slidingCarrier.traverse(o=>{if(o.isMesh&&o.userData.role==='keyed-hub-rigid-with-all-four-cams'){box.setFromObject(o).applyMatrix4(toShaftParent);hubFront=Math.min(hubFront,box.min.z);hubRear=Math.max(hubRear,box.max.z);}});}
+  const front=hubFront-.02,rear=hubRear+.02;
   shaft.geometry.dispose();shaft.geometry=new THREE.CylinderGeometry(radius,radius,rear-front,radialSegments).translate(0,(rear+front)/2,0);
-  g.shaftFrontZ=front;
-  for(const side of [-1,1]){
-   // Source presentation turns the model end for end: local -Z faces the viewer.
-   const face=hatchedSectionFace(radius,{name:'hatched-shaft-end-'+(side<0?'front':'rear')});
-   face.position.z=side<0?front:rear;if(side<0)face.rotation.y=Math.PI;shaft.parent.add(face);
-  }
+  g.shaftFrontZ=front;g.shaftRearZ=rear;
  }
  // Brown outlines each cam; the profile outlines lay only on the faces
  // turned away from the viewer, so the stack read as blurred discs.

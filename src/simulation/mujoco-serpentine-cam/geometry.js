@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import {hatchHeader} from '../mujoco-barrel-cam/hatched-header.js';
 import source from './source.js';
 import {makeSerpentineCamProfile} from './profile.js';
 import {barrelLand} from '../mujoco-barrel-cam/groove.js';
@@ -22,7 +21,9 @@ export function makeSerpentineCamGeometry(options={}) {
   add('floor',ring(f.shaftRadius,f.floor,f.left,f.right,f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
   add('shaft',disk(f.shaftRadius,f.x(source.shaftEnds[0]),f.x(source.shaftEnds[1]),f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
   const header=source.header.map(([x,y],i)=>[x,i===0||i===3?e.ceilingBottom:y]).map(([x,y])=>[f.x(x),f.y(y)]);
-  hatchHeader(add('header',plate(poly(header),-.20,.20),'frame',PALETTE.frame),header);
+  // Brown's hatched ceiling is the section of a fixed beam: model the beam
+  // itself as a plain solid running back through the frame (no hatch strokes).
+  add('header',plate(poly(header),-.50,.50),'frame',PALETTE.frame);
   for(const side of ['left','right']) {
     const outline=rectangle(f.y(e[side+'GuideBottom']),-.12,f.y(e.ceilingBottom),.12);
     const bore=rectangle(f.rodY-f.rodHalfHeight-.003,-f.rodHalfDepth-.003,f.rodY+f.rodHalfHeight+.003,f.rodHalfDepth+.003);

@@ -72,14 +72,18 @@ export function makeSilkTraverseAssembly(bundle) {
  move(363,289);line(382,289);curve([407,291],[416,308],[422,340]);line(496,340);line(496,328);line(441,328);
  curve([432,291],[418,275],[382,274]);line(363,274);bracketShape.closePath();
  add('guideBracket',plate(poly(bracketShape.getPoints(32).map(p=>p.toArray())),1.8,1.94),PALETTE.frame,'fixed');
- add('guideFoot',plate(sourcePoly([[390,346],[512,346],[500,360],[511,373],[501,391],[385,391],[391,378],[386,365]]),1.74,2.01),PALETTE.frame,'fixed');
+ // Brown breaks the fixed blocks off at the right edge. Model them whole:
+ // square-ended blocks joined by one upright frame post just beyond the
+ // drawn breaks, behind the guide rod's plane.
+ add('guideFoot',plate(sourcePoly([[386,346],[545,346],[545,391],[386,391]]),1.74,2.01),PALETTE.frame,'fixed');
+ add('frameWeb',plate(sourcePoly([[520,346],[545,346],[545,391],[520,391]]),1.18,1.74),PALETTE.frame,'fixed');
  // Join the source foot and curved support without inventing an overall base.
  add('footNeck',plate(sourcePoly([[422,336],[496,336],[496,350],[422,350]]),1.8,1.94),PALETTE.frame,'fixed');
  root.updateMatrixWorld(true);const tip=contact.parts.tappet.getWorldPosition(new THREE.Vector3());
  const stem=add('tappetStem',plate(round(.02),tip.z,1.13),PALETTE.ink,'fixed');stem.position.set(tip.x,tip.y,0);
  const supportEnd=raster([406,179]);
  const bar=add('tappetArm',new THREE.BoxGeometry(supportEnd[0]-tip.x,.06,.08),PALETTE.frame,'fixed');bar.position.set((supportEnd[0]+tip.x)/2,tip.y,1.1);
- add('tappetSupport',plate(sourcePoly([[406,151],[505,151],[499,164],[507,176],[500,187],[506,199],[406,199]]),1.02,1.18),PALETTE.frame,'fixed');
+ add('tappetSupport',plate(sourcePoly([[406,151],[545,151],[545,391],[520,391],[520,199],[406,199]]),1.02,1.18),PALETTE.frame,'fixed');
  const stateAtTime=time=>{
   // Repeat the finite adjustment; each replay resets the nut to its source pose.
   const playbackTime=((time%g.duration)+g.duration)%g.duration;

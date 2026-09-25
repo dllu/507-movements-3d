@@ -3,7 +3,6 @@ import source from './source.js';
 import {bowDrillClearCordPath} from './cord-path.js';
 import {plate,poly,ring,disk} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
-import {applyBowDrillShaftHatching} from './shaft-finish.js';
 import {LaidRopeGeometry,replaceWithLaidRope} from '../laid-rope.js';
 export {THREE};
 
@@ -64,7 +63,6 @@ export function makeBowDrillGeometry({amplitude=.9,cordSegments=96,cordTilt=.3,l
  }
  const shaft=source.circles.shaft.radius/100,outer=source.circles.outer.radius/100,hub=source.circles.hub.radius/100;
  add('drum',ring(shaft,drumRadius,-.16,.16,192),'spindle',PALETTE.driven);add('backFlange',ring(shaft,outer,-.20,-.16,192),'spindle',PALETTE.driven);add('frontFlange',ring(shaft,outer,.16,.20,192),'spindle',PALETTE.driven);add('frontLand',ring(shaft,pitchRadius,.20,.22,192),'spindle',PALETTE.driven);add('frontHub',ring(shaft,hub,.22,.24,192),'spindle',PALETTE.driven);add('shaft',disk(shaft,-.9,.24,128),'spindle',PALETTE.ink);
- applyBowDrillShaftHatching(parts.shaft.material);
  const bit=plate(poly([[-.12,-.8],[.12,-.8],[.12,-1.15],[.06,-1.32],[0,-1.36],[-.06,-1.32],[-.12,-1.15]]),-.025,.025);bit.rotateX(Math.PI/2);add('bit',bit,'spindle',PALETTE.ink);
  add('initialCord',bowDrillCordGeometry(cordPath.points,cordRadius),'cord',PALETTE.brass);
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);for(const n of ['frontFlange','frontLand','frontHub'])parts[n].visible=!enabled;};

@@ -305,32 +305,39 @@ function makeGuideGroove({
   return markShadows(guide);
 }
 
-function makeDynamicCoilSpring(material, pointCount = 65) {
-  const positions = new Float32Array(pointCount * 3);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  const spring = new THREE.Line(geometry, material);
+function makeDynamicCoilSpring(material, turns = 10) {
+  // A solid close-wound coil built once along +X over unit length and
+  // stretched between its end points, with straight end legs to its hooks.
+  const coilRadius = 0.07;
+  const wireRadius = 0.018;
+  const legFraction = 0.08;
+  const points = [new THREE.Vector3(0, 0, 0)];
+  const samples = turns * 24;
+  for (let index = 0; index <= samples; index += 1) {
+    const u = index / samples;
+    const phase = turns * FULL_TURN * u;
+    points.push(new THREE.Vector3(
+      legFraction + (1 - 2 * legFraction) * u,
+      coilRadius * Math.sin(phase),
+      coilRadius * Math.cos(phase),
+    ));
+  }
+  points.push(new THREE.Vector3(1, 0, 0));
+  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
+  const spring = new THREE.Mesh(
+    new THREE.TubeGeometry(curve, samples + 24, wireRadius, 8, false),
+    material,
+  );
   spring.userData.role = 'tension-spring-d-returning-elbow-lever-C';
   spring.userData.setEndpoints = (start, end) => {
     const delta = end.clone().sub(start);
     const length = delta.length();
-    const unit = delta.clone().multiplyScalar(1 / Math.max(length, 1e-12));
-    const normal = new THREE.Vector3(-unit.y, unit.x, 0);
-    const binormal = new THREE.Vector3(0, 0, 1);
-    const turns = 10;
-    for (let index = 0; index < pointCount; index += 1) {
-      const u = index / (pointCount - 1);
-      const taper = Math.sin(Math.PI * u);
-      const phase = turns * FULL_TURN * u;
-      const point = start.clone().addScaledVector(delta, u)
-        .addScaledVector(normal, 0.070 * taper * Math.sin(phase))
-        .addScaledVector(binormal, 0.070 * taper * Math.cos(phase));
-      positions[index * 3] = point.x;
-      positions[index * 3 + 1] = point.y;
-      positions[index * 3 + 2] = point.z;
-    }
-    geometry.attributes.position.needsUpdate = true;
-    geometry.computeBoundingSphere();
+    spring.position.copy(start);
+    spring.quaternion.setFromUnitVectors(
+      new THREE.Vector3(1, 0, 0),
+      delta.clone().multiplyScalar(1 / Math.max(length, 1e-12)),
+    );
+    spring.scale.set(length, 1, 1);
     spring.userData.currentLength = length;
     spring.userData.end = end.clone();
     spring.userData.start = start.clone();
@@ -688,13 +695,16 @@ function alternatingWeightedRackDrive(movement) {
   root.add(markShadows(elbowLever));
 
   const springAnchor = new THREE.Vector3(2.95, 4.82-(Math.PI*pinionPitchRadius-stroke), 0.13);
-  const springAnchorBoss = cylinderAlongZ(0.10, 0.54, darkMaterial, 24);
-  springAnchorBoss.position.copy(springAnchor);
+  // Spring d runs in front of lever C (z 0.64), clear of C's rest stop;
+  // the anchor stud stands out from the top bar to that plane.
+  const springPlaneZ = 0.64;
+  const springAnchorBoss = cylinderAlongZ(0.10, springPlaneZ + 0.11 + 0.14,
+    darkMaterial, 24);
+  springAnchorBoss.position.set(springAnchor.x, springAnchor.y,
+    (springPlaneZ + 0.11 - 0.14) / 2);
   springAnchorBoss.userData.role = 'fixed-anchor-of-tension-spring-d';
   root.add(springAnchorBoss);
-  const spring = makeDynamicCoilSpring(
-    new THREE.LineBasicMaterial({ color: PALETTE.brass }),
-  );
+  const spring = makeDynamicCoilSpring(brassMaterial);
   root.add(spring);
 
   const stateAtTime = (time) => {
@@ -755,7 +765,10 @@ function alternatingWeightedRackDrive(movement) {
     };
   };
 
-  const springAttachmentLocal = new THREE.Vector3(-0.02, -0.62, 0);
+  const springAttachmentLocal = new THREE.Vector3(-0.02, -0.62,
+    springPlaneZ - elbowPivot.z);
+  const springAnchorFront = new THREE.Vector3(springAnchor.x, springAnchor.y,
+    springPlaneZ);
   const update = (time) => {
     const state = stateAtTime(time);
     crosshead.position.y = state.crossheadY;
@@ -778,7 +791,13 @@ function alternatingWeightedRackDrive(movement) {
     const springAttachment = springAttachmentLocal.clone()
       .applyAxisAngle(new THREE.Vector3(0, 0, 1), elbowLever.rotation.z)
       .add(elbowPivot);
-    spring.userData.setEndpoints(springAttachment, springAnchor);
+    // The coil's end legs stop at the stud surfaces (hooked round them).
+    const springAxis = springAnchorFront.clone().sub(springAttachment)
+      .normalize();
+    spring.userData.setEndpoints(
+      springAttachment.clone().addScaledVector(springAxis, 0.056),
+      springAnchorFront.clone().addScaledVector(springAxis, -0.101),
+    );
 
     root.userData.contacts = {
       elbowLeverCToRightRackUpperCrossover: {

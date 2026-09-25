@@ -69,14 +69,16 @@ test('movement 476 is one stationary Lansdell Y-fork with two B suctions, centra
   assert.equal(degreesOfFreedom.mechanicalMovingParts, 0);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 0);
   assert.equal(degreesOfFreedom.prescribedAdvectiveFlowPhases, 2);
-  for (const removed of [blocks.basin, blocks.basinWater]) {
+  // The basin and the flow notation (streamlines, steam core and jet,
+  // markers) are not presented; the fork is opaque round pipe.
+  for (const removed of [blocks.basin, blocks.basinWater, blocks.steamCore,
+    blocks.steamJet, ...blocks.waterStreams, ...blocks.steamMarkers,
+    ...blocks.waterMarkers]) {
     assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
   }
   for (const block of [
-    blocks.dischargePipe, blocks.steamCore, blocks.steamJet,
-    blocks.steamPipe, ...blocks.suctionBranches,
-    ...blocks.waterStreams, ...blocks.steamMarkers,
-    ...blocks.waterMarkers]) assert.ok(block.parent === model.root, `${block.userData.role} parent`);
+    blocks.dischargePipe, blocks.steamPipe, ...blocks.suctionBranches,
+  ]) assert.ok(block.parent === model.root, `${block.userData.role} parent`);
 
   const roles = [];
   const belts = [];
@@ -90,7 +92,6 @@ test('movement 476 is one stationary Lansdell Y-fork with two B suctions, centra
     'stationary-suction-pipe-B-2-of-two-to-fork',
     'stationary-single-discharge-pipe-C-above-fork',
     'stationary-jet-pipe-A-entering-behind-right-B-at-fork',
-    'upward-steam-jet-on-centerline-of-C',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

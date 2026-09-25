@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
 import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
 import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
 import {
@@ -494,12 +495,15 @@ function breastWaterWheel(movement) {
       0.16,
     ),
   ];
-  const feedWater = makeTube(
-    feedPathPoints,
-    0.13,
+  // The feed is a sheet of water the width of the headrace water, spilling
+  // over the sill into the cells (a flattened tube, not a round hose).
+  const feedWater = new THREE.Mesh(
+    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
+      feedPathPoints.map((point) => point.clone().setZ(0)), false, 'centripetal'), 48, 0.09, 16, false)
+      .scale(1, 1, 0.46 / 0.09).translate(0, 0, 0.16),
     waterMaterial,
-    'inlet-stream-turning-from-headrace-into-breast-cells',
   );
+  feedWater.userData.role = 'inlet-stream-turning-from-headrace-into-breast-cells';
   root.add(feedWater);
   const feedCurve = new THREE.CatmullRomCurve3(
     feedPathPoints,
@@ -517,17 +521,14 @@ function breastWaterWheel(movement) {
     flowMarkers.push(marker);
   }
 
-  const tailrace = makeTube(
-    [
-      new THREE.Vector3(-1.12, -2.92, 0.06),
-      new THREE.Vector3(-1.64, -3.08, 0.06),
-      new THREE.Vector3(-2.86, -3.10, 0.06),
-      new THREE.Vector3(-4.34, -3.00, 0.06),
-    ],
-    0.20,
-    waterMaterial,
-    'free-tailwater-after-breast-cell-discharge',
+  // The discharged water runs away left as a shallow body on the race
+  // floor, the width of the floats, not a hose-like tube.
+  const tailrace = new THREE.Mesh(
+    waterVolumeGeometry({ xMin: -4.34, xMax: -1.0, surfaceY: -2.92, bottomY: -3.29, zMin: 0.06 - floatAxialWidth / 2, zMax: 0.06 + floatAxialWidth / 2 }),
+    waterVolumeMaterial(),
   );
+  tailrace.renderOrder = 1;
+  tailrace.userData.role = 'free-tailwater-after-breast-cell-discharge';
   root.add(tailrace);
   const foundation = new THREE.Mesh(
     new THREE.BoxGeometry(9.20, 0.30, 1.82),

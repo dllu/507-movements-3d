@@ -931,8 +931,10 @@ function singleActingBeamRackParallelMotion(movement) {
   chainRod.position.x = -chainGuideRadius;
   chainRod.userData.axis = new THREE.Vector3(0, 1, 0);
   chainRod.userData.role = 'vertical-rod-suspended-from-articulated-chain-D';
+  // Brown draws the rod below D as wide as the chain above it (its eye's
+  // diameter), not a thin wire.
   const chainRodBody = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30 * sourceScale, 12 * sourceScale,
+    new THREE.BoxGeometry(0.90 * sourceScale, 12 * sourceScale,
       2 * geometry.chainInnerHalfDepth),
     chainMaterial,
   );

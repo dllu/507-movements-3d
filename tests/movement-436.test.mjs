@@ -87,7 +87,11 @@ test('movement 436 stacks twelve fixed radial shutes above eighteen tangential c
   for (const fixed of [blocks.fixedGuideAssembly, blocks.casing,
     blocks.inletFlume, blocks.inletWater, blocks.lowerBasin,
     blocks.foundation, blocks.upperBearing, blocks.lowerBearing,
-    ...blocks.flowPathTubes]) assert.equal(fixed.parent, model.root);
+  ]) assert.equal(fixed.parent, model.root);
+  // Flow paths and particles are notation; source presentation hides them.
+  for (const notation of [...blocks.flowPathTubes, ...blocks.flowMarkers]) {
+    assert.equal(notation.parent, null);
+  }
   assert.ok(geometry.guideRowCenterY > geometry.runnerRowCenterY,
     'stationary guide row is physically above runner row');
 

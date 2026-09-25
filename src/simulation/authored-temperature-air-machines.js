@@ -447,7 +447,6 @@ function temperatureAirMachine(movement) {
 
   const airBubbleMaterial = new THREE.MeshBasicMaterial({
     color: 0xbfefff,
-    depthTest: false,
     depthWrite: false,
     transparent: true,
     opacity: 0.96,
@@ -632,8 +631,11 @@ function temperatureAirMachine(movement) {
       pathFraction,
       position,
       radiusScale,
+      // Air inside the opaque pressure pipe is not seen; only the bubbles
+      // rising free through the warm bath are.
       visible: Math.abs(state.screwAngularVelocity) > 0.018
-        && fade > 0.015,
+        && fade > 0.015
+        && pathDistance > warmBathEntryDistance,
       volumeRatio,
       warmProgress,
     };

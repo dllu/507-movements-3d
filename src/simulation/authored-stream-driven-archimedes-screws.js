@@ -3,7 +3,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import { horizontalRing } from './horizontal-turbine-solids.js';
 import { ring } from './finite-plate-geometry.js';
-import { ruledWaterLines, ruledWaterMaterial } from './ruled-water-lines.js';
+import { waterVolume } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -539,40 +539,9 @@ function streamDrivenArchimedesScrew(movement) {
   streamBed.position.set(lowerEnd.x + 0.20, groundY + 0.06, 0);
   streamBed.userData.role = 'fixed-stream-bed-around-lower-water-wheel';
   root.add(streamBed);
-  // Brown rules the stream surface with broken strokes running with the
-  // current (local z) round the wheel, not a water box.
-  const streamWater = new THREE.Mesh(
-    ruledWaterLines({ xMin: -2.7, xMax: 2.7, surfaceY: 3.9, rows: 29, spacing: 0.23, thickness: 0.035, depth: 0.012, dash: [0.5, 1.7], gap: [0.15, 0.5], seed: 443 })
-      .rotateX(-Math.PI / 2).rotateY(Math.PI / 2),
-    ruledWaterMaterial(),
-  );
-  // Brown rules the stream with long, gently wavering strokes running across
-  // the picture, not short straight dashes: replace the shared dashes with
-  // deterministic wavy strokes in the same surface plane.
-  {
-    let state = 443;
-    const random = () => { state = (state * 1664525 + 1013904223) >>> 0; return state / 4294967296; };
-    const strokes = [];
-    for (let row = 0; row < 32; row += 1) {
-      const z = -3.1 + row * 0.2 + (random() - 0.5) * 0.06;
-      let x = -7.4 + random() * 0.8;
-      while (x < 3.6) {
-        const length = Math.min(3.6 - x, 1.2 + random() * 2.4);
-        if (length > 0.3) {
-          const phase = random() * FULL_TURN, wave = 0.9 + random() * 0.8;
-          const points = Array.from({ length: 25 }, (_, i) => {
-            const px = x + length * i / 24;
-            return new THREE.Vector3(px, 0, z + 0.05 * Math.sin(FULL_TURN * px / wave + phase) + 0.03 * (px - x));
-          });
-          strokes.push(cappedTube(new THREE.CatmullRomCurve3(points), 36, 0.018, 5));
-        }
-        x += length + 0.25 + random() * 0.7;
-      }
-    }
-    streamWater.geometry.dispose();
-    streamWater.geometry = mergeGeometries(strokes);
-    strokes.forEach(stroke => stroke.dispose());
-  }
+  // The stream is a translucent water body running with the current round
+  // the lower wheel, from its surface down to the bed.
+  const streamWater = waterVolume({ xMin: -7.4, xMax: 3.6, surfaceY: 0, bottomY: groundY + 0.075 - streamSurfaceY, zMin: -3.1, zMax: 3.3 });
   streamWater.position.set(lowerEnd.x + 0.20, streamSurfaceY, 0);
   streamWater.userData.role =
     'stream-immersing-lower-screw-inlet-and-driving-wheel';

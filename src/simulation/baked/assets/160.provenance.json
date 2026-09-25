@@ -205,7 +205,7 @@
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/solids.js",
-      "sha256": "febaef6316ebc95e8c38148d64982cf815ccb05729e2471e7c09842f3788fbc9"
+      "sha256": "7f34fe753de2b2f34ec98fd64bc96b88b9210c43c4c384909809640e45a52869"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/update-solids.js",
@@ -238,6 +238,6 @@
   "velocityClosure": 1.5124728726390035e-14,
   "maxFKError": 3.0810435484902763e-7,
   "samples": 2001,
-  "bytes": 892145,
-  "sha256": "18bdfacc2f0abf3c80a077e362146e5993a97e801e6532a336f2c72e31b8ae05"
+  "bytes": 892968,
+  "sha256": "9319a8deecfaee6361cf26fdcf5f14f89e3d2a5b420dfd2b500656f9664477d1"
 }

@@ -312,29 +312,20 @@ function stoneLewis(movement) {
     'single-stone-translated-only-after-packing-contact');
   stone.position.y = sourceVerticalOriginScene;
   root.add(stone);
+  // Brown's ragged outline is his break-line convention for a stone that
+  // runs on; the model shows a whole squared block of the same extent, with
+  // the lewis hole cut down from its top face.
   const sourceStoneOutline = [
     [0.75, 4],
-    [1.361876, 3.943847],
-    [2.24228, 4.051651],
     [3.5, 4],
-    [3.374227, 3.332955],
-    [3.553901, 2.66816],
-    [3.589836, 1.572148],
-    [3.464064, 0.763614],
     [3.5, 0],
-    [1.829029, 0.116787],
-    [-0.347574, 0.009883],
-    [-1.854291, 0.134755],
     [-3.5, 0],
-    [-3.381521, 0.997191],
-    [-3.59713, 2.003366],
     [-3.5, 4],
-    [-2.734694, 3.925879],
-    [-1.315268, 4.015716],
     [-0.75, 4],
     [-0.75, 1.333333],
     [0.75, 1.333333],
   ];
+
   // The lewis hole is a blind pocket, not a slot through the block. Brown's
   // plate is a section through the hole; the stone's front face is that
   // section plane, so the pocket opens at the top and at the cut face only.

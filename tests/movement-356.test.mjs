@@ -390,12 +390,16 @@ test('movement 356 renderer binds all three gimbal axes and the ball shaft', () 
   }
 
   assert.equal(blocks.ballSpinIndexes.length, 4,
-    'asymmetric indexes make ball spin visible');
+    'the ball spin indexes stay as blocks for review');
+  for (const index of blocks.ballSpinIndexes) {
+    assert.equal(index.parent, null, 'Brown draws the ball plain: no spin stripes or dots');
+  }
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.equal(meshCount, 27); // 38 less 11 ink rims, edge lines and the equator line
+  // 38 less 11 ink rims, edge lines and the equator line, less 4 spin indexes.
+  assert.equal(meshCount, 23);
   disposeModel(model.root);
 });
 

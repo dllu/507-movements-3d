@@ -1,4 +1,4 @@
-import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
+import {correctEjectorTrapParts, ejectorOperatingStage} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -393,10 +393,23 @@ function brearBilgeEjector(movement) {
     }
   }
 
+  // The display loop starts the ejector, runs it and shuts it off, so the
+  // water level itself shows the process: the steam purges the air (the
+  // water still at the bilge, the foot of B), the vacuum draws the water
+  // up through B, D and C, the ejector runs full and discharges through C,
+  // and when the steam is shut off the water falls back down B. The flow
+  // quantities below are those of the running stage.
+  const bilgeLevelY = -2.91;
+  const outletLevelY = 3.40;
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
     const phase = cycleTime / cycleDuration;
+    const operation = ejectorOperatingStage(phase);
+    const waterLevelY = bilgeLevelY
+      + (outletLevelY - bilgeLevelY) * operation.levelFraction;
     return {
+      ...operation,
+      waterLevelY,
       cycleTime,
       inletAxialMomentumNewton,
       mixedStreamSpeedMetrePerSecond,
@@ -435,6 +448,7 @@ function brearBilgeEjector(movement) {
         Math.sin(Math.PI * progress) ** 0.55,
       );
     }
+    root.userData.updateWorkingParts?.(time, state);
   };
 
   root.userData = {
@@ -471,7 +485,7 @@ function brearBilgeEjector(movement) {
       markerContinuity:
         'Every steam and water marker traverses one complete inlet-to-outlet curve by arc length with getPointAt and shrinks continuously to zero at both recycling endpoints.',
       operatingSequence:
-        'The steam jet first purges air from D and C, lowering pressure in B; after priming, atmospheric pressure raises bilge water through B and the continuing jet entrains it into a regular mixed discharge through C. The loop depicts that steady second stage.',
+        'The steam jet first purges air from D and C, lowering pressure in B; after priming, atmospheric pressure raises bilge water through B and the continuing jet entrains it into a regular mixed discharge through C. The presented loop shows the water level doing this: it stands at the bilge during the purge, rises through B, D and C, holds full while the ejector runs and the discharge issues from the open mouth of C, and falls back down B when the steam is shut off. The level is a prescribed smoothstep, not an integrated priming transient; the flow quantities are those of the steady running stage.',
     },
     fidelity: 'authored',
     flowPaths: {
@@ -481,7 +495,7 @@ function brearBilgeEjector(movement) {
     },
     geometry,
     mechanism:
-      'The ejector has no moving mechanism. Fixed side pipe A enters chamber D, turns through a smooth elbow, and ends in an upward nozzle coaxial with discharge C. Its high-speed steam jet purges D and C and maintains a sub-atmospheric pressure over suction B. Bilge water consequently rises through B, divides around the unobstructed central nozzle, is entrained upward by the jet, recombines, and leaves continuously through C. Chamber, pipes, nozzle, and support remain stationary; only the two fluid marker populations advance.',
+      'The ejector has no moving mechanism. Fixed side pipe A enters chamber D, turns through a smooth elbow, and ends in an upward nozzle coaxial with discharge C. Its high-speed steam jet purges D and C and maintains a sub-atmospheric pressure over suction B. Bilge water consequently rises through B, divides around the unobstructed central nozzle, is entrained upward by the jet, recombines, and leaves continuously through C. Chamber, pipes, nozzle, and support remain stationary; only the two fluid marker populations advance in the offline model, and the presented water level rises through B, D and C, discharges from the mouth of C and falls back as the ejector is started, run and shut off.',
     motion: {
       cycleDuration,
       dischargeDirection: new THREE.Vector3(0, 1, 0),
@@ -549,7 +563,7 @@ function brearBilgeEjector(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.10, -3.22, -1.80),
-    new THREE.Vector3(3.38, 3.64, 1.80),
+    new THREE.Vector3(3.38, 4.00, 1.80),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(7.4, 3.7, 9.0);

@@ -445,7 +445,7 @@ test('movement 467 has finite render bounds and movement 507 remains the next au
   disposeModel(model507.root);
 });
 
-test('movement 467 is drawn as Brown’s section: back half-shells, hatched cut faces at z=0 and a butterfly wing', () => {
+test('movement 467 is drawn as Brown’s section: back half-shells, plain cut faces at z=0 and a butterfly wing', () => {
   const { model } = movementModel();
   const { blocks } = model.root.userData;
   model.root.updateMatrixWorld(true);
@@ -459,13 +459,13 @@ test('movement 467 is drawn as Brown’s section: back half-shells, hatched cut 
   }
   for (const section of [blocks.ramSection, blocks.cylinderSection,
     blocks.baseSection]) {
-    assert.equal(section.children.length, 2);
-    for (const face of section.children) {
-      assert.equal(face.userData.presentationOnly, true);
-      assert.equal(face.castShadow, false);
-      const box = new THREE.Box3().setFromObject(face);
-      assert.ok(box.min.z >= -1e-6 && box.max.z <= 0.0071);
-    }
+    // One plain solid face per cut: no hatch strokes (engraving notation).
+    assert.equal(section.isMesh, true);
+    assert.equal(section.children.length, 0);
+    assert.equal(section.userData.presentationOnly, true);
+    assert.equal(section.castShadow, false);
+    const box = new THREE.Box3().setFromObject(section);
+    assert.ok(box.min.z >= -1e-6 && box.max.z <= 0.0041);
   }
   // The lever passes behind the column, hidden by the back half-shells.
   const lever = new THREE.Box3().setFromObject(blocks.leverBar);

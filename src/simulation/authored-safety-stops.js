@@ -169,7 +169,10 @@ function otisSafetyStop(movement) {
   const catchTime = 5.7;
   const ropeTongueDepth = 0.10;
   const ropeLayerZ = 0.44 + ropeTongueDepth / 2 + 0.052 + 0.001;
-  const upperRopeAnchor = new THREE.Vector3(0, 5.2, ropeLayerZ);
+  // Rope a runs on up past Brown's crop to the (unmodelled) hoist, so its
+  // break and upper piece stay well out of every framed view instead of a
+  // short stub floating just above the platform.
+  const upperRopeAnchor = new THREE.Vector3(0, 12, ropeLayerZ);
   const maximumRopeGap = 0.48;
 
   const leftLowerJointAtAngle = (angle) => new THREE.Vector3(

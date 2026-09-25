@@ -85,7 +85,10 @@ function buildBroadHollowFrame(root, bx, by, shaftCenter) {
   ]));
   const opening = poly(map([
     [455, 410], [690, 404], [650, 420], [600, 465], [570, 520], [557, 590],
-    [562, 650], [590, 710], [640, 760], [660, 888], [400, 888], [405, 860],
+    // The S-arm's inner edge is kept about 33 px inside its outer edge all
+    // the way to the foot (it used to cross it at y 760, pinching the
+    // casting in two).
+    [562, 650], [575, 705], [605, 760], [630, 820], [640, 888], [400, 888], [405, 860],
     [420, 810], [445, 760], [475, 690], [487, 620], [485, 570], [465, 490],
     [452, 440],
   ]));
@@ -102,8 +105,10 @@ function buildBroadHollowFrame(root, bx, by, shaftCenter) {
     rect(203, 690, 309, 720));
   // Reservoir C: a recessed channel along the hollow arm's mid-line.
   const centre = spline(map([[740, 212], [741, 300], [727, 410], [685, 443],
-    [630, 473], [598, 515], [578, 565], [572, 610], [580, 660], [605, 715],
-    [645, 772], [667, 812]]));
+    [630, 473], [598, 515], [578, 565], [572, 610], [580, 660], [598, 712],
+    [615, 745]]));
+  // The channel stops inside the S-arm above its foot; running on to the
+  // foot it crossed the arm's edge and cut a break through the casting.
   const channelHalfWidth = 0.05;
   const sides = [[], []];
   centre.forEach((point, index) => {

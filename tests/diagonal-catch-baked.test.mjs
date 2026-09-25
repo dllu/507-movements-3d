@@ -8,13 +8,19 @@ import {createDiagonalContactProjector} from '../src/simulation/mujoco-diagonal-
 
 const bundle=JSON.parse(gunzipSync(fs.readFileSync(new URL('../src/simulation/baked/assets/181.json.gz',import.meta.url))));
 const snapshot=model=>Object.values(model.root.userData.parts).flatMap(p=>p.matrixWorld.elements);
-for(const id of [181,182])test(`${id} baked assembly repeats, retains its weight joints and sections the rod`,()=>{
+for(const id of [181,182])test(`${id} baked assembly repeats, retains its weight joints and moves the whole rod`,()=>{
  const model=makeBakedDiagonalCatchModel(bundle,id),root=model.root,u=root.userData;
  try{
-  const initial=snapshot(model),section=root.getObjectByName('sectioned-piston-rod'),rodBounds=new THREE.Box3().setFromObject(section);
+  const initial=snapshot(model),rod=root.getObjectByName('piston-rod');
+  const rodOffset=new THREE.Box3().setFromObject(rod).min.y-new THREE.Box3().setFromObject(u.parts['source-projecting-piston-rod-tappet-shoe#24']).min.y;
+  assert.ok(!/hatch/.test(JSON.stringify(Object.keys(u.parts))),'no hatch notation');
+  root.traverse(o=>assert.ok(!o.isLine,'no line notation'));
   for(let i=0;i<=360;i++){
    model.update(i/20);assert.ok(snapshot(model).every(Number.isFinite));
-   assert.deepEqual(new THREE.Box3().setFromObject(section).min.toArray(),rodBounds.min.toArray());
+   const rb=new THREE.Box3().setFromObject(rod);
+   assert.ok(rb.max.y>2.64+.5&&rb.min.y<-3.325-.5,'whole piston rod runs past both picture edges');
+   const tappet=new THREE.Box3().setFromObject(u.parts['source-projecting-piston-rod-tappet-shoe#24']);
+   assert.ok(Math.abs((rb.min.y-tappet.min.y)-rodOffset)<1e-9,'rod travels with its tappet');
    for(const name of ['upperWeight','lowerWeight','catchWeight']){
     const anchor=root.getObjectByName('anchor:'+name).getWorldPosition(new THREE.Vector3());
     const weight=root.getObjectByName('body:'+name).getWorldPosition(new THREE.Vector3());
@@ -70,7 +76,7 @@ test('serialized working solids stay inside the qualified planar contact envelop
  }finally{model.dispose();}
 });
 
-for(const id of [181,182])test(`${id} synchronous registry route plays the same baked assembly with rods cut at the drawing edge`,async()=>{
+for(const id of [181,182])test(`${id} synchronous registry route plays the same baked assembly with whole weighted rods`,async()=>{
  const {createAuthoredDiagonalCatchMovement}=await import('../src/simulation/authored-diagonal-catches.js');
  const {diagonalCatchKeys}=await import('../src/simulation/baked/diagonal-catch-keys.js');
  const {DIAGONAL_CATCH_ROD_EDGE_Y}=await import('../src/simulation/mujoco-diagonal-catch/update-solids.js');
@@ -92,7 +98,7 @@ for(const id of [181,182])test(`${id} synchronous registry route plays the same 
     }
    }
    for(const rod of Object.values(a).filter(m=>/vertical-rod/.test(m.name)))
-    assert.ok(Math.abs(new THREE.Box3().setFromObject(rod).min.y-DIAGONAL_CATCH_ROD_EDGE_Y)<1e-6,'rod ends at the drawing edge');
+    assert.ok(new THREE.Box3().setFromObject(rod).min.y<DIAGONAL_CATCH_ROD_EDGE_Y-.3,'whole rod runs below the drawing edge to its weight');
   }
   assert.ok(worst<3e-4,`compact keys follow the bake: ${worst}`);
  }finally{baked.dispose();live.dispose();}

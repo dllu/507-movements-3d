@@ -1,5 +1,6 @@
 import {correctChainPump} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
+import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -575,6 +576,14 @@ function chainPump(movement) {
     update,
   };
   correctChainPump(root);
+  // Brown rules water round the lower wheel: the pump stands in a body of
+  // water that submerges the return wheel and the chain intake.
+  reservoir.visible = true;
+  reservoir.geometry.dispose();
+  reservoir.geometry = waterVolumeGeometry({ xMin: -3.0, xMax: 1.6, surfaceY: 0, bottomY: groundY - reservoirSurfaceY, zMin: -0.7, zMax: 0.58 });
+  reservoir.position.set(0, reservoirSurfaceY, 0);
+  reservoir.material = waterVolumeMaterial();
+  reservoir.renderOrder = 1;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.10, -2.20, -.76),
     new THREE.Vector3(1.70, 3.61, .60),

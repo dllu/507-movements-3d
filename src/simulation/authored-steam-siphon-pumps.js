@@ -1,4 +1,4 @@
-import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
+import {correctEjectorTrapParts, ejectorOperatingStage} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -352,6 +352,9 @@ function lansdellSteamSiphonPump(movement) {
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
     return {
+      // Presented start, run and stop loop; the flows below are those of
+      // the steady running stage.
+      ...ejectorOperatingStage(cycleTime / cycleDuration),
       cycleTime,
       inletMomentumNewton,
       mixedSpeedMetrePerSecond,
@@ -391,6 +394,7 @@ function lansdellSteamSiphonPump(movement) {
         Math.sin(Math.PI * progress) ** 0.55,
       );
     }
+    root.userData.updateWorkingParts?.(time, state);
   };
 
   root.userData = {
@@ -419,7 +423,7 @@ function lansdellSteamSiphonPump(movement) {
     },
     dynamics: {
       assumptionScope:
-        'The steady visual state specifies the fork pressure and uses choked ideal-steam flow, equal branch suction, and one-dimensional equal-pressure momentum mixing. Startup air purge, condensation, diffuser recovery, turbulence, cavitation, pipe friction, leakage, unequal source heads, and downstream back-pressure are not integrated.',
+        'The steady visual state specifies the fork pressure and uses choked ideal-steam flow, equal branch suction, and one-dimensional equal-pressure momentum mixing. Startup air purge, condensation, diffuser recovery, turbulence, cavitation, pipe friction, leakage, unequal source heads, and downstream back-pressure are not integrated. The presented loop starts, runs and shuts off the siphon: the discharge issuing from the open mouth of C grows once the water reaches it, holds while running and collapses at shut-off (prescribed smoothstep ramps).',
       markerContinuity:
         'Every marker follows one complete A-to-C or B-to-C curve by arc length with getPointAt and shrinks continuously to zero at both recycling endpoints.',
       unbrokenCurrent:
@@ -504,7 +508,7 @@ function lansdellSteamSiphonPump(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.25, -3.15, -1.52),
-    new THREE.Vector3(2.52, 3.66, 1.52),
+    new THREE.Vector3(2.52, 4.02, 1.52),
   );
   root.userData.cameraDistanceScale = 1.04;
   root.userData.cameraDirection = new THREE.Vector3(7.2, 3.8, 9.4);

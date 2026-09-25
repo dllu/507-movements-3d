@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import source from './source.js';
 import {bellCrankCordPath} from './cord-path.js';
-import {bellCrankCordGeometry,applyBellCrankShaftFinish} from './finish.js';
+import {bellCrankCordGeometry} from './finish.js';
 import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
@@ -37,7 +37,6 @@ export function makeBellCrankGeometry({amplitude=.5,cordSegments=64,outputSegmen
  add('frontFace',ring(shaft+.0015,insetRadius,.10,.125,256),'pulley',PALETTE.driven);
  add('pulleyHub',ring(shaft+.0015,hub,.125,.17,192),'pulley',PALETTE.driven);
  add('pulleyShaft',translated(disk(shaft,-.24,.19,128),centers.pulley),'fixed',PALETTE.ink);
- applyBellCrankShaftFinish(parts.pulleyShaft.material);
  const inputPin=local(source.circles.inputPin.center),outputPin=local(source.circles.outputPin.center),inputEnd=local(source.cord.inputEnd),outputEnd=local(source.cord.outputEnd);
  const gripOffset=.14,gripLength=.025,gripClearance=.0015;
  const toward=(a,b)=>new THREE.Vector3(...b).sub(new THREE.Vector3(...a)).normalize().toArray();

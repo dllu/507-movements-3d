@@ -116,7 +116,8 @@ function siphonPressureGauge(movement) {
     metalness: 0.42,
     roughness: 0.36,
   });
-  const scaleMaterial = matte(PALETTE.paper, {
+  // An ivory scale board, distinct from the page, carries the marks.
+  const scaleMaterial = matte(0xe6dcc3, {
     roughness: 0.86,
   });
   const scaleInkMaterial = matte(PALETTE.ink, {
@@ -264,12 +265,14 @@ function siphonPressureGauge(movement) {
     new THREE.BoxGeometry(1.13, scaleTop - scaleBottom, 0.11),
     scaleMaterial,
   ), 'fixed-zero-through-six-pressure-scale-board');
-  scaleBoard.position.set(1.72, (scaleBottom + scaleTop) / 2, -0.30);
+  // The board stands just behind the tube plane; its marks read from the
+  // front only (the board hides them from behind).
+  scaleBoard.position.set(1.72, (scaleBottom + scaleTop) / 2, -0.06);
   const scaleSpine = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.035, scaleTop - scaleBottom - 0.12, 0.045),
     scaleInkMaterial,
   ), 'vertical-pressure-scale-spine');
-  scaleSpine.position.set(1.28, (scaleBottom + scaleTop) / 2, -0.22);
+  scaleSpine.position.set(1.28, (scaleBottom + scaleTop) / 2, 0.01);
   const scaleTicks = [];
   const scaleNumerals = [];
   for (let value = 0; value <= 6; value += 1) {
@@ -278,10 +281,10 @@ function siphonPressureGauge(movement) {
       new THREE.BoxGeometry(value === 0 ? 0.43 : 0.34, 0.038, 0.05),
       scaleInkMaterial,
     ), `scale-mark-${value}`);
-    tick.position.set(value === 0 ? 1.48 : 1.435, y, -0.21);
+    tick.position.set(value === 0 ? 1.48 : 1.435, y, 0.02);
     tick.userData.value = value;
     const numeral = makeScaleDigit(value, scaleInkMaterial);
-    numeral.position.set(2.00, y, -0.21);
+    numeral.position.set(2.00, y, 0.004);
     numeral.scale.setScalar(0.72);
     scaleTicks.push(tick);
     scaleNumerals.push(numeral);

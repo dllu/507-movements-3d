@@ -103,9 +103,11 @@ export function correctForcePumpParts(root,id){
     liquid=chamberContents(b.chamberWater,profile);gas=chamberContents(b.compressedAir,profile);
     b.chamberWater.position.x=x;b.compressedAir.position.x=x;b.compressedAir.material.opacity=.14;
     d.chamberEnvelope={profile,...liquid};
-    // Brown's side outlet leaves the neck, sweeps down under the bulb's
-    // rounded bottom and rises beside it: an S with the vessel's own curve.
-    const side=new THREE.CatmullRomCurve3([[x,.95],[x-.62,.95],[x-1.08,.72],[x-1.40,1.00],[x-1.47,1.60],[x-1.47,2.75]].map(([px,py])=>new THREE.Vector3(px,py,0)),false,'centripetal');
+    // Brown's side outlet leaves the neck, sweeps under the bulb's rounded
+    // bottom and rises beside it. The dip is kept shallow enough that the
+    // centreline radius stays above 0.32 everywhere (the pipe's outer radius
+    // is 0.24), so the inner wall of the bend never folds into a sliver.
+    const side=new THREE.CatmullRomCurve3([[x,.95],[x-.40,.95],[x-.78,.88],[x-1.10,.90],[x-1.35,1.08],[x-1.46,1.40],[x-1.47,1.80],[x-1.47,2.75]].map(([px,py])=>new THREE.Vector3(px,py,0)),false,'centripetal');
     replace(b.selectedOutlet,curvedPipeWall(side,.17,.24,80));replace(b.selectedOutletWater,new THREE.TubeGeometry(side,80,.15,14,false));output=side;
     const dip=new THREE.LineCurve3(new THREE.Vector3(x,1.25,0),new THREE.Vector3(x,4.10,0));
     replace(b.alternativeOutlet,curvedPipeWall(dip,.145,.20,32));b.alternativeCap.position.set(x,4.15,0);

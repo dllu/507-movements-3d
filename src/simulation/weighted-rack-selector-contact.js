@@ -59,14 +59,23 @@ export function installWeightedRackSelector(root){
  const lug=add(plate(clip.difference(clip.union(capsule([0,g.guideY-.10],[lx,ly],.10,32),poly(circle([lx,ly],.15,64))),poly(circle([lx,ly],.056,64))),-.125,.125),b.rightRack.userData.body.material,'inboard-upper-rack-lug-for-elbow-C');
  const roller=add(boredLatheGeometry([{axial:-.11,radial:r},{axial:.11,radial:r}],.058,64),b.rightRack.userData.pivotBore.material,'upper-rack-lug-contact-roller');roller.rotation.x=Math.PI/2;roller.position.set(lx,ly,.32);
  const axle=add(new T.CylinderGeometry(.055,.055,.46,32),roller.material,'upper-lug-roller-axle');axle.rotation.x=Math.PI/2;axle.position.set(lx,ly,.19);
- const stud=add(new T.CylinderGeometry(.055,.055,.37,32),roller.material,'elbow-spring-attachment-standoff',b.elbowLever);stud.rotation.x=Math.PI/2;stud.position.set(-.02,-.62,.15);
+ const stud=add(new T.CylinderGeometry(.055,.055,.655,32),roller.material,'elbow-spring-attachment-standoff',b.elbowLever);stud.rotation.x=Math.PI/2;stud.position.set(-.02,-.62,.2925);
  // Fixed stop bears on the curved stem, with a nonzero moment arm; a pin
  // against the circular pivot boss alone would not arrest rotation.
- const stop=add(new T.CylinderGeometry(.065,.065,.94,32),roller.material,'fixed-selector-rest-stop',b.fixedFrame);stop.rotation.x=Math.PI/2;
+ const stop=add(new T.CylinderGeometry(.065,.065,.72,32),roller.material,'fixed-selector-rest-stop',root);stop.rotation.x=Math.PI/2;
  const stopPhi=-.23,sx=-R+(R+w+.065)*Math.cos(stopPhi),sy=(R+w+.065)*Math.sin(stopPhi);
  stop.position.set(b.elbowLever.position.x+sx*Math.cos(rest)-sy*Math.sin(rest),b.elbowLever.position.y+sx*Math.sin(rest)+sy*Math.cos(rest),.16);
  const pivotXY=[b.elbowLever.position.x,b.elbowLever.position.y],stopXY=[stop.position.x,stop.position.y],anchorXY=[b.springAnchorBoss.position.x,b.springAnchorBoss.position.y];
- const bracket=add(plate(clip.difference(clip.union(capsule(pivotXY,anchorXY,.14,32),capsule(pivotXY,stopXY,.14,32),poly(circle(pivotXY,.20,64))),poly(circle(pivotXY,.132,64)),poly(circle(stopXY,.066,64)),poly(circle(anchorXY,.101,64))),-.20,-.12),b.fixedFrame.children[0].material,'fixed-selector-pivot-stop-and-spring-bracket',b.fixedFrame);
+ const bracket=add(plate(clip.difference(clip.union(capsule(pivotXY,anchorXY,.14,32),capsule(pivotXY,stopXY,.14,32),poly(circle(pivotXY,.20,64))),poly(circle(pivotXY,.132,64)),poly(circle(stopXY,.066,64)),poly(circle(anchorXY,.101,64))),-.20,-.12),b.fixedFrame.children[0].material,'fixed-selector-pivot-stop-and-spring-bracket',root);
+ // Brown's top bar carrying C's pivot and spring d's anchor is kept (the rest
+ // of the undrawn frame is not shown); a short web drops from the anchor end
+ // to the top of the right guide b casting so the bar is carried.
+ let guideTop=null;
+ const guideCurve=b.rightGuide?.userData.centerline;
+ if(guideCurve){b.rightGuide.updateMatrix();let best=Infinity;for(let i=0;i<=400;i++){const p=guideCurve.getPoint(i/400).applyMatrix4(b.rightGuide.matrix);const d=Math.hypot(p.x-anchorXY[0],p.y-anchorXY[1]);if(d<best){best=d;guideTop=[p.x,p.y];}}
+  // End on the casting's outer face, clear of the groove the rack pin runs in.
+  const ux=anchorXY[0]-guideTop[0],uy=anchorXY[1]-guideTop[1],ul=Math.hypot(ux,uy);guideTop=[guideTop[0]+ux/ul*.20,guideTop[1]+uy/ul*.20];}
+ if(guideTop){const web=add(plate(capsule(anchorXY,guideTop,.06,24),-.30,-.12),b.fixedFrame.children[0].material,'fixed-web-from-selector-bracket-to-right-guide',root);b.elbowBracketWeb=web;}
  b.leverContactIndex.geometry.dispose();b.leverContactIndex.geometry=new T.SphereGeometry(.028,16,10);
  d.updateSelectorContact=state=>{const p=state.elbowAssist.point;b.leverContactIndex.position.set(p.x,p.y,.47);};
  b.elbowCam=old;b.elbowLug=lug;b.elbowRoller=roller;b.elbowRollerAxle=axle;b.elbowSpringStud=stud;b.elbowRestStop=stop;b.elbowBracket=bracket;

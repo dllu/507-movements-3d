@@ -40,7 +40,7 @@ function presentSourceSupports(root,g){
  for(const [x0,x1] of [[74,226],[226,371]]){const plate=new THREE.Shape(),a=w(x0,baseTop),b=w(x1,baseBottom);plate.moveTo(a.x,a.y);plate.lineTo(b.x,a.y);plate.lineTo(b.x,b.y);plate.lineTo(a.x,b.y);plate.closePath();extrude(plate,-.30,.80,frame,'base-plate');}
  const left=w(6,baseBottom),right=w(514,baseBottom),depth=26*s;
  // The hatched ground is a cut solid under the base plates, not a sheet of strokes.
- const ground=groundBlock(right.x-left.x,depth,1.2,{spacing:.13,name:'hatched-ground-block'});ground.position.set((left.x+right.x)/2,left.y-depth/2,.25);group.add(ground);
+ const ground=groundBlock(right.x-left.x,depth,1.2,{name:'fixed-ground-block'});ground.position.set((left.x+right.x)/2,left.y-depth/2,.25);group.add(ground);
  root.add(group);group.updateMatrixWorld(true);
  root.userData.cameraFitBounds.union(new THREE.Box3().setFromObject(group));
 }

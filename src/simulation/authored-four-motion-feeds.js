@@ -578,10 +578,13 @@ function fourMotionFeed(movement) {
   const followerPadHalfHeight = 0.08;
   const dogX = 5.35;
   const workPlateY = 1.17;
-  const springFixedX = -4.08;
-  const springCarrierLocalX = -2.90;
+  // Brown draws the return spring inside A at its left end: it bears
+  // between A's left cross-leg and a fixed stop inside the fork, and is
+  // compressed as A feeds forward, so it pushes A back.
+  const springCarrierLocalX = -2.74;
+  const springBaseLength = 1.18;
+  const springFixedX = springCarrierLocalX + springBaseLength;
   const springY = 1.37;
-  const springBaseLength = springCarrierLocalX - springFixedX;
 
   const feedLawAtPhase = (phase) => lawWithDwells(phase, {
     endDwellEnd: 1,
@@ -660,23 +663,26 @@ function fourMotionFeed(movement) {
     new THREE.TubeGeometry(springCurve, 144, 0.035, 8, false),
     springMaterial,
   );
-  returnSpring.position.set(springFixedX, springY, -0.50);
+  returnSpring.position.set(springCarrierLocalX, springY, 0);
   returnSpring.userData.role =
-    'preloaded-carrier-return-spring-pulling-bar-A-rearward';
+    'preloaded-carrier-return-spring-pushing-bar-A-rearward';
   root.add(markShadows(returnSpring));
 
-  const rearSpringAnchor = cylinderAlongAxis(
-    0.12,
-    0.72,
-    new THREE.Vector3(0, 0, 1),
-    darkMaterial,
-    26,
+  // A's left cross-leg joining the fork rails, on which the spring bears.
+  const springLeg = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.24, 0.40),
+    carrierMaterial,
   );
-  // The spring's straight end bears on the anchor pin's face rather than
-  // running into its centre.
-  rearSpringAnchor.position.set(springFixedX - 0.12 - 0.035 - 0.005,
-    springY, -0.50);
-  rearSpringAnchor.userData.role = 'fixed-return-spring-anchor';
+  springLeg.position.set(springCarrierLocalX - 0.04, springY, 0);
+  springLeg.userData.role = 'carrier-A-left-cross-leg-bearing-return-spring';
+  carrierA.add(markShadows(springLeg));
+  // Brown's hatched stop inside the fork (its frame support is undrawn).
+  const rearSpringAnchor = new THREE.Mesh(
+    new THREE.BoxGeometry(0.20, 0.30, 0.30),
+    frameMaterial,
+  );
+  rearSpringAnchor.position.set(springFixedX + 0.10, springY, 0);
+  rearSpringAnchor.userData.role = 'fixed-return-spring-stop-inside-fork-A';
   root.add(markShadows(rearSpringAnchor));
 
   const guideRails = [-0.39, 0.39].map((z) => {
@@ -822,7 +828,7 @@ function fourMotionFeed(movement) {
       radialNormal,
       rockerAngle,
       springExtension: carrierX,
-      springLength: springBaseLength + carrierX,
+      springLength: springBaseLength - carrierX,
       springReturnActive: carrierVelocity < -1e-8,
     };
   };
@@ -837,6 +843,7 @@ function fourMotionFeed(movement) {
       0,
     );
     feedBarB.rotation.z = state.rockerAngle;
+    returnSpring.position.x = state.carrierX + springCarrierLocalX;
     returnSpring.scale.x = state.springLength / springBaseLength;
     root.userData.contacts = {
       axialCamToCarrierProjection: {

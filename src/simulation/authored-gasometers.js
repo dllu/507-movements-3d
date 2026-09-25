@@ -133,6 +133,38 @@ function presentCounterweightedSection(root) {
     web.userData.role = 'plain-pulley-web';
     rotor.add(web);
   }
+  // Plate 479 draws each suspension as a heavy flat band lapping a
+  // flat-faced pulley between flanges, not a thin round cord in a groove.
+  // The band's centre line stays on the rope pitch radius.
+  const radius = 0.46, bandWidth = 0.2, bandThickness = 0.1;
+  const face = radius - bandThickness / 2;
+  for (const pulley of blocks.pulleys) {
+    const tread = pulley.userData.tread;
+    tread.geometry.dispose();
+    tread.geometry = boredLatheGeometry([
+      { radial: face + 0.07, axial: -0.14 },
+      { radial: face + 0.07, axial: -0.11 },
+      { radial: face, axial: -0.11 },
+      { radial: face, axial: 0.11 },
+      { radial: face + 0.07, axial: 0.11 },
+      { radial: face + 0.07, axial: 0.14 },
+    ], 0.34, 96);
+  }
+  const lap = new THREE.Shape();
+  lap.absarc(0, 0, radius + bandThickness / 2, 0, Math.PI, false);
+  lap.absarc(0, 0, face + 0.001, Math.PI, 0, true);
+  blocks.ropeArcs.forEach((arc, index) => {
+    const center = blocks.pulleys[index].position;
+    arc.geometry.dispose();
+    arc.geometry = new THREE.ExtrudeGeometry(lap, { depth: bandWidth, bevelEnabled: false, curveSegments: 48 })
+      .translate(center.x, center.y, center.z - bandWidth / 2);
+    arc.userData.role = arc.userData.role.replace('semicircular-contact-arc', 'flat-band-lap');
+  });
+  for (const run of [...blocks.innerRopeSegments, ...blocks.outerRopeSegments]) {
+    run.geometry.dispose();
+    run.geometry = new THREE.BoxGeometry(bandThickness, 1, bandWidth);
+    run.userData.flatBand = true;
+  }
   presentFlatSection(root);
 }
 

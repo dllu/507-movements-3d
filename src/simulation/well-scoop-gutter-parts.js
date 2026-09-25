@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {waterVolumeMaterial} from './water-volume.js';
 import {plate,poly,circle,capsule,ring,polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {boredJournal,fitPistonGuide} from './piston-guide-parts.js';
@@ -45,6 +46,10 @@ export function correctWaterLiftParts(root,id) {
     replace(b.leftBank,plate(poly([[-4.225,-2.42],[-4.225,.02],[-2.59,.02],[-1.92,-2.42]]),-1.275,1.275));b.leftBank.position.set(0,0,0);
     replace(b.rightBank,plate(poly([[1.5,-2.42],[1.25,.9],[3.675,.9],[3.675,-2.42]]),-1.275,1.275));b.rightBank.position.set(0,0,0);
     b.basin.visible=false;
+    // The basin water between the two banks, from its surface to the floor
+    // (it was a thin surface sheet).
+    {const top=b.basinWater.position.y+.06,left=y=>-2.59+.67*(.02-y)/2.44,right=y=>1.25+.25*(.9-y)/3.32;
+     replace(b.basinWater,plate(poly([[left(-2.42),-2.42],[right(-2.42),-2.42],[right(top),top],[left(top),top]]),-1.2,1.2));b.basinWater.position.set(0,0,0);b.basinWater.material=waterVolumeMaterial();b.basinWater.renderOrder=1;}
     const outline=poly([[.02,.12],[2.82,-.31],[3.43,-.08],[3.24,-.92],[2.56,-1.20],[1.78,-.88],[.02,-.10]]);
     const bosses=clip.union(outline,poly(circle([0,0],.23,64)),poly(circle([g.scoopConnectionRadius,0],.18,64)),poly([[g.scoopConnectionRadius-.12,-.45],[g.scoopConnectionRadius+.12,-.45],[g.scoopConnectionRadius+.12,0],[g.scoopConnectionRadius-.12,0]]));
     const bored=clip.difference(bosses,poly(circle([0,0],.164,64)),poly(circle([g.scoopConnectionRadius,0],.064,64)));

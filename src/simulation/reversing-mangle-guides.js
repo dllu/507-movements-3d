@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import cavities from './baked/reversing-mangle-cavities.js';
-import {markShadows} from './primitives.js';
+import {markShadows, PALETTE} from './primitives.js';
 import {circle, poly, plate, polygonClipping as clip} from './finite-plate-geometry.js';
 import {boredCylinderGeometry} from './piston-guide-parts.js';
 
@@ -34,7 +34,13 @@ export function finishReversingMangleGuides(root,update,id) {
   replace(b.guideGrooveRecess,plate(clip.difference(loops.inner,bore),floor,front));
   b.guideGrooveOuter.userData.role='finite-outer-wall-of-blind-mangle-guide';
   b.guideGrooveRecess.userData.role='finite-inner-island-of-blind-mangle-guide';
-  b.guideGrooveRecess.material=b.wheelBody.material;
+  // Backing, groove walls and root strip are one wheel: one wheel colour,
+  // not an ink layer showing as a black rim stripe or back face.
+  const ink=new THREE.Color(PALETTE.ink);
+  const wheelMaterial=[b.wheelBody,b.guideGrooveOuter].map(m=>m.material).find(m=>!m.color.equals(ink))??b.wheelBody.material;
+  b.wheelBody.material=wheelMaterial;
+  b.guideGrooveOuter.material=wheelMaterial;
+  b.guideGrooveRecess.material=wheelMaterial;
   // This is a bearing collar, not a torus crossing its own guided shaft.
   b.guideFollower.geometry.dispose();
   b.guideFollower.geometry=boredCylinderGeometry(.062,.056,.17);
@@ -43,6 +49,7 @@ export function finishReversingMangleGuides(root,update,id) {
     const strip=channelLoops(d,.024,true);
     replace(b.pitchGroove,plate(clip.difference(strip.outer,strip.inner),front,.18));
     b.pitchGroove.userData.role='continuous-root-strip-under-mangle-teeth';
+    b.pitchGroove.material=wheelMaterial;
   }
   if(cavities[id]) {
     const cavity=poly(cavities[id].points);
