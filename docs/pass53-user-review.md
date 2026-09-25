@@ -463,3 +463,92 @@ Fix lanes: p53-no-hidden-lines, p53-parts, p53-no-crop and p53-style. A rotated-
 - **501** (minor): Scale card carries a thick solid black bar with ticks (a black block), not Brown's fine graduations.
 
 Default-view crops of whole parts that run past Brown's framing are not counted as flaws (the viewer can rotate and zoom; AGENTS.md asks for the engraving's initial camera).
+
+## Pass-57 verification audit (rotated views, after pass 56)
+
+- **13** (minor): the hauling fall leaving the fixed sheave ends in mid-air a short way to the left (old crop line), with no hand or attachment as in 12 and 14-22
+- **23** (minor): the two guide pulleys B float with no bracket or axle support, and the band's top run is carried only by them
+- **39** (minor): the fixed ring is a solid grey disk pierced by four thin slits that read as white tick marks (Brown draws an open four-segment ring around the gears); the grey vertical rod also stops in mid-air at Brown's break line
+- **47** (minor): from above/below, the quarter-cut clutch halves show thin uncapped wire-like shell outlines (blue and orange hairline frames) along the cut edges instead of solid cut faces; the grey shifting lever's horizontal arm also ends in mid-air
+- **52** (minor): the operating lever tapers to a thin blade whose far end stops in mid-air; the round grip the ledger describes is not visible, and the lever's fulcrum bracket hangs off the shaft with no frame
+- **61** (minor): the black shifter fork hangs off the collar and its two legs stop just below in mid-air; no lever, pivot or guide carries it
+- **64** (minor): the lever's fixed fulcrum pin and the spring's clamp block float with no frame or bracket behind them
+- **75** (minor): the fixed click/detent pivot (upper right) is a free-standing pin with nothing behind it; the wheel shaft also stands alone
+- **76** (minor): the stationary pawl's pivot is a bare grey pin sticking out into space with no frame or bracket
+- **77** (minor): lever A's fixed pivot is a bare grey pin sticking out behind the lever with nothing carrying it
+- **80** (minor): bar A ends flat in mid-air a short way below the teeth (old crop line) with no guide or attachment; the whole assembly floats
+- **81** (minor): the grey guide plates for rod B float unsupported
+- **83** (minor): rocking shaft B carrying both sectors has no bearings/frame (presentation hides the physics frame), so the sector pair and link A hang in space
+- **84** (minor): Two grey support posts under the wheel end in mid-air at the bottom (old crop line)
+- **99** (minor): the grey guide for the follower rod is a cluster of thin posts that end in mid-air below the disk (old crop line), with a spindly cross-frame; nothing carries the guide block
+- **101** (minor): the two grey guide blocks for the sliding bar float with no frame; the top hanger strip is a knife-thin sheet
+- **104** (minor): the long screw floats with no bearings at its ends, and the pedestal bore is empty (no shaft through the wheel hub; the wheel shows through the hole)
+- **106** (minor): the grooved drum's shaft is two short stubs ending in mid-air (Brown's break) with no bearings; nothing carries the drum
+- **107** (minor): same as 106 - the drum shaft stubs end in mid-air with no bearings
+- **110** (minor): Both half-nuts sit above the roller; Brown's text puts one over and one under the roller
+- **113** (minor): The table's support rollers have no axle or bearing and float
+- **114** (minor): the rack yoke's end stubs stop flat in mid-air with no guides (unlike 90/91/96), so the reciprocating frame floats
+- **115** (minor): the rack frame has only short tab stubs at each end and no guide; it floats
+- **116** (minor): the frame's end stubs stop in mid-air with no guides
+- **118** (minor): the yellow pitman ends at a bare eye in mid-air on the left (nothing drives it), and the upper rack has no guide so it floats above the pinion
+- **122** (minor): the blue driving rod runs off to the right and ends in mid-air at Brown's break with no guide or crank
+- **123** (minor): the double rack has no guide; its plain end stubs stop in mid-air above and below
+- **127** (minor): the two racks slide with no guides and float
+- **153** (minor): bar guide rollers, elbow-lever pivot and disk shaft all sit on bare stub axles with no frame or bearing behind; the whole mechanism floats
+- **183** (minor): handle/cam shafts have no frame or bearings (181/182 have standoff brackets), the orange bar has no guides and the valve rods end in mid-air top and bottom
+- **184** (minor): same as 183: rockshafts float with no frame, bar unguided, rods end in mid-air when zoomed out
+- **186** (minor): eccentric rod ends square in mid-air (no eccentric or strap) when zoomed out; rockshaft has no bearing
+- **187** (minor): eccentric rod ends square in mid-air when zoomed out; rockshaft unsupported
+- **188** (minor): eccentric rod runs off and ends square in mid-air with no eccentric; rockshaft unsupported
+- **189** (minor): eccentric rod ends square in mid-air, vertical valve rod ends in mid-air at top, bell-crank pivot has no support
+- **192** (minor): pinion spins on a short bare stub with no shaft, bearing or universal joint carrying it (floats against the wheel face)
+- **193** (minor): pinion shaft beyond the universal joint ends in mid-air with no bearing
+- **194** (minor): pinion on a bare stub with no universal-joint shaft or bearing (caption requires a jointed shaft)
+- **197** (minor): a thin bar still pokes out through both short ends of the frame into empty space; the guide arcs are free-standing blades and the pinion has no shaft support
+- **201** (minor): the two L-shaped guide brackets for rod A float in space with no frame or wall behind them
+- **234** (minor): verge spindle S floats across the crown wheel with no bearings; crown-wheel shaft ends in mid-air below
+- **247** (minor): in the reset phase the sounding line is looped around the weight instead of tied to the rod, whose top ends bare; rod and weight hang together below a lone hand
+- **263** (minor): Cone B is still cantilevered off the screw: its large-end shaft stub hangs free with no bearing or standard under it (the only stands are the two screw standards).
+- **262** (minor): Same model as 263: from r60/rm60 the cone's large-end shaft stub has no bearing; the end-view stand under B is the far screw standard, so the cone is cantilevered.
+- **272** (minor): The cam is a hollow-looking skewed frustum: its big face is a flat yellow annulus with a flat red inner disc (two-tone, reads as a painted target or a shallow bowl) with a knife-thin rim, instead of Brown's thick S-curved cam plate; the shaft enters the red disc with no hub on that side.
+- **277** (minor): No lock plate or frame: the hammer's pivot, the grey strap block at c and the grey link's far pin all hang in space, and the cylinder has no arbor/bearing, so the whole lock floats when rotated.
+- **286** (minor): The stamp rod has no guide: it rises bodily off its grey foot block with nothing holding it upright except the cam contact, and the cam's shaft is a bare short stub with no bearing or frame.
+- **290** (minor): The lower rod K is modelled as a short stub that just stops square in mid-air at Brown's crop line (no bob, weight or attachment), so from every view it reads as broken off.
+- **292** (minor): From behind, the plain back face of the rim shows a ring of small pale tick slivers (the front-face teeth poking through the rim), reading as marker ticks.
+- **295** (minor): From r60/rm60 the wheel's second (back-plane) set of teeth are loose arrowhead blocks on thin stub rods sticking sideways out of the rim, which reads as stray bits rather than the cylinder-wheel's raised teeth.
+- **304** (minor): The plain back face of the wheel rim carries a ring of tiny black dots (pin-hole ends), which reads as dotted marker notation rather than geometry.
+- **305** (minor): The pendulum's suspension eye is an empty hole with no pin or cock, and the wheel's arbor in the window has no frame or bearing, so the whole pendulum and wheel float when rotated.
+- **318** (minor): The yellow stud R is a loose peg hanging in space beside the hairspring (no cock or plate carries it), so from oblique/top views it floats; the scale arc also stands on a lone post with nothing linking it to the balance.
+- **321** (minor): Spring T runs off the wheel to a black end pin that hangs in space with no frame or stud holding it, clearly visible as a loose tail from the back and r60 views.
+- **332** (minor): The beam's main pivot A is an empty black bore with no shaft, bearing or support, so the whole beam (and linkage) hangs in space from every view.
+- **333** (minor): Both fixed pivots sit on thin pale slabs that float in mid-air with nothing under or behind them (no frame joins them to the cylinder's column), reading as detached ground patches.
+- **336** (minor): The slanted grey frame member still ends in mid-air at a small square end cap (visible whole in obl/r60): nothing carries its upper end.
+- **351** (minor): The rack bar slides up and down with nothing guiding it (its top and bottom cross-heads ride with it and touch no frame) and the pinion sits on a bare arbor stub, so the whole mechanism floats when rotated.
+- **353** (minor): The helve's pivot is a blue boss with a short pin and a small clevis stub that stand on nothing: no post or frame carries the hammer's fulcrum, so it floats between the anvil block and the cam stand.
+- **367** (minor): The pale inset strip on the upper bar still carries faint tick marks along its length (a printed-scale look copied from Brown's hatching), visible in default, back and top views.
+- **378** (minor): At mid-stroke the saw teeth and lower frame bar still pass straight into the solid log with no kerf; the log's end face also carries painted dark concentric ring lines (contour-line decoration).
+- **377** (minor): The black handrail the man grips hangs in space: neither end is fixed to the slanted board, the frame or any post, so it floats in every rotated view.
+- **387** (minor): The boat at the ladder foot is a flat rectangular slab (pontoon) with a round bump underneath, not Brown's boat.
+- **393** (minor): The bracket carrying the upright shaft's bearing sticks out sideways and ends in mid-air; nothing holds the shaft or its pulley.
+- **394** (minor): Pinion shaft is a short stub with no bearing and the rack frame has no guide, so the whole device floats.
+- **400** (minor): Bar A and the cam shaft have no guide or bearings; the whole feed hangs in air.
+- **401** (minor): The treadle fulcrum and the wheel-shaft bushing float with no frame or bearing.
+- **403** (minor): The two guide pins and the traced arc hang in mid-air with no drawing board under them.
+- **405** (minor): The focus pins, rollers and both traced hyperbolas float in mid-air with no drawing surface.
+- **406** (minor): The focus pin and the traced parabola float in mid-air beside the square with no drawing surface.
+- **415** (minor): Both pawl cords bend at a sharp corner in mid-air instead of running straight (or sagging) from crank E to the pawls.
+- **424** (minor): The ports are flat black slabs stuck onto the walls, one poking out past the outside of the casing. Frame B stands proud of the casing front, and the crankshaft stub has no bearing.
+- **427** (minor): The cylinder is a bare ring with no heads, front or back, so from behind you see the hub and pistons through it and nothing carries the shaft.
+- **428** (minor): The cylinder is a bare ring with no heads, so the rollers and arms show straight through from behind and the shaft has no bearing.
+- **433** (minor): The jet passes straight through the wheel's floats and carries on out past the far side, instead of striking them.
+- **448** (minor): From the side or back, the whole piston and the foot-valve disc stick out through the cut face of the half barrel. The spout is a cut half-pipe.
+- **449** (minor): The whole piston and valve discs stick out past the half-cut barrel wall when rotated.
+- **450** (minor): The whole piston and valve discs stick out past the half-cut barrel wall when rotated.
+- **451** (minor): The whole piston and valve discs stick out past the half-cut barrel wall when rotated.
+- **456** (minor): The casing is an open ring with no back head, so the rotor and its cross-arms show straight through from behind, and the ring has open gaps at the port joints.
+- **458** (minor): The bracket or shelf Brown draws on the left post is missing.
+- **459** (minor): The lower end of the spiral shaft hangs free below the worm. The step and arm that should support it and shift it between the worm wheels are missing.
+- **477** (minor): The liquid in valve D is a free-standing orange bar inside the cut valve that doesn't fill the cavity, so it reads as a stray rod.
+- **483** (minor): A lens-shaped part pokes out through the right side wall of the case. An orange zigzag wire from valve B ends loose in mid-air.
+- **490** (minor): The pulley bracket bars end in T-caps in mid-air and the wheel bearings and tiller have no deck or hull, so the whole gear floats (still present).
+- **498** (minor): The supply vessel is an open cup: from behind you look into it and see the port hole. It floats with no support.
