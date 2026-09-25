@@ -70,3 +70,18 @@ Fix lanes: p53-no-hidden-lines, p53-parts, p53-no-crop and p53-style. A rotated-
 - **360** (minor): The right sector's cord stands off the sector rim in depth, arcing free beside the arc instead of lying on it.
 - **368** (flawed): The follower block and tracer pin float about 0.7 rack-widths below the rack's lower end with nothing joining them; they move together but are disconnected.
 - **375** (minor): Two pinion teeth render white (undrawn marker stripes).
+
+## Rotated-view audit 128–254
+
+- **136** (minor): Ground hatching is a flat sheet of stroke lines; rotated it reads as a comb/fringe hanging off the base
+- **143** (minor): Undrawn yellow 'pulley-index' stripe on the back face of the left pulley
+- **145** (minor): Hatched ground slabs render as white boards with black comb strokes, reading as floating barcode pieces when rotated
+- **154** (minor): Ground hatching is a vertical sheet of stroke lines hanging under the base; reads as a comb/fringe when rotated
+- **159** (minor): Slack cord bows sideways in a large S-curve mid-cycle rather than hanging or pulling taut
+- **164** (minor): Ceiling/ground hatching are flat comb sheets that read as bristles when rotated or seen from above
+- **167** (minor): Reversing groove reads as a thin knife-cut sliver tapering to nothing at its ends, where Brown draws a constant-width band the stud rides in
+- **178** (minor): Back face of the disk shows streaky shadow-acne/z-fighting speckle
+- **179** (minor): Ground hatching renders as a floating comb sheet under the lever foot
+- **202** (minor): Worm thread run-outs stick out as sharp sickle-shaped flaps past both end faces (one hangs below the end disc)
+- **249** (minor): Undrawn white orientation-index stripe on the upper tube ('white-rigid-orientation-index-on-upper-tube')
+- **253** (minor): 'deployed-hook-angle-stop' studs float as loose blue dots beside each hook pivot, off hub B; Brown draws none

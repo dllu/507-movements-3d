@@ -4520,7 +4520,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4528,9 +4529,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Ground hatching is a flat sheet of stroke lines; rotated it reads as a comb/fringe hanging off the base",
       "limits": "Finite-tip path remains prescribed; preload does not prove dynamic contact, and source offset/support/retention approximated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 137,
@@ -4764,7 +4765,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4772,9 +4774,9 @@
         "note": "Baked visible geometry with analytical motion; not a MuJoCo simulation bake."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Undrawn yellow 'pulley-index' stripe on the back face of the left pulley",
       "limits": "Generated worm uses simplified display relief and inferred depths; loads and manufacturing tolerances unqualified.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 144,
@@ -4830,7 +4832,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4838,9 +4841,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hatched ground slabs render as white boards with black comb strokes, reading as floating barcode pieces when rotated",
       "limits": "The beam pivot sits ≈1.8 plate units from the drawn position. Beam/rod motion prescribed through ideal pins.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 146,
@@ -5151,7 +5154,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5159,9 +5163,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Ground hatching is a vertical sheet of stroke lines hanging under the base; reads as a comb/fringe when rotated",
       "limits": "Physical return stop, ideal guide and eight-pixel weight offset inferred; the hidden rear frame remains in the bake.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 155,
@@ -5319,7 +5323,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m18-audit-b-review.md"
+        "docs/m18-audit-b-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5327,9 +5332,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Slack cord bows sideways in a large S-curve mid-cycle rather than hanging or pulling taut",
       "limits": "The slack cord bows sideways as an illustration, not finite-rope physics.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 160,
@@ -5494,7 +5499,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5502,9 +5508,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Ceiling/ground hatching are flat comb sheets that read as bristles when rotated or seen from above",
       "limits": "Ideal pinned linkage and seated foot; reaction frame/workpiece omitted and loads not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 165,
@@ -5602,7 +5608,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5610,9 +5617,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Reversing groove reads as a thin knife-cut sliver tapering to nothing at its ends, where Brown draws a constant-width band the stud rides in",
       "limits": "Recessed reversing groove uses analytic dead-center/clearance assumptions; no source 2D oracle.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 168,
@@ -5978,7 +5985,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5986,9 +5994,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Back face of the disk shows streaky shadow-acne/z-fighting speckle",
       "limits": "Production crank ratio differs from the oracle; loads, friction and backlash not solved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 179,
@@ -6012,7 +6020,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6023,9 +6032,9 @@
         "note": "Offline shaft/stop MuJoCo check; production remains prescribed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Ground hatching renders as a floating comb sheet under the lever foot",
       "limits": "Engine/manual valve response not simulated; bearing resistance and depths inferred despite isolated stop-contact study.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 180,
@@ -6827,7 +6836,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
-        "docs/m7-gears-teeth-review.md"
+        "docs/m7-gears-teeth-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6835,9 +6845,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Worm thread run-outs stick out as sharp sickle-shaped flaps past both end faces (one hangs below the end disc)",
       "limits": "Worm ends stand a little taller than Brown's: enveloping the wheel over his worm length dips 0.175 R where he draws about 0.12 R.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 203,
@@ -8420,17 +8430,18 @@
       "references": [
         "docs/pipe-coupling-family-review.md",
         "docs/minimal-interface-review.md",
-        "docs/visual-review-pass-49.md"
+        "docs/visual-review-pass-49.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-joints.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Undrawn white orientation-index stripe on the upper tube ('white-rigid-orientation-index-on-upper-tube')",
       "limits": "Socket split and static clamp hardware inferred; bolt preload, gasket compression and pressure-tight sealing unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 250,
@@ -8554,7 +8565,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8562,9 +8574,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "'deployed-hook-angle-stop' studs float as loose blue dots beside each hook pivot, off hub B; Brown draws none",
       "limits": "Hook motion prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 254,
