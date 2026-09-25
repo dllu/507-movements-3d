@@ -460,7 +460,8 @@
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
         "docs/w4a-1-160-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -468,9 +469,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Four sheaves over three need the standing end on the lower block, giving an ideal advantage of 7 where the caption rule gives 6; elastic rope contact unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 15,
@@ -503,9 +504,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Six supporting parts where the text says seven; retained contact-speed error is below 3% in tested poses; ideal rope with no stretch or friction.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 16,
@@ -527,7 +528,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -535,9 +537,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 17,
@@ -559,7 +561,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -567,9 +570,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 18,
@@ -592,7 +595,8 @@
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m1-belts-gears-review.md"
+        "docs/m1-belts-gears-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -600,9 +604,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Ideal massless ropes/sheaves; stretch and friction not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 19,
@@ -624,7 +628,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -632,9 +637,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 20,
@@ -656,7 +661,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -664,9 +670,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 21,
@@ -688,7 +694,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -696,9 +703,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 22,
@@ -720,7 +727,8 @@
         "docs/minimal-interface-review.md",
         "docs/belts-1-23-review.md",
         "docs/w2b-belts-clutches-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -728,9 +736,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum",
       "limits": "Ideal massless ropes/sheaves; lateral swing, stretch, friction and unrestricted 3D equilibrium are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 23,
@@ -1544,9 +1552,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Clutch cones/boss are modelled as half-section solids (engraving's cut section): from the side they are flat-faced half discs, parts not whole",
       "limits": "Annular friction clutch uses assumed friction/load behavior; source dimensions and material calibration are unverified.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 48,
@@ -2380,7 +2388,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2388,9 +2397,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Work piece on the anvil is built from stacked slabs whose left end steps out in jagged layers (construction artefact)",
       "limits": "Gravity-driven hammer uses reconstructed material/impact assumptions and finite sampled clearance.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 73,
@@ -2593,7 +2602,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2c-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2601,9 +2611,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Lever B's free end is cut in a swallowtail break-notch (engraving break notation) instead of a whole finished end",
       "limits": "Finite ratchet/contact law uses reconstructed source geometry and idealized force/impact assumptions.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 79,
@@ -2863,7 +2873,8 @@
         "docs/w4a-1-160-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p53-no-crop-review.md",
-        "docs/p54-hatch-review.md"
+        "docs/p54-hatch-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2871,7 +2882,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The edge of the restored second pulley shows at the right of the default view.",
+      "visibleFlaws": "The edge of the restored second pulley shows at the right of the default view. Pump rope and rod run down below the frame and stop at a small crosshead in mid-air (old crop line); nothing below",
       "limits": "The plain rear drive band shows no visible travel.",
       "assessment": "minor"
     },
@@ -3067,7 +3078,8 @@
         "docs/review-progress.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -3075,9 +3087,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Crosshead guide bars end abruptly in open space at the right (engraving's break line) and are not supported by anything",
       "limits": "Ideal pins and guides; guide/support depths inferred, not load-bearing contact simulation.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 93,
@@ -4141,7 +4153,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/w3h-mujoco-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m1-belts-gears-review.md"
+        "docs/m1-belts-gears-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4149,9 +4162,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Centre gear lies in the rack's plane: a column of dark dashes (z-fighting/interpenetration of gear teeth through the rack) runs down the rack face",
       "limits": "Keeping the full rack stroke in view makes the subject smaller than on the plate.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 124,
@@ -4242,7 +4255,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-hatch-review.md"
+        "docs/p54-hatch-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "live",
@@ -4250,9 +4264,9 @@
         "note": "Production model-loader selects live MuJoCo physics and createPhysicsPlayback."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "All three rope runs end in mid-air at the old crop line (both pulley falls and the horizontal rope at the lower crank arm) with no attachment",
       "limits": "Cord/attachment geometry and local angle/loads inferred; tube injectivity and continuous clearance not proved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 127,
@@ -4517,9 +4531,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "both ends of the rope stop in mid-air at Brown's crop line, attached to nothing",
       "limits": "Helical wrap has prescribed axial creep; traction, retention and unseen support remain idealized.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 135,
@@ -4800,7 +4814,7 @@
         "note": "Baked visible geometry with analytical motion; not a MuJoCo simulation bake."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The added guide-rail post and base show where Brown crops the supports.",
+      "visibleFlaws": "The added guide-rail post and base show where Brown crops the supports. default view crops the valve rod and guide posts at the bottom frame edge; rod runs far past Brown's short tapered end down to an added tall two-post guide stand",
       "limits": "Brown breaks the rod off below the disk, so the view crops the rod, slider and guide at his plate edge; rod length and guide are inferred.",
       "assessment": "minor"
     },
@@ -4863,7 +4877,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4871,9 +4886,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the fixed post ends in mid-air with no base or ground under it (Brown stands it on a ground line)",
       "limits": "Lazy-tongs linkage uses ideal joints and reconstructed depths; no elastic/load simulation.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 145,
@@ -5094,9 +5109,9 @@
         "note": "Offline passive contact validation exists; production remains analytical."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "valve rod ends in a small blue block floating in mid-air with no guide or valve",
       "limits": "The 0.56 shaft (Brown's hatched circle) can stand about 1.0 proud of one end of the stack, because the carrier slides 1.02 along it.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 151,
@@ -5155,7 +5170,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5163,9 +5179,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the traced ellipse is a thin black wire loop floating in space with no paper or board under it (reads as a contour line); cross-piece also has no support",
       "limits": "Pencil projected onto common bar axis; hidden guide shoes/supports and ideal joints inferred.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 153,
@@ -5235,9 +5251,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "top pulley spins on a bare stub axle with no bracket or post (floats above the frame)",
       "limits": "Physical return stop, ideal guide and eight-pixel weight offset inferred; the hidden rear frame remains in the bake.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 155,
@@ -5298,7 +5314,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m3-mujoco-cams-review.md"
+        "docs/m3-mujoco-cams-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5306,9 +5323,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "valve rod ends in a modelled break-line notch in mid-air with no guide or valve",
       "limits": "Engraving proportions differ from the 2D oracle; ideal linkage constraints.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 157,
@@ -5620,7 +5637,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -5631,9 +5649,9 @@
         "note": "Historical MuJoCo trials; installed bake is quasistatic geometric contact, not MuJoCo."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the upright output bar hangs from the link with a free lower end and no guide; the lever pivot stands on nothing",
       "limits": "Equal sinusoidal lobes replace hand-drawn uneven outline; quasi-static loading, rolling and guide assumptions remain.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 166,
@@ -5659,7 +5677,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p53-no-hidden-lines-review.md"
+        "docs/p53-no-hidden-lines-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5667,9 +5686,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "connecting rod ends in a modelled break-line (notched zigzag cut) in mid-air, no slide or mould it drives",
       "limits": "Engraving-based slot has a shorter dwell than the oracle; ideal lost-motion constraint and depths inferred.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 167,
@@ -5703,9 +5722,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the reciprocating rod has no guides and the drum axle no bearings; both float free",
       "limits": "The band foreshortens near the silhouettes at phases other than the plate's, as a real groove on a drum does.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 168,
@@ -5732,7 +5751,8 @@
         "docs/w2d-cranks-screws-review.md",
         "docs/w4b-164-253-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p53-no-hidden-lines-review.md"
+        "docs/p53-no-hidden-lines-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5740,9 +5760,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "blue driving lever is cut off square in mid-air at Brown's crop line (no pivot or driver); crank shafts have no bearings",
       "limits": "Hidden rocker pivot inferred; oracle dimensions intentionally differ from the visible engraving fit.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 169,
@@ -5768,7 +5788,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p53-no-hidden-lines-review.md"
+        "docs/p53-no-hidden-lines-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5776,9 +5797,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "blue driving lever is cut off square in mid-air at Brown's crop line (no pivot or driver); crank shafts have no bearings",
       "limits": "Hidden full rocker/pivot inferred; drawn pitman joints not exactly collinear, no joint/load dynamics.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 170,
@@ -5839,7 +5860,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5847,9 +5869,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the curved slide's guide rods and the trunnion stub float free (rod ends in mid-air top and bottom, trunnion unattached to anything); valve-rod guide block hangs in air",
       "limits": "Operator reversing selection prescribed; hidden crank/rocker and diagnostic valve output inferred, no pressure/load simulation.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 172,
@@ -5882,9 +5904,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the grey slotted guide frame floats with no support and the crank shafts have no bearings",
       "limits": "Engraved dotted curve inconsistent with measured linkage; hidden guide and ideal constraints inferred.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 173,
@@ -5920,7 +5942,7 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The added upright frame post shows where Brown crops the supports.",
+      "visibleFlaws": "The added upright frame post shows where Brown crops the supports. a black radial index stripe is painted on the face of the gold star wheel (marker)",
       "limits": "Finite 71.825-second adjustment visibly resets at replay boundary; ideal nut/guide constraints, tooth geometry and depths inferred.",
       "assessment": "minor"
     },
@@ -6089,9 +6111,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "connecting rod stops square in mid-air at Brown's crop line (no tool slide) and the fixed slotted disk floats with no support",
       "limits": "Production crank ratio differs from the oracle; loads, friction and backlash not solved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 179,
@@ -6165,9 +6187,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "screw shanks poke out as black pins behind the side-piece",
       "limits": "Board orientation/operator guidance, friction, inertia and force/damping inferred; timing parameter-dependent.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 181,
@@ -6204,9 +6226,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "default view crops the piston rod and valve rods at the top/bottom frame edges; zoomed out the handle shafts have no frame or bearings and the valve rods end in bare weights in mid-air",
       "limits": "Lower finger and upper arm sit about 20 px from each plate's outline because Brown's 181 and 182 draw the same catch inconsistently; one rigid part is a compromise between them.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 182,
@@ -6243,9 +6265,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "default view crops the piston rod and valve rods at the top/bottom frame edges; handle shafts have no frame or bearings",
       "limits": "Same rigid catch as 181, phase-shifted; lower finger and upper arm sit about 20 px from the plate because Brown's 181 and 182 disagree.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 183,
@@ -6283,7 +6305,7 @@
         "note": "Unqualified MuJoCo transfer diagnostic; no production motion installed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The default view crops the orange bar and weight rods at the top and bottom frame edges (maxNdc 1.86).",
+      "visibleFlaws": "The default view crops the orange bar and weight rods at the top and bottom frame edges (maxNdc 1.86). (existing crop) plus handle shafts float with no frame and valve rods end in mid-air when zoomed out",
       "limits": "Catches are hidden studs, lip and boss inside drawn outlines; a few px of the lip's working end can be seen through the band's window, where it physically lies; weights and friction not solved.",
       "assessment": "minor",
       "userReported": "2026-09-24"
@@ -6326,7 +6348,7 @@
         "note": "Shared 183–184 unqualified MuJoCo diagnostic; no production motion installed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The default view crops the orange piston bar and rods at the frame edges (maxNdc 1.87).",
+      "visibleFlaws": "The default view crops the orange piston bar and rods at the frame edges (maxNdc 1.87). (existing crop) plus handle shafts float with no frame and valve rods end in mid-air when zoomed out",
       "limits": "Plate 184 is plate 183 reflected top to bottom; the view is a presentation reflection of the 183 solve, with the weight arms turned half a turn to Brown's mid-height pins (same torque).",
       "assessment": "minor"
     },
@@ -6397,9 +6419,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "default view crops the eccentric rod at the left frame edge; the free end of the spring-handle loop cuts through its own descending band",
       "limits": "The lever turns ≈29° because of the claw's reach; the claw knuckle is hidden where Brown draws it.",
-      "assessment": "reasonable",
+      "assessment": "minor",
       "userReported": "2026-09-24"
     },
     {
@@ -6792,9 +6814,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "a thin bar pokes out through both short ends of the frame into empty space, and the guide arcs are thin free-standing blades with no connection to the plate",
       "limits": "The pinion shaft's rise-and-fall bearing is outside the drawing.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 198,
@@ -7232,7 +7254,8 @@
         "docs/slot-family-review.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7240,9 +7263,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the two guide blocks for the vertical bar float in mid-air with no frame, and the arm's shaft has no bearing",
       "limits": "Analytical slot/linkage motion retained; running clearances, friction, impact, load response and broader assembly contacts unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 211,
@@ -7552,7 +7575,8 @@
         "docs/w3f-gears-core-review.md",
         "docs/w4b-164-253-review.md",
         "docs/w5a-gears-intermittent-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7560,9 +7584,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the long pinion is built as an open spoked wire cage of thin rods (reads as a wireframe), where Brown draws a solid long fluted pinion; the pinion shaft floats with no bearing",
       "limits": "The lantern is about twice Brown's relative size (halving it needs 80 crown teeth or a 4-stave lantern). Loaded mesh unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 220,
@@ -7751,7 +7775,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7759,9 +7784,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "on the return stroke the pawl lifts well clear above the wheel (floats about a tooth-height off) instead of dragging over the teeth; the arm pivot sits on a small black stub with no ground block Brown draws",
       "limits": "Pawl return bias and wheel holding imposed; initial hinge reaction requires suitable gravity/spring bias. Passive engagement and load capacity unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 226,
@@ -7818,7 +7843,8 @@
         "docs/w3f-gears-core-review.md",
         "docs/w4b-164-253-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m1-belts-gears-review.md"
+        "docs/m1-belts-gears-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7826,9 +7852,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "both chain legs stop at Brown's crop line and hang loose in mid-air with nothing attached",
       "limits": "The straps cross in front of the tooth tips.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 228,
@@ -7854,7 +7880,8 @@
         "docs/w5a-gears-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
-        "docs/m7-gears-teeth-review.md"
+        "docs/m7-gears-teeth-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7862,9 +7889,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "both chain legs stop at Brown's crop line and hang loose in mid-air with nothing attached; the pulley has no support for its stub shaft",
       "limits": "Chain follows a prescribed path.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 229,
@@ -7888,7 +7915,8 @@
         "docs/w2b-belts-clutches-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
-        "docs/p53-no-crop-review.md"
+        "docs/p53-no-crop-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7896,7 +7924,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "Chain legs are cut square at Brown's leg ends.",
+      "visibleFlaws": "Chain legs are cut square at Brown's leg ends. (existing) chain legs end square in mid-air at Brown's crop line",
       "limits": "The left leg ends in a square cut where Brown draws a rounded end link.",
       "assessment": "minor"
     },
@@ -8124,7 +8152,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8132,9 +8161,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "pawl b and c tips end in short black cross-pins that jut sideways into the air beyond the pawl (not in plate)",
       "limits": "Prescribed return bias and output holding; source initial lever tilt/tip placement approximate.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 237,
@@ -8202,9 +8231,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "pallets B and C are separate rectangular blocks perched on the frame tips (C sits on a thin tapering nib and reads as a stray stub), where Brown draws C as the hooked end of the arm",
       "limits": "Brown draws a six-point star; seven are kept per the site title and C's dashed line. Oscillation, drops and impacts prescribed; C support retains small clearance rather than solved force transfer.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 239,
@@ -8261,7 +8290,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8269,9 +8299,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "spring drawn as a thin round grey wire (plate: flat leaf spring)",
       "limits": "Selected stops clear, but free-run path may separate by 0.0816; passive lift/drop and opening bias unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 241,
@@ -8293,7 +8323,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8301,9 +8332,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the single driving tooth is a thin curved sliver much slighter than Brown's broad tapered tooth; the yellow click pivots on a bare stub with no support",
       "limits": "Finite indexing contacts corrected; sharp entry/seating velocity transitions, click bias, impact and load holding remain prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 242,
@@ -8401,9 +8432,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "C/C' stop blocks mounted on a free-floating vertical post (no support top or bottom); the scale-pan ring hangs with a gap below the beam end instead of hooked through it",
       "limits": "Only shaft section A shows motion; the lever and pan rest at balance.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 245,
@@ -8506,9 +8537,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "during reload phase an undrawn external sling appears: thin gold wire rising to a mid-air anchor far above the tube, with its legs stabbing into the ball; rope drawn as thin rod not laid rope",
       "limits": "The view follows the lowered rod, so the sea bottom rises to meet it rather than the rod falling; detent, drag and impact idealized.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 248,
@@ -8634,7 +8665,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
         "docs/w4b-164-253-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8642,9 +8674,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the guide-frame posts stop square in mid-air at Brown's lower crop line with no base; after release the weight only drops a short way before the loop resets",
       "limits": "Release is quasistatic; tip studs inferred.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 252,
@@ -8666,7 +8698,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4b-164-253-review.md",
-        "docs/m18-audit-b-review.md"
+        "docs/m18-audit-b-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8674,9 +8707,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "the guide bars of slot C end square in mid-air at the right crop line and D's stem ends in mid-air below",
       "limits": "D's stroke (3.6) is shorter than the official animation's so its crossbar stays below slot C; running clearances and friction are unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 253,
@@ -8712,7 +8745,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The hoist rope strands still stop at the crop line.",
+      "visibleFlaws": "The hoist rope strands still stop at the crop line. the hoist rope strands still stop in mid-air at the crop line below the frame disc",
       "limits": "The deployed hook angle is scripted, not seated on a stop.",
       "assessment": "minor"
     },
@@ -8923,7 +8956,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/w4c-254-400-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8931,9 +8965,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Thin white radial marker stripes painted on the faces of both large gears D and E (marker notation).",
       "limits": "The number of thread starts is a reconstruction choice.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 261,
@@ -8968,9 +9002,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Cord D does not wrap pulley B's rim as drawn: it runs down behind B onto a small hub drum on B's back face, so from the front it appears to vanish into B's face.",
       "limits": "The drum and cord lie behind B; rope tension not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 262,
@@ -9127,17 +9161,18 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
-        "docs/w4c-254-400-review.md"
+        "docs/w4c-254-400-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-differential-screws.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Screw threads are thin loose ribbon helices round a thin core that read as coil springs, ending in abrupt cut stubs; both uprights are two stacked blocks with a visible misaligned seam at mid-height.",
       "limits": "Ideal gear/screw constraints omit friction, compliance, load-dependent backlash and self-locking.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 267,
@@ -9230,7 +9265,8 @@
         "docs/w3d-255-287-review.md",
         "docs/m14-last-residuals-review.md",
         "docs/m15-final-review.md",
-        "docs/m21-269-76-review.md"
+        "docs/m21-269-76-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9238,9 +9274,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "At the plate pose the closed end sits about 1.6 pitches farther right than drawn, because the model's tooth groups run on one continuous 17-pitch line where Brown's overlap.",
+      "visibleFlaws": "At the plate pose the closed end sits about 1.6 pitches farther right than drawn, because the model's tooth groups run on one continuous 17-pitch line where Brown's overlap. Stroke overruns the yoke: at phase .25 the pinion sits outside the open end with no rack engaged, and at phase .75 it passes through the closed-end crossbar by about half its radius.",
       "limits": "The closed end and the rod's flat end are set back behind the gear so its tips pass in front of them at the stroke limit; handoff teeth are relieved at working depth and keep Brown's outline as a web behind the gear; the rod, which Brown breaks off, leaves the view at the stroke limit.",
-      "assessment": "minor"
+      "assessment": "flawed"
     },
     {
       "id": 270,
@@ -9431,17 +9467,18 @@
         "docs/movement-260-266-275.md",
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-worm-racks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Both helix ends run out as knife-thin tapered blades that stick out past the drum like stray slivers.",
       "limits": "Rack pitch 0.64 against Brown's ≈0.55. Ideal gear/screw constraints omit friction, compliance, backlash and self-locking.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 276,
@@ -9614,7 +9651,8 @@
         "docs/w4c-254-400-review.md",
         "docs/w5b-248-314-review.md",
         "docs/m4-203-321-review.md",
-        "docs/m7-gears-teeth-review.md"
+        "docs/m7-gears-teeth-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9622,9 +9660,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hand lever is built from two straight box segments that meet at the bend with an open, unblended mitre seam (visible notch/gap).",
       "limits": "Loaded frictional drive and passive pawl seating unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 281,
@@ -9745,17 +9783,18 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/w2f-274-333-review.md"
+        "docs/w2f-274-333-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-saw-feeds.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Two thin black rods run above the rack with a visible gap and no attachment, floating like drawn outline lines rather than a real guide.",
       "limits": "Finite pawl/ratchet law imposed with return bias; loaded holding, friction, impact and cutting-force response unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 285,
@@ -9779,7 +9818,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
         "docs/w3d-255-287-review.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9787,9 +9827,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The spindle sleeve inside the housing is a translucent pale-blue tube with the screw visible through it (translucency standing in for a hidden part).",
       "limits": "The catalog title still says handwheel; the quill clamp lever is a flat bar. Screw motion prescribed.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 286,
@@ -9812,7 +9852,8 @@
         "docs/visual-review-pass-49.md",
         "docs/intersection-screen-pass50.md",
         "docs/w2f-274-333-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9820,9 +9861,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "A thin yellow strip rides along the lever's upper edge and a thin black strip lines the jaw's underside; neither is a drawn part and they read as marker/outline lines.",
       "limits": "Toe/lifter contact and valve spring load are prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 287,
@@ -10262,9 +10303,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Sloped tooth faces show fine streaky striping (shadow acne) that reads like hatch strokes.",
       "limits": "Pallets stop at the release edge, about 10% shorter than Brown's strips; any extension keeps the escaping tooth in contact.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 300,
@@ -10472,9 +10513,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Window is still two mismatched quadrant cut-outs of different radius, offset and meeting at a stepped notch, not Brown's semicircle-plus-sector opening; only a plain orange disc shows through it, with no escape-wheel teeth or pallet as drawn; a stray red speck sits at the arbor, and a tiny white/orange sliver pokes up through the slot in the top view.",
       "limits": "The pin keeps the historical 1:60 eccentricity (0.075), so it sits small and close to the arbor; release-corner contact about 0.0006; only the upright-face impulse is qualified.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 306,
@@ -10529,7 +10570,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane3-escapements-review.md",
-        "docs/w5b-248-314-review.md"
+        "docs/w5b-248-314-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10537,9 +10579,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Default camera crops the pendulum rod at the top edge (Brown's break line), and zoomed out the whole rod hangs from an empty pivot hole with no suspension pin, so it floats.",
       "limits": "Legs at exactly 120°; impulse pins hidden.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 308,
@@ -10739,7 +10781,8 @@
         "docs/w3b-escapements-review.md",
         "docs/w4c-254-400-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -10750,9 +10793,9 @@
         "note": "Offline passing-spring study remains unqualified; production motion is prescribed."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The detent spring is a wavy S-bent yellow strip that wraps a knot-like loop round the locking stone, unlike Brown's straight detent; a stray yellow dot sits beside the banking pin.",
       "limits": "V meets the spring ≈11° before dead point.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 314,
@@ -10846,7 +10889,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2f-274-333-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10854,9 +10898,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The jar is filled with translucent blue water-like liquid, but Brown's bob is a jar of mercury, which should read as an opaque silvery metal.",
       "limits": "Zero-thickness glass and wire adjustment thread remain illustrative; jar clamp/adjuster mating and thermal transient response unqualified.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 317,
@@ -10921,9 +10965,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The balance spring is a set of separate closed concentric rings rather than one continuous spiral from stud R to the staff, and the SLOW/FAST sector is covered in a black line grid (tick/hatch notation).",
       "limits": "No SLOW/FAST lettering on the plate.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 319,
@@ -11083,7 +11127,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11091,9 +11136,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The wheel slots through the ruler show a flat bright-white floor, as if patched with a white plate, instead of reading as open slots onto the paper.",
       "limits": "Manual drawing motion and linkage geometry prescribed; joint play, paper contact force, friction and manufacturing tolerances unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 324,
@@ -11180,7 +11225,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane6-engines-misc-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11188,9 +11234,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Camera fit excludes the flywheel, so it is clipped by the canvas edge in every view (default, rotated, back and top), reading as a broken-off wheel.",
       "limits": "The rod clears the side walls by about 0.011; the rendered piston rod is shorter than the official stroke geometry.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 327,
@@ -11214,7 +11260,8 @@
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11222,9 +11269,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "At bottom of stroke the crosshead rollers run off the lower ends of guide bars A (they sit beside/below the slots rather than on the bars) and the crosshead lands on the cylinder cover; the flywheel is also clipped by the canvas in every view.",
       "limits": "Proportions follow the plate rather than the official animation (longer rod, larger flywheel).",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 328,
@@ -11248,7 +11295,8 @@
         "docs/engines-328-343-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11256,9 +11304,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The flywheel-shaft pinion looks to sit clear of the right-hand wheel C, with a gap between tooth tips instead of meshing depth; the contact is hidden behind the beam, so worth checking.",
       "limits": "The default pose keeps the official phase rather than the plate's.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 329,
@@ -11426,9 +11474,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The orange piston-rod stub hanging from the left beam end stops in mid-air at Brown's crop line, with no piston, guide or cylinder.",
       "limits": "Brown's beam is ≈3° steeper; joints P and N drift sideways up to 0.09/0.05.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 334,
@@ -11488,7 +11536,8 @@
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
         "docs/lane8-escapements-engines-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11496,9 +11545,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Everything floats: the beam fulcrum and the radius rod's fixed pivot at the far left are bare pins with no bracket, and the yellow piston rod stops in mid-air at the crop line.",
       "limits": "B sits at 7.22 against the plate's 7.97 so E stays straight. Legacy beam/crosshead interfaces remain partly approximate.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 336,
@@ -11522,7 +11571,8 @@
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m19-audit-c-review.md"
+        "docs/m19-audit-c-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11530,9 +11580,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The grey slanted frame member at upper left ends in mid-air at Brown's break line, with no attachment beyond it.",
       "limits": "Frame about 20% taller than the plate crop to keep the swept crosshead in view; plate rod scale inconsistent.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 337,
@@ -11555,7 +11605,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11563,9 +11614,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The beam runs off the canvas in most views; the radius rod's fixed pivot is a bare floating pin, and the yellow piston rod stops in mid-air at the crop line.",
       "limits": "The beam runs off the plate edge as drawn. Analytical linkage closures retained; approximate straightness and inferred dimensions are not exact historical reproduction. Steam loads, joint play and friction unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 338,
@@ -11588,7 +11639,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11596,9 +11648,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The radius rod's fixed pivot is a bare floating pin, the beam runs off the canvas, and the yellow piston rod stops in mid-air at the crop line.",
       "limits": "Analytical linkage closures retained; approximate straightness and inferred dimensions are not exact historical reproduction. Steam loads, joint play and friction unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 339,
@@ -11657,7 +11709,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane8-escapements-engines-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11665,9 +11718,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The joggling pillar's centre F is a bare pin with no bearing or foundation, and both hanging rods from D and C stop in mid-air at the crop line.",
       "limits": "C drifts up to 0.05; the pillar leans 4° against Brown's 6–7°.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 341,
@@ -11802,7 +11855,8 @@
         "docs/visual-review-pass-49.md",
         "docs/lane6-engines-misc-review.md",
         "docs/w5c-333-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11810,9 +11864,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Z-fighting: the crank-pin end is coplanar with the back face of the crank and shows as a speckled black patch.",
       "limits": "The plate's crank (1.7) replaces the official animation's 2.25, which is kept as source data. The cylinder is closed, so the piston is hidden.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 345,
@@ -11953,9 +12007,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The cross slots in disc A show a flat bright-white floor on both faces instead of open slots or plain slot bottoms, like a white filler plate; bar B also runs off the canvas at the top.",
       "limits": "Rod B runs out of the view as Brown breaks it off.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 349,
@@ -12093,9 +12147,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "All the cords (the V to the weight hook, the falls to the drums and the wraps on the drums) are smooth thin blue tubes, where the plate draws laid rope.",
       "limits": "The crown is an arch rather than a rounded cap.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 353,
@@ -12306,7 +12360,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The band is two thin cords in the band colour, thinner than Brown's rope.",
+      "visibleFlaws": "The band is two thin cords in the band colour, thinner than Brown's rope. The long diagonal rope is a hairline strand that runs far past the canvas top (still unending at 3x zoom-out) with no visible upper attachment; it crosses in front of the cone without engaging it, while its lower end is tied to a bracket far below the frame.",
       "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths.",
       "assessment": "minor"
     },
@@ -12823,7 +12877,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The driving pulley beyond the crop has no support.",
+      "visibleFlaws": "The driving pulley beyond the crop has no support. The drive belt is two thin round blue tubes where the plate draws a flat belt; it runs off to a small floating pulley (already noted in the ledger).",
       "limits": "Empirical load law illustrates resistance; teaching weight moved manually.",
       "assessment": "minor"
     },
@@ -12920,7 +12974,8 @@
         "docs/w5c-333-400-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m5-326-400-review.md",
-        "docs/m19-audit-c-review.md"
+        "docs/m19-audit-c-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12928,9 +12983,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The whole treadwheel hangs on a short bare axle stub with no bearing, post or frame, so it floats unsupported from every angle.",
       "limits": "Animal effort and wheel load are not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 377,
@@ -12993,7 +13048,8 @@
         "docs/w2g-341-400-review.md",
         "docs/w3c-343-417-review.md",
         "docs/w4c-254-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13001,9 +13057,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The saw blade drops into the log with no kerf, so the teeth and lower frame bar pass straight through the solid log at mid-stroke.",
       "limits": "Spring shapes/deflections prescribed; cutting force not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 379,
@@ -13140,7 +13196,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "A short neck from the hinge to the back plate is not in Brown's plate.",
+      "visibleFlaws": "A short neck from the hinge to the back plate is not in Brown's plate. Front of the mirror frame carries a single J-shaped raised step instead of Brown's rounded inner rim and separate D-shaped panel; short neck from hinge to back plate.",
       "limits": "Mirror adjustment prescribed; thread friction and clamp preload unsolved.",
       "assessment": "minor"
     },
@@ -13164,7 +13220,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13172,9 +13229,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Rollers and brush cylinder hang from one side frame only; their far shaft ends stick out into air with no bearing.",
       "limits": "Zero-thickness cloth and constant winding radii; source animation ratio itself conjectural. Bristle deformation, tension and winding buildup unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 384,
@@ -13374,7 +13431,8 @@
         "docs/w2g-341-400-review.md",
         "docs/w3c-343-417-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13382,9 +13440,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Base is an open-fronted channel (half-section) and the pawl pivot and eccentric shaft float beside the rack with no bracket to the stand.",
       "limits": "The stop pawl is held clear by hand while lowering.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 390,
@@ -13481,7 +13539,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
         "docs/w3c-343-417-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13489,9 +13548,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The strained spring ends in a black block floating in mid-air with nothing to anchor to.",
       "limits": "Spring preload is a path-length display proxy; blade tension and cutting loads unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 393,
@@ -13592,9 +13651,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Casing seen from behind or above is translucent, with the red/blue passages ghosting through; thick black casing band reads as an outline rim.",
       "limits": "Brown's port pipes beyond the plug circle are omitted. The second figure is a display copy of the same cock. Valve rotation prescribed.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 396,
@@ -13619,7 +13678,8 @@
         "docs/w2g-341-400-review.md",
         "docs/w3c-343-417-review.md",
         "docs/w5c-333-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13627,9 +13687,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Balance rim has no arms to its staff, so the ring floats unconnected to the arbor.",
       "limits": "The impulse pin overlaps the fork by 0.071 on both beats and can throw the lever only about 3.6 degrees where the pallets need 5; F still receives work instead of acting strictly as a detent.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 397,
@@ -13653,7 +13713,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
         "docs/w3c-343-417-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13661,9 +13722,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Bottom lever pivot and crank shaft float with no ground or bearing (Brown draws a grounded boss); the shuttle bar has no guide.",
       "limits": "Roller spin and dwell holding prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 398,
@@ -13821,7 +13882,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13829,9 +13891,9 @@
         "note": "Baked pallet geometry and prescribed motion; rejected geometric continuation was not MuJoCo."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Balance wheels are rendered as translucent discs inside the rims.",
       "limits": "The balances are open rims with a faint web where Brown draws no arms, so both racks show where the rims cross.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 403,
@@ -13854,7 +13916,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13862,9 +13925,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Thin vertical line from apex to chord and a thin chord line read as construction marks not in the plate.",
       "limits": "Manual three-rule tracing prescribed; friction, pin play, drawing force and historical depths remain inferred.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 404,
@@ -13886,7 +13949,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13894,9 +13958,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "At full stroke the bow bends into a near-semicircle, far beyond the plate's shallow arc, and its ends slip past the roller posts.",
       "limits": "Intermediate bent shape prescribed; no elastic constitutive law, stress, springback, friction or loaded screw/thrust response solved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 405,
@@ -13995,9 +14059,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Cord is a thin plain tube, not laid rope, and it lengthens about 2x as the slide moves (inextensible loop); straightened lath overlaps the upright post.",
       "limits": "The undrawn drawing board and mirrored half-arch are removed by source presentation. Manual tracing prescribed; joint friction, pencil force and historical slide/fulcrum depth details unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 408,
@@ -14056,7 +14120,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/w4d-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14064,9 +14129,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Black graduation ticks are painted on the blue leg.",
       "limits": "Manual instrument operation prescribed; drawing/gripping force, friction, elastic deflection and loaded joint behavior unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 410,
@@ -14135,9 +14200,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Recording drum is covered with a black drawn grid not in the plate.",
       "limits": "The operator's hands are omitted. Countershaft and spur pair driving the drum are engineered, not drawn. Quasi-static terrain and pendulum angle imposed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 412,
@@ -14236,7 +14301,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The scroll web is shaded where Brown leaves the paper white.",
+      "visibleFlaws": "The scroll web is shaded where Brown leaves the paper white. Outer end of the scroll overhangs past the edge of the backing disc at some rotation phases.",
       "limits": "Generated finite tooth profiles preserve imposed ratios; loaded mesh, clearance take-up and exact historical tooth sections unvalidated.",
       "assessment": "minor"
     },
@@ -14294,7 +14359,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14302,9 +14368,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Spring is a flat spiral, not Brown's helical spring, and its free wire stretches across the wheel face to reach the crank pin as the crank turns.",
       "limits": "Spring shapes/deflections prescribed; elastic stress, preload, joint force, contact response and fatigue unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 417,
@@ -14367,7 +14433,8 @@
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m6-402-507-review.md",
-        "docs/m9-410-507-review.md"
+        "docs/m9-410-507-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14375,9 +14442,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Valve chest is a half cut-away shell, and the valve seat is a black slab floating below the chest with no connection.",
       "limits": "The slot follows exact kinematics. Valve input and roller loaded-wall convention prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 419,
@@ -14411,9 +14478,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Axles of wheels A and B end in air behind the discs; nothing on the rocking frame carries them.",
       "limits": "Combined displayed band length varies; effective-radius rocking law does not establish both inextensible bands.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 420,
@@ -14438,7 +14505,8 @@
         "docs/w2h-401-507-review.md",
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14446,9 +14514,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Bell hangs from a short black stub with no support; bell-pull rope ends in mid-air below the base.",
       "limits": "Spring seats overlap 0.103 by design.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 421,
@@ -14481,7 +14549,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The barrel is round where Brown draws a rectangular hatched section; the crank has no drawn bearing.",
+      "visibleFlaws": "The barrel is round where Brown draws a rectangular hatched section; the crank has no drawn bearing. Cylinder and trunk are cut open on the front (section) rather than whole; the crankshaft has no bearing.",
       "limits": "Steam/valve motion prescribed; pressure forces, leakage, seal compression, friction and thermodynamic performance unvalidated.",
       "assessment": "minor"
     },
@@ -14506,7 +14574,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/w4d-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14514,9 +14583,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Black comb/hatch strip on the side of the valve chest; cylinder is an open sector frame with no front or back faces.",
       "limits": "Steam/valve motion prescribed; pressure forces, leakage and seal compression unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 423,
@@ -14618,7 +14687,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The gap between the bore and the outer wall is narrower than Brown's, and the base is wider.",
+      "visibleFlaws": "The gap between the bore and the outer wall is narrower than Brown's, and the base is wider. Casing and steam passages are open rings with no front or back walls, so they read as a cut section from an oblique view.",
       "limits": "Abutment assumed loaded against eccentric; return force, inertia, friction, wear and leakage unsolved.",
       "assessment": "minor"
     },
@@ -14643,7 +14712,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/w4d-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14651,9 +14721,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Steam ports are pairs of flat slabs (a pipe cut in section) stuck to the ring.",
       "limits": "Unspecified outward load maintains radial followers; contact forces, return, friction, wear and leakage not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 427,
@@ -14742,7 +14812,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14750,9 +14821,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Casing is two disconnected C-shaped halves with an open slot between them, and the ports are pairs of flat plates; black tick marks on the lobe tips.",
       "limits": "Relieved mate gap reaches 0.013372; pressure/leakage unsolved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 430,
@@ -14807,7 +14878,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14815,9 +14887,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Wheel axle has no bearings or frame, so the wheel hangs in air over the water.",
       "limits": "Cell fill and streams illustrative, not conserved water/free surfaces; hydraulic torque, losses, gate sealing and loaded regulation unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 432,
@@ -14839,7 +14911,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14847,9 +14920,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Wheel axle has no bearings, so the wheel hangs unsupported.",
       "limits": "Cell fill and streams illustrative, not conserved water/free surfaces; hydraulic torque, losses, gate sealing and loaded regulation unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 433,
@@ -14873,7 +14946,8 @@
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m6-402-507-review.md",
-        "docs/m9-410-507-review.md"
+        "docs/m9-410-507-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14881,9 +14955,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Jet is drawn as a bundle of thin streamline tubes plus droplet spheres (banned flow notation); the nozzle floats unsupported.",
       "limits": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 434,
@@ -14949,9 +15023,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Pale translucent disc with a white rim fills the runner centre (not in plate).",
       "limits": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 436,
@@ -14985,9 +15059,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Turbine case is a translucent shell used to show the runner inside.",
       "limits": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 437,
@@ -15054,9 +15128,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Discharge jets are thin solid-looking tubes rather than water.",
       "limits": "Water/air motion and rotor speed prescribed; fluid forces, pressure, efficiency, free surfaces and loaded regulation unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 439,
@@ -15082,7 +15156,8 @@
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p53-style-review.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15090,9 +15165,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Bucket has no bail; the rope ends at the rim.",
       "limits": "Bucket fill/drain/travel and counterweight return prescribed; rope tension, tipping, impact and fluid mass balance unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 440,
@@ -15161,9 +15236,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Wheel has no axle support and floats over the water; the rim is a thin black ring that reads as an outline.",
       "limits": "Upright hanging and gravity return imposed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 442,
@@ -15240,9 +15315,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The wheel is still a solid disc behind the buckets.",
+      "visibleFlaws": "The wheel is still a solid disc behind the buckets. Screw casing is translucent to show the helix (Brown's dotted hidden line); black rings at the tube ends.",
       "limits": "Bracket reconstructed; only the far end of the arm and the trough leave the left edge, as on the plate; water raising and stream torque illustrative.",
-      "assessment": "minor"
+      "assessment": "flawed"
     },
     {
       "id": 444,
@@ -15268,7 +15343,8 @@
         "docs/w3e-418-504-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m6-402-507-review.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15276,9 +15352,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Fountain spray is a bundle of thin streamline tubes; tanks are open on the front.",
       "limits": "Bucket/rope motion and water transport prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 445,
@@ -15336,7 +15412,8 @@
         "docs/intersection-screen-pass50.md",
         "docs/lane7-hydraulic-misc-review.md",
         "docs/w3e-418-504-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15344,9 +15421,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Dark lens-shaped blob caps the jet inside the upper channel.",
       "limits": "Box depth and cutaway are assumed. Flow bookkeeping does not validate free surfaces or pressure recovery.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 447,
@@ -15381,9 +15458,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Anchor lies on the water surface, not the river bed; the boat is a flat lozenge.",
       "limits": "The rope's slack is drawn in, not simulated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 448,
@@ -15405,7 +15482,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15413,9 +15491,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Pump barrel and spout are translucent to show the piston and valves.",
       "limits": "Valve lifts/flap timing prescribed; dynamic seating, seal compression, leakage, priming, pressure losses and pumping forces unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 449,
@@ -15437,7 +15515,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4d-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15445,9 +15524,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Pump barrel and valve chest are translucent to show the internals.",
       "limits": "Valve lifts/flap timing prescribed; dynamic seating, seal compression, leakage, priming, pressure losses and pumping forces unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 450,
@@ -15469,7 +15548,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15477,9 +15557,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Pump barrel and pipes are translucent to show the internals.",
       "limits": "Valve timing prescribed; pressure-induced opening, priming/leakage and seal forces unsolved. Fluid volumes omit some immersed solid displacement.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 451,
@@ -15511,9 +15591,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Barrel and air vessel are translucent; a stray translucent square block sits inside the pipe.",
       "limits": "Valve timing prescribed; pressure-induced opening, priming/leakage and seal forces unsolved. Fluid volumes omit some immersed solid displacement.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 452,
@@ -15569,7 +15649,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15577,9 +15658,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Valve chest and pipes are translucent grey to show the valves.",
       "limits": "Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 454,
@@ -15601,7 +15682,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15609,9 +15691,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Pump casing and pipes are translucent to show the diaphragm and valves.",
       "limits": "Flap/valve timing prescribed; pressure, inertia, springs, cavitation, sealing and flexible-wall fluid response not solved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 455,
@@ -15646,9 +15728,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Inlet and outlet pipes are open three-sided troughs (half-pipe sections).",
       "limits": "Square-block contact branch has velocity corners and a small forward shaft moment as the tip clears the corner; hold/return prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 456,
@@ -15683,9 +15765,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Inlet pipe F is an open half-channel section.",
       "limits": "The rear spider carrying the drum shows through it; Brown does not draw it but it carries the drum.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 457,
@@ -15707,7 +15789,8 @@
         "docs/minimal-interface-review.md",
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15715,9 +15798,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Well shaft is a translucent cylinder to show the bucket inside.",
       "limits": "Bucket motion, fill/drain and reset prescribed; rope tension, fluid capture/slosh, drive forces and loaded equilibrium unsolved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 458,
@@ -15750,9 +15833,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Well walls are translucent panels to show the buckets.",
       "limits": "Bucket motion, fill/drain and reset prescribed; rope tension, fluid capture/slosh, drive forces and loaded equilibrium unsolved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 459,
@@ -15790,9 +15873,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Well shaft is a pale translucent panel.",
       "limits": "Bucket and tappet trip motion prescribed; the buckets start and stop abruptly at pick-up, as a running worm picking up a stopped wheel must; worm meshing not qualified.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 460,
@@ -15858,9 +15941,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Spout spray is thin streamline strands; the trough side walls read as black outline rims in the default view.",
       "limits": "Flap timing prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 462,
@@ -15883,7 +15966,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15891,9 +15975,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Rising pipe is translucent to show the chain discs.",
       "limits": "Continuous chain lacks rigid-link/chordal dynamics; tension, slack and tooth forces unsolved. Disk/riser clearance is not a leak-tight seal.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 463,
@@ -15928,9 +16012,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Overflow is a thin curved tube; when the gate tilts open, the headwater block keeps a vertical face standing with nothing holding it.",
       "limits": "One animated weir stands for Brown's two figures.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 464,
@@ -15962,9 +16046,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Fountain spray is a bundle of thin tubes; the body is a cut-open section.",
       "limits": "The drawn section stands in for a hidden 3D model; the bowl hangs on straps and the feet are plain pads rather than claws; the spray is an illustrative plume; prescribed transfer and ideal isothermal pressure; hidden loop reset nonphysical.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 465,
@@ -15997,9 +16081,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Pump barrels are translucent glass cylinders showing the pistons.",
       "limits": "The operator's motion is prescribed, not a dynamic figure.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 466,
@@ -16034,9 +16118,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Press cylinder is translucent below the ram; the pump tank is cut open on the front.",
       "limits": "Checks, displacement and return metering prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 467,
@@ -16072,9 +16156,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Jack body is a half-section cut-away rather than whole.",
       "limits": "Lever read as a plunger at the upper eye with a floating fulcrum on a swing link; pump barrel, check valves, bore and depths inferred; ram shown as a hollow bore rather than Brown's slotted solid; checks and displacement prescribed; small lift (0.18) set by the plunger/ram area ratio.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 468,
@@ -16100,7 +16184,8 @@
         "docs/w3e-418-504-review.md",
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/w5d-mixed-review.md"
+        "docs/w5d-mixed-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16108,9 +16193,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Timber ends carry painted X-in-box marks (Brown's section notation).",
       "limits": "Plan hatching not drawn.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 469,
@@ -16143,9 +16228,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Screw casing is translucent to show the helix; the tanks are open on the front.",
       "limits": "Thermal run-down/reset imposed; heat maintenance unexplained by source. Bubble dynamics, sealing, startup and loaded bevel behavior unsolved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 470,
@@ -16179,9 +16264,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The valve chest still sits by the right leg, and the frame differs from Brown's.",
+      "visibleFlaws": "The valve chest still sits by the right leg, and the frame differs from Brown's. Cylinder and valve chest are translucent to show the piston; black flange rims.",
       "limits": "Steam pipe and valve gear sit on the right. Ideal pressure lift and inelastic impact.",
-      "assessment": "minor"
+      "assessment": "flawed"
     },
     {
       "id": 471,
@@ -16205,7 +16290,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/m6-402-507-review.md"
+        "docs/m6-402-507-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16213,9 +16299,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Moving cylinder is translucent to show the piston.",
       "limits": "The anvil window is an open slot. Hammer pressure/trajectory prescribed.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 472,
@@ -16249,9 +16335,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Both cylinders are translucent to show the pistons.",
       "limits": "Cylinder and pump walls are see-through; pump D bore and A travel follow the plate, not Grimshaw's 8 in and 10 in; no gland at the piston entrance; pump checks state-only; forces prescribed.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 473,
@@ -16276,7 +16362,8 @@
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p53-no-hidden-lines-review.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16284,9 +16371,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Outer tub is translucent to show the inner tub; the hoops are thin black rings; the ropes are very thin lines.",
       "limits": "Bell/valve cycles prescribed; pressure-driven valve action, water-seal dynamics, leakage, friction and pump performance unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 474,
@@ -16352,9 +16439,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Ejector chamber is translucent to show the steam pipe; a pale water disc hovers above the discharge mouth.",
       "limits": "The chamber water rises, runs and falls on fixed smooth ramps, not a simulated priming; the discharge column stops at its rounded top (falling spray not modelled).",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 476,
@@ -16385,9 +16472,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "A pale translucent water disc hovers above the discharge pipe mouth.",
       "limits": "Water inside the opaque fork is not shown; the discharge from C follows the same scheduled stages as 475.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 477,
@@ -16411,7 +16498,8 @@
         "docs/w2h-401-507-review.md",
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/w5d-mixed-review.md"
+        "docs/w5d-mixed-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16419,9 +16507,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Expansion tube changes colour red to yellow as a symbolic temperature indicator; the casing is a quarter cut-away.",
       "limits": "Casing proportions reconstructed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 478,
@@ -16445,7 +16533,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16453,9 +16542,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Sphere and pipes are translucent; the expansion pipe changes colour blue to red as a heat indicator.",
       "limits": "Temperature and quasi-static expansion/contact prescribed; heat transfer, valve inertia, friction, leakage and condensate inventory unsolved.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 479,
@@ -16489,9 +16578,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The tank and bell are still translucent.",
+      "visibleFlaws": "The tank and bell are still translucent. Tank and bell are translucent (already in the ledger, still present).",
       "limits": "Motion and quasi-static gas pressure prescribed; buoyancy detail, guide friction, rope elasticity, pulley inertia, thermal changes and slosh unvalidated.",
-      "assessment": "minor"
+      "assessment": "flawed"
     },
     {
       "id": 480,
@@ -16523,9 +16612,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Tank and bell are translucent to show the internal tubes.",
       "limits": "Motion and quasi-static gas pressure prescribed; buoyancy detail, guide friction, rope elasticity, pulley inertia, thermal changes and slosh unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 481,
@@ -16551,7 +16640,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
         "docs/m6-402-507-review.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16559,9 +16649,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Front of the case is translucent glass showing the drum; the grey torus rim stands detached from the case face.",
       "limits": "The gas chamber is shown with a pale red tint.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 482,
@@ -16595,9 +16685,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Inner float vessel panels are translucent; the casing is open on the front.",
       "limits": "Quasi-static balance omits inertia, friction, capillarity and seal transients.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 483,
@@ -16623,7 +16713,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m6-402-507-review.md",
         "docs/m9-410-507-review.md",
-        "docs/p54-water-review.md"
+        "docs/p54-water-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16631,9 +16722,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Valve chest B is a translucent box; the casing is open-fronted.",
       "limits": "Bellows/spring/valve timing prescribed; not gas-tight.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 484,
@@ -16702,9 +16793,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Black band at the cap base and black sail edging read as dark contour rims.",
       "limits": "Prescribed rotor speed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 486,
@@ -16871,7 +16962,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "The rope still rides over the barrel flange.",
+      "visibleFlaws": "The rope still rides over the barrel flange. Steering ropes are thin plain lines, not laid rope; pulley bracket bars end in mid-air (rope still rides the flange, per ledger).",
       "limits": "Spatial rope geometry clear at sampled poses; helix slip, tension, sag, axial creep and material transport not solved.",
       "assessment": "minor"
     },
@@ -16896,7 +16987,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/w2h-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16904,9 +16996,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Hauling rope runs off and ends in mid-air at the old crop line.",
       "limits": "Pawl loading and return bias prescribed; friction, impact, loaded holding strength and passive capstan operation unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 492,
@@ -16932,7 +17024,8 @@
         "docs/w3e-418-504-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/w5d-mixed-review.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16940,9 +17033,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Both upper and lower ropes end in mid-air at the old crop line.",
       "limits": "The paired unit and pull bar are hidden in the plate view.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 493,
@@ -16976,9 +17069,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Dashed stipple marks run along the edges of the lewis hole (z-fighting or shadow artefact).",
       "limits": "Prescribed wedge/stone lift; stone friction, elastic deformation, grip strength and load capacity unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 494,
@@ -17102,7 +17195,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w4d-401-507-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17110,9 +17204,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Fan casing is translucent to show the blades; black bars at the outlet mouth.",
       "limits": "Flow markers are not fluid parcels; rotating-blade clearance, pressure rise, efficiency and flow field unvalidated.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 498,
@@ -17144,9 +17238,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Brass marker rings on the tube; the scale board floats beside the tube with no attachment.",
       "limits": "The bands holding the scale board are minimal and not in Brown.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 499,
@@ -17168,7 +17262,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4d-401-507-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17176,9 +17271,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Dial face is translucent and there is no case back, so the mechanism shows through from behind.",
       "limits": "Pressure and elastic displacement prescribed; stress, hysteresis, sealing, gear backlash, joint preload and pressure transients unsolved.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 500,
@@ -17212,9 +17307,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Brown's section figure is modelled as a literal half-cut body beside the gauge; the dial is translucent and the bezel ring stands off from it.",
       "limits": "The passage from the case into the pipe looks closed at the cut face (no elbow modelled).",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 501,
@@ -17246,9 +17341,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Brass index ring on the tube; the scale card floats beside the tube.",
       "limits": "The band holding the scale board is minimal and not in Brown.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 502,

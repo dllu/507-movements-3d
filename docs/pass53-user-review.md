@@ -196,3 +196,170 @@ Fix lanes: p53-no-hidden-lines, p53-parts, p53-no-crop and p53-style. A rotated-
 - **504** (minor): White index stripes on the output gears and the carrier.
 - **505** (minor): White index stripes on the sun gear and arm.
 - **506** (minor): White index stripes on the gears.
+
+## Pass-55 verification audit (rotated views, after pass 54)
+
+- **47** (flawed): Clutch cones/boss are modelled as half-section solids (engraving's cut section): from the side they are flat-faced half discs, parts not whole
+- **123** (flawed): Centre gear lies in the rack's plane: a column of dark dashes (z-fighting/interpenetration of gear teeth through the rack) runs down the rack face
+- **126** (flawed): All three rope runs end in mid-air at the old crop line (both pulley falls and the horizontal rope at the lower crank arm) with no attachment
+- **72** (minor): Work piece on the anvil is built from stacked slabs whose left end steps out in jagged layers (construction artefact)
+- **78** (minor): Lever B's free end is cut in a swallowtail break-notch (engraving break notation) instead of a whole finished end
+- **14** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **15** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **16** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **17** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **18** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **19** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **20** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **21** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **22** (minor): Hauling (fall) end of the tackle rope stops in mid-air at the old crop line with no hand, cleat or drum
+- **86** (minor): Pump rope and rod run down below the frame and stop at a small crosshead in mid-air (old crop line); nothing below
+- **92** (minor): Crosshead guide bars end abruptly in open space at the right (engraving's break line) and are not supported by anything
+- **134** (minor): both ends of the rope stop in mid-air at Brown's crop line, attached to nothing
+- **142** (minor): default view crops the valve rod and guide posts at the bottom frame edge; rod runs far past Brown's short tapered end down to an added tall two-post guide stand
+- **144** (minor): the fixed post ends in mid-air with no base or ground under it (Brown stands it on a ground line)
+- **150** (minor): valve rod ends in a small blue block floating in mid-air with no guide or valve
+- **152** (minor): the traced ellipse is a thin black wire loop floating in space with no paper or board under it (reads as a contour line); cross-piece also has no support
+- **154** (minor): top pulley spins on a bare stub axle with no bracket or post (floats above the frame)
+- **156** (flawed): valve rod ends in a modelled break-line notch in mid-air with no guide or valve
+- **165** (minor): the upright output bar hangs from the link with a free lower end and no guide; the lever pivot stands on nothing
+- **166** (flawed): connecting rod ends in a modelled break-line (notched zigzag cut) in mid-air, no slide or mould it drives
+- **167** (minor): the reciprocating rod has no guides and the drum axle no bearings; both float free
+- **168** (minor): blue driving lever is cut off square in mid-air at Brown's crop line (no pivot or driver); crank shafts have no bearings
+- **169** (minor): blue driving lever is cut off square in mid-air at Brown's crop line (no pivot or driver); crank shafts have no bearings
+- **171** (minor): the curved slide's guide rods and the trunnion stub float free (rod ends in mid-air top and bottom, trunnion unattached to anything); valve-rod guide block hangs in air
+- **172** (minor): the grey slotted guide frame floats with no support and the crank shafts have no bearings
+- **173** (minor): a black radial index stripe is painted on the face of the gold star wheel (marker)
+- **178** (minor): connecting rod stops square in mid-air at Brown's crop line (no tool slide) and the fixed slotted disk floats with no support
+- **180** (minor): screw shanks poke out as black pins behind the side-piece
+- **181** (minor): default view crops the piston rod and valve rods at the top/bottom frame edges; zoomed out the handle shafts have no frame or bearings and the valve rods end in bare weights in mid-air
+- **182** (minor): default view crops the piston rod and valve rods at the top/bottom frame edges; handle shafts have no frame or bearings
+- **183** (minor): (existing crop) plus handle shafts float with no frame and valve rods end in mid-air when zoomed out
+- **184** (minor): (existing crop) plus handle shafts float with no frame and valve rods end in mid-air when zoomed out
+- **186** (minor): default view crops the eccentric rod at the left frame edge; the free end of the spring-handle loop cuts through its own descending band
+- **197** (minor): a thin bar pokes out through both short ends of the frame into empty space, and the guide arcs are thin free-standing blades with no connection to the plate
+- **210** (minor): the two guide blocks for the vertical bar float in mid-air with no frame, and the arm's shaft has no bearing
+- **219** (minor): the long pinion is built as an open spoked wire cage of thin rods (reads as a wireframe), where Brown draws a solid long fluted pinion; the pinion shaft floats with no bearing
+- **225** (minor): on the return stroke the pawl lifts well clear above the wheel (floats about a tooth-height off) instead of dragging over the teeth; the arm pivot sits on a small black stub with no ground block Brown draws
+- **227** (minor): both chain legs stop at Brown's crop line and hang loose in mid-air with nothing attached
+- **228** (minor): both chain legs stop at Brown's crop line and hang loose in mid-air with nothing attached; the pulley has no support for its stub shaft
+- **229** (minor): (existing) chain legs end square in mid-air at Brown's crop line
+- **236** (minor): pawl b and c tips end in short black cross-pins that jut sideways into the air beyond the pawl (not in plate)
+- **238** (minor): pallets B and C are separate rectangular blocks perched on the frame tips (C sits on a thin tapering nib and reads as a stray stub), where Brown draws C as the hooked end of the arm
+- **240** (minor): spring drawn as a thin round grey wire (plate: flat leaf spring)
+- **241** (minor): the single driving tooth is a thin curved sliver much slighter than Brown's broad tapered tooth; the yellow click pivots on a bare stub with no support
+- **244** (minor): C/C' stop blocks mounted on a free-floating vertical post (no support top or bottom); the scale-pan ring hangs with a gap below the beam end instead of hooked through it
+- **247** (flawed): during reload phase an undrawn external sling appears: thin gold wire rising to a mid-air anchor far above the tube, with its legs stabbing into the ball; rope drawn as thin rod not laid rope
+- **251** (minor): the guide-frame posts stop square in mid-air at Brown's lower crop line with no base; after release the weight only drops a short way before the loop resets
+- **252** (minor): the guide bars of slot C end square in mid-air at the right crop line and D's stem ends in mid-air below
+- **253** (minor): the hoist rope strands still stop in mid-air at the crop line below the frame disc
+- **260** (minor): Thin white radial marker stripes painted on the faces of both large gears D and E (marker notation).
+- **261** (minor): Cord D does not wrap pulley B's rim as drawn: it runs down behind B onto a small hub drum on B's back face, so from the front it appears to vanish into B's face.
+- **266** (minor): Screw threads are thin loose ribbon helices round a thin core that read as coil springs, ending in abrupt cut stubs; both uprights are two stacked blocks with a visible misaligned seam at mid-height.
+- **269** (flawed): Stroke overruns the yoke: at phase .25 the pinion sits outside the open end with no rack engaged, and at phase .75 it passes through the closed-end crossbar by about half its radius.
+- **275** (minor): Both helix ends run out as knife-thin tapered blades that stick out past the drum like stray slivers.
+- **280** (minor): Hand lever is built from two straight box segments that meet at the bend with an open, unblended mitre seam (visible notch/gap).
+- **284** (minor): Two thin black rods run above the rack with a visible gap and no attachment, floating like drawn outline lines rather than a real guide.
+- **285** (flawed): The spindle sleeve inside the housing is a translucent pale-blue tube with the screw visible through it (translucency standing in for a hidden part).
+- **286** (minor): A thin yellow strip rides along the lever's upper edge and a thin black strip lines the jaw's underside; neither is a drawn part and they read as marker/outline lines.
+- **299** (minor): Sloped tooth faces show fine streaky striping (shadow acne) that reads like hatch strokes.
+- **305** (flawed): Window is still two mismatched quadrant cut-outs of different radius, offset and meeting at a stepped notch, not Brown's semicircle-plus-sector opening; only a plain orange disc shows through it, with no escape-wheel teeth or pallet as drawn; a stray red speck sits at the arbor, and a tiny white/orange sliver pokes up through the slot in the top view.
+- **307** (minor): Default camera crops the pendulum rod at the top edge (Brown's break line), and zoomed out the whole rod hangs from an empty pivot hole with no suspension pin, so it floats.
+- **313** (minor): The detent spring is a wavy S-bent yellow strip that wraps a knot-like loop round the locking stone, unlike Brown's straight detent; a stray yellow dot sits beside the banking pin.
+- **316** (minor): The jar is filled with translucent blue water-like liquid, but Brown's bob is a jar of mercury, which should read as an opaque silvery metal.
+- **318** (minor): The balance spring is a set of separate closed concentric rings rather than one continuous spiral from stud R to the staff, and the SLOW/FAST sector is covered in a black line grid (tick/hatch notation).
+- **323** (minor): The wheel slots through the ruler show a flat bright-white floor, as if patched with a white plate, instead of reading as open slots onto the paper.
+- **326** (minor): Camera fit excludes the flywheel, so it is clipped by the canvas edge in every view (default, rotated, back and top), reading as a broken-off wheel.
+- **327** (flawed): At bottom of stroke the crosshead rollers run off the lower ends of guide bars A (they sit beside/below the slots rather than on the bars) and the crosshead lands on the cylinder cover; the flywheel is also clipped by the canvas in every view.
+- **328** (minor): The flywheel-shaft pinion looks to sit clear of the right-hand wheel C, with a gap between tooth tips instead of meshing depth; the contact is hidden behind the beam, so worth checking.
+- **333** (minor): The orange piston-rod stub hanging from the left beam end stops in mid-air at Brown's crop line, with no piston, guide or cylinder.
+- **335** (minor): Everything floats: the beam fulcrum and the radius rod's fixed pivot at the far left are bare pins with no bracket, and the yellow piston rod stops in mid-air at the crop line.
+- **336** (minor): The grey slanted frame member at upper left ends in mid-air at Brown's break line, with no attachment beyond it.
+- **337** (minor): The beam runs off the canvas in most views; the radius rod's fixed pivot is a bare floating pin, and the yellow piston rod stops in mid-air at the crop line.
+- **338** (minor): The radius rod's fixed pivot is a bare floating pin, the beam runs off the canvas, and the yellow piston rod stops in mid-air at the crop line.
+- **340** (minor): The joggling pillar's centre F is a bare pin with no bearing or foundation, and both hanging rods from D and C stop in mid-air at the crop line.
+- **344** (minor): Z-fighting: the crank-pin end is coplanar with the back face of the crank and shows as a speckled black patch.
+- **348** (minor): The cross slots in disc A show a flat bright-white floor on both faces instead of open slots or plain slot bottoms, like a white filler plate; bar B also runs off the canvas at the top.
+- **352** (minor): All the cords (the V to the weight hook, the falls to the drums and the wraps on the drums) are smooth thin blue tubes, where the plate draws laid rope.
+- **358** (minor): The long diagonal rope is a hairline strand that runs far past the canvas top (still unending at 3x zoom-out) with no visible upper attachment; it crosses in front of the cone without engaging it, while its lower end is tied to a bracket far below the frame.
+- **373** (minor): The drive belt is two thin round blue tubes where the plate draws a flat belt; it runs off to a small floating pulley (already noted in the ledger).
+- **376** (minor): The whole treadwheel hangs on a short bare axle stub with no bearing, post or frame, so it floats unsupported from every angle.
+- **378** (minor): The saw blade drops into the log with no kerf, so the teeth and lower frame bar pass straight through the solid log at mid-stroke.
+- **382** (minor): Front of the mirror frame carries a single J-shaped raised step instead of Brown's rounded inner rim and separate D-shaped panel; short neck from hinge to back plate.
+- **383** (minor): Rollers and brush cylinder hang from one side frame only; their far shaft ends stick out into air with no bearing.
+- **389** (minor): Base is an open-fronted channel (half-section) and the pawl pivot and eccentric shaft float beside the rack with no bracket to the stand.
+- **392** (minor): The strained spring ends in a black block floating in mid-air with nothing to anchor to.
+- **395** (flawed): Casing seen from behind or above is translucent, with the red/blue passages ghosting through; thick black casing band reads as an outline rim.
+- **396** (minor): Balance rim has no arms to its staff, so the ring floats unconnected to the arbor.
+- **397** (minor): Bottom lever pivot and crank shaft float with no ground or bearing (Brown draws a grounded boss); the shuttle bar has no guide.
+- **402** (minor): Balance wheels are rendered as translucent discs inside the rims.
+- **403** (minor): Thin vertical line from apex to chord and a thin chord line read as construction marks not in the plate.
+- **404** (minor): At full stroke the bow bends into a near-semicircle, far beyond the plate's shallow arc, and its ends slip past the roller posts.
+- **407** (flawed): Cord is a thin plain tube, not laid rope, and it lengthens about 2x as the slide moves (inextensible loop); straightened lath overlaps the upright post.
+- **409** (minor): Black graduation ticks are painted on the blue leg.
+- **411** (minor): Recording drum is covered with a black drawn grid not in the plate.
+- **414** (minor): Outer end of the scroll overhangs past the edge of the backing disc at some rotation phases.
+- **416** (minor): Spring is a flat spiral, not Brown's helical spring, and its free wire stretches across the wheel face to reach the crank pin as the crank turns.
+- **418** (minor): Valve chest is a half cut-away shell, and the valve seat is a black slab floating below the chest with no connection.
+- **419** (minor): Axles of wheels A and B end in air behind the discs; nothing on the rocking frame carries them.
+- **420** (minor): Bell hangs from a short black stub with no support; bell-pull rope ends in mid-air below the base.
+- **421** (minor): Cylinder and trunk are cut open on the front (section) rather than whole; the crankshaft has no bearing.
+- **422** (flawed): Black comb/hatch strip on the side of the valve chest; cylinder is an open sector frame with no front or back faces.
+- **425** (minor): Casing and steam passages are open rings with no front or back walls, so they read as a cut section from an oblique view.
+- **426** (minor): Steam ports are pairs of flat slabs (a pipe cut in section) stuck to the ring.
+- **429** (flawed): Casing is two disconnected C-shaped halves with an open slot between them, and the ports are pairs of flat plates; black tick marks on the lobe tips.
+- **431** (minor): Wheel axle has no bearings or frame, so the wheel hangs in air over the water.
+- **432** (minor): Wheel axle has no bearings, so the wheel hangs unsupported.
+- **433** (flawed): Jet is drawn as a bundle of thin streamline tubes plus droplet spheres (banned flow notation); the nozzle floats unsupported.
+- **435** (minor): Pale translucent disc with a white rim fills the runner centre (not in plate).
+- **436** (flawed): Turbine case is a translucent shell used to show the runner inside.
+- **438** (minor): Discharge jets are thin solid-looking tubes rather than water.
+- **439** (minor): Bucket has no bail; the rope ends at the rim.
+- **441** (minor): Wheel has no axle support and floats over the water; the rim is a thin black ring that reads as an outline.
+- **443** (flawed): Screw casing is translucent to show the helix (Brown's dotted hidden line); black rings at the tube ends.
+- **444** (minor): Fountain spray is a bundle of thin streamline tubes; tanks are open on the front.
+- **446** (minor): Dark lens-shaped blob caps the jet inside the upper channel.
+- **447** (minor): Anchor lies on the water surface, not the river bed; the boat is a flat lozenge.
+- **448** (flawed): Pump barrel and spout are translucent to show the piston and valves.
+- **449** (flawed): Pump barrel and valve chest are translucent to show the internals.
+- **450** (flawed): Pump barrel and pipes are translucent to show the internals.
+- **451** (flawed): Barrel and air vessel are translucent; a stray translucent square block sits inside the pipe.
+- **453** (flawed): Valve chest and pipes are translucent grey to show the valves.
+- **454** (flawed): Pump casing and pipes are translucent to show the diaphragm and valves.
+- **455** (minor): Inlet and outlet pipes are open three-sided troughs (half-pipe sections).
+- **456** (minor): Inlet pipe F is an open half-channel section.
+- **457** (flawed): Well shaft is a translucent cylinder to show the bucket inside.
+- **458** (flawed): Well walls are translucent panels to show the buckets.
+- **459** (minor): Well shaft is a pale translucent panel.
+- **461** (minor): Spout spray is thin streamline strands; the trough side walls read as black outline rims in the default view.
+- **462** (flawed): Rising pipe is translucent to show the chain discs.
+- **463** (flawed): Overflow is a thin curved tube; when the gate tilts open, the headwater block keeps a vertical face standing with nothing holding it.
+- **464** (minor): Fountain spray is a bundle of thin tubes; the body is a cut-open section.
+- **465** (flawed): Pump barrels are translucent glass cylinders showing the pistons.
+- **466** (minor): Press cylinder is translucent below the ram; the pump tank is cut open on the front.
+- **467** (minor): Jack body is a half-section cut-away rather than whole.
+- **468** (minor): Timber ends carry painted X-in-box marks (Brown's section notation).
+- **469** (flawed): Screw casing is translucent to show the helix; the tanks are open on the front.
+- **470** (flawed): Cylinder and valve chest are translucent to show the piston; black flange rims.
+- **471** (flawed): Moving cylinder is translucent to show the piston.
+- **472** (flawed): Both cylinders are translucent to show the pistons.
+- **473** (flawed): Outer tub is translucent to show the inner tub; the hoops are thin black rings; the ropes are very thin lines.
+- **475** (flawed): Ejector chamber is translucent to show the steam pipe; a pale water disc hovers above the discharge mouth.
+- **476** (minor): A pale translucent water disc hovers above the discharge pipe mouth.
+- **477** (minor): Expansion tube changes colour red to yellow as a symbolic temperature indicator; the casing is a quarter cut-away.
+- **478** (flawed): Sphere and pipes are translucent; the expansion pipe changes colour blue to red as a heat indicator.
+- **479** (flawed): Tank and bell are translucent (already in the ledger, still present).
+- **480** (flawed): Tank and bell are translucent to show the internal tubes.
+- **481** (flawed): Front of the case is translucent glass showing the drum; the grey torus rim stands detached from the case face.
+- **482** (minor): Inner float vessel panels are translucent; the casing is open on the front.
+- **483** (minor): Valve chest B is a translucent box; the casing is open-fronted.
+- **485** (minor): Black band at the cap base and black sail edging read as dark contour rims.
+- **490** (minor): Steering ropes are thin plain lines, not laid rope; pulley bracket bars end in mid-air (rope still rides the flange, per ledger).
+- **491** (minor): Hauling rope runs off and ends in mid-air at the old crop line.
+- **492** (minor): Both upper and lower ropes end in mid-air at the old crop line.
+- **493** (minor): Dashed stipple marks run along the edges of the lewis hole (z-fighting or shadow artefact).
+- **497** (flawed): Fan casing is translucent to show the blades; black bars at the outlet mouth.
+- **498** (minor): Brass marker rings on the tube; the scale board floats beside the tube with no attachment.
+- **499** (minor): Dial face is translucent and there is no case back, so the mechanism shows through from behind.
+- **500** (flawed): Brown's section figure is modelled as a literal half-cut body beside the gauge; the dial is translucent and the bezel ring stands off from it.
+- **501** (minor): Brass index ring on the tube; the scale card floats beside the tube.
