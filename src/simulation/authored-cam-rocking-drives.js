@@ -168,14 +168,6 @@ function makeCam({
   disk.userData.role = 'single-solid-input-cam-disc';
   cam.add(disk);
 
-  const outerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(5 * scale, 0.055, 12, 96),
-    darkMaterial,
-  );
-  outerRim.position.z = 0.235;
-  outerRim.userData.role = 'input-cam-outer-rim';
-  cam.add(outerRim);
-
   const addArcSet = (arcs, role) => arcs.map((arc, index) => {
     const [, centerX, centerY, radius, startAngle, endAngle] = arc;
     const curve = new PlanarArcCurve3(
@@ -220,7 +212,6 @@ function makeCam({
   cam.userData.disk = disk;
   cam.userData.index = index;
   cam.userData.offsetEdges = offsetEdges;
-  cam.userData.outerRim = outerRim;
   cam.userData.shaft = shaft;
   recess398Cam(cam,contactArcs,scale);
   return markShadows(cam);
@@ -241,13 +232,6 @@ function makeFollower({
   roller.position.z = 0.37;
   roller.userData.role = 'cam-contact-roller-constrained-to-horizontal-line';
   follower.add(roller);
-  const rollerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(rollerRadius, 0.026, 9, 36),
-    darkMaterial,
-  );
-  rollerRim.position.z = 0.69;
-  rollerRim.userData.role = 'cam-follower-roller-rim';
-  follower.add(rollerRim);
 
   const pivotOffset = 8.197955 * scale;
   const railStart = 0.57 * scale;
@@ -290,7 +274,6 @@ function makeFollower({
   follower.userData.pivotIndex = pivotIndex;
   follower.userData.rails = rails;
   follower.userData.roller = roller;
-  follower.userData.rollerRim = rollerRim;
   return markShadows(follower);
 }
 

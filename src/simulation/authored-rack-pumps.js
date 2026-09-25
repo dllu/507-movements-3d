@@ -368,7 +368,6 @@ function handRockedPinionAndPumpRacks(movement) {
   }
 
   const pumpCylinders = [];
-  const pumpCylinderRings = [];
   for (const side of [-1, 1]) {
     const x = side * pinionPitchRadius;
     const cylinder = new THREE.Mesh(
@@ -381,17 +380,6 @@ function handRockedPinionAndPumpRacks(movement) {
       : 'right-air-pump-barrel';
     pumpCylinders.push(cylinder);
     root.add(cylinder);
-    for (const y of [pumpCylinderTop, pumpCylinderBottom]) {
-      const ring = new THREE.Mesh(
-        new THREE.TorusGeometry(0.46, 0.045, 10, 48),
-        darkMaterial,
-      );
-      ring.rotation.x = Math.PI / 2;
-      ring.position.set(x, y, 0.23);
-      ring.userData.role = 'fixed-pump-barrel-end-ring';
-      pumpCylinderRings.push(ring);
-      root.add(ring);
-    }
   }
 
   const pinion = makeGear({
@@ -639,7 +627,6 @@ function handRockedPinionAndPumpRacks(movement) {
     pinion,
     pinionAxle,
     pinionRotor,
-    pumpCylinderRings,
     pumpCylinders,
     rightPiston: rightRackAssembly.piston,
     rightPistonRod: rightRackAssembly.pistonRod,

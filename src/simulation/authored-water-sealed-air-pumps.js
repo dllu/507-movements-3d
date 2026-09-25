@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {replaceWithLaidRope} from './laid-rope.js';
 import {correctWaterSealedPump} from './water-sealed-pump-parts.js';
 import {
   PALETTE,
@@ -24,6 +25,15 @@ function setRodBetween(mesh, start, end) {
   mesh.position.copy(start).add(end).multiplyScalar(0.5);
   mesh.scale.y = length;
   mesh.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
+}
+
+// Brown draws these as laid ropes: the shared three-strand rope, rebuilt
+// along its straight run, its lay fixed from the upper end.
+function setRopeBetween(mesh, start, end, radius) {
+  mesh.position.set(0, 0, 0);
+  mesh.quaternion.identity();
+  mesh.scale.set(1, 1, 1);
+  replaceWithLaidRope(mesh, new THREE.LineCurve3(start.clone(), end.clone()), {radius, tubularSegments: 32});
 }
 
 function waterSealedBellPump(movement) {
@@ -411,19 +421,13 @@ function waterSealedBellPump(movement) {
   );
   tubBottom.position.y = outerTubBottomY - 0.08;
   outerTub.add(tubBottom);
-  const tubRings = [outerTubBottomY, externalWaterLineY, outerTubTopY]
+  // Brown's dotted water line is notation; the water itself shows the level.
+  const tubRings = [outerTubBottomY, outerTubTopY]
     .map((y, index) => {
       const ring = addRole(new THREE.Mesh(
-        new THREE.TorusGeometry(
-          outerTubInnerRadius + 0.10,
-          index === 1 ? 0.032 : 0.048,
-          9,
-          56,
-        ),
-        index === 1 ? ropeMaterial : darkMaterial,
-      ), index === 1
-        ? 'engraving-dotted-water-level'
-        : `outer-tub-hoop-${index + 1}`);
+        new THREE.TorusGeometry(outerTubInnerRadius + 0.10, 0.048, 9, 56),
+        darkMaterial,
+      ), `outer-tub-hoop-${index === 0 ? 1 : 3}`);
       ring.rotation.x = Math.PI / 2;
       ring.position.y = y;
       outerTub.add(ring);
@@ -643,15 +647,17 @@ function waterSealedBellPump(movement) {
     movingBell.position.y = state.bellCenterY;
     setRodBetween(leftLever, state.leftOuterEnd, state.leftInnerEnd);
     setRodBetween(rightLever, state.rightOuterEnd, state.rightInnerEnd);
-    setRodBetween(
+    setRopeBetween(
       leftSuspensionRope,
       state.leftInnerEnd,
       state.leftBellLug,
+      0.026,
     );
-    setRodBetween(
+    setRopeBetween(
       rightSuspensionRope,
       state.rightInnerEnd,
       state.rightBellLug,
+      0.026,
     );
     const leftGrip = new THREE.Vector3(
       state.leftOuterEnd.x,
@@ -663,8 +669,8 @@ function waterSealedBellPump(movement) {
       0.20,
       state.rightOuterEnd.z,
     );
-    setRodBetween(leftPullRope, state.leftOuterEnd, leftGrip);
-    setRodBetween(rightPullRope, state.rightOuterEnd, rightGrip);
+    setRopeBetween(leftPullRope, state.leftOuterEnd, leftGrip, 0.025);
+    setRopeBetween(rightPullRope, state.rightOuterEnd, rightGrip, 0.025);
     handGrips[0].position.copy(leftGrip);
     handGrips[1].position.copy(rightGrip);
 

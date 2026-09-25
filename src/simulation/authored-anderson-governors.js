@@ -571,19 +571,6 @@ function andersonGyroscopeGovernor(movement) {
   rotorDisk.position.x = rotorCenterOffset;
   rotorDisk.userData.role = 'heavy-gyroscope-wheel-A';
   outputRotor.add(rotorDisk);
-  const rotorFaceRings = [-1, 1].map((side) => {
-    const ring = torusNormalToX(rotorRadius * 0.78, 0.042,
-      darkMaterial, 96);
-    ring.position.x = rotorCenterOffset + side * (rotorWidth / 2 + 0.01);
-    ring.userData.role = 'dark-face-ring-on-heavy-wheel-A';
-    ring.userData.side = side;
-    outputRotor.add(ring);
-    return ring;
-  });
-  const rotorRim = torusNormalToX(rotorRadius, 0.06, darkMaterial, 112);
-  rotorRim.position.x = rotorCenterOffset;
-  rotorRim.userData.role = 'dark-working-rim-of-heavy-wheel-A';
-  outputRotor.add(rotorRim);
 
   const outputShaft = cylinderAlongX(
     shaftRadius,
@@ -656,11 +643,6 @@ function andersonGyroscopeGovernor(movement) {
   outputBearingCollar.userData.role =
     'nonrotating-bearing-at-outer-end-of-piece-B-for-rods-C';
   tiltGroup.add(outputBearingCollar);
-  const outputBearingRim = torusNormalToX(0.14, 0.037,
-    darkMaterial, 36);
-  outputBearingRim.position.x = outputLeverLength + 0.14;
-  outputBearingRim.userData.role = 'outer-end-bearing-rim-on-piece-B';
-  tiltGroup.add(outputBearingRim);
   carrierGroup.add(tiltGroup);
 
   const cardanSpider = new THREE.Group();
@@ -1308,7 +1290,6 @@ function andersonGyroscopeGovernor(movement) {
     leverSpringArm,
     lowerStandard,
     outputBearingCollar,
-    outputBearingRim,
     outputRotor,
     outputShaft,
     outputYokeArms,
@@ -1320,10 +1301,8 @@ function andersonGyroscopeGovernor(movement) {
     rotatingSwivel,
     rotorDisk,
     rotorFaceIndexes,
-    rotorFaceRings,
     rotorHub,
     rotorIndexBead,
-    rotorRim,
     spiderHub,
     spiderInputTrunnion,
     spiderOutputTrunnion,

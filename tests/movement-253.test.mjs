@@ -351,7 +351,7 @@ test('movement 253 renderer binds both rotors, all hooks, spring, and contacts',
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
 
-  assert.equal(blocks.ropeEdges.length, 2);
+  assert.equal(blocks.hoistingRope.geometry.type, 'LaidRopeGeometry');
   // Brown draws no springs or speed indices; the source presentation removes
   // them from the display while the kinematic spring law stays in the model.
   const removed = model.root.userData.sourcePresentation.removedRoles;

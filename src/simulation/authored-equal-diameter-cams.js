@@ -65,16 +65,8 @@ function makeRoller({
   tread.userData.role = `${role}-tread`;
   rotor.add(tread);
 
-  const faceRings = [-1, 1].map((side) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(radius * 0.87, radius * 0.055, 8, 40),
-      darkMaterial,
-    );
-    ring.position.z = side * depth * 0.505;
-    ring.userData.role = `${role}-face-ring`;
-    rotor.add(ring);
-    return ring;
-  });
+  // Brown inks the roller's edge; it has no separate face ring.
+  const faceRings = [];
 
   const rotationIndices = [-1, 1].map((side) => {
     const index = new THREE.Mesh(
@@ -488,13 +480,9 @@ function equalDiameterCam(movement) {
   const profileSegments = 540;
   // A tiny machining allowance bounds the chord error of the finite mesh.
   const profileMeshAllowance = 0.00023;
-  const profilePoints = [];
   for (let index = 0; index < profileSegments; index += 1) {
     const theta = index / profileSegments * FULL_TURN;
     const point = camProfilePointAt(theta);
-    // Face trim stays inside the working envelope, away from the rollers.
-    const trim = point.clone().addScaledVector(outwardNormalAt(theta), -0.04);
-    profilePoints.push(new THREE.Vector3(trim.x, trim.y, camDepth / 2 + 0.012));
     const finitePoint = point.clone().addScaledVector(outwardNormalAt(theta), -profileMeshAllowance);
     if (index === 0) camShape.moveTo(finitePoint.x, finitePoint.y);
     else camShape.lineTo(finitePoint.x, finitePoint.y);
@@ -508,32 +496,11 @@ function equalDiameterCam(movement) {
     'roller-radius-inward-offset-of-equal-diameter-pitch-curve';
   camRotor.add(camBody);
 
-  const profileOutline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(
-        profilePoints,
-        true,
-        'centripetal',
-        0.5,
-      ),
-      profileSegments,
-      0.027,
-      7,
-      true,
-    ),
-    darkMaterial,
-  );
-  profileOutline.userData.role = 'dark-equal-diameter-cam-outline';
-  camRotor.add(profileOutline);
+  // The cam's inked edge is the plate's outline of the solid cam, not a
+  // separate dark band, so no outline tube is added.
 
   const camHub = cylinderAlongZ(0.62, camDepth * 1.22, driverMaterial, 48);
   camHub.userData.role = 'cam-hub-fixed-to-input-shaft';
-  const hubRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.62, 0.055, 10, 48),
-    darkMaterial,
-  );
-  hubRing.position.z = camDepth * 0.63;
-  hubRing.userData.role = 'cam-hub-front-ring';
   const camShaft = cylinderAlongZ(0.21, 0.71 - camBearingZ + 0.04, darkMaterial, 36);
   camShaft.position.z = (0.71 + camBearingZ - 0.04) / 2;
   camShaft.userData.role = 'rotating-cam-input-shaft';
@@ -543,7 +510,7 @@ function equalDiameterCam(movement) {
   );
   camRotationIndex.position.set(0.91, 0, camDepth / 2 + 0.06);
   camRotationIndex.userData.role = 'white-cam-rotation-index';
-  camRotor.add(camHub, camRotationIndex, camShaft, hubRing);
+  camRotor.add(camHub, camRotationIndex, camShaft);
 
   const yoke = new THREE.Group();
   yoke.userData.axis = X_AXIS.clone();
@@ -720,9 +687,7 @@ function equalDiameterCam(movement) {
     camRotor,
     camShaft,
     guidePosts,
-    hubRing,
     leftRoller,
-    profileOutline,
     rightRoller,
     rodRuns,
     straightGuides,

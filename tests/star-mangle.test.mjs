@@ -38,7 +38,8 @@ test('054 radial teeth, both guide faces and rims form closed solids with outwar
     assert.ok([...edges.values()].every(n => n === 2), 'closed edges');
     assert.ok([...directions.values()].every(n => n === 0), 'consistent winding');
   });
-  assert.equal(seen.size, 23);
+  assert.equal(seen.size, 21);
+  assert.ok(parts.crabBlock.isMesh && !parts.bridge && !parts.stem, "A is one solid block, not a bridge and stem");
 });
 
 test('054 rendered tooth skins clear in both directions through running and crossover phases', () => {

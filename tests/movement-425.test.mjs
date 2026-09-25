@@ -70,7 +70,7 @@ test('movement 425 is one shaft-fast eccentric piston C in fixed cylinder A with
   assert.equal(blocks.abutmentNose.parent, blocks.abutmentD);
   assert.equal(blocks.abutmentStem.parent, blocks.abutmentD);
   assert.equal(blocks.abutmentD.parent, model.root);
-  assert.equal(blocks.shaftB.parent, model.root);
+  assert.equal(blocks.shaftB.parent, blocks.rotor);
 
   const roles = [];
   const belts = [];

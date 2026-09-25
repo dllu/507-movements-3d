@@ -465,6 +465,8 @@ function jointedParallelRuler(movement) {
     );
     outline.userData.noShadow = true;
     outline.userData.role = `${role}-source-outline`;
+    outline.visible = false; // ink edge line only: kept for references, not drawn
+    outline.userData.retiredInkOutline = true;
     group.add(body, outline);
     return { body, group, outline };
   };
@@ -493,6 +495,8 @@ function jointedParallelRuler(movement) {
   );
   intermediateOutline.userData.noShadow = true;
   intermediateOutline.userData.role = 'intermediate-bar-source-outline';
+  intermediateOutline.visible = false; // ink edge line only: kept for references, not drawn
+  intermediateOutline.userData.retiredInkOutline = true;
   const middleLeftAnchor = new THREE.Object3D();
   middleLeftAnchor.position.y = armPlaneY - intermediatePlaneY;
   middleLeftAnchor.userData.role = 'intermediate-left-middle-pivot-anchor';

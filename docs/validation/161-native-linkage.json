@@ -9,22 +9,23 @@
         "period": 8,
         "variableSpeed": true,
         "spindleDrive": true,
-        "lowSpeed": 4.586361238233177,
-        "highSpeed": 5.096956646020253,
-        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints are unloaded point-ball equilibria; actual finite-mass dynamics need comparison."
+        "equilibriumCalibration": true,
+        "lowSpeed": 4.7733934017120685,
+        "highSpeed": 5.305040709875139,
+        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints optionally include the full linkage gravity and rotational-inertia derivatives; the native transient remains passive."
       },
-      "maximumPinClosureError": 4.5750270512562465e-7,
-      "maximumSymmetryError": 1.1102230246251565e-16,
+      "maximumPinClosureError": 4.274354827379574e-8,
+      "maximumSymmetryError": 1.6653345369377348e-16,
       "spreadRange": [
-        0.22500507501503383,
-        0.5861320299604937
+        0.3573411745711424,
+        0.612116568678825
       ],
       "cycleEndSpread": [
         0.365,
-        0.3412185131857191,
-        0.3025333447749856,
-        0.26529325457303965,
-        0.24115823851380874
+        0.3631615461847733,
+        0.36065127561620797,
+        0.3584926651477083,
+        0.3573411745711424
       ]
     },
     {
@@ -34,26 +35,27 @@
         "period": 8,
         "variableSpeed": true,
         "spindleDrive": true,
-        "lowSpeed": 4.586361238233177,
-        "highSpeed": 5.096956646020253,
-        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints are unloaded point-ball equilibria; actual finite-mass dynamics need comparison."
+        "equilibriumCalibration": true,
+        "lowSpeed": 4.7733934017120685,
+        "highSpeed": 5.305040709875139,
+        "assumptions": "Diagnostic source-proportioned linkage with ideal hinges/slider, two 1 kg balls, inferred light links and sleeve, gravity at 0.1 m per world unit, and only spindle position actuation. No valve load, feedback engine or bevel contact yet. Speed endpoints optionally include the full linkage gravity and rotational-inertia derivatives; the native transient remains passive."
       },
-      "maximumPinClosureError": 2.130327500316417e-7,
+      "maximumPinClosureError": 4.29342316545933e-8,
       "maximumSymmetryError": 1.1102230246251565e-16,
       "spreadRange": [
-        0.22520834197380277,
-        0.586194044374366
+        0.35733655645180434,
+        0.612118930615424
       ],
       "cycleEndSpread": [
         0.365,
-        0.34200925365845386,
-        0.3036139616406993,
-        0.2662134979007722,
-        0.24163077709043812
+        0.36316529960149496,
+        0.36065475683730264,
+        0.35849243824941984,
+        0.35733655645180434
       ]
     }
   ],
-  "maximumTimestepSpreadDifference": 0.0013756633046918543,
+  "maximumTimestepSpreadDifference": 0.000023019788723821488,
   "limitations": "Under-damped transients have not settled to a periodic bake. Valve force, speed/load calibration, source-shaped solid clearances and bevel geometry/contact remain to review.",
   "sources": [
     {
@@ -62,7 +64,7 @@
     },
     {
       "file": "src/simulation/mujoco-ball-governor/physics.js",
-      "sha256": "b8a4be077edae26ee43508e42c01b5d7c4eb02839785155360ab45be5ab87f27"
+      "sha256": "ef6db804186848035ec1d72bc0a907af9a21fb46215ca046ca01aa08f30ebd0e"
     },
     {
       "file": "public/engravings/mm_161.png",
@@ -70,7 +72,7 @@
     },
     {
       "file": "src/simulation/authored-governors.js",
-      "sha256": "24e0ed4d2cc3af45eabe876dbd1167b4afa538b8c4aaab7270d112a8a01ab68f"
+      "sha256": "1f5fcd9b87215c1d3d55b6d0ffe2321617186e6ea232ae1bfb13cdd769c09f30"
     }
   ]
 }

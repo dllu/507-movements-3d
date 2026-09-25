@@ -590,8 +590,10 @@ function pileDriverReleasingHooks(movement) {
   weightAssembly.add(...pivotPins, ...pivotIndexes);
   root.add(weightAssembly);
 
+  // Brown draws the hoisting rope as a plain cord: the shared laid rope.
   const rope = makeDynamicCable({
     color: PALETTE.ink,
+    laid: true,
     maxSegments: 2,
     radius: 0.075,
   });
@@ -1104,11 +1106,13 @@ function pileDriverReleasingHooks(movement) {
     leftHook.rotation.z = state.leftHookAngle;
     rightHook.rotation.z = state.rightHookAngle;
     liftHead.position.y = state.liftHeadY;
+    // The rope ends on top of its eye ring (0.34 ring + 0.085 tube). Its lay
+    // is fixed to that lower end, so it rises with the head.
+    const ropeEndY = state.liftHeadY + 1.24 + 0.425;
     rope.userData.setPoints([
       new THREE.Vector3(0, ropeTopY, 0.08),
-      // The rope ends on top of its eye ring (0.34 ring + 0.085 tube).
-      new THREE.Vector3(0, state.liftHeadY + 1.24 + 0.425, 0.08),
-    ]);
+      new THREE.Vector3(0, ropeEndY, 0.08),
+    ], ropeTopY - ropeEndY);
     const guidePoints = [
       state.guideContactPoints.left,
       state.guideContactPoints.right,

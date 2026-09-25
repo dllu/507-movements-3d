@@ -16,12 +16,12 @@ export default {
     note: 'Side elevation of the curved standard with its two guide brackets, the twin wiper A and the stamp rod with projection B; the stamp head hangs above the ground line and no anvil or striking bed is drawn.',
   },
   86: {
-    remove: ['remote(?:BearingStandard|BearingLip|Base|DriveRim|DriveWeb|DriveHub|InputShaft)', 'rearDrive(?:Web|Hub)', 'pumpGuide(?:Left|Right|Crossbar|PillarLeft|PillarRight)', 'pumpLowerBed', 'pumpCrosshead', 'pumpOutputRod', 'ropeLoadFerrule'],
-    note: 'Front elevation of the loose wheel A on its A-frame standard with catch B, cam C, the post and the overhead stop, cut at the ground line: the rope runs down into the plinth and the hatched upper and lower runs of the driving band leave the plate to the right (the factory clips both at the plate edge). The band\'s own pulley sits hidden behind A (only its rim is kept, so the spoke openings stay clear); the second pulley, pump rod, crosshead and rod guides are not drawn.',
+    remove: ['rearDrive(?:Web|Hub)'],
+    note: 'Front elevation of the loose wheel A on its A-frame standard with catch B, cam C, the post and the overhead stop. Brown cuts the view at the ground line and at the right edge; the rope, driving band, second pulley and pump hardware are modelled whole and run off the default view. The band\'s own pulley sits hidden behind A (only its rim is kept, so the spoke openings stay clear).',
   },
   89: {
     remove: ['bored-crosshead-cheek', 'crosshead-bridge-clear-of-swinging-eye', 'wrist-pin-(?:shank|retaining-head)', 'output-valve-stem', 'fixed-horizontal-crosshead-channel', 'base-rail', 'guide-support-\\d', 'bored-rear-shaft-support'],
-    note: 'Front elevation of the sheave, strap and bolted rod flange, the rod broken off to the right; no crosshead, guides or bed are drawn.',
+    note: 'Front elevation of the sheave, strap and bolted rod flange. Brown breaks the rod off to the right; the model shows it whole to its wrist eye. No crosshead, guides or bed are drawn.',
   },
   90: {
     camera: [0, 0, 1],
@@ -56,8 +56,7 @@ export default {
     note: 'Front view with Brown\'s layout (pivot shaft on the right) and the same rotation sense, taken from the arm side without a mirror: the grooved arm in front, its cover lifted in section to show the crank pin in the endless groove, and the opaque disk behind it (Brown views from the disk side and dashes the arm). No frame is drawn (the factory omits it).',
   },
   105: {
-    remove: ['anvil', 'blank'],
-    note: 'Front elevation of the weighted handle, screw, nut and ram in the frame, broken off below the ram guide; no lower jaw, anvil or blank is drawn. The ram presses an invisible reconstructed blank.',
+    note: 'Front elevation of the weighted handle, screw, nut and ram in the frame. Brown breaks the frame off below the ram guide; the frame is modelled whole with its lower jaw, anvil and blank, which run off the bottom of the default view.',
   },
   108: {
     camera: [0, 0, 1],
@@ -78,6 +77,10 @@ export default {
   142: {
     remove: ['rear-post', 'guide-support-post', 'guide-(?:upper|lower)-bridge', 'base'],
     note: 'Face view of the carrier disk, fixed pinion, planet wheel and crank with the connecting rod running down past the disk to the cropped plate edge, where its slider rides the traverse guide rail; no base, pedestal or guide supports are drawn.',
+  },
+  143: {
+    remove: ['pulley-index'],
+    note: 'The left pulley is a plain disk; Brown draws no index stripe on it.',
   },
   145: {
     remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-bearing-post-behind-flywheel', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index'],
@@ -317,13 +320,13 @@ export default {
   },
   297: {
     remove: ['fixed-lantern-escapement-base', 'fixed-bored-rear-plate-joining-both-arbor-bearings', 'fixed-(?:rocking-arm-bearing-A|lantern-wheel-bearing)'],
-    note: 'Face view of the pin wheel with the hatched pallets B and C; arm A and its pivot are dashed hidden lines. No base, rear plate or bearings are drawn.',
+    note: 'Face view of the pin wheel with pallets B and C on arm A; Brown dashes the arm, but the model shows the real arm in front of the disc, where the pallets meet the trundle ends. No base, rear plate or bearings are drawn.',
   },
   299: {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
     camera: [0.02, 0.02, -1],
     remove: ['weighted-horizontal-foliot-regulator'],
-    note: 'Nearly edge-on view along the verge, cropped along the crown edge to about three pitches of the near band with the wheel ends running out of view: the concave-backed raked teeth, the far teeth faded pale between them as Brown draws them only lightly, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
+    note: 'Nearly edge-on view along the verge, cropped along the crown edge to about three pitches of the near band with the wheel ends running out of view: the concave-backed raked teeth with the far teeth seen through their gaps, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
   },
   300: {
     remove: ['debaufre-wheel-rotation-witness', 'pallet-oscillation-witness'],
@@ -338,8 +341,8 @@ export default {
     note: 'Face view of the Graham wheel with its four crossings as a leaning X under anchor D, C, E, the pendulum rod marked only by the dot F; no frame, bob, index marks or highlighted pallet faces are drawn.',
   },
   305: {
-    remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket', 'pendulum-angle-index', 'disc-half-turn-index'],
-    note: 'The pendulum pallet plate and single-pin disc; no clock frame, brackets or index marks are drawn.',
+    remove: ['rear-clock-frame-upright', 'fixed-pendulum-pivot-bracket', 'fixed-single-pin-disc-arbor-bracket'],
+    note: 'The bottle-shaped pendulum plate, one part with its eye, rod, two eccentric adjusting bushes and the escapement opening cut to Brown\'s two D windows, and the single-pin disc behind it; no clock frame or brackets are drawn.',
   },
   306: {
     remove: ['rear-frame-cross-bridge', 'bored-back-strut-joining-wheel-arbor-to-frame-bridge'],
@@ -398,8 +401,8 @@ export default {
     note: 'The compensation balance alone: bar t-a-t\' with timing screws and the compound arms carrying weights b, b\'; no balance spring or stud is drawn.',
   },
   320: {
-    remove: ['fixed-clock-frame', '.*-symmetric-rotation-index', 'chain-link-index-marker'],
-    note: 'The pulleys P and p, the weights and the endless chain; no clock frame, rotation indices or chain markers are drawn.',
+    remove: ['fixed-clock-frame', '.*-symmetric-rotation-index'],
+    note: 'The pulleys P and p, the weights and the endless chain (a laid rope, whose lay shows its travel); no clock frame or rotation indices are drawn.',
   },
   321: {
     remove: ['fixed-clock-frame-and-T-bearing', 'great-wheel-G-symmetric-rotation-index', 'barrel-B-symmetric-rotation-index', 'maintaining-spring-material-index'],
@@ -452,7 +455,7 @@ export default {
     note: 'Front elevation of the flywheel behind the slotted crosshead A in its frame; no white rim tick, wrist disk or crosshead index is drawn.',
   },
   360: {
-    remove: ['white-continuous-flywheel-index', 'white-oscillating-drum-index', 'fixed-material-(?:drive|counterweight)-cord-marker'],
+    remove: ['white-continuous-flywheel-index', 'white-oscillating-drum-index'],
     note: 'Front elevation of the rocking beam with its two cord sectors, the hanging weight and the drum-and-ratchet on the flywheel shaft; the cords run over the sector ends without ball fastenings (the factory hides the knots), and no white indices or cord markers are drawn.',
   },
   380: {
@@ -613,7 +616,7 @@ export default {
   },
   405: {
     remove: ['rule-distance-index-\\d+', '(?:upper-focus-rule-pivot|lower-focus-fixed-thread-loop-pin)-white-center-index', 'given-(?:upper|lower)-hyperbola-vertex'],
-    note: 'The rule pivoted at the upper focus, the thread from its free end round the pencil to the lower focus, both branches and the dashed axes; no rule graduations, centre indices or vertex points are drawn.',
+    note: 'The rule pivoted at the upper focus, the thread from its free end round the pencil to the lower focus, and both branches; Brown\'s dotted axes are notation and are not drawn, nor are rule graduations, centre indices or vertex points.',
   },
   406: {
     remove: ['fixed-drawing-board-presentational-support-not-source-hardware', 'fixed-drawing-board-border', 'square-blade-distance-index-\\d+', 'white-focus-center-index', 'given-(?:base-endpoint-[12]|parabola-vertex)', 'given-parabola-base-chord', 'dashed-parabola-axis-parallel-to-square-blade'],
@@ -660,7 +663,7 @@ export default {
   },
   421: {
     remove: ['marine-trunk-engine-foundation', 'rear-crankshaft-support-column', 'rear-crankshaft-bearing-arm', 'high-pressure-upper-annular-chamber-indicator', 'lower-expansive-exhaust-chamber-indicator'],
-    note: 'The sectioned cylinder, trunk piston, pitman and crank with Brown\'s dotted crank-pin circle; no foundation, crank supports or steam tints are drawn.',
+    note: 'The sectioned cylinder, trunk piston, pitman and crank; Brown\'s dotted crank-pin circle is notation and is not drawn, nor are the foundation, crank supports or steam tints.',
   },
   422: {
     remove: ['fixed-foundation-of-sector-cylinder-A', '(?:counter)?clockwise-steam-passage-from-D-to-A', '(?:counter)?clockwise-chamber-admission-indicator', 'white-valve-D-position-index', 'cutaway-back-of-sector-steam-space'],
@@ -668,12 +671,12 @@ export default {
   },
   423: {
     remove: ['left-fixed-cylinder-frame', 'right-fixed-cylinder-frame', '(?:top|bottom)-outer-side-induction-opening-indicator', 'cutaway-(?:top|bottom)-outer-steam-space', 'common-central-exhaust-space-between-the-two-pistons'],
-    note: 'Section of Root\'s double-quadrant engine: the closed cast casing on its foot enclosing both quadrant chambers, the two pistons B on their pivots, the common crank D inside its dotted flywheel circle and valve a; no legs, steam tints or steam markers are drawn.',
+    note: 'Section of Root\'s double-quadrant engine: the closed cast casing on its foot enclosing both quadrant chambers, the two pistons B on their pivots, the common crank D and valve a; Brown\'s dotted circle round D is notation and is not drawn, nor are legs, steam tints or steam markers.',
   },
   424: {
     camera: [0, 0, 1],
     remove: ['fixed-foundation-of-square-piston-engine', '(?:left|right)-B-port-admission-indicator', '(?:top|bottom)-C-port-admission-indicator'],
-    note: 'Flat elevation of the oblong cylinder A with the sliding frame piston B, the nested piston C and crank wrist a on shaft b with its dotted path; no bed plate or steam markers are drawn.',
+    note: 'Flat elevation of the oblong cylinder A with the sliding frame piston B, the nested piston C and crank wrist a on shaft b (Brown\'s dotted wrist path is not drawn); no bed plate or steam markers are drawn.',
   },
   425: {
     camera: [0.08, 0.05, 1],
@@ -739,7 +742,8 @@ export default {
   },
   438: {
     camera: [0.08, 0.05, 1],
-    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it.",
+    remove: ['visible-reaction-mill-shaft-rotation-marker'],
+    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn.",
   },
   439: {
     camera: [0.08, 0.05, 1],
@@ -824,12 +828,12 @@ export default {
   },
   465: {
     remove: ['left-operator-pressure-pad', 'right-operator-pressure-pad'],
-    note: 'Diagonal balance beam on its platform over the two pumps in the well between two masonry banks, its water ruled; Brown draws a man working the beam, not pressure pads, and no foundation slab or water box.',
+    note: 'Diagonal balance beam on its platform over the two pumps in the well between two masonry banks, its water ruled, with Brown\'s man standing astride the pivot and holding the hand-bar carried on the beam; no pressure pads, foundation slab or water box are drawn.',
   },
   466: {
     camera: [0, 0.03, 1],
-    remove: ['fixed-foundation-under-hydrostatic-press-and-hand-pump'],
-    note: 'Sectional elevation of the press, ram cylinder, pipe, hand pump and open reservoir; no foundation slab is drawn.',
+    remove: ['fixed-foundation-under-hydrostatic-press-and-hand-pump', 'modeled-relief-return-valve-for-lowering-press', 'active-return-water-from-relief-valve-to-reservoir'],
+    note: 'Sectional elevation of the press, ram cylinder, pipe, hand pump and open reservoir, the reservoir standing on the ground beside the press; no foundation slab or relief valve is drawn.',
   },
   467: {
     camera: [0, 0.02, 1],
@@ -860,7 +864,7 @@ export default {
   },
   473: {
     remove: ['water-sealed-air-pump-foundation'],
-    note: 'Elevation of the frame on its two foot blocks, the crossed levers, ropes and the inverted tub in the larger tub, the water level dotted; no base slab is drawn.',
+    note: 'Elevation of the frame on its two foot blocks, the crossed levers, ropes and the inverted tub in the larger tub with the water standing in it (Brown\'s dotted water line is not drawn); no base slab is drawn.',
   },
   477: {
     remove: ['condensate-path-\\d-marker-\\d', 'transparent-rear-wall-of-outer-box'],
@@ -895,11 +899,11 @@ export default {
     note: 'Plan of the six arms with their pivoted sails, the reference circle and the single wind arrow Brown draws; no beads, indices or extra arrows.',
   },
   490: {
-    remove: ['material-marker-on-single-steering-rope-\\d+', '(?:upper|lower)-guide-sheave-white-index', 'white-handwheel-and-barrel-index'],
+    remove: ['(?:upper|lower)-guide-sheave-white-index', 'white-handwheel-and-barrel-index'],
     note: 'Plan of the wheel edge-on with its handles, the barrel, the two guide pulleys and the tiller; no rope beads or indices are drawn.',
   },
   493: {
-    remove: ['central-to-packing-contact-index-\\d', 'fixed-overhead-hoist-eye', 'white-index-of-upward-hoist-direction', 'white-upward-hoist-index-shaft'],
+    remove: ['central-to-packing-contact-index-\\d', '(?:left|right)-wall-contact-index', 'fixed-overhead-hoist-eye', 'white-index-of-upward-hoist-direction', 'white-upward-hoist-index-shaft'],
     note: 'Section of the stone with the lewis in its hole and the shackle on the rope; no hoist eye, arrow or contact indices are drawn.',
   },
   498: {
@@ -921,7 +925,7 @@ export default {
   },
   491: {
     camera: [0.02, 0.04, 1],
-    remove: ['white-material-marker-on-capstan-cable-\\d+', 'white-pawl-tip-contact-marker', 'white-rotation-index-on-capstan-head', 'fixed-circular-base-plinth', 'fixed-wide-capstan-base-foot'],
+    remove: ['white-pawl-tip-contact-marker', 'white-rotation-index-on-capstan-head', 'fixed-circular-base-plinth', 'fixed-wide-capstan-base-foot'],
     note: 'Side elevation of the capstan, pawl and bars with the ratchet on the ground line, as Brown draws it; no plinth, cable beads or indices are drawn.',
   },
   492: {
@@ -959,7 +963,7 @@ export default {
   281: {
     camera: [0.03, 0.01, 1],
     remove: ['white-disk-rotation-index', 'white-lever-vibration-index'],
-    note: 'Front elevation of the grooved disk, follower pin and lever on its upper fulcrum; Brown dashes the lever again at its other extreme, and draws no standard under the lever, only the A-frame and plank base; the white indices are not drawn.',
+    note: 'Front elevation of the grooved disk, follower pin and lever on its upper fulcrum; Brown\'s dashed second pose of the lever is notation and is not drawn; he draws no standard under the lever, only the A-frame and plank base; the white indices are not drawn.',
   },
   277: {
     camera: [-0.12, 0.05, 1],

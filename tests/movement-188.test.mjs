@@ -63,7 +63,8 @@ test('188 plate landmarks: pin, pivot, loop extents and step a sit where Brown d
     near(box.max.y, R([0, 74]).y, 4 * px, 'loop top at the plate');
     near(box.max.x, R([401, 0]).x, 4 * px, 'handle arm reaches the pin leg');
     const rod = new THREE.Box3().setFromObject(b.rodFront);
-    near(rod.min.x, R([15, 0]).x, 2 * px, 'broken rod end');
+    // Brown's break at x 15 is a drawing convention: the rod runs on whole.
+    near(rod.min.x, R([-300, 0]).x, 2 * px, 'rod runs on past Brown\'s break');
     near(rod.max.x, R([520, 0]).x, 2 * px, 'rod nose');
     near(rod.min.y, R([0, 335]).y, 1e-6, 'rod lower edge');
     // Step a: the leaf head ends exactly under the limb at the plate step.

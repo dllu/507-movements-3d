@@ -164,3 +164,17 @@ are a 161 by 81 PNG, now correctly named
 `../reference/sam-gallagher-063-unavailable-placeholder.png`. The earlier
 commentary saying the animation had been retrieved was corrected. The saved
 `sam-gallagher-063-frame-01.png` is that same placeholder, not a mechanism frame.
+
+## Pass 53: whole solid parts, smooth one-piece pawl
+
+The undrawn leg zone (a shader that discarded the drop inside a region riding
+with the pawl) and the dashed leg outline are removed: rotated views showed
+the pawl and drop cut off. The drop is one whole solid plate. The pawl is one
+plate with Brown's simple smooth outline (ring, broad arm under the striker,
+straight inner edge to a pointed nose, one curve back over the shoulder); the
+separate stepped nose block is gone. The pawl is thick enough to span the pins'
+plane and the star's (z −0.22 to 0.04), so the solver now checks the whole
+pawl outline against the star. Rebaked (fingerprint e4c43a18): one point
+(−35.96°) per event, repeat error 0.0039, drop lift 20.2°. While the pawl hangs
+low a narrow strip of the drop's leg shows between the lobe and the pin disk;
+it is the real leg and is left visible. See docs/p53-parts-review.md.

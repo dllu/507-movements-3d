@@ -104,8 +104,6 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   for (const part of [
     blocks.camBody,
     blocks.bevelFace,
-    blocks.frontWavyEdge,
-    blocks.rearEdge,
     blocks.shaft,
     blocks.hub,
     blocks.rotationIndex,
@@ -282,8 +280,8 @@ test('movement 272 renders a closed cone-rimmed disk whose front vertices lie on
     near(band.getX(index), faceXAtLocalY(band.getY(index)), 2e-6,
       `working band vertex ${index}`);
   }
-  assert.equal(blocks.frontWavyEdge.geometry.parameters.closed, true);
-  assert.equal(blocks.rearEdge.geometry.type, 'TorusGeometry');
+  assert.equal(blocks.frontWavyEdge, undefined, 'no dark edge tube on the wavy rim');
+  assert.equal(blocks.rearEdge, undefined, 'no dark torus on the rear rim');
   disposeModel(model.root);
 });
 
@@ -366,8 +364,6 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
   const camChildTransforms = [
     blocks.camBody,
     blocks.bevelFace,
-    blocks.frontWavyEdge,
-    blocks.rearEdge,
     blocks.shaft,
     blocks.hub,
     blocks.rotationIndex,
@@ -443,8 +439,9 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  // The undrawn base, posts, shaft bearings and backing rail are presented away.
-  assert.equal(meshCount, 13);
+  // The undrawn base, posts, shaft bearings and backing rail are presented
+  // away, and the disk carries no dark edge tubes.
+  assert.equal(meshCount, 11);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);

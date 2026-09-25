@@ -77,7 +77,9 @@ test('movement 361 keeps the belt pulley loose from the axially separate pin-clu
   assert.equal(blocks.shiftCollar.parent, blocks.shiftCarrier);
   assert.equal(blocks.belt.parent, model.root);
   assert.equal(blocks.belt.userData.closed, true);
-  assert.equal(blocks.belt.userData.markers.length, 10);
+  // Brown hatches the band: the shared laid rope, whose lay shows travel.
+  assert.equal(blocks.belt.userData.markers.length, 0);
+  assert.equal(blocks.belt.userData.crossSection, 'laid-rope');
   assert.equal(data.transmission.beltCount, 1);
 
   const roles = [];
@@ -377,25 +379,24 @@ test('movement 361 renderer preserves carriers, belt material continuity, and fi
 
     const curve = blocks.belt.userData.curve;
     const pathLength = blocks.belt.userData.length;
-    blocks.belt.userData.markers.forEach((marker, index) => {
-      const phase = positiveModulo(
-        expected.beltTravel / pathLength
-          + index / geometry.beltMarkerCount,
-        1,
-      );
-      vectorNear(marker.position, curve.getPointAt(phase), 3e-12,
-        `material marker ${index} at ${time}`);
-    });
+    near(blocks.belt.userData.mesh.geometry.userData.travel,
+      expected.beltTravel, 0, `laid-rope travel at ${time}`);
+    assert.ok(curve && pathLength > 0);
   }
+  // Material points of the laid rope, placed by its rendered travel.
+  const materialPoints = () => {
+    const { curve, length } = blocks.belt.userData;
+    const travel = blocks.belt.userData.mesh.geometry.userData.travel;
+    return Array.from({ length: geometry.beltMarkerCount }, (_, index) =>
+      curve.getPointAt(positiveModulo(travel / length + index / geometry.beltMarkerCount, 1)));
+  };
 
   const beforeClosure = [];
   model.update(geometry.cyclePeriod - 1e-4);
-  blocks.belt.userData.markers.forEach((marker) => {
-    beforeClosure.push(marker.position.clone());
-  });
+  beforeClosure.push(...materialPoints());
   model.update(geometry.cyclePeriod + 1e-4);
-  blocks.belt.userData.markers.forEach((marker, index) => {
-    assert.ok(marker.position.distanceTo(beforeClosure[index]) < 1e-5,
+  materialPoints().forEach((marker, index) => {
+    assert.ok(marker.distanceTo(beforeClosure[index]) < 1e-5,
       `marker ${index} stays continuous across demonstration boundary`);
   });
 
@@ -404,8 +405,8 @@ test('movement 361 renderer preserves carriers, belt material continuity, and fi
   for (let index = 0; index <= 1200; index += 1) {
     model.update(geometry.cyclePeriod * 2 * index / 1200);
     model.root.updateMatrixWorld(true);
-    const currentMarkers = blocks.belt.userData.markers.map(
-      (marker) => marker.getWorldPosition(new THREE.Vector3()),
+    const currentMarkers = materialPoints().map(
+      (point) => blocks.belt.localToWorld(point.clone()),
     );
     if (previousMarkers) {
       currentMarkers.forEach((marker, markerIndex) => {

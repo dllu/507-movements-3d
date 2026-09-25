@@ -22,7 +22,15 @@ function hindleyWormGeometry(p,halfLength,boreRadius){
   rootHalfWidth:p.wormPitch/4+p.dedendum*tangent,tipHalfWidth:p.wormPitch/4-p.addendum*tangent});
  g.scale(1,-1,1);g.rotateZ(Math.PI/2);
  const pos=g.attributes.position,half=virtualLength/2,out=[],cut=[[],[]];
- const map=v=>{const r=Math.hypot(v.x,v.y),beta=v.z/p.pitchRadius,wheelRadius=p.pitchRadius+p.wormRadius-r,rho=p.distance-wheelRadius*Math.cos(beta);return new THREE.Vector3(v.x*rho/r,v.y*rho/r,wheelRadius*Math.sin(beta));};
+ // Cut square, the last partial turn would end in knife-edged sickles past
+ // each end face. Run the thread out instead: over the last pitch before each
+ // end its height above the root shrinks smoothly to zero, so each end face is
+ // a clean root disc. The run-out scales the straight virtual worm's radius at
+ // fixed (angle, axial position), where the thread is a radial graph, so the
+ // mapped solid only loses material.
+ const wheelRoot=p.pitchRadius+p.wormRadius-rootRadius,runOut=p.wormPitch;
+ const runOutRadius=(r,z)=>{const t=Math.min(1,Math.max(0,(halfLength-Math.abs(wheelRoot*Math.sin(z/p.pitchRadius)))/runOut));return r<=rootRadius||t>=1?r:rootRadius+(r-rootRadius)*t*t*(3-2*t);};
+ const map=v=>{const radial=Math.hypot(v.x,v.y),r=runOutRadius(radial,v.z),beta=v.z/p.pitchRadius,wheelRadius=p.pitchRadius+p.wormRadius-r,rho=p.distance-wheelRadius*Math.cos(beta);return new THREE.Vector3(v.x*rho/radial,v.y*rho/radial,wheelRadius*Math.sin(beta));};
  const clip=(poly,side)=>{const res=[];for(let i=0;i<poly.length;i++){const a=poly[i],b=poly[(i+1)%poly.length],da=halfLength-side*a.z,db=halfLength-side*b.z;if(da>=0)res.push(a);if((da<0)!==(db<0)){const q=a.clone().lerp(b,da/(da-db));q.z=side*halfLength;res.push(q);}}return res;};
  for(let i=0;i<pos.count;i+=3){
   const v=[0,2,1].map(j=>new THREE.Vector3().fromBufferAttribute(pos,i+j));

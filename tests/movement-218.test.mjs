@@ -97,8 +97,9 @@ test('movement 218 is the independently authored output plate of 217', () => {
   assert.equal(blocks.outputHubRing.parent, blocks.outputRotor);
   assert.equal(blocks.rockerBody.parent, blocks.rocker);
   assert.equal(blocks.followerRoller.parent, blocks.rocker);
-  assert.equal(blocks.followerSourceRing.parent, blocks.rocker);
-  assert.equal(blocks.catchPivotRing.parent, blocks.rocker);
+  // Brown's eye circles at A and G are ink edges, not separate rings.
+  assert.equal(blocks.followerSourceRing, undefined);
+  assert.equal(blocks.catchPivotRing, undefined);
   assert.equal(blocks.catchBar.parent, blocks.catchLink);
   assert.equal(blocks.catchHookTongue.parent, blocks.catchLink);
   assert.equal(blocks.catchHook.parent, blocks.catchLink);
@@ -399,7 +400,6 @@ test('movement 218 runtime exposes release and dwell while 262 stays authored', 
     'rendered G hinge',
   );
   assert.equal(blocks.camRotor.visible, false);
-  assert.equal(blocks.followerSourceRing.visible, true);
   // Brown draws no contact markers; the contact itself is still reported.
   assert.equal(blocks.catchContactMarker.visible, false);
   assert.equal(blocks.tripContactMarker.visible, false);

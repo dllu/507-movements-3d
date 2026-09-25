@@ -688,6 +688,9 @@ function sixWaveFaceCamRockerMotion() {
     new THREE.LineBasicMaterial({ color: PALETTE.ink }),
   );
   wavedOutline.userData.role = 'dark-outline-of-six-wave-cam-face';
+  // Brown's ink edge only: kept for references, not drawn.
+  wavedOutline.visible = false;
+  wavedOutline.userData.retiredInkOutline = true;
 
   const camHubHeight = camTopY - minimumLowerFaceY + 0.16;
   const camHub = new THREE.Mesh(
@@ -791,6 +794,9 @@ function sixWaveFaceCamRockerMotion() {
   );
   rockerPivotRing.position.z = 0.18;
   rockerPivotRing.userData.role = 'moving-eye-around-fixed-rocker-fulcrum';
+  // Brown's ink edge only: kept for references, not drawn.
+  rockerPivotRing.visible = false;
+  rockerPivotRing.userData.retiredInkOutline = true;
   const leftJointPinRadius = 0.14;
   const leftJointPin = cylinderAlongZ(
     leftJointPinRadius,
@@ -824,6 +830,9 @@ function sixWaveFaceCamRockerMotion() {
   );
   followerRim.position.z = followerDepth / 2 + 0.018;
   followerRim.userData.role = 'dark-rim-on-rolling-follower-face';
+  // Brown's ink edge only: kept for references, not drawn.
+  followerRim.visible = false;
+  followerRim.userData.retiredInkOutline = true;
   const followerIndex = new THREE.Mesh(
     new THREE.BoxGeometry(followerRadius * 0.78, 0.10, 0.05),
     witnessMaterial,

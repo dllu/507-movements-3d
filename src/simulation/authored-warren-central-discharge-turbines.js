@@ -430,8 +430,11 @@ function warrenCentralDischargeTurbine(movement) {
   root.add(casingFloor);
 
   const shaftBearing=new THREE.Mesh(horizontalRing(.234,.36,-1.98,-1.78),frameMaterial);shaftBearing.userData.role='bored-output-shaft-lower-bearing';root.add(shaftBearing);
-  const bearingBridge=new THREE.Mesh(horizontalPlate(polygonClipping.difference(poly([[-3.4,-.16],[3.4,-.16],[3.4,.16],[-3.4,.16]]),poly(circle([0,0],.234,128))),-1.98,-1.82),frameMaterial);bearingBridge.userData.role='lower-shaft-bearing-support-bridge';root.add(bearingBridge);
-  for(const x of[-3.35,3.35]){const post=new THREE.Mesh(new THREE.BoxGeometry(.16,1.23,.25),frameMaterial);post.position.set(x,-1.225,0);post.userData.role='lower-bearing-bridge-support-post';root.add(post);}
+  // Four-armed step-bearing spider hung from the foundation's underside: every
+  // arm runs from the bearing collar to the foundation (outside the central
+  // discharge), so no bracket ends in mid-air when the plan view is rotated.
+  const bearingBridge=new THREE.Group();bearingBridge.userData.role='lower-shaft-bearing-support-spider';root.add(bearingBridge);
+  for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2,dir=horizontalRadial(a),from=dir.clone().multiplyScalar(.33).setY(-1.88),to=dir.clone().multiplyScalar(2.7).setY(-.60),span=to.clone().sub(from),arm=new THREE.Mesh(new THREE.BoxGeometry(span.length(),.14,.18),frameMaterial);arm.position.copy(from).add(to).multiplyScalar(.5);arm.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),span.normalize());arm.userData.role='lower-bearing-spider-arm-to-foundation';bearingBridge.add(arm);}
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;

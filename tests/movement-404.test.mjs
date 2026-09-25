@@ -91,8 +91,10 @@ test('movement 404 is one tapered elastic cyclograph bar, two fixed rollers, and
     'fixed-threaded-nut-in-straight-bar',
     'nonrotating-swivel-thrust-pad-at-inner-arched-bar-midpoint',
     'three-lobed-handwheel-rigid-on-adjusting-screw',
-    'working-outer-edge-that-is-circular-at-maximum-bend',
   ]) assert.ok(roles.includes(role), role);
+  // No ink outline on the bar edge and no undrawn construction arc.
+  for (const role of ['working-outer-edge-that-is-circular-at-maximum-bend',
+    'required-true-circular-arc-through-three-given-points']) assert.ok(!roles.includes(role), role);
   disposeModel(model.root);
 });
 
@@ -322,8 +324,7 @@ test('movement 404 update binds the computed path, screw, pad, rollers, and cont
 
   assert.equal(position.usage, THREE.DynamicDrawUsage);
   assert.equal(position.count, geometry.totalPathSampleCount * 4);
-  assert.equal(blocks.outerEdgeHighlight.geometry
-    .getAttribute('position').count, geometry.totalPathSampleCount);
+  assert.equal(blocks.outerEdgeHighlight, undefined);
   model.update(geometry.cycleDuration / 2);
   const relaxedPositions = Array.from(position.array);
   assert.notDeepEqual(relaxedPositions, sourcePositions);

@@ -479,20 +479,12 @@ function oneRevolutionPerPistonStrokeCrank(reference = false) {
     head.position.y=.56-shaft.position.z;head.userData.role=name;shaft.add(head);
   }
 
-  // A faint orbit circle corresponds to the dashed construction circle in
-  // the engraving.  It is explicitly a witness, never a physical member.
-  const orbitPoints=Array.from({length:129},(_,i)=>new THREE.Vector3(crankRadius*Math.cos(FULL_TURN*i/128),crankRadius*Math.sin(FULL_TURN*i/128),0));
-  const crankOrbitWitness=new THREE.Line(new THREE.BufferGeometry().setFromPoints(orbitPoints),new THREE.LineDashedMaterial({color:PALETTE.muted,dashSize:.08,gapSize:.06,fog:false}));
-  crankOrbitWitness.computeLineDistances();
-  crankOrbitWitness.position.z = frameFrontZ + 0.015;
-  crankOrbitWitness.userData.role = 'nonphysical-crank-orbit-witness';
-  crankOrbitWitness.userData.witnessOnly = true;
+  // Brown's dashed crank circle is construction notation; it is not drawn.
 
   root.add(
     frame,
     fixedShaft,
     rearShaftCollar,
-    crankOrbitWitness,
     crankParts.crank,
     slider,
     crankPinShaft,
@@ -753,7 +745,6 @@ function oneRevolutionPerPistonStrokeCrank(reference = false) {
     crankCenterAnchor,
     crankFixedBoss: crankParts.fixedBoss,
     crankMovingBoss: crankParts.movingBoss,
-    crankOrbitWitness,
     crankPinAnchor: crankParts.crankPinAnchor,
     crankPinShaft,
     crankRotationIndex: crankParts.rotationIndex,
@@ -804,8 +795,6 @@ function oneRevolutionPerPistonStrokeCrank(reference = false) {
   });
   update(0);
   markShadows(root);
-  crankOrbitWitness.castShadow = false;
-  crankOrbitWitness.receiveShadow = false;
   // Brown's elevation draws no shadow of the crank and rod across the frame face.
   framePlate.receiveShadow = false;
   return {

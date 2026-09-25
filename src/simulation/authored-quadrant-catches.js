@@ -139,16 +139,20 @@ function sourceHandGear(movementId) {
     blocks[`${name}Shaft`] = shaft;
   }
 
-  // Piston rod: a source-width section with broken ends (it runs beyond the
-  // plate), carrying the projecting tappet.
+  // Piston rod: a source-width section, carrying the projecting tappet.
   // Plate 184 runs the rod from 30 to 490 px (its top and bottom breaks),
-  // which is 416 to -44 in this unreflected frame.
+  // which is 416 to -44 in this unreflected frame. Brown's breaks are a
+  // drawing convention: the rod is modelled whole with square ends that run
+  // on past the plate (and the view) by `beyondPlate` pixels each way.
   const [rodBottomY, rodTopY] = is184 ? [416, -44] : [rodBottom183, rodTop183];
+  const beyondPlate = 260;
   const rodX0 = 155, rodX1 = 190;
-  const rodOutline = [[rodX0, rodBottomY], [rodX0 + 10, rodBottomY - 6], [rodX0 + 21, rodBottomY + 4], [rodX1, rodBottomY - 3],
-    [rodX1, rodTopY], [rodX1 - 12, rodTopY + 5], [rodX1 - 22, rodTopY - 4], [rodX0, rodTopY + 3]].map(toModel);
+  const rodOutline = [[rodX0, rodBottomY + beyondPlate], [rodX1, rodBottomY + beyondPlate],
+    [rodX1, rodTopY - beyondPlate], [rodX0, rodTopY - beyondPlate]].map(toModel);
+  const plateRodCorners = [[rodX0, rodBottomY], [rodX1, rodTopY]].map(toModel);
   const pistonRod = new THREE.Mesh(plate([[[...rodOutline, rodOutline[0]]]], ...layers.R), materials.piston);
   pistonRod.userData.role = 'source-width-sectioned-piston-rod';
+  pistonRod.userData.runsPastCrop = true;
   root.add(pistonRod);
   const pistonGroup = new THREE.Group();
   pistonGroup.userData.role = 'vertically-reciprocating-piston-tappet';
@@ -165,7 +169,7 @@ function sourceHandGear(movementId) {
   pistonGroup.add(tappet);
   root.add(pistonGroup);
 
-  // Back-weight rods hang from the eyes and are cut at the plate edge.
+  // Back-weight rods hang from the eyes and run on past the plate edge.
   const weightRods = {};
   for (const [name, body] of [['upper', upper], ['lower', lower]]) {
     const group = new THREE.Group();
@@ -173,6 +177,7 @@ function sourceHandGear(movementId) {
     const rod = new THREE.Mesh(new THREE.BoxGeometry(8 * sourceScale, 1, layers.rods[1] - layers.rods[0]), materials.pin);
     rod.position.z = (layers.rods[0] + layers.rods[1]) / 2;
     rod.userData.role = `${name}-back-weight-rod`;
+    rod.userData.runsPastCrop = true;
     const eyeZ = span(name === 'upper' && !is184 ? 'X' : 'W');
     const pin = new THREE.Mesh(new THREE.CylinderGeometry(eyePin * sourceScale, eyePin * sourceScale, eyeZ[1] - layers.rods[1], 32), materials.pin);
     pin.rotation.x = Math.PI / 2;
@@ -209,9 +214,10 @@ function sourceHandGear(movementId) {
     for (const [name, w] of Object.entries(weightRods)) {
       const e = eyeAt(w, name === 'upper' ? s.upperAngle : s.lowerAngle), m = toModel(e);
       // 183's rods hang down the page; 184's run the other way in the
-      // unreflected frame, so they hang down in the reflected view, cut at
-      // the piston rod's broken end.
-      const length = Math.max(0.05, (is184 ? e[1] - rodTopY : weightRodBottom[name] - e[1]) * sourceScale);
+      // unreflected frame, so they hang down in the reflected view, running
+      // on as far as the piston rod does.
+      const length = Math.max(0.05, (is184 ? e[1] - rodTopY + beyondPlate
+        : weightRodBottom[name] - e[1] + beyondPlate) * sourceScale);
       w.group.position.set(m[0], m[1], 0);
       w.rod.scale.y = length;
       w.rod.position.y = is184 ? length / 2 : -length / 2;
@@ -265,9 +271,11 @@ function sourceHandGear(movementId) {
     update(period * i / 72); root.updateMatrixWorld(true);
     root.traverseVisible((o) => {
       const a = o.geometry?.attributes.position;
-      if (a) for (let j = 0; j < a.count; j++) box.expandByPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld));
+      if (a && !o.userData.runsPastCrop) for (let j = 0; j < a.count; j++) box.expandByPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld));
     });
   }
+  // Frame Brown's plate: the rods count only as far as his breaks.
+  for (const [x, y] of plateRodCorners) box.expandByPoint(point.set(x, y, 0).applyMatrix4(pistonRod.parent.matrixWorld));
   root.userData.cameraFitBounds = box.expandByScalar(0.1);
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };

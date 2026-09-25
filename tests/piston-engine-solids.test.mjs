@@ -29,7 +29,7 @@ for(const[id,create]of factories)test(`${id}: actual working piston, chamber and
   const model=create({id}),u=model.root.userData,b=u.blocks;try{
     const pairs=[];
     if(id===424){
-      for(const fixed of [b.mainShaftB,b.crankArm,b.crankWristA,b.crankReference])for(const piston of [b.pistonCBody,b.pistonCWristBearing])pairs.push([fixed,piston]);
+      for(const fixed of [b.mainShaftB,b.crankArm,b.crankWristA])for(const piston of [b.pistonCBody,b.pistonCWristBearing])pairs.push([fixed,piston]);
       for(const wall of b.pistonB.children)for(const piston of[b.pistonCBody])pairs.push([wall,piston]);
       for(const wall of b.cylinderA.children)for(const piston of b.pistonB.children)pairs.push([wall,piston]);
       assert.ok(!solidSurface(b.pistonCBody.geometry).inside(new THREE.Vector3(0,0,0)),'C wrist is truly bored');
@@ -65,7 +65,8 @@ test('425/426: corrected finite working surfaces retain near contact across the 
           assert.ok(gap<.000044,'source circular-cap and piston contact survives finite meshing');
           assert.ok(state.contactNormal.y>.94,'contact reaction lifts the abutment');
           const contact=state.pistonCylinderContactPoint.clone();contact.z=.3;
-          if(Math.abs(Math.atan2(contact.x,contact.y))>.072)assert.ok(wall.distance(contact)<.000032,'piston reaches the working chamber outside the abutment opening');
+          const fromTop=Math.abs(Math.atan2(contact.x,contact.y)),[portNear,portFar]=u.solidReview.portWindowAnglesFromTop;
+          if(fromTop>.072&&!(fromTop>portNear-.01&&fromTop<portFar+.01))assert.ok(wall.distance(contact)<.000032,'piston reaches the working chamber outside the abutment opening and the two port windows');
         }
       }else{
         const surfaces=[b.topHousingBack,b.bottomHousingBack,b.leftAbutmentBody,b.rightAbutmentBody].map(mesh=>solidSurface(mesh.geometry));

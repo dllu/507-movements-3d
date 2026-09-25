@@ -128,6 +128,9 @@ function crankTangentOscillatingRod(movement) {
   );
   guideTread.position.z = guideRollerDepth / 2 + 0.01;
   guideTread.userData.role = 'guide-roller-working-tread';
+  // A dark face ring only outlined the roller edge; retired.
+  guideTread.visible = false;
+  guideTread.userData.retiredInkOutline = true;
   const guideIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.3, 0.06, 0.045),
     whiteMaterial,

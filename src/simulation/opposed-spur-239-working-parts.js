@@ -7,44 +7,6 @@ import { stopOutlines239 } from './baked/opposed-spur-239-outlines.js';
 // Plate 239 draws square teeth. Their parallel flanks are 0.447 wide, the
 // width the former involute had where the two stop noses bear (radii 2.17
 // and 2.32), so the stops trap the same free play.
-// Brown breaks the wheel off below the hub with an irregular line. The break
-// is fixed in the world while the wheel turns, so fragments below a wavy
-// world-space line are discarded instead of cutting the geometry (the same
-// technique as movement 233's lantern wheel).
-export const WHEEL_BREAK_239 = { amplitude: 0.1, level: -0.82, wavelength: 1.7 };
-const JAG_STEP_239 = 0.32;
-function applyWorldBreakBelow(material, { amplitude, level, wavelength }) {
-  const broken = material.clone();
-  // Front faces only: the back walls seen through the ragged cut otherwise
-  // print a second, offset break line just below it.
-  broken.side = THREE.FrontSide;
-  broken.userData.worldBreakBelow = { amplitude, level, wavelength };
-  broken.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
-      .replace('#include <project_vertex>', '#include <project_vertex>\nvBreakWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;');
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
-      .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
-        {
-          float k = 6.28318530718 / ${wavelength.toFixed(6)};
-          // Brown's break is ragged: a slow wave plus straight zigzags from
-          // three incommensurate triangle waves.
-          float jagX = vBreakWorld.x / ${JAG_STEP_239.toFixed(6)};
-          float jag = (abs(fract(jagX + 0.13) - 0.5) * 4.0 - 1.0) * 0.5
-            + (abs(fract(1.73 * jagX + 0.41) - 0.5) * 4.0 - 1.0) * 0.3
-            + (abs(fract(2.91 * jagX + 0.77) - 0.5) * 4.0 - 1.0) * 0.2;
-          float breakY = ${level.toFixed(6)}
-            + ${amplitude.toFixed(6)} * (0.5 * sin(k * vBreakWorld.x + 0.7)
-              + 0.15 * sin(2.3 * k * vBreakWorld.x + 2.1)
-              + 0.4 * jag);
-          if (vBreakWorld.y < breakY) discard;
-        }`);
-  };
-  broken.customProgramCacheKey = () => `world-break-jagged-${level}-${amplitude}-${wavelength}`;
-  return broken;
-}
-
 export const SQUARE_TOOTH_WIDTH_239 = 0.447;
 export function spurStopProfile239({ teeth, pitchRadius, rootRadius, outerRadius }) {
   const square = squareToothOutline({ teeth, radius: pitchRadius, addendum: outerRadius - pitchRadius,
@@ -107,18 +69,13 @@ export function finishOpposedSpur239(model) {
     post.userData.role = `${name}-journal-support-post`; root.add(journal, post); journals.push(journal); posts.push(post);
   }
   b.bearingPost.visible = false;
-  // The plate breaks the wheel off just below its hub; the fixed journals
+  // The plate breaks the wheel off just below its hub; that is Brown's
+  // drawing convention, so the wheel is modelled whole. The fixed journals
   // and rail behind it are not drawn, and no index mark is drawn on the wheel.
-  for (const mesh of [b.gearBody, b.gearHub, b.gearHubRing]) {
-    const original = mesh.material;
-    mesh.material = applyWorldBreakBelow(original, WHEEL_BREAK_239);
-    original.dispose();
-  }
   b.gearIndicator.removeFromParent();
-  d.wheelBreak = { ...WHEEL_BREAK_239 };
   d.workingParts239 = { sourceOutlines, journals, posts };
   // The full turning wheel is kept as sweptBounds; the camera fits the
-  // plate's crop, which ends at the break line below the hub.
+  // plate's crop, so the whole wheel runs off the view just below the hub.
   d.sweptBounds = new THREE.Box3(new THREE.Vector3(-3.7, -3.55, -0.68), new THREE.Vector3(5, 3.25, 0.65));
   d.cameraFitBounds.set(new THREE.Vector3(-3.7, -1.05, -0.68), new THREE.Vector3(5, 3.25, 0.65));
   d.minimumDisplayCycleSeconds = 6;

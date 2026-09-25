@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {plate,poly,sector} from './finite-plate-geometry.js';
+import {capsule,circle,plate,poly,polygonClipping,sector,spline} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -285,9 +285,21 @@ function eccentricRotaryEngine(movement) {
   const topGapHalfAngle = Math.asin(0.5 / sourceCylinderInnerRadius);
   const housingArcStart = Math.PI / 2 + topGapHalfAngle;
   const housingArcEnd = Math.PI / 2 + FULL_TURN - topGapHalfAngle;
+  // Brown's two ports pierce the top of the bore on either side of the
+  // abutment and rise through the casing into the necks.
+  const portInnerX = 0.97;
+  const portOuterX = 1.45;
+  const portWallThickness = 0.08;
+  const portMeanRadius = (cylinderInnerRadius + cylinderOuterRadius) / 2;
+  const portNearAngle = Math.asin(portInnerX / portMeanRadius);
+  const portFarAngle = Math.asin(portOuterX / portMeanRadius);
+  const boreSectors = (inner, outer) => polygonClipping.union(
+    sector(inner, outer, housingArcStart, Math.PI / 2 + portNearAngle, 256),
+    sector(inner, outer, Math.PI / 2 + portFarAngle, FULL_TURN + Math.PI / 2 - portFarAngle, 1280),
+    sector(inner, outer, Math.PI / 2 - portNearAngle, housingArcEnd - FULL_TURN, 256),
+  );
   const housingBack = new THREE.Mesh(
-    plate(sector(cylinderInnerRadius + 0.00003, cylinderOuterRadius,
-      housingArcStart, housingArcEnd, 1536), -0.41, 0.63),
+    plate(boreSectors(cylinderInnerRadius + 0.00003, cylinderOuterRadius), -0.41, 0.63),
     frameMaterial,
   );
   housingBack.position.z = 0;
@@ -316,10 +328,8 @@ function eccentricRotaryEngine(movement) {
     'fixed-outer-circular-wall-of-cylinder-A',
   );
   innerCylinderWall.geometry.dispose(); outerCylinderWall.geometry.dispose();
-  innerCylinderWall.geometry = plate(sector(cylinderInnerRadius + 0.00003, cylinderInnerRadius + 0.12,
-    housingArcStart, housingArcEnd, 1536), 0.63, 0.67);
-  outerCylinderWall.geometry = plate(sector(cylinderOuterRadius - 0.12, cylinderOuterRadius,
-    housingArcStart, housingArcEnd, 1536), 0.63, 0.67);
+  innerCylinderWall.geometry = plate(boreSectors(cylinderInnerRadius + 0.00003, cylinderInnerRadius + 0.12), 0.63, 0.67);
+  outerCylinderWall.geometry = plate(boreSectors(cylinderOuterRadius - 0.12, cylinderOuterRadius), 0.63, 0.67);
   root.add(innerCylinderWall, outerCylinderWall);
 
   const foundation = new THREE.Mesh(
@@ -330,16 +340,40 @@ function eccentricRotaryEngine(movement) {
   foundation.userData.role = 'fixed-foundation-of-rotary-engine-A';
   root.add(foundation);
 
-  const neckLeft = makeTubeThrough([
-    new THREE.Vector3(-1.35, 3.12, -0.04),
-    new THREE.Vector3(-1.46, 3.40, -0.04),
-    new THREE.Vector3(-1.46, 4.20, -0.04),
-  ], 0.17, frameMaterial, 'left-eduction-neck-of-cylinder-A');
-  const neckRight = makeTubeThrough([
-    new THREE.Vector3(1.35, 3.12, -0.04),
-    new THREE.Vector3(1.46, 3.40, -0.04),
-    new THREE.Vector3(1.46, 4.20, -0.04),
-  ], 0.17, frameMaterial, 'right-induction-neck-of-cylinder-A');
+  // Brown's pear-shaped outer casing: its wall swells out round the bore,
+  // pinches in above the feet and rises at the top into two necks whose
+  // flanges meet the abutment guide. Each port is a walled passage from its
+  // window in the bore up through the flange. Coordinates are scaled from
+  // the plate about the centre of B (0.0113 units per half-pixel), with the
+  // swell widened slightly for the source's thicker bore wall.
+  const pearLeft = spline([
+    [-2.70, -3.29], [-2.42, -3.05], [-2.45, -2.85], [-3.00, -2.25],
+    [-3.60, -1.16], [-3.77, -0.03], [-3.70, 0.87], [-3.33, 1.80],
+    [-2.45, 2.70], [-1.88, 3.25], [-1.83, 3.60], [-1.83, 4.08],
+  ]);
+  const flangeBottom = 4.04;
+  const flangeTop = 4.43;
+  const guideRailOuterX = 0.44;
+  const casingHalf = side => {
+    const m = ([x, y]) => [side * x, y];
+    const rect = (x0, x1, y0, y1) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(m));
+    const solid = polygonClipping.union(
+      ...pearLeft.slice(1).map((point, index) => capsule(m(pearLeft[index]), m(point), 0.08, 8)),
+      rect(-2.17, -guideRailOuterX, flangeBottom, flangeTop),
+      rect(-2.17, -1.83, flangeBottom - 0.24, flangeBottom),
+      poly([[-2.40, -2.98], [-3.15, -cylinderOuterRadius], [-2.20, -cylinderOuterRadius]].map(m)),
+      rect(-portOuterX - portWallThickness, -portOuterX, 2.6, flangeTop),
+      rect(-portInnerX, -portInnerX + portWallThickness, 2.6, flangeTop),
+    );
+    return polygonClipping.difference(solid,
+      poly(circle([0, 0], cylinderOuterRadius, 1536)),
+      rect(-portOuterX, -portInnerX, 2.0, flangeTop + 1),
+      poly([[-9, -9], [9, -9], [9, -cylinderOuterRadius], [-9, -cylinderOuterRadius]]));
+  };
+  const neckLeft = new THREE.Mesh(plate(casingHalf(1), -0.41, 0.63), frameMaterial);
+  neckLeft.userData.role = 'left-half-of-pear-casing-with-eduction-neck-of-cylinder-A';
+  const neckRight = new THREE.Mesh(plate(casingHalf(-1), -0.41, 0.63), frameMaterial);
+  neckRight.userData.role = 'right-half-of-pear-casing-with-induction-neck-of-cylinder-A';
   root.add(neckLeft, neckRight);
 
   const guideTower = new THREE.Group();
@@ -409,7 +443,8 @@ function eccentricRotaryEngine(movement) {
   const shaftB = cylinderAlongZ(0.30, 1.24, darkMaterial, 36);
   shaftB.position.z = 0.34;
   shaftB.userData.role = 'central-main-shaft-B';
-  root.add(shaftB);
+  // B turns with the piston C keyed fast on it.
+  rotor.add(shaftB);
 
   const abutmentD = new THREE.Group();
   abutmentD.userData.role =
@@ -450,14 +485,15 @@ function eccentricRotaryEngine(movement) {
     'instantaneous-sealing-contact-between-C-and-D';
   root.add(pistonAbutmentContactMarker);
 
+  // The dark back of each port passage, from the bore window to the flange.
   const inductionPort = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 1.08, 0.16),
-    darkMaterial,
+    new THREE.BoxGeometry(portOuterX - portInnerX, flangeTop - 2.80, 0.06),
+    frameMaterial,
   );
-  inductionPort.position.set(1.23, 3.46, 0.30);
+  inductionPort.position.set((portInnerX + portOuterX) / 2, (flangeTop + 2.80) / 2, -0.38);
   inductionPort.userData.role = 'right-induction-port';
   const eductionPort = inductionPort.clone();
-  eductionPort.position.x = -1.23;
+  eductionPort.position.x = -(portInnerX + portOuterX) / 2;
   eductionPort.userData.role = 'left-eduction-port';
   root.add(inductionPort, eductionPort);
   const inductionIndicator = new THREE.Mesh(
@@ -623,6 +659,7 @@ function eccentricRotaryEngine(movement) {
   root.userData.groundFloorY = -3.78;
   root.userData.hideGround = true;
   root.userData.solidReview = { chamberRadialClearance: 0.00003,
+    portWindowAnglesFromTop: [portNearAngle, portFarAngle],
     qualification: 'Closed annular working wall and source circular-cap abutment with full-stroke guide clearance. Circle contact is prescribed; return loading, steam sealing, pressure and friction are not simulated.' };
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[]) material.fog=false;});
   markShadows(root);

@@ -31,39 +31,6 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   return cylinder;
 }
 
-function centeredExtrusion(shape, depth, bevelSize = 0.008) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize,
-    bevelThickness: bevelSize,
-    curveSegments: 16,
-    depth,
-    steps: 1,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  return geometry;
-}
-
-function polygonShape(points) {
-  const shape = new THREE.Shape();
-  points.forEach((point, index) => {
-    if (index === 0) shape.moveTo(point.x, point.y);
-    else shape.lineTo(point.x, point.y);
-  });
-  shape.closePath();
-  return shape;
-}
-
-function annularShape(outerRadius, innerRadius) {
-  const shape = new THREE.Shape();
-  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
-  const opening = new THREE.Path();
-  opening.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
-  shape.holes.push(opening);
-  return shape;
-}
-
 function beamBetween(start, end, width, depth, material) {
   const direction = end.clone().sub(start);
   const beam = new THREE.Mesh(
@@ -95,30 +62,102 @@ function smootherStep(value) {
   return x ** 3 * (x * (x * 6 - 15) + 10);
 }
 
-function outerPalletPlateShape(diskCenterY) {
+// Brown's bottle-shaped pendulum plate as one part, in the pendulum frame
+// (pivot at the origin, raster scale `scale`): the eye round the pivot, the
+// straight rod, the bottle's belly and flat foot, the two adjustment holes,
+// and the escapement opening cut directly to Brown's shape. The opening is
+// his two D-shaped windows, upper-left and lower-right, joined at the disc
+// arbor. Their working edges are the pallets: the upper-right solid's lower
+// edge and the lower-left solid's upper edge are dead faces concentric with
+// the pivot; the two upright edges beside the arbor are the impulse faces.
+function macdowallPlateShape({
+  adjustmentCenters,
+  adjustmentRadius,
+  lowerDeadFaceRadius,
+  pinRadius,
+  pivotBoreRadius,
+  scale,
+  upperDeadFaceRadius,
+}) {
+  // Brown's outline half-widths (raster pixels, to the ink centre) against
+  // raster y below the pivot at y 35.
+  const profile = [
+    [55, 12.5], [160, 12.5], [180, 14.5], [210, 19.5], [240, 25.5],
+    [270, 38], [300, 54.5], [330, 75], [360, 91], [390, 97], [402, 97.5],
+    [420, 94], [450, 82.5], [480, 65.5], [492, 61.5], [505, 61],
+  ].map(([y, half]) => new THREE.Vector2(half * scale, -(y - 35) * scale));
+  const eyeRadius = 24 * scale;
+  const side = new THREE.SplineCurve(profile.slice(2)).getPoints(96);
+  const stemHalf = profile[0].x;
+  const eyeJoin = -Math.sqrt(eyeRadius ** 2 - stemHalf ** 2);
+  // Counterclockwise outline (the holes run clockwise): down the left side,
+  // across the foot, up the right side and over the eye.
   const shape = new THREE.Shape();
-  shape.moveTo(-0.22, -0.42);
-  shape.lineTo(-0.24, -1.34);
-  shape.bezierCurveTo(-0.27, -2.30, -0.64, -2.90, -1.08, -3.55);
-  shape.bezierCurveTo(-1.48, -4.16, -1.47, -4.92, -1.19, -5.56);
-  shape.lineTo(-0.94, -6.12);
-  shape.lineTo(0.94, -6.12);
-  shape.lineTo(1.19, -5.56);
-  shape.bezierCurveTo(1.47, -4.92, 1.48, -4.16, 1.08, -3.55);
-  shape.bezierCurveTo(0.64, -2.90, 0.27, -2.30, 0.24, -1.34);
-  shape.lineTo(0.22, -0.42);
+  shape.moveTo(-stemHalf, eyeJoin);
+  shape.lineTo(-stemHalf, profile[1].y);
+  side.forEach((point) => shape.lineTo(-point.x, point.y));
+  [...side].reverse().forEach((point) => shape.lineTo(point.x, point.y));
+  shape.lineTo(stemHalf, profile[1].y);
+  shape.lineTo(stemHalf, eyeJoin);
+  shape.absarc(0, 0, eyeRadius, Math.atan2(eyeJoin, stemHalf),
+    Math.atan2(eyeJoin, -stemHalf) + FULL_TURN, false);
   shape.closePath();
 
-  const escapementOpening = new THREE.Path();
-  escapementOpening.absarc(0, diskCenterY, 0.91, 0, FULL_TURN, true);
-  shape.holes.push(escapementOpening);
-
-  for (const x of [-0.59, 0.59]) {
-    const adjustmentOpening = new THREE.Path();
-    adjustmentOpening.absarc(x, -5.57, 0.29, 0, FULL_TURN, true);
-    shape.holes.push(adjustmentOpening);
+  const pivotBore = new THREE.Path();
+  pivotBore.absarc(0, 0, pivotBoreRadius, 0, FULL_TURN, true);
+  shape.holes.push(pivotBore);
+  for (const [x, y] of adjustmentCenters) {
+    const hole = new THREE.Path();
+    hole.absarc(x, y, adjustmentRadius, 0, FULL_TURN, true);
+    shape.holes.push(hole);
   }
-  return shape;
+
+  // The escapement opening. D-window sizes from Brown: 80 by 50 pixels, the
+  // outer corners rounded as quarter ellipses.
+  const reach = 74.5 * scale;
+  const flat = 33 * scale;
+  const height = 50 * scale;
+  // The dead faces are arcs about the pivot where the pin works (|x| up to
+  // `working`); beyond it their slope eases to level, so the windows keep
+  // Brown's straight horizontal edges.
+  const working = 0.4;
+  const ease = 0.25;
+  const deadFace = (radius) => (x) => {
+    const u = Math.abs(x);
+    if (u <= working) return -Math.sqrt(radius ** 2 - u ** 2);
+    const base = -Math.sqrt(radius ** 2 - working ** 2);
+    const slope = working / Math.sqrt(radius ** 2 - working ** 2);
+    const run = Math.min(u - working, ease);
+    return base + slope * (run - run * run / (2 * ease));
+  };
+  const ceiling = deadFace(upperDeadFaceRadius);
+  const floor = deadFace(lowerDeadFaceRadius);
+  const points = [];
+  const steps = 48;
+  for (let index = 0; index <= steps; index += 1) {
+    const x = pinRadius + (reach - pinRadius) * index / steps;
+    points.push([x, ceiling(x)]);
+  }
+  const rightTop = ceiling(reach);
+  for (let index = 1; index <= 24; index += 1) {
+    const t = Math.PI / 2 * index / 24;
+    points.push([flat + (reach - flat) * Math.cos(t), rightTop - height * Math.sin(t)]);
+  }
+  points.push([-pinRadius, rightTop - height]);
+  for (let index = 0; index <= steps; index += 1) {
+    const x = -pinRadius - (reach - pinRadius) * index / steps;
+    points.push([x, floor(x)]);
+  }
+  const leftBottom = floor(-reach);
+  for (let index = 1; index <= 24; index += 1) {
+    const t = Math.PI / 2 * index / 24;
+    points.push([-flat - (reach - flat) * Math.cos(t), leftBottom + height * Math.sin(t)]);
+  }
+  points.push([pinRadius, leftBottom + height]);
+  const opening = new THREE.Path(points.map(([x, y]) => new THREE.Vector2(x, y)));
+  opening.closePath();
+  shape.holes.push(opening);
+  return { opening: points, shape };
 }
 
 function macdowallSinglePinEscapement(movement) {
@@ -157,12 +196,22 @@ function macdowallSinglePinEscapement(movement) {
   const eccentricityRatio = 1 / 60;
   const pinOrbitRadius = centerDistance * eccentricityRatio;
   const pinRadius = 0.024;
-  const pinLength = 0.42;
-  const diskRadius = 0.39;
+  // Depth, back to front: the disc behind the pendulum plate, its pin
+  // standing forward through the plate's opening, whose edges are the
+  // pallets. Brown's disc (about 36 pixels) is seen through the windows.
+  const diskRadius = 0.44;
   const diskDepth = 0.22;
   const palletDepth = 0.25;
-  const workingPlaneZ = 0.37;
-  const contactMarkerZ = workingPlaneZ + 0.25;
+  const plateZ = 0.02;
+  const plateBack = plateZ - palletDepth / 2;
+  const diskZ = plateBack - 0.01 - diskDepth / 2;
+  const diskFront = diskZ + diskDepth / 2;
+  const pinFront = plateZ + palletDepth / 2 + 0.02;
+  // The pin is set into the arbor's end, which lies flush with the disc face.
+  const pinSeat = 0.03;
+  const pinLength = pinFront - diskFront + pinSeat;
+  const workingPlaneZ = (pinFront + diskFront - pinSeat) / 2;
+  const contactMarkerZ = pinFront + 0.1;
 
   const pendulumPeriod = 4;
   const halfBeatDuration = pendulumPeriod / 2;
@@ -400,7 +449,7 @@ function macdowallSinglePinEscapement(movement) {
     metalness: 0.38,
     roughness: 0.38,
   });
-  const rubyMaterial = matte(0xf7f4e8, {
+  const rubyMaterial = matte(0x9b2335, {
     metalness: 0.05,
     roughness: 0.30,
   });
@@ -446,66 +495,34 @@ function macdowallSinglePinEscapement(movement) {
   palletAssembly.userData.role = 'pendulum-carried-z-slot-pallet-plate';
   root.add(palletAssembly);
   const localDiskCenterY = diskCenter.y - palletPivot.y;
-  const plate = new THREE.Mesh(
-    centeredExtrusion(
-      outerPalletPlateShape(localDiskCenterY),
-      palletDepth,
-      0.014,
-    ),
-    plateMaterial,
-  );
-  plate.position.z = 0.02;
+  // Brown's two lower adjustment holes, each holding an eccentric bush with
+  // its screw set off centre (raster centres 227 and 295 at y 476).
+  const adjustmentCenters = [227, 295].map((x) => [
+    (x - sourceRasterPendulumPivot.x) * sourceScale,
+    -(476 - sourceRasterPendulumPivot.y) * sourceScale,
+  ]);
+  const adjustmentRadius = 22 * sourceScale;
+  const pivotBoreRadius = 0.076;
+  const { opening: escapementOpening, shape: plateShape } = macdowallPlateShape({
+    adjustmentCenters,
+    adjustmentRadius,
+    lowerDeadFaceRadius: lockCenterRadius + pinRadius,
+    pinRadius,
+    pivotBoreRadius,
+    scale: sourceScale,
+    upperDeadFaceRadius: lockCenterRadius - pinRadius,
+  });
+  const plateGeometry = new THREE.ExtrudeGeometry(plateShape, {
+    bevelEnabled: false,
+    curveSegments: 48,
+    depth: palletDepth,
+  });
+  plateGeometry.translate(0, 0, -palletDepth / 2);
+  const plate = new THREE.Mesh(plateGeometry, plateMaterial);
+  plate.position.z = plateZ;
   plate.userData.role = 'macdowall-bottle-profile-pallet-plate';
+  plate.userData.escapementOpening = escapementOpening;
   palletAssembly.add(plate);
-
-  const pivotRing = new THREE.Mesh(
-    centeredExtrusion(annularShape(0.33, 0.125), palletDepth + 0.08),
-    plateMaterial,
-  );
-  pivotRing.position.z = 0.03;
-  pivotRing.userData.role = 'pendulum-suspension-eye';
-  palletAssembly.add(pivotRing);
-  const neck = beamBetween(
-    new THREE.Vector3(0, -0.33, 0.03),
-    new THREE.Vector3(0, -0.68, 0.03),
-    0.24,
-    palletDepth,
-    plateMaterial,
-  );
-  neck.userData.role = 'pendulum-plate-neck';
-  palletAssembly.add(neck);
-
-  const upperPalletShape = polygonShape([
-    new THREE.Vector2(-0.90, localDiskCenterY + 0.015),
-    new THREE.Vector2(-pinRadius, localDiskCenterY + 0.015),
-    new THREE.Vector2(-pinRadius, localDiskCenterY + 0.47),
-    new THREE.Vector2(-0.27, localDiskCenterY + 0.66),
-    new THREE.Vector2(-0.63, localDiskCenterY + 0.58),
-    new THREE.Vector2(-0.88, localDiskCenterY + 0.31),
-  ]);
-  const upperPallet = new THREE.Mesh(
-    centeredExtrusion(upperPalletShape, palletDepth + 0.12),
-    palletMaterial,
-  );
-  upperPallet.position.z = workingPlaneZ;
-  upperPallet.userData.role = 'upper-left-L-pallet';
-  palletAssembly.add(upperPallet);
-
-  const lowerPalletShape = polygonShape([
-    new THREE.Vector2(pinRadius, localDiskCenterY - 0.47),
-    new THREE.Vector2(pinRadius, localDiskCenterY - 0.015),
-    new THREE.Vector2(0.90, localDiskCenterY - 0.015),
-    new THREE.Vector2(0.88, localDiskCenterY - 0.31),
-    new THREE.Vector2(0.63, localDiskCenterY - 0.58),
-    new THREE.Vector2(0.27, localDiskCenterY - 0.66),
-  ]);
-  const lowerPallet = new THREE.Mesh(
-    centeredExtrusion(lowerPalletShape, palletDepth + 0.12),
-    palletMaterial,
-  );
-  lowerPallet.position.z = workingPlaneZ;
-  lowerPallet.userData.role = 'lower-right-L-pallet';
-  palletAssembly.add(lowerPallet);
 
   const deadFacePoints = (rest) => {
     const upper = rest === 'upper-left';
@@ -571,19 +588,21 @@ function macdowallSinglePinEscapement(movement) {
   );
   palletAssembly.add(upperImpulseEdge, lowerImpulseEdge);
 
-  const adjustmentScrews = [-0.59, 0.59].map((x, index) => {
+  // Each adjustment hole carries an eccentric bush flush with the plate,
+  // turned by its off-centre screw (Brown's small hatched circles).
+  const bushMaterial = matte(0x3d6e86, { metalness: 0.22, roughness: 0.5 });
+  const adjustmentScrews = adjustmentCenters.map(([x, y], index) => {
     const screw = new THREE.Group();
-    screw.position.set(x, -5.57, 0.13);
+    screw.position.set(x, y, plateZ);
     screw.userData.index = index;
     screw.userData.role = 'pallet-plate-adjustment-screw';
-    const collar = cylinderAlongZ(0.25, 0.34, faceMaterial);
-    const head = cylinderAlongZ(0.13, 0.48, darkMaterial);
-    const slot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.19, 0.034, 0.025),
-      rubyMaterial,
-    );
-    slot.position.z = 0.26;
-    screw.add(collar, head, slot);
+    const bush = cylinderAlongZ(adjustmentRadius - 0.006, palletDepth, bushMaterial, 48);
+    bush.userData.role = 'eccentric-adjusting-bush';
+    const offset = (index === 0 ? -9 : 14) * sourceScale;
+    const head = cylinderAlongZ(7.5 * sourceScale, 0.04, darkMaterial, 32);
+    head.position.set(offset, 0, palletDepth / 2 + 0.02);
+    head.userData.role = 'eccentric-bush-screw-head';
+    screw.add(bush, head);
     palletAssembly.add(screw);
     return screw;
   });
@@ -596,30 +615,15 @@ function macdowallSinglePinEscapement(movement) {
   const wheelRotor = new THREE.Group();
   wheelRotor.userData.role = 'clockwise-half-turn-per-beat-rotor';
   escapeWheel.add(wheelRotor);
-  const disk = cylinderAlongZ(diskRadius, diskDepth, diskMaterial, 48);
-  disk.position.z = 0.04;
+  const disk = cylinderAlongZ(diskRadius, diskDepth, diskMaterial, 64);
+  disk.position.z = diskZ;
   disk.userData.role = 'very-small-solid-escape-disc';
   wheelRotor.add(disk);
-  const diskRim = new THREE.Mesh(
-    new THREE.TorusGeometry(diskRadius * 0.94, 0.025, 8, 48),
-    darkMaterial,
-  );
-  diskRim.position.z = diskDepth / 2 + 0.17;
-  diskRim.userData.role = 'single-pin-disc-visible-rim';
-  wheelRotor.add(diskRim);
-  const diskHub = cylinderAlongZ(0.115, 0.74, darkMaterial);
-  diskHub.position.z = 0.11;
+  // The arbor ends at the disc's face, behind the pin and the plate.
+  const diskHub = cylinderAlongZ(0.115, 0.6, darkMaterial);
+  diskHub.position.z = diskFront - 0.3;
   diskHub.userData.role = 'single-pin-disc-arbor';
   wheelRotor.add(diskHub);
-  const diskIndex = beamBetween(
-    new THREE.Vector3(0, 0, diskDepth / 2 + 0.18),
-    new THREE.Vector3(diskRadius * 0.78, 0, diskDepth / 2 + 0.18),
-    0.075,
-    0.025,
-    rubyMaterial,
-  );
-  diskIndex.userData.role = 'disc-half-turn-index';
-  wheelRotor.add(diskIndex);
   const rubyPin = cylinderAlongZ(pinRadius, pinLength, rubyMaterial, 32);
   rubyPin.position.set(pinOrbitRadius, 0, workingPlaneZ);
   rubyPin.userData.eccentricity = pinOrbitRadius;
@@ -635,14 +639,6 @@ function macdowallSinglePinEscapement(movement) {
   contactMarker.position.z = contactMarkerZ;
   contactMarker.userData.role = 'active-pin-pallet-contact';
   root.add(contactMarker);
-
-  const pendulumIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.055, 0.29, 0.035),
-    rubyMaterial,
-  );
-  pendulumIndex.position.set(0, -1.08, palletDepth / 2 + 0.055);
-  pendulumIndex.userData.role = 'pendulum-angle-index';
-  palletAssembly.add(pendulumIndex);
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -669,21 +665,15 @@ function macdowallSinglePinEscapement(movement) {
     contactMarker,
     disk,
     diskHub,
-    diskIndex,
-    diskRim,
     escapeWheel,
     fixedFrame,
     lowerDeadEdge,
     lowerImpulseEdge,
-    lowerPallet,
     palletAssembly,
-    pendulumIndex,
     plate,
-    pivotRing,
     rubyPin,
     upperDeadEdge,
     upperImpulseEdge,
-    upperPallet,
     wheelRotor,
   };
   root.userData.cameraDistanceScale = 1.06;
@@ -698,7 +688,9 @@ function macdowallSinglePinEscapement(movement) {
     contactMarkerZ,
     diskCenter: diskCenter.clone(),
     diskDepth,
+    diskFront,
     diskRadius,
+    diskZ,
     eccentricityRatio,
     escapeAngle,
     faceEquationScale,
@@ -710,6 +702,7 @@ function macdowallSinglePinEscapement(movement) {
     lowerDeadFaceRadius,
     palletDepth,
     palletPivot: palletPivot.clone(),
+    plateZ,
     pendulumAmplitude,
     pendulumPeriod,
     pinCount: 1,
@@ -844,7 +837,7 @@ function macdowallSinglePinEscapement(movement) {
   });
   root.userData.materialsIgnoreSceneFog = true;
   markShadows(root);
-  for (const object of [contactMarker, diskIndex, pendulumIndex]) {
+  for (const object of [contactMarker]) {
     object.castShadow = false;
     object.receiveShadow = false;
   }

@@ -2,33 +2,38 @@
   "movement": 153,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 native poses from the sixth full disk cycle. Contact markers are excluded; intended soft working contacts are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 43,
-    "pairs": 626,
+    "parts": 42,
+    "pairs": 591,
     "poses": 65,
-    "checks": 3843468,
+    "checks": 3070146,
     "failingPairs": 0
   },
   "failures": {},
   "softContacts": {
-    "part-30/bar-fixed-underside-direct-drive-projection-35": {
+    "part-29/bar-fixed-underside-direct-drive-projection-34": {
       "firstPose": 3,
       "points": 4,
-      "maximumDepth": 0.00001604932087890374
+      "maximumDepth": 0.000016690695022256908
     },
-    "part-32/distal-input-driving-face-38": {
-      "firstPose": 12,
+    "part-31/distal-input-driving-face-37": {
+      "firstPose": 10,
+      "points": 3,
+      "maximumDepth": 0.000041235733305611255
+    },
+    "bar-fixed-front-return-stud-35/bored-return-arm-39": {
+      "firstPose": 10,
       "points": 2,
-      "maximumDepth": 0.00005402262741899255
+      "maximumDepth": 0.000005075158990952566
     },
-    "part-32/bar-fixed-underside-direct-drive-projection-35": {
+    "part-31/bar-fixed-underside-direct-drive-projection-34": {
       "firstPose": 35,
       "points": 4,
-      "maximumDepth": 0.000016049324887091732
+      "maximumDepth": 0.000016690698763087077
     },
-    "part-30/distal-input-driving-face-38": {
-      "firstPose": 44,
-      "points": 2,
-      "maximumDepth": 0.000054021889085931196
+    "part-29/distal-input-driving-face-37": {
+      "firstPose": 42,
+      "points": 3,
+      "maximumDepth": 0.00004123533341604535
     }
   },
   "sources": [
@@ -38,7 +43,7 @@
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "290771ca52b327d32237412b765dce2c86ea85799e2ff2a887d7cc8630ebee6b"
+      "sha256": "53e4d165ea87da91257135de86b58ae19a85731f40dc02b3635745737895d627"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/sync.js",
@@ -46,11 +51,11 @@
     },
     {
       "file": "src/simulation/authored-stud-drives.js",
-      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+      "sha256": "8faed0df6244529a768e0623c0d0cffdd062a900954fc74d62d2717bbdaa290f"
     },
     {
       "file": "/dev/shm/153-supported-fine-samples.json",
-      "sha256": "5992cf585421387ab99cd1676324a0b86fef0697e0c49362211578edaa87ae89"
+      "sha256": "c58711a4331672811992f6c29defe4b506d87cd275f7543fd481ce165357b67c"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

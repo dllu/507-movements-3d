@@ -134,13 +134,6 @@ function extrudedShape(shape, depth, centerZ, material) {
   return mesh;
 }
 
-function lineLoop(points, z, material) {
-  const geometry = new THREE.BufferGeometry().setFromPoints(
-    points.map((point) => new THREE.Vector3(point.x, point.y, z)),
-  );
-  return new THREE.LineLoop(geometry, material);
-}
-
 function segmentIntersection(firstStart, firstEnd, secondStart, secondEnd) {
   const firstDirection = firstEnd.clone().sub(firstStart);
   const secondDirection = secondEnd.clone().sub(secondStart);
@@ -651,9 +644,6 @@ function groovedCamWoolComberRollerMotion(movementId) {
     roughness: 0.7,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.48 });
-  const grooveLineMaterial = new THREE.LineBasicMaterial({
-    color: PALETTE.ink,
-  });
 
   const camRotor = new THREE.Group();
   camRotor.userData.role = 'clockwise-grooved-heart-cam-C-D-B-e';
@@ -690,8 +680,6 @@ function groovedCamWoolComberRollerMotion(movementId) {
   );
   innerIsland.userData.role = 'central-heart-cam-island';
   camRotor.add(innerIsland);
-  camRotor.add(lineLoop(outerWall, camLandDepth + 0.002, grooveLineMaterial));
-  camRotor.add(lineLoop(innerWall, camLandDepth + 0.002, grooveLineMaterial));
 
   const camShaft = cylinderAlongZ(0.22, 1.18, darkMaterial, 40);
   camShaft.position.z = -0.20;
@@ -860,30 +848,6 @@ function groovedCamWoolComberRollerMotion(movementId) {
   );
   catchPivotBearing.userData.role = 'hinged-catch-G-pivot';
   rocker.add(catchPivotBearing);
-  const catchPivotRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.17, 0.035, 10, 40),
-    outputPlateFocus ? darkMaterial : whiteMaterial,
-  );
-  catchPivotRing.position.set(
-    catchPivotLocal.x,
-    catchPivotLocal.y,
-    outputPlateFocus ? 0.835 : 1.17,
-  );
-  catchPivotRing.userData.role = 'G-hinge-source-face-ring';
-  rocker.add(catchPivotRing);
-
-  const followerSourceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.16, 0.04, 10, 40),
-    darkMaterial,
-  );
-  followerSourceRing.position.set(
-    followerLocal.x,
-    followerLocal.y,
-    0.69,
-  );
-  followerSourceRing.userData.role = 'A-source-face-ring';
-  followerSourceRing.visible = outputPlateFocus;
-  rocker.add(followerSourceRing);
 
   const catchLink = new THREE.Group();
   catchLink.userData.role = 'hinged-catch-G';
@@ -1072,10 +1036,8 @@ function groovedCamWoolComberRollerMotion(movementId) {
     catchIndex,
     catchLink,
     catchPivotBearing,
-    catchPivotRing,
     followerContactMarker,
     followerRoller,
-    followerSourceRing,
     frameBase,
     framePost,
     frameTop,

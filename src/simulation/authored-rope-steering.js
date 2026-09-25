@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {tubePathUpdater} from './update-tube-path.js';
+import {LaidRopeGeometry, replaceWithLaidRope} from './laid-rope.js';
 import {correctSteeringSolids} from './steering-spatial-parts.js';
 import {
   PALETTE,
@@ -120,7 +120,6 @@ function ropeSteering(movement) {
   const lowerRopePlaneZ = drumRadius;
   const ropeRadius = 0.025;
   const visibleFullWrapCount = 5;
-  const markerCount = 14;
 
   // The barrel axis lies across the plan (X), unlike the guide axes (Z).
   // Both free branches leave the front barrel generator, at opposite axial ends.
@@ -406,7 +405,8 @@ function ropeSteering(movement) {
     sheave.rotation.x = Math.PI / 2;
     const groove = addRole(new THREE.Mesh(
       new THREE.TorusGeometry(guideRadius, 0.045, 10, 44),
-      darkMaterial,
+      // The grooved rim is the sheave itself, not a black tyre.
+      drivenMaterial,
     ), `${label}-guide-sheave-rope-groove`);
     const index = addRole(new THREE.Mesh(
       new THREE.BoxGeometry(guideRadius * 0.58, 0.050, 0.035),
@@ -522,8 +522,10 @@ function ropeSteering(movement) {
     pathLength: 0,
     points: [],
   };
+  // Brown hatches the tiller rope as a laid rope: the shared three-strand
+  // rope, whose lay travels with the drum payout (no painted markers).
   const rope = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(
+    new LaidRopeGeometry(
       new THREE.LineCurve3(
         new THREE.Vector3(),
         new THREE.Vector3(0.001, 0, 0),
@@ -538,15 +540,6 @@ function ropeSteering(movement) {
   rope.userData.isBelt = false;
   rope.userData.isSingleContinuousRope = true;
   root.add(rope);
-  const refillRope = tubePathUpdater(rope.geometry);
-  const ropeMarkers = Array.from({ length: markerCount }, (_, index) => {
-    const marker = addRole(new THREE.Mesh(
-      new THREE.SphereGeometry(0.061, 16, 11),
-      markerMaterial,
-    ), `material-marker-on-single-steering-rope-${index + 1}`);
-    root.add(marker);
-    return marker;
-  });
   const buildContinuousRopeCurve = (routes) => {
     const points = [];
     const slack = (freeRopeLength-routes.totalFreeBranchLength)/2;
@@ -581,9 +574,14 @@ function ropeSteering(movement) {
     return curve;
   };
 
-  const updateRopeGeometry = (routes) => {
+  const updateRopeGeometry = (routes, travel) => {
     const curve = buildContinuousRopeCurve(routes);
-    refillRope(curve);
+    replaceWithLaidRope(rope, curve, {
+      radius: ropeRadius,
+      travel,
+      tubularSegments: 420,
+      radialSegments: 7,
+    });
     return curve;
   };
 
@@ -593,18 +591,7 @@ function ropeSteering(movement) {
     upperGuide.rotating.rotation.z = state.upperGuideAngleRadian;
     lowerGuide.rotating.rotation.z = state.lowerGuideAngleRadian;
     tiller.rotation.z = state.tillerAngleRadian;
-    const curve = updateRopeGeometry(state.routes);
-    for (let index = 0; index < ropeMarkers.length; index += 1) {
-      const progress = THREE.MathUtils.euclideanModulo(
-        index / ropeMarkers.length
-          + state.ropeDisplacement / ropePathState.pathLength,
-        1,
-      );
-      ropeMarkers[index].position.copy(curve.getPointAt(progress));
-      ropeMarkers[index].scale.setScalar(
-        Math.sin(Math.PI * progress) ** 0.30,
-      );
-    }
+    updateRopeGeometry(state.routes, state.ropeDisplacement);
   };
 
   const geometry = {
@@ -619,7 +606,6 @@ function ropeSteering(movement) {
     lowerDrumContact,
     lowerGuideCenter,
     lowerRopePlaneZ,
-    markerCount,
     maximumDifferentialExcursion,
     maximumTillerAngle,
     neutralDifferentialLength,
@@ -651,7 +637,6 @@ function ropeSteering(movement) {
       handwheelSpokes,
       lowerGuide,
       rope,
-      ropeMarkers,
       rudderHead,
       squareRudderKey,
       tiller,
@@ -670,11 +655,11 @@ function ropeSteering(movement) {
     differentialDerivativeAtAngle,
     dynamics: {
       continuity:
-        'There is exactly one Curve3 centerline and one tube mesh: upper tiller end to upper guide, continuous multi-turn barrel helix, lower guide, and lower tiller end. Every adjacent sampled section shares its endpoint.',
+        'There is exactly one Curve3 centerline and one laid-rope mesh: upper tiller end to upper guide, continuous multi-turn barrel helix, lower guide, and lower tiller end. Every adjacent sampled section shares its endpoint.',
       historicalSlackDisclosure:
         'The ordinary unquadranted tiller does not keep its taut branch-length sum constant. Reconstructed equal smooth slack bows preserve the ideal fixed free-rope length and differential payout. Bow shape and imposed guide rotation do not solve tension, friction or axial creep on the barrel.',
-      markerContinuity:
-        'White material markers use the signed analytic drum payout divided by current total path length and getPointAt arc-length sampling over the single uninterrupted rope curve, so transitions between free spans, guide arcs, and barrel turns are smooth.',
+      layTravel:
+        'The rope is the shared three-strand laid rope. Its lay phase advances by the signed analytic drum payout, measured by arc length along the single uninterrupted rope curve, so the visible twist moves smoothly through free spans, guide arcs, and barrel turns without painted markers.',
       sourceProjectionDisclosure:
         'The barrel and handwheel share the across-plan X shaft; guide and rudder axes are Z. Both branches meet the front barrel generator and a five-turn helix joins them with reconstructed axial lead transitions. Depths, supports, tension and axial creep are inferred.',
     },
@@ -772,9 +757,6 @@ function ropeSteering(movement) {
   addHandwheelHandles(root);
   root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);
-  ropeMarkers.forEach((marker) => {
-    marker.castShadow = false;
-  });
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

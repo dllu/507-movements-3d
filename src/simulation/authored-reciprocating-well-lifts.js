@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {replaceWithLaidRope} from './laid-rope.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
 import {
@@ -833,6 +834,34 @@ function reciprocatingWellLift(movement) {
     ropeMaterial,
   ), 'single-rope-right-outer-vertical-leg');
   continuousRope.add(leftRopeLeg, rightRopeLeg);
+  // Brown draws one laid rope: render it as the shared three-strand rope from
+  // the left bail over both pulleys to the right bail. The span pieces stay as
+  // hidden references for the contact checks.
+  const laidRope = addRole(new THREE.Mesh(new THREE.BufferGeometry(), ropeMaterial),
+    'single-laid-rope-over-both-pulleys-between-both-bails');
+  continuousRope.add(laidRope);
+  for (const piece of [leftUpperArc, rightUpperArc, innerRope, leftRopeLeg, rightRopeLeg]) piece.visible = false;
+  const layRope = (leftY, rightY) => {
+    const arc = (center, first) => {
+      const curve = new THREE.Curve();
+      curve.getPoint = (t, target = new THREE.Vector3()) => {
+        const angle = first - Math.PI * t / 2;
+        return target.set(center.x + pulleyRadius * Math.cos(angle), center.y + pulleyRadius * Math.sin(angle), ropeZ);
+      };
+      return curve;
+    };
+    const left = pulleyCenters.left, right = pulleyCenters.right;
+    const path = new THREE.CurvePath();
+    path.add(new THREE.LineCurve3(new THREE.Vector3(leftRopeX, leftY, ropeZ),
+      new THREE.Vector3(left.x - pulleyRadius, left.y, ropeZ)));
+    path.add(arc(left, Math.PI));
+    path.add(new THREE.LineCurve3(new THREE.Vector3(left.x, left.y + pulleyRadius, ropeZ),
+      new THREE.Vector3(right.x, right.y + pulleyRadius, ropeZ)));
+    path.add(arc(right, Math.PI / 2));
+    path.add(new THREE.LineCurve3(new THREE.Vector3(right.x + pulleyRadius, right.y, ropeZ),
+      new THREE.Vector3(rightRopeX, rightY, ropeZ)));
+    replaceWithLaidRope(laidRope, path, {radius: 0.038, tubularSegments: 256});
+  };
 
   const makeBucket = (side) => {
     const bucket = addRole(new THREE.Group(),
@@ -979,6 +1008,7 @@ function reciprocatingWellLift(movement) {
     setVerticalExtent(rightRopeLeg, state.rightBailY, wheelCenterY);
     rightRopeLeg.position.x = rightRopeX;
     rightRopeLeg.position.z = ropeZ;
+    layRope(state.leftBailY, state.rightBailY);
     leftBucket.bucket.position.copy(state.leftBucketPivot);
     leftBucket.bucket.rotation.z = state.leftBucketTilt;
     rightBucket.bucket.position.copy(state.rightBucketPivot);

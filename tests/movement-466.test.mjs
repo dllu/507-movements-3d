@@ -65,7 +65,12 @@ test('movement 466 is one hand pump hydraulically linked to a much larger solid 
   assert.equal(blocks.fixedHead.parent, blocks.pressFrame);
   assert.equal(blocks.inletValve.parent, model.root);
   assert.equal(blocks.deliveryValve.parent, model.root);
-  assert.equal(blocks.reliefValve.parent, model.root);
+  // Brown draws no relief valve: the presentation detaches it and its
+  // return water, while the relief law still lowers the ram.
+  assert.equal(blocks.reliefValve.parent, null);
+  assert.equal(blocks.reliefWater.parent, null);
+  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes(
+    'modeled-relief-return-valve-for-lowering-press'));
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.pumpAndRamIndependent, false);

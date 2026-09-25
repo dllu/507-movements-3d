@@ -5,10 +5,10 @@
     "radius": 0.56,
     "length": 4.76,
     "floorRadius": 0.4,
-    "slotHalfHeight": 0.17,
+    "slotHalfHeight": 0.195,
     "centerY": 0.21,
     "amplitude": 1.218,
-    "studRadius": 0.075,
+    "studRadius": 0.065,
     "studCenterRadius": 0.53,
     "rodX": 1.05,
     "rodRadius": 0.112,
@@ -18,7 +18,7 @@
   "poses": 129,
   "meshes": 8,
   "pairs": 16,
-  "queries": 9699708,
+  "queries": 10117276,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the four-second analytic cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
@@ -29,15 +29,15 @@
     },
     {
       "file": "src/simulation/reversing-groove-drum.js",
-      "sha256": "e18846d149e430de6b614be580214b111f415f64293d601452616c6054dc0f90"
+      "sha256": "97cced4db1ace4b74898b6e367b8712cb0674704d8c63ba354457be65b9793e1"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

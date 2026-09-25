@@ -1,5 +1,6 @@
 import {correctDrawingTemplateParts,pointedTemplateParameters,taperedBendIntegrals} from './drawing-template-parts.js';
 import * as THREE from 'three';
+import { LaidRopeGeometry, replaceWithLaidRope } from './laid-rope.js';
 import {
   PALETTE,
   markShadows,
@@ -7,7 +8,6 @@ import {
 } from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
@@ -67,15 +67,16 @@ function lineTube(points, radius, material) {
 }
 
 function makeDynamicCord(radius, material) {
-  const cord = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, 14),
-    material,
-  );
+  // Brown hatches the cord as a laid rope: the shared three-strand rope,
+  // rebuilt along the straight run between its two moving ends.
+  const cord = new THREE.Mesh(new THREE.BufferGeometry(), material);
+  cord.userData.crossSection = 'laid-rope';
   cord.userData.setEndpoints = (start, end) => {
-    const delta = end.clone().sub(start);
-    cord.position.copy(start).add(end).multiplyScalar(0.5);
-    cord.scale.set(1, delta.length(), 1);
-    cord.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
+    replaceWithLaidRope(cord, new THREE.LineCurve3(start.clone(), end.clone()), {
+      radius,
+      // Enough samples for the longest run, so the buffers never reallocate.
+      tubularSegments: 1024,
+    });
   };
   return cord;
 }
@@ -426,7 +427,7 @@ function pointedArchInstrument(movement) {
     return marker;
   });
 
-  const cord = makeDynamicCord(0.027, darkMaterial);
+  const cord = makeDynamicCord(0.027, matte(PALETTE.belt, { roughness: 0.78 }));
   cord.userData.role =
     'single-working-cord-from-elastic-bar-tip-to-slide-pin';
   root.add(cord);
@@ -757,6 +758,22 @@ function pointedArchInstrument(movement) {
   updateBarGeometry(1);
   update(0);
   correctDrawingTemplateParts(root,407,update);
+  // The loop round the slide pin is the same cord: a closed laid-rope ring
+  // on the helper's finite loop radius.
+  {
+    const loop = root.userData.blocks.cordLoop;
+    const loopRadius = loop.geometry.parameters.radius;
+    const loopTube = loop.geometry.parameters.tube;
+    const circle = new THREE.EllipseCurve(0, 0, loopRadius, loopRadius);
+    const ring = new THREE.CatmullRomCurve3(
+      circle.getSpacedPoints(96).slice(0, -1).map((p) => new THREE.Vector3(p.x, p.y, 0)),
+      true,
+    );
+    loop.geometry.dispose();
+    loop.geometry = new LaidRopeGeometry(ring, 128, loopTube, 8, true);
+    loop.material = root.userData.blocks.cord.material;
+    loop.userData.crossSection = 'laid-rope';
+  }
   return { root, update, cameraDirection: root.userData.cameraDirection };
 }
 

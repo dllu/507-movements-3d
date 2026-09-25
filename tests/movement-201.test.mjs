@@ -531,10 +531,12 @@ test('movement 201 runtime poses use one tangent-continuous belt and remain dist
     );
   }
 
+  // The belt is a laid rope: its moving lay, not white markers, shows travel.
   const beltMarkers = blocks.belt.children.filter(
     (child) => child.userData.isFlowMarker === true,
   );
-  assert.equal(beltMarkers.length, 12);
+  assert.equal(beltMarkers.length, 0);
+  assert.equal(blocks.belt.userData.mesh.geometry.type, 'LaidRopeGeometry');
   const times = [
     0,
     0.317,
@@ -617,17 +619,11 @@ test('movement 201 runtime poses use one tangent-continuous belt and remain dist
       2e-15,
       'runtime physical large pulley angle',
     );
-    const firstMarkerExpected = beltCurve.getPointAt(
-      THREE.MathUtils.euclideanModulo(
-        state.beltDistance / blocks.belt.userData.length,
-        1,
-      ),
-    );
-    vector3Near(
-      beltMarkers[0].position,
-      firstMarkerExpected,
-      2e-15,
-      'first white belt marker follows exact arc-length belt position',
+    near(
+      blocks.belt.userData.mesh.geometry.userData.travel,
+      state.beltDistance,
+      1e-9,
+      'the rope lay follows the exact arc-length belt position',
     );
   }
 

@@ -2,33 +2,33 @@
   "movement": 153,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 interpolated baked poses across the full cycle, offset between recorded samples. Uses the authored constituent solids with the baked generalized coordinates; the bundle merges these same solids by body and material. Contact markers are excluded; intended soft working contacts are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 43,
-    "pairs": 626,
+    "parts": 42,
+    "pairs": 591,
     "poses": 65,
-    "checks": 3848628,
+    "checks": 3075696,
     "failingPairs": 0
   },
   "failures": {},
   "softContacts": {
-    "part-30/bar-fixed-underside-direct-drive-projection-35": {
+    "part-29/bar-fixed-underside-direct-drive-projection-34": {
       "firstPose": 0,
-      "points": 3,
-      "maximumDepth": 0.00001311936333450725
+      "points": 2,
+      "maximumDepth": 0.000005558869228816654
     },
-    "part-32/distal-input-driving-face-38": {
+    "part-31/distal-input-driving-face-37": {
       "firstPose": 12,
       "points": 3,
-      "maximumDepth": 0.0000021453649849401124
+      "maximumDepth": 0.000002144849696683604
     },
-    "part-30/distal-input-driving-face-38": {
+    "part-29/distal-input-driving-face-37": {
       "firstPose": 42,
       "points": 12,
-      "maximumDepth": 0.00032534732708291617
+      "maximumDepth": 0.0003253548459003587
     },
-    "bar-fixed-front-return-stud-36/bored-return-arm-40": {
+    "bar-fixed-front-return-stud-35/bored-return-arm-39": {
       "firstPose": 42,
       "points": 4,
-      "maximumDepth": 0.00008693518713487336
+      "maximumDepth": 0.00008611131468136413
     }
   },
   "sources": [
@@ -38,7 +38,7 @@
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "290771ca52b327d32237412b765dce2c86ea85799e2ff2a887d7cc8630ebee6b"
+      "sha256": "53e4d165ea87da91257135de86b58ae19a85731f40dc02b3635745737895d627"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/sync.js",
@@ -46,11 +46,11 @@
     },
     {
       "file": "src/simulation/authored-stud-drives.js",
-      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+      "sha256": "8faed0df6244529a768e0623c0d0cffdd062a900954fc74d62d2717bbdaa290f"
     },
     {
       "file": "src/simulation/baked/assets/153.json.gz",
-      "sha256": "ce195d8bf4a647124abab9bf0bec77720e17bb0e1c5345e1eb15eb6b53dd4810"
+      "sha256": "a31e8352f252fb628565ac4c6c7552d6715d0956e51df7fc5502d49a9322042a"
     },
     {
       "file": "src/simulation/baked/playback.js",

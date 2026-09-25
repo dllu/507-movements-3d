@@ -1026,7 +1026,8 @@ test('movement 178 closes one rotating radial slot through a fixed eccentric cir
     visibleBounds.union(new THREE.Box3().setFromObject(object));
   });
   const visibleSize = visibleBounds.getSize(new THREE.Vector3());
-  assert.ok(visibleSize.x > 23.5,
+  // The retired ink ring stood 0.025 units proud of the disk rim.
+  assert.ok(visibleSize.x > 23.4,
     'full finite rod, disk, guide, and cutting tool are visible');
   assert.ok(visibleSize.y > 7.8,
     'source-pose disk and vertical crank occupy full height');

@@ -11,7 +11,7 @@
     },
     {
       "file": "src/simulation/authored-scroll-gears.js",
-      "sha256": "0e675181d7fe4eba5a0782b53fbdd01d009f570ac06b31e1b16a26e680e476b1"
+      "sha256": "a50c5d15e63c04e8c4923372790dcbeed45dadb9d2c1acc4ee3c98f37f097a4f"
     },
     {
       "file": "src/simulation/variable-face-gear-parts.js",
@@ -35,7 +35,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "scripts/review-variable-face-contact.mjs",
@@ -50,10 +50,10 @@
     {
       "id": 219,
       "poses": 17,
-      "tested": 1523852,
+      "tested": 1575508,
       "inside": 0,
       "maxPenetration": 0,
-      "maxWorkingGap": 0.0029378007877607472,
+      "maxWorkingGap": 0.00310805718314524,
       "categories": {
         "gear": 0
       }

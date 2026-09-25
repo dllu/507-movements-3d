@@ -34,7 +34,7 @@
     },
     {
       "file": "src/simulation/linked-variable-crank.js",
-      "sha256": "7c7b68baa8f6c2d7e462df3009a05c2627d54789bec30d6c6c2b693c31cb3a06"
+      "sha256": "d9600ad957412b3891eb3b197a26c0170be7674123a617ef48f7d5d34c7bfc04"
     },
     {
       "file": "src/simulation/variable-radius-crank-motion.js",
@@ -54,7 +54,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

@@ -154,6 +154,9 @@ function makeIndexedEccentricSheave({
   );
   rim.position.z = z + width * 0.52;
   rim.userData.role = 'working-rim-under-eccentric-strap';
+  // Only the sheave's drawn edge: hidden reference, not a dark rim band.
+  rim.visible = false;
+  rim.userData.retiredInkOutline = true;
   const index = new THREE.Mesh(
     new THREE.BoxGeometry(radius * 0.62, 0.075, 0.035),
     matte(PALETTE.white, { roughness: 0.43 }),

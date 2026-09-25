@@ -280,16 +280,20 @@ function makeBeamAndSectors({
 
   const shoeStart = 2.740167;
   const shoeEnd = 3.490659;
+  // Brown's chain lies on the arc's rim, so the shoe's face runs forward
+  // through the chain's plane and the links bear on it, just clear.
+  const chainShoeBackZ = 0.30;
+  const chainShoeFrontZ = geometry.chainOuterHigh + 0.025;
   const chainShoe = new THREE.Mesh(
     centeredExtrusion(annularSectorShape(
       14 * sourceScale,
-      16 * sourceScale,
+      15.95 * sourceScale,
       shoeStart,
       shoeEnd,
-    ), 0.17, 0.005),
+    ), chainShoeFrontZ - chainShoeBackZ, 0.005),
     beamMaterial,
   );
-  chainShoe.position.z = 0.385;
+  chainShoe.position.z = (chainShoeBackZ + chainShoeFrontZ) / 2;
   chainShoe.userData.guideRadius = chainGuideRadius;
   chainShoe.userData.role =
     'curved-chain-suspension-shoe-concentric-with-pivot-F';

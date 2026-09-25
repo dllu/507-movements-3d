@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {makeBellCrankGeometry} from './geometry.js';
 import {makeBellCrankPhysics} from './physics.js';
-import {bellCrankCordGeometry} from './finish.js';
+import {updateBellCrankCord} from './finish.js';
 import {createPhysicsPlayback} from '../mujoco/simulation.js';
 import {disposeObject3D} from '../dispose-model.js';
 export {THREE};
@@ -12,7 +12,7 @@ export function makeMujocoBellCrank(mujoco,options={}){
  const sync=()=>{
   const{data,model,bodies}=physics;mujoco.mj_forward(model,data);
   for(const[n,id]of Object.entries(bodies)){u.blocks[n].position.fromArray(data.xpos,3*id);u.blocks[n].quaternion.set(data.xquat[4*id+1],data.xquat[4*id+2],data.xquat[4*id+3],data.xquat[4*id]);}
-  for(const name of ['input','output']){const points=physics.getCordPoints(name),geometry=bellCrankCordGeometry(points,u.profile.cordRadius,u.profile.cordLengths[name]);u.parts[name+'Cord'].geometry.dispose();u.parts[name+'Cord'].geometry=geometry;}
+  for(const name of ['input','output'])updateBellCrankCord(u.parts[name+'Cord'],physics.getCordPoints(name),u.profile.cordRadius);
   visual.root.updateMatrixWorld(true);
   return u.state={time:data.time,qpos:Object.fromEntries(Object.entries(physics.joints).map(([n,j])=>[n,data.qpos[j.q]])),qvel:Object.fromEntries(Object.entries(physics.joints).map(([n,j])=>[n,data.qvel[j.v]])),contacts:data.ncon};
  };

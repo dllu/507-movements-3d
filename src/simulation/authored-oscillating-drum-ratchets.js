@@ -159,7 +159,7 @@ class BeamToDrumCordCurve extends THREE.Curve {
       return target.set(
         data.beamPivot.x + data.sectorRadius * Math.cos(angle),
         data.beamPivot.y + data.sectorRadius * Math.sin(angle),
-        data.z,
+        data.sectorZ,
       );
     }
     const afterSector = distance - data.sectorArcLength;
@@ -172,7 +172,7 @@ class BeamToDrumCordCurve extends THREE.Curve {
           data.drumCenter.y,
           progress,
         ),
-        data.z,
+        THREE.MathUtils.lerp(data.sectorZ, data.z, progress),
       );
     }
     const progress = data.drumArcLength > 1e-12
@@ -204,7 +204,8 @@ class BeamToDrumCordCurve extends THREE.Curve {
       return target.set(Math.sin(angle), -Math.cos(angle), 0).normalize();
     }
     if (distance < data.sectorArcLength + data.verticalLength - 1e-10) {
-      return target.set(0, -1, 0);
+      return target.set(0, -data.verticalLength, data.z - data.sectorZ)
+        .normalize();
     }
     const progress = data.drumArcLength > 1e-12
       ? THREE.MathUtils.clamp(
@@ -263,7 +264,7 @@ class CounterweightCordCurve extends THREE.Curve {
       return target.set(
         data.beamPivot.x + data.sectorRadius * Math.cos(angle),
         data.beamPivot.y + data.sectorRadius * Math.sin(angle),
-        data.z,
+        data.sectorZ,
       );
     }
     const progress = data.verticalLength > 1e-12
@@ -276,7 +277,7 @@ class CounterweightCordCurve extends THREE.Curve {
     return target.set(
       data.tangentX,
       THREE.MathUtils.lerp(data.beamPivot.y, data.tailY, progress),
-      data.z,
+      data.sectorZ,
     );
   }
 
@@ -341,6 +342,9 @@ function oscillatingDrumRatchet(movement) {
   const ratchetToothPitch = FULL_TURN / ratchetToothCount;
   const counterweightNominalFreeLength = 1.55;
   const cordZ = 0.67;
+  // Both cords lie on their sectors' rims in the beam's plane; the drive
+  // cord crosses forward to the drum's groove along its vertical run.
+  const sectorCordZ = 0.16;
   const driveCordVerticalLength = beamPivot.y - drumCenter.y;
   const driveCordLength = sectorRadius * sectorBaseWrap
     + driveCordVerticalLength
@@ -378,6 +382,7 @@ function oscillatingDrumRatchet(movement) {
         + driveCordVerticalLength
         + drumArcLength,
       verticalLength: driveCordVerticalLength,
+      sectorZ: sectorCordZ,
       z: cordZ,
     };
   };
@@ -406,7 +411,8 @@ function oscillatingDrumRatchet(movement) {
       tangentX: beamPivot.x - sectorRadius,
       totalLength: sectorArcLength + verticalLength,
       verticalLength,
-      z: cordZ,
+      sectorZ: sectorCordZ,
+      z: sectorCordZ,
     };
   };
 
@@ -580,9 +586,10 @@ function oscillatingDrumRatchet(movement) {
     z: 0.39,
   });
   looseDrum.add(drumBody);
+  // The grooved cord rim is part of the drum, in its own colour.
   const drumOuterRim = new THREE.Mesh(
     new THREE.TorusGeometry(drumRadius, 0.052, 10, 64),
-    darkMaterial,
+    driverMaterial,
   );
   drumOuterRim.position.z = 0.50;
   drumOuterRim.userData.role = 'loose-drum-cord-groove';
@@ -638,7 +645,11 @@ function oscillatingDrumRatchet(movement) {
   root.add(looseDrum);
 
   const rockingBeam = new THREE.Group();
-  rockingBeam.position.set(beamPivot.x, beamPivot.y, 0);
+  // The cords lie on the sectors' rims: each rim runs just inside the
+  // cord's pitch circle in the cords' sector plane.
+  const beamPlaneOffset = sectorCordZ - 0.16;
+  const sectorRimRadius = sectorRadius - 0.12 - 0.033 - 0.004;
+  rockingBeam.position.set(beamPivot.x, beamPivot.y, beamPlaneOffset);
   rockingBeam.userData.axis = Z_AXIS.clone();
   rockingBeam.userData.role = 'externally-vibrated-double-sector-beam';
   const sectorEndAngle = 0.78;
@@ -646,7 +657,7 @@ function oscillatingDrumRatchet(movement) {
   const rightSector = makeArcTube({
     endAngle: sectorEndAngle,
     material: driverMaterial,
-    radius: sectorRadius,
+    radius: sectorRimRadius,
     role: 'right-circular-cord-sector-on-rocking-beam',
     startAngle: sectorLowerAngle,
     tubeRadius: 0.12,
@@ -655,7 +666,7 @@ function oscillatingDrumRatchet(movement) {
   const leftSector = makeArcTube({
     endAngle: Math.PI - sectorLowerAngle,
     material: driverMaterial,
-    radius: sectorRadius,
+    radius: sectorRimRadius,
     role: 'left-circular-counterweight-sector-on-rocking-beam',
     startAngle: Math.PI - sectorEndAngle,
     tubeRadius: 0.12,
@@ -671,8 +682,8 @@ function oscillatingDrumRatchet(movement) {
     Math.PI - sectorLowerAngle,
   ]) {
     const end = new THREE.Vector3(
-      sectorRadius * Math.cos(phase),
-      sectorRadius * Math.sin(phase),
+      sectorRimRadius * Math.cos(phase),
+      sectorRimRadius * Math.sin(phase),
       0.16,
     );
     const spoke = makeBeam(
@@ -694,7 +705,7 @@ function oscillatingDrumRatchet(movement) {
   rightCordKnot.position.set(
     sectorRadius * Math.cos(sectorBaseWrap),
     sectorRadius * Math.sin(sectorBaseWrap),
-    cordZ,
+    sectorCordZ - beamPlaneOffset,
   );
   rightCordKnot.userData.role = 'drive-cord-end-fixed-to-right-sector';
   rockingBeam.add(rightCordKnot);
@@ -702,7 +713,7 @@ function oscillatingDrumRatchet(movement) {
   leftCordKnot.position.set(
     sectorRadius * Math.cos(Math.PI - sectorBaseWrap),
     sectorRadius * Math.sin(Math.PI - sectorBaseWrap),
-    cordZ,
+    sectorCordZ - beamPlaneOffset,
   );
   leftCordKnot.userData.role =
     'counterweight-cord-end-fixed-to-left-sector';
@@ -715,8 +726,10 @@ function oscillatingDrumRatchet(movement) {
   }
   root.add(rockingBeam);
 
-  const beamPivotPin = cylinderAlongZ(0.095, 0.92, brassMaterial, 24);
-  beamPivotPin.position.set(beamPivot.x, beamPivot.y, 0.03);
+  const beamPivotPin = cylinderAlongZ(0.095, 0.92 + beamPlaneOffset,
+    brassMaterial, 24);
+  beamPivotPin.position.set(beamPivot.x, beamPivot.y,
+    0.03 + beamPlaneOffset / 2);
   beamPivotPin.userData.role = 'fixed-beam-pivot-pin';
   root.add(beamPivotPin);
 
@@ -726,16 +739,13 @@ function oscillatingDrumRatchet(movement) {
     {
       closed: false,
       color: PALETTE.belt,
-      markerColor: PALETTE.white,
-      markerCount: 7,
+      laid: true,
       radius: 0.033,
       tubularSegments: 196,
     },
   );
-  driveCord.userData.markers = driveCord.children.slice(0, 7);
-  driveCord.userData.markers.forEach((marker) => {
-    marker.userData.role = 'fixed-material-drive-cord-marker';
-  });
+  // Brown hatches the cords: laid rope, whose lay replaces the markers.
+  driveCord.userData.markers = [];
   driveCord.userData.materialLength = driveCordLength;
   driveCord.userData.role = 'one-inextensible-beam-to-drum-drive-cord';
   root.add(driveCord);
@@ -745,23 +755,20 @@ function oscillatingDrumRatchet(movement) {
     {
       closed: false,
       color: PALETTE.belt,
-      markerColor: PALETTE.white,
-      markerCount: 4,
+      laid: true,
       radius: 0.030,
       tubularSegments: 150,
     },
   );
-  counterweightCord.userData.markers = counterweightCord.children.slice(0, 4);
-  counterweightCord.userData.markers.forEach((marker) => {
-    marker.userData.role = 'fixed-material-counterweight-cord-marker';
-  });
+  // Brown hatches the cords: laid rope, whose lay replaces the markers.
+  counterweightCord.userData.markers = [];
   counterweightCord.userData.materialLength = counterweightCordLength;
   counterweightCord.userData.role = 'left-sector-counterweight-cord';
   root.add(counterweightCord);
 
   const counterweight = new THREE.Group();
   counterweight.position.x = beamPivot.x - sectorRadius;
-  counterweight.position.z = cordZ;
+  counterweight.position.z = sectorCordZ;
   counterweight.userData.role = 'hanging-balance-weight-on-left-cord';
   const weightBody = new THREE.Mesh(
     new THREE.SphereGeometry(0.19, 24, 18),

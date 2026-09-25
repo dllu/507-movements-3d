@@ -174,27 +174,6 @@ function troughFaceBandGeometry(profile, segments, innerFraction, rings = 10) {
   return geometry;
 }
 
-function makeWavyRimEdge(profile, material, role, segments) {
-  const points = Array.from({ length: segments }, (_, index) => {
-    const angle = FULL_TURN * index / segments;
-    const rho = rimRadiusAtAngle(angle, profile);
-    const y = rho * Math.cos(angle);
-    return new THREE.Vector3(troughFaceX(y, profile), y, rho * Math.sin(angle));
-  });
-  const edge = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(points, true, 'centripetal'),
-      segments * 2,
-      0.025,
-      8,
-      true,
-    ),
-    material,
-  );
-  edge.userData.role = role;
-  return edge;
-}
-
 function beveledDiskInclinedFollower(movement) {
   const root = new THREE.Group();
   const camCenter = new THREE.Vector3(0, 0, 0);
@@ -433,21 +412,8 @@ function beveledDiskInclinedFollower(movement) {
   bevelFace.userData.innerFraction = workingBandInnerFraction;
   bevelFace.userData.role = 'wavy-working-band-of-trough-face';
   camRotor.add(bevelFace);
-  const frontWavyEdge = makeWavyRimEdge(
-    faceProfile,
-    darkMaterial,
-    'wavy-edge-where-face-meets-bevelled-rim',
-    camSegments,
-  );
-  camRotor.add(frontWavyEdge);
-  const rearEdge = new THREE.Mesh(
-    new THREE.TorusGeometry(camBackRadius, 0.025, 8, camSegments),
-    darkMaterial,
-  );
-  rearEdge.rotation.y = Math.PI / 2;
-  rearEdge.position.x = camBackX;
-  rearEdge.userData.role = 'circular-rear-boundary-of-bevelled-rim';
-  camRotor.add(rearEdge);
+  // Brown's wavy line and rear circle are the inked edges of the solid
+  // disk; the shaded 3D edges show them, so no dark edge tubes are added.
   const shaft = cylinderAlongX(
     shaftRadius,
     shaftLength,
@@ -597,11 +563,9 @@ function beveledDiskInclinedFollower(movement) {
     follower,
     followerGuides,
     followerRod,
-    frontWavyEdge,
     guideBackingRail,
     guideBrackets,
     hub,
-    rearEdge,
     rotationIndex,
     shaft,
     shaftBearings,

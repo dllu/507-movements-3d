@@ -90,7 +90,8 @@ for (const id of [183, 184]) {
       m.update(18 * i / 24); m.root.updateMatrixWorld(true);
       m.root.traverseVisible((o) => {
         const a = o.geometry?.attributes.position;
-        if (a) for (let j = 0; j < a.count; j += 7) assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld)));
+        // The complete piston and weight rods run on past Brown's breaks.
+        if (a && !o.userData.runsPastCrop) for (let j = 0; j < a.count; j += 7) assert.ok(d.cameraFitBounds.containsPoint(point.fromBufferAttribute(a, j).applyMatrix4(o.matrixWorld)));
       });
     }
   });

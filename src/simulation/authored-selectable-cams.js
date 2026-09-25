@@ -350,18 +350,12 @@ function makeCamAssembly(
   assembly.userData.role = `throw-${config.index + 1}-cam-rigid-on-sliding-carrier`;
 
   const profilePoints = [];
-  const outlinePoints = [];
   const profileSamples = 192;
   for (let index = 0; index < profileSamples; index += 1) {
     const angle = index / profileSamples * FULL_TURN;
     const profile = profileGeometryAt(config, angle);
     const point = profile.boundary;
     profilePoints.push(point.toArray());
-    outlinePoints.push(new THREE.Vector3(
-      point.x - profile.normal.x * 0.04,
-      point.y - profile.normal.y * 0.04,
-      config.camDepth / 2 + 0.012,
-    ));
   }
   const plate = new THREE.Mesh(
     finitePlate(clip.difference(poly(profilePoints), poly(circle([0, 0], config.baseRadius, profileSamples))), -config.camDepth / 2, config.camDepth / 2),
@@ -370,17 +364,6 @@ function makeCamAssembly(
   plate.userData.camProfile = 'common-heel-variable-throw-polar-pear';
   plate.userData.role = `throw-${config.index + 1}-working-cam-plate`;
   plate.userData.throw = config.lift;
-  const outline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(outlinePoints, true, 'centripetal'),
-      profileSamples,
-      0.012,
-      7,
-      true,
-    ),
-    darkMaterial,
-  );
-  outline.userData.role = `throw-${config.index + 1}-cam-profile-outline`;
   const lobeIndex = cylinderAlongZ(0.052, 0.032, indexMaterial, 20);
   lobeIndex.position.set(
     config.baseRadius + config.lift * 0.62,
@@ -398,11 +381,10 @@ function makeCamAssembly(
     tick.userData.role = `throw-${config.index + 1}-identity-tick`;
     return tick;
   });
-  assembly.add(plate, outline, lobeIndex, ...throwTicks);
+  assembly.add(plate, lobeIndex, ...throwTicks);
   return {
     assembly,
     lobeIndex,
-    outline,
     plate,
     profileSamples,
     throwTicks,
@@ -824,12 +806,6 @@ function slidingFourThrowCamValveGear() {
     },
   );
   leverBody.userData.role = 'rigid-lever-from-fixed-pivot-to-cam-roller';
-  const leverPivotRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.34, 0.060, 10, 46),
-    darkMaterial,
-  );
-  leverPivotRing.position.z = 0.115;
-  leverPivotRing.userData.role = 'large-fixed-right-fulcrum-ring';
   const leverPivotFace = cylinderAlongZ(0.25, 0.070, drivenMaterial, 36);
   leverPivotFace.position.z = 0.115;
   leverPivotFace.userData.role = 'blue-lever-fulcrum-face';
@@ -872,7 +848,6 @@ function slidingFourThrowCamValveGear() {
   outputPin.userData.role = 'lever-pin-in-open-valve-rod-head-slot';
   lever.add(
     leverBody,
-    leverPivotRing,
     leverPivotFace,
     leverIndex,
     followerRoller.root,
@@ -1444,7 +1419,6 @@ function slidingFourThrowCamValveGear() {
     leverIndex,
     leverPivotFace,
     leverPivotPost,
-    leverPivotRing,
     outputPin,
     rotatingShaft,
     shaftKeyIndex,

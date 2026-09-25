@@ -78,8 +78,11 @@ test('movement 419 is one continuous crank A, one oscillating wheel B, exactly t
     if (object.userData.isBelt) belts.push(object);
   });
   assert.deepEqual(belts, [blocks.flexibleBandC, blocks.flexibleBandD]);
-  assert.equal(blocks.flexibleBandC.children.length, 30);
-  assert.equal(blocks.flexibleBandD.children.length, 30);
+  // Each band is one continuous laid cord, not thirty cylinder pieces.
+  for (const band of [blocks.flexibleBandC, blocks.flexibleBandD]) {
+    assert.equal(band.children.length, 1);
+    assert.equal(band.userData.crossSection, 'laid-rope');
+  }
   assert.ok(!roles.some((role) => /band.*bead|belt.*sphere/i.test(role)));
   for (const role of [
     'continuously-rotating-crank-wheel-A',
@@ -357,10 +360,10 @@ test('movement 419 update binds both wheel rotations, the link, the rolling crad
     sameAngle(blocks.cradleE.rotation.z, state.cradleAngle, 0,
       'cradle E rocking update');
     for (const band of [blocks.flexibleBandC, blocks.flexibleBandD]) {
-      assert.equal(band.children.length, 30);
-      for (const segment of band.children) {
-        assert.ok(Number.isFinite(segment.scale.y));
-        assert.ok(segment.scale.y > 0);
+      assert.equal(band.children.length, 1);
+      assert.ok(Number.isFinite(band.userData.length) && band.userData.length > 0);
+      for (const value of band.userData.mesh.geometry.attributes.position.array) {
+        assert.ok(Number.isFinite(value));
       }
     }
   }

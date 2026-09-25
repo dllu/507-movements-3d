@@ -72,8 +72,10 @@ test('movement 438 feeds four equally handed bent outlet arms through one centra
   assert.equal(blocks.nozzleCollars.length, 4);
   assert.equal(blocks.jetMarkers.length, 24);
   for (const rotating of [blocks.shaft, blocks.shaftWater,
-    blocks.lowerShaftCone, blocks.rotationMarker, ...blocks.armPipes,
+    blocks.lowerShaftCone, ...blocks.armPipes,
     ...blocks.nozzleCollars]) assert.equal(rotating.parent, blocks.runner);
+  // Source presentation removes the white rotation marker Brown does not draw.
+  assert.equal(blocks.rotationMarker.parent, null);
   for (const fixed of [blocks.inletHopper, blocks.inletWaterBowl,
     blocks.upperBearing, blocks.lowerBearing, blocks.bearingBracket,
     blocks.wall, blocks.inletFlume, blocks.inletStream]) assert.equal(fixed.parent, model.root);

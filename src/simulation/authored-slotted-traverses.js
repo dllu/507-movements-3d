@@ -749,18 +749,6 @@ function slottedTraverse(movement) {
   lowerNeck.userData.role = 'lower-slot-neck-to-center-C';
   const centerBoss = boredJournal(0.35, 0.136, leverDepth * 1.18, leverMaterial);
   centerBoss.userData.role = 'lever-center-boss-at-output-joint-C';
-  const upperSlotOutline = new THREE.LineSegments(
-    new THREE.EdgesGeometry(upperSlottedEnd.geometry, 24),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  upperSlotOutline.userData.noShadow = true;
-  upperSlotOutline.userData.role = 'upper-slot-machined-outline';
-  const lowerSlotOutline = new THREE.LineSegments(
-    new THREE.EdgesGeometry(lowerSlottedEnd.geometry, 24),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  lowerSlotOutline.userData.noShadow = true;
-  lowerSlotOutline.userData.role = 'lower-slot-machined-outline';
   const leverJointAnchor = new THREE.Object3D();
   leverJointAnchor.position.z = jointPlaneZ - leverPlaneZ;
   leverJointAnchor.userData.role = 'lever-analytic-joint-anchor-C';
@@ -776,8 +764,6 @@ function slottedTraverse(movement) {
     upperNeck,
     lowerNeck,
     centerBoss,
-    upperSlotOutline,
-    lowerSlotOutline,
     leverJointAnchor,
     fixedPinSlotAnchor,
     movingPinSlotAnchor,
@@ -944,7 +930,6 @@ function slottedTraverse(movement) {
     leverAssembly,
     leverJointAnchor,
     lowerNeck,
-    lowerSlotOutline,
     lowerSlottedEnd,
     movingInput,
     movingPinAnchor,
@@ -960,7 +945,6 @@ function slottedTraverse(movement) {
     railIndexes,
     riserToRail,
     upperNeck,
-    upperSlotOutline,
     upperSlottedEnd,
   };
   root.userData.cameraDistanceScale = 1.05;
@@ -1105,10 +1089,6 @@ function slottedTraverse(movement) {
     new THREE.Vector3(3.2, 3.85, 0.7),
   );
   markShadows(root);
-  upperSlotOutline.castShadow = false;
-  upperSlotOutline.receiveShadow = false;
-  lowerSlotOutline.castShadow = false;
-  lowerSlotOutline.receiveShadow = false;
   return {
     cameraDirection: new THREE.Vector3(1.2, 0.6, 14),
     root,

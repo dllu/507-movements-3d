@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { bevelBodyGeometry, bevelToothGeometry } from './bevel-geometry.js';
 import { beltFrameAt, flatBeltGeometry } from './belt-geometry.js';
+import { LaidRopeGeometry, replaceWithLaidRope } from './laid-rope.js';
 
 export const PALETTE = Object.freeze({
   ink: 0x252a2d,
@@ -96,6 +97,9 @@ export function makePulley({
   sheave.userData.role = spokes > 0 ? 'open-pulley-rim' : 'solid-pulley-drum';
   rotor.add(sheave);
 
+  // Brown outlines tread edges in ink only because the plate is a line
+  // drawing; they are not separate parts. The former dark edge rings stay as
+  // hidden placeholders so callers that index rotor children keep working.
   for (let index = 0; grooves > 0 && index <= grooves; index += 1) {
     const z = -width / 2 + (width * index) / Math.max(grooves, 1);
     const rim = new THREE.Mesh(
@@ -103,6 +107,8 @@ export function makePulley({
       darkMaterial,
     );
     rim.position.z = z;
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     rotor.add(rim);
   }
 
@@ -283,11 +289,15 @@ export function makeGear({
   hub.rotation.x = Math.PI / 2;
   rotor.add(hub);
 
+  // Brown draws no dark ring on a gear face. The former face ring stays as a
+  // hidden placeholder so callers that index rotor children keep working.
   const inset = new THREE.Mesh(
     new THREE.TorusGeometry(radius * 0.54, Math.max(0.025, radius * 0.035), 8, 48),
     matte(PALETTE.ink),
   );
   inset.position.z = depth * 0.51;
+  inset.visible = false;
+  inset.userData.retiredInkOutline = true;
   rotor.add(inset);
 
   // The high tooth counts used by many historical gears can otherwise make
@@ -838,7 +848,7 @@ export function circularArcThrough(
   return new CircularArcCurve3(center, radialStart, normalizedAxis, sweep);
 }
 
-function makeTube(path, { radius = 0.055, color = PALETTE.belt, closed = true, width, thickness, widthDirection } = {}) {
+function makeTube(path, { radius = 0.055, color = PALETTE.belt, closed = true, width, thickness, widthDirection, laid = false } = {}) {
   const fromPoints = Array.isArray(path);
   const curve = fromPoints
     ? new THREE.CatmullRomCurve3(path, closed, 'centripetal', 0.35)
@@ -851,7 +861,8 @@ function makeTube(path, { radius = 0.055, color = PALETTE.belt, closed = true, w
     : Math.max(128, (curve.curves?.length ?? 4) * 28);
   const geometry = width
     ? flatBeltGeometry(curve, { width, thickness, widthDirection, closed, segments: Math.max(256, segmentCount) })
-    : new THREE.TubeGeometry(curve, segmentCount, radius, 10, closed);
+    : laid ? new LaidRopeGeometry(curve, segmentCount, radius, 8, closed)
+      : new THREE.TubeGeometry(curve, segmentCount, radius, 10, closed);
   const mesh = new THREE.Mesh(geometry, matte(color, { roughness: 0.76 }));
   mesh.castShadow = true;
   return { curve, mesh };
@@ -887,24 +898,28 @@ export function makeMovingBelt(path, {
   width,
   thickness = 0.024,
   widthDirection = new THREE.Vector3(0, 0, 1),
+  laid = false,
 } = {}) {
   const group = new THREE.Group();
-  const { curve, mesh } = makeTube(path, { radius, color, closed, width, thickness, widthDirection });
+  // A laid rope shows its travel by its moving lay, so it carries no markers.
+  const isLaid = laid && !width;
+  const { curve, mesh } = makeTube(path, { radius, color, closed, width, thickness, widthDirection, laid: isLaid });
   group.add(mesh);
   const markerMaterial = matte(markerColor, { roughness: 0.5 });
-  const markers = Array.from({ length: markerCount }, () => {
+  const markers = Array.from({ length: isLaid ? 0 : markerCount }, () => {
     const marker = beltMarker(radius, markerMaterial, width, thickness);
     group.add(marker);
     return marker;
   });
 
   group.userData.curve = curve;
-  group.userData.crossSection = width ? 'flat' : 'round';
+  group.userData.crossSection = width ? 'flat' : isLaid ? 'laid-rope' : 'round';
   group.userData.width = width;
   group.userData.thickness = width ? thickness : 2 * radius;
   group.userData.mesh = mesh;
   group.userData.length = curve.getLength();
   group.userData.update = (phase) => {
+    if (isLaid) mesh.geometry.setTravel(phase * group.userData.length);
     markers.forEach((marker, index) => {
       placeBeltMarker(marker, curve, THREE.MathUtils.euclideanModulo(phase + index / markerCount, 1), width, widthDirection);
     });
@@ -927,19 +942,21 @@ export function makeDynamicMovingBelt(initialCurve, {
   thickness = 0.024,
   widthDirection = new THREE.Vector3(0, 0, 1),
   sectionAt,
+  laid = false,
 } = {}) {
   const group = new THREE.Group();
+  const isLaid = laid && !width;
   const beltMaterial = matte(color, { roughness: 0.76 });
   const markerMaterial = matte(markerColor, { roughness: 0.5 });
   const mesh = new THREE.Mesh(new THREE.BufferGeometry(), beltMaterial);
   mesh.castShadow = true;
-  const markers = Array.from({ length: markerCount }, () => {
+  const markers = Array.from({ length: isLaid ? 0 : markerCount }, () => {
     const marker = beltMarker(radius, markerMaterial, width, thickness);
     group.add(marker);
     return marker;
   });
   group.add(mesh);
-  group.userData.crossSection = width ? 'flat' : 'round';
+  group.userData.crossSection = width ? 'flat' : isLaid ? 'laid-rope' : 'round';
   group.userData.width = width;
   group.userData.thickness = width ? thickness : 2 * radius;
   group.userData.mesh = mesh;
@@ -949,9 +966,15 @@ export function makeDynamicMovingBelt(initialCurve, {
     if (typeof curve?.getPoint !== 'function') throw new TypeError('A dynamic belt requires a Three.js curve.');
     const replacement = width
       ? flatBeltGeometry(curve, { width, thickness, widthDirection, sectionAt, closed, segments: Math.max(256, tubularSegments) })
-      : new THREE.TubeGeometry(curve, tubularSegments, radius, 10, closed);
+      : isLaid ? new LaidRopeGeometry(curve, tubularSegments, radius, 8, closed, { travel: distance })
+        : new THREE.TubeGeometry(curve, tubularSegments, radius, 10, closed);
     const current = mesh.geometry;
-    const canReuse = current.attributes.position?.count === replacement.attributes.position.count;
+    const canReuse = current.attributes.position?.count === replacement.attributes.position.count
+      && current.index?.count === replacement.index?.count;
+    if (isLaid && canReuse) {
+      current._laid = replacement._laid;
+      current.userData = replacement.userData;
+    }
     if (canReuse) {
       for (const name of ['position', 'normal']) {
         current.attributes[name].array.set(replacement.attributes[name].array);
@@ -973,6 +996,7 @@ export function makeDynamicMovingBelt(initialCurve, {
     const curve = group.userData.curve;
     const length = group.userData.length;
     if (!curve || !length) return;
+    if (isLaid) mesh.geometry.setTravel?.(distance);
     markers.forEach((marker, index) => {
       const basePhase = closed ? index / markerCount : (index + 1) / (markerCount + 1);
       const phase = closed
@@ -1135,8 +1159,28 @@ export function makeDynamicCable({
   maxSegments = 32,
   radius = 0.045,
   color = PALETTE.belt,
+  laid = false,
 } = {}) {
   const group = new THREE.Group();
+  if (laid) {
+    // One laid rope along the polyline, in place of separate cylinders.
+    const rope = new THREE.Mesh(new THREE.BufferGeometry(), matte(color, { roughness: 0.78 }));
+    rope.castShadow = true;
+    group.add(rope);
+    group.userData.mesh = rope;
+    group.userData.setPoints = (points, travel = 0) => {
+      const path = new THREE.CurvePath();
+      const count = Math.min(points.length - 1, maxSegments);
+      for (let index = 0; index < count; index += 1) {
+        if (points[index].distanceToSquared(points[index + 1]) < 1e-12) continue;
+        path.add(new THREE.LineCurve3(points[index].clone(), points[index + 1].clone()));
+      }
+      if (!path.curves.length) { rope.visible = false; return; }
+      rope.visible = true;
+      replaceWithLaidRope(rope, path, { radius, travel });
+    };
+    return group;
+  }
   const geometry = new THREE.CylinderGeometry(radius, radius, 1, 8);
   const material = matte(color, { roughness: 0.78 });
   const segments = Array.from({ length: maxSegments }, () => {

@@ -807,12 +807,16 @@ function sixRollerPulleyBearing(movement) {
   outerRaceSurface.userData.innerWorkingRadius = outerRaceInnerRadius;
   outerRaceSurface.userData.role =
     'internal-working-surface-of-rotating-outer-race';
+  outerRaceSurface.visible = false; // ink edge line only: kept for references, not drawn
+  outerRaceSurface.userData.retiredInkOutline = true;
   const pulleyFrontFlange = new THREE.Mesh(
     new THREE.TorusGeometry(pulleyOuterRadius - 0.035, 0.035, 9, 96),
     darkMaterial,
   );
   pulleyFrontFlange.position.z = pulleyRimDepth / 2 + 0.015;
   pulleyFrontFlange.userData.role = 'front-edge-of-belt-pulley-tread';
+  pulleyFrontFlange.visible = false; // ink edge line only: kept for references, not drawn
+  pulleyFrontFlange.userData.retiredInkOutline = true;
   const pulleyRearFlange = pulleyFrontFlange.clone();
   pulleyRearFlange.position.z = -pulleyRimDepth / 2 - 0.015;
   pulleyRearFlange.userData.role = 'rear-edge-of-belt-pulley-tread';
@@ -920,6 +924,8 @@ function sixRollerPulleyBearing(movement) {
     );
     frontRing.position.z = rollerDepth / 2 + 0.018;
     frontRing.userData.role = `front-face-ring-of-roller-${index + 1}`;
+    frontRing.visible = false; // ink edge line only: kept for references, not drawn
+    frontRing.userData.retiredInkOutline = true;
     const hub = makeAxialCylinder({
       length: rollerDepth * 1.1,
       material: darkMaterial,

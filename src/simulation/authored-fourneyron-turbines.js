@@ -246,9 +246,10 @@ function fourneyronTurbine(movement) {
     fixedGuideAssembly.add(vane);
     fixedGuideVanes.push(vane);
   }
+  // The boundary ring belongs to guide assembly A: its colour, not ink.
   const guideBoundary = new THREE.Mesh(
     new THREE.TorusGeometry(guideOuterRadius, 0.09, 10, 96),
-    darkMaterial,
+    guideMaterial,
   );
   guideBoundary.geometry.dispose();guideBoundary.geometry=horizontalRing(1.68,1.765,-.10,-.06);guideBoundary.rotation.set(0,0,0);guideBoundary.position.y=0;
   guideBoundary.userData.role = 'fixed-outer-boundary-of-guide-ring-A';
@@ -315,10 +316,10 @@ function fourneyronTurbine(movement) {
   runnerHub.userData.role = 'rotating-runner-output-hub-below-fixed-guides';
   runner.add(runnerHub);
   const runnerShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1.86, 32),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 0.69, 32),
     runnerMaterial,
   );
-  runnerShaft.position.y = -1.12;
+  runnerShaft.position.y = -0.535;
   runnerShaft.userData.role = 'vertical-output-shaft-of-outer-runner';
   runner.add(runnerShaft);
   const runnerSupportArms = [];
@@ -409,9 +410,9 @@ function fourneyronTurbine(movement) {
     'circumferential-outward-water-discharge';
   root.add(dischargeRing);
 
-  const shaftBearing=new THREE.Mesh(horizontalRing(.224,.36,-1.98,-1.78),frameMaterial);shaftBearing.userData.role='bored-output-shaft-lower-bearing';root.add(shaftBearing);
-  const bearingBridge=new THREE.Mesh(horizontalPlate(polygonClipping.difference(poly([[-3.4,-.16],[3.4,-.16],[3.4,.16],[-3.4,.16]]),poly(circle([0,0],.224,128))),-1.98,-1.82),frameMaterial);bearingBridge.userData.role='lower-shaft-bearing-support-bridge';root.add(bearingBridge);
-  for(const x of[-3.35,3.35]){const post=new THREE.Mesh(new THREE.BoxGeometry(.16,1.23,.25),frameMaterial);post.position.set(x,-1.225,0);post.userData.role='lower-bearing-bridge-support-post';root.add(post);}
+  // The short shaft runs in a bored bush fixed to the foundation's underside;
+  // no separate under-floor bridge is needed (Brown draws only the plan).
+  const shaftBearing=new THREE.Mesh(horizontalRing(.224,.40,-.84,-.63),frameMaterial);shaftBearing.userData.role='bored-output-shaft-bush-bolted-under-foundation';root.add(shaftBearing);
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
@@ -439,7 +440,6 @@ function fourneyronTurbine(movement) {
       'fourneyron-outward-flow-turbine-with-fixed-inner-curved-guides-and-clockwise-outer-runner',
     blocks: {
       shaftBearing,
-      bearingBridge,
       runnerBackplate,
       runnerRisers,
       casingFloor,

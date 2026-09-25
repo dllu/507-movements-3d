@@ -282,6 +282,9 @@ function flangedFlatBeltPulley(movement) {
     rim.position.x = side * (flangeOuterFaceOffset + 0.025);
     rim.userData.role =
       `${side < 0 ? 'left' : 'right'}-flange-dark-outer-rim`;
+    // Drawn face edge only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     pulleyRotor.add(rim);
     return rim;
   });
@@ -508,6 +511,9 @@ function plainFlatBeltPulley(movement) {
     rim.position.x = side * (treadHalfWidth + 0.025);
     rim.userData.role =
       `${side < 0 ? 'left' : 'right'}-plain-pulley-face-rim`;
+    // Drawn face edge only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     pulleyRotor.add(rim);
     return rim;
   });
@@ -749,6 +755,9 @@ function concaveGroovedRoundBandPulley(movement) {
     rim.position.x = side * (pulleyHalfWidth + 0.025);
     rim.userData.role =
       `${side < 0 ? 'left' : 'right'}-concave-pulley-face-rim`;
+    // Drawn face edge only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     pulleyRotor.add(rim);
     return rim;
   });
@@ -1013,6 +1022,9 @@ function smoothVGroovedRoundBandPulley(movement) {
     rim.rotation.y = Math.PI / 2;
     rim.position.x = side * (pulleyHalfWidth + 0.025);
     rim.userData.role = `${side < 0 ? 'left' : 'right'}-v-pulley-face-rim`;
+    // Drawn face edge only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     pulleyRotor.add(rim);
     return rim;
   });
@@ -1295,6 +1307,10 @@ function notchedVGroovedRoundBandPulley(movement) {
     line.userData.role = 'notch-bottom-contrast-line';
     notchContrastLines.add(line);
   }
+  // Notch bottoms are real cut geometry; the ink contrast lines were only
+  // drawn edges and are retired.
+  notchContrastLines.visible = false;
+  notchContrastLines.userData.retiredInkOutline = true;
   pulleyRotor.add(notchContrastLines);
 
   const faceRims = [-1, 1].map((side) => {
@@ -1306,6 +1322,9 @@ function notchedVGroovedRoundBandPulley(movement) {
     rim.position.x = side * (pulleyHalfWidth + 0.025);
     rim.userData.role =
       `${side < 0 ? 'left' : 'right'}-notched-v-pulley-face-rim`;
+    // Drawn face edge only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     pulleyRotor.add(rim);
     return rim;
   });

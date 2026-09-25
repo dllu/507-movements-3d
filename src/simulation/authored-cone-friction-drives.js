@@ -179,21 +179,6 @@ function traversingRollerConeDrive(movement) {
     'concave-generator-horn-shaped-friction-drum';
   coneRotor.add(coneBody);
 
-  const coneFaceRims = [
-    { radius: coneLargeRadius * 0.94, side: -1 },
-    { radius: coneSmallRadius * 0.88, side: 1 },
-  ].map(({ radius, side }) => {
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(radius, 0.035, 9, 72),
-      inkMaterial,
-    );
-    rim.position.z = side * (coneLength / 2 + 0.012);
-    rim.userData.role = side < 0
-      ? 'large-end-cone-face-rim'
-      : 'small-end-cone-face-rim';
-    coneRotor.add(rim);
-    return rim;
-  });
   const coneHub = cylinderAlongLocalZ({
     depth: coneLength + 0.24,
     material: inkMaterial,
@@ -255,7 +240,8 @@ function traversingRollerConeDrive(movement) {
       20,
       88,
     ),
-    inkMaterial,
+    // The rounded tread is the roller's own edge, not an ink rim.
+    rollerMaterial,
   );
   rollerTread.userData.role = 'round-friction-tread-touching-cone';
   rollerRotor.add(rollerTread);
@@ -400,7 +386,6 @@ function traversingRollerConeDrive(movement) {
   root.userData.blocks = {
     cone,
     coneBody,
-    coneFaceRims,
     coneHub,
     coneIndices,
     coneRotor,

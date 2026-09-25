@@ -502,8 +502,10 @@ function boatDetachingHooks(movement) {
     );
     tackleThroatMarker.visible = false;
     tackleHookAssembly.add(tackleThroatMarker);
+    // Brown draws the tackle falls and release ropes laid: the shared rope.
     const fallRope = addRole(makeDynamicCable({
       color: ropeMaterialColor,
+      laid: true,
       maxSegments: 18,
       radius: 0.055,
     }), `external-vertical-tackle-fall-${unitIndex + 1}`);
@@ -542,6 +544,7 @@ function boatDetachingHooks(movement) {
   const releaseCords = units.map((unit, index) => {
     const cord = addRole(makeDynamicCable({
       color: ropeMaterialColor,
+      laid: true,
       // Exactly the pieces used: spare (hidden) pieces were left stacked at
       // the origin, where they overlapped one another.
       maxSegments: 36,

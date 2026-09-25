@@ -98,24 +98,6 @@ function capTubeEnds(geometry, tubularSegments, radialSegments) {
   geometry.setIndex(indices);
 }
 
-function dashedBeam(start, end, dashCount, width, depth, material) {
-  const group = new THREE.Group();
-  const delta = end.clone().sub(start);
-  for (let index = 0; index < dashCount; index += 1) {
-    const u0 = (index + 0.12) / dashCount;
-    const u1 = (index + 0.64) / dashCount;
-    const dash = beamBetween(
-      start.clone().addScaledVector(delta, u0),
-      start.clone().addScaledVector(delta, u1),
-      width,
-      depth,
-      material,
-    );
-    group.add(dash);
-  }
-  return group;
-}
-
 // Involute spur outline with a small circumferential backlash, extruded
 // along +Z and bored for its shaft.
 function spurGearGeometry({ teeth, pitchRadius, depth, boreRadius, backlash = 0.012 }) {
@@ -403,39 +385,8 @@ function selfRecordingLevel(movement) {
   upperBrace.userData.role = 'upper-horizontal-carriage-brace';
   carriage.add(upperBrace);
 
-  const triangleConstruction = new THREE.Group();
-  triangleConstruction.userData.role =
-    'nonphysical-isosceles-governing-triangle-construction';
-  const triangleLeft = dashedBeam(
-    new THREE.Vector3(constructionApex.x, constructionApex.y, -0.24),
-    new THREE.Vector3(leftWheelCenter.x, leftWheelCenter.y, -0.24),
-    14,
-    0.025,
-    0.020,
-    whiteMaterial,
-  );
-  const triangleRight = dashedBeam(
-    new THREE.Vector3(constructionApex.x, constructionApex.y, -0.24),
-    new THREE.Vector3(rightWheelCenter.x, rightWheelCenter.y, -0.24),
-    14,
-    0.025,
-    0.020,
-    whiteMaterial,
-  );
-  const triangleBaseWitness = dashedBeam(
-    new THREE.Vector3(leftWheelCenter.x, 0, -0.24),
-    new THREE.Vector3(rightWheelCenter.x, 0, -0.24),
-    18,
-    0.025,
-    0.020,
-    whiteMaterial,
-  );
-  triangleConstruction.add(
-    triangleLeft,
-    triangleRight,
-    triangleBaseWitness,
-  );
-  carriage.add(triangleConstruction);
+  // Brown's dotted isosceles triangle is construction notation; the wheel
+  // centres and apex stay as geometry data but no triangle is drawn.
 
   const handle = new THREE.Group();
   handle.userData.role = 'left-hand-push-handle-fixed-to-carriage';
@@ -989,7 +940,6 @@ function selfRecordingLevel(movement) {
       pendulumRod,
       rightWheel,
       terrain,
-      triangleConstruction,
       upperBrace,
       verticalAdjustmentKnob,
       verticalDrumGuide,
@@ -1125,9 +1075,6 @@ function selfRecordingLevel(movement) {
   root.userData.groundFloorY = -1.04;
   markShadows(root);
   groundBeam.receiveShadow = true;
-  triangleConstruction.traverse((object) => {
-    object.castShadow = false;
-  });
   chartTrace.castShadow = false;
   root.userData.reconstructionNote = 'Closed journal bores, finite tire radius and a pointed stylus replace nominal contact markers; the 18/18 bevel pair uses back-cone involute approximations. The arch, apex, drum height and drum proportions follow the engraving; the bevel stage and 16/16 spur pair that raise the drive to the drum are engineered (Brown shows only a ribbed wheel at the drum shaft end). Pendulum response and terrain slope remain quasi-static prescribed inputs.';
   root.userData.cameraFov = 8;

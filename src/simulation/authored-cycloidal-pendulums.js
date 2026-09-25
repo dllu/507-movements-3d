@@ -395,6 +395,9 @@ function cycloidalIsochronousPendulum(movement) {
     rail.userData.fixed = true;
     rail.userData.role =
       `${side}-cycloidal-cheek-exact-cord-contact-edge`;
+    // Brown's ink edge of the cheek only: kept as data, not drawn.
+    rail.visible = false;
+    rail.userData.retiredInkOutline = true;
     root.add(rail);
     return rail;
   });
@@ -487,23 +490,15 @@ function cycloidalIsochronousPendulum(movement) {
     amplitude: oscillationAmplitude,
     cycloidRadius,
     lowestBobY,
-    // Behind the bob sphere so the dotted path is not threaded through it.
     z: mechanismPlaneZ - bobRadius - 0.03,
   });
-  const pathDashes = [];
-  const pathIntervals = 48;
-  for (let index = 0; index < pathIntervals; index += 2) {
-    const start = bobPathCurve.getPoint(index / pathIntervals);
-    const end = bobPathCurve.getPoint((index + 1) / pathIntervals);
-    const dash = cylinderBetween(start, end, 0.012, darkMaterial, 8);
-    dash.userData.fixed = true;
-    dash.userData.role = 'dashed-reference-of-bob-cycloidal-path';
-    root.add(dash);
-    pathDashes.push(dash);
-  }
+  // Brown's dotted bob path is notation; the curve is kept only as data.
 
+  // Brown's cord is drawn as a cord: one continuous laid rope. It is tied
+  // at the cusp, so its material does not run along the path (travel 0).
   const cord = makeDynamicCable({
-    color: PALETTE.ink,
+    color: PALETTE.belt,
+    laid: true,
     maxSegments: wrappedCableSegments + freeCableSegments,
     radius: cordRadius,
   });
@@ -610,7 +605,6 @@ function cycloidalIsochronousPendulum(movement) {
       cheekPlates,
       contactBead,
       cord,
-      pathDashes,
       sidePosts,
       suspensionBoss,
       topBeam,

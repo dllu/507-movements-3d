@@ -328,6 +328,10 @@ function helicalCurrentRotor(movement) {
       darkMaterial,
     );
     edge.userData.role = role;
+    // Brown inks the ribbon's edges only because the plate is a line drawing;
+    // the dark edge tubes stay as hidden references.
+    edge.visible = false;
+    edge.userData.retiredInkOutline = true;
     rotor.add(edge);
     return { curve, edge };
   };
@@ -364,6 +368,8 @@ function helicalCurrentRotor(movement) {
       `radial-end-edge-of-ribbon-${index + 1}`,
       12,
     );
+    rail.visible = false;
+    rail.userData.retiredInkOutline = true;
     rotor.add(rail);
     return rail;
   });

@@ -77,8 +77,9 @@ export function makeHeldSideDifferential() {
   weight.position.set(-brakePitch, -p.brakeTailLength - 0.10, p.brakeBandZ);
   const curve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.beltPitchRadius, p.beltPitchRadius, 0);
   const segments = 2048, geometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-  // Brown draws the band plain: one paper colour, no travelling stitch marks.
-  const paper = new THREE.Color(0xd9cead), beltColors = new Float32Array(geometry.attributes.position.count * 3);
+  // Brown draws the band as a plain flat belt: the shared belt colour, no
+  // travelling stitch marks.
+  const paper = new THREE.Color(PALETTE.belt), beltColors = new Float32Array(geometry.attributes.position.count * 3);
   for (let j = 0; j < beltColors.length; j += 3) paper.toArray(beltColors, j);
   geometry.setAttribute('color', new THREE.BufferAttribute(beltColors, 3));
   const belt = add('belt', new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92 })), root, 'belt');

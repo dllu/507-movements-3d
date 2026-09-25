@@ -1,6 +1,6 @@
 import * as T from 'three';
 import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
-import {mergePassageParts} from './finite-fluid-passages.js';
+import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 const rectangle=(x0,y0,x1,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
@@ -32,7 +32,10 @@ export function correctFourWayCock(root){
  }
  const disk=poly(circle([0,0],g.plugRadius,256));
  // A rear floor and open front form an explicit section through the passages.
- replace(b.plug,mergePassageParts([plate(disk,-g.plugDepth/2,-.17),plate(clip.difference(disk,...cuts),-.17,g.plugDepth/2)]));
+ // A thin mid-plane web holds the plug together; the passages are cut open
+ // from both faces so the rear of each plug shows the same two channels.
+ const web=d.plugWebHalfDepth=.03,cut=clip.difference(disk,...cuts);
+ replace(b.plug,mergePassageParts([plate(cut,-g.plugDepth/2,-web),plate(disk,-web,web),plate(cut,web,g.plugDepth/2)]));
  b.plug.rotation.set(0,0,0);
  const ports=[rectangle(-width,-3,width,3),rectangle(-3,-width,3,width)];
  // Brown draws each section as outlines: the bore is a single thin circle
@@ -44,7 +47,9 @@ export function correctFourWayCock(root){
  b.plug.material=b.plug.material.clone();b.plug.material.color.set(0xf1ece2);
  for(const channel of Object.values(b.channels)){
   channel.userData.recess.visible=false;
-  const core=channel.userData.flowCore;replace(core,new T.TubeGeometry(channel.userData.curve,96,.155,20));core.position.z=0;
+  // One flattened fluid core in each open face channel, clear of the web.
+  const core=channel.userData.flowCore,half=z=>new T.TubeGeometry(channel.userData.curve,96,.155,20).scale(1,1,.5).translate(0,0,z);
+  replace(core,mergePassageParts([half(.12),half(-.12)]));core.position.z=0;
  }
  // Sectioned external pipes: finite side walls and a rear wall expose the bore.
  for(const pipe of Object.values(b.pipes)){
@@ -66,4 +71,16 @@ export function correctFourWayCock(root){
  fitPistonGuide(root,d.update,d.motion.cycleDuration);
  d.cameraDirection=new T.Vector3(.6,.6,15);d.cameraFov=12;
  root.traverse(o=>{if([].concat(o.material??[]).some(m=>m.transparent)){o.castShadow=false;o.receiveShadow=false;}});
+}
+
+// Brown carries each passage's double outline out past the plug circle as a
+// short pipe from each of the four body ports, curving toward the corner its
+// passage turns to in the figure's position. Round pipes with open bores.
+export function makeBrownPortPipes(material,{start=1.80,length=.62,bend=2.4,bore=.245,wall=.30}={}){
+ const group=new T.Group();group.userData.role='brown-fixed-port-pipes-beyond-plug-circle';
+ for(const [name,u,side]of[['top-steam-supply',[0,1],[-1,0]],['left-cylinder-end',[-1,0],[0,1]],['right-cylinder-end',[1,0],[0,-1]],['bottom-exhaust',[0,-1],[1,0]]]){
+  const curve=new (class extends T.Curve{getPoint(t,target=new T.Vector3()){const a=t*length/bend,r=start+bend*Math.sin(a),l=bend*(1-Math.cos(a));return target.set(u[0]*r+side[0]*l,u[1]*r+side[1]*l,0);}})();
+  const pipe=new T.Mesh(curvedPipeWall(curve,bore,wall,32,32),material);pipe.userData.role=`${name}-brown-port-pipe`;pipe.castShadow=true;pipe.receiveShadow=true;group.add(pipe);
+ }
+ return group;
 }

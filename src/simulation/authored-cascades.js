@@ -75,7 +75,7 @@ function loadAnchoredCascade(id) {
   });
   const initialPaths = pathsAt(0);
   const ropes = initialPaths.map((path, index) => {
-    const rope = makeDynamicMovingBelt(path.curve, { closed: false, markerCount: 0, radius: 0.032 });
+    const rope = makeDynamicMovingBelt(path.curve, { closed: false, markerCount: 0, radius: 0.032, laid: true });
     rope.userData.mechanismRope = true;
     rope.userData.ropeStage = index;
     root.add(rope);
@@ -202,7 +202,7 @@ export function sixPulleyCascade() {
   });
   const initial = pathsAt(0);
   const ropes = initial.map((path, index) => {
-    const rope = makeDynamicMovingBelt(path.curve, { closed: false, radius: 0.032, markerCount: 0 });
+    const rope = makeDynamicMovingBelt(path.curve, { closed: false, radius: 0.032, markerCount: 0, laid: true });
     rope.userData.mechanismRope = true;
     rope.userData.ropeStage = index;
     root.add(rope);
@@ -321,7 +321,7 @@ export function ceilingAnchoredEightToOneCascade() {
   });
   const initial = pathsAt(0);
   const ropes = initial.map((path, index) => {
-    const rope = makeDynamicMovingBelt(path.curve, { closed: false, radius: 0.032, markerCount: 0 });
+    const rope = makeDynamicMovingBelt(path.curve, { closed: false, radius: 0.032, markerCount: 0, laid: true });
     rope.userData.mechanismRope = true;
     rope.userData.ropeStage = index;
     root.add(rope);

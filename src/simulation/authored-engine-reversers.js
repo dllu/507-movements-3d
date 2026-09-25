@@ -1,4 +1,5 @@
 import {ring} from './finite-plate-geometry.js';
+import {groundBlock} from './ground-block.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -689,6 +690,9 @@ function sourceScaledSingleEngineReverser() {
   );
   eccentricOuterRim.position.set(-eccentricity, 0, sheaveDepth / 2 + 0.018);
   eccentricOuterRim.userData.role = 'painted-face-outline-of-loose-eccentric';
+  // Brown's inner circle is only an inked edge, not a separate part.
+  eccentricOuterRim.visible = false;
+  eccentricOuterRim.userData.retiredInkOutline = true;
   const eccentricCenterMark = new THREE.Mesh(
     new THREE.TorusGeometry(0.13, 0.035, 8, 36),
     whiteMaterial,
@@ -1082,28 +1086,15 @@ function sourceScaledSingleEngineReverser() {
   baseRail.position.set(foundationCenter.x,foundationCenter.y,baseZ);
   baseRail.userData.role = 'engraved-foundation-under-hand-lever';
   {
-    // Brown draws this foundation as a ground line with diagonal hatching,
-    // not a solid slab: keep the slab's extent but render the line and
-    // hatch strokes only.
+    // Brown draws this foundation as a ground line with diagonal hatching:
+    // notation for a cut solid. Keep the slab's extent and render it as a
+    // solid ground block with a faint side hatch.
     const width = 170 * sourceScale;
     const height = 21 * sourceScale;
+    const block = groundBlock(width, height, .5, {spacing: .16, name: 'engraved-foundation-under-hand-lever'});
     baseRail.geometry.dispose();
-    baseRail.geometry = new THREE.BoxGeometry(width, 0.05, 0.5);
-    baseRail.geometry.translate(0, height / 2 - 0.025, 0);
-    baseRail.material = darkMaterial;
-    const strokeLength = height / Math.sin(Math.PI / 4) - 0.05;
-    const strokeCount = 17;
-    for (let index = 0; index < strokeCount; index += 1) {
-      const stroke = new THREE.Mesh(
-        new THREE.BoxGeometry(0.028, strokeLength, 0.04),
-        darkMaterial,
-      );
-      const x = -width / 2 + height / 2 + (width - height) * index / (strokeCount - 1);
-      stroke.position.set(x, -0.025, 0.23);
-      stroke.rotation.z = Math.PI / 4;
-      stroke.userData.role = 'foundation-hatch-stroke';
-      baseRail.add(stroke);
-    }
+    baseRail.geometry = block.geometry;
+    baseRail.material = block.material;
   }
   const leverPedestal = new THREE.Mesh(
     ring(.26,.36,-.10,.10,96),

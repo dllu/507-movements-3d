@@ -305,6 +305,10 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   diskRim.position.z = diskFrontZ + rimDepth;
   diskRim.userData.role = 'visible-outline-of-input-disk';
   inputRotor.add(diskRim);
+  diskRim.visible = false;
+  diskRim.userData.retiredInkOutline = true;
+  // Brown inks the disk edges only because the plate is a line drawing;
+  // the dark outline rings stay as hidden placeholders.
   // Brown's broad raised rim, on the face toward the crosshead.
   const diskFaceRim = new THREE.Mesh(
     boredLatheGeometry([
@@ -324,6 +328,8 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   diskFaceRimEdge.position.z = diskFrontZ + rimDepth;
   diskFaceRimEdge.userData.role = 'inner-edge-of-raised-disk-rim';
   inputRotor.add(diskFaceRimEdge);
+  diskFaceRimEdge.visible = false;
+  diskFaceRimEdge.userData.retiredInkOutline = true;
 
   const inputShaft = cylinderAlongZ(
     shaftRadius,
@@ -463,6 +469,8 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   yokeOutline.position.z = yokeFrontZ + 0.017;
   yokeOutline.userData.role = 'front-outline-of-capsule-crosshead';
   yoke.add(yokeOutline);
+  yokeOutline.visible = false;
+  yokeOutline.userData.retiredInkOutline = true;
 
   // Inspection anchors describe the open channel; no painted face or
   // corner disk occupies the volume in which the wrist now runs.
@@ -496,6 +504,8 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     edge.userData.role = 'front-edge-of-shaped-endless-groove';
     edge.userData.side = side;
     yoke.add(edge);
+    edge.visible = false;
+    edge.userData.retiredInkOutline = true;
     return edge;
   });
 

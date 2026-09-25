@@ -22,13 +22,13 @@ export function correctGyroscopeParts(root,id) {
     journal(housing,radius,length,bore);pair(pin,housing);p.journals.push({housing,pin,bore});
   };
   if(id===355){
-    ring(b.ringBody,'support355');b.ringOutline.visible=false;
+    ring(b.ringBody,'support355');
     b.leftSpindleCap.visible=false; // The short left end terminates inside its journal.
     for(const o of[b.pillarIndex,b.ringIndex,...b.spinIndexes])o.visible=false; // Brown draws no white indices.
     b.bearingHousings.forEach(h=>bearing(h,b.spindle,g.bearingOuterRadius,g.bearingLength,.096));
     // The original oversized ring intersects the spinning rim at both crossings.
-    for(const moving of[b.diskBody,b.diskRim,b.spindle,b.hub,...b.spinIndexes,b.rightSpindleKnob,b.knobBulb]){
-      for(const fixed of[b.ringBody,...b.bearingHousings,b.pillar,b.supportCup,b.supportCupRim,b.pintle,b.curvedNeck])pair(moving,fixed);
+    for(const moving of[b.diskBody,b.spindle,b.hub,...b.spinIndexes,b.rightSpindleKnob,b.knobBulb]){
+      for(const fixed of[b.ringBody,...b.bearingHousings,b.pillar,b.supportCup,b.pintle,b.curvedNeck])pair(moving,fixed);
     }
     d.cameraDirection=new THREE.Vector3(7,3.8,12);
     // The full precession sweep, so disk C and ring A stay in view as they
@@ -44,7 +44,6 @@ export function correctGyroscopeParts(root,id) {
     d.dynamics.validationScope='Prescribed horizontal regular-precession solution and spin-angular-momentum balance; no release or contact-dynamics validation.';
   }else{
     ring(b.outerRing,'outer356');ring(b.middleRing,'middle356');ring(b.innerRing,'inner356');
-    [...b.outerEdgeLines,...b.middleEdgeLines,...b.innerEdgeLines].forEach(o=>o.visible=false);
     b.middlePivotBearings.forEach((h,i)=>bearing(h,b.middlePivotPins[i],g.bearingRadius,.055,.081));
     b.innerPivotBearings.forEach((h,i)=>bearing(h,b.innerPivotPins[i],g.bearingRadius*.91,.20,.074));
     b.rotorBearingHousings.forEach(h=>bearing(h,b.rotorShaft,g.bearingRadius*.82,.17,.070));
@@ -61,7 +60,7 @@ export function correctGyroscopeParts(root,id) {
         o.position.set(0,0,0);o.rotation.set(side<0?Math.PI:0,0,0);
       }else{o.position.normalize().multiplyScalar(g.ballRadius+.018);}
     });
-    for(const moving of[b.heavyBall,b.ballEquator,b.rotorShaft,b.rotorHub,...b.shaftCaps,...b.ballSpinIndexes]){
+    for(const moving of[b.heavyBall,b.rotorShaft,b.rotorHub,...b.shaftCaps,...b.ballSpinIndexes]){
       for(const fixed of[b.innerRing,b.middleRing,b.outerRing,...b.rotorBearingHousings,...b.innerPivotBearings,...b.middlePivotBearings,b.supportColumn])pair(moving,fixed);
     }
     pair(b.innerRing,b.middleRing);pair(b.middleRing,b.outerRing);pair(b.innerRing,b.outerRing);

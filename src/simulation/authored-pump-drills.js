@@ -394,12 +394,6 @@ function pumpDrill(movement) {
   drillSocket.position.y = -1.54;
   drillSocket.userData.role = 'source-labeled-drill-socket-E';
   spindleRotor.add(drillSocket);
-  for (const y of [-1.405, -1.675]) {
-    const socketBand = cylinderAlongY(0.215, 0.055, darkMaterial, 28);
-    socketBand.position.y = y;
-    socketBand.userData.role = 'drill-socket-retaining-band';
-    spindleRotor.add(socketBand);
-  }
 
   const drillNeck = cylinderAlongY(0.075, 0.30, darkMaterial, 20);
   drillNeck.position.y = -1.80;
@@ -464,24 +458,21 @@ function pumpDrill(movement) {
     const initialGeometry = initialState[key];
     const branch = makeDynamicMovingBelt(
       new PumpDrillCordBranchCurve(initialGeometry),
+      // Brown hatches the cord as laid rope; its lay replaces the markers.
       {
         closed: false,
         color: PALETTE.belt,
-        markerColor: PALETTE.white,
-        markerCount: 4,
+        laid: true,
         radius: 0.035,
         tubularSegments: 180,
       },
     );
-    branch.userData.markers = branch.children.slice(0, 4);
+    branch.userData.markers = [];
     branch.userData.materialLength = kinematics.branchLength;
     branch.userData.role = side < 0
       ? 'left-half-of-single-pump-drill-cord'
       : 'right-half-of-single-pump-drill-cord';
     branch.userData.side = side;
-    branch.userData.markers.forEach((marker) => {
-      marker.userData.role = 'fixed-material-cord-marker';
-    });
     singleCord.add(branch);
     return branch;
   });
@@ -499,8 +490,7 @@ function pumpDrill(movement) {
       cordBranches[index].userData.setCurve(
         new PumpDrillCordBranchCurve(geometry),
       );
-      // Distance zero means every sphere retains its original material
-      // coordinate; these are not circulating belt markers.
+      // Both ends are tied, so the lay keeps its material coordinate.
       cordBranches[index].userData.updateDistance(0);
     }
     root.userData.currentState = state;

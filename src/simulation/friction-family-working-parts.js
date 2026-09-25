@@ -98,7 +98,6 @@ export function correctFriction413(model){
  replace(b.lowerLeftHalf,new T.CylinderGeometry(g.lowerGrooveRootRadius,g.lowerGrooveLipRadius,.25,128));b.lowerLeftHalf.position.x=-.125;
  replace(b.lowerRightHalf,new T.CylinderGeometry(g.lowerGrooveLipRadius,g.lowerGrooveRootRadius,.25,128));b.lowerRightHalf.position.x=.125;
  b.grooveRoot.visible=false;role('rubber-v-edge-crown').visible=false;
- for(const[name,side]of[['left-lip-of-rigid-v-groove',-1],['right-lip-of-rigid-v-groove',1]])role(name).position.x=side*.29;
  b.contactIndicators.forEach(o=>o.visible=false);b.compressionGuide.visible=false;
  d.threadProfiles={external,internal};d.workingPartsReview={qualification:'Closed mating screw/nut threads follow the displayed advance, with real shaft journals and matching unloaded V profiles. Rubber remains a free-expansion volume proxy: its loaded groove penetration is not a validated deformation or traction solution.'};return model;
 }

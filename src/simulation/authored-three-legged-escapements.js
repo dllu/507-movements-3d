@@ -122,11 +122,10 @@ function longToothPalletPlateOutline(scale) {
     .map((point) => [point.x, point.y]);
   right[right.length - 1][0] = 0;
   const left = right.slice(1, -1).reverse().map(([x, y]) => [-x, y]);
+  // Brown breaks the neck off with a ragged edge; the caller carries the
+  // neck on up to the pendulum's suspension, so the outline ends square.
   const top = right[0][1];
-  // Brown breaks the neck off with a ragged edge.
-  const ragged = [[0.36, 0.05], [0.22, 0.01], [0.08, 0.06], [-0.07, 0], [-0.2, 0.04], [-0.36, -0.02]]
-    .map(([x, y]) => [x, top + y]);
-  return [...right, ...left, [-right[0][0], top], ...ragged.reverse()];
+  return [...right, ...left, [-right[0][0], top]];
 }
 
 function beamBetween(start, end, width, depth, material) {
@@ -1320,9 +1319,16 @@ function longStoppingToothEscapement(movement) {
   // proportions about the wheel centre.
   const bottle = longToothPalletPlateOutline(2.52 / 224)
     .map(([x, y]) => [x + wheelCenter.x - palletPivot.x, y + wheelCenter.y - palletPivot.y]);
+  // The neck is not broken off: it runs on as a strap of its own width to a
+  // bored eye at the suspension point (the pallet pivot, far above the view).
+  const neckHalf = bottle[0][0], neckTop = bottle.at(-1)[1], eyeRadius = neckHalf;
+  const neckStrap = poly([
+    [neckHalf, neckTop - 0.02], [neckHalf, 0], [-neckHalf, 0], [-neckHalf, neckTop - 0.02],
+  ]);
   const plateOutline = clip.difference(
-    poly(bottle),
+    clip.union(poly(bottle), neckStrap, poly(circle([0, 0], eyeRadius, 64))),
     poly(openingPlate.map(toPivotFrame)),
+    poly(circle([0, 0], 0.12, 48)),
   );
   const plate = new THREE.Mesh(
     platePrism(plateOutline, -palletDepth / 2, palletDepth / 2),
@@ -1749,7 +1755,13 @@ function longStoppingToothEscapement(movement) {
 export function createAuthoredThreeLeggedEscapementMovement(movement) {
   switch (movement.id) {
     case 306: return finishPinEscapement(threeLeggedDeadEscapement(movement));
-    case 307: return finishPinEscapement(longStoppingToothEscapement(movement));
+    case 307: {
+      const model = finishPinEscapement(longStoppingToothEscapement(movement));
+      // Frame Brown's crop: the complete neck runs on up to the suspension.
+      const bounds = model.root.userData.cameraFitBounds;
+      bounds.max.y = Math.min(bounds.max.y, 3.55);
+      return model;
+    }
     default: return null;
   }
 }

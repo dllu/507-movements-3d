@@ -10,7 +10,7 @@ import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 for(const[id,create]of[[433,wheel],[434,outward],[435,inward]])test(`${id}: actual moving walls and shafts clear stationary guides, supports and bores`,()=>{
   const model=create({id}),u=model.root.userData,b=u.blocks;
   try{
-    const fixed=id===433?[b.lowerBearing,b.upperBearing,b.bearingCone,b.overheadBeam,b.lowerPedestal,b.foundation]:[b.fixedGuideAssembly,b.casingFloor,b.shaftBearing,b.bearingBridge];
+    const fixed=id===433?[b.lowerBearing,b.upperBearing,b.bearingCone,b.overheadBeam,b.lowerPedestal,b.foundation]:[b.fixedGuideAssembly,b.casingFloor,b.shaftBearing,...(b.bearingBridge?[b.bearingBridge]:[])];
     const targets=[];for(const group of fixed)group.traverse(mesh=>{if(mesh.isMesh&&!mesh.material.transparent)targets.push({mesh,surface:solidSurface(mesh.geometry)});});
     const moving=[];(b.rotor??b.runner).traverse(mesh=>{if(mesh.isMesh){const all=surfacePoints(mesh.geometry);moving.push({mesh,points:all.filter((_,i)=>i%Math.max(1,Math.floor(all.length/900))===0)});}});
     for(let frame=0;frame<=64;frame++){

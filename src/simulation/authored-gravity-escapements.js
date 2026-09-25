@@ -1568,7 +1568,10 @@ function singleThreeLeggedGravityEscapement(movement) {
   const unlockAngle = THREE.MathUtils.degToRad(1.8);
   const pendulumRodRadius = 0.070;
   const beatPinRadius = 0.105;
-  const beatContactClearance = pendulumRodRadius + beatPinRadius;
+  // Brown closes the two legs on a collar clamped to the pendulum rod just
+  // above its lower screw; the beat pins bear on the collar's flat flanks.
+  const beatCollarHalfWidth = 0.17;
+  const beatContactClearance = beatCollarHalfWidth + beatPinRadius;
   const palletPlaneOffset = 0.27;
   const pendulumPlaneZ = 0.80;
   const lockingWheelDepth = 0.26;
@@ -1869,7 +1872,7 @@ function singleThreeLeggedGravityEscapement(movement) {
     );
     const pendulumSurfacePoint = pendulumRodCenterPoint.clone().add(
       pendulumNormal.clone().multiplyScalar(
-        beatSideSign * pendulumRodRadius,
+        beatSideSign * beatCollarHalfWidth,
       ),
     );
     const beatPinSurfacePoint = activeBeatPinCenter.clone().add(
@@ -2319,7 +2322,7 @@ function singleThreeLeggedGravityEscapement(movement) {
       lockAngle + THREE.MathUtils.degToRad(10), 10);
     const lockFace = plateRegistry.add({
       key: `${sideKey}-stop-${stopLetter}`,
-      material: markerMaterial,
+      material: palletMaterial,
       owner: group,
       primitives: [
         platePolygon(stopSector.points.map(([x, y]) => toLocal(
@@ -2331,7 +2334,29 @@ function singleThreeLeggedGravityEscapement(movement) {
       z0: Math.min(stopInnerZ, stopOuterZ),
       z1: Math.max(stopInnerZ, stopOuterZ),
     });
-    const lockBacking = lockFace;
+    // The legs sweep almost all of the stop's slab, leaving only the lock
+    // face. Brown's stop is a block on the leg's outer edge, so a bracket
+    // in the arm's own plane, clear of the legs, carries that face.
+    const bowAnchorLocal = smoothBowPoints.reduce((best, point) => (
+      point.distanceTo(lockBackLocal) < best.distanceTo(lockBackLocal)
+        ? point : best
+    ));
+    const lockBracket = plateRegistry.add({
+      key: `${sideKey}-bracket-${stopLetter}`,
+      material: palletMaterial,
+      owner: group,
+      primitives: [
+        platePolygon(stopSector.points.map(([x, y]) => toLocal(
+          new THREE.Vector2(x, y),
+        ))),
+        plateBand(lockBackLocal, bowAnchorLocal, 0.16),
+        plateDisc(lockBackLocal, 0.12),
+      ],
+      role: `${sideName}-stop-${stopLetter}-bracket-on-leg`,
+      z0: -armHalfDepth,
+      z1: armHalfDepth,
+    });
+    const lockBacking = lockBracket;
     const adjustmentScrew = cylinderAlongZ(0.060, 0.31,
       darkMaterial, 20);
     adjustmentScrew.position.set(side * 0.82, 0.02, 0);
@@ -2423,24 +2448,7 @@ function singleThreeLeggedGravityEscapement(movement) {
   );
   pendulumRod.userData.role = 'pendulum-rod-between-alternating-beat-pins';
   pendulumAssembly.add(pendulumRod);
-  // Brown draws this rod only as a dashed centre line; the solid rod stays
-  // as the working body but is not rendered.
-  pendulumRod.visible = false;
-  const pendulumRodDashedLine = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, -0.16, 0),
-      new THREE.Vector3(0, -pendulumLength, 0),
-    ]),
-    new THREE.LineDashedMaterial({
-      color: PALETTE.ink,
-      dashSize: 0.16,
-      fog: false,
-      gapSize: 0.11,
-    }),
-  );
-  pendulumRodDashedLine.computeLineDistances();
-  pendulumRodDashedLine.userData.role = 'dashed-pendulum-rod-centre-line';
-  pendulumAssembly.add(pendulumRodDashedLine);
+  // Brown dashes this rod as a centre line; the model shows the real rod.
   const pendulumPivotEye = new THREE.Mesh(
     new THREE.TorusGeometry(0.20, 0.057, 10, 36),
     pendulumMaterial,
@@ -2454,6 +2462,32 @@ function singleThreeLeggedGravityEscapement(movement) {
   pendulumBob.scale.y = 1.16;
   pendulumBob.userData.role = 'pendulum-bob';
   pendulumAssembly.add(pendulumBob);
+  // Brown's bottom fitting: a collar with a pointed head clamped on the rod
+  // where both legs end, with a clamping screw through it. The beat pins
+  // bear on its parallel flanks.
+  const beatCollarY = beatPinWorldY - pendulumPivot.y;
+  // The extrusion bevel grows the outline by its size, so the drawn flank
+  // lands exactly on the contact half-width.
+  const beatCollarBevel = 0.004;
+  const beatCollarFlank = beatCollarHalfWidth - beatCollarBevel;
+  const beatCollarShape = new THREE.Shape([
+    new THREE.Vector2(-beatCollarFlank, -0.30),
+    new THREE.Vector2(beatCollarFlank, -0.30),
+    new THREE.Vector2(beatCollarFlank, 0.34),
+    new THREE.Vector2(0, 0.58),
+    new THREE.Vector2(-beatCollarFlank, 0.34),
+  ]);
+  const beatCollar = new THREE.Mesh(
+    centeredExtrusion(beatCollarShape, 0.22, beatCollarBevel),
+    pendulumMaterial,
+  );
+  beatCollar.position.set(0, beatCollarY, 0);
+  beatCollar.userData.role = 'pendulum-beat-collar-where-both-legs-end';
+  pendulumAssembly.add(beatCollar);
+  const beatCollarScrew = cylinderAlongZ(0.055, 0.30, darkMaterial, 20);
+  beatCollarScrew.position.set(0, beatCollarY - 0.12, 0);
+  beatCollarScrew.userData.role = 'pendulum-beat-collar-clamping-screw';
+  pendulumAssembly.add(beatCollarScrew);
 
   const beatContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.064, 16, 12),
@@ -2594,6 +2628,7 @@ function singleThreeLeggedGravityEscapement(movement) {
   root.userData.fidelity = 'authored';
   root.userData.fixedLockPointForSide = fixedLockPointForSide;
   root.userData.geometry = {
+    beatCollarHalfWidth,
     beatContactClearance,
     beatPinLocalX,
     beatPinLocalY,

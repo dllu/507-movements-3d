@@ -72,7 +72,6 @@ test('movement 175 reference dimensions transfer continuously between tangent sl
     crankCenterAnchor,
     crankFixedBoss,
     crankMovingBoss,
-    crankOrbitWitness,
     crankPinAnchor,
     crankPinShaft,
     crankRotationIndex,
@@ -134,7 +133,6 @@ test('movement 175 reference dimensions transfer continuously between tangent sl
     crankCenterAnchor,
     crankFixedBoss,
     crankMovingBoss,
-    crankOrbitWitness,
     crankPinAnchor,
     crankPinShaft,
     crankRotationIndex,
@@ -171,7 +169,8 @@ test('movement 175 reference dimensions transfer continuously between tangent sl
     'fixed crank shaft is normal to the mechanism plane');
   vectorNear(slider.userData.translationAxis, Y_AXIS, 0,
     'crosshead has one vertical translation axis');
-  assert.equal(crankOrbitWitness.userData.witnessOnly, true);
+  assert.equal(model.root.getObjectsByProperty('isLine', true).length, 0,
+    'Brown\'s dashed crank circle is notation and is not drawn');
 
   const forbiddenStandIns = [];
   const topologyCounts = {
@@ -662,7 +661,8 @@ test('movement 175 reference dimensions transfer continuously between tangent sl
   assert.ok(geometry.crankPlaneZ < geometry.rodPlaneZ);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 3.3);
+  // The dashed crank circle (notation, removed in pass 53) no longer widens the bounds.
+  assert.ok(size.x > 3.15);
   assert.ok(size.y > 7.3);
   assert.ok(size.z > 1.2,
     'frame, crank, crosshead, pins, and rod occupy real depth');

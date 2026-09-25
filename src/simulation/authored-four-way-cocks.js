@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {cockPassagePath, correctFourWayCock} from './four-way-cock-parts.js';
+import {cockPassagePath, correctFourWayCock, makeBrownPortPipes} from './four-way-cock-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -502,7 +502,7 @@ function fourWaySteamCock(movement) {
         ? forwardParameter
         : 1 - forwardParameter;
       marker.position.copy(passage.userData.curve.getPoint(parameter));
-      marker.position.z = 0;
+      marker.position.z = 0.125;
     });
   }
 
@@ -782,6 +782,11 @@ function fourWaySteamCock(movement) {
     core.userData = { role: `second-plate-figure-passage-${name}-fluid-core` };
     secondPlugRotor.add(core);
   }
+  const portPipes = makeBrownPortPipes(matte(0xd6d0c4, { metalness: 0.12, roughness: 0.55 }));
+  fixedBody.add(portPipes);
+  const secondPortPipes = portPipes.clone();
+  secondPortPipes.rotation.z = -HALF_PI;
+  secondFigureBody.add(secondPortPipes);
   root.add(markShadows(secondFigureBody), markShadows(secondPlugRotor));
   const updateBothFigures = (time) => {
     update(time);
@@ -789,18 +794,21 @@ function fourWaySteamCock(movement) {
   };
   updateBothFigures(0);
   root.userData.update = updateBothFigures;
+  root.userData.blocks.portPipes = portPipes;
   root.userData.blocks.secondFigure = {
     body: secondFigureBody,
     housing: secondHousing,
+    portPipes: secondPortPipes,
     plug: secondPlug,
     plugRotor: secondPlugRotor,
   };
   root.userData.secondFigureOffset = secondFigureOffset.clone();
   root.userData.cameraFov = 14;
+  const portPipeReach = 2.45;
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(secondFigureOffset.x - bodyOuterRadius - 0.15,
-      secondFigureOffset.y - bodyOuterRadius - 0.15, -0.35),
-    new THREE.Vector3(bodyOuterRadius + 0.15, bodyOuterRadius + 0.15, 0.35),
+      secondFigureOffset.y - portPipeReach, -0.35),
+    new THREE.Vector3(portPipeReach, portPipeReach, 0.35),
   );
   return {
     root,

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {replaceWithLaidRope} from './laid-rope.js';
 import {correctWellBucketParts} from './well-bucket-working-parts.js';
 import {
   PALETTE,
@@ -384,6 +385,20 @@ function twoBucketWellPulley(movement) {
     ropeMaterial,
   ), 'single-rope-right-vertical-leg');
   continuousRope.add(rightRopeLeg);
+  // Brown draws one laid rope: render it as the shared three-strand rope from
+  // the left bail over the sheave to the right bail. The leg and arc pieces
+  // stay as hidden references for the contact checks.
+  const laidRope = addRole(new THREE.Mesh(new THREE.BufferGeometry(), ropeMaterial),
+    'single-laid-rope-over-sheave-between-both-bails');
+  continuousRope.add(laidRope);
+  for (const piece of [upperArc, leftRopeLeg, rightRopeLeg]) piece.visible = false;
+  const layRope = (leftY, rightY) => {
+    const path = new THREE.CurvePath();
+    path.add(new THREE.LineCurve3(new THREE.Vector3(-pulleyRadius, leftY, 0), arcPoints[0].clone()));
+    path.add(arcCurve);
+    path.add(new THREE.LineCurve3(arcPoints.at(-1).clone(), new THREE.Vector3(pulleyRadius, rightY, 0)));
+    replaceWithLaidRope(laidRope, path, {radius: 0.045, tubularSegments: 256});
+  };
 
   const makeBucket = (side) => {
     const bucket = addRole(new THREE.Group(),
@@ -460,6 +475,7 @@ function twoBucketWellPulley(movement) {
     leftRopeLeg.position.x = -pulleyRadius;
     setVerticalExtent(rightRopeLeg, state.rightBailY, pulleyCenter.y);
     rightRopeLeg.position.x = pulleyRadius;
+    layRope(state.leftBailY, state.rightBailY);
     leftBucket.bucket.position.copy(state.leftBucketCenter);
     rightBucket.bucket.position.copy(state.rightBucketCenter);
     updateBucketWater(leftBucket, state.leftWaterFraction);

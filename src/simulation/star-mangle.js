@@ -7,7 +7,7 @@ import { boredSpurGeometry } from './jaw-clutch-geometry.js';
 import { radialToothGeometry } from './star-mangle-geometry.js';
 import { PALETTE, matte, markShadows } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
-import { starMangleCrabEnd, starMangleRunningRim } from './star-mangle-guide.js';
+import { starMangleCrabBlock, starMangleCrabEnd, starMangleRunningRim } from './star-mangle-guide.js';
 
 export function makeStarMangle({ profiles: data = profileData, contactMap = mapData } = {}) {
   const motion = starMangleMotion(data.parameters), p = motion.parameters;
@@ -69,13 +69,8 @@ export function makeStarMangle({ profiles: data = profileData, contactMap = mapD
     mesh.rotation.z = geometry.userData.terminal; crab.add(mesh);
     (guideSide > 0 ? crabEnds : crabReturns).push(mesh);
   }
-  const gapHalfAngle = (p.omittedTeeth + 1) * p.wheelPitch / 2;
-  const bridgeHalfAngle = Math.max(0.009, gapHalfAngle - Math.atan2(p.pinionRadius * 1.815 / p.wheelRadius + 0.112, 1.787));
-  const stemZ = p.pinionRadius + pinion.geometry.userData.outerRadius + 0.06;
-  const bridge = annulus(1.76, 1.86, Math.PI - bridgeHalfAngle, 2 * bridgeHalfAngle, stemZ + 0.075, PALETTE.brass); bridge.position.z = stemZ / 2;
-  const stem = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.07, 0.075), matte(PALETTE.brass)); stem.position.set(-1.595, 0, stemZ);
-  const stemFoot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.07, stemZ), matte(PALETTE.brass)); stemFoot.position.set(-1.33, 0, stemZ / 2);
-  crab.add(bridge, stem, stemFoot); wheel.add(crab);
+  const crabBlock = new THREE.Mesh(undefined, matte(PALETTE.brass));
+  crab.add(crabBlock); wheel.add(crab);
   const applyState = (s) => {
     wheel.rotation.z = s.wheelAngle;
     input.position.set(0, s.centerY, s.centerZ); rotor.rotation.z = s.pinionAngle;
@@ -87,12 +82,29 @@ export function makeStarMangle({ profiles: data = profileData, contactMap = mapD
   const stateAtTime = (time) => loadedMotion ? loadedMotion.atInputTravel(initialInputTravel + p.inputSpeed * time)
     : motion.atTime(initialTravel / p.inputSpeed + time);
   const update = (time) => applyState(stateAtTime(time));
+  // Wheel-frame collar centres through both crossovers and the adjoining
+  // face runs, in the block's (s = -y, z) section coordinates.
+  function collarSweep() {
+    const points = [], centre = new THREE.Vector3(), inverse = new THREE.Matrix4();
+    for (const start of [p.runTravel, p.returnStart]) {
+      for (let travel = start - 0.8; travel <= start + Math.PI + 0.8 + 1e-9; travel += 0.05) {
+        updateTravel(travel); root.updateMatrixWorld(true);
+        inverse.copy(wheel.matrixWorld).invert();
+        centre.setFromMatrixPosition(collar.matrixWorld).applyMatrix4(inverse);
+        points.push([-centre.y, centre.z]);
+      }
+      points.push(null);
+    }
+    const runs = [], run = []; for (const point of points) { if (point) run.push(point); else runs.push(run.splice(0)); }
+    return runs;
+  }
+  crabBlock.geometry = starMangleCrabBlock(collarSweep());
   root.userData = { fidelity: 'authored', hideGround: true, cameraFov: 17, shadowCameraHalfExtent: 2.2, shadowBias: -0.00003,
     fullCameraDirection: new THREE.Vector3(4, 3, 8),
     mechanism: 'radial-tooth-mangle-with-captured-crab-guide', reconstructionStatus: 'contact-verified-reconstruction',
     idealConstraints: 'Fixed output axis; external input bearing fixes X and follows Y²−Z²=R²−rp², with end stops at Z=±rp.', geometry: { ...p, ...loadedMotion?.parameters, initialTravel, initialInputTravel },
     blocks: { wheel, input }, parts: { spokes, teeth, innerRim, outerRim, hub, shaft, pinion, inputShaft,
-      collar, crab, crabEnds, crabReturns, bridge, stem, stemFoot },
+      collar, crab, crabEnds, crabReturns, crabBlock },
     animationTiming: { authoredCyclePeriod: p.cycleDuration }, updateTravel, stateAtTime, loadedMotion };
   update(0); markShadows(root); return { root, update, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }

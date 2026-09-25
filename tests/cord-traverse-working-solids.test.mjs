@@ -48,10 +48,18 @@ test('362 groove retains finite material and captures the pin on both axial flan
   assert.ok(Math.abs(m.root.userData.currentState.outputVelocityX)<=g.peakTraverseSpeed+1e-10);
  }
 });
+// A tube contains its centreline; a three-strand laid rope does not (the
+// strands leave a small core gap), so it must contain its first strand's axis.
+function cordCore(cord){
+ const geometry=cord.userData.mesh.geometry;
+ if(geometry.type!=='LaidRopeGeometry')return cord.userData.curve.getPointAt(.413);
+ const {centers,frames,along,length,dims}=geometry._laid,i=Math.round(.413*along),phase=2*Math.PI*(length*i/along-geometry.userData.travel)/dims.lay;
+ return centers[i].clone().addScaledVector(frames.normals[i],dims.layRadius*Math.cos(phase)).addScaledVector(frames.binormals[i],dims.layRadius*Math.sin(phase));
+}
 test('352 and 358 deform closed cords without replacing geometry or growing scenes',()=>{
  for(const id of[352,358]){
   const m=models.get(id),b=m.root.userData.blocks,cords=id===352?[b.rope]:[b.firstCord,b.secondCord],geometry=cords.map(c=>c.userData.mesh.geometry),count=meshes(m.root).length;
-  for(let i=0;i<=12;i++){m.update(i);assert.equal(meshes(m.root).length,count);cords.forEach((c,j)=>{assert.equal(c.userData.mesh.geometry,geometry[j]);assert.ok(solidSurface(c.userData.mesh.geometry).inside(c.userData.curve.getPointAt(.413)),'closed cord contains its centerline');});}
+  for(let i=0;i<=12;i++){m.update(i);assert.equal(meshes(m.root).length,count);cords.forEach((c,j)=>{assert.equal(c.userData.mesh.geometry,geometry[j]);assert.ok(solidSurface(c.userData.mesh.geometry).inside(cordCore(c)),'closed cord contains its centerline (a laid rope: its first strand axis)');});}
  }
 });
 test('358 follows the ten-turn carriage law while retaining the complete track and travel marks',()=>{

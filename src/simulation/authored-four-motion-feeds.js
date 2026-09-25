@@ -339,6 +339,8 @@ function makeCompoundCam({
     darkMaterial,
   );
   faceRim.userData.role = 'visible-compound-cam-working-edge';
+  faceRim.visible = false; // ink edge line only: kept for references, not drawn
+  faceRim.userData.retiredInkOutline = true;
   cam.add(faceRim);
 
   const shaft = cylinderAlongAxis(

@@ -11,10 +11,10 @@
     {
       "id": 202,
       "side": 0,
-      "queries": 2585566,
+      "queries": 2346379,
       "penetrations": 0,
       "maximumDepth": 0,
-      "minimumGap": 0.0019489764194698298,
+      "minimumGap": 0.002491874225579685,
       "maximumClosestGap": 0.002491905348876431,
       "worst": null
     },
@@ -42,7 +42,7 @@
   "sources": [
     {
       "file": "src/simulation/special-worm-solids.js",
-      "sha256": "86777462d1e6e0a97e9c035d5865e1d9715ac0fd52f1ab0263d2bde506f4bac5"
+      "sha256": "1c64cb5f738fc5383174005603c2595d474a4bceb5ecfe2d5d41de642954c1ce"
     },
     {
       "file": "src/simulation/special-worm-parameters.js",
@@ -62,7 +62,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "da0f13f59fed60a3494699a8e45975b15de332a5e830ee39b12c67696e3088bc"
+      "sha256": "c7fe2bc8a1573e16ae222044d8fa35e4a75901c6990334a2a7c8278b4be11aa9"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -70,7 +70,7 @@
     },
     {
       "file": "src/simulation/authored-differential-worm-drives.js",
-      "sha256": "a57da36d14cfd92139608ee638abee54a458133052082eebeb70be2aca131c73"
+      "sha256": "221d03ae7a0b3ebe378c119d3e9a52c7bb609bf02f165b9ecf6d1836135b64a3"
     },
     {
       "file": "src/simulation/instanced-worm-wheel.js",

@@ -35,6 +35,14 @@ function cableEndpoints(cable) {
   const visible = cable.children.filter((segment) => segment.visible);
   assert.equal(visible.length, 1);
   cable.updateWorldMatrix(true, true);
+  // A laid rope carries its centreline; a cylinder segment spans local y +-0.5.
+  const path = visible[0].geometry.parameters?.path;
+  if (path) {
+    return {
+      end: path.getPoint(1).applyMatrix4(visible[0].matrixWorld),
+      start: path.getPoint(0).applyMatrix4(visible[0].matrixWorld),
+    };
+  }
   return {
     end: new THREE.Vector3(0, 0.5, 0)
       .applyMatrix4(visible[0].matrixWorld),

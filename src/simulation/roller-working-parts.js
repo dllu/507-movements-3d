@@ -61,7 +61,8 @@ function rebuildWheel(wheel, radius, bore, width, spokes, phase = 0) {
   const index = wheel.userData.indexMark;
   rotor.clear();
   const inner = spokes ? radius - .15 : bore;
-  const rim = mesh(rotor, ring(inner, radius, -width / 2, width / 2, 256), spokes ? dark : color, 'finite-bored-wheel-tread');
+  // A spoked wheel's rim is the wheel itself, not a black tyre: same colour as its spokes.
+  const rim = mesh(rotor, ring(inner, radius, -width / 2, width / 2, 256), color, 'finite-bored-wheel-tread');
   const hubRadius = Math.max(radius * .13, .08);
   const hub = mesh(rotor, ring(bore, hubRadius, -width * .61, width * .61, 128), dark, 'bored-wheel-hub');
   const radialSpokes = [];

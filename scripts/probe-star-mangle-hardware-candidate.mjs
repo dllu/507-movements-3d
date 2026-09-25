@@ -7,7 +7,7 @@ const data = JSON.parse(await readFile(process.env.PROFILE_INPUT ?? 'artifacts/r
 const contactMap = process.env.MAP_INPUT ? JSON.parse(await readFile(process.env.MAP_INPUT, 'utf8')) : null;
 const model = makeStarMangleCandidate(data, { contactMap }), p = model.root.userData.geometry, parts = model.root.userData.parts;
 const wheelParts = [parts.innerRim, parts.outerRim, parts.hub, parts.shaft, ...parts.spokes,
-  ...parts.crabEnds, ...parts.crabReturns, parts.bridge, parts.stem, parts.stemFoot, ...parts.teeth];
+  ...parts.crabEnds, ...parts.crabReturns, parts.crabBlock, ...parts.teeth];
 const inputParts = [parts.pinion, parts.inputShaft, parts.collar];
 for (const [name, value] of Object.entries(parts)) {
   if (Array.isArray(value)) value.forEach((mesh, i) => { mesh.name = `${name}-${i}`; }); else value.name = name;

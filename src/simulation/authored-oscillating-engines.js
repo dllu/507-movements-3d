@@ -54,14 +54,13 @@ export function rectangularRodPassageGeometry(width, height, depth, halfX, halfZ
   return geometry;
 }
 
-// Brown draws the engine rails as bars broken off at both ends.
+// Brown draws the engine rails as bars broken off at both ends: a drawing
+// convention. The rails are modelled whole, running on past his breaks to
+// square ends, and leave the default view.
 function brokenRailOutline(x0, x1, yTop, yBottom, jag) {
-  const h = yTop - yBottom;
+  const run = jag * 30;
   return poly([
-    [x0, yTop], [x1, yTop],
-    [x1 - jag, yTop - h * 0.35], [x1 + jag * 0.6, yTop - h * 0.7], [x1, yBottom],
-    [x0, yBottom],
-    [x0 + jag * 0.6, yBottom + h * 0.3], [x0 - jag, yBottom + h * 0.65],
+    [x0 - run, yTop], [x1 + run, yTop], [x1 + run, yBottom], [x0 - run, yBottom],
   ]);
 }
 

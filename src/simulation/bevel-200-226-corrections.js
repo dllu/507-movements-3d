@@ -8,7 +8,7 @@ function refine(gear,{height=.22,bore,hubLow,hubHigh,hubOuter,thickness=.96}={})
  const u=gear.userData,raw=bevelToothGeometry({teeth:u.teeth,innerDistance:u.innerDistance,outerDistance:u.outerDistance,pitchConeAngle:u.pitchConeAngle,toothHeight:height,toothThicknessFactor:thickness,flankSegments:18,tipSegments:8});
  replace(u.body,bevelBodyGeometry(raw,bore));const old=u.toothMeshes[0].geometry;for(const tooth of u.toothMeshes)tooth.geometry=raw;old.dispose();
  replace(u.hub,ring(bore,hubOuter,hubLow,hubHigh));u.hub.position.set(0,0,0);u.hub.rotation.set(0,0,0);
- u.inset.position.z=raw.userData.root.z+.018;u.indicator.position.z=raw.userData.root.z+.035;
+ u.inset.position.z=raw.userData.root.z+.018;u.inset.visible=false;u.inset.userData.retiredInkOutline=true;u.indicator.position.z=raw.userData.root.z+.035;
  Object.assign(u,{boreRadius:bore,toothHeight:raw.userData.height,hubLow,hubHigh,hubOuter,toothThicknessFactor:thickness});
 }
 function finish(root,note,period){root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=period;root.userData.reconstructionNote=note;root.traverse(o=>{for(const m of(Array.isArray(o.material)?o.material:[o.material]))if(m)m.fog=false;});markShadows(root);}

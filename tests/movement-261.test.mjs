@@ -2,6 +2,7 @@ import { assertReadableTiming } from './helpers/display-timing.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -480,43 +481,36 @@ test('movement 261 renders a smooth exact closure and leaves 269 authored', () =
   disposeModel(model.root);
 });
 
-test('movement 261 dashes the hidden drum and drum-side strand of D over B as Brown carries them', () => {
+test('movement 261 shows the real drum and drum-side strand of D behind B, with no dashed notation', () => {
   const movement = catalog.movements[260];
   const model = createMovementModel(movement);
   const { blocks, geometry } = model.root.userData;
-  const { drumHiddenCircle: circle, strandHiddenLine: strand } = blocks;
-  for (const line of [circle, strand]) {
-    assert.ok(line.isLineSegments && line.material.isLineDashedMaterial);
-    assert.equal(line.material.toneMapped, false);
-    const position = line.geometry.attributes.position;
-    for (let index = 0; index < position.count; index += 1) {
-      const depth = position.getZ(index);
-      assert.ok(depth > 0.15 && depth < 0.18, 'on B\'s front face, under its rim, hub, pin and C');
-    }
-  }
-  assert.equal(circle.parent, blocks.diskAssembly, 'the drum circle turns with B');
-  const radii = [];
-  const position = circle.geometry.attributes.position;
-  for (let index = 0; index < position.count; index += 1) {
-    radii.push(Math.hypot(position.getX(index), position.getY(index)));
-  }
-  near(Math.min(...radii), geometry.drumRadius, 0.013, 'drum circle radius');
-  assert.ok(geometry.diskHubRadius < geometry.drumRadius - 0.05, 'Brown\'s small hub leaves the drum circle clear');
-  for (const time of [0, 1.5, 3, 4.5, 6, 7.5, 9, 10.5]) {
+  const lines = [];
+  model.root.traverse((object) => { if (object.isLine) lines.push(object); });
+  assert.deepEqual(lines.map((line) => line.userData.role), [], 'no hidden-line notation is drawn');
+  assert.equal(blocks.drumHiddenCircle, undefined);
+  assert.equal(blocks.strandHiddenLine, undefined);
+  const { drum, diskAssembly, cord } = blocks;
+  assert.equal(drum.parent, diskAssembly, 'the drum turns with B');
+  assert.ok(drum.visible && drum.isMesh, 'the drum itself is drawn');
+  assert.ok(geometry.diskHubRadius < geometry.drumRadius - 0.05, 'Brown\'s small hub leaves the drum clear');
+  const cordMesh = cord.userData.mesh;
+  assert.equal(cordMesh.geometry.type, 'LaidRopeGeometry', 'cord D is a laid rope');
+  assert.ok(cordMesh.visible, 'the cord tube is drawn');
+  model.root.updateMatrixWorld(true);
+  const drumBox = new THREE.Box3().setFromObject(drum);
+  const diskBox = new THREE.Box3().setFromObject(blocks.diskBody);
+  assert.ok(drumBox.max.z <= diskBox.min.z + 1e-6, 'the drum lies behind B, hidden from the front as Brown dashes it');
+  for (const time of [0, 3, 6, 9]) {
     model.update(time);
+    model.root.updateMatrixWorld(true);
     const { configuration } = model.root.userData.kinematics;
-    const points = strand.geometry.attributes.position;
-    // One segment per ink strand; strand 3 of 6 lies within 0.003 of the
-    // centre line, which runs from B's rim edge to the drum tangent.
-    const middle = 6;
-    const start = { x: points.getX(middle), y: points.getY(middle) };
-    const end = { x: points.getX(middle + 1), y: points.getY(middle + 1) };
-    near(distance(end, configuration.drumTangent), 0, 0.02, `strand ends at the drum tangent at ${time}`);
-    near(distance(start, geometry.diskCenter), geometry.diskRadius + 0.065, 0.02, `strand starts at B's rim at ${time}`);
-    const direction = configuration.drumTangent.clone().sub(configuration.pulleyTangent).normalize();
-    const along = { x: end.x - start.x, y: end.y - start.y };
-    const cross = Math.abs(along.x * direction.y - along.y * direction.x) / Math.hypot(along.x, along.y);
-    assert.ok(cross < 0.02, 'the dashes continue the drawn strand');
+    const tangent = diskAssembly.parent.localToWorld(
+      new THREE.Vector3(configuration.drumTangent.x, configuration.drumTangent.y, 0));
+    const box = new THREE.Box3().setFromObject(cordMesh);
+    assert.ok(box.min.x <= tangent.x + 1e-3 && box.max.x >= tangent.x - 1e-3
+      && box.min.y <= tangent.y + 1e-3 && box.max.y >= tangent.y - 1e-3,
+    `the cord reaches the drum tangent at ${time}`);
   }
   disposeModel(model.root);
 });

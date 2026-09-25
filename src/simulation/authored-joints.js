@@ -347,6 +347,10 @@ function makeSlotOutline({
   outline.userData.points = points;
   outline.userData.role = 'visible-boundary-of-open-L-shaped-slot';
   outline.userData.noShadow = true;
+  // The slot is cut through the socket wall; this ink line only traced its
+  // edge, so it stays as a hidden reference for the slot geometry.
+  outline.visible = false;
+  outline.userData.retiredInkOutline = true;
   return outline;
 }
 
@@ -1047,18 +1051,8 @@ function ballAndSocketPipeJoint(movement) {
   maleBoreLiner.userData.role =
     'visible-inner-wall-of-continuous-male-bore';
 
-  const orientationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.045, 1.12, 0.14),
-    matte(PALETTE.white, { roughness: 0.48 }),
-  );
-  orientationIndex.position.set(
-    upperTubeOuterRadius + 0.025,
-    2.72,
-    0,
-  );
-  orientationIndex.userData.role =
-    'white-rigid-orientation-index-on-upper-tube';
-  maleAssembly.add(maleBall, upperTube, maleBoreLiner, orientationIndex);
+  // Brown draws the upper tube plain: no orientation index stripe.
+  maleAssembly.add(maleBall, upperTube, maleBoreLiner);
   root.add(maleAssembly);
 
   const fixedSocketAssembly = new THREE.Group();
@@ -1349,7 +1343,6 @@ function ballAndSocketPipeJoint(movement) {
     maleBall,
     maleBallSectionFaces: maleBallParts.sectionFaces,
     maleBoreLiner,
-    orientationIndex,
     upperClampEars,
     upperSocketHalf,
     upperSocketSectionFaces: upperSocketParts.sectionFaces,

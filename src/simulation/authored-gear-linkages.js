@@ -118,6 +118,9 @@ function makeSpokedSpurGear({
   );
   frontRing.position.z = depth / 2 + 0.015;
   frontRing.userData.role = 'visible-spur-gear-web-boundary';
+  // Drawn web/rim edge only: retained as a hidden reference, not a dark rim.
+  frontRing.visible = false;
+  frontRing.userData.retiredInkOutline = true;
   rotor.add(frontRing);
 
   const indexMaterial = matte(PALETTE.white, { roughness: 0.46 });

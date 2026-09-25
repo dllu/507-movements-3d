@@ -245,12 +245,6 @@ function gravityDropStamp(movement) {
   const shaftBearing = cylinderAlongZ(0.25, 0.30, frameMaterial, 40);
   shaftBearing.position.set(wheelCenter.x, wheelCenter.y, -0.31);
   shaftBearing.userData.role = 'fixed-bearing-for-horizontal-pinion-shaft';
-  const shaftBearingRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.25, 0.045, 9, 40),
-    inkMaterial,
-  );
-  shaftBearingRing.position.set(wheelCenter.x, wheelCenter.y, -0.13);
-  shaftBearingRing.userData.role = 'fixed-pinion-bearing-front-ring';
 
   const anvil = new THREE.Mesh(
     new THREE.BoxGeometry(1.45, 0.36, 1.05),
@@ -283,7 +277,6 @@ function gravityDropStamp(movement) {
     lowerBridge,
     bearingBridge,
     shaftBearing,
-    shaftBearingRing,
     anvil,
     workpiece,
     impactHalo,
@@ -800,7 +793,6 @@ function gravityDropStamp(movement) {
     rackTravelIndicator,
     rearPost,
     shaftBearing,
-    shaftBearingRing,
     stampDie,
     stampFaceAnchor,
     topBridge,

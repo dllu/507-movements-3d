@@ -334,6 +334,9 @@ function commonPaddleWheel(movement) {
     paddleEdge.position.copy(paddle.position);
     paddleEdge.position.y = paddleTangentialThicknessSceneUnit / 2 + 0.025;
     assembly.add(paddleEdge);
+    // Brown draws each paddle as one plain board; the dark edge was ink.
+    paddleEdge.visible = false;
+    paddleEdge.userData.retiredInkOutline = true;
     rotor.add(assembly);
     spokeAssemblies.push({ assembly, paddle, paddleEdge, spokes });
     paddles.push(paddle);

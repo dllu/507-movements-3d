@@ -362,11 +362,6 @@ function diaphragmPressureGauge(movement) {
     frameMaterial,
   ), 'fixed-round-magdeburg-gauge-case-rim');
   outerRim.position.z = 0.05;
-  const innerBezel = addRole(new THREE.Mesh(
-    new THREE.TorusGeometry(3.04, 0.045, 10, 96),
-    inkMaterial,
-  ), 'fixed-inner-dial-bezel');
-  innerBezel.position.z = 0.53;
 
   const chamber = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(1.55, 1.55, 0.52, 64, 1, true),
@@ -584,7 +579,6 @@ function diaphragmPressureGauge(movement) {
     diaphragmBoss,
     dialFace,
     outerRim,
-    innerBezel,
     scaleArc,
     ...scaleTicks,
     connectingRod,
@@ -677,7 +671,6 @@ function diaphragmPressureGauge(movement) {
     inletCollar,
     inletPipe,
     inletPressureCore,
-    innerBezel,
     outerRim,
     pinion,
     pointer,

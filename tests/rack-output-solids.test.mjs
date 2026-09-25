@@ -20,9 +20,9 @@ function audit(model,pairs,frames=65) {
 }
 test('282 actual slot, guide, teeth and pulley solids clear throughout a crank revolution',()=>{
  const model=createAuthoredSlottedDiskLeverMovement({id:282}),b=model.root.userData.blocks;
- audit(model,[[b.leverBody,b.diskRim],[b.leverBody,b.diskHub],[b.drivePin,b.leverBody],[b.guidePin,b.topGuide],[b.sector,b.pivotPin],
+ audit(model,[[b.leverBody,b.diskBody],[b.leverBody,b.diskHub],[b.drivePin,b.leverBody],[b.guidePin,b.topGuide],[b.sector,b.pivotPin],
   ...b.rackTeeth.map(t=>[t,b.sector]),[b.rackBody,b.sector],
-  ...[b.pulleySheave,...b.pulleyFlanges].flatMap(p=>[b.incomingCord,b.verticalCord,...b.wrappedCordSegments].map(c=>[c,p]))]);
+  ...[b.pulleySheave,...b.pulleyFlanges].map(p=>[b.cordRope,p])]);
 });
 test('283 both racks mesh with the pinion and remain clear in actual guides and pump bores',()=>{
  const model=createAuthoredRackPumpMovement({id:283}),{root}=model,b=root.userData.blocks,pinion=b.pinionRotor.children[0];

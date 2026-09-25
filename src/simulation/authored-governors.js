@@ -132,6 +132,10 @@ export function makePitchBevelGear({
   );
   faceRing.position.z = outerFaceZ + 0.018;
   faceRing.userData.role = 'bevel-gear-face-ring';
+  // Brown inks the face circle only as a drawing edge; keep the reference
+  // hidden for code that positions it, but do not render a dark rim.
+  faceRing.visible = false;
+  faceRing.userData.retiredInkOutline = true;
   const faceIndex = new THREE.Mesh(
     new THREE.BoxGeometry(
       pitchRadiusAt(outerDistance) * 0.46,
@@ -487,6 +491,8 @@ function dragFanInclinedPlaneGovernorMotion() {
     );
     innerEdge.userData.role = 'inner-edge-of-circular-inclined-plane';
     innerEdge.userData.index = index;
+    innerEdge.visible = false;
+    innerEdge.userData.retiredInkOutline = true;
     const outerEdge = new THREE.Mesh(
       new THREE.TubeGeometry(
         new THREE.CatmullRomCurve3(outerEdgePoints),
@@ -499,6 +505,8 @@ function dragFanInclinedPlaneGovernorMotion() {
     );
     outerEdge.userData.role = 'outer-edge-of-circular-inclined-plane';
     outerEdge.userData.index = index;
+    outerEdge.visible = false;
+    outerEdge.userData.retiredInkOutline = true;
     const ribs = [];
     for (let ribIndex = 0; ribIndex <= 8; ribIndex += 1) {
       const sampleIndex = Math.round(ribIndex / 8 * rampSampleCount);
@@ -578,10 +586,14 @@ function dragFanInclinedPlaneGovernorMotion() {
       darkMaterial,
     );
     outline.userData.role = 'dark-outline-of-governor-air-fan';
+    // The plate's fan border is only its drawn edge: the blade itself fills
+    // the whole fan rectangle and the former dark edging box is retired.
+    outline.visible = false;
+    outline.userData.retiredInkOutline = true;
     const blade = new THREE.Mesh(
       new THREE.BoxGeometry(
-        fanWidth - 0.10,
-        fanHeight - 0.10,
+        fanWidth,
+        fanHeight,
         fanDepth,
       ),
       drivenMaterial,
@@ -597,7 +609,7 @@ function dragFanInclinedPlaneGovernorMotion() {
       rivet.position.set(
         offset * fanWidth * 0.22,
         -fanHeight * 0.30,
-        fanOutlineDepth / 2 + 0.035,
+        fanDepth / 2 + 0.0175,
       );
       rivet.userData.role = 'visible-fastener-on-air-fan';
       return rivet;
@@ -635,6 +647,8 @@ function dragFanInclinedPlaneGovernorMotion() {
     rim.rotation.y = Math.PI / 2;
     rim.position.x = side * (rollerWidth / 2 + 0.015);
     rim.userData.role = 'visible-rim-of-inclined-plane-roller';
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     const indexMarkerRadius = rollerRadius * 0.97;
     const indexMarkerAngle = Math.PI / 2 - side * sourceRollAngle;
     const indexMarker = new THREE.Mesh(

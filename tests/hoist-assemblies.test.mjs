@@ -52,7 +52,9 @@ for (const id of [16, 17, 18, 19, 20, 21, 22]) {
         const positions = mesh.geometry.attributes.position;
         for (const pulley of pulleys) {
           const inverse = pulley.matrixWorld.clone().invert();
-          const flanges = pulley.userData.rotor.children.filter((part) => part.geometry?.type === 'TorusGeometry');
+          // Retired ink tread-edge rings are hidden placeholders, not flanges.
+          const flanges = pulley.userData.rotor.children.filter((part) => part.visible
+            && part.geometry?.type === 'TorusGeometry');
           for (let i = 0; i < positions.count; i += 1) {
             const point = new THREE.Vector3().fromBufferAttribute(positions, i).applyMatrix4(mesh.matrixWorld).applyMatrix4(inverse);
             if (Math.abs(point.z) < pulley.userData.width / 2) {

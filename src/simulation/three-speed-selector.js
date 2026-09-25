@@ -43,11 +43,9 @@ export function makeThreeSpeedSelector() {
   const curve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.beltPitchRadius, p.beltPitchRadius, 0);
   const segments = 2048, length = curve.getLength();
   const beltGeometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-  // Brown draws the band plain: one paper colour, no travelling stitch marks.
-  const paper = new THREE.Color(0xd9cead), colorsBuffer = new Float32Array(beltGeometry.attributes.position.count * 3);
-  for (let i = 0; i < colorsBuffer.length; i += 3) paper.toArray(colorsBuffer, i);
-  beltGeometry.setAttribute('color', new THREE.BufferAttribute(colorsBuffer, 3));
-  const belt = add('belt', new THREE.Mesh(beltGeometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 })));
+  // Brown draws the band plain: the shared flat-belt look in the belt colour,
+  // no travelling stitch marks or edge rims.
+  const belt = add('belt', new THREE.Mesh(beltGeometry, matte(PALETTE.belt, { roughness: 0.76 })));
   belt.userData = { curve, length, crossSection: 'rectangular', width: p.beltWidth, thickness: p.beltThickness, isYarn: true };
   const update = time => {
     const state = motion.atTime(time); driver.rotation.z = state.driverAngle; output.rotation.z = state.outputAngle;

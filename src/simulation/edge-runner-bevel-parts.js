@@ -10,6 +10,10 @@ export function correctEdgeRunnerBevels(root) {
     - Math.PI / g.inputPinionTeeth;
   for (const [gear, phase] of [[b.largeBevelGear, 0], [b.inputPinion, pinionPhase]]) {
     const u = gear.userData;
+    // Brown draws no index tooth: every tooth takes the gear's own colour.
+    // (Both gears index tooth 0, so tooth 1 carries the ordinary material.)
+    const toothMaterial = u.toothMeshes[1].material;
+    for (const mesh of u.toothMeshes) mesh.material = toothMaterial;
     const tooth = bevelToothGeometry({
       teeth: u.teeth, innerDistance: u.innerDistance, outerDistance: u.outerDistance,
       pitchConeAngle: u.pitchConeAngle, toothHeight: u.toothHeight,

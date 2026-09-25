@@ -377,7 +377,8 @@ test('movement 236 renderer binds both pawls and closes before movement 339', ()
   assert.ok(size.z > 1.2);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 22);
+  // The dark pivot rings Brown only inks are retired.
+  assert.ok(meshCount >= 21);
 
   const movement507 = catalog.movements[506];
   const model289 = createMovementModel(movement507);

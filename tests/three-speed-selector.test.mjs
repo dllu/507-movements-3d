@@ -148,7 +148,7 @@ test('058 shaft ratios, stopped traversals and belt material flow survive arbitr
     setTime(time);
     const state = model.root.userData.kinematics, before = motion.atTime(time - dt), after = motion.atTime(time + dt);
     const matrices = Object.values(parts).map(mesh => mesh.matrixWorld.clone());
-    const colors = parts.belt.geometry.attributes.color.array.slice();
+    const colors = parts.belt.geometry.attributes.position.array.slice();
     for (const [angle, speed] of [['driverAngle', 'driverSpeed'], ['outputAngle', 'outputSpeed'], ['looseAngle', 'looseSpeed'], ['beltZ', 'beltAxialSpeed'], ['beltDistance', 'beltLinearSpeed']]) {
       near((after[angle] - before[angle]) / (2 * dt), state[speed], 2e-7);
     }
@@ -159,7 +159,7 @@ test('058 shaft ratios, stopped traversals and belt material flow survive arbitr
     }
     setTime(time + 5.31); setTime(time);
     Object.values(parts).forEach((mesh, i) => assert.ok(mesh.matrixWorld.equals(matrices[i])));
-    assert.deepEqual(parts.belt.geometry.attributes.color.array, colors);
+    assert.deepEqual(parts.belt.geometry.attributes.position.array, colors);
   }
   for (const time of boundaries) {
     const before = motion.atTime(time - dt), after = motion.atTime(time + dt);

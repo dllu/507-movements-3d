@@ -230,7 +230,7 @@ function leverChronometerEscapement(movement) {
   const longImpulseAdvance = toothPitch * 0.75;
   const shortReturnAdvance = toothPitch - longImpulseAdvance;
   const wheelToothTipRadius = sourceRasterWheelOuterRadius * sourceScale;
-  const wheelToothRootRadius = 2.65;
+  const wheelToothRootRadius = 2.52;
   const wheelInnerRadius = 2.18;
   const wheelDepth = 0.30;
   const wheelBaseAngle = 0;
@@ -595,8 +595,9 @@ function leverChronometerEscapement(movement) {
       ([x, y]) => [x * cos - y * sin, x * sin + y * cos],
     ));
   });
+  const webCircleSegments = 180;
   const wheelWeb = polygonClipping.difference(
-    poly(circle([0, 0], wheelToothRootRadius, 180)),
+    poly(circle([0, 0], wheelToothRootRadius, webCircleSegments)),
     poly(circle([0, 0], 0.34, 48)),
     ...wheelWindows,
   );
@@ -606,17 +607,31 @@ function leverChronometerEscapement(movement) {
   );
   wheelRim.userData.role = 'lever-chronometer-escape-wheel-rim';
   wheelRotor.add(wheelRim);
-  const toothShape = polygonShape([
-    new THREE.Vector2(wheelToothRootRadius - 0.07, -0.15),
-    new THREE.Vector2(wheelToothTipRadius - 0.06, -0.052),
-    new THREE.Vector2(wheelToothTipRadius, 0),
-    new THREE.Vector2(wheelToothRootRadius + 0.10, 0.14),
-  ]);
-  const toothGeometry = centeredExtrusion(
-    toothShape,
-    wheelDepth + 0.02,
-    0.005,
-  );
+  // Brown's teeth are deep hooked ratchet teeth: the leading (clockwise)
+  // face undercuts slightly behind the tip, and a straight back slopes the
+  // whole pitch down to the next tooth's root. The tip stays on the
+  // contact radius at the tooth's own angle. Each tooth stands on the web's
+  // own root-circle vertices at the web's depth, so tooth and rim read as
+  // one flush outline.
+  const webStep = FULL_TURN / webCircleSegments;
+  const rootVertex = (index) => [
+    wheelToothRootRadius * Math.cos(index * webStep),
+    wheelToothRootRadius * Math.sin(index * webStep),
+  ];
+  const pitchSteps = Math.round(toothPitch / webStep);
+  const toothOutline = [
+    rootVertex(1),
+    [wheelToothTipRadius, 0],
+    [
+      (wheelToothTipRadius - 0.035) * Math.cos(0.022),
+      (wheelToothTipRadius - 0.035) * Math.sin(0.022),
+    ],
+    ...Array.from({ length: pitchSteps }, (_, step) => (
+      rootVertex(pitchSteps - step)
+    )),
+  ];
+  const toothGeometry = plate(poly(toothOutline),
+    -wheelDepth / 2, wheelDepth / 2);
   const wheelTeeth = [];
   for (let index = 0; index < toothCount; index += 1) {
     const tooth = new THREE.Mesh(toothGeometry, driverMaterial);
@@ -793,12 +808,6 @@ function leverChronometerEscapement(movement) {
   );
   rollerDisk.position.z = rollerPlaneZ;
   rollerDisk.userData.role = 'balance-roller-carrying-fork-pin-and-pallet-C';
-  const rollerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.49, 0.035, 10, 42),
-    darkMaterial,
-  );
-  rollerRim.position.z = rollerPlaneZ + 0.12;
-  rollerRim.userData.role = 'dark-edge-of-lever-chronometer-roller';
   const balancePin = cylinderAlongZ(
     balancePinRadius,
     0.74,
@@ -892,7 +901,6 @@ function leverChronometerEscapement(movement) {
   balanceIndex.userData.role = 'white-index-on-lever-chronometer-balance';
   balance.add(
     rollerDisk,
-    rollerRim,
     balancePin,
     directPalletCarrier,
     directCarrierPost,
@@ -1380,7 +1388,6 @@ function leverChronometerEscapement(movement) {
     palletLever,
     palletLockEdges,
     rollerDisk,
-    rollerRim,
     wheelBearing,
     wheelHub,
     wheelIndex,

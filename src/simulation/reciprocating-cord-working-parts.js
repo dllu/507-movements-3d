@@ -3,7 +3,6 @@ import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {circle,poly,plate,polygonClipping as clip} from './finite-plate-geometry.js';
 import {makeBoredPlanarLink} from './bored-planar-link.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
-import {retainTraverseCord} from './cord-traverse-working-parts.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 const ring=(r,b,l)=>boredLatheGeometry([{axial:-l/2,radial:r},{axial:l/2,radial:r}],b,72);
 const add=(parent,geometry,material,role)=>{const m=new T.Mesh(geometry,material);m.userData.role=role;parent.add(m);return m;};
@@ -22,7 +21,7 @@ export function correctReciprocatingCordParts(root,id,update){
   // The analytic radius is the cord centreline; reserve its finite radial thickness.
   replace(b.spindle,new T.CylinderGeometry(g.spindleRadius-.037,g.spindleRadius-.037,4.03,48));
   const sleeve=role(root,'loose-crossbar-guide-hole-around-spindle');replace(sleeve,ring(.24,g.spindleRadius-.033,.20));sleeve.rotation.set(0,0,0);
-  for(const cord of b.cordBranches){retainTraverseCord(cord,.035,240);for(const marker of cord.userData.markers)marker.visible=false;}
+  // The laid-rope branches already reuse their buffers as the curve changes.
   d.minimumDisplayCycleSeconds=8;
  }else if(id===374){
   bandSheave(b.eccentricPulley,g.eccentricPulleyRadius,0);bandSheave(b.treadleRoller,g.treadleRollerRadius,.074);

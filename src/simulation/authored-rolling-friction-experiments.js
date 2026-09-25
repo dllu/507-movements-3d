@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctRollerParts} from './roller-working-parts.js';
+import {flatBeltGeometry} from './belt-geometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
@@ -445,41 +446,41 @@ function rollingCarriageFrictionExperiment(movement) {
   belt.userData.isBelt = true;
   belt.userData.role =
     'one-source-visible-endless-drive-belt-on-coaxial-pulley';
-  const beltTubeRadius = 0.034;
-  const upperBeltStrand = tubeBetween(
-    upperFreeEnd,
-    upperTangent,
-    beltTubeRadius,
-    darkMaterial,
+  // Brown draws a thin flat band (double line) round the pulley: the shared
+  // flat-belt section, sitting in the pulley's channel.
+  const beltPath = new THREE.CurvePath();
+  beltPath.add(new THREE.LineCurve3(upperFreeEnd, upperTangent));
+  const upperAngle = beltWrapStartAngle + beltWrapAngle;
+  const wrapSteps = 96;
+  let previous = upperTangent.clone();
+  for (let step = 1; step <= wrapSteps; step += 1) {
+    const angle = upperAngle - beltWrapAngle * step / wrapSteps;
+    const next = step === wrapSteps ? lowerTangent.clone() : new THREE.Vector3(
+      drivePulleyCenter.x + drivePulleyRadius * Math.cos(angle),
+      drivePulleyCenter.y + drivePulleyRadius * Math.sin(angle),
+      beltPlaneZ,
+    );
+    beltPath.add(new THREE.LineCurve3(previous, next));
+    previous = next;
+  }
+  beltPath.add(new THREE.LineCurve3(lowerTangent, lowerFreeEnd));
+  const beltWidth = 0.07;
+  const beltThickness = 0.05;
+  const beltBand = new THREE.Mesh(
+    flatBeltGeometry(beltPath, {
+      width: beltWidth,
+      thickness: beltThickness,
+      closed: false,
+      segments: 512,
+    }),
+    matte(PALETTE.belt, { roughness: 0.76 }),
   );
-  upperBeltStrand.userData.role = 'upper-straight-tangent-run-of-one-belt';
-  belt.add(upperBeltStrand);
-  const lowerBeltStrand = tubeBetween(
-    lowerTangent,
-    lowerFreeEnd,
-    beltTubeRadius,
-    darkMaterial,
-  );
-  lowerBeltStrand.userData.role = 'lower-straight-tangent-run-of-one-belt';
-  belt.add(lowerBeltStrand);
-  const beltWrap = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      drivePulleyRadius,
-      beltTubeRadius,
-      9,
-      42,
-      beltWrapAngle,
-    ),
-    darkMaterial,
-  );
-  beltWrap.position.set(
-    drivePulleyCenter.x,
-    drivePulleyCenter.y,
-    beltPlaneZ,
-  );
-  beltWrap.rotation.z = beltWrapStartAngle;
-  beltWrap.userData.role = 'semicircular-wrap-of-the-same-single-belt';
-  belt.add(beltWrap);
+  beltBand.userData.role = 'one-flat-belt-entering-from-left-with-half-wrap';
+  beltBand.userData.crossSection = 'flat';
+  belt.add(beltBand);
+  belt.userData.crossSection = 'flat';
+  belt.userData.width = beltWidth;
+  belt.userData.thickness = beltThickness;
   root.add(belt);
 
   const carriageWheels = carriageWheelCenters.map((center, index) => {
@@ -620,18 +621,6 @@ function rollingCarriageFrictionExperiment(movement) {
     dialTicks.push(tick);
     root.add(tick);
   }
-  const dialInnerCircle = new THREE.Mesh(
-    new THREE.TorusGeometry(0.405, 0.016, 8, 80),
-    darkMaterial,
-  );
-  dialInnerCircle.position.set(
-    indicatorCenter.x,
-    indicatorCenter.y,
-    indicatorCenter.z + 0.15,
-  );
-  dialInnerCircle.userData.fixed = true;
-  dialInnerCircle.userData.role = 'inner-circle-of-graduated-indicator-band';
-  root.add(dialInnerCircle);
   const pointerPivot = new THREE.Group();
   pointerPivot.position.set(
     indicatorCenter.x,
@@ -770,7 +759,7 @@ function rollingCarriageFrictionExperiment(movement) {
     blocks: {
       base,
       belt,
-      beltWrap,
+      beltBand,
       carriageAxlePins,
       carriageWheels,
       chassis,
@@ -784,7 +773,6 @@ function rollingCarriageFrictionExperiment(movement) {
       indicatorShelf,
       largeAxle,
       largeWheel,
-      lowerBeltStrand,
       pointer,
       pointerPin,
       pointerPivot,
@@ -792,7 +780,6 @@ function rollingCarriageFrictionExperiment(movement) {
       supportBeams,
       testWeight,
       tether,
-      upperBeltStrand,
       wagon,
       wagonBed,
       wagonSides,

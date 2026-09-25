@@ -3,11 +3,13 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
 import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, finiteSawSheave } from './spring-pivot-family-parts.js';
 import {
+  CircularArcCurve3,
   PALETTE,
   markShadows,
   matte,
   setSpin,
 } from './primitives.js';
+import { makeLaidRopeMesh } from './laid-rope.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -33,9 +35,42 @@ function tubeBetween(start, end, radius, material) {
   );
 }
 
-function setVerticalRope(mesh, x, firstY, secondY, z) {
-  mesh.position.set(x, (firstY + secondY) / 2, z);
-  mesh.scale.y = Math.abs(secondY - firstY);
+const ROPE_RADIUS = 0.025;
+
+// One continuous laid rope per side: up from the carriage tie, half round
+// the top of its pulley, and down to the counterweight. The path starts at
+// the carriage tie, which moves with the rope's own material, so arc length
+// from that end is a material coordinate and the lay needs no extra travel.
+function counterweightRopePath({
+  center,
+  radius,
+  innerX,
+  outerX,
+  tieY,
+  weightY,
+}) {
+  const z = center.z;
+  const path = new THREE.CurvePath();
+  path.add(new THREE.LineCurve3(
+    new THREE.Vector3(innerX, tieY, z),
+    new THREE.Vector3(innerX, center.y, z),
+  ));
+  const radialStart = new THREE.Vector3(innerX - center.x, 0, 0);
+  // Over the top: counter-clockwise from the right side of the left pulley,
+  // clockwise from the left side of the right pulley.
+  const sweep = innerX > center.x ? Math.PI : -Math.PI;
+  path.add(new CircularArcCurve3(
+    center,
+    radialStart,
+    new THREE.Vector3(0, 0, 1),
+    sweep,
+  ));
+  path.add(new THREE.LineCurve3(
+    new THREE.Vector3(outerX, center.y, z),
+    new THREE.Vector3(outerX, weightY, z),
+  ));
+  path.userData = { radius };
+  return path;
 }
 
 function pendulumTreeSaw(movement) {
@@ -414,8 +449,7 @@ function pendulumTreeSaw(movement) {
   }
 
   const pulleyRoots = [];
-  const ropeArcs = [];
-  const ropeSegments = [];
+  const ropes = [];
   const counterweights = [];
   for (let index = 0; index < 2; index += 1) {
     const pulley = finiteSawSheave(carriageMaterial);
@@ -430,39 +464,27 @@ function pendulumTreeSaw(movement) {
     pulleyRoots.push(pulley);
     root.add(pulley);
 
-    const ropeArc = new THREE.Mesh(
-      new THREE.TorusGeometry(
-        pulleyRadius,
-        0.025,
-        8,
-        36,
-        Math.PI,
-      ),
+    const rope = makeLaidRopeMesh(
+      counterweightRopePath({
+        center: pulleyCenters[index],
+        radius: pulleyRadius,
+        innerX: index === 0
+          ? pulleyCenters[index].x + pulleyRadius
+          : pulleyCenters[index].x - pulleyRadius,
+        outerX: index === 0
+          ? pulleyCenters[index].x - pulleyRadius
+          : pulleyCenters[index].x + pulleyRadius,
+        tieY: pulleyY - 1,
+        weightY: pulleyY - 1,
+      }),
       ropeMaterial,
+      { radius: ROPE_RADIUS },
     );
-    ropeArc.position.copy(pulleyCenters[index]).setZ(0.34);
-    ropeArc.userData.role = 'fixed-upper-half-rope-wrap-on-pulley';
-    ropeArcs.push(ropeArc);
-    root.add(ropeArc);
-
-    const innerRope = new THREE.Mesh(
-      new THREE.CylinderGeometry(.025,.025,1,12),
-      ropeMaterial,
-    );
-    innerRope.userData.side = index === 0 ? 'left' : 'right';
-    innerRope.userData.role =
-      'variable-carriage-side-straight-rope-segment';
-    ropeSegments.push(innerRope);
-    root.add(innerRope);
-    const outerRope = new THREE.Mesh(
-      new THREE.CylinderGeometry(.025,.025,1,12),
-      ropeMaterial,
-    );
-    outerRope.userData.side = index === 0 ? 'left' : 'right';
-    outerRope.userData.role =
-      'variable-counterweight-side-straight-rope-segment';
-    ropeSegments.push(outerRope);
-    root.add(outerRope);
+    rope.userData.side = index === 0 ? 'left' : 'right';
+    rope.userData.role =
+      'continuous-laid-counterweight-rope-over-pulley';
+    ropes.push(rope);
+    root.add(rope);
 
     const counterweight = new THREE.Mesh(
       // 0.30 deep so the connecting rod's plane (z 0.50..0.60) passes clear.
@@ -566,21 +588,16 @@ function pendulumTreeSaw(movement) {
       const outerX = index === 0
         ? pulleyCenter.x - pulleyRadius
         : pulleyCenter.x + pulleyRadius;
-      setVerticalRope(
-        ropeSegments[index * 2],
+      ropes[index].userData.setCurve(counterweightRopePath({
+        center: pulleyCenter,
+        radius: pulleyRadius,
         innerX,
-        // The rope is tied on top of the anchor stud, not run to its axis.
-        state.anchorY + 0.083,
-        pulleyY,
-        0.34,
-      );
-      setVerticalRope(
-        ropeSegments[index * 2 + 1],
         outerX,
-        state.counterweightRopeTopY,
-        pulleyY,
-        0.34,
-      );
+        // The rope is tied on top of the anchor stud, not run to its axis.
+        tieY: state.anchorY + 0.083,
+        weightY: state.counterweightRopeTopY,
+      }), 0);
+      ropes[index].geometry.userData.deforming = true;
       counterweights[index].position.y = state.counterweightY;
       setSpin(pulleyRoots[index], state.pulleyAngles[index]);
     }
@@ -627,8 +644,7 @@ function pendulumTreeSaw(movement) {
       pendulumSupports,
       pulleyRoots,
       rodJointPin,
-      ropeArcs,
-      ropeSegments,
+      ropes,
       saw,
       sawBlade,
       sawHandles,

@@ -335,15 +335,33 @@ function stoneLewis(movement) {
     [-0.75, 1.333333],
     [0.75, 1.333333],
   ];
+  // The lewis hole is a blind pocket, not a slot through the block. Brown's
+  // plate is a section through the hole; the stone's front face is that
+  // section plane, so the pocket opens at the top and at the cut face only.
+  // Behind the pocket the block is whole.
+  const stoneFrontZ = 1.355;
+  const stoneBackZ = -2.395;
+  const pocketBackZ = 0.45;
   const stoneBody = polygonMesh(
     scalePoints(sourceStoneOutline),
-    3.75,
+    stoneFrontZ - pocketBackZ,
     stoneMaterial,
     'source-profiled-stone-with-open-front-sectional-bore',
     0,
   );
-  stoneBody.position.z = -0.52;
+  stoneBody.position.z = (stoneFrontZ + pocketBackZ) / 2;
   stone.add(stoneBody);
+  const stoneBehindPocket = polygonMesh(
+    scalePoints(sourceStoneOutline.slice(0, -2)),
+    pocketBackZ - stoneBackZ,
+    stoneMaterial,
+    'solid-stone-behind-the-blind-lewis-pocket',
+    0,
+  );
+  stoneBehindPocket.position.z = (pocketBackZ + stoneBackZ) / 2;
+  stone.add(stoneBehindPocket);
+  const pocketDepth = stoneFrontZ - pocketBackZ;
+  const pocketCenterZ = (stoneFrontZ + pocketBackZ) / 2;
 
   const boreBack = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -356,32 +374,32 @@ function stoneLewis(movement) {
   boreBack.position.set(
     0,
     (boreBottomY + boreTopY) * sourceScale / 2,
-    -2.36,
+    pocketBackZ + 0.0275,
   );
   stone.add(boreBack);
   const boreBottom = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(
       boreHalfWidth * 2 * sourceScale,
       0.055,
-      3.30,
+      pocketDepth,
     ),
     cutMaterial,
   ), 'bottom-face-of-sectioned-lewis-bore');
-  boreBottom.position.set(0, boreBottomY * sourceScale - .0275, -0.38);
+  boreBottom.position.set(0, boreBottomY * sourceScale - .0275, pocketCenterZ);
   stone.add(boreBottom);
   const boreWalls = [-1, 1].map((side, index) => {
     const wall = addRole(new THREE.Mesh(
       new THREE.BoxGeometry(
         0.045,
         (boreTopY - boreBottomY) * sourceScale,
-        3.30,
+        pocketDepth,
       ),
       cutMaterial,
     ), `vertical-bore-contact-wall-${index + 1}`);
     wall.position.set(
       side * (boreHalfWidth * sourceScale + .0225),
       (boreBottomY + boreTopY) * sourceScale / 2,
-      -0.38,
+      pocketCenterZ,
     );
     stone.add(wall);
     return wall;
@@ -552,8 +570,10 @@ function stoneLewis(movement) {
   const fixedHoistPoint = new THREE.Vector3(0, 5.05, 0.93);
   const shackleRopePointLocalY =
     .34*sourceScale+.44+.105*sourceScale;
+  // Brown draws the hoist rope laid (twisted): the shared laid rope.
   const hoistRope = addRole(makeDynamicCable({
     color: PALETTE.belt,
+    laid: true,
     maxSegments: 18,
     radius: 0.052,
   }), 'single-hoist-rope-pulling-only-the-central-wedge');
@@ -606,10 +626,11 @@ function stoneLewis(movement) {
       centerPin.position.y + shackleRopePointLocalY,
       centerPin.position.z,
     );
+    // The lay is fixed to the shackle end, which rises with the wedge.
     hoistRope.userData.setPoints([
       fixedHoistPoint,
       movingRopePoint,
-    ]);
+    ], fixedHoistPoint.distanceTo(movingRopePoint));
   };
 
   const geometry = {
@@ -674,6 +695,7 @@ function stoneLewis(movement) {
       shackleRing,
       stone,
       stoneBody,
+      stoneBehindPocket,
       upwardIndex,
       upwardIndexShaft,
       wedgeContactMarkers,

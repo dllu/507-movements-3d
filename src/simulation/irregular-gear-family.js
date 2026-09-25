@@ -21,7 +21,7 @@ export function correctIrregularGearFamily(root,id,update){
   rotor.children[0].geometry.rotateZ(-Math.PI/(2*g.pinionTeeth));
   boreHub(rotor.children[1],.084);rotor.children[2].visible=false;
   replace(b.slotFollower,new THREE.CylinderGeometry(.125,.125,.36,48));
-  const rim=b.rod.children.find(o=>o.userData.role==='slot-follower-roller-rim');replace(rim,new THREE.TorusGeometry(.13,.025,10,48));
+  const rim=b.rod.children.find(o=>o.userData.role==='slot-follower-roller-rim');replace(rim,new THREE.TorusGeometry(.13,.025,10,48));rim.visible=false;rim.userData.retiredInkOutline=true;
   root.userData.reconstructionNote='An eccentric circular gear reconstructs the unspecified irregular driver. Its carried pinion rotates continuously, rocking the slotted arm and reciprocating rod A. The belt speed is measured relative to that moving arm; dimensions and speeds are inferred.';
  }else if(id===196){
   replace(b.wheelBody,contourGeometry(generated[196].outline,g.boreRadius,g.wheelDepth));for(const tooth of b.wheelToothMeshes)tooth.visible=false;

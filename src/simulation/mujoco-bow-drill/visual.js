@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {makeBowDrillGeometry,bowDrillTube} from './geometry.js';
+import {makeBowDrillGeometry,updateBowDrillCord} from './geometry.js';
 import {makeBowDrillPhysics} from './physics.js';
 import {createPhysicsPlayback} from '../mujoco/simulation.js';
 import {disposeObject3D} from '../dispose-model.js';
@@ -27,7 +27,7 @@ export function makeMujocoBowDrill(mujoco,options={}) {
     for(let i=0;i<weights.length;i++)for(let k=0;k<3;k++)stock.attributes.position.array[3*i+k]=rest[3*i+k]-direction.getComponent(k)*tension*weights[i];
     stock.attributes.position.needsUpdate=true;stock.computeVertexNormals();stock.computeBoundingSphere();
     const points=physics.getCordPoints();
-    const geometry=bowDrillTube(points,points.map(()=>f.cordRadius));u.parts.initialCord.geometry.dispose();u.parts.initialCord.geometry=geometry;
+    updateBowDrillCord(u.parts.initialCord,points,f.cordRadius);
     visual.root.updateMatrixWorld(true);
     return u.state={time:data.time,qpos:Object.fromEntries(Object.entries(joints).map(([n,j])=>[n,data.qpos[j.q]])),qvel:Object.fromEntries(Object.entries(joints).map(([n,j])=>[n,data.qvel[j.v]])),contacts:data.ncon};
   };

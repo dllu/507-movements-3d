@@ -9,7 +9,8 @@ export function makeVariableCamGeometry({samplesPerArc=128}={}){
  // guide width/height 67/22 px, and 309 px from follower point to rod end.
  g.followerLength=309/51.25;g.guideHeight=22/51.25;g.guideWidth=67/51.25;
  g.lowerGuideCenterY=-.45+201/51.25;g.upperGuideCenterY=-.45+312/51.25;
- const remove=name=>b[name].removeFromParent();
+ // Parts already retired upstream (e.g. the dark cam outline) may be absent.
+ const remove=name=>b[name]?.removeFromParent();
  for(const name of ['cameraEnvelope','contactMarker','baseRail','supportPost','shaftBearingArm','lowerGuideArm','upperGuideArm','shaftBearing','carrierRim','shaftKey','camRotationIndex','followerIndex','camOutline'])remove(name);
  const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
  for(const side of ['lower','upper']){

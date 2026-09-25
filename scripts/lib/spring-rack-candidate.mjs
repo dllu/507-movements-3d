@@ -56,10 +56,14 @@ export function makeSpringRackCandidate({pressureDegrees=10,rackTipWidthPixels=2
  attach('gearHub',ring(bore,hubRadius,.075,.145,128),'gear',PALETTE.driver);
  attach('fixedAxle',disk(px(measured.circles.shaftInner.radius),-.12,.165,128),'fixed',PALETTE.muted);
  attach('axleRearCap',disk(px(28),-.135,-.12,128),'fixed',PALETTE.muted);
+ // Brown's tail stops just below the lower guide, but the settled stroke lifts
+ // the rack by 2.268 (profile.parameters.upper); the hollow rod is extended so
+ // its lower end stays through the guide at the top of the stroke.
+ const strokeTop=2.268160511922817;
  const horizontal=(outer,hole,low,high)=>{
   const geometry=plate(hole?clip.difference(outer,hole):outer,low,high);geometry.rotateX(-Math.PI/2);return geometry;
  },xzRectangle=(xs,zs)=>rect(source([xs[0],0])[0],source([xs[1],0])[0],-zs[1],-zs[0]),
-  channel=xzRectangle(p.guide.channelX,p.guide.channelZ),rodLow=source([0,1257])[1],rodHigh=source([0,507])[1];
+  channel=xzRectangle(p.guide.channelX,p.guide.channelZ),rodLow=Math.min(source([0,1257])[1],source([0,measured.rod.lowerGuide.bottom])[1]-strokeTop-px(4)),rodHigh=source([0,507])[1];
  // Four touching closed walls form the hollow rod. The rear wall has a real
  // closed slot for the fixed stop pin; no stop force is applied to an empty
  // location or through a painted opening.

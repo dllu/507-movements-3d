@@ -698,6 +698,21 @@ function scrollGear(movement) {
   contactMarker.castShadow = false;
   update(0);
   correctVariableFaceGear(root, 414);
+  // Brown cuts the scroll teeth on the face of wheel A: a solid web
+  // behind the spiral band joins both turns to the hub.
+  const scrollWeb = annularDiskAlongZ({
+    depth: 0.10,
+    innerRadius: 0.34,
+    material: matte(0x9fb6c1, { metalness: 0.12, roughness: 0.55 }),
+    outerRadius: 2.235,
+  });
+  scrollWeb.position.z = 0.509;
+  scrollWeb.userData.role = 'scroll-wheel-A-face-web-joining-spiral-to-hub';
+  scrollWeb.castShadow = true;
+  scrollWeb.receiveShadow = true;
+  scrollWeb.material.fog = false;
+  scrollRotor.add(scrollWeb);
+  root.userData.blocks.scrollWeb = scrollWeb;
   return {
     cameraDirection: root.userData.cameraDirection,
     root,

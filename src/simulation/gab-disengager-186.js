@@ -183,7 +183,9 @@ export function springHandleGabDisengager() {
   const rod = new THREE.Group();
   rod.name = 'eccentric-rod';
   const bar = polygonClipping.union(
-    polyPx([[25, 231], [29, 238], [24, 245], [28, 252], [23, 260], [27, 269], [353, 269], [353, 231]]),
+    // Brown breaks the rod off at the left (a drawing convention); it runs on
+    // whole toward its eccentric, past the view.
+    polyPx([[-300, 231], [-300, 269], [353, 269], [353, 231]]),
     circlePx(353, 250, 19),
     polygonClipping.intersection(circlePx(270, 250, 53, [0, 0], 160), polyPx([[200, 180], [340, 180], [340, 250], [200, 250]])),
   );
@@ -423,6 +425,8 @@ export function springHandleGabDisengager() {
     fitBounds.expandByObject(root, true);
   }
   fitBounds.expandByScalar(0.08);
+  // Frame Brown's plate: the complete rod counts only as far as his break.
+  fitBounds.min.x = Math.max(fitBounds.min.x, P(23, 0)[0] - 0.08);
 
   Object.assign(root.userData, {
     fidelity: 'authored',

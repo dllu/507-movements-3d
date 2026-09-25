@@ -57,6 +57,8 @@ function makeStationaryLens({
   lens.add(hemisphere);
   const equator = torusAboutY(lensRadius, 0.055, darkMaterial, 72);
   equator.userData.role = 'fixed-lens-equator-and-work-holder-rim';
+  equator.visible = false; // ink edge line only: kept for references, not drawn
+  equator.userData.retiredInkOutline = true;
   lens.add(equator);
 
   const fixedSurfaceIndexes = [];
@@ -137,6 +139,8 @@ function makePolishingCup({
   const rim = torusAboutY(rimRadius, 0.075, darkMaterial, 72);
   rim.position.y = rimY;
   rim.userData.role = 'circular-mouth-rim-of-eccentric-polishing-cup';
+  rim.visible = false; // ink edge line only: kept for references, not drawn
+  rim.userData.retiredInkOutline = true;
   cupRotor.add(rim);
 
   const socket = torusAboutY(0.18, 0.065, darkMaterial, 36);
@@ -323,6 +327,8 @@ function eccentricLensPolisher(movement) {
   const handwheelRim = torusAboutY(0.72, 0.055, darkMaterial, 64);
   handwheelRim.position.y = 4.39;
   handwheelRim.userData.role = 'upright-shaft-handwheel-rim';
+  handwheelRim.visible = false; // ink edge line only: kept for references, not drawn
+  handwheelRim.userData.retiredInkOutline = true;
   shaftRotor.add(handwheelRim);
   const shaftIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.075, 16, 10),

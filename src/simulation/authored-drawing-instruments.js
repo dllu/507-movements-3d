@@ -418,16 +418,8 @@ function twoStudEllipsograph() {
     );
     topFace.position.y = barTopY + 0.040 - barCenterY;
     topFace.userData.role = `${name}-stud-white-motion-index`;
-    const topRing = ringAroundY(
-      studBoreRadius * 0.81,
-      0.025,
-      darkMaterial,
-      40,
-    );
-    topRing.position.y = barTopY + 0.064 - barCenterY;
-    topRing.userData.role = `${name}-stud-retaining-collar`;
-    assembly.add(pin, topFace, topRing);
-    assembly.userData.blocks = { pin, topFace, topRing };
+    assembly.add(pin, topFace);
+    assembly.userData.blocks = { pin, topFace };
     return assembly;
   };
   const horizontalStudAssembly = makeStud(
@@ -471,22 +463,12 @@ function twoStudEllipsograph() {
   );
   pencilTopFace.position.y = barTopY + 0.040 - barCenterY;
   pencilTopFace.userData.role = 'pencil-white-motion-index';
-  const pencilCollar = ringAroundY(
-    pencilBoreRadius * 0.81,
-    0.025,
-    darkMaterial,
-    40,
-  );
-  pencilCollar.position.y = barTopY + 0.064 - barCenterY;
-  pencilCollar.userData.role = 'pencil-retaining-collar';
   pencilAssembly.add(
     pencilShaft,
     pencilPoint,
     pencilTopFace,
-    pencilCollar,
   );
   pencilAssembly.userData.blocks = {
-    pencilCollar,
     pencilPoint,
     pencilShaft,
     pencilTopFace,

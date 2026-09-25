@@ -3,7 +3,6 @@ import {sampleJointedTappetMotion} from './jointed-tappet-motion.js';
 import * as THREE from 'three';
 import{PALETTE,matte,markShadows}from'./primitives.js';
 import{makeJointedTappetContactProfile}from'./jointed-tappet-contact.js';
-import{makeExtrudedSectionCaps}from'./extruded-section-caps.js';
 import{add,sub,rotate,poly,circle,capsule,sector,spline,plate,disk,ring,polygonClipping as clip,familyMass}from'./finite-plate-geometry.js';
 
 export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
@@ -57,10 +56,17 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
   attach('tappetRestMount',plate(capsule(p.C,Cstop,.014),.053,.074),'fixed',PALETTE.muted);
   attach('dogPivotPin',disk(.029,.17,.253),'tappet',PALETTE.muted,[...p.B,0]);
   attach('dogPivotCap',disk(.046,.253,.263),'tappet',PALETTE.muted,[...p.B,0]);
-  const dogNose=p.V,dogLocal=point=>sub(source(point),p.PB),
-    dogHead=spline([[944,645],[955,642],[993,629],[1035,665],[1009,708],[966,713]].map(dogLocal)),
-    dogWeight=spline([[966,713],[974,742],[970,771],[953,794],[925,803],[890,799],[854,783],[832,763],[813,734],p.nosePixels].map(dogLocal)),
-    dogOutline=[dogNose,dogLocal([805,680]),...dogHead,...dogWeight.slice(1,-1)],
+  // B is Brown's lobe traced from the plate: a sharp upper-left corner, a
+  // straight top edge to the joint, and a rounded weight below. The finite
+  // contact nose lies a little below and left of his corner, so his whole
+  // outline is turned and scaled about the joint B until the corner sits on
+  // the nose; the nose then reads as the lobe's corner, not a spur.
+  const dogNose=p.V,dogLocal=point=>sub(source(point),p.PB),brownCorner=dogLocal([805,680]),
+    lobeTurn=Math.atan2(dogNose[1],dogNose[0])-Math.atan2(brownCorner[1],brownCorner[0]),
+    lobeScale=Math.hypot(...dogNose)/Math.hypot(...brownCorner),lobe=point=>rotate(dogLocal(point).map(v=>v*lobeScale),lobeTurn),
+    dogHead=spline([[944,645],[955,642],[993,629],[1035,665],[1009,708],[966,713]].map(lobe)),
+    dogWeight=spline([[966,713],[974,742],[970,771],[953,794],[925,803],[890,799],[854,783],[832,763],[813,734],[807,706],[805,680]].map(lobe)),
+    dogOutline=[dogNose,...dogHead,...dogWeight.slice(1,-1)],
     dogShape=clip.difference(clip.union(poly(dogOutline),poly(circle([0,0],.112)),poly(circle(dogNose,p.noseRadius))),poly(circle([0,0],.032))),
     dogStopRadius=.012,dogStopOrbit=.075,dogStopFace=Math.PI/2,
     dogStop=add(p.B,rotate([dogStopOrbit,0],dogStopFace+Math.asin(dogStopRadius/dogStopOrbit)));
@@ -80,37 +86,16 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
   const setState=({q=0,alpha=0,theta=p.wheelStart,driverAngle=0,holdingAngle=contact.closeH(theta).angle-H0.angle}={})=>{
     blocks.driver.rotation.z=driverAngle;blocks.wheel.rotation.z=theta;blocks.tappet.rotation.z=q;
     blocks.dog.position.set(...add(p.C,rotate(p.B,q)),0);blocks.dog.rotation.z=q+alpha;blocks.holding.rotation.z=holdingAngle;
-    root.userData.kinematics={q,alpha,theta,driverAngle,holdingAngle};
-    // The section window is cut in the driver's own frame, so rim segment D,
-    // its stud and the arm carrying it turn rigidly with the large wheel.
-    planeRotation.makeRotationZ(driverAngle);sectionPlanes.forEach((plane,i)=>plane.copy(baseSectionPlanes[i]).applyMatrix4(planeRotation));
-    for(const section of sections)section.update(driverAngle);root.updateMatrixWorld(true);
+    root.userData.kinematics={q,alpha,theta,driverAngle,holdingAngle};root.updateMatrixWorld(true);
   };
+  // Brown's plate window: his two broken lines across the rim above and
+  // below D, and the rim's inner side. The large wheel itself is modelled
+  // whole; the window only sets the default framing.
   const upperA=source([1065,210]),upperB=source([1253,190]),lowerA=source([1030,1050]),lowerB=source([1183,1120]),
     makePlane=(a,b,sign)=>{const d=sub(b,a),normal=new THREE.Vector3(sign*d[1],-sign*d[0],0).normalize();return new THREE.Plane(normal,-normal.x*a[0]-normal.y*a[1]);},
-    baseSectionPlanes=[makePlane(upperA,upperB,1),makePlane(lowerA,lowerB,-1),new THREE.Plane(new THREE.Vector3(1,0,0),0)],
-    sectionPlanes=baseSectionPlanes.map(plane=>plane.clone()),planeRotation=new THREE.Matrix4(),
-    sectionDefinitions=[{name:'driverBody',polygons:driverBody,low:-.30,high:-.20},
-      {name:'driverRearHub',polygons:clip.difference(poly(circle([0,0],.19)),poly(circle([0,0],bore))),low:-.36,high:-.30},
-      {name:'driverStud',polygons:poly(circle([0,0],studRadius)),low:-.20,high:.172,offset:studVector}],
-    sections=sectionDefinitions.map(d=>{const section=makeExtrudedSectionCaps({...d,planes:sectionPlanes,material:parts[d.name].material});
-      root.add(section.root);return section;}),
-    setConfiguration=id=>{
-      if(!['section','complete'].includes(id))throw new Error('Unknown jointed tappet view');root.userData.configuration=id;
-      for(const[name,mesh]of Object.entries(parts))if(families[name]==='driver'){
-        mesh.material.clippingPlanes=id==='section'?sectionPlanes:[];mesh.material.clipShadows=true;mesh.material.needsUpdate=true;
-      }
-      for(const section of sections)section.root.visible=id==='section';
-      // The complete wheel fits its swept disc (every other part lies inside
-      // it). The engraving section crops where Brown crops: ratchet A, the
-      // pawls and the tappet over their whole motion, plus the broken-off
-      // segment D at the plate pose. As the large wheel turns, the segment's
-      // broken arc leaves the view and comes back round; nothing else does.
-      root.userData.cameraFitBounds=id==='section'?sectionFitBounds.clone()
-        :new THREE.Box3(new THREE.Vector3(-driverOuter,-driverOuter,-.46),new THREE.Vector3(driverOuter,driverOuter,.266));
-    };
+    baseSectionPlanes=[makePlane(upperA,upperB,1),makePlane(lowerA,lowerB,-1),new THREE.Plane(new THREE.Vector3(1,0,0),0)];
   // Segment D at the plate pose (driver angle 0): the ring and stud inside
-  // the section window.
+  // Brown's window.
   const segmentAtPlatePose=new THREE.Box3(),insideWindow=point=>baseSectionPlanes.every(plane=>plane.distanceToPoint(point)>=0);
   for(let i=0;i<2880;i++){const angle=i*Math.PI*2/2880;for(const radius of [driverInner,driverOuter]){
     const point=new THREE.Vector3(radius*Math.cos(angle),radius*Math.sin(angle),0);if(insideWindow(point))segmentAtPlatePose.expandByPoint(point);}}
@@ -122,19 +107,19 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
   const sweptWorkingParts=new THREE.Box3(new THREE.Vector3(-1.001,-1.001,-.46),new THREE.Vector3(2.328,1.202,.266));
   const sectionFitBounds=sweptWorkingParts.clone().union(segmentAtPlatePose);
   sectionFitBounds.min.z=-.46;sectionFitBounds.max.z=.266;
-  root.userData={parts,families,blocks,contact,masses,setState,setConfiguration,sections,segmentAtPlatePose,sweptWorkingParts,
+  root.userData={parts,families,blocks,contact,masses,setState,segmentAtPlatePose,sweptWorkingParts,cameraFitBounds:sectionFitBounds.clone(),
     geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studRadius,studOrbit,studOverlap,strikeKink,strikeArmStart:[0,0],barRadius,end,restQ,CstopRadius,CstopOrbit,Cstop,CstopAngle,
       dogStopRadius,dogStopOrbit,dogStopFace,dogStop,H0Angle:H0.angle,holdingNose},
-    configurations:[{id:'section',label:'Engraving section'},{id:'complete',label:'Complete wheel'}],configurationLabel:'View',configuration:'section',
-    localClippingEnabled:true,hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),shadowCameraHalfExtent:4,
+    hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),shadowCameraHalfExtent:4,
     shadowBias:-.00005,shadowNormalBias:.005,mechanism:'stud-struck-jointed-tappet-ratchet-counter',fidelity:'authored',reconstructionStatus:'rebuilt',
     profile,playbackPeriod:profile.period,animationTiming:{authoredCyclePeriod:profile.period},minimumDisplayCycleSeconds:profile.period,
-    idealConstraints:'A clockwise stud drives the jointed tappet; the 20-tooth count wheel turns counterclockwise and settles one tooth ahead. Gravity, finite normal contact and inelastic impact determine the cached trajectory. Common material density, viscous bearing damping and an opposing output load are reconstruction assumptions. The 24-second physical cycle is displayed in 12 seconds. The engraving section clips only the display of the complete coaxial driver, in the driver\'s own frame.'};
+    idealConstraints:'A clockwise stud drives the jointed tappet; the 20-tooth count wheel turns counterclockwise and settles one tooth ahead. Gravity, finite normal contact and inelastic impact determine the cached trajectory. Common material density, viscous bearing damping and an opposing output load are reconstruction assumptions. The 24-second physical cycle is displayed in 12 seconds. The complete coaxial driver is modelled; the default view frames Brown\'s window onto rim segment D.'};
   const stateAtTime=time=>sampleJointedTappetMotion(time);
   const update=time=>{const state=stateAtTime(time);setState(state);Object.assign(root.userData.kinematics,state);};
   root.userData.stateAtTime=stateAtTime;
-  // Brown draws only rim segment D of the large wheel, so the engraving
-  // section is the initial view; the complete wheel remains selectable.
-  setConfiguration('section');update(0);markShadows(root);
+  // Brown draws only rim segment D of the large wheel ("partly represented"),
+  // breaking it off above and below. The wheel is modelled complete; the
+  // default view frames Brown's window, so the rim runs off its edges.
+  update(0);markShadows(root);
   return{root,update,setState,contact,cameraDirection:new THREE.Vector3(0,0,10)};
 }

@@ -743,7 +743,8 @@ test('movement 213 renders the separated planes, pin contacts, rigid indices, an
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 19, 'the undrawn frame, white indices and contact markers are presented away');
+  // The dark ratchet outline Brown only inks is retired.
+  assert.ok(meshCount >= 18, 'the undrawn frame, white indices and contact markers are presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

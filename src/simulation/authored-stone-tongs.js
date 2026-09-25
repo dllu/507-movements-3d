@@ -109,7 +109,8 @@ function stoneLiftingTongs(movement) {
   const sourceScale = 0.72;
   const sourceGroundY = -3.177038;
   const sourceBaselineScene = -1.78;
-  const groundFloorY = -1.84;
+  const groundBedThickness = 0.2;
+  const groundFloorY = sourceBaselineScene - groundBedThickness - 1e-3;
   const sourceVerticalOriginScene =
     sourceBaselineScene - sourceGroundY * sourceScale;
   const sourcePhaseLandmarks = [0, 0.2, 0.4, 0.5, 0.7, 0.9, 1];
@@ -296,6 +297,20 @@ function stoneLiftingTongs(movement) {
   );
   stoneBody.position.z = -0.48;
   stone.add(stoneBody);
+  // Brown draws the stone already hanging in the nippers. The canvas cycle
+  // also opens the tongs while the stone is down, so the stone needs a
+  // resting surface then: a plain flat bed whose top is the stone's
+  // source baseline. It is the minimum undrawn support the cycle requires.
+  const groundBedMaterial = matte(PALETTE.frame, {
+    metalness: 0.0,
+    roughness: 0.95,
+  });
+  const groundBed = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(5.0, groundBedThickness, 4.2),
+    groundBedMaterial,
+  ), 'flat-ground-bed-the-stone-rests-on-while-the-tongs-open');
+  groundBed.position.set(0, sourceBaselineScene - groundBedThickness / 2, -0.48);
+  root.add(groundBed);
   const stoneContactSockets = [
     leftStoneContactRest,
     rightStoneContactRest,
@@ -438,9 +453,11 @@ function stoneLiftingTongs(movement) {
   const shackleStem=addRole(new THREE.Mesh(plate(clip.difference(clip.union(poly(circle([0,0],.16,64)),poly([[-.08,0],[.08,0],[.08,.22],[-.08,.22]])),poly(circle([0,0],.124,64))),-.06,.06),shackleMaterial),'shackle-neck-above-common-link-pin');
   shackle.add(shackleStem);
 
-  const fixedHoistPoint = new THREE.Vector3(0, 6.25, 0.62);
+  const fixedHoistPoint = new THREE.Vector3(0, 6.75, 0.62);
   const shackleRopePointLocal = new THREE.Vector3(0, 0.72, 0);
+  // Brown draws the hoist rope laid: the shared three-strand rope.
   const hoistRope = addRole(makeDynamicCable({
+    laid: true,
     color: PALETTE.belt,
     maxSegments: 18,
     radius: 0.052,
@@ -536,6 +553,7 @@ function stoneLiftingTongs(movement) {
       'weight-tightened-rhombus-link-stone-lifting-tongs',
     blocks: {
       fixedHoistEye,
+      groundBed,
       hoistRope,
       jawPivotPin,
       leftJaw,
@@ -638,7 +656,7 @@ function stoneLiftingTongs(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.85, -1.84, -2.25),
+    new THREE.Vector3(-2.85, groundFloorY, -2.25),
     new THREE.Vector3(2.85, 6.56, 1.75),
   );
   root.userData.cameraDistanceScale = 1.03;

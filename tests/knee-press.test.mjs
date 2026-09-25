@@ -11,7 +11,7 @@ test('164 source linkage keeps both lengths and the vertical upper guide',()=>{
 });
 test('164 source-shaped solids follow the analytic joints, fit bounds and restart exactly',()=>{
  const v=makeKneePress(),g=v.root.userData.geometry;try{
-  const initial=JSON.stringify(v.root.userData.state);v.root.traverse(o=>{if(o.isMesh)assert.equal(o.material.fog,false);});assert.equal(v.root.userData.hideGround,true);
+  const initial=JSON.stringify(v.root.userData.state);v.root.traverse(o=>{if(o.isMesh)for(const m of [o.material].flat())assert.equal(m.fog,false);});assert.equal(v.root.userData.hideGround,true);
   for(let i=0;i<129;i++){v.update(g.period*(i+.371)/129);const s=v.root.userData.state,pin=v.root.getObjectByName('kneePin').getWorldPosition(new THREE.Vector3());assert.ok(pin.distanceTo(new THREE.Vector3(...s.knee,0))<1e-12);assert.ok(v.root.userData.cameraFitBounds.containsBox(new THREE.Box3().setFromObject(v.root,true)));}
   v.reset();assert.equal(JSON.stringify(v.root.userData.state),initial);
  }finally{v.dispose();}

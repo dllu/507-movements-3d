@@ -184,6 +184,9 @@ function makeBearingBlock({ color, depth, fixed, role }) {
     collar.userData.role = fixed
       ? 'fixed-bearing-internal-thread-mouth'
       : 'movable-bearing-internal-thread-mouth';
+    // Only the drawn bore edge: hidden reference, not a dark rim.
+    collar.visible = false;
+    collar.userData.retiredInkOutline = true;
     group.add(collar);
     return collar;
   });

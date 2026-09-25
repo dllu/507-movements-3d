@@ -8,25 +8,17 @@ const shaft=(o,r,length,z)=>{replace(o,new T.CylinderGeometry(r,r,length,32));o.
 function mesh(parent,geometry,material,name){const o=new T.Mesh(geometry,material);o.userData.role=name;parent.add(o);return o;}
 
 export function correctSinglePinParts(root){
- const d=root.userData,b=d.blocks,g=d.geometry,D=g.centerDistance,r=g.pinRadius;
- // Brown's upper-left and lower-right white areas are openings. Their solid
- // upright pallet faces belong on the opposite sides of the running pin.
- const arc=(a,c,R)=>Array.from({length:161},(_,i)=>{const x=a+(c-a)*i/160;return[x,-Math.sqrt(R*R-x*x)]});
- const upper=[...arc(r,.90,g.upperDeadFaceRadius),[.88,-D+.31],[.63,-D+.58],[.27,-D+.66],[r,-D+.47]];
- const lower=[...arc(-.90,-r,g.lowerDeadFaceRadius),[-r,-D-.47],[-.27,-D-.66],[-.63,-D-.58],[-.88,-D-.31]];
- for(const[o,p]of[[b.upperPallet,upper],[b.lowerPallet,lower]])replace(o,plate(poly(p),-.185,.185));
- b.upperPallet.userData.role='upper-solid-pallet-right-of-upper-left-opening';b.lowerPallet.userData.role='lower-solid-pallet-left-of-lower-right-opening';
+ const d=root.userData,b=d.blocks,g=d.geometry;
+ // The plate's own opening edges are the pallets; the ideal face centrelines
+ // stay as hidden references for the kinematic checks.
  for(const o of[b.upperDeadEdge,b.lowerDeadEdge,b.upperImpulseEdge,b.lowerImpulseEdge])o.visible=false;
- const suspension=role(root,'fixed-pendulum-pivot');shaft(suspension,.118,.82,-.05);
- replace(b.pivotRing,bore(.33,.123,.33));b.pivotRing.rotation.x=Math.PI/2;
- const housing=role(root,'fixed-single-pin-disc-arbor');replace(housing,bore(.16,.118,.47));housing.position.z=-.325;
- shaft(b.diskHub,.115,.710,-.225);replace(b.disk,bore(g.diskRadius,.118,g.diskDepth));
- const cap=mesh(b.wheelRotor,new T.CylinderGeometry(.13,.13,.035,48),b.disk.material,'disk-face-cap-carrying-the-eccentric-pin');cap.rotation.x=Math.PI/2;cap.position.z=.1425;b.pinCarrier=cap;
- role(root,'pendulum-plate-neck').scale.x=1.3;
- // End the arbor at the disk face, behind the eccentric pin and working plate.
- shaft(b.rubyPin,r,.46,g.workingPlaneZ);b.diskRim.position.z=.145;b.diskIndex.position.z=.1425;
- b.palletMounts=[1,-1].map(side=>{const o=mesh(b.palletAssembly,new T.CylinderGeometry(.055,.055,.10,32),b.plate.material,'pallet-mount-across-axial-stand-off');o.rotation.x=Math.PI/2;o.position.set(side*.87,-D+side*.30,.18);return o;});
- d.workingPartsReview={scope:'Finite straight impulse faces, concentric rests, correct Z-opening handedness, pin/arbor stack and support bores.',qualification:'Upright impulse contact and positive work are checked against actual finite faces. Prescribed release/landing has a small corner interference and short gaps from the dead faces; passive operation is not qualified.',measuredBaseline:{pinPalletPenetration:.061,arborPalletPenetration:.108},contactMarkersSuppressed:true};
+ // Suspension pin through the eye's bore; the disc arbor runs in a fixed
+ // bush behind the disc.
+ const suspension=role(root,'fixed-pendulum-pivot');shaft(suspension,.07,g.palletDepth+.12,g.plateZ);
+ const housing=role(root,'fixed-single-pin-disc-arbor');replace(housing,bore(.16,.118,.2));housing.position.z=g.diskZ-g.diskDepth/2-.11;
+ const arborEnd=g.diskFront,arborLength=arborEnd-(housing.position.z-.1);shaft(b.diskHub,.115,arborLength,arborEnd-arborLength/2);
+ replace(b.disk,bore(g.diskRadius,.118,g.diskDepth));
+ d.workingPartsReview={scope:'Pendulum plate with the escapement opening cut to Brown\'s shape: concentric dead edges and straight upright impulse edges, the pin standing from the disc behind the plate, bored eye, disc and arbor bush.',qualification:'Upright impulse contact and positive work are checked against the actual opening edges. Prescribed release/landing has a small corner interference and short gaps from the dead faces; passive operation is not qualified.',contactMarkersSuppressed:true};
 }
 
 // Movement 306 only; 307 builds its own finite parts.

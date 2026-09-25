@@ -282,12 +282,10 @@ test('movement 407 update binds the dynamic ribbon, tip pencil, and both cord en
     vectorNear(blocks.pencil.position,
       new THREE.Vector3(state.tip.x, state.tip.y, 0), 0,
     'rendered pencil at bar tip');
-    const cordStart = blocks.cord.localToWorld(
-      new THREE.Vector3(0, -0.5, 0),
-    );
-    const cordEnd = blocks.cord.localToWorld(
-      new THREE.Vector3(0, 0.5, 0),
-    );
+    // The laid-rope cord's centreline runs between its two moving ends.
+    const cordPath = blocks.cord.geometry.parameters.path;
+    const cordStart = blocks.cord.localToWorld(cordPath.getPoint(0));
+    const cordEnd = blocks.cord.localToWorld(cordPath.getPoint(1));
     const origin=new THREE.Vector3(state.slidePin.x,state.slidePin.y,.33),tip=new THREE.Vector3(state.tip.x,state.tip.y,.33),direction=tip.clone().sub(origin).normalize();
     vectorNear(cordStart,origin.clone().addScaledVector(direction,.105),1e-13,'cord meets outside of slide loop');
     vectorNear(cordEnd,tip.clone().addScaledVector(direction,-.139),1e-13,'cord meets outside of pencil loop');

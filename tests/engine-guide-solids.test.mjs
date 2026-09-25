@@ -57,7 +57,7 @@ test('326: translating piston rod clears the standard and its deep foot',()=>{
     for(const [shoe,face] of [[b.leftSlideShoe,b.leftPlanedFace],[b.rightSlideShoe,b.rightPlanedFace]]) {
       assert.ok(bounds(shoe.userData.frontCheek).min.z>bounds(face).max.z);
     }
-    assert.equal(b.guideOutline.isLineLoop,true,'decorative tube must not protrude into shoes');
+    assert.equal(b.guideOutline,undefined,'no decorative ink outline around the real slot');
   }finally{disposeMovementModel(m);}
 });
 

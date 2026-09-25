@@ -464,7 +464,7 @@ test('movement 357 renderer closes every rotating and stationary linkage', () =>
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.equal(meshCount, 190); // Conical bodies, bored plate lever N and rods P and C with their pins, dogleg hinge spokes, open hinge support and the sectioned cast casing, foot, pulley and lugs; no white indices.
+  assert.equal(meshCount, 186); // No ink face rings, wheel rim or bearing rim. Conical bodies, bored plate lever N and rods P and C with their pins, dogleg hinge spokes, open hinge support and the sectioned cast casing, foot, pulley and lugs; no white indices.
   disposeModel(model.root);
 });
 

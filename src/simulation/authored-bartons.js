@@ -90,8 +90,8 @@ function spanishBarton(nominalAdvantage) {
   };
   const initial = pathAt(0);
   const nominalRopeLengths = { primary: initial.primary.getLength(), secondary: initial.secondary.getLength() };
-  const primary = makeDynamicMovingBelt(initial.primary, { closed: false, radius: 0.032, markerCount: 0 });
-  const secondary = makeDynamicMovingBelt(initial.secondary, { closed: false, radius: 0.032, markerCount: 0 });
+  const primary = makeDynamicMovingBelt(initial.primary, { closed: false, radius: 0.032, markerCount: 0, laid: true });
+  const secondary = makeDynamicMovingBelt(initial.secondary, { closed: false, radius: 0.032, markerCount: 0, laid: true });
   primary.userData.mechanismRope = true;
   secondary.userData.mechanismRope = true;
   primary.userData.ropeStage = five ? 'primary' : 'hauling';

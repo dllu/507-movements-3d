@@ -1,5 +1,12 @@
 import { correctGoingBarrel } from './maintaining-clock-parts.js';
+import {
+  circle,
+  plate,
+  poly,
+  polygonClipping,
+} from './finite-plate-geometry.js';
 import * as THREE from 'three';
+import { replaceWithLaidRope } from './laid-rope.js';
 import {
   PALETTE,
   makeBeam,
@@ -10,7 +17,6 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
@@ -155,16 +161,6 @@ function setBoxBetween(box, start, end) {
   box.position.copy(start).add(end).multiplyScalar(0.5);
   box.rotation.z = Math.atan2(displacement.y, displacement.x);
   box.scale.x = displacement.length();
-}
-
-function setCylinderBetween(cylinder, start, end) {
-  const displacement = end.clone().sub(start);
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    displacement.clone().normalize(),
-  );
-  cylinder.scale.y = displacement.length();
 }
 
 function harrisonGoingBarrel(movement) {
@@ -578,6 +574,8 @@ function harrisonGoingBarrel(movement) {
     matte(PALETTE.ink, { metalness: 0.16, roughness: 0.50 }),
   );
   ringRim.userData.role = 'larger-ratchet-inner-rim';
+  ringRim.visible = false; // Brown's inner edge line only: kept, not drawn
+  ringRim.userData.retiredInkOutline = true;
   largeRatchet.userData.rotor.add(ringRim);
 
   const barrel = makeRotor('weight-going-barrel-B');
@@ -754,11 +752,14 @@ function harrisonGoingBarrel(movement) {
     matte(PALETTE.driver, { metalness: 0.08, roughness: 0.74 }),
   );
   weight.userData.role = 'driving-weight-on-barrel-B';
+  // Brown's weight cord is one laid rope: wound 1.7 turns-worth of arc on
+  // the drum's exposed front groove, then hanging straight to the weight.
   const rope = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.035, 0.035, 1, 9),
-    matte(PALETTE.ink, { roughness: 0.75 }),
+    new THREE.BufferGeometry(),
+    matte(PALETTE.belt, { roughness: 0.78 }),
   );
   rope.userData.role = 'single-weight-rope-wound-on-barrel-B';
+  rope.userData.crossSection = 'laid-rope';
   const ropeContact = new THREE.Vector3(
     weightX,
     0,
@@ -848,6 +849,30 @@ function harrisonGoingBarrel(movement) {
     };
   };
 
+  const ropeRadius = 0.035;
+  const ropeWrapPoints = Array.from({ length: 65 }, (_, i) => {
+    const angle = Math.PI - 1.7 * Math.PI * (64 - i) / 64;
+    return new THREE.Vector3(
+      ropeDrumPitchRadius * Math.cos(angle),
+      ropeDrumPitchRadius * Math.sin(angle),
+      ropeContact.z,
+    );
+  });
+  const ropeWrapCurve = new THREE.CatmullRomCurve3(ropeWrapPoints);
+  const shapeRope = (state) => {
+    const path = new THREE.CurvePath();
+    path.add(ropeWrapCurve);
+    path.add(new THREE.LineCurve3(
+      state.rope.topContact.clone(),
+      state.rope.weightAttachment.clone(),
+    ));
+    // The lay moves with the rope as the barrel pays it out.
+    replaceWithLaidRope(rope, path, {
+      radius: ropeRadius,
+      travel: ropeDrumPitchRadius * state.barrelAngle,
+      tubularSegments: 256,
+    });
+  };
   const update = (time) => {
     const state = stateAtTime(time);
     setRotorAngle(greatWheel, state.greatWheelAngle);
@@ -858,8 +883,7 @@ function harrisonGoingBarrel(movement) {
     clickT.rotation.z = clickT.userData.baseAngle
       + clickT.userData.liftSign * state.clickTLift;
     weight.position.copy(state.weightPosition);
-    setCylinderBetween(rope, state.rope.topContact,
-      state.rope.weightAttachment);
+    shapeRope(state);
     shapeSpringWire(state.springGeometry);
     for (const marker of springMarkers) {
       marker.position.copy(state.springGeometry.pointAtMaterialFraction(
@@ -1010,6 +1034,106 @@ function harrisonGoingBarrel(movement) {
   };
 
   correctGoingBarrel(root);
+  // The laid rope already runs round the exposed groove; the helper's
+  // separate wrap stays only as a reference.
+  root.userData.blocks.ropeWrap.visible = false;
+  root.userData.blocks.ropeWrap.userData.retiredDuplicateRope = true;
+  // The spring lies in front of barrel B, its small ratchet and click R, so
+  // each anchor stands on a post from the wheel that carries it. S's post
+  // rises from the larger ratchet's face. S' belongs to G, behind the
+  // ratchet: its post comes up through an arc slot in the ratchet ring
+  // (G runs up to 45 degrees ahead of the ratchet) clear of B's small
+  // ratchet, then a short arm above the wire's plane reaches S'.
+  {
+    const postRadius = 0.07;
+    // Both anchor pins are placed in their rotor's frame; the ratchet sits
+    // at z = 0 and G behind it.
+    const springPinBottomZ = largeRatchet.position.z
+      + springInnerAnchor.position.z
+      - springInnerAnchor.geometry.parameters.height / 2;
+    const springPinTopZ = greatWheel.position.z
+      + springOuterAnchor.position.z
+      + springOuterAnchor.geometry.parameters.height / 2;
+    const ratchetFrontZ = largeRatchet.position.z
+      + largeRatchetMesh.position.z
+      + largeRatchetMesh.userData.ratchetProfile.depth / 2;
+    const innerPostLength = springPinBottomZ - ratchetFrontZ + 0.02;
+    const innerPost = cylinderAlongZ(postRadius, innerPostLength,
+      largeRatchetMesh.material, 20);
+    innerPost.position.set(
+      springInnerAnchor.position.x,
+      springInnerAnchor.position.y,
+      ratchetFrontZ - 0.01 + innerPostLength / 2 - largeRatchet.position.z,
+    );
+    innerPost.userData.role = 'spring-S-post-on-larger-ratchet';
+    largeRatchet.userData.rotor.add(innerPost);
+
+    const outerPostRadius = 1.66;
+    const outerPostAngle = THREE.MathUtils.degToRad(192);
+    const greatWheelFrontZ = greatWheel.position.z + 0.15;
+    const armBottomZ = springPinTopZ - 0.01;
+    const armDepth = 0.08;
+    const outerPostTopZ = armBottomZ + armDepth;
+    const outerPostLength = outerPostTopZ - greatWheelFrontZ + 0.02;
+    const greatWheelLocalZ = (z) => z - greatWheel.position.z;
+    const outerPost = cylinderAlongZ(postRadius, outerPostLength,
+      greatWheel.userData.rotor.children[0].material, 20);
+    const postPoint = new THREE.Vector2(
+      Math.cos(outerPostAngle) * outerPostRadius,
+      Math.sin(outerPostAngle) * outerPostRadius,
+    );
+    outerPost.position.set(postPoint.x, postPoint.y,
+      greatWheelLocalZ(greatWheelFrontZ - 0.02 + outerPostLength / 2));
+    outerPost.userData.role = 'spring-S-prime-post-on-G';
+    greatWheel.userData.rotor.add(outerPost);
+    const anchorPoint = new THREE.Vector2(
+      springOuterAnchor.position.x,
+      springOuterAnchor.position.y,
+    );
+    const armSpan = anchorPoint.clone().sub(postPoint);
+    const arm = new THREE.Mesh(
+      new THREE.BoxGeometry(armSpan.length(), 0.14, armDepth),
+      outerPost.material,
+    );
+    arm.position.set(
+      (postPoint.x + anchorPoint.x) / 2,
+      (postPoint.y + anchorPoint.y) / 2,
+      greatWheelLocalZ(armBottomZ + armDepth / 2),
+    );
+    arm.rotation.z = Math.atan2(armSpan.y, armSpan.x);
+    arm.userData.role = 'spring-S-prime-arm-on-G';
+    greatWheel.userData.rotor.add(arm);
+
+    const profile = largeRatchetMesh.userData.ratchetProfile;
+    const slotInner = outerPostRadius - postRadius - 0.025;
+    const slotOuter = outerPostRadius + postRadius + 0.025;
+    const slotHalfAngle = (postRadius + 0.03) / outerPostRadius;
+    const slotStart = outerPostAngle - slotHalfAngle;
+    const slotEnd = outerPostAngle + THREE.MathUtils.degToRad(45)
+      + slotHalfAngle;
+    const slotSteps = 48;
+    const slot = [
+      ...Array.from({ length: slotSteps + 1 }, (_, index) => {
+        const angle = slotStart + (slotEnd - slotStart) * index / slotSteps;
+        return [slotOuter * Math.cos(angle), slotOuter * Math.sin(angle)];
+      }),
+      ...Array.from({ length: slotSteps + 1 }, (_, index) => {
+        const angle = slotEnd - (slotEnd - slotStart) * index / slotSteps;
+        return [slotInner * Math.cos(angle), slotInner * Math.sin(angle)];
+      }),
+    ];
+    largeRatchetMesh.geometry.dispose();
+    largeRatchetMesh.geometry = plate(polygonClipping.difference(
+      poly(profile.outline),
+      poly(circle([0, 0], profile.bore, 64)),
+      poly(slot),
+    ), -profile.depth / 2, profile.depth / 2);
+    Object.assign(root.userData.blocks, {
+      springInnerPost: innerPost,
+      springOuterArm: arm,
+      springOuterPost: outerPost,
+    });
+  }
   // Frame the lowered weight's lowest point (just before winding).
   root.userData.cameraFitBounds.min.y = Math.min(
     root.userData.cameraFitBounds.min.y,

@@ -5,6 +5,7 @@ import {makeBellCrankGeometry} from '../src/simulation/mujoco-bell-crank/geometr
 import {makeMujocoBellCrank} from '../src/simulation/mujoco-bell-crank/visual.js';
 import {inspectWeightedClutchSolid} from '../scripts/lib/weighted-clutch-solid-audit.mjs';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
+import {LAID_ROPE} from '../src/simulation/laid-rope.js';
 const mujoco=await loadMujoco();
 
 test('126 retains measured pins and constructs closed curved lever and pulley hardware',()=>{
@@ -15,7 +16,7 @@ test('126 retains measured pins and constructs closed curved lever and pulley ha
    const p=u.profile[name+'Pin'],s=u.source.circles[name+'Pin'].center;
    assert(Math.hypot(p[0]-(s[0]-u.source.axis[0])/100,p[1]-(u.source.axis[1]-s[1])/100)<1e-12);
   }
-  for(const[n,m]of Object.entries(u.parts)){const r=inspectWeightedClutchSolid(m.geometry);assert(r.volume>0,n);assert.equal(r.components,1,n);assert.equal(r.unmatchedEdges+r.degenerate+r.wrongNormals+r.nonfinite,0,n);}
+  for(const[n,m]of Object.entries(u.parts)){const r=inspectWeightedClutchSolid(m.geometry);assert(r.volume>0,n);assert.equal(r.components,m.geometry.type==='LaidRopeGeometry'?LAID_ROPE.strands:1,n);assert.equal(r.unmatchedEdges+r.degenerate+r.wrongNormals+r.nonfinite,0,n);}
   assert(Math.abs(u.source.arms.input.length/u.source.arms.output.length-1.189)<.001);
   u.setSectionView(true);assert(!u.parts.frontFlange.visible&&u.parts.drum.visible&&u.parts.inputCord.visible);
  }finally{disposeObject3D(v.root);}

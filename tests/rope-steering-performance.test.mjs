@@ -2,8 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import {createAuthoredRopeSteeringMovement} from '../src/simulation/authored-rope-steering.js';
+import {LaidRopeGeometry} from '../src/simulation/laid-rope.js';
 
-test('490 retains GPU buffers while matching Three.js tube surfaces throughout steering', () => {
+test('490 retains GPU buffers while matching the shared laid-rope surface throughout steering', () => {
   const model = createAuthoredRopeSteeringMovement({id: 490});
   const data = model.root.userData, geometry = data.blocks.rope.geometry;
   const attributes = Object.fromEntries(Object.entries(geometry.attributes));
@@ -19,8 +20,12 @@ test('490 retains GPU buffers while matching Three.js tube surfaces throughout s
       assert.equal(geometry.attributes[key], attributes[key]);
       assert.equal(geometry.attributes[key].array, arrays[key]);
     }
-    const reference = new THREE.TubeGeometry(data.ropePathState.curve, geometry.parameters.tubularSegments,
-      data.geometry.ropeRadius, 7, false);
+    const state = data.stateAtTime(data.geometry.cycleDuration * i / 64);
+    assert.equal(geometry.type, 'LaidRopeGeometry');
+    assert.equal(geometry.userData.travel, state.ropeDisplacement,
+      'the rope lay travels with the analytic drum payout');
+    const reference = new LaidRopeGeometry(data.ropePathState.curve, 420,
+      data.geometry.ropeRadius, 7, false, {travel: state.ropeDisplacement});
     for (const key of ['position', 'normal']) {
       const actual = geometry.attributes[key].array, expected = reference.attributes[key].array;
       assert.equal(actual.length, expected.length);

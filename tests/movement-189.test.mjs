@@ -58,7 +58,7 @@ test('189 plate landmarks map onto the rendered bodies at the source pose', () =
   const box = new THREE.Box3().setFromObject(b.bellCrankPlate);
   near2(raster(new THREE.Vector2(box.min.x, box.max.y)), new THREE.Vector2(380.5, 28), 1.5, 'bell crank left/top');
   const rodBox = new THREE.Box3().setFromObject(b.rodBody);
-  near2(raster(new THREE.Vector2(rodBox.min.x, rodBox.max.y)), new THREE.Vector2(14, 354), 1.5, 'rod left end and crown top');
+  near2(raster(new THREE.Vector2(rodBox.min.x, rodBox.max.y)), new THREE.Vector2(-300, 354), 1.5, 'rod (whole past Brown\'s break at x 14) and crown top');
   near2(raster(new THREE.Vector2(rodBox.max.x, rodBox.min.y)), new THREE.Vector2(521, 417), 1.5, 'rod tip and lower edge');
   const armBox = new THREE.Box3().setFromObject(b.valveArm);
   assert.ok(Math.abs(raster(new THREE.Vector2(0, armBox.min.y)).y - 436) < 1.5, 'disc below the gab reaches y 436');

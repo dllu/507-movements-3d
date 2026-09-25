@@ -29,8 +29,11 @@ export function correctEjectorTrapParts(root,id,update) {
     const steamCurve=d.flowPaths.steamPipeCurve;steamCurve.points.at(-2).set(0,.46,0);steamCurve.updateArcLengths();d.flowPaths.steamFlowCurve.updateArcLengths();
     replace(b.steamPipeCore,new THREE.TubeGeometry(steamCurve,90,.085,16,false));
     const profile=[[-1.16,.53],[-1.02,.89],[-.65,1.23],[-.08,1.38],[.48,1.30],[1.05,1.04],[1.56,.57]];
-    const radius=y=>{const k=Math.max(1,profile.findIndex(p=>p[0]>=y));const[a,r]=profile[k-1],[c,s]=profile[k];return r+(s-r)*(y-a)/(c-a);};
-    const levels=[...profile.map(p=>p[0]),-.20,.34].sort((a,b)=>a-b);
+    // A smooth spline through Brown's pear section, sampled densely, so D's
+    // silhouette is a continuous curve instead of a seven-facet polygon.
+    const smooth=new THREE.SplineCurve(profile.map(([y,r])=>new THREE.Vector2(y,r))).getPoints(240).map(p=>[p.x,p.y]);
+    const radius=y=>{const found=smooth.findIndex(p=>p[0]>=y),k=found<0?smooth.length-1:Math.max(1,found);const[a,r]=smooth[k-1],[c,s]=smooth[k];return r+(s-r)*(y-a)/(c-a);};
+    const levels=[...Array.from({length:61},(_,i)=>-1.16+2.72*i/60).filter(y=>Math.abs(y+.20)>.02&&Math.abs(y-.34)>.02),-.20,.34].sort((a,b)=>a-b);
     replace(b.chamber,portedMeridian(levels,radius,y=>radius(y)-.065,(a,y)=>y>-.20&&y<.34&&Math.cos(a)>.976));
     replace(b.suctionPipe,horizontalRing(.40,.47,-.895,.895,64));
     replace(b.dischargePipe,horizontalRing(.47,.54,-.94,.94,64));

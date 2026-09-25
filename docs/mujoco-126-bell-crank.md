@@ -229,8 +229,10 @@ arclength are excluded. The minimum three-point bend radius is 67.957731
 pixels, compared with the 8.430556-pixel rope radius. These finite pose and
 surface samples do not prove continuous clearance or local tube injectivity.
 
-Cord strand shading follows material coordinates attached to the native
-sections. The shaft's section hatching remains fixed while the pulley turns.
+Both cords render as the shared three-strand laid rope (`laid-rope.js`) on a
+centripetal curve through the native section points; each path starts at a
+cord end, so its arc length is the material coordinate (pass 53 replaced the
+earlier strand-shading shader). The shaft's section hatching remains fixed while the pulley turns.
 A tighter shadow camera and −0.0004 bias remove the arm-face shadow artifacts;
 the more aggressive −0.001 trial detached the pin shadow and was rejected.
 Section view removes the front pulley face and hub to reveal the groove.

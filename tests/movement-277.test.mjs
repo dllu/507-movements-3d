@@ -339,3 +339,47 @@ test('movement 277 closes after six cocks while movement 507 remains authored', 
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 277 hammer draws Brown\'s stirrup link down against the mainspring, and both leaves bend at constant section', () => {
+  const model = createMovementModel(catalog.movements[276]);
+  const { blocks, geometry } = model.root.userData;
+  assert.equal(blocks.stirrup.parent, model.root);
+  assert.equal(blocks.hammerStirrupPin.parent, blocks.hammerRotor, 'the link hangs on a pin in the hammer');
+  const pinWorld = () => blocks.hammerStirrupPin.getWorldPosition(new THREE.Vector3());
+  const tipWorld = () => new THREE.Vector3(geometry.stirrupLength, 0, 0).applyMatrix4(blocks.stirrup.matrixWorld);
+  const restTip = [];
+  for (const time of [0, 0.8, 1.2, 1.6, 2.2, 2.8, 3.4]) {
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const pin = pinWorld();
+    const tip = tipWorld();
+    near(Math.hypot(tip.x - pin.x, tip.y - pin.y), geometry.stirrupLength, 1e-9, `rigid stirrup at ${time}`);
+    // The link's eye is the mainspring's tip.
+    const bend = model.root.userData.kinematics.mainspringBend;
+    assert.ok(bend >= 0 && bend < 0.6, `leaf bend ${bend}`);
+    if (time === 0) restTip.push(tip.clone());
+  }
+  model.update(geometry.inputCyclePeriod * 0.55);
+  model.root.updateMatrixWorld(true);
+  assert.ok(tipWorld().y < restTip[0].y - 0.4, 'cocking draws the stirrup and the mainspring tip down');
+  // Constant section: every bent top-face vertex keeps its rest distance to
+  // its neighbours across the leaf (no triangle spans the bend).
+  for (const mesh of [blocks.spring, blocks.mainspring]) {
+    const position = mesh.geometry.attributes.position;
+    model.update(0);
+    const rest = Float32Array.from(position.array);
+    model.update(geometry.inputCyclePeriod * 0.5);
+    let worst = 0;
+    for (let index = 0; index < position.count; index += 3) {
+      for (const [a, b] of [[0, 1], [1, 2], [2, 0]]) {
+        const i = index + a;
+        const j = index + b;
+        const restLength = Math.hypot(rest[i * 3] - rest[j * 3], rest[i * 3 + 1] - rest[j * 3 + 1]);
+        const length = Math.hypot(position.getX(i) - position.getX(j), position.getY(i) - position.getY(j));
+        worst = Math.max(worst, Math.abs(length - restLength));
+      }
+    }
+    assert.ok(worst < 0.01, `${mesh.userData.role} edges keep their length (${worst})`);
+  }
+  disposeModel(model.root);
+});

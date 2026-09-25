@@ -85,11 +85,13 @@ test('movement 356 is Bohnenberger’s three-ring spherical-rotor machine', () =
   assert.equal(blocks.innerPivotBearings.length, 2);
   assert.equal(blocks.innerPivotPins.length, 2);
   assert.equal(blocks.rotorBearingHousings.length, 2);
-  assert.equal(blocks.rotorBearingRims.length, 2);
+  // Brown inks edges; the model has no dark rims, outlines or equator lines.
+  for (const name of ['rotorBearingRims', 'lowerYawBearing', 'ballEquator', 'baseOutline', 'outerEdgeLines']) {
+    assert.equal(blocks[name], undefined, name);
+  }
   assert.equal(blocks.ballSpinIndexes.length, 4);
   assert.equal(blocks.shaftCaps.length, 2);
   assert.equal(blocks.supportColumn.parent, model.root);
-  assert.equal(blocks.lowerYawBearing.parent, model.root);
 
   assert.deepEqual(sourceReference.labels, {
     A: 'outer supported ring',
@@ -393,7 +395,7 @@ test('movement 356 renderer binds all three gimbal axes and the ball shaft', () 
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.equal(meshCount, 38);
+  assert.equal(meshCount, 27); // 38 less 11 ink rims, edge lines and the equator line
   disposeModel(model.root);
 });
 

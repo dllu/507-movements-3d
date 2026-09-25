@@ -208,6 +208,9 @@ function makeInvoluteSector({
   );
   hubRing.position.z = depth / 2 + 0.009;
   hubRing.userData.role = `${role}-front-hub-ring`;
+  // Drawn hub edge only; kept as a hidden reference, not a dark rim.
+  hubRing.visible = false;
+  hubRing.userData.retiredInkOutline = true;
   group.add(hubRing);
 
   const toothMeshes = [];

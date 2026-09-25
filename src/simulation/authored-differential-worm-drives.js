@@ -143,6 +143,9 @@ function makeWormWheel({
     );
     rim.position.z = side * (faceWidth / 2 + 0.012);
     rim.userData.role = `${label}-wheel-face-rim`;
+    // Brown's face circle is only the wheel's edge line: kept, not drawn.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     rotor.add(rim);
     return rim;
   });

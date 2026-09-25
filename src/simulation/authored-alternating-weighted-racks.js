@@ -104,6 +104,9 @@ function makeSpurGear({
   faceRing.position.z = depth / 2 + 0.015;
   faceRing.userData.role = 'output-wheel-face-reference-ring';
   rotor.add(faceRing);
+  // Plate ink, not a separate part.
+  faceRing.visible = false;
+  faceRing.userData.retiredInkOutline = true;
   const shaft = cylinderAlongZ(0.105, 1.12, darkMaterial, 28);
   shaft.userData.role = 'fixed-axis-output-shaft';
   rotor.add(shaft);

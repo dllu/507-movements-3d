@@ -92,7 +92,7 @@ test('movement 443 is one rigid oblique rotor containing the lower wheel, shaft,
   assert.deepEqual(belts, []);
   assert.deepEqual(ropes, []);
   assert.equal(roles.filter((role) =>
-    /^stream-driven-lower-paddle-/.test(role)).length, 8);
+    /^stream-driven-lower-paddle-/.test(role)).length, 12);
   assert.equal(roles.filter((role) =>
     /^gravity-low-water-pocket-advancing-one-pitch/.test(role)).length,
   5);

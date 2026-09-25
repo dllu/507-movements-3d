@@ -48,13 +48,7 @@ export function makeLinkedVariableCrank() {
     blocks.rocker.position.set(...s.wrist, 0); blocks.rocker.rotation.z = Math.atan2(g.rockerPivot[1] - s.wrist[1], g.rockerPivot[0] - s.wrist[0]);
     root.updateMatrixWorld(true); root.userData.state = s;
   };
-  const construction = (name, points) => {
-    const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(points.map(p => new THREE.Vector3(...p, -.04))),
-      new THREE.LineDashedMaterial({color: PALETTE.ink, dashSize: .065, gapSize: .055, opacity: .5, transparent: true, fog: false}));
-    line.name = name; line.computeLineDistances(); blocks.fixed.add(line);
-  };
-  construction('slotPinOrbit', Array.from({length: 513}, (_, i) => linkedVariableCrankAtAngle(i * 2 * Math.PI / 512, g).slotPin));
-  construction('auxiliaryOrbit', Array.from({length: 257}, (_, i) => [g.radius * Math.cos(i * 2 * Math.PI / 256), g.radius * Math.sin(i * 2 * Math.PI / 256)]));
+  // Brown's dashed pin orbits are construction notation and are not drawn.
   const bounds = new THREE.Box3();
   for (let i = 0; i <= 128; i++) { update(g.period * i / 128); bounds.union(new THREE.Box3().setFromObject(root, true)); }
   bounds.expandByScalar(.04); update(0); markShadows(root);

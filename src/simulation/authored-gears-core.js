@@ -631,7 +631,7 @@ function crownAndSpur() {
   return finish(root, update, new THREE.Vector3(0.65, 0.95, 10));
 }
 
-function makeRadialSlotWheel({ radius = 1.78, slotCount = 6, slotEndRadius = 1.56, slotWidth = 0.3 } = {}) {
+function makeRadialSlotWheel({ radius = 1.78, slotCount = 6, slotEndRadius = 1.56, slotWidth = 0.3, pocketOuterRadius = radius - 0.15 } = {}) {
   const root = new THREE.Group();
   const rotor = new THREE.Group();
   root.add(rotor);
@@ -646,38 +646,53 @@ function makeRadialSlotWheel({ radius = 1.78, slotCount = 6, slotEndRadius = 1.5
   const sectorAngle = 2 * Math.PI / slotCount;
   const innerRadius = halfWidth / Math.sin(sectorAngle / 2);
   const outerAngle = Math.asin(halfWidth / radius);
-  const sectors = [];
   const grooves = [];
+  // Brown's rim is one continuous band: the radial grooves stop in a rounded
+  // end that just receives a roller at its farthest excursion, so the raised
+  // webs and rim form one solid wall around recessed triangular pockets.
+  const snap = (value) => Math.round(value * 1e9) / 1e9;
+  const ring = (points) => [...points.map((point) => [snap(point.x), snap(point.y)]), [snap(points[0].x), snap(points[0].y)]];
+  const cutouts = [];
   for (let index = 0; index < slotCount; index += 1) {
-    const outline = new THREE.Shape();
-    outline.moveTo(innerRadius * Math.cos(sectorAngle / 2), innerRadius * Math.sin(sectorAngle / 2));
-    outline.lineTo(radius * Math.cos(outerAngle), radius * Math.sin(outerAngle));
-    outline.absarc(0, 0, radius, outerAngle, sectorAngle - outerAngle, false);
-    outline.closePath();
-    // Leave raised webs around real recessed triangular pockets. The radial
-    // gaps between adjacent sectors extend through the rim to the center.
-    const pocket = new THREE.Path();
-    pocket.moveTo(0.59 * Math.cos(sectorAngle / 2), 0.59 * Math.sin(sectorAngle / 2));
-    pocket.lineTo((radius - 0.15) * Math.cos(outerAngle + 0.09), (radius - 0.15) * Math.sin(outerAngle + 0.09));
-    pocket.lineTo((radius - 0.15) * Math.cos(sectorAngle - outerAngle - 0.09),
-      (radius - 0.15) * Math.sin(sectorAngle - outerAngle - 0.09));
-    pocket.closePath();
-    outline.holes.push(pocket);
-    const geometry = new THREE.ExtrudeGeometry(outline, { depth: wallTopZ - floorZ, bevelEnabled: false, curveSegments: 20 });
-    geometry.translate(0, 0, floorZ);
-    const sector = new THREE.Mesh(geometry, matte(PALETTE.driven, { metalness: 0.12 }));
-    sector.rotation.z = index * sectorAngle;
-    rotor.add(sector);
-    sectors.push(sector);
-    const pocketFloor = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(pocket.getPoints())), matte(PALETTE.ink));
+    const angle = index * sectorAngle, u = new THREE.Vector2(Math.cos(angle), Math.sin(angle)), n = new THREE.Vector2(-u.y, u.x);
+    const groove = [u.clone().multiplyScalar(0.1).addScaledVector(n, -halfWidth), u.clone().multiplyScalar(0.1).addScaledVector(n, halfWidth)];
+    for (let step = 0; step <= 24; step += 1) {
+      const a = Math.PI / 2 - Math.PI * step / 24;
+      // A 0.002 running clearance past the farthest roller excursion keeps the
+      // faceted round end clear of the roller.
+      groove.push(u.clone().multiplyScalar(slotEndRadius + 0.002 + halfWidth * Math.cos(a)).addScaledVector(n, halfWidth * Math.sin(a)));
+    }
+    cutouts.push([ring(groove)]);
+    const pocketStart = sectorAngle / 2 + angle, pocketA = angle + outerAngle + 0.09, pocketB = angle + sectorAngle - outerAngle - 0.09;
+    cutouts.push([ring([new THREE.Vector2(0.59 * Math.cos(pocketStart), 0.59 * Math.sin(pocketStart)),
+      new THREE.Vector2(pocketOuterRadius * Math.cos(pocketA), pocketOuterRadius * Math.sin(pocketA)),
+      new THREE.Vector2(pocketOuterRadius * Math.cos(pocketB), pocketOuterRadius * Math.sin(pocketB))])]);
+  }
+  const disc = [ring(Array.from({ length: 192 }, (_, i) => new THREE.Vector2(radius * Math.cos(2 * Math.PI * i / 192), radius * Math.sin(2 * Math.PI * i / 192))))];
+  const centre = [ring(Array.from({ length: 48 }, (_, i) => new THREE.Vector2(innerRadius * Math.cos(Math.PI * (2 * i + 1) / 48), innerRadius * Math.sin(Math.PI * (2 * i + 1) / 48))))];
+  const wallSection = slotClipping.difference(disc, centre, ...cutouts);
+  const wallShapes = wallSection.map((polygon) => {
+    const shape = new THREE.Shape(polygon[0].slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y)));
+    for (const hole of polygon.slice(1)) shape.holes.push(new THREE.Path(hole.slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y))));
+    return shape;
+  });
+  const wallGeometry = new THREE.ExtrudeGeometry(wallShapes, { depth: wallTopZ - floorZ, bevelEnabled: false, curveSegments: 1 });
+  wallGeometry.translate(0, 0, floorZ);
+  const wall = new THREE.Mesh(wallGeometry, matte(PALETTE.driven, { metalness: 0.12 }));
+  wall.userData.role = 'continuous-rim-and-groove-walls';
+  rotor.add(wall);
+  const sectors = [wall];
+  for (let index = 0; index < slotCount; index += 1) {
+    const pocket = cutouts[2 * index + 1][0];
+    const pocketFloor = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(pocket.slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y)))), matte(PALETTE.ink));
     pocketFloor.position.z = floorZ + 0.001;
-    pocketFloor.rotation.z = sector.rotation.z;
     rotor.add(pocketFloor);
-    const groove = new THREE.Mesh(new THREE.BoxGeometry(radius, slotWidth, 0.004), matte(PALETTE.ink));
-    groove.position.set(Math.cos(sector.rotation.z) * radius / 2, Math.sin(sector.rotation.z) * radius / 2, floorZ);
-    groove.rotation.z = sector.rotation.z;
+    const angle = index * sectorAngle;
+    const groove = new THREE.Mesh(new THREE.BoxGeometry(slotEndRadius, slotWidth, 0.004), matte(PALETTE.ink));
+    groove.position.set(Math.cos(angle) * slotEndRadius / 2, Math.sin(angle) * slotEndRadius / 2, floorZ);
+    groove.rotation.z = angle;
     groove.userData.grooveIndex = index;
-    groove.userData.centerlineAngle = sector.rotation.z;
+    groove.userData.centerlineAngle = angle;
     rotor.add(groove);
     grooves.push(groove);
   }
@@ -818,7 +833,8 @@ function multipleGearing() {
   const grooveEndRadius = rollerOrbitRadius * 2;
   const grooveWidth = rollerRadius * 2;
   const driven = makeRadialSlotWheel({
-    radius: 1.78,
+    radius: 1.84,
+    pocketOuterRadius: 1.63,
     slotCount: grooveCount,
     slotEndRadius: grooveEndRadius,
     slotWidth: grooveWidth,
@@ -3467,21 +3483,32 @@ function sunAndPlanet() {
   // The web runs under the rim, which closes the outer ends of the slits.
   flywheelShape.absarc(0, 0, flywheelInnerRadius + 0.05, 0, 2 * Math.PI, false);
   const slitHalfWidth = 0.065;
-  const slitInnerRadius = 0.6;
-  const slitOuterHalfAngle = Math.asin(slitHalfWidth / flywheelInnerRadius);
+  // The gaps run from just outside the hub flange to the rim, so the band
+  // between gear and rim reads as four separate arcs from every side; the
+  // rim and the narrow hub ring keep the wheel one rigid body.
+  const slitInnerRadius = 0.53;
   for (let quadrant = 0; quadrant < 4; quadrant += 1) {
     const angle = quadrant * Math.PI / 2;
     const along = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
     const across = new THREE.Vector2(-along.y, along.x);
     const point = (radial, lateral) => along.clone().multiplyScalar(radial)
       .addScaledVector(across, lateral);
+    // Brown rounds each web arc's corners where it meets the rim, so the
+    // gap flares into the rim with a fillet on both sides.
+    const fillet = 0.07, filletAngle = Math.asin((slitHalfWidth + fillet) / flywheelInnerRadius);
+    const straightEnd = Math.sqrt(flywheelInnerRadius ** 2 - (slitHalfWidth + fillet) ** 2) - fillet;
+    const corner = (side) => [point(Math.sqrt(flywheelInnerRadius ** 2 - slitHalfWidth ** 2) - 0.004, side * slitHalfWidth),
+      point(Math.sqrt(flywheelInnerRadius ** 2 - (slitHalfWidth + fillet) ** 2), side * (slitHalfWidth + fillet))];
     const hole = new THREE.Path();
     const start = point(slitInnerRadius, -slitHalfWidth);
-    const outerStart = point(flywheelInnerRadius * Math.cos(slitOuterHalfAngle), -slitHalfWidth);
+    const outerStart = point(straightEnd, -slitHalfWidth);
     hole.moveTo(start.x, start.y);
     hole.lineTo(outerStart.x, outerStart.y);
-    hole.absarc(0, 0, flywheelInnerRadius, angle - slitOuterHalfAngle,
-      angle + slitOuterHalfAngle, false);
+    const [controlA, endA] = corner(-1);
+    hole.quadraticCurveTo(controlA.x, controlA.y, endA.x, endA.y);
+    hole.absarc(0, 0, flywheelInnerRadius, angle - filletAngle, angle + filletAngle, false);
+    const [controlB] = corner(1), outerEnd = point(straightEnd, slitHalfWidth);
+    hole.quadraticCurveTo(controlB.x, controlB.y, outerEnd.x, outerEnd.y);
     const end = point(slitInnerRadius, slitHalfWidth);
     hole.lineTo(end.x, end.y);
     hole.closePath();
@@ -3768,6 +3795,8 @@ function angularBevelGears() {
   driver.position.copy(apex);
   driven.position.copy(apex);
   root.add(driver, driven);
+  retireInkOutline(driver.userData.inset);
+  retireInkOutline(driven.userData.inset);
   // The plate carries the upper shaft well past the rim at upper left and,
   // in front, on past the intersection with the lower shaft. Intersecting
   // shafts cannot both run through the apex: the lower one ends just clear
@@ -4042,6 +4071,36 @@ function makeVGroovedFrictionWheel(options) {
   return root;
 }
 
+function revolvedSectionSector(outline, axisY, side, sweep = 35 * Math.PI / 180, steps = 24) {
+  // Section points (x, y) lie in z = 0; each revolves about the line
+  // y = axisY, z = 0 through the sector angle towards -z.
+  let ring = outline.map((point) => new THREE.Vector2(point.x, point.y));
+  if (THREE.ShapeUtils.isClockWise(ring)) ring = ring.reverse();
+  const n = ring.length, positions = [], indices = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const phi = sweep * step / steps;
+    for (const point of ring) {
+      const r = side * (axisY - point.y);
+      positions.push(point.x, axisY - side * r * Math.cos(phi), -r * Math.sin(phi));
+    }
+  }
+  for (let step = 0; step < steps; step += 1) for (let i = 0; i < n; i += 1) {
+    const a = step * n + i, b = step * n + (i + 1) % n, c = b + n, d = a + n;
+    indices.push(a, c, b, a, d, c);
+  }
+  const faces = THREE.ShapeUtils.triangulateShape(ring, []);
+  for (const [a, b, c] of faces) {
+    indices.push(a, b, c);
+    indices.push(steps * n + a, steps * n + c, steps * n + b);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  const flat = geometry.toNonIndexed();
+  flat.computeVertexNormals();
+  return flat;
+}
+
 function makeGroovedSection(profile, top, bottom) {
   const root = new THREE.Group();
   const scale = 1.35, gap = 0.006;
@@ -4054,10 +4113,12 @@ function makeGroovedSection(profile, top, bottom) {
     const interfacePoints = points.map((p) => p.clone().add(new THREE.Vector2(0, upper ? gap / 2 : -gap / 2)));
     const outline = [new THREE.Vector2(left, upper ? top : bottom),
       new THREE.Vector2(right, upper ? top : bottom), ...[...interfacePoints].reverse()];
-    const shape = new THREE.Shape(outline);
-    shape.closePath();
-    const geometry = new THREE.ExtrudeGeometry(shape, { depth: 0.08, bevelEnabled: false, curveSegments: 1 });
-    geometry.translate(0, 0, -0.04);
+    // The section is the cut face of an enlarged sector of each wheel: the
+    // outline is revolved 35 degrees behind the plane about an axis at the
+    // section's outer edge, so turned views show real grooved wheel sectors
+    // meeting at their rims instead of a painted board.
+    const geometry = revolvedSectionSector(outline, upper ? top + 0.002 : bottom - 0.002, upper ? 1 : -1);
+    geometry.translate(0, 0, 0.04);
     const body = new THREE.Mesh(geometry, matte(color, { metalness: 0.04, roughness: 0.75 }));
     body.userData.sectionBody = true;
     root.add(body);
@@ -4411,6 +4472,7 @@ function makeLooseSpurGear({
     matte(PALETTE.ink),
   );
   inset.position.z = depth / 2 + 0.012;
+  retireInkOutline(inset);
   const indicator = new THREE.Mesh(
     new THREE.BoxGeometry(pitchRadius * 0.52, 0.055, 0.024),
     matte(PALETTE.white, { roughness: 0.5 }),
@@ -4886,6 +4948,8 @@ function reversibleRackAndPinionSlide() {
     const rearRing = frontRing.clone();
     rearRing.position.z = -guideRollerWidth / 2 - 0.015;
     rearRing.userData.role = 'rear-rim-of-slide-guide-roller';
+    retireInkOutline(rearRing);
+    retireInkOutline(frontRing);
     const hub = new THREE.Mesh(
       new THREE.CylinderGeometry(0.105, 0.105, guideRollerWidth * 1.12, 28),
       darkMaterial,
@@ -5349,6 +5413,7 @@ function alternatingDoubleRackMutilatedPinion() {
   );
   pinionRootOutline.position.z = pinionDepth / 2 + 0.026;
   pinionRootOutline.userData.role = 'root-circle-outline-of-mutilated-pinion';
+  retireInkOutline(pinionRootOutline);
   const pinionTeeth = installedToothIndices.map((toothIndex) => {
     const centerAngle = (toothIndex + 0.5) * pinionAngularPitch;
     const pointAt = (radius, angle) => new THREE.Vector2(
@@ -5388,6 +5453,7 @@ function alternatingDoubleRackMutilatedPinion() {
   );
   pinionInset.position.z = pinionDepth / 2 + 0.03;
   pinionInset.userData.role = 'front-face-ring-of-mutilated-pinion';
+  retireInkOutline(pinionInset);
   const pinionRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(pinionPitchRadius * 0.62, 0.052, 0.027),
     indexMaterial,
@@ -7519,6 +7585,7 @@ function conjugateRollerYokeCam() {
     new THREE.LineBasicMaterial({ color: PALETTE.ink }),
   );
   camOutline.userData.role = 'visible-working-profile-of-conjugate-cam';
+  retireInkOutline(camOutline);
   camRotor.add(camPlate, camHub, camRotationIndex, camOutline);
 
   const makeFrictionRoller = (role) => {
@@ -7542,6 +7609,8 @@ function conjugateRollerYokeCam() {
     frontRim.position.z = rollerDepth / 2 + 0.008;
     const backRim = frontRim.clone();
     backRim.position.z = -rollerDepth / 2 - 0.008;
+    retireInkOutline(backRim);
+    retireInkOutline(frontRim);
     const rotationIndex = new THREE.Mesh(
       new THREE.SphereGeometry(0.043, 16, 10),
       indexMaterial,
@@ -8973,6 +9042,7 @@ function alternatingEndlessRackPinion() {
   );
   pinionFaceRing.position.z = pinionDepth / 2 + 0.018;
   pinionFaceRing.userData.role = 'front-face-ring-on-uniform-pinion';
+  retireInkOutline(pinionFaceRing);
   const pinionRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(
       pinionPitchRadius * 0.62,
@@ -11765,6 +11835,7 @@ function alternatingSectorDoubleRackCrankSubstitute() {
     );
     inset.position.z = gearDepth / 2 + 0.019;
     inset.userData.role = `${role}-front-face-ring`;
+    retireInkOutline(inset);
     const indicator = new THREE.Mesh(
       new THREE.BoxGeometry(
         spurPitchRadius * 0.5,
@@ -11880,6 +11951,7 @@ function alternatingSectorDoubleRackCrankSubstitute() {
     faceArc.rotation.z = sectorBodyStartAngle;
     faceArc.position.z = sectorPlaneZ + sectorDepth / 2 + 0.019;
     faceArc.userData.role = `${sideName}-sector-face-index-arc`;
+    retireInkOutline(faceArc);
     sector.add(rim, ...teeth, hub, ...spokes, faceArc);
     sector.userData.angularPitch = sectorAngularPitch;
     sector.userData.fullToothCount = sectorFullToothCount;
@@ -14409,6 +14481,7 @@ function handCrankPinionSectorRodPress() {
   );
   pinionFaceRing.position.z = gearDepth / 2 + 0.022;
   pinionFaceRing.userData.role = 'dark-pinion-face-ring';
+  retireInkOutline(pinionFaceRing);
   const pinionRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(
       pinionPitchRadius * 0.5,
@@ -14533,6 +14606,7 @@ function handCrankPinionSectorRodPress() {
   );
   sectorFaceRing.position.z = gearDepth / 2 + 0.032;
   sectorFaceRing.userData.role = 'dark-sector-pivot-face-ring';
+  retireInkOutline(sectorFaceRing);
   const sectorSpokes = []; // The openings now belong to one continuous sector web.
   const sectorRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.34, 0.06, 0.029),
@@ -15854,6 +15928,7 @@ function internalRackSlidingCarriage() {
   );
   pinionFaceRing.position.z = pinionDepth / 2 + 0.022;
   pinionFaceRing.userData.role = 'dark-front-ring-on-input-pinion';
+  retireInkOutline(pinionFaceRing);
   const pinionRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(pinionPitchRadius * 0.62, 0.055, 0.034),
     indexMaterial,
@@ -19856,6 +19931,7 @@ function concentricUnequalSpeedMangleWheel() {
   );
   wheelRim.position.z = wheelFaceZ + 0.015;
   wheelRim.userData.role = 'outer-rim-of-concentric-mangle-wheel';
+  retireInkOutline(wheelRim);
   const wheelHub = new THREE.Mesh(
     new THREE.CylinderGeometry(0.2, 0.2, 0.4, 36),
     inkMaterial,
@@ -20790,6 +20866,7 @@ function singleCircleEqualSpeedMangleWheel() {
   // pinion runs over the rim on the outer branch.
   wheelRim.position.z = wheelFaceZ - 0.035;
   wheelRim.userData.role = 'outer-rim-of-equal-speed-mangle-wheel';
+  retireInkOutline(wheelRim);
   const wheelHub = new THREE.Mesh(
     new THREE.CylinderGeometry(0.2, 0.2, 0.4, 36),
     inkMaterial,
@@ -21916,6 +21993,7 @@ function oppositeHandTwinWormFeedRollDrive() {
     );
     faceRing.position.z = wheelDepth / 2 + 0.025;
     faceRing.userData.role = `${label}-worm-wheel-face-ring`;
+    retireInkOutline(faceRing);
     rotor.add(faceRing);
 
     const hub = new THREE.Mesh(
@@ -23879,6 +23957,7 @@ function rollingContactEllipsesWithToothedContinuation() {
     );
     faceRing.position.z = wheelDepth / 2 + 0.018;
     faceRing.userData.role = `${role}-hub-face-ring`;
+    retireInkOutline(faceRing);
     const indexBar = makeBeam(
       new THREE.Vector3(0.27, 0, wheelDepth / 2 + 0.06),
       new THREE.Vector3(0.78, 0, wheelDepth / 2 + 0.06),
@@ -25087,6 +25166,8 @@ function curvedSlotRockerVariableVelocitySlide() {
   );
   hubRing.position.z = armDepth / 2 + 0.025;
   hubRing.userData.role = 'input-hub-front-ring';
+  retireInkOutline(bodyEdge);
+  retireInkOutline(hubRing);
   const armIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.5, 0.055, 0.026),
     whiteMaterial,
@@ -25151,6 +25232,7 @@ function curvedSlotRockerVariableVelocitySlide() {
   );
   followerTread.position.z = armDepth / 2 + 0.065;
   followerTread.userData.role = 'follower-roller-front-tread';
+  retireInkOutline(followerTread);
   const followerIndex = new THREE.Mesh(
     new THREE.BoxGeometry(followerRadius * 0.92, 0.035, 0.024),
     whiteMaterial,
@@ -26903,6 +26985,7 @@ function capsuleGuidedMangleRack() {
     rim.position.set(x, 0, rackDepth / 2 + 0.095);
     rim.userData.index = index;
     rim.userData.role = 'dark-rim-of-round-rack-pin';
+    retireInkOutline(rim);
     rackPins.push(pin);
     rackPinRims.push(rim);
     rackAssembly.add(pin, rim);
@@ -27924,6 +28007,7 @@ function fixedPinionLiftedMangleRack() {
     inkMaterial,
   );
   slotRail.userData.role = 'central-capsule-lightening-slot-rim';
+  retireInkOutline(slotRail);
   const toothRootRail = new THREE.Mesh(
     new THREE.TubeGeometry(
       makeCapsuleCurve(2.18 * pinionPitchRadius, -0.06),
@@ -29902,6 +29986,7 @@ function eccentricGearCarriedPinionRocker() {
     // eccentric brings the shaft next to the mesh.
     hubRing.position.z = depth / 2 + 0.06;
     hubRing.userData.role = 'eccentric-input-shaft-hub-ring';
+    retireInkOutline(hubRing);
     const indicator = new THREE.Mesh(
       new THREE.BoxGeometry(0.28, 0.065, 0.026),
       matte(PALETTE.white, { roughness: 0.48 }),
@@ -30098,9 +30183,12 @@ function eccentricGearCarriedPinionRocker() {
     smallPulleyRadius + beltRadius + 0.001,
     -0.42,
   );
+  // Brown draws a plain round band: the shared laid rope, whose moving lay
+  // shows the travel without painted markers.
   const belt = makeMovingBelt(beltCurve, {
     color: PALETTE.belt,
-    markerCount: 12,
+    laid: true,
+    markerCount: 0,
     radius: beltRadius,
   });
   belt.userData.active = true;
@@ -31168,6 +31256,7 @@ function skewHyperboloidFrictionDrive() {
       );
       rim.position.z = side * (bodyHalfLength + 0.09);
       rim.userData.role = `${role}-end-face-rim`;
+      retireInkOutline(rim);
       return rim;
     });
     const endHubs = [-1, 1].map((side) => {
@@ -32955,6 +33044,7 @@ function compoundMutilatedExternalInternalGearReverser() {
   );
   compoundHub.position.z = gearDepth / 2 + 0.035;
   compoundHub.userData.role = 'compound-input-hub-reference-ring';
+  retireInkOutline(compoundHub);
   const compoundIndex = makeBeam(
     new THREE.Vector3(0.44, 0, gearDepth / 2 + 0.075),
     new THREE.Vector3(0.74, 0, gearDepth / 2 + 0.075),
@@ -33006,6 +33096,7 @@ function compoundMutilatedExternalInternalGearReverser() {
   );
   pinionHub.position.z = gearDepth / 2 + 0.035;
   pinionHub.userData.role = 'reversing-pinion-hub-reference-ring';
+  retireInkOutline(pinionHub);
   const pinionIndex = makeBeam(
     new THREE.Vector3(0.44, 0, gearDepth / 2 + 0.075),
     new THREE.Vector3(0.78, 0, gearDepth / 2 + 0.075),
@@ -34535,6 +34626,7 @@ function pairedStopsForSpurGear(movement) {
   );
   gearHubRing.position.z = gearDepth / 2 + 0.025;
   gearHubRing.userData.role = 'spur-gear-hub-outline';
+  retireInkOutline(gearHubRing);
   gearRotor.add(gearHubRing);
   const gearIndicator = new THREE.Mesh(
     new THREE.BoxGeometry(0.9, 0.055, 0.025),
@@ -34660,6 +34752,7 @@ function pairedStopsForSpurGear(movement) {
     );
     ring.position.z = depth / 2 + 0.025;
     ring.userData.role = `${side}-stop-pivot-outline`;
+    retireInkOutline(ring);
     group.add(ring);
     group.userData.body = body;
     group.userData.hub = hub;
@@ -35024,4 +35117,13 @@ function createGearCoreModel(movement) {
     case 239: return pairedStopsForSpurGear(movement);
     default: return null;
   }
+}
+
+// Brown inks every edge only because the plate is a line drawing. Former dark
+// outline rings stay as hidden placeholders so callers and blocks keep their
+// references.
+function retireInkOutline(mesh) {
+  mesh.visible = false;
+  mesh.userData.retiredInkOutline = true;
+  return mesh;
 }

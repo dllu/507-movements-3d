@@ -43,22 +43,25 @@ test('490 nonneighbor pieces of the rendered rope remain spatially disjoint',()=
   for(let pose=0;pose<=32;pose++) {
     model.update(g.cycleDuration*pose/32);
     const geometry=b.rope.geometry,positions=geometry.attributes.position;
-    const sides=geometry.parameters.radialSegments;
-    const stride=sides+1,segments=geometry.parameters.tubularSegments;
+    assert.equal(geometry.type,'LaidRopeGeometry');
+    const around=geometry.parameters.radialSegments,segments=geometry.parameters.tubularSegments;
+    const strands=geometry.userData.ropeLay.strands,perStrand=(segments+1)*around+2;
+    const cellLength=geometry.userData.ropeLay.length/segments;
+    // Cells within two rope diameters of arc share the local bend.
+    const neighbor=Math.ceil(4*g.ropeRadius/cellLength)+1;
     const boxes=[];
-    // Each actual tube cell consists entirely of triangles whose vertices
-    // lie on these two rings. Disjoint boxes prove disjoint finite surfaces;
+    // Every triangle of the three laid strands in a cell has its vertices on
+    // these two cross-sections. Disjoint boxes prove disjoint finite surfaces;
     // this uses the visible mesh, not the nominal helix pitch or curve law.
     for(let i=0;i<segments;i++) {
-      const points=[];
-      for(const ring of [i,i+1])for(let j=0;j<sides;j++)
-        points.push(new THREE.Vector3().fromBufferAttribute(positions,ring*stride+j));
-      boxes.push(new THREE.Box3().setFromPoints(points));
+      const box=new THREE.Box3(),point=new THREE.Vector3();
+      for(let k=0;k<strands;k++)for(const ring of [i,i+1])for(let j=0;j<around;j++)
+        box.expandByPoint(point.fromBufferAttribute(positions,k*perStrand+ring*around+j));
+      boxes.push(box);
     }
-    // The two immediate neighboring cells share the continuous local bend;
-    // the audit concerns distinct rope reaches and successive barrel turns.
-    for(let i=0;i<segments;i++)for(let j=i+3;j<segments;j++)
-      assert.equal(boxes[i].intersectsBox(boxes[j]),false,
+    // The audit concerns distinct rope reaches and successive barrel turns.
+    for(let i=0;i<segments;i++)for(let j=i+neighbor;j<segments;j++)
+      if(boxes[i].intersectsBox(boxes[j]))assert.fail(
         `nonneighbor rope cells ${i}/${j} require a narrow-phase check at pose ${pose}/32`);
   }
 });

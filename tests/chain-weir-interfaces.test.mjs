@@ -5,7 +5,7 @@ import {surfacePoints,solidSurface}from'./helpers/solid-surface.mjs';
 for(const[id,build]of[[462,chain],[463,weir]])test(`${id} finite working interfaces over a full cycle`,()=>{
  const m=build({id}),r=m.root,b=r.userData.blocks,g=r.userData.geometry,pairs=[];
  if(id===462){for(const w of[b.topWheel,b.bottomWheel]){pairs.push([w.axle,w.hub],[w.axle,w.bearing]);for(const part of w.workingParts)pairs.push([part,b.cylinder]);for(const{disk}of b.carriers)if(disk)for(const part of[w.hub,...w.workingParts])pairs.push([disk,part]);for(const carrier of b.carriers)for(const part of w.workingParts)pairs.push([carrier.crossShaft,part]);}
- for(const{disk}of b.carriers)if(disk)for(const part of[b.cylinder,...b.cylinderFlanges,...b.dischargeTrough.children.filter(o=>o!==b.dischargeWater)])pairs.push([disk,part]);for(const carrier of b.carriers)pairs.push([carrier.crossShaft,b.cylinder]);
+ for(const{disk}of b.carriers)if(disk)for(const part of[b.cylinder,...b.dischargeTrough.children.filter(o=>o!==b.dischargeWater)])pairs.push([disk,part]);for(const carrier of b.carriers)pairs.push([carrier.crossShaft,b.cylinder]);
  }else{for(const[p,a]of[[b.upperBody,b.upperPivotAssembly],[b.lowerBody,b.lowerPivotAssembly]]){pairs.push([a.axle,p]);for(const bearing of a.bearings)pairs.push([a.axle,bearing]);}
  pairs.push([b.upperBody,b.lowerBody],[b.upperContactEdge,b.lowerBody],...b.upperReinforcements.map(o=>[o,b.lowerBody]),...b.lowerReinforcements.map(o=>[o,b.upperBody]),[b.bedFlow,b.lowerBody],[b.notchFlow,b.upperBody],...b.upperShoulders.map(o=>[b.notchFlow,o]));}
  const points=new Map(),surfaces=new Map();for(const[a,c]of pairs){if(!points.has(a))points.set(a,surfacePoints(a.geometry));if(!surfaces.has(c))surfaces.set(c,solidSurface(c.geometry));}

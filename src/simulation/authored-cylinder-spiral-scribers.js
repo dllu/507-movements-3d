@@ -676,8 +676,11 @@ function spiralCylinderScriber(movement) {
   rackAssembly.userData.role =
     'vertical-rack-carriage-and-marking-point-assembly';
   root.add(rackAssembly);
-  const rackLocalBottom = 1.02;
-  const rackLength = 4.06;
+  // Brown carries the marking point on the rack's own lower end, so the
+  // rack runs down (by whole tooth pitches, keeping the pinion phase) and
+  // seats on the marking carriage.
+  const rackLocalBottom = 1.02 - 5 * rackPitch;
+  const rackLength = 4.06 + 5 * rackPitch;
   const rack = makeVerticalRack({
     bodyDepth: 0.15,
     bodyWidth: 0.30,

@@ -1443,9 +1443,10 @@ function sideLeverMarineParallelMotion(movement) {
   const leverRib = new THREE.Mesh(plate(poly([
     [1.75 * s, -0.06 * s], [7.0 * s, -0.06 * s],
     [7.0 * s, 0.06 * s], [1.75 * s, 0.06 * s],
-  ]), leverPlaneZ + leverHalfDepth - 0.01, leverPlaneZ + leverHalfDepth + 0.012),
-  darkMaterial);
-  leverRib.userData.role = 'side-lever-centre-web-line';
+  ]), leverPlaneZ + leverHalfDepth - 0.01, leverPlaneZ + leverHalfDepth + 0.03),
+  blueMaterial);
+  // Brown's centre line is the lever's raised web, not an ink stripe.
+  leverRib.userData.role = 'side-lever-raised-centre-web';
   const leverAnchor = (x, role) => {
     const anchor = new THREE.Object3D();
     anchor.position.set(x, 0, leverPlaneZ);

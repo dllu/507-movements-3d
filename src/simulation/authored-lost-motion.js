@@ -557,18 +557,24 @@ function lostMotionBrickPress() {
     darkMaterial,
   );
   diskOuterRim.userData.role = 'source-ten-and-three-quarter-unit-outer-rim';
+  diskOuterRim.visible = false; // ink edge/path only: kept for references, not drawn
+  diskOuterRim.userData.retiredInkOutline = true;
   const diskInnerRim = new THREE.Mesh(
     new THREE.TorusGeometry(diskInnerRadius, 0.045, 10, 88),
     darkMaterial,
   );
   diskInnerRim.position.z = diskDepth / 2 + 0.025;
   diskInnerRim.userData.role = 'engraved-inner-circle-of-driver-disk';
+  diskInnerRim.visible = false; // ink edge/path only: kept for references, not drawn
+  diskInnerRim.userData.retiredInkOutline = true;
   const crankOrbit = new THREE.Mesh(
     new THREE.TorusGeometry(crankRadius, 0.028, 8, 72),
     matte(PALETTE.ink, { opacity: 0.32, transparent: true }),
   );
   crankOrbit.position.z = diskDepth / 2 + 0.045;
   crankOrbit.userData.role = 'subdued-true-circular-orbit-of-crank-pin';
+  crankOrbit.visible = false; // ink edge/path only: kept for references, not drawn
+  crankOrbit.userData.retiredInkOutline = true;
   const driverHub = cylinderAlongZ(hubRadius, 0.78, darkMaterial, 40);
   driverHub.position.z = 0.02;
   driverHub.userData.role = 'central-driver-shaft-hub';
@@ -652,6 +658,8 @@ function lostMotionBrickPress() {
   );
   slotOutline.position.x = -slotCenterDistance;
   slotOutline.userData.role = 'dark-outline-of-three-unit-lost-motion-slot';
+  slotOutline.visible = false; // ink edge/path only: kept for references, not drawn
+  slotOutline.userData.retiredInkOutline = true;
   const slotFrame = new THREE.Mesh(
     centeredExtrusion(horizontalCapsuleRingShape(
       slotInnerRadius,
@@ -669,6 +677,8 @@ function lostMotionBrickPress() {
   );
   outputEye.position.z = rodDepth / 2 + 0.045;
   outputEye.userData.role = 'pitman-eye-pinned-to-translating-slide';
+  outputEye.visible = false; // ink edge/path only: kept for references, not drawn
+  outputEye.userData.retiredInkOutline = true;
   rodAssembly.add(rodBeam, slotOutline, slotFrame, outputEye);
 
   const outputSlide = new THREE.Group();

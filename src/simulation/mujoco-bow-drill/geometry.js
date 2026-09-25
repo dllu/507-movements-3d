@@ -4,7 +4,16 @@ import {bowDrillClearCordPath} from './cord-path.js';
 import {plate,poly,ring,disk} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 import {applyBowDrillShaftHatching} from './shaft-finish.js';
+import {LaidRopeGeometry,replaceWithLaidRope} from '../laid-rope.js';
 export {THREE};
+
+// Brown draws the bowstring and its tip bindings as cord: the shared
+// three-strand laid rope, on a smooth curve through the native sections.
+// Both string ends are tied, so arc length is the material coordinate and the
+// lay is not shifted along the cord.
+const cordCurve=points=>new THREE.CatmullRomCurve3(points.map(p=>new THREE.Vector3(...p)),false,'centripetal');
+export function bowDrillCordGeometry(points,radius){return new LaidRopeGeometry(cordCurve(points),points.length*4,radius,8,false);}
+export function updateBowDrillCord(mesh,points,radius){return replaceWithLaidRope(mesh,cordCurve(points),{radius,tubularSegments:points.length*4});}
 
 // Closed circular/elliptic sweep. Separate cap vertices preserve the edge normal.
 export function bowDrillTube(points,radii,{sides=24,depthRadii=radii}={}){
@@ -41,7 +50,7 @@ export function makeBowDrillGeometry({amplitude=.9,cordSegments=96,cordTilt=.3,l
   const binding=[...coil,...tailCurve.getPoints(72).slice(1).map(p=>p.toArray())];
   // A rounded solid lead joins the free span to the binding. Its overlap is
   // the tied knot, not an additional flexible length or a hidden drive link.
-  bindingPoints[name]=binding;add(name,bowDrillTube(binding,binding.map(()=>cordRadius),{sides:24}),'bow',PALETTE.brass);
+  bindingPoints[name]=binding;add(name,bowDrillCordGeometry(binding,cordRadius),'bow',PALETTE.brass);
   const first=new THREE.Vector3().fromArray(anchor),last=new THREE.Vector3().fromArray(coil[0]),axis=last.clone().sub(first);
   if(name==='lowerBinding') {
     const incoming=first.clone().sub(new THREE.Vector3(...cordPath.points[1])).normalize(),outgoing=new THREE.Vector3(...coil[1]).sub(last).normalize();
@@ -57,7 +66,7 @@ export function makeBowDrillGeometry({amplitude=.9,cordSegments=96,cordTilt=.3,l
  add('drum',ring(shaft,drumRadius,-.16,.16,192),'spindle',PALETTE.driven);add('backFlange',ring(shaft,outer,-.20,-.16,192),'spindle',PALETTE.driven);add('frontFlange',ring(shaft,outer,.16,.20,192),'spindle',PALETTE.driven);add('frontLand',ring(shaft,pitchRadius,.20,.22,192),'spindle',PALETTE.driven);add('frontHub',ring(shaft,hub,.22,.24,192),'spindle',PALETTE.driven);add('shaft',disk(shaft,-.9,.24,128),'spindle',PALETTE.ink);
  applyBowDrillShaftHatching(parts.shaft.material);
  const bit=plate(poly([[-.12,-.8],[.12,-.8],[.12,-1.15],[.06,-1.32],[0,-1.36],[-.06,-1.32],[-.12,-1.15]]),-.025,.025);bit.rotateX(Math.PI/2);add('bit',bit,'spindle',PALETTE.ink);
- add('initialCord',bowDrillTube(cordPath.points,cordPath.points.map(()=>cordRadius)),'cord',PALETTE.brass);
+ add('initialCord',bowDrillCordGeometry(cordPath.points,cordRadius),'cord',PALETTE.brass);
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);for(const n of ['frontFlange','frontLand','frontHub'])parts[n].visible=!enabled;};
  const bounds=new THREE.Box3();for(const q of [-amplitude,amplitude]){blocks.bow.position.set(d[0]*q,d[1]*q,0);root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}blocks.bow.position.set(0,0,0);bounds.expandByScalar(.12);
  Object.assign(root.userData,{source,parts,blocks,families,profile:{amplitude,cordSegments,cordTilt,lowerTieDepth,cordRadius,pitchRadius,drumRadius,lower,upper,cordPath,stockAt,stockRadius,stockSamples,stockPoints,bindingPoints},hideGround:true,setSectionView,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},shadowCameraHalfExtent:5,shadowBias:-.00002,shadowNormalBias:.001});setSectionView(false);markShadows(root);root.updateMatrixWorld(true);return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(1.2,1,10)};

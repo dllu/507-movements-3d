@@ -9,7 +9,7 @@ import {
 // - valve arm: rockshaft boss (313,111) r 35 with the hatched shaft r 18, a
 //   tapered neck, and a round lower eye r 45.5 about the gab pin (313,237.5)
 //   r 16; the eye shows below the rod.
-// - eccentric rod: broken-off left end at x 15, bar y 224.5-258, a round crown
+// - eccentric rod: broken-off left end at x 15 (modelled whole), bar y 224.5-258, a round crown
 //   r 56 concentric with the gab, the gab slot cut up from the lower edge, and
 //   the LOWER handle forged on it out to x 511.
 // - upper handle: pivoted on the small pin (319,198) in the crown; its cam lies
@@ -128,8 +128,9 @@ export function twoHandleGabDisengager() {
 
   // ------------------------------------------------------------ geometry
   const raster = (points) => points.map(([x, y]) => P(x, y));
-  const rodBar = poly(raster([[21, 224.5], [262, 224.5], [262, 258], [21, 258], [17, 252], [15, 244],
-    [19, 238], [15, 231]]));
+  // Brown breaks the rod off at the left (a drawing convention); it runs on
+  // whole toward its eccentric, past the view.
+  const rodBar = poly(raster([[-300, 224.5], [262, 224.5], [262, 258], [-300, 258]]));
   const crown = polygonClipping.intersection(poly(circle([0, 0], crownRadius, 160)),
     poly([[-2, rodBottomY], [2, rodBottomY], [2, 2], [-2, 2]]));
   const lowerHandle = poly(raster([

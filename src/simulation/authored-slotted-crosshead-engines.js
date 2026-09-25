@@ -657,48 +657,6 @@ function slottedCrossheadPillarEngine(movement) {
   yokeBody.userData.role =
     'crosshead-A-solid-body-minus-real-horizontal-journal-slot';
 
-  const slotLeftX = slotLeftCenterX;
-  const slotRightX = slotRightCenterX;
-  // Use an explicit sampled capsule for a crisp dark outline on the front.
-  const slotPoints = [];
-  for (let index = 0; index <= 28; index += 1) {
-    const angle = Math.PI / 2 - Math.PI * index / 28;
-    slotPoints.push(new THREE.Vector3(
-      slotRightX + slotHalfHeight * Math.cos(angle),
-      slotHalfHeight * Math.sin(angle),
-      crossheadPlaneZ + 0.105,
-    ));
-  }
-  slotPoints.push(new THREE.Vector3(
-    slotLeftX,
-    -slotHalfHeight,
-    crossheadPlaneZ + 0.105,
-  ));
-  for (let index = 0; index <= 28; index += 1) {
-    const angle = -Math.PI / 2 - Math.PI * index / 28;
-    slotPoints.push(new THREE.Vector3(
-      slotLeftX + slotHalfHeight * Math.cos(angle),
-      slotHalfHeight * Math.sin(angle),
-      crossheadPlaneZ + 0.105,
-    ));
-  }
-  slotPoints.push(new THREE.Vector3(
-    slotRightX,
-    slotHalfHeight,
-    crossheadPlaneZ + 0.105,
-  ));
-  const slotOutline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(slotPoints, true, 'centripetal'),
-      144,
-      0.018,
-      6,
-      true,
-    ),
-    darkMaterial,
-  );
-  slotOutline.userData.role = 'front-outline-of-real-crosshead-slot-A';
-
   const leftShoe = makePillarGuideShoe({
     frameBackZ,
     frameFrontZ,
@@ -773,7 +731,6 @@ function slottedCrossheadPillarEngine(movement) {
     pistonRod,
     pistonHead,
     yokeBody,
-    slotOutline,
     leftShoe,
     rightShoe,
     crossheadIndex,
@@ -1004,7 +961,6 @@ function slottedCrossheadPillarEngine(movement) {
     pistonRod,
     rightGuideShoe: rightShoe,
     slotCenterAnchor,
-    slotOutline,
     wristJournal: rotorParts.wristJournal,
     yokeBody,
   };

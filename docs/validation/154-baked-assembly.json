@@ -2,40 +2,40 @@
   "movement": 154,
   "method": "All visible mesh pairs belonging to different rigid bodies, bidirectional vertices/edge midpoints/face centers, 65 interpolated baked poses between recorded frames; authored constituent solids use the same body coordinates as merged baked geometry. Contact markers are excluded; intended soft working contacts and rope attachment joins are reported separately. Same-body mating interfaces excluded. No continuous collision proof.",
   "summary": {
-    "parts": 34,
-    "pairs": 440,
+    "parts": 33,
+    "pairs": 416,
     "poses": 65,
-    "checks": 5596352,
+    "checks": 20552404,
     "failingPairs": 0
   },
   "failures": {},
   "softContacts": {
-    "part-17/part-21": {
+    "part-16/part-20": {
       "firstPose": 0,
       "points": 4,
-      "maximumDepth": 0.0000023311458328274206
+      "maximumDepth": 0.0000023507665792565913
     },
-    "part-15/part-21": {
+    "part-14/part-20": {
       "firstPose": 24,
       "points": 1,
-      "maximumDepth": 0.0000012511519271451998
+      "maximumDepth": 0.000001244574086650685
     },
-    "part-19/part-21": {
+    "part-18/part-20": {
       "firstPose": 45,
       "points": 7,
-      "maximumDepth": 0.000016439334335585028
+      "maximumDepth": 0.000016493273924900567
     }
   },
   "attachmentJoins": {
-    "moving-cord-attachment-eye-22/one-continuous-inextensible-weighted-cord-33": {
+    "moving-cord-attachment-eye-21/one-continuous-inextensible-weighted-cord-32": {
       "firstPose": 0,
-      "points": 3928,
-      "maximumDepth": 0.0449457862704274
+      "points": 24425,
+      "maximumDepth": 0.04494578246801943
     },
-    "weight-cord-shackle-32/one-continuous-inextensible-weighted-cord-33": {
+    "weight-cord-shackle-31/one-continuous-inextensible-weighted-cord-32": {
       "firstPose": 0,
-      "points": 26000,
-      "maximumDepth": 0.03423800888375879
+      "points": 49790,
+      "maximumDepth": 0.027516520118206628
     }
   },
   "sources": [
@@ -45,19 +45,19 @@
     },
     {
       "file": "src/simulation/mujoco-weighted-bell-crank/geometry.js",
-      "sha256": "7e1ba0982ccd71ab091ccdb43ddba311e9e230ccba9699a6338d5a67bfae5aa8"
+      "sha256": "34ad9bc0ed8bb4d67585d1a147a619fb7b1b79c390ffbd7a9dab9b4302eaa6dc"
     },
     {
       "file": "src/simulation/mujoco-weighted-bell-crank/sync.js",
-      "sha256": "821799be1360786e4bd471218b62d3efe19411ea4fd359f0834fc36c05e2c4b3"
+      "sha256": "409446e897964512cf9eac788a866e6631cf5d6fea6c4e15fedcad4d29a2d70c"
     },
     {
       "file": "src/simulation/authored-stud-drives.js",
-      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+      "sha256": "8faed0df6244529a768e0623c0d0cffdd062a900954fc74d62d2717bbdaa290f"
     },
     {
       "file": "src/simulation/baked/assets/154.json.gz",
-      "sha256": "c3c82194c9d789355114b8b06d1a2d77e76e2eb4a6930748abb83521962e0eb4"
+      "sha256": "40657ff83c7898c074e14b368684f89011f37e31aa0ac41a688122577c918345"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -65,7 +65,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

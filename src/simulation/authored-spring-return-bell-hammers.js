@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { makeLaidRopeMesh } from './laid-rope.js';
 import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily, bellLipSphereGap } from './spring-pivot-family-parts.js';
 import {
   PALETTE,
@@ -361,6 +362,34 @@ function springReturnBellHammer(movement) {
   hammer.add(strikerFace);
   root.add(hammer);
 
+  // Brown draws a twisted pull cord hanging from the end of the tail, just
+  // past the end of the plank. It is tied into the tail end and hangs
+  // plumb; its top rides with the tail, so it needs no lay travel.
+  const pullCordRadius = 0.035;
+  const pullCordLength = 1.62;
+  const pullCordMaterial = matte(PALETTE.belt, { roughness: 0.78 });
+  const pullCordPath = (hammerAngle) => {
+    const angle = hammerAngle + tailDirection;
+    const tip = new THREE.Vector3(
+      pivot.x + Math.cos(angle) * hammerTailLength,
+      pivot.y + Math.sin(angle) * hammerTailLength,
+      pivot.z,
+    );
+    const hangX = tip.x - 0.05;
+    return new THREE.CatmullRomCurve3([
+      new THREE.Vector3(tip.x + 0.03, tip.y, tip.z),
+      new THREE.Vector3(tip.x - 0.035, tip.y - 0.012, tip.z),
+      new THREE.Vector3(hangX, tip.y - 0.13, tip.z),
+      new THREE.Vector3(hangX, tip.y - pullCordLength * 0.5, tip.z),
+      new THREE.Vector3(hangX, tip.y - pullCordLength, tip.z),
+    ], false, 'centripetal');
+  };
+  const pullCord = makeLaidRopeMesh(pullCordPath(restAngle), pullCordMaterial, {
+    radius: pullCordRadius,
+  });
+  pullCord.userData.role = 'twisted-pull-cord-hanging-from-hammer-tail';
+  root.add(pullCord);
+
   const springHeel = new THREE.Mesh(
     new THREE.BoxGeometry(0.58, 0.34, 0.66),
     springMaterial,
@@ -456,6 +485,7 @@ function springReturnBellHammer(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     hammer.rotation.z = state.hammerAngle;
+    pullCord.userData.setCurve(pullCordPath(state.hammerAngle), 0);
     springContactPad.position.copy(state.springContact);
     returnLeafSpring.userData.setCurve(
       springBase,
@@ -488,6 +518,7 @@ function springReturnBellHammer(movement) {
       hammerHead,
       hammerTail,
       pivotStand,
+      pullCord,
       returnLeafSpring,
       springContactPad,
       springHeel,

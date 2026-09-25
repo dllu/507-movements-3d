@@ -102,12 +102,15 @@ test('239 full gear and source pivots remain, and the prescribed free play is sm
 
 test('239 source-facing full-sweep bounds fit finite vertices and updates retain all buffers', () => {
   const m=make(),d=m.root.userData,meshes=[];m.root.traverse(o=>{if(o.isMesh)meshes.push([o,o.geometry]);}); const p=new THREE.Vector3();
+  // Everything above Brown's broken line (y -0.72) stays in the plate crop;
+  // the wheel itself is whole and simply runs off the view below.
+  const brownBreakTop=-0.72;assert.equal(d.wheelBreak,undefined);
   for(let i=0;i<=16;i++) {
     at(m,i/16);
     for(const[o,g]of meshes) {
-      assert.equal(o.geometry,g); assert.equal(o.material.fog,false);
+      assert.equal(o.geometry,g); assert.equal(o.material.fog,false);assert.equal(o.material.userData.worldBreakBelow,undefined);assert.equal(o.material.onBeforeCompile?.toString().includes('discard')??false,false);
       if(!o.visible)continue;
-      for(let j=0;j<g.attributes.position.count;j++) {p.fromBufferAttribute(g.attributes.position,j).applyMatrix4(o.matrixWorld);assert.ok(d.sweptBounds.containsPoint(p),`${o.userData.role}: ${p.toArray()}`);if(p.y>d.wheelBreak.level+d.wheelBreak.amplitude)assert.ok(d.cameraFitBounds.containsPoint(p),`drawn ${o.userData.role}: ${p.toArray()}`);}
+      for(let j=0;j<g.attributes.position.count;j++) {p.fromBufferAttribute(g.attributes.position,j).applyMatrix4(o.matrixWorld);assert.ok(d.sweptBounds.containsPoint(p),`${o.userData.role}: ${p.toArray()}`);if(p.y>brownBreakTop)assert.ok(d.cameraFitBounds.containsPoint(p),`drawn ${o.userData.role}: ${p.toArray()}`);}
     }
   }
   assert.equal(d.minimumDisplayCycleSeconds,6);assert.equal(d.hideGround,true);assert.equal(d.sourceAnimation.available,false);

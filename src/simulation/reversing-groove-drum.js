@@ -4,20 +4,23 @@ import {disposeObject3D} from './dispose-model.js';
 
 const TAU = 2 * Math.PI;
 export const grooveDrumGeometry = Object.freeze({
-  radius: .56, length: 4.76, floorRadius: .40, slotHalfHeight: .17,
-  centerY: .21, amplitude: 1.218, studRadius: .075,
+  radius: .56, length: 4.76, floorRadius: .40, slotHalfHeight: .195,
+  centerY: .21, amplitude: 1.218, studRadius: .065,
   studCenterRadius: .53, rodX: 1.05, rodRadius: .112,
   rodLength: 5.39, period: 4,
 });
+// Brown draws the front half of the groove as a straight band of constant
+// width running from one silhouette to the other. On a cylinder that is the
+// edge-on view of a planar (inclined) groove: its centre height varies as
+// -cos(angle), so the rising half and the falling half have opposite pitch
+// and join smoothly at the two reversals. Uniform drum rotation then gives
+// the harmonic rod motion directly.
 export function grooveHeight(angle, g = grooveDrumGeometry) {
-  const a = ((angle % TAU) + TAU) % TAU;
-  return g.centerY - g.amplitude + 2 * g.amplitude * Math.min(a, TAU - a) / Math.PI;
+  return g.centerY - g.amplitude * Math.cos(angle);
 }
 export function grooveDrumState(time, g = grooveDrumGeometry) {
-  const phase = TAU * time / g.period, cycle = Math.floor(phase / TAU);
-  const a = phase - cycle * TAU, c = Math.cos(a);
-  const localAngle = cycle * TAU + (a < Math.PI ? Math.PI / 2 * (1 - c) : Math.PI * 1.5 + Math.PI / 2 * c);
-  return {rodY: g.centerY - g.amplitude * c, drumAngle: -localAngle, localAngle};
+  const localAngle = TAU * time / g.period;
+  return {rodY: grooveHeight(localAngle, g), drumAngle: -localAngle, localAngle};
 }
 
 // Closed upper/lower drum solids with an actual channel between their faces.
@@ -91,7 +94,7 @@ export function makeReversingGrooveDrum() {
     simulationBackend: 'analytic', fidelity: 'authored', reconstructionStatus: 'reconstructed', supportsRestart: true,
     hideGround: true, cameraFitBounds: bounds, cameraFov: 8,
     animationTiming: {authoredCyclePeriod: g.period, displayCycleDuration: g.period, playbackTimeScale: 1},
-    reconstructionNote: 'Opposite-pitch groove halves guide the reciprocating stud. Harmonic rod motion and continued rotation at the two dead centers are prescribed; inertia and contact forces are not simulated. Groove depth, stud clearance and hidden dimensions are inferred.'});
+    reconstructionNote: 'The endless groove is the planar inclined groove whose front half Brown draws as a straight constant-width band; its rising and falling halves have opposite pitch. The stud rides the groove centreline, so uniform drum rotation and harmonic rod motion follow from the groove; the drum is prescribed to keep turning through the two dead centres, and inertia and contact forces are not simulated. Groove depth, stud clearance and hidden dimensions are inferred.'});
   return {root, update, reset: () => update(0), focus: bounds.getCenter(new THREE.Vector3()),
     cameraDirection: new THREE.Vector3(.01, .01, 15), dispose: () => disposeObject3D(root)};
 }

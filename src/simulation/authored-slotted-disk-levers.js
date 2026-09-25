@@ -9,10 +9,10 @@ import {
 import { rackPinionGeometry, rackToothGeometry } from './rack-pinion-parts.js';
 import { plate, poly, capsule, circle, sector as sectorPolygon, polygonClipping as clip } from './finite-plate-geometry.js';
 import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
+import { replaceWithLaidRope } from './laid-rope.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function cylinderAlongZ(radius, length, material, segments = 36) {
   const cylinder = new THREE.Mesh(
@@ -33,21 +33,6 @@ function positiveAngle(angle) {
 
 function vector3From2(point, z = 0) {
   return new THREE.Vector3(point.x, point.y, z);
-}
-
-function makeUnitRod(radius, material, radialSegments = 9) {
-  return new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, 1, radialSegments),
-    material,
-  );
-}
-
-function setRodBetween(rod, start, end) {
-  const direction = new THREE.Vector3().subVectors(end, start);
-  const length = Math.max(direction.length(), 1e-8);
-  rod.position.copy(start).add(end).multiplyScalar(0.5);
-  rod.scale.set(1, length, 1);
-  rod.quaternion.setFromUnitVectors(Y_AXIS, direction.normalize());
 }
 
 function slottedDiskLeverRackAndWeight(movement) {
@@ -583,13 +568,6 @@ function slottedDiskLeverRackAndWeight(movement) {
   const diskBody = cylinderAlongZ(diskRadius, 0.3, driverMaterial, 72);
   diskBody.userData.role = 'solid-driving-disk';
   diskRotor.add(diskBody);
-  const diskRim = new THREE.Mesh(
-    new THREE.TorusGeometry(diskRadius, 0.045, 10, 80),
-    darkMaterial,
-  );
-  diskRim.position.z = 0.14;
-  diskRim.userData.role = 'driving-disk-rim';
-  diskRotor.add(diskRim);
   const diskHub = cylinderAlongZ(0.14, 0.30, darkMaterial, 32);
   diskHub.userData.role = 'fixed-disk-axis-hub';
   diskRotor.add(diskHub);
@@ -793,19 +771,34 @@ function slottedDiskLeverRackAndWeight(movement) {
   const cord = new THREE.Group();
   cord.userData.role = 'single-inextensible-cord-over-fixed-pulley';
   root.add(cord);
-  const incomingCord = makeUnitRod(0.028, cordMaterial, 10);
-  incomingCord.userData.role = 'moving-lever-to-pulley-cord-segment';
-  cord.add(incomingCord);
-  const wrappedCordSegments = Array.from({ length: 20 }, (_, index) => {
-    const segment = makeUnitRod(0.028, cordMaterial, 10);
-    segment.userData.index = index;
-    segment.userData.role = 'cord-wrap-on-pulley';
-    cord.add(segment);
-    return segment;
-  });
-  const verticalCord = makeUnitRod(0.028, cordMaterial, 10);
-  verticalCord.userData.role = 'vertical-weight-cord-segment';
-  cord.add(verticalCord);
+  // Brown draws one plain cord; it is the shared three-strand laid rope,
+  // one continuous piece from the lever eye over the sheave to the weight.
+  const cordRadius = 0.028;
+  const cordPath = (state) => {
+    const at = (point) => new THREE.Vector3(point.x, point.y, ropePlaneZ);
+    const path = new THREE.CurvePath();
+    path.add(new THREE.LineCurve3(at(state.cableAttachment), at(state.cableTangentPoint)));
+    const wrap = state.cableWrapAngle, arcPoints = [];
+    const arcSteps = Math.max(2, Math.ceil(Math.abs(wrap) / (Math.PI / 48)));
+    for (let index = 0; index <= arcSteps; index += 1) {
+      const angle = wrap * (1 - index / arcSteps);
+      arcPoints.push(new THREE.Vector3(
+        pulleyCenter.x + Math.cos(angle) * pulleyRunningRadius,
+        pulleyCenter.y + Math.sin(angle) * pulleyRunningRadius,
+        ropePlaneZ,
+      ));
+    }
+    for (let index = 1; index < arcPoints.length; index += 1) {
+      path.add(new THREE.LineCurve3(arcPoints[index - 1], arcPoints[index]));
+    }
+    path.add(new THREE.LineCurve3(at(state.exitTangentPoint), at(state.weightTop)));
+    return path;
+  };
+  const cordRope = new THREE.Mesh(new THREE.BufferGeometry(), cordMaterial);
+  cordRope.userData.role = 'single-laid-cord-from-lever-eye-over-pulley-to-weight';
+  cordRope.userData.crossSection = 'laid-rope';
+  cordRope.userData.radius = cordRadius;
+  cord.add(cordRope);
 
   const weight = new THREE.Group();
   weight.userData.role = 'purely-vertical-reciprocating-weight';
@@ -839,14 +832,13 @@ function slottedDiskLeverRackAndWeight(movement) {
     diskBody,
     diskHub,
     diskIndex,
-    diskRim,
     diskRotor,
     drivePin,
     drivePinHead,
     frame,
     guidePin,
     guideSlot,
-    incomingCord,
+    cordRope,
     lever,
     leverBody,
     pivotCap,
@@ -866,12 +858,10 @@ function slottedDiskLeverRackAndWeight(movement) {
     slotFloor,
     slotHighlight,
     topGuide,
-    verticalCord,
     weight,
     weightBody,
     weightIndex,
     weightTopEye,
-    wrappedCordSegments,
   };
   root.userData.geometry = {
     cableLengthExtension,
@@ -1059,33 +1049,11 @@ function slottedDiskLeverRackAndWeight(movement) {
   };
 
   const updateCord = (state) => {
-    const attachment = state.cableAttachment.clone();
-    const tangentPoint = state.cableTangentPoint.clone();
-    const exitPoint = state.exitTangentPoint.clone();
-    const weightTopPoint = state.weightTop.clone();
-    attachment.z = ropePlaneZ;
-    tangentPoint.z = ropePlaneZ;
-    exitPoint.z = ropePlaneZ;
-    weightTopPoint.z = ropePlaneZ;
-    setRodBetween(incomingCord, attachment, tangentPoint);
-    wrappedCordSegments.forEach((segment, index) => {
-      const startAngle = state.cableWrapAngle
-        * (1 - index / wrappedCordSegments.length);
-      const endAngle = state.cableWrapAngle
-        * (1 - (index + 1) / wrappedCordSegments.length);
-      const start = new THREE.Vector3(
-        pulleyCenter.x + Math.cos(startAngle) * pulleyRunningRadius,
-        pulleyCenter.y + Math.sin(startAngle) * pulleyRunningRadius,
-        ropePlaneZ,
-      );
-      const end = new THREE.Vector3(
-        pulleyCenter.x + Math.cos(endAngle) * pulleyRunningRadius,
-        pulleyCenter.y + Math.sin(endAngle) * pulleyRunningRadius,
-        ropePlaneZ,
-      );
-      setRodBetween(segment, start, end);
-    });
-    setRodBetween(verticalCord, exitPoint, weightTopPoint);
+    // The cord is tied at the lever eye, so its lay is anchored there.
+    const path = cordPath(state);
+    replaceWithLaidRope(cordRope, path, { radius: cordRadius, travel: 0 });
+    cordRope.userData.curve = path;
+    cordRope.userData.incomingLength = path.curves[0].getLength();
   };
 
   const update = (time) => {

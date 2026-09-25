@@ -111,13 +111,14 @@ test('movement 411 is a two-wheel isosceles carriage with one pendulum, one rule
   assert.deepEqual(belts, []);
   for (const role of [
     'curved-carriage-frame-governed-by-isosceles-triangle',
-    'nonphysical-isosceles-governing-triangle-construction',
     'left-wheel-axis-member-of-one-to-one-right-angle-bevel-stage',
     'horizontal-drum-axis-member-of-one-to-one-right-angle-bevel-stage',
     'cylindrical-sectionally-ruled-recording-paper',
     'pendulum-pencil-maintaining-contact-with-chart-paper',
     'continuous-pencil-trace-progressively-inscribed-on-paper',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.includes('nonphysical-isosceles-governing-triangle-construction'),
+    'Brown\'s dotted triangle is notation and is not drawn');
   disposeModel(model.root);
 });
 

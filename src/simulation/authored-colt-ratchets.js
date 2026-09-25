@@ -1,12 +1,11 @@
 import * as THREE from 'three';
-import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
-  capsule,
   circle,
   plate,
   poly,
   polygonClipping,
 } from './finite-plate-geometry.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -45,13 +44,129 @@ function cylinderAlongZ(radius, length, material, segments = 36) {
   return cylinder;
 }
 
-function torusAroundX(radius, tube, material, segments = 52) {
-  const torus = new THREE.Mesh(
-    new THREE.TorusGeometry(radius, tube, 9, segments),
-    material,
-  );
-  torus.rotation.y = Math.PI / 2;
-  return torus;
+// A flat leaf of constant thickness in z, built as a finely stationed strip
+// with round ends (x along the leaf from the root, y across it), so that
+// bending its vertices keeps every cross-section intact: no triangle spans
+// more than one short station.
+function leafRibbonGeometry({
+  length,
+  bow = () => 0,
+  halfWidth,
+  low,
+  high,
+  stations = 64,
+  capSegments = 12,
+}) {
+  const centers = [];
+  const normals = [];
+  const widths = [];
+  for (let index = 0; index <= stations; index += 1) {
+    const u = index / stations;
+    const step = 1e-4;
+    const a = Math.max(0, u - step);
+    const b = Math.min(1, u + step);
+    const tx = length * (b - a);
+    const ty = bow(b) - bow(a);
+    const norm = Math.hypot(tx, ty);
+    centers.push([length * u, bow(u)]);
+    normals.push([-ty / norm, tx / norm]);
+    widths.push(halfWidth(u));
+  }
+  const side = (index, sign) => [
+    centers[index][0] + sign * normals[index][0] * widths[index],
+    centers[index][1] + sign * normals[index][1] * widths[index],
+  ];
+  // Round end around station `index`, from angle `from` (relative to the
+  // station's left normal) through half a turn counterclockwise.
+  const cap = (index, from) => Array.from({ length: capSegments - 1 }, (_, k) => {
+    const [nx, ny] = normals[index];
+    const angle = Math.atan2(ny, nx) + from + Math.PI * (k + 1) / capSegments;
+    return [
+      centers[index][0] + Math.cos(angle) * widths[index],
+      centers[index][1] + Math.sin(angle) * widths[index],
+    ];
+  });
+  // Counterclockwise outline: right side root to tip, round tip, left side
+  // back, round root.
+  const right = centers.map((_, index) => side(index, -1));
+  const left = centers.map((_, index) => side(index, 1)).reverse();
+  const tipCap = cap(stations, -Math.PI);
+  const rootCap = cap(0, 0);
+  const ring = [...right, ...tipCap, ...left, ...rootCap];
+  const positions = [];
+  const triangle = (a, b, c, z, up) => {
+    const area = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const ordered = (area > 0) === up ? [a, b, c] : [a, c, b];
+    for (const [x, y] of ordered) positions.push(x, y, z);
+  };
+  for (const [z, up] of [[high, true], [low, false]]) {
+    for (let index = 0; index < stations; index += 1) {
+      const l0 = side(index, 1);
+      const r0 = side(index, -1);
+      const l1 = side(index + 1, 1);
+      const r1 = side(index + 1, -1);
+      triangle(l0, r0, l1, z, up);
+      triangle(l1, r0, r1, z, up);
+    }
+    // Each round end is a fan from one end of its station's cross line, so
+    // it shares that line with the strip.
+    for (const [points, first, last] of [
+      [tipCap, side(stations, -1), side(stations, 1)],
+      [rootCap, side(0, 1), side(0, -1)],
+    ]) {
+      const fan = [...points, last];
+      for (let k = 0; k < fan.length - 1; k += 1) {
+        triangle(first, fan[k], fan[k + 1], z, up);
+      }
+    }
+  }
+  for (let index = 0; index < ring.length; index += 1) {
+    const [px, py] = ring[index];
+    const [qx, qy] = ring[(index + 1) % ring.length];
+    positions.push(px, py, low, qx, qy, low, qx, qy, high);
+    positions.push(px, py, low, qx, qy, high, px, py, high);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Station angles and positions of a clamped leaf bent as an end-loaded
+// cantilever: slope theta(u) = thetaTip * (2u - u^2) along its unit length.
+function cantileverStations(length, thetaTip, count = 48) {
+  const stations = [{ angle: 0, x: 0, y: 0 }];
+  let x = 0;
+  let y = 0;
+  for (let index = 1; index <= count; index += 1) {
+    const u = (index - 0.5) / count;
+    const angle = thetaTip * (2 * u - u * u);
+    x += Math.cos(angle) * length / count;
+    y += Math.sin(angle) * length / count;
+    const end = index / count;
+    stations.push({ angle: thetaTip * (2 * end - end * end), x, y });
+  }
+  return stations;
+}
+
+// Bent position of a leaf point given in the straight leaf's frame (`x`
+// along it from the root, `y` across): each cross-section moves rigidly with
+// its station; beyond either end the leaf continues along the end tangent.
+function bendLeafPoint(stations, length, x, y) {
+  const count = stations.length - 1;
+  const position = THREE.MathUtils.clamp(x / length * count, 0, count);
+  const index = Math.min(Math.floor(position), count - 1);
+  const fraction = position - index;
+  const a = stations[index];
+  const b = stations[index + 1];
+  const angle = a.angle + (b.angle - a.angle) * fraction;
+  const along = x - position / count * length;
+  const c = Math.cos(angle);
+  const s = Math.sin(angle);
+  return [
+    a.x + (b.x - a.x) * fraction + c * along - s * y,
+    a.y + (b.y - a.y) * fraction + s * along + c * y,
+  ];
 }
 
 function quinticWindow(value, start, end) {
@@ -383,24 +498,6 @@ function coltCylinderRatchet(movement) {
     springTipRest[1] - springRoot[1],
     springTipRest[0] - springRoot[0],
   );
-  // Leaf centreline in its own frame (root at origin, along +X), bowed a
-  // little like Brown's leaf.
-  const springCenterline = Array.from({ length: 9 }, (_, index) => {
-    const u = index / 8;
-    return [springLength * u, -0.05 * Math.sin(Math.PI * u)];
-  });
-  const springLocalPolygons = springCenterline.slice(0, -1).reduce(
-    (shape, point, index) => polygonClipping.union(
-      shape,
-      capsule(
-        point,
-        springCenterline[index + 1],
-        springRadius + (springTipRadius - springRadius) * (index + 1) / 8,
-        24,
-      ),
-    ),
-    [[circle([0, 0], springRadius, 48)]],
-  );
   // Signed 2D clearance of the spring leaf from the dog's right edge (the
   // only part of the dog the leaf can reach), both in the same plane.
   const dogEdgeLocal = [
@@ -725,6 +822,7 @@ function coltCylinderRatchet(movement) {
       normalizedCycle,
       resetting: normalizedCycle >= fallStart && normalizedCycle <= fallEnd,
       springAngle,
+      mainspringBend: mainspringBendAt(hammerAngle),
       stage,
     };
   };
@@ -777,46 +875,57 @@ function coltCylinderRatchet(movement) {
   cylinder.add(cylinderRotor);
   root.add(cylinder);
 
-  // Brown breaks the cylinder off at the plate's left edge: it runs on past
-  // the view's left crop instead of ending in a finished front face.
-  const cylinderRunOff = 1.2;
-  const cylinderBody = new THREE.Mesh(
-    boredLatheGeometry([
-      // The lathe axis maps to -x once turned onto the cylinder axis.
-      { axial: -cylinderLength / 2, radial: cylinderRadius },
-      { axial: cylinderLength / 2 + cylinderRunOff, radial: cylinderRadius },
-    ], cylinderBoreRadius, 72),
+  // Brown breaks the cylinder off at the plate's left edge; the model keeps
+  // the whole cylinder, which runs on past the view's left crop to its
+  // finished front face with the six chambers (blind, closed by the solid
+  // breech behind them) and the arbor bore.
+  const cylinderTotalLength = 4.4;
+  const cylinderBreechLength = 0.9;
+  const chamberRadius = 0.5;
+  const chamberPitchRadius = 1.22;
+  const cylinderSection = (withChambers, depth, rearOffset) => {
+    const shape = new THREE.Shape();
+    shape.absarc(0, 0, cylinderRadius, 0, FULL_TURN, false);
+    const bore = new THREE.Path();
+    bore.absarc(0, 0, cylinderBoreRadius, 0, FULL_TURN, true);
+    shape.holes.push(bore);
+    if (withChambers) {
+      for (let index = 0; index < ratchetTeeth; index += 1) {
+        // Shape x/y become the rotor's z/y: phase from +Y toward +Z.
+        const phase = ratchetFaceZero + (index + 0.5) * ratchetPitch;
+        const chamber = new THREE.Path();
+        chamber.absarc(
+          chamberPitchRadius * Math.sin(phase),
+          chamberPitchRadius * Math.cos(phase),
+          chamberRadius,
+          0,
+          FULL_TURN,
+          true,
+        );
+        shape.holes.push(chamber);
+      }
+    }
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      bevelEnabled: false,
+      curveSegments: 40,
+      depth,
+    });
+    // Extrusion +z runs forward along the rotor's -x from the rear face.
+    geometry.rotateY(-Math.PI / 2);
+    geometry.translate(cylinderLength / 2 - rearOffset, 0, 0);
+    return geometry;
+  };
+  const cylinderBreech = new THREE.Mesh(
+    cylinderSection(false, cylinderBreechLength, 0),
     drivenMaterial,
   );
-  cylinderBody.rotation.z = Math.PI / 2;
+  cylinderBreech.userData.role = 'cylinder-solid-breech';
+  const cylinderBody = new THREE.Mesh(
+    cylinderSection(true, cylinderTotalLength - cylinderBreechLength, cylinderBreechLength),
+    drivenMaterial,
+  );
   cylinderBody.userData.role = 'six-chamber-cylinder-body';
-  cylinderRotor.add(cylinderBody);
-  const cylinderEndRings = [-1, 1].map((side) => {
-    const ring = torusAroundX(cylinderRadius * 0.985, 0.055, darkMaterial, 64);
-    ring.position.x = side * cylinderLength / 2
-      - (side < 0 ? cylinderRunOff : 0);
-    ring.userData.role = side > 0
-      ? 'rear-cylinder-edge-ring'
-      : 'front-cylinder-edge-ring';
-    cylinderRotor.add(ring);
-    return ring;
-  });
-  const chamberStrips = Array.from({ length: ratchetTeeth }, (_, index) => {
-    const phase = index * ratchetPitch;
-    const strip = new THREE.Mesh(
-      new THREE.BoxGeometry(cylinderLength * 0.91 + cylinderRunOff, 0.045, 0.13),
-      darkMaterial,
-    );
-    strip.position.set(
-      -cylinderRunOff / 2,
-      cylinderRadius * 0.96 * Math.cos(phase),
-      cylinderRadius * 0.96 * Math.sin(phase),
-    );
-    strip.rotation.x = phase;
-    strip.userData.role = `cylinder-longitudinal-index-strip-${index + 1}`;
-    cylinderRotor.add(strip);
-    return strip;
-  });
+  cylinderRotor.add(cylinderBreech, cylinderBody);
 
   const ratchetFaces = Array.from(
     { length: ratchetTeeth },
@@ -867,16 +976,10 @@ function coltCylinderRatchet(movement) {
     [302, 101], [275, 85], [243, 78],
   ];
   const hammerShape = new THREE.Shape();
-  const hammerOutlinePoints = [];
   hammerRasterOutline.forEach(([x, y], index) => {
     const point = sourcePointToModel({ x, y });
     if (index === 0) hammerShape.moveTo(point.x, point.y);
     else hammerShape.lineTo(point.x, point.y);
-    hammerOutlinePoints.push(new THREE.Vector3(
-      point.x,
-      point.y,
-      hammerHalfDepth + hammerBevel + 0.001,
-    ));
   });
   hammerShape.closePath();
   const hammerBody = new THREE.Mesh(
@@ -885,12 +988,6 @@ function coltCylinderRatchet(movement) {
   );
   hammerBody.userData.role = 'source-profiled-hammer-tumbler-body';
   hammerRotor.add(hammerBody);
-  const hammerOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(hammerOutlinePoints),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  hammerOutline.userData.role = 'dark-hammer-profile-outline';
-  hammerRotor.add(hammerOutline);
   const hammerShaft = cylinderAlongZ(0.23, 0.62, darkMaterial, 36);
   hammerShaft.userData.role = 'hammer-pivot-shaft';
   hammerRotor.add(hammerShaft);
@@ -941,7 +1038,15 @@ function coltCylinderRatchet(movement) {
   springPivot.position.set(springRoot[0], springRoot[1], 0);
   springPivot.userData.axis = Z_AXIS.clone();
   springPivot.userData.role = 'spring-c-root-in-block';
-  const springGeometry = plate(springLocalPolygons, dogLow + 0.012, dogHigh - 0.012);
+  // The leaf in its own frame (root at origin, along +X), bowed a little
+  // like Brown's leaf, finely stationed so it bends at constant section.
+  const springGeometry = leafRibbonGeometry({
+    length: springLength,
+    bow: (u) => -0.05 * Math.sin(Math.PI * u),
+    halfWidth: (u) => springRadius + (springTipRadius - springRadius) * u,
+    low: dogLow + 0.012,
+    high: dogHigh - 0.012,
+  });
   const springRestPositions = Float32Array.from(
     springGeometry.getAttribute('position').array,
   );
@@ -971,15 +1076,193 @@ function coltCylinderRatchet(movement) {
   springPivot.add(spring);
   root.add(springPivot);
 
+  // The stirrup link and the mainspring at the right of the plate. Brown
+  // draws the link rising from the hammer's lower right to an eye round a
+  // pin, and the mainspring leaf running from that pin down to the right.
+  // The link is pinned in the hammer at Brown's open circle, behind the
+  // hammer plate (Brown's hammer outline runs across its foot); the leaf
+  // continues past Brown's crop to a clamp and bends as an end-loaded
+  // cantilever, so cocking the hammer draws the stirrup down and loads it.
+  const stirrupHammerPin = rasterToModel([385, 425]);
+  const stirrupSpringPin = rasterToModel([438, 323]);
+  const stirrupLength = Math.hypot(
+    stirrupSpringPin[0] - stirrupHammerPin[0],
+    stirrupSpringPin[1] - stirrupHammerPin[1],
+  );
+  const hammerBack = hammerZ - hammerHalfDepth - hammerBevel;
+  const linkHigh = hammerBack - 0.05;
+  const linkLow = linkHigh - 0.07;
+  const mainspringHigh = linkLow - 0.03;
+  const mainspringLow = mainspringHigh - 0.07;
+  // Brown's two lever lines run down to the right from the pin.
+  const mainspringDirection = new THREE.Vector2(0.81, -0.59).normalize();
+  const mainspringLength = 2.3;
+  const mainspringRoot = [
+    stirrupSpringPin[0] + mainspringLength * mainspringDirection.x,
+    stirrupSpringPin[1] + mainspringLength * mainspringDirection.y,
+  ];
+  const mainspringAngle = Math.atan2(-mainspringDirection.y, -mainspringDirection.x);
+  const mainspringTipAt = (thetaTip) => {
+    const { x, y } = cantileverStations(mainspringLength, thetaTip).at(-1);
+    const c = Math.cos(mainspringAngle);
+    const s = Math.sin(mainspringAngle);
+    return [mainspringRoot[0] + c * x - s * y, mainspringRoot[1] + s * x + c * y];
+  };
+  const hammerPinAt = (hammerAngle) => {
+    const c = Math.cos(hammerAngle);
+    const s = Math.sin(hammerAngle);
+    return [
+      c * stirrupHammerPin[0] - s * stirrupHammerPin[1],
+      s * stirrupHammerPin[0] + c * stirrupHammerPin[1],
+    ];
+  };
+  // The leaf's tip bend that keeps the rigid link's length for a hammer
+  // angle: drawing the hammer back only ever bends the leaf further.
+  const mainspringBendAt = (hammerAngle) => {
+    const [hx, hy] = hammerPinAt(hammerAngle);
+    const excess = (thetaTip) => {
+      const [tx, ty] = mainspringTipAt(thetaTip);
+      return Math.hypot(tx - hx, ty - hy) - stirrupLength;
+    };
+    if (excess(0) <= 0) return 0;
+    let low = 0;
+    let high = 1.2;
+    for (let iteration = 0; iteration < 40; iteration += 1) {
+      const middle = (low + high) / 2;
+      if (excess(middle) > 0) low = middle;
+      else high = middle;
+    }
+    return (low + high) / 2;
+  };
+  const stirrupPinRadius = 0.055;
+  const stirrupBoreRadius = 0.064;
+  // Brown's large open circle at the eye: a stout pin.
+  const eyePinRadius = 0.085;
+  const eyeBoreRadius = 0.094;
+  const linkMaterial = matte(PALETTE.muted, { metalness: 0.3, roughness: 0.45 });
+  const hullOfCircles = (circles) => {
+    const points = circles.flatMap(([center, radius]) => circle(center, radius, 96))
+      .sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const half = (list) => {
+      const hull = [];
+      for (const point of list) {
+        while (hull.length >= 2 && cross(hull.at(-2), hull.at(-1), point) <= 0) hull.pop();
+        hull.push(point);
+      }
+      hull.pop();
+      return hull;
+    };
+    return [...half(points), ...half([...points].reverse())];
+  };
+  // The link along +X from the hammer pin to the spring pin, tapering from
+  // its broad foot to the eye, bored for both pins.
+  const stirrupPolygons = polygonClipping.difference(
+    poly(hullOfCircles([[[0, 0], 0.26], [[stirrupLength, 0], 0.18]])),
+    [[circle([0, 0], stirrupBoreRadius, 96)]],
+    [[circle([stirrupLength, 0], eyeBoreRadius, 96)]],
+  );
+  const stirrup = new THREE.Group();
+  stirrup.userData.axis = Z_AXIS.clone();
+  stirrup.userData.role = 'hammer-stirrup-link';
+  const stirrupBody = new THREE.Mesh(plate(stirrupPolygons, linkLow, linkHigh), linkMaterial);
+  stirrupBody.userData.role = 'bored-stirrup-link-body';
+  const stirrupSpringPinMesh = cylinderAlongZ(
+    eyePinRadius,
+    linkHigh - mainspringLow + 0.02,
+    linkMaterial,
+    32,
+  );
+  stirrupSpringPinMesh.position.set(stirrupLength, 0, (linkHigh + mainspringLow) / 2);
+  stirrupSpringPinMesh.userData.role = 'stirrup-pin-in-mainspring-eye';
+  stirrup.add(stirrupBody, stirrupSpringPinMesh);
+  root.add(stirrup);
+  // The hammer's stirrup pin: Brown's open circle on the hammer's face.
+  const hammerStirrupPin = cylinderAlongZ(
+    stirrupPinRadius,
+    hammerBack + 2 * hammerHalfDepth + 2 * hammerBevel - linkLow + 0.01,
+    darkMaterial,
+    32,
+  );
+  hammerStirrupPin.position.set(
+    stirrupHammerPin[0],
+    stirrupHammerPin[1],
+    (linkLow - 0.01 + hammerBack + 2 * (hammerHalfDepth + hammerBevel)) / 2 - hammerZ,
+  );
+  hammerStirrupPin.userData.role = 'hammer-stirrup-pin';
+  const hammerStirrupPinHead = cylinderAlongZ(0.12, 0.03, linkMaterial, 40);
+  hammerStirrupPinHead.position.set(
+    stirrupHammerPin[0],
+    stirrupHammerPin[1],
+    hammerHalfDepth + hammerBevel + 0.015,
+  );
+  hammerStirrupPinHead.userData.role = 'hammer-stirrup-pin-head';
+  hammerRotor.add(hammerStirrupPin, hammerStirrupPinHead);
+
+  // The mainspring leaf with its eye round the stirrup pin, in its own frame
+  // (root at origin, along +X to the eye), bent as a cantilever.
+  // The leaf ends inside the eye's ring, clear of its bore.
+  const mainspringLeaf = leafRibbonGeometry({
+    length: mainspringLength - 0.2,
+    halfWidth: (u) => 0.12 - 0.02 * u,
+    low: mainspringLow,
+    high: mainspringHigh,
+    stations: 72,
+  });
+  const mainspringEye = plate(polygonClipping.difference(
+    [[circle([mainspringLength, 0], 0.2, 72)]],
+    [[circle([mainspringLength, 0], eyeBoreRadius, 72)]],
+  ), mainspringLow, mainspringHigh);
+  mainspringEye.deleteAttribute('uv');
+  mainspringEye.clearGroups();
+  const mainspringGeometry = mergeGeometries([mainspringLeaf, mainspringEye]);
+  const mainspringRest = Float32Array.from(mainspringGeometry.getAttribute('position').array);
+  const mainspring = new THREE.Mesh(mainspringGeometry, springMaterial);
+  mainspring.userData.role = 'mainspring-leaf-pressing-on-stirrup';
+  const mainspringFrame = new THREE.Group();
+  mainspringFrame.position.set(mainspringRoot[0], mainspringRoot[1], 0);
+  mainspringFrame.rotation.z = mainspringAngle;
+  mainspringFrame.userData.role = 'mainspring-root-frame';
+  mainspringFrame.add(mainspring);
+  root.add(mainspringFrame);
+  let bentMainspring = null;
+  const bendMainspring = (thetaTip) => {
+    if (thetaTip === bentMainspring) return;
+    bentMainspring = thetaTip;
+    const stations = cantileverStations(mainspringLength, thetaTip);
+    const attribute = mainspringGeometry.getAttribute('position');
+    for (let index = 0; index < attribute.count; index += 1) {
+      const [x, y] = bendLeafPoint(
+        stations,
+        mainspringLength,
+        mainspringRest[index * 3],
+        mainspringRest[index * 3 + 1],
+      );
+      attribute.setXY(index, x, y);
+    }
+    attribute.needsUpdate = true;
+    mainspringGeometry.computeVertexNormals();
+    mainspringGeometry.computeBoundingBox();
+    mainspringGeometry.computeBoundingSphere();
+  };
+  // Undrawn by Brown, beyond his crop: the block the leaf is set against.
+  const mainspringClamp = new THREE.Mesh(
+    plate(poly([[-0.44, -0.22], [-0.125, -0.22], [-0.125, 0.22], [-0.44, 0.22]]),
+      mainspringLow - 0.03, mainspringHigh + 0.03),
+    frameMaterial,
+  );
+  mainspringClamp.userData.role = 'fixed-mainspring-root-block';
+  mainspringFrame.add(mainspringClamp);
+
   // The arbor stops inside the cylinder; the ratchet closes the bore behind.
   const cylinderShaft = cylinderAlongX(
     cylinderArborRadius,
-    cylinderRearX - cylinderFrontX - 0.01,
+    cylinderTotalLength - 0.01,
     darkMaterial,
     30,
   );
   cylinderShaft.position.set(
-    (cylinderRearX - 0.01 + cylinderFrontX) / 2,
+    cylinderRearX - (cylinderTotalLength + 0.01) / 2,
     cylinderCenterY,
     0,
   );
@@ -1009,10 +1292,9 @@ function coltCylinderRatchet(movement) {
 
   root.userData.archetype = movement.archetype;
   root.userData.blocks = {
-    chamberStrips,
     cylinder,
     cylinderBody,
-    cylinderEndRings,
+    cylinderBreech,
     cylinderRotor,
     cylinderShaft,
     dog,
@@ -1021,13 +1303,18 @@ function coltCylinderRatchet(movement) {
     dogPivotPin,
     hammer,
     hammerBody,
-    hammerOutline,
     hammerRotor,
     hammerShaft,
+    hammerStirrupPin,
+    mainspring,
+    mainspringClamp,
+    mainspringFrame,
     ratchet,
     spring,
     springAnchorBlock,
     springPivot,
+    stirrup,
+    stirrupBody,
   };
   // Brown draws the parts floating on white: no ground shadow.
   root.userData.hideGround = true;
@@ -1073,8 +1360,11 @@ function coltCylinderRatchet(movement) {
     ratchetPitch,
     ratchetTeeth,
     ratchetToothDepth,
+    mainspringLength,
+    mainspringRoot,
     sourceScale,
     springRoot,
+    stirrupLength,
   };
   root.userData.mechanism =
     'one pivoted hammer and tumbler carries one rigid bored dog a on a pin; spring c presses that dog into one six-tooth face ratchet b on the back of the cylinder, each cocking stroke pushes one radial tooth face through exactly one chamber, and on the hammer fall the dog rides back over the next tooth and drops behind it';
@@ -1093,7 +1383,7 @@ function coltCylinderRatchet(movement) {
       imageHeight: sourceImageHeight,
       imageWidth: sourceImageWidth,
       inferredTopology:
-        'one hammer/tumbler, one pivoted dog a, one leaf spring c in its hatched block, and one six-tooth face ratchet b fixed to the cylinder; no cylinder lock is drawn, so the cylinder is taken as held by friction/an undrawn detent while the dog resets',
+        'one hammer/tumbler, one pivoted dog a, one leaf spring c in its hatched block, one six-tooth face ratchet b fixed to the cylinder, and at the right the stirrup link pinned in the hammer with the mainspring leaf bearing on its eye pin (the leaf continued past Brown\u2019s crop to an undrawn root block); no cylinder lock is drawn, so the cylinder is taken as held by friction/an undrawn detent while the dog resets',
       measurementUncertaintyPixels: 5,
       rasterCylinderFrontBottom: {
         x: sourceRasterCylinderFrontBottom.x,
@@ -1184,6 +1474,11 @@ function coltCylinderRatchet(movement) {
     dog.rotation.z = state.hammerAngle + state.dogAngle;
     springPivot.rotation.z = state.springAngle;
     bendSpring(state.springAngle);
+    const [hx, hy] = hammerPinAt(state.hammerAngle);
+    const [tx, ty] = mainspringTipAt(state.mainspringBend);
+    stirrup.position.set(hx, hy, 0);
+    stirrup.rotation.z = Math.atan2(ty - hy, tx - hx);
+    bendMainspring(state.mainspringBend);
     root.userData.contacts = {
       dogRatchet: {
         active: state.driving,

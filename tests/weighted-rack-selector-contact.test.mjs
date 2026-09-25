@@ -40,7 +40,8 @@ test('391 rounded approach loads the spring before outward assist, then the real
 });
 test('391 selector contact entry and release are continuous and playback retains buffers',()=>{
  let prior=d.stateAtTime(0),maximumStep=0;for(let i=1;i<=8192;i++){const next=d.stateAtTime(i/1024);maximumStep=Math.max(maximumStep,Math.abs(next.elbowAssist.leverAngle-prior.elbowAssist.leverAngle));assert.ok(next.elbowAssist.gap>-1e-8);prior=next;}
- assert.ok(maximumStep<.0024,`no branch jump: ${maximumStep}`);
+ // C now swings further (p53 fix-d), so its fastest 1/1024 s step is larger; a branch jump would be far bigger.
+ assert.ok(maximumStep<.0035,`no branch jump: ${maximumStep}`);
  for(const [a,c]of[[2,2.8],[3.5,3.8]]){let lo=a,hi=c;const first=d.stateAtTime(lo).elbowAssist.contact;for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(d.stateAtTime(mid).elbowAssist.contact===first)lo=mid;else hi=mid;}assert.ok(Math.abs(d.stateAtTime(hi+1e-7).elbowAssist.leverAngle-d.stateAtTime(lo-1e-7).elbowAssist.leverAngle)<1e-6);}
  const before=[];m.root.traverse(o=>before.push([o,o.geometry]));for(let i=0;i<=256;i++)m.update(i/32);const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,before);
  assert.match(d.selectorContactReview.qualification,/passive branch dynamics remain prescribed/);

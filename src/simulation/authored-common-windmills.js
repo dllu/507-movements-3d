@@ -477,6 +477,9 @@ function commonWindmill(movement) {
     darkMaterial,
   ), 'rigid-front-rim-of-windshaft-hub');
   hubRim.position.z = 0.27;
+  // Only the hub's drawn edge: hidden reference, not a dark rim.
+  hubRim.visible = false;
+  hubRim.userData.retiredInkOutline = true;
   rotor.add(hubRim);
   const windshaftIndex = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.18, 0.075, 0.055),
@@ -747,15 +750,8 @@ function commonWindmill(movement) {
     const tilt = ([u, v]) => new THREE.Vector2(
       u * Math.cos(rise) - v * Math.sin(rise), u * Math.sin(rise) + v * Math.cos(rise));
     const loopShape = new THREE.Shape(loop.map(tilt));
-    // Brown draws the loop as an outline: open it to a narrow band.
-    const band = 0.07, innerRoot = 0.45, innerRadius = endRadius - band;
-    const innerBeta = Math.asin(innerRadius / (tailLength - innerRoot));
-    const inner = [[innerRoot, 0]];
-    for (let i = 0; i <= 64; i += 1) {
-      const angle = -(Math.PI / 2 + innerBeta) + (Math.PI + 2 * innerBeta) * i / 64;
-      inner.push([tailLength + innerRadius * Math.cos(angle), innerRadius * Math.sin(angle)]);
-    }
-    loopShape.holes.push(new THREE.Path(inner.map(tilt)));
+    // Brown's outline encloses a vane sheet (the engraving leaves its face
+    // white), so the loop is one filled board, not an open wire.
     vane.geometry.dispose();
     vane.geometry = new THREE.ExtrudeGeometry(loopShape, {
       bevelEnabled: false,

@@ -29,7 +29,6 @@ export function makeRelievedStudReverser({inputContactMinimum=1.4}={}){
  const outputShape=clip.difference(clip.union(poly([[0,-oh],[ol,-oh],[ol,oh],[0,oh]]),poly(circle([ol,0],oh,96))),poly(circle([0,0],g.leverPivotRadius,96).map(([x,y])=>{const a=-output.rotation.z;return [x*Math.cos(a)-y*Math.sin(a),x*Math.sin(a)+y*Math.cos(a)];})));
  const outputMesh=new THREE.Mesh(plate(outputShape,-.1,.1),outputMaterial);outputMesh.name='bored-return-arm';output.add(outputMesh);output.position.z=.05;output.userData.blocks={body:outputMesh};
  // Keep visible moving volumes disjoint: studs and hubs start at their host faces.
- replace(b.diskRim,ring(g.diskRadius-.03,g.diskRadius,-.018,.007,128));
  for(const assembly of b.pinAssemblies){const p=assembly.userData.blocks;replace(p.pin,disk(g.studRadius,.12-g.studCenterZ,.73-g.studCenterZ,96));replace(p.face,disk(g.studRadius*.72,-.022,.020,96));}
  replace(b.barFrontStud,disk(g.barStudRadius,-.03,.21,96));
  replace(b.barFrontStudFace,disk(g.barStudRadius*.70,-.020,.019,96));

@@ -3698,9 +3698,12 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
   }
   // Decorative round wires entered the actual slide paths. The finite plate
   // and crank slot edges already provide their physical contact boundaries.
+  // Brown's ink edges on the disk rim and hub are not separate parts either.
+  // The detached rings stay in blocks as source-registration landmarks only.
   for (const decoration of [grooveInnerWall, grooveOuterWall,
     grooveCenterlineWitness, crankSlotOutline, sliderFrontOutline,
-    sliderRotationIndex, outputPinOutline, outputSlideIndex]) {
+    sliderRotationIndex, outputPinOutline, outputSlideIndex,
+    outerDiskOutline, crankHubOutline]) {
     decoration.removeFromParent();
     decoration.geometry.dispose();
   }
@@ -3716,10 +3719,12 @@ function eccentricCircularGuideVariableSpeedShaper({reference = false} = {}) {
   if (!reference) {
     // Recess the track into a single backed disk. The unseen rear web joins
     // the inner and outer lands without crossing the circular shoe's path.
+    // Its rear face stands 2 cm behind the lands' coplanar back faces, and
+    // its rim and bore sit 1 cm inside theirs, so no faces z-fight.
     const backing = new THREE.Mesh(centeredExtrusion(
-      diskWithOffsetHoleShape(outerDiskRadius, shaftOffset, shaftOpeningRadius), .10, 0),
+      diskWithOffsetHoleShape(outerDiskRadius - .01, shaftOffset, shaftOpeningRadius + .01), .12, 0),
       matte(PALETTE.ink));
-    backing.position.set(fixedDiskCenter.x, fixedDiskCenter.y, -.61);
+    backing.position.set(fixedDiskCenter.x, fixedDiskCenter.y, -.62);
     backing.userData.role = 'integral-rear-web-of-fixed-guide';
     root.add(backing);root.userData.blocks.guideBacking = backing;
     // Brown draws only the connecting rod, broken off at raster (37.5,157.5)

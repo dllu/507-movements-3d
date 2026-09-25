@@ -76,8 +76,11 @@ test('movement 415 is one smooth wheel D with coaxial lever A, opposed pawls B/C
   assert.equal(blocks.bCord.parent, blocks.leverRotor);
   assert.equal(blocks.cCord.parent, blocks.leverRotor);
   assert.equal(blocks.leverInputPin.parent, blocks.leverRotor);
-  assert.equal(blocks.bCord.userData.segments.length, 2);
-  assert.equal(blocks.cCord.userData.segments.length, 2);
+  for (const cord of [blocks.bCord, blocks.cCord]) {
+    assert.equal(cord.userData.rope.geometry.type, 'LaidRopeGeometry',
+      'each E-to-pawl cord is one continuous laid cord');
+    assert.equal(cord.userData.segments, undefined);
+  }
 
   const roles = [];
   const belts = [];
@@ -474,14 +477,12 @@ test('movement 415 update binds D, A, B, C, E, cords, input rod, and slider to o
       'input slider update');
     near(blocks.inputRod.scale.y, geometry.inputRodLength, 9e-16,
       'input rod rendered length');
-    near(blocks.bCord.userData.segments[0].scale.y
-      + blocks.bCord.userData.segments[1].scale.y,
-    geometry.bCordMaterialLength, 4e-16,
-    'B cord rendered length');
-    near(blocks.cCord.userData.segments[0].scale.y
-      + blocks.cCord.userData.segments[1].scale.y,
-    geometry.cCordMaterialLength, 4e-16,
-    'C cord rendered length');
+    near(blocks.bCord.userData.renderedLength,
+      geometry.bCordMaterialLength, 4e-16,
+      'B cord rendered length');
+    near(blocks.cCord.userData.renderedLength,
+      geometry.cCordMaterialLength, 4e-16,
+      'C cord rendered length');
   }
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod,
     geometry.cycleDuration);

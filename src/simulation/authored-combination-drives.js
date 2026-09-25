@@ -9,7 +9,6 @@ import {
 } from './primitives.js';
 
 import {foldingRod} from './folding-joint-parts.js';
-import {makeHiddenInkLine} from './hidden-ink-lines.js';
 import {fitPistonGuide} from './piston-guide-parts.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -147,7 +146,8 @@ function combinationWeightDrive(movement) {
   // pin to reach link C without passing through it.
   const cordPlaneZ = -0.24;
   const cordRadius = 0.042;
-  const cordMarkerCount = 11;
+  // The laid rope's lay shows the cord's travel, so it carries no markers.
+  const cordMarkerCount = 0;
   const weightFixedX = -2.18;
   const initialWeightY = -2.65;
   const weightEyeOffsetY = 0.48;
@@ -477,12 +477,6 @@ function combinationWeightDrive(movement) {
   root.add(diskAssembly);
   const diskBody = cylinderAlongZ(diskRadius, 0.3, inputMaterial, 80);
   diskBody.userData.role = 'revolving-disk-B';
-  const diskRim = new THREE.Mesh(
-    new THREE.TorusGeometry(diskRadius, 0.065, 12, 84),
-    darkMaterial,
-  );
-  diskRim.position.z = 0.18;
-  diskRim.userData.role = 'dark-disk-B-rim';
   // The hub stands proud of B's front face only, clear of the cord wraps.
   const diskHub = cylinderAlongZ(diskHubRadius, 0.45, darkMaterial, 44);
   diskHub.position.z = 0.075;
@@ -497,44 +491,9 @@ function combinationWeightDrive(movement) {
   );
   diskIndex.position.set(diskRadius * 0.44, 0, 0.19);
   diskIndex.userData.role = 'white-disk-B-and-drum-speed-index';
-  diskAssembly.add(diskBody, diskRim, diskHub, drum, diskIndex);
-  // Brown carries the drum-side strand of D over B's face to its inner
-  // circle. Here the drum and cord lie behind B, so draw them in his hidden-
-  // line notation: the drum's cord circle and the strand from B's rim to its
-  // tangent, as thin dashed ink lines on B's face.
-  const hiddenLineZ = 0.155 + 0.005;
-  const drumHiddenCircle = makeHiddenInkLine(
-    Array.from({ length: 120 }, (_, index) => {
-      const angle = FULL_TURN * index / 120;
-      return [drumRadius * Math.cos(angle), drumRadius * Math.sin(angle)];
-    }),
-    {
-      closed: true,
-      dashSize: 0.085,
-      gapSize: 0.055,
-      role: 'dashed-hidden-drum-circle-behind-disk-B',
-      width: 0.024,
-      z: hiddenLineZ,
-    },
-  );
-  diskAssembly.add(drumHiddenCircle);
-  const strandHiddenPoints = (configuration) => {
-    const from = configuration.pulleyTangent;
-    const to = configuration.drumTangent;
-    const direction = to.clone().sub(from);
-    const length = direction.length();
-    direction.divideScalar(length);
-    // Enter at the dark rim's outer edge, where the drawn cord disappears.
-    const entryRadius = diskRadius + 0.065;
-    const offset = from.clone().sub(diskCenter);
-    const along = offset.dot(direction);
-    const across = offset.lengthSq() - along ** 2;
-    const enter = Math.min(length, Math.max(0,
-      -along - Math.sqrt(Math.max(0, entryRadius ** 2 - across))));
-    const start = from.clone().addScaledVector(direction, enter);
-    return [[start.x, start.y], [to.x, to.y]];
-  };
-
+  diskAssembly.add(diskBody, diskHub, drum, diskIndex);
+  // Brown dashes the drum and its strand of D only because B hides them;
+  // the real drum and cord behind B show when the view is turned.
   const armA = foldingRod({length: pulleyArmRadius, width: .16, depth: .18,
     bore: .184, material: armMaterial, role: 'rocking-arm-A-pivoted-at-G-and-carrying-pulley-E'});
   armA.userData.addPinEye(rockerJointRadius, .119);
@@ -613,11 +572,13 @@ function combinationWeightDrive(movement) {
 
   const initialConfiguration = configurationAtDiskAngle(0);
   const initialCordCurve = makeCordCurve(initialConfiguration);
+  // Cord D is a laid rope; its lay is fixed in the material from the
+  // weight end, so no flow markers are needed.
   const cord = makeDynamicMovingBelt(initialCordCurve, {
     closed: false,
     color: PALETTE.belt,
-    markerColor: PALETTE.white,
-    markerCount: cordMarkerCount,
+    laid: true,
+    markerCount: 0,
     radius: cordRadius,
     tubularSegments: 288,
   });
@@ -626,9 +587,7 @@ function combinationWeightDrive(movement) {
   cord.userData.ropeCount = 1;
   cord.userData.role =
     'one-continuous-weight-to-moving-pulley-to-drum-cord-D';
-  const cordMesh = cord.children.find((object) => (
-    object.geometry?.type === 'TubeGeometry'
-  ));
+  const cordMesh = cord.userData.mesh;
   cordMesh.userData.role = 'single-visible-continuous-cord-D-tube';
   const cordMarkers = cord.children.filter((object) => (
     object.userData.isFlowMarker === true
@@ -639,25 +598,12 @@ function combinationWeightDrive(movement) {
     marker.userData.role = `fixed-material-cord-D-marker-${index + 1}`;
   });
   root.add(cord);
-  const strandHiddenLine = makeHiddenInkLine(
-    strandHiddenPoints(initialConfiguration),
-    {
-      anchor: 'end',
-      dashSize: 0.085,
-      fitDashes: false,
-      gapSize: 0.055,
-      role: 'dashed-hidden-drum-side-strand-of-cord-D-behind-disk-B',
-      width: 0.024,
-      z: hiddenLineZ,
-    },
-  );
-  root.add(strandHiddenLine);
 
   const fixedPivot = cylinderAlongZ(0.18, 0.64, darkMaterial, 40);
   fixedPivot.position.set(fixedPivotG.x, fixedPivotG.y, 0.02);
   fixedPivot.userData.role = 'fixed-rocker-pivot-G';
   root.add(fixedPivot);
-  // Seated on B's front face and inside the dark rim torus's inner edge.
+  // Seated on B's front face, inside its rim.
   const crankPin = cylinderAlongZ(0.11, 0.33, darkMaterial, 34);
   crankPin.userData.role = 'eccentric-pin-on-disk-B-driving-link-C';
   root.add(crankPin);
@@ -753,9 +699,7 @@ function combinationWeightDrive(movement) {
     diskBody,
     diskHub,
     diskIndex,
-    diskRim,
     drum,
-    drumHiddenCircle,
     fixedPivot,
     frame,
     linkC,
@@ -766,7 +710,6 @@ function combinationWeightDrive(movement) {
     pulleyHub,
     pulleyIndex,
     rockerJointPin,
-    strandHiddenLine,
     weight,
     weightBody,
     weightEye,
@@ -943,7 +886,6 @@ function combinationWeightDrive(movement) {
     );
     const cordCurve = makeCordCurve(configuration);
     cord.userData.setCurve(cordCurve);
-    strandHiddenLine.userData.setPoints(strandHiddenPoints(configuration));
     cord.userData.centerlineLength = configuration.totalLength;
     cord.userData.centerlineLengthError = configuration.cordLengthError;
     root.userData.kinematics = state;

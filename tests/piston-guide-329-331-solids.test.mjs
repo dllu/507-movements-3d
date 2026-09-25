@@ -30,7 +30,7 @@ test('329 piston stays inside the continued barrel and clears the real rod passa
   for(let i=0;i<=64;i++){m.update(g.cyclePeriod*i/64);m.root.updateMatrixWorld(true);const box=new THREE.Box3().setFromObject(b.pistonHead);assert.ok(box.min.y>d.finiteGuideReview.cylinderBottom+.08);assert.ok(box.max.y<d.finiteGuideReview.cylinderTop-.1);}
 });
 test('331 finite slot/journal, pillars/shoes and rod/gland remain clear through the stroke',()=>{
-  const m=models[1],b=m.root.userData.blocks,pairs=[[b.wristJournal,b.yokeBody],[b.wristJournal,b.slotOutline],[b.crankshaft,b.bearingHousing],[b.crankshaft,b.bearingBore],[b.pistonRod,b.cylinderTop],[b.pistonRod,b.cylinderBore],[b.pistonRod,b.glandNeck]];
+  const m=models[1],b=m.root.userData.blocks,pairs=[[b.wristJournal,b.yokeBody],[b.crankshaft,b.bearingHousing],[b.crankshaft,b.bearingBore],[b.pistonRod,b.cylinderTop],[b.pistonRod,b.cylinderBore],[b.pistonRod,b.glandNeck]];
   for(let i=0;i<2;i++)for(const shoePart of (i===0?b.leftGuideShoe:b.rightGuideShoe).children)pairs.push([shoePart,b.guidePosts[i]]);
   const fields=audit(m,pairs,64);for(const f of fields)assert.ok(f.min>.0002,`${f.a.userData.role}/${f.b.userData.role} ${f.min}`);
   assert.ok(fields[0].maxNear<.005,'journal retains close engagement with slot');

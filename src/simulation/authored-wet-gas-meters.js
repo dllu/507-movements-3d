@@ -329,10 +329,11 @@ function wetGasMeter(movement) {
   );
   caseShell.rotation.x = Math.PI / 2;
   caseShell.userData.role = 'transparent-stationary-shell-of-case-A';
+  // The case edges are rolled metal beads in the case's own colour, not ink.
   const caseRims = [-1, 1].map((side, index) => {
     const rim = new THREE.Mesh(
       new THREE.TorusGeometry(caseRadiusSceneUnit, 0.085, 11, 80),
-      darkMaterial,
+      frameMaterial,
     );
     rim.position.z = side * caseDepthSceneUnit / 2;
     rim.userData.role = `stationary-case-rim-${index + 1}`;

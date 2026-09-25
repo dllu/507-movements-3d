@@ -72,9 +72,10 @@ export function correctGasometerWorkingParts(root, id) {
       for (const child of pulley.userData.rotor.children) {
         if (child.geometry?.type === 'BoxGeometry' && !child.userData.role && child.position.z === 0) child.visible = false;
       }
-      const axle = addMesh(root, new THREE.CylinderGeometry(0.07, 0.07, 0.58, 48),
+      // The axle runs back into its post behind the pulley.
+      const axle = addMesh(root, new THREE.CylinderGeometry(0.07, 0.07, 0.83, 48),
         b.tankTopRim.material, `counterweight-pulley-axle-${i + 1}`, pulley.position);
-      axle.rotation.x = Math.PI / 2; axle.position.z = -0.04;
+      axle.rotation.x = Math.PI / 2; axle.position.z = -0.165;
       parts.axles.push(axle); parts.grooves.push(pulley.userData.tread); parts.hubs.push(pulley.userData.hub);
       addMesh(b.counterweights[i], new THREE.CylinderGeometry(0.085, 0.085, 0.16, 24),
         b.tankTopRim.material, 'counterweight-rope-socket', new THREE.Vector3(0, 0.42, 0));

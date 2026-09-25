@@ -72,10 +72,8 @@ test('movement 180 wedges one upward-sliding board between one fixed side-piece 
     fixedScrewSlots,
     fixedScrews,
     fixedSideFaceWitness,
-    fixedSideOutline,
     fixedSidePiece,
     jawContactAnchor,
-    jawOutline,
     jawPivotAnchor,
     jawPlate,
     jawRotationIndex,
@@ -90,7 +88,6 @@ test('movement 180 wedges one upward-sliding board between one fixed side-piece 
     workpieceBody,
     workpieceInputIndex,
     workpieceLeadingEdgeAnchor,
-    workpieceOutline,
     workpieceRightFaceAnchor,
   } = blocks;
 
@@ -134,10 +131,8 @@ test('movement 180 wedges one upward-sliding board between one fixed side-piece 
     benchBase,
     fixedContactMarker,
     fixedSideFaceWitness,
-    fixedSideOutline,
     fixedSidePiece,
     jawContactAnchor,
-    jawOutline,
     jawPivotAnchor,
     jawPlate,
     jawRotationIndex,
@@ -152,10 +147,12 @@ test('movement 180 wedges one upward-sliding board between one fixed side-piece 
     workpieceBody,
     workpieceInputIndex,
     workpieceLeadingEdgeAnchor,
-    workpieceOutline,
     workpieceRightFaceAnchor,
   ]) {
     assert.ok(object?.isObject3D, `${object?.userData?.role ?? 'block'} is 3D`);
+  }
+  for (const retired of ['fixedSideOutline', 'jawOutline', 'workpieceOutline']) {
+    assert.equal(blocks[retired], undefined, `no decorative ink ${retired}`);
   }
   assert.equal(fixedScrews.length, 2);
   assert.equal(fixedScrewHeads.length, 2);

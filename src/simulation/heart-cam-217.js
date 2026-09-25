@@ -52,26 +52,20 @@ function band(centreLine, radius) {
   return groups[0];
 }
 
-const ringLoop = (ring, z) => new THREE.BufferGeometry().setFromPoints(ring.slice(0, -1).map(([x, y]) => new THREE.Vector3(x, y, z)));
-
 export function createHeartCam217() {
   const g = heartCam217Geometry();
   const root = new THREE.Group(), parts = {}, blocks = {};
   const heart = poly(g.centreLine);
   const groove = band(g.centreLine, g.grooveHalfWidth);
-  const bevel = band(g.centreLine, g.grooveHalfWidth + 11 * RASTER);
   const disk = poly(circle([0, 0], g.camRadius, 256));
   const keyhole = poly(circle([0, 0], g.keyholeRadius, 96));
   const outerLand = clip.difference(disk, clip.union(heart, groove));
   const island = clip.difference(heart, groove, keyhole);
-  const outerBevel = clip.union(heart, bevel);
-  const islandBevel = clip.difference(heart, bevel, poly(circle([0, 0], g.keyholeRadius + 11 * RASTER, 96)));
 
   const landMaterial = matte(PALETTE.driver, {metalness: .13, roughness: .62});
   const floorMaterial = matte(0xa94734, {metalness: .1, roughness: .72});
   const leverMaterial = matte(PALETTE.driven, {metalness: .12, roughness: .63});
   const inkMaterial = matte(PALETTE.ink, {metalness: .23, roughness: .51});
-  const lineMaterial = new THREE.LineBasicMaterial({color: PALETTE.ink});
   const add = (parent, name, geometry, material) => {
     const mesh = new THREE.Mesh(geometry, material); mesh.name = name; mesh.userData.role = name; parent.add(mesh); parts[name] = mesh; return mesh;
   };
@@ -82,10 +76,6 @@ export function createHeartCam217() {
   add(cam, 'heart-island', plate(island, 0, .22), landMaterial);
   add(cam, 'hub-boss', plate(clip.difference(poly(circle([0, 0], g.bossRadius, 96)), poly(circle([0, 0], g.boreRadius, 96))), 0, .22), landMaterial);
   add(cam, 'cam-shaft', plate(poly(circle([0, 0], g.boreRadius - .01, 64)), -.4, .3), inkMaterial);
-  // Brown's double wall lines: the groove edge and the bevel line on each land.
-  for (const polygons of [outerBevel, clip.union(heart, groove), island, islandBevel]) for (const polygon of polygons) for (const ring of polygon) {
-    const line = new THREE.LineLoop(ringLoop(ring, .222), lineMaterial); line.userData.role = 'engraved-wall-line'; cam.add(line);
-  }
 
   // Stud A's carrier frame turns about H (the undrawn lever of plate 218), so
   // the stud follows the arc it would on the real machine; only the stud,

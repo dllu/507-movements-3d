@@ -20,20 +20,15 @@ export function finishHookFamily(root, duration) {
 
 export function correctCheckHookJournals(root) {
   const { hooks, hookPivots, flangeDisk, centerShaft, fixedBacking, ropeDrumBody } = root.userData.blocks;
-  const { hookCenterline, hookBarRadius, hookBarbOutline, hookLean } = root.userData.geometry;
-  const plates = [], stops = [];
+  const { hookCenterline, hookBarRadius, hookBarbOutline } = root.userData.geometry;
+  const plates = [];
   hooks.forEach((hook, index) => {
     const material = hook.children[0].material;
     for (const child of hook.children) child.visible = false;
     const body = new THREE.Mesh(boredHookPlate(hookCenterline.map(p => p.toArray()), hookBarRadius, .36, .304, .44, [hookBarbOutline.map(p => p.toArray())]), material);
     body.userData.role = 'bored-working-check-hook'; hook.add(body); plates.push(body);
-    // The stop sits behind (clockwise of) the deployed bar: the stud
-    // reaction and centrifugal swing both seat the hook against it.
-    const stop = new THREE.Mesh(disk(.1, -.42, .18, 48), material);
-    const stopOffset = hookBarRadius + .1;
-    stop.position.set(.65 * Math.cos(hookLean) + stopOffset * Math.sin(hookLean), .65 * Math.sin(hookLean) - stopOffset * Math.cos(hookLean), 0);
-    stop.userData.role = 'deployed-hook-angle-stop';
-    hookPivots[index].add(stop); stops.push(stop);
+    // Brown draws no hook stops: the deployed angle is prescribed, so no
+    // stop stud is modelled beside the hook pivot.
     const pin=hookPivots[index].children.find(o=>o.userData.role?.endsWith('pivot-pin'));
     pin.geometry=new THREE.CylinderGeometry(.3,.3,.76,64);
     hookPivots[index].children.find(o=>o.userData.role?.endsWith('torsion-return-spring')).position.z=.27;
@@ -48,10 +43,10 @@ export function correctCheckHookJournals(root) {
   }
   root.userData.blocks.ropeDrumIndex.geometry = new THREE.BoxGeometry(.6,.13,.07);
   root.userData.blocks.ropeDrumIndex.position.set(.65,0,.825);
-  root.userData.workingHooks = { plates, stops };
+  root.userData.workingHooks = { plates };
   root.userData.dynamics = { prescribedDeployment: true, prescribedCatchImpact: true,
     validatedPassiveCatch: false, springLaw: 'ideal unloaded torsional quarter-cycle followed by imposed holding and reset' };
-  root.userData.reconstructionNote = 'The hook faces resist drum rotation and bear against deployment stops. Hook deployment, impact and subsequent holding are prescribed; the illustrated spring response does not validate a loaded mine-hoist arrest.';
+  root.userData.reconstructionNote = 'The hook faces resist drum rotation. Brown draws no hook stops, so the deployed hook angle is prescribed rather than seated on a stop. Hook deployment, impact and subsequent holding are prescribed; the illustrated spring response does not validate a loaded mine-hoist arrest.';
   finishHookFamily(root, 12);
 }
 

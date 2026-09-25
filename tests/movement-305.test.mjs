@@ -74,8 +74,18 @@ test('movement 305 is one tiny single-pin disc inside one pendulum-carried Z-slo
   assert.equal(blocks.contactMarker.parent, model.root);
   assert.equal(blocks.wheelRotor.parent, blocks.escapeWheel);
   assert.equal(blocks.rubyPin.parent, blocks.wheelRotor);
-  assert.equal(blocks.upperPallet.parent, blocks.palletAssembly);
-  assert.equal(blocks.lowerPallet.parent, blocks.palletAssembly);
+  assert.equal(blocks.plate.parent, blocks.palletAssembly);
+  assert.equal(blocks.upperPallet, undefined, 'no pallet pieces are added into the opening');
+  assert.equal(blocks.lowerPallet, undefined);
+  // The plate is one part: its only meshes are the plate and the two
+  // adjusting bushes with their screws.
+  const plateMeshes = [];
+  blocks.palletAssembly.traverse((object) => { if (object.isMesh && object.visible) plateMeshes.push(object.userData.role); });
+  assert.deepEqual(plateMeshes.sort(), [
+    'eccentric-adjusting-bush', 'eccentric-adjusting-bush',
+    'eccentric-bush-screw-head', 'eccentric-bush-screw-head',
+    'macdowall-bottle-profile-pallet-plate',
+  ]);
   assert.equal(blocks.upperDeadEdge.parent, blocks.palletAssembly);
   assert.equal(blocks.lowerDeadEdge.parent, blocks.palletAssembly);
   assert.equal(blocks.upperImpulseEdge.parent, blocks.palletAssembly);
@@ -387,4 +397,48 @@ test('movement 305 renderer follows the exact state and leaves movement 507 auth
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model507.root);
   disposeModel(model.root);
+});
+
+test('movement 305 cuts the opening to Brown\'s shape with the working faces as its own edges', () => {
+  const model = createMovementModel(catalog.movements[304]);
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const ring = blocks.plate.userData.escapementOpening;
+  const inside = ([x, y]) => {
+    let result = false;
+    for (let i = 0, j = ring.length - 1; i < ring.length; j = i, i += 1) {
+      const [xi, yi] = ring[i];
+      const [xj, yj] = ring[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) result = !result;
+    }
+    return result;
+  };
+  const edgeDistance = (point) => {
+    let best = Infinity;
+    for (let i = 0; i < ring.length; i += 1) {
+      const a = ring[i];
+      const b = ring[(i + 1) % ring.length];
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const t = Math.max(0, Math.min(1, ((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / (dx * dx + dy * dy)));
+      best = Math.min(best, Math.hypot(point[0] - a[0] - t * dx, point[1] - a[1] - t * dy));
+    }
+    return best;
+  };
+  // Brown's two D windows: upper-left and lower-right of the arbor.
+  const cy = geometry.diskCenter.y - geometry.palletPivot.y;
+  assert.ok(inside([-0.5, cy + 0.3]) && inside([0.5, cy - 0.3]), 'upper-left and lower-right windows');
+  assert.ok(!inside([-0.5, cy - 0.3]) && !inside([0.5, cy + 0.3]), 'solid lower-left and upper-right');
+  // The pin stays in the opening through the whole cycle, touching its edges
+  // at the dead rests and impulses.
+  let worst = Infinity;
+  for (let index = 0; index <= 2000; index += 1) {
+    const { pinCenterLocal } = stateAtTime(geometry.pendulumPeriod * index / 2000);
+    const point = [pinCenterLocal.x, pinCenterLocal.y];
+    assert.ok(inside(point), 'pin centre in the opening');
+    worst = Math.min(worst, edgeDistance(point) - geometry.pinRadius);
+  }
+  assert.ok(worst > -0.001 && worst < 1e-6, `pin works on the edges (${worst})`);
+  const plateBack = geometry.plateZ - geometry.palletDepth / 2;
+  assert.ok(geometry.diskZ + geometry.diskDepth / 2 < plateBack, 'the disc runs behind the plate');
+  assert.ok(blocks.disk.parent === blocks.wheelRotor);
 });

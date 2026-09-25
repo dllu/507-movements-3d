@@ -96,7 +96,7 @@ test('253 active face supplies resisting drum torque and seats the hook against 
   assert.equal(d.stateAtTime(7.2).hookAngle,0);
 });
 
-test('253 finite hook faces, stops and studs clear over approach, arrest and backed-off retraction',()=>{
+test('253 finite hook faces and studs clear over approach, arrest and backed-off retraction (Brown draws no hook stops)',()=>{
   const m=create(253),d=m.root.userData,a=audit();let maximumContactGap=0;
   const times=new Set(Array.from({length:33},(_,i)=>12*i/32));
   for(let i=0;i<=16;i++){times.add(4.4+.2*i/16);times.add(7+.8*i/16);}
@@ -106,9 +106,6 @@ test('253 finite hook faces, stops and studs clear over approach, arrest and bac
     for(let i=0;i<3;i++){
       const body=d.workingHooks.plates[i];
       for(const stud of d.blocks.studs)a.check(body,stud,'hook/stud');
-      a.check(body,d.workingHooks.stops[i],'hook/deployment stop');
-      const stopGap=a.check(d.workingHooks.stops[i],body,'stop/working hook');
-      if(t>=4.6&&t<=7)assert.ok(stopGap<.0003,stopGap);
       const pivot=d.blocks.hookPivots[i].children.find(o=>o.userData.role?.endsWith('pivot-pin'));
       a.check(pivot,body,'pin/bored hook',true);
       if(t>=4.6&&t<=7){const gap=a.check(body,d.blocks.studs[i],'arresting face');maximumContactGap=Math.max(maximumContactGap,gap);assert.ok(gap<.002,gap);}

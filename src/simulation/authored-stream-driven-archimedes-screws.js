@@ -123,14 +123,14 @@ function streamDrivenArchimedesScrew(movement) {
   const wheelLocalY = -screwLength / 2 - 0.18;
   // Brown's paddle disc is well over twice the casing's diameter.
   const waterWheelRadius = 1.6;
-  const waterWheelPaddleCount = 8;
+  const waterWheelPaddleCount = 12;
   const streamSurfaceY = -1.34;
   const streamVelocityZ = 1.34;
   const representativeStreamForce = 6.1;
   const streamDriveTorque = waterWheelRadius
     * representativeStreamForce;
   const dischargeTroughY = 1.82;
-  const groundY = -3.05;
+  const groundY = -3.60;
 
   const worldFromAssemblyLocal = (localPoint) => localPoint.clone()
     .applyQuaternion(assemblyQuaternion)
@@ -256,6 +256,10 @@ function streamDrivenArchimedesScrew(movement) {
     metalness: 0.16,
     roughness: 0.47,
   });
+  const paddleMaterial = matte(PALETTE.brass, {
+    metalness: 0.12,
+    roughness: 0.52,
+  });
   const casingMaterial = matte(PALETTE.driven, {
     opacity: 0.23,
     roughness: 0.31,
@@ -353,9 +357,8 @@ function streamDrivenArchimedesScrew(movement) {
   waterWheel.userData.role =
     'lower-stream-wheel-rigidly-fixed-to-screw-shaft';
   rotor.add(waterWheel);
-  // Brown draws the wheel as one plain solid disc with thin flat boards set
-  // behind it round its edge, standing out past the rim, not a spoked
-  // double rim or a ring of blocks.
+  // Brown draws the wheel as one plain solid disc with box floats set behind
+  // it round its edge, standing out past the rim, not a spoked double rim.
   const wheelRims = [0].map((offset) => {
     const rim = new THREE.Mesh(
       horizontalRing(centralShaftRadius + 0.004, waterWheelRadius, -0.06, 0.06),
@@ -372,15 +375,21 @@ function streamDrivenArchimedesScrew(movement) {
     const paddleCarrier = new THREE.Group();
     paddleCarrier.rotation.y = angle;
     waterWheel.add(paddleCarrier);
-    // Brown's floats are boxes, not thin boards: radial 0.66, axial 0.62,
-    // 0.28 thick, joined through the disc rim and standing mostly on its
-    // far (downstream) face.
-    const paddle = new THREE.Mesh(
-      new THREE.BoxGeometry(0.66, 0.62, 0.28),
-      wheelMaterial,
-    );
-    // Brown's boards stand through the disc edge, showing on both faces.
-    paddle.position.set(waterWheelRadius + 0.03, -0.20, 0);
+    // Brown's floats are box buckets standing well out past the rim on the
+    // disc's far face: radial 1.0, axial 0.64, 0.30 wide, built as five
+    // thin boards open on the leading side so they read as buckets rather
+    // than as solid gear teeth.
+    const wall = 0.045, radial = 1.0, axial = 0.64, width = 0.30;
+    const boards = [
+      [radial, axial, wall, 0, 0, width / 2 - wall / 2],
+      [wall, axial, width, -radial / 2 + wall / 2, 0, 0],
+      [wall, axial, width, radial / 2 - wall / 2, 0, 0],
+      [radial, wall, width, 0, -axial / 2 + wall / 2, 0],
+      [radial, wall, width, 0, axial / 2 - wall / 2, 0],
+    ].map(([x, y, z, px, py, pz]) => new THREE.BoxGeometry(x, y, z).translate(px, py, pz));
+    const paddle = new THREE.Mesh(mergeGeometries(boards), paddleMaterial);
+    boards.forEach(board => board.dispose());
+    paddle.position.set(waterWheelRadius + 0.12, -axial / 2 + 0.03, 0);
     paddle.userData.role = `stream-driven-lower-paddle-${index + 1}`;
     paddleCarrier.add(paddle);
     paddles.push(paddle);
@@ -426,7 +435,7 @@ function streamDrivenArchimedesScrew(movement) {
       bearing.position.x,
       groundY + height / 2,
       // Outside the enlarged paddle boards' sweep.
-      index === 0 ? -2.12 : 2.12,
+      index === 0 ? -2.45 : 2.45,
     );
     support.userData.role = `fixed-oblique-bearing-support-${index + 1}`;
     root.add(support);
@@ -435,51 +444,83 @@ function streamDrivenArchimedesScrew(movement) {
 
   const bearingBridges = bearings.map((bearing, index) => {
     const sign = index === 0 ? -1 : 1;
-    const bridge = new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,1.28,24),frameMaterial);
+    const bridge = new THREE.Mesh(new THREE.CylinderGeometry(.065,.065,1.61,24),frameMaterial);
     bridge.rotation.x = Math.PI/2;
-    bridge.position.set(bearing.position.x,bearing.position.y,sign*1.48);
+    bridge.position.set(bearing.position.x,bearing.position.y,sign*1.645);
     bridge.userData.role = `finite-bearing-to-post-bridge-${index + 1}`;
     root.add(bridge);
     return bridge;
   });
 
-  // Brown holds the top of the shaft in a bracket reaching in from the upper
-  // left: a bearing round the shaft stub above the casing, its arm rising
-  // clear of the casing and running off to the left.
+  // Brown holds the top of the shaft in a flat strap bracket reaching in from
+  // the upper left: its rounded end is a boss bored for the shaft stub above
+  // the casing, and the strap runs left over the trough. The strap's left end
+  // is carried by a saddle resting across the trough's two side walls, so no
+  // bracket end hangs in mid-air when the view is rotated.
   const upperStubBearing = new THREE.Mesh(
-    ring(centralShaftRadius + 0.004, 0.30, -0.08, 0.08),
+    ring(centralShaftRadius + 0.004, 0.36, -0.14, 0.12),
     frameMaterial,
   );
   upperStubBearing.quaternion.setFromUnitVectors(Z_AXIS, axisDirection);
   upperStubBearing.position.copy(worldFromAssemblyLocal(new THREE.Vector3(0, screwLength / 2 + 0.22, 0)));
   upperStubBearing.userData.role = 'fixed-bracket-bearing-on-upper-shaft-stub';
   root.add(upperStubBearing);
-  // Brown's bracket is a bent gooseneck bar: it comes in from the left edge,
-  // dips to a knuckle over the top of the casing and turns down along the
-  // axis as a stud into the head bearing round the shaft stub.
-  const axisPoint = (distance) => worldFromAssemblyLocal(new THREE.Vector3(0, screwLength / 2 + distance, 0));
-  const headSleeve = new THREE.Mesh(ring(centralShaftRadius + 0.004, 0.22, 0.06, 0.44), frameMaterial);
-  headSleeve.quaternion.setFromUnitVectors(Z_AXIS, axisDirection);
-  headSleeve.position.copy(axisPoint(0.22));
-  headSleeve.userData.role = 'fixed-bracket-bearing-on-upper-shaft-stub';
-  root.add(headSleeve);
-  const knuckle = axisPoint(0.72);
-  const gooseneck = new THREE.CatmullRomCurve3([
-    axisPoint(0.60), knuckle,
-    knuckle.clone().add(new THREE.Vector3(0.02, 0.36, 0)),
-    knuckle.clone().add(new THREE.Vector3(-0.55, 0.62, 0)),
-    knuckle.clone().add(new THREE.Vector3(-1.35, 0.50, 0)),
-    new THREE.Vector3(-4.2, knuckle.y + 0.36, 0),
-    new THREE.Vector3(-5.3, knuckle.y + 0.44, 0),
+  const bossCenter = upperStubBearing.position.clone();
+  // Perpendicular to the shaft in the picture plane, toward the upper right:
+  // the strap leaves the boss there and hooks back over it to the left.
+  const bossSide = new THREE.Vector3(-axisDirection.y, axisDirection.x, 0);
+  if (bossSide.x < 0) bossSide.negate();
+  // Trough frame (same transform as the trough built below).
+  const troughFrame = new THREE.Object3D();
+  troughFrame.position.set(upperEnd.x - 2.02, dischargeTroughY, 0);
+  troughFrame.rotation.z = -0.05;
+  troughFrame.updateMatrixWorld(true);
+  const saddleX = -4.55;
+  const saddleLocal = troughFrame.worldToLocal(new THREE.Vector3(saddleX, dischargeTroughY, 0));
+  const wallTop = troughFrame.localToWorld(new THREE.Vector3(saddleLocal.x, 0.37, 0)).y;
+  const strapY = bossCenter.y + 0.50;
+  const strapPath = new THREE.CatmullRomCurve3([
+    bossCenter.clone().addScaledVector(bossSide, 0.26),
+    bossCenter.clone().addScaledVector(bossSide, 0.36).add(new THREE.Vector3(0, 0.26, 0)),
+    new THREE.Vector3(bossCenter.x - 0.20, strapY, 0),
+    new THREE.Vector3(bossCenter.x - 0.90, strapY, 0),
+    new THREE.Vector3(saddleX - 0.12, strapY, 0),
   ], false, 'centripetal');
-  const bracketArm = new THREE.Mesh(cappedTube(gooseneck, 96, 0.09, 12), frameMaterial);
+  const sweepStrap = (curve, width, thickness, segments) => {
+    const positions = [];
+    const frames = Array.from({ length: segments + 1 }, (_, i) => {
+      const t = i / segments, point = curve.getPointAt(t), tangent = curve.getTangentAt(t);
+      const normal = new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
+      return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([u, v]) =>
+        point.clone().addScaledVector(normal, u * width / 2).add(new THREE.Vector3(0, 0, v * thickness / 2)));
+    });
+    const quad = (a, b, c, d) => positions.push(...a.toArray(), ...b.toArray(), ...c.toArray(), ...a.toArray(), ...c.toArray(), ...d.toArray());
+    for (let i = 0; i < segments; i += 1) {
+      const f = frames[i], g = frames[i + 1];
+      for (let k = 0; k < 4; k += 1) quad(f[k], f[(k + 1) % 4], g[(k + 1) % 4], g[k]);
+    }
+    const [f0, f1] = [frames[0], frames[segments]];
+    quad(f0[3], f0[2], f0[1], f0[0]);
+    quad(f1[0], f1[1], f1[2], f1[3]);
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    geometry.computeVertexNormals();
+    return geometry;
+  };
+  const bracketArm = new THREE.Mesh(sweepStrap(strapPath, 0.30, 0.16, 64), frameMaterial);
   bracketArm.userData.role = 'fixed-upper-shaft-bracket-arm';
   root.add(bracketArm);
-  const bracketStud = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.2, 32), frameMaterial);
-  bracketStud.quaternion.copy(upperStubBearing.quaternion).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI / 2));
-  bracketStud.position.copy(axisPoint(0.56));
+  const saddleBar = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.12, 1.34), frameMaterial);
+  saddleBar.position.set(saddleX, wallTop + 0.06, 0);
+  saddleBar.rotation.z = -0.05;
+  saddleBar.userData.role = 'fixed-upper-shaft-bracket-saddle-on-trough-walls';
+  root.add(saddleBar);
+  const legHeight = strapY + 0.12 - (wallTop + 0.10);
+  const bracketStud = new THREE.Mesh(new THREE.BoxGeometry(0.24, legHeight, 0.14), frameMaterial);
+  bracketStud.position.set(saddleX, wallTop + 0.10 + legHeight / 2, 0);
   bracketStud.userData.role = 'fixed-upper-shaft-bracket-arm';
   root.add(bracketStud);
+  const headSleeve = saddleBar;
   const upperBracketArms = [bracketArm, bracketStud, headSleeve];
 
   const base = new THREE.Mesh(

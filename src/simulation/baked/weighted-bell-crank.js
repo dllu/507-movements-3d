@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {loadBakedBundle,makeBakedRigidMovement} from './playback.js';
+import {groundBlock} from '../ground-block.js';
 import {weightedCordGeometry,updateWeightedCord} from '../mujoco-weighted-bell-crank/sync.js';
 // Presentation only (the baked physics keeps its supports and return stop):
 // Brown hangs the top pulley with no gallows, stands the disk and the bell
@@ -38,9 +39,8 @@ function presentSourceSupports(root,g){
  for(const [x,y,name] of [[cx,cy,'disk-axle-end'],[lp.x,lp.y,'bell-crank-pin-end']]){const c=new THREE.Shape();c.absarc(...w(x,y).toArray(),10*s,0,2*Math.PI,false);extrude(c,.80,.83,ink,name);}
  for(const [x0,x1] of [[74,226],[226,371]]){const plate=new THREE.Shape(),a=w(x0,baseTop),b=w(x1,baseBottom);plate.moveTo(a.x,a.y);plate.lineTo(b.x,a.y);plate.lineTo(b.x,b.y);plate.lineTo(a.x,b.y);plate.closePath();extrude(plate,-.30,.80,frame,'base-plate');}
  const left=w(6,baseBottom),right=w(514,baseBottom),depth=26*s;
- const line=new THREE.Mesh(new THREE.BoxGeometry(right.x-left.x,.035,.30),ink);line.position.set((left.x+right.x)/2,left.y-.0175,.62);line.name='ground-line';group.add(line);
- const count=Math.round((right.x-left.x)/.13);
- for(let i=0;i<count;i++){const stroke=new THREE.Mesh(new THREE.BoxGeometry(.02,depth*Math.SQRT2,.02),ink);stroke.position.set(left.x+depth/2+(right.x-left.x-depth)*i/(count-1),left.y-depth/2-.035,.62);stroke.rotation.z=Math.PI/4;stroke.name='ground-hatch-stroke';group.add(stroke);}
+ // The hatched ground is a cut solid under the base plates, not a sheet of strokes.
+ const ground=groundBlock(right.x-left.x,depth,1.2,{spacing:.13,name:'hatched-ground-block'});ground.position.set((left.x+right.x)/2,left.y-depth/2,.25);group.add(ground);
  root.add(group);group.updateMatrixWorld(true);
  root.userData.cameraFitBounds.union(new THREE.Box3().setFromObject(group));
 }

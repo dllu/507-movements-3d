@@ -892,6 +892,9 @@ function sourceScaledDiagonalCatchHandGear({ movementId }) {
     );
     hubRing.position.z = handleDepth / 2 + 0.035;
     hubRing.userData.role = `${role}-dark-hub-ring`;
+    // The hub circle is the drawn edge of the bored hub, not a separate part.
+    hubRing.visible = false;
+    hubRing.userData.retiredInkOutline = true;
     const weightEye = new THREE.Mesh(
       new THREE.TorusGeometry(0.17, 0.055, 10, 36),
       darkMaterial,

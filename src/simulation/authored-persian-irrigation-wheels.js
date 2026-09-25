@@ -435,9 +435,10 @@ function persianIrrigationWheel(movement) {
     );
     bucketBottom.position.y = -0.63;
     bucket.add(bucketBottom);
+    // A rolled lip in the bucket's own colour, not an ink outline.
     const bucketRim = new THREE.Mesh(
       new THREE.TorusGeometry(0.30, 0.035, 8, 32),
-      darkMaterial,
+      bucketMaterial,
     );
     bucketRim.rotation.x = Math.PI / 2;
     bucketRim.position.y = -0.14;

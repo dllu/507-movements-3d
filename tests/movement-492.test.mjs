@@ -35,23 +35,24 @@ function vectorNear(actual, expected, tolerance, message) {
   near(actual.distanceTo(expected), 0, tolerance, message);
 }
 
-function cableEndpoints(cable) {
-  const visible = cable.children.filter((segment) => segment.visible);
-  assert.ok(visible.length > 0, `${cable.userData.role} has segments`);
+// Each cable is one laid rope along a straight-piece polyline.
+function cablePolyline(cable) {
+  const rope = cable.userData.mesh;
+  assert.equal(rope.visible, true, `${cable.userData.role} is drawn`);
+  assert.equal(rope.geometry.type, 'LaidRopeGeometry');
   cable.updateWorldMatrix(true, true);
-  return {
-    end: new THREE.Vector3(0, 0.5, 0)
-      .applyMatrix4(visible.at(-1).matrixWorld),
-    start: new THREE.Vector3(0, -0.5, 0)
-      .applyMatrix4(visible[0].matrixWorld),
-  };
+  const pieces = rope.geometry.parameters.path.curves;
+  return [pieces[0].v1, ...pieces.map((piece) => piece.v2)]
+    .map((point) => point.clone().applyMatrix4(rope.matrixWorld));
+}
+
+function cableEndpoints(cable) {
+  const points = cablePolyline(cable);
+  return { end: points.at(-1), start: points[0] };
 }
 
 function cablePoints(cable) {
-  const visible = cable.children.filter((segment) => segment.visible);
-  cable.updateWorldMatrix(true, true);
-  return visible.flatMap((segment) => [-0.5, 0.5].map((y) =>
-    new THREE.Vector3(0, y, 0).applyMatrix4(segment.matrixWorld)));
+  return cablePolyline(cable);
 }
 
 function disposeModel(root) {

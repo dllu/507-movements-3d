@@ -19,19 +19,19 @@
   "loopEnd": 12,
   "bounds": {
     "min": [
-      -3.955309815955008,
-      -1.6580000466039198,
+      -3.957070389961958,
+      -1.6580000466108935,
       -0.5600000262260437
     ],
     "max": [
-      4.208604413940576,
-      2.5199599486328763,
+      4.208613353328285,
+      2.5199599843051717,
       1.0780000042915345
     ]
   },
   "focus": [
-    0.12664729899278404,
-    0.4309799510144783,
+    0.1257714816831632,
+    0.43097996884713907,
     0.2589999890327454
   ],
   "cameraDirection": [
@@ -46,7 +46,7 @@
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/geometry.js",
-      "sha256": "290771ca52b327d32237412b765dce2c86ea85799e2ff2a887d7cc8630ebee6b"
+      "sha256": "53e4d165ea87da91257135de86b58ae19a85731f40dc02b3635745737895d627"
     },
     {
       "file": "src/simulation/mujoco-stud-reverser/physics.js",
@@ -58,7 +58,7 @@
     },
     {
       "file": "src/simulation/authored-stud-drives.js",
-      "sha256": "351e7e27cef3ea7c7a0716e7b754b6b1961e57304afc519ca482533397904615"
+      "sha256": "8faed0df6244529a768e0623c0d0cffdd062a900954fc74d62d2717bbdaa290f"
     },
     {
       "file": "src/simulation/mujoco/mass.js",
@@ -66,27 +66,27 @@
     },
     {
       "file": "docs/validation/153-supported-fine.json",
-      "sha256": "1a1d333ff5bb19fd9cdae4c9bafca3088503377f6e84b1bc56191c5a6edd05af"
+      "sha256": "003dbaa9f45e8e4ba3f041c03376836396830905ab8d025702c8f1e0f5458ac6"
     },
     {
       "file": "docs/validation/153-assembly.json",
-      "sha256": "5059309db85dc177d6885b679f70977d4b8e30305a1a040c82718eee0c6f85a0"
+      "sha256": "2aa9d7246d0d78c6cb4fddcbf77163a886ff89d9d8a41ee8f3e535a9030e44dc"
     },
     {
       "file": "docs/validation/153-moving-volumes.json",
-      "sha256": "f5b4e5b8e16e25a1d75c7969f93d1a8cd21d14b2244d07e5c5846f2911df705e"
+      "sha256": "33ffa36caefa0d9752b657bb12cff9dc0e024dc1dc7bc6ff5480e83146cc3105"
     }
   ],
   "closure": [
-    1.4846435192339413e-10,
-    2.4069298637519054e-10,
+    1.4844303564132133e-10,
+    1.4067323694799683e-10,
     0,
-    -6.876942487687998e-10,
-    -6.876942487687998e-10
+    -4.019235361196749e-10,
+    -4.019235361196749e-10
   ],
   "sourceTime": 60,
-  "bytes": 292440,
-  "sha256": "ce195d8bf4a647124abab9bf0bec77720e17bb0e1c5345e1eb15eb6b53dd4810",
+  "bytes": 281165,
+  "sha256": "a31e8352f252fb628565ac4c6c7552d6715d0956e51df7fc5502d49a9322042a",
   "samples": 6001,
   "meshes": 15
 }

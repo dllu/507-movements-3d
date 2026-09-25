@@ -209,7 +209,7 @@
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/update-solids.js",
-      "sha256": "f5866158f47c4d441ec5c9cc24823aca936b5384656f457dcfd782aead8d6579"
+      "sha256": "4b40db513d6d579a1626b5d81f5d08c5dc15a6164292f69549b4f00d2571d1c9"
     },
     {
       "file": "src/simulation/mujoco-spring-return-treadle/kinematics.js",
@@ -238,6 +238,6 @@
   "velocityClosure": 1.5124728726390035e-14,
   "maxFKError": 3.0810435484902763e-7,
   "samples": 2001,
-  "bytes": 608610,
-  "sha256": "aa2419560f7053a151d9d1ded275352ebd5f6644b70ea6f3389565830fa18f67"
+  "bytes": 892145,
+  "sha256": "18bdfacc2f0abf3c80a077e362146e5993a97e801e6532a336f2c72e31b8ae05"
 }

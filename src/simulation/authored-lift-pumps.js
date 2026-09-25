@@ -232,6 +232,8 @@ function commonLiftPump(movement) {
   root.add(well);
   const wellRim = horizontalRing(1.18, 0.08, darkMaterial);
   wellRim.position.y = -1.91;
+  wellRim.visible = false;
+  wellRim.userData.retiredInkOutline = true;
   root.add(wellRim);
   const wellWater = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(1.08, 1.08, 0.22, 48),
@@ -262,6 +264,9 @@ function commonLiftPump(movement) {
   for (const y of [-1.39, 2.53]) {
     const rim = horizontalRing(0.78, 0.07, darkMaterial);
     rim.position.y = y;
+    // Edge line only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     root.add(rim);
   }
 
@@ -792,6 +797,8 @@ function modernLiftingPump(movement) {
   root.add(sourceWater);
   const wellRim = horizontalRing(1.03, 0.075, darkMaterial);
   wellRim.position.y = -1.90;
+  wellRim.visible = false;
+  wellRim.userData.retiredInkOutline = true;
   root.add(wellRim);
 
   const suctionPipe = addRole(new THREE.Mesh(
@@ -816,6 +823,9 @@ function modernLiftingPump(movement) {
   for (const y of [-1.37, 2.03]) {
     const rim = horizontalRing(0.78, 0.07, darkMaterial);
     rim.position.y = y;
+    // Edge line only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     root.add(rim);
   }
   const barrelRails = addRole(new THREE.Group(),
@@ -942,6 +952,9 @@ function modernLiftingPump(movement) {
     const rim = horizontalRing(y > deliveryFlapY ? 0.43 : 0.31,
       0.05, darkMaterial);
     rim.position.set(1.45, y, 0);
+    // Edge line only: hidden reference, not a dark rim.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     root.add(rim);
   }
 

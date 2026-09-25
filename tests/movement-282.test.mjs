@@ -453,7 +453,7 @@ test('movement 282 renderer follows all constraints and closes before 283', () =
       `rendered weight x at ${time}`);
     near(blocks.weight.position.y, expected.weightCenter.y, 0,
       `rendered weight y at ${time}`);
-    near(blocks.incomingCord.scale.y, expected.cableIncomingLength, 2e-15,
+    near(blocks.cordRope.userData.curve.curves[0].getLength(), expected.cableIncomingLength, 1e-13,
       `rendered incoming cord length at ${time}`);
     model.root.updateMatrixWorld(true);
     const renderedDrivePin = model.root.worldToLocal(

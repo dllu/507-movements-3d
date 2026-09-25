@@ -746,7 +746,8 @@ test('movement 198 fills a real 3D envelope as the reviewed queue advances throu
   // Undrawn white pulley indices and markers are hidden, and the guide
   // rollers are plain discs without spokes.
   // The traced carrier plate replaces the capsule rail and two stub arms.
-  assert.ok(visibleMeshCount >= 85);
+  // The dark slot and face rims Brown only inks are retired.
+  assert.ok(visibleMeshCount >= 83);
   assert.equal(rackToothCount, 36);
   assert.equal(suspensionRodCount, 2);
   assert.equal(fixedGuideRollerCount, 4);

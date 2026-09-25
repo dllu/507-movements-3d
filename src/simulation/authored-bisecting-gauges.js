@@ -804,14 +804,13 @@ function bisectingGauge(movement) {
   // and carries only a dark bisecting line; no end-grain bars, white
   // indices, slotted white thumb head or witness strip are drawn.
   // Brown shows only a short piece of the plank, both ends broken off in
-  // ragged lines just beyond the cheeks and the marking point.
-  const plankNear = -2.36, plankFar = 2.70;
-  const raggedEnd = (y, sign) => Array.from({ length: 15 }, (_, i) => {
-    const x = workpieceHalfWidth - 2 * workpieceHalfWidth * i / 14;
-    const edge = i === 0 || i === 14 ? 0 : 1;
-    return [sign * x, y + edge * sign * (0.09 * Math.sin(i * 2.3) + 0.05 * Math.sin(i * 5.1))];
-  });
-  const plankOutline = [...raggedEnd(plankNear, 1), ...raggedEnd(plankFar, -1)];
+  // ragged lines just beyond the cheeks: a drawing convention. The board is
+  // modelled whole with square sawn ends and runs off the default view.
+  const plankNear = -6.0, plankFar = 6.3;
+  const plankOutline = [
+    [workpieceHalfWidth, plankNear], [workpieceHalfWidth, plankFar],
+    [-workpieceHalfWidth, plankFar], [-workpieceHalfWidth, plankNear],
+  ];
   workpiece.geometry.dispose();
   workpiece.geometry = platePrism(poly(plankOutline), -0.11, 0.11);
   workpiece.position.y = 0;

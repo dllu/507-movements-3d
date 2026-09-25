@@ -3493,8 +3493,8 @@ test('movement 47 couples an annular tongue to a recessed clutch box with a fixe
   assert.equal(model.root.userData.mechanism, 'annular-tongue-friction-clutch-with-fixed-section');
   assert.equal(model.root.userData.localClippingEnabled, true);
   assert.equal(model.root.userData.sectionView, true);
-  assert.equal(input.userData.body.material.clippingPlanes.length, 2);
-  assert.equal(output.userData.body.material.clippingPlanes.length, 2);
+  assert.equal(input.userData.body.material.clippingPlanes.length, 1, 'a half-body cutaway, not a thin slab');
+  assert.equal(output.userData.body.material.clippingPlanes.length, 1, 'a half-body cutaway, not a thin slab');
   assert.equal(feather.userData.shaftFeather, true);
   assert.ok(g.shaftRight - g.shaftLeft < 2.05, 'the shaft matches the engraving diameter scale');
   assert.ok(g.shaftRadius < g.boreRadius);
@@ -4971,7 +4971,6 @@ test('movement 90 absorbs eccentric vertical travel in one nonrotating elongated
     shaftKey,
     sheaveBody,
     sheaveIndicator,
-    sheaveRim,
     slotLiner,
     supportLegs,
     translationIndicator,
@@ -5002,7 +5001,6 @@ test('movement 90 absorbs eccentric vertical travel in one nonrotating elongated
     shaftCap,
     shaftKey,
     sheaveBody,
-    sheaveRim,
     sheaveIndicator,
     eccentricCenterMark,
   ]) assert.equal(component.parent, input.userData.rotor);
@@ -5448,7 +5446,6 @@ test('movement 91 uses one constant-width triangular eccentric for two true valv
     bearingSupports,
     camBody,
     camFaceIndex,
-    camOutline,
     follower,
     followerBody,
     guideBrackets,
@@ -5491,7 +5488,6 @@ test('movement 91 uses one constant-width triangular eccentric for two true valv
   for (const component of [
     camBody,
     camFaceIndex,
-    camOutline,
     inputShaft,
     shaftHub,
   ]) assert.equal(component.parent, input.userData.rotor);
@@ -5507,7 +5503,8 @@ test('movement 91 uses one constant-width triangular eccentric for two true valv
     camFaceIndex.userData.role,
     'rotation-index-on-triangular-eccentric',
   );
-  assert.equal(camOutline.isLineLoop, true);
+  assert.equal(model.root.userData.blocks.camOutline, undefined,
+    'no ink outline traces the eccentric profile');
 
   for (const component of [
     followerBody,
@@ -8370,7 +8367,6 @@ test('movement 96 gives a roller follower uniform traverse from one heart cam', 
     baseRail,
     bearingBracket,
     camBody,
-    camOutline,
     camRotationIndex,
     follower,
     followerBar,
@@ -8378,7 +8374,6 @@ test('movement 96 gives a roller follower uniform traverse from one heart cam', 
     followerRoller,
     framePost,
     guideBrackets,
-    hubRing,
     input,
     inputShaft,
     rollerHub,
@@ -8411,9 +8406,7 @@ test('movement 96 gives a roller follower uniform traverse from one heart cam', 
 
   for (const component of [
     camBody,
-    camOutline,
     camRotationIndex,
-    hubRing,
     inputShaft,
     shaftHub,
   ]) assert.equal(component.parent, input.userData.rotor);
@@ -8455,7 +8448,8 @@ test('movement 96 gives a roller follower uniform traverse from one heart cam', 
   assert.equal(camBody.geometry.parameters.options.bevelEnabled, false);
   assert.equal(camBody.userData.profileShape, camBody.userData.profileShape);
   assert.equal(camBody.userData.profileShape.holes.length, 0);
-  assert.equal(camOutline.geometry.type, 'BufferGeometry');
+  assert.equal(model.root.userData.blocks.camOutline, undefined,
+    'no ink outline traces the heart cam');
   assert.equal(followerRoller.geometry.type, 'CylinderGeometry');
   assert.equal(
     followerRoller.geometry.parameters.radiusTop,
@@ -9024,7 +9018,6 @@ test('movement 97 captures one sliding pin in a recessed heart-cam groove', () =
     baseRail,
     bearingBracket,
     camRotationIndex,
-    carrierRim,
     centralIsland,
     follower,
     followerAxle,
@@ -9034,12 +9027,9 @@ test('movement 97 captures one sliding pin in a recessed heart-cam groove', () =
     framePost,
     grooveFloor,
     guideBrackets,
-    hubRing,
-    innerWallOutline,
     input,
     inputShaft,
     outerLand,
-    outerWallOutline,
     shaftBearing,
     shaftHub,
     translationIndex,
@@ -9066,14 +9056,10 @@ test('movement 97 captures one sliding pin in a recessed heart-cam groove', () =
 
   for (const component of [
     camRotationIndex,
-    carrierRim,
     centralIsland,
     grooveFloor,
-    hubRing,
-    innerWallOutline,
     inputShaft,
     outerLand,
-    outerWallOutline,
     shaftHub,
   ]) assert.equal(component.parent, input.userData.rotor);
   for (const component of [
@@ -10384,7 +10370,6 @@ test('movement 99 feeds a guided drill roller between adjacent turns of one spir
     carriage,
     carriageIndex,
     carrier,
-    carrierRim,
     diskRotationIndex,
     drillBit,
     drillChuck,
@@ -10395,12 +10380,10 @@ test('movement 99 feeds a guided drill roller between adjacent turns of one spir
     framePosts,
     guideCrossbars,
     housingBridge,
-    hubOutline,
     input,
     inputShaft,
     rollerHousing,
     rollerHub,
-    rollerRim,
     rollerRotationIndex,
     rollerRotor,
     shaftBearing,
@@ -10432,9 +10415,7 @@ test('movement 99 feeds a guided drill roller between adjacent turns of one spir
 
   for (const component of [
     carrier,
-    carrierRim,
     diskRotationIndex,
-    hubOutline,
     inputShaft,
     shaftHub,
     spiralEndCap,
@@ -10445,7 +10426,6 @@ test('movement 99 feeds a guided drill roller between adjacent turns of one spir
   for (const component of [
     followerRoller,
     rollerHub,
-    rollerRim,
     rollerRotationIndex,
   ]) assert.equal(component.parent, rollerRotor);
   for (const component of [
@@ -14840,7 +14820,6 @@ test('movement 106 drives one guided pin at uniform speed through one closed bar
   const model = createMovementModel(catalog.movements[105]);
   const {
     barrel,
-    barrelEndRims,
     baseRail,
     bearingPosts,
     camBearings,
@@ -14879,7 +14858,6 @@ test('movement 106 drives one guided pin at uniform speed through one closed bar
     camRotationIndex,
     grooveTrack,
     inputShaft,
-    ...barrelEndRims,
     ...grooveReversalPockets,
   ]) assert.equal(component.parent, inputRotor);
   for (const component of [
@@ -14902,7 +14880,8 @@ test('movement 106 drives one guided pin at uniform speed through one closed bar
     assert.equal(post.parent, support);
     assert.equal(bearing.geometry.parameters.shapes.holes.length, 1);
   }
-  assert.equal(barrelEndRims.length, 2);
+  assert.equal(model.root.userData.blocks.barrelEndRims, undefined,
+    'no ink rims on the barrel ends');
   assert.equal(bearingPosts.length, 2);
   assert.equal(camBearings.length, 2);
   assert.equal(grooveReversalPockets.length, 2);
@@ -15387,7 +15366,6 @@ test('movement 107 repeats six uniform strokes through one serpentine barrel gro
   const model = createMovementModel(catalog.movements[106]);
   const {
     barrel,
-    barrelEndRims,
     baseRail,
     bearingPosts,
     camBearings,
@@ -15426,7 +15404,6 @@ test('movement 107 repeats six uniform strokes through one serpentine barrel gro
     camRotationIndex,
     grooveTrack,
     inputShaft,
-    ...barrelEndRims,
     ...grooveReversalPockets,
   ]) assert.equal(component.parent, inputRotor);
   for (const component of [
@@ -15449,7 +15426,8 @@ test('movement 107 repeats six uniform strokes through one serpentine barrel gro
     assert.equal(post.parent, support);
     assert.equal(bearing.geometry.parameters.shapes.holes.length, 1);
   }
-  assert.equal(barrelEndRims.length, 2);
+  assert.equal(model.root.userData.blocks.barrelEndRims, undefined,
+    'no ink rims on the barrel ends');
   assert.equal(bearingPosts.length, 2);
   assert.equal(camBearings.length, 2);
   assert.equal(grooveReversalPockets.length, 12);
@@ -23604,14 +23582,12 @@ test('movement 121 reverses one intermittent cog by throwing the disk-carried cl
     cameraEnvelope,
     carrierBody,
     carrierDisk,
-    carrierRim,
     carrierRotationIndex,
     carrierRotor,
     carrierSleeve,
     centerBearing,
     centerPost,
     cogBody,
-    cogFaceRing,
     cogHub,
     cogIndicator,
     cogRotor,
@@ -23623,7 +23599,6 @@ test('movement 121 reverses one intermittent cog by throwing the disk-carried cl
     outputShaft,
     pawl,
     pawlBody,
-    pawlPivotRing,
     pawlPivotStud,
     pawlTipMarker,
     rodGuidePost,
@@ -23660,7 +23635,6 @@ test('movement 121 reverses one intermittent cog by throwing the disk-carried cl
   assert.equal(carrierRotor.parent, carrierDisk);
   for (const carrierPart of [
     carrierBody,
-    carrierRim,
     carrierRotationIndex,
     carrierSleeve,
     crankJointRing,
@@ -23670,11 +23644,11 @@ test('movement 121 reverses one intermittent cog by throwing the disk-carried cl
   ]) {
     assert.equal(carrierPart.parent, carrierRotor);
   }
-  for (const pawlPart of [pawlBody, pawlPivotRing, pawlTipMarker]) {
+  for (const pawlPart of [pawlBody, pawlTipMarker]) {
     assert.equal(pawlPart.parent, pawl);
   }
   assert.equal(cogRotor.parent, cogWheel);
-  for (const cogPart of [cogBody, cogFaceRing, cogHub, cogIndicator]) {
+  for (const cogPart of [cogBody, cogHub, cogIndicator]) {
     assert.equal(cogPart.parent, cogRotor);
   }
   for (const sliderPart of [sliderEye, sliderJointPin, sliderStem]) {
@@ -25528,7 +25502,11 @@ test('movement 124 drives one fiddle-drill spindle with one smoothly wrapped bow
   assert.equal(string.userData.closed, false);
   assert.equal(string.userData.wrapTurns, 1);
   assert.equal(string.userData.length, geometry.nominalStringLength);
-  assert.equal(stringMarkers.length, geometry.stringMarkerCount);
+  // The bowstring is the shared laid rope: its lay, fixed from the lower tied
+  // end, shows the material, so no white flow markers are drawn.
+  assert.equal(stringMarkers.length, 0);
+  assert.equal(string.userData.crossSection, 'laid-rope');
+  assert.equal(string.userData.mesh.geometry.userData.travel, 0);
   assert.deepEqual(
     string.userData.materialMarkerFractions,
     geometry.stringMarkerFractions,
@@ -26852,8 +26830,14 @@ test('movement 126 redirects one input rope through one fixed pulley into a sepa
     outputCable.userData.role,
     'separate-constant-length-output-cable',
   );
-  assert.equal(inputCableMarkers.length, geometry.inputCableMarkerCount);
-  assert.equal(outputCableMarkers.length, geometry.outputCableMarkerCount);
+  // Both cables are the shared laid rope, lay fixed from each tied end: no
+  // white flow markers are drawn.
+  assert.equal(inputCableMarkers.length, 0);
+  assert.equal(outputCableMarkers.length, 0);
+  for (const cable of [inputCable, outputCable]) {
+    assert.equal(cable.userData.crossSection, 'laid-rope');
+    assert.equal(cable.userData.mesh.geometry.userData.travel, 0);
+  }
   assert.deepEqual(
     inputCable.userData.materialMarkerFractions,
     geometry.inputMarkerFractions,
@@ -27349,19 +27333,15 @@ test('movement 128 uses three rigid wipers and conjugate faces to reciprocate on
     inputRotor,
     inputShaft,
     leftGate,
-    leftWorkingLine,
     rightGate,
-    rightWorkingLine,
     rotationIndex,
     rotorHub,
-    rotorHubRim,
     shaftBearing,
     shaftPost,
     slideRods,
     slidingFrame,
     translationIndex,
     wiperArms,
-    wiperHeadRims,
     wiperHeads,
   } = model.root.userData.blocks;
   const {
@@ -27383,18 +27363,16 @@ test('movement 128 uses three rigid wipers and conjugate faces to reciprocate on
   assert.equal(frameBody.parent, slidingFrame);
   assert.equal(rightGate.parent, slidingFrame);
   assert.equal(leftGate.parent, slidingFrame);
-  assert.equal(rightWorkingLine.parent, slidingFrame);
-  assert.equal(leftWorkingLine.parent, slidingFrame);
+  assert.equal(model.root.userData.blocks.rightWorkingLine, undefined);
+  assert.equal(model.root.userData.blocks.leftWorkingLine, undefined);
   assert.equal(translationIndex.parent, slidingFrame);
   for (const rod of slideRods) assert.equal(rod.parent, slidingFrame);
   for (const component of [
     inputShaft,
     rotationIndex,
     rotorHub,
-    rotorHubRim,
     ...wiperArms,
     ...wiperHeads,
-    ...wiperHeadRims,
   ]) assert.equal(component.parent, inputRotor);
   for (const component of [
     baseRail,
@@ -27409,7 +27387,8 @@ test('movement 128 uses three rigid wipers and conjugate faces to reciprocate on
   assert.equal(geometry.wiperCount, 3);
   assert.equal(wiperArms.length, 3);
   assert.equal(wiperHeads.length, 3);
-  assert.equal(wiperHeadRims.length, 3);
+  assert.equal(model.root.userData.blocks.wiperHeadRims, undefined,
+    'no ink rims on the wiper heads');
   assert.equal(geometry.wiperAngularSpacing, Math.PI * 2 / 3);
   assert.equal(geometry.halfStrokeAngle, Math.PI / 3);
   assert.equal(geometry.outputCyclesPerInputRevolution, 3);
@@ -27479,10 +27458,6 @@ test('movement 128 uses three rigid wipers and conjugate faces to reciprocate on
   assert.equal(rightGate.geometry, leftGate.geometry,
     'the two integral working faces are one half-turn-conjugate shape');
   assert.equal(leftGate.rotation.z, Math.PI);
-  assert.equal(rightWorkingLine.geometry.getAttribute('position').count,
-    geometry.gateProfileSegmentCount + 1);
-  assert.equal(leftWorkingLine.geometry.getAttribute('position').count,
-    geometry.gateProfileSegmentCount + 1);
   assert.equal(rightGateProfileSamples.length,
     geometry.gateProfileSegmentCount + 1);
   assert.equal(leftGateProfileSamples.length,
@@ -28662,7 +28637,6 @@ test('movement 130 closes one gravity-opened shear jaw through exact eccentric-c
     camHub,
     cameraEnvelope,
     camInput,
-    camRim,
     camRotationIndex,
     camRotor,
     camShaft,
@@ -28675,7 +28649,6 @@ test('movement 130 closes one gravity-opened shear jaw through exact eccentric-c
     movingBlade,
     movingBladeTipMarker,
     pivotBearing,
-    pivotFaceRing,
     pivotPin,
     pivotStand,
     upperJaw,
@@ -28690,7 +28663,7 @@ test('movement 130 closes one gravity-opened shear jaw through exact eccentric-c
   );
   assert.equal(camInput.parent, model.root);
   assert.equal(camRotor.parent, camInput);
-  for (const component of [camDisk, camRim, camRotationIndex, camHub]) {
+  for (const component of [camDisk, camRotationIndex, camHub]) {
     assert.equal(component.parent, camRotor);
   }
   assert.equal(upperJawAssembly.parent, model.root);
@@ -28698,7 +28671,6 @@ test('movement 130 closes one gravity-opened shear jaw through exact eccentric-c
     upperJaw,
     leverContactFace,
     movingBlade,
-    pivotFaceRing,
     gravityIndex,
     movingBladeTipMarker,
   ]) assert.equal(component.parent, upperJawAssembly);
@@ -31441,11 +31413,9 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
     baseRail,
     bearingSupports,
     camBody,
-    camOutline,
     cameraEnvelope,
     carrierDisk,
     carrierFaceIndex,
-    carrierRim,
     fastenerBoss,
     fastenerSquare,
     follower,
@@ -31483,10 +31453,8 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
   );
   for (const component of [
     camBody,
-    camOutline,
     carrierDisk,
     carrierFaceIndex,
-    carrierRim,
     fastenerBoss,
     fastenerSquare,
     inputShaft,
@@ -31511,7 +31479,8 @@ test('movement 135 uses a vertex-pivoted true Reuleaux tappet for positive-retur
   ]) assert.equal(component.parent, model.root);
   assert.equal(lowerContactMarker.parent, model.root);
   assert.equal(upperContactMarker.parent, model.root);
-  assert.equal(camOutline.isLineLoop, true);
+  assert.equal(model.root.userData.blocks.camOutline, undefined,
+    'no ink outline line on the cam');
   assert.equal(
     carrierDisk.userData.role,
     'circular-carrier-disk-centered-on-cam-vertex',
@@ -32085,11 +32054,9 @@ test('movement 136 drives a spring-held axial rod from sixteen shaped rim teeth'
     inputRotor,
     inputShaft,
     movingSpringCollar,
-    rearRimOutline,
     shaftBearing,
     shaftPedestal,
     toothedRim,
-    toothedRimOutline,
     wheelBody,
     wheelFaceIndex,
     wheelHub,
@@ -32116,9 +32083,7 @@ test('movement 136 drives a spring-held axial rod from sixteen shaped rim teeth'
   );
   for (const component of [
     inputShaft,
-    rearRimOutline,
     toothedRim,
-    toothedRimOutline,
     wheelBody,
     wheelFaceIndex,
     wheelHub,
@@ -32166,7 +32131,8 @@ test('movement 136 drives a spring-held axial rod from sixteen shaped rim teeth'
     fixedGuideSleeve.userData.role,
     'fixed-guide-coaxial-with-follower-rod',
   );
-  assert.equal(toothedRimOutline.isLineLoop, true);
+  assert.equal(model.root.userData.blocks.toothedRimOutline, undefined,
+    'no ink outline line on the cam');
   const guideAxis = Z_AXIS.clone().applyQuaternion(
     fixedGuideSleeve.quaternion
   );
@@ -32297,10 +32263,6 @@ test('movement 136 drives a spring-held axial rod from sixteen shaped rim teeth'
     toothedRim.geometry.attributes.position.count,
     geometry.toothCount * 128 * 18,
   );
-  assert.equal(
-    toothedRimOutline.geometry.attributes.position.count,
-    geometry.toothCount * 24,
-  );
   assert.ok(Math.abs(
     toothedRim.geometry.boundingBox.min.x - geometry.baseFrontX
   ) < 2e-6);
@@ -32427,7 +32389,6 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
     camCenterWitness,
     cameraEnvelope,
     camFaceIndex,
-    camRim,
     crankshaftBearing,
     crankshaftSupport,
     fixedPivotBearing,
@@ -32435,7 +32396,6 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
     fork,
     forkMotionIndex,
     forkPivotBoss,
-    forkPivotRim,
     guideSupport,
     input,
     inputRotor,
@@ -32445,7 +32405,6 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
     lowerRoller,
     lowerRollerIndex,
     lowerRollerPin,
-    lowerRollerRim,
     lowerRollerRotor,
     lowerRollerWheel,
     outerForkBow,
@@ -32459,7 +32418,6 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
     upperRoller,
     upperRollerIndex,
     upperRollerPin,
-    upperRollerRim,
     upperRollerRotor,
     upperRollerWheel,
     valveConnectingLink,
@@ -32496,7 +32454,6 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
     camBody,
     camCenterWitness,
     camFaceIndex,
-    camRim,
     inputShaft,
     shaftKey,
   ]) assert.equal(component.parent, inputRotor,
@@ -32504,7 +32461,6 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
   for (const component of [
     forkMotionIndex,
     forkPivotBoss,
-    forkPivotRim,
     lowerForkArm,
     lowerRoller,
     outerForkBow,
@@ -32516,12 +32472,10 @@ test('movement 137 rocks a guided valve rod with a captured expansion eccentric'
   assert.equal(upperRoller.userData.rotor, upperRollerRotor);
   for (const component of [
     lowerRollerIndex,
-    lowerRollerRim,
     lowerRollerWheel,
   ]) assert.equal(component.parent, lowerRollerRotor);
   for (const component of [
     upperRollerIndex,
-    upperRollerRim,
     upperRollerWheel,
   ]) assert.equal(component.parent, upperRollerRotor);
   assert.equal(lowerRollerPin.parent, lowerRoller);
@@ -33093,12 +33047,10 @@ test('movement 138 lifts a guided point follower with one seven-arc plate cam', 
   const model = createMovementModel(catalog.movements[137]);
   const {
     baseRail,
-    camOutline,
     camPlate,
     cameraEnvelope,
     camRotationIndex,
     carrierDisk,
-    carrierRim,
     contactMarker,
     follower,
     followerIndex,
@@ -33145,11 +33097,9 @@ test('movement 138 lifts a guided point follower with one seven-arc plate cam', 
   );
 
   for (const component of [
-    camOutline,
     camPlate,
     camRotationIndex,
     carrierDisk,
-    carrierRim,
     innerHub,
     inputShaft,
     outerHub,
@@ -33204,7 +33154,8 @@ test('movement 138 lifts a guided point follower with one seven-arc plate cam', 
     upperGuide.userData.role,
     'fixed-upper-guide-block-for-vertical-rod',
   );
-  assert.equal(camOutline.isLineLoop, true);
+  assert.equal(model.root.userData.blocks.camOutline, undefined,
+    'no ink outline line on the cam');
 
   let circularCarriers = 0;
   let sevenArcProfiles = 0;
@@ -39820,6 +39771,11 @@ test('movement 147 lifts one loose fan crosshead on two shaft-fixed circular inc
       geometry.fanOutlineDepth);
     assert.ok(fan.blade.geometry.parameters.depth > geometry.fanOutlineDepth,
       'the blue vane face remains visible from both sides of its dark rim');
+    assert.equal(fan.outline.visible, false,
+      'the drawn fan border is not rendered as a dark rim');
+    assert.equal(fan.outline.userData.retiredInkOutline, true);
+    assert.equal(fan.blade.geometry.parameters.width, geometry.fanWidth);
+    assert.equal(fan.blade.geometry.parameters.height, geometry.fanHeight);
     assert.equal(fan.rivets.length, 2);
   }
   assert.equal(rampRecords[0].centerAngle, 0);
@@ -40986,7 +40942,6 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
     leverIndex,
     leverPivotFace,
     leverPivotPost,
-    leverPivotRing,
     outputPin,
     rotatingShaft,
     shaftKeyIndex,
@@ -41051,10 +41006,8 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
   for (const [index, record] of camRecords.entries()) {
     assert.equal(record.assembly.parent, slidingCarrier,
       'all four cams are rigidly fixed to the one sliding carrier');
-    for (const component of [
-      record.plate,
-      record.outline,
-    ]) assert.equal(component.parent, record.assembly);
+    assert.equal(record.plate.parent, record.assembly);
+    assert.equal(record.outline, undefined, 'no dark ink outline traces the cam edge');
     assert.equal(record.assembly.position.z, geometry.localCamPlanes[index]);
     assert.equal(record.assembly.rotation.z, geometry.phaseOffset);
     assert.equal(
@@ -41083,13 +41036,13 @@ test('movement 150 slides one four-throw cam series at a common heel to vary a v
   for (const cheek of valveGuideCheeks) assert.equal(cheek.parent, valveGuide);
   for (const component of [
     leverBody,
-    leverPivotRing,
     leverPivotFace,
     leverIndex,
     followerRoller.root,
     followerAxle,
     outputPin,
   ]) assert.equal(component.parent, lever);
+  assert.equal(blocks.leverPivotRing, undefined, 'no dark ink ring outlines the lever fulcrum eye');
   assert.ok(lever.userData.axis.distanceTo(Z_AXIS) < 1e-15);
   assert.equal(followerRoller.rotor.parent, followerRoller.root);
   for (const component of [
@@ -41864,13 +41817,14 @@ test('movement 151 uses one worm wheel and opposite-hand screw threads to move t
     assert.ok(record.nut.userData.axis.distanceTo(X_AXIS) < 1e-15);
     for (const component of [
       record.body,
-      ...record.boreRings,
       record.internalThread,
       record.guideStem,
       record.guideShoe,
       record.translationIndex,
     ]) assert.equal(component.parent, record.nut);
-    assert.equal(record.nut.children.length, 7);
+    assert.equal(record.boreRings, undefined,
+      'no decorative ink rims around the nut bores');
+    assert.equal(record.nut.children.length, 5);
     assert.equal(record.body.geometry.parameters.shapes.holes.length, 1,
       'each square nut is built with a real through-bore');
     assert.equal(record.internalThread.userData.handedness,
@@ -53555,7 +53509,6 @@ test('movement 165 rocks a weighted upright bar from one six-wave vertical-shaft
     camHub,
     fixedRockerPivot,
     followerAssembly,
-    followerRim,
     followerWheel,
     input,
     lowerShaft,
@@ -53567,14 +53520,16 @@ test('movement 165 rocks a weighted upright bar from one six-wave vertical-shaft
     rearColumn,
     rockerAssembly,
     rockerBeam,
-    rockerPivotRing,
     upperCollar,
     upperShaft,
-    wavedOutline,
     wavedSkirt,
     ...outputGuideCheeks,
     ...outputGuideBridges,
   ]) assert.equal(object.visible, true);
+  // Brown's edge lines are not separate parts: the ink rims stay hidden.
+  for (const object of [followerRim, rockerPivotRing, wavedOutline]) {
+    assert.equal(object.visible, false);
+  }
 
   disposeModel(model.root);
 });
@@ -54521,19 +54476,20 @@ test('movement 166 uses one loose crank pin and one slotted pitman for two real 
         : [];
     for (const material of materials) assert.equal(material.fog, false);
   });
+  // Brown's inked disk circles, crank orbit, slot outline and eye ring are
+  // retired as hidden references (no black rims).
+  for (const object of [crankOrbit, diskInnerRim, diskOuterRim, outputEye, slotOutline]) {
+    assert.equal(object.visible, false);
+  }
   for (const object of [
     baseRail,
     crankArm,
-    crankOrbit,
     crankPinBody,
     crankPinFace,
     diskBody,
-    diskInnerRim,
-    diskOuterRim,
     diskRotationIndex,
     driverHub,
     driverShaft,
-    outputEye,
     outputIndex,
     outputPin,
     outputPinFace,
@@ -54545,7 +54501,6 @@ test('movement 166 uses one loose crank pin and one slotted pitman for two real 
     slideBottomEdge,
     slideTopEdge,
     slotFrame,
-    slotOutline,
     ...guideEndBridges,
     ...guideRails,
     ...guideSupports,
@@ -54763,7 +54718,7 @@ test('movement 167 turns one vertical drum from one reciprocating stud in one en
     new Set(['lower', 'upper']),
   );
   assert.equal(endCaps.length, 2);
-  assert.equal(endRims.length, 2);
+  assert.equal(endRims, undefined, 'no dark ink rims outline the drum ends');
   assert.equal(shaftBearings.length, 2);
   assert.equal(bearingBrackets.length, 2);
   assert.equal(guideRailSupports.length, 2);
@@ -55413,7 +55368,6 @@ test('movement 167 turns one vertical drum from one reciprocating stud in one en
     topRail,
     ...bearingBrackets,
     ...endCaps,
-    ...endRims,
     ...grooveReversalPockets,
     ...guideRailSupports,
     ...shaftBearings,
@@ -59380,7 +59334,6 @@ test('movement 174 self-clamps one board between two jaws pivoting on fixed scre
     lowerCamCenterAnchor,
     lowerContactMarker,
     lowerJaw,
-    lowerJawOutline,
     lowerJawPlate,
     lowerJawRotationIndex,
     lowerPivotScrew,
@@ -59391,7 +59344,6 @@ test('movement 174 self-clamps one board between two jaws pivoting on fixed scre
     upperCamCenterAnchor,
     upperContactMarker,
     upperJaw,
-    upperJawOutline,
     upperJawPlate,
     upperJawRotationIndex,
     upperPivotScrew,
@@ -59470,7 +59422,6 @@ test('movement 174 self-clamps one board between two jaws pivoting on fixed scre
     lowerCamCenterAnchor,
     lowerContactMarker,
     lowerJaw,
-    lowerJawOutline,
     lowerJawPlate,
     lowerJawRotationIndex,
     lowerPivotScrew,
@@ -59481,7 +59432,6 @@ test('movement 174 self-clamps one board between two jaws pivoting on fixed scre
     upperCamCenterAnchor,
     upperContactMarker,
     upperJaw,
-    upperJawOutline,
     upperJawPlate,
     upperJawRotationIndex,
     upperPivotScrew,

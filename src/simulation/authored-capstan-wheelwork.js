@@ -219,10 +219,6 @@ function capstanWheelwork(movement) {
   foundation.position.y = 0.13;
   foundation.userData.role = 'fixed-circular-capstan-foundation';
   fixedFrame.add(foundation);
-  const foundationRim = torusNormalToY(3.49, 0.12, darkMaterial, 96);
-  foundationRim.position.y = 0.29;
-  foundationRim.userData.role = 'fixed-foundation-rim';
-  fixedFrame.add(foundationRim);
   const centerBearing = cylinderAlongY(0.40, 0.62, darkMaterial, 40);
   centerBearing.position.y = 0.48;
   centerBearing.userData.role =

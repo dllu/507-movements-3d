@@ -68,7 +68,6 @@ test('276: rendered cam envelope stays within machining tolerance of both roller
     assert.equal(b.camBody.geometry.parameters.options.bevelEnabled, false);
     assertClearCycle(model, [
       [b.leftRoller.userData.blocks.tread, b.camBody], [b.rightRoller.userData.blocks.tread, b.camBody],
-      [b.leftRoller.userData.blocks.tread, b.profileOutline], [b.rightRoller.userData.blocks.tread, b.profileOutline],
     ]);
   } finally {disposeObject3D(model.root);}
 });

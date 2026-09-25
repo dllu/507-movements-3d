@@ -38,7 +38,7 @@ test('394 finite guide mouths retain working flange surfaces without inverted-ar
  const m=parsons({id:394}),d=m.root.userData,b=d.blocks,o=b.outputRotor.userData,check=audit();let min=Infinity,maxWorking=0,pinion=Infinity;
  for(const phase of[...Array.from({length:33},(_,i)=>i/32),.40,.44,.48,.90,.94,.98]){m.update(phase*8);m.root.updateMatrixWorld(true);
   for(const wall of[...b.finiteGuideWalls,...b.guideAttachments]){
-   for(const flange of[o.largeFlange,o.smallFlange,o.largeFlangeRim,o.smallFlangeRim])min=Math.min(min,check(flange,wall));
+   for(const flange of[o.largeFlange,o.smallFlange])min=Math.min(min,check(flange,wall));
    pinion=Math.min(pinion,check(o.pinion,wall));
   }
   const s=d.kinematics;if(s.largeFlangeActive)maxWorking=Math.max(maxWorking,check(o.largeFlange,b.largeGroove.userData.workingWall));if(s.smallFlangeActive)maxWorking=Math.max(maxWorking,check(o.smallFlange,b.smallGroove.userData.workingWall));

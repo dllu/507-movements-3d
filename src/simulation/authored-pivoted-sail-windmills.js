@@ -309,6 +309,9 @@ function pivotedSailWindmill(movement) {
   ), 'rigid-rim-of-load-flywheel');
   loadFlywheelRim.rotation.x = Math.PI / 2;
   loadFlywheelRim.position.y = -0.65;
+  // Only the flywheel's drawn edge: hidden reference, not a dark rim.
+  loadFlywheelRim.visible = false;
+  loadFlywheelRim.userData.retiredInkOutline = true;
   rotor.add(loadFlywheelRim);
 
   const armAssemblies = [];
@@ -371,6 +374,12 @@ function pivotedSailWindmill(movement) {
       `front-face-index-of-pivoted-sail-${sailIndex + 1}`;
     backMarker.userData.role =
       `back-face-index-of-pivoted-sail-${sailIndex + 1}`;
+    // Brown draws each sail as a plain board; the dark rails only traced its
+    // edges, so they stay as hidden references and the board shows itself.
+    for (const rail of [topRail, bottomRail, ...endRails]) {
+      rail.visible = false;
+      rail.userData.retiredInkOutline = true;
+    }
     hinge.add(
       panel,
       topRail,

@@ -26,14 +26,16 @@ export function makeScotchYokeGeometry() {
   const stemX=x(source.stemX),stemRadius=px(source.stemRadius),stemZ=.36,guideHalfLength=.11;
   const guideCenter=Math.max(...roots.map(Math.abs))+crankRadius+guideHalfLength+.07;
   const stemEnd=guideCenter+guideHalfLength+crankRadius+.04,postX=1.96,postHalfWidth=.06;
-  // Brown's lower stem ends in a loop drawn round the shaft at the plate's
-  // pose. The loop rides with the yoke in the stem plane, in front of the
-  // shaft end and hub (which stop at z=.18), so it frames the shaft end at
-  // that pose and slides clear across the disk elsewhere in the stroke.
-  const loopY=-crankRadius*Math.sin(source.phase),loopInner=.19,loopOuter=.27;
+  // Brown's lower stem is a flat strap with an elongated slot round the shaft
+  // end. The slot runs from the yoke down to the lowest relative shaft
+  // position, so throughout the stroke the shaft end and hub are framed by the
+  // slot rather than crossed by solid stem. The strap stays in the yoke plane,
+  // in front of the shaft end and hub (which stop at z=.18), because the yoke
+  // itself crosses the shaft axis at mid-stroke.
+  const loopY=-crankRadius,loopInner=.19,loopOuter=.27,strapTop=roots[1]+.01;
   attach('stemLoop',plate(clip.difference(clip.union(poly(circle([stemX,loopY],loopOuter,128)),
-    poly([[stemX-stemRadius,loopY],[stemX+stemRadius,loopY],[stemX+stemRadius,roots[1]+.01],[stemX-stemRadius,roots[1]+.01]])),
-  poly(circle([stemX,loopY],loopInner,128))),stemZ-stemRadius,stemZ+stemRadius),'yoke',PALETTE.driven);
+    poly([[stemX-loopOuter,loopY],[stemX+loopOuter,loopY],[stemX+loopOuter,strapTop],[stemX-loopOuter,strapTop]])),
+  capsule([stemX,loopY],[stemX,roots[1]],loopInner,128)),stemZ-.12,stemZ+.12),'yoke',PALETTE.driven);
   for(const [i,sign] of [1,-1].entries()) {
     const ends=[i?loopY-loopOuter+.01:roots[i],sign*stemEnd].sort((a,b)=>a-b);
     const stem=attach('stem'+i,disk(stemRadius,...ends,96),'yoke',PALETTE.driven,[stemX,0,stemZ]);stem.rotation.x=-Math.PI/2;

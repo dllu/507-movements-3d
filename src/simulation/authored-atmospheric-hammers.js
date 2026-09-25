@@ -594,16 +594,6 @@ function atmosphericHammer(movement) {
     cylinderMaterial,
   ), 'front-cutaway-moving-cylinder-shell-B');
   movingCylinder.add(cylinderShell);
-  const cylinderRings = [-1, 1].map((side, index) => {
-    const ring = addRole(new THREE.Mesh(
-      new THREE.TorusGeometry(cylinderOuterRadius + 0.015, 0.050, 9, 52),
-      darkMaterial,
-    ), `moving-cylinder-end-ring-${index + 1}`);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = side * (cylinderHalfChamberHeight + 0.08);
-    movingCylinder.add(ring);
-    return ring;
-  });
   const cylinderDriveLug = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.32, 0.28, 0.30),
     drivenMaterial,
@@ -814,7 +804,6 @@ function atmosphericHammer(movement) {
       crankDisk,
       crankPinVisual,
       cylinderDriveLug,
-      cylinderRings,
       cylinderShell,
       fixedDriveShaft,
       fixedFrame,

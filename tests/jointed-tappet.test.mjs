@@ -157,36 +157,17 @@ test('076 independent solids clear each other through strike, overtravel, foldin
   dispose(model);
 });
 
-test('076 section view clips only driver display and leaves physical buffers and state intact',()=>{
+test('076 models the large wheel whole: no clipping, section caps or view configurations',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData;
-  const buffers=Object.fromEntries(Object.entries(u.parts).map(([name,mesh])=>[name,mesh.geometry.attributes.position.array.slice()]));
-  assert.equal(u.configuration,'section');assert.equal(u.sections.length,3);
-  for(const time of [0,.53,3.26525,6,9,12.53]){
-    const state=pose(model,time);
-    for(const view of ['complete','section']){
-      u.setConfiguration(view);assert.deepEqual(u.kinematics,state);
-      for(const [name,mesh] of Object.entries(u.parts)){
-        assert.deepEqual(mesh.geometry.attributes.position.array,buffers[name]);
-        assert.equal(mesh.material.clippingPlanes?.length??0,view==='section'&&u.families[name]==='driver'?3:0);
-      }
-      for(const section of u.sections){assert.equal(section.root.visible,view==='section');section.root.traverse(mesh=>{
-        if(mesh.geometry){assert.ok([...mesh.geometry.attributes.position.array].every(Number.isFinite));assert.equal(mesh.material.clippingPlanes.length,0);}
-      });}
-    }
-  }
-  // The section window is cut in the driver's frame: rim segment D and its
-  // stud keep the same place in it as the large wheel turns.
-  u.setConfiguration('section');
-  const inWindow=time=>{pose(model,time);const stud=new THREE.Vector3().setFromMatrixPosition(u.parts.driverStud.matrixWorld);
-    return u.parts.driverBody.material.clippingPlanes.map(plane=>plane.distanceToPoint(stud));};
-  const start=inWindow(0);for(const time of [.7,3,6,9.5])inWindow(time).forEach((d,i)=>near(d,start[i],1e-9));
-  assert.ok(start.every(d=>d>0),'stud D lies inside the section window');
-  assert.throws(()=>u.setConfiguration('unknown'),/view/);dispose(model);
+  assert.equal(u.localClippingEnabled,undefined);assert.equal(u.configurations,undefined);assert.equal(u.sections,undefined);
+  for(const time of [0,.53,3.26525,6,9,12.53]){pose(model,time);
+    model.root.traverse(object=>{if(object.material)assert.equal(object.material.clippingPlanes?.length??0,0,`${object.name} is clipped`);});}
+  dispose(model);
 });
 
-test('076 engraving section frames A, the pawls and the tappet throughout, cropping only segment D as Brown does',()=>{
+test('076 default view frames A, the pawls and the tappet throughout and Brown\'s window onto segment D',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,{driverOuter,studVector}=u.geometry;
-  u.setConfiguration('section');const fit=u.cameraFitBounds.clone();
+  const fit=u.cameraFitBounds.clone();
   // Every non-driver part stays in the view at every sampled pose, and the
   // stored sweep is tight (recomputed from vertices).
   const swept=new THREE.Box3(),box=new THREE.Box3();
@@ -197,8 +178,8 @@ test('076 engraving section frames A, the pawls and the tappet throughout, cropp
     near(swept.min[axis],u.sweptWorkingParts.min[axis],.003);near(swept.max[axis],u.sweptWorkingParts.max[axis],.003);
   }
   assert.ok(fit.containsBox(new THREE.Box3(swept.min.clone().setZ(fit.min.z),swept.max.clone().setZ(fit.max.z))));
-  // Segment D at the plate pose is whole in the view; the crop is Brown's
-  // (its broken ends), not the swept disc.
+  // Segment D at the plate pose is in the view; the rest of the (complete)
+  // wheel runs off the view edges as Brown's broken ends do.
   assert.ok(fit.containsBox(u.segmentAtPlatePose));
   near(fit.max.x,driverOuter,1e-9);near(fit.min.y,u.segmentAtPlatePose.min.y,1e-12);
   assert.ok(fit.max.x-fit.min.x<1.5*driverOuter&&fit.max.y-fit.min.y<1.2*driverOuter,'narrower than the swept disc');
@@ -207,7 +188,5 @@ test('076 engraving section frames A, the pawls and the tappet throughout, cropp
     return fit.containsPoint(stud.setZ(0));};
   assert.ok(studInView(0));assert.ok([3,4.5,6,7.5].some(time=>!studInView(time)),'D leaves the view');assert.ok(studInView(u.profile.period));
   near(Math.hypot(...studVector),u.geometry.studOrbit,1e-12);
-  // The complete wheel still fits its whole disc.
-  u.setConfiguration('complete');near(u.cameraFitBounds.max.x,driverOuter,1e-12);near(u.cameraFitBounds.min.y,-driverOuter,1e-12);
   dispose(model);
 });

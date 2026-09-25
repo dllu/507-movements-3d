@@ -211,7 +211,8 @@ test('sector-band material advances once with wrap transfer and has clearance at
   const a = outgoing.getPoint(outgoing.peak);
   const b = returning.getPoint(returning.peak);
   assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 1e-8);
-  assert.ok(Math.abs(a.z - b.z) > belt.userData.width + 0.09);
+  // A flat band clears by its width; the laid rope of 6 by its diameter.
+  assert.ok(Math.abs(a.z - b.z) > (belt.userData.width ?? belt.userData.thickness) + 0.09);
 });
 
 test('tensioner pivots on a rigid arm, keeps one planar inextensible belt, and begins in the source contact pose', () => {

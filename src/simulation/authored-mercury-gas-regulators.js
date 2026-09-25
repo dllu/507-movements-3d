@@ -23,18 +23,39 @@ function addDomedCover(root, material, rodX) {
     poly([...arc(2.80, 0.60)].reverse()),
   );
   const knobTop = baseY + 0.78 + 0.30;
-  const knob = poly([
-    [rodX - 0.20, baseY + 0.60], [rodX + 0.20, baseY + 0.60],
-    [rodX + 0.20, knobTop - 0.10], [rodX + 0.10, knobTop],
-    [rodX - 0.10, knobTop], [rodX - 0.20, knobTop - 0.10],
-  ]);
+  // Only a square rod passage is cut through the crown; the rest of the
+  // lid is unbroken across its depth.
+  const hole = 0.095;
   const slot = poly([
-    [rodX - 0.095, baseY - 0.1], [rodX + 0.095, baseY - 0.1],
-    [rodX + 0.095, knobTop + 0.1], [rodX - 0.095, knobTop + 0.1],
+    [rodX - hole, baseY - 0.1], [rodX + hole, baseY - 0.1],
+    [rodX + hole, knobTop + 0.1], [rodX - hole, knobTop + 0.1],
   ]);
-  const outline = polygonClipping.difference(polygonClipping.union(shell, knob), slot);
-  const cover = new THREE.Mesh(plate(outline, -1.20, 1.20), material);
+  // Each slab is built as closed left and right halves meeting at the rod.
+  const halves = [
+    polygonClipping.intersection(shell, poly([[-4, 0], [rodX, 0], [rodX, 5], [-4, 5]])),
+    polygonClipping.intersection(shell, poly([[rodX, 0], [4, 0], [4, 5], [rodX, 5]])),
+  ];
+  const geometries = [
+    ...halves.map(half => plate(half, -1.20, -hole)),
+    plate(polygonClipping.difference(shell, slot), -hole, hole),
+    ...halves.map(half => plate(half, hole, 1.20)),
+  ];
+  const cover = new THREE.Group();
+  geometries.forEach(geometry => cover.add(new THREE.Mesh(geometry, material)));
   cover.userData.role = 'fixed-domed-cover-with-rod-knob';
+  // Brown's knob is a small turned boss on the crown, bored for the rod.
+  const crownOuter = baseY + 0.78 * Math.sqrt(Math.max(0, 1 - (rodX / 2.98) ** 2));
+  const knob = new THREE.Mesh(new THREE.LatheGeometry([
+    new THREE.Vector2(hole, crownOuter - 0.01),
+    new THREE.Vector2(0.20, crownOuter - 0.01),
+    new THREE.Vector2(0.20, knobTop - 0.10),
+    new THREE.Vector2(0.10, knobTop),
+    new THREE.Vector2(hole, knobTop),
+    new THREE.Vector2(hole, crownOuter - 0.01),
+  ], 48), material);
+  knob.position.x = rodX;
+  knob.userData.role = 'fixed-turned-knob-on-cover-crown';
+  cover.add(knob);
   root.add(cover);
   root.userData.blocks.domedCover = cover;
   const bounds = root.userData.cameraFitBounds;
@@ -997,9 +1018,6 @@ function powersMercuryRegulator(movement) {
   // liquid, and the back of the section is left plain paper-white.
   const SECTION_Z = 0.30;
   const frontCut = [new THREE.Plane(new THREE.Vector3(0, 0, -1), SECTION_Z)];
-  const hideRuns = [
-    new THREE.Plane(new THREE.Vector3(0, 0, 1), SECTION_Z),
-  ];
   const blocks = root.userData.blocks;
   const box = (x0, x1, y0, y1) =>
     poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
@@ -1038,10 +1056,10 @@ function powersMercuryRegulator(movement) {
   ], quicksilverFaceMaterial, 'section-face-of-quicksilver-seals');
   blocks.sectionFaces = [troughFace, quicksilverFace];
   const trough = blocks.outerMercuryChannels[0].trough;
-  trough.material.clippingPlanes = frontCut.concat(hideRuns);
+  trough.material.clippingPlanes = frontCut;
   mercuryMaterial.color.setHex(0xb9c3c6);
   mercuryMaterial.opacity = 0.55;
-  mercuryMaterial.clippingPlanes = frontCut.concat(hideRuns);
+  mercuryMaterial.clippingPlanes = frontCut;
   cupMaterial.clippingPlanes = frontCut;
   for (const skirt of blocks.cupCrossSkirts ?? []) {
     skirt.material.clippingPlanes = frontCut;

@@ -69,7 +69,6 @@ test('movement 363 is one rigid seesaw on one fixed central transverse axle', ()
   for (const component of [
     blocks.plank,
     blocks.pivotBoss,
-    ...blocks.plankEdgeRails,
     ...blocks.seats,
     ...blocks.handlePosts,
     ...blocks.handleBars,

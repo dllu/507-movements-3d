@@ -65,14 +65,17 @@ test('movement 369 contains two opposed cycloidal cheeks, one wrapping cord, a b
   assert.equal(blocks.cheekContactRails.length, 2);
   assert.equal(blocks.sidePosts.length, 2);
   assert.equal(blocks.braceMembers.length, 6);
-  assert.equal(blocks.pathDashes.length, 24);
-  assert.equal(blocks.cord.children.length, 66);
+  assert.equal(blocks.pathDashes, undefined, 'Brown\'s dotted bob path is notation, not drawn');
+  // One continuous three-strand laid rope in place of 66 cylinder segments.
+  assert.equal(blocks.cord.children.length, 1);
+  assert.equal(blocks.cord.userData.mesh.geometry.userData.crossSection, 'laid-rope');
+  assert.ok(blocks.cheekContactRails.every(({ visible }) => !visible),
+    'the cheek edge lines are ink notation, not drawn parts');
   for (const component of [
     ...blocks.cheekPlates,
     ...blocks.cheekContactRails,
     ...blocks.sidePosts,
     ...blocks.braceMembers,
-    ...blocks.pathDashes,
     blocks.topBeam,
     blocks.suspensionBoss,
     blocks.cord,
@@ -100,8 +103,8 @@ test('movement 369 contains two opposed cycloidal cheeks, one wrapping cord, a b
     'massless-inextensible-cord-wrapping-on-one-cycloidal-cheek',
     'moving-tangency-point-between-cord-and-active-cheek',
     'cycloidal-path-pendulum-bob',
-    'dashed-reference-of-bob-cycloidal-path',
   ]) assert.ok(roles.includes(role), role);
+  assert.ok(!roles.includes('dashed-reference-of-bob-cycloidal-path'));
   assert.equal(toothedObjects.length, 0);
   assert.equal(beltObjects.length, 0);
   disposeModel(model.root);
@@ -437,7 +440,7 @@ test('movement 369 renderer keeps constant cable topology, smooth cheek contact,
       'rendered bob position');
     vectorNear(blocks.contactBead.position, state.contactPoint, 0,
       'rendered cheek contact');
-    assert.equal(blocks.cord.children.length, 66);
+    assert.equal(blocks.cord.children.length, 1);
     assert.ok(blocks.cord.children.every(({ visible }) => visible));
     maximumCordError = Math.max(
       maximumCordError,

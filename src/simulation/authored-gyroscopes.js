@@ -251,14 +251,6 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   baseTier.position.set(supportPivot.x, -2.02, supportPivot.z);
   baseTier.userData.role = 'fixed-upper-tier-of-pillar-base';
 
-  const baseCollar = new THREE.Mesh(
-    new THREE.TorusGeometry(0.64, 0.055, 10, 64),
-    darkMaterial,
-  );
-  baseCollar.rotation.x = Math.PI / 2;
-  baseCollar.position.set(supportPivot.x, -1.89, supportPivot.z);
-  baseCollar.userData.role = 'fixed-outline-around-pillar-base';
-
   const pillarLength = 2.93;
   const pillarTopY = supportPivot.y - 0.24;
   const pillarBottomY = pillarTopY - pillarLength;
@@ -292,21 +284,6 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
     supportPivot.z,
   );
   supportCup.userData.role = 'fixed-bearing-cup-on-top-of-pillar-G';
-
-  // The rim stays inside the sweep of the curved neck's lower end.
-  const supportCupRim = torusNormalToY(
-    0.155,
-    0.04,
-    darkMaterial,
-    10,
-    56,
-  );
-  supportCupRim.position.set(
-    supportPivot.x,
-    supportPivot.y - 0.03,
-    supportPivot.z,
-  );
-  supportCupRim.userData.role = 'fixed-rim-of-pintle-bearing';
 
   const precessionAssembly = new THREE.Group();
   precessionAssembly.position.copy(supportPivot);
@@ -364,24 +341,6 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   ringBody.userData.role = 'horizontal-bearing-ring-A';
   precessionAssembly.add(ringBody);
 
-  const ringOutline = new THREE.Group();
-  ringOutline.position.x = supportToCenter;
-  ringOutline.userData.role = 'two-dark-edge-lines-outlining-horizontal-ring-A';
-  for (const side of [-1, 1]) {
-    const edge = torusNormalToY(
-      ringRadius + side * ringTubeRadius * 0.72,
-      0.024,
-      darkMaterial,
-      8,
-      144,
-    );
-    edge.position.y = ringTubeRadius * 0.69;
-    edge.userData.role = 'dark-edge-line-on-horizontal-ring-A';
-    edge.userData.side = side;
-    ringOutline.add(edge);
-  }
-  precessionAssembly.add(ringOutline);
-
   const ringIndex = new THREE.Mesh(
     new THREE.SphereGeometry(ringTubeRadius * 0.72, 24, 14),
     indexMaterial,
@@ -412,25 +371,6 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
     return housing;
   });
 
-  const bearingRims = [-1, 1].map((side) => {
-    const rim = torusNormalToX(
-      spindleRadius + 0.035,
-      0.035,
-      darkMaterial,
-      10,
-      40,
-    );
-    rim.position.set(
-      supportToCenter + side * (bearingOffset + bearingLength / 2 + 0.008),
-      0,
-      0,
-    );
-    rim.userData.role = 'visible-spindle-bearing-rim';
-    rim.userData.side = side;
-    precessionAssembly.add(rim);
-    return rim;
-  });
-
   const spinRotor = new THREE.Group();
   spinRotor.position.x = supportToCenter;
   spinRotor.userData.role =
@@ -456,34 +396,9 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   diskBody.userData.role = 'rapidly-spinning-metallic-disk-C';
   spinRotor.add(diskBody);
 
-  const diskRim = torusNormalToX(
-    diskRadius - 0.035,
-    0.052,
-    darkMaterial,
-    12,
-    128,
-  );
-  diskRim.userData.role = 'dark-rim-of-metallic-disk-C';
-  spinRotor.add(diskRim);
-
   const hub = cylinderAlongX(hubRadius, hubLength, brassMaterial, 56);
   hub.userData.role = 'hub-rigid-with-metallic-disk-C-and-spindle';
   spinRotor.add(hub);
-
-  const faceRings = [-1, 1].map((side) => {
-    const ring = torusNormalToX(
-      diskRadius * 0.73,
-      0.024,
-      darkMaterial,
-      8,
-      96,
-    );
-    ring.position.x = side * (diskThickness / 2 + 0.014);
-    ring.userData.role = 'concentric-face-line-on-spinning-disk-C';
-    ring.userData.side = side;
-    spinRotor.add(ring);
-    return ring;
-  });
 
   const spinIndexes = [];
   for (const side of [-1, 1]) {
@@ -550,11 +465,9 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
   root.add(
     baseFoot,
     baseTier,
-    baseCollar,
     pillar,
     pillarIndex,
     supportCup,
-    supportCupRim,
     precessionAssembly,
   );
 
@@ -697,15 +610,11 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
 
   root.userData.archetype = 'single-support-steady-precession-gyroscope';
   root.userData.blocks = {
-    baseCollar,
     baseFoot,
     baseTier,
     bearingHousings,
-    bearingRims,
     curvedNeck,
     diskBody,
-    diskRim,
-    faceRings,
     hub,
     knobBulb,
     leftSpindleCap,
@@ -717,12 +626,10 @@ function singleSupportSteadyPrecessionGyroscope(movement) {
     rightSpindleKnob,
     ringBody,
     ringIndex,
-    ringOutline,
     spinIndexes,
     spinRotor,
     spindle,
     supportCup,
-    supportCupRim,
   };
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraFitBounds = new THREE.Box3(
@@ -963,14 +870,6 @@ function bohnenbergerThreeRingMachine(movement) {
   baseTier.position.set(0, -2.29, 0);
   baseTier.userData.role = 'fixed-upper-tier-of-Bohnenberger-pedestal';
 
-  const baseOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(0.68, 0.052, 10, 64),
-    darkMaterial,
-  );
-  baseOutline.rotation.x = Math.PI / 2;
-  baseOutline.position.set(0, -2.16, 0);
-  baseOutline.userData.role = 'dark-outline-of-pedestal-base';
-
   const outerBottomY = gimbalCenter.y - outerRadius;
   const supportColumnTopY = outerBottomY - 0.08;
   const supportColumnBottomY = -2.16;
@@ -993,17 +892,6 @@ function bohnenbergerThreeRingMachine(movement) {
   pedestalNeck.position.set(0, supportColumnBottomY + 0.15, 0);
   pedestalNeck.userData.role = 'flared-neck-of-fixed-pedestal';
 
-  const lowerYawBearing = torusNormalToY(
-    0.23,
-    0.055,
-    darkMaterial,
-    10,
-    56,
-  );
-  lowerYawBearing.position.set(0, outerBottomY - 0.04, 0);
-  lowerYawBearing.userData.role =
-    'fixed-lower-seat-for-imposed-outer-ring-reorientation';
-
   const outerYawGroup = new THREE.Group();
   outerYawGroup.position.copy(gimbalCenter);
   outerYawGroup.userData.role =
@@ -1018,21 +906,6 @@ function bohnenbergerThreeRingMachine(movement) {
   );
   outerRing.userData.role = 'outer-ring-A';
   outerYawGroup.add(outerRing);
-
-  const outerEdgeLines = [-1, 1].map((side) => {
-    const edge = torusNormalToZ(
-      outerRadius + side * outerTubeRadius * 0.7,
-      0.023,
-      darkMaterial,
-      8,
-      160,
-    );
-    edge.position.z = outerTubeRadius * 0.67;
-    edge.userData.role = 'dark-edge-line-on-outer-ring-A';
-    edge.userData.side = side;
-    outerYawGroup.add(edge);
-    return edge;
-  });
 
   const lowerYawTrunnion = cylinderAlongY(
     0.12,
@@ -1059,21 +932,6 @@ function bohnenbergerThreeRingMachine(movement) {
   );
   middleRing.userData.role = 'middle-ring-A1';
   middleYawGroup.add(middleRing);
-
-  const middleEdgeLines = [-1, 1].map((side) => {
-    const edge = torusNormalToZ(
-      middleRadius + side * middleTubeRadius * 0.69,
-      0.021,
-      darkMaterial,
-      8,
-      144,
-    );
-    edge.position.z = middleTubeRadius * 0.66;
-    edge.userData.role = 'dark-edge-line-on-middle-ring-A1';
-    edge.userData.side = side;
-    middleYawGroup.add(edge);
-    return edge;
-  });
 
   const middlePivotBearings = [-1, 1].map((side) => {
     const bearing = cylinderAlongY(
@@ -1119,21 +977,6 @@ function bohnenbergerThreeRingMachine(movement) {
   innerRing.userData.role = 'smallest-ring-A2';
   innerPitchGroup.add(innerRing);
 
-  const innerEdgeLines = [-1, 1].map((side) => {
-    const edge = torusNormalToY(
-      innerRadius + side * innerTubeRadius * 0.68,
-      0.019,
-      darkMaterial,
-      8,
-      132,
-    );
-    edge.position.y = innerTubeRadius * 0.66;
-    edge.userData.role = 'dark-edge-line-on-smallest-ring-A2';
-    edge.userData.side = side;
-    innerPitchGroup.add(edge);
-    return edge;
-  });
-
   const innerPivotBearings = [-1, 1].map((side) => {
     const bearing = cylinderAlongX(
       bearingRadius * 0.91,
@@ -1178,23 +1021,6 @@ function bohnenbergerThreeRingMachine(movement) {
     return housing;
   });
 
-  const rotorBearingRims = [-1, 1].map((side) => {
-    const rim = torusNormalToZ(
-      rotorShaftRadius + 0.028,
-      0.027,
-      darkMaterial,
-      8,
-      36,
-    );
-    rim.position.z = side * (
-      rotorBearingOffset + bearingLength / 2 + 0.008
-    );
-    rim.userData.role = 'visible-bearing-rim-for-heavy-ball-axis';
-    rim.userData.side = side;
-    innerPitchGroup.add(rim);
-    return rim;
-  });
-
   const ballSpinRotor = new THREE.Group();
   ballSpinRotor.userData.role =
     'heavy-ball-B-and-shaft-spinning-inside-smallest-ring-A2';
@@ -1206,16 +1032,6 @@ function bohnenbergerThreeRingMachine(movement) {
   );
   heavyBall.userData.role = 'rapidly-rotating-heavy-ball-B';
   ballSpinRotor.add(heavyBall);
-
-  const ballEquator = torusNormalToZ(
-    ballRadius + 0.012,
-    0.025,
-    darkMaterial,
-    8,
-    112,
-  );
-  ballEquator.userData.role = 'equatorial-index-on-heavy-ball-B';
-  ballSpinRotor.add(ballEquator);
 
   const rotorShaft = cylinderAlongZ(
     rotorShaftRadius,
@@ -1278,10 +1094,8 @@ function bohnenbergerThreeRingMachine(movement) {
   root.add(
     baseFoot,
     baseTier,
-    baseOutline,
     pedestalNeck,
     supportColumn,
-    lowerYawBearing,
     outerYawGroup,
   );
 
@@ -1470,31 +1284,24 @@ function bohnenbergerThreeRingMachine(movement) {
 
   root.userData.archetype = 'three-ring-inertial-axis-gimbal';
   root.userData.blocks = {
-    ballEquator,
     ballSpinIndexes,
     ballSpinRotor,
     baseFoot,
-    baseOutline,
     baseTier,
     heavyBall,
-    innerEdgeLines,
     innerPitchGroup,
     innerPivotBearings,
     innerPivotPins,
     innerRing,
-    lowerYawBearing,
     lowerYawTrunnion,
-    middleEdgeLines,
     middlePivotBearings,
     middlePivotPins,
     middleRing,
     middleYawGroup,
-    outerEdgeLines,
     outerRing,
     outerYawGroup,
     pedestalNeck,
     rotorBearingHousings,
-    rotorBearingRims,
     rotorHub,
     rotorShaft,
     shaftCaps,

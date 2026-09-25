@@ -415,6 +415,9 @@ function pickeringThreeSpringGovernor(movement) {
   );
   upperCapRing.rotation.x = Math.PI / 2;
   upperCapRing.position.y = topAnchorY + 0.35;
+  // Traced only the cap's drawn lower edge: retired dark rim.
+  upperCapRing.visible = false;
+  upperCapRing.userData.retiredInkOutline = true;
   upperHead.add(upperFlange, upperKeeper, upperCap, upperCapRing);
 
   const slidingSleeve = new THREE.Group();

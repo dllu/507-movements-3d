@@ -25,14 +25,19 @@ export function makeEndlessRackGeometry(options={}){
  const guide=clip.difference(poly([[241.7482,168.26],[297.3911,168.26],[297.3911,440.04],[241.7482,440.04]].map(local)),capsule([0,-f.H],[0,f.H],.1074545,64));
  add('guide',plate(guide,.24,.40),'fixed',PALETTE.frame);
  f.journalRadius=.105;add('journal',ring(.0908,f.journalRadius,.18,.46,96),'carrier',PALETTE.brass);
- for(const [name,pixels]of [['topBeam',[[65,120],[465,120],[459,137],[467,168],[77,170],[67,153],[75,141]]],['bottomBeam',[[81,441],[458,439],[448,456],[454,482],[77,484],[83,463],[88,456]]]])add(name,plate(poly(pixels.map(local)),.21,.43),'fixed',PALETTE.frame);
+ // Brown breaks both beams off at the plate edges (a drawing convention);
+ // they are modelled whole with square ends running on past the view.
+ for(const [name,pixels]of [['topBeam',[[-260,120],[790,120],[790,169],[-260,169]]],['bottomBeam',[[-260,440],[790,440],[790,483],[-260,483]]]])add(name,plate(poly(pixels.map(local)),.21,.43),'fixed',PALETTE.frame);
  blocks.pinion.position.y=blocks.carrier.position.y=f.H;blocks.rack.position.x=f.rackOffset;
  for(const n of ['pinion','rack']){const c=convexPlateCells(parts[n].geometry);cells[n]=c.cells.map(p=>[c.low,c.high].flatMap(z=>p.map(q=>[...q,z])));}
  const guideOutline=new THREE.LineSegments(new THREE.EdgesGeometry(parts.guide.geometry,20),new THREE.LineBasicMaterial({color:PALETTE.ink}));
  guideOutline.name='section-outline-of-front-guide';blocks.fixed.add(guideOutline);
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.guide.visible=!enabled;guideOutline.visible=Boolean(enabled);};
- Object.assign(root.userData,{source,parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002,setSectionView});setSectionView(true);
- markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-f.L-f.H,f.L+f.H])for(const y of [-f.H,f.H]){blocks.rack.position.x=x;blocks.pinion.position.y=blocks.carrier.position.y=y;root.updateMatrixWorld(true);for(const [n,mesh]of Object.entries(parts))if(n!=='rod')bounds.union(new THREE.Box3().setFromObject(mesh,true));}blocks.rack.position.x=f.rackOffset;blocks.pinion.position.y=blocks.carrier.position.y=f.H;root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
+ Object.assign(root.userData,{source,parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002,setSectionView});
+ // Brown draws the slotted guide as a solid bar in front of the rack, with the
+ // pinion shaft showing in its slot; the outline-only section is optional.
+ setSectionView(false);
+ markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const x of [-f.L-f.H,f.L+f.H])for(const y of [-f.H,f.H]){blocks.rack.position.x=x;blocks.pinion.position.y=blocks.carrier.position.y=y;root.updateMatrixWorld(true);for(const [n,mesh]of Object.entries(parts))if(!['rod','topBeam','bottomBeam'].includes(n))bounds.union(new THREE.Box3().setFromObject(mesh,true));}for(const [x,y]of [[65,120],[467,484]]){const [wx,wy]=local([x,y]);bounds.expandByPoint(new THREE.Vector3(wx,wy,0));}blocks.rack.position.x=f.rackOffset;blocks.pinion.position.y=blocks.carrier.position.y=f.H;root.updateMatrixWorld(true);bounds.expandByScalar(.05);root.userData.sampledMotionBounds={min:bounds.min.toArray(),max:bounds.max.toArray()};
  // Brown draws the whole toothed rack body; only its end rods and the beams
  // are broken off at the plate edges. Fit the rack body's full sweep (the
  // rods are excluded above) so it never leaves the frame.

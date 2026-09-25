@@ -8,6 +8,7 @@ import {makeBowDrillContactAudit} from '../scripts/lib/bow-drill-contact-audit.m
 import {cordSegmentDistance,cordSelfClearance} from '../scripts/lib/bow-drill-cord-distance.mjs';
 import {inspectWeightedClutchSolid} from '../scripts/lib/weighted-clutch-solid-audit.mjs';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
+import {LAID_ROPE} from '../src/simulation/laid-rope.js';
 const mujoco=await loadMujoco();
 
 test('124 has closed finite parts, a clear full wrap and attached bindings',()=>{
@@ -16,7 +17,8 @@ test('124 has closed finite parts, a clear full wrap and attached bindings',()=>
     assert.equal(Object.keys(u.parts).length,13);assert(u.hideGround);
     for(const [name,part] of Object.entries(u.parts)) {
       const r=inspectWeightedClutchSolid(part.geometry);
-      assert(r.volume>0,name);assert.equal(r.components,1,name);
+      // The cord and bindings are three-strand laid rope: one closed strand each.
+      assert(r.volume>0,name);assert.equal(r.components,part.geometry.type==='LaidRopeGeometry'?LAID_ROPE.strands:1,name);
       assert.equal(r.unmatchedEdges+r.degenerate+r.wrongNormals+r.nonfinite,0,name);
     }
     assert(f.cordPath.sweep>6&&f.cordPath.sweep<6.5);

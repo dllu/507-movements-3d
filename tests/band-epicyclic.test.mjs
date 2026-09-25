@@ -113,7 +113,9 @@ test('057 round bands fit all four pulley grooves and have separated actual skin
     return triangleTree(geometry);
   };
   const result = meshPairDistance(span(0, lengths[0] / length), span(lengths[1] / length, lengths[2] / length), new THREE.Matrix4(), 0.01);
-  assert.ok(result.witness && result.distance > 0.0002 && result.distance < 0.0006, 'mutually supported spans have a small positive skin gap');
+  // Laid-rope strands meet only at their crowns, so the crossed spans (centrelines
+  // 2 * 0.0402 apart) keep a small positive gap between strand surfaces.
+  assert.ok(result.witness && result.distance > 0.0002 && result.distance < 0.004, 'mutually supported spans have a small positive skin gap');
 });
 
 test('057 keeps physical differential ratios, repeatable seeking and continuous belt material flow', () => {
@@ -122,13 +124,13 @@ test('057 keeps physical differential ratios, repeatable seeking and continuous 
     setTime(time);
     const matrices = Object.values(parts).map(mesh => mesh.matrixWorld.clone());
     const angles = [parts.sun.rotation.z, parts.ring.rotation.z, blocks.carrier.rotation.z, parts.planet.rotation.z + blocks.carrier.rotation.z];
-    const colors = parts.innerBelt.geometry.attributes.color.array.slice();
+    const colors = parts.innerBelt.geometry.attributes.position.array.slice();
     setTime(time + dt);
     const next = [parts.sun.rotation.z, parts.ring.rotation.z, blocks.carrier.rotation.z, parts.planet.rotation.z + blocks.carrier.rotation.z];
     for (const [i, speed] of [p.sunSpeed, p.ringSpeed, p.carrierSpeed, p.planetSpeed].entries()) assert.ok(Math.abs((next[i] - angles[i]) / dt - speed) < 1e-7);
     setTime(time + 3.7); setTime(time);
     Object.values(parts).forEach((mesh, i) => assert.ok(mesh.matrixWorld.equals(matrices[i]), 'seeking restores the same physical pose'));
-    assert.deepEqual(parts.innerBelt.geometry.attributes.color.array, colors, 'material flow also seeks without remembered state');
+    assert.deepEqual(parts.innerBelt.geometry.attributes.position.array, colors, 'the laid-rope lay also seeks without remembered state');
   }
   assert.ok(Math.abs(p.sunTeeth * (p.sunSpeed - p.carrierSpeed) + p.ringTeeth * (p.ringSpeed - p.carrierSpeed)) < 1e-12);
   assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, p.carrierPeriod, 'the display profile covers a full carrier orbit');

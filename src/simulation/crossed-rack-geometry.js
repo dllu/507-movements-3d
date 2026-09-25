@@ -35,14 +35,15 @@ export function makeCrossedRackGeometry({hookRelief={left:704,right:524}}={}){
   parts[name]=mesh;families[name]=family;blocks[family].add(mesh);return mesh;
  };
  const rackCommands=[['M',485,144],['L',758,144],['Q',725,169,714,201],['L',714,measured.toothOrigins.right-13]];
- // Walk the right edge down, then the broken stem and left edge back up.
+ // Walk the right edge down, then the stem and left edge back up.
  for(let i=0;i<measured.teeth;i++){
   const y=measured.toothOrigins.right+i*measured.pitch;
   rackCommands.push(['L',722-.8*i,y],['L',697-.8*i,y]);
  }
- rackCommands.push(['L',683,measured.toothOrigins.right+15*measured.pitch+7],['L',683,1104],
-  ['Q',671,1113,655,1098],['Q',636,1080,620,1094],['L',608,1102],['L',579,1096],['L',555,1120],
-  ['L',556,measured.toothOrigins.left+15*measured.pitch+10]);
+ // Brown breaks the stem off below the teeth (a drawing convention); it is
+ // modelled whole, running on to a square end below the view.
+ rackCommands.push(['L',683,measured.toothOrigins.right+15*measured.pitch+7],['L',683,1480],
+  ['L',556,1480],['L',556,measured.toothOrigins.left+15*measured.pitch+10]);
  for(let i=measured.teeth-1;i>=0;i--){
   const y=measured.toothOrigins.left+i*measured.pitch;
   rackCommands.push(['L',546-.1*i,y],['L',518-.15*i,y]);

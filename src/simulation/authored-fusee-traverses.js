@@ -1,4 +1,5 @@
-import {correctCordTraverseParts, retainTraverseCord} from './cord-traverse-working-parts.js';
+import {correctCordTraverseParts} from './cord-traverse-working-parts.js';
+import { LAID_ROPE, replaceWithLaidRope } from './laid-rope.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -264,41 +265,40 @@ function makeStaticGroove({
   return groove;
 }
 
-// Colors a retained tube as a two-strand laid rope. The lay is fixed in the
-// cord material: its coordinate is the arc length from the fixed far end.
-function addRopeLay(cord, color, segments, lay = 0.15) {
+// Replaces a cord's tube by the shared laid rope. Its lay is fixed in the
+// cord material, measured from the fixed far end, so travel is the length.
+function retainLaidTraverseCord(cord, radius) {
   const mesh = cord.userData.mesh;
-  const geometry = mesh.geometry;
-  const count = geometry.attributes.position.count;
-  const colors = new THREE.BufferAttribute(new Float32Array(count * 3), 3)
-    .setUsage(THREE.DynamicDrawUsage);
-  geometry.setAttribute('color', colors);
-  const light = new THREE.Color(color);
-  const dark = light.clone().multiplyScalar(0.3);
-  const mixed = new THREE.Color();
-  mesh.material = mesh.material.clone();
-  mesh.material.color.set(0xffffff);
-  mesh.material.vertexColors = true;
-  const paint = () => {
-    const length = cord.userData.length;
-    for (let i = 0; i <= segments; i += 1) {
-      const fromFixedEnd = length * (1 - i / segments);
-      for (let j = 0; j <= 10; j += 1) {
-        const phase = 2 * (fromFixedEnd / lay + j / 10);
-        const shade = 0.5 + 0.5 * Math.cos(FULL_TURN * phase);
-        mixed.copy(light).lerp(dark, shade ** 2);
-        colors.setXYZ(i * 11 + j, mixed.r, mixed.g, mixed.b);
+  const rebuild = (curve) => {
+    const length = curve.getLength();
+    const laid = mesh.geometry._laid;
+    // The long cords always use the laid rope's maximum sample count, so a
+    // new centreline only needs new centres and frames (the index, lay and
+    // buffers stay); rebuilding the whole geometry each frame was too slow.
+    if (laid && !laid.closed && laid.along === LAID_ROPE.maxSamples
+      && length / laid.dims.lay * LAID_ROPE.samplesPerLay > laid.along) {
+      const frames = curve.computeFrenetFrames(laid.along, false);
+      for (let i = 0; i <= laid.along; i += 1) {
+        curve.getPointAt(i / laid.along, laid.centers[i]);
       }
+      laid.frames = frames;
+      laid.length = length;
+      mesh.geometry.parameters.path = curve;
+      mesh.geometry.userData.ropeLay.length = length;
+      mesh.geometry.setTravel(length);
+    } else {
+      replaceWithLaidRope(mesh, curve, {
+        radius,
+        radialSegments: 6,
+        travel: length,
+      });
     }
-    for (const vertex of [count - 2, count - 1]) colors.setXYZ(vertex, dark.r, dark.g, dark.b);
-    colors.needsUpdate = true;
+    cord.userData.curve = curve;
+    cord.userData.length = length;
+    cord.userData.updateDistance(0);
   };
-  const setCurve = cord.userData.setCurve;
-  cord.userData.setCurve = (curve) => {
-    setCurve(curve);
-    paint();
-  };
-  paint();
+  rebuild(cord.userData.curve);
+  cord.userData.setCurve = rebuild;
 }
 
 function fuseeCarriageTraverse(movement) {
@@ -537,13 +537,25 @@ function fuseeCarriageTraverse(movement) {
     ['right-upper', rightAnchor],
   ]) {
     const stand = new THREE.Group();
-    // Off-plate anchor post standing on the rail bed beneath the plan.
+    // Off-plate anchor stand at the level of the rail bed beneath the plan:
+    // a stout post rising from a broad foot plate, so the fixed band end
+    // reads as a mounted stand rather than a loose stub.
+    const footDepth = 0.16;
+    const footBackZ = railTopZ - 0.22 - footDepth;
     const postHeight = point.z - 0.11 - (railTopZ - 0.22);
     const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13, 0.18, postHeight),
+      new THREE.BoxGeometry(0.26, 0.30, postHeight + 0.02),
       frameMaterial,
     );
-    post.position.set(point.x, point.y, railTopZ - 0.22 + postHeight / 2);
+    post.position.set(point.x, point.y,
+      railTopZ - 0.22 - 0.02 + (postHeight + 0.02) / 2);
+    const foot = new THREE.Mesh(
+      new THREE.BoxGeometry(0.95, 0.80, footDepth),
+      frameMaterial,
+    );
+    foot.position.set(point.x, point.y, footBackZ + footDepth / 2);
+    foot.userData.role = `${side}-fixed-cord-anchor-foot`;
+    stand.add(foot);
     const eye = new THREE.Mesh(
       new THREE.TorusGeometry(0.105, 0.035, 9, 28),
       brassMaterial,
@@ -957,11 +969,10 @@ function fuseeCarriageTraverse(movement) {
   correctCordTraverseParts(root,358,update);
   // The carriage-following view holds the carriage still, so the traverse
   // reads through the fixed bands sliding past it. Brown draws each band as
-  // a laid rope; a helical lay fixed in the material (measured from its fixed
-  // far end) makes that sliding visible.
-  for (const [cord, color] of [[leftCord, PALETTE.belt], [rightCord, PALETTE.accent]]) {
-    retainTraverseCord(cord, 0.018, 1200);
-    addRopeLay(cord, color, 1200);
+  // a laid rope: the shared three-strand rope, its lay fixed in the material
+  // at the fixed far end (the curve's end), makes that sliding visible.
+  for (const cord of [leftCord, rightCord]) {
+    retainLaidTraverseCord(cord, 0.018);
     cord.userData.mesh.userData.role = cord === leftCord
       ? 'finite-fusee-cord-1' : 'finite-fusee-cord-2';
   }

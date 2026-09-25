@@ -576,7 +576,8 @@ test('movement 211 renders rigid indices and exact pin/guide/lock poses while 21
     assert.doesNotMatch(object.userData.role ?? '', /frame|post|rail|foot|bearing|marker|radial-.*index|face-index/,
       'Brown draws no stand, bearings or painted indexes');
   });
-  assert.equal(meshCount, 10);
+  // The dark face and root rings Brown only inks are retired.
+  assert.equal(meshCount, 8);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 6, 'near-front elevation like the plate');

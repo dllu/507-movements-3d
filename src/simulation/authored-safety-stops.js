@@ -784,14 +784,17 @@ function otisSafetyStop(movement) {
   platformPositionIndex.userData.role = 'white-platform-travel-index';
   carriage.add(platformPositionIndex);
 
+  // Brown draws a as a hatched laid rope: the shared three-strand rope.
   const upperRope = makeDynamicCable({
-    color: PALETTE.driver,
+    color: PALETTE.belt,
+    laid: true,
     maxSegments: 9,
     radius: 0.052,
   });
   upperRope.userData.role = 'upper-segment-of-hoisting-rope-a';
   const lowerRope = makeDynamicCable({
-    color: PALETTE.driver,
+    color: PALETTE.belt,
+    laid: true,
     maxSegments: 9,
     radius: 0.052,
   });
@@ -1135,8 +1138,11 @@ function otisSafetyStop(movement) {
         index / 9,
       )
     ));
-    upperRope.userData.setPoints(upperPoints);
-    lowerRope.userData.setPoints(lowerPoints);
+    // The rope material rises and falls with the platform eye, so the lay
+    // travels with it (both pieces run downward from their upper ends).
+    const ropeTravel = -state.ropeEye.y;
+    upperRope.userData.setPoints(upperPoints, ropeTravel);
+    lowerRope.userData.setPoints(lowerPoints, ropeTravel);
     upperRope.userData.brokenEnd = state.upperBrokenEnd.clone();
     lowerRope.userData.brokenEnd = state.lowerBrokenEnd.clone();
     lowerRope.userData.attachment = state.ropeEye.clone();

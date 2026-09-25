@@ -36,14 +36,15 @@ function vectorNear(actual, expected, tolerance, message) {
 }
 
 function cableEndpoints(cable) {
-  const visible = cable.children.filter((segment) => segment.visible);
-  assert.equal(visible.length, 1);
+  // One laid rope along the cable's straight polyline.
+  const rope = cable.userData.mesh;
+  assert.equal(rope.visible, true);
+  assert.equal(rope.geometry.type, 'LaidRopeGeometry');
   cable.updateWorldMatrix(true, true);
+  const path = rope.geometry.parameters.path;
   return {
-    end: new THREE.Vector3(0, 0.5, 0)
-      .applyMatrix4(visible[0].matrixWorld),
-    start: new THREE.Vector3(0, -0.5, 0)
-      .applyMatrix4(visible[0].matrixWorld),
+    end: path.getPoint(1).applyMatrix4(rope.matrixWorld),
+    start: path.getPoint(0).applyMatrix4(rope.matrixWorld),
   };
 }
 

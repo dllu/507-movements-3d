@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {replaceWithLaidRope} from './laid-rope.js';
 import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {poly,circle,plate,ring,turned,polygonClipping} from './finite-plate-geometry.js';
 import {
@@ -398,6 +399,22 @@ function waterBucketReciprocator(movement) {
     'upper-semicircular-part-of-single-rope',
   );
   ropeAssembly.add(upperRopeArc);
+  // Brown draws one rope; render it as the shared three-strand laid rope from
+  // the counterweight eye, over the pulley, to the bucket bail. The straight
+  // and arc pieces stay as hidden references for the contact checks.
+  const laidRope = new THREE.Mesh(new THREE.BufferGeometry(), matte(PALETTE.belt, {roughness: 0.78}));
+  laidRope.userData.role = 'single-laid-rope-counterweight-over-pulley-to-bucket';
+  ropeAssembly.add(laidRope);
+  for (const piece of [leftRopeStrand, rightRopeStrand, upperRopeArc]) piece.visible = false;
+  const layRope = (counterweightY, bucketY) => {
+    const path = new THREE.CurvePath();
+    path.add(new THREE.LineCurve3(
+      new THREE.Vector3(counterweightRopeX, counterweightY, 0), ropeArcPoints[0].clone()));
+    path.add(ropeArcCurve);
+    path.add(new THREE.LineCurve3(
+      ropeArcPoints.at(-1).clone(), new THREE.Vector3(bucketRopeX, bucketY, 0)));
+    replaceWithLaidRope(laidRope, path, {radius: 0.045, tubularSegments: 256});
+  };
   const ropeMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.105, 20, 14),
     whiteMaterial,
@@ -560,6 +577,7 @@ function waterBucketReciprocator(movement) {
       state.bucketAttachmentY,
     );
     ropeMarker.position.copy(state.ropeMarker.position);
+    layRope(state.counterweightAttachmentY, state.bucketAttachmentY);
     const streamBottom = state.bucketAttachmentY - .90 + .70 * state.waterFill;
     const streamLength = 1.80 - streamBottom;
     fallingWater.position.y = (1.80 + streamBottom) / 2;

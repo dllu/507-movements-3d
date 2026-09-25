@@ -2,7 +2,6 @@ import { DEBAUFRE_300_301_PALLET } from './baked/debaufre-300-301-pallet.js';
 import { finishSevenTooth238Contact } from './seven-tooth-238-contact.js';
 import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
 import * as THREE from 'three';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   makeBeam,
@@ -1552,6 +1551,8 @@ function sevenToothAnchorEscapement(movement) {
   );
   palletHubRing.position.z = 0.17;
   palletHubRing.userData.role = 'pallet-axis-A-outline';
+  palletHubRing.visible = false;
+  palletHubRing.userData.retiredInkOutline = true;
   palletCarrier.add(palletHubRing);
   const palletIndicator = new THREE.Mesh(
     new THREE.BoxGeometry(0.42, 0.05, 0.027),
@@ -3742,71 +3743,6 @@ function oldFashionedClockVergeEscapement(movement) {
     blocks.crownWheel.userData.rotor.add(spoke);
   }
 
-  // Brown hatches the band edge-on with vertical lines that crowd toward
-  // both ends. Evenly spaced rules round the band's outer face do exactly
-  // that when seen edge-on. They are presentation-only strips on the rotor.
-  {
-    const hatchCount = 132;
-    const hatchWidth = 0.009;
-    const hatchHeight = baseGeometry.bodyDepth - 0.02;
-    const hatchRadius = baseGeometry.contactRadius + 0.0015;
-    const strips = [];
-    const matrix = new THREE.Matrix4();
-    for (let index = 0; index < hatchCount; index += 1) {
-      const angle = index * FULL_TURN / hatchCount;
-      const strip = new THREE.BoxGeometry(0.003, hatchWidth, hatchHeight);
-      matrix.makeRotationZ(angle).setPosition(
-        hatchRadius * Math.cos(angle),
-        hatchRadius * Math.sin(angle),
-        baseGeometry.toothBaseZ - baseGeometry.bodyDepth / 2,
-      );
-      strip.applyMatrix4(matrix);
-      strips.push(strip);
-    }
-    const bandHatch = new THREE.Mesh(
-      mergeGeometries(strips),
-      matte(0xc9d0d0, { metalness: 0.02, roughness: 0.8 }),
-    );
-    for (const strip of strips) strip.dispose();
-    bandHatch.userData.presentationOnly = true;
-    bandHatch.userData.role = 'crown-band-vertical-hatching';
-    bandHatch.castShadow = false;
-    blocks.crownWheel.userData.rotor.add(bandHatch);
-  }
-
-  // Seen along the verge, the far half of the crown shows its teeth through
-  // the gaps of the near ones, leaning the other way. Brown draws those far
-  // teeth only as light outlines behind his near strip, so every tooth
-  // fragment behind the plane through the crown axis facing the camera is
-  // faded toward the paper, for whatever camera views it.
-  const farToothFade = {
-    centerDepth: { value: 0 },
-    paper: { value: new THREE.Color(PALETTE.paper) },
-  };
-  const toothMaterial = blocks.crownWheel.userData.toothMeshes[0].material;
-  toothMaterial.onBeforeCompile = (shader) => {
-    shader.uniforms.farToothCenterDepth = farToothFade.centerDepth;
-    shader.uniforms.farToothPaper = farToothFade.paper;
-    shader.fragmentShader = shader.fragmentShader
-      .replace(
-        'void main() {',
-        'uniform float farToothCenterDepth;\nuniform vec3 farToothPaper;\nvoid main() {',
-      )
-      .replace(
-        '#include <dithering_fragment>',
-        'gl_FragColor.rgb = mix(gl_FragColor.rgb, farToothPaper, 0.62 * smoothstep(-0.02, 0.02, vViewPosition.z - farToothCenterDepth));\n#include <dithering_fragment>',
-      );
-  };
-  toothMaterial.customProgramCacheKey = () => 'far-crown-tooth-fade-299';
-  const crownCenterWorld = new THREE.Vector3();
-  for (const tooth of blocks.crownWheel.userData.toothMeshes) {
-    tooth.onBeforeRender = (renderer, scene, camera) => {
-      blocks.crownWheel.getWorldPosition(crownCenterWorld);
-      crownCenterWorld.applyMatrix4(camera.matrixWorldInverse);
-      farToothFade.centerDepth.value = -crownCenterWorld.z;
-    };
-  }
-
   const foliotAtPhase = (cyclePhase) => {
     const phaseAngle = FULL_TURN * cyclePhase;
     return {
@@ -4899,6 +4835,9 @@ function debaufreFrictionalRestEscapement(
   );
   palletTopEdge.position.set(palletX0 + 0.0175 + 0.004, 0, 0);
   palletTopEdge.userData.role = 'pallet-cut-end-rest-edge';
+  // Brown's line at the cut end is its drawn edge, not a separate dark strip.
+  palletTopEdge.visible = false;
+  palletTopEdge.userData.retiredInkOutline = true;
   palletAssembly.add(palletTopEdge);
 
   // Raised flanges in the wheel planes.  Their tops are the carved envelope

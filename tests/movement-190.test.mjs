@@ -653,7 +653,6 @@ test('movement 190 rendered transforms preserve both pin joints, the screw axis,
   const {
     externalThread,
     fixedFrame,
-    frameOutline,
     fulcrumPin,
     handleIndex,
     handleTipAnchor,
@@ -747,7 +746,7 @@ test('movement 190 rendered transforms preserve both pin joints, the screw axis,
   assert.equal(screw.position.z, 0);
   assert.equal(externalThread.parent, screwRotor);
   assert.equal(internalThread.parent, model.root);
-  assert.equal(frameOutline.parent, model.root);
+  assert.equal(blocks.frameOutline, undefined, 'no decorative ink frame outline');
   // Brown draws no index marks: source presentation detaches them.
   for (const unshown of [holderIndex, handleIndex, shoeContactIndex,
     threadContactMarker, workContactMarker, thrustContactMarker]) {
@@ -795,8 +794,9 @@ test('movement 190 occupies a real 3D envelope and remains distinct as the revie
     if (object.isMesh) meshCount += 1;
     if (object.userData.screwThread) threadCount += 1;
   });
-  // Eight undrawn white indices and contact markers are presented away.
-  assert.ok(meshCount >= 21);
+  // Eight undrawn white indices and contact markers are presented away,
+  // and the four decorative ink outlines are gone.
+  assert.ok(meshCount >= 17);
   assert.equal(threadCount, 2);
 
   const movement189 = createMovementModel(catalog.movements[188]);

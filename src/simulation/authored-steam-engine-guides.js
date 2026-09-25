@@ -617,16 +617,6 @@ function verticalPlanedSlotPistonGuide(movement) {
   foundationFoot.userData.fixed = true;
   foundationFoot.userData.role = 'deep-engine-standard-foundation-foot';
 
-  const guideOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(verticalCapsuleCurve(
-      0, guideSlotUpperCenterY, guideSlotLowerCenterY,
-      guideSlotHalfWidth, frameFrontZ + .001,
-    ).getPoints(144)),
-    new THREE.LineBasicMaterial({color: PALETTE.ink, fog: false}),
-  );
-  guideOutline.userData.fixed = true;
-  guideOutline.userData.role = 'real-vertical-guide-slot-outline';
-
   const straightGuideLength = guideSlotUpperCenterY
     - guideSlotLowerCenterY;
   const guideCenterY = (guideSlotUpperCenterY
@@ -697,7 +687,6 @@ function verticalPlanedSlotPistonGuide(movement) {
     standardFrontSkin,
     standardSideWalls,
     foundationFoot,
-    guideOutline,
     leftPlanedFace,
     rightPlanedFace,
     ...bearingSupports,
@@ -1124,7 +1113,6 @@ function verticalPlanedSlotPistonGuide(movement) {
     framePlate,
     guideAxisBottomAnchor,
     guideAxisTopAnchor,
-    guideOutline,
     leftPlanedFace,
     leftSlideShoe: leftShoe,
     liveShaft,
@@ -1290,22 +1278,18 @@ function makeGuideRoller({
   roller.userData.role = role;
 
   const bore = radius / 3 + .004;
-  const disk = boredCylinderAlongZ(radius * .95, bore, depth, accentMaterial);
+  // The disk itself is the rolling tread (no separate ink rim); enough
+  // facets keep its polygonal edge within 0.0001 of the guide face.
+  const disk = boredCylinderAlongZ(radius, bore, depth, accentMaterial, 128);
   disk.position.z = planeZ;
   disk.userData.role = `${role}-solid-rolling-disk`;
-  const tread = new THREE.Mesh(
-    new THREE.TorusGeometry(radius * .925, radius * 0.075, 12, 96),
-    darkMaterial,
-  );
-  tread.position.z = planeZ;
-  tread.userData.role = `${role}-working-tread`;
   const hub = boredCylinderAlongZ(radius * .45, bore, depth * 1.18, darkMaterial);
   hub.position.z = planeZ;
   hub.userData.role = `${role}-rotating-hub`;
-  roller.add(disk, tread, hub);
+  roller.add(disk, hub);
+  roller.userData.tread = disk;
   roller.userData.disk = disk;
   roller.userData.hub = hub;
-  roller.userData.tread = tread;
   return roller;
 }
 
@@ -1411,18 +1395,6 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   );
   topBeam.userData.fixed = true;
   topBeam.userData.role = 'wide-fixed-overhead-engine-crossbeam';
-  const topBeamBands = [-1.0625, -1.5625, -2.5625].map(
-    (sourceY, index) => {
-      const band = new THREE.Mesh(
-        new THREE.BoxGeometry(36 * sourceScale, 0.026, 0.66),
-        darkMaterial,
-      );
-      band.position.set(0, sourceY * sourceScale, -0.04);
-      band.userData.fixed = true;
-      band.userData.role = `source-overhead-beam-line-${index + 1}`;
-      return band;
-    },
-  );
 
   const guideBarTopY = -3.0625 * sourceScale;
   const guideBarBottomY = frameBottomY;
@@ -1558,7 +1530,6 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
 
   fixedFrame.add(
     topBeam,
-    ...topBeamBands,
     leftGuideBarA,
     rightGuideBarA,
     cylinderBody,
@@ -2069,7 +2040,6 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
     rightRoller,
     rollerAxles,
     topBeam,
-    topBeamBands,
     wristPinAnchor,
     wristPinShaft,
   };

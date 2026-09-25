@@ -139,7 +139,7 @@ test('060 material flow agrees with the actual neutral-fiber curve tangent on bo
   assert.ok(counts.every(count => count > 400), 'each band has independently checked upper and lower wraps');
 });
 
-test('060 group motion, belt translation and color flow are repeatable through negative and multiple cycles', () => {
+test('060 group motion, belt translation and band geometry are repeatable through negative and multiple cycles', () => {
   const dt = 1e-5, groups = ['driver', 'output', 'looseLeft', 'looseRight'], bands = ['leftBelt', 'rightBelt'];
   const boundaries = [0, p.dwellDuration, p.stageDuration, p.stageDuration + p.dwellDuration, p.cycleDuration];
   for (const time of [-13.37, -2.11, 0.731, 2.85, 3.827, 6.15, 9.14, 13.79, ...boundaries]) {
@@ -157,10 +157,12 @@ test('060 group motion, belt translation and color flow are repeatable through n
       near((after.beltDistances[i] - before.beltDistances[i]) / (2 * dt), state.beltLinearSpeeds[i], 2e-7);
     });
     const matrices = Object.values(parts).map(mesh => mesh.matrixWorld.clone());
-    const colors = bands.map(name => parts[name].geometry.attributes.color.array.slice());
+    const shapes = bands.map(name => parts[name].geometry.attributes.position.array.slice());
     setTime(time + 9.317); setTime(time);
     Object.values(parts).forEach((mesh, i) => assert.ok(mesh.matrixWorld.equals(matrices[i])));
-    bands.forEach((name, i) => assert.deepEqual(parts[name].geometry.attributes.color.array, colors[i]));
+    bands.forEach((name, i) => assert.deepEqual(parts[name].geometry.attributes.position.array, shapes[i]));
+    // Flat bands share the belt colour; no vertex-colour paper bands.
+    bands.forEach(name => assert.equal(parts[name].geometry.attributes.color, undefined));
   }
   for (const time of boundaries) {
     const before = motion.atTime(time - dt), after = motion.atTime(time + dt);

@@ -341,11 +341,11 @@
     },
     {
       "file": "src/simulation/authored-governors.js",
-      "sha256": "24e0ed4d2cc3af45eabe876dbd1167b4afa538b8c4aaab7270d112a8a01ab68f"
+      "sha256": "1f5fcd9b87215c1d3d55b6d0ffe2321617186e6ea232ae1bfb13cdd769c09f30"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

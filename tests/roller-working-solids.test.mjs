@@ -21,7 +21,7 @@ for (const id of [365,373]) test(`${id} selected finite rolling interfaces clear
         for(const other of [drum.rim,b.chassis,b.wagonBed,...b.axleHangers,b.carriageAxlePins[i],b.tetherBracket]) pairs.push([moving,other]);
       }
       for(const load of b.fixedLoads)pairs.push([load,b.testWeight]);
-      pairs.push([b.testWeight,b.wagonBed],[b.workingPulley,b.beltWrap],[b.workingPulley,b.upperBeltStrand],[b.workingPulley,b.lowerBeltStrand],
+      pairs.push([b.testWeight,b.wagonBed],[b.workingPulley,b.beltBand],
         [b.tether,b.dialFace],[b.tether,b.indicatorHousing],[b.pointerPin,b.dialFace]);
     }
     let worst=0,where='';

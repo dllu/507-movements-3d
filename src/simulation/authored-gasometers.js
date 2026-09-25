@@ -442,10 +442,13 @@ function singleLiftCounterweightedGasometer(movement) {
     return { bore, pipe, shell };
   });
 
+  // Each post stands just outboard of and behind the axle end, clear of
+  // the tank's rim flange and of the hanging weight.
   const guidePosts = pulleyCenters.map((center, index) => {
+    const postX = center.x + Math.sign(center.x) * 0.07;
     const post = cylinderBetween(
-      new THREE.Vector3(center.x, -2.04, -0.24),
-      new THREE.Vector3(center.x, center.y, -0.24),
+      new THREE.Vector3(postX, -2.04, -0.50),
+      new THREE.Vector3(postX, center.y, -0.50),
       0.10,
       frameMaterial,
       `fixed-pulley-guide-post-${index + 1}`,

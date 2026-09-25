@@ -390,6 +390,9 @@ function textileDressingElements(movement) {
       );
       rim.position.z = z;
       rim.userData.role = 'winding-roll-edge-rim';
+      // Traced a drawn edge only: hidden reference, not a dark rim.
+      rim.visible = false;
+      rim.userData.retiredInkOutline = true;
       rollRims.push(rim);
       roller.add(rim);
     }

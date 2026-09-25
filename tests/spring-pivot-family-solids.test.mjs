@@ -21,15 +21,19 @@ function axialOverlap(a,b){const aa=new THREE.Box3().setFromObject(a),bb=new THR
 
 test('378 ropes join exact tangent wraps and retain a finite grooved sheave seat',()=>{
   const m=models[0],d=m.root.userData,b=d.blocks,g=d.geometry;
-  const results=audit(m,b.pulleyRoots.map((p,i)=>[b.ropeArcs[i],p.userData.rim]),14.4);
+  const results=audit(m,b.pulleyRoots.map((p,i)=>[b.ropes[i],p.userData.rim]),14.4);
   clear(results,.00001);for(const f of results)assert.ok(f.min<.0005);
-  for(let i=0;i<2;i++){
-    const arc=b.ropeArcs[i];assert.equal(arc.geometry.parameters.radius,g.pulleyRadius);
-    assert.equal(arc.position.z,g.pulleyCenters[i].z);
-    for(const leg of b.ropeSegments.slice(i*2,i*2+2)){
-      assert.ok(Math.abs(Math.abs(leg.position.x-arc.position.x)-g.pulleyRadius)<1e-15);
-      assert.equal(leg.position.z,arc.position.z);
-      assert.ok(Math.abs(leg.position.y+leg.scale.y/2-arc.position.y)<1e-14);
+  for(const t of [0,3.1,7.2]){
+    m.update(t);
+    for(let i=0;i<2;i++){
+      // One continuous laid rope: straight leg, half wrap, straight leg.
+      const path=b.ropes[i].geometry.parameters.path,[inner,arc,outer]=path.curves,c=g.pulleyCenters[i];
+      assert.equal(b.ropes[i].geometry.type,'LaidRopeGeometry');
+      assert.ok(Math.abs(arc.radialStart.length()-g.pulleyRadius)<1e-15);
+      assert.ok(arc.center.distanceTo(c)<1e-15);
+      assert.ok(inner.v2.distanceTo(arc.getPoint(0))<1e-15&&arc.getPoint(1).distanceTo(outer.v1)<1e-14,'legs meet the wrap');
+      assert.ok(Math.abs(inner.v1.x-inner.v2.x)<1e-15&&Math.abs(outer.v1.x-outer.v2.x)<1e-15,'vertical tangent legs');
+      assert.equal(inner.v1.z,c.z);
     }
   }
 });

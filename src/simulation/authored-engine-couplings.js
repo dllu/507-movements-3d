@@ -340,18 +340,6 @@ function makeRearDriverCrank({
   );
   wristBoss.position.y = crankRadius;
   wristBoss.userData.role = 'rear-input-crank-wrist-boss';
-  const shaftOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(0.35, 0.035, 8, 42),
-    darkMaterial,
-  );
-  shaftOutline.position.z = depth / 2 + 0.012;
-  shaftOutline.userData.role = 'rear-input-shaft-outline';
-  const wristOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(wristPinRadius, 0.030, 8, 40),
-    darkMaterial,
-  );
-  wristOutline.position.set(0, crankRadius, depth / 2 + 0.012);
-  wristOutline.userData.role = 'rear-input-wrist-outline';
   const inputWristAnchor = new THREE.Object3D();
   inputWristAnchor.position.y = crankRadius;
   inputWristAnchor.userData.role = 'analytic-input-wrist-center';
@@ -359,8 +347,6 @@ function makeRearDriverCrank({
     arm,
     shaftBoss,
     wristBoss,
-    shaftOutline,
-    wristOutline,
     inputWristAnchor,
   );
   return {

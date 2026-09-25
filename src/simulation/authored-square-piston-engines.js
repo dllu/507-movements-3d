@@ -366,13 +366,7 @@ function squarePistonEngine(movement) {
   pistonC.add(pistonCWristBearing);
   root.add(pistonC);
 
-  const crankReference = new THREE.Mesh(
-    new THREE.TorusGeometry(crankRadius, 0.045, 10, 56),
-    darkMaterial,
-  );
-  crankReference.position.z = 1.34;
-  crankReference.userData.role = 'crank-wrist-circular-path-reference';
-  root.add(crankReference);
+  // Brown's dotted wrist path round b is notation; it is not drawn.
   const crankRotor = new THREE.Group();
   crankRotor.userData.role = 'main-shaft-b-and-crank';
   const crankArm = new THREE.Mesh(
@@ -495,7 +489,6 @@ function squarePistonEngine(movement) {
       bottomPort,
       bottomPortIndicator,
       crankArm,
-      crankReference,
       crankRotor,
       crankWristA,
       cylinderA: cylinderA.group,

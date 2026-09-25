@@ -14,6 +14,14 @@ export function makeReverseThreadGeometry(options={}) {
  // Distinguish the recessed finish so both branches remain legible at a crossing.
  add('floor',alongY(ring(f.shaftRadius,f.floor,f.bottom,f.ceiling,256)),'input',new THREE.Color(PALETTE.driver).multiplyScalar(.45));
  add('shaft',alongY(disk(f.shaftRadius,f.y(f.source.shaftEnds[1]),f.y(f.source.shaftEnds[0]),128)),'input',PALETTE.driver);
+ // Brown's barrel is a solid drum: a turned end cap and hub boss close its top
+ // so the recessed groove floor never reads as an open tube. The gear closes
+ // the lower end. The cap sits above the groove ceiling (never reached by the
+ // shoe) and is a visual-only part of the input body: its ~1% volume is left
+ // out of the normalized MuJoCo mass so the validated dynamics are unchanged.
+ {const cap=new THREE.Mesh(alongY(ring(f.shaftRadius+.0015,f.radius,f.ceiling,f.ceiling+.03,256)),matte(PALETTE.driver,{metalness:.12,roughness:.62}));
+  const boss=new THREE.Mesh(alongY(ring(f.shaftRadius+.0015,.17,f.ceiling+.03,f.ceiling+.065,128)),cap.material);
+  cap.name='barrelEndCap';boss.name='barrelHubBoss';if(!blocks.input){blocks.input=new THREE.Group();root.add(blocks.input);}blocks.input.add(cap,boss);}
  const gearOuter=(e.gearRight-e.gearLeft)/200,teeth=76,module=gearOuter/(teeth/2+1),gear=roundedRackGear({teeth,module,depth:(e.gearBottom-e.gearTop)/100,boreRadius:f.shaftRadius,samples:64,cutterSteps:1024});
  add('gear',alongY(gear).translate(0,f.y((e.gearTop+e.gearBottom)/2),0),'input',PALETTE.driver);
  for(const side of ['upper','lower']) {

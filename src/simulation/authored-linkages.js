@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { makeBoredScissorLink } from './bored-scissor-link.js';
+import { groundBlock } from './ground-block.js';
 import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -1520,25 +1521,16 @@ function rockingBeamTieRodFlywheelMotion() {
   rightFloorLedge.position.set(3.25, floorY - 0.06, -0.52);
   rightFloorLedge.userData.role = 'fixed-right-ground-ledge-and-slider-bed';
   // Brown draws the ground as an inked line with diagonal hatching below,
-  // broken only by the wheel pit, not as two grey slabs.
-  const hatchedGroundMaterial = matte(PALETTE.paper, { metalness: 0.02, roughness: 0.9 });
+  // broken only by the wheel pit: engraving notation for a cut solid, so
+  // render each ledge as a solid ground block with a faint side hatch.
   for (const ledge of [leftFloorLedge, rightFloorLedge]) {
-    ledge.material = hatchedGroundMaterial;
     const { width, height, depth } = ledge.geometry.parameters;
-    const line = new THREE.Mesh(new THREE.BoxGeometry(width, 0.025, depth + 0.004), darkMaterial);
-    line.position.y = height / 2 - 0.0125;
-    line.userData.surfaceMarking = true;
-    ledge.add(line);
-    const strokeLength = (height - 0.025) * Math.SQRT2;
-    const count = Math.max(2, Math.round(width / 0.09));
-    for (let index = 0; index < count; index += 1) {
-      const stroke = new THREE.Mesh(new THREE.BoxGeometry(0.014, strokeLength, 0.004), darkMaterial);
-      const inset = (height - 0.025) / 2;
-      stroke.position.set(-width / 2 + inset + (width - 2 * inset) * index / (count - 1), -0.0125, depth / 2 + 0.003);
-      stroke.rotation.z = Math.PI / 4;
-      stroke.userData.surfaceMarking = true;
-      ledge.add(stroke);
-    }
+    const block = groundBlock(width, height, depth, { spacing: 0.09 });
+    ledge.geometry.dispose();
+    ledge.geometry = block.geometry;
+    ledge.material = block.material;
+    ledge.castShadow = false;
+    ledge.receiveShadow = true;
   }
   const sliderGuideRail = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -2668,6 +2660,11 @@ function curvedSlottedArmVariableVibration() {
     'outer-working-edge-of-circular-slot',
   );
   inputArm.add(slotInnerEdge, slotOuterEdge);
+  // Brown inks the slot walls only because the plate is a line drawing.
+  for (const edge of [slotInnerEdge, slotOuterEdge]) {
+    edge.visible = false;
+    edge.userData.retiredInkOutline = true;
+  }
 
   const outputArm = new THREE.Group();
   outputArm.position.set(outputPivot.x, outputPivot.y, 0);
@@ -2730,6 +2727,8 @@ function curvedSlottedArmVariableVibration() {
   );
   followerPinRim.position.set(-outputArmLength, 0, 0.24);
   followerPinRim.userData.role = 'front-rim-of-single-slot-follower-pin';
+  followerPinRim.visible = false;
+  followerPinRim.userData.retiredInkOutline = true;
   const outputRotationIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.06, 18, 12),
     indexMaterial,

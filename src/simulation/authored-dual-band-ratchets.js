@@ -245,9 +245,10 @@ function makeLoosePulleyCarrier({
   pulley.userData.role = `${role}-loose-band-pulley-body`;
   carrier.add(pulley);
 
+  // The grooved rim is part of the pulley, in the pulley's own colour.
   const groove = new THREE.Mesh(
     new THREE.TorusGeometry(pulleyRadius, 0.052, 10, 56),
-    darkMaterial,
+    beltMaterial,
   );
   groove.position.z = planeZ;
   groove.userData.role = `${role}-band-groove`;
@@ -459,7 +460,7 @@ function dualBandOscillationRectifier(movement) {
         8,
         false,
       ),
-      darkMaterial,
+      driverMaterial,
     );
     groove.userData.role = 'semicircular-piece-band-groove';
     rockingSector.add(groove);
@@ -620,7 +621,7 @@ function dualBandOscillationRectifier(movement) {
 
   const openBand = makeDynamicMovingBelt(initialOpenCurve, {
     closed: false,
-    color: PALETTE.ink,
+    color: PALETTE.belt,
     markerColor: PALETTE.white,
     markerCount: 6,
     radius: 0.034,
@@ -639,7 +640,7 @@ function dualBandOscillationRectifier(movement) {
   root.add(openBand);
   const crossedBand = makeDynamicMovingBelt(initialCrossedCurve, {
     closed: false,
-    color: PALETTE.brass,
+    color: PALETTE.belt,
     markerColor: PALETTE.white,
     markerCount: 6,
     radius: 0.034,

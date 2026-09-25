@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { LaidRopeGeometry } from './laid-rope.js';
 import { makeCrownRatchetGeometry, capstanPawlLeadAngle, capstanPawlDimensions, capstanPawlProfile } from './capstan-pawl-contact.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { capstanHeadGeometry, capstanSocketRimGeometry, capstanPackingProgress, capstanPawlArmGeometry, capstanPawlCheekGeometry } from './capstan-finite-parts.js';
@@ -84,7 +85,6 @@ function commonCapstan(movement) {
   const helixRise = 0.42;
   const ropeEntryHeight = 0.18;
   const freeCableEndX = 4.05;
-  const cableMarkerCount = 17;
   const handSpikeLength = 5.85;
   const headRadius = 1.30;
   const operatingPeriod = 8;
@@ -298,6 +298,9 @@ function commonCapstan(movement) {
   headBand.rotation.x = Math.PI / 2;
   headBand.position.y = 1.47;
   capstanRotor.add(headBand);
+  // The head's edge is only inked on the plate, not a separate band.
+  headBand.visible = false;
+  headBand.userData.retiredInkOutline = true;
 
   const handSpike = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(handSpikeLength, 0.16, 0.18),
@@ -373,8 +376,10 @@ function commonCapstan(movement) {
     pawlPivotAssembly.add(cheek); return cheek;
   });
 
+  // Brown hatches the cable as a laid rope; its moving lay shows the haul,
+  // so it carries no painted markers.
   const cable = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(
+    new LaidRopeGeometry(
       cableCurve,
       300,
       ropeRadius,
@@ -386,32 +391,12 @@ function commonCapstan(movement) {
   cable.userData.isBelt = false;
   cable.userData.isSingleContinuousCable = true;
   root.add(cable);
-  const cableMarkers = Array.from({ length: cableMarkerCount },
-    (_, index) => {
-      const marker = addRole(new THREE.Mesh(
-        new THREE.SphereGeometry(0.074, 17, 12),
-        markerMaterial,
-      ), `white-material-marker-on-capstan-cable-${index + 1}`);
-      root.add(marker);
-      return marker;
-    });
 
   const update = (time) => {
     const state = stateAtTime(time);
     capstanRotor.rotation.y = state.capstanRotationY;
     pawl.rotation.z = state.pawlClosure.pawlPitchAngleRadian;
-    for (let index = 0; index < cableMarkers.length; index += 1) {
-      const distance = positiveModulo(
-        index * cablePathLength / cableMarkers.length
-          + state.cableDistanceHauled,
-        cablePathLength,
-      );
-      const progress = distance / cablePathLength;
-      cableMarkers[index].position.copy(cableCurve.getPointAt(progress));
-      cableMarkers[index].scale.setScalar(
-        Math.sin(Math.PI * progress) ** 0.28,
-      );
-    }
+    cable.geometry.setTravel(state.cableDistanceHauled);
   };
 
   const maximumAxialPitchPerRadian = helixRise / (wrapAngle - 0.125);
@@ -421,7 +406,6 @@ function commonCapstan(movement) {
   ) / barrelRadius;
   const geometry = {
     barrelRadius,
-    cableMarkerCount,
     cablePathLength,
     freeCableEndX,
     handSpikeLength,
@@ -465,7 +449,6 @@ function commonCapstan(movement) {
       baseFoot,
       basePlinth,
       cable,
-      cableMarkers,
       capstanRotor,
       drumHead,
       fixedBase,
@@ -499,10 +482,10 @@ function commonCapstan(movement) {
     },
     dynamics: {
       finiteContactResidual: 'Finite nose/crown clearance follows a baked triangle-contact envelope with a prescribed smooth crest release. Gravity, impact, reverse load response and rope friction are not dynamically solved.',
-      cableMarkerContinuity:
-        'All white cable markers use constant-distance getPointAt sampling on the one cable Curve3. Its free-span endpoint and barrel-wrap start share position and tangent, so no marker changes path or speed abruptly at that transition.',
+      cableLayContinuity:
+        'The laid cable follows one arc-length Curve3 whose free-span endpoint and barrel-wrap start share position and tangent; its lay advances by the hauled distance, so the rope moves at constant speed through that transition.',
       helixPackingDisclosure:
-        'The three displayed turns use a 0.42-unit axial packing rise with a short smooth lead into constant pitch. Cable translation is exactly r_barrel times capstan angular speed; the small displayed helix makes marker azimuth differ from rigid surface azimuth by less than 0.09 percent at the steepest packing point.',
+        'The three displayed turns use a 0.42-unit axial packing rise with a short smooth lead into constant pitch. Cable translation is exactly r_barrel times capstan angular speed; the small displayed helix makes the rope lay azimuth differ from rigid surface azimuth by less than 0.09 percent at the steepest packing point.',
       idealRatchetContact:
         'In the hauling direction the capstan-mounted pawl climbs each fixed tooth ramp on its finite rounded nose, passes its high vertical edge, falls continuously under the prescribed release schedule, and recontacts the next ramp. Reverse motion meets that high face after at most one tooth of backlash; the reverse load response is not dynamically solved.',
     },
@@ -558,7 +541,7 @@ function commonCapstan(movement) {
         knowltonPatentCorroboration:
           'David Knowlton’s 1857 ship-capstan patent explicitly places a ratchet around the top of the fixed capstan base and suitable pawls on the outside of the barrel, independently confirming Brown’s moving-pawl/fixed-ratchet topology.',
         reconstructionDisclosure:
-          'The source fixes the component topology, rigid head/barrel relation, hauling direction, moving-pawl/fixed-ratchet relation, and one-way purpose. Exact dimensions, eighteen-tooth count, tooth and pawl profiles, three-turn display, line packing, constant operating speed, colors, and marker spacing are independently engineered and exposed.',
+          'The source fixes the component topology, rigid head/barrel relation, hauling direction, moving-pawl/fixed-ratchet relation, and one-way purpose. Exact dimensions, eighteen-tooth count, tooth and pawl profiles, three-turn display, line packing, constant operating speed, colors, and rope lay are independently engineered and exposed.',
       },
       knowlton1857PatentUrl:
         'https://patents.google.com/patent/US17971A/en',
@@ -596,7 +579,7 @@ function commonCapstan(movement) {
   });
   root.userData.minimumDisplayCycleSeconds = operatingPeriod;
   markShadows(root);
-  for (const marker of [...cableMarkers, pawlTip, rotationIndex]) {
+  for (const marker of [pawlTip, rotationIndex]) {
     marker.castShadow = false;
   }
   update(0);

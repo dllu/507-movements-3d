@@ -29,15 +29,13 @@ export function makeDualBeltSpeeds() {
       p.laneZs[lane] - p.pulleyWidths[lane] / 2, p.laneZs[lane] + p.pulleyWidths[lane] / 2,
       loose ? PALETTE.muted : PALETTE.driven), parent);
   }
-  // Brown draws the bands plain: one paper colour, no travelling stitch marks.
-  const bands = [], segments = 2048, paper = new THREE.Color(0xd9cead);
+  // Brown draws the bands plain: the shared flat-belt look (belt colour),
+  // with no travelling stitch marks.
+  const bands = [], segments = 2048;
   for (const [i, name] of ['leftBelt', 'rightBelt'].entries()) {
     const curve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.driverPitchRadii[i], p.lowerPitchRadius, 0);
     const geometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-    const colors = new Float32Array(geometry.attributes.position.count * 3);
-    for (let j = 0; j < colors.length; j += 3) paper.toArray(colors, j);
-    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const mesh = add(name, new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.92, metalness: 0 })));
+    const mesh = add(name, new THREE.Mesh(geometry, matte(PALETTE.belt, { roughness: 0.76 })));
     mesh.userData = { curve, length: curve.getLength(), crossSection: 'rectangular', width: p.beltWidth, thickness: p.beltThickness, isYarn: true };
     bands.push(mesh);
   }

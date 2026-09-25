@@ -118,8 +118,9 @@ test('419 visible rocker shoe meets its floor and finite bands occupy the drum t
   assert.ok(gap>=-2e-4&&gap<.008,`shoe/floor ${gap}`);largestGap=Math.max(largestGap,gap);
   const center=b.outputWheelB.getWorldPosition(new THREE.Vector3());
   const top=center.clone().setY(center.y+g.bandPitchRadius).setZ(g.bandZ);
-  const endC=b.flexibleBandC.children.at(-1).localToWorld(new THREE.Vector3(0,.5,0));
-  const startD=b.flexibleBandD.children[0].localToWorld(new THREE.Vector3(0,-.5,0));
+  // Each band is one laid rope along its sampled path.
+  const endC=b.flexibleBandC.localToWorld(b.flexibleBandC.userData.curve.getPoint(1));
+  const startD=b.flexibleBandD.localToWorld(b.flexibleBandD.userData.curve.getPoint(0));
   assert.ok(endC.distanceTo(top)<1e-12&&startD.distanceTo(top)<1e-12,'signed wrap reaches the shared drum top');
   for(const band of [b.flexibleBandC,b.flexibleBandD]){
    assert.ok(bounds(band).min.z>center.z-.21&&bounds(band).max.z<center.z+.21);

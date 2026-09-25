@@ -222,13 +222,14 @@ export function loopHandlePinCamGabDisengager() {
   const darkMaterial = matte(PALETTE.ink, {metalness: 0.28, roughness: 0.44});
   const clipMaterial = matte(PALETTE.frame, {metalness: 0.14, roughness: 0.68});
 
-  // Eccentric rod: broken end at the left, crown over the gab, nosed tail.
+  // Eccentric rod: Brown breaks it off at the left (a drawing convention);
+  // it runs on whole past the view. Crown over the gab, nosed tail.
   const rod = new THREE.Group();
   rod.userData.role = 'eccentric-rod-rigid-body';
   const rodOutline = poly(ring([
-    [15, 297], [332, 297], [338, 285], [348, 272], [365, 262], [385, 258], [405, 258], [425, 263],
+    [-300, 297], [332, 297], [338, 285], [348, 272], [365, 262], [385, 258], [405, 258], [425, 263],
     [440, 274], [450, 290], [458, 302], [470, 309], [500, 312], [514, 315], [520, 322], [517, 331],
-    [508, 335], [25, 335], [20, 329], [24, 321], [17, 313], [21, 305],
+    [508, 335], [-300, 335],
   ]));
   const gabCenter = R(PIN_RASTER);
   const gab = polygonClipping.union(
@@ -240,7 +241,7 @@ export function loopHandlePinCamGabDisengager() {
   const rodFront = extrude(polygonClipping.difference(rodOutline, gab, pivotBore), Z.rod, rodMaterial,
     'eccentric-rod-with-crown-open-bottom-gab-and-tail');
   // The rod is deeper behind its plain bar, where the leaf's clip is screwed.
-  const rodRail = extrude(poly(ring([[15, 297], [245, 297], [245, 335], [25, 335], [20, 329], [24, 321], [17, 313], [21, 305]])),
+  const rodRail = extrude(poly(ring([[-300, 297], [245, 297], [245, 335], [-300, 335]])),
     Z.rail, rodMaterial, 'eccentric-rod-rear-web-carrying-leaf-clip');
   const pivotPin = cylinderAlongZ(pivotPinRadius, 0.58, darkMaterial, 32);
   pivotPin.position.set(pivot.x, pivot.y, -0.13);
@@ -340,6 +341,8 @@ export function loopHandlePinCamGabDisengager() {
     root.updateMatrixWorld(true);
     bounds.union(new THREE.Box3().setFromObject(root, true));
   }
+  // Frame Brown's plate: the complete rod counts only as far as his break.
+  bounds.min.x = Math.max(bounds.min.x, R([15, 0]).x - 0.02);
 
   const blocks = {rodFront, rodRail, pivotPin, clipTop, clipFront, clipBack, clipScrew, leaf, handleBody, lug, valvePin,
     // Aliases for the pre-rewrite shared joint test (pin versus plates).

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { makeLaidRopeMesh } from './laid-rope.js';
 import { correctCheckHookJournals } from './lifting-check-hook-parts.js';
 import {
   PALETTE,
@@ -498,29 +499,34 @@ function centrifugalMineDrumCheckHooks(movement) {
   const ropeWrapRadius = ropeDrumRadius + ropeRadius;
   const ropeStrandLength = 5.9;
   const ropeMaterial = matte(0x3b3632, { roughness: 0.9 });
-  const ropeWeb = new THREE.Mesh(
-    new THREE.TorusGeometry(ropeWrapRadius, ropeRadius, 12, 64, Math.PI),
-    ropeMaterial,
-  );
-  ropeWeb.position.z = ropeDrumPlaneZ;
-  ropeWeb.userData.role = 'hoisting-rope-wrapped-over-drum';
-  root.add(ropeWeb);
-
-  const ropeEdges = [-1, 1].map((side) => {
-    const edge = new THREE.Mesh(
-      new THREE.CylinderGeometry(ropeRadius, ropeRadius, ropeStrandLength, 16),
-      ropeMaterial,
-    );
-    edge.position.set(
-      side * ropeWrapRadius,
-      -ropeStrandLength / 2,
+  // One continuous laid rope: up the left strand, over the drum top and down
+  // the right strand. Brown hatches it as a laid rope.
+  const ropePath = new THREE.CurvePath();
+  ropePath.add(new THREE.LineCurve3(
+    new THREE.Vector3(-ropeWrapRadius, -ropeStrandLength, ropeDrumPlaneZ),
+    new THREE.Vector3(-ropeWrapRadius, 0, ropeDrumPlaneZ),
+  ));
+  const ropeWrap = new THREE.Curve();
+  ropeWrap.getPoint = (t, target = new THREE.Vector3()) => {
+    const angle = Math.PI * (1 - t);
+    return target.set(
+      ropeWrapRadius * Math.cos(angle),
+      ropeWrapRadius * Math.sin(angle),
       ropeDrumPlaneZ,
     );
-    edge.userData.role =
-      `hoisting-rope-${side < 0 ? 'left' : 'right'}-hanging-strand`;
-    root.add(edge);
-    return edge;
+  };
+  ropePath.add(ropeWrap);
+  ropePath.add(new THREE.LineCurve3(
+    new THREE.Vector3(ropeWrapRadius, 0, ropeDrumPlaneZ),
+    new THREE.Vector3(ropeWrapRadius, -ropeStrandLength, ropeDrumPlaneZ),
+  ));
+  const hoistingRope = makeLaidRopeMesh(ropePath, ropeMaterial, {
+    radius: ropeRadius,
+    tubularSegments: 256,
+    radialSegments: 10,
   });
+  hoistingRope.userData.role = 'one-hoisting-rope-over-drum-hanging-in-two-strands';
+  root.add(hoistingRope);
 
   const shockSpring = makeDynamicCable({
     color: PALETTE.accent,
@@ -866,8 +872,7 @@ function centrifugalMineDrumCheckHooks(movement) {
     ropeDrumBody,
     ropeDrumIndex,
     ropeDrumRims,
-    ropeEdges,
-    ropeWeb,
+    hoistingRope,
     shockSpring,
     studs,
   };
@@ -1019,6 +1024,9 @@ function centrifugalMineDrumCheckHooks(movement) {
     const state = stateAtTime(time + displayTimeOffset);
     arrestFlange.rotation.z = state.flangeAngle;
     ropeDrum.rotation.z = state.ropeDrumAngle;
+    // The rope moves with the drum surface; positive drum turn runs the
+    // top of the drum toward the left strand, against the path direction.
+    hoistingRope.userData.setTravel(-ropeWrapRadius * state.ropeDrumAngle);
     hooks.forEach((hook) => {
       hook.rotation.z = state.hookAngle;
     });

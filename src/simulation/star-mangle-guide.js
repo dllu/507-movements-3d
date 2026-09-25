@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import polygonClipping from 'polygon-clipping';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 
 function meshWithSurfaceNormals(vertices, indices, groups) {
   const positions = [], faces = [], seen = new Map();
@@ -99,4 +101,56 @@ export function starMangleCrabEnd(motion, firstCrossover, { collarOffset = 0.265
   geometry.userData = { terminal, firstCrossover, collarOffset, collarRadius, guideClearance,
     wallThickness, radialStart, radialEnd, radialBands, curveSegments, centerAt, guideSide };
   return geometry;
+}
+
+// Brown draws A as one hatched block across the rim gap with a radial bar to
+// the inner rim. This solid block is cut by the swept collar silhouette of
+// both crossovers (runs of wheel-frame collar centres in (-y, z)); the thin crab
+// shells above remain inside it as the exact collar-retaining linings. The
+// two radial bars pass over the pinion's swept faces to feet on the inner rim.
+export function starMangleCrabBlock(collarRuns, { collarRadius = 0.10, clearance = 0.003,
+  halfWidth = 0.40, halfHeight = 0.585, radialStart = 1.76, radialEnd = 1.90,
+  barWidth = 0.16, barInner = 1.27, barOuter = 1.82, barLow = 0.505, barHigh = 0.575, footOuter = 1.36, footLow = 0.10 } = {}) {
+  const radius = collarRadius + clearance, capsules = [];
+  const circle = (s, z) => Array.from({ length: 40 }, (_, i) => {
+    const a = 2 * Math.PI * i / 40; return [s + radius * Math.cos(a), z + radius * Math.sin(a)];
+  });
+  for (const collarCenters of collarRuns) for (let i = 0; i < collarCenters.length; i += 1) {
+    const [s, z] = collarCenters[i], ring = circle(s, z);
+    if (i + 1 < collarCenters.length) {
+      const [s2, z2] = collarCenters[i + 1], length = Math.hypot(s2 - s, z2 - z);
+      if (length > 1e-9) {
+        const nx = -(z2 - z) / length * radius, ny = (s2 - s) / length * radius;
+        capsules.push([[[s + nx, z + ny], [s2 + nx, z2 + ny], [s2 - nx, z2 - ny], [s - nx, z - ny], [s + nx, z + ny]]]);
+      }
+    }
+    capsules.push([[...ring, ring[0]]]);
+  }
+  const sweep = polygonClipping.union(...capsules);
+  const rect = [[[-halfWidth, -halfHeight], [halfWidth, -halfHeight], [halfWidth, halfHeight], [-halfWidth, halfHeight], [-halfWidth, -halfHeight]]];
+  const section = polygonClipping.difference(rect, sweep);
+  const toShape = (polygon) => {
+    const shape = new THREE.Shape(polygon[0].slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y)));
+    for (const hole of polygon.slice(1)) shape.holes.push(new THREE.Path(hole.slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y))));
+    return shape;
+  };
+  // Shape (s, z) extruded along e maps to wheel frame (-(R0 + e), -s, z): the
+  // gap is centred on the wheel-frame angle pi and s = -y is proper-handed.
+  const radialMap = (r0) => new THREE.Matrix4().set(0, 0, -1, -r0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1);
+  const block = new THREE.ExtrudeGeometry(section.map(toShape), { depth: radialEnd - radialStart, bevelEnabled: false, curveSegments: 1 })
+    .applyMatrix4(radialMap(radialStart));
+  const parts = [block];
+  for (const side of [1, -1]) {
+    const bar = new THREE.BoxGeometry(barOuter - barInner, barWidth, barHigh - barLow)
+      .translate(-(barInner + barOuter) / 2, 0, side * (barLow + barHigh) / 2);
+    // The foot rises into the bar and is slightly narrower so no faces coincide.
+    const footTop = (barLow + barHigh) / 2, footInner = barInner + 0.01;
+    const foot = new THREE.BoxGeometry(footOuter - footInner, barWidth * 0.85, footTop - footLow)
+      .translate(-(footInner + footOuter) / 2, 0, side * (footTop + footLow) / 2);
+    parts.push(bar.toNonIndexed(), foot.toNonIndexed());
+  }
+  const merged = mergeGeometries(parts.map((g) => { const n = g.index ? g.toNonIndexed() : g; n.deleteAttribute('uv'); return n; }));
+  merged.computeVertexNormals(); merged.computeBoundingBox(); merged.computeBoundingSphere();
+  merged.userData = { collarRadius, clearance, halfWidth, halfHeight, radialStart, radialEnd, barLow, barHigh, sectionPieces: section.length };
+  return merged;
 }

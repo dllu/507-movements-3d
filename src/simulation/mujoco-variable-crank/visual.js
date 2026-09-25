@@ -15,7 +15,7 @@ export function makeMujocoVariableCrank(mujoco,options={}) {
       u.blocks[name].position.fromArray(data.xpos,id*3);
       u.blocks[name].quaternion.set(data.xquat[id*4+1],data.xquat[id*4+2],data.xquat[id*4+3],data.xquat[id*4]);
     }
-    u.updateHiddenGroove();visual.root.updateMatrixWorld(true);
+    visual.root.updateMatrixWorld(true);
     u.state={time:data.time,inputAngle:data.qpos[0],boltRadius:data.qpos[1],qpos:Array.from(data.qpos),qvel:Array.from(data.qvel)};return u.state;
   };
   const playback=createPhysicsPlayback(physics,sync);let disposed=false;
@@ -23,7 +23,7 @@ export function makeMujocoVariableCrank(mujoco,options={}) {
   const bounds=new THREE.Box3(new THREE.Vector3(-2.3,-2.1,-.84),new THREE.Vector3(2.3,2.1,.45));
   Object.assign(u,{mechanism:'mujoco-variable-crank',simulationBackend:'mujoco',physics,
     fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'The radial plate is held during adjustment; the spiral groove behind it is dashed where the plate is solid, as Brown draws it. The stepped bolt, depth and supports are reconstructed; radial slots are widened slightly to fit the bolt.',
+    reconstructionNote:'The radial plate is held during adjustment; the spiral groove plate behind it shows through the slots (Brown dashes it where the plate hides it). The stepped bolt, depth and supports are reconstructed; radial slots are widened slightly to fit the bolt.',
     cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},
     qualification:'Only the spiral plate is actuated. MuJoCo contact moves the bolt in an ideal radial guide. This demonstrates adjustment with the radial plate held; clamping and subsequent crank operation are not simulated.'});

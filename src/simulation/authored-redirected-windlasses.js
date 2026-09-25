@@ -757,9 +757,12 @@ function redirectedChineseWindlass(movement) {
   });
 
   const sourceRopeGeometry = ropeGeometryAtShaftAngle(0);
+  // Brown draws the rope laid: the shared three-strand rope, its lay fixed in
+  // the material from the curve's anchored start, shows the travel.
   const rope = makeDynamicMovingBelt(sourceRopeGeometry.curve, {
     closed: false,
     color: PALETTE.driven,
+    laid: true,
     markerCount: 0,
     radius: ropeRadius,
     tubularSegments: 640,
@@ -781,6 +784,8 @@ function redirectedChineseWindlass(movement) {
     marker.userData.materialDistance = distance;
     marker.userData.markerIndex = index;
     marker.userData.role = 'white-Lagrangian-marker-on-single-rope';
+    // Kept as a material reference; the laid rope's lay shows the travel.
+    marker.visible = false;
     rope.add(marker);
     return marker;
   });

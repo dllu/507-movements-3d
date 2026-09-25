@@ -16,8 +16,10 @@ export function makeFrictionClutch() {
   const outputProfile = [[0.572, boreRadius], [0.572, 0.800], [0.168, 0.800],
     [0.168, 0.884], [0.729, 0.884], [0.729, 0.25], [p.grooveLeft, 0.25],
     [p.grooveLeft, 0.182], [p.grooveRight, 0.182], [p.grooveRight, 0.25], [1.222, 0.25], [1.222, boreRadius]];
-  const planes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0),
-    new THREE.Plane(new THREE.Vector3(0, 0, 1), 0.08)];
+  // Brown's half-section is shown as a clean cutaway: only the near half of
+  // each turned member is cut away at the axial plane, so turned views show
+  // round bodies of revolution behind the hatched section face.
+  const planes = [new THREE.Plane(new THREE.Vector3(0, 0, -1), 0)];
   const makeRotor = () => {
     const group = new THREE.Group(), rotor = new THREE.Group();
     group.quaternion.setFromUnitVectors(Z_AXIS, X_AXIS);
@@ -43,6 +45,11 @@ export function makeFrictionClutch() {
   const inputSection = makeClutchSections(inputProfile, { boreRadius, color: PALETTE.driver, hatchSign: 1 });
   const outputSection = makeClutchSections(outputProfile, { boreRadius, keyHalfWidth, keywayTop,
     color: PALETTE.driven, hatchSign: -1 });
+  for (const section of [inputSection, outputSection]) {
+    const { caps, hatches } = section.userData;
+    section.remove(caps[1], hatches[1]);
+    section.userData.caps = [caps[0]]; section.userData.hatches = [hatches[0]];
+  }
   inputSection.position.x = offsetX;
   outputSection.position.x = offsetX;
   const shaft = makeRotor();

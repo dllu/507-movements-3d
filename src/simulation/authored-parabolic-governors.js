@@ -109,21 +109,6 @@ function makeRoller({
   wheel.userData.role = `${role}-anti-friction-wheel-L`;
   rotor.add(wheel);
 
-  const rims = [-1, 1].map((side) => {
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(
-        rollerRadius * 0.82,
-        rollerRadius * 0.085,
-        8,
-        40,
-      ),
-      darkMaterial,
-    );
-    rim.position.z = side * (rollerWidth / 2 + 0.008);
-    rim.userData.role = `${role}-face-rim`;
-    rotor.add(rim);
-    return rim;
-  });
   const faceIndices = [-1, 1].map((side) => {
     const index = new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -154,7 +139,6 @@ function makeRoller({
   assembly.userData.blocks = {
     axle,
     faceIndices,
-    rims,
     rotor,
     wheel,
   };
@@ -761,20 +745,6 @@ function parabolicGovernor(movement) {
     30,
   );
   sleeveCrossPin.userData.role = 'sleeve-cross-pin-joining-both-rods-F';
-  const sleeveUpperRing = torusAroundY(
-    sleeveRadius * 1.04,
-    0.045,
-    darkMaterial,
-  );
-  sleeveUpperRing.position.y = sleeveLength / 2;
-  sleeveUpperRing.userData.role = 'sleeve-upper-retaining-ring';
-  const sleeveLowerRing = torusAroundY(
-    sleeveRadius * 1.11,
-    0.055,
-    darkMaterial,
-  );
-  sleeveLowerRing.position.y = -sleeveLength / 2;
-  sleeveLowerRing.userData.role = 'sleeve-output-groove-ring';
   const sleeveIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.055, sleeveLength * 0.38, 0.035),
     whiteMaterial,
@@ -785,8 +755,6 @@ function parabolicGovernor(movement) {
     sleeve,
     sleeveCrossPin,
     sleeveIndex,
-    sleeveLowerRing,
-    sleeveUpperRing,
   );
 
   const lowerBearing = new THREE.Group();

@@ -46,9 +46,6 @@ export function finishParsons394(root,update){
  replace(r.outerRim,plate(clip.difference(capsule([-g.rackHalfStraight,0],[g.rackHalfStraight,0],g.rackPitchHalfHeight+.48,96),capsule([-g.rackHalfStraight,0],[g.rackHalfStraight,0],g.rackPitchHalfHeight+.095,96)),-.12,.18));
  for(const mesh of b.rackCarrier.children)if(/straight-web-of-endless-rack/.test(mesh.userData.role??''))mesh.visible=false;
  replace(o.hub,ring(.100,.18,-.775,.775,96),true);
- for(const [flange,rim,radius,z]of[[o.largeFlange,o.largeFlangeRim,g.largeFlangeRadius,g.largePlaneZ],[o.smallFlange,o.smallFlangeRim,g.smallFlangeRadius,g.smallPlaneZ]]){
-  replace(rim,new THREE.TorusGeometry(radius-.024,.016,10,96));rim.position.z=z+.071;
- }
  b.finiteGuideWalls=[];b.guideAttachments=[];
  for(const[groove,side,radius,z]of[[b.largeGroove,1,g.largeFlangeRadius,g.largePlaneZ],[b.smallGroove,-1,g.smallFlangeRadius,g.smallPlaneZ]]){
   for(const rail of groove.userData.rails)rail.visible=false;
@@ -94,16 +91,6 @@ export function finishParsons394(root,update){
    b.rackCarrier.add(web);b.rearToothWebs.push(web);
   }
  }
- // Brown outlines the guide flange behind the pinion as a thin ring larger
- // than the pinion, stepped out to a wider arc below. It turns with the
- // shaft behind the rack's rear plane (clear of the large flange at -0.365),
- // so the teeth and rim cover it where it passes behind them, as he dashes.
- const deg=Math.PI/180,inner=1.05,outer=1.19,stroke=.024,earStart=-155*deg,earEnd=-25*deg;
- const outline=clip.union(sector(inner-stroke,inner,earEnd,earStart+2*Math.PI,192),sector(outer-stroke,outer,earStart,earEnd,128),
-  ...[earStart,earEnd].map(a=>capsule([(inner-stroke)*Math.cos(a),(inner-stroke)*Math.sin(a)],[(outer-stroke/2)*Math.cos(a),(outer-stroke/2)*Math.sin(a)],stroke/2,16)));
- const flangeOutline=new THREE.Mesh(plate(outline,-.355,-.345),o.hub.material);
- flangeOutline.userData.role='outline-of-stepped-guide-flange-behind-pinion';flangeOutline.userData.presentationOnly=true;
- o.largeFlange.parent.add(flangeOutline);b.flangeOutline=flangeOutline;
  return finishView(root,update,8,new THREE.Vector3(.25,.12,15),d.timeline.cycleDuration);
 }
 function finishView(root,update,minimum,cameraDirection,cycle){

@@ -7,7 +7,7 @@ import {
 
 import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import { engineRod, annularSector } from './steam-engine-parts.js';
-import { capsule, plate, polygonClipping, spline } from './finite-plate-geometry.js';
+import { capsule, plate, polygonClipping, sector, spline } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -544,9 +544,21 @@ function doubleQuadrantEngine(movement) {
   rightPedestal.userData.role = 'right-fixed-cylinder-frame';
   root.add(rightPedestal);
 
-  // Brown's closed cast casing: one wall from the foot up round the left
-  // pivot boss, over the top quadrant, round valve a and the right pivot
-  // boss, down to the foot. It stands outside every piston sweep.
+  const topSectorStart = topInnerAngle - 0.08;
+  const topSectorEnd = topOuterAngle + 0.10;
+  const bottomSectorStart = bottomInnerAngle - 0.10;
+  const bottomSectorEnd = bottomOuterAngle + 0.08;
+  const chamberOuterRadius = pistonRockerRadius + 0.38;
+  const chamberInnerRadius = 0.57;
+  const quadrantWallThickness = 0.30;
+  const castingFront = 0.16;
+  const castingBack = -0.45;
+  const backWallDepth = 0.17;
+  const footTop = -4.88;
+
+  // Brown's closed cast casing: one thick sectioned wall from the foot up
+  // round the left pivot boss, over the top quadrant, round valve a and the
+  // right pivot boss, down to the foot. It stands outside every piston sweep.
   const casingPath = spline([
     [-4.62, -4.88], [-4.20, -3.00], [-3.86, -1.50], [-4.55, -0.80],
     [-4.76, 0.00], [-4.50, 0.80], [-3.86, 1.40], [-3.72, 3.00],
@@ -555,18 +567,48 @@ function doubleQuadrantEngine(movement) {
     [4.46, 2.30], [4.40, 1.50], [4.62, 0.80], [4.78, 0.00],
     [4.56, -1.00], [4.70, -3.00], [4.86, -4.88],
   ]);
-  const casingWall = new THREE.Mesh(plate(polygonClipping.union(
-    ...casingPath.slice(1).map((point, index) => capsule(casingPath[index], point, 0.09, 8)),
-  ), -0.20, 0.16), frameMaterial);
+  const aboveFoot = [[[[-9, footTop], [9, footTop], [9, 9], [-9, 9], [-9, footTop]]]];
+  const offsetSector = (center, inner, outer, start, end) => sector(inner, outer, start, end, 160)
+    .map(polygon => polygon.map(ring => ring.map(([x, y]) => [x + center.x, y + center.y])));
+  // Each quadrant's curved cylinder wall is a solid band of the casting. The
+  // top band runs on past its end wall to the casing's left side; the bottom
+  // band runs on past its piston's sweep down into the foot, as Brown draws.
+  const topWallOutline = polygonClipping.intersection(offsetSector(topFixedPivot,
+    chamberOuterRadius, chamberOuterRadius + quadrantWallThickness, topSectorStart,
+    THREE.MathUtils.degToRad(94)), aboveFoot);
+  const bottomWallOutline = polygonClipping.intersection(offsetSector(bottomFixedPivot,
+    chamberOuterRadius, chamberOuterRadius + quadrantWallThickness, bottomSectorStart,
+    THREE.MathUtils.degToRad(-94)), aboveFoot);
+  const topCylinderWall = new THREE.Mesh(plate(topWallOutline, castingBack, castingFront), frameMaterial);
+  topCylinderWall.userData.role = 'fixed-curved-wall-of-top-quadrant-cylinder';
+  const bottomCylinderWall = new THREE.Mesh(plate(bottomWallOutline, castingBack, castingFront), frameMaterial);
+  bottomCylinderWall.userData.role = 'fixed-curved-wall-of-bottom-quadrant-cylinder';
+  root.add(topCylinderWall, bottomCylinderWall);
+
+  // Brown's hatched cast webs: the wedge under valve a that closes the top
+  // wall's inner end, and the shelf under the left boss that carries the
+  // bottom wall's inner end back to the casing. Both lie outside the sweeps.
+  const valveWeb = [[[[1.10, 1.44], [1.92, 1.02], [2.64, 1.55], [2.62, 2.90],
+    [1.62, 3.02], [1.10, 1.44]]]];
+  const leftShelf = [[[[-4.10, -1.40], [-1.28, -1.40], [-1.28, -1.70], [-4.10, -1.70],
+    [-4.10, -1.40]]]];
+  const casingOutline = polygonClipping.difference(polygonClipping.intersection(polygonClipping.union(
+    ...casingPath.slice(1).map((point, index) => capsule(casingPath[index], point, 0.15, 8)),
+    valveWeb, leftShelf,
+  ), aboveFoot), topWallOutline, bottomWallOutline);
+  const casingWall = new THREE.Mesh(plate(casingOutline, castingBack, castingFront), frameMaterial);
   casingWall.userData.role = 'fixed-closed-cast-casing-wall-round-both-quadrants';
   root.add(casingWall);
-
-  const topSectorStart = topInnerAngle - 0.08;
-  const topSectorEnd = topOuterAngle + 0.10;
-  const bottomSectorStart = bottomInnerAngle - 0.10;
-  const bottomSectorEnd = bottomOuterAngle + 0.08;
-  const chamberOuterRadius = pistonRockerRadius + 0.38;
-  const chamberInnerRadius = 0.57;
+  // The back of the sectioned casting closes both quadrant cylinders and
+  // the common space behind the pistons.
+  const casingBackWall = new THREE.Mesh(plate(polygonClipping.intersection(
+    [[[...casingPath, casingPath[0]]]], aboveFoot,
+  ), castingBack - backWallDepth, castingBack), matte(0x8c9696, {
+    metalness: 0.18,
+    roughness: 0.60,
+  }));
+  casingBackWall.userData.role = 'fixed-back-wall-of-sectioned-casing';
+  root.add(casingBackWall);
 
   const topChamberBack = new THREE.Mesh(
     new THREE.RingGeometry(
@@ -599,41 +641,15 @@ function doubleQuadrantEngine(movement) {
   bottomChamberBack.userData.role = 'cutaway-bottom-outer-steam-space';
   root.add(bottomChamberBack);
 
-  const topCylinderWall = makeTubeThrough(
-    arcPoints(
-      topFixedPivot,
-      chamberOuterRadius,
-      topSectorStart,
-      topSectorEnd,
-      -0.02,
-    ),
-    0.18,
-    frameMaterial,
-    'fixed-curved-wall-of-top-quadrant-cylinder',
-  );
-  const bottomCylinderWall = makeTubeThrough(
-    arcPoints(
-      bottomFixedPivot,
-      chamberOuterRadius,
-      bottomSectorStart,
-      bottomSectorEnd,
-      -0.02,
-    ),
-    0.18,
-    frameMaterial,
-    'fixed-curved-wall-of-bottom-quadrant-cylinder',
-  );
-  root.add(topCylinderWall, bottomCylinderWall);
-
   const topEndWall = new THREE.Mesh(annularSector(chamberInnerRadius, chamberOuterRadius,
-    topSectorEnd - 0.015, topSectorEnd + 0.015, 0.62), frameMaterial);
+    topSectorEnd - 0.015, topSectorEnd + 0.015, castingFront - castingBack), frameMaterial);
   topEndWall.position.copy(topFixedPivot);
-  topEndWall.position.z = -0.02;
+  topEndWall.position.z = (castingFront + castingBack) / 2;
   topEndWall.userData.role = 'top-quadrant-cylinder-end-wall';
   const bottomEndWall = new THREE.Mesh(annularSector(chamberInnerRadius, chamberOuterRadius,
-    bottomSectorStart - 0.015, bottomSectorStart + 0.015, 0.62), frameMaterial);
+    bottomSectorStart - 0.015, bottomSectorStart + 0.015, castingFront - castingBack), frameMaterial);
   bottomEndWall.position.copy(bottomFixedPivot);
-  bottomEndWall.position.z = -0.02;
+  bottomEndWall.position.z = (castingFront + castingBack) / 2;
   bottomEndWall.userData.role = 'bottom-quadrant-cylinder-end-wall';
   root.add(topEndWall, bottomEndWall);
 
@@ -641,10 +657,10 @@ function doubleQuadrantEngine(movement) {
     const group = new THREE.Group();
     group.position.copy(fixedPivot);
     group.userData.role = `${rolePrefix}-single-acting-piston-B`;
-    const arm = new THREE.Mesh(
-      annularSector(0.42, pistonRockerRadius, -0.032, 0.032, 0.46),
-      pistonMaterial,
-    );
+    // A flat plate, tapering only as much as the end wall beside the hub
+    // allows at the stroke's end, so B reads as Brown's parallel-sided bar.
+    const arm = new THREE.Mesh(plate([[[[0.42, -0.035], [pistonRockerRadius, -0.15],
+      [pistonRockerRadius, 0.15], [0.42, 0.035], [0.42, -0.035]]]], -0.23, 0.23), pistonMaterial);
     arm.position.set(0, 0, z);
     arm.userData.role = `${rolePrefix}-radial-body-of-piston-B`;
     group.add(arm);
@@ -693,23 +709,8 @@ function doubleQuadrantEngine(movement) {
   const crankRotor = new THREE.Group();
   crankRotor.position.copy(crankCenter);
   crankRotor.userData.role = 'continuously-rotating-common-crank-D';
-  // Brown dots the flywheel circle round D rather than drawing a disc.
-  const crankDisk = new THREE.Group();
-  for (let index = 0; index < 36; index += 1) {
-    const angle = Math.PI * 2 * (index + 0.25) / 36;
-    const dash = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.022, 0.022, 1.05 * Math.PI / 36, 6),
-      darkMaterial,
-    );
-    dash.position.set(1.05 * Math.cos(angle), 1.05 * Math.sin(angle), 0);
-    dash.rotation.z = angle;
-    dash.userData.role = 'dotted-flywheel-circle-behind-crank-D';
-    crankDisk.add(dash);
-  }
-  crankDisk.position.copy(crankCenter);
-  crankDisk.position.z = -0.30;
-  crankDisk.userData.role = 'dotted-flywheel-circle-behind-crank-D';
-  root.add(crankDisk);
+  // Brown's dotted circle round D is notation (the crank's sweep, or a
+  // flywheel hidden behind the casing); it is not drawn.
   // The throw and pin run in front of the bottom cylinder's end wall.
   const crankArm = new THREE.Mesh(
     new THREE.BoxGeometry(crankRadius, 0.24, 0.30),
@@ -775,7 +776,9 @@ function doubleQuadrantEngine(movement) {
     bottomFixedPivot.clone().add(new THREE.Vector3(-0.26, -4.92, -0.04)),
   ], 0.13, frameMaterial,
   'bottom-passage-from-single-induction-valve-a-to-outer-steam-space');
-  root.add(topAdmissionPassage, bottomAdmissionPassage);
+  // The top passage is the gap between the casing and the top quadrant
+  // wall in the thick casting; only the right-hand passage is a pipe.
+  root.add(bottomAdmissionPassage);
 
   const inletPipe = new THREE.Mesh(
     new THREE.CylinderGeometry(0.22, 0.22, 1.18, 24),
@@ -801,7 +804,8 @@ function doubleQuadrantEngine(movement) {
     new THREE.Vector3(-2.20, -4.92, -0.18),
   ], 0.17, frameMaterial,
   'exhaust-passage-from-common-space-between-pistons');
-  root.add(exhaustPipe);
+  // Brown draws no separate exhaust pipe; the common space exhausts through
+  // the casting, so the pipe is not added to the scene.
 
   const topAdmissionIndicator = new THREE.Mesh(
     new THREE.SphereGeometry(0.18, 24, 16),
@@ -859,6 +863,8 @@ function doubleQuadrantEngine(movement) {
       bottomChamberBack,
       bottomConnectingRod,
       bottomCylinderWall,
+      casingBackWall,
+      casingWall,
       bottomEndWall,
       bottomPiston: bottomPistonParts.group,
       bottomPistonArm: bottomPistonParts.arm,
@@ -867,17 +873,14 @@ function doubleQuadrantEngine(movement) {
       centralExhaustSpace,
       commonCrankPin,
       crankArm,
-      crankDisk,
       crankRotor,
       crankShaft,
-      exhaustPipe,
       foundation,
       inductionValveA,
       inletPipe,
       leftPedestal,
       rightPedestal,
       topAdmissionIndicator,
-      topAdmissionPassage,
       topChamberBack,
       topConnectingRod,
       topCylinderWall,

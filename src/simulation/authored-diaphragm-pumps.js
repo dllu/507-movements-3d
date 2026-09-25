@@ -351,6 +351,9 @@ function diaphragmForcePump(movement) {
         darkMaterial,
       ), `flexing-diaphragm-concentric-seam-${index + 1}`);
       seam.position.x = diaphragmCenterX;
+      // Plate ink only: Brown draws no seams on the diaphragm.
+      seam.visible = false;
+      seam.userData.retiredInkOutline = true;
       root.add(seam);
       return { radius, seam };
     },
@@ -482,9 +485,13 @@ function diaphragmForcePump(movement) {
   const suctionMouth = horizontalRing(0.30, 0.055, darkMaterial);
   suctionMouth.position.set(0, -2.05, 0.38);
   root.add(suctionMouth);
+  suctionMouth.visible = false;
+  suctionMouth.userData.retiredInkOutline = true;
   const deliveryMouth = horizontalRing(0.32, 0.055, darkMaterial);
   deliveryMouth.position.set(2.02, 3.34, 0.38);
   root.add(deliveryMouth);
+  deliveryMouth.visible = false;
+  deliveryMouth.userData.retiredInkOutline = true;
 
   const makeCheckValve = (position, material, role) => {
     const body = addRole(new THREE.Mesh(

@@ -236,6 +236,9 @@ function adjustableMirrorStand(movement) {
   socketBoreWitness.rotation.x = Math.PI / 2;
   socketBoreWitness.position.y = socketTopY + 0.035;
   socketBoreWitness.userData.role = 'visible-annular-stem-socket-bore';
+  // Traced a drawn edge only: hidden reference, not a dark rim.
+  socketBoreWitness.visible = false;
+  socketBoreWitness.userData.retiredInkOutline = true;
   base.add(socketBoreWitness);
 
   const socketSetScrew = new THREE.Group();
@@ -583,6 +586,9 @@ function adjustableMirrorStand(movement) {
   root.userData.cameraFov = 14;
   fitPistonGuide(root, update, demonstrationPeriod);
   markShadows(root);
+  // The hinge bracket's shadow aliased into stair-stepped patches on the
+  // glass and frame face; the mirror assembly takes no cast shadow.
+  mirrorAssembly.traverse((object) => { object.receiveShadow = false; });
   return {
     cameraDirection: new THREE.Vector3(-1.6, 0.4, 10.2),
     root,

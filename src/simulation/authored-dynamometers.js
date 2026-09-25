@@ -152,6 +152,8 @@ export function makePitchConeGear({
   );
   faceRing.position.z = outerDistance + 0.018;
   faceRing.userData.role = 'miter-gear-face-index-ring';
+  faceRing.visible = false;
+  faceRing.userData.retiredInkOutline = true;
   rotor.add(faceRing);
   const faceIndex = new THREE.Mesh(
     new THREE.BoxGeometry(

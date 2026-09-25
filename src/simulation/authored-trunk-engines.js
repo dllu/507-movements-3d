@@ -7,7 +7,8 @@ import {
 } from './primitives.js';
 
 import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
-import { sectionedCylinder, engineRod, annularSector } from './steam-engine-parts.js';
+import { engineRod, annularSector } from './steam-engine-parts.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -222,18 +223,22 @@ function trunkEngine(movement) {
   const fixedCylinder = new THREE.Group();
   fixedCylinder.userData.role = 'fixed-cutaway-steam-cylinder';
   const cylinderHeight = cylinderHeadY - cylinderBottomY;
+  // A round cast barrel, sectioned by one clean front window so the piston
+  // and trunk show as in Brown's section while the piston stays enclosed
+  // when the view is turned.
+  const barrelInnerRadius = pistonRadius + 0.015;
+  const barrelOuterRadius = cylinderRadius + 0.14;
+  const sectionHalfAngle = THREE.MathUtils.degToRad(64);
+  const frontAngle = -Math.PI / 2;
+  const barrelAlongY = (inner, start, end, depth) => {
+    const geometry = annularSector(inner, barrelOuterRadius, start, end, depth);
+    geometry.rotateX(-Math.PI / 2);
+    return geometry;
+  };
   const backShell = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      cylinderRadius,
-      cylinderRadius,
-      cylinderHeight,
-      64,
-      1,
-      true,
-      Math.PI / 2,
-      Math.PI,
-    ),
-    shellMaterial,
+    barrelAlongY(barrelInnerRadius, frontAngle + sectionHalfAngle,
+      frontAngle + FULL_TURN - sectionHalfAngle, cylinderHeight),
+    frameMaterial,
   );
   backShell.position.set(
     0,
@@ -242,40 +247,22 @@ function trunkEngine(movement) {
   );
   backShell.userData.role = 'sectioned-back-half-cylinder-wall';
   fixedCylinder.add(backShell);
-  for (const side of [-1, 1]) {
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(0.16, cylinderHeight, 1.58),
-      frameMaterial,
-    );
-    wall.position.set(
-      side * cylinderRadius,
-      (cylinderHeadY + cylinderBottomY) / 2,
-      -0.17,
-    );
-    wall.userData.role = 'sectioned-side-wall-of-cylinder';
-    fixedCylinder.add(wall);
-  }
   const lowerFlange = new THREE.Mesh(
-    new THREE.BoxGeometry(2.84, 0.20, 1.92),
+    new THREE.BoxGeometry(2.84, 0.20, 2.84),
     frameMaterial,
   );
-  lowerFlange.position.set(0, cylinderBottomY - 0.10, -0.10);
+  lowerFlange.position.set(0, cylinderBottomY - 0.10, 0);
   lowerFlange.userData.role = 'lower-cylinder-flange';
   fixedCylinder.add(lowerFlange);
   for (const side of [-1, 1]) {
     const headHalf = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        cylinderRadius - trunkOuterRadius - 0.07,
-        0.22,
-        1.92,
-      ),
+      side > 0
+        ? barrelAlongY(trunkOuterRadius + 0.07, frontAngle + sectionHalfAngle, Math.PI / 2, 0.22)
+        : barrelAlongY(trunkOuterRadius + 0.07, Math.PI / 2,
+          frontAngle + FULL_TURN - sectionHalfAngle, 0.22),
       frameMaterial,
     );
-    headHalf.position.set(
-      side * (cylinderRadius + trunkOuterRadius + 0.07) / 2,
-      cylinderHeadY,
-      -0.10,
-    );
+    headHalf.position.set(0, cylinderHeadY, 0);
     headHalf.userData.role =
       'fixed-cylinder-head-half-around-trunk-opening';
     fixedCylinder.add(headHalf);
@@ -332,33 +319,23 @@ function trunkEngine(movement) {
   crankPinMarker.userData.role = 'white-upper-crank-pin';
   crankWheel.userData.rotor.add(crankPinMarker);
   root.add(crankWheel);
-  // Brown's dotted circle: the crank-pin path round the crank centre, drawn
-  // as short dashes behind the crank throw.
-  const dottedCrankCircle = new THREE.Group();
-  dottedCrankCircle.userData.role = 'dotted-crank-pin-path-circle';
-  const dashCount = 28;
-  for (let index = 0; index < dashCount; index += 1) {
-    const angle = FULL_TURN * (index + 0.25) / dashCount;
-    const dash = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.018, 0.018, crankRadius * FULL_TURN / dashCount * 0.5, 6),
-      darkMaterial,
-    );
-    dash.position.set(crankRadius * Math.cos(angle), crankRadius * Math.sin(angle), 0);
-    dash.rotation.z = angle;
-    dash.userData.role = 'dotted-crank-pin-path-circle';
-    dottedCrankCircle.add(dash);
-  }
-  dottedCrankCircle.position.copy(crankCenter);
-  dottedCrankCircle.position.z = -0.52;
-  root.add(dottedCrankCircle);
+  // Brown's dotted crank-pin circle is notation for the pin's path; it is
+  // not drawn.
 
   const pistonAndTrunk = new THREE.Group();
   pistonAndTrunk.userData.role =
     'single-translating-piston-and-attached-hollow-trunk';
-  const piston = new THREE.Mesh(
-    sectionedCylinder(pistonRadius, pistonThickness, 0.22),
-    pistonMaterial,
-  );
+  // The piston is cut by the same front section as the barrel, so it never
+  // stands proud of the casing when the view is turned.
+  const sectionWedgeReach = 3;
+  const pistonGeometry = plate(polygonClipping.difference(
+    poly(circle([0, 0], pistonRadius, 128)),
+    poly([[0, 0], [-sectionWedgeReach * Math.sin(sectionHalfAngle), -sectionWedgeReach * Math.cos(sectionHalfAngle)],
+      [0, -sectionWedgeReach], [sectionWedgeReach * Math.sin(sectionHalfAngle), -sectionWedgeReach * Math.cos(sectionHalfAngle)]]),
+    poly([[-0.22, -pistonRadius - 1], [0.22, -pistonRadius - 1], [0.22, 0.16], [-0.22, 0.16]]),
+  ), -pistonThickness / 2, pistonThickness / 2);
+  pistonGeometry.rotateX(-Math.PI / 2);
+  const piston = new THREE.Mesh(pistonGeometry, pistonMaterial);
   piston.userData.role = 'vertical-sliding-piston';
   pistonAndTrunk.add(piston);
   for (const side of [-1, 1]) {

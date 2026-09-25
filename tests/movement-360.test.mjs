@@ -77,8 +77,11 @@ test('movement 360 separates the loose oscillating drum from the shaft-fast ratc
   assert.equal(blocks.counterweightCord.parent, model.root);
   assert.equal(blocks.driveCord.userData.closed, false);
   assert.equal(blocks.counterweightCord.userData.closed, false);
-  assert.equal(blocks.driveCord.userData.markers.length, 7);
-  assert.equal(blocks.counterweightCord.userData.markers.length, 4);
+  // Brown hatches both cords: shared laid rope, no painted markers.
+  for (const cord of [blocks.driveCord, blocks.counterweightCord]) {
+    assert.equal(cord.userData.markers.length, 0);
+    assert.equal(cord.userData.crossSection, 'laid-rope');
+  }
 
   const roles = [];
   model.root.traverse((object) => {
@@ -315,7 +318,7 @@ test('movement 360 renderer binds both cord ends and all rotating bodies to thei
       new THREE.Vector3(
         expected.counterweightCord.tangentX,
         expected.counterweightCord.tailY,
-        geometry.cordZ,
+        expected.counterweightCord.z,
       ),
       3e-12,
       `counterweight tail at ${time}`,
@@ -324,15 +327,8 @@ test('movement 360 renderer binds both cord ends and all rotating bodies to thei
     for (const cord of [blocks.driveCord, blocks.counterweightCord]) {
       near(cord.userData.length, cord.userData.materialLength, 2e-12,
         `material cord length at ${time}`);
-      const divisor = cord.userData.markers.length + 1;
-      cord.userData.markers.forEach((marker, index) => {
-        vectorNear(
-          marker.position,
-          cord.userData.curve.getPointAt((index + 1) / divisor),
-          2e-12,
-          `fixed marker ${index} at ${time}`,
-        );
-      });
+      // Both ends are tied: the lay keeps its material coordinate.
+      assert.equal(cord.children.at(-1).geometry.userData.travel, 0);
       const positions = cord.children.at(-1).geometry.attributes.position;
       for (const value of positions.array) assert.ok(Number.isFinite(value));
     }
@@ -340,7 +336,7 @@ test('movement 360 renderer binds both cord ends and all rotating bodies to thei
   disposeModel(model.root);
 });
 
-test('movement 360 cord markers remain continuous for 1,200 rendered frames and close exactly', () => {
+test('movement 360 cord material points remain continuous for 1,200 rendered frames and close exactly', () => {
   const model = createMovementModel(catalog.movements[359]);
   const data = model.root.userData;
   const { blocks, geometry } = data;
@@ -356,10 +352,11 @@ test('movement 360 cord markers remain continuous for 1,200 rendered frames and 
     model.update(time);
     if (data.currentState.pawlMode.startsWith('driving')) drivingFrames += 1;
     else overrunningFrames += 1;
+    // Fixed material points on the laid cords (formerly marker spheres).
     const positions = [
-      ...blocks.driveCord.userData.markers,
-      ...blocks.counterweightCord.userData.markers,
-    ].map((marker) => marker.position.clone());
+      ...[1, 2, 3, 4, 5, 6, 7].map((i) => blocks.driveCord.userData.curve.getPointAt(i / 8)),
+      ...[1, 2, 3, 4].map((i) => blocks.counterweightCord.userData.curve.getPointAt(i / 5)),
+    ];
     if (frame === 0) {
       positions.forEach((position) => initialPositions.push(position.clone()));
     }

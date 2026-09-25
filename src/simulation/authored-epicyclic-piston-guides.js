@@ -277,6 +277,9 @@ function FixedAnnulusAndFrame({
   annulusOuterBand.position.z = gearPlaneZ + fixedRingDepth / 2 + 0.025;
   annulusOuterBand.userData.fixed = true;
   annulusOuterBand.userData.role = 'fixed-outer-band-of-gear-D';
+  // Only the drawn outer edge of D: hidden reference, not a dark rim.
+  annulusOuterBand.visible = false;
+  annulusOuterBand.userData.retiredInkOutline = true;
 
   const centralBearing = cylinderAlongZ(
     0.88 * sourceScale,

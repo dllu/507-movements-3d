@@ -128,7 +128,7 @@ export function whitePulleys() {
   const nominalRopeLength = initialPath.curve.getLength();
   // About 25 units of rope wrap grooves as small as 0.145: the default 128
   // tube segments cut chords 0.03 deep into the treads, so sample finely.
-  const rope = makeDynamicMovingBelt(initialPath.curve, { closed: false, radius: ropeRadius, markerCount: 0,
+  const rope = makeDynamicMovingBelt(initialPath.curve, { closed: false, radius: ropeRadius, markerCount: 0, laid: true,
     tubularSegments: 1536 });
   rope.userData.mechanismRope = true;
   root.add(top, bottom, topHanger, bottomHanger, rope);

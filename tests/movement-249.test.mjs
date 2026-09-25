@@ -335,10 +335,8 @@ test('movement 249 renderer exposes the bores, socket split, bolts, and exact ri
     blocks.lowerBoreLiner.userData.role,
     'visible-inner-wall-of-fixed-lower-bore',
   );
-  assert.equal(
-    blocks.orientationIndex.userData.role,
-    'white-rigid-orientation-index-on-upper-tube',
-  );
+  assert.equal(blocks.orientationIndex, undefined,
+    'Brown draws the upper tube without an orientation stripe');
   for (const bolt of blocks.clampBolts) {
     assert.equal(bolt.userData.fixed, true);
     assert.equal(bolt.children.length, 3);

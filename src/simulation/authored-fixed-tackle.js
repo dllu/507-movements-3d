@@ -83,7 +83,7 @@ export function twoFixedOneMovable() {
   };
   const initial = pathAt(0);
   const nominalRopeLength = initial.curve.getLength();
-  const rope = makeDynamicMovingBelt(initial.curve, { closed: false, radius: 0.032, markerCount: 0 });
+  const rope = makeDynamicMovingBelt(initial.curve, { closed: false, radius: 0.032, markerCount: 0, laid: true });
   rope.userData.mechanismRope = true;
   root.add(rope);
   const definitions = {

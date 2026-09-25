@@ -29,7 +29,8 @@ export function makeSelectableCamValve(){
  const add=(name,geometry,parent,color)=>{const mesh=new THREE.Mesh(geometry,materials[color]);mesh.name=name;parent.add(mesh);parts[name]=mesh;return mesh;};
  // Dispose removed geometry only: its materials are shared by retained parts.
  const detachedMaterials=new Set();
- const remove=o=>{o.removeFromParent();o.traverse(p=>{p.geometry?.dispose();for(const m of [p.material].flat())if(m)detachedMaterials.add(m);});};
+ // Parts retired upstream (e.g. the former dark pivot ring) may be absent.
+ const remove=o=>{if(!o)return;o.removeFromParent();o.traverse(p=>{p.geometry?.dispose();for(const m of [p.material].flat())if(m)detachedMaterials.add(m);});};
  for(const o of [b.valveSlider.root,b.valveGuide,b.leverBody,b.leverPivotFace,b.leverPivotRing,b.leverIndex,b.followerRoller.face,b.followerRoller.cap,b.followerRoller.index])remove(o);
  const retainedMaterials=new Set();root.traverse(o=>{for(const m of [o.material].flat())if(m)retainedMaterials.add(m);});
  for(const m of detachedMaterials)if(!retainedMaterials.has(m))m.dispose();
@@ -71,6 +72,8 @@ export function makeSelectableCamValve(){
  // turned away from the viewer, so the stack read as blurred discs.
  // Presentation-only copies outline the viewer-side faces (no mass).
  for(const record of b.camRecords){
+  // The dark cam outlines are retired (no black rims); nothing to mirror.
+  if(!record.outline)continue;
   // Mirrored onto the viewer-side face and sunk so it stands only 0.008
   // proud: the lever runs in the 0.06 gap beside a cam's face.
   const copy=record.outline.clone();copy.scale.z=-1;copy.position.z=.016;copy.userData={...record.outline.userData,role:record.outline.userData.role.replace('outline','front-outline'),presentationOnly:true};

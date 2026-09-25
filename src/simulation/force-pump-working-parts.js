@@ -83,16 +83,29 @@ export function correctForcePumpParts(root,id){
     replace(b.pumpDeliveryPipe,curvedPipeWall(inlet,.215,.27,96));
     replace(b.pumpDeliveryWater,new THREE.TubeGeometry(inlet,96,.18,16,false));
     replace(b.chamberNeck,portedBarrel(.475,.53,.40,1.20,.95,.23,-1));b.chamberNeck.position.set(x,0,0);
-    const outer=[[1.20,.53],[1.70,.82],[2.15,1.17],[2.90,.92],[3.40,.28]];
-    const inner=outer.map(([y,r])=>[y,r-.055]);
+    // Brown's vessel is a smooth bulb: a rounded bottom rising from the neck
+    // to its widest girth, closed by an elliptical dome round the dip tube.
+    // Dense sampling keeps the piecewise-linear volume law while the
+    // rendered outline reads round.
+    const vessel=wall=>{
+      const points=[],girth=.98-wall,topR=.28-wall;
+      for(let i=0;i<=24;i++){const a=Math.PI/2*i/24;points.push([2.55-(1.35-wall)*Math.cos(a),.53-wall+.45*Math.sin(a)]);}
+      const end=Math.acos(topR/girth);
+      for(let i=1;i<=24;i++){const a=end*i/24;points.push([2.55+(1.15-wall)*Math.sin(a),girth*Math.cos(a)]);}
+      return points;
+    };
+    const outer=vessel(0);
+    const inner=vessel(.055);
     replace(b.chamberShell,horizontalTurned([...outer,...inner.slice().reverse()]));b.chamberShell.position.set(x,0,0);b.chamberShell.scale.set(1,1,1);
     b.deliveryValveSeat.position.x=x;b.deliveryValveDisk.position.x=x;
     replace(b.deliveryValveSeat,horizontalRing(.24,.475,-.055,.035));b.deliveryValveSeat.rotation.set(0,0,0);
-    const profile=[[.40,.453],[1.20,.453],...inner.slice(1).map(([y,r])=>[y,r-.022])];
+    const profile=[[.40,.453],[1.30,.453],...vessel(.077).filter(([y])=>y>1.31)];
     liquid=chamberContents(b.chamberWater,profile);gas=chamberContents(b.compressedAir,profile);
     b.chamberWater.position.x=x;b.compressedAir.position.x=x;b.compressedAir.material.opacity=.14;
     d.chamberEnvelope={profile,...liquid};
-    const side=new THREE.CatmullRomCurve3([new THREE.Vector3(x,.95,0),new THREE.Vector3(-1.90,.95,0),new THREE.Vector3(-2.28,1.33,0),new THREE.Vector3(-2.28,2.75,0)]);
+    // Brown's side outlet leaves the neck, sweeps down under the bulb's
+    // rounded bottom and rises beside it: an S with the vessel's own curve.
+    const side=new THREE.CatmullRomCurve3([[x,.95],[x-.62,.95],[x-1.08,.72],[x-1.40,1.00],[x-1.47,1.60],[x-1.47,2.75]].map(([px,py])=>new THREE.Vector3(px,py,0)),false,'centripetal');
     replace(b.selectedOutlet,curvedPipeWall(side,.17,.24,80));replace(b.selectedOutletWater,new THREE.TubeGeometry(side,80,.15,14,false));output=side;
     const dip=new THREE.LineCurve3(new THREE.Vector3(x,1.25,0),new THREE.Vector3(x,4.10,0));
     replace(b.alternativeOutlet,curvedPipeWall(dip,.145,.20,32));b.alternativeCap.position.set(x,4.15,0);

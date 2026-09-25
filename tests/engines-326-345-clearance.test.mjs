@@ -30,7 +30,8 @@ test('327: flywheel runs behind the crossbeam and columns for the whole revoluti
   const model = createMovementModel(movements[326]);
   try {
     const b = model.root.userData.blocks;
-    const fixed = [b.topBeam, ...b.topBeamBands, b.leftGuideBarA, b.rightGuideBarA];
+    assert.equal(b.topBeamBands, undefined, 'no decorative ink lines across the crossbeam');
+    const fixed = [b.topBeam, b.leftGuideBarA, b.rightGuideBarA];
     const rotating = [b.flywheelRim, ...b.flywheelSpokes];
     for (let i = 0; i <= 32; i += 1) {
       model.update(period(model) * i / 32); model.root.updateMatrixWorld(true);

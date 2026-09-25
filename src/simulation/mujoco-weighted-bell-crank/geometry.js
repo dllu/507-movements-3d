@@ -12,7 +12,6 @@ export function makeSupportedWeightedBellCrank(){
  replace(b.diskBody,ring(.134,g.diskRadius,-g.diskDepth/2,g.diskDepth/2,128));
  replace(b.diskHub,ring(.134,g.hubRadius,.10,.24,96));
  replace(b.diskHubFace,ring(.134,g.hubRadius*.48,-.020,.018,96));
- replace(b.diskRim,plate(clip.difference(poly(circle([0,0],g.diskRadius,128)),poly(circle([0,0],g.diskRadius-.035,128)),...b.pinAssemblies.map(a=>poly(circle([a.position.x,a.position.y],g.studRadius+.0001,96)))),-.018,.007));
  for(const assembly of b.pinAssemblies){const {pin,face}=assembly.userData.blocks;replace(pin,disk(g.studRadius,.13-pin.position.z,g.studFrontZ-pin.position.z,96));replace(face,disk(g.studRadius*.72,-.022,.020,96));}
  replace(b.leverPivotCollar,ring(.114,g.leverPivotRadius,-.18,.18,96));
  replace(b.leverPivotFace,ring(.114,g.leverPivotRadius*.52,-.035,0,96));

@@ -71,9 +71,11 @@ function makeTriangularPlate({
   group.userData.holeRadius = holeRadius;
   group.userData.solidDepth = depth;
 
+  // Brown inks the plate's edges only because it is a line drawing: the
+  // side walls share the plate's own colour.
   const body = new THREE.Mesh(geometry, [
     matte(color, { metalness: 0.08, roughness: 0.66 }),
-    matte(PALETTE.ink, { metalness: 0.12, roughness: 0.58 }),
+    matte(color, { metalness: 0.08, roughness: 0.66 }),
   ]);
   body.userData.role = `${role}-solid-with-through-handling-hole`;
   body.userData.isRigidBody = true;
@@ -84,6 +86,8 @@ function makeTriangularPlate({
   );
   outline.userData.noShadow = true;
   outline.userData.role = `${role}-source-outline`;
+  outline.visible = false; // ink edge line only: kept for references, not drawn
+  outline.userData.retiredInkOutline = true;
 
   const holeRings = [];
   group.add(body, outline);
@@ -162,7 +166,7 @@ function makeRulerPlate({
 
   const body = new THREE.Mesh(geometry, [
     matte(PALETTE.driven, { metalness: 0.08, roughness: 0.66 }),
-    matte(PALETTE.ink, { metalness: 0.12, roughness: 0.58 }),
+    matte(PALETTE.driven, { metalness: 0.08, roughness: 0.66 }),
   ]);
   body.userData.role = 'rigid-straight-ruler-B-with-two-wheel-apertures';
   body.userData.isRigidBody = true;
@@ -172,6 +176,8 @@ function makeRulerPlate({
   );
   outline.userData.noShadow = true;
   outline.userData.role = 'source-outline-of-straight-ruler-B';
+  outline.visible = false; // ink edge line only: kept for references, not drawn
+  outline.userData.retiredInkOutline = true;
   group.add(body, outline);
   group.userData.body = body;
   group.userData.outline = outline;
@@ -236,6 +242,8 @@ function makeNickedWheel({ radius, role, station, width }) {
     const ring = ringAroundX(radius - 0.031, 0.031, darkMaterial);
     ring.position.x = side * (width / 2 + 0.012);
     ring.userData.role = `${role}-side-rim`;
+    ring.visible = false; // ink edge line only: kept for references, not drawn
+    ring.userData.retiredInkOutline = true;
     group.add(ring);
     return ring;
   });
@@ -1408,6 +1416,8 @@ function graduatedArcParallelRuler(movement) {
       );
       rail.position.z = side * bladeWidth / 2;
       rail.userData.role = `${role}-straight-drawing-edge`;
+      rail.visible = false; // ink edge line only: kept for references, not drawn
+      rail.userData.retiredInkOutline = true;
       rail.userData.side = side;
       group.add(rail);
       return rail;

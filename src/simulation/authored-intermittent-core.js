@@ -19,7 +19,6 @@ import {
   snapCounterMotionFingerprint,
   starOutline,
 } from './snap-counter-63-mechanism.js';
-import { makeHiddenInkLine } from './hidden-ink-lines.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -43,38 +42,6 @@ function finish(root, update, cameraDirection = new THREE.Vector3(6.4, 4.4, 8.6)
   root.userData.fidelity = 'authored';
   markShadows(root);
   return { root, update, cameraDirection };
-}
-
-// Brown breaks some rotating parts off with an irregular line. The break is
-// fixed in the world while the part turns, so it is drawn by discarding
-// fragments below a wavy world-space line rather than by cutting geometry.
-function applyWorldBreakBelow(material, { amplitude, level, wavelength }) {
-  const broken = material.clone();
-  broken.side = THREE.DoubleSide;
-  broken.userData.worldBreakBelow = { amplitude, level, wavelength };
-  broken.onBeforeCompile = (shader) => {
-    shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
-      .replace(
-        '#include <project_vertex>',
-        '#include <project_vertex>\nvBreakWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;',
-      );
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vBreakWorld;')
-      .replace(
-        '#include <clipping_planes_fragment>',
-        `#include <clipping_planes_fragment>
-        {
-          float k = 6.28318530718 / ${wavelength.toFixed(6)};
-          float breakY = ${level.toFixed(6)}
-            + ${amplitude.toFixed(6)} * (0.65 * sin(k * vBreakWorld.x + 0.7)
-              + 0.35 * sin(2.3 * k * vBreakWorld.x + 2.1));
-          if (vBreakWorld.y < breakY) discard;
-        }`,
-      );
-  };
-  broken.customProgramCacheKey = () => `world-break-${level}-${amplitude}-${wavelength}`;
-  return broken;
 }
 
 function centeredExtrusion(shape, depth) {
@@ -1964,24 +1931,23 @@ function snapActionStarCounter() {
   };
   const inkMaterial = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 });
 
-  // Depth layers, back to front, as Brown dashes them: the drop (its leg
-  // hidden behind the pin disk), the disk, the pawl, then the star in front
-  // of the pins' ends. The pins pass through the disk to reach both the
-  // drop's leg and the pawl's lobe; the pawl's nose steps forward into the
-  // star's plane, which the pins never reach.
+  // Depth layers, back to front, as Brown overlaps them: the drop (its leg
+  // behind the pin disk), the disk, then the pawl and the star in front of
+  // the pins' ends. The pins pass through the disk to reach both the drop's
+  // leg and the pawl's lobe. The pawl is one plate thick enough to reach
+  // from the pins' plane into the star's, which the pins never reach.
   const z = {
     dropBack: -0.62,
     dropFront: -0.54,
     diskBack: -0.48,
     diskFront: -0.26,
     pawlBack: -0.22,
-    pawlFront: -0.14,
-    screwHeadFront: -0.11,
+    pawlFront: 0.04,
+    screwHeadFront: 0.07,
     pinBack: -0.61,
     pinFront: -0.12,
     starBack: -0.09,
     starFront: 0.15,
-    noseFront: 0.12,
   };
 
   // Star: ten points on Brown's hatched shaft.
@@ -2033,112 +1999,16 @@ function snapActionStarCounter() {
   const drop = makePlanarRotor();
   drop.position.set(...toWorld(hinge).toArray(), 0);
   const dropMaterial = matte(PALETTE.brass, { metalness: 0.1, roughness: 0.65 });
-  // Brown dashes the drop's leg where it runs behind the pawl's lobe and
-  // the pin disk. The drop keeps its whole solid body (the leg is its working
-  // edge for the pins), but the part of it right of the lobe's inner edge and
-  // under the pawl's upper edge is not drawn: that zone is fixed to the pawl,
-  // so the drop shows solid exactly where it rises above the pawl, and the
-  // leg below never shows as a solid strip between the lobe and the disk.
-  // Its real edges inside the zone are drawn as Brown's dashed outline over
-  // the pawl and the disk.
-  const pawlRing = mechanism.pawlPlateOutline.map(([x, y]) => [x, -y]);
-  const pawlTopAt = (x) => {
-    let top = Infinity;
-    for (let i = 0; i < pawlRing.length; i += 1) {
-      const a = pawlRing[i];
-      const b = pawlRing[(i + 1) % pawlRing.length];
-      if ((a[0] - x) * (b[0] - x) > 0 || a[0] === b[0]) continue;
-      top = Math.min(top, a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]));
-    }
-    return top;
-  };
-  const zoneLeft = 717;
-  const zoneTop = [];
-  for (let x = zoneLeft; x <= 960; x += 3) {
-    const top = pawlTopAt(x);
-    if (Number.isFinite(top)) zoneTop.push([x, top + 3]);
-  }
-  const legZone = [[zoneLeft, 1000], ...zoneTop, [1150, zoneTop.at(-1)[1]], [1150, 1000]]
-    .map(([x, y]) => [x, -y]);
-  const legZoneInPawl = localRing(legZone, L.pawlPivot);
-  const zoneUniforms = {
-    legZone: { value: legZoneInPawl.map(([x, y]) => new THREE.Vector2(x, y)) },
-    legZoneFromWorld: { value: new THREE.Matrix4() },
-  };
-  const zoneCount = legZoneInPawl.length;
-  const clipOutsideLegZone = (material, keepInside) => {
-    const clipped = material.clone();
-    clipped.onBeforeCompile = (shader) => {
-      Object.assign(shader.uniforms, zoneUniforms);
-      shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nvarying vec3 vLegZoneWorld;')
-        .replace(
-          '#include <project_vertex>',
-          '#include <project_vertex>\nvLegZoneWorld = (modelMatrix * vec4(transformed, 1.0)).xyz;',
-        );
-      shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', `#include <common>
-          varying vec3 vLegZoneWorld;
-          uniform vec2 legZone[${zoneCount}];
-          uniform mat4 legZoneFromWorld;`)
-        .replace(
-          '#include <clipping_planes_fragment>',
-          `#include <clipping_planes_fragment>
-          {
-            vec2 p = (legZoneFromWorld * vec4(vLegZoneWorld, 1.0)).xy;
-            bool inside = false;
-            for (int i = 0, j = ${zoneCount - 1}; i < ${zoneCount}; j = i++) {
-              vec2 a = legZone[i];
-              vec2 b = legZone[j];
-              if ((a.y > p.y) != (b.y > p.y)
-                && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
-            }
-            if (inside != ${keepInside ? 'true' : 'false'}) discard;
-          }`,
-        );
-    };
-    clipped.customProgramCacheKey = () => `snap-counter-63-leg-zone-${keepInside}`;
-    return clipped;
-  };
-  const followPawl = () => {
-    zoneUniforms.legZoneFromWorld.value.copy(pawl.userData.rotor.matrixWorld).invert();
-  };
+  // The drop is one whole solid plate: its tail over the spring, the boss
+  // behind the pawl's ring, the arch over the star and the leg the pins lift,
+  // which runs behind the pawl's lobe and the pin disk.
   const dropBody = slab(
     ringShape(localRing(mechanism.dropOutline, hinge)),
     z.dropBack,
     z.dropFront,
-    clipOutsideLegZone(dropMaterial, false),
+    dropMaterial,
   );
   dropBody.userData.springDropBody = true;
-  dropBody.userData.legZone = legZone;
-  dropBody.onBeforeRender = followPawl;
-  // The drop's real edges from the top of the lobe round the leg to the
-  // arch, as one dashed run; only its part inside the zone is drawn.
-  const denseOutline = mechanism.dropOutline.flatMap((point, index, ring) => {
-    const next = ring[(index + 1) % ring.length];
-    const pieces = Math.max(1, Math.ceil(Math.hypot(next[0] - point[0], next[1] - point[1]) / 4));
-    return Array.from({ length: pieces }, (_, step) => [
-      point[0] + (next[0] - point[0]) * step / pieces,
-      point[1] + (next[1] - point[1]) * step / pieces,
-    ]);
-  });
-  const nearLeg = ([x]) => x > 690;
-  const firstAway = denseOutline.findIndex((point) => !nearLeg(point));
-  const legEdge = [];
-  for (let step = 1; step <= denseOutline.length; step += 1) {
-    const point = denseOutline[(firstAway + step) % denseOutline.length];
-    if (nearLeg(point)) legEdge.push(point);
-    else if (legEdge.length) break;
-  }
-  const legHiddenLine = makeHiddenInkLine(localRing(legEdge, hinge), {
-    dashSize: 0.06,
-    gapSize: 0.04,
-    role: 'dashed-hidden-outline-of-drop-leg',
-    width: 0.013,
-    z: z.pawlFront + 0.004,
-  });
-  legHiddenLine.material = clipOutsideLegZone(legHiddenLine.material, true);
-  legHiddenLine.onBeforeRender = followPawl;
   const [strikerX, strikerY] = localRing([mechanism.striker], hinge)[0];
   // Brown draws the striker, like the stop pin, as an open circle.
   const openPinMaterial = matte(PALETTE.white, { metalness: 0.12, roughness: 0.5 });
@@ -2168,11 +2038,11 @@ function snapActionStarCounter() {
   slot.rotation.z = -1.05;
   slot.position.set(pivotX, pivotY, z.screwHeadFront + 0.004);
   slot.userData.surfaceMarking = true;
-  drop.userData.rotor.add(dropBody, legHiddenLine, striker, strikerRim, screwShank, screwHead, slot);
+  drop.userData.rotor.add(dropBody, striker, strikerRim, screwShank, screwHead, slot);
   drop.userData.role = 'spring-carried-drop';
 
-  // The broad hooked pawl hangs on the screw; its nose steps forward into
-  // the star's plane.
+  // The broad hooked pawl hangs on the screw: one plate with Brown's smooth
+  // outline, deep enough for its nose to work in the star's plane.
   const pawl = makePlanarRotor();
   pawl.position.set(pivotX, pivotY, 0);
   const pawlMaterial = matte(PALETTE.accent, { metalness: 0.08, roughness: 0.67 });
@@ -2184,9 +2054,7 @@ function snapActionStarCounter() {
     pawlMaterial,
   );
   pawlBody.userData.pawlBody = true;
-  const pawlNose = slab(ringShape(localRing(mechanism.noseOutline, L.pawlPivot)), z.pawlBack, z.noseFront, pawlMaterial);
-  pawlNose.userData.pawlNose = true;
-  pawl.userData.rotor.add(pawlBody, pawlNose);
+  pawl.userData.rotor.add(pawlBody);
   pawl.userData.role = 'broad-hooked-pawl-on-drop';
   drop.userData.rotor.add(pawl);
 
@@ -2293,7 +2161,6 @@ function snapActionStarCounter() {
     driver,
     driverShaft,
     drop,
-    legHiddenLine,
     pawl,
     springLeaf,
     star,
@@ -4984,13 +4851,6 @@ function opposedSpringSectorCrownRatchet() {
     hub.rotation.x = Math.PI / 2;
     hub.userData.crownWheelHubD = true;
     rotor.add(hub);
-    const inset = new THREE.Mesh(
-      new THREE.TorusGeometry(wheelPitchRadius * 0.56, 0.035, 8, 64),
-      darkMaterial,
-    );
-    inset.position.z = toothBaseFace + 0.015;
-    inset.userData.crownWheelFaceInset = true;
-    rotor.add(inset);
     const indicator = new THREE.Mesh(
       new THREE.BoxGeometry(wheelPitchRadius * 0.72, 0.065, 0.03),
       matte(PALETTE.white, { roughness: 0.48 }),
@@ -5071,13 +4931,6 @@ function opposedSpringSectorCrownRatchet() {
     );
     hub.userData.sectorHubFastOnRockshaftB = true;
     rotor.add(hub);
-    const hubRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.3, 0.038, 8, 36),
-      darkMaterial,
-    );
-    hubRing.position.z = sectorDepth * 0.65;
-    hubRing.userData.sectorHubIndicator = true;
-    rotor.add(hubRing);
 
     const shoe = new THREE.Group();
     shoe.userData.springLiftedToothedShoeC = true;
@@ -5812,13 +5665,6 @@ function reversibleClickDiskCogIndex() {
     hub.rotation.x = Math.PI / 2;
     hub.userData.role = 'output-cog-hub';
     rotor.add(hub);
-    const faceRing = new THREE.Mesh(
-      new THREE.TorusGeometry(cogHubRadius * 0.72, 0.045, 9, 48),
-      inkMaterial,
-    );
-    faceRing.position.z = cogDepth / 2 + 0.035;
-    faceRing.userData.role = 'output-cog-face-ring';
-    rotor.add(faceRing);
     const indicator = new THREE.Mesh(
       new THREE.BoxGeometry(cogHubRadius * 0.72, 0.055, 0.035),
       indexMaterial,
@@ -5834,7 +5680,6 @@ function reversibleClickDiskCogIndex() {
     cog.userData.body = body;
     cog.userData.clockwiseFaces = clockwiseFaces;
     cog.userData.counterclockwiseFaces = counterclockwiseFaces;
-    cog.userData.faceRing = faceRing;
     cog.userData.hub = hub;
     cog.userData.indicator = indicator;
     cog.userData.mountPhase = cogMountPhase;
@@ -5855,13 +5700,6 @@ function reversibleClickDiskCogIndex() {
   );
   carrierBody.userData.role = 'large-source-proportioned-disk-wheel';
   carrierRotor.add(carrierBody);
-  const carrierRim = new THREE.Mesh(
-    new THREE.TorusGeometry(diskRadius, 0.045, 9, 80),
-    inkMaterial,
-  );
-  carrierRim.position.z = diskDepth / 2 + 0.025;
-  carrierRim.userData.role = 'outer-rim-of-oscillating-disk';
-  carrierRotor.add(carrierRim);
   const carrierSleeve = new THREE.Mesh(
     makeAnnulusGeometry(
       outputShaftRadius * 1.22,
@@ -5888,7 +5726,6 @@ function reversibleClickDiskCogIndex() {
   cogWheel.position.z = cogPlaneZ;
   cogWheel.userData.role = 'independently-rotating-coaxial-cog-wheel';
   const cogBody = cogWheel.userData.body;
-  const cogFaceRing = cogWheel.userData.faceRing;
   const cogHub = cogWheel.userData.hub;
   const cogIndicator = cogWheel.userData.indicator;
   const outputShaft = makeShaft({
@@ -5977,13 +5814,6 @@ function reversibleClickDiskCogIndex() {
     );
     body.userData.role = 'throw-over-hooked-click-body';
     click.add(body);
-    const pivotRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.19, 0.05, 9, 40),
-      inkMaterial,
-    );
-    pivotRing.position.z = pawlDepth / 2 + 0.025;
-    pivotRing.userData.role = 'click-pivot-eye';
-    click.add(pivotRing);
     const tipMarker = new THREE.Mesh(
       new THREE.SphereGeometry(0.055, 16, 12),
       indexMaterial,
@@ -5993,7 +5823,6 @@ function reversibleClickDiskCogIndex() {
     click.add(tipMarker);
     click.userData.body = body;
     click.userData.length = pawlLength;
-    click.userData.pivotRing = pivotRing;
     click.userData.role = 'reversible-click-attached-to-disk-wheel';
     click.userData.tipMarker = tipMarker;
     return click;
@@ -6004,7 +5833,6 @@ function reversibleClickDiskCogIndex() {
   pawl.rotation.z = forwardPawlMountAngle;
   carrierRotor.add(pawl);
   const pawlBody = pawl.userData.body;
-  const pawlPivotRing = pawl.userData.pivotRing;
   const pawlTipMarker = pawl.userData.tipMarker;
   const pawlPivotStud = new THREE.Mesh(
     new THREE.CylinderGeometry(0.09, 0.09, 0.74, 26),
@@ -6524,14 +6352,12 @@ function reversibleClickDiskCogIndex() {
     cameraEnvelope,
     carrierBody,
     carrierDisk,
-    carrierRim,
     carrierRotationIndex,
     carrierRotor,
     carrierSleeve,
     centerBearing,
     centerPost,
     cogBody,
-    cogFaceRing,
     cogHub,
     cogIndicator,
     cogRotor: cogWheel.userData.rotor,
@@ -6543,7 +6369,6 @@ function reversibleClickDiskCogIndex() {
     outputShaft,
     pawl,
     pawlBody,
-    pawlPivotRing,
     pawlPivotStud,
     pawlTipMarker,
     rodGuidePost,
@@ -6863,13 +6688,6 @@ function reciprocatingElbowPawlRatchetFeed() {
   );
   wheelBody.userData.role = 'source-proportioned-square-tooth-wheel-body';
   wheelRotor.add(wheelBody);
-  const wheelRootRing = new THREE.Mesh(
-    new THREE.TorusGeometry(wheelRootRadius, 0.035, 9, 80),
-    inkMaterial,
-  );
-  wheelRootRing.position.z = wheelDepth / 2 + 0.026;
-  wheelRootRing.userData.role = 'engraved-wheel-root-circle';
-  wheelRotor.add(wheelRootRing);
   const wheelHub = new THREE.Mesh(
     new THREE.CylinderGeometry(
       wheelHubRadius,
@@ -6882,13 +6700,6 @@ function reciprocatingElbowPawlRatchetFeed() {
   wheelHub.rotation.x = Math.PI / 2;
   wheelHub.userData.role = 'ratchet-output-hub';
   wheelRotor.add(wheelHub);
-  const hubRing = new THREE.Mesh(
-    new THREE.TorusGeometry(wheelBoreRadius, 0.065, 10, 56),
-    inkMaterial,
-  );
-  hubRing.position.z = wheelDepth * 0.72;
-  hubRing.userData.role = 'output-hub-face-ring';
-  wheelRotor.add(hubRing);
   const wheelIndex = makeBeam(
     new THREE.Vector3(wheelBoreRadius * 0.75, 0, wheelDepth * 0.73),
     new THREE.Vector3(wheelHubRadius * 0.78, 0, wheelDepth * 0.73),
@@ -6939,24 +6750,6 @@ function reciprocatingElbowPawlRatchetFeed() {
   );
   leverBody.userData.role = 'source-outline-elbow-lever-body';
   lever.add(leverBody);
-  const leverCenterRing = new THREE.Mesh(
-    new THREE.TorusGeometry(wheelBoreRadius * 1.02, 0.075, 10, 56),
-    inkMaterial,
-  );
-  leverCenterRing.position.z = leverDepth / 2 + 0.026;
-  leverCenterRing.userData.role = 'coaxial-elbow-pivot-ring';
-  lever.add(leverCenterRing);
-  const upperPivotRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.28, 0.065, 10, 44),
-    inkMaterial,
-  );
-  upperPivotRing.position.set(
-    0,
-    upperArmLength,
-    leverDepth / 2 + 0.028,
-  );
-  upperPivotRing.userData.role = 'single-throw-over-pawl-pivot-ring';
-  lever.add(upperPivotRing);
 
   const slotBack = makeBeam(
     new THREE.Vector3(
@@ -7033,13 +6826,6 @@ function reciprocatingElbowPawlRatchetFeed() {
   );
   pawlBody.userData.role = 'source-profile-hooked-pawl-body';
   pawl.add(pawlBody);
-  const pawlEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.22, 0.055, 9, 40),
-    inkMaterial,
-  );
-  pawlEye.position.z = pawlDepth / 2 + 0.024;
-  pawlEye.userData.role = 'pawl-pivot-eye';
-  pawl.add(pawlEye);
   const pawlTipMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 16, 12),
     whiteMaterial,
@@ -7580,7 +7366,6 @@ function reciprocatingElbowPawlRatchetFeed() {
     fixedFrame,
     guidePost,
     guideSupports,
-    hubRing,
     inputEye,
     inputGuides,
     inputMotionIndex,
@@ -7589,21 +7374,17 @@ function reciprocatingElbowPawlRatchetFeed() {
     inputStem,
     lever,
     leverBody,
-    leverCenterRing,
     outputShaft,
     pawl,
     pawlBody,
-    pawlEye,
     pawlPivotStud,
     pawlTipMarker,
     slotBack,
     slotLip,
-    upperPivotRing,
     wheel,
     wheelBody,
     wheelHub,
     wheelIndex,
-    wheelRootRing,
     wheelRotor,
   };
   root.userData.geometry = {
@@ -9262,20 +9043,13 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   driverBody.userData.role =
     'forty-position-wheel-with-eleven-teeth-and-plain-locking-rim';
   driverBody.userData.partialGearBody = true;
-  const driverEdge = makeProfileTube(
-    driverOutline,
-    driverDepth / 2 + 0.012,
-    0.014,
-    inkMaterial,
-    'driver-tooth-shoulder-and-plain-rim-outline',
-  );
   const driverHub = new THREE.Mesh(
     makeAnnulusGeometry(
       driverBoreRadius,
       2 * constructionScale,
       0.075,
     ),
-    inkMaterial,
+    driverMaterial,
   );
   driverHub.position.z = driverDepth / 2 + 0.025;
   driverHub.userData.role = 'driver-front-hub-ring';
@@ -9301,7 +9075,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   driverPin.userData.role = 'single-entry-driving-pin';
   driver.userData.rotor.add(
     driverBody,
-    driverEdge,
     driverHub,
     driverIndexTip,
     driverPin,
@@ -9320,20 +9093,13 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   pinionBody.userData.role =
     'sixteen-position-pinion-with-twelve-teeth-and-concave-lock-pocket';
   pinionBody.userData.partialGearBody = true;
-  const pinionEdge = makeProfileTube(
-    pinionOutline,
-    pinionDepth / 2 + 0.012,
-    0.014,
-    inkMaterial,
-    'pinion-teeth-and-concave-lock-outline',
-  );
   const pinionHub = new THREE.Mesh(
     makeAnnulusGeometry(
       pinionBoreRadius,
       1.375 * constructionScale,
       0.078,
     ),
-    inkMaterial,
+    pinionMaterial,
   );
   pinionHub.position.z = pinionDepth / 2 + 0.026;
   pinionHub.userData.role = 'pinion-front-hub-ring';
@@ -9342,7 +9108,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   pinionIndexTip.userData.role = 'pinion-index-tip';
 
   // The guide stands proud of the pinion face so it clears the driver's
-  // rim outline where it overhangs the plain rim.
+  // face where it overhangs the plain rim.
   const guideDepth = 0.14;
   const guideZ = pinionDepth / 2 + guideDepth / 2 + 0.005;
   const guidePiece = new THREE.Group();
@@ -9357,7 +9123,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   guidePiece.add(guideBody);
   pinion.userData.rotor.add(
     pinionBody,
-    pinionEdge,
     pinionHub,
     pinionIndexTip,
     guidePiece,
@@ -9735,7 +9500,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   root.userData.blocks = {
     driver,
     driverBody,
-    driverEdge,
     driverHub,
     driverIndexTip,
     driverPin,
@@ -9744,7 +9508,6 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     guidePiece,
     pinion,
     pinionBody,
-    pinionEdge,
     pinionHub,
     pinionIndexTip,
     pinionShaft,
@@ -10225,7 +9988,7 @@ function fiveSlotGenevaWindingStop() {
   const driverHub = new THREE.Mesh(
     // Brown's hub rings are about a quarter of each wheel's width.
     makeAnnulusGeometry(driverBoreRadius, 0.95 * constructionScale, 0.08),
-    inkMaterial,
+    driverMaterial,
   );
   driverHub.position.z = driverDepth / 2 + 0.026;
   driverHub.userData.role = 'driver-A-front-hub-ring';
@@ -10313,7 +10076,7 @@ function fiveSlotGenevaWindingStop() {
       0.97 * constructionScale,
       0.082,
     ),
-    inkMaterial,
+    stopWheelMaterial,
   );
   stopWheelHub.position.z = stopWheelDepth / 2 + 0.027;
   stopWheelHub.userData.role = 'stop-wheel-B-front-hub-ring';
@@ -11355,13 +11118,6 @@ function splitRimFacePinWindingStop() {
     'rear-plane-ratchet-wheel-not-meshed-to-stop-ring';
   driverBody.userData.ratchetToothCount = driverRatchetToothCount;
   driverBody.userData.directlyMeshesStopWheel = false;
-  const driverOutline = makeProfileTube({
-    material: inkMaterial,
-    points: driverRatchetOutline,
-    radius: 0.013,
-    role: 'twenty-two-saw-tooth-ratchet-outline',
-    z: driverPlaneZ + driverDepth / 2 + 0.012,
-  });
   const driverIndex = new THREE.Mesh(
     new THREE.BoxGeometry(1.02, 0.064, 0.028),
     whiteMaterial,
@@ -11381,7 +11137,6 @@ function splitRimFacePinWindingStop() {
   driverIndexTip.userData.role = 'winding-ratchet-index-tip';
   driver.userData.rotor.add(
     driverBody,
-    driverOutline,
     driverIndex,
     driverIndexTip,
   );
@@ -12091,7 +11846,6 @@ function splitRimFacePinWindingStop() {
     driverBody,
     driverIndex,
     driverIndexTip,
-    driverOutline,
     driverShaft,
     facePin,
     facePinCap,
@@ -15189,13 +14943,6 @@ function parallelogramLiftAndDrawPawlRatchet(movement) {
     );
     body.userData.role = 'twenty-square-tooth-output-wheel-body';
     rotor.add(body);
-    const hub = new THREE.Mesh(
-      new THREE.TorusGeometry(0.27, 0.07, 10, 40),
-      matte(PALETTE.ink, { metalness: 0.23, roughness: 0.49 }),
-    );
-    hub.position.z = wheelDepth / 2 + 0.025;
-    hub.userData.role = 'output-wheel-face-hub';
-    rotor.add(hub);
     const index = new THREE.Mesh(
       new THREE.BoxGeometry(0.055, wheelOuterRadius * 0.56, 0.026),
       matte(PALETTE.white, { roughness: 0.47 }),
@@ -16094,22 +15841,11 @@ function rollerAndLatchStopsForLanternWheel(movement) {
     metalness: 0.26,
     roughness: 0.48,
   });
-  // Brown breaks the wheel off below with an irregular line about 0.7 of
-  // its radius under the centre; the plates, rims and trundles stop there.
-  const wheelBreak = {
-    amplitude: 0.07,
-    level: -0.7 * wheelRadius,
-    wavelength: 1.15,
-  };
-  const brokenWheelMaterial = applyWorldBreakBelow(wheelMaterial, wheelBreak);
-  const brokenRimMaterial = applyWorldBreakBelow(darkMaterial, wheelBreak);
-  const brokenTrundleMaterial = applyWorldBreakBelow(
-    trundleMaterial,
-    wheelBreak,
-  );
+  // Brown breaks the wheel off below with an irregular line; that is his
+  // drawing convention, so the plates, rims and trundles are modelled whole.
   const rearPlate = new THREE.Mesh(
     new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.2, 80),
-    brokenWheelMaterial,
+    wheelMaterial,
   );
   rearPlate.rotation.x = Math.PI / 2;
   rearPlate.position.z = -0.24;
@@ -16118,14 +15854,6 @@ function rollerAndLatchStopsForLanternWheel(movement) {
   frontPlate.position.z = 0.18;
   frontPlate.userData.lanternWheelFrontPlate = true;
   wheelRotor.add(rearPlate, frontPlate);
-  for (const z of [-0.34, 0.28]) {
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(wheelRadius, 0.055, 10, 80),
-      brokenRimMaterial,
-    );
-    rim.position.z = z;
-    wheelRotor.add(rim);
-  }
   const trundles = Array.from({ length: trundleCount }, (_, index) => {
     const mountAngle = rollerGapAngle + halfPitch + index * trundlePitch;
     const trundle = new THREE.Mesh(
@@ -16135,7 +15863,7 @@ function rollerAndLatchStopsForLanternWheel(movement) {
         0.92,
         24,
       ),
-      brokenTrundleMaterial,
+      trundleMaterial,
     );
     trundle.rotation.x = Math.PI / 2;
     trundle.position.set(
@@ -16228,6 +15956,10 @@ function rollerAndLatchStopsForLanternWheel(movement) {
     darkMaterial,
   );
   rollerRim.position.z = 0.1;
+  // Brown's roller edge is only its outline: the ring stays (the 233 helper
+  // reads the rotor's children by position) but is not drawn.
+  rollerRim.visible = false;
+  rollerRim.userData.retiredInkOutline = true;
   rollerRotor.add(rollerRim);
   const rollerWitness = new THREE.Mesh(
     new THREE.BoxGeometry(rollerRadius * 0.72, 0.055, 0.025),
@@ -16273,12 +16005,6 @@ function rollerAndLatchStopsForLanternWheel(movement) {
   latchBody.position.z = 0.61;
   latchBody.userData.latchStopBody = true;
   latchStop.add(latchBody);
-  const latchPivotRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.18, 0.055, 9, 36),
-    darkMaterial,
-  );
-  latchPivotRing.position.z = 0.705;
-  latchStop.add(latchPivotRing);
   root.add(latchStop);
 
   const makePivotPin = (pivot, role) => {
@@ -18419,12 +18145,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       makeAnnulusGeometry(0.07, 0.14, 0.24),
       matte(PALETTE.driver, { metalness: 0.13, roughness: 0.58 }),
     );
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.142, 0.025, 8, 30),
-      matte(PALETTE.ink, { metalness: 0.21, roughness: 0.5 }),
-    );
-    ring.position.z = 0.13;
-    joint.add(hub, ring);
+    joint.add(hub);
     leverRotor.add(joint);
     return joint;
   });
@@ -20873,12 +20594,6 @@ function singleToothContinuousRatchetIndex(movement) {
   clickBody.userData.outlinePoints = holdingClickOutlinePoints;
   clickBody.userData.role = 'source-curved-holding-click-body';
   holdingClick.add(clickBody);
-  const clickRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.16, 0.045, 9, 36),
-    darkMaterial,
-  );
-  clickRing.position.z = 0.29;
-  holdingClick.add(clickRing);
   const clickWitness = new THREE.Mesh(
     new THREE.BoxGeometry(0.6, 0.045, 0.025),
     matte(PALETTE.white, { roughness: 0.47 }),

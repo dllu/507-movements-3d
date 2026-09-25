@@ -691,12 +691,6 @@ function leverEscapement(movement) {
   rollerDisk.rotation.x = Math.PI / 2;
   rollerDisk.position.z = rollerPlaneZ;
   rollerDisk.userData.role = 'balance-roller-disk-D';
-  const rollerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.84, 0.055, 10, 54),
-    darkMaterial,
-  );
-  rollerRim.position.z = rollerPlaneZ + 0.12;
-  rollerRim.userData.role = 'rim-of-balance-roller-disk-D';
   const pinOffset = new THREE.Vector2(
     Math.cos(balancePinMountAngle) * balancePinOrbitRadius,
     Math.sin(balancePinMountAngle) * balancePinOrbitRadius,
@@ -743,7 +737,6 @@ function leverEscapement(movement) {
   balanceIndex.userData.role = 'white-index-on-lever-balance';
   balance.add(
     rollerDisk,
-    rollerRim,
     impulsePin,
     balanceStaff,
     balanceRim,
@@ -1131,7 +1124,6 @@ function leverEscapement(movement) {
     pinContactMarker,
     rearStandard,
     rollerDisk,
-    rollerRim,
     wheelBearing,
     wheelHub,
     wheelIndex,

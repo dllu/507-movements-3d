@@ -535,6 +535,9 @@ function mercurialCompensationPendulum(movement) {
     const rim = torusAroundY(radius, 0.055, darkMaterial, 64);
     rim.position.y = y;
     rim.userData.role = 'glass-jar-protective-rim';
+    // Brown's ink edge of the glass/mercury only: kept, not drawn.
+    rim.visible = false;
+    rim.userData.retiredInkOutline = true;
     return rim;
   });
 
@@ -562,6 +565,9 @@ function mercurialCompensationPendulum(movement) {
   );
   mercuryMeniscus.renderOrder = 2;
   mercuryMeniscus.userData.role = 'mercury-meniscus-rim';
+  // Brown's ink edge of the glass/mercury only: kept, not drawn.
+  mercuryMeniscus.visible = false;
+  mercuryMeniscus.userData.retiredInkOutline = true;
 
   const hangerCrossbar = makeBeam(
     new THREE.Vector3(-1.34, jarLength / 2 + 0.20, 0),

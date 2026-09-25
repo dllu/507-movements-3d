@@ -560,6 +560,9 @@ function jonvalTurbine(movement) {
       waterMaterial,
       `continuous-axial-flow-path-through-guide-a-and-runner-c-${pathIndex + 1}`,
     );
+    // The path is kept as data for the drifting markers, but not drawn: a
+    // solid tube reads as a stiff rod, and Brown shows only a flow arrow.
+    tube.visible = false;
     root.add(tube);
     flowPathTubes.push(tube);
   }

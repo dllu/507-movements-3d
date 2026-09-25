@@ -27,8 +27,8 @@ test('395 sectioned passages are open through plug and housing at both indexed p
    const path=channel.userData.curve;
    for(let i=0;i<=64;i++){
     const p=path.getPoint(i/64);
-    assert.equal(plug.inside(p),false,'passage is cut out of the plug');
-    if(p.length()<g.plugRadius-1e-5)assert.equal(plug.inside(p.clone().setZ(-.19)),true,'finite rear floor');
+    for(const z of[-.12,.12])assert.equal(plug.inside(p.clone().setZ(z)),false,'passage is cut into both plug faces');
+    if(p.length()<g.plugRadius-1e-5)assert.equal(plug.inside(p),true,'finite mid-plane web');
    }
    for(const p of surfacePoints(channel.userData.flowCore.geometry))assert.ok(plug.signedDistance(p,.01)>-2e-6,'flow core clears the plug');
   }

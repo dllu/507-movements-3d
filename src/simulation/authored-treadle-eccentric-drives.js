@@ -1,5 +1,6 @@
 import {correctReciprocatingCordParts} from './reciprocating-cord-working-parts.js';
 import * as THREE from 'three';
+import { LaidRopeGeometry } from './laid-rope.js';
 import {
   PALETTE,
   makePulley,
@@ -499,6 +500,48 @@ function treadleEccentricBandDrive(movement) {
   rollerWrap.userData.role =
     'short-wrap-of-same-single-band-around-treadle-roller';
   belt.add(rollerWrap);
+  // Brown draws the endless band as a plain round cord: render it as one
+  // continuous three-strand laid rope along the same centreline (two arcs
+  // and two tangent runs). The four analytic pieces stay as hidden
+  // references for the contact checks.
+  const arcPoints = (center, radius, start, sweep, count) => Array.from(
+    { length: count + 1 },
+    (_, index) => {
+      const angle = start + sweep * index / count;
+      return new THREE.Vector3(
+        center.x + radius * Math.cos(angle),
+        center.y + radius * Math.sin(angle),
+        0,
+      );
+    },
+  );
+  const eccentricArc = arcPoints(new THREE.Vector2(0, 0),
+    eccentricPulleyRadius, tangentNormalAngle, eccentricWrapAngle, 96);
+  let rollerArc = arcPoints(new THREE.Vector2(pulleyCenterDistance, 0),
+    treadleRollerRadius, -tangentNormalAngle, rollerWrapAngle, 48);
+  // Run the loop the way the eccentric arc turns (counter-clockwise).
+  if (rollerArc[0].distanceTo(eccentricArc.at(-1))
+    > rollerArc.at(-1).distanceTo(eccentricArc.at(-1))) {
+    rollerArc = rollerArc.reverse();
+  }
+  const bandPath = new THREE.CurvePath();
+  const arcCurve = (points) => new THREE.CatmullRomCurve3(points, false,
+    'centripetal');
+  bandPath.add(arcCurve(eccentricArc));
+  bandPath.add(new THREE.LineCurve3(eccentricArc.at(-1), rollerArc[0]));
+  bandPath.add(arcCurve(rollerArc));
+  bandPath.add(new THREE.LineCurve3(rollerArc.at(-1), eccentricArc[0]));
+  const bandGeometry = new LaidRopeGeometry(bandPath, 512, beltTubeRadius,
+    8, true);
+  const band = new THREE.Mesh(bandGeometry, beltMaterial);
+  band.userData.role = 'one-continuous-laid-endless-band';
+  band.userData.crossSection = 'laid-rope';
+  belt.add(band);
+  for (const piece of [upperStraightRun, lowerStraightRun, eccentricWrap,
+    rollerWrap]) {
+    piece.visible = false;
+    piece.userData.retiredSegmentedBand = true;
+  }
   root.add(belt);
 
   const base = new THREE.Mesh(
@@ -572,6 +615,8 @@ function treadleEccentricBandDrive(movement) {
       beltPlaneZ,
     );
     belt.rotation.z = state.centerlineAngle;
+    // Material runs counter-clockwise round the eccentric in the band frame.
+    bandGeometry.setTravel(-state.beltTravel);
     root.userData.currentState = state;
     root.userData.beltContacts = state.contacts;
   };
@@ -596,6 +641,7 @@ function treadleEccentricBandDrive(movement) {
       upperRunTangentLocal,
     },
     blocks: {
+      band,
       base,
       belt,
       eccentricPulley,

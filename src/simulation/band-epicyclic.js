@@ -3,6 +3,7 @@ import { makeBandEpicyclicGearTrain } from './band-epicyclic-gears.js';
 import { bandProfileExtrusion } from './band-epicyclic-geometry.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { PALETTE, matte, markShadows, beltCurveOpen, beltCurveCrossed } from './primitives.js';
+import { LaidRopeGeometry } from './laid-rope.js';
 
 // Static clamped-span deflection under a concentrated crossover contact.
 // The two cords support one another; pulley grooves constrain end slopes.
@@ -90,20 +91,12 @@ export function makeBandEpicyclic(options = {}) {
   innerCurve.add(rawCrossed.curves[3]);
   const ropes = [];
   for (const [name, curve] of [['outerBelt', outerCurve], ['innerBelt', innerCurve]]) {
-    const geometry = new THREE.TubeGeometry(curve, 2048, p.ropeRadius, 16, true), length = curve.getLength();
-    const colors = new Float32Array(geometry.attributes.position.count * 3); geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    const mesh = add(name, new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.9, metalness: 0 })));
-    mesh.userData = { curve, length, radius: p.ropeRadius, isYarn: true };
-    const stripeCount = Math.round(length / 0.15), dark = new THREE.Color(0x25353c), light = new THREE.Color(0x83918b);
-    const updateDistance = distance => {
-      const uv = geometry.attributes.uv, color = geometry.attributes.color;
-      for (let i = 0; i < uv.count; i += 1) {
-        const phase = 2 * Math.PI * (stripeCount * (uv.getX(i) - distance / length) - 2 * uv.getY(i));
-        const shade = (Math.sin(phase) + 1) / 2, mix = shade ** 3 * 0.75;
-        color.setXYZ(i, dark.r + (light.r - dark.r) * mix, dark.g + (light.g - dark.g) * mix, dark.b + (light.b - dark.b) * mix);
-      }
-      color.needsUpdate = true;
-    };
+    // Brown hatches both bands as twisted cords: the shared three-strand laid
+    // rope, whose lay moves with the band material.
+    const geometry = new LaidRopeGeometry(curve, 2048, p.ropeRadius, 8, true), length = curve.getLength();
+    const mesh = add(name, new THREE.Mesh(geometry, matte(PALETTE.belt, { roughness: 0.76 })));
+    mesh.userData = { curve, length, radius: p.ropeRadius, crossSection: 'laid-rope', isYarn: true };
+    const updateDistance = distance => geometry.setTravel(distance);
     mesh.userData.updateDistance = updateDistance; ropes.push(updateDistance);
   }
   model.update = time => { gearUpdate(time); driver.rotation.z = p.inputSpeed * time; ropes.forEach(update => update(-p.inputSpeed * p.driverPitch * time)); };

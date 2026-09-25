@@ -558,11 +558,6 @@ function ellipticalDriverCompoundIdler(movement) {
     roughness: 0.59,
     side: THREE.DoubleSide,
   });
-  const accentMaterial = matte(PALETTE.brass, {
-    metalness: 0.16,
-    roughness: 0.57,
-    side: THREE.DoubleSide,
-  });
   const inkMaterial = matte(PALETTE.ink, {
     metalness: 0.22,
     roughness: 0.49,
@@ -578,8 +573,7 @@ function ellipticalDriverCompoundIdler(movement) {
   const circularGearZ = -0.18;
   const circularGearDepth = 0.28;
   // The grooved plate g-h sits in front of the arm, open toward it, so shaft
-  // D never passes through the plane that B's large wheel sweeps. It is
-  // rendered faint with a dashed groove, as Brown draws it.
+  // D never passes through the plane that B's large wheel sweeps.
   const carrierZ = 0.42;
   const guideFloorZ = 0.68;
   const guideFloorDepth = 0.1;
@@ -587,7 +581,7 @@ function ellipticalDriverCompoundIdler(movement) {
   const guideRailDepth = 0.12;
   const grooveHalfWidth = 0.145;
   const guideRollerRadius = 0.095;
-  const guidePlateMargin = 0.18;
+  const guidePlateMargin = 0.05;
   const boreRadius = 0.15;
   const renderProfileSamples = 720;
   const profilePointsAtOffset = (distance) => Array.from(
@@ -697,12 +691,23 @@ function ellipticalDriverCompoundIdler(movement) {
   const guideOuterPoints = profilePointsAtOffset(guideOuterDistance);
   const grooveOuterPoints = profilePointsAtOffset(grooveOuterDistance);
   const grooveInnerPoints = profilePointsAtOffset(grooveInnerDistance);
+  // The groove g-h is an open channel in front of C: an elliptical band
+  // (floor) carried by three spokes from D's hub, with two rails behind it.
+  // The band and spokes leave C's face and teeth open, as Brown draws them.
+  const guideBandInnerPoints = profilePointsAtOffset(
+    grooveInnerDistance - guidePlateMargin,
+  );
+  const guideMaterial = matte(PALETTE.frame, {
+    metalness: 0.18,
+    roughness: 0.55,
+    side: THREE.DoubleSide,
+  });
   const guideFloor = new THREE.Mesh(
     centeredExtrusion(
-      shapeFromPoints(guideOuterPoints, boreRadius),
+      ringShape(guideOuterPoints, guideBandInnerPoints),
       guideFloorDepth,
     ),
-    inkMaterial,
+    guideMaterial,
   );
   guideFloor.position.z = guideFloorZ;
   guideFloor.userData.guideGrooveFloor = true;
@@ -713,21 +718,51 @@ function ellipticalDriverCompoundIdler(movement) {
       ringShape(guideOuterPoints, grooveOuterPoints),
       guideRailDepth,
     ),
-    accentMaterial,
+    guideMaterial,
   );
   guideOuterRail.position.z = guideRailZ;
   guideOuterRail.userData.role = 'outer-wall-of-elliptical-guide-g-h';
   driverRotor.add(guideOuterRail);
   const guideInnerIsland = new THREE.Mesh(
     centeredExtrusion(
-      shapeFromPoints(grooveInnerPoints, boreRadius),
+      ringShape(grooveInnerPoints, guideBandInnerPoints),
       guideRailDepth,
     ),
-    accentMaterial,
+    guideMaterial,
   );
   guideInnerIsland.position.z = guideRailZ;
   guideInnerIsland.userData.role = 'inner-wall-of-elliptical-guide-g-h';
   driverRotor.add(guideInnerIsland);
+  const guideSpokes = [0.35, 0.35 + FULL_TURN / 3, 0.35 + 2 * FULL_TURN / 3]
+    .map((angle) => {
+      const direction = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
+      // Reach just into the band along this ray.
+      let reach = 0;
+      for (const point of guideBandInnerPoints) {
+        const along = point.x * direction.x + point.y * direction.y;
+        const across = Math.abs(point.x * direction.y - point.y * direction.x);
+        if (along > 0 && across < 0.04) reach = Math.max(reach, along);
+      }
+      const inner = 0.2;
+      const outer = reach + 0.06;
+      const spoke = new THREE.Mesh(
+        new THREE.BoxGeometry(outer - inner, 0.07, guideFloorDepth),
+        guideMaterial,
+      );
+      spoke.position.set(
+        direction.x * (inner + outer) / 2,
+        direction.y * (inner + outer) / 2,
+        guideFloorZ,
+      );
+      spoke.rotation.z = angle;
+      spoke.userData.role = 'spoke-carrying-guide-g-h-from-hub-d';
+      driverRotor.add(spoke);
+      return spoke;
+    });
+  const guideSpokeHub = cylinderAlongZ(0.24, guideFloorDepth, guideMaterial, 40);
+  guideSpokeHub.position.z = guideFloorZ;
+  guideSpokeHub.userData.role = 'guide-g-h-hub-keyed-on-shaft-d';
+  driverRotor.add(guideSpokeHub);
 
   const outputGear = makeGear({
     color: PALETTE.driven,
@@ -1044,46 +1079,17 @@ function ellipticalDriverCompoundIdler(movement) {
   update(0);
   correctVariableIdler(root, movement.id, update);
   markShadows(root);
-  // Brown draws no phase stripes, and draws the guide groove g-h only as a
-  // dashed path behind C. The attached grooved plate is not drawn as a body:
-  // it stays in the model for offline checks but is hidden, and both groove
-  // walls are traced as thin opaque dashed ink lines, as Brown draws them.
+  // Brown draws no phase stripes. He dashes the guide groove g-h because
+  // it lies behind C on his plate; here the real channel is drawn in front of
+  // C (shaft D cannot reach behind B's wheel), open over C's face.
   driverIndex.visible = false;
   for (const gear of [outputGear, compoundOuterGear, compoundPinion]) {
-    gear.userData.rotor.children[3].visible = false;
-  }
-  for (const mesh of [guideFloor, guideOuterRail, guideInnerIsland]) {
-    mesh.visible = false;
-    mesh.castShadow = false;
-    mesh.receiveShadow = false;
-    mesh.userData.hiddenGuidePlate = true;
+    // The white face index is the last part makeGear adds to the rotor.
+    gear.userData.rotor.children.at(-1).visible = false;
   }
   guideRoller.material = inkMaterial;
-  const dashedGrooveMaterial = new THREE.LineDashedMaterial({
-    color: PALETTE.ink,
-    dashSize: 0.16,
-    gapSize: 0.1,
-  });
-  const grooveDashes = [grooveOuterPoints, grooveInnerPoints].map((points, index) => {
-    const line = new THREE.LineLoop(
-      new THREE.BufferGeometry().setFromPoints(
-        points.map((point) => new THREE.Vector3(
-          point.x,
-          point.y,
-          guideFloorZ + guideFloorDepth / 2 + 0.004,
-        )),
-      ),
-      dashedGrooveMaterial,
-    );
-    line.computeLineDistances();
-    line.userData.role = index === 0
-      ? 'dashed-outer-edge-of-hidden-groove-g-h'
-      : 'dashed-inner-edge-of-hidden-groove-g-h';
-    line.userData.nonSolid = true;
-    driverRotor.add(line);
-    return line;
-  });
-  root.userData.blocks.grooveDashes = grooveDashes;
+  root.userData.blocks.guideSpokes = guideSpokes;
+  root.userData.blocks.guideSpokeHub = guideSpokeHub;
   // Re-seat the shafts for the front guide plate: D runs only from C to the
   // plate, B's spindle from its rear wheel to the roller, A's up to the arm.
   carrierBeam.userData.boredMesh.position.z = carrierZ;
@@ -1097,9 +1103,9 @@ function ellipticalDriverCompoundIdler(movement) {
     driverGearZ - driverGearDepth / 2 - 0.02,
     guideFloorZ + guideFloorDepth / 2 + 0.03,
   );
-  driverHub.scale.y = (guideRailZ - guideRailDepth / 2
+  driverHub.scale.y = (guideFloorZ - guideFloorDepth / 2
     - (driverGearZ - driverGearDepth / 2)) / 1.08;
-  driverHub.position.z = (guideRailZ - guideRailDepth / 2
+  driverHub.position.z = (guideFloorZ - guideFloorDepth / 2
     + driverGearZ - driverGearDepth / 2) / 2;
   compoundSpindle.position.z = setShaftSpan(
     compoundSpindle,

@@ -73,7 +73,7 @@ test('187: t = 0 reproduces the plate landmarks', () => withModel((model, u) => 
     return {left: a.x, right: c.x, top: c.y, bottom: a.y};
   };
   const rod = box(b.rodBody);
-  near(rod.left, 15, 2, 'broken rod end'); near(rod.right, 510, 3, 'lower grip end');
+  near(rod.left, -300, 2, 'rod runs on whole past Brown\'s break at x 15'); near(rod.right, 510, 3, 'lower grip end');
   near(rod.bottom, 258, 1, 'rod lower edge'); near(rod.top, 181.5, 1.5, 'crown top');
   const handle = box(b.upperHandleBody);
   near(handle.top, 174, 1, 'upper handle top edge'); near(handle.right, 505, 2, 'upper grip end');

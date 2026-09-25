@@ -9,9 +9,9 @@ import {
 
 import {boredJournal, fitPistonGuide} from './piston-guide-parts.js';
 import {makeBoredLinkRod} from './bored-link-rod.js';
+import {replaceWithLaidRope} from './laid-rope.js';
 
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function cylinderAlongZ(radius, length, material, segments = 32) {
   const cylinder = new THREE.Mesh(
@@ -33,17 +33,6 @@ function beamBetween(start, end, width, depth, material) {
   return beam;
 }
 
-function updateCylinderBetween(cylinder, start, end) {
-  const delta = end.clone().sub(start);
-  const length = delta.length();
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    delta.clone().multiplyScalar(1 / length),
-  );
-  cylinder.scale.set(1, length, 1);
-}
-
 function makeTubeThrough(points, radius, material, role) {
   const curve = new THREE.CatmullRomCurve3(
     points,
@@ -58,25 +47,29 @@ function makeTubeThrough(points, radius, material, role) {
   return tube;
 }
 
-function makeSegmentedBand(segmentCount, radius, material, role) {
+// Brown draws C and D as plain cord lines: one continuous shared laid rope
+// each, rebuilt along the sampled wrap-and-tangent path.
+function makeSegmentedBand(segmentCount, radius, material, role, { anchorAtEnd = false } = {}) {
   const band = new THREE.Group();
   band.userData.isBelt = true;
   band.userData.role = role;
   band.userData.segmentCount = segmentCount;
-  const segments = [];
-  for (let index = 0; index < segmentCount; index += 1) {
-    const segment = new THREE.Mesh(
-      new THREE.CylinderGeometry(radius, radius, 1, 10),
-      material,
-    );
-    segment.userData.role = `${role}-flexible-segment`;
-    band.add(segment);
-    segments.push(segment);
-  }
+  band.userData.crossSection = 'laid-rope';
+  const rope = new THREE.Mesh(new THREE.BufferGeometry(), material);
+  rope.userData.role = `${role}-laid-cord`;
+  band.add(rope);
+  band.userData.mesh = rope;
   band.userData.setPoints = (points) => {
-    for (let index = 0; index < segmentCount; index += 1) {
-      updateCylinderBetween(segments[index], points[index], points[index + 1]);
+    const path = new THREE.CurvePath();
+    for (let index = 0; index < points.length - 1; index += 1) {
+      path.add(new THREE.LineCurve3(points[index], points[index + 1]));
     }
+    // The cord is tied at its post, so the lay stays fixed at that end while
+    // more or less of it lies wound on wheel B.
+    const length = path.getLength();
+    replaceWithLaidRope(rope, path, { radius, travel: anchorAtEnd ? length : 0 });
+    band.userData.curve = path;
+    band.userData.length = length;
   };
   return band;
 }
@@ -647,6 +640,7 @@ function selfRockingCradle(movement) {
     0.038,
     bandMaterial,
     'flexible-band-D-right-limb-over-wheel-B',
+    { anchorAtEnd: true },
   );
   root.add(flexibleBandC, flexibleBandD);
 

@@ -194,14 +194,15 @@ export function bellCrankHangerGabDisengager() {
   }
   valveRocker.add(valveArm, valveShaft, hatch, valvePin);
 
-  // Eccentric rod: forked (slotted) left end, bar, raised crown over the gab,
+  // Eccentric rod: Brown breaks it off at the left (a drawing convention; it
+  // runs on whole past the view), forked slot, bar, raised crown over the gab,
   // raised eye for the hanger pin, and the tail to its rounded tip.
   const eccentricRod = new THREE.Group();
   eccentricRod.userData.role = 'eccentric-rod-with-fork-crown-gab-and-hanger-eye';
   const crown = smoothRaster([[284, 381], [300, 377], [314, 366], [328, 357], [342, 354], [356, 356],
     [367, 362], [377, 373], [386, 387], [394, 397], [404, 400.5]], 48);
   const rodOutline = polygonClipping.union(
-    poly([...rasterRing([[14, 417], [14, 383], [150, 382], [250, 381.5]]), ...crown,
+    poly([...rasterRing([[-300, 417], [-300, 383], [150, 382], [250, 381.5]]), ...crown,
       ...rasterRing([[458, 400.5], [486, 405], [517, 405], [521, 407], [521, 409.5], [517, 416], [300, 416]])]),
     disc(fromRaster(472, 401), 15.5 * PX),
   );

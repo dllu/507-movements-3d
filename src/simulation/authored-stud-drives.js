@@ -4,6 +4,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { LaidRopeGeometry } from './laid-rope.js';
 
 const FULL_TURN = Math.PI * 2;
 const HALF_TURN = Math.PI;
@@ -510,8 +511,7 @@ function studDiskElbowBarReverser() {
   );
   diskBody.position.z = diskPlaneZ;
   diskBody.userData.role = 'solid-source-proportioned-driver-disk';
-  const diskRim = ringInXY(diskRadius * 0.985, 0.040, darkMaterial, 72);
-  diskRim.position.z = diskPlaneZ + diskDepth / 2 + 0.018;
+  // Brown's circle is only the disk's edge; no separate dark rim is drawn.
   const diskHub = cylinderAlongZ(hubRadius, 0.46, darkMaterial, 42);
   diskHub.position.z = 0.05;
   const diskHubFace = cylinderAlongZ(hubRadius * 0.48, 0.035, whiteMaterial, 36);
@@ -536,7 +536,6 @@ function studDiskElbowBarReverser() {
   pinAssemblies[1].position.x = -studOrbitRadius;
   diskRotor.add(
     diskBody,
-    diskRim,
     diskHub,
     diskHubFace,
     ...pinAssemblies,
@@ -1013,7 +1012,6 @@ function studDiskElbowBarReverser() {
     diskBody,
     diskHub,
     diskHubFace,
-    diskRim,
     diskRotor,
     fixedFrame,
     guideRollers,
@@ -1844,13 +1842,7 @@ function threeStudWeightedCordBellCrank() {
   );
   diskBody.position.z = diskPlaneZ;
   diskBody.userData.role = 'solid-source-proportioned-driver-disk';
-  const diskRim = ringInXY(
-    diskRadius * 0.985,
-    0.040,
-    darkMaterial,
-    72,
-  );
-  diskRim.position.z = diskPlaneZ + diskDepth / 2 + 0.018;
+  // Brown's circle is only the disk's edge; no separate dark rim is drawn.
   const diskHub = cylinderAlongZ(hubRadius, 0.48, darkMaterial, 42);
   diskHub.position.z = 0.03;
   const diskHubFace = cylinderAlongZ(
@@ -1885,7 +1877,6 @@ function threeStudWeightedCordBellCrank() {
   });
   diskRotor.add(
     diskBody,
-    diskRim,
     diskHub,
     diskHubFace,
     ...pinAssemblies,
@@ -2210,7 +2201,8 @@ function threeStudWeightedCordBellCrank() {
     weight.userData.velocity = state.weight.velocity.clone();
     pulleyRotor.rotation.z = state.pulley.angle;
     pulley.userData.angularSpeed = state.pulley.angularSpeed;
-    const nextCordGeometry = new THREE.TubeGeometry(
+    // Brown hatches the cord as a laid rope; its lever end is fastened.
+    const nextCordGeometry = new LaidRopeGeometry(
       makeCordCurve(state.cord),
       180,
       cordRadius,
@@ -2265,7 +2257,6 @@ function threeStudWeightedCordBellCrank() {
     diskHub,
     diskHubFace,
     diskPost,
-    diskRim,
     diskRotor,
     fixedFrame,
     inputArm,

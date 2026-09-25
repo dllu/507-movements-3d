@@ -1,9 +1,9 @@
 {
   "movement": 178,
   "poses": 129,
-  "meshes": 18,
-  "pairs": 115,
-  "queries": 7986452,
+  "meshes": 16,
+  "pairs": 91,
+  "queries": 4821566,
   "intersections": {},
   "sources": [
     {
@@ -12,11 +12,11 @@
     },
     {
       "file": "src/simulation/authored-variable-cranks.js",
-      "sha256": "6abb2e187a328b1816a7a7bfbb4919ce597896d63f56887c35d007e4f6d25a7d"
+      "sha256": "90afaecf1194cbc3b943bbc1c9e545a2af1ee17348dfbf1745f83cf2b8621fc5"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

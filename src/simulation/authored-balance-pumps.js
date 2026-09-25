@@ -28,6 +28,162 @@ function setRodBetween(mesh, start, end) {
   mesh.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
 }
 
+// Two-link limb: the joint between start and end, bent toward pole.
+function limbJoint(start, end, upperLength, lowerLength, pole) {
+  const along = end.clone().sub(start);
+  const distance = THREE.MathUtils.clamp(along.length(),
+    Math.abs(upperLength - lowerLength) + 1e-4, upperLength + lowerLength - 1e-4);
+  along.normalize();
+  const x = (upperLength ** 2 - lowerLength ** 2 + distance ** 2) / (2 * distance);
+  const h = Math.sqrt(Math.max(0, upperLength ** 2 - x ** 2));
+  const bend = pole.clone().addScaledVector(along, -pole.dot(along)).normalize();
+  return start.clone().addScaledVector(along, x).addScaledVector(bend, h);
+}
+
+function placeCapsule(mesh, start, end) {
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.quaternion.setFromUnitVectors(Y_AXIS, end.clone().sub(start).normalize());
+}
+
+// Brown's operator stands astride the pivot on the rocking beam, feet on
+// the beam, both hands on a hand-bar carried by two stanchions from the
+// beam and parallel to it. His body stays upright and sways toward the
+// descending end; his legs and arms follow the beam by two-link closure.
+// He is built in the same manner as the treadmill walker of 377.
+function addBalanceBeamOperator(root, { beam, beamPivot, beamAmplitude, beamMaterial }) {
+  const scale = 1.4;
+  const thigh = 0.68, shin = 0.65, thighRadius = 0.095, shinRadius = 0.08;
+  const beamTop = 0.07, ankleLift = 0.10;
+  const feetX = [-0.80, 0.50];
+  const barY = 1.62, barZ = 0.32, barEnds = [-1.45, 1.25], handsX = [-0.75, 0.50];
+  const yaw = THREE.MathUtils.degToRad(25);
+  const hipBase = { x: -0.12, y: beamTop + ankleLift + 0.92 };
+  const jacketMaterial = matte(PALETTE.driver, { metalness: 0.02, roughness: 0.76 });
+  const trouserMaterial = matte(0x4d5d6c, { metalness: 0.02, roughness: 0.8 });
+  const skinMaterial = matte(0xe8b48f, { metalness: 0.0, roughness: 0.8 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48, side: THREE.DoubleSide });
+
+  // Hand-bar and its two stanchions, rigid with the beam.
+  const handBar = addRole(new THREE.Group(), 'hand-bar-carried-by-rocking-beam');
+  beam.add(handBar);
+  const barStart = new THREE.Vector3(barEnds[0] - 0.05, barY, barZ);
+  const barEnd = new THREE.Vector3(barEnds[1] + 0.05, barY, barZ);
+  const bar = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.04, 0.04, 1, 20), beamMaterial), 'operator-hand-bar');
+  setRodBetween(bar, barStart, barEnd);
+  handBar.add(bar);
+  for (const x of barEnds) {
+    const post = addRole(new THREE.Mesh(
+      new THREE.CylinderGeometry(0.035, 0.035, 1, 16), beamMaterial), 'hand-bar-stanchion-on-beam');
+    setRodBetween(post, new THREE.Vector3(x, beamTop - 0.02, 0.06), new THREE.Vector3(x, barY, barZ));
+    handBar.add(post);
+  }
+
+  const person = addRole(new THREE.Group(), 'operator-standing-on-rocking-beam');
+  root.add(person);
+  const body = new THREE.Group();
+  body.rotation.y = yaw;
+  person.add(body);
+  const jacketProfile = [
+    [0, -0.20], [0.16, -0.20], [0.178, -0.15], [0.172, -0.04],
+    [0.165, 0.10], [0.178, 0.26], [0.182, 0.40], [0.255, 0.46],
+    [0.265, 0.50], [0.235, 0.545], [0.16, 0.575], [0.08, 0.60], [0, 0.605],
+  ].map(([r, y]) => new THREE.Vector2(r * scale, y * scale));
+  const torso = addRole(new THREE.Mesh(new THREE.LatheGeometry(jacketProfile, 36), jacketMaterial),
+    'operator-jacket-torso');
+  torso.scale.z = 0.72;
+  body.add(torso);
+  const head = addRole(new THREE.Mesh(new THREE.SphereGeometry(0.15 * scale, 28, 18), skinMaterial),
+    'operator-head');
+  head.scale.set(0.92, 1.12, 0.88);
+  head.position.y = 0.80 * scale;
+  body.add(head);
+  const neck = addRole(new THREE.Mesh(new THREE.CylinderGeometry(
+    0.065 * scale, 0.075 * scale, 0.14 * scale, 18), skinMaterial), 'operator-neck');
+  neck.position.y = 0.66 * scale;
+  body.add(neck);
+  // Brown's operator wears a round-crowned hat with a narrow brim.
+  const hat = addRole(new THREE.Mesh(new THREE.LatheGeometry([
+    new THREE.Vector2(0, 0.13), new THREE.Vector2(0.10, 0.125), new THREE.Vector2(0.14, 0.09),
+    new THREE.Vector2(0.15, 0.02), new THREE.Vector2(0.21, 0.01), new THREE.Vector2(0.21, -0.01),
+    new THREE.Vector2(0.14, -0.01), new THREE.Vector2(0, -0.01),
+  ].map(v => v.multiplyScalar(scale)), 32), darkMaterial), 'operator-hat');
+  hat.position.y = 0.90 * scale;
+  body.add(hat);
+  const seat = addRole(new THREE.Mesh(
+    new THREE.CapsuleGeometry(0.12, 0.10, 8, 18).rotateZ(Math.PI / 2), trouserMaterial),
+    'operator-trouser-seat');
+  seat.scale.z = 0.9;
+  seat.position.y = -0.27 * scale + 0.03;
+  body.add(seat);
+
+  const capsule = (radius, length, material, role) => {
+    const mesh = addRole(new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 8, 16), material), role);
+    root.add(mesh);
+    return mesh;
+  };
+  const legs = feetX.map((x, index) => {
+    const foot = addRole(new THREE.Mesh(
+      new THREE.BoxGeometry(0.13, 0.08, 0.30).translate(0, 0, 0.05), darkMaterial), 'operator-shoe-on-beam');
+    foot.position.set(x, beamTop + 0.04, 0);
+    foot.rotation.y = yaw;
+    beam.add(foot);
+    return {
+      ankle: new THREE.Vector3(x, beamTop + ankleLift, 0),
+      side: index === 0 ? -1 : 1,
+      thigh: capsule(thighRadius, thigh, trouserMaterial, 'operator-thigh'),
+      shin: capsule(shinRadius, shin, trouserMaterial, 'operator-shin'),
+    };
+  });
+  const upperArm = 0.47, forearm = 0.46;
+  const arms = handsX.map((x, index) => ({
+    grip: new THREE.Vector3(x, barY + 0.07, barZ - 0.03),
+    side: index === 0 ? -1 : 1,
+    upper: capsule(0.058 * scale, upperArm, jacketMaterial, 'operator-upper-arm'),
+    lower: capsule(0.052 * scale, forearm, jacketMaterial, 'operator-forearm'),
+    hand: addRole(new THREE.Mesh(new THREE.SphereGeometry(0.062 * scale, 16, 10), skinMaterial),
+      'operator-hand-gripping-bar'),
+  }));
+  arms.forEach(arm => root.add(arm.hand));
+
+  const onBeam = (local, angle) => new THREE.Vector3(
+    beamPivot.x + local.x * Math.cos(angle) - local.y * Math.sin(angle),
+    beamPivot.y + local.x * Math.sin(angle) + local.y * Math.cos(angle),
+    beamPivot.z + local.z,
+  );
+  const across = new THREE.Vector3(Math.cos(yaw), 0, -Math.sin(yaw));
+  const facing = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+  const update = (angle) => {
+    const sway = angle / beamAmplitude;
+    const hip = new THREE.Vector3(
+      beamPivot.x + hipBase.x - 0.12 * sway,
+      beamPivot.y + hipBase.y - 0.03 * Math.abs(sway),
+      beamPivot.z,
+    );
+    person.position.copy(hip).addScaledVector(Y_AXIS, 0.27 * scale);
+    for (const leg of legs) {
+      const hipJoint = hip.clone().addScaledVector(across, leg.side * 0.13);
+      const ankle = onBeam(leg.ankle, angle);
+      const pole = facing.clone().addScaledVector(across, leg.side * 0.35);
+      const knee = limbJoint(hipJoint, ankle, thigh, shin, pole);
+      placeCapsule(leg.thigh, hipJoint, knee);
+      placeCapsule(leg.shin, knee, ankle);
+    }
+    for (const arm of arms) {
+      const shoulder = person.position.clone()
+        .addScaledVector(Y_AXIS, 0.45 * scale).addScaledVector(across, arm.side * 0.24 * scale);
+      const hand = onBeam(arm.grip, angle);
+      const pole = across.clone().multiplyScalar(arm.side).addScaledVector(Y_AXIS, 0.0)
+        .addScaledVector(facing, -1.2);
+      const elbow = limbJoint(shoulder, hand, upperArm, forearm, pole);
+      placeCapsule(arm.upper, shoulder, elbow);
+      placeCapsule(arm.lower, elbow, hand);
+      arm.hand.position.copy(hand);
+    }
+  };
+  return { handBar, person, update };
+}
+
 function balancePumps(movement) {
   const root = new THREE.Group();
   const cycleDuration = 6.2;
@@ -631,6 +787,29 @@ function balancePumps(movement) {
     reservoir.material = ruledWaterMaterial();
     reservoir.position.set(0, reservoirSurfaceY, -0.95);
     reservoirRim.visible = false;
+  }
+  {
+    const operator = addBalanceBeamOperator(root, { beam, beamPivot, beamAmplitude, beamMaterial });
+    root.userData.blocks.operator = operator.person;
+    root.userData.blocks.handBar = operator.handBar;
+    const working = root.userData.updateWorkingParts;
+    root.userData.updateWorkingParts = (state) => {
+      working?.(state);
+      operator.update(state.beamAngle);
+    };
+    // Frame the operator with the beam and pumps over the whole stroke.
+    const bounds = root.userData.cameraFitBounds, point = new THREE.Vector3();
+    for (let i = 0; i <= 16; i += 1) {
+      update(cycleDuration * i / 16);
+      root.updateMatrixWorld(true);
+      root.traverseVisible((object) => {
+        const position = object.geometry?.attributes.position;
+        if (!position) return;
+        for (let j = 0; j < position.count; j += 1) {
+          bounds.expandByPoint(point.fromBufferAttribute(position, j).applyMatrix4(object.matrixWorld));
+        }
+      });
+    }
   }
   markShadows(root);
   foundation.receiveShadow = true;

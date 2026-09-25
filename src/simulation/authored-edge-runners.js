@@ -66,6 +66,8 @@ function makeEdgeRunner({ axis, color, radius, width }) {
     darkMaterial,
   );
   tread.userData.role = 'edge-runner-circumferential-grinding-tread';
+  tread.visible = false; // ink edge line only: kept for references, not drawn
+  tread.userData.retiredInkOutline = true;
   rotor.add(tread);
   const hub = cylinderAlongZ(radius * 0.15, width * 1.34,
     darkMaterial, 28);
@@ -79,6 +81,8 @@ function makeEdgeRunner({ axis, color, radius, width }) {
       darkMaterial,
     );
     faceRing.position.z = side * width * 0.51;
+    faceRing.visible = false; // ink edge line only: kept for references, not drawn
+    faceRing.userData.retiredInkOutline = true;
     rotor.add(faceRing);
     faceRings.push(faceRing);
     const index = new THREE.Mesh(
@@ -273,6 +277,8 @@ function pairedEdgeRunnerMill(movement) {
   innerLip.position.y = panLipY;
   innerLip.userData.fixed = true;
   innerLip.userData.role = 'inner-rim-of-annular-grinding-trough';
+  innerLip.visible = false; // ink edge line only: kept for references, not drawn
+  innerLip.userData.retiredInkOutline = true;
   root.add(innerLip);
   const outerLip = new THREE.Mesh(
     new THREE.TorusGeometry(panOuterRadius + 0.18, 0.045, 9, 88),
@@ -282,6 +288,8 @@ function pairedEdgeRunnerMill(movement) {
   outerLip.position.y = panLipY;
   outerLip.userData.fixed = true;
   outerLip.userData.role = 'outer-rim-of-annular-grinding-trough';
+  outerLip.visible = false; // ink edge line only: kept for references, not drawn
+  outerLip.userData.retiredInkOutline = true;
   root.add(outerLip);
 
   const carrier = new THREE.Group();

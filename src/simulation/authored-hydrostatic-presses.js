@@ -726,6 +726,31 @@ function hydrostaticPress(movement) {
   root.userData.cameraFov = 10;
   root.userData.groundFloorY = groundY;
   correctHydraulicForceParts(root,466);
+  {
+    // Brown stands the pump cistern on the same ground as the press: carry
+    // its three walls down to the foot of the press columns and close it
+    // with a floor, the water filling it from that floor.
+    const floorY = 0.63 - 4.05 / 2;
+    const wallBottomY = -0.56;
+    const extension = (sizeX, sizeZ, x, z) => {
+      const piece = new THREE.Mesh(
+        new THREE.BoxGeometry(sizeX, wallBottomY - floorY, sizeZ), frameMaterial);
+      piece.position.set(x, (wallBottomY + floorY) / 2, z);
+      piece.userData.role = 'fixed-lower-wall-of-pump-cistern';
+      pumpReservoir.add(piece);
+    };
+    extension(0.16, 1.92, 0.62, 0);
+    extension(0.16, 1.92, 2.78, 0);
+    extension(2.32, 0.16, 1.70, -0.96);
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(2.32, 0.12, 1.92), frameMaterial);
+    floor.position.set(1.70, floorY + 0.06, 0);
+    floor.userData.role = 'fixed-floor-of-pump-cistern';
+    pumpReservoir.add(floor);
+    const waterTop = reservoirWater.position.y + 0.36;
+    reservoirWater.geometry.dispose();
+    reservoirWater.geometry = new THREE.BoxGeometry(2.05, waterTop - floorY - 0.12, 0.62);
+    reservoirWater.position.y = (waterTop + floorY + 0.12) / 2;
+  }
   markShadows(root);
   foundation.receiveShadow = true;
   for (const object of [ramCylinderWater, reservoirWater, pressureWater,

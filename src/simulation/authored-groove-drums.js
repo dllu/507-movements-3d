@@ -428,17 +428,6 @@ function harmonicInputInverseGrooveDrum() {
     cap.userData.side = side;
     return cap;
   });
-  const endRims = [lowerEndCapY, upperEndCapY].map((centerY, index) => {
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(drumRadius, 0.038, 9, 64),
-      darkMaterial,
-    );
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = centerY;
-    rim.userData.role = 'dark-rim-on-end-of-groove-drum';
-    rim.userData.side = index === 0 ? 'lower' : 'upper';
-    return rim;
-  });
   const drumRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.11, 0.035, drumRadius * 0.88),
     witnessMaterial,
@@ -456,7 +445,6 @@ function harmonicInputInverseGrooveDrum() {
     ...grooveReversalPockets,
     outputShaft,
     ...endCaps,
-    ...endRims,
     drumRotationIndex,
   );
 
@@ -728,7 +716,6 @@ function harmonicInputInverseGrooveDrum() {
     drum,
     drumRotationIndex,
     endCaps,
-    endRims,
     fixedFrame,
     grooveReversalPockets,
     grooveTrack,

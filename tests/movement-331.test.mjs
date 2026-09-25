@@ -82,7 +82,7 @@ test('movement 331 is the flywheel Scotch-yoke engine in pillar guides D-D', () 
   assert.equal(blocks.crankPinAnchor.parent, blocks.crankRotor);
   assert.equal(blocks.crossheadA.parent, model.root);
   assert.equal(blocks.yokeBody.parent, blocks.crossheadA);
-  assert.equal(blocks.slotOutline.parent, blocks.crossheadA);
+  assert.equal(blocks.slotOutline, undefined, 'no decorative ink outline around slot A');
   assert.equal(blocks.leftGuideShoe.parent, blocks.crossheadA);
   assert.equal(blocks.rightGuideShoe.parent, blocks.crossheadA);
   assert.equal(blocks.pistonRod.parent, blocks.crossheadA);

@@ -547,15 +547,6 @@ function axialPinPulleyClutch(movement) {
       bearing.userData.role = 'fixed-shaft-bearing-block';
       frame.add(bearing);
       bearingBlocks.push(bearing);
-      const bearingRing = torusNormalToX(
-        0.14,
-        0.045,
-        darkMaterial,
-        40,
-      );
-      bearingRing.position.set(x, y, 0.01);
-      bearingRing.userData.role = 'visible-bearing-journal-ring';
-      frame.add(bearingRing);
     }
   }
   root.add(frame);
@@ -834,18 +825,12 @@ function axialPinPulleyClutch(movement) {
   const belt = makeDynamicMovingBelt(initialState.beltPath.curve, {
     closed: true,
     color: PALETTE.belt,
-    markerColor: PALETTE.white,
-    markerCount: beltMarkerCount,
+    // Brown hatches the band as a laid rope; its lay shows the travel.
+    laid: true,
     radius: 0.038,
     tubularSegments: 180,
   });
-  belt.userData.markers = belt.children.slice(0, beltMarkerCount);
-  belt.userData.markers.forEach((marker) => {
-    marker.userData.role = 'fixed-material-marker-on-the-one-open-belt';
-    // Material markers stay allocated for continuity checks; Brown's band
-    // carries no white spots.
-    marker.visible = false;
-  });
+  belt.userData.markers = [];
   belt.userData.role =
     'single-open-belt-linking-upper-and-lower-equal-pitch-pulleys';
   belt.userData.pathContinuity = 'closed C1 tangent-continuous material path';

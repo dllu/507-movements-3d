@@ -31,8 +31,8 @@ for(const id of[262,263])test(`${id}: finite cone, thread/nut, footed standard E
   const b=m.root.userData.blocks,cache=new Map();
   // The plates draw no guide, spring or base; only standard E is fixed.
   for(const key of['base','guideRails','guideTop','carriageBlocks','carriageBridge','contactSpring'])assert.equal(b[key],undefined,key);
-  const pairs=[b.nut,b.nutThread,b.nutPost,b.rollerAxle,b.rollerBody,b.rollerFaceRim].map(o=>[b.coneBody,o]);
-  pairs.push(...b.eccentricConnectors.map(o=>[o,b.nutPost]),...b.coneRims.map(o=>[o,b.nutPost]));
+  const pairs=[b.nut,b.nutThread,b.nutPost,b.rollerAxle,b.rollerBody].map(o=>[b.coneBody,o]);
+  pairs.push(...b.eccentricConnectors.map(o=>[o,b.nutPost]));
   pairs.push([b.screwThread,b.nutThread],[b.screwThread,b.nut],[b.screwThread,b.nutPost],[b.screwThread,b.rollerAxle],[b.rightScrewCore,b.rollerBody],[b.rollerBody,b.rollerAxle]);
   const cone=solidSurface(b.coneBody.geometry),roller=solidSurface(b.rollerBody.geometry);
   for(let i=0;i<=64;i++){
@@ -47,7 +47,7 @@ for(const id of[262,263])test(`${id}: finite cone, thread/nut, footed standard E
   assert.ok(b.screwThread.geometry.userData.thread,'solid helical thread missing');
   // Plate 262: low footed cradle whose foot lies just under B's rim, and a
   // plain round boss (no carrier bar or joint balls) on B's large-end face.
-  if(id===262){const g=m.root.userData.geometry;assert.ok(box(b.nutPost).min.y>(g.coneEccentricity-1.4*g.coneLargeRadius)*m.root.scale.y,'cradle E too tall');const boss=b.eccentricConnectors[0];assert.equal(boss.children.length,2);assert.equal(boss.children[0].material,b.coneBody.material);}
+  if(id===262){const g=m.root.userData.geometry;assert.ok(box(b.nutPost).min.y>(g.coneEccentricity-1.4*g.coneLargeRadius)*m.root.scale.y,'cradle E too tall');const boss=b.eccentricConnectors[0];assert.equal(boss.children.length,1);assert.equal(boss.children[0].material,b.coneBody.material);}
  }finally{disposeMovementModel(m);}
 });
 

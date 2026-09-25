@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctWellBucketParts} from './well-bucket-working-parts.js';
+import {LaidRopeGeometry} from './laid-rope.js';
 import {
   PALETTE,
   markShadows,
@@ -26,16 +27,6 @@ function smootherStepDerivative(value) {
 function smootherStepSecondDerivative(value) {
   const x = THREE.MathUtils.clamp(value, 0, 1);
   return 60 * x * (1 - x) * (1 - 2 * x);
-}
-
-function setCylinderBetween(mesh, start, end) {
-  const delta = end.clone().sub(start);
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    delta.clone().normalize(),
-  );
-  mesh.scale.set(1, delta.length(), 1);
 }
 
 function counterbalancedWellSweep(movement) {
@@ -372,8 +363,16 @@ function counterbalancedWellSweep(movement) {
     counterweight.add(binding);
   }
 
+  // Brown draws the well rope twisted: the shared three-strand laid rope,
+  // built once at its constant length and hung from the long-arm tip. The
+  // rope material does not run along its length, so the lay stays fixed.
+  // It is tied under the round tip eye (radius .18 about the rope pin), so
+  // the laid rope starts at the eye's lowest point instead of inside it.
   const rope = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 1, 16),
+    new LaidRopeGeometry(new THREE.LineCurve3(
+      new THREE.Vector3(0, -0.18, 0),
+      new THREE.Vector3(0, -ropeLength, 0),
+    ), 96, 0.045, 8, false),
     ropeMaterial,
   ), 'constant-length-rope-hanging-vertically-from-long-arm-tip');
   root.add(rope);
@@ -430,7 +429,7 @@ function counterbalancedWellSweep(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     beam.rotation.z = state.beamAngle;
-    setCylinderBetween(rope, state.leftTip, state.ropeBottom);
+    rope.position.copy(state.leftTip);
     bucket.position.copy(state.bucketCenter);
     const waterHeight = 0.60 * state.bucketWaterFraction;
     bucketWater.visible = waterHeight > 1e-5;

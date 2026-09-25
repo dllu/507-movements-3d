@@ -172,19 +172,6 @@ function makeTravelingNut({
   body.rotation.y = Math.PI / 2;
   body.userData.role = `${name}-square-nut-body-with-real-through-bore`;
 
-  const boreRings = [-1, 1].map((sideSign) => {
-    const ring = torusAroundX(
-      internalThreadRadius + threadTubeRadius * 1.3,
-      0.026,
-      matte(PALETTE.ink, { metalness: 0.23, roughness: 0.50 }),
-      42,
-    );
-    ring.position.x = sideSign * (bodyWidth / 2 + 0.020);
-    ring.userData.role = `${name}-dark-rim-around-threaded-bore`;
-    ring.userData.side = sideSign < 0 ? 'left-face' : 'right-face';
-    return ring;
-  });
-
   const internalThreadCurve = worldXHelixCurve({
     handedness,
     maximum: bodyWidth / 2 + 0.035,
@@ -233,7 +220,6 @@ function makeTravelingNut({
 
   nut.add(
     body,
-    ...boreRings,
     internalThread,
     guideStem,
     guideShoe,
@@ -241,7 +227,6 @@ function makeTravelingNut({
   );
   return {
     body,
-    boreRings,
     guideShoe,
     guideStem,
     internalThread,

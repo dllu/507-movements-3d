@@ -190,7 +190,7 @@ function externalPersonTreadmill(movement) {
   for (const side of [-1, 1]) {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(wheelRadius - 0.065, 0.065, 11, 84),
-      darkMaterial,
+      wheelMaterial,
     );
     ring.position.z = side * drumWidth / 2;
     ring.userData.side = side;

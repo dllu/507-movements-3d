@@ -72,7 +72,7 @@ test('movement 355 is Brown’s point-supported single-ring gyroscope', () => {
   assert.equal(blocks.curvedNeck.parent, blocks.precessionAssembly);
   assert.equal(blocks.ringBody.parent, blocks.precessionAssembly);
   assert.equal(blocks.bearingHousings.length, 2);
-  assert.equal(blocks.bearingRims.length, 2);
+  assert.equal(blocks.bearingRims, undefined, 'no dark ink rims outline the bearings');
   blocks.bearingHousings.forEach((bearing) => {
     assert.equal(bearing.parent, blocks.precessionAssembly);
   });
@@ -361,7 +361,7 @@ test('movement 355 renderer keeps the ring level and both bearings on the spin a
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 28);
+  assert.ok(meshCount >= 22); // ink rims and face lines are gone
   disposeModel(model.root);
 });
 

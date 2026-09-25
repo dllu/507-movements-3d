@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import source from './source.js';
 import {bellCrankCordPath} from './cord-path.js';
-import {bellCrankCordGeometry,applyBellCrankCordFinish,applyBellCrankShaftFinish} from './finish.js';
+import {bellCrankCordGeometry,applyBellCrankShaftFinish} from './finish.js';
 import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
@@ -63,8 +63,7 @@ export function makeBellCrankGeometry({amplitude=.5,cordSegments=64,outputSegmen
  const cordLengths={};
  for(const[name,points,color]of [['input',inputPath.points,PALETTE.driver],['output',outputPoints,PALETTE.driven]]){
   cordLengths[name]=points.slice(1).map((p,i)=>Math.hypot(...p.map((v,k)=>v-points[i][k])));
-  add(name+'Cord',bellCrankCordGeometry(points,cordRadius,cordLengths[name]),'cord',color);
-  applyBellCrankCordFinish(parts[name+'Cord'].material);
+  add(name+'Cord',bellCrankCordGeometry(points,cordRadius),'cord',color);
  }
  const profile={amplitude,cordSegments,outputSegments,cordRadius,pitchRadius,drumRadius,initialLift,centers,inputPin,outputPin,inputEnd,outputEnd,inputPath,outputPoints,outputDirection,grips,cordLengths};
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);for(const n of ['frontFlange','frontFace','pulleyHub'])parts[n].visible=!enabled;};

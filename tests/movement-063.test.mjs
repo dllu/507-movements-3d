@@ -38,7 +38,7 @@ test('movement 63 is framed face on and layered as Brown dashes it', () => {
   assert.ok(z.diskFront < z.pawlBack, 'the broad pawl works in front of the disk');
   assert.ok(z.pinFront < z.starBack, 'the pins end behind the star, so they never meet it');
   assert.ok(z.pinBack < z.dropFront && z.pinFront > z.pawlBack, 'the pins reach both the leg and the lobe');
-  assert.ok(z.noseFront > z.starBack + 0.1, 'the pawl nose steps forward into the star plane');
+  assert.ok(z.pawlFront > z.starBack + 0.1, 'the one-piece pawl reaches forward into the star plane');
   assert.equal(pawl.parent, drop.userData.rotor, 'the pawl hangs on the drop');
   assert.equal(driver.userData.pins.length, 3);
   const [springBack, springFront] = zRange(springLeaf);
@@ -137,41 +137,29 @@ test('movement 63 bends the spring with the drop and poses every part from the s
   assert.ok(Math.abs(oneEvent + geometry.starPitch) < 1e-9);
 });
 
-test('movement 63 dashes the drop leg over the pawl and disk and never draws it as a solid strip', () => {
+test('movement 63 draws every part whole and solid, with no dashed outline or undrawn zone', () => {
   const model = build();
   const { blocks, geometry } = model.root.userData;
-  const { z } = geometry;
-  const line = blocks.legHiddenLine;
-  assert.ok(line.isLineSegments && line.material.isLineDashedMaterial, 'the leg is a dashed outline');
-  assert.equal(line.material.toneMapped, false);
-  assert.equal(line.parent, blocks.drop.userData.rotor, 'the dashes move rigidly with the drop');
-  const position = line.geometry.attributes.position;
-  for (let index = 0; index < position.count; index += 1) {
-    const depth = position.getZ(index);
-    assert.ok(depth > z.pawlFront && depth < z.starBack && depth < z.pinFront,
-      'drawn over the pawl and disk, under the pins\' ends and the star');
-  }
+  assert.equal(blocks.legHiddenLine, undefined);
+  model.root.traverse((object) => {
+    assert.ok(!object.isLine, `${object.userData.role ?? object.type} is not a drawn outline`);
+    for (const material of [object.material].flat().filter(Boolean)) {
+      assert.ok(!material.isLineDashedMaterial);
+      assert.equal(material.onBeforeCompile?.toString().includes('discard'), false,
+        'no fragment is cut away from a part');
+    }
+  });
+  const pawlBodies = blocks.pawl.userData.rotor.children.filter((child) => child.isMesh);
+  assert.equal(pawlBodies.length, 1, 'the pawl is one plate');
+  const [pawlBack, pawlFront] = zRange(pawlBodies[0]);
+  assert.ok(pawlBack < geometry.z.pinFront && pawlFront > geometry.z.starBack + 0.1,
+    'the one plate spans the pins\' plane and the star\'s');
   const dropBody = blocks.drop.userData.rotor.children.find((child) => child.userData.springDropBody);
   // The drop keeps its whole working body, leg included, for the pins.
   dropBody.geometry.computeBoundingBox();
   const k = geometry.sourceScale;
   const [hx, hy] = layout.dropHinge;
   const tip = defaultLeg.reduce((low, point) => (point[1] > low[1] ? point : low));
-  assert.ok(dropBody.geometry.boundingBox.min.y < (-tip[1] - hy) * k + 1e-6, 'the leg tip is still solid for the pins');
+  assert.ok(dropBody.geometry.boundingBox.min.y < (-tip[1] - hy) * k + 1e-6, 'the leg tip is solid for the pins');
   assert.ok(dropBody.geometry.boundingBox.max.x > (878 - hx) * k - 1e-6);
-  // The zone the drop is not drawn in rides with the pawl. Every leg point
-  // below the drop's top corner stays inside it in every baked pose, so no
-  // solid strip of the leg shows between the lobe and the disk.
-  const zone = dropBody.userData.legZone;
-  const [px, py] = layout.pawlPivot;
-  let margin = Infinity;
-  for (const rho of bakedMotion.rho) {
-    for (const [x, y] of defaultLeg.slice(1, -1)) {
-      const c = Math.cos(-rho);
-      const s = Math.sin(-rho);
-      const point = [px + (x - px) * c - (-y - py) * s, py + (x - px) * s + (-y - py) * c];
-      margin = Math.min(margin, -ringPointGap(zone, point));
-    }
-  }
-  assert.ok(margin > 3, `the leg stays inside the undrawn zone by ${margin} px`);
 });

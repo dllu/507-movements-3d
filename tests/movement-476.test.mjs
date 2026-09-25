@@ -61,7 +61,6 @@ test('movement 476 is one stationary Lansdell Y-fork with two B suctions, centra
   assert.equal(geometry.suctionBranchCount, 2);
   assert.equal(geometry.waterPathsPerBranch, 2);
   assert.equal(blocks.suctionBranches.length, 2);
-  assert.equal(blocks.branchCollars.length, 2);
   assert.equal(blocks.waterStreams.length, 4);
   assert.equal(blocks.steamMarkers.length, geometry.steamMarkerCount);
   assert.equal(blocks.waterMarkers.length,
@@ -74,7 +73,6 @@ test('movement 476 is one stationary Lansdell Y-fork with two B suctions, centra
     assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
   }
   for (const block of [
-    ...blocks.branchCollars, blocks.dischargeCollar,
     blocks.dischargePipe, blocks.steamCore, blocks.steamJet,
     blocks.steamPipe, ...blocks.suctionBranches,
     ...blocks.waterStreams, ...blocks.steamMarkers,
@@ -291,8 +289,7 @@ test('movement 476 choked A flow and C mixing obey the disclosed steam, mass, vo
 test('movement 476 renderer keeps every solid fixed and moves both fluids smoothly by arc length', () => {
   const { model } = movementModel();
   const { blocks, flowPaths, geometry } = model.root.userData;
-  const solids = [blocks.basin, ...blocks.branchCollars,
-    blocks.dischargeCollar, blocks.dischargePipe, blocks.steamJet,
+  const solids = [blocks.basin, blocks.dischargePipe, blocks.steamJet,
     blocks.steamPipe, ...blocks.suctionBranches,
     ...blocks.waterStreams];
   const transforms = solids.map((solid) => ({

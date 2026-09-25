@@ -38,7 +38,7 @@
     },
     {
       "file": "src/simulation/knee-press.js",
-      "sha256": "a431b88a125d3e6f0f491589a6fc23ab96babb9c28964a6eb0949143222ee9c9"
+      "sha256": "f6f00d99a80df1be7bb4613708719481b613e7d7852c34f75dc9e330f938512a"
     },
     {
       "file": "src/simulation/knee-press-motion.js",
@@ -54,11 +54,11 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "f1f08fee23f50a3199f992b7dce94fffe6ff518a78d78508f11f98a6c9979f43"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

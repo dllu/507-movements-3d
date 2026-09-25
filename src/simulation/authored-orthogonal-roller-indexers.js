@@ -399,6 +399,8 @@ function orthogonalRollerGrooveIndexer(movement) {
     );
     rim.position.z = side * driverDiskDepth / 2;
     rim.userData.role = 'dark-rim-on-continuous-driver-wheel';
+    rim.visible = false; // ink edge line only: kept for references, not drawn
+    rim.userData.retiredInkOutline = true;
     rim.userData.side = side;
     driverRotor.add(rim);
     return rim;

@@ -51,20 +51,6 @@ function beamBetween(start, end, width, depth, material) {
   return beam;
 }
 
-function lineTube(points, radius, material) {
-  const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-  return new THREE.Mesh(
-    new THREE.TubeGeometry(
-      curve,
-      Math.max(64, points.length * 2),
-      radius,
-      8,
-      false,
-    ),
-    material,
-  );
-}
-
 function makeHandwheel(material, indexMaterial) {
   const handwheel = new THREE.Group();
   handwheel.userData.role = 'three-lobed-handwheel-rigid-on-adjusting-screw';
@@ -390,23 +376,6 @@ function flexibleBarCyclograph(movement) {
     'single-continuous-elastic-arched-bar-tapered-to-half-depth-at-ends';
   root.add(elasticBar);
 
-  const outerLinePositions = new Float32Array(totalPathSampleCount * 3);
-  const outerLineGeometry = new THREE.BufferGeometry();
-  const outerLineAttribute = new THREE.BufferAttribute(
-    outerLinePositions,
-    3,
-  );
-  outerLineAttribute.setUsage(THREE.DynamicDrawUsage);
-  outerLineGeometry.setAttribute('position', outerLineAttribute);
-  const outerEdgeHighlight = new THREE.Line(
-    outerLineGeometry,
-    new THREE.LineBasicMaterial({ color: PALETTE.white }),
-  );
-  outerEdgeHighlight.position.z = 0.36;
-  outerEdgeHighlight.userData.role =
-    'working-outer-edge-that-is-circular-at-maximum-bend';
-  root.add(outerEdgeHighlight);
-
   const updateBarGeometry = (bend) => {
     const path = pathAtBend(bend);
     for (let index = 0; index < totalPathSampleCount; index += 1) {
@@ -425,16 +394,10 @@ function flexibleBarCyclograph(movement) {
       barPositions[positionOffset + 9] = inner.x;
       barPositions[positionOffset + 10] = inner.y;
       barPositions[positionOffset + 11] = -barThickness / 2;
-      const lineOffset = index * 3;
-      outerLinePositions[lineOffset] = outer.x;
-      outerLinePositions[lineOffset + 1] = outer.y;
-      outerLinePositions[lineOffset + 2] = 0;
     }
     barPositionAttribute.needsUpdate = true;
-    outerLineAttribute.needsUpdate = true;
     barGeometry.computeVertexNormals();
     barGeometry.computeBoundingSphere();
-    outerLineGeometry.computeBoundingSphere();
     elasticBar.userData.currentPath = path;
     return path;
   };
@@ -677,29 +640,6 @@ function flexibleBarCyclograph(movement) {
     root.add(marker);
     return marker;
   });
-  const targetArcHalfAngle = Math.asin(
-    supportHalfSpan / maximumCircleRadius,
-  );
-  const targetArcPoints = Array.from({ length: 129 }, (_, index) => {
-    const angle = THREE.MathUtils.lerp(
-      Math.PI / 2 + targetArcHalfAngle,
-      Math.PI / 2 - targetArcHalfAngle,
-      index / 128,
-    );
-    return new THREE.Vector3(
-      maximumCircleCenter.x + maximumCircleRadius * Math.cos(angle),
-      maximumCircleCenter.y + maximumCircleRadius * Math.sin(angle),
-      0.12,
-    );
-  });
-  const requiredCircularArc = lineTube(
-    targetArcPoints,
-    0.022,
-    driverMaterial,
-  );
-  requiredCircularArc.userData.role =
-    'required-true-circular-arc-through-three-given-points';
-  root.add(requiredCircularArc);
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -747,11 +687,9 @@ function flexibleBarCyclograph(movement) {
       elasticBar,
       fixedNut,
       handwheel,
-      outerEdgeHighlight,
       padBody,
       nutThread,
       requiredArcPoints,
-      requiredCircularArc,
       rollerAssemblies,
       screw,
       thrustPad,
@@ -902,7 +840,6 @@ function flexibleBarCyclograph(movement) {
   root.userData.cameraDirection = new THREE.Vector3(5.8, 4.0, 12.8);
   root.userData.groundFloorY = -1.80;
   markShadows(root);
-  requiredCircularArc.castShadow = false;
   root.userData.cameraFov = 8;
   root.userData.cameraDirection = new THREE.Vector3(0, .8, 12);
   fitPistonGuide(root, update, cycleDuration);

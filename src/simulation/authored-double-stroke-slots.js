@@ -697,6 +697,9 @@ function snyderDoubleStrokeSlotDrive(movement) {
   );
   diskRim.position.z = diskDepth / 2 + 0.012;
   diskRim.userData.role = 'disk-A-front-rim';
+  // The disk's drawn circumference only: hidden reference, not a dark rim.
+  diskRim.visible = false;
+  diskRim.userData.retiredInkOutline = true;
 
   const slotFloors = [0, Math.PI / 2].map((angle, index) => {
     const floor = new THREE.Mesh(

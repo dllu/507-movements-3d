@@ -3,7 +3,7 @@
   "factorySource": {
     "file": "src/simulation/authored-gears-core.js",
     "name": "oppositeHandTwinWormFeedRollDrive",
-    "sha256": "8f9cc457a572e43a674a8518175b2571ea3f15f9020e4f64695e5f3026ad84b3"
+    "sha256": "4e2d87ac504ad823b19149e852b017673209708336b406c0b3918349c976e721"
   },
   "sources": [
     {

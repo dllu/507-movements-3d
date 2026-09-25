@@ -87,7 +87,7 @@ test('movement 491 is one rigid capstan with one cable and a moving pawl over a 
   });
   assert.deepEqual(cables, [blocks.cable]);
   assert.deepEqual(belts, []);
-  assert.equal(blocks.cable.geometry.type, 'TubeGeometry');
+  assert.equal(blocks.cable.geometry.type, 'LaidRopeGeometry');
   disposeModel(model.root);
 });
 
@@ -265,7 +265,7 @@ test('movement 491 ratchet rises only in the hauling direction and presents a hi
   disposeModel(model.root);
 });
 
-test('movement 491 hauls its one cable at barrel surface speed and its markers cross the straight-to-wrap tangent smoothly', () => {
+test('movement 491 hauls its one laid cable at barrel surface speed smoothly through the straight-to-wrap tangent', () => {
   const { model } = movementModel();
   const { blocks, cableRoute, dynamics, geometry, stateAtTime,
     transmission } = model.root.userData;
@@ -278,19 +278,12 @@ test('movement 491 hauls its one cable at barrel surface speed and its markers c
     near(state.cableDistanceHauled, state.cableSpeed * time, 0,
       `hauled distance ${time}`);
     model.update(time);
-    blocks.cableMarkers.forEach((marker, index) => {
-      const distance = ((
-        index * cableRoute.pathLength / blocks.cableMarkers.length
-          + state.cableDistanceHauled
-      ) % cableRoute.pathLength + cableRoute.pathLength)
-        % cableRoute.pathLength;
-      vectorNear(marker.position,
-        cableRoute.curve.getPointAt(distance / cableRoute.pathLength),
-        2e-14, `arc-length marker ${index} at ${time}`);
-    });
+    near(blocks.cable.geometry.userData.travel, state.cableDistanceHauled,
+      0, `laid cable travel ${time}`);
   }
   assert.ok(cableRoute.curve instanceof THREE.Curve);
-  assert.equal(blocks.cable.geometry.type, 'TubeGeometry');
+  assert.equal(blocks.cable.geometry.type, 'LaidRopeGeometry');
+  assert.equal(blocks.cableMarkers, undefined);
   assert.ok(geometry.maximumHelixArcSpeedRatio < 1.0009);
   assert.match(transmission.cableHaulConstraint,
     /v_cable=r_barrel\*abs\(omega_capstan\)/);
@@ -308,25 +301,10 @@ test('movement 491 hauls its one cable at barrel surface speed and its markers c
     'free cable and first wrap share a tangent');
   assert.ok(incoming.dot(new THREE.Vector3(-1, 0, 0))
     > 0.999999999);
-
-  const crossingTime = geometry.freeCableEndX
-    / stateAtTime(0).cableSpeed;
-  model.update(crossingTime - 1e-4);
-  const markerBefore = blocks.cableMarkers[0].position.clone();
-  model.update(crossingTime);
-  const markerAt = blocks.cableMarkers[0].position.clone();
-  model.update(crossingTime + 1e-4);
-  const markerAfter = blocks.cableMarkers[0].position.clone();
-  const beforeVelocity = markerAt.clone().sub(markerBefore);
-  const afterVelocity = markerAfter.clone().sub(markerAt);
-  near(beforeVelocity.length(), afterVelocity.length(), 3e-7,
-    'constant marker speed through tangent');
-  assert.ok(beforeVelocity.normalize().dot(afterVelocity.normalize())
-    > 0.99999, 'marker direction is continuous through tangent');
   assert.match(sourceText,
-    /cableMarkers\[index\]\.position\.copy\(cableCurve\.getPointAt\(progress\)\)/);
-  assert.match(dynamics.cableMarkerContinuity,
-    /constant-distance getPointAt sampling.*share position and tangent.*no marker changes path or speed abruptly/s);
+    /cable\.geometry\.setTravel\(state\.cableDistanceHauled\)/);
+  assert.match(dynamics.cableLayContinuity,
+    /one arc-length Curve3.*share position and tangent.*constant speed/s);
   disposeModel(model.root);
 });
 

@@ -40,7 +40,7 @@ export function correctHammerWorkingParts(root,id){
  }else if(id===471){
   replace(b.cylinderShell,portedBarrel(g.cylinderInnerRadius,g.cylinderOuterRadius,-g.cylinderHalfChamberHeight-.08,g.cylinderHalfChamberHeight+.08,.20,.085,-1));
   replace(b.piston,new THREE.CylinderGeometry(g.cylinderInnerRadius-.003,g.cylinderInnerRadius-.003,g.pistonThickness,64));
-  b.workingCaps=ends(b.movingCylinder,0,0,-g.cylinderHalfChamberHeight,g.cylinderHalfChamberHeight,g.cylinderOuterRadius,.071,b.cylinderRings[0].material);
+  b.workingCaps=ends(b.movingCylinder,0,0,-g.cylinderHalfChamberHeight,g.cylinderHalfChamberHeight,g.cylinderOuterRadius,.071,b.pistonRod.material);
   replace(b.atmosphericPort,tube(.085,.24,.062));b.atmosphericPort.position.z=0;
   for(const column of b.fixedFrame.children.filter(o=>o.geometry?.parameters.height===5.47)){replace(column,new THREE.BoxGeometry(.27,6.12,.48));column.position.y=1.25;}
   const bearing=new THREE.Mesh(tube(.17,.18,.107),b.fixedDriveShaft.material);bearing.rotation.x=Math.PI/2;bearing.position.set(g.crankCenter.x,g.crankCenter.y,.52);root.add(bearing);b.crankBearing=bearing;

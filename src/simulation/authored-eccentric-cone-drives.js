@@ -595,19 +595,6 @@ function eccentricConeFrictionReverser(movement) {
   coneBody.userData.radiusAtLocalAxialPosition =
     radiusAtLocalAxialPosition;
   coneBody.userData.role = 'eccentric-conical-friction-body-B';
-  const coneRims = [
-    { name: 'large', radius: coneLargeRadius, x: -coneLength / 2 },
-    { name: 'small', radius: coneSmallRadius, x: coneLength / 2 },
-  ].map(({ name, radius, x }) => {
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(radius, 0.035, 10, 88),
-      darkMaterial,
-    );
-    rim.rotation.y = Math.PI / 2;
-    rim.position.set(x, coneEccentricity, 0);
-    rim.userData.role = `${name}-end-rim-of-eccentric-cone-B`;
-    return rim;
-  });
   const coneGeneratorIndex = new THREE.Mesh(
     new THREE.TubeGeometry(
       new THREE.LineCurve3(
@@ -651,7 +638,6 @@ function eccentricConeFrictionReverser(movement) {
     screwCore,
     screwThread,
     coneBody,
-    ...coneRims,
     coneGeneratorIndex,
     ...eccentricConnectors,
   );
@@ -677,13 +663,6 @@ function eccentricConeFrictionReverser(movement) {
   rollerBody.userData.contactEdgeLocalX = -rollerWidth / 2;
   rollerBody.userData.role =
     'thin-roller-C-touching-cone-at-large-end-side-edge';
-  const rollerFaceRim = new THREE.Mesh(
-    new THREE.TorusGeometry(rollerRadius - 0.018, 0.025, 9, 64),
-    darkMaterial,
-  );
-  rollerFaceRim.rotation.y = Math.PI / 2;
-  rollerFaceRim.position.x = rollerWidth / 2 + 0.006;
-  rollerFaceRim.userData.role = 'front-rim-of-friction-roller-C';
   const rollerIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.025, rollerRadius * 0.72, 0.038),
     whiteMaterial,
@@ -695,7 +674,7 @@ function eccentricConeFrictionReverser(movement) {
   );
   rollerIndex.userData.role =
     'white-index-showing-variable-and-reversing-roller-C-spin';
-  rollerRotor.add(rollerBody, rollerFaceRim, rollerIndex);
+  rollerRotor.add(rollerBody, rollerIndex);
   const rollerAxle = cylinderAlongX(
     0.065,
     guideX - rollerAxialCenter + .30,
@@ -816,7 +795,6 @@ function eccentricConeFrictionReverser(movement) {
     nutThread,
     coneBody,
     coneGeneratorIndex,
-    coneRims,
     contactMarker,
     contactSpring,
     eccentricConnectors,
@@ -829,7 +807,6 @@ function eccentricConeFrictionReverser(movement) {
     rollerAxle,
     rollerBody,
     rollerCarriage,
-    rollerFaceRim,
     rollerIndex,
     rollerRotor,
     screwConeAssembly,
@@ -1071,21 +1048,19 @@ function eccentricConeFrictionReverser(movement) {
     // Seen from the large end, the carrier bar and its joint balls would lie
     // across B's face. Brown draws a plain face with one circle round D (18
     // of B's 55 px) and D's end as a dot, so the large-end carrier becomes a
-    // round boss on the screw, flush on B, with a dark outline.
+    // round boss on the screw, standing slightly proud of B.
     const largeEndCarrier = eccentricConnectors[0];
     largeEndCarrier.traverse((object) => object.geometry?.dispose());
     largeEndCarrier.clear();
     const bossRadius = coneLargeRadius * 18 / 55;
     largeEndBoss = cylinderAlongX(bossRadius, 0.07, inputMaterial, 72);
+    // A chamfered outer edge lets the boss read against B's face without an
+    // ink ring: local +Y (the smaller top) faces outward along world -X.
+    largeEndBoss.geometry.dispose();
+    largeEndBoss.geometry = new THREE.CylinderGeometry(
+      bossRadius * 0.84, bossRadius, 0.07, 72);
     largeEndBoss.userData.role = 'round-large-end-boss-round-screw-D';
-    const bossRim = new THREE.Mesh(
-      new THREE.TorusGeometry(bossRadius, 0.025, 8, 72),
-      darkMaterial,
-    );
-    bossRim.rotation.y = Math.PI / 2;
-    bossRim.position.x = -0.035;
-    bossRim.userData.role = 'dark-outline-of-large-end-boss';
-    largeEndCarrier.add(largeEndBoss, bossRim);
+    largeEndCarrier.add(largeEndBoss);
     largeEndCarrier.userData.setEndpoints = () => {};
     largeEndCarrier.position.set(-coneLength / 2 - 0.035, 0, 0);
     largeEndCarrier.rotation.set(0, 0, 0);

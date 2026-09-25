@@ -86,7 +86,7 @@
     },
     {
       "file": "src/simulation/authored-curve-generators.js",
-      "sha256": "45635522a086bdb656c616933f9dae81eaa22ed9ed7ccf03678145ea051bba22"
+      "sha256": "e5772970348fd952787a7db47eaec64fbdb2103afa681c5bc802060cdad79a65"
     },
     {
       "file": "src/simulation/egg-curve-motion.js",
@@ -98,7 +98,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

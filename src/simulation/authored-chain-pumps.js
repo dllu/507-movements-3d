@@ -374,16 +374,6 @@ function chainPump(movement) {
   ), 'water-column-lifted-between-successive-chain-disks');
   cylinderWater.position.copy(cylinder.position);
   root.add(cylinderWater);
-  const cylinderFlanges = [cylinderBottomY, cylinderTopY].map((y, index) => {
-    const flange = addRole(new THREE.Mesh(
-      new THREE.TorusGeometry(cylinderInnerRadius + 0.07, 0.045, 10, 40),
-      darkMaterial,
-    ), index === 0 ? 'lower-cylinder-mouth' : 'upper-cylinder-mouth');
-    flange.rotation.x = Math.PI / 2;
-    flange.position.set(leftLegX, y, 0);
-    root.add(flange);
-    return flange;
-  });
 
   const dischargeTrough = addRole(new THREE.Group(),
     'upper-left-discharge-trough-receiving-raised-water');
@@ -495,7 +485,6 @@ function chainPump(movement) {
       bottomWheel,
       carriers,
       cylinder,
-      cylinderFlanges,
       cylinderWater,
       dischargeTrough,
       dischargeWater,

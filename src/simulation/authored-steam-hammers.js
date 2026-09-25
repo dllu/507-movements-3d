@@ -595,9 +595,11 @@ function steamHammer(movement) {
     20,
   ), 'steam-passage-from-valve-to-lower-cylinder');
   root.add(admissionPassage);
+  // Brown's steam pipe comes in from the left, in front of the left leg and
+  // the cylinder foot, to the valve chest.
   const supplyPipe = addRole(rodBetween(
-    new THREE.Vector3(1.43, 1.18, valvePivot.z),
-    new THREE.Vector3(2.05, 1.18, valvePivot.z),
+    new THREE.Vector3(-2.00, 1.12, valvePivot.z + 0.10),
+    new THREE.Vector3(0.72, 1.12, valvePivot.z + 0.10),
     0.085,
     darkMaterial,
     20,
@@ -610,7 +612,8 @@ function steamHammer(movement) {
     darkMaterial,
     20,
   ), 'steam-exhaust-stack');
-  root.add(exhaustStack);
+  // Brown draws no exhaust stack above the chest; it is kept only as an
+  // unattached block so shared corrections still find it, and is not shown.
 
   const update = (time) => {
     const state = stateAtTime(time);

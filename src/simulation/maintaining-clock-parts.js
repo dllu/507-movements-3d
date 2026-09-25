@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { tubePathUpdater } from './update-tube-path.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { plate, poly, circle, capsule, polygonClipping as clip } from './finite-plate-geometry.js';
 import clickPaths from './baked/maintaining-clock-clicks.js';
@@ -93,11 +92,7 @@ export function correctEndlessMaintainingChain(root){
     const pin=new THREE.Mesh(new THREE.CylinderGeometry(.08,.08,.80,32),eye.material);pin.rotation.x=Math.PI/2;pin.position.z=.12;carrier.add(pin);
     b[`${size}Weight`].position.z=.20;b[`${size}Hanger`]=eye;b[`${size}Axle`]=pin;
   }
-  // Reuse the shared buffer-preserving updater, including its closed seam.
-  const refillChain=tubePathUpdater(b.chainMesh.geometry);
-  b.chain.userData.setCurve=curve=>{
-    refillChain(curve);b.chain.userData.curve=curve;b.chain.userData.length=curve.getLength();
-  };
+  // The laid rope keeps its buffers (constant length) and closes its lay seam itself.
   const mesh=b.ratchetPulley.userData.rotor.children.find(o=>o.userData.role==='ratchet-wheel-riding-on-arbor-p');
   const center=[b.ratchetPulley.position.x,b.ratchetPulley.position.y];
   b.pawl.position.z=g.chainPlaneZ+mesh.position.z;

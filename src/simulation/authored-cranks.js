@@ -14908,13 +14908,6 @@ function quadratureTwinCrankShaftCoupling() {
     frontDisk.position.z = frontDiskCenterZ;
     frontDisk.userData.role = `${role}-front-crank-disk`;
 
-    const frontRim = new THREE.Mesh(
-      new THREE.TorusGeometry(frontDiskRadius, 0.045, 10, 84),
-      linerMaterial,
-    );
-    frontRim.position.z = frontDiskCenterZ + frontDiskDepth / 2 + 0.022;
-    frontRim.userData.role = `${role}-front-disk-outline`;
-
     const frontHub = cylinderAlongZ(hubRadius, hubDepth, linerMaterial, 40);
     frontHub.position.z = frontDiskCenterZ;
     frontHub.userData.role = `${role}-front-shaft-hub`;
@@ -14990,7 +14983,6 @@ function quadratureTwinCrankShaftCoupling() {
     rotor.add(
       shaft,
       frontDisk,
-      frontRim,
       frontHub,
       frontRotationIndex,
       frontPin,
@@ -15003,7 +14995,6 @@ function quadratureTwinCrankShaftCoupling() {
       frontDisk,
       frontHub,
       frontPin,
-      frontRim,
       frontRotationIndex,
       rearCrank,
       rearHub,

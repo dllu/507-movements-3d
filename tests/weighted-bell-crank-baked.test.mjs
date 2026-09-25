@@ -21,7 +21,7 @@ test('154 bake preserves bounds, fog settings, periodic closure and exact restar
   const initial=JSON.stringify(v.root.userData.state),cord=v.root.getObjectByName('weighted-cord'),geometry=cord.geometry,positions=geometry.attributes.position.array;
   for(let i=0;i<129;i++){v.update(12*(i+.317)/129);assert.ok(v.root.userData.cameraFitBounds.clone().expandByScalar(1e-5).containsBox(new THREE.Box3().setFromObject(v.root,true)));}
   assert.equal(cord.geometry,geometry);assert.equal(cord.geometry.attributes.position.array,positions);
-  v.root.traverse(o=>{if(o.material)assert.equal(o.material.fog,false);});
+  v.root.traverse(o=>{if(o.material)for(const m of [o.material].flat())assert.equal(m.fog,false);});
   v.update(12-1e-8);const before=v.root.userData.state.qpos;v.update(12+1e-8);const after=v.root.userData.state.qpos;for(const name of bundle.names)assert.ok(Math.abs(before[name]-after[name])<1e-6,name);
   v.reset();assert.equal(JSON.stringify(v.root.userData.state),initial);
  }finally{v.dispose();}

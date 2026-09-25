@@ -219,11 +219,11 @@
     },
     {
       "file": "src/simulation/authored-stroke-cranks.js",
-      "sha256": "1b6d5c928e9eec7fcef0598f0d5ded99c0cb07dfd6123b87f82fb4dd5daf9dbc"
+      "sha256": "4dc82b538cb349cd355619e9345bad4f3fc1bb910e4387f0b1d1ff180cc3ea09"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",

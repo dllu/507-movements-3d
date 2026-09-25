@@ -100,9 +100,9 @@ test('movement 373 is Robert\'s one-drum, two-wheel carriage experiment with one
     blocks.wagonBed,
     ...blocks.wagonSides,
   ]) assert.equal(component.parent, blocks.wagon);
-  assert.equal(blocks.upperBeltStrand.parent, blocks.belt);
-  assert.equal(blocks.lowerBeltStrand.parent, blocks.belt);
-  assert.equal(blocks.beltWrap.parent, blocks.belt);
+  // One continuous flat band (Brown's thin double line), not three pieces.
+  assert.equal(blocks.beltBand.parent, blocks.belt);
+  assert.equal(blocks.belt.userData.crossSection, 'flat');
   assert.equal(blocks.pointer.parent, blocks.pointerPivot);
   assert.equal(blocks.carriageWheels.length, 2);
   assert.equal(blocks.contactMarkers.length, 2);
@@ -300,7 +300,7 @@ test('movement 373 gives both carriage wheels the exact negative radius ratio an
       near(contact.normal.length(), 1, 0, 'unit contact normal');
     }
   }
-  assert.equal(blocks.belt.children.length, 3);
+  assert.equal(blocks.belt.children.length, 1); // one continuous flat band
   disposeModel(model.root);
 });
 

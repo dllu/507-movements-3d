@@ -66,10 +66,11 @@ export function makeDualInputDifferential() {
   add('outerSpindleCollar', drum(0.095, p.planetSpindleRadius, [p.planetHubEnd + 0.006, p.planetHubEnd + 0.026], PALETTE.brass), planetAxis, 'carrier');
   add('sidePulley', drum(p.pulleyRadius, p.sideHubRadius, p.pulleySpans[3], PALETTE.muted), side, 'side');
   const mainCurve = beltCurveOpen(new THREE.Vector2(0, p.driverHeight), new THREE.Vector2(), p.driverPitchRadius, p.pulleyPitchRadius, 0);
-  const segments = 2048, paper = new THREE.Color(0xd9cead);
+  const segments = 2048, paper = new THREE.Color(PALETTE.belt);
   const bandGeometry = curve => {
     const geometry = flatBeltGeometry(curve, { width: p.beltWidth, thickness: p.beltThickness, segments });
-    // Brown draws the bands plain: one paper colour, no travelling stitch marks.
+    // Brown draws the bands as plain flat belts: the shared belt colour, no
+    // travelling stitch marks.
     const colors = new Float32Array(geometry.attributes.position.count * 3);
     for (let j = 0; j < colors.length; j += 3) paper.toArray(colors, j);
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));

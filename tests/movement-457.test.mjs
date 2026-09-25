@@ -305,8 +305,12 @@ test('movement 457 renderer maps beam, rope, bucket water, and effort direction 
       `beam transform at ${phase}`);
     vectorNear(blocks.bucket.position, state.bucketCenter, 0,
       `bucket transform at ${phase}`);
-    near(blocks.rope.scale.y, geometry.ropeLength, 4e-16,
-      `rope display length at ${phase}`);
+    vectorNear(blocks.rope.position, state.leftTip, 0,
+      `laid rope hangs from the long-arm tip at ${phase}`);
+    blocks.rope.geometry.computeBoundingBox();
+    near(blocks.rope.geometry.boundingBox.min.y, -geometry.ropeLength, 1e-9,
+      `laid rope reaches the bail at ${phase}`);
+    near(blocks.rope.scale.y, 1, 0, `laid rope is not stretched at ${phase}`);
     assert.equal(blocks.operatorArrow.visible, false);
     const expectedWaterVisible = 0.60 * state.bucketWaterFraction > 1e-5;
     assert.equal(blocks.bucketWater.visible, expectedWaterVisible);

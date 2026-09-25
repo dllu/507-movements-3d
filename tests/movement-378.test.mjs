@@ -83,8 +83,7 @@ test('movement 378 is one pendulum-driven bow saw in a counterweighted vertical-
     blocks.pendulum,
     blocks.pendulumFrame,
     ...blocks.pulleyRoots,
-    ...blocks.ropeArcs,
-    ...blocks.ropeSegments,
+    ...blocks.ropes,
     blocks.saw,
     blocks.sawPinMarker,
   ]) assert.equal(component.parent, model.root);
@@ -109,8 +108,13 @@ test('movement 378 is one pendulum-driven bow saw in a counterweighted vertical-
   for (const rail of blocks.groundRails) assert.equal(rail.parent, null, 'Brown draws no foundation rails');
   assert.equal(blocks.pulleyRoots.length, 2);
   assert.equal(blocks.counterweights.length, 2);
-  assert.equal(blocks.ropeArcs.length, 2);
-  assert.equal(blocks.ropeSegments.length, 4);
+  assert.equal(blocks.ropes.length, 2);
+  for (const rope of blocks.ropes) {
+    assert.equal(rope.geometry.type, 'LaidRopeGeometry',
+      'each counterweight rope is one continuous laid rope');
+  }
+  assert.equal(blocks.ropeArcs, undefined);
+  assert.equal(blocks.ropeSegments, undefined);
   assert.equal(blocks.carriageSides.length, 2);
   assert.equal(blocks.sawHandles.length, 2);
   assert.equal(blocks.sawTeeth.length, 27);

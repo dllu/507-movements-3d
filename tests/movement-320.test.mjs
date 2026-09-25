@@ -87,7 +87,9 @@ test('movement 320 is Brown’s one-chain maintaining-power train', () => {
     [blocks.smallWeight, blocks.smallCarrier, 'small weight'],
     [blocks.largeWeight, blocks.largeCarrier, 'large weight'],
   ]) assert.ok(child.parent === parent, `${name} parent`);
-  assert.equal(blocks.chainMarkers.length, 21);
+  // The cord is the shared laid rope; its lay, not markers, shows travel.
+  assert.equal(blocks.chainMarkers.length, 0);
+  assert.equal(blocks.chain.userData.crossSection, 'laid-rope');
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
@@ -363,7 +365,7 @@ test('movement 320 locks p during going and lets it advance only while winding',
   disposeModel(model.root);
 });
 
-test('movement 320 closes continuously through pulley symmetries and one marker pitch', () => {
+test('movement 320 closes continuously through pulley symmetries and one chain pitch', () => {
   const model = createMovementModel(catalog.movements[319]);
   const { blocks, geometry, rawStateAtTime } = model.root.userData;
   const start = rawStateAtTime(0);
@@ -390,21 +392,13 @@ test('movement 320 closes continuously through pulley symmetries and one marker 
 
   model.update(0);
   model.root.updateMatrixWorld(true);
-  const initialMarkers = blocks.chainMarkers.map((marker) =>
-    marker.getWorldPosition(new THREE.Vector3()));
   const chainGeometry = blocks.chainMesh.geometry;
   model.update(geometry.demonstrationPeriod);
   model.root.updateMatrixWorld(true);
   assert.equal(blocks.chainMesh.geometry, chainGeometry,
     'dynamic chain reuses its buffer geometry');
-  for (let index = 0; index < blocks.chainMarkers.length; index += 1) {
-    vectorNear(
-      blocks.chainMarkers[index].getWorldPosition(new THREE.Vector3()),
-      initialMarkers[(index + 1) % blocks.chainMarkers.length],
-      2e-9,
-      `marker ${index} closes by one indistinguishable-link permutation`,
-    );
-  }
+  near(chainGeometry.userData.travel, closure.chainTravel, 0,
+    'the laid rope lay moves with the chain travel');
   assert.equal(blocks.windingHandle.visible, false);
   disposeModel(model.root);
 });

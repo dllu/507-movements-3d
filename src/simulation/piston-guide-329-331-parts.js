@@ -42,7 +42,6 @@ export function correctSlottedGuide(root){
   const d=root.userData,b=d.blocks,g=d.geometry;
   const shape=b.yokeBody.geometry.parameters.shapes,slot=capsule([g.slotLeftCenterX,0],[g.slotRightCenterX,0],g.slotHalfHeight+.0005,96);
   replace(b.yokeBody,plate(clip.difference(poly(shape.getPoints(48).map(p=>p.toArray())),slot),-g.crossheadDepth/2,g.crossheadDepth/2));
-  replace(b.slotOutline,plate(clip.difference(capsule([g.slotLeftCenterX,0],[g.slotRightCenterX,0],g.slotHalfHeight+.019,96),slot),g.crossheadPlaneZ+g.crossheadDepth/2-.002,g.crossheadPlaneZ+g.crossheadDepth/2+.008));
   replace(b.crankshaft,new THREE.CylinderGeometry(.1728,.1728,.98,48));b.crankshaft.position.z=-.14;
   replace(b.bearingHousing,tube(.36,.177,.44));b.bearingHousing.position.z=-.08;
   replace(b.bearingBore,tube(.178,.175,.44));b.bearingBore.position.z=-.08;

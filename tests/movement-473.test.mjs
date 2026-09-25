@@ -312,11 +312,12 @@ test('movement 473 renderer maps exact levers, ropes, bell, pressure surface, ch
     near(blocks.rightLever.scale.y,
       geometry.leverInnerArmLength + geometry.leverOuterArmLength,
       3e-12, `right lever length at ${phase}`);
-    near(blocks.leftSuspensionRope.scale.y,
-      geometry.suspensionRopeLength, 3e-12,
+    // The suspension ropes are laid ropes rebuilt along their exact run.
+    near(blocks.leftSuspensionRope.geometry.userData.ropeLay.length,
+      geometry.suspensionRopeLength, 1e-9,
       `left rendered rope at ${phase}`);
-    near(blocks.rightSuspensionRope.scale.y,
-      geometry.suspensionRopeLength, 3e-12,
+    near(blocks.rightSuspensionRope.geometry.userData.ropeLay.length,
+      geometry.suspensionRopeLength, 1e-9,
       `right rendered rope at ${phase}`);
     near(blocks.trappedGas.scale.y, state.chamberHeight, 1e-12,
       `gas chamber scale at ${phase}`);

@@ -68,7 +68,9 @@ test('movement 359 is one cord, one sliding crossbar, and one common drill rotor
   blocks.cordBranches.forEach((branch) => {
     assert.equal(branch.parent, blocks.singleCord);
     assert.equal(branch.userData.closed, false);
-    assert.equal(branch.userData.markers.length, 4);
+    // Brown hatches the cord: the shared laid rope, no painted markers.
+    assert.equal(branch.userData.markers.length, 0);
+    assert.equal(branch.userData.crossSection, 'laid-rope');
     assert.equal(branch.userData.materialLength, data.geometry.branchLength);
   });
 
@@ -267,7 +269,7 @@ test('movement 359 carries flywheel momentum through each unwound midpoint and r
   disposeModel(model.root);
 });
 
-test('movement 359 renderer keeps rotor, crossbar, cord ends, and fixed material markers synchronized', () => {
+test('movement 359 renderer keeps rotor, crossbar, cord ends, and the anchored rope lay synchronized', () => {
   const model = createMovementModel(catalog.movements[358]);
   const data = model.root.userData;
   const { blocks, geometry } = data;
@@ -290,14 +292,8 @@ test('movement 359 renderer keeps rotor, crossbar, cord ends, and fixed material
         2e-12, `eye attachment at ${time}`);
       vectorNear(branch.userData.curve.getPointAt(1), expectedCord.handlePoint,
         2e-12, `bar attachment at ${time}`);
-      branch.userData.markers.forEach((marker, markerIndex) => {
-        vectorNear(
-          marker.position,
-          branch.userData.curve.getPointAt((markerIndex + 1) / 5),
-          2e-12,
-          `material marker ${markerIndex} at ${time}`,
-        );
-      });
+      // Both ends are tied: the lay keeps its material coordinate.
+      assert.equal(branch.children.at(-1).geometry.userData.travel, 0);
       const positions = branch.children.at(-1).geometry.attributes.position;
       for (const value of positions.array) assert.ok(Number.isFinite(value));
     }
@@ -305,7 +301,7 @@ test('movement 359 renderer keeps rotor, crossbar, cord ends, and fixed material
   disposeModel(model.root);
 });
 
-test('movement 359 cord markers remain continuous through free-to-wrapped transitions over 1,200 rendered frames', () => {
+test('movement 359 cord material points remain continuous through free-to-wrapped transitions over 1,200 rendered frames', () => {
   const model = createMovementModel(catalog.movements[358]);
   const data = model.root.userData;
   const { blocks, geometry } = data;
@@ -318,8 +314,8 @@ test('movement 359 cord markers remain continuous through free-to-wrapped transi
     const time = geometry.cyclePeriod * frame / 1200;
     model.update(time);
     const positions = blocks.cordBranches.flatMap(
-      (branch) => branch.userData.markers.map(
-        (marker) => marker.position.clone(),
+      (branch) => [1, 2, 3, 4].map(
+        (index) => branch.userData.curve.getPointAt(index / 5),
       ),
     );
     if (frame === 0) {
@@ -354,14 +350,14 @@ test('movement 359 cord markers remain continuous through free-to-wrapped transi
     geometry.cyclePeriod * 3 / 4]) {
     model.update(midpoint - 1e-6);
     const before = blocks.cordBranches.flatMap(
-      (branch) => branch.userData.markers.map(
-        (marker) => marker.position.clone(),
+      (branch) => [1, 2, 3, 4].map(
+        (index) => branch.userData.curve.getPointAt(index / 5),
       ),
     );
     model.update(midpoint + 1e-6);
     const after = blocks.cordBranches.flatMap(
-      (branch) => branch.userData.markers.map(
-        (marker) => marker.position.clone(),
+      (branch) => [1, 2, 3, 4].map(
+        (index) => branch.userData.curve.getPointAt(index / 5),
       ),
     );
     after.forEach((position, index) => {

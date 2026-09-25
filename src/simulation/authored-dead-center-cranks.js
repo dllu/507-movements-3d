@@ -379,17 +379,19 @@ function brownellDeadCenterCrank(movement) {
   faceDisc.position.z = 0.02;
   faceDisc.userData.role = 'rigid-flywheel-faceplate';
   faceplate.add(faceDisc);
+  // The rounded rim is part of the flywheel, in the wheel's own colour.
   const rim = new THREE.Mesh(
     new THREE.TorusGeometry(wheelRadius, 0.095, 12, 84),
-    inkMaterial,
+    driverMaterial,
   );
   rim.position.z = 0.03;
   rim.userData.role = 'flywheel-rim';
   faceplate.add(rim);
-  // Brown draws a plain faceplate with one inner turned ring, no spokes or index.
+  // Brown draws a plain faceplate with one inner turned ring, no spokes or
+  // index: a low turned bead in the faceplate's colour, not an ink line.
   const faceRing = new THREE.Mesh(
     new THREE.TorusGeometry(wheelRadius * 0.74, 0.03, 8, 84),
-    inkMaterial,
+    driverMaterial,
   );
   faceRing.position.z = 0.135;
   faceRing.userData.role = 'faceplate-inner-turned-ring';

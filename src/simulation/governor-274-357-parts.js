@@ -122,7 +122,7 @@ export function correctAndersonGovernor(root,update){
  replace(b.lowerStandard,mergeGeometries(posts));posts.forEach(g=>g.dispose());
  const cap=root.children.find(o=>o.userData.role==='upper-bearing-cap-on-drive-standard');if(cap)bore(cap,.49,.18,.126);
  p.pairs.push([b.verticalCarrierShaft,b.lowerStandard],[b.engineInputShaft,b.lowerStandard]);if(cap)p.pairs.push([b.verticalCarrierShaft,cap]);
- for(const moving of[b.rotorDisk,b.rotorRim,b.outputShaft])for(const fixed of[b.radialCarrierBeam,...b.carrierCageArms,...b.hingeBearings,...b.hingePins,...b.inputYokeEyes,b.spiderInputTrunnion,b.spiderOutputTrunnion])p.pairs.push([moving,fixed]);
+ for(const moving of[b.rotorDisk,b.outputShaft])for(const fixed of[b.radialCarrierBeam,...b.carrierCageArms,...b.hingeBearings,...b.hingePins,...b.inputYokeEyes,b.spiderInputTrunnion,b.spiderOutputTrunnion])p.pairs.push([moving,fixed]);
  castCasing(root,b,p);
  d.governorWorkingParts=p;
  finish(root,'The 60:12 fixed-circle drive and single Cardan joint determine wheel spin. Tilt is prescribed from a quasi-static spring/gyroscopic torque balance. Transient governing, friction, stability and the spring load under real engine disturbances are not simulated.');

@@ -16,8 +16,6 @@ export function makeSilkTraverseGeometry(){
  const carrier=group('carrier'),planet=group('planet',carrier),rod=group('rod'),slider=group('slider');planet.position.set(...k.orbit,0);
  add(carrier,'carrier-disk',bore(circleAt([0,0],1.78),[[0,0]],.081),-.18,-.10,PALETTE.driver);
  add(carrier,'carrier-bearing',bore(circleAt([0,0],.18),[[0,0]],.081),-.28,-.18,PALETTE.driver);
- const dashed=[];for(let i=0;i<80;i++)for(const t of [0,.55]){const a=(i+t)*2*Math.PI/80;dashed.push(1.58*Math.cos(a),1.58*Math.sin(a),-.098);}
- const lineGeometry=new THREE.BufferGeometry();lineGeometry.setAttribute('position',new THREE.Float32BufferAttribute(dashed,3));carrier.add(new THREE.LineSegments(lineGeometry,new THREE.LineBasicMaterial({color:PALETTE.ink,fog:false})));
  for(const [name,geometry,parent,phase,color]of [['sun-gear',gears.sun,root,gears.sunPhase,PALETTE.ink],['planet-gear',gears.planet,planet,gears.planetPhase,PALETTE.driven]]){
   const mesh=new THREE.Mesh(geometry,matte(color));mesh.name=name;mesh.rotation.z=phase;parent.add(mesh);parts[name]=mesh;
  }

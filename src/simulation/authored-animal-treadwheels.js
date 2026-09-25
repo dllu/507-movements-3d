@@ -167,7 +167,7 @@ function animalInteriorTreadwheel(movement) {
   for (const side of [-1, 1]) {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(wheelRadius - 0.07, 0.070, 12, 96),
-      darkMaterial,
+      wheelMaterial,
     );
     ring.position.z = side * wheelWidth / 2;
     ring.userData.side = side;

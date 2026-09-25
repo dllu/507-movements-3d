@@ -12,6 +12,7 @@ import { whitePulleys } from './authored-white-pulleys.js';
 import { twoFixedOneMovable } from './authored-fixed-tackle.js';
 import { spanishBartonFourToOne, spanishBartonFiveToOne } from './authored-bartons.js';
 import { makeHoistLoad, makeSheaveHanger, makeTackleCase } from './hoist-hardware.js';
+import { LaidRopeGeometry, makeLaidRopeMesh } from './laid-rope.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -224,16 +225,20 @@ function simpleBeltTransmission(crossed = false) {
   const root = new THREE.Group();
   const upperCenter = new THREE.Vector2(0, 2.05);
   const lowerCenter = new THREE.Vector2(0, -2.05);
-  const radius = 0.82;
-  const driver = makePulley({ radius: radius - 0.012, width: 0.30, color: PALETTE.driver });
-  const driven = makePulley({ radius: radius - 0.012, width: 0.30, color: PALETTE.driven });
+  // Brown hatches the band of 1 and 2 as a laid rope, about a fifteenth of
+  // the pulley diameter across. Its centreline runs just outside the tread.
+  const pulleyRadius = 0.808;
+  const ropeRadius = 0.048;
+  const radius = pulleyRadius + ropeRadius + 0.003;
+  const driver = makePulley({ radius: pulleyRadius, width: 0.30, color: PALETTE.driver });
+  const driven = makePulley({ radius: pulleyRadius, width: 0.30, color: PALETTE.driven });
   driver.position.set(upperCenter.x, upperCenter.y, 0);
   driven.position.set(lowerCenter.x, lowerCenter.y, 0);
   const belt = makeMovingBelt(
     crossed
       ? beltCurveCrossed(upperCenter, lowerCenter, radius, radius)
       : beltCurveOpen(upperCenter, lowerCenter, radius, radius),
-    { width: 0.18, thickness: 0.024, markerCount: 0 },
+    { radius: ropeRadius, laid: true, markerCount: 0 },
   );
   root.add(driver, driven, belt);
   addKeyedShaft(driver);
@@ -271,13 +276,18 @@ function rightAngleGuides() {
   const drivenCenter = new THREE.Vector3(1.6, 1.5, 0);
   const driverCenter = new THREE.Vector3(-1.8, -2.65, 0);
   const guideVertex = new THREE.Vector3(driverCenter.x, 2.36, 0);
-  const drivenRadius = 0.88;
+  // Brown hatches this band as a laid rope. Its centreline runs just outside
+  // each tread, so the radii below are rope pitch radii.
+  const ropeRadius = 0.045;
+  const ropeLift = ropeRadius + 0.003;
+  const drivenRadius = 0.868 + ropeLift;
   // Brown's drum is as tall as it is wide, about 0.92 of the wheel's diameter.
-  const driverRadius = 0.81;
-  const driverWidth = 2 * driverRadius;
-  const guideRadius = 0.44;
-  const driven = makePulley({ radius: drivenRadius - 0.012, width: 0.38, color: PALETTE.driven, axis: Z_AXIS });
-  const driver = makePulley({ radius: driverRadius - 0.012, width: driverWidth, hubLength: driverWidth + 0.1,
+  const drumRadius = 0.798;
+  const driverRadius = drumRadius + ropeLift;
+  const driverWidth = 2 * (drumRadius + 0.012);
+  const guideRadius = 0.428 + ropeLift;
+  const driven = makePulley({ radius: drivenRadius - ropeLift, width: 0.38, color: PALETTE.driven, axis: Z_AXIS });
+  const driver = makePulley({ radius: drumRadius, width: driverWidth, hubLength: driverWidth + 0.1,
     spokes: 0, grooves: 0, color: PALETTE.driver, axis: X_AXIS });
   driven.position.copy(drivenCenter);
   driver.position.copy(driverCenter);
@@ -365,14 +375,14 @@ function rightAngleGuides() {
   beltCurve.add(drivenArc);
 
   const guideA = makePulley({
-    radius: guideRadius - 0.012,
+    radius: guideRadius - ropeLift,
     width: 0.23,
     color: PALETTE.accent,
     axis: firstGuide.axis,
     spokes: 0,
   });
   const guideB = makePulley({
-    radius: guideRadius - 0.012,
+    radius: guideRadius - ropeLift,
     width: 0.23,
     color: PALETTE.accent,
     axis: secondGuide.axis,
@@ -380,11 +390,7 @@ function rightAngleGuides() {
   });
   guideA.position.copy(firstGuide.center);
   guideB.position.copy(secondGuide.center);
-  const belt = makeMovingBelt(beltCurve, {
-    width: 0.15, thickness: 0.024, markerCount: 0,
-    widthDirection: contactWidthDirection(beltCurve,
-      [null, firstGuide.axis, null, X_AXIS, null, secondGuide.axis, null, Z_AXIS]),
-  });
+  const belt = makeMovingBelt(beltCurve, { radius: ropeRadius, laid: true, markerCount: 0 });
   root.add(driver, driven, guideA, guideB, belt);
   addKeyedShaft(driver, driverWidth + 0.3);
   addKeyedShaft(driven, 1.45);
@@ -572,7 +578,8 @@ function rightAngleCrossed() {
   });
   guideLeft.position.copy(leftGuideContact.center);
   guideRight.position.copy(rightGuideContact.center);
-  const belt = makeMovingBelt(beltCurve, { radius: 0.05, markerCount: 0 });
+  // Brown hatches the band as a laid rope lying on each tread.
+  const belt = makeMovingBelt(beltCurve, { radius: 0.05, laid: true, markerCount: 0 });
   root.add(driver, driven, guideLeft, guideRight, belt);
   addKeyedShaft(driver, 1.5);
   addKeyedShaft(driven, 1.15);
@@ -618,13 +625,16 @@ function tighteningPulley() {
   const beltZ = 0;
   const top = new THREE.Vector3(0, 2.35, beltZ);
   const bottom = new THREE.Vector3(0.20, -2.35, beltZ);
-  const driverRadius = 0.90;
-  const drivenRadius = 0.64;
-  const idlerRadius = 0.37;
-  const halfThickness = 0.012;
-  const driver = makePulley({ radius: driverRadius - halfThickness, color: PALETTE.driver });
-  const driven = makePulley({ radius: drivenRadius - halfThickness, color: PALETTE.driven });
-  const idler = makePulley({ radius: idlerRadius - halfThickness, width: 0.26, spokes: 0, color: PALETTE.accent, bore: 0.082 });
+  // Brown hatches the band as a laid rope; its centreline runs just outside
+  // each tread, so the radii below are rope pitch radii.
+  const ropeRadius = 0.045;
+  const ropeLift = ropeRadius + 0.003;
+  const driverRadius = 0.888 + ropeLift;
+  const drivenRadius = 0.628 + ropeLift;
+  const idlerRadius = 0.358 + ropeLift;
+  const driver = makePulley({ radius: driverRadius - ropeLift, color: PALETTE.driver });
+  const driven = makePulley({ radius: drivenRadius - ropeLift, color: PALETTE.driven });
+  const idler = makePulley({ radius: idlerRadius - ropeLift, width: 0.26, spokes: 0, color: PALETTE.accent, bore: 0.082 });
   driver.position.copy(top).setZ(0);
   driven.position.copy(bottom).setZ(0);
   const pivot = new THREE.Vector3(-1.57, -0.78, -0.25);
@@ -708,7 +718,7 @@ function tighteningPulley() {
     previousPath = path;
     return path;
   };
-  const belt = makeDynamicMovingBelt(pathAt(1).curve, { width: 0.16, thickness: 2 * halfThickness, markerCount: 0 });
+  const belt = makeDynamicMovingBelt(pathAt(1).curve, { radius: ropeRadius, laid: true, markerCount: 0 });
   belt.userData.mechanismBelt = true;
   const arm = makeDynamicLink({ thickness: 0.085, depth: 0.12, color: PALETTE.frame, jointRadius: 0.085 });
   root.add(driver, driven, idler, belt, arm);
@@ -787,14 +797,19 @@ function tighteningPulley() {
 function oscillatingSector() {
   const root = new THREE.Group();
   const beltZ = 0;
-  const sectorRadius = 1.12;
-  const lowerPitchRadius = 0.56;
+  // Brown hatches the band as a laid rope; its centreline runs just outside
+  // the sector rim and pulley treads, so the radii below are rope pitch radii.
+  const ropeRadius = 0.045;
+  const ropeLift = ropeRadius + 0.003;
+  const sectorRimRadius = 1.12;
+  const outerRadius = sectorRimRadius - 0.012;
+  const sectorRadius = outerRadius + ropeLift;
+  const lowerPitchRadius = 0.548 + ropeLift;
   const sectorPivot = new THREE.Vector3(0, 1.25, 0);
   const sector = new THREE.Group();
   sector.position.copy(sectorPivot);
   const sectorShape = new THREE.Shape();
-  const outerRadius = sectorRadius - 0.012;
-  const innerRadius = sectorRadius * 0.80;
+  const innerRadius = sectorRimRadius * 0.80;
   sectorShape.moveTo(-outerRadius, 0);
   sectorShape.absarc(0, 0, outerRadius, Math.PI, Math.PI * 2, false);
   sectorShape.lineTo(innerRadius, 0);
@@ -817,10 +832,10 @@ function oscillatingSector() {
   hub.rotation.x = Math.PI / 2;
   for (const angle of [-Math.PI * 0.70, -Math.PI * 0.30]) {
     const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(sectorRadius * 0.72, 0.08, 0.20),
+      new THREE.BoxGeometry(sectorRimRadius * 0.72, 0.08, 0.20),
       matte(PALETTE.ink),
     );
-    spoke.position.set(Math.cos(angle) * sectorRadius * 0.51, Math.sin(angle) * sectorRadius * 0.51, 0);
+    spoke.position.set(Math.cos(angle) * sectorRimRadius * 0.51, Math.sin(angle) * sectorRimRadius * 0.51, 0);
     spoke.rotation.z = angle;
     sector.add(spoke);
   }
@@ -833,9 +848,9 @@ function oscillatingSector() {
     arm.userData.role = 'sector-arm-under-lever';
     sector.add(arm);
   }
-  // The belt ends are fastened to the rim just under the lever bar (half
+  // The rope ends are fastened to the rim just under the lever bar (half
   // height 0.07) rather than inside it.
-  const attachmentDrop = Math.asin(0.074 / sectorRadius);
+  const attachmentDrop = Math.asin((0.074 + ropeRadius) / sectorRadius);
   const leftAttachmentLocal = new THREE.Vector3(
     -sectorRadius * Math.cos(attachmentDrop), -sectorRadius * Math.sin(attachmentDrop), beltZ);
   const rightAttachmentLocal = new THREE.Vector3(
@@ -852,8 +867,8 @@ function oscillatingSector() {
 
   const leftCenter = new THREE.Vector3(-1.5, -1.9, beltZ);
   const rightCenter = new THREE.Vector3(1.5, -1.9, beltZ);
-  const leftPulley = makePulley({ radius: lowerPitchRadius - 0.012, width: 0.28, color: PALETTE.driven });
-  const rightPulley = makePulley({ radius: lowerPitchRadius - 0.012, width: 0.28, color: PALETTE.driven });
+  const leftPulley = makePulley({ radius: lowerPitchRadius - ropeLift, width: 0.28, color: PALETTE.driven });
+  const rightPulley = makePulley({ radius: lowerPitchRadius - ropeLift, width: 0.28, color: PALETTE.driven });
   leftPulley.position.set(leftCenter.x, leftCenter.y, 0);
   rightPulley.position.set(rightCenter.x, rightCenter.y, 0);
   const leftBottom = leftCenter.clone().add(new THREE.Vector3(0, -lowerPitchRadius, 0));
@@ -926,8 +941,8 @@ function oscillatingSector() {
   const belt = makeDynamicMovingBelt(initialPath.curve, {
     closed: false,
     markerCount: 0,
-    width: 0.16,
-    thickness: 0.024,
+    radius: ropeRadius,
+    laid: true,
   });
   belt.userData.mechanismBelt = true;
   root.add(sector, leftPulley, rightPulley, belt);
@@ -1081,6 +1096,12 @@ function reversingBevelDrive() {
   gearA.userData.role = 'A-inner-shaft';
   gearB.userData.role = 'B-hollow-shaft';
   outputGear.userData.role = 'C-upright-output';
+  // Brown draws no dark ring on the gears' back faces; the generic miter-gear
+  // face ring is only line-drawing edging, so it stays as a hidden placeholder.
+  for (const gear of [gearA, gearB, outputGear]) {
+    gear.userData.inset.visible = false;
+    gear.userData.inset.userData.retiredInkOutline = true;
+  }
 
   const rightPulleyX = stackX + grooveSpacing;
   const leftPulleyX = stackX - grooveSpacing;
@@ -1701,10 +1722,12 @@ function fixedHoist() {
     };
   };
   const initialPath = makeRopePath(0);
+  // Brown draws the fall as a laid rope.
   const rope = makeDynamicMovingBelt(initialPath.curve, {
     closed: false,
     markerCount: 0,
     radius: 0.042,
+    laid: true,
   });
   rope.userData.mechanismRope = true;
   root.add(pulley, rope, weight);
@@ -1734,7 +1757,9 @@ function fixedHoist() {
     const ropeTravel = -motion;
     const ropeSpeed = -motionSpeed;
     rope.userData.setCurve(path.curve);
-    rope.userData.updateDistance(ropeTravel);
+    // The path starts at the hand's grip on a constant-length rope, so each
+    // arc-length coordinate is a fixed piece of rope: the lay is not shifted.
+    rope.userData.updateDistance(0);
     weight.position.copy(path.loadAttachment).add(new THREE.Vector3(0, -0.39, 0));
     hand.position.copy(path.effortEnd);
     setSpin(pulley, Math.sign(contactArc.sweep) * ropeTravel / pitchRadius);
@@ -1854,7 +1879,7 @@ function makeHaulingHand(ropeDirection, ropeRadius) {
     new THREE.Vector3(-0.2, -1.25, 0),
   ];
   const tail = new THREE.Mesh(
-    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(tailPoints), 48, ropeRadius, 10, false),
+    new LaidRopeGeometry(new THREE.CatmullRomCurve3(tailPoints), 48, ropeRadius, 8, false),
     matte(PALETTE.belt, { roughness: 0.76 }));
   tail.name = 'loose-rope-tail';
   body.add(arm, cuff);
@@ -1942,10 +1967,12 @@ function singleMovableHoist() {
     };
   };
   const initialPath = makeRopePath(0);
+  // Brown draws the rope laid; it runs from the free end to the anchor.
   const rope = makeDynamicMovingBelt(initialPath.curve, {
     closed: false,
     markerCount: 0,
     radius: 0.04,
+    laid: true,
   });
   rope.userData.mechanismRope = true;
   const weight = makeHoistLoad({ radius: 0.46, height: 0.62 });
@@ -1976,10 +2003,11 @@ function singleMovableHoist() {
     const loadSpeed = Math.cos(time * frequency) * 0.3 * frequency;
     const effortTravel = travel * 2;
     const effortSpeed = loadSpeed * 2;
-    const ropeTravel = -effortTravel;
     const path = makeRopePath(travel);
     rope.userData.setCurve(path.curve);
-    rope.userData.updateDistance(ropeTravel);
+    // Constant length measured from the free end: each arc-length coordinate
+    // is a fixed piece of rope, so the lay is not shifted along the path.
+    rope.userData.updateDistance(0);
     movablePulley.position.copy(path.movableCenter).setZ(0);
     movableHanger.position.copy(movablePulley.position);
     weight.position.copy(movableHanger.position).add(movableHanger.userData.attachment)
@@ -2199,6 +2227,7 @@ function blockAndTackle() {
     closed: false,
     markerCount: 0,
     radius: ropeRadius,
+    laid: true,
   });
   rope.userData.mechanismRope = true;
   root.add(topGroup, bottomGroup, rope);
@@ -2559,9 +2588,12 @@ function compensatedMovableDrive() {
     return (lower + upper) / 2;
   };
 
+  // Brown hatches the band as a laid rope and draws the weight cord as a
+  // plain cord; both render as the shared laid rope.
   const belt = makeDynamicMovingBelt(initialBeltPath.curve, {
     markerCount: 0,
     radius: 0.045,
+    laid: true,
   });
   belt.userData.mechanismBelt = true;
   belt.userData.continuousThreePulleyLoop = true;
@@ -2626,9 +2658,9 @@ function compensatedMovableDrive() {
   const initialSuspension = makeSuspensionPath(compensatorBase.y, weightBaseY);
   const suspension = makeDynamicMovingBelt(initialSuspension.curve, {
     closed: false,
-    color: PALETTE.ink,
     markerCount: 0,
     radius: 0.03,
+    laid: true,
   });
   suspension.userData.mechanismRope = true;
   const weight = makeHoistLoad({ radius: 0.27, height: 0.5 });
@@ -2708,7 +2740,9 @@ function compensatedMovableDrive() {
     belt.userData.setCurve(path.curve);
     belt.userData.updateDistance(beltDistance);
     suspension.userData.setCurve(suspensionPath.curve);
-    suspension.userData.updateDistance(-(compensatorY - compensatorBase.y));
+    // The cord is fast to the hanger at the path start and keeps its length,
+    // so each arc-length coordinate is a fixed piece of cord.
+    suspension.userData.updateDistance(0);
     hanger.position.set(compensatorBase.x, compensatorY, 0);
 
     const contacts = materialContacts(path);
@@ -3495,18 +3529,21 @@ function fiddleDrill() {
   );
 
   const initialStringCurve = stringCurveAt(0);
+  // Brown draws the bowstring as cord: the shared laid rope. Its lay is
+  // fixed from the lower tied end, so it carries no white flow markers.
   const string = makeDynamicMovingBelt(initialStringCurve, {
     closed: false,
     color: PALETTE.belt,
-    markerColor: PALETTE.white,
-    markerCount: stringMarkerCount,
+    markerCount: 0,
     radius: stringRadius,
     tubularSegments: 260,
+    laid: true,
   });
   const stringMarkers = string.children.filter((child) => (
     child.userData.isFlowMarker === true
   ));
-  const stringMarkerFractions = stringMarkers.map((_, index) => (
+  // Material probe coordinates along the string (no longer drawn).
+  const stringMarkerFractions = Array.from({ length: stringMarkerCount }, (_, index) => (
     (index + 1) / (stringMarkerCount + 1)
   ));
   string.userData.closed = false;
@@ -3570,6 +3607,9 @@ function fiddleDrill() {
       : pulleyBodyPlaneZ - spindleWidth * 0.38;
     ring.userData.axialSign = axialSign;
     ring.userData.role = 'edge-of-string-groove-on-spindle-pulley';
+    // Line-drawing edging, not a part: hidden, kept for block references.
+    ring.visible = false;
+    ring.userData.retiredInkOutline = true;
     return ring;
   });
   const spindleShaft = makeShaft({
@@ -3591,6 +3631,8 @@ function fiddleDrill() {
   );
   spindleFaceRing.position.z = pulleyBodyPlaneZ + spindleWidth / 2 + 0.08;
   spindleFaceRing.userData.role = 'front-face-ring-on-drill-pulley';
+  spindleFaceRing.visible = false;
+  spindleFaceRing.userData.retiredInkOutline = true;
   const spindleRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(
       spindlePitchRadius * 0.73,
@@ -4339,34 +4381,36 @@ function fixedPulleyBellCrankForceRedirector() {
   bellPivotShaft.position.set(0, 0, bellCrankPlaneZ);
   bellPivotShaft.userData.role = 'fixed-pivot-shaft-of-bell-crank';
 
+  // Brown hatches both cables as laid rope; each lay is fixed from its tied
+  // end, so the cables carry no white flow markers.
   const inputCable = makeDynamicMovingBelt(sourceInputCableGeometry.curve, {
     closed: false,
     color: PALETTE.driven,
-    markerColor: PALETTE.white,
-    markerCount: inputCableMarkerCount,
+    markerCount: 0,
     radius: cableRadius,
     tubularSegments: 150,
+    laid: true,
   });
   inputCable.userData.mechanismString = true;
   inputCable.userData.physicalCable = true;
   inputCable.userData.role = 'single-constant-length-input-cable-over-pulley';
   inputCable.userData.materialMarkerFractions = inputMarkerFractions;
-  const inputCableMarkers = inputCable.children.slice(0, inputCableMarkerCount);
-  const inputCableMesh = inputCable.children[inputCableMarkerCount];
+  const inputCableMarkers = inputCable.children.filter((child) => child.userData.isFlowMarker);
+  const inputCableMesh = inputCable.userData.mesh;
   const outputCable = makeDynamicMovingBelt(sourceOutputCableGeometry.curve, {
     closed: false,
     color: PALETTE.driven,
-    markerColor: PALETTE.white,
-    markerCount: outputCableMarkerCount,
+    markerCount: 0,
     radius: cableRadius,
     tubularSegments: 72,
+    laid: true,
   });
   outputCable.userData.mechanismString = true;
   outputCable.userData.physicalCable = true;
   outputCable.userData.role = 'separate-constant-length-output-cable';
   outputCable.userData.materialMarkerFractions = outputMarkerFractions;
-  const outputCableMarkers = outputCable.children.slice(0, outputCableMarkerCount);
-  const outputCableMesh = outputCable.children[outputCableMarkerCount];
+  const outputCableMarkers = outputCable.children.filter((child) => child.userData.isFlowMarker);
+  const outputCableMesh = outputCable.userData.mesh;
 
   const inputFreeEndKnot = new THREE.Mesh(
     new THREE.SphereGeometry(cableRadius * 2.05, 16, 11),
@@ -5330,6 +5374,10 @@ function chineseDifferentialWindlass() {
       + (flange.position.x < 0 ? -1 : 1)
         * barrelFlangeThickness * 0.57;
     ring.userData.role = 'dark-outline-on-windlass-barrel-flange';
+    // Only line-drawing edging: Brown sees the flanges edge-on and draws no
+    // ring on them. Kept as a hidden placeholder for block references.
+    ring.visible = false;
+    ring.userData.retiredInkOutline = true;
     return ring;
   });
   const shaftRotationIndex = new THREE.Mesh(
@@ -5436,6 +5484,9 @@ function chineseDifferentialWindlass() {
   loadHangerOutline.userData.role = (
     'dark-outline-behind-front-mounted-load-hanger'
   );
+  // An ink outline, not a part: hidden, kept for block references.
+  loadHangerOutline.visible = false;
+  loadHangerOutline.userData.retiredInkOutline = true;
   const loadHanger = new THREE.Mesh(
     new THREE.BoxGeometry(0.64, hangerLength, 0.16),
     drivenMaterial,
@@ -5533,12 +5584,15 @@ function chineseDifferentialWindlass() {
   baseRail.userData.role = 'fixed-base-rail-of-chinese-windlass';
 
   const sourceRopeGeometry = ropeGeometryAtShaftAngle(sourcePoseAngle);
+  // Brown hatches the rope as laid rope. The curve's arc length is the
+  // rope's material coordinate (both ends are fast), so the lay is not shifted.
   const rope = makeDynamicMovingBelt(sourceRopeGeometry.curve, {
     closed: false,
     color: PALETTE.driven,
     markerCount: 0,
     radius: ropeRadius,
     tubularSegments: ropeTubularSegments,
+    laid: true,
   });
   rope.userData.mechanismString = true;
   rope.userData.physicalCable = true;
@@ -6173,12 +6227,14 @@ function singleWrappedRopeDrumDrive() {
   }
 
   const ropeCurve = new SegmentedWrappedRopeCurve();
+  // Brown hatches the rope as laid rope; its lay runs with the rope travel.
   const rope = makeDynamicMovingBelt(ropeCurve, {
     closed: false,
     color: PALETTE.driven,
     markerCount: 0,
     radius: ropeRadius,
     tubularSegments: 420,
+    laid: true,
   });
   rope.userData.mechanismString = true;
   rope.userData.physicalCable = true;
@@ -6586,6 +6642,7 @@ function singleWrappedRopeDrumDrive() {
     drum.userData.angularSpeed = state.angularSpeed;
     drum.userData.angularAcceleration = state.angularAcceleration;
     rope.userData.materialTravel = state.ropeTravel;
+    rope.userData.updateDistance(state.ropeTravel);
     ropeMarkers.forEach((marker, index) => {
       const materialDistance = materialDistanceAtTime(
         time,
@@ -6941,12 +6998,6 @@ function endlessBandSaw() {
     const hubRadius = 0.13;
     const hub = cylinderAlongZ(hubRadius, wheelWidth + 0.1, material, 40);
     hub.userData.role = `${role}-hub`;
-    const hubOutline = new THREE.Mesh(
-      new THREE.TorusGeometry(hubRadius * 0.82, 0.025, 8, 36),
-      inkMaterial,
-    );
-    hubOutline.position.z = wheelWidth / 2 + 0.025;
-    hubOutline.userData.role = `${role}-front-hub-outline`;
 
     const spokeGeometry = Array.from(
       { length: sourceSpokeCount },
@@ -6988,20 +7039,8 @@ function endlessBandSaw() {
         return spoke;
       },
     );
-    const frontRimOutline = new THREE.Mesh(
-      new THREE.TorusGeometry(
-        wheelContactRadius - rimRadialThickness / 2,
-        0.025,
-        8,
-        64,
-      ),
-      inkMaterial,
-    );
-    frontRimOutline.position.z = wheelWidth / 2 + 0.012;
-    frontRimOutline.userData.role = `${role}-front-rim-outline`;
-    const rearRimOutline = frontRimOutline.clone();
-    rearRimOutline.position.z = -wheelWidth / 2 - 0.012;
-    rearRimOutline.userData.role = `${role}-rear-rim-outline`;
+    // Brown inks the rim and hub edges only because the plate is a line
+    // drawing; the former dark outline rings are not separate parts.
     const rotationIndex = new THREE.Mesh(
       new THREE.BoxGeometry(0.19, 0.05, 0.032),
       indexMaterial,
@@ -7016,16 +7055,10 @@ function endlessBandSaw() {
       rim,
       ...spokeGeometry,
       hub,
-      hubOutline,
-      frontRimOutline,
-      rearRimOutline,
       rotationIndex,
     );
     wheel.userData.blocks = {
-      frontRimOutline,
       hub,
-      hubOutline,
-      rearRimOutline,
       rim,
       rotationIndex,
       spokes: spokeGeometry,
@@ -9777,11 +9810,20 @@ function leverContractedCraneBandBrake(movement) {
   wheelBody.rotation.x = Math.PI / 2;
   wheelBody.userData.role = 'solid-brake-drum';
   wheelRotor.add(wheelBody);
+  // Brown's second circle inside the drum's edge marks a raised braking rim,
+  // not an ink ring: a shallow lip in the drum's own colour, inside the tread.
+  const rimLipDepth = 0.03;
   const brakingRim = new THREE.Mesh(
-    new THREE.TorusGeometry(wheelRadius - 0.12, 0.035, 10, 96),
-    darkMaterial,
+    new THREE.LatheGeometry([
+      new THREE.Vector2(wheelRadius - 0.15, 0),
+      new THREE.Vector2(wheelRadius, 0),
+      new THREE.Vector2(wheelRadius, rimLipDepth),
+      new THREE.Vector2(wheelRadius - 0.15, rimLipDepth),
+      new THREE.Vector2(wheelRadius - 0.15, 0),
+    ], 96).rotateX(Math.PI / 2),
+    wheelMaterial,
   );
-  brakingRim.position.z = wheelDepth / 2 + 0.015;
+  brakingRim.position.z = wheelDepth / 2;
   brakingRim.userData.role = 'visible-braking-rim';
   wheelRotor.add(brakingRim);
   const wheelHub = new THREE.Mesh(
@@ -11598,6 +11640,24 @@ function removeUndrawnWhiteIndexMarks(root) {
 // pulley. The hatching turns with the shaft, the only visible sign of the
 // drum's rotation (the lever and scale stay balanced at rest by design).
 // The shaft's front stub is set back flush with the hub face, as a section.
+// Brown draws the four scale-pan cords as plain cord lines: render each as
+// the shared laid rope along its final (static) span, in place of the plain
+// cylinder the clamp correction positioned.
+function layProny244Cables(root) {
+  for (const cable of root.userData.blocks.scaleCables) {
+    const segment = cable.children[0];
+    const offset = new THREE.Vector3(0, segment.scale.y / 2, 0).applyQuaternion(segment.quaternion);
+    const upper = segment.position.clone().add(offset);
+    const lower = segment.position.clone().sub(offset);
+    const rope = makeLaidRopeMesh(new THREE.LineCurve3(upper, lower), segment.material,
+      { radius: segment.geometry.parameters.radiusTop });
+    rope.userData.role = 'scale-pan-suspension-cable';
+    for (const child of cable.children) child.visible = false;
+    cable.add(rope);
+    cable.userData.mesh = rope;
+  }
+}
+
 function addProny244ShaftSection(root) {
   const { blocks } = root.userData;
   const rotor = blocks.drum.parent;
@@ -11662,7 +11722,7 @@ export function createAuthoredBeltMovement(movement) {
     case 229: result = toothedLinkChainWheel(); correctChainDrive(result, 229); break;
     case 242: result = leverContractedCraneBandBrake(movement); break;
     case 243: result = horizontalDriverToTwinVerticalShafts(movement); break;
-    case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); addProny244ShaftSection(result.root); break;
+    case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); addProny244ShaftSection(result.root); layProny244Cables(result.root); break;
     default: return null;
   }
   if (UNDRAWN_WHITE_INDEX_IDS.has(movement.id)) removeUndrawnWhiteIndexMarks(result.root, movement.id);

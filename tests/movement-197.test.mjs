@@ -736,8 +736,9 @@ test('movement 197 remains fully three-dimensional as the review queue advances 
       endGuideCount += 1;
     }
   });
-  // The undrawn shaft rails and guide/rack mounts are presented away.
-  assert.ok(visibleMeshCount >= 43);
+  // The undrawn shaft rails and guide/rack mounts are presented away, and
+  // the dark rack-pin rims and face rings Brown only inks are retired.
+  assert.ok(visibleMeshCount >= 31);
   assert.equal(rackPinCount, 11);
   assert.equal(endGuideCount, 2);
   assert.ok(model.cameraDirection.x > 0);

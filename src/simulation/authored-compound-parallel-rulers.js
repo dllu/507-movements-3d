@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import {makeRulerArm, boredRulerPlate, finishDrawingRuler} from './drawing-ruler-parts.js';
 import {
   PALETTE,
-  makeBeam,
   markShadows,
   matte,
 } from './primitives.js';
@@ -82,36 +81,14 @@ function makeSlottedRuler({
   };
   group.userData.solidDepth = depth;
 
-  const body = new THREE.Mesh(geometry, [
+  const body = new THREE.Mesh(
+    geometry,
     matte(PALETTE.driven, { metalness: 0.08, roughness: 0.66 }),
-    matte(PALETTE.ink, { metalness: 0.12, roughness: 0.57 }),
-  ]);
+  );
   body.userData.isRigidBody = true;
   body.userData.role = `${role}-solid-with-real-sliding-slot-B`;
-  const outline = new THREE.LineSegments(
-    new THREE.EdgesGeometry(geometry, 22),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  outline.userData.noShadow = true;
-  outline.userData.role = `${role}-source-outline-and-slot-border`;
-
-  const topBand = makeBeam(
-    new THREE.Vector3(-halfLength + 0.05, depth / 2 + 0.024,
-      halfWidth - 0.045),
-    new THREE.Vector3(halfLength - 0.05, depth / 2 + 0.024,
-      halfWidth - 0.045),
-    {
-      color: PALETTE.ink,
-      depth: 0.030,
-      jointRadius: 0.001,
-      thickness: 0.040,
-    },
-  );
-  topBand.userData.role = `${role}-long-parallel-working-edge`;
-  group.add(body, outline, topBand);
+  group.add(body);
   group.userData.body = body;
-  group.userData.outline = outline;
-  group.userData.workingEdgeBand = topBand;
   return markShadows(group);
 }
 
@@ -158,29 +135,8 @@ function makeSimpleRuler({ depth, length, role, width, pivotXs }) {
   );
   body.userData.isRigidBody = true;
   body.userData.role = `${role}-rigid-solid`;
-  const outline = new THREE.LineSegments(
-    new THREE.EdgesGeometry(body.geometry),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  outline.userData.noShadow = true;
-  outline.userData.role = `${role}-source-outline`;
-  const workingEdgeBand = makeBeam(
-    new THREE.Vector3(-length / 2 + 0.05, depth / 2 + 0.024,
-      width / 2 - 0.045),
-    new THREE.Vector3(length / 2 - 0.05, depth / 2 + 0.024,
-      width / 2 - 0.045),
-    {
-      color: PALETTE.ink,
-      depth: 0.030,
-      jointRadius: 0.001,
-      thickness: 0.040,
-    },
-  );
-  workingEdgeBand.userData.role = `${role}-long-parallel-working-edge`;
-  group.add(body, outline, workingEdgeBand);
+  group.add(body);
   group.userData.body = body;
-  group.userData.outline = outline;
-  group.userData.workingEdgeBand = workingEdgeBand;
   return markShadows(group);
 }
 

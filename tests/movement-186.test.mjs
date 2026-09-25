@@ -69,7 +69,9 @@ test('186 t=0 places the parts on Brown\'s plate landmarks', () => {
     const rockerBox = new THREE.Box3().setFromObject(b.valveArm);
     near(rockerBox.max.y, d.sourcePointFromRaster(0, 11).y, 2 * s, 'rocker boss top');
     const rodBox = new THREE.Box3().setFromObject(b.rodBody);
-    near(rodBox.min.x, d.sourcePointFromRaster(23, 0).x, 1 * s, 'rod broken end');
+    // Brown's break at x 23 is a drawing convention: the rod runs on whole.
+    near(rodBox.min.x, d.sourcePointFromRaster(-300, 0).x, 1 * s, 'rod runs on past Brown\'s break');
+    near(d.cameraFitBounds.min.x, d.sourcePointFromRaster(23, 0).x - 0.08, 1e-9, 'view framed at Brown\'s break');
     near(rodBox.max.y, d.sourcePointFromRaster(0, 197).y, 1 * s, 'rod crown top');
     near(rodBox.min.y, d.sourcePointFromRaster(0, 269).y, 1e-6, 'rod lower edge');
     // Spring loop reaches Brown's loop bottom and its free end lies at notch a.

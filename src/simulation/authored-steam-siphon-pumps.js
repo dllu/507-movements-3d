@@ -268,25 +268,7 @@ function lansdellSteamSiphonPump(movement) {
     56,
   );
   root.add(dischargePipe);
-  const branchCollars = [-1, 1].map((side, index) => {
-    const collar = new THREE.Mesh(
-      new THREE.TorusGeometry(0.45, 0.057, 9, 48),
-      jointMaterial,
-    );
-    collar.rotation.x = Math.PI / 2;
-    collar.position.set(side * 1.38, -2.61, 0);
-    collar.userData.role = `lower-B-${index + 1}-suction-mouth-collar`;
-    root.add(collar);
-    return collar;
-  });
-  const dischargeCollar = new THREE.Mesh(
-    new THREE.TorusGeometry(0.56, 0.064, 9, 52),
-    jointMaterial,
-  );
-  dischargeCollar.rotation.x = Math.PI / 2;
-  dischargeCollar.position.y = 1.30;
-  dischargeCollar.userData.role = 'twin-B-fork-to-single-C-joint';
-  root.add(dischargeCollar);
+  // Brown draws plain pipe mouths and a smooth fork neck: no ink rings.
 
   const steamPipe = makeTube(
     steamPipeCurve,
@@ -421,8 +403,6 @@ function lansdellSteamSiphonPump(movement) {
     blocks: {
       basin,
       basinWater,
-      branchCollars,
-      dischargeCollar,
       dischargePipe,
       steamCore,
       steamJet,

@@ -26,10 +26,7 @@ export function createAuthoredCurveGeneratorMovement(movement) {
   add('wristPin',disk(.14,.07,.57),PALETTE.ink,'slider',slider);
   const crosshead=clip.union(hole([0,0],.32),poly([[0,-.34],[.38,-.34],[.47,-.2],[.47,.16],[.34,.22],[.34,.34],[0,.34]]));
   add('slider',plate(clip.difference(crosshead,hole([0,0],.146)),.36,.50),PALETTE.frame,'slider',slider);
-  const trace=new THREE.Line(new THREE.BufferGeometry().setFromPoints(Array.from({length:513},(_,i)=>{
-    const p=eggAtAngle(i*2*Math.PI/512).tracer;return new THREE.Vector3(...p,.405);
-  })),new THREE.LineDashedMaterial({color:PALETTE.muted,dashSize:.09,gapSize:.055,fog:false}));
-  trace.computeLineDistances();trace.userData.role='nonphysical-trajectory-witness';root.add(trace);
+  // Brown's dashed egg is the tracer's path in his notation; it is not drawn.
   const update=time=>{const s=eggAtTime(time);rotor.rotation.z=s.angle;rod.position.set(...s.crank,0);
     rod.rotation.z=s.rodAngle;slider.position.set(...s.wrist,0);root.userData.kinematics=s;};
   Object.assign(root.userData,{parts,families,geometry:g,stateAtInputAngle:eggAtAngle,stateAtTime:eggAtTime,

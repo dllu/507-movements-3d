@@ -80,19 +80,9 @@ function sourceProfileGeometry({
     depth,
   });
   geometry.translate(0, 0, -depth / 2);
-  const outlineCurve = new THREE.CatmullRomCurve3(
-    localPoints.map((point) => new THREE.Vector3(
-      point.x,
-      point.y,
-      depth / 2 + 0.024,
-    )),
-    true,
-    'centripetal',
-  );
   return {
     geometry,
     localPoints,
-    outlineCurve,
     profileSampleCount,
     sampledPoints,
   };
@@ -104,7 +94,6 @@ function makeSourceJaw({
   depth,
   jawMaterial,
   markerLocal,
-  outlineMaterial,
   pivot,
   planeZ,
   sourcePoints,
@@ -130,17 +119,6 @@ function makeSourceJaw({
   const plate = new THREE.Mesh(profile.geometry, jawMaterial);
   plate.userData.role = 'source-fitted-curved-clamp-jaw-plate';
   plate.userData.sourceProfilePoints = sourcePoints;
-  const outline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      profile.outlineCurve,
-      profile.profileSampleCount,
-      0.021,
-      6,
-      true,
-    ),
-    outlineMaterial,
-  );
-  outline.userData.role = 'dark-source-profile-jaw-outline';
   const rotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.40, 0.060, 0.026),
     whiteMaterial,
@@ -154,7 +132,7 @@ function makeSourceJaw({
   const camCenterAnchor = new THREE.Object3D();
   camCenterAnchor.position.set(camCenterLocal.x, camCenterLocal.y, 0);
   camCenterAnchor.userData.role = 'analytic-eccentric-lobe-center-anchor';
-  jaw.add(plate, outline, rotationIndex, camCenterAnchor);
+  jaw.add(plate, rotationIndex, camCenterAnchor);
   jaw.userData.boreRadius = boreRadius;
   jaw.userData.camCenterLocal = camCenterLocal.clone();
   jaw.userData.localProfilePoints = profile.localPoints;
@@ -162,7 +140,6 @@ function makeSourceJaw({
   return {
     camCenterAnchor,
     jaw,
-    outline,
     plate,
     rotationIndex,
   };
@@ -619,7 +596,6 @@ function twinPivotedBenchClamp() {
     depth: jawDepth,
     jawMaterial,
     markerLocal: new THREE.Vector2(0.52, 0.34),
-    outlineMaterial: darkMaterial,
     pivot: sourceUpperPivot,
     planeZ: upperJawPlaneZ,
     sourcePoints: sourceUpperJawOutline,
@@ -634,7 +610,6 @@ function twinPivotedBenchClamp() {
     depth: jawDepth,
     jawMaterial,
     markerLocal: new THREE.Vector2(0.52, -0.34),
-    outlineMaterial: darkMaterial,
     pivot: sourceLowerPivot,
     planeZ: lowerJawPlaneZ,
     sourcePoints: sourceLowerJawOutline,
@@ -768,7 +743,6 @@ function twinPivotedBenchClamp() {
     lowerCamCenterAnchor: lowerJawParts.camCenterAnchor,
     lowerContactMarker,
     lowerJaw: lowerJawParts.jaw,
-    lowerJawOutline: lowerJawParts.outline,
     lowerJawPlate: lowerJawParts.plate,
     lowerJawRotationIndex: lowerJawParts.rotationIndex,
     lowerPivotScrew: lowerScrewParts.screw,
@@ -779,7 +753,6 @@ function twinPivotedBenchClamp() {
     upperCamCenterAnchor: upperJawParts.camCenterAnchor,
     upperContactMarker,
     upperJaw: upperJawParts.jaw,
-    upperJawOutline: upperJawParts.outline,
     upperJawPlate: upperJawParts.plate,
     upperJawRotationIndex: upperJawParts.rotationIndex,
     upperPivotScrew: upperScrewParts.screw,
@@ -920,22 +893,6 @@ function singlePivotedFixedSideBenchClamp() {
     geometry.translate(0, 0, -depth / 2);
     return { geometry, modelPoints };
   };
-  const outlineTube = (modelPoints, z, material, radius = 0.021) => {
-    const curve = new THREE.CurvePath();
-    for (let index = 0; index < modelPoints.length; index += 1) {
-      const start = modelPoints[index];
-      const end = modelPoints[(index + 1) % modelPoints.length];
-      curve.add(new THREE.LineCurve3(
-        new THREE.Vector3(start.x, start.y, z),
-        new THREE.Vector3(end.x, end.y, z),
-      ));
-    }
-    return new THREE.Mesh(
-      new THREE.TubeGeometry(curve, modelPoints.length * 5, radius, 6, true),
-      material,
-    );
-  };
-
   const fixedSideFaceX = sourcePointToModel(new THREE.Vector2(
     sourceFixedSideMaximumX,
     sourceOrigin.y,
@@ -1242,12 +1199,6 @@ function singlePivotedFixedSideBenchClamp() {
   fixedSidePiece.userData.fixed = true;
   fixedSidePiece.userData.role =
     'one-fixed-straight-side-piece-opposite-pivoted-clamp';
-  const fixedSideOutline = outlineTube(
-    fixedSideProfile.modelPoints,
-    fixedSideCenterZ + fixedSideDepth / 2 + 0.026,
-    darkMaterial,
-  );
-  fixedSideOutline.userData.role = 'dark-source-outline-of-fixed-side-piece';
   const fixedSideFaceWitness = new THREE.Mesh(
     new THREE.BoxGeometry(0.045, 1.1, 0.035),
     whiteMaterial,
@@ -1276,13 +1227,6 @@ function singlePivotedFixedSideBenchClamp() {
   workpieceBody.position.z = workpieceCenterZ;
   workpieceBody.userData.role =
     'single-board-whose-upward-push-self-energizes-clamp';
-  const workpieceOutline = outlineTube(
-    workpieceProfile.modelPoints,
-    workpieceCenterZ + workpieceDepth / 2 + 0.022,
-    darkMaterial,
-    0.018,
-  );
-  workpieceOutline.userData.role = 'dark-source-outline-of-sliding-board';
   const workpieceInputIndex = new THREE.Mesh(
     new THREE.BoxGeometry(workpieceWidth * 0.68, 0.07, 0.03),
     whiteMaterial,
@@ -1322,7 +1266,6 @@ function singlePivotedFixedSideBenchClamp() {
     'visible-board-contact-with-fixed-side-piece';
   workpiece.add(
     workpieceBody,
-    workpieceOutline,
     workpieceInputIndex,
     workpieceLeadingEdgeAnchor,
     workpieceRightFaceAnchor,
@@ -1335,7 +1278,6 @@ function singlePivotedFixedSideBenchClamp() {
     depth: jawDepth,
     jawMaterial,
     markerLocal: new THREE.Vector2(0.54, 0.36),
-    outlineMaterial: darkMaterial,
     pivot: sourceJawPivot,
     planeZ: jawPlaneZ,
     sourceOrigin,
@@ -1348,36 +1290,6 @@ function singlePivotedFixedSideBenchClamp() {
     'single-source-profiled-pivoted-eccentric-clamp-jaw';
   jawParts.camCenterAnchor.userData.role =
     'exact-source-contact-lobe-anchor-on-single-moving-jaw';
-  // The short closing edge from (226, 94) back to (225, 48) lies beneath the
-  // fixed side-piece and is dotted in the engraving. Keep that material in
-  // the solid plate, but draw only the exposed outer/inner perimeter as a
-  // dark tube so an oblique 3D view does not turn the hidden edge into a wire.
-  jawParts.outline.visible = false;
-  const visibleJawOutlineLocalPoints = sourceJawOutline
-    .slice(0, sourceVisibleJawOutlineEndIndex + 1)
-    .map((point) => new THREE.Vector3(
-      (point.x - sourceJawPivot.x) * sourceScale,
-      (sourceJawPivot.y - point.y) * sourceScale,
-      jawDepth / 2 + 0.024,
-    ));
-  const visibleJawOutlineCurve = new THREE.CatmullRomCurve3(
-    visibleJawOutlineLocalPoints,
-    false,
-    'centripetal',
-  );
-  const visibleJawOutline = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      visibleJawOutlineCurve,
-      visibleJawOutlineLocalPoints.length * 5,
-      0.021,
-      6,
-      false,
-    ),
-    darkMaterial,
-  );
-  visibleJawOutline.userData.role =
-    'dark-exposed-source-outline-of-single-moving-jaw';
-  jawParts.jaw.add(visibleJawOutline);
   const jawPivotAnchor = new THREE.Group();
   jawPivotAnchor.userData.role = 'exact-fixed-pivot-anchor-of-single-jaw';
   jawParts.jaw.add(jawPivotAnchor);
@@ -1429,7 +1341,6 @@ function singlePivotedFixedSideBenchClamp() {
     jawParts.jaw,
     workpiece,
     fixedSidePiece,
-    fixedSideOutline,
     fixedSideFaceWitness,
     jawScrewParts.screw,
     ...fixedScrewParts.map(({ screw }) => screw),
@@ -1570,10 +1481,8 @@ function singlePivotedFixedSideBenchClamp() {
     fixedScrewSlots: fixedScrewParts.map(({ slot }) => slot),
     fixedScrews: fixedScrewParts.map(({ screw }) => screw),
     fixedSideFaceWitness,
-    fixedSideOutline,
     fixedSidePiece,
     jawContactAnchor: jawParts.camCenterAnchor,
-    jawOutline: visibleJawOutline,
     jawPivotAnchor,
     jawPlate: jawParts.plate,
     jawRotationIndex: jawParts.rotationIndex,
@@ -1588,7 +1497,6 @@ function singlePivotedFixedSideBenchClamp() {
     workpieceBody,
     workpieceInputIndex,
     workpieceLeadingEdgeAnchor,
-    workpieceOutline,
     workpieceRightFaceAnchor,
   };
   root.userData.cameraDistanceScale = 1.18;
@@ -1605,8 +1513,6 @@ function singlePivotedFixedSideBenchClamp() {
 
   update(0);
   markShadows(root);
-  fixedSideOutline.castShadow = false;
-  workpieceOutline.castShadow = false;
   movingContactMarker.castShadow = false;
   fixedContactMarker.castShadow = false;
   return {
@@ -2070,21 +1976,6 @@ function screwThrustLeverClamp() {
     geometry.translate(0, 0, -depth / 2);
     return geometry;
   };
-  const outlineTube = (modelPoints, z, material, radius = 0.020) => {
-    const curve = new THREE.CurvePath();
-    for (let index = 0; index < modelPoints.length; index += 1) {
-      const start = modelPoints[index];
-      const end = modelPoints[(index + 1) % modelPoints.length];
-      curve.add(new THREE.LineCurve3(
-        new THREE.Vector3(start.x, start.y, z),
-        new THREE.Vector3(end.x, end.y, z),
-      ));
-    }
-    return new THREE.Mesh(
-      new THREE.TubeGeometry(curve, modelPoints.length * 5, radius, 6, true),
-      material,
-    );
-  };
   const verticalHelixCurve = ({
     maximumY,
     minimumY,
@@ -2223,15 +2114,6 @@ function screwThrustLeverClamp() {
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-central-fulcrum-standard-and-lower-threaded-arm';
-  // A fine ink line held between the screw thread crest (r 0.224), which it
-  // crosses at the lower arm, and the front holder cheek (z 0.26).
-  const frameOutline = outlineTube(
-    frameModelPoints,
-    frameDepth / 2 + 0.029,
-    darkMaterial,
-    0.014,
-  );
-  frameOutline.userData.role = 'dark-source-outline-of-fixed-clamp-frame';
 
   const holder = new THREE.Group();
   holder.position.set(holderPivot.x, holderPivot.y, 0);
@@ -2263,14 +2145,7 @@ function screwThrustLeverClamp() {
       ? 'rear-source-profiled-holder-cheek'
       : 'front-source-profiled-holder-cheek';
     cheek.userData.sideSign = sideSign;
-    const outline = outlineTube(
-      holderLocalPoints,
-      sideSign * holderCheekCenterZ
-        + sideSign * (holderPlateDepth / 2 + 0.022),
-      darkMaterial,
-    );
-    outline.userData.role = `${cheek.userData.role}-dark-outline`;
-    holder.add(cheek, outline);
+    holder.add(cheek);
     return cheek;
   });
   const holderIndex = new THREE.Mesh(
@@ -2295,7 +2170,7 @@ function screwThrustLeverClamp() {
     (sourceShoePin.y - point.y) * sourceScale,
   ));
   // The shoe sits between the holder cheeks (inner faces at z = 0.26) with
-  // its ink outline clear of them; no bevel, so the sole seats flush.
+  // clear of them; no bevel, so the sole seats flush.
   const shoeDepth = 0.40;
   const shoePlate = new THREE.Mesh(
     extrudeModelOutline({
@@ -2307,18 +2182,6 @@ function screwThrustLeverClamp() {
     shoeMaterial,
   );
   shoePlate.userData.role = 'source-profiled-swiveling-pressure-shoe';
-  // The ink line along the sole is lifted by its tube radius so it does not
-  // sink into the work it presses.
-  const shoeOutline = outlineTube(
-    shoeLocalPoints.map((point) => (
-      Math.abs(point.y - shoeContactLocal.y) < 1e-9
-        ? new THREE.Vector2(point.x, point.y + 0.021)
-        : point
-    )),
-    shoeDepth / 2 + 0.024,
-    darkMaterial,
-  );
-  shoeOutline.userData.role = 'dark-source-outline-of-pressure-shoe';
   const shoeContactIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.66, 0.040, 0.040),
     whiteMaterial,
@@ -2329,7 +2192,7 @@ function screwThrustLeverClamp() {
     shoeDepth / 2 + 0.052,
   );
   shoeContactIndex.userData.role = 'white-index-on-pressure-shoe-sole';
-  shoe.add(shoePlate, shoeOutline, shoeContactIndex);
+  shoe.add(shoePlate, shoeContactIndex);
 
   const fulcrumPin = cylinderAlongZ(0.16, 1.02, darkMaterial, 40);
   fulcrumPin.position.set(holderPivot.x, holderPivot.y, 0);
@@ -2507,7 +2370,6 @@ function screwThrustLeverClamp() {
   root.add(
     bench,
     fixedFrame,
-    frameOutline,
     fulcrumHead,
     fulcrumPin,
     holder,
@@ -2657,7 +2519,6 @@ function screwThrustLeverClamp() {
     bench,
     externalThread,
     fixedFrame,
-    frameOutline,
     fulcrumHead,
     fulcrumPin,
     handleArm,
@@ -2677,7 +2538,6 @@ function screwThrustLeverClamp() {
     screwRotor,
     shoe,
     shoeContactIndex,
-    shoeOutline,
     shoePin,
     shoePinAnchor,
     shoePlate,
@@ -2720,10 +2580,8 @@ function screwThrustLeverClamp() {
   update(0);
   markShadows(root);
   for (const object of [
-    frameOutline,
     holderIndex,
     shoeContactIndex,
-    shoeOutline,
     threadContactMarker,
     thrustContactMarker,
     workContactMarker,

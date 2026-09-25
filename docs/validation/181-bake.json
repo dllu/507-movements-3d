@@ -56,7 +56,7 @@
     },
     {
       "file": "src/simulation/authored-diagonal-catches.js",
-      "sha256": "9e0863ed965367880f5bb8b71381165ae5def02f142161f0bf1ded3c1764057e"
+      "sha256": "3e889913759fcdda8b97175898ac68cc8a4a53e571d5a2fadff77fa903254f62"
     },
     {
       "file": "src/simulation/finite-plate-geometry.js",
@@ -64,14 +64,14 @@
     },
     {
       "file": "docs/validation/181-projected-contact-motion.json",
-      "sha256": "2bc04871401dd4894be67183fab276bb4621644959f369037e924f1ac3f84106"
+      "sha256": "a6a2da47428ac497c5835c2349ffa29e545c2de590da16090028a384ff609472"
     }
   ],
   "keys": 9001,
-  "bytes": 524202,
-  "sha256": "f4062aed81102487e48d0aced0e8112ec0266a8c0e632473f44ca2d4dcbf8bcb",
+  "bytes": 524181,
+  "sha256": "aa2d16a25702119e923c76375f07924307641db8b0da616b6e029ff1e75c4b73",
   "compactKeysModule": "src/simulation/baked/diagonal-catch-keys.js",
   "compactKeys": 777,
-  "compactKeysSha256": "6eaaec037f9df48917f907cfd6eb67b13d98e84af9ba866271d6b57aeb0f023a",
+  "compactKeysSha256": "911610719691bc9dea2295535595a50f7c428a6e189c82878bd3c9d56de5cc7c",
   "status": "baked-assembly-source-review-open"
 }

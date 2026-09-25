@@ -1,5 +1,6 @@
 import { correctDicksonParts, finishOneWayFamily } from './one-way-clutch-working-parts.js';
 import * as THREE from 'three';
+import { replaceWithLaidRope } from './laid-rope.js';
 import {
   PALETTE,
   markShadows,
@@ -153,22 +154,24 @@ function updateCylinderBetween(cylinder, start, end) {
   cylinder.scale.set(1, length, 1);
 }
 
+// Brown's cords from crank E are laid cord: one continuous laid rope along
+// the constant-material-length route (crank pin, sag point, pawl eye). Its
+// start is tied to the crank pin, so arc length from there is a material
+// coordinate and the lay needs no extra travel.
 function makeDynamicCord(material, role) {
   const cord = new THREE.Group();
   cord.userData.role = role;
-  const segments = [0, 1].map(() => {
-    const segment = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.024, 0.024, 1, 10),
-      material,
-    );
-    segment.userData.role = `${role}-straight-material-segment`;
-    cord.add(segment);
-    return segment;
-  });
-  cord.userData.segments = segments;
+  const rope = new THREE.Mesh(new THREE.BufferGeometry(), material);
+  rope.userData.role = `${role}-laid-cord`;
+  cord.add(rope);
+  cord.userData.rope = rope;
   cord.userData.setRoute = (route) => {
-    updateCylinderBetween(segments[0], route.start, route.bend);
-    updateCylinderBetween(segments[1], route.bend, route.end);
+    const path = new THREE.CurvePath();
+    path.add(new THREE.LineCurve3(route.start.clone(), route.bend.clone()));
+    path.add(new THREE.LineCurve3(route.bend.clone(), route.end.clone()));
+    replaceWithLaidRope(rope, path, { radius: 0.024 });
+    cord.userData.renderedLength = route.start.distanceTo(route.bend)
+      + route.bend.distanceTo(route.end);
   };
   return cord;
 }

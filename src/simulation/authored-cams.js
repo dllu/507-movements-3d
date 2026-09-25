@@ -4,6 +4,7 @@ import { bowedValveYoke, rectangularGuideShoe } from './reuleaux-yoke-hardware.j
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {makeEccentricStrap} from './eccentric-strap.js';
+import {groundBlock} from './ground-block.js';
 import {
   PALETTE,
   makeBeam,
@@ -352,18 +353,6 @@ function eccentricSheaveElongatedTranslatingYoke() {
   sheaveBody.userData.radius = sheaveRadius;
   inputRotor.add(sheaveBody);
 
-  const sheaveRim = new THREE.Mesh(
-    new THREE.TorusGeometry(sheaveRadius * 0.83, 0.046, 10, 72),
-    darkMaterial,
-  );
-  sheaveRim.position.set(
-    eccentricity,
-    0,
-    sheaveDepth / 2 + 0.018,
-  );
-  sheaveRim.userData.role = 'front-rim-of-yoke-driving-eccentric';
-  inputRotor.add(sheaveRim);
-
   const sheaveIndicator = new THREE.Mesh(
     new THREE.BoxGeometry(sheaveRadius * 0.68, 0.065, 0.028),
     matte(PALETTE.white, { roughness: 0.48 }),
@@ -655,7 +644,6 @@ function eccentricSheaveElongatedTranslatingYoke() {
     shaftKey,
     sheaveBody,
     sheaveIndicator,
-    sheaveRim,
     slotLiner,
     supportLegs,
     translationIndicator,
@@ -881,16 +869,6 @@ function triangularEccentricValveMotion() {
   );
   camBody.userData.role = 'constant-width-rounded-triangular-eccentric';
   inputRotor.add(camBody);
-
-  const outlinePoints = profileShape.extractPoints(56).shape.map((point) => (
-    new THREE.Vector3(point.x, point.y, camDepth / 2 + 0.016)
-  ));
-  const camOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(outlinePoints),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  camOutline.userData.role = 'visible-profile-of-triangular-eccentric';
-  inputRotor.add(camOutline);
 
   const inputShaft = cylinderAlongZ(
     shaftRadius,
@@ -1275,7 +1253,6 @@ function triangularEccentricValveMotion() {
     bearingSupports,
     camBody,
     camFaceIndex,
-    camOutline,
     follower,
     followerBody,
     guideBrackets,
@@ -1600,15 +1577,6 @@ function heartCamUniformTraverseMotion() {
   camBody.userData.profileShape = profileShape;
   inputRotor.add(camBody);
 
-  const camOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(profilePoints.map((point) => (
-      new THREE.Vector3(point.x, point.y, camFrontZ + 0.012)
-    ))),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  camOutline.userData.role = 'visible-working-profile-of-heart-cam';
-  inputRotor.add(camOutline);
-
   const shaftHub = cylinderAlongZ(
     hubRadius,
     hubDepth,
@@ -1618,14 +1586,6 @@ function heartCamUniformTraverseMotion() {
   shaftHub.position.z = 0.015;
   shaftHub.userData.role = 'source-proportioned-hub-rigid-with-heart-cam';
   inputRotor.add(shaftHub);
-
-  const hubRing = new THREE.Mesh(
-    new THREE.TorusGeometry(hubRadius - 0.035, 0.04, 10, 56),
-    darkMaterial,
-  );
-  hubRing.position.z = hubDepth / 2 + 0.024;
-  hubRing.userData.role = 'dark-outline-on-heart-cam-hub';
-  inputRotor.add(hubRing);
 
   const inputShaft = cylinderAlongZ(
     shaftRadius,
@@ -2009,7 +1969,6 @@ function heartCamUniformTraverseMotion() {
     baseRail,
     bearingBracket,
     camBody,
-    camOutline,
     camRotationIndex,
     follower,
     followerBar,
@@ -2017,7 +1976,6 @@ function heartCamUniformTraverseMotion() {
     followerRoller,
     framePost,
     guideBrackets,
-    hubRing,
     input,
     inputShaft,
     rollerHub,
@@ -2519,32 +2477,6 @@ function groovedHeartCamPositiveTraverseMotion() {
   centralIsland.userData.profileShape = centralIslandShape;
   inputRotor.add(centralIsland);
 
-  const innerWallOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(innerWallPoints.map((point) => (
-      new THREE.Vector3(point.x, point.y, grooveWallFrontZ + 0.012)
-    ))),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  innerWallOutline.userData.role = 'visible-inner-wall-of-heart-groove';
-  inputRotor.add(innerWallOutline);
-
-  const outerWallOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(outerWallPoints.map((point) => (
-      new THREE.Vector3(point.x, point.y, grooveWallFrontZ + 0.012)
-    ))),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  outerWallOutline.userData.role = 'visible-outer-wall-of-heart-groove';
-  inputRotor.add(outerWallOutline);
-
-  const carrierRim = new THREE.Mesh(
-    new THREE.TorusGeometry(carrierRadius - 0.035, 0.04, 10, 112),
-    darkMaterial,
-  );
-  carrierRim.position.z = grooveWallFrontZ + 0.02;
-  carrierRim.userData.role = 'visible-outer-rim-of-grooved-cam-carrier';
-  inputRotor.add(carrierRim);
-
   const shaftHub = cylinderAlongZ(
     hubRadius,
     hubDepth,
@@ -2554,14 +2486,6 @@ function groovedHeartCamPositiveTraverseMotion() {
   shaftHub.position.z = 0.012;
   shaftHub.userData.role = 'hub-on-central-island-rigid-with-grooved-cam';
   inputRotor.add(shaftHub);
-
-  const hubRing = new THREE.Mesh(
-    new THREE.TorusGeometry(hubRadius - 0.035, 0.04, 10, 56),
-    darkMaterial,
-  );
-  hubRing.position.z = hubDepth / 2 + 0.022;
-  hubRing.userData.role = 'dark-outline-on-grooved-heart-cam-hub';
-  inputRotor.add(hubRing);
 
   const inputShaft = cylinderAlongZ(
     shaftRadius,
@@ -2928,7 +2852,6 @@ function groovedHeartCamPositiveTraverseMotion() {
     baseRail,
     bearingBracket,
     camRotationIndex,
-    carrierRim,
     centralIsland,
     follower,
     followerAxle,
@@ -2938,12 +2861,9 @@ function groovedHeartCamPositiveTraverseMotion() {
     framePost,
     grooveFloor,
     guideBrackets,
-    hubRing,
-    innerWallOutline,
     input,
     inputShaft,
     outerLand,
-    outerWallOutline,
     shaftBearing,
     shaftHub,
     translationIndex,
@@ -3365,14 +3285,6 @@ function spiralGuideDrillFeedMotion() {
   carrier.userData.role = 'source-seven-radius-circular-guide-carrier';
   inputRotor.add(carrier);
 
-  const carrierRim = new THREE.Mesh(
-    new THREE.TorusGeometry(carrierRadius - 0.04, 0.05, 10, 112),
-    darkMaterial,
-  );
-  carrierRim.position.z = carrierFrontZ + 0.018;
-  carrierRim.userData.role = 'front-outline-of-spiral-guide-carrier';
-  inputRotor.add(carrierRim);
-
   const spiralCurve = new THREE.CatmullRomCurve3(
     mergedGuidePoints,
     false,
@@ -3427,14 +3339,6 @@ function spiralGuideDrillFeedMotion() {
   shaftHub.userData.role = 'source-one-and-a-half-radius-disk-hub';
   inputRotor.add(shaftHub);
 
-  const hubOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(hubRadius - 0.035, 0.04, 10, 64),
-    darkMaterial,
-  );
-  hubOutline.position.z = hubCenterZ + hubDepth / 2 + 0.012;
-  hubOutline.userData.role = 'front-outline-of-spiral-disk-hub';
-  inputRotor.add(hubOutline);
-
   const diskRotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(carrierRadius * 0.36, 0.085, 0.032),
     indexMaterial,
@@ -3463,19 +3367,6 @@ function spiralGuideDrillFeedMotion() {
   );
   followerRoller.userData.role = 'small-roller-between-adjacent-spiral-turns';
   rollerRotor.add(followerRoller);
-
-  const rollerRim = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      rollerRadius - 0.025,
-      0.032,
-      9,
-      48,
-    ),
-    darkMaterial,
-  );
-  rollerRim.position.z = rollerDepth / 2 + 0.012;
-  rollerRim.userData.role = 'front-rim-of-free-feed-roller';
-  rollerRotor.add(rollerRim);
 
   const rollerHub = cylinderAlongZ(
     rollerHubRadius,
@@ -3976,7 +3867,6 @@ function spiralGuideDrillFeedMotion() {
     carriage,
     carriageIndex,
     carrier,
-    carrierRim,
     diskRotationIndex,
     drillBit,
     drillChuck,
@@ -3987,12 +3877,10 @@ function spiralGuideDrillFeedMotion() {
     framePosts,
     guideCrossbars,
     housingBridge,
-    hubOutline,
     input,
     inputShaft,
     rollerHousing,
     rollerHub,
-    rollerRim,
     rollerRotationIndex,
     rollerRotor,
     shaftBearing,
@@ -4280,19 +4168,6 @@ function cylindricalReversingGrooveCamMotion() {
   barrel.userData.role = 'single-rotating-barrel-cam-body';
   inputRotor.add(barrel);
 
-  const barrelEndRims = [-1, 1].map((sideSign) => {
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(barrelRadius - 0.025, 0.035, 9, 72),
-      darkMaterial,
-    );
-    rim.rotation.y = Math.PI / 2;
-    rim.position.x = sideSign * barrelHalfLength;
-    rim.userData.role = 'dark-rim-on-end-of-barrel-cam';
-    rim.userData.side = sideSign < 0 ? 'left' : 'right';
-    inputRotor.add(rim);
-    return rim;
-  });
-
   const grooveTrack = new THREE.Mesh(
     new THREE.TubeGeometry(
       grooveCurve,
@@ -4575,7 +4450,6 @@ function cylindricalReversingGrooveCamMotion() {
   root.userData.cameraDistanceScale = 1.08;
   root.userData.blocks = {
     barrel,
-    barrelEndRims,
     baseRail,
     bearingPosts,
     camBearings,
@@ -5106,9 +4980,6 @@ function threeWiperReciprocatingFrame() {
     roughness: 0.69,
   });
   const indexMaterial = matte(PALETTE.white, { roughness: 0.46 });
-  const workingLineMaterial = new THREE.LineBasicMaterial({
-    color: PALETTE.ink,
-  });
 
   const frameDisplacementAtDriverAngle = (driverAngle) => (
     outputAmplitude * Math.cos(
@@ -5211,28 +5082,6 @@ function threeWiperReciprocatingFrame() {
   leftGate.userData.role = 'lower-left-integral-conjugate-wiper-face';
   leftGate.userData.side = 'left';
 
-  const rightWorkingLine = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(
-      rightGateProfileSamples.map(({ profilePoint }) => new THREE.Vector3(
-        profilePoint.x,
-        profilePoint.y,
-        frameDepth / 2 + 0.023,
-      )),
-    ),
-    workingLineMaterial,
-  );
-  rightWorkingLine.userData.role = 'visible-upper-right-working-contact-profile';
-  const leftWorkingLine = new THREE.Line(
-    new THREE.BufferGeometry().setFromPoints(
-      leftGateProfileSamples.map(({ profilePoint }) => new THREE.Vector3(
-        profilePoint.x,
-        profilePoint.y,
-        frameDepth / 2 + 0.023,
-      )),
-    ),
-    workingLineMaterial,
-  );
-  leftWorkingLine.userData.role = 'visible-lower-left-working-contact-profile';
 
   const slideRods = [-1, 1].map((sideSign) => {
     const rod = cylinderAlongX(
@@ -5267,8 +5116,6 @@ function threeWiperReciprocatingFrame() {
     frameBody,
     rightGate,
     leftGate,
-    rightWorkingLine,
-    leftWorkingLine,
     ...slideRods,
     translationIndex,
   );
@@ -5279,7 +5126,6 @@ function threeWiperReciprocatingFrame() {
   inputRotor.userData.role = 'one-rigid-three-wiper-rotor';
   const wiperArms = [];
   const wiperHeads = [];
-  const wiperHeadRims = [];
   for (let index = 0; index < wiperCount; index += 1) {
     const localAngle = index * wiperAngularSpacing;
     const cosine = Math.cos(localAngle);
@@ -5315,36 +5161,13 @@ function threeWiperReciprocatingFrame() {
     head.userData.radius = wiperHeadRadius;
     head.userData.role = 'rounded-wiper-head-rigid-with-input-shaft';
 
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(
-        wiperHeadRadius * 0.91,
-        0.027,
-        8,
-        36,
-      ),
-      darkMaterial,
-    );
-    rim.position.set(
-      wiperCenterRadius * cosine,
-      wiperCenterRadius * sine,
-      wiperHeadDepth / 2 + 0.07,
-    );
-    rim.userData.index = index;
-    rim.userData.role = 'dark-outline-on-rounded-wiper-head';
     wiperArms.push(arm);
     wiperHeads.push(head);
-    wiperHeadRims.push(rim);
   }
 
   const rotorHub = cylinderAlongZ(hubRadius, hubDepth, driverMaterial, 52);
   rotorHub.position.z = 0.025;
   rotorHub.userData.role = 'central-hub-rigid-with-all-three-wipers';
-  const rotorHubRim = new THREE.Mesh(
-    new THREE.TorusGeometry(hubRadius * 0.9, 0.038, 9, 48),
-    darkMaterial,
-  );
-  rotorHubRim.position.z = hubDepth / 2 + 0.075;
-  rotorHubRim.userData.role = 'dark-outline-on-three-wiper-hub';
   const rotationIndex = new THREE.Mesh(
     new THREE.BoxGeometry(hubRadius * 0.52, 0.055, 0.028),
     indexMaterial,
@@ -5367,9 +5190,7 @@ function threeWiperReciprocatingFrame() {
   inputRotor.add(
     ...wiperArms,
     ...wiperHeads,
-    ...wiperHeadRims,
     rotorHub,
-    rotorHubRim,
     rotationIndex,
     inputShaft,
   );
@@ -5642,19 +5463,15 @@ function threeWiperReciprocatingFrame() {
     inputRotor,
     inputShaft,
     leftGate,
-    leftWorkingLine,
     rightGate,
-    rightWorkingLine,
     rotationIndex,
     rotorHub,
-    rotorHubRim,
     shaftBearing,
     shaftPost,
     slideRods,
     slidingFrame,
     translationIndex,
     wiperArms,
-    wiperHeadRims,
     wiperHeads,
   };
   root.userData.curves = {
@@ -6304,12 +6121,6 @@ function gravityOpenedEccentricPlateShears() {
   movingBlade.traverse((object) => {
     if (object.material) object.material = inkMaterial;
   });
-  const pivotFaceRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.225, 0.045, 10, 40),
-    inkMaterial,
-  );
-  pivotFaceRing.position.z = upperJawDepth / 2 + 0.04;
-  pivotFaceRing.userData.role = 'dark-ring-around-upper-jaw-pivot';
   const gravityIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.075, 18, 12),
     whiteMaterial,
@@ -6330,7 +6141,6 @@ function gravityOpenedEccentricPlateShears() {
     upperJaw,
     leverContactFace,
     movingBlade,
-    pivotFaceRing,
     gravityIndex,
     movingBladeTipMarker,
   );
@@ -6385,12 +6195,6 @@ function gravityOpenedEccentricPlateShears() {
   camDisk.position.set(0, -camEccentricity, 0);
   camDisk.userData.radius = camRadius;
   camDisk.userData.role = 'circular-cam-offset-from-input-shaft';
-  const camRim = new THREE.Mesh(
-    new THREE.TorusGeometry(camRadius, 0.045, 10, 64),
-    inkMaterial,
-  );
-  camRim.position.set(0, -camEccentricity, camDepth / 2 + 0.025);
-  camRim.userData.role = 'dark-rim-on-eccentric-circular-cam';
   const camRotationIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.068, 17, 11),
     whiteMaterial,
@@ -6403,7 +6207,7 @@ function gravityOpenedEccentricPlateShears() {
   camRotationIndex.userData.role = 'white-index-on-rotating-eccentric-cam';
   const camHub = cylinderAlongZ(0.17, camDepth * 1.26, inkMaterial, 28);
   camHub.userData.role = 'hub-at-eccentric-cam-input-axis';
-  camRotor.add(camDisk, camRim, camRotationIndex, camHub);
+  camRotor.add(camDisk, camRotationIndex, camHub);
 
   const camShaft = cylinderAlongZ(
     camShaftRadius,
@@ -6552,7 +6356,6 @@ function gravityOpenedEccentricPlateShears() {
     camHub,
     cameraEnvelope,
     camInput,
-    camRim,
     camRotationIndex,
     camRotor,
     camShaft,
@@ -6565,7 +6368,6 @@ function gravityOpenedEccentricPlateShears() {
     movingBlade,
     movingBladeTipMarker,
     pivotBearing,
-    pivotFaceRing,
     pivotPin,
     pivotStand,
     upperJaw,
@@ -6837,14 +6639,6 @@ function reuleauxCarrierDiskValveMotion() {
   carrierDisk.userData.role = 'circular-carrier-disk-centered-on-cam-vertex';
   inputRotor.add(carrierDisk);
 
-  const carrierRim = new THREE.Mesh(
-    new THREE.TorusGeometry(carrierDiskRadius, 0.055, 10, 96),
-    darkMaterial,
-  );
-  carrierRim.position.z = -0.205;
-  carrierRim.userData.role = 'visible-rim-of-circular-carrier-disk';
-  inputRotor.add(carrierRim);
-
   const carrierFaceIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.09, carrierDiskRadius * 0.72, 0.035),
     witnessMaterial,
@@ -6864,17 +6658,6 @@ function reuleauxCarrierDiskValveMotion() {
   camBody.position.z = -0.02;
   camBody.userData.role = 'true-three-arc-reuleaux-triangle-tappet';
   inputRotor.add(camBody);
-
-  const outlinePoints = profileShape.extractPoints(72).shape.map((point) => (
-    new THREE.Vector3(point.x, point.y, camDepth / 2 + 0.016)
-  ));
-  const camOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(outlinePoints),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  camOutline.position.z = camBody.position.z;
-  camOutline.userData.role = 'visible-profile-of-true-reuleaux-tappet';
-  inputRotor.add(camOutline);
 
   const fastenerBoss = cylinderAlongZ(
     fastenerBossRadius,
@@ -7337,11 +7120,9 @@ function reuleauxCarrierDiskValveMotion() {
     baseRail,
     bearingSupports,
     camBody,
-    camOutline,
     cameraEnvelope,
     carrierDisk,
     carrierFaceIndex,
-    carrierRim,
     fastenerBoss,
     fastenerSquare,
     follower,
@@ -7768,33 +7549,6 @@ function toothedAxialFaceCamSpringFollower() {
   toothedRim.userData.toothCount = toothCount;
   inputRotor.add(toothedRim);
 
-  const rimOutlinePoints = Array.from(
-    { length: toothCount * 24 },
-    (_, index) => {
-      const angle = fullTurn * index / (toothCount * 24);
-      return new THREE.Vector3(
-        toothProfileAtAngle(angle).faceCoordinate + 0.012,
-        wheelOuterRadius * Math.sin(angle),
-        wheelOuterRadius * Math.cos(angle),
-      );
-    },
-  );
-  const toothedRimOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(rimOutlinePoints),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  toothedRimOutline.userData.role = 'visible-sixteen-lobe-axial-face-profile';
-  inputRotor.add(toothedRimOutline);
-
-  const rearRimOutline = new THREE.Mesh(
-    new THREE.TorusGeometry(wheelOuterRadius, 0.045, 9, 96),
-    darkMaterial,
-  );
-  rearRimOutline.rotation.y = Math.PI / 2;
-  rearRimOutline.position.x = baseBackX - 0.025;
-  rearRimOutline.userData.role = 'straight-back-edge-of-edge-on-cam-wheel';
-  inputRotor.add(rearRimOutline);
-
   const inputShaft = cylinderAlongX(
     shaftRadius,
     shaftLength,
@@ -8107,12 +7861,6 @@ function toothedAxialFaceCamSpringFollower() {
     { thickness: postWidth, depth: 0.24, color: PALETTE.frame },
   );
   upperPost.userData.role = 'upright-plate-above-rod-guide';
-  const lowerPost = makeBeam(
-    new THREE.Vector3(fixedGuideX, groundY - hatchDepth, plateZ),
-    new THREE.Vector3(fixedGuideX, groundY, plateZ),
-    { thickness: postWidth, depth: 0.24, color: PALETTE.frame },
-  );
-  lowerPost.userData.role = 'upright-plate-let-into-ground';
   const gussetShape = new THREE.Shape();
   const gussetRun = 110 * sourceScale, gussetRise = 130 * sourceScale;
   gussetShape.moveTo(0, 0);
@@ -8127,22 +7875,11 @@ function toothedAxialFaceCamSpringFollower() {
   gusset.position.set(fixedGuideX - postWidth / 2, groundY, plateZ);
   gusset.userData.role = 'curved-bracket-stiffening-upright';
   const groundLeftX = wheelCenter.x + baseBackX + (20 - sourceBaseBackX) * sourceScale;
-  const groundRightX = fixedGuideX - postWidth / 2;
-  const groundWidth = groundRightX - groundLeftX;
-  const groundLine = new THREE.Mesh(new THREE.BoxGeometry(groundWidth, 0.04, 0.3), darkMaterial);
-  groundLine.position.set((groundLeftX + groundRightX) / 2, groundY - 0.02, plateZ);
-  groundLine.userData.role = 'engraved-ground-line';
-  sourcePlate.add(upperPost, lowerPost, gusset, groundLine);
-  const strokeLength = hatchDepth / Math.sin(Math.PI / 4);
-  const strokeCount = Math.round(groundWidth / 0.16);
-  for (let index = 0; index < strokeCount; index += 1) {
-    const stroke = new THREE.Mesh(new THREE.BoxGeometry(0.022, strokeLength, 0.02), darkMaterial);
-    const x = groundLeftX + hatchDepth / 2 + (groundWidth - hatchDepth) * index / (strokeCount - 1);
-    stroke.position.set(x, groundY - hatchDepth / 2 - 0.04, plateZ);
-    stroke.rotation.z = Math.PI / 4;
-    stroke.userData.role = 'ground-hatch-stroke';
-    sourcePlate.add(stroke);
-  }
+  // The hatched ground is a cut solid: one block the upright stands on.
+  const groundBlockRight = fixedGuideX + postWidth / 2;
+  const ground = groundBlock(groundBlockRight - groundLeftX, hatchDepth, 0.3, {name: 'engraved-hatched-ground-block'});
+  ground.position.set((groundLeftX + groundBlockRight) / 2, groundY - hatchDepth / 2, plateZ);
+  sourcePlate.add(upperPost, gusset, ground);
   root.add(sourcePlate);
 
   root.userData.mechanism = 'sixteen-tooth-axial-face-cam-spring-follower';
@@ -8172,11 +7909,9 @@ function toothedAxialFaceCamSpringFollower() {
     inputRotor,
     inputShaft,
     movingSpringCollar,
-    rearRimOutline,
     shaftBearing,
     shaftPedestal,
     toothedRim,
-    toothedRimOutline,
     wheelBody,
     wheelFaceIndex,
     wheelHub,
@@ -8814,14 +8549,6 @@ function frenchExpansionEccentricValveFork() {
   camBody.userData.radius = camRadius;
   inputRotor.add(camBody);
 
-  const camRim = new THREE.Mesh(
-    new THREE.TorusGeometry(camRadius, 0.048, 10, 96),
-    darkMaterial,
-  );
-  camRim.position.set(eccentricity, 0, 0.34);
-  camRim.userData.role = 'working-rim-of-expansion-eccentric';
-  inputRotor.add(camRim);
-
   const camFaceIndex = new THREE.Mesh(
     new THREE.BoxGeometry(camRadius * 0.72, 0.065, 0.04),
     witnessMaterial,
@@ -8901,19 +8628,13 @@ function frenchExpansionEccentricValveFork() {
     forkPivotShaftRadius + 0.012, drivenMaterial, 48);
   forkPivotBoss.position.z = contactPlaneZ;
   forkPivotBoss.userData.role = 'rocking-boss-of-fork-at-fixed-right-pivot';
-  const forkPivotRim = new THREE.Mesh(
-    new THREE.TorusGeometry(0.46, 0.052, 10, 48),
-    darkMaterial,
-  );
-  forkPivotRim.position.z = contactPlaneZ + 0.27;
-  forkPivotRim.userData.role = 'front-rim-of-rocking-fork-pivot-boss';
   const forkMotionIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.07, 0.3, 0.04),
     witnessMaterial,
   );
   forkMotionIndex.position.set(0, 0.29, contactPlaneZ + 0.3);
   forkMotionIndex.userData.role = 'rocking-index-on-fork-pivot-boss';
-  fork.add(forkPivotBoss, forkPivotRim, forkMotionIndex);
+  fork.add(forkPivotBoss, forkMotionIndex);
 
   const rollerPinRadius = 0.11;
   const makeForkRoller = (side) => {
@@ -8933,19 +8654,13 @@ function frenchExpansionEccentricValveFork() {
     );
     wheel.userData.role = `${side}-rolling-wheel-against-eccentric`;
     wheel.userData.radius = rollerRadius;
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(rollerRadius, 0.04, 9, 48),
-      darkMaterial,
-    );
-    rim.position.z = 0.255;
-    rim.userData.role = `${side}-roller-working-rim`;
     const index = new THREE.Mesh(
       new THREE.BoxGeometry(rollerRadius * 0.54, 0.055, 0.038),
       witnessMaterial,
     );
     index.position.set(rollerRadius * 0.51, 0, 0.28);
     index.userData.role = `${side}-roller-no-slip-rotation-index`;
-    rollerRotor.add(wheel, rim, index);
+    rollerRotor.add(wheel, index);
     const pin = cylinderAlongZ(rollerPinRadius, 0.86, darkMaterial, 28);
     pin.position.z = 0.02;
     pin.userData.role = `${side}-fixed-pin-carrying-contact-roller`;
@@ -8954,7 +8669,6 @@ function frenchExpansionEccentricValveFork() {
     return {
       index,
       pin,
-      rim,
       roller,
       rollerRotor,
       wheel,
@@ -9120,7 +8834,6 @@ function frenchExpansionEccentricValveFork() {
     camCenterWitness,
     cameraEnvelope,
     camFaceIndex,
-    camRim,
     crankshaftBearing,
     crankshaftSupport,
     fixedPivotBearing,
@@ -9128,7 +8841,6 @@ function frenchExpansionEccentricValveFork() {
     fork,
     forkMotionIndex,
     forkPivotBoss,
-    forkPivotRim,
     guideSupport,
     input,
     inputRotor,
@@ -9138,7 +8850,6 @@ function frenchExpansionEccentricValveFork() {
     lowerRoller: lowerRollerAssembly.roller,
     lowerRollerIndex: lowerRollerAssembly.index,
     lowerRollerPin: lowerRollerAssembly.pin,
-    lowerRollerRim: lowerRollerAssembly.rim,
     lowerRollerRotor: lowerRollerAssembly.rollerRotor,
     lowerRollerWheel: lowerRollerAssembly.wheel,
     outerForkBow,
@@ -9152,7 +8863,6 @@ function frenchExpansionEccentricValveFork() {
     upperRoller: upperRollerAssembly.roller,
     upperRollerIndex: upperRollerAssembly.index,
     upperRollerPin: upperRollerAssembly.pin,
-    upperRollerRim: upperRollerAssembly.rim,
     upperRollerRotor: upperRollerAssembly.rollerRotor,
     upperRollerWheel: upperRollerAssembly.wheel,
     valveConnectingLink,
@@ -9818,14 +9528,6 @@ function sevenArcVariableMotionPointFollower() {
   carrierDisk.userData.role = 'circular-carrier-behind-variable-motion-cam';
   inputRotor.add(carrierDisk);
 
-  const carrierRim = new THREE.Mesh(
-    new THREE.TorusGeometry(carrierRadius, 0.052, 10, 96),
-    darkMaterial,
-  );
-  carrierRim.position.z = -0.025;
-  carrierRim.userData.role = 'visible-rim-of-seven-arc-cam-carrier';
-  inputRotor.add(carrierRim);
-
   const camPlate = new THREE.Mesh(
     centeredExtrusion(camShape, 0.34, 0.008),
     camMaterial,
@@ -9834,16 +9536,6 @@ function sevenArcVariableMotionPointFollower() {
   camPlate.userData.role = 'seven-circular-arc-variable-motion-cam-profile';
   camPlate.userData.profileArcCount = profileArcs.length;
   inputRotor.add(camPlate);
-
-  const outlinePoints = camShape.extractPoints(64).shape.map((point) => (
-    new THREE.Vector3(point.x, point.y, 0.275)
-  ));
-  const camOutline = new THREE.LineLoop(
-    new THREE.BufferGeometry().setFromPoints(outlinePoints),
-    new THREE.LineBasicMaterial({ color: PALETTE.ink }),
-  );
-  camOutline.userData.role = 'visible-outline-of-seven-arc-working-profile';
-  inputRotor.add(camOutline);
 
   const outerHub = cylinderAlongZ(
     outerHubRadius,
@@ -10138,12 +9830,10 @@ function sevenArcVariableMotionPointFollower() {
   root.userData.cameraDistanceScale = 1.04;
   root.userData.blocks = {
     baseRail,
-    camOutline,
     camPlate,
     cameraEnvelope,
     camRotationIndex,
     carrierDisk,
-    carrierRim,
     contactMarker,
     follower,
     followerIndex,

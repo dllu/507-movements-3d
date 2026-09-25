@@ -343,17 +343,6 @@ function conicalPendulum(movement) {
   const bob = cylinderAlongY(bobRadius, bobLength, drivenMaterial, 48);
   bob.position.y = -bobDistanceFromTop;
   bob.userData.role = 'cylindrical-conical-pendulum-bob';
-  const bobRims = [-1, 1].map((side) => {
-    const rim = torusAroundY(
-      bobRadius * 0.91,
-      0.052,
-      darkMaterial,
-      56,
-    );
-    rim.position.y = -bobDistanceFromTop + side * bobLength * 0.47;
-    rim.userData.role = 'pendulum-bob-end-rim';
-    return rim;
-  });
   const bobIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.10, bobLength * 0.66, 0.045),
     whiteMaterial,
@@ -378,7 +367,6 @@ function conicalPendulum(movement) {
     flexureWire,
     rigidRod,
     bob,
-    ...bobRims,
     bobIndex,
     lowerSocket,
     lowerPinTail,
@@ -425,7 +413,6 @@ function conicalPendulum(movement) {
     bearingPlate,
     bob,
     bobIndex,
-    bobRims,
     crankArm,
     crankHub,
     driveCollar,

@@ -417,24 +417,6 @@ function adjustableFrictionGear(movement) {
   );
   grooveRoot.userData.role = 'rigid-v-groove-root';
   lowerRotor.add(grooveRoot);
-  const lowerLeftRim = torusNormalToX(
-    lowerGrooveLipRadius,
-    0.045,
-    darkMaterial,
-    88,
-  );
-  lowerLeftRim.position.x = -0.37;
-  lowerLeftRim.userData.role = 'left-lip-of-rigid-v-groove';
-  lowerRotor.add(lowerLeftRim);
-  const lowerRightRim = torusNormalToX(
-    lowerGrooveLipRadius,
-    0.045,
-    darkMaterial,
-    88,
-  );
-  lowerRightRim.position.x = 0.37;
-  lowerRightRim.userData.role = 'right-lip-of-rigid-v-groove';
-  lowerRotor.add(lowerRightRim);
   const lowerHub = cylinderAlongX(0.31, 0.92, darkMaterial, 36);
   lowerHub.userData.role = 'lower-driven-wheel-hub';
   lowerRotor.add(lowerHub);

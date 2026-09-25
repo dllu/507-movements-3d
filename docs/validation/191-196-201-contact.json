@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "da0f13f59fed60a3494699a8e45975b15de332a5e830ee39b12c67696e3088bc"
+      "sha256": "c7fe2bc8a1573e16ae222044d8fa35e4a75901c6990334a2a7c8278b4be11aa9"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -14,7 +14,7 @@
     },
     {
       "file": "src/simulation/irregular-gear-family.js",
-      "sha256": "dc9973584ec70eda393bae1165000e7a245e2fb7fe59a4087ebe65df37b18b38"
+      "sha256": "fa00ada341274e129ae54044262b8d6ab367192acac8a2144357864d5de71a02"
     },
     {
       "file": "src/simulation/generated-irregular-gear-profiles.js",
@@ -26,7 +26,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "scripts/review-irregular-gear-contact.mjs",

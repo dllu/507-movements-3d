@@ -88,14 +88,14 @@ function smoothRun(points, perSegment = 4) {
   return result;
 }
 
-const NOSE_TIP = [[710, 610], [708, 660], [705, 712], [712, 718], [728, 713], [770, 690], [792, 673]];
-const NOSE_ROOT = [[760, 630]];
+// Brown's pointed nose at the foot of the lobe's straight inner edge.
+const NOSE_TIP = [705, 713];
 
-// The front pawl: the ring round the screw, a broad arm whose upper edge
-// passes under the striker, and the hooked lobe ending in the nose. With
-// plateOnly, the nose (which steps forward into the star's plane as its own
-// block) is left out.
-export function pawlOutline({ plateOnly = false } = {}) {
+// The broad hooked pawl as one plate with Brown's simple smooth outline: the
+// ring round the screw, a broad arm whose upper edge passes under the
+// striker, and the lobe whose straight inner edge ends in the pointed nose,
+// its lower boundary sweeping in one curve back up over the shoulder.
+export function pawlOutline() {
   const [px, py] = layout.pawlPivot;
   const r = layout.bossRadius;
   // Boss arc from the lower right (where the arm's upper edge leaves) over
@@ -103,26 +103,20 @@ export function pawlOutline({ plateOnly = false } = {}) {
   const upperLeave = Math.atan2(-352 - py, 517 - px);
   const lowerLeave = Math.atan2(-340 - py, 346 - px);
   const bossArc = arc(layout.pawlPivot, r, upperLeave, lowerLeave + (lowerLeave < upperLeave ? Math.PI * 2 : 0), 28);
-  const tip = plateOnly ? [NOSE_TIP[0], ...NOSE_ROOT, NOSE_TIP.at(-1)] : NOSE_TIP;
   return [
     ...bossArc,
     ...[
       // arm's lower edge, leaving the ring tangentially
       ...smoothRun([[346, 340], [388, 372], [440, 400], [520, 428], [620, 446], [714, 462]]).slice(1),
-      // lobe's straight inner edge down to the nose, and the nose
-      [712, 560], ...tip.slice(0, -1),
-      // curved lower boundary back up over the lobe's shoulder
-      ...smoothRun([tip.at(-1), [815, 655], [858, 610], [893, 560], [918, 505], [933, 450],
-        [928, 408], [900, 375], [860, 356], [812, 350], [770, 358]]),
-      // arm's upper edge under the striker
-      ...smoothRun([[770, 358], [700, 381], [620, 370], [560, 362], [517, 352]]).slice(1, -1),
+      // lobe's straight inner edge down to the pointed nose
+      [712, 560], [709, 640],
+      // curved lower boundary from the nose back up over the lobe's shoulder
+      ...smoothRun([NOSE_TIP, [765, 692], [820, 655], [866, 604], [903, 545], [926, 482],
+        [930, 425], [908, 382], [864, 360], [812, 353], [764, 356]]),
+      // arm's upper edge, falling gently to the ring under the striker
+      ...smoothRun([[764, 356], [700, 360], [620, 358], [560, 355], [517, 352]]).slice(1, -1),
     ].map(image),
   ];
-}
-
-// The nose block that steps forward into the star's plane.
-export function pawlNoseOutline() {
-  return [...NOSE_TIP, ...NOSE_ROOT].map(image);
 }
 
 // The rear drop: the tail over the spring, the boss behind the ring, the
@@ -274,8 +268,9 @@ export function makeSnapCounterMechanism({
 } = {}) {
   const dropFallRate = dropFallPerEvent / stepsPerEvent;
   const pawlFallRate = pawlFallPerEvent / stepsPerEvent;
+  // The pawl is one plate thick enough to reach from the pins' plane into
+  // the star's, so its whole outline works against the star.
   const pawl = pawlOutline();
-  const nose = pawlNoseOutline();
   const drop = dropOutline(leg);
   const star = starOutline();
   const pinPitch = (Math.PI * 2) / layout.pinCount;
@@ -288,7 +283,7 @@ export function makeSnapCounterMechanism({
 
   const dropAt = (delta) => place(drop, hinge, delta);
   const pawlAt = (delta, rho) => place(place(pawl, pivot0, rho), hinge, delta);
-  const noseAt = (delta, rho) => place(place(nose, pivot0, rho), hinge, delta);
+  const noseAt = pawlAt;
   const starAt = (sigma) => star.map(([x, y]) => {
     const c = Math.cos(sigma);
     const s = Math.sin(sigma);
@@ -471,8 +466,7 @@ export function makeSnapCounterMechanism({
 
   return {
     dropOutline: drop,
-    noseOutline: nose,
-    pawlPlateOutline: pawlOutline({ plateOnly: true }),
+    pawlPlateOutline: pawl,
     pinPhase,
     rotateAboutHinge: (point, delta) => rotateAbout(point, hinge, delta),
     periodicEvent,
@@ -498,10 +492,9 @@ export function snapCounterMotionFingerprint(options = {}) {
   const text = JSON.stringify({
     drop: dropOutline(options.leg ?? defaultLeg),
     layout,
-    nose: pawlNoseOutline(),
     options,
     pawl: pawlOutline(),
-    solver: 5,
+    solver: 6,
   }, (key, value) => (typeof value === 'number' ? Math.round(value * 1e6) / 1e6 : value));
   let hash = 0x811c9dc5;
   for (let index = 0; index < text.length; index += 1) {

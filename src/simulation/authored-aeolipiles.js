@@ -416,6 +416,9 @@ function heroAeolipile(movement) {
   boilerRim.rotation.x = Math.PI / 2;
   boilerRim.position.y = 0.50;
   boilerRim.userData.role = 'fixed-boiler-lid-rim';
+  // Brown draws the kettle mouth as its edge line only: hidden reference.
+  boilerRim.visible = false;
+  boilerRim.userData.retiredInkOutline = true;
   root.add(boilerRim);
   const boilerWater = new THREE.Mesh(
     new THREE.CylinderGeometry(1.32, 1.32, 0.045, 60),
@@ -527,6 +530,9 @@ function heroAeolipile(movement) {
   );
   rotationBand.rotation.y = Math.PI / 2;
   rotationBand.userData.role = 'globe-equator-about-horizontal-pivot-axis';
+  // Not drawn by Brown: a dark band around the globe; hidden reference only.
+  rotationBand.visible = false;
+  rotationBand.userData.retiredInkOutline = true;
   rotor.add(rotationBand);
   const rotationMarkers = [
     new THREE.Vector3(0.44, 0.91, 0.69),

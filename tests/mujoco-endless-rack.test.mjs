@@ -14,7 +14,7 @@ test('119 preserves closed hardware and a section view independent of the solids
   assert.equal(Object.keys(u.parts).length,9);
   for(const [name,mesh]of Object.entries(u.parts)){const a=inspectWeightedClutchSolid(mesh.geometry);assert(a.volume>0,name);assert.equal(a.components,1,name);assert.equal(a.unmatchedEdges+a.degenerate+a.nonfinite+a.wrongNormals,0,name);}
   assert.equal(u.parts.pinion.geometry.userData.toothProfile,'rounded-rack-generated-involute-with-root-transition');
-  assert(u.sectionView&&!u.parts.guide.visible);u.setSectionView(false);assert(u.parts.guide.visible);u.setSectionView(true);assert(!u.parts.guide.visible);
+  assert(!u.sectionView&&u.parts.guide.visible,'the solid guide bar is drawn by default');u.setSectionView(true);assert(!u.parts.guide.visible);u.setSectionView(false);assert(u.parts.guide.visible);
   assert(u.hideGround);assert(u.parts.pinion.geometry.attributes.position.count>0);
  }finally{disposeObject3D(v.root);}
 });

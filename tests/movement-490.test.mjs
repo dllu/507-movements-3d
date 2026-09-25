@@ -256,7 +256,7 @@ test('movement 490 is one uninterrupted curve from one tiller end through all wr
   assert.ok(ropePathState.curve instanceof THREE.CatmullRomCurve3);
   assert.ok(ropePathState.points.length > 200);
   assert.ok(ropePathState.pathLength > 0);
-  assert.equal(blocks.rope.geometry.type, 'TubeGeometry');
+  assert.equal(blocks.rope.geometry.type, 'LaidRopeGeometry');
   const first = ropePathState.points[0];
   const last = ropePathState.points.at(-1);
   near(first.z, geometry.upperRopePlaneZ, 0, 'upper rope plane');
@@ -277,7 +277,7 @@ test('movement 490 is one uninterrupted curve from one tiller end through all wr
     ) > 0, `duplicate/disconnected sample ${index}`);
   }
   assert.match(dynamics.continuity,
-    /exactly one Curve3 centerline and one tube mesh.*upper guide.*barrel helix.*lower guide/s);
+    /exactly one Curve3 centerline and one laid-rope mesh.*upper guide.*barrel helix.*lower guide/s);
   assert.match(dynamics.historicalSlackDisclosure,
     /equal smooth slack bows preserve the ideal fixed free-rope length.*do not solve tension, friction or axial creep/s);
   disposeModel(model.root);
@@ -315,36 +315,34 @@ test('movement 490 renderer follows the solved driver, guides, tiller, and movin
   disposeModel(model.root);
 });
 
-test('movement 490 rope markers cross every transition smoothly by arc length', () => {
+test('movement 490 laid-rope lay travels smoothly with the drum payout, without markers', () => {
   const { model } = movementModel();
-  const { blocks, dynamics, ropePathState, stateAtTime } =
-    model.root.userData;
+  const { blocks, dynamics, stateAtTime } = model.root.userData;
+  const roles = [];
+  model.root.traverse((object) => roles.push(object.userData.role ?? ''));
+  assert.equal(roles.filter((role) => /material-marker/.test(role)).length, 0,
+    'laid rope carries no painted flow markers');
   for (const time of [0, 0.37, 1.29, 2.44, 4.61, 6.83]) {
     model.update(time);
-    const state = stateAtTime(time);
-    blocks.ropeMarkers.forEach((marker, index) => {
-      const progress = THREE.MathUtils.euclideanModulo(
-        index / blocks.ropeMarkers.length
-          + state.ropeDisplacement / ropePathState.pathLength,
-        1,
-      );
-      vectorNear(marker.position,
-        ropePathState.curve.getPointAt(progress), 2e-14,
-        `marker ${index} at ${time}`);
-    });
+    assert.equal(blocks.rope.geometry.type, 'LaidRopeGeometry');
+    assert.equal(blocks.rope.geometry.userData.travel,
+      stateAtTime(time).ropeDisplacement, `lay travel at ${time}`);
   }
   model.update(0.7100);
-  const before = blocks.ropeMarkers.map((marker) => marker.position.clone());
+  const positions = blocks.rope.geometry.attributes.position;
+  const before = Array.from({ length: 64 }, (_, index) =>
+    new THREE.Vector3().fromBufferAttribute(positions,
+      Math.floor(index * positions.count / 64)));
   model.update(0.7101);
-  blocks.ropeMarkers.forEach((marker, index) => {
-    const travel = marker.position.distanceTo(before[index]);
-    assert.ok(travel > 0 && travel < 0.01,
-      `smooth marker step ${index}: ${travel}`);
+  before.forEach((point, index) => {
+    const step = point.distanceTo(new THREE.Vector3().fromBufferAttribute(
+      positions, Math.floor(index * positions.count / 64)));
+    assert.ok(step < 0.01, `smooth lay step ${index}: ${step}`);
   });
   assert.match(sourceText,
-    /ropeMarkers\[index\]\.position\.copy\(curve\.getPointAt\(progress\)\)/);
-  assert.match(dynamics.markerContinuity,
-    /analytic drum payout.*getPointAt arc-length sampling.*free spans, guide arcs, and barrel turns.*smooth/s);
+    /updateRopeGeometry\(state\.routes, state\.ropeDisplacement\)/);
+  assert.match(dynamics.layTravel,
+    /signed analytic drum payout.*arc length.*free spans, guide arcs, and barrel turns.*without painted markers/s);
   disposeModel(model.root);
 });
 

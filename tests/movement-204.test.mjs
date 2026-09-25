@@ -746,7 +746,8 @@ test('movement 204 runtime keeps the contact generator fixed and remains distinc
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.ok(visibleMeshCount >= 20, 'the undrawn base, posts and painted end-face indices are presented away');
+  // The dark end-face rims Brown only inks are retired as hidden references.
+  assert.ok(visibleMeshCount >= 16, 'the undrawn base, posts and painted end-face indices are presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x * 4);

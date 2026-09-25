@@ -2,11 +2,11 @@
   "sources": [
     {
       "file": "src/simulation/authored-cylinder-spiral-scribers.js",
-      "sha256": "51b49be274e6ab34bd342c289088a0955a95369733f382e403b71888118a12ba"
+      "sha256": "dc8d24530109e6f48667c6f4879b6f8d1dac2525fb99f9f078070f68cf0be057"
     },
     {
       "file": "src/simulation/authored-dynamometers.js",
-      "sha256": "9dfd1bd96859455da8d3ad4496d5f87d3f1b2537073df4fd9d85199c1753de65"
+      "sha256": "8997b592a3d597887be9b4a6f74853ca94bab88f18ff214e8f117c0ffd2643e6"
     },
     {
       "file": "src/simulation/scriber-dynamometer-gears.js",
@@ -34,7 +34,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "scripts/review-368-372-contact-solids.mjs",
@@ -46,7 +46,7 @@
     {
       "id": 368,
       "poses": 33,
-      "queries": 561449,
+      "queries": 562103,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,

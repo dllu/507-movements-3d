@@ -405,12 +405,24 @@ function selfActingWeir(movement) {
   ), 'open-bed-scouring-flow-past-separated-leaves');
   root.add(bedFlow);
 
+  // A low deposit bank lying across the whole channel on the bed, like
+  // Brown's scoured deposit below the opened leaves, not a loose disc.
+  const sedimentShape = new THREE.Shape();
+  sedimentShape.moveTo(-0.52, 0);
+  for (let i = 1; i < 32; i += 1) {
+    const x = -0.52 + 1.04 * i / 32;
+    sedimentShape.lineTo(x, 0.11 * Math.sqrt(Math.max(0, 1 - (x / 0.52) ** 2)));
+  }
+  sedimentShape.lineTo(0.52, 0);
+  sedimentShape.closePath();
+  const sedimentGeometry = new THREE.ExtrudeGeometry(sedimentShape, { depth: gateWidth - 0.10, bevelEnabled: false });
+  sedimentGeometry.translate(0, 0, -(gateWidth - 0.10) / 2);
   const sedimentBank = addRole(new THREE.Mesh(
-    new THREE.SphereGeometry(0.52, 28, 14),
+    sedimentGeometry,
     sedimentMaterial,
   ), 'bed-deposit-reduced-by-open-scouring-sluice');
-  sedimentBank.scale.set(1.45, 0.20, 1.35);
-  sedimentBank.position.set(0.82, channelFloorY + 0.08, 0.55);
+  sedimentBank.scale.set(1.45, 1, 1);
+  sedimentBank.position.set(0.82, channelFloorY - 0.045, 0);
   root.add(sedimentBank);
 
   const update = (time) => {
@@ -425,7 +437,7 @@ function selfActingWeir(movement) {
     bedFlow.visible = state.bedFlowFraction > 1e-4;
     bedFlowMaterial.opacity = 0.16 + 0.46 * state.bedFlowFraction;
     sedimentBank.scale.x = 1.45 * state.sedimentRemainingFraction;
-    sedimentBank.scale.z = 1.35 * state.sedimentRemainingFraction;
+    sedimentBank.scale.y = Math.max(1e-3, state.sedimentRemainingFraction);
     root.userData.updateWorkingParts?.(state);
   };
 
@@ -583,18 +595,24 @@ function selfActingWeir(movement) {
   // current level.
   {
     const lineMaterial = ruledWaterMaterial();
+    const sectionPlaneZ = -(gateWidth / 2 + 0.06);
     const spacing = 0.1, lowestRow = channelFloorY + 0.07;
     const upstreamRows = Math.floor((floodWaterLevel - lowestRow) / spacing) + 1;
     const upstreamLines = addRole(new THREE.Mesh(ruledWaterLines({
       xMin: -3.30, xMax: -0.25, surfaceY: lowestRow + (upstreamRows - 1) * spacing, rows: upstreamRows,
       spacing, thickness: 0.028, dash: [0.6, 1.9], gap: [0.05, 0.22], seed: 4631, bottomUp: true,
     }), lineMaterial), 'upstream-head-water-ruled-lines');
+    // Rule the water on the channel's far face, behind the leaves, not
+    // through their middle: the leaves then cover the strokes as in Brown's
+    // section, and rotated views never show strokes cutting through a leaf.
+    upstreamLines.position.z = sectionPlaneZ;
     root.add(upstreamLines);
     const downstreamRows = Math.floor((downstreamWaterLevel - lowestRow) / spacing) + 1;
     const downstreamLines = addRole(new THREE.Mesh(ruledWaterLines({
       xMin: 0.40, xMax: 3.40, surfaceY: lowestRow + (downstreamRows - 1) * spacing, rows: downstreamRows,
       spacing, thickness: 0.028, dash: [0.6, 1.9], gap: [0.05, 0.22], seed: 4632,
     }), lineMaterial), 'downstream-tail-water-ruled-lines');
+    downstreamLines.position.z = sectionPlaneZ;
     root.add(downstreamLines);
     const bed = addRole(new THREE.Mesh(plate(poly([[-3.45, channelFloorY - 0.16], [3.45, channelFloorY - 0.16],
       [3.45, channelFloorY - 0.045], [-3.45, channelFloorY - 0.045]]), -gateWidth / 2, gateWidth / 2),

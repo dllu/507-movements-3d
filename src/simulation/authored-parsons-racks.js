@@ -326,13 +326,6 @@ function makePinionAndFlanges({
   largeFlange.userData.role =
     'larger-concentric-flange-driving-one-pitch-right-handoff';
   rotor.add(largeFlange);
-  const largeFlangeRim = new THREE.Mesh(
-    new THREE.TorusGeometry(largeFlangeRadius, 0.045, 10, 64),
-    darkMaterial,
-  );
-  largeFlangeRim.position.z = largePlaneZ + 0.07;
-  largeFlangeRim.userData.role = 'large-guide-flange-running-edge';
-  rotor.add(largeFlangeRim);
 
   const smallFlange = cylinderAlongZ(
     smallFlangeRadius,
@@ -344,13 +337,6 @@ function makePinionAndFlanges({
   smallFlange.userData.role =
     'smaller-concentric-flange-driving-three-pitch-left-handoff';
   rotor.add(smallFlange);
-  const smallFlangeRim = new THREE.Mesh(
-    new THREE.TorusGeometry(smallFlangeRadius, 0.040, 10, 48),
-    darkMaterial,
-  );
-  smallFlangeRim.position.z = smallPlaneZ + 0.07;
-  smallFlangeRim.userData.role = 'small-guide-flange-running-edge';
-  rotor.add(smallFlangeRim);
 
   const spinIndex = new THREE.Mesh(
     new THREE.BoxGeometry(pitchRadius * 0.58, 0.055, 0.036),
@@ -364,14 +350,12 @@ function makePinionAndFlanges({
   rotor.userData.angularPitch = angularPitch;
   rotor.userData.hub = hub;
   rotor.userData.largeFlange = largeFlange;
-  rotor.userData.largeFlangeRim = largeFlangeRim;
   rotor.userData.outerRadius = outerRadius;
   rotor.userData.pinion = pinion;
   rotor.userData.pitchRadius = pitchRadius;
   rotor.userData.rootRadius = rootRadius;
   rotor.userData.shaft = shaft;
   rotor.userData.smallFlange = smallFlange;
-  rotor.userData.smallFlangeRim = smallFlangeRim;
   rotor.userData.spinIndex = spinIndex;
   rotor.userData.toothCount = toothCount;
   return markShadows(rotor);

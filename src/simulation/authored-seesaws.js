@@ -228,20 +228,6 @@ function seesawMovement(movement) {
   );
   plank.userData.role = 'single-straight-balanced-seesaw-plank';
   beamRotor.add(plank);
-  const plankEdgeRails = [-1, 1].map((side) => {
-    const rail = new THREE.Mesh(
-      plate(polygonClipping.difference(
-        poly([[-beamHalfLength, beamThickness/2-.008], [beamHalfLength, beamThickness/2-.008],
-          [beamHalfLength, beamThickness/2+.032], [-beamHalfLength, beamThickness/2+.032]]),
-        poly(circle([0, 0], .109, 96))), side*.14-.0275, side*.14+.0275),
-      darkMaterial,
-    );
-    // Profile is expressed directly in beam coordinates, including the axle aperture.
-    rail.userData.role = 'dark-longitudinal-edge-of-rigid-plank';
-    rail.userData.side = side;
-    beamRotor.add(rail);
-    return rail;
-  });
   const pivotBoss = new THREE.Mesh(boredCylinderGeometry(.235, .109, .54), beamMaterial);
   pivotBoss.rotation.x = Math.PI / 2;
   pivotBoss.userData.role = 'moving-beam-bearing-boss-around-fixed-axle';
@@ -358,7 +344,6 @@ function seesawMovement(movement) {
       pivotAxle,
       pivotBoss,
       plank,
-      plankEdgeRails,
       seats,
     },
     degreesOfFreedom: {

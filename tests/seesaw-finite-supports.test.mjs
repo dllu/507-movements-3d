@@ -22,8 +22,8 @@ test('363 source-proportioned fulcrum keeps the entire moving body above the fou
   assert.ok(b.centerPost.position.y+b.centerPost.geometry.parameters.height/2 < data.geometry.pivot.y-.30);
 });
 
-test('363 actual bored boss, plank and rails clear the fixed axle throughout the cosine cycle', (t) => {
-  const moving = [b.pivotBoss,b.plank,...b.plankEdgeRails];
+test('363 actual bored boss and plank clear the fixed axle throughout the cosine cycle', (t) => {
+  const moving = [b.pivotBoss,b.plank];
   const pairs = moving.flatMap(mesh=>[[mesh,b.pivotAxle],[b.pivotAxle,mesh]])
     .map(([a,c])=>({a,c,points:surfacePoints(a.geometry),field:solidSurface(c.geometry)}));
   let minimum = Infinity;

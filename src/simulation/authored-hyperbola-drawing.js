@@ -23,17 +23,6 @@ function cylinderAlongZ(radius, depth, material, segments = 32) {
   return cylinder;
 }
 
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(delta.y, delta.x);
-  return beam;
-}
-
 function lineTube(points, radius, material) {
   const curve = new THREE.CatmullRomCurve3(
     points,
@@ -64,31 +53,6 @@ function makeDynamicCord(radius, material) {
     cord.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
   };
   return cord;
-}
-
-function addDashedReferenceLine({
-  count,
-  end,
-  material,
-  root,
-  start,
-  width,
-}) {
-  const direction = end.clone().sub(start);
-  const group = new THREE.Group();
-  for (let index = 0; index < count; index += 1) {
-    const from = start.clone().addScaledVector(
-      direction,
-      (index + 0.10) / count,
-    );
-    const to = start.clone().addScaledVector(
-      direction,
-      (index + 0.58) / count,
-    );
-    group.add(beamBetween(from, to, width, 0.018, material));
-  }
-  root.add(group);
-  return group;
 }
 
 function hyperbolaDrawingInstrument(movement) {
@@ -184,28 +148,7 @@ function hyperbolaDrawingInstrument(movement) {
   }
   root.add(boardFrame);
 
-  const referenceAxes = {
-    horizontal: addDashedReferenceLine({
-      count: 23,
-      end: new THREE.Vector3(2.63, 0, -0.205),
-      material: frameMaterial,
-      root,
-      start: new THREE.Vector3(-2.63, 0, -0.205),
-      width: 0.025,
-    }),
-    vertical: addDashedReferenceLine({
-      count: 21,
-      end: new THREE.Vector3(0, 1.92, -0.205),
-      material: frameMaterial,
-      root,
-      start: new THREE.Vector3(0, -2.87, -0.205),
-      width: 0.025,
-    }),
-  };
-  referenceAxes.horizontal.userData.role =
-    'dashed-transverse-axis-from-brown-engraving';
-  referenceAxes.vertical.userData.role =
-    'dashed-focal-axis-from-brown-engraving';
+  // Brown's dotted axes are construction notation and are not drawn.
 
   const hyperbolaY = (x, branchSign) => (
     branchSign * semiTransverseAxis * Math.sqrt(
@@ -540,7 +483,6 @@ function hyperbolaDrawingInstrument(movement) {
       lowerFocusPin,
       lowerThreadLoop,
       pencil,
-      referenceAxes,
       rule,
       ruleBody,
       ruleCord,
@@ -688,12 +630,6 @@ function hyperbolaDrawingInstrument(movement) {
   board.receiveShadow = true;
   targetBranches.lower.castShadow = false;
   targetBranches.upper.castShadow = false;
-  referenceAxes.horizontal.traverse((object) => {
-    object.castShadow = false;
-  });
-  referenceAxes.vertical.traverse((object) => {
-    object.castShadow = false;
-  });
   updateFiniteGeometry = installHyperbolaFiniteGeometry(root);
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };

@@ -127,18 +127,14 @@ export function makeEccentricStrap() {
       outputPoint,outputVelocity,actualRodLength:rodRadius,relativeBearingAngularSpeed:omega-strapAngularSpeed,
       stage:Math.abs(outputVelocity.x)<1e-10?'dead-center':outputVelocity.x<0?'drawing-output':'pushing-output'};
   };
-  // Brown breaks the rod off a short way beyond the bolted flanges. Keep the
-  // complete rod and wrist eye for the kinematics, but clip the drawn rod in
-  // the strap's own frame so a fixed-length stub rides with it.
-  const rodBreakX=innerCouplingX+1.5*flangeThickness+.6*outerRadius,rodBreak=new THREE.Plane();
-  eccentricRod.material=eccentricRod.material.clone();eccentricRod.material.clippingPlanes=[rodBreak];
+  // Brown breaks the rod off a short way beyond the bolted flanges; that is
+  // his drawing convention, so the rod is shown whole to its wrist eye.
   const update = time => {
     const state=stateAtTime(time);input.rotation.z=state.driverAngle;
     strap.position.copy(state.eccentricCenter);strap.rotation.z=state.strapAngle;
     outputSlide.position.copy(state.outputPoint);root.userData.kinematics=state;root.updateMatrixWorld(true);
-    rodBreak.set(new THREE.Vector3(-1,0,0),rodBreakX).applyMatrix4(strap.matrixWorld);
   };
-  root.userData={parts,families,joints,source,shadowCameraHalfExtent:5.5,shadowBias:-.00003,shadowNormalBias:.003,hideGround:true,localClippingEnabled:true,fidelity:'authored',reconstructionStatus:'rebuilt',
+  root.userData={parts,families,joints,source,shadowCameraHalfExtent:5.5,shadowBias:-.00003,shadowNormalBias:.003,hideGround:true,fidelity:'authored',reconstructionStatus:'rebuilt',
     mechanism:'eccentric-sheave-split-strap-slider',minimumDisplayCycleSeconds:4,playbackPeriod:4,
     animationTiming:{authoredCyclePeriod:4},stateAtTime,
     blocks:{input,inputShaft,sheaveBody,shaftCap,strap,leftStrapHalf:strapHalves[0],rightStrapHalf:strapHalves[1],

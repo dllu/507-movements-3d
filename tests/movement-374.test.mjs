@@ -109,7 +109,12 @@ test('movement 374 is one right-pivoted treadle roller driving one round shaft e
   });
   assert.deepEqual(belts, [blocks.belt]);
   assert.deepEqual(beltBeads, []);
-  assert.equal(blocks.belt.children.length, 4);
+  // One continuous laid rope is drawn; the four analytic pieces are hidden
+  // references for the contact checks.
+  assert.equal(blocks.belt.children.length, 5);
+  assert.equal(blocks.band.parent, blocks.belt);
+  assert.equal(blocks.band.geometry.userData.crossSection, 'laid-rope');
+  assert.deepEqual(blocks.belt.children.filter(({ visible }) => visible), [blocks.band]);
   for (const role of [
     'circular-pulley-mounted-eccentrically-on-output-shaft',
     'free-spinning-belt-roller-carried-on-moving-treadle',

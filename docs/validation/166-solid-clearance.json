@@ -30,7 +30,7 @@
     },
     {
       "file": "src/simulation/lost-motion-brick-press.js",
-      "sha256": "8eba50d92c953037f9965de464e4fd3908f69e8206c5fd0f38c125e8413a27c0"
+      "sha256": "bcc01fbdc6641c50e375d6d819f828cd1a2aab5ede3d5bf6922b379cb41d7415"
     },
     {
       "file": "src/simulation/lost-motion-brick-press-motion.js",
@@ -46,7 +46,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "3680440619d216471bba569bf1461c143c6501b68f43291ecbf564249dbafaa0"
+      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

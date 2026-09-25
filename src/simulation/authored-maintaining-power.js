@@ -974,11 +974,12 @@ function endlessChainMaintainingPower(movement) {
   ratchetPulley.position.z = chainPlaneZ;
   goingPulley.position.z = chainPlaneZ;
 
+  // Brown draws the "rope or chain" as plain cord lines: the shared laid
+  // rope, whose moving lay shows its travel (no white markers).
   const chain = makeDynamicMovingBelt(referencePath.curve, {
     closed: true,
     color: PALETTE.ink,
-    markerColor: PALETTE.white,
-    markerCount,
+    laid: true,
     radius: chainRadius,
     tubularSegments: 256,
   });
