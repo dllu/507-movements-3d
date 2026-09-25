@@ -56,3 +56,17 @@ Fix lanes: p53-no-hidden-lines, p53-parts, p53-no-crop and p53-style. A rotated-
 - **93** (minor): The stem's small round eye goes around the crank shaft only at one instant. For the rest of the stroke the solid upper stem slides across the crank hub. Brown's lower stem has an elongated slot around the shaft.
 - **108** (minor): The grooved drum is an open hollow tube with no end cap or hub. From above you can see inside, and the shaft stands in empty space. The groove lands stick out as thin fins in the side view.
 - **119** (minor): The slotted vertical guide bar is drawn only as hairline outlines with no body, so from oblique views it reads as floating wire lines. Brown draws a solid bar in front of the rack.
+
+## Rotated-view audit 255–381
+
+- **277** (flawed): Brown's pinned link at the hammer's lower right (pin plus link running off to the right) and the small lower hole are missing; from the side (c) the hammer is a flat slab with only the pawl and spring by the drum, so nothing drives or connects it.
+- **299** (minor): The rear crown-wheel teeth render washed-out, near-white (unlit or inside-out faces) beside the blue front teeth.
+- **305** (flawed): The round pendulum hole is partly refilled by two angular blue filler blocks jutting into the opening. Brown draws a quadrant pallet piece; the back view shows the fillers as dark slabs.
+- **310** (minor): Brown closes the two spring loops at a bottom collar/screw on the arbor. The model leaves the loops open, ending in two dangling pins with no bottom fitting, and faint white slivers float beside the pallet ends.
+- **314** (minor): The escape wheel is a solid disc with sparse thin spikes, where Brown draws deep hooked ratchet teeth on a broad rim.
+- **321** (minor): From the side and top, springs S/S' and their pivot pins hang in free space well in front of the ratchet and wheel faces, like stray wires with floating stubs.
+- **334** (minor): The chain hangs straight beside curved arc D instead of wrapping it. At mid-cycle the gun depresses so far that the breech, sector C and brace drop well below the bed.
+- **358** (minor): The lower band strand runs to a tiny grey stub with a yellow dot floating in mid-air below the fusee, and the upper strand runs off out of frame.
+- **360** (minor): The right sector's cord stands off the sector rim in depth, arcing free beside the arc instead of lying on it.
+- **368** (flawed): The follower block and tracer pin float about 0.7 rack-widths below the rack's lower end with nothing joining them; they move together but are disconnected.
+- **375** (minor): Two pinion teeth render white (undrawn marker stripes).

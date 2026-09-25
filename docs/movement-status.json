@@ -10086,7 +10086,8 @@
         "docs/u7-flawed-review.md",
         "docs/u8-299-review.md",
         "docs/m7-gears-teeth-review.md",
-        "docs/m12-forced-mixed-review.md"
+        "docs/m12-forced-mixed-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10094,9 +10095,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The rear crown-wheel teeth render washed-out, near-white (unlit or inside-out faces) beside the blue front teeth.",
       "limits": "Pallets stop at the release edge, about 10% shorter than Brown's strips; any extension keeps the escaping tooth in contact.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 300,
@@ -10462,17 +10463,18 @@
         "docs/minimal-interface-review.md",
         "docs/lane8-escapements-engines-review.md",
         "docs/w2f-274-333-review.md",
-        "docs/w3b-escapements-review.md"
+        "docs/w3b-escapements-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-gravity-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-23",
-      "visibleFlaws": "",
+      "updatedOn": "2026-09-24",
+      "visibleFlaws": "Brown closes the two spring loops at a bottom collar/screw on the arbor. The model leaves the loops open, ending in two dangling pins with no bottom fitting, and faint white slivers float beside the pallet ends.",
       "limits": "Stops D/E reduced to about 9% of their area by the cut; locking comes from the motion law. Motion prescribed.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 311,
@@ -10605,7 +10607,8 @@
         "docs/w3b-escapements-review.md",
         "docs/w4c-254-400-review.md",
         "docs/w5b-248-314-review.md",
-        "docs/m4-203-321-review.md"
+        "docs/m4-203-321-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10613,9 +10616,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The escape wheel is a solid disc with sparse thin spikes, where Brown draws deep hooked ratchet teeth on a broad rim.",
       "limits": "Pallet B sits higher than Brown's (fixed by the lock law); the lever is narrower.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 315,
@@ -10840,7 +10843,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/u7-flawed-review.md",
         "docs/m4-203-321-review.md",
-        "docs/m19-audit-c-review.md"
+        "docs/m19-audit-c-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10848,9 +10852,9 @@
         "note": "Baked geometric ratchet-click paths with prescribed clock motion; not MuJoCo."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "From the side and top, springs S/S' and their pivot pins hang in free space well in front of the ratchet and wheel faces, like stray wires with floating stubs.",
       "limits": "The weight hangs 0.28 lower than Brown's box because the model's G is slightly larger; winding takes 1/8 of the cycle and the spring recovers in 1/12, because Brown's single wire is too short for a longer lag.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 322,
@@ -11268,7 +11272,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/engines-326-345-review.md",
         "docs/visual-review-pass-49.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11276,9 +11281,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The chain hangs straight beside curved arc D instead of wrapping it. At mid-cycle the gun depresses so far that the breech, sector C and brace drop well below the bed.",
       "limits": "Plate proportions differ from the official animation. Articulated chain prescribed without tension/contact solve; broader legacy joints unqualified.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 335,
@@ -12097,7 +12102,8 @@
         "docs/w3c-343-417-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/u5-341-507-review.md",
-        "docs/m5-326-400-review.md"
+        "docs/m5-326-400-review.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12105,9 +12111,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The lower band strand runs to a tiny grey stub with a yellow dot floating in mid-air below the fusee, and the upper strand runs off out of frame.",
       "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 359,
@@ -12161,7 +12167,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w4c-254-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12169,9 +12176,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The right sector's cord stands off the sector rim in depth, arcing free beside the arc instead of lying on it.",
       "limits": "Capture/coast law prescribed; inertia, pawl return bias and loaded torque transfer not dynamically validated.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 361,
@@ -12432,7 +12439,8 @@
         "docs/w2g-341-400-review.md",
         "docs/w3c-343-417-review.md",
         "docs/w5c-333-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12440,9 +12448,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "The follower block and tracer pin float about 0.7 rack-widths below the rack's lower end with nothing joining them; they move together but are disconnected.",
       "limits": "The rack runs off the top of the frame, as in the plate. Bevels use approximate back-cone flanks.",
-      "assessment": "reasonable"
+      "assessment": "flawed"
     },
     {
       "id": 369,
@@ -12667,7 +12675,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
         "docs/w4c-254-400-review.md",
-        "docs/visual-assessment-pass52.md"
+        "docs/visual-assessment-pass52.md",
+        "docs/pass53-user-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12675,9 +12684,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-24",
-      "visibleFlaws": "",
+      "visibleFlaws": "Two pinion teeth render white (undrawn marker stripes).",
       "limits": "Runners scrub away from the contact line; grinding force/friction unsolved; bevel flanks approximate.",
-      "assessment": "reasonable"
+      "assessment": "minor"
     },
     {
       "id": 376,
