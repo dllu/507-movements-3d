@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctMercuryInstrument} from './mercury-instrument-parts.js';
+import {serifNumeralGeometry} from './serif-numerals.js';
 import {
   PALETTE,
   markShadows,
@@ -50,37 +51,15 @@ function lowerBendPoints(radius, tangentY, z = 0) {
   return points;
 }
 
-const DIGIT_SEGMENTS = Object.freeze({
-  0: ['a', 'b', 'c', 'd', 'e', 'f'],
-  1: ['b', 'c'],
-  2: ['a', 'b', 'g', 'e', 'd'],
-  3: ['a', 'b', 'g', 'c', 'd'],
-  4: ['f', 'g', 'b', 'c'],
-  5: ['a', 'f', 'g', 'c', 'd'],
-  6: ['a', 'f', 'g', 'e', 'c', 'd'],
-});
-
+// Brown's scale figures are bold italic serif numerals, raised a little
+// from the board face.
 function makeScaleDigit(value, material) {
   const digit = addRole(new THREE.Group(), `scale-numeral-${value}`);
-  const placements = {
-    a: [0, 0.15, 0, 0],
-    b: [0.09, 0.075, 0, Math.PI / 2],
-    c: [0.09, -0.075, 0, Math.PI / 2],
-    d: [0, -0.15, 0, 0],
-    e: [-0.09, -0.075, 0, Math.PI / 2],
-    f: [-0.09, 0.075, 0, Math.PI / 2],
-    g: [0, 0, 0, 0],
-  };
-  for (const segmentName of DIGIT_SEGMENTS[value]) {
-    const [x, y, z, rotation] = placements[segmentName];
-    const segment = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(0.15, 0.025, 0.025),
-      material,
-    ), `segment-${segmentName}-of-scale-numeral-${value}`);
-    segment.position.set(x, y, z);
-    segment.rotation.z = rotation;
-    digit.add(segment);
-  }
+  const glyph = addRole(
+    new THREE.Mesh(serifNumeralGeometry(value, 0.30, 0.025), material),
+    `serif-glyph-of-scale-numeral-${value}`,
+  );
+  digit.add(glyph);
   digit.userData.value = value;
   return digit;
 }

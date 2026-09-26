@@ -11,7 +11,7 @@ export function correctAxialPinParts(model){
  const d=model.root.userData,b=d.blocks;
  replace(b.pulleyDog,new T.CylinderGeometry(.06,.06,.30,128).rotateY(-d.dogGeometry.pinContactPhase));replace(b.shaftDog,new T.CylinderGeometry(.06,.06,.325,128));
  for(const o of[b.lowerPulley.sheave,b.lowerPulley.hub,...b.lowerPulley.flanges]){const p=o.geometry.parameters;replace(o,bore(p.radiusTop,.089,p.height));}
- for(const pulley of[b.upperPulley,b.lowerPulley]){const profile=[{axial:-.135,radial:.46},{axial:-.040,radial:.46}];for(let i=0;i<=32;i++){const x=-.040+.080*i/32;profile.push({axial:x,radial:.46-Math.sqrt(Math.max(0,.040**2-x*x))});}profile.push({axial:.135,radial:.46});replace(pulley.sheave,boredLatheGeometry(profile,pulley===b.lowerPulley?.089:.079,128));pulley.groove.visible=false;}
+ for(const pulley of[b.upperPulley,b.lowerPulley]){const profile=[{axial:-.135,radial:.46},{axial:-.040,radial:.46}];for(let i=0;i<=32;i++){const x=-.040+.080*i/32;profile.push({axial:x,radial:.46-Math.sqrt(Math.max(0,.040**2-x*x))});}profile.push({axial:.135,radial:.46});replace(pulley.sheave,boredLatheGeometry(profile,pulley===b.lowerPulley?.089:.079,128));if(pulley.groove)pulley.groove.visible=false;}
  for(const bearing of b.bearingBlocks){const radius=bearing.position.y>0?.079:.089;replace(bearing,plate(clip.difference(poly([[-.14,-.20],[.42,-.20],[.42,.20],[-.14,.20]]),poly(circle([0,0],radius,96))),-.16,.16).rotateY(Math.PI/2));bearing.position.z=0;}
 
  d.workingPartsReview={qualification:'Finite perpendicular pin axes meet on their sides at the analytically determined phase offset. Axial shifts occur at rest; load, impact and synchronization under power are not simulated.'};return model;

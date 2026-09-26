@@ -17804,6 +17804,220 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       ? nearest
       : coordinate;
   };
+  // Lever pose and the driven wheel angle within one lever cycle.
+  const localDriveAt = (cyclePhase) => {
+    const longDriving = cyclePhase < 0.5;
+    const workingHalfFraction = longDriving
+      ? cyclePhase * 2
+      : (cyclePhase - 0.5) * 2;
+    const leverAngle = -leverAmplitude * Math.cos(fullTurn * cyclePhase);
+    const longAnchor = anchorAt(sourceLongAnchor, leverAngle);
+    const shortAnchor = anchorAt(sourceShortAnchor, leverAngle);
+    let localWheelAngle = constrainedWheelAngleAt({
+      anchor: longDriving ? longAnchor : shortAnchor,
+      baseContactAngle: longDriving ? longStartAngle : shortBaseContactAngle,
+      contactRadius: longDriving
+        ? longDriveGeometry.centerRadius
+        : shortDriveGeometry.centerRadius,
+      expectedWheelAngle: longDriving
+        ? toothPitch * workingHalfFraction
+        : toothPitch * (1 + workingHalfFraction),
+      pawlLength: longDriving ? longPawlLength : shortPawlLength,
+    });
+    if (cyclePhase < boundaryEpsilon) localWheelAngle = 0;
+    if (Math.abs(cyclePhase - 0.5) < boundaryEpsilon) {
+      localWheelAngle = toothPitch;
+    }
+    return {
+      leverAngle,
+      localWheelAngle,
+      longAnchor,
+      longDriving,
+      shortAnchor,
+      workingHalfFraction,
+    };
+  };
+  // Brown draws both pawls lying on the teeth, so the idle pawl is not lifted
+  // clear. At each instant it is swung inward about its hinge until its
+  // rounded toe first meets the wheel outline, and so it rides back over the
+  // teeth in the wheel plane. Where the toe slips off a tooth corner it drops
+  // with a constant prescribed angular acceleration (a stand-in for its
+  // gravity or spring bias) until it lands on the next flank.
+  // Straight flanks of the flat pawl outline in its own frame, from the ends
+  // of its rounded toe back to the hinge (see alternating-pawl-236 parts).
+  const pawlToeSpan = THREE.MathUtils.degToRad(105);
+  const pawlFlankPolylines = (length) => {
+    const toeX = length + pawlNoseRadius * Math.cos(pawlToeSpan);
+    const toeY = pawlNoseRadius * Math.sin(pawlToeSpan);
+    return [
+      [[toeX, -toeY], [length - 0.18, -0.065], [length * 0.16, -0.115],
+        [-0.04, -0.1]],
+      [[toeX, toeY], [length - 0.17, 0.05], [length * 0.5, 0.1],
+        [-0.04, 0.11]],
+    ];
+  };
+  const idleFallAcceleration = 900;
+  const idleJumpThreshold = 0.02;
+  const restingPawlAngleAt = (anchor, length, wheelAngle, outAngle) => {
+    const local = rotateVector(anchor, -wheelAngle);
+    const start = outAngle - wheelAngle;
+    const r = pawlNoseRadius;
+    let best = Infinity;
+    const consider = (angle) => {
+      let candidate = angle;
+      while (candidate < start) candidate += fullTurn;
+      while (candidate - start >= fullTurn) candidate -= fullTurn;
+      if (candidate < best) best = candidate;
+    };
+    const count = profilePoints.length;
+    for (let index = 0; index < count; index += 1) {
+      const a = profilePoints[index];
+      const b = profilePoints[(index + 1) % count];
+      const dx = local.x - a.x;
+      const dy = local.y - a.y;
+      // Entry into the toe-radius disk about this outline corner.
+      const d = Math.hypot(dx, dy);
+      const k = (r * r - d * d - length * length) / (2 * length * d);
+      if (k > -1 && k < 1) consider(Math.atan2(dy, dx) + Math.acos(k));
+      // Entry into the toe-radius band along this outline edge.
+      const ex = b.x - a.x;
+      const ey = b.y - a.y;
+      const e = Math.hypot(ex, ey);
+      if (e < 1e-12) continue;
+      const tx = ex / e;
+      const ty = ey / e;
+      const psi = Math.atan2(tx, -ty);
+      const offset = -dx * ty + dy * tx;
+      for (const side of [1, -1]) {
+        const q = (side * r - offset) / length;
+        if (q <= -1 || q >= 1) continue;
+        const angle = psi + side * Math.acos(q);
+        const along = (dx + length * Math.cos(angle)) * tx
+          + (dy + length * Math.sin(angle)) * ty;
+        if (along >= 0 && along <= e) consider(angle);
+      }
+    }
+    // The straight flanks of the flat pawl behind its toe must also clear
+    // the tooth corners, and its corners the tooth flanks.
+    const flanks = pawlFlankPolylines(length);
+    const crossings = (radius, from, to, visit) => {
+      const fx = to[0] - from[0];
+      const fy = to[1] - from[1];
+      const aa = fx * fx + fy * fy;
+      const bb = 2 * (from[0] * fx + from[1] * fy);
+      const cc = from[0] ** 2 + from[1] ** 2 - radius * radius;
+      const disc = bb * bb - 4 * aa * cc;
+      if (disc < 0 || aa < 1e-18) return;
+      for (const sign of [-1, 1]) {
+        const t = (-bb + sign * Math.sqrt(disc)) / (2 * aa);
+        if (t >= 0 && t <= 1) {
+          visit(Math.atan2(from[1] + t * fy, from[0] + t * fx));
+        }
+      }
+    };
+    for (const polyline of flanks) {
+      for (let index = 0; index + 1 < polyline.length; index += 1) {
+        const from = polyline[index];
+        const to = polyline[index + 1];
+        for (const vertex of profilePoints) {
+          const wx = vertex.x - local.x;
+          const wy = vertex.y - local.y;
+          const phase = Math.atan2(wy, wx);
+          crossings(Math.hypot(wx, wy), from, to, (beta) => consider(phase - beta));
+        }
+      }
+      for (const corner of polyline) {
+        const radius = Math.hypot(corner[0], corner[1]);
+        const phase = Math.atan2(corner[1], corner[0]);
+        for (let index = 0; index < count; index += 1) {
+          const a = profilePoints[index];
+          const b = profilePoints[(index + 1) % count];
+          crossings(
+            radius,
+            [a.x - local.x, a.y - local.y],
+            [b.x - local.x, b.y - local.y],
+            (gamma) => consider(gamma - phase),
+          );
+        }
+      }
+    }
+    return best + wheelAngle;
+  };
+  const idleRestAt = (cyclePhase) => {
+    const drive = localDriveAt(cyclePhase);
+    const longIdle = !drive.longDriving;
+    const lifted = returnedPawlStateAt(longIdle
+      ? {
+        endAngle: longReturnEndAngle,
+        fraction: drive.workingHalfFraction,
+        startAngle: longReturnStartAngle,
+        swing: longResetSwing,
+      }
+      : {
+        endAngle: shortReturnEndAngle,
+        fraction: drive.workingHalfFraction,
+        startAngle: shortReturnStartAngle,
+        swing: shortResetSwing,
+      }).angle - 0.5;
+    return restingPawlAngleAt(
+      longIdle ? drive.longAnchor : drive.shortAnchor,
+      longIdle ? longPawlLength : shortPawlLength,
+      drive.localWheelAngle,
+      lifted,
+    );
+  };
+  // Precompute where the riding toe slips off a tooth corner in each half.
+  const idleDepartures = [0, 0.5].map((halfStart) => {
+    const departures = [];
+    const samples = 4000;
+    let previousPhase = halfStart;
+    let previousRest = idleRestAt(previousPhase);
+    for (let sample = 1; sample < samples; sample += 1) {
+      const phase = halfStart + 0.5 * sample / samples;
+      const rest = idleRestAt(phase);
+      if (rest - previousRest > idleJumpThreshold) {
+        let low = previousPhase;
+        let high = phase;
+        const lowRest = previousRest;
+        for (let iteration = 0; iteration < 64; iteration += 1) {
+          const middle = (low + high) / 2;
+          if (idleRestAt(middle) - lowRest < (rest - lowRest) / 2) {
+            low = middle;
+          } else {
+            high = middle;
+          }
+        }
+        departures.push({ angle: idleRestAt(low), phase: low });
+      }
+      previousPhase = phase;
+      previousRest = rest;
+    }
+    return departures;
+  });
+  const idlePawlAngleAt = (cyclePhase) => {
+    const rest = idleRestAt(cyclePhase);
+    let last = null;
+    for (const departure of idleDepartures[cyclePhase < 0.5 ? 0 : 1]) {
+      if (departure.phase <= cyclePhase) last = departure;
+    }
+    if (!last) return { angle: rest, resting: true };
+    const elapsed = cyclePhase - last.phase;
+    const falling = last.angle + 0.5 * idleFallAcceleration * elapsed ** 2;
+    return falling < rest
+      ? { angle: falling, resting: false }
+      : { angle: rest, resting: true };
+  };
+  const idlePawlStateAt = (cyclePhase) => {
+    const { angle, resting } = idlePawlAngleAt(cyclePhase);
+    // Numerical rate, one-sided at the half-cycle ends.
+    const step = 1e-7;
+    const halfStart = cyclePhase < 0.5 ? 0 : 0.5;
+    const low = Math.max(halfStart, cyclePhase - step);
+    const high = Math.min(halfStart + 0.5 - 1e-15, cyclePhase + step);
+    const rate = (idlePawlAngleAt(high).angle - idlePawlAngleAt(low).angle)
+      / (high - low);
+    return { angle, angularSpeed: rate * cyclesPerSecond, resting };
+  };
   const stateAtCycleCoordinate = (coordinate) => {
     const cycleCoordinate = normalizedCycleCoordinate(coordinate);
     const cycleIndex = Math.floor(cycleCoordinate);
@@ -17887,19 +18101,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
         activePawlAngularSpeed,
       ),
     );
-    const returnedPawlState = longDriving
-      ? returnedPawlStateAt({
-        endAngle: shortReturnEndAngle,
-        fraction: workingHalfFraction,
-        startAngle: shortReturnStartAngle,
-        swing: shortResetSwing,
-      })
-      : returnedPawlStateAt({
-        endAngle: longReturnEndAngle,
-        fraction: workingHalfFraction,
-        startAngle: longReturnStartAngle,
-        swing: longResetSwing,
-      });
+    const returnedPawlState = idlePawlStateAt(cyclePhase);
     const longPawlAngle = longDriving
       ? activePawlAngle
       : returnedPawlState.angle;
@@ -17926,8 +18128,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       pawlNoseRadius,
       wheelAngle,
     );
-    const returnedPawlAngularSpeed = returnedPawlState
-      .derivativePerFraction * 2 * cyclesPerSecond;
+    const returnedPawlAngularSpeed = returnedPawlState.angularSpeed;
     const longPawlAngularSpeed = longDriving
       ? activePawlAngularSpeed
       : returnedPawlAngularSpeed;
@@ -17999,6 +18200,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
       longProfileContact,
       longTipCenter,
       pitchesAdvanced: wheelAngle / toothPitch,
+      returnedPawlResting: returnedPawlState.resting,
       returnedPawlLiftedClear: longDriving
         ? shortProfileContact.clearance >= -1e-10
         : longProfileContact.clearance >= -1e-10,
@@ -18210,6 +18412,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     sourcePose: (sourceCyclePhase - initialCyclePhase) * cyclePeriod,
   };
   root.userData.geometry = {
+    pawlFlankPolylines,
     axis: Z_AXIS.clone(),
     baseFaceNormal,
     baseFaceOuter,

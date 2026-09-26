@@ -502,7 +502,9 @@ function tableEngine(movement) {
   const guideRails = [-1, 1].map((side, index) => {
     const start = new THREE.Vector3(
       side * 0.66 * sourceScale,
-      8.375 * sourceScale,
+      // Brown carries both slot lines down to the stepped guide foot on
+      // the cylinder cover, so the rails stand on the foot's top face.
+      7.97 * sourceScale,
       0.19,
     );
     const end = new THREE.Vector3(
@@ -558,20 +560,21 @@ function tableEngine(movement) {
     frameEdgeMaterial,
   );
   guideArch.userData.role = 'fixed-rounded-top-of-straight-slotted-guides';
-  const guideSlotArchPoints = [];
-  for (let index = 0; index <= 16; index += 1) {
-    const angle = Math.PI - Math.PI * index / 16;
-    guideSlotArchPoints.push(new THREE.Vector3(
-      0.535 * sourceScale * Math.cos(angle),
-      (14.0 + 0.535 * Math.sin(angle)) * sourceScale,
-      0.19,
-    ));
-  }
-  const guideSlotArch = tubeThrough(
-    guideSlotArchPoints,
-    0.045 * sourceScale,
-    frameMaterial,
-  );
+  // The slot's rounded end is the same bar as the two rails, bent through a
+  // half-annulus that meets both rail tops flush (inner radius 0.535, outer
+  // 0.785 source units, the rails' own inner and outer faces).
+  const guideSlotArchShape = new THREE.Shape();
+  guideSlotArchShape.absarc(0, 0, 0.785 * sourceScale, Math.PI, 0, true);
+  guideSlotArchShape.absarc(0, 0, 0.535 * sourceScale, 0, Math.PI, false);
+  guideSlotArchShape.closePath();
+  const guideSlotArchGeometry = new THREE.ExtrudeGeometry(guideSlotArchShape, {
+    depth: 0.34,
+    bevelEnabled: false,
+    curveSegments: 32,
+  });
+  guideSlotArchGeometry.translate(0, 0, -0.17);
+  const guideSlotArch = new THREE.Mesh(guideSlotArchGeometry, frameMaterial);
+  guideSlotArch.position.set(0, 14.0 * sourceScale, 0.19);
   guideSlotArch.userData.role = 'fixed-inner-semicircular-end-of-guide-slot';
   const guideFoot = new THREE.Mesh(
     rectangularRodPassageGeometry(2.75 * sourceScale, 0.22 * sourceScale, 0.82,

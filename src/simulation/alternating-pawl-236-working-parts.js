@@ -20,11 +20,12 @@ export function installAlternatingPawl236(root) {
       const angle = -TOE_SPAN + 2 * TOE_SPAN * i / 24;
       toe.push([length + r * Math.cos(angle), r * Math.sin(angle)]);
     }
+    // The same flanks bound the idle pawl's riding solve in the kinematics.
+    // The trailing edge tapers toward the toe so the next tooth's tip passes
+    // clear of it at the end of the stroke.
+    const [lower, upper] = g.pawlFlankPolylines(length);
     const outline = polygonClipping.union(poly([
-      [-0.04, -0.1], [length * 0.16, -0.115], [length - 0.18, -0.065],
-      // The trailing edge tapers toward the toe so the next tooth's tip
-      // passes clear of it at the end of the stroke.
-      ...toe, [length - 0.17, 0.05], [length * 0.5, 0.1], [-0.04, 0.11],
+      ...lower.slice(1).reverse(), ...toe, ...upper.slice(1),
     ]), poly(circle([0, 0], 0.1, 64)));
     replace(body, plate(polygonClipping.difference(outline, poly(circle([0, 0], 0.075, 64))), -0.065, 0.065)); // bore opened past the hub's own bore
     replace(pivotHub, ring(0.071, 0.105, -0.117, 0.117, 64));
@@ -62,11 +63,11 @@ export function installAlternatingPawl236(root) {
   root.userData.workingParts236 = { pins };
   root.userData.minimumDisplayCycleSeconds = 6;
   root.userData.hideGround = true;
-  root.userData.reconstructionNote = 'Two flat pawls in the wheel plane contact real tooth corners with their own rounded toes and advance the wheel on alternate strokes. Pawl return lift and corner seating are prescribed; hinge bias, contact forces and load capacity are not dynamically solved. The wheel slows to zero at each lever reversal.';
+  root.userData.reconstructionNote = 'Two flat pawls in the wheel plane contact real tooth corners with their own rounded toes and advance the wheel on alternate strokes. The idle pawl rides back over the teeth: it is swung in about its hinge until its toe or flank touches the outline, and its drop off each tooth corner uses a prescribed angular acceleration; hinge bias, contact forces and load capacity are not dynamically solved. The wheel slows to zero at each lever reversal.';
   root.userData.contactQualification236 = {
     contact: 'outer corner of steep rising flank, with outward normal 10 degrees clockwise from radial',
     normalConvention: 'wheel-to-pawl; its negative gives the force on the wheel',
-    return: 'smooth prescribed outward hinge lift; no passive spring simulation',
+    return: 'idle pawl rests on the tooth outline (geometric solve) with prescribed-acceleration drops off tooth corners; no passive spring simulation',
     source: 'Official page checked: no inline animation registration.',
   };
   root.traverse(o => {

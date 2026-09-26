@@ -542,11 +542,11 @@
       "id": 16,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-belts-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -561,7 +561,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
-        "docs/p64-fix-belts-review.md"
+        "docs/p64-fix-belts-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -577,11 +578,11 @@
       "id": 17,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-belts-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -596,7 +597,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
-        "docs/p64-fix-belts-review.md"
+        "docs/p64-fix-belts-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1033,11 +1035,11 @@
       "id": 30,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-gears-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1052,7 +1054,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p54-marks-review.md",
-        "docs/p64-fix-gears-review.md"
+        "docs/p64-fix-gears-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1694,11 +1697,11 @@
       "id": 49,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1711,7 +1714,8 @@
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
         "docs/m16-markers-review.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1727,11 +1731,11 @@
       "id": 50,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1743,7 +1747,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1759,11 +1764,11 @@
       "id": 51,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1775,7 +1780,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2379,11 +2385,11 @@
       "id": 68,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2396,7 +2402,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2523,11 +2530,11 @@
       "id": 72,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2542,7 +2549,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -3126,11 +3134,11 @@
       "id": 88,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -3145,7 +3153,8 @@
         "docs/w2c-intermittent-review.md",
         "docs/u1-intermittent-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4816,11 +4825,11 @@
       "id": 130,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4834,7 +4843,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -4884,11 +4894,11 @@
       "id": 132,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4904,7 +4914,8 @@
         "docs/w4a-1-160-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p64-fix-a1-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4920,11 +4931,11 @@
       "id": 133,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-gears-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4938,7 +4949,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-gears-review.md"
+        "docs/p64-fix-gears-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4954,11 +4966,11 @@
       "id": 134,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-belts-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4977,7 +4989,8 @@
         "docs/p54-marks-review.md",
         "docs/p55-ends-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-belts-review.md"
+        "docs/p64-fix-belts-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4993,11 +5006,11 @@
       "id": 135,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5014,7 +5027,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5106,11 +5120,11 @@
       "id": 138,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5125,7 +5139,8 @@
         "docs/intersection-screen-pass50.md",
         "docs/lane5-cams-catches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5176,11 +5191,11 @@
       "id": 140,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5194,7 +5209,8 @@
         "docs/validation/body-intersection-screen-pass49.json",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5287,11 +5303,11 @@
       "id": 143,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5310,7 +5326,8 @@
         "docs/pass53-user-review.md",
         "docs/p53-fix-b-review.md",
         "docs/p54-marks-review.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5362,11 +5379,11 @@
       "id": 145,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5385,7 +5402,8 @@
         "docs/p53-fix-b-review.md",
         "docs/p54-hatch-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5440,11 +5458,11 @@
       "id": 147,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5463,7 +5481,8 @@
         "docs/m10-48-147-review.md",
         "docs/pass53-user-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5516,11 +5535,11 @@
       "id": 149,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -5539,7 +5558,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5603,11 +5623,11 @@
       "id": 151,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5624,7 +5644,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2d-cranks-screws-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -5833,11 +5854,11 @@
       "id": 157,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5852,7 +5873,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6216,11 +6238,11 @@
       "id": 167,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6239,7 +6261,8 @@
         "docs/p53-fix-b-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p64-fix-a1-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6376,11 +6399,11 @@
       "id": 171,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6399,7 +6422,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6530,11 +6554,11 @@
       "id": 175,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6550,7 +6574,8 @@
         "docs/w2e-181-271-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p53-no-hidden-lines-review.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6566,11 +6591,11 @@
       "id": 176,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6583,7 +6608,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6599,11 +6625,11 @@
       "id": 177,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6616,7 +6642,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7132,11 +7159,11 @@
       "id": 190,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7151,7 +7178,8 @@
         "docs/w2e-181-271-review.md",
         "docs/w3a-catches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a2-review.md"
+        "docs/p64-fix-a2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7876,11 +7904,11 @@
       "id": 210,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-gears-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7894,7 +7922,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
-        "docs/p64-fix-gears-review.md"
+        "docs/p64-fix-gears-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8351,11 +8380,11 @@
       "id": 223,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8368,7 +8397,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2e-181-271-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-b2-review.md"
+        "docs/p64-fix-b2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8491,11 +8521,11 @@
       "id": 227,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8514,7 +8544,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8530,11 +8561,11 @@
       "id": 228,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8553,7 +8584,8 @@
         "docs/m7-gears-teeth-review.md",
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8786,11 +8818,11 @@
       "id": 235,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-pawls-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -8805,7 +8837,8 @@
         "docs/w4b-164-253-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m2-intermittent-review.md",
-        "docs/p64-fix-pawls-review.md"
+        "docs/p64-fix-pawls-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8821,11 +8854,11 @@
       "id": 236,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 lane, integrated by primary agent",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-a-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-fix-review.md",
+        "note": "Pass 66: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8842,7 +8875,8 @@
         "docs/p55-geo-a-review.md",
         "docs/p56-b-review.md",
         "docs/p64-fix-pawls-review.md",
-        "docs/p65-a-review.md"
+        "docs/p65-a-review.md",
+        "docs/p66-fix-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8851,7 +8885,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "Pawl return lift and corner seating are prescribed; forces are not solved.",
+      "limits": "The idle pawl rides back over the teeth; its drop off each tooth corner uses a prescribed angular acceleration; hinge bias, spring and contact forces are not solved.",
       "assessment": "reasonable"
     },
     {
@@ -8969,11 +9003,11 @@
       "id": 240,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-pawls-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8990,7 +9024,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-pawls-review.md"
+        "docs/p64-fix-pawls-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9075,11 +9110,11 @@
       "id": 243,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9093,7 +9128,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2b-belts-clutches-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9215,11 +9251,11 @@
       "id": 247,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 lane, integrated by primary agent",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: For about a second of each loop the view is empty while the rod is re-armed with a fresh weight above the frame."
+        "evidence": "docs/p66-247-review.md",
+        "note": "Pass 66: The fresh weight rises into view along the rod lifted by nothing drawn (a stand-in for hand threading); for about 1.5 s after recovery the frame shows the unloaded rod alone."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9242,7 +9278,8 @@
         "docs/p55-ends-review.md",
         "docs/p57-b-review.md",
         "docs/p64-fix-b1-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p66-247-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9250,8 +9287,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "For about a second of each loop the view is empty while the rod is re-armed with a fresh weight above the frame.",
-      "limits": "The sea bottom is implied by the caption. The rod is re-armed with a fresh weight out of view (fades are off-screen). Descent and recovery are prescribed.",
+      "visibleFlaws": "The fresh weight rises into view along the rod lifted by nothing drawn (a stand-in for hand threading); for about 1.5 s after recovery the frame shows the unloaded rod alone.",
+      "limits": "The sea bottom is implied by the caption. The view follows the rod, so the bottom and the spent weight sink out of view; the fresh weight starts where the spent one lies, below the view. Descent, recovery, reload and the final lowering (off screen) are prescribed.",
       "assessment": "minor"
     },
     {
@@ -9645,11 +9682,11 @@
       "id": 259,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9661,7 +9698,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/w3d-255-287-review.md",
-        "docs/p64-fix-b2-review.md"
+        "docs/p64-fix-b2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9713,11 +9751,11 @@
       "id": 261,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-deep-mech-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9735,7 +9773,8 @@
         "docs/m22-dashed-hidden-review.md",
         "docs/pass53-user-review.md",
         "docs/p53-style-review.md",
-        "docs/p64-deep-mech-review.md"
+        "docs/p64-deep-mech-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10348,11 +10387,11 @@
       "id": 278,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -10369,7 +10408,8 @@
         "docs/pass53-user-review.md",
         "docs/p54-marks-review.md",
         "docs/p56-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10645,11 +10685,11 @@
       "id": 286,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 lane, integrated by primary agent",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-fix-review.md",
+        "note": "Pass 66: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10666,7 +10706,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-fix-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10675,7 +10716,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "Toe/lifter contact and valve spring load are prescribed.",
+      "limits": "Toe/lifter contact and valve spring load are prescribed. The valve, seat and guides are off the plate and are not modelled.",
       "assessment": "reasonable"
     },
     {
@@ -10902,11 +10943,11 @@
       "id": 293,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-63 read-only audit lane",
-        "reviewPass": 63,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p63-audit-review.md",
-        "note": "Pass-63 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "evidence": "docs/p67-horology-review.md",
+        "note": "Pass 67: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10921,7 +10962,9 @@
         "docs/w2f-274-333-review.md",
         "docs/p61-horology-a-review.md",
         "docs/p62-plate-esc-review.md",
-        "docs/p63-audit-review.md"
+        "docs/p63-audit-review.md",
+        "docs/pass53-user-review.md",
+        "docs/p67-horology-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10930,7 +10973,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "Impulse pallet B reach reduced to 187.5 px. The balance follows a display law that lingers through the impulse arc; not harmonic dynamics.",
+      "limits": "Impulse pallet B reach reduced to 187.5 px. The balance follows a display law that lingers through the impulse arc; not harmonic dynamics. Pallet B is see-through so the notch it covers reads.",
       "assessment": "reasonable"
     },
     {
@@ -11010,11 +11053,11 @@
       "id": 296,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-63 read-only audit lane",
-        "reviewPass": 63,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p63-audit-review.md",
-        "note": "Pass-63 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "evidence": "docs/p67-horology-review.md",
+        "note": "Pass 67: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11033,7 +11076,8 @@
         "docs/p59-fixes-review.md",
         "docs/p61-horology-a-review.md",
         "docs/p62-horology-review.md",
-        "docs/p63-audit-review.md"
+        "docs/p63-audit-review.md",
+        "docs/p67-horology-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11049,11 +11093,11 @@
       "id": 297,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-63 lane, integrated by primary agent",
-        "reviewPass": 63,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p63-a-review.md",
-        "note": "Pass 63: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p67-horology-review.md",
+        "note": "Pass 67: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11071,7 +11115,9 @@
         "docs/p53-no-hidden-lines-review.md",
         "docs/p61-horology-b-review.md",
         "docs/p62-auditfix-b-review.md",
-        "docs/p63-a-review.md"
+        "docs/p63-a-review.md",
+        "docs/pass53-user-review.md",
+        "docs/p67-horology-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -11083,18 +11129,18 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "One see-through disc rather than a two-disc lantern, since arm A must cross the pin circle to reach C; B extends past the rim; motion from the offline bake.",
+      "limits": "One plain disc rather than a two-disc lantern, since arm A must cross the pin circle to reach C; the see-through arm lies in front of the pin ends; B extends past the rim; motion from the offline bake.",
       "assessment": "reasonable"
     },
     {
       "id": 298,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-deep-horology-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11111,7 +11157,8 @@
         "docs/p61-horology-b-review.md",
         "docs/p62-horology-review.md",
         "docs/p63-a-review.md",
-        "docs/p64-deep-horology-review.md"
+        "docs/p64-deep-horology-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11361,11 +11408,11 @@
       "id": 305,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11382,7 +11429,8 @@
         "docs/p55-geo-a-review.md",
         "docs/p56-305-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11501,11 +11549,11 @@
       "id": 309,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-deep-horology-review.md",
-        "note": "Pass 64: Brown's B bottom edge drops into a small nib past x 124; here it turns up into the lifting face (the nib lies in the lifting tooth's path)."
+        "evidence": "docs/p67-horology-review.md",
+        "note": "Pass 67: Brown's B bottom edge drops into a small nib past x 124; here it turns up into the lifting face (the nib lies in the lifting tooth's path)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11526,7 +11574,8 @@
         "docs/p61-spokes-review.md",
         "docs/p62-horology-review.md",
         "docs/p63-b-review.md",
-        "docs/p64-deep-horology-review.md"
+        "docs/p64-deep-horology-review.md",
+        "docs/p67-horology-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11535,7 +11584,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "Brown's B bottom edge drops into a small nib past x 124; here it turns up into the lifting face (the nib lies in the lifting tooth's path).",
-      "limits": "Mirror-symmetric lock stations at 129°/51°; Brown's hook a sits near 39°. Flat pallet plates cut to the tooth paths; wheel steps half a tooth per beat; pendulum not shown.",
+      "limits": "Mirror-symmetric lock stations at 129°/51°; Brown's hook a sits near 39°. Flat pallet plates cut to the tooth paths; ratchet teeth with Brown's slant; wheel steps half a pitch per beat; pendulum not shown.",
       "assessment": "minor"
     },
     {
@@ -11615,11 +11664,11 @@
       "id": 312,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11635,7 +11684,8 @@
         "docs/lane8-escapements-engines-review.md",
         "docs/w2f-274-333-review.md",
         "docs/p64-fix-esc2-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11957,11 +12007,11 @@
       "id": 321,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -11982,7 +12032,8 @@
         "docs/pass53-user-review.md",
         "docs/p53-fix-c-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12168,11 +12219,11 @@
       "id": 327,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12190,7 +12241,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p56-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12245,11 +12297,11 @@
       "id": 329,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12265,7 +12317,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p56-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12349,11 +12402,11 @@
       "id": 332,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12370,7 +12423,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12656,11 +12710,11 @@
       "id": 340,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12678,7 +12732,8 @@
         "docs/m5-326-400-review.md",
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12883,11 +12938,11 @@
       "id": 346,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 read-only audit lane",
-        "reviewPass": 62,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-audit-review.md",
-        "note": "Pass-62 audit: clean in default, ±60°, back, top and phase captures beside the plate."
+        "evidence": "docs/p67-mech-review.md",
+        "note": "Pass 67: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12904,7 +12959,8 @@
         "docs/p54-marks-review.md",
         "docs/pass53-user-review.md",
         "docs/p59-fixes-review.md",
-        "docs/p62-audit-review.md"
+        "docs/p62-audit-review.md",
+        "docs/p67-mech-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12913,7 +12969,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "The guide arches are open tube meshes. Pressure sealing, steam forces, friction and bearing loads unvalidated.",
+      "limits": "The guide arches are open tube meshes. Pressure sealing, steam forces, friction and bearing loads unvalidated. The slot rails run down onto the guide foot as one U.",
       "assessment": "reasonable"
     },
     {
@@ -13068,11 +13124,11 @@
       "id": 351,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p67-mech-review.md",
+        "note": "Pass 67: A short plain stretch of rod remains between the top tooth and the collar, where Brown's teeth reach the collar (his overhanging collar would sit inside the pinion at the lowered rest)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13090,7 +13146,9 @@
         "docs/m5-326-400-review.md",
         "docs/pass53-user-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-fix-review.md",
+        "docs/p67-mech-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -13101,9 +13159,9 @@
         "note": "Offline MuJoCo rack/stamp study; timestep-dependent pickup not installed."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "",
-      "limits": "Involute teeth stand in for Brown's square ones; the frame holds the stamp's full fall. The guides remain as detached kinematic references (not drawn).",
-      "assessment": "reasonable"
+      "visibleFlaws": "A short plain stretch of rod remains between the top tooth and the collar, where Brown's teeth reach the collar (his overhanging collar would sit inside the pinion at the lowered rest).",
+      "limits": "Eight rack teeth, all driven by the pinion's eight. Pickup and release are a gravity-step projection, not solved contact; rebound and impact are not solved.",
+      "assessment": "minor"
     },
     {
       "id": 352,
@@ -13148,11 +13206,11 @@
       "id": 353,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13170,7 +13228,8 @@
         "docs/pass53-user-review.md",
         "docs/p54-geo-b-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13446,11 +13505,11 @@
       "id": 361,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 read-only audit lane",
-        "reviewPass": 62,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-audit-review.md",
-        "note": "Pass-62 audit: clean in default, ±60°, back, top and phase captures beside the plate."
+        "evidence": "docs/p67-mech-review.md",
+        "note": "Pass 67: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13468,7 +13527,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p59-fixes-review.md",
-        "docs/p62-audit-review.md"
+        "docs/p62-audit-review.md",
+        "docs/p67-mech-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13477,7 +13537,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "Shifting occurs stopped by prescription; tooth/pin impact not validated.",
+      "limits": "Shifting occurs stopped by prescription; tooth/pin impact not validated. Both pulleys carry flanges as Brown draws, like 255.",
       "assessment": "reasonable"
     },
     {
@@ -13666,11 +13726,11 @@
       "id": 367,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 read-only audit lane",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-audit-review.md",
-        "note": "Pass-64 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "evidence": "docs/p67-mech-review.md",
+        "note": "Pass 67: The right link's pin passes through the brass arc near full closing, just below the link's pivot."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13686,7 +13746,8 @@
         "docs/pass53-user-review.md",
         "docs/p56-c-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-audit-review.md"
+        "docs/p64-audit-review.md",
+        "docs/p67-mech-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13694,19 +13755,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "",
-      "limits": "Manual ruler motion imposed; friction, joint play, drawing force and hidden joint depths unvalidated.",
-      "assessment": "reasonable"
+      "visibleFlaws": "The right link's pin passes through the brass arc near full closing, just below the link's pivot.",
+      "limits": "Manual ruler motion imposed; friction, joint play, drawing force and hidden joint depths unvalidated. The ivory scale reaches the arc over the whole travel; the arc's lower pin is centred on its end.",
+      "assessment": "minor"
     },
     {
       "id": 368,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 read-only audit lane",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-audit-review.md",
-        "note": "Pass-64 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "evidence": "docs/p67-mech-review.md",
+        "note": "Pass 67: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13725,7 +13786,8 @@
         "docs/pass53-user-review.md",
         "docs/p53-fix-c-review.md",
         "docs/p56-c-review.md",
-        "docs/p64-audit-review.md"
+        "docs/p64-audit-review.md",
+        "docs/p67-mech-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13734,7 +13796,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "The rack runs off the top of the frame, as in the plate. Bevels use approximate back-cone flanks.",
+      "limits": "The rack runs off the top of the frame, as in the plate. Bevels use approximate back-cone flanks. At the user's suggestion the rack is see-through in front of its pinion so both sets of teeth show, where Brown draws it behind (moving it behind reverses his spiral line).",
       "assessment": "reasonable"
     },
     {
@@ -13778,11 +13840,11 @@
       "id": 370,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 50,
-        "reviewedOn": "2026-09-23",
-        "evidence": "docs/visual-review-pass-49.md",
-        "note": "Default production-route capture inspected beside the engraving at true aspect."
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
+        "reviewedOn": "2026-09-26",
+        "evidence": "docs/p67-mech-review.md",
+        "note": "Pass 67: The mirror and ratchet stand in front of the bar, where Brown draws them behind (the lower-rail pins must reach the bar)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13796,16 +13858,17 @@
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
-        "docs/p54-marks-review.md"
+        "docs/p54-marks-review.md",
+        "docs/p67-mech-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-mirror-polishers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-24",
-      "visibleFlaws": "The mirror is plain silver rather than Brown's panel.",
-      "limits": "Working motion prescribed; polishing pressure, friction, elastic belt/pad response, wear and material removal unvalidated.",
+      "updatedOn": "2026-09-26",
+      "visibleFlaws": "The mirror and ratchet stand in front of the bar, where Brown draws them behind (the lower-rail pins must reach the bar).",
+      "limits": "Indexing and the carrier stroke are prescribed; the telescoping follower is illustrative; no polishing load.",
       "assessment": "minor"
     },
     {
@@ -13848,11 +13911,11 @@
       "id": 372,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13867,7 +13930,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m5-326-400-review.md",
         "docs/p64-fix-b2-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13924,11 +13988,11 @@
       "id": 374,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13942,7 +14006,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w2g-341-400-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13994,11 +14059,11 @@
       "id": 376,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14018,7 +14083,8 @@
         "docs/m19-audit-c-review.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14034,11 +14100,11 @@
       "id": 377,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14060,7 +14126,8 @@
         "docs/pass53-user-review.md",
         "docs/p57-c-review.md",
         "docs/p64-fix-c1-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14408,11 +14475,11 @@
       "id": 387,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 lane, integrated by primary agent",
-        "reviewPass": 62,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-supports-b-review.md",
-        "note": "Pass 62: The boat is broad (about 1.7 : 1) because the posts stand outboard of the ladder rails."
+        "evidence": "docs/p67-b-review.md",
+        "note": "Pass 67: The water is drawn as a deep block from surface to river bed, where Brown shows only surface lines; the boat is about 25% longer than Brown's."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14431,7 +14498,8 @@
         "docs/p54-water-review.md",
         "docs/pass53-user-review.md",
         "docs/p57-d-review.md",
-        "docs/p62-supports-b-review.md"
+        "docs/p62-supports-b-review.md",
+        "docs/p67-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14439,19 +14507,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The boat is broad (about 1.7 : 1) because the posts stand outboard of the ladder rails.",
-      "limits": "The second figure is a display copy half a tide out of phase. Latch action and buoyancy not solved.",
+      "visibleFlaws": "The water is drawn as a deep block from surface to river bed, where Brown shows only surface lines; the boat is about 25% longer than Brown's.",
+      "limits": "One animated ladder shows both of Brown's figures (high and low water). Latch action and buoyancy not solved; the last tread's rods clear the floating posts by only about 0.03–0.07 at low tide.",
       "assessment": "minor"
     },
     {
       "id": 388,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-67 lane, integrated by primary agent",
+        "reviewPass": 67,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p67-b-review.md",
+        "note": "Pass 67: Brown's inner circle on the roller face is not modelled (the face is plain)."
       },
       "intersections": {
         "status": "known",
@@ -14468,7 +14536,9 @@
         "docs/u5-341-507-review.md",
         "docs/pass53-user-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md",
+        "docs/p67-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14476,9 +14546,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "",
-      "limits": "Compliant grip unvalidated. Undrawn supports removed (pass 64); shafts end as plain stubs.",
-      "assessment": "reasonable"
+      "visibleFlaws": "Brown's inner circle on the roller face is not modelled (the face is plain).",
+      "limits": "Compliant grip unvalidated; tooth bite is prescribed at 0.05. Undrawn supports were removed in pass 64; shafts end as plain stubs.",
+      "assessment": "minor"
     },
     {
       "id": 389,
@@ -14523,11 +14593,11 @@
       "id": 390,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14545,7 +14615,8 @@
         "docs/pass53-user-review.md",
         "docs/p56-d-review.md",
         "docs/p64-fix-c1-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -14602,11 +14673,11 @@
       "id": 392,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14623,7 +14694,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-b-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14793,11 +14865,11 @@
       "id": 397,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14814,7 +14886,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-b-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14830,11 +14903,11 @@
       "id": 398,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14850,7 +14923,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15490,11 +15564,11 @@
       "id": 416,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15510,7 +15584,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-b-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15643,11 +15718,11 @@
       "id": 420,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -15665,7 +15740,8 @@
         "docs/m6-402-507-review.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-b-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15904,11 +15980,11 @@
       "id": 427,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15926,7 +16002,8 @@
         "docs/p54-marks-review.md",
         "docs/p56-d-review.md",
         "docs/p57-d-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16015,11 +16092,11 @@
       "id": 430,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16036,7 +16113,8 @@
         "docs/p55-water-review.md",
         "docs/pass53-user-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16052,11 +16130,11 @@
       "id": 431,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16071,7 +16149,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-b-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16087,11 +16166,11 @@
       "id": 432,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16106,7 +16185,8 @@
         "docs/p54-water-review.md",
         "docs/pass53-user-review.md",
         "docs/p55-geo-b-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16272,11 +16352,11 @@
       "id": 437,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16291,7 +16371,8 @@
         "docs/w3e-418-504-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p54-water-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16344,11 +16425,11 @@
       "id": 439,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16369,7 +16450,8 @@
         "docs/p55-geo-b-review.md",
         "docs/p56-d-review.md",
         "docs/p64-fix-c1-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16423,11 +16505,11 @@
       "id": 441,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16446,7 +16528,8 @@
         "docs/pass53-user-review.md",
         "docs/p54-water-review.md",
         "docs/p55-geo-b-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17032,11 +17115,11 @@
       "id": 457,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17052,7 +17135,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-cutaway-review.md",
         "docs/p64-fix-c2-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17106,11 +17190,11 @@
       "id": 459,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -17133,7 +17217,8 @@
         "docs/p54-marks-review.md",
         "docs/p56-d-review.md",
         "docs/p57-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17221,11 +17306,11 @@
       "id": 462,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17242,7 +17327,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-cutaway-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17258,11 +17344,11 @@
       "id": 463,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17283,7 +17369,8 @@
         "docs/p55-water-review.md",
         "docs/p56-d-review.md",
         "docs/p64-fix-c2-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17373,11 +17460,11 @@
       "id": 466,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17397,7 +17484,8 @@
         "docs/p53-fix-d-review.md",
         "docs/p55-cutaway-review.md",
         "docs/p64-fix-c2-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17530,11 +17618,11 @@
       "id": 470,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17553,7 +17641,8 @@
         "docs/p53-fix-d-review.md",
         "docs/p55-cutaway-review.md",
         "docs/p64-fix-c2-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17867,11 +17956,11 @@
       "id": 479,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17889,7 +17978,8 @@
         "docs/p53-fix-d-review.md",
         "docs/p54-marks-review.md",
         "docs/p55-cutaway-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18021,11 +18111,11 @@
       "id": 483,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18045,7 +18135,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-cutaway-review.md",
         "docs/p57-d-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18314,11 +18405,11 @@
       "id": 491,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 read-only audit lane",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-audit-review.md",
+        "note": "Pass-66 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18336,7 +18427,8 @@
         "docs/p55-ends-review.md",
         "docs/p56-d-review.md",
         "docs/p64-fix-c1-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p66-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18575,11 +18667,11 @@
       "id": 498,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-66 lane, integrated by primary agent",
+        "reviewPass": 66,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p66-fix-review.md",
+        "note": "Pass 66: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18598,7 +18690,8 @@
         "docs/p56-d-review.md",
         "docs/p57-d-review.md",
         "docs/p64-fix-c1-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p66-fix-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18607,7 +18700,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "",
-      "limits": "The scale strip and the 0 tag are minimal carriers for Brown's marks; the boiler beyond the crop is not modelled.",
+      "limits": "The scale strip and the 0 tag are minimal carriers for Brown's marks; the boiler beyond the crop is not modelled. Scale numerals use Liberation Serif Bold Italic outlines (SIL OFL 1.1).",
       "assessment": "reasonable"
     },
     {

@@ -5,7 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
-import { boredRollGeometry, boredBlockGeometry, woodFeedToothGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
+import { boredRollGeometry, boredBlockGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
+import { plate, poly } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -83,6 +84,39 @@ function makeSmoothSupportingRoller({
   return markShadows(root);
 }
 
+// Brown's feed tooth (pass 67): a broad, shallow tooth filling its whole
+// pitch. Slightly concave flanks rise from the valley circle to a short
+// rounded crown, so the teeth are about a tenth of the roller's radius deep
+// and several times as broad as they are high. The crown's outermost point
+// lies exactly on the tip radius used by the bite calculation.
+function bluntFeedToothGeometry(root, valley, tip, pitch, width) {
+  const points = [[root * Math.cos(pitch / 2), -root * Math.sin(pitch / 2)]];
+  const crownHalf = pitch * 0.1, crownDrop = (tip - valley) * 0.1;
+  const flankTop = tip - crownDrop;
+  // Leading flank: concave quarter-ellipse from the valley to the crown.
+  for (let i = 0; i <= 14; i += 1) {
+    const u = i / 14;
+    const angle = -pitch / 2 + u * (pitch / 2 - crownHalf);
+    const radius = valley + (flankTop - valley) * u ** 1.6;
+    points.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+  }
+  // Rounded crown.
+  for (let i = 1; i < 10; i += 1) {
+    const v = -1 + 2 * i / 10;
+    const angle = v * crownHalf;
+    const radius = tip - crownDrop * v * v;
+    points.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+  }
+  for (let i = 14; i >= 0; i -= 1) {
+    const u = i / 14;
+    const angle = pitch / 2 - u * (pitch / 2 - crownHalf);
+    const radius = valley + (flankTop - valley) * u ** 1.6;
+    points.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+  }
+  points.push([root * Math.cos(pitch / 2), root * Math.sin(pitch / 2)]);
+  return plate(poly(points), -width / 2, width / 2);
+}
+
 function makeToothedFeedRoller({
   material,
   pinMaterial,
@@ -98,9 +132,11 @@ function makeToothedFeedRoller({
   const rotor = new THREE.Group();
   root.add(rotor);
 
-  const core = cylinderAlongZ(rootRadius, rollerWidth, material, 64);
+  // The body runs out to the tooth valleys; Brown's inner circle is its face.
+  const valleyRadius = rootRadius;
+  const core = cylinderAlongZ(valleyRadius, rollerWidth, material, 64);
   core.geometry.dispose();
-  core.geometry = boredRollGeometry(rootRadius, rollerWidth, 0.152);
+  core.geometry = boredRollGeometry(valleyRadius, rollerWidth, 0.152, 160);
   core.userData.role = 'toothed-feed-roller-root-cylinder';
   rotor.add(core);
 
@@ -109,7 +145,7 @@ function makeToothedFeedRoller({
   for (let index = 0; index < toothCount; index += 1) {
     const baseAngle = -Math.PI / 2 + index * toothPitch;
     const tooth = new THREE.Mesh(
-      woodFeedToothGeometry(rootRadius - 0.01, toothTipRadius, toothPitch, rollerWidth * 0.96),
+      bluntFeedToothGeometry(valleyRadius - 0.03, valleyRadius, toothTipRadius, toothPitch, rollerWidth * 0.96),
       material,
     );
     tooth.rotation.z = baseAngle;
@@ -245,7 +281,9 @@ function woodworthPlanerFeed(movement) {
   const sourceWorkingRadius = 4;
   const sourcePlankThickness = 1;
   const sourceCenterDistance = 9;
-  const sourceUpperRootRadius = 3;
+  // Brown's teeth are shallow: their valleys lie at about 0.89 of the tip
+  // radius (measured on the plate: tips 67.5 px, valleys 60 px).
+  const sourceUpperRootRadius = 3.7;
   const sourceToothCount = 20;
   const sourceScale = 0.32;
   const workingRadius = sourceWorkingRadius * sourceScale;

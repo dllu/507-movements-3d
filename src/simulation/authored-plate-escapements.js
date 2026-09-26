@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { polygonClipping } from './finite-plate-geometry.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
 import { spokedWheelOutline } from './spoked-wheel.js';
+import { makeSeeThrough } from './see-through-part.js';
 import {
   TAU,
   arborMesh,
@@ -633,8 +634,11 @@ function lever296(movement) {
         windowShape: 'lens',
         outerRadius: rootRadius,
         rimInnerRadius: 112 * s,
-        spokeTipWidth: 34 * s,
-        hubRadius: 16 * s,
+        // Brown's crossings: about 22 px across at the rim, and each
+        // window's inner arc stops about 33 px from the centre, so the
+        // three crossings meet in a broad web round the arbor.
+        spokeTipWidth: (tune.spokeTipWidth ?? 22) * s,
+        hubRadius: (tune.spokeHub ?? 33) * s,
         boreRadius: 5 * s,
         // Brown's windows: right, lower left and upper left.
         phase: -60 * DEG,
@@ -1086,6 +1090,13 @@ function duplex293(movement) {
   const bumpMean = 0.2734375;
   const slow = (x) => bump.reduce((sum, a, i) => sum + a * Math.sin((i + 1) * x) / (i + 1), 0) / (1 - bumpMean);
   const warp = (phi) => phi - warpDepth * (slow(phi - warpAt) - slow(-warpAt));
+  // Brown's wheel reads as a heavy ring: a thick plate whose long teeth
+  // work the roller A in the wheel's own layer, with the crown pins a
+  // standing on its front face under pallet B.
+  const wheelHalf = tune.wheelHalfDepth ?? 0.2;
+  const pinZ = [wheelHalf - 0.01, wheelHalf + 0.13];
+  const palletZ = [wheelHalf + 0.02, wheelHalf + 0.12];
+  const rollerHalf = 0.12;
   const wheelOptions = {
     spokes: 4, outerRadius: rimRadius, rimInnerRadius: 226 * s, spokeWidth: 26 * s,
     hubRadius: 30 * s, rimFillet: 8 * s, boreRadius: 10 * s, phase: 45 * DEG,
@@ -1094,7 +1105,7 @@ function duplex293(movement) {
     movement,
     name: 'movement-293-duplex-escapement',
     period,
-    halfDepth: 0.07,
+    halfDepth: wheelHalf,
     dropAcceleration: tune.drop ?? 150,
     wheel: {
       role: 'duplex-escape-wheel',
@@ -1114,22 +1125,25 @@ function duplex293(movement) {
       pivot: axis,
       outline: palletB[0],
       holes: [circlePoints(axis, 7 * s, 32)],
-      zRange: [0.09, 0.19],
+      zRange: palletZ,
       amplitude,
       angle: (t) => amplitude * Math.sin(warp(TAU * t / period)),
       plateTolerance: 0.03,
       contactPieces: [{ points: localA(roller), layer: 0 }, { points: localA(palletB[0]), layer: 1 }],
     },
     extras: (root, materials) => {
-      materials.rocker.add(plateMesh(localA(roller), [circlePoints([0, 0], 7 * s, 32)], -0.07, 0.07, materials.oscillator, 'notched-roller-A'));
+      materials.rocker.add(plateMesh(localA(roller), [circlePoints([0, 0], 7 * s, 32)], -rollerHalf, rollerHalf, materials.oscillator, 'notched-roller-A'));
       for (let k = 0; k < count; k += 1) {
-        materials.wheelRotor.add(arborMesh(polar([0, 0], pinCircle, pinAngle(k)), pinR, 0.07, 0.19, materials.wheel, 'crown-pin-a'));
+        materials.wheelRotor.add(arborMesh(polar([0, 0], pinCircle, pinAngle(k)), pinR, pinZ[0], pinZ[1], materials.wheel, 'crown-pin-a'));
       }
+      // Pallet B covers the roller's notch in Brown's pose; it is shown
+      // see-through so the notch reads behind it.
+      makeSeeThrough(materials.rocker.children.find((mesh) => mesh.userData.role === 'impulse-pallet-B'));
       return [];
     },
     arbors: [
-      { center: axis, radius: 7 * s, z0: -0.3, z1: 0.3, role: 'balance-staff-arbor' },
-      { center: [0, 0], radius: 10 * s, z0: -0.3, z1: 0.2, role: 'wheel-arbor' },
+      { center: axis, radius: 7 * s, z0: -wheelHalf - 0.1, z1: palletZ[1] + 0.06, role: 'balance-staff-arbor' },
+      { center: [0, 0], radius: 10 * s, z0: -wheelHalf - 0.1, z1: wheelHalf + 0.06, role: 'wheel-arbor' },
     ],
     fit: fitBox(map, [30, 40, 510, 440]),
     plotView: [-2.6, 5.4, 2.6, 9.6],

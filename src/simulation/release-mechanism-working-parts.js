@@ -76,13 +76,16 @@ function finishSounding247Seat(model){
  lo=d.timeline.seabedContact;hi=lo;
  while(hi<geometricWithdrawal-dh&&acceleration(hi)>=-gravity){lo=hi;hi+=.001;}
  for(let i=0;i<32;i++){const mid=(lo+hi)/2;if(acceleration(mid)>=-gravity)lo=mid;else hi=mid;}
- const release=(lo+hi)/2,releaseHeight=envelope(release),releaseVelocity=(envelope(release+dh)-envelope(release-dh))/(2*dh),ground=g.weightOpeningHalfHeight;
+ const nominalSeat=g.pivot.y+g.catchSupportLocal.y+g.weightOpeningHalfHeight,raised=g.freshWeightRaisedRelativeY,letDown=(support(0)-raised)/(nominalSeat-raised),release=(lo+hi)/2,releaseHeight=envelope(release),releaseVelocity=(envelope(release+dh)-envelope(release-dh))/(2*dh),ground=g.weightOpeningHalfHeight;
  const impact=release+(releaseVelocity+Math.sqrt(releaseVelocity**2+2*gravity*(releaseHeight-ground)))/gravity;
  function centerY(time){const s=source(time),t=s.cycleTime;
   if(t<release)return s.bodyPositionY+support(s.catchAngle);
   if(t<impact-1e-12)return Math.max(ground,releaseHeight+releaseVelocity*(t-release)-.5*gravity*(t-release)**2);
-  if(t<d.timeline.catchReset)return ground;
-  // A fresh weight seated on the reset catch of the hauled rod.
+  if(t<d.timeline.rodRecovered)return ground;
+  // A fresh weight slid up from below and let down onto the reset catch;
+  // the let-down is rescaled so that it ends on the finite seat.
+  if(t<d.timeline.catchSet)return s.weightCenterY;
+  if(t<d.timeline.weightSeated)return s.bodyPositionY+raised+(s.weightCenterY-s.bodyPositionY-raised)*letDown;
   return envelope(time);
  }
  d.nominalKinematics247={stateAtTime:source,stateAtCyclePhase:d.stateAtCyclePhase,timeline:{...d.timeline},geometry:{...g}};
@@ -90,9 +93,11 @@ function finishSounding247Seat(model){
  d.stateAtTime=time=>{const s=source(time),t=s.cycleTime,y=centerY(time);let v,acc;
   if(t<release){v=(envelope(time+dh)-envelope(time-dh))/(2*dh);acc=acceleration(time);}
   else if(t<impact){v=releaseVelocity-gravity*(t-release);acc=-gravity;}
-  else if(t<d.timeline.catchReset){v=0;acc=0;}
+  else if(t<d.timeline.rodRecovered){v=0;acc=0;}
+  else if(t<d.timeline.catchSet){v=s.weightVelocity;acc=s.weightAcceleration;}
+  else if(t<d.timeline.weightSeated){v=s.bodyVelocity+letDown*(s.weightVelocity-s.bodyVelocity);acc=s.bodyAcceleration+letDown*(s.weightAcceleration-s.bodyAcceleration);}
   else{v=s.bodyVelocity;acc=s.bodyAcceleration;}
-  const active=t<release||t>=d.timeline.catchReset,p=center(s.catchAngle),overlap=Math.hypot(p.x+r,zMax)-bore;return{...s,supportOverlap:overlap,supportRadialClearance:-overlap,supportRadialReach:bore+overlap,weightOnSeabed:t>=impact&&t<d.timeline.catchReset,weightCenterY:y,weightLowerOpeningY:y-g.weightOpeningHalfHeight,weightUpperOpeningY:y+g.weightOpeningHalfHeight,weightVelocity:v,weightAcceleration:acc,catchSupportPosition:s.catchSupportPosition.clone().setZ(0),catchToWeightContactActive:active,finiteSeatActive:active,finiteSeatReleaseTime:release,stage:t>=release&&t<impact?'weight-free-fall':t>=d.nominalKinematics247.timeline.supportRelease&&t<release?'finite-nose-withdrawing-before-release':s.stage};};
+  const active=t<release||t>=d.timeline.weightSeated,p=center(s.catchAngle),overlap=Math.hypot(p.x+r,zMax)-bore;return{...s,supportOverlap:overlap,supportRadialClearance:-overlap,supportRadialReach:bore+overlap,weightOnSeabed:t>=impact&&t<d.timeline.rodRecovered,weightCenterY:y,weightLowerOpeningY:y-g.weightOpeningHalfHeight,weightUpperOpeningY:y+g.weightOpeningHalfHeight,weightVelocity:v,weightAcceleration:acc,catchSupportPosition:s.catchSupportPosition.clone().setZ(0),catchToWeightContactActive:active,finiteSeatActive:active,finiteSeatReleaseTime:release,stage:t>=release&&t<impact?'weight-free-fall':t>=d.nominalKinematics247.timeline.supportRelease&&t<release?'finite-nose-withdrawing-before-release':s.stage};};
 
  d.stateAtCyclePhase=q=>d.stateAtTime(q*d.timeline.cycleClosure);
  model.update=time=>{old(time);const s=d.stateAtTime(time);b.weightAssembly.position.y=s.weightCenterY;d.kinematics=s;const seat=s.finiteSeatActive?support(s.catchAngle,true):null;d.contacts.catchToWeight={active:s.finiteSeatActive,nominalPointSuperseded:true,supportEnvelopeHeight:s.weightCenterY,supportPoint:seat?.point.clone().add(new THREE.Vector3(0,s.bodyPositionY,0))??null};d.contacts.weightToSeabed={active:s.weightOnSeabed,gap:s.weightLowerOpeningY,impactSpeed:gravity*(impact-release)-releaseVelocity};};

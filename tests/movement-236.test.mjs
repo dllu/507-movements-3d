@@ -204,7 +204,7 @@ test('movement 236 short pawl continues counterclockwise through the return stro
   disposeModel(model.root);
 });
 
-test('movement 236 returned pawls remain rigid, smooth, and outside every tooth', () => {
+test('movement 236 returned pawls ride the teeth, rigid and outside every tooth', () => {
   const model = createMovementModel(catalog.movements[235]);
   const { stateAtCycleCoordinate } = model.root.userData;
   const samples = 32_768;
@@ -212,8 +212,8 @@ test('movement 236 returned pawls remain rigid, smooth, and outside every tooth'
   let previousShortTip = null;
   let maximumLongStep = 0;
   let maximumShortStep = 0;
-  let maximumLongClearance = 0;
-  let maximumShortClearance = 0;
+  let maximumIdleToeClearance = 0;
+  let restingSamples = 0;
   for (let sample = 0; sample <= samples; sample += 1) {
     const coordinate = sample / samples;
     const state = stateAtCycleCoordinate(coordinate);
@@ -222,6 +222,13 @@ test('movement 236 returned pawls remain rigid, smooth, and outside every tooth'
     assert.equal(state.returnedPawlLiftedClear, true);
     assert.ok(state.longPawlLengthError < 3e-12);
     assert.ok(state.shortPawlLengthError < 3e-12);
+    if (state.returnedPawlResting) restingSamples += 1;
+    maximumIdleToeClearance = Math.max(
+      maximumIdleToeClearance,
+      state.longDriving
+        ? state.shortProfileClearance
+        : state.longProfileClearance,
+    );
     if (previousLongTip) {
       maximumLongStep = Math.max(
         maximumLongStep,
@@ -234,21 +241,19 @@ test('movement 236 returned pawls remain rigid, smooth, and outside every tooth'
     }
     previousLongTip = state.longTipCenter;
     previousShortTip = state.shortTipCenter;
-    maximumLongClearance = Math.max(
-      maximumLongClearance,
-      state.longProfileClearance,
-    );
-    maximumShortClearance = Math.max(
-      maximumShortClearance,
-      state.shortProfileClearance,
-    );
   }
-  assert.ok(maximumLongStep < 2.7e-4,
+  // Brown draws both pawls lying on the teeth: the idle pawl rests on the
+  // wheel (toe or flank) except for brief drops off a tooth corner, and never
+  // swings clear of the rim.
+  assert.ok(restingSamples / (samples + 1) > 0.9,
+    `idle pawl rests on the teeth ${restingSamples / (samples + 1)}`);
+  assert.ok(maximumIdleToeClearance < 0.25,
+    `idle toe clearance ${maximumIdleToeClearance}`);
+  // The drops are quick but continuous (no teleporting between samples).
+  assert.ok(maximumLongStep < 4e-3,
     `long-pawl maximum sample step ${maximumLongStep}`);
-  assert.ok(maximumShortStep < 2.2e-4,
+  assert.ok(maximumShortStep < 4e-3,
     `short-pawl maximum sample step ${maximumShortStep}`);
-  assert.ok(maximumLongClearance > 0.65);
-  assert.ok(maximumShortClearance > 0.25);
   disposeModel(model.root);
 });
 

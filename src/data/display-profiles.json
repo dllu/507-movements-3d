@@ -4481,9 +4481,9 @@
       }
     },
     "236": {
-      "peakAngularSpeed": 0.964058288279468,
-      "peakVisibleAngularSpeed": 0.964058288278913,
-      "sustainedVisibleAngularSpeed": 0.6672890699560693,
+      "peakAngularSpeed": 4.536874947888954,
+      "peakVisibleAngularSpeed": 4.536874947888953,
+      "sustainedVisibleAngularSpeed": 0.38841728397367165,
       "floorY": -1.6199999554020352,
       "fastestPart": "short-alternating-pawl-c-hinge-pin",
       "motionBounds": {
@@ -4690,20 +4690,20 @@
       }
     },
     "247": {
-      "peakAngularSpeed": 0.9905694150433649,
-      "peakVisibleAngularSpeed": 0.9653971039975229,
+      "peakAngularSpeed": 1.109875971249646,
+      "peakVisibleAngularSpeed": 1.081671846686221,
       "sustainedVisibleAngularSpeed": 0,
-      "floorY": -0.03999999955296517,
+      "floorY": -4.539999999552965,
       "fastestPart": "single-rigid-bell-crank-and-weight-support-catch",
       "motionBounds": {
         "min": [
           -12,
-          -0.03999999955296517,
+          -4.539999999552965,
           -1.7000000476837158
         ],
         "max": [
           12,
-          22.355640902964225,
+          15.50054808240479,
           1.7000000476837158
         ]
       }
@@ -5434,17 +5434,17 @@
       "peakAngularSpeed": 0.3851110848680069,
       "peakVisibleAngularSpeed": 0.3851110848680069,
       "sustainedVisibleAngularSpeed": 0.2768906228447342,
-      "floorY": -4.226000003576279,
+      "floorY": -5.255999771118164,
       "fastestPart": "fixed-axis-rock-shaft",
       "motionBounds": {
         "min": [
           -5.25,
-          -4.226000003576279,
-          -0.5
+          -5.255999771118164,
+          -0.48999997138977064
         ],
         "max": [
-          1.4422922375202178,
-          4.363999885559084,
+          1.424000036239624,
+          4.3639997711181655,
           0.5699999713897707
         ]
       }
@@ -5578,7 +5578,7 @@
         "max": [
           8.25911709626198,
           10.679405221588508,
-          0.30000001192092896
+          0.3799999952316284
         ]
       }
     },
@@ -6669,17 +6669,17 @@
       "peakAngularSpeed": 1.5707963267992198,
       "peakVisibleAngularSpeed": 1.5707963267986647,
       "sustainedVisibleAngularSpeed": 1.5707963267931133,
-      "floorY": -9.439999999850988,
+      "floorY": -9.489999999850989,
       "fastestPart": "installed-mutilated-pinion-tooth-4",
       "motionBounds": {
         "min": [
-          -1.5059999523162841,
-          -9.439999999850988,
+          -1.5699999523162842,
+          -9.489999999850989,
           -0.7000000017881394
         ],
         "max": [
-          3.009999591502952,
-          7.3792613448346325,
+          3.067998343796597,
+          7.619630824367608,
           0.6600000071525574
         ]
       }
@@ -7040,8 +7040,8 @@
         ],
         "max": [
           2.375,
-          3.304760161856294,
-          0.7249999967217445
+          3.3412760101256973,
+          1.6849999967217446
         ]
       }
     },
@@ -7352,19 +7352,19 @@
     "387": {
       "peakAngularSpeed": 0.16814891689257902,
       "peakVisibleAngularSpeed": 0.16814891689230146,
-      "sustainedVisibleAngularSpeed": 0.15607790667968238,
-      "floorY": -6.8400000476837155,
+      "sustainedVisibleAngularSpeed": 0.13707705741157944,
+      "floorY": -1.4000000190734863,
       "fastestPart": "upper-suspension-pivot-pin",
       "motionBounds": {
         "min": [
-          -4.329999904632569,
-          -6.8400000476837155,
-          -2.0899999141693115
+          -4.299999904632568,
+          -1.4000000190734863,
+          -1.8600000143051147
         ],
         "max": [
-          6.0500000476837155,
-          4.379999997317791,
-          2.0899999141693115
+          5.799999923706055,
+          4.570000005960464,
+          1.8600000143051147
         ]
       }
     },

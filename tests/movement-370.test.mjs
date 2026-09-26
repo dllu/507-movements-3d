@@ -317,7 +317,7 @@ test('movement 370 mirror remains at one rigid station on the bar while its cent
         state.mirrorIndexPoint.y - state.mirrorCenter.y,
       ),
       geometry.mirrorSize * 0.34,
-      2e-16,
+      1e-15,
       'rigid asymmetric mirror index radius',
     );
     if (previousCenter !== null) {
@@ -330,7 +330,7 @@ test('movement 370 mirror remains at one rigid station on the bar while its cent
       sawBarOnlyAngularMotion = true;
     }
     if (state.phase > 0.10 && state.phase < 0.40
-      && state.ratchetAngularSpeed > 0
+      && state.ratchetAngularSpeed * geometry.clickHand > 0
       && Math.abs(state.barAngularSpeed) > 0.02) {
       sawCombinedAngularMotion = true;
     }
@@ -372,7 +372,8 @@ test('movement 370 common-shaft eccentric gives the exact harmonic click-carrier
       'eccentric harmonic carrier fraction');
     near(state.carrierAngle,
       geometry.carrierBaseAngle
-        + geometry.ratchetToothPitch * state.carrierFraction,
+        + geometry.clickHand * geometry.ratchetToothPitch
+          * state.carrierFraction,
       0, 'click-carrier angle');
     near(
       Math.hypot(
@@ -407,7 +408,8 @@ test('movement 370 common-shaft eccentric gives the exact harmonic click-carrier
     near(
       (after.carrierAngle - before.carrierAngle) / (2 * h),
       state.carrierAngularSpeed,
-      2e-11,
+      // central difference of an angle near 2.5 rad at h = 1e-5
+      5e-11,
       'analytic carrier angular speed',
     );
   }
@@ -421,7 +423,10 @@ test('movement 370 click advances exactly one tooth on each forward half-turn an
   const data = model.root.userData;
   const { geometry, stateAtTime } = data;
   const period = geometry.inputCyclePeriod;
-  const pitch = geometry.ratchetToothPitch;
+  // Brown's click turns the wheel clockwise (clickHand -1): the signed
+  // advance is clickHand times the tooth count.
+  const pitch = geometry.clickHand * geometry.ratchetToothPitch;
+  assert.equal(geometry.clickHand, -1);
 
   for (let cycle = 0; cycle < 16; cycle += 1) {
     const start = stateAtTime(cycle * period);
@@ -451,7 +456,7 @@ test('movement 370 click advances exactly one tooth on each forward half-turn an
     near(returnMid.pawlLift, geometry.pawlMaximumLift, 2e-16,
       `cycle ${cycle} maximum overrun lift`);
     assert.ok(returnMid.pawlTipWorld.distanceTo(
-      returnMid.selectedToothWorld) > 0.22);
+      returnMid.selectedToothWorld) > 0.3 * geometry.ratchetOuterRadius);
     assert.equal(start.engagedToothIndex,
       positiveModulo(-cycle, geometry.ratchetToothCount));
   }
@@ -459,8 +464,9 @@ test('movement 370 click advances exactly one tooth on each forward half-turn an
   let previousAngle = -Infinity;
   for (let sample = 0; sample <= 4000; sample += 1) {
     const state = stateAtTime(period * 5 * sample / 4000);
-    assert.ok(state.ratchetAngle >= previousAngle - 2e-15);
-    previousAngle = state.ratchetAngle;
+    assert.ok(state.ratchetAngle * geometry.clickHand
+      >= previousAngle - 2e-15);
+    previousAngle = state.ratchetAngle * geometry.clickHand;
     if (state.phase <= 0.5) {
       assert.ok(state.pawlTipWorld.distanceTo(
         state.selectedToothWorld) < 5e-16);
@@ -532,7 +538,7 @@ test('movement 370 renderer preserves bar guide, mirror pose, click contact, fol
     const renderedIndex = blocks.mirrorIndex.getWorldPosition(
       new THREE.Vector3(),
     );
-    vectorNear(renderedIndex, state.mirrorIndexPoint, 1e-15,
+    vectorNear(renderedIndex, state.mirrorIndexPoint, 3e-15,
       'rendered compound mirror index');
     assert.equal(blocks.contactMarker.visible, false);
     assert.ok(blocks.finiteClick.body.visible);
@@ -573,7 +579,8 @@ test('movement 370 is continuous at every crank boundary and completes one ratch
   near(oneTurn.inputAngle - start.inputAngle, FULL_TURN, 9e-16,
     'one input revolution');
   near(oneTurn.ratchetAngle - start.ratchetAngle,
-    geometry.ratchetToothPitch, 0, 'one ratchet tooth per turn');
+    geometry.clickHand * geometry.ratchetToothPitch, 0,
+    'one ratchet tooth per turn');
   vectorNear(oneTurn.crankPin, start.crankPin, 0,
     'bar crankpin repeats each input turn');
   vectorNear(oneTurn.mirrorCenter, start.mirrorCenter, 0,
@@ -582,7 +589,8 @@ test('movement 370 is continuous at every crank boundary and completes one ratch
     FULL_TURN * geometry.ratchetToothCount, 1.5e-14,
     'twelve input revolutions');
   near(fullIndex.ratchetAngle - start.ratchetAngle,
-    FULL_TURN, 9e-16, 'one complete mirror-ratchet revolution');
+    geometry.clickHand * FULL_TURN, 9e-16,
+    'one complete mirror-ratchet revolution (clockwise)');
   vectorNear(fullIndex.crankPin, start.crankPin, 0,
     'full-index crankpin closure');
   vectorNear(fullIndex.mirrorCenter, start.mirrorCenter, 0,

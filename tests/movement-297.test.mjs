@@ -171,7 +171,7 @@ test('movement 297 records Brown’s eight circles, A–C layout, arrow, and una
   disposeModel(model.root);
 });
 
-test('movement 297 builds one plain disc with eight axial trundles reaching back to the pallets', () => {
+test('movement 297 builds one plain disc with eight axial trundles standing forward to the pallets', () => {
   const model = createMovementModel(catalog.movements[296]);
   const { blocks, geometry } = model.root.userData;
 
@@ -179,11 +179,10 @@ test('movement 297 builds one plain disc with eight axial trundles reaching back
     ['front']);
   near(blocks.sidePlates[0].position.z,
     geometry.sidePlateOffset, 0, 'front plate z');
-  near(geometry.trundleFront,
-    geometry.sidePlateOffset + geometry.sidePlateDepth / 2, 0.01,
-  'pin ends are flush with the disc face');
-  assert.ok(geometry.trundleRear < geometry.sidePlateOffset - geometry.sidePlateDepth / 2 - 0.3,
-    'trundles reach back behind the disc to the pallet layer');
+  near(geometry.trundleRear, geometry.sidePlateOffset, 0,
+    'pins are seated in the disc and rise from its face');
+  assert.ok(geometry.trundleFront > geometry.sidePlateOffset + geometry.sidePlateDepth / 2 + 0.3,
+    'trundles stand forward of the disc to the pallet layer');
 
   const measuredAngles = [];
   blocks.trundles.forEach((trundle, index) => {

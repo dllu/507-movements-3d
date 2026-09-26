@@ -618,3 +618,19 @@ Default-view crops of whole parts that run past Brown's framing are not counted 
 - **436** (minor): Bottom step/bridge is a thin wavy sheet with blotchy mottled shading, unlike Brown's angular trough
 - **433** (minor): From behind, the water jet passes straight through the vanes and hub and fades out below
 - **421** (minor): Speckled shadow-acne pattern on the black gland/port blocks
+
+## User review, 2026-09-26 (after pass 66)
+
+The user reported: 293 needs a thicker escape wheel and a clearer notch in
+the back of the blue roller (perhaps see-through); 297's pins should stand on
+the orange wheel's front face with the blue part see-through, and the blue
+part is currently disconnected; 296's spokes are too thin; 309's yellow parts
+are disconnected at the top and its ratchet teeth are symmetric instead of
+slanted; 346's grey guide bottoms are disconnected; 351's rack has unused
+teeth (Brown matches 8 and 8); 361's pulleys need flanges like 255; 367's
+ivory scale must reach the brass arc in the open position and the arc's lower
+pin is off-centre; 368's rack and pinion teeth should face the default camera
+(or the rack be see-through); 370's ratchet clips through the black pins and
+its pawl is on the wrong side. Lanes p67-horology and p67-mech fix these.
+
+Follow-up the same day: 387's grey railings on the right are disconnected, and it should be shown once (the animation already shows both of Brown's states); 388's toothed top roller has far too skinny, pointed teeth. Lane p67-b fixes these.

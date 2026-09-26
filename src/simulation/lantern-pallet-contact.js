@@ -4,7 +4,7 @@ export const lanternContact297 = {
   period: 4, amplitude: Math.PI / 10, pitch: Math.PI / 4,
   pivot: [113 * 3 / 190, 239 * 3 / 190],
   orbit: 151 * 3 / 190, pinRadius: 22 * 3 / 190,
-  depth: .28, palletZ: .40, armZ: -.09,
+  depth: .28, palletZ: 1.00, armZ: 1.49,
   bars: [
     { name: 'B', center: [20 * 3 / 190 + .25 * Math.cos(46 * Math.PI / 180),
       -127 * 3 / 190 + .25 * Math.sin(46 * Math.PI / 180)], angle: 46 * Math.PI / 180, length: 1.5, width: .18 },

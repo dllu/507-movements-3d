@@ -130,8 +130,11 @@ function gravityDropStamp(movement) {
   const rackBarTopY = 3.62;
   const rackBarLength = rackBarTopY - rackBarBottomY;
   const rackToothBaseY = wheelCenter.y + workingMesh.rackOffset;
-  const firstRackToothIndex = -(sectorToothCount + 1);
-  const lastRackToothIndex = 4;
+  // Brown cuts exactly as many rack teeth as the pinion has (eight): each
+  // sector tooth drives one rack tooth, the first the top one (index 0) and
+  // the last the bottom one, so no rack tooth goes unused.
+  const firstRackToothIndex = -(sectorToothCount - 1);
+  const lastRackToothIndex = 0;
   const rackToothThickness = rackToothPitch * 0.38;
   const upperGuideY = 3.42;
   const lowerGuideY = -2.36;
@@ -1076,10 +1079,11 @@ function carryRackOnFiniteTeeth(model) {
   const analyticStateAtTime = d.stateAtTime;
   // With the plate's fine pitch the entering tooth sweeps across about two
   // rack pitches before the pitch point, so a stamp resting at the lift datum
-  // would sit in its path. The workpiece and anvil sit a quarter unit lower:
-  // the entering tooth's tip then meets the next rack tooth from below and
-  // picks the stamp up continuously into the pitch-line lift.
-  const restDisplacement = -0.25;
+  // would sit in its path. The workpiece and anvil sit 0.30 lower: the
+  // entering square tooth's tip then meets the next rack tooth's lower flank
+  // from below (not its end face) and picks the stamp up continuously into
+  // the pitch-line lift.
+  const restDisplacement = -0.30;
   for (const fixedPart of [b.anvil, b.workpiece]) fixedPart.position.y += restDisplacement;
   // Step the release window (shifted time 0 is the analytic release).
   const dt = 0.002;
@@ -1188,7 +1192,7 @@ function carryRackOnFiniteTeeth(model) {
   // Full carried travel: the higher apex and the lowered rest.
   d.cameraFitBounds.min.y -= 0.40;
   d.cameraFitBounds.max.y += 0.40;
-  d.reconstructionNote = 'Eight compatible involute teeth lift a straight rack. After release the rack is stepped under gravity and held to the nearest height clear of the finite teeth, so it follows the withdrawing final tooth before falling from that later release; the entering tooth lifts the resting rack at pickup. This inelastic kinematic projection is not solved contact dynamics: rebound, tooth elasticity and impact forces are not solved. A longer lower rod keeps the head below the lower guide at the carried apex.';
+  d.reconstructionNote = 'Eight square pinion teeth, each the envelope cut by the rack\'s nearly straight-flanked (6 degree) square teeth rolling on the pitch circle, lift a straight rack at the exact pitch-line rate. After release the rack is stepped under gravity and held to the nearest height clear of the finite teeth, so it follows the withdrawing final tooth before falling from that later release; the entering tooth lifts the resting rack at pickup. This inelastic kinematic projection is not solved contact dynamics: rebound, tooth elasticity and impact forces are not solved. A longer lower rod keeps the head below the lower guide at the carried apex.';
   d.stampCarriedContact = {
     carriedImpactTime: impactTime,
     carriedImpactVelocity: impactVelocity,

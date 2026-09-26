@@ -72,7 +72,7 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
   assert.equal(transmission.oneShotRelease, true);
   assert.equal(transmission.automaticReset, false);
   assert.equal(transmission.catchDetainedAfterTrip, true);
-  assert.match(transmission.loopReset, /hauled-clear-of-view/);
+  assert.match(transmission.loopReset, /fresh-weight-slid-up-from-below/);
   assert.equal(blocks.resetSling, undefined, 'no reload sling');
   assert.equal(
     blocks.probeAssembly.userData.role,
@@ -261,7 +261,7 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
 
   for (let sample = 0; sample < 32768; sample += 1) {
     const time = timeline.weightImpact
-      + (timeline.rodHauledClear - timeline.weightImpact)
+      + (timeline.rodRecovered - timeline.weightImpact)
         * sample / 32768;
     const state = stateAtTime(time);
     minimumBoreClearance = Math.min(
@@ -296,49 +296,47 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
   assert.ok(
     recovered.catchSupportPosition.y > recovered.weightUpperOpeningY,
   );
-  assert.equal(recovered.stage, 'rod-hauled-clear-of-view');
+  assert.equal(recovered.stage, 'fresh-weight-slid-up-past-retracted-catch');
   disposeModel(model.root);
 });
 
-test('movement 247 re-arms out of view: rod hauled clear, fresh weight, lowered back', () => {
+test('movement 247 re-arms in view: bottom sinks away, fresh weight slid up from below onto the reset catch', () => {
   const model = createMovementModel(catalog.movements[246]);
   const { geometry, stateAtTime, timeline, transmission, displayFrame247, blocks } =
     model.root.userData;
   assert.equal(transmission.automaticReset, false);
-  assert.match(transmission.loopReset, /hauled-clear-of-view/);
 
-  const clear = stateAtTime((timeline.rodHauledClear + timeline.catchReset) / 2);
-  const armed = stateAtTime((timeline.freshWeightShown + timeline.reloadedDescentBegins) / 2);
-  assert.equal(clear.stage, 'out-of-view-detent-release-and-catch-reset');
-  assert.equal(clear.detentLatched, false);
-  assert.ok(clear.catchAngle < 0);
-  assert.equal(clear.weightOnSeabed, true);
-  near(clear.bodyPositionY, geometry.hauledBodyY, 0, 'rod hauled clear');
+  const rising = stateAtTime((timeline.rodRecovered + timeline.freshWeightRaised) / 2);
+  const setting = stateAtTime((timeline.detentReleased + timeline.catchSet) / 2);
+  const armed = stateAtTime((timeline.weightSeated + timeline.cycleClosure) / 2);
+  assert.equal(rising.stage, 'fresh-weight-slid-up-past-retracted-catch');
+  assert.equal(rising.detentLatched, true);
+  assert.equal(rising.weightOnSeabed, false);
+  near(rising.bodyPositionY, geometry.hauledBodyY, 0, 'rod hauled in');
+  assert.equal(setting.detentLatched, false);
+  assert.ok(setting.catchAngle < 0);
+  assert.equal(setting.catchToWeightContactActive, false);
   assert.equal(armed.catchAngle, 0);
   assert.equal(armed.catchToWeightContactActive, true);
-  assert.equal(armed.weightOpacity, 1);
 
-  // The spent weight is invisible before it leaves the bottom, and the fresh
-  // one appears only once the rod and catch are wholly above the view.
+  // The rod never leaves Brown's pose in view, the weight is never hidden,
+  // and nothing jumps.
   const fit = model.root.userData.cameraFitBounds;
-  for (let sample = 0; sample <= 400; sample += 1) {
-    const time = timeline.rodRecovered
-      + (timeline.cycleClosure - timeline.rodRecovered) * sample / 400;
+  let previous = null;
+  for (let sample = 0; sample <= 2000; sample += 1) {
+    const time = timeline.cycleClosure * sample / 2000;
     model.update(time);
     model.root.updateMatrixWorld(true);
-    const state = stateAtTime(time);
-    assert.equal(blocks.weightAssembly.visible, state.weightOpacity > 0);
-    if (state.weightOpacity < 1 && state.weightOpacity > 0) {
-      const box = new THREE.Box3().setFromObject(blocks.weightAssembly);
-      const rod = new THREE.Box3().setFromObject(blocks.bodyAssembly);
-      const height = fit.max.y - fit.min.y;
-      if (time < timeline.catchReset) assert.ok(box.max.y < fit.min.y, `spent weight below view at ${time}`);
-      else {
-        assert.ok(box.min.y > fit.max.y + 0.3 * height, `fresh weight above view at ${time}`);
-        assert.ok(rod.min.y > fit.max.y + 0.3 * height, `rod above view at ${time}`);
-      }
+    assert.equal(blocks.weightAssembly.visible, true);
+    near(displayFrame247.position.y + stateAtTime(time).bodyPositionY,
+      geometry.recoveredBodyY, 1e-9, `rod fixed in view at ${time}`);
+    const box = new THREE.Box3().setFromObject(blocks.weightAssembly);
+    // The fresh weight starts where the spent one lies, well below the view.
+    if (previous) assert.ok(Math.abs(box.min.y - previous.min.y) < 0.05, `weight continuous at ${time}`);
+    if (time > timeline.rodRecovered - 1e-9 && time < timeline.rodRecovered + 1e-3) {
+      assert.ok(box.max.y < fit.min.y - 2, `weight handover below view at ${time}`);
     }
-    assert.ok(displayFrame247.position.y >= 0);
+    previous = box;
   }
   disposeModel(model.root);
 });
@@ -393,11 +391,10 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
       0,
       `bore clearance at ${time}`,
     );
-    assert.equal(contacts.outOfViewReset.automatic, false);
-    assert.equal(blocks.weightAssembly.visible, state.weightOpacity > 0);
+    assert.equal(contacts.freshWeightReload.automatic, false);
   }
-  model.update((timeline.catchReset + timeline.reloadedDescentBegins) / 2);
-  assert.equal(model.root.userData.contacts.outOfViewReset.active, true);
+  model.update((timeline.detentReleased + timeline.weightSeated) / 2);
+  assert.equal(model.root.userData.contacts.freshWeightReload.active, true);
   disposeModel(model.root);
 });
 

@@ -327,7 +327,7 @@ export default {
     note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so a plain thin sea-bottom surface (Brown draws none; the caption has the weight detach on striking bottom) rises from below for the probe to strike, and the dropped weight sinks away with it as the rod is recovered. The rod is then hauled out of the top of the view, re-armed there with a fresh weight, and lowered back; no reload gear is shown.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so a plain thin sea-bottom surface (Brown draws none; the caption has the weight detach on striking bottom) rises from below for the probe to strike, and the dropped weight sinks out of the bottom of the view with it as the rod is hauled in. A fresh bored weight is then slid up the rod from below the view past the retracted catch, the catch is set under it and it is let down onto the nose, so the rod never leaves the view; no reload gear or hand is shown.',
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
@@ -409,7 +409,7 @@ export default {
   },
   297: {
     remove: ['fixed-lantern-escapement-base', 'fixed-bored-rear-plate-joining-both-arbor-bearings', 'fixed-(?:rocking-arm-bearing-A|lantern-wheel-bearing)'],
-    note: 'Face view of the pin wheel with pallets B and C on arm A. Brown dashes the arm behind the wheel, so the eight pins reach back from the plain disc to the pallets and the arm, and the disc is see-through to show them. No base, rear plate or bearings are drawn.',
+    note: 'Face view of the pin wheel with pallets B and C on arm A. The eight pins stand forward from the plain disc; Brown dashes arm A across the wheel, so the arm lies in front of the pin ends and is see-through, carrying the solid pallets B and C back among the pins as one piece. No base, rear plate or bearings are drawn.',
   },
   299: {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
@@ -529,7 +529,7 @@ export default {
   },
   351: {
     remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop', '(?:upper|lower)-C-shaped-rack-guide-open-to-teeth', 'fixed-bearing-for-horizontal-pinion-shaft'],
-    note: 'The broad rack rod between its two broad collars, the stamp head below and the mutilated pinion on its cut shaft; no base, anvil, workpiece, rod guides, bearing or back bar is drawn, so none is shown.',
+    note: 'The broad rack rod between its two broad collars, cut with eight teeth for the pinion\'s eight, the stamp head below and the mutilated pinion on its cut shaft; no base, anvil, workpiece, rod guides, bearing or back bar is drawn, so none is shown.',
   },
   355: {
     camera: [7, 10, 12],
@@ -580,7 +580,7 @@ export default {
   368: {
     camera: [0, 0.03, 1],
     scale: [1, 1, -1],
-    note: 'Flat elevation from the rack side, mirrored front-to-back to the plate: the table edge-on, the horizontal bevel wheel on the left driven by the upright bevel on the crank shaft, the rack in front of its spur pinion, the crank on the right, and the plain cylinder below with its spiral line and the rack-borne marking arm.',
+    note: 'Flat elevation from the rack side, mirrored front-to-back to the plate: the table edge-on, the horizontal bevel wheel on the left driven by the upright bevel on the crank shaft, the rack in front of its spur pinion and see-through so both toothed members show as Brown draws them in mesh (the near-side rack keeps his spiral sense), the crank on the right, and the plain cylinder below with its spiral line and the rack-borne marking arm.',
   },
   371: {
     remove: ['fixed-base-beneath-mangle-wheel', 'rear-output-bearing-post'],
@@ -652,7 +652,7 @@ export default {
     note: 'The two long upright pins, the toggle links and the small pear weight hung from the apex. Brown crops the pins; their sockets stand on bored blocks on the door top and on the wall beside the opening, and the door hangs on plain knuckle hinges. No lintel, jamb, trim, handle or white indices are drawn.',
   },
   387: {
-    note: 'Side elevation of both of Brown\'s figures: the wharf ladder level at high water above and inclined to the boat at low water below (a display copy half a tide cycle out of phase); the factory omits the undrawn white rail and tread indices.',
+    note: 'Side elevation of the one wharf ladder, level at high water as in Brown\'s upper figure; the animation carries it down to the boat at low water, his lower figure, so it is not drawn twice. The wharf rail panels (posts with ball finials, top and bottom rails, crossed braces) are joined to the fixed ladder posts. The factory omits the undrawn white rail and tread indices.',
   },
   388: {
     remove: ['white-.*', 'fixed-planer-feed-roller-bearing-frame'],

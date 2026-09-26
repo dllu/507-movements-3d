@@ -1,5 +1,6 @@
 import {correctScriberDynamometer} from './scriber-dynamometer-gears.js';
 import * as THREE from 'three';
+import { makeSeeThrough } from './see-through-part.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
@@ -207,10 +208,6 @@ function makeVerticalRack({
     metalness: 0.13,
     roughness: 0.59,
   });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.22,
-    roughness: 0.48,
-  });
   const body = new THREE.Mesh(
     new THREE.BoxGeometry(bodyWidth, length, bodyDepth),
     rackMaterial,
@@ -232,7 +229,8 @@ function makeVerticalRack({
         pitch * 0.52,
         toothHeight,
       ),
-      index % 8 === 0 ? darkMaterial : rackMaterial,
+      // Uniform teeth: Brown marks no index tooth.
+      rackMaterial,
     );
     tooth.position.set(
       positionX,
@@ -1089,6 +1087,15 @@ function spiralCylinderScriber(movement) {
   );
   root.userData.cameraFitCropsSource = true;
   correctScriberDynamometer(root, 368);
+  // Brown draws the rack's teeth and the spur pinion in mesh at the default
+  // view, but his rack behind the pinion cannot also give his helix sense
+  // with the bevel pair where he draws it: the model keeps the rack on the
+  // pinion's near side (the mirrored presentation) so the spiral runs as
+  // engraved, and the rack's smooth backbone, the part covering the
+  // mesh, uses the shared see-through style with its teeth, so the pinion
+  // and the rack teeth both show through it.
+  makeSeeThrough(rack.userData.body);
+  for (const tooth of rack.userData.teeth) makeSeeThrough(tooth);
   // Brown draws plain wheels, a plain cylinder and no phase indices; those
   // cues stay allocated for the kinematic checks but are not presented.
   for (const part of [

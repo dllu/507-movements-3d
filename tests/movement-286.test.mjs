@@ -73,7 +73,8 @@ test('movement 286 is one rocking toe lifting one guided poppet-valve train', ()
   assert.equal(blocks.lifterBody.parent, blocks.lifter);
   assert.equal(blocks.followerShoe.parent, blocks.lifter);
   assert.equal(blocks.valveRod.parent, blocks.lifter);
-  assert.equal(blocks.poppetHead.parent, blocks.lifter);
+  // Brown breaks the rod off at the foot of the plate and draws no valve.
+  assert.equal(blocks.poppetHead, undefined, 'undrawn poppet valve head not built');
   assert.equal(blocks.valveIndex.parent, null, 'undrawn white index removed');
   assert.equal(blocks.fixedGuides.children.length, 0, 'no undrawn seat, base, guides or bearing');
   vectorNear(blocks.toe.userData.axis, Z_AXIS, 0, 'toe axis');
@@ -87,7 +88,7 @@ test('movement 286 is one rocking toe lifting one guided poppet-valve train', ()
   assert.equal(roles.filter((role) =>
     role === 'vertical-poppet-valve-lifting-rod').length, 1);
   assert.equal(roles.filter((role) =>
-    role === 'poppet-valve-head-rigid-with-lifting-rod').length, 1);
+    role === 'poppet-valve-head-rigid-with-lifting-rod').length, 0);
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -337,15 +338,9 @@ test('movement 286 renderer binds toe contact, lift, rod guide, and valve as one
     const rodWorld = model.root.worldToLocal(
       blocks.valveRod.getWorldPosition(new THREE.Vector3()),
     );
-    const valveWorld = model.root.worldToLocal(
-      blocks.poppetHead.getWorldPosition(new THREE.Vector3()),
-    );
     near(rodWorld.y - blocks.valveRod.position.y,
       expected.followerLift, 8e-16,
     `rendered rod translation at ${time}`);
-    near(valveWorld.y - blocks.poppetHead.position.y,
-      expected.followerLift, 8e-16,
-    `rendered valve translation at ${time}`);
   }
   disposeModel(model.root);
 });

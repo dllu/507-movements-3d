@@ -91,8 +91,8 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   assert.equal(blocks.rackPitchContactAnchor.parent, blocks.rack);
   assert.equal(blocks.gearTeeth.length, 8);
   assert.equal(blocks.gearToothFaceLines.length, 8);
-  assert.equal(blocks.rackTeeth.length, 14);
-  assert.equal(blocks.rackToothFaceLines.length, 14);
+  assert.equal(blocks.rackTeeth.length, 8);
+  assert.equal(blocks.rackToothFaceLines.length, 8);
   assert.equal(blocks.guideAssemblies.length, 2);
   assert.equal(blocks.pinion.userData.mutilated, true);
   assert.equal(blocks.pinion.userData.teeth, 18);
@@ -120,7 +120,7 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   assert.equal(roles.filter((role) =>
     /^installed-mutilated-pinion-tooth-/.test(role)).length, 8);
   assert.equal(roles.filter((role) =>
-    /^single-sided-rack-tooth-/.test(role)).length, 14);
+    /^single-sided-rack-tooth-/.test(role)).length, 8);
   assert.equal(roles.filter((role) =>
     /C-shaped-rack-guide-open-to-teeth|back-bar|back-arm|fixed-bearing/.test(role)).length, 0);
   assert.equal(roles.filter((role) => role ===

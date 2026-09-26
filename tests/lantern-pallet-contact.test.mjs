@@ -41,26 +41,41 @@ test('297: actual pin and pallet triangles clear in both directions, including e
   console.log({ actualSurfaceMinimum: minimum, poses: times.length });
 });
 
-test('297: one see-through front disc; pins reach back to the bars; arm A lies behind the pin ends', () => {
+test('297: pins stand forward of one plain disc; the see-through arm A lies in front of the pin ends and carries both bars', () => {
   const m = create({ id: 297 }), d = m.root.userData, b = d.blocks;
   m.update(0); m.root.updateMatrixWorld(true);
   const z = o => new THREE.Box3().setFromObject(o);
-  const pallet = z(b.palletBBody), pin = z(b.trundles[0]), arm = z(b.armA), disc = z(b.sidePlates[0]);
-  // Brown dashes arm A behind the wheel: one plain front disc, nothing in
-  // front of it but the flush pin ends and the hub.
+  const pin = z(b.trundles[0]), arm = z(b.armA), disc = z(b.sidePlates[0]);
+  // One plain disc carrying the pins on its front face; arm A in front of
+  // them, see-through as Brown dashes it; his solid pallets stay opaque.
   assert.equal(b.sidePlates.length, 1);
   assert.equal(b.sidePlates[0].userData.axialSide, 'front');
-  assert.ok(b.sidePlates[0].userData.seeThrough, 'the disc shows the arm and pallets behind it');
-  assert.ok(pin.max.z < disc.max.z + .01, 'pin ends stop flush with the disc face');
-  assert.ok(pallet.max.z < disc.min.z - .05, 'bars stop short of the disc');
-  assert.ok(pin.min.z < pallet.max.z - .27, 'full pin must share the complete working depth');
-  assert.ok(arm.max.z < pin.min.z - .05, 'arm clears rotating pin ends');
+  assert.ok(!b.sidePlates[0].userData.seeThrough, 'the disc is opaque');
+  assert.ok(b.armA.userData.seeThrough, 'arm A shows the pins beneath it');
+  assert.ok(pin.min.z > disc.min.z && pin.min.z < disc.max.z - .05, 'pins are seated in the disc and rise from its face');
+  assert.ok(arm.min.z > pin.max.z + .05, 'arm clears rotating pin ends');
+  const armOutline = b.armA.geometry.userData.plate;
+  assert.ok(armOutline, 'arm A is one extruded plate');
   for (const body of [b.palletBBody, b.palletCBody]) {
-    assert.ok(z(body).min.z < arm.max.z - .02, 'each bar reaches into the arm plate');
+    const bar = z(body);
+    assert.ok(!body.userData.seeThrough, 'pallets are solid');
+    assert.ok(bar.min.z > disc.max.z + .05, 'bars stop short of the disc');
+    assert.ok(bar.min.z < pin.max.z - .27, 'bars share the complete working depth of the pins');
+    assert.ok(bar.max.z > arm.min.z + .1, 'each bar reaches into the arm plate');
     assert.equal(body.parent.children.filter(o => /rigid-mount/.test(o.userData.role)).length, 0, 'no bridges');
   }
-  // One flat arm plate carries both bars: no pins or bridges between planes.
-  assert.ok(b.armA.geometry.userData.plate, 'arm A is one extruded plate');
+  // Both bars overlap the arm plate in plan: one connected piece.
+  const inArm = new THREE.Raycaster();
+  for (const [body, name] of [[b.palletBBody, 'B'], [b.palletCBody, 'C']]) {
+    const bar = c.bars.find(x => x.name === name);
+    let hits = 0;
+    for (let k = -20; k <= 20; k++) {
+      const local = new THREE.Vector3(k / 40 * bar.length, 0, 0).applyMatrix4(body.matrixWorld);
+      inArm.set(new THREE.Vector3(local.x, local.y, 5), new THREE.Vector3(0, 0, -1));
+      if (inArm.intersectObject(b.armA).length) hits++;
+    }
+    assert.ok(hits >= 3, `${name} bar is carried by the arm plate (${hits})`);
+  }
   assert.equal(d.lanternFiniteContact.mounts, undefined);
 });
 

@@ -557,3 +557,58 @@ test('movement 309 renderer follows both pallets, wheel, pendulum, and live cont
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test("movement 309 cuts Brown's slanted ratchet teeth and joins each pallet arm to its arbor eye", () => {
+  const model = createMovementModel(catalog.movements[308]);
+  const root = model.root;
+  let teeth;
+  const plates = [];
+  root.traverse((o) => {
+    if (o.userData.role === 'thirty-pointed-escape-wheel-teeth') teeth = o;
+    if (/pallet-plate-with-lifting-face-and-stop/.test(o.userData.role ?? '')) plates.push(o);
+  });
+  // Per tooth, the flank on the clockwise side of the tip is nearly radial
+  // and the counterclockwise back is long: the outline points near the tip
+  // circle lean one way.
+  const position = teeth.geometry.attributes.position;
+  const tip = 2.25, root2 = 1.98, pitch = FULL_TURN / 30;
+  const offsets = { lead: [], back: [] };
+  for (let i = 0; i < position.count; i += 1) {
+    const r = Math.hypot(position.getX(i), position.getY(i));
+    if (Math.abs(r - root2) > 1e-3) continue;
+    const a = Math.atan2(position.getY(i), position.getX(i));
+    // angle from the nearest tip station (tips at k * pitch in the plate frame)
+    const d = ((a / pitch) % 1 + 1) % 1;
+    if (d < 0.1) offsets.back.push(d); else if (d > 0.9) offsets.lead.push(d);
+  }
+  assert.ok(offsets.lead.length > 0, 'a root point just clockwise of each tip (radial face)');
+  assert.equal(offsets.back.length, 0, 'no root point just counterclockwise of a tip (sloping back)');
+  assert.ok(tip > root2);
+  // Each pallet plate reaches its arbor: material at the arbor's centre.
+  assert.equal(plates.length, 2);
+  for (const plate of plates) {
+    plate.geometry.computeBoundingBox();
+    const ray = new THREE.Raycaster(new THREE.Vector3(0, 0, 5), new THREE.Vector3(0, 0, -1));
+    const hits = [0.13, -0.13].flatMap((dx) => {
+      ray.set(new THREE.Vector3(dx, 0, 5), new THREE.Vector3(0, 0, -1));
+      return ray.intersectObject(new THREE.Mesh(plate.geometry));
+    });
+    assert.ok(hits.length >= 2, `${plate.userData.role} surrounds its arbor`);
+  }
+  // ... and the arm is continuous from the eye outward.
+  for (const plate of plates) {
+    const ray = new THREE.Raycaster();
+    const mesh = new THREE.Mesh(plate.geometry);
+    const side = plate.userData.role.startsWith('right') ? 1 : -1;
+    let gaps = 0;
+    for (let k = 0; k <= 20; k += 1) {
+      // Along the arm from the eye toward the weight stem, in the plate frame.
+      const t = k / 20 * 0.8;
+      ray.set(new THREE.Vector3(side * 0.6 * t, -0.8 * t, 5), new THREE.Vector3(0, 0, -1));
+      if (!ray.intersectObject(mesh).length) gaps += 1;
+    }
+    assert.equal(gaps, 0, `${plate.userData.role} arm runs unbroken into its eye`);
+  }
+  disposeLike(root);
+});
+function disposeLike(root) { root.traverse((o) => o.geometry?.dispose?.()); }

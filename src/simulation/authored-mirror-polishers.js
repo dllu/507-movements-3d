@@ -122,7 +122,11 @@ function mirrorPolishingCompoundMotion(movement) {
   const inputCyclePeriod = 5;
   const inputAngularSpeed = FULL_TURN / inputCyclePeriod;
   const inputStartAngle = THREE.MathUtils.degToRad(110);
-  const crankPlaneZ = 0.18;
+  // The whole crank side stands in front of the bar: the shaft ends at the
+  // eye crank in front of the bar face, so the bar can sweep past the shaft
+  // axis. Front to back: handle crank, upper rail, eccentric, eye crank, bar;
+  // the lower rail lies behind the bar, as Brown draws both rails.
+  const crankPlaneZ = 0;
   const barPlaneZ = 0.10;
   const crankCenter = new THREE.Vector3(0, 2.32, 0);
   const crankRadius = 0.72;
@@ -133,18 +137,28 @@ function mirrorPolishingCompoundMotion(movement) {
   const longBarWidth = 0.58;
   const longBarLength = 5.38;
   const mirrorDistanceFromTopEye = 3.30;
-  const mirrorSize = 0.96;
+  const mirrorSize = 1.10;
   const mirrorThickness = 0.08;
   const ratchetToothCount = 12;
   const ratchetToothPitch = FULL_TURN / ratchetToothCount;
-  const ratchetOuterRadius = 0.72;
-  const ratchetRootRadius = 0.58;
-  const carrierBaseAngle = THREE.MathUtils.degToRad(38);
-  const carrierPivotRadius = 0.94;
+  // Brown's ratchet spans about 0.83 of the mirror's side.
+  const ratchetOuterRadius = 0.52;
+  const ratchetRootRadius = 0.44;
+  // Brown's click hooks the ratchet's upper-left teeth and draws them
+  // upward: the wheel turns clockwise in the plate (clickHand -1, angles
+  // counterclockwise positive), its tooth tips pointing counterclockwise.
+  const clickHand = -1;
+  const carrierBaseAngle = THREE.MathUtils.degToRad(142);
+  const carrierPivotRadius = 0.68;
   const pawlContactRadius = ratchetOuterRadius;
   const pawlMaximumLift = 0.105;
   const eccentricity = 0.18;
   const mirrorRotorZ = 0.15;
+  // World depths: ratchet/click plane, carrier-pivot follower joint and the
+  // shaft eccentric, all in front of the bar (face at z 0.18).
+  const clickPlaneZ = 0.38;
+  const followerLowerZ = 0.56;
+  const eccentricPlaneZ = 0.43;
 
   const inputCycleAtTime = (time) => {
     const turns = time / inputCyclePeriod;
@@ -223,14 +237,16 @@ function mirrorPolishingCompoundMotion(movement) {
     const carrierFraction = 0.5 * (1 - cosine);
     const carrierFractionRate = 0.5 * sine * inputAngularSpeed;
     const carrierAngle = carrierBaseAngle
-      + ratchetToothPitch * carrierFraction;
-    const carrierAngularSpeed = ratchetToothPitch * carrierFractionRate;
+      + clickHand * ratchetToothPitch * carrierFraction;
+    const carrierAngularSpeed = clickHand * ratchetToothPitch
+      * carrierFractionRate;
     const drivingStroke = phase <= 0.5;
     const stepFraction = drivingStroke ? carrierFraction : 1;
     const stepFractionRate = drivingStroke ? carrierFractionRate : 0;
-    const ratchetAngle = cycleIndex * ratchetToothPitch
-      + ratchetToothPitch * stepFraction;
-    const ratchetAngularSpeed = ratchetToothPitch * stepFractionRate;
+    const ratchetAngle = clickHand * (cycleIndex * ratchetToothPitch
+      + ratchetToothPitch * stepFraction);
+    const ratchetAngularSpeed = clickHand * ratchetToothPitch
+      * stepFractionRate;
     const pawlLift = drivingStroke
       ? 0
       : pawlMaximumLift * sine ** 2;
@@ -245,20 +261,20 @@ function mirrorPolishingCompoundMotion(movement) {
       ? engagedToothIndex
       : positiveModulo(Math.round(
         (carrierAngle - carrierBaseAngle - ratchetAngle)
-          / ratchetToothPitch,
+          / (clickHand * ratchetToothPitch),
       ), ratchetToothCount);
     const pawlTipRadius = pawlContactRadius + pawlLift;
     const pawlTipLocal = new THREE.Vector3(
       pawlTipRadius * Math.cos(carrierAngle),
       -mirrorDistanceFromTopEye
         + pawlTipRadius * Math.sin(carrierAngle),
-      0.63,
+      clickPlaneZ,
     );
     const carrierPivotLocal = new THREE.Vector3(
       carrierPivotRadius * Math.cos(carrierAngle),
       -mirrorDistanceFromTopEye
         + carrierPivotRadius * Math.sin(carrierAngle),
-      0.63,
+      followerLowerZ,
     );
     const toWorldFromBar = (localPoint) => (
       crankPin.clone()
@@ -272,7 +288,7 @@ function mirrorPolishingCompoundMotion(movement) {
       ? carrierAngle
       : positiveModulo(
         ratchetAngle
-          + selectedToothIndex * ratchetToothPitch
+          + clickHand * selectedToothIndex * ratchetToothPitch
           + carrierBaseAngle,
         FULL_TURN,
       );
@@ -280,13 +296,13 @@ function mirrorPolishingCompoundMotion(movement) {
       pawlContactRadius * Math.cos(selectedToothAngle),
       -mirrorDistanceFromTopEye
         + pawlContactRadius * Math.sin(selectedToothAngle),
-      0.63,
+      clickPlaneZ,
     );
     const selectedToothWorld = toWorldFromBar(selectedToothLocal);
     const eccentricCenter = crankCenter.clone().add(new THREE.Vector3(
       eccentricity * Math.cos(inputPoseAngle),
       eccentricity * Math.sin(inputPoseAngle),
-      0.49,
+      eccentricPlaneZ,
     ));
     const mirrorWorldAngle = barWorldAngle + ratchetAngle;
     const mirrorWorldAngularSpeed = barAngularSpeed + ratchetAngularSpeed;
@@ -391,11 +407,13 @@ function mirrorPolishingCompoundMotion(movement) {
   root.add(crankBearing);
 
   const guidePins = [-1, 1].map((side) => {
-    const pin = cylinderAlongZ(guidePinRadius, 0.62, darkMaterial, 28);
+    // The pins stand from the lower rail only through the bar's depth, so
+    // the mirror and ratchet in front of the bar pass over them.
+    const pin = cylinderAlongZ(guidePinRadius, 0.30, darkMaterial, 28);
     pin.position.set(
       guidePoint.x + side * guidePinOffset,
       guidePoint.y,
-      0.06,
+      0.05,
     );
     pin.userData.fixed = true;
     pin.userData.role = 'one-of-two-fixed-lower-rail-bar-guide-pins';
@@ -678,10 +696,14 @@ function mirrorPolishingCompoundMotion(movement) {
       barPlaneZ,
       carrierBaseAngle,
       carrierPivotRadius,
+      clickHand,
+      clickPlaneZ,
       crankCenter: crankCenter.clone(),
       crankPlaneZ,
       crankRadius,
       eccentricity,
+      eccentricPlaneZ,
+      followerLowerZ,
       guidePinOffset,
       guidePinRadius,
       guidePoint: guidePoint.clone(),
@@ -770,7 +792,7 @@ function mirrorPolishingCompoundMotion(movement) {
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.48, -3.88, -0.55),
-    new THREE.Vector3(2.48, 3.40, 0.80),
+    new THREE.Vector3(2.48, 3.40, 1.65),
   );
   root.userData.groundFloorY = -2.17;
   markShadows(root);

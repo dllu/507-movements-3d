@@ -249,3 +249,38 @@ test("295's wheel is a narrow rim below the valleys over a plain recessed web, b
   assert.ok(box.max.z < z1 - 0.05, 'web recessed behind the rim');
   assert.ok(Math.hypot(box.max.x, 0) / 0.02 > 320);
 });
+
+test("293's wheel is a thick ring with the crown pins on its front face, and pallet B is see-through over the roller's notch", () => {
+  const root = models.get(293).root;
+  root.updateMatrixWorld(true);
+  const find = (role) => { const found = []; root.traverse((o) => { if (o.isMesh && o.userData.role === role) found.push(o); }); return found; };
+  const box = (o) => new THREE.Box3().setFromObject(o);
+  const wheel = box(find('duplex-escape-wheel')[0]);
+  assert.ok(wheel.max.z - wheel.min.z >= 0.35, `wheel thickness ${wheel.max.z - wheel.min.z}`);
+  for (const pin of find('crown-pin-a')) {
+    const b = box(pin);
+    assert.ok(b.min.z < wheel.max.z && b.max.z > wheel.max.z + 0.1, 'crown pins stand on the front face');
+  }
+  const [pallet] = find('impulse-pallet-B');
+  assert.ok(pallet.userData.seeThrough, 'pallet B shows the roller notch behind it');
+  assert.ok(box(pallet).min.z > wheel.max.z, 'pallet B works in front of the wheel');
+  const roller = box(find('notched-roller-A')[0]);
+  assert.ok(roller.min.z > wheel.min.z && roller.max.z < wheel.max.z, 'roller A works in the teeth layer');
+});
+
+test("296's three curved crossings meet in Brown's broad web about the arbor", () => {
+  const root = models.get(296).root;
+  const wheel = root.userData.contactOutlines.wheelCenter;
+  let mesh;
+  root.traverse((o) => { if (o.isMesh && o.userData.role === 'club-tooth-escape-wheel-A') mesh = o; });
+  const position = mesh.geometry.attributes.position;
+  // Every window vertex stays outside Brown's 33 px web (0.66 at 0.02/px),
+  // apart from the arbor bore.
+  let nearest = Infinity;
+  for (let i = 0; i < position.count; i += 1) {
+    const r = Math.hypot(position.getX(i), position.getY(i));
+    if (r > 0.2) nearest = Math.min(nearest, r);
+  }
+  assert.ok(nearest > 0.6 && nearest < 0.72, `window inner reach ${nearest}`);
+  assert.deepEqual(wheel, [0, 0]);
+});

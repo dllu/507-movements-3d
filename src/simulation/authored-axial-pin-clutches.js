@@ -266,13 +266,18 @@ function addGroovedPulley({
   width,
   whiteMaterial,
   darkMaterial,
+  flangeRadius = 0.54,
 }) {
+  // Brown draws each pulley edge-on as two tall flanges with the rope
+  // between them (as 255's flanged pulley): the flanges stand about 0.54
+  // (his proportion) from the axis, well above the 0.038-radius rope on
+  // the 0.46 pitch circle, so it cannot run off as the pulley shifts.
   const sheave = cylinderAlongX(radius * 0.88, width, material, 64);
   sheave.userData.role = `${rolePrefix}-solid-sheave`;
   group.add(sheave);
   const flanges = [-1, 1].map((side) => {
     const flange = cylinderAlongX(
-      radius,
+      flangeRadius,
       0.055,
       material,
       64,
@@ -283,9 +288,7 @@ function addGroovedPulley({
     group.add(flange);
     return flange;
   });
-  const groove = torusNormalToX(radius, 0.035, darkMaterial, 96);
-  groove.userData.role = `${rolePrefix}-single-working-belt-groove`;
-  group.add(groove);
+  const groove = null;
   const hub = cylinderAlongX(0.17, width + 0.18, darkMaterial, 40);
   hub.userData.role = `${rolePrefix}-hub`;
   group.add(hub);

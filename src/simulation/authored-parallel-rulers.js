@@ -1435,13 +1435,42 @@ function graduatedArcParallelRuler(movement) {
   const upperBlade = makeBlade('translating-upper-ruler-blade', upperPivotLocalXs);
   root.add(upperBlade);
 
-  const scaleLength = scaleMaximumX - scaleMinimumX + 0.24;
+  // Brown's reading is where the arc's outer edge falls on the ivory. Near
+  // full opening the arc runs almost tangent to the scale edge, so its band
+  // lies across the strip well left of the calibrated incidence point; the
+  // strip is carried left until the arc band (and its rounded tip) meets
+  // ivory over the whole travel.
+  const stripNearZ = -bladeWidth / 2 + 0.078 - 0.0675;
+  const stripFarZ = -bladeWidth / 2 + 0.078 + 0.0675;
+  let arcOverStripMinimumX = scaleMinimumX;
+  for (let a = 0; a <= 32; a += 1) {
+    const angle = THREE.MathUtils.lerp(minimumLinkAngle, maximumLinkAngle, a / 32);
+    const upper = upperBladePositionAtAngle(angle);
+    for (let k = 0; k <= 720; k += 1) {
+      const theta = arcSweep * k / 720;
+      for (const radius of [arcRadius - 0.06, arcRadius - 0.03, arcRadius]) {
+        const x = arcPivot.x - arcRadius + radius * Math.cos(theta);
+        const z = arcPivot.z + radius * Math.sin(theta) - upper.z;
+        if (z >= stripNearZ && z <= stripFarZ) {
+          arcOverStripMinimumX = Math.min(arcOverStripMinimumX, x - upper.x);
+        }
+      }
+    }
+    const tipCentreX = arcPivot.x + arcRadius * (Math.cos(arcSweep) - 1) - 0.03;
+    const tipZ = arcPivot.z + arcRadius * Math.sin(arcSweep) - upper.z;
+    if (tipZ + 0.055 >= stripNearZ && tipZ - 0.055 <= stripFarZ) {
+      arcOverStripMinimumX = Math.min(arcOverStripMinimumX, tipCentreX - 0.055 - upper.x);
+    }
+  }
+  const scaleLeftX = Math.min(scaleMinimumX - 0.12, arcOverStripMinimumX - 0.06);
+  const scaleRightX = scaleMaximumX + 0.12;
+  const scaleLength = scaleRightX - scaleLeftX;
   const ivoryScale = new THREE.Mesh(
     new THREE.BoxGeometry(scaleLength, 0.035, 0.135),
     ivoryMaterial,
   );
   ivoryScale.position.set(
-    (scaleMinimumX + scaleMaximumX) / 2,
+    (scaleLeftX + scaleRightX) / 2,
     bladeThickness / 2 + 0.026,
     -bladeWidth / 2 + 0.078,
   );
@@ -1477,8 +1506,8 @@ function graduatedArcParallelRuler(movement) {
   {
     const bottom = bladeThickness / 2, base = bottom + 0.018, top = bottom + 0.032;
     const zCenter = -bladeWidth / 2 + 0.078, halfWidth = 0.0675;
-    const x0 = (scaleMinimumX + scaleMaximumX) / 2 - scaleLength / 2;
-    const x1 = x0 + scaleLength;
+    const x0 = scaleLeftX;
+    const x1 = scaleRightX;
     const strip = poly([[x0, zCenter - halfWidth], [x1, zCenter - halfWidth], [x1, zCenter + halfWidth], [x0, zCenter + halfWidth]]);
     const face = strip;
     for (const tick of scaleTicks) {
@@ -1545,13 +1574,14 @@ function graduatedArcParallelRuler(movement) {
       arcPivot.z + (z - arcPivot.z) * (arcRadius - .06) / arcRadius])]),
     poly(circle([arcPivot.x - .03, arcPivot.z], .10, 48)));
   const brassArc = new THREE.Mesh(plate(polygonClipping.difference(arcOutline,
-    poly(circle([arcPivot.x, arcPivot.z], .044, 48))), -.0175, .0175).rotateX(Math.PI / 2), brassMaterial);
+    poly(circle([arcPivot.x - .03, arcPivot.z], .044, 48))), -.0175, .0175).rotateX(Math.PI / 2), brassMaterial);
   brassArc.position.y = arcHeight;
   brassArc.userData.role = 'fixed-to-lower-blade-brass-arc-crossing-graduated-scale';
   root.add(brassArc);
   const brassArcPivot = new THREE.Mesh(new THREE.CylinderGeometry(.04, .04, .25, 32), darkMaterial);
-  brassArcPivot.position.copy(arcPivot);
-  brassArcPivot.position.y = .12;
+  // The pin is centred in the arc's rounded lower end (the band's centre
+  // line, 0.03 inside the calibrated outer edge), where its bore is.
+  brassArcPivot.position.set(arcPivot.x - .03, .12, arcPivot.z);
   brassArcPivot.userData.role = 'fastening-pivot-of-brass-indicating-arc-on-lower-blade';
   root.add(brassArcPivot);
   const tip = arcCurve.getPoint(1);

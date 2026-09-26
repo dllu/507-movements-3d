@@ -437,7 +437,10 @@ function rockShaftToeAndPoppetLifter(movement) {
   const sourceRodTopY = sourcePointToModel(sourceRasterValveRodTop).y;
   const sourceRodBottomY = sourcePointToModel(sourceRasterValveRodBottom).y;
   const rodTopY = sourceRodTopY - highPoseOffset;
-  const rodBottomY = sourceRodBottomY - highPoseOffset;
+  // Brown breaks the lifting rod off at the foot of the plate and draws no
+  // valve. The rod continues straight past that break far enough that its
+  // plain cut end stays below the view over the whole lift.
+  const rodBottomY = sourceRodBottomY - highPoseOffset - highPoseOffset - 0.6;
   // The rod runs on above Brown's break (still inside the view's crop) so
   // it keeps in its upper guide over the whole lift.
   const rodRunTopY = rodTopY + 0.7;
@@ -450,13 +453,6 @@ function rockShaftToeAndPoppetLifter(movement) {
   valveRod.position.set(valveRodX, (rodRunTopY + rodBottomY) / 2, -0.08);
   valveRod.userData.role = 'vertical-poppet-valve-lifting-rod';
   lifter.add(valveRod);
-  const poppetHead = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.38, 0.50, 0.18, 38),
-    drivenMaterial,
-  );
-  poppetHead.position.set(valveRodX, rodBottomY - 0.12, 0);
-  poppetHead.userData.role = 'poppet-valve-head-rigid-with-lifting-rod';
-  lifter.add(poppetHead);
   const valveIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.035, 0.28, 0.18),
     whiteMaterial,
@@ -514,7 +510,6 @@ function rockShaftToeAndPoppetLifter(movement) {
     guidePost,
     lifter,
     lifterBody,
-    poppetHead,
     rockShaft,
     shaftCollar,
     toe,

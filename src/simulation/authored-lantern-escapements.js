@@ -1016,13 +1016,13 @@ function lanternWheelEscapement(movement) {
   root.userData.fidelity = 'authored';
   correctLanternWorkingParts(root, update);
   const finiteUpdate = installLanternFinitePlayback297(root);
-  // Brown draws the wheel as a plain disc pierced by the eight pins, with a
-  // hub ring and no spokes, and dashes arm A behind it. The pallets reach the
-  // pins from behind, so there is only the front disc: a rear end plate would
-  // have to pass through the arm, which crosses the pin circle from its pivot
-  // outside the rim to C inside it. The pins run back from the disc to just
-  // in front of the arm; the disc is see-through, as Brown's dashed arm and
-  // his solid pallets show the working parts behind it.
+  // Brown draws the wheel as a plain disc with the eight pin ends, a hub ring
+  // and no spokes, and dashes arm A across it. Only the front disc is kept: a
+  // rear end plate would have to pass through the arm, which crosses the pin
+  // circle from its pivot outside the rim to C inside it. The pins stand
+  // forward from the disc's face to the pallet layer; arm A lies in front of
+  // the pin ends and is see-through, as Brown dashes it, while his solid
+  // pallets B and C stay opaque.
   const blocks = root.userData.blocks;
   const [rearPlate, frontPlate] = blocks.sidePlates;
   const [rearHub, frontHub] = blocks.wheelHubs;
@@ -1037,16 +1037,16 @@ function lanternWheelEscapement(movement) {
   blocks.sidePlates = [frontPlate];
   blocks.wheelHubs = [frontHub];
   blocks.sidePlateSpokes = [];
-  // The arbor runs from just in front of the hub back past the arm layer.
+  // The arbor runs from just in front of the hub to a short stub behind the disc.
   const shaftFront = frontHub.position.z + 0.15 + 0.06;
-  const shaftRear = -0.40;
+  const shaftRear = 0.40;
   blocks.wheelShaft.geometry.dispose();
   // The arbor turns with the wheel and fills the bored hub and disc (it is
   // fixed in them): a clearance ring would open a sight line through the hub
   // to the background and speckle its face.
   blocks.wheelShaft.geometry = new THREE.CylinderGeometry(0.168, 0.168, shaftFront - shaftRear, 64);
   blocks.wheelShaft.position.z = (shaftFront + shaftRear) / 2;
-  makeSeeThrough(frontPlate);
+  makeSeeThrough(blocks.armA);
   const workingPairs = root.userData.lanternWorkingParts.pairs;
   // Keep only pairs that move relative to each other; the arbors are fixed in
   // their own hubs.
@@ -1062,14 +1062,14 @@ function lanternWheelEscapement(movement) {
   // Neither the index marks nor a contact marker appear on the plate.
   blocks.wheelIndex.visible = false;
   blocks.rimIndex.visible = false;
-  // Brown dashes arm A and its pivot because the disc hides them; the
-  // see-through disc shows the real arm, hub, arbor and pallets behind it.
+  // Brown dashes arm A over the wheel; the see-through arm shows the pins
+  // beneath it.
   const plainDiscUpdate = (time) => {
     finiteUpdate(time);
     blocks.contactMarker.visible = false;
   };
   plainDiscUpdate(0);
-  root.userData.reconstructionNote = 'The eight pins stand back from one plain bored disc, as drawn; arm A and pallets B and C lie behind it, seen through the disc. '
+  root.userData.reconstructionNote = 'The eight pins stand forward from one plain bored disc; the see-through arm A lies in front of the pin ends and carries the solid pallets B and C back among the pins. '
     + (root.userData.reconstructionNote ?? '').replace(/^The eight-trundle wheel has connected end rings, spokes and bored supports\. /, '');
   return {
     cameraDirection: root.userData.cameraDirection,

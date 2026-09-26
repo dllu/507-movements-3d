@@ -893,22 +893,30 @@ function mudgeGravityEscapement(movement) {
   const wheelRotor = new THREE.Group();
   wheelRotor.userData.role = 'two-steps-per-cycle-wheel-rotor';
   escapeWheel.add(wheelRotor);
+  // Brown's ratchet teeth: each tip has a nearly radial face on its
+  // clockwise (leading) side and a long straight back sloping down on its
+  // counterclockwise side to the root, followed by a short land on the root
+  // circle (measured on both flanks of his wheel: back about half a pitch,
+  // land about 0.45 pitch). The tips, which do all the locking and lifting,
+  // keep their stations.
+  const toothFaceUndercut = 0.03;
+  const toothBack = 0.5;
+  const polarPoint = (angle, radius) => new THREE.Vector2(
+    Math.cos(angle) * radius,
+    Math.sin(angle) * radius,
+  );
   const wheelShape = new THREE.Shape();
   for (let toothIndex = 0; toothIndex < toothCount; toothIndex += 1) {
     const centerAngle = toothIndex * toothPitch;
+    const landEnd = centerAngle + toothPitch * (1 - toothFaceUndercut);
+    const landStart = centerAngle + toothPitch * toothBack;
     const outline = [
-      new THREE.Vector2(
-        Math.cos(centerAngle - toothPitch * 0.47) * wheelRootRadius,
-        Math.sin(centerAngle - toothPitch * 0.47) * wheelRootRadius,
-      ),
-      new THREE.Vector2(
-        Math.cos(centerAngle) * toothTipRadius,
-        Math.sin(centerAngle) * toothTipRadius,
-      ),
-      new THREE.Vector2(
-        Math.cos(centerAngle + toothPitch * 0.47) * wheelRootRadius,
-        Math.sin(centerAngle + toothPitch * 0.47) * wheelRootRadius,
-      ),
+      polarPoint(centerAngle - toothPitch * toothFaceUndercut, wheelRootRadius),
+      polarPoint(centerAngle, toothTipRadius),
+      ...Array.from({ length: 4 }, (_, index) => polarPoint(
+        THREE.MathUtils.lerp(landStart, landEnd, index / 4),
+        wheelRootRadius,
+      )),
     ];
     for (const point of outline) {
       if (toothIndex === 0 && point === outline[0]) {
@@ -1031,6 +1039,11 @@ function mudgeGravityEscapement(movement) {
       point.clone().sub(outerTop).dot(armDirection),
     );
     const hubRadius = 0.15;
+    // Brown runs both edges of the arm up into the eye round its arbor C:
+    // the edges continue to the arbor's station along the arm, where the
+    // hub disc rounds the end, so the arm and eye are one plate.
+    const topOuter = outerLineAt(new THREE.Vector2(0, 0));
+    const topInner = innerLineAt(topOuter);
     // The tooth tip rests on the stop arc (about C) from `lock` to `stopEnd`;
     // it pushes toward C on the left and away from C on the right, because
     // the wheel turns clockwise. After release it runs on along the wheel,
@@ -1058,7 +1071,7 @@ function mudgeGravityEscapement(movement) {
           .addScaledVector(cornerOut, u * u);
       });
       armOutline = [
-        outerTop,
+        topOuter,
         cornerIn,
         ...cornerArc,
         cornerOut,
@@ -1067,7 +1080,7 @@ function mudgeGravityEscapement(movement) {
         ...stopArc.slice(1),
         notchBack,
         innerLineAt(notchBack),
-        innerTop,
+        topInner,
       ];
     } else {
       // A lifts on a block on the arm's inner edge; a is a hook at the end.
@@ -1079,14 +1092,14 @@ function mudgeGravityEscapement(movement) {
         0.16,
       );
       armOutline = [
-        outerTop,
+        topOuter,
         outerLineAt(hookOut),
         hookOut,
         ...stopArc.slice().reverse(),
         ...liftFacePoints.slice().reverse().slice(1),
         faceEnd,
         innerLineAt(faceEnd),
-        innerTop,
+        topInner,
       ];
     }
     // Threaded weight stem, square to the arm's outer edge through the ball.
