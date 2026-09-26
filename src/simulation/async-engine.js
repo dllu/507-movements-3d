@@ -3,6 +3,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { PALETTE } from './primitives.js';
 import { loadMovementModel } from './model-loader.js';
 import { disposeMovementModel, disposeObject3D } from './dispose-model.js';
+import {
+  AMBIENT_OCCLUSION_SETTINGS, ScreenSpaceAmbientOcclusion, shouldStartAmbientOcclusion,
+} from './ambient-occlusion.js';
 
 const CAMERA_FIT_MARGIN = 1.08;
 const GROUND_CLEARANCE = 0.14;
@@ -201,6 +204,12 @@ export class MovementEngine {
     this.fitCamera(this.model.cameraDirection);
     this.addGround();
 
+    // Screen-space AO is an interactive-viewer option ('auto' | 'on' | 'off';
+    // off unless requested). Offline reviews render with renderer.render and
+    // are unaffected either way.
+    this.ambientOcclusionAdaptive = options.ambientOcclusion === 'auto';
+    this.setAmbientOcclusion(shouldStartAmbientOcclusion(options.ambientOcclusion ?? false, this.renderer));
+
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(container);
     this.resize();
@@ -233,6 +242,33 @@ export class MovementEngine {
     this.scene.add(fill);
   }
 
+  setAmbientOcclusion(enabled) {
+    if (Boolean(enabled) === Boolean(this.ambientOcclusion)) return;
+    if (enabled) {
+      this.ambientOcclusion = new ScreenSpaceAmbientOcclusion(this.renderer, this.scene, this.camera);
+      this.ambientOcclusion.setModelRadius(this.fitRadius ?? 2);
+    } else {
+      this.ambientOcclusion.dispose();
+      this.ambientOcclusion = null;
+    }
+    this.slowRunSeconds = 0;
+    this.ambientOcclusionFrames = 0;
+  }
+
+  // 'auto' mode: switch AO off for this view when frames stay slow.
+  trackFrameInterval(interval) {
+    // Gaps over a second are pauses (hidden tab, debugger), not slow frames.
+    if (!this.ambientOcclusion || !this.ambientOcclusionAdaptive || interval > 1) return;
+    const { warmupFrames, slowFrameSeconds, slowRunSeconds } = AMBIENT_OCCLUSION_SETTINGS;
+    this.ambientOcclusionFrames += 1;
+    if (this.ambientOcclusionFrames <= warmupFrames) return;
+    this.slowRunSeconds = interval > slowFrameSeconds ? this.slowRunSeconds + interval : 0;
+    if (this.slowRunSeconds >= slowRunSeconds) {
+      this.setAmbientOcclusion(false);
+      this.ambientOcclusionAutoDisabled = true;
+    }
+  }
+
   fitCamera(direction = new THREE.Vector3(6, 4, 8), { preserveView = false } = {}) {
     const previousOffset = this.camera.position.clone().sub(this.controls.target);
     const previousTarget = this.controls.target.clone();
@@ -262,6 +298,8 @@ export class MovementEngine {
     }
     const sphere = bounds.getBoundingSphere(new THREE.Sphere());
     const radius = Math.max(sphere.radius, 1.7);
+    this.fitRadius = radius;
+    this.ambientOcclusion?.setModelRadius(radius);
     const distanceScale = this.model.root.userData.cameraDistanceScale ?? 1;
     const aspect = Math.max(1, this.container.clientWidth)
       / Math.max(1, this.container.clientHeight);
@@ -376,10 +414,14 @@ export class MovementEngine {
   animate = () => {
     if (this.disposed) return;
     this.animationFrame = requestAnimationFrame(this.animate);
-    const delta = Math.min(this.clock.getDelta(), 0.05);
-    this.advance(delta);
+    const interval = this.clock.getDelta();
+    this.advance(Math.min(interval, 0.05));
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
+    if (this.ambientOcclusion) {
+      this.ambientOcclusion.render();
+      this.trackFrameInterval(interval);
+    }
   };
 
   advance(delta) {
@@ -457,6 +499,8 @@ export class MovementEngine {
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
     this.renderer.domElement.removeEventListener('dblclick', this.onDoubleClick);
     this.controls.dispose();
+    this.ambientOcclusion?.dispose();
+    this.ambientOcclusion = null;
     this.scene.remove(this.model.root);
     disposeMovementModel(this.model);
     disposeObject3D(this.scene);

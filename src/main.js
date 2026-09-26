@@ -9,6 +9,20 @@ const movementById = new Map(movements.map((movement) => [movement.id, movement]
 const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 let activeCleanup = () => {};
 
+// Soft ambient occlusion in the 3D view: 'auto' (default; on unless the device
+// looks low-end or frames turn slow), 'on' or 'off'. Override per visit with
+// #/movement/7?ao=off or persistently with localStorage['507.ambientOcclusion'].
+function ambientOcclusionPreference() {
+  const valid = new Set(['auto', 'on', 'off']);
+  const fromHash = new URLSearchParams(location.hash.split('?')[1] ?? '').get('ao');
+  if (valid.has(fromHash)) return fromHash;
+  try {
+    const stored = localStorage.getItem('507.ambientOcclusion');
+    if (valid.has(stored)) return stored;
+  } catch { /* storage unavailable */ }
+  return 'auto';
+}
+
 const categoryCounts = movements.reduce((counts, movement) => {
   counts.set(movement.category, (counts.get(movement.category) ?? 0) + 1);
   return counts;
@@ -246,6 +260,7 @@ async function detailView(movement) {
   try {
     engine = await MovementEngine.create(stage, movement, {
       playing: !prefersReducedMotion.matches, signal: abortController.signal,
+      ambientOcclusion: ambientOcclusionPreference(),
     });
   } catch (error) {
     if (abortController.signal.aborted) return;
