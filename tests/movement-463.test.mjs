@@ -218,7 +218,17 @@ test('movement 463 schedule demonstrates ordinary notch overflow, flood opening,
   assert.ok(opening.contactDrive > 0 && opening.contactDrive < 1);
   assert.match(opening.regime, /rising-head/);
   near(scour.contactDrive, 1, 1e-12, 'fully open scour state');
-  near(scour.notchFlowFraction, 0, 1e-12, 'notch stream off while open');
+  // Brown's open weir spills over its lowered, turned upper leaf: the head
+  // never stands above the leaf's upstream top edge and the notch overflow
+  // follows the head over the lowered sill.
+  assert.ok(scour.notchFlowFraction > ordinary.notchFlowFraction);
+  for (let i = 0; i <= 200; i += 1) {
+    const state = stateAtPhase(i / 200);
+    const topEdgeY = geometry.upperPivot.y
+      - (geometry.upperThickness / 2) * Math.sin(state.upperAngle)
+      + geometry.upperTopLocal * Math.cos(state.upperAngle);
+    assert.ok(state.waterLevel < topEdgeY, `head below turned leaf top at ${i / 200}`);
+  }
   near(scour.bedFlowFraction, 1, 1e-12, 'full bed flow');
   assert.ok(scour.sedimentRemainingFraction < ordinary.sedimentRemainingFraction);
   assert.ok(closing.contactDrive > 0 && closing.contactDrive < 1);

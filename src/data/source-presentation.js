@@ -242,8 +242,8 @@ export default {
     note: 'Face view of the hooked arm with its J-shaped slot and the straight arm whose pinned end passes behind it (dashed on the plate); the factory draws no index marks.',
   },
   204: {
-    remove: ['fixed-(?:longitudinal|transverse)-base-rail', '(?:driver|driven)-shaft-bearing-post'],
-    note: 'The two hyperboloidal rollers on their shafts; no base or posts are drawn.',
+    remove: ['fixed-(?:longitudinal|transverse)-base-rail', '(?:driver|driven)-shaft-bearing-post', '(?:driver|driven)-shaft-stationary-bearing-ring'],
+    note: 'The two hyperboloidal rollers on their shafts; no base, posts or bearing rings are drawn.',
   },
   209: {
     remove: ['instantaneous-common-pitch-contact'],
@@ -327,7 +327,7 @@ export default {
     note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so the thin contact line (Brown draws no sea bottom) rises from below for the probe to strike, and the dropped weight sinks away with it as the rod is recovered.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so a plain thin sea-bottom surface (Brown draws none; the caption has the weight detach on striking bottom) rises from below for the probe to strike, and the dropped weight sinks away with it as the rod is recovered. The rod is then hauled out of the top of the view, re-armed there with a fresh weight, and lowered back; no reload gear is shown.',
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
@@ -415,7 +415,7 @@ export default {
     rotate: [Math.PI / 2, Math.PI / 2, 0],
     camera: [0.02, 0.02, -1],
     remove: ['crown-wheel-rotation-witness', 'weighted-horizontal-foliot-regulator'],
-    note: 'Nearly edge-on view along the verge, cropped along the crown edge to about three pitches of the near band with the wheel ends running out of view: the concave-backed raked teeth with the far teeth seen through their gaps, the verge journal end-on above and the two pallets about 100° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
+    note: 'Nearly edge-on view along the verge, cropped along the crown edge to about two pitches of the near band, as Brown’s strip is, with the wheel ends running out of view: the concave-backed raked teeth with the far teeth nearest the verge seen through their gaps, the verge journal end-on above and the two pallets about 108° apart, the steep one hanging down-left and the shallow one lying out to the right. Brown crops the foliot out of the detail, so it is not shown.',
   },
   300: {
     note: 'Front elevation of the one model shared with 301: the barbed four-spoked wheel (Brown cuts off the upper two spokes) over the edge-on pallet on the horizontal balance staff.',
@@ -618,7 +618,7 @@ export default {
   377: {
     camera: [1, 0.02, 0.62],
     remove: ['fixed-treadmill-foundation', 'fixed-hand-rail-support', 'white-index-.*'],
-    note: 'Level side view of the treadmill (Brown mixes an end view of the wheel with a side view of the drum; the camera sits between, nearer the side): the notched spur wheel on the near end of the axle behind its flared A-frame standard on a plank, the long diagonal side bar in front, and the drum running off to the right with the man, back to the viewer, stepping up its boards and holding the rail before him; no foundation slab, rail posts or white index are drawn.',
+    note: 'Level side view of the treadmill (Brown mixes an end view of the wheel with a side view of the drum; the camera sits between, nearer the side): the notched spur wheel on the near end of the axle behind its flared A-frame standard on a plank, the long diagonal side bar in front, and the drum running off to the right with the man, back to the viewer, stepping up its boards and holding the rail before him. The rail ends at the side bar, fastened by one bolt through the hole Brown draws near its top; no foundation slab, rail posts, bracket or white index are drawn.',
   },
   378: {
     camera: [0.05, 0.08, 1],
@@ -867,7 +867,7 @@ export default {
     note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn. The arms throw continuous water jets; the flow beads of the offline model are not presented.",
   },
   439: {
-    camera: [0.08, 0.05, 1],
+    camera: [0.08, 0.35, 1],
     remove: ['visible-oscillating-pulley-rotation-marker', 'material-marker-moving-continuously-on-single-rope', 'continuous-fall-water-marker-\\d+', 'fixed-overhead-pulley-support-beam', 'bored-pulley-shaft-hanger', 'fixed-pulley-support-post', 'fixed-ground-beneath-bucket', 'ground-anvil-opening-bucket-valve', 'fixed-post-carrying-upper-end-of-flume'],
     note: 'The pulley, rope, bucket with its projecting valve stem, counterweight and water stream; no gallows frame, ground, striking anvil, white pulley stripe or rope marker is drawn. No flow beads in the falling stream.',
   },
@@ -1058,7 +1058,7 @@ export default {
   },
   498: {
     remove: ['fixed-gauge-support-base', 'fixed-gauge-back-support', 'bored-glass-retaining-clip', 'clip-tab-to-scale-board', 'equal-level-zero-datum-across-both-legs', 'live-reading-index-at-right-mercury-surface', 'boiler-or-apparatus-connection-flange'],
-    note: 'The bent tube, its mercury, the scale marks beside the open leg and the cocked pipe, which runs straight on past Brown\'s crop and ends cleanly; no boiler, flange, base, post, datum bar or pointer is drawn. The marks sit on a slim scale strip grooved round the open leg and carried by it, so they neither float nor read mirrored from behind.',
+    note: 'The tall narrow bent tube, its mercury, the scale marks beside the open leg with Brown\'s second 0 mark beside the pressure leg, and the pipe with its T-handle plug cock, which runs straight on past Brown\'s crop and ends cleanly; no boiler, flange, base, post, datum bar or pointer is drawn. The marks sit on a slim scale strip grooved round the open leg and carried by it, so they neither float nor read mirrored from behind.',
   },
   487: {
     remove: ['fixed-bearing-A-frame-\\d-leg-(left|right)', 'fixed-bearing-base-rail-\\d', 'fixed-water-volume-intersecting-lower-paddles', 'fixed-waterline-plane', 'fixed-backward-water-path-\\d', 'backward-water-marker-\\d-\\d', 'fixed-(?:negative-x-backward-water-direction|positive-x-forward-vessel-thrust)-arrow', 'white-shaft-rotation-index', 'white-index-fixed-to-first-paddle'],

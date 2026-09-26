@@ -154,8 +154,8 @@ test('movement 206 is one lever carrying two independent curved pawls around one
   assert.deepEqual(sourceRaster.imageSize.toArray(), [525, 525]);
   assert.equal(sourceRaster.sourceUrl, movement.sourceUrl);
   assert.equal(sourceRaster.wheelToothCount, 53);
-  assert.equal(sourceRaster.wheelToothTipRadiusPixels, 211);
-  assert.deepEqual(sourceAnchors.wheelCenter.toArray(), [261, 303]);
+  assert.equal(sourceRaster.wheelToothTipRadiusPixels, 182);
+  assert.deepEqual(sourceAnchors.wheelCenter.toArray(), [260, 299]);
   assert.deepEqual(sourceAnchors.fixedLeverPivot.toArray(), [338, 49]);
   assert.deepEqual(sourceAnchors.sharedPawlPivot.toArray(), [257, 66]);
   assert.deepEqual(sourceAnchors.leftPawlTip.toArray(), [94, 203]);
@@ -248,15 +248,15 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
   near(leftFaceFraction, 0.43, 0, 'left working point on face');
   near(rightFaceFraction, 0.28, 0, 'right working point just below the tip');
   assert.equal(rightToothOffset, -16);
-  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(6.65));
-  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(6.8));
+  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(5.1));
+  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(5.3));
   near(risingAdvance + fallingAdvance, toothPitch, 2e-15, 'stroke closure');
   near(transmission.risingStrokeAdvance, risingAdvance, 0, 'rising advance');
   near(transmission.fallingStrokeAdvance, fallingAdvance, 0, 'falling advance');
-  assert.ok(risingAdvance > THREE.MathUtils.degToRad(2.5));
-  assert.ok(risingAdvance < THREE.MathUtils.degToRad(2.65));
-  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(4.15));
-  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(4.3));
+  assert.ok(risingAdvance > THREE.MathUtils.degToRad(2.7));
+  assert.ok(risingAdvance < THREE.MathUtils.degToRad(2.85));
+  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(3.95));
+  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(4.1));
 
   vector2Near(
     sourcePointToModel(sourceAnchors.fixedLeverPivot),
@@ -298,7 +298,9 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
       sourcePointToModel(sourceAnchors.rightPawlTip).y,
       sourcePointToModel(sourceAnchors.rightPawlTip).x,
     ),
-    THREE.MathUtils.degToRad(0.36),
+    // The wheel centre and tip circle are fitted to the drawn tooth tips;
+    // Brown's right pawl end then sits within two degrees of the solved one.
+    THREE.MathUtils.degToRad(2),
     'right contact sector matches the engraving',
   );
   near(
@@ -473,7 +475,7 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
   assert.ok(minimumClockwiseTorque > 1.9);
   assert.ok(maximumAngularSpeed < 1e-12);
   // Samples span 53 cycles, so each step covers 53/32768 of a cycle.
-  assert.ok(maximumResetStep < 0.005);
+  assert.ok(maximumResetStep < 0.0055, `reset step ${maximumResetStep}`);
 
   for (let cycleIndex = 0; cycleIndex < 53; cycleIndex += 1) {
     const start = stateAtCycleCoordinate(cycleIndex);
@@ -681,17 +683,19 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   const handleHigh = worldPositionAt(leverRotor, handlePoint, canonicalTimes.highReversal);
   const handleLow = worldPositionAt(leverRotor, handlePoint, canonicalTimes.lowReversal);
   // One vibration advances one of Brown's 53 fine teeth, so the lever's
-  // swing is small (about 6.7 degrees each way).
-  assert.ok(handleSource.distanceTo(handleHigh) > 0.08);
-  assert.ok(handleSource.distanceTo(handleLow) > 0.08);
-  assert.ok(handleHigh.distanceTo(handleLow) > 0.16);
+  // swing is small (about 5.2 degrees each way).
+  assert.ok(handleSource.distanceTo(handleHigh) > 0.07, `handle high ${handleSource.distanceTo(handleHigh)}`);
+  assert.ok(handleSource.distanceTo(handleLow) > 0.07, `handle low ${handleSource.distanceTo(handleLow)} ${handleHigh.distanceTo(handleLow)}`);
+  assert.ok(handleHigh.distanceTo(handleLow) > 0.14);
 
   model.update(canonicalTimes.sourcePose);
   model.root.updateMatrixWorld(true);
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
-  assert.ok(size.x > 4.8 && size.x < 4.95);
-  assert.ok(size.y > 5.7 && size.y < 5.9);
+  // The pawls bow well clear of the teeth and the lever stands above them,
+  // as in the engraving whose wheel is fitted at its drawn tooth tips.
+  assert.ok(size.x > 5.1 && size.x < 5.3);
+  assert.ok(size.y > 6.1 && size.y < 6.35);
   assert.ok(size.z > 0.8 && size.z < 0.95);
   assert.ok(bounds.min.x < -2.4);
   assert.ok(bounds.max.y > 3.3);

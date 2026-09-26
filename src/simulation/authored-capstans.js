@@ -410,10 +410,23 @@ function commonCapstan(movement) {
   root.add(cableLead);
   // Pass 56: the deck is Brown's ground line under the ratchet.
   const deckY = -1.61;
+  // The ratchet's footprint: its ring of flat tooth faces (plan y = -z).
+  const ratchetFootprint = radius => poly(Array.from({ length: ratchetToothCount }, (_, k) => {
+    const angle = ratchetPhaseOffset + k * FULL_TURN / ratchetToothCount;
+    return [radius * Math.cos(angle), -radius * Math.sin(angle)];
+  }));
   const deck = addRole(new THREE.Mesh(
-    plate(polygonClipping.difference(
-      poly([[-2.5, -2.3], [2.5, -2.3], [2.5, 2.3], [-2.5, 2.3]]),
-      poly(circle([0, 0], 0.145, 48)),
+    // The crown ratchet is let into the deck: the deck is cut away under
+    // its ring, so the two never share a face.
+    plate(polygonClipping.union(
+      polygonClipping.difference(
+        poly([[-2.5, -2.3], [2.5, -2.3], [2.5, 2.3], [-2.5, 2.3]]),
+        ratchetFootprint(ratchetOuterRadius),
+      ),
+      polygonClipping.difference(
+        ratchetFootprint(ratchetInnerRadius),
+        poly(circle([0, 0], 0.145, 48)),
+      ),
     ), deckY - 0.2, deckY).rotateX(-Math.PI / 2),
     supportMaterial,
   ), 'fixed-deck-under-capstan');

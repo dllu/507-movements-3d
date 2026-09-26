@@ -42,25 +42,21 @@ export function installAlternatingPawl236(root) {
   replace(b.leverBody, plate(polygonClipping.difference(outline, ...holes), -0.09, 0.09));
   b.leverJoints.forEach((joint, i) => replace(joint.children[0], ring(i === 1 ? 0.081 : 0.071, 0.14, -0.12, 0.12, 64)));
   b.lever.position.z = 0.87;
-  // Axial shoulders separate the independently swinging eyes from the lever.
+  // Brown draws fulcrum a and the wheel arbor as plain pins with no studs,
+  // bosses or framing, so each fixed pin is only as long as the parts it
+  // carries: a clears the lever's joint eye and the arbor the wheel's hub.
   const shaft = b.fulcrumShaft.userData.rotor.children.find(o => o.isMesh);
-  shaft.geometry.scale(1, 1.12 / 0.82, 1);
+  shaft.geometry.scale(1, 0.34 / 0.82, 1);
+  b.fulcrumShaft.position.z = 0.83;
+  b.fulcrumShaft.userData.length = 0.34;
+  const arbor = b.ratchetShaft.userData.rotor.children.find(o => o.isMesh);
+  arbor.geometry.scale(1, 0.56 / 0.96, 1);
+  b.ratchetShaft.position.z = b.ratchet.position.z;
+  b.ratchetShaft.userData.length = 0.56;
   replace(b.ratchet.userData.hub, ring(0.102, 0.34, -0.213, 0.213, 96));
   const index = b.ratchet.userData.indicator;
   replace(index, new THREE.BoxGeometry(0.045, 0.55, 0.012));
   index.position.set(0, 0.8, g.ratchetDepth / 2 + 0.006);
-  // Fulcrum a and the wheel arbor are carried by plain studs: a bored boss
-  // behind each shaft, flanged to the framing behind the mechanism.
-  root.updateMatrixWorld(true);
-  const frameMaterial = new THREE.MeshStandardMaterial({ color: 0x6f7773, roughness: 0.68, metalness: 0.12 });
-  const fulcrum = new THREE.Vector3(); shaft.getWorldPosition(fulcrum); root.worldToLocal(fulcrum);
-  for (const [name, x, y, bore, outer, front, z] of [['fulcrum-a', fulcrum.x, fulcrum.y, 0.079, 0.2, -0.1, 0], ['wheel-arbor', 0, 0, 0.104, 0.24, -0.24, b.ratchet.position.z]]) {
-    const boss = new THREE.Mesh(ring(bore, outer, -0.5, front, 64), frameMaterial);
-    boss.position.set(x, y, z); boss.userData.role = `fixed-stud-boss-of-${name}`;
-    const flange = new THREE.Mesh(ring(bore, outer + 0.06, -0.58, -0.5, 64), frameMaterial);
-    flange.position.set(x, y, z); flange.userData.role = `fixed-stud-flange-of-${name}`;
-    root.add(boss, flange);
-  }
   root.userData.cameraFitBounds.set(new THREE.Vector3(-4.02, -2.42, -0.65), new THREE.Vector3(2.43, 4.94, 1.2));
   b.activeContactMarker.visible = false;
   root.userData.workingParts236 = { pins };

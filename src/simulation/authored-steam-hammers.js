@@ -1,5 +1,6 @@
 import {correctHammerWorkingParts} from './hammer-working-parts.js';
 import {
+  capsule,
   circle,
   plate,
   poly,
@@ -9,7 +10,7 @@ import {
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {solidMaterial} from './cutaway-section.js';
-import {portedBarrel} from './lift-pump-working-parts.js';
+import {sidePortedShell} from './hydraulic-force-parts.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import {
   PALETTE,
@@ -84,6 +85,8 @@ function rodBetween(start, end, radius, material, segments = 18) {
 // a crown that the cylinder passes through, with a crossbar under the
 // cylinder. The legs are one plate in the elevation plane; the crown and the
 // crossbar are plan plates bored for the cylinder and the piston rod.
+const STANDARD_HALF_DEPTH = 0.74;
+
 function buildArchedCastStandard(frame, material, groundY, {
   cylinderOuterRadius,
   crossbarTopY,
@@ -92,9 +95,11 @@ function buildArchedCastStandard(frame, material, groundY, {
     child.removeFromParent();
     child.geometry?.dispose();
   }
-  const back = -0.30;
-  const front = 0.22;
-  const innerX = 0.64;
+  // Brown's cast standard has slender uprights round a window that takes
+  // his broad cylinder; it is deep enough for the crown to ring the barrel.
+  const back = -STANDARD_HALF_DEPTH;
+  const front = STANDARD_HALF_DEPTH;
+  const innerX = 0.86;
   const outerX = 1.02;
   const crownBottomY = 2.75;
   const crownTopY = 2.95;
@@ -107,7 +112,7 @@ function buildArchedCastStandard(frame, material, groundY, {
     [1.74, groundY],
     [1.04, groundY],
     [1.04, groundY + 0.10],
-    ...spline([[1.18, footY], [0.88, -0.35], [0.69, 0.35], [innerX, 0.95]]),
+    ...spline([[1.18, footY], [0.97, -0.35], [0.88, 0.35], [innerX, 0.95]]),
   ];
   for (const side of [-1, 1]) {
     const points = halfLeg.map(([x, y]) => [side * x, y]);
@@ -156,7 +161,11 @@ function steamHammer(movement) {
   const gravity = 9.81;
   const maximumLift = 1.05;
   const movingMassKilogram = 160;
-  const pistonRadius = 0.337;
+  // Brown's cylinder is broad: about two-thirds of the standard's width and
+  // twice the hammer head's diameter.
+  const cylinderOuterRadius = 0.66;
+  const cylinderInnerRadius = 0.56;
+  const pistonRadius = cylinderInnerRadius - 0.003;
   const pistonArea = Math.PI * pistonRadius ** 2;
   const staticSupportGaugePressure = movingMassKilogram * gravity
     / pistonArea;
@@ -183,24 +192,29 @@ function steamHammer(movement) {
   const pistonThickness = 0.20;
   const cylinderInnerBottomY = 1.25;
   const cylinderInnerTopY = 3.10;
-  const cylinderOuterRadius = 0.44;
-  const cylinderInnerRadius = 0.34;
   // Brown's valve gear: a top rocker on a fulcrum just under the crown, its
   // left arm lifting the slide-valve spindle out of the chest on the front of
-  // the cylinder and its right arm hung on a long vertical valve rod down to
-  // the hand lever pivoted low on the right leg, which ends in an upright
-  // handle. The command -1..1 sets the hand-lever angle.
-  const valvePlaneZ = 0.60;
-  const valveLinkZ = 0.68;
-  const valveChestZ = 0.52;
-  const rockerFulcrum = new THREE.Vector3(0.51, 2.53, valvePlaneZ);
-  const rockerLeftArm = 0.60;
-  const rockerRightArm = 0.63;
-  const handLeverPivot = new THREE.Vector3(1.455, -0.36, valvePlaneZ);
-  const handLeverRodArm = 0.30;
-  const handLeverHandleArm = 1.00;
-  const handleRise = 0.46;
-  const valveAngleAmplitude = THREE.MathUtils.degToRad(20);
+  // the cylinder and its right arm hung on a long vertical valve rod down
+  // the inside of the right upright to a short hand lever pivoted on the
+  // leg. The lever's long arm runs out to Brown's upright handle post, which
+  // slides in a pair of brackets from the leg and ends in a ball; a pin on
+  // the post rides in a short slot in the lever end. The command -1..1 sets
+  // the hand-lever angle.
+  const valvePlaneZ = STANDARD_HALF_DEPTH + 0.10;
+  const valveLinkZ = valvePlaneZ + 0.08;
+  const valveChestZ = 0.80;
+  const rockerFulcrum = new THREE.Vector3(0.40, 2.53, valvePlaneZ);
+  const rockerLeftArm = 0.45;
+  const rockerRightArm = 0.40;
+  const handLeverPivot = new THREE.Vector3(1.05, -0.225, valvePlaneZ);
+  const handLeverRodArm = 0.25;
+  const handlePostX = 1.74;
+  const handLeverHandleArm = handlePostX - handLeverPivot.x;
+  const handlePostBracketY = [0.04, -0.72];
+  // The post stands just in front of the lever, its pin reaching back into
+  // the lever-end slot.
+  const handlePostZ = valvePlaneZ + 0.075;
+  const valveAngleAmplitude = THREE.MathUtils.degToRad(12);
   const valveSpindleX = rockerFulcrum.x - rockerLeftArm;
   const valveRodLength = Math.hypot(
     rockerFulcrum.x + rockerRightArm - (handLeverPivot.x - handLeverRodArm),
@@ -208,7 +222,8 @@ function steamHammer(movement) {
   const spindleLinkLength = 0.36;
   const spoolBelowSpindlePin = 0.58;
   const valveSliderY = rockerFulcrum.y - spindleLinkLength - spoolBelowSpindlePin;
-  const valveSpoolHalfTravel = 0.10;
+  // Spool travel each way at full command (see valveKinematics).
+  const valveSpoolHalfTravel = 0.058;
   // Kept for the shared valve-command readout.
   const valvePivot = handLeverPivot;
   const valveBaseAngle = 0;
@@ -242,8 +257,12 @@ function steamHammer(movement) {
     const spindleDrop = Math.sqrt(spindleLinkLength ** 2 - (rockerLeftPin.x - valveSpindleX) ** 2);
     const spindlePin = new THREE.Vector3(valveSpindleX, rockerLeftPin.y - spindleDrop, valveLinkZ);
     const spoolPin = new THREE.Vector3(valveSpindleX, spindlePin.y - spoolBelowSpindlePin, valveChestZ);
+    // The handle post slides vertically; its pin rides in the lever slot.
+    const handlePostPin = new THREE.Vector3(handlePostX,
+      handLeverPivot.y + handLeverHandleArm * Math.tan(crankAngle), handlePostZ);
     return {
       command: clampedCommand,
+      handlePostPin,
       crankAngle,
       crankPin,
       rockerAngle,
@@ -548,9 +567,12 @@ function steamHammer(movement) {
   // Slide-valve chest on the front of the cylinder, over the cylinder's
   // admission port, bored vertically for the spool and its spindle.
   const valveChest = addRole(new THREE.Mesh(
+    // Plan outline (y = -z): a box on the front of the barrel, its back
+    // saddled to the barrel, bored for the spindle.
     plate(polygonClipping.difference(
-      poly([[-0.37, -(0.66 - valveChestZ)], [0.27, -(0.66 - valveChestZ)], [0.27, valveChestZ - 0.345], [-0.37, valveChestZ - 0.345]]),
-      poly(circle([valveSpindleX, 0], 0.092, 64))), 1.24, 1.95).rotateX(-Math.PI / 2).translate(0, 0, valveChestZ),
+      poly([[valveSpindleX - 0.22, -1.00], [valveSpindleX + 0.22, -1.00], [valveSpindleX + 0.22, -0.40], [valveSpindleX - 0.22, -0.40]]),
+      poly(circle([0, 0], cylinderOuterRadius + 0.001, 128)),
+      poly(circle([valveSpindleX, -valveChestZ], 0.092, 64))), 1.24, 1.95).rotateX(-Math.PI / 2),
     solidMaterial(cylinderMaterial),
   ), 'slide-valve-chest-on-cylinder-front');
   root.add(valveChest);
@@ -577,13 +599,15 @@ function steamHammer(movement) {
   const rockerLug = addRole(new THREE.Mesh(
     plate(polygonClipping.difference(polygonClipping.union(
       poly([[-0.08, 0], [0.08, 0], [0.08, 2.86 - rockerFulcrum.y], [-0.08, 2.86 - rockerFulcrum.y]]),
-      poly(circle([0, 0], 0.08, 48))), poly(circle([0, 0], valvePinRadius + 0.006, 32))), 0.15, 0.54),
+      poly(circle([0, 0], 0.08, 48))), poly(circle([0, 0], valvePinRadius + 0.006, 32))),
+    // From just clear of the barrel forward to the rocker.
+    Math.sqrt(cylinderOuterRadius ** 2 - (rockerFulcrum.x - 0.08) ** 2) + 0.02, valvePlaneZ - 0.06),
     frameMaterial,
   ), 'fixed-rocker-fulcrum-lug-under-crown');
   rockerLug.position.set(rockerFulcrum.x, rockerFulcrum.y, 0);
   root.add(rockerLug);
   const rockerAxle = makePin(0.30, 'fixed-rocker-fulcrum-pin');
-  rockerAxle.position.set(rockerFulcrum.x, rockerFulcrum.y, 0.63);
+  rockerAxle.position.set(rockerFulcrum.x, rockerFulcrum.y, valvePlaneZ + 0.03);
   root.add(rockerAxle);
   const valveRocker = addRole(new THREE.Group(), 'top-valve-rocker');
   valveRocker.position.copy(rockerFulcrum);
@@ -615,41 +639,72 @@ function steamHammer(movement) {
   valvePitman.userData.length = valveRodLength;
   root.add(valvePitman);
 
-  // Hand lever on a small lug from the right leg, with its upright handle.
+  // Short hand lever on a boss on the right leg's front face.
   const handLug = addRole(new THREE.Mesh(
-    plate(polygonClipping.difference(polygonClipping.union(
-      poly([[-0.08, -0.30], [0.08, -0.30], [0.08, 0], [-0.08, 0]]),
-      poly(circle([0, 0], 0.08, 48))), poly(circle([0, 0], valvePinRadius + 0.006, 32))), 0.0, 0.54),
+    new THREE.CylinderGeometry(0.08, 0.08, valvePlaneZ - 0.03 - (STANDARD_HALF_DEPTH - 0.04), 32)
+      .rotateX(Math.PI / 2),
     frameMaterial,
-  ), 'fixed-hand-lever-fulcrum-lug-on-right-leg');
-  handLug.position.set(handLeverPivot.x, handLeverPivot.y, 0);
+  ), 'fixed-hand-lever-fulcrum-boss-on-right-leg');
+  handLug.position.set(handLeverPivot.x, handLeverPivot.y,
+    (valvePlaneZ - 0.03 + STANDARD_HALF_DEPTH - 0.04) / 2);
   root.add(handLug);
-  const valveLever = addRole(new THREE.Group(), 'valve-hand-lever-with-upright-handle');
+  const valveLever = addRole(new THREE.Group(), 'valve-hand-lever-to-handle-post');
   valveLever.position.copy(handLeverPivot);
   root.add(valveLever);
-  const handEnd = handLeverHandleArm;
+  const handEnd = handLeverHandleArm + 0.07;
+  const postPinRadius = 0.028;
   const leverBar = new THREE.Mesh(plate(polygonClipping.difference(polygonClipping.union(
     poly([[-handLeverRodArm, -0.035], [handEnd, -0.035], [handEnd, 0.035], [-handLeverRodArm, 0.035]]),
     poly(circle([-handLeverRodArm, 0], 0.07, 48)), poly(circle([0, 0], 0.08, 48)),
-    poly([[handEnd - 0.07, -0.035], [handEnd, -0.035], [handEnd, handleRise], [handEnd - 0.07, handleRise]])),
-  poly(circle([-handLeverRodArm, 0], valvePinRadius + 0.004, 32)), poly(circle([0, 0], valvePinRadius + 0.004, 32))), -0.03, 0.03), darkMaterial);
+    capsule([handLeverHandleArm - 0.01, 0], [handLeverHandleArm + 0.03, 0], 0.068, 32)),
+  poly(circle([-handLeverRodArm, 0], valvePinRadius + 0.004, 32)), poly(circle([0, 0], valvePinRadius + 0.004, 32)),
+  // Slot for the post pin: the pin sits at radius arm / cos(angle).
+  capsule([handLeverHandleArm - 0.003, 0], [handLeverHandleArm / Math.cos(valveAngleAmplitude) + 0.003, 0], postPinRadius + 0.004, 32)), -0.03, 0.03), darkMaterial);
   valveLever.add(leverBar);
-  const leverHandle = new THREE.Mesh(new THREE.SphereGeometry(0.075, 22, 14), movingMaterial);
-  leverHandle.position.set(handEnd - 0.035, handleRise + 0.05, 0);
-  valveLever.add(leverHandle);
   const leverAxle = makePin(0.30, 'fixed-hand-lever-fulcrum-pin');
-  leverAxle.position.set(0, 0, 0.03);
   root.add(leverAxle);
-  leverAxle.position.copy(handLeverPivot).setZ(0.63);
+  leverAxle.position.copy(handLeverPivot).setZ(valvePlaneZ + 0.03);
   const crankPinMesh = makePin(0.18, 'hand-lever-valve-rod-pin');
   crankPinMesh.position.set(-handLeverRodArm, 0, 0.06);
   valveLever.add(crankPinMesh);
+  // Brown's upright handle post with its ball, sliding in two brackets from
+  // the leg; its pin rides in the lever's slot.
+  const postRadius = 0.035;
+  const postBelowPin = 0.73;
+  const postAbovePin = 0.49;
+  const handlePost = addRole(new THREE.Group(), 'sliding-upright-valve-handle-post');
+  root.add(handlePost);
+  const postRod = new THREE.Mesh(new THREE.CylinderGeometry(postRadius, postRadius, postBelowPin + postAbovePin, 24), darkMaterial);
+  postRod.position.y = (postAbovePin - postBelowPin) / 2;
+  const postBall = addRole(new THREE.Mesh(new THREE.SphereGeometry(0.075, 24, 16), movingMaterial), 'handle-post-ball');
+  postBall.position.y = postAbovePin + 0.06;
+  const postPin = addRole(new THREE.Mesh(new THREE.CylinderGeometry(postPinRadius, postPinRadius, 0.16, 20), darkMaterial), 'handle-post-pin-in-lever-slot');
+  postPin.rotation.x = Math.PI / 2;
+  postPin.position.z = valvePlaneZ - handlePostZ;
+  handlePost.add(postRod, postBall, postPin);
+  // The two brackets run from the leg's front face out to the post, each
+  // bored for it. Brown's lower one runs on past the post as a short foot.
+  const bracketDepth = [STANDARD_HALF_DEPTH - 0.04, handlePostZ + 0.09];
+  const handlePostBrackets = handlePostBracketY.map((y, index) => {
+    const legX = index === 0 ? 1.02 : 1.30;
+    const endX = handlePostX + (index === 0 ? 0.09 : 0.16);
+    const outline = polygonClipping.difference(polygonClipping.union(
+      poly([[legX, -bracketDepth[0]], [endX, -bracketDepth[0]], [endX, -bracketDepth[1]], [legX, -bracketDepth[1]]]),
+      poly(circle([handlePostX, -handlePostZ], 0.09, 48))),
+    poly(circle([handlePostX, -handlePostZ], postRadius + 0.004, 48)));
+    const bracket = addRole(new THREE.Mesh(
+      plate(outline, y - 0.04, y + 0.04).rotateX(-Math.PI / 2),
+      frameMaterial,
+    ), `fixed-handle-post-bracket-${index ? 'lower' : 'upper'}-on-right-leg`);
+    root.add(bracket);
+    return bracket;
+  });
 
   // Brown's steam pipe comes in from the left, in front of the left leg, to
   // the side of the valve chest.
   const supplyPipe = addRole(rodBetween(
-    new THREE.Vector3(-2.00, 1.55, valveChestZ),
-    new THREE.Vector3(-0.37, 1.55, valveChestZ),
+    new THREE.Vector3(-2.00, 1.55, STANDARD_HALF_DEPTH + 0.12),
+    new THREE.Vector3(valveSpindleX - 0.22, 1.55, STANDARD_HALF_DEPTH + 0.12),
     0.085,
     darkMaterial,
     20,
@@ -672,6 +727,7 @@ function steamHammer(movement) {
     steamChamber.position.y = cylinderInnerBottomY + chamberHeight / 2;
     steamChamber.visible = state.steamVisible;
     valveLever.rotation.z = state.valve.crankAngle;
+    handlePost.position.copy(state.valve.handlePostPin);
     valveRocker.rotation.z = state.valve.rockerAngle;
     valveSpool.position.copy(state.valve.spoolPin);
     placeLink(valvePitman, state.valve.crankPin, state.valve.rockerRightPin);
@@ -717,6 +773,8 @@ function steamHammer(movement) {
     topHoldEndPhase,
     handLeverPivot: handLeverPivot.clone(),
     handLeverRodArm,
+    handLeverHandleArm,
+    handlePostX,
     rockerFulcrum: rockerFulcrum.clone(),
     rockerLeftArm,
     rockerRightArm,
@@ -751,6 +809,8 @@ function steamHammer(movement) {
       steamChamber,
       supplyPipe,
       handLug,
+      handlePost,
+      handlePostBrackets,
       leverAxle,
       rockerAxle,
       rockerLug,
@@ -820,7 +880,7 @@ function steamHammer(movement) {
         engravingEvidence:
           'Brown shows a tall portal frame supporting the upper vertical cylinder, a single straight piston rod ending in a cylindrical hammer head over an anvil, a side steam passage and an external valve lever.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, mass, lift, gravity scale, steam pressure, valve law, fall duration, impact compliance or timing. A 160 kg rigid moving assembly, 1.05 m lift, 0.27 m piston radius, terrestrial gravity, force-derived pressure, ideal rigid impact, exact slider linkage, colors and a 5.2-second cycle are independently engineered.',
+          'Brown gives no dimensions, mass, lift, gravity scale, steam pressure, valve law, fall duration, impact compliance or timing. A 160 kg rigid moving assembly, 1.05 m lift, 0.557 m piston radius, terrestrial gravity, force-derived pressure, ideal rigid impact, exact slider linkage, colors and a 5.2-second cycle are independently engineered.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 470',
@@ -875,7 +935,10 @@ export function createAuthoredSteamHammerMovement(movement) {
       root.traverse((object) => {
         if (object.userData?.role !== 'fixed-upper-front-cutaway-steam-cylinder') return;
         object.geometry.dispose();
-        object.geometry = portedBarrel(0.378, 0.44, 1.25, 3.10, 1.335, 0.075, 1);
+        // The admission port is no wider than the chest over it and faces the
+        // chest's centre (the spindle line, just left of the front).
+        object.geometry = sidePortedShell(0.598, 0.66, 1.25, 3.10, 1.335, 0.075, 1, Math.cos(0.2));
+        object.rotation.y = -Math.PI / 2 - Math.atan2(0.05, 0.66);
         object.material = solidMaterial([].concat(object.material)[0]);
       });
     },

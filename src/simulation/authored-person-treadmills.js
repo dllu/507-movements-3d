@@ -633,11 +633,17 @@ function externalPersonTreadmill(movement) {
   // stands in front of the drum between the spur wheel and the man: its top
   // rises above the wheel's right-hand rim, higher than the rail, and it
   // runs down across the boards to the ground just left of his feet. It
-  // lies in the upright plane x = 1.16, clear of the boards (x <= 1.06),
-  // the rail (x = 1.29) and the man (x >= 1.3 at the rail).
+  // lies in the upright plane x = 1.56, clear of the drum's end rings
+  // (x <= 1.35) and of the man, who stays behind z = 0.13 where the plank
+  // passes; its front face is where the rail (axis x = 1.66, radius 0.055)
+  // seats against it.
   {
-    const guardX = 1.16;
-    const start = new THREE.Vector3(guardX, 2.0, 1.48);
+    const guardX = handRailX - 0.055 - 0.045;
+    // Brown's plank top stands well above the rail (the rail is bolted
+    // through the hole about a seventh of the way down), so the plank runs on
+    // the same line up to half a unit above the rail.
+    const topY = handRailY + 0.5;
+    const start = new THREE.Vector3(guardX, topY, 1.48 + (topY - 2.0) / 2);
     const end = new THREE.Vector3(guardX, -2.0, -0.52);
     const along = end.clone().sub(start);
     diagonalGuard.geometry.dispose();
@@ -663,23 +669,30 @@ function externalPersonTreadmill(movement) {
     railPosts.push(post);
     fixedFrame.add(post);
   }
-  // Pass 64: the rail's near end runs on to the top of the diagonal side
-  // plank and is bolted to it by a short bracket; Brown draws no post under
-  // its far end, which runs straight off the plate past the drum's end ring
-  // and ends cleanly (a capped solid rod, not an open tube).
-  const railNearZ = 1.48;
+  // Pass 65: the rail's near end stops at the diagonal plank and is fastened
+  // by a single through-bolt in Brown's drawn hole near the plank top (no
+  // box bracket). Its far end runs straight off the plate past the drum's
+  // end ring and ends cleanly (a capped solid rod, not an open tube).
+  // At rail height the plank's face spans z = plankZ +/- 0.12; the rail end
+  // seats on that face.
+  const plankZAtRail = 1.48 + (handRailY - 2.0) / 2;
+  const railNearZ = plankZAtRail + 0.08;
   const railFarZ = handRailStart.z;
   handRail.geometry.dispose();
   handRail.geometry = new THREE.CylinderGeometry(0.055, 0.055, railNearZ - railFarZ, 16)
     .rotateX(Math.PI / 2)
     .translate(handRailX, handRailY, (railNearZ + railFarZ) / 2);
-  const railBracket = new THREE.Mesh(
-    new THREE.BoxGeometry(handRailX + 0.07 - 1.12, handRailY + 0.08 - 1.92, 0.16),
-    frameMaterial,
+  // The bolt runs from the rail axis into the plank (0.09 thick),
+  // ending inside it, so nothing stands out behind; the rail seats on the
+  // plank face at Brown's hole.
+  const railBolt = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.035, 0.035, 0.12, 14)
+      .rotateZ(Math.PI / 2)
+      .translate(handRailX - 0.06, handRailY, plankZAtRail + 0.02),
+    darkMaterial,
   );
-  railBracket.position.set((handRailX + 0.07 + 1.12) / 2, (handRailY + 0.08 + 1.92) / 2, railNearZ);
-  railBracket.userData.role = 'bracket-bolting-hand-rail-to-top-of-side-plank';
-  fixedFrame.add(railBracket);
+  railBolt.userData.role = 'bolt-fastening-hand-rail-into-hole-in-side-plank';
+  fixedFrame.add(railBolt);
 
   const update = (time) => {
     const state = stateAtTime(time);

@@ -62,6 +62,9 @@ function selfActingWeir(movement) {
   const downstreamWaterLevel = 0.46;
   const channelFloorY = -0.05;
   const groundY = -0.22;
+  const crestFreeboard = 0.06;
+  const ordinaryNotchHead = ordinaryWaterLevel - notchBottomY;
+  const ordinaryNotchFlowFraction = 0.48;
   const riseEndPhase = 0.28;
   const openingEndPhase = 0.50;
   const drainEndPhase = 0.68;
@@ -187,9 +190,22 @@ function selfActingWeir(movement) {
       0,
       1,
     );
-    const notchHead = Math.max(0, waterLevel - notchBottomY);
-    const notchFlowFraction = (1 - contactDrive)
-      * (0.48 + 0.52 * floodFraction);
+    // The turned upper leaf lowers its top and its notch sill. The head
+    // water can never stand above the leaf's upstream top edge: it spills
+    // over the sill instead, so the scheduled level is capped just under
+    // that edge.
+    const upstreamCornerY = (localY) => upperPivot.y
+      - (upperThickness / 2) * Math.sin(gate.upperAngle)
+      + localY * Math.cos(gate.upperAngle);
+    const upperTopEdgeY = upstreamCornerY(upperTopLocal);
+    const notchSillY = upstreamCornerY(notchBottomLocal);
+    waterLevel = Math.min(waterLevel, upperTopEdgeY - crestFreeboard);
+    // Notch discharge follows the head over the (possibly lowered) sill as
+    // a sharp-crested weir, q ~ h^(3/2), scaled so the ordinary head gives
+    // the ordinary flow.
+    const notchHead = Math.max(0, waterLevel - notchSillY);
+    const notchFlowFraction = ordinaryNotchFlowFraction
+      * (notchHead / ordinaryNotchHead) ** 1.5;
     let regime = 'ordinary-closed-weir-with-notch-overflow';
     if (phase >= riseEndPhase && phase < openingEndPhase) {
       regime = 'rising-head-turns-upper-leaf-and-pushes-lower-leaf-back';

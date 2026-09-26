@@ -259,8 +259,18 @@ test('movement 470 hand lever, long valve rod, top rocker, spindle link and vert
     assert.ok(Math.abs(valve.rockerRightPin.x - valve.crankPin.x) < 0.1);
     assert.ok(valve.rockerRightPin.y - valve.crankPin.y > 2.5);
     spoolYs.push(valve.spoolPin.y);
+    // Brown's sliding handle post: its pin lies on the lever's axis, within
+    // the lever-end slot, and the post stays on its vertical line.
+    const pin = valve.handlePostPin;
+    near(pin.x, geometry.handlePostX, 1e-12, `handle post line at command ${command}`);
+    const along = Math.hypot(pin.x - geometry.handLeverPivot.x, pin.y - geometry.handLeverPivot.y);
+    near(Math.atan2(pin.y - geometry.handLeverPivot.y, pin.x - geometry.handLeverPivot.x),
+      valve.crankAngle, 1e-12, `post pin on the lever axis at command ${command}`);
+    assert.ok(along >= geometry.handLeverHandleArm - 1e-12
+      && along <= geometry.handLeverHandleArm / Math.cos(geometry.valveAngleAmplitude) + 1e-12);
   }
-  assert.ok(Math.max(...spoolYs) - Math.min(...spoolYs) > 0.15, 'the spool strokes');
+  // Brown's broad cylinder and slender uprights leave a short spool stroke.
+  assert.ok(Math.max(...spoolYs) - Math.min(...spoolYs) > 0.1, 'the spool strokes');
 
   for (const phase of [0, 0.03, 0.08, 0.30, 0.50, 0.54, 0.58, 0.80]) {
     const state = stateAtPhase(phase);

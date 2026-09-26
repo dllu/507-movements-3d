@@ -241,11 +241,20 @@ test('movement 216 preserves the source radii, sector spans, transition teeth, a
         Math.atan2(point.y, point.x),
         geometry.centralToothSpecs[0].centerAngle,
       ),
-      THREE.MathUtils.degToRad(degrees),
+      THREE.MathUtils.degToRad(degrees) * geometry.transitionWidthScale,
       2e-15,
       `built external transition offset ${index}`,
     );
   });
+  // Brown's square teeth: every working tooth has parallel flanks.
+  const chordWidth = (profile, first, second) => profile[first].distanceTo(profile[second]);
+  const pinionTooth = geometry.centralToothProfiles[3];
+  near(chordWidth(pinionTooth, 0, 3), geometry.externalToothWidth, 1e-12, 'square external tooth root width');
+  near(chordWidth(pinionTooth, 1, 2), geometry.externalToothWidth, 1e-12, 'square external tooth tip width');
+  const ringTooth = geometry.ringToothProfiles[5];
+  near(chordWidth(ringTooth, 1, 2), geometry.ringToothTipWidth, 1e-12, 'internal tooth tip width');
+  near(chordWidth(ringTooth, 0, 3), geometry.ringToothRootWidth, 1e-12, 'internal tooth root width');
+  assert.ok(geometry.ringToothTipWidth / geometry.ringToothRootWidth > 0.85, 'internal flanks are near-parallel');
 
   assert.deepEqual(
     sourceAnimation.keyframes.map(({ cpos, pinionDirection }) => (

@@ -39,7 +39,10 @@ export function correctMarineRotor(root,id){
   d.reconstructionNote='Closed finite blades retain the exact constant-lead helicoid as their mid-surface. Their display thickness is reconstructed. Bored shaft journals and a lowered support base clear the full rotation. Four-second viewing period slows the representative90rpm law; no CFD, cavitation, structural or loaded propulsion validation is implied.';
  }
  fitPistonGuide(root,d.update,g.cycleDuration);
- d.cameraDirection=id===487?new THREE.Vector3(.7,.7,15):new THREE.Vector3(15,1,10);
+ // 488: Brown looks at the screw almost square to the shaft, a little from the
+ // left and above (he shows the left collar's face), so both blades show the
+ // same breadth of face.
+ d.cameraDirection=id===487?new THREE.Vector3(.7,.7,15):new THREE.Vector3(-1.6,1.4,15);
  if(id===488){
   const bounds=new THREE.Box3(),point=new THREE.Vector3();
   for(let i=0;i<=64;i++){d.update(g.cycleDuration*i/64);root.updateMatrixWorld(true);root.traverseVisible(o=>{const p=o.geometry?.attributes.position;if(p)for(let j=0;j<p.count;j++)bounds.expandByPoint(point.fromBufferAttribute(p,j).applyMatrix4(o.matrixWorld));});}

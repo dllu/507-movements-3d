@@ -2,6 +2,7 @@ import { finishSounding247Parts } from './release-mechanism-working-parts.js';
 import * as THREE from 'three';
 import { makeLaidRopeMesh } from './laid-rope.js';
 import { makeHaulingHand } from './hauling-hand.js';
+import { groundBlock } from './ground-block.js';
 import {
   PALETTE,
   makeBeam,
@@ -293,10 +294,16 @@ function seabedTriggeredSoundingWeight(movement) {
     weightImpact: 5.3,
     probeDecompressed: 5.6,
     rodRecovered: 7.3,
-    manualReloadBegins: 7.8,
-    manualReloadLifted: 9.3,
-    manualCatchReset: 10.1,
-    weightSeated: 10.6,
+    // Loop reset, all out of view: the recovered rod is hauled on up past
+    // the top of the view, the spent weight (left on the bottom, below the
+    // view) fades out, the detent is released and the catch set, a fresh
+    // weight is threaded on and fades in on the catch, and the re-armed
+    // rod is lowered back into Brown's pose.
+    rodHauledClear: 8.5,
+    spentWeightGone: 8.75,
+    catchReset: 9.1,
+    freshWeightShown: 9.35,
+    reloadedDescentBegins: 9.4,
     cycleClosure: cyclePeriod,
   });
 
@@ -336,8 +343,10 @@ function seabedTriggeredSoundingWeight(movement) {
     + weightOpeningHalfHeight;
   const loadedWeightCenterY = recoveredBodyY
     + loadedWeightCenterRelativeY;
-  const seatClearance = 0.12;
-  const preloadedWeightCenterY = loadedWeightCenterY + seatClearance;
+  // How far above the recovered pose the rod is hauled so that it, the
+  // catch and the fresh weight are wholly above the view while re-armed.
+  const haulClearance = 10;
+  const hauledBodyY = recoveredBodyY + haulClearance;
   const groundedWeightCenterY = seabedY + weightOpeningHalfHeight;
 
   const zeroAngleState = Object.freeze({
@@ -371,12 +380,12 @@ function seabedTriggeredSoundingWeight(movement) {
         heldRetractedAngle,
       );
     }
-    if (cycleTime < timeline.manualReloadLifted) return heldAngleState;
-    if (cycleTime < timeline.manualCatchReset) {
+    if (cycleTime < timeline.rodHauledClear) return heldAngleState;
+    if (cycleTime < timeline.catchReset) {
       return transitionState(
         cycleTime,
-        timeline.manualReloadLifted,
-        timeline.manualCatchReset,
+        timeline.rodHauledClear,
+        timeline.catchReset,
         heldRetractedAngle,
         0,
       );
@@ -453,7 +462,25 @@ function seabedTriggeredSoundingWeight(movement) {
         recoveredBodyY,
       );
     }
-    return { acceleration: 0, value: recoveredBodyY, velocity: 0 };
+    if (cycleTime < timeline.rodHauledClear) {
+      return transitionState(
+        cycleTime,
+        timeline.rodRecovered,
+        timeline.rodHauledClear,
+        recoveredBodyY,
+        hauledBodyY,
+      );
+    }
+    if (cycleTime < timeline.reloadedDescentBegins) {
+      return { acceleration: 0, value: hauledBodyY, velocity: 0 };
+    }
+    return transitionState(
+      cycleTime,
+      timeline.reloadedDescentBegins,
+      timeline.cycleClosure,
+      hauledBodyY,
+      recoveredBodyY,
+    );
   };
 
   const weightStateForTime = (
@@ -500,7 +527,7 @@ function seabedTriggeredSoundingWeight(movement) {
         velocity: -modelGravity * elapsed,
       };
     }
-    if (cycleTime < timeline.manualReloadBegins) {
+    if (cycleTime < timeline.catchReset) {
       return {
         acceleration: 0,
         externallySupported: false,
@@ -508,39 +535,12 @@ function seabedTriggeredSoundingWeight(movement) {
         velocity: 0,
       };
     }
-    if (cycleTime < timeline.manualReloadLifted) {
-      const lift = transitionState(
-        cycleTime,
-        timeline.manualReloadBegins,
-        timeline.manualReloadLifted,
-        groundedWeightCenterY,
-        preloadedWeightCenterY,
-      );
-      return { ...lift, externallySupported: true };
-    }
-    if (cycleTime < timeline.manualCatchReset) {
-      return {
-        acceleration: 0,
-        externallySupported: true,
-        value: preloadedWeightCenterY,
-        velocity: 0,
-      };
-    }
-    if (cycleTime < timeline.weightSeated) {
-      const seating = transitionState(
-        cycleTime,
-        timeline.manualCatchReset,
-        timeline.weightSeated,
-        preloadedWeightCenterY,
-        loadedWeightCenterY,
-      );
-      return { ...seating, externallySupported: true };
-    }
+    // A fresh weight, seated on the reset catch of the hauled rod.
     return {
-      acceleration: 0,
+      acceleration: bodyState.acceleration,
       externallySupported: false,
-      value: loadedWeightCenterY,
-      velocity: 0,
+      value: bodyState.value + loadedWeightCenterRelativeY,
+      velocity: bodyState.velocity,
     };
   };
 
@@ -556,17 +556,14 @@ function seabedTriggeredSoundingWeight(movement) {
       return 'probe-decompression-with-detent-held';
     }
     if (cycleTime < timeline.rodRecovered) return 'rod-recovery';
-    if (cycleTime < timeline.manualReloadBegins) return 'released-dwell';
-    if (cycleTime < timeline.manualReloadLifted) {
-      return 'external-manual-weight-lift';
+    if (cycleTime < timeline.rodHauledClear) return 'rod-hauled-clear-of-view';
+    if (cycleTime < timeline.catchReset) {
+      return 'out-of-view-detent-release-and-catch-reset';
     }
-    if (cycleTime < timeline.manualCatchReset) {
-      return 'external-manual-detent-reset';
+    if (cycleTime < timeline.reloadedDescentBegins) {
+      return 'out-of-view-fresh-weight-seated';
     }
-    if (cycleTime < timeline.weightSeated) {
-      return 'external-manual-weight-seating';
-    }
-    return 'loaded-dwell';
+    return 're-armed-rod-lowered-into-view';
   };
 
   const stateAtTime = (time) => {
@@ -624,31 +621,32 @@ function seabedTriggeredSoundingWeight(movement) {
     const supportRadialReach = catchSupportWorld.x;
     const supportOverlap = supportRadialReach - boreRadius;
     const detentLatched = cycleTime >= timeline.supportRelease
-      && cycleTime < timeline.manualReloadLifted;
-    const manualResetActive = cycleTime >= timeline.manualReloadBegins
-      && cycleTime < timeline.weightSeated;
+      && cycleTime < timeline.rodHauledClear;
+    const outOfViewReset = cycleTime >= timeline.rodHauledClear
+      && cycleTime < timeline.reloadedDescentBegins;
     const probeToCatchContactActive = (
       cycleTime < timeline.weightImpact
-      || cycleTime >= timeline.manualCatchReset
+      || cycleTime >= timeline.catchReset
     );
     const catchToWeightContactActive = (
       cycleTime < timeline.supportRelease
-      || cycleTime >= timeline.weightSeated
+      || cycleTime >= timeline.catchReset
     );
     const weightOnSeabed = cycleTime >= timeline.weightImpact
-      && cycleTime < timeline.manualReloadBegins;
-    const resetSlingOpacity = cycleTime < timeline.manualReloadBegins
-      || cycleTime >= timeline.weightSeated
-      ? 0
-      : cycleTime < timeline.manualReloadBegins + 0.18
-        ? smootherStep01(
-          (cycleTime - timeline.manualReloadBegins) / 0.18,
-        )
-        : cycleTime > timeline.weightSeated - 0.18
-          ? 1 - smootherStep01(
-            (cycleTime - (timeline.weightSeated - 0.18)) / 0.18,
-          )
-          : 1;
+      && cycleTime < timeline.catchReset;
+    // The spent weight fades out below the view and the fresh one fades in
+    // above it; neither fade is ever on screen.
+    const weightOpacity = cycleTime < timeline.rodHauledClear
+      ? 1
+      : cycleTime < timeline.spentWeightGone
+        ? 1 - smootherStep01((cycleTime - timeline.rodHauledClear)
+          / (timeline.spentWeightGone - timeline.rodHauledClear))
+        : cycleTime < timeline.catchReset
+          ? 0
+          : cycleTime < timeline.freshWeightShown
+            ? smootherStep01((cycleTime - timeline.catchReset)
+              / (timeline.freshWeightShown - timeline.catchReset))
+            : 1;
 
     return {
       bodyAcceleration: body.acceleration,
@@ -673,7 +671,7 @@ function seabedTriggeredSoundingWeight(movement) {
       cyclePhase: cycleTime / cyclePeriod,
       cycleTime,
       detentLatched,
-      manualResetActive,
+      outOfViewReset,
       probeAcceleration,
       probeFootContactY,
       probeOffset,
@@ -681,7 +679,6 @@ function seabedTriggeredSoundingWeight(movement) {
       probePusherWorldY,
       probeToCatchContactActive,
       probeVelocity,
-      resetSlingOpacity,
       sourcePose: cycleTime === 0,
       stage: stageAtTime(cycleTime),
       supportOverlap,
@@ -693,6 +690,7 @@ function seabedTriggeredSoundingWeight(movement) {
       weightLowerOpeningY,
       weightOnSeabed,
       weightUpperOpeningY,
+      weightOpacity,
       weightVelocity: weight.velocity,
     };
   };
@@ -726,19 +724,19 @@ function seabedTriggeredSoundingWeight(movement) {
     roughness: 0.72,
     side: THREE.DoubleSide,
   });
-  const seabedMaterial = matte(0xc8b792, { roughness: 0.94 });
-
   const seabed = new THREE.Group();
-  // Brown draws no sea bottom. The probe and the dropped weight still need
-  // something to land on: a solid bed of sediment, whose top is the contact
-  // plane, rather than a thin sheet.
-  const seabedDepth = 0.9;
-  const seabedSlab = new THREE.Mesh(
-    new THREE.BoxGeometry(4.2, seabedDepth, 2.4),
-    seabedMaterial,
-  );
-  seabedSlab.position.y = seabedY - seabedDepth / 2;
-  seabedSlab.userData.role = 'sea-bottom-contact-plane';
+  // Brown draws no sea bottom, but the caption has the weight detach on
+  // striking it. It is kept as a plain thin ground surface, wide enough
+  // that its ends stay out of the view, whose top is the contact plane.
+  const seabedThickness = 0.04;
+  const seabedSlab = groundBlock(24, seabedThickness, 3.4, {
+    name: 'sea-bottom-contact-plane',
+  });
+  // Subdivided so the visible surface has vertices inside the view (the
+  // camera-fit check samples rendered vertices while the rod is re-armed).
+  seabedSlab.geometry.dispose();
+  seabedSlab.geometry = new THREE.BoxGeometry(24, seabedThickness, 3.4, 96, 1, 12);
+  seabedSlab.position.y = seabedY - seabedThickness / 2;
   const seabedRings = [];
   seabed.add(seabedSlab);
   seabed.userData.fixed = true;
@@ -964,51 +962,10 @@ function seabedTriggeredSoundingWeight(movement) {
   weightAssembly.userData.massRole = 'discarded-ballast';
   root.add(weightAssembly);
 
-  const resetSling = new THREE.Group();
-  resetSling.userData.external = true;
-  resetSling.userData.role =
-    'visible-external-sling-used-only-for-nonautomatic-loop-reload';
-  // Brown draws no reload gear: the loop reset is our addition, so it is
-  // kept to a plain basket sling of the same laid rope. The rope passes
-  // under the ball in a plane behind the rod (clear of the front cutaway),
-  // both parts meet at a hook, and the fall runs up out of the plate to a
-  // hauling hand, as in plate 12.
-  const slingRopeRadius = 0.05;
-  const slingPlaneZ = -0.62;
-  const slingMaterial = matte(PALETTE.belt, { roughness: 0.76 });
-  const slingPlaceholder = new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
-  const slingMain = makeLaidRopeMesh(slingPlaceholder, slingMaterial, { radius: slingRopeRadius, tubularSegments: 96 });
-  slingMain.userData.role = 'external-reload-sling-fall';
-  const slingBasket = makeLaidRopeMesh(slingPlaceholder, slingMaterial, { radius: slingRopeRadius, tubularSegments: 160 });
-  slingBasket.userData.role = 'external-reload-basket-sling-under-weight';
-  const slingHook = new THREE.Mesh(
-    new THREE.TorusGeometry(0.1, 0.035, 10, 24),
-    matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
-  );
-  slingHook.userData.role = 'external-reload-sling-hook';
-  const slingHand = makeHaulingHand(new THREE.Vector3(0, -1, 0), slingRopeRadius / 0.8, {
-    armDirection: new THREE.Vector3(0.35, 1, 0),
-    tailPoints: [
-      new THREE.Vector3(0, -0.15, 0),
-      new THREE.Vector3(0, 0.24, 0),
-      new THREE.Vector3(-0.12, 0.45, 0),
-      new THREE.Vector3(-0.35, 0.5, 0),
-      new THREE.Vector3(-0.55, 0.3, 0),
-      new THREE.Vector3(-0.6, -0.1, 0),
-    ],
-  });
-  slingHand.scale.setScalar(0.8);
-  // Set off to one side of the sounding line, which stays on the rod.
-  slingHand.position.set(1.1, 10.6, slingPlaneZ);
-  slingHand.userData.role = 'reload-sling-hauling-hand-above-plate';
-  resetSling.add(slingMain, slingBasket, slingHook, slingHand);
-  setMaterialOpacity(resetSling, 0);
-  root.add(resetSling);
-
   // The sounding line: tied through an eye on the rod's top end (above
   // Brown's crop) and paid out and hauled in through the leadsman's hand
   // above, in every phase: the rod is lowered and recovered on it, and it
-  // stays tied while the sling brings the weight back.
+  // stays tied while the rod is hauled clear and re-armed.
   const rodTopLocalY = housingTop.position.y + 1.65;
   const lineEye = new THREE.Mesh(new THREE.TorusGeometry(0.13, 0.04, 12, 32), darkMaterial);
   lineEye.position.set(0, rodTopLocalY + 0.13, 0);
@@ -1019,9 +976,9 @@ function seabedTriggeredSoundingWeight(movement) {
   bodyAssembly.add(lineEye, lineEyeShank);
   const lineRadius = 0.045;
   const lineHandY = 11.6;
-  // Its own material: the reload sling fades in and out, the line does not.
   const lineMaterial = matte(PALETTE.belt, { roughness: 0.76 });
-  const soundingLine = makeLaidRopeMesh(slingPlaceholder, lineMaterial, { radius: lineRadius, tubularSegments: 96 });
+  const linePlaceholder = new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(0, 1, 0));
+  const soundingLine = makeLaidRopeMesh(linePlaceholder, lineMaterial, { radius: lineRadius, tubularSegments: 96 });
   soundingLine.userData.role = 'sounding-line-tied-to-rod';
   const lineKnot = new THREE.Mesh(new THREE.SphereGeometry(lineRadius * 1.7, 16, 12), lineMaterial);
   lineKnot.userData.role = 'sounding-line-knot-at-eye';
@@ -1064,7 +1021,6 @@ function seabedTriggeredSoundingWeight(movement) {
     probeShaft,
     lineEye,
     lineHand,
-    resetSling,
     seabed,
     soundingLine,
     seabedSlab,
@@ -1087,14 +1043,14 @@ function seabedTriggeredSoundingWeight(movement) {
     maximumProbeRise,
     modelGravity,
     pivot: pivot.clone(),
-    preloadedWeightCenterY,
+    haulClearance,
+    hauledBodyY,
     probeFootContactLocalY,
     recoveredBodyY,
     releaseAngle,
     releaseBodyY,
     releaseLowerOpeningY,
     releaseWeightCenterY,
-    seatClearance,
     seabedContactBodyY,
     seabedY,
     sourceScale,
@@ -1113,7 +1069,7 @@ function seabedTriggeredSoundingWeight(movement) {
     catchType: 'single-pivot-bell-crank-with-radial-support-nose',
     input: 'bottom-projecting-seabed-probe',
     loopReset:
-      'explicit-external-sling-lifts-the-discarded-weight-and-manually-resets-the-detent',
+      'rod-hauled-clear-of-view-rearmed-with-fresh-weight-out-of-view-and-lowered-back',
     oneShotRelease: true,
     output: 'detachable-bored-sounding-weight',
     probeDegreeOfFreedom: 'one-vertical-prismatic-slide-relative-to-rod',
@@ -1192,38 +1148,15 @@ function seabedTriggeredSoundingWeight(movement) {
       ),
     ]);
 
-    // The basket passes under the ball behind the rod (radius 0.43).
-    const slingJunction = new THREE.Vector3(
-      0,
-      state.weightCenterY + weightOuterRadius + 0.38,
-      slingPlaneZ,
-    );
-    const basketRadius = Math.sqrt((weightOuterRadius + slingRopeRadius + 0.03) ** 2 - slingPlaneZ ** 2);
-    const junctionRise = slingJunction.y - state.weightCenterY;
-    const tangentAngle = Math.acos(basketRadius / junctionRise);
-    const basketPoint = (angle) => new THREE.Vector3(
-      basketRadius * Math.cos(angle),
-      state.weightCenterY + basketRadius * Math.sin(angle),
-      slingPlaneZ,
-    );
-    const basket = new THREE.CurvePath();
-    const basketStart = Math.PI / 2 + tangentAngle;
-    const basketEnd = Math.PI * 2.5 - tangentAngle;
-    basket.add(new THREE.LineCurve3(slingJunction.clone(), basketPoint(basketStart)));
-    const basketArc = new THREE.Curve();
-    basketArc.getPoint = (t, target = new THREE.Vector3()) => target.copy(
-      basketPoint(basketStart + (basketEnd - basketStart) * t));
-    basket.add(basketArc);
-    basket.add(new THREE.LineCurve3(basketPoint(basketEnd), slingJunction.clone()));
-    slingBasket.userData.setCurve(basket);
-    slingMain.userData.setCurve(new THREE.LineCurve3(slingJunction, slingHand.position.clone()));
-    slingHook.position.copy(slingJunction);
     // The line leaves the top of the eye, knotted there.
     const eyeTop = new THREE.Vector3(0, state.bodyPositionY + rodTopLocalY + 0.13 + 0.13, 0);
     lineKnot.position.copy(eyeTop);
+    // The leadsman's hand hauls the line in with the rod (above the view).
+    lineHand.position.y = lineHandY
+      + Math.max(0, state.bodyPositionY - recoveredBodyY);
     soundingLine.userData.setCurve(new THREE.LineCurve3(eyeTop, lineHand.position.clone()));
-    resetSling.visible = state.resetSlingOpacity > 0;
-    setMaterialOpacity(resetSling, state.resetSlingOpacity);
+    weightAssembly.visible = state.weightOpacity > 0;
+    setMaterialOpacity(weightAssembly, state.weightOpacity);
 
     bodyAssembly.userData.velocity = new THREE.Vector3(
       0,
@@ -1271,10 +1204,10 @@ function seabedTriggeredSoundingWeight(movement) {
         verticalGap: state.weightLowerOpeningY
           - state.catchSupportPosition.y,
       },
-      externalReloadSling: {
-        active: state.manualResetActive,
+      outOfViewReset: {
+        active: state.outOfViewReset,
         automatic: false,
-        opacity: state.resetSlingOpacity,
+        weightOpacity: state.weightOpacity,
       },
       housingToWeightBore: {
         interference: false,
@@ -1329,7 +1262,9 @@ export function createAuthoredSoundingWeightMovement(movement) {
     // lowered rod: the rod, catch and loaded weight stay where the plate
     // draws them while the contact line rises to meet the probe, and after
     // release the line and the dropped weight sink out of the bottom of the
-    // view as the rod is recovered. The sling brings the weight back up.
+    // view as the rod is recovered. Above its recovered pose the view stops
+    // following: the rod is hauled on out of the top of the view, re-armed
+    // there with a fresh weight, and lowered back into Brown's pose.
     // Relative motion, contacts and all model-frame kinematics are unchanged;
     // only this display frame is offset.
     const { root } = model;
@@ -1342,13 +1277,13 @@ export function createAuthoredSoundingWeightMovement(movement) {
     model.update = (time) => {
       frameUpdate(time);
       displayFrame.position.y = recoveredBodyY
-        - root.userData.kinematics.bodyPositionY;
+        - Math.min(recoveredBodyY, root.userData.kinematics.bodyPositionY);
     };
     root.userData.displayFrame247 = displayFrame;
     // Fit the plate pose: rod broken off above the weight, weight, window
     // and probe foot, with the contact line just in view at its highest
     // (probe compressed). The dropped weight and the line leave through the
-    // bottom edge during recovery and the sling passes out of the top.
+    // bottom edge during recovery; the rod leaves through the top to re-arm.
     const fitBounds = new THREE.Box3();
     const partBounds = new THREE.Box3();
     model.update(0);

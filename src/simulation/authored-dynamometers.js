@@ -206,9 +206,11 @@ function hoopReactionDynamometer(movement) {
   // Brown draws the hoop edgewise as a broad flat band standing in front of
   // the gears, only a little taller than the gear box. Its bore must still
   // clear the carried miters' tooth corners (1.333 from the shaft axis in the
-  // hoop plane), so it is kept as tight as that allows.
-  const hoopInnerRadius = 1.36;
-  const hoopOuterRadius = 1.50;
+  // hoop plane), so it is kept as tight as that allows: a thin rim with
+  // shallow teeth, about 1.37 times the box's half-height. Brown's 1.2 would
+  // cut through the carried miters.
+  const hoopInnerRadius = 1.35;
+  const hoopOuterRadius = 1.44;
   const hoopAxialWidth = 0.62;
   const hoopRadius = (hoopInnerRadius + hoopOuterRadius) / 2;
   const hoopTubeRadius = (hoopOuterRadius - hoopInnerRadius) / 2;
@@ -485,8 +487,8 @@ function hoopReactionDynamometer(movement) {
   // periphery (tips on the former outer radius), with no mating pinion,
   // because Brown draws none.
   const hoopTeeth = 64;
-  // Roots stay outside the carrier arms and braces seated 0.07 into the rim.
-  const hoopRootRadius = hoopOuterRadius - 0.055;
+  // Roots stay outside the carrier arms and braces seated 0.035 into the rim.
+  const hoopRootRadius = hoopOuterRadius - 0.045;
   const hoopShape = new THREE.Shape();
   const hoopPitchAngle = Math.PI * 2 / hoopTeeth;
   const hoopProfile = [
@@ -586,10 +588,13 @@ function hoopReactionDynamometer(movement) {
   const planetAxles = [];
   for (const y of [-1, 1]) {
     const axle = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.068, 0.068, 0.57, 22),
+      new THREE.CylinderGeometry(0.075, 0.075, 0.36, 32),
       darkMaterial,
     );
-    axle.position.y = y * 1.31;
+    // From the miter's back face to its end seated in the rim, inside the
+    // teeth; a little larger than the round arm it sleeves, so no coplanar
+    // faces fight.
+    axle.position.y = y * 1.205;
     axle.userData.role =
       'intermediate-miter-gear-axle-fixed-in-hoop-carrier';
     planetAxles.push(axle);
@@ -933,7 +938,8 @@ function hoopReactionDynamometer(movement) {
   outputShaft.geometry.dispose();
   outputShaft.geometry = new THREE.CylinderGeometry(0.09, 0.09, 2 * (postX + 0.36), 28);
   // Carrier arms and cross braces end in the tighter hoop's bore.
-  const armOuterEnd = hoopInnerRadius + 0.07;
+  // Seated 0.035 into the thin rim, inside its tooth roots.
+  const armOuterEnd = hoopInnerRadius + 0.035;
   for (const arm of carrierArms) {
     arm.geometry.dispose();
     arm.geometry = new THREE.CylinderGeometry(0.068, 0.068, armOuterEnd - 0.215, 48);
@@ -977,6 +983,10 @@ function hoopReactionDynamometer(movement) {
   );
   root.userData.groundFloorY = postBottom;
   root.userData.cameraFov = 16;
+  // A tighter shadow map with a small normal offset keeps the narrow hoop
+  // tooth tops free of self-shadow ripple.
+  root.userData.shadowCameraHalfExtent = 4.5;
+  root.userData.shadowNormalBias = 0.02;
   markShadows(root);
   return {
     cameraDirection: new THREE.Vector3(6.8, 3.9, 8.7),

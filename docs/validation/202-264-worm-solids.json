@@ -62,7 +62,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "7f032eaae6d5b82940ddb69c22d6e9db0400d0742d8eb3aba96a67a0b55ebc6f"
+      "sha256": "6aa99d6463803594550229897f7ef526fc2840bbad4d0a0e4e82d89c053b4f84"
     },
     {
       "file": "src/simulation/miter-gear.js",

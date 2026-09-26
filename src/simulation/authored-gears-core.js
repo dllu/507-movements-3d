@@ -3244,9 +3244,10 @@ function conicalStudGear() {
   const studBottomRadius = centerDistance - toothedBottomRadius;
   const studTopRadius = centerDistance - toothedTopRadius;
   const toothAngularPitch = fullTurn / parameters.teeth;
-  const studBodyRelief = 0.016;
-  const bodyRadiusAt = (height) => centerDistance
-    - (meanPitchRadius + motion.slope * height) * (1 + 2 / parameters.teeth) - studBodyRelief;
+  const studBodyRelief = 0.012;
+  // Body surface just clears the stub tooth tips (addendum = factor x module).
+  const bodyRadiusAt = (height) => centerDistance - (meanPitchRadius + motion.slope * height)
+    * (1 + 2 * parameters.toothAddendumFactor / parameters.teeth) - studBodyRelief;
   const makeRotor = (x) => {
     const cone = new THREE.Group();
     cone.quaternion.setFromUnitVectors(Z_AXIS, Y_AXIS);
@@ -31037,11 +31038,14 @@ function skewHyperboloidFrictionDrive() {
   // bisector their common rectilinear generator and the instantaneous screw
   // axis of the relative motion.  The resulting surfaces roll transversely
   // while retaining the unavoidable uniform sliding along that generator.
-  const shaftAngle = THREE.MathUtils.degToRad(40);
+  // Brown's end faces read as ellipses about half as wide as tall, which
+  // needs each axis about 25 degrees out of the picture plane; the offset
+  // keeps the waist near half the end radius so the bodies stay full.
+  const shaftAngle = THREE.MathUtils.degToRad(50);
   const generatorAngle = shaftAngle / 2;
-  const axisOffset = 1.3;
+  const axisOffset = 1.8;
   const throatRadius = axisOffset / 2;
-  const bodyHalfLength = 3;
+  const bodyHalfLength = 3.2;
   const shaftHalfLength = bodyHalfLength + 0.78;
   const contactHalfLength = bodyHalfLength / Math.cos(generatorAngle);
   const endRadius = Math.sqrt(
@@ -31694,8 +31698,11 @@ function skewHyperboloidFrictionDrive() {
     root.userData.kinematics = state;
   };
   correctSkewFrictionParts(root);
+  // A long lens keeps both end faces open, as in Brown's near-parallel view;
+  // a wide lens foreshortens the far-side end faces toward edge-on.
+  root.userData.cameraFov = 8;
   update(0);
-  return finish(root, update, new THREE.Vector3(0, 4.5, 13.2));
+  return finish(root, update, new THREE.Vector3(0, 2.3, 13.2));
 }
 
 const SPLIT_CAM_IDLE_FLANK_SHIFT = 0.07;
@@ -32666,28 +32673,25 @@ function compoundMutilatedExternalInternalGearReverser() {
   // Brown draws square teeth: near-parallel flanks (about 0.17 wide from
   // root to tip) and a broad flat tip, instead of the animation's pointed
   // tips. Root width and radii keep the source stations.
+  // Brown draws square teeth with parallel flanks. The pinion and the
+  // central sector share a constant-width tooth (0.15 wide, tip and root
+  // alike) and the internal ring a near-parallel one (0.155 at the tip,
+  // 0.175 at the root). These are about the widest square teeth for which
+  // the sampled pinion/sector outlines stay disjoint over the whole cycle.
+  const externalToothWidth = 0.15;
+  // Straight flanks need only their root and tip stations.
   const externalToothLevels = [
-    [-5.83108, pinionRootRadius],
-    [-5.83108, 0.939693],
-    [-5.1, 0.997295],
-    [-4.0, 1.054898],
-    [-3.0, pinionOuterRadius],
-    [3.0, pinionOuterRadius],
-    [4.0, 1.054898],
-    [5.1, 0.997295],
-    [5.83108, 0.939693],
-    [5.83108, pinionRootRadius],
-  ].map(([degrees, radius]) => [THREE.MathUtils.degToRad(degrees), radius]);
+    [-1, pinionRootRadius], [-1, pinionOuterRadius],
+    [1, pinionOuterRadius], [1, pinionRootRadius],
+  ].map(([side, radius]) => [side * Math.asin(externalToothWidth / 2 / radius), radius]);
+  const ringToothTipWidth = 0.155;
+  const ringToothRootWidth = 0.175;
   const internalToothLevels = [
-    [-2.70197, ringRootRadius],
-    [-1.93016, 3.044792],
-    [-1.29035, 2.952083],
-    [-0.83987, ringTipRadius],
-    [0.83987, ringTipRadius],
-    [1.29035, 2.952083],
-    [1.93016, 3.044792],
-    [2.70197, ringRootRadius],
-  ].map(([degrees, radius]) => [THREE.MathUtils.degToRad(degrees), radius]);
+    [-ringToothRootWidth, ringRootRadius],
+    [-ringToothTipWidth, ringTipRadius],
+    [ringToothTipWidth, ringTipRadius],
+    [ringToothRootWidth, ringRootRadius],
+  ].map(([width, radius]) => [Math.sign(width) * Math.asin(Math.abs(width) / 2 / radius), radius]);
   // The four end teeth are asymmetric handoff profiles in the source, not
   // uniformly scaled copies of a working tooth. Their swept-back flanks let
   // the inactive sector pass the pinion without a solid intersection while
@@ -32827,8 +32831,11 @@ function compoundMutilatedExternalInternalGearReverser() {
       centerAngle + offset,
     ))
   );
+  // The handoff teeth keep the source's lopsided outlines, narrowed to 0.8
+  // of their angular width so that they clear the squarer pinion teeth.
+  const transitionWidthScale = 0.8;
   const transitionProfile = (centerAngle, levels) => levels.map(
-    ([offset, radius]) => polarPoint(radius, centerAngle + offset),
+    ([offset, radius]) => polarPoint(radius, centerAngle + offset * transitionWidthScale),
   );
   const distanceToSegment = (point, start, end) => {
     const segment = end.clone().sub(start);
@@ -32959,12 +32966,19 @@ function compoundMutilatedExternalInternalGearReverser() {
   compound.userData.role =
     'coaxial-external-and-internal-mutilated-input-member';
   const compoundRotor = compound.userData.rotor;
+  // The rear web is the same member in a paler tint of its colour, so the
+  // external sector and the ring teeth stand out against it as on the plate.
+  const webMaterial = matte(new THREE.Color(PALETTE.driver).lerp(new THREE.Color(PALETTE.paper), 0.5), {
+    metalness: 0.1,
+    roughness: 0.66,
+    side: THREE.DoubleSide,
+  });
   const carrierBody = new THREE.Mesh(
     centeredExtrusion(
       annulusShape(3.28, shaftBoreRadius),
       carrierDepth,
     ),
-    driverMaterial,
+    webMaterial,
   );
   carrierBody.position.z = carrierCenterZ;
   carrierBody.userData.role =
@@ -33595,6 +33609,10 @@ function compoundMutilatedExternalInternalGearReverser() {
     carrierCenterZ,
     carrierDepth,
     centerDistance,
+    externalToothWidth,
+    ringToothRootWidth,
+    ringToothTipWidth,
+    transitionWidthScale,
     centralEquivalentTeeth,
     centralOuterRadius,
     centralPitchRadius,

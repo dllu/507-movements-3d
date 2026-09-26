@@ -7273,8 +7273,8 @@ function sharedPivotDoubleStrokeRatchet() {
   const ratchetRootRadius = 2.05;
   const toothOuterStartPhase = -0.04;
   const toothOuterEndPhase = 0;
-  const sourceWheelCenter = new THREE.Vector2(261, 303);
-  const sourceWheelTipRadius = 211;
+  const sourceWheelCenter = new THREE.Vector2(260, 299);
+  const sourceWheelTipRadius = 182;
   const sourceScale = ratchetOuterRadius / sourceWheelTipRadius;
   const sourceFixedLeverPivot = new THREE.Vector2(338, 49);
   const sourceSharedPawlPivot = new THREE.Vector2(257, 66);
@@ -7638,6 +7638,7 @@ function sharedPivotDoubleStrokeRatchet() {
     + pawlBandClearance;
   const pawlNoseBaseHalfWidth = 0.1;
   const pawlNoseFaceBias = 0.15;
+  const pawlNoseBlendAngle = 0.08;
   // The extrusion bevel grows the outline by its bevel size, so the drawn
   // nose radius is the finger radius less that bevel.
   const pawlNoseOutlineRadius = pawlFingerRadius - Math.min(0.025, 0.13 * 0.12);
@@ -7733,12 +7734,16 @@ function sharedPivotDoubleStrokeRatchet() {
     );
     const endAngle = unwrapToPivot(endCorner);
     const pivotRadius = pivot.length();
+    // Brown's bands bow well clear of the teeth and come down to them only
+    // at their working ends: the centreline rises steadily from the end
+    // radius to the pin, flattening as it reaches the eye.
     const radiusAt = (angle) => {
-      const fraction = (angle - endAngle) / (pivotAngle - endAngle);
+      const fraction = THREE.MathUtils.clamp(
+        (angle - endAngle) / (pivotAngle - endAngle), 0, 1);
       return THREE.MathUtils.lerp(
         pawlArcRadius,
         pivotRadius,
-        smoothStep01(THREE.MathUtils.clamp((fraction - 0.7) / 0.3, 0, 1)),
+        Math.sin(Math.PI / 2 * fraction),
       );
     };
     // The band narrows into the pin eye.
@@ -7775,8 +7780,18 @@ function sharedPivotDoubleStrokeRatchet() {
       );
       points.push(polar(angle, pawlNoseOutlineRadius).add(contact));
     }
-    points.push(bases[1].clone());
-    const returnStart = unwrapToPivot(bases[1]) + direction * 0.03;
+    // The inner edge runs down into the nose along a smooth curve, so the
+    // end reads as the band's own square end rather than a separate wedge.
+    const returnStart = unwrapToPivot(bases[1]) + direction * pawlNoseBlendAngle;
+    const blendEnd = polar(returnStart, radiusAt(returnStart) - halfWidthAt(returnStart));
+    const noseEnd = points.at(-1).clone();
+    const blendSteps = 12;
+    for (let index = 1; index < blendSteps; index += 1) {
+      const t = index / blendSteps;
+      points.push(noseEnd.clone().multiplyScalar((1 - t) ** 2)
+        .addScaledVector(bases[1], 2 * t * (1 - t))
+        .addScaledVector(blendEnd, t ** 2));
+    }
     for (let index = 0; index <= arcSteps; index += 1) {
       const angle = THREE.MathUtils.lerp(
         returnStart,

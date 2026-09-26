@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {horizontalTurned,horizontalPlate} from './horizontal-turbine-solids.js';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
+import {matte,PALETTE} from './primitives.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 
 // A closed tapered wall and floor, with an actual open mouth.
@@ -48,7 +49,9 @@ export function correctWellBucketParts(root,id){
     // Brown's forked post: a tree trunk from the ground whose two branch stubs
     // straddle the pole, one behind and one in front, and carry the pin.
     b.support.children.forEach(o=>o.visible=false);
-    const wood=b.support.children[0].material,groundTop=.46,crotch=g.beamPivot.y-.95;
+    // The post is timber, in the shared timber tone (as the treadmill boards
+    // and wooden buckets), not the grey used for iron frames.
+    const wood=matte(PALETTE.brass,{metalness:.01,roughness:.86}),groundTop=.46,crotch=g.beamPivot.y-.95;
     const limb=(from,to,r0,r1)=>{
       const axis=to.clone().sub(from),mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,axis.length(),20),wood);
       mesh.position.copy(from).add(to).multiplyScalar(.5);

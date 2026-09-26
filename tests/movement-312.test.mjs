@@ -102,14 +102,14 @@ test('movement 312 is Bloxam’s two-wheel, two-arm gravity escapement rather th
   disposeModel(model.root);
 });
 
-test('movement 312 arms run straight from C to A and B, then curve in on one tangent arc', () => {
+test('movement 312 arms run straight from C to A and B, then follow Brown’s J band to E and hook back to F', () => {
   const model = createMovementModel(catalog.movements[311]);
-  const { blocks } = model.root.userData;
-  for (const arm of [blocks.leftGravityArm, blocks.rightGravityArm]) {
+  const { blocks, geometry } = model.root.userData;
+  for (const [side, arm] of [[-1, blocks.leftGravityArm], [1, blocks.rightGravityArm]]) {
     assert.equal(arm.mainRailPoints.length, 2, 'no kink between C and the stop');
     const [pivot, lock] = arm.mainRailPoints;
     near(pivot.length(), 0, 1e-12, 'rail starts at C');
-    const arc = arm.lowerArcPoints;
+    const arc = arm.lowerBranchArc;
     near(arc[0].distanceTo(lock), 0, 1e-12, 'arc starts at the stop');
     const railDirection = lock.clone().sub(pivot).normalize();
     const firstChord = arc[1].clone().sub(arc[0]).normalize();
@@ -126,7 +126,15 @@ test('movement 312 arms run straight from C to A and B, then curve in on one tan
     );
     const radius = centre.distanceTo(a);
     for (const point of arc) near(point.distanceTo(centre), radius, 1e-9, 'arc point on one circle');
-    near(arc.at(-1).distanceTo(new THREE.Vector2(arm.forkPin.position.x, arm.forkPin.position.y)), 0, 1e-9, 'arc ends at the fork pin');
+    // The branch ends in one straight run, tangent to the arc, to the fork pin.
+    const pin = new THREE.Vector2(arm.forkPin.position.x, arm.forkPin.position.y);
+    near(arm.lowerArcPoints.at(-1).distanceTo(pin), 0, 1e-9, 'branch ends at the fork pin');
+    near(arc.at(-1).clone().sub(centre).dot(pin.clone().sub(arc.at(-1))), 0, 1e-9,
+      'straight run leaves the arc tangentially');
+    // Brown: E sits just under the arbor, F just above it.
+    const pinBelowPivot = -pin.y;
+    if (side < 0) assert.ok(pinBelowPivot > geometry.armAxisDistance && pinBelowPivot < geometry.armAxisDistance + 0.6);
+    else assert.ok(pinBelowPivot < geometry.armAxisDistance && pinBelowPivot > geometry.armAxisDistance - 0.8);
   }
   disposeModel(model.root);
 });

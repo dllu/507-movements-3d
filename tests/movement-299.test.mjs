@@ -213,8 +213,10 @@ test('movement 299 builds an adjustable two-weight foliot and an open odd-tooth 
   assert.equal(transmission.oddCrownToothCountRequired, true);
   near(geometry.toothPitch, Math.PI * 2 / 13, 0,
     'thirteen-tooth pitch');
+  // Brown's blades measure about 106 degrees apart; 108 lets the staff sit
+  // low over the tips while keeping his pallet length.
   near(THREE.MathUtils.radToDeg(geometry.palletIncludedAngle),
-    100, 1e-14, 'modeled pallet included angle');
+    108, 1e-12, 'modeled pallet included angle');
   assert.ok(geometry.palletFaceSpan > 0, 'working face has positive span');
   assert.ok(transmission.dropPerBeatInDegrees > 1.5);
   assert.ok(transmission.dropPerBeatInDegrees < 3);

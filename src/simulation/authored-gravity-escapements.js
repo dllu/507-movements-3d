@@ -4308,7 +4308,14 @@ function bloxamGravityEscapement(movement) {
   const pendulumRodRadius = 0.060;
   const forkPinRadius = 0.085;
   const forkContactClearance = pendulumRodRadius + forkPinRadius;
-  const forkPinLength = armAxisDistance + 0.62;
+  // Brown's fork pins: E on the left band just under the arbor, F on the
+  // right arm's returned hook just above it. Both still face the pendulum
+  // rod from either side; the rod and the arms share the axis C, so the pin
+  // heights along the rod do not change the beat timing.
+  const forkPinLengthE = armAxisDistance + 0.45;
+  const forkPinLengthF = armAxisDistance - 0.50;
+  const forkPinLength = forkPinLengthE;
+  const forkPinLengthForSide = (side) => (side > 0 ? forkPinLengthF : forkPinLengthE);
   const outerWheelPlaneZ = -0.30;
   const palletWheelPlaneZ = 0.28;
   const leftArmPlaneZ = -0.055;
@@ -4464,7 +4471,7 @@ function bloxamGravityEscapement(movement) {
   };
   const forkPinLocalPoint = (side) => new THREE.Vector2(
     side * forkContactClearance,
-    -forkPinLength,
+    -forkPinLengthForSide(side),
   );
   const forkPinCenterAt = (side, armAngle) => armWorldPoint(
     forkPinLocalPoint(side),
@@ -5173,32 +5180,48 @@ function bloxamGravityEscapement(movement) {
     const faceBack = faceMid.clone().addScaledVector(faceNormal, 0.16);
 
     const forkLocal = forkPinLocalPoint(side);
-    // Below the stop the arm carries on round in one circular arc, tangent
-    // to the straight arm at the stop and curving in under the wheel centre
-    // to the fork pin, as Brown's branches curve in toward the arbor. A short
-    // straight finger rises from the fork pin to the pallet-face stem.
-    const lowerArcPoints = (() => {
-      const start = toLocal(lockWorld);
-      const tangent = start.clone().normalize();
-      const chord = forkLocal.clone().sub(start);
-      const normal = new THREE.Vector2(-tangent.y, tangent.x);
-      if (normal.dot(chord) < 0) normal.negate();
-      const radius = chord.lengthSq() / (2 * normal.dot(chord));
-      const center = start.clone().addScaledVector(normal, radius);
-      const turn = Math.sign(tangent.x * normal.y - tangent.y * normal.x);
-      const startAngle = Math.atan2(start.y - center.y, start.x - center.x);
-      const endAngle = Math.atan2(forkLocal.y - center.y,
-        forkLocal.x - center.x);
-      const sweep = positiveModulo(turn * (endAngle - startAngle), FULL_TURN);
+    // Below its stop each arm carries on in Brown's band, leaving the
+    // straight arm tangentially on one circular arc and ending in a short
+    // straight run to its fork pin. The left band is a J: it curves in
+    // under the wheel centre, bottoming out level with pin E just under the
+    // arbor. The right arm turns back on itself in a tight hook below B and
+    // returns leftward, above the arbor, to pin F. A short straight finger
+    // then runs from each fork pin to its pallet-face stem.
+    const lowerBranch = (() => {
+      const stop = lockWorld.clone();
+      const along = stop.clone().sub(armPivot).normalize();
+      const pin = forkPinCenterAt(side, cockedAngle);
+      let center, radius, startAngle, sweep, turn;
+      if (side < 0) {
+        const normal = new THREE.Vector2(-along.y, along.x);
+        radius = (stop.y - pin.y) / (1 - normal.y);
+        center = stop.clone().addScaledVector(normal, radius);
+        startAngle = Math.atan2(stop.y - center.y, stop.x - center.x);
+        turn = 1;
+        sweep = positiveModulo(-Math.PI / 2 - startAngle, FULL_TURN);
+      } else {
+        const normal = new THREE.Vector2(along.y, -along.x);
+        radius = 0.32;
+        center = stop.clone().addScaledVector(normal, radius);
+        startAngle = Math.atan2(stop.y - center.y, stop.x - center.x);
+        turn = -1;
+        const toPin = pin.clone().sub(center);
+        const alpha = Math.atan2(toPin.y, toPin.x);
+        const offset = Math.acos(radius / toPin.length());
+        sweep = Math.min(...[alpha + offset, alpha - offset].map((angle) => (
+          positiveModulo(startAngle - angle, FULL_TURN))));
+      }
       const segments = 32;
-      return Array.from({ length: segments + 1 }, (_, index) => {
+      const arc = Array.from({ length: segments + 1 }, (_, index) => {
         const angle = startAngle + turn * sweep * index / segments;
-        return center.clone().add(new THREE.Vector2(
+        return toLocal(center.clone().add(new THREE.Vector2(
           Math.cos(angle) * radius,
           Math.sin(angle) * radius,
-        ));
+        )));
       });
+      return { arc, radius, points: [...arc, forkLocal.clone()] };
     })();
+    const lowerArcPoints = lowerBranch.points;
     const lowerCrosspiecePoints = [...lowerArcPoints, faceBack];
     const mainRail = plateRegistry.add({
       key: `${sideKey}-arm`,
@@ -5361,6 +5384,7 @@ function bloxamGravityEscapement(movement) {
       lockingDetentEdge,
       lockFacePoints,
       lowerArcPoints,
+      lowerBranchArc: lowerBranch.arc,
       mainRail,
       mainRailPoints,
       palletFace,
@@ -5379,7 +5403,7 @@ function bloxamGravityEscapement(movement) {
   pendulumAssembly.userData.role =
     'pendulum-between-adjustable-fork-pins-E-and-F';
   root.add(pendulumAssembly);
-  const pendulumLength = forkPinLength + 1.12;
+  const pendulumLength = armAxisDistance + 0.62 + 1.12;
   const pendulumRod = beamBetween(
     new THREE.Vector3(0, -0.08, 0),
     new THREE.Vector3(0, -pendulumLength, 0),
@@ -5564,6 +5588,8 @@ function bloxamGravityEscapement(movement) {
     firstWheelStepEndPhase,
     forkContactClearance,
     forkPinLength,
+    forkPinLengthE,
+    forkPinLengthF,
     forkPinRadius,
     gravityArmMass,
     historicalEscapeWheelRadius,

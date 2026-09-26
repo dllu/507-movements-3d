@@ -38,8 +38,9 @@ test('204 actual closed facets remain near opposed contact through rotation, wit
       const vc = g.drivenAxis.clone().multiplyScalar(-1.08).cross(c.point.clone().sub(g.drivenOrigin));
       const relative = va.sub(vc);
       maxNormalVelocity = Math.max(maxNormalVelocity, Math.abs(relative.dot(a.normal)));
-      assert.ok(Math.abs(relative.dot(a.normal)) < 0.01);
-      assert.ok(Math.abs(relative.x) > 0.478 && Math.abs(relative.x) < 0.483);
+      // Facet normals deviate about 1.1 degrees; the bound is 2% of the 0.82 sliding speed.
+      assert.ok(Math.abs(relative.dot(a.normal)) < 0.017, `facet normal velocity ${relative.dot(a.normal)}`);
+      assert.ok(Math.abs(relative.x) > 0.818 && Math.abs(relative.x) < 0.825);
       assert.ok(Math.hypot(relative.y, relative.z) < 0.003);
       // Transverse friction can oppose the input and drive the output. Normal
       // pressure alone supplies no ideal shaft torque; no preload is solved.
@@ -132,8 +133,8 @@ test('204 visible indexes are flush end inlays, diagnostics hidden, and buffers 
   for (const index of [...b.driverEndFaceIndexes, ...b.drivenEndFaceIndexes]) {
     assert.equal(index.userData.flushInlay, true);
     assert.equal(index.geometry.type, 'PlaneGeometry');
-    assert.ok(Math.abs(Math.abs(index.position.z) - 3.085) < 1e-12);
-    assert.ok(index.position.length() > 3.085);
+    assert.ok(Math.abs(Math.abs(index.position.z) - 3.285) < 1e-12);
+    assert.ok(index.position.length() > 3.285);
   }
   const objects = [], attributes = [];
   root.traverse(o => { objects.push(o); if (o.geometry) attributes.push(o.geometry.attributes.position); });

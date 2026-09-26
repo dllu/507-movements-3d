@@ -8,10 +8,12 @@ const cache = new Map();
 
 export const conicalStudParameters = Object.freeze({
   centerDistance: 1.8, radiusSlope: 0.42, axialAmplitude: 0.96,
-  // Brown draws round stud heads close on the cone face: stout studs that
-  // stand only far enough past the pitch cone to enter the tooth spaces.
-  halfHeight: 1.1, teeth: 24, studCount: 20, studRadius: 0.045,
-  studFront: 0.06, studBack: 0.20,
+  // Brown draws round stud heads nearly flush on the cone face. The toothed
+  // cone therefore carries stub teeth (addendum 0.45 module), so the stud
+  // body can sit close to its pitch cone and the round heads stand only a
+  // little proud while still entering the tooth spaces.
+  halfHeight: 1.1, teeth: 24, studCount: 20, studRadius: 0.055,
+  studFront: 0.03, studBack: 0.20, toothAddendumFactor: 0.45,
 });
 
 /** An end-to-end spiral with equal axial steps, as in the engraving.
@@ -77,11 +79,11 @@ export function conicalStudMotion({ centerDistance, radiusSlope, axialAmplitude,
     variation: radiusSlope * axialAmplitude, meanRadius, slope: radiusSlope, studs, inputCycleAngle };
 }
 
-function unitOutline(teeth) {
+function unitOutline(teeth, addendumFactor = 1) {
   return rackGeneratedOutline({
     pitchPoints: Array.from({ length: 720 }, (_, index) =>
       new THREE.Vector2(Math.cos(turn * index / 720), Math.sin(turn * index / 720))),
-    teeth, contactPointIndex: 0, toothAtContact: false,
+    teeth, contactPointIndex: 0, toothAtContact: false, addendumFactor,
   }).points;
 }
 
@@ -91,7 +93,7 @@ function unitOutline(teeth) {
  */
 export function conicalStudToothGeometry(parameters) {
   const motion = conicalStudMotion(parameters);
-  const outline = unitOutline(parameters.teeth);
+  const outline = unitOutline(parameters.teeth, parameters.toothAddendumFactor);
   const columns = outline.length / parameters.teeth;
   const { halfHeight } = parameters;
   const positions = [];
@@ -164,7 +166,7 @@ export function conicalStudCut(parameters, { regenerate = false } = {}) {
   if (!regenerate && cache.has(key)) return cache.get(key);
   if (!regenerate && savedCut?.key === key) { cache.set(key, savedCut); return savedCut; }
   const motion = conicalStudMotion(parameters);
-  const outline = unitOutline(parameters.teeth);
+  const outline = unitOutline(parameters.teeth, parameters.toothAddendumFactor);
   const topology = headTopology(parameters);
   const count = outline.length, angleStep = turn / count;
   const samples = 19200, clearance = 0.0012;

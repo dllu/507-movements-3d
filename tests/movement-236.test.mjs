@@ -374,11 +374,16 @@ test('movement 236 renderer binds both pawls and closes before movement 339', ()
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 5.5);
   assert.ok(size.y > 5.4);
-  assert.ok(size.z > 1.2);
+  // Only the wheel, pawls, lever and their plain pins: no studs or flanges
+  // reach back behind the mechanism.
+  assert.ok(size.z > 0.85 && size.z < 1.0);
+  const fixedStuds = [];
+  model.root.traverse((object) => { if (/fixed-stud/.test(object.userData.role ?? '')) fixedStuds.push(object); });
+  assert.equal(fixedStuds.length, 0);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
   // The dark pivot rings Brown only inks are retired.
-  assert.ok(meshCount >= 21);
+  assert.ok(meshCount >= 17);
 
   const movement507 = catalog.movements[506];
   const model289 = createMovementModel(movement507);

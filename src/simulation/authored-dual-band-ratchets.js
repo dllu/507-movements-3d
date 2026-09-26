@@ -505,8 +505,10 @@ function dualBandOscillationRectifier(movement) {
   rockerIndex.userData.role = 'white-rocking-piece-angle-index';
   rockingSector.add(rockerIndex);
 
-  const pivotPin = cylinderAlongZ(0.13, 1.10, darkMaterial, 32);
-  pivotPin.position.set(sectorCenter.x, sectorCenter.y, 0.20);
+  // Fulcrum a is a short pin through the lever boss (z 0.30 to 0.68) that
+  // stands only 0.06 proud of each face; Brown draws no frame behind it.
+  const pivotPin = cylinderAlongZ(0.13, 0.50, darkMaterial, 32);
+  pivotPin.position.set(sectorCenter.x, sectorCenter.y, 0.49);
   pivotPin.userData.role = 'fixed-fulcrum-a';
   root.add(pivotPin);
 

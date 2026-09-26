@@ -88,7 +88,12 @@ function makeScaleDigit(value, material) {
 function siphonPressureGauge(movement) {
   const root = new THREE.Group();
   const cycleDuration = 8;
-  const legCenterX = 0.76;
+  // Brown's U-tube is tall and narrow: its legs stand about an eighth of
+  // the tube's height apart.
+  const legCenterX = 0.46;
+  // The scale was laid out for legs 0.76 from the centre; it keeps its
+  // place beside the open leg.
+  const scaleShiftX = legCenterX - 0.76;
   const bendTangentY = -2.42;
   const tubeTopY = 3.02;
   const datumY = -0.18;
@@ -267,12 +272,12 @@ function siphonPressureGauge(movement) {
   ), 'fixed-zero-through-six-pressure-scale-board');
   // The board stands just behind the tube plane; its marks read from the
   // front only (the board hides them from behind).
-  scaleBoard.position.set(1.72, (scaleBottom + scaleTop) / 2, -0.06);
+  scaleBoard.position.set(1.72 + scaleShiftX, (scaleBottom + scaleTop) / 2, -0.06);
   const scaleSpine = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.035, scaleTop - scaleBottom - 0.12, 0.045),
     scaleInkMaterial,
   ), 'vertical-pressure-scale-spine');
-  scaleSpine.position.set(1.28, (scaleBottom + scaleTop) / 2, 0.01);
+  scaleSpine.position.set(1.28 + scaleShiftX, (scaleBottom + scaleTop) / 2, 0.01);
   const scaleTicks = [];
   const scaleNumerals = [];
   for (let value = 0; value <= 6; value += 1) {
@@ -281,14 +286,30 @@ function siphonPressureGauge(movement) {
       new THREE.BoxGeometry(value === 0 ? 0.43 : 0.34, 0.038, 0.05),
       scaleInkMaterial,
     ), `scale-mark-${value}`);
-    tick.position.set(value === 0 ? 1.48 : 1.435, y, 0.02);
+    tick.position.set((value === 0 ? 1.48 : 1.435) + scaleShiftX, y, 0.02);
     tick.userData.value = value;
     const numeral = makeScaleDigit(value, scaleInkMaterial);
-    numeral.position.set(2.00, y, 0.004);
+    numeral.position.set(2.00 + scaleShiftX, y, 0.004);
     numeral.scale.setScalar(0.72);
     scaleTicks.push(tick);
     scaleNumerals.push(numeral);
   }
+  // Brown's second "0" mark, beside the pressure leg at the same level: a
+  // short tag behind that leg (grooved round it in mercury-instrument-parts)
+  // carrying a tick and a numeral.
+  const leftZeroBoard = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(0.62, 0.46, 0.11),
+    scaleMaterial,
+  ), 'pressure-leg-zero-mark-tag');
+  leftZeroBoard.position.set(-legCenterX - glassOuterRadius - 0.31, datumY, -0.06);
+  const leftZeroTick = addRole(new THREE.Mesh(
+    new THREE.BoxGeometry(0.22, 0.038, 0.05),
+    scaleInkMaterial,
+  ), 'pressure-leg-zero-mark');
+  leftZeroTick.position.set(-legCenterX - glassOuterRadius - 0.12, datumY, 0.02);
+  const leftZeroNumeral = makeScaleDigit(0, scaleInkMaterial);
+  leftZeroNumeral.position.set(-legCenterX - glassOuterRadius - 0.43, datumY, 0.004);
+  leftZeroNumeral.scale.setScalar(0.72);
   const zeroDatumIndex = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(0.75, 0.025, 0.035),
     brassMaterial,
@@ -300,7 +321,7 @@ function siphonPressureGauge(movement) {
     brassMaterial,
   ), 'live-reading-index-at-right-mercury-surface');
   readingPointer.rotation.z = -Math.PI / 2;
-  readingPointer.position.x = 1.16;
+  readingPointer.position.x = 1.16 + scaleShiftX;
   readingPointer.position.z = 0.05;
 
   const base = addRole(new THREE.Mesh(
@@ -328,6 +349,9 @@ function siphonPressureGauge(movement) {
     ...tubeClamps,
     scaleBoard,
     scaleSpine,
+    leftZeroBoard,
+    leftZeroTick,
+    leftZeroNumeral,
     ...scaleTicks,
     ...scaleNumerals,
     zeroDatumIndex,
@@ -405,6 +429,9 @@ function siphonPressureGauge(movement) {
     boilerFlange,
     glassBend,
     glassLegs,
+    leftZeroBoard,
+    leftZeroNumeral,
+    leftZeroTick,
     menisci,
     mercuryBend,
     mercuryColumns,
@@ -424,8 +451,8 @@ function siphonPressureGauge(movement) {
   // Brown's view: the cocked pipe, bent tube and scale marks (the stand,
   // clips and board are removed by source presentation).
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.95, -3.5, -0.5),
-    new THREE.Vector3(2.35, 4.35, 0.5),
+    new THREE.Vector3(-3.9, -3.5, -0.5),
+    new THREE.Vector3(2.35 + scaleShiftX, 4.35, 0.5),
   );
   root.userData.canonicalTimes = {
     maximumPressure: cycleDuration / 2,

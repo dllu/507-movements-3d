@@ -1272,11 +1272,11 @@
       "id": 37,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-gears-review.md",
-        "note": "Pass 64: The studs still stand about 0.15 proud as short nubs at the cone silhouette, where Brown draws flush dots."
+        "evidence": "docs/p65-a-review.md",
+        "note": "Pass 65: At the silhouette one or two stud heads show as low buttons about 0.08–0.1 proud where Brown draws flush dots."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1290,7 +1290,8 @@
         "docs/w2a-gears-core-review.md",
         "docs/w4a-1-160-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-gears-review.md"
+        "docs/p64-fix-gears-review.md",
+        "docs/p65-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1298,8 +1299,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The studs still stand about 0.15 proud as short nubs at the cone silhouette, where Brown draws flush dots.",
-      "limits": "Studs are short pegs rather than flush dots (they must engage the teeth); the working gap reaches 0.075 and end-to-end handoff is unresolved. The studs must reach the tooth spaces; end-to-end handoff unresolved.",
+      "visibleFlaws": "At the silhouette one or two stud heads show as low buttons about 0.08–0.1 proud where Brown draws flush dots.",
+      "limits": "Forced: a flush dot cannot enter a tooth space (radial engagement is about 0.07). The end-to-end hand-off is unresolved and the motion is prescribed.",
       "assessment": "minor"
     },
     {
@@ -4883,11 +4884,11 @@
       "id": 132,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: The columns are slightly thinner than Brown's (0.40 against about 0.45)."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4902,7 +4903,8 @@
         "docs/visual-review-pass-49.md",
         "docs/w4a-1-160-review.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -4910,9 +4912,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The columns are slightly thinner than Brown's (0.40 against about 0.45).",
-      "limits": "A 0.17 toggle bar/sphere pair (pre-existing) and a low bed block below the frame; retraction retention supplied by ideal spherical joints. The platen hangs from the lower disc with no guide.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "A 0.17 toggle bar/sphere pair (pre-existing) and a low bed block below the frame; retraction retention by ideal spherical joints; the platen hangs from the lower disc with no guide.",
+      "assessment": "reasonable"
     },
     {
       "id": 133,
@@ -6214,11 +6216,11 @@
       "id": 167,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-a1-review.md",
-        "note": "Pass 64: A faint hairline ring shows on the drum ends in the top view."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6236,7 +6238,8 @@
         "docs/pass53-user-review.md",
         "docs/p53-fix-b-review.md",
         "docs/p55-geo-a-review.md",
-        "docs/p64-fix-a1-review.md"
+        "docs/p64-fix-a1-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6244,9 +6247,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "A faint hairline ring shows on the drum ends in the top view.",
+      "visibleFlaws": "",
       "limits": "The band foreshortens near the silhouettes at phases other than the plate's, as a real groove on a drum does.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 168,
@@ -7655,11 +7658,11 @@
       "id": 204,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-gears-review.md",
-        "note": "Pass 64: The end-face ellipses are narrower than Brown's (the 40° crossing is kept because the waist is already more pinched than the plate's)."
+        "evidence": "docs/p65-a-review.md",
+        "note": "Pass 65: The end ellipses are still a little narrower than Brown's (about 0.38 against 0.5) and the rollers slightly stubbier."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7671,7 +7674,8 @@
         "docs/minimal-interface-review.md",
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
-        "docs/p64-fix-gears-review.md"
+        "docs/p64-fix-gears-review.md",
+        "docs/p65-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7679,8 +7683,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The end-face ellipses are narrower than Brown's (the 40° crossing is kept because the waist is already more pinched than the plate's).",
-      "limits": "Ideal circumferential rolling permits longitudinal sliding; friction capacity, load transmission, slip and power loss not solved.",
+      "visibleFlaws": "The end ellipses are still a little narrower than Brown's (about 0.38 against 0.5) and the rollers slightly stubbier.",
+      "limits": "Forced: for equal hyperboloids the projected length over diameter is at most cos²α/sinα, 1.5 at the 30° half-angle a 0.5 ellipse needs, while Brown draws about 1.9, so his drawing is geometrically inconsistent. Longitudinal sliding, friction and load are not solved.",
       "assessment": "minor"
     },
     {
@@ -7723,11 +7727,11 @@
       "id": 206,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-pawls-review.md",
-        "note": "Pass 64: The pawl arcs sit closer to the teeth than Brown's wide bands, and the right pawl's end reads as a short wedge rather than a plain square end."
+        "evidence": "docs/p65-a-review.md",
+        "note": "Pass 65: The right pawl end tapers slightly more than Brown's full-width square end."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7747,7 +7751,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m2-intermittent-review.md",
         "docs/m11-forced-intermittent-review.md",
-        "docs/p64-fix-pawls-review.md"
+        "docs/p64-fix-pawls-review.md",
+        "docs/p65-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7755,8 +7760,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The pawl arcs sit closer to the teeth than Brown's wide bands, and the right pawl's end reads as a short wedge rather than a plain square end.",
-      "limits": "The pawls push clockwise on the long backs; teeth are 0.33 deep, about twice Brown's depth, to keep drive forces within 62° of the face normal; the archetype still says forty-four teeth.",
+      "visibleFlaws": "The right pawl end tapers slightly more than Brown's full-width square end.",
+      "limits": "Teeth 0.33 deep (about twice Brown's) with 53 teeth; the wheel is refitted to the drawn tips; the right contact sector is within 2° of the plate.",
       "assessment": "minor"
     },
     {
@@ -8089,11 +8094,11 @@
       "id": 216,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-gears-review.md",
-        "note": "Pass 64: The teeth are still tapered rather than Brown's square (limited by the ring's narrow root gaps and the handoff teeth); the orange upper wheel reads weakly against the same-member orange web."
+        "evidence": "docs/p65-a-review.md",
+        "note": "Pass 65: The teeth are square but slimmer than Brown's (about 40% of the pitch against about 50%)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8111,7 +8116,8 @@
         "docs/w3f-gears-core-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
-        "docs/p64-fix-gears-review.md"
+        "docs/p64-fix-gears-review.md",
+        "docs/p65-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8119,8 +8125,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The teeth are still tapered rather than Brown's square (limited by the ring's narrow root gaps and the handoff teeth); the orange upper wheel reads weakly against the same-member orange web.",
-      "limits": "Brown's 180° + 180° teeth would engage the pinion from both sides at each hand-off, so the ring keeps 22 teeth over 165°.",
+      "visibleFlaws": "The teeth are square but slimmer than Brown's (about 40% of the pitch against about 50%).",
+      "limits": "Forced: wider teeth interfere in the 3:1 internal mesh and at the hand-off teeth; shortening the teeth did not help. The ring keeps 22 teeth over 165°.",
       "assessment": "minor"
     },
     {
@@ -8412,11 +8418,11 @@
       "id": 225,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-pawls-review.md",
-        "note": "Pass 64: The arched pawl end reads as a gentle hook where Brown draws a plain curved bar."
+        "evidence": "docs/p65-a-review.md",
+        "note": "Pass 65: The bar bows more than Brown's (sagitta about 17% of its length against about 5%) and meets the wheel more steeply."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8433,7 +8439,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-pawls-review.md"
+        "docs/p64-fix-pawls-review.md",
+        "docs/p65-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8441,8 +8448,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The arched pawl end reads as a gentle hook where Brown draws a plain curved bar.",
-      "limits": "Pawl return bias and wheel holding imposed; initial hinge reaction requires suitable gravity/spring bias. Passive engagement and load capacity unvalidated. Return lift, gravity bias and load are prescribed.",
+      "visibleFlaws": "The bar bows more than Brown's (sagitta about 17% of its length against about 5%) and meets the wheel more steeply.",
+      "limits": "Forced: a flatter plain bar hits the tooth behind the nose during the drag-back. Return lift, gravity bias and load are prescribed.",
       "assessment": "minor"
     },
     {
@@ -8814,11 +8821,11 @@
       "id": 236,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-pawls-review.md",
-        "note": "Pass 64: Grey fixed stud bosses and flanges Brown does not draw show behind fulcrum a and the wheel arbor in rotated views."
+        "evidence": "docs/p65-a-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8834,7 +8841,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p56-b-review.md",
-        "docs/p64-fix-pawls-review.md"
+        "docs/p64-fix-pawls-review.md",
+        "docs/p65-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8842,9 +8850,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Grey fixed stud bosses and flanges Brown does not draw show behind fulcrum a and the wheel arbor in rotated views.",
-      "limits": "Prescribed return bias and output holding; source initial lever tilt/tip placement approximate. Prescribed return lift.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Pawl return lift and corner seating are prescribed; forces are not solved.",
+      "assessment": "reasonable"
     },
     {
       "id": 237,
@@ -9207,11 +9215,11 @@
       "id": 247,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b1-review.md",
-        "note": "Pass 64: An undrawn sea-bed slab and a rope sling round the weight appear (the sling shows from behind); they are the model's trigger surface and loop reset."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: For about a second of each loop the view is empty while the rod is re-armed with a fresh weight above the frame."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9233,7 +9241,8 @@
         "docs/p54-geo-a-review.md",
         "docs/p55-ends-review.md",
         "docs/p57-b-review.md",
-        "docs/p64-fix-b1-review.md"
+        "docs/p64-fix-b1-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9241,8 +9250,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "An undrawn sea-bed slab and a rope sling round the weight appear (the sling shows from behind); they are the model's trigger surface and loop reset.",
-      "limits": "The reload (rope sling, hook and hand) is added to loop the demonstration.",
+      "visibleFlaws": "For about a second of each loop the view is empty while the rod is re-armed with a fresh weight above the frame.",
+      "limits": "The sea bottom is implied by the caption. The rod is re-armed with a fresh weight out of view (fades are off-screen). Descent and recovery are prescribed.",
       "assessment": "minor"
     },
     {
@@ -11118,11 +11127,11 @@
       "id": 299,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b2-review.md",
-        "note": "Pass 64: Far-side teeth show through the gaps more widely than Brown's cropped strip; the verge journal stands higher above the tooth tips than drawn (0.24 pitch against about 0.15)."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: The journal stands slightly higher above the tips than drawn (0.19 pitch against about 0.15); the far teeth by the verge read more solid than Brown's lines."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11146,7 +11155,8 @@
         "docs/p53-fix-c-review.md",
         "docs/p54-marks-review.md",
         "docs/p55-geo-a-review.md",
-        "docs/p64-fix-b2-review.md"
+        "docs/p64-fix-b2-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11154,8 +11164,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Far-side teeth show through the gaps more widely than Brown's cropped strip; the verge journal stands higher above the tooth tips than drawn (0.24 pitch against about 0.15).",
-      "limits": "Pallet length and staff height are traded against a half-pitch advance per beat; tooth backs sag slightly more than Brown's (power 1.8 against about 1.6); foliot and recoil motion prescribed; verified contact is tangent only.",
+      "visibleFlaws": "The journal stands slightly higher above the tips than drawn (0.19 pitch against about 0.15); the far teeth by the verge read more solid than Brown's lines.",
+      "limits": "Wider pallet angle (108° against about 106°) and 0.34-wide pallets trade against staff height; tooth backs power 1.8 against 1.6; foliot and recoil prescribed; contact tangent only.",
       "assessment": "minor"
     },
     {
@@ -11605,11 +11615,11 @@
       "id": 312,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-esc2-review.md",
-        "note": "Pass 64: The curved lower branches sweep lower than Brown's bands, to the lower rim, because the fork pins sit below the arbor; the right branch mirrors the left instead of copying Brown's hook back to F above the arbor."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11624,7 +11634,8 @@
         "docs/minimal-interface-review.md",
         "docs/lane8-escapements-engines-review.md",
         "docs/w2f-274-333-review.md",
-        "docs/p64-fix-esc2-review.md"
+        "docs/p64-fix-esc2-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11632,9 +11643,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The curved lower branches sweep lower than Brown's bands, to the lower rim, because the fork pins sit below the arbor; the right branch mirrors the left instead of copying Brown's hook back to F above the arbor.",
-      "limits": "Straight spokes with T-heads approximate Brown's stops; straight-box pallet-wheel teeth lift at their tip corners. Motion prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Straight spokes with T-heads approximate Brown's stops. Motion is prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 313,
@@ -13837,11 +13848,11 @@
       "id": 372,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-b2-review.md",
-        "note": "Pass 64: The hoop is about 1.4× the gear box against Brown's 1.2×; faint shadow ripple shows on the tooth tops at close zoom."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13855,7 +13866,8 @@
         "docs/lane6-engines-misc-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m5-326-400-review.md",
-        "docs/p64-fix-b2-review.md"
+        "docs/p64-fix-b2-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13863,9 +13875,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The hoop is about 1.4× the gear box against Brown's 1.2×; faint shadow ripple shows on the tooth tops at close zoom.",
-      "limits": "The rim teeth have no drawn mating gear and are not part of any drive; the hoop is held still.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The hoop is about 1.37× the gear box against Brown's 1.2×: its bore must clear the carried gears' tooth corners, which Brown's proportion would cut through. The rim teeth have no mating gear; the hoop is held still.",
+      "assessment": "reasonable"
     },
     {
       "id": 373,
@@ -14022,11 +14034,11 @@
       "id": 377,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: A small box bracket joins the rail to the top of the diagonal plank."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14047,7 +14059,8 @@
         "docs/m19-audit-c-review.md",
         "docs/pass53-user-review.md",
         "docs/p57-c-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14055,9 +14068,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "A small box bracket joins the rail to the top of the diagonal plank.",
-      "limits": "Walker effort and wheel load are not simulated; in the air the ankle turn is eased at about 63°. Undrawn supports removed (pass 64); shafts end as plain stubs.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Walker effort and wheel load are not simulated; in the air the ankle turn is eased at about 63°. Undrawn supports removed (pass 64); shafts end as plain stubs. The rail is bolted to the side plank at Brown's hole.",
+      "assessment": "reasonable"
     },
     {
       "id": 378,
@@ -14510,11 +14523,11 @@
       "id": 390,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: The fulcrum pin sticks out about 0.5 behind the lever."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14531,7 +14544,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -14542,9 +14556,9 @@
         "note": "Experimental MuJoCo flywheel study; production remains prescribed."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The fulcrum pin sticks out about 0.5 behind the lever.",
+      "visibleFlaws": "",
       "limits": "Intended band seats up to 0.063. Undrawn supports removed (pass 64); shafts end as plain stubs.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 391,
@@ -16330,11 +16344,11 @@
       "id": 439,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: The spout is a flat plank where Brown draws an open trough."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16354,7 +16368,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-b-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16362,9 +16377,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The spout is a flat plank where Brown draws an open trough.",
-      "limits": "The gallows, ground and striking block are shown again; a post carries the flume. With no ground, the valve opens at the bottom of the scripted stroke. Undrawn supports removed (pass 64); shafts end as plain stubs.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The gallows, ground and striking block are shown again; a post carries the flume. With no ground, the valve opens at the bottom of the scripted stroke. Undrawn supports removed (pass 64); shafts end as plain stubs. The water in the trough is visible mainly from above.",
+      "assessment": "reasonable"
     },
     {
       "id": 440,
@@ -17017,11 +17032,11 @@
       "id": 457,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: The forked post is frame-grey rather than timber-coloured."
+        "evidence": "docs/p65-b-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17036,7 +17051,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/pass53-user-review.md",
         "docs/p55-cutaway-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p65-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17044,9 +17060,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The forked post is frame-grey rather than timber-coloured.",
+      "visibleFlaws": "",
       "limits": "One clean cutaway on the camera plane with plain cut faces; internal parts whole; no translucency, tints or colour signals.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 458,
@@ -17242,11 +17258,11 @@
       "id": 463,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: At flood the head water still stands over the turned upper leaf."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17266,7 +17282,8 @@
         "docs/p54-water-review.md",
         "docs/p55-water-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17274,9 +17291,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "At flood the head water still stands over the turned upper leaf.",
-      "limits": "Water levels and the overflow sheet are scheduled, not simulated.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Water levels are scheduled; the overflow follows a weir law over the moving sill. A 2.6% bed-flow visibility pop remains in the loop check.",
+      "assessment": "reasonable"
     },
     {
       "id": 464,
@@ -17356,11 +17373,11 @@
       "id": 466,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: In the default view the pendant ball hangs in line with the lever post rather than beside it as drawn."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17379,7 +17396,8 @@
         "docs/pass53-user-review.md",
         "docs/p53-fix-d-review.md",
         "docs/p55-cutaway-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17387,9 +17405,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "In the default view the pendant ball hangs in line with the lever post rather than beside it as drawn.",
+      "visibleFlaws": "",
       "limits": "One clean cutaway on the camera plane with plain cut faces; internal parts whole; no translucency, tints or colour signals.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 467,
@@ -17512,11 +17530,11 @@
       "id": 470,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: Brown's bracket pair and post under the handle are not modelled; the cylinder is slimmer than Brown's, so the chest is narrower."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17534,7 +17552,8 @@
         "docs/pass53-user-review.md",
         "docs/p53-fix-d-review.md",
         "docs/p55-cutaway-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17542,9 +17561,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown's bracket pair and post under the handle are not modelled; the cylinder is slimmer than Brown's, so the chest is narrower.",
-      "limits": "Vessels are whole opaque exteriors, as Brown draws them. A 5% steam-chamber visibility pop remains in the loop check.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Spool stroke ±0.058; the standard's depth is inferred. A 7.2% visibility pop of the steam chamber inside the closed barrel is not visible.",
+      "assessment": "reasonable"
     },
     {
       "id": 471,
@@ -18185,11 +18204,11 @@
       "id": 488,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: The upper blade looks narrower than the lower in the default oblique camera."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: The blades are narrower in face than Brown's broad faces (a true helicoid cannot show both faces from one side view)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18204,7 +18223,8 @@
         "docs/w2h-401-507-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m17-audit-d-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18212,7 +18232,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The upper blade looks narrower than the lower in the default oblique camera.",
+      "visibleFlaws": "The blades are narrower in face than Brown's broad faces (a true helicoid cannot show both faces from one side view).",
       "limits": "Prescribed rotor motion displayed at one turn per 4 s against a 90 rpm authored operating point; thrust, slip and loading not validated.",
       "assessment": "minor"
     },
@@ -18294,11 +18314,11 @@
       "id": 491,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: Close up, the ratchet and deck share a face and the capstan head z-fights with its bar sockets."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18315,7 +18335,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
         "docs/p56-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18323,9 +18344,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Close up, the ratchet and deck share a face and the capstan head z-fights with its bar sockets.",
+      "visibleFlaws": "",
       "limits": "Pawl loading and return bias prescribed; friction, impact, loaded holding strength and passive capstan operation unvalidated. The cable runs straight past its free end; the deck is trimmed to Brown's ground line.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 492,
@@ -18554,11 +18575,11 @@
       "id": 498,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
+        "reviewPass": 65,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c1-review.md",
-        "note": "Pass 64: Brown's left \"0\" mark beside the pressure leg is missing; the cock is a handwheel rather than Brown's T-handle plug cock; the pipe is shorter than Brown's."
+        "evidence": "docs/p65-c-review.md",
+        "note": "Pass 65: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18576,7 +18597,8 @@
         "docs/p55-geo-b-review.md",
         "docs/p56-d-review.md",
         "docs/p57-d-review.md",
-        "docs/p64-fix-c1-review.md"
+        "docs/p64-fix-c1-review.md",
+        "docs/p65-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18584,9 +18606,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown's left \"0\" mark beside the pressure leg is missing; the cock is a handwheel rather than Brown's T-handle plug cock; the pipe is shorter than Brown's.",
-      "limits": "The bands holding the scale board are minimal and not in Brown. The scale is a slim strip carried on the open leg; the boiler beyond the crop is not modelled.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The scale strip and the 0 tag are minimal carriers for Brown's marks; the boiler beyond the crop is not modelled.",
+      "assessment": "reasonable"
     },
     {
       "id": 499,

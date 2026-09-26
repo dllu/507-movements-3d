@@ -73,10 +73,12 @@ export function makeReversingGrooveDrum() {
   };
   add('lowerDrum', drumHalf(false, g), 'rotor', PALETTE.driver);
   add('upperDrum', drumHalf(true, g), 'rotor', PALETTE.driver);
-  // The dark groove floor is an open tube; the drum's ends are closed by a
-  // driver-coloured core, so an end face reads as one solid drum end.
-  add('grooveFloor', new THREE.CylinderGeometry(g.floorRadius, g.floorRadius, g.length, 128, 1, true), 'rotor', PALETTE.ink);
-  add('drumCore', new THREE.CylinderGeometry(g.floorRadius - .002, g.floorRadius - .002, g.length, 128), 'rotor', PALETTE.driver);
+  // One core at the groove-floor radius: its side is the dark groove floor
+  // and its end discs are driver-coloured, sharing the drum halves' 512 rim
+  // vertices, so each drum end reads as one solid face with no seam ring.
+  const core = add('drumCore', new THREE.CylinderGeometry(g.floorRadius, g.floorRadius, g.length, 512), 'rotor', PALETTE.driver);
+  const floorMaterial = matte(PALETTE.ink); floorMaterial.fog = false;
+  core.material = [floorMaterial, core.material, core.material];
   add('shaft', new THREE.CylinderGeometry(.105, .105, 5.628, 48), 'rotor', PALETTE.ink);
   const rodLocalY = (272 - (79 + 464) / 2) * .014 - (g.centerY - g.amplitude);
   add('rod', new THREE.CylinderGeometry(g.rodRadius, g.rodRadius, g.rodLength, 48), 'rod', PALETTE.driven, [g.rodX, rodLocalY, 0]);

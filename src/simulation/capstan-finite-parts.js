@@ -25,9 +25,12 @@ export function capstanHeadGeometry(radius) {
   return result;
 }
 
+// The rim stands proud of the head round each socket mouth. Its opening is a
+// little larger than the socket and it starts at the head's surface, so its
+// walls never lie in the socket's walls.
 export function capstanSocketRimGeometry() {
-  return plate(polygonClipping.difference(rectangle(-0.155,-0.14,0.155,0.14),
-    rectangle(-0.11,-0.10,0.11,0.10)), -0.045, 0.045).rotateY(Math.PI / 2);
+  return plate(polygonClipping.difference(rectangle(-0.16,-0.145,0.16,0.145),
+    rectangle(-0.117,-0.107,0.117,0.107)), -0.012, 0.075).rotateY(Math.PI / 2);
 }
 
 // Smoothly acquire constant packing pitch over the first quarter-radian.

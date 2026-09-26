@@ -72,7 +72,8 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
   assert.equal(transmission.oneShotRelease, true);
   assert.equal(transmission.automaticReset, false);
   assert.equal(transmission.catchDetainedAfterTrip, true);
-  assert.match(transmission.loopReset, /external-sling/);
+  assert.match(transmission.loopReset, /hauled-clear-of-view/);
+  assert.equal(blocks.resetSling, undefined, 'no reload sling');
   assert.equal(
     blocks.probeAssembly.userData.role,
     'bottom-projecting-seabed-probe-sliding-relative-to-rod',
@@ -86,6 +87,10 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
     'detachable-bored-spherical-sounding-weight-with-front-section-cutaway',
   );
   assert.equal(blocks.seabed.userData.fixed, true);
+  // The sea bottom is a plain thin surface, not a slab.
+  const bed = new THREE.Box3().setFromObject(blocks.seabedSlab);
+  assert.ok(bed.max.y - bed.min.y <= 0.05);
+  near(bed.max.y, model.root.userData.geometry.seabedY, 1e-6, 'bed top is the contact plane');
   disposeModel(model.root);
 });
 
@@ -254,9 +259,9 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
   let minimumProbeClearance = Infinity;
   let maximumGroundedWeightError = 0;
 
-  for (let sample = 0; sample <= 32768; sample += 1) {
+  for (let sample = 0; sample < 32768; sample += 1) {
     const time = timeline.weightImpact
-      + (timeline.manualReloadBegins - timeline.weightImpact)
+      + (timeline.rodHauledClear - timeline.weightImpact)
         * sample / 32768;
     const state = stateAtTime(time);
     minimumBoreClearance = Math.min(
@@ -273,6 +278,9 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
       maximumGroundedWeightError,
       Math.abs(state.weightLowerOpeningY - geometry.seabedY),
     );
+    if (time >= timeline.rodRecovered) {
+      assert.ok(state.bodyPositionY >= geometry.recoveredBodyY - 1e-12);
+    }
     assert.equal(state.detentLatched, true);
     assert.equal(state.catchToWeightContactActive, false);
     assert.equal(state.weightExternallySupported, false);
@@ -288,40 +296,50 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
   assert.ok(
     recovered.catchSupportPosition.y > recovered.weightUpperOpeningY,
   );
-  assert.equal(recovered.stage, 'released-dwell');
+  assert.equal(recovered.stage, 'rod-hauled-clear-of-view');
   disposeModel(model.root);
 });
 
-test('movement 247 labels its loop closure as an external manual reload', () => {
+test('movement 247 re-arms out of view: rod hauled clear, fresh weight, lowered back', () => {
   const model = createMovementModel(catalog.movements[246]);
-  const { geometry, stateAtTime, timeline, transmission } =
+  const { geometry, stateAtTime, timeline, transmission, displayFrame247, blocks } =
     model.root.userData;
   assert.equal(transmission.automaticReset, false);
-  assert.match(transmission.loopReset, /external-sling/);
+  assert.match(transmission.loopReset, /hauled-clear-of-view/);
 
-  const lift = stateAtTime(
-    (timeline.manualReloadBegins + timeline.manualReloadLifted) / 2,
-  );
-  const reset = stateAtTime(
-    (timeline.manualReloadLifted + timeline.manualCatchReset) / 2,
-  );
-  const seat = stateAtTime(
-    (timeline.manualCatchReset + timeline.weightSeated) / 2,
-  );
-  assert.equal(lift.stage, 'external-manual-weight-lift');
-  assert.equal(lift.weightExternallySupported, true);
-  assert.equal(lift.manualResetActive, true);
-  assert.ok(lift.resetSlingOpacity > 0.99);
-  assert.equal(reset.stage, 'external-manual-detent-reset');
-  assert.equal(reset.weightExternallySupported, true);
-  assert.equal(reset.detentLatched, false);
-  assert.ok(reset.catchAngle < 0);
-  near(reset.weightCenterY, geometry.preloadedWeightCenterY, 0,
-    'external sling holds weight above catch during reset');
-  assert.equal(seat.stage, 'external-manual-weight-seating');
-  assert.equal(seat.catchAngle, 0);
-  assert.ok(seat.weightLowerOpeningY
-    > seat.catchSupportPosition.y);
+  const clear = stateAtTime((timeline.rodHauledClear + timeline.catchReset) / 2);
+  const armed = stateAtTime((timeline.freshWeightShown + timeline.reloadedDescentBegins) / 2);
+  assert.equal(clear.stage, 'out-of-view-detent-release-and-catch-reset');
+  assert.equal(clear.detentLatched, false);
+  assert.ok(clear.catchAngle < 0);
+  assert.equal(clear.weightOnSeabed, true);
+  near(clear.bodyPositionY, geometry.hauledBodyY, 0, 'rod hauled clear');
+  assert.equal(armed.catchAngle, 0);
+  assert.equal(armed.catchToWeightContactActive, true);
+  assert.equal(armed.weightOpacity, 1);
+
+  // The spent weight is invisible before it leaves the bottom, and the fresh
+  // one appears only once the rod and catch are wholly above the view.
+  const fit = model.root.userData.cameraFitBounds;
+  for (let sample = 0; sample <= 400; sample += 1) {
+    const time = timeline.rodRecovered
+      + (timeline.cycleClosure - timeline.rodRecovered) * sample / 400;
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const state = stateAtTime(time);
+    assert.equal(blocks.weightAssembly.visible, state.weightOpacity > 0);
+    if (state.weightOpacity < 1 && state.weightOpacity > 0) {
+      const box = new THREE.Box3().setFromObject(blocks.weightAssembly);
+      const rod = new THREE.Box3().setFromObject(blocks.bodyAssembly);
+      const height = fit.max.y - fit.min.y;
+      if (time < timeline.catchReset) assert.ok(box.max.y < fit.min.y, `spent weight below view at ${time}`);
+      else {
+        assert.ok(box.min.y > fit.max.y + 0.3 * height, `fresh weight above view at ${time}`);
+        assert.ok(rod.min.y > fit.max.y + 0.3 * height, `rod above view at ${time}`);
+      }
+    }
+    assert.ok(displayFrame247.position.y >= 0);
+  }
   disposeModel(model.root);
 });
 
@@ -348,7 +366,7 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
     geometry.catchSupportLocal.y,
     0,
   );
-  for (const time of [0, 2.7, 3.4, 3.8, 4.35, 5.4, 7.4, 8.6, 9.25]) {
+  for (const time of [0, 2.7, 3.4, 3.8, 4.35, 5.4, 7.4, 8.6, 9.25, 10.2]) {
     model.update(time);
     model.root.updateMatrixWorld(true);
     const state = stateAtTime(time);
@@ -375,15 +393,11 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
       0,
       `bore clearance at ${time}`,
     );
-    assert.equal(
-      contacts.externalReloadSling.automatic,
-      false,
-    );
-    assert.equal(blocks.resetSling.visible, state.resetSlingOpacity > 0);
+    assert.equal(contacts.outOfViewReset.automatic, false);
+    assert.equal(blocks.weightAssembly.visible, state.weightOpacity > 0);
   }
-  model.update((timeline.manualReloadBegins + timeline.manualReloadLifted) / 2);
-  assert.equal(blocks.resetSling.visible, true);
-  assert.equal(model.root.userData.contacts.externalReloadSling.active, true);
+  model.update((timeline.catchReset + timeline.reloadedDescentBegins) / 2);
+  assert.equal(model.root.userData.contacts.outOfViewReset.active, true);
   disposeModel(model.root);
 });
 
@@ -406,8 +420,9 @@ test('movement 247 reported rates close away from edge release and leave movemen
     5.2,
     7.4,
     7.9,
-    8.5,
+    8.9,
     9.25,
+    10.2,
   ]) {
     const before = stateAtTime(time - step);
     const state = stateAtTime(time);

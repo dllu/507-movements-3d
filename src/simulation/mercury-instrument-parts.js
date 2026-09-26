@@ -34,11 +34,13 @@ function retainingClip(xs, radius, y, material) {
 // The scale board stands behind the glass leg it reads: a deeper board
 // with a round groove in which that leg lies, so the board is carried by
 // the tube (and the tube by the board) without bands or clips.
-function grooveScaleBoard(board, legX, glassRadius) {
+function grooveScaleBoard(board, legX, glassRadius, side = 1) {
   board.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(board);
   const grooveRadius = glassRadius + .02;
-  const left = legX - glassRadius - .14, right = box.max.x;
+  // side 1: the board runs out to the right of the leg; -1: to its left.
+  const left = side > 0 ? legX - glassRadius - .14 : box.min.x;
+  const right = side > 0 ? box.max.x : legX + glassRadius + .14;
   const front = box.max.z, back = -(glassRadius + .10);
   const section = polygonClipping.difference(
     poly([[left, -back], [right, -back], [right, -front], [left, -front]]),
@@ -68,7 +70,7 @@ export function correctMercuryInstrument(root, id, update) {
     const elbowRadius = .4, elbowX = -g.legCenterX - elbowRadius;
     const inletY = g.tubeTopY + elbowRadius;
     const path = new THREE.CurvePath();
-    path.add(new THREE.LineCurve3(new THREE.Vector3(-3.72, inletY, 0), new THREE.Vector3(elbowX, inletY, 0)));
+    path.add(new THREE.LineCurve3(new THREE.Vector3(-4.40, inletY, 0), new THREE.Vector3(elbowX, inletY, 0)));
     class Elbow extends THREE.Curve {
       getPoint(t, target = new THREE.Vector3()) {
         const a = Math.PI / 2 * (1 - t);
@@ -87,18 +89,33 @@ export function correctMercuryInstrument(root, id, update) {
     b.boilerFlange.position.y = inletY;
     // Pass 64: Brown draws the pipe only from his crop to the elbow, so it
     // runs straight to a clean open end; no flange, boiler or saddles.
-    b.valveStem.position.y = inletY + .46;
-    b.valveHandle.position.y = inletY + .785;
-    for (const rotation of [0, Math.PI / 2]) {
-      const spoke = new THREE.Mesh(new THREE.BoxGeometry(.64, .045, .045), b.valveHandle.material);
-      spoke.rotation.y = rotation;
-      spoke.position.copy(b.valveHandle.position);
-      root.add(spoke);
+    // Pass 65: Brown's cock is a plug cock: a round body between two pipe
+    // flanges, a small plug head on top and the T handle of the plug key
+    // hanging below. Its passage stays open.
+    const cockX = -2.45, body = .30, flange = .27, bodyHalf = .24, flangeHalf = .30;
+    const cockProfile = [[-flangeHalf, bore], [-flangeHalf, flange], [-bodyHalf, flange]];
+    for (let i = 0; i <= 24; i++) {
+      const a = -bodyHalf + 2 * bodyHalf * i / 24;
+      cockProfile.push([a, Math.sqrt(body * body - a * a)]);
     }
-    // A fixed stopcock boss joins the stem to the pressure pipe; its bore stays open.
-    const boss = new THREE.Mesh(wall(bore, .28, -.16, .16), b.boilerFlange.material);
-    boss.rotation.z = Math.PI / 2; boss.position.set(-2.53, inletY, 0);
+    cockProfile.push([bodyHalf, flange], [flangeHalf, flange], [flangeHalf, bore]);
+    const boss = new THREE.Mesh(lathe(cockProfile), b.boilerFlange.material);
+    boss.rotation.z = Math.PI / 2; boss.position.set(cockX, inletY, 0);
+    boss.userData.role = 'plug-cock-body-between-pipe-flanges';
     root.add(boss); b.valveBoss = boss;
+    replace(b.valveStem, new THREE.CylinderGeometry(.075, .085, .12, 24));
+    b.valveStem.userData.role = 'plug-cock-plug-head';
+    b.valveStem.position.set(cockX, inletY + body - .02 + .06, 0);
+    // The T handle: a flared neck from the body down to a flat cross bar.
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(.08, .13, .24, 24), b.valveHandle.material);
+    neck.userData.role = 'plug-cock-key-neck';
+    // The neck starts inside the round body, just below the passage.
+    neck.position.set(cockX, inletY - body + .04 - .12, 0);
+    root.add(neck); b.cockKeyNeck = neck;
+    replace(b.valveHandle, new THREE.BoxGeometry(.66, .15, .20));
+    b.valveHandle.userData.role = 'plug-cock-t-handle-bar';
+    b.valveHandle.rotation.set(0, 0, 0);
+    b.valveHandle.position.set(cockX, inletY - body + .04 - .24 - .075 + .005, 0);
     b.base.position.y = -3.47;
     replace(b.backPost, new THREE.BoxGeometry(.16, 6.12, .18));
     b.backPost.position.y = -.32;
@@ -112,6 +129,7 @@ export function correctMercuryInstrument(root, id, update) {
       tab.position.set(1.12, y, -.40); tab.userData.role = 'clip-tab-to-scale-board'; root.add(tab);
     }
     grooveScaleBoard(b.scaleBoard, g.legCenterX, g.glassOuterRadius);
+    if (b.leftZeroBoard) grooveScaleBoard(b.leftZeroBoard, -g.legCenterX, g.glassOuterRadius, -1);
   } else {
     replace(b.glassLongLeg, wall(bore, g.glassOuterRadius, -.5, .5));
     replace(b.glassShortLower, wall(bore, g.glassOuterRadius, g.bendTangentY, -3.65));

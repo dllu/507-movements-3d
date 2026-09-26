@@ -3524,16 +3524,22 @@ function oldFashionedClockVergeEscapement(movement) {
   // release edge, where the tooth tip leaves them. Brown draws them about
   // 0.6-0.65 of a pitch long; a pallet of length L releases at cos(phi) =
   // h / L, with h the staff height above the tooth tips, and the half-pitch
-  // advance per beat then fixes h. Raising the staff to 0.25 (0.24 pitch;
-  // Brown about 0.15) gives 0.64-long pallets (0.60 pitch) that release 17
-  // degrees past mid-swing and catch at 20.5; the steeper pallets clear the
-  // gentler backs through the 45-degree foliot swing.
-  const tuning = { h: 0.25, n: 1.8, amp: 45, rel: 17, cat: 20.5 };
+  // advance per beat then fixes h for a given pallet angle. Opening the
+  // pallets to 108 degrees (Brown's blades measure about 106) lets the staff
+  // sit at 0.20 (0.19 pitch; Brown about 0.15) with 0.61-long pallets (0.58
+  // pitch) that release 17 degrees past mid-swing and catch at 20.4 (2.0
+  // degrees of drop); the pallets clear the gentler backs through the
+  // 45-degree foliot swing. The wider angle brings the idle pallet down
+  // closer to the approaching tooth's back, so the pallets are 0.34 wide
+  // radially (the tooth depth, seen edge-on in Brown's view) rather than 0.5.
+  const tuning = { h: 0.20, n: 1.8, amp: 45, rel: 17, cat: 20.4, included: 108, width: 0.34 };
   const base = vergeAndCrownWheelEscapement(movement, {
     flagPallets: true,
     heightToRadiusRatioOverride: tuning.h / 2.2,
+    palletIncludedAngleDegrees: tuning.included,
     includeFrame: false,
     palletThickness: 0.12,
+    palletWidth: tuning.width,
     toothBackExponent: tuning.n,
     toothRakeFraction: 0.35,
     toothTipZ: 0.6,
@@ -4129,13 +4135,13 @@ function oldFashionedClockVergeEscapement(movement) {
   // unpresented world frame, with a narrow field, so the outer teeth run off
   // the frame as Brown's band does.
   root.userData.hideGround = true;
-  // A wider stretch along the crown edge (local z, which the source
-  // presentation turns horizontal: about three pitches, the wheel ends
-  // running out of view) shows
-  // Brown's strip of raked teeth rather than two oversized ones.
+  // Along the crown edge (local z, which the source presentation turns
+  // horizontal) the fit spans about two and a quarter pitches, as Brown's
+  // strip spans two: the wheel ends run out of view, and only the far teeth
+  // nearest the verge show through the gaps (Brown's X at the left).
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-0.6 * displayScale, -1.5 * displayScale, -1.55 * displayScale),
-    new THREE.Vector3(1.5 * displayScale, 1.5 * displayScale, 1.55 * displayScale),
+    new THREE.Vector3(-0.6 * displayScale, -1.5 * displayScale, -1.0 * displayScale),
+    new THREE.Vector3(1.5 * displayScale, 1.5 * displayScale, 1.0 * displayScale),
   );
   root.userData.cameraFov = 12;
   // The raked tooth faces lie nearly edge-on to the key light; a tight shadow

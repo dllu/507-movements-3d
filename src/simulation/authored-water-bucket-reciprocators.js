@@ -542,10 +542,36 @@ function waterBucketReciprocator(movement) {
   strikeAnvil.userData.role = 'ground-anvil-opening-bucket-valve';
   root.add(strikeAnvil);
 
-  const flume = new THREE.Mesh(
-    new THREE.BoxGeometry(3.30, 0.22, 0.82),
+  // Brown's spout is an open trough: a U section (floor and two side walls,
+  // open above) with a closed upper end, running down to an open lip over
+  // the bucket, and carrying a thin sheet of water along its floor.
+  const flumeLength = 3.30, flumeWidth = 0.46, flumeHeight = 0.22, flumeWall = 0.045;
+  const troughSection = new THREE.Shape([
+    [-flumeWidth / 2, -flumeHeight / 2], [flumeWidth / 2, -flumeHeight / 2],
+    [flumeWidth / 2, flumeHeight / 2], [flumeWidth / 2 - flumeWall, flumeHeight / 2],
+    [flumeWidth / 2 - flumeWall, -flumeHeight / 2 + flumeWall],
+    [-flumeWidth / 2 + flumeWall, -flumeHeight / 2 + flumeWall],
+    [-flumeWidth / 2 + flumeWall, flumeHeight / 2], [-flumeWidth / 2, flumeHeight / 2],
+  ].map(([u, v]) => new THREE.Vector2(u, v)));
+  const troughGeometry = new THREE.ExtrudeGeometry(troughSection, {depth: flumeLength, bevelEnabled: false})
+    .translate(0, 0, -flumeLength / 2)
+    .rotateY(Math.PI / 2);
+  const flume = new THREE.Mesh(troughGeometry, frameMaterial);
+  const flumeEnd = new THREE.Mesh(
+    new THREE.BoxGeometry(flumeWall, flumeHeight - flumeWall, flumeWidth - 2 * flumeWall),
     frameMaterial,
   );
+  flumeEnd.position.set(flumeLength / 2 - flumeWall / 2, flumeWall / 2, 0);
+  flumeEnd.userData.role = 'closed-upper-end-of-open-trough-spout';
+  flume.add(flumeEnd);
+  const flumeWater = new THREE.Mesh(
+    new THREE.BoxGeometry(flumeLength - flumeWall, 0.10, flumeWidth - 2 * flumeWall - 0.004),
+    waterMaterial,
+  );
+  flumeWater.position.set(-flumeWall / 2, -flumeHeight / 2 + flumeWall + 0.05, 0);
+  flumeWater.renderOrder = 2;
+  flumeWater.userData.role = 'water-running-down-open-trough-spout';
+  flume.add(flumeWater);
   flume.position.set(bucketRopeX+.33+1.65*Math.cos(.30),1.80+1.65*Math.sin(.30),0.02);
   flume.rotation.z = 0.30;
   flume.userData.role = 'fixed-flume-providing-continuous-water-fall';

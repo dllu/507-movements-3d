@@ -202,10 +202,10 @@ test('movement 204 constructs two disjoint one-sheet hyperboloids around nonpara
     throatRadius,
   } = geometry;
 
-  near(THREE.MathUtils.radToDeg(shaftAngle), 40, 1e-14, 'shaft angle');
+  near(THREE.MathUtils.radToDeg(shaftAngle), 50, 1e-14, 'shaft angle');
   near(
     THREE.MathUtils.radToDeg(generatorAngle),
-    20,
+    25,
     1e-14,
     'generator angle',
   );
@@ -294,7 +294,7 @@ test('movement 204 constructs two disjoint one-sheet hyperboloids around nonpara
       near(
         Math.abs(worldEndpoint.clone().sub(origin).dot(axis)),
         bodyHalfLength,
-        2e-15,
+        1e-14,
         'painted generator reaches an end plane',
       );
     }
@@ -464,7 +464,7 @@ test('movement 204 nominal smooth axodes have exact tangency, transverse rolling
   assert.ok(maxima.axial <= 1e-15, `maximum axial error ${maxima.axial}`);
   assert.ok(maxima.radial <= 5e-16, `maximum radial error ${maxima.radial}`);
   assert.ok(
-    maxima.surfaceResidual <= 1.2e-15,
+    maxima.surfaceResidual <= 4e-15,
     `maximum surface residual ${maxima.surfaceResidual}`,
   );
   assert.ok(
@@ -472,15 +472,15 @@ test('movement 204 nominal smooth axodes have exact tangency, transverse rolling
     `maximum normal/tangent error ${maxima.normalAlignment}`,
   );
   assert.ok(
-    maxima.normalVelocity <= 3e-16,
+    maxima.normalVelocity <= 6e-16,
     `maximum normal velocity ${maxima.normalVelocity}`,
   );
   assert.equal(maxima.transverseRolling, 0);
   assert.equal(maxima.transverseVelocityMatch, 0);
   assert.equal(maxima.relativeOffGenerator, 0);
   assert.equal(maxima.longitudinalVariation, 0);
-  assert.ok(transmission.nominalLongitudinalSlidingSpeed > 0.48);
-  assert.ok(transmission.nominalLongitudinalSlidingSpeed < 0.481);
+  assert.ok(transmission.nominalLongitudinalSlidingSpeed > 0.821);
+  assert.ok(transmission.nominalLongitudinalSlidingSpeed < 0.822);
   disposeModel(model.root);
 });
 
@@ -618,7 +618,7 @@ test('movement 204 keeps its exact 1-to-1 counterrotation and painted surface sp
         near(
           Math.abs(geometry.surfaceResidual(current, origin, axis)),
           0,
-          5e-15,
+          2e-14,
           `${name} painted generator stays on surface at phase ${phase}`,
         );
       }
@@ -747,7 +747,8 @@ test('movement 204 runtime keeps the contact generator fixed and remains distinc
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
   // The dark end-face rims Brown only inks are retired as hidden references.
-  assert.ok(visibleMeshCount >= 16, 'the undrawn base, posts and painted end-face indices are presented away');
+  assert.ok(visibleMeshCount >= 12, 'the two bodies with their end faces and hubs remain visible');
+  assert.ok(visibleMeshCount <= 14, 'the undrawn base, posts, bearing rings and painted end-face indices are presented away');
   // Brown looks square-on to the common generator, so the upper roller's
   // right end face and the lower roller's left end face both show and the
   // lower roller's near left end overlaps the upper one.

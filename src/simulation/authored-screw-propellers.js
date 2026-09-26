@@ -62,7 +62,10 @@ function screwPropeller(movement) {
   const chordSegments = 10;
   const rootRadiusSceneUnit = 0.42;
   const tipRadiusSceneUnit = 2.28;
-  const screwPitchSceneUnitPerTurn = 3.75;
+  // The displayed blades share the physical screw's pitch ratio
+  // (3.75 m pitch on a 3.60 m screw), so their faces lean as far round the
+  // shaft as the working screw's do.
+  const screwPitchSceneUnitPerTurn = 3.75 * (2 * tipRadiusSceneUnit) / 3.60;
   const helicalLeadCoefficientSceneUnit =
     screwPitchSceneUnitPerTurn / FULL_TURN;
 

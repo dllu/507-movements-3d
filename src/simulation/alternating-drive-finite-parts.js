@@ -148,7 +148,9 @@ export function correctDualBandInterfaces(root) {
   const pinY=b.pivotPin.position.y+.78;
   const outline=clip.union(poly([[-.125,-.765],[.125,-.765],[.125,pinY],[-.125,pinY]]),poly(circle([0,.78],.18,64)),poly(circle([0,pinY],.20,64)));
   replace(post,plate(clip.difference(outline,poly(circle([0,.78],.108,64))),-.14,.14));
-  const pinBack=post.position.z-.10,pinFront=b.pivotPin.position.z+.55;
+  // Brown draws no upright (the presentation removes it), so pin a is only a
+  // stub through the lever boss (z 0.30 to 0.68), 0.06 proud of each face.
+  const pinBack=.24,pinFront=.74;
   replace(b.pivotPin,new THREE.CylinderGeometry(.13,.13,pinFront-pinBack,32).rotateX(Math.PI/2));b.pivotPin.rotation.set(0,0,0);b.pivotPin.position.z=(pinFront+pinBack)/2;
   const base=b.frame.children.find(o=>o.userData.role==='rectifier-frame-base');
   replace(base,new THREE.BoxGeometry(.90,.22,.40));base.position.set(0,-1.61,post.position.z-.08);

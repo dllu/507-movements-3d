@@ -120,9 +120,13 @@ test('225 deterministic curved plate has one continuous finite body and a retain
   assert.equal(polygons.length, 1);
   assert.equal(polygons[0].length, 2);
   const field = solidSurface(geometry), length = d.geometry.pawlLength;
-  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(length * 0.45, -0.2, 0), new THREE.Vector3(length * 0.8, -0.28, 0), new THREE.Vector3(length, 0, 0)]);
+  // Brown's plain curved bar: one circular arc from the hinge to the nose.
+  const sagitta = d.geometry.pawlBarSagitta, radius = d.geometry.pawlBarArcRadius;
+  assert.ok(sagitta > 0 && sagitta < 0.2 * length, 'a plain arc, not a hook');
+  const half = Math.asin(length / 2 / radius);
   for (let i = 2; i <= 24; i++) {
-    const center = curve.getPoint(i / 24);
+    const a = -half + 2 * half * i / 24;
+    const center = new THREE.Vector3(length / 2 + radius * Math.sin(a), -(radius * Math.cos(a) - (radius - sagitta)), 0);
     assert.ok(field.signedDistance(center) < -0.025, `finite curved body at ${i / 24}`);
   }
   assert.ok(field.signedDistance(new THREE.Vector3()) > 0.073);

@@ -42,9 +42,16 @@ export function installCarrierPawl225(root) {
   const { blocks: b, geometry: g } = root.userData;
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
   const material = b.pawlBody.material, dark = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 });
-  // The bar arches up clear of the tooth behind the nose, so only its rounded
-  // tip drops into the tooth space, on the drive and while it drags back.
-  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(g.pawlLength * 0.45, -0.2, 0), new THREE.Vector3(g.pawlLength * 0.8, -0.28, 0), new THREE.Vector3(g.pawlLength, 0, 0)]);
+  // Brown's pawl is a plain curved bar: one circular arc from the hinge to
+  // the nose, bowed enough (sagitta 0.44) that only its rounded tip drops
+  // into the tooth space, on the drive and while it drags back.
+  const sagitta = 0.44;
+  const arcRadius = (g.pawlLength ** 2 / 4 + sagitta ** 2) / (2 * sagitta);
+  const halfAngle = Math.asin(g.pawlLength / 2 / arcRadius);
+  const curve = { getPoints: (n) => Array.from({ length: n + 1 }, (_, i) => {
+    const a = -halfAngle + 2 * halfAngle * i / n;
+    return new THREE.Vector3(g.pawlLength / 2 + arcRadius * Math.sin(a), -(arcRadius * Math.cos(a) - (arcRadius - sagitta)), 0);
+  }) };
   // A single ordered perimeter avoids unions between tangent capsule arcs,
   // which can fail ring reconstruction under browser floating-point arithmetic.
   // Brown's pawl is a plain flat bar whose own rounded tip (the working nose
@@ -64,6 +71,8 @@ export function installCarrierPawl225(root) {
   }
   replace(b.pawlBody, plate([[outline, circle([0, 0], 0.074, 64)]], -0.065, 0.065));
   g.pawlOutline = outline;
+  g.pawlBarSagitta = sagitta;
+  g.pawlBarArcRadius = arcRadius;
   b.pawlIndex.position.y = -0.12;
   b.pawlIndex.position.z = 0.08;
   for (const child of [...b.carrier.children]) { child.geometry?.dispose(); b.carrier.remove(child); }

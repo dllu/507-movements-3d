@@ -7019,13 +7019,14 @@ function twinObliqueRodTogglePressMotion() {
   // Brown's columns are round, with a moulded base on each plinth and a
   // flared capital under the head: one turned solid per column, set back
   // behind the platen (which Brown draws in front of them).
-  const columnShaftRadius = 0.2;
+  // Shaft 0.45 across: Brown's shafts are about 0.09 of the column spacing.
+  const columnShaftRadius = 0.225;
   const columnZ = frameBackZ - 0.36;
   const h = columnHeight / 2;
   const columnGeometry = turnedClutchGeometry([
-    [-h, 0], [-h, 0.25], [-h + 0.08, 0.25], [-h + 0.14, 0.225],
+    [-h, 0], [-h, 0.275], [-h + 0.08, 0.275], [-h + 0.14, 0.25],
     [-h + 0.2, columnShaftRadius], [h - 0.3, columnShaftRadius],
-    [h - 0.18, 0.235], [h - 0.1, 0.27], [h, 0.27], [h, 0],
+    [h - 0.18, 0.26], [h - 0.1, 0.295], [h, 0.295], [h, 0],
   ], { angularSegments: 64 }).rotateX(-Math.PI / 2);
   const frameColumns = [-1, 1].map((sideSign) => {
     const column = new THREE.Mesh(
@@ -7114,10 +7115,11 @@ function twinObliqueRodTogglePressMotion() {
       new THREE.BoxGeometry(footWidth, 0.2, 0.86),
       frameMaterial,
     );
+    // Each column plinth sits centred under its (set-back) column.
     foot.position.set(
       sideSign * columnHalfSpan,
       bedTopY - 0.42,
-      frameBackZ,
+      sideSign === 0 ? frameBackZ : columnZ,
     );
     foot.userData.role = sideSign === 0
       ? 'fixed-center-anvil-foot'

@@ -38,7 +38,10 @@ export function correctHydraulicForceParts(root,id) {
   // 466: Brown's lever post rises above the reservoir, standing on a bracket
   // from the tank's rim rather than passing down through the water.
   const standFoot=press?.66-g.pumpLeverPivot.y:g.groundY+.12-g.pumpLeverPivot.y;
-  const standProfile=clip.difference(clip.union(capsule([0,standFoot],[0,0],.12,24),poly(circle([0,0],axleRadius+.09,64))),poly(circle([0,0],axleRadius+.004,64)));
+  // 466: Brown draws the post as a slender upright under the right side of
+  // the fulcrum eye, so the pendant ball hangs beside it, not in front of it.
+  const standX=press?.22:0,standHalf=press?.07:.12;
+  const standProfile=clip.difference(clip.union(capsule([standX,standFoot],[standX,press?-.08:0],standHalf,24),poly(circle([0,0],axleRadius+.09,64))),poly(circle([0,0],axleRadius+.004,64)));
   replace(stand,plate(standProfile,-.07,.07));stand.position.copy(g.pumpLeverPivot);stand.position.z=z-.24;b.leverStand=stand;
   const pumpBottom=press?g.pumpCylinderBottomY:-.90,pumpTop=press?g.pumpCylinderTopY:.04;
   replace(b.pumpCylinder,sidePortedShell(g.pumpPlungerRadius+.004,g.pumpPlungerRadius+.075,pumpBottom,pumpTop,press?-.30:-.59,press?.10:.09,press?-1:1,.55,press));
@@ -61,7 +64,7 @@ export function correctHydraulicForceParts(root,id) {
   if(press) {
     replace(b.ramCylinder,sidePortedShell(g.ramRadius+.004,g.ramRadius+.09,g.ramCylinderBottomY,g.ramCylinderTopY,-.72,.12,1,.982,true));b.ramCylinder.position.y=0;
     b.ramCylinder.material=b.foundation.material;
-    b.leverRimBar=mesh(root,new THREE.BoxGeometry(.76,.12,.14),b.foundation.material,'fixed-rim-bracket-carrying-hand-lever-post');b.leverRimBar.position.set(.92,.60,z-.24);
+    b.leverRimBar=mesh(root,new THREE.BoxGeometry(.86,.12,.14),b.foundation.material,'fixed-rim-bracket-carrying-hand-lever-post');b.leverRimBar.position.set(.97,.60,z-.24);
     b.ramFloor=mesh(root,new THREE.CylinderGeometry(g.ramRadius+.09,g.ramRadius+.09,.08,64),b.foundation.material,'closed-ram-cylinder-floor');b.ramFloor.position.set(g.ramAxisX,g.ramCylinderBottomY+.04,0);
     replace(b.ramRod,new THREE.CylinderGeometry(g.ramRadius,g.ramRadius,1.40,64));
     replace(b.movingPlaten,new THREE.BoxGeometry(2.06,.20,1.52));
