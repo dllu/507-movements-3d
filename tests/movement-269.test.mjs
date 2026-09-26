@@ -162,7 +162,15 @@ test('movement 269 matches the measured source proportions and source pose', () 
   const modelDriveRodEnd = geometry.frameRight
     + geometry.driveRodLength + source.frameX;
 
-  assert.equal(geometry.pinionTeeth, plate.rasterPinionToothCount);
+  // Brown draws 18 gear teeth, but his 17 rack teeth span only about 15 of
+  // that gear's pitches. The model keeps his gear diameter (rack pitch lines)
+  // and his 17-tooth rack length, which sets a 20-tooth gear.
+  assert.equal(plate.rasterPinionToothCount, 18);
+  assert.equal(geometry.pinionTeeth, 20);
+  const rasterPixelsPerUnit = (plate.rasterPinionCenter.y - plate.rasterRackPitchLines.upperY)
+    / geometry.pinionPitchRadius;
+  near(17 * geometry.circularPitch * rasterPixelsPerUnit,
+    plate.rasterFrameInnerRightX - 40, 16, 'rack teeth span Brown\'s 300 px from the first tooth to the closed end');
   assert.equal(geometry.installedRackToothCount,
     plate.rasterRackToothCounts.reduce((sum, count) => sum + count, 0));
   assert.deepEqual(
@@ -194,8 +202,8 @@ test('movement 269 matches the measured source proportions and source pose', () 
     'source frame left reach',
   );
   // Brown's closed end is a quarter pitch past the last rack tooth and 48 px
-  // (2.36 pitches) wide. The model's groups are contiguous (17 pitches, where
-  // Brown's overlap), so at the source pose the end still sits farther right.
+  // wide. The model's closed end must clear the gear tips at the stroke
+  // limit, so at the source pose it still sits farther right.
   assert.ok(
     modelSourceRight / geometry.pinionOuterRadius
       > (plate.rasterFrameOuterBounds.right - plate.rasterPinionCenter.x)
@@ -217,11 +225,10 @@ test('movement 269 matches the measured source proportions and source pose', () 
     'closed end clears the gear tips at the stroke limit',
   );
   near(
-    geometry.frameRightBridgeWidth / geometry.circularPitch,
-    (plate.rasterFrameOuterBounds.right - plate.rasterFrameInnerRightX)
-      / plate.rasterRackPitch,
-    1e-12,
-    'closed end width in pitches',
+    geometry.frameRightBridgeWidth * rasterPixelsPerUnit,
+    plate.rasterFrameOuterBounds.right - plate.rasterFrameInnerRightX,
+    1e-9,
+    'closed end width in plate pixels',
   );
   // The rod is compared from the frame's closed end rather than from the gear.
   near(
@@ -289,7 +296,7 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
   assert.equal(blocks.rackTeeth.length, 17);
   assert.equal(blocks.upperRackTeeth.length, 11);
   assert.equal(blocks.lowerRackTeeth.length, 6);
-  assert.equal(blocks.pinionToothMeshes.length, 18);
+  assert.equal(blocks.pinionToothMeshes.length, 20);
   // The four arms are windows cut in the one-piece pinion web.
   assert.equal(blocks.pinionSpokes.length, 0);
   assert.equal(blocks.pinionRim.geometry.userData.spokedWheel.spokes, 4);

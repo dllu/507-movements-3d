@@ -6652,9 +6652,15 @@ function reuleauxCarrierDiskValveMotion() {
   carrierFaceIndex.userData.role = 'rotation-index-on-carrier-disk';
   inputRotor.add(carrierFaceIndex);
 
+  // Brown's triangular tappet is a separate part bolted to the disk: it
+  // takes the accent colour so it reads against the driver-orange disk.
+  const tappetMaterial = matte(PALETTE.accent, {
+    metalness: 0.14,
+    roughness: 0.6,
+  });
   const camBody = new THREE.Mesh(
     new THREE.ExtrudeGeometry(profileShape, {depth: camDepth, bevelEnabled: false, curveSegments: 96}).translate(0, 0, -camDepth / 2),
-    driverMaterial,
+    tappetMaterial,
   );
   camBody.position.z = -0.02;
   camBody.userData.role = 'true-three-arc-reuleaux-triangle-tappet';
@@ -6663,7 +6669,7 @@ function reuleauxCarrierDiskValveMotion() {
   const fastenerBoss = cylinderAlongZ(
     fastenerBossRadius,
     .485,
-    driverMaterial,
+    tappetMaterial,
     40,
   );
   fastenerBoss.position.set(fastenerOffset.x, fastenerOffset.y, .0025);
@@ -9521,7 +9527,9 @@ function sevenArcVariableMotionPointFollower() {
     metalness: 0.14,
     roughness: 0.61,
   });
-  const camMaterial = matte(0xc84e38, {
+  // Brown's cam and its plain carrier disc are distinct parts: the cam
+  // takes the accent colour so it reads against the driver-orange disc.
+  const camMaterial = matte(PALETTE.accent, {
     metalness: 0.17,
     roughness: 0.56,
   });

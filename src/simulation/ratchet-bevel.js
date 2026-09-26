@@ -140,8 +140,9 @@ export function makeRatchetBevel() {
     const brace = new THREE.Mesh(braceGeometry, matte(PALETTE.frame)); root.add(brace);
     bearing.userData.body = body; bearing.userData.brace = brace; return bearing;
   });
-  const base = new THREE.Mesh(new THREE.BoxGeometry(4.40, 0.10, 0.48), matte(PALETTE.frame)); base.position.y = -1.24;
-  root.add(rightGear, leftGear, outputGear, shaft, outputShaft, rightCarrier, leftCarrier, ...bearings, base);
+  // Brown stands each standard's flared foot directly on the hatched
+  // ground; no base slab joins them, so none is modelled.
+  root.add(rightGear, leftGear, outputGear, shaft, outputShaft, rightCarrier, leftCarrier, ...bearings);
   const update = (time) => {
     const state = motion.stateAt(time);
     for (const gear of [rightGear, leftGear]) gear.userData.rotor.rotation.z = Math.PI / 2 + state.advance;
@@ -157,7 +158,7 @@ export function makeRatchetBevel() {
   root.userData = { fidelity: 'authored', mechanism: 'equal-miter-gears-with-contact-driven-opposed-pawls', motion,
     cameraFov: 17, hideGround: true, fullCameraDirection: new THREE.Vector3(4.8, 3.2, 8),
     blocks: { rightGear, leftGear, outputGear, rightCarrier, leftCarrier, shaft, shaftBody, feathers,
-      outputShaft, outputShaftBody, bearings, base },
+      outputShaft, outputShaftBody, bearings },
     geometry: { ...motion.parameters, ...p, teeth, ratchetTeeth: p.teeth, innerDistance, outerDistance, pitchConeAngle, shaftRadius, looseBoreRadius,
       carrierBore, ratchetZ, ratchetDepth, armZ, armDepth, pawlDepth, keyHalfWidth, keyTop, pivotBore, pivotRadius,
       pawlLength: f.length, pawlRestAngle: f.restAngle, cycleMeaning: 'one-oscillation-of-the-horizontal-shaft' } };

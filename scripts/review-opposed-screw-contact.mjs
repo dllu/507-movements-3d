@@ -8,11 +8,12 @@ import {surfaceTriangles} from '../tests/helpers/solid-surface.mjs';
 const model=makeOpposedScrewNuts();
 try{
  const worm=model.root.getObjectByName('horizontal-input-worm'),wheel=model.root.getObjectByName('generated-worm-wheel'),pieces=[];
- for(let i=0;i<wheel.count;i++){const matrix=new Matrix4();wheel.getMatrixAt(i,matrix);pieces.push(wheel.geometry.clone().applyMatrix4(matrix));}
- const whole=mergeGeometries(pieces);pieces.forEach(p=>p.dispose());
+ // The production wheel is one welded mesh of its sectors; older builds instanced them.
+ if(wheel.isInstancedMesh)for(let i=0;i<wheel.count;i++){const matrix=new Matrix4();wheel.getMatrixAt(i,matrix);pieces.push(wheel.geometry.clone().applyMatrix4(matrix));}
+ const whole=wheel.isInstancedMesh?mergeGeometries(pieces):wheel.geometry.clone();pieces.forEach(p=>p.dispose());
  const trees=[triangleTree(worm.geometry),triangleTree(whole)],rows=[],count=Number(process.env.POSES??65),threshold=1e-5;
  const topology=[];
- for(const [name,geometry]of [['worm',worm.geometry],['wheel-sector',wheel.geometry]]){
+ for(const [name,geometry]of [['worm',worm.geometry],[wheel.isInstancedMesh?'wheel-sector':'welded-wheel',wheel.geometry]]){
   const edges=new Map();let volume=0,wrongNormals=0,faceIndex=0;
   for(const f of surfaceTriangles(geometry)){
    volume+=f.a.dot(f.b.clone().cross(f.c))/6;
@@ -31,6 +32,6 @@ try{
   if(i%8===0)console.log(rows.at(-1));
  }
  const files=['scripts/review-opposed-screw-contact.mjs','scripts/lib/star-mangle-pair-distance.mjs','src/simulation/opposed-screw-nuts.js','src/simulation/worm-gear-geometry.js','src/simulation/instanced-worm-wheel.js','src/simulation/mujoco-worm-saddle/wheel-data.js'];
- const report={movement:151,method:'Actual candidate worm skin against all triangles of all 18 rendered wheel instances, including end caps and sector walls. Closest-point traversal is bounded at 1e-5; a null exactDistance means separation is at least that bound, not that an exact distance was measured. 65 offset poses span one input turn; generating geometry repeats each wheel tooth.',sources:files.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')})),summary:{poses:count,intersections:rows.filter(r=>r.separationLowerBound===0).length,minimumSeparationLowerBound:Math.min(...rows.map(r=>r.separationLowerBound))},topology,rows};
+ const report={movement:151,method:'Actual candidate worm skin against all triangles of the rendered wheel (its 18 sectors welded into one closed mesh, end caps included). Closest-point traversal is bounded at 1e-5; a null exactDistance means separation is at least that bound, not that an exact distance was measured. 65 offset poses span one input turn; generating geometry repeats each wheel tooth.',sources:files.map(file=>({file,sha256:createHash('sha256').update(fs.readFileSync(file)).digest('hex')})),summary:{poses:count,intersections:rows.filter(r=>r.separationLowerBound===0).length,minimumSeparationLowerBound:Math.min(...rows.map(r=>r.separationLowerBound))},topology,rows};
  fs.writeFileSync('docs/validation/151-render-contact.json',JSON.stringify(report,null,2)+'\n');console.log({summary:report.summary,topology});whole.dispose();
 }finally{model.dispose();}

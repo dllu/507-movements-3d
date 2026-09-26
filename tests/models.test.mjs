@@ -29602,7 +29602,6 @@ test('movement 132 straightens two equal oblique rods to drive one guided platen
     lowerDisk,
     lowerSockets,
     platen,
-    platenGuides,
     platenMotionIndex,
     topFrameRails,
     upperBearingCollar,
@@ -30048,7 +30047,6 @@ test('movement 132 straightens two equal oblique rods to drive one guided platen
     bed,
     ...frameColumns,
     ...frameFeet,
-    ...platenGuides,
     ...topFrameRails,
     upperBearingCollar,
     upperBearingRing,
@@ -30204,7 +30202,6 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
     platenBody,
     platenBracketLeft,
     platenBracketRight,
-    platenGuideRails,
     platenMotionIndex,
     platenWristPin,
     sectorAssembly,
@@ -30649,7 +30646,6 @@ test('movement 133 raises one guided platen through an exact six-to-one pinion-s
     pinionAssembly,
     pinionBearing,
     pitchContactMarker,
-    ...platenGuideRails,
     sectorBearing,
     sectorPedestal,
     sectorPivotShaft,
@@ -37362,15 +37358,15 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
   for (const fixedPart of [
     beamPivotFrontRing,
     beamPivotPin,
-    flywheelBearingRing,
     leftFloorLedge,
     rightFloorLedge,
   ]) assert.equal(fixedPart.parent, fixedFrame);
-  // Brown draws no beam column, wheel post, slider rail or index marks;
-  // source presentation removes them, keeping a slim post behind the wheel
-  // (the beam shaft runs back into a flange) so neither shaft floats.
-  assert.equal(flywheelBearingPost.parent, fixedFrame);
+  // Brown draws no beam column, wheel post, beam-shaft flange, slider rail
+  // or index marks; source presentation removes them all (p60 support
+  // policy), so the wheel shaft and beam shaft end as short plain stubs.
   for (const undrawn of [
+    flywheelBearingPost,
+    flywheelBearingRing,
     beamColumnFoot,
     beamPivotBackColumn,
     sliderGuideRail,
@@ -38922,13 +38918,16 @@ test('movement 147 lifts one loose fan crosshead on two shaft-fixed circular inc
     valveLeverSlot,
   ]) assert.equal(component.parent, valveLeverRotor);
   for (const component of [
+    leverPivotPin,
+    lowerBearing,
+  ]) assert.equal(component.parent, fixedFrame);
+  // Brown draws no base rail, pedestal, lever post or pivot bracket.
+  for (const undrawn of [
     baseRail,
     leverPivotBracket,
-    leverPivotPin,
     leverSupportPost,
-    lowerBearing,
     lowerBearingPost,
-  ]) assert.equal(component.parent, fixedFrame);
+  ]) assert.equal(undrawn.parent, null);
   assert.equal(fixedFrame.userData.fixed, true);
 
   assert.equal(

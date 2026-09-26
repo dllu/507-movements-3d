@@ -329,13 +329,16 @@ function mudgeGravityEscapement(movement) {
   const toothPitch = FULL_TURN / toothCount;
   const wheelRootRadius = 1.98;
   const wheelInnerRadius = 1.48;
-  // Brown's locking notches b and a sit on the tooth tips at about 135 and
-  // 45 degrees (the labels B and A stand outside the arms), seven and a half
-  // pitches apart: the wheel steps half a pitch per beat, so a fallen pallet's
-  // stop always hangs over the middle of a tooth space, never on a tooth.
-  const leftLockAngle = THREE.MathUtils.degToRad(135);
-  const rightLockAngle = THREE.MathUtils.degToRad(45);
-  const lockStationSeparationTeeth = 7.5;
+  // Brown draws the locked B tooth with its tip in notch b at 129.4 degrees
+  // about the wheel centre (and his teeth at that phase). The mirrored lock
+  // stations 129 and 51 degrees are six and a half pitches apart: the wheel
+  // steps half a pitch per beat, so a fallen pallet's stop always hangs over
+  // the middle of a tooth space, never on a tooth. (Locking at 135/45, seven
+  // and a half pitches apart, set B's lifting face so low that the teeth
+  // swept away Brown's level bottom edge.)
+  const leftLockAngle = THREE.MathUtils.degToRad(129);
+  const rightLockAngle = THREE.MathUtils.degToRad(51);
+  const lockStationSeparationTeeth = 6.5;
   const wheelAdvancePerBeat = toothPitch / 2;
   const wheelAdvancePerCycle = toothPitch;
 
@@ -1037,13 +1040,14 @@ function mudgeGravityEscapement(movement) {
       // B lifts on the arm's end face; b's stop wall rises toward C.
       const toPivot = stopEnd.clone().multiplyScalar(-1).normalize();
       const notchBack = stopEnd.clone().addScaledVector(toPivot, 0.14);
-      // Brown's B end: a well-rounded outer corner at his (101.7, 202.5),
-      // the bottom edge running straight on to the lifting face (not a
-      // square end cut across the arm, which left a point). Brown's bottom
-      // edge falls slightly to a pallet hanging below it; here the lifting
-      // face sits about level with the corner, so the bottom rises gently.
+      // Brown's B end: a well-rounded outer corner at his (101.7, 202.5)
+      // and his level bottom edge (y 206.5) running on to x 124, where it
+      // turns up into the lifting face. Brown's bottom continues to x 131
+      // and drops into a small nib hanging in the tooth space; that region
+      // is where the lifting tooth passes, so the swept cut removes it.
       const bluntCorner = sourceLocal(new THREE.Vector2(101.7, 202.5));
-      const bottomDirection = liftStart.clone().sub(bluntCorner).normalize();
+      const brownBottomEnd = sourceLocal(new THREE.Vector2(124, 206.5));
+      const bottomDirection = brownBottomEnd.clone().sub(bluntCorner).normalize();
       const round = 0.14;
       const cornerIn = bluntCorner.clone().addScaledVector(armDirection, -round);
       const cornerOut = bluntCorner.clone().addScaledVector(bottomDirection, round);
@@ -1058,6 +1062,7 @@ function mudgeGravityEscapement(movement) {
         cornerIn,
         ...cornerArc,
         cornerOut,
+        brownBottomEnd,
         ...liftFacePoints,
         ...stopArc.slice(1),
         notchBack,
@@ -5133,13 +5138,9 @@ function bloxamGravityEscapement(movement) {
     root.add(group);
 
     const lockWorld = fixedLockPointForSide(side);
-    const shoulderWorld = new THREE.Vector2(
-      side * 0.74,
-      armPivot.y - 2.95,
-    );
+    // Brown draws each arm straight from C to its stop A or B.
     const mainRailPoints = [
       armPivot,
-      shoulderWorld,
       lockWorld,
     ].map((point) => armLocalPoint(point, cockedAngle));
     // Each arm is one flat plate in its own thin slab (the two slabs are
@@ -5172,16 +5173,33 @@ function bloxamGravityEscapement(movement) {
     const faceBack = faceMid.clone().addScaledVector(faceNormal, 0.16);
 
     const forkLocal = forkPinLocalPoint(side);
-    const lowerCrosspieceWorld = new THREE.Vector2(
-      side * 0.82,
-      wheelCenter.y - 0.18,
-    );
-    const lowerCrosspiecePoints = [
-      toLocal(lockWorld),
-      toLocal(lowerCrosspieceWorld),
-      faceBack,
-      forkLocal,
-    ];
+    // Below the stop the arm carries on round in one circular arc, tangent
+    // to the straight arm at the stop and curving in under the wheel centre
+    // to the fork pin, as Brown's branches curve in toward the arbor. A short
+    // straight finger rises from the fork pin to the pallet-face stem.
+    const lowerArcPoints = (() => {
+      const start = toLocal(lockWorld);
+      const tangent = start.clone().normalize();
+      const chord = forkLocal.clone().sub(start);
+      const normal = new THREE.Vector2(-tangent.y, tangent.x);
+      if (normal.dot(chord) < 0) normal.negate();
+      const radius = chord.lengthSq() / (2 * normal.dot(chord));
+      const center = start.clone().addScaledVector(normal, radius);
+      const turn = Math.sign(tangent.x * normal.y - tangent.y * normal.x);
+      const startAngle = Math.atan2(start.y - center.y, start.x - center.x);
+      const endAngle = Math.atan2(forkLocal.y - center.y,
+        forkLocal.x - center.x);
+      const sweep = positiveModulo(turn * (endAngle - startAngle), FULL_TURN);
+      const segments = 32;
+      return Array.from({ length: segments + 1 }, (_, index) => {
+        const angle = startAngle + turn * sweep * index / segments;
+        return center.clone().add(new THREE.Vector2(
+          Math.cos(angle) * radius,
+          Math.sin(angle) * radius,
+        ));
+      });
+    })();
+    const lowerCrosspiecePoints = [...lowerArcPoints, faceBack];
     const mainRail = plateRegistry.add({
       key: `${sideKey}-arm`,
       material,
@@ -5276,7 +5294,7 @@ function bloxamGravityEscapement(movement) {
     const outerSlabZ1 = outerWheelPlaneZ + outerWheelDepth / 2 - planeZ;
     const lockingDetentEdge = plateRegistry.add({
       key: `${sideKey}-detent-${letter}`,
-      material: markerMaterial,
+      material: darkMaterial,
       owner: group,
       primitives: [stopPrimitive],
       role: `${sideName}-eight-degree-outer-locking-detent-${letter}`,
@@ -5342,6 +5360,7 @@ function bloxamGravityEscapement(movement) {
       heavyLowerCrosspiece,
       lockingDetentEdge,
       lockFacePoints,
+      lowerArcPoints,
       mainRail,
       mainRailPoints,
       palletFace,

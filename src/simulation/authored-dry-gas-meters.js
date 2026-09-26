@@ -88,56 +88,50 @@ function createRectangularBellows({
   role,
 }) {
   const group = addRole(new THREE.Group(), role);
-  // Brown draws each chamber as one closed leather bellows whose top and
-  // bottom outlines dip in two deep V folds between full-height boards.
-  const stationScales = [1.0, 0.70, 1.0, 0.70, 1.0];
-  const stationFractions = stationScales.map(
-    (_, index) => index / (stationScales.length - 1),
-  );
-  const halfHeights = stationScales.map((scale) => 1.10 * scale);
-  const halfDepths = stationScales.map((scale) => 0.58 * scale);
-  const segmentCount = stationScales.length - 1;
-  const positionArray = new Float32Array(segmentCount * 4 * 6 * 3);
+  // Brown draws each chamber as a round leather bellows: a smooth waisted
+  // skin between the end boards, drawn in by one middle hoop, so its top and
+  // bottom outlines dip in two rounded folds. The skin is a surface of
+  // revolution about the stroke axis (flattened front-to-back to the boards'
+  // depth). Each fold's leather has a constant length: the waist is deep when
+  // the chamber is closed up and shallow when it is drawn out.
+  const stationFractions = [0, 0.5, 1];
+  const halfHeight = 1.10, halfDepth = 0.52;
+  const halfHeights = stationFractions.map(() => halfHeight);
+  const halfDepths = stationFractions.map(() => halfDepth);
+  const foldLeather = Math.hypot(0.5875, 0.12);
+  const profileSteps = 40, around = 72;
+  const rings = 2 * profileSteps + 1;
+  const positionArray = new Float32Array(rings * (around + 1) * 3);
+  const indices = [];
+  for (let i = 0; i < rings - 1; i += 1) for (let j = 0; j < around; j += 1) {
+    const a = i * (around + 1) + j, b = a + 1, c = a + around + 2, d = a + around + 1;
+    indices.push(a, d, b, b, d, c);
+  }
   const geometry = new THREE.BufferGeometry();
   const positions = new THREE.BufferAttribute(positionArray, 3);
   positions.setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('position', positions);
+  geometry.setIndex(indices);
   const skin = addRole(new THREE.Mesh(geometry, material),
-    `${role}-continuous-flexible-pleated-skin`);
+    `${role}-continuous-flexible-round-leather-skin`);
   group.add(skin);
 
-  const stationFrames = stationScales.map((_, index) => {
-    const halfHeight = halfHeights[index];
-    const halfDepth = halfDepths[index];
+  const stationFrames = stationFractions.map((_, index) => {
     const frame = addRole(new THREE.Group(),
-      `${role}-pleat-frame-${index + 1}`);
-    for (const side of [-1, 1]) {
-      const horizontal = new THREE.Mesh(
-        new THREE.BoxGeometry(0.045, 0.055, 2 * halfDepth),
-        frameMaterial,
-      );
-      horizontal.position.y = side * halfHeight;
-      frame.add(horizontal);
-      const vertical = new THREE.Mesh(
-        new THREE.BoxGeometry(0.045, 2 * halfHeight, 0.055),
-        frameMaterial,
-      );
-      vertical.position.z = side * halfDepth;
-      frame.add(vertical);
-    }
+      `${role}-${index === 1 ? 'middle-hoop' : 'end-hoop'}-${index + 1}`);
+    const hoop = new THREE.Mesh(
+      new THREE.LatheGeometry([
+        new THREE.Vector2(0.985, -0.035), new THREE.Vector2(1.035, -0.035),
+        new THREE.Vector2(1.035, 0.035), new THREE.Vector2(0.985, 0.035),
+        new THREE.Vector2(0.985, -0.035)], 72),
+      frameMaterial,
+    );
+    hoop.rotation.z = Math.PI / 2;
+    hoop.scale.set(halfHeight, 1, halfDepth);
+    frame.add(hoop);
     group.add(frame);
     return frame;
   });
-
-  const corner = (x, halfHeight, halfDepth, index) => {
-    const corners = [
-      [x, halfHeight, halfDepth],
-      [x, halfHeight, -halfDepth],
-      [x, -halfHeight, -halfDepth],
-      [x, -halfHeight, halfDepth],
-    ];
-    return corners[index];
-  };
 
   const update = (nextFixedX, nextMovingX) => {
     const stationXs = stationFractions.map((fraction) =>
@@ -145,46 +139,20 @@ function createRectangularBellows({
     stationFrames.forEach((frame, index) => {
       frame.position.x = stationXs[index];
     });
+    const halfFold = Math.abs(nextMovingX - nextFixedX) / 4;
+    const dip = Math.sqrt(Math.max(0, foldLeather ** 2 - halfFold ** 2)) / halfHeight;
     let cursor = 0;
-    const put = (value) => {
-      positionArray[cursor] = value[0];
-      positionArray[cursor + 1] = value[1];
-      positionArray[cursor + 2] = value[2];
-      cursor += 3;
-    };
-    for (let segment = 0; segment < segmentCount; segment += 1) {
-      for (let side = 0; side < 4; side += 1) {
-        const nextSide = (side + 1) % 4;
-        const a = corner(
-          stationXs[segment],
-          halfHeights[segment],
-          halfDepths[segment],
-          side,
-        );
-        const b = corner(
-          stationXs[segment],
-          halfHeights[segment],
-          halfDepths[segment],
-          nextSide,
-        );
-        const c = corner(
-          stationXs[segment + 1],
-          halfHeights[segment + 1],
-          halfDepths[segment + 1],
-          nextSide,
-        );
-        const d = corner(
-          stationXs[segment + 1],
-          halfHeights[segment + 1],
-          halfDepths[segment + 1],
-          side,
-        );
-        put(a);
-        put(b);
-        put(c);
-        put(a);
-        put(c);
-        put(d);
+    for (let i = 0; i < rings; i += 1) {
+      const u = i / (rings - 1);
+      const x = THREE.MathUtils.lerp(nextFixedX, nextMovingX, u);
+      const local = (u * 2) % 1;
+      const scale = 1 - dip * Math.sin(Math.PI * local) ** 1.6;
+      for (let j = 0; j <= around; j += 1) {
+        const angle = j / around * Math.PI * 2;
+        positionArray[cursor] = x;
+        positionArray[cursor + 1] = halfHeight * scale * Math.cos(angle);
+        positionArray[cursor + 2] = halfDepth * scale * Math.sin(angle);
+        cursor += 3;
       }
     }
     positions.needsUpdate = true;

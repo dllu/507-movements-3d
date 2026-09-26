@@ -12,29 +12,21 @@ export function correctSinglePinParts(root){
  // The plate's own opening edges are the pallets; the ideal face centrelines
  // stay as hidden references for the kinematic checks.
  for(const o of[b.upperDeadEdge,b.lowerDeadEdge,b.upperImpulseEdge,b.lowerImpulseEdge])o.visible=false;
- // Suspension pin through the eye's bore; the disc arbor runs in a fixed
- // bush behind the disc.
- const suspension=role(root,'fixed-pendulum-pivot');shaft(suspension,.07,g.palletDepth+.12,g.plateZ);
- const housing=role(root,'fixed-single-pin-disc-arbor');replace(housing,bore(.16,.118,.2));housing.position.z=g.diskZ-g.diskDepth/2-.11;
- const arborEnd=g.diskFront,arborLength=arborEnd-(housing.position.z-.1);shaft(b.diskHub,.115,arborLength,arborEnd-arborLength/2);
+ // Brown draws the suspension pin only as the dot in the eye and the disc
+ // arbor as a cut section; no frame, cock, back bar or bush is drawn. The
+ // pin runs just through the eye with a retaining head in front, and the
+ // arbor ends as a short cut stub just behind the disc.
+ const suspension=role(root,'fixed-pendulum-pivot');
+ const housing=role(root,'fixed-single-pin-disc-arbor');housing.removeFromParent();housing.geometry.dispose();
+ const arborEnd=g.diskFront,arborBack=g.diskZ-g.diskDepth/2-.08,arborLength=arborEnd-arborBack;shaft(b.diskHub,.115,arborLength,arborEnd-arborLength/2);
  replace(b.disk,bore(g.diskRadius,.118,g.diskDepth));
- // One plain back bar, hidden behind the pendulum rod in Brown's view,
- // carries both fixed parts: the cock at its head holds the suspension pin
- // (run back through the eye into it, with a retaining head in front), and
- // the disc arbor's bush is seated on its face lower down.
  {
-  const frameMaterial=b.fixedFrame.children[0].material;
-  const pivotY=suspension.position.y,diskY=housing.position.y;
-  const barFront=housing.position.z-.1,barBack=barFront-.1;
-  const bar=mesh(b.fixedFrame,plate(clip.union(capsule([0,pivotY+.12],[0,diskY],.13,32),poly(circle([0,diskY],.24,64))),barBack,barFront),frameMaterial,'plain-back-bar-carrying-suspension-cock-and-disc-bush');
+  const pivotY=suspension.position.y;
   const eyeBack=g.plateZ-g.palletDepth/2,eyeFront=g.plateZ+g.palletDepth/2;
-  const cockFront=eyeBack-.03;
-  mesh(b.fixedFrame,plate(clip.difference(poly(circle([0,pivotY],.2,64)),poly(circle([0,pivotY],.071,48))),barFront,cockFront),frameMaterial,'suspension-cock-boss-on-back-bar').position.x=0;
-  const pinBack=barBack+.02,pinFront=eyeFront+.04;
+  const pinBack=eyeBack-.03,pinFront=eyeFront+.04;
   shaft(suspension,.07,pinFront-pinBack,(pinFront+pinBack)/2);
   const head=mesh(b.fixedFrame,new T.CylinderGeometry(.11,.11,.03,32),suspension.material,'suspension-pin-retaining-head');
   head.rotation.x=Math.PI/2;head.position.set(suspension.position.x,pivotY,pinFront+.015);
-  b.backBar=bar;
  }
  d.workingPartsReview={scope:'Pendulum plate with the escapement opening cut to Brown\'s shape: concentric dead edges and straight upright impulse edges, the pin standing from the disc behind the plate, bored eye, disc and arbor bush.',qualification:'The disc is driven until the pin meets the actual opening edges: it rests on the concentric dead faces, rolls round the neck corner and pushes the upright face, with positive work, all solved against the plate. Only the short drop onto the opposite dead face is prescribed; the pendulum law is prescribed and forces are not solved, so passive operation is not qualified.',contactMarkersSuppressed:true};
 }

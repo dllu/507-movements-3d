@@ -1,10 +1,10 @@
 {
   "movement": 157,
   "method": "Bidirectional visible mesh vertices, edge midpoints and triangle centers. Cross-body pairs at 129 full-cycle poses; same-moving-body pairs once because relative transforms are fixed. Fixed-frame unions excluded. Finite sampling, not a continuous collision proof.",
-  "parts": 34,
-  "pairs": 408,
+  "parts": 16,
+  "pairs": 117,
   "poses": 129,
-  "checks": 6462460,
+  "checks": 5140274,
   "failures": {},
   "sources": [
     {
@@ -13,7 +13,7 @@
     },
     {
       "file": "src/simulation/pinned-elbow.js",
-      "sha256": "6a7ea29ebc992e4d478ca598e7eb6d13a0521e0f3942f76d2ade2e718a523133"
+      "sha256": "b6228569bc9fc9280256ed0a09c7a6e01987170d805fef9d894b19e46d7a9ad5"
     },
     {
       "file": "src/simulation/pinned-elbow-motion.js",
@@ -25,7 +25,7 @@
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

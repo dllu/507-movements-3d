@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { makeBoredPlanarLink } from './bored-planar-link.js';
-import { boreBoxAtLocalPoint, boreZCylinder, addZJournal, finishSpringFamily } from './spring-pivot-family-parts.js';
+import { boreZCylinder, addZJournal, finishSpringFamily } from './spring-pivot-family-parts.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -25,17 +26,6 @@ function cylinderAlongZ(radius, length, material, segments = 40) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(delta.y, delta.x);
-  return beam;
 }
 
 function findPeriodicRoots(evaluate, samples = 7200) {
@@ -67,20 +57,27 @@ function findPeriodicRoots(evaluate, samples = 7200) {
   return roots;
 }
 
-// Brown's spring A is a helical spring: a close wire coil between an eye
-// on the fixed pivot A and an eye on crank pin B. Its centre line is rebuilt
-// each frame for the current eye distance (the coils open and close; the
-// wire section stays round), with short straight legs from each eye to the
-// coil.
-function makeHelicalEyeSpring(material, {coilRadius = 0.13, wireRadius = 0.026, turns = 9, legLength = 0.34, eyeRadius = 0.17} = {}) {
-  const coilSamples = turns * 20;
-  const lineCount = coilSamples + 5;
-  const sides = 8;
-  const positions = new Float32Array(lineCount * sides * 3);
+// Brown's spring A (plate 416) is a flat coiled spring on the fixed arbor A:
+// its inner end is hooked in the key slot at the foot of the arbor, it wraps
+// once closely round the arbor, opens out through a further half turn and
+// leaves the top of the coil as a free tail that ends in an eye on crank pin B.
+// The strip section is a flat rectangle. Its deformation is prescribed (the
+// outer turn opens and closes with the arbor-to-pin distance and the tail is a
+// smooth cubic onto the pin eye); it is not an elastic solve.
+function makeCoiledSpringA(material, {thickness = 0.03, width = 0.10, startRadius = 0.292, wrapRadius = 0.31, endRadius = 0.89, eyeRadius = 0.13, restDistance = 1.24} = {}) {
+  const wrapSteps = 120, openSteps = 110, tailSteps = 70;
+  const count = wrapSteps + openSteps + tailSteps + 1;
+  // Eight vertices per section (two per flat face) keep the four faces flat.
+  const positions = new Float32Array(count * 8 * 3);
   const indices = [];
-  for (let i = 0; i < lineCount - 1; i += 1) for (let j = 0; j < sides; j += 1) {
-    const a = i * sides + j, b = i * sides + (j + 1) % sides, c = b + sides, d = a + sides;
-    indices.push(a, d, b, b, d, c);
+  for (let i = 0; i < count - 1; i += 1) for (let face = 0; face < 4; face += 1) {
+    const a = i * 8 + face * 2, b = a + 1, c = a + 9, d = a + 8;
+    indices.push(a, b, c, a, c, d);
+  }
+  for (const base of [0, (count - 1) * 8]) {
+    const cap = [0, 2, 4, 6].map(k => base + k);
+    if (base === 0) indices.push(cap[0], cap[2], cap[1], cap[0], cap[3], cap[2]);
+    else indices.push(cap[0], cap[1], cap[2], cap[0], cap[2], cap[3]);
   }
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
@@ -88,45 +85,60 @@ function makeHelicalEyeSpring(material, {coilRadius = 0.13, wireRadius = 0.026, 
   geometry.userData.deforming = true;
   const mesh = new THREE.Mesh(geometry, material);
   mesh.frustumCulled = false;
-  mesh.userData.role = 'helical-spring-A-between-fixed-eye-and-crank-eye';
-  const line = Array.from({length: lineCount}, () => new THREE.Vector3());
-  const tangent = new THREE.Vector3(), normal = new THREE.Vector3(), binormal = new THREE.Vector3();
-  mesh.userData.setEndpoints = (start, end) => {
-    const length = start.distanceTo(end);
-    mesh.position.copy(start);
-    mesh.rotation.set(0, 0, Math.atan2(end.y - start.y, end.x - start.x));
-    const coilStart = legLength, coilEnd = length - legLength;
-    // The legs are welded to the outside of each eye ring, clear of the pin.
-    line[0].set(eyeRadius, 0, 0);
-    line[1].set((eyeRadius + coilStart) * 0.5, 0, 0);
-    line[2].set(coilStart, coilRadius * 0.55, 0);
-    for (let i = 0; i <= coilSamples; i += 1) {
-      const u = i / coilSamples, angle = u * turns * Math.PI * 2;
-      line[3 + i].set(coilStart + (coilEnd - coilStart) * u, coilRadius * Math.cos(angle), coilRadius * Math.sin(angle));
+  mesh.userData.role = 'coiled-spring-A-on-fixed-arbor-with-tail-to-crank-pin-B';
+  const points = Array.from({length: count}, () => new THREE.Vector2());
+  const start = -Math.PI / 2, wrapEnd = start - 1.75 * Math.PI, restEnd = start - 3 * Math.PI;
+  mesh.userData.setEndpoints = (anchor, pin) => {
+    mesh.position.copy(anchor);
+    const target = new THREE.Vector2(pin.x - anchor.x, pin.y - anchor.y);
+    const distance = target.length(), stretch = distance - restDistance;
+    // The open outer turn winds a little further and swells as B draws away.
+    const end = restEnd - 0.22 * stretch, outer = endRadius + 0.10 * stretch;
+    for (let i = 0; i <= wrapSteps; i += 1) {
+      const u = i / wrapSteps, angle = start + (wrapEnd - start) * u;
+      const radius = wrapRadius + (startRadius - wrapRadius) * (1 - Math.min(1, u * 8)) ** 2;
+      points[i].set(radius * Math.cos(angle), radius * Math.sin(angle));
     }
-    line[lineCount - 2].set((coilEnd + length - eyeRadius) * 0.5, 0, 0);
-    line[lineCount - 1].set(length - eyeRadius, 0, 0);
-    normal.set(0, 0, 1);
-    for (let i = 0; i < lineCount; i += 1) {
-      tangent.copy(line[Math.min(lineCount - 1, i + 1)]).sub(line[Math.max(0, i - 1)]).normalize();
-      normal.addScaledVector(tangent, -normal.dot(tangent));
-      if (normal.lengthSq() < 1e-8) normal.set(0, 1, 0).addScaledVector(tangent, -tangent.y);
-      normal.normalize();
-      binormal.crossVectors(tangent, normal);
-      for (let j = 0; j < sides; j += 1) {
-        const angle = j / sides * Math.PI * 2, c = Math.cos(angle) * wireRadius, s = Math.sin(angle) * wireRadius;
-        const k = (i * sides + j) * 3;
-        positions[k] = line[i].x + normal.x * c + binormal.x * s;
-        positions[k + 1] = line[i].y + normal.y * c + binormal.y * s;
-        positions[k + 2] = line[i].z + normal.z * c + binormal.z * s;
+    for (let i = 1; i <= openSteps; i += 1) {
+      const u = i / openSteps, angle = wrapEnd + (end - wrapEnd) * u;
+      const radius = wrapRadius + (outer - wrapRadius) * u ** 1.15;
+      points[wrapSteps + i].set(radius * Math.cos(angle), radius * Math.sin(angle));
+    }
+    const join = points[wrapSteps + openSteps].clone();
+    const direction = join.clone().sub(points[wrapSteps + openSteps - 1]).normalize();
+    // The tail meets the pin eye on its side facing the coil.
+    // It arrives square to the eye's rim, ending just on its surface.
+    const eyeTouch = target.clone().addScaledVector(target.clone().sub(join).normalize(), -(eyeRadius + 0.003));
+    const chord = eyeTouch.distanceTo(join);
+    const c1 = join.clone().addScaledVector(direction, chord * 0.42);
+    const arrive = target.clone().sub(eyeTouch).normalize();
+    const c2 = eyeTouch.clone().addScaledVector(arrive, -chord * 0.30);
+    for (let i = 1; i <= tailSteps; i += 1) {
+      const u = i / tailSteps, v = 1 - u;
+      points[wrapSteps + openSteps + i].set(
+        v * v * v * join.x + 3 * v * v * u * c1.x + 3 * v * u * u * c2.x + u * u * u * eyeTouch.x,
+        v * v * v * join.y + 3 * v * v * u * c1.y + 3 * v * u * u * c2.y + u * u * u * eyeTouch.y,
+      );
+    }
+    for (let i = 0; i < count; i += 1) {
+      const before = points[Math.max(0, i - 1)], after = points[Math.min(count - 1, i + 1)];
+      const dx = after.x - before.x, dy = after.y - before.y, length = Math.hypot(dx, dy);
+      const nx = -dy / length * thickness / 2, ny = dx / length * thickness / 2, p = points[i];
+      const corners = [[1, -1], [1, 1], [1, 1], [-1, 1], [-1, 1], [-1, -1], [-1, -1], [1, -1]];
+      for (let k = 0; k < 8; k += 1) {
+        const [side, face] = corners[k], o = (i * 8 + k) * 3;
+        positions[o] = p.x + side * nx;
+        positions[o + 1] = p.y + side * ny;
+        positions[o + 2] = face * width / 2;
       }
     }
     geometry.attributes.position.needsUpdate = true;
     geometry.computeVertexNormals();
     geometry.computeBoundingBox();
     geometry.computeBoundingSphere();
-    mesh.userData.attachmentDistance = length;
-    mesh.userData.terminalPoint = end.clone();
+    mesh.userData.attachmentDistance = distance;
+    mesh.userData.tailEnd = eyeTouch.clone();
+    mesh.userData.terminalPoint = pin.clone();
   };
   return mesh;
 }
@@ -135,17 +147,32 @@ function springAssistedTreadle(movement) {
   const root = new THREE.Group();
   const cycleDuration = 6;
   const crankAngularSpeed = FULL_TURN / cycleDuration;
-  const sourceCrankAngle = 2.95;
+  // Brown's plate (525 px): hub of crank B, pin B, the treadle joint, the
+  // treadle's intermediate pivot lug, its tip and arbor A, at the flywheel's
+  // 1.24 radius over its 128 px drawn radius.
+  const plateScale = 1.24 / 128;
+  const platePixels = {
+    wheelCenter: [341.7, 173.3], crankPin: [272.3, 161.0], treadleJoint: [349.0, 437.3],
+    treadlePivot: [245.0, 443.3], treadleTip: [38.3, 439.3], arbor: [158.3, 219.3],
+  };
   const wheelCenter = new THREE.Vector3(1.00, 1.05, 0);
-  const treadlePivot = new THREE.Vector3(-2.50, -1.55, 0);
-  const crankRadius = 0.62;
-  const treadleJointRadius = 3.25;
-  const pitmanLength = 2.77;
+  const fromPlate = ([x, y]) => new THREE.Vector3(
+    wheelCenter.x + (x - platePixels.wheelCenter[0]) * plateScale,
+    wheelCenter.y - (y - platePixels.wheelCenter[1]) * plateScale, 0);
+  const sourceCrankPin = fromPlate(platePixels.crankPin);
+  const sourceTreadleJoint = fromPlate(platePixels.treadleJoint);
+  const treadlePivot = fromPlate(platePixels.treadlePivot);
+  const sourceTreadleTip = fromPlate(platePixels.treadleTip);
+  const sourceCrankAngle = Math.atan2(sourceCrankPin.y - wheelCenter.y, sourceCrankPin.x - wheelCenter.x);
+  const crankRadius = sourceCrankPin.distanceTo(wheelCenter);
+  const treadleJointRadius = sourceTreadleJoint.distanceTo(treadlePivot);
+  const pitmanLength = sourceCrankPin.distanceTo(sourceTreadleJoint);
   const wheelRadius = 1.24;
-  const springAnchor = new THREE.Vector3(-0.75, 0.58, 0.79);
+  const springPlaneZ = 0.66;
+  const springAnchor = fromPlate(platePixels.arbor).setZ(springPlaneZ);
   const springRate = 5;
-  const springTurns = (4 * Math.PI - .55 - Math.PI/2) / FULL_TURN;
-  const springCoilRadius = 0.85;
+  const springTurns = 1.5;
+  const springCoilRadius = 0.89;
 
   const linkageAtCrankAngle = (crankAngle) => {
     const crankRadial = new THREE.Vector3(
@@ -319,11 +346,26 @@ function springAssistedTreadle(movement) {
   const maximumSpringLength = centerToSpringAnchorLength + crankRadius;
   let minimumTreadleAngle = Infinity;
   let maximumTreadleAngle = -Infinity;
+  let minimumAt = 0, maximumAt = 0;
   for (let index = 0; index <= 7200; index += 1) {
-    const sample = stateAtCrankAngle(FULL_TURN * index / 7200);
-    minimumTreadleAngle = Math.min(minimumTreadleAngle, sample.treadleAngle);
-    maximumTreadleAngle = Math.max(maximumTreadleAngle, sample.treadleAngle);
+    const angle = FULL_TURN * index / 7200;
+    const sample = stateAtCrankAngle(angle);
+    if (sample.treadleAngle < minimumTreadleAngle) { minimumTreadleAngle = sample.treadleAngle; minimumAt = angle; }
+    if (sample.treadleAngle > maximumTreadleAngle) { maximumTreadleAngle = sample.treadleAngle; maximumAt = angle; }
   }
+  // Refine both extremes of the rocking treadle by golden-section search.
+  const refineExtreme = (center, sign) => {
+    let lower = center - FULL_TURN / 7200, upper = center + FULL_TURN / 7200;
+    const golden = (Math.sqrt(5) - 1) / 2;
+    for (let iteration = 0; iteration < 80; iteration += 1) {
+      const a = upper - golden * (upper - lower), b = lower + golden * (upper - lower);
+      if (sign * linkageAtCrankAngle(a).treadleAngle < sign * linkageAtCrankAngle(b).treadleAngle) upper = b;
+      else lower = a;
+    }
+    return linkageAtCrankAngle((lower + upper) / 2).treadleAngle;
+  };
+  minimumTreadleAngle = refineExtreme(minimumAt, 1);
+  maximumTreadleAngle = refineExtreme(maximumAt, -1);
 
   const geometry = {
     crankAngularSpeed,
@@ -372,58 +414,28 @@ function springAssistedTreadle(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
 
+  // Brown draws no frame. The fixed arbor A (with the key slot that holds the
+  // spring's inner end), the crankshaft and the treadle pivot pin are short
+  // stubs that end cleanly just behind the parts they carry.
   const fixedFrame = new THREE.Group();
-  fixedFrame.userData.role = 'fixed-flywheel-and-treadle-bearing-frame';
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(6.50, 0.20, 1.06),
-    frameMaterial,
-  );
-  base.position.set(-0.18, -2.34, -0.66);
-  base.userData.role = 'fixed-treadle-machine-foundation';
-  fixedFrame.add(base);
-  const wheelPost = beamBetween(
-    new THREE.Vector3(1.00, -2.24, -0.55),
-    new THREE.Vector3(1.00, 1.05, -0.55),
-    0.22,
-    0.25,
-    frameMaterial,
-  );
-  wheelPost.userData.role = 'fixed-flywheel-bearing-standard';
-  const wheelBrace = beamBetween(
-    new THREE.Vector3(2.05, -2.24, -0.55),
-    new THREE.Vector3(1.00, 0.25, -0.55),
-    0.15,
-    0.20,
-    frameMaterial,
-  );
-  wheelBrace.userData.role = 'fixed-flywheel-standard-brace';
-  fixedFrame.add(wheelPost, wheelBrace);
-  const wheelBearing = cylinderAlongZ(0.24, 0.45, frameMaterial, 34);
-  wheelBearing.position.copy(wheelCenter);
-  wheelBearing.position.z = -0.51;
-  boreZCylinder(wheelBearing,.24,.114,.45);
-  wheelBearing.userData.role = 'fixed-crankshaft-bearing';
-  fixedFrame.add(wheelBearing);
-  const treadleBearing = cylinderAlongZ(0.18, 0.58, frameMaterial, 30);
-  treadleBearing.position.copy(treadlePivot);
-  treadleBearing.position.z = -0.35;
-  boreZCylinder(treadleBearing,.18,.114,.40);
-  treadleBearing.userData.role = 'fixed-treadle-pivot-bearing';
-  fixedFrame.add(treadleBearing);
-  // A short pedestal carries the treadle pivot bearing on the slab.
-  const treadlePedestal = new THREE.Mesh(new THREE.BoxGeometry(0.22, treadlePivot.y - 0.14 - (-2.24), 0.25), frameMaterial);
-  treadlePedestal.position.set(treadlePivot.x, (treadlePivot.y - 0.14 - 2.24) / 2, -0.46);
-  treadlePedestal.userData.role = 'fixed-treadle-pivot-pedestal';
-  fixedFrame.add(treadlePedestal);
-  const springBracket = cylinderAlongZ(0.25, 0.42, frameMaterial, 34);
-  springBracket.position.copy(springAnchor);
-  springBracket.position.z = 0.05;
-  boreZCylinder(springBracket,.25,.114,.42);
-  const springStandard=new THREE.Mesh(new THREE.BoxGeometry(.14,2.83,.16),frameMaterial);
-  springStandard.position.set(springAnchor.x,-.835,-.22);
-  springStandard.userData.role='fixed-spring-anchor-standard';fixedFrame.add(springStandard);
-  springBracket.userData.role = 'fixed-spring-A-anchor-bracket';
-  fixedFrame.add(springBracket);
+  fixedFrame.userData.role = 'fixed-arbor-A-crankshaft-and-treadle-pivot-stubs';
+  const arborRadius = 0.194;
+  const arbor = cylinderAlongZ(arborRadius, 0.42, frameMaterial, 48);
+  arbor.position.copy(springAnchor).setZ(springPlaneZ - 0.15);
+  arbor.userData.role = 'fixed-arbor-A-carrying-spring-inner-end';
+  fixedFrame.add(arbor);
+  const arborKey = new THREE.Mesh(new THREE.BoxGeometry(0.075, 0.10, 0.12), frameMaterial);
+  arborKey.position.set(springAnchor.x, springAnchor.y - 0.225, springPlaneZ);
+  arborKey.userData.role = 'arbor-A-key-holding-spring-inner-end';
+  fixedFrame.add(arborKey);
+  const crankShaft = cylinderAlongZ(0.13, 0.80, darkMaterial, 40);
+  crankShaft.position.copy(wheelCenter).setZ(0.0);
+  crankShaft.userData.role = 'fixed-crankshaft-journal-for-flywheel-and-crank-B';
+  fixedFrame.add(crankShaft);
+  const treadleShaft = cylinderAlongZ(0.044, 0.28, darkMaterial, 28);
+  treadleShaft.position.copy(treadlePivot).setZ(0.36);
+  treadleShaft.userData.role = 'fixed-treadle-pivot-pin';
+  fixedFrame.add(treadleShaft);
   root.add(fixedFrame);
 
   const flywheelRotor = new THREE.Group();
@@ -439,68 +451,67 @@ function springAssistedTreadle(movement) {
   flywheelRotor.add(flywheelRim);
   // Brown draws the flywheel as a plain disc: a bored web, no spokes.
   const flywheelWeb = cylinderAlongZ(wheelRadius - 0.06, 0.10, drivenMaterial, 96);
-  boreZCylinder(flywheelWeb, wheelRadius - 0.06, .114, .10);
+  boreZCylinder(flywheelWeb, wheelRadius - 0.06, 0.134, 0.10);
   flywheelWeb.position.z = -0.08;
   flywheelWeb.userData.role = 'plain-flywheel-disc-web-fast-on-crankshaft';
   flywheelRotor.add(flywheelWeb);
-  const flywheelHub = cylinderAlongZ(0.28, 0.50, drivenMaterial, 38);
-  flywheelHub.position.z = -0.02;
-  boreZCylinder(flywheelHub,.28,.114,.50);
-  flywheelHub.userData.role = 'flywheel-hub-fast-on-crankshaft';
-  flywheelRotor.add(flywheelHub);
-  const crankArm = beamBetween(
-    new THREE.Vector3(0, 0, 0.33),
-    new THREE.Vector3(crankRadius, 0, 0.33),
-    0.17,
-    0.18,
-    driverMaterial,
-  );
-  boreBoxAtLocalPoint(crankArm,[-crankRadius/2,0],.114);
+  const flywheelHub = addZJournal(flywheelRotor, 0.28, 0.134, 0.36, drivenMaterial,
+    new THREE.Vector3(0, 0, -0.06), 'flywheel-hub-fast-on-crankshaft');
+  // Crank B: Brown's round boss on the shaft tapering to the pin eye.
+  const crankOutline = polygonClipping.union(
+    poly(circle([0, 0], 0.35, 96)), poly(circle([crankRadius, 0], 0.13, 64)),
+    poly([[0, -0.20], [crankRadius, -0.10], [crankRadius, 0.10], [0, 0.20]]));
+  const crankArm = new THREE.Mesh(plate(polygonClipping.difference(crankOutline,
+    poly(circle([0, 0], 0.134, 64))), 0.12, 0.30), driverMaterial);
   crankArm.userData.role = 'rigid-crank-B-arm';
   flywheelRotor.add(crankArm);
-  const crankHub=addZJournal(flywheelRotor,.20,.114,.28,driverMaterial,new THREE.Vector3(0,0,.28),'bored-crank-to-flywheel-hub');
-  const crankPin = cylinderAlongZ(0.13, 0.88, whiteMaterial, 26);
-  crankPin.position.set(crankRadius, 0, 0.53);
+  const crankHub = crankArm;
+  const crankPin = cylinderAlongZ(0.075, 0.44, whiteMaterial, 28);
+  crankPin.position.set(crankRadius, 0, 0.52);
   crankPin.userData.role = 'white-crank-B-pin-and-spring-attachment';
   flywheelRotor.add(crankPin);
   root.add(flywheelRotor);
 
+  // Brown's slim treadle bar tapers to its left tip; its pivot lug hangs
+  // below the bar at the intermediate fulcrum and the eye at its right end
+  // takes the pitman.
   const treadleRotor = new THREE.Group();
   treadleRotor.position.copy(treadlePivot);
   treadleRotor.userData.role = 'rocking-foot-treadle-input';
-  const treadleBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(treadleJointRadius + 0.48, 0.09, 0.16),
-    driverMaterial,
-  );
-  treadleBeam.position.set((treadleJointRadius - 0.48) / 2, 0, 0.06);
-  boreBoxAtLocalPoint(treadleBeam,[-(treadleJointRadius-.48)/2,0],.114);
-  const treadleHub=addZJournal(treadleRotor,.20,.114,.30,driverMaterial,new THREE.Vector3(0,0,.06),'bored-treadle-hub');
-  const treadleShaft=cylinderAlongZ(.11,.92,darkMaterial);treadleShaft.position.copy(treadlePivot).setZ(-.12);root.add(treadleShaft);
-  treadleBeam.userData.role = 'rigid-treadle-lever';
+  const sourceTreadleAngle = Math.atan2(sourceTreadleJoint.y - treadlePivot.y, sourceTreadleJoint.x - treadlePivot.x);
+  const tipLocal = sourceTreadleTip.clone().sub(treadlePivot).applyAxisAngle(new THREE.Vector3(0, 0, 1), -sourceTreadleAngle);
+  const barHalf = x => 0.018 + 0.026 * (x - tipLocal.x) / (treadleJointRadius - tipLocal.x);
+  const barTop = [], barBottom = [];
+  for (const x of [tipLocal.x, treadleJointRadius]) {
+    const y = x === tipLocal.x ? tipLocal.y : 0;
+    barTop.push([x, y + barHalf(x)]);
+    barBottom.push([x, y - barHalf(x)]);
+  }
+  const treadleOutline = polygonClipping.union(
+    poly([barBottom[0], barBottom[1], barTop[1], barTop[0]]),
+    poly(circle([tipLocal.x, tipLocal.y], barHalf(tipLocal.x), 24)),
+    poly(circle([0, 0], 0.09, 64)),
+    poly(circle([treadleJointRadius, 0], 0.145, 64)));
+  const treadleBeam = new THREE.Mesh(plate(polygonClipping.difference(treadleOutline,
+    poly(circle([0, 0], 0.048, 48)), poly(circle([treadleJointRadius, 0], 0.08, 48))),
+  -0.05, 0.05), driverMaterial);
+  treadleBeam.position.z = 0.38;
+  treadleBeam.userData.role = 'rigid-treadle-lever-with-intermediate-pivot-lug';
   treadleRotor.add(treadleBeam);
-  const treadleJointPin = cylinderAlongZ(0.13, 0.68, whiteMaterial, 24);
-  treadleJointPin.position.set(treadleJointRadius, 0, 0.25);
+  const treadleHub = treadleBeam;
+  const treadleJointPin = cylinderAlongZ(0.075, 0.24, whiteMaterial, 24);
+  treadleJointPin.position.set(treadleJointRadius, 0, 0.44);
   treadleJointPin.userData.role = 'white-treadle-to-pitman-joint';
   treadleRotor.add(treadleJointPin);
   root.add(treadleRotor);
 
-  const pitman = makeBoredPlanarLink({length:pitmanLength,width:.15,eyeRadius:.19,boreRadius:.134,depth:.10},darkMaterial);
+  const pitman = makeBoredPlanarLink({length:pitmanLength,width:.10,eyeRadius:.145,boreRadius:.079,depth:.08},darkMaterial);
   pitman.userData.role = 'constant-length-pitman-from-crank-B-to-treadle';
   root.add(pitman);
-  const spring = makeHelicalEyeSpring(springMaterial);
+  const spring = makeCoiledSpringA(springMaterial, {restDistance: sourceCrankPin.distanceTo(springAnchor.clone().setZ(0))});
   root.add(spring);
-  const springAnchorEye=addZJournal(root,.18,.114,.06,springMaterial,springAnchor,'spring-fixed-end-pivot-eye');
-  const springCrankEye=addZJournal(root,.18,.134,.06,springMaterial,springAnchor,'spring-crank-end-pivot-eye');
-  const springAnchorPin = cylinderAlongZ(0.11, 1.20, darkMaterial, 28);
-  springAnchorPin.position.copy(springAnchor).setZ(.65);
-  springAnchorPin.userData.role = 'fixed-pin-A-carrying-spring-fixed-eye';
-  root.add(springAnchorPin);
-  // Ends inside the crank hub so the pitman sweeps clear in front of it.
-  const crankShaft = cylinderAlongZ(0.11, 1.02, darkMaterial, 30);
-  crankShaft.position.copy(wheelCenter);
-  crankShaft.position.z = -0.11;
-  crankShaft.userData.role = 'crankshaft-through-fixed-bearing';
-  root.add(crankShaft);
+  const springCrankEye = addZJournal(root, 0.13, 0.079, 0.10, springMaterial, springAnchor, 'spring-A-tail-eye-on-crank-pin-B');
+  const springAnchorPin = arbor;
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -530,12 +541,12 @@ function springAssistedTreadle(movement) {
       fixedFrame,
       flywheelRotor,
       pitman,
-      wheelBearing,
       crankShaft,
       treadleShaft,
       treadleHub,
-      treadleBearing,
-      springAnchorEye,
+      arbor,
+      arborKey,
+      flywheelHub,
       springCrankEye,
       spring,
       springAnchorPin,
@@ -559,7 +570,7 @@ function springAssistedTreadle(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'Crank B and its flywheel make one continuous turn while a constant-length pitman rocks the treadle through exact four-bar closure. Preloaded helical spring A is stretched at the upper toggle and compressed at the lower toggle; its force therefore gives B positive tangential torque at both zero-leverage dead centers, exchanging stored energy without imposing net work over a complete turn.',
+      'Crank B and its flywheel make one continuous turn while a constant-length pitman rocks the treadle through exact four-bar closure. Preloaded spring A, coiled on its arbor, is stretched at the upper toggle and compressed at the lower toggle; its force therefore gives B positive tangential torque at both zero-leverage dead centers, exchanging stored energy without imposing net work over a complete turn.',
     motion: {
       cycleDuration,
       crankAngularSpeed,
@@ -602,7 +613,7 @@ function springAssistedTreadle(movement) {
         engravingEvidence:
           'Brown’s plate shows one flywheel and crank B, a long pitman from B to a rocking treadle, and a separately anchored spring A whose free end reaches the crankpin.',
         reconstructionDisclosure:
-          'Brown fixes the crank, pitman, treadle, spring attachment, and intended dead-center assistance but gives no link lengths, pivot locations, spring rate, preload, dimensions, speed, or force values. The exact crank-rocker proportions, full-turn timing, helical coil of the spring (drawn between an eye on the fixed pin A and an eye on crank pin B, its coils opening and closing with the eye distance; no guide rod is modelled), and neutral spring length halfway between the two toggle lengths are independently engineered. The latter makes the modeled linear spring pull at one dead center and push at the other so both tangential torques have the same sign.',
+          'Brown fixes the crank, pitman, treadle, spring attachment, and intended dead-center assistance but gives no link lengths, spring rate, preload, speed, or force values. The flywheel centre, crank pin, treadle pivot lug, treadle joint and arbor A are measured from the plate; the full-turn timing, the flat coiled spring on arbor A (one close turn round the keyed arbor opening out through a further half turn into a free tail hooked on crank pin B, its outer turn and tail deforming by a prescribed rule rather than an elastic solve), the ideal linear spring-force readout along the arbor-to-pin line, and the neutral spring length halfway between the two toggle lengths are independently engineered. The latter makes the modeled spring pull at one dead center and push at the other so both tangential torques have the same sign.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 416',
@@ -624,15 +635,13 @@ function springAssistedTreadle(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.20, -2.48, -1.12),
-    new THREE.Vector3(2.55, 2.48, 1.18),
+    new THREE.Vector3(-2.05, -2.30, -0.40),
+    new THREE.Vector3(2.42, 2.45, 0.76),
   );
   root.userData.cameraDistanceScale = 1.02;
   root.userData.cameraDirection = new THREE.Vector3(5.8, 3.8, 10.8);
-  root.userData.groundFloorY = -2.48;
   finishSpringFamily(root, cycleDuration);
   markShadows(root);
-  base.receiveShadow = true;
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

@@ -364,7 +364,8 @@ test('movement 223 runtime binds both shafts while 262 remains authored', () => 
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 5.3);
   assert.ok(size.y > 8.1);
-  assert.ok(size.z > 2.1);
+  // Four sector planes, Brown's front hub collar and shaft ends flush with it.
+  assert.ok(size.z > 1.7);
   let meshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
@@ -381,5 +382,36 @@ test('movement 223 runtime binds both shafts while 262 remains authored', () => 
     model.root.userData.archetype,
   );
   disposeModel(movement507.root);
+  disposeModel(model.root);
+});
+
+test('movement 223 carries Brown’s front hub collar on both arbors and closes the sector seams', () => {
+  const model = createMovementModel(catalog.movements[222]);
+  const { blocks, geometry } = model.root.userData;
+  const frontFace = geometry.planeZs.at(-1) + geometry.sectorDepth / 2;
+  assert.equal(blocks.hubCollars.length, 2);
+  for (const [collar, assembly] of [
+    [blocks.hubCollars[0], blocks.driverAssembly],
+    [blocks.hubCollars[1], blocks.outputAssembly],
+  ]) {
+    assert.equal(collar.parent, assembly.userData.rotor);
+    collar.geometry.computeBoundingBox();
+    const box = collar.geometry.boundingBox;
+    near(box.max.x, 0.5, 1e-6, 'collar radius');
+    near(collar.position.z - (box.max.y - box.min.y) / 2, frontFace, 1e-6,
+      'collar seated on the front sector face');
+  }
+  const laps = [];
+  model.root.traverse((object) => {
+    if (/web-lap-behind-front-sector$/.test(object.userData.role ?? '')) laps.push(object);
+  });
+  assert.ok(laps.length >= 6, 'every abutting pair of planes is lapped');
+  for (const lap of laps) {
+    const sector = lap.parent;
+    lap.geometry.computeBoundingBox();
+    const radius = Math.max(...[...Array(lap.geometry.attributes.position.count).keys()]
+      .map((i) => Math.hypot(lap.geometry.attributes.position.getX(i), lap.geometry.attributes.position.getY(i))));
+    assert.ok(radius < sector.userData.rootRadius, 'lap stays inside its own root circle');
+  }
   disposeModel(model.root);
 });

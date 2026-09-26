@@ -114,10 +114,21 @@ test('movement 206 is one lever carrying two independent curved pawls around one
   assert.equal(blocks.leftPawl.userData.independentAtSharedPivot, true);
   assert.equal(blocks.rightPawl.userData.independentAtSharedPivot, true);
   assert.notEqual(blocks.leftPawl, blocks.rightPawl);
-  assert.equal(blocks.leftPawl.userData.centerlinePoints.length, 37);
-  assert.equal(blocks.rightPawl.userData.centerlinePoints.length, 37);
-  assert.ok(blocks.leftPawl.userData.bend < 0);
-  assert.ok(blocks.rightPawl.userData.bend > 0);
+  // Both flat pawls lie inside the wheel's tooth band and bear on the teeth
+  // with their own rounded noses: no finger, pin or offset reaches back.
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const ratchetBox = new THREE.Box3().setFromObject(blocks.ratchetBody);
+  for (const pawl of [blocks.leftPawl, blocks.rightPawl]) {
+    assert.equal(pawl.userData.contactFinger.isMesh, undefined);
+    assert.ok(pawl.userData.body.userData.outline.length > 100);
+    const pawlBox = new THREE.Box3().setFromObject(pawl.userData.body);
+    assert.ok(pawlBox.min.z >= ratchetBox.min.z - 1e-9, 'pawl behind the tooth band');
+    assert.ok(pawlBox.max.z <= ratchetBox.max.z + 1e-9, 'pawl in front of the tooth band');
+    const meshes = [];
+    pawl.traverse((object) => { if (object.isMesh) meshes.push(object); });
+    assert.equal(meshes.length, 2, 'one flat body and its pin eye');
+  }
   assert.equal(blocks.ratchet.userData.teeth, 53);
   assert.equal(blocks.ratchet.userData.profilePoints.length, 159);
   assert.equal(blocks.ratchet.userData.toothFaces.length, 53);
@@ -681,14 +692,14 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 4.8 && size.x < 4.95);
   assert.ok(size.y > 5.7 && size.y < 5.9);
-  assert.ok(size.z > 1.2 && size.z < 1.3);
+  assert.ok(size.z > 0.8 && size.z < 0.95);
   assert.ok(bounds.min.x < -2.4);
   assert.ok(bounds.max.y > 3.3);
   let visibleMeshCount = 0;
   model.root.traverse((object) => {
     if (object.isMesh && object.visible) visibleMeshCount += 1;
   });
-  assert.equal(visibleMeshCount, 15, 'no stand, bearings or painted indexes; one face rim step');
+  assert.equal(visibleMeshCount, 13, 'no stand, bearings, painted indexes or pawl fingers; one face rim step');
   model.root.traverse((object) => {
     assert.doesNotMatch(object.userData.role ?? '', /frame|post|rail|bearing|index/i);
   });

@@ -459,7 +459,7 @@ test('movement 329 is a fully spatial engine distinct from Cartwright 328', () =
   const { blocks, geometry } = model.root.userData;
 
   assert.equal(blocks.sideBearings.length, 2);
-  assert.equal(blocks.supportLegs.length, 4);
+  assert.equal(blocks.supportLegs.length, 2, "one broad flat bar per leg, as Brown draws");
   assert.equal(blocks.flywheelSpokes.length, 4);
   assert.equal(blocks.gland.parent, blocks.fixedFrame);
   assert.equal(blocks.cylinderTop.parent, blocks.fixedFrame);

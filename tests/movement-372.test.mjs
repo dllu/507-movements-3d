@@ -517,3 +517,22 @@ test('movement 372 closes every gear index after one input revolution and leaves
   disposeModel(model.root);
   disposeModel(model507.root);
 });
+
+test('movement 372 hoop rim carries Brown’s edgewise-ruled spur teeth', () => {
+  const model = createMovementModel(catalog.movements[371]);
+  const { blocks, geometry } = model.root.userData;
+  const data = blocks.hoop.geometry.userData;
+  assert.equal(data.teeth, 64);
+  assert.equal(data.tipRadius, geometry.hoopOuterRadius);
+  assert.ok(data.rootRadius > data.boreRadius + 0.04, 'solid rim under the teeth');
+  const p = blocks.hoop.geometry.attributes.position;
+  const seen = new Set();
+  for (let i = 0; i < p.count; i += 1) {
+    const r = Math.hypot(p.getX(i), p.getY(i));
+    if (Math.abs(r - data.tipRadius) < 1e-5) seen.add(Math.round(Math.atan2(p.getY(i), p.getX(i)) * 1e4));
+  }
+  assert.equal(seen.size, 2 * 64, 'two tip corners per tooth');
+  // The hoop is held: it stays still, so it needs no rotation cue.
+  assert.equal(blocks.hoop.userData.rotationIndicator ?? false, false);
+  disposeModel(model.root);
+});

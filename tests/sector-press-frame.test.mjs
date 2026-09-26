@@ -12,7 +12,7 @@ test('133 frame supports connect and the anvil covers the rising platen',()=>{
  try{
   v.root.updateMatrixWorld(true);
   for(let i=0;i<2;i++){
-   assert(joined(b.frameColumns[i],b.baseRail));assert(joined(b.platenGuideRails[i],b.frameColumns[i]));
+   assert(joined(b.frameColumns[i],b.baseRail));
    assert(joined(b.headerPanel,b.topBlocks[i]));
    const old=box(b.frameColumns[i]);old.min.y=-.25*.42;assert(!old.intersectsBox(box(b.baseRail)),'former column gap must fail');
   }
@@ -23,8 +23,10 @@ test('133 frame supports connect and the anvil covers the rising platen',()=>{
    assert(anvil.min.x<platen.min.x&&anvil.max.x>platen.max.x);
    assert(anvil.min.z<platen.min.z&&anvil.max.z>platen.max.z,'pressing faces must overlap in depth');
    assert(anvil.min.y-platen.max.y>=d.closedPressClearance-1e-7,'platen must not enter anvil');
-   for(const part of [...b.frameColumns,...b.platenGuideRails,b.baseRail,b.headerPanel,b.topCap])assert(!box(b.platen).intersectsBox(box(part)),'platen assembly must clear fixed supports');
+   for(const part of [...b.frameColumns,b.baseRail,b.headerPanel,b.topCap])assert(!box(b.platen).intersectsBox(box(part)),'platen assembly must clear fixed supports');
   }
+  let undrawnCheek=false;v.root.traverse(o=>{if(/guide-along-platen/.test(o.userData.role??''))undrawnCheek=true;});
+  assert(!undrawnCheek,'Brown draws no guide cheeks inside the columns');
   assert(-.43+.04+(.3+.18)/2<box(b.platenBody).min.z,'former anvil sat entirely behind the platen');
  }finally{disposeObject3D(v.root);}
 });

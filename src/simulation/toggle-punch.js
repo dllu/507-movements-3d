@@ -18,7 +18,10 @@ export function makeTogglePunch(){
  const eye=(a,b,r=.09)=>clip.union(capsule(a,b,.05,24),poly(circle(a,r,48)),poly(circle(b,r,48)));
  // Separate rear support plate and front pedestal reproduce the engraving's
  // casting and cutaway. Their hidden depths are reconstructed.
- add(root,'rear-frame',bore(drawn([[185,66],[224,65],[224,131],[242,149],[279,148],[279,248],[239,248],[239,400],[185,400]]),[g.top,[0,0]],.0715),-.25,-.15,PALETTE.frame);
+ // The rear plate's lower part runs on behind the pedestal's web (hidden by
+ // it from the front) so, seen from behind, it is visibly carried by the web
+ // rather than hanging short of the base.
+ add(root,'rear-frame',bore(drawn([[185,66],[224,65],[224,131],[242,149],[279,148],[279,400],[185,400]]),[g.top,[0,0]],.0715),-.25,-.15,PALETTE.frame);
  add(root,'pedestal',drawn([[239,248],[280,248],...curve([[280,265],[299,282],[326,308],[343,335],[347,361],[348,390],[359,417],[375,436],[387,447]]),[408,447],[408,483],[118,483],[118,448],...curve([[218,448],[232,439],[239,421]])]),-.15,.16,PALETTE.frame);
  const lever=group('lever');
  const leverShape=clip.union(eye([0,0],g.pin,.10),capsule([0,0],g.handleEnd,.065,32),poly(circle([0,0],.15,64)));

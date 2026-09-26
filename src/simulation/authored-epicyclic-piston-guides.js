@@ -314,20 +314,22 @@ function FixedAnnulusAndFrame({
     bearing.userData.fixed = true;
     bearing.userData.role = `${sideName}-fixed-annulus-D-bearing-boss`;
     sideBearings.push(bearing);
-    for (const offset of [-0.11, 0.11]) {
+    // Brown draws each leg as one broad flat bar, not a pair of rods.
+    for (const offset of [0]) {
       const leg = beamBetween2D(
         new THREE.Vector2(
           side * fixedRingOuterRadius + offset,
           -0.10,
         ),
         // Brown's legs run off the plate's foot; they continue on the same
-        // line down to the bed plate the cylinder stands on (y = -6.842).
+        // line down to the level of the cylinder's foot (y = -6.842) and end
+        // there cleanly (Brown draws no bed plate).
         new THREE.Vector2(
           side * fixedRingOuterRadius + offset + (side * 14.1 * sourceScale
             - side * fixedRingOuterRadius) * (6.842 - 0.10) / (20.15 * sourceScale - 0.10),
           -6.842,
         ),
-        0.10,
+        0.32,
         0.26,
         frameMaterial,
         // Kept ahead of the flywheel rim and arms (back face z=-0.37 against
@@ -1044,17 +1046,7 @@ function EpicyclicPistonRodGuide(movement) {
   finishPistonGuides(root,update);
   // Brown crops the flywheel and shows only the cylinder cover; the view
   // frames the whole flywheel, the A-frame legs and the whole cylinder down
-  // to its base.
-  {
-    // A plain bed plate carries the cylinder base and the A-frame feet.
-    let material = null;
-    root.traverse((o) => { if (!material && /A-frame-support-leg/.test(o.userData.role ?? '')) material = o.material; });
-    const bed = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.16, 1.95), material);
-    bed.position.set(0, -6.842 - 0.08, 0.52);
-    bed.userData.fixed = true;
-    bed.userData.role = 'fixed-bed-plate-under-cylinder-and-A-frame';
-    root.add(bed);
-  }
+  // to its base. No bed plate is drawn, so none is built.
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4.5, -7.05, -0.80),
     new THREE.Vector3(4.5, 4.5, 1.00),

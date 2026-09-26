@@ -1362,39 +1362,44 @@ export function createAuthoredTripHammerMovement(movement) {
   if (movement.id !== 353) return null;
   const model = firstOrderTripHammer(movement);
   correctTripHammerParts(model);
-  addHelveStandard(model);
+  removeUndrawnHelveSupports(model);
   markShadows(model.root);
   return model;
 }
 
-// Brown draws no standard under the helve's fulcrum; a plain post behind
-// the helve carries the fulcrum's bearing bridge down to a foot level with
-// the cam post's base, so the fulcrum does not hang in the air.
-function addHelveStandard(model) {
+// Brown draws the helve's pivot box with no post, bridge or rear bearing
+// under it, so none is shown: the fixed fulcrum is the short shaft through
+// the box, ending in its front retainer and just behind the moving hub.
+function removeUndrawnHelveSupports(model) {
   const root = model.root;
   root.updateMatrixWorld(true);
   const b = root.userData.blocks;
-  const find = (role) => {
-    let found = null;
-    root.traverse((object) => { if (object.userData.role === role) found = object; });
-    return found;
-  };
-  const bridgeBox = new THREE.Box3().setFromObject(find('fixed-first-order-lever-bearing-bridge'));
-  const groundY = new THREE.Box3().setFromObject(find('fixed-base-block-under-cam-post')).min.y;
-  const material = b.postBase.material;
-  const x = (bridgeBox.min.x + bridgeBox.max.x) / 2;
-  const back = bridgeBox.min.z;
-  const front = back + 0.2;
-  const footTop = groundY + 0.2;
-  const post = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, bridgeBox.max.y - footTop, front - back), material);
-  post.position.set(x, (bridgeBox.max.y + footTop) / 2, (front + back) / 2);
-  post.userData.fixed = true;
-  post.userData.role = 'plain-post-under-helve-fulcrum-bridge';
-  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.2, 0.5), material);
-  foot.position.set(x, groundY + 0.1, (front + back) / 2 + 0.06);
-  foot.userData.fixed = true;
-  foot.userData.role = 'plain-foot-of-helve-fulcrum-post';
-  root.add(post, foot);
-  Object.assign(b, { helvePost: post, helvePostFoot: foot });
+  for (const part of [b.pivotBridge, b.rearPivotBearing, b.pivotPost]) part.removeFromParent();
+  const hubBox = new THREE.Box3().setFromObject(b.movingPivotHub);
+  const retainerBox = new THREE.Box3().setFromObject(b.frontPivotBearing);
+  const back = hubBox.min.z - 0.05;
+  const front = retainerBox.max.z;
+  const shaft = b.hammerPivotShaft;
+  shaft.traverse((object) => {
+    if (!object.isMesh) return;
+    const radius = object.geometry.parameters.radiusTop;
+    object.geometry.dispose();
+    object.geometry = new THREE.CylinderGeometry(radius, radius, front - back, 22);
+  });
+  shaft.position.z = (front + back) / 2;
+  shaft.userData.length = front - back;
+  // Likewise no rear bearing is drawn behind the wiper wheel: its shaft runs
+  // from the post in front to a cut end just behind the wheel's hub.
+  b.rearCamBearing.removeFromParent();
+  const camHubBox = new THREE.Box3().setFromObject(b.camHub);
+  const inputBox = new THREE.Box3().setFromObject(b.inputShaft);
+  const inputBack = camHubBox.min.z - 0.05;
+  const inputFront = inputBox.max.z;
+  b.inputShaft.traverse((object) => {
+    if (!object.isMesh) return;
+    const radius = object.geometry.parameters.radiusTop;
+    object.geometry.dispose();
+    object.geometry = new THREE.CylinderGeometry(radius, radius, inputFront - inputBack, 22);
+  });
+  b.inputShaft.position.z += (inputFront + inputBack) / 2 - (inputBox.min.z + inputBox.max.z) / 2;
 }

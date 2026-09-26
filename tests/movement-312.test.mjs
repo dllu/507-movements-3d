@@ -102,6 +102,35 @@ test('movement 312 is Bloxam’s two-wheel, two-arm gravity escapement rather th
   disposeModel(model.root);
 });
 
+test('movement 312 arms run straight from C to A and B, then curve in on one tangent arc', () => {
+  const model = createMovementModel(catalog.movements[311]);
+  const { blocks } = model.root.userData;
+  for (const arm of [blocks.leftGravityArm, blocks.rightGravityArm]) {
+    assert.equal(arm.mainRailPoints.length, 2, 'no kink between C and the stop');
+    const [pivot, lock] = arm.mainRailPoints;
+    near(pivot.length(), 0, 1e-12, 'rail starts at C');
+    const arc = arm.lowerArcPoints;
+    near(arc[0].distanceTo(lock), 0, 1e-12, 'arc starts at the stop');
+    const railDirection = lock.clone().sub(pivot).normalize();
+    const firstChord = arc[1].clone().sub(arc[0]).normalize();
+    const lastChord = arc[2].clone().sub(arc[1]).normalize();
+    const halfStep = Math.acos(THREE.MathUtils.clamp(firstChord.dot(lastChord), -1, 1)) / 2;
+    near(Math.acos(THREE.MathUtils.clamp(railDirection.dot(firstChord), -1, 1)),
+      halfStep, 1e-9, 'arc leaves the straight arm tangentially');
+    // One circle: every point is equidistant from the circumcentre of three.
+    const [a, b, c] = [arc[0], arc[Math.floor(arc.length / 2)], arc.at(-1)];
+    const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+    const centre = new THREE.Vector2(
+      (a.lengthSq() * (b.y - c.y) + b.lengthSq() * (c.y - a.y) + c.lengthSq() * (a.y - b.y)) / d,
+      (a.lengthSq() * (c.x - b.x) + b.lengthSq() * (a.x - c.x) + c.lengthSq() * (b.x - a.x)) / d,
+    );
+    const radius = centre.distanceTo(a);
+    for (const point of arc) near(point.distanceTo(centre), radius, 1e-9, 'arc point on one circle');
+    near(arc.at(-1).distanceTo(new THREE.Vector2(arm.forkPin.position.x, arm.forkPin.position.y)), 0, 1e-9, 'arc ends at the fork pin');
+  }
+  disposeModel(model.root);
+});
+
 test('movement 312 preserves Bloxam’s primary dimensions, slopes, timing angles, and Brown landmarks', () => {
   const movement = catalog.movements[311];
   const model = createMovementModel(movement);

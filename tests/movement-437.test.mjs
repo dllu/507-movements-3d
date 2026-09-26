@@ -77,9 +77,10 @@ test('movement 437 combines eight upper radial vanes with four lower inclined bu
     blocks.runnerFloor, blocks.runnerHub, blocks.shaft]) assert.ok(part.parent === blocks.runner, `${part.userData.role} parent`);
   for (const fixed of [blocks.outerScrollWall, blocks.innerScrollWall,
     blocks.scrollWater, blocks.inletFlume, blocks.inletWater,
-    blocks.lowerBasin,
-    ...blocks.escapeFlowTubes]) assert.ok(fixed.parent === model.root, `${fixed.userData.role} parent`);
-  for (const removed of [blocks.casingFloor, blocks.upperBearing]) {
+    blocks.lowerBasin]) assert.ok(fixed.parent === model.root, `${fixed.userData.role} parent`);
+  // The thin escape-path tubes under the runner read as flow-line notation.
+  for (const removed of [blocks.casingFloor, blocks.upperBearing,
+    ...blocks.escapeFlowTubes]) {
     assert.ok(removed.parent === null, `source presentation removes ${removed.userData.role}`);
   }
   assert.ok(geometry.radialVaneCenterY > geometry.lowerBucketCenterY,

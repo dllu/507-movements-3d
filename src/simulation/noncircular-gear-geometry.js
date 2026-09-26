@@ -8,8 +8,13 @@ const cache = new Map();
  * See Bäsel, Determining the geometry of noncircular gears for given
  * transmission function, arXiv:1905.02642, for the generating principle.
  */
-export function rackGeneratedOutline({ pitchPoints, teeth, contactPointIndex, toothAtContact }) {
-  const key = JSON.stringify({ pitchPoints, teeth, contactPointIndex, toothAtContact });
+export function rackGeneratedOutline({
+  pitchPoints, teeth, contactPointIndex, toothAtContact,
+  pressureAngle = Math.PI / 9, addendumFactor = 1, dedendumFactor = 1.25,
+}) {
+  const key = JSON.stringify({
+    pitchPoints, teeth, contactPointIndex, toothAtContact, pressureAngle, addendumFactor, dedendumFactor,
+  });
   if (cache.has(key)) return cache.get(key);
   const count = pitchPoints.length;
   const lengths = [0];
@@ -24,11 +29,11 @@ export function rackGeneratedOutline({ pitchPoints, teeth, contactPointIndex, to
   const perimeter = lengths.at(-1);
   const pitch = perimeter / teeth;
   const module = pitch / Math.PI;
-  const addendum = module;
-  const dedendum = module * 1.25;
+  const addendum = module * addendumFactor;
+  const dedendum = module * dedendumFactor;
   const backlash = module * 0.01;
   const clearance = module * 0.002;
-  const pressureTangent = Math.tan(Math.PI / 9);
+  const pressureTangent = Math.tan(pressureAngle);
   const rayCount = teeth * 128;
   const rays = Array.from({ length: rayCount }, (_, i) => ({
     x: Math.cos(i * 2 * Math.PI / rayCount), y: Math.sin(i * 2 * Math.PI / rayCount),

@@ -209,13 +209,9 @@ export const CUTAWAY_SPECS = {
     water: ['pressurized-water-under-large-solid-ram', 'pressurized-water-column-linking-small-and-large-cylinders'],
   },
   470: {
-    // Brown draws the cylinder as an exterior: the whole cylinder wall (with
-    // the port where the steam passage enters) is built in
-    // authored-steam-hammers.js. The valve chest is the one cutaway, opened
-    // on z = 0.62 just behind the pitman so the spool and its pin show.
-    plane: {point: new THREE.Vector3(0, 0, 0.62)},
-    colors: {'cutaway-admission-and-exhaust-valve-chest': 0x59605f},
-    cut: ['cutaway-admission-and-exhaust-valve-chest'],
+    // Brown draws the cylinder and its valve chest as exteriors: the whole
+    // cylinder wall (ported under the chest) and the closed chest are built
+    // in authored-steam-hammers.js; nothing is cut away.
     hide: [/^fixed-cylinder-ring-/],
   },
   471: {

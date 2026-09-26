@@ -84,7 +84,9 @@ test('movement 240 is one ratchet wheel with three alternative stop forms', () =
   assert.equal(blocks.hookGravityStop.parent, model.root);
   assert.equal(blocks.straightGravityStop.parent, model.root);
   assert.equal(blocks.springPawlStop.parent, model.root);
-  assert.equal(blocks.leafSpring.parent, model.root);
+  // The S-lever is part of stop C's flat plate; the old round leaf-spring
+  // tube is not drawn.
+  assert.equal(blocks.leafSpring.parent, null);
   assert.equal(blocks.springAnchorShaft, blocks.springPawlStopPivot);
   assert.equal(blocks.wheel.userData.teeth, 18);
   assert.equal(blocks.hookGravityStop.userData.role, 'hook-gravity-stop');
@@ -113,7 +115,8 @@ test('movement 240 preserves the measured comparison plate and spring joint', ()
   } = model.root.userData;
   const plate = sourceReference.plate240;
 
-  assert.deepEqual(plate.rasterWheelCenter.toArray(), [225, 260]);
+  // Brown's hub centre; his tips lie about 135 px from it.
+  assert.deepEqual(plate.rasterWheelCenter.toArray(), [213, 234]);
   assert.deepEqual(plate.rasterHookPivot.toArray(), [49, 240]);
   assert.deepEqual(plate.rasterHookNose.toArray(), [151, 121]);
   assert.deepEqual(plate.rasterStraightPivot.toArray(), [478, 140]);
@@ -142,19 +145,19 @@ test('movement 240 preserves the measured comparison plate and spring joint', ()
   });
   vectorNear(
     geometry.stopDefinitions[0].pivot,
-    new THREE.Vector2(-2.464, 0.28),
+    new THREE.Vector2(-2.296, -0.084),
     2e-15,
     'hook fixed pivot',
   );
   vectorNear(
     geometry.stopDefinitions[1].pivot,
-    new THREE.Vector2(3.542, 1.68),
+    new THREE.Vector2(3.71, 1.316),
     2e-15,
     'straight fixed pivot',
   );
   vectorNear(
     geometry.stopDefinitions[2].pivot,
-    new THREE.Vector2(0.196, -2.87),
+    new THREE.Vector2(0.364, -3.234),
     2e-15,
     'spring fixed anchor',
   );
@@ -402,7 +405,7 @@ test('movement 240 reported wheel and pawl derivatives match finite differences'
   disposeModel(model.root);
 });
 
-test('movement 240 renderer binds the selected stop and flexes the leaf spring', () => {
+test('movement 240 renderer binds the selected stop and turns stop C with its S-lever', () => {
   const model = createMovementModel(catalog.movements[239]);
   const {
     blocks,
@@ -446,12 +449,15 @@ test('movement 240 renderer binds the selected stop and flexes the leaf spring',
         );
       }
     }
+    // C and its S-lever are one plate turning about the lever's pivot eye.
     const springPawl = state.pawls[2];
     const expectedBearing = geometry.stopDefinitions[2].pivot.clone().add(
       rotate(geometry.springBearingLocal, springPawl.angleDelta),
     );
-    vectorNear(blocks.leafSpring.userData.bearingPoint, expectedBearing, 1e-15,
-      'leaf-spring carried bearing');
+    const carried = new THREE.Vector3(geometry.springBearingLocal.x, geometry.springBearingLocal.y, 0)
+      .applyMatrix4(new THREE.Matrix4().makeRotationZ(blocks.springPawlStop.rotation.z));
+    vectorNear(new THREE.Vector2(carried.x, carried.y).add(geometry.stopDefinitions[2].pivot), expectedBearing, 1e-14,
+      'S-lever carried joint');
     minimumBearingY = Math.min(minimumBearingY, expectedBearing.y);
     maximumBearingY = Math.max(maximumBearingY, expectedBearing.y);
     assert.equal(
@@ -460,11 +466,10 @@ test('movement 240 renderer binds the selected stop and flexes the leaf spring',
       state.pawls.filter(pawl => pawl.contact !== null).length,
     );
   }
-  assert.ok(maximumBearingY - minimumBearingY > .13 && maximumBearingY - minimumBearingY < .14,
-    'finite follower uses the smaller reconstructed spring flexure');
+  assert.ok(maximumBearingY - minimumBearingY > .1 && maximumBearingY - minimumBearingY < .3,
+    'C lifts through a small rigid swing of its S-lever');
   assert.equal(blocks.wheelIndicator.userData.role, 'ratchet-wheel-face-index');
-  assert.equal(blocks.leafSpring.userData.role,
-    'spring-pawl-curved-leaf-spring');
+  assert.equal(blocks.leafSpring.userData.drawn, false);
   disposeModel(model.root);
 });
 

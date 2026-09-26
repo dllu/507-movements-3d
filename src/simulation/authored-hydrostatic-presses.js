@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {correctHydraulicForceParts} from './hydraulic-force-parts.js';
+import {boredCylinderGeometry} from './piston-guide-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -491,6 +492,18 @@ function hydrostaticPress(movement) {
   );
   leverStand.position.set(pumpLeverPivot.x, 1.00, -0.38);
   root.add(leverStand);
+  // Brown hangs a ball weight on a slender rod from the lever's fulcrum pin,
+  // in front of the lever; it hangs plumb from the fixed pin.
+  const leverPendant = addRole(new THREE.Group(), 'ball-weight-pendant-hanging-from-lever-fulcrum');
+  leverPendant.position.set(pumpLeverPivot.x, pumpLeverPivot.y, 0.18);
+  const pendantEye = new THREE.Mesh(boredCylinderGeometry(0.21, 0.154, 0.07), darkMaterial);
+  pendantEye.rotation.x = Math.PI / 2;
+  const pendantRod = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.86, 16), darkMaterial);
+  pendantRod.position.y = -0.20 - 0.43;
+  const pendantBall = addRole(new THREE.Mesh(new THREE.SphereGeometry(0.11, 32, 20), darkMaterial), 'pendant-ball-weight');
+  pendantBall.position.y = -1.13;
+  leverPendant.add(pendantEye, pendantRod, pendantBall);
+  root.add(leverPendant);
 
   const inletValve = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.15, 0.15, 0.045, 24),
@@ -620,6 +633,7 @@ function hydrostaticPress(movement) {
       inletValve,
       inletWater,
       leverAxle,
+      leverPendant,
       movingPlaten,
       pressFrame,
       pressurePipe,

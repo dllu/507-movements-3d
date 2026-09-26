@@ -668,27 +668,71 @@ function selfActingWeir(movement) {
       upstreamWater.geometry.computeBoundingBox();
       upstreamWater.geometry.computeBoundingSphere();
     };
-    // Falling sheet over the notch crest: the notch wide and the ordinary
-    // head deep at the crest, thinning as it falls on a parabolic nappe and
-    // breaking into spray where it lands in the tail water.
-    const crestY = notchBottomY + (ordinaryWaterLevel - notchBottomY) / 2 + 0.015;
-    const landX = 1.36, faceX = upperThickness;
-    const nappe = [new THREE.Vector3(-0.02, crestY, 0), new THREE.Vector3(0.1, crestY, 0)];
-    for (let i = 0; i <= 8; i += 1) {
-      const u = i / 8, x = faceX + (landX - faceX) * u;
-      nappe.push(new THREE.Vector3(x, crestY - (crestY - downstreamWaterLevel + 0.10) * u * u, 0));
-    }
-    // Top of the sheet level with the head water surface at the crest.
-    const sheetHalfDepth = (ordinaryWaterLevel - notchBottomY) / 2 - 0.015;
+    // Falling sheet over the notch crest, the notch wide. Its depth over the
+    // crest follows the notch discharge (depth ~ q^(2/3), with q the scheduled
+    // notch flow, the ordinary flow giving the ordinary head), it thins as it
+    // accelerates down a parabolic nappe, throws farther the deeper it runs,
+    // and breaks into spray where it lands in the tail water. It starts on
+    // the notch crest of the (possibly turning) upper leaf and dwindles to
+    // nothing as the flow stops, rather than switching off.
+    const ordinaryNotchFraction = 0.48;
+    const ordinarySheetHalfDepth = (ordinaryWaterLevel - notchBottomY) / 2 - 0.015;
+    const sheetHalfWidth = notchWidth / 2 - 0.02;
+    const nappe = Array.from({ length: 12 }, () => new THREE.Vector3());
+    const nappeCurve = new THREE.CatmullRomCurve3(nappe);
+    const nappeOptions = (flow) => {
+      const halfDepth = Math.max(1e-4, ordinarySheetHalfDepth * flow ** (2 / 3));
+      return {
+        radius: halfDepth, endRadius: halfDepth * 0.5,
+        // At a trickle the sheet draws in to a thin thread and vanishes.
+        width: sheetHalfWidth * Math.min(1, flow / 0.35),
+        endWidth: sheetHalfWidth * 1.15 * Math.min(1, flow / 0.35),
+        widthAxis: new THREE.Vector3(0, 0, 1), segments: 80, radialSegments: 24,
+        fadeStart: 0.86, flare: 1.35,
+      };
+    };
+    const layNappe = (state, flow) => {
+      const ua = state.upperAngle;
+      const halfDepth = ordinarySheetHalfDepth * flow ** (2 / 3);
+      const lift = halfDepth + 0.02;
+      const approach = onLeaf(upperPivot, ua, -upperThickness / 2 - 0.12, notchBottomLocal + lift);
+      const up = onLeaf(upperPivot, ua, -upperThickness / 2, notchBottomLocal + lift);
+      const crest = onLeaf(upperPivot, ua, 0, notchBottomLocal + lift);
+      const down = onLeaf(upperPivot, ua, upperThickness / 2, notchBottomLocal + lift);
+      const landY = downstreamWaterLevel - 0.10;
+      // A turned leaf leans its downstream face out under the sheet; the
+      // water leaving its sloping crest is thrown at least clear of it.
+      const throwX = Math.max(1.26 * Math.max(0.12, flow ** (1 / 3)),
+        (down.y - landY) * Math.tan(Math.abs(ua)) + 0.30);
+      nappe[0].set(approach.x, approach.y, 0);
+      nappe[1].set(up.x, up.y, 0);
+      nappe[2].set(crest.x, crest.y, 0);
+      for (let i = 0; i <= 8; i += 1) {
+        const u = i / 8;
+        nappe[3 + i].set(down.x + throwX * u, down.y - (down.y - landY) * u * u, 0);
+      }
+      nappeCurve.updateArcLengths();
+    };
+    layNappe(stateAtPhase(0), 1);
     notchFlow.geometry.dispose();
-    notchFlow.geometry = waterJetGeometry(new THREE.CatmullRomCurve3(nappe), {
-      radius: sheetHalfDepth, endRadius: sheetHalfDepth * 1.6,
-      width: notchWidth / 2 - 0.02, endWidth: (notchWidth / 2 - 0.02) * 1.2,
-      widthAxis: new THREE.Vector3(0, 0, 1), segments: 80, radialSegments: 24,
-      fadeStart: 0.86, flare: 1.35,
-    });
+    notchFlow.geometry = waterJetGeometry(nappeCurve, nappeOptions(1));
+    notchFlow.geometry.userData.deforming = true;
     notchFlow.material = waterJetMaterial({ opacity: 0.42 });
     notchFlow.renderOrder = 1;
+    const updateNappe = (state) => {
+      const flow = state.notchFlowFraction / ordinaryNotchFraction;
+      notchFlow.visible = flow > 1e-3;
+      if (!notchFlow.visible) return;
+      layNappe(state, flow);
+      const next = waterJetGeometry(nappeCurve, nappeOptions(flow));
+      for (const name of ['position', 'normal', 'color']) {
+        notchFlow.geometry.attributes[name].array.set(next.attributes[name].array);
+        notchFlow.geometry.attributes[name].needsUpdate = true;
+      }
+      next.dispose();
+      notchFlow.geometry.computeBoundingBox();
+      notchFlow.geometry.computeBoundingSphere();
+    };
     bedFlow.geometry.dispose();
     bedFlow.geometry = new THREE.BoxGeometry(1, 1, gateWidth);
     bedFlow.material = water;
@@ -697,6 +741,7 @@ function selfActingWeir(movement) {
     root.userData.updateWorkingParts = (state) => {
       shared?.(state);
       updateHeadWater(state);
+      updateNappe(state);
       if (bedFlow.visible) {
         const la = state.lowerAngle;
         const lowerBottomUp = onLeaf(lowerPivot, la, -lowerThickness / 2, -lowerPivotFromBottom);

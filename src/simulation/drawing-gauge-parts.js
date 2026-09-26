@@ -16,7 +16,14 @@ export function finishDrawingGauge(root,update,period,direction=new THREE.Vector
 export function correctCentrolinead(root){
  const b=root.userData.blocks,g=root.userData.geometry;
  root.remove(b.board,b.boardFrame,b.constructionCircleArc,b.fixedPinChord);
- for(const pin of Object.values(b.fixedPins))pin.collar.position.z=-.39;
+ // Brown draws no pins on the instrument; the two guide pins stay only as
+ // plain dark pegs the height of the leg each one bears against, with no
+ // collar knob or shank standing out behind the legs.
+ for(const [pin,layer] of [[b.fixedPins.lower,-.13],[b.fixedPins.upper,.05]]){
+  pin.axle.visible=false;pin.group.remove(pin.axle);
+  replace(pin.collar,new THREE.CylinderGeometry(.072,.072,.16,48));
+  pin.collar.material=b.centralJoint.material;pin.collar.position.z=layer-pin.group.position.z;
+ }
  for(const [index,leg] of Object.values(b.legs).entries()){
   const normal=new THREE.Vector2(-leg.direction.y,leg.direction.x);
   leg.body.position.x+=normal.x*.075;leg.body.position.y+=normal.y*.075;

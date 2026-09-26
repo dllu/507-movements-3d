@@ -397,7 +397,7 @@ test('movement 235 renderer binds the arm, tappet, spring, wheel, and two contac
   assert.ok(size.z > 0.8);
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 21); // the undrawn base block is no longer built
+  assert.ok(meshCount >= 19); // no undrawn base block and no cross-pin noses
   disposeModel(model.root);
 });
 

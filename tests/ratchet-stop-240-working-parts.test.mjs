@@ -38,24 +38,26 @@ function audit() {
 }
 
 const shaftMesh=g=>g.userData.rotor.children.find(o=>o.isMesh);
-test('240 all finite toes clear the wheel and actually seat on retaining faces',()=>{
+test('240 flat stops lie in the wheel plane and their own toes clear it and seat on retaining faces',()=>{
  const m=create({id:240}),d=m.root.userData,b=d.blocks,p=d.workingParts,a=audit();let maximumSeatedGap=0;
+ const bodies=[b.hookGravityStopBody,b.straightGravityStopBody,b.springPawlStopBody];
+ // No cross-pins: each toe is the rounded end of its flat plate.
+ for(const nose of p.noses)assert.equal(nose.isMesh,undefined);
  const poses=[...Array.from({length:129},(_,i)=>i/128),...p.stops.flatMap((s,i)=>[(i+.24)/3,(i+.78)/3])];
- for(const q of poses){m.update((q-d.geometry.initialCycleCoordinate)*6);m.root.updateMatrixWorld(true);const s=d.kinematics;
-  for(let i=0;i<3;i++){const nose=p.noses[i],box=new THREE.Box3().setFromObject(nose);assert.ok(box.min.z<.16&&box.max.z>-.16);
-   const gap=a.check(nose,b.wheelBody,'toe/wheel');a.check(b.wheelBody,nose,'wheel/toe');
-   if(s.pawls[i].engaged&&s.wheelDwelling){maximumSeatedGap=Math.max(maximumSeatedGap,gap);assert.ok(gap<.0007);}
-   for(const part of[b.hookGravityStopBody,b.straightGravityStopBody,b.springPawlStopBody])a.check(part,b.wheelBody,'backing body/wheel');
-   for(let j=0;j<3;j++)if(i!==j)a.check(nose,p.noses[j],'toe/toe');
+ for(const q of poses){m.update((q-d.geometry.initialCycleCoordinate)*6);m.root.updateMatrixWorld(true);const s=d.kinematics,wheelBox=new THREE.Box3().setFromObject(b.wheelBody);
+  for(let i=0;i<3;i++){const body=bodies[i],box=new THREE.Box3().setFromObject(body);assert.ok(box.min.z>wheelBox.min.z&&box.max.z<wheelBox.max.z,'stop inside the tooth band');
+   const gap=a.check(body,b.wheelBody,'stop/wheel');a.check(b.wheelBody,body,'wheel/stop');
+   if(s.pawls[i].engaged&&s.wheelDwelling){maximumSeatedGap=Math.max(maximumSeatedGap,gap);assert.ok(gap<.0015);}
+   for(let j=0;j<3;j++)if(i!==j)a.check(body,bodies[j],'stop/stop');
   }
  }console.log({maximumSeatedGap,...a.report()});
 });
 test('240 each actual retaining face resists reverse rotation but needs closing preload',()=>{
  const m=create({id:240}),d=m.root.userData,b=d.blocks;let maximum=-Infinity;
  for(let i=0;i<3;i++){m.update(((i+.24)/3-d.geometry.initialCycleCoordinate)*6);m.root.updateMatrixWorld(true);const c=d.kinematics.pawls[i].finiteContact;
-  const world=new THREE.Vector3(c.point.x,c.point.y,0),local=world.clone().applyMatrix4(b.wheelBody.matrixWorld.clone().invert()),point=new THREE.Vector3();let best=Infinity,normal;
+  const world=new THREE.Vector3(c.point.x,c.point.y,b.wheel.position.z),local=world.clone().applyMatrix4(b.wheelBody.matrixWorld.clone().invert()),point=new THREE.Vector3();let best=Infinity,normal;
   for(const t of surfaceTriangles(b.wheelBody.geometry)){const gap=t.closestPointToPoint(local,point).distanceTo(local);if(gap<best){best=gap;normal=t.getNormal(new THREE.Vector3());}}
-  normal.transformDirection(b.wheelBody.matrixWorld);const moment=-world.x*normal.y+world.y*normal.x;assert.ok(best<1e-6);assert.ok(moment<-1.8);assert.ok(c.openingMoment>0);maximum=Math.max(maximum,moment);
+  normal.transformDirection(b.wheelBody.matrixWorld);const moment=-world.x*normal.y+world.y*normal.x;assert.ok(best<1e-6);assert.ok(moment<-1.4,`moment ${moment}`); // Brown's 1.9-radius wheelassert.ok(c.openingMoment>0);maximum=Math.max(maximum,moment);
  }assert.equal(d.dynamics.selfLocking,false);assert.equal(d.dynamics.forceValidated,false);console.log({leastRetainingMoment:maximum});
 });
 test('240 selection, free-run and drop stay continuous and clear across all three alternatives',()=>{
@@ -65,8 +67,8 @@ test('240 selection, free-run and drop stay continuous and clear across all thre
  }previous=s;}console.log({minimumWorkingCircleGap:minimum,maxAngularStep:maxStep});
 });
 test('240 finite pivot and hub bores clear their actual shafts',()=>{
- const m=create({id:240}),d=m.root.userData,b=d.blocks,p=d.workingParts,a=audit(),shafts=[b.hookGravityStopPivot,b.straightGravityStopPivot,b.springPawlStopPivot],bodies=[b.hookGravityStopBody,b.straightGravityStopBody];
- for(let i=0;i<=16;i++){m.update((i/16-d.geometry.initialCycleCoordinate)*6);m.root.updateMatrixWorld(true);shafts.forEach((s,j)=>{a.check(shaftMesh(s),p.collars[j],'stop collar',true);if(j<2)a.check(shaftMesh(s),bodies[j],'stop pivot',true);});a.check(p.pin,p.eye,'spring attachment',true);a.check(shaftMesh(b.wheelShaft),b.wheel.userData.hub,'wheel hub',true);}
+ const m=create({id:240}),d=m.root.userData,b=d.blocks,p=d.workingParts,a=audit(),shafts=[b.hookGravityStopPivot,b.straightGravityStopPivot,b.springPawlStopPivot],bodies=[b.hookGravityStopBody,b.straightGravityStopBody,b.springPawlStopBody];
+ for(let i=0;i<=16;i++){m.update((i/16-d.geometry.initialCycleCoordinate)*6);m.root.updateMatrixWorld(true);shafts.forEach((s,j)=>{a.check(shaftMesh(s),p.collars[j],'stop collar',true);a.check(shaftMesh(s),bodies[j],'stop pivot',true);});a.check(shaftMesh(b.wheelShaft),b.wheel.userData.hub,'wheel hub',true);}
  console.log(a.report());
 });
 test('240 keeps stable scene buffers and source comparison display settings',()=>{

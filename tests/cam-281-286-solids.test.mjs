@@ -82,31 +82,15 @@ test('286: finite shoe rests on the curved toe instead of straddling the contact
   } finally {disposeObject3D(model.root);}
 });
 
-test('286: the rod runs in two bored guides on a back bar and the finite valve closes onto its seat', () => {
+test('286: only Brown\'s drawn parts remain; no undrawn guides, seat, base or bearing', () => {
   const model = createAuthoredPoppetValveMovement({id: 286}), u = model.root.userData, b = u.blocks;
   try {
-    // Brown draws the rod alone; the rod still needs guiding, so two plain
-    // bored guides on one back bar hold it (the old standard stays unbuilt).
-    const guides = b.fixedGuides.children.filter(mesh => /guide$/.test(mesh.userData.role));
-    assert.equal(guides.length, 2);
+    // Brown draws the lifting rod alone, broken off above and below, and the
+    // rock shaft as a cut section; every fixed support is undrawn.
+    assert.equal(b.fixedGuides.children.length, 0);
     assert.equal(b.guidePost.parent, null);
-    assert.equal(b.backBar.parent, b.fixedGuides);
-    assert.equal(b.shaftBearing.parent, b.fixedGuides);
-    for (let frame = 0; frame <= 128; frame++) {
-      model.update(frame * u.geometry.cyclePeriod / 128);model.root.updateMatrixWorld(true);
-      const head = new THREE.Box3().setFromObject(b.poppetHead), seat = new THREE.Box3().setFromObject(b.valveSeat);
-      assert.ok(Math.abs(head.min.y - seat.max.y - u.kinematics.valveLift) < 1e-8,
-        'finite seating gap must equal valve lift and close at rest');
-      const rod = new THREE.Box3().setFromObject(b.valveRod);
-      for (const guide of guides) {
-        const bounds = new THREE.Box3().setFromObject(guide);
-        assert.ok(rod.min.y < bounds.min.y && rod.max.y > bounds.max.y, 'guide stays fully on rod');
-      }
-    }
-    assertClearCycle(model, [
-      ...guides.map(guide => [b.valveRod, guide]),
-      ...b.fixedGuides.children.flatMap(part => [[b.lifterBody, part], [b.poppetHead, part]]),
-    ]);
+    const shaft = new THREE.Box3().setFromObject(b.rockShaft);
+    assert.ok(shaft.min.z > -0.6, 'rock shaft ends as a short stub behind the toe');
   } finally {disposeObject3D(model.root);}
 });
 

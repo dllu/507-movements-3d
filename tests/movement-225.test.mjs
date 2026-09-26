@@ -202,28 +202,26 @@ test('movement 225 has smooth drive, dwell, click-over, and accumulated indexing
   disposeModel(model.root);
 });
 
-test('movement 225 pawl nose crosses the ratchet plane and meets a real driving flank', () => {
+test('movement 225 flat pawl lies in the ratchet plane and meets a real driving flank', () => {
   const model = createMovementModel(catalog.movements[224]);
   const { blocks, geometry } = model.root.userData;
-  const ratchetBack = -geometry.ratchetDepth / 2;
-  const ratchetFront = geometry.ratchetDepth / 2;
-  const noseBack = geometry.pawlPlaneZ - geometry.pawlNoseDepth / 2;
-  const noseFront = geometry.pawlPlaneZ + geometry.pawlNoseDepth / 2;
+  const ratchetBack = geometry.pawlPlaneZ - geometry.ratchetDepth / 2;
+  const ratchetFront = geometry.pawlPlaneZ + geometry.ratchetDepth / 2;
+  const pawlBox = new THREE.Box3().setFromObject(blocks.pawlBody);
 
   assert.equal(blocks.ratchet.userData.teeth, 20);
   assert.equal(blocks.ratchet.userData.toothFaces.length, 20);
   assert.equal(blocks.ratchet.userData.profilePoints.length, 60);
   assert.equal(blocks.ratchet.userData.body.geometry.type, 'ExtrudeGeometry');
-  assert.equal(blocks.pawlNose.geometry.parameters.height, 0.46);
-  assert.ok(noseBack < ratchetFront);
-  assert.ok(noseFront > ratchetBack);
-  assert.ok(
-    Math.min(noseFront, ratchetFront) - Math.max(noseBack, ratchetBack) > 0.13,
-    'working nose must pass through the ratchet axial layer',
-  );
+  // No cross-pin: the rounded nose is the flat pawl's own end, inside the
+  // wheel's tooth band.
+  assert.equal(blocks.pawlNose.isMesh, undefined);
+  assert.ok(pawlBox.min.z > ratchetBack && pawlBox.max.z < ratchetFront,
+    'the pawl lies in the ratchet plane');
+  near(blocks.ratchet.position.z, geometry.pawlPlaneZ, 0, 'shared plane');
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 13);
+  assert.ok(meshCount >= 9);
   assert.ok(model.cameraDirection.z > 4 * Math.abs(model.cameraDirection.x));
   disposeModel(model.root);
 });

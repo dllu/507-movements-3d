@@ -166,6 +166,12 @@ test('movement 427 exact source pose matches the official packing pivots and con
     2.3e-16, 'right root guide radius');
   near(geometry.pistonRootRadius, 1.1171565, 0,
     'scaled exact source root radius');
+  // Playback opens on Brown's plate pose: the pistons on the upper-left /
+  // lower-right diagonal, the lower-right one about 38 degrees down.
+  const display = model.root.userData.stateAtTime(0);
+  near(display.inputAngle, geometry.plateDisplayInputAngle, 1e-15, 'plate display input');
+  assert.ok(display.rightPiston.pistonAngle < -0.55 && display.rightPiston.pistonAngle > -0.75);
+  assert.ok(display.leftPiston.pistonAngle > 1.9 && display.leftPiston.pistonAngle < 2.4);
   disposeModel(model.root);
 });
 

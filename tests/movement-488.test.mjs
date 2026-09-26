@@ -126,6 +126,7 @@ test('movement 488 blade points lie exactly on one constant-lead helicoid', () =
     bladeSurfacePointScene,
     geometry,
     halfChordAngleAt,
+    skewAngleAt,
     transmission,
   } = model.root.userData;
   for (let radialIndex = 0; radialIndex <= 40; radialIndex += 1) {
@@ -146,7 +147,7 @@ test('movement 488 blade points lie exactly on one constant-lead helicoid', () =
         geometry.helicalLeadCoefficientSceneUnit * phi,
         3e-16, `helical lead u${radialIndex} v${chordIndex}`);
       near(phi,
-        chordFraction * halfChordAngleAt(radialFraction),
+        skewAngleAt(radialFraction) + chordFraction * halfChordAngleAt(radialFraction),
         3e-16, `finite blade patch angle u${radialIndex} v${chordIndex}`);
     }
   }

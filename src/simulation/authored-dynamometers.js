@@ -476,14 +476,52 @@ function hoopReactionDynamometer(movement) {
   hoopCarrier.userData.role =
     'freely-journaled-hoop-carrier-held-stationary-by-measuring-band';
   root.add(hoopCarrier);
-  const hoop = new THREE.Mesh(
-    boredLatheGeometry([
-      { axial: -hoopAxialWidth / 2, radial: hoopOuterRadius },
-      { axial: hoopAxialWidth / 2, radial: hoopOuterRadius },
-    ], hoopInnerRadius, 128),
-    hoopMaterial,
-  );
-  hoop.rotation.z = Math.PI / 2;
+  // Brown rules the edgewise hoop with transverse lines evenly spaced in
+  // angle (about 5-6 degrees apart when unprojected from the plate's 174 px
+  // radius), foreshortening toward its top and bottom exactly as the teeth
+  // of an edgewise spur wheel do; in the companion plate 368 he rules only
+  // the toothed wheel and rack this way and leaves plain pulleys blank. The
+  // hoop is therefore a spur-toothed rim: 64 straight teeth cut into its
+  // periphery (tips on the former outer radius), with no mating pinion,
+  // because Brown draws none.
+  const hoopTeeth = 64;
+  // Roots stay outside the carrier arms and braces seated 0.07 into the rim.
+  const hoopRootRadius = hoopOuterRadius - 0.055;
+  const hoopShape = new THREE.Shape();
+  const hoopPitchAngle = Math.PI * 2 / hoopTeeth;
+  const hoopProfile = [
+    [-0.5, hoopRootRadius], [-0.3, hoopRootRadius],
+    [-0.2, hoopOuterRadius], [0.2, hoopOuterRadius],
+    [0.3, hoopRootRadius],
+  ];
+  for (let tooth = 0; tooth < hoopTeeth; tooth += 1) {
+    hoopProfile.forEach(([fraction, radius], index) => {
+      const angle = (tooth + fraction) * hoopPitchAngle;
+      const x = Math.cos(angle) * radius;
+      const y = Math.sin(angle) * radius;
+      if (tooth === 0 && index === 0) hoopShape.moveTo(x, y);
+      else hoopShape.lineTo(x, y);
+    });
+  }
+  hoopShape.closePath();
+  hoopShape.holes.push(new THREE.Path().absarc(
+    0, 0, hoopInnerRadius, 0, Math.PI * 2, true,
+  ));
+  const hoopGeometry = new THREE.ExtrudeGeometry(hoopShape, {
+    bevelEnabled: false,
+    curveSegments: 128,
+    depth: hoopAxialWidth,
+  });
+  hoopGeometry.translate(0, 0, -hoopAxialWidth / 2);
+  hoopGeometry.userData = {
+    boreRadius: hoopInnerRadius,
+    rootRadius: hoopRootRadius,
+    teeth: hoopTeeth,
+    tipRadius: hoopOuterRadius,
+  };
+  const hoop = new THREE.Mesh(hoopGeometry, hoopMaterial);
+  // Extrusion axis (local Z) along the horizontal shaft (world X).
+  hoop.rotation.y = Math.PI / 2;
   hoop.userData.role =
     'hoop-shaped-frame-free-to-revolve-on-middle-of-horizontal-shaft';
   hoopCarrier.add(hoop);

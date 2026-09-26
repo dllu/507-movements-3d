@@ -87,7 +87,9 @@ for (const id of [30, 33, 35]) {
           if (length > outerRadii[1 - side] + 0.005) continue;
           const gap = length - radiusAt(local, outlines[1 - side]);
           assert.ok(gap > -1e-6, `pose ${sample}: a rendered tooth outline enters its mate by ${-gap}`);
-          closest = Math.min(closest, gap);
+          // Engagement is the normal flank gap: near-radial square teeth
+          // (movement 30's 10-degree rack) magnify a radial gap measure.
+          closest = Math.min(closest, gap, distanceToOutline(local, outlines[1 - side]));
         }
       }
       assert.ok(closest < 0.0025, `pose ${sample}: generated flanks stay engaged (${closest})`);

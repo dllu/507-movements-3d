@@ -9,10 +9,12 @@ const Z_AXIS = new THREE.Vector3(0, 0, 1);
 // Brown's 298: balance C on a vertical staff whose pinion drives a crown wheel
 // (the drum, geared like Movement 26) on a horizontal arbor. That arbor carries
 // two tilted loops over the top of a face-on saw-tooth escape wheel. At the top
-// the teeth move along the arbor, so the loops are reconstructed as opposite-
-// handed helical pallets: a tooth corner pushing a helical face turns the arbor,
-// and each pallet releases by swinging out of the wheel's plane (one toward the
-// front, one toward the back). Coordinates: x right, y up, z toward the viewer;
+// the teeth move along the arbor, so each loop's lowest arc is a short helical
+// pallet: a tooth corner pushing it turns the arbor. The two working arcs are
+// mirror images through the vertical plane of the arbor (one works behind the
+// wheel's mid-plane, one in front), so they drive the arbor opposite ways while
+// both loops lean alike in the front view, tops to the left, as Brown draws
+// them. Each pallet releases where its wire lifts off under the arbor. Coordinates: x right, y up, z toward the viewer;
 // 0.03 model units per source pixel, origin at source (150, 276), the arbor axis.
 const SCALE = 0.03;
 const source = (px, py) => new THREE.Vector2((px - 150) * SCALE, (276 - py) * SCALE);
@@ -95,7 +97,12 @@ function gearedBalanceVergeEscapement(movement) {
   // meets the lower half of the wire and the wire lifts clear on release.
   const wireLift = 0.005;
   const topRadius = arborRadius + wireRadius - 0.012;
-  const loopArch = 0.2;
+  // Brown's loops stand well clear above the rod: the top of each loop's
+  // wire centreline is this far from the arbor axis.
+  const loopTop = 0.41;
+  // Brown's loops lean with their tops to the left: measured on the plate the
+  // loop axis runs about 0.34 px left per px of rise.
+  const brownLoopLean = 0.34;
 
   // Signed distance from a wire-centreline point to the leading face (and tip
   // corner) of the tooth whose tip is at world angle phi: positive when the
@@ -362,45 +369,100 @@ function gearedBalanceVergeEscapement(movement) {
     // The working helix ends exactly at the contact point at release; from
     // there the wire bends up at once (it keeps the helix's advance along the
     // arbor, so it lifts away from the escaping tooth instead of standing in
-    // its path). The far end, which never meets a tooth, rises smoothly. The
-    // top of the loop is wrapped over the arbor.
+    // its path) to pass just under the arbor, where it is soldered. The rest
+    // of the loop is one smooth egg round the rod (soldered at its foot under
+    // the arbor, clear at the sides, arched well above the rod as Brown's
+    // loops are), which the far end of the working arc joins smoothly.
     const releaseDelta = loop.contactDelta(loop.side < 0 ? releaseAngle : -releaseAngle);
     const releaseSense = loop.side < 0 ? 1 : -1;
-    const farDelta = -releaseSense * (arborAmplitude + 0.42);
-    const releaseRise = 0.25, farRise = 0.45;
+    // The far end stands a little beyond the deepest contact, at the swing's
+    // extreme.
+    const farDelta = loop.contactDelta(loop.side < 0 ? -arborAmplitude : arborAmplitude) - releaseSense * 0.12;
+    const releaseRise = 0.25, farRise = 0.7;
     loop.arcEnds = [Math.min(releaseDelta, farDelta), Math.max(releaseDelta, farDelta)];
     const helixX = (delta) => loop.center + loop.side * helixPitch * delta;
-    const drop = loop.rho - topRadius;
+    // The egg is an upright ellipse in the end view: its foot rests on the
+    // arbor's underside (topRadius), its top is loopTop above the axis and
+    // its sides stand just clear of the rod, so the loop is tall and narrow.
+    const eggCentre = (loopTop - topRadius) / 2, eggHeight = (loopTop + topRadius) / 2, eggWidth = 0.2;
+    const egg = (delta) => {
+      // Ray from the axis at arbor angle delta: (z, y) = r (sin, -cos).
+      const sz = Math.sin(delta) / eggWidth, cy = -Math.cos(delta) / eggHeight, oy = -eggCentre / eggHeight;
+      const a = sz * sz + cy * cy, b = 2 * cy * oy, c = oy * oy - 1;
+      return (-b + Math.sqrt(b * b - 4 * a * c)) / (2 * a);
+    };
     const points = [];
     // Walk the loop in the release sense starting at the far end.
     const start = farDelta - releaseSense * farRise;
     const workingEnd = releaseDelta;
-    const riseEnd = releaseDelta + releaseSense * releaseRise;
-    const topEnd = start + releaseSense * FULL_TURN;
-    const riseX = helixX(riseEnd), startX = helixX(start);
     const count = 480;
     for (let i = 0; i < count; i += 1) {
       const delta = start + releaseSense * FULL_TURN * i / count;
       const along = (delta - start) * releaseSense;
-      let rho, x;
+      const pastRelease = (delta - workingEnd) * releaseSense;
+      let rho;
       if (along < farRise) {
-        const u = along / farRise, smooth = u * u * (3 - 2 * u);
-        rho = topRadius + drop * smooth; x = helixX(delta);
-      } else if ((delta - workingEnd) * releaseSense <= 0) {
-        rho = loop.rho; x = helixX(delta);
-      } else if ((delta - riseEnd) * releaseSense <= 0) {
-        const u = (delta - workingEnd) * releaseSense / releaseRise;
-        rho = loop.rho - drop * (1 - (1 - u) ** 2); x = helixX(delta);
+        const u = along / farRise;
+        rho = THREE.MathUtils.lerp(egg(delta), loop.rho, u * u * (3 - 2 * u));
+      } else if (pastRelease <= 0) {
+        rho = loop.rho;
+      } else if (pastRelease < releaseRise) {
+        const u = pastRelease / releaseRise;
+        rho = THREE.MathUtils.lerp(loop.rho, egg(delta), 1 - (1 - u) ** 2);
       } else {
-        const u = (delta - riseEnd) * releaseSense / ((topEnd - riseEnd) * releaseSense);
-        const smooth = u * u * (3 - 2 * u);
-        // Brown's loops stand clear above the rod (their tops about 0.26
-        // over it): the wire hugs the arbor low on its sides, where it is
-        // soldered, and arches over the top.
-        const ends = Math.min(1, u / 0.2, (1 - u) / 0.2);
-        rho = topRadius + loopArch * ((1 - Math.cos(delta)) / 2) ** 2 * ends * ends * (3 - 2 * ends); x = THREE.MathUtils.lerp(riseX, startX, smooth);
+        rho = egg(delta);
       }
-      points.push(arborFramePoint(delta, rho, x));
+      points.push(arborFramePoint(delta, rho, helixX(delta)));
+    }
+    // Brown draws both loops as narrow rings leaning the same way, tops to
+    // the left (the loop axis runs about 0.34 px left per px of rise). The
+    // working arcs of the two loops are mirror images through the vertical
+    // plane of the arbor, which leaves the front view unchanged, so both can
+    // lean alike. Near the bottom the helix is, to first order, the plane
+    // x = centre + side (pitch / rho) z. Beyond the working arc the wire
+    // eases (over freeBlend radians) onto a surface that starts as that
+    // plane and, going up, narrows toward the lean line: its z slope falls
+    // to upperSlope by arbor height and it is sheared left above leanFloor
+    // (clear of every tooth contact, which stays below arbor-frame y -0.129)
+    // so that the loop's top stands back by Brown's lean. The working helix
+    // and its contact law are untouched.
+    const helixTaper = 0.15, freeBlend = 0.5, upperSlope = 0.45, returnSlope = 0.15, leanFloor = -0.1, leanBlend = 0.1;
+    const workFrom = farRise, workTo = (workingEnd - start) * releaseSense;
+    const lowSlope = helixPitch / loop.rho;
+    const smooth = (u) => { const v = THREE.MathUtils.clamp(u, 0, 1); return v * v * (3 - 2 * v); };
+    const ramp = (y) => {
+      const h = y - leanFloor;
+      if (h <= 0) return 0;
+      return h < leanBlend ? h * h / (2 * leanBlend) : h - leanBlend / 2;
+    };
+    const lowest = points.reduce((p, q) => (q.y < p.y ? q : p));
+    const highest = points.reduce((p, q) => (q.y > p.y ? q : p));
+    let lean = 0;
+    const surfaceX = (point) => {
+      const slope = THREE.MathUtils.lerp(lowSlope, upperSlope, (point.y + loop.rho) / (loopTop + loop.rho));
+      // Only the strand on the working side spreads along the arbor with the
+      // helix; the other strand stays near the loop's station (bowing a
+      // little the other way), so that neither loop's back strands run into
+      // the other's working arc.
+      const across = loop.side * point.z;
+      const soft = (v) => (v + Math.sqrt(v * v + 0.01)) / 2;
+      return loop.center + slope * soft(across) - returnSlope * soft(-across) + lean * ramp(point.y);
+    };
+    // The lean puts the top of the loop Brown's lean left of its lowest
+    // point (which lies on the working arc).
+    lean = (lowest.x - brownLoopLean * (highest.y - lowest.y) - surfaceX(highest)) / ramp(highest.y);
+    for (let i = 0; i < count; i += 1) {
+      const along = FULL_TURN * i / count;
+      const outside = Math.max(0, workFrom - along, along - workTo);
+      const gap = along > workTo ? Math.min(outside, FULL_TURN - along + workFrom) : outside;
+      if (gap <= 0) continue;
+      // Beyond the arc the helix's advance along the arbor tapers off, so
+      // the wire does not run on past the working face and double back.
+      const beyondFar = along < workFrom;
+      const endDelta = beyondFar ? farDelta : workingEnd;
+      const outward = beyondFar ? -releaseSense : releaseSense;
+      const helixRun = helixX(endDelta + outward * helixTaper * Math.tanh(gap / helixTaper));
+      points[i].x = THREE.MathUtils.lerp(helixRun, surfaceX(points[i]), smooth(gap / freeBlend));
     }
     // Round the loop's three corners (release bend, top wrap, closure) so
     // the wire bends no tighter than about 1.3 of its own radius: a sharper
@@ -584,6 +646,7 @@ function gearedBalanceVergeEscapement(movement) {
   root.userData.minimumDisplayCycleSeconds = 4;
   root.userData.contactTipAngle = (side, theta) => loops[side].tip(theta).value;
   root.userData.helixGap = (side, theta, phi) => helixGap(loops[side], theta, phi).gap;
+  root.userData.contactDelta = (side, theta) => loops[side].contactDelta(theta);
   root.userData.times = times;
   root.userData.stateAtTime = stateAtTime;
   root.userData.displayTimeOffset = displayTimeOffset;
@@ -594,7 +657,7 @@ function gearedBalanceVergeEscapement(movement) {
   };
   root.userData.reconstruction = {
     drawn: 'balance C, vertical staff and pinion, 26-style crown wheel on a horizontal arbor, two tilted wire loops on that arbor over a face-on saw-tooth wheel with four lens crossings, arrow rising on the wheel’s right',
-    inferred: 'each loop is a round wire soldered over the top of the arbor whose lower working arc is a short opposite-handed helix: a tooth’s leading face pushes the wire along the arbor and turns it, and the loop releases by swinging out of the wheel plane; each tooth lands as the arbor reverses, so the wheel never recoils; tooth counts 26/30/12, helix pitch, swing and drop schedule are inferred',
+    inferred: 'each loop is a round wire soldered under the arbor whose lower working arc is a short helix; the two working arcs are mirror images through the arbor’s vertical plane, so the loops drive opposite ways yet lean alike (tops left) as drawn: a tooth’s leading face pushes the wire along the arbor and turns it, and the loop releases where its wire lifts off; each tooth lands as the arbor reverses, so the wheel never recoils; tooth counts 26/30/12, helix pitch, swing and drop schedule are inferred',
   };
   update(0);
   markShadows(root);

@@ -30,19 +30,21 @@ test('134 finite helical rope clears its flange and both free spans', () => {
     const positions = b.ropeMesh.geometry.attributes.position.array;
     model.update(.5); model.update(1);
     assert.equal(b.ropeMesh.geometry.attributes.position.array, positions, 'playback must reuse rope geometry');
-    // Pass 55 (p55-ends) ran both free spans on to storage reels beyond the
-    // plate. The reels turn with the rope at no slip, so they are now the
-    // fastest visible part and the sustained display-speed cap, not the old
-    // 4 s default, sets the cycle (about 4.81 s).
-    const reel = model.root.userData.ropeReels[0].userData.rotor;
-    model.update(0); const reelStart = reel.rotation.z; model.update(.5);
-    const reelSpeed = (reel.rotation.z - reelStart) / .5;
+    // Pass 64: Brown draws no reels, so both free spans run on straight past
+    // the crop and end cleanly; the leads stay collinear with the drawn spans.
+    const leads = model.root.userData.ropeLeads;
+    assert.equal(leads.length, 2);
+    for (const [lead, span] of [[leads[0], curve.leftSpan], [leads[1], curve.rightSpan]]) {
+      const line = lead.userData.curve;
+      const direction = span.v2.clone().sub(span.v1).normalize();
+      assert(line.v2.clone().sub(line.v1).normalize().distanceTo(direction) < 1e-12, 'lead continues the span straight');
+    }
+    let reelCount = 0;
+    model.root.traverse((object) => { if (/reel/.test(object.userData.role ?? '')) reelCount += 1; });
+    assert.equal(reelCount, 0, 'no undrawn reels or stands');
     applyDisplayTiming(model, movement);
     const timing = model.root.userData.animationTiming;
-    assert(Math.abs(timing.sustainedVisibleAngularSpeed - reelSpeed) < 1e-9);
-    assert(Math.abs(timing.displayCycleDuration
-      - timing.authoredCyclePeriod * reelSpeed / MAX_SUSTAINED_DISPLAY_ANGULAR_SPEED) < 1e-9);
-    assert(timing.displayCycleDuration > 4 && timing.displayCycleDuration < 5);
+    assert(timing.sustainedVisibleAngularSpeed <= MAX_SUSTAINED_DISPLAY_ANGULAR_SPEED + 1e-9);
     assert(model.root.userData.hideGround && model.root.userData.supportsRestart);
   } finally { disposeObject3D(model.root); }
 });

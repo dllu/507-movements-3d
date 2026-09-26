@@ -23,6 +23,14 @@ export function correctMarineRotor(root,id){
   const original=b.bladeAssemblies[0].blade.geometry,solid=finiteSurfaceShell(original,.045);
   original.dispose();for(const a of b.bladeAssemblies){a.blade.geometry=solid;a.perimeter.forEach(o=>o.visible=false);a.blade.material.transparent=false;a.blade.material.opacity=1;a.blade.material.depthWrite=true;}
   replace(b.hub,horizontalRing(.184,.43,-.54,.54));
+  // Brown's hub has a collar on the shaft side, and beyond it the shaft
+  // steps down to a plain end nut; the shaft ends cleanly at the nut.
+  b.nose.visible=false;
+  replace(b.shaft,new THREE.CylinderGeometry(.18,.18,3.84,40));b.shaft.position.x=-.28;
+  b.hubFittings=[[.184,.56,-.86,-.54,'hub-collar-on-shaft-side'],[.184,.27,.54,1.11,'stepped-shaft-sleeve-beyond-hub'],[0,.31,1.64,1.84,'propeller-shaft-end-nut']].map(([inner,outer,low,high,role])=>{
+   const part=new THREE.Mesh(inner?horizontalRing(inner,outer,low,high,96):new THREE.CylinderGeometry(outer,outer,high-low,48).translate(0,(low+high)/2,0),b.hub.material);
+   part.rotation.z=-Math.PI/2;part.userData.role=role;b.rotor.add(part);return part;
+  });
   for(const bearing of b.bearings)replace(bearing,ring(.184,.365,-.11,.11,96));
   b.waterVolume.visible=false;
   b.base.position.y=-2.56;

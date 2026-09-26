@@ -20,19 +20,42 @@ export function carrierPawlClearance225(center, wheelAngle, outline, noseRadius)
   return nearest390Outline([c * center.x + s * center.y, -s * center.x + c * center.y], outline).distance - noseRadius;
 }
 
+// Signed clearance between the whole flat pawl outline (local to its hinge)
+// and the wheel outline. The pawl shares the wheel's plane; its arched bar is
+// shaped so that only the nose touches the teeth, which tests verify.
+export function carrierPawlBarClearance225(pivot, angle, wheelAngle, barOutline, wheelOutline) {
+  const ca = Math.cos(angle), sa = Math.sin(angle), cw = Math.cos(wheelAngle), sw = Math.sin(wheelAngle);
+  let clearance = Infinity;
+  for (const [x, y] of barOutline) {
+    const wx = pivot.x + ca * x - sa * y, wy = pivot.y + sa * x + ca * y;
+    if (wx * wx + wy * wy > 3.2) continue;
+    clearance = Math.min(clearance, nearest390Outline([cw * wx + sw * wy, -sw * wx + cw * wy], wheelOutline).distance);
+  }
+  for (const [x, y] of wheelOutline) {
+    const wx = cw * x - sw * y - pivot.x, wy = sw * x + cw * y - pivot.y;
+    clearance = Math.min(clearance, nearest390Outline([ca * wx + sa * wy, -sa * wx + ca * wy], barOutline).distance);
+  }
+  return clearance;
+}
+
 export function installCarrierPawl225(root) {
   const { blocks: b, geometry: g } = root.userData;
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
-  const material = b.pawlBody.material, dark = b.pawlNose.material;
-  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(g.pawlLength * 0.45, -0.16, 0), new THREE.Vector3(g.pawlLength, 0, 0)]);
+  const material = b.pawlBody.material, dark = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 });
+  // The bar arches up clear of the tooth behind the nose, so only its rounded
+  // tip drops into the tooth space, on the drive and while it drags back.
+  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(g.pawlLength * 0.45, -0.2, 0), new THREE.Vector3(g.pawlLength * 0.8, -0.28, 0), new THREE.Vector3(g.pawlLength, 0, 0)]);
   // A single ordered perimeter avoids unions between tangent capsule arcs,
   // which can fail ring reconstruction under browser floating-point arithmetic.
+  // Brown's pawl is a plain flat bar whose own rounded tip (the working nose
+  // radius) drops into the tooth in the wheel's plane.
   const points = curve.getPoints(24).map(p => [p.x, p.y]);
-  const widths = points.map(([x]) => 0.045 + 0.095 * Math.max(0, 1 - x / 0.25) ** 2);
+  const noseRadius = g.pawlNoseRadius;
+  const widths = points.map(([x]) => noseRadius + 0.05 * Math.max(0, 1 - x / 0.25) ** 2);
   const outline = points.map(([x, y], i) => [x, y + widths[i]]);
   for (let i = 1; i <= 16; i++) {
     const angle = Math.PI / 2 - Math.PI * i / 16;
-    outline.push([g.pawlLength + 0.045 * Math.cos(angle), 0.045 * Math.sin(angle)]);
+    outline.push([g.pawlLength + noseRadius * Math.cos(angle), noseRadius * Math.sin(angle)]);
   }
   outline.push(...points.slice(0, -1).reverse().map(([x, y], i) => [x, y - widths[points.length - 2 - i]]));
   for (let i = 1; i < 32; i++) {
@@ -40,7 +63,7 @@ export function installCarrierPawl225(root) {
     outline.push([0.14 * Math.cos(angle), 0.14 * Math.sin(angle)]);
   }
   replace(b.pawlBody, plate([[outline, circle([0, 0], 0.074, 64)]], -0.065, 0.065));
-  replace(b.pawlNose, new THREE.CylinderGeometry(g.pawlNoseRadius, g.pawlNoseRadius, g.pawlNoseDepth, 128));
+  g.pawlOutline = outline;
   b.pawlIndex.position.y = -0.12;
   b.pawlIndex.position.z = 0.08;
   for (const child of [...b.carrier.children]) { child.geometry?.dispose(); b.carrier.remove(child); }
@@ -82,7 +105,7 @@ export function installCarrierPawl225(root) {
   const index = b.ratchet.userData.indicator;
   replace(index, new THREE.BoxGeometry(0.04, 0.65, 0.012));
   index.position.set(0, 0.9, g.ratchetDepth / 2 + 0.006);
-  const journal = new THREE.Mesh(ring(0.108, 0.24, -0.44, -0.24, 96), matte(PALETTE.frame));
+  const journal = new THREE.Mesh(ring(0.108, 0.24, g.pawlPlaneZ - 0.44, g.pawlPlaneZ - 0.24, 96), matte(PALETTE.frame));
   journal.userData.role = 'bored-fixed-output-shaft-journal'; root.add(journal);
   root.userData.workingParts225 = { carrier, hinge, floorPin, journal };
   root.userData.updateWorkingParts225 = state => hinge.position.set(state.pawlPivot.x, state.pawlPivot.y, 0.34);

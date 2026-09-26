@@ -226,8 +226,8 @@ test('movement 498 starts and closes at rest, fits every pose, and leaves moveme
   for (let sample = 0; sample <= 720; sample += 1) {
     model.update(geometry.cycleDuration * sample / 720);
     model.root.updateMatrixWorld(true);
-    // The boiler head and shell the pipe's flange is bolted to lie just
-    // beyond Brown's crop.
+    // Nothing is drawn beyond Brown's crop (no boiler); any part so marked
+    // would be excluded from the fit.
     model.root.traverse((object) => {
       if (!object.isMesh) return;
       for (let parent = object; parent; parent = parent.parent) if (parent.userData.beyondPlateCrop) return;

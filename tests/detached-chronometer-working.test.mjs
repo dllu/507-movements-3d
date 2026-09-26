@@ -89,6 +89,8 @@ test('314 parts are single flat extrusions in Brown’s three planes', () => {
   assert.ok(close(zRange(b.directPalletC), planes.front), 'C in the front plane');
   assert.ok(close(zRange(b.leverBody), planes.lever), 'lever behind');
   assert.ok(close(zRange(b.balanceDisc), planes.balance), 'disc behind the lever');
+  // Brown draws no frame: the only fixed parts are the banking pins.
+  assert.deepEqual(b.fixedFrame.children, b.bankingPins);
   // No stand or bracket in front of the movement.
   m.root.updateMatrixWorld(true);
   for (const part of b.fixedFrame.children) {

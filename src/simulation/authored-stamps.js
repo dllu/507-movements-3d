@@ -1271,8 +1271,9 @@ function matchBrownStampProportions(model) {
   b.rack.add(neck);
   b.stampNeck = neck;
   // The shaft ends just proud of the pinion hub, as Brown's boss does,
-  // instead of standing far out in front of the face.
-  const shaftBack = b.inputShaft.position.z - 0.74;
+  // instead of standing far out in front of the face; behind, it ends as a
+  // short cut stub just past the hub, since Brown draws no bearing.
+  const shaftBack = g.gearPlaneZ - 0.36 - 0.08;
   const shaftFront = g.gearPlaneZ + 0.36 + 0.06;
   b.inputShaft.geometry.dispose();
   b.inputShaft.geometry = new THREE.CylinderGeometry(0.105, 0.105, shaftFront - shaftBack, 28);
@@ -1291,30 +1292,6 @@ function matchBrownStampProportions(model) {
       lip.position.x = (left - 0.20 + right - 0.02) / 2;
     }
   });
-  // The two C-guides and the pinion's bearing are carried on one plain
-  // back bar behind the rod: an upright joining both guides' rear lips and
-  // an arm across to the bearing boss, all behind the moving rack, collars
-  // and pinion.
-  {
-    const material = b.shaftBearing.material;
-    const barLow = -0.40;
-    const barHigh = -0.10;
-    const barX = (left + right) / 2;
-    const bearing = b.shaftBearing.position;
-    const top = bearing.y + 0.14;
-    const bottom = guideYs[1] - 0.17;
-    const upright = new THREE.Mesh(new THREE.BoxGeometry(0.36, top - bottom, barHigh - barLow), material);
-    upright.position.set(barX, (top + bottom) / 2, (barLow + barHigh) / 2);
-    upright.userData.role = 'plain-back-bar-carrying-rack-guides';
-    // The arm stops in the boss wall, clear of the turning shaft.
-    const armEnd = bearing.x - 0.18;
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(armEnd - barX, 0.28, 0.20), material);
-    arm.position.set((barX + armEnd) / 2, bearing.y, -0.30);
-    arm.userData.role = 'plain-back-arm-to-pinion-shaft-bearing';
-    b.fixedFrame.add(upright, arm);
-    b.guideBackBar = upright;
-    b.bearingArm = arm;
-  }
   // The undrawn anvil is not needed: the thin workpiece is the lower stop.
   b.anvil.visible = false;
   g.brownRodWidth = rodWidth;

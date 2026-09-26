@@ -2631,18 +2631,10 @@ function addPlainSupports(result, id) {
   supports.userData.fixed = true;
   supports.userData.role = 'plain-undrawn-supports';
   if (id === 332) {
-    // Shaft A runs back into a boss on a flat tie bar that joins it to the
-    // vessel wall behind the side lever.
+    // Brown draws shaft A only as its hatched section through the lever; it
+    // ends as a short cut stub just behind the lever, with no tie or boss.
     const shaft = byRole('fixed-sectioned-side-lever-shaft-A');
-    const low = -0.60, high = -0.45;
-    lengthenShaft(shaft, low + 0.02);
-    const tie = new THREE.Mesh(plate(clip.union(
-      poly(circle([0, 0], 0.34, 48)),
-      poly([[0, -0.13], [2.35, 0.5], [2.35, 0.76], [0, 0.13]]),
-    ), low, high), frameMaterial);
-    tie.userData.fixed = true;
-    tie.userData.role = 'plain-back-tie-carrying-shaft-A-from-vessel';
-    supports.add(tie);
+    lengthenShaft(shaft, -0.22);
   } else if (id === 336) {
     // A bed bar level with the cylinder's bottom flange runs left behind
     // the side lever; a pedestal on it takes shaft O, and a column at its

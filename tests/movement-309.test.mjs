@@ -223,8 +223,13 @@ test('movement 309 advances a thirty-tooth wheel exactly half a clockwise pitch 
     'one pitch per full pendulum cycle');
   near(geometry.leftLockAngle - geometry.rightLockAngle,
     geometry.lockStationSeparationTeeth * geometry.toothPitch,
-  1e-15, 'seven-and-a-half-pitch lock-station separation');
-  assert.equal(geometry.lockStationSeparationTeeth, 7.5);
+  1e-15, 'six-and-a-half-pitch lock-station separation');
+  // Brown's locked B tooth stands in notch b at 129.4 degrees; the mirrored
+  // stations 129/51 are six and a half pitches apart, so a fallen pallet's
+  // stop still hangs over the middle of a tooth space.
+  assert.equal(geometry.lockStationSeparationTeeth, 6.5);
+  near(geometry.leftLockAngle, THREE.MathUtils.degToRad(129), 1e-15,
+    'B locks where Brown draws the tooth in notch b');
   assert.equal(transmission.toothCount, 30);
   assert.equal(transmission.stepsPerPendulumCycle, 2);
   assert.equal(transmission.wheelCyclesPerRevolution, 30);
@@ -244,7 +249,7 @@ test('movement 309 advances a thirty-tooth wheel exactly half a clockwise pitch 
     assert.equal(start.startingLeftToothIndex,
       positiveModulo(cycle, geometry.toothCount));
     assert.equal(start.rightToothIndex,
-      positiveModulo(start.startingLeftToothIndex - 7,
+      positiveModulo(start.startingLeftToothIndex - 6,
         geometry.toothCount));
     vectorNear(toothTipAt(
       start.wheelAngle,

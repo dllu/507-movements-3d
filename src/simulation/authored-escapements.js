@@ -3518,17 +3518,23 @@ function oldFashionedClockVergeEscapement(movement) {
   // Brown's teeth are about 0.55 of a pitch tall (0.6 here) with raked
   // leading faces: each tip overhangs its foot by about 0.37 pitch in the
   // plate (0.35 here) and the next tooth's concave back starts at that foot,
-  // so the strip has no flat gaps. That longer back (1.35 pitch) must sag
-  // more (exponent 2.3; 2.0 already lets the 45-degree foliot swing's idle
-  // pallet graze a back) to keep the dipping pallet clear. The pallets are
-  // plain slender blades, 0.12 thick against Brown's roughly 1:6 strips; they
-  // end at the release edge because any extension past it sweeps into the
-  // next tooth's back as the pallet dips.
+  // so the strip has no flat gaps. Brown's backs are gentle arcs (a power
+  // law of about 1.6 fits the plate; 1.8 here). The pallets are plain
+  // slender strips (0.12 thick against Brown's roughly 1:6) and end at the
+  // release edge, where the tooth tip leaves them. Brown draws them about
+  // 0.6-0.65 of a pitch long; a pallet of length L releases at cos(phi) =
+  // h / L, with h the staff height above the tooth tips, and the half-pitch
+  // advance per beat then fixes h. Raising the staff to 0.25 (0.24 pitch;
+  // Brown about 0.15) gives 0.64-long pallets (0.60 pitch) that release 17
+  // degrees past mid-swing and catch at 20.5; the steeper pallets clear the
+  // gentler backs through the 45-degree foliot swing.
+  const tuning = { h: 0.25, n: 1.8, amp: 45, rel: 17, cat: 20.5 };
   const base = vergeAndCrownWheelEscapement(movement, {
     flagPallets: true,
+    heightToRadiusRatioOverride: tuning.h / 2.2,
     includeFrame: false,
     palletThickness: 0.12,
-    toothBackExponent: 2.3,
+    toothBackExponent: tuning.n,
     toothRakeFraction: 0.35,
     toothTipZ: 0.6,
   });
@@ -3579,9 +3585,9 @@ function oldFashionedClockVergeEscapement(movement) {
   const contactAngleDerivative = root.userData.contactAngleDerivative;
   const contactAngleSecondDerivative =
     root.userData.contactAngleSecondDerivative;
-  const foliotAmplitude = THREE.MathUtils.degToRad(45);
-  const releaseAngle = THREE.MathUtils.degToRad(25);
-  const catchAngle = THREE.MathUtils.degToRad(28);
+  const foliotAmplitude = THREE.MathUtils.degToRad(tuning.amp);
+  const releaseAngle = THREE.MathUtils.degToRad(tuning.rel);
+  const catchAngle = THREE.MathUtils.degToRad(tuning.cat);
   const cyclePeriod = 4;
   const cyclesPerSecond = 1 / cyclePeriod;
   const phaseAngleRate = FULL_TURN;
@@ -4068,12 +4074,14 @@ function oldFashionedClockVergeEscapement(movement) {
       wheelAngularSpeed: crownWheelAngularSpeed,
     };
   };
-  // Brown's 299 pose has the near pallet lying out to the right over a tooth
-  // tip and the far one hanging steeply down-left: the right pallet's
-  // impulse, an eighth of a cycle after the left foliot extreme. The display
-  // clock starts there; the mechanism state per cycle coordinate is
-  // unchanged.
-  const displayCycleOffset = 0.125;
+  // Brown's 299 pose has one pallet lying out to the right (about 15 degrees
+  // below horizontal) with a tooth tip at its very end, and the other
+  // hanging steeply down-left (about 59 degrees): the instant a tooth is
+  // released from a pallet tip. The display clock starts just before the
+  // second release (cycle 207/256, a dyadic value so cycle closure stays exact;
+  // strips about 24 and 56 degrees below horizontal); the mechanism state per
+  // cycle coordinate is unchanged.
+  const displayCycleOffset = 207 / 256;
   const stateAtTime = (time) => stateAtCycleCoordinate(
     time * cyclesPerSecond + displayCycleOffset,
   );

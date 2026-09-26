@@ -8,7 +8,7 @@ for(const[id,build]of[[470,steam],[471,atmospheric],[472,compressed]])test(`${id
  const model=build({id}),r=model.root,d=r.userData,b=d.blocks,g=d.geometry;
  const shell=id===470?b.fixedCylinder:id===471?b.cylinderShell:b.hammerCylinderShell,piston=b.piston??b.hammerPiston,rod=b.pistonRod??b.hammerPistonRod;
  const pairs=[[piston,shell],[rod,shell],[b.hammerHead,shell],[b.hammerFace,b.anvilFace],...b.workingCaps.flatMap(cap=>[[piston,cap],[rod,cap],[b.hammerHead,cap]])];
- if(id===470)pairs.push([b.valveSpool,b.valveChest],[b.admissionPassage,b.fixedCylinder]);
+ if(id===470)pairs.push([b.valveSpoolBody,b.valveChest],[b.rockerAxle,b.valveRocker.children[0]],[b.leverAxle,b.valveLever.children[0]],[b.valvePitman,b.valveLever.children[0]],[b.spindleLink,b.valveChest]);
  if(id===471)pairs.push([b.fixedDriveShaft,b.crankBearing],[b.fixedDriveShaft,b.crankDisk],[b.fixedDriveShaft,rod],[b.fixedDriveShaft,b.hammerHead],[b.crankPinVisual,b.connectingRod],[b.cylinderJointPin,b.connectingRod],[b.cylinderJointPin,b.cylinderDriveLug],[b.connectingRod,b.cylinderShell],[b.connectingRod,b.crankDisk]);
  if(id===472)pairs.push([b.pumpConnectingRod,b.pumpPiston],[b.pumpConnectingRod,b.pumpCrankArm],[b.pumpCrankPin,b.pumpConnectingRod],...b.pumpForks.flatMap(o=>[[b.pumpConnectingRod,o],[b.pumpWristPin,o]]),[b.pumpPiston,b.pumpShell],[b.pumpConnectingRod,b.pumpShell],[b.pumpWristPin,b.pumpConnectingRod],[b.driveShaft,b.drivePulley],[b.driveShaft,b.frictionWheel],[b.frictionWheel,b.frictionDisk],[b.slideValve,b.valveChest]);
  const data=pairs.map(([a,c])=>({a,c,points:surfacePoints(a.geometry),solid:solidSurface(c.geometry)}));let queries=0,minFaceGap=Infinity;

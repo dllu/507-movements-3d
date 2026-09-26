@@ -65,10 +65,13 @@ test('movement 228 is one twelve-pitch pulley carrying one ladder-rung chain', (
   assert.equal(new Set(blocks.teeth).size, 12);
   assert.equal(blocks.chain.userData.parallelSideLinkRows, 2);
   assert.equal(blocks.chain.userData.hasTransverseRungs, true);
-  // Ten tail sections per leg run the chain down into its navel pipes.
-  assert.equal(blocks.sections.length, 27);
-  assert.equal(blocks.sideLinks.length, 54);
-  assert.equal(blocks.rungs.length, 27);
+  // One slot per section of the finite hoist chain (26) plus one spare, so
+  // the slot count stays even and each slot keeps its side-link parity.
+  const { geometry } = model.root.userData;
+  assert.equal(geometry.chainTailIndex - geometry.chainHeadIndex, 26);
+  assert.equal(blocks.sections.length, 28);
+  assert.equal(blocks.sideLinks.length, 56);
+  assert.equal(blocks.rungs.length, 28);
   assert.equal(sourceAnimation.available, false);
   assert.equal(sourceAnimation.officialPageHasCanvasAnimation, false);
   disposeModel(model.root);
@@ -129,7 +132,7 @@ test('movement 228 preserves the six-interval half-wrap visible in the source pl
   disposeModel(model.root);
 });
 
-test('movement 228 keeps every rigid ladder section exact through 32,769 states', () => {
+test('movement 228 keeps every rigid ladder section exact through 32,769 hoist-stroke states', () => {
   const model = createMovementModel(catalog.movements[227]);
   const { geometry, stateAtInputAngle } = model.root.userData;
   let maximumLinkLengthError = 0;
@@ -139,10 +142,18 @@ test('movement 228 keeps every rigid ladder section exact through 32,769 states'
   let minimumChordalVelocityFactor = Number.POSITIVE_INFINITY;
   let maximumChordalVelocityFactor = 0;
   for (let index = 0; index <= 32768; index += 1) {
-    const inputAngle = index / 32768 * FULL_TURN;
+    const inputAngle = (index / 32768 * 2 - 1) * geometry.hoistStrokeAngle;
     const state = stateAtInputAngle(inputAngle);
-    assert.equal(state.nodes.length, 28);
-    assert.equal(state.chainSections.length, 27);
+    // One finite chain: the same 27 joints in every state, both ends below
+    // the plate's crop.
+    assert.equal(state.nodes.length, 27);
+    assert.equal(state.chainSections.length, 26);
+    assert.equal(state.nodes[0].materialIndex, geometry.chainTailIndex);
+    assert.equal(state.nodes.at(-1).materialIndex, geometry.chainHeadIndex);
+    for (const end of [state.nodes[0], state.nodes.at(-1)]) {
+      assert.ok(end.position.y <= geometry.chainEndMaximumY + 1e-12,
+        `state ${index} chain end stays below the plate crop`);
+    }
     assert.equal(state.engagements.length, 6);
     state.chainSections.forEach((section) => {
       maximumLinkLengthError = Math.max(
@@ -211,7 +222,7 @@ test('movement 228 keeps every rigid ladder section exact through 32,769 states'
   disposeModel(model.root);
 });
 
-test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', () => {
+test('movement 228 has smooth pin handoffs and a closed hoist stroke', () => {
   const model = createMovementModel(catalog.movements[227]);
   const {
     blocks,
@@ -220,7 +231,7 @@ test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', 
     transmission,
   } = model.root.userData;
   const epsilon = 1e-9;
-  for (let boundary = 0; boundary <= 12; boundary += 1) {
+  for (let boundary = -geometry.hoistStrokePitches; boundary <= geometry.hoistStrokePitches; boundary += 1) {
     const angle = boundary * geometry.chainNodeStep;
     const before = stateAtInputAngle(angle - epsilon);
     const after = stateAtInputAngle(angle + epsilon);
@@ -241,9 +252,13 @@ test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', 
         `boundary ${boundary} rung ${node.materialIndex} velocity is continuous`,
       );
     });
+    // The finite chain keeps every joint across each handoff.
     assert.equal(commonNodes, 27);
+    if (Math.abs(angle) >= geometry.hoistStrokeAngle - 1e-12) continue;
+    const timeAt = (inputAngle) => Math.asin(inputAngle / geometry.hoistStrokeAngle)
+      * geometry.cyclePeriod / FULL_TURN;
 
-    model.update((angle - epsilon) / geometry.inputAngularSpeed);
+    model.update(timeAt(angle - epsilon));
     const renderedBefore = new Map(blocks.sections.map((section) => [
       section.userData.materialIndex,
       {
@@ -252,7 +267,7 @@ test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', 
         quaternion: section.quaternion.clone(),
       },
     ]));
-    model.update((angle + epsilon) / geometry.inputAngularSpeed);
+    model.update(timeAt(angle + epsilon));
     const renderedAfter = new Map(blocks.sections.map((section) => [
       section.userData.materialIndex,
       {
@@ -276,7 +291,7 @@ test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', 
 
   let previousAdvance = Number.NEGATIVE_INFINITY;
   for (let index = 0; index <= 4096; index += 1) {
-    const inputAngle = index / 4096 * FULL_TURN;
+    const inputAngle = (index / 4096 * 2 - 1) * geometry.hoistStrokeAngle;
     const state = stateAtInputAngle(inputAngle);
     assert.ok(state.chainAdvance >= previousAdvance - 2e-15);
     previousAdvance = state.chainAdvance;
@@ -295,26 +310,20 @@ test('movement 228 has smooth pin handoffs and advances twelve rungs per turn', 
       `state ${index} chordal derivative`,
     );
   }
-  const start = stateAtInputAngle(0);
-  const closure = stateAtInputAngle(FULL_TURN);
-  near(closure.sprocketAngle - start.sprocketAngle, -FULL_TURN, 0,
-    'one pulley revolution');
-  near(
-    closure.chainAdvance - start.chainAdvance,
-    transmission.chainTravelPerPulleyTurn,
-    2e-15,
-    'twelve-rung chain advance',
-  );
-  assert.equal(closure.materialStepIndex - start.materialStepIndex, 12);
+  // Each hoist stroke pays out and winds back the same sections: the state
+  // is exactly periodic.
+  const { stateAtTime } = model.root.userData;
+  const start = stateAtTime(0);
+  const closure = stateAtTime(geometry.cyclePeriod);
+  near(closure.sprocketAngle, start.sprocketAngle, 2e-15, 'stroke closure');
+  near(closure.chainAdvance, start.chainAdvance, 2e-15, 'chain closure');
   closure.nodes.forEach((node, index) => {
-    nearVector(
-      node.position,
-      start.nodes[index].position,
-      2e-15,
-      `closure rung ${index}`,
-    );
-    assert.equal(node.materialIndex - start.nodes[index].materialIndex, 12);
+    nearVector(node.position, start.nodes[index].position, 2e-15,
+      `closure rung ${index}`);
+    assert.equal(node.materialIndex, start.nodes[index].materialIndex);
   });
+  near(transmission.chainTravelPerPulleyTurn, 12 * geometry.linkPitch, 2e-15,
+    'twelve rungs per pulley turn');
   disposeModel(model.root);
 });
 
@@ -397,14 +406,13 @@ test('movement 228 closes in four authored seconds while movement 507 stays auth
   assertReadableTiming(animationTiming);
   const start = stateAtTime(0);
   const closure = stateAtTime(geometry.cyclePeriod);
-  near(closure.sprocketAngle - start.sprocketAngle, -FULL_TURN, 0,
-    'runtime pulley closure');
-  near(
-    closure.chainAdvance - start.chainAdvance,
-    12 * geometry.linkPitch,
-    2e-15,
-    'runtime ladder-chain closure',
-  );
+  near(closure.sprocketAngle, start.sprocketAngle, 2e-15,
+    'runtime hoist-stroke closure');
+  near(closure.chainAdvance, start.chainAdvance, 2e-15,
+    'runtime ladder-chain closure');
+  const quarter = stateAtTime(geometry.cyclePeriod / 4);
+  near(quarter.sprocketAngle, -2 * geometry.chainNodeStep, 2e-15,
+    'hoist stroke amplitude');
 
   const movement507 = createMovementModel(catalog.movements[506]);
   assert.equal(catalog.movements[506].id, 507);

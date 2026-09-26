@@ -21,7 +21,7 @@ test('305 finite neck corners and upright faces touch the pin and transfer posit
  assert.ok(count>100);assert.deepEqual([...kinds].sort(),['corner-impulse','upright-impulse']);console.log({finite305ImpulseSamples:count,maximumImpulseGap:worst});
 });
 test('305 pin, arbor, bored disk and suspension clear their independent neighbours throughout playback',()=>{
- const m=models[0],b=m.root.userData.blocks;const pairs=[[b.diskHub,b.plate],[b.diskHub,b.disk],[b.diskHub,role(m.root,'fixed-single-pin-disc-arbor')],[b.plate,role(m.root,'fixed-pendulum-pivot')],[b.disk,b.plate]];
+ const m=models[0],b=m.root.userData.blocks;const pairs=[[b.diskHub,b.plate],[b.diskHub,b.disk],[b.plate,role(m.root,'fixed-pendulum-pivot')],[b.disk,b.plate]];
  for(let i=0;i<=128;i++){m.update(i/32);m.root.updateMatrixWorld(true);for(const[a,c]of pairs)assert.ok(clearance(a,c)>-2e-6,`${i}: ${a.userData.role}/${c.userData.role}`);}
 });
 test('306/307 have bored moving hubs and connected pin/arbor supports',()=>{

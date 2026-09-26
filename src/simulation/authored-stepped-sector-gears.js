@@ -1,4 +1,5 @@
 import {correctVariableSectors} from './variable-sector-parts.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -279,6 +280,76 @@ function makeInvoluteSector({
   group.userData.transitionTeeth = transitionTeeth;
   group.userData.workingTeeth = workingTeeth;
   return group;
+}
+
+// Brown draws a round hub collar in front of each arbor (plate 223: collar
+// radius about 0.5 of the four-unit shaft spacing). Adjacent sectors on one
+// arbor abut at a common radial edge but lie in different planes, so an
+// oblique line of sight could pass through the axial gap between them as a
+// bright slit. Each rear sector's web therefore laps a few degrees behind its
+// front neighbour, inside both sectors' root circles, where the front view
+// never sees it and the mating sector in that plane never reaches.
+function addHubCollarsAndWebLaps(root) {
+  const blocks = root.userData.blocks;
+  const { planeZs, sectorDepth } = root.userData.geometry;
+  const collarFrontZ = planeZs.at(-1) + sectorDepth / 2;
+  const collarDepth = 0.12;
+  const collars = [];
+  for (const [assembly, sectors, color, role] of [
+    [blocks.driverAssembly, blocks.driverSectors, PALETTE.driver, 'uniform-input'],
+    [blocks.outputAssembly, blocks.outputSectors, PALETTE.driven, 'variable-output'],
+  ]) {
+    const material = sectors[0].children[0].material;
+    const collar = new THREE.Mesh(
+      boredLatheGeometry([
+        { radial: 0.5, axial: -collarDepth / 2 },
+        { radial: 0.5, axial: collarDepth / 2 },
+      ], 0.107, 64),
+      material,
+    );
+    collar.rotation.x = Math.PI / 2;
+    collar.position.z = collarFrontZ + collarDepth / 2;
+    collar.userData.role = `${role}-front-hub-collar`;
+    assembly.userData.rotor.add(collar);
+    collars.push(collar);
+
+    const normalized = (angle) => positiveModulo(angle, FULL_TURN);
+    const lap = 0.14;
+    for (const rear of sectors) {
+      for (const front of sectors) {
+        if (front.userData.planeZ <= rear.userData.planeZ) continue;
+        const rearStart = normalized(rear.userData.sectorStart);
+        const rearEnd = normalized(rear.userData.sectorEnd);
+        const frontStart = normalized(front.userData.sectorStart);
+        const frontEnd = normalized(front.userData.sectorEnd);
+        const same = (a, b) => Math.abs(normalized(a - b + Math.PI) - Math.PI) < 1e-9;
+        const radius = Math.min(rear.userData.rootRadius, front.userData.rootRadius) - 0.08;
+        let start = null;
+        if (same(rearEnd, frontStart)) start = rear.userData.sectorEnd;
+        else if (same(rearStart, frontEnd)) start = rear.userData.sectorStart - lap;
+        if (start === null) continue;
+        const web = new THREE.Mesh(
+          centeredExtrusion(
+            annularSectorShape(0.3, radius, start, start + lap),
+            sectorDepth,
+            0.004,
+          ),
+          rear.children[0].material,
+        );
+        web.userData.role = `${rear.userData.role}-web-lap-behind-front-sector`;
+        rear.add(web);
+      }
+    }
+  }
+  const shaftLength = 2 * (collarFrontZ + collarDepth + 0.02);
+  for (const shaft of [blocks.driverShaft, blocks.outputShaft]) {
+    const rod = shaft.userData.rotor.children[0];
+    const radius = rod.geometry.parameters.radiusTop;
+    rod.geometry.dispose();
+    rod.geometry = new THREE.CylinderGeometry(radius, radius, shaftLength, 22);
+    shaft.userData.length = shaftLength;
+  }
+  blocks.hubCollars = collars;
 }
 
 function makeRotorAssembly(position, role) {
@@ -725,6 +796,7 @@ function steppedFourPlaneSectorGears(movement) {
   };
   update(0);
   correctVariableSectors(root);
+  addHubCollarsAndWebLaps(root);
   // Brown draws no white phase indices on either shaft.
   driverFaceIndex.visible = false;
   outputFaceIndex.visible = false;

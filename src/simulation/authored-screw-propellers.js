@@ -105,17 +105,24 @@ function screwPropeller(movement) {
   const openWaterEfficiency =
     usefulPropulsivePowerWatt / shaftInputPowerWatt;
 
-  const halfChordAngleAt = (radialFraction) => {
-    const shoulder = Math.sin(Math.PI * radialFraction) ** 0.72;
-    return 0.16 + 0.30 * shoulder + 0.07 * radialFraction;
+  // Brown's blades are broad and flared: a narrow neck at the hub widening
+  // steadily to a broad, nearly square tip whose corners are only eased, the
+  // whole blade skewed a little round the shaft.
+  const chordAt = (radialFraction) => {
+    const corner = radialFraction > 0.94
+      ? 1 - 0.22 * ((radialFraction - 0.94) / 0.06) ** 2 : 1;
+    return (0.50 + 0.86 * radialFraction ** 1.25) * corner;
   };
+  const halfChordAngleAt = (radialFraction) => chordAt(radialFraction) / (2 * THREE.MathUtils.lerp(
+    rootRadiusSceneUnit, tipRadiusSceneUnit, radialFraction));
+  const skewAngleAt = (radialFraction) => 0.12 * radialFraction ** 1.5;
   const bladeSurfacePointScene = (radialFraction, chordFraction) => {
     const radius = THREE.MathUtils.lerp(
       rootRadiusSceneUnit,
       tipRadiusSceneUnit,
       radialFraction,
     );
-    const helicalAngle = chordFraction
+    const helicalAngle = skewAngleAt(radialFraction) + chordFraction
       * halfChordAngleAt(radialFraction);
     return new THREE.Vector3(
       helicalLeadCoefficientSceneUnit * helicalAngle,
@@ -544,6 +551,7 @@ function screwPropeller(movement) {
     },
     geometry,
     halfChordAngleAt,
+    skewAngleAt,
     helicalAdvanceForRotation,
     mechanism:
       'Two opposite broad blades and one shaft rotate as a single rigid body about the X axis. Every point of either blade lies on the same constant-lead helicoid x=(pitch/2pi)*phi, so a full turn advances the corresponding ideal screw by exactly one pitch and the local blade angle decreases with radius as atan(pitch/(2pi*r)). In water, finite slip replaces the literal nut constraint: shaft torque produces positive-X thrust while the accelerated wake travels negative X.',

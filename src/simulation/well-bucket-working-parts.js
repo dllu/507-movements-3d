@@ -36,20 +36,35 @@ function bucketParts(bucket,water,height,top,bottom,handleRise){
 export function correctWellBucketParts(root,id){
   const d=root.userData,b=d.blocks,g=d.geometry;
   if(id===457){
-    const [body,pin]=b.beam.children,curve=body.geometry.parameters.path,left=[],right=[];
-    for(let i=0;i<=96;i++){
-      const p=curve.getPoint(i/96),t=curve.getTangent(i/96).normalize();
-      left.push([p.x-t.y*.14,p.y+t.x*.14]);right.push([p.x+t.y*.14,p.y-t.x*.14]);
-    }
-    const outline=clip.difference(clip.union(poly([...left,...right.reverse()]),poly(circle([0,0],.27,64)),poly(circle([-g.longArmLength,0],.18,48))),poly(circle([0,0],.204,64)),poly(circle([-g.longArmLength,0],.134,48)));
+    // Brown's sweep is one straight hewn pole, tapering from the fulcrum to
+    // its tip, on a thin pin through the pole and both prongs of the post.
+    const [body,pin]=b.beam.children,L=g.longArmLength,S=g.shortArmLength,pinRadius=.07;
+    const half=x=>.105+.05*(x+L)/(L+S);
+    const outline=clip.difference(clip.union(poly([[-L,-half(-L)],[S,-half(S)],[S,half(S)],[-L,half(-L)]]),
+      poly(circle([-L,0],.18,48)),poly(circle([S,0],half(S),32))),
+      poly(circle([0,0],pinRadius+.006,48)),poly(circle([-L,0],.134,48)));
     replace(body,plate(outline,-.10,.10));
+    replace(b.pivotAxle,new THREE.CylinderGeometry(pinRadius,pinRadius,1.0,24));
+    // Brown's forked post: a tree trunk from the ground whose two branch stubs
+    // straddle the pole, one behind and one in front, and carry the pin.
     b.support.children.forEach(o=>o.visible=false);
-    const fork=clip.difference(clip.union(capsule([0,-1.42],[0,0],.14,24),poly(circle([0,0],.27,64))),poly(circle([0,0],.204,64)));
-    b.forks=[];
-    for(const z of [-.32,.32]){
-      const mesh=new THREE.Mesh(plate(fork,-.075,.075),b.support.children[0].material);mesh.position.copy(g.beamPivot);mesh.position.z=z;b.support.add(mesh);b.forks.push(mesh);
-    }
-    const trunk=new THREE.Mesh(new THREE.CylinderGeometry(.25,.40,.82,20),b.support.children[0].material);trunk.position.set(g.beamPivot.x,.91,0);b.support.add(trunk);b.trunk=trunk;
+    const wood=b.support.children[0].material,groundTop=.46,crotch=g.beamPivot.y-.95;
+    const limb=(from,to,r0,r1)=>{
+      const axis=to.clone().sub(from),mesh=new THREE.Mesh(new THREE.CylinderGeometry(r1,r0,axis.length(),20),wood);
+      mesh.position.copy(from).add(to).multiplyScalar(.5);
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),axis.normalize());
+      b.support.add(mesh);return mesh;
+    };
+    const base=new THREE.Vector3(g.beamPivot.x,groundTop-.02,0),fork=new THREE.Vector3(g.beamPivot.x,crotch,0);
+    b.trunk=limb(base,fork.clone().setY(crotch+.12),.36,.27);
+    b.forks=[-1,1].map(side=>{
+      const atPin=new THREE.Vector3(g.beamPivot.x+side*.04,g.beamPivot.y,side*.42);
+      const lower=limb(fork,atPin,.22,.15);
+      const top=atPin.clone().add(new THREE.Vector3(side*.10,.62,side*.05));
+      const upper=limb(atPin,top,.15,.11);
+      const knot=new THREE.Mesh(new THREE.SphereGeometry(.15,20,14),wood);knot.position.copy(atPin);b.support.add(knot);
+      return upper;
+    });
     const water=bucketParts(b.bucket,b.bucketWater,g.bucketHeight,.40,.30,g.bucketHandleRise);
     const ground=clip.difference(poly([[-3.75,-1.35],[3.35,-1.35],[3.35,1.35],[-3.75,1.35]]),poly(circle([g.wellCenterX,0],1.135,128)));
     replace(b.base,horizontalPlate(ground,.39,.46));b.base.position.set(0,0,0);

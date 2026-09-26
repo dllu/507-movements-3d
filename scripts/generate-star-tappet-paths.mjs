@@ -15,6 +15,19 @@ function clearance(s,delta,kind){
  return (inside?-best:best)-(kind==='tappet'?g.tappetNoseRadius:g.holdingClickRadius);
 }
 const states=Array.from({length:N+1},(_,i)=>(d.nominalStateAtCycleCoordinate??d.stateAtCycleCoordinate)(i/N));
+// The flat tappet hook and holding click share the star's plane, so the whole
+// plate outline (not only the nose circle) must clear the star. Only outline
+// points that can reach the star's tip circle are tested.
+const bodies={tappet:d.blocks.tappetBody,holding:d.blocks.holdingClickBody};
+const rings=Object.fromEntries(Object.entries(bodies).map(([k,m])=>{const polygons=m.geometry.userData.plate.polygons;assert.equal(polygons.length,1,`${k} is one plate`);return[k,polygons[0][0].map(([x,y])=>({x,y}))];}));
+const signed=(ring,px,py)=>{let best=Infinity,inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const a=ring[j],b=ring[i],dx=b.x-a.x,dy=b.y-a.y,l=dx*dx+dy*dy;if(l<1e-18)continue;const u=Math.max(0,Math.min(1,((px-a.x)*dx+(py-a.y)*dy)/l));best=Math.min(best,Math.hypot(px-a.x-u*dx,py-a.y-u*dy));if((a.y>py)!==(b.y>py)&&px<(b.x-a.x)*(py-a.y)/(b.y-a.y)+a.x)inside=!inside;}return inside?-best:best;};
+function bodyGap(s,delta,kind){
+ const angle=kind==='tappet'?s.carrierAngle+g.tappetRestRelativeAngle+delta:g.holdingClickRestAngle+delta,pivot=kind==='tappet'?s.tappetHinge:g.holdingClickPivot;
+ const ca=Math.cos(angle),sa=Math.sin(angle),cw=Math.cos(s.wheelAngle),sw=Math.sin(s.wheelAngle),ring=rings[kind],R=g.ratchetOuterRadius+.02;let gap=Infinity;
+ for(const p of ring){const x=pivot.x+ca*p.x-sa*p.y,y=pivot.y+sa*p.x+ca*p.y;if(x*x+y*y>R*R)continue;gap=Math.min(gap,signed(outline,x*cw+y*sw,-x*sw+y*cw));}
+ for(const q of outline){const x=q.x*cw-q.y*sw-pivot.x,y=q.x*sw+q.y*cw-pivot.y;gap=Math.min(gap,signed(ring,ca*x+sa*y,-sa*x+ca*y));}
+ return gap;
+}
 function path(kind){
  let costs=new Float64Array(width).fill(Infinity);costs[-low]=0;const parents=[];
  for(let i=1;i<=N;i++){
@@ -26,7 +39,7 @@ function path(kind){
    const angle=kind==='tappet'?s.carrierAngle+g.tappetRestRelativeAngle+delta:g.holdingClickRestAngle+delta;
    const pivot=kind==='tappet'?s.tappetHinge:g.holdingClickPivot,length=kind==='tappet'?g.tappetLength:g.holdingClickLength;
    const center=pivot.clone().add({x:length*Math.cos(angle),y:length*Math.sin(angle)});
-   const gap=d.profileClearanceAt(center,radius,s.wheelAngle).clearance;
+   const gap=Math.min(d.profileClearanceAt(center,radius,s.wheelAngle).clearance,bodyGap(s,delta,kind));
    const seated=delta===0&&(kind==='tappet'?s.cyclePhase<=d.timeline.driveEndPhase:s.cyclePhase===0||s.cyclePhase>=d.timeline.driveEndPhase);
    if(gap < (seated?-1e-10:margin))continue;
    for(let k=Math.max(0,j-limit);k<=Math.min(width-1,j+limit);k++){

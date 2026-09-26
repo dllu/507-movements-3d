@@ -38,7 +38,9 @@ export function correctReciprocatingCordParts(root,id,update){
   const treadleBody=b.treadleBeam;
   // Brown's treadle tapers from the fulcrum toward its free left end.
   const tail=g.treadleBehindPivot??.30,reach=g.treadleRadius+(g.treadleBeyondRoller??1.26);
-  const web=clip.difference(poly([[-tail,-.085],[reach,-.055],[reach,.055],[-tail,.085]]),poly(circle([0,0],.079,64)),poly(circle([g.treadleRadius,0],.074,64)));
+  // The roller axle's bore is wider than the tapering web there, so the web
+  // swells into a round boss round it rather than breaking through its edges.
+  const web=clip.difference(clip.union(poly([[-tail,-.085],[reach,-.055],[reach,.055],[-tail,.085]]),poly(circle([g.treadleRadius,0],.125,64))),poly(circle([0,0],.079,64)),poly(circle([g.treadleRadius,0],.074,64)));
   replace(treadleBody,plate(web,-.15,.15));treadleBody.position.x=0;
   replace(b.rollerAxle,new T.CylinderGeometry(.070,.070,.62,32));b.rollerAxle.position.z=.22;
   // Pin is behind the treadle web; the web's local fulcrum receives a real bearing eye.

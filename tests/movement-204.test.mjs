@@ -748,9 +748,15 @@ test('movement 204 runtime keeps the contact generator fixed and remains distinc
   });
   // The dark end-face rims Brown only inks are retired as hidden references.
   assert.ok(visibleMeshCount >= 16, 'the undrawn base, posts and painted end-face indices are presented away');
-  assert.ok(model.cameraDirection.x > 0);
+  // Brown looks square-on to the common generator, so the upper roller's
+  // right end face and the lower roller's left end face both show and the
+  // lower roller's near left end overlaps the upper one.
+  assert.ok(Math.abs(model.cameraDirection.x) < 0.05 * model.cameraDirection.z);
   assert.ok(model.cameraDirection.y > 0);
-  assert.ok(model.cameraDirection.z > model.cameraDirection.x * 4);
+  const { driverAxis, drivenAxis } = model.root.userData.geometry;
+  const view = model.cameraDirection.clone().normalize();
+  assert.ok(driverAxis.dot(view) > 0.25 && -drivenAxis.dot(view) > 0.25,
+    'upper right and lower left end faces both face the viewer');
 
   const nextMovement = catalog.movements[204];
   const nextModel = createMovementModel(nextMovement);

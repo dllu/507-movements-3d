@@ -21,17 +21,20 @@ test('157 closes every rigid link through a full turn on one continuous branch',
  }
  assert.ok(high-low>1);const a=pinnedElbowState(0,g),b=pinnedElbowState(g.period,g);for(const name of ['pin','input','output','slider'])assert.ok(Math.hypot(...a[name].map((x,i)=>x-b[name][i]))<1e-12);
 });
-test('157 rendered rods terminate at their pins and retain geometry through playback',()=>{
+test('157 rendered rods terminate at their pins, the output rod hangs to its off-plate guide point, and geometry is retained',()=>{
  const v=makePinnedElbow(),u=v.root.userData;
  try{
   const geometries=Object.values(u.parts).map(p=>p.geometry);
   for(let i=0;i<=256;i++){
    v.update(u.geometry.period*i/256);const s=u.state;
-   for(const [part,local,expected]of [[u.parts.crankPin,new Vector3(),s.pin],[u.parts.upperPin,new Vector3(),s.input],[u.parts.outputPin,new Vector3(),s.output],[u.blocks.coupler,new Vector3(u.geometry.couplerLength,0,0),s.input],[u.blocks.rod,new Vector3(u.geometry.rodLength,0,0),s.slider],[u.parts.sliderPin,new Vector3(),s.slider]]){
+   for(const [part,local,expected]of [[u.parts.crankPin,new Vector3(),s.pin],[u.parts.upperPin,new Vector3(),s.input],[u.parts.outputPin,new Vector3(),s.output],[u.blocks.coupler,new Vector3(u.geometry.couplerLength,0,0),s.input],[u.blocks.rod,new Vector3(u.geometry.rodLength,0,0),s.slider]]){
     const p=part.localToWorld(local);assert.ok(Math.hypot(p.x-expected[0],p.y-expected[1])<1e-12);
    }
    assert.ok(u.cameraFitBounds.containsBox(new Box3().setFromObject(v.root,true)));assert.deepEqual(Object.values(u.parts).map(p=>p.geometry),geometries);
   }
+  // Brown draws no guide, crosshead, frame or bearing plates (p60 policy).
+  for(const name of ['crosshead','sliderPin','guideBack','base','diskBearingFlange','pivotBearingFlange','guideFlange'])assert.equal(u.parts[name],undefined,name);
+  assert.equal(u.blocks.slider.children.length,0);
   v.root.traverse(o=>{if(o.material)assert.equal(o.material.fog,false);});assert.equal(u.hideGround,true);v.reset();assert.equal(u.state.time,0);
  }finally{v.dispose();}
 });

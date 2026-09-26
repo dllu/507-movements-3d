@@ -3,6 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { createAuthoredIntermittentMovement as create } from '../src/simulation/authored-intermittent.js';
 import { nearest390Outline } from '../src/simulation/dual-band-pawl-contact.js';
+import { carrierPawlBarClearance225 } from '../src/simulation/carrier-pawl-225-working-parts.js';
 import { solidSurface, surfacePoints, surfaceTriangles } from './helpers/solid-surface.mjs';
 const make = () => create({ id: 225 });
 const at = (model, phase) => { model.update((phase - 0.25) * 4); model.root.updateMatrixWorld(true); return model.root.userData.kinematics; };
@@ -13,7 +14,7 @@ test('225 real driving triangles have a useful positive normal moment through th
   let minimumMoment = Infinity, maximumGap = 0;
   for (let i = 0; i <= 32; i++) {
     const state = at(model, 0.499 * i / 32);
-    const target = new THREE.Vector3(state.ratchetContactPoint.x, state.ratchetContactPoint.y, 0).applyMatrix4(wheel.matrixWorld.clone().invert());
+    const target = new THREE.Vector3(state.ratchetContactPoint.x, state.ratchetContactPoint.y, d.geometry.pawlPlaneZ).applyMatrix4(wheel.matrixWorld.clone().invert());
     let distance = Infinity, normal;
     for (const triangle of triangles) {
       triangle.closestPointToPoint(target, point);
@@ -55,18 +56,25 @@ test('225 complete circular nose clears every actual outline edge through return
   }
 });
 
-test('225 rendered nose occupies the tooth depth and clears the finite wheel surfaces', () => {
-  const model = make(), d = model.root.userData, b = d.blocks, wheel = b.ratchet.userData.body;
-  const field = solidSurface(wheel.geometry), points = surfacePoints(b.pawlNose.geometry);
-  for (let i = 0; i <= 64; i++) {
-    const s = at(model, i / 64), transform = wheel.matrixWorld.clone().invert().multiply(b.pawlNose.matrixWorld);
-    const gap = Math.min(...points.map(p => field.signedDistance(p.clone().applyMatrix4(transform))));
-    assert.ok(gap > 0.00018, `${i / 64}: ${gap}`);
-    if (s.driving) assert.ok(gap < 0.00024);
-    const noseBox = new THREE.Box3().setFromObject(b.pawlNose), wheelBox = new THREE.Box3().setFromObject(wheel);
-    assert.ok(Math.min(noseBox.max.z, wheelBox.max.z) - Math.max(noseBox.min.z, wheelBox.min.z) > 0.1399);
-    assert.ok(new THREE.Box3().setFromObject(b.pawlBody).min.z - wheelBox.max.z > 0.0249);
+test('225 flat pawl shares the wheel plane and its whole outline, not a cross-pin, meets the teeth', () => {
+  const model = make(), d = model.root.userData, b = d.blocks, g = d.geometry, wheel = b.ratchet.userData.body;
+  const outline = b.ratchet.userData.profilePoints.map(p => p.toArray());
+  let minimum = Infinity, largestDriveGap = 0;
+  for (let i = 0; i <= 256; i++) {
+    const s = at(model, i / 256);
+    const gap = carrierPawlBarClearance225(s.pawlPivot, s.pawlAngle, s.wheelAngle, g.pawlOutline, outline);
+    minimum = Math.min(minimum, gap);
+    assert.ok(gap > 0.00018, `${i / 256}: ${gap}`);
+    // The 16-segment polygonal nose sits up to 0.00043 inside its circle.
+    if (s.driving) { largestDriveGap = Math.max(largestDriveGap, gap); assert.ok(gap < 0.0007); }
+    const pawlBox = new THREE.Box3().setFromObject(b.pawlBody), wheelBox = new THREE.Box3().setFromObject(wheel);
+    assert.ok(pawlBox.min.z > wheelBox.min.z && pawlBox.max.z < wheelBox.max.z, 'pawl inside the tooth band');
   }
+  assert.equal(b.pawlNose.isMesh, undefined, 'the nose is the pawl\'s own rounded end');
+  let meshes = 0;
+  b.pawl.traverse(o => { if (o.isMesh && o.visible) meshes += 1; });
+  assert.equal(meshes, 1);
+  console.log({ minimumWholeOutlineClearance: minimum, largestDriveGap });
 });
 
 test('225 separate pawl and carrier hinge bores clear their actual shafts', () => {
@@ -112,7 +120,7 @@ test('225 deterministic curved plate has one continuous finite body and a retain
   assert.equal(polygons.length, 1);
   assert.equal(polygons[0].length, 2);
   const field = solidSurface(geometry), length = d.geometry.pawlLength;
-  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(length * 0.45, -0.16, 0), new THREE.Vector3(length, 0, 0)]);
+  const curve = new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(length * 0.45, -0.2, 0), new THREE.Vector3(length * 0.8, -0.28, 0), new THREE.Vector3(length, 0, 0)]);
   for (let i = 2; i <= 24; i++) {
     const center = curve.getPoint(i / 24);
     assert.ok(field.signedDistance(center) < -0.025, `finite curved body at ${i / 24}`);

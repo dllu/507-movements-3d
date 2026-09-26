@@ -493,81 +493,10 @@ function rockShaftToeAndPoppetLifter(movement) {
   );
   guidePost.position.set(valveRodX + 0.34, -0.80, -0.75);
   guidePost.userData.role = 'fixed-valve-rod-guide-standard';
-  const valveSeat = new THREE.Mesh(
-    ring(0.44, 0.62, 0, 0.12, 96),
-    frameMaterial,
-  );
-  valveSeat.rotation.x = Math.PI / 2;
-  valveSeat.position.set(valveRodX, rodBottomY - 0.21, 0);
-  valveSeat.userData.role = 'fixed-poppet-valve-seat';
-  fixedGuides.add(valveSeat);
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(2.1, 0.20, 1.12),
-    frameMaterial,
-  );
-  base.position.set(valveRodX, rodBottomY - 0.92, -0.16);
-  base.userData.role = 'fixed-valve-guide-base';
-  fixedGuides.add(base);
-  for (const side of [-1, 1]) {
-    const support = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.49, 0.18), frameMaterial);
-    support.position.set(valveRodX + side * 0.56, rodBottomY - 0.575, 0);
-    support.userData.role = 'fixed-seat-support-outside-poppet-sweep';
-    fixedGuides.add(support);
-  }
-
-  // Undrawn supports, kept behind the working parts: one plain back bar
-  // standing on the base behind the rod (hidden by it in Brown's view)
-  // carries two bored guides that keep the rod upright above and below the
-  // lifter's sweep, and an arm to a bored bearing for the rock shaft.
-  const supportBack = -0.72;
-  const supportFront = -0.56;
-  const rodAxisZ = -0.08;
-  const rodGuideYs = [rodTopY + 0.3, -3.0];
-  const backBarTop = rodGuideYs[0] + 0.2;
-  const backBarBottom = base.position.y + 0.10;
-  const backBar = new THREE.Mesh(
-    new THREE.BoxGeometry(0.38, backBarTop - backBarBottom, supportFront - supportBack),
-    frameMaterial,
-  );
-  backBar.position.set(valveRodX, (backBarTop + backBarBottom) / 2, (supportBack + supportFront) / 2);
-  backBar.userData.role = 'plain-back-bar-carrying-rod-guides-and-rock-shaft-bearing';
-  fixedGuides.add(backBar);
-  const rodGuides = rodGuideYs.map((y, index) => {
-    const guide = new THREE.Mesh(ring(0.225, 0.34, -0.07, 0.07, 64), frameMaterial);
-    guide.rotation.x = Math.PI / 2;
-    guide.position.set(valveRodX, y, rodAxisZ);
-    guide.userData.role = index === 0 ? 'upper-bored-valve-rod-guide' : 'lower-bored-valve-rod-guide';
-    const web = new THREE.Mesh(
-      // Positive depth: the web runs from the bar's front face forward to
-      // just behind the guide (a negative extent renders inside out).
-      new THREE.BoxGeometry(0.2, 0.14, (rodAxisZ - 0.3) - supportFront),
-      frameMaterial,
-    );
-    web.position.set(valveRodX, y, (supportFront + rodAxisZ - 0.3) / 2);
-    web.userData.role = 'web-joining-rod-guide-to-back-bar';
-    fixedGuides.add(guide, web);
-    return guide;
-  });
-  // The rock shaft's bearing: a bored boss behind the toe on an arm from
-  // the back bar. The shaft runs back into it.
-  const shaftBearingFront = -0.3;
-  const bearingArm = new THREE.Mesh(
-    plate(polygonClipping.difference(
-      polygonClipping.union(
-        poly([[0, -0.2], [valveRodX, -0.2], [valveRodX, 0.2], [0, 0.2]]),
-        poly(circle([0, 0], 0.5, 64)),
-      ),
-      poly(circle([0, 0], 0.315, 64)),
-    ), supportBack, supportFront),
-    frameMaterial,
-  );
-  bearingArm.userData.role = 'back-arm-carrying-rock-shaft-bearing';
-  const shaftBearing = new THREE.Mesh(ring(0.315, 0.5, supportFront, shaftBearingFront, 64), frameMaterial);
-  shaftBearing.userData.role = 'bored-rock-shaft-bearing-boss';
-  fixedGuides.add(bearingArm, shaftBearing);
-  rockShaft.geometry.dispose();
-  rockShaft.geometry = cylinderAlongZ(0.31, 0.57 - (supportBack + 0.02), darkMaterial, 38).geometry;
-  rockShaft.position.z = (0.57 + supportBack + 0.02) / 2;
+  // Brown draws the lifting rod alone, broken off above and below, and the
+  // rock shaft only as a cut section through the toe boss. No seat, base,
+  // back bar, rod guides or shaft bearing is drawn, so none is built; the
+  // rock shaft ends as a plain stub just behind the toe.
 
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.065, 20, 13),
@@ -579,13 +508,8 @@ function rockShaftToeAndPoppetLifter(movement) {
   root.userData.archetype =
     'rockshaft-curved-toe-clearance-lifter-guided-poppet-valve';
   root.userData.blocks = {
-    backBar,
-    base,
-    bearingArm,
     contactMarker,
     fixedGuides,
-    rodGuides,
-    shaftBearing,
     followerShoe,
     guidePost,
     lifter,
@@ -598,7 +522,6 @@ function rockShaftToeAndPoppetLifter(movement) {
     toeNoseIndex,
     valveIndex,
     valveRod,
-    valveSeat,
     workingFlank,
   };
   root.userData.cameraDistanceScale = 1.06;

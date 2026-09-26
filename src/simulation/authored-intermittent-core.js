@@ -868,130 +868,50 @@ function taperedLinkShape(start, startRadius, end, endRadius, holes = []) {
 }
 
 function makeCurvedSharedPivotPawl({
-  bend,
-  catchDepth,
   depth,
   length,
+  outline,
   role,
-  bandHalfWidth = 0.075,
-  bandStart = 0,
   boreRadius = 0,
   fingerRadius = null,
   hubDepth = depth * 1.9,
   hubRadius = 0.105,
-  markers = true,
-  noseLength = 0.16,
 }) {
   const root = new THREE.Group();
   const pawlMaterial = matte(PALETTE.accent, {
     metalness: 0.11,
     roughness: 0.61,
   });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.22,
-    roughness: 0.49,
-  });
-  const sampleCount = 36;
-  const halfThickness = bandHalfWidth;
-  const centerlinePoints = [];
-  const upperEdge = [];
-  const lowerEdge = [];
-  const startFraction = bandStart / length;
-  const noseFloor = fingerRadius === null ? 0 : fingerRadius / halfThickness;
-  for (let index = 0; index <= sampleCount; index += 1) {
-    const fraction = startFraction
-      + (1 - startFraction) * index / sampleCount;
-    const inverse = 1 - fraction;
-    const point = new THREE.Vector2(
-      length * fraction,
-      2 * inverse * fraction * bend,
-    );
-    const derivative = new THREE.Vector2(
-      length,
-      2 * bend * (1 - 2 * fraction),
-    );
-    const normal = new THREE.Vector2(
-      -derivative.y,
-      derivative.x,
-    ).normalize();
-    const noseTaper = fraction <= 1 - noseLength
-      ? 1
-      : Math.max(noseFloor, (1 - fraction) / noseLength);
-    const localHalfThickness = halfThickness * noseTaper;
-    centerlinePoints.push(point);
-    upperEdge.push(point.clone().addScaledVector(
-      normal,
-      localHalfThickness,
-    ));
-    lowerEdge.push(point.clone().addScaledVector(
-      normal,
-      -localHalfThickness,
-    ));
-  }
-  const bodyShape = new THREE.Shape();
-  bodyShape.moveTo(upperEdge[0].x, upperEdge[0].y);
-  for (let index = 1; index < upperEdge.length; index += 1) {
-    bodyShape.lineTo(upperEdge[index].x, upperEdge[index].y);
-  }
-  for (let index = lowerEdge.length - 1; index >= 0; index -= 1) {
-    bodyShape.lineTo(lowerEdge[index].x, lowerEdge[index].y);
-  }
-  bodyShape.closePath();
+  // The pawl is one flat extrusion of its authored outline (local frame:
+  // pivot at the origin, finger centre at (length, 0)). Its rounded nose is
+  // part of that outline, so it bears on the tooth in its own plane.
+  const bodyShape = new THREE.Shape(outline);
   const body = new THREE.Mesh(
     centeredExtrusion(bodyShape, depth),
     pawlMaterial,
   );
   body.userData.curvedPointedPawlBody = true;
+  body.userData.outline = outline.map((point) => point.clone());
   root.add(body);
 
-  const contactFinger = new THREE.Mesh(
-    fingerRadius === null
-      ? new THREE.CylinderGeometry(0.027, 0.045, catchDepth, 20)
-      : new THREE.CylinderGeometry(fingerRadius, fingerRadius, catchDepth, 24),
-    darkMaterial,
-  );
-  contactFinger.rotation.x = Math.PI / 2;
-  contactFinger.position.set(
-    length,
-    0,
-    -depth / 2 - catchDepth / 2 + 0.012,
-  );
+  // Marks the centre of the rounded nose that bears on the tooth.
+  const contactFinger = new THREE.Object3D();
+  contactFinger.position.set(length, 0, 0);
   contactFinger.userData.pawlToothContactFinger = true;
+  contactFinger.userData.radius = fingerRadius;
   root.add(contactFinger);
 
   const pivotHub = new THREE.Mesh(
     boreRadius > 0
       ? makeAnnulusGeometry(boreRadius, hubRadius, hubDepth)
       : new THREE.CylinderGeometry(hubRadius, hubRadius, hubDepth, 26),
-    darkMaterial,
+    pawlMaterial,
   );
   if (boreRadius === 0) pivotHub.rotation.x = Math.PI / 2;
   pivotHub.userData.pawlPivotHub = true;
   root.add(pivotHub);
-  let tipMarker = null;
-  if (markers) {
-    const pivotRing = new THREE.Mesh(
-      new THREE.TorusGeometry(0.128, 0.03, 8, 30),
-      matte(PALETTE.white, { roughness: 0.49 }),
-    );
-    pivotRing.position.z = depth * 0.72;
-    pivotRing.userData.pawlPivotIndicator = true;
-    root.add(pivotRing);
-
-    tipMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.043, 16, 11),
-      matte(PALETTE.white, { roughness: 0.48 }),
-    );
-    tipMarker.position.set(length, 0, depth / 2 + 0.018);
-    tipMarker.userData.pointedPawlTip = true;
-    root.add(tipMarker);
-  }
-
   root.userData.axis = Z_AXIS.clone();
-  root.userData.bend = bend;
   root.userData.body = body;
-  root.userData.catchDepth = catchDepth;
-  root.userData.centerlinePoints = centerlinePoints;
   root.userData.contactFinger = contactFinger;
   root.userData.depth = depth;
   root.userData.independentAtSharedPivot = true;
@@ -999,7 +919,6 @@ function makeCurvedSharedPivotPawl({
   root.userData.pivotHub = pivotHub;
   root.userData.role = role;
   root.userData.tipLocal = new THREE.Vector3(length, 0, 0);
-  root.userData.tipMarker = tipMarker;
   return markShadows(root);
 }
 
@@ -7430,7 +7349,9 @@ function sharedPivotDoubleStrokeRatchet() {
     leftUnmountedDrivePoint.y,
     leftUnmountedDrivePoint.x,
   );
-  const ratchetDepth = 0.3;
+  // The wheel is thick enough that both flat pawls, stacked on their common
+  // pin, lie inside its tooth band and bear on the teeth in their own planes.
+  const ratchetDepth = 0.39;
   const ratchet = makeSpringIndexedRatchet({
     boreRadius: 0.23,
     depth: ratchetDepth,
@@ -7441,7 +7362,8 @@ function sharedPivotDoubleStrokeRatchet() {
     toothOuterEndPhase,
     toothOuterStartPhase,
   });
-  ratchet.position.z = 0.04;
+  const ratchetPlaneZ = 0.215;
+  ratchet.position.z = ratchetPlaneZ;
   ratchet.userData.role =
     'fifty-three-tooth-clockwise-double-stroke-ratchet-wheel';
   const ratchetBody = ratchet.userData.body;
@@ -7458,7 +7380,7 @@ function sharedPivotDoubleStrokeRatchet() {
   ratchetFaceStep.userData.role = 'ratchet-face-rim-step';
   ratchet.userData.rotor.add(ratchetFaceStep);
   const ratchetShaft = makeShaft({ length: 0.62, radius: 0.19 });
-  ratchetShaft.position.z = 0.04;
+  ratchetShaft.position.z = ratchetPlaneZ;
   ratchetShaft.userData.radius = 0.19;
   ratchetShaft.userData.role = 'clockwise-output-shaft-keyed-to-ratchet';
 
@@ -7634,7 +7556,7 @@ function sharedPivotDoubleStrokeRatchet() {
   const rockerRotor = rocker.userData.rotor;
   // Brown draws only the wheel, the two pawls on their common pin and the
   // lever on its hatched fulcrum; there is no stand or painted index.
-  const rockerPlaneZ = 0.76;
+  const rockerPlaneZ = 0.56;
   rocker.position.set(
     fixedLeverPivot.x,
     fixedLeverPivot.y,
@@ -7686,7 +7608,7 @@ function sharedPivotDoubleStrokeRatchet() {
   commonPawlJoint.userData.commonMovingPawlPivot = true;
   commonPawlJoint.userData.role =
     'single-moving-pin-carrying-two-independent-pawls';
-  const commonPawlStudLength = 0.7;
+  const commonPawlStudLength = 0.66;
   const commonPawlStud = new THREE.Mesh(
     new THREE.CylinderGeometry(0.085, 0.085, commonPawlStudLength, 24),
     matte(PALETTE.ink, { metalness: 0.23, roughness: 0.47 }),
@@ -7703,36 +7625,202 @@ function sharedPivotDoubleStrokeRatchet() {
   commonPawlJoint.add(commonPawlStud, commonPawlHead);
   rockerRotor.add(commonPawlJoint);
 
+  // Brown's pawls are broad flat bands that run round outside the tooth
+  // tips; the square-cut end of each drops a short nose into one tooth
+  // space. Each outline is set out at mid-stroke in the wheel's frame: a
+  // band concentric with the wheel and clear of the tips, ending square just
+  // past a rounded nose that enters the tooth space through its opening and
+  // ends on the solved finger centre. The nose is part of the flat pawl, in
+  // the ratchet's tooth plane.
+  const pawlBandHalfWidth = 0.12;
+  const pawlBandClearance = 0.11;
+  const pawlArcRadius = ratchetOuterRadius + pawlBandHalfWidth
+    + pawlBandClearance;
+  const pawlNoseBaseHalfWidth = 0.1;
+  const pawlNoseFaceBias = 0.15;
+  // The extrusion bevel grows the outline by its bevel size, so the drawn
+  // nose radius is the finger radius less that bevel.
+  const pawlNoseOutlineRadius = pawlFingerRadius - Math.min(0.025, 0.13 * 0.12);
+  const hookedPawlOutline = (right) => {
+    const pivot = sharedPawlPivotAtRockerAngle(handleMeanAngle);
+    const orbitRadius = right
+      ? rightContactOrbitRadius
+      : leftContactOrbitRadius;
+    const pawlLength = right ? rightPawlLength : leftPawlLength;
+    const contactAngle = constrainedContactAngleAt({
+      anchor: pivot,
+      expectedAngle: right
+        ? (rightStartWorldAngle + rightEndWorldAngle) / 2
+        : (leftSourceContactAngle + leftEndWorldAngle) / 2,
+      orbitRadius,
+      pawlLength,
+    });
+    const drivenAngle = contactAngle - (
+      right ? rightDrivePointLocalAngle : leftSourceContactAngle
+    );
+    const contact = new THREE.Vector2(
+      Math.cos(contactAngle) * orbitRadius,
+      Math.sin(contactAngle) * orbitRadius,
+    );
+    const tipAngles = ratchet.userData.profilePoints
+      .filter((point) => point.length() > ratchetOuterRadius - 1e-6)
+      .map((point) => unwrapNear(
+        Math.atan2(point.y, point.x) + drivenAngle,
+        contactAngle,
+      ) - contactAngle);
+    const aheadTip = Math.min(...tipAngles.filter((angle) => angle > 0));
+    const behindTip = Math.max(...tipAngles.filter((angle) => angle < 0));
+    const openingAngle = contactAngle + (aheadTip + behindTip) / 2;
+    const opening = new THREE.Vector2(
+      Math.cos(openingAngle) * ratchetOuterRadius,
+      Math.sin(openingAngle) * ratchetOuterRadius,
+    );
+    // The nose leaves the tooth space between its opening and the driven
+    // face's normal, so the finger's front half bears on that face.
+    const face = ratchet.userData.toothFaces[
+      right ? THREE.MathUtils.euclideanModulo(rightToothOffset, toothCount) : 0
+    ];
+    const faceNormal = face.outwardNormal.clone().rotateAround(
+      origin,
+      drivenAngle,
+    );
+    const noseDirection = opening.clone().sub(contact).normalize()
+      .multiplyScalar(1 - pawlNoseFaceBias)
+      .addScaledVector(faceNormal, pawlNoseFaceBias)
+      .normalize();
+    const noseNormal = new THREE.Vector2(-noseDirection.y, noseDirection.x);
+    const innerRadius = pawlArcRadius - pawlBandHalfWidth;
+    const outerRadius = pawlArcRadius + pawlBandHalfWidth;
+    // Where each nose flank meets the band's inner edge.
+    const flankBase = (side) => {
+      const start = contact.clone().addScaledVector(
+        noseNormal,
+        side * pawlNoseOutlineRadius,
+      );
+      const along = start.dot(noseDirection);
+      const distance = -along + Math.sqrt(
+        along ** 2 - start.lengthSq() + (innerRadius + 0.02) ** 2,
+      );
+      return start.clone().addScaledVector(noseDirection, distance)
+        .addScaledVector(noseNormal, side * (
+          pawlNoseBaseHalfWidth - pawlNoseOutlineRadius
+        ));
+    };
+    // The band starts inside the pawl's eye, clear of the common pin.
+    const pivotAngle = Math.atan2(pivot.y, pivot.x)
+      + Math.sign(contactAngle - Math.atan2(pivot.y, pivot.x))
+        * 0.105 / pivot.length();
+    const unwrapToPivot = (point) => unwrapNear(
+      Math.atan2(point.y, point.x),
+      contactAngle,
+    );
+    const direction = Math.sign(pivotAngle - contactAngle);
+    const bases = [flankBase(1), flankBase(-1)].sort(
+      (first, second) => direction * (
+        unwrapToPivot(first) - unwrapToPivot(second)
+      ),
+    );
+    // bases[0] is the flank nearer the band's square end, bases[1] nearer
+    // the pivot.
+    // The square end continues the outer nose flank straight out to the
+    // band's outer edge, so the cut end's inner corner is the nose.
+    const flankAlong = bases[0].dot(noseDirection);
+    const endCorner = bases[0].clone().addScaledVector(
+      noseDirection,
+      -flankAlong + Math.sqrt(
+        flankAlong ** 2 - bases[0].lengthSq() + outerRadius ** 2,
+      ),
+    );
+    const endAngle = unwrapToPivot(endCorner);
+    const pivotRadius = pivot.length();
+    const radiusAt = (angle) => {
+      const fraction = (angle - endAngle) / (pivotAngle - endAngle);
+      return THREE.MathUtils.lerp(
+        pawlArcRadius,
+        pivotRadius,
+        smoothStep01(THREE.MathUtils.clamp((fraction - 0.7) / 0.3, 0, 1)),
+      );
+    };
+    // The band narrows into the pin eye.
+    const halfWidthAt = (angle) => {
+      const fraction = (angle - endAngle) / (pivotAngle - endAngle);
+      return THREE.MathUtils.lerp(
+        pawlBandHalfWidth,
+        0.09,
+        smoothStep01(THREE.MathUtils.clamp((fraction - 0.8) / 0.2, 0, 1)),
+      );
+    };
+    const polar = (angle, radius) => new THREE.Vector2(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius,
+    );
+    const points = [];
+    const arcSteps = 72;
+    // Outer edge from the pivot round to the square end.
+    for (let index = 0; index <= arcSteps; index += 1) {
+      const angle = THREE.MathUtils.lerp(pivotAngle, endAngle, index / arcSteps);
+      points.push(polar(angle, radiusAt(angle) + halfWidthAt(angle)));
+    }
+    // Down the square end and its nose flank, round the nose, and back
+    // along the inner edge to the pivot.
+    points.push(bases[0].clone());
+    const noseAngle = Math.atan2(-noseDirection.y, -noseDirection.x);
+    const firstSide = Math.sign(
+      bases[0].clone().sub(contact).dot(noseNormal),
+    );
+    const noseSteps = 16;
+    for (let index = 0; index <= noseSteps; index += 1) {
+      const angle = noseAngle - firstSide * (
+        Math.PI / 2 - Math.PI * index / noseSteps
+      );
+      points.push(polar(angle, pawlNoseOutlineRadius).add(contact));
+    }
+    points.push(bases[1].clone());
+    const returnStart = unwrapToPivot(bases[1]) + direction * 0.03;
+    for (let index = 0; index <= arcSteps; index += 1) {
+      const angle = THREE.MathUtils.lerp(
+        returnStart,
+        pivotAngle,
+        index / arcSteps,
+      );
+      points.push(polar(angle, radiusAt(angle) - halfWidthAt(angle)));
+    }
+    const pawlAngle = Math.atan2(contact.y - pivot.y, contact.x - pivot.x);
+    const local = points.map((point) => point.clone().sub(pivot)
+      .rotateAround(origin, -pawlAngle));
+    // Keep the outline counter-clockwise for the extrusion.
+    let area = 0;
+    for (let index = 0; index < local.length; index += 1) {
+      const current = local[index];
+      const next = local[(index + 1) % local.length];
+      area += current.x * next.y - next.x * current.y;
+    }
+    return area < 0 ? local.reverse() : local;
+  };
   const pawlDepth = 0.13;
   const pawlHubDepth = 0.16;
   const pawlHubBevel = Math.min(0.025, pawlHubDepth * 0.12);
-  const leftPawlPlaneZ = 0.3;
-  const rightPawlPlaneZ = 0.53;
-  const pawlFingerBackZ = ratchet.position.z - ratchetDepth / 2 + 0.035;
+  // Both pawls lie in the wheel's tooth band (0.02 to 0.41).
+  const leftPawlPlaneZ = 0.12;
+  const rightPawlPlaneZ = 0.32;
   const pawlOptions = {
-    bandHalfWidth: 0.14,
-    bandStart: 0.1,
     boreRadius: 0.085 + pawlHubBevel + 0.006,
     depth: pawlDepth,
     fingerRadius: pawlFingerRadius,
     hubDepth: pawlHubDepth,
-    hubRadius: 0.2,
-    markers: false,
-    // Brown's bands stay broad to square-cut ends over the teeth.
-    noseLength: 0.03,
+    // Brown's small pin eye clears the tooth tips at the low reversal.
+    hubRadius: 0.155,
   };
   const leftPawl = makeCurvedSharedPivotPawl({
     ...pawlOptions,
-    bend: -0.48,
-    catchDepth: leftPawlPlaneZ - pawlFingerBackZ - pawlDepth / 2 + 0.012,
     length: leftPawlLength,
+    outline: hookedPawlOutline(false),
     role: 'left-curved-pawl-driving-while-common-pin-rises',
   });
   const rightPawl = makeCurvedSharedPivotPawl({
     ...pawlOptions,
-    bend: 0.5,
-    catchDepth: rightPawlPlaneZ - pawlFingerBackZ - pawlDepth / 2 + 0.012,
     length: rightPawlLength,
+    outline: hookedPawlOutline(true),
     role: 'right-curved-pawl-driving-while-common-pin-falls',
   });
   const leftPawlBody = leftPawl.userData.body;
@@ -8297,23 +8385,25 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   const pinionDepth = 0.4;
 
   // Brown's plate, measured about both centres, fixes the proportions: the
-  // wheel's teeth are fine (about 9 degrees apart, tips at 8.9 and roots at
-  // 8.1 construction units against the plain rim at 9.2), about eleven of them
-  // run up to the pin, and the pinion carries about 20-degree teeth with a
-  // concave lock where four positions are missing. The working construction
-  // below keeps that: a forty-position wheel with eleven installed teeth and
-  // a sixteen-position pinion with twelve teeth, so the active ratio is 5:2
-  // and the pinion makes one turn while the wheel turns 144 degrees. (The
-  // site's animation used twelve coarse teeth over 135 degrees at 2:1.)
+  // wheel's teeth are fine (tips at 8.9 and roots at 8.1 construction units
+  // against the plain rim at 9.25), eleven of them span about 88 degrees up
+  // to the pin, and the pinion's tips run 20 degrees apart: thirteen teeth
+  // with five positions missing where the concave lock faces the wheel. The
+  // working construction keeps that: a forty-five-position wheel (8 degrees)
+  // with eleven installed teeth and an eighteen-position pinion (20 degrees)
+  // with thirteen teeth. The active ratio is still 5:2, so the pitch radii
+  // match the plate's, the tips stay inside the plain rim, and the pinion
+  // makes one turn while the wheel turns 144 degrees. (The site's animation
+  // used twelve coarse teeth over 135 degrees at 2:1.)
   // The entry pin sits on the wheel's pitch circle, so the guide flank is
   // the offset epicycloid it traces on the pinion: the pin drives at exactly
   // the pitch ratio until the first tooth takes over. The plain rim stands
   // only slightly beyond the tooth tips, as drawn, and every relief on the
   // wheel is generated by sweeping the pinion outline through the cycle.
-  const driverEquivalentToothCount = 40;
-  const pinionEquivalentToothCount = 16;
+  const driverEquivalentToothCount = 45;
+  const pinionEquivalentToothCount = 18;
   const driverInstalledToothCount = 11;
-  const pinionInstalledToothCount = 12;
+  const pinionInstalledToothCount = 13;
   const indexingRatio = driverEquivalentToothCount / pinionEquivalentToothCount;
   const indexArc = fullTurn / indexingRatio;
   const rawCenterDistance = 12;
@@ -8322,7 +8412,9 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   const rawPinionPitchRadius = rawCenterDistance / (indexingRatio + 1);
   const rawModule = 2 * rawPinionPitchRadius / pinionEquivalentToothCount;
   const rawAddendum = 0.8 * rawModule;
-  const rawDedendum = rawModule;
+  // Deep enough that the mating tips, swept with the 0.08 running
+  // clearance, never cut below the root.
+  const rawDedendum = Math.max(rawModule, rawAddendum + 0.09);
   const rawPlainRadius = 9.1;
   const rawLockRadius = rawPlainRadius + 0.125;
   const rawDriverRootRadius = rawDriverPitchRadius - rawDedendum;
@@ -8391,18 +8483,20 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
       + (pitchRadius - radius) * flankLean
   );
 
-  // Pinion: twelve teeth on a sixteen-position circle; the four positions
-  // facing the wheel at rest are cut away by the concave lock arc.
+  // Pinion: thirteen teeth on an eighteen-position circle; the five
+  // positions facing the wheel at rest are cut away by the concave lock arc.
+  const pinionMissingToothCount = pinionEquivalentToothCount
+    - pinionInstalledToothCount;
   const pinionToothCenterAngles = Array.from(
     { length: pinionInstalledToothCount },
-    (_, index) => -degreesToRadians(56.25) - index * pinionPitchAngle,
+    (_, index) => -(pinionMissingToothCount / 2 + 0.5) * pinionPitchAngle
+      - index * pinionPitchAngle,
   );
-  const pinionMissingToothCenterAngles = [
-    -33.75,
-    -11.25,
-    11.25,
-    33.75,
-  ].map(degreesToRadians);
+  const pinionMissingToothCenterAngles = Array.from(
+    { length: pinionMissingToothCount },
+    (_, index) => (index - (pinionMissingToothCount - 1) / 2)
+      * pinionPitchAngle,
+  );
   const pinionLockCornerAngle = Math.acos(
     (rawCenterDistance ** 2 + rawPinionRootRadius ** 2 - rawLockRadius ** 2)
       / (2 * rawCenterDistance * rawPinionRootRadius),
@@ -8502,7 +8596,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   // small running clearance on the clockwise (pushed) side.
   const guideRunningClearance = 0.012;
   const guideThickness = 1.15;
-  const guideEntryEndPhase = degreesToRadians(21);
+  const guideEntryEndPhase = degreesToRadians(22.5);
   const rawPinPathInPinion = (phase) => rotateVector2(
     rotateVector2(rawDriverPinLocal, phase).sub(rawPinionCenter),
     -pinionAngleAtPhase(phase),
@@ -8566,7 +8660,9 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   // pinion outline (dilated by a running clearance) swept through the index.
   const driverToothCenterAngles = Array.from(
     { length: driverInstalledToothCount },
-    (_, index) => degreesToRadians(153) - index * driverPitchAngle,
+    // The first tooth is 3.5 wheel pitches behind the pin, so its centre
+    // meets a pinion space on the line of centres.
+    (_, index) => Math.PI - 3.5 * driverPitchAngle - index * driverPitchAngle,
   );
   const driverToothedStartAngle = driverToothCenterAngles[0]
     + driverPitchAngle / 2;
@@ -8841,7 +8937,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     driverMaterial,
   );
   driverBody.userData.role =
-    'forty-position-wheel-with-eleven-teeth-and-plain-locking-rim';
+    'forty-five-position-wheel-with-eleven-teeth-and-plain-locking-rim';
   driverBody.userData.partialGearBody = true;
   const driverHub = new THREE.Mesh(
     makeAnnulusGeometry(
@@ -8891,7 +8987,7 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
     pinionMaterial,
   );
   pinionBody.userData.role =
-    'sixteen-position-pinion-with-twelve-teeth-and-concave-lock-pocket';
+    'eighteen-position-pinion-with-thirteen-teeth-and-concave-lock-pocket';
   pinionBody.userData.partialGearBody = true;
   const pinionHub = new THREE.Mesh(
     makeAnnulusGeometry(
@@ -9055,7 +9151,10 @@ function pinGuidedHalfToothIntermittentLockingDrive() {
   );
   const guideStrikeTolerance = 0.02 * constructionScale;
   const driverToothGridBase = 0;
-  const pinionToothGridBase = degreesToRadians(11.25);
+  const pinionToothGridBase = THREE.MathUtils.euclideanModulo(
+    pinionToothCenterAngles[0],
+    pinionPitchAngle,
+  );
   const pitchContactPoint = new THREE.Vector2(-driverPitchRadius, 0);
   const angularDistance = (left, right) => Math.abs(
     THREE.MathUtils.euclideanModulo(left - right + Math.PI, fullTurn)
@@ -14401,6 +14500,9 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   });
   ratchet.userData.role = 'twenty-tooth-single-action-ratchet-wheel';
   ratchet.userData.body.userData.role = 'source-sawtooth-ratchet-body';
+  // The wheel and the flat pawl share one plane.
+  const pawlPlaneZ = 0.23;
+  ratchet.position.z = pawlPlaneZ;
   root.add(ratchet);
   const ratchetShaft = makeShaft({
     axis: Z_AXIS,
@@ -14408,7 +14510,7 @@ function vibratingCarrierSinglePawlRatchet(movement) {
     length: 0.95,
     radius: 0.105,
   });
-  ratchetShaft.position.z = -0.04;
+  ratchetShaft.position.z = pawlPlaneZ - 0.04;
   ratchetShaft.userData.role = 'fixed-axis-ratchet-output-shaft';
   root.add(ratchetShaft);
 
@@ -14433,16 +14535,9 @@ function vibratingCarrierSinglePawlRatchet(movement) {
     matte(PALETTE.driver, { metalness: 0.12, roughness: 0.62 }),
   );
   pawlBody.userData.role = 'curved-pawl-body-from-carrier-hinge-to-wheel';
-  const pawlNose = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      pawlNoseRadius,
-      pawlNoseRadius,
-      0.46,
-      24,
-    ),
-    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 }),
-  );
-  pawlNose.rotation.x = Math.PI / 2;
+  // The working nose is the flat pawl's own rounded end, in the ratchet's
+  // plane; this marker records its centre.
+  const pawlNose = new THREE.Object3D();
   pawlNose.position.set(pawlLength, 0, 0);
   pawlNose.userData.role = 'rounded-pawl-working-nose';
   const pawlIndex = new THREE.Mesh(
@@ -14473,7 +14568,7 @@ function vibratingCarrierSinglePawlRatchet(movement) {
     new THREE.SphereGeometry(0.055, 18, 12),
     matte(PALETTE.white, { roughness: 0.46 }),
   );
-  contactMarker.position.z = 0.24;
+  contactMarker.position.z = 0.47;
   contactMarker.userData.role = 'active-pawl-tooth-contact-marker';
   root.add(contactMarker);
 
@@ -14515,8 +14610,8 @@ function vibratingCarrierSinglePawlRatchet(movement) {
     cyclesPerSecond,
     driveEndContactAngle: driveEnd.contactAngle,
     driveStartContactAngle: driveStart.contactAngle,
-    pawlNoseDepth: 0.46,
-    pawlPlaneZ: 0.23,
+    pawlNoseDepth: 0.13,
+    pawlPlaneZ,
     pawlContactCenterRadius,
     pawlLength,
     pawlNoseRadius,
@@ -14581,7 +14676,7 @@ function vibratingCarrierSinglePawlRatchet(movement) {
       0.32,
     );
     carrier.userData.setEndpoints(carrierStart, carrierEnd);
-    pawl.position.set(state.pawlPivot.x, state.pawlPivot.y, 0.23);
+    pawl.position.set(state.pawlPivot.x, state.pawlPivot.y, pawlPlaneZ);
     pawl.rotation.z = state.pawlAngle;
     setSpin(ratchet, state.wheelAngle);
     setSpin(ratchetShaft, state.wheelAngle);
@@ -16225,7 +16320,10 @@ function springTappetArmStarRatchet(movement) {
 
   const ratchetOuterRadius = 1.22;
   const ratchetRootRadius = 0.5;
-  const ratchetDepth = 0.3;
+  // The star is as thick as the tappet hook and the holding click that bear
+  // on it in its own plane.
+  const ratchetDepth = 0.22;
+  const starPlaneZ = 0.5;
   const tappetNoseRadius = 0.07;
   const driveFaceAngularSpan = THREE.MathUtils.degToRad(35);
   const sharpTipPhase = 1 - driveFaceAngularSpan / toothPitch;
@@ -16376,6 +16474,7 @@ function springTappetArmStarRatchet(movement) {
   ratchet.userData.role = 'six-point-counterclockwise-star-ratchet-wheel';
   ratchet.userData.body.userData.role = 'source-six-point-star-ratchet-body';
   ratchet.userData.indicator.userData.role = 'ratchet-wheel-face-index';
+  ratchet.position.z = starPlaneZ;
   root.add(ratchet);
   const ratchetShaft = makeShaft({
     axis: Z_AXIS,
@@ -16383,7 +16482,7 @@ function springTappetArmStarRatchet(movement) {
     length: 0.94,
     radius: 0.1,
   });
-  ratchetShaft.position.z = -0.02;
+  ratchetShaft.position.z = starPlaneZ - 0.02;
   ratchetShaft.userData.role = 'fixed-axis-intermittent-output-shaft';
   root.add(ratchetShaft);
 
@@ -16972,16 +17071,9 @@ function springTappetArmStarRatchet(movement) {
     matte(PALETTE.brass, { metalness: 0.12, roughness: 0.61 }),
   );
   tappetBody.userData.role = 'hooked-source-tappet-body';
-  const tappetNose = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      tappetNoseRadius,
-      tappetNoseRadius,
-      0.42,
-      24,
-    ),
-    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 }),
-  );
-  tappetNose.rotation.x = Math.PI / 2;
+  // The working nose is the rounded end of the flat hook (see
+  // finishStarTappet); this marker records its centre.
+  const tappetNose = new THREE.Object3D();
   tappetNose.position.set(tappetLength, 0, 0);
   tappetNose.userData.role = 'rounded-working-and-click-over-nose';
   const tappetHingeHub = new THREE.Mesh(
@@ -17049,7 +17141,7 @@ function springTappetArmStarRatchet(movement) {
   holdingClick.position.set(
     holdingClickPivot.x,
     holdingClickPivot.y,
-    0.38,
+    starPlaneZ,
   );
   holdingClick.userData.axis = Z_AXIS.clone();
   holdingClick.userData.role = 'upper-pivoted-reverse-holding-click';
@@ -17064,16 +17156,7 @@ function springTappetArmStarRatchet(movement) {
     matte(PALETTE.muted, { metalness: 0.12, roughness: 0.62 }),
   );
   holdingClickBody.userData.role = 'curved-source-holding-click-body';
-  const holdingClickNose = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      holdingClickRadius,
-      holdingClickRadius,
-      0.4,
-      24,
-    ),
-    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 }),
-  );
-  holdingClickNose.rotation.x = Math.PI / 2;
+  const holdingClickNose = new THREE.Object3D();
   holdingClickNose.position.set(holdingClickLength, 0, 0);
   holdingClickNose.userData.role = 'reverse-locking-click-nose';
   const holdingClickIndex = new THREE.Mesh(
@@ -17091,7 +17174,8 @@ function springTappetArmStarRatchet(movement) {
   holdingClickBearing.position.set(
     holdingClickPivot.x,
     holdingClickPivot.y,
-    0.52,
+    // In front of the star's face, clear of the passing points.
+    starPlaneZ + 0.15,
   );
   holdingClickBearing.userData.role = 'fixed-upper-click-bearing';
   const holdingClickShaft = makeShaft({
@@ -17103,7 +17187,7 @@ function springTappetArmStarRatchet(movement) {
   holdingClickShaft.position.set(
     holdingClickPivot.x,
     holdingClickPivot.y,
-    0.2,
+    starPlaneZ + 0.03,
   );
   holdingClickShaft.userData.role = 'fixed-upper-click-pivot-pin';
   root.add(holdingClickBearing, holdingClickShaft);
@@ -17112,19 +17196,19 @@ function springTappetArmStarRatchet(movement) {
     new THREE.SphereGeometry(0.052, 18, 12),
     matte(PALETTE.white, { roughness: 0.46 }),
   );
-  driveContactMarker.position.z = 0.5;
+  driveContactMarker.position.z = 0.64;
   driveContactMarker.userData.role = 'active-drive-face-contact-marker';
   const returnContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.047, 18, 12),
     matte(PALETTE.white, { roughness: 0.46 }),
   );
-  returnContactMarker.position.z = 0.51;
+  returnContactMarker.position.z = 0.65;
   returnContactMarker.userData.role = 'active-click-over-contact-marker';
   const holdingContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.043, 18, 12),
     matte(PALETTE.white, { roughness: 0.46 }),
   );
-  holdingContactMarker.position.z = 0.52;
+  holdingContactMarker.position.z = 0.66;
   holdingContactMarker.userData.role = 'active-holding-click-contact-marker';
   root.add(driveContactMarker, returnContactMarker, holdingContactMarker);
 
@@ -17354,7 +17438,11 @@ function alternatingTwoPawlContinuousRatchet(movement) {
 
   const ratchetOuterRadius = 1.62;
   const ratchetRootRadius = 1.23;
-  const ratchetDepth = 0.3;
+  // The wheel is thick enough that both flat pawls b and c, one behind the
+  // other on the lever, lie in its tooth band and bear on it with their own
+  // rounded toes.
+  const ratchetDepth = 0.32;
+  const ratchetPlaneZ = 0.36;
   const toothOuterStartPhase = 0.08;
   const toothOuterEndPhase = 0.2;
   const pawlNoseRadius = 0.045;
@@ -17526,6 +17614,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     'fifteen-tooth-counterclockwise-nearly-continuous-ratchet-wheel';
   ratchet.userData.body.userData.role = 'source-fifteen-tooth-ratchet-body';
   ratchet.userData.indicator.userData.role = 'ratchet-wheel-rotation-index';
+  ratchet.position.z = ratchetPlaneZ;
   root.add(ratchet);
   const ratchetShaft = makeShaft({
     axis: Z_AXIS,
@@ -17533,7 +17622,7 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     length: 0.96,
     radius: 0.1,
   });
-  ratchetShaft.position.z = -0.02;
+  ratchetShaft.position.z = ratchetPlaneZ - 0.02;
   ratchetShaft.userData.role = 'counterclockwise-output-shaft';
   root.add(ratchetShaft);
 
@@ -18032,17 +18121,10 @@ function alternatingTwoPawlContinuousRatchet(movement) {
     );
     pivotIndex.position.z = depth * 0.72;
     pivotIndex.userData.role = `${role}-pivot-index`;
-    const contactFinger = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        pawlNoseRadius,
-        pawlNoseRadius,
-        0.32,
-        22,
-      ),
-      matte(PALETTE.ink, { metalness: 0.23, roughness: 0.47 }),
-    );
-    contactFinger.rotation.x = Math.PI / 2;
-    contactFinger.position.set(length, 0, -0.1);
+    // The toe is the rounded end of the flat pawl itself, in the wheel's
+    // plane; this marker records its centre.
+    const contactFinger = new THREE.Object3D();
+    contactFinger.position.set(length, 0, 0);
     contactFinger.userData.radius = pawlNoseRadius;
     contactFinger.userData.role = `${role}-round-tooth-contact`;
     const tipMarker = new THREE.Object3D();
@@ -19094,9 +19176,13 @@ function threeAlternativeRatchetStops(movement) {
   const fullTurn = Math.PI * 2;
   const toothCount = 18;
   const toothPitch = fullTurn / toothCount;
-  const wheelRootRadius = 1.85;
-  const wheelOuterRadius = 2.25;
+  // Brown's wheel: tips about 135 px about its hub at (213, 234).
+  const wheelRootRadius = 1.56;
+  const wheelOuterRadius = 1.9;
   const wheelDepth = 0.32;
+  // The wheel shares the stops' plane (their bodies span 0.23 to 0.41), so
+  // each flat stop bears on the teeth with its own rounded toe.
+  const wheelPlaneZ = 0.32;
   const wheelMountPhase = THREE.MathUtils.degToRad(120);
   const toothOuterStartPhase = 0.69;
   const toothOuterEndPhase = 0.73;
@@ -19112,7 +19198,7 @@ function threeAlternativeRatchetStops(movement) {
     parkEnd: 0.96,
   };
   const initialCycleCoordinate = 0.24 / demonstrationsPerCycle;
-  const sourceImageCenter = new THREE.Vector2(225, 260);
+  const sourceImageCenter = new THREE.Vector2(213, 234);
   const sourceScale = 0.014;
   const sourceHookPivot = new THREE.Vector2(49, 240);
   const sourceHookNose = new THREE.Vector2(151, 121);
@@ -19169,10 +19255,11 @@ function threeAlternativeRatchetStops(movement) {
   wheel.userData.role = 'shared-eighteen-tooth-clockwise-ratchet-wheel';
   wheel.userData.body.userData.role = 'source-asymmetric-ratchet-wheel-body';
   wheel.userData.indicator.userData.role = 'ratchet-wheel-face-index';
+  wheel.position.z = wheelPlaneZ;
   root.add(wheel);
 
   const wheelShaft = makeShaft({ length: 1.1, radius: 0.12 });
-  wheelShaft.position.z = -0.01;
+  wheelShaft.position.z = wheelPlaneZ - 0.01;
   wheelShaft.userData.role = 'shared-ratchet-wheel-shaft';
   root.add(wheelShaft);
 
@@ -19546,8 +19633,9 @@ function threeAlternativeRatchetStops(movement) {
     group.add(witness);
     root.add(group);
 
-    const pivotShaft = makeShaft({ length: 0.86, radius: 0.085 });
-    pivotShaft.position.set(stop.pivot.x, stop.pivot.y, 0.2);
+    // A plain fixed pin through the stop's eye and its collar.
+    const pivotShaft = makeShaft({ length: 0.34, radius: 0.085 });
+    pivotShaft.position.set(stop.pivot.x, stop.pivot.y, 0.33);
     pivotShaft.userData.role = `${stop.key}-fixed-pivot`;
     root.add(pivotShaft);
     const contactMarker = new THREE.Mesh(

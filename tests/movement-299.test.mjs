@@ -384,6 +384,7 @@ test('movement 299 analytic foliot and crown rates match finite differences', ()
   const model = createMovementModel(catalog.movements[298]);
   const { stateAtTime } = model.root.userData;
   const h = 1e-5;
+  const wide = 1e-4;
   for (const time of [0.2, 0.7, 1.0, 1.6, 1.9, 2.2, 2.7, 3.0, 3.6, 3.9]) {
     const before = stateAtTime(time - h);
     const state = stateAtTime(time);
@@ -391,16 +392,20 @@ test('movement 299 analytic foliot and crown rates match finite differences', ()
     const foliotSpeed = (
       after.foliotAngle - before.foliotAngle
     ) / (2 * h);
+    // Second differences use a wider, better-conditioned step (round-off
+    // grows as 1/h^2; truncation at 1e-4 is below 1e-7 here).
+    const wideBefore = stateAtTime(time - wide);
+    const wideAfter = stateAtTime(time + wide);
     const foliotAcceleration = (
-      after.foliotAngle - 2 * state.foliotAngle + before.foliotAngle
-    ) / h ** 2;
+      wideAfter.foliotAngle - 2 * state.foliotAngle + wideBefore.foliotAngle
+    ) / wide ** 2;
     const crownSpeed = (
       after.crownWheelAngle - before.crownWheelAngle
     ) / (2 * h);
     const crownAcceleration = (
-      after.crownWheelAngle - 2 * state.crownWheelAngle
-      + before.crownWheelAngle
-    ) / h ** 2;
+      wideAfter.crownWheelAngle - 2 * state.crownWheelAngle
+      + wideBefore.crownWheelAngle
+    ) / wide ** 2;
     near(foliotSpeed, state.foliotAngularSpeed, 2e-9,
       `foliot speed at ${time}`);
     near(foliotAcceleration, state.foliotAngularAcceleration, 8e-6,
@@ -518,5 +523,28 @@ test('movement 299 crown teeth are Brown’s raked saw teeth with no flat gaps',
       }
     }
   }
+  disposeModel(model.root);
+});
+
+test('movement 299 pallets and tooth backs keep Brown’s proportions', () => {
+  const model = createMovementModel(catalog.movements[298]);
+  const { geometry } = model.root.userData;
+  const linearPitch = geometry.toothPitch * geometry.contactRadius;
+  const palletLength = geometry.palletReleaseDistance / linearPitch;
+  // Brown draws the strips about 0.6-0.65 of a tooth pitch long.
+  assert.ok(palletLength > 0.57 && palletLength < 0.68, `pallet length ${palletLength} pitch`);
+  // Brown's backs are gentle arcs (power law about 1.6), not deep hooks.
+  const wheel = model.root.userData.blocks.crownWheel.userData;
+  const tooth = wheel.toothMeshes[0];
+  const p = tooth.geometry.attributes.position;
+  const start = tooth.userData.mountAngle - wheel.toothBackAngle;
+  let midHeight = -Infinity;
+  for (let i = 0; i < p.count; i += 1) {
+    const angle = Math.atan2(p.getY(i), p.getX(i));
+    const t = Math.atan2(Math.sin(angle - start), Math.cos(angle - start)) / wheel.toothBackAngle;
+    if (Math.abs(t - 0.5) < 0.03) midHeight = Math.max(midHeight, p.getZ(i));
+  }
+  const tipZ = geometry.toothTipZ;
+  assert.ok(midHeight / tipZ > 0.25, `back mid-height ${midHeight / tipZ} of the tip`);
   disposeModel(model.root);
 });

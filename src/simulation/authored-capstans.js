@@ -393,58 +393,30 @@ function commonCapstan(movement) {
   cable.userData.isSingleContinuousCable = true;
   root.add(cable);
 
-  // Brown crops the hauled part at the plate edge. Just beyond it the cable
-  // turns down into a deck pipe standing on the deck line, so it has a real
-  // lead rather than an end in mid-air. The lead is fixed geometry whose lay
-  // runs with the cable's haul.
+  // Brown crops the hauled part at the plate edge. Pass 64: beyond it the
+  // cable simply runs on straight along its own lead and ends cleanly (no
+  // undrawn bollard or deck pipe). The lead is fixed geometry whose lay runs
+  // with the cable's haul.
   const freeEnd = cableCurve.getPoint(0);
-  const pipeX = freeCableEndX + 1.25;
-  const bendRadius = 0.36;
-  const pipeTopY = -0.62;
-  // Pass 56: the deck is Brown's ground line under the ratchet; the deck
-  // pipe stands on it and the cable runs down through it.
-  const deckY = -1.61;
-  const leadCurve = new THREE.CurvePath();
-  const pipeBottom = new THREE.Vector3(pipeX, deckY + 0.3, freeEnd.z);
-  const bendBottom = new THREE.Vector3(pipeX, freeEnd.y - bendRadius, freeEnd.z);
-  leadCurve.add(new THREE.LineCurve3(pipeBottom, bendBottom));
-  const bend = new THREE.Curve();
-  bend.getPoint = (t, target = new THREE.Vector3()) => {
-    const angle = Math.PI * t / 2;
-    return target.set(
-      pipeX - bendRadius + bendRadius * Math.cos(angle),
-      freeEnd.y - bendRadius + bendRadius * Math.sin(angle),
-      freeEnd.z,
-    );
-  };
-  leadCurve.add(bend);
-  leadCurve.add(new THREE.LineCurve3(
-    new THREE.Vector3(pipeX - bendRadius, freeEnd.y, freeEnd.z), freeEnd.clone()));
-  const leadLength = leadCurve.getLength();
+  const outward = cableCurve.getTangent(0).clone().negate().normalize();
+  const leadLength = 0.6;
+  const leadCurve = new THREE.LineCurve3(
+    freeEnd.clone().addScaledVector(outward, leadLength), freeEnd.clone());
   const cableLead = addRole(new THREE.Mesh(
-    new LaidRopeGeometry(leadCurve, 160, ropeRadius, 9, false),
+    new LaidRopeGeometry(leadCurve, 40, ropeRadius, 9, false),
     ropeMaterial,
-  ), 'cable-lead-into-deck-pipe-beyond-plate');
-  const deckPipe = addRole(new THREE.Mesh(
-    new THREE.LatheGeometry([
-      [0.1, deckY], [0.24, deckY], [0.24, deckY + 0.06], [0.16, deckY + 0.06],
-      [0.16, pipeTopY - 0.08], [0.24, pipeTopY], [0.2, pipeTopY], [0.1, pipeTopY - 0.1],
-    ].map(([x, y]) => new THREE.Vector2(x, y)), 48),
-    darkMaterial,
-  ), 'deck-pipe-receiving-hauled-cable');
-  deckPipe.position.set(pipeX, 0, freeEnd.z);
-  for (const part of [cableLead, deckPipe]) part.userData.beyondPlateCrop = true;
-  root.add(cableLead, deckPipe);
+  ), 'cable-lead-running-straight-past-plate-crop');
+  cableLead.userData.beyondPlateCrop = true;
+  root.add(cableLead);
+  // Pass 56: the deck is Brown's ground line under the ratchet.
+  const deckY = -1.61;
   const deck = addRole(new THREE.Mesh(
     plate(polygonClipping.difference(
-      poly([[-2.4, -2.3], [pipeX + 0.7, -2.3], [pipeX + 0.7, 2.3], [-2.4, 2.3]]),
-      poly(circle([pipeX, -freeEnd.z], 0.1, 48)),
+      poly([[-2.5, -2.3], [2.5, -2.3], [2.5, 2.3], [-2.5, 2.3]]),
       poly(circle([0, 0], 0.145, 48)),
     ), deckY - 0.2, deckY).rotateX(-Math.PI / 2),
     supportMaterial,
-  ), 'fixed-deck-under-capstan-and-deck-pipe');
-  // Brown's ground line; the plank runs on beyond his crop to the deck pipe.
-  deck.userData.beyondPlateCrop = true;
+  ), 'fixed-deck-under-capstan');
   root.add(deck);
 
   const update = (time) => {

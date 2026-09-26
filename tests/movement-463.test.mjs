@@ -310,8 +310,10 @@ test('movement 463 renderer follows the contact solution, changes flow routes, a
       state.waterLevel, 1e-6, `upstream water surface at phase ${phase}`);
     near(blocks.upstreamWater.geometry.boundingBox.min.y,
       geometry.channelFloorY, 1e-6, `upstream water bed at phase ${phase}`);
+    // The notch sheet dwindles with the scheduled notch flow instead of
+    // switching off when the leaves start to turn.
     assert.equal(blocks.notchFlow.visible,
-      state.contactDrive < 1e-8);
+      state.notchFlowFraction / 0.48 > 1e-3);
     assert.equal(blocks.bedFlow.visible,
       state.contactDrive > .05 && state.lowerBottomCenter.y - geometry.lowerThickness/2*Math.abs(Math.sin(state.lowerAngle)) - geometry.channelFloorY > .02);
     near(blocks.sedimentBank.scale.x,
@@ -321,6 +323,19 @@ test('movement 463 renderer follows the contact solution, changes flow routes, a
       upperAxlePosition, 0, 'upper axle fixed');
     vectorNear(blocks.lowerPivotAssembly.axle.position,
       lowerAxlePosition, 0, 'lower axle fixed');
+  }
+  // Through the opening the sheet narrows smoothly to nothing: no pop.
+  const sheetHeight = (phase) => {
+    model.update(phase * geometry.cycleDuration);
+    blocks.notchFlow.geometry.computeBoundingBox();
+    return blocks.notchFlow.visible
+      ? blocks.notchFlow.geometry.boundingBox.getSize(new THREE.Vector3()).z : 0;
+  };
+  let previous = sheetHeight(0.26);
+  for (let phase = 0.262; phase <= 0.52; phase += 0.002) {
+    const next = sheetHeight(phase);
+    assert.ok(Math.abs(next - previous) < 0.15, `sheet width continuous at ${phase}`);
+    previous = next;
   }
   disposeModel(model.root);
 });

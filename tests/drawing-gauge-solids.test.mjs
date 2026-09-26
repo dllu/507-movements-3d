@@ -19,7 +19,7 @@ function clear(prepared){for(const {a,b,points,surface} of prepared){
 test('408 finite pin cylinders touch the working leg faces and clear the whole head over the usable sweep',()=>{
  const m=make(408),d=m.root.userData,b=d.blocks;
  const pairs=[];
- for(const pin of Object.values(b.fixedPins))for(const mesh of [b.head,b.centralJoint,b.blade,...Object.values(b.legs).flatMap(l=>[l.body,l.backEdge,...l.clamp.children])])pairs.push([pin.axle,mesh]);
+ for(const pin of Object.values(b.fixedPins))for(const mesh of [b.head,b.centralJoint,b.blade,...Object.values(b.legs).flatMap(l=>[l.body,l.backEdge,...l.clamp.children])])pairs.push([pin.collar,mesh]);
  pairs.push([b.legs.lower.body,b.legs.upper.body],[b.centralJoint,b.head],
   [b.centralJoint,b.legs.lower.body],[b.centralJoint,b.legs.upper.body],
   [b.head,b.legs.lower.body],[b.head,b.legs.upper.body]);
@@ -27,7 +27,7 @@ test('408 finite pin cylinders touch the working leg faces and clear the whole h
  for(let i=0;i<=64;i++){
   m.update(d.geometry.cycleDuration*i/64);m.root.updateMatrixWorld(true);
   for(const key of ['upper','lower']){
-   const local=b.legs[key].body.worldToLocal(b.fixedPins[key].axle.getWorldPosition(new THREE.Vector3()));
+   const local=b.legs[key].body.worldToLocal(b.fixedPins[key].collar.getWorldPosition(new THREE.Vector3()));
    assert.ok(Math.abs(Math.abs(local.y)-.12-.075)<1e-12);
   }
   clear(prepared);

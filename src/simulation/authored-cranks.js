@@ -1,6 +1,7 @@
 import { makeCouplingShaft } from './coupling-shaft.js';
 import {toggleSocketDisk} from './toggle-socket-disk.js';
 import {boredHorizontalPlate} from './bored-horizontal-plate.js';
+import {turnedClutchGeometry} from './clutch-section-geometry.js';
 import {slottedSectorToothProfiles} from './slotted-sector-teeth.js';
 import * as THREE from 'three';
 import {
@@ -7015,15 +7016,26 @@ function twinObliqueRodTogglePressMotion() {
   const columnBottomY = bedTopY - 0.34;
   const columnTopY = topFrameY - 0.1;
   const columnHeight = columnTopY - columnBottomY;
+  // Brown's columns are round, with a moulded base on each plinth and a
+  // flared capital under the head: one turned solid per column, set back
+  // behind the platen (which Brown draws in front of them).
+  const columnShaftRadius = 0.2;
+  const columnZ = frameBackZ - 0.36;
+  const h = columnHeight / 2;
+  const columnGeometry = turnedClutchGeometry([
+    [-h, 0], [-h, 0.25], [-h + 0.08, 0.25], [-h + 0.14, 0.225],
+    [-h + 0.2, columnShaftRadius], [h - 0.3, columnShaftRadius],
+    [h - 0.18, 0.235], [h - 0.1, 0.27], [h, 0.27], [h, 0],
+  ], { angularSegments: 64 }).rotateX(-Math.PI / 2);
   const frameColumns = [-1, 1].map((sideSign) => {
     const column = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, columnHeight, 0.3),
+      columnGeometry,
       frameMaterial,
     );
     column.position.set(
       sideSign * columnHalfSpan,
       (columnTopY + columnBottomY) / 2,
-      frameBackZ,
+      columnZ,
     );
     column.userData.role = 'fixed-column-guiding-and-supporting-press';
     column.userData.side = sideSign < 0 ? 'left' : 'right';
@@ -7114,33 +7126,8 @@ function twinObliqueRodTogglePressMotion() {
     return foot;
   });
 
-  const guideClearance = 0.06;
-  const platenGuideCentersX = [-1, 1].map(
-    (sideSign) => sideSign * (platenHalfWidth + guideClearance + 0.1),
-  );
-  const platenGuides = platenGuideCentersX.map((x, index) => {
-    const guide = new THREE.Group();
-    guide.position.set(x, openLowerDiskY + lowerPlatenCenterLocalY, 0);
-    guide.userData.role = 'fixed-vertical-guide-at-platen-edge';
-    guide.userData.side = index === 0 ? 'left' : 'right';
-    for (const z of [-1, 1]) {
-      const shoe = new THREE.Mesh(
-        new THREE.BoxGeometry(0.18, platenHeight * 1.75, 0.16),
-        darkMaterial,
-      );
-      shoe.position.z = z * (platenDepth / 2 + 0.09);
-      shoe.userData.role = 'fixed-wear-shoe-constraining-platen';
-      guide.add(shoe);
-    }
-    const web = new THREE.Mesh(
-      new THREE.BoxGeometry(.12, platenHeight * 1.75, platenDepth + .34),
-      frameMaterial,
-    );
-    web.position.x = Math.sign(x) * .14;
-    web.userData.role = 'outer-web-joining-guide-shoes-to-column';
-    guide.add(web);
-    return guide;
-  });
+  // Brown draws no guides at the platen ends (p60 support policy): the
+  // platen hangs from the lower disk, carried by the toggle bars.
 
   const cameraFitPoints = [
     new THREE.Vector3(-handleOuterRadius - 0.25, handleY, 0),
@@ -7179,7 +7166,6 @@ function twinObliqueRodTogglePressMotion() {
     ...topFrameRails,
     upperBearingRing,
     upperBearingCollar,
-    ...platenGuides,
     upperInput,
     lowerAssembly,
     ...linkRods,
@@ -7416,7 +7402,6 @@ function twinObliqueRodTogglePressMotion() {
     lowerSockets,
     platen,
     platenFrontBand,
-    platenGuides,
     platenMotionIndex,
     topFrameRails,
     upperBearingCollar,
@@ -7460,7 +7445,6 @@ function twinObliqueRodTogglePressMotion() {
     openDiskSeparation,
     openLowerDiskY,
     platenDepth,
-    platenGuideCentersX,
     platenHalfWidth,
     platenHeight,
     platenStroke,

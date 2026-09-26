@@ -3,7 +3,6 @@ import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { spokedWheelGeometry } from './spoked-wheel.js';
 import { creaseIndexedNormals } from './crease-normals.js';
-import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
 
 // Movement 314: Brown's lever chronometer escapement (after Grimthorpe's
@@ -47,18 +46,6 @@ const smootherStepDerivative = (u) => 30 * u * u * (u - 1) * (u - 1);
 const smootherStepSecondDerivative = (u) => 60 * u * (2 * u * u - 3 * u + 1);
 const positiveModulo = (value, modulus) => ((value % modulus) + modulus) % modulus;
 
-// Quintic from (x0, v0, a0) to (x1, v1, a1) over unit time.
-function quintic(x0, v0, a0, x1, v1, a1) {
-  const c3 = 10 * (x1 - x0) - 6 * v0 - 4 * v1 - 1.5 * a0 + 0.5 * a1;
-  const c4 = -15 * (x1 - x0) + 8 * v0 + 7 * v1 + 1.5 * a0 - a1;
-  const c5 = 6 * (x1 - x0) - 3 * v0 - 3 * v1 - 0.5 * a0 + 0.5 * a1;
-  return (u) => ({
-    x: x0 + v0 * u + 0.5 * a0 * u * u + c3 * u ** 3 + c4 * u ** 4 + c5 * u ** 5,
-    v: v0 + a0 * u + 3 * c3 * u * u + 4 * c4 * u ** 3 + 5 * c5 * u ** 4,
-    a: a0 + 6 * c3 * u + 12 * c4 * u * u + 20 * c5 * u ** 3,
-  });
-}
-
 // Flat extrusion of polygon-clipping polygons with crisp plate edges and
 // smooth curved walls.
 function flatPart(polygons, low, high) {
@@ -82,17 +69,6 @@ function roundBar(radius, back, front, material, segments = 40) {
   );
   mesh.rotation.x = Math.PI / 2;
   mesh.position.z = (back + front) / 2;
-  return mesh;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const mesh = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.rotation.z = Math.atan2(delta.y, delta.x);
   return mesh;
 }
 
@@ -163,7 +139,8 @@ function leverChronometerEscapement(movement) {
   const leverDepth = leverHigh - leverLow;
   const discLow = -0.40;
   const discHigh = -0.24;
-  const framePlaneZ = -0.80;
+  // The arbors and banking pins stop as plain stubs just behind the disc.
+  const framePlaneZ = discLow - 0.10;
 
   // ---- Wheel ------------------------------------------------------------
   const toothCount = 13;
@@ -171,12 +148,23 @@ function leverChronometerEscapement(movement) {
   const wheelToothTipRadius = sourceRasterWheelOuterRadius * sourceScale;
   const wheelToothRootRadius = sourceRasterWheelRootRadius * sourceScale;
   const wheelDepth = frontHigh - frontLow;
-  // Tooth 0 locks on A with its tip where Brown draws it.
+  // Tooth 0 locks on A. Brown's free tips scatter about 2 degrees either
+  // side of a regular thirteen; the tooth he draws at C's end stands 2.3
+  // degrees upstream of the regular phase through his A. The wheel is set
+  // 1.9 degrees upstream (A's tip then sits within 6 px of his A mark, the
+  // impulse tooth 0.4 degrees from his), because C's longer blade enters the
+  // tip circle upstream of the regular phase: the waiting tooth must stand
+  // behind C's working face when C's end arrives.
   const wheelBaseAngle = Math.atan2(
     sourcePointToModel(sourceRasterPalletA).y,
     sourcePointToModel(sourceRasterPalletA).x,
-  );
-  const longImpulseAdvance = toothPitch * 0.75;
+  ) + 1.9 * DEG;
+  // The long advance sets the wheel's phase while B locks, when C passes
+  // back across the tip circle: with C reaching 1.60 its path only clears
+  // the locked teeth for phases 0.82-1.0 of a pitch from the tooth positions
+  // at angle 0 (a window measured over the whole swing). 0.871 pitch puts the
+  // B-locked phase at 0.95, and B within 5 px of where Brown draws it.
+  const longImpulseAdvance = toothPitch * 0.871;
   const shortReturnAdvance = toothPitch - longImpulseAdvance;
   const palletAReferenceAngle = wheelBaseAngle;
   const palletBReferenceAngle = wheelBaseAngle - toothPitch - longImpulseAdvance;
@@ -210,15 +198,25 @@ function leverChronometerEscapement(movement) {
   const leverAmplitude = Math.abs(leverAngleOfPin(statedLeverDetachAngle));
   const pinEngagementHalfPhase = Math.acos(statedLeverDetachAngle / balanceAmplitude) / Math.PI;
   const pinDisengagementHalfPhase = 1 - pinEngagementHalfPhase;
-  // A releases a little before the balance's middle; the next tooth catches
-  // C with matched speed, rides it, slides off its end, and the tooth
-  // between lands on B well after the lever has banked.
-  const palletReleaseHalfPhase = 0.507;
-  const impulseCatchHalfPhase = 0.60;
-  const cReachRadius = 1.50;
-  const nextPalletLandingHalfPhase = 0.775;
-  const returnReleaseHalfPhase = 0.46;
-  const returnLandingHalfPhase = 0.70;
+  // A releases as the balance passes its middle (Brown's pose, with C's end
+  // at the waiting tooth's tip); the freed wheel
+  // accelerates under the train's constant torque and strikes C (it must
+  // move faster than C to catch it, so the catch is an impact that slows the
+  // wheel to C's speed), rides it, slides off its end and runs on, still
+  // accelerating, until the tooth between strikes B. On the return B
+  // releases once C has passed back, and the wheel accelerates through the
+  // short transfer until the tooth strikes A. Free wheel motion is only ever
+  // uniform acceleration from the train; every stop or slowing is a contact.
+  const palletReleaseHalfPhase = 0.5;
+  const impulseCatchHalfPhase = 0.56;
+  // Brown's blade reaches about 1.70-1.74 from the staff (his tooth tip
+  // meets its end). The locked teeth leave room for about 1.65: the lens C's
+  // end cuts inside the tip circle grows with its reach, and from about 1.68
+  // it is longer than the gap between two locked teeth at any wheel phase.
+  // 1.60 also leaves the waiting tooth behind C's face as C's end arrives,
+  // with the wheel phase above.
+  const cReachRadius = 1.60;
+  const returnReleaseHalfPhase = 0.56;
 
   const sideForHalfBeat = (index) => (positiveModulo(index, 2) === 0 ? 1 : -1);
   const isActingHalfBeat = (index) => sideForHalfBeat(index) > 0;
@@ -268,8 +266,7 @@ function leverChronometerEscapement(movement) {
     return { n: q.dot(cNormal), s: q.dot(cDirection) };
   };
   if (bladeFrame(0, -balanceAmplitude).n < 0) cNormal.negate();
-  // C reaches 1.50 from the staff (Brown draws about 1.74): any longer and
-  // it could not pass back between the locked teeth on the return.
+  // C reaches cReachRadius from the staff (see above).
   const cBladeEndS = (() => {
     const b = cInner.dot(cDirection);
     return -b + Math.sqrt(b * b - cInner.lengthSq() + cReachRadius ** 2);
@@ -309,13 +306,22 @@ function leverChronometerEscapement(movement) {
   })();
   const catchState = contactStateAtHalfPhase(impulseCatchHalfPhase);
   const endState = contactStateAtHalfPhase(impulseEndHalfPhase);
+  // The train's free angular acceleration (advance per half beat squared),
+  // fixed by the drop: from rest at A's release to C at the catch.
   const dropSpan = impulseCatchHalfPhase - palletReleaseHalfPhase;
-  const runSpan = nextPalletLandingHalfPhase - impulseEndHalfPhase;
-  const dropCurve = quintic(0, 0, 0, catchState.x, catchState.v * dropSpan, catchState.a * dropSpan ** 2);
-  const runCurve = quintic(endState.x, endState.v * runSpan, endState.a * runSpan ** 2,
-    longImpulseAdvance, 0, 0);
-  const returnSpan = returnLandingHalfPhase - returnReleaseHalfPhase;
-  const returnCurve = quintic(0, 0, 0, shortReturnAdvance, 0, 0);
+  const freeAcceleration = 2 * catchState.x / dropSpan ** 2;
+  const dropCurve = (tau) => ({ x: freeAcceleration * tau * tau / 2, v: freeAcceleration * tau, a: freeAcceleration });
+  // After sliding off C the wheel keeps its speed and accelerates on until
+  // the intervening tooth strikes B.
+  const runCurve = (tau) => ({
+    x: endState.x + endState.v * tau + freeAcceleration * tau * tau / 2,
+    v: endState.v + freeAcceleration * tau,
+    a: freeAcceleration,
+  });
+  const nextPalletLandingHalfPhase = impulseEndHalfPhase + (-endState.v + Math.sqrt(
+    endState.v ** 2 + 2 * freeAcceleration * (longImpulseAdvance - endState.x))) / freeAcceleration;
+  const returnCurve = dropCurve;
+  const returnLandingHalfPhase = returnReleaseHalfPhase + Math.sqrt(2 * shortReturnAdvance / freeAcceleration);
 
   // Wheel advance (in half-phase units) within a half beat.
   const wheelAdvanceAtHalfPhase = (acting, h) => {
@@ -327,24 +333,24 @@ function leverChronometerEscapement(movement) {
     if (acting) {
       if (h <= palletReleaseHalfPhase) return { ...toTime(0, 0, 0), event: 'locked', progress: 0 };
       if (h < impulseCatchHalfPhase) {
-        const q = dropCurve((h - palletReleaseHalfPhase) / dropSpan);
-        return { ...toTime(q.x, q.v / dropSpan, q.a / dropSpan ** 2), event: 'drop-onto-C', progress: 0 };
+        const q = dropCurve(h - palletReleaseHalfPhase);
+        return { ...toTime(q.x, q.v, q.a), event: 'drop-onto-C', progress: 0 };
       }
       if (h < impulseEndHalfPhase) {
         const c = contactStateAtHalfPhase(h);
         return { ...toTime(c.x, c.v, c.a), event: 'direct-impulse-C', progress: 0.5 };
       }
       if (h < nextPalletLandingHalfPhase) {
-        const q = runCurve((h - impulseEndHalfPhase) / runSpan);
-        return { ...toTime(q.x, q.v / runSpan, q.a / runSpan ** 2), event: 'run-to-B-after-C', progress: 0.9 };
+        const q = runCurve(h - impulseEndHalfPhase);
+        return { ...toTime(q.x, q.v, q.a), event: 'run-to-B-after-C', progress: 0.9 };
       }
       return { ...toTime(longImpulseAdvance, 0, 0), event: 'B-lock-after-direct-impulse', progress: 1 };
     }
     if (h <= returnReleaseHalfPhase) return { ...toTime(0, 0, 0), event: 'locked', progress: 0 };
     if (h < returnLandingHalfPhase) {
-      const u = (h - returnReleaseHalfPhase) / returnSpan;
-      const q = returnCurve(u);
-      return { ...toTime(q.x, q.v / returnSpan, q.a / returnSpan ** 2), event: 'short-unpowered-B-to-A-transfer', progress: u };
+      const q = returnCurve(h - returnReleaseHalfPhase);
+      const u = (h - returnReleaseHalfPhase) / (returnLandingHalfPhase - returnReleaseHalfPhase);
+      return { ...toTime(q.x, q.v, q.a), event: 'short-unpowered-B-to-A-transfer', progress: u };
     }
     return { ...toTime(shortReturnAdvance, 0, 0), event: 'A-lock-after-short-transfer', progress: 1 };
   };
@@ -495,10 +501,29 @@ function leverChronometerEscapement(movement) {
   balance.userData.axis = Z_AXIS.clone();
   balance.userData.role = 'balance-with-one-direct-impulse-pallet-C-and-one-roller-pin';
   const balanceRimRadius = sourceRasterBalanceOuterRadius * sourceScale;
-  const notchCenter = px(318, 55).sub(balanceCenter).normalize().multiplyScalar(balanceRimRadius);
+  // Brown's disc is cut down on its left, toward the wheel: from a concave
+  // notch (through (324, 40), (317, 56) and (320, 72)) its edge runs on an
+  // arc 67 px about the staff down to C, whose blade stands on the step
+  // back out to the rim.
+  const local = (x, y) => px(x, y).sub(balanceCenter);
+  const recessRadius = 67 * sourceScale;
+  const recessFrom = local(320, 72), recessTo = local(306, 138);
+  const polarAngle = (p) => Math.atan2(p.y, p.x);
+  const recessArc = Array.from({ length: 33 }, (_, i) => {
+    const from = polarAngle(recessFrom);
+    const to = from + positiveModulo(polarAngle(recessTo) - from, FULL_TURN);
+    const angle = THREE.MathUtils.lerp(from, to, i / 32);
+    return v2(Math.cos(angle), Math.sin(angle)).multiplyScalar(recessRadius);
+  });
+  const recessCut = [
+    local(334, 14), local(326, 34),
+    ...arcThrough(local(326, 34), local(317, 56), recessFrom, 24).slice(1),
+    ...recessArc.slice(1),
+    local(283, 147), local(250, 170), local(250, 14),
+  ].map((p) => p.toArray());
   const discShape = polygonClipping.difference(
     poly(circle([0, 0], balanceRimRadius, 256)),
-    poly(circle(notchCenter.toArray(), 12 * sourceScale, 64)),
+    [[[...recessCut, recessCut[0]]]],
     poly(circle([0, 0], 0.118, 48)),
   );
   const balanceDisc = new THREE.Mesh(flatPart(discShape, discLow, discHigh),
@@ -623,20 +648,19 @@ function leverChronometerEscapement(movement) {
     return roundRing([lead, ...points, releaseFoot, lockFoot].map((p) => p.toArray()));
   };
   const wheelLocal = wheelCenter.clone().sub(leverPivot);
-  const polarAboutWheel = (radius, angle) => wheelLocal.clone().add(
-    v2(Math.cos(angle), Math.sin(angle)).multiplyScalar(radius));
-  // Brown's crescent: the inside a circular arc just clear of the tooth tips
-  // at every lever angle (through the clearance envelope at its two ends and
-  // middle), the outside a circular arc through his outline, square ends.
-  const outerArc = arcThrough(L(422.5, 325), L(360, 445), L(290, 470), 64);
-  // Both band ends stop on the stone side of their lock faces.
-  const angleA = palletAReferenceAngle - 2 * DEG;
-  const angleB = palletBReferenceAngle - 3 * DEG;
+  // Brown's crescent: a band of nearly even width. Its inside is the
+  // straight line he draws from B's root (283, 428) to A's root (377, 333);
+  // its outside is a circular arc through his outline (measured on the
+  // plate at (424, 328), (360, 416) and (289, 468)); the stones A and B
+  // stand out from its two ends. Near B the tooth tips, turned with the
+  // lever through its throw, come within reach of his line, so there the
+  // inside follows the tips' clearance envelope instead (joined smoothly).
+  const outerArc = arcThrough(L(424, 328), L(360, 416), L(289, 468), 64);
   const tipClearanceRadius = (angle) => {
     // Smallest radius about the wheel whose point, turned with the lever
     // through its whole throw, stays 0.03 outside the tip circle.
     const clear = (radius) => {
-      const q = polarAboutWheel(radius, angle);
+      const q = wheelLocal.clone().add(v2(Math.cos(angle), Math.sin(angle)).multiplyScalar(radius));
       for (let k = -16; k <= 16; k += 1) {
         const w = rotate2(q, leverAmplitude * k / 16).sub(wheelLocal);
         if (w.length() < wheelToothTipRadius + 0.03) return false;
@@ -651,37 +675,17 @@ function leverChronometerEscapement(movement) {
     }
     return hi;
   };
-  // A single circular arc just outside that clearance envelope: through
-  // the envelope at both ends and the middle, lifted by the envelope's
-  // largest excess over it.
-  const envelope = Array.from({ length: 49 }, (_, i) => {
-    const angle = THREE.MathUtils.lerp(angleB, angleA, i / 48);
-    return { angle, radius: tipClearanceRadius(angle) };
+  const innerFrom = L(283, 428), innerTo = L(377, 333);
+  const innerArc = Array.from({ length: 97 }, (_, i) => {
+    const onLine = innerFrom.clone().lerp(innerTo, i / 96);
+    const ray = onLine.clone().sub(wheelLocal);
+    const angle = Math.atan2(ray.y, ray.x);
+    const line = ray.length(), envelope = tipClearanceRadius(angle);
+    // Smooth maximum of the two radii (blend width 0.02).
+    const k = 0.02;
+    const radius = Math.max(line, envelope) + k * Math.log1p(Math.exp(-Math.abs(line - envelope) / k));
+    return wheelLocal.clone().add(v2(Math.cos(angle), Math.sin(angle)).multiplyScalar(radius));
   });
-  const arcFrom = (lift) => arcThrough(
-    polarAboutWheel(envelope[0].radius + lift, envelope[0].angle),
-    polarAboutWheel(envelope[24].radius + lift, envelope[24].angle),
-    polarAboutWheel(envelope[48].radius + lift, envelope[48].angle),
-    96,
-  );
-  const excess = (arc) => {
-    let worst = 0;
-    for (const { angle, radius } of envelope) {
-      // Radius of the arc along this ray from the wheel centre.
-      const dir = v2(Math.cos(angle), Math.sin(angle));
-      let best = Infinity;
-      for (const p of arc) {
-        const w = p.clone().sub(wheelLocal);
-        const off = Math.abs(w.x * dir.y - w.y * dir.x);
-        if (off < best) { best = off; var along = w.dot(dir); }
-      }
-      worst = Math.max(worst, radius - along);
-    }
-    return worst;
-  };
-  let innerLift = 0;
-  for (let k = 0; k < 4; k += 1) innerLift += excess(arcFrom(innerLift)) + 0.002;
-  const innerArc = arcFrom(innerLift);
   const bandRing = roundRing([...innerArc, ...outerArc].map((p) => p.toArray()));
   const stoneARing = stoneRing('A');
   const stoneBRing = stoneRing('B');
@@ -723,8 +727,14 @@ function leverChronometerEscapement(movement) {
       return p.clone().addScaledVector(bis, toothClearance / Math.max(bis.dot(n1), 0.2));
     });
   })();
+  // Sweep samples close enough that no tooth moves more than 0.003 between
+  // them (the wheel runs fast just before it strikes B or A).
   const sweepTimes = [];
-  for (let i = 0; i < 240; i += 1) sweepTimes.push(balancePeriod * i / 240);
+  for (let time = 0; time < balancePeriod;) {
+    sweepTimes.push(time);
+    const speed = Math.abs(stateAtTime(time).wheelAngularSpeed) * wheelToothTipRadius;
+    time += Math.min(balancePeriod / 480, 0.003 / Math.max(speed, 1e-6));
+  }
   const cutBySweptTeeth = (shape, toLocal) => {
     let cut = shape;
     const box = new THREE.Box2();
@@ -748,6 +758,17 @@ function leverChronometerEscapement(movement) {
     (world, state) => rotate2(world.clone().sub(leverPivot), -state.leverAngle));
   crescentShape = polygonClipping.difference(crescentShape, [[roundRing(circle([0, 0], 0.152, 64))]]);
   crescentShape = largest(crescentShape);
+  // The fine sweep leaves runs of vertices microns apart; drop them so the
+  // plate's caps triangulate cleanly.
+  crescentShape = crescentShape.map((polygon) => polygon.map((ring) => {
+    const kept = [ring[0]];
+    for (const point of ring.slice(1)) {
+      const last = kept.at(-1);
+      if (Math.hypot(point[0] - last[0], point[1] - last[1]) >= 2e-4) kept.push(point);
+    }
+    kept[kept.length - 1] = ring[0];
+    return kept;
+  }));
   const crescent = new THREE.Mesh(flatPart(crescentShape, frontLow, frontHigh), palletMaterial);
   crescent.userData.role = 'crescent-pallet-plate-with-locking-only-pallets-A-and-B';
   const leverArbor = roundBar(0.15, framePlaneZ, frontHigh + 0.03, darkMaterial, 40);
@@ -795,47 +816,13 @@ function leverChronometerEscapement(movement) {
     return pin;
   });
 
-  // ---- Frame: plain bars behind everything -----------------------------
+  // ---- Fixed parts: Brown draws no frame --------------------------------
+  // Only the banking pins are fixed; the three arbors end as plain stubs
+  // just behind the balance disc, with no bars or bearing bosses.
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.fixed = true;
-  fixedFrame.userData.role = 'fixed-back-bars-carrying-the-three-arbors-and-banking-pins';
-  const at = (p) => new THREE.Vector3(p.x, p.y, framePlaneZ);
-  const bankMid = bankingPinCenters.left.clone().add(bankingPinCenters.right).multiplyScalar(0.5);
-  // Bored bearing bosses for the three arbors; the bars run between them.
-  const bossRadius = 0.26;
-  const bosses = [
-    ['wheel', wheelCenter, 0.13],
-    ['lever', leverPivot, 0.15],
-    ['balance', balanceCenter, 0.115],
-  ].map(([name, center, arborRadius]) => {
-    const boss = new THREE.Mesh(
-      boredLatheGeometry([
-        { radial: bossRadius, axial: -0.09 },
-        { radial: bossRadius, axial: 0.09 },
-      ], arborRadius + 0.004, 64),
-      frameMaterial,
-    );
-    boss.rotation.x = Math.PI / 2;
-    boss.position.set(center.x, center.y, framePlaneZ);
-    boss.userData.role = `fixed-back-bearing-${name}`;
-    return boss;
-  });
-  const barBetween = (name, a, b, trimA, trimB) => {
-    const dir = b.clone().sub(a).normalize();
-    const start = a.clone().addScaledVector(dir, trimA);
-    const end = b.clone().addScaledVector(dir, -trimB);
-    const bar = beamBetween(at(start), at(end), 0.22, 0.14, frameMaterial);
-    bar.userData.role = `fixed-back-bar-${name}`;
-    return bar;
-  };
-  const trim = bossRadius - 0.02;
-  const bars = [
-    barBetween('wheel-to-lever', wheelCenter, leverPivot, trim, trim),
-    barBetween('lever-to-balance', leverPivot, balanceCenter, trim, trim),
-    barBetween('lever-to-banking', leverPivot, bankMid, trim, 0),
-    barBetween('banking-pins', bankingPinCenters.left, bankingPinCenters.right, 0, 0),
-  ];
-  fixedFrame.add(...bars, ...bosses, ...bankingPins);
+  fixedFrame.userData.role = 'fixed-banking-pins-for-lever-foot';
+  fixedFrame.add(...bankingPins);
 
   root.add(fixedFrame, escapeWheel, palletLever, balance);
 
@@ -1059,8 +1046,6 @@ function leverChronometerEscapement(movement) {
     balancePin,
     balanceStaff,
     bankingPins,
-    bars,
-    bosses,
     crescent,
     directPalletC,
     escapeWheel,
@@ -1204,7 +1189,7 @@ function leverChronometerEscapement(movement) {
   root.userData.toothTipPoint = toothTipPoint;
   root.userData.wheelAngleAtHalfLanding = wheelAngleAtHalfLanding;
   root.userData.wheelAdvanceAtHalfPhase = wheelAdvanceAtHalfPhase;
-  root.userData.reconstructionNote = 'Brown’s parts are flat plates in three planes (wheel, crescent and C in front; lever behind; balance disc behind that). The lever pivots on the crescent’s arbor. Lock faces are arcs about that arbor; the fork is the roller pin’s swept path; C is Brown’s straight blade, shortened to reach 1.50 from the staff so it passes back between the locked teeth. The wheel drops onto C with matched speed, rides it by exact contact, and runs to B on a smooth law after sliding off; lever and wheel motion are prescribed kinematics (no dynamics).';
+  root.userData.reconstructionNote = 'Brown’s parts are flat plates in three planes (wheel, crescent and C in front; lever behind; balance disc behind that). The lever pivots on the crescent’s arbor. Lock faces are arcs about that arbor; the fork is the roller pin’s swept path; C is Brown’s straight blade, reaching 1.60 from the staff (his reaches about 1.70-1.74) so it passes back between the locked teeth. The free wheel only accelerates uniformly under the train: it strikes C, rides it by exact contact, slides off and strikes B; lever and wheel motion are prescribed kinematics (no dynamics).';
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = 4;
   root.userData.cameraDirection = new THREE.Vector3(0, 0, 15);

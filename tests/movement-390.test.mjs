@@ -69,10 +69,9 @@ test('movement 390 is one rocking sector, exactly two distinct bands, two loose 
     blocks.pivotPin,
     blocks.rockingSector,
   ]) assert.ok(component.parent === model.root, `${component.userData.role} parent`);
-  // One upright on a small foot carries the flywheel shaft and fulcrum a.
-  assert.ok(blocks.frame.parent === model.root, 'the upright carries both shafts');
-  assert.deepEqual(blocks.frame.children.map((o) => o.userData.role).sort(),
-    ['fixed-flywheel-shaft-bearing-post', 'rectifier-frame-base']);
+  // Brown draws no frame, upright or foot: the fulcrum pin and the flywheel
+  // shaft end as plain stubs.
+  assert.ok(blocks.frame.parent === null, 'no undrawn frame is presented');
   assert.ok(blocks.crossedRatchet.parent === blocks.flywheelRotor, 'blocks.crossedRatchet parent');
   assert.ok(blocks.openRatchet.parent === blocks.flywheelRotor, 'blocks.openRatchet parent');
   assert.ok(blocks.flywheelRim.parent === blocks.flywheelRotor, 'blocks.flywheelRim parent');

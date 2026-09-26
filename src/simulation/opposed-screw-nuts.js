@@ -18,6 +18,35 @@ export function opposedScrewState(time){
  return {wheelAngle,wormAngle:18*wheelAngle,nutX:g.sourceNutX.map((x,i)=>x-(i===0?1:-1)*g.pitch/tau*wheelAngle)};
 }
 
+// The instanced sectors meet on coincident internal radial faces, and their
+// separately rotated boundary vertices leave hairline cracks on the flat end
+// faces through which those darker faces read as radial seams. Bake the
+// sectors into one welded mesh: every copy is rotated exactly, the internal
+// radial closures (the last 12m indices of the sector) are dropped, and
+// coincident boundary vertices snap to one position. The sector normals are
+// kept, so the end faces stay flat and the tooth flanks keep their edges.
+function solidWheel(instanced){
+ const sector=instanced.geometry,{teeth,axialSteps:m}=instanced.userData,pitch=2*Math.PI/teeth;
+ const position=sector.attributes.position,normal=sector.attributes.normal,count=position.count;
+ const index=Array.from(sector.index.array).slice(0,sector.index.count-12*m);
+ const positions=new Float32Array(3*count*teeth),normals=new Float32Array(3*count*teeth),indices=[],snap=new Map();
+ for(let t=0;t<teeth;t++){
+  const c=Math.cos(t*pitch),s=Math.sin(t*pitch),base=t*count;
+  for(let i=0;i<count;i++){
+   let x=position.getX(i)*c-position.getY(i)*s,y=position.getX(i)*s+position.getY(i)*c,z=position.getZ(i);
+   const key=[x,y,z].map(v=>Math.round(v*1e5)).join(','),seen=snap.get(key);
+   if(seen)[x,y,z]=seen;else snap.set(key,[x,y,z]);
+   positions.set([x,y,z],3*(base+i));
+   normals.set([normal.getX(i)*c-normal.getY(i)*s,normal.getX(i)*s+normal.getY(i)*c,normal.getZ(i)],3*(base+i));
+  }
+  for(const k of index)indices.push(base+k);
+ }
+ const geometry=new THREE.BufferGeometry();
+ geometry.setAttribute('position',new THREE.BufferAttribute(positions,3));geometry.setAttribute('normal',new THREE.BufferAttribute(normals,3));
+ geometry.setIndex(indices);geometry.computeBoundingBox();geometry.computeBoundingSphere();sector.dispose();
+ const mesh=new THREE.Mesh(geometry,instanced.material);mesh.userData={...instanced.userData,weldedSectors:true};return mesh;
+}
+
 // Ideal gear and screw constraints with generated, independently checked solids.
 export function makeOpposedScrewNuts(){
  const root=new THREE.Group(),parts={},blocks={};
@@ -29,7 +58,7 @@ export function makeOpposedScrewNuts(){
  const transmission=body('transmission');transmission.rotation.y=Math.PI/2;transmission.scale.setScalar(scale);
  const wheel=new THREE.Group(),worm=new THREE.Group();transmission.add(wheel,worm);blocks.wheel=wheel;blocks.worm=worm;
  worm.position.y=f.distance;
- const wheelMesh=makeInstancedWormWheel(f,saddleWheelCut,.135/scale,materials.driven);
+ const wheelMesh=solidWheel(makeInstancedWormWheel(f,saddleWheelCut,.135/scale,materials.driven));
  wheelMesh.name='generated-worm-wheel';wheelMesh.rotation.z=Math.PI/2+(f.lead*Math.PI/2-f.phase)/f.pitchRadius;wheel.add(wheelMesh);parts.wheel=wheelMesh;
  const length=.9/scale;
  add('horizontal-input-worm',cylindricalWormGeometry({pitchRadius:f.wormPitchRadius,module:f.pitch/Math.PI,length,pressureAngle:f.pressureAngle,rootRadius:f.wormRoot,tipRadius:f.wormTip,rootHalfWidth:f.rootHalfWidth,tipHalfWidth:f.tipHalfWidth,phase:f.phase,angularSteps:768}).rotateY(Math.PI/2),worm,'driver');

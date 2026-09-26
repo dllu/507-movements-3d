@@ -15,7 +15,7 @@ test('236 both strokes touch an actual tooth corner with positive normal torque'
   const triangles = surfaceTriangles(wheel.geometry);
   let minTorque = Infinity, maxGap = 0;
   for (let i = 0; i <= 64; i++) {
-    const s = at(m, i / 64), target = new THREE.Vector3(s.activeProfilePoint.x, s.activeProfilePoint.y, 0);
+    const s = at(m, i / 64), target = new THREE.Vector3(s.activeProfilePoint.x, s.activeProfilePoint.y, d.blocks.ratchet.position.z);
     const local = target.clone().applyMatrix4(wheel.matrixWorld.clone().invert());
     const normals = [];
     for (const triangle of triangles) {
@@ -32,10 +32,11 @@ test('236 both strokes touch an actual tooth corner with positive normal torque'
     minTorque = Math.min(minTorque, moment);
     assert.ok(moment > 0.28130);
     assert.ok(Math.abs(moment - s.activeCompressionTorque) < 1e-12);
-    const finger = s.longDriving ? d.blocks.longPawlContactFinger : d.blocks.shortPawlContactFinger;
-    const field = solidSurface(finger.geometry), point = target.clone().applyMatrix4(finger.matrixWorld.clone().invert());
+    // The toe is the flat pawl's own rounded end (24 chords, sagitta 0.00013).
+    const body = s.longDriving ? d.blocks.longPawlBody : d.blocks.shortPawlBody;
+    const field = solidSurface(body.geometry), point = target.clone().applyMatrix4(body.matrixWorld.clone().invert());
     const gap = field.distance(point); maxGap = Math.max(maxGap, gap);
-    assert.ok(gap < 0.0000061, `finite inscribed toe gap ${gap}`);
+    assert.ok(gap < 0.00015, `finite inscribed toe gap ${gap}`);
   }
   console.log({ minimumActualCornerMoment: minTorque, maximumFiniteToeGap: maxGap });
 });
@@ -59,10 +60,12 @@ test('236 complete nose circles clear every float32 tooth edge and reseat contin
   console.log({ minimumEnclosingCircleClearance: minimum });
 });
 
-test('236 actual toes occupy the wheel depth and selected moving solids clear through the cycle', () => {
+test('236 flat pawls lie in the wheel plane and selected moving solids clear through the cycle', () => {
   const m = make(), b = m.root.userData.blocks, wheel = b.ratchet.userData.body;
-  const pairs = [[b.longPawlContactFinger, wheel], [b.shortPawlContactFinger, wheel], [b.longPawlBody, wheel], [b.shortPawlBody, wheel],
-    [b.longPawlBody, b.shortPawlBody], [b.longPawlContactFinger, b.shortPawlBody], [b.shortPawlContactFinger, b.longPawlBody], [b.longPawlPivotHub, b.leverBody], [b.shortPawlPivotHub, b.leverBody]];
+  assert.equal(b.longPawlContactFinger.isMesh, undefined);
+  assert.equal(b.shortPawlContactFinger.isMesh, undefined);
+  const pairs = [[b.longPawlBody, wheel], [b.shortPawlBody, wheel], [wheel, b.longPawlBody], [wheel, b.shortPawlBody],
+    [b.longPawlBody, b.shortPawlBody], [b.longPawlPivotHub, b.leverBody], [b.shortPawlPivotHub, b.leverBody]];
   const caches = pairs.map(([moving, fixed]) => ({ moving, fixed, points: surfacePoints(moving.geometry), field: solidSurface(fixed.geometry) }));
   let min = Infinity;
   for (let i = 0; i <= 64; i++) {
@@ -74,9 +77,9 @@ test('236 actual toes occupy the wheel depth and selected moving solids clear th
         assert.ok(gap > -1e-7, `${i / 64} ${moving.userData.role} vs ${fixed.userData.role}: ${gap}`);
       }
     }
-    for (const finger of [b.longPawlContactFinger, b.shortPawlContactFinger]) {
-      const toe = new THREE.Box3().setFromObject(finger), w = new THREE.Box3().setFromObject(wheel);
-      assert.ok(Math.min(toe.max.z, w.max.z) - Math.max(toe.min.z, w.min.z) > 0.2299);
+    for (const body of [b.longPawlBody, b.shortPawlBody]) {
+      const pawl = new THREE.Box3().setFromObject(body), w = new THREE.Box3().setFromObject(wheel);
+      assert.ok(pawl.min.z > w.min.z && pawl.max.z < w.max.z, 'pawl inside the tooth band');
     }
   }
   console.log({ minimumSelectedSurfaceClearance: min });

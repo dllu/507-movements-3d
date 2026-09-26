@@ -8,8 +8,10 @@ const cache = new Map();
 
 export const conicalStudParameters = Object.freeze({
   centerDistance: 1.8, radiusSlope: 0.42, axialAmplitude: 0.96,
-  halfHeight: 1.1, teeth: 24, studCount: 20, studRadius: 0.03,
-  studFront: 0.12, studBack: 0.20,
+  // Brown draws round stud heads close on the cone face: stout studs that
+  // stand only far enough past the pitch cone to enter the tooth spaces.
+  halfHeight: 1.1, teeth: 24, studCount: 20, studRadius: 0.045,
+  studFront: 0.06, studBack: 0.20,
 });
 
 /** An end-to-end spiral with equal axial steps, as in the engraving.

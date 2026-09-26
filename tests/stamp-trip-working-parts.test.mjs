@@ -66,14 +66,15 @@ test('351 release follows the withdrawing final tooth and pickup lifts the resti
 test('353 finite wipers, rounded helve, impact face, supports and journals clear through release and strike',()=>{
  const m=trip({id:353}),d=m.root.userData,b=d.blocks,g=d.geometry,audit=auditor(),phases=Array.from({length:129},(_,i)=>i/128);
  for(const phase of[g.contactStartPhase,g.contactEndPhase,g.impactPhase])for(const e of[-1e-6,0,1e-6])phases.push(phase+e);
- const moving=[b.camDisk,b.camHub,...b.wiperMeshes,b.helve,b.hammerHead,b.movingJournalBlock,b.movingPivotHub],fixed=[b.camPost,b.camPostCap,b.pivotPost,b.pivotBridge,b.rearCamBearing,b.frontPivotBearing,b.rearPivotBearing];
+ const moving=[b.camDisk,b.camHub,...b.wiperMeshes,b.helve,b.hammerHead,b.movingJournalBlock,b.movingPivotHub],fixed=[b.camPost,b.camPostCap,b.frontPivotBearing];
  for(const phase of phases){
   m.update((phase-g.initialCyclePhase)*g.lobeCyclePeriod);m.root.updateMatrixWorld(true);
   for(const a of[b.followerNose,b.helve])for(const target of[b.camDisk,...b.wiperMeshes])audit.check(a,target,'wiper');
   audit.check(b.hammerHead,b.anvilFace,'strike');audit.check(b.hammerHead,b.anvilBody,'anvil body');
   for(const a of moving)for(const target of fixed)audit.check(a,target,'fixed hardware');
-  for(const shaft of meshes(b.inputShaft))for(const target of[b.camDisk,b.camHub,b.camPost,b.camPostCap,b.rearCamBearing])audit.check(shaft,target,'input passage',true);
-  for(const shaft of meshes(b.hammerPivotShaft))for(const target of[b.helve,b.movingJournalBlock,b.movingPivotHub,b.pivotPost,b.pivotBridge,b.frontPivotBearing,b.rearPivotBearing])audit.check(shaft,target,'fulcrum passage',true);
+  for(const shaft of meshes(b.inputShaft))for(const target of[b.camDisk,b.camHub,b.camPost,b.camPostCap])audit.check(shaft,target,'input passage',true);
+  for(const shaft of meshes(b.hammerPivotShaft))for(const target of[b.helve,b.movingJournalBlock,b.movingPivotHub,b.frontPivotBearing])audit.check(shaft,target,'fulcrum passage',true);
+  for(const part of[b.pivotPost,b.pivotBridge,b.rearPivotBearing,b.rearCamBearing])assert.equal(part.parent,null,'undrawn fulcrum support removed');
  }
  console.log({id:353,...audit.report()});
 });

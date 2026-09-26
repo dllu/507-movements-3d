@@ -5,7 +5,7 @@
   "sources": [
     {
       "file": "src/simulation/toggle-punch.js",
-      "sha256": "13feb59a75e3b1f68858efd8489905691ee8e506731aa4b83321ba6ce3a30459"
+      "sha256": "e10b69528b32c5f56ff57103da8c67a2b5163470f09aebca00007431a5be7f06"
     },
     {
       "file": "src/simulation/toggle-punch-kinematics.js",

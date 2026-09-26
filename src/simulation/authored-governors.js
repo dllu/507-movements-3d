@@ -335,12 +335,11 @@ function dragFanInclinedPlaneGovernorMotion() {
   const leverPivotPin = cylinderAlongZ(0.16, 0.74, darkMaterial, 40);
   leverPivotPin.position.set(leverPivotX, leverPivotY, leverPlaneZ);
   leverPivotPin.userData.role = 'fixed-pivot-pin-of-output-valve-lever';
+  // Brown draws the lower bearing on the shaft but no base rail, pedestal,
+  // lever post or bracket (p60 support policy, matching the baked production
+  // model): only the bearing and the lever's fulcrum pin are mounted.
   fixedFrame.add(
-    baseRail,
-    lowerBearingPost,
     lowerBearing,
-    leverSupportPost,
-    leverPivotBracket,
     leverPivotPin,
   );
 

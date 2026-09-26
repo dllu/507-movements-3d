@@ -75,7 +75,7 @@ test('movement 286 is one rocking toe lifting one guided poppet-valve train', ()
   assert.equal(blocks.valveRod.parent, blocks.lifter);
   assert.equal(blocks.poppetHead.parent, blocks.lifter);
   assert.equal(blocks.valveIndex.parent, null, 'undrawn white index removed');
-  assert.equal(blocks.valveSeat.parent, blocks.fixedGuides);
+  assert.equal(blocks.fixedGuides.children.length, 0, 'no undrawn seat, base, guides or bearing');
   vectorNear(blocks.toe.userData.axis, Z_AXIS, 0, 'toe axis');
 
   const roles = [];

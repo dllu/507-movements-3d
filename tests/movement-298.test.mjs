@@ -37,6 +37,21 @@ test('298 wire loops are round-wire tubes wrapped over the arbor, not blades beh
   }
 });
 
+test('298 both loops lean the same way, tops to the left, as Brown draws them, and clear each other', () => {
+  const { blocks, geometry: g } = create().root.userData;
+  const lines = [blocks.pallet1, blocks.pallet2].map((loop) => loop.userData.centerline);
+  for (const line of lines) {
+    const lowest = line.reduce((a, b) => (b.y < a.y ? b : a));
+    const highest = line.reduce((a, b) => (b.y > a.y ? b : a));
+    const lean = (highest.x - lowest.x) / (highest.y - lowest.y);
+    // Brown's loop axes run about 0.34 px left per px of rise.
+    assert.ok(lean < -0.25 && lean > -0.45, `loop lean ${lean}`);
+  }
+  let closest = Infinity;
+  for (const a of lines[0]) for (const b of lines[1]) closest = Math.min(closest, a.distanceTo(b));
+  assert.ok(closest > 2 * g.wireRadius + 0.02, `loops ${closest} apart`);
+});
+
 test('298 contacting teeth touch the wire at exactly the running clearance and both drops are equal', () => {
   const model = create();
   const d = model.root.userData, g = d.geometry;

@@ -127,10 +127,11 @@ function combinationWeightDrive(movement) {
   const couplerLength = 4;
   const pulleyArmRadius = 3.1;
   const diskRadius = 0.83;
-  // Brown's hub circle on B is about a fifth of B's radius; at that size the
-  // drum circle, dashed behind B, shows clear of it as his inner circle.
-  const diskHubRadius = 0.16;
-  const drumRadius = 0.22;
+  // Brown draws the drum as a bold circle on B's front face (about 27 px
+  // against his 49 px crank radius) with a small axle circle (about 10 px)
+  // at its centre; cord D comes down onto the drum's left side.
+  const diskHubRadius = 0.13;
+  const drumRadius = 0.35;
   const drumAxialAdvancePerRadian = 0.014;
   const effectiveDrumTakeupRadius = Math.hypot(
     drumRadius,
@@ -140,11 +141,18 @@ function combinationWeightDrive(movement) {
   const movingPulleyPitchRadius = 0.72;
   const movingPulleyOuterRadius = 0.82;
   const movingPulleyHubRadius = 0.18;
-  // Depth stack (front to back): link C, crank pin and hub face; disk B;
-  // then the drum, cord D and pulley E tread behind B. The crank pin sweeps
-  // across the drum-to-E span in plan, so the cord must lie behind B for the
-  // pin to reach link C without passing through it.
-  const cordPlaneZ = -0.24;
+  // Depth stack (front to back): link C; arm A; pulley E's front flange;
+  // B's crank arm carrying the pin; then the drum, cord D and pulley E's
+  // tread; then disk B. The crank pin's circle (radius 49 px on the plate)
+  // crosses every line leaving the 27 px drum, so the pin cannot rise from
+  // B's face through the cord's plane. It stands instead on a short crank
+  // arm keyed to the shaft end just in front of the drum, so the pin only
+  // occupies depths in front of the cord and D wraps the drum on B's front
+  // face as Brown draws it.
+  const cordPlaneZ = 0.44;
+  const crankArmFrontZ = 0.61;
+  const armAZ = 0.73;
+  const linkCZ = 0.93;
   const cordRadius = 0.042;
   // The laid rope's lay shows the cord's travel, so it carries no markers.
   const cordMarkerCount = 0;
@@ -477,12 +485,14 @@ function combinationWeightDrive(movement) {
   root.add(diskAssembly);
   const diskBody = cylinderAlongZ(diskRadius, 0.3, inputMaterial, 80);
   diskBody.userData.role = 'revolving-disk-B';
-  // The hub stands proud of B's front face only, clear of the cord wraps.
-  const diskHub = cylinderAlongZ(diskHubRadius, 0.45, darkMaterial, 44);
-  diskHub.position.z = 0.075;
+  // B's shaft end runs forward through the drum and the crank arm; its end
+  // is Brown's small axle circle.
+  const diskHub = cylinderAlongZ(diskHubRadius, 0.56, darkMaterial, 44);
+  diskHub.position.z = 0.13 + 0.28;
   diskHub.userData.role = 'fixed-axis-disk-B-hub';
-  const drum = cylinderAlongZ(drumRadius - cordRadius, 0.31, inputMaterial, 56);
-  drum.position.z = -0.305;
+  // The drum stands on B's front face; the cord winds back towards B.
+  const drum = cylinderAlongZ(drumRadius - cordRadius, 0.34, inputMaterial, 56);
+  drum.position.z = 0.15 + 0.17;
   drum.userData.effectiveTakeupRadius = effectiveDrumTakeupRadius;
   drum.userData.role = 'cord-winding-drum-coaxial-with-disk-B';
   const diskIndex = new THREE.Mesh(
@@ -491,9 +501,24 @@ function combinationWeightDrive(movement) {
   );
   diskIndex.position.set(diskRadius * 0.44, 0, 0.19);
   diskIndex.userData.role = 'white-disk-B-and-drum-speed-index';
-  diskAssembly.add(diskBody, diskHub, drum, diskIndex);
-  // Brown dashes the drum and its strand of D only because B hides them;
-  // the real drum and cord behind B show when the view is turned.
+  // Overhung crank arm on the shaft end, in front of the drum and cord.
+  const crankArmHalfWidth = 0.13;
+  const crankArmShape = new THREE.Shape();
+  crankArmShape.moveTo(0, -crankArmHalfWidth);
+  crankArmShape.lineTo(crankRadius, -crankArmHalfWidth);
+  crankArmShape.absarc(crankRadius, 0, crankArmHalfWidth, -Math.PI / 2, Math.PI / 2, false);
+  crankArmShape.lineTo(0, crankArmHalfWidth);
+  crankArmShape.absarc(0, 0, crankArmHalfWidth, Math.PI / 2, Math.PI * 1.5, false);
+  const crankArm = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(crankArmShape, {
+      bevelEnabled: false,
+      curveSegments: 24,
+      depth: 0.1,
+    }).translate(0, 0, crankArmFrontZ - 0.1),
+    inputMaterial,
+  );
+  crankArm.userData.role = 'disk-B-shaft-crank-arm-in-front-of-drum';
+  diskAssembly.add(diskBody, diskHub, drum, crankArm, diskIndex);
   const armA = foldingRod({length: pulleyArmRadius, width: .16, depth: .18,
     bore: .184, material: armMaterial, role: 'rocking-arm-A-pivoted-at-G-and-carrying-pulley-E'});
   armA.userData.addPinEye(rockerJointRadius, .119);
@@ -532,11 +557,11 @@ function combinationWeightDrive(movement) {
   });
   const pulleyHub = cylinderAlongZ(
     movingPulleyHubRadius,
-    0.6,
+    0.59,
     darkMaterial,
     40,
   );
-  pulleyHub.position.z = -0.1;
+  pulleyHub.position.z = 0.545;
   pulleyHub.userData.role = 'moving-pulley-E-arm-journal';
   const pulleyIndex = new THREE.Mesh(
     new THREE.BoxGeometry(movingPulleyPitchRadius * 0.72, 0.065, 0.028),
@@ -599,15 +624,15 @@ function combinationWeightDrive(movement) {
   });
   root.add(cord);
 
-  const fixedPivot = cylinderAlongZ(0.18, 0.64, darkMaterial, 40);
-  fixedPivot.position.set(fixedPivotG.x, fixedPivotG.y, 0.02);
+  const fixedPivot = cylinderAlongZ(0.18, 1.14, darkMaterial, 40);
+  fixedPivot.position.set(fixedPivotG.x, fixedPivotG.y, 0.27);
   fixedPivot.userData.role = 'fixed-rocker-pivot-G';
   root.add(fixedPivot);
-  // Seated on B's front face, inside its rim.
-  const crankPin = cylinderAlongZ(0.11, 0.33, darkMaterial, 34);
+  // Seated on the crank arm's front face, never at the cord's depth.
+  const crankPin = cylinderAlongZ(0.11, 0.39, darkMaterial, 34);
   crankPin.userData.role = 'eccentric-pin-on-disk-B-driving-link-C';
   root.add(crankPin);
-  const rockerJointPin = cylinderAlongZ(0.115, 0.49, darkMaterial, 34);
+  const rockerJointPin = cylinderAlongZ(0.115, 0.40, darkMaterial, 34);
   rockerJointPin.userData.role = 'joint-between-link-C-and-arm-A';
   root.add(rockerJointPin);
 
@@ -696,6 +721,7 @@ function combinationWeightDrive(movement) {
     cordContactMarkers,
     cordMarkers,
     diskAssembly,
+    crankArm,
     diskBody,
     diskHub,
     diskIndex,
@@ -833,23 +859,23 @@ function combinationWeightDrive(movement) {
     const { configuration } = state;
     diskAssembly.rotation.z = state.diskAngle;
     armA.userData.setEndpoints(
-      new THREE.Vector3(fixedPivotG.x, fixedPivotG.y, 0.08),
+      new THREE.Vector3(fixedPivotG.x, fixedPivotG.y, armAZ),
       new THREE.Vector3(
         configuration.linkage.pulleyCenter.x,
         configuration.linkage.pulleyCenter.y,
-        0.08,
+        armAZ,
       ),
     );
     linkC.userData.setEndpoints(
       new THREE.Vector3(
         configuration.linkage.rockerJoint.x,
         configuration.linkage.rockerJoint.y,
-        0.4,
+        linkCZ,
       ),
       new THREE.Vector3(
         configuration.linkage.crankPin.x,
         configuration.linkage.crankPin.y,
-        0.4,
+        linkCZ,
       ),
     );
     movingPulley.position.set(
@@ -862,12 +888,12 @@ function combinationWeightDrive(movement) {
     crankPin.position.set(
       configuration.linkage.crankPin.x,
       configuration.linkage.crankPin.y,
-      0.315,
+      crankArmFrontZ + 0.195,
     );
     rockerJointPin.position.set(
       configuration.linkage.rockerJoint.x,
       configuration.linkage.rockerJoint.y,
-      0.235,
+      0.82,
     );
     cordContactMarkers[0].position.set(
       configuration.weightTangent.x,

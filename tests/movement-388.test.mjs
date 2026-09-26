@@ -74,7 +74,8 @@ test('movement 388 is one toothed upper feed roller, one smooth lower support ro
     ...blocks.upperFaceIndexes,
     ...blocks.workpieceIndexes,
   ]) assert.ok(index.parent === null, `${index.userData.role} removed`);
-  assert.ok(blocks.frame.parent !== null, 'the far bearing frame carries both roller shafts');
+  // Brown draws no bearings, standard or foot; the shafts end as stubs.
+  assert.ok(blocks.frame.parent === null, 'no undrawn bearing frame is presented');
   assert.ok(blocks.lowerRotor.parent === blocks.lowerRoller, 'blocks.lowerRotor parent');
   assert.ok(blocks.upperRotor.parent === blocks.upperRoller, 'blocks.upperRotor parent');
   assert.ok(blocks.workpieceBoard.parent === blocks.workpiece, 'blocks.workpieceBoard parent');
@@ -100,13 +101,13 @@ test('movement 388 is one toothed upper feed roller, one smooth lower support ro
     'smooth-cylindrical-workpiece-support-surface',
     'wood-plank-between-feed-rollers',
   ]) assert.ok(roles.includes(role), role);
-  // The far bearings behind the rollers carry both shafts; the near ones
-  // are cut away with Brown's section through the shafts.
+  // Brown draws no bearings or standard: the shafts end as plain stubs.
   for (const role of [
     'fixed-planer-feed-roller-bearing-frame',
     'roller-shaft-bearing-block',
     'fixed-planer-feed-frame-standard',
-  ]) assert.ok(roles.includes(role), `${role} carries the rollers`);
+    'planer-feed-frame-base',
+  ]) assert.ok(!roles.includes(role), `source presentation removes ${role}`);
   for (const role of [
     'white-fed-workpiece-material-index',
     'white-roller-face-spin-index',

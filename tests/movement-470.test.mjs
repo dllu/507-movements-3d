@@ -234,21 +234,33 @@ test('movement 470 ballistic solution reaches exact anvil contact with the recor
   disposeModel(model.root);
 });
 
-test('movement 470 valve rocker, fixed-axis spool, and pitman maintain exact linkage closure', () => {
+test('movement 470 hand lever, long valve rod, top rocker, spindle link and vertical spool maintain exact linkage closure', () => {
   const { model } = movementModel();
   const { geometry, stateAtPhase, valveKinematics } = model.root.userData;
+  const spoolYs = [];
 
   for (const command of [-1, -0.73, -0.22, 0, 0.41, 0.86, 1]) {
     const valve = valveKinematics(command);
-    near(valve.crankPin.distanceTo(valve.spoolPin),
+    near(valve.crankPin.distanceTo(geometry.handLeverPivot.clone().setZ(valve.crankPin.z)),
+      geometry.handLeverRodArm, 2e-12, `hand lever arm at command ${command}`);
+    near(valve.crankPin.distanceTo(valve.rockerRightPin),
       geometry.valvePitmanLength, 2e-12,
-      `valve pitman length at command ${command}`);
-    near(valve.spoolPin.y, geometry.valveSliderY, 1e-12,
-      `valve slider axis at command ${command}`);
-    near(valve.crankPin.distanceTo(geometry.valvePivot),
-      geometry.valveCrankRadius, 2e-12,
-      `valve crank radius at command ${command}`);
+      `long valve rod length at command ${command}`);
+    const fulcrum = geometry.rockerFulcrum.clone().setZ(valve.rockerLeftPin.z);
+    near(valve.rockerRightPin.distanceTo(fulcrum), geometry.rockerRightArm, 2e-12,
+      `rocker right arm at command ${command}`);
+    near(valve.rockerLeftPin.distanceTo(fulcrum), geometry.rockerLeftArm, 2e-12,
+      `rocker left arm at command ${command}`);
+    near(valve.rockerLeftPin.distanceTo(valve.spindlePin), geometry.spindleLinkLength, 2e-12,
+      `spindle link length at command ${command}`);
+    near(valve.spoolPin.x, geometry.valveSpindleX, 1e-12,
+      `vertical spool axis at command ${command}`);
+    // The long rod hangs near-vertical from the rocker to the hand lever.
+    assert.ok(Math.abs(valve.rockerRightPin.x - valve.crankPin.x) < 0.1);
+    assert.ok(valve.rockerRightPin.y - valve.crankPin.y > 2.5);
+    spoolYs.push(valve.spoolPin.y);
   }
+  assert.ok(Math.max(...spoolYs) - Math.min(...spoolYs) > 0.15, 'the spool strokes');
 
   for (const phase of [0, 0.03, 0.08, 0.30, 0.50, 0.54, 0.58, 0.80]) {
     const state = stateAtPhase(phase);
@@ -305,16 +317,23 @@ test('movement 470 renderer moves only the rigid assembly and maps valve, chambe
       `valve lever at ${phase}`);
     vectorNear(blocks.valveSpool.position, state.valve.spoolPin, 1e-12,
       `valve spool at ${phase}`);
+    near(blocks.valveRocker.rotation.z, state.valve.rockerAngle, 1e-12,
+      `valve rocker at ${phase}`);
     near(blocks.valvePitman.userData.length, geometry.valvePitmanLength, 0,
-      `valve pitman at ${phase}`);
+      `valve rod at ${phase}`);
     blocks.valvePitman.updateMatrixWorld(true);
     const farEye = new THREE.Vector3(geometry.valvePitmanLength, 0, 0)
       .applyMatrix4(blocks.valvePitman.matrixWorld);
-    near(Math.hypot(farEye.x - state.valve.spoolPin.x, farEye.y - state.valve.spoolPin.y),
-      0, 2e-12, `bored pitman far eye on spool pin at ${phase}`);
+    near(Math.hypot(farEye.x - state.valve.rockerRightPin.x, farEye.y - state.valve.rockerRightPin.y),
+      0, 2e-12, `bored valve rod upper eye on rocker pin at ${phase}`);
     near(Math.hypot(blocks.valvePitman.position.x - state.valve.crankPin.x,
       blocks.valvePitman.position.y - state.valve.crankPin.y), 0, 2e-12,
-    `bored pitman near eye on crank pin at ${phase}`);
+    `bored valve rod lower eye on hand-lever pin at ${phase}`);
+    blocks.spindleLink.updateMatrixWorld(true);
+    const linkTop = new THREE.Vector3(geometry.spindleLinkLength, 0, 0)
+      .applyMatrix4(blocks.spindleLink.matrixWorld);
+    near(Math.hypot(linkTop.x - state.valve.rockerLeftPin.x, linkTop.y - state.valve.rockerLeftPin.y),
+      0, 2e-12, `spindle link on rocker pin at ${phase}`);
     assert.equal(blocks.steamChamber.visible, state.steamVisible);
   }
   disposeModel(model.root);

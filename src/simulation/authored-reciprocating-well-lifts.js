@@ -636,12 +636,8 @@ function reciprocatingWellLift(movement) {
   topBeam.position.set(0, 3.72, 0.28);
   topBeam.userData.role = 'fixed-top-beam-of-well-frame';
   support.add(topBeam);
-  const gearBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(3.25, 0.15, 0.22),
-    frameMaterial,
-  );
-  gearBeam.position.set(0, wheelCenterY, -0.80);
-  support.add(gearBeam);
+  // Pass 64: Brown draws no bar behind the two chain wheels; their axles
+  // end as plain stubs.
   const tappetStand = new THREE.Mesh(
     new THREE.BoxGeometry(0.18, 1.45, 0.22),
     frameMaterial,

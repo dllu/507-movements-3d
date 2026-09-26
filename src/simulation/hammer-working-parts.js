@@ -30,12 +30,9 @@ export function correctHammerWorkingParts(root,id){
   replace(b.fixedCylinder,portedBarrel(g.cylinderInnerRadius,g.cylinderOuterRadius,g.cylinderInnerBottomY-.08,g.cylinderInnerTopY+.08,1.34,.085,1));b.fixedCylinder.position.y=0;
   replace(b.piston,new THREE.CylinderGeometry(g.pistonRadius,g.pistonRadius,g.pistonThickness,64));
   b.workingCaps=ends(root,0,0,g.cylinderInnerBottomY,g.cylinderInnerTopY,g.cylinderOuterRadius,.078,b.cylinderRings[0].material);
-  // A real horizontal bore lets the spool traverse the valve chest.
-  const chest=clip.difference(rect(.54,.42),poly(circle([0,0],.108,64)));
-  replace(b.valveChest,plate(chest,-.36,.36).rotateY(Math.PI/2));
-  const route=new THREE.CatmullRomCurve3([new THREE.Vector3(.72,1.34,.52),new THREE.Vector3(.58,1.34,.27),new THREE.Vector3(.50,1.34,0),new THREE.Vector3(.28,1.34,0)]);
-  replace(b.admissionPassage,curvedPipeWall(route,.032,.045,64));b.admissionPassage.position.set(0,0,0);b.admissionPassage.quaternion.identity();b.admissionPassage.scale.set(1,1,1);
-  for(const pipe of[b.supplyPipe,b.exhaustStack])replace(pipe,tube(.085,1,.06));
+  // The barrel's admission port faces the front, under Brown's valve chest.
+  b.fixedCylinder.rotation.y=-Math.PI/2;
+  replace(b.supplyPipe,tube(.085,1,.06));
   d.reconstructionNote='Steam pressure is prescribed to raise the rigid piston/rod/head, followed by the authored exhaust transition and analytic gravity fall. The finite striking face meets the anvil without overlap. The instantaneous stop is an ideal inelastic impact; deformation, rebound, valve-port flow and force transfer are not simulated.';
  }else if(id===471){
   replace(b.cylinderShell,portedBarrel(g.cylinderInnerRadius,g.cylinderOuterRadius,-g.cylinderHalfChamberHeight-.08,g.cylinderHalfChamberHeight+.08,.20,.085,-1));

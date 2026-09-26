@@ -50,11 +50,11 @@ test('378 real pin eyes and an open guide replace intersecting solid rods and gu
 });
 test('416 pitman and spring pivot eyes clear their pins with finite axial engagement',()=>{
   const m=models[1],b=m.root.userData.blocks,pairs=[[b.crankPin,b.pitman],[b.treadleJointPin,b.pitman],
-    [b.crankPin,b.springCrankEye],[b.springAnchorPin,b.springAnchorEye],
-    [b.crankShaft,b.wheelBearing],[b.crankShaft,b.crankHub],[b.treadleShaft,b.treadleBearing],[b.treadleShaft,b.treadleHub]];
+    [b.crankPin,b.springCrankEye],[b.crankShaft,b.flywheelHub],[b.crankShaft,b.crankArm],[b.treadleShaft,b.treadleHub]];
   const results=audit(m,pairs,6);clear(results,.0035);for(const f of results)assert.ok(f.min<.005);
   for(const[a,b]of pairs)assert.ok(axialOverlap(a,b)>.05);
-  clear(audit(m,[[b.crankPin,b.spring],[b.springAnchorPin,b.spring],[b.spring,b.pitman]],6));
+  // The coiled spring clears the crank pin, its arbor and key, and the pitman.
+  clear(audit(m,[[b.crankPin,b.spring],[b.springAnchorPin,b.spring],[b.arborKey,b.spring],[b.spring,b.pitman]],6));
 });
 test('420 actual striker/lip and underside spring shoe remain close without crossing solid walls',()=>{
   const m=models[2],b=m.root.userData.blocks,g=m.root.userData.geometry;
@@ -86,12 +86,15 @@ test('378/416/420 state queries and playback preserve meshes, geometry and reada
 });
 
 
-test('416 draws Brown\'s helical spring A between its eyes and 420 support actually meets its overhead arm',()=>{
-  const m=models[1],spring=m.root.userData.blocks.spring;m.update(0);
+test('416 draws Brown\'s spring A coiled on its arbor and 420 support actually meets its overhead arm',()=>{
+  const m=models[1],spring=m.root.userData.blocks.spring,g=m.root.userData.geometry;m.update(0);
   const bounds=spring.geometry.boundingBox,size=bounds.getSize(new THREE.Vector3());
-  // Local x runs from the fixed eye to the crank eye; the coil is round about it.
-  assert.ok(Math.abs(size.x-(spring.userData.attachmentDistance-.34))<.02,'coil spans the eye-to-eye distance less the two eye radii');
-  assert.ok(Math.abs(size.y-size.z)<.01&&size.z>.25&&size.z<.4,'round helical coil, not a planar strip');
+  // A flat strip coiled in one plane round arbor A: its width is the strip width.
+  assert.ok(Math.abs(size.z-.10)<1e-6,'planar coiled strip, not a helix');
+  // The coil surrounds the arbor and the tail reaches crank pin B's eye.
+  assert.ok(bounds.min.x<-.55&&bounds.min.y<-.35&&bounds.max.y>.85,'open outer turn round the arbor');
+  const pin=m.root.userData.stateAtTime(0).springAttachment.clone().sub(g.springAnchor);
+  assert.ok(Math.abs(bounds.max.x-(pin.x-.13))<.03,'tail ends at the pin eye');
   assert.equal(spring.geometry.userData.deforming,true);
   const b=models[2].root.userData.blocks.fixedBellSupport;
   const post=b.children.find(o=>o.userData.role==='fixed-bell-support-post');

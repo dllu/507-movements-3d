@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import {createAuthoredCamMovement} from '../authored-cams.js';
 import {variableCamProfile} from './profile.js';
-import {matte,PALETTE,markShadows} from '../primitives.js';
+import {markShadows} from '../primitives.js';
 /** Offline reconstruction: retain source proportions, replace working surfaces and supports. */
 export function makeVariableCamGeometry({samplesPerArc=128}={}){
  const model=createAuthoredCamMovement({id:138}),{root}=model,b=root.userData.blocks,g=root.userData.geometry;
@@ -32,13 +32,10 @@ export function makeVariableCamGeometry({samplesPerArc=128}={}){
   const geo=annulus(.235,.123,g.guideHeight+.08);geo.rotateX(Math.PI/2);replace(b[name],geo);b[name].rotation.set(0,0,0);b[name].position.z=.09;
  }
  for(const name of ['lowerGuideBracket','upperGuideBracket'])b[name].position.z=-.20;
- const frameMaterial=matte(PALETTE.frame);
- const post=new THREE.Mesh(new THREE.BoxGeometry(.18,g.upperGuideCenterY-g.shaftCenter.y+.5,.14),frameMaterial);
- post.position.set(0,(g.upperGuideCenterY+g.shaftCenter.y)/2,-.85);root.add(post);
- const bearing=new THREE.Mesh(annulus(.25,.173,.16),frameMaterial);bearing.position.set(0,g.shaftCenter.y,-.70);root.add(bearing);
- for(const y of [g.lowerGuideCenterY,g.upperGuideCenterY]){
-  const arm=new THREE.Mesh(new THREE.BoxGeometry(.18,.14,.50),frameMaterial);arm.position.set(0,y,-.57);root.add(arm);
- }
+ // Brown draws only the two bolted guide brackets: no post, arms or shaft
+ // bearing behind the disc (p60 support policy), so the brackets stand free
+ // and the shaft ends as a plain stub.
+ b.carrierDisk.name='carrierDisk';b.outerHub.name='outerHub';
  b.follower.position.set(0,g.shaftCenter.y,0);
  const blocks={cam:b.inputRotor,follower:b.follower};
  root.userData={blocks};markShadows(root);root.traverse(o=>{if(o.material)o.material.fog=false;});root.updateMatrixWorld(true);

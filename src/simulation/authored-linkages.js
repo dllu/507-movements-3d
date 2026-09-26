@@ -1660,9 +1660,11 @@ function rockingBeamTieRodFlywheelMotion() {
     return assembly;
   };
 
+  // Brown's hatched shaft section: a short fixed shaft through the beam
+  // eye, ending cleanly just behind the beam (no flange or column).
   const beamPivotPin = makePinAssembly({
-    centerZ: -0.02,
-    length: 2.08,
+    centerZ: 0.8,
+    length: 0.52,
     role: 'fixed-through-pin-at-center-of-rocking-beam',
   });
   beamPivotPin.position.copy(beamPivot);
@@ -1729,8 +1731,10 @@ function rockingBeamTieRodFlywheelMotion() {
   );
   flywheelShaft.userData.role = 'fixed-axis-output-shaft-through-flywheel';
   flywheelShaft.geometry.dispose();
-  flywheelShaft.geometry = new THREE.CylinderGeometry(.13,.13,1,32);
-  flywheelShaft.position.z = -.20;
+  // Brown draws no bearing for the wheel shaft (the wheel turns in its
+  // pit): the shaft is a short plain stub either side of the hub.
+  flywheelShaft.geometry = new THREE.CylinderGeometry(.13,.13,.72,32);
+  flywheelShaft.position.z = -.06;
   const crankArm = new THREE.Mesh(
     new THREE.BoxGeometry(crankRadius, 0.15, 0.19),
     darkMaterial,

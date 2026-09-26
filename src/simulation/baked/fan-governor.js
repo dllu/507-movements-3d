@@ -51,6 +51,20 @@ export function makeFanGovernorModel(bundle){
   const material=driver[0]?.material;
   for(const mesh of driver){mesh.geometry.dispose();blocks.shaft.remove(mesh);}
   if(material)for(const [name,geometry]of Object.entries(tub)){if(!geometry.isBufferGeometry)continue;const mesh=new THREE.Mesh(geometry,material);mesh.name='tub-'+name;mesh.castShadow=mesh.receiveShadow=true;blocks.shaft.add(mesh);}}
+ // Brown breaks the regulating lever off at its fulcrum and draws no stand
+ // for it (p60 support policy): the baked fixed body's small rear bracket
+ // at the lever's fulcrum is dropped, leaving only the fulcrum pin through
+ // the lever's end. The shaft's lower bearing stays.
+ for(const mesh of root.getObjectByName('body:fixed')?.children??[]){
+  const geometry=mesh.geometry;if(!mesh.isMesh||geometry.index)continue;
+  geometry.computeBoundingBox();if(geometry.boundingBox.max.x<2||geometry.boundingBox.min.x>2)continue;
+  const keep=[];for(const [name,attribute]of Object.entries(geometry.attributes))keep.push([name,attribute,[]]);
+  const position=geometry.attributes.position;
+  for(let t=0;t<position.count;t+=3){if(Math.min(position.getX(t),position.getX(t+1),position.getX(t+2))>2)continue;
+   for(const [,attribute,out]of keep)for(let k=0;k<3;k++)for(let c=0;c<attribute.itemSize;c++)out.push(attribute.array[(t+k)*attribute.itemSize+c]);}
+  for(const [name,attribute,out]of keep)geometry.setAttribute(name,new THREE.Float32BufferAttribute(out,attribute.itemSize));
+  geometry.computeBoundingBox();geometry.computeBoundingSphere();
+ }
  root.traverse(o=>{for(const m of Array.isArray(o.material)?o.material:o.material?[o.material]:[])m.fog=false;});
  const update=time=>{
   if(disposed)throw new Error('Movement disposed');

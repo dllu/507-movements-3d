@@ -2174,10 +2174,10 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
   };
 
   // Now that the whole cylinder is in view, the guide columns run on down to
-  // a plain bed plate on which the cylinder stands.
+  // the cylinder's foot and end there cleanly; Brown draws no bed plate.
   {
     const cylinderBox = new THREE.Box3().setFromObject(cylinderBody);
-    const bedTop = cylinderBox.min.y, bedHeight = 0.2;
+    const bedTop = cylinderBox.min.y;
     for (const guide of [leftGuideBarA, rightGuideBarA]) {
       const columnBox = new THREE.Box3().setFromObject(guide.userData.body);
       const lower = new THREE.Mesh(
@@ -2191,15 +2191,6 @@ function rollerGuidedFrenchEngineCrosshead(movement) {
       lower.userData.role = `${guide.userData.role}-column-foot`;
       guide.add(lower);
     }
-    const bed = new THREE.Mesh(
-      new THREE.BoxGeometry(3.5, bedHeight, cylinderBox.max.z - (-0.3) + 0.1),
-      cylinderBody.material,
-    );
-    bed.position.set(0, bedTop - bedHeight / 2, (cylinderBox.max.z + 0.1 - 0.3) / 2);
-    bed.userData.fixed = true;
-    bed.userData.role = 'fixed-engine-bed-under-cylinder-and-columns';
-    root.add(bed);
-    root.userData.blocks.engineBed = bed;
   }
   finishGuidePresentation(root, update, cyclePeriod);
   // Brown crops the plate to the crank above and the cylinder cover below;

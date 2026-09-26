@@ -4,8 +4,8 @@
   "method": "All pairs of visible meshes, bidirectional vertices, edge midpoints and triangle centers, at 61 playback poses from 0.005 to 6.005 seconds (halfway between saved poses, with one repeated loop pose). Cam/roller soft contact reported separately. Inferred output channels and rear shaft bearing frame included. No continuous collision proof.",
   "summary": {
     "poses": 61,
-    "parts": 33,
-    "checks": 8251474,
+    "parts": 20,
+    "checks": 6068650,
     "failingPairs": 0
   },
   "failures": {},
@@ -52,7 +52,7 @@
     },
     {
       "file": "src/simulation/baked/twin-cam.js",
-      "sha256": "cd0a421ac9883bfc6111a0de2904bf0c7e28f63b45440b5d73110cf434db13e5"
+      "sha256": "8e37d0fdec042ca9f284c1e0ff9666548bc36ff03b3d4c7ff1204a31ba53b85c"
     },
     {
       "file": "src/simulation/baked/playback.js",

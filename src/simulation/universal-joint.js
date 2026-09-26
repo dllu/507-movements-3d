@@ -3,10 +3,13 @@ import { PALETTE, markShadows, matte } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 
 const X = new THREE.Vector3(1, 0, 0), Z = new THREE.Vector3(0, 0, 1);
-const dimensions = { forkInnerRadius: 0.66, forkOuterRadius: 0.78, forkWidth: 0.18,
-  trunnionRadius: 0.72, eyeRadius: 0.12, eyeDepth: 0.12, boreRadius: 0.046,
-  pinRadius: 0.045, pinStart: 0.56, pinEnd: 0.795, pinCapRadius: 0.052,
-  pinCapStart: 0.784, pinCapEnd: 0.807, armEnd: 0.075, shaftRadius: 0.075,
+// Brown draws the forks as broad flat bands (straps): a modest radial
+// thickness, but a wide face along the pin, their ends rounded about the
+// pin eye. The shafts are heavy and flare into the band.
+const dimensions = { forkInnerRadius: 0.66, forkOuterRadius: 0.84, forkWidth: 0.30,
+  trunnionRadius: 0.75, eyeRadius: 0.15, eyeDepth: 0.18, boreRadius: 0.046,
+  pinRadius: 0.045, pinStart: 0.56, pinEnd: 0.855, pinCapRadius: 0.052,
+  pinCapStart: 0.844, pinCapEnd: 0.867, armEnd: 0.075, shaftRadius: 0.10, neckRadius: 0.15, neckLength: 0.42,
   shaftInnerDistance: 1.20, forkAxialScale: 1.6, middleAxialScale: 1.12,
   crossEnd: 0.648, crossHalfWidth: 0.063, crossDepth: 0.10 };
 
@@ -47,8 +50,11 @@ function makeFork(axis, reference, direction, length, color, p) {
   const body = new THREE.Mesh(bodyGeometry, matte(color, { metalness: 0.18, roughness: 0.57 }));
   body.userData.curvedFork = true;
   const eyes = [-1, 1].map((side) => eye(p, color, side));
-  const shaft = turned([[p.shaftInnerDistance, 0], [p.shaftInnerDistance, p.shaftRadius],
-    [length, p.shaftRadius], [length, 0]], color);
+  // The shaft swells into a neck as broad as the band where it joins the
+  // bottom of the strap (kept outside the strap's inner face).
+  const neckStart = p.forkInnerRadius * p.forkAxialScale + 0.03, neckEnd = p.forkOuterRadius * p.forkAxialScale + p.neckLength;
+  const shaft = turned([[neckStart, 0], [neckStart, p.neckRadius], [p.forkOuterRadius * p.forkAxialScale, p.neckRadius],
+    [neckEnd, p.shaftRadius], [length, p.shaftRadius], [length, 0]], color);
   if (direction < 0) shaft.rotation.y = Math.PI;
   shaft.userData.shaft = true;
   rotor.add(body, ...eyes, shaft);

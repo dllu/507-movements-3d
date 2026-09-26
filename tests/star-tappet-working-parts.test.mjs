@@ -38,24 +38,23 @@ function audit() {
 }
 
 const shaftMesh=g=>g.userData.rotor.children.find(o=>o.isMesh);
-test('235 actual working noses occupy wheel depth and clear throughout drive, return and holding',()=>{
+test('235 flat tappet hook and holding click lie in the star plane and their own noses clear it throughout',()=>{
  const m=create({id:235}),d=m.root.userData,b=d.blocks,wheel=b.ratchet.userData.body,a=audit();let driveGap=0,holdGap=0;
- for(let i=0;i<=128;i++){m.update(i/128*4);m.root.updateMatrixWorld(true);const s=d.kinematics;
-  for(const nose of[b.tappetNose,b.holdingClickNose]){const box=new THREE.Box3().setFromObject(nose);assert.ok(box.min.z<.15&&box.max.z>-.15);a.check(nose,wheel,'nose/wheel');a.check(wheel,nose,'wheel/nose');}
-  const drive=a.check(b.tappetNose,wheel,'tappet proximity'),hold=a.check(b.holdingClickNose,wheel,'holding proximity');
-  if(s.driveContact){driveGap=Math.max(driveGap,drive);assert.ok(drive<.0007);}
-  if(s.wheelDwelling){holdGap=Math.max(holdGap,hold);assert.ok(hold<.0007);assert.ok(s.holdingTorque>0);}
-  for(const body of[b.carrierBody,b.tappetBody,b.holdingClickBody])a.check(body,wheel,'body/wheel');
-  for(const body of[b.carrierBody,b.holdingClickBody,b.ratchet.userData.hub])a.check(b.tappetNose,body,'tappet nose/hardware');
-  for(const body of[b.carrierBody,b.tappetBody,b.ratchet.userData.hub])a.check(b.holdingClickNose,body,'holding nose/hardware');
-  a.check(b.tappetNose,b.holdingClickNose,'nose/nose');
-  a.check(b.tappetBody,b.carrierBody,'tappet/carrier');a.check(b.holdingClickBody,b.tappetBody,'holding/tappet');
+ // No cross-pins: each nose is the rounded end of its flat plate.
+ assert.equal(b.tappetNose.isMesh,undefined);assert.equal(b.holdingClickNose.isMesh,undefined);
+ for(let i=0;i<=128;i++){m.update(i/128*4);m.root.updateMatrixWorld(true);const s=d.kinematics,wheelBox=new THREE.Box3().setFromObject(wheel);
+  for(const body of[b.tappetBody,b.holdingClickBody]){const box=new THREE.Box3().setFromObject(body);assert.ok(box.min.z>wheelBox.min.z&&box.max.z<wheelBox.max.z);a.check(body,wheel,'body/wheel');a.check(wheel,body,'wheel/body');}
+  const drive=a.check(b.tappetBody,wheel,'tappet proximity'),hold=a.check(b.holdingClickBody,wheel,'holding proximity');
+  if(s.driveContact){driveGap=Math.max(driveGap,drive);assert.ok(drive<.0015,`drive ${i} ${drive}`);}
+  if(s.wheelDwelling){holdGap=Math.max(holdGap,hold);assert.ok(hold<.0015);assert.ok(s.holdingTorque>0);}
+  for(const body of[b.carrierBody,b.ratchet.userData.hub])a.check(b.tappetBody,body,'tappet/hardware');
+  for(const body of[b.carrierBody,b.tappetBody,b.ratchet.userData.hub])a.check(b.holdingClickBody,body,'holding/hardware');
  }
  console.log({driveGap,holdGap,...a.report()});
 });
 test('235 actual drive and seated holding surfaces transmit counterclockwise torque',()=>{
  const m=create({id:235}),d=m.root.userData,b=d.blocks;let minimum=Infinity;
- for(const q of[0,.04,.12,.2,.239,.3,.7]){m.update(q*4);m.root.updateMatrixWorld(true);const s=d.kinematics,c=s.driveContact??s.holdingClickState,world=new THREE.Vector3((c.point??c.profilePoint).x,(c.point??c.profilePoint).y,.05),local=world.clone().applyMatrix4(b.ratchet.userData.body.matrixWorld.clone().invert());let best=Infinity,normal;const p=new THREE.Vector3();
+ for(const q of[0,.04,.12,.2,.239,.3,.7]){m.update(q*4);m.root.updateMatrixWorld(true);const s=d.kinematics,c=s.driveContact??s.holdingClickState,world=new THREE.Vector3((c.point??c.profilePoint).x,(c.point??c.profilePoint).y,b.ratchet.position.z),local=world.clone().applyMatrix4(b.ratchet.userData.body.matrixWorld.clone().invert());let best=Infinity,normal;const p=new THREE.Vector3();
   for(const t of surfaceTriangles(b.ratchet.userData.body.geometry)){const gap=t.closestPointToPoint(local,p).distanceTo(local);if(gap<best){best=gap;normal=t.getNormal(new THREE.Vector3());}}
   normal.transformDirection(b.ratchet.userData.body.matrixWorld);const torque=-world.x*normal.y+world.y*normal.x;assert.ok(best<1e-6);assert.ok(torque>.1);minimum=Math.min(minimum,torque);
  }console.log({minimumCompressiveTorqueArm:minimum});

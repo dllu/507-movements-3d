@@ -24,6 +24,10 @@ function eccentricShaftRadialPistonEngine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
+  // Brown's plate shows the pistons on the upper-left/lower-right diagonal
+  // (the lower one about 40 degrees below the horizontal); playback starts
+  // from that pose and still makes one whole turn per cycle.
+  const sourceInputAngle = 0.86;
   const sourceScale = 0.5;
   const sourceCylinderRadius = 6;
   const sourceHubRadius = 5;
@@ -221,7 +225,7 @@ function eccentricShaftRadialPistonEngine(movement) {
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
     return {
-      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
+      ...stateAtInputAngle(sourceInputAngle + inputAngularSpeed * cycleTime),
       cycleTime,
       phase: cycleTime / cycleDuration,
     };
@@ -229,6 +233,7 @@ function eccentricShaftRadialPistonEngine(movement) {
 
   const geometry = {
     cycleDuration,
+    plateDisplayInputAngle: sourceInputAngle,
     cylinderCenter: cylinderCenter.clone(),
     cylinderRadius,
     guideRingInnerRadius,
@@ -519,6 +524,8 @@ function eccentricShaftRadialPistonEngine(movement) {
     );
   };
 
+  // The official animation's own pose (input 0); playback starts from
+  // Brown's plate pose at sourceInputAngle.
   const sourceState = stateAtInputAngle(0);
   root.userData = {
     animationTiming: {

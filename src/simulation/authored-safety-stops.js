@@ -1243,25 +1243,7 @@ export function createAuthoredSafetyStopMovement(movement) {
     if (/^white-/.test(object.userData.role ?? '')) whiteIndices.push(object);
   });
   for (const object of whiteIndices) object.removeFromParent();
-  // The uprights A stand on a plain floor sill that ties their feet, so they
-  // no longer float below Brown's crop.
-  const leftPost = result.root.children.find((o) => o.userData.role === 'fixed-left-upright-A');
-  const postBox = new THREE.Box3().setFromObject(leftPost);
-  const sillHeight = 0.26;
-  const baseSill = new THREE.Mesh(
-    new THREE.BoxGeometry(2 * 2.79 + 0.4, sillHeight, postBox.max.z - postBox.min.z + 0.24),
-    leftPost.material,
-  );
-  baseSill.position.set(0, postBox.min.y - sillHeight / 2, (postBox.min.z + postBox.max.z) / 2);
-  baseSill.userData.role = 'fixed-floor-sill-carrying-uprights-A';
-  baseSill.castShadow = true;
-  baseSill.receiveShadow = true;
-  result.root.add(baseSill);
-  finished.baseSill = baseSill;
-  if (result.root.userData.cameraFitBounds) {
-    result.root.userData.cameraFitBounds.min.y = Math.min(
-      result.root.userData.cameraFitBounds.min.y, postBox.min.y - sillHeight - 0.03);
-  }
+  // Brown's uprights A run off the bottom of the plate; no base or sill is drawn.
   result.root.userData.fidelity = 'authored';
   return result;
 }

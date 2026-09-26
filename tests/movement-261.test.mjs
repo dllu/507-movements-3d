@@ -481,7 +481,7 @@ test('movement 261 renders a smooth exact closure and leaves 269 authored', () =
   disposeModel(model.root);
 });
 
-test('movement 261 shows the real drum and drum-side strand of D behind B, with no dashed notation', () => {
+test('movement 261 winds cord D on a drum on B\'s front face, with the crank pin kept in front of the cord', () => {
   const movement = catalog.movements[260];
   const model = createMovementModel(movement);
   const { blocks, geometry } = model.root.userData;
@@ -500,10 +500,16 @@ test('movement 261 shows the real drum and drum-side strand of D behind B, with 
   model.root.updateMatrixWorld(true);
   const drumBox = new THREE.Box3().setFromObject(drum);
   const diskBox = new THREE.Box3().setFromObject(blocks.diskBody);
-  assert.ok(drumBox.max.z <= diskBox.min.z + 1e-6, 'the drum lies behind B, hidden from the front as Brown dashes it');
-  for (const time of [0, 3, 6, 9]) {
+  assert.ok(drumBox.min.z >= diskBox.max.z - 1e-6, 'the drum stands on B\'s front face, as Brown draws it');
+  for (const time of [0, 1.5, 3, 4.5, 6, 7.5, 9, 10.5]) {
     model.update(time);
     model.root.updateMatrixWorld(true);
+    const cordBox = new THREE.Box3().setFromObject(cordMesh);
+    const pinBox = new THREE.Box3().setFromObject(blocks.crankPin);
+    const crankArmBox = new THREE.Box3().setFromObject(blocks.crankArm);
+    assert.ok(pinBox.min.z > cordBox.max.z, `the crank pin never reaches the cord's depth at ${time}`);
+    assert.ok(crankArmBox.min.z > cordBox.max.z, `the crank arm lies in front of the cord at ${time}`);
+    assert.ok(cordBox.min.z > diskBox.max.z, `cord D stays in front of B's face at ${time}`);
     const { configuration } = model.root.userData.kinematics;
     const tangent = diskAssembly.parent.localToWorld(
       new THREE.Vector3(configuration.drumTangent.x, configuration.drumTangent.y, 0));

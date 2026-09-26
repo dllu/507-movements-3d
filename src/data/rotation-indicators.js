@@ -19,7 +19,8 @@ export default {
   62: ['driverDrum', 'sideDriverDrum', 'carrierPulley', 'directPulley', 'loosePulley', 'sidePulley'],
   68: ['driverPlate'],
   82: ['pulleyBody'],
-  88: ['camA'],
+  // 88: disk B (a plain disc carrying only the two stops) and its hub.
+  88: ['camA', 'wheelB', 'wheelRearHub'],
   // 89: the eccentric sheave (bored off-centre) turns its cue about the
   // shaft axis, its geometry Z through its origin.
   89: [{ pattern: 'eccentric-bearing-journal', axis: 'z' }, 'raised-sheave-face', '(rear|front)-retaining-flange', 'shaft-collar'],
@@ -39,14 +40,22 @@ export default {
   126: ['drum', 'backFlange', 'frontFlange', 'frontFace', 'pulleyHub'],
   129: ['larger-rope-winding-barrel', 'smaller-rope-unwinding-barrel', '(large-outer|central|small-outer)-windlass-barrel-flange',
     'single-tilted-movable-load-pulley'],
+  // 130: the eccentric disc is bored off-centre on the shaft; its baked
+  // geometry Z runs along the shaft axis through the origin.
+  130: [{ pattern: 'body:cam', axis: 'z' }],
   131: ['disk'],
-  134: ['(pay-out|take-up)-rope-reel-beyond-plate'],
+  135: ['circular-carrier-disk-centered-on-cam-vertex'],
   137: ['body:upper', 'body:lower'],
+  // 138: the plain carrier disc and round hub behind the seven-arc cam.
+  138: ['carrierDisk', 'outerHub'],
   139: ['support-roller-[01]', 'roller-flange-[01]-[01]'],
   142: ['carrier-disk'],
+  143: ['pulley'],
   146: ['driver-disk'],
   149: ['roller[01]'],
   150: ['working-roller-tread-on-selected-cam'],
+  // 151: the upper worm shaft, seen end-on in its bearing ring.
+  151: ['input-shaft', '(front|rear)-input-journal'],
   153: ['body:disk'],
   154: ['body:pulley'],
   156: ['disk'],
@@ -58,6 +67,8 @@ export default {
   163: ['middlePulley'],
   165: ['rollerWheel'],
   166: ['disk', 'hub'],
+  // 171: the two plain eccentric sheaves (their straps carry lugs: no cue).
+  171: ['eccentric-sheave-fast-on-common-crankshaft'],
   198: ['(upper|lower)-fixed-guide-roller-for-main-frame'],
   204: ['(driving|driven)-one-sheet-hyperboloidal-friction-wheel-(pitch-surface|flat-end-face|shaft-hub)'],
   230: ['(upper-input|lower-output)-shaft-front-crank-disk'],
@@ -68,6 +79,9 @@ export default {
   256: ['plain-crowned-flat-belt-working-tread', 'plain-pulley-hub'],
   257: ['true-round-bottom-concave-grooved-pulley-body', 'concave-pulley-hub'],
   258: ['true-smooth-v-grooved-pulley-body', 'smooth-v-pulley-hub'],
+  // 259: the notched groove breaks exact revolution symmetry, so its body
+  // turns the cue about its geometry X (the shaft axis) explicitly.
+  259: [{ pattern: 'true-periodically-notched-v-grooved-pulley-body', axis: 'x' }, 'notched-v-pulley-hub'],
   261: ['revolving-disk-B', 'fixed-axis-disk-B-hub', 'cord-winding-drum-coaxial-with-disk-B',
     '(rear|front)-moving-pulley-E-flange', 'moving-pulley-E-cord-tread'],
   262: ['thin-roller-C-touching-cone-at-large-end-side-edge', 'eccentric-conical-friction-body-B', 'round-large-end-boss-round-screw-D'],

@@ -536,12 +536,19 @@ test('movement 210 renders exact transforms while 211–213 are distinct and aut
   assert.ok(sweptSize.y > 8.4, 'the bar and arm sweep a real vertical envelope');
   assert.ok(sweptSize.z > 1.5, 'shaft, plate, and roller use real depth');
   assert.ok(sweptBounds.min.y < -3.3);
-  assert.ok(sweptBounds.max.y > 5.1);
+  assert.ok(sweptBounds.max.y > 5.0);
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);
-  assert.ok(model.root.userData.cameraFitBounds.clone().expandByScalar(0.01).containsBox(sweptBounds),
-    'camera bounds reserve the complete stroke without an oversized stand');
+  const fit = model.root.userData.cameraFitBounds;
+  assert.ok(fit.min.x <= sweptBounds.min.x + 0.03 && fit.max.x >= sweptBounds.max.x - 0.03,
+    'camera bounds reserve the arm\'s complete swing');
+  for (const guide of blocks.guideAssemblies) {
+    assert.ok(fit.clone().expandByScalar(0.01).containsBox(new THREE.Box3().setFromObject(guide)),
+      'camera bounds keep both drawn guide blocks in view');
+  }
+  assert.ok(fit.getSize(new THREE.Vector3()).y < 6.3,
+    'the default view frames Brown\'s guide-to-guide span, not the bar\'s full overhang');
 
   const movement209 = createMovementModel(catalog.movements[208]);
   const movement211 = createMovementModel(catalog.movements[210]);

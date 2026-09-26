@@ -18,13 +18,19 @@ function spanishBarton(nominalAdvantage) {
   const loadX = -0.64;
   const carrierX = loadX + radius * (five ? 3 : 2);
   const fixedX = five ? loadX + radius * 2 : (loadX + carrierX) / 2;
-  const fixedZ = five ? 0 : planeSeparation;
+  // Brown's 4:1 barton (16) has no crossing ropes, so all three sheaves and
+  // both ropes share one plane and each moving block hangs from an eye in
+  // line above its sheave, as the plate's S-links show. In the 5:1 barton (17)
+  // the diagonal becket crosses the load-to-fixed leg, so the carrier and that
+  // becket sit in a second plane; Brown runs both terminating ropes straight to
+  // the moving blocks' hubs, so both end on their block pins (no stirrups).
+  const fixedZ = 0;
   const carrierZ = five ? planeSeparation : 0;
   const fixed = makeHoistBlock({ radius, color: PALETTE.driver, upperEyeZ: 0 });
   const load = makeHoistBlock({ radius, color: PALETTE.driven, lowerHook: true,
-    ...(five ? { pinBecketZ: planeSeparation } : { upperEyeZ: planeSeparation }) });
+    ...(five ? { pinBecketZ: planeSeparation } : { upperEyeZ: 0 }) });
   const carrier = makeHoistBlock({ radius, color: PALETTE.accent,
-    upperEyeZ: five ? -planeSeparation : planeSeparation });
+    ...(five ? { pinBecketZ: -planeSeparation } : { upperEyeZ: 0 }) });
   fixed.position.set(fixedX, fixedY, fixedZ);
   load.position.set(loadX, loadBaseY, 0);
   carrier.position.set(carrierX, carrierBaseY, carrierZ);

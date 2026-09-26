@@ -34,7 +34,8 @@ test('gear plates 24-46 drop painted indices the engravings do not show', () => 
   for (const id of [24, 25, 26, 27, 29, 30, 31, 33, 34, 43]) {
     const model = modelFor(id);
     assert.equal(whiteMeshes(model.root).length, 0, `${id} keeps white index marks`);
-    assert.ok(model.root.userData.sourceAbsentIndicesRemoved > 0, `${id} had no marks to remove`);
+    // 30 is now built without index marks, so there is nothing to remove.
+    if (id !== 30) assert.ok(model.root.userData.sourceAbsentIndicesRemoved > 0, `${id} had no marks to remove`);
   }
   // Plain friction surfaces keep their indices so their slip stays legible.
   for (const id of [28, 32]) {

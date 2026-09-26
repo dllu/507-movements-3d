@@ -99,8 +99,9 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   assert.equal(blocks.pinion.userData.missingToothCount, 10);
   assert.deepEqual(blocks.pinion.userData.installedToothIndices,
     [0, 1, 2, 3, 4, 5, 6, 7]);
+  // Brown draws no rod guides: they stay as kinematic references only.
   blocks.guideAssemblies.forEach(({ guide }) => {
-    assert.equal(guide.parent, blocks.fixedFrame);
+    assert.equal(guide.parent, null);
     assert.equal(guide.userData.openTowardRackTeeth, true);
   });
 
@@ -121,7 +122,7 @@ test('movement 351 is one gravity-drop stamp driven by one mutilated pinion', ()
   assert.equal(roles.filter((role) =>
     /^single-sided-rack-tooth-/.test(role)).length, 14);
   assert.equal(roles.filter((role) =>
-    /C-shaped-rack-guide-open-to-teeth/.test(role)).length, 2);
+    /C-shaped-rack-guide-open-to-teeth|back-bar|back-arm|fixed-bearing/.test(role)).length, 0);
   assert.equal(roles.filter((role) => role ===
     'heavy-falling-polygonal-stamp-head').length, 1);
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)),

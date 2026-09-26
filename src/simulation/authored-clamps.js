@@ -2095,11 +2095,23 @@ function screwThrustLeverClamp() {
   const armLow = (sourceHolderPivot.y - 374) * sourceScale;
   const armHigh = (sourceHolderPivot.y - 346) * sourceScale;
   const rectangle = (left, bottom, right, top) => poly([[left, bottom], [right, bottom], [right, top], [left, top]]);
+  // Brown carries the standard's left edge on down through the bench as a
+  // square shank that ends below it in a short foot bent toward the screw
+  // (x 248 to 282, bottom y 507 on the plate). It passes a mortise in the
+  // bench and is one piece with the standard.
+  const shankLeft = (248 - sourceHolderPivot.x) * sourceScale, shankRight = (258 - sourceHolderPivot.x) * sourceScale;
+  const footRight = (282 - sourceHolderPivot.x) * sourceScale, shankHalfDepth = 0.085;
+  const shankTop = (sourceHolderPivot.y - 374) * sourceScale, footBottom = (sourceHolderPivot.y - 507) * sourceScale;
+  const footTop = footBottom + 10 * sourceScale;
+  const shank = plate(poly([[shankLeft, footBottom], [footRight, footBottom], [footRight, footTop], [shankRight, footTop],
+    [shankRight, shankTop], [shankLeft, shankTop]]), -shankHalfDepth, shankHalfDepth);
   bench.geometry.dispose();
   bench.geometry = plate(polygonClipping.difference(
     rectangle(-(benchMaximumX - benchMinimumX) / 2, -benchDepth / 2,
       (benchMaximumX - benchMinimumX) / 2, benchDepth / 2),
-    poly(circle([screwAxisX - bench.position.x, bench.position.z], threadCrestRadius + 0.008, 128))),
+    poly(circle([screwAxisX - bench.position.x, bench.position.z], threadCrestRadius + 0.008, 128)),
+    rectangle(shankLeft - 0.006 - bench.position.x, bench.position.z - shankHalfDepth - 0.006,
+      shankRight + 0.006 - bench.position.x, bench.position.z + shankHalfDepth + 0.006)),
     -(benchTopY - benchBottomY) / 2, (benchTopY - benchBottomY) / 2).rotateX(-Math.PI / 2);
   const upright = plate(polygonClipping.difference(poly(frameModelPoints.map(p => p.toArray())),
     rectangle(armLeft, armLow - 0.01, armRight + 0.01, armHigh + 0.000001),
@@ -2108,9 +2120,9 @@ function screwThrustLeverClamp() {
     poly(circle([screwAxisX, 0], threadCrestRadius + 0.004, 128))), armLow, armHigh)
     .rotateX(-Math.PI / 2);
   // Both generators are non-indexed; omit UVs to merge consistent attributes.
-  upright.deleteAttribute('uv'); lowerArm.deleteAttribute('uv');
-  fixedFrame.geometry.dispose(); fixedFrame.geometry = mergeGeometries([upright, lowerArm]);
-  upright.dispose(); lowerArm.dispose();
+  upright.deleteAttribute('uv'); lowerArm.deleteAttribute('uv'); shank.deleteAttribute('uv');
+  fixedFrame.geometry.dispose(); fixedFrame.geometry = mergeGeometries([upright, lowerArm, shank]);
+  upright.dispose(); lowerArm.dispose(); shank.dispose();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-central-fulcrum-standard-and-lower-threaded-arm';

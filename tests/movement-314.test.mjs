@@ -127,16 +127,28 @@ test('movement 314 wheel drops onto the straight blade C and drives it', () => {
     assert.ok(state.balanceAngularSpeed > 0 && state.wheelAngularSpeed < 0);
   }
   assert.ok(samples > 150);
-  // Matched speed at the catch and at slide-off (no jerk).
-  for (const name of ['impulseCatch', 'impulseEnd']) {
-    const t = canonicalTimes[name];
+  // The freed wheel only accelerates, so it must be moving faster than C to
+  // catch it: the catch is a strike that slows the wheel to C's speed. At
+  // slide-off the wheel keeps its speed.
+  {
+    const t = canonicalTimes.impulseCatch;
     const before = stateAtTime(t - 1e-7);
     const after = stateAtTime(t + 1e-7);
-    near(before.wheelAngularSpeed, after.wheelAngularSpeed, 2e-3, `${name} speed continuity`);
-    near(before.wheelAngularAcceleration, after.wheelAngularAcceleration, 0.5, `${name} acceleration continuity`);
+    assert.ok(before.wheelAngularSpeed < after.wheelAngularSpeed - 0.1, 'the wheel strikes C faster than C moves');
+    assert.ok(after.wheelAngularSpeed < 0, 'and then drives it');
+    const drop = [];
+    for (let i = 1; i < 50; i += 1) drop.push(stateAtTime(canonicalTimes.aRelease + (t - canonicalTimes.aRelease) * i / 50));
+    for (let i = 1; i < drop.length; i += 1) {
+      assert.ok(drop[i].wheelAngularSpeed < drop[i - 1].wheelAngularSpeed, 'the free wheel never slows before it meets C');
+    }
   }
-  // C reaches no further than the gap between the locked teeth allows.
-  assert.ok(geometry.cReachRadius < 1.6);
+  {
+    const t = canonicalTimes.impulseEnd;
+    near(stateAtTime(t - 1e-7).wheelAngularSpeed, stateAtTime(t + 1e-7).wheelAngularSpeed, 2e-3, 'slide-off speed continuity');
+  }
+  // C is as long as the locked teeth allow it to pass back between them
+  // (Brown draws about 1.70-1.74; from about 1.68 no wheel phase clears).
+  assert.ok(geometry.cReachRadius >= 1.6 && geometry.cReachRadius < 1.68);
   disposeModel(model.root);
 });
 
@@ -150,15 +162,28 @@ test('movement 314 advances one pitch per oscillation, long then short, never re
       -geometry.toothPitch, 1e-12, `pitch closure at ${t}`);
     near(stateAtTime(t + geometry.balancePeriod).leverAngle, stateAtTime(t).leverAngle, 1e-12, 'lever closure');
   }
+  // Free motion is smooth; the speed changes abruptly only at the three
+  // strikes (on C, on B and on A), and a strike only ever slows the wheel.
+  const { canonicalTimes } = model.root.userData;
+  const strikes = [canonicalTimes.impulseCatch, canonicalTimes.bLanding, canonicalTimes.aRelock];
   let previous = stateAtTime(0).wheelAngle;
-  let previousSpeed = 0;
+  let previousSpeed = stateAtTime(0).wheelAngularSpeed;
+  let struck = 0;
   for (let i = 1; i <= 20000; i += 1) {
-    const state = stateAtTime(geometry.balancePeriod * i / 20000);
+    const time = geometry.balancePeriod * i / 20000;
+    const state = stateAtTime(time);
     assert.ok(state.wheelAngle <= previous + 1e-12, `no recoil at ${i}`);
-    assert.ok(Math.abs(state.wheelAngularSpeed - previousSpeed) < 0.05, `smooth wheel speed at ${i}`);
+    const step = geometry.balancePeriod / 20000;
+    if (strikes.some((t) => t > time - step + 1e-12 && t <= time + 1e-12)) {
+      assert.ok(Math.abs(state.wheelAngularSpeed) < Math.abs(previousSpeed), `a strike slows the wheel at ${i}`);
+      struck += 1;
+    } else {
+      assert.ok(Math.abs(state.wheelAngularSpeed - previousSpeed) < 0.05, `smooth wheel speed at ${i}`);
+    }
     previous = state.wheelAngle;
     previousSpeed = state.wheelAngularSpeed;
   }
+  assert.equal(struck, 3);
   disposeModel(model.root);
 });
 

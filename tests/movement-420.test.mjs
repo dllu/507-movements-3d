@@ -67,7 +67,8 @@ test('movement 420 is one pivoted external hammer, one under-lever return spring
   assert.equal(blocks.springContactPad.parent, model.root);
   assert.equal(blocks.bellBody.parent, blocks.bellPivot);
   assert.equal(blocks.bellPivot.parent, model.root);
-  assert.equal(blocks.fixedBellSupport.parent, model.root);
+  // Brown draws no post, arm or hanger for the bell; none is presented.
+  assert.equal(blocks.fixedBellSupport.parent, null);
 
   const roles = [];
   const belts = [];
