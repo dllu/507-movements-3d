@@ -19,10 +19,12 @@ export function installLanternFinitePlayback297(root) {
   b.wheelIndex.position.z = 1.2005;
   b.armA.position.z = c.armZ;
   const armDepth = .22, armBack = c.armZ - armDepth / 2, armFront = c.armZ + armDepth / 2;
-  replace(b.armHub, ring(.166, .30, armBack - .06, armFront + .06, 96)); b.armHub.rotation.set(0, 0, 0);
+  replace(b.armHub, ring(.15, .30, armBack - .06, armFront + .06, 96)); b.armHub.rotation.set(0, 0, 0);
   const arbor = d.lanternWorkingParts.armArbor;
-  replace(arbor, new THREE.CylinderGeometry(.16, .16, armDepth + .30, 64)); arbor.position.z = c.armZ - .03;
-  d.lanternWorkingParts.pairs.push([arbor, b.armHub]);
+  // The arbor is fixed in the arm's hub (both turn with the arm), so it fills
+  // the hub bore: a clearance ring there would open a sight line through to
+  // the background and speckle the hub face.
+  replace(arbor, new THREE.CylinderGeometry(.168, .168, armDepth + .30, 64)); arbor.position.z = c.armZ - .03;
   // Arm A is one flat plate (Brown's tapered arm from its pivot, with the
   // outlines of B and C) behind the pin ends; B and C are straight bars of
   // Brown's hatched section standing forward from the plate along the pins,

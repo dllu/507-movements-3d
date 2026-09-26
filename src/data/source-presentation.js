@@ -71,7 +71,7 @@ export default {
     note: 'The slotted lever hung from its pivot bracket under Brown\'s hatched ceiling, working the pin of the horizontal bar, which slides in two bolted guides. Brown draws the guides free-standing, separate from the ceiling, so no straps hang them from it (p60 support policy). Only the production MuJoCo model is presented; its physics keeps ideal guides.',
   },
   105: {
-    note: 'Front elevation of the weighted handle, screw, nut and ram in the frame. Brown breaks the frame off below the ram guide; the frame is modelled whole with its lower jaw, anvil and blank. The default view keeps Brown\'s window (handle to the raised ram), so the lower jaw and anvil run off its bottom and the blank sits on the bottom edge, where the ram is seen striking it. The blank is wider than the ram face, so it stays in sight under the ram when struck.',
+    note: 'Front elevation of the weighted handle, screw, nut and ram in the frame. Brown breaks the frame off below the ram guide; the frame is modelled whole with its lower jaw, anvil and blank. The default view keeps Brown\'s handle-to-ram composition and carries it on down to the foot of the lower jaw, so the anvil and the blank the ram strikes sit wholly in view. The blank is wider than the ram face, so it stays in sight under the ram when struck.',
   },
   108: {
     camera: [0, 0, 1],
@@ -535,7 +535,7 @@ export default {
   },
   358: {
     remove: ['fixed-carriage-guide-rail', 'rail-end-cross-tie', 'rail-travel-reference-mark'],
-    note: 'Plan of the carriage: the fusee on its shaft in the carriage frame with the crank at the large end, the cross-member and bed carrying the two edge-on wheels on their axles, and the band crossing the fusee; no guide rail or travel ticks are drawn under the wheels.',
+    note: 'Plan of the carriage: the fusee on its shaft with the crank at the large end, Brown\'s two long flat side bars running from under the wheel frame past the crank and off the plate, the cross bar carrying the crank-end bearing, the cross-member and bed carrying the two edge-on wheels on their axles, and the band crossing the fusee; no guide rail or travel ticks are drawn under the wheels.',
   },
   354: {
     remove: ['visible-radial-index-on-input-disk', 'visible-linear-index-on-output-stem'],
@@ -662,7 +662,7 @@ export default {
   },
   391: {
     remove: ['fixed-frame-carrying-guide-grooves-and-output-bearing', '(?:.*-)?white-.*', 'reciprocating-input-piston-rod'],
-    note: 'The D-shaped guides b, racks A, A1 on their weighted crosshead, cog wheel and elbow lever C; no frame, input rod or white indices are drawn.',
+    note: 'The D-shaped guides b, racks A, A1 on their weighted crosshead, cog wheel and elbow lever C: its curved arm, its short arm resting on a small stop pin, spring d, and the short link hung from C that bears on the top of A1. C, the stop and the spring\'s far end stand on bare fixed pins, as drawn; no frame, input rod or white indices are drawn.',
   },
   392: {
     remove: ['fixed-gig-saw-machine-bed', 'white-.*'],

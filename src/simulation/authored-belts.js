@@ -1855,7 +1855,7 @@ function fixedHoist() {
   return { root, update, cameraDirection: new THREE.Vector3(0.3, 0.15, 10) };
 }
 
-// Brown crops both legs of the chain pulleys 227-229. The chain is endless in
+// Brown crops both legs of the chain pulleys 227 and 228. The chain is endless in
 // use, so just beyond the plate each leg drops through a chain (navel) pipe
 // in a deck plate, as a ship's cable goes down to its locker: links leave
 // view inside the pipes instead of stopping in mid-air. `legs` gives each
@@ -9422,11 +9422,20 @@ function toothedLinkChainWheel() {
     fullTurn,
   ) - Math.PI;
 
+  // The chain is one finite chain (see below): null bounds give the plate
+  // window used to find its end links.
+  let chainTailIndex = null;
+  let chainHeadIndex = null;
   const stateAtInputAngle = (
     inputAngle,
     angularSpeed = inputAngularSpeed,
   ) => {
     const { phase, stepIndex } = normalizedPhase(inputAngle);
+    if (chainTailIndex !== null
+      && (stepIndex > chainTailIndex + incomingPitchCountAtPhaseZero - 1
+        || stepIndex < chainHeadIndex + incomingPitchCountAtPhaseZero + 7)) {
+      throw new RangeError('Movement 229 hoist stroke left its finite chain.');
+    }
     const maximumCircleMaterialIndex = stepIndex
       - incomingPitchCountAtPhaseZero;
     const circleNodes = [];
@@ -9463,7 +9472,9 @@ function toothedLinkChainWheel() {
     const incomingMaterialIndex = maximumCircleMaterialIndex + 1;
     const nodes = [];
     for (
-      let offset = incomingTailNodeCount - 1;
+      let offset = chainTailIndex === null
+        ? incomingTailNodeCount - 1
+        : chainTailIndex - incomingMaterialIndex;
       offset >= 0;
       offset -= 1
     ) {
@@ -9498,7 +9509,9 @@ function toothedLinkChainWheel() {
     const outgoingMaterialIndex = minimumCircleMaterialIndex - 1;
     for (
       let offset = 0;
-      outgoingCoordinate + offset * linkPitch <= outgoingEndDistance + 1e-10;
+      chainHeadIndex === null
+        ? outgoingCoordinate + offset * linkPitch <= outgoingEndDistance + 1e-10
+        : outgoingMaterialIndex - offset >= chainHeadIndex;
       offset += 1
     ) {
       nodes.push({
@@ -9622,9 +9635,28 @@ function toothedLinkChainWheel() {
       sprocketAngularSpeed,
     };
   };
+  // Brown draws a finite chain: the left leg ends in a rounded end link about
+  // a pitch radius below the wheel centre, and the right leg runs off the
+  // plate. A finite chain cannot loop on a wheel turning one way, so the
+  // wheel works as a chain hoist: from Brown's pose it pays out the left leg
+  // (lifting the right) hoistStrokePitches links and winds it back each
+  // cycle, on a smooth cosine stroke. Both chain ends are whole links.
+  const hoistStrokePitches = 4;
+  const hoistStrokeAngle = hoistStrokePitches * chainNodeStep;
+  const plateWindow = stateAtInputAngle(0);
+  // Brown's left end pin sits 0.96 pitch radii below the wheel centre: five
+  // links fewer than the plate window's incoming tail.
+  chainTailIndex = plateWindow.nodes[0].materialIndex - 5;
+  // The right end stays two links past the plate's crop at the top of the
+  // stroke.
+  chainHeadIndex = plateWindow.nodes.at(-1).materialIndex - 2 - hoistStrokePitches;
+  const hoistAngleAtTime = (time) => -hoistStrokeAngle
+    * (1 - Math.cos(fullTurn * time / cyclePeriod)) / 2;
+  const hoistSpeedAtTime = (time) => -hoistStrokeAngle
+    * Math.sin(fullTurn * time / cyclePeriod) * Math.PI / cyclePeriod;
   const stateAtTime = (time) => stateAtInputAngle(
-    inputAngularSpeed * time,
-    inputAngularSpeed,
+    hoistAngleAtTime(time),
+    hoistSpeedAtTime(time),
   );
 
   root.userData.mechanism = 'fourteen-pitch-toothed-link-chain-wheel';
@@ -9641,7 +9673,11 @@ function toothedLinkChainWheel() {
     wheelRotor,
   };
   root.userData.geometry = {
+    chainHeadIndex,
     chainNodeStep,
+    chainTailIndex,
+    hoistStrokeAngle,
+    hoistStrokePitches,
     cyclePeriod,
     fullTurn,
     hubDepth,
@@ -9732,42 +9768,8 @@ function toothedLinkChainWheel() {
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;
 
-  // The legs run on past Brown's crop into navel pipes whose mouths lie at
-  // y = -4 (addChainNavelPipes); each leg is cut inside its pipe.
-  const drawnLeftLegDepth = (0.46 + 4.32) / 2.16;
-  const drawnRightLegDepth = (0.46 + 4.32) / 2.16;
-  // Brown draws short legs: the left one ends about a pitch radius below the
-  // wheel centre and the right one runs off the plate well above the wheel
-  // bottom. The full chain keeps running beyond these cut-offs; rather than
-  // popping whole links in and out as they pass (a one-link jump each
-  // pitch), each leg is cut square at a fixed line across it, so the links
-  // slide continuously out of view. The cuts sit at Brown's leg ends: the
-  // left about a pitch radius below the wheel centre, the right where the
-  // plate crops it.
-  const legCutPoint = (tangentPoint, direction, depth, overshoot) => {
-    const y = wheelCenter.y - pitchRadius * depth;
-    return tangentPoint.clone()
-      .addScaledVector(direction, (y - tangentPoint.y) / direction.y + overshoot);
-  };
-  const leftCut = legCutPoint(leftTangentPoint, incomingDirection, drawnLeftLegDepth, 0.12);
-  const rightCut = legCutPoint(rightTangentPoint, outgoingDirection, drawnRightLegDepth, 0.1);
-  // Keep points upstream of the left cut and upstream of the right cut.
-  const localLegCuts = [
-    new THREE.Plane().setFromNormalAndCoplanarPoint(incomingDirection.clone(), leftCut),
-    new THREE.Plane().setFromNormalAndCoplanarPoint(outgoingDirection.clone().negate(), rightCut),
-  ];
-  const legCuts = localLegCuts.map((plane) => plane.clone());
-  for (const material of [linkMaterial, linkMaterialAlternate, pivotMaterial]) {
-    material.clippingPlanes = legCuts;
-    material.clipShadows = true;
-  }
-  root.userData.localClippingEnabled = true;
-  root.userData.chainLegCuts = { left: leftCut, right: rightCut, planes: legCuts };
   const update = (time) => {
     const state = stateAtTime(time);
-    // Clipping planes are world-space; follow any placement of the root.
-    root.updateMatrixWorld();
-    legCuts.forEach((plane, index) => plane.copy(localLegCuts[index]).applyMatrix4(root.matrixWorld));
     wheelRotor.rotation.z = state.sprocketAngle;
     links.forEach((object) => {
       object.visible = false;
@@ -9781,9 +9783,7 @@ function toothedLinkChainWheel() {
       );
       const object = links[renderSlot];
       const parity = Math.abs(link.materialIndex % 2);
-      // Links wholly beyond a leg cut are hidden; the rest are clipped.
-      object.visible = localLegCuts.every((plane) => plane.distanceToPoint(link.start.position) > -0.2
-        || plane.distanceToPoint(link.end.position) > -0.2);
+      object.visible = true;
       object.position.copy(link.start.position);
       object.rotation.set(0, 0, link.angle);
       object.userData.plate.position.z = parity === 0
@@ -11978,17 +11978,8 @@ export function createAuthoredBeltMovement(movement) {
       addChainNavelPipes(result, [-2, 2].map((x) => ({ mouth: new THREE.Vector3(x, -5.45, 0), direction: new THREE.Vector3(0, -1, 0) }))); break;
     case 228: result = ladderRungChainPulley(); correctChainDrive(result, 228);
       addChainNavelPipes(result, [-2.05, 2.05].map((x) => ({ mouth: new THREE.Vector3(x, -8, 0), direction: new THREE.Vector3(0, -1, 0) }))); break;
-    case 229: {
-      result = toothedLinkChainWheel(); correctChainDrive(result, 229);
-      const g = result.root.userData.geometry;
-      const legMouth = (point, direction) => point.clone().addScaledVector(direction, (point.y + 4) / -direction.y);
-      const down = g.incomingDirection.clone().negate();
-      addChainNavelPipes(result, [
-        { mouth: legMouth(g.leftTangentPoint, down), direction: down },
-        { mouth: legMouth(g.rightTangentPoint, g.outgoingDirection), direction: g.outgoingDirection.clone() },
-      ]);
-      break;
-    }
+    // 229's finite chain is whole (a hoist stroke), so it needs no pipes.
+    case 229: result = toothedLinkChainWheel(); correctChainDrive(result, 229); break;
     case 242: result = leverContractedCraneBandBrake(movement); break;
     case 243: result = horizontalDriverToTwinVerticalShafts(movement); break;
     case 244: result = pronyBrakeDynamometer(movement); correctClampParts(result, 244); addProny244ShaftSection(result.root); layProny244Cables(result.root); break;

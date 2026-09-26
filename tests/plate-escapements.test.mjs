@@ -231,10 +231,21 @@ test('293 wheel advance is spread over the impulse swing, not a snap', () => {
   assert.ok(count / n > 0.1, `80% of the advance in ${(100 * count / n).toFixed(1)}% of the cycle`);
 });
 
-test("295's wheel is a narrow rim below the valleys, open between the arms as Brown draws it", () => {
-  let wheel;
-  models.get(295).root.traverse((object) => { if (object.userData.role === 'cylinder-escape-wheel') wheel = object; });
-  const { holes } = wheel.geometry.userData.outline;
-  const windowTop = Math.max(...holes.flat().map(([x, y]) => Math.hypot(x, y))) / 0.02;
-  assert.ok(windowTop > 320, `window reaches ${windowTop} px (valley bottoms at 352)`);
+test("295's wheel is a narrow rim below the valleys over a plain recessed web, blank below Brown's arc", () => {
+  let wheel; let web;
+  models.get(295).root.traverse((object) => {
+    if (object.userData.role === 'cylinder-escape-wheel') wheel = object;
+    if (object.userData.role === 'cylinder-wheel-plain-recessed-web') web = object;
+  });
+  const { holes, z1 } = wheel.geometry.userData.outline;
+  // One round rim opening (no arms), its edge at Brown's arc.
+  assert.equal(holes.length, 1);
+  const radii = holes[0].map(([x, y]) => Math.hypot(x, y) / 0.02);
+  assert.ok(Math.min(...radii) > 320 && Math.max(...radii) < 335, `rim edge ${Math.min(...radii)}-${Math.max(...radii)} px`);
+  // The web fills the rim opening, set back behind the rim's face.
+  assert.ok(web, 'plain web');
+  web.geometry.computeBoundingBox();
+  const box = web.geometry.boundingBox;
+  assert.ok(box.max.z < z1 - 0.05, 'web recessed behind the rim');
+  assert.ok(Math.hypot(box.max.x, 0) / 0.02 > 320);
 });

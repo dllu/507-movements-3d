@@ -59,7 +59,7 @@ export function makeScrewPressGeometry(options={}) {
     [innerX,326],...cubic([innerX,326],[innerX,298],[278,e.nutBottom],[left,e.nutBottom]).slice(1)].map(f.world);
   // Brown breaks the frame off below the ram guide (a drawing convention);
   // the frame is modelled whole with its lower jaw, anvil and blank, and the
-  // default view keeps Brown's crop so the lower jaw runs off its bottom.
+  // default view runs on down to the foot of the jaw so the struck blank shows.
   const presentedContour=contour;
   add('frame',plate(poly(presentedContour),-f.frameDepth,f.frameDepth),'frame',PALETTE.frame);
   add('anvil',alongY(disk(.35,f.anvilBottom,f.workBottom,192)),'frame',PALETTE.frame);

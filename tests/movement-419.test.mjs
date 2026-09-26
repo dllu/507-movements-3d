@@ -93,9 +93,12 @@ test('movement 419 is one continuous crank A, one oscillating wheel B, exactly t
     'left-band-standard-attached-to-rocker-E',
     'right-band-standard-attached-to-rocker-E',
     'rolling-self-rocking-cradle-E',
-    'circular-rocker-shoe-of-cradle-E',
+    'solid-circular-segment-rocker-E',
     'fixed-floor-beneath-rocking-cradle-E',
   ]) assert.ok(roles.includes(role), role);
+  // Brown's E is one solid circular segment whose flat top is the bed.
+  assert.equal(blocks.rockerShoe, blocks.cradleBed);
+  assert.equal(blocks.rockerShoe.geometry.type, 'ExtrudeGeometry');
   disposeModel(model.root);
 });
 

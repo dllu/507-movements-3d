@@ -35,6 +35,8 @@ function groovedSheave(pulley,R,bore,width){
  pulley.userData.workingGroove=body;
 }
 export function correctCordTraverseParts(root,id,update){
+ // 358's long side bars run off the plate; the carriage close-up frames without them.
+ const sideBars358=[];
  const d=root.userData,b=d.blocks,g=d.geometry;
  if(id===352){
   for(const [p,R,bore,w]of[[b.leftGuide.pulley,g.fixedGuidePitchRadius,.068,.18],[b.rightGuide.pulley,g.fixedGuidePitchRadius,.068,.18],[b.movingPulley,g.movingPulleyPitchRadius,.055,.16]])groovedSheave(p,R,bore,w);
@@ -72,6 +74,17 @@ export function correctCordTraverseParts(root,id,update){
   for(const wheel of b.carriageWheels){const axle=add(b.carriage,new T.CylinderGeometry(.040,.040,1.12,32),b.carriageBed.material,'fixed-carriage-wheel-axle');axle.position.set(wheel.position.x,wheelY,wheelZ);}
   for(const bearing of b.carriage.children.filter(o=>o.userData.role==='carriage-mounted-fusee-shaft-bearing')){replace(bearing,ring(.14,.047,.14));bearing.rotation.set(0,0,0);const support=add(b.carriage,new T.BoxGeometry(.20,.10,.34),bearing.material,'fusee-journal-to-bearing-frame');support.position.set(0,bearing.position.y,-.26);}
   const lowerCross=add(b.carriage,new T.BoxGeometry(barLength,.13,.13),b.carriageBed.material,'lower-fusee-bearing-crossmember');lowerCross.position.set(0,-.25,wheelZ);
+  // Brown's two long flat bars run the length of the carriage, along the
+  // fusee shaft: under the far wheel frame, past the fusee and the crank, and
+  // on off the plate at his break. They stand clear of the crank's sweep
+  // (radius 1.3) and lie under the wheel-frame bars; one cross bar joins them
+  // to carry the crank-end bearing.
+  const frameBars=b.carriage.children.filter(o=>o.userData.role==='carriage-mounted-fusee-bearing-frame');let frameMaterial;
+  frameBars[0].traverse(o=>{if(o.isMesh&&!frameMaterial)frameMaterial=o.material;});
+  for(const bar of frameBars){bar.removeFromParent();bar.traverse(o=>o.geometry?.dispose());}
+  const sideX=1.44,sideWidth=.24,sideZ=wheelZ-.125,sideStart=b.carriageBed.position.y-.065,sideEnd=7.5;
+  for(const sign of[1,-1]){const side=add(b.carriage,new T.BoxGeometry(sideWidth,sideEnd-sideStart,.13),frameMaterial,'long-carriage-side-bar-run-past-plate-break');side.position.set(sign*sideX,(sideStart+sideEnd)/2,sideZ);sideBars358.push(side);}
+  const cross=add(b.carriage,new T.BoxGeometry(2*sideX,.14,.13),frameMaterial,'carriage-mounted-fusee-bearing-frame');cross.position.set(0,2.02,wheelZ);
   for(const cord of[b.firstCord,b.secondCord])for(const marker of cord.userData.markers)marker.visible=false;
   for(const [i,cord]of[b.firstCord,b.secondCord].entries()){retainTraverseCord(cord,.03,480);cord.userData.mesh.userData.role=`finite-fusee-cord-${i+1}`;}
   const rail=b.track.children.find(o=>o.userData.role==='fixed-carriage-guide-rail'),railTop=rail.position.z+.05;
@@ -85,5 +98,5 @@ export function correctCordTraverseParts(root,id,update){
  }
  d.minimumDisplayCycleSeconds=g.cyclePeriod??g.inputCyclePeriod;d.workingPartsReview={status:'selected-finite-interfaces',residual:id===362?'The oblique planar groove prescribes a smooth sinusoidal traverse; pin clearance is finite, but load, friction and backlash response are not simulated.':'Analytical pitch-radius travel and ideal no-slip spin are preserved. Helical lay, cord elasticity, tension and the exact changing finite-radius material length remain reconstruction approximations.'};
  fitPistonGuide(root,update,d.minimumDisplayCycleSeconds);d.cameraDirection=id===362?new T.Vector3(.5,.3,15):new T.Vector3(.6,.4,15);
- if(id===358){root.updateMatrixWorld(true);d.cameraFitBounds=new T.Box3().setFromObject(b.carriage).expandByScalar(.24);d.presentation={referenceFrame:'carriage-following closeup',croppedGeometry:'The complete stationary track is retained, with its remote ends outside the initial closeup.'};}
+ if(id===358){root.updateMatrixWorld(true);for(const bar of sideBars358)bar.removeFromParent();d.cameraFitBounds=new T.Box3().setFromObject(b.carriage).expandByScalar(.24);for(const bar of sideBars358)b.carriage.add(bar);root.updateMatrixWorld(true);d.presentation={referenceFrame:'carriage-following closeup',croppedGeometry:'The complete stationary track is retained, with its remote ends outside the initial closeup.'};}
 }

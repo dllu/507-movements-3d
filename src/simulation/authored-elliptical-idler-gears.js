@@ -694,12 +694,12 @@ function ellipticalDriverCompoundIdler(movement) {
   const guideOuterPoints = profilePointsAtOffset(guideOuterDistance);
   const grooveOuterPoints = profilePointsAtOffset(grooveOuterDistance);
   const grooveInnerPoints = profilePointsAtOffset(grooveInnerDistance);
-  // The groove g-h is an open channel behind C: an elliptical band (floor)
-  // carried by three spokes from the post at the ellipse centre, with two
-  // rails in front of it. C hides the spokes; the band shows round C.
-  const guideBandInnerPoints = profilePointsAtOffset(
-    grooveInnerDistance - guidePlateMargin,
-  );
+  // The groove g-h is cut into the front face of one solid elliptical plate
+  // behind C (Brown dashes it as hidden work): a plain floor bounded by the
+  // outer groove line, with two rails in front of it forming the channel. The
+  // plate is carried by the post at the ellipse centre, which C hides; no
+  // spokes or openings are shown between C and the groove. The island inside
+  // the groove is the plate's solid face, flush with the outer rail.
   const guideMaterial = matte(PALETTE.frame, {
     metalness: 0.18,
     roughness: 0.55,
@@ -707,7 +707,7 @@ function ellipticalDriverCompoundIdler(movement) {
   });
   const guideFloor = new THREE.Mesh(
     centeredExtrusion(
-      ringShape(guideOuterPoints, guideBandInnerPoints),
+      shapeFromPoints(guideOuterPoints),
       guideFloorDepth,
     ),
     guideMaterial,
@@ -728,7 +728,7 @@ function ellipticalDriverCompoundIdler(movement) {
   driverRotor.add(guideOuterRail);
   const guideInnerIsland = new THREE.Mesh(
     centeredExtrusion(
-      ringShape(grooveInnerPoints, guideBandInnerPoints),
+      shapeFromPoints(grooveInnerPoints),
       guideRailDepth,
     ),
     guideMaterial,
@@ -737,35 +737,9 @@ function ellipticalDriverCompoundIdler(movement) {
   guideInnerIsland.userData.role = 'inner-wall-of-elliptical-guide-g-h';
   driverRotor.add(guideInnerIsland);
   const guidePostCenter = new THREE.Vector2(0, -focalDistance);
-  const guideSpokes = [Math.PI / 2, Math.PI / 2 + FULL_TURN / 3, Math.PI / 2 + 2 * FULL_TURN / 3]
-    .map((angle) => {
-      const direction = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
-      // Reach just into the band along this ray from the post.
-      let reach = 0;
-      for (const bandPoint of guideBandInnerPoints) {
-        const point = bandPoint.clone().sub(guidePostCenter);
-        const along = point.x * direction.x + point.y * direction.y;
-        const across = Math.abs(point.x * direction.y - point.y * direction.x);
-        if (along > 0 && across < 0.04) reach = Math.max(reach, along);
-      }
-      const inner = 0.16;
-      const outer = reach + 0.06;
-      const spoke = new THREE.Mesh(
-        new THREE.BoxGeometry(outer - inner, 0.07, guideFloorDepth),
-        guideMaterial,
-      );
-      spoke.position.set(
-        guidePostCenter.x + direction.x * (inner + outer) / 2,
-        guidePostCenter.y + direction.y * (inner + outer) / 2,
-        guideFloorZ,
-      );
-      spoke.rotation.z = angle;
-      spoke.userData.role = 'spoke-carrying-guide-g-h-from-hub-d';
-      driverRotor.add(spoke);
-      return spoke;
-    });
+  const guideSpokes = [];
   // One post from C's back face to the plate, spanning the A/B wheel plane.
-  const guidePostBack = guideFloorZ - guideFloorDepth / 2;
+  const guidePostBack = guideFloorZ;
   const guidePostFront = driverGearZ - driverGearDepth / 2 + 0.01;
   const guideSpokeHub = cylinderAlongZ(0.18, guidePostFront - guidePostBack, guideMaterial, 40);
   guideSpokeHub.position.set(guidePostCenter.x, guidePostCenter.y, (guidePostFront + guidePostBack) / 2);

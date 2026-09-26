@@ -410,16 +410,18 @@ test('movement 492 release ropes remain attached to both lower eyes and one comm
       assert.ok(Math.min(...cablePoints(blocks.releaseCords[index])
         .map((point) => point.distanceTo(eyeCenter))) < 0.126 - 0.045,
       `release rope passes through lower eye ${index + 1} at ${time}`);
-      vectorNear(
-        release.end,
-        new THREE.Vector3(
-          state.pullBarX,
-          geometry.pullBarHeight,
-          unit.unitZ,
-        ),
-        2e-14,
-        `release rope ends at common bar ${index + 1} at ${time}`,
-      );
+      // The rope runs taut and straight from the eye to the lead sheave; the
+      // common bar grips it on that line, at its own unit's station.
+      near(release.end.x, state.pullBarX, 2e-14, `release rope ends at common bar ${index + 1} at ${time}`);
+      near(release.end.y, blocks.pullBar.position.y, 2e-14, `common bar on the rope line ${index + 1} at ${time}`);
+      assert.ok(Math.abs(release.end.z - unit.unitZ) < 0.4 && Math.abs(release.end.z) < 1.775, `rope within the bar at its unit ${index + 1}`);
+      const points = cablePoints(blocks.releaseCords[index]);
+      const straight = points.slice(-13), direction = straight.at(-1).clone().sub(straight[0]).normalize();
+      for (const point of straight) {
+        const offset = point.clone().sub(straight[0]);
+        assert.ok(offset.sub(direction.clone().multiplyScalar(offset.dot(direction))).length() < 1e-9,
+          `release rope straight from the eye ${index + 1} at ${time}`);
+      }
 
       const fall = cableEndpoints(unit.fallRope);
       vectorNear(

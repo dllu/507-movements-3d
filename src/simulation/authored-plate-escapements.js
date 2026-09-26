@@ -685,14 +685,15 @@ function smoothStep(x) {
 
 function free291(movement) {
   const tune = movement.tune ?? {};
-  // Wheel B re-measured on the plate: centre (145.5, 327), tips on 119.5 px
-  // and roots on 101 px about it.
-  const map = plateMapper([145.5, tune.cy ?? 327], 0.02);
+  // Wheel B about Brown's centre mark (145.5, 327). His ten unobstructed
+  // tooth tips lie 119.5-125.8 px from it (mean about 121.7 on the ink), so
+  // the tips are on 121.7 px; roots on 101 px.
+  const map = plateMapper([tune.cx ?? 145.5, tune.cy ?? 327], 0.02);
   const s = map.scale;
   const P = (x, y) => map([x, y]);
   const count = 13;
   const pitch = TAU / count;
-  const tipRadius = (tune.tip ?? 119.5) * s;
+  const tipRadius = (tune.tip ?? 121.7) * s;
   const rootRadius = (tune.root ?? 101) * s;
   // Hooked teeth leaning clockwise: the tip leads, its face is undercut
   // back to the root and a straight back rises to the next tip.
@@ -716,9 +717,13 @@ function free291(movement) {
   const frontZ = [0.1, 0.22];
   const springZ = [0.17, 0.215];
   // Balance a: impulse roller with the notch g-h facing the wheel at t = 0.
-  // Balance a and its roller as drawn: centre (77, 186), radius 48 px.
-  const O = P(tune.ox ?? 77, tune.oy ?? 186);
-  const rollerRadius = (tune.rollerRadius ?? 48) * s;
+  // Balance a and its roller: a circle fit to Brown's roller outline gives
+  // centre (75, 182.5), radius 48.5 px (ink centre line); his arbor mark at
+  // (77, 186) is 4 px off that centre, so the concentric roller and arbor
+  // stand at the roller's centre. (Round the arbor mark, a 48 px roller
+  // would stand 2 px nearer the wheel than Brown's and block the tips.)
+  const O = P(tune.ox ?? 75, tune.oy ?? 182.5);
+  const rollerRadius = (tune.rollerRadius ?? 48.5) * s;
   const toWheel = Math.atan2(-O[1], -O[0]);
   const notchAt = toWheel + (tune.notchTurn ?? -8) * DEG;
   const notchLeft = notchAt - (tune.notchLong ?? 50) * DEG;
@@ -729,7 +734,7 @@ function free291(movement) {
   const balanceAngle = (t) => balanceAmplitude * Math.sin(TAU * t / period);
   const balanceRate = (t) => balanceAmplitude * TAU / period * Math.cos(TAU * t / period);
   // Passing spring: from beyond stud i under hook k to its tip at the stud.
-  const springTip = P((tune.ox ?? 77) + 11, 185.4);
+  const springTip = P(tune.springTipX ?? 88, 185.4);
   const springEnd = P(408, 168.5);
   const studI = P(336, 172.4);
   const tipOffset = [springTip[0] - O[0], springTip[1] - O[1]];
@@ -778,10 +783,11 @@ function free291(movement) {
   // plane and its lip reaches forward over the passing spring, which runs
   // in front of the post and on past the end of A to the stud.
   const detentOutline = [P(133, 192), P(326, 194.5), P(326, 151), P(347, 151), P(347, 195.8), P(440, 196), P(440, 202), P(133, 201)];
-  // Stop d where Brown draws it (x 188-199); it reaches 5 px lower than his
-  // 213 so the tooth tips (on 119.5 px) lock against its face.
+  // Stop d where Brown draws it: x 188-199, its bottom on his ink line at
+  // y 215. The tips pass 2 px above that edge at d's face (x 188), so a tip
+  // locks against it at (188, 213), as Brown draws the tip at d's corner.
   const dx = tune.dx ?? 188;
-  const stopD = [P(dx, 201.5), P(dx + 11, 201.5), P(dx + 11, tune.stopBottom ?? 218), P(dx, tune.stopBottom ?? 218)];
+  const stopD = [P(dx, 201.5), P(dx + 11, 201.5), P(dx + 11, tune.stopBottom ?? 215), P(dx, tune.stopBottom ?? 215)];
   const localB = (points) => points.map(([x, y]) => [x - b[0], y - b[1]]);
   const balance = new THREE.Group();
   balance.name = 'balance-a';
@@ -1179,6 +1185,8 @@ function cylinderEscapement(movement) {
     return [polar(W, heelBottom - 6 * s, h + stalkHalf), polar(W, heelBottom - 6 * s, h - stalkHalf),
       polar(W, heelTop - 2 * s, h - stalkHalf), polar(W, heelTop - 2 * s, h + stalkHalf)];
   };
+  const rimInner = (tune.rimInner ?? 325) * s;
+  const rimChamfer = 3 * s;
   // Cylinder section at the wheel: a C of the tube's wall, lips rounded.
   const Rc = 49 * s;
   const rc = 39 * s;
@@ -1266,12 +1274,11 @@ function cylinderEscapement(movement) {
         ...Array.from({ length: count }, (_, i) => ({ points: pillar(i), layer: 2 })),
       ],
       // Brown's plan draws the wheel's rim as one arc about 27 px (at this
-      // scale) inside the valley bottoms, with nothing below it: the rim
-      // is a narrow band and the rest is open between the arms.
-      holes: (turn) => builderHoles({
-        spokes: 4, outerRadius: valleyBottom, rimInnerRadius: (tune.rimInner ?? 325) * s, spokeWidth: 26 * s,
-        hubRadius: 30 * s, rimFillet: 8 * s, boreRadius: 10 * s, phase: 45 * DEG,
-      }, turn),
+      // scale) inside the valley bottoms and nothing below it. The rim is a
+      // narrow band whose chamfered inner edge is that arc; inside it a
+      // plain web, recessed behind the rim, fills the wheel, so the plan
+      // shows a blank face below the arc (no arms or windows).
+      holes: () => [circlePoints([0, 0], rimInner + rimChamfer, 120)],
     },
     oscillator: {
       name: 'cylinder-A-B-rocker',
@@ -1292,6 +1299,14 @@ function cylinderEscapement(movement) {
       // visible cylinder is the turned/cut body (one rigid part).
       materials.rocker.children.forEach((child) => { child.visible = false; });
       materials.rocker.add(...cylinder.children.slice());
+      // The rim's chamfered inner edge and the plain recessed web inside it.
+      const [zb, zf] = webZ;
+      materials.wheelRotor.add(tagged(new THREE.Mesh(turnedSmooth([
+        [zb, rimInner], [zb, rimInner + rimChamfer], [zf, rimInner + rimChamfer], [zf - rimChamfer, rimInner],
+      ], { segments: 180 }), materials.wheel), 'cylinder-wheel-rim-chamfered-inner-edge'));
+      materials.wheelRotor.add(tagged(new THREE.Mesh(turnedSmooth([
+        [zb, 10 * s], [zb, rimInner], [zb + 0.08, rimInner], [zb + 0.08, 10 * s],
+      ], { segments: 180 }), materials.wheel), 'cylinder-wheel-plain-recessed-web'));
       // Wedge heads on their pillars, raised to the passage level.
       for (let i = 0; i < count; i += 1) {
         materials.wheelRotor.add(plateMesh(head(i), [], headZ[0], headZ[1], materials.wheel, 'wedge-pallet-head'));

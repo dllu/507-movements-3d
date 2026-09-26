@@ -19,7 +19,6 @@ export const LOOP_SEAM_ALLOWLIST = new Map([
   [49, 'Ratchet click: the massless spring-held pawl drops off each tooth crest into the next space (about 1% of the model); it happens every tooth and one drop coincides with the loop point.'],
   [73, 'Ratchet click: strong spring C rides over the ratchet tooth crest and drops in behind it (about 3%) once per index, mid-cycle; a sprung stop, not a loop reset.'],
   [191, 'Brown\'s progressive scroll gears: the driven scroll returns from its fastest to its slowest radius at the radial step once per turn, at the loop point; the drive is continuous.'],
-  [264, 'Fast worm, not a seam: the worm runs at 3000 rpm so the 202 s beat shows the 1% wheel difference; the checker\'s fixed 1e-6-period bracket (4e-4 s) spans 0.13 rad of steady worm rotation. The state closes exactly at the beat (movement-264 test).'],
   [217, 'Heart cam: the roller lever reverses at the cam\'s point once per turn, at the loop point; the cam turns continuously.'],
   [63, 'Owned by a separate lane (spring-carried drop reverses at the loop point); recorded in docs/p60-loops-review.md, not edited here.'],
 ]);

@@ -370,7 +370,10 @@ export function measureLoopSeams(model, options = {}) {
   result.maxJump = merged.reduce((m, jump) => Math.max(m, jump.jump), 0);
 
   // 3. Periodicity and velocity continuity at each k*P.
-  const epsilon = 1e-6 * period;
+  // Also short enough that the fastest point moves at most 1e-5 of the
+  // model size, so a fast part over a long loop (264's worm) does not read
+  // its steady motion across the seam as a jump.
+  const epsilon = Math.min(1e-6 * period, peakSpeed > 0 ? 1e-5 * size / peakSpeed : Infinity);
   // Short enough that the fastest point moves 0.1% of the model size, so
   // steady rotation does not read as a velocity change.
   const delta = Math.min(period / 2000, peakSpeed > 0 ? 1e-3 * size / peakSpeed : Infinity);

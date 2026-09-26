@@ -334,7 +334,8 @@ function fuseeCarriageTraverse(movement) {
   // Brown's plan: the carriage frame bars run along the traverse, the two
   // wheel axles lie parallel to the fusee shaft, and each axle carries one
   // wheel seen edge-on. The rail lies directly beneath the wheels.
-  const truckAxleX = 1.75;
+  // Brown's wheels stand about 2.0 from the shaft, outside his long bars.
+  const truckAxleX = 2.0;
   const truckWheelY = -0.675;
   const frameZ = -0.43;
   const railTopZ = frameZ - wheelRadius;

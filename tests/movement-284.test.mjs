@@ -27,18 +27,25 @@ test('284 is one crank, bell crank, pulling catch, click, ratchet, pinion and ca
   assert.equal(roles.some((role) => /index|marker|hatch/.test(role)), false);
 });
 
-test('284 ratchet faces are radial and face clockwise (the plate slant)', () => {
-  // Pairs: [root, tip] at the same angle (the steep face), then the back
-  // falls to the next root anticlockwise.
+test('284 ratchet faces lean back as Brown cuts them and face clockwise', () => {
+  // Pairs: [root, tip]. Each tip stands a little ahead (anticlockwise) of its
+  // root: the steep face leans Brown's ~12 degrees back over its own tooth.
+  // The back then falls to the next root anticlockwise.
+  const lean = g.toothFaceLean * 180 / Math.PI;
+  assert.ok(lean > 9 && lean < 14, `lean ${lean}`);
   for (let i = 0; i < ratchetProfile.length; i += 2) {
     const root = ratchetProfile[i];
     const tip = ratchetProfile[i + 1];
     const next = ratchetProfile[(i + 2) % ratchetProfile.length];
-    assert.ok(Math.abs(Math.atan2(root[1], root[0]) - Math.atan2(tip[1], tip[0])) < 1e-12);
+    const lead = Math.atan2(tip[1], tip[0]) - Math.atan2(root[1], root[0]);
+    const wrapped = ((lead + Math.PI) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI) - Math.PI;
+    assert.ok(Math.abs(wrapped - g.toothTipLead) < 1e-9);
     assert.ok(Math.hypot(...tip) > Math.hypot(...next));
     const turn = Math.atan2(next[1], next[0]) - Math.atan2(tip[1], tip[0]);
     assert.ok(((turn % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) < pitch + 1e-9);
   }
+  // The claw's working edge rises as Brown's does (about 16 degrees).
+  assert.ok(Math.abs(g.clawRise * 180 / Math.PI - 16) < 1);
 });
 
 test('284 feeds one tooth anticlockwise per crank turn and never runs back while feeding', () => {
@@ -122,10 +129,10 @@ test('284 feed screw setting stays inside the drawn slot', () => {
 });
 
 test('284 hook hangs where Brown draws it in the default pose', () => {
-  // The slider sits catchHingeDrop px low on its screw (the least setting
-  // that feeds), and the catch is built from that hinge so the claw point
-  // still stands at Brown's pocket.
-  assert.ok(g.catchHingeDrop <= 9);
+  // The slider sits catchHingeDrop px low on its screw (just past the least
+  // setting that feeds), and the catch is built from that hinge so the claw
+  // point still stands at Brown's pocket.
+  assert.ok(g.catchHingeDrop <= 4);
   assert.ok(Math.abs(g.sliderRadius - g.sourceSliderRadius - g.catchHingeDrop * g.sourceScale) < 1e-9);
   const { nose } = stateAtTime(0);
   const raster = [nose[0] / g.sourceScale + 140, 352 - nose[1] / g.sourceScale];

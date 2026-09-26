@@ -87,17 +87,6 @@ function cylinderAlongZ(radius, length, material, segments = 24) {
   return cylinder;
 }
 
-function quadraticPoints(start, control, end, count = 19) {
-  return Array.from({ length: count }, (_, index) => {
-    const parameter = index / (count - 1);
-    const oneMinus = 1 - parameter;
-    return new THREE.Vector3()
-      .addScaledVector(start, oneMinus ** 2)
-      .addScaledVector(control, 2 * oneMinus * parameter)
-      .addScaledVector(end, parameter ** 2);
-  });
-}
-
 function boatDetachingHooks(movement) {
   const root = new THREE.Group();
 
@@ -569,6 +558,11 @@ function boatDetachingHooks(movement) {
   const releaseSheaveRadius = 0.16;
   const releaseStanchionFootY = -2.2;
   const releaseRopeTailAtRest = 0.55;
+  // Brown's release rope leaves the lower eye falling gently to the right
+  // (about 0.115 down per unit across on the plate, 0.07 in the model seen in
+  // the default perspective); the lead sheave's top is on that line.
+  const restRopeEye = stateAtTime(0).ropeEyeCenter;
+  const releaseLeadY = restRopeEye.y - 0.07 * (releaseSheaveX - (unitCenterX + restRopeEye.x));
   const ropeEnds = units.map((unit, index) => {
     const fallLead = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(
       new THREE.Vector3(-0.73, 3.88 + fallLeadLength, tacklePlaneZ),
@@ -594,7 +588,7 @@ function boatDetachingHooks(movement) {
     leadMaterial), `release-rope-lead-beyond-plate-${index + 1}`);
     const releaseHand = new THREE.Group();
     releaseHand.userData.role = `fixed-release-rope-lead-sheave-and-toggle-${index + 1}`;
-    const sheaveCenter = new THREE.Vector3(releaseSheaveX, pullBarHeight - releaseSheaveRadius, unit.unitZ);
+    const sheaveCenter = new THREE.Vector3(releaseSheaveX, releaseLeadY - releaseSheaveRadius, unit.unitZ);
     const fittingMaterial = matte(PALETTE.frame, { metalness: 0.15, roughness: 0.62 });
     const sheave = addRole(new THREE.Mesh(new THREE.TorusGeometry(releaseSheaveRadius, 0.055, 12, 48), fittingMaterial),
       `release-rope-lead-sheave-${index + 1}`);
@@ -651,6 +645,46 @@ function boatDetachingHooks(movement) {
   );
   root.add(pullDirectionIndex);
 
+  // The release rope: bent through the lower eye round its bar, then taut
+  // and straight to the top of the fixed lead sheave beyond the plate.
+  const releaseRopePath = (state, unit) => {
+    const eyeCenter = new THREE.Vector3(
+      unitCenterX + state.ropeEyeCenter.x,
+      state.ropeEyeCenter.y,
+      unit.unitZ + mechanismPlaneZ,
+    );
+    const lead = new THREE.Vector3(releaseSheaveX, releaseLeadY, unit.unitZ);
+    const pull = new THREE.Vector3(lead.x - eyeCenter.x, lead.y - eyeCenter.y, 0)
+      .normalize();
+    // Keep the bend clear of the lever arm that joins the eye.
+    const arm = new THREE.Vector3(unitCenterX + leverPivot.x - eyeCenter.x,
+      leverPivot.y - eyeCenter.y, 0).normalize();
+    const minimumArmAngle = THREE.MathUtils.degToRad(80);
+    const armAngle = Math.acos(THREE.MathUtils.clamp(pull.dot(arm), -1, 1));
+    if (armAngle < minimumArmAngle) {
+      const turn = (minimumArmAngle - armAngle) * Math.sign(arm.x * pull.y - arm.y * pull.x || 1);
+      pull.applyAxisAngle(new THREE.Vector3(0, 0, 1), turn);
+    }
+    const eyeBar = eyeCenter.clone().addScaledVector(pull, 0.20);
+    // Wide enough to clear the lever boss (r 0.18, half-depth 0.105) and
+    // still pass inside its 0.126 bore. Finely sampled, so adjacent straight
+    // rope pieces meet at shallow bends.
+    const loopRadius = 0.155;
+    const loop = [];
+    const loopSteps = 24;
+    for (let i = 0; i <= loopSteps; i += 1) {
+      const angle = -Math.PI / 2 - (FULL_TURN - 2.0) * (1 - i / loopSteps);
+      loop.push(eyeBar.clone()
+        .addScaledVector(pull, loopRadius * Math.cos(angle))
+        .add(new THREE.Vector3(0, 0, loopRadius * Math.sin(angle))));
+    }
+    const start = loop.at(-1);
+    const along = (state.pullBarX - start.x) / (lead.x - start.x);
+    const end = start.clone().lerp(lead, along);
+    return { start, loop, end, lead };
+  };
+  const restRelease = releaseRopePath(stateAtTime(0), units[0]);
+  const restLeadLength = restRelease.lead.distanceTo(restRelease.end);
   const update = (time) => {
     const state = stateAtTime(time);
     for (const unit of units) {
@@ -679,68 +713,26 @@ function boatDetachingHooks(movement) {
     });
     pullDirectionIndex.position.x = state.pullBarX + 0.38;
     units.forEach((unit, index) => {
-      const eyeCenter = new THREE.Vector3(
-        unitCenterX + state.ropeEyeCenter.x,
-        state.ropeEyeCenter.y,
-        unit.unitZ + mechanismPlaneZ,
-      );
-      const end = new THREE.Vector3(
-        state.pullBarX,
-        pullBarHeight,
-        unit.unitZ,
-      );
-      // The rope is bent through the lower eye round its bar on the pull
-      // side, then runs to the bar; it no longer ends inside the ring.
-      const pull = new THREE.Vector3(end.x - eyeCenter.x, end.y - eyeCenter.y, 0)
-        .normalize();
-      // Keep the bend clear of the lever arm that joins the eye.
-      const arm = new THREE.Vector3(unitCenterX + leverPivot.x - eyeCenter.x,
-        leverPivot.y - eyeCenter.y, 0).normalize();
-      const minimumArmAngle = THREE.MathUtils.degToRad(80);
-      const armAngle = Math.acos(THREE.MathUtils.clamp(pull.dot(arm), -1, 1));
-      if (armAngle < minimumArmAngle) {
-        const turn = (minimumArmAngle - armAngle) * Math.sign(arm.x * pull.y - arm.y * pull.x || 1);
-        pull.applyAxisAngle(new THREE.Vector3(0, 0, 1), turn);
-      }
-      const eyeBar = eyeCenter.clone().addScaledVector(pull, 0.20);
-      // Wide enough to clear the lever boss (r 0.18, half-depth 0.105) and
-      // still pass inside its 0.126 bore.
-      const loopRadius = 0.155;
-      const loop = [];
-      // From the free end round through the hole to the outgoing run, which
-      // leaves the bar tangentially toward the pull bar.
-      // Finely sampled, so adjacent straight rope pieces meet at shallow
-      // bends (coarse bends overlapped by 0.034 at their inner corners).
-      const loopSteps = 24;
-      for (let i = 0; i <= loopSteps; i += 1) {
-        const angle = -Math.PI / 2 - (FULL_TURN - 2.0) * (1 - i / loopSteps);
-        loop.push(eyeBar.clone()
-          .addScaledVector(pull, loopRadius * Math.cos(angle))
-          .add(new THREE.Vector3(0, 0, loopRadius * Math.sin(angle))));
-      }
-      const start = loop.at(-1);
-      // The cord arrives at `end` already heading for the lead sheave, so the
-      // rope runs on without a kink.
-      const towardSheave = new THREE.Vector3(releaseSheaveX, pullBarHeight, unit.unitZ).sub(end).normalize();
-      const control = end.clone().addScaledVector(towardSheave, -0.48 * start.distanceTo(end));
-      control.z += 0.06 * (index === 0 ? -1 : 1);
+      const { start, loop, end, lead } = releaseRopePath(state, unit);
+      // Taut and straight from the lower eye to the lead sheave, as Brown
+      // draws it: the pull bar grips the rope on that line.
       releaseCords[index].userData.setPoints([
         ...loop.slice(0, -1),
-        ...quadraticPoints(start, control, end, 13),
+        ...Array.from({ length: 13 }, (_, i) => start.clone().lerp(end, i / 12)),
       ]);
-      // The lead continues straight along the cord's end tangent.
-      const leadDirection = end.clone().sub(control).normalize();
-      // The lead runs straight on to the top of the fixed sheave; the tail
-      // hanging from its far side takes up the length drawn in.
+      if (index === 0) {
+        pullBar.position.y = end.y;
+        pullBarGrip.position.y = end.y;
+        pullDirectionIndex.position.y = end.y;
+      }
+      // The tail hanging from the sheave's far side takes up the length
+      // drawn in.
       const { releaseHand, releaseLead } = ropeEnds[index];
       const { sheaveCenter, tail, toggle } = releaseHand.userData.parts;
-      const sheaveTop = sheaveCenter.clone().setY(sheaveCenter.y + releaseSheaveRadius);
-      const lead = sheaveTop.clone().sub(end);
       releaseLead.position.set(0, 0, 0);
       releaseLead.geometry.dispose();
-      releaseLead.geometry = new LaidRopeGeometry(new THREE.LineCurve3(end.clone(), sheaveTop), 48, 0.045, 8, false);
-      const restLead = releaseSheaveX - pullBarRestX;
-      const tailLength = Math.max(0.12, releaseRopeTailAtRest + (restLead - lead.length()));
+      releaseLead.geometry = new LaidRopeGeometry(new THREE.LineCurve3(end.clone(), lead), 48, 0.045, 8, false);
+      const tailLength = Math.max(0.12, releaseRopeTailAtRest + (restLeadLength - lead.distanceTo(end)));
       tail.geometry.dispose();
       tail.geometry = new LaidRopeGeometry(new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(0, -tailLength, 0)), 48, 0.045, 8, false);
       toggle.position.set(sheaveCenter.x + releaseSheaveRadius, sheaveCenter.y - tailLength - 0.05, sheaveCenter.z);

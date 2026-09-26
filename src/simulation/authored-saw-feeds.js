@@ -91,17 +91,22 @@ const GRAVITY = 54; // model units / s^2 (1 unit is about 0.18 m)
 // CATCH_HINGE_DROP px lower on the feed screw than Brown's slider (the
 // drawn setting cannot sweep far enough for the claw to drop behind the
 // next tooth), and the stem is refitted from there so the hook itself hangs
-// where Brown draws it.
-const CATCH_HINGE_DROP = 9;
+// where Brown draws it. With Brown's leaning tooth faces (TOOTH_FACE_LEAN)
+// 3.5 px is the least setting that feeds; 4 px keeps a small margin.
+const CATCH_HINGE_DROP = 4;
 const CATCH_HINGE = [PLATE.catchHinge[0], PLATE.catchHinge[1] + CATCH_HINGE_DROP];
 // The claw point, at the pocket corner of Brown's pose. Its upper (working)
-// edge follows the radial tooth face it pulls on, which is why it runs
-// nearly level where Brown's slopes up into the stem.
+// edge follows the leaning tooth face it pulls on.
 const CATCH_CLAW_TIP = [240.2, 338.6];
-// The working edge rises 8 degrees, just inside the 7.6-degree tooth face
-// plus the catch's own turn while pulling (Brown's rises about 16, which
-// would cut into the tooth above).
-const CLAW_RISE = 8 * Math.PI / 180;
+// The working edge rises 16 degrees as Brown's does: the tooth face there
+// stands at about 7.6 + 12 degrees, so the claw seats on it without cutting
+// into the tooth above.
+const CLAW_RISE = 16 * Math.PI / 180;
+// Brown's steep tooth faces are not radial: measured round the free side of
+// the wheel, each tip stands 10-13 degrees (about 0.6 degree of wheel turn)
+// ahead of its root, leaning back over its own tooth. The lean lets the
+// returning claw drop behind the next tip sooner.
+const TOOTH_FACE_LEAN = 12 * Math.PI / 180;
 // Gig-back: the carriage stops GL tooth short of the start and the catch and
 // click are let down onto the backs, then the wheel settles 0.18 tooth past
 // the seat onto the click.
@@ -234,16 +239,18 @@ function toModel(polygons, pivotRaster = O_PX) {
     ([x, y]) => sub(P(x, y), pivot))));
 }
 
-// Ratchet teeth (wheel frame): a radial steep face at each pocket angle
-// facing clockwise, the straight back rising anticlockwise... i.e. from the
-// tip down to the next pocket, as Brown cuts them (the plate's r(theta)
-// jumps up abruptly and falls gradually with increasing angle).
+// Ratchet teeth (wheel frame): a steep face at each pocket angle facing
+// clockwise, its tip leaning TOOTH_FACE_LEAN ahead (anticlockwise) of the
+// root, then the straight back from the tip down to the next pocket, as
+// Brown cuts them (the plate's r(theta) jumps up steeply and falls gradually
+// with increasing angle).
+const TIP_LEAD = (R_TIP - R_ROOT) * Math.tan(TOOTH_FACE_LEAN) / R_TIP;
 function ratchetProfile(mountPhase) {
   const points = [];
   for (let n = 0; n < N_TEETH; n += 1) {
     const theta = mountPhase + n * PITCH;
     points.push([R_ROOT * Math.cos(theta), R_ROOT * Math.sin(theta)]);
-    points.push([R_TIP * Math.cos(theta), R_TIP * Math.sin(theta)]);
+    points.push([R_TIP * Math.cos(theta + TIP_LEAD), R_TIP * Math.sin(theta + TIP_LEAD)]);
   }
   return points;
 }
@@ -403,9 +410,9 @@ function solveFeed() {
   };
 
   // Catch: the feed screw sets the slider radius (CATCH_HINGE_DROP below
-  // Brown's). 9 px is the least setting at which the claw both drives one
+  // Brown's). 3.5 px is the least setting at which the claw both drives one
   // tooth past the click and drops clear behind the next tooth on the
-  // return (checked on the solved motion; 3-8 px fail).
+  // return (checked on the solved motion; 0-3 px fail).
   const reach = len(sub(P(...CATCH_CLAW_TIP), P(...CATCH_HINGE)));
   const strokeAt = (radius, phase) => {
     const low = seatAngle(hingeAt(maxRocker.value, radius), reach);
@@ -413,7 +420,7 @@ function solveFeed() {
     // Where the nose passes the tooth tips at the bottom of its return.
     const lowAtTips = seatAngle(hingeAt(maxRocker.value, radius), reach, R_TIP);
     const overtravel = mod(high - phase - SEAT_ANGLE_OFFSET, PITCH);
-    return { low, high, lowAtTips, sweep: high - low, overtravel, dropMargin: high - overtravel - PITCH - lowAtTips };
+    return { low, high, lowAtTips, sweep: high - low, overtravel, dropMargin: high - overtravel - PITCH + TIP_LEAD - lowAtTips };
   };
   // The slider stands where the catch's hinge eye is built (CATCH_HINGE);
   // the click is Brown's.
@@ -958,6 +965,9 @@ function crankRockerPullCatchSawFeed(movement) {
     sourceSliderRadius: SOURCE_SLIDER_RADIUS,
     catchHingeDrop: CATCH_HINGE_DROP,
     catchClawTipRaster: CATCH_CLAW_TIP,
+    clawRise: CLAW_RISE,
+    toothFaceLean: TOOTH_FACE_LEAN,
+    toothTipLead: TIP_LEAD,
     catchSweep: solution.stroke.sweep,
   };
   root.userData.solution = solution;

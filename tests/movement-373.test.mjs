@@ -300,11 +300,18 @@ test('movement 373 gives both carriage wheels the exact negative radius ratio an
       near(contact.normal.length(), 1, 0, 'unit contact normal');
     }
   }
-  // One flat band: the framed run round the pulley, both strands running
-  // straight on past the plate's crop; its undrawn driving pulley is omitted.
+  // One endless flat band: the framed run round the pulley and, past the
+  // plate's crop, its return round a plain driving pulley of equal radius on
+  // a bare shaft stub. The band is continuous at both free ends.
   assert.deepEqual(blocks.belt.children.map((part) => part.userData.role),
-    ['one-flat-belt-entering-from-left-with-half-wrap', 'lower-belt-strand-running-past-plate-crop',
-      'upper-belt-strand-running-past-plate-crop']);
+    ['one-flat-belt-entering-from-left-with-half-wrap', 'belt-running-on-past-plate-crop-round-driving-pulley']);
+  assert.equal(blocks.remotePulley.userData.role, 'plain-driving-pulley-beyond-plate-crop');
+  assert.ok(blocks.remotePulley.userData.beyondPlateCrop);
+  near(geometry.remotePulleyCenter.distanceTo(blocks.drivePulley.position),
+    geometry.beltFreeLength + 3.2, 1e-12, 'driving pulley reach along the parallel strands');
+  model.update(1.3);
+  near(blocks.remotePulley.userData.rotor.rotation.z, model.root.userData.currentState.drivePulleyAngle, 0,
+    'equal pulleys turn together');
   disposeModel(model.root);
 });
 

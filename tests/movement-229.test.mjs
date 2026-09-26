@@ -190,7 +190,7 @@ test('movement 229 preserves the official wheel, link, tangent, and view dimensi
   disposeModel(model.root);
 });
 
-test('movement 229 keeps every rigid link and engaged tooth exact through 32,769 states', () => {
+test('movement 229 keeps every rigid link and engaged tooth exact through 32,769 hoist states', () => {
   const model = createMovementModel(catalog.movements[228]);
   const { geometry, stateAtInputAngle } = model.root.userData;
   let maximumLinkLengthError = 0;
@@ -205,8 +205,11 @@ test('movement 229 keeps every rigid link and engaged tooth exact through 32,769
   let minimumNodeCount = Number.POSITIVE_INFINITY;
   let maximumNodeCount = 0;
   for (let index = 0; index <= 32768; index += 1) {
-    const state = stateAtInputAngle(index / 32768 * FULL_TURN);
-    assert.ok(state.nodes.length === 19 || state.nodes.length === 20);
+    // The wheel pays out and winds back the one finite chain over its stroke.
+    const state = stateAtInputAngle(-index / 32768 * geometry.hoistStrokeAngle);
+    assert.equal(state.nodes.length, 21);
+    assert.equal(state.nodes[0].materialIndex, geometry.chainTailIndex);
+    assert.equal(state.nodes.at(-1).materialIndex, geometry.chainHeadIndex);
     assert.equal(state.chainLinks.length, state.nodes.length - 1);
     assert.ok(state.circleNodeCount === 5 || state.circleNodeCount === 6);
     assert.equal(state.engagements.length, state.circleNodeCount - 1);
@@ -289,8 +292,8 @@ test('movement 229 keeps every rigid link and engaged tooth exact through 32,769
   assert.ok(maximumEngagementPhaseError < 1.8e-15);
   assert.ok(maximumEngagementRadiusError < 7e-16);
   assert.ok(maximumEngagementVelocityError < 1e-15);
-  assert.equal(minimumNodeCount, 19);
-  assert.equal(maximumNodeCount, 20);
+  assert.equal(minimumNodeCount, 21);
+  assert.equal(maximumNodeCount, 21);
   assert.ok(minimumIncomingSpeed > 3.34);
   assert.ok(maximumIncomingSpeed < 3.4);
   assert.ok(minimumOutgoingSpeed > 3.34);
@@ -302,6 +305,9 @@ test('movement 229 has continuous entry and exit handoffs with stable rendered l
   const model = createMovementModel(catalog.movements[228]);
   const { blocks, geometry, stateAtInputAngle } = model.root.userData;
   const epsilon = 1e-9;
+  // Inverse of the cosine hoist stroke (first half cycle).
+  const timeAtAngle = (angle) => Math.acos(1 + 2 * angle / geometry.hoistStrokeAngle)
+    * geometry.cyclePeriod / FULL_TURN;
 
   const verifyBoundary = (
     angle,
@@ -324,7 +330,7 @@ test('movement 229 has continuous entry and exit handoffs with stable rendered l
     });
     assert.equal(commonNodes, expectedCommonNodes, `${label} common nodes`);
 
-    model.update((angle - epsilon) / geometry.inputAngularSpeed);
+    model.update(timeAtAngle(angle + epsilon));
     const renderedBefore = new Map(blocks.links
       .filter((link) => link.userData.materialIndex !== null)
       .map((link) => [
@@ -335,7 +341,7 @@ test('movement 229 has continuous entry and exit handoffs with stable rendered l
           quaternion: link.quaternion.clone(),
         },
       ]));
-    model.update((angle + epsilon) / geometry.inputAngularSpeed);
+    model.update(timeAtAngle(angle - epsilon));
     const renderedAfter = new Map(blocks.links
       .filter((link) => link.userData.materialIndex !== null)
       .map((link) => [
@@ -358,26 +364,27 @@ test('movement 229 has continuous entry and exit handoffs with stable rendered l
     assert.equal(commonLinks, expectedCommonLinks, `${label} common links`);
   };
 
-  for (let pitchIndex = 0; pitchIndex <= 14; pitchIndex += 1) {
+  // A finite chain: every node and link persists through each handoff.
+  for (let pitchIndex = -1; pitchIndex > -geometry.hoistStrokePitches; pitchIndex -= 1) {
     verifyBoundary(
       pitchIndex * geometry.chainNodeStep,
-      19,
-      18,
+      21,
+      20,
       `entry ${pitchIndex}`,
     );
   }
-  for (let pitchIndex = 0; pitchIndex < 14; pitchIndex += 1) {
+  for (let pitchIndex = -1; pitchIndex >= -geometry.hoistStrokePitches; pitchIndex -= 1) {
     verifyBoundary(
       pitchIndex * geometry.chainNodeStep + geometry.rightHandoffPhase,
+      21,
       20,
-      19,
       `exit ${pitchIndex}`,
     );
   }
   disposeModel(model.root);
 });
 
-test('movement 229 includes physical chordal action and exact full-turn advance', () => {
+test('movement 229 includes physical chordal action and exact hoist-stroke advance', () => {
   const model = createMovementModel(catalog.movements[228]);
   const {
     geometry,
@@ -386,7 +393,7 @@ test('movement 229 includes physical chordal action and exact full-turn advance'
   } = model.root.userData;
   let previousAdvance = Number.NEGATIVE_INFINITY;
   for (let index = 0; index <= 4096; index += 1) {
-    const inputAngle = index / 4096 * FULL_TURN;
+    const inputAngle = (index / 4096 - 1) * geometry.hoistStrokeAngle;
     const state = stateAtInputAngle(inputAngle);
     assert.ok(state.chainAdvance >= previousAdvance - 2e-15);
     previousAdvance = state.chainAdvance;
@@ -421,22 +428,21 @@ test('movement 229 includes physical chordal action and exact full-turn advance'
       < 0.0016,
   );
 
-  const start = stateAtInputAngle(0);
-  const closure = stateAtInputAngle(FULL_TURN);
-  near(closure.sprocketAngle - start.sprocketAngle, -FULL_TURN, 0,
-    'one wheel revolution');
+  const start = stateAtInputAngle(-geometry.hoistStrokeAngle);
+  const closure = stateAtInputAngle(0);
+  near(closure.sprocketAngle - start.sprocketAngle,
+    -geometry.hoistStrokePitches * geometry.chainNodeStep, 0,
+    'hoist stroke of the wheel');
   near(
     closure.chainAdvance - start.chainAdvance,
-    transmission.chainTravelPerWheelTurn,
+    transmission.chainTravelPerWheelTurn * geometry.hoistStrokePitches / 14,
     2e-15,
-    'fourteen-link chain advance',
+    'four-link chain advance',
   );
-  assert.equal(closure.materialStepIndex - start.materialStepIndex, 14);
+  assert.equal(closure.materialStepIndex - start.materialStepIndex, 4);
   assert.equal(closure.nodes.length, start.nodes.length);
   closure.nodes.forEach((node, index) => {
-    nearVector(node.position, start.nodes[index].position, 2e-15,
-      `closure node ${index}`);
-    assert.equal(node.materialIndex - start.nodes[index].materialIndex, 14);
+    assert.equal(node.materialIndex, start.nodes[index].materialIndex);
   });
   disposeModel(model.root);
 });
@@ -529,13 +535,20 @@ test('movement 229 closes in four authored seconds while movement 507 stays auth
   assertReadableTiming(animationTiming);
   const start = stateAtTime(0);
   const closure = stateAtTime(geometry.cyclePeriod);
-  near(closure.sprocketAngle - start.sprocketAngle, -FULL_TURN, 0,
+  // Seamless loop: the hoist returns exactly to Brown's pose.
+  near(closure.sprocketAngle - start.sprocketAngle, 0, 1e-15,
     'runtime wheel closure');
+  closure.nodes.forEach((node, index) => {
+    nearVector(node.position, start.nodes[index].position, 1e-12,
+      `runtime chain closure node ${index}`);
+  });
+  const top = stateAtTime(geometry.cyclePeriod / 2);
+  near(top.sprocketAngle, geometry.hoistStrokeAngle, 1e-15, 'hoist stroke');
   near(
-    closure.chainAdvance - start.chainAdvance,
-    14 * geometry.linkPitch,
+    start.chainAdvance - top.chainAdvance,
+    geometry.hoistStrokePitches * geometry.linkPitch,
     2e-15,
-    'runtime toothed-chain closure',
+    'runtime toothed-chain hoist stroke',
   );
 
   const movement507 = createMovementModel(catalog.movements[506]);

@@ -14,10 +14,10 @@ export function makeMujocoScrewPress(mujoco,options={}) {
   const playback=createPhysicsPlayback(physics,sync);let disposed=false;
   const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
   const bounds=new THREE.Box3(new THREE.Vector3(-2.15,-2.65,-2.15),new THREE.Vector3(2.15,1.65,2.15));
-  // Brown's window: the handle down to the raised ram (the fit margin carries
-  // the view just past it), where he breaks the frame off. The lower jaw and anvil run off the bottom
-  // of the default view; the blank sits on its bottom edge.
-  const plateWindow=new THREE.Box3(new THREE.Vector3(-1.8,u.profile.ramBottom+.25,-.25),new THREE.Vector3(1.95,1.5,.25));
+  // Brown breaks the frame off just below the raised ram. The default view
+  // keeps his handle-to-ram composition and carries it on down to the foot of
+  // the lower jaw, so the anvil and the struck blank sit wholly in view.
+  const plateWindow=new THREE.Box3(new THREE.Vector3(-1.8,u.profile.baseBottom,-.25),new THREE.Vector3(1.95,1.5,.25));
   Object.assign(u,{mechanism:'mujoco-screw-press',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
     // The generic fit distance is sized for the window's bounding sphere;
     // this scale brings the window's height edge to edge as Brown crops it.

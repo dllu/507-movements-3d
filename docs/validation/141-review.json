@@ -30,7 +30,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-belts.js",
-      "sha256": "6afe42ffb345546f09393cbbe70ae80eeb3d2e17b02a4f5fed6d79f3985d490f"
+      "sha256": "ab22c1fde7fefb2148bcd445c91afc507947bb57aa64a62539c8d090a8a45dbb"
     },
     {
       "file": "src/data/band-saw-dimensions.js",

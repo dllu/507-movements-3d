@@ -171,14 +171,23 @@ function sourceHandGear(movementId) {
   for (const [name, body] of [['upper', upper], ['lower', lower]]) {
     const group = new THREE.Group();
     group.userData.role = `${name}-back-weight-rod-hanging-from-eye`;
-    const rod = new THREE.Mesh(new THREE.BoxGeometry(8 * sourceScale, 1, layers.rods[1] - layers.rods[0]), materials.pin);
-    rod.position.z = (layers.rods[0] + layers.rods[1]) / 2;
+    // Each straight rod hangs close behind its eye's plate (as in 181/182),
+    // joined by a short pin through the rod end and the eye, so the rod never
+    // turns a long horizontal pin to reach an eye in a forward layer. 183's
+    // upper eye lies on the quadrant (layer X): its rod sits in the gap behind
+    // it, which at the rod's side of the gear holds nothing else.
+    const eyeZ = span(name === 'upper' && !is184 ? 'X' : 'W');
+    const rodThickness = layers.rods[1] - layers.rods[0];
+    const rodZ = [eyeZ[0] - 0.02 - rodThickness, eyeZ[0] - 0.02];
+    const rod = new THREE.Mesh(new THREE.BoxGeometry(8 * sourceScale, 1, rodThickness), materials.pin);
+    rod.position.z = (rodZ[0] + rodZ[1]) / 2;
     rod.userData.role = `${name}-back-weight-rod`;
     rod.userData.runsPastCrop = true;
-    const eyeZ = span(name === 'upper' && !is184 ? 'X' : 'W');
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(eyePin * sourceScale, eyePin * sourceScale, eyeZ[1] - layers.rods[1], 32), materials.pin);
+    // The pin's rear end lies just inside the rod (no coplanar end faces).
+    const pinBack = rodZ[0] + 0.01;
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(eyePin * sourceScale, eyePin * sourceScale, eyeZ[1] - pinBack, 32), materials.pin);
     pin.rotation.x = Math.PI / 2;
-    pin.position.z = (eyeZ[1] + layers.rods[1]) / 2;
+    pin.position.z = (eyeZ[1] + pinBack) / 2;
     pin.userData.role = `${name}-back-weight-rod-eye-pin`;
     // Brown draws no weight: the rod runs straight out of the picture and
     // ends cleanly below the view in every pose (the back-weight load is an

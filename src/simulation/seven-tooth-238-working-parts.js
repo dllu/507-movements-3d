@@ -4,11 +4,22 @@ import sweep from './baked/seven-tooth-238-sweep.js';
 import{plate,poly,circle,capsule,ring,polygonClipping as clip}from'./finite-plate-geometry.js';
 import{mergeGeometries}from'three/addons/utils/BufferGeometryUtils.js';
 // Depth of each pallet block behind its working face (in the plate plane).
+// Reach of C's web along the arm outline from its carrier point.
+const C_HOOK_REACH=.72;
 const FACE_DEPTH={B:{tip:.16,root:.16},C:{tip:.0605,root:.16}};
 const convexHull=points=>{const p=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lower=[],upper=[];
  for(const q of p){while(lower.length>1&&cross(lower.at(-2),lower.at(-1),q)<=0)lower.pop();lower.push(q);}
  for(const q of p.reverse()){while(upper.length>1&&cross(upper.at(-2),upper.at(-1),q)<=0)upper.pop();upper.push(q);}
  return [...lower.slice(0,-1),...upper.slice(0,-1)];};
+// The arm outline from its tip (nearest the carrier) along the outer edge
+// (the neighbour side that rises towards C's pad), out to C_HOOK_REACH.
+const hookOuterEdge=(source,carrier)=>{
+ const n=source.length,dist=p=>Math.hypot(p[0]-carrier[0],p[1]-carrier[1]);
+ let tip=0;for(let i=1;i<n;i++)if(dist(source[i])<dist(source[tip]))tip=i;
+ const step=source[(tip+1)%n][1]>source[(tip-1+n)%n][1]?1:-1,edge=[source[tip]];
+ for(let k=1;k<n&&dist(edge.at(-1))<C_HOOK_REACH;k++)edge.push(source[(tip+step*k+n*k)%n]);
+ return edge;
+};
 export function finishSevenTooth238(root){
  const d=root.userData,b=d.blocks,g=d.geometry,parts={faces:[],mounts:[],attachments:[],profile:data};
  const replace=(mesh,geometry,reset=false)=>{mesh.geometry.dispose();mesh.geometry=geometry;if(reset)mesh.rotation.set(0,0,0);};
@@ -47,7 +58,12 @@ export function finishSevenTooth238(root){
   // Each pad is joined to the carrier by a broad web (the convex hull of the
   // pad and a disc at the carrier), so C reads as the anchor's hooked end
   // rather than a block on a thin nib.
-  const hullPoints=[...pad,...Array.from({length:24},(_,i)=>[attachment.carrier[0]+.28*Math.cos(i*Math.PI/12),attachment.carrier[1]+.28*Math.sin(i*Math.PI/12)])];
+  // C: Brown draws C as the hooked end of the arm itself, so its web is the
+  // hull of the pad and the arm's own outline near the carrier (one straight
+  // bridge, no rounded stub or V-gap between pad and arm).
+  const hullPoints=attachment.side==='C'
+   ?[...pad,...hookOuterEdge(source,attachment.carrier)]
+   :[...pad,...Array.from({length:24},(_,i)=>[attachment.carrier[0]+.28*Math.cos(i*Math.PI/12),attachment.carrier[1]+.28*Math.sin(i*Math.PI/12)])];
   body=clip.union(body,poly(pad),poly(convexHull(hullPoints)));}
  // Brown's B and C are faces cut in the anchor's own outline, so the anchor
  // is one plate as thick as the pallet faces: in the wheel's layer (up to the
@@ -73,7 +89,9 @@ export function finishSevenTooth238(root){
  const bCut=poly([[corner[0],corner[1]],at(bRoot,0,-.0005),at(bTip,0,-.0005),at(bTip,0,-stepDepth-.01),at(bTip,1.2,-stepDepth-.01),at(bTip,1.2,.8),[corner[0]+bn.x*.8,corner[1]+bn.y*.8]]);
  const notch=clip.intersection(swept,poly([at(bTip,0,-stepDepth-.4),at(bTip,1.2,-stepDepth-.4),at(bTip,1.2,.8),at(bTip,0,.8)]));
  body=clip.difference(body,bCut);parts.bStep={corner,depth:stepDepth};
- const bore=poly(circle([0,0],.094,128)),front=clip.difference(body,swept,bore);
+ // Slivers the swept cut isolates from the body (area < 0.005) are dropped.
+ const ringArea=r=>r.reduce((sum,p,i)=>{const q=r[(i+1)%r.length];return sum+p[0]*q[1]-q[0]*p[1];},0)/2;
+ const bore=poly(circle([0,0],.094,128)),front=clip.difference(body,swept,bore).filter(polygon=>Math.abs(ringArea(polygon[0]))>=.005);
  const layers=[plate(clip.difference(body,notch,bore),-.11,wheelBackPlane),plate(front,wheelBackPlane,g.palletPlaneZ+.09)];
  replace(b.palletBody,mergeGeometries(layers));layers.forEach(layer=>layer.dispose());parts.frontLayer=front;
  replace(b.palletHub,ring(.094,.3,-.14,.14,128),true);

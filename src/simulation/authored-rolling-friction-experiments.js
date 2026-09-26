@@ -1128,9 +1128,70 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
     b.testWeight.geometry.dispose();
     b.testWeight.geometry = heap;
   }
+  // Brown crops the belt at the plate's left edge. A belt is endless, so
+  // past that crop it wraps a plain driving pulley of the same size (the
+  // strands are parallel), cloned from the drawn pulley and carried on a bare
+  // shaft stub: no post, standard or base. It lies wholly beyond the plate.
+  {
+    for (const run of [...b.belt.children]) {
+      if (!run.userData.beyondPlateCrop) continue;
+      b.belt.remove(run);
+      run.geometry.dispose();
+    }
+    const direction = g.beltDirection, normal = g.beltNormal, radius = g.drivePulleyRadius;
+    const reach = g.beltFreeLength + 3.2;
+    const remoteCenter = new THREE.Vector3(
+      b.drivePulley.position.x - direction.x * reach,
+      b.drivePulley.position.y - direction.y * reach,
+      b.drivePulley.position.z,
+    );
+    const at = (angle) => new THREE.Vector3(
+      remoteCenter.x + radius * Math.cos(angle), remoteCenter.y + radius * Math.sin(angle), g.beltPlaneZ);
+    const lowerFree = g.lowerFreeEnd.clone(), upperFree = g.upperFreeEnd.clone();
+    const path = new THREE.CurvePath();
+    const directionAngle = Math.atan2(direction.y, direction.x);
+    let previous = at(directionAngle - Math.PI / 2);
+    path.add(new THREE.LineCurve3(lowerFree, previous));
+    const wrapSteps = 96;
+    for (let step = 1; step <= wrapSteps; step += 1) {
+      const next = at(directionAngle - Math.PI / 2 - Math.PI * step / wrapSteps);
+      path.add(new THREE.LineCurve3(previous, next));
+      previous = next;
+    }
+    path.add(new THREE.LineCurve3(previous, upperFree));
+    const loop = new THREE.Mesh(
+      flatBeltGeometry(path, { width: b.belt.userData.width, thickness: b.belt.userData.thickness, closed: false, segments: 256 }),
+      b.beltBand.material,
+    );
+    loop.userData.role = 'belt-running-on-past-plate-crop-round-driving-pulley';
+    loop.userData.beyondPlateCrop = true;
+    b.belt.add(loop);
+    const rotorPath = [];
+    for (let o = b.drivePulley.userData.rotor; o && o !== b.drivePulley; o = o.parent) rotorPath.unshift(o.parent.children.indexOf(o));
+    const remotePulley = b.drivePulley.clone(true);
+    remotePulley.position.copy(remoteCenter);
+    remotePulley.userData = { role: 'plain-driving-pulley-beyond-plate-crop', beyondPlateCrop: true };
+    remotePulley.userData.rotor = rotorPath.reduce((o, i) => o.children[i], remotePulley);
+    remotePulley.traverse((o) => {
+      o.userData.beyondPlateCrop = true;
+      if (o !== remotePulley && o.userData.role) o.userData.role = `driving-pulley-${o.userData.role}`;
+    });
+    root.add(remotePulley);
+    const stub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, 0.62, 24).rotateX(Math.PI / 2),
+      b.largeAxle.material,
+    );
+    stub.position.set(remoteCenter.x, remoteCenter.y, g.beltPlaneZ - 0.12);
+    stub.userData = { role: 'bare-driving-shaft-stub-beyond-plate-crop', fixed: true, beyondPlateCrop: true };
+    root.add(stub);
+    b.remotePulley = remotePulley;
+    b.remoteShaftStub = stub;
+    g.remotePulleyCenter = remoteCenter.clone();
+  }
   const baseUpdate = model.update;
   model.update = (time) => {
     baseUpdate(time);
+    setSpin(b.remotePulley, root.userData.currentState?.drivePulleyAngle ?? 0);
     const fraction = root.userData.currentState?.loadFraction
       ?? root.userData.stateAtTime(time).loadFraction;
     // With no added load the heap is hidden, parked at its seated pose.

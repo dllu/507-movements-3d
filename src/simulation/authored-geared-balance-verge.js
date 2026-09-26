@@ -540,7 +540,9 @@ function gearedBalanceVergeEscapement(movement) {
   balance.add(rim);
   for (let index = 0; index < 3; index += 1) {
     const spoke = new THREE.Mesh(new THREE.BoxGeometry(balanceRadius - 0.3, 0.12, 0.2), balanceMaterial);
-    const angle = Math.PI / 2 + index * FULL_TURN / 3;
+    // At the display pose (balance angle zero) one spoke points left and two
+    // reach right, to front and back, as Brown draws them toward C.
+    const angle = Math.PI + index * FULL_TURN / 3;
     spoke.position.set(Math.cos(angle) * (balanceRadius - 0.3) / 2, 0, -Math.sin(angle) * (balanceRadius - 0.3) / 2);
     spoke.rotation.y = angle;
     spoke.userData.role = 'balance-C-spoke';
@@ -555,8 +557,12 @@ function gearedBalanceVergeEscapement(movement) {
   // Mesh phase: a crown tooth sits at the top at arbor angle zero, so a pinion
   // space must face the crown there.
   const pinionPhase = Math.PI / pinionTeeth;
+  // Display time starts a quarter period in, at mid-swing (arbor angle zero),
+  // so t = 0 shows both loops standing upright over the arbor and the balance
+  // spokes as Brown draws them, rather than the arbor at a 34 degree extreme.
+  const displayTimeOffset = period / 4;
   const update = (time) => {
-    const state = stateAtTime(time);
+    const state = stateAtTime(time + displayTimeOffset);
     arbor.rotation.x = state.arborAngle;
     escapeRotor.rotation.z = state.wheelAngle;
     staff.rotation.y = state.balanceAngle;
@@ -580,6 +586,7 @@ function gearedBalanceVergeEscapement(movement) {
   root.userData.helixGap = (side, theta, phi) => helixGap(loops[side], theta, phi).gap;
   root.userData.times = times;
   root.userData.stateAtTime = stateAtTime;
+  root.userData.displayTimeOffset = displayTimeOffset;
   root.userData.sourceAnimation = {
     available: false,
     reason: 'The official Movement 298 page marks Animated unavailable and serves only the original engraving.',

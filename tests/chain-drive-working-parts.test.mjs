@@ -77,12 +77,12 @@ for(const id of [227,228,229])test(`${id}: stable buffers, readable timing, comp
  m.root.traverse(o=>{if(o.geometry){saved.push([o,o.geometry,o.geometry.attributes.position.array]);}for(const material of[].concat(o.material??[]))assert.equal(material.fog,false);});
  for(let i=0;i<=16;i++){
   m.update(4*i/16);m.root.updateMatrixWorld(true);m.root.traverseVisible(o=>{const position=o.geometry?.attributes.position;if(!position)return;
-   // 229 cuts its chain legs with fixed clipping planes; clipped vertices are not drawn.
    const cuts=[].concat(o.material??[]).flatMap(material=>material.clippingPlanes??[]);
-   // The legs run on below the plate into navel pipes in a deck; the pipes,
-   // deck and link material inside them lie beyond the framed plate.
+   // 227/228: the legs run on below the plate into navel pipes in a deck; the
+   // pipes, deck and link material inside them lie beyond the framed plate.
+   // 229: the finite hoist chain's legs run on past the plate's crop.
    if(o.parent?.userData.role==='chain-navel-pipes-and-deck-beyond-plate-crop')return;
-   for(let j=0;j<position.count;j++){const point=new THREE.Vector3().fromBufferAttribute(position,j).applyMatrix4(o.matrixWorld);if(cuts.some(plane=>plane.distanceToPoint(point)<0))continue;if(point.y<d.cameraFitBounds.min.y&&point.y>d.chainNavelPipes.deckY-d.chainNavelPipes.pipeLength)continue;if(id===229&&point.y<d.geometry.wheelCenter.y&&point.y>d.chainNavelPipes.deckY-d.chainNavelPipes.pipeLength&&(o.userData.chainLink||o.parent?.userData.chainLink))continue;assert.ok(d.cameraFitBounds.containsPoint(point),`${id} frame misses a vertex`);}});
+   for(let j=0;j<position.count;j++){const point=new THREE.Vector3().fromBufferAttribute(position,j).applyMatrix4(o.matrixWorld);if(cuts.some(plane=>plane.distanceToPoint(point)<0))continue;if(id!==229&&point.y<d.cameraFitBounds.min.y&&point.y>d.chainNavelPipes.deckY-d.chainNavelPipes.pipeLength)continue;if(id===229&&point.y<d.geometry.wheelCenter.y&&(o.userData.chainLink||o.parent?.userData.chainLink))continue;assert.ok(d.cameraFitBounds.containsPoint(point),`${id} frame misses a vertex`);}});
  }
  let count=0;m.root.traverse(o=>{if(o.geometry)count++;});assert.equal(count,saved.length);
  for(const[o,g,a]of saved){assert.equal(o.geometry,g);assert.equal(o.geometry.attributes.position.array,a);}

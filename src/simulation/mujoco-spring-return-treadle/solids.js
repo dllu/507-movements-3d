@@ -31,10 +31,9 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  add('pulleyAxle',disk(.14,-.05,.84,96),'fixed',PALETTE.ink);
  add('pulleyRetainer',ring(.14,.20,.784,.83,96),'fixed',PALETTE.ink);
  add('floor',plate(imagePoly([[16,459],[466,459],[466,465],[16,465]]),-.62,.84),'fixed',PALETTE.frame);
- add('springClamp',plate(imagePoly([[26,181],[35,174],[48,194],[39,202]]),-.55,.08),'fixed',PALETTE.frame);
  // Brown crops the bow's fixed end and draws no hanger for the pulley. The
- // small end block is kept as the bow's clamped end; the undrawn floor posts
- // under it and under the pulley are not modelled (p62).
+ // bow simply ends at his cut: no end block, clamp or floor posts are
+ // modelled (p62/p63); its fixed end is the cantilever root off the plate.
  // Rounded fastening heads contain only the terminal cord material. Their
  // hidden shoulders/stems and the separated endpoint depths are inferred.
  const anchor=(name,family,point,low,high)=>{
@@ -53,7 +52,7 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  const band=add('band',new THREE.BufferGeometry(),'fixed',PALETTE.ink);
  const update=makeSpringTreadleUpdater(root,{widths,pivot});
 
- Object.assign(root.userData,{parts,families,blocks,leafWidths:widths,hideGround:true,sourceScale:scale,reconstructionNote:'Unregistered source-shaped candidate. Pedestal and solid pulley follow the engraving; depth, the bow end block and cord fastenings are inferred; the pulley axle is a plain stub. Native effective masses and flexural properties are not inferred from the stylized visible strip thickness.'});
+ Object.assign(root.userData,{parts,families,blocks,leafWidths:widths,hideGround:true,sourceScale:scale,reconstructionNote:'Unregistered source-shaped candidate. Pedestal and solid pulley follow the engraving; depth and cord fastenings are inferred; the bow ends at the plate cut; the pulley axle is a plain stub. Native effective masses and flexural properties are not inferred from the stylized visible strip thickness.'});
  const route=new ReturnBandRoute([.774,2.664],[.738,-2.322]);update({treadle:0,rotorPhase:route.rotorPhase,upper:[.774,2.664,0],lower:[.738,-2.322,0],leafPoints:leaf.points.map(p=>p.toArray())});markShadows(root);
  return{root,update,dispose:()=>disposeObject3D(root)};
 }

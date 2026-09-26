@@ -5,16 +5,16 @@
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-105.json.gz",
   "bytes": 6971,
-  "assetSha256": "167747e8cb3c70d2d2682d89e897e936da3320228e9bde335033d371106e7ad7",
+  "assetSha256": "3acf170e01dedac0125c12f0ecbcbe7bd5e16d713ce8860b91d76f2e349b1ff9",
   "motionSources": {
     "src/simulation/mujoco-screw-press/physics.js": "ebd40022f7d854afd2094857c9b41f3c12d0ed8c71797f0cc2b153c240fd7317",
     "src/simulation/mujoco-screw-press/profile.js": "b65b400c4bdabba863850de38a9bbdd24933f6cedab83954ec2fc32749a01c4d",
     "src/simulation/mujoco-screw-press/source.js": "781c6bd06982f835ebeaf2ea38bef56563d4b9f12c6ec82daff0164b7d5e9ae5",
-    "src/simulation/mujoco-screw-press/visual.js": "234603ef7fbde73db9a4d200920a17089a06622fbbb632bb7fcd05b1506f69ee",
+    "src/simulation/mujoco-screw-press/visual.js": "3b2c90885ebb7bfb4b7a29fe2a27664686f848001f3bb26648d4042650f084e9",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-screw-press/geometry.js": "e8810990ea378c16b1e2b9a6d9d45ed7eb28b66029acf840a65292a11dbef7db",
+    "src/simulation/mujoco-screw-press/geometry.js": "03630cfe04b252e056c828301d07cb9c4bcb0d5c4dba87a0da39ea148b5d2f2f",
     "src/simulation/mujoco-screw-press/section.js": "2d501318a0fb563795849b26d02d93358a0a0c8e2be13e35931b9bb883e386d4"
   },
   "physicsXmlSha256": {
@@ -69,5 +69,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 1.4802809257507323
+  "bakeSeconds": 1.4577085809707642
 }

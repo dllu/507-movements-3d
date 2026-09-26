@@ -283,6 +283,12 @@ test('movement 221 uses one common pitch and a real recessed parallel guide', ()
   }
 
   assert.equal(blocks.guideFloor.userData.guideGrooveFloor, true);
+  // The groove g-h is cut in one solid plate: no spokes carry it and the
+  // floor and inner island have no openings between C and the groove.
+  assert.equal(blocks.guideSpokes.length, 0);
+  for (const plate of [blocks.guideFloor, blocks.guideInnerIsland]) {
+    assert.equal(plate.geometry.parameters.shapes.holes.length, 0, plate.userData.role);
+  }
   assert.equal(blocks.guideRoller.userData.guideFollower, true);
   assert.ok(geometry.guideOuterDistance > geometry.grooveOuterDistance);
   assert.ok(geometry.grooveOuterDistance > geometry.grooveInnerDistance);

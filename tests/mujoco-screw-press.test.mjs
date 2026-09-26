@@ -38,9 +38,9 @@ test('105 closed solids retain open bores, a captured swivel and native working 
     assert.ok(Math.abs(f.internal.width+f.external.width+2*f.clearance-f.pitch)<1e-12);
     assert.ok(f.bearing.radius>f.bearing.neck+.003,'the screw flange must be retained below the cap bore');
     assert.ok(f.bearing.top<f.capBottom&&f.bearing.bottom>f.bearing.floor);
-    // Brown's window ends at the raised ram; the blank, now wider than the ram
-    // face, lies below it and stays visible when struck.
-    assert.ok(u.cameraFitBounds.min.y>f.workTop&&u.cameraFitBounds.max.y<f.barY+.5);
+    // The default view runs from the handle down to the foot of the lower jaw,
+    // so the anvil and the blank (wider than the ram face) are wholly in view.
+    assert.ok(u.cameraFitBounds.min.y<=f.baseBottom+1e-9&&u.cameraFitBounds.max.y<f.barY+.5);
     assert.ok(f.blankRadius>f.ramRadius);
     const state=[...p.data.qpos,...p.data.qvel];u.setSectionView(true);
     assert.ok(u.section.caps.every(c=>c.visible));u.setSectionView(false);
@@ -71,7 +71,7 @@ test('105 ten strokes retain the guides and threads and contact the blank withou
         assert.deepEqual(a.topologyIssues,[]);
         for(const issue of a.issues){assert.deepEqual([issue.from,issue.to].sort(),['blank','ram'],JSON.stringify(issue));visiblePenetration=Math.max(visiblePenetration,-issue.gap);}
         // Every part stays in the sampled motion bounds; the default view
-        // (cameraFitBounds) is Brown's narrower window and crops the lower jaw.
+        // (cameraFitBounds) runs from the handle to the foot of the lower jaw.
         const motionBounds=new THREE.Box3(new THREE.Vector3(...u.sampledMotionBounds.min),new THREE.Vector3(...u.sampledMotionBounds.max));
         for(const mesh of Object.values(u.parts)) {
           const positions=mesh.geometry.attributes.position;

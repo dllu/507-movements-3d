@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {installWeightedRackSelector, selectorState} from './weighted-rack-selector-contact.js';
+import {installWeightedRackSelector, makeSelectorLinkSchedule, selectorGeometry, selectorState} from './weighted-rack-selector-contact.js';
 import { correctWeightedRackInterfaces, correctWeightedRackTeeth, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import {
   PALETTE,
@@ -695,18 +695,18 @@ function alternatingWeightedRackDrive(movement) {
   root.add(markShadows(elbowLever));
 
   const springAnchor = new THREE.Vector3(2.95, 4.82-(Math.PI*pinionPitchRadius-stroke), 0.13);
-  // Spring d runs in front of lever C (z 0.64), clear of C's rest stop;
-  // the anchor stud stands out from the top bar to that plane.
+  // Spring d runs in front of lever C (z 0.64), clear of C's link and stop.
   const springPlaneZ = 0.64;
-  const springAnchorBoss = cylinderAlongZ(0.10, springPlaneZ + 0.11 + 0.14,
-    darkMaterial, 24);
-  springAnchorBoss.position.set(springAnchor.x, springAnchor.y,
-    (springPlaneZ + 0.11 - 0.14) / 2);
+  // A short fixed stud at spring d's far end (Brown's small circle).
+  const springAnchorBoss = cylinderAlongZ(0.10, 0.26, darkMaterial, 24);
+  springAnchorBoss.position.set(springAnchor.x, springAnchor.y, springPlaneZ);
   springAnchorBoss.userData.role = 'fixed-anchor-of-tension-spring-d';
   root.add(springAnchorBoss);
   const spring = makeDynamicCoilSpring(brassMaterial);
   root.add(spring);
 
+  // Angle of C's free link (see makeSelectorLinkSchedule), built on first use.
+  let linkSchedule = null;
   const stateAtTime = (time) => {
     const cycles = Math.floor(time / cycleDuration);
     const cycleTime = positiveModulo(time, cycleDuration);
@@ -723,6 +723,11 @@ function alternatingWeightedRackDrive(movement) {
     const crossheadAcceleration =
       phaseData.crossheadAccelerationPerPhase2 / cycleDuration ** 2;
     const contactState = selectorState(rightPose,guideY,elbowPivot);
+    linkSchedule ??= makeSelectorLinkSchedule(
+      (t) => selectorState(rackPose(1, t / cycleDuration), guideY, elbowPivot),
+      cycleDuration,
+    );
+    contactState.linkAngle = linkSchedule.angleAt(cycleTime, contactState);
     const topAssistActive = phaseData.stage === 'top-zero-speed-guide-crossover-with-elbow-assist' && contactState.contact;
     const assistProgress = topAssistActive ? phaseData.stageProgress : 0;
     const leftRackPhaseError = wrappedSignedAngle(
@@ -765,7 +770,7 @@ function alternatingWeightedRackDrive(movement) {
     };
   };
 
-  const springAttachmentLocal = new THREE.Vector3(-0.02, -0.62,
+  const springAttachmentLocal = new THREE.Vector3(...selectorGeometry.springStud,
     springPlaneZ - elbowPivot.z);
   const springAnchorFront = new THREE.Vector3(springAnchor.x, springAnchor.y,
     springPlaneZ);

@@ -208,7 +208,6 @@ function selfRockingCradle(movement) {
   const cradleBandEffectiveRadius = bandPitchRadius
     / cradlePerOutputRatio;
   const rockerRollRadius = 3.68;
-  const rockerTubeRadius = .13;
   const groundY = -2.60;
   const cradleCenterY = groundY + rockerRollRadius;
   const bandZ = .42;
@@ -576,29 +575,26 @@ function selfRockingCradle(movement) {
 
   const cradleE = new THREE.Group();
   cradleE.userData.role = 'rolling-self-rocking-cradle-E';
-  const rockerPoints = [];
-  for (let index = 0; index <= 72; index += 1) {
-    const angle = THREE.MathUtils.lerp(-2.15, -0.99, index / 72);
-    rockerPoints.push(new THREE.Vector3(
-      (rockerRollRadius-rockerTubeRadius) * Math.cos(angle),
-      (rockerRollRadius-rockerTubeRadius) * Math.sin(angle),
-      -0.02,
-    ));
-  }
-  const rockerShoe = makeTubeThrough(
-    rockerPoints,
-    0.13,
+  // Brown draws rocker E as one solid circular segment: a flat top (the
+  // bed the standards stand on) over a rolling arc of the roll radius. It is
+  // one extruded outline, behind wheel A.
+  const rockerTopY = -2.66;
+  const rockerHalfChord = Math.sqrt(rockerRollRadius ** 2 - rockerTopY ** 2);
+  const rockerShape = new THREE.Shape();
+  rockerShape.moveTo(-rockerHalfChord, rockerTopY);
+  rockerShape.absarc(0, 0, rockerRollRadius,
+    Math.atan2(rockerTopY, -rockerHalfChord), Math.atan2(rockerTopY, rockerHalfChord), false);
+  rockerShape.closePath();
+  const rockerDepth = 0.82;
+  const rockerShoe = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(rockerShape, { depth: rockerDepth, bevelEnabled: false, curveSegments: 96 })
+      .translate(0, 0, -.25 - rockerDepth / 2),
     cradleMaterial,
-    'circular-rocker-shoe-of-cradle-E',
   );
+  rockerShoe.userData.role = 'solid-circular-segment-rocker-E';
   cradleE.add(rockerShoe);
-  const cradleBed = new THREE.Mesh(
-    new THREE.BoxGeometry(4.55, 0.18, 0.82),
-    cradleMaterial,
-  );
-  cradleBed.position.set(0, -2.75, -.25);
-  cradleBed.userData.role = 'rigid-bed-of-cradle-E';
-  cradleE.add(cradleBed);
+  // The segment's flat top is the cradle's bed.
+  const cradleBed = rockerShoe;
   for (const side of [-1, 1]) {
     const standard = beamBetween(
       new THREE.Vector3(side * 2.02, -2.68, -.25),

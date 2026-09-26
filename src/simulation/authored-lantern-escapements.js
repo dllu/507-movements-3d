@@ -1041,12 +1041,19 @@ function lanternWheelEscapement(movement) {
   const shaftFront = frontHub.position.z + 0.15 + 0.06;
   const shaftRear = -0.40;
   blocks.wheelShaft.geometry.dispose();
-  blocks.wheelShaft.geometry = new THREE.CylinderGeometry(0.16, 0.16, shaftFront - shaftRear, 64);
+  // The arbor turns with the wheel and fills the bored hub and disc (it is
+  // fixed in them): a clearance ring would open a sight line through the hub
+  // to the background and speckle its face.
+  blocks.wheelShaft.geometry = new THREE.CylinderGeometry(0.168, 0.168, shaftFront - shaftRear, 64);
   blocks.wheelShaft.position.z = (shaftFront + shaftRear) / 2;
   makeSeeThrough(frontPlate);
   const workingPairs = root.userData.lanternWorkingParts.pairs;
+  // Keep only pairs that move relative to each other; the arbors are fixed in
+  // their own hubs.
+  const body = (part) => (part.parent === blocks.wheelRotor || part.parent?.parent === blocks.wheelRotor
+    ? 'wheel' : part.parent === blocks.armAssembly || part.parent?.parent === blocks.armAssembly ? 'arm' : part.uuid);
   root.userData.lanternWorkingParts.pairs = workingPairs.filter(
-    ([a, b]) => a.parent && b.parent,
+    ([a, b]) => a.parent && b.parent && body(a) !== body(b),
   );
   // The pin ends read as separate circles on the plate's plain disc.
   const pinMaterial = matte(PALETTE.white, { metalness: 0.22, roughness: 0.45 });

@@ -228,7 +228,10 @@ test('movement 391 alternates exactly one working rack and exchanges mesh only a
     timeline.cycleDuration
       * (geometry.ascentEnd + geometry.topCrossoverEnd) / 2,
   );
-  assert.equal(topMiddle.elbowAssist.active, false); // C has released before the crossover midpoint.
+  // C's link carries the pin past the crossover midpoint and lets go before
+  // the crossover ends.
+  assert.equal(topMiddle.elbowAssist.active, true);
+  assert.equal(stateAtTime(timeline.cycleDuration * geometry.topCrossoverEnd).elbowAssist.contact, false);
   near(topMiddle.leftRack.outwardFraction, 0.5, 4e-15,
     'left top crossover midpoint');
   near(topMiddle.rightRack.outwardFraction, 0.5, 4e-15,
