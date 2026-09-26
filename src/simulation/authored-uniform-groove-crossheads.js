@@ -4,7 +4,6 @@ import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
-  makeBeam,
   markShadows,
   matte,
 } from './primitives.js';
@@ -587,81 +586,10 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     guideBridges.push(bridge);
   }
 
-  const rearFrameRails = [
-    makeBeam(
-      new THREE.Vector3(
-        -frameHalfWidth,
-        shaftCenter.y - guideCenter - guideHalfHeight,
-        frameZ,
-      ),
-      new THREE.Vector3(
-        -frameHalfWidth,
-        shaftCenter.y + guideCenter + guideHalfHeight,
-        frameZ,
-      ),
-      { thickness: 0.13, depth: 0.2, color: PALETTE.frame },
-    ),
-    makeBeam(
-      new THREE.Vector3(
-        frameHalfWidth,
-        shaftCenter.y - guideCenter - guideHalfHeight,
-        frameZ,
-      ),
-      new THREE.Vector3(
-        frameHalfWidth,
-        shaftCenter.y + guideCenter + guideHalfHeight,
-        frameZ,
-      ),
-      { thickness: 0.13, depth: 0.2, color: PALETTE.frame },
-    ),
-  ];
-  rearFrameRails.forEach((rail, index) => {
-    rail.userData.role = 'fixed-rear-support-rail';
-    rail.userData.index = index;
-  });
-
-  const guideBrackets = [-1, 1].flatMap((sideY) => [-1, 1].map((sideX) => {
-    const bracket = makeBeam(
-      new THREE.Vector3(
-        sideX * frameHalfWidth,
-        shaftCenter.y + sideY * guideCenter,
-        frameZ,
-      ),
-      new THREE.Vector3(
-        sideX * guideHalfWidth,
-        shaftCenter.y + sideY * guideCenter,
-        stemPlaneZ - 0.20,
-      ),
-      { thickness: 0.12, depth: 0.18, color: PALETTE.frame },
-    );
-    bracket.userData.role = 'fixed-bracket-carrying-output-guide';
-    bracket.userData.sideX = sideX;
-    bracket.userData.sideY = sideY;
-    return bracket;
-  }));
-
-  const rearBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(hubRadius + 0.075, 0.075, 10, 48),
-    frameMaterial,
-  );
-  rearBearing.position.set(shaftCenter.x, shaftCenter.y, -0.63);
-  rearBearing.userData.role = 'fixed-bearing-for-input-shaft';
-
-  const bearingBrackets = [-1, 1].map((sideX) => {
-    const bracket = makeBeam(
-      new THREE.Vector3(sideX * frameHalfWidth, shaftCenter.y, frameZ),
-      rearBearing.position,
-      { thickness: 0.12, depth: 0.18, color: PALETTE.frame },
-    );
-    bracket.userData.role = 'fixed-input-bearing-bracket';
-    return bracket;
-  });
-
+  // Brown draws only the two guide blocks: no rear frame, rails, brackets or
+  // shaft bearing (p62 support rule). The guides and the input axis are fixed
+  // ideal constraints; the shaft ends inside the disk.
   root.add(
-    ...rearFrameRails,
-    ...guideBrackets,
-    ...bearingBrackets,
-    rearBearing,
     ...guideCheeks,
     ...guideBridges,
     input,
@@ -878,7 +806,6 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
   root.userData.archetype =
     'uniform-velocity-endless-groove-crosshead';
   root.userData.blocks = {
-    bearingBrackets,
     crankWrist,
     diskBody,
     diskRim,
@@ -886,7 +813,6 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     grooveBand,
     grooveCornerPockets,
     grooveEdges,
-    guideBrackets,
     guideCheeks,
     hubFace,
     input,
@@ -894,8 +820,6 @@ function uniformVelocityEndlessGrooveCrosshead(movement) {
     inputShaft,
     islandRetainer,
     lowerStem,
-    rearBearing,
-    rearFrameRails,
     shaftHub,
     stemIndexes,
     upperStem,

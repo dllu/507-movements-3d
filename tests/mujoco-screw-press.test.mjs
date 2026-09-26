@@ -38,6 +38,10 @@ test('105 closed solids retain open bores, a captured swivel and native working 
     assert.ok(Math.abs(f.internal.width+f.external.width+2*f.clearance-f.pitch)<1e-12);
     assert.ok(f.bearing.radius>f.bearing.neck+.003,'the screw flange must be retained below the cap bore');
     assert.ok(f.bearing.top<f.capBottom&&f.bearing.bottom>f.bearing.floor);
+    // Brown's window ends at the raised ram; the blank, now wider than the ram
+    // face, lies below it and stays visible when struck.
+    assert.ok(u.cameraFitBounds.min.y>f.workTop&&u.cameraFitBounds.max.y<f.barY+.5);
+    assert.ok(f.blankRadius>f.ramRadius);
     const state=[...p.data.qpos,...p.data.qvel];u.setSectionView(true);
     assert.ok(u.section.caps.every(c=>c.visible));u.setSectionView(false);
     assert.ok(u.section.caps.every(c=>!c.visible));assert.deepEqual([...p.data.qpos,...p.data.qvel],state);
@@ -66,9 +70,12 @@ test('105 ten strokes retain the guides and threads and contact the blank withou
         v.sync();const a=auditClutchSourceSolids(v);checks+=a.checks;poses++;
         assert.deepEqual(a.topologyIssues,[]);
         for(const issue of a.issues){assert.deepEqual([issue.from,issue.to].sort(),['blank','ram'],JSON.stringify(issue));visiblePenetration=Math.max(visiblePenetration,-issue.gap);}
+        // Every part stays in the sampled motion bounds; the default view
+        // (cameraFitBounds) is Brown's narrower window and crops the lower jaw.
+        const motionBounds=new THREE.Box3(new THREE.Vector3(...u.sampledMotionBounds.min),new THREE.Vector3(...u.sampledMotionBounds.max));
         for(const mesh of Object.values(u.parts)) {
           const positions=mesh.geometry.attributes.position;
-          for(let j=0;j<positions.count;j++)assert.ok(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(positions,j).applyMatrix4(mesh.matrixWorld)),mesh.name);
+          for(let j=0;j<positions.count;j++)assert.ok(motionBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(positions,j).applyMatrix4(mesh.matrixWorld)),mesh.name);
         }
       }
       if(i%cycle===cycle/2)assert.ok(Math.abs(slide+f.pitch)<.001,'ram did not reach the blank');

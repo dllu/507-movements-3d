@@ -26,16 +26,15 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  add('pulleyCore',ring(.144,.726,.23,.72,128),'pulley',PALETTE.brass);
  add('pulleyRearFlange',ring(.144,.774,.17,.23,128),'pulley',PALETTE.brass);
  add('pulleyFrontFlange',ring(.144,.774,.72,.78,128),'pulley',PALETTE.brass);
- add('pulleyAxle',disk(.14,-.60,.84,96),'fixed',PALETTE.ink);
- add('pulleyBearing',ring(.144,.25,-.48,.164,96),'fixed',PALETTE.frame);
+ // Brown draws the pulley on its axle with no hanger: the fixed axle ends as
+ // a plain stub behind the pulley (p62; no bearing, pad or post).
+ add('pulleyAxle',disk(.14,-.05,.84,96),'fixed',PALETTE.ink);
  add('pulleyRetainer',ring(.14,.20,.784,.83,96),'fixed',PALETTE.ink);
- add('pulleyMount',plate(poly([[-.32,-.38],[.32,-.38],[.32,.38],[-.32,.38]]),-.60,-.48),'fixed',PALETTE.frame);
  add('floor',plate(imagePoly([[16,459],[466,459],[466,465],[16,465]]),-.62,.84),'fixed',PALETTE.frame);
  add('springClamp',plate(imagePoly([[26,181],[35,174],[48,194],[39,202]]),-.55,.08),'fixed',PALETTE.frame);
- // Brown crops the bow's fixed end and the pulley's hanger. Slim posts from
- // the floor, in the back plane, carry the end block and the pulley's pad.
- add('springClampPost',plate(imagePoly([[31,196],[43,196],[43,459],[31,459]]),-.55,-.45),'fixed',PALETTE.frame);
- add('pulleyPost',plate(poly([[-.1,-.38],[.1,-.38],[.1,pixel([0,459])[1]],[-.1,pixel([0,459])[1]]]),-.60,-.48),'fixed',PALETTE.frame);
+ // Brown crops the bow's fixed end and draws no hanger for the pulley. The
+ // small end block is kept as the bow's clamped end; the undrawn floor posts
+ // under it and under the pulley are not modelled (p62).
  // Rounded fastening heads contain only the terminal cord material. Their
  // hidden shoulders/stems and the separated endpoint depths are inferred.
  const anchor=(name,family,point,low,high)=>{
@@ -54,7 +53,7 @@ export function makeSpringTreadleSolids({segments=32,tailSegments=6}={}){
  const band=add('band',new THREE.BufferGeometry(),'fixed',PALETTE.ink);
  const update=makeSpringTreadleUpdater(root,{widths,pivot});
 
- Object.assign(root.userData,{parts,families,blocks,leafWidths:widths,hideGround:true,sourceScale:scale,reconstructionNote:'Unregistered source-shaped candidate. Pedestal and solid pulley follow the engraving; depth, rear mounts, bearings and cord fastenings are inferred. Native effective masses and flexural properties are not inferred from the stylized visible strip thickness.'});
+ Object.assign(root.userData,{parts,families,blocks,leafWidths:widths,hideGround:true,sourceScale:scale,reconstructionNote:'Unregistered source-shaped candidate. Pedestal and solid pulley follow the engraving; depth, the bow end block and cord fastenings are inferred; the pulley axle is a plain stub. Native effective masses and flexural properties are not inferred from the stylized visible strip thickness.'});
  const route=new ReturnBandRoute([.774,2.664],[.738,-2.322]);update({treadle:0,rotorPhase:route.rotorPhase,upper:[.774,2.664,0],lower:[.738,-2.322,0],leafPoints:leaf.points.map(p=>p.toArray())});markShadows(root);
  return{root,update,dispose:()=>disposeObject3D(root)};
 }

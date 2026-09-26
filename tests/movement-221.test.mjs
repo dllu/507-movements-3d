@@ -304,13 +304,16 @@ test('movement 221 uses one common pitch and a real recessed parallel guide', ()
     - (geometry.circularGearZ + geometry.circularGearDepth / 2);
   near(meshPlaneClearance, 0.08, 5e-17,
     'small-pinion plane clears compound outer-wheel plane');
-  // The grooved plate sits in front of the arm so shaft D never crosses the
-  // plane swept by B's large wheel.
-  const guideToFrontPinionClearance = geometry.guideRailZ
-    - geometry.guideRailDepth / 2
-    - (geometry.driverGearZ + geometry.driverGearDepth / 2);
-  assert.ok(guideToFrontPinionClearance > 0.11);
-  assert.ok(geometry.guideFloorZ > geometry.guideRailZ);
+  // As Brown dashes it, the grooved plate lies behind C and behind the A/B
+  // wheel plane, open toward the front; shaft D stays in front of C.
+  const guideToRearWheelClearance = geometry.circularGearZ
+    - geometry.circularGearDepth / 2
+    - (geometry.guideRailZ + geometry.guideRailDepth / 2);
+  assert.ok(guideToRearWheelClearance > 0.05);
+  assert.ok(geometry.guideFloorZ < geometry.guideRailZ);
+  const driverShaftBox = new THREE.Box3().setFromObject(blocks.driverShaft);
+  assert.ok(driverShaftBox.min.z > geometry.circularGearZ + geometry.circularGearDepth / 2,
+    'shaft D never enters the plane swept by B\'s large wheel');
   disposeModel(model.root);
 });
 

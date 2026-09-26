@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-epicyclic-trains.js",
-      "sha256": "e9816abe689ec987d3af099ba62e9647cafc7c7559fda43e434b5a5ffa9ca4fa"
+      "sha256": "8fc68d81d0d6cb3349875bdb77a5d67e294e0993a3a82cf11c903576d0574de5"
     },
     {
       "file": "src/simulation/epicyclic-503-504-contact.js",
@@ -10,7 +10,7 @@
     },
     {
       "file": "src/simulation/epicyclic-family-corrections.js",
-      "sha256": "31d8e12d803c018324789039a68df8ad2130ad2559cd95b4899a8339875fb34e"
+      "sha256": "71e610575353a62729cda14af8c7401149a5547f7b788c667a738d00e8a21f83"
     },
     {
       "file": "src/simulation/primitives.js",

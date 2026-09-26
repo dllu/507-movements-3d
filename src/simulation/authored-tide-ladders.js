@@ -281,13 +281,17 @@ function makeFloatAssembly({
   // Pass 57: Brown's small open boat instead of a pontoon slab. The hull is
   // an open shell with a rounded bottom and a sheer that rises to pointed
   // ends; a thwart across it carries the two end-frame posts, which are run
-  // down onto it. The boat extends left of the posts as Brown draws it.
+  // down onto it. Brown draws the posts a little aft of midships (about 45%
+  // of the boat from its bow), so the thwart lies where the hull is widest:
+  // the beam just takes the posts and the boat is about 1.7 times as long as
+  // it is broad (pass 62; with the posts near the stern it was nearly as
+  // broad as long).
   const posts = endFrame.userData.posts;
   const postOuterZ = Math.max(...posts.map((post) => Math.abs(post.position.z) + 0.09));
-  const bow = -2.0, stern = 0.55, center = (bow + stern) / 2, half = (stern - bow) / 2;
+  const bow = -1.55, stern = 1.85, center = (bow + stern) / 2, half = (stern - bow) / 2;
   const wall = 0.06, sheerY = -0.145, depth = 0.62;
   // The thwart (x within +-0.12 of the posts) must reach past the posts.
-  const thwartS = (0.12 - center) / half;
+  const thwartS = Math.max(Math.abs(0.12 - center), Math.abs(-0.12 - center)) / half;
   const beam = (postOuterZ + 0.03 + wall) / Math.sqrt(1 - thwartS ** 4) + 0.01;
   const hull = new THREE.Mesh(openBoatHullGeometry({
     // The stern stays low: the ladder's stringers swing over it.

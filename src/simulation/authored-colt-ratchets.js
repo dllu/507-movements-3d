@@ -1260,32 +1260,20 @@ function coltCylinderRatchet(movement) {
     mainspringGeometry.computeBoundingBox();
     mainspringGeometry.computeBoundingSphere();
   };
-  // Undrawn by Brown, beyond his crop: the block the leaf is set against.
-  const mainspringClamp = new THREE.Mesh(
-    plate(poly([[-0.44, -0.22], [-0.125, -0.22], [-0.125, 0.22], [-0.44, 0.22]]),
-      mainspringLow - 0.03, mainspringHigh + 0.03),
-    frameMaterial,
-  );
-  mainspringClamp.userData.role = 'fixed-mainspring-root-block';
-  mainspringFrame.add(mainspringClamp);
+  // Brown breaks the leaf off at the lower right; its root in the grip
+  // frame is not drawn, so the leaf ends cleanly there with no undrawn
+  // block or lock-plate arm (p62 support policy).
 
   // The lock plate (frame side) behind the working parts, kept small and
-  // out of sight: a boss round the tumbler arbor with three narrow arms (one
-  // plain plate) to spring c's block, the lug for the cylinder arbor and the
-  // mainspring's root block. The boss and the upper arms lie behind the
-  // hammer; the arm to the mainspring root runs low, behind the hammer's
-  // foot and under the leaf, so nothing large stands behind the stirrup.
+  // out of sight: a boss round the tumbler arbor with two narrow arms (one
+  // plain plate) to spring c's block and the lug for the cylinder arbor.
+  // The boss and the arms lie behind the hammer.
   const blockFoot = rasterToModel([176, 200]);
-  const clampCentre = [
-    mainspringRoot[0] - 0.28 * Math.cos(mainspringAngle),
-    mainspringRoot[1] - 0.28 * Math.sin(mainspringAngle),
-  ];
   const arborLugCentre = [-1.64, cylinderCenterY];
   const arborLugHalf = [0.22, 0.3];
   const blockCentre = springBlockOutline.reduce((sum, point) => [sum[0] + point[0] / springBlockOutline.length,
     sum[1] + point[1] / springBlockOutline.length], [0, 0]);
   const armHalfWidth = 0.13;
-  const lowerArmKnee = [0.55, -0.62];
   const arm = (a, b, radius = armHalfWidth) => poly(hullOfCircles([[a, radius], [b, radius]]));
   const lockPlateOutline = polygonClipping.difference(
     polygonClipping.union(
@@ -1293,9 +1281,6 @@ function coltCylinderRatchet(movement) {
       arm([0, 0], arborLugCentre),
       arm(arborLugCentre, blockCentre),
       arm(blockFoot, blockCentre),
-      arm([0, 0], lowerArmKnee),
-      arm(lowerArmKnee, clampCentre),
-      [[circle(clampCentre, 0.3, 48)]],
     ),
     [[circle([0, 0], 0.235, 72)]],
   );
@@ -1377,7 +1362,6 @@ function coltCylinderRatchet(movement) {
     mainspring,
     lockPlate,
     arborLug,
-    mainspringClamp,
     mainspringFrame,
     ratchet,
     spring,

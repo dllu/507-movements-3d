@@ -3,7 +3,7 @@
   "bounds": {
     "min": [
       -2.25,
-      -6.15,
+      -7.4,
       -0.5
     ],
     "max": [
@@ -14,11 +14,9 @@
   },
   "guide": {
     "minimum": -5.660387490087336,
-    "maximum": -1.9196889132751338,
-    "railBottom": -5.910387490087336,
-    "railTop": -1.6696889132751338
+    "maximum": -1.9196889132751338
   },
-  "assumptions": "The engraving truncates the rod. Its 370-pixel length, vertical output guide, supports and all axial depths are reconstructed.",
+  "assumptions": "The engraving truncates the rod. Its 370-pixel working length to an ideally guided vertical output joint and all axial depths are reconstructed; the rod runs on straight past that joint and ends cleanly. No guide, stand or supports are drawn or modelled.",
   "sources": [
     {
       "file": "src/data/silk-traverse-dimensions.js",
@@ -34,7 +32,7 @@
     },
     {
       "file": "src/simulation/silk-traverse-geometry.js",
-      "sha256": "ef69f250a4c111eb9ef7dc30ef5e75986a24155930f85c1d7f6f5628b7e7c8c2"
+      "sha256": "2adbc01742a091986c20122b93abb5092832376aa25e6437e07956d2507c1a00"
     },
     {
       "file": "src/simulation/silk-traverse-kinematics.js",
@@ -42,9 +40,9 @@
     },
     {
       "file": "scripts/bake-silk-traverse.mjs",
-      "sha256": "4039bf7896addaf6216ab8c0b2ca25521b52f20f6633144d059571fed11c1c1d"
+      "sha256": "7d90b89cfa4e509d013d8e48c1127820d955265c28151cb668c08ab99fcee39d"
     }
   ],
-  "bytes": 540520,
-  "assetSha256": "62bacd8cf46915a9cdec33fd8c8ab57e258a574390a3af3a013482df116ee2b7"
+  "bytes": 505801,
+  "assetSha256": "df6db3904f62200a113655f6d0bec8298ce61941d2a89a76f81887835050bfca"
 }

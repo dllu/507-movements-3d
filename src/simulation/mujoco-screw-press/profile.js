@@ -11,9 +11,11 @@ export function makeScrewPressProfile({segments=192,clearance=.001,turns=1}={}) 
   const barY=y(source.bar[0]+source.bar[2]/2),barRadius=source.bar[2]/200;
   const ramRadius=(e.ramRight-e.ramLeft)/200,ramBottom=y(source.ramBottom),ramTop=y(e.ramTop),capBottom=ramTop-.035;
   const bearing={neck:.09,radius:.17,top:capBottom-.003,bottom:capBottom-.055,floor:capBottom-.058};
-  const workTop=ramBottom-turns*pitch,workBottom=workTop-.025,anvilBottom=workBottom-.10,baseBottom=anvilBottom-.22;
+  // The blank is wider than the ram face (a stamping blank, not a slug the
+  // ram covers), so it stays in sight under the ram when struck.
+  const blankRadius=.32,workTop=ramBottom-turns*pitch,workBottom=workTop-.06,anvilBottom=workBottom-.10,baseBottom=anvilBottom-.22;
   return {axis,x,y,world,pitch,lead,width,phase,segments,clearance,turns,coreRadius,crestRadius,external,internal,
-    barY,barRadius,ramRadius,ramBottom,ramTop,capBottom,bearing,workTop,workBottom,anvilBottom,baseBottom,
+    barY,barRadius,ramRadius,ramBottom,ramTop,capBottom,bearing,blankRadius,workTop,workBottom,anvilBottom,baseBottom,
     frameDepth:.24,nutRadius:(e.nutRight-e.nutLeft)/200,flangeRadius:(e.flangeRight-e.flangeLeft)/200,
     hubHalf:(e.hubRight-e.hubLeft)/200,hubDepth:.24,guideDepth:.33};
 }

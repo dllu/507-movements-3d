@@ -237,7 +237,7 @@ test('movement 304 records Brown’s plate and the period thirty-pin constructio
   disposeModel(model.root);
 });
 
-test('movement 304 builds replaceable half-round A and trapezoidal B pins whose arcs carry every contact', () => {
+test('movement 304 builds replaceable half-round A and thin-slip B pins whose arcs carry every contact', () => {
   const model = createMovementModel(catalog.movements[303]);
   const {
     blocks,
@@ -265,7 +265,7 @@ test('movement 304 builds replaceable half-round A and trapezoidal B pins whose 
     1e-15, 'pin size from four-degree construction');
   near(geometry.legacyPinWorkingArc, Math.PI, 0,
     'legacy half-round working arc');
-  // B's short leading side is the arc the pallets touch.
+  // B's curved leading face is the arc the pallets touch.
   assert.ok(geometry.preferredArcStart > -Math.PI);
   assert.ok(geometry.preferredArcEnd < 0);
   assert.ok(geometry.preferredPinWorkingArc < 0.65 * Math.PI);
@@ -310,7 +310,7 @@ test('movement 304 builds replaceable half-round A and trapezoidal B pins whose 
     assert.ok(stemBox.min.z < geometry.wheelDepth / 2 - 0.1, 'stem seated deep in the rim');
     assert.ok(stemBox.max.z < geometry.workingPlaneZ - geometry.palletDepth / 2);
     assert.equal(pin.userData.role, expectedProfile === 'preferred-B'
-      ? 'replaceable-preferred-trapezoidal-B-pin'
+      ? 'replaceable-preferred-slip-B-pin'
       : 'replaceable-legacy-half-round-A-pin');
   }
   assert.equal(stateAtTime(0).activePinProfile, 'preferred-B');

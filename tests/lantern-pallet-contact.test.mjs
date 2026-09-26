@@ -41,17 +41,22 @@ test('297: actual pin and pallet triangles clear in both directions, including e
   console.log({ actualSurfaceMinimum: minimum, poses: times.length });
 });
 
-test('297: ring, spokes and forward arm clear pallets and pin ends; bars stand straight off the one-piece arm', () => {
+test('297: one see-through front disc; pins reach back to the bars; arm A lies behind the pin ends', () => {
   const m = create({ id: 297 }), d = m.root.userData, b = d.blocks;
   m.update(0); m.root.updateMatrixWorld(true);
   const z = o => new THREE.Box3().setFromObject(o);
-  const pallet = z(b.palletBBody), pin = z(b.trundles[0]), arm = z(b.armA);
-  assert.ok(pallet.min.z > z(b.sidePlates[1]).max.z + .13);
-  assert.ok(pallet.min.z > Math.max(...b.sidePlateSpokes.map(o => z(o).max.z)) + .14);
-  assert.ok(pin.max.z > pallet.min.z + .27, 'full pin must share the complete working depth');
-  assert.ok(arm.min.z > pin.max.z + .16, 'arm clears rotating pin ends');
+  const pallet = z(b.palletBBody), pin = z(b.trundles[0]), arm = z(b.armA), disc = z(b.sidePlates[0]);
+  // Brown dashes arm A behind the wheel: one plain front disc, nothing in
+  // front of it but the flush pin ends and the hub.
+  assert.equal(b.sidePlates.length, 1);
+  assert.equal(b.sidePlates[0].userData.axialSide, 'front');
+  assert.ok(b.sidePlates[0].userData.seeThrough, 'the disc shows the arm and pallets behind it');
+  assert.ok(pin.max.z < disc.max.z + .01, 'pin ends stop flush with the disc face');
+  assert.ok(pallet.max.z < disc.min.z - .05, 'bars stop short of the disc');
+  assert.ok(pin.min.z < pallet.max.z - .27, 'full pin must share the complete working depth');
+  assert.ok(arm.max.z < pin.min.z - .05, 'arm clears rotating pin ends');
   for (const body of [b.palletBBody, b.palletCBody]) {
-    assert.ok(z(body).max.z > arm.min.z + .02, 'each bar reaches into the arm plate');
+    assert.ok(z(body).min.z < arm.max.z - .02, 'each bar reaches into the arm plate');
     assert.equal(body.parent.children.filter(o => /rigid-mount/.test(o.userData.role)).length, 0, 'no bridges');
   }
   // One flat arm plate carries both bars: no pins or bridges between planes.
@@ -64,7 +69,7 @@ test('297: actual loaded planar face normals oppose wheel rotation', () => {
   for (const t of [1.2, 1.8, 3.1, 3.5]) {
     const s = state(t); assert.ok(s.contactActive && !s.contact.end);
     m.update(t); m.root.updateMatrixWorld(true);
-    const body = b[`pallet${s.contact.bar}Body`], local = body.worldToLocal(new THREE.Vector3(...s.contact.point, 1.06));
+    const body = b[`pallet${s.contact.bar}Body`], local = body.worldToLocal(new THREE.Vector3(...s.contact.point, c.palletZ));
     const triangles = surfaceTriangles(body.geometry); let best = null, distance = Infinity;
     for (const tri of triangles) { const gap = tri.closestPointToPoint(local, p).distanceTo(local); if (gap < distance) { best = tri; distance = gap; } }
     const normal = best.getNormal(new THREE.Vector3()).transformDirection(body.matrixWorld);

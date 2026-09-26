@@ -2321,19 +2321,17 @@ function doubleParallelMotion(movement) {
   leftPiston.userData.role = 'cut-off-rod-guided-by-point-P';
   leftPiston.userData.rotationDegreesOfFreedom = 0;
   const leftPistonPlaneZ = -0.10;
-  // Brown cuts this rod off below P. It is whole: it runs down through the
-  // gland of a closed cylinder standing below the plate's view, deep enough
-  // for P's full stroke (the P locus is straight to a small fraction of the
-  // gland clearance).
-  const pistonCylinderTopY = -4.6;
-  const pistonCylinderLength = 4.8;
-  const leftPistonRodLength = addedPistonHalfStroke - pistonCylinderTopY + 0.3;
+  // Brown cuts this rod off below P. It runs on straight and ends cleanly
+  // below the plate's crop even at the top of P's stroke (1.2 below the
+  // framed bottom); the p57 closed cylinder far below, which Brown does not
+  // draw, is not built (p62 support policy, as for 181 and 182).
+  const leftPistonRodLength = 2.11 + 9.4 * s + 1.2;
   const leftPistonRod = new THREE.Mesh(plate(clip.union(
     poly([[-0.22 * s, 0], [0.22 * s, 0], [0.22 * s, -leftPistonRodLength],
       [-0.22 * s, -leftPistonRodLength]]),
     poly(circle([0, 0], 0.50 * s, 40)),
   ), leftPistonPlaneZ - 0.05, leftPistonPlaneZ + 0.05), outputMaterial);
-  leftPistonRod.userData.role = 'left-P-rod-running-into-its-cylinder';
+  leftPistonRod.userData.role = 'left-P-rod-running-on-straight-past-the-plate';
   const leftPistonPointAnchor = new THREE.Object3D();
   leftPistonPointAnchor.position.z = leftPistonPlaneZ;
   leftPistonPointAnchor.userData.role = 'analytic-left-P-rod-joint';
@@ -2344,14 +2342,6 @@ function doubleParallelMotion(movement) {
     output: leftPiston,
   };
   root.add(leftPiston);
-  const pistonCylinder = new THREE.Mesh(new THREE.LatheGeometry([
-    [0.12, 0], [0.12, -0.2], [0.36, -0.2], [0.36, -pistonCylinderLength + 0.2], [0.001, -pistonCylinderLength + 0.2],
-    [0.001, -pistonCylinderLength], [0.5, -pistonCylinderLength], [0.5, 0], [0.12, 0],
-  ].map(([x, y]) => new THREE.Vector2(x, y)), 48), matte(PALETTE.frame, { metalness: 0.15, roughness: 0.62 }));
-  pistonCylinder.position.set(0, pistonCylinderTopY, leftPistonPlaneZ);
-  pistonCylinder.userData.role = 'closed-cylinder-receiving-P-rod-beyond-plate';
-  pistonCylinder.userData.beyondPlateCrop = true;
-  root.add(pistonCylinder);
 
   const pinOn = (parent, name, x, low, high) => {
     const pin = cylinderAlongZ(pinRadius[name], high - low, whiteMaterial, 30);
@@ -2676,18 +2666,18 @@ function addPlainSupports(result, id) {
     pedestal.userData.role = 'plain-pedestal-carrying-shaft-O-on-bed-bar';
     supports.add(pedestal);
   } else if (id === 333) {
-    // The lugs stand on frame blocks (not pale ground slabs) carried by two
-    // posts down to a cross bar on the P cylinder's head, beyond the crop.
-    const cylinder = byRole('closed-cylinder-receiving-P-rod-beyond-plate');
-    const cylinderTop = cylinder.position.y;
+    // Brown hatches a short ground line under each lug: each lug stands on
+    // a small frame block for that cut ground, and nothing more. The p57
+    // posts and cross bar down to a P cylinder are not built (p62 support
+    // policy).
     for (const name of ['left-pivot-O', 'right-pivot-R']) {
       const foot = byRole(`${name}-solid-ground-block`);
       const bearing = byRole(`${name}-fixed-bearing-bracket`);
       const pedestal = foot.parent;
       const footBox = new THREE.Box3().setFromObject(foot);
       const bearingBox = new THREE.Box3().setFromObject(bearing);
-      // O's block and post keep the lug's plane, in front of the O-M
-      // radius bar that dips below O; R's stand behind the R-W rocker.
+      // O's block keeps the lug's plane, in front of the O-M radius bar
+      // that dips below O; R's stands behind the R-W rocker.
       const low = name === 'left-pivot-O' ? bearingBox.min.z : 0.12;
       const high = bearingBox.max.z;
       const block = box([footBox.min.x, footBox.max.x, footBox.min.y, footBox.max.y, low, high],
@@ -2696,13 +2686,7 @@ function addPlainSupports(result, id) {
       pedestal.add(block);
       foot.removeFromParent();
       foot.geometry.dispose();
-      const x = pedestal.position.x;
-      supports.add(box([x - 0.2, x + 0.2, cylinderTop, footBox.min.y, low, name === 'left-pivot-O' ? high : 0.46],
-        `${name}-frame-post-down-to-cylinder-cross-bar`));
     }
-    const rightX = byRole('right-pivot-R-fixed-bearing-bracket').parent.position.x;
-    supports.add(box([-0.2, rightX + 0.2, cylinderTop - 0.2, cylinderTop, 0.12, 0.62],
-      'frame-cross-bar-on-P-cylinder-head-joining-both-posts'));
   }
   root.add(supports);
   root.userData.plainSupports = supports;

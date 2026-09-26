@@ -508,7 +508,7 @@ function tippingWaterMeter(movement) {
   const leftStop = makeStop('left', leftStopContact);
   const rightStop = makeStop('right', rightStopContact);
 
-  const flumeLength = 3.72;
+  const flumeLength = 5.25;
   const flumeAngle = 0.35;
   const flumeDirection = new THREE.Vector3(
     Math.cos(flumeAngle),
@@ -542,20 +542,17 @@ function tippingWaterMeter(movement) {
     return rail;
   });
 
-  // Pass 56: the inlet flume's upper end rests on one plain post, clear of
-  // the trough's sweep, standing on a short sill run out from the base.
-  const flumePostX = 3.25;
-  const flumeUnderside = streamOutletY + Math.tan(flumeAngle) * (flumePostX + 0.12 - streamX)
-    - 0.04 / Math.cos(flumeAngle);
-  const baseTop = groundY + 0.25;
-  const flumePost = new THREE.Mesh(new THREE.BoxGeometry(0.24, flumeUnderside - baseTop, 0.30), frameMaterial);
-  flumePost.position.set(flumePostX, (flumeUnderside + baseTop) / 2, 0);
-  flumePost.userData.role = 'fixed-post-carrying-upper-end-of-inlet-flume';
-  root.add(flumePost);
-  const flumeSill = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.25, 0.40), frameMaterial);
-  flumeSill.position.set(2.85 + 0.31 - 0.005, groundY + 0.125, 0);
-  flumeSill.userData.role = 'fixed-sill-under-flume-post';
-  root.add(flumeSill);
+  // Brown breaks the flume off beyond the plate's upper right. It carries
+  // its water, a shallow sheet on the bottom that pours off the lower end
+  // as the fall, and ends cleanly just beyond the default crop (the p56 post
+  // and sill that held its upper end are not built; p62 support policy).
+  const flumeWater = new THREE.Mesh(
+    new THREE.BoxGeometry(flumeLength - 0.02, 0.06, 0.66),
+    waterMaterial,
+  );
+  flumeWater.position.set(0.01, 0.07, 0);
+  flumeWater.userData.role = 'water-running-down-the-inlet-flume';
+  flume.add(flumeWater);
 
   const fallingWater = new THREE.Mesh(
     new THREE.CylinderGeometry(0.105, 0.105, 1, 20),

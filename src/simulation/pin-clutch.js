@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { pinWallBracket } from './beyond-crop-hardware.js';
 import { markShadows, matte, PALETTE } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { pinClutchMotion } from './pin-clutch-motion.js';
@@ -86,13 +85,9 @@ export function makePinClutch() {
   const pivotPin = turned([[0.27, 0], [0.27, p.pivotRadius], [0.385, p.pivotRadius], [0.385, 0]], PALETTE.ink);
   const pivotCaps = [[0.280, 0.305], [0.365, 0.393]].map(([a, b]) =>
     turned([[a, 0], [a, 0.075], [b, 0.075], [b, 0]], PALETTE.brass));
-  // The fixed fulcrum pin's shank runs back behind its rear cap to a small
-  // flange on the framing, below the disks and clear of the sleeve.
-  const fulcrumBracket = pinWallBracket({ x: 0, y: 0, pinRadius: p.pivotRadius, zPin: 0.27, zWall: -0.62,
-    flange: 0.24, role: 'fulcrum-pin-wall-bracket' });
-  // No floor column (p60 support policy): the flange reads as bolted to the
-  // machine framing, as in 48 and 53.
-  pivot.add(pivotPin, ...pivotCaps, fulcrumBracket); root.add(driver, output, lever, shoe, pivot);
+  // Brown draws the fixed fulcrum only as a capped pin, with no bracket; it
+  // ends as a plain stub (p62: the undrawn wall flange is removed).
+  pivot.add(pivotPin, ...pivotCaps); root.add(driver, output, lever, shoe, pivot);
   const update = (time) => {
     const state = motion.stateAtTime(time);
     driver.userData.rotor.rotation.z = state.driverAngle;
@@ -102,11 +97,11 @@ export function makePinClutch() {
   };
   root.userData = { fidelity: 'authored', mechanism: 'two-stud-clutch-with-loaded-hole-walls-and-bell-crank',
     cameraFov: 17, hideGround: true, fullCameraDirection: new THREE.Vector3(5, 3, 8),
-    geometry: { ...p, handleEnd, handleHalfWidth }, blocks: { driver, output, lever, shoe, pivot }, beyondCrop: { fulcrumBracket },
+    geometry: { ...p, handleEnd, handleHalfWidth }, blocks: { driver, output, lever, shoe, pivot },
     parts: { driverBody, studs, outputDisk, outputHub, shaft, knob, leverBody, grip, followerPin, followerCap, followerBackCap, pivotPin, pivotCaps },
     stateAtTime: motion.stateAtTime };
   // Frame Brown's plate: the measured swept box with the handle to his break.
-  // Its run on to the grip and the fulcrum bracket stay out of the fit.
+  // Its run on to the grip stays out of the fit.
   root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.56, -1.1415, -1.1), new THREE.Vector3(3.26, 1.1, 1.1));
   update(0); markShadows(root);
   return { root, update, cameraDirection: new THREE.Vector3(0, 0, 10) };

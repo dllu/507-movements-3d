@@ -1833,17 +1833,17 @@ function fergusonMechanicalParadox(movement) {
   correctEpicyclicFamily(root, movement.id);
   correctEpicyclic503504(root, movement.id);
   // Brown's side elevation shows the arm at rest along +x, from A's pedestal
-  // to the outer end D. The view frames the arm's full turn about A so the
-  // carried wheels never leave it; in the near-orthographic side view the
+  // to the outer end D. The view frames that pose whole and centred, plus
+  // 2.2 of the turn to A's left, so the carried wheels leave the frame only
+  // near the far side of the turn; in the near-orthographic side view the
   // sweep's depth barely projects, so the fit box uses a shallower depth.
-  // Both boxes follow the actual swept surfaces (x +/-4.021, y -1.570 to
-  // 0.680), so the train is as large and as centred as the full turn allows.
+  // The swept surfaces reach x +/-4.021, y -1.570 to 0.680.
   root.userData.sweptBounds = new THREE.Box3(
     new THREE.Vector3(-4.04, -1.59, -4.04),
     new THREE.Vector3(4.04, 0.70, 4.04),
   );
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.07, -1.59, -1.0),
+    new THREE.Vector3(-2.2, -1.59, -1.0),
     new THREE.Vector3(4.07, 0.70, 1.0),
   );
   markShadows(root);
@@ -3730,17 +3730,19 @@ function twentyFiveThousandToOneEpicyclic(movement) {
     spurContactMarkers,
     supportBase,
   };
-  // The planet wheels F, G orbit m out to 4.970 (actual surfaces). In the
-  // flat front elevation the orbit's depth barely projects, so the fit box
-  // follows the visible silhouette with a shallow depth; this keeps the
-  // train as large as its full turn allows.
+  // The planet wheels F, G orbit m out to 4.970 (actual surfaces). The view
+  // frames Brown's pose (arm n m and F, G reaching left of the shaft) whole,
+  // plus 2.75 of the orbit to the shaft's right, so F, G and the arm leave
+  // the frame only near the far side of their turn. In the flat front
+  // elevation the orbit's depth barely projects, so the fit box keeps a
+  // shallow depth.
   root.userData.sweptBounds = new THREE.Box3(
     new THREE.Vector3(-4.99, -3.48, -4.99),
     new THREE.Vector3(4.99, 4.42, 4.99),
   );
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-4.99, -3.48, -1.0),
-    new THREE.Vector3(4.99, 4.42, 1.0),
+    new THREE.Vector3(2.75, 4.42, 1.0),
   );
   root.userData.canonicalTimes = {
     carrierHalfTurn: nominalCarrierPeriod / 2,

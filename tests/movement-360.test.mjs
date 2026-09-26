@@ -268,6 +268,12 @@ test('movement 360 reverses the loose drum twice per beam cycle while its flywhe
   disposeModel(model.root);
 });
 
+test('movement 360 opens on Brown\'s level beam', () => {
+  const model = createMovementModel(catalog.movements[359]);
+  model.update(0);
+  assert.ok(Math.abs(model.root.userData.blocks.rockingBeam.rotation.z) < 1e-9);
+});
+
 test('movement 360 renderer binds both cord ends and all rotating bodies to their proper carriers', () => {
   const model = createMovementModel(catalog.movements[359]);
   const data = model.root.userData;
@@ -276,7 +282,9 @@ test('movement 360 renderer binds both cord ends and all rotating bodies to thei
 
   for (const time of [0, 0.73, 1.5, 2.86, 3, 4.5, 5.99,
     6, 7.5, 9, 10.5, 11.7]) {
-    const expected = data.stateAtTime(time);
+    // Display time runs displayTimeOffset ahead of the physical timeline, so
+    // time 0 shows Brown's level beam.
+    const expected = data.stateAtTime(time + data.timeline.displayTimeOffset);
     model.update(time);
     model.root.updateMatrixWorld(true);
     near(blocks.rockingBeam.rotation.z, expected.beamAngle, 2e-12,

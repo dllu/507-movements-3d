@@ -479,70 +479,28 @@ function rollingCarriageFrictionExperiment(movement) {
   beltBand.userData.role = 'one-flat-belt-entering-from-left-with-half-wrap';
   beltBand.userData.crossSection = 'flat';
   belt.add(beltBand);
-  // Brown crops the belt at the plate's left edge; it is endless, running on
-  // up-left past the crop round a driving pulley of the same size, so no
-  // strand stops in mid-air. That run and pulley lie outside the framed view.
-  const remoteDistance = 7;
-  const remoteCenter = new THREE.Vector3(
-    drivePulleyCenter.x - beltDirection.x * remoteDistance,
-    drivePulleyCenter.y - beltDirection.y * remoteDistance,
-    beltPlaneZ,
-  );
-  const normalAngle = Math.atan2(beltNormal.y, beltNormal.x);
-  const remotePoint = (angle) => new THREE.Vector3(
-    remoteCenter.x + drivePulleyRadius * Math.cos(angle),
-    remoteCenter.y + drivePulleyRadius * Math.sin(angle),
-    beltPlaneZ,
-  );
-  const returnPath = new THREE.CurvePath();
-  const remoteLower = remotePoint(normalAngle + Math.PI);
-  returnPath.add(new THREE.LineCurve3(lowerFreeEnd, remoteLower));
-  let remotePrevious = remoteLower;
-  for (let step = 1; step <= wrapSteps; step += 1) {
-    const next = remotePoint(normalAngle + Math.PI - Math.PI * step / wrapSteps);
-    returnPath.add(new THREE.LineCurve3(remotePrevious, next));
-    remotePrevious = next;
-  }
-  returnPath.add(new THREE.LineCurve3(remotePrevious, upperFreeEnd));
-  const returnBand = new THREE.Mesh(
-    flatBeltGeometry(returnPath, { width: beltWidth, thickness: beltThickness, closed: false, segments: 512 }),
-    beltBand.material,
-  );
-  returnBand.userData.role = 'endless-belt-return-run-beyond-plate-crop';
-  returnBand.userData.beyondPlateCrop = true;
-  belt.add(returnBand);
-  const remotePulley = new THREE.Mesh(
-    new THREE.CylinderGeometry(drivePulleyRadius - beltThickness / 2 - 0.002,
-      drivePulleyRadius - beltThickness / 2 - 0.002, 0.14, 64),
-    drivePulley.userData.tread?.material ?? beltBand.material,
-  );
-  remotePulley.rotation.x = Math.PI / 2;
-  remotePulley.position.copy(remoteCenter);
-  remotePulley.userData.role = 'driving-pulley-of-endless-belt-beyond-plate-crop';
-  remotePulley.userData.beyondPlateCrop = true;
-  root.add(remotePulley);
-  // The driving pulley is keyed on a short shaft carried by a plain floor
-  // standard behind the belt, standing on the same floor as the test rig's
-  // legs, all beyond the plate's crop (no floating ceiling plate).
-  const hangerMaterial = matte(PALETTE.frame, { roughness: 0.7 });
-  const lineShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.2, 24), matte(PALETTE.ink, { roughness: 0.5 }));
-  lineShaft.rotation.x = Math.PI / 2;
-  lineShaft.position.set(remoteCenter.x, remoteCenter.y, beltPlaneZ - 0.35);
-  lineShaft.userData.role = 'driving-pulley-shaft-beyond-plate-crop';
-  const floorY = -2.168;
-  const hangerStrap = new THREE.Mesh(new THREE.BoxGeometry(0.16, remoteCenter.y - floorY, 0.08), hangerMaterial);
-  hangerStrap.position.set(remoteCenter.x, (remoteCenter.y + floorY) / 2, beltPlaneZ - 0.72);
-  hangerStrap.userData.role = 'floor-standard-carrying-driving-pulley-shaft-beyond-plate-crop';
-  const hangerBearing = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.14, 24), hangerMaterial);
-  hangerBearing.rotation.x = Math.PI / 2;
-  hangerBearing.position.set(remoteCenter.x, remoteCenter.y, beltPlaneZ - 0.72);
-  hangerBearing.userData.role = 'standard-bearing-of-driving-pulley-shaft-beyond-plate-crop';
-  const ceilingBeam = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.12, 0.7), hangerMaterial);
-  ceilingBeam.position.set(remoteCenter.x, floorY + 0.06, beltPlaneZ - 0.72);
-  ceilingBeam.userData.role = 'foot-of-driving-pulley-standard-beyond-plate-crop';
-  for (const part of [lineShaft, hangerStrap, hangerBearing, ceilingBeam]) {
-    part.userData.beyondPlateCrop = true;
-    root.add(part);
+  // Brown crops the belt at the plate's left edge; its driving pulley is not
+  // drawn, so both strands run straight on up-left past the crop and end
+  // cleanly there (no remote pulley, standard or foot; p62 support rule).
+  const runOn = 2.6;
+  const runPath = new THREE.CurvePath();
+  runPath.add(new THREE.LineCurve3(
+    lowerFreeEnd,
+    lowerFreeEnd.clone().add(new THREE.Vector3(-beltDirection.x * runOn, -beltDirection.y * runOn, 0)),
+  ));
+  const upperRunPath = new THREE.CurvePath();
+  upperRunPath.add(new THREE.LineCurve3(
+    upperFreeEnd.clone().add(new THREE.Vector3(-beltDirection.x * runOn, -beltDirection.y * runOn, 0)),
+    upperFreeEnd,
+  ));
+  for (const [path, which] of [[runPath, 'lower'], [upperRunPath, 'upper']]) {
+    const run = new THREE.Mesh(
+      flatBeltGeometry(path, { width: beltWidth, thickness: beltThickness, closed: false, segments: 8 }),
+      beltBand.material,
+    );
+    run.userData.role = `${which}-belt-strand-running-past-plate-crop`;
+    run.userData.beyondPlateCrop = true;
+    belt.add(run);
   }
   belt.userData.crossSection = 'flat';
   belt.userData.width = beltWidth;

@@ -329,10 +329,18 @@ function valveReliefGuide(movement) {
   base.position.set(0, -2.38, -0.34);
   base.userData.role = 'fixed-slide-valve-foundation';
   fixedFrame.add(base);
+  // Brown's port under A is a cavity in the seat, not a part: the seat is
+  // bored through with a plain port that A covers at mid-stroke (the p57
+  // dark port stub hung below the seat and is not built).
   const valveSeat = new THREE.Mesh(
-    new THREE.BoxGeometry(4.20, 0.18, 1.26),
+    plate(clip.difference(
+      poly([[-2.10, -0.63], [2.10, -0.63], [2.10, 0.63], [-2.10, 0.63]]),
+      poly([[-0.18, -0.30], [0.18, -0.30], [0.18, 0.30], [-0.18, 0.30]]),
+    ), -0.09, 0.09),
     frameMaterial,
   );
+  // The plate is drawn in x-z (local y is world z) and 0.18 thick in y.
+  valveSeat.rotation.x = Math.PI / 2;
   valveSeat.position.set(0, -2.09, 0);
   valveSeat.userData.role = 'fixed-horizontal-valve-seat';
   fixedFrame.add(valveSeat);
@@ -349,10 +357,6 @@ function valveReliefGuide(movement) {
     endWall.userData.role = 'fixed-valve-chest-end-wall';
     fixedFrame.add(endWall);
   }
-  const steamPort = cylinderAlongZ(0.18, 0.30, darkMaterial, 40);
-  steamPort.position.set(0, -2.38, 0);
-  steamPort.userData.role = 'stationary-steam-port-below-valve-A';
-  fixedFrame.add(steamPort);
   // Brown sections the fixed casing through the rod plane: a hollow cone
   // with a bored top and a foot flange stands on the hatched chest cover,
   // whose recess below encloses guide D. Only the half behind the section

@@ -4,11 +4,11 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-126.json.gz",
-  "bytes": 311130,
-  "assetSha256": "c72439cab5722523dd067794a8b9bca264716bf221d71994f0f8a65959dec7e2",
+  "bytes": 308508,
+  "assetSha256": "66ae2e728947c97b21609035a97d83873ace8a86d201b48930e67270e7d3b4a3",
   "motionSources": {
     "src/simulation/mujoco-bell-crank/cord-path.js": "81035664772ab1a1c4520b573da89e8c1e5251c1cae832332ac97000e4d2b196",
-    "src/simulation/mujoco-bell-crank/ends.js": "7d3acd136f0716dabbb883674c678035f50c5e102a3963f5ec54952a416c7161",
+    "src/simulation/mujoco-bell-crank/ends.js": "30b732bca12d171481cfae41dc6fac63a58fcb0e37c3bc022188b00eada56ce1",
     "src/simulation/mujoco-bell-crank/finish.js": "fa3a8e766868787fdf812364bb76fe4d7dbdc427697b92331328fff58d9cd95b",
     "src/simulation/mujoco-bell-crank/physics.js": "5056c74dd1bafe48c84c79a39d22eb447608fff67d3547428876cdbf02fd70d5",
     "src/simulation/mujoco-bell-crank/source.js": "28e378407f8b8b91d0513920d7e220638908e98cc15ebfb74e6399b1c3390515",
@@ -69,5 +69,5 @@
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 130.9856327943802
+  "bakeSeconds": 119.5387361125946
 }

@@ -301,6 +301,12 @@ function retainLaidTraverseCord(cord, radius) {
   cord.userData.setCurve = rebuild;
 }
 
+// Brown draws the band as a stout laid rope (about a fifteenth of the large
+// fusee diameter). The two cords lie side by side in the widened groove, each
+// off its centre line by CORD_OFFSET, so they clear where they meet.
+const CORD_RADIUS = 0.032;
+const CORD_OFFSET = 0.034;
+
 function fuseeCarriageTraverse(movement) {
   const root = new THREE.Group();
 
@@ -362,10 +368,6 @@ function fuseeCarriageTraverse(movement) {
   const fuseeMaterial = matte(PALETTE.driver, {
     metalness: 0.13,
     roughness: 0.56,
-  });
-  const brassMaterial = matte(PALETTE.accent, {
-    metalness: 0.22,
-    roughness: 0.48,
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.45 });
 
@@ -538,35 +540,12 @@ function fuseeCarriageTraverse(movement) {
     ['left-lower', leftAnchor],
     ['right-upper', rightAnchor],
   ]) {
+    // Brown's band runs off the plate at both ends; no anchor hardware is
+    // drawn, so each fixed end is an ideal fixed point where the laid band
+    // simply ends, far beyond the crop (p62 support rule).
     const stand = new THREE.Group();
-    // Off-plate anchor stand at the level of the rail bed beneath the plan:
-    // a stout post rising from a broad foot plate, so the fixed band end
-    // reads as a mounted stand rather than a loose stub.
-    const footDepth = 0.16;
-    const footBackZ = railTopZ - 0.22 - footDepth;
-    const postHeight = point.z - 0.11 - (railTopZ - 0.22);
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.26, 0.30, postHeight + 0.02),
-      frameMaterial,
-    );
-    post.position.set(point.x, point.y,
-      railTopZ - 0.22 - 0.02 + (postHeight + 0.02) / 2);
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.95, 0.80, footDepth),
-      frameMaterial,
-    );
-    foot.position.set(point.x, point.y, footBackZ + footDepth / 2);
-    foot.userData.role = `${side}-fixed-cord-anchor-foot`;
-    stand.add(foot);
-    const eye = new THREE.Mesh(
-      new THREE.TorusGeometry(0.105, 0.035, 9, 28),
-      brassMaterial,
-    );
-    eye.rotation.y = Math.PI / 2;
-    eye.position.copy(point);
-    eye.userData.role = `${side}-fixed-cord-eye`;
-    stand.add(post, eye);
-    stand.userData.role = `${side}-fixed-cord-anchor`;
+    stand.position.copy(point);
+    stand.userData.role = `${side}-fixed-cord-end-point`;
     root.add(stand);
     fixedAnchors.push(stand);
   }
@@ -609,12 +588,12 @@ function fuseeCarriageTraverse(movement) {
     const wrappedProgress = Math.abs(progress - startProgress);
     if (wrappedProgress > 1e-8) {
       path.add(new FuseeGrooveSegmentCurve3(
-        (sampleProgress) => groovePointAt(sampleProgress, state).add(new THREE.Vector3(0,isLeft?.020:-.020,0)),
+        (sampleProgress) => groovePointAt(sampleProgress, state).add(new THREE.Vector3(0,isLeft?CORD_OFFSET:-CORD_OFFSET,0)),
         startProgress,
         progress,
       ));
     }
-    const contact = groovePointAt(progress, state).add(new THREE.Vector3(0,isLeft?.020:-.020,0));
+    const contact = groovePointAt(progress, state).add(new THREE.Vector3(0,isLeft?CORD_OFFSET:-CORD_OFFSET,0));
     const freeDirection = anchor.clone().sub(contact);
     const freeLength = freeDirection.length();
     const wrappedDirection = grooveTangentAt(
@@ -976,7 +955,7 @@ function fuseeCarriageTraverse(movement) {
   // a laid rope: the shared three-strand rope, its lay fixed in the material
   // at the fixed far end (the curve's end), makes that sliding visible.
   for (const cord of [leftCord, rightCord]) {
-    retainLaidTraverseCord(cord, 0.018);
+    retainLaidTraverseCord(cord, CORD_RADIUS);
     cord.userData.mesh.userData.role = cord === leftCord
       ? 'finite-fusee-cord-1' : 'finite-fusee-cord-2';
   }

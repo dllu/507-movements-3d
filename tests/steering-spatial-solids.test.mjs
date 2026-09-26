@@ -5,10 +5,10 @@ import {createAuthoredRopeSteeringMovement} from '../src/simulation/authored-rop
 import {surfacePoints,solidSurface} from './helpers/solid-surface.mjs';
 
 function workingTargets(b) {
-  return [b.barrel,...b.barrelFlanges,b.fixedShaft,...b.wheelPedestals,
+  return [b.barrel,...b.barrelFlanges,b.fixedShaft,
     ...b.shaftBearings,b.upperGuide.sheave,b.upperGuide.groove,b.upperGuide.pin,
-    b.upperGuide.post,b.lowerGuide.sheave,b.lowerGuide.groove,b.lowerGuide.pin,
-    b.lowerGuide.post,b.tillerBar,b.tillerTipBoss,b.handwheelRim,...b.handwheelSpokes];
+    b.upperGuide.bracket,b.lowerGuide.sheave,b.lowerGuide.groove,b.lowerGuide.pin,
+    b.lowerGuide.bracket,b.tillerBar,b.tillerTipBoss,b.handwheelRim,...b.handwheelSpokes];
 }
 
 test('490 actual rope triangles clear barrel, flanges, guide grooves, axles and supports through steering',()=>{

@@ -572,12 +572,15 @@ function ellipticalDriverCompoundIdler(movement) {
   const driverGearDepth = 0.28;
   const circularGearZ = -0.18;
   const circularGearDepth = 0.28;
-  // The grooved plate g-h sits in front of the arm, open toward it, so shaft
-  // D never passes through the plane that B's large wheel sweeps.
+  // The grooved plate g-h lies behind C and behind the A/B wheel plane, as
+  // Brown dashes it, open toward the front. B's spindle runs back through its
+  // wheel into the groove. The plate hangs from C on a post at the ellipse
+  // centre, which B's and A's wheels never sweep (shaft D, which B's wheel
+  // does sweep, stays in front of C).
   const carrierZ = 0.42;
-  const guideFloorZ = 0.68;
+  const guideFloorZ = -0.56;
   const guideFloorDepth = 0.1;
-  const guideRailZ = 0.57;
+  const guideRailZ = -0.44;
   const guideRailDepth = 0.12;
   const grooveHalfWidth = 0.145;
   const guideRollerRadius = 0.095;
@@ -691,9 +694,9 @@ function ellipticalDriverCompoundIdler(movement) {
   const guideOuterPoints = profilePointsAtOffset(guideOuterDistance);
   const grooveOuterPoints = profilePointsAtOffset(grooveOuterDistance);
   const grooveInnerPoints = profilePointsAtOffset(grooveInnerDistance);
-  // The groove g-h is an open channel in front of C: an elliptical band
-  // (floor) carried by three spokes from D's hub, with two rails behind it.
-  // The band and spokes leave C's face and teeth open, as Brown draws them.
+  // The groove g-h is an open channel behind C: an elliptical band (floor)
+  // carried by three spokes from the post at the ellipse centre, with two
+  // rails in front of it. C hides the spokes; the band shows round C.
   const guideBandInnerPoints = profilePointsAtOffset(
     grooveInnerDistance - guidePlateMargin,
   );
@@ -733,25 +736,27 @@ function ellipticalDriverCompoundIdler(movement) {
   guideInnerIsland.position.z = guideRailZ;
   guideInnerIsland.userData.role = 'inner-wall-of-elliptical-guide-g-h';
   driverRotor.add(guideInnerIsland);
-  const guideSpokes = [0.35, 0.35 + FULL_TURN / 3, 0.35 + 2 * FULL_TURN / 3]
+  const guidePostCenter = new THREE.Vector2(0, -focalDistance);
+  const guideSpokes = [Math.PI / 2, Math.PI / 2 + FULL_TURN / 3, Math.PI / 2 + 2 * FULL_TURN / 3]
     .map((angle) => {
       const direction = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
-      // Reach just into the band along this ray.
+      // Reach just into the band along this ray from the post.
       let reach = 0;
-      for (const point of guideBandInnerPoints) {
+      for (const bandPoint of guideBandInnerPoints) {
+        const point = bandPoint.clone().sub(guidePostCenter);
         const along = point.x * direction.x + point.y * direction.y;
         const across = Math.abs(point.x * direction.y - point.y * direction.x);
         if (along > 0 && across < 0.04) reach = Math.max(reach, along);
       }
-      const inner = 0.2;
+      const inner = 0.16;
       const outer = reach + 0.06;
       const spoke = new THREE.Mesh(
         new THREE.BoxGeometry(outer - inner, 0.07, guideFloorDepth),
         guideMaterial,
       );
       spoke.position.set(
-        direction.x * (inner + outer) / 2,
-        direction.y * (inner + outer) / 2,
+        guidePostCenter.x + direction.x * (inner + outer) / 2,
+        guidePostCenter.y + direction.y * (inner + outer) / 2,
         guideFloorZ,
       );
       spoke.rotation.z = angle;
@@ -759,9 +764,12 @@ function ellipticalDriverCompoundIdler(movement) {
       driverRotor.add(spoke);
       return spoke;
     });
-  const guideSpokeHub = cylinderAlongZ(0.24, guideFloorDepth, guideMaterial, 40);
-  guideSpokeHub.position.z = guideFloorZ;
-  guideSpokeHub.userData.role = 'guide-g-h-hub-keyed-on-shaft-d';
+  // One post from C's back face to the plate, spanning the A/B wheel plane.
+  const guidePostBack = guideFloorZ - guideFloorDepth / 2;
+  const guidePostFront = driverGearZ - driverGearDepth / 2 + 0.01;
+  const guideSpokeHub = cylinderAlongZ(0.18, guidePostFront - guidePostBack, guideMaterial, 40);
+  guideSpokeHub.position.set(guidePostCenter.x, guidePostCenter.y, (guidePostFront + guidePostBack) / 2);
+  guideSpokeHub.userData.role = 'guide-g-h-post-from-c-at-ellipse-centre';
   driverRotor.add(guideSpokeHub);
 
   const outputGear = makeGear({
@@ -1079,9 +1087,8 @@ function ellipticalDriverCompoundIdler(movement) {
   update(0);
   correctVariableIdler(root, movement.id, update);
   markShadows(root);
-  // Brown draws no phase stripes. He dashes the guide groove g-h because
-  // it lies behind C on his plate; here the real channel is drawn in front of
-  // C (shaft D cannot reach behind B's wheel), open over C's face.
+  // Brown draws no phase stripes. He dashes the guide groove g-h because it
+  // lies behind C; here the real channel lies behind C and the A/B wheels.
   driverIndex.visible = false;
   for (const gear of [outputGear, compoundOuterGear, compoundPinion]) {
     // The white face index is the last part makeGear adds to the rotor.
@@ -1090,8 +1097,9 @@ function ellipticalDriverCompoundIdler(movement) {
   guideRoller.material = inkMaterial;
   root.userData.blocks.guideSpokes = guideSpokes;
   root.userData.blocks.guideSpokeHub = guideSpokeHub;
-  // Re-seat the shafts for the front guide plate: D runs only from C to the
-  // plate, B's spindle from its rear wheel to the roller, A's up to the arm.
+  // Re-seat the shafts for the rear guide plate: D runs forward from C only
+  // (B's wheel sweeps D's axis behind C), B's spindle from the arm back
+  // through its wheel to the roller, and A's from its wheel up to the arm.
   carrierBeam.userData.boredMesh.position.z = carrierZ;
   const setShaftSpan = (mesh, back, front) => {
     mesh.geometry.dispose();
@@ -1100,21 +1108,21 @@ function ellipticalDriverCompoundIdler(movement) {
   };
   driverShaft.position.z = setShaftSpan(
     driverShaft.userData.rotor.children[0],
-    driverGearZ - driverGearDepth / 2 - 0.02,
-    guideFloorZ + guideFloorDepth / 2 + 0.03,
+    driverGearZ - driverGearDepth / 2 + 0.02,
+    driverGearZ + driverGearDepth / 2 + 0.04,
   );
-  driverHub.scale.y = (guideFloorZ - guideFloorDepth / 2
-    - (driverGearZ - driverGearDepth / 2)) / 1.08;
-  driverHub.position.z = (guideFloorZ - guideFloorDepth / 2
-    + driverGearZ - driverGearDepth / 2) / 2;
+  // The hub starts just inside C's back face (no coplanar faces).
+  driverHub.scale.y = (driverGearDepth + 0.02) / 1.08;
+  driverHub.position.z = driverGearZ + 0.02;
+  guideRoller.position.z = guideRailZ;
   compoundSpindle.position.z = setShaftSpan(
     compoundSpindle,
-    circularGearZ - circularGearDepth / 2 - 0.02,
-    guideRailZ + guideRailDepth / 2 - 0.01,
+    guideRailZ - guideRailDepth / 2 + 0.01,
+    carrierZ + 0.07,
   );
   outputShaft.position.z = setShaftSpan(
     outputShaft.userData.rotor.children[0],
-    circularGearZ - circularGearDepth / 2 - 0.08,
+    circularGearZ - circularGearDepth / 2 + 0.01,
     carrierZ + 0.065,
   );
   // Fit the whole cycle: B orbits well above its source pose mid-cycle.

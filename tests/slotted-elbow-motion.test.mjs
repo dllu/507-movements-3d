@@ -25,15 +25,17 @@ test('156 rendered pin joints follow the solved linkage without changing geometr
   const geometries=Object.values(u.parts).map(p=>p.geometry);
   for(let i=0;i<=256;i++){
    v.update(u.geometry.period*i/256);const s=u.state;
-   for(const [part,local,expected]of [[u.parts.crankPin,new Vector3(),s.pin],[u.parts.outputPin,new Vector3(),s.output],[u.blocks.rod,new Vector3(u.geometry.rodLength,0,0),s.slider],[u.parts.sliderPin,new Vector3(),s.slider]]){
+   for(const [part,local,expected]of [[u.parts.crankPin,new Vector3(),s.pin],[u.parts.outputPin,new Vector3(),s.output],[u.blocks.rod,new Vector3(u.geometry.rodLength,0,0),s.slider]]){
     const p=part.localToWorld(local);assert.ok(Math.hypot(p.x-expected[0],p.y-expected[1])<1e-12);
    }
-   // Fit the drawn members; the whole rod runs on below Brown's break to its
-   // guided crosshead, so only its drawn length is framed.
+   // Fit the drawn members; the whole rod runs on straight below Brown's
+   // break and ends cleanly, so only its drawn length is framed.
    for(const name of ['input','lever'])assert.ok(u.cameraFitBounds.containsBox(new Box3().setFromObject(u.blocks[name],true)));
    assert.ok(u.cameraFitBounds.containsPoint(u.blocks.rod.localToWorld(new Vector3(205*u.source.scale,0,.74))));
    assert.deepEqual(Object.values(u.parts).map(p=>p.geometry),geometries);
   }
+  // p62: no undrawn guide, crosshead, bearings, posts or base.
+  assert.deepEqual(Object.keys(u.parts).filter(n=>/guide|crosshead|slider|Bearing|Post|base/.test(n)),[]);
   v.root.traverse(o=>{if(o.material)assert.equal(o.material.fog,false);});assert.equal(u.hideGround,true);
   v.reset();assert.equal(u.state.time,0);
  }finally{v.dispose();}

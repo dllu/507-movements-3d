@@ -73,6 +73,10 @@ test('movement 358 is one carriage-mounted fusee constrained by two opposed cord
   assert.equal(blocks.fixedAnchors.length, 2);
   blocks.fixedAnchors.forEach((anchor) => {
     assert.equal(anchor.parent, model.root);
+    // Brown draws no anchor stand, foot or eye: the fixed ends are ideal.
+    let meshes = 0;
+    anchor.traverse((object) => { if (object.isMesh) meshes += 1; });
+    assert.equal(meshes, 0);
   });
   assert.equal(blocks.firstCord.userData.closed, false);
   assert.equal(blocks.secondCord.userData.closed, false);
@@ -338,7 +342,7 @@ test('movement 358 renderer keeps every cord marker continuous across free and w
         0, 1e-15, `wheel rolling contact ${wheelIndex}/${index}`);
     });
     near(contacts.fuseeCords.commonTakeoffSeparation,
-      .040, 1e-14, `finite separated takeoffs ${index}`);
+      .068, 1e-14, `finite separated takeoffs ${index}`);
     near(contacts.fuseeCords.tangentialVelocityError,
       0, 1e-16 * geometry.carriageStroke, `cord no-slip contact ${index}`);
     cords.forEach((cord, cordIndex) => {

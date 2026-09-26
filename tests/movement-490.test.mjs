@@ -349,10 +349,12 @@ test('movement 490 laid-rope lay travels smoothly with the drum payout, without 
 test('movement 490 fixed frame stays fixed, fits all helm angles, and leaves spinning movement 507 next', () => {
   const { model } = movementModel();
   const { blocks, geometry } = model.root.userData;
+  // Brown draws no deck, posts or pedestals: none is built.
+  assert.equal(blocks.deck, undefined);
+  assert.equal(blocks.wheelPedestals, undefined);
   const fixedObjects = [
-    blocks.deck,
     blocks.fixedShaft,
-    ...blocks.wheelPedestals,
+    ...blocks.shaftBearings,
     blocks.upperGuide.fixed,
     blocks.lowerGuide.fixed,
   ];
@@ -370,8 +372,6 @@ test('movement 490 fixed frame stays fixed, fits all helm angles, and leaves spi
   });
   assert.ok(model.root.userData.cameraFitBounds.containsBox(union));
   assert.ok(model.root.userData.cameraDistanceScale >= 1);
-  const deckBounds = new THREE.Box3().setFromObject(blocks.deck);
-  assert.ok(model.root.userData.groundFloorY <= deckBounds.min.y);
 
   const next = catalog.movements[506];
   assert.equal(next.id, 507);

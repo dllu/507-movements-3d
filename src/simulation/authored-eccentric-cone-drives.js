@@ -1065,34 +1065,13 @@ function eccentricConeFrictionReverser(movement) {
   headBush.position.set(headBearingX, 0, 0);
   headBush.userData.role = 'inferred-plain-bush-on-input-journal-of-D';
   frame.add(headStandard, headBush);
-  // Roller C's short axle is carried by a light arm to a sliding sleeve on a
-  // round post standing behind B, clear of B's largest swept radius
-  // (1.48): C rises and falls freely while its axis stays parallel to D. The
-  // arm runs from the axle end beyond C's small-end face, 0.29 or more
-  // above B's surface.
-  const postZ = -1.66, armX = 0.22, postBottom = -1.34, postTop = 1.98;
-  const rollerPost = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.055, postTop - postBottom, 28), frameMaterial);
-  rollerPost.position.set(rollerAxialCenter + armX, (postTop + postBottom) / 2, postZ);
-  rollerPost.userData.role = 'inferred-vertical-guide-post-for-roller-C';
-  const rollerPostFoot = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.07, 0.46), frameMaterial);
-  rollerPostFoot.position.set(rollerAxialCenter + armX, postBottom + 0.035, postZ - 0.05);
-  rollerPostFoot.userData.role = 'foot-of-roller-C-guide-post';
-  frame.add(rollerPost, rollerPostFoot);
-  rollerAxle.geometry.dispose();
-  rollerAxle.geometry = cylinderAlongX(0.065, 0.36, darkMaterial, 30).geometry;
-  rollerAxle.position.x = 0.07;
-  const rollerSleeve = new THREE.Mesh(boredCylinderGeometry(0.105, 0.059, 0.24), frameMaterial);
-  rollerSleeve.position.set(armX, 0, postZ);
-  rollerSleeve.userData.role = 'sleeve-sliding-on-roller-C-guide-post';
-  const rollerArm = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.09, -postZ - 0.1), frameMaterial);
-  rollerArm.position.set(armX, 0, (postZ + 0.1) / 2);
-  rollerArm.userData.role = 'arm-joining-roller-C-axle-to-guide-sleeve';
-  rollerCarriage.add(rollerSleeve, rollerArm);
+  // Brown draws roller C only on its short spindle (the cross bar in 263,
+  // the small circle in 262); its carrier, like the spring or weight that
+  // presses it on B, is not drawn. The p57 guide post, foot, sleeve and arm
+  // stood beside B in the end view and are not built (p62 support policy):
+  // C's spindle ends cleanly either side of the roller as Brown draws it.
   Object.assign(root.userData.blocks, {
-    rollerArm, rollerPost, rollerPostFoot, rollerSleeve, tailBush, tailStandard,
-    headBush, headStandard});
+    tailBush, tailStandard, headBush, headStandard});
   root.userData.minimumDisplayCycleSeconds = 12;
   root.userData.cameraFov = presentationView === 'end-view' ? 2 : 8;
   root.userData.reconstructionNote = 'The eccentric cone, at Brown\'s offset of about a quarter of its radius, drives roller C at a changing speed and lifts and lowers it once per turn; as the contact spirals toward the small end each fall is longer than the rise before it. As in the plates, the spring or weight that presses roller C on the cone and the guide of C are not drawn; the height of C follows the cone. The screw runs uniformly between short end ramps and returns after three turns to repeat the demonstration; this return is not specified in the engraving.';

@@ -25,6 +25,14 @@ export default {
   89: [{ pattern: 'eccentric-bearing-journal', axis: 'z' }, 'raised-sheave-face', '(rear|front)-retaining-flange', 'shaft-collar'],
   90: [{ pattern: 'sheave', axis: 'z' }, 'collar'],
   95: ['disk', { pattern: 'hub', axis: 'y' }, 'thrustCollar', 'roller'],
+  // 97: the plain grooved disk (floor and outer land with its rim, bored on
+  // the shaft axis, their geometry Z through the origin) and its round hubs.
+  // The heart-shaped boss ('inner') is a cam of obvious shape: no cue.
+  97: [{ pattern: 'floor|outer', axis: 'z' }, '(front|rear)Hub'],
+  // 98, 99: the plain crank disk and the spiral-feed disk carry only a pin
+  // or a raised spiral; the disks and hubs take the cue.
+  98: ['disk', '(front|rear)Hub'],
+  99: ['disk', '(front|rear)Hub'],
   117: ['upperRoller', 'lowerRoller'],
   // 124: the spindle's drum; the drill bit is edge-on in the plate's view.
   124: ['drum', '(back|front)Flange', 'frontLand', 'frontHub'],
@@ -55,7 +63,6 @@ export default {
   230: ['(upper-input|lower-output)-shaft-front-crank-disk'],
   242: ['solid-brake-drum', 'visible-braking-rim', 'brake-wheel-hub'],
   244: ['smooth-turned-friction-pulley-A', 'brake-drum-hub'],
-  251: ['winding-drum-barrel', 'winding-drum-flange'],
   253: ['load-side-rope-drum', 'rope-drum-(rear|front)-rim', 'return-sheave-body', 'return-sheave-rim'],
   255: ['straight-cylindrical-flat-belt-working-tread', '(left|right)-belt-retaining-flange', 'flanged-pulley-hub'],
   256: ['plain-crowned-flat-belt-working-tread', 'plain-pulley-hub'],

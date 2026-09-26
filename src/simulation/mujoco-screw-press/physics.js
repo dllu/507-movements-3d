@@ -9,7 +9,7 @@ export function makeScrewPressPhysics(mujoco,visual,{timestep=.002,period=8,kp=2
   const xml=`<mujoco model="105 weighted screw press"><compiler angle="radian" inertiafromgeom="false"/>
     <option timestep="${timestep}" gravity="0 -9.81 0" integrator="implicitfast" solver="Newton" iterations="40" tolerance="1e-10"/>
     <default><geom condim="1" friction="0 0 0" solref="${contactTime} 1" solimp=".999 .9999 .0001"/></default>
-    <worldbody>${cylinder('blank',.23,f.workBottom,f.workTop,2)}
+    <worldbody>${cylinder('blank',f.blankRadius,f.workBottom,f.workTop,2)}
       <body name="ram"><joint name="ram" type="slide" axis="0 1 0" damping=".01"/>${inertia('ram')}${cylinder('ram',f.ramRadius,f.ramBottom,f.capBottom,1)}
         <body name="screw"><joint name="screw" type="hinge" axis="0 1 0" damping=".01"/>${inertia('screw')}</body>
       </body>

@@ -3,7 +3,7 @@ import {createMujocoSimulation} from '../mujoco/simulation.js';
 const vec=a=>a.map(v=>Number(v.toPrecision(12))).join(' ');
 export function makeDoubleRackPhysics(mujoco,visual,{timestep=.0005,period=8,contactTime=.002,friction=0,load=0,driveGain=2000,guideDamping=.02}={}){
  if(![timestep,period,contactTime,driveGain].every(x=>Number.isFinite(x)&&x>0)||![friction,guideDamping].every(x=>Number.isFinite(x)&&x>=0)||!Number.isFinite(load))throw new RangeError('Invalid double-rack physics options');
- const u=visual.root.userData,mass=Object.fromEntries(['pinion','frame'].map(n=>[n,rigidFamilyInertia(u.parts,u.families,n)])),density=1/mass.frame.volume,assets=[];
+ const u=visual.root.userData,mass=Object.fromEntries(['pinion','frame'].map(n=>[n,rigidFamilyInertia(u.workingParts??u.parts,u.families,n)])),density=1/mass.frame.volume,assets=[];
  const inertia=n=>{const m=mass[n];return `<inertial pos="${vec(m.centroid)}" mass="${m.volume*density}" fullinertia="${vec(m.inertia.map(v=>v*density))}"/>`;};
  const geoms=(n,mask,other)=>u.cells[n].map((cell,i)=>{const id=n+i;assets.push(`<mesh name="${id}" vertex="${vec(cell.flat())}"/>`);return `<geom name="${id}" type="mesh" mesh="${id}" contype="${mask}" conaffinity="${other}"/>`;}).join('');
  const pinion=geoms('pinion',1,2),frame=geoms('frame',2,1),omega=2*Math.PI/period;

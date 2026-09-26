@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {addDrawingBoard} from './drawing-board-parts.js';
 const turn=2*Math.PI,cordRadius=.012,pencilRadius=.085,cordZ0=.16,cordZ1=.36;
+// Untone-mapped board colour that shades to the scene paper (0xf3f0e9) under
+// the default key light, so the board's face reads as Brown's page.
+const BOARD_PAGE_TINT=0xe8e5e5;
 // External tangents with a fixed clockwise winding sense. Lifting the
 // attachment heights monotonically along the unfolded path separates strands.
 function tangent(a,ra,b,rb){const d=b.clone().sub(a),length=d.length(),e=d.multiplyScalar(1/length),k=(ra-rb)/length,h=Math.sqrt(1-k*k),normal=new THREE.Vector2(e.x*k-e.y*h,e.y*k+e.x*h);return{start:a.clone().addScaledVector(normal,ra),end:b.clone().addScaledVector(normal,rb),normal,length:Math.sqrt(length*length-(ra-rb)**2)};}
@@ -34,7 +37,13 @@ export function installHyperbolaFiniteGeometry(root){
  // two focus pins stand with their collars in bores through it.
  root.updateMatrixWorld(true);
  const foci=[b.upperFocusPin,b.lowerFocusPin].map(pin=>pin.collar.getWorldPosition(new THREE.Vector3()));
- b.drawingBoard=addDrawingBoard(root,{min:[-2.62,-2.62],max:[2.62,2.62],top:-.17,holes:foci.map(f=>[f.x,f.y,.1705]),holeDepth:.075});
+ // Pass 62: Brown draws the branches straight on his page, so the board's
+ // face is given the page's tone under the default light (tone-mapped it
+ // shaded as a grey backdrop filling the plate). It is still the solid board
+ // holding the pins and traced lines, receiving the rule's shadow, and its
+ // edges and back show in rotated views.
+ b.drawingBoard=addDrawingBoard(root,{min:[-2.62,-2.62],max:[2.62,2.62],top:-.17,holes:foci.map(f=>[f.x,f.y,.1705]),holeDepth:.075,color:BOARD_PAGE_TINT});
+ b.drawingBoard.material.toneMapped=false;
  root.traverse(o=>{for(const m of(Array.isArray(o.material)?o.material:[o.material]))if(m)m.fog=false;});
  const update=state=>{
   const p=hyperbolaCordPath(state);b.focusCord.userData.setEndpoints(p.start,p.entry);b.ruleCord.userData.setEndpoints(p.exit,p.end);

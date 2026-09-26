@@ -307,8 +307,10 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   pinionCollar.userData.role = 'hidden-keyed-pinion-bore-sleeve';
   pinion.userData.rotor.add(pinionCollar);
 
-  const shaftLength = 4.1;
-  const shaftCenterX = 3.5;
+  // Brown draws the pinion shaft running out to the upper right about one
+  // crown diameter beyond the rim (p62). Its inner end stays at x 1.45.
+  const shaftLength = 8.7;
+  const shaftCenterX = 5.8;
   const shaftRadius = 0.095;
   const pinionShaft = makeShaft({
     axis: X_AXIS,
@@ -320,37 +322,9 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   pinionShaft.userData.role = 'fixed-axis-rotating-splined-pinion-shaft';
   root.add(pinionShaft);
 
-  // Supports beyond the plate, on the floor level: a foot plate carries the
-  // arbor's footstep bearing and a standard whose bored head carries the
-  // pinion shaft near its outer end.
-  const supportMaterial = matte(PALETTE.frame, { metalness: 0.12, roughness: 0.68 });
-  const supports = new THREE.Group();
-  supports.userData.role = 'floor-footstep-and-pinion-shaft-standard';
-  const floorTopZ = arborBottomZ - 0.02;
-  const standardX = shaftCenterX + shaftLength / 2 - 0.45;
-  const floor = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.16), supportMaterial);
-  floor.position.set(0, 0, floorTopZ - 0.08);
-  floor.userData.role = 'foot-plate-of-arbor-footstep';
-  const standardFoot = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.7, 0.16), supportMaterial);
-  standardFoot.position.set(standardX, 0, floorTopZ - 0.08);
-  standardFoot.userData.role = 'foot-of-pinion-shaft-standard';
-  const footstepShape = new THREE.Shape().absarc(0, 0, 0.26, 0, FULL_TURN, false);
-  footstepShape.holes.push(new THREE.Path().absarc(0, 0, 0.108, 0, FULL_TURN, true));
-  const footstep = new THREE.Mesh(new THREE.ExtrudeGeometry(footstepShape, { bevelEnabled: false, depth: 0.3, curveSegments: 48 }), supportMaterial);
-  footstep.position.z = floorTopZ;
-  footstep.userData.role = 'footstep-bearing-of-crown-arbor';
-  const headShape = new THREE.Shape().absarc(0, 0, 0.22, 0, FULL_TURN, false);
-  headShape.holes.push(new THREE.Path().absarc(0, 0, shaftRadius + 0.004, 0, FULL_TURN, true));
-  const standardHead = new THREE.Mesh(new THREE.ExtrudeGeometry(headShape, { bevelEnabled: false, depth: 0.24, curveSegments: 48 }), supportMaterial);
-  standardHead.rotation.y = Math.PI / 2;
-  standardHead.position.set(standardX - 0.12, 0, pinionCenterZ);
-  standardHead.userData.role = 'bored-head-of-pinion-shaft-standard';
-  const standardHeight = pinionCenterZ - 0.2 - floorTopZ;
-  const standard = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.24, standardHeight), supportMaterial);
-  standard.position.set(standardX, 0, floorTopZ + standardHeight / 2);
-  standard.userData.role = 'pinion-shaft-standard';
-  supports.add(floor, standardFoot, footstep, standardHead, standard);
-  root.add(supports);
+  // Brown draws the crown wheel on its vertical arbor and the pinion on its
+  // shaft running off to the upper right, with no footstep or standard: both
+  // shafts end as plain stubs (p60/p62).
 
   const splineLength = pinionDepth;
   const splineCenterX = pinionAxialCenterX;
@@ -679,7 +653,9 @@ function eccentricCrownWheelAndSlidingPinion(movement) {
   pinionCollar.visible = false;
   root.userData.reconstructionNote = 'An eccentric crown wheel drives a long pinion whose teeth span the whole range of relative radius, as Brown draws it; the contact travels along the fixed pinion. Equal accumulated pitch gives five pinion turns per crown revolution. Dimensions and finite tooth profiles are inferred.';
   root.rotation.z = THREE.MathUtils.degToRad(55);
-  root.userData.cameraFitBounds.set(new THREE.Vector3(-3.23, -3.23, -2.27), new THREE.Vector3(3.35, 4.70, 1.46));
+  // The fit includes the whole pinion shaft to its outer end, as Brown frames
+  // it (world end after the 55-degree turn: 0.574 * 10.15, 0.819 * 10.15).
+  root.userData.cameraFitBounds.set(new THREE.Vector3(-3.23, -3.23, -2.27), new THREE.Vector3(6.05, 8.5, 1.46));
   markShadows(root);
   return {
     root,

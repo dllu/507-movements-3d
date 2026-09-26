@@ -3,7 +3,6 @@ import { PALETTE, markShadows, matte } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { boredSpurGeometry, jawClutchGeometry } from './jaw-clutch-geometry.js';
 import { makeJawClutchMotion } from './jaw-clutch-motion.js';
-import { pinWallBracket } from './beyond-crop-hardware.js';
 
 const LEVER_STANDOFF = 0.035;
 
@@ -113,11 +112,9 @@ export function makeJawClutch() {
     { depth: 0.042, bevelEnabled: false, curveSegments: 24 }).translate(0, 0, 0.455 + LEVER_STANDOFF), matte(PALETTE.frame)); rod.add(rodBody);
   // Only the rod's run below Brown's crop lies past the plate framing.
   rodBody.userData.beyondPlateCropBelowY = -1.83;
-  // The fixed fulcrum pin's shank runs back to a small flange on the framing
-  // behind the clutch, clear of the sleeve and the loose gear.
-  const fulcrumBracket = pinWallBracket({ x: p.pivotX, y: p.pivotY, pinRadius: 0.032, zPin: 0.31, zWall: -0.62,
-    flange: 0.26, role: 'fulcrum-pin-wall-bracket' });
-  root.add(input, output, shaft, pinion, lever, follower, followerPin, pivotPin, rod, fulcrumBracket);
+  // Brown draws the fixed fulcrum only as a pin through the bell crank's
+  // elbow, with no bracket; it ends as a plain stub behind the lever (p62).
+  root.add(input, output, shaft, pinion, lever, follower, followerPin, pivotPin, rod);
   const update = (time) => {
     const state = motion.stateAt(time + sourcePhase * p.cycleDuration);
     // With an even pinion count a half-pitch offset puts a pinion space
@@ -139,8 +136,6 @@ export function makeJawClutch() {
     cameraFov: 11, cameraDistanceScale: 4, fullCameraDirection: new THREE.Vector3(5.4, 3.6, 8), motion,
     blocks: { input, output, shaft, pinion, inputBody, outputBody, gearBody, pinionBody, shaftBody, feather,
       lever, leverBody, follower, followerPin, pivotPin, rod, rodBody, handlePin },
-    // Carried by the rod and fixed respectively; not separate moving bodies.
-    beyondCrop: { fulcrumBracket },
     geometry: { ...p, sourcePhase, jawPhase, inputProfile, outputProfile, shaftRadius, boreRadius, keyHalfWidth, keywayTop,
       keyLeft, keyRight, keyBottom, keyTop, featherHalfWidth, pinionTeeth, gearTeeth, module, gearDepth,
       gearPitchRadius, pinionPitchRadius, pinionY, pinionMeshPhase, handleLength, leverBackZ, leverDepth,

@@ -87,7 +87,7 @@ test('movement 354 is the shaped-groove uniform-velocity crosshead', () => {
   assert.equal(blocks.grooveEdges.length, 2);
   assert.equal(blocks.grooveCornerPockets.length, 2);
   assert.equal(blocks.guideCheeks.length, 4);
-  assert.equal(blocks.rearFrameRails.length, 2);
+  assert.equal(blocks.rearFrameRails, undefined, "Brown draws no rear frame");
 
   const roles = [];
   model.root.traverse((object) => {

@@ -480,8 +480,7 @@ function selfRockingCradle(movement) {
   const pinMaterial = matte(PALETTE.ink, { metalness: 0.28, roughness: 0.44 });
 
   // Brown's floor is a hatched ground line: notation for the solid floor.
-  // Model the floor itself as a plain ground block deep enough to carry both
-  // the rocking cradle E and the rear drive standard.
+  // Model the floor itself as a plain ground block under the rocking cradle E.
   const groundDepth = 0.24;
   const ground = groundBlock(6.8, groundDepth, 1.40,
     { name: 'fixed-floor-beneath-rocking-cradle-E' });
@@ -489,20 +488,17 @@ function selfRockingCradle(movement) {
   ground.userData.role = 'fixed-floor-beneath-rocking-cradle-E';
   root.add(ground);
 
+  // Brown draws no support for the fixed A and B axes. As in the gear
+  // family they end as plain stubs just behind the discs; the p57 rear mast
+  // down to the floor showed below A and is not built (p62 support policy).
   const fixedAxleFrame = new THREE.Group();
   fixedAxleFrame.userData.role =
     'fixed-rear-frame-carrying-A-and-B-axes';
-  const rearMast = new THREE.Mesh(
-    new THREE.BoxGeometry(.20,4.28,.24),
-    frameMaterial,
-  );
-  rearMast.position.set(0,-.475,-.94);
-  rearMast.userData.role = 'rear-grounded-drive-bearing-standard';
-  fixedAxleFrame.add(rearMast);
+  const axleBack = -.33, axleFront = .54;
   for (const center of [inputCenter, outputCenter]) {
-    const axle = cylinderAlongZ(.11,1.50,groundMaterial,28);
+    const axle = cylinderAlongZ(.11,axleFront-axleBack,groundMaterial,28);
     axle.position.copy(center);
-    axle.position.z = -.21;
+    axle.position.z = (axleFront+axleBack)/2;
     axle.userData.role = center === inputCenter
       ? 'fixed-axis-of-continuously-rotating-wheel-A'
       : 'fixed-axis-of-oscillating-wheel-B';
@@ -692,7 +688,7 @@ function selfRockingCradle(movement) {
       fixedAxleFrame,
       flexibleBandC,
       flexibleBandD,
-      ground, rearMast, cradleLoad,
+      ground, cradleLoad,
       inputCrankArm,
       inputPinMarker,
       inputWheelA,

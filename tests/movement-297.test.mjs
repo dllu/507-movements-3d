@@ -73,10 +73,10 @@ test('movement 297 is one eight-trundle lantern cage controlled by one two-palle
   assert.equal(blocks.palletC.parent, blocks.armAssembly);
   assert.equal(blocks.palletBBody.parent, blocks.palletB);
   assert.equal(blocks.palletCBody.parent, blocks.palletC);
-  assert.equal(blocks.sidePlates.length, 2);
+  assert.equal(blocks.sidePlates.length, 1, 'one plain front disc; arm A lies behind it');
   assert.equal(blocks.sidePlateSpokes.length, 0, 'Brown draws plain discs without spokes');
   assert.equal(blocks.trundles.length, 8);
-  assert.equal(blocks.wheelHubs.length, 2);
+  assert.equal(blocks.wheelHubs.length, 1);
   vectorNear(blocks.lanternWheel.userData.axis,
     new THREE.Vector3(0, 0, 1), 0, 'lantern-wheel axis');
   vectorNear(blocks.armAssembly.userData.axis,
@@ -171,19 +171,19 @@ test('movement 297 records Brown’s eight circles, A–C layout, arrow, and una
   disposeModel(model.root);
 });
 
-test('movement 297 builds a real two-plate lantern cage with eight axial trundles', () => {
+test('movement 297 builds one plain disc with eight axial trundles reaching back to the pallets', () => {
   const model = createMovementModel(catalog.movements[296]);
   const { blocks, geometry } = model.root.userData;
 
   assert.deepEqual(blocks.sidePlates.map((plate) => plate.userData.axialSide),
-    ['rear', 'front']);
+    ['front']);
   near(blocks.sidePlates[0].position.z,
-    -geometry.sidePlateOffset, 0, 'rear plate z');
-  near(blocks.sidePlates[1].position.z,
     geometry.sidePlateOffset, 0, 'front plate z');
-  assert.ok(geometry.trundleLength
-    > 2 * geometry.sidePlateOffset + geometry.sidePlateDepth,
-  'trundles bridge and project beyond both end plates');
+  near(geometry.trundleFront,
+    geometry.sidePlateOffset + geometry.sidePlateDepth / 2, 0.01,
+  'pin ends are flush with the disc face');
+  assert.ok(geometry.trundleRear < geometry.sidePlateOffset - geometry.sidePlateDepth / 2 - 0.3,
+    'trundles reach back behind the disc to the pallet layer');
 
   const measuredAngles = [];
   blocks.trundles.forEach((trundle, index) => {

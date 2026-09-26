@@ -767,17 +767,22 @@ function doubleQuadrantEngine(movement) {
     topFixedPivot.clone().add(new THREE.Vector3(0.45, 4.45, -0.04)),
   ], 0.13, frameMaterial,
   'top-passage-from-single-induction-valve-a-to-outer-steam-space');
-  const bottomAdmissionPassage = makeTubeThrough([
-    sourceValvePivot.clone().add(new THREE.Vector3(0.52, -0.35, -0.04)),
-    new THREE.Vector3(4.25, 0.85, -0.04),
-    new THREE.Vector3(4.48, -2.02, -0.04),
-    bottomFixedPivot.clone().add(new THREE.Vector3(-0.20, -4.55, -0.04)),
-    // Carried on into the cast foot rather than ending in mid-air.
-    bottomFixedPivot.clone().add(new THREE.Vector3(-0.26, -4.92, -0.04)),
-  ], 0.13, frameMaterial,
-  'bottom-passage-from-single-induction-valve-a-to-outer-steam-space');
-  // The top passage is the gap between the casing and the top quadrant
-  // wall in the thick casting; only the right-hand passage is a pipe.
+  // Brown draws the right-hand passage as a double wall in the casting: an
+  // inner wall runs from under valve a's chest down round the right pivot
+  // boss, about 0.2 inside the casing, and stops short of the foot so the
+  // passage turns under its end into the bottom quadrant's outer steam
+  // space. (It replaces the p57 round pipe; the top passage is the gap
+  // between the casing and the top quadrant wall.)
+  const rightPassageInnerPath = spline([
+    [3.91, 1.48], [4.18, 0.80], [4.34, 0.00], [4.12, -1.00],
+    [4.18, -2.00], [4.26, -3.00], [4.36, -4.10],
+  ]);
+  const bottomAdmissionPassage = new THREE.Mesh(plate(polygonClipping.union(
+    ...rightPassageInnerPath.slice(1).map((point, index) =>
+      capsule(rightPassageInnerPath[index], point, 0.09, 8)),
+  ), castingBack, castingFront), frameMaterial);
+  bottomAdmissionPassage.userData.role =
+    'inner-wall-of-right-passage-from-induction-valve-a-to-bottom-outer-steam-space';
   root.add(bottomAdmissionPassage);
 
   const inletPipe = new THREE.Mesh(

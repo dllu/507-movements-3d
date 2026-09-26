@@ -9,8 +9,13 @@ export function makeReciprocatingPawlRatchet(){
   for(const name of ['wheel','bar','movingPawl','holdingPawl','rod','fixed']){
     blocks[name]=new THREE.Group();root.add(blocks[name]);
   }
+  // Brown crops rod C just below the wheel. It runs on straight past his
+  // crop by ROD_RUN_ON and ends in the same rounded end (p62), so the rod is
+  // whole when the view is turned; its bottom run lies outside the fit.
+  const ROD_RUN_ON=1;
   for(const descriptor of profile.parts){
-    const d=descriptor.shape;let geometry;
+    const d=descriptor.name==='rodBody'?{...descriptor.shape,polygons:descriptor.shape.polygons.map(rings=>rings.map(
+      (ring,index)=>index?ring:ring.map(([x,y])=>[x,y<-.5?y-ROD_RUN_ON:y])))}:descriptor.shape;let geometry;
     if(d.kind==='turned')geometry=turnedClutchGeometry(d.profile,d);
     else{
       const shapes=d.polygons.map(([outer,...holes])=>{
@@ -32,7 +37,9 @@ export function makeReciprocatingPawlRatchet(){
   };
   root.userData={parts,families,blocks,profile,motion,geometry:p,mass:profile.mass,stateAtTime:motion.atTime,
     mechanism:'reciprocating-rod-vibrating-pawl-ratchet-index',fidelity:'authored',reconstructionStatus:'rebuilt',
-    hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),
+    hideGround:true,cameraFov:8,
+    // Brown's plate framing: the swept mechanism with rod C to his crop.
+    cameraFitBounds:new THREE.Box3(new THREE.Vector3(-1.1018,-1.5175,-.24),new THREE.Vector3(1.0314,1.0278,.173)),fullCameraDirection:new THREE.Vector3(0,0,10),
     shadowCameraHalfExtent:2.5,shadowBias:-.00003,shadowNormalBias:.005,
     animationTiming:{authoredCyclePeriod:p.period},minimumDisplayCycleSeconds:p.period,
     idealConstraints:'Rod C swings on an ordinary round pin in the bar. The prescribed bar stroke includes overtravel; the wheel and both pawls respond continuously to gravity, inertia, bearing damping and an opposing output load. The holding pawl drops after the crest clears, then the wheel settles against it. The regular 34-tooth profile reconstructs the unevenly drawn engraving.'};

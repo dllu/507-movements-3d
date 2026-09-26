@@ -14,19 +14,47 @@ export function correctReactionFerry(root){
  const outline=poly(b.hull.geometry.parameters.shapes.getPoints(64).map(p=>[p.x,p.y*.65]));
  const wells=[rectangle(.92,-.27,1.38,.27),rectangle(1.67,-.27,2.14,.27)];
  const postHole=poly(circle([g.sternFromBow,0],.075,64));
- // The lower hull narrows from the gunwale outline down to a narrower
- // flat bottom, so the boat has flared sides and a fine bow rather
- // than reading as a flat lozenge. The stern stays upright where the rudder
- // stock passes through its notch.
- const beamAt=x=>x<=2.0?.62:x>=2.4?1:.62+.38*(x-2.0)/.4;
- const loftHull=(z0,z1)=>{
-  const g=plate(clip.difference(outline,postHole),z0,z1),pos=g.attributes.position;
-  for(let i=0;i<pos.count;i++)if(Math.abs(pos.getZ(i)-z1)<1e-9)pos.setY(i,pos.getY(i)*beamAt(pos.getX(i)));
-  pos.needsUpdate=true;g.computeVertexNormals();return g;
+ // Pass 62: below the gunwale band the hull is a lofted round-bilged body:
+ // its sides turn in from the gunwale outline to a flat bottom half the beam
+ // 0.30 deeper, and its stem rakes back from the bow while a flat transom
+ // stands forward of the rudder stock and bearing (the upper band carries
+ // the stock's notch aft of it). The former lower body was a thin slab, so
+ // the boat read as a flat, shallow lozenge.
+ const transomX=2.44,bandDepth=.17,hullDepth=.47,beamBottom=.5,lengthBottom=.72,rings=12;
+ const lowerHull=()=>{
+  const ringPoints=clip.intersection(outline,rectangle(-1,-2,transomX,2))[0][0].slice(0,-1);
+  // Open the ring at the transom: start just after the starboard corner.
+  let area=0;for(let i=0;i<ringPoints.length;i++){const a=ringPoints[i],b=ringPoints[(i+1)%ringPoints.length];area+=a[0]*b[1]-b[0]*a[1];}
+  if(area<0)ringPoints.reverse();
+  const onTransom=p=>Math.abs(p[0]-transomX)<1e-6;
+  let start=ringPoints.findIndex((p,i)=>onTransom(p)&&!onTransom(ringPoints[(i+1)%ringPoints.length]));
+  const chain=[];for(let i=0;i<ringPoints.length;i++){const p=ringPoints[(start+i)%ringPoints.length];chain.push(p);if(i>0&&onTransom(p))break;}
+  const at=(p,phi)=>{const f=1-Math.cos(phi),x=p[0]<transomX?transomX+(p[0]-transomX)*(1-(1-lengthBottom)*f):p[0];return[x,p[1]*(1-(1-beamBottom)*f),bandDepth+(hullDepth-bandDepth)*Math.sin(phi)];};
+  const levels=[...Array(rings+1)].map((_,k)=>chain.map(p=>at(p,k/rings*Math.PI/2)));
+  const side=[],index=[];
+  for(const level of levels)for(const p of level)side.push(...p);
+  const n=chain.length;
+  for(let k=0;k<rings;k++)for(let i=0;i<n-1;i++){const a=k*n+i,b=a+1,c=a+n,d=c+1;index.push(a,c,b,b,c,d);}
+  const sides=new T.BufferGeometry();sides.setAttribute('position',new T.Float32BufferAttribute(side,3));sides.setIndex(index);sides.computeVertexNormals();
+  // Flat caps: the cockpit floor on top, the bottom and the transom.
+  const cap=(points2,map,flip)=>{const tris=T.ShapeUtils.triangulateShape(points2.map(p=>new T.Vector2(...p)),[]),pos=[];
+   for(const t of tris){const order=flip?[t[0],t[2],t[1]]:t;for(const j of order)pos.push(...map(points2[j]));}
+   const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.computeVertexNormals();return g;};
+  const top=cap(levels[0].map(p=>[p[0],p[1]]),q=>[q[0],q[1],bandDepth],false);
+  const bottom=cap(levels[rings].map(p=>[p[0],p[1]]),q=>[q[0],q[1],hullDepth],true);
+  const transom=cap([...levels.map(l=>[l[0][1],l[0][2]]),...levels.slice().reverse().map(l=>[l[n-1][1],l[n-1][2]])],q=>[transomX,q[0],q[1]],false);
+  // Orient each cap outward (plate local +z points down into the water).
+  const orient=(g,want)=>{g.computeBoundingBox();const nrm=g.attributes.normal,pos=g.attributes.position;let dot=0;for(let i=0;i<nrm.count;i++)dot+=nrm.getX(i)*want[0]+nrm.getY(i)*want[1]+nrm.getZ(i)*want[2];
+   if(dot<0){for(let i=0;i<pos.count;i+=3){for(const a of[pos,nrm]){const t=[a.getX(i+1),a.getY(i+1),a.getZ(i+1)];a.setXYZ(i+1,a.getX(i+2),a.getY(i+2),a.getZ(i+2));a.setXYZ(i+2,...t);}}g.computeVertexNormals();}return g;};
+  orient(top,[0,0,-1]);orient(bottom,[0,0,1]);orient(transom,[1,0,0]);
+  // Side faces wind outward: check against the centroid direction.
+  {const c=new T.Vector3(1.4,0,.3),pos=sides.attributes.position,nrm=sides.attributes.normal;let dot=0;for(let i=0;i<pos.count;i++)dot+=(pos.getX(i)-c.x)*nrm.getX(i)+(pos.getY(i)-c.y)*nrm.getY(i);
+   if(dot<0){const ix=sides.index.array;for(let i=0;i<ix.length;i+=3){const t=ix[i+1];ix[i+1]=ix[i+2];ix[i+2]=t;}sides.computeVertexNormals();}}
+  return [sides,top,bottom,transom];
  };
  replace(b.hull,mergePassageParts([
-  plate(clip.difference(outline,...wells,postHole,poly(circle([0,0],.14,64))),0,.17),
-  loftHull(.17,.34),
+  plate(clip.difference(outline,...wells,postHole,poly(circle([0,0],.14,64))),0,bandDepth),
+  ...lowerHull(),
  ]));
  b.hull.position.y=-.03;
  replace(b.deck,plate(clip.difference(rectangle(.77,-.3445,2.39,.3445),...wells),0,.1));

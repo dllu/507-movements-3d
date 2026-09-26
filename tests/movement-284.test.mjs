@@ -52,7 +52,7 @@ test('284 feeds one tooth anticlockwise per crank turn and never runs back while
       // The click holds every return: the wheel never falls below the
       // pocket it last dropped into.
       assert.ok(s.wheel[i] >= start - 1e-9, `run-back at ${i}`);
-      assert.ok(peak - s.wheel[i] < 0.12 * pitch, `settle at ${i}`);
+      assert.ok(peak - s.wheel[i] < 0.1 * pitch, `settle at ${i}`);
     }
     assert.ok(peak > end, 'the catch overtravels and the wheel settles back onto the click');
   }
@@ -118,5 +118,16 @@ test('284 feed screw setting stays inside the drawn slot', () => {
   // The slot in the vertical arm runs from raster y 134 to 224 below a at 122.
   const slider = g.sliderRadius / g.sourceScale;
   assert.ok(slider > 134 - 122 + 10 && slider < 224 - 122 - 10, `slider ${slider}`);
-  assert.ok(Math.abs(g.overtravel / pitch - 0.12) < 0.021);
+  assert.ok(g.overtravel / pitch > 0.02 && g.overtravel / pitch < 0.1, `overtravel ${g.overtravel / pitch}`);
+});
+
+test('284 hook hangs where Brown draws it in the default pose', () => {
+  // The slider sits catchHingeDrop px low on its screw (the least setting
+  // that feeds), and the catch is built from that hinge so the claw point
+  // still stands at Brown's pocket.
+  assert.ok(g.catchHingeDrop <= 9);
+  assert.ok(Math.abs(g.sliderRadius - g.sourceSliderRadius - g.catchHingeDrop * g.sourceScale) < 1e-9);
+  const { nose } = stateAtTime(0);
+  const raster = [nose[0] / g.sourceScale + 140, 352 - nose[1] / g.sourceScale];
+  assert.ok(Math.hypot(raster[0] - g.catchClawTipRaster[0], raster[1] - g.catchClawTipRaster[1]) < 5, `nose ${raster}`);
 });

@@ -7,22 +7,27 @@ const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = g
 export function installLanternFinitePlayback297(root) {
   const d = root.userData, b = d.blocks, g = d.geometry;
   g.armAmplitude = c.amplitude; g.palletBodyWidth = .18; g.palletPlaneZ = c.palletZ;
-  g.trundleLength = 2.01; g.trundleAxialCenter = .195; g.trundleFront = 1.20; g.trundleRear = -.81;
+  // Brown dashes arm A behind the wheel: the plain front disc carries the
+  // eight pins, whose ends show on its face as Brown's circles, and the pins
+  // reach back from it to the pallet layer; arm A lies behind the pin ends.
+  g.trundleFront = g.sidePlateOffset + g.sidePlateDepth / 2 + .005; g.trundleRear = .10;
+  g.trundleLength = g.trundleFront - g.trundleRear; g.trundleAxialCenter = (g.trundleFront + g.trundleRear) / 2;
   for (const trundle of b.trundles) {
     replace(trundle, new THREE.CylinderGeometry(c.pinRadius, c.pinRadius, g.trundleLength, 128));
     trundle.position.z = g.trundleAxialCenter;
   }
   b.wheelIndex.position.z = 1.2005;
   b.armA.position.z = c.armZ;
-  replace(b.armHub, ring(.166, .34, -.95, 1.61, 96)); b.armHub.rotation.set(0, 0, 0);
+  const armDepth = .22, armBack = c.armZ - armDepth / 2, armFront = c.armZ + armDepth / 2;
+  replace(b.armHub, ring(.166, .30, armBack - .06, armFront + .06, 96)); b.armHub.rotation.set(0, 0, 0);
   const arbor = d.lanternWorkingParts.armArbor;
-  replace(arbor, new THREE.CylinderGeometry(.16, .16, 3.26, 64)); arbor.position.z = -.02;
+  replace(arbor, new THREE.CylinderGeometry(.16, .16, armDepth + .30, 64)); arbor.position.z = c.armZ - .03;
   d.lanternWorkingParts.pairs.push([arbor, b.armHub]);
   // Arm A is one flat plate (Brown's tapered arm from its pivot, with the
-  // outlines of B and C) in front of the pin ends; B and C are straight bars
-  // of Brown's hatched section standing back from the plate to the pin ends.
-  const armDepth = .22, armBack = c.armZ - armDepth / 2;
-  const barFront = c.palletZ - c.depth / 2, barBack = armBack + .04;
+  // outlines of B and C) behind the pin ends; B and C are straight bars of
+  // Brown's hatched section standing forward from the plate along the pins,
+  // stopping short of the disc.
+  const barFront = c.palletZ + c.depth / 2, barBack = armFront - .04;
   const barOutline = bar => {
     const [cx, cy] = bar.center, u = [Math.cos(bar.angle), Math.sin(bar.angle)], v = [-u[1], u[0]];
     return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => [
@@ -39,7 +44,7 @@ export function installLanternFinitePlayback297(root) {
   b.armA.userData.role = 'one-piece-rocking-arm-A';
   for (const bar of c.bars) {
     const body = b[`pallet${bar.name}Body`], group = b[`pallet${bar.name}`];
-    replace(body, new THREE.BoxGeometry(bar.length, bar.width, barBack - barFront));
+    replace(body, new THREE.BoxGeometry(bar.length, bar.width, barFront - barBack));
     body.position.set(...bar.center, (barFront + barBack) / 2); body.rotation.z = bar.angle;
     const bridge = group.children.find(x => /rigid-mount/.test(x.userData.role));
     if (bridge) { bridge.removeFromParent(); bridge.geometry.dispose(); }
@@ -74,7 +79,7 @@ export function installLanternFinitePlayback297(root) {
   d.lanternFiniteContact = { bars: c.bars, bake: lanternBake297.metadata,
     collisionModel: 'planar sphere/box supports equal the visible cylinder/box supports; all motion is constrained to XY',
     softContactCorrection: 'offline projection onto finite bar surfaces, maximum angle correction below 0.0015 rad' };
-  d.reconstructionNote = 'Offline MuJoCo drives the full trundles against finite B/C bars; release retains wheel speed, with landing rebound. Arm motion, constant torque and frictionless contact are prescribed assumptions, not a self-running clock. The inferred ±18° stroke, B shifted 0.25 along its axis, C length 1.28, and forward trundle ends make the finite geometry compatible; they are not dimensioned in the engraving. A sub-0.0015-radian offline projection removes solver overlap; spring, bearing loss and impact compliance remain unvalidated.';
+  d.reconstructionNote = 'Offline MuJoCo drives the full trundles against finite B/C bars; release retains wheel speed, with landing rebound. Arm motion, constant torque and frictionless contact are prescribed assumptions, not a self-running clock. The inferred ±18° stroke, B shifted 0.25 along its axis, C length 1.28, and the pins reaching back from the disc to the pallet bars make the finite geometry compatible; they are not dimensioned in the engraving. A sub-0.0015-radian offline projection removes solver overlap; spring, bearing loss and impact compliance remain unvalidated.';
   root.traverse(o => { for (const mat of [].concat(o.material ?? [])) mat.fog = false; });
   markShadows(root);
   for (const marker of [b.wheelIndex, b.rimIndex, b.contactMarker]) marker.castShadow = marker.receiveShadow = false;

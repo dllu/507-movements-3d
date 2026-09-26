@@ -91,6 +91,7 @@ test('wheel directions follow the plates: 288 and 289 counterclockwise; 290, 291
 
 test('288 teeth have radial leading faces on the counterclockwise side (tips lead)', () => {
   const cells = models.get(288).root.userData.contactOutlines.wheelCells;
+  assert.equal(cells.length, 33, "Brown's 33 teeth");
   const [root, tip, , back] = cells[0].points.map(([x, y]) => ({ a: Math.atan2(y, x), r: Math.hypot(x, y) }));
   assert.ok(Math.abs(root.a - tip.a) < 1e-9, 'leading face radial');
   assert.ok(tip.r > root.r && back.r < tip.r, 'tooth rises from root to tip');
@@ -185,4 +186,55 @@ test('every extruded plate has caps covering exactly its outline (no earcut mis-
       assert.ok(Math.abs(cap - expected) <= 1e-4 * Math.max(1, expected), `${id} ${object.userData.role} cap ${cap} vs ${expected}`);
     });
   }
+});
+
+test("292 studs are Brown's clear triangles on the rim's middle line, front ones outward and back ones inward", () => {
+  const cells = models.get(292).root.userData.contactOutlines.wheelCells;
+  const px = (v) => v / 0.02;
+  for (const cell of cells) {
+    assert.equal(cell.points.length, 3, 'a triangle');
+    const radii = cell.points.map(([x, y]) => px(Math.hypot(x, y)));
+    const base = radii.filter((r) => Math.abs(r - 230) < 1e-6).length;
+    assert.equal(base, 2, 'base on the middle line');
+    const apex = radii.find((r) => Math.abs(r - 230) >= 1e-6);
+    // Front studs (layer 1) point outward over the outer half, back ones inward.
+    assert.ok(cell.layer === 1 ? apex > 238 : apex < 222, `apex ${apex}`);
+    const [a, b] = cell.points.filter((_, i) => Math.abs(radii[i] - 230) < 1e-6);
+    assert.ok(px(Math.hypot(a[0] - b[0], a[1] - b[1])) >= 8, 'a clear triangle, not a nick');
+  }
+});
+
+test('292 pallet c is a wedge whose sharp tip ends the front arm', () => {
+  const d = models.get(292).root.userData.contactOutlines;
+  const c = ring(d.pieces[d.pieceLayers.indexOf(1)]).slice(0, -1);
+  let sharpest = Math.PI;
+  for (let i = 0; i < c.length; i += 1) {
+    const p = c[(i + c.length - 1) % c.length]; const q = c[i]; const r = c[(i + 1) % c.length];
+    const u = [p[0] - q[0], p[1] - q[1]]; const v = [r[0] - q[0], r[1] - q[1]];
+    const lu = Math.hypot(...u); const lv = Math.hypot(...v);
+    if (lu < 1e-9 || lv < 1e-9) continue;
+    sharpest = Math.min(sharpest, Math.acos((u[0] * v[0] + u[1] * v[1]) / (lu * lv)));
+  }
+  assert.ok(sharpest < 65 * Math.PI / 180, `tip angle ${sharpest * 180 / Math.PI}`);
+});
+
+test('293 wheel advance is spread over the impulse swing, not a snap', () => {
+  const k = models.get(293).root.userData.kinematics;
+  const n = 800;
+  const steps = [];
+  for (let i = 1; i <= n; i += 1) steps.push(Math.abs(k.wheelAngle(k.period * i / n) - k.wheelAngle(k.period * (i - 1) / n)));
+  const total = steps.reduce((a, b) => a + b, 0);
+  steps.sort((a, b) => b - a);
+  let sum = 0; let count = 0;
+  while (sum < 0.8 * total) sum += steps[count++];
+  // Before pass 62, 80 % of the tooth's advance happened in 3.4 % of the cycle.
+  assert.ok(count / n > 0.1, `80% of the advance in ${(100 * count / n).toFixed(1)}% of the cycle`);
+});
+
+test("295's wheel is a narrow rim below the valleys, open between the arms as Brown draws it", () => {
+  let wheel;
+  models.get(295).root.traverse((object) => { if (object.userData.role === 'cylinder-escape-wheel') wheel = object; });
+  const { holes } = wheel.geometry.userData.outline;
+  const windowTop = Math.max(...holes.flat().map(([x, y]) => Math.hypot(x, y))) / 0.02;
+  assert.ok(windowTop > 320, `window reaches ${windowTop} px (valley bottoms at 352)`);
 });

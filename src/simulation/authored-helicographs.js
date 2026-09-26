@@ -742,10 +742,13 @@ function screwHelicograph(movement) {
     new THREE.Vector3(-5.35, -0.12, -5.35),
     new THREE.Vector3(5.35, 2.18, 5.35),
   );
-  // In the near-orthographic side view the sweep's depth does not project;
-  // a shallow depth proxy keeps the box corners from inflating the fit.
+  // The view frames Brown's pose (point left, screw and wheel right) whole,
+  // plus 2.8 of the sweep to the point's left, so the wheel leaves the frame
+  // only near the far side of the turn. In the near-orthographic side view
+  // the sweep's depth does not project; a shallow depth proxy keeps the box
+  // corners from inflating the fit.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.35, -0.12, -1.05),
+    new THREE.Vector3(-2.8, -0.12, -1.05),
     new THREE.Vector3(5.35, 2.18, 1.05),
   );
   root.userData.groundFloorY = -0.10;

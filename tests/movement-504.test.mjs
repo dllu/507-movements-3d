@@ -299,10 +299,11 @@ test('movement 504 runs continuously, fits the full carrier orbit, and leaves an
   });
   const fit = model.root.userData.cameraFitBounds;
   assert.ok(fit.containsBox(pose), JSON.stringify([pose.min, pose.max]));
-  for (const axis of ['x', 'y']) {
-    assert.ok(fit.min[axis] <= swept.min[axis] + 1e-6 && fit.max[axis] >= swept.max[axis] - 1e-6, axis);
-  }
-  assert.ok(fit.max.x - fit.min.x < 1.05 * (swept.max.x - swept.min.x));
+  // Brown's rest pose whole plus part of the turn to A's left: tighter than
+  // the full orbit, which the carried wheels leave only near its far side.
+  assert.ok(fit.min.y <= swept.min.y + 1e-6 && fit.max.y >= swept.max.y - 1e-6, 'y');
+  assert.ok(fit.max.x >= swept.max.x - 1e-6 && fit.min.x < pose.min.x - 1, 'x');
+  assert.ok(fit.max.x - fit.min.x < 0.85 * (swept.max.x - swept.min.x));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
 

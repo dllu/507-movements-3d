@@ -19,6 +19,7 @@ test('142 completed hardware has current clearance evidence and prebuilt provena
 });
 test('142 baked geometry follows closed rigid joints through the three-turn pattern',()=>{
  const bundle=JSON.parse(gunzipSync(fs.readFileSync('src/simulation/baked/assets/142.json.gz'))),v=makeSilkTraverseModel(bundle),b=v.root.userData.blocks;
+ const rod=b.rod.getObjectByName('connecting-rod');rod.geometry.computeBoundingBox();
  try{
   for(let i=0;i<=720;i++){
    const time=15*i/720;v.update(time);const s=silkTraverseAtTime(time);
@@ -26,27 +27,26 @@ test('142 baked geometry follows closed rigid joints through the three-turn patt
    assert(wrist.distanceTo(start)<1e-12);assert(end.distanceTo(b.slider.getWorldPosition(new Vector3()))<1e-12);
    assert(Math.abs(Math.hypot(s.wrist[0]-s.slider[0],s.wrist[1]-s.slider[1])-g.rodLength)<1e-12);
    // The fit follows the disk and gears down to the plate's cropped lower
-   // edge; the complete rod always runs downward to its slider on the guide.
+   // edge; the whole rod always runs downward past its guided joint, and its
+   // clean end stays below the view.
    assert(v.root.userData.cameraFitBounds.containsBox(new Box3().setFromObject(b.carrier,true)));
    assert(s.slider[1]<s.wrist[1]-1.5,'the rod never points up freely');
    assert(s.rodAngle<-Math.PI/4&&s.rodAngle>-3*Math.PI/4,'the rod runs downward to the traverse');
    assert(s.slider[1]<v.root.userData.cameraFitBounds.max.y);
+   const tip=b.rod.localToWorld(new Vector3(rod.geometry.boundingBox.max.x,0,0));
+   assert(tip.y<v.root.userData.presentedCrop.plateEdge-.2,'the rod end stays out of the default view');
   }
   assert.equal(v.root.userData.cameraFitBounds.min.y,v.root.userData.presentedCrop.plateEdge);
-  const rod=b.rod.getObjectByName('connecting-rod');rod.geometry.computeBoundingBox();assert(rod.geometry.boundingBox.max.x>g.rodLength,'the complete rod is presented');
+  assert(rod.geometry.boundingBox.max.x>g.rodLength,'the complete rod is presented');
   const a=silkTraverseAtTime(0),z=silkTraverseAtTime(15);assert(Math.hypot(...a.wrist.map((x,i)=>x-z.wrist[i]))<1e-12);
   assert(Math.abs(a.slider[1]-z.slider[1])<1e-12);v.reset();assert.equal(v.root.userData.state.angle,0);
  }finally{v.dispose();}
 });
-test('142 complete slider shoe clears its rail and the stud cap clears the working gears',()=>{
+test('142 draws no undrawn guide stand; the stud cap clears the working gears',()=>{
  const v=makeSilkTraverseGeometry(),{parts}=v.root.userData;
  try{
-  const hole=parts['bored-slider-shoe'].geometry.userData.plate.polygons[0][1];
-  const xmin=Math.min(...hole.map(p=>p[0])),xmax=Math.max(...hole.map(p=>p[0])),zmin=Math.min(...hole.map(p=>p[1])),zmax=Math.max(...hole.map(p=>p[1]));
-  const rail=new Box3().setFromObject(parts['output-guide-rail']);assert(rail.min.x>xmin&&rail.max.x<xmax&&rail.min.z>zmin&&rail.max.z<zmax);
-  for(let i=0;i<=720;i++){
-   v.update(15*i/720);const shoe=new Box3().setFromObject(parts['bored-slider-shoe']);assert(shoe.min.y>rail.min.y&&shoe.max.y<rail.max.y);
-  }
+  // p62: Brown draws no guide rail, stand, stud post, rear bearing or slider.
+  assert.deepEqual(Object.keys(parts).filter(n=>/guide|post|bridge|cross-arm|rear-bearing|shoe|slider/.test(n)),[]);
   assert(parts['visible-stud-cap'].geometry.userData.plate.low>parts['planet-gear'].geometry.userData.depth/2);
   assert(parts['wrist-pin'].geometry.userData.plate.low>parts['visible-stud-cap'].geometry.userData.plate.high);
  }finally{v.dispose();}

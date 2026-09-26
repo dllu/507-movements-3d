@@ -817,6 +817,17 @@ function diaphragmPressureGauge(movement) {
   // back half does not read as a half-drum stuck to the gauge's side.
   sectionView.group.position.x += 1.6;
   root.add(sectionView.group);
+  // The section's pointer turns about the gauge axis, which lies in the cut
+  // plane, so half its sweep would stand in front of the cut. Like every
+  // other part of the section it keeps only the half behind the plane.
+  {
+    const needle = sectionView.blocks.needle;
+    sectionView.group.updateMatrixWorld(true);
+    const cut = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0).applyMatrix4(sectionView.group.matrixWorld);
+    needle.material = needle.material.clone();
+    Object.assign(needle.material, { clippingPlanes: [cut], side: THREE.DoubleSide });
+    root.userData.localClippingEnabled = true;
+  }
 
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);

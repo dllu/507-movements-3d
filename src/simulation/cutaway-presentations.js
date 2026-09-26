@@ -68,6 +68,9 @@ export function applyCutaway(root, spec) {
     }
     if (spec.mercury && matches(mesh, spec.mercury)) {
       mesh.material = mercuryMaterial();report.mercury.push(roleOf(mesh));
+      // Walls dipping into the quicksilver share its cut plane: draw the
+      // quicksilver just behind them there instead of z-fighting.
+      if (spec.mercuryBehindWalls) Object.assign(mesh.material, {polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 4});
       if (spec.cutMercury) {
         sectionMeshInPlace(mesh, root, {normal, point});
         if (!mesh.geometry.attributes.position.count) {mesh.parent?.remove(mesh);report.removed.push(roleOf(mesh));}
@@ -313,6 +316,7 @@ export const CUTAWAY_SPECS = {
     colors: {'outer-quicksilver-channel-sealing-cup-H-1': 0x59605f, 'finite-open-mercury-trough-around-D': 0x59605f},
     mercury: [/^quicksilver-volume-for-cup-H-rim-/, /quicksilver-seat-volume-for-D$/],
     cutMercury: true,
+    mercuryBehindWalls: true,
     hide: [/^section-face-of-/, 'regulated-outlet-gas-acting-on-inner-surface-of-H'],
   },
   483: {
@@ -439,17 +443,10 @@ export const CUTAWAY_SPECS = {
   },
   421: {
     // One cut on z = 0 through cylinder, heads, flange, stuffing box, piston
-    // and trunk. A minimal standard on the rear of the head carries the
-    // crankshaft in a plain bearing (Brown crops it; it must not float).
+    // and trunk. Brown draws no standard or bearing for the crankshaft (only
+    // the crank on its bare shaft), so none is built: the shaft axis is a
+    // fixed ideal constraint (p62 support rule).
     prepare(root) {
-      const flange = findRole(root, 'lower-cylinder-flange'), material = [].concat(flange.material)[0];
-      const boss = new THREE.Mesh(latheSectionGeometry([[0.125, -0.08], [0.24, -0.08], [0.24, 0.08], [0.125, 0.08]], {phiStart: 0, phiLength: Math.PI * 2, segments: 48}), material);
-      boss.rotation.x = Math.PI / 2;boss.position.set(0, 2.78, -0.84);
-      boss.userData.role = 'fixed-crankshaft-plain-bearing';
-      const post = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.33, 0.16), material);
-      post.position.set(0, 1.23 + 1.33 / 2, -0.84);
-      post.userData.role = 'fixed-bearing-standard-on-cylinder-head';
-      for (const mesh of [boss, post]) {mesh.castShadow = true;mesh.receiveShadow = true;root.add(mesh);}
       // The stuffing box sat 0.09 down inside the head, so their cut faces
       // shared the section plane there and z-fought as a speckled patch: it
       // now stands on the head's top face (world y 1.23).

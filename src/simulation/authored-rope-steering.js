@@ -760,39 +760,45 @@ function ropeSteering(movement) {
   });
   correctSteeringSolids(root);
   addHandwheelHandles(root);
-  // Pass 57: the feet stand on a plain pale deck under the whole gear
-  // (Brown's plan view looks straight down on it), set just below the
-  // handwheel handles' lowest sweep (-3.06), so the posts, pedestals and
-  // their feet are carried down 0.36 to it. The deck is bored for the rudder
-  // stock, which now runs on through it.
+  // Brown's plan draws no deck, posts, pedestals or feet: only the two shaft
+  // bearings and, on each guide sheave, a short flat bracket running out
+  // from its axle (up-right on the upper sheave, down-right on the lower) and
+  // broken off. Those brackets are kept as drawn and end on nothing; the
+  // deck, the sheave posts, the handwheel pedestals and every foot are not
+  // built (p62 support rule).
   {
-    const b = root.userData.blocks, deckTop = -3.16, deckBottom = -3.28, drop = 0.36;
-    const lengthen = (mesh) => {
-      const p = mesh.geometry.parameters;
-      mesh.geometry.dispose();mesh.geometry = new THREE.BoxGeometry(p.width, p.height, p.depth + drop);
-      mesh.position.z -= drop / 2;
-    };
-    for (const guide of [b.upperGuide, b.lowerGuide]) {lengthen(guide.post);guide.foot.position.z -= drop;}
-    for (const pedestal of b.wheelPedestals) lengthen(pedestal);
-    root.traverse((o) => {if (o.userData.role === 'handwheel-pedestal-foot') o.position.z -= drop;});
-    const rect = (x0, y0, x1, y1) => [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]];
-    const stockCenter = new THREE.Vector3();
-    b.rudderShaft.getWorldPosition(stockCenter);
-    const outline = polygonClipping.difference(rect(-3.95, -3.30, 3.75, 3.30),
-      poly(circle([stockCenter.x, stockCenter.y], 0.125, 48)));
-    b.deck.geometry.dispose();
-    b.deck.geometry = plate(outline, deckBottom, deckTop);
-    b.deck.position.set(0, 0, 0);
-    b.deck.visible = true;
-    b.deck.material = b.deck.material.clone();b.deck.material.color.set(0xe4dccb);
-    b.deck.userData.role = 'fixed-deck-carrying-steering-gear';
-    const stockTop = b.rudderShaft.position.z + 1.31;
-    b.rudderShaft.geometry.dispose();
-    b.rudderShaft.geometry = new THREE.CylinderGeometry(0.12, 0.12, stockTop - (-3.46 - b.tiller.position.z), 40);
-    b.rudderShaft.position.z = (stockTop + (-3.46 - b.tiller.position.z)) / 2;
-    root.userData.cameraFitBounds.min.set(-3.97, -3.32, -3.48);
-    root.userData.cameraFitBounds.max.y = 3.32;
-    root.userData.groundFloorY = -3.32;
+    const b = root.userData.blocks;
+    for (const guide of [b.upperGuide, b.lowerGuide]) {
+      guide.post.removeFromParent();guide.post.geometry.dispose();
+      guide.foot.removeFromParent();guide.foot.geometry.dispose();
+      delete guide.post;delete guide.foot;
+    }
+    for (const pedestal of b.wheelPedestals) {pedestal.removeFromParent();pedestal.geometry.dispose();}
+    const feet = [];
+    root.traverse((o) => {if (o.userData.role === 'handwheel-pedestal-foot') feet.push(o);});
+    for (const foot of feet) {foot.removeFromParent();foot.geometry.dispose();}
+    b.deck.removeFromParent();b.deck.geometry.dispose();
+    delete b.wheelPedestals;delete b.deck;
+    // Brown's brackets: about 1.1 long from the axle, 0.36 wide, rounded
+    // round the axle and cut square at the break; they lie just behind the
+    // sheave, the fixed axle pin standing on them.
+    const bracketLength = 1.1, bracketHalf = 0.18;
+    const outline = polygonClipping.union(
+      poly([[0, -bracketHalf], [bracketLength, -bracketHalf], [bracketLength, bracketHalf], [0, bracketHalf]]),
+      poly(circle([0, 0], bracketHalf, 48)),
+    );
+    for (const [guide, angle, name] of [[b.upperGuide, THREE.MathUtils.degToRad(53.5), 'upper'], [b.lowerGuide, THREE.MathUtils.degToRad(-45), 'lower']]) {
+      const bracket = new THREE.Mesh(plate(outline, -0.34, -0.18), b.shaftBearings[0].material);
+      bracket.rotation.z = angle;
+      bracket.userData.role = `${name}-guide-sheave-bracket-broken-off-as-drawn`;
+      guide.fixed.add(bracket);
+      guide.bracket = bracket;
+    }
+    // The rudder stock runs on down out of the plan (never into a deck).
+    // The frame takes in Brown's broken-off brackets.
+    root.userData.cameraFitBounds.min.set(-3.97, -3.47, -3.48);
+    root.userData.cameraFitBounds.max.y = 3.66;
+    root.userData.groundFloorY = -3.47;
   }
   root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);

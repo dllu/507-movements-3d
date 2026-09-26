@@ -1005,9 +1005,6 @@ function mudgeGravityEscapement(movement) {
     const lock = lockFacePoints[0];
     const liftStart = liftFacePoints[0];
     const faceDirection = lock.clone().sub(liftStart).normalize();
-    // The lifting face is carried a little past the first touch; the arm
-    // ends there square to its outer edge.
-    const faceStart = liftStart.clone().addScaledVector(faceDirection, -0.04);
     const stopEnd = lockFaceLocalPointAt(side, releaseMagnitude + 0.006);
     const stopArc = Array.from({ length: 7 }, (_, index) => lockFaceLocalPointAt(
       side,
@@ -1017,10 +1014,6 @@ function mudgeGravityEscapement(movement) {
     const innerTop = sourceLocal(sourceRasterLeftArmInnerTop);
     const outerEnd = sourceLocal(sourceRasterLeftArmOuterEnd);
     const armDirection = outerEnd.clone().sub(outerTop).normalize();
-    const armCorner = outerTop.clone().addScaledVector(
-      armDirection,
-      faceStart.clone().sub(outerTop).dot(armDirection),
-    );
     // The inner edge runs parallel to the outer one at Brown's arm width and
     // meets the notch's back wall, which rises from the stop toward C.
     const armNormal = new THREE.Vector2(-armDirection.y, armDirection.x);
@@ -1044,10 +1037,27 @@ function mudgeGravityEscapement(movement) {
       // B lifts on the arm's end face; b's stop wall rises toward C.
       const toPivot = stopEnd.clone().multiplyScalar(-1).normalize();
       const notchBack = stopEnd.clone().addScaledVector(toPivot, 0.14);
+      // Brown's B end: a well-rounded outer corner at his (101.7, 202.5),
+      // the bottom edge running straight on to the lifting face (not a
+      // square end cut across the arm, which left a point). Brown's bottom
+      // edge falls slightly to a pallet hanging below it; here the lifting
+      // face sits about level with the corner, so the bottom rises gently.
+      const bluntCorner = sourceLocal(new THREE.Vector2(101.7, 202.5));
+      const bottomDirection = liftStart.clone().sub(bluntCorner).normalize();
+      const round = 0.14;
+      const cornerIn = bluntCorner.clone().addScaledVector(armDirection, -round);
+      const cornerOut = bluntCorner.clone().addScaledVector(bottomDirection, round);
+      const cornerArc = Array.from({ length: 9 }, (_, index) => {
+        const u = (index + 1) / 10;
+        return cornerIn.clone().multiplyScalar((1 - u) ** 2)
+          .addScaledVector(bluntCorner, 2 * u * (1 - u))
+          .addScaledVector(cornerOut, u * u);
+      });
       armOutline = [
         outerTop,
-        armCorner,
-        faceStart,
+        cornerIn,
+        ...cornerArc,
+        cornerOut,
         ...liftFacePoints,
         ...stopArc.slice(1),
         notchBack,

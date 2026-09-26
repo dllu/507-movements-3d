@@ -23,12 +23,29 @@ test('movement 183 opens on the ascending stroke in the plate pose', () => {
   assert.deepEqual([...PU], [275, 128]);
   assert.deepEqual([...PL], [283, 353]);
   assert.deepEqual([...studs.upper], [238, 265]);
-  // Brown draws no markers. The back weights are real rod ends outside the
-  // plate's framing; the reconstructed back bar, rod guide and cylinder are
+  // Brown draws no markers and no weights: the back-weight rods run straight
+  // out of the view. The reconstructed back bar, rod guide and cylinder are
   // not presented (p60 support policy).
   const roles = [];
   model.root.traverse((o) => { if (o.isMesh) roles.push(o.userData.role); });
   assert.ok(!roles.some((r) => /marker|index|gravity-weight/.test(r)), roles.join());
   assert.ok(!roles.some((r) => /fixed-back-bar|fixed-piston-rod-guide|fixed-steam-cylinder|fixed-handle-shaft-boss/.test(r)), roles.join());
-  assert.ok(roles.includes('upper-back-weight'));
+  assert.ok(!roles.some((r) => /-back-weight$/.test(r)), 'no undrawn weights');
+  assert.ok(roles.includes('upper-back-weight-rod'));
+});
+
+test('movements 183 and 184 back-weight rods run out of the view and end below it in every pose', async () => {
+  const THREE = await import('three');
+  for (const index of [182, 183]) {
+    const model = createMovementModel(catalog.movements[index]), d = model.root.userData;
+    const fit = d.cameraFitBounds, period = d.geometry.cyclePeriod;
+    for (let i = 0; i <= 48; i += 1) {
+      model.update(period * i / 48);
+      model.root.updateMatrixWorld(true);
+      for (const rod of [d.blocks.upperWeightRod, d.blocks.lowerWeightRod]) {
+        const box = new THREE.Box3().setFromObject(rod);
+        assert.ok(box.min.y < fit.min.y - 0.2, `${index + 1} ${rod.userData.role} ends inside the view at ${i}`);
+      }
+    }
+  }
 });

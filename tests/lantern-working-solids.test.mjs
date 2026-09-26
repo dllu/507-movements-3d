@@ -23,7 +23,7 @@ test('297: real rotating arbors clear both fixed journals and the bored rear pla
   console.log({ count, minimum });
 });
 
-test('297: each spoke and trundle joins its end rings, and both journals join the rear support', () => {
+test('297: each trundle passes through the disc, and both journals join the rear support', () => {
   const m = create({ id: 297 }), b = m.root.userData.blocks; m.root.updateMatrixWorld(true);
   const overlap = (a, c) => {
     return Math.min(...[[a, c], [c, a]].map(([from, to]) => {
@@ -37,7 +37,7 @@ test('297: each spoke and trundle joins its end rings, and both journals join th
     assert.ok(overlap(spoke, b.wheelHubs[index]) < -.01, 'spoke must join hub');
   }
   for (const trundle of b.trundles) for (const plate of b.sidePlates)
-    assert.ok(overlap(trundle, plate) < -.005, 'trundle must attach to both end rings');
+    assert.ok(overlap(trundle, plate) < -.005, 'trundle must pass through the disc');
   for (const journal of [b.wheelBearing, b.armBearing])
     assert.ok(overlap(journal, b.standard) < -.01, 'fixed journal must join support plate');
 });

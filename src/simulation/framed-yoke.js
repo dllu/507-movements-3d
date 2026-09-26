@@ -31,8 +31,12 @@ export function makeFramedYoke(){
   const add=(name,geometry,body,color)=>{const m=new THREE.Mesh(geometry,materials[color]);m.name=name;blocks[body].add(m);parts[name]=m;return m;};
   const xy=(name,shape,low,high,body,color)=>add(name,plate(shape,low,high),body,color);
   xy('driver-disk',disk(g.diskRadius),.05,.47,'input','driver');
-  xy('front-supported-shaft',disk(.43),.06,.90,'input','ink');
-  xy('stationary-front-bearing',clip.difference(disk(.81),disk(.433)),.49,.86,'fixed','frame');
+  // Brown's two centre circles (raster radii 22.5 and 42.5) are the shaft
+  // end and the disk's own hub. No bearing or mounting is drawn, so the
+  // shaft ends as a plain stub in front of the hub (p62), as in the rest of
+  // the crank family; the unmounted fixed front bearing is removed.
+  xy('disk-shaft-stub',disk(.43),.06,.90,'input','ink');
+  xy('disk-front-hub',clip.difference(disk(.84),disk(.433)),.47,.84,'input','driver');
   const wrist=xy('back-reaching-wrist',disk(g.wristRadius),-.50,.51,'input','brass');wrist.position.x=g.crankRadius;
 
   // Trace the broad frame in the engraving, relative to its source wrist.
@@ -66,7 +70,7 @@ export function makeFramedYoke(){
   const update=time=>{if(disposed)throw new Error('Movement disposed');const state=framedYokeAtTime(time);blocks.input.rotation.z=state.angle;blocks.yoke.position.y=state.y;root.updateMatrixWorld(true);root.userData.state=state;};
   Object.assign(root.userData,{parts,blocks,mechanism:'measured-front-disk-framed-yoke',fidelity:'authored',simulationBackend:'analytic',reconstructionStatus:'verified',hideGround:true,supportsRestart:true,cameraFitBounds:bounds,
     animationTiming:{authoredCyclePeriod:g.period,displayCycleDuration:g.period,playbackTimeScale:1},
-    reconstructionNote:'Measured crank and broad yoke, with a straight hidden groove. Brown breaks the stems off; they run on straight past the plate edge and end cleanly there, with no added guides. The front bearing represents a fixed external support whose mounting is omitted; the shaft is supported in front to clear the rear yoke.'});
+    reconstructionNote:'Measured crank and broad yoke, with a straight hidden groove. Brown breaks the stems off; they run on straight past the plate edge and end cleanly there, with no added guides. The shaft ends as a plain stub in front of the disk hub; like the rest of the crank family its bearing is not drawn or modelled.'});
   markShadows(root);update(0);
   return {root,update,reset:()=>update(0),focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.06,.04,15),dispose:()=>{if(!disposed){disposed=true;disposeObject3D(root);}}};
 }

@@ -1799,7 +1799,10 @@ function compoundBarCompensationPendulum(movement) {
 
 export function createAuthoredCompensationPendulumMovement(movement) {
   if (movement.id === 316) {
-    return applyCutawayFor(mercurialCompensationPendulum(movement), 316);
+    // Brown sections the jar: the mercury is cut on the plane facing the
+    // camera (plain cut face) so the rod's lower end shows standing in it,
+    // as he draws it; the glass stays clear and whole.
+    return applyCutawayFor(mercurialCompensationPendulum(movement), 316, { cutMercury: true });
   }
   if (movement.id === 317) {
     return compoundBarCompensationPendulum(movement);

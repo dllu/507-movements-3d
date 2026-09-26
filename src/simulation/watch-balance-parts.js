@@ -37,30 +37,21 @@ export function correctWatchRegulator(root){
   for(const segment of b.springSegments)replace(segment,new THREE.BoxGeometry(.014,1,.12));
   root.userData.cameraFitBounds=new THREE.Box3(new THREE.Vector3(-3.95,-5.30,-.85),new THREE.Vector3(3.95,3.70,1.40));
   // Supports Brown leaves undrawn, kept plain and out of the way. Behind the
-  // balance, one flat back bar carries the staff's lower bearing, runs down
-  // to the scale plate it holds, and sends an arm to a post under stud R
-  // (the post stands where the spokes never reach at the 24-degree swing).
-  // In front, a short cock bar from R's head over the fixed ring holds R,
-  // the ring and the staff's upper pivot, above the regulator lever.
+  // balance, one flat back bar carries the staff's lower bearing and runs
+  // down to the scale plate it holds. Brown draws no balance cock and no
+  // stud carrier: the small fixed stud R and the regulator's fixed ring
+  // (hidden under the lever's ring, concentric with the staff) are shown as
+  // drawn, without the bars that would cross the balance spring.
   {
     const frame=b.fixedRing.material;
-    const stud=b.fixedStudR.position,studTop=stud.z+.36;
     const backLow=-.42,backHigh=-.30;
     const outline=polygonClipping.difference(
-      polygonClipping.union(capsule([0,.25],[0,-3.7],.15,48),capsule([0,0],[stud.x,stud.y],.12,48),poly(circle([0,0],.4,64))),
+      polygonClipping.union(capsule([0,.25],[0,-3.7],.15,48),poly(circle([0,0],.4,64))),
       poly(circle([0,0],.16,48)));
     const backBar=new THREE.Mesh(plate(outline,backLow,backHigh),frame);
-    backBar.userData.role='plain-back-bar-carrying-staff-bearing-scale-plate-and-stud-post';
-    const studPost=new THREE.Mesh(new THREE.CylinderGeometry(.09,.09,stud.z-.36-backHigh+.02,24).rotateX(Math.PI/2),frame);
-    studPost.position.set(stud.x,stud.y,(backHigh-.02+stud.z-.36)/2);
-    studPost.userData.role='post-from-back-bar-to-stud-R';
-    const cockOutline=polygonClipping.difference(
-      polygonClipping.union(capsule([stud.x,stud.y],[0,0],.13,48),poly(circle([0,0],.3,64))),
-      poly(circle([0,0],.155,48)));
-    const cock=new THREE.Mesh(plate(cockOutline,studTop-.01,studTop+.07),frame);
-    cock.userData.role='small-cock-bar-over-stud-R-fixed-ring-and-staff';
-    b.fixedFrame.add(backBar,studPost,cock);
-    Object.assign(b,{backBar,studPost,cock});
+    backBar.userData.role='plain-back-bar-carrying-staff-bearing-and-scale-plate';
+    b.fixedFrame.add(backBar);
+    Object.assign(b,{backBar});
   }
   root.userData.minimumDisplayCycleSeconds=20;
   root.userData.reconstructionNote='The lever prescribes a slow rate adjustment; the balance follows the ideal stiffness/active-length relation. The spring ribbon and curb neutral point are kinematic approximations, not a solved elastic/contact system. The fixed watch bridges outside this source detail are omitted.';

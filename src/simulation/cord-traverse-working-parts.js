@@ -55,10 +55,11 @@ export function correctCordTraverseParts(root,id,update){
    const points=[];
    for(let i=0;i<=N;i++){
     const progress=i/N,y=g.fuseeTopY-height*progress,phase=Math.PI/2+2*Math.PI*g.revolutionCount*progress;
-    // The floor follows the lower groove edge so the cord clears Brown's steep cone.
+    // The floor follows the lower groove edge so the cord clears Brown's steep cone;
+    // the flat floor is wide enough for the two side-by-side laid cords.
     const angular=Math.atan2(Math.sin(angle-phase),Math.cos(angle-phase)),offset=Math.abs(angular*pitch/(2*Math.PI));
     const floor=profile(Math.min(1,progress+.05/height)*g.revolutionCount)-.032,outer=profile(progress*g.revolutionCount)+.004;
-    const fraction=T.MathUtils.clamp((offset-.037)/.013,0,1);points.push([y,floor+(outer-floor)*fraction]);
+    const fraction=T.MathUtils.clamp((offset-.068)/.007,0,1);points.push([y,floor+(outer-floor)*fraction]);
    }
    points.push([g.fuseeBottomY,.046],[g.fuseeTopY,.046]);return points;
   },128,'y');replace(b.fuseeBody,body);

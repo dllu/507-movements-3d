@@ -236,10 +236,15 @@ function recoilAnchor288(movement) {
   const s = map.scale;
   const P = (x, y) => map([x, y + (tune.dy ?? 0)]);
   // Escape wheel A: radial leading faces with sloped backs and flat roots
-  // (tips lead the counterclockwise rotation of Brown's arrow). 31 teeth: at
-  // the plate's 33 the drawn pallets span a whole number of pitches and lock
-  // both sides at once; 31 keeps Brown's anchor unchanged and working.
-  const count = tune.count ?? 31;
+  // (tips lead the counterclockwise rotation of Brown's arrow). Brown's 33
+  // teeth. His pallet corners c and d stand almost exactly five pitches
+  // apart, which locks both sides at once; each pallet is set 3.25 px
+  // outward (about a sixth of a pitch between them), inside the engraving's
+  // own drift, so the span is five and a half pitches and the anchor works
+  // (the working window is about 6-8 px of total spread).
+  const count = tune.count ?? 33;
+  const rdx = tune.rdx ?? 3.25;
+  const ldx = tune.ldx ?? -3.25;
   const pitch = TAU / count;
   const tipRadius = 221 * s;
   const rootRadius = 192 * s;
@@ -256,14 +261,14 @@ function recoilAnchor288(movement) {
   // the semicircular boss round the arbor a, pallet faces c-e and d-b.
   const outline = joinPath(
     [P(129, 83), P(402, 82)],
-    arcThrough(P(402, 82), P(393, 156), P(364, 206), 20),
-    [P(337, 207)],
-    [P(355, 132)],
+    arcThrough(P(402, 82), P(393 + rdx / 2, 156), P(364 + rdx, 206), 20),
+    [P(337 + rdx, 207)],
+    [P(355 + rdx / 2, 132)],
     [P(276, 132)],
     arcPoints(P(248, 140), 28 * s, 0, -Math.PI, 24),
-    [P(220, 132), P(163, 133), P(154, 185)],
-    [P(137, 212)],
-    arcThrough(P(137, 212), P(117, 150), P(129, 83), 20).slice(1, -1),
+    [P(220, 132), P(163, 133), P(154 + ldx, 185)],
+    [P(137 + ldx, 212)],
+    arcThrough(P(137 + ldx, 212), P(117, 150), P(129, 83), 20).slice(1, -1),
   );
   return pivotedEscapement({
     movement,
@@ -571,9 +576,18 @@ function lever296(movement) {
   const F = (a, l) => [O[0] + u[0] * a * s + v[0] * l * s, O[1] + u[1] * a * s + v[1] * l * s];
   const m = mouth / s;
   const halfSlot = 5.5;
+  // Pallets as drawn, each turned a few degrees about B (right 2, left 3;
+  // 4-7 px at the pallets) so the pallets' impulse faces carry the wheel
+  // through nearly all of each beat's half tooth while the pin swings the
+  // lever (about 0.45 and 0.5 pitch, with 0.03 recoil and 0.08 free drop);
+  // as traced the wheel moved only 0.25 on one beat and ran 0.45 free with
+  // the lever at rest after the other.
+  const turnAboutB = (point, degrees) => add(rot([point[0] - B[0], point[1] - B[1]], degrees * DEG), B);
+  const RP = (x, y) => turnAboutB(P(x, y), tune.rightTurn ?? 2);
+  const LP = (x, y) => turnAboutB(P(x, y), tune.leftTurn ?? 3);
   const leverOutline = [
-    P(294, 14), P(446, 54), P(508, 36), P(496, 92), P(430, 88),
-    P(404, 124), P(384, 108), P(398, 82), P(206, 82), P(210, 106), P(180, 106), P(166, 74),
+    P(294, 14), P(446, 54), P(508, 36), P(496, 92), RP(430, 88),
+    RP(404, 124), RP(384, 108), RP(398, 82), LP(206, 82), LP(210, 106), LP(180, 106), LP(166, 74),
     F(m, -27), F(m, -halfSlot), F(slotBottom / s, -halfSlot), F(slotBottom / s, halfSlot), F(m, halfSlot), F(m, 27),
     P(160, 50),
   ];
@@ -671,13 +685,15 @@ function smoothStep(x) {
 
 function free291(movement) {
   const tune = movement.tune ?? {};
-  const map = plateMapper([145.5, 331], 0.02);
+  // Wheel B re-measured on the plate: centre (145.5, 327), tips on 119.5 px
+  // and roots on 101 px about it.
+  const map = plateMapper([145.5, tune.cy ?? 327], 0.02);
   const s = map.scale;
   const P = (x, y) => map([x, y]);
   const count = 13;
   const pitch = TAU / count;
-  const tipRadius = 116 * s;
-  const rootRadius = 99 * s;
+  const tipRadius = (tune.tip ?? 119.5) * s;
+  const rootRadius = (tune.root ?? 101) * s;
   // Hooked teeth leaning clockwise: the tip leads, its face is undercut
   // back to the root and a straight back rises to the next tip.
   const undercut = (tune.undercut ?? 1.2) * DEG;
@@ -700,8 +716,9 @@ function free291(movement) {
   const frontZ = [0.1, 0.22];
   const springZ = [0.17, 0.215];
   // Balance a: impulse roller with the notch g-h facing the wheel at t = 0.
-  const O = P(tune.ox ?? 84, tune.oy ?? 188);
-  const rollerRadius = (tune.rollerRadius ?? 44) * s;
+  // Balance a and its roller as drawn: centre (77, 186), radius 48 px.
+  const O = P(tune.ox ?? 77, tune.oy ?? 186);
+  const rollerRadius = (tune.rollerRadius ?? 48) * s;
   const toWheel = Math.atan2(-O[1], -O[0]);
   const notchAt = toWheel + (tune.notchTurn ?? -8) * DEG;
   const notchLeft = notchAt - (tune.notchLong ?? 50) * DEG;
@@ -712,7 +729,7 @@ function free291(movement) {
   const balanceAngle = (t) => balanceAmplitude * Math.sin(TAU * t / period);
   const balanceRate = (t) => balanceAmplitude * TAU / period * Math.cos(TAU * t / period);
   // Passing spring: from beyond stud i under hook k to its tip at the stud.
-  const springTip = P((tune.ox ?? 84) + 11, 185.4);
+  const springTip = P((tune.ox ?? 77) + 11, 185.4);
   const springEnd = P(408, 168.5);
   const studI = P(336, 172.4);
   const tipOffset = [springTip[0] - O[0], springTip[1] - O[1]];
@@ -761,8 +778,10 @@ function free291(movement) {
   // plane and its lip reaches forward over the passing spring, which runs
   // in front of the post and on past the end of A to the stud.
   const detentOutline = [P(133, 192), P(326, 194.5), P(326, 151), P(347, 151), P(347, 195.8), P(440, 196), P(440, 202), P(133, 201)];
-  const dx = tune.dx ?? 178;
-  const stopD = [P(dx, 201.5), P(dx + 11, 201.5), P(dx + 11, tune.stopBottom ?? 227), P(dx, tune.stopBottom ?? 227)];
+  // Stop d where Brown draws it (x 188-199); it reaches 5 px lower than his
+  // 213 so the tooth tips (on 119.5 px) lock against its face.
+  const dx = tune.dx ?? 188;
+  const stopD = [P(dx, 201.5), P(dx + 11, 201.5), P(dx + 11, tune.stopBottom ?? 218), P(dx, tune.stopBottom ?? 218)];
   const localB = (points) => points.map(([x, y]) => [x - b[0], y - b[1]]);
   const balance = new THREE.Group();
   balance.name = 'balance-a';
@@ -796,7 +815,11 @@ function free291(movement) {
       angle: (t) => detentState(t).detent,
       contactPieces: [localB(stopD)],
       startTime: 0.3 * period,
-      plateTime: (t) => Math.abs(balanceAngle(t)) < 2 * DEG && balanceRate(t) > 0,
+      // Brown's pose: the balance at the middle of its swing with the notch
+      // at the wheel and A down on its banking (d locking): the return swing,
+      // on which the stud only bends the passing spring.
+      plateTime: (t) => Math.abs(balanceAngle(t)) < 6 * DEG && balanceRate(t) < 0
+        && detentState(t).detent === 0 && detentState(t).spring === 0,
     },
     extraObstacles: (t) => [{ points: placeFlat(toFlat(roller), { x: O[0], y: O[1], angle: balanceAngle(t) }) }],
     extraPlot: (t) => [
@@ -865,70 +888,70 @@ function stud292(movement) {
   const s = map.scale;
   const P = (x, y) => map([x, y]);
   const studs = 48;
-  const pairPitch = TAU / (studs / 2);
   const studPitch = TAU / studs;
-  const studRadius = 228 * s;
+  // Brown's rim has a middle line (radius 230 px): the studs are clear
+  // triangles standing on it, the front ones pointing outward over the
+  // outer half of the face, the back ones inward over the inner half.
+  const middle = 230 * s;
+  const studBase = (tune.studBase ?? 9) * s;
+  const studHeight = (tune.studHeight ?? 10) * s;
   const F = P(227.5, 56);
   const layerZ = { back: [-0.32, -0.2], front: [0.2, 0.32] };
-  // The studs' path runs almost straight away from F where the pallets act.
-  const pathPoint = polar([0, 0], studRadius, (tune.pathAngle ?? 27) * DEG);
+  // Path frame at the pallets: x runs down the studs' path (away from F,
+  // which the path points at), y runs outward across it; both pallets move
+  // along y (arcs about F), so their locking faces x = const are dead-beat.
+  const pathPoint = polar([0, 0], middle, (tune.pathAngle ?? 27) * DEG);
   const psi0 = Math.atan2(pathPoint[1] - F[1], pathPoint[0] - F[0]);
   const rho0 = Math.hypot(pathPoint[0] - F[0], pathPoint[1] - F[1]);
-  const aboutF = (rhoPx, dpsiDeg) => polar(F, rho0 + rhoPx * s, psi0 + dpsiDeg * DEG);
-  // Studs: small triangles, flat leading face toward the travel (clockwise),
-  // apex trailing; even studs on the back face, odd on the front.
-  const studW = (tune.studWidth ?? 10) * s;
-  const studL = (tune.studLength ?? 8) * s;
-  const studTriangle = (angle) => {
-    const c = polar([0, 0], studRadius, angle);
-    const t = [Math.sin(angle), -Math.cos(angle)]; // clockwise tangent
-    const n = [Math.cos(angle), Math.sin(angle)];
-    const lead = [c[0] + t[0] * studL / 2, c[1] + t[1] * studL / 2];
-    return [
-      [lead[0] + n[0] * studW / 2, lead[1] + n[1] * studW / 2],
-      [lead[0] - n[0] * studW / 2, lead[1] - n[1] * studW / 2],
-      [c[0] - t[0] * studL / 2, c[1] - t[1] * studL / 2],
-    ];
+  const radiusPx = rho0 / s;
+  const pf = (x, y) => polar(F, rho0 + x * s, psi0 + y / radiusPx);
+  const studTriangle = (angle, front) => {
+    const half = studBase / 2 / middle;
+    const lead = angle - half; // clockwise travel: the leading flank is radial
+    return front
+      ? [polar([0, 0], middle, lead), polar([0, 0], middle + studHeight, lead), polar([0, 0], middle, angle + half)]
+      : [polar([0, 0], middle, lead), polar([0, 0], middle, angle + half), polar([0, 0], middle - studHeight, lead)];
   };
   const phase = (tune.phase ?? 30) * DEG;
   const studAngles = Array.from({ length: studs }, (_, k) => phase - k * studPitch);
-  const cells = studAngles.map((angle, k) => ({ points: studTriangle(angle), layer: k % 2 ? 1 : 2 }));
-  // Pallets (anchor frame = plate pose). Front: enters the path from the
-  // B side (larger psi); back: from the A side. Each: a locking arc about
-  // F facing the oncoming studs, and a long inclined end (impulse face).
-  const impulseLength = tune.impulseLength ?? 16;
-  const endAt = tune.palletEnd ?? 0.2;
-  const lift = tune.lift ?? 1.2;
-  const side = 7;
-  const arc = (rho, from, to, n = 48) => Array.from({ length: n + 1 }, (_, i) => aboutF(rho, from + (to - from) * i / n));
-  const pallet = (sign) => joinPath(
-    arc(0, sign * endAt, sign * side),
-    arc(impulseLength, sign * side, sign * (endAt - lift)),
+  const cells = studAngles.map((angle, k) => ({ points: studTriangle(angle, k % 2 === 1), layer: k % 2 ? 1 : 2 }));
+  // Pallets (anchor frame = plate pose), each a band between two arcs about
+  // F (x = 0 is the locking face met by the oncoming studs) cut off by one
+  // inclined impulse face: Brown's wedge c ends the front arm in a sharp
+  // point T, and R mirrors it from the inside of the path.
+  const W = tune.palletWidth ?? 24;
+  const D = tune.palletDrop ?? 16;
+  const yU = tune.palletSet ?? 15;
+  const G = tune.palletGap ?? 32;
+  const arcX = (x, y0, y1, n = 24) => Array.from({ length: n + 1 }, (_, i) => pf(x, y0 + (y1 - y0) * i / n));
+  const wedge = (yCorner, dropSign, yFar) => joinPath(
+    arcX(0, yFar, yCorner),
+    [pf(W, yCorner - dropSign * D)],
+    arcX(W, yCorner - dropSign * D, yFar).slice(1),
   );
-  const frontPallet = pallet(1);
-  const backPallet = pallet(-1);
-  // Arms: plain straight bars from the hub F to the pallets (the front arm
-  // bends at B as Brown draws it).
+  const frontPallet = wedge(yU, 1, yU + 40);
+  const backPallet = wedge(yU - G, -1, yU - G - 40);
   const B = P(482, 338);
   const hubR = 36 * s;
   const bar = (a, b, w) => {
     const d = [b[0] - a[0], b[1] - a[1]]; const l = Math.hypot(...d); const n = [-d[1] / l * w / 2, d[0] / l * w / 2];
     return [[a[0] + n[0], a[1] + n[1]], [b[0] + n[0], b[1] + n[1]], [b[0] - n[0], b[1] - n[1]], [a[0] - n[0], a[1] - n[1]]];
   };
-  const frontEnd = aboutF(impulseLength / 2, 5);
-  const backEnd = aboutF(impulseLength / 2, -5);
-  // Arm plates lie clear of the studs' ends (front arm in front of the
-  // front studs, back arm behind the back studs); each pallet is a block
-  // on its arm's end reaching into the studs' layer.
+  // The front arm runs F-B, then down the arc band B-c to the wedge; the
+  // band's working end (the pallet c) is thickened back to the studs'
+  // layer. The back arm runs straight from F to its pallet R.
+  const bandTop = (Math.atan2(B[1] - F[1], B[0] - F[0]) - psi0) * radiusPx;
   const frontArm = union([
     [circlePoints(F, hubR, 64)],
     [bar(F, B, 40 * s)],
     [circlePoints(B, 20 * s, 32)],
-    [bar(B, frontEnd, 28 * s)],
+    [wedge(yU, 1, bandTop)],
   ]);
+  const backEnd = pf(W / 2, yU - G - 30);
   const backArm = union([
     [circlePoints(F, hubR, 64)],
     [bar(F, backEnd, 26 * s)],
+    [backPallet],
   ]);
   if (frontArm.length !== 1 || backArm.length !== 1) throw new Error('292 arms are not single pieces');
   const local = (points) => points.map(([x, y]) => [x - F[0], y - F[1]]);
@@ -955,8 +978,8 @@ function stud292(movement) {
       tooth: [[0, 250 * s]],
       outline: circlePoints([0, 0], 250 * s, 256),
       phase,
-      tipRadius: studRadius + 8 * s,
-      rootRadius: studRadius - 8 * s,
+      tipRadius: middle + studHeight,
+      rootRadius: middle - studHeight,
       cells,
       holes: (turn) => builderHoles(wheelOptions, turn),
     },
@@ -978,9 +1001,12 @@ function stud292(movement) {
       materials.rocker.add(plateMesh(circlePoints([0, 0], hubR, 64), [circlePoints([0, 0], 9 * s, 32)], layerZ.back[1], layerZ.front[0], materials.oscillator, 'anchor-hub-F'));
       materials.rocker.add(plateMesh(local(frontPallet), [], 0.09, layerZ.front[0], materials.oscillator, 'front-pallet-c'));
       materials.rocker.add(plateMesh(local(backPallet), [], layerZ.back[1], -0.09, materials.oscillator, 'back-pallet-R'));
+      // Steel studs set in the wheel, so they read as Brown's clear
+      // triangles on the rim.
+      const studMaterial = matte(PALETTE.white, { metalness: 0.3, roughness: 0.45 });
       studAngles.forEach((angle, k) => {
-        const z = k % 2 ? [0.08, 0.17] : [-0.17, -0.08];
-        materials.wheelRotor.add(plateMesh(studTriangle(angle), [], z[0], z[1], materials.wheel, k % 2 ? 'front-stud' : 'back-stud'));
+        const z = k % 2 ? [0.08, 0.18] : [-0.18, -0.08];
+        materials.wheelRotor.add(plateMesh(studTriangle(angle, k % 2 === 1), [], z[0], z[1], studMaterial, k % 2 ? 'front-stud' : 'back-stud'));
       });
       return [];
     },
@@ -1025,7 +1051,7 @@ function duplex293(movement) {
   const pinCells = Array.from({ length: count }, (_, k) => ({ points: circlePoints(polar([0, 0], pinCircle, pinAngle(k)), pinR, 16), layer: 1 }));
   const axis = P(267, 113.75);
   const rollerR = (tune.rollerRadius ?? 39.5) * s;
-  const notchAt = (tune.notchAt ?? -40) * DEG;
+  const notchAt = (tune.notchAt ?? -34) * DEG;
   const notchHalf = (tune.notchHalf ?? 11) * DEG;
   const notchDepth = (tune.notchDepth ?? 16) * s;
   const roller = joinPath(
@@ -1043,7 +1069,17 @@ function duplex293(movement) {
   ])[0];
   const localA = (points) => points.map(([x, y]) => [x - axis[0], y - axis[1]]);
   const period = 2;
-  const amplitude = (tune.amplitude ?? 120) * DEG;
+  const amplitude = (tune.amplitude ?? 95) * DEG;
+  // Display law: the balance swings harmonically in phase u, but lingers
+  // (speed down to 1 - warp of the mean) through the impulse arc, so the
+  // notch passage, the pin's push on B and the drop read as one spread
+  // advance instead of a snap. A kinematic presentation choice.
+  const warpDepth = tune.warp ?? 0.7;
+  const warpAt = tune.warpAt ?? -0.3;
+  const bump = [0.4375, 0.21875, 0.0625, 0.0078125];
+  const bumpMean = 0.2734375;
+  const slow = (x) => bump.reduce((sum, a, i) => sum + a * Math.sin((i + 1) * x) / (i + 1), 0) / (1 - bumpMean);
+  const warp = (phi) => phi - warpDepth * (slow(phi - warpAt) - slow(-warpAt));
   const wheelOptions = {
     spokes: 4, outerRadius: rimRadius, rimInnerRadius: 226 * s, spokeWidth: 26 * s,
     hubRadius: 30 * s, rimFillet: 8 * s, boreRadius: 10 * s, phase: 45 * DEG,
@@ -1053,7 +1089,7 @@ function duplex293(movement) {
     name: 'movement-293-duplex-escapement',
     period,
     halfDepth: 0.07,
-    dropAcceleration: tune.drop ?? 600,
+    dropAcceleration: tune.drop ?? 150,
     wheel: {
       role: 'duplex-escape-wheel',
       center: [0, 0],
@@ -1074,6 +1110,7 @@ function duplex293(movement) {
       holes: [circlePoints(axis, 7 * s, 32)],
       zRange: [0.09, 0.19],
       amplitude,
+      angle: (t) => amplitude * Math.sin(warp(TAU * t / period)),
       plateTolerance: 0.03,
       contactPieces: [{ points: localA(roller), layer: 0 }, { points: localA(palletB[0]), layer: 1 }],
     },
@@ -1228,8 +1265,11 @@ function cylinderEscapement(movement) {
         ...Array.from({ length: count }, (_, i) => ({ points: head(i), layer: 1 })),
         ...Array.from({ length: count }, (_, i) => ({ points: pillar(i), layer: 2 })),
       ],
+      // Brown's plan draws the wheel's rim as one arc about 27 px (at this
+      // scale) inside the valley bottoms, with nothing below it: the rim
+      // is a narrow band and the rest is open between the arms.
       holes: (turn) => builderHoles({
-        spokes: 4, outerRadius: valleyBottom, rimInnerRadius: 290 * s, spokeWidth: 26 * s,
+        spokes: 4, outerRadius: valleyBottom, rimInnerRadius: (tune.rimInner ?? 325) * s, spokeWidth: 26 * s,
         hubRadius: 30 * s, rimFillet: 8 * s, boreRadius: 10 * s, phase: 45 * DEG,
       }, turn),
     },
@@ -1266,6 +1306,21 @@ function cylinderEscapement(movement) {
     plotView: [-1.8, axisRadius - 1.4, 1.8, axisRadius + 2.2],
     mechanism: 'The balance turns the cylinder A-B back and forth. A wedge pallet of the wheel rests on the outside of the cylinder, slides up the lip A as the opening comes round (impulse), drops inside and rests on the inside wall; on the return swing it slides out over lip B (impulse) and the next pallet drops on the outside.',
   });
+  if (!is294) {
+    // Brown's plan draws two phases of the one cylinder side by side, about
+    // 17 degrees either side of the wheel's top: left, pallet b about to
+    // pass lip B; right, pallet c inside the passage. The model has one
+    // cylinder; the plan is turned so it stands at his right-hand position
+    // (the phase t = 0 shows, a pallet inside), and the view spans his whole
+    // drawing, so pallets b and a stand where he draws them to its left.
+    const turn = (tune.planTurn ?? -17) * DEG;
+    model.root.rotation.z = turn;
+    const axis = [-Math.sin(turn) * axisRadius, Math.cos(turn) * axisRadius];
+    model.root.userData.cameraFitBounds = new THREE.Box3(
+      new THREE.Vector3(axis[0] - 7.9, axis[1] - 3.4, webZ[0] - 0.05),
+      new THREE.Vector3(axis[0] + 2.2, axis[1] + 0.8, headZ[1] + 0.05));
+    model.root.userData.cameraFov = 12;
+  }
   return model;
 }
 

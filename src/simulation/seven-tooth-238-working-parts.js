@@ -55,8 +55,26 @@ export function finishSevenTooth238(root){
  // region the star's teeth sweep relative to it over a cycle (baked offline,
  // with 3% radial clearance), and the faces stand flush in it rather than as
  // blocks on a thinner plate.
- const bore=poly(circle([0,0],.094,128)),front=clip.difference(body,poly(sweep.outline),bore);
- const layers=[plate(clip.difference(body,bore),-.11,wheelBackPlane),plate(front,wheelBackPlane,g.palletPlaneZ+.09)];
+ //
+ // Brown draws B as a plain square step: the anchor's left edge, a straight
+ // top on which the star rests, and a straight inner edge dropping square to
+ // the notch. The web and pad above add a rounded knob and the swept region
+ // leaves a stepped ledge beside the face, so both layers are trimmed to
+ // that step: nothing above the corner-root-tip top line, a straight edge
+ // square to the face from its tip down to the swept notch floor, and in the
+ // notch the rear layer follows the same swept floor as the front one.
+ const swept=poly(sweep.outline),fb=d.faceAt('B',0),bRoot=fb.rootPoint.clone().sub(g.palletPivot),bTip=fb.tipPoint.clone().sub(g.palletPivot),bn=fb.normal,bt=bTip.clone().sub(bRoot).normalize();
+ const corner=source.reduce((best,p)=>Math.hypot(p[0]-bRoot.x,p[1]-bRoot.y)<Math.hypot(best[0]-bRoot.x,best[1]-bRoot.y)?p:best);
+ const at=(p,u,v)=>[p.x+bt.x*u+bn.x*v,p.y+bt.y*u+bn.y*v];
+ const insideSwept=q=>{let inside=false;const r=sweep.outline;for(let i=0,j=r.length-1;i<r.length;j=i++){const a=r[i],c=r[j];if((a[1]>q[1])!==(c[1]>q[1])&&q[0]<(c[0]-a[0])*(q[1]-a[1])/(c[1]-a[1])+a[0])inside=!inside;}return inside;};
+ // Depth of the square step: where the edge square to the face meets the
+ // swept notch floor (the swept region's first re-entry below the tip).
+ let stepDepth=0;while(stepDepth<1&&insideSwept(at(bTip,-.0005,-stepDepth)))stepDepth+=.001;stepDepth+=.05;while(stepDepth<1&&!insideSwept(at(bTip,-.0005,-stepDepth)))stepDepth+=.001;
+ const bCut=poly([[corner[0],corner[1]],at(bRoot,0,-.0005),at(bTip,0,-.0005),at(bTip,0,-stepDepth-.01),at(bTip,1.2,-stepDepth-.01),at(bTip,1.2,.8),[corner[0]+bn.x*.8,corner[1]+bn.y*.8]]);
+ const notch=clip.intersection(swept,poly([at(bTip,0,-stepDepth-.4),at(bTip,1.2,-stepDepth-.4),at(bTip,1.2,.8),at(bTip,0,.8)]));
+ body=clip.difference(body,bCut);parts.bStep={corner,depth:stepDepth};
+ const bore=poly(circle([0,0],.094,128)),front=clip.difference(body,swept,bore);
+ const layers=[plate(clip.difference(body,notch,bore),-.11,wheelBackPlane),plate(front,wheelBackPlane,g.palletPlaneZ+.09)];
  replace(b.palletBody,mergeGeometries(layers));layers.forEach(layer=>layer.dispose());parts.frontLayer=front;
  replace(b.palletHub,ring(.094,.3,-.14,.14,128),true);
  replace(b.palletIndicator,new THREE.BoxGeometry(.30,.04,.012));b.palletIndicator.position.z=.116;

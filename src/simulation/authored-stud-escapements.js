@@ -178,7 +178,7 @@ function lePautePinWheelEscapement(movement) {
   const root = new THREE.Group();
 
   // Brown's plate compares the original half-round A pin with the improved
-  // trapezoidal B pin, whose short leading side is the arc the pallets touch. Every pin projects from one
+  // thin B slip, whose curved leading side is the arc the pallets touch. Every pin projects from one
   // face of one wheel and both pallet bits work in that same plane. A broad
   // plate hangs from the round collet on the pallet arbor in front of the pin
   // ends; its right leg carries the higher outer pallet (tip pointing left,
@@ -228,8 +228,10 @@ function lePautePinWheelEscapement(movement) {
   const wheelInnerRadius = sourceRasterWheelInnerRadius * sourceScale;
   const pinOrbitRadius = sourceRasterPinOrbitRadius * sourceScale;
   const wheelDepth = 0.34;
-  const pinLength = 0.66;
-  const palletDepth = 0.24;
+  // The pins stand out of the wheel face about the rim's own thickness, just
+  // enough for the pallet bits to work them.
+  const pinLength = 0.34;
+  const palletDepth = 0.20;
   const workingPlaneZ = wheelDepth / 2 + pinLength * 0.64;
   const pinFrontZ = wheelDepth / 2 + pinLength;
   const plateClearance = 0.05;
@@ -800,16 +802,13 @@ function lePautePinWheelEscapement(movement) {
       return [Math.cos(angle) * radius, Math.sin(angle) * radius];
     },
   );
-  // A: Brown's half-round (D) pin. B: Brown's trapezoid, inscribed in the
-  // A outline so both forms work the same pallets: the flat trailing base is
-  // A's diameter, the short leading side is exactly the arc the pallets touch,
-  // and the slanted flanks are chords back to the base.
+  // A: Brown's half-round (D) pin, its flat trailing side along the radius.
+  // B: Brown's thin slanted slip, nearly radial, cut from the leading side
+  // of the A outline so both forms work the same pallets: its curved leading
+  // face is exactly the arc the pallets touch (with a small margin) and its
+  // straight trailing face is that arc's chord.
   const legacyPinOutline = () => arcPoints(pinRadius, Math.PI, FULL_TURN, 24);
-  const preferredPinOutline = () => [
-    [-pinRadius, 0],
-    ...arcPoints(pinRadius, preferredArcStart, preferredArcEnd, 18),
-    [pinRadius, 0],
-  ];
+  const preferredPinOutline = () => arcPoints(pinRadius, preferredArcStart, preferredArcEnd, 18);
   const outlineShape = (points) => polygonShape(
     points.map(([x, y]) => new THREE.Vector2(x, y)),
   );
@@ -842,7 +841,7 @@ function lePautePinWheelEscapement(movement) {
     pinGroup.userData.profile = profile;
     pinGroup.userData.replaceable = true;
     pinGroup.userData.role = profile === 'preferred-B'
-      ? 'replaceable-preferred-trapezoidal-B-pin'
+      ? 'replaceable-preferred-slip-B-pin'
       : 'replaceable-legacy-half-round-A-pin';
     const body = new THREE.Mesh(
       centeredExtrusion(
@@ -855,7 +854,7 @@ function lePautePinWheelEscapement(movement) {
       preferredPinMaterial,
     );
     body.userData.role = profile === 'preferred-B'
-      ? 'preferred-B-trapezoidal-working-body'
+      ? 'preferred-B-slip-working-body'
       : 'legacy-A-semicircular-working-body';
     // The replaceable stem screws into a blind hole in the rim.
     const rivet = cylinderAlongZ(
@@ -1262,7 +1261,7 @@ function lePautePinWheelEscapement(movement) {
     impulse: 'both pallet impulses act downward, the defining steady-action advantage of Le Paute’s layout',
     oscillationAdvance: pinPitch,
     pinCount,
-    preferredPinForm: 'B: Brown\'s trapezoid inscribed in the A half-round: the flat trailing base, slanted chord flanks and a short leading side that is exactly the arc the pallets touch',
+    preferredPinForm: 'B: Brown\'s thin, nearly radial slip cut from the leading side of the A half-round: a curved leading face that is exactly the arc the pallets touch, and a straight trailing chord',
     recoil: 'none',
   };
   root.userData.blocks = {
@@ -1408,7 +1407,7 @@ function lePautePinWheelEscapement(movement) {
     },
     preferredB: {
       count: preferredPins.length,
-      profile: 'trapezoid inscribed in the A half-round; its short leading side is the working arc',
+      profile: 'thin slip cut from the leading side of the A half-round; its curved leading face is the working arc',
       sourceLabel: 'B',
       workingArcRadians: preferredArcEnd - preferredArcStart,
     },

@@ -9,7 +9,7 @@ import {surfacePoints,solidSurface,surfaceTriangles} from './helpers/solid-surfa
 for(const id of [370,393])test(`${id}: finite repaired polishing interfaces over the full input cycle`,()=>{
   const m=(id===370?mirror:lens)({id,description:''}),r=m.root,b=r.userData.blocks;
   const pairs=id===370?[[b.crankShaft,b.crankBearing],[b.crankShaft,b.upperRail],[b.crankPinBoss,b.barBody],[b.crankPinBoss,b.upperEye],[b.barBody,b.upperRail],[b.barBody,b.lowerRail],...b.guidePins.map(p=>[b.barBody,p]),[b.mirrorAxle,b.barBody],[b.mirrorAxle,b.carrierArm],[b.finiteClick.body,b.ratchetWheel],[b.finiteClick.pin,b.carrierArm],[b.finiteClick.pin,b.finiteClick.body],[b.finiteClick.body,b.mirrorBacking]]
-    :[[b.shaft,b.upperBearing],[b.shaft,b.bearingBridge],[b.shaft,b.handwheel],[b.ball,b.cupRotor.userData.socket],[b.ballStem,b.cupRotor.userData.socket],[b.ball,b.cupRotor.userData.outerShell],[b.lens.userData.hemisphere,b.cupRotor.userData.outerShell]];
+    :[[b.shaft,b.upperBearing],[b.shaft,b.handwheel],[b.ball,b.cupRotor.userData.socket],[b.ballStem,b.cupRotor.userData.socket],[b.ball,b.cupRotor.userData.outerShell],[b.lens.userData.hemisphere,b.cupRotor.userData.outerShell]];
   const samples=new Map(),solids=new Map();for(const[a,c]of pairs){if(!samples.has(a))samples.set(a,surfacePoints(a.geometry));if(!solids.has(c))solids.set(c,solidSurface(c.geometry));}
   const period=id===370?r.userData.geometry.inputCyclePeriod:r.userData.motion.inputCycleDuration;let queries=0;
   for(let i=0;i<=32;i++){

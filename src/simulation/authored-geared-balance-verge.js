@@ -95,6 +95,7 @@ function gearedBalanceVergeEscapement(movement) {
   // meets the lower half of the wire and the wire lifts clear on release.
   const wireLift = 0.005;
   const topRadius = arborRadius + wireRadius - 0.012;
+  const loopArch = 0.2;
 
   // Signed distance from a wire-centreline point to the leading face (and tip
   // corner) of the tooth whose tip is at world angle phi: positive when the
@@ -393,7 +394,11 @@ function gearedBalanceVergeEscapement(movement) {
       } else {
         const u = (delta - riseEnd) * releaseSense / ((topEnd - riseEnd) * releaseSense);
         const smooth = u * u * (3 - 2 * u);
-        rho = topRadius; x = THREE.MathUtils.lerp(riseX, startX, smooth);
+        // Brown's loops stand clear above the rod (their tops about 0.26
+        // over it): the wire hugs the arbor low on its sides, where it is
+        // soldered, and arches over the top.
+        const ends = Math.min(1, u / 0.2, (1 - u) / 0.2);
+        rho = topRadius + loopArch * ((1 - Math.cos(delta)) / 2) ** 2 * ends * ends * (3 - 2 * ends); x = THREE.MathUtils.lerp(riseX, startX, smooth);
       }
       points.push(arborFramePoint(delta, rho, x));
     }

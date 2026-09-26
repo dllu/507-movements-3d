@@ -400,6 +400,9 @@ function pileDriverReleasingHooks(movement) {
   const BLOCK_Z = [-0.7, -0.25];
   const TEE_Z = [-0.3, 0.3];
   const FRAME_Z = [-0.9, 0.9];
+  // Back face of slot B: behind the rope (radius 0.2 about z -0.475) and the
+  // rope-block casting (back at z -0.7).
+  const BEAM_BACK_Z = -0.74;
   const RIB_Z = [-0.9, -0.3];
   const LUG_Z = [-0.25, 0.9];
   const PIN_RADIUS = 4.4;
@@ -409,13 +412,20 @@ function pileDriverReleasingHooks(movement) {
   frame.userData.fixed = true;
   frame.userData.role = 'fixed-pile-driver-frame-with-slot-b';
   const groundY = restY + W_BOTTOM - 9 - 29 - 40;
+  // Brown's top beam is one continuous timber: slot B is cut through its
+  // front part only (open at the front, top and bottom), so the beam's back
+  // runs unbroken behind the slot, the rope and the horns.
   const cheekRight = rightCheekOutline();
   const beamHalves = [cheekRight, mirror(cheekRight)].map((outline, index) => {
-    const half = slab(poly(scaled(outline)), ...FRAME_Z, frameMaterial,
+    const half = slab(poly(scaled(outline)), BEAM_BACK_Z, FRAME_Z[1], frameMaterial,
       `${index ? 'left' : 'right'}-half-of-top-beam-with-side-of-slot-b`);
     half.userData.fixed = true;
     return half;
   });
+  const beamBack = box(-BEAM_HALF, BEAM_HALF, BEAM_BOTTOM, BEAM_TOP, FRAME_Z[0], BEAM_BACK_Z, frameMaterial,
+    'continuous-back-of-top-beam-behind-slot-b');
+  beamBack.userData.fixed = true;
+  beamHalves.push(beamBack);
   const posts = [-1, 1].map((side) => box(side < 0 ? -POST_OUTER : POST_INNER, side < 0 ? -POST_INNER : POST_OUTER,
     restY + W_BOTTOM - 8, BEAM_BOTTOM, ...FRAME_Z, frameMaterial, `${side < 0 ? 'left' : 'right'}-guide-post`));
   const ribs = [-1, 1].map((side) => box(side < 0 ? -POST_INNER : RIB_INNER, side < 0 ? -RIB_INNER : POST_INNER,
@@ -500,92 +510,18 @@ function pileDriverReleasingHooks(movement) {
   weight.add(weightBody, tee, ...lugs);
   root.add(weight);
 
-  // ------------------------------------------------ rope, sheave and drum --
+  // ------------------------------------------------------------ rope --
   const hoistRopeRadius = 0.2;
   const rope = makeDynamicCable({ color: PALETTE.belt, laid: true, maxSegments: 256, radius: hoistRopeRadius });
   rope.userData.role = 'vertical-hoisting-rope-through-slot-b';
+  rope.userData.mesh.userData.role = 'vertical-hoisting-rope-through-slot-b';
+  // It runs up out of the picture past Brown's crop.
+  rope.userData.mesh.userData.beyondPlateCrop = true;
   root.add(rope);
-  const tieTopY = BEAM_TOP * S;
-  const sheaveRadius = 0.5;
-  const sheaveCenter = new THREE.Vector3(0, tieTopY + 0.85, ropeZ - sheaveRadius);
-  const drumRadius = 0.5;
-  const drumCenter = new THREE.Vector3(0, sheaveCenter.y, sheaveCenter.z - 1.5);
-  const coilPitch = 2 * hoistRopeRadius * 1.08;
-  const coilTurns = 3;
-  const fixedRopePoints = [];
-  for (let i = coilTurns * 48; i >= 0; i -= 1) {
-    const phi = i / 48 * Math.PI * 2;
-    fixedRopePoints.push(new THREE.Vector3(-coilPitch * i / 48,
-      drumCenter.y + drumRadius * Math.cos(phi), drumCenter.z - drumRadius * Math.sin(phi)));
-  }
-  for (let i = 0; i <= 12; i += 1) {
-    const phi = Math.PI / 2 * i / 12;
-    fixedRopePoints.push(new THREE.Vector3(0,
-      sheaveCenter.y + sheaveRadius * Math.cos(phi), sheaveCenter.z + sheaveRadius * Math.sin(phi)));
-  }
-  let fixedRopeLength = 0;
-  for (let i = 1; i < fixedRopePoints.length; i += 1) fixedRopeLength += fixedRopePoints[i].distanceTo(fixedRopePoints[i - 1]);
-  const winch = new THREE.Group();
-  winch.userData.role = 'hoisting-sheave-and-winding-drum-on-top-beam';
-  const sheaveRotor = new THREE.Group();
-  sheaveRotor.position.copy(sheaveCenter);
-  const drumRotor = new THREE.Group();
-  drumRotor.position.copy(drumCenter);
-  const alongX = (radius, length, material, role) => {
-    const object = mesh(new THREE.CylinderGeometry(radius, radius, length, 48), material, role);
-    object.rotation.z = Math.PI / 2;
-    return object;
-  };
-  const sheaveBody = alongX(sheaveRadius - hoistRopeRadius, 0.48, frameMaterial, 'hoisting-rope-sheave');
-  const sheaveFlanges = [-1, 1].map((side) => {
-    const flange = alongX(sheaveRadius + 0.08, 0.06, frameMaterial, 'hoisting-rope-sheave-flange');
-    flange.position.x = side * (0.24 + 0.03);
-    return flange;
-  });
-  sheaveRotor.add(sheaveBody, ...sheaveFlanges);
-  const barrelLength = coilPitch * coilTurns + 2 * hoistRopeRadius + 0.06;
-  const barrel = alongX(drumRadius - hoistRopeRadius - 0.005, barrelLength, frameMaterial, 'winding-drum-barrel');
-  barrel.position.x = -coilPitch * coilTurns / 2;
-  const drumFlanges = [-1, 1].map((side) => {
-    const flange = alongX(drumRadius + 0.16, 0.08, frameMaterial, 'winding-drum-flange');
-    flange.position.x = barrel.position.x + side * (barrelLength / 2 + 0.04);
-    return flange;
-  });
-  drumRotor.add(barrel, ...drumFlanges);
-  // The cheeks stand on the two halves of the beam, clear of slot B.
-  const cheekInnerX = [SLOT_TOP_HALF * S + 0.12, -SLOT_TOP_HALF * S - 0.2];
-  const axleLength = cheekInnerX[0] - cheekInnerX[1] + 0.3;
-  for (const [rotor, center] of [[sheaveRotor, sheaveCenter], [drumRotor, drumCenter]]) {
-    const axle = alongX(0.07, axleLength, darkMaterial, 'axle-turning-in-winch-cheeks');
-    axle.position.set((cheekInnerX[0] + cheekInnerX[1]) / 2 - center.x, 0, 0);
-    rotor.add(axle);
-  }
-  const cheekShape = new THREE.Shape();
-  const cheekFront = sheaveCenter.z + sheaveRadius + 0.2;
-  const cheekBack = drumCenter.z - drumRadius - 0.3;
-  cheekShape.moveTo(cheekBack, 0);
-  cheekShape.lineTo(cheekFront, 0);
-  cheekShape.lineTo(cheekFront, sheaveCenter.y - tieTopY + 0.3);
-  cheekShape.lineTo(cheekBack, sheaveCenter.y - tieTopY + 0.3);
-  cheekShape.closePath();
-  for (const center of [sheaveCenter, drumCenter]) {
-    cheekShape.holes.push(new THREE.Path().absarc(center.z, center.y - tieTopY, 0.074, 0, Math.PI * 2, true));
-  }
-  const cheeks = cheekInnerX.map((x, index) => {
-    const cheek = mesh(new THREE.ExtrudeGeometry(cheekShape, { depth: 0.1, bevelEnabled: false }), frameMaterial, 'winch-cheek-standing-on-top-beam');
-    cheek.rotation.y = -Math.PI / 2;
-    cheek.position.set(index === 0 ? x + 0.1 : x, tieTopY, 0);
-    return cheek;
-  });
-  // The beam is only 1.8 deep; the drum overhangs behind on a back bracket.
-  const shelves = [-1, 1].map((side) => {
-    const shelf = box(side < 0 ? -BEAM_HALF + 30 : SLOT_TOP_HALF + 1, side < 0 ? -SLOT_TOP_HALF - 1 : BEAM_HALF - 30,
-      BEAM_TOP - 6, BEAM_TOP, cheekBack - 0.05, FRAME_Z[0], frameMaterial, 'winch-shelf-behind-top-beam');
-    return shelf;
-  });
-  winch.add(sheaveRotor, drumRotor, ...cheeks);
-  frame.add(...shelves);
-  root.add(winch);
+  // Brown draws only the rope running up through slot B and out of the
+  // picture; its winch is not drawn, so the rope runs straight past the crop
+  // (it is excluded from the camera fit) and ends cleanly well above it.
+  const ropeTopY = BEAM_TOP * S + 8;
 
   // ---------------------------------------------------------------- update --
   const update = (time) => {
@@ -594,12 +530,12 @@ function pileDriverReleasingHooks(movement) {
     jaws[0].rotation.z = -state.jawOpeningAngle;
     jaws[1].rotation.z = state.jawOpeningAngle;
     weight.position.y = state.weightY * S;
-    // The rope ends on top of the eye (ring top 120.4 plus the rope's own radius).
-    const ropeEndY = (state.blockHeight + 120.4 + 4) * S;
-    const hangingLength = sheaveCenter.y - ropeEndY;
-    rope.userData.setPoints([...fixedRopePoints, new THREE.Vector3(0, ropeEndY, ropeZ)], fixedRopeLength + hangingLength);
-    sheaveRotor.rotation.x = hangingLength / sheaveRadius;
-    drumRotor.rotation.x = hangingLength / drumRadius;
+    // The rope's end is seized into the top of the eye (ring top 120.4), so
+    // no gap shows between them.
+    const ropeEndY = (state.blockHeight + 119.8) * S;
+    const hangingLength = ropeTopY - ropeEndY;
+    // The lay travels with the rope: its phase is fixed at the eye.
+    rope.userData.setPoints([new THREE.Vector3(0, ropeTopY, ropeZ), new THREE.Vector3(0, ropeEndY, ropeZ)], hangingLength);
     root.userData.kinematics = state;
   };
 
@@ -699,8 +635,8 @@ function pileDriverReleasingHooks(movement) {
 
   finishHookFamily(root, period);
   // Fit the drawn parts over the whole cycle; the pile, anvil and post feet
-  // below the plate's crop are excluded.
-  for (const part of belowCrop) part.visible = false;
+  // below the plate's crop and the rope running up out of it are excluded.
+  for (const part of [...belowCrop, rope]) part.visible = false;
   const fitBounds = new THREE.Box3();
   for (let sample = 0; sample <= 64; sample += 1) {
     update(period * sample / 64);
@@ -713,7 +649,7 @@ function pileDriverReleasingHooks(movement) {
   }
   root.userData.cameraFitBounds = fitBounds.expandByScalar(0.02);
   root.userData.cameraDistanceScale = 0.88;
-  for (const part of belowCrop) part.visible = true;
+  for (const part of [...belowCrop, rope]) part.visible = true;
   update(0);
   markShadows(root);
   return {

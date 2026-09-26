@@ -13,19 +13,19 @@ const near=(a,b,t=1e-9)=>assert.ok(Math.abs(a-b)<=t,`${a} != ${b}`);
 const dispose=model=>model.root.traverse(o=>{o.geometry?.dispose();o.material?.map?.dispose();o.material?.dispose();});
 const poses=[0,.04,.25,1,1.25,1.345,1.75,2.5,3.245,3.47,3.6525,3.75,4.0167,4.25,4.250001,5.345,7.6525,8.25];
 
-test('086 completes the measured loose wheel and input band with real shaft and pump guide passages',()=>{
+test('086 completes the measured loose wheel and input band with real shaft and rope passages',()=>{
  const model=makePumpCatchDrive(),u=model.root.userData,h=u.completeHardware;
- // 45 parts plus the two barrel hangers from the guide crossbar to the lower bed.
- assert.equal(Object.keys(u.parts).length,47);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
+ // p60 support policy: Brown draws no second sheave, stand or pump hardware.
+ assert.equal(Object.keys(u.parts).length,28);
+ assert.deepEqual(Object.keys(u.parts).filter(n=>/^remote|Barrel|Guide|Hanger|LowerBed|Crosshead/.test(n)),[]);
+ assert.equal(u.blocks.remoteInput,undefined);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
  assert.notEqual(u.blocks.wheel,u.blocks.cam);assert.equal(u.blocks.catch.parent,u.blocks.wheel);
  near(h.radius,(u.source.center[0]-u.source.visibleRope.x)/u.source.scale);
  near(h.ropeRadius,u.source.visibleRope.width/(2*u.source.scale));
  near(u.rearDrive.radius,((u.source.rearRuns.lower[0]+u.source.rearRuns.lower[1])-(u.source.rearRuns.upper[0]+u.source.rearRuns.upper[1]))/(4*u.source.scale));
  for(const [name,point]of [
   ['spokedLooseWheelA',[0,0,-.2]],['looseWheelHub',[0,0,-.35]],['frontBearingStandard',[0,0,.3]],
-  ['pumpCrosshead',[-.25,-.08,0]],['pumpCrosshead',[.25,-.08,0]],['ropeLoadFerrule',[0,.06,0]],
-  ['pumpLowerBed',[0,-5,0]],['basePlinth',[-h.radius,(u.source.center[1]-u.source.base.top)/u.source.scale-.05,h.z]],
-  ['pumpGuideCrossbar',[-h.radius,-1.82,h.z]]]){
+  ['ropeLoadFerrule',[0,.06,0]],['basePlinth',[-h.radius,(u.source.center[1]-u.source.base.top)/u.source.scale-.05,h.z]]]){
   const solid=solidSurface(u.parts[name].geometry),p=new THREE.Vector3(...point);
   assert.ok(solid.box.containsPoint(p),name+' probe must lie within the overall body bounds');
   assert.equal(solid.inside(p),false,name+' needs a real passage');
@@ -58,11 +58,16 @@ test('086 all rigid solids and changing rope meshes are closed with consistent s
 test('086 production has exact candidate pose, rigid geometry and live rope parity',()=>{
  const model=makePumpCatchDrive(),u=model.root.userData,candidate=makePumpCatchLiveCandidate(),v=candidate.root.userData,motion=makePumpCatchPlayback(profile);
  indexPumpCatchHardware(candidate);
- assert.deepEqual(u.source,v.source);assert.deepEqual(u.families,v.families);
+ assert.deepEqual(u.source,v.source);
+ // Production prunes the undrawn hardware, lengthens the pump rod to the rope
+ // end and opens the band; every other part matches the qualified candidate.
+ assert.deepEqual(u.families,Object.fromEntries(Object.entries(v.families).filter(([n])=>!u.prunedHardware.includes(n))));
  assert.deepEqual(u.geometry,v.geometry);assert.deepEqual(u.completeHardware,v.completeHardware);
+ const reshaped=new Set(['pumpOutputRod','inputDriveRope']);
  for(const time of poses){
   const expected=motion.sample(time);assert.deepEqual(u.stateAtTime(time),expected);model.update(time);candidate.setState(expected);
   for(const [name,mesh]of Object.entries(u.parts)){
+   if(reshaped.has(name)){assert.deepEqual(mesh.matrixWorld.elements,v.parts[name].matrixWorld.elements,name+' transform');continue;}
    const other=v.parts[name];assert.deepEqual(mesh.matrixWorld.elements,other.matrixWorld.elements,name+' transform');
    for(const [key,a]of Object.entries(mesh.geometry.attributes)){
     const b=other.geometry.attributes[key];assert.equal(a.count,b.count);
@@ -87,10 +92,12 @@ test('086 retains startup, repeats a settled four-second cycle and keeps the inp
  }
  const seam=(profile.repeat.start+profile.repeat.period)/rate,delta=1e-7,a=u.stateAtTime(seam-delta),b=u.stateAtTime(seam+delta);
  for(let k=0;k<3;k++)near(a.q[k],b.q[k],1e-5);
- // Brown's two hatched runs are laid rope: one endless three-strand rope in
- // the sheave grooves, whose lay travels with the sheaves' rims.
+ // Brown's two hatched runs are laid rope in the groove of A's sheave. They
+ // leave the plate to the right, run straight on and end cleanly (no second
+ // sheave is drawn); the lay travels with the sheave rim.
  const rope=u.parts.inputDriveRope;
- assert.equal(rope.geometry.type,'LaidRopeGeometry');assert.equal(rope.geometry.parameters.closed,true);
+ assert.equal(rope.geometry.type,'LaidRopeGeometry');assert.equal(rope.geometry.parameters.closed,false);
+ rope.geometry.computeBoundingBox();near(rope.geometry.boundingBox.max.x,u.rearDrive.bandEnd,1e-6);
  assert.equal(u.parts.inputDriveBand,undefined);
  near(rope.geometry.parameters.radius,u.rearDrive.ropeRadius);
  near(rope.geometry.userData.ropeLay.length,u.rearDrive.bandLength,1e-3);
@@ -98,7 +105,7 @@ test('086 retains startup, repeats a settled four-second cycle and keeps the inp
  dispose(model);
 });
 
-test('086 finite catch contacts clear through lift and release; the pump returns to its bed',()=>{
+test('086 finite catch contacts clear through lift and release; the pump returns to its lowest point',()=>{
  const model=makePumpCatchDrive(),u=model.root.userData,contact=makePumpCatchHeelContact(model);
  let min=Infinity,max=-Infinity,camContacts=0,stopContacts=0;
  for(let i=0;i<=160;i++){
@@ -115,7 +122,7 @@ test('086 finite catch contacts clear through lift and release; the pump returns
 test('086 actual rope stays attached and constant in length, reuses its buffers and fits the complete camera envelope',()=>{
  const model=makePumpCatchDrive(),u=model.root.userData,h=u.completeHardware,g=u.parts.pumpRope.geometry,
   arrays=Object.fromEntries(Object.entries(g.attributes).map(([key,a])=>[key,a.array])),indices=g.index.array,
-  clamp=solidSurface(u.parts.wheelRopeClamp.geometry),head=solidSurface(u.parts.pumpCrosshead.geometry),
+  clamp=solidSurface(u.parts.wheelRopeClamp.geometry),head=solidSurface(u.parts.pumpOutputRod.geometry),
   bounds=new THREE.Box3(new THREE.Vector3(...profile.motionBounds.min),new THREE.Vector3(...profile.motionBounds.max)),counts=new Set();
  for(const time of poses){
   model.update(time);assert.equal(u.parts.pumpRope.geometry,g);assert.equal(g.index.array,indices);
@@ -129,7 +136,7 @@ test('086 actual rope stays attached and constant in length, reuses its buffers 
   }
   let length=0;for(let i=1;i<centers.length;i++)length+=centers[i].distanceTo(centers[i-1]);near(length,h.ropeLength,1e-5);
   near(clamp.distance(centers[0].clone().applyMatrix4(u.parts.wheelRopeClamp.matrixWorld.clone().invert())),0,1e-6);
-  near(head.distance(centers.at(-1).clone().applyMatrix4(u.parts.pumpCrosshead.matrixWorld.clone().invert())),0,1e-6);
+  near(head.distance(centers.at(-1).clone().applyMatrix4(u.parts.pumpOutputRod.matrixWorld.clone().invert())),0,1e-6);
   for(const [name,mesh]of Object.entries(u.parts))assert.ok(bounds.containsBox(new THREE.Box3().setFromObject(mesh,true)),name+' exceeds full-motion bounds');
  }
  assert.ok(counts.size>4,'Must exercise changing wrap topology');dispose(model);

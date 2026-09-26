@@ -908,6 +908,20 @@ function oscillatingDrumRatchet(movement) {
 }
 
 export function createAuthoredOscillatingDrumRatchetMovement(movement) {
-  if (movement.id === 360) return finishOneWayFamily(correctOscillatingDrum(oscillatingDrumRatchet(movement)), 360);
-  return null;
+  if (movement.id !== 360) return null;
+  const model = finishOneWayFamily(correctOscillatingDrum(oscillatingDrumRatchet(movement)), 360);
+  // Display time 0 is Brown's pose: the beam level at mid-swing, a quarter
+  // of a beam oscillation into the physical cycle (stateAtTime keeps the
+  // physical timeline; the loop stays whole because the shift is constant).
+  const data = model.root.userData;
+  const sourcePoseTime = data.geometry.beamOscillationPeriod / 4;
+  const physicalUpdate = model.update;
+  // The flywheel's plain spokes are set back by its advance over that
+  // shift, so they stand upright and level at time 0 as Brown draws them.
+  const spokeTurn = data.stateAtTime(0).flywheelAngle - data.stateAtTime(sourcePoseTime).flywheelAngle;
+  for (const spoke of data.blocks.flywheelSpokes) spoke.rotation.z += spokeTurn;
+  model.update = (time) => physicalUpdate(time + sourcePoseTime);
+  data.timeline.displayTimeOffset = sourcePoseTime;
+  model.update(0);
+  return model;
 }

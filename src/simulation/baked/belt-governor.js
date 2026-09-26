@@ -28,5 +28,11 @@ function endlessBeltBeyondCrop(root,bundle,update){
  const pulley=root.getObjectByName('middlePulley')??band,height=high-low+.324+.1;
  const drum=new THREE.Mesh(new THREE.CylinderGeometry(r0-.001,r0-.001,height,64),pulley.material);
  drum.position.set(xr,(low+high)/2,0);drum.name='drivingDrumBeyondCrop';drum.userData.role='driving-drum-of-endless-belt-beyond-plate-crop';root.add(drum);
+ // The drum turns on a plain upright shaft like the governor spindle (radius
+ // .1), ending as short stubs above and below it (p62). Brown crops the whole
+ // drum, so no bearing or frame is added for it.
+ const spindle=root.getObjectByName('spindle'),stub=.5;
+ const shaft=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,height+2*stub,32),spindle?.material??pulley.material);
+ shaft.position.copy(drum.position);shaft.name='drivingDrumShaftBeyondCrop';shaft.userData.role='driving-drum-shaft-beyond-plate-crop';shaft.castShadow=true;root.add(shaft);
 }
 export async function makeBakedBeltGovernor(){return makeBeltGovernorModel(await loadBakedBundle(new URL('./assets/163.json.gz',import.meta.url)));}

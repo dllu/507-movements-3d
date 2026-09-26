@@ -253,8 +253,9 @@ function earnshawSpringDetentEscapement(movement) {
   const escapeWheelRadiusToCenterDistance = 0.65;
   const toothTipRadius = centerDistance
     * escapeWheelRadiusToCenterDistance;
-  const wheelRootRadius = toothTipRadius * 0.77;
-  const wheelCrownRadius = toothTipRadius * 0.86;
+  // Brown draws the tooth roots at 0.83 of the tip radius (147/178 px).
+  const wheelRootRadius = toothTipRadius * 0.82;
+  const wheelCrownRadius = toothTipRadius * 0.89;
   const wheelDepth = 0.36;
   const impulseRollerDiameterToEscapeWheelDiameter = 0.5;
   const impulseRollerRadius = toothTipRadius
@@ -848,8 +849,12 @@ function earnshawSpringDetentEscapement(movement) {
   // than at the rim. Brown draws the crossings square to the page, so they
   // stand square at the opening pose. The bore only clears the 0.105 arbor,
   // so the crossings keep a solid centre between the window corners.
-  const crossingHalfWidth = 0.14;
-  const windowOuterRadius = wheelRootRadius * 0.84;
+  // Measured on the plate (window radius 120 px): the crossings are 19-23 px
+  // across Brown's lines, the rim 27 px to the tooth roots (window 0.82 of
+  // the root radius), and the window corners at the crossings sit 24 px from
+  // the centre (a fillet about 0.17 of the window radius).
+  const windowOuterRadius = wheelRootRadius * 0.82;
+  const crossingHalfWidth = windowOuterRadius * 0.095;
   const wheelBoreRadius = 0.16;
   const wheelRim = new THREE.Mesh(
     spokedWheelGeometry({
@@ -857,8 +862,8 @@ function earnshawSpringDetentEscapement(movement) {
       rimInnerRadius: windowOuterRadius,
       spokes: 4,
       spokeWidth: 2 * crossingHalfWidth,
-      hubFillet: windowOuterRadius * 0.10,
-      rimFillet: windowOuterRadius * 0.04,
+      hubFillet: windowOuterRadius * 0.17,
+      rimFillet: windowOuterRadius * 0.05,
       boreRadius: wheelBoreRadius,
       thickness: 0.26,
       phase: -stateAtTime(0).wheelAngle,

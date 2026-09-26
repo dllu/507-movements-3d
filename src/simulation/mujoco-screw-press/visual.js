@@ -14,8 +14,14 @@ export function makeMujocoScrewPress(mujoco,options={}) {
   const playback=createPhysicsPlayback(physics,sync);let disposed=false;
   const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
   const bounds=new THREE.Box3(new THREE.Vector3(-2.15,-2.65,-2.15),new THREE.Vector3(2.15,1.65,2.15));
+  // Brown's window: the handle down to the raised ram (the fit margin carries
+  // the view just past it), where he breaks the frame off. The lower jaw and anvil run off the bottom
+  // of the default view; the blank sits on its bottom edge.
+  const plateWindow=new THREE.Box3(new THREE.Vector3(-1.8,u.profile.ramBottom+.25,-.25),new THREE.Vector3(1.95,1.5,.25));
   Object.assign(u,{mechanism:'mujoco-screw-press',simulationBackend:'mujoco',physics,fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
+    // The generic fit distance is sized for the window's bounding sphere;
+    // this scale brings the window's height edge to edge as Brown crops it.
+    cameraFitBounds:plateWindow,cameraDistanceScale:.8,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
     reconstructionNote:'Turning the weighted handle lowers the guided ram onto a rigid blank. Section view exposes the threads and swivel. Their joints are ideal; thread friction is omitted. The lower frame, anvil, hidden bearing, depths and reversing drive are reconstructed.',
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1}});
   try{sync();}catch(error){dispose();throw error;}

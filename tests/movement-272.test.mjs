@@ -117,11 +117,11 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   assert.equal(blocks.translationIndex.parent, blocks.follower);
   assert.equal(blocks.followerGuides.length, 2);
   assert.ok(blocks.followerGuides.every((guide) => guide.parent === model.root));
-  assert.equal(blocks.shaftBearings.length, 2);
-  // Brown draws no frame; a plain base, posts and shaft bearings carry the
-  // shaft and, through one upright, the rod guides, so nothing floats.
-  assert.ok(blocks.shaftBearings.every((bearing) => bearing.parent === model.root), 'shaft bearings carry the shaft');
-  assert.equal(blocks.guideRiser.parent, model.root);
+  // Brown draws only the two rod guides and a bare shaft: no base, posts,
+  // shaft bearings, backing rail, brackets or riser.
+  for (const name of ['shaftBearings', 'bearingPosts', 'baseRail', 'guideBackingRail', 'guideBrackets', 'guideRiser']) {
+    assert.equal(blocks[name], undefined, `${name} is not drawn`);
+  }
 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
@@ -384,11 +384,6 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
   } = model.root.userData;
   const fixedParts = [
     ...blocks.followerGuides,
-    ...blocks.guideBrackets,
-    ...blocks.shaftBearings,
-    ...blocks.bearingPosts,
-    blocks.guideBackingRail,
-    blocks.baseRail,
   ].map((object) => ({
     object,
     position: object.position.clone(),
@@ -454,7 +449,6 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
       `runtime normal velocity at ${time}`,
     );
     assert.equal(model.root.userData.contacts.followerGuides.length, 2);
-    assert.equal(model.root.userData.contacts.shaftBearings.length, 2);
     for (const fixed of fixedParts) {
       vectorNear(fixed.object.position, fixed.position, 0,
         `fixed position at ${time}`);
@@ -471,12 +465,11 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
 
   let meshCount = 0;
   model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  // The plain supporting frame (base, posts, shaft bearings, backing rail,
-  // brackets and riser) is kept so nothing floats; the disk carries no dark
+  // Only Brown's two rod guides are fixed parts; the disk carries no dark
   // edge tubes. The plate has a hub on each face.
   // The coincident working-band skin is gone: the rod bears on the body's
   // own chamfer.
-  assert.equal(meshCount, 34);
+  assert.equal(meshCount, 11);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);

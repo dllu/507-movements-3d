@@ -5,6 +5,7 @@ import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import { horizontalRing } from './horizontal-turbine-solids.js';
 import { ring } from './finite-plate-geometry.js';
 import { waterVolume } from './water-volume.js';
+import { makeSeeThrough } from './see-through-part.js';
 import {
   PALETTE,
   markShadows,
@@ -358,7 +359,7 @@ function streamDrivenArchimedesScrew(movement) {
   waterWheel.userData.role =
     'lower-stream-wheel-rigidly-fixed-to-screw-shaft';
   rotor.add(waterWheel);
-  // Brown draws the wheel as one plain solid disc with box floats set behind
+  // Brown draws the wheel as one plain disc with box floats set behind
   // it round its edge, standing out past the rim, not a spoked double rim.
   const wheelRims = [0].map((offset) => {
     const rim = new THREE.Mesh(
@@ -367,6 +368,9 @@ function streamDrivenArchimedesScrew(movement) {
     );
     rim.position.y = offset;
     rim.userData.role = 'lower-water-wheel-solid-disc';
+    // Brown dots the casing, its spiral and the far floats where the disc
+    // covers them, so the disc takes the shared see-through style.
+    makeSeeThrough(rim);
     waterWheel.add(rim);
     return rim;
   });

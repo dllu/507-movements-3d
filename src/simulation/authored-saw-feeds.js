@@ -50,7 +50,6 @@ const PLATE = {
   inputShaft: [454, 453],
   crankPin: [389, 438],
   catchHinge: [141, 187],
-  catchNose: [244.5, 336.5],
   clickPivot: [73, 232],
   clickTip: [53.5, 292.5],
   rackPitch: 24,
@@ -83,64 +82,118 @@ const LOOP_PERIOD = CRANK_PERIOD * LOOP_REVOLUTIONS;
 const STEPS_PER_REV = 480;
 const GRAVITY = 54; // model units / s^2 (1 unit is about 0.18 m)
 
-// Catch outline: the stem is one circular arc through the hinge (fitted to
-// the plate's centreline, 0.5 px residual) running into a clothoid scroll
-// that ends in a round bead; a symmetric claw points left into the teeth.
+// Catch outline (raster, y down). Brown's catch is a Victorian scroll: a
+// circular-arc stem from the hinge eye runs into a clothoid scroll that
+// curls up anticlockwise into a round terminal, and a pointed claw web
+// under the foot of the stem reaches left into the teeth, its lower edge
+// sweeping smoothly out into the underside of the scroll. The scroll and
+// stem are fitted to the plate's ink (about 1 px residual). The hinge sits
+// CATCH_HINGE_DROP px lower on the feed screw than Brown's slider (the
+// drawn setting cannot sweep far enough for the claw to drop behind the
+// next tooth), and the stem is refitted from there so the hook itself hangs
+// where Brown draws it.
+const CATCH_HINGE_DROP = 9;
+const CATCH_HINGE = [PLATE.catchHinge[0], PLATE.catchHinge[1] + CATCH_HINGE_DROP];
+// The claw point, at the pocket corner of Brown's pose. Its upper (working)
+// edge follows the radial tooth face it pulls on, which is why it runs
+// nearly level where Brown's slopes up into the stem.
+const CATCH_CLAW_TIP = [240.2, 338.6];
+// The working edge rises 8 degrees, just inside the 7.6-degree tooth face
+// plus the catch's own turn while pulling (Brown's rises about 16, which
+// would cut into the tooth above).
+const CLAW_RISE = 8 * Math.PI / 180;
+// Gig-back: the carriage stops GL tooth short of the start and the catch and
+// click are let down onto the backs, then the wheel settles 0.18 tooth past
+// the seat onto the click.
+const GL = 0.15;
+const CLAW_EDGE = 10; // straight working edge, px (the tooth face is 6.5)
 function catchOutlineRaster() {
-  const center = [54.2, -375.3]; // raster x, -y
-  const radius = 209.5;
-  const start = 67 * Math.PI / 180;
-  const end = 17.07 * Math.PI / 180;
+  const hinge = CATCH_HINGE;
+  const stemEnd = [255.8, 312.34];
+  const stemHeading = 1.2883; // raster heading at the stem end (down and right)
+  const tangent = [Math.cos(stemHeading), Math.sin(stemHeading)];
+  const normal = [-tangent[1], tangent[0]];
+  // The circle through the hinge tangent to the stem end.
+  const d = sub(hinge, stemEnd);
+  const radius = (d[0] * d[0] + d[1] * d[1]) / (2 * (d[0] * normal[0] + d[1] * normal[1]));
+  const center = add(stemEnd, [normal[0] * radius, normal[1] * radius]);
+  const a0 = ang(sub(hinge, center));
+  const a1 = ang(sub(stemEnd, center));
+  const sweep = mod(a1 - a0 + Math.PI, TAU) - Math.PI;
+  const arcSteps = 60;
   const spine = [];
-  const arcSteps = 90;
   for (let i = 0; i <= arcSteps; i += 1) {
-    const a = start + (end - start) * i / arcSteps;
-    spine.push([center[0] + radius * Math.cos(a), center[1] + radius * Math.sin(a)]);
+    const a = a0 + sweep * i / arcSteps;
+    spine.push(add(center, [Math.abs(radius) * Math.cos(a), Math.abs(radius) * Math.sin(a)]));
   }
-  let heading = Math.atan2(-Math.cos(end), Math.sin(end));
-  let position = spine.at(-1);
-  const scrollLength = 91.7;
-  const k0 = -1 / radius;
-  const k1 = 0.1352;
+  const scrollLength = 97.9;
+  const k0 = Math.sign(sweep) / Math.abs(radius);
+  const k1 = -0.1388;
+  const exponent = 1.642;
   const steps = 160;
+  let heading = stemHeading;
+  let position = stemEnd;
   for (let i = 0; i < steps; i += 1) {
     const s = (i + 0.5) / steps;
-    heading += (k0 + (k1 - k0) * s ** 1.65) * scrollLength / steps;
+    heading += (k0 + (k1 - k0) * s ** exponent) * scrollLength / steps;
     position = add(position, [Math.cos(heading) * scrollLength / steps, Math.sin(heading) * scrollLength / steps]);
     spine.push(position);
   }
-  // Arc-length taper: 5.4 px half-width at the boss, 4.3 at the claw,
-  // 2.9 at the bead.
+  // Half-width tapers 5.4 px at the eye, 4.6 at the stem foot, 3.8 at the
+  // terminal.
   const lengths = [0];
   for (let i = 1; i < spine.length; i += 1) lengths.push(lengths[i - 1] + len(sub(spine[i], spine[i - 1])));
   const total = lengths.at(-1);
   const stemLength = lengths[arcSteps];
   const half = (s) => (s <= stemLength
-    ? 5.4 + (4.3 - 5.4) * s / stemLength
-    : 4.3 + (2.9 - 4.3) * (s - stemLength) / (total - stemLength));
-  const left = [];
-  const right = [];
+    ? 5.4 + (4.6 - 5.4) * s / stemLength
+    : 4.6 + (3.8 - 4.6) * (s - stemLength) / (total - stemLength));
+  const outer = [];
+  const inner = [];
   for (let i = 0; i < spine.length; i += 1) {
-    const a = spine[Math.max(0, i - 1)];
-    const b = spine[Math.min(spine.length - 1, i + 1)];
-    const t = sub(b, a);
+    const t = sub(spine[Math.min(spine.length - 1, i + 1)], spine[Math.max(0, i - 1)]);
     const n = [-t[1] / len(t), t[0] / len(t)];
     const w = half(lengths[i]);
-    left.push(add(spine[i], [n[0] * w, n[1] * w]));
-    right.push(add(spine[i], [-n[0] * w, -n[1] * w]));
+    outer.push(add(spine[i], [n[0] * w, n[1] * w]));
+    inner.push(add(spine[i], [-n[0] * w, -n[1] * w]));
   }
-  const toRaster = ([x, y]) => [x, -y];
-  const stroke = poly([...left, ...right.reverse()].map(toRaster));
-  const bead = poly(circle(toRaster(spine.at(-1)), 5.2, 48));
-  const hinge = PLATE.catchHinge;
+  const stroke = poly([...outer, ...inner.slice().reverse()]);
+  const bead = poly(circle(spine.at(-1), 4.6, 48));
   const boss = poly(circle(hinge, 11, 64));
-  // The claw's working (upper) edge runs level into a throat under the
-  // stem, deep enough for a tooth tip, so the point can reach the pocket
-  // corner and pull on the radial tooth face (Brown's small point slopes up
-  // into the stem, which would strike the tooth above before seating).
-  const claw = poly([PLATE.catchNose, [256.5, 337.2], [259.5, 338], [257, 346]]);
+  // Claw web. The working edge runs straight from the point at CLAW_RISE
+  // (along the radial tooth face it pulls on) until clear of the tooth tip,
+  // then curves up into the stem's left (outer) edge as Brown's does; the lower
+  // edge is one cubic from the point, leaving at Brown's 37 degrees and
+  // tangent into the scroll's underside at its lowest point.
+  const tip = CATCH_CLAW_TIP;
+  const bezier = (p0, p1, p2, p3, count) => Array.from({ length: count + 1 }, (_, i) => {
+    const u = i / count;
+    const v = 1 - u;
+    return [0, 1].map((k) => v * v * v * p0[k] + 3 * v * v * u * p1[k] + 3 * v * u * u * p2[k] + u * u * u * p3[k]);
+  });
+  const faceDirection = [Math.cos(CLAW_RISE), -Math.sin(CLAW_RISE)];
+  const shoulder = add(tip, [faceDirection[0] * CLAW_EDGE, faceDirection[1] * CLAW_EDGE]);
+  let upperIndex = 0;
+  let lowestIndex = arcSteps;
+  for (let i = 0; i < outer.length; i += 1) {
+    if (i <= arcSteps + 10 && Math.abs(outer[i][1] - (shoulder[1] - 10)) < Math.abs(outer[upperIndex][1] - (shoulder[1] - 10))) {
+      upperIndex = i;
+    }
+    if (i > arcSteps && i < arcSteps + steps * 0.8 && outer[i][1] > outer[lowestIndex][1]) lowestIndex = i;
+  }
+  const unit = (v) => [v[0] / len(v), v[1] / len(v)];
+  const upperTangent = unit(sub(outer[upperIndex + 1], outer[upperIndex - 1]));
+  const upper = [tip, ...bezier(shoulder, add(shoulder, [faceDirection[0] * 3, faceDirection[1] * 3]),
+    add(outer[upperIndex], [upperTangent[0] * 4, upperTangent[1] * 4]), outer[upperIndex], 16)];
+  const target = outer[lowestIndex];
+  const tt = unit(sub(outer[lowestIndex + 1], outer[lowestIndex - 1]));
+  const span = len(sub(target, tip));
+  const leave = 37 * Math.PI / 180;
+  const lower = bezier(tip, add(tip, [Math.cos(leave) * span * 0.4, Math.sin(leave) * span * 0.4]),
+    sub(target, [tt[0] * span * 0.35, tt[1] * span * 0.35]), target, 24);
+  const web = poly([...lower, ...outer.slice(upperIndex + 1, lowestIndex).reverse(), ...upper.slice().reverse()]);
   const bore = poly(circle(hinge, 4.5, 48));
-  return clip.difference(clip.union(stroke, bead, boss, claw), bore);
+  return clip.difference(clip.union(stroke, bead, boss, web), bore);
 }
 
 // Click (holding pawl): an eye about its pin and a tapered finger bounded by
@@ -349,12 +402,11 @@ function solveFeed() {
     return pocket;
   };
 
-  // Catch: the feed screw sets the slider radius. The setting and click
-  // length nearest Brown's drawing are chosen that drive one tooth plus a
-  // 12% overtravel (the click drops, and the wheel settles back onto it as
-  // the catch returns) and leave the catch a clear drop behind the next
-  // tooth on the return.
-  const reach = len(sub(P(...PLATE.catchNose), P(...PLATE.catchHinge)));
+  // Catch: the feed screw sets the slider radius (CATCH_HINGE_DROP below
+  // Brown's). 9 px is the least setting at which the claw both drives one
+  // tooth past the click and drops clear behind the next tooth on the
+  // return (checked on the solved motion; 3-8 px fail).
+  const reach = len(sub(P(...CATCH_CLAW_TIP), P(...CATCH_HINGE)));
   const strokeAt = (radius, phase) => {
     const low = seatAngle(hingeAt(maxRocker.value, radius), reach);
     const high = seatAngle(hingeAt(minRocker.value, radius), reach);
@@ -363,19 +415,10 @@ function solveFeed() {
     const overtravel = mod(high - phase - SEAT_ANGLE_OFFSET, PITCH);
     return { low, high, lowAtTips, sweep: high - low, overtravel, dropMargin: high - overtravel - PITCH - lowAtTips };
   };
-  let sliderRadius = SOURCE_SLIDER_RADIUS;
-  let clickExtension = 0;
-  let bestScore = Infinity;
-  for (let e = -6; e <= 6; e += 0.25) {
-    const phase = pocketFor(clickTipRaster(e)) - SEAT_ANGLE_OFFSET;
-    for (let r = SOURCE_SLIDER_RADIUS - px(5); r <= SOURCE_SLIDER_RADIUS + px(20); r += px(0.1)) {
-      const st = strokeAt(r, phase);
-      if (st.dropMargin < 0.12 * PITCH) continue;
-      if (Math.abs(st.overtravel - 0.12 * PITCH) > 0.02 * PITCH) continue;
-      const score = Math.abs(r - SOURCE_SLIDER_RADIUS) / SCALE + 2 * Math.abs(e);
-      if (score < bestScore) { bestScore = score; sliderRadius = r; clickExtension = e; }
-    }
-  }
+  // The slider stands where the catch's hinge eye is built (CATCH_HINGE);
+  // the click is Brown's.
+  const sliderRadius = SOURCE_SLIDER_RADIUS + px(CATCH_HINGE_DROP);
+  const clickExtension = 0;
   const clickTip = clickTipRaster(clickExtension);
   const clickTipLocal = sub(P(...clickTip), CLICK_PIVOT);
   const clickReach = len(clickTipLocal);
@@ -385,11 +428,11 @@ function solveFeed() {
   const clickSeatRotation = ang(sub(clickSeatPoint, CLICK_PIVOT)) - ang(clickTipLocal);
   const stroke = strokeAt(sliderRadius, mountPhase);
 
-  const catchOutline = toModel(catchOutlineRaster(), PLATE.catchHinge);
+  const catchOutline = toModel(catchOutlineRaster(), CATCH_HINGE);
   const clickOutline = toModel(clickOutlineRaster(clickTip), PLATE.clickPivot);
-  const catchNoseLocal = sub(P(...PLATE.catchNose), P(...PLATE.catchHinge));
+  const catchNoseLocal = sub(P(...CATCH_CLAW_TIP), P(...CATCH_HINGE));
   const catchSolver = makeContactSolver(catchOutline, null, -1,
-    (point) => len(add(P(...PLATE.catchHinge), point)) < R_TIP + px(30));
+    (point) => len(add(P(...CATCH_HINGE), point)) < R_TIP + px(30));
   const clickSolver = makeContactSolver(clickOutline, null, 1,
     (point) => len(add(CLICK_PIVOT, point)) < R_TIP + px(20));
   const profile = ratchetProfile(mountPhase);
@@ -438,12 +481,15 @@ function solveFeed() {
   const crankAt = (step) => maxRocker.angle - TAU * step / STEPS_PER_REV;
   const lift = (v) => (v < 0.15 ? smooth(v / 0.15) : v > 0.65 ? smooth((0.8 - v) / 0.15) : 1);
   // Gig-back schedule (one crank turn): lift catch and click, run the
-  // carriage back to 0.35 tooth short of the start, lower both onto the
+  // carriage back to GL tooth short of the start, lower both onto the
   // teeth, then let the carriage's back load settle the wheel clockwise
   // until the click catches its pocket.
+  // Relative to where the wheel rests on the seated click (estimated, then
+  // taken from the end of a feed stroke below).
+  let clickSeatWheel = wheelHold(clickSeatRotation, 0.5 * PITCH);
   const gigBackWheel = (v, start) => (v < 0.65
-    ? PITCH * 0.35 + (start - PITCH * 0.35) * (1 - smooth((v - 0.2) / 0.45))
-    : PITCH * (0.35 - 0.45 * smooth((v - 0.8) / 0.15)));
+    ? clickSeatWheel + PITCH * GL + (start - clickSeatWheel - PITCH * GL) * (1 - smooth((v - 0.2) / 0.45))
+    : clickSeatWheel + PITCH * (GL - (GL + 0.18) * smooth((v - 0.8) / 0.15)));
 
   const simulate = (initial, firstStep = 0) => {
     let { psi, alpha, beta } = initial;
@@ -519,14 +565,23 @@ function solveFeed() {
   // leaves; the recorded loop starts from that state, so its end (after its
   // own gig-back) matches its start.
   const gigStep = FEED_STROKES * STEPS_PER_REV;
+  // Where the wheel rests on the click at the end of a feed stroke.
+  const solution0Seat = () => wheel[2 * STEPS_PER_REV] - 2 * PITCH;
   const gigHinge = hingeAt(fourBar(crankAt(gigStep)).rocker, sliderRadius);
   const settled = simulate({
     psi: FEED_STROKES * PITCH,
     alpha: catchSolver(gigHinge, FEED_STROKES * PITCH, profile, 0.3, window),
     beta: clickSolver(CLICK_PIVOT, FEED_STROKES * PITCH, profile, clickSeatRotation - 0.3, window),
   }, gigStep);
-  const loopStart = { ...settled };
-  const loopEnd = simulate(settled);
+  simulate(settled);
+  clickSeatWheel = solution0Seat();
+  const settledAgain = simulate({
+    psi: FEED_STROKES * PITCH,
+    alpha: catchSolver(gigHinge, FEED_STROKES * PITCH, profile, 0.3, window),
+    beta: clickSolver(CLICK_PIVOT, FEED_STROKES * PITCH, profile, clickSeatRotation - 0.3, window),
+  }, gigStep);
+  const loopStart = { ...settledAgain };
+  const loopEnd = simulate(settledAgain);
   const catchStart = loopStart.alpha;
   const clickStart = loopStart.beta;
 
@@ -882,7 +937,13 @@ function crankRockerPullCatchSawFeed(movement) {
     feedStrokes: FEED_STROKES,
     loopPeriod: LOOP_PERIOD,
     mountPhase: solution.mountPhase,
-    overtravel: solution.stroke.overtravel,
+    // Measured: how far past the click's seat the catch drives the wheel.
+    overtravel: (() => {
+      const perRev = STEPS_PER_REV;
+      let peak = -Infinity;
+      for (let i = perRev; i <= 2 * perRev; i += 1) peak = Math.max(peak, solution.wheel[i]);
+      return peak - solution.wheel[2 * perRev];
+    })(),
     pinionPitchRadius: PINION_PITCH_RADIUS,
     pinionTeeth: PLATE.pinionTeeth,
     rackPitch: RACK_PITCH,
@@ -895,6 +956,8 @@ function crankRockerPullCatchSawFeed(movement) {
     sliderRadius: solution.sliderRadius,
     sourceScale: SCALE,
     sourceSliderRadius: SOURCE_SLIDER_RADIUS,
+    catchHingeDrop: CATCH_HINGE_DROP,
+    catchClawTipRaster: CATCH_CLAW_TIP,
     catchSweep: solution.stroke.sweep,
   };
   root.userData.solution = solution;

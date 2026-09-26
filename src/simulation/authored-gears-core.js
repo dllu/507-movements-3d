@@ -3497,9 +3497,12 @@ function sunAndPlanet() {
   // sun shaft and turns with the sun gear. The hub is a disk behind the sun
   // gear (hidden by it in the plate's view), bored for the sun shaft and
   // seated against the back of the sun's flange.
-  const ringRadius = 1.27;
-  const ringInnerRadius = 1.10;
-  const spokeHalfWidth = 0.055;
+  // Measured on mm_039 against the sun flange (0.49 = 53 px): outer rim
+  // circle 139 px, window arcs 121 px, and each paired-line "joint" (the
+  // spoke seen between gear tips and rim) about 13.5 px wide.
+  const ringRadius = 1.285;
+  const ringInnerRadius = 1.12;
+  const spokeHalfWidth = 0.0625;
   const hubRadius = 0.56;
   const flywheelMaterial = matte(0x5e6666, { metalness: 0.18, roughness: 0.61 });
   const flywheel = new THREE.Group();

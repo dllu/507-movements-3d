@@ -63,7 +63,7 @@ export function makeScrewPressGeometry(options={}) {
   const presentedContour=contour;
   add('frame',plate(poly(presentedContour),-f.frameDepth,f.frameDepth),'frame',PALETTE.frame);
   add('anvil',alongY(disk(.35,f.anvilBottom,f.workBottom,192)),'frame',PALETTE.frame);
-  add('blank',alongY(disk(.23,f.workBottom,f.workTop,192)),'frame',PALETTE.accent);
+  add('blank',alongY(disk(f.blankRadius,f.workBottom,f.workTop,192)),'frame',PALETTE.accent);
   Object.assign(root.userData,{source,profile:f,parts,families,blocks,screwAngles,nutAngles,frameContour:contour,presentedFrameContour:presentedContour,
     hideGround:true,shadowCameraHalfExtent:3,shadowBias:-.00002,shadowNormalBias:.001});
   const section=makeScrewPressSection(root,parts,blocks,f,housingProfile,ramProfile);

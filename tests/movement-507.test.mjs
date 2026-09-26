@@ -372,14 +372,22 @@ test('movement 507 is continuous, fits every carrier pose, and completes the aut
     // Precise: the actual surfaces, not per-mesh boxes of rotated parts.
     swept.union(new THREE.Box3().setFromObject(model.root, true));
   }
-  // The flat front view fits the orbit's visible silhouette (x, y); its
-  // depth is a shallow proxy, while sweptBounds holds the whole orbit.
+  // sweptBounds holds the whole orbit; the flat front view frames Brown's
+  // pose (x, y) whole plus part of the orbit to the shaft's right, with a
+  // shallow depth proxy, so F, G and the arm leave it only near the far side.
   assert.ok(model.root.userData.sweptBounds.containsBox(swept));
   const fit = model.root.userData.cameraFitBounds;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const pose = new THREE.Box3();
+  model.root.traverseVisible((object) => {
+    if (object.isMesh) pose.union(new THREE.Box3().setFromObject(object, true));
+  });
   for (const axis of ['x', 'y']) {
-    assert.ok(fit.min[axis] <= swept.min[axis] && fit.max[axis] >= swept.max[axis], axis);
+    assert.ok(fit.min[axis] <= pose.min[axis] && fit.max[axis] >= pose.max[axis], axis);
   }
-  assert.ok(fit.max.x - fit.min.x < 1.02 * (swept.max.x - swept.min.x));
+  assert.ok(fit.min.y <= swept.min.y && fit.max.y >= swept.max.y, 'y');
+  assert.ok(fit.max.x - fit.min.x < 0.85 * (swept.max.x - swept.min.x));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
 

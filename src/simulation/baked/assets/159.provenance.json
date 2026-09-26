@@ -65,7 +65,7 @@
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/solids.js",
-      "sha256": "37e2a4953e8fd3e1f0a1df7965265a03cb06f8321400137b7c2f4bbda75179b3"
+      "sha256": "81dcf25b0284ebf09519fa8a19e5b5153354c6b01dfd026699c998df577bcf81"
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/ideal-cord-shape.js",
@@ -86,6 +86,6 @@
   ],
   "assumptions": "Native ideal massless cord and passive treadle; slack shape is a length-preserving geometric illustration, not finite-rope vibration.",
   "samples": 3343,
-  "bytes": 524411,
-  "sha256": "3d435e26ea71016c89a174e4f6e26994472ea2c4c9e4556d9838b7fac0eba1b6"
+  "bytes": 507529,
+  "sha256": "72984c0a2f9654bf8be4052c8934ef3f0831823d4ba5896113b75bd058520f97"
 }

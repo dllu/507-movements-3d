@@ -7,7 +7,7 @@ import {plate, poly, circle, capsule, polygonClipping as clip} from './finite-pl
 // Brown's short link hangs from a pin on C down to the top of A'; it is
 // fixed to C (the second arm of the elbow) and is the face that the rack's
 // upper lug roller loads on approach and that carries it over the corner.
-export const selectorGeometry = Object.freeze({radius:2,halfWidth:.075,endAngle:-.9,restAngle:-.10,rollerRadius:.10,lugX:-.12,lugAboveGuide:.30,linkPin:[-.06,-.62],linkEnd:[-.48,-1.50]});
+export const selectorGeometry = Object.freeze({radius:2,halfWidth:.075,endAngle:-.85,restAngle:-.10,rollerRadius:.10,lugX:-.12,lugAboveGuide:.30,linkPin:[-.06,-.62],linkEnd:[-.48,-1.50]});
 const {radius:R,halfWidth:w,endAngle:end,restAngle:rest,rollerRadius:r}=selectorGeometry;
 const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
 export function selectorClosestPoint(q,angle){
@@ -52,7 +52,13 @@ export function installWeightedRackSelector(root){
  for(let i=1;i<=32;i++){const a=end-Math.PI*i/32;points.push([tip[0]+w*Math.cos(a),tip[1]+w*Math.sin(a)]);}
  for(let i=159;i>=0;i--){const a=end*i/160;points.push([-R+(R-w)*Math.cos(a),(R-w)*Math.sin(a)]);}
  const old=b.elbowLever.children[0];old.geometry.dispose();
- old.geometry=plate(clip.difference(clip.union(poly(points),poly(circle([0,0],.19,64)),capsule(selectorGeometry.linkPin,selectorGeometry.linkEnd,w,32)),poly(circle([0,0],.134,64))),.23,.37);
+ // The link is one plate with C's arm: a web fills the narrow gap between
+ // the arm and the link, so C reads as one broad curved arm with the link's
+ // edge as its working face, not as a fork.
+ const [pinX,pinY]=selectorGeometry.linkPin,[endX,endY]=selectorGeometry.linkEnd,web=[[pinX,pinY],[endX,endY]];
+ const arcAtY=y=>{const phi=Math.asin(y/R);return[-R+R*Math.cos(phi),y];};
+ for(let i=0;i<=32;i++)web.push(arcAtY(endY+(pinY-endY)*i/32));
+ old.geometry=plate(clip.difference(clip.union(poly(points),poly(circle([0,0],.19,64)),capsule(selectorGeometry.linkPin,selectorGeometry.linkEnd,w,32),poly(web)),poly(circle([0,0],.134,64))),.23,.37);
  old.userData.role='closed-curved-selector-C-with-rounded-entry-and-bored-pivot';
  const linkPinCap=new T.Mesh(new T.CylinderGeometry(.07,.07,.04,32),b.leverContactIndex.material.clone());linkPinCap.material.color.set(0x252a2d);linkPinCap.rotation.x=Math.PI/2;linkPinCap.position.set(...selectorGeometry.linkPin,.39);linkPinCap.userData.role='pin-joining-short-link-to-elbow-lever-C';b.elbowLever.add(linkPinCap);
  const add=(geometry,material,role,parent=b.rightRack)=>{const o=new T.Mesh(geometry,material);o.userData.role=role;parent.add(o);return o;};

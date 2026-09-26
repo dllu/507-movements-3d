@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import {
   PALETTE,
-  makeBeam,
   markShadows,
   matte,
 } from './primitives.js';
@@ -538,73 +537,9 @@ function beveledDiskInclinedFollower(movement) {
     root.add(guide);
     return guide;
   });
-  const guideBackingStart = followerGuides[0].position.clone();
-  const guideBackingEnd = followerGuides.at(-1).position.clone();
-  guideBackingStart.z = -0.72;
-  guideBackingEnd.z = -0.72;
-  const guideBackingRail = makeBeam(
-    guideBackingStart,
-    guideBackingEnd,
-    { color: PALETTE.frame, depth: 0.24, thickness: 0.15 },
-  );
-  guideBackingRail.userData.role = 'fixed-backing-rail-for-inclined-guides';
-  root.add(guideBackingRail);
-  const guideBrackets = followerGuides.map((guide, index) => {
-    const bracket = makeBeam(
-      guide.position.clone().setZ(-0.72),
-      guide.position.clone().setZ(-0.24),
-      { color: PALETTE.frame, depth: 0.18, thickness: 0.13 },
-    );
-    bracket.userData.index = index;
-    bracket.userData.role = 'fixed-bracket-from-backing-rail-to-rod-guide';
-    root.add(bracket);
-    return bracket;
-  });
-
-  // The backing rail stands on the base through one plain upright behind the
-  // lower guide, clear of the disk and the shaft.
-  const guideRiser = makeBeam(
-    guideBackingStart.clone().setY(-2.58),
-    guideBackingStart.clone(),
-    { color: PALETTE.frame, depth: 0.24, thickness: 0.15 },
-  );
-  guideRiser.userData.role = 'fixed-upright-from-base-to-guide-backing-rail';
-  root.add(guideRiser);
-
-  const bearingPositions = [-2.28, 2.28];
-  const shaftBearings = bearingPositions.map((x, index) => {
-    const bearing = sleeveAlongDirection({
-      direction: X_AXIS,
-      innerRadius: shaftRadius + 0.025,
-      length: 0.46,
-      material: frameMaterial,
-      outerRadius: 0.34,
-      role: 'fixed-bearing-for-horizontal-cam-shaft',
-    });
-    bearing.position.x = x;
-    bearing.userData.index = index;
-    root.add(bearing);
-    return bearing;
-  });
-  const baseRail = makeBeam(
-    new THREE.Vector3(-2.88, -2.58, -0.72),
-    new THREE.Vector3(2.88, -2.58, -0.72),
-    { color: PALETTE.frame, depth: 0.3, thickness: 0.18 },
-  );
-  baseRail.userData.role = 'fixed-base-beneath-beveled-cam';
-  root.add(baseRail);
-  const bearingPosts = shaftBearings.map((bearing, index) => {
-    const post = makeBeam(
-      new THREE.Vector3(bearing.position.x, -2.58, -0.72),
-      // The post meets the bearing's underside, clear of the shaft.
-      new THREE.Vector3(bearing.position.x, -0.26, -0.1),
-      { color: PALETTE.frame, depth: 0.25, thickness: 0.17 },
-    );
-    post.userData.index = index;
-    post.userData.role = 'fixed-post-supporting-cam-shaft-bearing';
-    root.add(post);
-    return post;
-  });
+  // Brown draws only the two guide stations on the rod and a bare shaft: no
+  // base, posts, shaft bearings, backing rail or brackets (p62 support rule).
+  // The guides and the shaft axis are fixed ideal constraints.
   const contactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.07, 20, 14),
     whiteMaterial,
@@ -614,8 +549,6 @@ function beveledDiskInclinedFollower(movement) {
 
   root.userData.archetype = movement.archetype;
   root.userData.blocks = {
-    baseRail,
-    bearingPosts,
     camAssembly,
     camBody,
     camRotor,
@@ -624,18 +557,14 @@ function beveledDiskInclinedFollower(movement) {
     follower,
     followerGuides,
     followerRod,
-    guideBackingRail,
-    guideBrackets,
-    guideRiser,
     hub,
     frontHub,
     rotationIndex,
     shaft,
-    shaftBearings,
     translationIndex,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.85, -2.82, -2.12),
+    new THREE.Vector3(-4.85, -2.3, -2.12),
     new THREE.Vector3(2.95, 4.35, 2.12),
   );
   root.userData.geometry = {
@@ -763,12 +692,6 @@ function beveledDiskInclinedFollower(movement) {
         index,
         radialClearance: guideRunningClearance,
         rotationError: 0,
-      })),
-      shaftBearings: shaftBearings.map((bearing, index) => ({
-        axis: X_AXIS.clone(),
-        center: bearing.position.clone(),
-        index,
-        radialClearance: bearing.userData.innerRadius - shaftRadius,
       })),
     };
     root.userData.kinematics = state;

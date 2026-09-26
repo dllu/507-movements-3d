@@ -168,7 +168,6 @@ function sourceHandGear(movementId) {
 
   // Back-weight rods hang from the eyes and run on past the plate edge.
   const weightRods = {};
-  const weightHeight = 0.55;
   for (const [name, body] of [['upper', upper], ['lower', lower]]) {
     const group = new THREE.Group();
     group.userData.role = `${name}-back-weight-rod-hanging-from-eye`;
@@ -181,14 +180,12 @@ function sourceHandGear(movementId) {
     pin.rotation.x = Math.PI / 2;
     pin.position.z = (eyeZ[1] + layers.rods[1]) / 2;
     pin.userData.role = `${name}-back-weight-rod-eye-pin`;
-    // The back weight itself hangs on the rod's lower end, just past the view.
-    const weight = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, weightHeight, 40), materials.pin);
-    weight.position.z = rod.position.z;
-    weight.userData.role = `${name}-back-weight`;
-    weight.userData.runsPastCrop = true;
-    group.add(rod, pin, weight);
+    // Brown draws no weight: the rod runs straight out of the picture and
+    // ends cleanly below the view in every pose (the back-weight load is an
+    // implied, undrawn limit).
+    group.add(rod, pin);
     root.add(group);
-    weightRods[name] = { group, rod, pin, weight, eye: body.eye, pivot: body.pivot, length: 1 };
+    weightRods[name] = { group, rod, pin, eye: body.eye, pivot: body.pivot, length: 1 };
     blocks[`${name}WeightRod`] = rod;
     blocks[`${name}WeightPin`] = pin;
   }
@@ -218,12 +215,11 @@ function sourceHandGear(movementId) {
       const e = eyeAt(w, name === 'upper' ? s.upperAngle : s.lowerAngle), m = toModel(e);
       // 183's rods hang down the page; 184's run the other way in the
       // unreflected frame, so they hang down in the reflected view. Each rod
-      // has a fixed length, so its weight rises and falls with the eye.
+      // has a fixed length and rises and falls with the eye.
       const length = w.length;
       w.group.position.set(m[0], m[1], 0);
       w.rod.scale.y = length;
       w.rod.position.y = -sgn * length / 2;
-      w.weight.position.y = -sgn * (length + weightHeight / 2);
     }
     root.userData.kinematics = s;
   };
@@ -287,10 +283,11 @@ function sourceHandGear(movementId) {
       }
     }
     const fit = root.userData.cameraFitBounds;
-    // Weight rods end just below the view at the plate pose.
-    for (const [name, w] of Object.entries(weightRods)) w.length = eyeView[name][0] - (fit.min.y - 0.35);
+    // Weight rods end below the view in every pose, even when the eye is
+    // at its highest.
+    for (const [name, w] of Object.entries(weightRods)) w.length = Math.max(...eyeView[name]) - (fit.min.y - 0.35);
     const lowestWeight = Math.min(...Object.entries(weightRods).map(([name, w]) =>
-      Math.min(...eyeView[name]) - w.length - weightHeight));
+      Math.min(...eyeView[name]) - w.length));
     const tvMin = Math.min(...tappetView), tvMax = Math.max(...tappetView);
     const guideY = fit.max.y + 0.7, glandY = lowestWeight - 0.35, floorY = glandY - (tvMax - tvMin) - 1.4;
     const above = guideY + 0.35 - tvMin, below = tvMax - (glandY - 0.45);

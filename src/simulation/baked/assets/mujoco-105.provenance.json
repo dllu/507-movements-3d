@@ -4,24 +4,24 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-105.json.gz",
-  "bytes": 12217,
-  "assetSha256": "6793bf8bacee987951ceb08144916a6ed8946175344f4143b7a39d6cf27eeb2e",
+  "bytes": 6971,
+  "assetSha256": "167747e8cb3c70d2d2682d89e897e936da3320228e9bde335033d371106e7ad7",
   "motionSources": {
-    "src/simulation/mujoco-screw-press/physics.js": "3d0f556f7ada3fa8b1282fadf0f1709ef2252da6a39bb8c4020b89a58577c857",
-    "src/simulation/mujoco-screw-press/profile.js": "c6364dafafb802c7ae3221127d05fe043b6025f1ea8a233971153656d577bb6a",
+    "src/simulation/mujoco-screw-press/physics.js": "ebd40022f7d854afd2094857c9b41f3c12d0ed8c71797f0cc2b153c240fd7317",
+    "src/simulation/mujoco-screw-press/profile.js": "b65b400c4bdabba863850de38a9bbdd24933f6cedab83954ec2fc32749a01c4d",
     "src/simulation/mujoco-screw-press/source.js": "781c6bd06982f835ebeaf2ea38bef56563d4b9f12c6ec82daff0164b7d5e9ae5",
-    "src/simulation/mujoco-screw-press/visual.js": "515294dad266c53bb943e1d2e48c4d94ebf25a4a4f7e94882fa00968b5c3822d",
+    "src/simulation/mujoco-screw-press/visual.js": "234603ef7fbde73db9a4d200920a17089a06622fbbb632bb7fcd05b1506f69ee",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-screw-press/geometry.js": "9d1000e88d10a2b976447ef370ed3c1f216aed61df6114775f514e4588a4c4fe",
+    "src/simulation/mujoco-screw-press/geometry.js": "e8810990ea378c16b1e2b9a6d9d45ed7eb28b66029acf840a65292a11dbef7db",
     "src/simulation/mujoco-screw-press/section.js": "2d501318a0fb563795849b26d02d93358a0a0c8e2be13e35931b9bb883e386d4"
   },
   "physicsXmlSha256": {
-    "default": "26bafde8587db47eade603622d2c496ab1e18843ffd90ac4cb74b2aedb0b581e"
+    "default": "6f18fe90b64993193447dfa344589750467a009397f43d3d5eba78d55e48a0fd"
   },
   "fullXmlSha256": {
-    "default": "ba85d539a052ddef87c91a1d513d40926f44e774716956aba65351bf17f07d64"
+    "default": "8bfa75b9cbcf1a92822bbd1862dbbe0da22d918102705d7aae50cbb84cfef8a6"
   },
   "config": {
     "sampleRate": 60,
@@ -58,16 +58,16 @@
           }
         ]
       },
-      "roundTripPixels": 0.0000059978168413034605,
+      "roundTripPixels": 0.004863153301653204,
       "seam": {
-        "seamStepPixels": 0.15235861303277334,
-        "interiorStepPixels": 7.5716337931005055,
-        "seamSecondPixels": 0.09515461583590108,
-        "interiorSecondPixels": 0.9201554261074407
+        "seamStepPixels": 0.14893948507702504,
+        "interiorStepPixels": 7.571267656565027,
+        "seamSecondPixels": 0.09929719888950876,
+        "interiorSecondPixels": 0.9243329837534755
       }
     }
   },
   "extras": [],
   "removed": [],
-  "bakeSeconds": 1.4402339820861816
+  "bakeSeconds": 1.4802809257507323
 }

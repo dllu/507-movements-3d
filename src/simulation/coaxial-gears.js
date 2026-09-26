@@ -27,20 +27,11 @@ export function makeCoaxialDifferentSpeeds({ gearALoadPhase = 0.000928, gearCLoa
   gearC.position.z = p.ringZ; root.add(gearC);
   const turned = (profile, boreRadius, color) => new THREE.Mesh(turnedClutchGeometry(profile, { boreRadius, angularSegments: 192, color }),
     new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.6, metalness: 0.16 }));
-  // Brown draws C's flat web face white, like every flat face on the plate.
-  // A spoked web behind the gears keeps C one real, lit body while leaving
-  // windows so A and B still read when the model is turned round.
-  const webBack = -0.23 - p.ringZ, webFront = p.backplateFront - p.ringZ, webRim = 1.80, webHub = 0.45, armHalf = 0.09, arms = 6;
+  // Brown draws C's interior blank: one plain flat web face behind the gears,
+  // with no arms or windows, keeps C a single real, lit body.
+  const webBack = -0.23 - p.ringZ, webFront = p.backplateFront - p.ringZ;
   const webShape = new THREE.Shape(); webShape.absarc(0, 0, p.outerRadius, 0, 2 * Math.PI, false);
   const bore = new THREE.Path(); bore.absarc(0, 0, 0.263, 0, 2 * Math.PI, true); webShape.holes.push(bore);
-  for (let i = 0; i < arms; i += 1) {
-    const a0 = 2 * Math.PI * i / arms, a1 = 2 * Math.PI * (i + 1) / arms;
-    const outer0 = a0 + Math.asin(armHalf / webRim), outer1 = a1 - Math.asin(armHalf / webRim);
-    const inner0 = a0 + Math.asin(armHalf / webHub), inner1 = a1 - Math.asin(armHalf / webHub);
-    const windowPath = new THREE.Path(); windowPath.moveTo(webHub * Math.cos(inner0), webHub * Math.sin(inner0));
-    windowPath.absarc(0, 0, webHub, inner0, inner1, false); windowPath.lineTo(webRim * Math.cos(outer1), webRim * Math.sin(outer1));
-    windowPath.absarc(0, 0, webRim, outer1, outer0, true); windowPath.closePath(); webShape.holes.push(windowPath);
-  }
   const backplate = new THREE.Mesh(new THREE.ExtrudeGeometry(webShape, { depth: webFront - webBack, bevelEnabled: false, curveSegments: 96 })
     .translate(0, 0, webBack), matte(PALETTE.accent));
   const sleeve = turned([[-0.56 - p.ringZ, 0.267], [-0.56 - p.ringZ, 0.35], [-0.18 - p.ringZ, 0.35], [-0.18 - p.ringZ, 0.267]], 0.267, PALETTE.brass);
