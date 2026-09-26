@@ -10,7 +10,9 @@ const mujoco=await loadMujoco();
 test('113 has closed shallow involute teeth and rollers separated from the rack in depth',()=>{
  const v=makeRackPinionGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,20);
+  assert.equal(Object.keys(u.parts).length,9);
+  // p60 support policy: Brown draws no stands, guides or back bars here.
+  assert.deepEqual(Object.keys(u.parts).filter(n=>/Guide|Pillar|Foot|Bearing|BackBar|Post|Clip|Strap|TieBar/.test(n)),[]);
   for(const [name,m]of Object.entries(u.parts)){const s=inspectWeightedClutchSolid(m.geometry);assert(s.volume>0,name);assert.equal(s.components,1,name);assert.equal(s.unmatchedEdges+s.degenerate+s.nonfinite+s.wrongNormals,0,name);}
   assert.equal(u.parts.pinion.geometry.userData.teeth,15);assert.equal(u.parts.pinion.geometry.userData.addendum,.8);
   u.parts.rack.geometry.computeBoundingBox();for(const n of ['leftRoller','rightRoller']){u.parts[n].geometry.computeBoundingBox();assert(u.parts[n].geometry.boundingBox.min.z>u.parts.rack.geometry.boundingBox.max.z);}

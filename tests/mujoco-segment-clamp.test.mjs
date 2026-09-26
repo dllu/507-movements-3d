@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from 'three';
 import loadMujoco from '@mujoco/mujoco';
-import {makeSegmentClampGeometry} from '../src/simulation/mujoco-segment-clamp/geometry.js';
+import {makeSegmentClampGeometry,jawTips} from '../src/simulation/mujoco-segment-clamp/geometry.js';
 import {makeMujocoSegmentClamp} from '../src/simulation/mujoco-segment-clamp/visual.js';
 import {inspectWeightedClutchSolid} from '../scripts/lib/weighted-clutch-solid-audit.mjs';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
@@ -54,7 +54,7 @@ test('120 a long stroke closes against native jaw contact and reopens over two c
    assert.equal(p.data.qfrc_actuator[1],0);assert.equal(p.data.qfrc_actuator[2],0);
    error=Math.max(error,100*Math.abs(q[1]+f.externalRatio*q[0])*f.externalTeeth*f.externalModule/2,100*Math.abs(q[2]-f.internalRatio*q[0])*f.internalTeeth*f.internalModule/2);
    const cs=p.data.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{penetration=Math.max(penetration,-100*c.dist);const pair=Array.from(c.geom).map(id=>p.geomGroups[id]).sort().join('/');if(pair==='leftJaw/rightJaw')jawCycles.add(Math.floor(p.data.time/5));else gearPairs.add(pair);}finally{c.delete();}}}finally{cs.delete();}
-   if(Math.abs(p.data.time-2.5)<1e-8||Math.abs(p.data.time-7.5)<1e-8){assert(q[0]>1.68&&q[0]<1.72);assert(p.data.qfrc_actuator[0]>7.9);}
+   if(Math.abs(p.data.time-2.5)<1e-8||Math.abs(p.data.time-7.5)<1e-8){assert(q[0]>1.50&&q[0]<1.53);assert(p.data.qfrc_actuator[0]>7.9);}
   }
   assert.deepEqual([...jawCycles],[0,1]);assert.equal(gearPairs.size,2);assert(Math.abs(p.data.qpos[0])<.01);assert(error<.15);assert(penetration<.05);
   t.diagnostic(JSON.stringify({maximumRollingErrorPixels:error,maximumPenetrationPixels:penetration}));
@@ -73,11 +73,24 @@ test('120 default stroke closes the jaws against native contact with both segmen
   }
   // The jaws meet in every cycle and stop the shaft short of its command; the
   // pinions stay inside both working tooth arcs throughout.
-  assert.deepEqual([...jawCycles],[0,1]);assert(input>1.68&&input<1.72);
+  assert.deepEqual([...jawCycles],[0,1]);assert(input>1.50&&input<1.53);
   const deg=Math.PI/180,marginExternal=Math.min(pinion-(-123*deg-external),-39*deg-external-pinion),marginInternal=Math.min(pinion-(-119*deg+internal),-61*deg+internal-pinion);
   assert(marginExternal>15*deg);assert(marginInternal>5*deg);
   assert.equal(pairs.size,2);assert(error<.15);assert(Math.abs(p.data.qpos[0])<.01);
   t.diagnostic(JSON.stringify({externalDegrees:external/deg,internalDegrees:internal/deg,marginExternal:marginExternal/deg,marginInternal:marginInternal/deg,maximumRollingErrorPixels:error}));
+ }finally{v.dispose();}
+});
+
+test('120 closed jaws meet point to point without crossing',t=>{
+ const v=makeMujocoSegmentClamp(mujoco),u=v.root.userData,local=([x,y])=>new THREE.Vector3((x-u.source.axis[0])/100,(u.source.axis[1]-y)/100,0),[left,right]=jawTips().map(local);
+ try{
+  let closest=Infinity;
+  for(let i=1;i<=300;i++){v.update(i/60);const l=left.clone().applyMatrix4(u.blocks.external.matrixWorld),r=right.clone().applyMatrix4(u.blocks.internal.matrixWorld);
+   // The left point never passes to the right of the right point.
+   assert(r.x-l.x>-.002,'jaw points cross at '+(i/60));closest=Math.min(closest,l.distanceTo(r));}
+  v.update(2.5);const l=left.clone().applyMatrix4(u.blocks.external.matrixWorld),r=right.clone().applyMatrix4(u.blocks.internal.matrixWorld);
+  assert(100*l.distanceTo(r)<.5);assert(Math.abs(Math.hypot(...jawTips()[0].map((q,i)=>q-u.source.axis[i]))-Math.hypot(...jawTips()[1].map((q,i)=>q-u.source.axis[i])))<1e-9);
+  t.diagnostic(JSON.stringify({closedPointGapPixels:100*l.distanceTo(r),closestPixels:100*closest}));
  }finally{v.dispose();}
 });
 

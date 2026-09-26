@@ -25,11 +25,14 @@ export function correctGasMeterParts(root,id,update) {
   const headMaterial=b.drumShell.material.clone();headMaterial.opacity=.08;headMaterial.depthWrite=false;
   b.drumHeads=[];
   for(const[slots,z]of[[b.rearInletSlots,-.52],[b.frontOutletSlots,.52]]){
-   const holes=slots.map(o=>{const p=o.geometry.parameters,a=o.rotation.z;return poly([[-p.width/2,-p.height/2],[p.width/2,-p.height/2],[p.width/2,p.height/2],[-p.width/2,p.height/2]].map(([x,y])=>[o.position.x+x*Math.cos(a)-y*Math.sin(a),o.position.y+x*Math.sin(a)+y*Math.cos(a)]));});
+   // Gas enters each chamber B through the hooked mouth of its partitions
+   // round pipe a, so the rear head is whole (its old slots read as loose
+   // chips); the front head keeps its peripheral outlets.
+   const holes=z<0?[]:slots.map(o=>{const p=o.geometry.parameters,a=o.rotation.z;return poly([[-p.width/2,-p.height/2],[p.width/2,-p.height/2],[p.width/2,p.height/2],[-p.width/2,p.height/2]].map(([x,y])=>[o.position.x+x*Math.cos(a)-y*Math.sin(a),o.position.y+x*Math.sin(a)+y*Math.cos(a)]));});
    const head=add(b.drum,plate(clip.difference(poly(circle([0,0],g.drumRadiusSceneUnit,128)),poly(circle([0,0],.34,64)),...holes),z-.025,z+.025),headMaterial,'finite-ported-drum-head');b.drumHeads.push(head);
    for(const o of slots)o.visible=false;
   }
-  for(const group of b.partitions)for(const o of group.children){const p=o.geometry.parameters;replace(o,new THREE.BoxGeometry(p.width,p.height,1.0));}
+  for(const group of b.partitions)for(const o of group.children){if(o.geometry.type!=='BoxGeometry')continue;const p=o.geometry.parameters;replace(o,new THREE.BoxGeometry(p.width,p.height,1.0));}
   replace(b.rearCaseHead,plate(clip.difference(poly(circle([0,0],g.caseRadiusSceneUnit,128)),poly(circle([0,0],.12,64))),-.025,.025));
  } else if(id===482){
   // Complete finite rectangular mercury channels; liquid remains an envelope.

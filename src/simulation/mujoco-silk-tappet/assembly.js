@@ -11,10 +11,26 @@ import {disposeObject3D} from '../dispose-model.js';
 export function makeSilkTraverseAssembly(bundle) {
  const root=new THREE.Group(),parts={},families={},contact=makeSilkTappetSolids(bundle.parameters);
  const center=[202,283],scale=bundle.parameters.station/Math.hypot(160,96),angle=Math.atan2(96,160);
- const startTime=(.3-.025)/bundle.parameters.speed,start=sampleSilkTappetMotion(bundle,startTime);
+ // The source pose is taken on the second carrier turn (the first holds the
+ // recording's startup), so the looped run below passes through it.
+ const revolution=2*Math.PI/bundle.parameters.speed;
+ const startTime=(.3-.025)/bundle.parameters.speed+revolution,start=sampleSilkTappetMotion(bundle,startTime);
  const phase=angle-start.carrier,screwZ=.23,lead=.12;
  const nutInitial=(-43*Math.cos(angle)-27*Math.sin(angle))*scale;
- const g={center,scale,angle,startTime,phase,screwZ,lead,nutInitial,duration:bundle.duration-startTime};
+ // Loop: seventeen recorded carrier turns from a rest pose with the carrier
+ // opposite the tappet (mid-dwell), easing up from rest and back down to it;
+ // then, with the carrier at rest and the tappet far from the star wheel, the
+ // screw is wound back by hand through the seventeen teeth it was indexed, so
+ // the nut returns to its start. The wind-back is a reconstructed reset, not
+ // recorded dynamics; the cycle repeats without a jump.
+ const restTime=(Math.PI-bundle.parameters.start)/bundle.parameters.speed,runTurns=17,runEnd=restTime+runTurns*revolution,
+  ease=1.5,rewind=4.5,runDisplay=runEnd-restTime+ease,cycle=runDisplay+rewind;
+ if(runEnd>bundle.duration)throw new RangeError('173 run exceeds the recording');
+ const g={center,scale,angle,startTime,phase,screwZ,lead,nutInitial,duration:cycle,restTime,runTurns,runEnd,ease,rewind,runDisplay};
+ const easedRun=u=>{const r=w=>w/2-ease/(2*Math.PI)*Math.sin(Math.PI*w/ease);
+  if(u<ease)return r(Math.max(0,u));if(u>runDisplay-ease)return runEnd-restTime-r(Math.max(0,runDisplay-u));return u-ease/2;};
+ const smootherStep=x=>{const t=Math.max(0,Math.min(1,x));return t*t*t*(10-15*t+6*t*t);};
+ const displayOffset=startTime-restTime+ease/2;
  const raster=p=>[(p[0]-center[0])*scale,(center[1]-p[1])*scale];
  const sourcePoly=points=>poly(points.map(raster));
  const add=(name,geometry,color,family,parent=root)=>{
@@ -76,17 +92,19 @@ export function makeSilkTraverseAssembly(bundle) {
  const bar=add('tappetArm',new THREE.BoxGeometry(supportEnd[0]-tip.x,.06,.08),PALETTE.frame,'fixed');bar.position.set((supportEnd[0]+tip.x)/2,tip.y,1.1);
  add('tappetSupport',plate(sourcePoly([[406,151],[545,151],[545,391],[520,391],[520,199],[406,199]]),1.02,1.18),PALETTE.frame,'fixed');
  const stateAtTime=time=>{
-  // Repeat the finite adjustment; each replay resets the nut to its source pose.
-  const playbackTime=((time%g.duration)+g.duration)%g.duration;
-  const q=sampleSilkTappetMotion(bundle,startTime+playbackTime);
+  const c=(((time+displayOffset)%cycle)+cycle)%cycle;
+  let q;
+  if(c<=runDisplay)q=sampleSilkTappetMotion(bundle,restTime+easedRun(c));
+  else{const end=sampleSilkTappetMotion(bundle,runEnd),first=sampleSilkTappetMotion(bundle,restTime);
+   q={carrier:end.carrier,wheel:end.wheel-(end.wheel-first.wheel)*smootherStep((c-runDisplay)/rewind)};}
   const a=phase+q.carrier,station=nutInitial-(q.wheel-start.wheel)*lead/(2*Math.PI);
   return {...q,angle:a,nutStation:station,wrist:[station*Math.cos(a),station*Math.sin(a)],time};
  };
  const update=time=>{const s=stateAtTime(time);contact.update(s);screw.rotation.z=s.wheel;
   nut.position.x=s.nutStation;yoke.position.x=s.wrist[0];root.userData.kinematics=s;root.updateMatrixWorld(true);};
- Object.assign(root.userData,{parts,families,geometry:g,stateAtTime,cameraFov:8,hideGround:true,supportsRestart:true,materialsIgnoreSceneFog:true,
+ Object.assign(root.userData,{parts,families,geometry:g,stateAtTime,cameraFov:8,hideGround:true,materialsIgnoreSceneFog:true,
   animationTiming:{authoredCyclePeriod:g.duration,displayCycleDuration:g.duration,playbackTimeScale:1},
-  reconstructionNote:'The tappet indexes the screw and gradually changes the traverse. At the end of its finite adjustment, playback restarts from the initial nut position.',
+  reconstructionNote:'The tappet indexes the screw and gradually changes the traverse. After seventeen carrier turns the carrier comes to rest away from the tappet and the screw is wound back by hand to the starting nut position before the carrier starts again; this wind-back is a reconstructed reset.',
   mechanism:'tappet-indexed-silk-traverse',fidelity:'authored',simulationBackend:'baked-mujoco',reconstructionStatus:'reconstructed'});
  update(0);const bounds=new THREE.Box3();for(let i=0;i<=128;i++){update(g.duration*i/128);bounds.union(new THREE.Box3().setFromObject(root));}update(0);
  root.userData.cameraFitBounds=bounds.clone().expandByScalar(.08);

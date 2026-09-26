@@ -1,0 +1,188 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import * as THREE from 'three';
+import { readFileSync } from 'node:fs';
+import { createMovementModel } from '../src/simulation/registry.js';
+import { polygonClipping } from '../src/simulation/finite-plate-geometry.js';
+import { placeFlat, toFlat } from '../src/simulation/plate-escapement-kit.js';
+
+const catalog = JSON.parse(readFileSync(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
+
+// Movements 288-296 are flat extruded parts traced from Brown's plates; the
+// escape wheel is solved from contact with those very outlines.
+const ids = [288, 289, 290, 291, 292, 293, 294, 295, 296];
+const models = new Map(ids.map((id) => [id, createMovementModel(catalog.movements[id - 1])]));
+
+const ring = (flat) => {
+  const points = [];
+  for (let i = 0; i < flat.length; i += 2) points.push([flat[i], flat[i + 1]]);
+  points.push(points[0]);
+  return points;
+};
+const area = (multi) => multi.reduce((sum, polygon) => sum + polygon.reduce((acc, r, k) => {
+  let a = 0;
+  for (let i = 0; i + 1 < r.length; i += 1) a += r[i][0] * r[i + 1][1] - r[i + 1][0] * r[i][1];
+  return acc + (k === 0 ? 1 : -1) * Math.abs(a / 2);
+}, 0), 0);
+
+test('288-296 each advance exactly one tooth (or stud pair) per oscillation with no jam', () => {
+  for (const [id, model] of models) {
+    const s = model.root.userData.solution;
+    assert.equal(model.root.userData.fidelity, 'authored', `${id}`);
+    assert.equal(s.failed, false, `${id} failed`);
+    assert.equal(s.unresolved, 0, `${id} unresolved contacts`);
+    assert.ok(Math.abs(s.advance - s.expected) < s.pitch * 1e-3, `${id} advance ${s.advance / s.pitch} pitch`);
+    // No teleporting: each solver step moves the wheel less than a tenth of a pitch.
+    for (let i = 1; i <= s.stepsPerPeriod; i += 1) {
+      assert.ok(Math.abs(s.angles[i] - s.angles[i - 1]) < s.pitch / 10, `${id} step ${i}`);
+    }
+    // Some locking/resting and some motion in every cycle.
+    assert.ok(s.states.some((state) => state === 3 || state === 1), `${id} has contact`);
+  }
+});
+
+test('288-296 wheel outlines never overlap the escapement outlines they work against', () => {
+  for (const [id, model] of models) {
+    const d = model.root.userData;
+    const { pivot, wheelCenter, wheelCells, pieces, pieceLayers } = d.contactOutlines;
+    const k = d.kinematics;
+    let worst = 0;
+    for (let i = 0; i < 97; i += 1) {
+      const t = k.period * i / 96;
+      const wheelPose = { x: wheelCenter[0], y: wheelCenter[1], angle: k.wheelAngle(t) };
+      const rockerPose = { x: pivot[0], y: pivot[1], angle: k.rockerAngle(t) };
+      pieces.forEach((piece, n) => {
+        const obstacle = ring(placeFlat(piece, rockerPose));
+        for (const cell of wheelCells) {
+          if ((cell.layer ?? 0) !== pieceLayers[n]) continue;
+          const placed = ring(placeFlat(toFlat(cell.points), wheelPose));
+          worst = Math.max(worst, area(polygonClipping.intersection([placed], [obstacle])));
+        }
+      });
+    }
+    // The table is linearly interpolated between solver steps; allow a
+    // sliver of area far below any visible overlap.
+    assert.ok(worst < 5e-5, `${id} overlap area ${worst}`);
+  }
+});
+
+test('flat escapements keep wheel and anchor/frame/lever in one drawn plane without hidden pieces', () => {
+  for (const id of [288, 289, 290, 296]) {
+    const d = models.get(id).root.userData;
+    const zRange = (object) => new THREE.Box3().setFromObject(object);
+    const rockerMeshes = d.blocks.rocker.children.filter((child) => child.isMesh);
+    assert.equal(rockerMeshes.length, 1, `${id}: the escapement part is one extrusion`);
+    const wheelMeshes = d.blocks.wheelRotor.children.filter((child) => child.isMesh);
+    assert.equal(wheelMeshes.length, 1, `${id}: the wheel is one extrusion`);
+    const a = zRange(rockerMeshes[0]);
+    const b = zRange(wheelMeshes[0]);
+    assert.ok(Math.abs(a.min.z - b.min.z) < 1e-9 && Math.abs(a.max.z - b.max.z) < 1e-9, `${id}: same plane`);
+  }
+});
+
+test('wheel directions follow the plates: 288 and 289 counterclockwise; 290, 291, 292, 293, 295 and 296 clockwise', () => {
+  const expectation = { 288: 1, 289: 1, 290: -1, 291: -1, 292: -1, 293: -1, 294: -1, 295: -1, 296: -1 };
+  for (const [id, model] of models) {
+    const k = model.root.userData.kinematics;
+    const change = k.wheelAngle(k.period * 4) - k.wheelAngle(0);
+    assert.equal(Math.sign(change), expectation[id], `${id} direction`);
+  }
+});
+
+test('288 teeth have radial leading faces on the counterclockwise side (tips lead)', () => {
+  const cells = models.get(288).root.userData.contactOutlines.wheelCells;
+  const [root, tip, , back] = cells[0].points.map(([x, y]) => ({ a: Math.atan2(y, x), r: Math.hypot(x, y) }));
+  assert.ok(Math.abs(root.a - tip.a) < 1e-9, 'leading face radial');
+  assert.ok(tip.r > root.r && back.r < tip.r, 'tooth rises from root to tip');
+  const behind = Math.atan2(Math.sin(back.a - tip.a), Math.cos(back.a - tip.a));
+  assert.ok(behind < 0, 'the sloped back trails clockwise of the tip');
+});
+
+test('290 pallets are two equal plain rectangles, symmetric about the frame', () => {
+  const pieces = models.get(290).root.userData.contactOutlines.pieces.map((flat) => ring(flat).slice(0, -1));
+  assert.equal(pieces.length, 2);
+  for (const piece of pieces) assert.equal(piece.length, 4);
+  const size = (p) => [Math.abs(p[1][0] - p[0][0]), Math.abs(p[2][1] - p[1][1])];
+  const [a, b] = pieces.map(size);
+  assert.ok(Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[1] - b[1]) < 1e-9);
+});
+
+test('294 and 295 are one model seen two ways', () => {
+  const roles = (id) => {
+    const list = [];
+    models.get(id).root.traverse((object) => { if (object.isMesh) list.push(object.userData.role); });
+    return list.sort();
+  };
+  // Presentation removes the wheel for 294 and the near end of the cylinder
+  // for 295; the model beneath is the same.
+  const fresh = (id) => {
+    const model = createMovementModel({ ...catalog.movements[id - 1], id: 295 });
+    const list = [];
+    model.root.traverse((object) => { if (object.isMesh) list.push(object.userData.role); });
+    return list.sort();
+  };
+  assert.deepEqual(fresh(294), fresh(295));
+  assert.ok(roles(294).includes('cylinder-passage-C-with-lips-A-B'));
+  assert.ok(roles(295).includes('cylinder-passage-C-with-lips-A-B'));
+  assert.ok(!roles(294).includes('cylinder-escape-wheel'), '294 shows the cylinder alone');
+  assert.ok(!roles(295).includes('cylinder-upper-end-dome'), '295 is cut at the wheel');
+});
+
+test('cylinder turned parts are shaded smoothly round the axis', () => {
+  const model = createMovementModel(catalog.movements[293]);
+  model.root.traverse((object) => {
+    if (!object.isMesh || !/^cylinder-(upper-end-tube|tube-below-passage)$/.test(object.userData.role)) return;
+    const p = object.geometry.attributes.position;
+    const n = object.geometry.attributes.normal;
+    for (let i = 0; i < p.count; i += 1) {
+      const r = Math.hypot(p.getX(i), p.getY(i));
+      if (r < 0.5 || Math.abs(n.getZ(i)) > 0.5) continue;
+      // Side-wall normals are exactly radial (no facets).
+      const radial = (n.getX(i) * p.getX(i) + n.getY(i) * p.getY(i)) / r;
+      assert.ok(Math.abs(Math.abs(radial) - 1) < 1e-4);
+    }
+  });
+});
+
+test('whole anchor, frame and lever outlines (not only their working ends) clear the whole wheel', () => {
+  for (const id of [288, 289, 290, 296]) {
+    const d = models.get(id).root.userData;
+    const { rocker, wheelRotor } = d.blocks;
+    const rockerOutline = rocker.children.find((child) => child.isMesh).geometry.userData.outline;
+    const wheelOutline = wheelRotor.children.find((child) => child.isMesh).geometry.userData.outline;
+    const k = d.kinematics;
+    const place = (points, x, y, angle) => {
+      const out = points.map(([px, py]) => [x + px * Math.cos(angle) - py * Math.sin(angle), y + px * Math.sin(angle) + py * Math.cos(angle)]);
+      out.push(out[0]);
+      return out;
+    };
+    let worst = 0;
+    for (let i = 0; i < 49; i += 1) {
+      const t = k.period * i / 48;
+      const r = [place(rockerOutline.outer, rocker.position.x, rocker.position.y, k.rockerAngle(t)),
+        ...rockerOutline.holes.map((hole) => place(hole, rocker.position.x, rocker.position.y, k.rockerAngle(t)))];
+      const w = [place(wheelOutline.outer, wheelRotor.position.x, wheelRotor.position.y, k.wheelAngle(t)),
+        ...wheelOutline.holes.map((hole) => place(hole, wheelRotor.position.x, wheelRotor.position.y, k.wheelAngle(t)))];
+      worst = Math.max(worst, area(polygonClipping.intersection([r], [w])));
+    }
+    assert.ok(worst < 2e-5, `${id} whole-outline overlap ${worst}`);
+  }
+});
+
+test('every extruded plate has caps covering exactly its outline (no earcut mis-bridges)', () => {
+  const signed = (r) => { let a = 0; for (let i = 0; i < r.length; i += 1) { const [x0, y0] = r[i]; const [x1, y1] = r[(i + 1) % r.length]; a += x0 * y1 - x1 * y0; } return a / 2; };
+  for (const [id, model] of models) {
+    model.root.traverse((object) => {
+      const outline = object.geometry?.userData?.outline;
+      if (!object.isMesh || !outline) return;
+      const p = object.geometry.attributes.position;
+      let cap = 0;
+      for (let i = 0; i < p.count; i += 3) {
+        if ([0, 1, 2].some((j) => Math.abs(p.getZ(i + j) - outline.z1) > 1e-5)) continue;
+        cap += ((p.getX(i + 1) - p.getX(i)) * (p.getY(i + 2) - p.getY(i)) - (p.getX(i + 2) - p.getX(i)) * (p.getY(i + 1) - p.getY(i))) / 2;
+      }
+      const expected = Math.abs(signed(outline.outer)) - outline.holes.reduce((sum, hole) => sum + Math.abs(signed(hole)), 0);
+      assert.ok(Math.abs(cap - expected) <= 1e-4 * Math.max(1, expected), `${id} ${object.userData.role} cap ${cap} vs ${expected}`);
+    });
+  }
+});

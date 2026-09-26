@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {plate, poly, circle, capsule, disk, polygonClipping as clip} from './finite-plate-geometry.js';
 import {PALETTE, matte, markShadows} from './primitives.js';
 import {disposeObject3D} from './dispose-model.js';
+import {supportMaterial} from './back-plate-support.js';
 import {sourceVariableCrankGeometry, variableRadiusCrankAtAngle} from './variable-radius-crank-motion.js';
 
 export function makeVariableRadiusCrank() {
@@ -52,6 +53,28 @@ export function makeVariableRadiusCrank() {
   add('rockerFulcrumPin', disk(.12, -.22, .26, 96), 'fixed', PALETTE.ink, [...g.rockerPivot, 0]);
   add('rockerFulcrumBearing', plate(clip.difference(clip.union(hole([0, 0], .34), poly([[-.34, 0], [.34, 0], [.42, .62], [-.42, .62]])),
     hole([0, 0], .124)), -.20, 0), 'fixed', PALETTE.muted, [...g.rockerPivot, 0]);
+
+  // Brown draws no frame. Each shaft bearing's flange and the rocker's
+  // fulcrum block are carried by a stay running straight back to a round
+  // flange on the framing wall behind the mechanism; stay and flange lie
+  // within the bearing flange's outline, so the plate's view is unchanged.
+  {
+    const frame = supportMaterial(); frame.fog = false;
+    const support = new THREE.Group(); support.userData.role = 'fixed-framing-behind-crank-bearings';
+    const aux = new THREE.Vector2(0, 0), main = new THREE.Vector2(...g.mainPivot), zWall = -1.6;
+    const stay = (role, x, y, zFront) => {
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(.3, .3, zFront - zWall), frame); bar.position.set(x, y, (zFront + zWall) / 2);
+      bar.userData.role = role; bar.name = role;
+      const flange = new THREE.Mesh(disk(.26, zWall - .08, zWall, 64), frame); flange.position.set(x, y, 0);
+      flange.userData.role = role + '-flange'; flange.name = role + '-flange';
+      support.add(bar, flange);
+    };
+    stay('fixed-stay-from-auxiliary-bearing-to-framing-wall', aux.x, aux.y, -.55);
+    stay('fixed-stay-from-main-bearing-to-framing-wall', main.x, main.y, -.55);
+    stay('fixed-stay-from-rocker-fulcrum-block-to-framing-wall', ...g.rockerPivot, -.20);
+    support.traverse(o => { if (o.isMesh) { o.castShadow = o.receiveShadow = true; } });
+    blocks.fixed.add(support);
+  }
   // The default view frames Brown's drawn length of the rocker only.
   const drawnRocker = new THREE.Mesh(plate(poly([[0, -.2], [1.36, -.2], [1.36, .2], [0, .2]]), .02, .20));
   const update = time => {

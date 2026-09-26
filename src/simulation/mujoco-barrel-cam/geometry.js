@@ -8,19 +8,6 @@ const rectangle=(l,b,r,t)=>poly([[l,b],[r,b],[r,t],[l,t]]);
 const alongX=g=>g.applyMatrix4(new THREE.Matrix4().set(0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,1));
 export {THREE};
 
-// Bearing hangers for the drum shaft: a bored boss at each shaft end on a
-// plain strap dropped from the ceiling beam, set back behind the follower
-// rod's plane so the rod slides past in front of it.
-export const shaftExtension=.22;
-export function addShaftHangers(add,f,shaftEnds,ceilingY) {
-  const r=f.shaftRadius,length=.2,z=-.3,depth=.14,bottom=-(r+.13);
-  for(const [i,end] of shaftEnds.entries()){
-    const lo=i?end-length:end,hi=i?end:end+length;
-    add('shaftBearing'+i,ring(r+.004,r+.13,lo,hi,128).rotateY(Math.PI/2),'frame',PALETTE.frame);
-    add('shaftHanger'+i,new THREE.BoxGeometry(length,ceilingY-bottom,depth).translate((lo+hi)/2,(ceilingY+bottom)/2,z),'frame',PALETTE.frame);
-  }
-}
-
 export function makeBarrelCamGeometry(options={}) {
   const f=makeBarrelCamProfile(options),e=source.edges,root=new THREE.Group(),parts={},families={},blocks={},collision={};
   const add=(name,geometry,family,color)=>{
@@ -32,11 +19,9 @@ export function makeBarrelCamGeometry(options={}) {
     const land=barrelLand(f,side);collision[name]=land.cells;add(name,land.geometry,'input',PALETTE.driver);
   }
   add('floor',ring(f.shaftRadius,f.floor,f.left,f.right,f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
-  // Brown breaks the shaft off either side; it runs on into two plain
-  // bearing hangers dropped from the ceiling beam behind the rod's plane.
-  const shaftEnds=source.shaftEnds.map(f.x).map((x,i)=>x+(i?1:-1)*shaftExtension);
-  add('shaft',disk(f.shaftRadius,shaftEnds[0],shaftEnds[1],f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
-  addShaftHangers(add,f,shaftEnds,f.y(e.ceilingBottom));
+  // Brown breaks the shaft off either side; it ends there as a plain stub
+  // (p60 support policy: no added hangers).
+  add('shaft',disk(f.shaftRadius,f.x(source.shaftEnds[0]),f.x(source.shaftEnds[1]),f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
   const header=[[104,e.ceilingBottom],[129,92],[418,92],[430,e.ceilingBottom]].map(([x,y])=>[f.x(x),f.y(y)]);
   // Brown's hatched ceiling is the section of a fixed beam: model the beam
   // itself as a plain solid running back through the frame (no hatch strokes).

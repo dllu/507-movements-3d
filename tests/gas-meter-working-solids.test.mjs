@@ -27,9 +27,10 @@ test('481 hollow journal and actual end-plate apertures retain material around t
  try{
   const journal=solidSurface(b.journal.geometry);assert.equal(journal.inside(new T.Vector3(0,.58,0)),false);assert.equal(journal.inside(new T.Vector3(.2,.58,0)),true);
   // Pass 55: the section plane z = .48 removes the front head (and its
-  // outlet slots) entirely; the rear head keeps its inlet apertures.
+  // outlet slots) entirely. Pass 59: gas enters through the hooked chamber
+  // mouths round pipe a, so the rear head is whole apart from its journal bore.
   assert.equal(b.drumHeads[1].parent,null,'front drum head lies wholly in front of the section');
-  for(let i=0;i<1;i++){const surface=solidSurface(b.drumHeads[i].geometry),slots=i?b.frontOutletSlots:b.rearInletSlots,z=i?.52:-.52;for(const p of slots)assert.equal(surface.inside(new T.Vector3(p.position.x,p.position.y,z)),false);assert.equal(surface.inside(new T.Vector3(1.2,0,z)),true);}
+  {const surface=solidSurface(b.drumHeads[0].geometry);for(const p of b.rearInletSlots)assert.equal(surface.inside(new T.Vector3(p.position.x,p.position.y,-.52)),true);assert.equal(surface.inside(new T.Vector3(1.2,0,-.52)),true);assert.equal(surface.inside(new T.Vector3(0,0,-.52)),false);}
   const outlet=d.flowPaths.centralInletCurve.getPoint(1);assert.ok(outlet.y-.040>d.geometry.waterSurfaceY,'complete inlet bore emerges above the water');
  }finally{disposeObject3D(m.root);}
 });

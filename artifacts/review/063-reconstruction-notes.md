@@ -178,3 +178,56 @@ pawl outline against the star. Rebaked (fingerprint e4c43a18): one point
 (−35.96°) per event, repeat error 0.0039, drop lift 20.2°. While the pawl hangs
 low a narrow strip of the drop's leg shows between the lobe and the pin disk;
 it is the real leg and is left visible. See docs/p53-parts-review.md.
+
+## Pass 60: pins strike only the drop; pawl flush with the star
+
+User correction. The pins no longer touch the pawl. They strike only the
+drop's leg, which is now Brown's broad pointed wedge. On the enlargement the
+dashed leg's right edge falls straight at x ≈ 890 to a tip at about (885, 797),
+and its lower-left edge runs straight up to the lobe's inner edge at about
+(720, 590). The model uses `brownLeg()`: a straight right edge, an 8 px filleted
+tip at y ≈ 800, and a straight lower-left edge to (716, 584). The synthesised
+lift-law envelope is gone.
+
+The solver (fingerprint version 7) pushes only the drop out of the pins. As the
+drop rises it carries the pawl. If the lift presses the nose into the star, the
+pawl turns up on its screw, never past the striker. Gravity lowers the pawl
+onto the star. The nose therefore slides out of its space, over the next point
+and into the next space before the pin escapes past the leg's tip. The spring
+then throws the drop down and the seated nose turns the unloaded star.
+
+Rebaked with fingerprint 6148de4b:
+
+| Measure | Value |
+|---|---|
+| Advance per event | −36.0002° |
+| Repeat error | 4e-6 |
+| Maximum drop lift | 21.42° |
+| Lowest pawl angle | −20.74° |
+| Rest | 59 of 360 steps |
+| Pin to drop | 2.0 px (contact clearance) |
+| Pin to pawl, closest approach in plan | 20.7 px |
+| Nose to star | 2.0 px |
+| Stop pin | 0.6 px |
+| Striker at rest | 1.27 px |
+
+The pins never hold the pawl against the striker, so the striker only limits
+the pawl's rise and never bears in the steady cycle.
+
+A variant in which the pawl yields up to the striker before a loaded star turns
+was tried. Brown's nose then rides out of the space and the star never turns,
+so it was rejected. The drive remains a quasi-static approximation for an
+unloaded star.
+
+Layers are, back to front:
+
+1. The opaque pin disk (z −0.62…−0.38).
+2. The drop, thickened to 0.18 (−0.33…−0.15).
+3. The pins, which reach forward to −0.13 through the drop's thickness and stop
+   short of the pawl.
+4. The pawl, flush with the star (−0.09…0.15).
+
+The pawl is the see-through part (see-through-part.js), because Brown dots the
+leg and the disk's rim behind its lobe. The disk is opaque again. Brown dashes
+the leg behind the disk; at the user's request the drop now lies in front of
+the disk. This is a recorded discrepancy. See docs/p60-063-review.md.

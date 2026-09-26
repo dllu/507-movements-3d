@@ -1,0 +1,68 @@
+{
+  "id": 124,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-124.json.gz",
+  "bytes": 509597,
+  "assetSha256": "2f688fd3c5f2c4f5ff5d14fd12211cbaf837ddde8fd59e1360e9c7ab7e948706",
+  "motionSources": {
+    "src/simulation/mujoco-bow-drill/cord-path.js": "584d0ed6016ec5074bb5baafcb76be0b617a8456a260e0bf977cfe32d3f30af1",
+    "src/simulation/mujoco-bow-drill/physics.js": "f69054c0996ed9d5642f029c6c530dd81386380a86165a2757b0da07c3da41e5",
+    "src/simulation/mujoco-bow-drill/source.js": "5f618c85a0784e2cb2bea4f543cceb489ca9cb852ecea9de4b7447e4f53572a8",
+    "src/simulation/mujoco-bow-drill/visual.js": "4a2d98ea6659b507a9628fc17875668e116be96fe901ecec834060ead2c189b7",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-bow-drill/geometry.js": "22ec48bb9daa7fd42babc9a5829f53412dded8f9bcc32fb5fdf5dda0c3cceaa8"
+  },
+  "physicsXmlSha256": {
+    "default": "5dcd4ef629acff2a48609bab624717189d90976320313b724764b033b866c6a5"
+  },
+  "fullXmlSha256": {
+    "default": "3206e1df5fe6c01a178d5d1338ab5ab2126bcd87822bfcf3013356ec247d2383"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 4,
+    "maxLoopPeriods": 4,
+    "searchPeriods": 28,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-bow-drill",
+    "curves": {},
+    "qpos": false
+  },
+  "cycleDesign": "The bow is drawn to and fro on a sinusoidal stroke and its cord turns the drill one way and back by friction. After the frictional cord settles, one bow stroke closes the loop. The laid-rope cord is stored as its recorded centreline and rebuilt in playback; the stock deformation under cord tension is stored as vertex frames.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 4,
+        "samples": 250,
+        "dt": 0.016,
+        "startTime": 132,
+        "periods": 1,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 0.08407210066645004,
+        "maximumCorrectionPixels": 0.08407210066645004,
+        "maximumRotationCorrection": 0.0000750612298576203,
+        "wraps": []
+      },
+      "roundTripPixels": 0.08445726903644153,
+      "seam": {
+        "seamStepPixels": 2.631370648788313,
+        "interiorStepPixels": 2.631370648788313,
+        "seamSecondPixels": 0.8139666235774178,
+        "interiorSecondPixels": 1.181912272755102
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 207.79727097606659
+}

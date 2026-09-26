@@ -2,7 +2,6 @@ import * as THREE from 'three';
 import source from './source.js';
 import {makeSerpentineCamProfile} from './profile.js';
 import {barrelLand} from '../mujoco-barrel-cam/groove.js';
-import {addShaftHangers,shaftExtension} from '../mujoco-barrel-cam/geometry.js';
 import {plate,poly,circle,turned,disk,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {matte,PALETTE,markShadows} from '../primitives.js';
 const rectangle=(l,b,r,t)=>poly([[l,b],[r,b],[r,t],[l,t]]);
@@ -20,11 +19,9 @@ export function makeSerpentineCamGeometry(options={}) {
     const land=barrelLand(f,side);collision[name]=land.cells;add(name,land.geometry,'input',PALETTE.driver);
   }
   add('floor',ring(f.shaftRadius,f.floor,f.left,f.right,f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
-  // Brown breaks the shaft off either side; it runs on into two plain
-  // bearing hangers dropped from the ceiling beam behind the rod's plane.
-  const shaftEnds=source.shaftEnds.map(f.x).map((x,i)=>x+(i?1:-1)*shaftExtension);
-  add('shaft',disk(f.shaftRadius,shaftEnds[0],shaftEnds[1],f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
-  addShaftHangers(add,f,shaftEnds,f.y(e.ceilingBottom));
+  // Brown breaks the shaft off either side; it ends there as a plain stub
+  // (p60 support policy: no added hangers).
+  add('shaft',disk(f.shaftRadius,f.x(source.shaftEnds[0]),f.x(source.shaftEnds[1]),f.segments).rotateY(Math.PI/2),'input',PALETTE.driver);
   const header=source.header.map(([x,y],i)=>[x,i===0||i===3?e.ceilingBottom:y]).map(([x,y])=>[f.x(x),f.y(y)]);
   // Brown's hatched ceiling is the section of a fixed beam: model the beam
   // itself as a plain solid running back through the frame (no hatch strokes).

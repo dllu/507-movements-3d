@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ring } from './finite-plate-geometry.js';
+import { circle, plate, poly, polygonClipping, ring } from './finite-plate-geometry.js';
 import { markShadows } from './primitives.js';
 import { lanternContact297 as c } from './lantern-pallet-contact.js';
 import { lanternState297, lanternBake297 } from './lantern-pallet-playback.js';
@@ -18,25 +18,36 @@ export function installLanternFinitePlayback297(root) {
   const arbor = d.lanternWorkingParts.armArbor;
   replace(arbor, new THREE.CylinderGeometry(.16, .16, 3.26, 64)); arbor.position.z = -.02;
   d.lanternWorkingParts.pairs.push([arbor, b.armHub]);
-  const mounts = [];
+  // Arm A is one flat plate (Brown's tapered arm from its pivot, with the
+  // outlines of B and C) in front of the pin ends; B and C are straight bars
+  // of Brown's hatched section standing back from the plate to the pin ends.
+  const armDepth = .22, armBack = c.armZ - armDepth / 2;
+  const barFront = c.palletZ - c.depth / 2, barBack = armBack + .04;
+  const barOutline = bar => {
+    const [cx, cy] = bar.center, u = [Math.cos(bar.angle), Math.sin(bar.angle)], v = [-u[1], u[0]];
+    return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => [
+      cx + i * bar.length / 2 * u[0] + j * bar.width / 2 * v[0],
+      cy + i * bar.length / 2 * u[1] + j * bar.width / 2 * v[1]]);
+  };
+  const armOutline = polygonClipping.union(
+    poly([[-.27, 0], [.27, 0], [.2, -2.85], [-.45, -2.95]]),
+    poly(circle([0, 0], .34, 96)),
+    ...c.bars.map(bar => poly(barOutline(bar))),
+  );
+  replace(b.armA, plate(polygonClipping.difference(armOutline, poly(circle([0, 0], .166, 96))), -armDepth / 2, armDepth / 2));
+  b.armA.position.set(0, 0, c.armZ); b.armA.rotation.set(0, 0, 0);
+  b.armA.userData.role = 'one-piece-rocking-arm-A';
   for (const bar of c.bars) {
     const body = b[`pallet${bar.name}Body`], group = b[`pallet${bar.name}`];
-    replace(body, new THREE.BoxGeometry(bar.length, bar.width, c.depth));
-    body.position.set(...bar.center, c.palletZ); body.rotation.z = bar.angle;
+    replace(body, new THREE.BoxGeometry(bar.length, bar.width, barBack - barFront));
+    body.position.set(...bar.center, (barFront + barBack) / 2); body.rotation.z = bar.angle;
     const bridge = group.children.find(x => /rigid-mount/.test(x.userData.role));
-    const direction = new THREE.Vector2(-1.02, -3.62).normalize();
-    const center = new THREE.Vector2(...bar.center), attach = direction.multiplyScalar(center.dot(direction));
-    replace(bridge, new THREE.BoxGeometry(center.distanceTo(attach) + .08, .14, .18));
-    bridge.position.set((center.x + attach.x) / 2, (center.y + attach.y) / 2, c.armZ);
-    bridge.rotation.z = Math.atan2(center.y - attach.y, center.x - attach.x);
-    const mount = new THREE.Mesh(new THREE.CylinderGeometry(.055, .055, .48, 24), body.material);
-    mount.rotation.x = Math.PI / 2; mount.position.set(...bar.center, 1.34);
-    mount.userData.role = `finite-axial-pallet-${bar.name}-mount-in-bar-footprint`;
-    group.add(mount); mounts.push(mount);
+    if (bridge) { bridge.removeFromParent(); bridge.geometry.dispose(); }
     b[`pallet${bar.name}Face`].visible = false;
     for (const child of group.children) if (/label-marker/.test(child.userData.role)) child.visible = false;
     const profile = d.palletProfiles[bar.name];
     profile.normal.multiplyScalar(-1);
+    const center = new THREE.Vector2(...bar.center);
     profile.facePointLocal = center.clone().addScaledVector(profile.normal, bar.width / 2);
     profile.workingRange = [-bar.length / 2, bar.length / 2];
     profile.workingFaceLocalPoints = profile.workingRange.map(x => profile.facePointLocal.clone().addScaledVector(profile.tangent, x));
@@ -60,7 +71,7 @@ export function installLanternFinitePlayback297(root) {
     dynamics: 'offline MuJoCo with an imposed arm oscillator and constant wheel torque' });
   delete d.transmission.evenToOddDropAdvance; delete d.transmission.oddToEvenDropAdvance;
   d.timeline = { demonstrationPeriod: 4, schedule: ['finite-B-contact', 'inherited-speed-free-drop', 'finite-C-contact', 'inherited-speed-free-drop'] };
-  d.lanternFiniteContact = { bars: c.bars, mounts, bake: lanternBake297.metadata,
+  d.lanternFiniteContact = { bars: c.bars, bake: lanternBake297.metadata,
     collisionModel: 'planar sphere/box supports equal the visible cylinder/box supports; all motion is constrained to XY',
     softContactCorrection: 'offline projection onto finite bar surfaces, maximum angle correction below 0.0015 rad' };
   d.reconstructionNote = 'Offline MuJoCo drives the full trundles against finite B/C bars; release retains wheel speed, with landing rebound. Arm motion, constant torque and frictionless contact are prescribed assumptions, not a self-running clock. The inferred ±18° stroke, B shifted 0.25 along its axis, C length 1.28, and forward trundle ends make the finite geometry compatible; they are not dimensioned in the engraving. A sub-0.0015-radian offline projection removes solver overlap; spring, bearing loss and impact compliance remain unvalidated.';

@@ -161,6 +161,30 @@ function buildLoopColumn(root, frame, material, groundY, {
   port.position.x = -(cylinderOuterRadius - 0.10 + portLength / 2);
 }
 
+// Crank A's shaft bearing is carried on a plain bar across the back of the
+// loop column (both arms), not on a thin bracket; cylinder B slides between
+// two guide strips fixed to the inner faces of the column's arms behind its
+// admission hole, with running clearance. Both are reconstructed supports.
+function addCrankBarAndCylinderGuides(root, material, axisX, cylinderRadius) {
+  const bearing = root.userData.blocks.crankBearing;
+  root.traverse((object) => {
+    if (/^crank-A-bearing-bracket-/.test(object.userData.role ?? '')) object.visible = false;
+  });
+  const frameHalfDepth = 0.46, armInner = 0.56, armOuter = 0.92;
+  const bar = addRole(new THREE.Mesh(new THREE.BoxGeometry(2 * armOuter, 0.2, 0.1), material),
+    'fixed-bar-across-column-back-carrying-crank-A-bearing');
+  bar.position.set(axisX, bearing.position.y, -frameHalfDepth - 0.05);
+  root.add(bar);
+  const clearance = 0.006, stripDepth = 0.24, stripTop = 4.0, stripBottom = 0.3;
+  for (const side of [-1, 1]) {
+    const width = armInner - cylinderRadius - clearance;
+    const strip = addRole(new THREE.Mesh(new THREE.BoxGeometry(width, stripTop - stripBottom, stripDepth), material),
+      `fixed-guide-strip-for-cylinder-B-${side < 0 ? 'left' : 'right'}`);
+    strip.position.set(axisX + side * (armInner - width / 2), (stripTop + stripBottom) / 2, -frameHalfDepth + stripDepth / 2 + 0.02);
+    root.add(strip);
+  }
+}
+
 function atmosphericHammer(movement) {
   const root = new THREE.Group();
   const cycleDuration = 2.8;
@@ -905,6 +929,7 @@ function atmosphericHammer(movement) {
     axisX: cylinderAxisX,
     cylinderOuterRadius,
   });
+  addCrankBarAndCylinderGuides(root, frameMaterial, cylinderAxisX, cylinderOuterRadius);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(cylinderAxisX - 1.85, groundY - 0.05, -1.22),
     new THREE.Vector3(cylinderAxisX + 1.85, 5.08, 1.12),

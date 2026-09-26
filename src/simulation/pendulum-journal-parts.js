@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { PALETTE, makeBevelGear } from './primitives.js';
 
 const rectangle = (w,h,cx=0,cy=0) => poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]]);
 const tube = (r,h,bore) => boredLatheGeometry([{radial:r,axial:-h/2},{radial:r,axial:h/2}],bore,64);
@@ -22,7 +23,19 @@ export function correctConicalJournals(root) {
   replace(b.spindle,new THREE.CylinderGeometry(.16,.16,2.22,40));
   b.spindle.position.y=-1.05;
   replace(b.crankHub,tube(.40,.42,.162));
-  replace(b.driveCollar,boredLatheGeometry([{radial:.50,axial:-.26},{radial:.29,axial:.26}],.162,64));
+  // Brown draws a toothed bevel pinion under the bearing bar (large end up),
+  // not a smooth cone: the spindle's drive to the clockwork.
+  const pinion=makeBevelGear({teeth:14,radius:.46,depth:.3,color:PALETTE.brass,axis:new THREE.Vector3(0,-1,0)});
+  for(const child of [...pinion.userData.rotor.children])if(child.geometry?.type==='BoxGeometry'){pinion.userData.rotor.remove(child);child.geometry.dispose();}
+  pinion.position.y=-1.21;pinion.userData.role='toothed-bevel-drive-pinion';
+  b.spindleRotor.remove(b.driveCollar);b.driveCollar.geometry.dispose();
+  b.spindleRotor.add(pinion);b.driveCollar=pinion;b.drivePinion=pinion;
+  // Brown draws the bearing bar and the foot with nothing between them: one
+  // plain pillar behind the spindle carries the bar on the foot.
+  const pillarTop=b.bearingPlate.position.y-.15,pillarBottom=-5.32;
+  const pillar=new THREE.Mesh(new THREE.BoxGeometry(.3,pillarTop-pillarBottom,.2),b.bearingPlate.material);
+  pillar.position.set(0,(pillarTop+pillarBottom)/2,-.7);pillar.userData.role='fixed-bearing-bar-back-pillar';
+  b.fixedFrame.add(pillar);b.backPillar=pillar;
   replace(b.bob,tube(g.bobRadius,g.bobLength,.087));
   const ballRadius=.225,bore=.087,limit=Math.sqrt(ballRadius**2-(bore+.0001)**2);
   replace(b.lowerSocket,boredLatheGeometry(Array.from({length:49},(_,i)=>{

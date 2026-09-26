@@ -3,11 +3,14 @@ import {makePumpCatchCoreGeometry} from './pump-catch-core.js';
 import {poly,circle,capsule,plate,disk,ring,turned,polygonClipping as clip} from './finite-plate-geometry.js';
 import {conformingPlateMesh} from './conforming-plate-mesh.js';
 import {PALETTE,matte,markShadows} from './primitives.js';
+import {makeLaidRopeMesh} from './laid-rope.js';
 export {THREE};
 
-// The two hatched horizontal source runs are interpreted as a separate input
-// band behind the loose wheel. The second pulley, rear bearings and return
-// path are omitted in the engraving; their completion is explicit here.
+// The two hatched horizontal source runs are Brown's laid rope: an endless
+// rope drive behind the loose wheel, in the grooves of a sheave on the cam
+// shaft and of a second sheave beyond the plate's right edge. The second
+// sheave, rear bearings and return path are omitted in the engraving; their
+// completion is explicit here.
 export function makePumpCatchRearDriveGeometry({model=makePumpCatchCoreGeometry()}={}){
   const u=model.root.userData,source=u.source,corePartNames=Object.keys(u.parts),scale=source.scale,
     radius=((source.rearRuns.lower[0]+source.rearRuns.lower[1])-(source.rearRuns.upper[0]+source.rearRuns.upper[1]))/(4*scale),
@@ -19,8 +22,12 @@ export function makePumpCatchRearDriveGeometry({model=makePumpCatchCoreGeometry(
   const attach=(name,geometry,family,color,group=u.blocks[family],position=[0,0,0])=>{
     const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.22,roughness:.58}));mesh.name=name;mesh.position.fromArray(position);group.add(mesh);u.parts[name]=mesh;u.families[name]=family;return mesh;
   };
-  const flangeRadius=outerRadius+.025,rimProfile=[[low-.05,webRadius-.002],[low-.05,flangeRadius],[low,flangeRadius],[low,contactRadius],
-    [high,contactRadius],[high,flangeRadius],[high+.05,flangeRadius],[high+.05,webRadius-.002]],
+  // Grooved sheave rims: a round-bottomed groove whose bottom carries the
+  // rope (radius halfWidth) on the neutral radius, with flared cheeks.
+  const ropeRadius=halfWidth,middle=(low+high)/2,grooveRadius=ropeRadius*1.04,flangeRadius=outerRadius+.025,
+    groove=Array.from({length:17},(_,k)=>{const a=Math.PI*(k/16);return[middle-grooveRadius*Math.cos(a),radius-grooveRadius*Math.sin(a)];}),
+    rimProfile=[[low-.05,webRadius-.002],[low-.05,flangeRadius],[middle-grooveRadius-.06,flangeRadius],[middle-grooveRadius,radius+.01],
+      ...groove,[middle+grooveRadius,radius+.01],[middle+grooveRadius+.06,flangeRadius],[high+.05,flangeRadius],[high+.05,webRadius-.002]],
     web=clip.intersection(u.profiles.wheel,poly(circle([0,0],webRadius,512)));
   for(const[prefix,family,group]of [['rearDrive','cam',u.blocks.cam],['remoteDrive','remoteInput',remote]]){
     attach(prefix+'Rim',turned(rimProfile,segments),family,PALETTE.driver,group);
@@ -39,37 +46,26 @@ export function makePumpCatchRearDriveGeometry({model=makePumpCatchCoreGeometry(
   const baseLeft=(source.base.left-source.center[0])/scale,baseRight=(source.base.right-source.center[0])/scale;
   attach('rearBaseExtension',plate(poly([[baseLeft,bottom],[baseRight,bottom],[baseRight,floor],[baseLeft,floor]]),-1.43,-.65),'fixed',PALETTE.muted);
   attach('remoteBase',plate(poly([[separation-.8,bottom],[separation+.8,bottom],[separation+.8,floor],[separation-.8,floor]]),-1.43,-.60),'fixed',PALETTE.muted);
-  // Circumscribe the inner belt polygon around the analytic pulley cylinder.
-  // Both rotating pulley meshes stay inside that cylinder at every angle.
-  const bandProfile=clip.difference(capsule([0,0],[separation,0],outerRadius,segments/2),capsule([0,0],[separation,0],innerRadius,segments/2)),
-    bandGeometry=conformingPlateMesh(plate(bandProfile,low,high)),band=attach('inputDriveBand',bandGeometry,'band',0xffffff,model.root),
-    uv=[];
-  const distanceAt=(x,y)=>{
-    if(x<0){let angle=Math.atan2(y,x);if(angle> -Math.PI/2)angle-=2*Math.PI;return 2*separation+Math.PI*radius+radius*(-Math.PI/2-angle);}
-    if(x>separation)return separation+radius*(Math.PI/2-Math.atan2(y,x-separation));
-    return y>=0?x:2*separation+Math.PI*radius-x;
-  };
-  // A material pattern conveys belt motion without extra collars intersecting
-  // the band. UVs retain the physical distance around the complete loop.
-  const flat=bandGeometry.index?bandGeometry.toNonIndexed():bandGeometry;
-  if(flat!==bandGeometry){band.geometry=flat;bandGeometry.dispose();}
-  const p=flat.attributes.position;
-  for(let i=0;i<p.count;i+=3){
-    const points=[0,1,2].map(k=>new THREE.Vector3().fromBufferAttribute(p,i+k)),normal=new THREE.Triangle(...points).getNormal(new THREE.Vector3()),front=Math.abs(normal.z)>.5,
-      row=points.map(v=>{const r=Math.hypot(v.x<0?v.x:v.x>separation?v.x-separation:0,v.y);return[distanceAt(v.x,v.y)/bandLength,front?(r-innerRadius)/(outerRadius-innerRadius):(v.z-low)/(high-low)];});
-    if(Math.max(...row.map(v=>v[0]))-Math.min(...row.map(v=>v[0]))>.5)for(const v of row)if(v[0]<.5)v[0]+=1;
-    for(const v of row)uv.push(...v);
-  }
-  flat.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2));
-  // Brown hatches the band runs: engraving notation. The flat leather band
-  // is plain (no stripe texture).
-  band.material.map=null;band.material.color.set(0x9b8f6f);band.material.roughness=.85;band.material.metalness=0;
+  // The endless laid rope on the neutral radius, round both sheaves: along
+  // the top from A's sheave to the remote one, round it, back along the
+  // bottom and round A's sheave (clockwise seen from the front).
+  const loop=new THREE.CurvePath(),at=(x,y)=>new THREE.Vector3(x,y,middle),arc=(cx,from,to)=>{
+    const curve=new THREE.Curve();curve.getPoint=t=>{const angle=from+(to-from)*t;return at(cx+radius*Math.cos(angle),radius*Math.sin(angle));};return curve;};
+  loop.add(new THREE.LineCurve3(at(0,radius),at(separation,radius)));
+  loop.add(arc(separation,Math.PI/2,-Math.PI/2));
+  loop.add(new THREE.LineCurve3(at(separation,-radius),at(0,-radius)));
+  loop.add(arc(0,-Math.PI/2,-3*Math.PI/2));
+  const band=makeLaidRopeMesh(loop,matte(0xb08d57,{roughness:.86,metalness:0}),{radius:ropeRadius,closed:true,tubularSegments:1024});
+  band.name='inputDriveRope';model.root.add(band);u.parts[band.name]=band;u.families[band.name]='band';
   const coreSetState=model.setState,setState=state=>{
-    const result=coreSetState(state);remote.rotation.z=result.camAngle;model.root.updateMatrixWorld(true);return result;
+    const result=coreSetState(state);remote.rotation.z=result.camAngle;
+    // The sheaves turn anticlockwise for a positive angle, carrying the rope
+    // against the loop's clockwise parameter.
+    band.userData.setTravel(-result.camAngle*radius);model.root.updateMatrixWorld(true);return result;
   };
-  model.setState=setState;u.setState=setState;u.rearDrive={corePartNames,radius,halfWidth,contactRadius,innerRadius,outerRadius,separation,low,high,bandLength,segments,
+  model.setState=setState;u.setState=setState;u.rearDrive={corePartNames,radius,halfWidth,ropeRadius,contactRadius,innerRadius,outerRadius,separation,low,high,bandLength,segments,
     maximumRadialRenderingGap:innerRadius-contactRadius*Math.cos(Math.PI/segments),
-    qualification:'A complete equal-pulley input band and rear supports reconstruct the omitted drive. Radius and band width follow the visible horizontal runs; spacing, section, hidden spokes and depths are assumptions. Ideal no-slip motion is imposed at the neutral band radius; finite traction and belt stresses are not solved. Wheel/catch geometry and mass are unchanged.'};
+    qualification:'A complete endless laid-rope drive on two equal grooved sheaves and rear supports reconstruct the omitted drive. Sheave radius and rope diameter follow Brown\'s two hatched horizontal runs; spacing, groove section, hidden spokes and depths are assumptions. Ideal no-slip motion is imposed at the rope\'s centre radius; finite traction and rope stresses are not solved. Wheel/catch geometry and mass are unchanged.'};
   u.qualification='Core plus reconstructed rear input apparatus. Pump rope, load hardware, capture dynamics and complete mechanical qualification remain pending.';
   u.shadowCameraHalfExtent=8;setState();markShadows(model.root);return model;
 }

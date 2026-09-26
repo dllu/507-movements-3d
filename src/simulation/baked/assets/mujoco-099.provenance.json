@@ -1,0 +1,77 @@
+{
+  "id": 99,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-099.json.gz",
+  "bytes": 26068,
+  "assetSha256": "e835ce4b0ba48477e6d6a65a7a8774edf7a27b8cf733daf1ed1e988ede1148e1",
+  "motionSources": {
+    "src/simulation/mujoco-spiral-feed/physics.js": "6ef29e6812d95a82528a9e8d223cee50bc0d4b744e1290e8f9a6c3e304d12f31",
+    "src/simulation/mujoco-spiral-feed/profile.js": "688b7f2e76d526aca000a17e2f54eb9096a92cd72fce5ba2f699bfa39e7a096c",
+    "src/simulation/mujoco-spiral-feed/source.js": "6ef0f9b53a587c9f2ac6d28a5ae4a458c723b845013f87073736181523534021",
+    "src/simulation/mujoco-spiral-feed/visual.js": "4f6aabaa51f5753f2e149ccd3adf60b0f4b0d70c012481bc3085ef19527ea0ca",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-spiral-feed/geometry.js": "efe45c37fcc9d92a5d12dda9b4ac4f27d942a13a8e868a167321b85c020dc06e"
+  },
+  "physicsXmlSha256": {
+    "default": "bcbceaf274a6221f577b091a495c899635a73508b1a66ecc5fa4caaac3fac930"
+  },
+  "fullXmlSha256": {
+    "default": "c67e0102e17b4e69901caa089222891d2285149a6e27a9e08d6eea02bc913b93"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-spiral-feed"
+  },
+  "cycleDesign": "The disk is driven forward and back by a cosine reversal before the roller leaves the open spiral; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 12,
+        "samples": 750,
+        "dt": 0.016,
+        "startTime": 24,
+        "periods": 1,
+        "drivePeriod": 12
+      },
+      "closure": {
+        "rawSeamPixels": 3.1431491717170164e-10,
+        "maximumCorrectionPixels": 1.9317880628477724e-11,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.input",
+            "angle": 2.8175933808327613e-12,
+            "rawAngle": 2.8175933808327613e-12
+          },
+          {
+            "key": "blocks.roller",
+            "angle": -0.1494888671656931,
+            "rawAngle": -0.1494888671656931
+          }
+        ]
+      },
+      "roundTripPixels": 0.000016545198338426725,
+      "seam": {
+        "seamStepPixels": 18.53635058920366,
+        "interiorStepPixels": 18.704235113711555,
+        "seamSecondPixels": 11.387390711660759,
+        "interiorSecondPixels": 11.782032291231173
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 94.07232715797424
+}

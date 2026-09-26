@@ -1,0 +1,73 @@
+{
+  "id": 112,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-112.json.gz",
+  "bytes": 6037,
+  "assetSha256": "44eec0cce1199cdede650caa2090f96e56dbacc0d2bce5fd800e21441cfc6fa1",
+  "motionSources": {
+    "src/simulation/mujoco-persian-drill/physics.js": "b9f13e9ff67619f559e70a3ff538c4fac58460f0531973d8e8b6545dd0ff0eee",
+    "src/simulation/mujoco-persian-drill/profile.js": "ecf9a789ba935ebf46a5baa79191e5ee7611954fd7e14f0a364256dfc2040902",
+    "src/simulation/mujoco-persian-drill/source.js": "3c3e826d49d7bfc0e0748b1eb9dafa0a409f89a7fe6bc11df394f04e496fa648",
+    "src/simulation/mujoco-persian-drill/visual.js": "663926b8cbc25b5d2aa0633fc45c85d7f6703fdd77d917aadf2e9c4918d4cb8c",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-persian-drill/geometry.js": "6ef64f544168f1531c489e9e330b7f2978f1cdfad6b0f3cb5d3565166fa5902a",
+    "src/simulation/mujoco-persian-drill/section.js": "b035d98108334974bc56c27f32d9e50251739fec187292cdf7495cb46069146b"
+  },
+  "physicsXmlSha256": {
+    "default": "93a4115c2646c187cbd45828ad2daf3400a9590beb8fc941aa7a67e1f64e9bc3"
+  },
+  "fullXmlSha256": {
+    "default": "fc0969dfba368dfc81ab90ba3e6f12e9d15639cf060abe6da64d3af61037b00b"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-persian-drill"
+  },
+  "cycleDesign": "Sinusoidal reversing grip stroke after the start-up ramp: the drill turns one way and back; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 6,
+        "samples": 375,
+        "dt": 0.016,
+        "startTime": 72,
+        "periods": 1,
+        "drivePeriod": 6
+      },
+      "closure": {
+        "rawSeamPixels": 1.205675445470592e-9,
+        "maximumCorrectionPixels": 3.802089719451285e-10,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.stock",
+            "angle": 9.225442632043723e-11,
+            "rawAngle": 9.225442632043723e-11
+          }
+        ]
+      },
+      "roundTripPixels": 0.004588012022943566,
+      "seam": {
+        "seamStepPixels": 2.1110300361626484,
+        "interiorStepPixels": 2.1378315424287893,
+        "seamSecondPixels": 0.24819461726632172,
+        "interiorSecondPixels": 0.25997500677950874
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 104.587728890419
+}

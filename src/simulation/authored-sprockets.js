@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { plate, capsule, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -40,23 +41,6 @@ function makeAxialCylinder({
   return cylinder;
 }
 
-function makeBarBetween(start, end, radius, material, role) {
-  const direction = end.clone().sub(start);
-  const bar = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, direction.length(), 18),
-    material,
-  );
-  bar.position.copy(start).add(end).multiplyScalar(0.5);
-  bar.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    direction.normalize(),
-  );
-  bar.userData.end = end.clone();
-  bar.userData.role = role;
-  bar.userData.start = start.clone();
-  return bar;
-}
-
 function tenForkChainSprocket(movement) {
   const root = new THREE.Group();
   root.scale.setScalar(0.86);
@@ -73,9 +57,16 @@ function tenForkChainSprocket(movement) {
   const forkRootRadius = 2.32;
   const forkJunctionRadius = 2.68;
   const forkTipRadius = 3.03;
-  const forkHalfSpread = 0.27;
-  const forkBarRadius = 0.065;
-  const chainSeatRadius = 2.92;
+  // Brown's forks are chunky flat Ys: each is one flat plate (0.18 wide in
+  // its axial-radial plane, 0.2 thick tangentially) with rounded ends. The
+  // prong centres are drawn in so the whole fork (0.68 across) keeps the
+  // engraved forks' axial width (50-60 px of the 410 px body height).
+  const forkHalfSpread = 0.25;
+  const forkBarRadius = 0.09;
+  const forkPlateThickness = 0.2;
+  // The chain seat sits in the outer part of the fork, where the chunkier
+  // prongs still leave a centred link more than 0.1 of half-width.
+  const chainSeatRadius = 2.985;
   const chainSeatProgress =
     (chainSeatRadius - forkJunctionRadius)
     / (forkTipRadius - forkJunctionRadius);
@@ -191,42 +182,16 @@ function tenForkChainSprocket(movement) {
       forkTipRadius,
       0,
     );
-    const stem = makeBarBetween(
-      rootPoint,
-      junctionPoint,
-      forkBarRadius,
+    const flatY = new THREE.Mesh(
+      plate(clip.union(
+        capsule([rootPoint.x, rootPoint.y], [junctionPoint.x, junctionPoint.y], forkBarRadius, 32),
+        capsule([junctionPoint.x, junctionPoint.y], [leftTip.x, leftTip.y], forkBarRadius, 32),
+        capsule([junctionPoint.x, junctionPoint.y], [rightTip.x, rightTip.y], forkBarRadius, 32),
+      ), -forkPlateThickness / 2, forkPlateThickness / 2),
       wheelMaterial,
-      `fork-${index + 1}-radial-stem`,
     );
-    const leftProng = makeBarBetween(
-      junctionPoint,
-      leftTip,
-      forkBarRadius,
-      wheelMaterial,
-      `fork-${index + 1}-left-axial-prong`,
-    );
-    const rightProng = makeBarBetween(
-      junctionPoint,
-      rightTip,
-      forkBarRadius,
-      wheelMaterial,
-      `fork-${index + 1}-right-axial-prong`,
-    );
-    fork.add(stem, leftProng, rightProng);
-
-    for (const [name, point] of [
-      ['junction', junctionPoint],
-      ['left-tip', leftTip],
-      ['right-tip', rightTip],
-    ]) {
-      const joint = new THREE.Mesh(
-        new THREE.SphereGeometry(forkBarRadius, 22, 14),
-        wheelMaterial,
-      );
-      joint.position.copy(point);
-      joint.userData.role = `fork-${index + 1}-${name}-rounded-end`;
-      fork.add(joint);
-    }
+    flatY.userData.role = `fork-${index + 1}-chunky-flat-y-fork`;
+    fork.add(flatY);
 
     if (index === 0) {
       const pocketIndex = new THREE.Mesh(

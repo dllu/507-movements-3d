@@ -15,7 +15,7 @@ export function makeSourceTreadle(){
  add('diskHub',ring(.184,.238,0,.12,128),'disk',PALETTE.ink);
  place('crankPin',disk(.125,0,.88,128),'disk',g.pin,PALETTE.brass);
  place('crankRetainer',ring(.125,.165,.824,.88,128),'disk',g.pin,PALETTE.ink);
- place('crankFace',disk(.095,.88,.90,128),'disk',g.pin,PALETTE.white);
+ place('crankFace',disk(.095,.88,.90,128),'disk',g.pin,PALETTE.brass);
  const treadleShape=clip.difference(clip.union(rectangle(0,g.footLength,-.084,.084),poly(circle([0,0],.168,128)),poly(circle([g.armLength,0],.182,128))),poly(circle([0,0],.144,128)));
  add('treadle',plate(treadleShape,.30,.52),'treadle',PALETTE.driven);
  place('treadlePin',disk(.125,.52,.88,128),'treadle',[g.armLength,0],PALETTE.ink);

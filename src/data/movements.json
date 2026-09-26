@@ -2595,7 +2595,7 @@
       "title": "Plain Flat-Belt Pulley",
       "description": "256. A plain pulley for a flat belt.",
       "category": "Ropes, belts & pulleys",
-      "archetype": "straight-tread-flangeless-flat-belt-pulley-rigid-on-horizontal-shaft",
+      "archetype": "crowned-tread-flangeless-flat-belt-pulley-rigid-on-horizontal-shaft",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_256.html"
     },
@@ -3175,7 +3175,7 @@
       "title": "Lever chronometer escapement",
       "description": "314. Lever chronometer escapement. In this the pallets, A, B, and lever, look like those of the lever escapement 296: but these pallets only lock the escape-wheel, having no impulse. Impulse is given by teeth of escape-wheel directly to a pallet, C, attached to balance.",
       "category": "Escapements & horology",
-      "archetype": "fifteen-tooth-single-impulse-lever-chronometer-alternating-long-short-lock-transfer-escapement",
+      "archetype": "thirteen-tooth-single-impulse-lever-chronometer-alternating-long-short-lock-transfer-escapement",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_314.html"
     },

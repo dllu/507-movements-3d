@@ -1,0 +1,72 @@
+{
+  "id": 114,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-114.json.gz",
+  "bytes": 6358,
+  "assetSha256": "88bd6a9d4639a89babf3c10d3c2e3dc5db70d92a6ba6285149bb76f6d5167bac",
+  "motionSources": {
+    "src/simulation/mujoco-double-rack/end-relief.js": "68604242825b14d3215a32bdd53722a11530909618fccd0c89d7549bc5f8182b",
+    "src/simulation/mujoco-double-rack/physics.js": "ca29c3223b8da36451135852640e50f04f5d7c5b1e5e2ef98f1df95f44ecd65b",
+    "src/simulation/mujoco-double-rack/source.js": "896c4a0da8b167d71816e028744289379e709ba3b9028cb1bd2f71468735e42d",
+    "src/simulation/mujoco-double-rack/visual.js": "70d4c43e4df96363a5768726ad32ad0b1511679df2c7020d020450feebfe5d3c",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-double-rack/geometry.js": "bb9153867dffc1a306d691a3fce43fb8f508ab301785044732f36fb35d42a40e"
+  },
+  "physicsXmlSha256": {
+    "default": "909d410785ad2edc1e36adf7f4dcf9fc63c867b61f774bc44a11015fff862f5b"
+  },
+  "fullXmlSha256": {
+    "default": "9dccf2100cf628f33aca1a64a84750b1546ce4a598c67a75d79bceb7f2bc57ea"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-double-rack"
+  },
+  "cycleDesign": "The half-toothed pinion turns at constant speed and drives the frame alternately one way and back; one pinion turn closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 8,
+        "samples": 500,
+        "dt": 0.016,
+        "startTime": 56,
+        "periods": 1,
+        "drivePeriod": 8
+      },
+      "closure": {
+        "rawSeamPixels": 0.026022531037117602,
+        "maximumCorrectionPixels": 0.02440546740048313,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.pinion",
+            "angle": 6.283185307210067,
+            "rawAngle": 6.283185307210067
+          }
+        ]
+      },
+      "roundTripPixels": 0.02455698125753969,
+      "seam": {
+        "seamStepPixels": 0.711381292123835,
+        "interiorStepPixels": 0.8639533386473037,
+        "seamSecondPixels": 0.010000042675528675,
+        "interiorSecondPixels": 1.0000050067901611
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 84.24785007190704
+}

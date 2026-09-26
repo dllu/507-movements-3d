@@ -4,12 +4,11 @@ import {roundedRackGear} from '../coaxial-gear-geometry.js';
 import {plate,poly,circle,ring,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {segmentClampContactCells} from '../mujoco-segment-clamp/contact.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
-import {slideSleeve} from '../back-plate-support.js';
 export {THREE};
 
 export function makeVariableTraverseGeometry({upperTeeth=29,lowerTeeth=23,crankScale=.85,upperShift=-.5,addendum=.8,dedendum=1.5,upperPhase=.1286428026254441,samples=96,cutterSteps=2048,collisionTolerance=.0005}={}){
  if(![upperTeeth,lowerTeeth,samples,cutterSteps].every(Number.isInteger)||Math.min(upperTeeth,lowerTeeth)<8||samples<32||cutterSteps<128||![upperShift,upperPhase].every(Number.isFinite)||![addendum,dedendum,crankScale].every(v=>Number.isFinite(v)&&v>0)||!Number.isFinite(collisionTolerance)||collisionTolerance<0)throw new RangeError('Invalid 122 geometry options');
- const root=new THREE.Group(),blocks={},parts={},families={},cells={},contactApproximation={};
+ const root=new THREE.Group(),blocks={},parts={},families={},cells={},contactApproximation={},contactJobs=[];
  const bounds0=new THREE.Box3(new THREE.Vector3(-2.3,-2.35,-.2),new THREE.Vector3(3.05,2.15,.95));
  const local=([x,y])=>[(x-source.axis[0])/100,(source.axis[1]-y)/100],sub=(a,b)=>a.map((v,i)=>v-b[i]);
  const axes={upper:[160.56672913119453,194.3319731183004],lower:[202.64896397653337,388.7828992944972]};
@@ -28,7 +27,7 @@ export function makeVariableTraverseGeometry({upperTeeth=29,lowerTeeth=23,crankS
   add(n+'Gear',g,n,color);add(n+'Hub',ring(shaft,hub,.2,.25,128),n,color);add(n+'Shaft',disk(shaft,-.12,.25,128),n,PALETTE.ink);
   f[n+'Crank']=sub(position[n+'Rod'],position[n]);
   add(n+'CrankPin',translated(disk(source.circles[n+'Crank'].radius/100,.2,.47,96),f[n+'Crank']),n,PALETTE.ink);
-  const part=parts[n+'Gear'],approx=segmentClampContactCells(part.geometry,collisionTolerance);cells[n+'Gear']=approx.cells;const{cells:_,...description}=approx;contactApproximation[n+'Gear']=description;
+  {const geometry=parts[n+'Gear'].geometry;contactJobs.push(()=>{const approximation=segmentClampContactCells(geometry,collisionTolerance);cells[n+'Gear']=approximation.cells;const{cells:_,...description}=approximation;contactApproximation[n+'Gear']=description;});}
  }
  for(const[n,endName,edgeOffsets,color]of [['upper','topPin',[-11.21928728485604,6.211138615054426],PALETTE.driven],['lower','bottomPin',[-8.027507908385223,10.115785413830794],PALETTE.driver]]){
   const a=crankPixels[n],b=source.circles[endName].center,d=sub(b,a),L=Math.hypot(...d),normal=[-d[1]/L,d[0]/L],toLocal=p=>sub(local(p),position[n+'Rod']);
@@ -48,24 +47,13 @@ export function makeVariableTraverseGeometry({upperTeeth=29,lowerTeeth=23,crankS
  const bar=new THREE.Shape();bar.moveTo(350,174);bar.bezierCurveTo(330,177,333,214,351,219);bar.lineTo(407,209);bar.lineTo(416,195);bar.lineTo(495,180);bar.bezierCurveTo(507,182,510,157,499,156);bar.lineTo(416,174);bar.lineTo(410,176);bar.lineTo(404,169);bar.closePath();
  add('outputBar',plate(clip.difference(poly(bar.getPoints(24).map(p=>floatingLocal(p.toArray()))),poly(circle([0,0],source.circles.centerPin.radius/100+.0015,128))),.66,.8),'slider',PALETTE.driven);
  add('centerPin',disk(source.circles.centerPin.radius/100,.6,.85,128),'floating',PALETTE.ink);
- // Brown breaks the output bar off at the plate edge. It runs on whole, as
- // one piece with the bar, into a fixed guide on a post standing on the
- // floor, just past its right-hand reach (the guide follows the bar axis).
- {
-  const dir=new THREE.Vector2(...f.slideDirection),angle=Math.atan2(dir.y,dir.x),end=floatingLocal([505,169]);
-  const s0=end[0]*dir.x+end[1]*dir.y,offset=-end[0]*dir.y+end[1]*dir.x,travel=.4,gap=.12,guideLength=.3,halfWidth=.1,z0=.66,z1=.8;
-  const guideStart=s0+travel+gap,extEnd=guideStart+guideLength+travel+.05;
-  add('outputBarExtension',new THREE.BoxGeometry(extEnd-s0+.03,2*halfWidth,z1-z0).translate((extEnd+s0-.03)/2,offset,(z0+z1)/2).rotateZ(angle),'slider',PALETTE.driven);
-  blocks.fixed=new THREE.Group();blocks.fixed.position.set(...position.slider,0);root.add(blocks.fixed);
-  const uc=guideStart+guideLength/2,sleeve=slideSleeve({center:new THREE.Vector3(uc,offset,(z0+z1)/2),axis:'x',length:guideLength,
-   innerWidth:2*halfWidth+.012,innerDepth:z1-z0+.012,wall:.05});
-  sleeve.updateMatrixWorld(true);
-  for(const part of [...sleeve.children])add('outputGuide-'+part.userData.role,part.geometry.applyMatrix4(part.matrixWorld).rotateZ(angle),'fixed',PALETTE.frame);
-  const gc=new THREE.Vector2(uc,offset).rotateAround(new THREE.Vector2(),angle),postTop=gc.y-halfWidth-.06,floor=bounds0.min.y-position.slider[1];
-  add('outputGuidePost',new THREE.BoxGeometry(.16,postTop-floor,.14).translate(gc.x,(postTop+floor)/2,(z0+z1)/2),'fixed',PALETTE.frame);
-  add('outputGuideFoot',new THREE.BoxGeometry(.5,.08,.5).translate(gc.x,floor+.04,(z0+z1)/2),'fixed',PALETTE.frame);
- }
+ // Brown breaks the output bar off at the plate edge; it ends there on its
+ // own rounded end (no added guide or stand: p60 support policy).
  const bounds=bounds0.clone();
- Object.assign(root.userData,{source,profile:f,blocks,parts,families,cells,contactApproximation,hideGround:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},shadowCameraHalfExtent:5,shadowBias:-.00002,shadowNormalBias:.002});
+ Object.assign(root.userData,{source,profile:f,blocks,parts,families,hideGround:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},shadowCameraHalfExtent:5,shadowBias:-.00002,shadowNormalBias:.002});
+ // Collision cells are for the live simulation only; baked playback never
+ // reads them, so they are decomposed on first use (as in 113).
+ const buildContacts=()=>{for(const job of contactJobs.splice(0))job();};
+ for(const [key,value] of [['cells',cells],['contactApproximation',contactApproximation]])Object.defineProperty(root.userData,key,{configurable:true,enumerable:true,get(){buildContacts();Object.defineProperty(root.userData,key,{value,writable:true,configurable:true,enumerable:true});return value;}});
  markShadows(root);root.updateMatrixWorld(true);return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(1.3,1,10)};
 }

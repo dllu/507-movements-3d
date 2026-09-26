@@ -273,7 +273,8 @@ test('movement 282 sector and rack retain exact pitch-line rolling', () => {
   'common circular pitch');
   assert.equal(geometry.sectorEquivalentToothCount, 16);
   assert.equal(geometry.sectorToothCount, 7);
-  assert.equal(geometry.rackToothCount, 12);
+  // Only the teeth the sector can reach are cut: Brown draws seven.
+  assert.equal(geometry.rackToothCount, 7);
   for (let index = 0; index <= 8192; index += 1) {
     const state = stateAtDiskAngle(FULL_TURN * index / 8192);
     near(state.rackVelocity.x, state.rackPitchTangentialSpeed, 0,

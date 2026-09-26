@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { isSeeThrough } from '../src/simulation/see-through-part.js';
 import bakedMotion from '../src/simulation/baked/intermittent-63-211-snap-counter-cuts.js';
 import {
   defaultLeg,
@@ -26,7 +27,7 @@ const zRange = (object) => {
   return [box.min.z, box.max.z];
 };
 
-test('movement 63 is framed face on and layered as Brown dashes it', () => {
+test('movement 63 is framed face on, with the pins working only in the drop\'s plane', () => {
   const model = build();
   const data = model.root.userData;
   const { drop, driver, pawl, star, springLeaf } = data.blocks;
@@ -34,15 +35,31 @@ test('movement 63 is framed face on and layered as Brown dashes it', () => {
   assert.equal(data.hideGround, true);
   assert.ok(model.cameraDirection.clone().normalize().z > 0.98, 'the plate is seen face on');
   const { z } = data.geometry;
-  assert.ok(z.dropFront < z.diskBack, 'the drop, whose leg Brown dashes, runs behind the pin disk');
-  assert.ok(z.diskFront < z.pawlBack, 'the broad pawl works in front of the disk');
-  assert.ok(z.pinFront < z.starBack, 'the pins end behind the star, so they never meet it');
-  assert.ok(z.pinBack < z.dropFront && z.pinFront > z.pawlBack, 'the pins reach both the leg and the lobe');
-  assert.ok(z.pawlFront > z.starBack + 0.1, 'the one-piece pawl reaches forward into the star plane');
+  assert.ok(z.diskFront < z.dropBack, 'the opaque pin disk runs behind the drop');
+  assert.ok(z.dropFront < z.pawlBack, 'the drop runs behind the pawl');
+  assert.ok(z.pinBack < z.dropBack && z.pinFront > z.dropFront, 'the pins\' front ends reach through the drop\'s leg');
+  assert.ok(z.pinFront < z.pawlBack && z.pinFront < z.starBack, 'the pins end short of the pawl and the star');
+  assert.equal(z.pawlBack, z.starBack, 'the pawl is flush with the star at the back');
+  assert.equal(z.pawlFront, z.starFront, 'the pawl is flush with the star at the front');
   assert.equal(pawl.parent, drop.userData.rotor, 'the pawl hangs on the drop');
   assert.equal(driver.userData.pins.length, 3);
+  const pawlBody = pawl.userData.rotor.children.find((child) => child.userData.pawlBody);
+  const [pawlBack, pawlFront] = zRange(pawlBody);
+  const [starBack, starFront] = zRange(star.userData.body);
+  assert.ok(Math.abs(pawlBack - starBack) < 1e-6 && Math.abs(pawlFront - starFront) < 1e-6, 'pawl and star faces are flush');
+  for (const pin of driver.userData.pins) {
+    assert.ok(zRange(pin)[1] < pawlBack - 0.02, 'no pin reaches the pawl');
+    const [pinBack, pinFront] = zRange(pin);
+    const dropBody = drop.userData.rotor.children.find((child) => child.userData.springDropBody);
+    const [dropBack, dropFront] = zRange(dropBody);
+    assert.ok(pinBack < dropBack && pinFront > dropFront, 'every pin spans the drop\'s thickness');
+  }
+  // Brown dots the leg and the disk's rim behind the pawl's lobe: the pawl
+  // is the see-through part; the disk is opaque.
+  assert.ok(isSeeThrough(pawlBody), 'the pawl is see-through');
+  assert.ok(!isSeeThrough(driver.userData.rotor.children.find((child) => child.userData.driverDisk)), 'the disk is opaque');
   const [springBack, springFront] = zRange(springLeaf);
-  assert.ok(springBack > z.dropFront - 1e-9 && springFront < z.diskBack, 'the spring lies on the drop tail');
+  assert.ok(springBack > z.dropFront - 1e-9 && springFront < z.pawlBack, 'the spring lies on the drop tail');
   assert.ok(zRange(star)[1] > z.starFront - 1e-9);
 });
 
@@ -65,8 +82,8 @@ test('movement 63 plays the baked steady contact solution, which the live solver
 test('movement 63 keeps every working pair clear through a steady event', () => {
   const mechanism = makeSnapCounterMechanism();
   const { delta, phaseOffset, rho, sigma, startSigma, stepsPerEvent } = bakedMotion;
-  let pinPawl = Infinity;
   let pinDrop = Infinity;
+  let pinPawl = Infinity;
   let noseStar = Infinity;
   let striker = Infinity;
   let stop = Infinity;
@@ -76,8 +93,8 @@ test('movement 63 keeps every working pair clear through a steady event', () => 
     const pawl = mechanism.pawlAt(delta[step], rho[step]);
     const drop = mechanism.dropAt(delta[step]);
     for (const pin of pins) {
-      pinPawl = Math.min(pinPawl, ringPointGap(pawl, pin) - layout.pinRadius);
       pinDrop = Math.min(pinDrop, ringPointGap(drop, pin) - layout.pinRadius);
+      pinPawl = Math.min(pinPawl, ringPointGap(pawl, pin) - layout.pinRadius);
     }
     noseStar = Math.min(noseStar, ringGap(
       mechanism.noseAt(delta[step], rho[step]),
@@ -86,32 +103,37 @@ test('movement 63 keeps every working pair clear through a steady event', () => 
     striker = Math.min(striker, mechanism.strikerGap(delta[step], rho[step]));
     stop = Math.min(stop, ringPointGap(drop, mechanism.stopPin) - layout.stopPinRadius);
   }
-  assert.ok(pinPawl > 1, `pins clear the pawl (${pinPawl} px)`);
-  assert.ok(pinDrop > 1, `pins clear the drop (${pinDrop} px)`);
+  assert.ok(pinDrop > 1 && pinDrop < 3, `the pins bear on the drop's leg without entering it (${pinDrop} px)`);
+  assert.ok(pinPawl > 10, `the pins never touch the pawl, even in plan (${pinPawl} px)`);
   assert.ok(noseStar > 1, `the nose clears the star (${noseStar} px)`);
-  assert.ok(striker > 0 && striker < 1, `the striker bears on the pawl at rest (${striker} px)`);
+  // The pins never hold the pawl up, so the striker only limits its rise:
+  // at rest it sits a pixel or so above the arm (0.005 plate units).
+  assert.ok(striker > 0 && striker < 1.5, `the striker sits just above the pawl's arm (${striker} px)`);
   assert.ok(stop > 0 && stop < 1, `the drop comes to rest just on the stop pin (${stop} px)`);
 });
 
-test('movement 63 lifts, releases the pawl first, then snaps the drop and star', () => {
+test('movement 63 lifts the drop, lets the pawl ride into the next space, then snaps the star', () => {
   const { delta, rho, sigma, stepsPerEvent } = bakedMotion;
   const pitch = Math.PI * 2 / layout.starTeeth;
   const firstLift = delta.findIndex((value) => value > delta[0] + 1e-4);
-  const pawlRelease = rho.findIndex((value, index) => index > firstLift && value < -0.001);
   const peak = delta.indexOf(Math.max(...delta));
+  const lowestPawl = rho.indexOf(Math.min(...rho));
   const starStart = sigma.findIndex((value) => value < -1e-4);
-  assert.ok(firstLift > 0 && firstLift < pawlRelease, 'the pins lift the pawl with the drop first');
-  assert.ok(delta[pawlRelease] - delta[0] > 0.07,
-    'the pawl rides on the striker while the pin lifts its lobe and the drop');
-  assert.ok(pawlRelease < peak, 'the pin escapes the pawl before it escapes the drop');
+  assert.ok(firstLift > 0, 'the drop rests on its stop pin first');
+  for (let index = firstLift + 1; index <= peak; index += 1) {
+    assert.ok(delta[index] >= delta[index - 1] - 1e-9, 'the pins lift the drop steadily');
+    assert.ok(rho[index] <= rho[index - 1] + 1e-9, 'the pawl hangs lower on the screw as the drop rises');
+  }
   assert.ok(Math.max(...delta) > 0.3, 'the drop is lifted about twenty degrees');
-  assert.ok(starStart > peak, 'the star stays still until the drop falls');
+  assert.ok(Math.min(...rho) < -0.3, 'the pawl drops over the next point into the next space');
+  assert.ok(lowestPawl <= peak + 10, 'the pawl is in the next space before the drop falls');
+  assert.ok(starStart > peak - 10, 'the star stays still until the drop falls');
   assert.ok((stepsPerEvent - starStart) / stepsPerEvent < 0.1, 'the spring throws the drop and star quickly');
   for (let index = 1; index <= stepsPerEvent; index += 1) {
     assert.ok(sigma[index] <= sigma[index - 1] + 1e-9, 'the star only turns forward (clockwise)');
   }
   assert.ok(Math.abs(sigma.at(-1) + pitch) < 1e-6, 'each pin turns the star one point');
-  assert.ok(Math.abs(delta.at(-1) - delta[0]) < 1e-6 && Math.abs(rho.at(-1) - rho[0]) < 1e-3,
+  assert.ok(Math.abs(delta.at(-1) - delta[0]) < 1e-6 && Math.abs(rho.at(-1) - rho[0]) < 1e-4,
     'each event ends where the next begins');
 });
 
@@ -152,10 +174,10 @@ test('movement 63 draws every part whole and solid, with no dashed outline or un
   const pawlBodies = blocks.pawl.userData.rotor.children.filter((child) => child.isMesh);
   assert.equal(pawlBodies.length, 1, 'the pawl is one plate');
   const [pawlBack, pawlFront] = zRange(pawlBodies[0]);
-  assert.ok(pawlBack < geometry.z.pinFront && pawlFront > geometry.z.starBack + 0.1,
-    'the one plate spans the pins\' plane and the star\'s');
+  assert.ok(Math.abs(pawlBack - geometry.z.starBack) < 1e-6 && Math.abs(pawlFront - geometry.z.starFront) < 1e-6,
+    'the one plate is flush with the star');
   const dropBody = blocks.drop.userData.rotor.children.find((child) => child.userData.springDropBody);
-  // The drop keeps its whole working body, leg included, for the pins.
+  // The drop keeps Brown's broad pointed leg, solid down to its tip.
   dropBody.geometry.computeBoundingBox();
   const k = geometry.sourceScale;
   const [hx, hy] = layout.dropHinge;

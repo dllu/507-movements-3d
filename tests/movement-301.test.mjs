@@ -217,6 +217,25 @@ test('movements 300 and 301 are distinct projections of exactly the same mechani
     `shared geometry ${key}`,
   );
 
+  // One model: identical meshes, geometry and materials in both views; only
+  // the camera (and the display clock offset) differ.
+  const meshSignature = (root) => {
+    const rows = [];
+    root.traverse((object) => {
+      if (!object.isMesh) return;
+      rows.push([
+        object.userData.role ?? object.name,
+        object.visible,
+        object.geometry.attributes.position.count,
+        object.material.color?.getHexString(),
+        object.material.emissive?.getHexString(),
+      ].join('|'));
+    });
+    return rows;
+  };
+  assert.deepEqual(meshSignature(side.root), meshSignature(front.root),
+    '300 and 301 share one model');
+
   for (const coordinate of [0, 0.1, 0.24, 0.3, 0.5, 0.74, 0.8, 0.95, 1]) {
     const frontState = front.root.userData.stateAtCycleCoordinate(coordinate);
     const sideState = side.root.userData.stateAtCycleCoordinate(coordinate);

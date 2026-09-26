@@ -1,0 +1,85 @@
+{
+  "id": 122,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-122.json.gz",
+  "bytes": 96273,
+  "assetSha256": "8c4800e92681daf5aafa881ea37f37cb58e1af38dfe4ac3b6b9240d6cb66b9bf",
+  "motionSources": {
+    "src/simulation/mujoco-variable-traverse/physics.js": "65a2285352a43500af3c15cf8f950c3fbc84be538a93080a5cf4ae0a2291e3eb",
+    "src/simulation/mujoco-variable-traverse/source.js": "7f599af135fddf864860510398508cd59c7d0fd92ebae33bc217c6f39936af06",
+    "src/simulation/mujoco-variable-traverse/visual.js": "44213f6e10c743c96688ae5918b9021a8ed2cbca591f15d4efc6ae744d62ed07",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-variable-traverse/geometry.js": "1d78b4d3a9ca75fa8a8a566d66981afe34c15bb13061654519a2e3c665bb899c"
+  },
+  "physicsXmlSha256": {
+    "default": "253c3434e24acfb7d99a24d3af454b8daf40ccea6950ea8a2dbbcb013c760aea"
+  },
+  "fullXmlSha256": {
+    "default": "17e201af78e471d87529ee0b4c00809deb6b01eb45e1dc054a8c6a4e9b4efc81"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 29,
+    "searchPeriods": 3,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 116,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-variable-traverse",
+    "qpos": false,
+    "wrap": {
+      "blocks.upper": {
+        "symmetry": 6.283185307179586
+      },
+      "blocks.lower": {
+        "symmetry": 6.283185307179586
+      }
+    }
+  },
+  "cycleDesign": "The lower gear turns at constant speed. With 23 and 29 teeth the two crank pins return together only after 29 lower-gear turns, so the loop is that whole 116 s traverse pattern; both gears are carried forward by whole turns.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 116,
+        "samples": 7250,
+        "dt": 0.016,
+        "startTime": 12,
+        "periods": 29,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 2.0463984048317598e-7,
+        "maximumCorrectionPixels": 4.116230867457789e-8,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.upper",
+            "angle": 144.51326206513048,
+            "rawAngle": 144.51326206440726
+          },
+          {
+            "key": "blocks.lower",
+            "angle": 182.212373908208,
+            "rawAngle": 182.212373908634
+          }
+        ]
+      },
+      "roundTripPixels": 0.006702075501421078,
+      "seam": {
+        "seamStepPixels": 2.4655992441638985,
+        "interiorStepPixels": 2.5464563518940415,
+        "seamSecondPixels": 0.06221168737885465,
+        "interiorSecondPixels": 0.2878256448533994
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 52.13932069396973
+}

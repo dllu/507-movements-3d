@@ -6,6 +6,7 @@ import {
 } from './primitives.js';
 import {waterFountainGeometry, waterJetMaterial} from './water-volume.js';
 import {applyCutawayFor} from './cutaway-presentations.js';
+import {latheSectionGeometry} from './cutaway-section.js';
 
 import {
   circle,
@@ -362,6 +363,15 @@ function dectolOscillatingColumn(movement) {
     frameMaterial,
   ), 'fixed-lower-box-top-with-round-opening');
   root.add(lowerTop);
+  // Brown's walled neck carries the stream from the upper box's orifice down
+  // into the lower box: a round pipe (in the same half-section as the boxes)
+  // seated under the upper floor and on the lower top round both openings.
+  const neck = addRole(new THREE.Mesh(
+    latheSectionGeometry([[receiverHoleRadius + 0.01, receiverTopY], [receiverHoleRadius + 0.09, receiverTopY],
+      [receiverHoleRadius + 0.09, nozzleBottomY], [receiverHoleRadius + 0.01, nozzleBottomY]], {segments: 64}),
+    frameMaterial,
+  ), 'fixed-walled-neck-from-upper-orifice-to-lower-box');
+  root.add(neck);
   const lowerBack = backWall([
     [-lowerOuter, groundY],
     [outletRightX, groundY],

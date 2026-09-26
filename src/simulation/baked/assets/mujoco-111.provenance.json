@@ -1,0 +1,73 @@
+{
+  "id": 111,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-111.json.gz",
+  "bytes": 20147,
+  "assetSha256": "fc074c74df2f48e88263daced5f199851b4c06ce4be46857ce67c1d973ca668e",
+  "motionSources": {
+    "src/simulation/mujoco-micrometer/physics.js": "0fe70efa596303b67d636564f94009c98710e54e2843484f2fdc6c9c246e9d7f",
+    "src/simulation/mujoco-micrometer/profile.js": "0f12f204c396b75a14d98d3ccdf52c06138546ab7e2541ae26f443710ea26c92",
+    "src/simulation/mujoco-micrometer/source.js": "b62449d554cc17cd8213a73df64c5b13517c66a60ac1fd7b9e1817f44e8d1c1a",
+    "src/simulation/mujoco-micrometer/visual.js": "01b4b139d1d91da3310e78d196650a70ea32e81feaa61cd4e12e6a6069aad2fc",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-micrometer/geometry.js": "c7a2fc8e935092d4a40461f8e9b136e46247907fb24eb337b661a53491893e8b",
+    "src/simulation/mujoco-micrometer/section.js": "ab6b2147d677c4fc35d65da82645d64539be52fea788df8e6f7acbfcf7652169"
+  },
+  "physicsXmlSha256": {
+    "default": "06fd70e8375437dfef9b63e5d0c3f47cf5f938e9766462a79ba99b74aad6a6dd"
+  },
+  "fullXmlSha256": {
+    "default": "8f05db1619a737fedc63ae6604c34355879a390770ac879f55844a4e048d383c"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-micrometer"
+  },
+  "cycleDesign": "Cosine reversing sleeve drive: the sleeve screws out and back; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 16,
+        "samples": 1000,
+        "dt": 0.016,
+        "startTime": 48,
+        "periods": 1,
+        "drivePeriod": 16
+      },
+      "closure": {
+        "rawSeamPixels": 6.710624863672788e-11,
+        "maximumCorrectionPixels": 2.576904618509235e-13,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.outer",
+            "angle": 1.4871011323400185e-12,
+            "rawAngle": 1.4871011323400185e-12
+          }
+        ]
+      },
+      "roundTripPixels": 0.004981205492202111,
+      "seam": {
+        "seamStepPixels": 0.019900641827307813,
+        "interiorStepPixels": 1.9835216216296785,
+        "seamSecondPixels": 0.01260373974810226,
+        "interiorSecondPixels": 0.11671177774245214
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 2.3739718642234804
+}

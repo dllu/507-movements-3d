@@ -1,6 +1,7 @@
 import { correctCraneBrakeJoints, correctSpatialPulley, finishBandDrive } from './band-drive-working-parts.js';
 import {correctChainDrive} from './chain-drive-working-parts.js';
 import { ropeDrumSpokeShape } from './rope-drum-spoke.js';
+import { filletPulleySpokes } from './spoked-wheel.js';
 import { HelicalDrumWrap } from './helical-drum-wrap.js';
 import { ceilingAnchoredEightToOneCascade, sixPulleyCascade, loadAnchoredSevenToOneCascade, loadAnchoredThreeToOneCascade } from './authored-cascades.js';
 import * as THREE from 'three';
@@ -14,7 +15,7 @@ import { spanishBartonFourToOne, spanishBartonFiveToOne } from './authored-barto
 import { makeHoistLoad, makeSheaveHanger, makeTackleCase } from './hoist-hardware.js';
 import { LAID_ROPE, LaidRopeGeometry, makeLaidRopeMesh } from './laid-rope.js';
 import { makeHaulingHand } from './hauling-hand.js';
-import { backBar, bearingBoss, footPillar, freezeFitBoundsWithout } from './back-plate-support.js';
+import { freezeFitBoundsWithout } from './back-plate-support.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -268,8 +269,8 @@ function simpleBeltTransmission(crossed = false) {
   const pulleyRadius = 0.808;
   const ropeRadius = 0.048;
   const radius = pulleyRadius + ropeRadius + 0.003;
-  const driver = makePulley({ radius: pulleyRadius, width: 0.30, color: PALETTE.driver });
-  const driven = makePulley({ radius: pulleyRadius, width: 0.30, color: PALETTE.driven });
+  const driver = filletPulleySpokes(makePulley({ radius: pulleyRadius, width: 0.30, color: PALETTE.driver }));
+  const driven = filletPulleySpokes(makePulley({ radius: pulleyRadius, width: 0.30, color: PALETTE.driven }));
   driver.position.set(upperCenter.x, upperCenter.y, 0);
   driven.position.set(lowerCenter.x, lowerCenter.y, 0);
   // Pass 58: the crossed rope of 2 is taut, its runs straight tangents.
@@ -325,7 +326,7 @@ function rightAngleGuides() {
   const driverRadius = drumRadius + ropeLift;
   const driverWidth = 2 * (drumRadius + 0.012);
   const guideRadius = 0.428 + ropeLift;
-  const driven = makePulley({ radius: drivenRadius - ropeLift, width: 0.38, color: PALETTE.driven, axis: Z_AXIS });
+  const driven = filletPulleySpokes(makePulley({ radius: drivenRadius - ropeLift, width: 0.38, color: PALETTE.driven, axis: Z_AXIS }));
   const driver = makePulley({ radius: drumRadius, width: driverWidth, hubLength: driverWidth + 0.1,
     spokes: 0, grooves: 0, color: PALETTE.driver, axis: X_AXIS });
   driven.position.copy(drivenCenter);
@@ -472,19 +473,19 @@ function rightAngleCrossed() {
   const driverRadius = 0.88;
   const drivenRadius = 0.58;
   const guideRadius = 0.48;
-  const driver = makePulley({
+  const driver = filletPulleySpokes(makePulley({
     radius: driverRadius - 0.05,
     width: 0.4,
     color: PALETTE.driver,
     axis: Z_AXIS,
-  });
-  const driven = makePulley({
+  }));
+  const driven = filletPulleySpokes(makePulley({
     radius: drivenRadius - 0.05,
     width: 0.5,
     color: PALETTE.driven,
     grooves: 1,
     axis: Y_AXIS,
-  });
+  }));
   driver.position.copy(driverCenter);
   driven.position.copy(drivenCenter);
 
@@ -671,8 +672,8 @@ function tighteningPulley() {
   const driverRadius = 0.888 + ropeLift;
   const drivenRadius = 0.628 + ropeLift;
   const idlerRadius = 0.358 + ropeLift;
-  const driver = makePulley({ radius: driverRadius - ropeLift, color: PALETTE.driver });
-  const driven = makePulley({ radius: drivenRadius - ropeLift, color: PALETTE.driven });
+  const driver = filletPulleySpokes(makePulley({ radius: driverRadius - ropeLift, color: PALETTE.driver }));
+  const driven = filletPulleySpokes(makePulley({ radius: drivenRadius - ropeLift, color: PALETTE.driven }));
   const idler = makePulley({ radius: idlerRadius - ropeLift, width: 0.26, spokes: 0, color: PALETTE.accent, bore: 0.082 });
   driver.position.copy(top).setZ(0);
   driven.position.copy(bottom).setZ(0);
@@ -906,8 +907,8 @@ function oscillatingSector() {
 
   const leftCenter = new THREE.Vector3(-1.5, -1.9, beltZ);
   const rightCenter = new THREE.Vector3(1.5, -1.9, beltZ);
-  const leftPulley = makePulley({ radius: lowerPitchRadius - ropeLift, width: 0.28, color: PALETTE.driven });
-  const rightPulley = makePulley({ radius: lowerPitchRadius - ropeLift, width: 0.28, color: PALETTE.driven });
+  const leftPulley = filletPulleySpokes(makePulley({ radius: lowerPitchRadius - ropeLift, width: 0.28, color: PALETTE.driven }));
+  const rightPulley = filletPulleySpokes(makePulley({ radius: lowerPitchRadius - ropeLift, width: 0.28, color: PALETTE.driven }));
   leftPulley.position.set(leftCenter.x, leftCenter.y, 0);
   rightPulley.position.set(rightCenter.x, rightCenter.y, 0);
   const leftBottom = leftCenter.clone().add(new THREE.Vector3(0, -lowerPitchRadius, 0));
@@ -1312,22 +1313,18 @@ function steppedSpeedDrive() {
   const driven = makeSteppedPulley({ radii, stepWidth, color: PALETTE.driven, reverse: true });
   driver.position.set(left.x, left.y, 0);
   driven.position.set(right.x, right.y, 0);
-  const belts = radii.map((radius, index) => {
-    const oppositeRadius = radii[radii.length - index - 1];
-    const z = (index - (radii.length - 1) / 2) * stepWidth;
-    const belt = makeMovingBelt(
-      beltCurveOpen(left, right, radius + halfThickness, oppositeRadius + halfThickness, z),
-      { width: 0.20, thickness: 2 * halfThickness, markerCount: 0 },
-    );
-    belt.userData.selectorBelt = true;
-    belt.userData.level = index;
-    root.add(belt);
-    return belt;
-  });
   root.add(driver, driven);
   addKeyedShaft(driver, 2.1);
   addKeyedShaft(driven, 2.1);
+  // Each stage runs the drive up, holds it and runs it down (4.2 s), then
+  // shifts the belt by hand to the adjacent step pair while the pulleys are
+  // at rest. The steps are visited in a ping-pong order, so every shift is
+  // one step and the six-stage cycle closes without a jump.
   const shiftPeriod = 4.2;
+  const shiftDuration = 0.8;
+  const stageDuration = shiftPeriod + shiftDuration;
+  const levelSequence = [2, 3, 2, 1, 0, 1];
+  const cycleDuration = stageDuration * levelSequence.length;
   const rampFraction = 0.16;
   const rampTime = shiftPeriod * rampFraction;
   const fullIntegral = shiftPeriod - rampTime;
@@ -1339,44 +1336,78 @@ function steppedSpeedDrive() {
   };
   const pitchRadii = radii.map((radius) => radius + halfThickness);
   const ratioAt = (index) => pitchRadii[index] / pitchRadii[radii.length - 1 - index];
-  const distancePerCycle = fullIntegral * 1.25 * pitchRadii.reduce((sum, r) => sum + r, 0);
-  const drivenAnglePerCycle = fullIntegral * 1.25 * radii.reduce((sum, _, i) => sum + ratioAt(i), 0);
+  const prefix = (weight) => levelSequence.reduce((sums, level) => [...sums, sums.at(-1) + 1.25 * fullIntegral * weight(level)], [0]);
+  const drivenPrefix = prefix(ratioAt);
+  const beltPrefix = prefix((level) => pitchRadii[level]);
+  const levelZ = (level) => (level - (radii.length - 1) / 2) * stepWidth;
+  // One belt: it runs on a step pair and is shifted across at rest.
+  const belt = makeDynamicMovingBelt(
+    beltCurveOpen(left, right, pitchRadii[2], pitchRadii[1], levelZ(2)),
+    { width: 0.20, thickness: 2 * halfThickness, markerCount: 0 },
+  );
+  belt.userData.role = 'belt-on-one-step-pair-shifted-at-rest';
+  belt.userData.selectorBelt = true;
+  setBeltActive(belt, true);
+  root.add(belt);
+  const belts = [belt];
+  const smooth = (x) => { const t = THREE.MathUtils.clamp(x, 0, 1); return t * t * t * (10 - 15 * t + 6 * t * t); };
 
   const update = (time) => {
-    const stage = Math.floor(time / shiftPeriod);
-    const selected = THREE.MathUtils.euclideanModulo(stage + 2, radii.length);
-    const cycleProgress = THREE.MathUtils.euclideanModulo(time, shiftPeriod) / shiftPeriod;
-    let driveEnvelope = 1;
-    if (cycleProgress < rampFraction) {
-      const progress = cycleProgress / rampFraction;
-      driveEnvelope = progress * progress * (3 - 2 * progress);
-    } else if (cycleProgress > 1 - rampFraction) {
-      const progress = (1 - cycleProgress) / rampFraction;
-      driveEnvelope = progress * progress * (3 - 2 * progress);
+    const completedCycles = Math.floor(time / cycleDuration);
+    const withinCycle = time - completedCycles * cycleDuration;
+    const stage = Math.min(levelSequence.length - 1, Math.floor(withinCycle / stageDuration));
+    const local = withinCycle - stage * stageDuration;
+    const selected = levelSequence[stage];
+    const shifting = local >= shiftPeriod;
+    const cycleProgress = Math.min(local, shiftPeriod) / shiftPeriod;
+    let driveEnvelope = 0;
+    if (!shifting) {
+      driveEnvelope = 1;
+      if (cycleProgress < rampFraction) {
+        const progress = cycleProgress / rampFraction;
+        driveEnvelope = progress * progress * (3 - 2 * progress);
+      } else if (cycleProgress > 1 - rampFraction) {
+        const progress = (1 - cycleProgress) / rampFraction;
+        driveEnvelope = progress * progress * (3 - 2 * progress);
+      }
     }
     const driverRadius = pitchRadii[selected];
     const drivenRadius = pitchRadii[radii.length - selected - 1];
     const driverAngularSpeed = 1.25 * driveEnvelope;
     const drivenAngularSpeed = driverAngularSpeed * driverRadius / drivenRadius;
     const beltSpeed = driverAngularSpeed * driverRadius;
-    const completedCycles = Math.floor(stage / radii.length);
-    const stageWithinCycle = THREE.MathUtils.euclideanModulo(stage, radii.length);
-    const integratedEnvelope = envelopeIntegral(cycleProgress * shiftPeriod);
-    const driverAngle = 1.25 * (stage * fullIntegral + integratedEnvelope);
-    let drivenAngle = completedCycles * drivenAnglePerCycle + 1.25 * integratedEnvelope * ratioAt(selected);
-    let beltDistance = completedCycles * distancePerCycle + 1.25 * integratedEnvelope * driverRadius;
-    for (let i = 0; i < stageWithinCycle; i += 1) {
-      const prior = (i + 2) % radii.length;
-      drivenAngle += 1.25 * fullIntegral * ratioAt(prior);
-      beltDistance += 1.25 * fullIntegral * pitchRadii[prior];
-    }
+    const integratedEnvelope = envelopeIntegral(Math.min(local, shiftPeriod));
+    const stagesDone = completedCycles * levelSequence.length + stage;
+    const driverAngle = 1.25 * (stagesDone * fullIntegral + integratedEnvelope);
+    const drivenAngle = completedCycles * drivenPrefix.at(-1) + drivenPrefix[stage]
+      + 1.25 * integratedEnvelope * ratioAt(selected);
+    const beltDistance = completedCycles * beltPrefix.at(-1) + beltPrefix[stage]
+      + 1.25 * integratedEnvelope * driverRadius;
     setSpin(driver, -driverAngle);
     setSpin(driven, -drivenAngle);
-    belts.forEach((belt, index) => {
-      const active = index === selected;
-      setBeltActive(belt, active);
-      if (active) belt.userData.updateDistance(beltDistance);
-    });
+    let shift = null;
+    let beltDriverRadius = driverRadius, beltDrivenRadius = drivenRadius, beltZ = levelZ(selected);
+    if (shifting) {
+      // The rising end is lifted onto its larger step before the belt is
+      // slid across; the falling end slides over its smaller step and then
+      // drops onto it.
+      const target = levelSequence[(stage + 1) % levelSequence.length];
+      const progress = (local - shiftPeriod) / shiftDuration;
+      const driverUp = pitchRadii[target] > pitchRadii[selected];
+      const lift = smooth(progress / 0.45), slide = smooth((progress - 0.25) / 0.5), drop = smooth((progress - 0.55) / 0.45);
+      const radiusAt = (from, to, up) => THREE.MathUtils.lerp(from, to, up ? lift : drop);
+      beltDriverRadius = radiusAt(pitchRadii[selected], pitchRadii[target], driverUp);
+      beltDrivenRadius = radiusAt(pitchRadii[radii.length - 1 - selected], pitchRadii[radii.length - 1 - target], !driverUp);
+      beltZ = THREE.MathUtils.lerp(levelZ(selected), levelZ(target), slide);
+      shift = { from: selected, to: target, progress };
+    }
+    const key = `${beltDriverRadius},${beltDrivenRadius},${beltZ}`;
+    if (belt.userData.pathKey !== key) {
+      belt.userData.pathKey = key;
+      belt.userData.setCurve(beltCurveOpen(left, right, beltDriverRadius, beltDrivenRadius, beltZ));
+    }
+    belt.userData.level = selected;
+    belt.userData.updateDistance(beltDistance);
     root.userData.kinematics = {
       activeBeltCount: 1,
       beltSpeed,
@@ -1387,8 +1418,10 @@ function steppedSpeedDrive() {
       driverAngularSpeed: -driverAngularSpeed,
       driverRadius,
       selected,
+      shift,
     };
   };
+  root.userData.animationTiming = { authoredCyclePeriod: cycleDuration };
   root.userData.mechanism = 'stepped-speed-drive';
   root.userData.blocks = { driver, driven, belts };
   root.userData.nominalBeltLength = beltLength;
@@ -1615,12 +1648,12 @@ function rightAngleWithoutGuides() {
     spokes: 0,
     grooves: 0,
   });
-  const driven = makePulley({
+  const driven = filletPulleySpokes(makePulley({
     radius: bottomPitchRadius - 0.012,
     width: 0.4,
     color: PALETTE.driven,
     axis: Z_AXIS,
-  });
+  }));
   driver.position.copy(topCenter);
   driven.position.copy(bottomCenter);
 
@@ -2787,33 +2820,16 @@ function compensatedMovableDrive() {
     suspension,
     weight,
   );
-  const driverAxle = addKeyedShaft(driver, 0.88);
+  const driverAxle = addKeyedShaft(driver, 0.80);
   const movableAxle = addKeyedShaft(movable, 0.80);
   const compensatorAxle = addAxle(
     root,
     new THREE.Vector3(compensatorBase.x, compensatorBase.y, 0.07),
     1.02,
   );
-  // Brown draws no frame. The guide pulleys B turn on axles run back to a
-  // plain back bar behind the mechanism, standing on a pillar behind the
-  // counterweight; the fixed driver's shaft runs in a bearing boss on its own
-  // pillar. Both pillars stand on feet at a floor below the driven pulley.
-  const supportBack = -0.45;
-  const floorY = -2.4;
-  const guideAxles = guides.map((guide) => {
-    const front = guide.position.z + 0.21;
-    return addAxle(root, new THREE.Vector3(guide.position.x, guide.position.y, (front + supportBack) / 2),
-      front - supportBack);
-  });
-  const guideBar = backBar(guideCenters.map((c) => ({ x: c.x, y: c.y })), { zFront: supportBack, width: 0.3, role: 'guide-pulley-back-bar' });
-  const guidePillar = footPillar({ x: guideCenters[1].x, yTop: guideCenters[1].y, yFloor: floorY,
-    z: supportBack - 0.05, width: 0.2, role: 'guide-pulley-pillar' });
-  const driverPad = backBar([{ x: driverCenter.x, y: driverCenter.y }], { zFront: supportBack, width: 0.4, role: 'driver-shaft-pad' });
-  const driverBearing = bearingBoss({ x: driverCenter.x, y: driverCenter.y, boreRadius: 0.078, outerRadius: 0.16,
-    zBack: supportBack, zFront: -0.33, role: 'driver-shaft-bearing' });
-  const driverPillar = footPillar({ x: driverCenter.x, yTop: driverCenter.y, yFloor: floorY,
-    z: supportBack - 0.05, width: 0.24, role: 'driver-shaft-pillar' });
-  root.add(guideBar, guidePillar, driverPad, driverBearing, driverPillar);
+  // Brown draws no frame: the guide pulleys B and the driver turn on plain
+  // axle stubs, as elsewhere in the belt family (p60 support policy).
+  const guideAxles = guides.map((guide) => addAxle(root, guide.position, 0.42));
   const hanger = new THREE.Group();
   const shoulder = compensatorRadius + 0.10;
   for (const z of [-0.36, ropePlane]) {
@@ -2930,10 +2946,8 @@ function compensatedMovableDrive() {
     };
   };
   update(0);
-  // Frame Brown's view: the added bar, pillars and bearing stay out of the
-  // fit, so the pillars run off below the plate's crop.
-  freezeFitBoundsWithout(root, update, 2 * Math.PI / frequency,
-    [guideBar, guidePillar, driverPad, driverBearing, driverPillar]);
+  // Frame Brown's view on the swept mechanism.
+  freezeFitBoundsWithout(root, update, 2 * Math.PI / frequency, []);
   return {
     root,
     cameraDirection: new THREE.Vector3(0.3, 0.15, 10),
@@ -11896,13 +11910,16 @@ function removeUndrawnWhiteIndexMarks(root) {
 // the shared laid rope along its final (static) span, in place of the plain
 // cylinder the clamp correction positioned.
 function layProny244Cables(root) {
+  const cordMaterial = matte(PALETTE.belt, { metalness: 0.04, roughness: 0.72 });
   for (const cable of root.userData.blocks.scaleCables) {
     const segment = cable.children[0];
     const offset = new THREE.Vector3(0, segment.scale.y / 2, 0).applyQuaternion(segment.quaternion);
     const upper = segment.position.clone().add(offset);
     const lower = segment.position.clone().sub(offset);
-    const rope = makeLaidRopeMesh(new THREE.LineCurve3(upper, lower), segment.material,
-      { radius: segment.geometry.parameters.radiusTop });
+    // Thick enough (0.035, like the other laid cords) for its three strands
+    // to read, in the shared cord colour rather than ink.
+    const rope = makeLaidRopeMesh(new THREE.LineCurve3(upper, lower), cordMaterial,
+      { radius: 0.035 });
     rope.userData.role = 'scale-pan-suspension-cable';
     for (const child of cable.children) child.visible = false;
     cable.add(rope);

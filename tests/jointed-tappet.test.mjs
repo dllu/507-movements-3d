@@ -22,8 +22,12 @@ test('076 locates C, the hinged end B, the holding pawl and D on a complete coax
   const restEnd=[p.C[0]+Math.cos(p.restQ)*p.end[0]-Math.sin(p.restQ)*p.end[1],p.C[1]+Math.sin(p.restQ)*p.end[0]+Math.cos(p.restQ)*p.end[1]];
   near(Math.hypot(...restEnd)+p.barRadius+p.studRadius-p.studOrbit,.05,1e-12);
   assert.ok(p.studOrbit+p.studRadius<=p.driverOuter&&p.studOrbit-p.studRadius>=p.driverInner,'D must stay on the rim');
+  // One stud on each of the four spokes: the same stud a quarter turn apart.
+  assert.equal(p.studCount,4);
+  for(let i=1;i<4;i++){const other=u.parts[`driverStud${i}`].position,angle=Math.atan2(stud.y,stud.x)+i*Math.PI/2;
+    near(other.x,p.studOrbit*Math.cos(angle),1e-12);near(other.y,p.studOrbit*Math.sin(angle),1e-12);}
   assert.deepEqual(u.blocks.driver.position.toArray(),[0,0,0]);assert.deepEqual(u.blocks.wheel.position.toArray(),[0,0,0]);
-  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,26);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
+  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,29);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
   assert.match(u.idealConstraints,/reconstruction assumptions/);near(u.profile.physics.load,3);assert.deepEqual(u.profile.physics.damping,[3,.008,100,.003]);
   for(const family of ['driver','wheel','tappet','dog','holding']){
     near(u.masses[family].volume*u.profile.physics.density,u.profile.physics.mass[family].mass,1e-10);
@@ -70,7 +74,7 @@ test('076 all four bearings have real bores with supporting material around them
   dispose(model);
 });
 
-test('076 settles one counterclockwise tooth per clockwise driver turn and resets its joint',()=>{
+test('076 settles one counterclockwise tooth per stud, four per clockwise driver turn, and resets its joint',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
   near(pose(model,0).q,0);near(pose(model,.2).q,.3);
   assert.ok(pose(model,1).theta>p.wheelStart+1.1*p.pitch,'The wheel must pass one tooth for the holding pawl to drop in');
@@ -78,18 +82,18 @@ test('076 settles one counterclockwise tooth per clockwise driver turn and reset
   // The stud tips the tappet only far enough to index one tooth: it
   // releases B within 60° of rest and the wheel overtravels under 1.25 teeth.
   let qMin=Infinity,thetaMax=-Infinity;
-  for(let t=0;t<12;t+=.001){const s=sampleJointedTappetMotion(t);qMin=Math.min(qMin,s.q);thetaMax=Math.max(thetaMax,s.theta);}
+  for(let t=0;t<3;t+=.001){const s=sampleJointedTappetMotion(t);qMin=Math.min(qMin,s.q);thetaMax=Math.max(thetaMax,s.theta);}
   assert.ok(p.restQ-qMin<Math.PI/3&&qMin<-.6,`tappet swing ${p.restQ-qMin}`);
   assert.ok(thetaMax<p.wheelStart+1.25*p.pitch,`wheel overtravel ${(thetaMax-p.wheelStart)/p.pitch}`);
   for(const cycle of [0,1,2,9,19,20,63]){
-    const held=pose(model,cycle*12+4);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,.3);near(held.alpha,0);near(held.holdingAngle,0);
-    const next=pose(model,(cycle+1)*12);near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1));near(next.q,.3);
+    const held=pose(model,cycle*3+2);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,.3);near(held.alpha,0);near(held.holdingAngle,0);
+    const next=pose(model,(cycle+1)*3);near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1)/4);near(next.q,.3);
   }
-  for(const time of [12.07,12.53,15.1,19.2]){
-    const a=pose(model,time),b=pose(model,time+12);near(b.theta-a.theta,p.pitch);near(b.q,a.q);near(b.alpha,a.alpha);near(b.holdingAngle,a.holdingAngle);
+  for(const time of [3.07,3.53,4.1,5.2]){
+    const a=pose(model,time),b=pose(model,time+3);near(b.theta-a.theta,p.pitch);near(b.q,a.q);near(b.alpha,a.alpha);near(b.holdingAngle,a.holdingAngle);
     pose(model,time+57);assert.deepEqual(pose(model,time),a,'Seeking must be independent of update order');
   }
-  near(u.animationTiming.authoredCyclePeriod,12);near(u.minimumDisplayCycleSeconds,12);dispose(model);
+  near(u.animationTiming.authoredCyclePeriod,3);near(u.minimumDisplayCycleSeconds,3);dispose(model);
 });
 
 test('076 the cached clock is continuous at wraps, clamps negative time and rejects invalid clocks',()=>{
@@ -97,9 +101,9 @@ test('076 the cached clock is continuous at wraps, clamps negative time and reje
   for(const time of [NaN,Infinity,-Infinity])assert.throws(()=>sampleJointedTappetMotion(time),/clock/);
   for(const period of [0,-1,NaN,Infinity])assert.throws(()=>sampleJointedTappetMotion(1,{period}),/clock/);
   for(const cycle of [1,2,20])for(const key of ['q','alpha','theta','holdingAngle','driverAngle']){
-    near(sampleJointedTappetMotion(cycle*12-1e-9)[key],sampleJointedTappetMotion(cycle*12+1e-9)[key],2e-9);
+    near(sampleJointedTappetMotion(cycle*3-1e-9)[key],sampleJointedTappetMotion(cycle*3+1e-9)[key],2e-9);
   }
-  const slow=sampleJointedTappetMotion(.53),fast=sampleJointedTappetMotion(.53*2/3,{period:8});
+  const slow=sampleJointedTappetMotion(.53),fast=sampleJointedTappetMotion(.53*2/3,{period:2});
   for(const key of ['q','alpha','theta','holdingAngle','driverAngle'])near(slow[key],fast[key]);
   slow.angularVelocities.forEach((v,k)=>near(fast.angularVelocities[k],v*1.5));
 });
@@ -108,9 +112,9 @@ test('076 actual working noses and mechanical stops resist motion into their con
   const model=makeJointedTappetCounter(),u=model.root.userData;
   const cases=[
     {time:.8,a:'dogNose',b:'wheelBody',block:'wheel',delta:-1e-4},
-    {time:4,a:'holdingNose',b:'wheelBody',block:'wheel',delta:-1e-4},
+    {time:2,a:'holdingNose',b:'wheelBody',block:'wheel',delta:-1e-4},
     {time:0,a:'dogStopPin',b:'dogStopSector',block:'dog',delta:1e-3},
-    {time:4,a:'tappetRestPin',b:'tappetRestSector',block:'tappet',delta:1e-3},
+    {time:2,a:'tappetRestPin',b:'tappetRestSector',block:'tappet',delta:1e-3},
     {time:.7,a:'driverStud',b:'tappetBody',block:'driver',delta:-1e-4},
   ];
   for(const c of cases){
@@ -141,7 +145,7 @@ test('076 actual working noses and mechanical stops resist motion into their con
 test('076 independent solids clear each other through strike, overtravel, folding and the next turn',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData;
   const parts=Object.entries(u.parts).map(([name,mesh])=>({name,mesh,solid:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)}));
-  for(const time of [0,.16,.45,.48,.52,.6,.66,.7,.8,.93,1,1.2,1.4,1.556,1.8,2,2.9,3.1,4,6,9,11.9,12.53,12.8]){
+  for(const time of [0,.16,.45,.48,.52,.6,.66,.7,.8,.93,1,1.2,1.4,1.556,1.8,2,2.9,3.1,3.53,3.8,4,4.2,4.556,5,6,9,11.9,12.53,12.8]){
     pose(model,time);
     for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++){
       if(u.families[parts[i].name]===u.families[parts[j].name])continue;
@@ -186,7 +190,7 @@ test('076 default view frames A, the pawls and the tappet throughout and Brown\'
   // As the large wheel turns, stud D leaves the view and comes back.
   const studInView=time=>{pose(model,time);const stud=new THREE.Vector3().setFromMatrixPosition(u.parts.driverStud.matrixWorld);
     return fit.containsPoint(stud.setZ(0));};
-  assert.ok(studInView(0));assert.ok([3,4.5,6,7.5].some(time=>!studInView(time)),'D leaves the view');assert.ok(studInView(u.profile.period));
+  assert.ok(studInView(0));assert.ok([3,4.5,6,7.5].some(time=>!studInView(time)),'D leaves the view');assert.ok(studInView(4*u.profile.period));
   near(Math.hypot(...studVector),u.geometry.studOrbit,1e-12);
   dispose(model);
 });

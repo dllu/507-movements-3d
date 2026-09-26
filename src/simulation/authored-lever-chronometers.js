@@ -1,1084 +1,851 @@
-import {correctDetachedChronometer} from './detached-chronometer-working-parts.js';
 import * as THREE from 'three';
-import {plate,poly,circle,polygonClipping} from './finite-plate-geometry.js';
-import {boredLatheGeometry} from './bored-lathe-geometry.js';
-import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { spokedWheelGeometry } from './spoked-wheel.js';
+import { creaseIndexedNormals } from './crease-normals.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
+import { PALETTE, markShadows, matte } from './primitives.js';
+
+// Movement 314: Brown's lever chronometer escapement (after Grimthorpe's
+// fig. 77, the "union" chronometer). Every part is a flat extrusion in
+// Brown's plane arrangement, traced by design intent from the plate:
+//
+//   front plane  (z 0 .. 0.24): the thirteen-tooth escape wheel, the
+//                crescent pallet plate carrying locking pallets A and B,
+//                and impulse pallet C, a straight blade on a collet on the
+//                balance staff;
+//   lever plane  (z -0.24 .. 0): the lever, forked at the top round the
+//                roller pin, pivoted on the crescent's arbor and banked at
+//                its foot between two pins;
+//   balance plane (z -0.40 .. -0.24): the plain balance disc with its small
+//                notch, carrying the roller pin forward into the fork.
+//
+// Brown draws the lever over the disc and the crescent over the lever (its
+// edges dashed under it), and C over the disc; the wheel lies clear of the
+// lever and disc in his view. The lever pivots on the arbor Brown draws as
+// the large circle on the crescent, like the pallet arbor of 296.
+//
+// A and B only lock. On the acting vibration A releases, the tooth two
+// pitches ahead drops onto C (the wheel catches C with matched speed) and
+// drives it through contact with the straight blade, slides off C's end,
+// and the intervening tooth lands on B. On the return vibration B unlocks
+// for the short residual transfer back to A, while C passes back through
+// the gap between the teeth.
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const DEG = Math.PI / 180;
 
-function positiveModulo(value, modulus) {
-  return ((value % modulus) + modulus) % modulus;
-}
+const v2 = (x, y) => new THREE.Vector2(x, y);
+const rotate2 = (point, angle) => v2(
+  point.x * Math.cos(angle) - point.y * Math.sin(angle),
+  point.x * Math.sin(angle) + point.y * Math.cos(angle),
+);
+const crossZ = (point) => v2(-point.y, point.x);
+const smootherStep = (u) => u * u * u * (u * (u * 6 - 15) + 10);
+const smootherStepDerivative = (u) => 30 * u * u * (u - 1) * (u - 1);
+const smootherStepSecondDerivative = (u) => 60 * u * (2 * u * u - 3 * u + 1);
+const positiveModulo = (value, modulus) => ((value % modulus) + modulus) % modulus;
 
-function rotate2(point, angle) {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
-  return new THREE.Vector2(
-    cosine * point.x - sine * point.y,
-    sine * point.x + cosine * point.y,
-  );
-}
-
-function crossZ(point) {
-  return new THREE.Vector2(-point.y, point.x);
-}
-
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function centeredExtrusion(shape, depth, bevelSize = 0.008) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize,
-    bevelThickness: bevelSize,
-    curveSegments: 12,
-    depth,
-    steps: 1,
+// Quintic from (x0, v0, a0) to (x1, v1, a1) over unit time.
+function quintic(x0, v0, a0, x1, v1, a1) {
+  const c3 = 10 * (x1 - x0) - 6 * v0 - 4 * v1 - 1.5 * a0 + 0.5 * a1;
+  const c4 = -15 * (x1 - x0) + 8 * v0 + 7 * v1 + 1.5 * a0 - a1;
+  const c5 = 6 * (x1 - x0) - 3 * v0 - 3 * v1 - 0.5 * a0 + 0.5 * a1;
+  return (u) => ({
+    x: x0 + v0 * u + 0.5 * a0 * u * u + c3 * u ** 3 + c4 * u ** 4 + c5 * u ** 5,
+    v: v0 + a0 * u + 3 * c3 * u * u + 4 * c4 * u ** 3 + 5 * c5 * u ** 4,
+    a: a0 + 6 * c3 * u + 12 * c4 * u * u + 20 * c5 * u ** 3,
   });
-  geometry.translate(0, 0, -depth / 2);
+}
+
+// Flat extrusion of polygon-clipping polygons with crisp plate edges and
+// smooth curved walls.
+function flatPart(polygons, low, high) {
+  const extruded = plate(polygons, low, high);
+  const polygonsKept = extruded.userData.plate;
+  extruded.deleteAttribute('normal');
+  extruded.deleteAttribute('uv');
+  const geometry = mergeVertices(extruded, 1e-7);
+  geometry.clearGroups();
+  extruded.dispose();
+  creaseIndexedNormals(geometry, Math.PI / 5);
+  geometry.computeBoundingSphere();
+  geometry.userData.plate = polygonsKept;
   return geometry;
 }
 
-// First-quadrant window bounded by the crossings x = h, y = h and an outer
-// arc of radius outerRadius, with fillets at all three corners (Brown's
-// rounded-square windows), returned counter-clockwise as [x, y] pairs.
-function filletedQuadrantWindow(h, outerRadius, innerFillet, outerFillet, samples = 10) {
-  const points = [];
-  const arc = (cx, cy, radius, from, to) => {
-    for (let step = 0; step <= samples; step += 1) {
-      const angle = from + (to - from) * step / samples;
-      points.push([cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius]);
-    }
-  };
-  const inner = h + innerFillet;
-  arc(inner, inner, innerFillet, Math.PI, Math.PI * 1.5);
-  const cy = h + outerFillet;
-  const cx = Math.sqrt((outerRadius - outerFillet) ** 2 - cy ** 2);
-  const lowAngle = Math.atan2(cy, cx);
-  arc(cx, cy, outerFillet, -Math.PI / 2, lowAngle);
-  const highAngle = Math.PI / 2 - lowAngle;
-  for (let step = 1; step < samples * 2; step += 1) {
-    const angle = lowAngle + (highAngle - lowAngle) * step / (samples * 2);
-    points.push([Math.cos(angle) * outerRadius, Math.sin(angle) * outerRadius]);
-  }
-  arc(cy, cx, outerFillet, highAngle, Math.PI);
-  return points;
-}
-
-function polygonShape(points) {
-  const shape = new THREE.Shape();
-  points.forEach((point, index) => {
-    if (index === 0) shape.moveTo(point.x, point.y);
-    else shape.lineTo(point.x, point.y);
-  });
-  shape.closePath();
-  return shape;
-}
-
-function annularShape(outerRadius, innerRadius) {
-  const shape = new THREE.Shape();
-  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
-  const opening = new THREE.Path();
-  opening.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
-  shape.holes.push(opening);
-  return shape;
-}
-
-// Crescent through the pallet end, across the lever below the pivot, to a
-// short horn beyond the lever's far edge (Brown's plate B), in lever-local
-// coordinates.
-function crescentCarrierShape(palletCentroid, tailAxis) {
-  const tailNormal = new THREE.Vector2(-tailAxis.y, tailAxis.x);
-  const along = palletCentroid.dot(tailAxis);
-  const across = palletCentroid.dot(tailNormal);
-  const start = palletCentroid.clone();
-  const middle = tailAxis.clone().multiplyScalar(along * 0.80);
-  const end = tailAxis.clone().multiplyScalar(along * 0.60)
-    .addScaledVector(tailNormal, -across * 0.32);
-  const samples = 24;
-  const spine = [];
-  for (let step = 0; step <= samples; step += 1) {
-    const t = step / samples;
-    const a = start.clone().multiplyScalar((1 - t) ** 2);
-    const b = middle.clone().multiplyScalar(2 * (1 - t) * t);
-    const c = end.clone().multiplyScalar(t ** 2);
-    spine.push(a.add(b).add(c));
-  }
-  const left = [];
-  const right = [];
-  spine.forEach((point, index) => {
-    const previous = spine[Math.max(index - 1, 0)];
-    const next = spine[Math.min(index + 1, samples)];
-    const tangent = next.clone().sub(previous).normalize();
-    const normal = new THREE.Vector2(-tangent.y, tangent.x);
-    const t = index / samples;
-    const halfWidth = 0.14 + 0.20 * Math.sin(Math.PI * Math.min(t * 1.15, 1));
-    left.push(point.clone().addScaledVector(normal, halfWidth));
-    right.push(point.clone().addScaledVector(normal, -halfWidth));
-  });
-  return polygonShape([...left, ...right.reverse()]);
+function roundBar(radius, back, front, material, segments = 40) {
+  const mesh = new THREE.Mesh(
+    new THREE.CylinderGeometry(radius, radius, front - back, segments),
+    material,
+  );
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.z = (back + front) / 2;
+  return mesh;
 }
 
 function beamBetween(start, end, width, depth, material) {
-  const direction = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(direction.length(), width, depth),
+  const delta = end.clone().sub(start);
+  const mesh = new THREE.Mesh(
+    new THREE.BoxGeometry(delta.length(), width, depth),
     material,
   );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(direction.y, direction.x);
-  return beam;
+  mesh.position.copy(start).add(end).multiplyScalar(0.5);
+  mesh.rotation.z = Math.atan2(delta.y, delta.x);
+  return mesh;
 }
 
-function edgeTube(points, z, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points.map((point) => new THREE.Vector3(point.x, point.y, z)),
-    false,
-    'centripetal',
-  );
-  const edge = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      curve,
-      Math.max(36, points.length * 2),
-      radius,
-      8,
-      false,
-    ),
-    material,
-  );
-  edge.userData.role = role;
-  return edge;
-}
-
-function smootherStep(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return x ** 3 * (x * (x * 6 - 15) + 10);
-}
-
-function smootherStepDerivative(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return 30 * x ** 2 * (x - 1) ** 2;
-}
-
-function smootherStepSecondDerivative(value) {
-  const x = THREE.MathUtils.clamp(value, 0, 1);
-  return 60 * x * (2 * x ** 2 - 3 * x + 1);
-}
-
-function profileStripShape(points, radialWidth) {
-  const inner = points.map((point) => {
-    const radius = point.length();
-    return point.clone().multiplyScalar(
-      Math.max(radius - radialWidth, 0.08) / radius,
-    );
+// Points of a circular arc through three points (in order a, b, c).
+function arcThrough(a, b, c, count) {
+  const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+  const ux = ((a.lengthSq()) * (b.y - c.y) + (b.lengthSq()) * (c.y - a.y)
+    + (c.lengthSq()) * (a.y - b.y)) / d;
+  const uy = ((a.lengthSq()) * (c.x - b.x) + (b.lengthSq()) * (a.x - c.x)
+    + (c.lengthSq()) * (b.x - a.x)) / d;
+  const center = v2(ux, uy);
+  const radius = a.distanceTo(center);
+  const angle = (p) => Math.atan2(p.y - center.y, p.x - center.x);
+  const a0 = angle(a);
+  let a1 = angle(b);
+  let a2 = angle(c);
+  // Unwrap so the sweep passes through b.
+  const unwrap = (x, ref) => x + FULL_TURN * Math.round((ref - x) / FULL_TURN);
+  a1 = unwrap(a1, a0);
+  a2 = unwrap(a2, a1);
+  if ((a1 - a0) * (a2 - a1) < 0) a2 += Math.sign(a1 - a0) * FULL_TURN;
+  return Array.from({ length: count + 1 }, (_, i) => {
+    const t = a0 + (a2 - a0) * i / count;
+    return v2(center.x + radius * Math.cos(t), center.y + radius * Math.sin(t));
   });
-  return polygonShape([...points, ...inner.reverse()]);
 }
 
 function leverChronometerEscapement(movement) {
   const root = new THREE.Group();
 
-  // Brown copied this arrangement from Grimthorpe's fig. 77. A and B are
-  // locking faces only. On the acting vibration A releases, a different
-  // tooth gives direct impulse to balance pallet C, and the tooth between A
-  // and B lands on B. On the return vibration B releases for only the small
-  // residual advance needed to put the wheel back on A; no impulse occurs.
+  // ---- Plate measurements (525 px raster, y down) ----------------------
+  // Tooth tips fitted by circle to the thirteen free tips: centre
+  // (176, 275), radius 176 px, one tip every 27.7 degrees.
   const sourceImageWidth = 525;
   const sourceImageHeight = 525;
-  const sourceRasterWheelCenter = new THREE.Vector2(175, 275);
-  const sourceRasterBalanceCenter = new THREE.Vector2(373, 115);
-  const sourceRasterLeverPivot = new THREE.Vector2(375, 200);
-  const sourceRasterBalancePin = new THREE.Vector2(373, 159);
-  const sourceRasterImpulseStartC = new THREE.Vector2(281, 145);
-  const sourceRasterPalletA = new THREE.Vector2(349, 299);
-  const sourceRasterPalletBFreeTip = new THREE.Vector2(203, 397);
-  const sourceRasterLeftBank = new THREE.Vector2(324, 477);
-  const sourceRasterRightBank = new THREE.Vector2(424, 467);
-  const sourceRasterWheelOuterRadius = 168;
-  const sourceRasterBalanceOuterRadius = 84;
+  const sourceRasterWheelCenter = v2(176, 275);
+  const sourceRasterWheelOuterRadius = 176;
+  const sourceRasterWheelRootRadius = 144;
+  const sourceRasterBalanceCenter = v2(372, 116);
+  const sourceRasterBalanceOuterRadius = 90;
+  const sourceRasterBalancePin = v2(372, 159.4);
+  const sourceRasterLeverPivot = v2(371.5, 375.5);
+  const sourceRasterPalletA = v2(350.6, 296);
+  const sourceRasterImpulseStartC = v2(291, 142);
+  const sourceRasterCInner = v2(320, 130);
+  const sourceRasterCOuter = v2(282.5, 146);
+  const sourceRasterLeftBank = v2(324, 477);
+  const sourceRasterRightBank = v2(424, 467);
   const sourceScale = 3.25 / sourceRasterWheelOuterRadius;
-  const sourcePointToModel = ({ x, y }) => new THREE.Vector2(
+  const sourcePointToModel = ({ x, y }) => v2(
     (x - sourceRasterWheelCenter.x) * sourceScale,
     (sourceRasterWheelCenter.y - y) * sourceScale,
   );
+  const px = (x, y) => sourcePointToModel({ x, y });
 
   const wheelCenter = sourcePointToModel(sourceRasterWheelCenter);
   const balanceCenter = sourcePointToModel(sourceRasterBalanceCenter);
   const leverPivot = sourcePointToModel(sourceRasterLeverPivot);
-  const balanceToLever = leverPivot.clone().sub(balanceCenter);
-  const leverToBalance = balanceCenter.clone().sub(leverPivot);
-  const balanceToLeverDistance = balanceToLever.length();
-  const balancePinMountAngle = Math.atan2(
-    balanceToLever.y,
-    balanceToLever.x,
-  );
+  const pinPoint = sourcePointToModel(sourceRasterBalancePin);
 
-  const toothCount = 15;
+  // ---- Planes ---------------------------------------------------------
+  const frontLow = 0;
+  const frontHigh = 0.24;
+  const frontPlaneZ = (frontLow + frontHigh) / 2;
+  const leverLow = -0.24;
+  const leverHigh = 0;
+  const leverPlaneZ = (leverLow + leverHigh) / 2;
+  const leverDepth = leverHigh - leverLow;
+  const discLow = -0.40;
+  const discHigh = -0.24;
+  const framePlaneZ = -0.80;
+
+  // ---- Wheel ------------------------------------------------------------
+  const toothCount = 13;
   const toothPitch = FULL_TURN / toothCount;
+  const wheelToothTipRadius = sourceRasterWheelOuterRadius * sourceScale;
+  const wheelToothRootRadius = sourceRasterWheelRootRadius * sourceScale;
+  const wheelDepth = frontHigh - frontLow;
+  // Tooth 0 locks on A with its tip where Brown draws it.
+  const wheelBaseAngle = Math.atan2(
+    sourcePointToModel(sourceRasterPalletA).y,
+    sourcePointToModel(sourceRasterPalletA).x,
+  );
   const longImpulseAdvance = toothPitch * 0.75;
   const shortReturnAdvance = toothPitch - longImpulseAdvance;
-  const wheelToothTipRadius = sourceRasterWheelOuterRadius * sourceScale;
-  const wheelToothRootRadius = 2.52;
-  const wheelInnerRadius = 2.18;
-  const wheelDepth = 0.30;
-  const wheelBaseAngle = 0;
   const palletAReferenceAngle = wheelBaseAngle;
-  const palletBReferenceAngle = wheelBaseAngle
-    - toothPitch
-    - longImpulseAdvance;
+  const palletBReferenceAngle = wheelBaseAngle - toothPitch - longImpulseAdvance;
   const directImpulseToothOffset = 2;
-  const directImpulseStartAngle = wheelBaseAngle
-    + directImpulseToothOffset * toothPitch;
+  const directImpulseStartAngle = wheelBaseAngle + directImpulseToothOffset * toothPitch;
 
+  // ---- Balance, lever and timing ----------------------------------------
   const balancePeriod = 4;
   const halfBeatDuration = balancePeriod / 2;
-  const balanceAmplitude = THREE.MathUtils.degToRad(68);
-  const leverAmplitude = THREE.MathUtils.degToRad(7);
-  const balancePinOrbitRadius = sourceRasterBalancePin
-    .distanceTo(sourceRasterBalanceCenter) * sourceScale;
-  const balancePinRadius = 0.085;
-  const statedLeverDetachAngle = THREE.MathUtils.degToRad(15);
-  const pinEngagementHalfPhase = Math.acos(
-    statedLeverDetachAngle / balanceAmplitude,
-  ) / Math.PI;
+  // Time 0 is the plate's pose (see stateAtTime).
+  const phaseOffset = 0.5 * halfBeatDuration;
+  const balanceAmplitude = 68 * DEG;
+  const balancePinOrbitRadius = pinPoint.distanceTo(balanceCenter);
+  const balancePinRadius = 0.12;
+  const balancePinMountAngle = Math.atan2(
+    pinPoint.y - balanceCenter.y,
+    pinPoint.x - balanceCenter.x,
+  );
+  const pivotToBalance = balanceCenter.clone().sub(leverPivot);
+  // The roller pin turns the lever while the balance is within 40 degrees of
+  // its middle. With Brown's pin radius and fork length the fork's own
+  // geometry then gives a 7 degree lever throw each side.
+  const statedLeverDetachAngle = 40 * DEG;
+  const pinAt = (angle) => balanceCenter.clone().add(rotate2(
+    v2(Math.cos(balancePinMountAngle), Math.sin(balancePinMountAngle))
+      .multiplyScalar(balancePinOrbitRadius), angle));
+  const leverAngleOfPin = (angle) => {
+    const pin = pinAt(angle).sub(leverPivot);
+    return Math.atan2(pin.y, pin.x) - Math.atan2(pivotToBalance.y, pivotToBalance.x);
+  };
+  const leverAmplitude = Math.abs(leverAngleOfPin(statedLeverDetachAngle));
+  const pinEngagementHalfPhase = Math.acos(statedLeverDetachAngle / balanceAmplitude) / Math.PI;
   const pinDisengagementHalfPhase = 1 - pinEngagementHalfPhase;
-  const palletReleaseHalfPhase = 0.455;
-  const nextPalletLandingHalfPhase = pinDisengagementHalfPhase;
+  // A releases a little before the balance's middle; the next tooth catches
+  // C with matched speed, rides it, slides off its end, and the tooth
+  // between lands on B well after the lever has banked.
+  const palletReleaseHalfPhase = 0.507;
+  const impulseCatchHalfPhase = 0.60;
+  const cReachRadius = 1.50;
+  const nextPalletLandingHalfPhase = 0.775;
+  const returnReleaseHalfPhase = 0.46;
+  const returnLandingHalfPhase = 0.70;
 
-  // The lever (z 0.18..0.46) lies just in front of the wheel (front face
-  // 0.16), as Brown draws B across the teeth; only short locking nibs reach
-  // back into the wheel plane (added after the finite-part corrections).
-  const leverPlaneZ = 0.32;
-  const leverDepth = 0.28;
-  // C sweeps past the lever pivot, so it and its carrier run in the rear half
-  // of the wheel plane (z -0.15..0.09), below the lever arms, pallets and fork
-  // (z >= 0.10); the lever's hub and arbor start in front of that layer.
-  const directPalletPlaneZ = -0.03;
-  const directPalletDepth = 0.22;
-  const rollerPlaneZ = 0.58;
-  const balancePlaneZ = 1.12;
-
-  const sideForHalfBeat = (halfBeatIndex) => (
-    positiveModulo(halfBeatIndex, 2) === 0 ? 1 : -1
-  );
-  const isActingHalfBeat = (halfBeatIndex) => (
-    sideForHalfBeat(halfBeatIndex) > 0
-  );
+  const sideForHalfBeat = (index) => (positiveModulo(index, 2) === 0 ? 1 : -1);
+  const isActingHalfBeat = (index) => sideForHalfBeat(index) > 0;
   const palletNameForSide = (side) => (side > 0 ? 'A' : 'B');
-  const referenceAngleForPallet = (name) => (
-    name === 'A' ? palletAReferenceAngle : palletBReferenceAngle
+
+  const balanceStateAtHalfPhase = (side, h) => {
+    const w = Math.PI / halfBeatDuration;
+    return {
+      angle: -side * balanceAmplitude * Math.cos(Math.PI * h),
+      angularSpeed: side * balanceAmplitude * w * Math.sin(Math.PI * h),
+      angularAcceleration: side * balanceAmplitude * w * w * Math.cos(Math.PI * h),
+    };
+  };
+  // Acting (side +1): the pin moves right and the fork above the pivot
+  // turns the lever clockwise, from +a to -a.
+  const leverStateAtHalfPhase = (side, h) => {
+    const start = side * leverAmplitude;
+    if (h <= pinEngagementHalfPhase) {
+      return { angle: start, angularSpeed: 0, angularAcceleration: 0, progress: 0 };
+    }
+    if (h >= pinDisengagementHalfPhase) {
+      return { angle: -start, angularSpeed: 0, angularAcceleration: 0, progress: 1 };
+    }
+    const duration = (pinDisengagementHalfPhase - pinEngagementHalfPhase) * halfBeatDuration;
+    const u = (h - pinEngagementHalfPhase) / (pinDisengagementHalfPhase - pinEngagementHalfPhase);
+    return {
+      angle: start - 2 * start * smootherStep(u),
+      angularSpeed: -2 * start * smootherStepDerivative(u) / duration,
+      angularAcceleration: -2 * start * smootherStepSecondDerivative(u) / duration ** 2,
+      progress: u,
+    };
+  };
+
+  // ---- Pallet C: Brown's straight blade ----------------------------------
+  // In the balance's frame (balance angle 0 = the plate's pose, pin down).
+  const cInner = sourcePointToModel(sourceRasterCInner).sub(balanceCenter);
+  const cOuter = sourcePointToModel(sourceRasterCOuter).sub(balanceCenter);
+  const cDirection = cOuter.clone().sub(cInner).normalize();
+  // Normal pointing to the side the driving tooth comes from.
+  let cNormal = v2(-cDirection.y, cDirection.x);
+  const impulseTipAt = (advance) => v2(
+    Math.cos(directImpulseStartAngle - advance) * wheelToothTipRadius,
+    Math.sin(directImpulseStartAngle - advance) * wheelToothTipRadius,
   );
-  const referencePointForPallet = (name) => {
-    const angle = referenceAngleForPallet(name);
-    return wheelCenter.clone().add(new THREE.Vector2(
-      Math.cos(angle) * wheelToothTipRadius,
-      Math.sin(angle) * wheelToothTipRadius,
-    ));
+  const bladeFrame = (advance, angle) => {
+    const q = rotate2(impulseTipAt(advance).sub(balanceCenter), -angle).sub(cInner);
+    return { n: q.dot(cNormal), s: q.dot(cDirection) };
   };
-  const halfBeatAtTime = (time) => {
-    const coordinate = time / halfBeatDuration;
-    const halfBeatIndex = Math.floor(coordinate);
-    return {
-      halfBeatIndex,
-      halfPhase: coordinate - halfBeatIndex,
-    };
-  };
-  const balanceStateAtHalfPhase = (side, halfPhase) => {
-    const argument = Math.PI * halfPhase;
-    const angularFrequency = Math.PI / halfBeatDuration;
-    return {
-      angle: -side * balanceAmplitude * Math.cos(argument),
-      angularAcceleration: side * balanceAmplitude
-        * angularFrequency ** 2 * Math.cos(argument),
-      angularSpeed: side * balanceAmplitude
-        * angularFrequency * Math.sin(argument),
-    };
-  };
-  const leverStateAtHalfPhase = (side, halfPhase) => {
-    if (halfPhase <= pinEngagementHalfPhase) {
-      return {
-        angle: -side * leverAmplitude,
-        angularAcceleration: 0,
-        angularSpeed: 0,
-        progress: 0,
-      };
+  if (bladeFrame(0, -balanceAmplitude).n < 0) cNormal.negate();
+  // C reaches 1.50 from the staff (Brown draws about 1.74): any longer and
+  // it could not pass back between the locked teeth on the return.
+  const cBladeEndS = (() => {
+    const b = cInner.dot(cDirection);
+    return -b + Math.sqrt(b * b - cInner.lengthSq() + cReachRadius ** 2);
+  })();
+  const cBladeEnd = cInner.clone().addScaledVector(cDirection, cBladeEndS);
+  // Wheel advance that keeps the impulse tooth's tip on the blade.
+  const contactAdvance = (angle) => {
+    let lo = -0.5;
+    let hi = 1.5;
+    let flo = bladeFrame(lo, angle).n;
+    for (let k = 0; k < 80; k += 1) {
+      const mid = (lo + hi) / 2;
+      const fm = bladeFrame(mid, angle).n;
+      if (fm * flo > 0) { lo = mid; flo = fm; } else hi = mid;
     }
-    if (halfPhase >= pinDisengagementHalfPhase) {
-      return {
-        angle: side * leverAmplitude,
-        angularAcceleration: 0,
-        angularSpeed: 0,
-        progress: 1,
-      };
+    return (lo + hi) / 2;
+  };
+  const contactAdvanceAtHalfPhase = (h) => contactAdvance(balanceStateAtHalfPhase(1, h).angle);
+  const derivativeStep = 1e-4;
+  const contactStateAtHalfPhase = (h) => {
+    const e = derivativeStep;
+    const x = contactAdvanceAtHalfPhase(h);
+    const xp = contactAdvanceAtHalfPhase(h + e);
+    const xm = contactAdvanceAtHalfPhase(h - e);
+    return { x, v: (xp - xm) / (2 * e), a: (xp - 2 * x + xm) / (e * e) };
+  };
+  // Slide-off: the contact point reaches C's end.
+  const impulseEndHalfPhase = (() => {
+    let lo = impulseCatchHalfPhase + 0.02;
+    let hi = pinDisengagementHalfPhase + 0.05;
+    const s = (h) => bladeFrame(contactAdvanceAtHalfPhase(h), balanceStateAtHalfPhase(1, h).angle).s;
+    for (let k = 0; k < 60; k += 1) {
+      const mid = (lo + hi) / 2;
+      if (s(mid) < cBladeEndS) lo = mid; else hi = mid;
     }
-    const duration = (
-      pinDisengagementHalfPhase - pinEngagementHalfPhase
-    ) * halfBeatDuration;
-    const progress = (
-      halfPhase - pinEngagementHalfPhase
-    ) / (
-      pinDisengagementHalfPhase - pinEngagementHalfPhase
-    );
-    return {
-      angle: -side * leverAmplitude
-        + side * 2 * leverAmplitude * smootherStep(progress),
-      angularAcceleration: side * 2 * leverAmplitude
-        * smootherStepSecondDerivative(progress) / duration ** 2,
-      angularSpeed: side * 2 * leverAmplitude
-        * smootherStepDerivative(progress) / duration,
-      progress,
-    };
-  };
-  const wheelAdvanceAtHalfPhase = (acting, halfPhase) => {
-    const totalAdvance = acting
-      ? longImpulseAdvance
-      : shortReturnAdvance;
-    if (halfPhase <= palletReleaseHalfPhase) {
-      return {
-        advance: 0,
-        angularAcceleration: 0,
-        angularSpeed: 0,
-        event: 'locked',
-        progress: 0,
-      };
+    return lo;
+  })();
+  const catchState = contactStateAtHalfPhase(impulseCatchHalfPhase);
+  const endState = contactStateAtHalfPhase(impulseEndHalfPhase);
+  const dropSpan = impulseCatchHalfPhase - palletReleaseHalfPhase;
+  const runSpan = nextPalletLandingHalfPhase - impulseEndHalfPhase;
+  const dropCurve = quintic(0, 0, 0, catchState.x, catchState.v * dropSpan, catchState.a * dropSpan ** 2);
+  const runCurve = quintic(endState.x, endState.v * runSpan, endState.a * runSpan ** 2,
+    longImpulseAdvance, 0, 0);
+  const returnSpan = returnLandingHalfPhase - returnReleaseHalfPhase;
+  const returnCurve = quintic(0, 0, 0, shortReturnAdvance, 0, 0);
+
+  // Wheel advance (in half-phase units) within a half beat.
+  const wheelAdvanceAtHalfPhase = (acting, h) => {
+    const toTime = (x, v, a) => ({
+      advance: x,
+      angularSpeed: -v / halfBeatDuration,
+      angularAcceleration: -a / halfBeatDuration ** 2,
+    });
+    if (acting) {
+      if (h <= palletReleaseHalfPhase) return { ...toTime(0, 0, 0), event: 'locked', progress: 0 };
+      if (h < impulseCatchHalfPhase) {
+        const q = dropCurve((h - palletReleaseHalfPhase) / dropSpan);
+        return { ...toTime(q.x, q.v / dropSpan, q.a / dropSpan ** 2), event: 'drop-onto-C', progress: 0 };
+      }
+      if (h < impulseEndHalfPhase) {
+        const c = contactStateAtHalfPhase(h);
+        return { ...toTime(c.x, c.v, c.a), event: 'direct-impulse-C', progress: 0.5 };
+      }
+      if (h < nextPalletLandingHalfPhase) {
+        const q = runCurve((h - impulseEndHalfPhase) / runSpan);
+        return { ...toTime(q.x, q.v / runSpan, q.a / runSpan ** 2), event: 'run-to-B-after-C', progress: 0.9 };
+      }
+      return { ...toTime(longImpulseAdvance, 0, 0), event: 'B-lock-after-direct-impulse', progress: 1 };
     }
-    if (halfPhase >= nextPalletLandingHalfPhase) {
-      return {
-        advance: totalAdvance,
-        angularAcceleration: 0,
-        angularSpeed: 0,
-        event: acting ? 'B-lock-after-direct-impulse' : 'A-lock-after-short-transfer',
-        progress: 1,
-      };
+    if (h <= returnReleaseHalfPhase) return { ...toTime(0, 0, 0), event: 'locked', progress: 0 };
+    if (h < returnLandingHalfPhase) {
+      const u = (h - returnReleaseHalfPhase) / returnSpan;
+      const q = returnCurve(u);
+      return { ...toTime(q.x, q.v / returnSpan, q.a / returnSpan ** 2), event: 'short-unpowered-B-to-A-transfer', progress: u };
     }
-    const duration = (
-      nextPalletLandingHalfPhase - palletReleaseHalfPhase
-    ) * halfBeatDuration;
-    const progress = (
-      halfPhase - palletReleaseHalfPhase
-    ) / (
-      nextPalletLandingHalfPhase - palletReleaseHalfPhase
-    );
-    return {
-      advance: totalAdvance * smootherStep(progress),
-      angularAcceleration: -totalAdvance
-        * smootherStepSecondDerivative(progress) / duration ** 2,
-      angularSpeed: -totalAdvance
-        * smootherStepDerivative(progress) / duration,
-      event: acting ? 'direct-impulse-C' : 'short-unpowered-B-to-A-transfer',
-      progress,
-    };
+    return { ...toTime(shortReturnAdvance, 0, 0), event: 'A-lock-after-short-transfer', progress: 1 };
   };
-  const accumulatedAdvanceAtHalfLanding = (halfBeatIndex) => {
-    const oscillationIndex = Math.floor(halfBeatIndex / 2);
-    return oscillationIndex * toothPitch
-      + (isActingHalfBeat(halfBeatIndex) ? 0 : longImpulseAdvance);
+  const accumulatedAdvanceAtHalfStart = (index) => Math.floor(index / 2) * toothPitch
+    + (isActingHalfBeat(index) ? 0 : longImpulseAdvance);
+  const wheelAngleAtHalfLanding = (index) => wheelBaseAngle - accumulatedAdvanceAtHalfStart(index);
+  const currentLockToothIndex = (index) => {
+    const oscillation = Math.floor(index / 2);
+    return isActingHalfBeat(index)
+      ? positiveModulo(oscillation, toothCount)
+      : positiveModulo(oscillation - 1, toothCount);
   };
-  const wheelAngleAtHalfLanding = (halfBeatIndex) => (
-    wheelBaseAngle - accumulatedAdvanceAtHalfLanding(halfBeatIndex)
-  );
-  const wheelAngleAtHalfPhase = (halfBeatIndex, halfPhase) => (
-    wheelAngleAtHalfLanding(halfBeatIndex)
-      - wheelAdvanceAtHalfPhase(
-        isActingHalfBeat(halfBeatIndex),
-        halfPhase,
-      ).advance
-  );
-  const currentLockToothIndex = (halfBeatIndex) => {
-    const oscillationIndex = Math.floor(halfBeatIndex / 2);
-    return isActingHalfBeat(halfBeatIndex)
-      ? positiveModulo(oscillationIndex, toothCount)
-      : positiveModulo(oscillationIndex - 1, toothCount);
-  };
-  const directImpulseToothIndex = (halfBeatIndex) => {
-    const oscillationIndex = Math.floor(halfBeatIndex / 2);
-    return positiveModulo(
-      oscillationIndex + directImpulseToothOffset,
-      toothCount,
-    );
-  };
+  const directImpulseToothIndex = (index) => positiveModulo(
+    Math.floor(index / 2) + directImpulseToothOffset, toothCount);
   const toothTipPoint = (wheelAngle, toothIndex) => {
     const angle = wheelAngle + toothIndex * toothPitch;
-    return wheelCenter.clone().add(new THREE.Vector2(
-      Math.cos(angle) * wheelToothTipRadius,
-      Math.sin(angle) * wheelToothTipRadius,
-    ));
+    return wheelCenter.clone().add(v2(Math.cos(angle), Math.sin(angle)).multiplyScalar(wheelToothTipRadius));
   };
 
-  const balancePinCenterAtHalfPhase = (side, halfPhase) => {
-    const balance = balanceStateAtHalfPhase(side, halfPhase);
-    const offset = rotate2(new THREE.Vector2(
-      Math.cos(balancePinMountAngle) * balancePinOrbitRadius,
-      Math.sin(balancePinMountAngle) * balancePinOrbitRadius,
-    ), balance.angle);
-    return balanceCenter.clone().add(offset);
-  };
-  const balancePinCenterLeverLocal = (side, halfPhase) => {
-    const lever = leverStateAtHalfPhase(side, halfPhase);
-    return rotate2(
-      balancePinCenterAtHalfPhase(side, halfPhase).sub(leverPivot),
-      -lever.angle,
-    );
-  };
-  const pinCenterFrameAtHalfPhase = (side, halfPhase) => {
-    const epsilon = 1e-6;
-    const center = balancePinCenterLeverLocal(side, halfPhase);
-    const tangent = balancePinCenterLeverLocal(side, halfPhase + epsilon)
-      .sub(balancePinCenterLeverLocal(side, halfPhase - epsilon))
-      .normalize();
-    return {
-      center,
-      normal: new THREE.Vector2(-tangent.y, tangent.x),
-      tangent,
-    };
-  };
-  const forkTineFaceLocalPoint = (side, halfPhase) => {
-    const frame = pinCenterFrameAtHalfPhase(side, halfPhase);
-    return frame.center.clone().addScaledVector(
-      frame.normal,
-      balancePinRadius,
-    );
-  };
-  const forkTineFaceFrame = (side, halfPhase) => {
-    const epsilon = 1e-6;
-    const centerFrame = pinCenterFrameAtHalfPhase(side, halfPhase);
-    const point = forkTineFaceLocalPoint(side, halfPhase);
-    const tangent = forkTineFaceLocalPoint(side, halfPhase + epsilon)
-      .sub(forkTineFaceLocalPoint(side, halfPhase - epsilon))
-      .normalize();
-    return {
-      ...centerFrame,
-      faceNormal: new THREE.Vector2(-tangent.y, tangent.x),
-      faceTangent: tangent,
-      point,
-    };
-  };
-  const forkTineFacePoints = (side, count = 49) => Array.from(
-    { length: count },
-    (_, index) => forkTineFaceLocalPoint(
-      side,
-      THREE.MathUtils.lerp(
-        pinEngagementHalfPhase,
-        pinDisengagementHalfPhase,
-        index / (count - 1),
-      ),
-    ),
+  // ---- Fork: conjugate to the roller pin ---------------------------------
+  const pinCenterLeverLocal = (side, h) => rotate2(
+    pinAt(balanceStateAtHalfPhase(side, h).angle).sub(leverPivot),
+    -leverStateAtHalfPhase(side, h).angle,
   );
-
-  const palletSideForName = (name) => (name === 'A' ? 1 : -1);
-  const palletLockLocalPoint = (name, halfPhase) => {
-    const side = palletSideForName(name);
-    const lever = leverStateAtHalfPhase(side, halfPhase);
-    return rotate2(
-      referencePointForPallet(name).sub(leverPivot),
-      -lever.angle,
-    );
+  const pinFrame = (side, h) => {
+    const e = 1e-6;
+    const center = pinCenterLeverLocal(side, h);
+    const tangent = pinCenterLeverLocal(side, h + e).sub(pinCenterLeverLocal(side, h - e)).normalize();
+    return { center, tangent, normal: v2(-tangent.y, tangent.x) };
   };
-  const palletLockFrame = (name, halfPhase) => {
-    const epsilon = 1e-6;
-    const point = palletLockLocalPoint(name, halfPhase);
-    let tangent = palletLockLocalPoint(name, halfPhase + epsilon)
-      .sub(palletLockLocalPoint(name, halfPhase - epsilon));
+  const forkTineFaceLocalPoint = (side, h) => {
+    const frame = pinFrame(side, h);
+    return frame.center.clone().addScaledVector(frame.normal, balancePinRadius);
+  };
+  const forkTineFaceFrame = (side, h) => {
+    const e = 1e-6;
+    const centerFrame = pinFrame(side, h);
+    const point = forkTineFaceLocalPoint(side, h);
+    const tangent = forkTineFaceLocalPoint(side, h + e).sub(forkTineFaceLocalPoint(side, h - e)).normalize();
+    return { ...centerFrame, point, faceTangent: tangent, faceNormal: v2(-tangent.y, tangent.x) };
+  };
+  const forkTineFacePoints = (side, count = 49) => Array.from({ length: count }, (_, i) =>
+    forkTineFaceLocalPoint(side, THREE.MathUtils.lerp(
+      pinEngagementHalfPhase, pinDisengagementHalfPhase, i / (count - 1))));
+
+  // ---- Lock faces A and B: arcs about the lever arbor ------------------
+  const referencePointForPallet = (name) => {
+    const angle = name === 'A' ? palletAReferenceAngle : palletBReferenceAngle;
+    return v2(Math.cos(angle), Math.sin(angle)).multiplyScalar(wheelToothTipRadius);
+  };
+  const palletSideForName = (name) => (name === 'A' ? 1 : -1);
+  const releaseForName = (name) => (name === 'A' ? palletReleaseHalfPhase : returnReleaseHalfPhase);
+  const palletLockLocalPoint = (name, h) => rotate2(
+    referencePointForPallet(name).sub(leverPivot),
+    -leverStateAtHalfPhase(palletSideForName(name), h).angle,
+  );
+  const palletLockFrame = (name, h) => {
+    const e = 1e-6;
+    const point = palletLockLocalPoint(name, h);
+    let tangent = palletLockLocalPoint(name, h + e).sub(palletLockLocalPoint(name, h - e));
     if (tangent.lengthSq() < 1e-16) tangent = crossZ(point);
     tangent.normalize();
-    return {
-      normal: new THREE.Vector2(-tangent.y, tangent.x),
-      point,
-      tangent,
-    };
+    return { point, tangent, normal: v2(-tangent.y, tangent.x) };
   };
-  const palletLockPoints = (name, count = 39) => Array.from(
-    { length: count },
-    (_, index) => palletLockLocalPoint(
-      name,
-      THREE.MathUtils.lerp(
-        pinEngagementHalfPhase,
-        palletReleaseHalfPhase,
-        index / (count - 1),
-      ),
-    ),
+  const palletLockPoints = (name, count = 39) => Array.from({ length: count }, (_, i) =>
+    palletLockLocalPoint(name, THREE.MathUtils.lerp(
+      pinEngagementHalfPhase, releaseForName(name), i / (count - 1))));
+
+  const directImpulseLocalPointAtHalfPhase = (h) => rotate2(
+    impulseTipAt(contactAdvanceAtHalfPhase(h)).sub(balanceCenter),
+    -balanceStateAtHalfPhase(1, h).angle,
   );
+  const directImpulsePoints = (count = 61) => Array.from({ length: count }, (_, i) =>
+    directImpulseLocalPointAtHalfPhase(THREE.MathUtils.lerp(
+      impulseCatchHalfPhase, impulseEndHalfPhase, i / (count - 1))));
 
-  const directImpulseLocalPointAtHalfPhase = (halfPhase) => {
-    const balance = balanceStateAtHalfPhase(1, halfPhase);
-    const wheel = wheelAdvanceAtHalfPhase(true, halfPhase);
-    const toothAngle = directImpulseStartAngle - wheel.advance;
-    const toothPoint = wheelCenter.clone().add(new THREE.Vector2(
-      Math.cos(toothAngle) * wheelToothTipRadius,
-      Math.sin(toothAngle) * wheelToothTipRadius,
-    ));
-    return rotate2(toothPoint.sub(balanceCenter), -balance.angle);
+  // ---- Materials ---------------------------------------------------------
+  const driverMaterial = matte(PALETTE.driver, { metalness: 0.17, roughness: 0.50 });
+  const drivenMaterial = matte(PALETTE.driven, { metalness: 0.18, roughness: 0.52 });
+  const palletMaterial = matte(PALETTE.accent, { metalness: 0.14, roughness: 0.43 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.30, roughness: 0.42 });
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.13, roughness: 0.68 });
+
+  // ---- Escape wheel: one plate, teeth and web --------------------------
+  // Brown's teeth: a sharp tip, a short leading face undercut slightly
+  // behind it, and a straight back running the whole pitch down to the
+  // next tooth's root.
+  const leadAngle = 0.10;
+  const toothPolygon = (index) => {
+    const t = index * toothPitch;
+    const polar = (radius, angle) => [radius * Math.cos(t + angle), radius * Math.sin(t + angle)];
+    return [
+      polar(wheelToothRootRadius, leadAngle),
+      polar(wheelToothTipRadius, 0),
+      polar(wheelToothTipRadius - 0.04, 0.02),
+      polar(wheelToothRootRadius, toothPitch),
+    ];
   };
-  const directImpulseFrame = (halfPhase) => {
-    const epsilon = 1e-6;
-    const point = directImpulseLocalPointAtHalfPhase(halfPhase);
-    const tangent = directImpulseLocalPointAtHalfPhase(halfPhase + epsilon)
-      .sub(directImpulseLocalPointAtHalfPhase(halfPhase - epsilon))
-      .normalize();
-    return {
-      normal: new THREE.Vector2(-tangent.y, tangent.x),
-      point,
-      tangent,
-    };
-  };
-  const directImpulsePoints = (count = 61) => Array.from(
-    { length: count },
-    (_, index) => directImpulseLocalPointAtHalfPhase(
-      THREE.MathUtils.lerp(
-        palletReleaseHalfPhase,
-        nextPalletLandingHalfPhase,
-        index / (count - 1),
-      ),
-    ),
+  const wheelOutline = [];
+  for (let index = 0; index < toothCount; index += 1) {
+    const [root0, tip, nearTip] = toothPolygon(index);
+    const t = index * toothPitch;
+    // Along the root circle from the previous back's foot (at t) to this
+    // tooth's leading root (t + leadAngle), then up the face.
+    for (let k = 0; k <= 4; k += 1) {
+      const angle = t + leadAngle * k / 4;
+      wheelOutline.push([wheelToothRootRadius * Math.cos(angle), wheelToothRootRadius * Math.sin(angle)]);
+    }
+    wheelOutline.pop();
+    wheelOutline.push(root0, tip, nearTip);
+  }
+  // The outline runs clockwise in angle order for undercut teeth; the
+  // builder accepts either winding.
+  const wheelPlate = new THREE.Mesh(
+    spokedWheelGeometry({
+      outline: wheelOutline,
+      rimInnerRadius: 2.08,
+      spokes: 4,
+      spokeWidth: 0.50,
+      hubFillet: 0.60,
+      rimFillet: 0.25,
+      boreRadius: 0.13,
+      thickness: wheelDepth,
+      arcSegments: 180,
+      // Brown's cross stands square to the page in his pose (time 0).
+      phase: -wheelBaseAngle,
+    }),
+    driverMaterial,
   );
-
-  const driverMaterial = matte(PALETTE.driver, {
-    metalness: 0.17,
-    roughness: 0.50,
-  });
-  const drivenMaterial = matte(PALETTE.driven, {
-    metalness: 0.18,
-    roughness: 0.52,
-  });
-  const palletMaterial = matte(PALETTE.accent, {
-    metalness: 0.14,
-    roughness: 0.43,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.30,
-    roughness: 0.42,
-  });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.13,
-    roughness: 0.68,
-  });
-  const indexMaterial = matte(PALETTE.white, { roughness: 0.38 });
-
+  wheelPlate.position.z = frontPlaneZ;
+  wheelPlate.userData.noRotationIndicator = true;
+  wheelPlate.userData.role = 'thirteen-tooth-lever-chronometer-escape-wheel-plate';
   const escapeWheel = new THREE.Group();
   escapeWheel.position.set(wheelCenter.x, wheelCenter.y, 0);
   escapeWheel.userData.axis = Z_AXIS.clone();
-  escapeWheel.userData.role =
-    'clockwise-fifteen-tooth-lever-chronometer-escape-wheel';
+  escapeWheel.userData.role = 'clockwise-thirteen-tooth-lever-chronometer-escape-wheel';
   const wheelRotor = new THREE.Group();
-  wheelRotor.userData.role =
-    'alternating-long-and-short-advance-escape-wheel-rotor';
+  wheelRotor.userData.role = 'alternating-long-and-short-advance-escape-wheel-rotor';
   escapeWheel.add(wheelRotor);
-  // Brown draws a solid web pierced by four rounded windows, leaving a
-  // broad cross, rather than a thin rim on four wire spokes.
-  // Brown's windows are pillow-shaped: each corner is well rounded, so the
-  // web reads as four windows rather than a thin rim on a crossbar.
-  const wheelArmHalfWidth = 0.24;
-  const wheelWindowOuterRadius = wheelInnerRadius - 0.02;
-  const wheelWindowPoints = filletedQuadrantWindow(
-    wheelArmHalfWidth,
-    wheelWindowOuterRadius,
-    wheelWindowOuterRadius * 0.16,
-    wheelWindowOuterRadius * 0.28,
-  );
-  const wheelWindows = [0, 1, 2, 3].map((quadrant) => {
-    const angle = quadrant * FULL_TURN / 4;
-    const cos = Math.cos(angle);
-    const sin = Math.sin(angle);
-    return poly(wheelWindowPoints.map(
-      ([x, y]) => [x * cos - y * sin, x * sin + y * cos],
-    ));
-  });
-  const webCircleSegments = 180;
-  const wheelWeb = polygonClipping.difference(
-    poly(circle([0, 0], wheelToothRootRadius, webCircleSegments)),
-    poly(circle([0, 0], 0.34, 48)),
-    ...wheelWindows,
-  );
-  const wheelRim = new THREE.Mesh(
-    plate(wheelWeb, -wheelDepth / 2, wheelDepth / 2),
-    driverMaterial,
-  );
-  wheelRim.userData.role = 'lever-chronometer-escape-wheel-rim';
-  wheelRotor.add(wheelRim);
-  // Brown's teeth are deep hooked ratchet teeth: the leading (clockwise)
-  // face undercuts slightly behind the tip, and a straight back slopes the
-  // whole pitch down to the next tooth's root. The tip stays on the
-  // contact radius at the tooth's own angle. Each tooth stands on the web's
-  // own root-circle vertices at the web's depth, so tooth and rim read as
-  // one flush outline.
-  const webStep = FULL_TURN / webCircleSegments;
-  const rootVertex = (index) => [
-    wheelToothRootRadius * Math.cos(index * webStep),
-    wheelToothRootRadius * Math.sin(index * webStep),
-  ];
-  const pitchSteps = Math.round(toothPitch / webStep);
-  const toothOutline = [
-    rootVertex(1),
-    [wheelToothTipRadius, 0],
-    [
-      (wheelToothTipRadius - 0.035) * Math.cos(0.022),
-      (wheelToothTipRadius - 0.035) * Math.sin(0.022),
-    ],
-    ...Array.from({ length: pitchSteps }, (_, step) => (
-      rootVertex(pitchSteps - step)
-    )),
-  ];
-  const toothGeometry = plate(poly(toothOutline),
-    -wheelDepth / 2, wheelDepth / 2);
-  const wheelTeeth = [];
-  for (let index = 0; index < toothCount; index += 1) {
-    const tooth = new THREE.Mesh(toothGeometry, driverMaterial);
-    tooth.rotation.z = index * toothPitch;
-    tooth.userData.index = index;
-    tooth.userData.role = 'pointed-lever-chronometer-escape-wheel-tooth';
-    wheelTeeth.push(tooth);
-    wheelRotor.add(tooth);
-  }
-  const wheelSpokes = [];
-  const wheelHub = cylinderAlongZ(0.34, 0.76, darkMaterial, 36);
-  wheelHub.userData.role = 'lever-chronometer-escape-wheel-hub';
-  const wheelShaft = cylinderAlongZ(0.11, 1.45, darkMaterial, 30);
-  wheelShaft.userData.role = 'fixed-lever-chronometer-escape-wheel-arbor';
-  wheelRotor.add(wheelHub);
-  escapeWheel.add(wheelShaft);
-  const wheelIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.095, 18, 14),
-    indexMaterial,
-  );
-  wheelIndex.position.set(2.34, 0, 0.24);
-  wheelIndex.userData.role = 'white-index-on-lever-chronometer-wheel';
-  wheelRotor.add(wheelIndex);
+  wheelRotor.add(wheelPlate);
+  const wheelArbor = roundBar(0.13, framePlaneZ, frontHigh + 0.05, darkMaterial, 32);
+  wheelArbor.userData.role = 'escape-wheel-arbor';
+  wheelRotor.add(wheelArbor);
 
-  const palletLever = new THREE.Group();
-  palletLever.position.set(leverPivot.x, leverPivot.y, 0);
-  palletLever.userData.axis = Z_AXIS.clone();
-  palletLever.userData.role =
-    'single-pivoted-two-locking-pallet-lever-A-B-with-fork';
-  const leverPivotHub = cylinderAlongZ(0.22, 0.72, darkMaterial, 32);
-  leverPivotHub.position.z = leverPlaneZ;
-  leverPivotHub.userData.role = 'lever-chronometer-pallet-lever-pivot';
-  palletLever.add(leverPivotHub);
-
-  const forkAxisLocal = leverToBalance.clone().normalize();
-  const forkRootLocal = forkAxisLocal.clone().multiplyScalar(
-    balanceToLeverDistance - balancePinOrbitRadius - 0.12,
-  );
-  const forkLever = beamBetween(
-    new THREE.Vector3(0, 0, leverPlaneZ),
-    new THREE.Vector3(forkRootLocal.x, forkRootLocal.y, leverPlaneZ),
-    0.25,
-    leverDepth,
-    drivenMaterial,
-  );
-  forkLever.userData.role = 'locking-lever-arm-to-balance-roller-fork';
-  palletLever.add(forkLever);
-
-  const forkTines = [];
-  const forkTineEdges = [];
-  const forkTineProfiles = {};
-  for (const side of [1, -1]) {
-    const name = side > 0 ? 'acting-side' : 'return-side';
-    const facePoints = forkTineFacePoints(side);
-    const bodyPoints = facePoints.map((point, index) => {
-      const halfPhase = THREE.MathUtils.lerp(
-        pinEngagementHalfPhase,
-        pinDisengagementHalfPhase,
-        index / (facePoints.length - 1),
-      );
-      const center = pinCenterFrameAtHalfPhase(side, halfPhase).center;
-      return point.clone().addScaledVector(
-        point.clone().sub(center).normalize(),
-        0.10,
-      );
-    });
-    const tine = edgeTube(
-      bodyPoints,
-      leverPlaneZ,
-      0.10,
-      drivenMaterial,
-      `${name}-fork-tine-driven-by-balance-pin`,
-    );
-    const edge = edgeTube(
-      facePoints,
-      leverPlaneZ + leverDepth / 2 + 0.025,
-      0.027,
-      indexMaterial,
-      `${name}-working-face-of-locking-lever-fork`,
-    );
-    forkTines.push(tine);
-    forkTineEdges.push(edge);
-    forkTineProfiles[name] = facePoints.map((point) => point.clone());
-    palletLever.add(tine, edge);
-  }
-
-  const palletBlocks = [];
-  const palletLockEdges = [];
-  const palletProfiles = {};
-  for (const name of ['A', 'B']) {
-    const points = palletLockPoints(name);
-    const stripWidth = name === 'A' ? 0.31 : 0.37;
-    const block = new THREE.Mesh(
-      centeredExtrusion(
-        profileStripShape(points, stripWidth),
-        leverDepth,
-        0.007,
-      ),
-      palletMaterial,
-    );
-    block.position.z = leverPlaneZ;
-    block.userData.role =
-      `locking-only-pallet-${name}-with-no-impulse-face`;
-    const edge = edgeTube(
-      points,
-      leverPlaneZ - leverDepth / 2 + 0.018,
-      0.034,
-      indexMaterial,
-      `working-lock-face-of-pallet-${name}-no-impulse`,
-    );
-    const centroid = points.reduce(
-      (sum, point) => sum.add(point),
-      new THREE.Vector2(),
-    ).multiplyScalar(1 / points.length);
-    const carrierEnd = centroid.clone().multiplyScalar(
-      Math.max(centroid.length() - stripWidth * 0.45, 0.2)
-        / centroid.length(),
-    );
-    // Brown hangs B on a crescent plate screwed across the lever below A,
-    // not on a straight arm from the pivot; the crescent keeps the lever
-    // plane in front of the teeth.
-    const carrier = name === 'A'
-      ? beamBetween(
-        new THREE.Vector3(0, 0, leverPlaneZ),
-        new THREE.Vector3(carrierEnd.x, carrierEnd.y, leverPlaneZ),
-        0.29,
-        leverDepth * 0.86,
-        drivenMaterial,
-      )
-      : new THREE.Mesh(
-        centeredExtrusion(
-          crescentCarrierShape(centroid, forkAxisLocal.clone().negate()),
-          leverDepth * 0.86,
-          0.008,
-        ),
-        drivenMaterial,
-      );
-    if (name === 'B') carrier.position.z = leverPlaneZ;
-    carrier.userData.role = `rigid-arm-from-lever-pivot-to-pallet-${name}`;
-    palletProfiles[name] = points.map((point) => point.clone());
-    palletBlocks.push(block);
-    palletLockEdges.push(edge);
-    palletLever.add(carrier, block, edge);
-  }
-
-  const tailAxis = forkAxisLocal.clone().multiplyScalar(-1);
-  const tailNormal = new THREE.Vector2(-tailAxis.y, tailAxis.x);
-  const tailLength = 5.25;
-  const tailEndHalfWidth = 0.34;
-  const tailShape = polygonShape([
-    tailNormal.clone().multiplyScalar(0.15),
-    tailAxis.clone().multiplyScalar(tailLength)
-      .addScaledVector(tailNormal, tailEndHalfWidth),
-    tailAxis.clone().multiplyScalar(tailLength)
-      .addScaledVector(tailNormal, -tailEndHalfWidth),
-    tailNormal.clone().multiplyScalar(-0.15),
-  ]);
-  const bankingTail = new THREE.Mesh(
-    centeredExtrusion(tailShape, leverDepth * 0.82, 0.008),
-    drivenMaterial,
-  );
-  bankingTail.position.z = leverPlaneZ;
-  bankingTail.userData.role = 'long-lever-tail-between-fixed-banking-pins';
-  palletLever.add(bankingTail);
-
+  // ---- Balance: plain disc with its notch, roller pin, collet and C ------
   const balance = new THREE.Group();
   balance.position.set(balanceCenter.x, balanceCenter.y, 0);
   balance.userData.axis = Z_AXIS.clone();
-  balance.userData.role =
-    'balance-with-one-direct-impulse-pallet-C-and-one-fork-pin';
-  const rollerDisk = new THREE.Mesh(
-    centeredExtrusion(annularShape(0.49, 0.15), 0.20, 0.006),
-    drivenMaterial,
-  );
-  rollerDisk.position.z = rollerPlaneZ;
-  rollerDisk.userData.role = 'balance-roller-carrying-fork-pin-and-pallet-C';
-  const balancePin = cylinderAlongZ(
-    balancePinRadius,
-    0.74,
-    darkMaterial,
-    24,
-  );
-  balancePin.position.set(
-    Math.cos(balancePinMountAngle) * balancePinOrbitRadius,
-    Math.sin(balancePinMountAngle) * balancePinOrbitRadius,
-    0.39,
-  );
-  balancePin.userData.role =
-    'single-balance-roller-pin-driving-locking-lever-both-ways';
-
-  const directProfilePoints = directImpulsePoints();
-  const directPalletC = new THREE.Mesh(
-    centeredExtrusion(
-      profileStripShape(directProfilePoints, 0.25),
-      directPalletDepth,
-      0.007,
-    ),
-    palletMaterial,
-  );
-  directPalletC.position.z = directPalletPlaneZ;
-  directPalletC.userData.role =
-    'single-balance-mounted-direct-impulse-pallet-C';
-  const directPalletEdge = edgeTube(
-    directProfilePoints,
-    directPalletPlaneZ + directPalletDepth / 2 + 0.02,
-    0.035,
-    indexMaterial,
-    'working-face-of-direct-impulse-pallet-C',
-  );
-  const directCentroid = directProfilePoints.reduce(
-    (sum, point) => sum.add(point),
-    new THREE.Vector2(),
-  ).multiplyScalar(1 / directProfilePoints.length);
-  const directCarrierEnd = directCentroid.clone().multiplyScalar(0.90);
-  const directPalletCarrier = beamBetween(
-    new THREE.Vector3(
-      directCentroid.x / directCentroid.length() * 0.30,
-      directCentroid.y / directCentroid.length() * 0.30,
-      directPalletPlaneZ,
-    ),
-    new THREE.Vector3(
-      directCarrierEnd.x,
-      directCarrierEnd.y,
-      directPalletPlaneZ,
-    ),
-    0.19,
-    directPalletDepth * 0.82,
-    palletMaterial,
-  );
-  directPalletCarrier.userData.role =
-    'rigid-carrier-from-balance-staff-to-direct-pallet-C';
-  const directCarrierPost = cylinderAlongZ(0.11, 0.55, palletMaterial, 24);
-  directCarrierPost.position.set(
-    directCentroid.x / directCentroid.length() * 0.43,
-    directCentroid.y / directCentroid.length() * 0.43,
-    0.31,
-  );
-  directCarrierPost.userData.role =
-    'vertical-post-joining-low-pallet-C-to-balance-roller';
-
-  const balanceStaff = cylinderAlongZ(0.115, 2.35, darkMaterial, 32);
-  balanceStaff.position.z = 0.48;
-  balanceStaff.userData.role = 'balance-staff-for-lever-chronometer';
+  balance.userData.role = 'balance-with-one-direct-impulse-pallet-C-and-one-roller-pin';
   const balanceRimRadius = sourceRasterBalanceOuterRadius * sourceScale;
-  // Brown draws the balance as a plain disk behind the lever, not a spoked
-  // rim; its radius stops short of the lever arbor, which sits at its edge.
-  const balanceDiskRadius = Math.min(
-    balanceRimRadius,
-    balanceToLeverDistance - 0.14,
+  const notchCenter = px(318, 55).sub(balanceCenter).normalize().multiplyScalar(balanceRimRadius);
+  const discShape = polygonClipping.difference(
+    poly(circle([0, 0], balanceRimRadius, 256)),
+    poly(circle(notchCenter.toArray(), 12 * sourceScale, 64)),
+    poly(circle([0, 0], 0.118, 48)),
   );
-  const balanceDiskDepth = 0.10;
-  const balanceDiskZ = -0.28;
-  const balanceRim = cylinderAlongZ(
-    balanceDiskRadius,
-    balanceDiskDepth,
-    drivenMaterial,
+  const balanceDisc = new THREE.Mesh(flatPart(discShape, discLow, discHigh),
+    matte(PALETTE.fluid, { metalness: 0.18, roughness: 0.52 }));
+  balanceDisc.userData.role = 'lever-chronometer-balance-wheel-rim';
+  const balanceStaff = roundBar(0.115, framePlaneZ, frontHigh + 0.06, darkMaterial, 32);
+  balanceStaff.userData.role = 'balance-staff-for-lever-chronometer';
+  // Roller pin: from the disc forward into the fork (lever plane only).
+  const pinLocal = pinPoint.clone().sub(balanceCenter);
+  const balancePin = roundBar(balancePinRadius, discLow + 0.02, leverHigh - 0.02, darkMaterial, 32);
+  balancePin.position.x = pinLocal.x;
+  balancePin.position.y = pinLocal.y;
+  balancePin.userData.role = 'single-balance-roller-pin-driving-locking-lever-both-ways';
+  // C: one flat plate in the front plane, a collet round the staff and the
+  // straight blade Brown draws, its working face on the line through his
+  // blade, ending where the driving tooth slides off.
+  const bladeWidth = 0.10;
+  // Brown's line runs nearly through the staff, so the straight blade is
+  // simply continued inward into the collet.
+  const bladeStart = (() => {
+    const bb = cInner.dot(cDirection);
+    const inside = 0.2;
+    return cInner.clone().addScaledVector(cDirection, -bb - Math.sqrt(Math.max(0, bb * bb - cInner.lengthSq() + inside ** 2)));
+  })();
+  const back = cNormal.clone().multiplyScalar(bladeWidth);
+  const bladeRing = [
+    cBladeEnd, bladeStart, bladeStart.clone().add(back), cBladeEnd.clone().add(back),
+  ].map((p) => p.toArray());
+  let cShape = polygonClipping.union(poly(circle([0, 0], 0.24, 64)), poly(bladeRing));
+  cShape = polygonClipping.difference(cShape, poly(circle([0, 0], 0.118, 48)));
+  const directPalletC = new THREE.Mesh(flatPart(cShape, frontLow, frontHigh), palletMaterial);
+  directPalletC.userData.role = 'single-balance-mounted-direct-impulse-pallet-C';
+  balance.add(balanceDisc, balanceStaff, balancePin, directPalletC);
+
+  // ---- Clearance sweeps --------------------------------------------------
+  // Everything is posed from the analytic state; sweeps sample two
+  // oscillations' worth of half beats (both sides) and the wheel's own
+  // repeat of one pitch.
+  const round6 = (value) => Math.round(value * 1e6) / 1e6;
+  const roundRing = (ring) => ring.map(([x, y]) => [round6(x), round6(y)]);
+  // Capsule chain round a sequence of centres (swept disc).
+  const sweptDisc = (centers, radius) => {
+    const pieces = [];
+    for (let i = 0; i + 1 < centers.length; i += 1) {
+      const a = centers[i];
+      const b = centers[i + 1];
+      const d = b.clone().sub(a);
+      if (d.length() < 1e-9) continue;
+      const angle = Math.atan2(d.y, d.x);
+      const ring = [];
+      for (const [c, start] of [[b, angle - Math.PI / 2], [a, angle + Math.PI / 2]]) {
+        for (let k = 0; k <= 16; k += 1) {
+          const t = start + Math.PI * k / 16;
+          ring.push([c.x + radius * Math.cos(t), c.y + radius * Math.sin(t)]);
+        }
+      }
+      pieces.push([roundRing([...ring, ring[0]])]);
+    }
+    return pieces.length ? polygonClipping.union(...pieces.map((p) => [p])) : [];
+  };
+
+  // ---- Lever: one flat piece in the lever plane --------------------------
+  // Lever-group coordinates are world offsets from the arbor at lever angle
+  // 0, the plate's pose. Brown's lever: concave sides, about 54 px across at
+  // the fork and the foot and 38 px at the waist, on the axis x = 372.
+  const L = (x, y) => px(x, y).sub(leverPivot);
+  const leverAxisX = L(372, 0).x;
+  // The horns stop just below the detached pin's path (Brown's top at
+  // y 145 would be cut into curls by the pin as it leaves the fork).
+  const leverTopY = L(372, 155).y;
+  const leverFootY = L(372, 497).y;
+  const leverWaistY = L(372, 320).y;
+  const edgeArc = (side) => arcThrough(
+    v2(leverAxisX + side * 26 * sourceScale, leverTopY),
+    v2(leverAxisX + side * 19 * sourceScale, leverWaistY),
+    v2(leverAxisX + side * 28 * sourceScale, leverFootY),
+    48,
+  );
+  const rightEdge = edgeArc(1);
+  const leftEdge = edgeArc(-1);
+  const leverRing = roundRing([...leftEdge, ...rightEdge.slice().reverse()].map((p) => p.toArray()));
+  let leverShape = [[[...leverRing, leverRing[0]]]];
+  // The fork: the roller pin's path in the lever's frame over the whole
+  // cycle, plus running clearance. Inside the fork window its walls are the
+  // pin's conjugate tine faces; outside it the same sweep cuts the horns
+  // the detached pin passes over.
+  // (The return half beat retraces the acting path exactly, backwards.)
+  const pinPath = [];
+  for (let i = 0; i <= 90; i += 1) pinPath.push(pinCenterLeverLocal(1, i / 90));
+  const forkCut = sweptDisc(pinPath, balancePinRadius + 0.004);
+  leverShape = polygonClipping.difference(leverShape, forkCut);
+  leverShape = polygonClipping.difference(leverShape, [[roundRing(circle([0, 0], 0.152, 64))]]);
+  // Keep the main piece (the horns' tips can be cut free by the sweep).
+  const largest = (polygons) => {
+    const area = (ring) => Math.abs(ring.reduce((sum, p, i) => {
+      const q = ring[(i + 1) % ring.length];
+      return sum + p[0] * q[1] - q[0] * p[1];
+    }, 0) / 2);
+    return [polygons.reduce((best, polygon) => (area(polygon[0]) > area(best[0]) ? polygon : best))];
+  };
+  leverShape = largest(leverShape);
+  const leverBody = new THREE.Mesh(flatPart(leverShape, leverLow, leverHigh), drivenMaterial);
+  leverBody.userData.role = 'forked-lever-with-banking-foot-in-lever-plane';
+
+  // ---- Crescent with locking pallets A and B (front plane) -------------
+  // Each lock face is the arc, about the lever arbor, that the resting tooth
+  // tip traces as the lever turns: the tooth neither advances nor recoils
+  // while it locks. The stone lies on the side the tooth pushes toward; its
+  // release edge follows the tooth's travel.
+  const toothTravel = (angle) => v2(Math.sin(angle), -Math.cos(angle));
+  const stoneRing = (name) => {
+    const points = palletLockPoints(name, 25);
+    const refAngle = name === 'A' ? palletAReferenceAngle : palletBReferenceAngle;
+    const travel = toothTravel(refAngle);
+    const chord = points.at(-1).clone().sub(points[0]).normalize();
+    const n = v2(-chord.y, chord.x);
+    if (n.dot(travel) < 0) n.negate();
+    const depth = 0.30;
+    const lead = points[0].clone().addScaledVector(chord, -0.06);
+    const releaseFoot = points.at(-1).clone().addScaledVector(travel, depth);
+    const lockFoot = lead.clone().addScaledVector(n, depth);
+    return roundRing([lead, ...points, releaseFoot, lockFoot].map((p) => p.toArray()));
+  };
+  const wheelLocal = wheelCenter.clone().sub(leverPivot);
+  const polarAboutWheel = (radius, angle) => wheelLocal.clone().add(
+    v2(Math.cos(angle), Math.sin(angle)).multiplyScalar(radius));
+  // Brown's crescent: the inside a circular arc just clear of the tooth tips
+  // at every lever angle (through the clearance envelope at its two ends and
+  // middle), the outside a circular arc through his outline, square ends.
+  const outerArc = arcThrough(L(422.5, 325), L(360, 445), L(290, 470), 64);
+  // Both band ends stop on the stone side of their lock faces.
+  const angleA = palletAReferenceAngle - 2 * DEG;
+  const angleB = palletBReferenceAngle - 3 * DEG;
+  const tipClearanceRadius = (angle) => {
+    // Smallest radius about the wheel whose point, turned with the lever
+    // through its whole throw, stays 0.03 outside the tip circle.
+    const clear = (radius) => {
+      const q = polarAboutWheel(radius, angle);
+      for (let k = -16; k <= 16; k += 1) {
+        const w = rotate2(q, leverAmplitude * k / 16).sub(wheelLocal);
+        if (w.length() < wheelToothTipRadius + 0.03) return false;
+      }
+      return true;
+    };
+    let lo = wheelToothTipRadius;
+    let hi = wheelToothTipRadius + 1;
+    for (let k = 0; k < 40; k += 1) {
+      const mid = (lo + hi) / 2;
+      if (clear(mid)) hi = mid; else lo = mid;
+    }
+    return hi;
+  };
+  // A single circular arc just outside that clearance envelope: through
+  // the envelope at both ends and the middle, lifted by the envelope's
+  // largest excess over it.
+  const envelope = Array.from({ length: 49 }, (_, i) => {
+    const angle = THREE.MathUtils.lerp(angleB, angleA, i / 48);
+    return { angle, radius: tipClearanceRadius(angle) };
+  });
+  const arcFrom = (lift) => arcThrough(
+    polarAboutWheel(envelope[0].radius + lift, envelope[0].angle),
+    polarAboutWheel(envelope[24].radius + lift, envelope[24].angle),
+    polarAboutWheel(envelope[48].radius + lift, envelope[48].angle),
     96,
   );
-  balanceRim.position.z = balanceDiskZ;
-  balanceRim.userData.role = 'lever-chronometer-balance-wheel-rim';
-  const balanceSpokes = [];
-  const balanceIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.095, 18, 14),
-    indexMaterial,
-  );
-  balanceIndex.position.set(0, balanceRimRadius, balancePlaneZ + 0.10);
-  balanceIndex.userData.role = 'white-index-on-lever-chronometer-balance';
-  balance.add(
-    rollerDisk,
-    balancePin,
-    directPalletCarrier,
-    directCarrierPost,
-    directPalletC,
-    directPalletEdge,
-    balanceStaff,
-    balanceRim,
-    balanceIndex,
-  );
+  const excess = (arc) => {
+    let worst = 0;
+    for (const { angle, radius } of envelope) {
+      // Radius of the arc along this ray from the wheel centre.
+      const dir = v2(Math.cos(angle), Math.sin(angle));
+      let best = Infinity;
+      for (const p of arc) {
+        const w = p.clone().sub(wheelLocal);
+        const off = Math.abs(w.x * dir.y - w.y * dir.x);
+        if (off < best) { best = off; var along = w.dot(dir); }
+      }
+      worst = Math.max(worst, radius - along);
+    }
+    return worst;
+  };
+  let innerLift = 0;
+  for (let k = 0; k < 4; k += 1) innerLift += excess(arcFrom(innerLift)) + 0.002;
+  const innerArc = arcFrom(innerLift);
+  const bandRing = roundRing([...innerArc, ...outerArc].map((p) => p.toArray()));
+  const stoneARing = stoneRing('A');
+  const stoneBRing = stoneRing('B');
+  // Each stone's root joins the band (hull of the stone and the band's end).
+  const hull = (points) => {
+    const pts = points.map(([x, y]) => v2(x, y)).sort((a, b) => a.x - b.x || a.y - b.y);
+    const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+    const half = (list) => list.reduce((h, p) => {
+      while (h.length >= 2 && cross(h.at(-2), h.at(-1), p) <= 0) h.pop();
+      h.push(p);
+      return h;
+    }, []);
+    const lower = half(pts);
+    const upper = half(pts.slice().reverse());
+    return roundRing([...lower.slice(0, -1), ...upper.slice(0, -1)].map((p) => p.toArray()));
+  };
+  const closeRing = (ring) => [[...ring, ring[0]]];
+  const rootA = hull([...stoneARing, innerArc.at(-1).toArray(), outerArc[0].toArray(),
+    innerArc.at(-6).toArray()]);
+  const rootB = hull([...stoneBRing, innerArc[0].toArray(), outerArc.at(-1).toArray(),
+    innerArc[5].toArray()]);
+  let crescentShape = polygonClipping.union(
+    closeRing(bandRing), closeRing(stoneARing), closeRing(stoneBRing),
+    closeRing(rootA), closeRing(rootB));
+  // Swept wheel teeth, in the lever's frame, plus running clearance.
+  const toothClearance = 0.0015;
+  const grownTooth = (() => {
+    const ring = toothPolygon(0).map(([x, y]) => v2(x, y));
+    const count = ring.length;
+    let area = 0;
+    for (let i = 0; i < count; i += 1) area += ring[i].x * ring[(i + 1) % count].y - ring[(i + 1) % count].x * ring[i].y;
+    const sign = area > 0 ? 1 : -1;
+    return ring.map((p, i) => {
+      const prev = ring[(i + count - 1) % count];
+      const next = ring[(i + 1) % count];
+      const n1 = v2(p.y - prev.y, prev.x - p.x).normalize().multiplyScalar(sign);
+      const n2 = v2(next.y - p.y, p.x - next.x).normalize().multiplyScalar(sign);
+      const bis = n1.clone().add(n2).normalize();
+      return p.clone().addScaledVector(bis, toothClearance / Math.max(bis.dot(n1), 0.2));
+    });
+  })();
+  const sweepTimes = [];
+  for (let i = 0; i < 240; i += 1) sweepTimes.push(balancePeriod * i / 240);
+  const cutBySweptTeeth = (shape, toLocal) => {
+    let cut = shape;
+    const box = new THREE.Box2();
+    for (const polygon of shape) for (const [x, y] of polygon[0]) box.expandByPoint(v2(x, y));
+    box.expandByScalar(0.05);
+    for (const time of sweepTimes) {
+      const state = stateAtTime(time);
+      const pieces = [];
+      for (let k = 0; k < toothCount; k += 1) {
+        const angle = state.wheelAngle + k * toothPitch;
+        const ring = grownTooth.map((p) => toLocal(rotate2(p, angle).add(wheelCenter), state));
+        const tb = new THREE.Box2().setFromPoints(ring);
+        if (!tb.intersectsBox(box)) continue;
+        pieces.push([roundRing(ring.map((p) => p.toArray()))]);
+      }
+      if (pieces.length) cut = polygonClipping.difference(cut, ...pieces.map((p) => [p]));
+    }
+    return cut;
+  };
+  crescentShape = cutBySweptTeeth(crescentShape,
+    (world, state) => rotate2(world.clone().sub(leverPivot), -state.leverAngle));
+  crescentShape = polygonClipping.difference(crescentShape, [[roundRing(circle([0, 0], 0.152, 64))]]);
+  crescentShape = largest(crescentShape);
+  const crescent = new THREE.Mesh(flatPart(crescentShape, frontLow, frontHigh), palletMaterial);
+  crescent.userData.role = 'crescent-pallet-plate-with-locking-only-pallets-A-and-B';
+  const leverArbor = roundBar(0.15, framePlaneZ, frontHigh + 0.03, darkMaterial, 40);
+  leverArbor.userData.role = 'lever-and-pallet-arbor';
+  const palletLever = new THREE.Group();
+  palletLever.position.set(leverPivot.x, leverPivot.y, 0);
+  palletLever.userData.axis = Z_AXIS.clone();
+  palletLever.userData.role = 'pivoted-lever-with-crescent-pallets-A-B-and-fork';
+  palletLever.add(leverBody, crescent, leverArbor);
 
-  const lockingContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.080, 18, 14),
-    indexMaterial,
-  );
-  lockingContactMarker.userData.role =
-    'white-marker-on-active-locking-only-pallet-contact';
-  const directImpulseMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.086, 18, 14),
-    indexMaterial,
-  );
-  directImpulseMarker.userData.role =
-    'white-marker-on-direct-wheel-to-balance-impulse-C';
-  const forkPinContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.072, 18, 14),
-    indexMaterial,
-  );
-  forkPinContactMarker.userData.role =
-    'white-marker-on-balance-pin-to-locking-lever-contact';
-
-  const fixedFrame = new THREE.Group();
-  fixedFrame.userData.fixed = true;
-  fixedFrame.userData.role = 'fixed-three-arbor-lever-chronometer-frame';
-  const framePlaneZ = -0.70;
-  const wheelToLeverFrame = beamBetween(
-    new THREE.Vector3(wheelCenter.x, wheelCenter.y, framePlaneZ),
-    new THREE.Vector3(leverPivot.x, leverPivot.y, framePlaneZ),
-    0.20,
-    0.25,
-    frameMaterial,
-  );
-  wheelToLeverFrame.userData.role = 'fixed-wheel-to-lever-frame-member';
-  const leverToBalanceFrame = beamBetween(
-    new THREE.Vector3(leverPivot.x, leverPivot.y, framePlaneZ),
-    new THREE.Vector3(balanceCenter.x, balanceCenter.y, framePlaneZ),
-    0.20,
-    0.25,
-    frameMaterial,
-  );
-  leverToBalanceFrame.userData.role = 'fixed-lever-to-balance-frame-member';
-  const lowerFramePoint = sourcePointToModel(new THREE.Vector2(375, 500));
-  const leverToBanksFrame = beamBetween(
-    new THREE.Vector3(leverPivot.x, leverPivot.y, framePlaneZ),
-    new THREE.Vector3(lowerFramePoint.x, lowerFramePoint.y, framePlaneZ),
-    0.20,
-    0.25,
-    frameMaterial,
-  );
-  leverToBanksFrame.userData.role = 'fixed-frame-member-behind-banking-tail';
-  const wheelBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.34, 0.07, 10, 40),
-    frameMaterial,
-  );
-  wheelBearing.position.set(wheelCenter.x, wheelCenter.y, framePlaneZ + 0.12);
-  wheelBearing.userData.role = 'fixed-lever-chronometer-wheel-bearing';
-  const leverBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.28, 0.065, 10, 40),
-    frameMaterial,
-  );
-  leverBearing.position.set(leverPivot.x, leverPivot.y, framePlaneZ + 0.12);
-  leverBearing.userData.role = 'fixed-locking-lever-bearing';
-  const balanceBearing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.33, 0.07, 10, 40),
-    frameMaterial,
-  );
-  balanceBearing.position.set(
-    balanceCenter.x,
-    balanceCenter.y,
-    framePlaneZ + 0.12,
-  );
-  balanceBearing.userData.role = 'fixed-lever-chronometer-balance-bearing';
-  const bankingPinRadius = 0.10;
+  // ---- Banking pins: the foot banks at each end of its throw -----------
+  const bankingPinRadius = 6 * sourceScale;
+  const bankY = L(372, 472).y;
+  const edgePointAt = (edge, y) => {
+    for (let i = 0; i + 1 < edge.length; i += 1) {
+      const a = edge[i];
+      const b = edge[i + 1];
+      if ((a.y - y) * (b.y - y) <= 0) {
+        const t = (y - a.y) / (b.y - a.y);
+        const point = a.clone().lerp(b, t);
+        const tangent = b.clone().sub(a).normalize();
+        return { point, tangent };
+      }
+    }
+    throw new Error('bank height outside the lever edge');
+  };
   const bankingContactPoints = {};
   const bankingPinCenters = {};
   const bankingPins = [-1, 1].map((sign) => {
     const name = sign < 0 ? 'left' : 'right';
+    const { point, tangent } = edgePointAt(sign < 0 ? leftEdge : rightEdge, bankY);
+    let outward = v2(-tangent.y, tangent.x);
+    if (outward.x * sign < 0) outward.negate();
+    // The foot, below the arbor, swings right (toward +x) as the lever
+    // turns anticlockwise.
     const bankAngle = sign * leverAmplitude;
-    const localContact = tailAxis.clone().multiplyScalar(tailLength)
-      .addScaledVector(tailNormal, sign * tailEndHalfWidth);
-    const contact = leverPivot.clone().add(rotate2(localContact, bankAngle));
-    const outward = rotate2(tailNormal, bankAngle).multiplyScalar(sign);
-    const position = contact.clone().addScaledVector(
-      outward,
-      bankingPinRadius,
-    );
+    const contact = leverPivot.clone().add(rotate2(point, bankAngle));
+    const center = leverPivot.clone().add(rotate2(point.clone().addScaledVector(outward, bankingPinRadius), bankAngle));
     bankingContactPoints[name] = contact;
-    bankingPinCenters[name] = position;
-    // The pin runs from in front of the lever tail back into the banking
-    // bridge on the frame plane.
-    const pinFront = leverPlaneZ + 0.43;
-    const pinBack = framePlaneZ;
-    const pin = cylinderAlongZ(0.10, pinFront - pinBack, frameMaterial, 24);
-    pin.position.set(position.x, position.y, (pinFront + pinBack) / 2);
-    pin.userData.role = `fixed-${name}-banking-pin-for-locking-lever`;
+    bankingPinCenters[name] = center;
+    const pin = roundBar(bankingPinRadius, framePlaneZ, leverHigh, frameMaterial, 32);
+    pin.position.x = center.x;
+    pin.position.y = center.y;
+    pin.userData.role = `fixed-${name}-banking-pin-for-lever-foot`;
     return pin;
   });
-  // Brown draws only the two pin heads; they stand in a small bridge behind
-  // the tail, carried by an arm from the lever's bearing (both hidden behind
-  // the lever in the plate's view).
-  const bankingBridge = beamBetween(
-    new THREE.Vector3(bankingPinCenters.left.x, bankingPinCenters.left.y,
-      framePlaneZ),
-    new THREE.Vector3(bankingPinCenters.right.x, bankingPinCenters.right.y,
-      framePlaneZ),
-    0.20,
-    0.20,
-    frameMaterial,
-  );
-  bankingBridge.userData.role = 'fixed-banking-pin-bridge';
-  const bankingMid = bankingPinCenters.left.clone()
-    .add(bankingPinCenters.right).multiplyScalar(0.5);
-  const bankingArmStart = leverPivot.clone().add(
-    bankingMid.clone().sub(leverPivot).normalize().multiplyScalar(0.28),
-  );
-  const bankingArm = beamBetween(
-    new THREE.Vector3(bankingArmStart.x, bankingArmStart.y, framePlaneZ),
-    new THREE.Vector3(bankingMid.x, bankingMid.y, framePlaneZ),
-    0.12,
-    0.16,
-    frameMaterial,
-  );
-  bankingArm.userData.role = 'fixed-banking-bridge-arm-from-lever-bearing';
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(10.7, 0.24, 0.88),
-    frameMaterial,
-  );
-  base.position.set(1.08, -4.72, framePlaneZ + 0.02);
-  base.userData.role = 'fixed-lever-chronometer-frame-base';
-  fixedFrame.add(
-    wheelToLeverFrame,
-    leverToBalanceFrame,
-    leverToBanksFrame,
-    wheelBearing,
-    leverBearing,
-    balanceBearing,
-    ...bankingPins,
-    bankingBridge,
-    bankingArm,
-    base,
-  );
 
-  const cameraEnvelope = new THREE.Mesh(
-    new THREE.BoxGeometry(10.8, 10.5, 4.2),
-    new THREE.MeshBasicMaterial({
-      colorWrite: false,
-      depthWrite: false,
-      opacity: 0,
-      transparent: true,
-    }),
-  );
-  cameraEnvelope.position.set(1.10, -0.12, 0.30);
-  cameraEnvelope.userData.cameraFitGuide = true;
-  cameraEnvelope.userData.cameraFramingEnvelope = true;
-  cameraEnvelope.userData.role =
-    'invisible-envelope-for-complete-lever-chronometer';
+  // ---- Frame: plain bars behind everything -----------------------------
+  const fixedFrame = new THREE.Group();
+  fixedFrame.userData.fixed = true;
+  fixedFrame.userData.role = 'fixed-back-bars-carrying-the-three-arbors-and-banking-pins';
+  const at = (p) => new THREE.Vector3(p.x, p.y, framePlaneZ);
+  const bankMid = bankingPinCenters.left.clone().add(bankingPinCenters.right).multiplyScalar(0.5);
+  // Bored bearing bosses for the three arbors; the bars run between them.
+  const bossRadius = 0.26;
+  const bosses = [
+    ['wheel', wheelCenter, 0.13],
+    ['lever', leverPivot, 0.15],
+    ['balance', balanceCenter, 0.115],
+  ].map(([name, center, arborRadius]) => {
+    const boss = new THREE.Mesh(
+      boredLatheGeometry([
+        { radial: bossRadius, axial: -0.09 },
+        { radial: bossRadius, axial: 0.09 },
+      ], arborRadius + 0.004, 64),
+      frameMaterial,
+    );
+    boss.rotation.x = Math.PI / 2;
+    boss.position.set(center.x, center.y, framePlaneZ);
+    boss.userData.role = `fixed-back-bearing-${name}`;
+    return boss;
+  });
+  const barBetween = (name, a, b, trimA, trimB) => {
+    const dir = b.clone().sub(a).normalize();
+    const start = a.clone().addScaledVector(dir, trimA);
+    const end = b.clone().addScaledVector(dir, -trimB);
+    const bar = beamBetween(at(start), at(end), 0.22, 0.14, frameMaterial);
+    bar.userData.role = `fixed-back-bar-${name}`;
+    return bar;
+  };
+  const trim = bossRadius - 0.02;
+  const bars = [
+    barBetween('wheel-to-lever', wheelCenter, leverPivot, trim, trim),
+    barBetween('lever-to-balance', leverPivot, balanceCenter, trim, trim),
+    barBetween('lever-to-banking', leverPivot, bankMid, trim, 0),
+    barBetween('banking-pins', bankingPinCenters.left, bankingPinCenters.right, 0, 0),
+  ];
+  fixedFrame.add(...bars, ...bosses, ...bankingPins);
 
-  root.add(
-    cameraEnvelope,
-    fixedFrame,
-    escapeWheel,
-    palletLever,
-    balance,
-    lockingContactMarker,
-    directImpulseMarker,
-    forkPinContactMarker,
-  );
+  root.add(fixedFrame, escapeWheel, palletLever, balance);
 
-  const stateAtTime = (time) => {
-    const { halfBeatIndex, halfPhase } = halfBeatAtTime(time);
+  // ---- State -------------------------------------------------------------
+  // Time 0 is the plate's pose: the balance at its middle on the acting
+  // vibration, the pin in the fork, A just releasing.
+  function internalState(internalTime) {
+    const coordinate = internalTime / halfBeatDuration;
+    const halfBeatIndex = Math.floor(coordinate);
+    const halfPhase = coordinate - halfBeatIndex;
     const side = sideForHalfBeat(halfBeatIndex);
     const acting = isActingHalfBeat(halfBeatIndex);
     const currentPallet = palletNameForSide(side);
@@ -1086,76 +853,62 @@ function leverChronometerEscapement(movement) {
     const balanceState = balanceStateAtHalfPhase(side, halfPhase);
     const leverState = leverStateAtHalfPhase(side, halfPhase);
     const wheelState = wheelAdvanceAtHalfPhase(acting, halfPhase);
-    const wheelAngle = wheelAngleAtHalfPhase(halfBeatIndex, halfPhase);
-    const beforeRelease = halfPhase < palletReleaseHalfPhase;
-    const afterLanding = halfPhase >= nextPalletLandingHalfPhase;
+    const wheelAngle = wheelAngleAtHalfLanding(halfBeatIndex) - wheelState.advance;
+    const releaseHalfPhase = acting ? palletReleaseHalfPhase : returnReleaseHalfPhase;
+    const landingHalfPhase = acting ? nextPalletLandingHalfPhase : returnLandingHalfPhase;
+    const beforeRelease = halfPhase <= releaseHalfPhase;
+    const afterLanding = halfPhase >= landingHalfPhase;
     const lockingContactActive = beforeRelease || afterLanding;
-    const directImpulseActive = acting
-      && !beforeRelease
-      && !afterLanding;
-    const shortTransferActive = !acting
-      && !beforeRelease
-      && !afterLanding;
+    const directImpulseActive = acting && halfPhase >= impulseCatchHalfPhase
+      && halfPhase < impulseEndHalfPhase;
+    const shortTransferActive = !acting && !beforeRelease && !afterLanding;
     const forkPinContactActive = halfPhase >= pinEngagementHalfPhase
       && halfPhase <= pinDisengagementHalfPhase;
     const currentToothIndex = currentLockToothIndex(halfBeatIndex);
     const nextToothIndex = currentLockToothIndex(halfBeatIndex + 1);
     const lockingPallet = afterLanding ? nextPallet : currentPallet;
-    const lockingToothIndex = afterLanding
-      ? nextToothIndex
-      : currentToothIndex;
-    const lockingToothPoint = toothTipPoint(
-      wheelAngle,
-      lockingToothIndex,
-    );
-    const balancePinCenter = balancePinCenterAtHalfPhase(side, halfPhase);
+    const lockingToothIndex = afterLanding ? nextToothIndex : currentToothIndex;
+    const lockingToothPoint = toothTipPoint(wheelAngle, lockingToothIndex);
+    const balancePinCenter = pinAt(balanceState.angle);
 
     let stage;
-    if (beforeRelease && halfPhase < pinEngagementHalfPhase) {
-      stage = `${currentPallet}-locked-balance-detached`;
-    } else if (beforeRelease) {
-      stage = `balance-pin-unlocking-${currentPallet}`;
-    } else if (directImpulseActive) {
-      stage = 'direct-wheel-to-balance-impulse-at-C-A-to-B';
-    } else if (shortTransferActive) {
-      stage = 'short-unpowered-wheel-transfer-B-to-A';
-    } else if (forkPinContactActive) {
-      stage = `${nextPallet}-locks-as-balance-pin-leaves-fork`;
-    } else {
-      stage = `${nextPallet}-locked-balance-detached`;
-    }
+    if (beforeRelease && halfPhase < pinEngagementHalfPhase) stage = `${currentPallet}-locked-balance-detached`;
+    else if (beforeRelease) stage = `balance-pin-unlocking-${currentPallet}`;
+    else if (acting && halfPhase < impulseCatchHalfPhase) stage = 'wheel-drops-onto-C';
+    else if (directImpulseActive) stage = 'direct-wheel-to-balance-impulse-at-C-A-to-B';
+    else if (acting && !afterLanding) stage = 'tooth-leaves-C-and-runs-to-B';
+    else if (shortTransferActive) stage = 'short-unpowered-wheel-transfer-B-to-A';
+    else if (forkPinContactActive) stage = `${nextPallet}-locks-as-balance-pin-leaves-fork`;
+    else stage = `${nextPallet}-locked-balance-detached`;
 
     let lockingContact = null;
     if (lockingContactActive) {
-      const profileHalfPhase = beforeRelease
-        ? Math.max(halfPhase, pinEngagementHalfPhase)
-        : pinEngagementHalfPhase;
-      const frame = palletLockFrame(lockingPallet, profileHalfPhase);
-      const expectedPoint = leverPivot.clone().add(
-        rotate2(frame.point, leverState.angle),
-      );
-      const faceTangent = rotate2(frame.tangent, leverState.angle);
-      const faceNormal = rotate2(frame.normal, leverState.angle);
-      const toothVelocity = crossZ(
-        lockingToothPoint.clone().sub(wheelCenter),
-      ).multiplyScalar(wheelState.angularSpeed);
-      const palletVelocity = crossZ(
-        expectedPoint.clone().sub(leverPivot),
-      ).multiplyScalar(leverState.angularSpeed);
+      const lockSide = palletSideForName(lockingPallet);
+      // On its own face the lock point is where the lever stood at
+      // engagement, i.e. the face point for the lever's current angle.
+      const leverAngle = leverState.angle;
+      const refPoint = referencePointForPallet(lockingPallet);
+      const localPoint = rotate2(refPoint.clone().sub(leverPivot), -leverAngle);
+      const expectedPoint = leverPivot.clone().add(rotate2(localPoint, leverAngle));
+      const faceTangent = rotate2(crossZ(localPoint).normalize(), leverAngle);
+      const faceNormal = v2(-faceTangent.y, faceTangent.x);
+      const toothVelocity = crossZ(lockingToothPoint.clone().sub(wheelCenter))
+        .multiplyScalar(wheelState.angularSpeed);
+      const palletVelocity = crossZ(expectedPoint.clone().sub(leverPivot))
+        .multiplyScalar(leverState.angularSpeed);
       const relativeVelocity = toothVelocity.clone().sub(palletVelocity);
       lockingContact = {
         expectedPoint,
         faceNormal,
         faceTangent,
-        localPoint: frame.point,
+        localPoint,
+        lockSide,
         mode: 'locking-only-no-impulse',
         normalVelocityError: relativeVelocity.dot(faceNormal),
         pallet: lockingPallet,
-        palletVelocity,
         pointError: lockingToothPoint.distanceTo(expectedPoint),
         relativeSlipSpeed: relativeVelocity.dot(faceTangent),
         toothIndex: lockingToothIndex,
-        toothVelocity,
       };
     }
 
@@ -1165,74 +918,45 @@ function leverChronometerEscapement(movement) {
     if (directImpulseActive) {
       impulseToothIndex = directImpulseToothIndex(halfBeatIndex);
       impulseToothPoint = toothTipPoint(wheelAngle, impulseToothIndex);
-      const frame = directImpulseFrame(halfPhase);
-      const expectedPoint = balanceCenter.clone().add(
-        rotate2(frame.point, balanceState.angle),
-      );
-      const faceTangent = rotate2(frame.tangent, balanceState.angle);
-      const faceNormal = rotate2(frame.normal, balanceState.angle);
-      const toothVelocity = crossZ(
-        impulseToothPoint.clone().sub(wheelCenter),
-      ).multiplyScalar(wheelState.angularSpeed);
-      const palletVelocity = crossZ(
-        expectedPoint.clone().sub(balanceCenter),
-      ).multiplyScalar(balanceState.angularSpeed);
+      const frame = bladeFrame(wheelState.advance, balanceState.angle);
+      const faceTangent = rotate2(cDirection, balanceState.angle);
+      const faceNormal = rotate2(cNormal, balanceState.angle);
+      const toothVelocity = crossZ(impulseToothPoint.clone().sub(wheelCenter))
+        .multiplyScalar(wheelState.angularSpeed);
+      const palletVelocity = crossZ(impulseToothPoint.clone().sub(balanceCenter))
+        .multiplyScalar(balanceState.angularSpeed);
       const relativeVelocity = toothVelocity.clone().sub(palletVelocity);
       directImpulseContact = {
-        expectedPoint,
+        bladeS: frame.s,
         faceNormal,
         faceTangent,
-        localPoint: frame.point,
         mode: 'escape-tooth-directly-impulses-balance-pallet-C',
         normalVelocityError: relativeVelocity.dot(faceNormal),
-        palletVelocity,
-        pointError: impulseToothPoint.distanceTo(expectedPoint),
-        relativeSlipSpeed: relativeVelocity.dot(faceTangent),
+        pointError: Math.abs(frame.n),
+        pushesForward: toothVelocity.dot(faceNormal) > 0,
         toothIndex: impulseToothIndex,
-        toothVelocity,
       };
     }
 
     let forkPinContact = null;
     if (forkPinContactActive) {
       const frame = forkTineFaceFrame(side, halfPhase);
-      const expectedPoint = leverPivot.clone().add(
-        rotate2(frame.point, leverState.angle),
-      );
+      const expectedPoint = leverPivot.clone().add(rotate2(frame.point, leverState.angle));
       const faceTangent = rotate2(frame.faceTangent, leverState.angle);
       const faceNormal = rotate2(frame.faceNormal, leverState.angle);
-      const surfaceOffset = rotate2(
-        frame.point.clone().sub(frame.center),
-        leverState.angle,
-      );
+      const surfaceOffset = rotate2(frame.point.clone().sub(frame.center), leverState.angle);
       const pinSurfacePoint = balancePinCenter.clone().add(surfaceOffset);
-      const pinVelocity = crossZ(
-        pinSurfacePoint.clone().sub(balanceCenter),
-      ).multiplyScalar(balanceState.angularSpeed);
-      const leverVelocity = crossZ(
-        expectedPoint.clone().sub(leverPivot),
-      ).multiplyScalar(leverState.angularSpeed);
+      const pinVelocity = crossZ(pinSurfacePoint.clone().sub(balanceCenter))
+        .multiplyScalar(balanceState.angularSpeed);
+      const leverVelocity = crossZ(expectedPoint.clone().sub(leverPivot))
+        .multiplyScalar(leverState.angularSpeed);
       const relativeVelocity = pinVelocity.clone().sub(leverVelocity);
-      let mode = `balance-pin-drives-lever-unlocking-${currentPallet}`;
-      if (directImpulseActive) {
-        mode = 'balance-pin-completes-lever-throw-during-direct-impulse';
-      } else if (shortTransferActive) {
-        mode = 'balance-pin-completes-lever-throw-during-short-transfer';
-      }
       forkPinContact = {
         expectedPoint,
-        faceNormal,
-        faceTangent,
-        leverVelocity,
-        localPoint: frame.point,
-        mode,
+        mode: `balance-pin-drives-lever-${acting ? 'A-to-B' : 'B-to-A'}`,
         normalVelocityError: relativeVelocity.dot(faceNormal),
-        pinRadiusError: balancePinCenter.distanceTo(pinSurfacePoint)
-          - balancePinRadius,
-        pinSurfacePoint,
-        pinVelocity,
+        pinRadiusError: balancePinCenter.distanceTo(pinSurfacePoint) - balancePinRadius,
         pointError: pinSurfacePoint.distanceTo(expectedPoint),
-        relativeSlipSpeed: relativeVelocity.dot(faceTangent),
         tine: side > 0 ? 'acting-side' : 'return-side',
       };
     }
@@ -1272,114 +996,55 @@ function leverChronometerEscapement(movement) {
       wheelAngularAcceleration: wheelState.angularAcceleration,
       wheelAngularSpeed: wheelState.angularSpeed,
       wheelEvent: wheelState.event,
-      wheelEventProgress: wheelState.progress,
     };
+  }
+  function stateAtTime(time) {
+    return internalState(time + phaseOffset);
+  }
+  const internalCanonical = {
+    aLocked: 0.10,
+    aUnlockEntry: pinEngagementHalfPhase,
+    aRelease: palletReleaseHalfPhase,
+    impulseCatch: impulseCatchHalfPhase,
+    directImpulseMid: (impulseCatchHalfPhase + impulseEndHalfPhase) / 2,
+    impulseEnd: impulseEndHalfPhase,
+    bLanding: nextPalletLandingHalfPhase,
+    bLocked: 1.10,
+    bUnlockEntry: 1 + pinEngagementHalfPhase,
+    bRelease: 1 + returnReleaseHalfPhase,
+    shortTransferMid: 1 + (returnReleaseHalfPhase + returnLandingHalfPhase) / 2,
+    aRelock: 1 + returnLandingHalfPhase,
   };
-  const stateAtCyclePhase = (phase) => stateAtTime(
-    phase * balancePeriod,
-  );
-  const canonicalTimes = {
-    aLocked: 0.10 * halfBeatDuration,
-    aUnlockEntry: pinEngagementHalfPhase * halfBeatDuration,
-    directImpulseStart: palletReleaseHalfPhase * halfBeatDuration,
-    directImpulseMid: (
-      palletReleaseHalfPhase + nextPalletLandingHalfPhase
-    ) * halfBeatDuration / 2,
-    bLanding: nextPalletLandingHalfPhase * halfBeatDuration,
-    bLocked: halfBeatDuration + 0.10 * halfBeatDuration,
-    bUnlockEntry: halfBeatDuration
-      + pinEngagementHalfPhase * halfBeatDuration,
-    shortTransferMid: halfBeatDuration + (
-      palletReleaseHalfPhase + nextPalletLandingHalfPhase
-    ) * halfBeatDuration / 2,
-    aRelock: halfBeatDuration
-      + nextPalletLandingHalfPhase * halfBeatDuration,
-    cycleClosure: balancePeriod,
-  };
-  const canonicalStates = Object.fromEntries(
-    Object.entries(canonicalTimes).map(([name, time]) => [
-      name,
-      stateAtTime(time),
-    ]),
-  );
+  const canonicalTimes = Object.fromEntries(Object.entries(internalCanonical).map(([name, h]) => [
+    name, positiveModulo(h * halfBeatDuration - phaseOffset, balancePeriod)]));
 
   const update = (time) => {
     const state = stateAtTime(time);
     balance.rotation.z = state.balanceAngle;
-    balance.userData.angularAcceleration = state.balanceAngularAcceleration;
     balance.userData.angularSpeed = state.balanceAngularSpeed;
+    balance.userData.angularAcceleration = state.balanceAngularAcceleration;
     palletLever.rotation.z = state.leverAngle;
-    palletLever.userData.angularAcceleration = state.leverAngularAcceleration;
     palletLever.userData.angularSpeed = state.leverAngularSpeed;
+    palletLever.userData.angularAcceleration = state.leverAngularAcceleration;
     wheelRotor.rotation.z = state.wheelAngle;
-    wheelRotor.userData.angularAcceleration = state.wheelAngularAcceleration;
     wheelRotor.userData.angularSpeed = state.wheelAngularSpeed;
-    lockingContactMarker.visible = state.lockingContactActive;
-    directImpulseMarker.visible = state.directImpulseActive;
-    forkPinContactMarker.visible = state.forkPinContactActive;
-    if (state.lockingContactActive) {
-      lockingContactMarker.position.set(
-        state.lockingContact.expectedPoint.x,
-        state.lockingContact.expectedPoint.y,
-        leverPlaneZ + leverDepth / 2 + 0.14,
-      );
-    }
-    if (state.directImpulseActive) {
-      directImpulseMarker.position.set(
-        state.directImpulseContact.expectedPoint.x,
-        state.directImpulseContact.expectedPoint.y,
-        directPalletPlaneZ + directPalletDepth / 2 + 0.15,
-      );
-    }
-    if (state.forkPinContactActive) {
-      forkPinContactMarker.position.set(
-        state.forkPinContact.expectedPoint.x,
-        state.forkPinContact.expectedPoint.y,
-        leverPlaneZ + leverDepth / 2 + 0.16,
-      );
-    }
+    wheelRotor.userData.angularAcceleration = state.wheelAngularAcceleration;
     root.userData.contacts = {
-      directImpulseC: state.directImpulseActive
-        ? {
-          mode: state.directImpulseContact.mode,
-          normalVelocityError:
-            state.directImpulseContact.normalVelocityError,
-          pointError: state.directImpulseContact.pointError,
-          toothIndex: state.directImpulseContact.toothIndex,
-        }
-        : null,
-      forkPin: state.forkPinContactActive
-        ? {
-          mode: state.forkPinContact.mode,
-          normalVelocityError: state.forkPinContact.normalVelocityError,
-          pinRadiusError: state.forkPinContact.pinRadiusError,
-          pointError: state.forkPinContact.pointError,
-          tine: state.forkPinContact.tine,
-        }
-        : null,
-      lockingPallet: state.lockingContactActive
-        ? {
-          mode: state.lockingContact.mode,
-          normalVelocityError: state.lockingContact.normalVelocityError,
-          pallet: state.lockingContact.pallet,
-          pointError: state.lockingContact.pointError,
-          toothIndex: state.lockingContact.toothIndex,
-        }
-        : null,
+      directImpulseC: state.directImpulseContact,
+      forkPin: state.forkPinContact,
+      lockingPallet: state.lockingContact,
     };
     root.userData.kinematics = state;
   };
 
-  root.userData.archetype =
-    'fifteen-tooth-single-impulse-lever-chronometer-alternating-long-short-lock-transfer-escapement';
-  root.userData.mechanism =
-    'one 15-tooth clockwise escape wheel is alternately locked by lever pallets A and B, which have no impulse faces; on the A-to-B vibration a separate tooth directly impulses the sole balance-mounted pallet C while the tooth between A and B reaches B, and on the return vibration B unlocks for only a short unpowered transfer back to A';
+  root.userData.archetype = movement.archetype;
+  root.userData.mechanism = 'one 13-tooth clockwise escape wheel is alternately locked by pallets A and B on a crescent carried by the forked lever, neither with an impulse face; on the A-to-B vibration the tooth two pitches ahead drops onto the balance’s straight pallet C, drives it and slides off its end, and the tooth between lands on B; on the return vibration B unlocks for only a short unpowered transfer back to A';
   root.userData.transmission = {
     balanceImpulseCountPerOscillation: 1,
     balanceIsDetachedOutsideForkWindow: true,
     balanceMountedImpulsePalletCount: 1,
     directImpulseToothOffset,
-    direction: 'escape wheel advances clockwise in one long acting movement and one short return movement',
+    direction: 'escape wheel turns clockwise: one long acting advance and one short return advance per oscillation',
     leverPalletCount: 2,
     leverPalletImpulseFaceCount: 0,
     longImpulseAdvance,
@@ -1390,55 +1055,38 @@ function leverChronometerEscapement(movement) {
   };
   root.userData.blocks = {
     balance,
-    balanceBearing,
-    balanceIndex,
+    balanceDisc,
     balancePin,
-    balanceRim,
-    balanceSpokes,
     balanceStaff,
-    bankingArm,
-    bankingBridge,
     bankingPins,
-    bankingTail,
-    base,
-    cameraEnvelope,
-    directCarrierPost,
-    directImpulseMarker,
+    bars,
+    bosses,
+    crescent,
     directPalletC,
-    directPalletCarrier,
-    directPalletEdge,
     escapeWheel,
     fixedFrame,
-    forkLever,
-    forkPinContactMarker,
-    forkTineEdges,
-    forkTines,
-    leverBearing,
-    leverPivotHub,
-    leverToBalanceFrame,
-    leverToBanksFrame,
-    lockingContactMarker,
-    palletBlocks,
+    leverArbor,
+    leverBody,
     palletLever,
-    palletLockEdges,
-    rollerDisk,
-    wheelBearing,
-    wheelHub,
-    wheelIndex,
-    wheelRim,
+    wheelArbor,
+    wheelPlate,
     wheelRotor,
-    wheelShaft,
-    wheelSpokes,
-    wheelTeeth,
-    wheelToLeverFrame,
   };
-  root.userData.canonicalStates = canonicalStates;
   root.userData.canonicalTimes = canonicalTimes;
-  root.userData.directImpulseFrame = directImpulseFrame;
-  root.userData.directImpulsePoints = directImpulsePoints;
+  root.userData.canonicalStates = Object.fromEntries(Object.entries(canonicalTimes).map(
+    ([name, time]) => [name, stateAtTime(time)]));
   root.userData.forkTineFaceFrame = forkTineFaceFrame;
   root.userData.forkTineFacePoints = forkTineFacePoints;
-  root.userData.forkTineProfiles = forkTineProfiles;
+  root.userData.palletLockFrame = palletLockFrame;
+  root.userData.palletLockPoints = palletLockPoints;
+  root.userData.directImpulsePoints = directImpulsePoints;
+  root.userData.toothPolygon = toothPolygon;
+  root.userData.planes = {
+    front: [frontLow, frontHigh],
+    lever: [leverLow, leverHigh],
+    balance: [discLow, discHigh],
+    frame: framePlaneZ,
+  };
   root.userData.geometry = {
     balanceAmplitude,
     balanceCenter: balanceCenter.clone(),
@@ -1446,16 +1094,16 @@ function leverChronometerEscapement(movement) {
     balancePinMountAngle,
     balancePinOrbitRadius,
     balancePinRadius,
-    balancePlaneZ,
     balanceRimRadius,
-    balanceToLeverDistance,
     bankingContactPoints,
     bankingPinCenters,
     bankingPinRadius,
+    cBladeEndS,
+    cReachRadius,
     directImpulseStartAngle,
-    directPalletDepth,
-    directPalletPlaneZ,
     halfBeatDuration,
+    impulseCatchHalfPhase,
+    impulseEndHalfPhase,
     leverAmplitude,
     leverDepth,
     leverPivot: leverPivot.clone(),
@@ -1465,34 +1113,30 @@ function leverChronometerEscapement(movement) {
     palletAReferenceAngle,
     palletBReferenceAngle,
     palletReleaseHalfPhase,
+    phaseOffset,
     pinDisengagementHalfPhase,
     pinEngagementHalfPhase,
-    rollerPlaneZ,
+    returnLandingHalfPhase,
+    returnReleaseHalfPhase,
     shortReturnAdvance,
     sourceImageHeight,
     sourceImageWidth,
     sourceScale,
     statedLeverDetachAngle,
-    tailEndHalfWidth,
-    tailLength,
     toothCount,
     toothPitch,
     wheelBaseAngle,
     wheelCenter: wheelCenter.clone(),
     wheelDepth,
-    wheelInnerRadius,
     wheelToothRootRadius,
     wheelToothTipRadius,
   };
-  root.userData.palletLockFrame = palletLockFrame;
-  root.userData.palletLockPoints = palletLockPoints;
-  root.userData.palletProfiles = palletProfiles;
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
     officialCanvasModelPresent: false,
     officialPageAnimatedTabDisabled: true,
-    referenceScope: 'Brown supplies the static 15-tooth wheel, balance-mounted pallet C, two-pallet lever A-B, roller pin, banking pins, and a concise distinction from movement 296. Grimthorpe fig. 77 supplies the exact A-to-B direct-impulse and B-to-A short-transfer sequence; exact historic lift and drop angles are not dimensioned.',
+    referenceScope: 'Brown supplies the static 13-tooth wheel, balance pallet C, the crescent pallets A and B on the forked lever, roller pin and banking pins. Grimthorpe fig. 77 supplies the A-to-B direct-impulse and B-to-A short-transfer sequence; historic lift and drop angles are not dimensioned.',
     sourceUrl: 'https://507movements.com/mm_314.html',
   };
   root.userData.sourcePointToModel = sourcePointToModel;
@@ -1501,19 +1145,21 @@ function leverChronometerEscapement(movement) {
     brownPlate314: {
       imageHeight: sourceImageHeight,
       imageWidth: sourceImageWidth,
-      inferredTopology: 'one 15-tooth escape wheel, one pivoted forked lever carrying two locking-only pallets A and B, one roller pin, one direct impulse pallet C rigid with the balance, and two fixed banking pins',
-      measurementUncertaintyPixels: 12,
+      inferredTopology: 'one 13-tooth escape wheel; one lever pivoted on the crescent’s arbor, forked round one roller pin and banked between two pins, its crescent carrying locking-only pallets A and B; one direct impulse pallet C on the balance staff',
+      measurementUncertaintyPixels: 6,
       rasterBalanceCenter: sourceRasterBalanceCenter.clone(),
       rasterBalanceOuterRadius: sourceRasterBalanceOuterRadius,
       rasterBalancePin: sourceRasterBalancePin.clone(),
+      rasterCInner: sourceRasterCInner.clone(),
+      rasterCOuter: sourceRasterCOuter.clone(),
       rasterImpulseStartC: sourceRasterImpulseStartC.clone(),
       rasterLeftBank: sourceRasterLeftBank.clone(),
       rasterLeverPivot: sourceRasterLeverPivot.clone(),
       rasterPalletA: sourceRasterPalletA.clone(),
-      rasterPalletBFreeTip: sourceRasterPalletBFreeTip.clone(),
       rasterRightBank: sourceRasterRightBank.clone(),
       rasterWheelCenter: sourceRasterWheelCenter.clone(),
       rasterWheelOuterRadius: sourceRasterWheelOuterRadius,
+      rasterWheelRootRadius: sourceRasterWheelRootRadius,
       visibleWheelToothCount: toothCount,
     },
     grimthorpeFigure77: {
@@ -1540,15 +1186,16 @@ function leverChronometerEscapement(movement) {
       publicationYear: 1908,
     },
   };
-  root.userData.stateAtCyclePhase = stateAtCyclePhase;
+  root.userData.stateAtCyclePhase = (phase) => stateAtTime(phase * balancePeriod);
   root.userData.stateAtTime = stateAtTime;
   root.userData.timeline = {
     demonstrationPeriod: balancePeriod,
     schedule: [
       'A-locks-while-balance-is-detached',
       'balance-pin-enters-fork-and-unlocks-A',
+      'released-tooth-drops-onto-C-with-matched-speed',
       'escape-tooth-directly-impulses-balance-pallet-C',
-      'intervening-tooth-lands-on-B-as-direct-impulse-ends',
+      'tooth-slides-off-C-and-intervening-tooth-lands-on-B',
       'balance-returns-and-pin-unlocks-B',
       'wheel-makes-short-unpowered-transfer-from-B-to-A',
       'A-relocks-and-balance-detaches',
@@ -1557,235 +1204,35 @@ function leverChronometerEscapement(movement) {
   root.userData.toothTipPoint = toothTipPoint;
   root.userData.wheelAngleAtHalfLanding = wheelAngleAtHalfLanding;
   root.userData.wheelAdvanceAtHalfPhase = wheelAdvanceAtHalfPhase;
+  root.userData.reconstructionNote = 'Brown’s parts are flat plates in three planes (wheel, crescent and C in front; lever behind; balance disc behind that). The lever pivots on the crescent’s arbor. Lock faces are arcs about that arbor; the fork is the roller pin’s swept path; C is Brown’s straight blade, shortened to reach 1.50 from the staff so it passes back between the locked teeth. The wheel drops onto C with matched speed, rides it by exact contact, and runs to B on a smooth law after sliding off; lever and wheel motion are prescribed kinematics (no dynamics).';
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = 4;
+  root.userData.cameraDirection = new THREE.Vector3(0, 0, 15);
+  root.userData.cameraFov = 8;
+  root.userData.cameraDistanceScale = 0.86;
+  root.userData.fidelity = 'authored';
 
-  update(0);
   root.traverse((object) => {
-    const materials = Array.isArray(object.material)
-      ? object.material
-      : object.material
-        ? [object.material]
-        : [];
-    for (const material of materials) material.fog = false;
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
   });
   root.userData.materialsIgnoreSceneFog = true;
   markShadows(root);
-  for (const object of [
-    balanceIndex,
-    cameraEnvelope,
-    directImpulseMarker,
-    forkPinContactMarker,
-    lockingContactMarker,
-    wheelIndex,
-  ]) {
-    object.castShadow = false;
-    object.receiveShadow = false;
-  }
-  root.userData.fidelity = 'authored';
-  correctDetachedChronometer(root, 314, update);
-  const palletNibs = [];
-  root.userData.blocks.palletNibs = palletNibs;
-  {
-    // The lever pivot sits on pallet C's orbit, so its hub and arbor are kept
-    // in front of C's layer and the arbor runs forward to a front journal
-    // (Brown shows only the arbor end at the top of A).
-    const { arbor } = root.userData.detachedChronometerParts;
-    const tube = (outer, inner, length) => boredLatheGeometry([
-      { radial: outer, axial: -length / 2 },
-      { radial: outer, axial: length / 2 },
-    ], inner, 64);
-    const hubBack = 0.12;
-    const hubFront = leverPlaneZ + 0.36;
-    leverPivotHub.geometry.dispose();
-    leverPivotHub.geometry = tube(0.22, 0.126, hubFront - hubBack);
-    leverPivotHub.position.z = (hubBack + hubFront) / 2;
-    const arborFront = 1.00;
-    arbor.geometry.dispose();
-    arbor.geometry = new THREE.CylinderGeometry(0.12, 0.12,
-      arborFront - hubBack, 48);
-    arbor.position.z = (hubBack + arborFront) / 2;
-    leverBearing.position.z = arborFront - 0.10;
-    // The lever's front journal is carried by a flat L-shaped cock that runs
-    // out to the right, clear of the swinging tail, and down to the right
-    // banking pin, whose head it is screwed to; the pins stand in the bridge
-    // behind the tail. This replaces the loose rear post that stopped short
-    // of the lever pivot.
-    {
-      const cockZ = leverBearing.position.z;
-      const rightPin = bankingPins[1];
-      const pinCenter = bankingPinCenters.right;
-      const pinBack = framePlaneZ;
-      const pinFront = cockZ + 0.06;
-      rightPin.geometry.dispose();
-      rightPin.geometry = new THREE.CylinderGeometry(0.10, 0.10, pinFront - pinBack, 24);
-      rightPin.position.z = (pinFront + pinBack) / 2;
-      const cockX = pinCenter.x + 0.48;
-      const corners = [
-        new THREE.Vector3(leverPivot.x + 0.22, leverPivot.y, cockZ),
-        new THREE.Vector3(cockX, leverPivot.y, cockZ),
-        new THREE.Vector3(cockX, pinCenter.y, cockZ),
-        new THREE.Vector3(pinCenter.x, pinCenter.y, cockZ),
-      ];
-      const cockParts = [];
-      for (let i = 0; i < 3; i++) {
-        const a = corners[i].clone(), c = corners[i + 1].clone();
-        const d = c.clone().sub(a).normalize().multiplyScalar(0.11);
-        if (i > 0) a.sub(d);
-        if (i < 2) c.add(d);
-        const part = beamBetween(a, c, 0.22, 0.12, frameMaterial);
-        part.userData.role = 'fixed-front-cock-carrying-lever-journal';
-        cockParts.push(part);
-      }
-      bankingArm.removeFromParent();
-      bankingArm.geometry.dispose();
-      fixedFrame.add(...cockParts);
-      root.userData.blocks.leverCock = cockParts;
-      delete root.userData.blocks.bankingArm;
-    }
-    // Locking nibs: the part of each pallet strip that stays outside radius
-    // (tip - 0.28) from the wheel axis at both lever banks, extruded back into
-    // the wheel plane; the rest of each long curved pallet stays in front.
-    // B's strip swings deep inside the wheel while A locks, so B gets no nib
-    // and its lock is shown in front of the teeth only.
-    palletNibs.length = 0;
-    const bankTimes = [0, balancePeriod * 0.5];
-    for (const [index, name] of ['A', 'B'].entries()) {
-      const stripWidth = name === 'A' ? 0.31 : 0.37;
-      const points = palletProfiles[name];
-      const inner = points.map((point) => point.clone().multiplyScalar(
-        Math.max(point.length() - stripWidth, 0.08) / point.length()));
-      let nibShape = poly([...points, ...inner.reverse()]
-        .map((v) => v.toArray()));
-      for (const time of bankTimes) {
-        update(time);
-        const axis = rotate2(wheelCenter.clone().sub(leverPivot),
-          -palletLever.rotation.z);
-        nibShape = polygonClipping.difference(nibShape,
-          poly(circle(axis.toArray(), wheelToothTipRadius - 0.28, 256)));
-      }
-      if (!nibShape.length) continue;
-      const nib = new THREE.Mesh(plate(nibShape, -0.02, 0.20),
-        palletBlocks[index].material);
-      nib.userData.role = `locking-nib-of-pallet-${name}-in-wheel-plane`;
-      palletLever.add(nib);
-      palletNibs.push(nib);
-    }
-    // Pallet C's strip followed only the tooth-tip path, so the leading flank
-    // of the impulsing tooth swept up to 0.08 into it, and the returning
-    // tooth grazed A's nib before landing.  Cut both by the swept outline of
-    // every tooth plus 0.0015 running clearance, sampled over a full
-    // oscillation (the wheel repeats after one pitch) and densely over the
-    // impulse.  The tips still slide along and lock on the retained faces,
-    // just clear of them.
-    {
-      // Convex hull of the actual bevelled tooth mesh (its mitred tip
-      // reaches beyond the nominal outline plus the bevel size).
-      const toothPoints = [];
-      const positions = wheelTeeth[0].geometry.attributes.position;
-      for (let i = 0; i < positions.count; i += 1) {
-        toothPoints.push(new THREE.Vector2(positions.getX(i), positions.getY(i)));
-      }
-      toothPoints.sort((a, b) => a.x - b.x || a.y - b.y);
-      const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y)
-        - (a.y - o.y) * (b.x - o.x);
-      const half = (points) => points.reduce((hull, point) => {
-        while (hull.length >= 2
-          && cross(hull.at(-2), hull.at(-1), point) <= 0) hull.pop();
-        hull.push(point);
-        return hull;
-      }, []);
-      const lower = half(toothPoints);
-      const upper = half([...toothPoints].reverse());
-      const outline = [...lower.slice(0, -1), ...upper.slice(0, -1)];
-      const grow = 0.0015;
-      // Mitred outward offset of the counterclockwise hull (a superset of
-      // the grown tooth).
-      const grown = outline.map((point, index) => {
-        const previous = outline[(index + outline.length - 1) % outline.length];
-        const next = outline[(index + 1) % outline.length];
-        const n1 = new THREE.Vector2(point.y - previous.y, previous.x - point.x)
-          .normalize();
-        const n2 = new THREE.Vector2(next.y - point.y, point.x - next.x)
-          .normalize();
-        const bisector = n1.clone().add(n2).normalize();
-        return point.clone().addScaledVector(
-          bisector,
-          grow / Math.max(bisector.dot(n1), 0.2),
-        );
-      });
-      const times = [
-        ...Array.from({ length: 361 }, (_, i) => balancePeriod * i / 360),
-        ...[0, 1].flatMap((halfBeat) => Array.from({ length: 401 },
-          (_, i) => halfBeatDuration * (halfBeat + palletReleaseHalfPhase
-            + (nextPalletLandingHalfPhase - palletReleaseHalfPhase) * i / 400))),
-      ];
-      const toLocal = new THREE.Matrix4();
-      const matrix = new THREE.Matrix4();
-      const point = new THREE.Vector3();
-      const toothBox = new THREE.Box2();
-      const cutBySweptTeeth = (mesh, shapePolygons) => {
-        const box = new THREE.Box2();
-        for (const polygon of shapePolygons) {
-          for (const [x, y] of polygon[0]) box.expandByPoint(new THREE.Vector2(x, y));
-        }
-        let cut = shapePolygons;
-        for (const time of times) {
-          update(time);
-          root.updateMatrixWorld(true);
-          toLocal.copy(mesh.matrixWorld).invert();
-          for (const tooth of wheelTeeth) {
-            matrix.multiplyMatrices(toLocal, tooth.matrixWorld);
-            toothBox.makeEmpty();
-            const ring = grown.map(({ x, y }) => {
-              point.set(x, y, 0).applyMatrix4(matrix);
-              const q = [
-                Math.round(point.x * 1e6) / 1e6,
-                Math.round(point.y * 1e6) / 1e6,
-              ];
-              toothBox.expandByPoint(new THREE.Vector2(q[0], q[1]));
-              return q;
-            });
-            if (!toothBox.intersectsBox(box)) continue;
-            cut = polygonClipping.difference(cut, poly(ring));
-          }
-        }
-        return cut;
-      };
-      const cShape = profileStripShape(directProfilePoints, 0.25);
-      const cCut = cutBySweptTeeth(
-        directPalletC,
-        poly(cShape.getPoints().map((v) => v.toArray())),
-      );
-      directPalletC.geometry.dispose();
-      directPalletC.geometry = plate(
-        cCut,
-        -directPalletDepth / 2,
-        directPalletDepth / 2,
-      );
-      for (const nib of palletNibs) {
-        const nibCut = cutBySweptTeeth(nib, nib.geometry.userData.plate.polygons);
-        nib.geometry.dispose();
-        nib.geometry = plate(nibCut, -0.02, 0.20);
-      }
-    }
-    update(0);
-    arbor.userData.role = 'locking-lever-arbor-through-front-journal';
+  const bounds = new THREE.Box3();
+  const point = new THREE.Vector3();
+  for (let i = 0; i <= 32; i += 1) {
+    update(balancePeriod * i / 32);
     root.updateMatrixWorld(true);
-    leverBearing.geometry.computeBoundingBox();
-    root.userData.cameraFitBounds.union(
-      leverBearing.geometry.boundingBox.clone()
-        .applyMatrix4(leverBearing.matrixWorld)
-        .expandByScalar(0.15),
-    );
-    for (const part of root.userData.blocks.leverCock ?? []) {
-      root.userData.cameraFitBounds.union(
-        new THREE.Box3().setFromObject(part).expandByScalar(0.1));
-    }
+    root.traverseVisible((object) => {
+      const position = object.geometry?.attributes.position;
+      if (!position) return;
+      for (let j = 0; j < position.count; j += 1) {
+        bounds.expandByPoint(point.fromBufferAttribute(position, j).applyMatrix4(object.matrixWorld));
+      }
+    });
   }
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  root.userData.cameraFitBounds = bounds.expandByScalar(0.15);
+  update(0);
+  return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 
 export function createAuthoredLeverChronometerMovement(movement) {

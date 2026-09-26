@@ -66,15 +66,25 @@ function denisonOpeningPoints({
   const h = impulseCornerY;
   const top = openingTopY;
   const s = restFaceY;
-  const upperLeftLobe = [
+  // Both curved edges are smooth, as Brown draws them: the upper-left lobe is
+  // a centripetal spline through the traced knots, and the lower-left sweep a
+  // quarter-ellipse-like Bezier leaving the side step straight down and
+  // meeting the flat bottom edge tangentially (it lies outside the old
+  // polyline, so it only widens the opening).
+  const sampleCurve = (curve, count) => curve.getPoints(count).map((p) => [p.x, p.y]);
+  const upperLeftLobe = sampleCurve(new THREE.CatmullRomCurve3([
     [0, top], [-0.30, top - 0.005], [-0.56, top - 0.04], [-0.77, top - 0.11],
     [-0.93, top - 0.22], [-1.03, top - 0.36], [-1.065, 0.34], [-1.05, 0.20],
-  ];
-  const lowerLeftSweep = [
-    [-restOuterX + 0.01, -0.10], [-restOuterX + 0.07, -0.25],
-    [-restOuterX + 0.20, -0.40], [-restOuterX + 0.42, -0.53],
-    [-restOuterX + 0.68, -h + 0.10], [-restOuterX + 0.86, -h],
-  ];
+  ].map(([x, y]) => new THREE.Vector3(x, y, 0)), false, 'centripetal'), 40);
+  const sweepEndX = -restOuterX + 0.86;
+  const sweepWidth = sweepEndX + restOuterX;
+  const sweepHeight = s + h;
+  const lowerLeftSweep = sampleCurve(new THREE.CubicBezierCurve(
+    new THREE.Vector2(-restOuterX, s),
+    new THREE.Vector2(-restOuterX, s - 0.55 * sweepHeight),
+    new THREE.Vector2(sweepEndX - 0.55 * sweepWidth, -h),
+    new THREE.Vector2(sweepEndX, -h),
+  ), 32).slice(1);
   const half = [
     ...upperLeftLobe,
     [-restInnerX, s],

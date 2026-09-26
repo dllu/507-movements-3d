@@ -9,6 +9,7 @@ import {
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {makeBoredLinkRod} from './bored-link-rod.js';
 import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 function addRole(object, role) {
   object.userData.role = role;
@@ -288,13 +289,38 @@ function stoneLiftingTongs(movement) {
     x * sourceScale,
     y * sourceScale,
   ]);
-  const stoneBody = polygonMesh(
-    stoneShapePoints,
-    3.25,
-    stoneMaterial,
-    'source-profiled-lifted-stone',
-    0,
-  );
+  // The two points bite into small sockets in the stone's sides (the bite
+  // seats), each in the plane of its own tong: the stone is one solid built
+  // of five stacked layers whose outline is Brown's, with a V-socket at the
+  // left seat in the left tong's layer and at the right seat in the right's.
+  // Layer z ranges are world depths (the stone body sits at z -0.48): the
+  // left tong works at z 0.13 and the right at -0.13, so the middle layer
+  // carries both sockets.
+  const socketDepth = 0.085;
+  const socketHalfWidth = 0.095;
+  const stoneOutlineWithSockets = (sockets) => {
+    const points = [];
+    stoneShapePoints.forEach(([x, y], index) => {
+      const seat = sockets.find((side) => index === (side < 0 ? 0 : 11));
+      if (!seat) { points.push([x, y]); return; }
+      const inward = seat < 0 ? 1 : -1;
+      // Brown's outline runs down the left side from the seat and up the
+      // right side to it; keep the socket's rim points in that order.
+      points.push([x, y + socketHalfWidth * inward], [x + socketDepth * inward, y], [x, y - socketHalfWidth * inward]);
+    });
+    return poly(points);
+  };
+  const stoneHalfDepth = 3.25 / 2;
+  const stoneLayers = [
+    [-stoneHalfDepth - 0.48, -0.33, []],
+    [-0.33, -0.07, [1]],
+    [-0.07, 0.07, [-1, 1]],
+    [0.07, 0.33, [-1]],
+    [0.33, stoneHalfDepth - 0.48, []],
+  ].map(([low, high, sockets]) => plate(stoneOutlineWithSockets(sockets), low + 0.48, high + 0.48));
+  const stoneBody = addRole(new THREE.Mesh(mergeGeometries(stoneLayers), stoneMaterial),
+    'source-profiled-lifted-stone');
+  stoneLayers.forEach((layer) => layer.dispose());
   stoneBody.position.z = -0.48;
   stone.add(stoneBody);
   // Brown draws the stone already hanging in the nippers. The canvas cycle
@@ -365,7 +391,8 @@ function stoneLiftingTongs(movement) {
       new THREE.ConeGeometry(0.145, 0.38, 20),
       darkMaterial,
     ), `${side}-inward-stone-biting-point`);
-    biteTip.position.copy(finalPoint).addScaledVector(tipDirection, -0.19);
+    // The point's apex sits 0.05 inside the stone's side, in its socket.
+    biteTip.position.copy(finalPoint).addScaledVector(tipDirection, -0.19 + 0.05);
     biteTip.quaternion.setFromUnitVectors(
       new THREE.Vector3(0, 1, 0),
       tipDirection,
@@ -478,8 +505,12 @@ function stoneLiftingTongs(movement) {
     z,
   );
 
+  // Brown draws the stone already hanging in the closed nippers, so the
+  // display clock starts mid-way through the source's lifted dwell (source
+  // phase 0.45); stateAtTime keeps the source canvas's own phase.
+  const displayPhaseOffset = 0.45;
   const update = (time) => {
-    const state = stateAtTime(time);
+    const state = stateAtTime(time + displayPhaseOffset * cycleDuration);
     const jawPivotScene = sourceToScene(
       new THREE.Vector2(0, state.jawPivotY),
       0,
@@ -524,6 +555,7 @@ function stoneLiftingTongs(movement) {
   const geometry = {
     closedJawAngle,
     cycleDuration,
+    displayPhaseOffset,
     fixedHoistPoint,
     groundFloorY,
     jawPivotRestY,

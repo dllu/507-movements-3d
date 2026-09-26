@@ -5,8 +5,6 @@ export {DEFAULT_DISPLAY_CYCLE_SECONDS, MAX_DISPLAY_ANGULAR_SPEED, MAX_SUSTAINED_
 import { createAuthoredBeltMovement } from './authored-belts.js';
 import { createAuthoredBeltGovernorMovement } from './authored-belt-governors.js';
 import { createAuthoredBearingMovement } from './authored-bearings.js';
-import { createAuthoredAnchorEscapementMovement } from './authored-anchor-escapements.js';
-import { createAuthoredAnnularEscapementMovement } from './authored-annular-escapements.js';
 import { createAuthoredDeadbeatEscapementMovement } from './authored-deadbeat-escapements.js';
 import { createAuthoredDetachedEscapementMovement } from './authored-detached-escapements.js';
 import { createAuthoredGravityEscapementMovement } from './authored-gravity-escapements.js';
@@ -190,13 +188,11 @@ import { createAuthoredEccentricConeDriveMovement } from './authored-eccentric-c
 import { createAuthoredEqualDiameterCamMovement } from './authored-equal-diameter-cams.js';
 import { createAuthoredCrankMovement } from './authored-cranks.js';
 import { createAuthoredCrossedSlotMovement } from './authored-crossed-slots.js';
-import { createAuthoredCylinderEscapementMovement } from './authored-cylinder-escapements.js';
 import { createAuthoredCurveGeneratorMovement } from './authored-curve-generators.js';
 import { createAuthoredDrawingInstrumentMovement } from './authored-drawing-instruments.js';
 import { createAuthoredDifferentialDriveMovement } from './authored-differential-drives.js';
 import { createAuthoredDifferentialScrewMovement } from './authored-differential-screws.js';
 import { createAuthoredDifferentialWormDriveMovement } from './authored-differential-worm-drives.js';
-import { createAuthoredDuplexEscapementMovement } from './authored-duplex-escapements.js';
 import { createAuthoredDiagonalCatchMovement } from './authored-diagonal-catches.js';
 import { createAuthoredEngineCouplingMovement } from './authored-engine-couplings.js';
 import { createAuthoredEngineReverserMovement } from './authored-engine-reversers.js';
@@ -219,7 +215,6 @@ import { createAuthoredJointMovement } from './authored-joints.js';
 import { createAuthoredKneeLeverMovement } from './authored-knee-levers.js';
 import { createAuthoredLatheHeadMovement } from './authored-lathe-heads.js';
 import { createAuthoredLanternEscapementMovement } from './authored-lantern-escapements.js';
-import { createAuthoredLeverEscapementMovement } from './authored-lever-escapements.js';
 import { createAuthoredLeverChronometerMovement } from './authored-lever-chronometers.js';
 import { createAuthoredLinkageMovement } from './authored-linkages.js';
 import { createAuthoredLostMotionMovement } from './authored-lost-motion.js';
@@ -261,21 +256,18 @@ import { createAuthoredWaterGovernorMovement } from './authored-water-governors.
 import { createAuthoredWaveCamMovement } from './authored-wave-cams.js';
 import { createAuthoredWatchRegulatorMovement } from './authored-watch-regulators.js';
 import { createAuthoredWoolComberMovement } from './authored-wool-comber.js';
+import { createAuthoredPlateEscapementMovement } from './authored-plate-escapements.js';
 export function createMovementModel(movement) {
-  const model = createAuthoredSinglePinEscapementMovement(movement)
+  const model = createAuthoredPlateEscapementMovement(movement)
+    ?? createAuthoredSinglePinEscapementMovement(movement)
     ?? createAuthoredThreeLeggedEscapementMovement(movement)
     ?? createAuthoredDetachedEscapementMovement(movement)
     ?? createAuthoredGravityEscapementMovement(movement)
     ?? createAuthoredLanternEscapementMovement(movement)
-    ?? createAuthoredLeverEscapementMovement(movement)
     ?? createAuthoredLeverChronometerMovement(movement)
-    ?? createAuthoredCylinderEscapementMovement(movement)
-    ?? createAuthoredDuplexEscapementMovement(movement)
     ?? createAuthoredStudEscapementMovement(movement)
     ?? createAuthoredFreeEscapementMovement(movement)
-    ?? createAuthoredAnnularEscapementMovement(movement)
     ?? createAuthoredDeadbeatEscapementMovement(movement)
-    ?? createAuthoredAnchorEscapementMovement(movement)
     ?? createAuthoredPickeringGovernorMovement(movement)
     ?? createAuthoredPoppetValveMovement(movement)
     ?? createAuthoredLatheHeadMovement(movement)

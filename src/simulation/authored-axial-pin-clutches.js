@@ -573,16 +573,21 @@ function axialPinPulleyClutch(movement) {
   // (about 0.9 radius and 0.3 thick at the plate's scale), not a spoked wheel.
   const handwheelRadius = 0.90;
   const handwheelThickness = 0.30;
-  const handwheelProfile = [new THREE.Vector2(0, -handwheelThickness / 2)];
-  for (let step = 0; step <= 12; step += 1) {
-    const angle = -Math.PI / 2 + Math.PI * step / 12;
+  // The flat faces end just short of the rounded rim, so each face keeps
+  // its own flat normal (a face vertex shared with the rim's first arc
+  // segment shaded the whole face as a shallow dome).
+  const faceEdge = handwheelRadius - handwheelThickness / 2;
+  const handwheelProfile = [new THREE.Vector2(0, -handwheelThickness / 2),
+    new THREE.Vector2(faceEdge - 0.002, -handwheelThickness / 2)];
+  for (let step = 0; step <= 24; step += 1) {
+    const angle = -Math.PI / 2 + Math.PI * step / 24;
     handwheelProfile.push(new THREE.Vector2(
-      handwheelRadius - handwheelThickness / 2
-        + handwheelThickness / 2 * Math.cos(angle),
+      faceEdge + handwheelThickness / 2 * Math.cos(angle),
       handwheelThickness / 2 * Math.sin(angle),
     ));
   }
-  handwheelProfile.push(new THREE.Vector2(0, handwheelThickness / 2));
+  handwheelProfile.push(new THREE.Vector2(faceEdge - 0.002, handwheelThickness / 2),
+    new THREE.Vector2(0, handwheelThickness / 2));
   const handwheelRim = new THREE.Mesh(
     new THREE.LatheGeometry(handwheelProfile, 96),
     driverMaterial,

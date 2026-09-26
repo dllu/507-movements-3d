@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {spokedWheelGeometry} from './spoked-wheel.js';
 import {boredCylinderGeometry,boredJournal,fitPistonGuide} from './piston-guide-parts.js';
 import {
   PALETTE,
@@ -86,22 +87,20 @@ function clearGuideGearFlanks(gear) {
 
 function openWheelBody(gear,boreRadius) {
   const rotor=gear.userData.rotor,body=rotor.children[0],hub=rotor.children[1];
-  const p=body.geometry.parameters,shape=p.shapes.clone();
-  const bore=new THREE.Path();bore.absarc(0,0,boreRadius,0,FULL_TURN,true);
-  shape.holes.push(bore);
-  const inner=gear.userData.radius*.22,outer=gear.userData.rootRadius-.11;
-  for(let i=0;i<4;i++) {
-    const start=i*Math.PI/2+.08,end=(i+1)*Math.PI/2-.08;
-    const opening=new THREE.Path();
-    opening.moveTo(inner*Math.cos(start),inner*Math.sin(start));
-    opening.lineTo(outer*Math.cos(start),outer*Math.sin(start));
-    opening.absarc(0,0,outer,start,end,false);
-    opening.lineTo(inner*Math.cos(end),inner*Math.sin(end));
-    opening.absarc(0,0,inner,end,start,true);opening.closePath();
-    shape.holes.push(opening);
-  }
+  const p=body.geometry.parameters,outline=p.shapes.getPoints(1);
+  if(outline.length>1&&outline[0].distanceTo(outline.at(-1))<1e-9)outline.pop();
+  // Brown's wheels C are flat webs with four windows: one plate
+  // (spoked-wheel.js), each window two spoke edges and an arc concentric
+  // with the wheel, rounded more at the hub than at the rim; the toothed
+  // outline and its working flanks are unchanged.
   body.geometry.dispose();
-  body.geometry=new THREE.ExtrudeGeometry(shape,{...p.options,curveSegments:24,bevelEnabled:false}).translate(0,0,-p.options.depth/2);
+  body.geometry=spokedWheelGeometry({outline,rimInnerRadius:gear.userData.rootRadius-.11,spokes:4,
+    spokeWidth:gear.userData.radius*.17,hubRadius:gear.userData.radius*.30,rimFillet:gear.userData.radius*.05,
+    boreRadius,thickness:p.options.depth,arcSegments:192,
+    // Brown's crossings stand as an X (within 6 degrees on both wheels) at
+    // the opening pose.
+    phase:THREE.MathUtils.degToRad(-3)});
+  body.userData.noRotationIndicator=true;
   const hp=hub.geometry.parameters;hub.geometry.dispose();
   hub.geometry=boredCylinderGeometry(hp.radiusTop,boreRadius,hp.height);
   gear.userData.sourceSpokeCount=4;

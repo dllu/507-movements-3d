@@ -698,16 +698,23 @@ function waterSealedBellPump(movement) {
       0,
     );
     internalWaterSurface.position.set(0, state.internalWaterLineY, 0);
+    // The gas shown passing each check swells and thins with the valve's
+    // eased lift instead of appearing and vanishing at full size.
+    const lift = root.userData.valveLiftAtPhase?.(state.phase) ?? {
+      lower: state.lowerInletValveOpen ? 1 : 0, upper: state.upperOutletValveOpen ? 1 : 0};
     outletGasPlume.visible = state.upperOutletValveOpen
-      && state.outletVolumetricFlow > 0;
+      && state.outletVolumetricFlow > 0 && lift.upper > 0;
+    outletGasPlume.scale.set(lift.upper, 1, lift.upper);
     outletGasPlume.position.set(
       0,
       state.bellCenterY + bellHeight / 2 + 0.52,
       0,
     );
-    inletGasColumn.visible = state.lowerInletValveOpen;
+    inletGasColumn.visible = state.lowerInletValveOpen && lift.lower > 0;
+    inletGasColumn.scale.set(lift.lower, 1, lift.lower);
     inletGasJet.visible = state.lowerInletValveOpen
-      && state.inletVolumetricFlow > 0;
+      && state.inletVolumetricFlow > 0 && lift.lower > 0;
+    inletGasJet.scale.set(lift.lower, 1, lift.lower);
     root.userData.updateWorkingParts?.(state);
     trappedGas.material = state.upperOutletValveOpen
       ? exhaustGasMaterial

@@ -1,7 +1,7 @@
 {
   "movement": 173,
   "status": "selected-source-features-qualified",
-  "maximumWheelBoundsError": 2.093361963513928,
+  "maximumWheelBoundsError": 2.0933810941038473,
   "landmarks": [
     {
       "name": "wrist",
@@ -10,10 +10,10 @@
         310
       ],
       "projected": [
-        158.47058823529412,
-        309.11764705882354
+        158.47058823529431,
+        309.117647058824
       ],
-      "errorPixels": 1.028991510855048
+      "errorPixels": 1.028991510854556
     },
     {
       "name": "wheel center",
@@ -22,10 +22,10 @@
         187
       ],
       "projected": [
-        362,
-        187
+        361.9999999999991,
+        186.99999999999847
       ],
-      "errorPixels": 0
+      "errorPixels": 1.7840141966275059e-12
     },
     {
       "name": "rod end",
@@ -34,17 +34,17 @@
         283
       ],
       "projected": [
-        498.4705882352941,
+        498.4705882352943,
         283
       ],
-      "errorPixels": 0.5294117647059124
+      "errorPixels": 0.5294117647056851
     }
   ],
   "projectedWheelBounds": [
-    333.0933619635139,
-    144.57299442006132,
-    390.90663803648613,
-    229.42700557993868
+    333.093381094102,
+    144.57302630437562,
+    390.90661890589615,
+    229.42697369562129
   ],
   "approximateSourceWheelBounds": [
     331,
@@ -60,7 +60,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "d87d39887275c5895f296f0348cfb0ee603f17b8cbb4367d492a2b878cbd28c4"
+      "sha256": "06a0eb7d79589f423d27c154873e1d5aab69c48e09356e2210d6ef5122a1751b"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",

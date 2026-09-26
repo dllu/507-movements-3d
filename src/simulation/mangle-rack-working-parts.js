@@ -21,8 +21,11 @@ function boredPinion(b, id) {
   // the real shaft/body interface instead of two overlapping full cylinders.
   const bounds = new THREE.Box3().setFromBufferAttribute(hub.geometry.attributes.position);
   const depth = bounds.max.y - bounds.min.y, outer = bounds.max.x;
-  replace(hub, ring(radius, outer, -depth / 2, depth / 2, 96));
+  replace(hub, ring(radius, Math.max(outer, radius + 1e-4), -depth / 2, depth / 2, 96));
   hub.rotation.set(0, 0, 0);
+  // 198's former hub is slimmer than the pinion bore: no hub stands proud of
+  // the bore, and an inside-out sleeve would sit in the running clearance.
+  if (outer <= radius) hub.visible = false;
 }
 function finish197(root) {
   const { blocks: b, geometry: g } = root.userData;

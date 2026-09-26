@@ -37,11 +37,12 @@ test('095 finite contact face, radial axle and guide contain the complete workin
     const envelope=Math.hypot(g.followerX+g.rollerHalfWidth,maxY+g.rollerRadius,g.rollerRadius);
     assert.ok(envelope<g.radius*Math.cos(Math.PI/8));
     const maxHeight=u.expectedHeight(0),minHeight=u.expectedHeight(Math.PI);
-    assert.ok(maxHeight+.225<g.guideY-g.guideHalfLength);
-    // The rod runs past Brown's crop and stays in its guide at every height.
+    assert.ok(maxHeight>minHeight);
+    // p60 support policy: no added guide or post. The rod runs on straight
+    // past Brown's crop and its clean end stays above the crop at every height.
     assert.ok(g.rodTop>(u.source.rollerCenter[1]-u.source.rodTop)/100);
-    assert.ok(g.guideY-g.guideHalfLength>g.plateTop);
-    assert.ok(minHeight+g.rodTop>g.guideY+g.guideHalfLength);
+    assert.ok(minHeight+g.rodTop>g.plateTop+.2);
+    assert.deepEqual(Object.keys(u.parts).filter(n=>/guide|Post/i.test(n)),[]);
     assert.ok(g.rollerHalfWidth<.0625);assert.ok(g.pinRadius+.001<g.rollerRadius);
   } finally {v.dispose();}
 });

@@ -34,11 +34,75 @@ function polygonMoments(points, sign) {
   return [area, firstX, firstY, polar].map(value => value * orientation);
 }
 
-export function gravityTumblerPlateProfile({ bore = 0.425, curveSegments = 256 } = {}) {
+// Brown draws E symmetric about a line through the shaft centre, turned
+// 13.5 degrees clockwise from vertical in the plate's pose: the two horn tips
+// sit at the same radius (2.44, 2.41) either side of it, and the scalloped
+// inner edge has one central hollow flanked by matching lobes. The freehand
+// trace is not quite symmetric, so the outline is its mirror average about
+// that axis (the best-fitting mirror line of the trace, 76.5 degrees from +X).
+export const TUMBLER_SYMMETRY_AXIS = 76.5 * Math.PI / 180;
+
+function sampledTrace(samplesPerCurve) {
   const { anchor, scale, start, curves } = tumblerSource;
-  const point = ([x, y]) => [(x - anchor[0]) / scale, (anchor[1] - y) / scale];
-  const shape = new THREE.Shape(); shape.moveTo(...point(start));
-  for (const controls of curves) shape.bezierCurveTo(...controls.flatMap(point));
+  const point = ([x, y]) => new THREE.Vector2((x - anchor[0]) / scale, (anchor[1] - y) / scale);
+  const points = [point(start)], corners = [0];
+  let previous = points[0];
+  for (const controls of curves) {
+    const [a, b, c] = controls.map(point);
+    points.push(...new THREE.CubicBezierCurve(previous, a, b, c).getSpacedPoints(samplesPerCurve).slice(1));
+    corners.push(points.length - 1); previous = c;
+  }
+  points.pop(); // the closing point repeats the left horn tip
+  return { points, rightTip: corners[3] };
+}
+
+// Resample a polyline to n points evenly spaced in arc length.
+function resample(points, n) {
+  const lengths = [0];
+  for (let i = 1; i < points.length; i++) lengths.push(lengths[i - 1] + points[i].distanceTo(points[i - 1]));
+  const total = lengths.at(-1), out = [];
+  for (let k = 0, j = 1; k < n; k++) {
+    const target = total * k / (n - 1);
+    while (j < points.length - 1 && lengths[j] < target) j++;
+    const t = (target - lengths[j - 1]) / Math.max(1e-12, lengths[j] - lengths[j - 1]);
+    out.push(points[j - 1].clone().lerp(points[j], THREE.MathUtils.clamp(t, 0, 1)));
+  }
+  return out;
+}
+
+// The symmetric outline: from the back's crossing of the axis over the right
+// horn and along the scalloped edge to the central hollow, then the mirror
+// image of that half back to the start.
+export function symmetricTumblerOutline(samples = 256) {
+  const { points, rightTip } = sampledTrace(400);
+  const axis = new THREE.Vector2(Math.cos(TUMBLER_SYMMETRY_AXIS), Math.sin(TUMBLER_SYMMETRY_AXIS));
+  const mirror = (q) => axis.clone().multiplyScalar(2 * q.dot(axis)).sub(q);
+  const side = (q) => axis.x * q.y - axis.y * q.x; // > 0 left of the axis
+  // Where the back and the scalloped edge cross the axis.
+  const crossing = (from, to) => {
+    for (let i = from; i < to; i++) if (side(points[i]) >= 0 && side(points[i + 1]) < 0) return i + 1;
+    throw new Error('tumbler outline does not cross its axis');
+  };
+  const top = crossing(0, rightTip);
+  let dip = -1;
+  for (let i = rightTip; i < points.length - 1; i++) if (side(points[i]) <= 0 && side(points[i + 1]) > 0) { dip = i + 1; break; }
+  if (dip < 0) throw new Error('tumbler inner edge does not cross its axis');
+  const leftBack = resample(points.slice(0, top + 1), samples).reverse();
+  const rightBack = resample(points.slice(top, rightTip + 1), samples);
+  const rightEdge = resample(points.slice(rightTip, dip + 1), samples);
+  const leftEdge = resample([...points.slice(dip), points[0]], samples).reverse();
+  // Right half: average of the right trace and the mirrored left trace.
+  const back = rightBack.map((q, i) => q.clone().add(mirror(leftBack[i])).multiplyScalar(0.5));
+  const edge = rightEdge.map((q, i) => q.clone().add(mirror(leftEdge[i])).multiplyScalar(0.5));
+  // Both halves meet the axis exactly.
+  for (const q of [back[0], edge.at(-1)]) q.copy(axis.clone().multiplyScalar(q.dot(axis)));
+  const right = [...back, ...edge.slice(1)];
+  const left = right.slice(1, -1).reverse().map(mirror);
+  return [...right, ...left];
+}
+
+export function gravityTumblerPlateProfile({ bore = 0.425, curveSegments = 256 } = {}) {
+  const shape = new THREE.Shape(symmetricTumblerOutline(curveSegments));
   shape.closePath();
   const hole = new THREE.Path(); hole.absarc(0, 0, bore, 0, 2 * Math.PI, false);
   shape.holes.push(hole);

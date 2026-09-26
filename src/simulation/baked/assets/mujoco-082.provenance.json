@@ -1,0 +1,80 @@
+{
+  "id": 82,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-082.json.gz",
+  "bytes": 638522,
+  "assetSha256": "81a04228e654ec372dff00b36df8fc11d543092b4e7a11fa1cb4231436ca8905",
+  "motionSources": {
+    "src/simulation/mujoco-treadle/collision.js": "c242f9c33b002058a16bfc5113f8d6aae413efd3731bc09ad365e9513d7ebf00",
+    "src/simulation/mujoco-treadle/linkage.js": "632fd75de23175b11fc8fe5cb4263911bad4243fdaf59cedc136cb340fc467bf",
+    "src/simulation/mujoco-treadle/physics.js": "ad8b55b2256982e9590681373a39adaa261526d0e4baa4f725b1a7053a446cbc",
+    "src/simulation/mujoco-treadle/source.js": "a4ccbe2793e8b37024141d3cd340a4fd39965cfb8b1729023404e13fc16ebb6d",
+    "src/simulation/mujoco-treadle/visual.js": "efe16859c8c3b3f36a311abb4db56619ba5ef10455c5998235ed6b4cb1fefa3c",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-treadle/geometry.js": "653a2523c1c38b70d4352c6893115aedf902002108c266bed001beec6fd2488e"
+  },
+  "physicsXmlSha256": {
+    "default": "d2625632789d8a3a7c16f8f40fb69ec932aebdc29a6b52837c0779d9766f361a"
+  },
+  "fullXmlSha256": {
+    "default": "edaeeae66c2a8140211e14b16bc5eb7ec340a0045443a6c33585adc08c5690a2"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 3,
+    "maxLoopPeriods": 12,
+    "searchPeriods": 24,
+    "tolerancePixels": 0.5,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-treadle",
+    "wrap": {
+      "blocks.wheel": {
+        "symmetry": 0.241660973353061
+      }
+    }
+  },
+  "cycleDesign": "Periodic treadle drive; the ratchet wheel advances by whole teeth each loop and is carried forward by that turn.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 20,
+        "samples": 1250,
+        "dt": 0.016,
+        "startTime": 108,
+        "periods": 5,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 0.47097343039664735,
+        "maximumCorrectionPixels": 0.04091227331419547,
+        "maximumRotationCorrection": 0.002733952669553939,
+        "wraps": [
+          {
+            "key": "blocks.wheel",
+            "angle": 3.383253626942854,
+            "rawAngle": 3.3805196742774974
+          }
+        ]
+      },
+      "roundTripPixels": 0.3336582541963853,
+      "seam": {
+        "seamStepPixels": 0.8681765999707198,
+        "interiorStepPixels": 3.188184196370083,
+        "seamSecondPixels": 0.5719830648204073,
+        "interiorSecondPixels": 3.7723848413669936
+      }
+    }
+  },
+  "extras": [
+    "blocks.lowerArm/passive-lower-pawl-torsion-spring#0"
+  ],
+  "removed": [],
+  "bakeSeconds": 28.370074897289275
+}

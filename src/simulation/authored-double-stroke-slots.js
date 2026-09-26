@@ -100,7 +100,19 @@ function crossedSlotDiskGeometry(radius, halfLength, halfWidth, depth) {
   const shape = new THREE.Shape();
   shape.absarc(0, 0, radius, 0, FULL_TURN, false);
   shape.holes.push(crossedSlotHole(halfLength, halfWidth));
-  return centeredExtrusion(shape, depth, 0);
+  const geometry = centeredExtrusion(shape, depth, 0);
+  // The cap triangulation bridges the cross-shaped hole to the rim with
+  // near-degenerate slivers whose computed normals are noise; they showed as
+  // a lone seam line across the flat faces. Cap triangles are exactly flat.
+  const position = geometry.attributes.position, normal = geometry.attributes.normal;
+  for (let vertex = 0; vertex + 2 < position.count; vertex += 3) {
+    const z = position.getZ(vertex);
+    if (Math.abs(Math.abs(z) - depth / 2) > 1e-6
+      || position.getZ(vertex + 1) !== z || position.getZ(vertex + 2) !== z) continue;
+    for (let k = 0; k < 3; k += 1) normal.setXYZ(vertex + k, 0, 0, Math.sign(z));
+  }
+  normal.needsUpdate = true;
+  return geometry;
 }
 
 function makeSlotSlide({

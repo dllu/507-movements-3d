@@ -64,9 +64,9 @@ test('movement 309 is Mudge’s two-arbor escapement with two weighted pallets a
   assert.equal(archetype, movement.archetype);
   assert.match(mechanism, /two independent weighted pallets A\/P and B\/Q/);
   assert.match(mechanism, /separate adjacent arbors C/);
-  assert.match(mechanism, /advances one pitch/);
+  assert.match(mechanism, /advances half a pitch/);
   assert.match(mechanism, /weight-controlled impulse directly/);
-  assert.match(presentation, /two acting faces and nibs/);
+  assert.match(presentation, /lifting face and locking stop/);
   assert.match(presentation, /long half-forks P\/Q/);
   assert.equal(transmission.impulsesPerPendulumCycle, 2);
   assert.deepEqual(transmission.impulsesPerVibration, [1, 1]);
@@ -85,7 +85,11 @@ test('movement 309 is Mudge’s two-arbor escapement with two weighted pallets a
     blocks.rightPallet.group);
   assert.equal(blocks.pendulumAssembly.parent, model.root);
   assert.equal(blocks.wheelRotor.parent, blocks.escapeWheel);
-  assert.equal(blocks.spokeMeshes.length, 4);
+  // The four spokes are windows cut in the one-piece wheel plate.
+  assert.equal(blocks.spokeMeshes.length, 0);
+  const wheelPlate = blocks.wheelRotor.children.find((child) =>
+    child.userData.role === 'thirty-pointed-escape-wheel-teeth');
+  assert.equal(wheelPlate.geometry.userData.spokedWheel.spokes, 4);
   assert.equal(blocks.frameBearings.length, 4);
 
   const roles = [];
@@ -96,10 +100,16 @@ test('movement 309 is Mudge’s two-arbor escapement with two weighted pallets a
     /gravity-impulse-weight$/.test(role)).length, 2);
   assert.equal(roles.filter((role) =>
     /fork-pin-[PQ]$/.test(role)).length, 2);
+  // Each pallet is one flat plate in the wheel's plane carrying its lifting
+  // face and locking stop (no separate pads or nibs at other depths).
   assert.equal(roles.filter((role) =>
-    /tooth-lifting-acting-face$/.test(role)).length, 2);
-  assert.equal(roles.filter((role) =>
-    /terminal-locking-nib$/.test(role)).length, 2);
+    /pallet-plate-with-lifting-face-and-stop$/.test(role)).length, 2);
+  for (const pallet of [blocks.leftPallet, blocks.rightPallet]) {
+    const box = new THREE.Box3().setFromObject(pallet.arm);
+    assert.ok(box.max.z - box.min.z < 0.28, 'plate lies within the wheel plane');
+    assert.equal(pallet.liftFace, pallet.arm);
+    assert.equal(pallet.lockingNib, pallet.arm);
+  }
   assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
   disposeModel(model.root);
 });
@@ -195,7 +205,7 @@ test('movement 309 records Brown’s measured elevation and Beckett’s complete
   disposeModel(model.root);
 });
 
-test('movement 309 advances a thirty-tooth wheel exactly one clockwise pitch per vibration', () => {
+test('movement 309 advances a thirty-tooth wheel exactly half a clockwise pitch per vibration', () => {
   const model = createMovementModel(catalog.movements[308]);
   const {
     geometry,
@@ -207,16 +217,17 @@ test('movement 309 advances a thirty-tooth wheel exactly one clockwise pitch per
   assert.equal(geometry.toothCount, 30);
   near(geometry.toothPitch, FULL_TURN / 30, 1e-15,
     'thirty-tooth pitch');
-  near(geometry.wheelAdvancePerBeat, geometry.toothPitch, 0,
-    'one pitch per vibration');
-  near(geometry.wheelAdvancePerCycle, geometry.toothPitch * 2, 0,
-    'two pitches per full pendulum cycle');
+  near(geometry.wheelAdvancePerBeat, geometry.toothPitch / 2, 0,
+    'half a pitch per vibration');
+  near(geometry.wheelAdvancePerCycle, geometry.toothPitch, 0,
+    'one pitch per full pendulum cycle');
   near(geometry.leftLockAngle - geometry.rightLockAngle,
     geometry.lockStationSeparationTeeth * geometry.toothPitch,
-  1e-15, 'nine-pitch lock-station separation');
+  1e-15, 'seven-and-a-half-pitch lock-station separation');
+  assert.equal(geometry.lockStationSeparationTeeth, 7.5);
   assert.equal(transmission.toothCount, 30);
   assert.equal(transmission.stepsPerPendulumCycle, 2);
-  assert.equal(transmission.wheelCyclesPerRevolution, 15);
+  assert.equal(transmission.wheelCyclesPerRevolution, 30);
 
   for (let cycle = -2; cycle <= 16; cycle += 1) {
     const start = stateAtTime(cycle * geometry.pendulumPeriod);
@@ -225,15 +236,15 @@ test('movement 309 advances a thirty-tooth wheel exactly one clockwise pitch per
     const end = stateAtTime((cycle + 1)
       * geometry.pendulumPeriod);
     near(between.wheelAngle - start.wheelAngle,
-      -geometry.toothPitch, 1e-12,
-      `first clockwise pitch in cycle ${cycle}`);
+      -geometry.toothPitch / 2, 1e-12,
+      `first clockwise half pitch in cycle ${cycle}`);
     near(end.wheelAngle - start.wheelAngle,
-      -geometry.toothPitch * 2, 1e-12,
-      `two clockwise pitches in cycle ${cycle}`);
+      -geometry.toothPitch, 1e-12,
+      `one clockwise pitch in cycle ${cycle}`);
     assert.equal(start.startingLeftToothIndex,
-      positiveModulo(cycle * 2, geometry.toothCount));
+      positiveModulo(cycle, geometry.toothCount));
     assert.equal(start.rightToothIndex,
-      positiveModulo(start.startingLeftToothIndex - 8,
+      positiveModulo(start.startingLeftToothIndex - 7,
         geometry.toothCount));
     vectorNear(toothTipAt(
       start.wheelAngle,
@@ -242,9 +253,9 @@ test('movement 309 advances a thirty-tooth wheel exactly one clockwise pitch per
     `starting left tooth ${cycle}`);
   }
   const start = stateAtTime(0);
-  const closure = stateAtTime(15 * geometry.pendulumPeriod);
+  const closure = stateAtTime(30 * geometry.pendulumPeriod);
   near(closure.wheelAngle - start.wheelAngle,
-    -FULL_TURN, 1e-12, 'fifteen pendulum cycles close one wheel turn');
+    -FULL_TURN, 1e-12, 'thirty pendulum cycles close one wheel turn');
   disposeModel(model.root);
 });
 
@@ -322,7 +333,7 @@ test('movement 309 holds alternate teeth at fixed terminal nibs with no recoil u
     stateAtCyclePhase,
     transmission,
   } = model.root.userData;
-  const samples = [0.04, 0.20, 0.34, 0.47, 0.61, 0.84, 0.97];
+  const samples = [0.04, 0.20, 0.30, 0.47, 0.61, 0.80, 0.97];
 
   for (const phase of samples) {
     const state = stateAtCyclePhase(phase);
@@ -337,8 +348,8 @@ test('movement 309 holds alternate teeth at fixed terminal nibs with no recoil u
       fixedLockPointForSide(state.activeLockSide === 'right' ? 1 : -1),
       2e-14, `fixed lock station at phase ${phase}`);
   }
-  assert.equal(blocks.leftPallet.lockFacePoints.length, 17);
-  assert.equal(blocks.rightPallet.lockFacePoints.length, 17);
+  assert.equal(blocks.leftPallet.lockFacePoints.length, 9);
+  assert.equal(blocks.rightPallet.lockFacePoints.length, 9);
   assert.equal(blocks.leftPallet.lockingNib.parent,
     blocks.leftPallet.group);
   assert.equal(blocks.rightPallet.lockingNib.parent,
@@ -416,8 +427,8 @@ test('movement 309 uses each released wheel step to cock only the opposite weigh
     near(endMagnitude, geometry.cockedMagnitude, 1e-15,
       `${step.side} finishes cocked`);
     near(end.wheelAdvance - start.wheelAdvance,
-      geometry.toothPitch, 2e-15,
-      `${step.side} cocking consumes exactly one pitch`);
+      geometry.toothPitch / 2, 2e-15,
+      `${step.side} cocking consumes exactly half a pitch`);
   }
   disposeModel(model.root);
 });

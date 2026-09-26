@@ -62,7 +62,7 @@
     },
     {
       "file": "src/simulation/authored-gears-core.js",
-      "sha256": "15eceaf4b6f4aab079455271bd6b7a255369933c84b531c40088989b93e4e28a"
+      "sha256": "94c48738e21f8d995746078fe57dad5b200ad143ac653da04befb32016c80f2a"
     },
     {
       "file": "src/simulation/miter-gear.js",
@@ -70,7 +70,7 @@
     },
     {
       "file": "src/simulation/authored-differential-worm-drives.js",
-      "sha256": "221d03ae7a0b3ebe378c119d3e9a52c7bb609bf02f165b9ecf6d1836135b64a3"
+      "sha256": "3e9d1f0007a9955399e8d7d1024c67bb1fa8f408c310b56e448985ba1da62bf5"
     },
     {
       "file": "src/simulation/instanced-worm-wheel.js",

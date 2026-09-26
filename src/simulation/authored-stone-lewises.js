@@ -206,9 +206,38 @@ function stoneLewis(movement) {
     return anchorX - inwardOffset;
   };
 
+  // The hoist starts and stops smoothly. The source's poses are kept as a
+  // function of a motion phase, and the hoisting and lowering runs are eased
+  // at both ends (cosine speed ramps over motionEaseFraction of the cycle), so
+  // there is no instant start after the lowered dwell at the loop point nor
+  // instant stop at the raised dwell. Dwell landmarks keep their times.
+  const motionEaseFraction = 0.06;
+  const motionRuns = [[0, fullyRaisedPhase], [loweringStartPhase, releasedPhase]];
+  const easedPhaseAt = (cyclePhase) => {
+    for (const [start, end] of motionRuns) {
+      if (cyclePhase < start || cyclePhase > end) continue;
+      const length = end - start, r = motionEaseFraction, v = length / (length - r);
+      const ramp = (w) => ({s: v * (w / 2 - r / (2 * Math.PI) * Math.sin(Math.PI * w / r)),
+        rate: v * (1 - Math.cos(Math.PI * w / r)) / 2});
+      const u = cyclePhase - start;
+      if (u < r) { const a = ramp(u); return {phase: start + a.s, rate: a.rate}; }
+      if (length - u < r) { const a = ramp(length - u); return {phase: end - a.s, rate: a.rate}; }
+      return {phase: start + v * (u - r / 2), rate: v};
+    }
+    return {phase: cyclePhase, rate: 0};
+  };
+  const cyclePhaseAtPhase = (phase) => {
+    let low = 0, high = 1;
+    for (let i = 0; i < 64; i += 1) {
+      const middle = (low + high) / 2;
+      if (easedPhaseAt(middle).phase < phase) low = middle; else high = middle;
+    }
+    return high;
+  };
+
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
-    const phase = cycleTime / cycleDuration;
+    const {phase, rate} = easedPhaseAt(cycleTime / cycleDuration);
     const centralLift = centralLiftAtPhase(phase);
     const stoneLift = stoneLiftAtPhase(phase);
     const packingSpread = packingSpreadAtPhase(phase);
@@ -223,7 +252,7 @@ function stoneLewis(movement) {
     return {
       centerPinAnchorY,
       centerPinVelocitySourceUnitPerSecond:
-        centralVelocityAtPhase(phase),
+        centralVelocityAtPhase(phase) * rate,
       centralLift,
       cycleTime,
       kinematicPackingSpread,
@@ -233,13 +262,13 @@ function stoneLewis(movement) {
       packingSpreadClosureError:
         packingSpread - kinematicPackingSpread,
       packingSpreadVelocitySourceUnitPerSecond:
-        packingSpreadVelocityAtPhase(phase),
+        packingSpreadVelocityAtPhase(phase) * rate,
       packingsAgainstWall,
       phase,
       relativeWedgeAdvance,
       stoneLift,
       stoneSupportedByWedgedPackings: packingsAgainstWall,
-      stoneVelocitySourceUnitPerSecond: stoneVelocityAtPhase(phase),
+      stoneVelocitySourceUnitPerSecond: stoneVelocityAtPhase(phase) * rate,
       wallClearance,
     };
   };
@@ -640,6 +669,9 @@ function stoneLewis(movement) {
     centralWedgeTopY,
     contactMarkerLocalY,
     cycleDuration,
+    cyclePhaseAtPhase,
+    easedPhaseAt,
+    motionEaseFraction,
     fixedHoistPoint,
     fullyRaisedPhase,
     kinematicWedgeSlope,
@@ -708,7 +740,7 @@ function stoneLewis(movement) {
       forcePath:
         'Hoist tension enters the central wedge through its shackle, produces opposed normal forces on the two packing tapers, presses their vertical outer faces into the bore walls, and transfers the stone weight back through wall contact. The visualization asserts the kinematic load path, not a safe working load or material-specific friction capacity.',
       sourceLinearTimingDisclosure:
-        'The official canvas uses piecewise-linear interpolation with instantaneous speed changes at its published phase landmarks. This model retains those exact source poses, stage velocities, four-second period, and dwells rather than inventing a smoother timing law.',
+        'The official canvas uses piecewise-linear interpolation with instantaneous speed changes at its published phase landmarks. This model retains those exact source poses along the motion phase, the four-second period and the dwells, but eases each hoisting and lowering run in and out so the hoist never starts or stops instantly (including at the loop point).',
       straightBoreDisclosure:
         'Fidler describes the traditional separate-piece Lewis in a hole wider at the bottom, but Brown’s Movement 493 canvas explicitly draws a 1.5-unit straight-sided slot and drives vertical-faced packing pieces against it. The 3D cutaway follows that movement-specific canvas construction.',
     },

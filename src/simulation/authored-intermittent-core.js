@@ -20,6 +20,8 @@ import {
   starOutline,
 } from './snap-counter-63-mechanism.js';
 import * as THREE from 'three';
+import { makeSeeThrough } from './see-through-part.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 import {
   PALETTE,
   makeBeam,
@@ -1176,7 +1178,7 @@ function makeJointedTappetPawl({
 // in the curve's plane, so a face-on view shows Brown's double-lined band
 // rather than a round wire. `halfWidthAt(u)` gives the in-plane half width
 // along the curve; the axial half depth is fixed.
-function makeFlatBandGeometry(curve, segments, halfWidthAt, halfDepth, endTrim = 0) {
+function makeFlatBandGeometry(curve, segments, halfWidthAt, halfDepth, endTrim = 0, zRangeAt = null) {
   const rings = segments + 1;
   const vertexCount = rings * 8 + 8;
   const positions = new Float32Array(vertexCount * 3);
@@ -1220,9 +1222,12 @@ function makeFlatBandGeometry(curve, segments, halfWidthAt, halfDepth, endTrim =
       const nx = -tangent.y / length;
       const ny = tangent.x / length;
       const w = halfWidthAt(u);
+      // zRangeAt gives the band's [back, front] offsets from the curve at
+      // u (a leaf whose depth changes along it); otherwise ±halfDepth.
+      const [back, front] = zRangeAt ? zRangeAt(u) : [-halfDepth, halfDepth];
       const corners = [
-        [w, halfDepth], [w, -halfDepth], [w, -halfDepth], [-w, -halfDepth],
-        [-w, -halfDepth], [-w, halfDepth], [-w, halfDepth], [w, halfDepth],
+        [w, front], [w, back], [w, back], [-w, back],
+        [-w, back], [-w, front], [-w, front], [w, front],
       ];
       const sideNormals = [[nx, ny, 0], [0, 0, -1], [-nx, -ny, 0], [0, 0, 1]];
       for (let corner = 0; corner < 8; corner += 1) {
@@ -1241,7 +1246,7 @@ function makeFlatBandGeometry(curve, segments, halfWidthAt, halfDepth, endTrim =
         const sign = ring === 0 ? -1 : 1;
         const tx = (tangent.x / length) * sign;
         const ty = (tangent.y / length) * sign;
-        [[w, halfDepth], [w, -halfDepth], [-w, -halfDepth], [-w, halfDepth]]
+        [[w, front], [w, back], [-w, back], [-w, front]]
           .forEach(([offset, z], corner) => set(
             cap + corner,
             point.x + nx * offset,
@@ -1366,6 +1371,7 @@ function makeDynamicLeafSpring(initialCurve, {
         halfWidthAt,
         radius,
         band.endTrim ?? 0,
+        band.zRangeAt ?? null,
       ),
       matte(color, { metalness: 0.1, roughness: 0.58 }),
     );
@@ -1931,21 +1937,20 @@ function snapActionStarCounter() {
   };
   const inkMaterial = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 });
 
-  // Depth layers, back to front, as Brown overlaps them: the drop (its leg
-  // behind the pin disk), the disk, then the pawl and the star in front of
-  // the pins' ends. The pins pass through the disk to reach both the drop's
-  // leg and the pawl's lobe. The pawl is one plate thick enough to reach
-  // from the pins' plane into the star's, which the pins never reach.
+  // Depth layers, back to front: the pin disk, the drop (a thick plate
+  // whose leg the pins' front ends strike), then the pawl flush with the
+  // star it works. The pins end short of the pawl and star, so they touch
+  // only the drop's leg.
   const z = {
-    dropBack: -0.62,
-    dropFront: -0.54,
-    diskBack: -0.48,
-    diskFront: -0.26,
-    pawlBack: -0.22,
-    pawlFront: 0.04,
-    screwHeadFront: 0.07,
-    pinBack: -0.61,
-    pinFront: -0.12,
+    diskBack: -0.62,
+    diskFront: -0.38,
+    dropBack: -0.33,
+    dropFront: -0.15,
+    pinBack: -0.5,
+    pinFront: -0.13,
+    pawlBack: -0.09,
+    pawlFront: 0.15,
+    screwHeadFront: 0.18,
     starBack: -0.09,
     starFront: 0.15,
   };
@@ -1960,7 +1965,7 @@ function snapActionStarCounter() {
     matte(PALETTE.driven, { metalness: 0.1, roughness: 0.66 }),
   );
   starBody.userData.starWheelBody = true;
-  const starShaft = cylinder(0.24, z.dropBack - 0.1, z.starFront + 0.04, inkMaterial);
+  const starShaft = cylinder(0.24, z.diskBack - 0.1, z.starFront + 0.04, inkMaterial);
   starShaft.userData.role = 'intermittent-output-shaft';
   star.userData.rotor.add(starBody, starShaft);
   star.userData.role = 'ten-point-intermittent-counter-star';
@@ -1977,7 +1982,7 @@ function snapActionStarCounter() {
     72,
   );
   driverBody.userData.driverDisk = true;
-  const driverShaft = cylinder(0.28, z.dropBack - 0.1, z.diskFront + 0.02, inkMaterial);
+  const driverShaft = cylinder(0.28, z.diskBack - 0.1, z.diskFront + 0.02, inkMaterial);
   driverShaft.userData.role = 'continuous-input-shaft';
   driver.userData.rotor.add(driverBody, driverShaft);
   const pinMaterial = matte(PALETTE.brass, { metalness: 0.18, roughness: 0.52 });
@@ -2000,8 +2005,9 @@ function snapActionStarCounter() {
   drop.position.set(...toWorld(hinge).toArray(), 0);
   const dropMaterial = matte(PALETTE.brass, { metalness: 0.1, roughness: 0.65 });
   // The drop is one whole solid plate: its tail over the spring, the boss
-  // behind the pawl's ring, the arch over the star and the leg the pins lift,
-  // which runs behind the pawl's lobe and the pin disk.
+  // behind the pawl's ring, the arch over the star and Brown's broad pointed
+  // leg, which runs behind the pawl's lobe and in front of the pin disk,
+  // where the pins' front ends strike it.
   const dropBody = slab(
     ringShape(localRing(mechanism.dropOutline, hinge)),
     z.dropBack,
@@ -2037,7 +2043,9 @@ function snapActionStarCounter() {
   drop.userData.role = 'spring-carried-drop';
 
   // The broad hooked pawl hangs on the screw: one plate with Brown's smooth
-  // outline, deep enough for its nose to work in the star's plane.
+  // outline, flush with the star it works. Brown dots the drop's leg and the
+  // disk's rim behind its lobe, so the pawl is see-through
+  // (see-through-part.js) and those working parts show.
   const pawl = makePlanarRotor();
   pawl.position.set(pivotX, pivotY, 0);
   const pawlMaterial = matte(PALETTE.accent, { metalness: 0.08, roughness: 0.67 });
@@ -2049,6 +2057,8 @@ function snapActionStarCounter() {
     pawlMaterial,
   );
   pawlBody.userData.pawlBody = true;
+  pawlBody.userData.role = 'see-through-broad-hooked-pawl-plate';
+  makeSeeThrough(pawlBody);
   pawl.userData.rotor.add(pawlBody);
   pawl.userData.role = 'broad-hooked-pawl-on-drop';
   drop.userData.rotor.add(pawl);
@@ -2146,7 +2156,6 @@ function snapActionStarCounter() {
     let stage = 'rest';
     if (starRate < -1e-9) stage = 'star-drive';
     else if (dropRate < -1e-9) stage = 'drop-falling';
-    else if (dropRate > 1e-9 && pawlAngle > -1e-4) stage = 'lifting-pawl-and-drop';
     else if (dropRate > 1e-9) stage = 'lifting-drop';
     else if (dropAngle > 0.01) stage = 'drop-held';
     return {
@@ -2190,7 +2199,7 @@ function snapActionStarCounter() {
   };
   root.userData.snapCounter = { fingerprint, mechanism, motion, toWorld };
   root.userData.stateAtTime = stateAtTime;
-  root.userData.reconstructionNote = 'Follows Brown\'s plate and Sam Gallagher\'s reconstruction: the spring carries the drop, which swings about the spring\'s virtual hinge; the broad hooked pawl hangs on the drop\'s screw and the striker stops it rising. The pins lift the pawl\'s lobe, then the drop\'s hidden leg; the pawl escapes first and falls into the next space; when the pin escapes the leg the spring throws the drop down and the pawl turns the star one point. The motion is a baked quasi-static planar contact solution with finite fall speeds; the leg\'s working edge is synthesised from a chosen lift law.';
+  root.userData.reconstructionNote = 'Follows Brown\'s plate and Sam Gallagher\'s reconstruction: the spring carries the drop, which swings about the spring\'s virtual hinge; the broad hooked pawl hangs on the drop\'s screw and the striker stops it rising. The pins strike only the drop\'s broad pointed leg (Brown\'s dashed wedge) and lift the whole drop; the pawl rides with it, its nose sliding out of its space and over the next point into the next space; when the pin escapes past the leg\'s tip the spring throws the drop down and the pawl turns the star one point. The motion is a baked quasi-static planar contact solution with finite fall speeds; the pawl works flush with the star, in front of the pins\' ends.';
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -2525,12 +2534,13 @@ function internalGuardTappetStudIndex() {
     flatExtrusion(plateOutline, plateDepth, [circlePath(driverShaftRadius + 0.01)]),
     driverMaterial,
   );
-  // Brown dashes B's rim, tappet and the interior studs behind the plate;
-  // the plate is opaque and the viewer rotates to see them.
+  // Brown dots B's rim, tappet and the interior studs behind the plate; the
+  // plate is see-through (see-through-part.js) so they show as working parts.
   driverBody.material = matte(PALETTE.driver, {
     metalness: 0.1,
     roughness: 0.64,
   });
+  makeSeeThrough(driverBody);
   driverBody.position.z = plateBackZ;
   driverBody.userData.driverWheelBBody = true;
   driverBody.userData.role = 'B-front-plate-carrying-guard-rim';
@@ -2791,7 +2801,7 @@ function internalGuardTappetStudIndex() {
     tappetHalfWidth,
     tappetLength,
   };
-  root.userData.reconstructionNote = 'B is a front plate carrying a notched internal rim and one radial tappet; C carries ten studs. The tappet pushes the middle of three interior studs with its leading flank and then its rounded tip, releasing it exactly one pitch later; the rim holds the upper stud (with the lower stud a small play away) through dwell. Each notch is the narrow slanted channel the stud sweeps through the rim, as Brown draws his slits. Brown draws the interior studs through B; B\'s plate is translucent so they read through it.';
+  root.userData.reconstructionNote = 'B is a front plate carrying a notched internal rim and one radial tappet; C carries ten studs. The tappet pushes the middle of three interior studs with its leading flank and then its rounded tip, releasing it exactly one pitch later; the rim holds the upper stud (with the lower stud a small play away) through dwell. Each notch is the narrow slanted channel the stud sweeps through the rim, as Brown draws his slits. Brown dots the interior studs, tappet and rim behind B; B\'s plate is see-through so they show.';
   root.userData.stateAtTime = stateAtTime;
   root.userData.sectionView = false;
   root.userData.fullCameraDirection = new THREE.Vector3(1.2, 0.9, 12.4);
@@ -2817,11 +2827,81 @@ function internalGuardTappetStudIndex() {
   };
   update(0);
   const finished = finish(root, update, new THREE.Vector3(1.2, 0.9, 12.4));
-  // Brown draws C's studs end-on as small circles; the translucent plate and
-  // the long studs would otherwise cast shadow sweeps the plate does not show.
+  // Brown draws C's studs end-on as small circles; the long studs would
+  // otherwise cast shadow sweeps the plate does not show (the see-through
+  // plate casts none).
   driverBody.castShadow = false;
   for (const stud of studs) stud.castShadow = false;
   return finished;
+}
+
+// A leaf clamped part-way along its length: the relaxed centreline plus a
+// cantilever deflection (3v^2 - v^3) / 2 of the free end beyond clampFraction
+// (v runs 0..1 over that free end). Used for C, whose shallow tip is the
+// flexible part while its deep pressing web stays put.
+class ClampedTipLeafCurve extends THREE.Curve {
+  constructor(relaxedPoints, tipDisplacement, clampFraction) {
+    super();
+    this.relaxedPoints = relaxedPoints;
+    this.tipDisplacement = tipDisplacement.clone();
+    this.clampFraction = clampFraction;
+  }
+
+  getPoint(t, target = new THREE.Vector3()) {
+    const u = THREE.MathUtils.clamp(t, 0, 1);
+    const last = this.relaxedPoints.length - 1;
+    const scaled = u * last;
+    const index = Math.min(Math.floor(scaled), last - 1);
+    target.lerpVectors(this.relaxedPoints[index], this.relaxedPoints[index + 1], scaled - index);
+    const v = THREE.MathUtils.clamp((u - this.clampFraction) / (1 - this.clampFraction), 0, 1);
+    return target.addScaledVector(this.tipDisplacement, v * v * (3 - v) / 2);
+  }
+}
+
+// A leaf clamped at its start and guided at its end (the end keeps its
+// direction): the relaxed centreline plus the end displacement times
+// 3u^2 - 2u^3.
+class GuidedLeafCurve extends THREE.Curve {
+  constructor(relaxedPoints, tipDisplacement) {
+    super();
+    this.relaxedPoints = relaxedPoints;
+    this.tipDisplacement = tipDisplacement.clone();
+  }
+
+  getPoint(t, target = new THREE.Vector3()) {
+    const u = THREE.MathUtils.clamp(t, 0, 1);
+    const last = this.relaxedPoints.length - 1;
+    const scaled = u * last;
+    const index = Math.min(Math.floor(scaled), last - 1);
+    target.lerpVectors(this.relaxedPoints[index], this.relaxedPoints[index + 1], scaled - index);
+    return target.addScaledVector(this.tipDisplacement, u * u * (3 - 2 * u));
+  }
+}
+
+// Points evenly spaced in arc length along a polyline (Vector3s).
+function evenPolyline(points, count) {
+  const lengths = [0];
+  for (let i = 1; i < points.length; i += 1) lengths.push(lengths[i - 1] + points[i].distanceTo(points[i - 1]));
+  const total = lengths.at(-1);
+  const out = [];
+  for (let k = 0, j = 1; k < count; k += 1) {
+    const target = total * k / (count - 1);
+    while (j < points.length - 1 && lengths[j] < target) j += 1;
+    const f = THREE.MathUtils.clamp((target - lengths[j - 1]) / Math.max(1e-12, lengths[j] - lengths[j - 1]), 0, 1);
+    out.push(points[j - 1].clone().lerp(points[j], f));
+  }
+  return { points: out, lengths, total };
+}
+
+function hermitePoints(start, startTangent, end, endTangent, count) {
+  return Array.from({ length: count + 1 }, (_, index) => {
+    const t = index / count;
+    const h00 = 2 * t ** 3 - 3 * t ** 2 + 1, h10 = t ** 3 - 2 * t ** 2 + t;
+    const h01 = -2 * t ** 3 + 3 * t ** 2, h11 = t ** 3 - t ** 2;
+    return new THREE.Vector3()
+      .addScaledVector(start, h00).addScaledVector(startTangent, h10)
+      .addScaledVector(end, h01).addScaledVector(endTangent, h11);
+  });
 }
 
 function springPressedRatchetIndex() {
@@ -2836,10 +2916,8 @@ function springPressedRatchetIndex() {
   const toothOuterStartPhase = 0.28;
   const toothOuterEndPhase = 1.02;
   const stopFaceFraction = 0.3;
-  // With Brown's eleven shallow teeth the pitch is short, so B bears near
-  // the crest to keep its leaf clear of C's stop on the following tooth.
-  const driveFaceFraction = 0.95;
-  const stopFaceWorldAngle = 2.65;
+  // C's end seats in A's teeth at the upper left, as Brown draws it.
+  const stopFaceWorldAngle = THREE.MathUtils.degToRad(140);
   const baseFaceOuter = new THREE.Vector2(
     Math.cos(toothOuterEndPhase * toothPitch) * ratchetOuterRadius,
     Math.sin(toothOuterEndPhase * toothPitch) * ratchetOuterRadius,
@@ -2848,13 +2926,10 @@ function springPressedRatchetIndex() {
     Math.cos(toothPitch) * ratchetRootRadius,
     Math.sin(toothPitch) * ratchetRootRadius,
   );
-  const baseStopPoint = baseFaceRoot.clone().lerp(
-    baseFaceOuter,
-    stopFaceFraction,
-  );
-  const ratchetMountPhase = stopFaceWorldAngle
-    - Math.atan2(baseStopPoint.y, baseStopPoint.x);
+  const baseStopPoint = baseFaceRoot.clone().lerp(baseFaceOuter, stopFaceFraction);
+  const ratchetMountPhase = stopFaceWorldAngle - Math.atan2(baseStopPoint.y, baseStopPoint.x);
   const ratchetDepth = 0.2;
+  const ratchetPlaneZ = 0.08;
   const ratchet = makeSpringIndexedRatchet({
     boreRadius: 0.18,
     depth: ratchetDepth,
@@ -2866,7 +2941,7 @@ function springPressedRatchetIndex() {
     toothOuterStartPhase,
     sharkFin: true,
   });
-  ratchet.position.z = 0.08;
+  ratchet.position.z = ratchetPlaneZ;
   ratchet.userData.role = 'clockwise-intermittent-ratchet-wheel-A';
   const ratchetBody = ratchet.userData.body;
   ratchet.userData.rotor.remove(ratchet.userData.indicator);
@@ -2876,50 +2951,43 @@ function springPressedRatchetIndex() {
   ratchet.userData.rotor.add(ratchetIndicator);
   ratchet.userData.indicator = ratchetIndicator;
   const ratchetShaft = makeShaft({ length: 1.34, radius: 0.09 });
-  ratchetShaft.position.z = 0.08;
+  ratchetShaft.position.z = ratchetPlaneZ;
   ratchetShaft.userData.radius = 0.09;
   ratchetShaft.userData.role = 'intermittent-output-shaft-A';
+  const profile = ratchet.userData.profilePoints;
 
-  // Brown's spring ends are thin. With the shallower teeth, pads this small
-  // keep B's catch and C's stop apart as B leaves the face.
+  // Depth layers (z, front is +z). A spans its whole depth. B is a flat
+  // leaf lying on D's face behind A; only its end, the nib, is deep enough to
+  // reach forward into A's back half. C lies in front: its long pressing web
+  // is deep enough to reach back to the nib, and its thin flexible end works
+  // in A's front half. So B's leaf and clamp pass under C (Brown: "B passes
+  // under the strong spring C"), C's web bears radially on the back of B's
+  // nib, and B's nib and C's end can share a tooth space without meeting.
+  const ratchetBack = ratchetPlaneZ - ratchetDepth / 2;
+  const catchLeafZ = [-0.19, -0.07];
+  const catchNibZ = [-0.19, 0.07];
+  const strongWebZ = [ratchetBack, 0.19];
+  const strongTipZ = [0.09, 0.19];
+
+  // C's end is round (radius strongHalfWidth), seated on the working face.
   const stopPadRadius = 0.035;
-  const catchPadRadius = 0.04;
-  const facePointAt = (face, fraction) => face.root.clone().lerp(
-    face.outer,
-    fraction,
-  );
+  const facePointAt = (face, fraction) => face.root.clone().lerp(face.outer, fraction);
   const stopFace = ratchet.userData.toothFaces[0];
   const stopFacePoint = facePointAt(stopFace, stopFaceFraction);
-  const idealStopPadCenter = stopFacePoint.clone().addScaledVector(
-    stopFace.outwardNormal,
-    stopPadRadius,
-  );
+  const idealStopPadCenter = stopFacePoint.clone().addScaledVector(stopFace.outwardNormal, stopPadRadius);
   const stopPawlDirection = idealStopPadCenter.clone().normalize();
-  const deflectedCatchCenterLocal = facePointAt(
-    stopFace,
-    driveFaceFraction,
-  ).addScaledVector(stopFace.outwardNormal, catchPadRadius);
 
   const pointInsideRatchet = (point) => {
-    const profile = ratchet.userData.profilePoints;
     let inside = false;
-    for (
-      let index = 0, previousIndex = profile.length - 1;
-      index < profile.length;
-      previousIndex = index, index += 1
-    ) {
+    for (let index = 0, previousIndex = profile.length - 1; index < profile.length; previousIndex = index, index += 1) {
       const current = profile[index];
       const previous = profile[previousIndex];
-      if (
-        (current.y > point.y) !== (previous.y > point.y)
-        && point.x < (previous.x - current.x)
-          * (point.y - current.y) / (previous.y - current.y) + current.x
-      ) inside = !inside;
+      if ((current.y > point.y) !== (previous.y > point.y)
+        && point.x < (previous.x - current.x) * (point.y - current.y) / (previous.y - current.y) + current.x) inside = !inside;
     }
     return inside;
   };
   const closestRatchetProfilePoint = (point) => {
-    const profile = ratchet.userData.profilePoints;
     let distance = Infinity;
     let pointOnProfile = null;
     let segmentIndex = -1;
@@ -2928,13 +2996,8 @@ function springPressedRatchetIndex() {
       const end = profile[(index + 1) % profile.length];
       const edge = end.clone().sub(start);
       const denominator = edge.lengthSq();
-      const fraction = denominator < 1e-18
-        ? 0
-        : THREE.MathUtils.clamp(
-          point.clone().sub(start).dot(edge) / denominator,
-          0,
-          1,
-        );
+      const fraction = denominator < 1e-18 ? 0
+        : THREE.MathUtils.clamp(point.clone().sub(start).dot(edge) / denominator, 0, 1);
       const candidate = start.clone().addScaledVector(edge, fraction);
       const candidateDistance = point.distanceTo(candidate);
       if (candidateDistance < distance) {
@@ -2945,10 +3008,25 @@ function springPressedRatchetIndex() {
     }
     return { distance, point: pointOnProfile, segmentIndex };
   };
+  // Outermost radius of A's rest profile along a world ray.
+  const profileRadiusAt = (angle) => {
+    const direction = new THREE.Vector2(Math.cos(angle), Math.sin(angle));
+    let radius = 0;
+    for (let index = 0; index < profile.length; index += 1) {
+      const a = profile[index];
+      const b = profile[(index + 1) % profile.length];
+      const e = b.clone().sub(a);
+      const denominator = direction.x * e.y - direction.y * e.x;
+      if (Math.abs(denominator) < 1e-14) continue;
+      const distance = (a.x * e.y - a.y * e.x) / denominator;
+      const fraction = (a.x * direction.y - a.y * direction.x) / denominator;
+      if (distance > 0 && fraction >= 0 && fraction <= 1) radius = Math.max(radius, distance);
+    }
+    return radius;
+  };
   const stopContactAtDrivenAngle = (drivenAngle) => {
     const localCenterAtRadius = (radius) => stopPawlDirection.clone()
-      .multiplyScalar(radius)
-      .rotateAround(new THREE.Vector2(), -drivenAngle);
+      .multiplyScalar(radius).rotateAround(new THREE.Vector2(), -drivenAngle);
     const collidesAtRadius = (radius) => {
       const localCenter = localCenterAtRadius(radius);
       return pointInsideRatchet(localCenter)
@@ -2959,12 +3037,12 @@ function springPressedRatchetIndex() {
     if (!collidesAtRadius(low) || collidesAtRadius(high)) {
       throw new RangeError('The fixed strong spring cannot reach ratchet A.');
     }
-    // A shark-fin crest overhangs its root. A single outer bisection can
-    // skip the free pocket and put C on the crest instead of in its seat.
+    // A shark-fin crest overhangs its root; step out before bisecting so C
+    // lands in its seat rather than on the crest.
     const inner = low;
     const outer = high;
     for (let index = 1; index <= 256; index += 1) {
-      const radius = inner + (outer-inner)*index/256;
+      const radius = inner + (outer - inner) * index / 256;
       if (!collidesAtRadius(radius)) { high = radius; break; }
       low = radius;
     }
@@ -2975,16 +3053,9 @@ function springPressedRatchetIndex() {
     }
     const centerRadius = (low + high) / 2;
     const center = stopPawlDirection.clone().multiplyScalar(centerRadius);
-    const localCenter = center.clone().rotateAround(
-      new THREE.Vector2(),
-      -drivenAngle,
-    );
+    const localCenter = center.clone().rotateAround(new THREE.Vector2(), -drivenAngle);
     const closest = closestRatchetProfilePoint(localCenter);
-    const localContactPoint = closest.point;
-    const contactPoint = localContactPoint.clone().rotateAround(
-      new THREE.Vector2(),
-      drivenAngle,
-    );
+    const contactPoint = closest.point.clone().rotateAround(new THREE.Vector2(), drivenAngle);
     const normal = center.clone().sub(contactPoint).normalize();
     const padPoint = center.clone().addScaledVector(normal, -stopPadRadius);
     return {
@@ -2993,7 +3064,7 @@ function springPressedRatchetIndex() {
       contactError: padPoint.distanceTo(contactPoint),
       contactPoint,
       localCenter,
-      localContactPoint,
+      localContactPoint: closest.point,
       normal,
       padPoint,
       segmentIndex: closest.segmentIndex,
@@ -3001,6 +3072,169 @@ function springPressedRatchetIndex() {
   };
   const restStopContact = stopContactAtDrivenAngle(0);
 
+  // --- C and the path of B's nib, in world polar coordinates (ψ is the
+  // angle of the nib's front face, r the radius of its centre line). The nib
+  // pushes the crest corner of face 1, one pitch behind C's seat, from ψ0
+  // through one pitch, so at the end it arrives in C's tooth space.
+  const nibHalfWidth = 0.085;
+  const nibLength = 0.11;
+  const toothClearance = 0.012;
+  const pressGap = 0.004;
+  const wrapNear = (angle, reference) => reference
+    + THREE.MathUtils.euclideanModulo(angle - reference + Math.PI, fullTurn) - Math.PI;
+  const face1Outer = ratchet.userData.toothFaces[1].outer;
+  const drivePsi0 = wrapNear(Math.atan2(face1Outer.y, face1Outer.x), stopFaceWorldAngle + toothPitch);
+  const driveEndPsi = drivePsi0 - toothPitch;
+  const nibAngle = (radius) => nibLength / radius;
+  // Highest tooth under an angular footprint of A at rest.
+  const footprintMax = (psi, span) => {
+    let radius = 0;
+    for (let k = 1; k <= 24; k += 1) radius = Math.max(radius, profileRadiusAt(psi + span * k / 24));
+    return radius;
+  };
+  // Driving, the nib's inner edge clears the next tooth's back under its
+  // footprint while its end face spans the crest radius.
+  const driveRadius = footprintMax(drivePsi0, nibAngle(0.93)) + toothClearance + nibHalfWidth;
+  const relaxedNibRadius = ratchetOuterRadius + nibHalfWidth + 0.025;
+  const escapeRadius = ratchetOuterRadius + nibHalfWidth + 0.004;
+  const escapeSpan = THREE.MathUtils.degToRad(9);
+  const relaxSpan = THREE.MathUtils.degToRad(10);
+  const escapeStartPsi = driveEndPsi + escapeSpan;
+  // C is a nearly straight strong leaf, as Brown draws it, from the block
+  // towards A. Its deep part is straight: its inner edge is the line at
+  // distance webDistance from A's centre, normal at the middle of the drive.
+  const webDistance = driveRadius + nibHalfWidth + pressGap;
+  const webNormalAngle = drivePsi0 - toothPitch / 2;
+  const webInnerAt = (theta) => webDistance / Math.cos(theta - webNormalAngle);
+  // The deep web ends where the nib's rear corner is at escape start; C
+  // continues shallow (in A's front half) to its end in C's seat.
+  const webEndTheta = escapeStartPsi + nibAngle(driveRadius);
+  // The nib follows C's web: the web touches the highest point of the nib's
+  // back under the deep web.
+  const followRadius = (psi) => {
+    const alpha = nibAngle(driveRadius);
+    let radius = relaxedNibRadius;
+    for (let k = 0; k <= 32; k += 1) {
+      const theta = psi + alpha * k / 32;
+      if (theta < webEndTheta - 1e-9 || Math.abs(theta - webNormalAngle) > 1.4) continue;
+      radius = Math.min(radius, webInnerAt(theta) - nibHalfWidth - pressGap);
+    }
+    return radius;
+  };
+  const escapeFrom = followRadius(escapeStartPsi);
+  // Nib radius for a front angle ψ in [driveEndPsi, driveEndPsi + 2π).
+  const nibRadiusAt = (psi) => {
+    const past = driveEndPsi + fullTurn - psi;
+    if (past < relaxSpan) {
+      return THREE.MathUtils.lerp(escapeRadius, relaxedNibRadius, smoothStep01(past / relaxSpan));
+    }
+    if (psi >= escapeStartPsi) return followRadius(psi);
+    return THREE.MathUtils.lerp(escapeFrom, escapeRadius, smoothStep01((escapeStartPsi - psi) / escapeSpan));
+  };
+  let pressStartPsi = drivePsi0;
+  while (followRadius(pressStartPsi) < relaxedNibRadius && pressStartPsi < drivePsi0 + 1.2) pressStartPsi += 0.0005;
+  // Checks of the designed path: the pressed nib clears A's teeth, and its
+  // end face spans the crest it drives from ψ0 to the escape.
+  let pressToothMargin = Infinity;
+  for (let k = 1; k <= 200; k += 1) {
+    const psi = drivePsi0 + (pressStartPsi - drivePsi0) * k / 200;
+    pressToothMargin = Math.min(pressToothMargin,
+      nibRadiusAt(psi) - nibHalfWidth - footprintMax(psi, nibAngle(nibRadiusAt(psi))));
+  }
+  let driveCrestSpan = Infinity;
+  for (let k = 0; k <= 200; k += 1) {
+    const psi = drivePsi0 - (drivePsi0 - escapeStartPsi) * k / 200;
+    const radius = nibRadiusAt(psi);
+    driveCrestSpan = Math.min(driveCrestSpan, ratchetOuterRadius - (radius - nibHalfWidth), radius + nibHalfWidth - ratchetOuterRadius);
+  }
+  if (!(pressToothMargin > 0 && driveCrestSpan > 0)) {
+    throw new RangeError(`movement 73 nib path fails: tooth margin ${pressToothMargin}, crest span ${driveCrestSpan}`);
+  }
+
+  // C's centre line: from the block's corner, joining the straight web, and
+  // at the end curving in to its seat.
+  const strongHalfWidth = stopPadRadius;
+  const webNormal = new THREE.Vector3(Math.cos(webNormalAngle), Math.sin(webNormalAngle), 0);
+  const webDirection = new THREE.Vector3(Math.sin(webNormalAngle), -Math.cos(webNormalAngle), 0); // clockwise
+  const webLinePoint = (theta) => webNormal.clone().multiplyScalar(webDistance + strongHalfWidth)
+    .addScaledVector(webDirection, (webDistance + strongHalfWidth) * Math.tan(theta - webNormalAngle) * -1);
+  // C rises from the top right corner of Brown's hatched block, which
+  // stands just clear of D's rim at the lower left.
+  const strongSpringAnchor = new THREE.Vector3(-1.56, -1.14, 0);
+  const webJoinTheta = pressStartPsi + THREE.MathUtils.degToRad(10);
+  const webJoin = webLinePoint(webJoinTheta);
+  const rootPoints = hermitePoints(
+    strongSpringAnchor,
+    webDirection.clone().multiplyScalar(strongSpringAnchor.distanceTo(webJoin)),
+    webJoin,
+    webDirection.clone().multiplyScalar(strongSpringAnchor.distanceTo(webJoin)),
+    40,
+  );
+  const webCenter = Array.from({ length: 81 }, (_, index) => webLinePoint(
+    THREE.MathUtils.lerp(webJoinTheta, webEndTheta, index / 80)));
+  const stopCenter3 = new THREE.Vector3(restStopContact.center.x, restStopContact.center.y, 0);
+  const hookStart = webCenter.at(-1);
+  const hookEntry = (() => {
+    // Arriving inward and a little clockwise, into the tooth space.
+    const direction = stopPawlDirection.clone().negate().rotateAround(new THREE.Vector2(), 0.5);
+    return new THREE.Vector3(direction.x, direction.y, 0);
+  })();
+  const hookPoints = hermitePoints(
+    hookStart,
+    webDirection.clone().multiplyScalar(hookStart.distanceTo(stopCenter3) * 1.1),
+    stopCenter3,
+    hookEntry.multiplyScalar(hookStart.distanceTo(stopCenter3) * 1.1),
+    40,
+  );
+  const polylineLength = (points) => points.reduce(
+    (length, point, index) => index ? length + point.distanceTo(points[index - 1]) : 0, 0);
+  const strongRaw = [...rootPoints, ...webCenter.slice(1), ...hookPoints.slice(1)];
+  const strongEven = evenPolyline(strongRaw, 257);
+  const relaxedStrongPoints = strongEven.points;
+  const webEndFraction = (polylineLength(rootPoints) + polylineLength(webCenter)) / strongEven.total;
+  const webTaper = 0.004;
+  const strongCurveAt = (tipCenter) => new ClampedTipLeafCurve(
+    relaxedStrongPoints,
+    new THREE.Vector3(tipCenter.x - stopCenter3.x, tipCenter.y - stopCenter3.y, 0),
+    webEndFraction,
+  );
+  const strongZRangeAt = (u) => {
+    const f = smoothStep01((u - webEndFraction) / webTaper);
+    return [THREE.MathUtils.lerp(strongWebZ[0], strongTipZ[0], f), strongWebZ[1]];
+  };
+  const strongSpring = makeDynamicLeafSpring(strongCurveAt(restStopContact.center), {
+    band: { zRangeAt: strongZRangeAt },
+    color: PALETTE.muted,
+    planeZ: 0,
+    radius: strongHalfWidth,
+    tubularSegments: 256,
+  });
+  strongSpring.userData.role = 'fixed-strong-press-and-stop-spring-C';
+  strongSpring.userData.strongSpringC = true;
+  // C's rounded end: a half-round of exactly the band's width and depth
+  // on the band's square end, so the leaf simply ends round.
+  const halfRound = new THREE.Shape();
+  halfRound.absarc(0, 0, stopPadRadius, -Math.PI / 2, Math.PI / 2, false);
+  halfRound.closePath();
+  const halfRoundGeometry = new THREE.ExtrudeGeometry(halfRound, {
+    bevelEnabled: false, curveSegments: 24, depth: strongTipZ[1] - strongTipZ[0],
+  });
+  halfRoundGeometry.translate(0, 0, strongTipZ[0]);
+  const stopPad = new THREE.Mesh(halfRoundGeometry, strongSpring.userData.mesh.material);
+  const stopPadZ = (strongTipZ[0] + strongTipZ[1]) / 2;
+  const placeStopPad = (curve) => {
+    const end = curve.getPoint(1);
+    const tangent = curve.getTangent(1);
+    stopPad.position.set(end.x, end.y, 0);
+    stopPad.rotation.z = Math.atan2(tangent.y, tangent.x);
+  };
+  placeStopPad(strongSpring.userData.curve);
+  stopPad.userData.radius = stopPadRadius;
+  stopPad.userData.strongSpringStopTipC = true;
+  stopPad.userData.role = 'rounded-end-of-strong-spring-C';
+  strongSpring.add(stopPad);
+
+  // --- D, the driving wheel, with B clamped to its face.
   const driver = makePlanarRotor();
   const driverRotor = driver.userData.rotor;
   const driverRadius = 1.5;
@@ -3018,14 +3252,13 @@ function springPressedRatchetIndex() {
     depth: driverDepth,
   });
   driverGeometry.translate(0, 0, -driverDepth / 2);
-  const driverBody = new THREE.Mesh(
-    driverGeometry,
-    matte(PALETTE.driver, { metalness: 0.08, roughness: 0.68 }),
-  );
+  const driverBody = new THREE.Mesh(driverGeometry, matte(PALETTE.driver, { metalness: 0.08, roughness: 0.68 }));
   driverBody.position.z = driverPlaneZ;
   driverBody.userData.drivingWheelDBody = true;
+  // D is a plain turning disc: it carries the shared quadrant cue.
+  applyRotationIndicator(driverBody, { axis: 'z' });
   driverRotor.add(driverBody);
-  // D turns loose on A's shaft; its sleeve stops short of A's bevelled back.
+  // D turns loose on A's shaft; its sleeve stops short of A's back.
   const driverSleeve = new THREE.Mesh(
     makeAnnulusGeometry(driverBoreRadius + 0.025, 0.27, 0.34),
     matte(PALETTE.ink, { metalness: 0.24, roughness: 0.47 }),
@@ -3034,11 +3267,7 @@ function springPressedRatchetIndex() {
   driverSleeve.userData.hollowDriverSleeveD = true;
   driverRotor.add(driverSleeve);
   const driverIndicator = new THREE.Object3D();
-  driverIndicator.position.set(
-    0,
-    -driverRadius * 0.72,
-    driverPlaneZ + driverDepth / 2 + 0.04,
-  );
+  driverIndicator.position.set(0, -driverRadius * 0.72, driverPlaneZ + driverDepth / 2 + 0.04);
   driverIndicator.userData.driverRotationIndicator = true;
   driverRotor.add(driverIndicator);
   driver.userData.body = driverBody;
@@ -3046,155 +3275,73 @@ function springPressedRatchetIndex() {
   driver.userData.radius = driverRadius;
   driver.userData.role = 'continuous-clockwise-driving-wheel-D';
   driver.userData.sleeve = driverSleeve;
+  const driverFace = driverPlaneZ + driverDepth / 2;
 
-  const catchSpringPlaneZ = 0.28;
-  const strongSpringPlaneZ = 0.35;
-  const leafRadius = 0.035;
-  const catchBandHalfWidth = 0.06;
-  // B is a flat leaf clamped to D's face and bent round inside D's rim. When
-  // it is relaxed its tip stands straight out from the tooth it will drive,
-  // so pressing it bends the leaf and moves the tip inward along a radius,
-  // as a real cantilever tip moves when loaded across its length.
-  const catchRelaxedRadius = 1.40;
-  const catchMountRadius = 1.31;
-  const catchSpan = 1.4;
-  const catchTipAngle = Math.atan2(
-    deflectedCatchCenterLocal.y,
-    deflectedCatchCenterLocal.x,
+  // B in D's frame: clamped near D's rim, running clockwise along it and in
+  // towards A, ending in the nib, whose front face is square to the leaf.
+  // Relaxed, the nib stands just clear of A's crests.
+  const catchTipAngle = 0; // B's front in D's frame
+  const catchSpan = 1.3;
+  const catchMountRadius = 1.3;
+  const catchSamples = 96;
+  const catchMount = new THREE.Vector3(
+    Math.cos(catchTipAngle + catchSpan) * catchMountRadius,
+    Math.sin(catchTipAngle + catchSpan) * catchMountRadius,
+    0,
   );
-  const catchMountAngle = catchTipAngle + catchSpan;
-  const catchMountLocal = new THREE.Vector3(
-    Math.cos(catchMountAngle) * catchMountRadius,
-    Math.sin(catchMountAngle) * catchMountRadius,
-    catchSpringPlaneZ,
+  const catchTipRelaxed = new THREE.Vector3(relaxedNibRadius, 0, 0);
+  const catchLength = catchSpan * 1.22;
+  const relaxedCatchPoints = evenPolyline(hermitePoints(
+    catchMount,
+    new THREE.Vector3(Math.sin(catchTipAngle + catchSpan), -Math.cos(catchTipAngle + catchSpan), 0)
+      .multiplyScalar(catchLength),
+    catchTipRelaxed,
+    new THREE.Vector3(0, -catchLength, 0),
+    160,
+  ), catchSamples + 1).points;
+  // C's straight web bears along the whole back of the nib, so it holds the
+  // nib square as well as pressing it in: B bends as a leaf clamped at D and
+  // guided at the nib (deflection 3u^2 - 2u^3), and its square end face stays
+  // radial, flat on the crest it drives.
+  const catchCurveLocalAt = (nibRadius) => new GuidedLeafCurve(
+    relaxedCatchPoints,
+    new THREE.Vector3(nibRadius - relaxedNibRadius, 0, 0),
   );
-  const relaxedCatchCenterLocal = new THREE.Vector2(
-    Math.cos(catchTipAngle) * catchRelaxedRadius,
-    Math.sin(catchTipAngle) * catchRelaxedRadius,
-  );
-  const leafSamples = 96;
-  const relaxedCatchPoints = Array.from({ length: leafSamples + 1 }, (_, index) => {
-    const u = index / leafSamples;
-    const angle = THREE.MathUtils.lerp(catchMountAngle, catchTipAngle, u);
-    const radius = THREE.MathUtils.lerp(catchMountRadius, catchRelaxedRadius, smoothStep01(u));
-    return new THREE.Vector3(
-      Math.cos(angle) * radius,
-      Math.sin(angle) * radius,
-      catchSpringPlaneZ,
-    );
-  });
-  const catchCurveLocalAt = (deflection, tipOverride = null) => {
-    const fraction = THREE.MathUtils.clamp(deflection, 0, 1);
-    const tip = tipOverride
-      ? new THREE.Vector2(tipOverride.x, tipOverride.y)
-      : relaxedCatchCenterLocal.clone().lerp(deflectedCatchCenterLocal, fraction);
-    return cantileverLeafCurve(relaxedCatchPoints, tip);
-  };
-  // Brown draws B as a broad flat band along D's rim; it narrows to the
-  // pad's width where it turns in to the teeth.
-  const catchSpring = makeDynamicLeafSpring(catchCurveLocalAt(0), {
+  const catchTotalLength = relaxedCatchPoints.reduce(
+    (length, point, index) => index ? length + point.distanceTo(relaxedCatchPoints[index - 1]) : 0, 0);
+  const nibStartFraction = 1 - nibLength / catchTotalLength;
+  const nibTaper = 0.012;
+  const catchLeafHalfWidth = 0.05;
+  const catchSpring = makeDynamicLeafSpring(catchCurveLocalAt(relaxedNibRadius), {
     band: {
       halfWidthAt: (u) => THREE.MathUtils.lerp(
-        catchBandHalfWidth,
-        leafRadius,
-        THREE.MathUtils.smoothstep(u, 0.55, 0.8),
+        THREE.MathUtils.lerp(catchLeafHalfWidth, 0.035, THREE.MathUtils.smoothstep(u, 0.4, 0.75)),
+        nibHalfWidth,
+        smoothStep01((u - (nibStartFraction - nibTaper)) / nibTaper),
       ),
-      endTrim: catchPadRadius + 0.001,
+      zRangeAt: (u) => [catchLeafZ[0], THREE.MathUtils.lerp(catchLeafZ[1], catchNibZ[1],
+        smoothStep01((u - (nibStartFraction - nibTaper)) / nibTaper))],
     },
     color: PALETTE.brass,
-    planeZ: catchSpringPlaneZ,
-    radius: leafRadius,
+    planeZ: 0,
+    radius: 0.06,
+    tubularSegments: 192,
   });
   catchSpring.userData.catchSpringB = true;
   catchSpring.userData.role = 'driver-carried-bent-catch-spring-B';
   driverRotor.add(catchSpring);
-  const catchPadLength = 0.3;
-  const catchPad = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      catchPadRadius,
-      catchPadRadius,
-      catchPadLength,
-      24,
-    ),
-    matte(PALETTE.brass, { metalness: 0.16, roughness: 0.52 }),
-  );
-  catchPad.rotation.x = Math.PI / 2;
-  catchPad.position.set(
-    relaxedCatchCenterLocal.x,
-    relaxedCatchCenterLocal.y,
-    0.16,
-  );
-  catchPad.userData.catchSpringTipB = true;
-  catchPad.userData.radius = catchPadRadius;
-  driverRotor.add(catchPad);
-  const catchClampBack = driverPlaneZ + driverDepth / 2;
-  const catchClampFront = catchSpringPlaneZ + leafRadius - 0.01;
   const catchClamp = new THREE.Mesh(
-    new THREE.BoxGeometry(0.24, 0.15, catchClampFront - catchClampBack),
+    new THREE.BoxGeometry(0.24, 0.15, catchLeafZ[1] + 0.02 - driverFace),
     matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
   );
-  catchClamp.position.copy(catchMountLocal)
-    .setZ((catchClampBack + catchClampFront) / 2);
-  catchClamp.rotation.z = catchMountAngle + Math.PI / 2;
+  catchClamp.position.copy(catchMount).setZ((driverFace + catchLeafZ[1] + 0.02) / 2);
+  catchClamp.rotation.z = catchTipAngle + catchSpan + Math.PI / 2;
   catchClamp.userData.catchSpringClamp = true;
   driverRotor.add(catchClamp);
 
-  // C rises from the top right corner of Brown's hatched block, which
-  // stands just clear of D's rim at the lower left.
-  const strongSpringAnchor = new THREE.Vector3(
-    -1.56,
-    -1.14,
-    strongSpringPlaneZ,
-  );
-  // C's relaxed centreline, from the block to its stop in A's teeth. Riding
-  // over a passing tooth bends it as a cantilever loaded at its stop end.
-  const relaxedStrongPoints = new THREE.CubicBezierCurve3(
-    strongSpringAnchor.clone(),
-    new THREE.Vector3(-1.52, -0.55, strongSpringPlaneZ),
-    new THREE.Vector3(-1.18, 0.12, strongSpringPlaneZ),
-    new THREE.Vector3(
-      restStopContact.center.x,
-      restStopContact.center.y,
-      strongSpringPlaneZ,
-    ),
-  ).getSpacedPoints(leafSamples);
-  const strongCurveAt = ({ tipCenter }) => cantileverLeafCurve(
-    relaxedStrongPoints,
-    tipCenter,
-  );
-  const strongSpring = makeDynamicLeafSpring(
-    strongCurveAt({ tipCenter: restStopContact.center }),
-    {
-      band: { endTrim: stopPadRadius + 0.001 },
-      color: PALETTE.muted,
-      planeZ: strongSpringPlaneZ,
-      radius: leafRadius,
-    },
-  );
-  strongSpring.userData.role = 'fixed-strong-press-and-stop-spring-C';
-  strongSpring.userData.strongSpringC = true;
-  const stopPadLength = 0.34;
-  const stopPad = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      stopPadRadius,
-      stopPadRadius,
-      stopPadLength,
-      24,
-    ),
-    matte(PALETTE.muted, { metalness: 0.18, roughness: 0.5 }),
-  );
-  stopPad.rotation.x = Math.PI / 2;
-  stopPad.position.set(
-    restStopContact.center.x,
-    restStopContact.center.y,
-    0.18,
-  );
-  stopPad.userData.radius = stopPadRadius;
-  stopPad.userData.strongSpringStopTipC = true;
   // Brown's small hatched block at lower left, with C rising from its
-  // corner: about two thirds of D's radius square, its top level with D's
-  // lower rim. Brown's hatching marks it as a cut solid; the model shows
-  // the plain fixed block.
+  // corner. Brown's hatching marks it as a cut solid; the model shows the
+  // plain fixed block.
   const clampWidth = 1.0;
   const clampHeight = 1.1;
   const clampDepth = 0.26;
@@ -3203,380 +3350,95 @@ function springPressedRatchetIndex() {
     matte(PALETTE.frame, { metalness: 0.08, roughness: 0.8 }),
   );
   strongSpringClamp.position.copy(strongSpringAnchor)
-    .add(new THREE.Vector3(
-      0.045 - clampWidth / 2,
-      0.045 - clampHeight / 2,
-      0,
-    ));
+    .add(new THREE.Vector3(0.045 - clampWidth / 2, 0.045 - clampHeight / 2, (strongWebZ[0] + strongWebZ[1]) / 2));
   strongSpringClamp.userData.fixedStrongSpringClamp = true;
 
-  root.add(
-    strongSpringClamp,
-    driver,
-    ratchetShaft,
-    ratchet,
-    strongSpring,
-    stopPad,
-  );
+  root.add(strongSpringClamp, driver, ratchetShaft, ratchet, strongSpring);
 
+  // --- Motion. D turns clockwise at a constant rate. Each turn, B's nib
+  // meets C's web, is pressed down into the space before face 1, drives A
+  // exactly one pitch with the crest corner on its end face, escapes up the
+  // end of the web as A's face comes round into C's space, and springs back
+  // out; C's thin end rides over the tooth and drops in behind it.
   const driverAngularSpeed = 0.72;
   const driverCyclePeriod = fullTurn / driverAngularSpeed;
-  const indexStartPhase = 0.58;
-  // C is a ramp over B's path: from where B's tip first passes under C's
-  // leaf, the tip is held under C as it closes in on the teeth, then runs
-  // at the driving radius into the tooth space.
-  const strongPolar = relaxedStrongPoints.map((point) => ({
-    angle: Math.atan2(point.y, point.x),
-    radius: Math.hypot(point.x, point.y),
-  }));
-  for (let index = 1; index < strongPolar.length; index += 1) {
-    const previous = strongPolar[index - 1].angle;
-    strongPolar[index].angle = previous
-      + THREE.MathUtils.euclideanModulo(strongPolar[index].angle - previous + Math.PI, fullTurn)
-      - Math.PI;
-  }
-  const strongRadiusAtAngle = (angle) => {
-    const wrapped = strongPolar[0].angle
-      - THREE.MathUtils.euclideanModulo(strongPolar[0].angle - angle, fullTurn);
-    for (let index = 1; index < strongPolar.length; index += 1) {
-      const a = strongPolar[index - 1];
-      const b = strongPolar[index];
-      if ((wrapped - a.angle) * (wrapped - b.angle) <= 0) {
-        return THREE.MathUtils.lerp(a.radius, b.radius, (wrapped - a.angle) / (b.angle - a.angle));
-      }
-    }
-    return Infinity;
-  };
-  const catchPressTravel = catchRelaxedRadius - deflectedCatchCenterLocal.length();
-  const tipWorldAngleAt = (cyclePhase) => catchTipAngle
-    + (indexStartPhase - cyclePhase) * fullTurn;
-  const pressDeflectionAt = (cyclePhase) => {
-    const raw = Math.max(0, (catchRelaxedRadius
-      - strongRadiusAtAngle(tipWorldAngleAt(cyclePhase))) / catchPressTravel);
-    // Smooth minimum with full deflection, so the tip eases onto its
-    // driving radius instead of turning a corner.
-    const k = 0.3;
-    const h = THREE.MathUtils.clamp(0.5 + 0.5 * (1 - raw) / k, 0, 1);
-    return THREE.MathUtils.lerp(1, raw, h) - k * h * (1 - h);
-  };
-  let pressStartPhase = indexStartPhase;
-  {
-    let low = indexStartPhase - 0.3;
-    let high = indexStartPhase;
-    for (let iteration = 0; iteration < 60; iteration += 1) {
-      const middle = (low + high) / 2;
-      if (strongRadiusAtAngle(tipWorldAngleAt(middle)) > catchRelaxedRadius) low = middle;
-      else high = middle;
-    }
-    pressStartPhase = high;
-  }
-  const indexPhaseSpan = 1 / toothCount;
-  const indexEndPhase = indexStartPhase + indexPhaseSpan;
-  const releaseEndPhase = 0.75;
-  // Brown draws B at rest with its clamp near the top of D and its tip at
+  // Brown draws B at rest with its clamp near the top of D and its end at
   // the right.
-  const initialCyclePhase = 0.01;
+  const initialFrontAngle = THREE.MathUtils.degToRad(10);
   const boundaryEpsilon = 1e-12;
-  const normalizedCycleCoordinate = (coordinate) => {
-    const nearest = Math.round(coordinate);
-    return Math.abs(coordinate - nearest) < boundaryEpsilon
-      ? nearest
-      : coordinate;
-  };
-  const stageForPhase = (cyclePhase) => {
-    if (cyclePhase < pressStartPhase - boundaryEpsilon) {
-      return 'ratchet-dwell-before-press';
-    }
-    if (cyclePhase < indexStartPhase - boundaryEpsilon) {
-      return 'strong-spring-press';
-    }
-    if (cyclePhase <= indexEndPhase + boundaryEpsilon) {
-      return 'catch-spring-index';
-    }
-    if (cyclePhase < releaseEndPhase - boundaryEpsilon) {
-      return 'catch-spring-release';
-    }
-    return 'ratchet-dwell-after-index';
-  };
-  const closestCurvePoints = (firstCurve, secondCurve) => {
-    const samples = 32;
-    let distance = Infinity;
-    let firstPoint = null;
-    let secondPoint = null;
-    let firstFraction = 0;
-    let secondFraction = 0;
-    for (let firstIndex = 0; firstIndex <= samples; firstIndex += 1) {
-      const firstSample = firstCurve.getPoint(firstIndex / samples);
-      for (let secondIndex = 0; secondIndex <= samples; secondIndex += 1) {
-        const secondSample = secondCurve.getPoint(secondIndex / samples);
-        const candidateDistance = firstSample.distanceTo(secondSample);
-        if (candidateDistance < distance) {
-          distance = candidateDistance;
-          firstPoint = firstSample;
-          secondPoint = secondSample;
-          firstFraction = firstIndex / samples;
-          secondFraction = secondIndex / samples;
-        }
-      }
-    }
-    return {
-      distance,
-      firstFraction,
-      firstPoint,
-      secondFraction,
-      secondPoint,
-    };
-  };
-  const clearCatchCenter = (rawCenter, drivenAngle) => {
-    const rawLocal = rawCenter.clone().rotateAround(
-      new THREE.Vector2(),
-      -drivenAngle,
-    );
-    const closestRaw = closestRatchetProfilePoint(rawLocal);
-    const rawInside = pointInsideRatchet(rawLocal);
-    const rawClearance = rawInside
-      ? -catchPadRadius
-      : closestRaw.distance - catchPadRadius;
-    if (rawClearance >= -1e-12) {
-      return {
-        center: rawCenter,
-        clearance: rawClearance,
-        localCenter: rawLocal,
-        profilePoint: closestRaw.point,
-        projected: false,
-      };
-    }
-    const localDirection = rawLocal.clone().normalize();
-    const collidesAtRadius = (radius) => {
-      const candidate = localDirection.clone().multiplyScalar(radius);
-      return pointInsideRatchet(candidate)
-        || closestRatchetProfilePoint(candidate).distance < catchPadRadius;
-    };
-    let low = ratchetRootRadius * 0.45;
-    let high = ratchetOuterRadius + catchPadRadius + 0.3;
-    if (!collidesAtRadius(low) || collidesAtRadius(high)) {
-      throw new RangeError('Catch spring B cannot clear ratchet A.');
-    }
-    for (let iteration = 0; iteration < 58; iteration += 1) {
-      const middle = (low + high) / 2;
-      if (collidesAtRadius(middle)) low = middle;
-      else high = middle;
-    }
-    const localCenter = localDirection.multiplyScalar((low + high) / 2);
-    const profileContact = closestRatchetProfilePoint(localCenter);
-    return {
-      center: localCenter.clone().rotateAround(
-        new THREE.Vector2(),
-        drivenAngle,
-      ),
-      clearance: profileContact.distance - catchPadRadius,
-      localCenter,
-      profilePoint: profileContact.point,
-      projected: true,
-    };
+  const stageFor = (psi) => {
+    if (driveEndPsi + fullTurn - psi < relaxSpan) return 'catch-spring-release';
+    if (psi >= pressStartPsi) return 'ratchet-dwell';
+    if (psi > drivePsi0) return 'strong-spring-press';
+    if (psi >= driveEndPsi + escapeSpan) return 'catch-spring-index';
+    return 'catch-spring-escape';
   };
   const stateAtTime = (time) => {
     const inputTravelAngle = driverAngularSpeed * time;
-    const cycleCoordinate = normalizedCycleCoordinate(
-      initialCyclePhase + inputTravelAngle / fullTurn,
-    );
-    const cycleIndex = Math.floor(cycleCoordinate);
-    const cyclePhase = cycleCoordinate - cycleIndex;
-    const driverAngle = -(cycleCoordinate - indexStartPhase) * fullTurn;
-    const driverActualAngularSpeed = -driverAngularSpeed;
-    const stage = stageForPhase(cyclePhase);
-    const indexing = stage === 'catch-spring-index';
-    const eventFraction = indexing
-      ? THREE.MathUtils.clamp(
-        (cyclePhase - indexStartPhase) / indexPhaseSpan,
-        0,
-        1,
-      )
-      : stage === 'catch-spring-release'
-        || stage === 'ratchet-dwell-after-index' ? 1 : 0;
-    const drivenAngle = -(cycleIndex + eventFraction) * toothPitch;
-    const drivenAngularSpeed = indexing ? driverActualAngularSpeed : 0;
-    let catchSpringDeflection;
-    if (stage === 'strong-spring-press') {
-      catchSpringDeflection = pressDeflectionAt(cyclePhase);
-    } else if (indexing) {
-      catchSpringDeflection = 1;
-    } else if (stage === 'catch-spring-release') {
-      catchSpringDeflection = 1 - smoothStep01(
-        (cyclePhase - indexEndPhase)
-          / (releaseEndPhase - indexEndPhase),
-      );
-    } else {
-      catchSpringDeflection = 0;
-    }
-
-    const rawCatchCurveLocal = catchCurveLocalAt(catchSpringDeflection);
-    const rawCatchCenterLocal3 = rawCatchCurveLocal.getPoint(1);
-    const rawCatchCenterLocal = new THREE.Vector2(
-      rawCatchCenterLocal3.x,
-      rawCatchCenterLocal3.y,
-    );
-    const rawCatchCenter = rawCatchCenterLocal.clone().rotateAround(
-      new THREE.Vector2(),
-      driverAngle,
-    );
-    const activeToothIndex = THREE.MathUtils.euclideanModulo(
-      cycleIndex,
-      toothCount,
-    );
-    const activeFace = ratchet.userData.toothFaces[activeToothIndex];
-    const activeFacePoint = facePointAt(
-      activeFace,
-      driveFaceFraction,
-    ).rotateAround(new THREE.Vector2(), drivenAngle);
-    const activeFaceNormal = activeFace.outwardNormal.clone().rotateAround(
-      new THREE.Vector2(),
-      drivenAngle,
-    );
-    const catchClearance = clearCatchCenter(rawCatchCenter, drivenAngle);
-    const catchCenter = catchClearance.center;
-    const catchCenterLocal = catchCenter.clone().rotateAround(
-      new THREE.Vector2(),
-      -driverAngle,
-    );
-    const catchCurveLocal = catchCurveLocalAt(
-      catchSpringDeflection,
-      catchCenterLocal,
-    );
-    const projectedRatchetPoint = catchClearance.profilePoint.clone()
-      .rotateAround(new THREE.Vector2(), drivenAngle);
-    const projectedContactNormal = catchCenter.clone()
-      .sub(projectedRatchetPoint)
-      .normalize();
-    const catchToothContactEngaged = indexing
-      || catchClearance.projected;
-    const catchContactNormal = indexing
-      ? activeFaceNormal
-      : projectedContactNormal;
-    const catchRatchetPoint = indexing
-      ? activeFacePoint
-      : projectedRatchetPoint;
-    const catchToothPoint = catchCenter.clone().addScaledVector(
-      catchContactNormal,
-      -catchPadRadius,
-    );
-    const catchToothContactError = catchToothContactEngaged
-      ? catchToothPoint.distanceTo(catchRatchetPoint)
-      : null;
-    const catchToothNormalVelocityError = indexing
-      ? Math.abs(new THREE.Vector3(
-        activeFaceNormal.x,
-        activeFaceNormal.y,
-        0,
-      ).dot(new THREE.Vector3(
-        -catchToothPoint.y
-          * (driverActualAngularSpeed - drivenAngularSpeed),
-        catchToothPoint.x
-          * (driverActualAngularSpeed - drivenAngularSpeed),
-        0,
-      )))
-      : null;
-
+    // Front angle unwrapped, then measured within the cycle that ends at the
+    // end of a drive (so the cycle index counts completed indexes).
+    const front = initialFrontAngle - inputTravelAngle;
+    const x = (front - driveEndPsi) / fullTurn;
+    const nearest = Math.round(x);
+    const coordinate = Math.abs(x - nearest) < boundaryEpsilon ? nearest : x;
+    const turnsSinceDrive = Math.floor(coordinate);
+    const psi = driveEndPsi + (coordinate - turnsSinceDrive) * fullTurn;
+    const initialTurns = Math.floor((initialFrontAngle - driveEndPsi) / fullTurn);
+    const completedIndexes = initialTurns - turnsSinceDrive;
+    const driving = psi <= drivePsi0 + boundaryEpsilon;
+    const eventAngle = driving ? drivePsi0 - psi : 0;
+    const drivenAngle = -(completedIndexes * toothPitch + eventAngle);
+    const stage = stageFor(psi);
+    const indexing = driving;
+    const nibRadius = nibRadiusAt(psi);
+    const driverAngle = front - catchTipAngle;
+    const catchCurveLocal = catchCurveLocalAt(nibRadius);
     const stopContact = stopContactAtDrivenAngle(drivenAngle);
-    const derivativeEpsilon = 1e-7;
-    const stopBefore = stopContactAtDrivenAngle(
-      drivenAngle - derivativeEpsilon,
-    ).center;
-    const stopAfter = stopContactAtDrivenAngle(
-      drivenAngle + derivativeEpsilon,
-    ).center;
-    const stopCenterDerivative = stopAfter.clone().sub(stopBefore)
-      .divideScalar(2 * derivativeEpsilon);
-    const stopCenterVelocity = stopCenterDerivative.multiplyScalar(
-      drivenAngularSpeed,
-    );
-    const ratchetStopSurfaceVelocity = new THREE.Vector2(
-      -stopContact.contactPoint.y * drivenAngularSpeed,
-      stopContact.contactPoint.x * drivenAngularSpeed,
-    );
-    const stopNormalVelocityError = Math.abs(
-      stopCenterVelocity.sub(ratchetStopSurfaceVelocity).dot(
-        stopContact.normal,
-      ),
-    );
-
-    const catchCurveWorld = new CantileverLeafCurve(
-      relaxedCatchPoints.map((point) => point.clone()
-        .applyAxisAngle(Z_AXIS, driverAngle)),
-      catchCurveLocal.tipDisplacement.clone().applyAxisAngle(Z_AXIS, driverAngle),
-    );
-    const strongCurve = strongCurveAt({ tipCenter: stopContact.center });
-    // C lies over B wherever the two leaves cross; that crossing is where C
-    // bears on B from the press until B escapes.
-    const pressWindow = stage === 'strong-spring-press'
-      || indexing
-      || (stage === 'catch-spring-release' && catchSpringDeflection > 0);
-    const leafCrossing = planarLeafCrossing(catchCurveWorld, strongCurve);
-    const springCrossing = leafCrossing
-      ?? closestCurvePoints(catchCurveWorld, strongCurve);
-    const springPressContactFraction = leafCrossing?.firstFraction ?? null;
-    const springPressInfluence = pressWindow && leafCrossing ? 1 : 0;
-    const springPressClearance = springCrossing.distance - 2 * leafRadius;
-    const strongSpringPressEngaged = springPressInfluence > 0
-      && springPressClearance <= 0.008;
+    const strongCurve = strongCurveAt(stopContact.center);
+    const pressing = psi < pressStartPsi;
+    const activeToothIndex = THREE.MathUtils.euclideanModulo(completedIndexes + 1, toothCount);
+    const crest = ratchet.userData.toothFaces[activeToothIndex].outer.clone()
+      .rotateAround(new THREE.Vector2(), drivenAngle);
     return {
-      activeFaceNormal,
-      activeFacePoint,
       activeToothIndex,
-      catchCenter,
-      catchCenterLocal,
-      catchPadProfileClearance: catchClearance.clearance,
-      catchPadProjectedClear: catchClearance.projected,
-      catchCurveLocal,
-      catchCurveWorld,
-      catchSpringDeflection,
-      catchContactMode: indexing
-        ? 'driving-tooth'
-        : catchClearance.projected ? 'sliding-clear' : 'clear',
-      catchContactNormal,
-      catchRatchetPoint,
-      catchToothContactEngaged,
-      catchToothContactError,
-      catchToothNormalVelocityError,
-      catchToothPoint,
-      cycleCoordinate,
-      cycleIndex,
-      cyclePhase,
+      completedIndexes,
+      crest,
+      cycleCoordinate: coordinate,
       drivenAngle,
-      drivenAngularSpeed,
-      driverActualAngularSpeed,
+      drivenAngularSpeed: indexing ? -driverAngularSpeed : 0,
+      driverActualAngularSpeed: -driverAngularSpeed,
       driverAngle,
       driverInputRevolutions: inputTravelAngle / fullTurn,
-      eventFraction,
+      eventFraction: eventAngle / toothPitch,
       indexing,
       inputTravelAngle,
+      nibFrontAngle: psi,
+      nibRadius,
+      catchCurveLocal,
+      catchSpringDeflection: (relaxedNibRadius - nibRadius) / (relaxedNibRadius - driveRadius),
+      catchToothContactEngaged: indexing,
       ratchetLocked: !indexing,
       ratchetTeethAdvanced: -drivenAngle / toothPitch,
-      springCrossing,
-      springPressClearance,
-      springPressContactFraction,
-      springPressInfluence,
       stage,
       stopContact,
       stopContactEngaged: true,
       stopMode: indexing ? 'riding-next-tooth' : 'holding-ratchet',
-      stopNormalVelocityError,
       strongCurve,
-      strongSpringPressEngaged,
+      strongSpringPressEngaged: pressing,
     };
   };
 
   root.userData.mechanism = 'spring-pressed-eleven-tooth-ratchet-index';
-  // The extent the camera framed while the block was a 1.0 x 1.2 slab: D,
-  // the springs and the block's corner, with the rest of the block cropped.
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.52, -2.3, -0.59),
     new THREE.Vector3(1.5, 1.5, 0.75),
   );
   root.userData.hideGround = true;
+  // One turn of D takes at least 10 s on screen, so the press, the
+  // one-tooth index and the escape each read (the index lasts about 1 s).
+  root.userData.minimumDisplayCycleSeconds = 10;
   root.userData.blocks = {
     catchClamp,
-    catchPad,
     catchSpring,
     driver,
     driverBody,
@@ -3592,46 +3454,63 @@ function springPressedRatchetIndex() {
   };
   root.userData.geometry = {
     axis: Z_AXIS.clone(),
-    catchMountLocal,
-    catchPadLength,
-    catchPadRadius,
-    catchSpringPlaneZ,
-    deflectedCatchCenterLocal,
-    driveFaceFraction,
+    catchLeafZ,
+    catchMount,
+    catchNibZ,
+    catchSpan,
+    catchTipAngle,
+    driveEndPsi,
+    drivePsi0,
+    driveRadius,
     driverAngularSpeed,
     driverBoreRadius,
     driverCyclePeriod,
     driverDepth,
     driverPlaneZ,
     driverRadius,
+    escapeRadius,
+    escapeSpan,
     fullTurn,
-    indexEndPhase,
-    indexPhaseSpan,
-    indexStartPhase,
-    initialCyclePhase,
-    leafRadius,
-    pressStartPhase,
+    nibAngularLength: nibAngle(driveRadius),
+    nibHalfWidth,
+    nibLength,
+    pressGap,
+    pressStartPsi,
     ratchetDepth,
     ratchetMountPhase,
     ratchetOuterRadius,
+    ratchetPlaneZ,
     ratchetRootRadius,
-    relaxedCatchCenterLocal,
-    releaseEndPhase,
+    relaxedNibRadius,
+    relaxSpan,
     restStopContact,
     stopFaceFraction,
     stopFaceWorldAngle,
-    stopPadLength,
     stopPadRadius,
     stopPawlDirection,
+    strongHalfWidth,
     strongSpringAnchor,
-    strongSpringPlaneZ,
+    strongTipZ,
+    strongWebZ,
+    toothClearance,
     toothCount,
     toothOuterEndPhase,
     toothOuterStartPhase,
     toothPitch,
+    driveCrestSpan,
+    escapeStartPsi,
+    pressToothMargin,
+    webDistance,
+    webEndFraction,
+    webEndTheta,
+    webNormalAngle,
   };
   root.userData.stateAtTime = stateAtTime;
   root.userData.stopContactAtDrivenAngle = stopContactAtDrivenAngle;
+  root.userData.nibRadiusAt = nibRadiusAt;
+  root.userData.webInnerAt = webInnerAt;
+  root.userData.profileRadiusAt = profileRadiusAt;
+  root.userData.reconstructionNote = 'B is a flat leaf clamped to D\'s face behind A; its square-ended nib reaches forward into A\'s back half. C is fixed: its deep web bears on the back of the nib and presses it into the space before a tooth, the nib drives that tooth one pitch by its crest, then escapes up the end of the web and springs back out. C\'s thin end, in A\'s front half, is the stop: it rides over the tooth and drops in behind it. The nib path is designed from A\'s teeth and C\'s web is its envelope, so the press is a kinematic contact, not a force solution.';
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -3639,64 +3518,23 @@ function springPressedRatchetIndex() {
     setSpin(ratchet, state.drivenAngle);
     setSpin(ratchetShaft, state.drivenAngle);
     catchSpring.userData.setCurve(state.catchCurveLocal);
-    catchPad.position.set(
-      state.catchCenterLocal.x,
-      state.catchCenterLocal.y,
-      0.16,
-    );
     strongSpring.userData.setCurve(state.strongCurve);
-    stopPad.position.set(
-      state.stopContact.center.x,
-      state.stopContact.center.y,
-      0.18,
-    );
+    placeStopPad(state.strongCurve);
     root.userData.contacts = {
       catchTooth: {
-        catchPoint: state.catchToothContactEngaged
-          ? new THREE.Vector3(
-            state.catchToothPoint.x,
-            state.catchToothPoint.y,
-            0.16,
-          )
-          : null,
         engaged: state.catchToothContactEngaged,
-        error: state.catchToothContactError,
-        mode: state.catchContactMode,
-        normal: state.catchToothContactEngaged
-          ? state.catchContactNormal.clone()
-          : null,
-        normalVelocityError: state.catchToothNormalVelocityError,
         toothIndex: state.activeToothIndex,
         toothPoint: state.catchToothContactEngaged
-          ? new THREE.Vector3(
-            state.catchRatchetPoint.x,
-            state.catchRatchetPoint.y,
-            0.16,
-          )
-          : null,
+          ? new THREE.Vector3(state.crest.x, state.crest.y, (catchNibZ[1] + ratchetBack) / 2) : null,
       },
-      springPress: {
-        catchPoint: state.springCrossing.firstPoint.clone(),
-        clearance: state.springPressClearance,
-        engaged: state.strongSpringPressEngaged,
-        strongPoint: state.springCrossing.secondPoint.clone(),
-      },
+      springPress: { engaged: state.strongSpringPressEngaged },
       strongStop: {
         engaged: state.stopContactEngaged,
         error: state.stopContact.contactError,
         mode: state.stopMode,
         normal: state.stopContact.normal.clone(),
-        normalVelocityError: state.stopNormalVelocityError,
-        padPoint: new THREE.Vector3(
-          state.stopContact.padPoint.x,
-          state.stopContact.padPoint.y,
-          0.16,
-        ),
-        ratchetPoint: new THREE.Vector3(
-          state.stopContact.contactPoint.x,
-          state.stopContact.contactPoint.y,
-          0.16,
-        ),
+        padPoint: new THREE.Vector3(state.stopContact.padPoint.x, state.stopContact.padPoint.y, stopPadZ),
+        ratchetPoint: new THREE.Vector3(state.stopContact.contactPoint.x, state.stopContact.contactPoint.y, stopPadZ),
       },
     };
     root.userData.kinematics = state;

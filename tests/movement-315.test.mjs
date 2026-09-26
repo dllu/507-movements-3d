@@ -422,3 +422,29 @@ test('movement 315 uses its authored four-second cycle and leaves movement 507 a
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 315 drives through Brown\'s toothed bevel pinion and carries the bearing bar on the foot', () => {
+  const model = createMovementModel(catalog.movements[314]);
+  const { blocks } = model.root.userData;
+  const pinion = blocks.drivePinion;
+  assert.equal(pinion.parent, blocks.spindleRotor, 'the pinion turns with the spindle');
+  assert.equal(pinion.userData.teeth, 14);
+  assert.equal(pinion.userData.rotor.children.filter((child) => child.userData.bevelTooth).length, 14);
+  assert.equal(pinion.userData.rotor.children.filter((child) => child.geometry?.type === 'BoxGeometry').length, 0,
+    'no white face index');
+  model.root.updateMatrixWorld(true);
+  const box = (object) => new THREE.Box3().setFromObject(object);
+  // Large end up, just under the bearing bar.
+  const teethTop = [], teethBottom = [];
+  for (const tooth of pinion.userData.rotor.children.filter((child) => child.userData.bevelTooth)) {
+    const b = box(tooth); teethTop.push(b.max.y); teethBottom.push(b.min.y);
+  }
+  const bar = box(blocks.bearingPlate), foot = box(blocks.fixedFrame.children.find((o) => o.userData.role === 'fixed-spindle-foot'));
+  assert.ok(Math.max(...teethTop) < bar.min.y && bar.min.y - Math.max(...teethTop) < 0.15);
+  // The back pillar joins the bar to the foot, behind the spindle.
+  const pillar = box(blocks.backPillar);
+  near(pillar.max.y, bar.min.y, 1e-6, 'pillar meets the bar');
+  near(pillar.min.y, foot.max.y, 1e-6, 'pillar stands on the foot');
+  assert.ok(pillar.max.z < -0.5 && pillar.min.z > bar.min.z && pillar.min.z > foot.min.z, 'behind the spindle, within both plates');
+  disposeModel(model.root);
+});

@@ -191,9 +191,13 @@ function rhombusRectilinearConverter(movement) {
   const cycleAngularSpeed = FULL_TURN / cyclePeriod;
 
   const rodRadius = 0.1;
-  const horizontalRodLength = 1.9;
+  // At full spread (half span 2.364) the corner eyes (radius 0.21) reach
+  // 2.574 from the centre; the horizontal guides' inner ends stand at 2.66,
+  // so no eye or pin boss ever enters a guide. The rods are lengthened to
+  // keep the same engagement beyond the guides.
+  const horizontalRodLength = 2.0;
   const verticalRodLength = 2.02;
-  const horizontalGuideDistance = 2.8;
+  const horizontalGuideDistance = 2.9;
   const verticalGuideDistance = 3.472;
   const guideLength = 0.48;
   const guideDepth = 0.5;

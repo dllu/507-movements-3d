@@ -2,7 +2,6 @@ import profile from '../data/jointed-tappet-profile.js';
 import {sampleJointedTappetMotion} from './jointed-tappet-motion.js';
 import * as THREE from 'three';
 import{PALETTE,matte,markShadows}from'./primitives.js';
-import{backBar,footPillar}from'./back-plate-support.js';
 import{makeJointedTappetContactProfile}from'./jointed-tappet-contact.js';
 import{add,sub,rotate,poly,circle,capsule,sector,spline,plate,disk,ring,polygonClipping as clip,familyMass}from'./finite-plate-geometry.js';
 
@@ -40,7 +39,13 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
     driverBody=clip.difference(clip.union(driverRing,...driverSpokes,poly(circle([0,0],.19))),poly(circle([0,0],bore)));
   attach('driverBody',plate(driverBody,-.30,-.20),'driver',PALETTE.driver);
   attach('driverRearHub',ring(bore,.19,-.36,-.30),'driver',PALETTE.brass);
+  // One stud D stands on each of the four spokes, so the tappet is struck
+  // and A counts one tooth every quarter turn of the driver. Brown's window
+  // shows only the one stud on his rim segment; the others are the same stud
+  // repeated round the complete wheel.
+  const studCount=4;
   attach('driverStud',disk(studRadius,-.20,.172),'driver',PALETTE.brass,[...studVector,0]);
+  for(let i=1;i<studCount;i++)attach(`driverStud${i}`,disk(studRadius,-.20,.172),'driver',PALETTE.brass,[...rotate(studVector,i*Math.PI/2),0]);
   attach('wheelBody',plate(clip.difference(poly(contact.wheel.points),poly(circle([0,0],bore))),-.06,.06),'wheel',PALETTE.driven);
   attach('wheelFrontHub',ring(bore,.200,.06,.068),'wheel',PALETTE.driven);
   attach('wheelRearHub',ring(bore,.19,-.15,-.06),'wheel',PALETTE.brass);
@@ -84,18 +89,14 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
   // Brown draws no frame. Both fixed pivots stand on one fixed bracket plate
   // clamped on the fixed common axle, in the gap between the count wheel and
   // the coaxial driver (the driver's spokes and stud sweep everything behind
-  // and around them); the axle itself runs back past the driver into a boss
-  // on a plain pillar standing on a foot below the large wheel.
+  // and around them). The axle ends in a plain stub behind the driver; no
+  // floor pillar is added (p60 support policy).
   const bracketBack=-.192,bracketFront=-.157;
   attach('holdingPivotPin',disk(.036,bracketFront,.253),'fixed',PALETTE.muted,[...p.PH,0]);
   attach('holdingPivotCap',disk(.049,.253,.263),'fixed',PALETTE.muted,[...p.PH,0]);
   attach('fixedPivotCShank',disk(.053,bracketFront,.053),'fixed',PALETTE.muted,[...p.C,0]);
   attach('fixedPivotBracket',plate(clip.difference(clip.union(capsule([0,0],p.PH,.075),capsule([0,0],p.C,.075),poly(circle([0,0],.2))),
     poly(circle([0,0],axleRadius))),bracketBack,bracketFront),'fixed',PALETTE.frame);
-  const axleSupport=new THREE.Group();axleSupport.name='axleBackSupport';
-  axleSupport.add(backBar([{x:0,y:0}],{zFront:-.46,width:.36,role:'axle-pad'}),
-    footPillar({x:0,yTop:0,yFloor:-2.75,z:-.51,width:.24,footDepth:.5,role:'axle-pillar'}));
-  blocks.fixed.add(axleSupport);
   const masses=Object.fromEntries(['driver','wheel','tappet','dog','holding'].map(family=>[family,familyMass(parts,families,family)]));
   const setState=({q=0,alpha=0,theta=p.wheelStart,driverAngle=0,holdingAngle=contact.closeH(theta).angle-H0.angle}={})=>{
     blocks.driver.rotation.z=driverAngle;blocks.wheel.rotation.z=theta;blocks.tappet.rotation.z=q;
@@ -122,12 +123,12 @@ export function makeJointedTappetCounter({strikeKink=.3,studOverlap=.05}={}){
   const sectionFitBounds=sweptWorkingParts.clone().union(segmentAtPlatePose);
   sectionFitBounds.min.z=-.46;sectionFitBounds.max.z=.266;
   root.userData={parts,families,blocks,contact,masses,setState,segmentAtPlatePose,sweptWorkingParts,cameraFitBounds:sectionFitBounds.clone(),
-    geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studRadius,studOrbit,studOverlap,strikeKink,strikeArmStart:[0,0],barRadius,end,restQ,CstopRadius,CstopOrbit,Cstop,CstopAngle,
+    geometry:{...p,bore,axleRadius,driverInner,driverOuter,studVector,studCount,studRadius,studOrbit,studOverlap,strikeKink,strikeArmStart:[0,0],barRadius,end,restQ,CstopRadius,CstopOrbit,Cstop,CstopAngle,
       dogStopRadius,dogStopOrbit,dogStopFace,dogStop,H0Angle:H0.angle,holdingNose},
     hideGround:true,cameraFov:8,fullCameraDirection:new THREE.Vector3(0,0,10),shadowCameraHalfExtent:4,
     shadowBias:-.00005,shadowNormalBias:.005,mechanism:'stud-struck-jointed-tappet-ratchet-counter',fidelity:'authored',reconstructionStatus:'rebuilt',
     profile,playbackPeriod:profile.period,animationTiming:{authoredCyclePeriod:profile.period},minimumDisplayCycleSeconds:profile.period,
-    idealConstraints:'A clockwise stud drives the jointed tappet; the 20-tooth count wheel turns counterclockwise and settles one tooth ahead. Gravity, finite normal contact and inelastic impact determine the cached trajectory. Common material density, viscous bearing damping and an opposing output load are reconstruction assumptions. The 24-second physical cycle is displayed in 12 seconds. The complete coaxial driver is modelled; the default view frames Brown\'s window onto rim segment D.'};
+    idealConstraints:'Four clockwise studs, one on each spoke of the driver, each strike the jointed tappet in turn; at every strike the 20-tooth count wheel turns counterclockwise and settles one tooth ahead. Gravity, finite normal contact and inelastic impact determine the cached trajectory. Common material density, viscous bearing damping and an opposing output load are reconstruction assumptions. Each strike takes a 6-second physical cycle (a quarter of the driver\'s 24-second turn), displayed in 3 seconds. The complete coaxial driver is modelled; the default view frames Brown\'s window onto rim segment D.'};
   const stateAtTime=time=>sampleJointedTappetMotion(time);
   const update=time=>{const state=stateAtTime(time);setState(state);Object.assign(root.userData.kinematics,state);};
   root.userData.stateAtTime=stateAtTime;

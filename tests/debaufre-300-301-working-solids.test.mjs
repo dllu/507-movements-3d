@@ -84,12 +84,16 @@ test('300/301 working solids are closed, outward and connected', () => {
     assert.ok(signedVolume(mesh.geometry) > 0, `${mesh.userData.role} is outward-wound`);
   }
   for (const wheel of [blocks.frontWheel, blocks.rearWheel]) {
-    const rimInner = g.wheelRimRadius - 0.17;
-    for (const spoke of wheel.userData.spokes) {
-      assert.ok(spoke.userData.innerRadius < 0.36, 'spoke starts inside the hub');
-      assert.ok(spoke.userData.outerRadius > rimInner && spoke.userData.outerRadius < g.wheelRimRadius,
-        'spoke ends inside the rim, not past it');
-    }
+    // One closed plate: rim, spokes meeting the rim's inside, boss, teeth.
+    const plate = wheel.userData.plate;
+    assert.ok(signedVolume(plate.geometry) > 0, 'spoked plate is outward-wound');
+    const params = plate.geometry.userData.spokedWheel;
+    assert.equal(params.rimInnerRadius, g.wheelRimRadius - 0.17);
+    assert.ok(params.rimInnerRadius < g.wheelRimRadius, 'spokes run into the rim');
+    const p = plate.geometry.attributes.position;
+    let outer = 0;
+    for (let i = 0; i < p.count; i += 1) outer = Math.max(outer, Math.hypot(p.getX(i), p.getY(i)));
+    assert.ok(Math.abs(outer - g.wheelContactRadius) < 1e-6, 'plate teeth reach the contact radius');
     for (const tooth of wheel.userData.toothMeshes) {
       tooth.geometry.computeBoundingSphere();
       const p = tooth.geometry.attributes.position;
@@ -122,7 +126,7 @@ test('negative control: an uncarved plain D is struck by the passing teeth', () 
   plainMesh.userData.role = 'uncarved-plain-D-control';
   blocks.palletAssembly.add(plainMesh);
   const { escape } = bodies(model);
-  const teeth = prepared(escape.filter((mesh) => mesh.userData.role === 'debaufre-undercut-ratchet-tooth'), 0.02);
+  const teeth = prepared(escape.filter((mesh) => mesh.userData.role === 'debaufre-ratchet-wheel-one-piece-spoked-plate'), 0.02);
   const worst = worstPenetration(model, teeth, prepared([plainMesh], 0.02), 160);
   // The 0.475-thick D (was 0.673) is struck about 0.045 deep.
   assert.ok(worst.depth > 0.03, `control detects the old tooth-through-flat failure (${worst.depth})`);

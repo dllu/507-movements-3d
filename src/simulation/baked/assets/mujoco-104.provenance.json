@@ -1,0 +1,112 @@
+{
+  "id": 104,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-104.json.gz",
+  "bytes": 28680,
+  "assetSha256": "48b03d88ef5e23001e2cf2e94b0f768c7b9e983b0dcec5a5c30b5962b714936a",
+  "motionSources": {
+    "src/simulation/mujoco-worm-saddle/hob.js": "239cb2dd501c893df7782ea61efb1ca2780aebfbc21590cf7399258a8d9eee8a",
+    "src/simulation/mujoco-worm-saddle/physics.js": "e2bf0495b5dfb98b2de7f391d0dbbc3d6bbba0382376255a01b92f46352f6a8b",
+    "src/simulation/mujoco-worm-saddle/profile.js": "6a7c7e938e639f846d00af63ab56aeb72d75b268436663e99b69969d6cd402a0",
+    "src/simulation/mujoco-worm-saddle/visual.js": "cabb6e26b8b717a7679e7dc0bf3d2ce61250f6d68cab03dd1d1bbb5a2841c367",
+    "src/simulation/mujoco-worm-saddle/wheel-data.js": "b4aa695b6415fc96ac0c31322932f2600ed63202bf139ab8e4f12f239993fa14",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-worm-saddle/geometry.js": "5cf2a55787b5e9ddab46656ae0fb4cef3c6ce6595de9cbac19df9eacab1e74ff"
+  },
+  "physicsXmlSha256": {
+    "worm": "04e6bba4a7d7c69b575f17746a49410744059268f2a2a9ca7cb988dc9af644cf",
+    "wheel": "04e6bba4a7d7c69b575f17746a49410744059268f2a2a9ca7cb988dc9af644cf"
+  },
+  "fullXmlSha256": {
+    "worm": "ffa931c77fdbb1d1374881d717968fbe965a6c73f1d29401a1a20178ea89acec",
+    "wheel": "ffa931c77fdbb1d1374881d717968fbe965a6c73f1d29401a1a20178ea89acec"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-worm-saddle",
+    "variants": {
+      "worm": {
+        "options": {
+          "mode": "worm"
+        }
+      },
+      "wheel": {
+        "options": {
+          "mode": "wheel"
+        }
+      }
+    },
+    "defaultVariant": "worm"
+  },
+  "cycleDesign": "Reversing input (1 - cos) on the selected member (screw or wheel); one drive period closes each loop.",
+  "variants": {
+    "worm": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 8,
+        "samples": 500,
+        "dt": 0.016,
+        "startTime": 24,
+        "periods": 1,
+        "drivePeriod": 8
+      },
+      "closure": {
+        "rawSeamPixels": 2.012085890904419e-11,
+        "maximumCorrectionPixels": 1.0412355680361445e-18,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.worm",
+            "angle": -3.4920113675673825e-13,
+            "rawAngle": -3.4920113675673825e-13
+          }
+        ]
+      },
+      "roundTripPixels": 0.000004429766140706105,
+      "seam": {
+        "seamStepPixels": 0.06620707314021798,
+        "interiorStepPixels": 3.2413860542335815,
+        "seamSecondPixels": 0.04075631226756932,
+        "interiorSecondPixels": 0.3836681700744418
+      }
+    },
+    "wheel": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 8,
+        "samples": 500,
+        "dt": 0.016,
+        "startTime": 16,
+        "periods": 1,
+        "drivePeriod": 8
+      },
+      "closure": {
+        "rawSeamPixels": 4.344505697150956e-12,
+        "maximumCorrectionPixels": 1.612208630485945e-13,
+        "maximumRotationCorrection": 0,
+        "wraps": []
+      },
+      "roundTripPixels": 0.08728813516418302,
+      "seam": {
+        "seamStepPixels": 0.013327943268774563,
+        "interiorStepPixels": 0.7730293930718217,
+        "seamSecondPixels": 0.009281842264936375,
+        "interiorSecondPixels": 0.010662915532554215
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 3.754171105861664
+}

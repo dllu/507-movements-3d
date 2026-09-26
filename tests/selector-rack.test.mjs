@@ -22,7 +22,7 @@ test('084 uses the measured single cam, complete wheel and open suspension slots
   const radius = Math.max(...Array.from({length: wheel.count}, (_, i) => Math.hypot(wheel.getX(i), wheel.getY(i))));
   near(radius * scale, 231.4045, .001);
   assert.equal(u.source.upper.length, 13); assert.equal(u.source.lower.length, 14);
-  near(u.animationTiming.playbackTimeScale, 1); near(u.playbackDuration, 17.2);
+  near(u.animationTiming.playbackTimeScale, 1); assert.equal(u.playbackDuration, undefined, 'the demonstration loops without end');
   // The floor supports below Brown's crop stay out of the plate framing.
   m.update(17.2); m.root.updateMatrixWorld(true);
   const framed = new THREE.Box3();
@@ -49,7 +49,7 @@ test('084 parts remain closed solids with consistent face winding', () => {
 test('084 production preserves reviewed geometry and the exact governor inputs', () => {
   const m = makeSelectorRackDrive(), u = m.root.userData, candidate = makeSelectorRackFreeCandidate(), physics = makeSelectorRackDynamics(candidate);
   for (let i = 0; i <= 180; i++) {
-    const time = u.playbackDuration * i / 180, state = u.stateAtTime(time), input = physics.input(time);
+    const time = u.stateAtTime(0).loop.end * i / 181, state = u.stateAtTime(time), input = physics.input(time);
     near(state.camAngle, input.camAngle); near(state.selectorY, input.selectorY);
     if (i % 10) continue;
     m.update(time); candidate.setState(state);
@@ -62,7 +62,7 @@ test('084 production preserves reviewed geometry and the exact governor inputs',
   assert.throws(() => u.stateAtTime(NaN)); assert.throws(() => u.stateAtTime(Infinity)); dispose(m); dispose(candidate);
 });
 
-test('084 walks the rack along its teeth both ways, retains free tilt and holds its final pose for replay', () => {
+test('084 walks the rack along its teeth both ways, retains free tilt and loops seamlessly', () => {
   const m = makeSelectorRackDrive(), u = m.root.userData, first = u.stateAtTime(0), end = u.stateAtTime(17.2);
   // Two cam turns on the upper rack, two on the lower, two on the upper.
   const offset = time => (u.stateAtTime(time).center[0] - first.center[0]) * 240;
@@ -74,8 +74,16 @@ test('084 walks the rack along its teeth both ways, retains free tilt and holds 
   const limits = m.root.userData.geometry.limits.rackX.map(v => v * 240);
   for (const r of u.profile.knots) {const x = (r[1] - first.center[0]) * 240; assert(x >= limits[0] - .01 && x <= limits[1] + .01);}
   assert(Math.max(...u.profile.knots.map(r => Math.abs(r[3]))) > .001);
-  assert.equal(end.finished, true); assert.deepEqual(u.stateAtTime(99), end);
-  near(u.stateAtTime(99).selectorY, -3 / 240); assert.deepEqual(u.stateAtTime(0), first);
+  // After the opening turn the four-turn span closes on itself: no end,
+  // no jump at the wrap, and the cam keeps turning at its constant rate.
+  const {start, end: wrap} = first.loop;
+  assert.equal(end.finished, false); near(wrap - start, 4 * u.profile.period);
+  const before = u.stateAtTime(wrap - 1e-9), after = u.stateAtTime(wrap + 1e-9);
+  assert(Math.hypot(before.center[0] - after.center[0], before.center[1] - after.center[1]) * 240 < 1e-4, 'rack pose closes');
+  near(before.frameAngle, after.frameAngle); near(before.selectorY, after.selectorY);
+  near(Math.cos(before.camAngle - after.camAngle), 1);
+  assert.deepEqual(u.stateAtTime(99).center, u.stateAtTime(start + (99 - start) % (wrap - start)).center);
+  assert.deepEqual(u.stateAtTime(0), first);
   const bounds = new THREE.Box3(new THREE.Vector3(...u.sampledMotionBounds.min), new THREE.Vector3(...u.sampledMotionBounds.max));
   for (const time of [0, 2.7, 3.2, 4.5, 5.8, 6.6, 7.4, 8.3, 10.4, 11, 12, 14.9, 17.2]) {
     m.update(time); for (const mesh of Object.values(u.parts)) assert(bounds.containsBox(new THREE.Box3().setFromObject(mesh, true)), mesh.name + ' framing');

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { spokedWheelGeometry } from './spoked-wheel.js';
 import {
   PALETTE,
   markShadows,
@@ -480,10 +481,14 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   // gear; from the front it reads as the rod leaving the closed end.
   const driveRodNeckLength = driveRodStart + 0.05 - (frameRight - 0.02);
   const driveRodNeck = new THREE.Mesh(
+    // The rod start lies left of the frame end, so the signed length is
+    // negative; a box needs positive extents or it renders inside out.
     new THREE.BoxGeometry(
-      driveRodNeckLength,
+      Math.abs(driveRodNeckLength),
       driveRodRadius * 2,
-      frameRightBridgeDepth,
+      // A hair thinner than the bridge it runs into, so the faces inside
+      // the bridge are not coplanar with the bridge's (no z-fighting).
+      frameRightBridgeDepth - 0.006,
     ),
     darkMaterial,
   );
@@ -532,16 +537,6 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   pinion.userData.role =
     'fixed-axis-complete-eighteen-tooth-alternating-output-spur-gear';
 
-  const rimShape = new THREE.Shape();
-  rimShape.absarc(0, 0, pinionRootRadius, 0, FULL_TURN, false);
-  const rimHole = new THREE.Path();
-  rimHole.absarc(0, 0, pinionRimInnerRadius, 0, FULL_TURN, true);
-  rimShape.holes.push(rimHole);
-  const pinionRim = new THREE.Mesh(
-    centeredExtrusion(rimShape, pinionDepth, 0.009),
-    drivenMaterial,
-  );
-  pinionRim.userData.role = 'annular-root-rim-of-complete-output-pinion';
 
   const baseToothShape = new THREE.Shape();
   const baseToothPoints = involutePinionTooth({
@@ -571,26 +566,28 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     sourceContactCoordinate,
   ).value;
   const spokeLocalPhase = -sourcePinionAngle;
-  const spokeLength = pinionRimInnerRadius - pinionHubRadius - 0.04;
-  const spokeCenterRadius = (
-    pinionRimInnerRadius + pinionHubRadius + 0.04
-  ) / 2;
-  const pinionSpokes = Array.from({ length: 4 }, (_, index) => {
-    const angle = spokeLocalPhase + index * Math.PI / 2;
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(spokeLength, 0.13, pinionDepth * 0.68),
-      drivenMaterial,
-    );
-    spoke.position.set(
-      Math.cos(angle) * spokeCenterRadius,
-      Math.sin(angle) * spokeCenterRadius,
-      0,
-    );
-    spoke.rotation.z = angle;
-    spoke.userData.index = index;
-    spoke.userData.role = 'source-four-spoke-output-gear-web';
-    return spoke;
-  });
+  // Brown draws the pinion as one flat web: a rim under the teeth and four
+  // square quadrant windows between the arms. One plate (spoked-wheel.js),
+  // each window two arm edges and an arc concentric with the gear, rounded
+  // slightly more at the hub than at the rim; bored for the hub boss.
+  const pinionRim = new THREE.Mesh(
+    spokedWheelGeometry({
+      outerRadius: pinionRootRadius,
+      rimInnerRadius: pinionRimInnerRadius,
+      spokes: 4,
+      spokeWidth: 0.13,
+      hubRadius: pinionHubRadius + 0.05,
+      rimFillet: 0.02,
+      boreRadius: pinionHubRadius,
+      thickness: pinionDepth + 0.018,
+      phase: spokeLocalPhase,
+    }),
+    drivenMaterial,
+  );
+  pinionRim.userData.noRotationIndicator = true;
+  pinionRim.userData.role = 'annular-root-rim-of-complete-output-pinion';
+  // The arms are part of the one-piece web.
+  const pinionSpokes = [];
   // The boss stands proud in front; behind, it stops short of the joggled
   // closed end, which the hub overhangs at the stroke limit.
   const pinionHubFront = pinionDepth * 0.71;
@@ -1175,11 +1172,14 @@ function installConjugateReliefTeeth(root) {
     tooth.geometry.dispose();
     tooth.geometry = toothGeometry;
   }
+  // The web keeps its spoked outline, unbevelled at the teeth's depth.
+  const web = b.pinionRim.geometry.userData.spokedWheel;
   b.pinionRim.geometry.dispose();
-  b.pinionRim.geometry = plate(polygonClipping.difference(
-    poly(circle([0, 0], gearRoot, 192)),
-    poly(circle([0, 0], g.pinionRimInnerRadius, 192)),
-  ), -g.pinionDepth / 2, g.pinionDepth / 2);
+  b.pinionRim.geometry = spokedWheelGeometry({
+    ...web, outline: undefined, outerRadius: gearRoot, rimInnerRadius: g.pinionRimInnerRadius,
+    hubFillet: web.hubFillet ?? undefined, hubArcRadius: web.hubArcRadius ?? undefined,
+    thickness: g.pinionDepth, arcSegments: 192,
+  });
 
   // Pinion teeth in pinion coordinates, and each rack tooth's nominal
   // straight-sided outline in frame coordinates.

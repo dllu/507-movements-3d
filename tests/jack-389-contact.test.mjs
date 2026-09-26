@@ -53,9 +53,9 @@ test('389 finite pawl paths have bounded travel at two time resolutions',()=>{
 test('389 finite handoff includes overtravel, supported settling and a genuine next-tooth seat', () => {
  const model=createMovementModel(catalog[388]),d=model.root.userData,g=d.geometry,t=d.timeline;
  for(let stroke=0;stroke<3;stroke++) {
-  const peak=d.stateAtTime((stroke+g.drivePowerFraction)*t.strokeDuration);
-  const settling=d.stateAtTime((stroke+(g.drivePowerFraction+g.transferFraction)/2)*t.strokeDuration);
-  const seated=d.stateAtTime((stroke+g.transferFraction+1e-7)*t.strokeDuration);
+  const peak=d.crankStateAtTime((stroke+g.drivePowerFraction)*t.strokeDuration);
+  const settling=d.crankStateAtTime((stroke+(g.drivePowerFraction+g.transferFraction)/2)*t.strokeDuration);
+  const seated=d.crankStateAtTime((stroke+g.transferFraction+1e-7)*t.strokeDuration);
   assert.ok(Math.abs(peak.rackDisplacement-(stroke+1)*g.toothPitch-g.seatingOvertravel)<1e-12);
   assert.equal(settling.drivingEngaged,true);assert.equal(settling.holdingEngaged,false);
   assert.ok(settling.rackSpeed<0 && settling.rackDisplacement>seated.rackDisplacement);
@@ -90,7 +90,7 @@ test('389 driving and holding noses actually seat inside finite tooth faces',()=
  const model=createMovementModel(catalog[388]),d=model.root.userData,b=d.blocks,g=d.geometry;
  for(const [time,key,material] of [[.25*d.timeline.strokeDuration,'driveNose','driveMaterialToothIndex'],
    [.7*d.timeline.strokeDuration,'holdingTip','holdingMaterialToothIndex']]) {
-  const state=d.stateAtTime(time);model.update(time);model.root.updateMatrixWorld(true);
+  const playback=d.playbackTimeAtCrankTime(time),state=d.stateAtTime(playback);model.update(playback);model.root.updateMatrixWorld(true);
   const tooth=b.rackTeeth.find(o=>o.userData.materialToothIndex===state[material]);
   const point=state[key].clone().applyMatrix4(tooth.matrixWorld.clone().invert());
   assert.ok(solidSurface(tooth.geometry).distance(point)<2e-7);

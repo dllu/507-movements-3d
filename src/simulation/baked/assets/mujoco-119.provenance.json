@@ -1,0 +1,72 @@
+{
+  "id": 119,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-119.json.gz",
+  "bytes": 9148,
+  "assetSha256": "680097fb783ac0a85fe1a0d341c1c06b68e28f378b9b7795c1bb698c6160184d",
+  "motionSources": {
+    "src/simulation/mujoco-endless-rack/physics.js": "c96fdc8340b94132b1fd47c6b62f012ad1571969ace24903efb0c504c25bbac3",
+    "src/simulation/mujoco-endless-rack/profile.js": "cf76ff66415b12f5847cee467d22bee8fa6607da49abf4bb11b5a3d0d5f08f64",
+    "src/simulation/mujoco-endless-rack/source.js": "821dbd948599f33beb0f664befa617597a5de8f614806cca775ab251ff8fe8b1",
+    "src/simulation/mujoco-endless-rack/visual.js": "d3bd44cf6c2a64374967f5dafed007fd59c05ca179f505b8739cf94d1e1949cc",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-endless-rack/geometry.js": "fd3811f138c4142d909c5497c4c085bf1c1a61194c3fe6b3dbbd398074d07d74"
+  },
+  "physicsXmlSha256": {
+    "default": "bbd32ebcc4fea1a20dc0da572f7271223c12bc75ed318ec3c470dcbf22d0ec84"
+  },
+  "fullXmlSha256": {
+    "default": "82c8b2a9b2828ff2a473c758471aabbb425dfa4a3d4fceca697610a2c53063ba"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-endless-rack"
+  },
+  "cycleDesign": "The pinion turns at constant speed and drives the rack along, lifting round each end and back; one pinion period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 8,
+        "samples": 500,
+        "dt": 0.016,
+        "startTime": 16,
+        "periods": 1,
+        "drivePeriod": 8
+      },
+      "closure": {
+        "rawSeamPixels": 0.000015393145758046956,
+        "maximumCorrectionPixels": 0.000009638293499729042,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.pinion",
+            "angle": 28.27433388160728,
+            "rawAngle": 28.27433388160728
+          }
+        ]
+      },
+      "roundTripPixels": 0.00469275797116968,
+      "seam": {
+        "seamStepPixels": 2.3666636874824243,
+        "interiorStepPixels": 4.346804669966582,
+        "seamSecondPixels": 0.13381139806185544,
+        "interiorSecondPixels": 0.40465498042244474
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 57.560882317066195
+}

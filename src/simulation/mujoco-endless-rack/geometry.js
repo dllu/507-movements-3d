@@ -29,11 +29,14 @@ export function makeEndlessRackGeometry(options={}){
  // they are modelled whole with square ends running on past the view.
  for(const [name,pixels]of [['topBeam',[[-260,120],[790,120],[790,169],[-260,169]]],['bottomBeam',[[-260,440],[790,440],[790,483],[-260,483]]]])add(name,plate(poly(pixels.map(local)),.21,.43),'fixed',PALETTE.frame);
  blocks.pinion.position.y=blocks.carrier.position.y=f.H;blocks.rack.position.x=f.rackOffset;
- for(const n of ['pinion','rack']){const c=convexPlateCells(parts[n].geometry);cells[n]=c.cells.map(p=>[c.low,c.high].flatMap(z=>p.map(q=>[...q,z])));}
+ const cellGeometry=Object.fromEntries(['pinion','rack'].map(n=>[n,parts[n].geometry])),buildCells=()=>{for(const [n,g] of Object.entries(cellGeometry)){const c=convexPlateCells(g);cells[n]=c.cells.map(p=>[c.low,c.high].flatMap(z=>p.map(q=>[...q,z])));}};
  const guideOutline=new THREE.LineSegments(new THREE.EdgesGeometry(parts.guide.geometry,20),new THREE.LineBasicMaterial({color:PALETTE.ink}));
  guideOutline.name='section-outline-of-front-guide';blocks.fixed.add(guideOutline);
  const setSectionView=enabled=>{root.userData.sectionView=Boolean(enabled);parts.guide.visible=!enabled;guideOutline.visible=Boolean(enabled);};
- Object.assign(root.userData,{source,parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002,setSectionView});
+ Object.assign(root.userData,{source,parts,families,blocks,profile:f,hideGround:true,shadowCameraHalfExtent:6,shadowNormalBias:.01,shadowBias:-.00002,setSectionView});
+ // Collision cells are for the live simulation only; baked playback never
+ // reads them, so they are decomposed on first use (as in 113).
+ Object.defineProperty(root.userData,'cells',{configurable:true,enumerable:true,get(){buildCells();Object.defineProperty(root.userData,'cells',{value:cells,writable:true,configurable:true,enumerable:true});return cells;}});
  // Brown draws the slotted guide as a solid bar in front of the rack, with the
  // pinion shaft showing in its slot; the outline-only section is optional.
  setSectionView(false);

@@ -7,8 +7,12 @@ import {writeFile} from 'node:fs/promises';
 import {makeJointedTappetCounter} from '../src/simulation/jointed-tappet.js';
 import {makeJointedTappetDynamics,advanceJointedTappetStep} from './lib/jointed-tappet-dynamics-study.mjs';
 
-const parameters={period:24,load:3,damping:[3,.008,100,.003]},duration=7.2,epsilon=5e-8,steps=[.000125,.0000625,.00003125];
-const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry,physics=makeJointedTappetDynamics(model,parameters);
+// The driver turns once in 24 s and carries one stud on each of its four
+// spokes, so the tappet is struck every 6 s: one strike cycle is baked.
+const parameters={period:24,load:3,damping:[3,.008,100,.003]},duration=6,epsilon=5e-8,steps=[.000125,.0000625,.00003125];
+const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry,physics=makeJointedTappetDynamics(model,parameters),
+  strikePeriod=parameters.period/p.studCount;
+if(duration!==strikePeriod)throw new Error('The baked strike cycle must equal one stud pitch of the driver');
 const runs=[];let dense;const only=process.env.STEPS?JSON.parse(process.env.STEPS):null;if(only)steps.splice(0,steps.length,...only);
 for(const dt of steps){
   let state=physics.initial,minimumGap=Infinity,qMin=Infinity,maxTeeth=0;const samples=[],rows=[[0,...state.x]],stride=Math.round(.001/dt);
@@ -42,7 +46,13 @@ while(index<dense.length){
 if(selected.at(-1)!==dense.length-1)selected.push(dense.length-1);
 const first=selected.map(i=>dense[i]),settled=dense.find(r=>r[0]>.1&&Math.abs(r[1]-.3)<1e-10&&Math.abs(r[2])<1e-8&&Math.abs(r[3]-p.wheelStart)<1e-6);
 if(!settled)throw new Error('No initial settled interval');
-const rest=[.3,0,p.wheelStart+p.pitch,0];first.push([8,...rest],[24,...rest]);
+if(Math.abs(first.at(-1)[0]-strikePeriod)>1e-9)throw new Error('The baked cycle must end at the next stud');
+// Once the count has settled (within 1e-6 rad of the exact rest), blend to the
+// exact rest over 0.25 s and hold it until the next stud, so every strike
+// cycle starts and ends on the same exact state.
+const rest=[.3,0,p.wheelStart+p.pitch,0],restIndex=first.findIndex(r=>r[0]>1&&first.slice(first.indexOf(r)).every(x=>x.slice(1).every((v,k)=>Math.abs(v-rest[k])<1e-6)));
+if(restIndex<0||first[restIndex][0]+.25>=strikePeriod)throw new Error('The count does not settle before the next stud');
+const restTime=first[restIndex][0]+.25;first.splice(restIndex+1);first.push([restTime,...rest],[strikePeriod,...rest]);
 const steady=[[0,.3,0,p.wheelStart,0],[settled[0],.3,0,p.wheelStart,0],...first.filter(r=>r[0]>settled[0])];
 const sample=(table,t)=>{let a=0,b=table.length-1;while(b-a>1){const m=(a+b)>>1;if(table[m][0]<=t)a=m;else b=m;}const A=table[a],B=table[b],f=Math.max(0,Math.min(1,(t-A[0])/(B[0]-A[0])));return A.slice(1).map((v,k)=>v+f*(B[k+1]-v));};
 let minimumGap=Infinity,worst=null;
@@ -51,9 +61,9 @@ for(const [label,table] of [['first',first],['steady',steady]])for(let i=0;i<tab
   for(const [kind,gap] of Object.entries(gaps))if(gap<minimumGap){minimumGap=gap;worst={label,t,kind,gap};}
 }
 if(minimumGap< -1e-6)throw new Error('Interpolated contact penetration '+JSON.stringify(worst));
-const metadata={physics:physics.parameters,geometry:p,physicsPeriod:24,period:12,epsilon,initialSettleTime:settled[0]};
+const metadata={physics:physics.parameters,geometry:p,physicsPeriod:strikePeriod,driverPeriod:parameters.period,studCount:p.studCount,period:strikePeriod/2,epsilon,initialSettleTime:settled[0]};
 await writeFile('src/data/jointed-tappet-profile.js','// Finite contact dynamics cache baked by scripts/bake-jointed-tappet-motion.mjs.\n// See artifacts/review/076-rebake-report.json.\n// Rows: physical time, tappet angle, dog angle relative to tappet, wheel angle, holding-pawl angle.\nexport default {\n'+Object.entries(metadata).map(([k,v])=>`  ${k}: ${JSON.stringify(v)},`).join('\n')+'\n  first: [\n'+first.map(r=>'    '+JSON.stringify(r)).join(',\n')+'\n  ],\n  steady: [\n'+steady.map(r=>'    '+JSON.stringify(r)).join(',\n')+'\n  ],\n};\n');
 const report={movement:76,status:'rebaked-finite-contact-cache',parameters,duration,steps,runs:runs.map(({samples,...r})=>r),comparisons,firstKnots:first.length,steadyKnots:steady.length,initialSettleTime:settled[0],interpolatedMinimumGap:minimumGap,worst,
-  studOrbit:p.studOrbit,studOverlap:p.studOverlap};
+  studOrbit:p.studOrbit,studOverlap:p.studOverlap,studCount:p.studCount,strikePeriod};
 await writeFile('artifacts/review/076-rebake-report.json',JSON.stringify(report,null,2)+'\n');
 console.log({comparisons,firstKnots:first.length,steadyKnots:steady.length,minimumGap});

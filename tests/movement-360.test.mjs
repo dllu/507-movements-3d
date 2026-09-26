@@ -89,7 +89,7 @@ test('movement 360 separates the loose oscillating drum from the shaft-fast ratc
   });
   for (const role of [
     'externally-vibrated-double-sector-beam',
-    'right-circular-cord-sector-on-rocking-beam',
+    'rocking-beam-double-sector-plate',
     'cord-drum-loose-on-flywheel-shaft',
     'pawl-pivot-rigidly-carried-by-loose-drum',
     'ratchet-wheel-fast-on-flywheel-shaft',

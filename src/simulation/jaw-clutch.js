@@ -4,7 +4,6 @@ import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { boredSpurGeometry, jawClutchGeometry } from './jaw-clutch-geometry.js';
 import { makeJawClutchMotion } from './jaw-clutch-motion.js';
 import { pinWallBracket } from './beyond-crop-hardware.js';
-import { makeHaulingHand } from './hauling-hand.js';
 
 const LEVER_STANDOFF = 0.035;
 
@@ -103,22 +102,17 @@ export function makeJawClutch() {
   const handlePin = pin(0.020, 0.38 + LEVER_STANDOFF, 0.51 + LEVER_STANDOFF);
   pivotPin.position.set(p.pivotX, p.pivotY, 0); handlePin.position.set(handleLength, 0, 0); lever.add(handlePin);
   // Brown crops the vertical operating rod below the bell crank. It runs on
-  // whole to the operator's hand, just below the plate; its top eye is
-  // pinned to the bell crank and follows that endpoint without stretching.
-  const rodLength = 2.75, gripDepth = 2.5;
+  // straight a little past his crop and ends cleanly there (p60: no hand or
+  // stand); its top eye is pinned to the bell crank and follows that endpoint.
+  const rodLength = 2.1;
   const rod = new THREE.Group(), rodShape = new THREE.Shape();
   rodShape.moveTo(-0.028, -rodLength); rodShape.lineTo(0.028, -rodLength); rodShape.lineTo(0.028, 0);
   rodShape.absarc(0, 0, 0.044, 0, Math.PI, false); rodShape.closePath();
   const rodBore = new THREE.Path(); rodBore.absarc(0, 0, 0.022, 0, 2 * Math.PI, true); rodShape.holes.push(rodBore);
   const rodBody = new THREE.Mesh(new THREE.ExtrudeGeometry(rodShape,
     { depth: 0.042, bevelEnabled: false, curveSegments: 24 }).translate(0, 0, 0.455 + LEVER_STANDOFF), matte(PALETTE.frame)); rod.add(rodBody);
-  // The hand grips the flat rod (its bore clears the bar's diagonal).
-  const hand = makeHaulingHand(new THREE.Vector3(0, 1, 0), 0.03);
-  hand.getObjectByName('loose-rope-tail')?.removeFromParent();
-  hand.scale.setScalar(0.8); hand.position.set(0, -gripDepth, 0.476 + LEVER_STANDOFF); rod.add(hand);
-  // Only the rod's run below Brown's crop (the old rod foot) and the hand lie
-  // past the plate framing.
-  hand.userData.beyondPlateCrop = true; rodBody.userData.beyondPlateCropBelowY = -1.83;
+  // Only the rod's run below Brown's crop lies past the plate framing.
+  rodBody.userData.beyondPlateCropBelowY = -1.83;
   // The fixed fulcrum pin's shank runs back to a small flange on the framing
   // behind the clutch, clear of the sleeve and the loose gear.
   const fulcrumBracket = pinWallBracket({ x: p.pivotX, y: p.pivotY, pinRadius: 0.032, zPin: 0.31, zWall: -0.62,
@@ -146,13 +140,13 @@ export function makeJawClutch() {
     blocks: { input, output, shaft, pinion, inputBody, outputBody, gearBody, pinionBody, shaftBody, feather,
       lever, leverBody, follower, followerPin, pivotPin, rod, rodBody, handlePin },
     // Carried by the rod and fixed respectively; not separate moving bodies.
-    beyondCrop: { hand, fulcrumBracket },
+    beyondCrop: { fulcrumBracket },
     geometry: { ...p, sourcePhase, jawPhase, inputProfile, outputProfile, shaftRadius, boreRadius, keyHalfWidth, keywayTop,
       keyLeft, keyRight, keyBottom, keyTop, featherHalfWidth, pinionTeeth, gearTeeth, module, gearDepth,
       gearPitchRadius, pinionPitchRadius, pinionY, pinionMeshPhase, handleLength, leverBackZ, leverDepth,
       cycleMeaning: 'align-insert-positive-drive-withdraw-and-coast' } };
   // Frame Brown's plate: the measured swept box of the mechanism with the
-  // rod to his crop. The rod's run on to the hand stays out of the fit.
+  // rod to his crop. The rod's short run past it stays out of the fit.
   root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-0.56, -1.83, -0.99875), new THREE.Vector3(3.99, 1.93875, 0.99875));
   update(0); markShadows(root);
   return { root, update, cameraDirection: new THREE.Vector3(0.03, 0.06, 10) };

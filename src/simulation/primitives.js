@@ -36,7 +36,9 @@ export function markShadows(object) {
       // Invisible framing markers contribute to camera bounds only. Their
       // depth materials can still cast shadows despite zero visible opacity.
       const physicalPart = !child.userData.cameraFitGuide;
-      child.castShadow = physicalPart;
+      // See-through parts (see-through-part.js) cast no shadow on the
+      // working parts they reveal.
+      child.castShadow = physicalPart && !child.userData.seeThrough;
       child.receiveShadow = physicalPart;
     }
   });

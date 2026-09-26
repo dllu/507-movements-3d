@@ -82,7 +82,7 @@ export function pumpCatchHardwareBounds(model,{range,camRange},{tolerance=1e-6}=
       outer:for(const A of a.projected)for(const B of b.projected){checks++;const g=projectionGap(A,B)-roundoff;minimum=Math.min(minimum,g);if(g< -tolerance){failed=true;break outer;}}
       if(!failed){Object.assign(pair,{certified:true,method:'invariant-xz-triangle-projection',margin:minimum,checks});continue;}
     }
-    const band=a.name==='inputDriveBand'?a:b.name==='inputDriveBand'?b:null,rim=band===a?b:band===b?a:null;
+    const band=a.name==='inputDriveRope'?a:b.name==='inputDriveRope'?b:null,rim=band===a?b:band===b?a:null;
     if(band&&['rearDriveRim','remoteDriveRim'].includes(rim.name)){
       const center=[rim.name==='remoteDriveRim'?remote:0,0],bandRadius=radialRange(band.triangles,[0,1],center),low=band.initial.min[2]+tolerance/2,high=band.initial.max[2]-tolerance/2;
       let maximumRadius=0,vertices=0;

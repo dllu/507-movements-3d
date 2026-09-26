@@ -8,7 +8,7 @@ export {THREE};
 
 export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendum=1.5,pressureAngle=Math.PI/9,leftPhase=.16147166188269907,samples=96,cutterSteps=2048,collisionTolerance=.00025}={}){
  if(![middleShift,leftPhase].every(Number.isFinite)||![addendum,dedendum,pressureAngle].every(v=>Number.isFinite(v)&&v>0)||pressureAngle>=Math.PI/3||![samples,cutterSteps].every(Number.isInteger)||samples<32||cutterSteps<128||!Number.isFinite(collisionTolerance)||collisionTolerance<0)throw new RangeError('Invalid 125 geometry options');
- const root=new THREE.Group(),blocks={},parts={},families={},cells={},contactApproximation={};
+ const root=new THREE.Group(),blocks={},parts={},families={},cells={},contactApproximation={},contactJobs=[];
  const local=([x,y])=>[(x-source.axis[0])/100,(source.axis[1]-y)/100],sub=(a,b)=>a.map((v,i)=>v-b[i]);
  const axes={left:[87.67301051966052,379.85778481743716],middle:[220.2617468223709,380.152333309462],right:[384.4100674329652,378.38002688530923]},teeth={left:19,middle:23,right:29};
  const centers=Object.fromEntries(Object.entries(axes).map(([n,p])=>[n,local(p)]));
@@ -25,7 +25,7 @@ export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendu
   const g=roundedRackGear({teeth:teeth[n],module,depth:.18,boreRadius:shaft,addendum,dedendum,profileShift:n==='middle'?middleShift:-middleShift,pressureAngle,tipRadius:tipRadius*module,samples,cutterSteps});g.rotateZ(phases[n]);g.translate(0,0,-.09);
   add(n+'Gear',g,n,colors[n]);add(n+'Hub',ring(shaft,hub,0,.05,128),n,colors[n]);add(n+'Shaft',disk(shaft,-.30,.07,128),n,PALETTE.ink);
   f.cranks[n]=sub(position[n+'Rod'],position[n]);add(n+'CrankPin',translated(disk(source.circles[n+'Crank'].radius/100,0,n==='left'?.60:.27,96),f.cranks[n]),n,PALETTE.ink);
-  const approximation=segmentClampContactCells(g,collisionTolerance);cells[n+'Gear']=approximation.cells;const{cells:_,...description}=approximation;contactApproximation[n+'Gear']=description;
+  {const geometry=g;contactJobs.push(()=>{const approximation=segmentClampContactCells(geometry,collisionTolerance);cells[n+'Gear']=approximation.cells;const{cells:_,...description}=approximation;contactApproximation[n+'Gear']=description;});}
  }
  for(const[n,definition]of Object.entries(source.rods)){
   const{from,to,edgeOffsets}=definition,a=source.circles[from].center,b=source.circles[to].center,d=sub(b,a),L=Math.hypot(...d),normal=[-d[1]/L,d[0]/L],toLocal=p=>sub(local(p),position[n]);
@@ -48,6 +48,10 @@ export function makeCascadedTraverseGeometry({middleShift=.5,addendum=.8,dedendu
  add('outputStem',plate(stemShape,.84,.94),'slider',PALETTE.driven);
  add('outputEye',ring(source.circles.upperCenterPin.radius/100+.0015,source.circles.upperCenterEye.radius/100,.94,.98,128),'slider',PALETTE.driven);
  const bounds=new THREE.Box3(new THREE.Vector3(-2.55,-2.2,-.4),new THREE.Vector3(2.3,2.9,1.1));
- Object.assign(root.userData,{source,profile:f,blocks,parts,families,cells,contactApproximation,hideGround:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},shadowCameraHalfExtent:5,shadowBias:-.00002,shadowNormalBias:.002});
+ Object.assign(root.userData,{source,profile:f,blocks,parts,families,hideGround:true,cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},shadowCameraHalfExtent:5,shadowBias:-.00002,shadowNormalBias:.002});
+ // Collision cells are for the live simulation only; baked playback never
+ // reads them, so they are decomposed on first use (as in 113).
+ const buildContacts=()=>{for(const job of contactJobs.splice(0))job();};
+ for(const [key,value] of [['cells',cells],['contactApproximation',contactApproximation]])Object.defineProperty(root.userData,key,{configurable:true,enumerable:true,get(){buildContacts();Object.defineProperty(root.userData,key,{value,writable:true,configurable:true,enumerable:true});return value;}});
  markShadows(root);root.updateMatrixWorld(true);return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(1.3,1,10)};
 }

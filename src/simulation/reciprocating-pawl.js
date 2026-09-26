@@ -3,7 +3,6 @@ import profile from '../data/reciprocating-pawl-profile.js';
 import {makeReciprocatingPawlMotion} from './reciprocating-pawl-motion.js';
 import {turnedClutchGeometry} from './clutch-section-geometry.js';
 import {matte,markShadows} from './primitives.js';
-import {backBar,footPillar,pinBoss} from './back-plate-support.js';
 
 export function makeReciprocatingPawlRatchet(){
   const root=new THREE.Group(),parts={},families={},blocks={},motion=makeReciprocatingPawlMotion(profile),p=motion.parameters;
@@ -25,16 +24,6 @@ export function makeReciprocatingPawlRatchet(){
     mesh.name=descriptor.name;mesh.position.fromArray(descriptor.position);blocks[descriptor.family].add(mesh);
     parts[descriptor.name]=mesh;families[descriptor.name]=descriptor.family;
   }
-  // Brown draws no frame. The fixed wheel axle and the holding pawl's pin run
-  // back to a plain back bar behind the wheel, carried on a pillar and foot
-  // below the wheel (behind it in the plate's view).
-  const zBack=-.26,[hx,hy]=p.PH??profile.parts.find(d=>d.name==='holdingPawlPin').position;
-  const supports=new THREE.Group();supports.name='backBarSupports';
-  supports.add(backBar([{x:hx,y:hy},{x:0,y:0}],{zFront:zBack,width:.14,role:'back-bar'}),
-    pinBoss({x:0,y:0,radius:.088,zBack,zFront:-.24,role:'wheel-axle-boss'}),
-    pinBoss({x:hx,y:hy,radius:.066,zBack,zFront:-.15,role:'holding-pawl-pin-boss'}),
-    footPillar({x:0,yTop:0,yFloor:-1.6,z:zBack-.05,width:.2,footDepth:.4,role:'back-bar-pillar'}));
-  blocks.fixed.add(supports);
   const update=time=>{
     const state=motion.atTime(time);blocks.wheel.rotation.z=state.wheelAngle;blocks.bar.rotation.z=state.barAngle;
     blocks.movingPawl.position.set(...state.B.pivot,0);blocks.movingPawl.rotation.z=state.angleB;

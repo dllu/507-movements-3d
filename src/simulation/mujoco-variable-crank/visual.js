@@ -23,7 +23,7 @@ export function makeMujocoVariableCrank(mujoco,options={}) {
   const bounds=new THREE.Box3(new THREE.Vector3(-2.3,-2.1,-.84),new THREE.Vector3(2.3,2.1,.45));
   Object.assign(u,{mechanism:'mujoco-variable-crank',simulationBackend:'mujoco',physics,
     fidelity:'authored',reconstructionStatus:'integrated',supportsRestart:true,
-    reconstructionNote:'The radial plate is held during adjustment; the spiral groove plate behind it shows through the slots (Brown dashes it where the plate hides it). The stepped bolt, depth and supports are reconstructed; radial slots are widened slightly to fit the bolt.',
+    reconstructionNote:'The radial plate is held during adjustment; the spiral groove plate behind it shows through the slots and through the see-through slotted plate (Brown dots it where the plate hides it). The stepped bolt, depth and supports are reconstructed; radial slots are widened slightly to fit the bolt.',
     cameraFitBounds:bounds,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()},
     animationTiming:{authoredCyclePeriod:physics.description.options.period,displayCycleDuration:physics.description.options.period,playbackTimeScale:1},
     qualification:'Only the spiral plate is actuated. MuJoCo contact moves the bolt in an ideal radial guide. This demonstrates adjustment with the radial plate held; clamping and subsequent crank operation are not simulated.'});

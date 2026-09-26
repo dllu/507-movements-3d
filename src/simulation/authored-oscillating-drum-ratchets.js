@@ -1,5 +1,6 @@
 import {correctOscillatingDrum,finishOneWayFamily} from './one-way-clutch-working-parts.js';
 import * as THREE from 'three';
+import {circle,plate,poly,polygonClipping as clip,rotate as rotateXY,sector} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -22,52 +23,6 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
-}
-
-class PlanarArcCurve3 extends THREE.Curve {
-  constructor(radius, startAngle, endAngle, z = 0) {
-    super();
-    this.radius = radius;
-    this.startAngle = startAngle;
-    this.endAngle = endAngle;
-    this.z = z;
-  }
-
-  getPoint(value, target = new THREE.Vector3()) {
-    const angle = THREE.MathUtils.lerp(
-      this.startAngle,
-      this.endAngle,
-      value,
-    );
-    return target.set(
-      this.radius * Math.cos(angle),
-      this.radius * Math.sin(angle),
-      this.z,
-    );
-  }
-}
-
-function makeArcTube({
-  endAngle,
-  material,
-  radius,
-  role,
-  startAngle,
-  tubeRadius,
-  z = 0,
-}) {
-  const arc = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new PlanarArcCurve3(radius, startAngle, endAngle, z),
-      72,
-      tubeRadius,
-      10,
-      false,
-    ),
-    material,
-  );
-  arc.userData.role = role;
-  return arc;
 }
 
 function makeAnnularDrum({
@@ -335,7 +290,8 @@ function oscillatingDrumRatchet(movement) {
   const drumRadius = beamPivot.x + sectorRadius - drumCenter.x;
   const drumRatio = sectorRadius / drumRadius;
   const drumAmplitude = beamAmplitude * drumRatio;
-  const sectorBaseWrap = 0.64;
+  // The cords reach the rims' outer ends (Brown draws them over the ends).
+  const sectorBaseWrap = 0.50;
   const drumBaseWrap = 1.35;
   const flywheelRadius = 1.34;
   const ratchetToothCount = 16;
@@ -652,49 +608,44 @@ function oscillatingDrumRatchet(movement) {
   rockingBeam.position.set(beamPivot.x, beamPivot.y, beamPlaneOffset);
   rockingBeam.userData.axis = Z_AXIS.clone();
   rockingBeam.userData.role = 'externally-vibrated-double-sector-beam';
-  const sectorEndAngle = 0.78;
-  const sectorLowerAngle = -0.46;
-  const rightSector = makeArcTube({
-    endAngle: sectorEndAngle,
-    material: driverMaterial,
-    radius: sectorRimRadius,
-    role: 'right-circular-cord-sector-on-rocking-beam',
-    startAngle: sectorLowerAngle,
-    tubeRadius: 0.12,
-    z: 0.16,
-  });
-  const leftSector = makeArcTube({
-    endAngle: Math.PI - sectorLowerAngle,
-    material: driverMaterial,
-    radius: sectorRimRadius,
-    role: 'left-circular-counterweight-sector-on-rocking-beam',
-    startAngle: Math.PI - sectorEndAngle,
-    tubeRadius: 0.12,
-    z: 0.16,
-  });
-  rockingBeam.add(rightSector, leftSector);
-  for (const phase of [
-    sectorLowerAngle,
-    0,
-    sectorEndAngle,
-    Math.PI - sectorEndAngle,
-    Math.PI,
-    Math.PI - sectorLowerAngle,
-  ]) {
-    const end = new THREE.Vector3(
-      sectorRimRadius * Math.cos(phase),
-      sectorRimRadius * Math.sin(phase),
-      0.16,
+  // Brown's beam is one flat plate: two short flat-ended rims concentric
+  // with the pivot (about +/-30 degrees), each carried by a broad horizontal
+  // arm and two narrower diagonal arms that butt into the rim's inner edge
+  // well inside its ends.  The drive cord needs the right rim from the
+  // vertical tangent (-beamAmplitude in the beam frame) up to its
+  // attachment at sectorBaseWrap, which the symmetric rim covers.
+  const sectorHalfSpan = 0.52;
+  const sectorRimDepth = 0.15;
+  const sectorRimInnerRadius = sectorRimRadius + 0.12 - sectorRimDepth;
+  const diagonalSpokeAngle = 0.40;
+  const hubHoleRadius = 0.18;
+  const radialBar = (angle, halfWidth) => {
+    const reach = sectorRimInnerRadius + 0.03;
+    return poly([[0, -halfWidth], [reach, -halfWidth],
+      [reach, halfWidth], [0, halfWidth]]
+      .map((point) => rotateXY(point, angle)));
+  };
+  let beamRegion = poly(circle([0, 0], 0.25, 96));
+  for (const side of [0, Math.PI]) {
+    beamRegion = clip.union(
+      beamRegion,
+      sector(sectorRimInnerRadius, sectorRimRadius + 0.12,
+        side - sectorHalfSpan, side + sectorHalfSpan, 128),
+      radialBar(side, 0.11),
+      radialBar(side + diagonalSpokeAngle, 0.05),
+      radialBar(side - diagonalSpokeAngle, 0.05),
     );
-    const spoke = makeBeam(
-      new THREE.Vector3(0, 0, 0.16),
-      end,
-      { color: PALETTE.driver, depth: 0.15, thickness: 0.10 },
-    );
-    spoke.userData.role = 'rigid-rocking-beam-sector-spoke';
-    rockingBeam.add(spoke);
   }
-  const beamHub = cylinderAlongZ(0.18, 0.44, darkMaterial, 30);
+  beamRegion = clip.difference(beamRegion,
+    poly(circle([0, 0], hubHoleRadius, 96)));
+  const beamPlate = new THREE.Mesh(
+    plate(beamRegion, 0.16 - 0.075, 0.16 + 0.075),
+    driverMaterial,
+  );
+  beamPlate.userData.role = 'rocking-beam-double-sector-plate';
+  beamPlate.userData.sectorHalfSpan = sectorHalfSpan;
+  rockingBeam.add(beamPlate);
+  const beamHub = cylinderAlongZ(hubHoleRadius, 0.44, darkMaterial, 30);
   beamHub.position.z = 0.15;
   beamHub.userData.role = 'rocking-beam-fixed-pivot-hub';
   rockingBeam.add(beamHub);

@@ -5,14 +5,23 @@ import {plate,poly,circle,sector,spline,disk,ring,polygonClipping as clip} from 
 import {segmentClampContactCells} from './contact.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 export {THREE};
+// Brown's jaw points moved radially onto one circle about the pivot (source px).
+export function jawTips(){
+ const plate=[[198,54],[339,54]],radius=p=>Math.hypot(p[0]-source.axis[0],p[1]-source.axis[1]),common=(radius(plate[0])+radius(plate[1]))/2;
+ return plate.map(p=>{const r=radius(p);return p.map((v,i)=>source.axis[i]+(v-source.axis[i])*common/r);});
+}
 export function makeSegmentClampGeometry(options={}){
  const f=segmentClampProfile(options),root=new THREE.Group(),blocks={},parts={},families={},cells={};
  const local=([x,y])=>[(x-source.axis[0])/100,(source.axis[1]-y)/100],curve=p=>spline(p.map(local));
  for(const n of ['input','external','internal','fixed']){blocks[n]=new THREE.Group();root.add(blocks[n]);}
  const add=(n,g,family,color)=>{const mesh=new THREE.Mesh(g,matte(color,{metalness:.18,roughness:.55}));mesh.name=n;parts[n]=mesh;families[n]=family;blocks[family].add(mesh);return mesh;};
- // Open curves follow the separate inner and outer engraving edges.
- const leftJaw=poly([...curve([[198,54],[170,78],[154,108],[151,128],[157,159],[173,187],[197,207],[226,219]]),...curve([[226,197],[202,185],[181,167],[171,146],[170,124],[177,94],[189,70],[198,54]])]);
- const rightJaw=poly([...curve([[339,54],[358,77],[371,106],[374,130],[366,162],[350,188],[323,208],[285,222]]),...curve([[282,195],[311,186],[337,168],[353,146],[360,124],[358,103],[351,80],[339,54]])]);
+ // Open curves follow the separate inner and outer engraving edges. Brown's
+ // two points lie 169 and 181 px from the common pivot, so closing jaws would
+ // pass each other. Each point moves along its own radius (6 px) to their
+ // mean radius, so both points meet at one spot when the jaws close.
+ const [leftTip,rightTip]=jawTips();
+ const leftJaw=poly([...curve([leftTip,[170,78],[154,108],[151,128],[157,159],[173,187],[197,207],[226,219]]),...curve([[226,197],[202,185],[181,167],[171,146],[170,124],[177,94],[189,70],leftTip])]);
+ const rightJaw=poly([...curve([rightTip,[358,77],[371,106],[374,130],[366,162],[350,188],[323,208],[285,222]]),...curve([[282,195],[311,186],[337,168],[353,146],[360,124],[358,103],[351,80],rightTip])]);
  const externalBand=clip.intersection(poly(f.externalOutline),sector(1.22,2,-123*Math.PI/180,-39*Math.PI/180,160));
  const leftArm=poly([[226,227],[233,239],[196,327],[186,344],[171,336]].map(local)),rightArm=poly([[283,222],[381,297],[374,307],[355,297],[282,237]].map(local));
  const pivot=poly(circle([0,0],.32656634,128)),bore=poly(circle([0,0],.111,128));
@@ -38,14 +47,21 @@ export function makeSegmentClampGeometry(options={}){
  add('inputShaft',disk(.182,-.21,.38,128),'input',PALETTE.ink);add('compoundHub',ring(.182,.26,.04,.10,128),'input',PALETTE.driver);
  add('pivotShaft',disk(.1093328647,-.46,.40,128),'fixed',PALETTE.ink);add('pivotWasher',ring(.1093328647,.205146433,.28,.35,128),'fixed',PALETTE.frame);
  blocks.input.position.set(...f.input,0);
- const contactGeometry={smallPinion:parts.smallPinion.geometry,largePinion:parts.largePinion.geometry,
-  externalTeeth:plate(clip.intersection(parts.externalFrame.geometry.userData.plate.polygons,sector(1.31,1.65,-126*Math.PI/180,-35*Math.PI/180,160)),.10,.28),
-  internalTeeth:parts.internalToothBand.geometry,
-  leftJaw:plate(clip.difference(leftJaw,padRelief),-.08,.28),rightJaw:plate(clip.difference(rightJaw,padRelief),-.20,.22)};
- const contactApproximation={};for(const[name,g]of Object.entries(contactGeometry)){const {cells:pieces,...description}=segmentClampContactCells(g,options.collisionTolerance??.0005);cells[name]=pieces;contactApproximation[name]=description;if(!Object.values(parts).some(m=>m.geometry===g))g.dispose();}
+ // Collision cells are for the live simulation only; baked playback never
+ // reads them, so they are decomposed on first use.
+ const contactApproximation={};let contactsBuilt=false;
+ const buildContacts=()=>{
+  if(contactsBuilt)return;contactsBuilt=true;
+  const contactGeometry={smallPinion:parts.smallPinion.geometry,largePinion:parts.largePinion.geometry,
+   externalTeeth:plate(clip.intersection(parts.externalFrame.geometry.userData.plate.polygons,sector(1.31,1.65,-126*Math.PI/180,-35*Math.PI/180,160)),.10,.28),
+   internalTeeth:parts.internalToothBand.geometry,
+   leftJaw:plate(clip.difference(leftJaw,padRelief),-.08,.28),rightJaw:plate(clip.difference(rightJaw,padRelief),-.20,.22)};
+  for(const[name,g]of Object.entries(contactGeometry)){const {cells:pieces,...description}=segmentClampContactCells(g,options.collisionTolerance??.0005);cells[name]=pieces;contactApproximation[name]=description;if(!Object.values(parts).some(m=>m.geometry===g))g.dispose();}
+ };
  const bounds=new THREE.Box3();const stroke=(options.amplitude??segmentClampStroke)+.05;for(let i=0;i<=32;i++){const a=stroke*i/32;blocks.external.rotation.z=-f.externalRatio*a;blocks.internal.rotation.z=f.internalRatio*a;blocks.input.rotation.z=a;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}
  for(const block of Object.values(blocks))block.rotation.z=0;root.updateMatrixWorld(true);bounds.expandByScalar(.08);
- Object.assign(root.userData,{source,profile:f,parts,blocks,families,cells,contactApproximation,hideGround:true,cameraFitBounds:bounds,shadowCameraHalfExtent:5,shadowNormalBias:.01,shadowBias:-.00002,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()}});
+ for(const [key,value] of [['cells',cells],['contactApproximation',contactApproximation]])Object.defineProperty(root.userData,key,{configurable:true,enumerable:true,get(){buildContacts();return value;}});
+ Object.assign(root.userData,{source,profile:f,parts,blocks,families,hideGround:true,cameraFitBounds:bounds,shadowCameraHalfExtent:5,shadowNormalBias:.01,shadowBias:-.00002,sampledMotionBounds:{min:bounds.min.toArray(),max:bounds.max.toArray()}});
  // Brown draws the clamp flat, face-on.
  markShadows(root);return{root,focus:bounds.getCenter(new THREE.Vector3()),cameraDirection:new THREE.Vector3(.15,.1,10)};
 }

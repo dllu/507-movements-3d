@@ -1,5 +1,7 @@
 import {correctBearingParts} from './bearing-working-parts.js';
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 import {
   PALETTE,
   markShadows,
@@ -118,6 +120,15 @@ function makeSupportWheel({
   return { hub, index, rim, spokes, wheel };
 }
 
+// Round sides shade smoothly; the flat end caps keep their own normals.
+function smoothBar(geometry) {
+  geometry.deleteAttribute('normal');
+  geometry.deleteAttribute('uv');
+  const merged = mergeVertices(geometry, 1e-6);
+  geometry.dispose();
+  return creaseIndexedNormals(merged, Math.PI / 4);
+}
+
 function makeMainShaftWheel({
   flywheelInnerRadius,
   flywheelOuterRadius,
@@ -162,13 +173,19 @@ function makeMainShaftWheel({
       Math.sin(angle + angularOffset) * radius,
       0,
     );
+    // Each spoke runs from inside the hub into the rim's section, so both
+    // open tube ends are buried and the spoke visibly meets the rim.
     const curve = new THREE.QuadraticBezierCurve3(
       point(0.78, 0),
       point(2.05, 0.24),
-      point(flywheelInnerRadius - 0.05, 0.12),
+      point(flywheelInnerRadius + 0.15, 0.12),
     );
+    // A closed (capped) round bar swept along the curve.
+    const section = new THREE.Shape().absarc(0, 0, 0.17, 0, FULL_TURN, false);
     const spoke = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 36, 0.17, 10, false),
+      smoothBar(new THREE.ExtrudeGeometry(section, {
+        bevelEnabled: false, curveSegments: 16, extrudePath: curve, steps: 36,
+      })),
       material,
     );
     spoke.position.z = z;

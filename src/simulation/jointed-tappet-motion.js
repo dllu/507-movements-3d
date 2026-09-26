@@ -27,7 +27,9 @@ export function sampleJointedTappetMotion(time, {period = profile.period} = {}) 
   x[2] += cycle * profile.geometry.pitch;
   return {
     q: x[0], alpha: x[1], theta: x[2], holdingAngle: x[3],
-    driverAngle: -2 * Math.PI * physicsTime / profile.physicsPeriod,
+    // The driver turns once per driverPeriod; each of its studs strikes
+    // once per turn, so one strike cycle (physicsPeriod) is a fraction of it.
+    driverAngle: -2 * Math.PI * physicsTime / (profile.driverPeriod ?? profile.physicsPeriod),
     cycle, phase: local / profile.physicsPeriod, physicsTime, period,
     angularVelocities,
   };

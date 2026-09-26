@@ -77,6 +77,10 @@ function correctWheelBearing(root) {
   // occupying the tangent solids themselves.
   b.contactMarkers.forEach(marker => { marker.position.z = 1.26; });
   root.userData.minimumDisplayCycleSeconds = g.inputCyclePeriod;
+  // The support wheels' thin rims and spokes, just in front of the spoked
+  // main wheel, cast crisp bars across its rim that read as painted rotation
+  // bands (a spoked wheel needs no cue). The main wheel takes no shadows.
+  b.mainFlywheelRim.parent?.traverse(o => { if (o.isMesh && /main-flywheel/.test(o.userData.role ?? '')) o.receiveShadow = false; });
   root.userData.workingBearingReview = {
     interfaces: 'Bored support hubs, fixed axles, flat rims and a separated full-height front pedestal.',
     residual: 'No-slip motion is analytical; bearing loads, friction and elastic deformation are not solved. Casting depth and axle fastening are inferred.',

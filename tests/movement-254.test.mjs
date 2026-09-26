@@ -141,7 +141,8 @@ test('movement 254 builds ten equal three-dimensional bifurcated pockets', () =>
       0,
       `mirror fork prongs ${index + 1}`,
     );
-    assert.equal(blocks.forks[index].children.length >= 6, true);
+    // Pass 59: each fork is one chunky flat Y plate.
+    assert.equal(blocks.forks[index].children.some((child) => /chunky-flat-y-fork$/.test(child.userData.role ?? '')), true);
   });
   near(
     geometry.toothCount * geometry.toothStep,

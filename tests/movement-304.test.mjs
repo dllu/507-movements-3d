@@ -237,7 +237,7 @@ test('movement 304 records Brown’s plate and the period thirty-pin constructio
   disposeModel(model.root);
 });
 
-test('movement 304 builds replaceable half-round A and relieved B pins whose arcs carry every contact', () => {
+test('movement 304 builds replaceable half-round A and trapezoidal B pins whose arcs carry every contact', () => {
   const model = createMovementModel(catalog.movements[303]);
   const {
     blocks,
@@ -265,7 +265,7 @@ test('movement 304 builds replaceable half-round A and relieved B pins whose arc
     1e-15, 'pin size from four-degree construction');
   near(geometry.legacyPinWorkingArc, Math.PI, 0,
     'legacy half-round working arc');
-  // B keeps only the leading arc the pallets touch: a thin, wide segment.
+  // B's short leading side is the arc the pallets touch.
   assert.ok(geometry.preferredArcStart > -Math.PI);
   assert.ok(geometry.preferredArcEnd < 0);
   assert.ok(geometry.preferredPinWorkingArc < 0.65 * Math.PI);
@@ -310,7 +310,7 @@ test('movement 304 builds replaceable half-round A and relieved B pins whose arc
     assert.ok(stemBox.min.z < geometry.wheelDepth / 2 - 0.1, 'stem seated deep in the rim');
     assert.ok(stemBox.max.z < geometry.workingPlaneZ - geometry.palletDepth / 2);
     assert.equal(pin.userData.role, expectedProfile === 'preferred-B'
-      ? 'replaceable-preferred-relieved-B-pin'
+      ? 'replaceable-preferred-trapezoidal-B-pin'
       : 'replaceable-legacy-half-round-A-pin');
   }
   assert.equal(stateAtTime(0).activePinProfile, 'preferred-B');
@@ -411,6 +411,11 @@ test('movement 304 finite pins never enter the finite pallet bits over a whole c
       const angle = start + (end - start) * index / 32;
       points.push([Math.cos(angle) * geometry.pinRadius,
         Math.sin(angle) * geometry.pinRadius]);
+    }
+    if (profile === 'preferred-B') {
+      // Trapezoid: chord flanks down to the full-width trailing base.
+      points.unshift([-geometry.pinRadius, 0]);
+      points.push([geometry.pinRadius, 0]);
     }
     const first = points[0];
     const last = points.at(-1);
@@ -696,16 +701,15 @@ test('movement 304 closes one pin pitch, remains distinct from 292, and leaves m
     -geometry.pinPitch, 9e-16, 'clockwise cycle advance');
   near(end.pinsAdvanced, 1, 2e-15, 'one pin advanced');
 
+  // 292 is a different mechanism: 48 studs alternately on the front and
+  // back faces of its rim (authored-plate-escapements.js).
   const stud292 = createMovementModel(catalog.movements[291]);
-  assert.equal(stud292.root.userData.geometry.studCount, 48);
-  assert.equal(stud292.root.userData.blocks.frontStuds.length, 24);
-  assert.equal(stud292.root.userData.blocks.rearStuds.length, 24);
-  assert.equal(stud292.root.userData.blocks.studMeshes.some((stud) =>
-    stud.userData.axialPlane === 'rear'), true);
+  const studRoles = [];
+  stud292.root.traverse((object) => { if (/^(front|back)-stud$/.test(object.userData.role ?? '')) studRoles.push(object.userData.role); });
+  assert.equal(studRoles.filter((role) => role === 'front-stud').length, 24);
+  assert.equal(studRoles.filter((role) => role === 'back-stud').length, 24);
   assert.equal(model.root.userData.blocks.pinMeshes.some((pin) =>
     'axialPlane' in pin.userData), false);
-  assert.notEqual(stud292.root.userData.archetype,
-    model.root.userData.archetype);
 
   const movement507 = catalog.movements[506];
   const model507 = createMovementModel(movement507);

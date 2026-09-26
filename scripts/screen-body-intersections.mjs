@@ -49,7 +49,9 @@ async function worker(id) {
     const label = named ? String(named.userData.role || named.name) : 'root';
     const role = named === object ? label : `${label}/${object.geometry.type}`;
     const translucent = materialsOf(object).some((m) => m.transparent && (m.opacity ?? 1) < 0.6);
-    const fluid = FLUID.test(role) || translucent;
+    // See-through parts (see-through-part.js) are solid parts drawn
+    // semi-transparent to reveal the working parts behind them.
+    const fluid = FLUID.test(role) || (translucent && !object.userData.seeThrough);
     meshes.push({ mesh: object, role, fluid, versions: [], geometries: [], matrices: [], visible: [] });
   });
   const live = meshes.filter((item) => !item.skipped);

@@ -221,33 +221,49 @@ function makeBeamAndSectors({
 
   const sectorWebStart = Math.PI - 16.5 * Math.PI / 180;
   const sectorWebEnd = Math.PI + 16.5 * Math.PI / 180;
-  const sectorWeb = new THREE.Mesh(
-    centeredExtrusion(annularSectorShape(
-      sectorRootRadius - 1.2 * sourceScale,
-      sectorRootRadius - 0.025,
-      sectorWebStart,
-      sectorWebEnd,
-    ), 0.25, 0.005),
-    beamMaterial,
-  );
-  sectorWeb.position.z = beamPlaneZ;
-  sectorWeb.userData.role = 'narrow-toothed-rim-of-open-sector-C';
-  beam.add(sectorWeb);
-
   const sectorToothGeometry = makeSectorToothGeometry({
     depth: 0.25,
     outerRadius: sectorOuterRadius,
     rootRadius: sectorRootRadius,
     sourceScale,
   });
-  const sectorTeeth = Array.from({ length: 17 }, (_, index) => {
+  const toothOutline = sectorToothGeometry.parameters.shapes
+    .extractPoints(1).shape.map((point) => [point.x, point.y]);
+  const toothCenterAngles = Array.from({ length: 17 },
+    (_, index) => Math.PI + (index - 8) * sectorAngularPitch);
+  // Sector C is one plate: the narrow rim runs out to the tooth root circle
+  // and the seventeen involute teeth stand on it, so no tooth floats.
+  const webInnerRadius = sectorRootRadius - 1.2 * sourceScale;
+  const webArc = (radius, reverse) => Array.from({ length: 129 }, (_, i) => {
+    const t = reverse ? 1 - i / 128 : i / 128;
+    const angle = sectorWebStart + (sectorWebEnd - sectorWebStart) * t;
+    return [radius * Math.cos(angle), radius * Math.sin(angle)];
+  });
+  let sectorRegion = poly([...webArc(sectorRootRadius, false),
+    ...webArc(webInnerRadius, true)]);
+  for (const angle of toothCenterAngles) {
+    const c = Math.cos(angle), sn = Math.sin(angle);
+    sectorRegion = clip.union(sectorRegion, poly(toothOutline
+      .map(([x, y]) => [x * c - y * sn, x * sn + y * c])));
+  }
+  const sectorWeb = new THREE.Mesh(
+    plate(sectorRegion, beamPlaneZ - 0.125, beamPlaneZ + 0.125),
+    beamMaterial,
+  );
+  sectorWeb.userData.role = 'narrow-toothed-rim-of-open-sector-C';
+  beam.add(sectorWeb);
+
+  // The individual tooth profiles stay as unrendered analytic references
+  // for the tooth-phase and swept-contact checks; the plate above draws them.
+  const sectorTeeth = toothCenterAngles.map((angle, index) => {
     const tooth = new THREE.Mesh(sectorToothGeometry.clone(), beamMaterial);
-    const centeredIndex = index - 8;
-    tooth.rotation.z = Math.PI + centeredIndex * sectorAngularPitch;
+    tooth.rotation.z = angle;
     tooth.position.z = beamPlaneZ;
+    tooth.visible = false;
     tooth.userData.centerAngle = tooth.rotation.z;
     tooth.userData.index = index;
     tooth.userData.role = 'working-tooth-of-thirty-unit-sector-C';
+    tooth.userData.renderedBy = 'narrow-toothed-rim-of-open-sector-C';
     beam.add(tooth);
     return tooth;
   });
@@ -424,17 +440,14 @@ function makeRack({
     return tooth;
   });
 
-  const topCap = cylinderAlongZ(0.50 * sourceScale, 0.25,
-    rackMaterial, 30);
-  topCap.position.set(toothTipX, toothedBottom, rackPlaneZ);
-  topCap.userData.role = 'rounded-upper-end-of-rack-B';
   const backWearStrip = new THREE.Mesh(
     new THREE.BoxGeometry(
       0.045,
       bodyTop - toothedBottom,
       0.255,
     ),
-    darkMaterial,
+    // The rack's own steel (a black strip read as a dark rim along B).
+    rackMaterial,
   );
   backWearStrip.position.set(
     bodyLeft + 0.0225,
@@ -450,7 +463,6 @@ function makeRack({
   backLineAnchor.position.set(bodyLeft, 0, rackPlaneZ);
   backLineAnchor.userData.role = 'analytic-back-line-of-rack-B';
   rack.add(
-    topCap,
     backWearStrip,
     originAnchor,
     backLineAnchor,
@@ -462,7 +474,6 @@ function makeRack({
     originAnchor,
     rack,
     rackTeeth,
-    topCap,
   };
 }
 

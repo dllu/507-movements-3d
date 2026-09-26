@@ -31,7 +31,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 256 is one flangeless straight-tread pulley rigid on its shaft', () => {
+test('movement 256 is one flangeless crowned-tread pulley rigid on its shaft', () => {
   const movement = catalog.movements[255];
   const model = createMovementModel(movement);
   const {
@@ -51,17 +51,17 @@ test('movement 256 is one flangeless straight-tread pulley rigid on its shaft', 
   assert.equal(fidelity, 'authored');
   assert.equal(
     archetype,
-    'straight-tread-flangeless-flat-belt-pulley-rigid-on-horizontal-shaft',
+    'crowned-tread-flangeless-flat-belt-pulley-rigid-on-horizontal-shaft',
   );
   assert.equal(archetype, movement.archetype);
-  assert.match(mechanism, /flangeless-straight-working-tread/);
+  assert.match(mechanism, /flangeless-crowned-working-tread/);
   assert.equal(geometry.flangeCount, 0);
   assert.equal(blocks.tread.parent, blocks.pulleyRotor);
   assert.equal(blocks.hub.parent, blocks.pulleyRotor);
   assert.equal(blocks.shaft.parent, blocks.pulleyRotor);
   assert.equal(
     transmission.compatibleBeltSpeedLaw,
-    'v=omega-times-straight-tread-radius',
+    'v=omega-times-crown-crest-radius',
   );
   disposeModel(model.root);
 });
@@ -166,20 +166,35 @@ test('movement 256 matches the source pulley, hub, and shaft proportions', () =>
   disposeModel(model.root);
 });
 
-test('movement 256 has one straight working tread and no hidden flange or crown', () => {
+test('movement 256 has one crowned working tread as drawn and no flange', () => {
   const model = createMovementModel(catalog.movements[255]);
   const { blocks, geometry } = model.root.userData;
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
 
-  assert.equal(geometry.treadProfile, 'straight-cylindrical-as-drawn');
+  // Brown draws the rim's top and bottom edges as shallow convex arcs.
+  assert.equal(geometry.treadProfile, 'circular-arc-crown-as-drawn');
   near(geometry.treadHalfWidth * 2, geometry.treadWidth, 0,
     'two tread half-widths');
   near(blocks.tread.userData.workingRadius, geometry.treadRadius, 0,
-    'constant working radius');
+    'crest working radius');
   near(blocks.tread.userData.axialHalfWidth, geometry.treadHalfWidth, 0,
     'working half-width');
-  assert.equal(blocks.tread.userData.profile, 'straight-cylindrical');
+  assert.equal(blocks.tread.userData.profile, 'circular-arc-crown');
+  // Plate: about 5.5 px of crown on a 212 px radius.
+  near(geometry.crownHeight / geometry.treadRadius, 5.5 / 212, 0.004,
+    'crown-to-radius ratio');
+  const profile = blocks.tread.geometry.userData.outerProfile;
+  const crest = profile.reduce((best, point) => (point.radial > best.radial ? point : best));
+  near(crest.axial, 0, 1e-12, 'crest on the mid-plane');
+  near(crest.radial, geometry.treadRadius, 1e-12, 'crest radius');
+  near(profile[0].radial, geometry.treadEdgeRadius, 1e-12, 'left edge radius');
+  near(profile.at(-1).radial, geometry.treadEdgeRadius, 1e-12, 'right edge radius');
+  for (let index = 1; index < profile.length; index += 1) {
+    const rising = profile[index].axial <= 0;
+    assert.ok(rising ? profile[index].radial >= profile[index - 1].radial
+      : profile[index].radial <= profile[index - 1].radial, 'convex crown');
+  }
   assert.equal(roles.some((role) => /retaining-flange/.test(role)), false);
   assert.equal(blocks.faceRims.length, 2);
   blocks.faceRims.forEach((rim, index) => {

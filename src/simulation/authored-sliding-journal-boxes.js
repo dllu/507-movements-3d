@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
+import { makeSeeThrough } from './see-through-part.js';
 import {
   PALETTE,
   makeBeam,
@@ -322,8 +323,8 @@ function claytonSlidingJournalBox(movement) {
   );
   wristRotationIndex.userData.role = 'white-crank-wrist-rotation-index';
   crankRotor.add(wristRotationIndex);
-  // Brown dashes the crank's hidden edges only because the box and lobe
-  // cover them; the real throw and shaft show when the view is turned.
+  // Brown dots the crank's hidden edges because the box covers them; the
+  // box's lining and gibs are see-through (below), so the real throw shows.
   const fixedCrankBearing = boredJournal(0.44, 0.366, 0.15, frameMaterial);
   fixedCrankBearing.position.z = -0.75;
   fixedCrankBearing.userData.role = 'fixed-crank-shaft-bearing';
@@ -525,6 +526,10 @@ function claytonSlidingJournalBox(movement) {
     journalBox.add(assembly);
     return assembly;
   });
+  // Brown dots the crank throw's edges where the box's lining pieces and
+  // taper gibs cover it; those pieces are see-through (see-through-part.js)
+  // so the throw shows behind them as a working part.
+  for (const piece of [...liningPieces, ...taperGibs]) makeSeeThrough(piece);
   const boxMotionIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.055, 0.58, 0.035),
     whiteMaterial,

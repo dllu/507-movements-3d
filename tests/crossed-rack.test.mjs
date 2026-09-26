@@ -16,7 +16,7 @@ test('080 follows the measured finite rack, joint centers and crossed pawl layer
   u.source(pixel).forEach((v,i)=>near(p.anchors[key][i],v));
  }
  assert(p.layers.right[0]>p.layers.left[1]);assert(p.layers.left[0]>p.layers.rack[1]);
- assert.match(u.idealConstraints,/ideal prismatic/);near(u.playbackDuration,10);near(u.minimumDisplayCycleSeconds,4);dispose(model);
+ assert.match(u.idealConstraints,/ideal prismatic/);assert.equal(u.playbackDuration,undefined);near(u.minimumDisplayCycleSeconds,4);dispose(model);
 });
 
 test('080 renders closed outward surfaces and real shaft bores and slot',()=>{
@@ -44,9 +44,9 @@ test('080 renders closed outward surfaces and real shaft bores and slot',()=>{
  assert.equal(solidSurface(u.parts.slottedRack.geometry).inside(new THREE.Vector3(...point,0)),false);dispose(model);
 });
 
-test('080 carries the whole rack through cycles, retains rollback and holds its finite final pose',()=>{
+test('080 carries the whole rack through cycles, retains rollback and returns seamlessly to its start',()=>{
  const model=makeCrossedRackDrive(),u=model.root.userData,p=u.geometry,keys=['q','rackY','leftAngle','rightAngle'];
- near(sampleCrossedRackMotion(0).rackY,0);near(sampleCrossedRackMotion(10).rackY/p.pitch,4.380129831371553);
+ near(sampleCrossedRackMotion(0).rackY,0);near(sampleCrossedRackMotion(9).rackY/p.pitch,4.380129831371553);
  // Both compared heights can differ from the physical knots by the
  // independently certified 0.001-source-pixel compression allowance.
  near((sampleCrossedRackMotion(8).rackY-sampleCrossedRackMotion(4).rackY)/p.pitch,2.006313622,2*.001/(p.pitch*p.scale));
@@ -56,10 +56,15 @@ test('080 carries the whole rack through cycles, retains rollback and holds its 
   model.update(time);const first={...u.kinematics};model.update(time+37);model.update(time);assert.deepEqual(u.kinematics,first);
   const fast=sampleCrossedRackMotion(time/2,{period:2});for(const key of keys)near(first[key],fast[key]);
  }
- for(const time of [10,10.01,100,1e6]){
-  const state=sampleCrossedRackMotion(time);assert(state.finished&&state.inputStopped);near(state.rackVelocity,0);
-  assert(state.angularVelocities.every(v=>v===0));for(const key of keys)near(state[key],sampleCrossedRackMotion(10)[key]);
- }
+ // The recorded lift (0-9 s) is followed by a three-second return; the
+ // twelve-second cycle closes in pose and velocity and never finishes.
+ const loop=12;near(sampleCrossedRackMotion(0).duration,loop);assert.equal(u.playbackDuration,undefined);
+ for(const seam of [9,loop,2*loop])for(const key of keys)near(sampleCrossedRackMotion(seam-1e-7)[key],sampleCrossedRackMotion(seam+1e-7)[key],2e-6);
+ const before=sampleCrossedRackMotion(loop-1e-6),after=sampleCrossedRackMotion(loop+1e-6);
+ near(before.angularVelocities[0],after.angularVelocities[0],1e-4);near(before.rackVelocity,0,1e-3);
+ for(const time of [10,10.5,100,1e6]){const state=sampleCrossedRackMotion(time);assert(!state.finished&&!state.inputStopped);}
+ assert(sampleCrossedRackMotion(10.5).rackY<sampleCrossedRackMotion(9).rackY-p.pitch,'the released rack is let down');
+ for(const key of keys)near(sampleCrossedRackMotion(loop+3.1)[key],sampleCrossedRackMotion(3.1)[key],1e-9);
  for(const time of [NaN,Infinity,-Infinity])assert.throws(()=>sampleCrossedRackMotion(time));
  for(const period of [0,-1,NaN,Infinity])assert.throws(()=>sampleCrossedRackMotion(1,{period}));dispose(model);
 });
@@ -91,9 +96,9 @@ test('080 each loaded hook supports actual rack material',()=>{
  dispose(model);
 });
 
-test('080 independent solid families clear through startup, reversals and final hold',()=>{
+test('080 independent solid families clear through startup, reversals and the return stroke',()=>{
  const model=makeCrossedRackDrive(),u=model.root.userData,parts=Object.entries(u.parts).map(([name,mesh])=>({name,mesh,solid:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)}));
- for(const time of [0,.06,.1,.114,1,1.5,2,3,4,5,6,7,8,9,10]){
+ for(const time of [0,.06,.1,.114,1,1.5,2,3,4,5,6,7,8,9,9.2,9.5,10,10.5,11,11.4,11.6,11.8,11.9,12]){
   model.update(time);const boxes=parts.map(p=>p.solid.box.clone().applyMatrix4(p.mesh.matrixWorld));
   for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++)if(u.families[parts[i].name]!==u.families[parts[j].name]&&boxes[i].intersectsBox(boxes[j])){
    for(const [a,b]of [[parts[i],parts[j]],[parts[j],parts[i]]]){

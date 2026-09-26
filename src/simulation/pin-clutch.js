@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { flangeColumn, pinWallBracket } from './beyond-crop-hardware.js';
+import { pinWallBracket } from './beyond-crop-hardware.js';
 import { markShadows, matte, PALETTE } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { pinClutchMotion } from './pin-clutch-motion.js';
@@ -90,11 +90,9 @@ export function makePinClutch() {
   // flange on the framing, below the disks and clear of the sleeve.
   const fulcrumBracket = pinWallBracket({ x: 0, y: 0, pinRadius: p.pivotRadius, zPin: 0.27, zWall: -0.62,
     flange: 0.24, role: 'fulcrum-pin-wall-bracket' });
-  // The flange stands on a plain column with a foot on the floor below the
-  // disks, so it does not hang off the pin.
-  const fulcrumColumn = flangeColumn({ x: 0, yTop: -0.12, yFloor: -1.32 - p.leverPivotY, zWall: -0.62,
-    width: 0.2, role: 'fulcrum-bracket-column' });
-  pivot.add(pivotPin, ...pivotCaps, fulcrumBracket, fulcrumColumn); root.add(driver, output, lever, shoe, pivot);
+  // No floor column (p60 support policy): the flange reads as bolted to the
+  // machine framing, as in 48 and 53.
+  pivot.add(pivotPin, ...pivotCaps, fulcrumBracket); root.add(driver, output, lever, shoe, pivot);
   const update = (time) => {
     const state = motion.stateAtTime(time);
     driver.userData.rotor.rotation.z = state.driverAngle;
@@ -104,7 +102,7 @@ export function makePinClutch() {
   };
   root.userData = { fidelity: 'authored', mechanism: 'two-stud-clutch-with-loaded-hole-walls-and-bell-crank',
     cameraFov: 17, hideGround: true, fullCameraDirection: new THREE.Vector3(5, 3, 8),
-    geometry: { ...p, handleEnd, handleHalfWidth }, blocks: { driver, output, lever, shoe, pivot }, beyondCrop: { fulcrumBracket, fulcrumColumn },
+    geometry: { ...p, handleEnd, handleHalfWidth }, blocks: { driver, output, lever, shoe, pivot }, beyondCrop: { fulcrumBracket },
     parts: { driverBody, studs, outputDisk, outputHub, shaft, knob, leverBody, grip, followerPin, followerCap, followerBackCap, pivotPin, pivotCaps },
     stateAtTime: motion.stateAtTime };
   // Frame Brown's plate: the measured swept box with the handle to his break.

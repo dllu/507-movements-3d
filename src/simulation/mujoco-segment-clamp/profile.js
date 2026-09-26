@@ -1,10 +1,11 @@
 import {roundedRackGear} from '../coaxial-gear-geometry.js';
 import source from './source.js';
 // Default reversing input stroke, radians. Brown's caption has the jaws
-// "brought together with great force": the jaws meet at about 1.70 rad of
-// input (25 and 28 degrees of jaw swing), so the 1.8 rad command closes them
-// against native jaw contact at the torque limit, dwells, and reopens. Both
-// pinions stay at least 6 degrees inside their working tooth arcs.
+// "brought together with great force": the two jaw points meet at one spot
+// at about 1.52 rad of input (22 and 25 degrees of jaw swing), so the 1.8 rad
+// command closes them point to point against native jaw contact at the
+// torque limit, dwells, and reopens. Both pinions stay at least 6 degrees
+// inside their working tooth arcs.
 export const segmentClampStroke=1.8;
 const inv=r=>{const t=Math.sqrt(Math.max(0,r*r-1));return t-Math.atan(t);};
 export function segmentClampProfile({smallTeeth=13,externalTeeth=51,largeTeeth=23,internalTeeth=79,smallPhase=.22655716251849467,largePhase=.2318328724332012,samples=96,cutterSteps=2048}={}){

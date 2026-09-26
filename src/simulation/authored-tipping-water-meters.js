@@ -603,7 +603,9 @@ function tippingWaterMeter(movement) {
     const streamLength = Math.max(0.10, outlet.y - groundY - 0.08);
     spill.visible = flow > 0.002;
     spill.position.set(outlet.x, outlet.y - streamLength / 2, 0);
-    const widthScale = 0.36 + 0.64 * flow;
+    // The stream thins to a thread as the flow starts and stops, so it
+    // never appears or vanishes at full thickness.
+    const widthScale = Math.min(1, flow / 0.15) * (0.36 + 0.64 * flow);
     spill.scale.set(widthScale, streamLength, widthScale);
   };
 

@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { correctPileHookSurfaces, pileHeadOffset, pileLatch } from './lifting-check-hook-parts.js';
+import { finishHookFamily } from './lifting-check-hook-parts.js';
+import { circle, plate, poly, polygonClipping, capsule } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeDynamicCable,
@@ -7,634 +8,510 @@ import {
   matte,
 } from './primitives.js';
 
-const Z_AXIS = new THREE.Vector3(0, 0, 1);
+// Movement 251 is modelled in plate pixels (x from the jaw-pivot midline,
+// y up from the jaw pivots in Brown's drawn pose) and scaled by S.
+const S = 0.05;
+const PIVOT_X = 29.75;
 
-function positiveModulo(value, modulus) {
-  return ((value % modulus) + modulus) % modulus;
-}
+// Right jaw outline about its own pivot, traced from Brown's right hook A
+// (classical contour of the ink) and made symmetric: a crescent horn with a
+// round end, a pivot boss, a straight shank and an inward foot. The foot
+// top carries a 35-degree barb matching the undercut T head, so the load
+// presses the jaws shut (see LOAD_ANGLE). Counter-clockwise, pixels, y up.
+const JAW_OUTLINE = [[3.02, 140.94], [3.36, 142.36], [4.09, 143.62], [5.16, 144.62], [6.48, 145.26], [7.92, 145.5], [9.37, 145.31], [10.7, 144.71], [11.8, 143.74], [12.58, 142.5], [12.96, 141.09], [15.9, 140.4], [19.77, 139.12], [23.79, 137.6], [27.59, 135.56], [31.17, 133.13], [34.55, 130.43], [37.74, 127.52], [40.75, 124.42], [43.58, 121.14], [46.24, 117.72], [48.68, 114.14], [50.82, 110.39], [52.59, 106.48], [54.06, 102.43], [55.4, 98.31], [56.73, 94.17], [57.94, 90.02], [58.87, 85.82], [59.36, 81.57], [59.45, 77.26], [59.24, 72.92], [58.86, 68.58], [58.33, 64.27], [57.57, 60.02], [56.46, 55.87], [54.93, 51.86], [53.04, 47.97], [50.84, 44.22], [48.41, 40.6], [45.82, 37.11], [43.12, 33.73], [40.34, 30.45], [37.47, 27.24], [34.53, 24.09], [31.53, 20.99], [28.48, 17.93], [25.39, 14.91], [22.27, 11.92], [19.14, 8.95], [16, 6], [12.53, 5.02], [12.93, 3.88], [13.23, 2.7], [13.42, 1.5], [13.5, 0.29], [13.47, -0.92], [13.33, -2.13], [13.09, -3.32], [12.73, -4.48], [12.28, -5.61], [11.73, -6.69], [11.08, -7.71], [10.34, -8.68], [3, -14], [3, -44.5], [2.82, -46.06], [2.31, -47.54], [1.47, -48.86], [0.36, -49.97], [-0.96, -50.81], [-2.44, -51.32], [-4, -51.5], [-15.25, -51.5], [-22.75, -44], [-22.75, -34.2], [-18.75, -37], [-10.5, -37], [-10.5, -13], [-13.5, -5], [-12.5, 6.5], [-9.79, 10.03], [-6.73, 13.16], [-3.39, 15.98], [0.14, 18.57], [3.79, 21.02], [7.49, 23.42], [11.16, 25.85], [14.76, 28.36], [18.22, 31.04], [21.48, 33.96], [24.49, 37.15], [27.26, 40.57], [29.78, 44.16], [32.08, 47.88], [34.23, 51.7], [36.29, 55.59], [38.29, 59.54], [40.08, 63.56], [41.43, 67.71], [42.18, 71.99], [42.46, 76.39], [42.5, 80.82], [42.39, 85.24], [41.96, 89.59], [41.01, 93.85], [39.48, 97.96], [37.54, 101.93], [35.32, 105.73], [32.9, 109.39], [30.31, 112.93], [27.6, 116.38], [24.78, 119.74], [21.81, 122.96], [18.6, 125.96], [15.06, 128.66], [11.29, 131.13], [7.67, 133.68], [4.6, 136.69], [2.5, 140.5]];
 
-function cycleTime(time, period) {
-  const cycles = time / period;
-  if (Math.abs(cycles - Math.round(cycles)) < 1e-12) return 0;
-  return positiveModulo(time, period);
-}
+// T head on W (pixels in the gripped frame; W hangs with this frame on the
+// jaw frame). Brown: bar 253..281 x 240..251, stem 259..271 down to W at 284.
+const T_STEM = 6;
+const T_BAR = 11;
+const T_TOP = -26;
+const T_BOTTOM = -37;
+const T_CHAMFER = 3;
+const LOAD_ANGLE = 35 * Math.PI / 180;
+const T_UNDERCUT_Y = T_BOTTOM + (T_BAR - T_STEM) * Math.tan(LOAD_ANGLE);
+const W_TOP = -70;
+const W_BOTTOM = -264;
+const W_HALF = 78.5;
+const RIB_INNER = 79;
+const POST_INNER = 92;
+const POST_OUTER = 119;
+// Slot B in the top beam (Brown: y 11..41 → 203..173; half-widths 38 at the
+// top, 49 at the mouth). Its rounded lower lips press the horns inward.
+const BEAM_BOTTOM = 173;
+const BEAM_TOP = 203;
+const BEAM_HALF = 129;
+const SLOT_TOP_HALF = 38;
+const SLOT_MOUTH_HALF = 50;
+const SLOT_LIP_RADIUS = 3;
+// Monkey (rope block) stop lugs: the claw shanks seat on them when closed.
+const STOP_HALF = 19.15;
+const BLOCK_BOTTOM = -18;
+
+const rotate = ([x, y], angle) => {
+  const c = Math.cos(angle), s = Math.sin(angle);
+  return [x * c - y * s, x * s + y * c];
+};
 
 function smootherStep01(value) {
   const u = THREE.MathUtils.clamp(value, 0, 1);
   return u ** 3 * (u * (u * 6 - 15) + 10);
 }
 
-function smootherStepFirstDerivative(value) {
-  const u = THREE.MathUtils.clamp(value, 0, 1);
-  return 30 * u ** 2 * (u - 1) ** 2;
+function ramp(time, start, end, from, to) {
+  return from + (to - from) * smootherStep01((time - start) / (end - start));
 }
 
-function smootherStepSecondDerivative(value) {
-  const u = THREE.MathUtils.clamp(value, 0, 1);
-  return 60 * u * (u - 1) * (2 * u - 1);
+function densify(points, spacing, closed = true) {
+  const result = [];
+  const count = closed ? points.length : points.length - 1;
+  for (let i = 0; i < count; i += 1) {
+    const a = points[i], b = points[(i + 1) % points.length];
+    const steps = Math.max(1, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1]) / spacing));
+    for (let k = 0; k < steps; k += 1) result.push([a[0] + (b[0] - a[0]) * k / steps, a[1] + (b[1] - a[1]) * k / steps]);
+  }
+  return result;
 }
 
-function transitionState(time, start, end, from, to) {
-  if (time <= start) return { acceleration: 0, value: from, velocity: 0 };
-  if (time >= end) return { acceleration: 0, value: to, velocity: 0 };
-  const duration = end - start;
-  const u = (time - start) / duration;
-  const travel = to - from;
-  return {
-    acceleration:
-      travel * smootherStepSecondDerivative(u) / duration ** 2,
-    value: from + travel * smootherStep01(u),
-    velocity: travel * smootherStepFirstDerivative(u) / duration,
+function insideConvex(point, convex, eps = 1e-9) {
+  for (let i = 0; i < convex.length; i += 1) {
+    const a = convex[i], b = convex[(i + 1) % convex.length];
+    const ex = b[0] - a[0], ey = b[1] - a[1];
+    const cross = (ex * (point[1] - a[1]) - ey * (point[0] - a[0])) / Math.hypot(ex, ey);
+    if (cross <= eps) return false;
+  }
+  return true;
+}
+
+function insidePolygon(point, polygon) {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
+    const [xi, yi] = polygon[i], [xj, yj] = polygon[j];
+    if ((yi > point[1]) !== (yj > point[1])
+      && point[0] < (xj - xi) * (point[1] - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+// Distance from a point to a polygon boundary (for reported clearances).
+function boundaryDistance(point, polygon) {
+  let best = Infinity;
+  for (let i = 0; i < polygon.length; i += 1) {
+    const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+    const ex = b[0] - a[0], ey = b[1] - a[1];
+    const t = THREE.MathUtils.clamp(((point[0] - a[0]) * ex + (point[1] - a[1]) * ey) / (ex * ex + ey * ey), 0, 1);
+    best = Math.min(best, Math.hypot(point[0] - a[0] - t * ex, point[1] - a[1] - t * ey));
+  }
+  return best;
+}
+
+const mirror = (points) => points.map(([x, y]) => [-x, y]).reverse();
+const shift = (points, dx, dy) => points.map(([x, y]) => [x + dx, y + dy]);
+const scaled = (points) => points.map(([x, y]) => [x * S, y * S]);
+
+// Right cheek of slot B (convex, counter-clockwise), with a filleted lip.
+function rightCheekOutline() {
+  const d = [SLOT_TOP_HALF - SLOT_MOUTH_HALF, BEAM_TOP - BEAM_BOTTOM];
+  const length = Math.hypot(...d);
+  const normal = [d[1] / length, -d[0] / length];
+  const r = SLOT_LIP_RADIUS;
+  const center = [SLOT_MOUTH_HALF + r * (1 - normal[1]) / normal[0], BEAM_BOTTOM + r];
+  const t2 = [center[0] - r * normal[0], center[1] - r * normal[1]];
+  const a2 = Math.atan2(t2[1] - center[1], t2[0] - center[0]);
+  const a1 = -Math.PI / 2;
+  const arc = [];
+  for (let i = 0; i <= 12; i += 1) {
+    const angle = a2 + (a1 - a2) * i / 12;
+    arc.push([center[0] + r * Math.cos(angle), center[1] + r * Math.sin(angle)]);
+  }
+  return [...arc.slice(-1), [BEAM_HALF, BEAM_BOTTOM], [BEAM_HALF, BEAM_TOP], [SLOT_TOP_HALF, BEAM_TOP], ...arc.slice(0, -1)];
+}
+
+function teePieces() {
+  const rightWing = [[T_STEM, T_UNDERCUT_Y], [T_BAR, T_BOTTOM], [T_BAR, T_TOP - T_CHAMFER], [T_BAR - T_CHAMFER, T_TOP], [T_STEM, T_TOP]];
+  const middle = [[-T_STEM, W_TOP], [T_STEM, W_TOP], [T_STEM, T_TOP], [-T_STEM, T_TOP]];
+  return { rightWing, leftWing: mirror(rightWing), middle };
+}
+
+function teeOutline() {
+  return [[-T_STEM, W_TOP], [T_STEM, W_TOP], [T_STEM, T_UNDERCUT_Y], [T_BAR, T_BOTTOM], [T_BAR, T_TOP - T_CHAMFER], [T_BAR - T_CHAMFER, T_TOP],
+    [-T_BAR + T_CHAMFER, T_TOP], [-T_BAR, T_TOP - T_CHAMFER], [-T_BAR, T_BOTTOM], [-T_STEM, T_UNDERCUT_Y]];
+}
+
+// Planar contact geometry shared by the motion law, userData and the tests.
+function createPlanarContacts() {
+  const dense = densify(JAW_OUTLINE, 0.3);
+  const hornSamples = dense.filter(([, y]) => y > 95);
+  const footSamples = dense.filter(([, y]) => y < -20);
+  const cheek = rightCheekOutline();
+  const tee = teePieces();
+  const jawAt = (phi, samples = JAW_OUTLINE) => samples.map((p) => {
+    const q = rotate(p, phi);
+    return [q[0] + PIVOT_X, q[1]];
+  });
+  // Overlap tests run in the jaw's own frame: the few convex vertices are
+  // moved instead of the densely sampled jaw boundary.
+  const jawBox = [Math.min(...JAW_OUTLINE.map((p) => p[0])), Math.max(...JAW_OUTLINE.map((p) => p[0])),
+    Math.min(...JAW_OUTLINE.map((p) => p[1])), Math.max(...JAW_OUTLINE.map((p) => p[1]))];
+  // Closed sub-outlines for point-in-polygon tests: a horizontal ray from a
+  // point above y 90 (or below -20) only crosses edges of that band.
+  const band = (keep) => JAW_OUTLINE.filter((p, i) => keep(p) || keep(JAW_OUTLINE[(i + 1) % JAW_OUTLINE.length])
+    || keep(JAW_OUTLINE[(i + JAW_OUTLINE.length - 1) % JAW_OUTLINE.length]));
+  const hornOutline = band(([, y]) => y > 88);
+  const footOutline = band(([, y]) => y < -18);
+  const toJaw = (points, phi, dy) => points.map(([x, y]) => rotate([x - PIVOT_X, y + dy], -phi));
+  const overlapsLocal = (samples, convex) => {
+    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+    for (const [x, y] of convex) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+    for (const p of samples) {
+      if (p[0] <= x0 || p[0] >= x1 || p[1] <= y0 || p[1] >= y1) continue;
+      if (insideConvex(p, convex)) return true;
+    }
+    return convex.some((v) => v[0] > jawBox[0] && v[0] < jawBox[1] && v[1] > jawBox[2] && v[1] < jawBox[3]
+      && insidePolygon(v, v[1] > 90 ? hornOutline : v[1] < -20 ? footOutline : JAW_OUTLINE));
   };
+  // Right jaw vs right cheek of slot B with the rope block at height h.
+  const hornOverlaps = (h, phi) => overlapsLocal(hornSamples, toJaw(cheek, phi, -h));
+  // Right jaw foot vs the T head raised r above its gripped position.
+  const footOverlaps = (r, phi) => overlapsLocal(footSamples, toJaw(tee.rightWing, phi, r))
+    || overlapsLocal(footSamples, toJaw(tee.middle, phi, r));
+  const footInnerX = (phi) => Math.min(...jawAt(phi, footSamples).map(([x]) => x));
+  return { cheek, footInnerX, footOverlaps, hornOverlaps, jawAt, tee };
 }
 
-function rotateVector2(vector, angle) {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
-  return new THREE.Vector2(
-    vector.x * cosine - vector.y * sine,
-    vector.x * sine + vector.y * cosine,
-  );
-}
-
-function extrudedPolygon(points, depth, material, role) {
-  const shape = new THREE.Shape();
-  points.forEach((point, index) => {
-    if (index === 0) shape.moveTo(point.x, point.y);
-    else shape.lineTo(point.x, point.y);
-  });
-  shape.closePath();
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 2,
-    bevelSize: 0.045,
-    bevelThickness: 0.045,
-    curveSegments: 12,
-    depth,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  const mesh = new THREE.Mesh(geometry, material);
-  mesh.userData.role = role;
-  return mesh;
-}
-
-function cylinderAlongZ(radius, length, material, role, segments = 36) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  cylinder.userData.role = role;
-  return cylinder;
-}
-
-function tubeAlongPoints(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points.map((point) => new THREE.Vector3(point.x, point.y, 0)),
-    false,
-    'centripetal',
-  );
-  const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 72, radius, 14, false),
-    material,
-  );
-  tube.userData.centerlinePoints = points.map((point) => point.clone());
-  tube.userData.role = role;
-  return tube;
-}
-
-function beamAlongSurface({
-  depth,
-  end,
-  inwardNormal,
-  material,
-  role,
-  start,
-  thickness,
-}) {
-  const direction = end.clone().sub(start);
-  const length = direction.length();
-  const surfaceMiddle = start.clone().add(end).multiplyScalar(0.5);
-  const bodyMiddle = surfaceMiddle.clone().addScaledVector(
-    inwardNormal,
-    -thickness / 2,
-  );
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(thickness, length, depth),
-    material,
-  );
-  beam.position.set(bodyMiddle.x, bodyMiddle.y, 0);
-  beam.rotation.z = -Math.atan2(direction.x, direction.y);
-  beam.userData.inwardNormal = inwardNormal.clone();
-  beam.userData.role = role;
-  beam.userData.surfaceEnd = end.clone();
-  beam.userData.surfaceStart = start.clone();
-  return beam;
+function tabulate(from, to, step, fn) {
+  const values = [];
+  const count = Math.round((to - from) / step);
+  for (let i = 0; i <= count; i += 1) values.push(fn(from + step * i, i, values));
+  return {
+    from, step, values,
+    at(x) {
+      const f = (x - from) / step;
+      if (f <= 0) return values[0];
+      if (f >= values.length - 1) return values.at(-1);
+      const i = Math.floor(f), t = f - i;
+      return values[i] + (values[i + 1] - values[i]) * t;
+    },
+  };
 }
 
 function pileDriverReleasingHooks(movement) {
   const root = new THREE.Group();
-  const renderScale = 0.76;
+  const renderScale = 0.6;
   root.scale.setScalar(renderScale);
+  const contacts = createPlanarContacts();
 
-  // Brown's front elevation gives a symmetric pair of hooks on the hammer,
-  // a rope-carried lifting head between them, and a slot that narrows upward.
-  // The dimensions below preserve those measured proportions. The straight
-  // guide faces are constructed as exact offsets from the path of each round
-  // hook tip, so the tip-to-wall gap is identically zero during squeezing.
-  const cycleDuration = 10;
-  const lowDwellEnd = 0.75;
-  const guideEngagementTime = 2.05;
-  const releaseTime = 3.45;
-  const impactTime = 4.45;
-  const impactDwellEnd = 5.15;
-  const headLoweringEnd = 6.25;
-  const relatchEnd = 6.95;
-  const recoveryEnd = 8.75;
-  const initialPivotY = -2;
-  const guideEngagementPivotY = -0.35;
-  const releasePivotY = 1.45;
-  const impactPivotY = -2.75;
-  const dropDistance = releasePivotY - impactPivotY;
-  const freeFallDuration = impactTime - releaseTime;
-  const gravitationalAcceleration =
-    2 * dropDistance / freeFallDuration ** 2;
-  const hookPivotHalfSpacing = 1.35;
-  const hookTubeRadius = 0.24;
-  const releaseHookAngle = 0.24;
-  const headRelativeY = 2.19;
-  const headBarHalfWidth = 2.64;
-  const headBarHalfHeight = 0.19;
-  // Brown's W is a tall block filling the space between the guide rails,
-  // with rounded side notches; its top stays just below the hook pivots.
-  const hammerHalfWidth = 3.12;
-  // Plate W is about 1.2 times as tall as it is wide.
-  const hammerHeight = 7.4;
-  const hammerCenterBelowPivot = 0.45 + hammerHeight / 2;
-  const hammerBottomBelowPivot =
-    hammerCenterBelowPivot + hammerHeight / 2;
-  const pileHeadTopY = impactPivotY - hammerBottomBelowPivot;
-  const frameRailInnerHalfWidth = 3.45;
-  const ropeTopY = 7.2;
-  const leftHookTipLocal = new THREE.Vector2(-1.15, 4.2);
-  const rightHookTipLocal = new THREE.Vector2(1.15, 4.2);
-  const leftLatchBearingLocal = new THREE.Vector2(-1.29, 2);
-  const rightLatchBearingLocal = new THREE.Vector2(1.29, 2);
-  const latchArcRadius = leftLatchBearingLocal.length();
-
-  const leftPivot = (pivotY) => new THREE.Vector2(
-    -hookPivotHalfSpacing,
-    pivotY,
-  );
-  const rightPivot = (pivotY) => new THREE.Vector2(
-    hookPivotHalfSpacing,
-    pivotY,
-  );
-  const leftTipAt = (pivotY, hookAngle) => leftPivot(pivotY).add(
-    rotateVector2(leftHookTipLocal, -hookAngle),
-  );
-  const rightTipAt = (pivotY, hookAngle) => rightPivot(pivotY).add(
-    rotateVector2(rightHookTipLocal, hookAngle),
-  );
-  const guidePathStart = leftTipAt(guideEngagementPivotY, 0);
-  const guidePathEnd = leftTipAt(releasePivotY, releaseHookAngle);
-  const guidePathSlope =
-    (guidePathEnd.x - guidePathStart.x)
-    / (guidePathEnd.y - guidePathStart.y);
-  const guidePathIntercept =
-    guidePathStart.x - guidePathSlope * guidePathStart.y;
-  const guideNormalScale = Math.hypot(1, guidePathSlope);
-  const leftGuideInwardNormal = new THREE.Vector2(
-    1 / guideNormalScale,
-    -guidePathSlope / guideNormalScale,
-  );
-  const rightGuideInwardNormal = new THREE.Vector2(
-    -leftGuideInwardNormal.x,
-    leftGuideInwardNormal.y,
-  );
-  const guideSurfaceStart = guidePathStart.clone().addScaledVector(
-    leftGuideInwardNormal,
-    -hookTubeRadius,
-  );
-  const guideSurfaceEnd = guidePathEnd.clone().addScaledVector(
-    leftGuideInwardNormal,
-    -hookTubeRadius,
-  );
-  const guideSurfaceIntercept =
-    guidePathIntercept - hookTubeRadius * guideNormalScale;
-
-  const solveGuideAngle = (pivotY) => {
-    if (pivotY <= guideEngagementPivotY + 1e-14) return 0;
-    if (pivotY >= releasePivotY - 1e-14) return releaseHookAngle;
-    let lower = 0;
-    let upper = releaseHookAngle;
-    for (let iteration = 0; iteration < 56; iteration += 1) {
-      const middle = (lower + upper) / 2;
-      const tip = leftTipAt(pivotY, middle);
-      const residual = tip.x
-        - guidePathSlope * tip.y - guidePathIntercept;
-      if (residual < 0) lower = middle;
-      else upper = middle;
+  // ---------------------------------------------------------------- laws --
+  // Opening angle forced by slot B (quasi-static: the jaws' weight keeps
+  // the horns on the lips; minimal non-penetrating angle at each height).
+  const slotStart = 20;
+  const slotAngle = (h) => {
+    if (h <= slotStart || !contacts.hornOverlaps(h, 0)) return 0;
+    let low = 0, high = 0.4;
+    for (let k = 0; k < 40; k += 1) {
+      const mid = (low + high) / 2;
+      if (contacts.hornOverlaps(h, mid)) low = mid; else high = mid;
     }
-    return (lower + upper) / 2;
+    return high;
+  };
+  // Feet leave the T head once their inner tips pass its bar ends.
+  let lo = 0, hi = 0.4;
+  for (let k = 0; k < 50; k += 1) {
+    const mid = (lo + hi) / 2;
+    if (contacts.footInnerX(mid) >= T_BAR) hi = mid; else lo = mid;
+  }
+  const freeAngle = hi;
+  const openAngle = freeAngle + 0.022;
+  // Height of the T above its gripped seat while the barbs slide out.
+  const supportAt = (phi) => {
+    let low = -4, high = 8;
+    if (!contacts.footOverlaps(low, phi)) return null;
+    for (let k = 0; k < 44; k += 1) {
+      const mid = (low + high) / 2;
+      if (contacts.footOverlaps(mid, phi)) low = mid; else high = mid;
+    }
+    return high;
+  };
+  // Solved directly (not interpolated) so the seat never dips into the barbs.
+  const support = (phi) => supportAt(Math.min(Math.max(phi, 0), freeAngle - 1e-9)) ?? 0;
+  const heightWhere = (test) => {
+    let low = slotStart, high = 60;
+    for (let k = 0; k < 44; k += 1) {
+      const mid = (low + high) / 2;
+      if (test(mid)) high = mid; else low = mid;
+    }
+    return high;
+  };
+  const topHeight = heightWhere((h) => slotAngle(h) >= openAngle);
+  const engageHeight = heightWhere((h) => slotAngle(h) > 0);
+
+  // Re-catch: descending onto the resting T, the feet ride its chamfered
+  // top, cam open, slide down the bar ends and fall shut beneath the bar.
+  const catchHeight = -50;
+  const catchLowOvertravel = 2;
+  const lowHeight = catchHeight - catchLowOvertravel;
+  let snapRelative = null, snapAngle = 0;
+  const camTable = tabulate(-24, catchLowOvertravel, 0.05, (r, i, previous) => {
+    let phi = previous.at(-1) ?? 0;
+    if (snapRelative !== null) return snapAngle;
+    if (contacts.footOverlaps(r, phi)) {
+      let a = phi, b = phi + 0.02;
+      while (contacts.footOverlaps(r, b)) { a = b; b += 0.02; }
+      for (let k = 0; k < 34; k += 1) {
+        const mid = (a + b) / 2;
+        if (contacts.footOverlaps(r, mid)) a = mid; else b = mid;
+      }
+      return b;
+    }
+    if (phi > 0) {
+      // Gravity closes the jaw only through continuously clear angles; if it
+      // can close fully here the tip has cleared the bar corner.
+      let next = phi;
+      while (next > 0 && !contacts.footOverlaps(r, Math.max(0, next - 0.001))) next = Math.max(0, next - 0.001);
+      if (next === 0 && phi > 0.02) { snapRelative = r; snapAngle = phi; return phi; }
+      phi = next;
+    }
+    return phi;
+  });
+
+  // The tabulated angle is refined so interpolation never leaves a foot
+  // inside the T head.
+  const camAngle = (r) => {
+    const tabulated = camTable.at(r);
+    if (!contacts.footOverlaps(r, tabulated)) return tabulated;
+    let low = tabulated, high = tabulated + 0.02;
+    for (let k = 0; k < 40; k += 1) {
+      const mid = (low + high) / 2;
+      if (contacts.footOverlaps(r, mid)) low = mid; else high = mid;
+    }
+    return high;
   };
 
-  const hookMaterial = matte(PALETTE.driven, {
-    metalness: 0.2,
-    roughness: 0.48,
-  });
-  const hammerMaterial = matte(PALETTE.driver, {
-    metalness: 0.16,
-    roughness: 0.55,
-  });
-  const headMaterial = matte(PALETTE.accent, {
-    metalness: 0.24,
-    roughness: 0.44,
-  });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.15,
-    roughness: 0.68,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.24,
-    roughness: 0.48,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
+  // Timeline (canonical seconds). The rope block rises with W gripped,
+  // slot B opens the jaws, W falls, the block descends and re-grips.
+  const period = 10;
+  const riseEnd = 3.8;
+  const descentStart = 5;
+  const descentEnd = 8.6;
+  const swingEnd = 8.95;
+  const takeUpStart = 9.3;
+  const gravity = 280; // px/s², a readable demonstration scale
+  const blockHeight = (u) => {
+    if (u < riseEnd) return ramp(u, 0, riseEnd, catchHeight, topHeight);
+    if (u < descentStart) return topHeight;
+    if (u < descentEnd) return ramp(u, descentStart, descentEnd, topHeight, lowHeight);
+    if (u < takeUpStart) return lowHeight;
+    return ramp(u, takeUpStart, period, lowHeight, catchHeight);
+  };
+  const riseAngle = (u) => slotAngle(blockHeight(u));
+  lo = 0; hi = riseEnd;
+  for (let k = 0; k < 60; k += 1) {
+    const mid = (lo + hi) / 2;
+    if (riseAngle(mid) >= freeAngle) hi = mid; else lo = mid;
+  }
+  const releaseTime = hi;
+  const grippedY = (u) => blockHeight(u) + support(riseAngle(u));
+  const releaseY = grippedY(releaseTime);
+  const releaseVelocity = (grippedY(releaseTime) - grippedY(releaseTime - 1e-4)) / 1e-4;
+  const restY = catchHeight;
+  const fallDuration = (releaseVelocity + Math.sqrt(releaseVelocity ** 2 + 2 * gravity * (releaseY - restY))) / gravity;
+  const impactTime = releaseTime + fallDuration;
+  lo = 0; hi = riseEnd;
+  for (let k = 0; k < 60; k += 1) {
+    const mid = (lo + hi) / 2;
+    if (blockHeight(mid) >= 0) hi = mid; else lo = mid;
+  }
+  const displayTimeOffset = hi; // t = 0 shows Brown's pose
 
+  const stateAtTime = (time) => {
+    let u = ((time % period) + period) % period;
+    if (Math.abs(u - period) < 1e-9) u = 0;
+    const h = blockHeight(u);
+    let stage, phi, teeY, velocity = 0;
+    if (u < releaseTime) {
+      stage = slotAngle(h) > 0 ? 'slot-b-squeezing-horns-open-jaws' : 'hoisting-gripped-weight';
+      phi = slotAngle(h);
+      teeY = h + support(phi);
+      velocity = (grippedY(Math.min(u + 1e-4, releaseTime)) - grippedY(Math.max(0, u - 1e-4))) / 2e-4;
+    } else if (u < impactTime) {
+      stage = 'released-weight-falling';
+      const tau = u - releaseTime;
+      phi = slotAngle(h);
+      teeY = releaseY + releaseVelocity * tau - gravity * tau * tau / 2;
+      velocity = releaseVelocity - gravity * tau;
+    } else if (u < descentStart) {
+      stage = 'weight-on-pile-jaws-held-open';
+      phi = slotAngle(h);
+      teeY = restY;
+    } else if (u < descentEnd) {
+      stage = 'rope-block-descending-jaws-cam-over-t-head';
+      phi = Math.max(slotAngle(h), camAngle(restY - h));
+      teeY = restY;
+    } else if (u < swingEnd) {
+      stage = 'jaws-falling-shut-under-t-head';
+      phi = snapAngle * (1 - smootherStep01((u - descentEnd) / (swingEnd - descentEnd)));
+      teeY = restY;
+    } else if (u < takeUpStart) {
+      stage = 'jaws-closed-under-t-head';
+      phi = 0;
+      teeY = restY;
+    } else {
+      stage = 'taking-up-to-grip';
+      phi = 0;
+      teeY = restY;
+    }
+    const relative = teeY - h;
+    const gripped = u < releaseTime || u >= period - 1e-9;
+    return {
+      blockHeight: h,
+      cycleCoordinate: u / period,
+      gripped,
+      jawOpeningAngle: phi,
+      localTime: u,
+      stage,
+      teeRelative: relative,
+      weightY: teeY,
+      weightVelocity: velocity,
+      weightBottomY: teeY + W_BOTTOM,
+      pileHeadGap: teeY - restY,
+    };
+  };
+
+  // ------------------------------------------------------------ materials --
+  const jawMaterial = matte(PALETTE.driven, { metalness: 0.2, roughness: 0.48 });
+  const weightMaterial = matte(PALETTE.driver, { metalness: 0.16, roughness: 0.55 });
+  const blockMaterial = matte(PALETTE.accent, { metalness: 0.24, roughness: 0.44 });
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.15, roughness: 0.68 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 });
+  const mesh = (geometry, material, role) => {
+    const object = new THREE.Mesh(geometry, material);
+    object.userData.role = role;
+    return object;
+  };
+  const slab = (polygons, low, high, material, role) => mesh(plate(polygons, low, high), material, role);
+  const box = (x0, x1, y0, y1, z0, z1, material, role) => {
+    const object = mesh(new THREE.BoxGeometry((x1 - x0) * S, (y1 - y0) * S, z1 - z0), material, role);
+    object.position.set((x0 + x1) / 2 * S, (y0 + y1) / 2 * S, (z0 + z1) / 2);
+    return object;
+  };
+
+  // Depth layers (local units): jaws and T head in one plane, the rope-block
+  // casting behind them, the frame deepest.
+  const JAW_Z = [-0.2, 0.2];
+  const BLOCK_Z = [-0.7, -0.25];
+  const TEE_Z = [-0.3, 0.3];
+  const FRAME_Z = [-0.9, 0.9];
+  const RIB_Z = [-0.9, -0.3];
+  const LUG_Z = [-0.25, 0.9];
+  const PIN_RADIUS = 4.4;
+
+  // --------------------------------------------------------------- frame --
   const frame = new THREE.Group();
   frame.userData.fixed = true;
-  frame.userData.role = 'fixed-pile-driver-frame-with-converging-slot-b';
-  // The rails run from the top frame down to the pile-head level, and on
-  // (below Brown's crop through W) to the ground, where each stands on a foot.
-  const railTopY = 6.15;
-  const groundY = pileHeadTopY - 1.9;
-  const railHeight = railTopY - pileHeadTopY;
-  const railWidth = 0.58;
-  const rails = [-1, 1].map((side) => {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(railWidth, railHeight, 1.25),
-      frameMaterial,
-    );
-    rail.position.set(
-      side * (frameRailInnerHalfWidth + railWidth / 2),
-      railTopY - railHeight / 2,
-      -0.32,
-    );
-    rail.userData.fixed = true;
-    rail.userData.role = `${side < 0 ? 'left' : 'right'}-hammer-guide-rail`;
-    return rail;
+  frame.userData.role = 'fixed-pile-driver-frame-with-slot-b';
+  const groundY = restY + W_BOTTOM - 9 - 29 - 40;
+  const cheekRight = rightCheekOutline();
+  const beamHalves = [cheekRight, mirror(cheekRight)].map((outline, index) => {
+    const half = slab(poly(scaled(outline)), ...FRAME_Z, frameMaterial,
+      `${index ? 'left' : 'right'}-half-of-top-beam-with-side-of-slot-b`);
+    half.userData.fixed = true;
+    return half;
   });
-  frame.add(...rails);
-  const railExtensions = [-1, 1].map((side) => {
-    const extension = new THREE.Mesh(new THREE.BoxGeometry(railWidth, pileHeadTopY - groundY - 0.3, 1.25), frameMaterial);
-    extension.position.set(side * (frameRailInnerHalfWidth + railWidth / 2), (pileHeadTopY + groundY + 0.3) / 2, -0.32);
-    extension.userData.fixed = true;
-    extension.userData.role = `${side < 0 ? 'left' : 'right'}-guide-rail-below-plate-crop`;
-    return extension;
-  });
-  frame.add(...railExtensions);
-  const railFeet = [-1, 1].map((side) => {
-    const foot = new THREE.Mesh(new THREE.BoxGeometry(railWidth + 0.5, 0.3, 1.9), frameMaterial);
-    foot.position.set(side * (frameRailInnerHalfWidth + railWidth / 2 + 0.12), groundY + 0.15, -0.32);
-    foot.userData.fixed = true;
-    foot.userData.role = `${side < 0 ? 'left' : 'right'}-guide-rail-foot-below-plate-crop`;
-    return foot;
-  });
-  frame.add(...railFeet);
+  const posts = [-1, 1].map((side) => box(side < 0 ? -POST_OUTER : POST_INNER, side < 0 ? -POST_INNER : POST_OUTER,
+    restY + W_BOTTOM - 8, BEAM_BOTTOM, ...FRAME_Z, frameMaterial, `${side < 0 ? 'left' : 'right'}-guide-post`));
+  const ribs = [-1, 1].map((side) => box(side < 0 ? -POST_INNER : RIB_INNER, side < 0 ? -RIB_INNER : POST_INNER,
+    restY + W_BOTTOM - 8, BEAM_BOTTOM, ...RIB_Z, frameMaterial, `${side < 0 ? 'left' : 'right'}-weight-guide-batten`));
+  const postFeet = [-1, 1].map((side) => box(side < 0 ? -POST_OUTER - 10 : POST_INNER, side < 0 ? -POST_INNER : POST_OUTER + 10,
+    groundY, restY + W_BOTTOM - 8, ...FRAME_Z, frameMaterial, `${side < 0 ? 'left' : 'right'}-post-and-foot-below-plate-crop`));
+  frame.add(...beamHalves, ...posts, ...ribs, ...postFeet);
+  // Pile head and pile beneath the plate's crop, where W lands.
+  const anvil = box(-60, 60, restY + W_BOTTOM - 9, restY + W_BOTTOM, -1.0, 1.0, darkMaterial, 'pile-head-impact-anvil');
+  const pile = box(-40, 40, groundY, restY + W_BOTTOM - 9, -0.8, 0.8, frameMaterial, 'pile-below-impact-head');
+  const belowCrop = [anvil, pile, ...postFeet];
+  for (const part of belowCrop) part.userData.beyondPlateCrop = true;
+  frame.add(anvil, pile);
+  root.add(frame);
 
-  const leftTopBeam = extrudedPolygon([
-    // Brown draws one plain top beam pierced by the tapered slot B; its
-    // depth only spans the squeezing stroke of the hook tips.
-    new THREE.Vector2(-4.3, guideSurfaceEnd.y + 0.45),
-    guideSurfaceEnd.clone().add(new THREE.Vector2(0, 0.45)),
-    guideSurfaceStart.clone().add(new THREE.Vector2(-0.12, -0.45)),
-    new THREE.Vector2(-4.3, guideSurfaceStart.y - 0.45),
-  ], 1.32, frameMaterial, 'left-half-of-top-frame-around-slot-b');
-  // Set the cheeks behind the lifting-head plane so the rising head passes
-  // in front of them; the dark guide faces still reach the hook plane.
-  leftTopBeam.position.z = -1.25;
-  leftTopBeam.userData.fixed = true;
-  const rightTopBeam = leftTopBeam.clone();
-  rightTopBeam.scale.x = -1;
-  rightTopBeam.userData.role = 'right-half-of-top-frame-around-slot-b';
-  const guideThickness = 0.34;
-  const leftGuide = beamAlongSurface({
-    depth: 1.46,
-    end: guideSurfaceEnd,
-    inwardNormal: leftGuideInwardNormal,
-    material: darkMaterial,
-    role: 'left-straight-inward-squeezing-face-of-slot-b',
-    start: guideSurfaceStart,
-    thickness: guideThickness,
-  });
-  leftGuide.position.z = 0.05;
-  leftGuide.userData.fixed = true;
-  const rightGuide = leftGuide.clone();
-  rightGuide.position.x *= -1;
-  rightGuide.rotation.z *= -1;
-  rightGuide.userData.inwardNormal = rightGuideInwardNormal.clone();
-  rightGuide.userData.role = 'right-straight-inward-squeezing-face-of-slot-b';
-  rightGuide.userData.surfaceStart = new THREE.Vector2(
-    -guideSurfaceStart.x,
-    guideSurfaceStart.y,
+  // ------------------------------------------------------ rope block (monkey)
+  const block = new THREE.Group();
+  block.userData.role = 'rope-block-carrying-pliers-jaws';
+  const stirrupRight = [[66.5, 94], [67, 84], [63.5, 73], [55, 62], [41, 52], [25, 43], [11, 33], [2, 23], [0, 20.5]];
+  const castingOutline = polygonClipping.union(
+    poly([[-68, 94], [68, 94], [68, 104], [-68, 104]]),
+    poly([[-35, 84], [35, 84], [35, 94], [-35, 94]]),
+    poly([[-24.5, 67], [24.5, 67], [24.5, 84], [-24.5, 84]]),
+    poly([[-24.5, 67], [0, 49], [24.5, 67]]),
+    ...stirrupRight.slice(1).map((p, i) => capsule(stirrupRight[i], p, 1.9, 12)),
+    ...stirrupRight.slice(1).map((p, i) => capsule([-stirrupRight[i][0], stirrupRight[i][1]], [-p[0], p[1]], 1.9, 12)),
+    poly([[-STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, 10], [26, 10], [24, 34], [0, 21], [-24, 34], [-26, 10], [-STOP_HALF, 10]]),
+    poly(circle([PIVOT_X, 0], 9, 64)),
+    poly(circle([-PIVOT_X, 0], 9, 64)),
   );
-  rightGuide.userData.surfaceEnd = new THREE.Vector2(
-    -guideSurfaceEnd.x,
-    guideSurfaceEnd.y,
-  );
-  // The tie carries slot B, a real passage for the hoisting rope.
-  const tieShapes = [-1, 1].map((side) => {
-    const shape = new THREE.Shape();
-    shape.moveTo(side * 0.13, -0.3);
-    shape.lineTo(side * 4.3, -0.3);
-    shape.lineTo(side * 4.3, 0.3);
-    shape.lineTo(side * 0.13, 0.3);
-    shape.closePath();
-    return shape;
-  });
-  const tieGeometry = new THREE.ExtrudeGeometry(tieShapes, {
-    bevelEnabled: false,
-    depth: 1.32,
-  });
-  tieGeometry.translate(0, 0, -0.66);
-  const upperTie = new THREE.Mesh(tieGeometry, frameMaterial);
-  // Brown's beam B runs unbroken across both posts: this cap closes the top
-  // of the slotted cheeks so the beam reads as one bar, leaving only a
-  // narrow bore for the hoisting rope. The hook tips stop below the cheek
-  // tops (the release point), so the cap never meets them.
-  upperTie.position.set(0, guideSurfaceEnd.y + 0.45 + 0.3 - 0.02, -1.25);
-  upperTie.userData.fixed = true;
-  upperTie.userData.role = 'fixed-upper-frame-tie-above-slot-b';
-  frame.add(leftTopBeam, rightTopBeam, leftGuide, rightGuide, upperTie);
-
-  const pileHead = new THREE.Group();
-  pileHead.userData.fixed = true;
-  pileHead.userData.role = 'fixed-pile-head-and-anvil';
-  const anvil = new THREE.Mesh(
-    new THREE.BoxGeometry(5.1, 0.45, 2.05),
-    darkMaterial,
-  );
-  // Now shown, the anvil sits just under the weight's lowest face (the
-  // weight's side notches reach 0.045 below its nominal bottom).
-  anvil.position.y = pileHeadTopY - 0.225 - 0.05;
-  anvil.userData.fixed = true;
-  anvil.userData.role = 'pile-head-impact-anvil';
-  const pile = new THREE.Mesh(
-    new THREE.BoxGeometry(2.6, 1.45, 1.65),
-    frameMaterial,
-  );
-  pile.position.y = pileHeadTopY - 1.175 - 0.05;
-  pile.userData.fixed = true;
-  pile.userData.role = 'pile-below-impact-head';
-  // Brown's plate is cropped through W; the pile and its head lie below the
-  // crop. They are shown (the weight falls onto them), but the default view
-  // is fitted to the drawn parts only.
-  const belowCrop = [anvil, pile, ...railFeet, ...railExtensions];
-  for (const part of belowCrop) {
-    part.visible = false;
-    part.userData.beyondPlateCrop = true;
-  }
-  pileHead.add(anvil, pile);
-  root.add(frame, pileHead);
-
-  const liftHead = new THREE.Group();
-  liftHead.userData.role = 'rope-carried-lifting-head-released-by-hooks-a';
-  const headBar = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      2 * headBarHalfWidth,
-      2 * headBarHalfHeight,
-      1.05,
-    ),
-    headMaterial,
-  );
-  headBar.position.z = 0.08;
-  headBar.userData.role = 'horizontal-lifting-head-gripped-by-hooks';
-  const headStem = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.19, 0.19, 1.18, 28),
-    headMaterial,
-  );
-  headStem.position.set(0, 0.72, 0.08);
-  headStem.userData.role = 'lifting-head-rope-stem';
-  const centeringWedge = extrudedPolygon([
-    new THREE.Vector2(-0.72, -headBarHalfHeight),
-    new THREE.Vector2(0.72, -headBarHalfHeight),
-    new THREE.Vector2(0.34, -0.76),
-    new THREE.Vector2(0, -1.08),
-    new THREE.Vector2(-0.34, -0.76),
-  ], 0.88, headMaterial, 'lifting-head-centering-wedge');
-  centeringWedge.position.z = 0.08;
-  const ropeEye = new THREE.Mesh(
-    new THREE.TorusGeometry(0.34, 0.085, 12, 40),
-    darkMaterial,
-  );
-  ropeEye.position.set(0, 1.24, 0.62);
-  ropeEye.userData.role = 'lifting-rope-eye';
-
-  const headArcForSide = (side) => {
-    const pivotInHead = new THREE.Vector2(
-      side * hookPivotHalfSpacing,
-      -headRelativeY,
-    );
-    const bearing = side < 0
-      ? leftLatchBearingLocal
-      : rightLatchBearingLocal;
-    const points = [];
-    for (let index = 0; index <= 32; index += 1) {
-      const hookAngle = releaseHookAngle * index / 32;
-      const rigidAngle = side < 0 ? -hookAngle : hookAngle;
-      points.push(pivotInHead.clone().add(
-        rotateVector2(bearing, rigidAngle),
-      ));
-    }
-    const arc = tubeAlongPoints(
-      points,
-      0.105,
-      darkMaterial,
-      `${side < 0 ? 'left' : 'right'}-concentric-hook-bearing-arc`,
-    );
-    arc.position.z = 0.18;
-    return arc;
-  };
-  const leftHeadArc = headArcForSide(-1);
-  const rightHeadArc = headArcForSide(1);
-  liftHead.add(
-    headBar,
-    headStem,
-    centeringWedge,
-    ropeEye,
-    leftHeadArc,
-    rightHeadArc,
-  );
-  root.add(liftHead);
-
-  const weightAssembly = new THREE.Group();
-  weightAssembly.userData.role = 'falling-hammer-w-with-two-pivoted-hooks-a';
-  const notchRadius = 0.3;
-  const notchCenters = [hammerHeight / 2 - 1.05, -hammerHeight / 2 + 1.05];
-  const sideProfile = (side) => {
-    const points = [];
-    const ordered = side > 0 ? notchCenters : [...notchCenters].reverse();
-    for (const centerY of ordered) {
-      for (let index = 0; index <= 12; index += 1) {
-        const angle = Math.PI / 2 - Math.PI * index / 12;
-        const y = centerY + notchRadius * Math.sin(angle) * (side > 0 ? 1 : -1);
-        points.push(new THREE.Vector2(
-          side * (hammerHalfWidth - notchRadius * Math.cos(angle)),
-          y,
-        ));
-      }
-    }
-    return points;
-  };
-  const hammerProfile = [
-    new THREE.Vector2(-hammerHalfWidth, hammerHeight / 2),
-    new THREE.Vector2(hammerHalfWidth, hammerHeight / 2),
-    ...sideProfile(1),
-    new THREE.Vector2(hammerHalfWidth, -hammerHeight / 2),
-    new THREE.Vector2(-hammerHalfWidth, -hammerHeight / 2),
-    ...sideProfile(-1),
-  ];
-  const hammer = extrudedPolygon(
-    hammerProfile,
-    1.72,
-    hammerMaterial,
-    'drop-hammer-weight-w-with-side-guide-notches',
-  );
-  // Front bevel face (z 0.835) stays behind the flat hook cheeks (z 0.85).
-  hammer.position.set(0, -hammerCenterBelowPivot, -0.07);
-  const hammerIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 1.2, 0.05),
-    whiteMaterial,
-  );
-  hammerIndex.position.set(0.9, -hammerCenterBelowPivot, 0.86);
-  hammerIndex.userData.role = 'white-falling-weight-motion-index';
-  // Brown draws W plain, without a motion index.
-  hammerIndex.visible = false;
-  const yoke = extrudedPolygon([
-    new THREE.Vector2(-1.72, 0.24),
-    new THREE.Vector2(1.72, 0.24),
-    new THREE.Vector2(1.52, -0.64),
-    new THREE.Vector2(0.55, -0.72),
-    new THREE.Vector2(0.45, -1.12),
-    new THREE.Vector2(-0.45, -1.12),
-    new THREE.Vector2(-0.55, -0.72),
-    new THREE.Vector2(-1.52, -0.64),
-  ], 1.18, hammerMaterial, 'hammer-top-yoke-carrying-both-hook-pivots');
-  yoke.position.z = 0.14;
-  weightAssembly.add(hammer, hammerIndex, yoke);
-
-  const leftHook = new THREE.Group();
-  leftHook.position.x = -hookPivotHalfSpacing;
-  leftHook.userData.axis = Z_AXIS.clone();
-  leftHook.userData.role = 'left-pivoted-releasing-hook-a';
-  // Brown's horns A bulge well outward toward the rails above the toe and
-  // curl back inward to the tips that enter slot B.
-  const leftHookPoints = [
-    new THREE.Vector2(0, 0.04),
-    new THREE.Vector2(-0.48, 0.28),
-    new THREE.Vector2(-1.15, 1),
-    new THREE.Vector2(-1.45, 1.6),
-    new THREE.Vector2(-1.53, 2),
-    new THREE.Vector2(-1.68, 2.6),
-    new THREE.Vector2(-1.68, 3.14),
-    new THREE.Vector2(-1.58, 3.7),
-    new THREE.Vector2(-1.4, 4.08),
-    leftHookTipLocal.clone(),
-  ];
-  const leftHookBody = tubeAlongPoints(
-    leftHookPoints,
-    hookTubeRadius,
-    hookMaterial,
-    'left-source-curved-hook-body-a',
-  );
-  leftHookBody.position.z = 0.48;
-  const leftBearing = new THREE.Mesh(
-    new THREE.SphereGeometry(0.15, 24, 16),
-    whiteMaterial,
-  );
-  leftBearing.position.set(
-    leftLatchBearingLocal.x,
-    leftLatchBearingLocal.y,
-    0.48,
-  );
-  leftBearing.userData.role = 'left-white-lifting-head-bearing-index';
-  const leftTipIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(hookTubeRadius, 24, 16),
-    hookMaterial,
-  );
-  leftTipIndex.position.set(leftHookTipLocal.x, leftHookTipLocal.y, 0.48);
-  leftTipIndex.userData.role = 'left-rounded-guide-contact-tip';
-  leftHook.add(leftHookBody, leftBearing, leftTipIndex);
-
-  const rightHook = new THREE.Group();
-  rightHook.position.x = hookPivotHalfSpacing;
-  rightHook.userData.axis = Z_AXIS.clone();
-  rightHook.userData.role = 'right-pivoted-releasing-hook-a';
-  const rightHookPoints = leftHookPoints.map(
-    (point) => new THREE.Vector2(-point.x, point.y),
-  );
-  const rightHookBody = tubeAlongPoints(
-    rightHookPoints,
-    hookTubeRadius,
-    hookMaterial,
-    'right-source-curved-hook-body-a',
-  );
-  rightHookBody.position.z = 0.48;
-  const rightBearing = leftBearing.clone();
-  rightBearing.position.x *= -1;
-  rightBearing.userData.role = 'right-white-lifting-head-bearing-index';
-  const rightTipIndex = leftTipIndex.clone();
-  rightTipIndex.position.x *= -1;
-  rightTipIndex.userData.role = 'right-rounded-guide-contact-tip';
-  rightHook.add(rightHookBody, rightBearing, rightTipIndex);
-  weightAssembly.add(leftHook, rightHook);
-
-  const pivotPins = [-1, 1].map((side) => {
-    const pin = cylinderAlongZ(
-      0.31,
-      1.42,
-      darkMaterial,
-      `${side < 0 ? 'left' : 'right'}-hook-pivot-pin`,
-    );
-    pin.position.set(side * hookPivotHalfSpacing, 0, 0.48);
+  const casting = slab(castingOutline.map((polygon) => polygon.map((ring) => scaled(ring))), ...BLOCK_Z, blockMaterial,
+    'rope-block-casting-bar-web-stirrup-and-pivot-ears');
+  // The stop lugs reach forward into the jaw plane below the pivot bosses.
+  const stopLug = slab(poly(scaled([[-STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, BLOCK_BOTTOM], [STOP_HALF, -14], [-STOP_HALF, -14]])),
+    BLOCK_Z[1], JAW_Z[1], blockMaterial, 'rope-block-jaw-closing-stop-lugs');
+  const ring = mesh(new THREE.TorusGeometry(7 * S, 2 * S, 14, 40), darkMaterial, 'hoisting-rope-eye-on-rope-block');
+  const ropeZ = (BLOCK_Z[0] + BLOCK_Z[1]) / 2;
+  ring.position.set(0, (104 + 7 + 0.4) * S, ropeZ);
+  const pins = [-1, 1].map((side) => {
+    const pin = mesh(new THREE.CylinderGeometry(PIN_RADIUS * S, PIN_RADIUS * S, JAW_Z[1] + 0.06 - BLOCK_Z[0] + 0.02, 48), darkMaterial,
+      `${side < 0 ? 'left' : 'right'}-jaw-pivot-pin`);
+    pin.rotation.x = Math.PI / 2;
+    pin.position.set(side * PIVOT_X * S, 0, (JAW_Z[1] + 0.06 + BLOCK_Z[0] - 0.02) / 2);
+    const head = mesh(new THREE.CylinderGeometry(7 * S, 7 * S, 0.05, 48), darkMaterial, `${side < 0 ? 'left' : 'right'}-jaw-pivot-pin-head`);
+    head.rotation.x = Math.PI / 2;
+    head.position.set(side * PIVOT_X * S, 0, JAW_Z[1] + 0.01 + 0.025);
+    block.add(head);
     return pin;
   });
-  const pivotIndexes = [-1, 1].map((side) => {
-    const index = new THREE.Mesh(
-      new THREE.BoxGeometry(0.3, 0.08, 0.05),
-      whiteMaterial,
-    );
-    index.position.set(side * hookPivotHalfSpacing, 0, 1.21);
-    index.userData.role =
-      `${side < 0 ? 'left' : 'right'}-white-hook-angle-index`;
-    // Brown draws plain pivot pins, without angle indices.
-    index.visible = false;
-    return index;
-  });
-  weightAssembly.add(...pivotPins, ...pivotIndexes);
-  root.add(weightAssembly);
+  block.add(casting, stopLug, ring, ...pins);
 
-  // Brown draws the hoisting rope running up out of the plate above B. It is
-  // the shared laid rope, whole: up over a sheave carried on the top tie and
-  // back to a winding drum beside it, where its end is coiled on the barrel.
-  const hoistRopeRadius = 0.12;
-  const rope = makeDynamicCable({
-    color: PALETTE.belt,
-    laid: true,
-    maxSegments: 256,
-    radius: hoistRopeRadius,
+  const jaws = [-1, 1].map((side) => {
+    const jaw = new THREE.Group();
+    jaw.position.x = side * PIVOT_X * S;
+    jaw.userData.role = `${side < 0 ? 'left' : 'right'}-pliers-jaw-a`;
+    const outline = side > 0 ? JAW_OUTLINE : mirror(JAW_OUTLINE);
+    const shape = polygonClipping.difference(poly(scaled(outline)), poly(circle([0, 0], (PIN_RADIUS + 0.12) * S, 64)));
+    const body = slab(shape, ...JAW_Z, jawMaterial, `${side < 0 ? 'left' : 'right'}-bored-pliers-jaw-with-horn-a-and-foot`);
+    jaw.add(body);
+    block.add(jaw);
+    return jaw;
   });
+  root.add(block);
+
+  // ------------------------------------------------------------ weight W --
+  const weight = new THREE.Group();
+  weight.userData.role = 'solid-drop-weight-w-with-t-head';
+  const weightBody = box(-W_HALF, W_HALF, W_BOTTOM, W_TOP, ...FRAME_Z, weightMaterial, 'solid-drop-weight-w');
+  const tee = slab(poly(scaled(teeOutline())), ...TEE_Z, weightMaterial, 't-head-fixed-on-weight-w');
+  // Brown's rounded lugs on W's sides ride in front of the guide battens.
+  const lugs = [];
+  for (const side of [-1, 1]) for (const y of [-106, -233]) {
+    const arc = [];
+    for (let i = 0; i <= 24; i += 1) {
+      const a = -Math.PI / 2 + Math.PI * i / 24;
+      arc.push([side * (W_HALF - 0.5 + 6 * Math.cos(a)), y + 6.5 * Math.sin(a)]);
+    }
+    const outline = side > 0 ? arc : arc.reverse();
+    const lug = slab(poly(scaled(outline)), ...LUG_Z, weightMaterial, `${side < 0 ? 'left' : 'right'}-rounded-guide-lug-of-w`);
+    lugs.push(lug);
+  }
+  weight.add(weightBody, tee, ...lugs);
+  root.add(weight);
+
+  // ------------------------------------------------ rope, sheave and drum --
+  const hoistRopeRadius = 0.2;
+  const rope = makeDynamicCable({ color: PALETTE.belt, laid: true, maxSegments: 256, radius: hoistRopeRadius });
   rope.userData.role = 'vertical-hoisting-rope-through-slot-b';
   root.add(rope);
-  const tieTopY = upperTie.position.y + 0.3;
-  const sheaveRadius = 0.4;
-  const sheaveCenter = new THREE.Vector3(0, tieTopY + 0.62, 0.08 - sheaveRadius);
-  const drumRadius = 0.4;
-  const drumCenter = new THREE.Vector3(0, sheaveCenter.y, -1.4);
+  const tieTopY = BEAM_TOP * S;
+  const sheaveRadius = 0.5;
+  const sheaveCenter = new THREE.Vector3(0, tieTopY + 0.85, ropeZ - sheaveRadius);
+  const drumRadius = 0.5;
+  const drumCenter = new THREE.Vector3(0, sheaveCenter.y, sheaveCenter.z - 1.5);
   const coilPitch = 2 * hoistRopeRadius * 1.08;
   const coilTurns = 3;
-  // Fixed part of the rope: coil on the drum (deepest turn first), the run
-  // from the drum top to the sheave top and the arc down the sheave's front.
   const fixedRopePoints = [];
   for (let i = coilTurns * 48; i >= 0; i -= 1) {
     const phi = i / 48 * Math.PI * 2;
@@ -649,488 +526,146 @@ function pileDriverReleasingHooks(movement) {
   let fixedRopeLength = 0;
   for (let i = 1; i < fixedRopePoints.length; i += 1) fixedRopeLength += fixedRopePoints[i].distanceTo(fixedRopePoints[i - 1]);
   const winch = new THREE.Group();
-  winch.userData.role = 'hoisting-sheave-and-winding-drum-on-top-tie';
+  winch.userData.role = 'hoisting-sheave-and-winding-drum-on-top-beam';
   const sheaveRotor = new THREE.Group();
   sheaveRotor.position.copy(sheaveCenter);
   const drumRotor = new THREE.Group();
   drumRotor.position.copy(drumCenter);
-  const alongX = (radius, length, material) => {
-    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, length, 48), material);
-    mesh.rotation.z = Math.PI / 2;
-    return mesh;
+  const alongX = (radius, length, material, role) => {
+    const object = mesh(new THREE.CylinderGeometry(radius, radius, length, 48), material, role);
+    object.rotation.z = Math.PI / 2;
+    return object;
   };
-  const sheaveBody = alongX(sheaveRadius - hoistRopeRadius, 0.26, frameMaterial);
-  sheaveBody.userData.role = 'hoisting-rope-sheave';
+  const sheaveBody = alongX(sheaveRadius - hoistRopeRadius, 0.48, frameMaterial, 'hoisting-rope-sheave');
   const sheaveFlanges = [-1, 1].map((side) => {
-    const flange = alongX(sheaveRadius + 0.06, 0.05, frameMaterial);
-    flange.position.x = side * (hoistRopeRadius + 0.03);
-    flange.userData.role = 'hoisting-rope-sheave-flange';
+    const flange = alongX(sheaveRadius + 0.08, 0.06, frameMaterial, 'hoisting-rope-sheave-flange');
+    flange.position.x = side * (0.24 + 0.03);
     return flange;
   });
   sheaveRotor.add(sheaveBody, ...sheaveFlanges);
-  const barrelLength = coilPitch * coilTurns + 2 * hoistRopeRadius + 0.04;
-  const barrel = alongX(drumRadius - hoistRopeRadius - 0.005, barrelLength, frameMaterial);
+  const barrelLength = coilPitch * coilTurns + 2 * hoistRopeRadius + 0.06;
+  const barrel = alongX(drumRadius - hoistRopeRadius - 0.005, barrelLength, frameMaterial, 'winding-drum-barrel');
   barrel.position.x = -coilPitch * coilTurns / 2;
-  barrel.userData.role = 'winding-drum-barrel';
   const drumFlanges = [-1, 1].map((side) => {
-    const flange = alongX(drumRadius + 0.14, 0.06, frameMaterial);
-    flange.position.x = barrel.position.x + side * (barrelLength / 2 + 0.03);
-    flange.userData.role = 'winding-drum-flange';
+    const flange = alongX(drumRadius + 0.16, 0.08, frameMaterial, 'winding-drum-flange');
+    flange.position.x = barrel.position.x + side * (barrelLength / 2 + 0.04);
     return flange;
   });
   drumRotor.add(barrel, ...drumFlanges);
-  const cheekInnerX = [hoistRopeRadius + 0.12, -coilPitch * coilTurns - hoistRopeRadius - 0.12];
+  // The cheeks stand on the two halves of the beam, clear of slot B.
+  const cheekInnerX = [SLOT_TOP_HALF * S + 0.12, -SLOT_TOP_HALF * S - 0.2];
   const axleLength = cheekInnerX[0] - cheekInnerX[1] + 0.3;
-  // Each axle is fast in its sheave or drum and turns in bored cheeks.
-  const axles = [[sheaveRotor, sheaveCenter], [drumRotor, drumCenter]].map(([rotor, center]) => {
-    const axle = alongX(0.06, axleLength, darkMaterial);
+  for (const [rotor, center] of [[sheaveRotor, sheaveCenter], [drumRotor, drumCenter]]) {
+    const axle = alongX(0.07, axleLength, darkMaterial, 'axle-turning-in-winch-cheeks');
     axle.position.set((cheekInnerX[0] + cheekInnerX[1]) / 2 - center.x, 0, 0);
-    axle.userData.role = 'axle-turning-in-top-cheeks';
     rotor.add(axle);
-    return axle;
-  });
+  }
   const cheekShape = new THREE.Shape();
-  cheekShape.moveTo(-2.0, 0);
-  cheekShape.lineTo(0.2, 0);
-  cheekShape.lineTo(0.2, sheaveCenter.y - tieTopY + 0.25);
-  cheekShape.lineTo(-2.0, sheaveCenter.y - tieTopY + 0.25);
+  const cheekFront = sheaveCenter.z + sheaveRadius + 0.2;
+  const cheekBack = drumCenter.z - drumRadius - 0.3;
+  cheekShape.moveTo(cheekBack, 0);
+  cheekShape.lineTo(cheekFront, 0);
+  cheekShape.lineTo(cheekFront, sheaveCenter.y - tieTopY + 0.3);
+  cheekShape.lineTo(cheekBack, sheaveCenter.y - tieTopY + 0.3);
   cheekShape.closePath();
   for (const center of [sheaveCenter, drumCenter]) {
-    cheekShape.holes.push(new THREE.Path().absarc(center.z, center.y - tieTopY, 0.064, 0, Math.PI * 2, true));
+    cheekShape.holes.push(new THREE.Path().absarc(center.z, center.y - tieTopY, 0.074, 0, Math.PI * 2, true));
   }
   const cheeks = cheekInnerX.map((x, index) => {
-    const cheek = new THREE.Mesh(new THREE.ExtrudeGeometry(cheekShape, { depth: 0.08, bevelEnabled: false }), frameMaterial);
-    // Shape x runs along z, shape y up; the extrusion is along x.
+    const cheek = mesh(new THREE.ExtrudeGeometry(cheekShape, { depth: 0.1, bevelEnabled: false }), frameMaterial, 'winch-cheek-standing-on-top-beam');
     cheek.rotation.y = -Math.PI / 2;
-    cheek.position.set(index === 0 ? x + 0.08 : x, tieTopY, 0);
-    cheek.userData.role = 'winch-cheek-standing-on-top-tie';
+    cheek.position.set(index === 0 ? x + 0.1 : x, tieTopY, 0);
     return cheek;
   });
+  // The beam is only 1.8 deep; the drum overhangs behind on a back bracket.
+  const shelves = [-1, 1].map((side) => {
+    const shelf = box(side < 0 ? -BEAM_HALF + 30 : SLOT_TOP_HALF + 1, side < 0 ? -SLOT_TOP_HALF - 1 : BEAM_HALF - 30,
+      BEAM_TOP - 6, BEAM_TOP, cheekBack - 0.05, FRAME_Z[0], frameMaterial, 'winch-shelf-behind-top-beam');
+    return shelf;
+  });
   winch.add(sheaveRotor, drumRotor, ...cheeks);
+  frame.add(...shelves);
   root.add(winch);
 
-  const guideContactMarkers = [-1, 1].map((side) => {
-    const marker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.105, 20, 14),
-      matte(PALETTE.accent, { metalness: 0.22, roughness: 0.43 }),
-    );
-    marker.userData.role =
-      `${side < 0 ? 'left' : 'right'}-exact-hook-tip-to-slot-contact-marker`;
-    root.add(marker);
-    return marker;
-  });
-  const latchContactMarkers = [-1, 1].map((side) => {
-    const marker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.095, 20, 14),
-      whiteMaterial,
-    );
-    marker.userData.role =
-      `${side < 0 ? 'left' : 'right'}-hook-to-lifting-head-contact-marker`;
-    root.add(marker);
-    return marker;
-  });
-  const impactMarker = new THREE.Mesh(
-    new THREE.TorusGeometry(0.52, 0.07, 10, 40),
-    matte(PALETTE.accent, { metalness: 0.18, roughness: 0.5 }),
-  );
-  impactMarker.rotation.x = Math.PI / 2;
-  impactMarker.position.set(0, pileHeadTopY + 0.03, 1.05);
-  impactMarker.userData.fixed = true;
-  impactMarker.userData.role = 'pile-head-impact-contact-marker';
-  root.add(impactMarker);
-
-  const guideAngleState = (pivotState) => {
-    const value = solveGuideAngle(pivotState.value);
-    if (value === 0 || value === releaseHookAngle) {
-      return { acceleration: 0, value, velocity: 0 };
-    }
-    const rotatedTip = rotateVector2(leftHookTipLocal, -value);
-    const coefficientA =
-      leftHookTipLocal.x - guidePathSlope * leftHookTipLocal.y;
-    const coefficientB =
-      leftHookTipLocal.y + guidePathSlope * leftHookTipLocal.x;
-    const denominator =
-      -coefficientA * Math.sin(value)
-      + coefficientB * Math.cos(value);
-    const secondAngleDerivative =
-      -coefficientA * Math.cos(value)
-      - coefficientB * Math.sin(value);
-    const velocity = guidePathSlope * pivotState.velocity / denominator;
-    const acceleration = (
-      guidePathSlope * pivotState.acceleration
-      - secondAngleDerivative * velocity ** 2
-    ) / denominator;
-    // Keep the evaluated tip available to make the dependency explicit and
-    // guard against future changes that accidentally switch the rotation hand.
-    void rotatedTip;
-    return { acceleration, value, velocity };
+  // ---------------------------------------------------------------- update --
+  const update = (time) => {
+    const state = stateAtTime(time + displayTimeOffset);
+    block.position.y = state.blockHeight * S;
+    jaws[0].rotation.z = -state.jawOpeningAngle;
+    jaws[1].rotation.z = state.jawOpeningAngle;
+    weight.position.y = state.weightY * S;
+    // The rope ends on top of the eye (ring top 120.4 plus the rope's own radius).
+    const ropeEndY = (state.blockHeight + 120.4 + 4) * S;
+    const hangingLength = sheaveCenter.y - ropeEndY;
+    rope.userData.setPoints([...fixedRopePoints, new THREE.Vector3(0, ropeEndY, ropeZ)], fixedRopeLength + hangingLength);
+    sheaveRotor.rotation.x = hangingLength / sheaveRadius;
+    drumRotor.rotation.x = hangingLength / drumRadius;
+    root.userData.kinematics = state;
   };
 
-  const latchContactState = ({
-    bearingLocal,
-    headY,
-    hookAngle,
-    pivot,
-    side,
-  }) => {
-    const rigidAngle = side < 0 ? -hookAngle : hookAngle;
-    const rotatedBearing = rotateVector2(bearingLocal, rigidAngle);
-    const hookPoint = pivot.clone().add(rotatedBearing);
-    const mirroredX = side < 0 ? hookPoint.x : -hookPoint.x;
-    const corner = new THREE.Vector2(pileLatch.edgeX, headY + pileLatch.shelfTop);
-    const along = Math.min(0, ((mirroredX - corner.x) + (hookPoint.y - corner.y)) / 2);
-    const headPoint = new THREE.Vector2(side < 0 ? corner.x + along : -corner.x - along, corner.y + along);
-    const normal = hookPoint.clone().sub(headPoint).normalize();
-    return {
-      arcCoordinate: hookAngle / releaseHookAngle,
-      gap: hookPoint.distanceTo(headPoint) - pileLatch.toeRadius,
-      normal,
-      headPoint,
-      hookPoint,
-      radialError: rotatedBearing.length() - latchArcRadius,
-      remainingRetainingAngle: releaseHookAngle - hookAngle,
-    };
-  };
-
-  const stateAtTime = (time) => {
-    const unsnappedLocalTime = cycleTime(time, cycleDuration);
-    const localTime = [
-      lowDwellEnd,
-      guideEngagementTime,
-      releaseTime,
-      impactTime,
-      impactDwellEnd,
-      headLoweringEnd,
-      relatchEnd,
-      recoveryEnd,
-    ].find((boundary) => (
-      Math.abs(unsnappedLocalTime - boundary) < 1e-12
-    )) ?? unsnappedLocalTime;
-    let stage = 'latched-low-source-dwell';
-    let pivotState = { acceleration: 0, value: initialPivotY, velocity: 0 };
-    let headState = {
-      acceleration: 0,
-      value: initialPivotY + headRelativeY,
-      velocity: 0,
-    };
-    let hookState = { acceleration: 0, value: 0, velocity: 0 };
-    let freeFallElapsed = 0;
-    let externalReload = false;
-
-    if (localTime >= lowDwellEnd && localTime < guideEngagementTime) {
-      stage = 'raising-latched-weight-to-slot';
-      pivotState = transitionState(
-        localTime,
-        lowDwellEnd,
-        guideEngagementTime,
-        initialPivotY,
-        guideEngagementPivotY,
-      );
-      headState = {
-        acceleration: pivotState.acceleration,
-        value: pivotState.value + headRelativeY,
-        velocity: pivotState.velocity,
-      };
-    } else if (
-      localTime >= guideEngagementTime && localTime < releaseTime
-    ) {
-      stage = 'slot-b-squeezing-hooks-inward';
-      pivotState = transitionState(
-        localTime,
-        guideEngagementTime,
-        releaseTime,
-        guideEngagementPivotY,
-        releasePivotY,
-      );
-      headState = {
-        acceleration: pivotState.acceleration,
-        value: pivotState.value + headRelativeY,
-        velocity: pivotState.velocity,
-      };
-      hookState = guideAngleState(pivotState);
-    } else if (localTime >= releaseTime && localTime < impactTime) {
-      stage = 'released-weight-in-gravity-only-fall';
-      freeFallElapsed = localTime - releaseTime;
-      pivotState = {
-        acceleration: -gravitationalAcceleration,
-        value:
-          releasePivotY
-          - 0.5 * gravitationalAcceleration * freeFallElapsed ** 2,
-        velocity: -gravitationalAcceleration * freeFallElapsed,
-      };
-      headState = {
-        acceleration: 0,
-        value: releasePivotY + headRelativeY,
-        velocity: 0,
-      };
-      hookState = { acceleration: 0, value: releaseHookAngle, velocity: 0 };
-    } else if (localTime >= impactTime && localTime < impactDwellEnd) {
-      stage = 'weight-stopped-on-pile-head';
-      pivotState = { acceleration: 0, value: impactPivotY, velocity: 0 };
-      headState = {
-        acceleration: 0,
-        value: releasePivotY + headRelativeY,
-        velocity: 0,
-      };
-      hookState = { acceleration: 0, value: releaseHookAngle, velocity: 0 };
-    } else if (
-      localTime >= impactDwellEnd && localTime < headLoweringEnd
-    ) {
-      stage = 'external-reset-lowering-lifting-head';
-      externalReload = true;
-      pivotState = { acceleration: 0, value: impactPivotY, velocity: 0 };
-      headState = transitionState(
-        localTime,
-        impactDwellEnd,
-        headLoweringEnd,
-        releasePivotY + headRelativeY,
-        impactPivotY + headRelativeY,
-      );
-      hookState = { acceleration: 0, value: releaseHookAngle, velocity: 0 };
-    } else if (localTime >= headLoweringEnd && localTime < relatchEnd) {
-      stage = 'external-reset-relatching-hooks';
-      externalReload = true;
-      pivotState = { acceleration: 0, value: impactPivotY, velocity: 0 };
-      headState = {
-        acceleration: 0,
-        value: impactPivotY + headRelativeY,
-        velocity: 0,
-      };
-      hookState = transitionState(
-        localTime,
-        headLoweringEnd,
-        relatchEnd,
-        releaseHookAngle,
-        0,
-      );
-    } else if (localTime >= relatchEnd && localTime < recoveryEnd) {
-      stage = 'external-reset-recovering-latched-weight';
-      externalReload = true;
-      pivotState = transitionState(
-        localTime,
-        relatchEnd,
-        recoveryEnd,
-        impactPivotY,
-        initialPivotY,
-      );
-      headState = {
-        acceleration: pivotState.acceleration,
-        value: pivotState.value + headRelativeY,
-        velocity: pivotState.velocity,
-      };
-    } else if (localTime >= recoveryEnd) {
-      stage = 'latched-low-cycle-end-dwell';
-    }
-
-    const headOffset = pileHeadOffset(hookState.value);
-    // Position contact law is authoritative. Derivatives are reported only for
-    // the interior smooth portion; the final shelf-edge force singularity is
-    // explicitly outside this prescribed demonstration's dynamic validation.
-    const epsilon = 1e-6;
-    const lo = Math.max(0, hookState.value - epsilon);
-    const hi = Math.min(releaseHookAngle, hookState.value + epsilon);
-    const derivative = (pileHeadOffset(hi) - pileHeadOffset(lo)) / (hi - lo || 1);
-    headState.value += headOffset;
-    headState.velocity += derivative * hookState.velocity;
-    headState.acceleration = null;
-    const leftPivotPoint = leftPivot(pivotState.value);
-    const rightPivotPoint = rightPivot(pivotState.value);
-    const leftHookAngle = -hookState.value;
-    const rightHookAngle = hookState.value;
-    const leftHookTip = leftTipAt(pivotState.value, hookState.value);
-    const rightHookTip = rightTipAt(pivotState.value, hookState.value);
-    const leftGuideCenterResidual =
-      leftHookTip.x
-      - guidePathSlope * leftHookTip.y - guidePathIntercept;
-    const mirroredRightTip = new THREE.Vector2(
-      -rightHookTip.x,
-      rightHookTip.y,
-    );
-    const rightGuideCenterResidual =
-      mirroredRightTip.x
-      - guidePathSlope * mirroredRightTip.y - guidePathIntercept;
-    const leftGuideClearance = (
-      leftHookTip.x
-      - guidePathSlope * leftHookTip.y - guideSurfaceIntercept
-    ) / guideNormalScale - hookTubeRadius;
-    const rightGuideClearance = (
-      mirroredRightTip.x
-      - guidePathSlope * mirroredRightTip.y - guideSurfaceIntercept
-    ) / guideNormalScale - hookTubeRadius;
-    const leftGuideContactPoint = leftHookTip.clone().addScaledVector(
-      leftGuideInwardNormal,
-      -hookTubeRadius,
-    );
-    const rightGuideContactPoint = rightHookTip.clone().addScaledVector(
-      rightGuideInwardNormal,
-      -hookTubeRadius,
-    );
-    const leftLatchContact = latchContactState({
-      bearingLocal: leftLatchBearingLocal,
-      headY: headState.value,
-      hookAngle: hookState.value,
-      pivot: leftPivotPoint,
-      side: -1,
-    });
-    const rightLatchContact = latchContactState({
-      bearingLocal: rightLatchBearingLocal,
-      headY: headState.value,
-      hookAngle: hookState.value,
-      pivot: rightPivotPoint,
-      side: 1,
-    });
-    const guideContactActive =
-      localTime >= guideEngagementTime && localTime <= releaseTime;
-    const alignedForLatch =
-      leftLatchContact.gap < 1e-12 && rightLatchContact.gap < 1e-12;
-    const retainingArcRemaining = hookState.value < releaseHookAngle;
-    const weightSupported = alignedForLatch && retainingArcRemaining;
-    const released =
-      localTime >= releaseTime && localTime < headLoweringEnd;
-    const fallDistance = releasePivotY - pivotState.value;
-    const hammerBottomY = pivotState.value - hammerBottomBelowPivot;
-    const pileHeadGap = hammerBottomY - pileHeadTopY;
-    return {
-      cycleCoordinate: localTime / cycleDuration,
-      externalReload,
-      freeFallElapsed,
-      freeFallIdentityError:
-        pivotState.velocity ** 2
-        - 2 * gravitationalAcceleration * Math.max(0, fallDistance),
-      guideContactActive,
-      guideContactClearances: {
-        left: leftGuideClearance,
-        right: rightGuideClearance,
-      },
-      guideContactPoints: {
-        left: leftGuideContactPoint,
-        right: rightGuideContactPoint,
-      },
-      guidePathResiduals: {
-        left: leftGuideCenterResidual,
-        right: rightGuideCenterResidual,
-      },
-      hammerBottomY,
-      headLatched: weightSupported,
-      hookAngularAcceleration: hookState.acceleration,
-      hookAngularSpeed: hookState.velocity,
-      hookOpeningAngle: hookState.value,
-      impactContact: pileHeadGap < 1e-12,
-      impactSpeed: gravitationalAcceleration * freeFallDuration,
-      kineticEnergyPerUnitMass: 0.5 * pivotState.velocity ** 2,
-      leftHookAngle,
-      leftHookAngularAcceleration: -hookState.acceleration,
-      leftHookAngularSpeed: -hookState.velocity,
-      leftHookPivot: leftPivotPoint,
-      leftHookTip,
-      leftLatchContact,
-      liftHeadAcceleration: headState.acceleration,
-      liftHeadVelocity: headState.velocity,
-      liftHeadY: headState.value,
-      localTime,
-      pileHeadGap,
-      potentialEnergyLostPerUnitMass:
-        gravitationalAcceleration * Math.max(0, fallDistance),
-      released,
-      rightHookAngle,
-      rightHookAngularAcceleration: hookState.acceleration,
-      rightHookAngularSpeed: hookState.velocity,
-      rightHookPivot: rightPivotPoint,
-      rightHookTip,
-      rightLatchContact,
-      sourcePose: localTime === 0,
-      stage,
-      weightAcceleration: pivotState.acceleration,
-      weightPivotY: pivotState.value,
-      weightSupported,
-      weightVelocity: pivotState.velocity,
-    };
-  };
-
-  root.userData.archetype =
-    'slot-triggered-twin-pivot-releasing-hooks-with-ballistic-pile-driver-drop';
-  root.userData.blocks = {
-    anvil,
-    frame,
-    guideContactMarkers,
-    hammer,
-    hammerIndex,
-    headBar,
-    impactMarker,
-    latchContactMarkers,
-    leftBearing,
-    leftGuide,
-    leftHeadArc,
-    leftHook,
-    leftHookBody,
-    leftTipIndex,
-    liftHead,
-    pile,
-    pileHead,
-    pivotIndexes,
-    pivotPins,
-    rails,
-    rightGuide,
-    rightHeadArc,
-    rightHook,
-    rightHookBody,
-    rightBearing,
-    rightTipIndex,
-    rope,
-    weightAssembly,
-    yoke,
-  };
-  root.userData.cameraDistanceScale = 0.88;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-5.2, -8.7, -1.1),
-    new THREE.Vector3(5.2, 8.35, 1.25),
-  );
-  root.userData.geometry = {
-    dropDistance,
-    frameRailInnerHalfWidth,
-    gravitationalAcceleration,
-    guideEngagementPivotY,
-    guideNormalScale,
-    guidePathEnd: guidePathEnd.clone(),
-    guidePathIntercept,
-    guidePathSlope,
-    guidePathStart: guidePathStart.clone(),
-    guideSurfaceEnd: guideSurfaceEnd.clone(),
-    guideSurfaceIntercept,
-    guideSurfaceStart: guideSurfaceStart.clone(),
-    hammerBottomBelowPivot,
-    hammerHalfWidth,
-    hammerHeight,
-    headBarHalfHeight,
-    headBarHalfWidth,
-    headRelativeY,
-    hookPivotHalfSpacing,
-    hookTubeRadius,
-    impactPivotY,
-    initialPivotY,
-    latchArcRadius,
-    leftGuideInwardNormal: leftGuideInwardNormal.clone(),
-    leftHookCenterline: leftHookPoints.map((point) => point.clone()),
-    leftHookTipLocal: leftHookTipLocal.clone(),
-    leftLatchBearingLocal: leftLatchBearingLocal.clone(),
-    pileHeadTopY,
-    releaseHookAngle,
-    releasePivotY,
-    renderScale,
-    rightGuideInwardNormal: rightGuideInwardNormal.clone(),
-    rightHookCenterline: rightHookPoints.map((point) => point.clone()),
-    rightHookTipLocal: rightHookTipLocal.clone(),
-    rightLatchBearingLocal: rightLatchBearingLocal.clone(),
-    ropeTopY,
-  };
+  root.userData.archetype = 'slot-triggered-twin-pivot-releasing-hooks-with-ballistic-pile-driver-drop';
   root.userData.mechanism =
-    'rope-lifts-head-and-latched-hammer-until-converging-slot-b-squeezes-both-hook-tips-inward-and-the-unretained-weight-falls-freely';
+    'rope-block-carries-pliers-jaws-gripping-the-t-head-of-w-until-slot-b-squeezes-the-horns-and-opens-the-jaws-then-the-jaws-cam-over-and-regrip-the-t-head';
+  root.userData.blocks = {
+    anvil, beamHalves, block, casting, frame, jaws, lugs, pile, pins, posts, ribs, ring, rope, stopLug, tee, weight, weightBody,
+    jawBodies: jaws.map((jaw) => jaw.children[0]),
+  };
+  root.userData.displayTimeOffset = displayTimeOffset;
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.planar = {
+    ...contacts,
+    camAngle,
+    slotAngle,
+    support,
+  };
+  root.userData.geometry = {
+    blockBottom: BLOCK_BOTTOM,
+    catchHeight,
+    engageHeight,
+    freeAngle,
+    gravity,
+    jawOutline: JAW_OUTLINE.map((p) => [...p]),
+    loadAngle: LOAD_ANGLE,
+    lowHeight,
+    openAngle,
+    pinRadius: PIN_RADIUS,
+    pivotX: PIVOT_X,
+    pixelScale: S,
+    renderScale,
+    restY,
+    snapAngle,
+    snapRelative,
+    stopHalfWidth: STOP_HALF,
+    tee: { stemHalf: T_STEM, barHalf: T_BAR, top: T_TOP, bottom: T_BOTTOM, undercutY: T_UNDERCUT_Y },
+    topHeight,
+    weight: { halfWidth: W_HALF, top: W_TOP, bottom: W_BOTTOM },
+    slot: { bottom: BEAM_BOTTOM, top: BEAM_TOP, mouthHalf: SLOT_MOUTH_HALF, topHalf: SLOT_TOP_HALF, lipRadius: SLOT_LIP_RADIUS },
+  };
+  root.userData.timeline = {
+    cycleDuration: period, demonstrationPeriod: period, descentEnd, descentStart, impactTime, releaseTime, riseEnd, swingEnd, takeUpStart,
+  };
+  root.userData.transmission = {
+    externalReloadRequired: false,
+    hookCount: 2,
+    releaseType: 'slot-b-squeezes-pliers-horns-to-open-jaws',
+    releasedBody: 'pile-driver-weight-w',
+    trigger: 'horns-a-enter-slot-b-in-the-top-beam',
+  };
+  root.userData.dynamics = {
+    prescribedHoist: true,
+    quasiStaticJaws: true,
+    validatedPassiveRelease: false,
+    releaseLaw: 'slot-B lips press the horns inward; the minimal non-penetrating opening angle is solved against the jaw outline; W falls ballistically once the foot tips pass the T bar ends',
+    closingLaw: `the ${Math.round(LOAD_ANGLE * 180 / Math.PI)}-degree barbs turn the load into a closing moment and the jaws' own weight closes them when unloaded`,
+    limitation: 'hoist motion, contact forces, friction and the jaws\' swing-shut timing are prescribed; impact is inelastic',
+  };
+  root.userData.reconstructionNote =
+    'W is one solid block with a T head. The pliers jaws A pivot on the rope block; their barbed feet hook under the undercut T bar. Rising into slot B, the horns are pressed inward by its lips, opening the jaws until the feet pass the bar ends and W falls. Descending, the feet ride the T head\'s chamfered top, cam open and fall shut under the bar. Brown\'s flat foot tops are drawn with a 35-degree barb so the load holds the jaws closed; slot B is widened at its mouth to admit the horns.';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
     reason: 'the official page marks movement 251 animation unavailable',
-    referenceScope:
-      'static engraving and public-domain description only; no official motion data exists',
+    referenceScope: 'static engraving and public-domain description only; no official motion data exists',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -1139,43 +674,18 @@ function pileDriverReleasingHooks(movement) {
       imageHeight: 525,
       imageWidth: 525,
       inferredTopology:
-        'two mirror-image hooks pivot on the weight yoke, embrace one rope-carried lifting head, and enter one upward-converging slot in the fixed pile-driver frame',
-      measurementUncertaintyPixels: 5,
+        'two mirror-image pliers jaws pivot on the rope block, their feet grip the T head on top of the solid weight W, and their horns enter the slot in the top beam',
+      measurementUncertaintyPixels: 2,
       officialAnimationAvailable: false,
-      rasterFrameBounds: {
-        bottom: 524,
-        left: 137,
-        right: 396,
-        top: 9,
-      },
-      rasterGuideSlot: {
-        bottomHalfWidth: 40,
-        centerX: 266,
-        lowerY: 42,
-        topHalfWidth: 28,
-        upperY: 10,
-      },
-      rasterHookBounds: [
-        { bottom: 228, left: 183, right: 260, top: 67 },
-        { bottom: 228, left: 269, right: 348, top: 67 },
-      ],
-      rasterHookPivots: [
-        { centerX: 238, centerY: 215, radius: 10 },
-        { centerX: 294, centerY: 215, radius: 10 },
-      ],
-      rasterLiftingHeadBounds: {
-        bottom: 188,
-        left: 192,
-        right: 336,
-        top: 88,
-      },
-      rasterWeightBounds: {
-        bottom: 480,
-        left: 151,
-        right: 380,
-        top: 230,
-      },
-      view: 'front-elevation-through-rope-hook-pivots-weight-and-guide-slot',
+      rasterJawPivots: [{ x: 237.5, y: 214 }, { x: 297, y: 214 }],
+      rasterTeeBar: { left: 253, right: 281, top: 240, bottom: 251 },
+      rasterTeeStem: { left: 259, right: 271, top: 251, bottom: 284 },
+      rasterWeightBounds: { left: 186, right: 344, top: 284, bottom: 478 },
+      rasterSlotB: { centerX: 265, topY: 13, topHalfWidth: 38, bottomY: 37, bottomHalfWidth: 49 },
+      rasterTopBeam: { top: 11, bottom: 41 },
+      rasterRopeBlockBar: { left: 198, right: 335, top: 110, bottom: 120 },
+      rasterHornTop: 67,
+      view: 'front-elevation-through-rope-block-jaws-t-head-weight-and-slot-b',
     },
     primaryScan: {
       archiveIdentifier: 'fivehundredseven00browiala',
@@ -1186,98 +696,23 @@ function pileDriverReleasingHooks(movement) {
     },
     sourceUrl: movement.sourceUrl,
   };
-  root.userData.stateAtTime = stateAtTime;
-  root.userData.timeline = {
-    cycleDuration,
-    demonstrationPeriod: cycleDuration,
-    guideEngagementTime,
-    headLoweringEnd,
-    impactDwellEnd,
-    impactTime,
-    lowDwellEnd,
-    recoveryEnd,
-    relatchEnd,
-    releaseTime,
-  };
-  root.userData.transmission = {
-    externalReloadRequired: true,
-    guideCount: 2,
-    hookCount: 2,
-    latchContactCount: 2,
-    releaseType: 'symmetric-slot-triggered-hook-release',
-    releasedBody: 'pile-driver-weight-w',
-    trigger: 'upper-hook-tips-enter-upward-converging-slot-b',
-  };
 
-  const update = (time) => {
-    const state = stateAtTime(time);
-    weightAssembly.position.y = state.weightPivotY;
-    leftHook.rotation.z = state.leftHookAngle;
-    rightHook.rotation.z = state.rightHookAngle;
-    liftHead.position.y = state.liftHeadY;
-    // The rope ends on top of its eye ring (0.34 ring + 0.085 tube). Its lay
-    // is fixed to that lower end, so it rises with the head.
-    const ropeEndY = state.liftHeadY + 1.24 + 0.425;
-    const hangingLength = sheaveCenter.y - ropeEndY;
-    rope.userData.setPoints([
-      ...fixedRopePoints,
-      new THREE.Vector3(0, ropeEndY, 0.08),
-    ], fixedRopeLength + hangingLength);
-    // The sheave and drum turn with the rope.
-    sheaveRotor.rotation.x = hangingLength / sheaveRadius;
-    drumRotor.rotation.x = hangingLength / drumRadius;
-    const guidePoints = [
-      state.guideContactPoints.left,
-      state.guideContactPoints.right,
-    ];
-    guideContactMarkers.forEach((marker, index) => {
-      marker.position.set(guidePoints[index].x, guidePoints[index].y, 0.98);
-      // Contact points stay in userData; Brown draws no marker spheres.
-      marker.visible = false;
-    });
-    const latchPoints = [
-      state.leftLatchContact.hookPoint,
-      state.rightLatchContact.hookPoint,
-    ];
-    latchContactMarkers.forEach((marker, index) => {
-      marker.position.set(latchPoints[index].x, latchPoints[index].y, 1.02);
-      marker.visible = false;
-    });
-    // The pile head lies below the plate crop, so its impact ring stays hidden.
-    impactMarker.visible = false;
-    root.userData.contacts = {
-      guideSlotB: {
-        active: state.guideContactActive,
-        leftClearance: state.guideContactClearances.left,
-        rightClearance: state.guideContactClearances.right,
-      },
-      hooksToLiftingHead: {
-        leftGap: state.leftLatchContact.gap,
-        rightGap: state.rightLatchContact.gap,
-        weightSupported: state.weightSupported,
-      },
-      weightToPileHead: {
-        active: state.impactContact,
-        gap: state.pileHeadGap,
-      },
-    };
-    root.userData.kinematics = state;
-  };
-  correctPileHookSurfaces(root);
-  // Fit the displayed parts over the whole cycle; the undrawn pile below the
-  // plate's crop is excluded.
+  finishHookFamily(root, period);
+  // Fit the drawn parts over the whole cycle; the pile, anvil and post feet
+  // below the plate's crop are excluded.
+  for (const part of belowCrop) part.visible = false;
   const fitBounds = new THREE.Box3();
   for (let sample = 0; sample <= 64; sample += 1) {
-    update(cycleDuration * sample / 64);
+    update(period * sample / 64);
     root.updateMatrixWorld(true);
     root.traverseVisible((object) => {
       if (!object.isMesh) return;
       object.geometry.computeBoundingBox();
-      fitBounds.union(object.geometry.boundingBox.clone()
-        .applyMatrix4(object.matrixWorld));
+      fitBounds.union(object.geometry.boundingBox.clone().applyMatrix4(object.matrixWorld));
     });
   }
   root.userData.cameraFitBounds = fitBounds.expandByScalar(0.02);
+  root.userData.cameraDistanceScale = 0.88;
   for (const part of belowCrop) part.visible = true;
   update(0);
   markShadows(root);

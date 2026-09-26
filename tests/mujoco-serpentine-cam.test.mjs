@@ -14,7 +14,7 @@ test('107 closed solids and compiled convex prisms preserve the actual groove wa
   let vertices=0;
   try {
     assert.equal(p.model.nq,2);assert.equal(p.model.nu,1);assert.equal(p.model.neq,0);assert.equal(p.model.jnt_stiffness[1],0);
-    assert.equal(Object.keys(u.parts).length,15);assert.equal(p.model.nmesh,4*f.segments/f.repetitions);
+    assert.equal(Object.keys(u.parts).length,11);assert.equal(p.model.nmesh,4*f.segments/f.repetitions);
     for(const part of Object.values(u.parts)) {
       const a=inspectWeightedClutchSolid(part.geometry);assert.equal(a.components,1);assert.ok(a.volume>0);
       for(const key of ['degenerate','wrongNormals','nonfinite','unmatchedEdges'])assert.equal(a[key],0,part.name+' '+key);

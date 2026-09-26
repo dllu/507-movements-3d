@@ -1,0 +1,74 @@
+{
+  "id": 102,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-102.json.gz",
+  "bytes": 17202,
+  "assetSha256": "47dea48e879b2d4e6c3dcb3fc8e1b3e8a222638355ef36334b29cdecfb125adb",
+  "motionSources": {
+    "src/simulation/mujoco-screw/physics.js": "0e28e499dd3036c628112904b5f9aa9c1430fa152ee70421bdf34eead092fd0d",
+    "src/simulation/mujoco-screw/profile.js": "d4d0aec836cd7ad136e69765babef96cd4bfbbb3dfe647ad7d08fe226c84796f",
+    "src/simulation/mujoco-screw/source.js": "4a8f40da4ead6851cefdc280f649280a1b0c5dbfa2378a9cf8dfebc25a92875d",
+    "src/simulation/mujoco-screw/thread-geometry.js": "226c91213d15b75ed4f8d2fd9e928754a48594d506286f615b621ed98c8c91c2",
+    "src/simulation/mujoco-screw/visual.js": "4ecf304f7e253b71360591826ac8f43a4b5ef75450c0eba481ef09b2fb82a3aa",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-screw/geometry.js": "9657e411697a72416c44e42d90db58f76977f112467008c5b8dbb66a497b8fbb",
+    "src/simulation/mujoco-screw/section.js": "c972e668fc80f8fad3fb215b3e8142c8ef67ab94f11853c18ba6459f350fc734"
+  },
+  "physicsXmlSha256": {
+    "default": "e60bddf3b7ed4377f3c798dda7a0160cf8055df1e8a71e46c1909b8364a0224f"
+  },
+  "fullXmlSha256": {
+    "default": "186076af2c3b18a9df681de4656f9beaa680ea19d37de0e0418a5b104bcba92c"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-screw"
+  },
+  "cycleDesign": "Reversing nut drive (1 - cos): the nut climbs the fixed bolt and returns; one drive period closes the loop. The section cap is refreshed from the recorded nut pose during playback.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 12,
+        "samples": 750,
+        "dt": 0.016,
+        "startTime": 24,
+        "periods": 1,
+        "drivePeriod": 12
+      },
+      "closure": {
+        "rawSeamPixels": 1.1850162966540026e-11,
+        "maximumCorrectionPixels": 7.993605777301127e-13,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.nut",
+            "angle": -6.714745946767575e-14,
+            "rawAngle": -6.714745946767575e-14
+          }
+        ]
+      },
+      "roundTripPixels": 0.000008889883704278522,
+      "seam": {
+        "seamStepPixels": 0.11338141040623335,
+        "interiorStepPixels": 8.396632049660436,
+        "seamSecondPixels": 0.07136428887052684,
+        "interiorSecondPixels": 1.1016094952152256
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 68.9952018942833
+}

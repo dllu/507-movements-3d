@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import data from './baked/seven-tooth-238-profiles.js';
+import sweep from './baked/seven-tooth-238-sweep.js';
 import{plate,poly,circle,capsule,ring,polygonClipping as clip}from'./finite-plate-geometry.js';
+import{mergeGeometries}from'three/addons/utils/BufferGeometryUtils.js';
 // Depth of each pallet block behind its working face (in the plate plane).
 const FACE_DEPTH={B:{tip:.16,root:.16},C:{tip:.0605,root:.16}};
 const convexHull=points=>{const p=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lower=[],upper=[];
@@ -45,9 +47,17 @@ export function finishSevenTooth238(root){
   // Each pad is joined to the carrier by a broad web (the convex hull of the
   // pad and a disc at the carrier), so C reads as the anchor's hooked end
   // rather than a block on a thin nib.
-  const hullPoints=[...pad,...Array.from({length:24},(_,i)=>[attachment.carrier[0]+.15*Math.cos(i*Math.PI/12),attachment.carrier[1]+.15*Math.sin(i*Math.PI/12)])];
+  const hullPoints=[...pad,...Array.from({length:24},(_,i)=>[attachment.carrier[0]+.28*Math.cos(i*Math.PI/12),attachment.carrier[1]+.28*Math.sin(i*Math.PI/12)])];
   body=clip.union(body,poly(pad),poly(convexHull(hullPoints)));}
- replace(b.palletBody,plate(clip.difference(body,poly(circle([0,0],.094,128))),-.11,wheelBackPlane));
+ // Brown's B and C are faces cut in the anchor's own outline, so the anchor
+ // is one plate as thick as the pallet faces: in the wheel's layer (up to the
+ // faces' front, palletPlaneZ + .09) it keeps its whole outline except the
+ // region the star's teeth sweep relative to it over a cycle (baked offline,
+ // with 3% radial clearance), and the faces stand flush in it rather than as
+ // blocks on a thinner plate.
+ const bore=poly(circle([0,0],.094,128)),front=clip.difference(body,poly(sweep.outline),bore);
+ const layers=[plate(clip.difference(body,bore),-.11,wheelBackPlane),plate(front,wheelBackPlane,g.palletPlaneZ+.09)];
+ replace(b.palletBody,mergeGeometries(layers));layers.forEach(layer=>layer.dispose());parts.frontLayer=front;
  replace(b.palletHub,ring(.094,.3,-.14,.14,128),true);
  replace(b.palletIndicator,new THREE.BoxGeometry(.30,.04,.012));b.palletIndicator.position.z=.116;
  b.frameRail.visible=false;b.palletBearingPost.visible=false;

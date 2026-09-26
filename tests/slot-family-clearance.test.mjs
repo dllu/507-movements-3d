@@ -59,7 +59,7 @@ test('252: neither crossbar nor stiffening web closes the bottom ends of the obl
     model.update(8 * i / 40); model.root.updateMatrixWorld(true);
     for (const pin of [b.leftRollerPin, b.rightRollerPin]) {
       const center = pin.getWorldPosition(new THREE.Vector3());
-      for (const mesh of [b.crossbar, b.lowerWeb, b.leftArm, b.rightArm, b.topRail, b.bottomRail]) {
+      for (const mesh of [b.crossbar, b.lowerWeb, b.leftArm, b.rightArm, b.slottedFrame]) {
         assertOpenDisc(mesh, center, g.pinRadius * model.root.scale.x, `252 ${i} ${mesh.userData.role}`);
       }
     }

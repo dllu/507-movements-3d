@@ -25,17 +25,17 @@ function assertClearCycle(model, pairs, samples = 128) {
   }
 }
 
-test('272: visible wavy working band stays tangent to the finite shoe without entering it', () => {
+test('272: the rod end dome bears on the rendered chamfer without entering the disk', () => {
   const model = createAuthoredBeveledCamMovement({id: 272}), {blocks: b, geometry: g} = model.root.userData;
   try {
-    const vertices = b.bevelFace.geometry.attributes.position;
+    const vertices = b.camBody.geometry.attributes.position;
     for (let frame = 0; frame <= 256; frame++) {
       model.update(frame * model.root.userData.timeline.cyclePeriod / 256);model.root.updateMatrixWorld(true);
       const center = b.contactShoe.getWorldPosition(new THREE.Vector3()).applyMatrix4(b.camRotor.matrixWorld.clone().invert());
       let closest = Infinity;
       for (let i = 0; i < vertices.count; i++) closest = Math.min(closest, center.distanceTo(new THREE.Vector3().fromBufferAttribute(vertices, i)));
-      assert.ok(closest >= g.shoeRadius, `visible face vertex enters the shoe by ${g.shoeRadius - closest}`);
-      assert.ok(closest < g.shoeRadius + g.contactClearance + 0.02, `shoe leaves the visible face: ${closest}`);
+      assert.ok(closest >= g.tipSphereRadius, `disk vertex enters the dome by ${g.tipSphereRadius - closest}`);
+      assert.ok(closest < g.tipSphereRadius + g.contactClearance + 0.03, `dome leaves the chamfer: ${closest}`);
     }
     assertClearCycle(model, [[b.contactShoe, b.camBody], [b.followerRod, b.camBody]]);
   } finally {disposeObject3D(model.root);}

@@ -42,44 +42,31 @@ function audit() {
 const visibleMeshes = root => { const result = []; root.traverseVisible(o => { if (o.isMesh) result.push(o); }); return result; };
 
 
-test('251 actual toes and hook cheeks clear the complete moving head throughout squeeze, fall and reload', () => {
-  const m=create(251),d=m.root.userData,b=d.blocks,a=audit(); let maximumGap=0;
-  const targets=visibleMeshes(b.liftHead);
+test('251 pliers jaws clear the T head, slot B, the stop lugs and the rope block over grip, release, fall and re-catch', () => {
+  const m=create(251),d=m.root.userData,b=d.blocks,tl=d.timeline,a=audit();let seatedStop=Infinity,seatedTee=Infinity;
   const times=new Set(Array.from({length:33},(_,i)=>10*i/32));
-  for(const [start,end] of [[2.05,3.45],[3.45,3.65],[6.25,6.95]]) for(let i=0;i<=16;i++) times.add(start+(end-start)*i/16);
-  for(const t of times){m.update(t);m.root.updateMatrixWorld(true);
-    for(const body of [...d.workingHooks.bodies,...d.workingHooks.toes]) for(const target of targets) a.check(body,target,'hook/head');
-    if(t<=3.45) for(let i=0;i<2;i++){const gap=Math.min(a.check(d.workingHooks.toes[i],d.workingHooks.shelves[i],'working toe/shelf'),a.check(d.workingHooks.shelves[i],d.workingHooks.toes[i],'shelf/toe'));maximumGap=Math.max(maximumGap,gap);assert.ok(gap<.0003,gap);}
+  // update() takes display time; sample canonical phases around the contacts.
+  for(const [start,end] of [[2.8,tl.releaseTime+.05],[7.2,8.2],[8.5,9.2],[9.3,10]]) for(let i=0;i<=16;i++) times.add(start+(end-start)*i/16);
+  for(const u of times){m.update(u-d.displayTimeOffset);m.root.updateMatrixWorld(true);const s=d.kinematics;
+    for(const jaw of b.jawBodies){
+      const tee=Math.min(a.check(jaw,b.tee,'jaw/T head'),a.check(b.tee,jaw,'T head/jaw'));
+      if(s.gripped&&s.jawOpeningAngle===0) seatedTee=Math.min(seatedTee,tee);
+      for(const fixed of [...b.beamHalves,b.stopLug,b.casting,b.weightBody]) {a.check(jaw,fixed,'jaw/fixed');a.check(fixed,jaw,'fixed/jaw');}
+      if(s.jawOpeningAngle===0) seatedStop=Math.min(seatedStop,a.check(b.stopLug,jaw,'stop seat'));
+    }
+    a.check(b.tee,b.casting,'T/rope block');a.check(b.stopLug,b.tee,'lug/T');
   }
-  console.log({id:251,maximumGap,...a.report()});
+  assert.ok(seatedTee<.002,seatedTee);assert.ok(seatedStop<.01,seatedStop);
+  console.log({id:251,seatedTee,seatedStop,...a.report()});
 });
 
-test('251 load-bearing normals support the weight until the finite edge release, without pose jumps',()=>{
-  const d=create(251).root.userData;
-  for(let i=0;i<1000;i++){const s=d.stateAtTime(3.45*i/1000);assert.ok(Math.abs(s.leftLatchContact.gap)<1e-12);assert.ok(s.leftLatchContact.normal.y>0);}
-  for(const t of [2.05,3.45,4.45,5.15,6.25,6.95,8.75,10]){
-    const a=d.stateAtTime(t-1e-7),b=d.stateAtTime(t+1e-7);
-    assert.ok(Math.abs(a.liftHeadY-b.liftHeadY)<1e-5);assert.ok(Math.abs(a.hookOpeningAngle-b.hookOpeningAngle)<1e-6);
-  }
-  const initial=d.stateAtTime(0),n=initial.leftLatchContact.normal,p=d.geometry.leftLatchBearingLocal;
-  assert.ok(p.x*n.y-p.y*n.x>.49, 'initial load must seat the left hook against its closing stop');
-  assert.equal(d.dynamics.validatedPassiveRelease,false);
-  assert.equal(d.stateAtTime(3.45).weightSupported,false);
-  assert.ok(d.stateAtTime(3.46).leftLatchContact.gap>0);
-});
-
-test('251 actual pins clear bored cheeks and span their thickness; hook tips remain clear of guides',()=>{
+test('251 pins fill their jaw bores through the jaw and into the rope-block ears', () => {
   const m=create(251),d=m.root.userData,a=audit();
   for(let i=0;i<=16;i++){m.update(10*i/16);m.root.updateMatrixWorld(true);
     for(let j=0;j<2;j++){
-      a.check(d.blocks.pivotPins[j],d.workingHooks.bodies[j],'pivot/cheek',true);
-      for(const fixed of [d.blocks.yoke,d.workingHooks.closingStops[j],d.workingHooks.stopBrackets[j]]) {
-        a.check(d.workingHooks.bodies[j],fixed,'hook/closing stop and yoke');
-        const gap=a.check(fixed,d.workingHooks.bodies[j],'closing stop and yoke/hook');
-        if(i===0&&fixed===d.workingHooks.closingStops[j])assert.ok(gap<.004,gap);
-      }
-      for(const guide of [d.blocks.leftGuide,d.blocks.rightGuide]) for(const body of [d.workingHooks.bodies[j],d.workingHooks.toes[j]]) a.check(body,guide,`hook/guide t=${10*i/16}`);
-      const pin=new THREE.Box3().setFromObject(d.blocks.pivotPins[j]),body=new THREE.Box3().setFromObject(d.workingHooks.bodies[j]);assert.ok(pin.min.z<body.min.z&&pin.max.z>body.max.z);
+      const gap=a.check(d.blocks.pins[j],d.blocks.jawBodies[j],'pin/bored jaw',true);assert.ok(gap<.01,gap);
+      const pin=new THREE.Box3().setFromObject(d.blocks.pins[j]),jaw=new THREE.Box3().setFromObject(d.blocks.jawBodies[j]),ear=new THREE.Box3().setFromObject(d.blocks.casting);
+      assert.ok(pin.min.z<ear.max.z&&pin.max.z>jaw.max.z);
     }
   }console.log({id:251,...a.report()});
 });
@@ -125,7 +112,7 @@ test('253 finite hook faces and studs clear over approach, arrest and backed-off
 
 for(const id of [251,253])test(`${id} stable geometry buffers, outward new plates, no fog, shadows and cycle fit`,()=>{
   const m=create(id),d=m.root.userData,meshes=visibleMeshes(m.root),buffers=meshes.map(o=>o.geometry.attributes.position.array);
-  for(const mesh of [...(d.workingHooks.bodies??[]),...(d.workingHooks.plates??[])]){
+  for(const mesh of [...(d.workingHooks?.bodies??[]),...(d.workingHooks?.plates??[]),...(d.blocks.jawBodies??[])]){
     let volume=0;for(const t of surfaceTriangles(mesh.geometry))volume+=t.a.dot(new THREE.Vector3().crossVectors(t.b,t.c))/6;assert.ok(volume>0);
   }
   for(let i=0;i<=16;i++){m.update((id===251?10:12)*i/16);m.root.updateMatrixWorld(true);meshes.forEach((mesh,j)=>{

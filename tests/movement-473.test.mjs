@@ -332,12 +332,16 @@ test('movement 473 renderer maps exact levers, ropes, bell, pressure surface, ch
       geometry.bellHeight / 2 + 0.2885
         + 0.10 * model.root.userData.valveLiftAtPhase(state.phase).upper,
       1e-12, `upper check lift at ${phase}`);
+    // Gas shown at each check swells and thins with the eased lift.
+    const lift = model.root.userData.valveLiftAtPhase(state.phase);
     assert.equal(blocks.outletGasPlume.visible,
-      state.upperOutletValveOpen && state.outletVolumetricFlow > 0);
+      state.upperOutletValveOpen && state.outletVolumetricFlow > 0 && lift.upper > 0);
     assert.equal(blocks.inletGasColumn.visible,
-      state.lowerInletValveOpen);
+      state.lowerInletValveOpen && lift.lower > 0);
     assert.equal(blocks.inletGasJet.visible,
-      state.lowerInletValveOpen && state.inletVolumetricFlow > 0);
+      state.lowerInletValveOpen && state.inletVolumetricFlow > 0 && lift.lower > 0);
+    near(blocks.inletGasJet.scale.x, lift.lower, 1e-12, `inlet gas width at ${phase}`);
+    near(blocks.outletGasPlume.scale.x, lift.upper, 1e-12, `outlet gas width at ${phase}`);
   }
   disposeModel(model.root);
 });

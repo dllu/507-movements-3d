@@ -237,51 +237,60 @@ function equalOppositeCrossedSlotTraverse(movement) {
   root.add(fixedSlotFrame);
 
   const railLength = 12.6;
-  const railThickness = 0.52;
+  const railThickness = 0.72;
   const railCenterX = 0;
-  const topRail = new THREE.Mesh(
-    new THREE.BoxGeometry(railLength, railThickness, fixedFrameDepth),
+  // Brown draws slot C in ONE piece with its standard: the head's face swells
+  // in smooth concave (circular) flares onto a bar whose slot is closed by a rounded end
+  // just clear of the flares. Model that outline as a single extrusion (the
+  // standard continuing down below Brown's break, the bar running on past
+  // his crop to a closed end) so the bar visibly joins the head without
+  // steps or seams. Coordinates are relative to the slot centreline.
+  const barHalfHeight = fixedSlotHalfHeight + railThickness;
+  const headLeftX = -8.05;
+  const headRightX = -7.05;
+  const headTopY = 2.6;
+  // Each flare is a circular cove tangent to the head face and the bar edge.
+  const flareFootX = -6.1;
+  const flareRadius = flareFootX - headRightX;
+  const standardBottomY = -9 - 1.1 - pinY;
+  const barEndX = railCenterX + railLength / 2 + 3;
+  const slotLeftCenterX = -5.6;
+  const slotRightCenterX = barEndX - 0.62 - fixedSlotHalfHeight;
+  const frameShape = new THREE.Shape();
+  frameShape.moveTo(headLeftX, standardBottomY);
+  frameShape.lineTo(headRightX, standardBottomY);
+  frameShape.lineTo(headRightX, -barHalfHeight - flareRadius);
+  frameShape.absarc(flareFootX, -barHalfHeight - flareRadius, flareRadius,
+    Math.PI, Math.PI / 2, true);
+  frameShape.lineTo(barEndX, -barHalfHeight);
+  frameShape.lineTo(barEndX, barHalfHeight);
+  frameShape.lineTo(flareFootX, barHalfHeight);
+  frameShape.absarc(flareFootX, barHalfHeight + flareRadius, flareRadius,
+    -Math.PI / 2, -Math.PI, true);
+  frameShape.lineTo(headRightX, headTopY);
+  frameShape.lineTo(headLeftX, headTopY);
+  frameShape.closePath();
+  frameShape.holes.push(capsuleHole(slotLeftCenterX, slotRightCenterX, fixedSlotHalfHeight));
+  const slottedFrame = new THREE.Mesh(
+    centeredExtrusion(frameShape, fixedFrameDepth, 0.018),
     frameMaterial,
   );
-  topRail.position.set(
-    railCenterX,
-    pinY + fixedSlotHalfHeight + railThickness / 2,
-    fixedFramePlaneZ,
-  );
-  topRail.userData.innerSurfaceY = pinY + fixedSlotHalfHeight;
-  topRail.userData.role = 'fixed-slot-c-upper-rail';
-  fixedSlotFrame.add(topRail);
-
-  const bottomRail = new THREE.Mesh(
-    new THREE.BoxGeometry(railLength, railThickness, fixedFrameDepth),
-    frameMaterial,
-  );
-  bottomRail.position.set(
-    railCenterX,
-    pinY - fixedSlotHalfHeight - railThickness / 2,
-    fixedFramePlaneZ,
-  );
-  bottomRail.userData.innerSurfaceY = pinY - fixedSlotHalfHeight;
-  bottomRail.userData.role = 'fixed-slot-c-lower-rail';
-  fixedSlotFrame.add(bottomRail);
-
-  // Brown draws the fixed head as a tall broken-off standard, about 2.4
-  // slot heights tall, whose face swells in concave flares onto both rails.
-  const leftMountShape = new THREE.Shape();
-  leftMountShape.moveTo(-7.75, pinY - 2.6);
-  leftMountShape.lineTo(-7.05, pinY - 2.6);
-  leftMountShape.quadraticCurveTo(-6.95, pinY - 1.2, -6.34, pinY - 0.9);
-  leftMountShape.lineTo(-6.34, pinY + 0.9);
-  leftMountShape.quadraticCurveTo(-6.95, pinY + 1.2, -7.05, pinY + 2.6);
-  leftMountShape.lineTo(-7.75, pinY + 2.6);
-  leftMountShape.closePath();
-  const leftMount = new THREE.Mesh(
-    centeredExtrusion(leftMountShape, fixedFrameDepth, 0.018),
-    frameMaterial,
-  );
-  leftMount.position.z = fixedFramePlaneZ;
-  leftMount.userData.role = 'fixed-slot-c-left-machine-frame-mount';
-  fixedSlotFrame.add(leftMount);
+  slottedFrame.position.set(0, pinY, fixedFramePlaneZ);
+  slottedFrame.userData.innerSurfaceY = {
+    lower: pinY - fixedSlotHalfHeight,
+    upper: pinY + fixedSlotHalfHeight,
+  };
+  slottedFrame.userData.outerSurfaceY = {
+    lower: pinY - barHalfHeight,
+    upper: pinY + barHalfHeight,
+  };
+  slottedFrame.userData.slotEndsX = {
+    left: slotLeftCenterX - fixedSlotHalfHeight,
+    right: slotRightCenterX + fixedSlotHalfHeight,
+  };
+  slottedFrame.userData.flareFootX = flareFootX;
+  slottedFrame.userData.role = 'fixed-one-piece-standard-and-slotted-bar-c';
+  fixedSlotFrame.add(slottedFrame);
 
   const movingYoke = new THREE.Group();
   movingYoke.position.y = yokeStartY;
@@ -382,7 +391,8 @@ function equalOppositeCrossedSlotTraverse(movement) {
       role: `roller-${label}-plain-front-flange-without-orientation-mark`,
       segments: 72,
     });
-    frontFlange.position.z = movingYokePlaneZ + yokeDepth / 2 + 0.14;
+    // Clear the arm's 0.025 edge bevel as well as its flat face.
+    frontFlange.position.z = movingYokePlaneZ + yokeDepth / 2 + 0.16;
     frontFlange.userData.hasRadialIndex = false;
     roller.add(frontFlange);
 
@@ -474,13 +484,12 @@ function equalOppositeCrossedSlotTraverse(movement) {
   root.userData.archetype =
     'vertically-translated-twin-oblique-slot-yoke-driving-equal-and-opposite-horizontal-rollers';
   root.userData.blocks = {
-    bottomRail,
     crossbar,
     fixedSlotFrame,
     inputBlock,
     inputStem,
     leftArm,
-    leftMount,
+    slottedFrame,
     leftRoller: leftRoller.roller,
     leftRollerFrontFlange: leftRoller.frontFlange,
     leftRollerPin: leftRoller.pin,
@@ -490,7 +499,6 @@ function equalOppositeCrossedSlotTraverse(movement) {
     rightRoller: rightRoller.roller,
     rightRollerFrontFlange: rightRoller.frontFlange,
     rightRollerPin: rightRoller.pin,
-    topRail,
   };
   root.userData.hideGround = true;
   root.traverse(object => {
@@ -647,32 +655,26 @@ function equalOppositeCrossedSlotTraverse(movement) {
     root.userData.kinematics = state;
   };
   const sweptBounds = new THREE.Box3();
+  // Frame Brown's view: the one-piece frame counts only over the plate's
+  // extent (head top to bottom flare, bar to the plate's right crop), not its
+  // continuation below the break or past the crop.
+  fixedSlotFrame.remove(slottedFrame);
   for (const time of [0, FULL_CYCLE * 0.4]) {
     update(time);
     root.updateMatrixWorld(true);
     sweptBounds.union(new THREE.Box3().setFromObject(root));
   }
+  fixedSlotFrame.add(slottedFrame);
+  sweptBounds.union(new THREE.Box3(
+    new THREE.Vector3(-7.75, pinY - 2.6, fixedFramePlaneZ - fixedFrameDepth / 2),
+    new THREE.Vector3(railLength / 2, pinY + 2.6, fixedFramePlaneZ + fixedFrameDepth / 2),
+  ).applyMatrix4(root.matrixWorld));
   root.userData.cameraFitBounds = sweptBounds.expandByScalar(0.02);
   // Beyond the framed plate the parts Brown breaks off are whole: slot C's
-  // rails run on to an end block that closes the slot; the broken standard
-  // continues down as a post; and D's stem runs down through a guide bush
-  // carried on an arm from that post.
-  const railExtension = 2.4;
-  for (const rail of [topRail, bottomRail]) {
-    rail.geometry.dispose();
-    rail.geometry = new THREE.BoxGeometry(railLength + railExtension, railThickness, fixedFrameDepth);
-    rail.position.x = railCenterX + railExtension / 2;
-  }
-  const slotEndBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.5, 2 * fixedSlotHalfHeight + 2 * railThickness, fixedFrameDepth),
-    frameMaterial,
-  );
-  slotEndBlock.position.set(railCenterX + railLength / 2 + railExtension + 0.25, pinY, fixedFramePlaneZ);
-  slotEndBlock.userData.role = 'fixed-end-block-closing-slot-c-beyond-plate';
+  // bar (above) runs on to a closed end and the broken standard continues
+  // down; D's stem runs down through a guide bush carried on an arm from
+  // that standard (hidden by the source presentation).
   const bushTopY = -9;
-  const standardPost = new THREE.Mesh(new THREE.BoxGeometry(0.7, pinY - 2.6 - (bushTopY - 1.1), fixedFrameDepth), frameMaterial);
-  standardPost.position.set(-7.4, (pinY - 2.6 + bushTopY - 1.1) / 2, fixedFramePlaneZ);
-  standardPost.userData.role = 'fixed-standard-continuing-below-its-drawn-break';
   const bushArm = new THREE.Mesh(new THREE.BoxGeometry(7.05 - 0.33, 0.3, 0.3), frameMaterial);
   bushArm.position.set(-(7.05 + 0.33) / 2, bushTopY - 0.25, movingYokePlaneZ);
   bushArm.userData.role = 'fixed-arm-carrying-stem-guide-bush';
@@ -684,7 +686,7 @@ function equalOppositeCrossedSlotTraverse(movement) {
   ].map(([x, y]) => new THREE.Vector2(x, y)), 40), frameMaterial);
   stemBush.position.set(0, bushTopY - 0.25, movingYokePlaneZ);
   stemBush.userData.role = 'fixed-guide-bush-for-piece-d-stem';
-  fixedSlotFrame.add(slotEndBlock, standardPost, bushArm, bushArmRoot, stemBush);
+  fixedSlotFrame.add(bushArm, bushArmRoot, stemBush);
   // The stem is long enough to stay in its bush over the whole stroke.
   const stemLength = 9.2;
   inputStem.geometry.dispose();

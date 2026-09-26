@@ -68,8 +68,12 @@ test('movement 252 is the two-slot equal-and-opposite roller traverse', () => {
   assert.equal(blocks.rightArm.parent, blocks.movingYoke);
   assert.equal(blocks.leftRoller.parent, model.root);
   assert.equal(blocks.rightRoller.parent, model.root);
-  assert.equal(blocks.topRail.parent, blocks.fixedSlotFrame);
-  assert.equal(blocks.bottomRail.parent, blocks.fixedSlotFrame);
+  assert.equal(blocks.slottedFrame.parent, blocks.fixedSlotFrame);
+  // Brown's standard and slotted bar C are one smooth piece: a single
+  // extrusion whose outline carries the flares and the closed slot.
+  assert.equal(blocks.fixedSlotFrame.children.filter((child) => child.userData.role
+    ?.startsWith('fixed-one-piece-standard')).length, 1);
+  assert.equal(blocks.slottedFrame.geometry.parameters.shapes.holes.length, 1);
   disposeModel(model.root);
 });
 
@@ -301,17 +305,20 @@ test('movement 252 renders real open slots with positive running clearances', ()
   );
   assert.equal(innerClearance.pinSpansBothConstraintPlanes, true);
 
-  blocks.leftMount.geometry.computeBoundingBox();
-  const mountRightEdge = blocks.leftMount.geometry.boundingBox.max.x;
+  const { slotEndsX, flareFootX } = blocks.slottedFrame.userData;
   const outerLeftRollerEdge = -geometry.outerHalfSpacing
     - geometry.rollerRadius;
   assert.ok(
-    outerLeftRollerEdge - mountRightEdge > 0.1,
-    'roller A clears the fixed left mounting bracket at full stroke',
+    outerLeftRollerEdge - flareFootX > 0.1,
+    'roller A clears the standard flares at full stroke',
   );
   assert.ok(
-    6.3 - (geometry.outerHalfSpacing + geometry.rollerRadius) > 0.1,
-    'roller B clears the open right rail ends at full stroke',
+    -geometry.outerHalfSpacing - geometry.pinRadius - slotEndsX.left > 0.4,
+    'pin A stays clear of the closed left end of slot C',
+  );
+  assert.ok(
+    slotEndsX.right - (geometry.outerHalfSpacing + geometry.pinRadius) > 0.4,
+    'pin B stays clear of the closed right end of slot C',
   );
   disposeModel(model.root);
 });
@@ -386,7 +393,7 @@ test('movement 252 keeps piece D below slot C and the roller flanges', () => {
   const model = createMovementModel(catalog.movements[251]);
   const { blocks, geometry } = model.root.userData;
   const rollerBottom = geometry.pinY - geometry.rollerRadius;
-  const railBottom = blocks.bottomRail.position.y - 0.26;
+  const railBottom = blocks.slottedFrame.userData.outerSurfaceY.lower;
   for (let sample = 0; sample <= 64; sample += 1) {
     model.update(8 * sample / 64);
     model.root.updateMatrixWorld(true);

@@ -64,9 +64,33 @@ test('238 drop and handoff are position/velocity continuous with no hidden conta
  for(const q of[0,.1,.34,.4,.58,.82,.88,1]){const a=d.stateAtCycleCoordinate(q-1e-7),b=d.stateAtCycleCoordinate(q+1e-7);assert.ok(Math.abs(a.wheelAngle-b.wheelAngle)<1e-5);assert.ok(Math.abs(a.palletAngle-b.palletAngle)<1e-5);assert.ok(Math.abs(a.wheelAngularSpeed-b.wheelAngularSpeed)<1e-6);}
  assert.ok(g.palletAmplitude>=THREE.MathUtils.degToRad(4));assert.equal(d.dynamics.forceValidated,false);assert.ok(d.workingParts.profile.qualification.areaLossFraction<.15);assert.ok(d.workingParts.profile.qualification.maximumTipLoss<1e-12);assert.ok(d.workingParts.profile.qualification.smoothingOutsideArea<1e-12);
 });
+// The one-piece anchor is merged from a full rear layer and a front layer
+// (the outline less the star's swept region) that share the plane just behind
+// the wheel. Those coincident internal faces defeat a first-hit winding test,
+// so containment here counts every crossing along a few oblique rays (an
+// internal double face adds two crossings and leaves the parity unchanged).
+const insideByParity=(geometry,point)=>{const triangles=surfaceTriangles(geometry),hit=new THREE.Vector3();
+ const votes=[[.31217,.18723,1],[-.2713,.4127,-1],[.5813,-.3371,.7]].map(direction=>{const ray=new THREE.Ray(point,new THREE.Vector3(...direction).normalize());let crossings=0;
+  for(const t of triangles)if(ray.intersectTriangle(t.a,t.b,t.c,false,hit))crossings++;return crossings%2===1;});
+ return votes.filter(Boolean).length>=2;};
 test('238 rear attachments join the source body to C and B without floating standoffs; bores clear arbors',()=>{
- const m=create({id:238}),d=m.root.userData,b=d.blocks,p=d.workingParts,a=audit(),body=solidSurface(b.palletBody.geometry);
- for(const attachment of p.attachments){assert.ok(body.inside(new THREE.Vector3(...attachment.mid,0)));assert.ok(body.inside(new THREE.Vector3(...attachment.carrier,0)));}
+ const m=create({id:238}),d=m.root.userData,b=d.blocks,p=d.workingParts,g=d.geometry,a=audit(),geometry=b.palletBody.geometry;
+ geometry.computeBoundingBox();const rear=geometry.boundingBox.min.z,wheelBack=g.palletPlaneZ-g.wheelDepth/2-.01;
+ // B and C are cut into the one-piece anchor: each face's strap (its middle
+ // and the point where it meets Brown's outline) lies inside the anchor's
+ // rear layer through its whole depth.
+ for(const attachment of p.attachments)for(const z of[rear+.01,0,wheelBack-.01]){
+  assert.ok(insideByParity(geometry,new THREE.Vector3(...attachment.mid,z)),`${attachment.side} strap middle at z ${z}`);
+  assert.ok(insideByParity(geometry,new THREE.Vector3(...attachment.carrier,z)),`${attachment.side} strap carrier at z ${z}`);}
+ // Nothing floats: every face and standoff shares the anchor's frame, and
+ // the whole footprint of each face is seated on the anchor just behind the
+ // wheel, where the faces begin.
+ // (Face corners flush with the anchor's outline count as seated.)
+ m.root.updateMatrixWorld(true);const toBody=b.palletBody.matrixWorld.clone().invert(),surface=solidSurface(geometry);
+ for(const part of[...p.faces,...p.mounts]){part.geometry.computeBoundingBox();
+  const seat=Math.min(part.geometry.boundingBox.max.z,wheelBack)-.01,matrix=toBody.clone().multiply(part.matrixWorld);
+  for(const point of surfacePoints(part.geometry)){const q=point.clone().applyMatrix4(matrix);q.z=seat;
+   assert.ok(insideByParity(geometry,q)||surface.distance(q)<1e-5,`${part.userData.role} is seated on the anchor at ${q.toArray()}`);}}
  for(let i=0;i<=16;i++){m.update(i/16*4);m.root.updateMatrixWorld(true);for(const part of[b.palletBody,b.palletHub,p.bearing])a.check(shaftMesh(b.palletShaft),part,'pallet arbor',true);for(const part of[b.escapeWheel.userData.body,b.escapeWheel.userData.hub])a.check(shaftMesh(b.escapeShaft),part,'wheel arbor',true);}
  console.log(a.report());
 });

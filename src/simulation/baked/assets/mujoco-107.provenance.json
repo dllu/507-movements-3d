@@ -1,0 +1,80 @@
+{
+  "id": 107,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-107.json.gz",
+  "bytes": 24275,
+  "assetSha256": "71a12516c6221badc41366de5818a8770e5210281388d414a029cf7819e64999",
+  "motionSources": {
+    "src/simulation/mujoco-serpentine-cam/profile.js": "d24ffd67dccf13844690a23f74d482e85ee778f194d06c693fd3addc6382f6f1",
+    "src/simulation/mujoco-serpentine-cam/source.js": "56bf6544a96753e41c8a3943d441b11852cb2e842a62953fb3a71f9ba2287f2f",
+    "src/simulation/mujoco-serpentine-cam/visual.js": "13a9f48538a5cbd7eea4edcf38144aa24510bc71abd0a8841bcb24f2c3f0088f",
+    "src/simulation/mujoco-barrel-cam/groove.js": "f4e9d75c384e3087a19a419e3f733fffef5cd4060697ec9a1e58b23fd02549fd",
+    "src/simulation/mujoco-barrel-cam/physics.js": "5642db9d86fe68ee0adaf13d19036eab272c0ce7be4f90f59c3dfc395a6d8dcd",
+    "src/simulation/mujoco-barrel-cam/profile.js": "4bc14fe01197e87b81a2c2a10216cb027419e6944b79a2bb16422b7c8cef4de6",
+    "src/simulation/mujoco-barrel-cam/source.js": "d3a55b2a252541ad5ebde2fe19dfd824c56bd63667df515b57aaa0a142a47f9c",
+    "src/simulation/mujoco-barrel-cam/visual.js": "27d43ed251073f953db615c1a30f6b666136d3045d8d8bda7456e9641510bbbb",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-serpentine-cam/geometry.js": "c27b5f7ef7f02ef1ac3539defafbac34866ed2ce1559917021266d9f76baa2b2",
+    "src/simulation/mujoco-barrel-cam/geometry.js": "034db4671a3fe4e4d90b43715b6027f25b7b2b057afda50247f109e0c5193a99"
+  },
+  "physicsXmlSha256": {
+    "default": "61614c55f25b89ec5337d2fde380c0959bef876b54035980476d2c5e1ea0ff25"
+  },
+  "fullXmlSha256": {
+    "default": "c165388f2e04733c43bcd397a01e53b751ba6ae2e30e1670fe65873392bac510"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": [
+      "src/simulation/mujoco-serpentine-cam",
+      "src/simulation/mujoco-barrel-cam"
+    ]
+  },
+  "cycleDesign": "Constant-speed serpentine cam (106's physics); one turn closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 24,
+        "samples": 1500,
+        "dt": 0.016,
+        "startTime": 48,
+        "periods": 1,
+        "drivePeriod": 24
+      },
+      "closure": {
+        "rawSeamPixels": 1.0706135977756048e-8,
+        "maximumCorrectionPixels": 1.0706128149816363e-8,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.input",
+            "angle": 6.2831853072029284,
+            "rawAngle": 6.2831853072029284
+          }
+        ]
+      },
+      "roundTripPixels": 0.000002629776973604661,
+      "seam": {
+        "seamStepPixels": 1.2938926694913282,
+        "interiorStepPixels": 1.3480925932526588,
+        "seamSecondPixels": 0.13187376316608213,
+        "interiorSecondPixels": 0.19400045275692612
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 355.6224572710991
+}

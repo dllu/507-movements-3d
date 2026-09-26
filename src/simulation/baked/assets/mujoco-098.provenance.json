@@ -1,0 +1,72 @@
+{
+  "id": 98,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-098.json.gz",
+  "bytes": 4247,
+  "assetSha256": "4075d05a2361ce6f64743d73c5b4aaf33c583662fc3303aa62a624da12b330e2",
+  "motionSources": {
+    "src/simulation/mujoco-endless-groove/physics.js": "3af0a77909daea762aca34d484d1fc5a9702ca96b60088cfed1074e77e07efb5",
+    "src/simulation/mujoco-endless-groove/profile.js": "29d58f96f7bf154ad1dd729cfa3841f3900bb93e49d02ea6ea9b577daab16912",
+    "src/simulation/mujoco-endless-groove/source.js": "7681b22f4b1a464c07f2b3bcee794bece6c0ab694027c48e7ffb4c1d74418fc1",
+    "src/simulation/mujoco-endless-groove/visual.js": "b1e0a8fa51ff1d2bb4ac6b897c5daa34c4754b45b8228f3b869398e5ee9fa63a",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-endless-groove/geometry.js": "5651867c8890de2ef28f1884156be38883f8733ead746372d87f53a915574a4d"
+  },
+  "physicsXmlSha256": {
+    "default": "81b9140e2bbcab142e384245b708cdd001a1656cc7fe7db6a56bf44b8af05fb0"
+  },
+  "fullXmlSha256": {
+    "default": "5ec6d2cc93be1069543f770f6c0ed22c536a64a003acb29f5e65b4cc736e3e6f"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-endless-groove"
+  },
+  "cycleDesign": "Constant-speed endless-groove cam; one turn closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 2,
+        "samples": 125,
+        "dt": 0.016,
+        "startTime": 4,
+        "periods": 1,
+        "drivePeriod": 2
+      },
+      "closure": {
+        "rawSeamPixels": 0.0038940307291780024,
+        "maximumCorrectionPixels": 0,
+        "maximumRotationCorrection": 0.000005700663136726278,
+        "wraps": [
+          {
+            "key": "blocks.input",
+            "angle": 6.283175522791939,
+            "rawAngle": 6.283175522791939
+          }
+        ]
+      },
+      "roundTripPixels": 0.002313140659346391,
+      "seam": {
+        "seamStepPixels": 8.237832959856195,
+        "interiorStepPixels": 8.76497767909982,
+        "seamSecondPixels": 0.41564418991121754,
+        "interiorSecondPixels": 3.2848885493824738
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 7.734037049770356
+}

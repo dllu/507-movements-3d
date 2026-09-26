@@ -309,7 +309,8 @@ test('movement 494 renderer keeps the links closed and the 3D bite markers coinc
 
   for (const time of [0, 0.29, 0.8, 1.21, 1.6, 2, 2.53, 2.8,
     3.17, 3.6, 4]) {
-    const state = stateAtTime(time);
+    // The display clock starts in the source's lifted dwell.
+    const state = stateAtTime(time + geometry.displayPhaseOffset * geometry.cycleDuration);
     model.update(time);
     model.root.updateMatrixWorld(true);
     near(blocks.leftJaw.rotation.z, state.leftJawAngle, 0,
@@ -351,9 +352,9 @@ test('movement 494 renderer keeps the links closed and the 3D bite markers coinc
 
     if (state.biteContact) {
       vectorNear(
-        blocks.leftJawParts.biteMarker.getWorldPosition(
-          new THREE.Vector3(),
-        ),
+        // The contact index is not drawn (source presentation removes it);
+        // its seat point stays fixed in the tong.
+        blocks.leftJaw.localToWorld(blocks.leftJawParts.biteMarker.position.clone()),
         blocks.stoneContactSockets[0].getWorldPosition(
           new THREE.Vector3(),
         ),
@@ -361,9 +362,9 @@ test('movement 494 renderer keeps the links closed and the 3D bite markers coinc
         `left 3D bite contact ${time}`,
       );
       vectorNear(
-        blocks.rightJawParts.biteMarker.getWorldPosition(
-          new THREE.Vector3(),
-        ),
+        // The contact index is not drawn (source presentation removes it);
+        // its seat point stays fixed in the tong.
+        blocks.rightJaw.localToWorld(blocks.rightJawParts.biteMarker.position.clone()),
         blocks.stoneContactSockets[1].getWorldPosition(
           new THREE.Vector3(),
         ),

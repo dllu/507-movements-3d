@@ -4,7 +4,7 @@ import {roundedRackGear} from '../coaxial-gear-geometry.js';
 import {plate,poly,polygonClipping as clip,circle,disk} from '../finite-plate-geometry.js';
 import {convexPlateCells} from '../mujoco/convex-plate.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
-import {addStubGuides} from '../rack-frame-guides.js';
+import {addStubRunOns} from '../rack-frame-guides.js';
 export {THREE};
 export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSamples=64,pawlRadius=.014,ratchetPhase=s.ratchet.phase}={}){
  if(!Number.isInteger(samples)||samples<32||!Number.isInteger(cutterSteps)||cutterSteps<256||!Number.isInteger(ratchetSamples)||ratchetSamples<16||!Number.isFinite(pawlRadius)||pawlRadius<=0||!Number.isFinite(ratchetPhase))throw new RangeError('Invalid 116 geometry options');
@@ -51,20 +51,22 @@ export function makeRackRectifierGeometry({samples=96,cutterSteps=2048,ratchetSa
   const pin=add(name+'PawlPin',disk(.0125,z>0?.26:z-.046,z>0?z+.046:-.26,48),name,PALETTE.ink);pin.position.set(...s.pawlPivot,0);
  }
  add('shaft',disk(s.shaftRadius,-.50,.50,96),'output',PALETTE.ink);
- for(const [name,mesh]of Object.entries(parts))if(!name.includes('Pin')&&name!=='shaft'&&!name.includes('Stub')){const c=convexPlateCells(mesh.geometry);cells[name]={family:families[name],vertices:c.cells.map(p=>[c.low,c.high].flatMap(z=>p.map(q=>[...q,z])))};}
- Object.assign(root.userData,{parts,families,blocks,cells,profile:f,hideGround:true,shadowCameraHalfExtent:4,shadowBias:-.00002,shadowNormalBias:.0005});markShadows(root);root.updateMatrixWorld(true);
+ const cellParts=Object.entries(parts).filter(([name])=>!name.includes('Pin')&&name!=='shaft'&&!name.includes('Stub')).map(([name,mesh])=>[name,mesh.geometry]),buildCells=()=>{for(const [name,geometry] of cellParts){const c=convexPlateCells(geometry);cells[name]={family:families[name],vertices:c.cells.map(p=>[c.low,c.high].flatMap(z=>p.map(q=>[...q,z])))};}};
+ Object.assign(root.userData,{parts,families,blocks,profile:f,hideGround:true,shadowCameraHalfExtent:4,shadowBias:-.00002,shadowNormalBias:.0005});
+ // Collision cells are for the live simulation only; baked playback never
+ // reads them, so they are decomposed on first use (as in 113).
+ Object.defineProperty(root.userData,'cells',{configurable:true,enumerable:true,get(){buildCells();Object.defineProperty(root.userData,'cells',{value:cells,writable:true,configurable:true,enumerable:true});return cells;}});
+ markShadows(root);root.updateMatrixWorld(true);
  const bounds=new THREE.Box3().setFromObject(root,true);bounds.expandByVector(new THREE.Vector3(amplitude+.06,.08,.02));root.userData.cameraFitBounds=bounds;
- // Brown breaks the frame's end stubs off. They run on whole into fixed
- // guides past the frame's reach (as for 90 and 91). The guides and the
- // output shaft's rear bearing stand on plain posts to a floor below, so no
- // tie bar crosses the open frame window. They are added after the framing
- // bounds and the contact cells.
- blocks.fixed=new THREE.Group();root.add(blocks.fixed);
- addStubGuides({add,movingFamily:'frame',travel:{left:amplitude+.04,right:amplitude+.04},zWall:-.7,floorY:-1.3,
+ // Brown breaks the frame's end stubs off at the plate edge. They run on
+ // straight, as one piece with the frame, far enough that their clean ends
+ // never enter the drawn view; no guides or floor posts are added (p60).
+ addStubRunOns({add,movingFamily:'frame',travel:{left:amplitude+.04,right:amplitude+.04},
   stubs:[{tipX:local([8,294])[0],y:local([0,294])[1],halfHeight:(314-274)/200,halfDepth:.08,sign:-1},
-   {tipX:local([514,290])[0],y:local([0,290])[1],halfHeight:(300-280)/200,halfDepth:.08,sign:1}],
-  shafts:[{x:0,y:0,radius:s.shaftRadius,back:-.5,family:'output'}]});
- markShadows(blocks.fixed);root.updateMatrixWorld(true);
+   {tipX:local([514,290])[0],y:local([0,290])[1],halfHeight:(300-280)/200,halfDepth:.08,sign:1}]});
+ // The output shaft keeps its plain rear stub (part of its native inertia).
+ add('shaftTail0',disk(s.shaftRadius,-.696,-.499,96),'output',PALETTE.ink);
+ root.updateMatrixWorld(true);
  // The frame slides a full amplitude each way; keep both ends in view.
  root.userData.cameraDistanceScale=1.22;
  // Brown draws the frame and pinions in a flat face view.

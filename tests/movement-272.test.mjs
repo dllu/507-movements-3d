@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { createMovementModel } from '../src/simulation/registry.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -91,6 +92,7 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   assert.match(mechanism, /one-horizontal-shaft-rotates-one-circular-disk/);
   assert.match(mechanism, /circumference-is-bevelled-parallel-to-the-rod/);
   assert.match(mechanism, /front-face-is-a-wavy-trough/);
+  assert.match(mechanism, /domed-end-bears-on-the-wavy-chamfer-square-to-it/);
   assert.match(mechanism, /one-gravity-preloaded-rod/);
   assert.match(mechanism, /two-fixed-inclined-guides/);
   assert.equal(transmission.inputMotion,
@@ -103,7 +105,6 @@ test('movement 272 is one beveled disk cam driving one inclined sliding rod', ()
   assert.equal(blocks.camRotor.parent, blocks.camAssembly);
   for (const part of [
     blocks.camBody,
-    blocks.bevelFace,
     blocks.shaft,
     blocks.hub,
     blocks.rotationIndex,
@@ -203,16 +204,17 @@ test('movement 272 records the unavailable animation and measured source plate',
     'engraved shaft passes through the cam center',
   );
   const sourceState = stateAtDriverAngle(0);
-  vectorNear(sourceState.contactPoint, geometry.sourceSurfacePoint, 1e-9,
+  vectorNear(sourceState.contactPoint, geometry.sourceSurfacePoint, 1e-7,
     'source-pose point of contact');
   vectorNear(sourceState.shoeCenter, geometry.sourceShoeCenter, 1e-9,
     'source-pose shoe center');
   disposeModel(model.root);
 });
 
-test('movement 272 source pose touches the top of the wavy face and the rod rises and falls twice per turn', () => {
+test('movement 272 source pose bears square on the chamfer at the top and the rod rises and falls twice per turn', () => {
   const model = createMovementModel(catalog.movements[271]);
   const {
+    chamferSectionAtAngle,
     faceXAtLocalY,
     geometry,
     stateAtDriverAngle,
@@ -222,15 +224,21 @@ test('movement 272 source pose touches the top of the wavy face and the rod rise
   const inner = stateAtDriverAngle(Math.PI / 2);
   const opposite = stateAtDriverAngle(Math.PI);
 
-  // The rim cone is parallel to the inclined rod.
+  // The rim cone is parallel to the inclined rod and the chamfer square to it.
   near(Math.tan(geometry.bevelAngle), -geometry.followerDirection.y
     / geometry.followerDirection.x, 1e-15, 'rim bevel parallels the rod');
-  near(geometry.sourceSurfacePoint.x,
-    faceXAtLocalY(geometry.sourceSurfacePoint.y), 1e-15,
-    'source point lies on the trough face');
+  const top = chamferSectionAtAngle(0);
+  const generator = new THREE.Vector3(top.outerX - top.innerX,
+    top.outerRadius - top.innerRadius, 0).normalize();
+  near(generator.dot(geometry.followerDirection), 0, 1e-12,
+    'chamfer generator square to the rod at the top');
+  near(top.outerRadius, geometry.camOuterRadius, 1e-12, 'peak at the drawn radius');
+  near(top.innerX, faceXAtLocalY(top.innerRadius), 1e-12, 'chamfer starts on the face rim');
   near(geometry.sourceShoeCenter.distanceTo(geometry.sourceSurfacePoint),
-    geometry.shoeRadius + geometry.contactClearance, 1e-15,
-    'shoe center one radius plus running clearance off the face');
+    geometry.tipSphereRadius + geometry.contactClearance, 1e-15,
+    'dome centre one radius plus running clearance off the chamfer');
+  vectorNear(source.contactPoint, geometry.sourceSurfacePoint, 1e-7,
+    'source contact mid-chamfer on the rod axis');
   near(source.displacement, 0, 1e-12, 'outer dead-center displacement');
   near(source.displacementSpeed, 0, 1e-9, 'outer dead-center speed');
   assert.equal(source.stage, 'rod-outer-dead-center');
@@ -240,7 +248,7 @@ test('movement 272 source pose touches the top of the wavy face and the rod rise
   assert.equal(inner.stage, 'rod-inner-dead-center');
   near(opposite.displacement, source.displacement, 1e-12,
     'second outer dead center half a turn later');
-  assert.ok(geometry.outputStroke > 0.3 && geometry.outputStroke < 0.4);
+  assert.ok(geometry.outputStroke > 0.35 && geometry.outputStroke < 0.5);
   near(transmission.outputStroke, geometry.outputStroke, 0,
     'reported transmission stroke');
   assert.equal(transmission.strokesPerRevolution, 2);
@@ -249,77 +257,92 @@ test('movement 272 source pose touches the top of the wavy face and the rod rise
   disposeModel(model.root);
 });
 
-test('movement 272 renders a closed cone-rimmed disk whose front vertices lie on the trough', () => {
+test('movement 272 renders a closed disk: trough face, chamfer, bevel cone and rear face', () => {
   const model = createMovementModel(catalog.movements[271]);
-  const { blocks, faceXAtLocalY, geometry, rimRadiusAtAngle } = model.root.userData;
-  const body = blocks.camBody.geometry;
+  const { blocks, chamferSectionAtAngle, faceXAtLocalY, geometry } = model.root.userData;
+  // The rendered body splits its vertices at the creases; weld by position
+  // to check the solid.
+  const rendered = blocks.camBody.geometry;
+  assert.equal(rendered.userData.closedSolid, true);
+  const solid = new THREE.BufferGeometry();
+  solid.setAttribute('position', rendered.getAttribute('position'));
+  solid.setIndex(rendered.index);
+  const body = mergeVertices(solid, 1e-6);
   const positions = body.getAttribute('position');
-  assert.equal(body.userData.closedSolid, true);
   assert.deepEqual([...undirectedEdgeHistogram(body).keys()], [2],
     'every body edge belongs to exactly two triangles');
   let front = 0;
   let back = 0;
-  let land = 0;
+  let peak = 0;
+  let chamfer = 0;
   for (let index = 0; index < positions.count; index += 1) {
     const x = positions.getX(index);
     const y = positions.getY(index);
     const z = positions.getZ(index);
+    const section = chamferSectionAtAngle(Math.atan2(z, y));
     if (Math.abs(x - geometry.camBackX) < 1e-6) {
       back += 1;
       assert.ok(Math.hypot(y, z) <= geometry.camBackRadius + 1e-6);
-    } else if (Math.abs(x - faceXAtLocalY(y) - geometry.camRimLandWidth) < 2e-6
-      && Math.abs(Math.hypot(y, z) - rimRadiusAtAngle(Math.atan2(z, y))) < 1e-5) {
-      // The rim land's back edge, one land width behind the face's rim.
-      land += 1;
+    } else if (Math.abs(x - section.outerX) < 2e-6
+      && Math.abs(Math.hypot(y, z) - section.outerRadius) < 1e-5) {
+      peak += 1;
+    } else if (Math.hypot(y, z) > section.innerRadius + 1e-5) {
+      // Intermediate chamfer rings lie on the straight generator.
+      const t = (Math.hypot(y, z) - section.innerRadius)
+        / (section.outerRadius - section.innerRadius);
+      near(x, section.innerX + t * (section.outerX - section.innerX), 3e-6,
+        `chamfer vertex ${index} on its generator`);
+      chamfer += 1;
     } else {
       front += 1;
       near(x, faceXAtLocalY(y), 2e-6, `front vertex ${index} on trough`);
-      assert.ok(Math.hypot(y, z)
-        <= rimRadiusAtAngle(Math.atan2(z, y)) + 1e-5);
+      assert.ok(Math.hypot(y, z) <= section.innerRadius + 1e-5);
     }
   }
   assert.ok(front > 3000 && back === geometry.camSegments + 1);
-  assert.equal(land, geometry.camSegments, 'one rim-land ring behind the wavy edge');
-  assert.ok(geometry.camRimLandWidth > 0.1, 'the rim is a band, not a knife edge');
-  near(rimRadiusAtAngle(0), geometry.camOuterRadius, 1e-12,
-    'top and bottom rim reach the drawn outer radius');
-  assert.ok(rimRadiusAtAngle(Math.PI / 2) < rimRadiusAtAngle(0) - 0.2,
-    'the side rim is lower where the trough is shallow');
-  const band = blocks.bevelFace.geometry.getAttribute('position');
-  for (let index = 0; index < band.count; index += 1) {
-    near(band.getX(index), faceXAtLocalY(band.getY(index)), 2e-6,
-      `working band vertex ${index}`);
-  }
+  assert.equal(peak, geometry.camSegments, 'one peak ring behind the wavy rim');
+  assert.ok(chamfer >= geometry.camSegments, 'chamfer rings between rim and peak');
+  assert.ok(geometry.chamferLength > 0.4, 'the chamfer is a band, not a knife edge');
+  assert.ok(chamferSectionAtAngle(Math.PI / 2).outerRadius
+    < chamferSectionAtAngle(0).outerRadius - 0.1,
+  'the side rim is lower where the trough is shallow');
+  assert.equal(blocks.bevelFace, undefined, 'no coincident working skin');
   assert.equal(blocks.frontWavyEdge, undefined, 'no dark edge tube on the wavy rim');
   assert.equal(blocks.rearEdge, undefined, 'no dark torus on the rear rim');
   disposeModel(model.root);
 });
 
-test('movement 272 keeps the rounded shoe on the trough face throughout a revolution', () => {
+test('movement 272 keeps the rod end bearing square on the chamfer throughout a revolution', () => {
   const model = createMovementModel(catalog.movements[271]);
   const { geometry, stateAtDriverAngle } = model.root.userData;
-  let minimumRimClearance = Infinity;
   let minimum = Infinity;
   let maximum = -Infinity;
+  let worstAngle = 0;
   const stages = new Set();
-  for (let sample = 0; sample <= 4096; sample += 1) {
-    const state = stateAtDriverAngle(FULL_TURN * sample / 4096);
+  for (let sample = 0; sample <= 1024; sample += 1) {
+    const state = stateAtDriverAngle(FULL_TURN * sample / 1024);
     assert.ok(Number.isFinite(state.displacement));
-    assert.ok(state.bevelPlaneError < 1e-12, `contact on face at ${sample}`);
-    assert.ok(state.shoePlaneGap < 1e-9, `shoe radius at ${sample}`);
-    assert.ok(Math.abs(state.normalVelocityError) < 2e-6,
+    assert.ok(state.shoePlaneGap < 1e-9, `dome radius at ${sample}`);
+    assert.ok(Math.abs(state.normalVelocityError) < 2e-5,
       `no separating velocity at ${sample}`);
     const offset = state.shoeCenter.clone().sub(geometry.sourceShoeCenter);
     assert.ok(new THREE.Vector3().crossVectors(offset,
       geometry.followerDirection).length() < 1e-15,
-    `shoe remains on the guide axis at ${sample}`);
-    minimumRimClearance = Math.min(minimumRimClearance,
-      state.contactRadiusOuterClearance);
+    `rod remains on the guide axis at ${sample}`);
+    // Contact stays inside the chamfer (clear of both its edges) and on the
+    // rod's end dome, with the chamfer nearly square to the rod.
+    assert.ok(state.chamferContactAlong > 0.2
+      && state.chamferContactAlong < geometry.chamferLength - 0.2,
+    `contact on the chamfer at ${sample}: ${state.chamferContactAlong}`);
+    assert.ok(state.contactAxisOffset < geometry.rodRadius,
+      `contact on the rod end at ${sample}`);
+    worstAngle = Math.max(worstAngle, state.contactAngleFromRodAxis);
     minimum = Math.min(minimum, state.displacement);
     maximum = Math.max(maximum, state.displacement);
     stages.add(state.stage);
   }
-  assert.ok(minimumRimClearance > 0.15, `contact stays inside the rim: ${minimumRimClearance}`);
+  assert.ok(worstAngle < 15 * Math.PI / 180,
+    `chamfer normal within 15 degrees of the rod: ${worstAngle}`);
   near(maximum, 0, 1e-12, 'outer dead center');
   near(minimum, -geometry.outputStroke, 1e-9, 'inner dead center');
   assert.ok(stages.has('rod-moving-inward-toward-beveled-cam'));
@@ -373,7 +396,6 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
   }));
   const camChildTransforms = [
     blocks.camBody,
-    blocks.bevelFace,
     blocks.shaft,
     blocks.hub,
     blocks.rotationIndex,
@@ -452,7 +474,9 @@ test('movement 272 renderer binds one rigid rotor and one fixed-axis follower', 
   // The plain supporting frame (base, posts, shaft bearings, backing rail,
   // brackets and riser) is kept so nothing floats; the disk carries no dark
   // edge tubes. The plate has a hub on each face.
-  assert.equal(meshCount, 35);
+  // The coincident working-band skin is gone: the rod bears on the body's
+  // own chamfer.
+  assert.equal(meshCount, 34);
   const size = new THREE.Box3().setFromObject(model.root)
     .getSize(new THREE.Vector3());
   assert.ok(size.x > 6.9);

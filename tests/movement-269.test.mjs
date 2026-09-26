@@ -290,7 +290,9 @@ test('movement 269 lays out exactly four staggered rack groups on one pitch', ()
   assert.equal(blocks.upperRackTeeth.length, 11);
   assert.equal(blocks.lowerRackTeeth.length, 6);
   assert.equal(blocks.pinionToothMeshes.length, 18);
-  assert.equal(blocks.pinionSpokes.length, 4);
+  // The four arms are windows cut in the one-piece pinion web.
+  assert.equal(blocks.pinionSpokes.length, 0);
+  assert.equal(blocks.pinionRim.geometry.userData.spokedWheel.spokes, 4);
   assert.deepEqual(handoffDesign.boundaryAdjacentToothIndices,
     expectedRelieved);
   assert.equal(handoffDesign.handoffCount, 3);

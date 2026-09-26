@@ -387,23 +387,25 @@ function diskEngine(movement) {
         inputAngularAcceleration,
       );
 
-    // The fixed diaphragm is the world XY half-plane. Its intersection with
-    // the moving disk is the disk's radial slot direction. Choosing the sign
-    // with positive Y keeps that one-sided slot on the physical diaphragm.
+    // The fixed diaphragm is the rear horizontal half-plane through the
+    // shaft axis (world XZ, z < 0), so it lies behind Brown's vertical
+    // section and leaves the cut chamber open to view. Its intersection with
+    // the moving disk is the disk's radial slot direction; choosing the sign
+    // with negative Z keeps that one-sided slot on the physical diaphragm.
     const rawSlotDirection = new THREE.Vector3(
-      diskNormal.y,
-      -diskNormal.x,
+      -diskNormal.z,
       0,
+      diskNormal.x,
     );
     const rawSlotVelocity = new THREE.Vector3(
-      diskNormalVelocity.y,
-      -diskNormalVelocity.x,
+      -diskNormalVelocity.z,
       0,
+      diskNormalVelocity.x,
     );
     const rawSlotAcceleration = new THREE.Vector3(
-      diskNormalAcceleration.y,
-      -diskNormalAcceleration.x,
+      -diskNormalAcceleration.z,
       0,
+      diskNormalAcceleration.x,
     );
     const slotState = normalizedVectorWithRates(
       rawSlotDirection,
@@ -725,6 +727,9 @@ function diskEngine(movement) {
     }),
     frameMaterial,
   );
+  // The diaphragm stands in the rear horizontal half-plane (local XZ,
+  // z < 0), out of the section plane that Brown cuts.
+  fixedPartition.geometry.rotateX(-Math.PI / 2);
   fixedPartition.userData.role =
     'fixed-radial-diaphragm-through-piston-disc-slot';
   const partitionFace = new THREE.Mesh(
@@ -1018,7 +1023,7 @@ function diskEngine(movement) {
       movingMember: diskAssembly,
       outerPoint: new THREE.Vector3(),
       planeNormal: Z_AXIS.clone(),
-      type: 'sliding-radial-slot-over-fixed-diaphragm-in-world-XY-plane',
+      type: 'sliding-radial-slot-over-fixed-diaphragm-in-rear-world-XZ-half-plane',
     },
     shaftBearings: {
       fixedMember: fixedFrame,
@@ -1212,7 +1217,7 @@ function diskEngine(movement) {
     crankConstraint:
       'P=B+L n lies on the crank circle P=(-D, r cos(theta), r sin(theta)) with L^2=D^2+r^2',
     diaphragmConstraint:
-      'the one-sided disk slot follows normalized (n_y,-n_x,0), exactly the intersection of the disk plane n·(X-B)=0 with the fixed XY diaphragm plane',
+      'the one-sided disk slot follows normalized (-n_z,0,n_x), exactly the intersection of the disk plane n·(X-B)=0 with the fixed rear XZ diaphragm half-plane behind the section',
     motion:
       'uniform shaft rotation makes disk normal n precess at constant half-angle beta; the fixed diaphragm controls roll, so the disk nutates rather than freely spinning about n',
     powerFlow:
@@ -1286,7 +1291,10 @@ function diskEngine(movement) {
   // rings, the cradle and the white contact and roll indices.
   for (const hidden of [...chamberJunctionRings, ...centralSeatRings, ...chamberShellRibs,
     ...coneGeneratorRibs, partitionFace, chamberCradle, ...chamberFeet, discIndex,
-    ...coneContactMarkers, crankIndex, crankArm, ...flywheelSpokes]) hidden.visible = false;
+    ...coneContactMarkers, crankIndex, crankArm, ...flywheelSpokes,
+    // The ink slot lips were a dark rim lying flush on the slot walls
+    // (coplanar faces); the slot is cut in the disk itself.
+    ...slotLips]) hidden.visible = false;
   fixedPartition.material = casingMaterial;
 
   // Brown's "crank-arm or fly-wheel" is a solid wheel seen edgewise, the rod
@@ -1391,7 +1399,7 @@ function diskEngine(movement) {
   counterSideRod.position.set(-(counterLength + centralBallRadius * 0.45) / 2, 0, 0);
   const collarMaterial = pistonBall.material;
   const rodCollars = [1, -1].map((side, index) => {
-    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.50, 0.44), collarMaterial);
+    const collar = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.44, 0.50), collarMaterial);
     collar.position.set(side * bowRadius, 0, 0);
     collar.userData.role = `moving-square-collar-on-rod-end-${index + 1}`;
     diskAssembly.add(collar);
@@ -1401,7 +1409,8 @@ function diskEngine(movement) {
   const bowStart = Math.asin(0.20 / bowRadius);
   for (let index = 0; index <= 96; index += 1) {
     const angle = THREE.MathUtils.lerp(bowStart, Math.PI - bowStart, index / 96);
-    bowPoints.push(new THREE.Vector3(bowRadius * Math.cos(angle), bowRadius * Math.sin(angle), 0));
+    // Local -Z (minus the disk's transverse axis) is up in Brown's view.
+    bowPoints.push(new THREE.Vector3(bowRadius * Math.cos(angle), 0, -bowRadius * Math.sin(angle)));
   }
   const bowSection = new THREE.Shape();
   bowSection.absarc(0, 0, 0.11, 0, Math.PI * 2, false);
@@ -1443,6 +1452,10 @@ function diskEngine(movement) {
 
   update(0);
   markShadows(root);
+  // The key light falls from above the section plane, so the casing's own
+  // upper wall would black out the upper half of the opened chamber. The
+  // cut casing is lit but takes no cast shadows, so both halves read open.
+  for (const part of [sphericalZone, ...conicalHeads]) part.receiveShadow = false;
   return {
     cameraDirection: new THREE.Vector3(0, 0.03, 1),
     root,

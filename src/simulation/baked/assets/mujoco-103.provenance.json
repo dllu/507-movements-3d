@@ -1,0 +1,73 @@
+{
+  "id": 103,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-103.json.gz",
+  "bytes": 11861,
+  "assetSha256": "2a87d4be65a18e0b548d3b5ec7fa298f8f172fa03739bd0be3b74498a00fc26a",
+  "motionSources": {
+    "src/simulation/mujoco-leadscrew-slide/physics.js": "e6a09e0ed0412f239e415b689f723ca6b803cd14d44f65451f55a2c2e8bda4bd",
+    "src/simulation/mujoco-leadscrew-slide/profile.js": "5eadb830ed2d3fef9d30ce6100c14d54a3c0edb98c9ddb40fa41a8a1ff18ced5",
+    "src/simulation/mujoco-leadscrew-slide/source.js": "27cf330c0906c5eb6f401947abf21e37dd70a33c7b4a8d83628aa18be1251b25",
+    "src/simulation/mujoco-leadscrew-slide/visual.js": "2b2dee6676943e6cd5ca692ee8d8af683fc427f6454467745817e77efedbe1ce",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-leadscrew-slide/geometry.js": "129feeee4387922c47ae4e72273de69c816f7bda214d95fa936ab87e082cbe26",
+    "src/simulation/mujoco-leadscrew-slide/section.js": "49d5a0a1be0378e1284c1f394b7732af6e90fd5ed436ced23d2d4048e24aee9c"
+  },
+  "physicsXmlSha256": {
+    "default": "5a5ed7c711997b5cc87a106f8b3e0e6e623c20c1c437a5542f84c582f041f738"
+  },
+  "fullXmlSha256": {
+    "default": "74b2cc98c0b38f10a3883b7963507abf17c447e5e88a127878efb461469430e3"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-leadscrew-slide"
+  },
+  "cycleDesign": "Reversing screw drive (1 - cos): the slide runs out and returns; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 8,
+        "samples": 500,
+        "dt": 0.016,
+        "startTime": 64,
+        "periods": 1,
+        "drivePeriod": 8
+      },
+      "closure": {
+        "rawSeamPixels": 1.2088200572427502e-10,
+        "maximumCorrectionPixels": 9.583445148564351e-11,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.screw",
+            "angle": -5.770816767156073e-13,
+            "rawAngle": -5.770816767156073e-13
+          }
+        ]
+      },
+      "roundTripPixels": 0.000004151597621238068,
+      "seam": {
+        "seamStepPixels": 0.06648760967148144,
+        "interiorStepPixels": 3.256235741254083,
+        "seamSecondPixels": 0.040925495322435425,
+        "interiorSecondPixels": 0.38548043134843657
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 98.74139982509612
+}

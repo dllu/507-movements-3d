@@ -131,24 +131,33 @@ test('all four speed steps fit the same physical band and sit on horizontal shaf
   assert.ok(driver.getWorldPosition(new THREE.Vector3()).y > driven.getWorldPosition(new THREE.Vector3()).y + 5);
   const axis = new THREE.Vector3(0, 0, 1).transformDirection(driver.matrixWorld);
   assert.ok(Math.abs(axis.x) > 0.9999);
-  const lengths = belts.map((belt) => belt.userData.curve.getLength());
-  assert.ok(Math.max(...lengths) - Math.min(...lengths) < 2e-5, 'full tangent-and-wrap lengths agree');
-  for (const [index, belt] of belts.entries()) {
+  // One band runs on each step pair in turn (ping-pong, 5 s stages) and is
+  // shifted between them at rest.
+  const [belt] = belts, stepWidth = driver.userData.stepWidth, lengths = new Map();
+  const clearsTreads = (label) => {
     const positions = belt.userData.mesh.geometry.attributes.position;
     for (let i = 0; i < positions.count; i += 1) {
       const point = new THREE.Vector3().fromBufferAttribute(positions, i);
       for (const pulley of [driver, driven]) {
         const radialDistance = Math.hypot(point.x - pulley.position.x, point.y - pulley.position.y);
-        const radius = pulley.userData.radii[index];
-        assert.ok(radialDistance >= radius - 1e-6, 'band vertices clear the actual tread radius');
+        const step = Math.max(0, Math.min(3, Math.floor(point.z / stepWidth + 2)));
+        assert.ok(radialDistance >= pulley.userData.radii[step] - 1e-6, `band vertices clear the actual tread radius (${label})`);
       }
     }
+  };
+  for (let stage = 0; stage < 6; stage += 1) {
+    model.update(stage * 5 + 2, 0);
+    lengths.set(belt.userData.level, belt.userData.curve.getLength());
+    clearsTreads(`stage ${stage}`);
+    for (const shift of [4.25, 4.4, 4.6, 4.8, 4.95]) {model.update(stage * 5 + shift, 0); clearsTreads(`shift ${stage} ${shift}`);}
   }
+  assert.equal(lengths.size, 4);
+  assert.ok(Math.max(...lengths.values()) - Math.min(...lengths.values()) < 2e-5, 'full tangent-and-wrap lengths agree');
 });
 
 test('speed step motion is seekable and its position derivatives match the declared ratios', () => {
   const model = modelFor(8);
-  const time = 5.6;
+  const time = 7.6;
   const dt = 0.0001;
   model.update(time, 0);
   const before = { ...model.root.userData.kinematics };
@@ -160,7 +169,7 @@ test('speed step motion is seekable and its position derivatives match the decla
   for (let i = 1; i <= 100; i += 1) model.update(time * i / 100, time / 100);
   assert.equal(model.root.userData.kinematics.driverAngle, before.driverAngle);
   assert.equal(model.root.userData.kinematics.drivenAngle, before.drivenAngle);
-  for (const shift of [4.2, 8.4, 12.6, 16.8]) {
+  for (const shift of [4.2, 4.6, 9.2, 9.6, 14.5, 30]) {
     model.update(shift, 0);
     assert.ok(Math.abs(model.root.userData.kinematics.driverAngularSpeed) < 1e-10, 'the drive stops when the band changes steps');
   }

@@ -242,10 +242,10 @@ test('movement 347 closes the crank, ball, disk, sphere, cones, and diaphragm co
       `unit transverse direction ${sample}`);
     near(state.disk.normal.dot(state.disk.slotDirection), 0, 3e-16,
       `slot lies in disk ${sample}`);
-    near(state.disk.slotDirection.z, 0, 0,
-      `slot lies in fixed diaphragm plane ${sample}`);
-    assert.ok(state.disk.slotDirection.y > 0,
-      `one-sided slot points into the fixed diaphragm at ${sample}`);
+    near(state.disk.slotDirection.y, 0, 0,
+      `slot lies in fixed rear diaphragm plane ${sample}`);
+    assert.ok(state.disk.slotDirection.z < 0,
+      `one-sided slot points back into the fixed diaphragm at ${sample}`);
     vector3Near(
       new THREE.Vector3().crossVectors(
         state.disk.normal,
@@ -258,7 +258,7 @@ test('movement 347 closes the crank, ball, disk, sphere, cones, and diaphragm co
     near(state.disk.slotOuterPoint.distanceTo(geometry.ballCenter),
       geometry.chamberRadius, 2e-15,
       `slot end remains on sphere ${sample}`);
-    near(state.disk.slotOuterPoint.z, geometry.ballCenter.z, 0,
+    near(state.disk.slotOuterPoint.y, geometry.ballCenter.y, 0,
       `slot end remains on diaphragm ${sample}`);
 
     for (const [name, point, side] of [
@@ -308,16 +308,20 @@ test('movement 347 exhibits the four canonical nutation orientations without fre
   vector3Near(canonicalStates.threeQuarterTurn.disk.normal,
     new THREE.Vector3(-cosine, 0, -sine), 6e-16,
     'three-quarter-turn disk normal');
+  // The diaphragm is the rear horizontal half-plane behind Brown's section:
+  // with the disk edgewise to the view its slot points straight back.
   vector3Near(canonicalStates.engravingPhase.disk.slotDirection,
-    new THREE.Vector3(sine, cosine, 0), 4e-16,
-    'engraving-phase slot direction');
+    new THREE.Vector3(0, 0, -1), 4e-16,
+    'engraving-phase slot remains on diaphragm');
   vector3Near(canonicalStates.halfTurn.disk.slotDirection,
-    new THREE.Vector3(-sine, cosine, 0), 4e-16,
-    'half-turn slot direction');
+    new THREE.Vector3(0, 0, -1), 4e-16,
+    'half-turn slot remains on diaphragm');
   vector3Near(canonicalStates.quarterTurn.disk.slotDirection,
-    Y_AXIS, 4e-16, 'quarter-turn slot remains on diaphragm');
+    new THREE.Vector3(-sine, 0, -cosine), 4e-16,
+    'quarter-turn slot direction');
   vector3Near(canonicalStates.threeQuarterTurn.disk.slotDirection,
-    Y_AXIS, 4e-16, 'three-quarter slot remains on diaphragm');
+    new THREE.Vector3(sine, 0, -cosine), 4e-16,
+    'three-quarter slot direction');
   quaternionNear(canonicalStates.cycleClosure.disk.orientation,
     canonicalStates.engravingPhase.disk.orientation, 5e-16,
     'one-cycle disk orientation closure');

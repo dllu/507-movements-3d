@@ -4,7 +4,7 @@ import * as THREE from 'three';
 import {PALETTE,matte,markShadows} from './primitives.js';
 import {add,sub,rotate,poly,circle,capsule,plate,disk,ring,polygonClipping as clip,familyMass} from './finite-plate-geometry.js';
 import {makeAlternatingPegGeometry} from './alternating-peg-geometry.js';
-import {backBar,footPillar,pinBoss} from './back-plate-support.js';
+import {spokedWheelGeometry} from './spoked-wheel.js';
 
 export function makeAlternatingPegPawlDrive(){
  const {pinRadius=.049,headRadius=.1,lowerHeadRadius=headRadius,mouthRadius=.070,upperFace=Math.PI/3,lowerFace=-Math.PI/4,mouthAngle=130*Math.PI/180,lowerMouthAngle=null,seatPhase}=profile.geometry;
@@ -15,12 +15,12 @@ export function makeAlternatingPegPawlDrive(){
  const attach=(name,geometry,family,color,position=[0,0,0])=>{
   const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.16,roughness:.61}));mesh.name=name;mesh.position.fromArray(position);blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;
  };
- const half=.1,angle=Math.asin(half/p.innerRadius),hole=[];
- for(let i=0;i<=192;i++)hole.push(rotate([p.innerRadius,0],angle+(Math.PI/2-2*angle)*i/192));
- hole.push([half,.29]);
- for(let i=1;i<=96;i++){const t=i/96,u=1-t;hole.push([u*u*u*half+3*u*u*t*half+3*u*t*t*.16+t*t*t*.29,u*u*u*.29+3*u*u*t*.16+3*u*t*t*half+t*t*t*half]);}
- const holes=Array.from({length:4},(_,i)=>poly(hole.map(v=>rotate(v,i*Math.PI/2)))),wheelShape=clip.difference(poly(circle([0,0],1,1024)),poly(circle([0,0],.14)),...holes);
- attach('wheelBody',plate(wheelShape,-.055,.055),'wheel',PALETTE.driven);
+ // One four-spoked plate (spoked-wheel.js): each window is two spoke edges
+ // and an arc concentric with the wheel, flared generously into the hub and
+ // slightly into the rim, as Brown draws it. (Wheel inertia changes by
+ // 0.05% from the earlier sharp-cornered windows the motion was baked with.)
+ attach('wheelBody',spokedWheelGeometry({outerRadius:1,rimInnerRadius:p.innerRadius,spokes:4,spokeWidth:.2,hubFillet:.17,rimFillet:.02,
+  boreRadius:.14,thickness:.11,arcSegments:1024}),'wheel',PALETTE.driven);
  attach('wheelFrontHub',ring(.14,.197,.055,.085),'wheel',PALETTE.driven);
  attach('wheelRearHub',ring(.14,.197,-.115,-.055),'wheel',PALETTE.driven);
  const pegGeometry=disk(pinRadius,.055,.185),capGeometry=disk(pinRadius+.006,.185,.205),pinCenters=[],
@@ -42,15 +42,6 @@ export function makeAlternatingPegPawlDrive(){
  attach('leverBody',plate(leverShape,.21,.29),'lever',PALETTE.driver);
  attach('fixedPivotA',disk(.041,-.15,.34),'fixed',PALETTE.muted,[...p.A,0]);
  attach('fixedPivotCap',disk(.061,.34,.35),'fixed',PALETTE.muted,[...p.A,0]);
- // Brown draws no frame. Lever A's fixed pin and the wheel axle each run back
- // into a boss on a plain pillar standing on a foot, behind the lever and the
- // wheel respectively.
- const supports=new THREE.Group();supports.name='backPillarSupports';
- supports.add(backBar([{x:0,y:0}],{zFront:-.32,width:.34,role:'axle-pad'}),backBar([{x:p.A[0],y:p.A[1]}],{zFront:-.32,width:.2,role:'lever-pivot-pad'}),
-  pinBoss({x:p.A[0],y:p.A[1],radius:.065,zBack:-.32,zFront:-.15,role:'lever-pivot-boss'}),
-  footPillar({x:0,yTop:0,yFloor:-1.35,z:-.37,width:.2,footDepth:.4,role:'axle-pillar'}),
-  footPillar({x:p.A[0],yTop:p.A[1],yFloor:-1.35,z:-.37,width:.14,footDepth:.4,role:'lever-pivot-pillar'}));
- blocks.fixed.add(supports);
  const determinant=Math.cos(upperFace)*Math.sin(lowerFace)-Math.sin(upperFace)*Math.cos(lowerFace),
   corner=[pinRadius*(Math.sin(lowerFace)-Math.sin(upperFace))/determinant,pinRadius*(Math.cos(upperFace)-Math.cos(lowerFace))/determinant],
   arc=(a,b)=>Array.from({length:97},(_,i)=>{const t=i/96,r=pinRadius+(mouthRadius-pinRadius)*t*t*(3-2*t);return rotate([r,0],a+(b-a)*t);}),

@@ -2,11 +2,13 @@
 // Gallagher's reconstruction (engineering.stackexchange.com/q/52770):
 // the drop is carried by the leaf spring at the left and swings about the
 // spring's virtual hinge; the broad hooked pawl hangs from the screw on the
-// drop, free to fall but stopped from rising by the drop's striker pin; the
-// driver pins lift the pawl's lobe and the drop's hidden leg, escape the
-// pawl first so its nose falls into the next star space, then escape the
-// drop, which the spring throws down so the striker drives the pawl and the
-// pawl's nose turns the star one point.
+// drop, free to fall but stopped from rising by the drop's striker pin. The
+// driver pins strike only the drop's broad pointed leg and lift the whole
+// drop; the pawl rides up with it, its nose sliding out of its space and,
+// under gravity, over the next point into the next space. When the pin
+// escapes past the leg's tip the spring throws the drop down, the striker
+// drives the pawl and the pawl's nose turns the star one point. The pins
+// work in the drop's plane, behind the pawl and the star.
 //
 // Outlines are traced in Brown's enlargement (source pixels, y down) and
 // converted to plate coordinates (y up). The motion is a quasi-static
@@ -119,8 +121,8 @@ export function pawlOutline() {
   ];
 }
 
-// The rear drop: the tail over the spring, the boss behind the ring, the
-// arch over the star, and the hidden leg (dashed by Brown) that the pins lift.
+// The drop: the tail over the spring, the boss behind the ring, the arch
+// over the star, and the leg (dashed by Brown) that the pins lift.
 export function dropOutline(leg = defaultLeg) {
   return [
     [140, 433],
@@ -135,69 +137,41 @@ export function dropOutline(leg = defaultLeg) {
   ].map(image);
 }
 
-// The leg's working edge is synthesised as the envelope of the pin for a
-// chosen lift law (cosine ease from startLift to maxLift between the pin
-// angles, measured clockwise in the source image from its right), so the
-// pin rides it without gaps or jumps and escapes past its tip.
-export function synthesizeLeg({
-  startAngle = 208,
-  endAngle = 252,
-  startLift = 4,
-  maxLift = 20,
-  samples = 32,
-  tipClearance = 8,
-  rightEdgeTop = [878, 402],
-  joinPoints = [[800, 560], [700, 540]],
+// Brown's leg, which he dashes behind the lobe: a broad pointed wedge. Its
+// right edge drops straight from under the lobe's shoulder to the tip; its
+// lower-left edge runs straight up from the tip to the lobe's inner edge.
+// The pins ride that lower-left edge and escape past the rounded tip.
+export function brownLeg({
+  corner = [891, 815],
+  tipRadius = 8,
+  inner = [716, 584],
+  rightEdgeTop = [884, 408],
 } = {}) {
-  const hinge = layout.dropHinge;
-  const [dx, dy] = layout.driverCenter;
-  const radians = Math.PI / 180;
-  const path = Array.from({ length: samples + 1 }, (_, index) => {
-    const u = index / samples;
-    const a = (startAngle + (endAngle - startAngle) * u) * radians;
-    const lift = (startLift + (maxLift - startLift) * (1 - Math.cos(Math.PI * u)) / 2) * radians;
-    const pin = [dx + Math.cos(-a) * layout.pinOrbitRadius, dy + Math.sin(-a) * layout.pinOrbitRadius];
-    const back = rotateAbout(pin, hinge, -lift);
-    return [back[0], -back[1]];
-  });
-  const edge = path.map((point, index) => {
-    const before = path[Math.max(0, index - 1)];
-    const after = path[Math.min(path.length - 1, index + 1)];
-    const tx = after[0] - before[0];
-    const ty = after[1] - before[1];
-    const length = Math.hypot(tx, ty);
-    return [point[0] + ty / length * layout.pinRadius, point[1] - tx / length * layout.pinRadius];
-  });
-  // Near the end of the lift the envelope folds back on itself; the leg's
-  // tip is its lowest point.
-  let lowest = 0;
-  edge.forEach((point, index) => { if (point[1] >= edge[lowest][1]) lowest = index; });
-  edge.length = lowest + 1;
-  // Keep the resting tip inside the circle the next pin sweeps, so that pin
-  // meets the pawl's lobe before it touches the leg.
-  const earlyPins = Array.from({ length: 61 }, (_, index) => {
-    const a = (125 + index) * radians;
-    return [dx + Math.cos(a) * layout.pinOrbitRadius, -dy + Math.sin(a) * layout.pinOrbitRadius];
-  });
-  const nearEarlyPin = ([x, y]) => earlyPins.some(([px, py]) => (
-    Math.hypot(x - px, y - py) < layout.pinRadius + tipClearance));
-  while (edge.length > 2 && nearEarlyPin(edge.at(-1))) edge.pop();
-  const tip = edge.at(-1);
-  // Walking up from the tip the edge must rise steadily.
-  const rising = [tip];
-  for (const point of edge.slice(0, -1).reverse()) {
-    if (point[1] < rising.at(-1)[1] - 0.5) rising.push(point);
-  }
+  // Fillet the pointed corner between the right edge (running up from it)
+  // and the lower-left edge (running to the inner point).
+  const unit = ([x, y]) => { const l = Math.hypot(x, y); return [x / l, y / l]; };
+  const up = unit([rightEdgeTop[0] - corner[0], rightEdgeTop[1] - corner[1]]);
+  const toInner = unit([inner[0] - corner[0], inner[1] - corner[1]]);
+  const half = Math.acos(up[0] * toInner[0] + up[1] * toInner[1]) / 2;
+  const reach = tipRadius / Math.tan(half);
+  const bisector = unit([up[0] + toInner[0], up[1] + toInner[1]]);
+  const centre = [corner[0] + bisector[0] * tipRadius / Math.sin(half), corner[1] + bisector[1] * tipRadius / Math.sin(half)];
+  const from = [corner[0] + up[0] * reach, corner[1] + up[1] * reach];
+  const to = [corner[0] + toInner[0] * reach, corner[1] + toInner[1] * reach];
+  const a0 = Math.atan2(from[1] - centre[1], from[0] - centre[0]);
+  let a1 = Math.atan2(to[1] - centre[1], to[0] - centre[0]);
+  if (a1 < a0) a1 += Math.PI * 2;
   return [
     rightEdgeTop,
-    [tip[0] + 6, (rightEdgeTop[1] + tip[1]) / 2],
-    [tip[0] + 4, tip[1] - 4],
-    ...rising,
-    ...joinPoints,
+    ...[0.25, 0.5, 0.75].map((t) => [rightEdgeTop[0] + (from[0] - rightEdgeTop[0]) * t, rightEdgeTop[1] + (from[1] - rightEdgeTop[1]) * t]),
+    ...arc(centre, tipRadius, a0, a1, 10),
+    ...[1 / 3, 2 / 3].map((t) => [to[0] + (inner[0] - to[0]) * t, to[1] + (inner[1] - to[1]) * t]),
+    inner,
+    [690, 550],
   ];
 }
 
-export const defaultLeg = synthesizeLeg();
+export const defaultLeg = brownLeg();
 
 export function starOutline() {
   const { starCenter, starOuterRadius, starRootRadius, starTeeth } = layout;
@@ -268,8 +242,8 @@ export function makeSnapCounterMechanism({
 } = {}) {
   const dropFallRate = dropFallPerEvent / stepsPerEvent;
   const pawlFallRate = pawlFallPerEvent / stepsPerEvent;
-  // The pawl is one plate thick enough to reach from the pins' plane into
-  // the star's, so its whole outline works against the star.
+  // The pawl is one plate flush with the star, so its whole outline works
+  // against the star; the pins end behind it.
   const pawl = pawlOutline();
   const drop = dropOutline(leg);
   const star = starOutline();
@@ -297,6 +271,7 @@ export function makeSnapCounterMechanism({
       layout.driverCenter[1] + Math.sin(angle) * layout.pinOrbitRadius,
     ];
   });
+  let jams = 0;
   const pinGap = (ring, pins) => Math.min(...pins.map((pin) => ringPointGap(ring, pin) - layout.pinRadius));
   // Seat the striker on the arm's upper edge and the stop pin under the
   // tail, each with a hair of clearance, at Brown's x positions.
@@ -341,26 +316,30 @@ export function makeSnapCounterMechanism({
   const solveStep = (state, driverAngle) => {
     const pins = pinsAt(driverAngle);
     let { delta, rho, sigma } = state;
-    const pawlClear = (d, r) => pinGap(pawlAt(d, r), pins) >= clearance;
     const dropClear = (d) => pinGap(dropAt(d), pins) >= clearance;
     const noseClear = (d, r, s) => ringGap(noseAt(d, r), starAt(s)) >= clearance;
-    // Pins push: raise the pawl up to the striker, then the drop.
-    if (!pawlClear(delta, rho)) {
+    // The pins push only the drop's leg; raise the drop until it clears them.
+    if (!dropClear(delta)) {
+      let high = delta;
+      while (!dropClear(high)) high += 0.004;
+      delta = lowestClear(Math.max(state.delta, high - 0.004), high, dropClear);
+    }
+    // The rising drop carries the pawl on its screw; if the lift presses the
+    // nose against the star the pawl turns up on the screw (the striker
+    // allows it up to rho = 0).
+    if (!noseClear(delta, rho, sigma)) {
       let high = rho;
-      while (high < 0 && !pawlClear(delta, high)) high = Math.min(0, high + 0.01);
-      if (pawlClear(delta, high)) {
-        rho = high > rho ? lowestClear(Math.max(rho, high - 0.01), high, (r) => pawlClear(delta, r)) : high;
+      while (high < 0 && !noseClear(delta, high, sigma)) high = Math.min(0, high + 0.002);
+      if (noseClear(delta, high, sigma)) {
+        rho = lowestClear(Math.max(rho, high - 0.002), high, (r) => noseClear(delta, r, sigma));
       } else {
-        rho = 0;
+        rho = high;
+        jams += 1;
       }
     }
-    if (!pawlClear(delta, rho) || !dropClear(delta)) {
-      let high = delta;
-      while (!(pawlClear(high, rho) && dropClear(high))) high += 0.004;
-      delta = lowestClear(Math.max(state.delta, high - 0.004), high, (d) => pawlClear(d, rho) && dropClear(d));
-    }
-    // Spring lowers the drop at a finite rate; the pawl rises against the
-    // star, then the striker drives the pawl and the pawl drives the star.
+    // Spring lowers the drop at a finite rate; the seated nose turns the
+    // (unloaded) star, the pawl turning up on its screw as the star's flank
+    // lifts it, just short of the striker.
     const dropTarget = Math.max(0, delta - dropFallRate);
     const subSteps = 12;
     for (let index = 1; index <= subSteps; index += 1) {
@@ -387,17 +366,15 @@ export function makeSnapCounterMechanism({
           if (!noseClear(d, r, sigma)) break;
         }
       }
-      if (!pawlClear(d, r)) break;
       delta = d;
       rho = r;
       sigma = s;
     }
-    // Gravity lowers the pawl at a finite rate until the star or a pin
-    // stops it.
+    // Gravity lowers the pawl at a finite rate until the star stops it.
     const pawlTarget = rho - pawlFallRate;
     for (let index = 1; index <= subSteps; index += 1) {
       const r = rho + (pawlTarget - rho) * index / subSteps;
-      if (!noseClear(delta, r, sigma) || !pawlClear(delta, r)) break;
+      if (!noseClear(delta, r, sigma)) break;
       rho = r;
     }
     return { delta, rho, sigma };
@@ -466,6 +443,7 @@ export function makeSnapCounterMechanism({
 
   return {
     dropOutline: drop,
+    jamCount: () => jams,
     pawlPlateOutline: pawl,
     pinPhase,
     rotateAboutHinge: (point, delta) => rotateAbout(point, hinge, delta),
@@ -494,7 +472,7 @@ export function snapCounterMotionFingerprint(options = {}) {
     layout,
     options,
     pawl: pawlOutline(),
-    solver: 6,
+    solver: 7,
   }, (key, value) => (typeof value === 'number' ? Math.round(value * 1e6) / 1e6 : value));
   let hash = 0x811c9dc5;
   for (let index = 0; index < text.length; index += 1) {

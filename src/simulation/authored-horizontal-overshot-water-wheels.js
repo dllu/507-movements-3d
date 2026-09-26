@@ -452,13 +452,18 @@ function horizontalOvershotWaterWheel(movement) {
   // edges as the falling spray Brown draws under the runner: a sheet that
   // starts just below the floats (whose undersides are at y = -0.09) and
   // thins out as it falls, so no water passes through the floats.
+  // The spray is flung off the floats' outer ends downstream of the strike
+  // (the water runs out along the float as the runner turns), so seen from
+  // behind it falls outside the runner rather than lining up under the jet
+  // as if the jet had run straight on through the floats and hub.
+  const spillStart = impactPoint.clone().addScaledVector(impactTangent, 0.35)
+    .addScaledVector(impactRadial, bladeOuterRadius + 0.08 - impactRadius).setY(-0.02);
   const spillCurve = new THREE.QuadraticBezierCurve3(
-    new THREE.Vector3(impactPoint.x, -0.13, impactPoint.z),
-    impactPoint.clone().addScaledVector(impactTangent, 0.30)
-      .setY(-0.55),
-    impactPoint.clone().addScaledVector(impactTangent, 0.55)
-      .addScaledVector(impactRadial, 0.2)
-      .setY(-1.55),
+    spillStart,
+    spillStart.clone().addScaledVector(impactTangent, 0.3)
+      .addScaledVector(impactRadial, 0.1).setY(-0.55),
+    spillStart.clone().addScaledVector(impactTangent, 0.5)
+      .addScaledVector(impactRadial, 0.35).setY(-1.45),
   );
   const spill = new THREE.Mesh(
     waterJetGeometry(spillCurve, {

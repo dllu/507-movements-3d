@@ -1,0 +1,121 @@
+{
+  "id": 121,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-121.json.gz",
+  "bytes": 12874,
+  "assetSha256": "99bc6b5fbabf1aa6513b8642af34cb84bd898832f1b38917e89564259182609e",
+  "motionSources": {
+    "src/simulation/mujoco-reversible-click/physics.js": "1b7780ca18dc604fd30229ed51d730bccba77a32f6a627a43d96715604f410d6",
+    "src/simulation/mujoco-reversible-click/source.js": "b018e5dd8efe9e8bf8632c7e799105dc6405b1829b29e5cd5696a53de353a35d",
+    "src/simulation/mujoco-reversible-click/visual.js": "c211887c29d4caff41fa0130d66385d0d234deedfa59770e7d56d5bffeddd1eb",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-reversible-click/geometry.js": "58e7b6c88bc98bef351e615d8d53b04ba7642ddb468287a0e70815b320062604"
+  },
+  "physicsXmlSha256": {
+    "forward": "dcaa1d593fb1c6be5170acf2812d46106dcd2627f912666bbc8c25f17ff34df6",
+    "reverse": "dcaa1d593fb1c6be5170acf2812d46106dcd2627f912666bbc8c25f17ff34df6"
+  },
+  "fullXmlSha256": {
+    "forward": "b5b0fb594fa2133fe75867288762db6e6c1281a47157dade3a73878d3bda923c",
+    "reverse": "b5b0fb594fa2133fe75867288762db6e6c1281a47157dade3a73878d3bda923c"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-reversible-click",
+    "variants": {
+      "forward": {
+        "options": {
+          "mode": "forward"
+        }
+      },
+      "reverse": {
+        "options": {
+          "mode": "reverse"
+        }
+      }
+    },
+    "defaultVariant": "forward",
+    "wrap": {
+      "blocks.output": {
+        "symmetry": 0.2617993877991494
+      }
+    }
+  },
+  "cycleDesign": "The input rod rises and falls on a cosine stroke, rocking the disk; the click drives the 24-tooth cog one way (forward, as engraved) or the other (thrown over). The cog advances by whole teeth each stroke, so one stroke closes each configuration’s loop and the cog is carried forward by those teeth.",
+  "variants": {
+    "forward": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 3,
+        "samples": 200,
+        "dt": 0.015,
+        "startTime": 27,
+        "periods": 1,
+        "drivePeriod": 3
+      },
+      "closure": {
+        "rawSeamPixels": 0.000003382972541755853,
+        "maximumCorrectionPixels": 6.314130753195063e-10,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.output",
+            "angle": -0.2617993877991494,
+            "rawAngle": -0.2617995222489414
+          }
+        ]
+      },
+      "roundTripPixels": 0.006576673544657719,
+      "seam": {
+        "seamStepPixels": 0.07234872832172984,
+        "interiorStepPixels": 1.4713197039282742,
+        "seamSecondPixels": 0.05142189759044836,
+        "interiorSecondPixels": 1.2324154039541413
+      }
+    },
+    "reverse": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 3,
+        "samples": 200,
+        "dt": 0.015,
+        "startTime": 12,
+        "periods": 1,
+        "drivePeriod": 3
+      },
+      "closure": {
+        "rawSeamPixels": 0.0000011222312913518498,
+        "maximumCorrectionPixels": 1.86877282710251e-12,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.output",
+            "angle": 0.2617993877991494,
+            "rawAngle": 0.2617995942983956
+          }
+        ]
+      },
+      "roundTripPixels": 0.005909688094903629,
+      "seam": {
+        "seamStepPixels": 0.04932625905261915,
+        "interiorStepPixels": 1.1396966020049895,
+        "seamSecondPixels": 0.04511606709873697,
+        "interiorSecondPixels": 1.0438021422423158
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 23.988055088996887
+}

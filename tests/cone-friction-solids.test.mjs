@@ -45,9 +45,10 @@ for(const id of[262,263])test(`${id}: finite cone, thread/nut, footed standard E
   }
   assert.ok(box(b.nutPost).intersectsBox(box(b.nut)),'nut unsupported');
   assert.ok(b.screwThread.geometry.userData.thread,'solid helical thread missing');
-  // Plate 262: low footed cradle whose foot lies just under B's rim, and a
-  // plain round boss (no carrier bar or joint balls) on B's large-end face.
-  if(id===262){const g=m.root.userData.geometry;assert.ok(box(b.nutPost).min.y>(g.coneEccentricity-1.4*g.coneLargeRadius)*m.root.scale.y,'cradle E too tall');const boss=b.eccentricConnectors[0];assert.equal(boss.children.length,1);assert.equal(boss.children[0].material,b.coneBody.material);}
+  // Plates 262-263 draw one standard E (a low footed cradle whose foot lies
+  // just under B's rim) and a plain round boss on B's large-end face, so
+  // both views build the same parts.
+  {const g=m.root.userData.geometry;assert.ok(box(b.nutPost).min.y>(g.coneEccentricity-1.4*g.coneLargeRadius)*m.root.scale.y,'cradle E too tall');assert.equal(b.eccentricConnectors.length,1);const boss=b.eccentricConnectors[0];assert.equal(boss.children.length,1);assert.equal(boss.children[0].material,b.coneBody.material);}
  }finally{disposeMovementModel(m);}
 });
 
@@ -83,4 +84,30 @@ test('cone family: source-uniform drive, readable cycles, complete framing and n
    }
   }finally{disposeMovementModel(m);}
  }
+});
+
+test('262/263: one shared model whose standard E has outward-facing normals', () => {
+ const [end, side] = [262, 263].map(make);
+ try {
+  const roles = (m) => { const list = []; m.root.traverse((o) => { if (o.isMesh) list.push(`${o.userData.role}|${o.geometry.attributes.position.count}`); }); return list.sort(); };
+  // Same parts, same geometry sizes: the two IDs differ only in camera.
+  assert.deepEqual(roles(end), roles(side));
+  const post = end.root.userData.blocks.nutPost.geometry;
+  const p = post.attributes.position, n = post.attributes.normal;
+  post.computeBoundingBox();
+  const centre = post.boundingBox.getCenter(new THREE.Vector3());
+  // Every flat face's normal points away from the solid: the signed volume
+  // is positive and each triangle's winding agrees with its stored normal.
+  let volume = 0;
+  const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3(), cross = new THREE.Vector3(), normal = new THREE.Vector3();
+  for (let i = 0; i < p.count; i += 3) {
+   a.fromBufferAttribute(p, i).sub(centre); b.fromBufferAttribute(p, i + 1).sub(centre); c.fromBufferAttribute(p, i + 2).sub(centre);
+   volume += a.dot(new THREE.Vector3().crossVectors(b, c)) / 6;
+   cross.subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+   if (cross.lengthSq() < 1e-14) continue;
+   normal.fromBufferAttribute(n, i);
+   assert.ok(cross.normalize().dot(normal) > 0.99, `normal ${i} disagrees with winding`);
+  }
+  assert.ok(volume > 0, 'standard E is wound inside-out');
+ } finally { disposeMovementModel(end); disposeMovementModel(side); }
 });

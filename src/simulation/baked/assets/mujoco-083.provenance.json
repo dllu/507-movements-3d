@@ -1,0 +1,77 @@
+{
+  "id": 83,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-083.json.gz",
+  "bytes": 210123,
+  "assetSha256": "79a0c1ea75c0422c1ddf5764463746429118ff0054c3cf4b497845d630fa9aff",
+  "motionSources": {
+    "src/simulation/mujoco-spring-sector/linkage.js": "6060c4ba5bbc058b6c12f2e0f4e2390e1959b4af35460e47b978d917b481e6db",
+    "src/simulation/mujoco-spring-sector/physics.js": "6802909c379cac70c8eac976366911f2977755b4f7d147ec637d266e8eca89b8",
+    "src/simulation/mujoco-spring-sector/source.js": "c99a8705ba90ba6731be12dbe006b74be65d187797a9d0887bc6336596a0f6e4",
+    "src/simulation/mujoco-spring-sector/visual.js": "d8ca7359931de6125eff1e91a478ff4b69c92c0e55ce0f6a79dc100d67785ae4",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-spring-sector/geometry.js": "eabb14cf67428b202c21fab51b37ef6df095a9c952d0e5704487f0d37b87befb"
+  },
+  "physicsXmlSha256": {
+    "default": "82cdb26186481dd0223ad164c7b909fdd1efd185604e8592a06fb62dc93414d5"
+  },
+  "fullXmlSha256": {
+    "default": "c24422358164d27c411345defd3d7d880cc3c22ccf8f6f82cf488e2cbcaad4e3"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-spring-sector",
+    "wrap": {
+      "blocks.wheel": {
+        "symmetry": 0.16534698176788384
+      }
+    }
+  },
+  "cycleDesign": "Sinusoidal rocking of the input slider; the spring-guided sectors advance the 38-tooth crown wheel, which is carried forward by its whole-tooth turn each loop. One drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 4,
+        "samples": 250,
+        "dt": 0.016,
+        "startTime": 40,
+        "periods": 1,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 0.05494575326829729,
+        "maximumCorrectionPixels": 0.021704499384963646,
+        "maximumRotationCorrection": 0.00015378294932292215,
+        "wraps": [
+          {
+            "key": "blocks.wheel",
+            "angle": 1.3227758541430708,
+            "rawAngle": 1.3228354841451762
+          }
+        ]
+      },
+      "roundTripPixels": 0.050047338105602586,
+      "seam": {
+        "seamStepPixels": 2.389549056151389,
+        "interiorStepPixels": 2.389549056151389,
+        "seamSecondPixels": 0.8638028789249979,
+        "interiorSecondPixels": 2.895717086903099
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 33.288146835803985
+}

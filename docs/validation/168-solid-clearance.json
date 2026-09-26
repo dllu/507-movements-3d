@@ -19,9 +19,9 @@
     "period": 4
   },
   "poses": 129,
-  "meshes": 9,
-  "pairs": 29,
-  "queries": 4500294,
+  "meshes": 15,
+  "pairs": 71,
+  "queries": 5693544,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the four-second analytic cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
@@ -32,7 +32,7 @@
     },
     {
       "file": "src/simulation/variable-radius-crank.js",
-      "sha256": "f0be6e5d938df6f1118cd3e542d837afc3c999109b08f38c1751bb9edf2f7b95"
+      "sha256": "2b677fe00f22a354ee21c1b12337cb6f322c5e2636c7e6bba81111feb31fc197"
     },
     {
       "file": "src/simulation/variable-radius-crank-motion.js",
@@ -44,11 +44,11 @@
     },
     {
       "file": "src/simulation/clutch-section-geometry.js",
-      "sha256": "32e252c6798963e9f1c361432be76aa9c9a464b926cb62a276758a020ba1a5ef"
+      "sha256": "e1278ea943497a8a63668838508c0f18f660d0d6da7c92416b3c53b09436b6ca"
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
+      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

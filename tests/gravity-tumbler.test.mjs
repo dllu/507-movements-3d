@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { readFile } from 'node:fs/promises';
 import * as THREE from 'three';
-import { gravityTumblerPlateProfile, tumblerSource } from '../src/simulation/gravity-tumbler-plate.js';
+import { gravityTumblerPlateProfile, tumblerSource, symmetricTumblerOutline, TUMBLER_SYMMETRY_AXIS } from '../src/simulation/gravity-tumbler-plate.js';
 import { tumblerSourcePoints } from '../scripts/lib/gravity-tumbler-source-points.mjs';
 import { makeGravityTumblerMotion } from '../src/simulation/gravity-tumbler-motion.js';
 import { createMovementModel, applyDisplayTiming } from '../src/simulation/registry.js';
@@ -80,7 +80,7 @@ test('067 release and catch converge when the integration step changes', () => {
 
 test('067 the finite pin transmits positive lifting and catch forces at its actual corner', () => {
   const pinTree = triangleTree(parts.drivingPin.geometry), collarTree = triangleTree(parts.halfCutSleeveEnd.geometry);
-  for (const time of [0, 8.54, 10.13, 12.31, 14.81]) {
+  for (const time of [0, 8.6, 10.13, 12.31, 14.81]) {
     model.update(time); model.root.updateMatrixWorld(true);
     const result = meshPairDistance(pinTree, collarTree,
       parts.halfCutSleeveEnd.matrixWorld.clone().invert().multiply(parts.drivingPin.matrixWorld), 0.01);
@@ -167,8 +167,26 @@ test('067 the scalloped plate follows independent source boundary readings', () 
       const t = direction.lengthSq() ? THREE.MathUtils.clamp(q.clone().sub(a).dot(direction) / direction.lengthSq(), 0, 1) : 0;
       distance = Math.min(distance, q.distanceTo(a.clone().addScaledVector(direction, t)));
     }
-    assert.ok(distance * scale < 13, String([x, y]));
+    // E is Brown's outline made symmetric (his freehand trace is not
+    // quite): the mirror average stays within 17 source pixels of his line.
+    assert.ok(distance * scale < 17, String([x, y]));
   }
-  near(p.plateArea, 9.311551027363338, 1e-8);
+  near(p.plateArea, 9.312664732566146, 1e-8);
   assert.ok(p.plateCentroidX > 0.21 && p.plateCentroidY > 0.93);
+});
+
+test('067 the tumbler E is symmetric about its axis through the shaft, as Brown draws it', () => {
+  const outline = symmetricTumblerOutline(), axis = new THREE.Vector2(Math.cos(TUMBLER_SYMMETRY_AXIS), Math.sin(TUMBLER_SYMMETRY_AXIS));
+  const mirror = (q) => axis.clone().multiplyScalar(2 * q.dot(axis)).sub(q);
+  const distanceToOutline = (q) => {
+    let distance = Infinity;
+    for (let i = 0; i < outline.length; i++) {
+      const a = outline[i], b = outline[(i + 1) % outline.length], direction = b.clone().sub(a);
+      const t = THREE.MathUtils.clamp(q.clone().sub(a).dot(direction) / direction.lengthSq(), 0, 1);
+      distance = Math.min(distance, q.distanceTo(a.clone().addScaledVector(direction, t)));
+    }
+    return distance;
+  };
+  for (const q of outline) assert.ok(distanceToOutline(mirror(q)) < 1e-9);
+  for (const part of [parts.tumblerPlate]) assert.equal(part.userData.seeThrough, true, 'E is see-through so B shows behind it');
 });

@@ -1,1145 +1,923 @@
 import * as THREE from 'three';
-import { sawFeedFlank, installSawFeedWorkingParts } from './saw-feed-working-parts.js';
-import {
-  PALETTE,
-  makeBeam,
-  makeDynamicLink,
-  makeGear,
-  markShadows,
-  matte,
-  setSpin,
-} from './primitives.js';
+import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
+import { creaseIndexedNormals } from './crease-normals.js';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
+import { rackPinionGeometry, rackToothGeometry } from './rack-pinion-parts.js';
+import { spokedWheelGeometry } from './spoked-wheel.js';
+import { PALETTE, markShadows, matte } from './primitives.js';
 
-const FULL_TURN = Math.PI * 2;
-const Z_AXIS = new THREE.Vector3(0, 0, 1);
+// Movement 284: Brown's saw-mill carriage feed. A lower crank rocks the
+// bell crank about fulcrum a by a long rod; the catch hung from the screw-set
+// slider on its vertical arm PULLS the large ratchet anticlockwise one tooth
+// per crank turn, the click at the upper left holds it against clockwise
+// return, and the pinion on the ratchet shaft feeds the carriage rack.
+//
+// Every visible part is one flat extrusion in its drawn plane. Positions and
+// proportions are measured on the 525 px plate; the outlines are rebuilt as
+// the intended curves (circles, arcs, straight lines, a clothoid scroll).
+// The official page has no animation for this movement.
 
-function centeredExtrusion(shape, depth, bevelSize = 0.006) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize,
-    bevelThickness: bevelSize,
-    curveSegments: 4,
-    depth,
-    steps: 1,
+const TAU = Math.PI * 2;
+const SCALE = 0.0155; // model units per plate pixel
+const O_PX = [140, 352]; // ratchet centre on the plate
+const P = (x, y) => [(x - O_PX[0]) * SCALE, (O_PX[1] - y) * SCALE];
+const px = (value) => value * SCALE;
+
+const rot = ([x, y], a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const sub = (a, b) => [a[0] - b[0], a[1] - b[1]];
+const len = (a) => Math.hypot(a[0], a[1]);
+const ang = (a) => Math.atan2(a[1], a[0]);
+const mod = (value, period) => ((value % period) + period) % period;
+const smooth = (x) => {
+  const t = Math.min(1, Math.max(0, x));
+  return t * t * t * (t * (6 * t - 15) + 10);
+};
+
+// ---------------------------------------------------------------- geometry
+
+// Measured on the plate (raster pixels, y down).
+const PLATE = {
+  ratchetCenter: [140, 352],
+  ratchetTipRadius: 107,
+  ratchetRootRadius: 100.5,
+  ratchetRimInnerRadius: 87,
+  ratchetHubRadius: 26,
+  ratchetSpokeWidth: 13,
+  ratchetTeeth: 44,
+  fulcrumA: [141, 122],
+  rockerJoint: [465, 122],
+  inputShaft: [454, 453],
+  crankPin: [389, 438],
+  catchHinge: [141, 187],
+  catchNose: [244.5, 336.5],
+  clickPivot: [73, 232],
+  clickTip: [53.5, 292.5],
+  rackPitch: 24,
+  pinionTeeth: 8,
+};
+
+const N_TEETH = PLATE.ratchetTeeth;
+const PITCH = TAU / N_TEETH;
+const R_TIP = px(PLATE.ratchetTipRadius);
+const R_ROOT = px(PLATE.ratchetRootRadius);
+const PINION_PITCH_RADIUS = px(PLATE.pinionTeeth * PLATE.rackPitch / TAU);
+const RACK_PITCH = px(PLATE.rackPitch);
+const RACK_ADDENDUM = 0.1;
+const FULCRUM = P(...PLATE.fulcrumA);
+const ROCKER_LENGTH = len(sub(P(...PLATE.rockerJoint), FULCRUM));
+const INPUT = P(...PLATE.inputShaft);
+const CRANK_RADIUS = len(sub(P(...PLATE.crankPin), INPUT));
+const ROD_LENGTH = len(sub(P(...PLATE.rockerJoint), P(...PLATE.crankPin)));
+const SOURCE_CRANK_ANGLE = ang(sub(P(...PLATE.crankPin), INPUT));
+const SOURCE_SLIDER_RADIUS = len(sub(P(...PLATE.catchHinge), FULCRUM));
+const CLICK_PIVOT = P(...PLATE.clickPivot);
+// The pawl noses rest a hair off the pocket corner.
+const SEAT_RADIUS = R_ROOT + 0.002;
+const SEAT_ANGLE_OFFSET = -0.002 / R_ROOT;
+
+const CRANK_PERIOD = 2.4;
+const FEED_STROKES = 8;
+const LOOP_REVOLUTIONS = FEED_STROKES + 1;
+const LOOP_PERIOD = CRANK_PERIOD * LOOP_REVOLUTIONS;
+const STEPS_PER_REV = 480;
+const GRAVITY = 54; // model units / s^2 (1 unit is about 0.18 m)
+
+// Catch outline: the stem is one circular arc through the hinge (fitted to
+// the plate's centreline, 0.5 px residual) running into a clothoid scroll
+// that ends in a round bead; a symmetric claw points left into the teeth.
+function catchOutlineRaster() {
+  const center = [54.2, -375.3]; // raster x, -y
+  const radius = 209.5;
+  const start = 67 * Math.PI / 180;
+  const end = 17.07 * Math.PI / 180;
+  const spine = [];
+  const arcSteps = 90;
+  for (let i = 0; i <= arcSteps; i += 1) {
+    const a = start + (end - start) * i / arcSteps;
+    spine.push([center[0] + radius * Math.cos(a), center[1] + radius * Math.sin(a)]);
+  }
+  let heading = Math.atan2(-Math.cos(end), Math.sin(end));
+  let position = spine.at(-1);
+  const scrollLength = 91.7;
+  const k0 = -1 / radius;
+  const k1 = 0.1352;
+  const steps = 160;
+  for (let i = 0; i < steps; i += 1) {
+    const s = (i + 0.5) / steps;
+    heading += (k0 + (k1 - k0) * s ** 1.65) * scrollLength / steps;
+    position = add(position, [Math.cos(heading) * scrollLength / steps, Math.sin(heading) * scrollLength / steps]);
+    spine.push(position);
+  }
+  // Arc-length taper: 5.4 px half-width at the boss, 4.3 at the claw,
+  // 2.9 at the bead.
+  const lengths = [0];
+  for (let i = 1; i < spine.length; i += 1) lengths.push(lengths[i - 1] + len(sub(spine[i], spine[i - 1])));
+  const total = lengths.at(-1);
+  const stemLength = lengths[arcSteps];
+  const half = (s) => (s <= stemLength
+    ? 5.4 + (4.3 - 5.4) * s / stemLength
+    : 4.3 + (2.9 - 4.3) * (s - stemLength) / (total - stemLength));
+  const left = [];
+  const right = [];
+  for (let i = 0; i < spine.length; i += 1) {
+    const a = spine[Math.max(0, i - 1)];
+    const b = spine[Math.min(spine.length - 1, i + 1)];
+    const t = sub(b, a);
+    const n = [-t[1] / len(t), t[0] / len(t)];
+    const w = half(lengths[i]);
+    left.push(add(spine[i], [n[0] * w, n[1] * w]));
+    right.push(add(spine[i], [-n[0] * w, -n[1] * w]));
+  }
+  const toRaster = ([x, y]) => [x, -y];
+  const stroke = poly([...left, ...right.reverse()].map(toRaster));
+  const bead = poly(circle(toRaster(spine.at(-1)), 5.2, 48));
+  const hinge = PLATE.catchHinge;
+  const boss = poly(circle(hinge, 11, 64));
+  // The claw's working (upper) edge runs level into a throat under the
+  // stem, deep enough for a tooth tip, so the point can reach the pocket
+  // corner and pull on the radial tooth face (Brown's small point slopes up
+  // into the stem, which would strike the tooth above before seating).
+  const claw = poly([PLATE.catchNose, [256.5, 337.2], [259.5, 338], [257, 346]]);
+  const bore = poly(circle(hinge, 4.5, 48));
+  return clip.difference(clip.union(stroke, bead, boss, claw), bore);
+}
+
+// Click (holding pawl): an eye about its pin and a tapered finger bounded by
+// two circular arcs meeting at the tip.
+function arcThrough(a, b, c, count) {
+  const [ax, ay] = a;
+  const [bx, by] = b;
+  const [cx, cy] = c;
+  const d = 2 * (ax * (by - cy) + bx * (cy - ay) + cx * (ay - by));
+  const ux = ((ax * ax + ay * ay) * (by - cy) + (bx * bx + by * by) * (cy - ay) + (cx * cx + cy * cy) * (ay - by)) / d;
+  const uy = ((ax * ax + ay * ay) * (cx - bx) + (bx * bx + by * by) * (ax - cx) + (cx * cx + cy * cy) * (bx - ax)) / d;
+  const r = Math.hypot(ax - ux, ay - uy);
+  const a0 = Math.atan2(ay - uy, ax - ux);
+  const a2 = Math.atan2(cy - uy, cx - ux);
+  const a1 = Math.atan2(by - uy, bx - ux);
+  let sweep = a2 - a0;
+  const between = mod(a1 - a0, TAU) < mod(a2 - a0, TAU);
+  if (between) sweep = mod(sweep, TAU);
+  else sweep = mod(sweep, TAU) - TAU;
+  return Array.from({ length: count + 1 }, (_, i) => [
+    ux + r * Math.cos(a0 + sweep * i / count),
+    uy + r * Math.sin(a0 + sweep * i / count),
+  ]);
+}
+
+function clickOutlineRaster(tip = PLATE.clickTip) {
+  const leftEdge = arcThrough([64, 236], [57.3, 262], tip, 40);
+  const rightEdge = arcThrough(tip, [69.5, 263], [81.5, 236], 40);
+  const finger = poly([...leftEdge, ...rightEdge.slice(1), [73, 228]]);
+  const eye = poly(circle(PLATE.clickPivot, 9, 64));
+  return clip.difference(clip.union(finger, eye), poly(circle(PLATE.clickPivot, 4, 48)));
+}
+
+// Raster polygons -> model polygons relative to a pivot.
+function toModel(polygons, pivotRaster = O_PX) {
+  const pivot = P(...pivotRaster);
+  return polygons.map((polygon) => polygon.map((ringPoints) => ringPoints.map(
+    ([x, y]) => sub(P(x, y), pivot))));
+}
+
+// Ratchet teeth (wheel frame): a radial steep face at each pocket angle
+// facing clockwise, the straight back rising anticlockwise... i.e. from the
+// tip down to the next pocket, as Brown cuts them (the plate's r(theta)
+// jumps up abruptly and falls gradually with increasing angle).
+function ratchetProfile(mountPhase) {
+  const points = [];
+  for (let n = 0; n < N_TEETH; n += 1) {
+    const theta = mountPhase + n * PITCH;
+    points.push([R_ROOT * Math.cos(theta), R_ROOT * Math.sin(theta)]);
+    points.push([R_TIP * Math.cos(theta), R_TIP * Math.sin(theta)]);
+  }
+  return points;
+}
+
+// ----------------------------------------------------------- contact solver
+
+// Rotation of a pivoted plate towards the wheel (direction sign), swept from
+// an angle just behind its current pose, at which its outline first ENTERS
+// the ratchet outline: exact circle/segment crossing angles, vertex-edge both
+// ways. Exits (the claw leaving a tooth face it sits under) are ignored, so
+// the sweep may start inside a pocket. Both outlines run anticlockwise.
+function firstHit(pivot, localPoints, localEdges, wheelPoints, wheelEdges, open, sign) {
+  let best = Infinity;
+  const circleSegment = (center, radius, a, b, callback) => {
+    const d = sub(b, a);
+    const f = sub(a, center);
+    const A = d[0] * d[0] + d[1] * d[1];
+    const B = 2 * (f[0] * d[0] + f[1] * d[1]);
+    const C = f[0] * f[0] + f[1] * f[1] - radius * radius;
+    const disc = B * B - 4 * A * C;
+    if (disc < 0) return;
+    const root = Math.sqrt(disc);
+    for (const t of [(-B - root) / (2 * A), (-B + root) / (2 * A)]) {
+      if (t >= 0 && t <= 1) callback([a[0] + d[0] * t, a[1] + d[1] * t], d);
+    }
+  };
+  // A point moving with velocity v enters an anticlockwise outline across
+  // edge direction d when v points to the edge's left (inside).
+  const entering = (v, d) => d[0] * v[1] - d[1] * v[0] > 0;
+  for (const v of localPoints) {
+    const radius = len(v);
+    const base = ang(v);
+    for (const [a, b] of wheelEdges) {
+      circleSegment(pivot, radius, a, b, (x, d) => {
+        const r = sub(x, pivot);
+        if (!entering([-sign * r[1], sign * r[0]], d)) return;
+        const travel = mod(sign * (ang(r) - base - open), TAU);
+        if (travel < best) best = travel;
+      });
+    }
+  }
+  for (const w of wheelPoints) {
+    const dw = sub(w, pivot);
+    const radius = len(dw);
+    const base = ang(dw);
+    for (const [a, b] of localEdges) {
+      circleSegment([0, 0], radius, a, b, (x, d) => {
+        // In the plate's frame the wheel point turns the other way.
+        if (!entering([sign * x[1], -sign * x[0]], d)) return;
+        const travel = mod(sign * (base - ang(x) - open), TAU);
+        if (travel < best) best = travel;
+      });
+    }
+  }
+  return open + sign * best;
+}
+
+function makeContactSolver(outline, pivotOf, sign, region) {
+  // Only the working part of the outline (near the wheel) can touch it.
+  // Decimated to about 1.5 px spacing; corners (the claw) are kept.
+  let full = outline[0][0].slice(0, -1);
+  if (full.reduce((area, p, i) => {
+    const q = full[(i + 1) % full.length];
+    return area + p[0] * q[1] - q[0] * p[1];
+  }, 0) < 0) full = full.slice().reverse();
+  const ring = full.filter((point, i) => {
+    const prev = full[(i + full.length - 1) % full.length];
+    const next = full[(i + 1) % full.length];
+    const turn = Math.abs(mod(ang(sub(next, point)) - ang(sub(point, prev)) + Math.PI, TAU) - Math.PI);
+    return i % 3 === 0 || turn > 0.3;
   });
-  geometry.translate(0, 0, -depth / 2);
+  const keep = ring.map((point) => region(point));
+  const localPoints = ring.filter((_, i) => keep[i]);
+  const localEdges = [];
+  for (let i = 0; i < ring.length; i += 1) {
+    const j = (i + 1) % ring.length;
+    if (keep[i] || keep[j]) localEdges.push([ring[i], ring[j]]);
+  }
+  const localCenter = localPoints.reduce((sum, point) => add(sum, point), [0, 0])
+    .map((value) => value / localPoints.length);
+  return (hinge, wheelAngle, profile, current, window) => {
+    const wheelPoints = [];
+    const wheelEdges = [];
+    const count = profile.length;
+    const centerAngle = ang(add(hinge, rot(localCenter, current)));
+    for (let i = 0; i < count; i += 1) {
+      const p = rot(profile[i], wheelAngle);
+      const delta = Math.abs(mod(ang(p) - centerAngle + Math.PI, TAU) - Math.PI);
+      if (delta > window) continue;
+      wheelPoints.push(p);
+      wheelEdges.push([p, rot(profile[(i + 1) % count], wheelAngle)]);
+    }
+    // Start just outside the current pose: contact is followed continuously
+    // (sweeping in from far out would land on the outermost tooth instead).
+    const open = current - sign * 0.01;
+    return firstHit(hinge, localPoints, localEdges, wheelPoints, wheelEdges, open, sign);
+  };
+}
+
+// ------------------------------------------------------------- kinematics
+
+function fourBar(crankAngle) {
+  const pin = add(INPUT, [CRANK_RADIUS * Math.cos(crankAngle), CRANK_RADIUS * Math.sin(crankAngle)]);
+  const delta = sub(pin, FULCRUM);
+  const d = len(delta);
+  const along = (ROCKER_LENGTH ** 2 - ROD_LENGTH ** 2 + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, ROCKER_LENGTH ** 2 - along ** 2));
+  const u = [delta[0] / d, delta[1] / d];
+  const foot = add(FULCRUM, [u[0] * along, u[1] * along]);
+  const c1 = add(foot, [-u[1] * h, u[0] * h]);
+  const c2 = add(foot, [u[1] * h, -u[0] * h]);
+  const joint = c1[1] >= c2[1] ? c1 : c2;
+  return { pin, joint, rocker: ang(sub(joint, FULCRUM)) };
+}
+
+const hingeAt = (rocker, sliderRadius) => add(FULCRUM, rot([0, -sliderRadius], rocker));
+
+// World polar angle of the catch nose seated on the pocket circle.
+function seatAngle(hinge, reach, radius = SEAT_RADIUS) {
+  const d = len(hinge);
+  const along = (d * d + radius ** 2 - reach ** 2) / (2 * d);
+  const h = Math.sqrt(Math.max(0, radius ** 2 - along ** 2));
+  const u = [hinge[0] / d, hinge[1] / d];
+  const c1 = add([u[0] * along, u[1] * along], [-u[1] * h, u[0] * h]);
+  const c2 = add([u[0] * along, u[1] * along], [u[1] * h, -u[0] * h]);
+  return ang(c1[0] > c2[0] ? c1 : c2);
+}
+
+let cachedSolution = null;
+
+function solveFeed() {
+  if (cachedSolution) return cachedSolution;
+  // Crank angles of the two rocker extremes (the crank turns clockwise).
+  let maxRocker = { value: -Infinity };
+  let minRocker = { value: Infinity };
+  for (let i = 0; i < 7200; i += 1) {
+    const angle = TAU * i / 7200;
+    const { rocker } = fourBar(angle);
+    if (rocker > maxRocker.value) maxRocker = { value: rocker, angle };
+    if (rocker < minRocker.value) minRocker = { value: rocker, angle };
+  }
+
+  // Click: its tip seats in pocket 0 with the wheel at 0. The tip may be
+  // lengthened a few pixels along the drawn finger to phase the pockets.
+  const clickAxis = sub(PLATE.clickTip, PLATE.clickPivot);
+  const clickTipRaster = (extension) => add(PLATE.clickTip,
+    [clickAxis[0] / len(clickAxis) * extension, clickAxis[1] / len(clickAxis) * extension]);
+  const pocketFor = (tipRaster) => {
+    const reachClick = len(sub(P(...tipRaster), CLICK_PIVOT));
+    let pocket = ang(P(...tipRaster));
+    for (let i = 0; i < 60; i += 1) {
+      const error = len(sub([SEAT_RADIUS * Math.cos(pocket), SEAT_RADIUS * Math.sin(pocket)], CLICK_PIVOT)) - reachClick;
+      const e2 = len(sub([SEAT_RADIUS * Math.cos(pocket + 1e-6), SEAT_RADIUS * Math.sin(pocket + 1e-6)], CLICK_PIVOT)) - reachClick;
+      pocket -= error / ((e2 - error) / 1e-6);
+    }
+    return pocket;
+  };
+
+  // Catch: the feed screw sets the slider radius. The setting and click
+  // length nearest Brown's drawing are chosen that drive one tooth plus a
+  // 12% overtravel (the click drops, and the wheel settles back onto it as
+  // the catch returns) and leave the catch a clear drop behind the next
+  // tooth on the return.
+  const reach = len(sub(P(...PLATE.catchNose), P(...PLATE.catchHinge)));
+  const strokeAt = (radius, phase) => {
+    const low = seatAngle(hingeAt(maxRocker.value, radius), reach);
+    const high = seatAngle(hingeAt(minRocker.value, radius), reach);
+    // Where the nose passes the tooth tips at the bottom of its return.
+    const lowAtTips = seatAngle(hingeAt(maxRocker.value, radius), reach, R_TIP);
+    const overtravel = mod(high - phase - SEAT_ANGLE_OFFSET, PITCH);
+    return { low, high, lowAtTips, sweep: high - low, overtravel, dropMargin: high - overtravel - PITCH - lowAtTips };
+  };
+  let sliderRadius = SOURCE_SLIDER_RADIUS;
+  let clickExtension = 0;
+  let bestScore = Infinity;
+  for (let e = -6; e <= 6; e += 0.25) {
+    const phase = pocketFor(clickTipRaster(e)) - SEAT_ANGLE_OFFSET;
+    for (let r = SOURCE_SLIDER_RADIUS - px(5); r <= SOURCE_SLIDER_RADIUS + px(20); r += px(0.1)) {
+      const st = strokeAt(r, phase);
+      if (st.dropMargin < 0.12 * PITCH) continue;
+      if (Math.abs(st.overtravel - 0.12 * PITCH) > 0.02 * PITCH) continue;
+      const score = Math.abs(r - SOURCE_SLIDER_RADIUS) / SCALE + 2 * Math.abs(e);
+      if (score < bestScore) { bestScore = score; sliderRadius = r; clickExtension = e; }
+    }
+  }
+  const clickTip = clickTipRaster(clickExtension);
+  const clickTipLocal = sub(P(...clickTip), CLICK_PIVOT);
+  const clickReach = len(clickTipLocal);
+  const pocketAngle = pocketFor(clickTip);
+  const mountPhase = pocketAngle - SEAT_ANGLE_OFFSET;
+  const clickSeatPoint = [SEAT_RADIUS * Math.cos(pocketAngle), SEAT_RADIUS * Math.sin(pocketAngle)];
+  const clickSeatRotation = ang(sub(clickSeatPoint, CLICK_PIVOT)) - ang(clickTipLocal);
+  const stroke = strokeAt(sliderRadius, mountPhase);
+
+  const catchOutline = toModel(catchOutlineRaster(), PLATE.catchHinge);
+  const clickOutline = toModel(clickOutlineRaster(clickTip), PLATE.clickPivot);
+  const catchNoseLocal = sub(P(...PLATE.catchNose), P(...PLATE.catchHinge));
+  const catchSolver = makeContactSolver(catchOutline, null, -1,
+    (point) => len(add(P(...PLATE.catchHinge), point)) < R_TIP + px(30));
+  const clickSolver = makeContactSolver(clickOutline, null, 1,
+    (point) => len(add(CLICK_PIVOT, point)) < R_TIP + px(20));
+  const profile = ratchetProfile(mountPhase);
+  const window = 0.35;
+  // The wheel's clockwise limit against the click where it stands: the
+  // carriage load turns the wheel back until a tooth face meets the click.
+  let clickRing = clickOutline[0][0].slice(0, -1);
+  if (clickRing.reduce((area, q, i) => {
+    const r = clickRing[(i + 1) % clickRing.length];
+    return area + q[0] * r[1] - r[0] * q[1];
+  }, 0) < 0) clickRing = clickRing.slice().reverse();
+  clickRing = clickRing.filter((q) => len(add(CLICK_PIVOT, q)) < R_TIP + px(20));
+  const clickAngleWorld = ang(P(...clickTip));
+  const wheelHold = (beta, current) => {
+    const world = clickRing.map((q) => add(CLICK_PIVOT, rot(q, beta)));
+    const edges = [];
+    for (let i = 0; i + 1 < world.length; i += 1) edges.push([world[i], world[i + 1]]);
+    const points = [];
+    const localEdges = [];
+    for (let i = 0; i < profile.length; i += 1) {
+      const q = profile[i];
+      const delta = Math.abs(mod(ang(q) + current - clickAngleWorld + Math.PI, TAU) - Math.PI);
+      if (delta > window) continue;
+      points.push(q);
+      localEdges.push([q, profile[(i + 1) % profile.length]]);
+    }
+    const hold = firstHit([0, 0], points, localEdges, world, edges, current + 1e-5, -1);
+    return current - hold > 2 * PITCH ? -Infinity : hold;
+  };
+
+  // The pocket at or just above the nose (a seated nose may sit a hair past
+  // its seat angle).
+  const catchPocket = (theta) => Math.ceil((theta - mountPhase - SEAT_ANGLE_OFFSET) / PITCH - 0.05);
+  const noseWorld = (hinge, alpha) => add(hinge, rot(catchNoseLocal, alpha));
+
+  const dt = CRANK_PERIOD / STEPS_PER_REV;
+  const total = STEPS_PER_REV * LOOP_REVOLUTIONS;
+  const wheel = new Float64Array(total + 1);
+  const catchAngle = new Float64Array(total + 1);
+  const clickAngle = new Float64Array(total + 1);
+  const crankAngle = new Float64Array(total + 1);
+  const engaged = new Uint8Array(total + 1);
+  const catchGap = new Float64Array(total + 1);
+  const clickGap = new Float64Array(total + 1);
+
+  const crankAt = (step) => maxRocker.angle - TAU * step / STEPS_PER_REV;
+  const lift = (v) => (v < 0.15 ? smooth(v / 0.15) : v > 0.65 ? smooth((0.8 - v) / 0.15) : 1);
+  // Gig-back schedule (one crank turn): lift catch and click, run the
+  // carriage back to 0.35 tooth short of the start, lower both onto the
+  // teeth, then let the carriage's back load settle the wheel clockwise
+  // until the click catches its pocket.
+  const gigBackWheel = (v, start) => (v < 0.65
+    ? PITCH * 0.35 + (start - PITCH * 0.35) * (1 - smooth((v - 0.2) / 0.45))
+    : PITCH * (0.35 - 0.45 * smooth((v - 0.8) / 0.15)));
+
+  const simulate = (initial, firstStep = 0) => {
+    let { psi, alpha, beta } = initial;
+    let omega = 0;
+    let gigStart = psi;
+    let betaRate = 0;
+    const startHinge = hingeAt(fourBar(crankAt(firstStep)).rocker, sliderRadius);
+    let pocket = catchPocket(ang(noseWorld(startHinge, alpha)) - psi);
+    let catchHand = alpha;
+    let clickHand = beta;
+    for (let step = firstStep; step <= total; step += 1) {
+      const revolution = Math.min(LOOP_REVOLUTIONS - 1, Math.floor(step / STEPS_PER_REV));
+      const phase = step / STEPS_PER_REV - revolution;
+      const crank = crankAt(step);
+      const hinge = hingeAt(fourBar(crank).rocker, sliderRadius);
+      let isDriving = false;
+      if (revolution < FEED_STROKES) {
+        const pocketSeat = mountPhase + SEAT_ANGLE_OFFSET + pocket * PITCH;
+        const driven = seatAngle(hinge, reach) - pocketSeat;
+        const floor = wheelHold(beta, psi);
+        isDriving = driven > floor;
+        psi = Math.max(floor, driven);
+        // Catch: gravity swings it onto the teeth; contact holds it off them.
+        const contact = catchSolver(hinge, psi, profile, alpha, window);
+        const free = alpha + omega * dt - (GRAVITY / reach) * dt * dt;
+        if (free <= contact) {
+          omega = step ? Math.min(3, (contact - alpha) / dt) : 0;
+          alpha = contact;
+        } else {
+          omega -= (GRAVITY / reach) * dt;
+          alpha = free;
+        }
+        const clickContact = clickSolver(CLICK_PIVOT, psi, profile, beta, window);
+        const clickFree = beta + betaRate * dt + (GRAVITY / clickReach) * dt * dt;
+        if (clickFree >= clickContact) {
+          betaRate = step ? Math.max(-3, (clickContact - beta) / dt) : 0;
+          beta = clickContact;
+        } else {
+          betaRate += (GRAVITY / clickReach) * dt;
+          beta = clickFree;
+        }
+        catchGap[step] = alpha - contact;
+        clickGap[step] = clickContact - beta;
+        catchHand = alpha;
+        clickHand = beta;
+      } else {
+        const prevPsi = psi;
+        if (phase === 0) gigStart = psi;
+        psi = gigBackWheel(phase, gigStart);
+        if (phase >= 0.8) psi = Math.max(psi, wheelHold(beta, prevPsi));
+        const contact = catchSolver(hinge, psi, profile, alpha, window);
+        // The hand lets each part down past the teeth, so both end resting
+        // on them wherever the lift began.
+        const letDown = 0.15 * smooth((phase - 0.65) / 0.15);
+        alpha = Math.max(contact, catchHand + 0.3 * lift(phase) - letDown);
+        const clickContact = clickSolver(CLICK_PIVOT, psi, profile, beta, window);
+        beta = Math.min(clickContact, clickHand - 0.3 * lift(phase) + letDown);
+        omega = 0;
+        betaRate = 0;
+        catchGap[step] = alpha - contact;
+        clickGap[step] = clickContact - beta;
+      }
+      pocket = catchPocket(ang(noseWorld(hinge, alpha)) - psi);
+      wheel[step] = psi;
+      catchAngle[step] = alpha;
+      clickAngle[step] = beta;
+      crankAngle[step] = crank;
+      engaged[step] = isDriving ? 1 : 0;
+    }
+    return { psi, alpha, beta };
+  };
+  // A first pass through the gig-back alone gives the settled state it
+  // leaves; the recorded loop starts from that state, so its end (after its
+  // own gig-back) matches its start.
+  const gigStep = FEED_STROKES * STEPS_PER_REV;
+  const gigHinge = hingeAt(fourBar(crankAt(gigStep)).rocker, sliderRadius);
+  const settled = simulate({
+    psi: FEED_STROKES * PITCH,
+    alpha: catchSolver(gigHinge, FEED_STROKES * PITCH, profile, 0.3, window),
+    beta: clickSolver(CLICK_PIVOT, FEED_STROKES * PITCH, profile, clickSeatRotation - 0.3, window),
+  }, gigStep);
+  const loopStart = { ...settled };
+  const loopEnd = simulate(settled);
+  const catchStart = loopStart.alpha;
+  const clickStart = loopStart.beta;
+
+  cachedSolution = {
+    catchAngle,
+    catchNoseLocal,
+    catchOutline,
+    catchStart,
+    catchGap,
+    loopEnd,
+    loopStart,
+    clickAngle,
+    clickGap,
+    clickOutline,
+    clickSeatRotation,
+    clickStart,
+    crankAngle,
+    dt,
+    engaged,
+    maxRockerCrank: maxRocker.angle,
+    minRockerCrank: minRocker.angle,
+    clickExtension,
+    mountPhase,
+    reach,
+    sliderRadius,
+    stroke,
+    total,
+    wheel,
+  };
+  return cachedSolution;
+}
+
+// ------------------------------------------------------------------ model
+
+function smoothPlate(polygons, low, high) {
+  const extruded = plate(polygons, low, high);
+  extruded.deleteAttribute('normal');
+  extruded.deleteAttribute('uv');
+  const geometry = mergeVertices(extruded, 1e-7);
+  extruded.dispose();
+  creaseIndexedNormals(geometry, Math.PI / 5);
   return geometry;
 }
 
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
+function box(x0, y0, x1, y1) {
+  return poly([P(x0, y0), P(x1, y0), P(x1, y1), P(x0, y1)]);
 }
 
-function rotate2(vector, angle) {
-  const cosine = Math.cos(angle);
-  const sine = Math.sin(angle);
-  return new THREE.Vector2(
-    cosine * vector.x - sine * vector.y,
-    sine * vector.x + cosine * vector.y,
-  );
+function cylinderZ(radius, low, high, material, segments = 48) {
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, high - low, segments), material);
+  mesh.rotation.x = Math.PI / 2;
+  mesh.position.z = (low + high) / 2;
+  return mesh;
 }
 
-function cross2(left, right) {
-  return left.x * right.y - left.y * right.x;
+function hullOfCircles(a, ra, b, rb, count = 64) {
+  // Outline of two circles joined by their outer tangents.
+  const d = sub(b, a);
+  const dist = len(d);
+  const base = ang(d);
+  const phi = Math.acos((ra - rb) / dist);
+  const points = [];
+  for (let i = 0; i <= count; i += 1) {
+    const t = base + phi + (TAU - 2 * phi) * i / count;
+    points.push(add(a, [ra * Math.cos(t), ra * Math.sin(t)]));
+  }
+  for (let i = 0; i <= count; i += 1) {
+    const t = base - phi + 2 * phi * i / count;
+    points.push(add(b, [rb * Math.cos(t), rb * Math.sin(t)]));
+  }
+  return poly(points);
 }
 
-function makeSawtoothRatchet({
-  boreRadius,
-  depth,
-  innerRadius,
-  mountPhase,
-  outerRadius,
-  rootRadius,
-  teeth,
-  toothOuterEndPhase,
-  toothOuterStartPhase,
-}) {
+function crankRockerPullCatchSawFeed(movement) {
+  const solution = solveFeed();
   const root = new THREE.Group();
-  const rotor = new THREE.Group();
-  root.add(rotor);
-  const toothPitch = FULL_TURN / teeth;
-  const profilePoints = [];
-  const toothFaces = [];
-  const shape = new THREE.Shape();
-  for (let toothIndex = 0; toothIndex < teeth; toothIndex += 1) {
-    const rootAngle = mountPhase + toothIndex * toothPitch;
-    const outerStartAngle = rootAngle
-      + toothOuterStartPhase * toothPitch;
-    const outerEndAngle = rootAngle + toothOuterEndPhase * toothPitch;
-    const nextRootAngle = rootAngle + toothPitch;
-    const rootPoint = new THREE.Vector2(
-      Math.cos(rootAngle) * rootRadius,
-      Math.sin(rootAngle) * rootRadius,
-    );
-    const outerStart = new THREE.Vector2(
-      Math.cos(outerStartAngle) * outerRadius,
-      Math.sin(outerStartAngle) * outerRadius,
-    );
-    const outerEnd = new THREE.Vector2(
-      Math.cos(outerEndAngle) * outerRadius,
-      Math.sin(outerEndAngle) * outerRadius,
-    );
-    if (toothIndex === 0) shape.moveTo(rootPoint.x, rootPoint.y);
-    else shape.lineTo(rootPoint.x, rootPoint.y);
-    shape.lineTo(outerStart.x, outerStart.y);
-    shape.lineTo(outerEnd.x, outerEnd.y);
-    profilePoints.push(rootPoint, outerStart, outerEnd);
-    const nextRoot = new THREE.Vector2(
-      Math.cos(nextRootAngle) * rootRadius,
-      Math.sin(nextRootAngle) * rootRadius,
-    );
-    toothFaces.push({
-      outer: outerEnd,
-      root: nextRoot,
-      toothIndex,
-    });
-  }
-  shape.closePath();
-  const centerHole = new THREE.Path();
-  centerHole.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
-  shape.holes.push(centerHole);
+  const mat = (color, roughness = 0.6) => matte(color, { metalness: 0.13, roughness });
+  const frameMaterial = mat(PALETTE.frame, 0.68);
+  const carriageMaterial = mat(PALETTE.muted, 0.7);
+  const rackMaterial = mat(PALETTE.driven, 0.6);
+  const wheelMaterial = mat(PALETTE.driven, 0.58);
+  const leverMaterial = mat(PALETTE.driven, 0.56);
+  const driverMaterial = mat(PALETTE.driver, 0.57);
+  const pawlMaterial = mat(PALETTE.accent, 0.55);
+  const inkMaterial = mat(PALETTE.ink, 0.48);
+  const named = (mesh, role) => { mesh.userData.role = role; return mesh; };
 
-  const wheelMaterial = matte(PALETTE.driven, {
-    metalness: 0.13,
-    roughness: 0.59,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.22,
-    roughness: 0.49,
-  });
-  const rim = new THREE.Mesh(
-    centeredExtrusion(shape, depth, 0.003),
-    wheelMaterial,
-  );
-  rim.userData.role = 'thirty-eight-tooth-saw-feed-ratchet-rim';
-  rotor.add(rim);
-
-  const hub = cylinderAlongZ(boreRadius + 0.22, depth * 1.28,
-    darkMaterial, 36);
-  hub.userData.role = 'ratchet-and-pinion-common-hub';
-  rotor.add(hub);
-  const bore = cylinderAlongZ(boreRadius, depth * 1.6,
-    matte(PALETTE.frame, { metalness: 0.18, roughness: 0.54 }), 32);
-  bore.userData.role = 'ratchet-shaft-visible-bore';
-  rotor.add(bore);
-  const spokeLength = innerRadius - boreRadius - 0.16;
-  for (let index = 0; index < 4; index += 1) {
-    const angle = Math.PI / 4 + index * Math.PI / 2;
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(spokeLength, 0.18, depth * 0.72),
-      wheelMaterial,
-    );
-    const radius = boreRadius + 0.16 + spokeLength / 2;
-    spoke.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0);
-    spoke.rotation.z = angle;
-    spoke.userData.role = 'open-ratchet-wheel-spoke';
-    rotor.add(spoke);
-  }
-  const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(0.055, outerRadius * 0.52, 0.025),
-    matte(PALETTE.white, { roughness: 0.45 }),
-  );
-  indicator.position.set(0, outerRadius * 0.63, depth / 2 + 0.025);
-  indicator.userData.role = 'white-ratchet-rotation-index';
-
-  root.userData.axis = Z_AXIS.clone();
-  root.userData.body = rim;
-  root.userData.indicator = indicator;
-  root.userData.profilePoints = profilePoints;
-  root.userData.rotor = rotor;
-  root.userData.teeth = teeth;
-  root.userData.toothFaces = toothFaces;
-  root.userData.toothPitch = toothPitch;
-  return markShadows(root);
-}
-
-function makeDownwardRackTooth({ depth, pitch, toothHeight }) {
-  const shape = new THREE.Shape();
-  shape.moveTo(-pitch * 0.42, toothHeight / 2);
-  shape.lineTo(-pitch * 0.19, -toothHeight / 2);
-  shape.lineTo(pitch * 0.19, -toothHeight / 2);
-  shape.lineTo(pitch * 0.42, toothHeight / 2);
-  shape.closePath();
-  return centeredExtrusion(shape, depth);
-}
-
-function crankRockerAdjustableSawFeed(movement) {
-  const root = new THREE.Group();
-
-  // The official page marks Movement 284's animation unavailable. All source
-  // coordinates below are independently measured from Brown's public-domain
-  // 525 px engraving; the motion follows the resulting closed four-bar and
-  // pawl-contact geometry rather than a generic rack-and-pinion animation.
-  const sourceImageWidth = 525;
-  const sourceImageHeight = 525;
-  const sourceScale = 0.0155;
-  const sourceRasterRatchetCenter = new THREE.Vector2(140, 352);
-  const sourceRasterRatchetOuterRight = new THREE.Vector2(247, 352);
-  const sourceRasterBellCrankPivot = new THREE.Vector2(141, 122);
-  const sourceRasterRockerJoint = new THREE.Vector2(465, 122);
-  const sourceRasterInputShaft = new THREE.Vector2(454, 453);
-  const sourceRasterCrankPin = new THREE.Vector2(389, 438);
-  const sourceRasterPawlHinge = new THREE.Vector2(141, 187);
-  const sourceRasterPawlContactDirection = 0.18;
-  const sourceRasterRackLeft = new THREE.Vector2(194, 318);
-  const sourceRasterRackRight = new THREE.Vector2(492, 318);
-  const sourceRasterHoldingPawlPivot = new THREE.Vector2(73, 232);
-  const sourceRasterLeftFrameTop = new THREE.Vector2(62, 81);
-  const sourceRasterLeftFrameBottom = new THREE.Vector2(62, 499);
-  const sourceRasterRightFrameBottom = new THREE.Vector2(455, 506);
-
-  const sourcePointToModel = ({ x, y }) => new THREE.Vector2(
-    (x - sourceRasterRatchetCenter.x) * sourceScale,
-    (sourceRasterRatchetCenter.y - y) * sourceScale,
-  );
-  const ratchetCenter = sourcePointToModel(sourceRasterRatchetCenter);
-  const bellCrankPivot = sourcePointToModel(sourceRasterBellCrankPivot);
-  const sourceRockerJoint = sourcePointToModel(sourceRasterRockerJoint);
-  const inputShaft = sourcePointToModel(sourceRasterInputShaft);
-  const sourceCrankPin = sourcePointToModel(sourceRasterCrankPin);
-  const sourcePawlHinge = sourcePointToModel(sourceRasterPawlHinge);
-  const rockerLength = bellCrankPivot.distanceTo(sourceRockerJoint);
-  const crankRadius = inputShaft.distanceTo(sourceCrankPin);
-  const connectingRodLength = sourceCrankPin.distanceTo(sourceRockerJoint);
-  const groundLength = bellCrankPivot.distanceTo(inputShaft);
-  const sourceInputAngle = Math.atan2(
-    sourceCrankPin.y - inputShaft.y,
-    sourceCrankPin.x - inputShaft.x,
-  );
-  const sourceRockerAngle = Math.atan2(
-    sourceRockerJoint.y - bellCrankPivot.y,
-    sourceRockerJoint.x - bellCrankPivot.x,
-  );
-
-  const fourBarAtInputAngle = (inputAngle) => {
-    const crankPin = inputShaft.clone().add(new THREE.Vector2(
-      Math.cos(inputAngle) * crankRadius,
-      Math.sin(inputAngle) * crankRadius,
-    ));
-    const delta = crankPin.clone().sub(bellCrankPivot);
-    const centerDistance = delta.length();
-    const along = (
-      rockerLength ** 2 - connectingRodLength ** 2 + centerDistance ** 2
-    ) / (2 * centerDistance);
-    const heightSquared = rockerLength ** 2 - along ** 2;
-    if (heightSquared < -1e-10) {
-      throw new RangeError('Movement 284 four-bar cannot close.');
-    }
-    const height = Math.sqrt(Math.max(0, heightSquared));
-    const unit = delta.clone().multiplyScalar(1 / centerDistance);
-    const normal = new THREE.Vector2(-unit.y, unit.x);
-    const foot = bellCrankPivot.clone().addScaledVector(unit, along);
-    const candidates = [
-      foot.clone().addScaledVector(normal, height),
-      foot.clone().addScaledVector(normal, -height),
-    ];
-    const rockerJoint = candidates[0].y >= candidates[1].y
-      ? candidates[0]
-      : candidates[1];
-    const rockerVector = rockerJoint.clone().sub(bellCrankPivot);
-    const connectingRodVector = rockerJoint.clone().sub(crankPin);
-    const rockerAngle = Math.atan2(rockerVector.y, rockerVector.x);
-    const connectingRodAngle = Math.atan2(
-      connectingRodVector.y,
-      connectingRodVector.x,
-    );
-    const inputPerpendicular = new THREE.Vector2(
-      -Math.sin(inputAngle),
-      Math.cos(inputAngle),
-    );
-    const rockerPerpendicular = new THREE.Vector2(
-      -Math.sin(rockerAngle),
-      Math.cos(rockerAngle),
-    );
-    const rodPerpendicular = new THREE.Vector2(
-      -Math.sin(connectingRodAngle),
-      Math.cos(connectingRodAngle),
-    );
-    const derivativeDenominator = rockerLength
-      * cross2(rockerPerpendicular, rodPerpendicular);
-    const rockerDerivative = crankRadius
-      * cross2(inputPerpendicular, rodPerpendicular)
-      / derivativeDenominator;
-    return {
-      connectingRodAngle,
-      connectingRodClosureError: Math.abs(
-        connectingRodVector.length() - connectingRodLength,
-      ),
-      crankPin,
-      rockerAngle,
-      rockerDerivative,
-      rockerJoint,
-      rockerLengthError: Math.abs(rockerVector.length() - rockerLength),
-    };
+  // Planes (z): posts and carriage behind, rack and pinion, the shaft
+  // hanger, then the ratchet, catch and click in one plane; the bell crank
+  // and crank just behind that plane, the rod in front of the rack.
+  const Z = {
+    carriage: [-0.60, -0.20], leftPost: [-1.00, -0.62], rack: [-0.20, 0.06], pinion: [-0.18, 0.06],
+    hanger: [0.08, 0.16], wheel: [0.18, 0.34], lever: [0.00, 0.16], rod: [0.18, 0.30],
   };
 
-  const extremum = (lower, upper, maximize) => {
-    let low = lower;
-    let high = upper;
-    for (let iteration = 0; iteration < 90; iteration += 1) {
-      const first = (2 * low + high) / 3;
-      const second = (low + 2 * high) / 3;
-      const firstValue = fourBarAtInputAngle(first).rockerAngle;
-      const secondValue = fourBarAtInputAngle(second).rockerAngle;
-      if ((firstValue < secondValue) === maximize) low = first;
-      else high = second;
-    }
-    const inputAngle = (low + high) / 2;
-    return {
-      inputAngle,
-      rockerAngle: fourBarAtInputAngle(inputAngle).rockerAngle,
-    };
-  };
-  const rockerMaximum = extremum(0, Math.PI, true);
-  const rockerMinimum = extremum(Math.PI, FULL_TURN, false);
-  const inputStartAngle = rockerMinimum.inputAngle;
-  const inputEndAngle = rockerMaximum.inputAngle;
-  const driveEndPhase = THREE.MathUtils.euclideanModulo(
-    inputStartAngle - inputEndAngle,
-    FULL_TURN,
-  ) / FULL_TURN;
-  const sourceCycleCoordinate = THREE.MathUtils.euclideanModulo(
-    inputStartAngle - sourceInputAngle,
-    FULL_TURN,
-  ) / FULL_TURN;
-
-  const ratchetTeeth = 38;
-  const ratchetToothPitch = FULL_TURN / ratchetTeeth;
-  const ratchetOuterRadius = sourcePointToModel(
-    sourceRasterRatchetOuterRight,
-  ).x;
-  const ratchetRootRadius = ratchetOuterRadius - 0.19;
-  const ratchetInnerRadius = ratchetOuterRadius * 0.62;
-  const pawlNoseRadius = 0.085;
-  const workingFlank = sawFeedFlank({radius:ratchetOuterRadius,rootRadius:ratchetRootRadius,teeth:ratchetTeeth,noseRadius:pawlNoseRadius});
-  const pawlContactCenterRadius = workingFlank.radius;
-  const sourcePawlContactCenter = new THREE.Vector2(
-    Math.cos(sourceRasterPawlContactDirection) * pawlContactCenterRadius,
-    Math.sin(sourceRasterPawlContactDirection) * pawlContactCenterRadius,
-  );
-  const pawlPivotAt = (rockerAngle, sliderRadius) => bellCrankPivot.clone()
-    .add(rotate2(new THREE.Vector2(0, -sliderRadius), rockerAngle));
-  const pawlLengthForSliderRadius = (sliderRadius) => pawlPivotAt(
-    sourceRockerAngle,
-    sliderRadius,
-  ).distanceTo(sourcePawlContactCenter);
-  const pawlContactGeometry = (
-    rockerAngle,
-    sliderRadius,
-    pawlLength,
-    contactCenterRadius = pawlContactCenterRadius,
-  ) => {
-    const pawlPivot = pawlPivotAt(rockerAngle, sliderRadius);
-    const centerDistance = pawlPivot.length();
-    const lineAngle = Math.atan2(pawlPivot.y, pawlPivot.x);
-    const cosine = (
-      centerDistance ** 2 + contactCenterRadius ** 2 - pawlLength ** 2
-    ) / (2 * centerDistance * contactCenterRadius);
-    const triangleAngle = Math.acos(THREE.MathUtils.clamp(cosine, -1, 1));
-    const contactAngle = lineAngle - triangleAngle;
-    const pawlContactCenter = new THREE.Vector2(
-      Math.cos(contactAngle) * contactCenterRadius,
-      Math.sin(contactAngle) * contactCenterRadius,
-    );
-    const pawlVector = pawlContactCenter.clone().sub(pawlPivot);
-    const pivotDerivative = rotate2(
-      new THREE.Vector2(sliderRadius, 0),
-      rockerAngle,
-    );
-    const distanceDerivative = pawlPivot.dot(pivotDerivative)
-      / centerDistance;
-    const lineAngleDerivative = cross2(pawlPivot, pivotDerivative)
-      / centerDistance ** 2;
-    const cosineDerivative = distanceDerivative
-      / (2 * contactCenterRadius) * (
-        1 - (
-          contactCenterRadius ** 2 - pawlLength ** 2
-        ) / centerDistance ** 2
-      );
-    const contactAngleDerivative = lineAngleDerivative
-      + cosineDerivative / Math.sqrt(Math.max(1e-18, 1 - cosine ** 2));
-    return {
-      contactAngle,
-      contactAngleDerivative,
-      pawlAngle: Math.atan2(pawlVector.y, pawlVector.x),
-      pawlContactCenter,
-      pawlPivot,
-      pawlVector,
-    };
-  };
-  const pawlSweepAtSliderRadius = (sliderRadius) => {
-    const pawlLength = pawlLengthForSliderRadius(sliderRadius);
-    const start = pawlContactGeometry(
-      rockerMinimum.rockerAngle,
-      sliderRadius,
-      pawlLength,
-    );
-    const end = pawlContactGeometry(
-      rockerMaximum.rockerAngle,
-      sliderRadius,
-      pawlLength,
-    );
-    return start.contactAngle - end.contactAngle;
-  };
-  let lowerSliderRadius = 45 * sourceScale;
-  let upperSliderRadius = 90 * sourceScale;
-  for (let iteration = 0; iteration < 80; iteration += 1) {
-    const middle = (lowerSliderRadius + upperSliderRadius) / 2;
-    if (pawlSweepAtSliderRadius(middle) < ratchetToothPitch) {
-      lowerSliderRadius = middle;
-    } else {
-      upperSliderRadius = middle;
-    }
-  }
-  const sliderRadius = (lowerSliderRadius + upperSliderRadius) / 2;
-  const pawlLength = pawlLengthForSliderRadius(sliderRadius);
-  const driveStartContact = pawlContactGeometry(
-    rockerMinimum.rockerAngle,
-    sliderRadius,
-    pawlLength,
-  );
-  const driveEndContact = pawlContactGeometry(
-    rockerMaximum.rockerAngle,
-    sliderRadius,
-    pawlLength,
-  );
-  const pawlReturnLift = 0.17;
-  const toothOuterStartPhase = 0.12;
-  const toothOuterEndPhase = 0.25;
-  const ratchetMountPhase = driveStartContact.contactAngle
-    - workingFlank.angle;
-  const inputCyclePeriod = 5;
-  const inputAngularSpeed = -FULL_TURN / inputCyclePeriod;
-  const pinionTeeth = 12;
-  const pinionPitchRadius = 0.58;
-  const pinionToothHeight = 0.16;
-  const rackPitch = FULL_TURN * pinionPitchRadius / pinionTeeth;
-  const rackToothCount = 19;
-  const rackLength = rackPitch * rackToothCount;
-  const sourceRackCenterX = 2.83;
-  const boundaryEpsilon = 1e-12;
-
-  const normalizedCoordinate = (coordinate) => {
-    const nearest = Math.round(coordinate);
-    return Math.abs(coordinate - nearest) < boundaryEpsilon
-      ? nearest
-      : coordinate;
-  };
-  const returnLiftAtProgress = (progress) => 16 * progress ** 2
-    * (1 - progress) ** 2;
-  const poseAtCycleCoordinate = (rawCoordinate) => {
-    const cycleCoordinate = normalizedCoordinate(rawCoordinate);
-    const cycleIndex = Math.floor(cycleCoordinate);
-    const cyclePhase = cycleCoordinate - cycleIndex;
-    const inputAngle = inputStartAngle - FULL_TURN * cycleCoordinate;
-    const fourBar = fourBarAtInputAngle(inputAngle);
-    const rockerAngularSpeed = fourBar.rockerDerivative
-      * inputAngularSpeed;
-    const driving = cyclePhase < driveEndPhase;
-    let wheelAngle;
-    let wheelAngularSpeed;
-    let pawlGeometry;
-    let returnClearance;
-    let returnProgress;
-    if (driving) {
-      pawlGeometry = pawlContactGeometry(
-        fourBar.rockerAngle,
-        sliderRadius,
-        pawlLength,
-      );
-      wheelAngle = -cycleIndex * ratchetToothPitch
-        + pawlGeometry.contactAngle - driveStartContact.contactAngle;
-      wheelAngularSpeed = pawlGeometry.contactAngleDerivative
-        * rockerAngularSpeed;
-      returnClearance = 0;
-      returnProgress = 0;
-    } else {
-      returnProgress = (
-        cyclePhase - driveEndPhase
-      ) / (1 - driveEndPhase);
-      returnClearance = pawlReturnLift
-        * returnLiftAtProgress(returnProgress);
-      pawlGeometry = pawlContactGeometry(
-        fourBar.rockerAngle,
-        sliderRadius,
-        pawlLength,
-        pawlContactCenterRadius + returnClearance,
-      );
-      wheelAngle = -(cycleIndex + 1) * ratchetToothPitch;
-      wheelAngularSpeed = 0;
-    }
-    return {
-      ...fourBar,
-      activeToothIndex: THREE.MathUtils.euclideanModulo(
-        cycleIndex,
-        ratchetTeeth,
-      ),
-      cycleCoordinate,
-      cycleIndex,
-      cyclePhase,
-      driving,
-      inputAngle,
-      inputAngularSpeed,
-      pawlGeometry,
-      returnClearance,
-      returnProgress,
-      rockerAngularSpeed,
-      stage: driving
-        ? 'adjustable-pawl-driving-one-ratchet-tooth'
-        : 'pawl-lifted-over-return-wheel-dwell',
-      wheelAngle,
-      wheelAngularSpeed,
-    };
-  };
-  const sourcePose = poseAtCycleCoordinate(sourceCycleCoordinate);
-  const sourceWheelAngle = sourcePose.wheelAngle;
-  const stateAtCycleCoordinate = (cycleCoordinate) => {
-    const pose = poseAtCycleCoordinate(cycleCoordinate);
-    const activeFaceAngle = ratchetMountPhase + pose.wheelAngle + pose.cycleIndex * ratchetToothPitch;
-    const contactNormal = rotate2(workingFlank.normal, activeFaceAngle);
-    const pawlContactPoint = pose.pawlGeometry.pawlContactCenter.clone().addScaledVector(contactNormal, -pawlNoseRadius);
-    const ratchetContactPoint = rotate2(workingFlank.point, activeFaceAngle);
-    const rackX = sourceRackCenterX - pinionPitchRadius
-      * (pose.wheelAngle - sourceWheelAngle);
-    const rackSpeed = -pinionPitchRadius * pose.wheelAngularSpeed;
-    const crankPinVelocity = new THREE.Vector2(
-      -Math.sin(pose.inputAngle) * crankRadius * inputAngularSpeed,
-      Math.cos(pose.inputAngle) * crankRadius * inputAngularSpeed,
-    );
-    const pawlPivotVelocity = rotate2(
-      new THREE.Vector2(sliderRadius, 0),
-      pose.rockerAngle,
-    ).multiplyScalar(pose.rockerAngularSpeed);
-    return {
-      ...pose,
-      crankPinVelocity,
-      pawlContactError: pose.driving
-        ? pawlContactPoint.distanceTo(ratchetContactPoint)
-        : null,
-      pawlContactPoint,
-      contactNormal,
-      outputContactMomentArm: -cross2(ratchetContactPoint,contactNormal),
-      pawlPivotVelocity,
-      pinionRackNoSlipError: rackSpeed
-        + pinionPitchRadius * pose.wheelAngularSpeed,
-      rackDisplacement: rackX - sourceRackCenterX,
-      rackSpeed,
-      rackVelocity: new THREE.Vector3(rackSpeed, 0, 0),
-      rackX,
-      ratchetContactPoint,
-      wheelTeethAdvanced: -(pose.wheelAngle - sourceWheelAngle)
-        / ratchetToothPitch,
-    };
-  };
-  const stateAtTime = (time) => stateAtCycleCoordinate(
-    sourceCycleCoordinate + time / inputCyclePeriod,
-  );
-
-  const driverMaterial = matte(PALETTE.driver, {
-    metalness: 0.13,
-    roughness: 0.57,
-  });
-  const drivenMaterial = matte(PALETTE.driven, {
-    metalness: 0.12,
-    roughness: 0.61,
-  });
-  const accentMaterial = matte(PALETTE.accent, {
-    metalness: 0.14,
-    roughness: 0.56,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.23,
-    roughness: 0.48,
-  });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.12,
-    roughness: 0.68,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.45 });
-
+  // Fixed frame: the left post behind the carriage, the right post under it.
   const frame = new THREE.Group();
-  frame.userData.role = 'fixed-saw-feed-frame-and-carriage-guides';
+  frame.userData.role = 'fixed-saw-feed-frame';
   root.add(frame);
-  const leftTop = sourcePointToModel(sourceRasterLeftFrameTop);
-  const leftBottom = sourcePointToModel(sourceRasterLeftFrameBottom);
-  const rightBottom = sourcePointToModel(sourceRasterRightFrameBottom);
-  const leftPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.54, leftTop.y - leftBottom.y, 0.52),
-    frameMaterial,
-  );
-  leftPost.position.set(leftTop.x, (leftTop.y + leftBottom.y) / 2, -0.42);
-  leftPost.userData.role = 'left-fixed-bellcrank-and-output-bearing-post';
-  frame.add(leftPost);
-  // The right post rises to the underside of the carriage slide (top at
-  // -0.27) so the slide rests on both posts instead of ending in mid-air.
-  const rightPostTop = -0.49;
-  const rightPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.52, rightPostTop - rightBottom.y, 0.52),
-    frameMaterial,
-  );
-  rightPost.position.set(rightBottom.x, (rightPostTop + rightBottom.y) / 2, -0.42);
-  rightPost.userData.role = 'right-fixed-input-crank-bearing-post';
-  frame.add(rightPost);
-  // Its front face stops 0.01 behind the feed pinion's back face.
-  const carriageGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(7.2, 0.22, 0.36),
-    frameMaterial,
-  );
-  carriageGuide.position.set(2.2, -0.38, -0.45);
-  carriageGuide.userData.role = 'fixed-horizontal-carriage-slide';
-  frame.add(carriageGuide);
-  for (const x of [-1.45, 4.85]) {
-    const foot = new THREE.Mesh(
-      new THREE.BoxGeometry(0.95, 0.18, 0.62),
-      frameMaterial,
-    );
-    foot.position.set(x, -2.35, -0.4);
-    foot.userData.role = 'saw-feed-frame-foot';
-    // Brown's elevation breaks both posts off without feet.
-  }
+  const leftPost = named(new THREE.Mesh(smoothPlate(box(61, 80, 109, 506), ...Z.leftPost), frameMaterial),
+    'left-frame-post-behind-carriage');
+  const rightPost = named(new THREE.Mesh(smoothPlate(box(455, 400, 505, 506), ...Z.carriage), frameMaterial),
+    'right-frame-post-under-carriage');
+  // Bracket carrying fulcrum a off the left post, behind the bell crank.
+  const fulcrumBracket = named(new THREE.Mesh(smoothPlate(clip.union(box(100, 112, 141, 132),
+    poly(circle(P(...PLATE.fulcrumA), px(10), 48))), Z.leftPost[1], -0.02), frameMaterial),
+  'fulcrum-bracket-on-left-post');
+  // Shaft hanger: a flat arm from under the carriage (bolted to the left
+  // post, whose foot block is also the carriage's left way) up to the
+  // ratchet shaft, between the pinion and the ratchet.
+  const hangerFoot = [85, 416];
+  const hangerOutline = clip.difference(clip.union(
+    hullOfCircles(P(...PLATE.ratchetCenter), px(14), P(...hangerFoot), px(13)),
+    box(61, 400, 109, 432)), poly(circle([0, 0], px(12) + 0.004, 48)));
+  const hanger = named(new THREE.Mesh(smoothPlate(hangerOutline, ...Z.hanger), frameMaterial),
+    'ratchet-shaft-hanger');
+  const hangerBlock = named(new THREE.Mesh(smoothPlate(box(61, 400, 109, 432), Z.leftPost[1], Z.hanger[0]),
+    frameMaterial), 'hanger-foot-and-carriage-way-on-left-post');
+  // Crank shaft bearing plate on the right post's face.
+  const crankBearing = named(new THREE.Mesh(smoothPlate(clip.difference(clip.union(box(443, 410, 467, 495),
+    poly(circle(INPUT, px(19), 64))), poly(circle(INPUT, px(10) + 0.004, 48))), Z.carriage[1], -0.10), frameMaterial),
+  'input-crank-shaft-bearing-plate');
+  frame.add(leftPost, rightPost, fulcrumBracket, hanger, hangerBlock, crankBearing);
 
-  const pinion = makeGear({
-    color: PALETTE.driven,
-    depth: 0.28,
-    radius: pinionPitchRadius,
-    teeth: pinionTeeth,
-    toothHeight: pinionToothHeight,
-  });
-  pinion.position.set(0, 0, -0.12);
-  pinion.userData.role = 'coaxial-carriage-feed-pinion';
-  root.add(pinion);
-
-  const ratchet = makeSawtoothRatchet({
-    boreRadius: 0.18,
-    depth: 0.32,
-    innerRadius: ratchetInnerRadius,
-    mountPhase: ratchetMountPhase,
-    outerRadius: ratchetOuterRadius,
-    rootRadius: ratchetRootRadius,
-    teeth: ratchetTeeth,
-    toothOuterEndPhase,
-    toothOuterStartPhase,
-  });
-  ratchet.position.z = 0.24;
-  ratchet.userData.role = 'large-one-way-saw-feed-ratchet-wheel';
-  root.add(ratchet);
-  const outputShaft = cylinderAlongZ(0.16, 0.94, darkMaterial, 36);
-  outputShaft.position.z = 0.02;
-  outputShaft.userData.role = 'common-ratchet-and-pinion-output-shaft';
-  root.add(outputShaft);
-
+  // Carriage (saw bed) with the rack on its side. Brown breaks the bed off at
+  // both plate edges; it is modelled whole, ending just beyond them.
   const carriage = new THREE.Group();
   carriage.userData.role = 'translating-saw-bed-carriage-with-side-rack';
   root.add(carriage);
-  const rackDepth = 0.28;
-  const rackToothGeometry = makeDownwardRackTooth({
-    depth: rackDepth,
-    pitch: rackPitch,
-    toothHeight: pinionToothHeight,
-  });
+  const bed = named(new THREE.Mesh(smoothPlate(box(12, 270, 518, 400), ...Z.carriage), carriageMaterial),
+    'saw-bed-carriage');
+  const bedRail = named(new THREE.Mesh(smoothPlate(box(12, 270, 518, 283), Z.carriage[1], Z.carriage[1] + 0.06),
+    carriageMaterial), 'saw-bed-top-rail');
+  const rackPitchY = PINION_PITCH_RADIUS;
+  const rackRootY = rackPitchY + RACK_ADDENDUM + 0.006;
+  const rackBar = named(new THREE.Mesh(smoothPlate(poly([
+    [P(27, 0)[0], P(0, 283)[1]], [P(490, 0)[0], P(0, 283)[1]],
+    [P(490, 0)[0], rackRootY], [P(27, 0)[0], rackRootY]]), ...Z.rack), rackMaterial), 'carriage-rack-bar');
+  carriage.add(bed, bedRail, rackBar);
+  const rackTooth = rackToothGeometry({ pitch: RACK_PITCH, addendum: RACK_ADDENDUM, depth: Z.rack[1] - Z.rack[0] });
   const rackTeeth = [];
-  for (let index = 0; index < rackToothCount; index += 1) {
-    const tooth = new THREE.Mesh(rackToothGeometry, drivenMaterial);
-    tooth.position.set(
-      (index - (rackToothCount - 1) / 2) * rackPitch,
-      pinionPitchRadius,
-      -0.13,
-    );
-    tooth.userData.index = index;
-    tooth.userData.role = 'downward-facing-carriage-rack-tooth';
+  for (let i = -4; i <= 14; i += 1) {
+    const x = i * RACK_PITCH;
+    if (x < P(27, 0)[0] + RACK_PITCH / 2 || x > P(490, 0)[0] - RACK_PITCH / 2) continue;
+    const tooth = named(new THREE.Mesh(rackTooth, rackMaterial), 'downward-carriage-rack-tooth');
+    tooth.position.set(x, rackPitchY, (Z.rack[0] + Z.rack[1]) / 2);
+    tooth.rotation.z = Math.PI;
     rackTeeth.push(tooth);
     carriage.add(tooth);
   }
-  const rackBody = new THREE.Mesh(
-    new THREE.BoxGeometry(rackLength + 0.18, 0.18, rackDepth),
-    drivenMaterial,
-  );
-  rackBody.position.set(0, pinionPitchRadius + 0.17, -0.13);
-  rackBody.userData.role = 'carriage-side-rack-bar';
-  carriage.add(rackBody);
-  const carriageBed = new THREE.Mesh(
-    new THREE.BoxGeometry(rackLength + 0.74, 0.54, 0.72),
-    drivenMaterial,
-  );
-  carriageBed.position.set(0, pinionPitchRadius + 0.55, -0.36);
-  carriageBed.userData.role = 'sawing-machine-translating-bed';
-  carriage.add(carriageBed);
-  // Brown's double line along the top of the bed is its raised top rail: one
-  // strip seated on the bed (the former two dark rods floated above it).
-  {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(rackLength + 0.62, 0.14, 0.11),
-      drivenMaterial,
-    );
-    rail.position.set(0, pinionPitchRadius + 0.82 + 0.07, -0.14);
-    rail.userData.role = 'saw-bed-top-guide-rail';
-    carriage.add(rail);
-  }
-  const rackIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(rackPitch * 0.66, 0.04, rackDepth + 0.035),
-    whiteMaterial,
-  );
-  rackIndex.position.set(-rackPitch / 2, pinionPitchRadius + 0.27, -0.13);
-  rackIndex.userData.role = 'white-carriage-feed-translation-index';
 
+  // Ratchet, pinion and shaft turn together.
+  const ratchet = new THREE.Group();
+  ratchet.userData.role = 'large-one-way-saw-feed-ratchet-wheel';
+  ratchet.userData.axis = new THREE.Vector3(0, 0, 1);
+  root.add(ratchet);
+  const profile = ratchetProfile(solution.mountPhase);
+  const shaftRadius = px(12);
+  const maxCrankAngle = solution.maxRockerCrank;
+  // Display time 0 is Brown's pose (horizontal arm) in the third stroke.
+  const sourceTimeOffset = 2 * CRANK_PERIOD
+    + mod(maxCrankAngle - SOURCE_CRANK_ANGLE, TAU) / TAU * CRANK_PERIOD;
+  const sourceWheelAngle = (() => {
+    const x = sourceTimeOffset / solution.dt;
+    const i = Math.floor(x);
+    return solution.wheel[i] * (1 - (x - i)) + solution.wheel[i + 1] * (x - i);
+  })();
+  const ratchetBody = named(new THREE.Mesh(spokedWheelGeometry({
+    outline: profile,
+    spokes: 4,
+    // Brown's spokes stand at 45 degrees in his pose (display time 0).
+    phase: Math.PI / 4 - sourceWheelAngle,
+    rimInnerRadius: px(PLATE.ratchetRimInnerRadius),
+    spokeWidth: px(PLATE.ratchetSpokeWidth),
+    hubArcRadius: px(PLATE.ratchetHubRadius),
+    hubFillet: px(3),
+    rimFillet: px(3),
+    boreRadius: shaftRadius + 0.004,
+    thickness: Z.wheel[1] - Z.wheel[0],
+  }), wheelMaterial), 'forty-four-tooth-four-spoke-ratchet');
+  ratchetBody.position.z = (Z.wheel[0] + Z.wheel[1]) / 2;
+  ratchetBody.userData.noRotationIndicator = true;
+  const pinion = named(new THREE.Mesh(rackPinionGeometry({
+    radius: PINION_PITCH_RADIUS, teeth: PLATE.pinionTeeth, addendum: RACK_ADDENDUM,
+    depth: Z.pinion[1] - Z.pinion[0], bore: shaftRadius + 0.004,
+  }), wheelMaterial), 'eight-tooth-feed-pinion');
+  // A pinion tooth space sits under the rack tooth above the shaft.
+  pinion.rotation.z = Math.PI / 2 + Math.PI / PLATE.pinionTeeth;
+  pinion.position.z = (Z.pinion[0] + Z.pinion[1]) / 2;
+  const shaft = named(cylinderZ(shaftRadius, Z.pinion[0] - 0.01, Z.wheel[1] + 0.06, inkMaterial),
+    'ratchet-and-pinion-shaft');
+  ratchet.add(ratchetBody, pinion, shaft);
+
+  // Bell crank: the arm to the rod and the slotted vertical arm, one plate.
   const bellCrank = new THREE.Group();
-  bellCrank.position.set(bellCrankPivot.x, bellCrankPivot.y, 0);
-  bellCrank.userData.axis = Z_AXIS.clone();
-  bellCrank.userData.role = 'adjustable-right-angle-bell-crank-lever';
+  bellCrank.userData.role = 'adjustable-bell-crank-lever';
+  bellCrank.userData.axis = new THREE.Vector3(0, 0, 1);
+  bellCrank.position.set(FULCRUM[0], FULCRUM[1], 0);
   root.add(bellCrank);
-  const horizontalArm = makeBeam(
-    new THREE.Vector3(0, 0, 0.55),
-    new THREE.Vector3(rockerLength, 0, 0.55),
-    {
-      color: PALETTE.driven,
-      depth: 0.18,
-      thickness: 0.18,
-    },
-  );
-  horizontalArm.userData.role = 'bell-crank-horizontal-rocker-arm';
-  bellCrank.add(horizontalArm);
-  const slotMinimumRadius = 43 * sourceScale;
-  const slotMaximumRadius = 92 * sourceScale;
-  const verticalArmLength = slotMaximumRadius + 0.31;
-  const verticalArm = makeBeam(
-    new THREE.Vector3(0, 0, 0.55),
-    new THREE.Vector3(0, -verticalArmLength, 0.55),
-    {
-      color: PALETTE.driven,
-      depth: 0.25,
-      thickness: 0.38,
-    },
-  );
-  verticalArm.userData.role = 'slotted-bell-crank-feed-adjustment-arm';
-  bellCrank.add(verticalArm);
-  const adjustmentSlot = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, slotMaximumRadius - slotMinimumRadius,
-      0.035),
-    darkMaterial,
-  );
-  adjustmentSlot.position.set(
-    0,
-    -(slotMinimumRadius + slotMaximumRadius) / 2,
-    0.705,
-  );
-  adjustmentSlot.userData.role = 'vertical-feed-adjustment-slot';
-  bellCrank.add(adjustmentSlot);
-  const adjustmentScrew = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.055,
-      slotMaximumRadius - slotMinimumRadius + 0.3, 18),
-    accentMaterial,
-  );
-  adjustmentScrew.position.set(
-    0,
-    -(slotMinimumRadius + slotMaximumRadius) / 2 + 0.03,
-    0.73,
-  );
-  adjustmentScrew.userData.role = 'feed-variation-screw';
-  bellCrank.add(adjustmentScrew);
-  const screwThreads = [];
-  for (let index = 0; index < 11; index += 1) {
-    const thread = new THREE.Mesh(
-      new THREE.TorusGeometry(0.068, 0.012, 7, 20),
-      darkMaterial,
-    );
-    thread.rotation.x = Math.PI / 2;
-    thread.position.set(
-      0,
-      -slotMinimumRadius - index
-        * (slotMaximumRadius - slotMinimumRadius) / 10,
-      0.73,
-    );
-    thread.userData.role = 'feed-adjustment-screw-thread';
-    screwThreads.push(thread);
-    bellCrank.add(thread);
+  const local = (polygons) => polygons.map((polygon) => polygon.map((ringPoints) => ringPoints.map(
+    (point) => sub(point, FULCRUM))));
+  const leverOutline = clip.difference(clip.union(
+    hullOfCircles(P(150, 122.5), px(7.5), P(...PLATE.rockerJoint), px(11)),
+    box(122, 100, 164, 232)),
+  box(130, 134, 157, 224),
+  poly(circle(P(...PLATE.fulcrumA), px(4.5) + 0.004, 48)),
+  poly(circle(P(...PLATE.rockerJoint), px(4.5) + 0.004, 48)),
+  poly(circle(P(141, 94), px(6) + 0.004, 32)));
+  const lever = named(new THREE.Mesh(smoothPlate(local(leverOutline), ...Z.lever), leverMaterial),
+    'bell-crank-arm-and-slotted-screw-frame');
+  // Feed screw: eye head above the frame, the threaded rod in the slot, the
+  // nut-slider carrying the catch hinge. Only its setting (the slider
+  // radius) matters to the motion.
+  const sliderY = FULCRUM[1] - solution.sliderRadius;
+  const sliderRasterY = O_PX[1] - sliderY / SCALE;
+  const screwHead = named(new THREE.Mesh(smoothPlate(local(clip.difference(clip.union(
+    poly(circle(P(141, 75), px(12), 64)), box(137, 80, 145, 100)),
+  poly(circle(P(141, 75), px(5), 48)))), 0.04, 0.12), inkMaterial), 'feed-screw-eye-head');
+  const slider = named(new THREE.Mesh(smoothPlate(local(box(130, sliderRasterY - 10.5, 157, sliderRasterY + 10.5)),
+    ...Z.lever), inkMaterial), 'screw-set-catch-slider');
+  const screwMaterial = mat(PALETTE.brass, 0.5);
+  const rodBetween = (y0, y1, role) => {
+    const a = P(141, y0);
+    const b = P(141, y1);
+    const mesh = named(new THREE.Mesh(new THREE.CylinderGeometry(px(6), px(6), Math.abs(a[1] - b[1]), 32),
+      screwMaterial), role);
+    mesh.position.set(a[0] - FULCRUM[0], (a[1] + b[1]) / 2 - FULCRUM[1], 0.08);
+    return mesh;
+  };
+  const screwUpper = rodBetween(134, sliderRasterY - 10.5, 'feed-screw-upper-thread');
+  const screwLower = rodBetween(sliderRasterY + 10.5, 224, 'feed-screw-lower-thread');
+  const fulcrumPin = named(cylinderZ(px(4.5), Z.leftPost[1] + 0.3, Z.lever[1] + 0.05, inkMaterial), 'fulcrum-a-pin');
+  fulcrumPin.position.set(0, 0, fulcrumPin.position.z);
+  const hingeLocal = [0, -solution.sliderRadius];
+  const hingePin = named(cylinderZ(px(4.2), Z.lever[1], Z.wheel[1] + 0.04, inkMaterial), 'catch-hinge-pin');
+  hingePin.position.set(hingeLocal[0], hingeLocal[1], hingePin.position.z);
+  const hingeCap = named(cylinderZ(px(6.5), Z.wheel[1], Z.wheel[1] + 0.04, inkMaterial), 'catch-hinge-cap');
+  hingeCap.position.set(hingeLocal[0], hingeLocal[1], hingeCap.position.z);
+  const rodPinLocal = sub(P(...PLATE.rockerJoint), FULCRUM);
+  const rodPin = named(cylinderZ(px(4.5), Z.lever[0], Z.rod[1] + 0.03, inkMaterial), 'rocker-rod-pin');
+  rodPin.position.set(rodPinLocal[0], rodPinLocal[1], rodPin.position.z);
+  bellCrank.add(lever, screwHead, slider, screwUpper, screwLower, hingePin, hingeCap, rodPin);
+  // The fulcrum pin is fixed in the bracket; the bell crank turns on it.
+  fulcrumPin.position.set(FULCRUM[0], FULCRUM[1], fulcrumPin.position.z);
+  root.add(fulcrumPin);
+
+  // Catch (the pulling hook) in the ratchet plane.
+  const catchGroup = new THREE.Group();
+  catchGroup.userData.role = 'pulling-catch-hung-from-bell-crank';
+  catchGroup.userData.axis = new THREE.Vector3(0, 0, 1);
+  root.add(catchGroup);
+  const catchBody = named(new THREE.Mesh(smoothPlate(solution.catchOutline, ...Z.wheel), pawlMaterial),
+    'scroll-catch-with-pulling-claw');
+  catchGroup.add(catchBody);
+
+  // Click (holding pawl) on its pin in the left post.
+  const click = new THREE.Group();
+  click.userData.role = 'holding-click-against-clockwise-return';
+  click.userData.axis = new THREE.Vector3(0, 0, 1);
+  click.position.set(CLICK_PIVOT[0], CLICK_PIVOT[1], 0);
+  root.add(click);
+  const clickBody = named(new THREE.Mesh(smoothPlate(solution.clickOutline, ...Z.wheel), pawlMaterial),
+    'holding-click-body');
+  click.add(clickBody);
+  const clickPin = named(cylinderZ(px(4) - 0.004, Z.leftPost[1], Z.wheel[1] + 0.04, inkMaterial), 'click-pivot-pin');
+  const clickCap = named(cylinderZ(px(6), Z.wheel[1], Z.wheel[1] + 0.04, inkMaterial), 'click-pin-cap');
+  for (const mesh of [clickPin, clickCap]) {
+    mesh.position.set(CLICK_PIVOT[0], CLICK_PIVOT[1], mesh.position.z);
+    root.add(mesh);
   }
-  const screwKnob = cylinderAlongZ(0.16, 0.25, accentMaterial, 28);
-  screwKnob.position.set(0, 0.22, 0.57);
-  screwKnob.userData.role = 'feed-adjustment-screw-hand-knob';
-  bellCrank.add(screwKnob);
-  const slider = cylinderAlongZ(0.17, 0.46, darkMaterial, 30);
-  slider.position.set(0, -sliderRadius, 0.6);
-  slider.userData.role = 'screw-positioned-pawl-hinge-slider';
-  bellCrank.add(slider);
-  const rockerJointIndex = cylinderAlongZ(0.12, 0.32, whiteMaterial, 28);
-  rockerJointIndex.position.set(rockerLength, 0, 0.58);
-  rockerJointIndex.userData.role = 'white-rocker-joint-index';
-  const rockerJointPin = cylinderAlongZ(0.1, 0.44, darkMaterial, 28);
-  rockerJointPin.position.set(rockerLength, 0, 0.68);
-  rockerJointPin.userData.role = 'rocker-to-connecting-rod-joint-pin';
-  bellCrank.add(rockerJointPin);
-  const bellCrankBearing = cylinderAlongZ(0.18, 0.82, darkMaterial, 34);
-  bellCrankBearing.position.set(bellCrankPivot.x, bellCrankPivot.y, 0.28);
-  bellCrankBearing.userData.role = 'fixed-bell-crank-fulcrum-a';
-  root.add(bellCrankBearing);
 
+  // Input crank (tapered arm) on its shaft in the right post's bearing.
   const inputCrank = new THREE.Group();
-  inputCrank.position.set(inputShaft.x, inputShaft.y, 0);
-  inputCrank.userData.axis = Z_AXIS.clone();
-  inputCrank.userData.role = 'continuously-revolving-lower-input-crank';
+  inputCrank.userData.role = 'continuously-revolving-input-crank';
+  inputCrank.userData.axis = new THREE.Vector3(0, 0, 1);
+  inputCrank.position.set(INPUT[0], INPUT[1], 0);
   root.add(inputCrank);
-  const crankArm = makeBeam(
-    new THREE.Vector3(0, 0, 0.58),
-    new THREE.Vector3(crankRadius, 0, 0.58),
-    {
-      color: PALETTE.driver,
-      depth: 0.20,
-      thickness: 0.22,
-    },
-  );
-  crankArm.userData.role = 'rigid-input-crank-arm';
-  inputCrank.add(crankArm);
-  const crankPin = cylinderAlongZ(0.14, 0.54, darkMaterial, 30);
-  crankPin.position.set(crankRadius, 0, 0.58);
-  crankPin.userData.role = 'input-crank-pin';
-  inputCrank.add(crankPin);
-  const crankIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.07, 20, 13),
-    whiteMaterial,
-  );
-  crankIndex.position.set(crankRadius * 0.56, 0, 0.72);
-  crankIndex.userData.role = 'white-input-crank-rotation-index';
-  const inputBearing = cylinderAlongZ(0.23, 0.86, darkMaterial, 36);
-  inputBearing.position.set(inputShaft.x, inputShaft.y, 0.25);
-  inputBearing.userData.role = 'fixed-lower-input-shaft-bearing';
-  root.add(inputBearing);
+  const crankArm = named(new THREE.Mesh(smoothPlate(clip.difference(
+    hullOfCircles([0, 0], px(20), [CRANK_RADIUS, 0], px(12)),
+    poly(circle([CRANK_RADIUS, 0], px(4.5) + 0.004, 48))), ...Z.lever), driverMaterial), 'tapered-input-crank-arm');
+  const crankShaft = named(cylinderZ(px(10), Z.carriage[1] + 0.01, Z.lever[1] + 0.01, inkMaterial),
+    'input-crank-shaft');
+  const crankPin = named(cylinderZ(px(4.5), Z.lever[0], Z.rod[1] + 0.03, inkMaterial), 'input-crank-pin');
+  crankPin.position.set(CRANK_RADIUS, 0, crankPin.position.z);
+  inputCrank.add(crankArm, crankShaft, crankPin);
 
-  const connectingRod = makeDynamicLink({
-    color: PALETTE.driver,
-    depth: 0.18,
-    jointRadius: 0.13,
-    thickness: 0.15,
-  });
-  connectingRod.userData.role = 'crank-to-bellcrank-connecting-rod';
+  // Connecting rod: a slender bar with an eye at each end.
+  const connectingRod = new THREE.Group();
+  connectingRod.userData.role = 'crank-to-bell-crank-connecting-rod';
   root.add(connectingRod);
+  const rodBody = named(new THREE.Mesh(smoothPlate(clip.difference(clip.union(
+    hullOfCircles([0, 0], px(4), [ROD_LENGTH, 0], px(4)),
+    poly(circle([0, 0], px(9), 48)), poly(circle([ROD_LENGTH, 0], px(9), 48))),
+  poly(circle([0, 0], px(4.5) + 0.004, 32)), poly(circle([ROD_LENGTH, 0], px(4.5) + 0.004, 32))), ...Z.rod),
+  driverMaterial), 'connecting-rod-with-eyes');
+  connectingRod.add(rodBody);
 
-  const pawl = new THREE.Group();
-  pawl.userData.axis = Z_AXIS.clone();
-  pawl.userData.role = 'separately-hinged-adjustable-curved-feed-pawl';
-  const pawlCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(pawlLength * 0.34, 0.13, 0),
-    new THREE.Vector3(pawlLength * 0.76, 0.08, 0),
-    new THREE.Vector3(pawlLength, 0, 0),
-  ], false, 'centripetal');
-  const pawlBody = new THREE.Mesh(
-    new THREE.TubeGeometry(pawlCurve, 54, 0.09, 11, false),
-    accentMaterial,
-  );
-  pawlBody.userData.role = 'curved-feed-catch-body';
-  pawl.add(pawlBody);
-  const pawlNose = cylinderAlongZ(pawlNoseRadius, 0.42, darkMaterial, 26);
-  pawlNose.position.set(pawlLength, 0, 0);
-  pawlNose.userData.role = 'rounded-feed-pawl-working-nose';
-  pawl.add(pawlNose);
-  const pawlIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.055, 18, 12),
-    whiteMaterial,
-  );
-  pawlIndex.position.set(pawlLength * 0.73, 0.11, 0.11);
-  pawlIndex.userData.role = 'white-pawl-motion-index';
-  root.add(pawl);
+  const stateAtTime = (time) => {
+    const loopTime = mod(time + sourceTimeOffset, LOOP_PERIOD);
+    const x = loopTime / solution.dt;
+    const i = Math.min(solution.total - 1, Math.floor(x));
+    const f = x - i;
+    const lerp = (array) => array[i] * (1 - f) + array[i + 1] * f;
+    const wheelAngle = lerp(solution.wheel);
+    const crank = maxCrankAngle - TAU * (loopTime / CRANK_PERIOD);
+    const bar = fourBar(crank);
+    const hinge = hingeAt(bar.rocker, solution.sliderRadius);
+    const catchAngle = lerp(solution.catchAngle);
+    const nose = add(hinge, rot(solution.catchNoseLocal, catchAngle));
+    return {
+      catchAngle,
+      catchGap: solution.catchGap[i],
+      clickAngle: lerp(solution.clickAngle),
+      clickGap: solution.clickGap[i],
+      crankAngle: crank,
+      crankPin: bar.pin,
+      driving: solution.engaged[i] === 1,
+      gigBack: loopTime >= FEED_STROKES * CRANK_PERIOD,
+      hinge,
+      loopTime,
+      nose,
+      rackX: -PINION_PITCH_RADIUS * wheelAngle,
+      rockerAngle: bar.rocker,
+      rockerJoint: bar.joint,
+      wheelAngle,
+      wheelTeethAdvanced: wheelAngle / PITCH,
+    };
+  };
 
-  const holdingPawlPivot = sourcePointToModel(
-    sourceRasterHoldingPawlPivot,
-  );
-  const holdingPawlLength = 0.78;
-  const holdingPawlBaseAngle = -1.03;
-  const holdingPawl = new THREE.Group();
-  holdingPawl.position.set(holdingPawlPivot.x, holdingPawlPivot.y, 0.48);
-  holdingPawl.userData.axis = Z_AXIS.clone();
-  holdingPawl.userData.role = 'fixed-pivot-anti-reverse-holding-pawl';
-  const holdingBody = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(holdingPawlLength, 0, 0),
-    {
-      color: PALETTE.accent,
-      depth: 0.14,
-      thickness: 0.13,
-    },
-  );
-  holdingBody.userData.role = 'holding-pawl-body';
-  holdingPawl.add(holdingBody);
-  const holdingPivotPin = cylinderAlongZ(0.11, 0.42, darkMaterial, 26);
-  holdingPivotPin.userData.role = 'holding-pawl-fixed-pivot-pin';
-  holdingPawl.add(holdingPivotPin);
-  root.add(holdingPawl);
+  const update = (time) => {
+    const state = stateAtTime(time);
+    inputCrank.rotation.z = state.crankAngle;
+    bellCrank.rotation.z = state.rockerAngle;
+    catchGroup.position.set(state.hinge[0], state.hinge[1], 0);
+    catchGroup.rotation.z = state.catchAngle;
+    click.rotation.z = state.clickAngle;
+    ratchet.rotation.z = state.wheelAngle;
+    carriage.position.x = state.rackX;
+    connectingRod.position.set(state.crankPin[0], state.crankPin[1], 0);
+    connectingRod.rotation.z = ang(sub(state.rockerJoint, state.crankPin));
+    root.userData.kinematics = state;
+  };
 
-  const pawlContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.06, 20, 13),
-    whiteMaterial,
-  );
-  pawlContactMarker.position.z = 0.72;
-  pawlContactMarker.userData.role = 'active-pawl-ratchet-contact-marker';
-  // Contact markers stay as unrendered state; Brown draws no white beads.
-  const rackContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.055, 20, 13),
-    whiteMaterial,
-  );
-  rackContactMarker.position.set(0, pinionPitchRadius, 0.18);
-  rackContactMarker.userData.role = 'pinion-rack-pitch-contact-marker';
-
-  const oneCycleStart = stateAtTime(0);
-  const oneCycleEnd = stateAtTime(inputCyclePeriod);
-  root.userData.archetype =
-    'continuous-crank-bellcrank-adjustable-pawl-ratchet-pinion-carriage-rack';
+  root.userData.archetype = movement.archetype;
   root.userData.blocks = {
-    adjustmentScrew,
-    adjustmentSlot,
-    bellCrank,
-    bellCrankBearing,
-    carriage,
-    carriageBed,
-    connectingRod,
-    crankArm,
-    crankPin,
-    frame,
-    holdingPawl,
-    horizontalArm,
-    inputBearing,
-    inputCrank,
-    outputShaft,
-    pawl,
-    pawlBody,
-    pawlContactMarker,
-    pawlNose,
-    pinion,
-    rackBody,
-    rackContactMarker,
-    rackIndex,
-    rackTeeth,
-    ratchet,
-    ratchetRotor: ratchet.userData.rotor,
-    screwKnob,
-    screwThreads,
-    slider,
-    verticalArm,
+    bed, bellCrank, carriage, catchBody, catchGroup, click, clickBody, clickPin, connectingRod, crankArm,
+    crankBearing, fulcrumBracket, hanger, hangerBlock, inputCrank, lever, leftPost, pinion, rackBar, rackTeeth,
+    ratchet, ratchetBody, rightPost, shaft, slider,
   };
-  root.userData.cameraDistanceScale = 1.08;
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.05, -2.65, -0.9),
-    new THREE.Vector3(6.15, 4.45, 1.0),
-  );
-  root.userData.feedAdjustment = {
-    maximumSliderRadius: slotMaximumRadius,
-    maximumSweptTeeth: pawlSweepAtSliderRadius(slotMaximumRadius)
-      / ratchetToothPitch,
-    minimumSliderRadius: slotMinimumRadius,
-    minimumSweptTeeth: pawlSweepAtSliderRadius(slotMinimumRadius)
-      / ratchetToothPitch,
-    pawlSweepAtSliderRadius,
-    selectedOutputTeethPerCycle: 1,
-    selectedSliderRadius: sliderRadius,
-    screwAction:
-      'turning the vertical screw moves the pawl hinge along the bell-crank arm, changing its tangential sweep at the ratchet',
-  };
-  root.userData.fourBarAtInputAngle = fourBarAtInputAngle;
   root.userData.geometry = {
-    connectingRodLength,
-    crankRadius,
-    driveEndContactAngle: driveEndContact.contactAngle,
-    driveEndPhase,
-    driveStartContactAngle: driveStartContact.contactAngle,
-    groundLength,
-    inputCyclePeriod,
-    inputEndAngle,
-    inputStartAngle,
-    pawlContactCenterRadius,
-    pawlLength,
-    pawlNoseRadius,
-    workingFlank,
-    ratchetMountPhase,
-    pawlReturnLift,
-    pinionPitchRadius,
-    pinionTeeth,
-    rackLength,
-    rackPitch,
-    rackToothCount,
-    ratchetInnerRadius,
-    ratchetOuterRadius,
-    ratchetRootRadius,
-    ratchetTeeth,
-    ratchetToothPitch,
-    rockerLength,
-    rockerMaximumAngle: rockerMaximum.rockerAngle,
-    rockerMinimumAngle: rockerMinimum.rockerAngle,
-    sliderRadius,
-    sourceCycleCoordinate,
-    sourceInputAngle,
-    sourceRockerAngle,
-    sourceScale,
-    sourceWheelAngle,
+    crankPeriod: CRANK_PERIOD,
+    crankRadius: CRANK_RADIUS,
+    feedStrokes: FEED_STROKES,
+    loopPeriod: LOOP_PERIOD,
+    mountPhase: solution.mountPhase,
+    overtravel: solution.stroke.overtravel,
+    pinionPitchRadius: PINION_PITCH_RADIUS,
+    pinionTeeth: PLATE.pinionTeeth,
+    rackPitch: RACK_PITCH,
+    ratchetPitch: PITCH,
+    ratchetRootRadius: R_ROOT,
+    ratchetTeeth: N_TEETH,
+    ratchetTipRadius: R_TIP,
+    rockerLength: ROCKER_LENGTH,
+    rodLength: ROD_LENGTH,
+    sliderRadius: solution.sliderRadius,
+    sourceScale: SCALE,
+    sourceSliderRadius: SOURCE_SLIDER_RADIUS,
+    catchSweep: solution.stroke.sweep,
   };
+  root.userData.solution = solution;
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.ratchetProfile = profile;
   root.userData.mechanism =
-    'one continuously revolving lower crank closes one crank-rocker four-bar with the horizontal arm of a right-angle bell crank; the screw-positioned hinge on its vertical arm carries one separately pivoted catch, which drives the large ratchet exactly one tooth on the power swing and lifts clear while the ratchet dwells on return; the ratchet shaft carries one coaxial pinion whose pitch motion advances the saw-bed carriage rack without slip';
-  root.userData.pawlContactGeometry = pawlContactGeometry;
-  root.userData.pawlSweepAtSliderRadius = pawlSweepAtSliderRadius;
+    'a continuously turning lower crank rocks the bell crank about fulcrum a through a long rod; the catch hung from the screw-set slider on its vertical arm pulls the ratchet anticlockwise one tooth per turn and drops behind the next tooth on the return, while the click at the upper left holds the wheel against clockwise return; the pinion on the ratchet shaft feeds the carriage rack to the left, and after eight strokes catch and click are lifted and the carriage is run back (gig-back) so the loop closes';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
     reason: 'The official Movement 284 page marks its animation unavailable.',
     sourceUrl: movement.sourceUrl,
   };
-  root.userData.sourcePointToModel = sourcePointToModel;
-  root.userData.sourceReference = {
-    officialDescription: movement.description,
-    plate284: {
-      imageHeight: sourceImageHeight,
-      imageWidth: sourceImageWidth,
-      inferredPinionTeeth: pinionTeeth,
-      inferredRatchetTeeth: ratchetTeeth,
-      inferredTopology:
-        'a lower crank and long connecting rod rock the horizontal arm about fulcrum a; its perpendicular slotted arm carries a screw-adjusted pawl hinge; the pawl indexes the large ratchet, and a smaller pinion on the same shaft meshes beneath the carriage rack',
-      measurementUncertaintyPixels: 7,
-      rasterBellCrankPivot: {
-        x: sourceRasterBellCrankPivot.x,
-        y: sourceRasterBellCrankPivot.y,
-      },
-      rasterCrankPin: {
-        x: sourceRasterCrankPin.x,
-        y: sourceRasterCrankPin.y,
-      },
-      rasterHoldingPawlPivot: {
-        x: sourceRasterHoldingPawlPivot.x,
-        y: sourceRasterHoldingPawlPivot.y,
-      },
-      rasterInputShaft: {
-        x: sourceRasterInputShaft.x,
-        y: sourceRasterInputShaft.y,
-      },
-      rasterLeftFrameBottom: {
-        x: sourceRasterLeftFrameBottom.x,
-        y: sourceRasterLeftFrameBottom.y,
-      },
-      rasterLeftFrameTop: {
-        x: sourceRasterLeftFrameTop.x,
-        y: sourceRasterLeftFrameTop.y,
-      },
-      rasterPawlHinge: {
-        x: sourceRasterPawlHinge.x,
-        y: sourceRasterPawlHinge.y,
-      },
-      rasterRackLeft: {
-        x: sourceRasterRackLeft.x,
-        y: sourceRasterRackLeft.y,
-      },
-      rasterRackRight: {
-        x: sourceRasterRackRight.x,
-        y: sourceRasterRackRight.y,
-      },
-      rasterRatchetCenter: {
-        x: sourceRasterRatchetCenter.x,
-        y: sourceRasterRatchetCenter.y,
-      },
-      rasterRatchetOuterRight: {
-        x: sourceRasterRatchetOuterRight.x,
-        y: sourceRasterRatchetOuterRight.y,
-      },
-      rasterRightFrameBottom: {
-        x: sourceRasterRightFrameBottom.x,
-        y: sourceRasterRightFrameBottom.y,
-      },
-      rasterRockerJoint: {
-        x: sourceRasterRockerJoint.x,
-        y: sourceRasterRockerJoint.y,
-      },
-    },
-    primaryScan: {
-      archiveIdentifier: 'fivehundredseven00browiala',
-      descriptionPage: 75,
-      edition: 21,
-      illustrationPage: 74,
-      publicationYear: 1908,
-    },
-    sourceUrl: movement.sourceUrl,
-  };
-  root.userData.stateAtCycleCoordinate = stateAtCycleCoordinate;
-  root.userData.stateAtTime = stateAtTime;
-  root.userData.timeline = {
-    driveEndPhase,
-    inputCyclePeriod,
-    returnFraction: 1 - driveEndPhase,
-    schedule: [
-      'crank-driven-pawl-power-swing-and-one-tooth-index',
-      'crank-driven-pawl-click-return-with-output-dwell',
-    ],
-    sourceCycleCoordinate,
-  };
-  root.userData.transmission = {
-    carriageAdvancePerInputTurn: oneCycleEnd.rackX - oneCycleStart.rackX,
-    direction:
-      'clockwise input crank, clockwise one-tooth ratchet-and-pinion index, rightward carriage feed',
-    inputTurnsPerRatchetTurn: ratchetTeeth,
-    oneToothIndexAngle: ratchetToothPitch,
-    outputTeethPerInputTurn: oneCycleEnd.wheelTeethAdvanced
-      - oneCycleStart.wheelTeethAdvanced,
-    pinionRackNoSlipLaw:
-      'rack-speed = -pinion-pitch-radius * common-shaft-angular-speed',
-    returnStrokeWheelDwell: true,
-  };
-
-  const update = (time) => {
-    const state = stateAtTime(time);
-    inputCrank.rotation.z = state.inputAngle;
-    bellCrank.rotation.z = state.rockerAngle;
-    // The rod runs in front of the crank plate and rocker arm (z 0.71-0.89),
-    // clear of the input journal, so only the pins pass through its eyes.
-    connectingRod.userData.setEndpoints(
-      new THREE.Vector3(state.crankPin.x, state.crankPin.y, 0.80),
-      new THREE.Vector3(
-        state.rockerJoint.x,
-        state.rockerJoint.y,
-        0.80,
-      ),
-    );
-    pawl.position.set(
-      state.pawlGeometry.pawlPivot.x,
-      state.pawlGeometry.pawlPivot.y,
-      0.52,
-    );
-    pawl.rotation.z = state.pawlGeometry.pawlAngle;
-    setSpin(ratchet, state.wheelAngle);
-    setSpin(pinion, state.wheelAngle);
-    carriage.position.x = state.rackX;
-    holdingPawl.rotation.z = holdingPawlBaseAngle + (
-      state.driving
-        ? 0.075 * (0.5 - 0.5 * Math.cos(
-          state.wheelAngle * ratchetTeeth,
-        ))
-        : 0
-    );
-    pawlContactMarker.visible = state.driving;
-    pawlContactMarker.position.x = state.ratchetContactPoint.x;
-    pawlContactMarker.position.y = state.ratchetContactPoint.y;
-    inputCrank.userData.angularSpeed = state.inputAngularSpeed;
-    bellCrank.userData.angularSpeed = state.rockerAngularSpeed;
-    ratchet.userData.angularSpeed = state.wheelAngularSpeed;
-    pinion.userData.angularSpeed = state.wheelAngularSpeed;
-    carriage.userData.velocity = state.rackVelocity.clone();
-    root.userData.contacts = {
-      pawlRatchet: state.driving ? {
-        activeToothIndex: state.activeToothIndex,
-        contactError: state.pawlContactError,
-        point: state.ratchetContactPoint.clone(),
-      } : null,
-      pawlReturnClearance: state.returnClearance,
-      pinionRack: {
-        active: true,
-        noSlipError: state.pinionRackNoSlipError,
-        pitchPoint: new THREE.Vector3(0, pinionPitchRadius, 0),
-      },
-    };
-    root.userData.updateWorkingInterfaces?.(state);
-    root.userData.kinematics = state;
-  };
-
-  installSawFeedWorkingParts(root);
+  root.userData.reconstructionNote =
+    'Catch, click and wheel follow a contact solve on the actual outlines: the catch and click fall under gravity onto the teeth and are held off them by contact; the catch drives only when seated in a pocket. The wheel is held on the click by the carriage load on the return. The gig-back (lifting catch and click and running the carriage back) is the sawyer\'s action, not described by Brown; it closes the animation loop.';
+  root.userData.animationTiming = { authoredCyclePeriod: LOOP_PERIOD };
+  root.userData.minimumDisplayCycleSeconds = LOOP_PERIOD;
+  root.userData.hideGround = true;
+  root.userData.cameraFov = 8;
+  const min = P(-30, 512);
+  const max = P(520, 58);
+  root.userData.cameraFitBounds = new THREE.Box3(
+    new THREE.Vector3(min[0], min[1], -1.0), new THREE.Vector3(max[0], max[1], 0.4));
   update(0);
   markShadows(root);
   return {
@@ -1152,7 +930,7 @@ function crankRockerAdjustableSawFeed(movement) {
 
 export function createAuthoredSawFeedMovement(movement) {
   if (movement.id !== 284) return null;
-  const result = crankRockerAdjustableSawFeed(movement);
+  const result = crankRockerPullCatchSawFeed(movement);
   result.root.userData.fidelity = 'authored';
   return result;
 }

@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { patchSeeThroughShader } from './see-through-part.js';
 
 // Rotation cue for featureless turning bodies (plain pulleys, drums, rollers,
 // discs, sheaves, cone and stepped pulleys). Brown's plates carry no index
@@ -146,8 +147,14 @@ function install(material, frameMatrix, strength) {
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>\n${FRAGMENT_HEAD}`)
       .replace('#include <color_fragment>', `#include <color_fragment>\n${FRAGMENT_BODY}`);
+    // A see-through part (see-through-part.js) keeps its edge opacity.
+    patchSeeThroughShader(shader, material.userData.seeThrough);
   };
-  material.customProgramCacheKey = () => 'rotation-indicator-v2';
+  material.customProgramCacheKey = () => {
+    const seeThrough = material.userData.seeThrough;
+    return seeThrough ? `rotation-indicator-v2-see-through-${seeThrough.opacity}-${seeThrough.edgeOpacity}`
+      : 'rotation-indicator-v2';
+  };
   material.clone = function cloneWithIndicator() {
     return install(new this.constructor().copy(this), frameMatrix.clone(), strength);
   };

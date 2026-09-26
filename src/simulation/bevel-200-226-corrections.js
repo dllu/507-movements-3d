@@ -41,8 +41,23 @@ export function correctSixBevelTrain(root){
   if(o.userData.role==='three-times-speed-output-index'){replace(o,new THREE.BoxGeometry(.055,.38,.045));o.position.y=.375;}
   const r={'right-fixed-bearing-for-shaft-F':.080,'left-fixed-bearing-around-output-E-and-shaft-F':.172,'upper-fixed-bearing-for-input-shaft-B':.092}[o.userData.role];if(r){replace(o,ring(r,.292,-.057,.057));o.userData.boreRadius=r;}
  });
+ // Brown draws frame A as a broad flat rectangular frame (double outline,
+ // band about 13.5-16 px of the plate, 0.22, and thin): one flat plate whose outer edge
+ // is his outer line, in place of the four thin square rails.
+ const g=root.userData.geometry,band=.22,members=[];
+ b.carrierAssembly.traverse(o=>{if(o.userData.role==='source-rectangular-carrier-frame-A-member')members.push(o);});
+ if(members.length){
+  const frameMaterial=matte(PALETTE.frame,{metalness:.12,roughness:.6});
+  const outer=[[g.frameLeftX,g.frameBottomY],[g.frameRightX,g.frameBottomY],[g.frameRightX,g.frameTopY],[g.frameLeftX,g.frameTopY]];
+  const inner=[[g.frameLeftX+band,g.frameBottomY+band],[g.frameRightX-band,g.frameBottomY+band],[g.frameRightX-band,g.frameTopY-band],[g.frameLeftX+band,g.frameTopY-band]];
+  const shape=new THREE.Shape(outer.map(p=>new THREE.Vector2(...p)));shape.holes.push(new THREE.Path(inner.reverse().map(p=>new THREE.Vector2(...p))));
+  const flatFrame=new THREE.Mesh(new THREE.ExtrudeGeometry(shape,{depth:.08,bevelEnabled:false}).translate(0,0,g.frameRearZ-.04),frameMaterial);
+  flatFrame.userData.role='broad-flat-rectangular-carrier-frame-A';flatFrame.userData.carrierFrameMember=true;
+  for(const member of members)member.visible=false;
+  b.carrierAssembly.add(flatFrame);b.flatFrameA=flatFrame;
+ }
  const collar=new THREE.Mesh(ring(.076,.13,-.025,.025),matte(PALETTE.frame));collar.rotation.y=Math.PI/2;collar.position.x=-3.47;collar.userData.role='carrier-fixed-shaft-collar';
- const spoke=makeBeam(new THREE.Vector3(-3.47,0,-.1),new THREE.Vector3(-3.47,0,-1.3),{color:PALETTE.frame,thickness:.05,depth:.08}),tie=makeBeam(new THREE.Vector3(-3.47,0,-1.3),new THREE.Vector3(root.userData.geometry.frameLeftX,0,-1.3),{color:PALETTE.frame,thickness:.05,depth:.08});
+ const spoke=makeBeam(new THREE.Vector3(-3.47,0,-.1),new THREE.Vector3(-3.47,0,-1.3),{color:PALETTE.frame,thickness:.05,depth:.08}),tie=makeBeam(new THREE.Vector3(-3.47,0,-1.3),new THREE.Vector3(root.userData.geometry.frameLeftX+.095,0,-1.3),{color:PALETTE.frame,thickness:.05,depth:.08});
  b.carrierAssembly.add(collar,spoke,tie);b.carrierShaftConnection=[collar,spoke,tie];
  finish(root,'The six equal gears make F and C counterrotate. The carrier fixed to F then drives E at three times input speed; the caption’s stated doubling conflicts with these gear constraints. Hidden journal supports and tooth sections are reconstructed.',12);
 }

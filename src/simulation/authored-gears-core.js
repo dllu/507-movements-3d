@@ -40,6 +40,7 @@ import { thinRibWormGeometry } from './thin-rib-worm-geometry.js';
 import { conicalStudMotion, conicalStudToothGeometry, conicalStudHeadGeometry, conicalStudParameters } from './conical-stud-geometry.js';
 import { steppedSectorCut, steppedSectorMotion } from './stepped-sector-geometry.js';
 import { mangleToothOutline } from './mangle-gear-geometry.js';
+import { spokedWheelGeometry } from './spoked-wheel.js';
 import {
   PALETTE,
   beltCurveCrossed,
@@ -995,9 +996,12 @@ function makeBrushDisk({
     matte(PALETTE.driven, { metalness: 0.1, roughness: 0.68 }),
   );
   body.rotation.x = Math.PI / 2;
+  // Brown draws one plain disk: the friction facing is in the disk's own
+  // colour (a black facing read as a dark rim, and its quadrant cue as a
+  // harsh checkerboard).
   const rubber = new THREE.Mesh(
     new THREE.CylinderGeometry(radius * 0.965, radius * 0.965, rubberThickness, 88),
-    matte(PALETTE.ink, { metalness: 0.02, roughness: 0.94 }),
+    matte(PALETTE.driven, { metalness: 0.06, roughness: 0.8 }),
   );
   rubber.rotation.x = Math.PI / 2;
   rubber.position.z = bodyThickness / 2 + rubberThickness / 2;
@@ -3487,70 +3491,42 @@ function sunAndPlanet() {
   };
   const sun = makeSourceGear(PALETTE.driven, true);
   const planet = makeSourceGear(PALETTE.driver, false);
-  // Brown's fixed ring round the gears: a continuous outer rim and, inside
-  // it, four separate quarter segments parted by open radial gaps (an open
-  // four-part ring, not a disk). The segments are set back from the rim face
-  // (the drawn rim/segment line), flare into the rim with fillets, and stop
-  // just inside the sun's tooth roots, so the middle of the ring is open
-  // round the sun shaft. The ring is fixed: it is carried from behind by a
-  // spacer at its foot on the sun-shaft pillar and does not turn.
+  // Brown's large wheel behind the sun is the fly-wheel the caption says the
+  // sun gear is keyed to: a rim, four thin radial spokes (the paired radial
+  // lines of the plate) and a hub, open between the spokes. It is fast on the
+  // sun shaft and turns with the sun gear. The hub is a disk behind the sun
+  // gear (hidden by it in the plate's view), bored for the sun shaft and
+  // seated against the back of the sun's flange.
   const ringRadius = 1.27;
   const ringInnerRadius = 1.10;
-  const ringHubRadius = 0.6;
-  const segmentRecess = 0.04;
-  const gapHalfWidth = 0.07;
-  const segmentOuterRadius = ringInnerRadius + 0.05;
-  const fillet = 0.07;
-  const ringZ = -0.225;
-  const ringShapes = [];
-  for (let quadrant = 0; quadrant < 4; quadrant += 1) {
-    const a0 = quadrant * Math.PI / 2, a1 = a0 + Math.PI / 2;
-    const pointAt = (angle, radial, lateral) => new THREE.Vector2(
-      Math.cos(angle) * radial - Math.sin(angle) * lateral,
-      Math.sin(angle) * radial + Math.cos(angle) * lateral);
-    const polar = (radius, angle) => new THREE.Vector2(radius * Math.cos(angle), radius * Math.sin(angle));
-    const innerHalf = Math.asin(gapHalfWidth / ringHubRadius);
-    const straightEnd = Math.sqrt(ringInnerRadius ** 2 - (gapHalfWidth + fillet) ** 2) - fillet;
-    const filletAngle = Math.asin((gapHalfWidth + fillet) / ringInnerRadius);
-    const cornerRadial = Math.sqrt(ringInnerRadius ** 2 - gapHalfWidth ** 2) - 0.004;
-    const shape = new THREE.Shape();
-    const startPoint = pointAt(a0, Math.sqrt(ringHubRadius ** 2 - gapHalfWidth ** 2), gapHalfWidth);
-    shape.moveTo(startPoint.x, startPoint.y);
-    const e0 = pointAt(a0, straightEnd, gapHalfWidth);
-    shape.lineTo(e0.x, e0.y);
-    const c0 = pointAt(a0, cornerRadial, gapHalfWidth), f0 = polar(ringInnerRadius, a0 + filletAngle);
-    shape.quadraticCurveTo(c0.x, c0.y, f0.x, f0.y);
-    const o0 = polar(segmentOuterRadius, a0 + filletAngle);
-    shape.lineTo(o0.x, o0.y);
-    shape.absarc(0, 0, segmentOuterRadius, a0 + filletAngle, a1 - filletAngle, false);
-    const f1 = polar(ringInnerRadius, a1 - filletAngle);
-    shape.lineTo(f1.x, f1.y);
-    const c1 = pointAt(a1, cornerRadial, -gapHalfWidth), e1 = pointAt(a1, straightEnd, -gapHalfWidth);
-    shape.quadraticCurveTo(c1.x, c1.y, e1.x, e1.y);
-    const i1 = pointAt(a1, Math.sqrt(ringHubRadius ** 2 - gapHalfWidth ** 2), -gapHalfWidth);
-    shape.lineTo(i1.x, i1.y);
-    shape.absarc(0, 0, ringHubRadius, a1 - innerHalf, a0 + innerHalf, true);
-    shape.closePath();
-    ringShapes.push(shape);
-  }
-  const ringMaterial = matte(0x5e6666, { metalness: 0.18, roughness: 0.61 });
-  const ringSegments = new THREE.Mesh(new THREE.ExtrudeGeometry(ringShapes, {
-    depth: 0.10 - segmentRecess, bevelEnabled: true, bevelSegments: 1,
-    bevelSize: 0.003, bevelOffset: -0.003, bevelThickness: 0.003, curveSegments: 64,
-  }).translate(0, 0, ringZ), ringMaterial);
-  ringSegments.userData.role = 'fixed-ring-four-segments';
-  ringSegments.userData.segmentCount = 4;
-  const rimShape = new THREE.Shape();
-  rimShape.absarc(0, 0, ringRadius, 0, 2 * Math.PI, false);
-  const rimBore = new THREE.Path();
-  rimBore.absarc(0, 0, ringInnerRadius, 0, 2 * Math.PI, true);
-  rimShape.holes.push(rimBore);
-  const ringRim = new THREE.Mesh(new THREE.ExtrudeGeometry(rimShape, {
-    depth: 0.10, bevelEnabled: true, bevelSegments: 1,
-    bevelSize: 0.003, bevelOffset: -0.003, bevelThickness: 0.003, curveSegments: 96,
-  }).translate(0, 0, ringZ), ringMaterial);
-  ringRim.userData.role = 'fixed-ring-rim';
-  root.add(ringSegments, ringRim);
+  const spokeHalfWidth = 0.055;
+  const hubRadius = 0.56;
+  const flywheelMaterial = matte(0x5e6666, { metalness: 0.18, roughness: 0.61 });
+  const flywheel = new THREE.Group();
+  flywheel.userData.role = 'flywheel-fast-on-sun-shaft';
+  // One plate (spoked-wheel.js) in the hub's plane: the rim, four thin
+  // spokes and a large hub disk, each window closed by the rim arc and an
+  // arc concentric with the hub, with small fillets at all four corners.
+  const hubBack = -0.235, hubFront = -0.182;
+  const ringRim = new THREE.Mesh(spokedWheelGeometry({
+    outerRadius: ringRadius,
+    rimInnerRadius: ringInnerRadius,
+    spokes: 4,
+    spokeWidth: 2 * spokeHalfWidth,
+    hubRadius,
+    hubArcRadius: hubRadius,
+    hubFillet: 0.04,
+    rimFillet: 0.03,
+    boreRadius: axleRadius + 0.004,
+    thickness: hubFront - hubBack,
+  }).translate(0, 0, (hubFront + hubBack) / 2), flywheelMaterial);
+  ringRim.userData.role = 'flywheel-rim';
+  ringRim.userData.noRotationIndicator = true;
+  const flywheelHub = ringRim;
+  const spokes = [];
+  flywheel.add(ringRim);
+  flywheel.userData.spokeCount = 4;
+  root.add(flywheel);
 
   const carrier = new THREE.Group();
   const armShape = new THREE.Shape();
@@ -3610,58 +3586,12 @@ function sunAndPlanet() {
   rodBoss.position.z = 0.2;
   planet.userData.rotor.add(rodBoss);
   const sunShaftFront = 0.14;
-  // Brown draws no frame. The sun shaft runs back into a bearing boss on a
-  // plain pillar behind the fixed ring; the rod's upper wrist pin works in a
-  // crosshead sliding between vertical guide bars on a back bar, which
-  // stands on its own pillar. Both pillars stand on feet at a floor below
-  // the planet's orbit, behind every moving part.
-  const supportFront = -0.3;
-  const supportFloor = -2.5;
-  const sunShaftBack = supportFront + 0.002;
+  // Brown draws no frame, and none is added (p60 support policy): the sun
+  // shaft ends in a plain stub behind the ring, and the rod ends cleanly at
+  // its upper wrist pin above the plate's crop.
+  const sunShaftBack = -0.298;
   const sunShaft = makeShaft({ length: sunShaftFront - sunShaftBack, radius: axleRadius, axis: Z_AXIS });
   sunShaft.position.z = (sunShaftFront + sunShaftBack) / 2;
-  const sunBearing = bearingBoss({ x: 0, y: 0, boreRadius: axleRadius + 0.004, outerRadius: 0.2,
-    zBack: supportFront, zFront: -0.24, role: 'sun-shaft-bearing' });
-  const sunPad = backBar([{ x: 0, y: 0 }], { zFront: supportFront, width: 0.5, role: 'sun-shaft-pad' });
-  const sunPillar = footPillar({ x: 0, yTop: 0, yFloor: supportFloor, z: supportFront - 0.05,
-    width: 0.3, role: 'sun-shaft-pillar' });
-  const guideBottom = 2.2, guideTop = 6.05;
-  const crossheadWidth = 0.44, crossheadHeight = 0.5, crossheadBack = -0.12, crossheadFront = 0.15;
-  const crossheadShape = new THREE.Shape();
-  crossheadShape.moveTo(-crossheadWidth / 2, -crossheadHeight / 2);
-  crossheadShape.lineTo(crossheadWidth / 2, -crossheadHeight / 2);
-  crossheadShape.lineTo(crossheadWidth / 2, crossheadHeight / 2);
-  crossheadShape.lineTo(-crossheadWidth / 2, crossheadHeight / 2);
-  crossheadShape.closePath();
-  const crossheadBore = new THREE.Path();
-  crossheadBore.absarc(0, 0, axleRadius + 0.006, 0, 2 * Math.PI, true);
-  crossheadShape.holes.push(crossheadBore);
-  const crosshead = new THREE.Mesh(new THREE.ExtrudeGeometry(crossheadShape, {
-    depth: crossheadFront - crossheadBack, bevelEnabled: false, curveSegments: 32,
-  }).translate(0, 0, crossheadBack), matte(PALETTE.muted, { metalness: 0.16, roughness: 0.6 }));
-  crosshead.userData.role = 'wrist-pin-crosshead';
-  const guideSupport = new THREE.Group();
-  guideSupport.userData.role = 'crosshead-guide';
-  const railWidth = 0.09;
-  for (const side of [-1, 1]) {
-    const rail = new THREE.Mesh(new THREE.BoxGeometry(railWidth, guideTop - guideBottom, crossheadFront - supportFront),
-      supportMaterial());
-    rail.position.set(upperGuideX + side * (crossheadWidth / 2 + 0.004 + railWidth / 2),
-      (guideTop + guideBottom) / 2, (crossheadFront + supportFront) / 2);
-    rail.userData.role = 'crosshead-guide-bar';
-    guideSupport.add(rail);
-  }
-  guideSupport.add(backPlate({ minX: upperGuideX - crossheadWidth / 2 - 0.004 - railWidth,
-    maxX: upperGuideX + crossheadWidth / 2 + 0.004 + railWidth, minY: guideBottom, maxY: guideTop,
-    zFront: supportFront, role: 'crosshead-guide-back-bar' }));
-  guideSupport.add(footPillar({ x: upperGuideX, yTop: guideBottom, yFloor: supportFloor,
-    z: supportFront - 0.05, width: 0.3, role: 'crosshead-guide-pillar' }));
-  // The fixed ring's foot sits on a spacer block on the sun-shaft pillar.
-  const ringSpacer = new THREE.Mesh(new THREE.BoxGeometry(0.24, ringRadius - ringInnerRadius, ringZ - supportFront),
-    supportMaterial());
-  ringSpacer.position.set(0, -(ringRadius + ringInnerRadius) / 2, (ringZ + supportFront) / 2);
-  ringSpacer.userData.role = 'fixed-ring-spacer';
-  root.add(sunBearing, sunPad, sunPillar, crosshead, guideSupport, ringSpacer);
   const armStud = makeShaft({ length: 0.12, radius: axleRadius, axis: Z_AXIS });
   armStud.position.z = 0.31;
   armStud.userData.role = 'arm-sun-end-stud';
@@ -3672,12 +3602,12 @@ function sunAndPlanet() {
   const orbitPeriod = 2 * Math.PI / carrierAngularSpeed;
   root.userData.mechanism = 'watts-equal-gear-sun-and-planet';
   root.userData.blocks = { sun, planet, carrier, arm, connectingRod, rodBoss,
-    ringSegments, ringRim, sunShaft, planetShaft, armStud };
+    flywheel, flywheelRim: ringRim, flywheelHub, flywheelSpokes: spokes, sunShaft, planetShaft, armStud };
   root.userData.geometry = {
     teeth, module, pitchRadius, angularPitch, circularPitch: Math.PI * module,
     centerDistance, sunCenter, sunPhase, planetPhase, gearDepth, flangeRadius,
     axleRadius, bearingRadius, armRadius, rodLength, visibleRodLength, rodWidth,
-    upperGuideX, ringRadius, ringInnerRadius, ringHubRadius, gapHalfWidth,
+    upperGuideX, ringRadius, ringInnerRadius, hubRadius, spokeHalfWidth,
     orbitPeriod, cycleDuration: orbitPeriod, carrierAngularSpeed,
   };
   const update = (time) => {
@@ -3695,10 +3625,10 @@ function sunAndPlanet() {
     planetShaft.position.set(px, py, 0.1275);
     connectingRod.position.set(px, py, 0);
     connectingRod.rotation.z = rodAngle;
-    crosshead.position.set(upperGuideX, py + dy, 0);
     carrier.rotation.z = carrierAngle;
     setSpin(sun, sunAngle);
     setSpin(sunShaft, sunAngle);
+    flywheel.rotation.z = sunAngle;
     setSpin(planet, planetAngle);
     setSpin(planetShaft, planetAngle);
     root.userData.planetaryContact = {
@@ -3716,8 +3646,8 @@ function sunAndPlanet() {
   update(0);
   // The rod is modelled whole, so the fixed opening camera fits the swept
   // motion envelope (the whole rod through the cycle), not Brown's crop at
-  // the wheels. The added pillars and crosshead guide stay out of that fit.
-  freezeFitBoundsWithout(root, update, orbitPeriod, [sunBearing, sunPad, sunPillar, crosshead, guideSupport, ringSpacer]);
+  // the wheels.
+  freezeFitBoundsWithout(root, update, orbitPeriod, []);
   root.userData.cameraFov = 18;
   return finish(root, update, new THREE.Vector3(0.04, 0.22, 10));
 }

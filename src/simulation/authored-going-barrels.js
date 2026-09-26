@@ -664,7 +664,8 @@ function harrisonGoingBarrel(movement) {
       const b = ring * springSides + (side + 1) % springSides;
       const c = a + springSides;
       const d = b + springSides;
-      springIndices.push(a, c, b, b, c, d);
+      // Counterclockwise seen from outside, matching the outward normals.
+      springIndices.push(a, b, c, b, d, c);
     }
   }
   const springWireGeometry = new THREE.BufferGeometry();

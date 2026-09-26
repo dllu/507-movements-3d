@@ -159,7 +159,7 @@ test('movement 493 exactly reproduces all six official piecewise-linear source p
     [1, 0, 0, 0],
   ];
   for (const [phase, center, stone, spread] of cases) {
-    const state = stateAtTime(phase * geometry.cycleDuration);
+    const state = stateAtTime(geometry.cyclePhaseAtPhase(phase) * geometry.cycleDuration);
     near(state.centralLift, center, 8e-16,
       `official center position at phase ${phase}`);
     near(state.stoneLift, stone, 8e-16,
@@ -169,8 +169,9 @@ test('movement 493 exactly reproduces all six official piecewise-linear source p
   }
 
   for (let sample = 0; sample < 4000; sample += 1) {
-    const phase = sample / 4000;
-    const state = stateAtTime(phase * geometry.cycleDuration);
+    // Source poses are kept along the eased motion phase.
+    const state = stateAtTime(sample / 4000 * geometry.cycleDuration);
+    const { phase } = state;
     let expectedCenter;
     if (phase < 0.4) expectedCenter = 5 * phase;
     else if (phase <= 0.5) expectedCenter = 2;
@@ -192,7 +193,7 @@ test('movement 493 exactly reproduces all six official piecewise-linear source p
   assert.deepEqual(geometry.sourcePhaseLandmarks,
     [0, 0.138, 0.4, 0.5, 0.762, 0.9, 1]);
   assert.match(model.root.userData.dynamics.sourceLinearTimingDisclosure,
-    /piecewise-linear interpolation.*instantaneous speed changes.*exact source poses.*four-second period.*dwells/s);
+    /piecewise-linear interpolation.*instantaneous speed changes.*exact source poses.*four-second period.*dwells.*eases/s);
   disposeModel(model.root);
 });
 
@@ -261,7 +262,7 @@ test('movement 493 reaches both bore walls before the stone can move and then li
     assert.equal(state.packingsAgainstWall, false);
   }
   const contact = stateAtTime(
-    geometry.lockingPhase * geometry.cycleDuration,
+    geometry.cyclePhaseAtPhase(geometry.lockingPhase) * geometry.cycleDuration,
   );
   near(contact.wallClearance, 0, 0, 'exact simultaneous wall contact');
   near(contact.packingAnchorX, geometry.boreHalfWidth, 0,
@@ -272,9 +273,9 @@ test('movement 493 reaches both bore walls before the stone can move and then li
 
   for (let sample = 553; sample <= 3048; sample += 1) {
     const time = sample / 1000;
-    const phase = time / geometry.cycleDuration;
     const state = stateAtTime(time);
-    if (phase <= geometry.stoneHomePhase) {
+    const { phase } = state;
+    if (phase >= geometry.lockingPhase && phase <= geometry.stoneHomePhase) {
       near(state.wallClearance, 0, 2e-16,
         `outer face stays on wall ${sample}`);
       near(state.relativeWedgeAdvance, geometry.lockStroke, 5e-16,

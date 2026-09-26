@@ -448,9 +448,11 @@ function swingingGutterPump(movement) {
       jet.visible = dischargeVisible;
       if (!dischargeVisible) continue;
       jet.position.copy(state.outlet);
-      const reach = 0.35 + 0.65 * THREE.MathUtils.smoothstep(
+      // The jet grows from the outlet as discharge starts (no pop at a
+      // third of its length).
+      const reach = THREE.MathUtils.smoothstep(
         state.outletDischargeFraction, 0, 1);
-      jet.scale.set(reach, reach, 1);
+      jet.scale.set(reach, reach, reach);
     }
   };
 

@@ -1,0 +1,78 @@
+{
+  "id": 110,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-110.json.gz",
+  "bytes": 12797,
+  "assetSha256": "8133b4b8d5094f85e209d987d07f579db29bd55a1185de85a453c99312f94ac4",
+  "motionSources": {
+    "src/simulation/mujoco-half-nut/physics.js": "22226698f32e33e52685e56bd530c2e70dcaf5ad550344ebd72959f4b923528b",
+    "src/simulation/mujoco-half-nut/profile.js": "5d4aba86848dc76b6ad8d698b3d26e981216fbdd5cbdf968949bb17a3eb38415",
+    "src/simulation/mujoco-half-nut/source.js": "ab7a3e3ffe4c74afdeb8106f685c38f8875eb6e87bc97a95d5e353c6fd6cc715",
+    "src/simulation/mujoco-half-nut/thread-section.js": "deae497ea22b759b30d2cb6a5f5821781c945636e9c90f37292913df4a13ac70",
+    "src/simulation/mujoco-half-nut/visual.js": "6ed40925be50aaadc6d05d24e37b52c17f4c899066c4a6c7582f6a55fc6e499f",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-half-nut/geometry.js": "480a2570b92698fb646f26a9470060cb47933e34ac7feb14eed2bd8072578c13"
+  },
+  "physicsXmlSha256": {
+    "default": "22f017fb1f76cf5c1fb8c1c5da0643b745a29c37ceb1ae7053daf6b514353759"
+  },
+  "fullXmlSha256": {
+    "default": "01982c04c1954b1e9394f1c01a5474aff3d9255cccaedcd0242e5fbee3e598df"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-half-nut",
+    "wrap": {
+      "blocks.roller": {
+        "symmetry": 6.283185307179586
+      }
+    }
+  },
+  "cycleDesign": "The roller turns at a constant 60 rpm and the selector throws the half-nut over at each end of travel, so the carriage runs out and back; one 16 s traverse cycle closes the loop and the roller is carried forward by whole turns.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 16,
+        "samples": 1000,
+        "dt": 0.016,
+        "startTime": 80,
+        "periods": 1,
+        "drivePeriod": 16
+      },
+      "closure": {
+        "rawSeamPixels": 0.01939835620598573,
+        "maximumCorrectionPixels": 0.0084664838951951,
+        "maximumRotationCorrection": 0.000005624907096565989,
+        "wraps": [
+          {
+            "key": "blocks.roller",
+            "angle": 100.53096491487338,
+            "rawAngle": 100.53096463833072
+          }
+        ]
+      },
+      "roundTripPixels": 0.009847506393405559,
+      "seam": {
+        "seamStepPixels": 1.9965601579589276,
+        "interiorStepPixels": 2.3130382256554984,
+        "seamSecondPixels": 0.2006264760118041,
+        "interiorSecondPixels": 0.31995041345117897
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 257.49546980285646
+}

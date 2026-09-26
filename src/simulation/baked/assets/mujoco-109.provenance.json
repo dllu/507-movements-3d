@@ -1,0 +1,79 @@
+{
+  "id": 109,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-109.json.gz",
+  "bytes": 99417,
+  "assetSha256": "881992db82a1b6ea3dd5c8b32da4a24f60e0cd19b6f043ef7944f8d9618e9509",
+  "motionSources": {
+    "src/simulation/mujoco-thread-cutting/physics.js": "c6eb01371698c176ae7d942efedc8edc9b052d2f61a99df52056453bb486bef3",
+    "src/simulation/mujoco-thread-cutting/profile.js": "9cabc80eef7fc8387e313fc2b97fc784be2642df8a86cbde8ebb677c4fbe94c5",
+    "src/simulation/mujoco-thread-cutting/source.js": "4ab4c377e9797f92afef0e27445d87ad1eae73e3d659c952aa826bdaf547e75a",
+    "src/simulation/mujoco-thread-cutting/stock.js": "df5513e4251a6ff5794f69ed8313a41463583ae54de48735f518ba36ed818c1f",
+    "src/simulation/mujoco-thread-cutting/visual.js": "e40de496961c5f0858b668368663e72a7fa87852c7e861487ca03f9427116781",
+    "src/simulation/mujoco-thread-cutting/workpiece.js": "329f96428299f2918248424a3b7d2f510add0b4fc90aae1a352f556b98b30737",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-thread-cutting/geometry.js": "672e8df7f3c17e945284cf06dcb7d132715fdef955bd4905952965a6777cff12"
+  },
+  "physicsXmlSha256": {
+    "default": "dbd1e82e43bbdaf7c6d0e2b9c009cf9ad24df3e88c87ff64c6c1af4f6807d0b5"
+  },
+  "fullXmlSha256": {
+    "default": "5cd1c028ea990cb4a1a11e4b2b8b30b92195543763d295701ed26bf46e431f84"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-thread-cutting"
+  },
+  "cycleDesign": "The lathe drive reverses each period: the tool carriage feeds along the stock cutting the thread and returns, and the geometric cut follows it back; one 24 s period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 24,
+        "samples": 1500,
+        "dt": 0.016,
+        "startTime": 48,
+        "periods": 1,
+        "drivePeriod": 24
+      },
+      "closure": {
+        "rawSeamPixels": 4.3936733550977117e-10,
+        "maximumCorrectionPixels": 3.4817526466113247e-12,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.lead",
+            "angle": 1.8714890748228186e-12,
+            "rawAngle": 1.8714890748228186e-12
+          },
+          {
+            "key": "blocks.work",
+            "angle": -2.4913404672588513e-12,
+            "rawAngle": -2.4913404672588513e-12
+          }
+        ]
+      },
+      "roundTripPixels": 0.006543567660101794,
+      "seam": {
+        "seamStepPixels": 4.4891552922164255,
+        "interiorStepPixels": 4.502924866828755,
+        "seamSecondPixels": 0.3766474880528039,
+        "interiorSecondPixels": 0.3802232455781808
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 26.44635182714462
+}

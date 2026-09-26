@@ -1,0 +1,76 @@
+{
+  "id": 95,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-095.json.gz",
+  "bytes": 10095,
+  "assetSha256": "6aaba360550d266dfc06a5683027318bba2893af059542aea91ab211136466e2",
+  "motionSources": {
+    "src/simulation/mujoco-inclined-disk/physics.js": "54614396f1f3398bdc97412f2b8740a1de89330807156a58b3ce741d7e55ecbc",
+    "src/simulation/mujoco-inclined-disk/source.js": "d7ea2c2ebb2bea10cbd5da532404a7c7227a5ce9feefba7b4b703b5974a8a873",
+    "src/simulation/mujoco-inclined-disk/visual.js": "cfab65525fc20bcaa20d88c91d2aa4d0193c937f85e26d757bc37b9c7e68839e",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-inclined-disk/geometry.js": "166377d3ed437ed769610844cea95136c70ccaac938f6639eab8fe5184ee341a"
+  },
+  "physicsXmlSha256": {
+    "default": "acfe2122151179f008f7feae957729be463aebc4ea0a3e300196d26ae44b5c72"
+  },
+  "fullXmlSha256": {
+    "default": "13ae4ea0407d2c8e50826ecbd83b7eb276afcde7bc83d6df5d08910a4be89a88"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-inclined-disk"
+  },
+  "cycleDesign": "Constant-speed inclined disk driving the roller follower; one turn closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 4,
+        "samples": 250,
+        "dt": 0.016,
+        "startTime": 12,
+        "periods": 1,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 2.4202301726066482e-11,
+        "maximumCorrectionPixels": 1.3777867735598193e-11,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.input",
+            "angle": 6.28318530717603,
+            "rawAngle": 6.28318530717603
+          },
+          {
+            "key": "blocks.roller",
+            "angle": 51.84948468331607,
+            "rawAngle": 51.84948468331607
+          }
+        ]
+      },
+      "roundTripPixels": 0.000007865039999460194,
+      "seam": {
+        "seamStepPixels": 3.582908510132706,
+        "interiorStepPixels": 3.5830552261207176,
+        "seamSecondPixels": 0.6254247139896272,
+        "interiorSecondPixels": 0.6492783125467304
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 0.8213132047653198
+}

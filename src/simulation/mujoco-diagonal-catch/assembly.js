@@ -5,6 +5,14 @@ import {plate,poly,circle,ring,polygonClipping as clip} from '../finite-plate-ge
 import {disposeObject3D} from '../dispose-model.js';
 import {makeDiagonalCatchUpdater,DIAGONAL_CATCH_ROD_EDGE_Y} from './update-solids.js';
 
+// Convex hull (monotone chain) of 2D points.
+function convexHull(points){
+ const p=[...points].sort((a,b)=>a[0]-b[0]||a[1]-b[1]),cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]),lower=[],upper=[];
+ for(const q of p){while(lower.length>1&&cross(lower.at(-2),lower.at(-1),q)<=0)lower.pop();lower.push(q);}
+ for(const q of p.reverse()){while(upper.length>1&&cross(upper.at(-2),upper.at(-1),q)<=0)upper.pop();upper.push(q);}
+ return [...lower.slice(0,-1),...upper.slice(0,-1)];
+}
+
 function lowerBacking(finger){
  const local=([x,y])=>[(x-271)*.0125-finger.fit.pivot[0],(234-y)*.0125-finger.fit.pivot[1]];
  // One continuous crescent supports the same face during trip and retention.
@@ -38,12 +46,15 @@ export function createDiagonalCatchAssembly(){
   // Plate 182 reveals the upper horn above the hub. In the closed position
   // its end falls behind the piston rod. The offset is inferred;
   // the already-qualified front catching face remains in the catch plane.
-  const horn=side==='upper'?[[219,50],[232,57],[233,68],[267,84],[252,109],[231,122],[219,89]].map(([x,y])=>{
+  // A clean horn: one smooth tapered web from the hub round to Brown's tip
+  // (the hull of the hub and the horn), without the stepped notch and the
+  // corner spike that read as scrap.
+  const horn=side==='upper'?[[219,50],[233,68],[252,109],[231,122],[219,89]].map(([x,y])=>{
    const dx=(x-270)*.0125-finger.fit.pivot[0],dy=(236-y)*.0125-finger.fit.pivot[1],a=-finger.fit.angle;
    return[dx*Math.cos(a)-dy*Math.sin(a),dx*Math.sin(a)+dy*Math.cos(a)];
   }):[];
   const backingOutline=side==='upper'
-   ?clip.union(poly(circle([0,0],.38,96)),poly(horn),finger.polygons)
+   ?clip.union(poly(convexHull([...horn,...circle([0,0],.38,96)])),finger.polygons)
    :lowerBacking(finger);
   const backing=clip.difference(backingOutline,poly(circle([0,0],.12,96)));
   const backLow=side==='upper'?-.46:-.09,backHigh=side==='upper'?-.34:.09;

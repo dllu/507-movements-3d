@@ -6,6 +6,27 @@ export const DEFAULT_DISPLAY_CYCLE_SECONDS = 2;
 // move faster without stretching every pendulum beat into tens of seconds.
 export const MAX_DISPLAY_ANGULAR_SPEED = 6 * Math.PI;
 export const MAX_SUSTAINED_DISPLAY_ANGULAR_SPEED = 2 * Math.PI;
+// Fine-pitch gearing is hard to follow at low refresh rates even when the
+// wheels turn slowly: what the eye tracks is teeth passing the mesh. Where
+// applied, display playback keeps the tooth-passing frequency at the pitch
+// circle (teeth per second past a fixed point) at or below this rate.
+export const MAX_DISPLAY_TOOTH_PASSING_RATE = 6;
+// Authored tooth-passing frequency (teeth per authored second) of the fastest
+// toothed rotor, measured by scripts/inventory-rotating-parts.mjs and checked
+// against each factory's tooth counts. The cap is applied only to these
+// continuous fine-tooth gear demonstrations: applied to every toothed
+// movement it would also stretch escapements, indexing trains and long
+// clockwork cycles (for example 57, 260 and 414) to minutes, so it is opt-in.
+export const FINE_TOOTH_PASSING_RATES = new Map([
+  [24, 30 * 1.25 / (2 * Math.PI)],
+  [25, 36 * 1.12 / (2 * Math.PI)],
+  [26, 5.5259],
+  [41, 4.5455],
+  [42, 6.8755],
+  [43, 7.4230],
+  [44, 6.1879],
+  [53, 6.6845],
+]);
 
 const OPENING_AUTHORED_CYCLE_PERIODS = new Map([
   [1, Math.PI * 2 / 1.55],
@@ -153,13 +174,21 @@ export function applyDisplayTiming(
   const sustainedVisibleAngularSpeed = positiveFinite(
     displayProfiles.profiles[movement.id]?.sustainedVisibleAngularSpeed,
   ) ?? peakVisibleAngularSpeed;
-  const playbackTimeScale = Math.min(
+  const toothPassingRate = FINE_TOOTH_PASSING_RATES.get(movement.id) ?? 0;
+  // A model may author its playback rate outright where the speed caps would
+  // defeat the demonstration: 264's common worm must spin fast (a motor-speed
+  // blur) for the 100/101-tooth wheels' 1% difference to accumulate visibly.
+  const authoredPlaybackTimeScale = positiveFinite(
+    model.root.userData.authoredPlaybackTimeScale,
+  );
+  const playbackTimeScale = authoredPlaybackTimeScale ?? Math.min(
     authoredCyclePeriod / targetCycleDuration,
     // A brief intermittent index can be unreadable even when peak speed is
     // modest. An authored minimum keeps that working stroke visible.
     authoredCyclePeriod / (positiveFinite(model.root.userData.minimumDisplayCycleSeconds) ?? targetCycleDuration),
     peakVisibleAngularSpeed > 0 ? MAX_DISPLAY_ANGULAR_SPEED / peakVisibleAngularSpeed : Infinity,
     sustainedVisibleAngularSpeed > 0 ? MAX_SUSTAINED_DISPLAY_ANGULAR_SPEED / sustainedVisibleAngularSpeed : Infinity,
+    toothPassingRate > 0 ? MAX_DISPLAY_TOOTH_PASSING_RATE / toothPassingRate : Infinity,
   );
   model.root.userData.animationTiming = {
     authoredCyclePeriod,
@@ -168,6 +197,7 @@ export function applyDisplayTiming(
     displayCycleDuration: authoredCyclePeriod / playbackTimeScale,
     peakVisibleAngularSpeed,
     sustainedVisibleAngularSpeed,
+    ...(toothPassingRate > 0 ? { toothPassingRate, displayToothPassingRate: toothPassingRate * playbackTimeScale } : {}),
   };
   model.root.userData.sampledFloorY = displayProfiles.profiles[movement.id]?.floorY;
   model.root.userData.sampledMotionBounds = displayProfiles.profiles[movement.id]?.motionBounds;

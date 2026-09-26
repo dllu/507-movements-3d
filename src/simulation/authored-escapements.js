@@ -2,7 +2,8 @@ import { DEBAUFRE_300_301_PALLET } from './baked/debaufre-300-301-pallet.js';
 import { finishSevenTooth238Contact } from './seven-tooth-238-contact.js';
 import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
 import * as THREE from 'three';
-import { ring } from './finite-plate-geometry.js';
+import { polygonClipping, ring } from './finite-plate-geometry.js';
+import { makeSpokedWheel } from './spoked-wheel.js';
 import { backBar, freezeFitBoundsWithout, supportMaterial } from './back-plate-support.js';
 import {
   PALETTE,
@@ -385,6 +386,7 @@ function makeCrownEscapeWheel({
   root.userData.contactRadius = contactRadius;
   root.userData.toothInnerRadius = innerRadius;
   root.userData.toothBaseZ = toothBaseZ;
+  // Callers address the white witness through this (234's tests; 302 hides it).
   root.userData.indicator = indicator;
   root.userData.mountPhase = mountPhase;
   root.userData.teeth = toothCount;
@@ -3020,7 +3022,13 @@ function sidewaysBalanceWheelCrownEscapement(movement) {
   crownWheel.userData.body.visible = true;
   crownWheel.userData.body.userData.role =
     'horizontal-solid-crown-wheel-D-body';
-  crownWheel.userData.indicator.visible = false;
+  // The crown's white rotation witness is no longer exposed as
+  // userData.indicator; Brown draws none, so hide it by role.
+  crownWheel.userData.rotor.traverse((object) => {
+    if (object.userData.role === 'crown-wheel-rotation-witness') {
+      object.visible = false;
+    }
+  });
   // Brown's elevation shows no hub above the band: keep it inside the cup.
   crownWheel.userData.rotor.traverse((object) => {
     if (object.userData.role !== 'crown-wheel-hub') return;
@@ -4402,7 +4410,6 @@ function makeDebaufreRatchetWheel({
   outerRadius,
   rimRadius,
   toothCount,
-  yokeArc = false,
 }) {
   const root = new THREE.Group();
   const rotor = new THREE.Group();
@@ -4413,18 +4420,61 @@ function makeDebaufreRatchetWheel({
     metalness: 0.18,
     roughness: 0.57,
   });
+  // Edge-on (301) every tooth shows a differently inclined side wall; a
+  // moderate self-glow keeps those walls from reading as a patchwork of dark
+  // blocks. The same material serves both views of the one model.
+  wheelMaterial.emissive.copy(wheelMaterial.color).multiplyScalar(0.45);
+  wheelMaterial.color.multiplyScalar(0.65);
   root.add(rotor);
   root.userData.axis = Z_AXIS.clone();
   root.userData.rotor = rotor;
 
-  const rimShape = new THREE.Shape();
-  rimShape.absarc(0, 0, rimRadius, 0, FULL_TURN, false);
-  const rimHole = new THREE.Path();
-  rimHole.absarc(0, 0, rimRadius - rimWidth, 0, FULL_TURN, true);
-  rimShape.holes.push(rimHole);
-  const rim = new THREE.Mesh(debaufrePrism(rimShape, depth, 96), wheelMaterial);
-  rim.userData.role = 'debaufre-ratchet-wheel-rim';
-  rotor.add(rim);
+  // Brown draws the wheel's web with plain spokes meeting boss and rim in
+  // sharp corners (no fillets): the rim, four spokes, the round boss and
+  // the twelve barbed teeth are one flat plate from the shared builder,
+  // each window two straight spoke edges between an arc concentric with
+  // the boss and the rim's inside. His 300 shows the lower pair only (the
+  // upper pair is cut off by the break across the boss); they are 90
+  // degrees apart, the down-left spoke about 37 degrees off the vertical.
+  const toothOutlines = [];
+  for (let index = 0; index < toothCount; index += 1) {
+    toothOutlines.push(debaufreToothOutline({
+      outerRadius,
+      rootRadius: rimRadius - 0.04,
+      tipAngle: mountPhase + index * toothPitch,
+      toothPitch,
+    }));
+  }
+  const ringOf = (points) => {
+    const closed = points.map((point) => [point.x ?? point[0], point.y ?? point[1]]);
+    closed.push(closed[0]);
+    return [closed];
+  };
+  const rimCircle = Array.from({ length: 192 }, (_, index) => {
+    const angle = index / 192 * FULL_TURN;
+    return [Math.cos(angle) * rimRadius, Math.sin(angle) * rimRadius];
+  });
+  const union = polygonClipping.union(
+    ringOf(rimCircle),
+    ...toothOutlines.map(ringOf),
+  );
+  const outline = union[0][0].slice(0, -1);
+  const spokePhase = THREE.MathUtils.degToRad(53);
+  const plate = makeSpokedWheel({
+    boreRadius: hubRadius - 0.01,
+    hubArcRadius: 0.6,
+    hubFillet: 0,
+    outline,
+    phase: spokePhase,
+    rimFillet: 0,
+    rimInnerRadius: rimRadius - rimWidth,
+    spokeWidth: 0.28,
+    spokes: 4,
+    thickness: depth,
+  }, wheelMaterial);
+  plate.userData.role = 'debaufre-ratchet-wheel-one-piece-spoked-plate';
+  rotor.add(plate);
+  const spokeAngles = [0, 1, 2, 3].map((index) => spokePhase + index * Math.PI / 2);
 
   // The hub is bored for the common arbor, which turns with it.
   const hubShape = new THREE.Shape();
@@ -4441,79 +4491,18 @@ function makeDebaufreRatchetWheel({
   hub.userData.role = 'debaufre-ratchet-wheel-hub';
   rotor.add(hub);
 
-  // Brown's 300 boss: a lobed plate, flat-topped and cut back in an arc
-  // between the two spokes, around the ringed collet (drawn at wheel angle 0).
-  const bossOutline = [
-    [-0.58, 0.3], [-0.2, 0.36], [0.5, 0.38], [0.58, -0.18],
-    [0.36, -0.44], [0.12, -0.5], [-0.14, -0.5], [-0.34, -0.45], [-0.54, -0.3],
-  ];
-  const bossShape = new THREE.Shape(
-    bossOutline.map(([x, y]) => new THREE.Vector2(x, y)),
-  );
-  const bossBore = new THREE.Path();
-  bossBore.absarc(0, 0, hubRadius - 0.01, 0, FULL_TURN, true);
-  bossShape.holes.push(bossBore);
-  const boss = new THREE.Mesh(debaufrePrism(bossShape, depth, 36), wheelMaterial);
-  boss.userData.role = 'debaufre-ratchet-wheel-lobed-boss';
-  rotor.add(boss);
-
-  // Two spokes, as drawn, run down-left and down-right from the boss.
-  const spokeInner = hubRadius - 0.04;
-  const spokeOuter = rimRadius - rimWidth + 0.04;
-  const spokes = [];
-  const spokeAngles = [-Math.PI / 2 - 0.96, -Math.PI / 2 + 0.96];
-  for (let index = 0; index < spokeAngles.length; index += 1) {
-    const spokeAngle = spokeAngles[index];
-    const spoke = new THREE.Mesh(
-      new THREE.BoxGeometry(spokeOuter - spokeInner, 0.2, depth * 0.8),
-      wheelMaterial,
-    );
-    spoke.position.set(
-      Math.cos(spokeAngle) * (spokeInner + spokeOuter) / 2,
-      Math.sin(spokeAngle) * (spokeInner + spokeOuter) / 2,
-      0,
-    );
-    spoke.rotation.z = spokeAngle;
-    spoke.userData.index = index;
-    spoke.userData.innerRadius = spokeInner;
-    spoke.userData.outerRadius = spokeOuter;
-    spoke.userData.role = 'debaufre-ratchet-wheel-spoke';
-    spokes.push(spoke);
-    rotor.add(spoke);
-  }
-
-  // Brown's 300 closes the two spokes with a broad arc just inside the rim,
-  // so the boss, spokes and arc read as one triangular sector yoke.
-  let yoke = null;
-  if (yokeArc) {
-    const arcOuter = rimRadius - rimWidth - 0.14;
-    const arcInner = arcOuter - 0.2;
-    const [arcStart, arcEnd] = spokeAngles;
-    const arcShape = new THREE.Shape();
-    arcShape.absarc(0, 0, arcOuter, arcStart, arcEnd, false);
-    arcShape.absarc(0, 0, arcInner, arcEnd, arcStart, true);
-    yoke = new THREE.Mesh(
-      debaufrePrism(arcShape, depth * 0.8, 48),
-      wheelMaterial,
-    );
-    yoke.userData.role = 'debaufre-ratchet-wheel-sector-yoke-arc';
-    rotor.add(yoke);
-  }
-
+  // Exact tooth prisms stay as hidden analytic references for the contact
+  // law and its tests; the visible teeth are part of the plate.
   const toothMeshes = [];
   const toothTips = [];
   for (let index = 0; index < toothCount; index += 1) {
     const tipAngle = mountPhase + index * toothPitch;
-    const outline = debaufreToothOutline({
-      outerRadius,
-      rootRadius: rimRadius - 0.04,
-      tipAngle,
-      toothPitch,
-    });
+    const outline = toothOutlines[index];
     const tooth = new THREE.Mesh(
       debaufrePrism(new THREE.Shape(outline), depth),
       wheelMaterial,
     );
+    tooth.visible = false;
     tooth.userData.index = index;
     tooth.userData.mountAngle = tipAngle;
     tooth.userData.role = 'debaufre-undercut-ratchet-tooth';
@@ -4522,28 +4511,14 @@ function makeDebaufreRatchetWheel({
     rotor.add(tooth);
   }
 
-  const indicatorLength = (spokeOuter - hubRadius) * 0.7;
-  const indicator = new THREE.Mesh(
-    new THREE.BoxGeometry(indicatorLength, 0.06, 0.02),
-    matte(PALETTE.white, { roughness: 0.46 }),
-  );
-  indicator.position.set(
-    Math.cos(spokeAngles[0]) * (hubRadius + indicatorLength / 2 + 0.12),
-    Math.sin(spokeAngles[0]) * (hubRadius + indicatorLength / 2 + 0.12),
-    depth * 0.4 + 0.008,
-  );
-  indicator.rotation.z = spokeAngles[0];
-  indicator.userData.role = 'debaufre-wheel-rotation-witness';
-  rotor.add(indicator);
-
   root.userData.depth = depth;
   root.userData.hub = hub;
-  root.userData.indicator = indicator;
   root.userData.mountPhase = mountPhase;
   root.userData.outerRadius = outerRadius;
-  root.userData.rim = rim;
-  root.userData.spokes = spokes;
-  root.userData.yoke = yoke;
+  root.userData.plate = plate;
+  root.userData.rim = plate;
+  root.userData.rimInnerRadius = rimRadius - rimWidth;
+  root.userData.spokeAngles = spokeAngles;
   root.userData.teeth = toothCount;
   root.userData.toothMeshes = toothMeshes;
   root.userData.toothPitch = toothPitch;
@@ -4583,9 +4558,9 @@ function debaufreFrictionalRestEscapement(
   const wheelDepth = 0.15;
   const palletRadius = 0.8;
   const escapeArborRadius = 0.15;
-  // 301's side elevation draws the drum edge; 300's front elevation shows
-  // none, so there it shrinks to the collet radius, behind the lobed boss.
-  const spacerDrumRadius = presentation === 'side' ? 0.72 : 0.3;
+  // 301's side elevation draws the spacer drum's edge; 300 and 301 share
+  // one model, so the drum is the same in both views.
+  const spacerDrumRadius = 0.72;
   const balanceStaffRadius = 0.12;
   const balanceStaffLength = 5.9;
   const palletColletRadius = 0.3;
@@ -4664,7 +4639,6 @@ function debaufreFrictionalRestEscapement(
     outerRadius: wheelContactRadius,
     rimRadius: wheelRimRadius,
     toothCount,
-    yokeArc: presentation === 'front',
   });
   frontWheel.position.set(0, wheelCenterY, wheelPlaneOffset);
   frontWheel.userData.pairMember = 'front';
@@ -4911,17 +4885,6 @@ function debaufreFrictionalRestEscapement(
   palletHub.userData.role = 'debaufre-pallet-staff-collet';
   palletAssembly.add(palletHub);
 
-  const palletWitness = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 20, 14),
-    matte(PALETTE.white, { roughness: 0.45 }),
-  );
-  palletWitness.position.set(
-    palletThickness / 2 + 0.08,
-    -palletRadius * 0.62,
-    0,
-  );
-  palletWitness.userData.role = 'pallet-oscillation-witness';
-  palletAssembly.add(palletWitness);
 
   const frontContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.135, 22, 16),
@@ -5177,7 +5140,6 @@ function debaufreFrictionalRestEscapement(
     palletHub,
     palletTopEdge,
     palletSweptBands,
-    palletWitness,
     rearContactMarker,
     rearWheel,
     spacerDrum,
@@ -5195,14 +5157,6 @@ function debaufreFrictionalRestEscapement(
     // staff reads end-on instead of as a receding rod.
     root.userData.cameraFov = 2.5;
     root.userData.cameraDistanceScale = 1;
-    // Edge-on, every tooth shows a differently inclined side wall, so plain
-    // lighting paints the strips in a patchwork of dark and light blocks
-    // where Brown draws two even strips. A strong self-glow evens them out.
-    for (const wheel of [frontWheel, rearWheel]) {
-      const material = wheel.userData.rim.material;
-      material.emissive.copy(material.color).multiplyScalar(0.8);
-      material.color.multiplyScalar(0.3);
-    }
     // Brown breaks both wheels off a little above the arbor (about 0.18 of
     // the arbor-to-pallet distance), so the view is cropped there.
     const cropTop = wheelCenterY + 0.18 * (wheelCenterY - palletCenterY);

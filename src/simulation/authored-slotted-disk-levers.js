@@ -130,8 +130,8 @@ function slottedDiskLeverRackAndWeight(movement) {
   const rackPitch = sectorPitchRadius * sectorAngularPitch;
   const sectorToothCount = 7;
   // Brown cuts only a short run of teeth into the middle of the long guided
-  // bar: 7 sector teeth plus the 2.4-pitch stroke and a tooth of margin.
-  const rackToothCount = 12;
+  // bar; the run is set below from the rack's stroke (the teeth the sector
+  // can reach), which gives his seven.
   const toothHeight = 0.16;
   const rackLength = rackPitch * 23.4;
   const rackDepth = 0.32;
@@ -484,6 +484,8 @@ function slottedDiskLeverRackAndWeight(movement) {
   let minimumUpperPathLength = Infinity;
   let maximumUpperPathLength = -Infinity;
   let minimumSlotEndClearance = Infinity;
+  let minimumRackX = Infinity;
+  let maximumRackX = -Infinity;
   for (let index = 0; index <= 4096; index += 1) {
     const state = stateAtDiskAngle(FULL_TURN * index / 4096);
     minimumUpperPathLength = Math.min(
@@ -498,7 +500,23 @@ function slottedDiskLeverRackAndWeight(movement) {
       minimumSlotEndClearance,
       state.slotEndClearance,
     );
+    minimumRackX = Math.min(minimumRackX, state.rackX);
+    maximumRackX = Math.max(maximumRackX, state.rackX);
   }
+  // A rack tooth is cut only where the sector can reach it: within two
+  // pitches of the pitch point (where the sector's teeth stand in the rack's
+  // tooth band) at some point of the stroke. Offsets are in pitches from the
+  // lever pivot at the source pose, half-way between sector teeth.
+  const rackReachPitches = 2;
+  const rackToothOffsets = [];
+  for (let step = -12; step <= 11; step += 1) {
+    const offset = step + 0.5;
+    if (offset * rackPitch + maximumRackX >= -rackReachPitches * rackPitch - 1e-9
+      && offset * rackPitch + minimumRackX <= rackReachPitches * rackPitch + 1e-9) {
+      rackToothOffsets.push(offset);
+    }
+  }
+  const rackToothCount = rackToothOffsets.length;
 
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.12,
@@ -539,7 +557,9 @@ function slottedDiskLeverRackAndWeight(movement) {
       { color: PALETTE.frame, radius: 0.105 },
     ));
   }
-  for (const y of [-1.55, -0.86]) {
+  // Brown's lower rails (raster y 370 and 400): both pass outside the sweep
+  // of the hand crank behind the disk.
+  for (const y of [-1.55, -1.21]) {
     frame.add(makeBeam(
       new THREE.Vector3(leftFoot.x, y, -0.44),
       new THREE.Vector3(rightFoot.x, y, -0.44),
@@ -568,17 +588,36 @@ function slottedDiskLeverRackAndWeight(movement) {
   const diskBody = cylinderAlongZ(diskRadius, 0.3, driverMaterial, 72);
   diskBody.userData.role = 'solid-driving-disk';
   diskRotor.add(diskBody);
-  const diskHub = cylinderAlongZ(0.14, 0.30, darkMaterial, 32);
+  // The hub stands a little proud of both disk faces (a hub flush with the
+  // disk, and the axle end, shared their face planes and z-fought).
+  const diskHub = cylinderAlongZ(0.14, 0.38, darkMaterial, 32);
   diskHub.userData.role = 'fixed-disk-axis-hub';
   diskRotor.add(diskHub);
-  const diskAxle=cylinderAlongZ(.07,.70,darkMaterial);
-  diskAxle.position.z=-.17;
+  const diskAxle=cylinderAlongZ(.07,.86,darkMaterial);
+  diskAxle.position.z=-.25;
   diskAxle.userData.role='rear-disk-axle';diskRotor.add(diskAxle);
+  // Brown dashes a hand crank behind the disk, from the axle down-left to
+  // the rim (raster 200,325 at the source phase): a plain arm keyed on the
+  // axle against the disk's back face, with a short rearward handle that
+  // stops in front of the bearing stays.
+  const rearCrankTip = sourcePointToModel(new THREE.Vector2(200, 325))
+    .sub(diskCenter).rotateAround(new THREE.Vector2(), -sourceDiskAngle);
+  const rearCrankArm = new THREE.Mesh(plate(clip.difference(
+    clip.union(capsule([0, 0], [rearCrankTip.x, rearCrankTip.y], .085, 24),
+      poly(circle([0, 0], .20, 48))),
+    poly(circle([0, 0], .143, 48))), -.21, -.15), driverMaterial);
+  rearCrankArm.userData.role = 'rear-hand-crank-arm-keyed-on-disk-axle';
+  diskRotor.add(rearCrankArm);
+  const rearCrankHandle = cylinderAlongZ(.06, .18, darkMaterial, 32);
+  rearCrankHandle.position.set(rearCrankTip.x, rearCrankTip.y, -.30);
+  rearCrankHandle.userData.role = 'rear-hand-crank-handle';
+  diskRotor.add(rearCrankHandle);
+  // The bearing and its stays sit behind the posts, clear of the handle.
   const diskBearing=boredJournal(.18,.073,.20,frameMaterial);
-  diskBearing.position.set(diskCenter.x,diskCenter.y,-.48);
+  diskBearing.position.set(diskCenter.x,diskCenter.y,-.64);
   diskBearing.userData.role='bored-disk-bearing';root.add(diskBearing);
   for(const x of [leftFoot.x,rightFoot.x]) {
-    frame.add(makeBeam(new THREE.Vector3(x,0,-.48),new THREE.Vector3(Math.sign(x)*.18,0,-.48),
+    frame.add(makeBeam(new THREE.Vector3(x,0,-.64),new THREE.Vector3(Math.sign(x)*.18,0,-.64),
       {color:PALETTE.frame,radius:.085}));
     // Strut meets the guide's inner rim behind the plate, clear of the slot.
     const y=leverPivot.y+Math.sqrt((guideRadius-.19)**2-(x-leverPivot.x)**2);
@@ -706,7 +745,7 @@ function slottedDiskLeverRackAndWeight(movement) {
   for (let index = 0; index < rackToothCount; index += 1) {
     const tooth = new THREE.Mesh(rackToothSolid, drivenMaterial);
     tooth.position.set(
-      leverPivot.x + (index - (rackToothCount - 1) / 2) * rackPitch,
+      leverPivot.x + rackToothOffsets[index] * rackPitch,
       rackPitchY,
       0.18,
     );
@@ -883,6 +922,7 @@ function slottedDiskLeverRackAndWeight(movement) {
     rackPitch,
     rackPitchY,
     rackToothCount,
+    rackToothOffsets,
     sectorAngularPitch,
     sectorEquivalentToothCount,
     sectorPitchRadius,

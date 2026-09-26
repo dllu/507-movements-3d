@@ -34,7 +34,7 @@
     10
   ],
   "source": {
-    "reportSha256": "83d987cc3fc397b2526d8232d9b55481d0b9eddfbe0f901640251912436293ae",
+    "reportSha256": "463db5076b771ee41cc6f7ec600dae99d87569f19a5536200cf14a3a20d63540",
     "simulationSources": [
       {
         "file": "src/simulation/mujoco-three-wiper/geometry.js",
@@ -50,7 +50,7 @@
       },
       {
         "file": "src/simulation/primitives.js",
-        "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
+        "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
       },
       {
         "file": "package-lock.json",
@@ -67,6 +67,6 @@
     "maximumPenetrationPixels": 0.06596195776944758
   },
   "samples": 17991,
-  "bytes": 413103,
-  "assetSha256": "213678bbb8ca07b6c4ec649270ee18a16ea07297d08591f9b981261ba373cf1a"
+  "bytes": 413124,
+  "assetSha256": "35381b6e1bbe539e48e368ac24247aa85502e76c12e6a32659a3b2ca3794a9c6"
 }

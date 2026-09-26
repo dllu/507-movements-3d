@@ -1,0 +1,80 @@
+{
+  "id": 108,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-108.json.gz",
+  "bytes": 36467,
+  "assetSha256": "2081b6cca181a397aa016c27034ac50128ce95cc97720e16a3953cd8d2bd427b",
+  "motionSources": {
+    "src/simulation/mujoco-reverse-thread/groove.js": "be705dca10856d552265cbced88f527e1b0b8d9c27e13eedca50a5fd7e87774c",
+    "src/simulation/mujoco-reverse-thread/normals.js": "40ed553623390dd80c7e23de1ed5123e261abf9c8b6ea91b227c8187eba3cc35",
+    "src/simulation/mujoco-reverse-thread/physics.js": "167e562486e0ae1c76304298c6974e721bd633247ee65c956aaeaace612cc1fe",
+    "src/simulation/mujoco-reverse-thread/profile.js": "5721f87502a4384f02028089055498e5654c69847ee0c82062cbd9137f95dc01",
+    "src/simulation/mujoco-reverse-thread/shoe.js": "5b1358489ba26931a39eca0280b6b7ab739d5331a7b03e9f802c75eec83c24a6",
+    "src/simulation/mujoco-reverse-thread/source.js": "43dd8069eb094e943eb727b1e15f978afd121c15ec76e6c95d3448d472cf702c",
+    "src/simulation/mujoco-reverse-thread/visual.js": "9c3ac59e524a6261a3e71cdee388cdfac7756a91825fe3596148260b0ede4819",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-reverse-thread/geometry.js": "db4a77e521fa0f5ae1d206436533431864adf7a79afb3c4e0eccdad15081d79f"
+  },
+  "physicsXmlSha256": {
+    "default": "c732764fb2855266f10642ed98e07d9318a1cf59b4f5bfca4b2f10e574b25c3a"
+  },
+  "fullXmlSha256": {
+    "default": "6114b6881a2d5b78d6a588ec92bffced0cb6f72a179c17afa4c72cd63da42c31"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 1,
+    "maxLoopPeriods": 1,
+    "searchPeriods": 2,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-reverse-thread",
+    "wrap": {
+      "blocks.input": {
+        "symmetry": 6.283185307179586
+      }
+    }
+  },
+  "cycleDesign": "One drive period is a whole traverse cycle: the barrel turns six times at constant speed while the swiveling shoe runs out along one hand of the groove and back along the other. The barrel is carried forward by whole turns.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 33,
+        "samples": 2000,
+        "dt": 0.0165,
+        "startTime": 66,
+        "periods": 1,
+        "drivePeriod": 33
+      },
+      "closure": {
+        "rawSeamPixels": 2.082805095311338e-8,
+        "maximumCorrectionPixels": 2.455363690145873e-9,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.input",
+            "angle": 37.69911184307752,
+            "rawAngle": 37.69911184325702
+          }
+        ]
+      },
+      "roundTripPixels": 0.004981179139691314,
+      "seam": {
+        "seamStepPixels": 1.5432055030186806,
+        "interiorStepPixels": 1.557719819336536,
+        "seamSecondPixels": 0.02912917240698988,
+        "interiorSecondPixels": 1.5065888626701058
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 140.24498310518265
+}

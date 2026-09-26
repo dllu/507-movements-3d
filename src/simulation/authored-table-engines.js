@@ -375,7 +375,8 @@ function tableEngine(movement) {
       0.07,
       1.62,
     ),
-    frameEdgeMaterial,
+    // The table's top is the frame's own colour (black read as an ink rim).
+    frameMaterial,
   );
   tableTopEdge.position.set(0, sourceTableTopY * sourceScale, 0);
   tableTopEdge.userData.role = 'fixed-table-bed-top-edge';
@@ -486,7 +487,7 @@ function tableEngine(movement) {
         (specification.maximumY - specification.minimumY) * sourceScale,
         0.91, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.116, 0.16,
       ),
-      index === 0 ? frameEdgeMaterial : frameMaterial,
+      frameMaterial,
     );
     collar.position.set(
       0,

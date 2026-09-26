@@ -1,5 +1,6 @@
 import {loadAuthoredMovement} from './authored-loader.js';
 import {applySourcePresentation} from './source-presentation.js';
+import {bakedMujocoRoutes} from './baked/mujoco-baked-routes.js';
 
 // Migrate a movement by registering its factory here. Existing authored models
 // remain available while each replacement's geometry and contacts are checked.
@@ -43,6 +44,15 @@ export const physicsFactories = {
   125: () => import('./mujoco-cascaded-traverse/visual.js').then(module => module.makeMujocoCascadedTraverse),
   126: () => import('./mujoco-bell-crank/visual.js').then(module => module.makeMujocoBellCrank),
 };
+
+// Baked MuJoCo loops load by default. Add ?live (or ?mujoco=live) to the page
+// URL, before or after the #, to run the live simulation instead.
+export function preferLiveMujoco() {
+  const location = globalThis.location;
+  if (!location) return false;
+  const queries = [location.search, location.hash?.split('?')[1] ?? ''].map(q => new URLSearchParams(q));
+  return queries.some(q => q.has('live') && q.get('live') !== '0' || q.get('mujoco') === 'live');
+}
 
 export async function loadMovementModel(movement) {
   const model = await loadUnpresentedModel(movement);
@@ -290,6 +300,12 @@ async function loadUnpresentedModel(movement) {
   if (movement.id === 123) {
     const {makeBakedSectorHandoff} = await import('./baked/sector-handoff.js');
     const model = await makeBakedSectorHandoff();
+    model.root.userData.archetype = movement.archetype;
+    return model;
+  }
+  if (bakedMujocoRoutes[movement.id] && !preferLiveMujoco()) {
+    const {loadBakedMujocoMovement} = await import('./baked/mujoco-playback.js');
+    const model = await loadBakedMujocoMovement(movement.id);
     model.root.userData.archetype = movement.archetype;
     return model;
   }

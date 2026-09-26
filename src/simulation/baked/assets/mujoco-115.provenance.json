@@ -1,0 +1,65 @@
+{
+  "id": 115,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-115.json.gz",
+  "bytes": 7813,
+  "assetSha256": "0a78e756a662b1211e5f3220d3afe04841a22fd6169dfed47982cf88603eca34",
+  "motionSources": {
+    "src/simulation/mujoco-equal-racks/physics.js": "def6b125c9e2cf26a4d40bc469188b6c09587781462f11447bb2a869ae4aaa61",
+    "src/simulation/mujoco-equal-racks/source.js": "5c440c5a3fb865972fdfaccfb0781eb0f53d32fe0a9a11c4efeb4fe813aadd32",
+    "src/simulation/mujoco-equal-racks/visual.js": "b38d18befefd0ab1ab1b30a60957790643e97ff0c7c75c640fd534e6533f752e",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-equal-racks/geometry.js": "f590a111a2311fc52308bcfda8c7bbe6469be8d8577a2ce2e4839bedd35f0563"
+  },
+  "physicsXmlSha256": {
+    "default": "dd482dc8da7bd0587782992c383f16b1da4c3b1ec399c7602e37f26fbcc92ecd"
+  },
+  "fullXmlSha256": {
+    "default": "7eea40760c75cd450cc52d1b5be17c64f088482802842203d600e7019f285295"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-equal-racks"
+  },
+  "cycleDesign": "Sinusoidal reversing opposite torques drive the frame out and back after the start-up ramp; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 6,
+        "samples": 375,
+        "dt": 0.016,
+        "startTime": 60,
+        "periods": 1,
+        "drivePeriod": 6
+      },
+      "closure": {
+        "rawSeamPixels": 4.610551307986613e-11,
+        "maximumCorrectionPixels": 2.6030609959204476e-13,
+        "maximumRotationCorrection": 0,
+        "wraps": []
+      },
+      "roundTripPixels": 0.004420064888193403,
+      "seam": {
+        "seamStepPixels": 1.606886151898456,
+        "interiorStepPixels": 1.60733524081148,
+        "seamSecondPixels": 0.0387909255068143,
+        "interiorSecondPixels": 0.04991541975328371
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 66.24063910102845
+}

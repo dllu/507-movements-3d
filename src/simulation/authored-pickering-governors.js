@@ -61,9 +61,12 @@ function makeDynamicLeafStrip({
       );
     }
   }
-  indices.push(0, 2, 1, 0, 3, 2);
+  // End caps wound outward like the side walls: the corner ring runs
+  // anticlockwise about -tangent, so the first cap keeps its order and the
+  // last is reversed.
+  indices.push(0, 1, 2, 0, 2, 3);
   const last = (pointCount - 1) * 4;
-  indices.push(last, last + 1, last + 2, last, last + 2, last + 3);
+  indices.push(last, last + 2, last + 1, last, last + 3, last + 2);
   geometry.setIndex(indices);
   const material = matte(color, {
     metalness: 0.22,

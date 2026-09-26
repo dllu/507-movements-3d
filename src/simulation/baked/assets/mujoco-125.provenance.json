@@ -1,0 +1,93 @@
+{
+  "id": 125,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-125.json.gz",
+  "bytes": 1058234,
+  "assetSha256": "370a3a1b731a8deb8ab23dfe0272d8c4453091da72da42c15ce0c6e22b3ee7f8",
+  "motionSources": {
+    "src/simulation/mujoco-cascaded-traverse/physics.js": "7514ab075060f51cfdca65578eb4a657104472ad228993184bf7c95c48a2ddbb",
+    "src/simulation/mujoco-cascaded-traverse/source.js": "b88da6774db5f062f906343d7c938741e0f6a4d7e930f158bb53cf5ffea6971d",
+    "src/simulation/mujoco-cascaded-traverse/visual.js": "7ffa185d58089b4c6c5b0400dfca39a5d8f9410759cb425bf4850f84ef24119d",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-cascaded-traverse/geometry.js": "4a0258baf04607c0e522a94aceb22a57ef30163ac5eab0269a433fc7407e1338"
+  },
+  "physicsXmlSha256": {
+    "default": "43ec05edb902731d5a94fa5f59324287dfe11132e67c64bf43f9c6408c58aead"
+  },
+  "fullXmlSha256": {
+    "default": "c27d97903a3e83d2555a59b859a51041ae0ddf1d0dbc9c5df7396d7563771cb0"
+  },
+  "config": {
+    "sampleRate": 20,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 437,
+    "searchPeriods": 1,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 1748,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-cascaded-traverse",
+    "qpos": false,
+    "wrap": {
+      "blocks.left": {
+        "symmetry": 6.283185307179586
+      },
+      "blocks.middle": {
+        "symmetry": 6.283185307179586
+      },
+      "blocks.right": {
+        "symmetry": 6.283185307179586
+      }
+    }
+  },
+  "cycleDesign": "The right gear turns at constant speed. Its 29 teeth drive the 23-tooth middle and 19-tooth left gears, and each gear carries a crank pin, so the linkage repeats exactly only after 437 right-gear turns; the loop is that whole 1748 s pattern, sampled at 20 Hz, with every gear carried forward by whole turns.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 1748,
+        "samples": 34960,
+        "dt": 0.05,
+        "startTime": 8,
+        "periods": 437,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 0.003699071380634332,
+        "maximumCorrectionPixels": 0.0011842305900005496,
+        "maximumRotationCorrection": 0.00004228375093840215,
+        "wraps": [
+          {
+            "key": "blocks.left",
+            "angle": 4190.884599888784,
+            "rawAngle": 4190.8845576050235
+          },
+          {
+            "key": "blocks.middle",
+            "angle": 3462.035104255952,
+            "rawAngle": 3462.035106259413
+          },
+          {
+            "key": "blocks.right",
+            "angle": 2745.751979237479,
+            "rawAngle": 2745.75198001059
+          }
+        ]
+      },
+      "roundTripPixels": 0.0070775247141582195,
+      "seam": {
+        "seamStepPixels": 8.03100946988069,
+        "interiorStepPixels": 8.3227361776607,
+        "seamSecondPixels": 0.9288988762707192,
+        "interiorSecondPixels": 1.4134820832777548
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 1203.6873081741332
+}

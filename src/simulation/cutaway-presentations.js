@@ -379,13 +379,25 @@ export const CUTAWAY_SPECS = {
   },
   469: {
     // The cisterns are cut on one plane just in front of the water wheel; the
-    // inclined screw casing, air receiver and air pipe are whole (Brown draws
-    // the screw as a closed tube).
+    // air receiver and air pipe are whole.
     plane: {point: new THREE.Vector3(0, 0, 0.6)},
     cut: [/cistern-end-wall-(left|right)$/],
     water: [/-water-body$/],
     solid: ['transparent-inclined-screw-barrel', 'submerged-air-receiver-at-lower-screw-end', 'air-pipe-ascending-crossing-descending-to-wheel-underside'],
     colors: {'transparent-inclined-screw-barrel': 0x7e8584},
+    // Brown shows the screw's spiral inside its tube: the barrel is cut in
+    // half on its axis plane facing the camera (a back half-tube with plain
+    // cut faces), so the whole flight shows. Water and the cistern back walls
+    // behind it take no shadows: the pipe's and screw's shadow patches seen
+    // through the water read as pale blotches in it.
+    prepare(root) {
+      const barrel = findRole(root, 'transparent-inclined-screw-barrel');
+      barrel.geometry.computeBoundingBox();
+      const {min, max} = barrel.geometry.boundingBox, outer = max.x;
+      barrel.geometry.dispose();
+      barrel.geometry = latheSectionGeometry([[outer - 0.04, min.y], [outer, min.y], [outer, max.y], [outer - 0.04, max.y]], {segments: 64});
+      root.traverse((object) => { if (/-water-body$|-cistern-back-wall$/.test(object.userData.role ?? '')) object.receiveShadow = false; });
+    },
   },
   395: {
     // Brown dashes the plug's passages as hidden bores. One cut on the face
@@ -438,6 +450,18 @@ export const CUTAWAY_SPECS = {
       post.position.set(0, 1.23 + 1.33 / 2, -0.84);
       post.userData.role = 'fixed-bearing-standard-on-cylinder-head';
       for (const mesh of [boss, post]) {mesh.castShadow = true;mesh.receiveShadow = true;root.add(mesh);}
+      // The stuffing box sat 0.09 down inside the head, so their cut faces
+      // shared the section plane there and z-fought as a speckled patch: it
+      // now stands on the head's top face (world y 1.23).
+      const box = findRole(root, 'fixed-annular-stuffing-box-around-moving-trunk');
+      root.updateMatrixWorld(true);box.geometry.computeBoundingBox();
+      const worldBox = new THREE.Box3().setFromObject(box), offset = worldBox.min.y - box.geometry.boundingBox.min.y;
+      const top = box.geometry.boundingBox.max.y, bottom = box.geometry.boundingBox.min.y, seat = 1.2305 - offset;
+      if (seat > bottom) {
+        const k = (top - seat) / (top - bottom), position = box.geometry.attributes.position;
+        for (let i = 0; i < position.count; i++) position.setY(i, top - (top - position.getY(i)) * k);
+        position.needsUpdate = true;box.geometry.computeBoundingBox();box.geometry.computeBoundingSphere();
+      }
     },
     cut: ['sectioned-back-half-cylinder-wall', 'lower-cylinder-flange', 'fixed-cylinder-head-half-around-trunk-opening', 'fixed-annular-stuffing-box-around-moving-trunk',
       'vertical-sliding-piston', 'cutaway-side-of-hollow-trunk-attached-to-piston', 'open-upper-rim-of-moving-trunk'],

@@ -26,7 +26,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
+      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
     }
   ],
   "method": "Rendered mating-thread and tooth vertices, edge midpoints and triangle centers tested bidirectionally against BVH containment across the complete programmed cycle. Distances capped at .02 local units. Housings, shafts and collars are excluded from this selected working-surface audit. Rack teeth outside the worm axial range are inactive.",

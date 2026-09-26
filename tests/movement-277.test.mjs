@@ -393,3 +393,63 @@ test('movement 277 hammer draws Brown\'s stirrup link down against the mainsprin
   }
   disposeModel(model.root);
 });
+
+// Brown's stirrup link and mainspring at the lower right have gone missing
+// in earlier passes; this pins them down as working, visible parts.
+test('movement 277 keeps Brown\'s stirrup link, pinned in the hammer and in the mainspring eye, visible past a small lock plate', () => {
+  const model = createMovementModel(catalog.movements[276]);
+  const { blocks, geometry } = model.root.userData;
+  const { stirrup, stirrupBody, hammerStirrupPin, hammerRotor, mainspring, lockPlate } = blocks;
+  for (const part of [stirrup, stirrupBody, hammerStirrupPin, mainspring]) {
+    assert.ok(part, 'the stirrup, its hammer pin and the mainspring exist');
+    for (let node = part; node; node = node.parent) assert.equal(node.visible, true, `${part.userData.role} is shown`);
+  }
+  assert.equal(stirrupBody.parent, stirrup);
+  assert.equal(hammerStirrupPin.parent, hammerRotor, 'one end is pinned in the hammer');
+  // The mainspring's eye: rest vertices of the eye's bore round (length, 0).
+  const position = mainspring.geometry.attributes.position;
+  model.update(0);
+  const eye = [];
+  for (let index = 0; index < position.count; index += 1) {
+    const radius = Math.hypot(position.getX(index) - geometry.mainspringLength, position.getY(index));
+    if (radius > 0.08 && radius < 0.11) eye.push(index);
+  }
+  assert.ok(eye.length > 50, 'the mainspring ends in a bored eye');
+  const eyeCentre = () => {
+    const centre = new THREE.Vector3();
+    for (const index of eye) centre.add(new THREE.Vector3().fromBufferAttribute(position, index));
+    return centre.divideScalar(eye.length).applyMatrix4(mainspring.matrixWorld);
+  };
+  for (const time of [0, 0.7, 1.4, geometry.inputCyclePeriod * 0.55, 2.9]) {
+    model.update(time);
+    model.root.updateMatrixWorld(true);
+    const hammerEnd = new THREE.Vector3(0, 0, 0).applyMatrix4(stirrup.matrixWorld);
+    const pin = hammerStirrupPin.getWorldPosition(new THREE.Vector3());
+    near(Math.hypot(hammerEnd.x - pin.x, hammerEnd.y - pin.y), 0, 1e-9, `link on the hammer pin at ${time}`);
+    const springEnd = new THREE.Vector3(geometry.stirrupLength, 0, 0).applyMatrix4(stirrup.matrixWorld);
+    const centre = eyeCentre();
+    near(Math.hypot(springEnd.x - centre.x, springEnd.y - centre.y), 0, 0.005, `link in the mainspring eye at ${time}`);
+  }
+  // At rest the link's upper part shows in front (Brown draws it beside the
+  // hammer), and from behind it is not hidden by the lock plate.
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const onLink = new THREE.Vector3(0.8 * geometry.stirrupLength, 0, 0).applyMatrix4(stirrup.matrixWorld);
+  const front = new THREE.Raycaster(new THREE.Vector3(onLink.x, onLink.y, 20), new THREE.Vector3(0, 0, -1));
+  assert.equal(front.intersectObject(model.root, true)[0]?.object, stirrupBody, 'the link shows from the front');
+  const back = new THREE.Raycaster(new THREE.Vector3(onLink.x, onLink.y, -20), new THREE.Vector3(0, 0, 1));
+  assert.notEqual(back.intersectObject(model.root, true)[0]?.object, lockPlate, 'the lock plate does not cover the link');
+  // The lock plate is a small frame piece, not a backdrop.
+  lockPlate.geometry.computeBoundingBox();
+  let area = 0;
+  const p = lockPlate.geometry.attributes.position, n = new THREE.Vector3(), a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
+  const idx = lockPlate.geometry.index;
+  for (let t = 0; t < (idx ? idx.count : p.count) / 3; t += 1) {
+    const v = (k) => (idx ? idx.getX(3 * t + k) : 3 * t + k);
+    a.fromBufferAttribute(p, v(0)); b.fromBufferAttribute(p, v(1)); c.fromBufferAttribute(p, v(2));
+    n.subVectors(b, a).cross(c.clone().sub(a));
+    if (n.z > 0) area += n.length() / 2;
+  }
+  assert.ok(area < 3, `lock plate face area ${area.toFixed(2)} stays small`);
+  disposeModel(model.root);
+});

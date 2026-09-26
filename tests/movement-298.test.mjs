@@ -9,12 +9,12 @@ import { solidSurface } from './helpers/solid-surface.mjs';
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
 const create = () => createMovementModel(catalog.movements[297]);
 
-test('298 is a balance-geared crown wheel driving helical pallets over a saw escape wheel', () => {
+test('298 is a balance-geared crown wheel driving wire-loop pallets over a saw escape wheel', () => {
   const model = create();
   const { blocks, geometry } = model.root.userData;
   assert.equal(model.root.userData.fidelity, 'authored');
   assert.equal(blocks.crownToothSolids.length, 30);
-  assert.equal(geometry.toothCount, 20);
+  assert.equal(geometry.toothCount, 26);
   assert.equal(geometry.pinionTeeth, 12);
   assert.ok(Math.abs(geometry.gearRatio - 30 / 12) < 1e-12, 'balance turns 2.5 times the arbor');
   // Rack-pinion mesh at the crown's top: the pinion axis is one pitch radius
@@ -24,35 +24,55 @@ test('298 is a balance-geared crown wheel driving helical pallets over a saw esc
   assert.equal(model.root.userData.sourceAnimation.available, false);
 });
 
-test('298 contacting tooth corners ride the helical pallet faces and both drops are positive and equal', () => {
+test('298 wire loops are round-wire tubes wrapped over the arbor, not blades behind it', () => {
+  const { blocks, geometry: g } = create().root.userData;
+  for (const loop of [blocks.pallet1, blocks.pallet2]) {
+    assert.equal(loop.geometry.type, 'TubeGeometry');
+    assert.equal(loop.geometry.parameters.radius, g.wireRadius);
+    assert.equal(loop.parent, blocks.arbor, 'the loop turns with the arbor');
+    const radii = loop.userData.centerline.map((p) => Math.hypot(p.y, p.z));
+    // Carried by the arbor: the top of the loop sinks into the rod surface.
+    assert.ok(Math.min(...radii) < g.arborRadius + g.wireRadius - 0.005, 'soldered over the arbor');
+    assert.ok(Math.max(...radii) < g.arborRadius + 0.3, 'hangs only to the tooth tips');
+  }
+});
+
+test('298 contacting teeth touch the wire at exactly the running clearance and both drops are equal', () => {
   const model = create();
   const d = model.root.userData, g = d.geometry;
   let contacts = 0;
-  for (let i = 0; i <= 2000; i += 1) {
-    const time = 4 * i / 2000, state = d.stateAtTime(time);
+  for (let i = 0; i <= 800; i += 1) {
+    const time = 4 * i / 800, state = d.stateAtTime(time);
     if (!state.activePallet) continue;
     const side = state.activePallet === 2 ? 1 : -1;
     const phi = d.contactTipAngle(side, state.arborAngle);
-    const x = g.escapeCenter.x + g.tipRadius * Math.cos(phi);
-    assert.ok(Math.abs(x - d.palletX(side, state.arborAngle, phi)) < 1e-9, `corner on helix at ${time}`);
+    assert.ok(Math.abs(d.helixGap(side, state.arborAngle, phi) - g.contactDistance) < 2e-6, `wire touches at ${time}`);
     // The played wheel angle puts an actual tooth tip at that contact angle.
     const offset = phi - Math.PI / 2 - state.wheelAngle;
     assert.ok(Math.abs(offset - Math.round(offset / g.pitch) * g.pitch) < 1e-9, `rendered tooth at contact ${time}`);
     contacts += 1;
   }
-  assert.ok(contacts > 1000);
+  assert.ok(contacts > 300);
   assert.ok(g.dropAngles.first > 0.02 && Math.abs(g.dropAngles.first - g.dropAngles.second) < 1e-9);
 });
 
-test('298 advances one tooth per balance period, counterclockwise, without jumps', () => {
+test('298 turns counterclockwise only: one tooth per period, no recoil and no jumps', () => {
   const d = create().root.userData, g = d.geometry;
-  let previous = d.stateAtTime(0), maxStep = 0;
+  let previous = d.stateAtTime(0), maxStep = 0, minStep = Infinity;
   for (let i = 1; i <= 4000; i += 1) {
     const state = d.stateAtTime(8 * i / 4000);
     maxStep = Math.max(maxStep, Math.abs(state.wheelAngle - previous.wheelAngle));
+    minStep = Math.min(minStep, state.wheelAngle - previous.wheelAngle);
+    assert.ok(state.wheelSpeed > -1e-9, `wheel never turns back (${state.wheelSpeed} at ${8 * i / 4000})`);
     previous = state;
   }
+  assert.ok(minStep > -1e-12, 'no recoil');
   assert.ok(maxStep < 0.002, `max wheel step ${maxStep}`);
+  // Landings happen as the arbor reverses, so the wheel only rests for an instant.
+  for (const time of [d.times.catch2, d.times.catch1]) {
+    assert.ok(Math.abs(d.stateAtTime(time - 1e-7).wheelSpeed) < 1e-3);
+    assert.ok(Math.abs(d.stateAtTime(time).arborSpeed) < 1e-9);
+  }
   assert.ok(Math.abs(d.stateAtTime(4).wheelAngle - d.stateAtTime(0).wheelAngle - g.pitch) < 1e-9);
   assert.ok(Math.abs(d.stateAtTime(0.5).balanceAngle - g.gearRatio * d.stateAtTime(0.5).arborAngle) < 1e-12);
 });

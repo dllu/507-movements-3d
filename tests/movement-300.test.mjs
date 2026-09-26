@@ -198,9 +198,22 @@ test('movement 300 builds one half-pitch pair on a common arbor around one palle
   assert.equal(blocks.rearWheel.userData.teeth, 12);
   assert.equal(blocks.frontWheel.userData.toothMeshes.length, 12);
   assert.equal(blocks.rearWheel.userData.toothMeshes.length, 12);
-  // Brown draws two spokes running down from the lobed boss.
-  assert.equal(blocks.frontWheel.userData.spokes.length, 2);
-  assert.equal(blocks.rearWheel.userData.spokes.length, 2);
+  // Ordinary four-spoked wheels (Brown cuts off the upper two spokes), each
+  // one plate from the shared builder with plain sharp spoke corners.
+  for (const wheel of [blocks.frontWheel, blocks.rearWheel]) {
+    const params = wheel.userData.plate.geometry.userData.spokedWheel;
+    assert.equal(params.spokes, 4);
+    assert.equal(params.rimFillet, 0);
+    assert.equal(params.hubFillet, 0);
+    const angles = wheel.userData.spokeAngles;
+    for (let index = 1; index < 4; index += 1) {
+      near(angles[index] - angles[index - 1], Math.PI / 2, 1e-12, 'spokes 90 degrees apart');
+    }
+    // Down-left spoke about 37 degrees off the vertical, as drawn.
+    near(1.5 * Math.PI - angles[2], THREE.MathUtils.degToRad(37), 1e-12, 'plate spoke phase');
+    assert.ok(wheel.userData.toothMeshes.every((tooth) => !tooth.visible),
+      'visible teeth are part of the plate');
+  }
   near(blocks.frontWheel.position.z,
     geometry.wheelPlaneOffset, 0, 'front wheel plane');
   near(blocks.rearWheel.position.z,

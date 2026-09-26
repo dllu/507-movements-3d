@@ -371,9 +371,10 @@ function groovedDiskFollower(movement) {
   const grooveFloor = new THREE.Mesh(plate(grooveSection, -0.05, grooveFloorZ), darkMaterial);
   grooveFloor.userData.role = 'recessed-face-groove-floor';
   diskRotor.add(grooveOuter, grooveFloor);
-  const diskHub = cylinderAlongZ(diskHubRadius, 1.18,
+  // The shaft runs back through the crank arm to the rear bearing.
+  const diskHub = cylinderAlongZ(diskHubRadius, 1.48,
     darkMaterial, 36);
-  diskHub.position.z = -0.23;
+  diskHub.position.z = -0.38;
   diskHub.userData.role = 'fixed-center-disk-shaft-hub';
   diskRotor.add(diskHub);
   const diskIndex = new THREE.Mesh(
@@ -384,10 +385,13 @@ function groovedDiskFollower(movement) {
   diskIndex.userData.role = 'white-disk-rotation-index';
   diskRotor.add(diskIndex);
 
-  // Brown's dashed lines (the rear arm's hidden edges and the lever at its
-  // other extreme) are notation; the real rear arm is modelled behind the disk.
-  // A driving arm keyed on the shaft behind the disk; Brown dashes it up and
-  // to the left of the hub (raster 165,177 at the source phase).
+  // Brown dots a crank arm behind the disk, up and to the left of the hub
+  // (raster 165,177 at the source phase): the hand crank that turns the
+  // disk. It is keyed on the shaft against the disk's plain back face and
+  // carries a plain handle pointing rearward. The disk itself is opaque (its
+  // groove is on the front face); the viewer can rotate to see the crank.
+  // His dashed lever at its other extreme is a second pose, not a part, and
+  // is not drawn.
   const sourceDiskAngle = stateAtTime(0).diskAngle;
   const rearArmTip = rotate2(
     sourcePointToModel(new THREE.Vector2(165, 177)),
@@ -409,10 +413,15 @@ function groovedDiskFollower(movement) {
     ),
     poly(circle([0, 0], diskHubRadius, 48)),
   );
-  const rearArm = new THREE.Mesh(plate(rearArmOutline, -0.42, -0.24),
+  const rearArm = new THREE.Mesh(plate(rearArmOutline, -0.32, -0.18),
     driverMaterial);
-  rearArm.userData.role = 'rear-driving-arm-keyed-on-disk-shaft';
+  rearArm.userData.role = 'rear-hand-crank-arm-keyed-on-disk-shaft';
   diskRotor.add(rearArm);
+  // A plain round handle on the arm's end, clear in front of the frame.
+  const crankHandle = cylinderAlongZ(0.075, 0.36, darkMaterial, 32);
+  crankHandle.position.set(rearArmTip.x, rearArmTip.y, -0.47);
+  crankHandle.userData.role = 'rear-hand-crank-handle';
+  diskRotor.add(crankHandle);
 
   const lever = new THREE.Group();
   lever.position.set(leverPivot.x, leverPivot.y, 0.67);
@@ -471,9 +480,9 @@ function groovedDiskFollower(movement) {
   lever.add(leverIndex);
   // The fulcrum pin runs back through the lever bore to the hidden rear
   // brace; Brown draws no other support for the upper fulcrum.
-  const leverPivotPin = cylinderAlongZ(leverPivotPinRadius, 1.62,
+  const leverPivotPin = cylinderAlongZ(leverPivotPinRadius, 1.92,
     darkMaterial, 36);
-  leverPivotPin.position.set(leverPivot.x, leverPivot.y, -0.05);
+  leverPivotPin.position.set(leverPivot.x, leverPivot.y, -0.20);
   leverPivotPin.userData.role = 'fixed-output-lever-fulcrum';
   root.add(leverPivotPin);
 
@@ -482,20 +491,20 @@ function groovedDiskFollower(movement) {
   const baseRightX = sourcePointToModel(sourceRasterBaseRight).x;
   // Brown's base is a deep plank; its top edge is raster y 454.
   const base = makeBeam(
-    new THREE.Vector3(baseLeftX, baseY, -0.66),
-    new THREE.Vector3(baseRightX, baseY, -0.66),
+    new THREE.Vector3(baseLeftX, baseY, -0.96),
+    new THREE.Vector3(baseRightX, baseY, -0.96),
     { color: PALETTE.frame, depth: 0.38, thickness: 0.42 },
   );
   base.userData.role = 'fixed-display-base';
   const leftDiskBrace = makeBeam(
-    new THREE.Vector3(-1.72, baseY + 0.13, -0.64),
-    new THREE.Vector3(-0.30, -0.12, -0.64),
+    new THREE.Vector3(-1.72, baseY + 0.13, -0.94),
+    new THREE.Vector3(-0.30, -0.12, -0.94),
     { color: PALETTE.frame, depth: 0.32, thickness: 0.24 },
   );
   leftDiskBrace.userData.role = 'fixed-left-disk-bearing-brace';
   const rightDiskBrace = makeBeam(
-    new THREE.Vector3(1.42, baseY + 0.13, -0.64),
-    new THREE.Vector3(0.30, -0.12, -0.64),
+    new THREE.Vector3(1.42, baseY + 0.13, -0.94),
+    new THREE.Vector3(0.30, -0.12, -0.94),
     { color: PALETTE.frame, depth: 0.32, thickness: 0.24 },
   );
   rightDiskBrace.userData.role = 'fixed-right-disk-bearing-brace';
@@ -503,7 +512,7 @@ function groovedDiskFollower(movement) {
   // legs and the fulcrum brace meet on it, all behind the disk.
   const rearBearing = new THREE.Mesh(
     plate(polygonClipping.difference(poly(circle([0, 0], 0.42, 64)),
-      poly(circle([0, 0], diskHubRadius + 0.012, 48))), -0.80, -0.48),
+      poly(circle([0, 0], diskHubRadius + 0.012, 48))), -1.10, -0.78),
     frameMaterial,
   );
   rearBearing.userData.role = 'fixed-rear-disk-shaft-bearing';
@@ -514,8 +523,8 @@ function groovedDiskFollower(movement) {
   const leverPivotDirection = leverPivot.clone().normalize();
   const upperCrossBrace = makeBeam(
     new THREE.Vector3(leverPivotDirection.x * 0.30,
-      leverPivotDirection.y * 0.30, -0.70),
-    new THREE.Vector3(leverPivot.x, leverPivot.y, -0.70),
+      leverPivotDirection.y * 0.30, -1.00),
+    new THREE.Vector3(leverPivot.x, leverPivot.y, -1.00),
     { color: PALETTE.frame, depth: 0.30, thickness: 0.22 },
   );
   upperCrossBrace.userData.role = 'fixed-upper-fulcrum-brace-behind-disk';
@@ -559,6 +568,7 @@ function groovedDiskFollower(movement) {
     leverBody,
     leverIndex,
     leverPivotPin,
+    crankHandle,
     rearArm,
     rearBearing,
     rightDiskBrace,

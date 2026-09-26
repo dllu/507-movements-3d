@@ -66,11 +66,15 @@ export function makeJointedTappetDynamics(candidate,{period=12,load=3,damping=[.
       const result=circleFeatures(edges,rotate(pin,-angle),radius,padding);gaps[kind]=result.gap;
       for(const f of result.rows){const normal=rotate(f.normal,angle),J=[0,0,0,0];J[index]=-cross(pin,normal);rows.push({id:kind+':'+f.index,kind,gap:f.gap,J});}
     }
-    const stud=rotate(p.studVector,-omega*time),local=rotate(sub(stud,p.C),-q),fraction=clamp(dot(sub(local,strikeStart),barAxis)/barSquare,0,1),
-      center=add(strikeStart,barAxis.map(v=>v*fraction)),delta=sub(local,center),distance=Math.hypot(...delta),normal=rotate(delta.map(v=>v/distance),q),
-      gap=distance-p.barRadius-p.studRadius;gaps.stud=gap;
-    if(gap<padding)rows.push({id:'stud',kind:'stud',gap,J:[-cross(sub(stud,p.C),normal),0,0,0],
-      inputNormalVelocity:dot(normal,[omega*stud[1],-omega*stud[0]]),point:stud,normal});
+    // One stud D on each of the driver's studCount spokes (evenly spaced).
+    gaps.stud=Infinity;
+    for(let k=0;k<(p.studCount??1);k++){
+      const stud=rotate(p.studVector,-omega*time+2*Math.PI*k/(p.studCount??1)),local=rotate(sub(stud,p.C),-q),fraction=clamp(dot(sub(local,strikeStart),barAxis)/barSquare,0,1),
+        center=add(strikeStart,barAxis.map(v=>v*fraction)),delta=sub(local,center),distance=Math.hypot(...delta),normal=rotate(delta.map(v=>v/distance),q),
+        gap=distance-p.barRadius-p.studRadius;gaps.stud=Math.min(gaps.stud,gap);
+      if(gap<padding)rows.push({id:k?'stud:'+k:'stud',kind:'stud',gap,J:[-cross(sub(stud,p.C),normal),0,0,0],
+        inputNormalVelocity:dot(normal,[omega*stud[1],-omega*stud[0]]),point:stud,normal});
+    }
     return{rows,gaps};
   };
   const energy=(x,v)=>{

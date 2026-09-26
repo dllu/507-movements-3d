@@ -564,7 +564,11 @@ function boatDetachingHooks(movement) {
   // with their rope ends.
   const leadMaterial = matte(ropeMaterialColor, { roughness: 0.76 });
   const fallLeadLength = 2.9;
-  const releaseLeadLength = 2.3;
+  // Fixed lead sheave for the release rope beyond the plate.
+  const releaseSheaveX = 6.0;
+  const releaseSheaveRadius = 0.16;
+  const releaseStanchionFootY = -2.2;
+  const releaseRopeTailAtRest = 0.55;
   const ropeEnds = units.map((unit, index) => {
     const fallLead = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(
       new THREE.Vector3(-0.73, 3.88 + fallLeadLength, tacklePlaneZ),
@@ -581,19 +585,41 @@ function boatDetachingHooks(movement) {
     fallHand.scale.setScalar(0.8);
     addRole(fallHand, `hand-holding-tackle-fall-${index + 1}`);
     unit.unit.add(fallLead, fallHand);
+    // The release rope runs on to a fixed lead sheave on a stanchion just
+    // beyond the plate, turns down over it and hangs as a short tail with a
+    // wooden toggle, where the release is pulled. Rope length is conserved:
+    // as the lower eye draws the rope in, the tail shortens.
     const releaseLead = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(
-      new THREE.Vector3(), new THREE.Vector3(releaseLeadLength, 0, 0)), 48, 0.045, 8, false),
+      new THREE.Vector3(), new THREE.Vector3(1, 0, 0)), 48, 0.045, 8, false),
     leadMaterial), `release-rope-lead-beyond-plate-${index + 1}`);
-    const releaseHand = makeHaulingHand(new THREE.Vector3(-1, 0, 0), 0.045 / 0.8, {
-      armDirection: new THREE.Vector3(0.78, -0.62, 0),
-      tailPoints: [
-        new THREE.Vector3(-0.15, 0, 0), new THREE.Vector3(0.24, 0, 0),
-        new THREE.Vector3(0.36, -0.2, 0), new THREE.Vector3(0.4, -0.55, 0),
-        new THREE.Vector3(0.36, -0.9, 0),
-      ],
-    });
-    releaseHand.scale.setScalar(0.8);
-    addRole(releaseHand, `hand-pulling-release-rope-${index + 1}`);
+    const releaseHand = new THREE.Group();
+    releaseHand.userData.role = `fixed-release-rope-lead-sheave-and-toggle-${index + 1}`;
+    const sheaveCenter = new THREE.Vector3(releaseSheaveX, pullBarHeight - releaseSheaveRadius, unit.unitZ);
+    const fittingMaterial = matte(PALETTE.frame, { metalness: 0.15, roughness: 0.62 });
+    const sheave = addRole(new THREE.Mesh(new THREE.TorusGeometry(releaseSheaveRadius, 0.055, 12, 48), fittingMaterial),
+      `release-rope-lead-sheave-${index + 1}`);
+    sheave.position.copy(sheaveCenter);
+    const sheaveWeb = addRole(new THREE.Mesh(new THREE.CylinderGeometry(releaseSheaveRadius - 0.03, releaseSheaveRadius - 0.03, 0.06, 40)
+      .rotateX(Math.PI / 2), fittingMaterial), `release-rope-lead-sheave-web-${index + 1}`);
+    sheaveWeb.position.copy(sheaveCenter);
+    const stanchionZ = unit.unitZ - 0.24;
+    const axle = addRole(new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.3, 20).rotateX(Math.PI / 2), fittingMaterial),
+      `release-sheave-axle-${index + 1}`);
+    axle.position.set(sheaveCenter.x, sheaveCenter.y, (unit.unitZ + stanchionZ) / 2 - 0.02);
+    const stanchion = addRole(new THREE.Mesh(new THREE.BoxGeometry(0.14, sheaveCenter.y + 0.12 - releaseStanchionFootY, 0.12), fittingMaterial),
+      `release-sheave-stanchion-${index + 1}`);
+    stanchion.position.set(sheaveCenter.x, (sheaveCenter.y + 0.12 + releaseStanchionFootY) / 2, stanchionZ - 0.08);
+    const foot = addRole(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.06, 0.4), fittingMaterial),
+      `release-sheave-stanchion-foot-${index + 1}`);
+    foot.position.set(sheaveCenter.x, releaseStanchionFootY + 0.03, stanchionZ - 0.08);
+    const tail = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(
+      new THREE.Vector3(), new THREE.Vector3(0, -1, 0)), 48, 0.045, 8, false), leadMaterial),
+    `release-rope-hanging-tail-${index + 1}`);
+    tail.position.set(sheaveCenter.x + releaseSheaveRadius, sheaveCenter.y, unit.unitZ);
+    const toggle = addRole(new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.42, 20).rotateX(Math.PI / 2),
+      matte(PALETTE.brass, { roughness: 0.7 })), `release-rope-wooden-toggle-${index + 1}`);
+    releaseHand.add(sheave, sheaveWeb, axle, stanchion, foot, tail, toggle);
+    releaseHand.userData.parts = { sheaveCenter, tail, toggle };
     root.add(releaseLead, releaseHand);
     for (const part of [fallHand, fallLead, releaseHand, releaseLead]) part.userData.beyondPlateCrop = true;
     return { fallHand, fallLead, releaseHand, releaseLead };
@@ -647,7 +673,7 @@ function boatDetachingHooks(movement) {
     }
     pullBar.position.x = state.pullBarX;
     pullBarGrip.position.x = state.pullBarX;
-    ropeEnds.forEach(({ fallHand, fallLead, releaseHand, releaseLead }, index) => {
+    ropeEnds.forEach(({ fallHand, fallLead }) => {
       fallLead.position.y = state.tackleLift;
       fallHand.position.set(-0.73, 3.88 + fallLeadLength + state.tackleLift, tacklePlaneZ);
     });
@@ -693,8 +719,10 @@ function boatDetachingHooks(movement) {
           .add(new THREE.Vector3(0, 0, loopRadius * Math.sin(angle))));
       }
       const start = loop.at(-1);
-      const control = start.clone().lerp(end, 0.52);
-      control.y -= 0.09;
+      // The cord arrives at `end` already heading for the lead sheave, so the
+      // rope runs on without a kink.
+      const towardSheave = new THREE.Vector3(releaseSheaveX, pullBarHeight, unit.unitZ).sub(end).normalize();
+      const control = end.clone().addScaledVector(towardSheave, -0.48 * start.distanceTo(end));
       control.z += 0.06 * (index === 0 ? -1 : 1);
       releaseCords[index].userData.setPoints([
         ...loop.slice(0, -1),
@@ -702,12 +730,20 @@ function boatDetachingHooks(movement) {
       ]);
       // The lead continues straight along the cord's end tangent.
       const leadDirection = end.clone().sub(control).normalize();
+      // The lead runs straight on to the top of the fixed sheave; the tail
+      // hanging from its far side takes up the length drawn in.
       const { releaseHand, releaseLead } = ropeEnds[index];
-      releaseLead.position.copy(end);
-      releaseLead.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), leadDirection);
-      releaseHand.position.copy(end).addScaledVector(leadDirection, releaseLeadLength);
-      // The fist was built for a rope running in -x; turn it onto the lead.
-      releaseHand.rotation.z = Math.atan2(leadDirection.y, leadDirection.x);
+      const { sheaveCenter, tail, toggle } = releaseHand.userData.parts;
+      const sheaveTop = sheaveCenter.clone().setY(sheaveCenter.y + releaseSheaveRadius);
+      const lead = sheaveTop.clone().sub(end);
+      releaseLead.position.set(0, 0, 0);
+      releaseLead.geometry.dispose();
+      releaseLead.geometry = new LaidRopeGeometry(new THREE.LineCurve3(end.clone(), sheaveTop), 48, 0.045, 8, false);
+      const restLead = releaseSheaveX - pullBarRestX;
+      const tailLength = Math.max(0.12, releaseRopeTailAtRest + (restLead - lead.length()));
+      tail.geometry.dispose();
+      tail.geometry = new LaidRopeGeometry(new THREE.LineCurve3(new THREE.Vector3(), new THREE.Vector3(0, -tailLength, 0)), 48, 0.045, 8, false);
+      toggle.position.set(sheaveCenter.x + releaseSheaveRadius, sheaveCenter.y - tailLength - 0.05, sheaveCenter.z);
     });
   };
 

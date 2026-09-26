@@ -3,6 +3,8 @@ import defaultProfile from '../data/open-rim-tappet-profile.js';
 import { makeOpenRimTappetMotion } from './open-rim-tappet-motion.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { PALETTE, matte, markShadows } from './primitives.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
+import { makeSeeThrough } from './see-through-part.js';
 
 export function makeOpenRimTappetIndex({ profile = defaultProfile } = {}) {
   const motion = makeOpenRimTappetMotion(profile), p = motion.parameters;
@@ -25,8 +27,8 @@ export function makeOpenRimTappetIndex({ profile = defaultProfile } = {}) {
   const phases = Array.from({length:arcSegments+1},(_,i) => p.openingHalfAngle + (2 * Math.PI - 2 * p.openingHalfAngle) * i / arcSegments);
   const rim = [...phases.map(a => [p.rimOuter * Math.cos(a),p.rimOuter * Math.sin(a)]),
     ...[...phases].reverse().map(a => [p.rimInner * Math.cos(a),p.rimInner * Math.sin(a)])];
-  // Brown dashes C's rim and tappet B behind the cover; the cover is opaque
-  // and the viewer rotates to see them.
+  // Brown dots C's rim and tappet B behind the cover; the cover is
+  // see-through (see-through-part.js) so they show as working parts.
   add('driverCover',drum(p.driverRadius,.25,.4,1024),input,PALETTE.driver);
   add('rim',plate(rim,-.02,.25),input,PALETTE.driver);
   add('tappet',plate(profile.tappet,-.02,.25),input,PALETTE.brass);
@@ -55,6 +57,10 @@ export function makeOpenRimTappetIndex({ profile = defaultProfile } = {}) {
     shadowCameraHalfExtent:6,shadowBias:-.00012,shadowNormalBias:.005,
     animationTiming:{authoredCyclePeriod:p.period},minimumDisplayCycleSeconds:5,
     idealConstraints:'The input tappet drives one stud, then the closing rim seats it after a short pause. This quasistatic model assumes a resisting output load, passive bearing resistance during the pause and ideal engagement impacts.'};
+  // C is a plain turning disc: it carries the shared quadrant cue.
+  applyRotationIndicator(parts.driverCover,{ axis:'auto' });
+  applyRotationIndicator(parts.driverFrontHub,{ axis:'auto' });
+  makeSeeThrough(parts.driverCover);
   update(0); markShadows(root);
   // The cover and the end-on studs would otherwise throw
   // shadow sweeps across A that the engraving does not show.

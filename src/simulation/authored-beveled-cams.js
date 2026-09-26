@@ -5,6 +5,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { creaseIndexedNormals } from './crease-normals.js';
 
 const FULL_TURN = Math.PI * 2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -67,55 +68,75 @@ function sleeveAlongDirection({
   return sleeve;
 }
 
-// Brown's plate 272 shows a thick disk whose circumference is bevelled to a
-// cone narrowing toward the rear, and whose front face is a trough: seen from
-// the side its edge is the wavy line joining the cone to the face. The face
-// height depends only on the cam-local y coordinate, x = H(y), so the side
-// silhouette of the face is exactly that wavy rim line.
+// Brown's plate 272 shows a thick disk on a horizontal shaft. Its front face
+// is a trough whose rim, seen from the side, is his first wavy line; a narrow
+// chamfer (the band between his two wavy lines) runs from that rim out to
+// the peak edge, and the circumference behind the peak is bevelled back to a
+// flat rear face. The rod's end bears on the chamfer, whose section at the
+// top of the disk is drawn square to the rod: the chamfer generator is
+// perpendicular to the rod and the bevel cone parallel to it. The face height
+// depends only on the cam-local y coordinate, x = H(y).
 function troughFaceX(y, profile) {
   return profile.centerX - profile.depth * (y / profile.referenceRadius) ** 2;
 }
 
-function rimRadiusAtAngle(angle, profile) {
-  // Intersect the trough with the cone rho = backRadius + (backX - x) * slope.
-  const c2 = Math.cos(angle) ** 2;
-  const quadratic = profile.depth * profile.slope * c2
+// Radius at which the face meets the chamfer at material angle psi (from
+// the cam-local +y axis). The chamfer generator of length L runs from that
+// rim point along (a, b) in (x, radius) and ends on the fixed bevel cone
+// radius = peakRadius - slope * (x - peakTopX): a quadratic in the radius.
+function chamferInnerRadiusAtAngle(angle, profile) {
+  const { chamferAxial: a, chamferRadial: b, chamferLength: length } = profile;
+  const quadratic = profile.slope * profile.depth * Math.cos(angle) ** 2
     / profile.referenceRadius ** 2;
-  const constant = profile.backRadius
-    + profile.slope * (profile.backX - profile.centerX);
-  if (quadratic < 1e-12) return constant;
-  return (1 - Math.sqrt(1 - 4 * quadratic * constant)) / (2 * quadratic);
+  const constant = b * length - profile.peakRadius
+    + profile.slope * (profile.centerX + a * length - profile.peakTopX);
+  // Root of q r^2 - r - K = 0 near r = -K, in the cancellation-free form.
+  return -2 * constant / (1 + Math.sqrt(1 + 4 * quadratic * constant));
 }
 
-function wavyConeDiskGeometry(profile, segments, rings = 24, landWidth = 0) {
+function chamferSection(angle, profile) {
+  const innerRadius = chamferInnerRadiusAtAngle(angle, profile);
+  const innerX = troughFaceX(innerRadius * Math.cos(angle), profile);
+  return {
+    innerRadius,
+    innerX,
+    outerRadius: innerRadius + profile.chamferRadial * profile.chamferLength,
+    outerX: innerX + profile.chamferAxial * profile.chamferLength,
+  };
+}
+
+function wavyChamferedDiskGeometry(profile, segments, rings = 24) {
   const positions = [];
   const indices = [];
-  const facePoint = (angle, fraction) => {
-    const rho = rimRadiusAtAngle(angle, profile) * fraction;
-    const y = rho * Math.cos(angle);
-    return [troughFaceX(y, profile), y, rho * Math.sin(angle)];
-  };
+  const sections = Array.from({ length: segments }, (_, index) => {
+    const angle = FULL_TURN * index / segments;
+    return { angle, ...chamferSection(angle, profile) };
+  });
   positions.push(troughFaceX(0, profile), 0, 0);
   for (let ring = 1; ring <= rings; ring += 1) {
-    for (let index = 0; index < segments; index += 1) {
-      positions.push(...facePoint(FULL_TURN * index / segments, ring / rings));
+    for (const { angle, innerRadius } of sections) {
+      const rho = innerRadius * ring / rings;
+      const y = rho * Math.cos(angle);
+      positions.push(troughFaceX(y, profile), y, rho * Math.sin(angle));
     }
   }
-  // Brown's rim is a band of real thickness: a cylindrical land runs back
-  // from the face's wavy edge before the bevel narrows to the rear face.
-  const landRingStart = positions.length / 3;
-  for (let index = 0; index < segments; index += 1) {
-    const [x, y, z] = facePoint(FULL_TURN * index / segments, 1);
-    positions.push(x + landWidth, y, z);
+  // Chamfer rings out to the peak edge (the chamfer's outer edge on the
+  // bevel cone); the intermediate rings lie on the straight generators.
+  const chamferRows = 8;
+  const chamferRingStart = positions.length / 3;
+  for (let row = 1; row <= chamferRows; row += 1) {
+    const t = row / chamferRows;
+    for (const { angle, innerRadius, innerX, outerRadius, outerX } of sections) {
+      const radius = innerRadius + (outerRadius - innerRadius) * t;
+      positions.push(innerX + (outerX - innerX) * t,
+        radius * Math.cos(angle), radius * Math.sin(angle));
+    }
   }
+  const peakRingStart = chamferRingStart + (chamferRows - 1) * segments;
   const backRingStart = positions.length / 3;
-  for (let index = 0; index < segments; index += 1) {
-    const angle = FULL_TURN * index / segments;
-    positions.push(
-      profile.backX,
-      profile.backRadius * Math.cos(angle),
-      profile.backRadius * Math.sin(angle),
-    );
+  for (const { angle } of sections) {
+    positions.push(profile.backX, profile.backRadius * Math.cos(angle),
+      profile.backRadius * Math.sin(angle));
   }
   const backCenter = positions.length / 3;
   positions.push(profile.backX, 0, 0);
@@ -130,14 +151,17 @@ function wavyConeDiskGeometry(profile, segments, rings = 24, landWidth = 0) {
       const d = ringStart(ring + 1) + next;
       indices.push(a, c, d, a, d, b);
     }
-    const rimA = ringStart(rings) + index;
-    const rimB = ringStart(rings) + next;
-    const landA = landRingStart + index;
-    const landB = landRingStart + next;
+    for (let row = 0; row < chamferRows; row += 1) {
+      const lower = row === 0 ? ringStart(rings) : chamferRingStart + (row - 1) * segments;
+      const upper = chamferRingStart + row * segments;
+      indices.push(lower + index, upper + index, upper + next,
+        lower + index, upper + next, lower + next);
+    }
+    const peakA = peakRingStart + index;
+    const peakB = peakRingStart + next;
     const backA = backRingStart + index;
     const backB = backRingStart + next;
-    indices.push(rimA, landA, landB, rimA, landB, rimB);
-    indices.push(landA, backA, backB, landA, backB, landB);
+    indices.push(peakA, backA, backB, peakA, backB, peakB);
     indices.push(backCenter, backB, backA);
   }
   // Wind every triangle outward.
@@ -152,119 +176,129 @@ function wavyConeDiskGeometry(profile, segments, rings = 24, landWidth = 0) {
   return geometry;
 }
 
-function troughFaceBandGeometry(profile, segments, innerFraction, rings = 10) {
-  const positions = [];
-  const indices = [];
-  for (let ring = 0; ring <= rings; ring += 1) {
-    const fraction = innerFraction + (1 - innerFraction) * ring / rings;
-    for (let index = 0; index < segments; index += 1) {
-      const angle = FULL_TURN * index / segments;
-      const rho = rimRadiusAtAngle(angle, profile) * fraction;
-      const y = rho * Math.cos(angle);
-      positions.push(troughFaceX(y, profile), y, rho * Math.sin(angle));
-    }
-  }
-  for (let ring = 0; ring < rings; ring += 1) {
-    for (let index = 0; index < segments; index += 1) {
-      const next = (index + 1) % segments;
-      const a = ring * segments + index;
-      const b = ring * segments + next;
-      const c = (ring + 1) * segments + index;
-      const d = (ring + 1) * segments + next;
-      indices.push(a, c, d, a, d, b);
-    }
-  }
-  for (let offset = 0; offset < indices.length; offset += 3) {
-    [indices[offset + 1], indices[offset + 2]] = [indices[offset + 2], indices[offset + 1]];
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setIndex(indices);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
 function beveledDiskInclinedFollower(movement) {
   const root = new THREE.Group();
   const camCenter = new THREE.Vector3(0, 0, 0);
   const camOuterRadius = 2.02;
-  const camFrontX = -0.78;
-  const camBackX = 0.48;
-  // The trough is 0.36 deep between the side rim (x = -0.42) and the top and
-  // bottom rim (x = -0.78), measured from the plate's wavy edge.
+  // The trough is 0.36 deep between the side rim and the top and bottom rim,
+  // measured from the plate's wavy edge.
   const troughDepth = 0.36;
+  const troughCenterX = -0.42;
   const followerDirection = new THREE.Vector3(-0.839, 0.544, 0).normalize();
-  // The circumference is bevelled parallel to the inclined rod.
+  // The circumference is bevelled parallel to the inclined rod, and the
+  // chamfer the rod bears on is square to it.
   const bevelSlope = -followerDirection.y / followerDirection.x;
   const bevelAngle = Math.atan(bevelSlope);
+  const chamferAxial = followerDirection.y;
+  const chamferRadial = -followerDirection.x;
+  // Brown's band is about 0.28 of the disk radius along its slant.
+  const chamferLength = 0.56;
+  const topInnerRadius = camOuterRadius - chamferRadial * chamferLength;
+  const camFrontX = troughCenterX - troughDepth;
+  const peakTopX = camFrontX + chamferAxial * chamferLength;
+  // Brown's rear face is about two thirds of the disk's height.
+  const camBackRadius = camOuterRadius * 0.66;
+  const camBackX = peakTopX + (camOuterRadius - camBackRadius) / bevelSlope;
   const faceProfile = {
-    backRadius: camOuterRadius - bevelSlope * (camBackX - camFrontX),
+    backRadius: camBackRadius,
     backX: camBackX,
-    centerX: camFrontX + troughDepth,
+    centerX: troughCenterX,
+    chamferAxial,
+    chamferLength,
+    chamferRadial,
     depth: troughDepth,
-    referenceRadius: camOuterRadius,
+    peakRadius: camOuterRadius,
+    peakTopX,
+    referenceRadius: topInnerRadius,
     slope: bevelSlope,
   };
-  const camBackRadius = faceProfile.backRadius;
   const camSegments = 128;
-  const camRimLandWidth = 0.18;
-  const workingBandInnerFraction = 0.62;
   const shaftRadius = 0.13;
   const shaftLength = 5.7;
   const hubRadius = 0.34;
   const hubLength = 0.36;
-  const shoeRadius = 0.16;
+  // The rod's end is a shallow dome (a cap of a 0.6 sphere across the
+  // rod's 0.15 radius, 0.019 high), so it reads as Brown's square end yet
+  // bears smoothly on the chamfer as its section tilts with the wave.
+  const tipSphereRadius = 0.6;
   const rodRadius = 0.15;
+  const tipCapHalfAngle = Math.asin(rodRadius / tipSphereRadius);
+  const tipCapBaseOffset = tipSphereRadius * Math.cos(tipCapHalfAngle);
   const rodLength = 4.05;
   const translationIndexDistance = 3.15;
   const guideRunningClearance = 0.025;
   const guideInnerRadius = rodRadius + guideRunningClearance;
   const guideOuterRadius = 0.34;
   const guideLength = 0.42;
-  const guideDistances = [1.18, 2.55];
-  const sourceContactRadius = 1.84;
-  // Nominal running clearance covering the faceted rendered face.
+  // Guide stations measured along the rod from the tip-dome centre (1.34
+  // and 2.71 from the rod's end, as drawn).
+  const guideDistances = [0.74, 2.11];
+  // Nominal running clearance covering the faceted rendered chamfer.
   const contactClearance = 0.0005;
   const faceX = (y) => troughFaceX(y, faceProfile);
-  const faceSlope = (y) => -2 * troughDepth * y / camOuterRadius ** 2;
+  const sourceSection = chamferSection(0, faceProfile);
+  // At the source pose the rod's axis meets the chamfer mid-slant at the top.
   const sourceSurfacePoint = new THREE.Vector3(
-    faceX(sourceContactRadius),
-    sourceContactRadius,
+    sourceSection.innerX + chamferAxial * chamferLength / 2,
+    sourceSection.innerRadius + chamferRadial * chamferLength / 2,
     0,
   );
-  const sourceOutwardNormal = new THREE.Vector3(
-    -1,
-    faceSlope(sourceContactRadius),
-    0,
-  ).normalize();
+  const sourceOutwardNormal = followerDirection.clone();
   const sourceShoeCenter = sourceSurfacePoint.clone().addScaledVector(
     sourceOutwardNormal,
-    shoeRadius + contactClearance,
+    tipSphereRadius + contactClearance,
   );
   const driverAngularSpeed = -0.82;
   const cyclePeriod = FULL_TURN / Math.abs(driverAngularSpeed);
   const sourceDriverAngle = 0;
   const boundaryEpsilon = 1e-7;
 
-  // The face is a cylinder along the cam-local z axis, so the nearest face
-  // point to a local point lies in its own local (x, y) section: solve the
-  // one-dimensional nearest point on x = H(y) by Newton iteration.
-  const nearestFacePoint = (local) => {
-    let y = local.y;
-    for (let iteration = 0; iteration < 30; iteration += 1) {
-      const x = faceX(y);
-      const slope = faceSlope(y);
-      const curvature = -2 * troughDepth / camOuterRadius ** 2;
-      const gradient = (x - local.x) * slope + (y - local.y);
-      const hessian = slope ** 2 + (x - local.x) * curvature + 1;
-      const step = gradient / hessian;
-      y -= step;
-      if (Math.abs(step) < 1e-15) break;
+  // Nearest point of the chamfer to a cam-local point: each material angle
+  // contributes one straight generator segment; golden-section search over
+  // the angle near the point's own angle.
+  const generatorAt = (angle) => {
+    const section = chamferSection(angle, faceProfile);
+    const c = Math.cos(angle);
+    const sn = Math.sin(angle);
+    return {
+      direction: new THREE.Vector3(chamferAxial, chamferRadial * c,
+        chamferRadial * sn),
+      start: new THREE.Vector3(section.innerX, section.innerRadius * c,
+        section.innerRadius * sn),
+    };
+  };
+  const nearestOnGenerator = (local, angle) => {
+    const { direction, start } = generatorAt(angle);
+    const along = THREE.MathUtils.clamp(
+      local.clone().sub(start).dot(direction), 0, chamferLength);
+    const point = start.addScaledVector(direction, along);
+    return { along, angle, distance: point.distanceTo(local), point };
+  };
+  const nearestChamferPoint = (local) => {
+    const center = Math.atan2(local.z, local.y);
+    const ratio = (Math.sqrt(5) - 1) / 2;
+    let low = center - 0.5;
+    let high = center + 0.5;
+    let first = high - ratio * (high - low);
+    let second = low + ratio * (high - low);
+    let firstValue = nearestOnGenerator(local, first).distance;
+    let secondValue = nearestOnGenerator(local, second).distance;
+    for (let iteration = 0; iteration < 70; iteration += 1) {
+      if (firstValue < secondValue) {
+        high = second;
+        second = first;
+        secondValue = firstValue;
+        first = high - ratio * (high - low);
+        firstValue = nearestOnGenerator(local, first).distance;
+      } else {
+        low = first;
+        first = second;
+        firstValue = secondValue;
+        second = low + ratio * (high - low);
+        secondValue = nearestOnGenerator(local, second).distance;
+      }
     }
-    const point = new THREE.Vector3(faceX(y), y, local.z);
-    const signedDistance = point.distanceTo(local)
-      * (local.x < faceX(local.y) ? 1 : -1);
-    return { point, signedDistance };
+    return nearestOnGenerator(local, (low + high) / 2);
   };
   const toCamLocal = (point, driverAngle) => point.clone()
     .applyAxisAngle(X_AXIS, -driverAngle);
@@ -273,13 +307,13 @@ function beveledDiskInclinedFollower(movement) {
       followerDirection,
       displacement,
     );
-    return nearestFacePoint(toCamLocal(center, driverAngle)).signedDistance
-      - shoeRadius - contactClearance;
+    return nearestChamferPoint(toCamLocal(center, driverAngle)).distance
+      - tipSphereRadius - contactClearance;
   };
   const solveDisplacement = (driverAngle) => {
-    let low = -1.2;
-    let high = 0.6;
-    for (let iteration = 0; iteration < 200; iteration += 1) {
+    let low = -0.8;
+    let high = 0.4;
+    for (let iteration = 0; iteration < 64; iteration += 1) {
       const middle = (low + high) / 2;
       if (shoeGapAt(driverAngle, middle) > 0) high = middle;
       else low = middle;
@@ -309,16 +343,12 @@ function beveledDiskInclinedFollower(movement) {
     const shoeAcceleration = followerDirection.clone().multiplyScalar(
       displacementAcceleration,
     );
-    const nearest = nearestFacePoint(toCamLocal(shoeCenter, driverAngle));
+    const nearest = nearestChamferPoint(toCamLocal(shoeCenter, driverAngle));
     const localContactPoint = nearest.point;
     const contactPoint = localContactPoint.clone()
       .applyAxisAngle(X_AXIS, driverAngle);
     const outwardNormal = shoeCenter.clone().sub(contactPoint).normalize();
     const contactRadius = Math.hypot(localContactPoint.y, localContactPoint.z);
-    const localContactAngle = Math.atan2(
-      localContactPoint.z,
-      localContactPoint.y,
-    );
     const camSurfaceVelocity = new THREE.Vector3().crossVectors(
       X_AXIS,
       contactPoint,
@@ -330,14 +360,17 @@ function beveledDiskInclinedFollower(movement) {
     );
     const atDeadCenter = Math.abs(displacementPerRadian) < boundaryEpsilon;
     const outerDead = Math.abs(Math.sin(driverAngle)) < 0.5;
+    // Contact offset from the rod axis, within the tip dome's radius.
+    const axisOffset = contactPoint.clone().sub(shoeCenter)
+      .projectOnPlane(followerDirection).length();
     return {
       atDeadCenter,
-      bevelPlaneError: Math.abs(localContactPoint.x - faceX(localContactPoint.y)),
       camSurfaceVelocity,
+      chamferContactAlong: nearest.along,
+      contactAngleFromRodAxis: outwardNormal.angleTo(followerDirection),
+      contactAxisOffset: axisOffset,
       contactPoint,
       contactRadius,
-      contactRadiusOuterClearance: rimRadiusAtAngle(localContactAngle, faceProfile)
-        - contactRadius,
       displacement,
       displacementAcceleration,
       displacementPerRadian,
@@ -353,8 +386,8 @@ function beveledDiskInclinedFollower(movement) {
       relativeVelocity,
       shoeAcceleration,
       shoeCenter,
-      shoePlaneGap: Math.abs(shoeCenter.distanceTo(contactPoint) - shoeRadius
-        - contactClearance),
+      shoePlaneGap: Math.abs(shoeCenter.distanceTo(contactPoint)
+        - tipSphereRadius - contactClearance),
       shoeVelocity,
       stage: atDeadCenter && outerDead
         ? 'rod-outer-dead-center'
@@ -377,16 +410,6 @@ function beveledDiskInclinedFollower(movement) {
     metalness: 0.12,
     roughness: 0.62,
   });
-  const bevelMaterial = matte(PALETTE.accent, {
-    metalness: 0.18,
-    roughness: 0.54,
-    side: THREE.DoubleSide,
-  });
-  // Offset depth testing, not the physical face: avoid z-fighting without
-  // lifting the visible working surface into the tangent shoe.
-  bevelMaterial.polygonOffset = true;
-  bevelMaterial.polygonOffsetFactor = -1;
-  bevelMaterial.polygonOffsetUnits = -1;
   const drivenMaterial = matte(PALETTE.driven, {
     metalness: 0.12,
     roughness: 0.64,
@@ -410,25 +433,16 @@ function beveledDiskInclinedFollower(movement) {
   camAssembly.add(camRotor);
   root.add(camAssembly);
 
+  // Brown's disk has crisp edges: the wavy face, the chamfer (the band
+  // between his two wavy lines), the bevel cone and the flat rear face meet
+  // at creases, so shared rim vertices must not blend their normals into a
+  // rounded, lens-like shading.
   const camBody = new THREE.Mesh(
-    wavyConeDiskGeometry(faceProfile, camSegments, 24, camRimLandWidth),
+    creaseIndexedNormals(wavyChamferedDiskGeometry(faceProfile, camSegments, 24), Math.PI / 8),
     driverMaterial,
   );
   camBody.userData.role = 'solid-disk-with-bevelled-rim-and-wavy-trough-face';
   camRotor.add(camBody);
-  // The working band is the plate's own face, in the plate's colour (a
-  // coincident skin kept for the contact checks, drawn in front of it).
-  const workingBandMaterial = driverMaterial.clone();
-  workingBandMaterial.polygonOffset = true;
-  workingBandMaterial.polygonOffsetFactor = -1;
-  workingBandMaterial.polygonOffsetUnits = -1;
-  const bevelFace = new THREE.Mesh(
-    troughFaceBandGeometry(faceProfile, camSegments, workingBandInnerFraction),
-    workingBandMaterial,
-  );
-  bevelFace.userData.innerFraction = workingBandInnerFraction;
-  bevelFace.userData.role = 'wavy-working-band-of-trough-face';
-  camRotor.add(bevelFace);
   // Brown's wavy line and rear circle are the inked edges of the solid
   // disk; the shaded 3D edges show them, so no dark edge tubes are added.
   const shaft = cylinderAlongX(
@@ -468,11 +482,24 @@ function beveledDiskInclinedFollower(movement) {
   follower.userData.role = 'inclined-guided-output-rod-and-rounded-shoe';
   follower.quaternion.setFromUnitVectors(Y_AXIS, followerDirection);
   root.add(follower);
-  const contactShoe = new THREE.Mesh(
-    new THREE.SphereGeometry(shoeRadius, 32, 20),
-    bevelMaterial,
+  // The rod's end: a shallow dome in the rod's own material (Brown draws a
+  // plain square end), centred on the follower origin, facing the disk.
+  const tipCollar = 0.02;
+  const tipProfile = [new THREE.Vector2(0, -tipSphereRadius)];
+  for (let step = 1; step <= 8; step += 1) {
+    const angle = tipCapHalfAngle * step / 8;
+    tipProfile.push(new THREE.Vector2(tipSphereRadius * Math.sin(angle),
+      -tipSphereRadius * Math.cos(angle)));
+  }
+  tipProfile.push(
+    new THREE.Vector2(rodRadius, -tipCapBaseOffset + tipCollar),
+    new THREE.Vector2(0, -tipCapBaseOffset + tipCollar),
   );
-  contactShoe.userData.role = 'rounded-shoe-bearing-on-beveled-circumference';
+  const contactShoe = new THREE.Mesh(
+    creaseIndexedNormals(new THREE.LatheGeometry(tipProfile, 36), Math.PI / 6),
+    drivenMaterial,
+  );
+  contactShoe.userData.role = 'domed-end-of-rod-bearing-on-disk-chamfer';
   follower.add(contactShoe);
   const followerRod = cylinderAlongY(
     rodRadius,
@@ -480,7 +507,7 @@ function beveledDiskInclinedFollower(movement) {
     drivenMaterial,
     36,
   );
-  followerRod.position.y = rodLength / 2 + shoeRadius * 0.52;
+  followerRod.position.y = rodLength / 2 - tipCapBaseOffset + tipCollar;
   followerRod.userData.role = 'straight-output-rod-sliding-only-along-its-axis';
   follower.add(followerRod);
   const translationIndex = cylinderAlongY(
@@ -589,7 +616,6 @@ function beveledDiskInclinedFollower(movement) {
   root.userData.blocks = {
     baseRail,
     bearingPosts,
-    bevelFace,
     camAssembly,
     camBody,
     camRotor,
@@ -621,7 +647,6 @@ function beveledDiskInclinedFollower(movement) {
     camFrontX,
     camOuterRadius,
     camSegments,
-    camRimLandWidth,
     contactClearance,
     followerDirection: followerDirection.clone(),
     guideDistances: [...guideDistances],
@@ -637,15 +662,16 @@ function beveledDiskInclinedFollower(movement) {
     rodRadius,
     shaftLength,
     shaftRadius,
-    shoeRadius,
+    chamferLength,
+    tipCapHalfAngle,
+    tipSphereRadius,
     sourceShoeCenter: sourceShoeCenter.clone(),
     sourceSurfacePoint: sourceSurfacePoint.clone(),
     translationIndexDistance,
     troughDepth,
-    workingBandInnerFraction,
   };
   root.userData.mechanism =
-    'one-horizontal-shaft-rotates-one-circular-disk-whose-circumference-is-bevelled-parallel-to-the-rod-and-whose-front-face-is-a-wavy-trough; one-gravity-preloaded-rod-slides-only-along-two-fixed-inclined-guides-while-its-rounded-shoe-follows-the-wavy-face-twice-per-turn';
+    'one-horizontal-shaft-rotates-one-circular-disk-whose-circumference-is-bevelled-parallel-to-the-rod-and-whose-front-face-is-a-wavy-trough; one-gravity-preloaded-rod-slides-only-along-two-fixed-inclined-guides-while-its-domed-end-bears-on-the-wavy-chamfer-square-to-it-twice-per-turn';
   root.userData.movement = movement;
   root.userData.sourceAnimation = {
     available: false,
@@ -695,7 +721,7 @@ function beveledDiskInclinedFollower(movement) {
     sourceUrl: movement.sourceUrl,
   };
   root.userData.faceXAtLocalY = faceX;
-  root.userData.rimRadiusAtAngle = (angle) => rimRadiusAtAngle(angle, faceProfile);
+  root.userData.chamferSectionAtAngle = (angle) => chamferSection(angle, faceProfile);
   root.userData.stateAtDriverAngle = stateAtDriverAngle;
   root.userData.stateAtTime = stateAtTime;
   root.userData.timeline = {
@@ -705,7 +731,7 @@ function beveledDiskInclinedFollower(movement) {
   };
   root.userData.transmission = {
     contactLaw:
-      'rounded-shoe-held-at-its-radius-from-the-rotating-trough-face-along-the-fixed-rod-axis',
+      'domed-rod-end-held-at-its-radius-from-the-rotating-chamfer-along-the-fixed-rod-axis',
     strokesPerRevolution: 2,
     followerMotion: 'reciprocating-rectilinear-along-one-fixed-inclined-axis',
     inputMotion: 'continuous-rotation-about-one-fixed-horizontal-axis',
@@ -725,12 +751,10 @@ function beveledDiskInclinedFollower(movement) {
     contactMarker.position.copy(state.contactPoint);
     root.userData.contacts = {
       bevelToFollowerShoe: {
-        bevelPlaneError: state.bevelPlaneError,
+        chamferContactAlong: state.chamferContactAlong,
         contactPoint: state.contactPoint.clone(),
-        innerRadialClearance: state.contactRadiusInnerClearance,
         normal: state.outwardNormal.clone(),
         normalVelocityError: state.normalVelocityError,
-        outerRadialClearance: state.contactRadiusOuterClearance,
         shoePlaneGap: state.shoePlaneGap,
       },
       followerGuides: followerGuides.map((guide, index) => ({
@@ -755,13 +779,12 @@ function beveledDiskInclinedFollower(movement) {
     for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
   });
   markShadows(root);
-  bevelFace.castShadow = false;
   // Brown draws neither index marks nor a contact marker.
   for (const marker of [rotationIndex, translationIndex, contactMarker]) marker.visible = false;
   // Side elevation like the plate: shaft across the view, rod in its plane,
   // seen a little from the front so the wavy face shows.
   root.userData.cameraFov = 10;
-  root.userData.reconstructionNote = 'The disk rim is a cone parallel to the rod and the front face a trough whose edge is Brown\'s wavy line, so the rod rises and falls twice per turn. The shoe/face contact is solved numerically on the finite trough; the gravity preload is assumed and friction and loads are not simulated.';
+  root.userData.reconstructionNote = 'The front face is a trough whose rim is Brown\'s wavy line; a narrow chamfer square to the rod (the band between his two wavy lines) joins it to a rim bevelled parallel to the rod. The rod\'s end bears on that chamfer, which the wave carries along the rod, so the rod rises and falls twice per turn. The contact is solved numerically on the finite chamfer; the gravity preload is assumed and friction and loads are not simulated.';
   return {
     root,
     update,

@@ -87,8 +87,14 @@ test('086 retains startup, repeats a settled four-second cycle and keeps the inp
  }
  const seam=(profile.repeat.start+profile.repeat.period)/rate,delta=1e-7,a=u.stateAtTime(seam-delta),b=u.stateAtTime(seam+delta);
  for(let k=0;k<3;k++)near(a.q[k],b.q[k],1e-5);
- // The band is plain leather: no stripe texture (Brown's hatching is notation).
- assert.equal(u.parts.inputDriveBand.material.map,null);
+ // Brown's two hatched runs are laid rope: one endless three-strand rope in
+ // the sheave grooves, whose lay travels with the sheaves' rims.
+ const rope=u.parts.inputDriveRope;
+ assert.equal(rope.geometry.type,'LaidRopeGeometry');assert.equal(rope.geometry.parameters.closed,true);
+ assert.equal(u.parts.inputDriveBand,undefined);
+ near(rope.geometry.parameters.radius,u.rearDrive.ropeRadius);
+ near(rope.geometry.userData.ropeLay.length,u.rearDrive.bandLength,1e-3);
+ for(const time of [.3,1.7]){model.update(time);near(rope.geometry.userData.travel,-u.kinematics.camAngle*u.rearDrive.radius,1e-9);}
  dispose(model);
 });
 

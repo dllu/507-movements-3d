@@ -44,7 +44,7 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/assembly.js",
-      "sha256": "2af57d19adfc8e3c17cacb36cd5d75edd317e3c0bfd967eae7ebc2c1e773fb4a"
+      "sha256": "7c3ffcb82b3c7aaa01a35447f57986db8b351d73d616730de79beebf70087e57"
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/update-solids.js",
@@ -68,10 +68,10 @@
     }
   ],
   "keys": 9001,
-  "bytes": 515394,
-  "sha256": "5b22c87366fa995a3523e0fda11b7c864d28371ee71dbbf7d7935d16e0042f56",
+  "bytes": 511799,
+  "sha256": "6fd79d2bd6bbc52a020757db188ea33289f156ef31df1d992a2d7bc2cea80900",
   "compactKeysModule": "src/simulation/baked/diagonal-catch-keys.js",
   "compactKeys": 777,
-  "compactKeysSha256": "17082b5025398edc82755be92d4117f67de1bed1974f0ac0924e5e316fcd19c3",
+  "compactKeysSha256": "e9067eb55e3944ff08f311912a25182f83c767374bfbc67102c631d6cb59f9ad",
   "status": "baked-assembly-source-review-open"
 }

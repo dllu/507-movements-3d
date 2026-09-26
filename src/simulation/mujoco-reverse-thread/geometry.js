@@ -10,7 +10,10 @@ export {THREE};
 export function makeReverseThreadGeometry(options={}) {
  const f=makeReverseThreadProfile(options),e=f.source.edges,root=new THREE.Group(),parts={},families={},blocks={};
  const add=(name,g,family,color)=>{if(!blocks[family]){blocks[family]=new THREE.Group();root.add(blocks[family]);}const m=new THREE.Mesh(g,matte(color,{metalness:.12,roughness:.62}));m.name=name;blocks[family].add(m);parts[name]=m;families[name]=family;return m;};
- const lands=reverseThreadLands(f);add('lands',lands.geometry,'input',PALETTE.driver);
+ // Baked playback passes the offline-baked visible lands (the same mesh; see
+ // baked/reverse-thread-lands.js); live physics builds them with their
+ // collision cells.
+ const lands=options.bakedLands?{geometry:options.bakedLands,cells:null,angles:null}:reverseThreadLands(f);add('lands',lands.geometry,'input',PALETTE.driver);
  // Distinguish the recessed finish so both branches remain legible at a crossing.
  add('floor',alongY(ring(f.shaftRadius,f.floor,f.bottom,f.ceiling,256)),'input',new THREE.Color(PALETTE.driver).multiplyScalar(.45));
  add('shaft',alongY(disk(f.shaftRadius,f.y(f.source.shaftEnds[1]),f.y(f.source.shaftEnds[0]),128)),'input',PALETTE.driver);

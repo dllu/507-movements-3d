@@ -1,0 +1,71 @@
+{
+  "id": 93,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-093.json.gz",
+  "bytes": 6468,
+  "assetSha256": "0cc602c5ca22675e6d2f3c28ca012e30d5c3d4967fc9ebba8e5c7176c05bcb6b",
+  "motionSources": {
+    "src/simulation/mujoco-scotch-yoke/physics.js": "cdd6cff287ab3e0c53a846f7e75644b85cf757afc4d79ac4fa80b05758571bd3",
+    "src/simulation/mujoco-scotch-yoke/source.js": "2d781bb8ade8ebc0f303174119b8d7b5ebd7fca6451d0b3579c9060b84d327b4",
+    "src/simulation/mujoco-scotch-yoke/visual.js": "1a8ee9984b400324d3c61b1b27e2b12e4a70231ba017e4a0c704e20d023a509d",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-scotch-yoke/geometry.js": "76ae11d32d30988c4c03e453d444384f6e900e0e97d6a10099ad12d82a511b1f"
+  },
+  "physicsXmlSha256": {
+    "default": "8f791c3c3c6a354d046c69e1eed5b6242aae337b0d1adff9d15ff7c06f3d69f7"
+  },
+  "fullXmlSha256": {
+    "default": "88d4bec5096a4df0856fc2968d780aacf4a6005ccedb1c8f4b73b44bb5faa0ea"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-scotch-yoke"
+  },
+  "cycleDesign": "Constant-speed crank; one crank turn closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 4,
+        "samples": 250,
+        "dt": 0.016,
+        "startTime": 12,
+        "periods": 1,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 3.253841640571409e-10,
+        "maximumCorrectionPixels": 3.185007813044649e-10,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.input",
+            "angle": 6.2831853071762716,
+            "rawAngle": 6.2831853071762716
+          }
+        ]
+      },
+      "roundTripPixels": 0.000003840152971106151,
+      "seam": {
+        "seamStepPixels": 3.4843886223644147,
+        "interiorStepPixels": 3.485801867673551,
+        "seamSecondPixels": 0.08778523179036642,
+        "interiorSecondPixels": 0.09682178497318894
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 0.7679644961357117
+}

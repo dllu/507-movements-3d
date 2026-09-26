@@ -34,7 +34,7 @@
     10
   ],
   "source": {
-    "reportSha256": "f1c31a92cb2049f61f491c0909543568e27538b209debc65c39dd95b55f7ca77",
+    "reportSha256": "8f9cc9807103417dd0da7d8c1f0311a746c17cb691cf41f35ec4afaed7bf8f4e",
     "simulationSources": [
       {
         "file": "src/simulation/mujoco-plate-shears/geometry.js",
@@ -54,7 +54,7 @@
       },
       {
         "file": "src/simulation/primitives.js",
-        "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
+        "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
       },
       {
         "file": "package-lock.json",
@@ -103,6 +103,6 @@
     "maximumPenetrationPixels": 0.00021767707832909267
   },
   "samples": 10421,
-  "bytes": 264054,
-  "assetSha256": "ec4c3ce71d9983fed35207f7f0a4b090b3824cf5c0274c1d8c45bcaad4c9a5f1"
+  "bytes": 264045,
+  "assetSha256": "d661a9bcc5509d12b657e19cf78f6b08e8a9a83180eeb5264affee67bcf4a088"
 }

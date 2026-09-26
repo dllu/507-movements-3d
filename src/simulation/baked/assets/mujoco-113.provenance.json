@@ -1,0 +1,104 @@
+{
+  "id": 113,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-113.json.gz",
+  "bytes": 42551,
+  "assetSha256": "4d24ea2d6f8974b1fa00b778560d256e07d22e0a79acdfeb182bae1f4a562a4d",
+  "motionSources": {
+    "src/simulation/mujoco-rack-pinion/physics.js": "70f52d6a13849db93ab2840c6a18ae939620330e6f6752f88794c642218970cb",
+    "src/simulation/mujoco-rack-pinion/source.js": "fe90f19324677eedf818640ee6acc389b7953f73ab5a402b7de368fc6bec65b3",
+    "src/simulation/mujoco-rack-pinion/visual.js": "1786deb59310d4fa27630e1b5c9eae596401e4f5d877d755adbaf7709deffb47",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-rack-pinion/geometry.js": "40d566b7a870cd70389ffaeb8691705147129b52df0b7f83d19dba491d227ce1"
+  },
+  "physicsXmlSha256": {
+    "pinion": "63f4e9c98f7efa3a114581a483d0fb2d39f3b4bb73f605ce5e32293384d65df9",
+    "rack": "63f4e9c98f7efa3a114581a483d0fb2d39f3b4bb73f605ce5e32293384d65df9"
+  },
+  "fullXmlSha256": {
+    "pinion": "6ed8ba81441da1d340508b9f7adc6d651d02447ae7875373e1b1f2b154824461",
+    "rack": "6ed8ba81441da1d340508b9f7adc6d651d02447ae7875373e1b1f2b154824461"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-rack-pinion",
+    "variants": {
+      "pinion": {
+        "options": {
+          "mode": "pinion"
+        }
+      },
+      "rack": {
+        "options": {
+          "mode": "rack"
+        }
+      }
+    },
+    "defaultVariant": "pinion"
+  },
+  "cycleDesign": "Sinusoidal reversing input on the selected member (pinion or rack); one drive period closes each loop after the start-up ramp.",
+  "variants": {
+    "pinion": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 6,
+        "samples": 375,
+        "dt": 0.016,
+        "startTime": 54,
+        "periods": 1,
+        "drivePeriod": 6
+      },
+      "closure": {
+        "rawSeamPixels": 0.006883117739963931,
+        "maximumCorrectionPixels": 0.00001897690218904923,
+        "maximumRotationCorrection": 0.00019818604896788898,
+        "wraps": []
+      },
+      "roundTripPixels": 0.00485362039436245,
+      "seam": {
+        "seamStepPixels": 0.521363735059659,
+        "interiorStepPixels": 0.521363735059659,
+        "seamSecondPixels": 0.00939727870689021,
+        "interiorSecondPixels": 0.015318802991057348
+      }
+    },
+    "rack": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 6,
+        "samples": 375,
+        "dt": 0.016,
+        "startTime": 42,
+        "periods": 1,
+        "drivePeriod": 6
+      },
+      "closure": {
+        "rawSeamPixels": 0.004992040038145839,
+        "maximumCorrectionPixels": 0.000005559269591389631,
+        "maximumRotationCorrection": 0.00014442588872193348,
+        "wraps": []
+      },
+      "roundTripPixels": 0.003526409394023283,
+      "seam": {
+        "seamStepPixels": 0.5199537622386566,
+        "interiorStepPixels": 0.5336301758285784,
+        "seamSecondPixels": 0.009035232697759193,
+        "interiorSecondPixels": 0.02661350754829057
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 63.24665014314652
+}

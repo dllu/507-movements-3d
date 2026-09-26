@@ -1,0 +1,65 @@
+{
+  "id": 118,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-118.json.gz",
+  "bytes": 7455,
+  "assetSha256": "18e3a8c4698c547bcf65db63acd6e5c96ee52f865932fea3b387acb08e10f328",
+  "motionSources": {
+    "src/simulation/mujoco-stroke-doubler/physics.js": "e2c79748be808ae03346f0b0be8ea6e915080a2fa17064a5d9ca366d801da90a",
+    "src/simulation/mujoco-stroke-doubler/source.js": "e639559f473596eea5033bafbbc878de213eabc0f48a5a2b871d538f93f9116a",
+    "src/simulation/mujoco-stroke-doubler/visual.js": "b54345844aeb971923125a53e02e7222823dc14f3e52e5d92aae5082e957fd64",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-stroke-doubler/geometry.js": "43c3e63ce2a1c93263bd4c6bed4e56d8163da67a1edfaa9d17a7f64d79d92585"
+  },
+  "physicsXmlSha256": {
+    "default": "21c1a267766d8c198b372902bbce9d0867709660351663f30f68828de929e604"
+  },
+  "fullXmlSha256": {
+    "default": "1859678b4487a679faba4bd0e424d13d6406e93b8992b859046156acd99ffd53"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-stroke-doubler"
+  },
+  "cycleDesign": "Sinusoidal reversing pitman stroke after the start-up ramp; the pinion rolls along the fixed rack and the upper rack runs out and back; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 5,
+        "samples": 400,
+        "dt": 0.0125,
+        "startTime": 10,
+        "periods": 1,
+        "drivePeriod": 5
+      },
+      "closure": {
+        "rawSeamPixels": 9.737100015172473e-10,
+        "maximumCorrectionPixels": 8.499639143552673e-10,
+        "maximumRotationCorrection": 0,
+        "wraps": []
+      },
+      "roundTripPixels": 0.004812089014992538,
+      "seam": {
+        "seamStepPixels": 1.6636717900570013,
+        "interiorStepPixels": 1.668551300205837,
+        "seamSecondPixels": 0.024546791721531885,
+        "interiorSecondPixels": 0.05104564641480857
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 29.000176896095276
+}

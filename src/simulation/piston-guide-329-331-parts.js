@@ -54,7 +54,10 @@ export function correctSlottedGuide(root){
     replace(web,new THREE.BoxGeometry(.06,1.44,.60));web.position.set(side*(g.guideOuterX+.048),-.24,-.005);
     replace(liner,new THREE.BoxGeometry(.045,1.32,.30));liner.position.set(side*(g.guideInnerX-.0245),-.24,-.02);
   }
-  for(const[side,face]of[[-1,b.guideFaces[0]],[1,b.guideFaces[1]]]){replace(face,new THREE.BoxGeometry(.02,g.guideTopY-g.guideBottomY,.34));face.position.set(side*(g.guideInnerX+.01),(g.guideTopY+g.guideBottomY)/2,-.02);}
+  for(const[side,face]of[[-1,b.guideFaces[0]],[1,b.guideFaces[1]]]){replace(face,new THREE.BoxGeometry(.02,g.guideTopY-g.guideBottomY,.34));face.position.set(side*(g.guideInnerX+.01),(g.guideTopY+g.guideBottomY)/2,-.02);
+    // The strip lay inside the pillar, its faces flush with the pillar's (z-fighting dark
+    // stripe); the pillar's own inner face is the planed guide surface.
+    face.visible=false;}
   // The gland was drawn behind the rod and its apparent bore was another solid.
   passageY(b.cylinderTop,.72,.48,.252,.172,.24);b.cylinderTop.position.z=.64;
   passageY(b.cylinderBore,.30,.22,.246,.166,.25);b.cylinderBore.position.set(0,-1.92,.64);

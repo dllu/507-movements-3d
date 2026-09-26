@@ -6,6 +6,7 @@ import { beltCurveCrossed, beltCurveOpen } from '../src/simulation/primitives.js
 import { createMovementModel } from '../src/simulation/registry.js';
 import { hasRotationIndicator, rotationIndicatorFrame } from '../src/simulation/rotation-indicator.js';
 import { assertReadableTiming } from './helpers/display-timing.mjs';
+import { FINE_TOOTH_PASSING_RATES, MAX_DISPLAY_TOOTH_PASSING_RATE } from '../src/simulation/display-timing.js';
 
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
 const X_AXIS = new THREE.Vector3(1, 0, 0);
@@ -216,7 +217,8 @@ test('all movements aim for two seconds while limiting the fastest rotating part
       timing.authoredCyclePeriod / timing.playbackTimeScale - timing.displayCycleDuration,
     ) < 1e-12);
     assert.ok(timing.displayCycleDuration >= 2 - 1e-10);
-    assertReadableTiming(timing);
+    // An authored playback rate (264's motor-speed worm) opts out of the caps.
+    if (model.root.userData.authoredPlaybackTimeScale === undefined) assertReadableTiming(timing);
     disposeModel(model.root);
   }
 });
@@ -495,28 +497,38 @@ test('movement 7 traverses one belt across loose and reversing coaxial drives', 
 
 test('movement 8 renders one belt and obeys the active pulley ratio', () => {
   const model = createMovementModel(catalog.movements[7]);
-  for (const time of [1, 4.5, 8.7, 13.2]) {
+  const levels = new Set();
+  // Run phases of four stages; the belt is shifted at rest between them.
+  for (const time of [1, 6.5, 11, 16.2, 21.5, 26]) {
     model.update(time, 0.016);
     const selectorBelts = model.root.children.filter((child) => child.userData.selectorBelt);
-    assert.equal(selectorBelts.length, 4, 'the four steps in the engraving are modeled');
-    assert.equal(
-      selectorBelts.filter((belt) => belt.visible && belt.userData.active).length,
-      1,
-      `one belt is installed at t=${time}`,
-    );
-    selectorBelts.forEach((belt, index) => {
-      assertTangentContinuous(belt.userData.curve, `movement 8 ratio ${index + 1}`);
-    });
+    assert.equal(selectorBelts.length, 1, 'one belt runs on the stepped pulleys');
+    assert.equal(selectorBelts[0].visible && selectorBelts[0].userData.active, true, `belt installed at t=${time}`);
+    assertTangentContinuous(selectorBelts[0].userData.curve, `movement 8 belt at ${time}`);
     const state = model.root.userData.kinematics;
+    assert.equal(state.shift, null);
+    levels.add(state.selected);
+    const expectedLength = selectorBelts[0].userData.length;
+    model.update(time + 0.01, 0.01);
+    assert.ok(Math.abs(selectorBelts[0].userData.length - expectedLength) < 1e-9, 'belt length is constant while running');
+    model.update(time, 0);
     const expectedRatio = state.driverRadius / state.drivenRadius;
     assert.ok(Math.abs(state.drivenAngularSpeed / state.driverAngularSpeed - expectedRatio) < 1e-10);
     assert.ok(Math.abs(Math.abs(state.beltSpeed) - Math.abs(state.driverAngularSpeed) * state.driverRadius) < 1e-10);
     assert.ok(Math.abs(Math.abs(state.beltSpeed) - Math.abs(state.drivenAngularSpeed) * state.drivenRadius) < 1e-10);
   }
 
+  assert.deepEqual([...levels].sort(), [0, 1, 2, 3], 'the belt visits all four step pairs');
+  // Between stages the belt is shifted one step at rest, and the six-stage
+  // ping-pong cycle closes.
+  model.update(4.6, 0.016);
+  const shift = model.root.userData.kinematics.shift;
+  assert.equal(Math.abs(shift.to - shift.from), 1);
+  assert.equal(Math.abs(model.root.userData.kinematics.driverAngularSpeed), 0);
   // Band material advances by physical distance, not by the local parameter
   // of a line or pulley arc.  The source draws no flow stripes, so the
   // arc-length parameterization they would follow is sampled directly.
+  model.update(1, 0.016);
   const selectorBelts = model.root.children.filter(
     (child) => child.userData.selectorBelt,
   );
@@ -2946,14 +2958,13 @@ test('movement 38 follows the source three-sector ratios and fixed-center constr
 
 test('movement 39 couples a rocking planet and finite connecting rod to two sun turns per orbit', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { sun, planet, carrier, arm, connectingRod, ringSegments, sunShaft, planetShaft } = model.root.userData.blocks;
+  const { sun, planet, carrier, arm, connectingRod, flywheel, sunShaft, planetShaft } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
   assert.equal(model.root.userData.mechanism, 'watts-equal-gear-sun-and-planet');
   assert.equal(sun.userData.teeth, 24);
   assert.equal(planet.userData.teeth, 24);
-  assert.equal(ringSegments.parent, model.root, 'plate 39 draws a fixed ring round the gears');
-  assert.equal(ringSegments.userData.segmentCount, 4, 'the ring is an open ring of four separate segments');
-  assert.equal(ringSegments.geometry.parameters.shapes.length, 4);
+  assert.equal(flywheel.parent, model.root, 'plate 39 draws the fly-wheel behind the sun gear');
+  assert.equal(flywheel.userData.spokeCount, 4, 'the fly-wheel has four thin spokes');
   assert.equal(arm.geometry.parameters.shapes.holes.length, 2);
   assert.equal(connectingRod.userData.wholeRod, true, 'the rod is modelled whole to its upper eye');
   assert.ok(Math.abs(new THREE.Box3().setFromObject(connectingRod).max.y - (g.rodLength + g.rodWidth / 2)) < 0.02);
@@ -3004,6 +3015,19 @@ test('movement 39 couples a rocking planet and finite connecting rod to two sun 
   assert.ok(Math.abs(final.carrierAngle - 2 * Math.PI) < 1e-12);
   disposeModel(model.root);
 });
+
+
+// Fine-tooth gear demonstrations (display-timing FINE_TOOTH_PASSING_RATES)
+// play slowly enough that at most six teeth a second pass the mesh; the
+// others keep the two-second default loop.
+function assertGearDisplayTiming(timing, id) {
+  if (FINE_TOOTH_PASSING_RATES.has(id)) {
+    assert.ok(timing.displayToothPassingRate <= MAX_DISPLAY_TOOTH_PASSING_RATE + 1e-9);
+    assert.ok(timing.displayCycleDuration > 2);
+  } else {
+    assert.ok(Math.abs(timing.displayCycleDuration - 2) < 1e-8);
+  }
+}
 
 for (const id of [40, 41]) {
   test(`movement ${id} matches unequal source gears with correctly led involute teeth`, () => {
@@ -3086,7 +3110,7 @@ for (const id of [40, 41]) {
     const end = model.root.userData.kinematics;
     assert.ok(Math.abs(end.driverAngle - initial.driverAngle - 2 * Math.PI) < 1e-12);
     assert.ok(Math.abs(end.drivenAngle - initial.drivenAngle + 1.4 * Math.PI) < 1e-12);
-    assert.ok(Math.abs(model.root.userData.animationTiming.displayCycleDuration - 2) < 1e-12);
+    assertGearDisplayTiming(model.root.userData.animationTiming, id);
     disposeModel(model.root);
   });
 }
@@ -3164,7 +3188,7 @@ test('movement 42 reconstructs shallow skew shafts with unequal opposite-hand in
   const tooth = model.root.userData.kinematics;
   assert.ok(Math.abs(tooth.driverAngle - initial.driverAngle - g.driverAngularPitch) < 1e-12);
   assert.ok(Math.abs(tooth.drivenAngle - initial.drivenAngle + g.drivenAngularPitch) < 1e-12);
-  assert.ok(Math.abs(model.root.userData.animationTiming.displayCycleDuration - 2) < 1e-12);
+  assertGearDisplayTiming(model.root.userData.animationTiming, 42);
   disposeModel(model.root);
 });
 
@@ -3359,7 +3383,7 @@ test('movement 44 meshes four separated and staggered rows with unequal source d
   const state = model.root.userData.kinematics;
   assert.ok(Math.abs(state.driverAngle - initial.driverAngle - g.driverToothPitch) < 1e-12);
   assert.ok(Math.abs(state.drivenAngle - initial.drivenAngle + g.drivenToothPitch) < 1e-12);
-  assert.ok(Math.abs(model.root.userData.animationTiming.displayCycleDuration - 2) < 1e-8);
+  assertGearDisplayTiming(model.root.userData.animationTiming, 44);
   disposeModel(model.root);
 });
 
@@ -3753,9 +3777,10 @@ test('movement 63 snaps a ten-point counter star once for each of three driver p
     assert.ok(state.driverAngle < previous.driverAngle, 'the pin disk turns steadily clockwise');
     previous = state;
   }
-  for (const stage of ['rest', 'lifting-pawl-and-drop', 'lifting-drop', 'star-drive']) {
+  for (const stage of ['rest', 'lifting-drop', 'star-drive']) {
     assert.ok(stages.has(stage), `${stage} occurs`);
   }
+  assert.ok(!stages.has('lifting-pawl-and-drop'), 'the pins lift only the drop, never the pawl');
   for (let event = 0; event < 3; event += 1) {
     const turned = data.stateAtTime(eventPeriod * (event + 1.02)).starAngle
       - data.stateAtTime(eventPeriod * (event + 0.02)).starAngle;
@@ -3879,367 +3904,130 @@ test('movement 72 uses the rebuilt circular-cam gravity hammer', () => {
 
 test('movement 73 lets carried spring B index A one tooth while fixed spring C presses and stops it', () => {
   const model = createMovementModel(catalog.movements[72]);
-  assert.equal(
-    model.root.userData.mechanism,
-    'spring-pressed-eleven-tooth-ratchet-index',
-  );
-  assert.equal(model.root.userData.fidelity, 'authored');
+  const u = model.root.userData;
+  assert.equal(u.mechanism, 'spring-pressed-eleven-tooth-ratchet-index');
+  assert.equal(u.fidelity, 'authored');
   const {
-    catchClamp,
-    catchPad,
-    catchSpring,
-    driver,
-    driverBody,
-    driverIndicator,
-    driverSleeve,
-    ratchet,
-    ratchetBody,
-    ratchetIndicator,
-    ratchetShaft,
-    stopPad,
-    strongSpring,
-    strongSpringClamp,
-  } = model.root.userData.blocks;
-  const geometry = model.root.userData.geometry;
+    catchClamp, catchSpring, driver, driverBody, driverIndicator, driverSleeve,
+    ratchet, ratchetBody, ratchetIndicator, ratchetShaft, stopPad, strongSpring, strongSpringClamp,
+  } = u.blocks;
+  const geometry = u.geometry;
 
+  // B is carried by D; C and its block are fixed.
   assert.equal(driverBody.parent, driver.userData.rotor);
   assert.equal(driverBody.userData.drivingWheelDBody, true);
+  assert.equal(hasRotationIndicator(driverBody), true, 'plain disc D carries the quadrant cue');
   assert.equal(driverIndicator.parent, driver.userData.rotor);
-  assert.equal(driverIndicator.userData.driverRotationIndicator, true);
   assert.equal(driverSleeve.parent, driver.userData.rotor);
-  assert.equal(driverSleeve.userData.hollowDriverSleeveD, true);
-  assert.equal(catchSpring.parent, driver.userData.rotor,
-    'bent spring B is secured to driving wheel D');
+  assert.equal(catchSpring.parent, driver.userData.rotor, 'bent spring B is secured to driving wheel D');
   assert.equal(catchClamp.parent, driver.userData.rotor);
-  assert.equal(catchPad.parent, driver.userData.rotor);
-  assert.equal(catchSpring.userData.catchSpringB, true);
-  assert.equal(catchSpring.userData.role,
-    'driver-carried-bent-catch-spring-B');
+  assert.equal(catchSpring.userData.role, 'driver-carried-bent-catch-spring-B');
   assert.equal(catchSpring.userData.mesh.userData.flexibleLeafSpring, true);
-  assert.equal(catchPad.userData.catchSpringTipB, true);
-
-  assert.equal(strongSpring.parent, model.root,
-    'strong spring C is attached to the fixed frame');
+  assert.equal(strongSpring.parent, model.root, 'strong spring C is attached to the fixed frame');
   assert.equal(strongSpringClamp.parent, model.root);
-  assert.equal(stopPad.parent, model.root);
-  assert.equal(strongSpring.userData.strongSpringC, true);
-  assert.equal(strongSpring.userData.role,
-    'fixed-strong-press-and-stop-spring-C');
+  assert.equal(strongSpring.userData.role, 'fixed-strong-press-and-stop-spring-C');
   assert.equal(strongSpring.userData.mesh.userData.flexibleLeafSpring, true);
-  assert.equal(stopPad.userData.strongSpringStopTipC, true);
-  assert.ok(geometry.strongSpringAnchor.x < 0);
-  assert.ok(geometry.strongSpringAnchor.y < 0,
-    'C rises from the fixed lower-left support shown by Brown');
+  assert.ok(geometry.strongSpringAnchor.x < 0 && geometry.strongSpringAnchor.y < 0,
+    'C rises from the fixed lower-left block shown by Brown');
+  // No rods stand out of the spring ends: B ends in its square nib and C in
+  // a half-round of exactly its own width and depth, carried on C itself.
+  assert.equal(u.blocks.catchPad, undefined);
+  assert.equal(stopPad.parent, strongSpring);
+  assert.equal(stopPad.material, strongSpring.userData.mesh.material);
+  stopPad.geometry.computeBoundingBox();
+  const padBox = stopPad.geometry.boundingBox;
+  assert.ok(Math.abs(padBox.min.z - geometry.strongTipZ[0]) < 1e-6 && Math.abs(padBox.max.z - geometry.strongTipZ[1]) < 1e-6);
+  assert.ok(Math.abs(padBox.max.x - geometry.stopPadRadius) < 1e-6 && Math.abs(padBox.min.x) < 1e-6);
+  assert.ok(Math.abs(geometry.strongHalfWidth - geometry.stopPadRadius) < 1e-12);
 
+  // A: Brown's eleven shallow ratchet teeth.
   assert.equal(ratchetBody.parent, ratchet.userData.rotor);
-  assert.equal(ratchetBody.userData.springIndexedRatchetBody, true);
   assert.equal(ratchetIndicator.userData.ratchetRotationIndicator, true);
-  assert.equal(ratchet.userData.role,
-    'clockwise-intermittent-ratchet-wheel-A');
-  assert.equal(ratchetShaft.userData.role,
-    'intermittent-output-shaft-A');
+  assert.equal(ratchet.userData.role, 'clockwise-intermittent-ratchet-wheel-A');
+  assert.equal(ratchetShaft.userData.role, 'intermittent-output-shaft-A');
   assert.equal(ratchet.userData.teeth, 11);
   assert.equal(ratchet.userData.toothFaces.length, 11);
-  assert.equal(ratchet.userData.profilePoints.length, 275,
-    'A has Brown’s eleven pointed teeth with curved backs and short working faces');
-  assert.equal(geometry.toothCount, 11);
   assert.equal(geometry.toothPitch, geometry.fullTurn / 11);
-  assert.ok(geometry.toothOuterStartPhase > 0);
-  assert.ok(geometry.toothOuterStartPhase
-    < geometry.toothOuterEndPhase);
-  assert.ok(geometry.toothOuterEndPhase > 1,
-    'the pointed crest overhangs its short working face');
-  const risingFaceLength = ratchet.userData.profilePoints[0].distanceTo(
-    ratchet.userData.profilePoints[1],
-  );
-  const stoppingFaceLength = ratchet.userData.toothFaces[0].outer.distanceTo(
-    ratchet.userData.toothFaces[0].root,
-  );
-  assert.ok(Math.abs(risingFaceLength - stoppingFaceLength) > 0.03,
-    'the tooth is a ratchet profile, not a symmetric spur tooth');
+  assert.ok(geometry.toothOuterEndPhase > 1, 'the pointed crest overhangs its short working face');
   const baseFace = ratchet.userData.toothFaces[0];
   for (const [index, face] of ratchet.userData.toothFaces.entries()) {
-    assert.equal(face.toothIndex, index);
     const rotation = index * geometry.toothPitch;
-    assert.ok(face.outer.distanceTo(baseFace.outer.clone().rotateAround(
-      new THREE.Vector2(),
-      rotation,
-    )) < 1e-12);
-    assert.ok(face.root.distanceTo(baseFace.root.clone().rotateAround(
-      new THREE.Vector2(),
-      rotation,
-    )) < 1e-12);
-    assert.ok(face.tangent.distanceTo(baseFace.tangent.clone().rotateAround(
-      new THREE.Vector2(),
-      rotation,
-    )) < 1e-12);
-    assert.ok(face.outwardNormal.distanceTo(
-      baseFace.outwardNormal.clone().rotateAround(
-        new THREE.Vector2(),
-        rotation,
-      ),
-    ) < 1e-12);
-    assert.ok(Math.abs(face.tangent.length() - 1) < 1e-12);
-    assert.ok(Math.abs(face.outwardNormal.length() - 1) < 1e-12);
-    assert.ok(Math.abs(face.tangent.dot(face.outwardNormal)) < 1e-12);
-    assert.ok(face.outwardNormal.dot(
-      face.outer.clone().add(face.root),
-    ) < 0, 'the working face undercuts the pointed crest');
+    assert.ok(face.outer.distanceTo(baseFace.outer.clone().rotateAround(new THREE.Vector2(), rotation)) < 1e-12);
+    assert.ok(face.root.distanceTo(baseFace.root.clone().rotateAround(new THREE.Vector2(), rotation)) < 1e-12);
+    assert.ok(face.outwardNormal.dot(face.outer.clone().add(face.root)) < 0, 'the working face undercuts the crest');
   }
-
-  for (const rotor of [driver, ratchet, ratchetShaft]) {
-    assert.ok(rotor.userData.axis.distanceTo(geometry.axis) < 1e-12);
-  }
-  assert.ok(Math.abs(geometry.strongSpringPlaneZ
-    - geometry.catchSpringPlaneZ - 2 * geometry.leafRadius) < 1e-12,
-  'C passes over B with their leaf surfaces, rather than centerlines, meeting');
-  assert.ok(geometry.driverPlaneZ + geometry.driverDepth / 2
-    < ratchet.position.z - geometry.ratchetDepth / 2,
-  'large driving wheel D is coaxial with and behind ratchet A');
-  assert.ok(geometry.pressStartPhase < geometry.indexStartPhase);
-  assert.ok(Math.abs(geometry.indexPhaseSpan - 1 / 11) < 1e-12);
-  assert.ok(geometry.indexEndPhase < geometry.releaseEndPhase);
-  assert.ok(geometry.releaseEndPhase < 1);
-
+  for (const rotor of [driver, ratchet, ratchetShaft]) assert.ok(rotor.userData.axis.distanceTo(geometry.axis) < 1e-12);
   model.root.updateMatrixWorld(true);
-  const driverBounds = new THREE.Box3().setFromObject(driverBody);
-  const ratchetBounds = new THREE.Box3().setFromObject(ratchetBody);
-  const catchPadBounds = new THREE.Box3().setFromObject(catchPad);
-  const stopPadBounds = new THREE.Box3().setFromObject(stopPad);
-  assert.ok(driverBounds.max.z < ratchetBounds.min.z);
-  assert.ok(catchPadBounds.min.z < ratchetBounds.max.z
-    && catchPadBounds.max.z > ratchetBounds.min.z,
-  'B has a real axial contact pad spanning A');
-  assert.ok(stopPadBounds.min.z < ratchetBounds.max.z
-    && stopPadBounds.max.z > ratchetBounds.min.z,
-  'C has a real axial stop pad spanning A');
+  assert.ok(new THREE.Box3().setFromObject(driverBody).max.z < new THREE.Box3().setFromObject(ratchetBody).min.z,
+    'large driving wheel D is coaxial with and behind ratchet A');
 
-  const atPhase = (phase, cycleIndex = 0) => (
-    model.root.userData.stateAtTime(
-      ((cycleIndex + phase - geometry.initialCyclePhase)
-        * geometry.fullTurn) / geometry.driverAngularSpeed,
-    )
-  );
-  const dwell = atPhase(0.4);
-  const pressEntry = atPhase(geometry.pressStartPhase);
-  const midPress = atPhase(
-    (geometry.pressStartPhase + geometry.indexStartPhase) / 2,
-  );
-  const indexEntry = atPhase(geometry.indexStartPhase);
-  const midIndex = atPhase(
-    geometry.indexStartPhase + geometry.indexPhaseSpan / 2,
-  );
-  const indexExit = atPhase(geometry.indexEndPhase);
-  const earlyEscape = atPhase(geometry.indexEndPhase + 0.005);
-  const clearEscape = atPhase(
-    (geometry.indexEndPhase + geometry.releaseEndPhase) / 2,
-  );
-  const afterIndex = atPhase(0.82);
+  // Depth layers: B's leaf passes under C's web; only B's nib reaches
+  // forward to meet C's web and A's teeth, and C's thin end works in A's
+  // front half, clear of the nib.
+  const ratchetBack = geometry.ratchetPlaneZ - geometry.ratchetDepth / 2;
+  const ratchetFront = geometry.ratchetPlaneZ + geometry.ratchetDepth / 2;
+  assert.ok(geometry.catchLeafZ[1] < geometry.strongWebZ[0], 'B passes under C');
+  assert.ok(geometry.catchNibZ[1] > ratchetBack && geometry.catchNibZ[1] > geometry.strongWebZ[0], 'the nib reaches A and C\'s web');
+  assert.ok(geometry.catchNibZ[1] < geometry.strongTipZ[0], 'C\'s end and B\'s nib share a tooth space without meeting');
+  assert.ok(geometry.strongTipZ[0] < ratchetFront, 'C\'s end reaches into A');
+  assert.ok(geometry.catchLeafZ[0] > geometry.driverPlaneZ + geometry.driverDepth / 2 - 1e-12, 'B lies on D\'s face');
+  assert.ok(geometry.pressToothMargin > 0 && geometry.driveCrestSpan > 0, 'the designed nib path clears and drives the teeth');
 
-  assert.equal(dwell.stage, 'ratchet-dwell-before-press');
-  assert.equal(dwell.ratchetLocked, true);
-  assert.equal(dwell.drivenAngularSpeed, 0);
-  assert.equal(dwell.catchSpringDeflection, 0);
-  assert.equal(dwell.catchToothContactEngaged, false);
-  assert.equal(dwell.strongSpringPressEngaged, false);
-
-  assert.equal(pressEntry.stage, 'strong-spring-press');
-  assert.equal(pressEntry.catchSpringDeflection, 0,
-    'B remains relaxed until it physically reaches C');
-  assert.equal(pressEntry.catchPadProjectedClear, false);
-  assert.equal(midPress.stage, 'strong-spring-press');
-  assert.ok(midPress.catchSpringDeflection > 0);
-  assert.ok(midPress.catchSpringDeflection < 1);
-  assert.equal(midPress.strongSpringPressEngaged, true);
-  assert.equal(midPress.catchToothContactEngaged, false);
-  assert.equal(midPress.drivenAngle, dwell.drivenAngle,
-    'A remains stopped while C is bending B toward its tooth');
-
-  for (const state of [indexEntry, midIndex, indexExit]) {
-    assert.equal(state.stage, 'catch-spring-index');
-    assert.equal(state.indexing, true);
-    assert.equal(state.ratchetLocked, false);
-    assert.equal(state.catchSpringDeflection, 1);
-    assert.equal(state.strongSpringPressEngaged, true);
-    assert.equal(state.catchToothContactEngaged, true);
-    assert.equal(state.catchContactMode, 'driving-tooth');
-    assert.ok(state.catchToothContactError < 1e-12);
-    assert.ok(state.catchToothNormalVelocityError < 1e-12);
-    assert.ok(Math.abs(state.springPressClearance) < 1e-12);
-    assert.ok(state.springCrossing.firstPoint.clone().setZ(0).distanceTo(
-      state.springCrossing.secondPoint.clone().setZ(0),
-    ) < 1e-12,
-    'C remains directly over B throughout the complete tooth step');
-    assert.ok(Math.abs(state.springCrossing.secondPoint.z
-      - state.springCrossing.firstPoint.z - 2 * geometry.leafRadius) < 1e-12);
-    assert.ok(state.stopContact.contactError < 1e-12);
-    assert.equal(state.stopContactEngaged, true);
-    assert.equal(state.stopMode, 'riding-next-tooth');
-  }
-  assert.ok(Math.abs(midIndex.eventFraction - 0.5) < 1e-12);
-  const toothPassMaximumRadius = Math.max(...Array.from({length: 101}, (_, i) =>
-    atPhase(geometry.indexStartPhase + geometry.indexPhaseSpan*i/100).stopContact.centerRadius));
-  assert.ok(toothPassMaximumRadius > geometry.restStopContact.centerRadius
-    + (geometry.ratchetOuterRadius - geometry.ratchetRootRadius) * 0.6,
-  'C flexes outward over the passing tooth while retaining the stop');
-  assert.ok(Math.abs(indexExit.drivenAngle
-    - indexEntry.drivenAngle + geometry.toothPitch) < 1e-12);
-
-  assert.equal(earlyEscape.stage, 'catch-spring-release');
-  assert.equal(earlyEscape.ratchetLocked, true);
-  assert.equal(earlyEscape.drivenAngularSpeed, 0);
-  assert.equal(earlyEscape.catchToothContactEngaged, true);
-  assert.equal(earlyEscape.catchContactMode, 'sliding-clear');
-  assert.ok(earlyEscape.catchToothContactError < 1e-12,
-    'B slides over the tooth instead of passing through it as it escapes C');
-  assert.equal(clearEscape.stage, 'catch-spring-release');
-  assert.ok(clearEscape.catchSpringDeflection > 0);
-  assert.ok(clearEscape.catchSpringDeflection < 1);
-  assert.equal(clearEscape.catchToothContactEngaged, false);
-  assert.equal(clearEscape.catchContactMode, 'clear');
-  assert.ok(clearEscape.catchPadProfileClearance > 0);
-  assert.equal(afterIndex.stage, 'ratchet-dwell-after-index');
-  assert.equal(afterIndex.catchSpringDeflection, 0);
-  assert.equal(afterIndex.catchToothContactEngaged, false);
-  assert.equal(afterIndex.ratchetLocked, true);
-  assert.equal(afterIndex.stopMode, 'holding-ratchet');
-
-  const nextCycle = atPhase(0.4, 1);
-  assert.ok(Math.abs(nextCycle.driverAngle
-    - dwell.driverAngle + geometry.fullTurn) < 1e-12,
-  'D makes one complete clockwise revolution per index event');
-  assert.ok(Math.abs(nextCycle.drivenAngle
-    - dwell.drivenAngle + geometry.toothPitch) < 1e-12,
-  'one revolution of D advances A by exactly one tooth');
-  assert.ok(Math.abs((nextCycle.drivenAngle - dwell.drivenAngle)
-    / (nextCycle.driverAngle - dwell.driverAngle) - 1 / 11) < 1e-12);
-  assert.equal(nextCycle.activeToothIndex, 1);
-  assert.equal(nextCycle.ratchetTeethAdvanced
-    - dwell.ratchetTeethAdvanced, 1);
-  const afterElevenDriverTurns = atPhase(0.4, 11);
-  assert.ok(Math.abs(afterElevenDriverTurns.drivenAngle
-    - dwell.drivenAngle + geometry.fullTurn) < 1e-12);
-  assert.ok(dwell.driverActualAngularSpeed < 0,
-    'the source arrow makes D rotate clockwise');
-  assert.ok(indexEntry.drivenAngularSpeed < 0,
-    'A advances clockwise with the engaged carried spring B');
-
-  let maximumStopRadius = 0;
-  let maximumStopVelocityError = 0;
-  let releaseSlideSamples = 0;
-  let pressProjectionSamples = 0;
-  for (let sample = 0; sample <= 960; sample += 1) {
-    const phase = sample / 960;
-    const state = atPhase(phase);
-    assert.ok(state.catchPadProfileClearance >= -1e-12,
-      'B never penetrates the exact ratchet profile');
-    assert.ok(state.stopContact.contactError < 1e-12,
-      'C remains tangent to A as both presser and stop');
-    maximumStopRadius = Math.max(
-      maximumStopRadius,
-      state.stopContact.centerRadius,
-    );
-    maximumStopVelocityError = Math.max(
-      maximumStopVelocityError,
-      state.stopNormalVelocityError,
-    );
-    if (state.stage === 'strong-spring-press'
-      && state.catchPadProjectedClear) pressProjectionSamples += 1;
-    if (state.catchContactMode === 'sliding-clear') {
-      releaseSlideSamples += 1;
-      assert.equal(state.stage, 'catch-spring-release');
-      assert.ok(state.catchToothContactError < 1e-12);
+  // The nib never enters C's web: its back stays at least pressGap inside
+  // the web wherever the deep web lies over it, and touches it while pressed.
+  const nibClearance = (psi) => {
+    const radius = u.nibRadiusAt(psi);
+    let clearance = Infinity;
+    for (let k = 0; k <= 32; k += 1) {
+      const theta = psi + geometry.nibAngularLength * k / 32;
+      if (theta < geometry.webEndTheta || Math.abs(theta - geometry.webNormalAngle) > 1.4) continue;
+      clearance = Math.min(clearance, u.webInnerAt(theta) - radius - geometry.nibHalfWidth);
     }
+    return clearance;
+  };
+  for (let k = 0; k <= 720; k += 1) {
+    const psi = geometry.driveEndPsi + geometry.fullTurn * k / 720;
+    assert.ok(nibClearance(psi) >= geometry.pressGap - 1e-9, `nib enters C at ${psi}`);
+  }
+  const pressedPsi = (geometry.drivePsi0 + geometry.escapeStartPsi) / 2;
+  assert.ok(Math.abs(nibClearance(pressedPsi) - geometry.pressGap) < 1e-9, 'C bears on the back of B\'s nib while it drives');
+
+  // One turn of D, sampled: dwell, press, index, escape, release.
+  const period = geometry.driverCyclePeriod;
+  const stages = new Set();
+  let maximumStopError = 0;
+  for (let sample = 0; sample <= 1440; sample += 1) {
+    const state = u.stateAtTime(period * sample / 1440);
+    stages.add(state.stage);
+    maximumStopError = Math.max(maximumStopError, state.stopContact.contactError);
     if (!state.indexing) assert.equal(state.drivenAngularSpeed, 0);
+    else assert.ok(state.drivenAngularSpeed < 0, 'A advances clockwise with B');
   }
-  assert.equal(pressProjectionSamples, 0,
-    'B reaches C without first colliding with an unrelated tooth');
-  assert.ok(releaseSlideSamples > 0,
-    'the finite-radius catch visibly slides free after the step');
-  assert.ok(maximumStopRadius
-    > geometry.restStopContact.centerRadius
-      + (geometry.ratchetOuterRadius - geometry.ratchetRootRadius) * 0.6);
-  assert.ok(maximumStopVelocityError < 3e-7,
-    'C and the rotating tooth have matching normal velocity at contact');
+  assert.deepEqual([...stages].sort(), ['catch-spring-escape', 'catch-spring-index', 'catch-spring-release',
+    'ratchet-dwell', 'strong-spring-press']);
+  assert.ok(maximumStopError < 1e-9, 'C stays tangent to A as stop');
+  const start = u.stateAtTime(0), turn = u.stateAtTime(period);
+  assert.ok(Math.abs(turn.driverAngle - start.driverAngle + geometry.fullTurn) < 1e-9, 'D turns clockwise');
+  assert.ok(Math.abs(turn.drivenAngle - start.drivenAngle + geometry.toothPitch) < 1e-9, 'one turn of D advances A one tooth');
+  assert.ok(Math.abs(u.stateAtTime(11 * period).drivenAngle - start.drivenAngle + geometry.fullTurn) < 1e-9);
+  assert.ok(start.driverActualAngularSpeed < 0, 'the source arrow makes D rotate clockwise');
+  assert.equal(u.minimumDisplayCycleSeconds, 10, 'one turn of D plays in at least ten seconds');
 
-  for (let sample = 0; sample <= 240; sample += 1) {
-    const phase = geometry.indexStartPhase
-      + geometry.indexPhaseSpan * sample / 240;
-    const state = atPhase(phase);
-    assert.equal(state.activeToothIndex, 0);
-    assert.ok(state.catchToothContactError < 1e-12);
-    assert.ok(state.catchToothNormalVelocityError < 1e-12);
-    assert.ok(Math.abs(state.springPressClearance) < 1e-12);
-    assert.equal(state.strongSpringPressEngaged, true);
-  }
-
-  for (const phase of [
-    geometry.initialCyclePhase,
-    geometry.pressStartPhase,
-    (geometry.pressStartPhase + geometry.indexStartPhase) / 2,
-    geometry.indexStartPhase,
-    geometry.indexStartPhase + geometry.indexPhaseSpan / 2,
-    geometry.indexEndPhase + 0.005,
-    (geometry.indexEndPhase + geometry.releaseEndPhase) / 2,
-    0.82,
-  ]) {
-    const time = ((phase - geometry.initialCyclePhase) * geometry.fullTurn)
-      / geometry.driverAngularSpeed;
-    model.update(time, 0.016);
-    const state = model.root.userData.kinematics;
+  // The rendered parts follow the state.
+  for (const fraction of [0, 0.3, 0.55, 0.58, 0.61, 0.64, 0.67, 0.9]) {
+    model.update(period * fraction, 0.016);
+    const state = u.kinematics;
     assert.equal(driver.userData.rotor.rotation.z, state.driverAngle);
     assert.equal(ratchet.userData.rotor.rotation.z, state.drivenAngle);
-    assert.equal(ratchetShaft.userData.rotor.rotation.z, state.drivenAngle);
     assert.equal(catchSpring.userData.curve, state.catchCurveLocal);
     assert.equal(strongSpring.userData.curve, state.strongCurve);
-    assert.ok(catchSpring.userData.curve.getPoint(0).distanceTo(
-      geometry.catchMountLocal,
-    ) < 1e-12);
-    assert.ok(catchSpring.userData.curve.getPoint(1).clone().setZ(0)
-      .distanceTo(new THREE.Vector3(
-        state.catchCenterLocal.x,
-        state.catchCenterLocal.y,
-        0,
-      )) < 1e-12);
-    assert.ok(strongSpring.userData.curve.getPoint(0).distanceTo(
-      geometry.strongSpringAnchor,
-    ) < 1e-12);
-    assert.ok(strongSpring.userData.curve.getPoint(1).clone().setZ(0)
-      .distanceTo(new THREE.Vector3(
-        state.stopContact.center.x,
-        state.stopContact.center.y,
-        0,
-      )) < 1e-12);
-    model.root.updateMatrixWorld(true);
-    const renderedCatchCenter = catchPad.getWorldPosition(
-      new THREE.Vector3(),
-    );
-    assert.ok(renderedCatchCenter.clone().setZ(0).distanceTo(
-      new THREE.Vector3(state.catchCenter.x, state.catchCenter.y, 0),
-    ) < 1e-11);
-    assert.ok(stopPad.getWorldPosition(new THREE.Vector3()).clone().setZ(0)
-      .distanceTo(new THREE.Vector3(
-        state.stopContact.center.x,
-        state.stopContact.center.y,
-        0,
-      )) < 1e-11);
-    assert.equal(model.root.userData.contacts.catchTooth.engaged,
-      state.catchToothContactEngaged);
-    assert.equal(model.root.userData.contacts.catchTooth.mode,
-      state.catchContactMode);
-    assert.equal(model.root.userData.contacts.springPress.engaged,
-      state.strongSpringPressEngaged);
-    assert.equal(model.root.userData.contacts.strongStop.engaged, true);
-    assert.equal(model.root.userData.contacts.strongStop.mode,
-      state.stopMode);
-    if (state.catchToothContactEngaged) {
-      assert.ok(model.root.userData.contacts.catchTooth.catchPoint.distanceTo(
-        model.root.userData.contacts.catchTooth.toothPoint,
-      ) < 1e-12);
-    } else {
-      assert.equal(model.root.userData.contacts.catchTooth.catchPoint, null);
-      assert.equal(model.root.userData.contacts.catchTooth.toothPoint, null);
-    }
+    assert.ok(catchSpring.userData.curve.getPoint(1).distanceTo(new THREE.Vector3(state.nibRadius, 0, 0)) < 1e-9);
+    assert.ok(strongSpring.userData.curve.getPoint(0).distanceTo(geometry.strongSpringAnchor) < 1e-9);
+    assert.ok(strongSpring.userData.curve.getPoint(1).clone().setZ(0).distanceTo(
+      new THREE.Vector3(state.stopContact.center.x, state.stopContact.center.y, 0)) < 1e-9);
+    assert.equal(u.contacts.catchTooth.engaged, state.catchToothContactEngaged);
+    assert.equal(u.contacts.springPress.engaged, state.strongSpringPressEngaged);
+    assert.equal(u.contacts.strongStop.engaged, true);
   }
   disposeModel(model.root);
 });

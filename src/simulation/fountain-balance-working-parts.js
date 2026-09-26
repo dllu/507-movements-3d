@@ -81,8 +81,10 @@ export function correctFountain(root){
  const section=sectionFountain(root);
  d.updateWorkingParts=state=>{
    updateWater(state.intermediateWaterSurfaceY);b.intermediateAirCavity.visible=false;
-   const head=Math.max(.02,state.idealJetHeight);
-   b.fountainSprays.forEach(spray=>{spray.scale.setScalar(head);spray.position.y=section.spireTipY;});
+   // The plume grows from the spire tip as the flow starts and sinks back as
+   // it stops, instead of appearing or vanishing at full height.
+   const onset=Math.min(1,(state.flowFraction??1)/.25),head=Math.max(.02,state.idealJetHeight)*onset*onset*(3-2*onset);
+   b.fountainSprays.forEach(spray=>{spray.scale.setScalar(Math.max(1e-3,head));spray.position.y=section.spireTipY;});
    section.update(state,b.jetColumn.material.opacity);
  };
  d.reconstructionNote='Three connected vessel paths and a finite circular bowl follow the engraving. Water transfer, isothermal pressure and jet head remain ideal prescribed laws; the hidden-flow loop reset is nonphysical. The gas enclosure capacity ignores wall/pipe displacement, and jets are illustrative paths, not solved fluid trajectories.';

@@ -490,16 +490,33 @@ function plainFlatBeltPulley(movement) {
   pulleyRotor.userData.role = 'plain-flat-belt-pulley-and-shaft-rotor';
   root.add(pulleyRotor);
 
-  const tread = makeAxialCylinder({
-    depth: treadWidth,
+  // Brown draws the rim's top and bottom edges as shallow convex arcs:
+  // the tread is crowned (about 5.5 px of sagitta on a 212 px radius at the
+  // 525 px plate), so a flat belt climbs to and centres on the crest.
+  const crownHeight = 0.07;
+  const edgeRadius = treadRadius - crownHeight;
+  const crownArcRadius = (treadHalfWidth ** 2 + crownHeight ** 2)
+    / (2 * crownHeight);
+  const crownSamples = 24;
+  const crownProfile = Array.from({ length: crownSamples + 1 }, (_, index) => {
+    const axial = -treadHalfWidth + treadWidth * index / crownSamples;
+    return {
+      axial,
+      radial: treadRadius - crownArcRadius
+        + Math.sqrt(crownArcRadius ** 2 - axial ** 2),
+    };
+  });
+  const tread = makeAxialLathe({
     material: pulleyMaterial,
-    radius: treadRadius,
+    profile: crownProfile,
     boreRadius: hubRadius + 0.008,
-    role: 'plain-straight-cylindrical-flat-belt-working-tread',
+    role: 'plain-crowned-flat-belt-working-tread',
     segments: 104,
   });
   tread.userData.axialHalfWidth = treadHalfWidth;
-  tread.userData.profile = 'straight-cylindrical';
+  tread.userData.crownHeight = crownHeight;
+  tread.userData.edgeRadius = edgeRadius;
+  tread.userData.profile = 'circular-arc-crown';
   tread.userData.workingRadius = treadRadius;
   pulleyRotor.add(tread);
 
@@ -576,7 +593,7 @@ function plainFlatBeltPulley(movement) {
   };
 
   root.userData.archetype =
-    'straight-tread-flangeless-flat-belt-pulley-rigid-on-horizontal-shaft';
+    'crowned-tread-flangeless-flat-belt-pulley-rigid-on-horizontal-shaft';
   root.userData.beltDefinition = {
     exactBeltRouteSpecifiedBySource: false,
     lateralGuidanceSpecifiedBySource: false,
@@ -605,12 +622,14 @@ function plainFlatBeltPulley(movement) {
     shaftLength,
     shaftRadius,
     treadHalfWidth,
-    treadProfile: 'straight-cylindrical-as-drawn',
+    crownHeight,
+    treadEdgeRadius: edgeRadius,
+    treadProfile: 'circular-arc-crown-as-drawn',
     treadRadius,
     treadWidth,
   };
   root.userData.mechanism =
-    'one-flangeless-straight-working-tread-turns-rigidly-with-its-hub-and-horizontal-shaft';
+    'one-flangeless-crowned-working-tread-turns-rigidly-with-its-hub-and-horizontal-shaft';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
@@ -623,7 +642,7 @@ function plainFlatBeltPulley(movement) {
       imageHeight: 525,
       imageWidth: 525,
       inferredTopology:
-        'one straight cylindrical flangeless working tread with a wider hub rigid on one horizontal shaft',
+        'one crowned (convex) flangeless working tread with a wider hub rigid on one horizontal shaft',
       measurementUncertaintyPixels: 5,
       officialAnimationAvailable: false,
       rasterHubBounds: {
@@ -663,7 +682,7 @@ function plainFlatBeltPulley(movement) {
   };
   root.userData.transmission = {
     angularSpeed,
-    compatibleBeltSpeedLaw: 'v=omega-times-straight-tread-radius',
+    compatibleBeltSpeedLaw: 'v=omega-times-crown-crest-radius',
     demonstrationAngularSpeedSpecifiedBySource: false,
     potentialBeltLinearSpeed: angularSpeed * treadRadius,
     speedRatioSpecifiedBySource: false,

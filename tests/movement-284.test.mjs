@@ -1,398 +1,122 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
 
-const Z_AXIS = new THREE.Vector3(0, 0, 1);
-const catalog = JSON.parse(await readFile(
-  new URL('../src/data/movements.json', import.meta.url),
-  'utf8',
-));
+const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
+const movement = catalog.movements.find(({ id }) => id === 284);
+const model = createMovementModel(movement);
+const { blocks, geometry: g, solution: s, stateAtTime, ratchetProfile } = model.root.userData;
+const pitch = g.ratchetPitch;
+const perRev = s.total / (g.feedStrokes + 1);
 
-function near(actual, expected, tolerance, message) {
-  assert.ok(
-    Math.abs(actual - expected) <= tolerance,
-    `${message}: expected ${expected}, received ${actual}`,
-  );
-}
-
-function vectorNear(actual, expected, tolerance, message) {
-  near(actual.distanceTo(expected), 0, tolerance, message);
-}
-
-function disposeModel(root) {
-  const geometries = new Set();
-  const materials = new Set();
-  root.traverse((object) => {
-    if (object.geometry) geometries.add(object.geometry);
-    if (Array.isArray(object.material)) {
-      object.material.forEach((material) => materials.add(material));
-    } else if (object.material) {
-      materials.add(object.material);
-    }
-  });
-  geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((material) => material.dispose());
-}
-
-test('movement 284 models the complete crank, bell-crank, ratchet, pinion, and carriage chain', () => {
-  const movement = catalog.movements[283];
-  const model = createMovementModel(movement);
-  const {
-    archetype,
-    blocks,
-    fidelity,
-    mechanism,
-  } = model.root.userData;
-
-  assert.equal(movement.id, 284);
-  assert.equal(movement.number, '284');
-  assert.equal(movement.title, 'Crank-Rocker Adjustable-Pawl Saw Feed');
-  assert.equal(movement.category, 'Rack & pinion');
-  assert.equal(movement.fidelity, 'authored');
-  assert.equal(fidelity, 'authored');
-  assert.equal(archetype,
-    'continuous-crank-bellcrank-adjustable-pawl-ratchet-pinion-carriage-rack');
-  assert.equal(archetype, movement.archetype);
-  assert.match(mechanism, /continuously revolving lower crank/);
-  assert.match(mechanism, /right-angle bell crank/);
-  assert.match(mechanism, /exactly one tooth/);
-  assert.match(mechanism, /coaxial pinion/);
-  assert.match(mechanism, /without slip/);
-
-  assert.equal(blocks.inputCrank.parent, model.root);
-  assert.equal(blocks.connectingRod.parent, model.root);
-  assert.equal(blocks.bellCrank.parent, model.root);
-  assert.equal(blocks.horizontalArm.parent, blocks.bellCrank);
-  assert.equal(blocks.verticalArm.parent, blocks.bellCrank);
-  assert.equal(blocks.adjustmentScrew.parent, blocks.bellCrank);
-  assert.equal(blocks.slider.parent, blocks.bellCrank);
-  assert.equal(blocks.pawl.parent, model.root);
-  assert.equal(blocks.ratchet.parent, model.root);
-  assert.equal(blocks.pinion.parent, model.root);
-  assert.equal(blocks.carriage.parent, model.root);
-  assert.equal(blocks.rackBody.parent, blocks.carriage);
-  assert.ok(blocks.rackTeeth.every(({ parent }) => parent === blocks.carriage));
-  vectorNear(blocks.inputCrank.userData.axis, Z_AXIS, 0,
-    'input crank axis');
-  vectorNear(blocks.bellCrank.userData.axis, Z_AXIS, 0,
-    'bell-crank axis');
-  vectorNear(blocks.ratchet.userData.axis, Z_AXIS, 0,
-    'ratchet axis');
-
+test('284 is one crank, bell crank, pulling catch, click, ratchet, pinion and carriage', () => {
+  assert.equal(model.root.userData.fidelity, 'authored');
+  assert.equal(model.root.userData.archetype, movement.archetype);
+  for (const name of ['inputCrank', 'bellCrank', 'catchGroup', 'click', 'ratchet', 'pinion', 'carriage', 'connectingRod']) {
+    assert.ok(blocks[name], name);
+  }
+  assert.equal(blocks.pinion.parent, blocks.ratchet);
+  assert.equal(blocks.rackBar.parent, blocks.carriage);
+  assert.equal(g.ratchetTeeth, 44);
+  assert.equal(g.pinionTeeth, 8);
+  assert.match(model.root.userData.mechanism, /pulls the ratchet anticlockwise/);
+  // No hatching, indices or marker parts.
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
-  assert.equal(roles.filter((role) => role === 'feed-variation-screw').length,
-    1);
-  assert.equal(roles.filter((role) =>
-    role === 'separately-hinged-adjustable-curved-feed-pawl').length, 1);
-  assert.equal(roles.filter((role) =>
-    role === 'fixed-pivot-anti-reverse-holding-pawl').length, 1);
-  assert.equal(roles.filter((role) =>
-    role === 'coaxial-carriage-feed-pinion').length, 1);
-  assert.equal(roles.filter((role) =>
-    role === 'translating-saw-bed-carriage-with-side-rack').length, 1);
-  assert.equal(roles.some((role) => /generic|procedural/.test(role)), false);
-  disposeModel(model.root);
+  assert.equal(roles.some((role) => /index|marker|hatch/.test(role)), false);
 });
 
-test('movement 284 records the unavailable animation and measured plate geometry', () => {
-  const movement = catalog.movements[283];
-  const model = createMovementModel(movement);
-  const {
-    geometry,
-    sourceAnimation,
-    sourcePointToModel,
-    sourceReference,
-  } = model.root.userData;
-  const plate = sourceReference.plate284;
-
-  assert.equal(sourceAnimation.available, false);
-  assert.equal(sourceAnimation.independentlyReconstructed, true);
-  assert.match(sourceAnimation.reason, /marks its animation unavailable/);
-  assert.equal(sourceAnimation.sourceUrl,
-    'https://507movements.com/mm_284.html');
-  assert.equal(sourceReference.officialDescription, movement.description);
-  assert.equal(plate.imageWidth, 525);
-  assert.equal(plate.imageHeight, 525);
-  assert.equal(plate.measurementUncertaintyPixels, 7);
-  assert.deepEqual(plate.rasterRatchetCenter, { x: 140, y: 352 });
-  assert.deepEqual(plate.rasterBellCrankPivot, { x: 141, y: 122 });
-  assert.deepEqual(plate.rasterRockerJoint, { x: 465, y: 122 });
-  assert.deepEqual(plate.rasterInputShaft, { x: 454, y: 453 });
-  assert.deepEqual(plate.rasterCrankPin, { x: 389, y: 438 });
-  assert.deepEqual(plate.rasterPawlHinge, { x: 141, y: 187 });
-  assert.equal(plate.inferredRatchetTeeth, 38);
-  assert.equal(plate.inferredPinionTeeth, 12);
-  assert.match(plate.inferredTopology, /fulcrum a/);
-  assert.match(plate.inferredTopology, /screw-adjusted pawl hinge/);
-  assert.match(plate.inferredTopology, /same shaft/);
-  vectorNear(sourcePointToModel(plate.rasterRatchetCenter),
-    new THREE.Vector2(0, 0), 0, 'source ratchet origin');
-  near(geometry.sourceRockerAngle, 0, 0, 'source horizontal rocker');
-  near(geometry.sliderRadius / geometry.sourceScale, 65,
-    2, 'engraved screw-block radius');
-  assert.deepEqual(sourceReference.primaryScan, {
-    archiveIdentifier: 'fivehundredseven00browiala',
-    descriptionPage: 75,
-    edition: 21,
-    illustrationPage: 74,
-    publicationYear: 1908,
-  });
-  disposeModel(model.root);
-});
-
-test('movement 284 solves one non-branching crank-rocker closure for every input angle', () => {
-  const model = createMovementModel(catalog.movements[283]);
-  const {
-    fourBarAtInputAngle,
-    geometry,
-  } = model.root.userData;
-
-  let minimumRocker = Infinity;
-  let maximumRocker = -Infinity;
-  for (let index = 0; index <= 720; index += 1) {
-    const angle = index / 720 * Math.PI * 2;
-    const state = fourBarAtInputAngle(angle);
-    near(state.crankPin.distanceTo(
-      new THREE.Vector2(4.867, -1.5655)), geometry.crankRadius, 2e-15,
-    `crank radius at sample ${index}`);
-    near(state.rockerLengthError, 0, 4e-15,
-      `rocker closure at sample ${index}`);
-    near(state.connectingRodClosureError, 0, 4e-15,
-      `rod closure at sample ${index}`);
-    assert.ok(Number.isFinite(state.rockerDerivative));
-    minimumRocker = Math.min(minimumRocker, state.rockerAngle);
-    maximumRocker = Math.max(maximumRocker, state.rockerAngle);
+test('284 ratchet faces are radial and face clockwise (the plate slant)', () => {
+  // Pairs: [root, tip] at the same angle (the steep face), then the back
+  // falls to the next root anticlockwise.
+  for (let i = 0; i < ratchetProfile.length; i += 2) {
+    const root = ratchetProfile[i];
+    const tip = ratchetProfile[i + 1];
+    const next = ratchetProfile[(i + 2) % ratchetProfile.length];
+    assert.ok(Math.abs(Math.atan2(root[1], root[0]) - Math.atan2(tip[1], tip[0])) < 1e-12);
+    assert.ok(Math.hypot(...tip) > Math.hypot(...next));
+    const turn = Math.atan2(next[1], next[0]) - Math.atan2(tip[1], tip[0]);
+    assert.ok(((turn % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) < pitch + 1e-9);
   }
-  near(minimumRocker, geometry.rockerMinimumAngle, 2e-5,
-    'sampled lower rocker limit');
-  near(maximumRocker, geometry.rockerMaximumAngle, 2e-5,
-    'sampled upper rocker limit');
-  assert.ok(geometry.rockerMaximumAngle > 0.18);
-  assert.ok(geometry.rockerMinimumAngle < -0.22);
-  near(geometry.rockerLength, 324 * geometry.sourceScale, 1e-15,
-    'measured horizontal arm length');
-  disposeModel(model.root);
 });
 
-test('movement 284 turns its crank continuously and reverses only the bell crank', () => {
-  const model = createMovementModel(catalog.movements[283]);
-  const {
-    geometry,
-    stateAtCycleCoordinate,
-    timeline,
-  } = model.root.userData;
-  const start = stateAtCycleCoordinate(0);
-  const driveMiddle = stateAtCycleCoordinate(timeline.driveEndPhase / 2);
-  const driveEnd = stateAtCycleCoordinate(timeline.driveEndPhase);
-  const returnMiddle = stateAtCycleCoordinate(
-    (1 + timeline.driveEndPhase) / 2,
-  );
-  const end = stateAtCycleCoordinate(1);
-
-  assert.equal(start.driving, true);
-  assert.equal(driveMiddle.driving, true);
-  assert.equal(driveEnd.driving, false);
-  assert.equal(returnMiddle.driving, false);
-  near(start.inputAngle - end.inputAngle, Math.PI * 2, 0,
-    'one clockwise input turn');
-  near(start.inputAngularSpeed, -Math.PI * 2 / geometry.inputCyclePeriod, 0,
-    'constant clockwise speed');
-  near(start.rockerAngle, geometry.rockerMinimumAngle, 3e-16,
-    'lower rocker limit');
-  near(driveEnd.rockerAngle, geometry.rockerMaximumAngle, 3e-15,
-    'upper rocker limit');
-  near(end.rockerAngle, start.rockerAngle, 2e-16,
-    'rocker cycle closure');
-  assert.ok(driveMiddle.rockerAngularSpeed > 0);
-  assert.ok(returnMiddle.rockerAngularSpeed < 0);
-  near(start.rockerAngularSpeed, 0, 2e-8,
-    'lower toggle rocker speed');
-  near(driveEnd.rockerAngularSpeed, 0, 2e-8,
-    'upper toggle rocker speed');
-  assert.deepEqual(timeline.schedule, [
-    'crank-driven-pawl-power-swing-and-one-tooth-index',
-    'crank-driven-pawl-click-return-with-output-dwell',
-  ]);
-  disposeModel(model.root);
-});
-
-test('movement 284 pawl drives exactly one ratchet tooth and lifts on the idle return', () => {
-  const model = createMovementModel(catalog.movements[283]);
-  const {
-    geometry,
-    stateAtCycleCoordinate,
-    timeline,
-    transmission,
-  } = model.root.userData;
-  const start = stateAtCycleCoordinate(0);
-  const driveEnd = stateAtCycleCoordinate(timeline.driveEndPhase);
-  const returnQuarter = stateAtCycleCoordinate(
-    timeline.driveEndPhase + (1 - timeline.driveEndPhase) * 0.25,
-  );
-  const returnMiddle = stateAtCycleCoordinate(
-    timeline.driveEndPhase + (1 - timeline.driveEndPhase) * 0.5,
-  );
-  const returnThreeQuarter = stateAtCycleCoordinate(
-    timeline.driveEndPhase + (1 - timeline.driveEndPhase) * 0.75,
-  );
-
-  for (let index = 0; index < 101; index += 1) {
-    const phase = timeline.driveEndPhase * index / 101;
-    const state = stateAtCycleCoordinate(phase);
-    assert.equal(state.driving, true);
-    near(state.pawlContactError, .0002, 8e-16,
-      `pawl contact at drive sample ${index}`);
-    assert.ok(state.wheelAngularSpeed <= 1e-12);
+test('284 feeds one tooth anticlockwise per crank turn and never runs back while feeding', () => {
+  for (let rev = 0; rev < g.feedStrokes; rev += 1) {
+    const start = s.wheel[rev * perRev];
+    const end = s.wheel[(rev + 1) * perRev];
+    assert.ok(Math.abs(end - start - pitch) < 1e-9, `stroke ${rev}`);
+    let peak = start;
+    for (let i = rev * perRev; i <= (rev + 1) * perRev; i += 1) {
+      peak = Math.max(peak, s.wheel[i]);
+      // The click holds every return: the wheel never falls below the
+      // pocket it last dropped into.
+      assert.ok(s.wheel[i] >= start - 1e-9, `run-back at ${i}`);
+      assert.ok(peak - s.wheel[i] < 0.12 * pitch, `settle at ${i}`);
+    }
+    assert.ok(peak > end, 'the catch overtravels and the wheel settles back onto the click');
   }
-  near(driveEnd.wheelAngle - start.wheelAngle,
-    -geometry.ratchetToothPitch, 3e-16, 'one-tooth drive');
-  near(returnQuarter.wheelAngle, driveEnd.wheelAngle, 0,
-    'first return-quarter ratchet dwell');
-  near(returnMiddle.wheelAngle, driveEnd.wheelAngle, 0,
-    'mid-return ratchet dwell');
-  near(returnThreeQuarter.wheelAngle, driveEnd.wheelAngle, 0,
-    'last return-quarter ratchet dwell');
-  near(returnMiddle.wheelAngularSpeed, 0, 0, 'return angular dwell');
-  near(returnMiddle.returnClearance, geometry.pawlReturnLift, 2e-16,
-    'maximum pawl lift');
-  assert.ok(returnQuarter.returnClearance > 0);
-  assert.ok(returnThreeQuarter.returnClearance > 0);
-  assert.equal(transmission.returnStrokeWheelDwell, true);
-  near(transmission.oneToothIndexAngle,
-    Math.PI * 2 / geometry.ratchetTeeth, 0, 'declared tooth pitch');
-  disposeModel(model.root);
 });
 
-test('movement 284 common-shaft pinion advances its rack at exact pitch speed', () => {
-  const model = createMovementModel(catalog.movements[283]);
-  const {
-    geometry,
-    stateAtCycleCoordinate,
-    stateAtTime,
-    transmission,
-  } = model.root.userData;
-  const expectedFeed = geometry.pinionPitchRadius
-    * geometry.ratchetToothPitch;
-  const start = stateAtTime(0);
-  const end = stateAtTime(geometry.inputCyclePeriod);
-
-  near(end.wheelAngle - start.wheelAngle,
-    -geometry.ratchetToothPitch, 3e-16, 'one input-cycle ratchet index');
-  near(end.rackX - start.rackX, expectedFeed, 3e-16,
-    'one input-cycle carriage feed');
-  near(transmission.carriageAdvancePerInputTurn, expectedFeed, 3e-16,
-    'declared carriage feed');
-  near(transmission.outputTeethPerInputTurn, 1, 3e-16,
-    'declared tooth index');
-  assert.equal(transmission.inputTurnsPerRatchetTurn, 38);
-  assert.match(transmission.pinionRackNoSlipLaw,
-    /rack-speed = -pinion-pitch-radius/);
-  for (let index = 0; index <= 400; index += 1) {
-    const state = stateAtCycleCoordinate(index / 100);
-    near(state.pinionRackNoSlipError, 0, 0,
-      `pinion-rack no-slip sample ${index}`);
-    near(state.rackSpeed,
-      -geometry.pinionPitchRadius * state.wheelAngularSpeed, 0,
-    `rack speed sample ${index}`);
+test('284 catch only pulls: the wheel moves only while the catch is seated and rising', () => {
+  for (let i = 1; i < g.feedStrokes * perRev; i += 1) {
+    if (s.wheel[i] > s.wheel[i - 1] + 1e-12) assert.equal(s.engaged[i], 1, `step ${i}`);
   }
-  const fullRatchetTurn = stateAtTime(
-    geometry.inputCyclePeriod * geometry.ratchetTeeth,
-  );
-  near(fullRatchetTurn.wheelAngle - start.wheelAngle, -Math.PI * 2,
-    3e-14, 'thirty-eight inputs make one output turn');
-  near(fullRatchetTurn.rackX - start.rackX,
-    Math.PI * 2 * geometry.pinionPitchRadius, 2e-14,
-    'one pinion circumference of carriage feed');
-  disposeModel(model.root);
+  // The wheel advances only while the bell crank turns clockwise (slider
+  // moving left): the catch pulls up the right side of the wheel. (Past the
+  // stroke end the seated catch lets the wheel settle back onto the click.)
+  const rockerAt = (time) => stateAtTime(time).rockerAngle;
+  let pulls = 0;
+  for (let time = 0.01; time < g.loopPeriod; time += 0.01) {
+    const state = stateAtTime(time);
+    const advancing = stateAtTime(time + 1e-3).wheelAngle > stateAtTime(time - 1e-3).wheelAngle + 1e-9;
+    if (state.driving && !state.gigBack && advancing) {
+      pulls += 1;
+      assert.ok(rockerAt(time + 1e-3) < rockerAt(time - 1e-3) + 1e-5, `rocker at ${time}`);
+      assert.ok(state.nose[0] > 1.3, 'nose on the right side of the wheel');
+    }
+  }
+  assert.ok(pulls > 100);
 });
 
-test('movement 284 screw position monotonically varies the available pawl feed', () => {
-  const model = createMovementModel(catalog.movements[283]);
-  const {
-    feedAdjustment,
-    geometry,
-    pawlSweepAtSliderRadius,
-  } = model.root.userData;
-
-  assert.match(feedAdjustment.screwAction, /moves the pawl hinge/);
-  assert.match(feedAdjustment.screwAction, /changing its tangential sweep/);
-  assert.equal(feedAdjustment.selectedOutputTeethPerCycle, 1);
-  near(feedAdjustment.selectedSliderRadius, geometry.sliderRadius, 0,
-    'selected screw setting');
-  near(pawlSweepAtSliderRadius(geometry.sliderRadius),
-    geometry.ratchetToothPitch, 3e-16, 'selected one-tooth sweep');
-  assert.ok(feedAdjustment.minimumSweptTeeth > 0.5);
-  assert.ok(feedAdjustment.minimumSweptTeeth < 0.7);
-  assert.ok(feedAdjustment.maximumSweptTeeth > 1.6);
-  assert.ok(feedAdjustment.maximumSweptTeeth < 1.8);
-  let previous = -Infinity;
-  for (let index = 0; index <= 50; index += 1) {
-    const radius = THREE.MathUtils.lerp(
-      feedAdjustment.minimumSliderRadius,
-      feedAdjustment.maximumSliderRadius,
-      index / 50,
-    );
-    const sweptTeeth = pawlSweepAtSliderRadius(radius)
-      / geometry.ratchetToothPitch;
-    assert.ok(sweptTeeth > previous,
-      `feed capacity increases at screw sample ${index}`);
-    previous = sweptTeeth;
+test('284 catch and click rest on the teeth (no penetration) while feeding', () => {
+  for (let i = 0; i < g.feedStrokes * perRev; i += 1) {
+    assert.ok(s.catchGap[i] >= -1e-9, `catch ${i}`);
+    assert.ok(s.clickGap[i] >= -1e-9, `click ${i}`);
   }
-  disposeModel(model.root);
 });
 
-test('movement 284 renderer follows its exact state and leaves movement 507 authored', () => {
-  const model = createMovementModel(catalog.movements[283]);
-  const {
-    blocks,
-    geometry,
-    stateAtTime,
-  } = model.root.userData;
-  for (const time of [0, 0.7, 1.8, 2.9, 4.2, 5, 13.4]) {
-    const expected = stateAtTime(time);
-    model.update(time);
-    near(blocks.inputCrank.rotation.z, expected.inputAngle, 0,
-      `rendered crank at ${time}`);
-    near(blocks.bellCrank.rotation.z, expected.rockerAngle, 0,
-      `rendered bell crank at ${time}`);
-    near(blocks.ratchetRotor.rotation.z, expected.wheelAngle, 0,
-      `rendered ratchet at ${time}`);
-    near(blocks.pinion.userData.rotor.rotation.z, expected.wheelAngle, 0,
-      `rendered pinion at ${time}`);
-    near(blocks.carriage.position.x, expected.rackX, 0,
-      `rendered carriage at ${time}`);
-    near(blocks.pawl.position.x, expected.pawlGeometry.pawlPivot.x, 0,
-      `rendered pawl x at ${time}`);
-    near(blocks.pawl.position.y, expected.pawlGeometry.pawlPivot.y, 0,
-      `rendered pawl y at ${time}`);
-    near(blocks.pawl.rotation.z, expected.pawlGeometry.pawlAngle, 0,
-      `rendered pawl angle at ${time}`);
-    vectorNear(blocks.carriage.userData.velocity,
-      expected.rackVelocity, 0, `rendered carriage velocity at ${time}`);
-    near(model.root.userData.contacts.pinionRack.noSlipError, 0, 0,
-      `rendered rack contact at ${time}`);
-    assert.equal(blocks.pawlContactMarker.visible, expected.driving);
-    model.root.updateMatrixWorld(true);
-    const renderedCrankPin = model.root.worldToLocal(
-      blocks.crankPin.getWorldPosition(new THREE.Vector3()),
-    );
-    near(renderedCrankPin.x, expected.crankPin.x, 2e-15,
-      `rendered crank-pin x at ${time}`);
-    near(renderedCrankPin.y, expected.crankPin.y, 2e-15,
-      `rendered crank-pin y at ${time}`);
+test('284 rack stays in mesh and the loop closes seamlessly', () => {
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (let time = 0; time <= g.loopPeriod; time += 0.005) {
+    const { rackX } = stateAtTime(time);
+    minX = Math.min(minX, rackX);
+    maxX = Math.max(maxX, rackX);
   }
-  assert.equal(blocks.rackTeeth.length, geometry.rackToothCount);
-  assert.equal(blocks.ratchet.userData.teeth, geometry.ratchetTeeth);
+  const travel = maxX - minX;
+  assert.ok(travel > 0.5 && travel < 0.6, `travel ${travel}`);
+  // The rack bar spans the pinion throughout its travel.
+  blocks.rackBar.geometry.computeBoundingBox();
+  const box = blocks.rackBar.geometry.boundingBox;
+  assert.ok(box.min.x + maxX < -g.pinionPitchRadius - 0.3);
+  assert.ok(box.max.x + minX > g.pinionPitchRadius + 3);
+  // Loop closure.
+  for (const key of ['psi', 'alpha', 'beta']) {
+    assert.ok(Math.abs(s.loopStart[key] - s.loopEnd[key]) < 1e-9, key);
+  }
+  const a = stateAtTime(0.3);
+  const b = stateAtTime(0.3 + g.loopPeriod);
+  for (const key of ['wheelAngle', 'catchAngle', 'clickAngle', 'rackX', 'rockerAngle']) {
+    assert.ok(Math.abs(a[key] - b[key]) < 1e-9, key);
+  }
+  // Smooth wheel: no jump between samples.
+  for (let i = 1; i <= s.total; i += 1) assert.ok(Math.abs(s.wheel[i] - s.wheel[i - 1]) < 0.02 * pitch * 4, `wheel step ${i}`);
+});
 
-  const movement507 = catalog.movements[506];
-  const model289 = createMovementModel(movement507);
-  assert.equal(movement507.id, 507);
-  assert.equal(movement507.fidelity, 'authored');
-  assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
-  assert.equal(model289.root.userData.fidelity, 'authored');
-  disposeModel(model289.root);
-  disposeModel(model.root);
+test('284 feed screw setting stays inside the drawn slot', () => {
+  // The slot in the vertical arm runs from raster y 134 to 224 below a at 122.
+  const slider = g.sliderRadius / g.sourceScale;
+  assert.ok(slider > 134 - 122 + 10 && slider < 224 - 122 - 10, `slider ${slider}`);
+  assert.ok(Math.abs(g.overtravel / pitch - 0.12) < 0.021);
 });

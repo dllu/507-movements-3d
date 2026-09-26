@@ -524,10 +524,14 @@ function jonvalTurbine(movement) {
   // No base disc: Brown draws a cranked bridge across the foot of trunk b
   // carrying step c.
   foundation.geometry.dispose();
-  foundation.geometry = plate(poly([
-    [-2.58, -1.62], [-2.30, -1.62], [-0.90, -1.91], [0.90, -1.91], [2.30, -1.62], [2.58, -1.62],
-    [2.58, -1.78], [2.26, -1.78], [0.88, -2.07], [-0.88, -2.07], [-2.26, -1.78], [-2.58, -1.78],
-  ]), -0.30, 0.30);
+  // Brown's bridge is an angular trough: upturned lips against the trunk
+  // wall, straight sloping sides and a flat floor carrying step c, all of
+  // one thickness (0.16), and deeper across the trunk than a thin strip.
+  foundation.geometry = plate(polygonClipping.union(poly([
+    [-2.58, -1.50], [-2.30, -1.50], [-1.35, -1.91], [1.35, -1.91], [2.30, -1.50], [2.58, -1.50],
+    [2.58, -1.66], [2.26, -1.66], [1.32, -2.07], [-1.32, -2.07], [-2.26, -1.66], [-2.58, -1.66],
+  ]), poly([[-2.58, -1.66], [-2.42, -1.66], [-2.42, -1.28], [-2.58, -1.28]]),
+  poly([[2.42, -1.66], [2.58, -1.66], [2.58, -1.28], [2.42, -1.28]])), -0.45, 0.45);
   foundation.position.y = 0;
   foundation.userData.role = 'fixed-bridge-carrying-step-c-across-trunk-b';
   root.add(foundation);
@@ -732,7 +736,8 @@ function jonvalTurbine(movement) {
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);
-  foundation.receiveShadow = true;
+  // The runner's many buckets would mottle the trough with broken shadow.
+  foundation.receiveShadow = false;
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

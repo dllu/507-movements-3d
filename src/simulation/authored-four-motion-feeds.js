@@ -180,26 +180,15 @@ class UnitHorizontalSpringCurve3 extends THREE.Curve {
   }
 
   getPoint(parameter, target = new THREE.Vector3()) {
-    const endFraction = 0.08;
-    if (parameter < endFraction) {
-      return target.set(
-        this.length * parameter,
-        0,
-        0,
-      );
-    }
-    if (parameter > 1 - endFraction) {
-      return target.set(
-        this.length * parameter,
-        0,
-        0,
-      );
-    }
-    const coilParameter = (parameter - endFraction)
-      / (1 - 2 * endFraction);
-    const angle = FULL_TURN * this.turns * coilParameter;
+    // A plain helix end to end: its end coils bear on the leg and the stop.
+    // (Straight axial leads that jumped out to the coil radius twisted the
+    // tube's frames and inverted its shading.)
+    // The end coils stop one wire radius short of the leg and the stop, so
+    // they bear on their faces.
+    const angle = FULL_TURN * this.turns * parameter;
+    const wire = 0.035;
     return target.set(
-      this.length * parameter,
+      wire + (this.length - 2 * wire) * parameter,
       this.radius * Math.cos(angle),
       this.radius * Math.sin(angle),
     );
@@ -654,9 +643,11 @@ function fourMotionFeed(movement) {
   });
   root.add(feedBarB);
 
+  // Coil radius 0.11: the coils (0.145 outside) stay within the stop's
+  // face and clear of the strap above it.
   const springCurve = new UnitHorizontalSpringCurve3(
     springBaseLength,
-    0.13,
+    0.11,
     8,
   );
   const returnSpring = new THREE.Mesh(

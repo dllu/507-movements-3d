@@ -41,7 +41,7 @@ test('297: actual pin and pallet triangles clear in both directions, including e
   console.log({ actualSurfaceMinimum: minimum, poses: times.length });
 });
 
-test('297: ring, spokes and forward arm clear pallets and pin ends; finite mounts attach', () => {
+test('297: ring, spokes and forward arm clear pallets and pin ends; bars stand straight off the one-piece arm', () => {
   const m = create({ id: 297 }), d = m.root.userData, b = d.blocks;
   m.update(0); m.root.updateMatrixWorld(true);
   const z = o => new THREE.Box3().setFromObject(o);
@@ -50,12 +50,13 @@ test('297: ring, spokes and forward arm clear pallets and pin ends; finite mount
   assert.ok(pallet.min.z > Math.max(...b.sidePlateSpokes.map(o => z(o).max.z)) + .14);
   assert.ok(pin.max.z > pallet.min.z + .27, 'full pin must share the complete working depth');
   assert.ok(arm.min.z > pin.max.z + .16, 'arm clears rotating pin ends');
-  for (let i = 0; i < 2; i++) {
-    const mount = d.lanternFiniteContact.mounts[i], bar = c.bars[i], body = i ? b.palletCBody : b.palletBBody;
-    assert.ok(z(mount).min.z < z(body).max.z - .09);
-    assert.ok(z(mount).max.z > arm.min.z + .1);
-    assert.ok(mount.geometry.parameters.radiusTop < bar.width / 2 - .03, 'mount fits inside finite pallet footprint');
+  for (const body of [b.palletBBody, b.palletCBody]) {
+    assert.ok(z(body).max.z > arm.min.z + .02, 'each bar reaches into the arm plate');
+    assert.equal(body.parent.children.filter(o => /rigid-mount/.test(o.userData.role)).length, 0, 'no bridges');
   }
+  // One flat arm plate carries both bars: no pins or bridges between planes.
+  assert.ok(b.armA.geometry.userData.plate, 'arm A is one extruded plate');
+  assert.equal(d.lanternFiniteContact.mounts, undefined);
 });
 
 test('297: actual loaded planar face normals oppose wheel rotation', () => {

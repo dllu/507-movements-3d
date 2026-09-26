@@ -1,7 +1,8 @@
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
-import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
+import {plate} from './finite-plate-geometry.js';
 import {helicalThread, threadAngles} from './mujoco-screw/thread-geometry.js';
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -86,89 +87,68 @@ const GAUSS_WEIGHTS = [
   0.2369268850561891,
 ];
 
-// Closed solid whose rectangular section flares from a neck to a foot, so the
-// same pedestal reads as Brown's footed cradle in end view (262) and as the
-// flared standard E in side view (263).
-function flaredPedestalGeometry({
+// Brown's standard E, one piece shared by both views: a rectangular foot
+// plate and two crossed webs whose sides sweep up from the foot in concave
+// coves to a slim neck. Seen along the screw (262) the cross-axis web shows
+// its coves over the foot and the along-axis web its edge as the centre
+// line; seen from the side (263) the roles swap, exactly as Brown draws the
+// footed cradle and the flared standard. The cross-axis web's top is a
+// cradle fitted to the nut's round underside.
+function crossedWebStandardGeometry({
   bottomY,
+  footTopY,
   footHalfX,
   footHalfZ,
-  footTopY,
+  neckBottomY,
   neckHalfX,
   neckHalfZ,
-  neckBottomY,
   topY,
-  flankSteps = 14,
+  cradleRadius,
+  webHalfThickness,
 }) {
-  const levels = [[bottomY, footHalfX, footHalfZ], [footTopY, footHalfX, footHalfZ]];
-  for (let step = 1; step <= flankSteps; step += 1) {
-    const t = step / flankSteps;
-    const flare = (1 - t) ** 2;
-    levels.push([
-      footTopY + (neckBottomY - footTopY) * t,
-      neckHalfX + (footHalfX - neckHalfX) * flare,
-      neckHalfZ + (footHalfZ - neckHalfZ) * flare,
-    ]);
+  const webOutline = (footHalf, neckHalf, top) => {
+    const coveBase = footHalf * 0.84;
+    const cove = (side) => Array.from({ length: 25 }, (_, index) => {
+      const phi = Math.PI / 2 * index / 24;
+      return [
+        side * (coveBase - (coveBase - neckHalf) * Math.sin(phi)),
+        neckBottomY - (neckBottomY - footTopY) * Math.cos(phi),
+      ];
+    });
+    // The web roots run a little down into the foot plate.
+    return [[
+      [coveBase, footTopY - 0.02],
+      ...cove(1),
+      ...top,
+      ...cove(-1).reverse(),
+      [-coveBase, footTopY - 0.02],
+    ]];
+  };
+  const alongTop = [[neckHalfX, topY], [-neckHalfX, topY]];
+  const acrossTop = [];
+  for (let index = 0; index <= 16; index += 1) {
+    const z = neckHalfZ - 2 * neckHalfZ * index / 16;
+    acrossTop.push([z, -Math.sqrt(cradleRadius ** 2 - z ** 2)]);
   }
-  levels.push([topY, neckHalfX, neckHalfZ]);
-  const corners = ([y, hx, hz]) => [
-    [-hx, y, -hz], [hx, y, -hz], [hx, y, hz], [-hx, y, hz],
-  ];
-  const positions = [];
-  const quad = (a, b, c, d) => positions.push(...a, ...b, ...c, ...a, ...c, ...d);
-  for (let index = 0; index < levels.length - 1; index += 1) {
-    const lower = corners(levels[index]);
-    const upper = corners(levels[index + 1]);
-    for (let side = 0; side < 4; side += 1) {
-      const next = (side + 1) % 4;
-      quad(lower[side], lower[next], upper[next], upper[side]);
-    }
-  }
-  const bottom = corners(levels[0]);
-  const top = corners(levels[levels.length - 1]);
-  quad(bottom[0], bottom[3], bottom[2], bottom[1]);
-  quad(top[0], top[1], top[2], top[3]);
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position',
-    new THREE.Float32BufferAttribute(positions, 3));
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-// Brown's end-view standard E: a foot plate, a slim central neck and two
-// splayed cove legs, outlined in the view plane (z across, y up) and given
-// a shallow depth along the screw axis (x).
-function splayedLegStandGeometry({
-  bottomY, footTopY, footHalfZ, neckHalfZ, legTopZ, legTopY, legWidth,
-  topY, halfDepth,
-}) {
-  const coveA = footHalfZ - legTopZ;
-  const coveB = legTopY - footTopY;
-  const shapes = [
-    poly([[-footHalfZ, bottomY], [footHalfZ, bottomY], [footHalfZ, footTopY], [-footHalfZ, footTopY]]),
-    poly([[-neckHalfZ, footTopY - 0.01], [neckHalfZ, footTopY - 0.01], [neckHalfZ, topY], [-neckHalfZ, topY]]),
-  ];
-  for (const side of [-1, 1]) {
-    const outer = [];
-    const inner = [];
-    for (let i = 0; i <= 24; i += 1) {
-      const phi = Math.PI / 2 * i / 24;
-      outer.push([side * (footHalfZ - coveA * Math.sin(phi)),
-        legTopY - coveB * Math.cos(phi)]);
-      inner.push([side * (footHalfZ - (coveA + legWidth) * Math.sin(phi)),
-        legTopY - (coveB + legWidth) * Math.cos(phi)]);
-    }
-    // The leg tops end behind B at every pose (within B's radius of every
-    // position of its centre), so no loop closes round an open window.
-    shapes.push(poly([...outer, [side * (legTopZ - legWidth), legTopY],
-      ...inner.reverse()]));
-  }
-  const outline = polygonClipping.union(...shapes);
-  const geometry = plate(outline, -halfDepth, halfDepth);
-  // Outline x -> world z, extrusion -> world x.
-  geometry.rotateY(-Math.PI / 2);
-  geometry.computeVertexNormals();
-  return geometry;
+  // Outline u -> world x, extrusion -> world z.
+  const alongWeb = plate([webOutline(footHalfX, neckHalfX, alongTop)],
+    -webHalfThickness, webHalfThickness);
+  // Outline u -> world z, extrusion -> world x.
+  const acrossWeb = plate([webOutline(footHalfZ, neckHalfZ, acrossTop)],
+    -webHalfThickness, webHalfThickness).rotateY(-Math.PI / 2);
+  const foot = new THREE.BoxGeometry(2 * footHalfX, footTopY - bottomY,
+    2 * footHalfZ).translate(0, (footTopY + bottomY) / 2, 0).toNonIndexed();
+  const parts = [alongWeb, acrossWeb, foot].map((geometry) => {
+    const clean = new THREE.BufferGeometry();
+    clean.setAttribute('position', geometry.getAttribute('position').clone());
+    geometry.dispose();
+    return clean;
+  });
+  const merged = mergeGeometries(parts);
+  parts.forEach((geometry) => geometry.dispose());
+  // Flat faces with crisp edges; every face is wound outward.
+  merged.computeVertexNormals();
+  return merged;
 }
 
 function integrateFivePoint(integrand, start, end) {
@@ -230,7 +210,8 @@ function eccentricConeFrictionReverser(movement) {
   const screwThreadHand = -1;
   const screwThreadXStart = 2.38;
   const screwThreadXEnd = 6.28;
-  const rightScrewCoreXStart = 2.24;
+  // D's core runs a little into B's small end, which seats on it.
+  const rightScrewCoreXStart = 2.1;
   const rightScrewCoreXEnd = 6.46;
   // Long enough to stay in its bush on the head standard over the whole
   // 0.57 traverse.
@@ -1013,66 +994,48 @@ function eccentricConeFrictionReverser(movement) {
   rollerAxle.position.x = 0;
   rollerAxle.userData.role = 'short-axle-of-friction-roller-C';
   nutPost.geometry.dispose();
-  // Plate 262 draws E as a low footed cradle whose foot plate lies just
-  // below B's rim; plate 263 keeps its own standard.
-  nutPost.geometry = presentationView === 'end-view'
-    // Seen along the screw from the large end, z is the visible width. The
-    // neck and the leg tops stand behind B; below B's rim the foot plate and two
-    // splayed cove legs show (Brown: foot underside 73 px and top 64 px of B's
-    // 55 px radius below B's centre, foot 36 px either side). B's offset swings
-    // its rim 26 px lower half a turn later, so at Brown's size the whole stand
-    // vanished behind B. The foot sits 3 px lower and spreads to 48 px either
-    // side, so its ends and the flaring leg roots stay visible beside B's
-    // lowest rim and B never looks unsupported.
-    ? splayedLegStandGeometry({
-      bottomY: coneEccentricity - coneLargeRadius * 76 / 55,
-      footHalfZ: 1.05,
-      footTopY: coneEccentricity - coneLargeRadius * 67 / 55,
-      halfDepth: 0.12,
-      legTopY: -0.66,
-      legTopZ: 0.55,
-      legWidth: 0.1,
-      neckHalfZ: 0.08,
-      topY: -0.309,
-    })
-    : flaredPedestalGeometry({
-      bottomY: -1.34,
-      footHalfX: 0.5,
-      footHalfZ: 0.95,
-      footTopY: -1.27,
-      neckBottomY: -0.72,
-      neckHalfX: 0.13,
-      neckHalfZ: 0.2,
-      topY: -0.309,
-    });
-  let largeEndBoss = null;
-  if (presentationView === 'end-view') {
-    // Seen from the large end, the carrier bar and its joint balls would lie
-    // across B's face. Brown draws a plain face with one circle round D (18
-    // of B's 55 px) and D's end as a dot, so the large-end carrier becomes a
-    // round boss on the screw, standing slightly proud of B.
-    const largeEndCarrier = eccentricConnectors[0];
-    largeEndCarrier.traverse((object) => object.geometry?.dispose());
-    largeEndCarrier.clear();
-    const bossRadius = coneLargeRadius * 18 / 55;
-    largeEndBoss = cylinderAlongX(bossRadius, 0.07, inputMaterial, 72);
-    // A chamfered outer edge lets the boss read against B's face without an
-    // ink ring: local +Y (the smaller top) faces outward along world -X.
-    largeEndBoss.geometry.dispose();
-    largeEndBoss.geometry = new THREE.CylinderGeometry(
-      bossRadius * 0.84, bossRadius, 0.07, 72);
-    largeEndBoss.userData.role = 'round-large-end-boss-round-screw-D';
-    largeEndCarrier.add(largeEndBoss);
-    largeEndCarrier.userData.setEndpoints = () => {};
-    largeEndCarrier.position.set(-coneLength / 2 - 0.035, 0, 0);
-    largeEndCarrier.rotation.set(0, 0, 0);
-  }
-  if (presentationView === 'end-view') {
-    // Seen from the large end, the stand faces away from the key light and
-    // read as a black slab; lift it to the frame grey of the other plates.
-    nutPost.material = frameMaterial.clone();
-    nutPost.material.emissive = new THREE.Color(PALETTE.frame).multiplyScalar(0.45);
-  }
+  // One standard E for both plates (only the camera differs). The foot
+  // plate lies just below B's rim in the end view (Brown: foot underside 73
+  // px and top 64 px of B's 55 px radius below B's centre). Across the axis
+  // the foot spreads 48 px either side of D rather than Brown's 36, so its
+  // ends and cove roots stay visible beside B's lowest rim (B's offset
+  // swings the rim 26 px lower half a turn later); along the axis it keeps
+  // the side view's proportions (foot 54 px, neck under nut E).
+  nutPost.geometry = crossedWebStandardGeometry({
+    bottomY: coneEccentricity - coneLargeRadius * 76 / 55,
+    cradleRadius: 0.309,
+    footHalfX: 0.56,
+    footHalfZ: 1.05,
+    footTopY: coneEccentricity - coneLargeRadius * 67 / 55,
+    neckBottomY: -0.7,
+    neckHalfX: 0.12,
+    neckHalfZ: 0.2,
+    topY: -0.309,
+    webHalfThickness: 0.06,
+  });
+  // Brown draws a plain face with one circle round D on B's large end (18 of
+  // B's 55 px in the end view; a short hub left of B in the side view), so
+  // the large-end carrier is a round boss on the screw standing slightly
+  // proud of B, and the small end simply seats on D's core.
+  const largeEndCarrier = eccentricConnectors[0];
+  largeEndCarrier.traverse((object) => object.geometry?.dispose());
+  largeEndCarrier.clear();
+  const bossRadius = coneLargeRadius * 18 / 55;
+  // A chamfered outer edge lets the boss read against B's face without an
+  // ink ring: local +Y (the smaller top) faces outward along world -X.
+  const largeEndBoss = cylinderAlongX(bossRadius, 0.07, inputMaterial, 72);
+  largeEndBoss.geometry.dispose();
+  largeEndBoss.geometry = new THREE.CylinderGeometry(
+    bossRadius * 0.84, bossRadius, 0.07, 72);
+  largeEndBoss.userData.role = 'round-large-end-boss-round-screw-D';
+  largeEndCarrier.add(largeEndBoss);
+  largeEndCarrier.userData.setEndpoints = () => {};
+  largeEndCarrier.position.set(-coneLength / 2 - 0.035, 0, 0);
+  largeEndCarrier.rotation.set(0, 0, 0);
+  const smallEndCarrier = eccentricConnectors[1];
+  smallEndCarrier.traverse((object) => object.geometry?.dispose());
+  smallEndCarrier.removeFromParent();
+  eccentricConnectors.length = 1;
   nutPost.position.set(nutAxialPosition, 0, 0);
   nutPost.userData.role = 'source-footed-standard-E-carrying-nut';
   // Supports the plates leave undrawn. A second standard like E carries a

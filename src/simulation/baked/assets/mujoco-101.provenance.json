@@ -1,0 +1,66 @@
+{
+  "id": 101,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-101.json.gz",
+  "bytes": 5177,
+  "assetSha256": "153f9ae6374bba36a2b5159e6479881dc71ff7b7e4a14c74d323848933a9ebbc",
+  "motionSources": {
+    "src/simulation/mujoco-slotted-bar/physics.js": "5bb143a5962ab9aeab71d253421af4cd9b1f6c9175f00950b42322b04d2edd2f",
+    "src/simulation/mujoco-slotted-bar/profile.js": "c8864826625b0f3cb0462f9b4f6cae5f0b2984d1f7c2b8969cd8d56218643fe5",
+    "src/simulation/mujoco-slotted-bar/source.js": "dd78c22463ca4af5fd45745caddde4b744b0bd0376808b76c5953bfd134f4517",
+    "src/simulation/mujoco-slotted-bar/visual.js": "3833ec16b37364ef845225d96f3d91aaa487bb8a73b3eb7e35437b429b833b8d",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-slotted-bar/geometry.js": "c60de7c26a537387295ca17d13d2be71e05f782f3e35e7d7b017d8b259a0ba1f"
+  },
+  "physicsXmlSha256": {
+    "default": "fd11f15f0cd3827faae316433d9b7e2c7bfdeec51df4a61cae77fe8dc5d9d586"
+  },
+  "fullXmlSha256": {
+    "default": "cbf2cad7db19c835b26ea47a38bd4928150b66d44086d90c5bc42dd4c34b10f1"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-slotted-bar"
+  },
+  "cycleDesign": "Cosine rocking of the lever in the slotted bar; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 3,
+        "samples": 200,
+        "dt": 0.015,
+        "startTime": 6,
+        "periods": 1,
+        "drivePeriod": 3
+      },
+      "closure": {
+        "rawSeamPixels": 2.3448583132868503e-12,
+        "maximumCorrectionPixels": 1.099120794378905e-12,
+        "maximumRotationCorrection": 0,
+        "wraps": []
+      },
+      "roundTripPixels": 0.000020895913764397012,
+      "seam": {
+        "seamStepPixels": 0.2529717257241039,
+        "interiorStepPixels": 5.25029145814754,
+        "seamSecondPixels": 0.16687276729391215,
+        "interiorSecondPixels": 0.16713399011507524
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 0.8514057149887085
+}

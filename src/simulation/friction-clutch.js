@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { PALETTE, markShadows, matte } from './primitives.js';
 import { makeFrictionClutchMotion } from './friction-clutch-motion.js';
 import { makeClutchSections, turnedClutchGeometry } from './clutch-section-geometry.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 
 const Z_AXIS = new THREE.Vector3(0, 0, 1), X_AXIS = new THREE.Vector3(1, 0, 0);
 
@@ -43,6 +44,9 @@ export function makeFrictionClutch() {
   };
   const input = makeMember(inputProfile, PALETTE.driver, false);
   const output = makeMember(outputProfile, PALETTE.driven, true);
+  // The two plain turned clutch members carry the shared quadrant rotation
+  // cue about their own axis (rotor Z). The fixed section caps do not turn.
+  for (const member of [input, output]) applyRotationIndicator(member.userData.body, { axis: 'z' });
   const inputSection = makeClutchSections(inputProfile, { boreRadius, color: PALETTE.driver });
   const outputSection = makeClutchSections(outputProfile, { boreRadius, keyHalfWidth, keywayTop,
     color: PALETTE.driven });

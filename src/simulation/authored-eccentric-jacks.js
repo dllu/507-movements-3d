@@ -495,7 +495,7 @@ function eccentricPawlJack(movement) {
     ),
   );
 
-  const stateAtTime = (time) => {
+  const rawStateAtTime = (time) => {
     const wrappedTime = positiveModulo(time, cycleDuration);
     const raisedDwellStarts = operatingDuration;
     const resetStarts = raisedDwellStarts + raisedDwellDuration;
@@ -570,7 +570,7 @@ function eccentricPawlJack(movement) {
       // play backward. The strap pawl lets the rack down one pitch per turn
       // while the stop pawl is held clear of each descending tooth; every pose
       // is a lifting pose, so the finite clearances carry over unchanged.
-      const mirrored = stateAtTime(operatingDuration - (wrappedTime - resetStarts));
+      const mirrored = rawStateAtTime(operatingDuration - (wrappedTime - resetStarts));
       return {
         ...mirrored,
         eccentricAngularSpeed: -mirrored.eccentricAngularSpeed,
@@ -578,7 +578,7 @@ function eccentricPawlJack(movement) {
         stage: `lowering-reversed-${mirrored.stage}`,
       };
     } else {
-      return {...stateAtTime(0), eccentricAngularSpeed: 0, rackSpeed: 0, rackAcceleration: 0, stage: 'lowered-jack-dwell'};
+      return {...rawStateAtTime(0), eccentricAngularSpeed: 0, rackSpeed: 0, rackAcceleration: 0, stage: 'lowered-jack-dwell'};
     }
 
     const camCenter = camCenterAtAngle(eccentricAngle);
@@ -638,6 +638,41 @@ function eccentricPawlJack(movement) {
     };
   };
 
+  // The operator's crank starts and stops smoothly: a cosine speed ramp at
+  // each end of the lifting run (and of the reversed lowering run) replaces
+  // the old instant start at full speed and the stop at the parked pose, so
+  // the loop from the lowered dwell into the next lift has no sudden start.
+  const parkTime = (liftStrokeCount - 1 + parkFraction) * strokeDuration;
+  const easeTime = operatingDuration - parkTime;
+  const easedDrive = (u) => {
+    const ramp = (w) => ({s: w / 2 - easeTime / (2 * Math.PI) * Math.sin(Math.PI * w / easeTime),
+      rate: (1 - Math.cos(Math.PI * w / easeTime)) / 2});
+    if (u < easeTime) return ramp(Math.max(0, u));
+    if (u > operatingDuration - easeTime) {
+      const end = ramp(Math.max(0, operatingDuration - u));
+      return {s: parkTime - end.s, rate: end.rate};
+    }
+    return {s: u - easeTime / 2, rate: 1};
+  };
+  const stateAtTime = (time) => {
+    const wrappedTime = positiveModulo(time, cycleDuration);
+    const resetStarts = operatingDuration + raisedDwellDuration;
+    let drive = null, sign = 1;
+    if (wrappedTime < operatingDuration) drive = easedDrive(wrappedTime);
+    else if (wrappedTime >= resetStarts && wrappedTime < resetStarts + resetDuration) {
+      drive = easedDrive(operatingDuration - (wrappedTime - resetStarts));
+      sign = -1;
+    }
+    if (!drive) return rawStateAtTime(time);
+    const state = rawStateAtTime(drive.s);
+    return {
+      ...state,
+      eccentricAngularSpeed: sign * state.eccentricAngularSpeed * drive.rate,
+      rackSpeed: sign * state.rackSpeed * drive.rate,
+      stage: sign < 0 ? `lowering-reversed-${state.stage}` : state.stage,
+    };
+  };
+
   const update = (time) => {
     const state = stateAtTime(time);
     rack.position.y = state.rackDisplacement;
@@ -680,7 +715,7 @@ function eccentricPawlJack(movement) {
     root.userData.kinematics = state;
   };
 
-  const firstPowerEnd = stateAtTime(
+  const firstPowerEnd = rawStateAtTime(
     strokeDuration * drivePowerFraction,
   );
   root.userData = {
@@ -831,7 +866,19 @@ function eccentricPawlJack(movement) {
       },
     },
     stateAtTime,
+    // Mechanism state against uniform crank time (no start/stop easing),
+    // and the playback time at which the eased lifting run reaches it.
+    crankStateAtTime: rawStateAtTime,
+    playbackTimeAtCrankTime: (crankTime) => {
+      let low = 0, high = operatingDuration;
+      for (let i = 0; i < 60; i += 1) {
+        const middle = (low + high) / 2;
+        if (easedDrive(middle).s < crankTime) low = middle; else high = middle;
+      }
+      return (low + high) / 2;
+    },
     timeline: {
+      easeTime,
       bottomDwellDuration,
       cycleDuration,
       demonstrationPeriod: cycleDuration,

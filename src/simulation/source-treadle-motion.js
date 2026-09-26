@@ -1,4 +1,9 @@
-export const sourceTreadleDimensions={diskCenter:[281,240],diskRadius:111,crankPin:[205,295],pivot:[421,418],joint:[181,412],foot:[78,410],scale:.014,period:4};
+// Brown draws the crank pin well out on the disk (at 205,295), but a treadle
+// on that 0.85-radius throw would swing ~50 degrees up across the disk face.
+// His treadle stays nearly level: the pin is set on the same radial line at
+// 0.28 of the disk radius (256,258), so the treadle rocks through about 16
+// degrees, from level (the plate pose) up and back.
+export const sourceTreadleDimensions={diskCenter:[281,240],diskRadius:111,crankPin:[256,258],pivot:[421,418],joint:[181,412],foot:[78,410],scale:.014,period:4};
 export function sourceTreadleParameters(source=sourceTreadleDimensions){
  const point=p=>[(p[0]-source.diskCenter[0])*source.scale,(source.diskCenter[1]-p[1])*source.scale];
  const pin=point(source.crankPin),pivot=point(source.pivot),joint=point(source.joint),foot=point(source.foot),arm=[joint[0]-pivot[0],joint[1]-pivot[1]],armLength=Math.hypot(...arm);

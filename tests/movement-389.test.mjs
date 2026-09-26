@@ -192,7 +192,7 @@ test('movement 389 closes the eccentric orbit, rigid strap pawl, and constructed
 test('movement 389 advances exactly one rack tooth on each of three eccentric power strokes', () => {
   const model = createMovementModel(catalog.movements[388]);
   const data = model.root.userData;
-  const { geometry, stateAtTime, timeline } = data;
+  const { geometry, crankStateAtTime: stateAtTime, timeline } = data;
   const epsilon = 1e-8;
 
   for (let strokeIndex = 0; strokeIndex < geometry.liftStrokeCount;
@@ -240,7 +240,7 @@ test('movement 389 advances exactly one rack tooth on each of three eccentric po
 test('movement 389 power contact is exact while the upper stop ratchets and then alone holds return load', () => {
   const model = createMovementModel(catalog.movements[388]);
   const data = model.root.userData;
-  const { geometry, stateAtTime, timeline, transmission } = data;
+  const { geometry, crankStateAtTime: stateAtTime, timeline, transmission } = data;
 
   assert.match(transmission.driveFollowerLaw, /camCenter/);
   assert.match(transmission.holdingLaw, /alone prevents rack descent/);
@@ -282,7 +282,7 @@ test('movement 389 power contact is exact while the upper stop ratchets and then
 test('movement 389 lowers the rack by the lifting strokes reversed, never dropping it', () => {
   const model = createMovementModel(catalog.movements[388]);
   const data = model.root.userData;
-  const { geometry, stateAtTime, timeline, transmission } = data;
+  const { geometry, crankStateAtTime: stateAtTime, timeline, transmission } = data;
   const raised = stateAtTime(timeline.events.resetStarts);
   const lowered = stateAtTime(timeline.events.bottomDwellStarts);
 

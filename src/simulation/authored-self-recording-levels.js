@@ -786,7 +786,10 @@ function selfRecordingLevel(movement) {
     };
   };
 
-  const updateTrace = (cyclePhase) => {
+  // The drum turns once per cycle over periodic ground, so after the first
+  // cycle the paper holds the whole closed profile and the pencil retraces
+  // it; the trace is not wiped at each loop.
+  const updateTrace = (cyclePhase, completedCycles = 0) => {
     tracePositions.set(traceTemplate);
     const exactIndex = Math.floor(cyclePhase * chartTraceSamples);
     const exactPoint = traceMaterialPointAtPhase(cyclePhase);
@@ -795,8 +798,9 @@ function selfRecordingLevel(movement) {
     tracePositions[writeIndex * 3 + 1] = exactPoint.y;
     tracePositions[writeIndex * 3 + 2] = exactPoint.z;
     tracePositionAttribute.needsUpdate = true;
-    traceGeometry.setDrawRange(0, writeIndex + 1);
-    return { drawCount: writeIndex + 1, endpointIndex: writeIndex };
+    const drawCount = completedCycles > 0 ? tracePointCount : writeIndex + 1;
+    traceGeometry.setDrawRange(0, drawCount);
+    return { drawCount, endpointIndex: writeIndex };
   };
   const update = (time) => {
     const state = stateAtTime(time);
@@ -822,7 +826,7 @@ function selfRecordingLevel(movement) {
       0,
       -stylusLength / 2,
     );
-    const traceState = updateTrace(state.cyclePhase);
+    const traceState = updateTrace(state.cyclePhase, Math.floor(time / cycleDuration));
     for (let index = 0; index < groundDashes.length; index += 1) {
       const raw = -groundDisplayLength / 2
         + index * groundDashSpacing

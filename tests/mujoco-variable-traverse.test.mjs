@@ -12,7 +12,9 @@ const mujoco=await loadMujoco();
 test('122 restores the unequal rods and closed source hardware with clear shaft ends',()=>{
  const v=makeVariableTraverseGeometry(),u=v.root.userData;
  try{
-  assert.equal(Object.keys(u.parts).length,25);assert(u.hideGround);assert(u.profile.upperRodLength-u.profile.lowerRodLength>.2);
+  assert.equal(Object.keys(u.parts).length,19);
+  // p60 support policy: Brown draws no stands, guides or back bars here.
+  assert.deepEqual(Object.keys(u.parts).filter(n=>/Guide|Pillar|Foot|Bearing|BackBar|Post|Clip|Strap|TieBar/.test(n)),[]);assert(u.hideGround);assert(u.profile.upperRodLength-u.profile.lowerRodLength>.2);
   for(const[n,m]of Object.entries(u.parts)){const r=inspectWeightedClutchSolid(m.geometry);assert(r.volume>0,n);assert.equal(r.components,1,n);assert.equal(r.unmatchedEdges+r.degenerate+r.wrongNormals+r.nonfinite,0,n);}
   for(const n of ['upper','lower']){const shaft=u.parts[n+'Shaft'].geometry,rod=u.parts[n+'Rod'].geometry;shaft.computeBoundingBox();rod.computeBoundingBox();assert(rod.boundingBox.min.z-shaft.boundingBox.max.z>.009);}
  }finally{disposeObject3D(v.root);}

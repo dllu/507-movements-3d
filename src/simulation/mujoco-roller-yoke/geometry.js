@@ -50,8 +50,11 @@ export function makeRollerYokeGeometry(options={}){
  const guide=clip.difference(poly([[-.48,-.19],[.48,-.19],[.48,.19],[-.48,.19]]),poly(circle([0,0],stemRadius+.003,96)));
  add('guide',plate(guide,-guideHalf,guideHalf),'fixed',PALETTE.muted,[0,guideCenter,railZ]).rotation.x=Math.PI/2;
  blocks.yoke.position.y=s.initialQ;
- const collision=convexPlateCells(parts.cam.geometry);
- Object.assign(root.userData,{source:s,profile,parts,families,blocks,collision,geometry:{rollerRadius:roller,rollerZHalf:.20,meanPitchRadius:R,stemRadius,stemEnd,stemLowerTop,guideCenter,guideHalf,railZ},hideGround:true,shadowCameraHalfExtent:4,shadowNormalBias:.0005,shadowBias:-.00002});
+ const camGeometry=parts.cam.geometry;
+ Object.assign(root.userData,{source:s,profile,parts,families,blocks,geometry:{rollerRadius:roller,rollerZHalf:.20,meanPitchRadius:R,stemRadius,stemEnd,stemLowerTop,guideCenter,guideHalf,railZ},hideGround:true,shadowCameraHalfExtent:4,shadowNormalBias:.0005,shadowBias:-.00002});
+ // Collision cells are for the live simulation only; baked playback never
+ // reads them, so they are decomposed on first use (as in 113).
+ Object.defineProperty(root.userData,'collision',{configurable:true,enumerable:true,get(){const collision=convexPlateCells(camGeometry);Object.defineProperty(root.userData,'collision',{value:collision,writable:true,configurable:true,enumerable:true});return collision;}});
  markShadows(root);root.updateMatrixWorld(true);const bounds=new THREE.Box3();for(const q of [profile.minimum,profile.maximum]){blocks.yoke.position.y=q;blocks.upper.position.y=q+R;blocks.lower.position.y=q-R;root.updateMatrixWorld(true);bounds.union(new THREE.Box3().setFromObject(root,true));}blocks.yoke.position.y=s.initialQ;blocks.upper.position.y=s.initialQ+R;blocks.lower.position.y=s.initialQ-R;root.updateMatrixWorld(true);
  // Include the complete rotating cam envelope as well as the yoke stroke.
  const camR=Math.max(...profile.points.map(p=>Math.hypot(...p)));bounds.expandByPoint(new THREE.Vector3(-camR,-camR,-.24));bounds.expandByPoint(new THREE.Vector3(camR,camR,.24));bounds.expandByScalar(.025);root.userData.cameraFitBounds=bounds;

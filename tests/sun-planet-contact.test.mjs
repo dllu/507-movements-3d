@@ -81,9 +81,9 @@ test('039 actual square-tooth flanks clear with bounded backlash while the plane
   console.log('039 maximum sampled working gap', largestGap);
 });
 
-test('039 has clear carrier bores and separate planes for the fixed ring, gears, rod and arm', () => {
+test('039 has clear carrier bores and separate planes for the flywheel, gears, rod and arm', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { sun, planet, carrier, arm, connectingRod, rodBoss, ringSegments: flywheel, planetShaft, sunShaft, armStud } = model.root.userData.blocks;
+  const { sun, planet, carrier, arm, connectingRod, rodBoss, flywheel, planetShaft, sunShaft, armStud } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
   const initialRodTransform = new THREE.Matrix4();
   for (let sample = 0; sample < 65; sample += 1) {
@@ -93,7 +93,7 @@ test('039 has clear carrier bores and separate planes for the fixed ring, gears,
     for (const part of [planet, planetShaft]) {
       const bounds = new THREE.Box3().setFromObject(part);
       assert.ok(bounds.min.z - wheelBounds.max.z > 0.0169,
-        'all orbiting parts, including the rear shaft tip, clear the fixed ring');
+        'all orbiting parts, including the rear shaft tip, clear the flywheel');
     }
     const armBounds = new THREE.Box3().setFromObject(arm);
     // Pass 54 models the rod whole with a wrist pin in its upper eye that runs
@@ -140,31 +140,43 @@ test('039 has clear carrier bores and separate planes for the fixed ring, gears,
         'the actual rod mesh remains rigidly attached to the planet');
     }
   }
-  assert.equal(flywheel.geometry.parameters.shapes.length, 4, 'the ring has four separate segments');
+  assert.equal(flywheel.userData.spokeCount, 4, 'the flywheel has four spokes');
 });
 
-test('039 fixed ring is Brown\'s open four-part ring: a rim and four separate segments round an open middle', () => {
+test('039 flywheel is fast on the sun shaft: a rim, four thin spokes and a bored hub, open between the spokes', () => {
   const model = createMovementModel(catalog.movements[38]);
-  const { ringSegments, ringRim, sun } = model.root.userData.blocks;
+  const { flywheel, flywheelRim, flywheelHub, flywheelSpokes, sun, sunShaft, planet } = model.root.userData.blocks;
   const g = model.root.userData.geometry;
-  const shapes = ringSegments.geometry.parameters.shapes;
-  assert.equal(shapes.length, 4, 'four separate segments, not one slit disk');
-  for (const shape of shapes) {
-    assert.equal(shape.holes.length, 0);
-    const radii = shape.getPoints(48).map((point) => point.length());
-    assert.ok(Math.min(...radii) > g.flangeRadius && Math.min(...radii) < g.pitchRadius - 1.1 * g.module,
-      'each segment stops inward behind the sun-gear body, leaving the middle open round the hub flange');
-    assert.ok(Math.max(...radii) < g.ringRadius, 'each segment runs under the continuous rim');
-  }
-  // Brown's gaps are about as wide as a tenth of the ring radius.
-  assert.ok(2 * g.gapHalfWidth / g.ringRadius > 0.1 && 2 * g.gapHalfWidth / g.ringRadius < 0.13);
-  const rimBounds = new THREE.Box3().setFromObject(ringRim);
-  const segmentBounds = new THREE.Box3().setFromObject(ringSegments);
-  assert.ok(rimBounds.max.z - segmentBounds.max.z > 0.035, 'the segments are recessed behind the rim face');
-  // The ring is fixed: it is not carried by the sun and does not move.
-  assert.equal(ringRim.parent, model.root); assert.equal(ringSegments.parent, model.root);
+  // One spoked plate (spoked-wheel.js): rim, four thin spokes and hub.
+  assert.equal(flywheelSpokes.length, 0);
+  assert.equal(flywheelRim, flywheelHub);
+  assert.equal(flywheelRim.parent, flywheel);
+  const wheel = flywheelRim.geometry.userData.spokedWheel;
+  assert.equal(wheel.spokes, 4, 'four spokes, not a slit disk');
+  assert.ok(wheel.spokeWidth / g.ringRadius < 0.1, 'the spokes are thin');
+  assert.equal(wheel.rimInnerRadius, g.ringInnerRadius);
+  assert.equal(wheel.hubArcRadius, g.hubRadius, 'each spoke runs from the hub into the rim');
+  // Open between the spokes: a ray through the web at 45 degrees meets
+  // nothing of the flywheel between hub and rim.
   model.update(0, 0); model.root.updateMatrixWorld(true);
-  const start = ringSegments.matrixWorld.clone();
-  model.update(g.orbitPeriod * 0.37, 0); model.root.updateMatrixWorld(true);
-  assert.ok(ringSegments.matrixWorld.equals(start) && sun.userData.rotor.rotation.z !== 0);
+  const r = (g.hubRadius + g.ringInnerRadius) / 2;
+  const probe = new THREE.Raycaster(new THREE.Vector3(r * Math.SQRT1_2, r * Math.SQRT1_2, -1),
+    new THREE.Vector3(0, 0, 1), 0, 0.9);
+  assert.equal(probe.intersectObject(flywheel, true).length, 0, 'open web between the spokes');
+  // Bored hub on the sun shaft, seated behind the sun's flange.
+  const hubBox = new THREE.Box3().setFromObject(flywheelHub), flangeBox = new THREE.Box3().setFromObject(sun.userData.flange);
+  assert.ok(flangeBox.min.z - hubBox.max.z >= 0 && flangeBox.min.z - hubBox.max.z < 0.005);
+  assert.ok(wheel.boreRadius > g.axleRadius);
+  // It turns with the sun gear and shaft.
+  for (const time of [0.3, 2.1, 0.61 * g.orbitPeriod]) {
+    model.update(time, 0);
+    assert.ok(Math.abs(flywheel.rotation.z - sun.userData.rotor.rotation.z) < 1e-12);
+    assert.ok(Math.abs(flywheel.rotation.z - model.root.userData.kinematics.sunAngle) < 1e-12);
+  }
+  // Everything that orbits stays in front of the flywheel.
+  for (let sample = 0; sample < 33; sample += 1) {
+    model.update(g.orbitPeriod * sample / 32, 0); model.root.updateMatrixWorld(true);
+    assert.ok(new THREE.Box3().setFromObject(planet).min.z - new THREE.Box3().setFromObject(flywheel).max.z > 0.0169);
+  }
+  assert.ok(sunShaft.parent === model.root);
 });

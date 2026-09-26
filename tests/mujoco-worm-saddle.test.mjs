@@ -25,7 +25,7 @@ test('104 retains ten closed solids and a reproducible matching hobbed wheel', t
   try {
     assert.equal(p.model.nq, 3); assert.equal(p.model.nu, 2); assert.equal(p.model.neq, 3);
     assert.equal(p.model.ngeom, 0); assert.equal(p.model.ntendon, 1);
-    assert.equal(Object.keys(u.parts).length, 17);
+    assert.equal(Object.keys(u.parts).length, 11);
     for (const part of Object.values(u.parts)) {
       const a = inspectWeightedClutchSolid(part.geometry);
       assert.equal(a.components, 1); assert.ok(a.volume > 0);

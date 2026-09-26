@@ -1,0 +1,73 @@
+{
+  "id": 105,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-105.json.gz",
+  "bytes": 12217,
+  "assetSha256": "6793bf8bacee987951ceb08144916a6ed8946175344f4143b7a39d6cf27eeb2e",
+  "motionSources": {
+    "src/simulation/mujoco-screw-press/physics.js": "3d0f556f7ada3fa8b1282fadf0f1709ef2252da6a39bb8c4020b89a58577c857",
+    "src/simulation/mujoco-screw-press/profile.js": "c6364dafafb802c7ae3221127d05fe043b6025f1ea8a233971153656d577bb6a",
+    "src/simulation/mujoco-screw-press/source.js": "781c6bd06982f835ebeaf2ea38bef56563d4b9f12c6ec82daff0164b7d5e9ae5",
+    "src/simulation/mujoco-screw-press/visual.js": "515294dad266c53bb943e1d2e48c4d94ebf25a4a4f7e94882fa00968b5c3822d",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-screw-press/geometry.js": "9d1000e88d10a2b976447ef370ed3c1f216aed61df6114775f514e4588a4c4fe",
+    "src/simulation/mujoco-screw-press/section.js": "2d501318a0fb563795849b26d02d93358a0a0c8e2be13e35931b9bb883e386d4"
+  },
+  "physicsXmlSha256": {
+    "default": "26bafde8587db47eade603622d2c496ab1e18843ffd90ac4cb74b2aedb0b581e"
+  },
+  "fullXmlSha256": {
+    "default": "ba85d539a052ddef87c91a1d513d40926f44e774716956aba65351bf17f07d64"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-screw-press"
+  },
+  "cycleDesign": "Reversing handle drive (1 - cos): the ram presses the blank and lifts again; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 8,
+        "samples": 500,
+        "dt": 0.016,
+        "startTime": 96,
+        "periods": 1,
+        "drivePeriod": 8
+      },
+      "closure": {
+        "rawSeamPixels": 1.0486756618686085e-7,
+        "maximumCorrectionPixels": 2.6513079925960525e-13,
+        "maximumRotationCorrection": 0,
+        "wraps": [
+          {
+            "key": "blocks.screw",
+            "angle": 5.480158442653076e-10,
+            "rawAngle": 5.480158442653076e-10
+          }
+        ]
+      },
+      "roundTripPixels": 0.0000059978168413034605,
+      "seam": {
+        "seamStepPixels": 0.15235861303277334,
+        "interiorStepPixels": 7.5716337931005055,
+        "seamSecondPixels": 0.09515461583590108,
+        "interiorSecondPixels": 0.9201554261074407
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 1.4402339820861816
+}

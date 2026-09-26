@@ -21,14 +21,14 @@
     {
       "name": "pin",
       "mapped": [
-        227.04622817285488,
-        279.0454927696445
+        226.95181285933046,
+        278.91469474128206
       ],
       "engraving": [
-        205,
-        295
+        256,
+        258
       ],
-      "errorPixels": 27.21364506296512
+      "errorPixels": 35.794156398501286
     },
     {
       "name": "pivot",
@@ -45,38 +45,38 @@
     {
       "name": "joint",
       "mapped": [
-        181.44885303046183,
-        415.9519184045426
+        181.4542195417229,
+        415.8543128300791
       ],
       "engraving": [
         181,
         412
       ],
-      "errorPixels": 3.977326755386998
+      "errorPixels": 3.880984769899939
     }
   ],
   "engravingParameters": {
     "pin": [
-      -1.064,
-      -0.77
+      -0.35000000000000003,
+      -0.252
     ],
     "pivot": [
       1.96,
       -2.492
     ],
     "armLength": 3.36104983598875,
-    "rodLength": 1.672106455941128,
+    "rodLength": 2.3980900733708896,
     "footLength": 4.803299203461748,
     "restAngle": 3.1165978599708732,
     "period": 4
   },
   "fullTurnMarginsPixels": {
-    "inner": 12.00725151726491,
-    "outer": 39.23780920553743
+    "inner": 126.87102565228571,
+    "outer": 154.1015833405582
   },
   "footHeightPixels": {
-    "highest": 169.216953947989,
-    "lowest": 432.90532999117033
+    "highest": 318.15518111148333,
+    "lowest": 414.55247039797837
   },
   "samples": [
     {
@@ -222,11 +222,11 @@
     },
     {
       "file": "src/simulation/authored-cranks.js",
-      "sha256": "3a87ef026a2fa7ca5f6018115f95a4803b89b57aa2bc34c4dc168d31422d8235"
+      "sha256": "456fb75ad2f77184893ffb1e701fb619c27f6f55def7f0a6b77b649676b21fd2"
     },
     {
       "file": "src/simulation/source-treadle-motion.js",
-      "sha256": "3b996d143058f59c557893a2fb7575784549d322527912b5bcfe0401c7fbfe5b"
+      "sha256": "5d89ca0dcb8a1aa9c35e02c454cbd51ef2d1d0b380130042e0636a7adabd53d2"
     },
     {
       "file": "public/engravings/mm_158.png",

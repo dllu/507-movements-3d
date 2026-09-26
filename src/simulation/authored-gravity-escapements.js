@@ -5,6 +5,7 @@ import {
   matte,
 } from './primitives.js';
 import { GRAVITY_ESCAPEMENT_PLATES } from './baked/gravity-escapement-plates.js';
+import { spokedWheelGeometry } from './spoked-wheel.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -317,22 +318,26 @@ function mudgeGravityEscapement(movement) {
   const forkContactClearance = pendulumRodRadius + forkPinRadius;
   const pendulumPeriod = 4;
   const pendulumAmplitude = THREE.MathUtils.degToRad(5);
-  const pickupAngle = THREE.MathUtils.degToRad(2.5);
-  const unlockAngle = THREE.MathUtils.degToRad(3.15);
+  const pickupAngle = THREE.MathUtils.degToRad(1.5);
+  const unlockAngle = THREE.MathUtils.degToRad(2.1);
   const wheelDepth = 0.28;
   const palletDepth = 0.16;
-  const palletPlaneZ = 0.20;
-  const pendulumPlaneZ = 0.82;
+  const palletPlaneZ = 0;
+  const pendulumPlaneZ = 0.5;
 
   const toothCount = 30;
   const toothPitch = FULL_TURN / toothCount;
   const wheelRootRadius = 1.98;
   const wheelInnerRadius = 1.48;
-  const leftLockAngle = THREE.MathUtils.degToRad(144);
-  const rightLockAngle = THREE.MathUtils.degToRad(36);
-  const lockStationSeparationTeeth = 9;
-  const wheelAdvancePerBeat = toothPitch;
-  const wheelAdvancePerCycle = toothPitch * 2;
+  // Brown's locking notches b and a sit on the tooth tips at about 135 and
+  // 45 degrees (the labels B and A stand outside the arms), seven and a half
+  // pitches apart: the wheel steps half a pitch per beat, so a fallen pallet's
+  // stop always hangs over the middle of a tooth space, never on a tooth.
+  const leftLockAngle = THREE.MathUtils.degToRad(135);
+  const rightLockAngle = THREE.MathUtils.degToRad(45);
+  const lockStationSeparationTeeth = 7.5;
+  const wheelAdvancePerBeat = toothPitch / 2;
+  const wheelAdvancePerCycle = toothPitch;
 
   const pendulumMotionAtPhase = (cyclePhase) => {
     const argument = FULL_TURN * cyclePhase;
@@ -423,7 +428,7 @@ function mudgeGravityEscapement(movement) {
   const liftFaceLocalPointAt = (side, progress) => {
     const easedProgress = THREE.MathUtils.clamp(progress, 0, 1);
     const toothAngle = lockAngleForSide(side)
-      + toothPitch * (1 - easedProgress);
+      + wheelAdvancePerBeat * (1 - easedProgress);
     const toothPoint = wheelCenter.clone().add(new THREE.Vector2(
       Math.cos(toothAngle) * toothTipRadius,
       Math.sin(toothAngle) * toothTipRadius,
@@ -463,15 +468,15 @@ function mudgeGravityEscapement(movement) {
     const cyclePhase = cycleCoordinate - cycleIndex;
     const pendulum = pendulumMotionAtPhase(cyclePhase);
     const startingLeftToothIndex = positiveModulo(
-      cycleIndex * 2,
+      cycleIndex,
       toothCount,
     );
     const rightToothIndex = positiveModulo(
-      startingLeftToothIndex - (lockStationSeparationTeeth - 1),
+      startingLeftToothIndex - (lockStationSeparationTeeth - 0.5),
       toothCount,
     );
     const landingLeftToothIndex = positiveModulo(
-      startingLeftToothIndex + 2,
+      startingLeftToothIndex + 1,
       toothCount,
     );
     let activeLiftSide = null;
@@ -525,7 +530,7 @@ function mudgeGravityEscapement(movement) {
       forkContactSide = 'left';
       mode = 'wheel-cocks-right-weighted-pallet-A';
       pendulumRaisedPalletSide = 'left';
-      wheelAdvance = toothPitch * liftProgress;
+      wheelAdvance = wheelAdvancePerBeat * liftProgress;
     } else if (cyclePhase < 0.5 - phaseBoundaryEpsilon) {
       leftMagnitude = forkMagnitudeAt(-pendulum.angle);
       rightMagnitude = cockedMagnitude;
@@ -534,7 +539,7 @@ function mudgeGravityEscapement(movement) {
       forkContactSide = 'left';
       mode = 'left-pallet-carried-to-outer-turn';
       pendulumRaisedPalletSide = 'left';
-      wheelAdvance = toothPitch;
+      wheelAdvance = wheelAdvancePerBeat;
     } else if (cyclePhase < rightPickupPhase - phaseBoundaryEpsilon) {
       leftMagnitude = forkMagnitudeAt(-pendulum.angle);
       rightMagnitude = cockedMagnitude;
@@ -543,7 +548,7 @@ function mudgeGravityEscapement(movement) {
       forkContactSide = 'left';
       gravityDescentSide = 'left';
       mode = 'left-pallet-gravity-recovery';
-      wheelAdvance = toothPitch;
+      wheelAdvance = wheelAdvancePerBeat;
       if (cyclePhase >= leftEffectiveImpulseStartPhase) {
         effectiveGravityImpulseActive = true;
         mode = 'left-weighted-pallet-gravity-impulse';
@@ -557,7 +562,7 @@ function mudgeGravityEscapement(movement) {
       mode = 'right-fork-P-lifts-and-unlocks-pallet-A';
       pendulumRaisedPalletSide = 'right';
       trainCoupledToPendulum = true;
-      wheelAdvance = toothPitch;
+      wheelAdvance = wheelAdvancePerBeat;
     } else if (cyclePhase <= secondWheelStepEndPhase
       + phaseBoundaryEpsilon) {
       const linearProgress = (
@@ -575,7 +580,7 @@ function mudgeGravityEscapement(movement) {
       forkContactSide = 'right';
       mode = 'wheel-cocks-left-weighted-pallet-B';
       pendulumRaisedPalletSide = 'right';
-      wheelAdvance = toothPitch * (1 + liftProgress);
+      wheelAdvance = wheelAdvancePerBeat * (1 + liftProgress);
     } else {
       leftMagnitude = cockedMagnitude;
       rightMagnitude = forkMagnitudeAt(pendulum.angle);
@@ -911,40 +916,29 @@ function mudgeGravityEscapement(movement) {
     }
   }
   wheelShape.closePath();
-  const wheelOpening = new THREE.Path();
-  wheelOpening.absarc(0, 0, wheelInnerRadius, 0, FULL_TURN, true);
-  wheelShape.holes.push(wheelOpening);
+  // One plate (spoked-wheel.js): the thirty teeth on a narrow rim (Brown's
+  // rim is about 0.14 of the root radius deep) and an X of four slender
+  // spokes that flare into the rim and, with large fillets, into the hub.
+  // The phase stands Brown's X of spokes at 45 degrees in the opening pose.
   const wheelTeeth = new THREE.Mesh(
-    centeredExtrusion(wheelShape, wheelDepth, 0.006),
+    spokedWheelGeometry({
+      outline: wheelShape.getPoints(),
+      rimInnerRadius: wheelRootRadius * 0.875,
+      spokes: 4,
+      spokeWidth: 0.12,
+      hubRadius: 0.40,
+      rimFillet: 0.05,
+      boreRadius: 0.30,
+      thickness: wheelDepth,
+      phase: Math.PI / 4 - stateAtTime(0).wheelAngle,
+    }),
     wheelMaterial,
   );
   wheelTeeth.userData.role = 'thirty-pointed-escape-wheel-teeth';
+  wheelTeeth.userData.noRotationIndicator = true;
   wheelRotor.add(wheelTeeth);
+  // The spokes are part of the one-piece wheel plate.
   const spokeMeshes = [];
-  // The rotor stands at 144 degrees at t=0; this offset shows Brown's X of
-  // spokes (at 45 degrees) in the opening pose.
-  for (let spokeIndex = 0; spokeIndex < 4; spokeIndex += 1) {
-    const angle = THREE.MathUtils.degToRad(-9) + spokeIndex * Math.PI / 2;
-    const spoke = beamBetween(
-      new THREE.Vector3(
-        Math.cos(angle) * 0.22,
-        Math.sin(angle) * 0.22,
-        0,
-      ),
-      new THREE.Vector3(
-        Math.cos(angle) * wheelInnerRadius * 0.96,
-        Math.sin(angle) * wheelInnerRadius * 0.96,
-        0,
-      ),
-      0.2,
-      wheelDepth * 0.78,
-      wheelMaterial,
-    );
-    spoke.userData.index = spokeIndex;
-    spoke.userData.role = 'Mudge-wheel-spoke';
-    wheelRotor.add(spoke);
-    spokeMeshes.push(spoke);
-  }
   // The hub stays below the half-fork layer that crosses in front of it.
   const wheelHub = cylinderAlongZ(0.30, 0.30, darkMaterial, 36);
   wheelHub.userData.role = 'escape-wheel-hub';
@@ -968,6 +962,19 @@ function mudgeGravityEscapement(movement) {
   wheelPhaseWitness.userData.role = 'white-wheel-phase-witness';
   wheelRotor.add(wheelPhaseWitness);
 
+  // Each pallet is one flat plate in the wheel's plane, as Brown draws it: a
+  // broad arm from its arbor C down to the working end, where a straight
+  // lifting face (B, A) leads into the locking notch (b, a) whose stop is an
+  // arc about C; a threaded stem carries the ball weight square to the arm's
+  // outer edge. The long half-fork to pin Q or P is a second flat bar on the
+  // same arbor, in front of the wheel. Brown's outlines are measured on the
+  // left pallet (the right one is its mirror image).
+  const sourceRasterLeftArmOuterTop = new THREE.Vector2(228, 34);
+  const sourceRasterLeftArmInnerTop = new THREE.Vector2(233, 55);
+  const sourceRasterLeftArmOuterEnd = new THREE.Vector2(101, 203);
+  const armPlaneHalfDepth = 0.08;
+  const forkBarZ0 = 0.20;
+  const forkBarZ1 = 0.30;
   const makeGravityPallet = (side) => {
     const sideName = side > 0 ? 'right-A-P' : 'left-B-Q';
     const group = new THREE.Group();
@@ -979,145 +986,174 @@ function mudgeGravityEscapement(movement) {
       `${sideName}-independent-weighted-gravity-pallet`;
     root.add(group);
 
-    const liftFacePoints = Array.from({ length: 49 }, (_, index) => (
-      liftFaceLocalPointAt(side, smootherStep(index / 48))
+    // Local frame at the cocked pose; plate points are mirrored for side +1.
+    const sourceLocal = (raster) => {
+      const leftLocal = palletLocalPoint(-1, sourcePointToModel(raster), cockedMagnitude);
+      return side < 0 ? leftLocal : new THREE.Vector2(-leftLocal.x, leftLocal.y);
+    };
+    const liftFacePoints = Array.from({ length: 25 }, (_, index) => (
+      liftFaceLocalPointAt(side, index / 24)
     ));
-    const lockFacePoints = Array.from({ length: 17 }, (_, index) => {
+    const lockFacePoints = Array.from({ length: 9 }, (_, index) => {
       const magnitude = THREE.MathUtils.lerp(
         cockedMagnitude,
         releaseMagnitude,
-        index / 16,
+        index / 8,
       );
       return lockFaceLocalPointAt(side, magnitude);
     });
-    // Working layer: the lift pad and the nib span the tooth slab and are
-    // shaped by the swept teeth. Arm layer: the arm, backing, half-fork and
-    // weight stem lie in front of the teeth and behind the pendulum.
-    const workingZ0 = -0.10 - palletPlaneZ;
-    const workingZ1 = 0.18 - palletPlaneZ;
-    const armZ1 = 0.32 - palletPlaneZ;
-    const localWheelCenter = palletLocalPoint(side, wheelCenter,
-      cockedMagnitude);
-    const radialOffset = (point, distance) => point.clone().add(
-      point.clone().sub(localWheelCenter).normalize()
-        .multiplyScalar(distance),
+    const lock = lockFacePoints[0];
+    const liftStart = liftFacePoints[0];
+    const faceDirection = lock.clone().sub(liftStart).normalize();
+    // The lifting face is carried a little past the first touch; the arm
+    // ends there square to its outer edge.
+    const faceStart = liftStart.clone().addScaledVector(faceDirection, -0.04);
+    const stopEnd = lockFaceLocalPointAt(side, releaseMagnitude + 0.006);
+    const stopArc = Array.from({ length: 7 }, (_, index) => lockFaceLocalPointAt(
+      side,
+      THREE.MathUtils.lerp(cockedMagnitude, releaseMagnitude + 0.006, index / 6),
+    ));
+    const outerTop = sourceLocal(sourceRasterLeftArmOuterTop);
+    const innerTop = sourceLocal(sourceRasterLeftArmInnerTop);
+    const outerEnd = sourceLocal(sourceRasterLeftArmOuterEnd);
+    const armDirection = outerEnd.clone().sub(outerTop).normalize();
+    const armCorner = outerTop.clone().addScaledVector(
+      armDirection,
+      faceStart.clone().sub(outerTop).dot(armDirection),
     );
-    const padPath = liftFacePoints.filter((_, index) => index % 4 === 0);
-    const liftFace = plateRegistry.add({
-      key: `${side > 0 ? 'right' : 'left'}-lift-pad`,
-      material: darkMaterial,
-      owner: group,
-      primitives: [platePolygon([
-        ...padPath.map((point) => radialOffset(point, 0.24)),
-        ...padPath.slice().reverse().map((point) => radialOffset(point,
-          -0.12)),
-      ])],
-      role: `${sideName}-tooth-lifting-acting-face`,
-      z0: workingZ0,
-      z1: workingZ1,
-    });
-    const lockAngle = lockAngleForSide(side);
-    const nibSector = plateSector(wheelCenter, toothTipRadius - 0.12,
-      toothTipRadius + 0.24,
-      lockAngle - THREE.MathUtils.degToRad(6),
-      lockAngle + THREE.MathUtils.degToRad(1), 8);
-    const lockingNib = plateRegistry.add({
-      key: `${side > 0 ? 'right' : 'left'}-nib`,
-      material: markerMaterial,
-      owner: group,
-      primitives: [platePolygon(nibSector.points.map(([x, y]) => (
-        palletLocalPoint(side, new THREE.Vector2(x, y), cockedMagnitude)
-      )))],
-      role: `${sideName}-terminal-locking-nib`,
-      z0: workingZ0,
-      z1: workingZ1,
-    });
-
-    const faceJoin = liftFacePoints.at(-1);
-    const padStartBack = radialOffset(liftFacePoints[0], 0.16);
-    const padEndBack = radialOffset(faceJoin, 0.16);
-    const nibBackAngle = lockAngle - THREE.MathUtils.degToRad(4);
-    const nibBack = palletLocalPoint(side, wheelCenter.clone().add(
-      new THREE.Vector2(Math.cos(nibBackAngle), Math.sin(nibBackAngle))
-        .multiplyScalar(toothTipRadius + 0.14),
-    ), cockedMagnitude);
-    const forkPoint = forkLocalPoint(side);
+    // The inner edge runs parallel to the outer one at Brown's arm width and
+    // meets the notch's back wall, which rises from the stop toward C.
+    const armNormal = new THREE.Vector2(-armDirection.y, armDirection.x);
+    if (armNormal.dot(innerTop.clone().sub(outerTop)) < 0) armNormal.multiplyScalar(-1);
+    const armWidth = innerTop.clone().sub(outerTop).dot(armNormal);
+    const innerLineAt = (point) => point.clone().addScaledVector(
+      armNormal,
+      -(point.clone().sub(outerTop).dot(armNormal) - armWidth),
+    );
+    const outerLineAt = (point) => outerTop.clone().addScaledVector(
+      armDirection,
+      point.clone().sub(outerTop).dot(armDirection),
+    );
+    const hubRadius = 0.15;
+    // The tooth tip rests on the stop arc (about C) from `lock` to `stopEnd`;
+    // it pushes toward C on the left and away from C on the right, because
+    // the wheel turns clockwise. After release it runs on along the wheel,
+    // so the stop's end wall is cut back along that path.
+    let armOutline;
+    if (side < 0) {
+      // B lifts on the arm's end face; b's stop wall rises toward C.
+      const toPivot = stopEnd.clone().multiplyScalar(-1).normalize();
+      const notchBack = stopEnd.clone().addScaledVector(toPivot, 0.14);
+      armOutline = [
+        outerTop,
+        armCorner,
+        faceStart,
+        ...liftFacePoints,
+        ...stopArc.slice(1),
+        notchBack,
+        innerLineAt(notchBack),
+        innerTop,
+      ];
+    } else {
+      // A lifts on a block on the arm's inner edge; a is a hook at the end.
+      const faceEnd = liftStart.clone().addScaledVector(faceDirection, -0.04);
+      const outward = stopEnd.clone().normalize();
+      const stopDrift = lock.clone().sub(stopEnd).normalize();
+      const hookOut = stopEnd.clone().addScaledVector(
+        outward.clone().addScaledVector(stopDrift, 0.55).normalize(),
+        0.16,
+      );
+      armOutline = [
+        outerTop,
+        outerLineAt(hookOut),
+        hookOut,
+        ...stopArc.slice().reverse(),
+        ...liftFacePoints.slice().reverse().slice(1),
+        faceEnd,
+        innerLineAt(faceEnd),
+        innerTop,
+      ];
+    }
+    // Threaded weight stem, square to the arm's outer edge through the ball.
     const weightPoint = weightLocalPoint(side);
-    const armPoint = new THREE.Vector2(
-      side * Math.abs(faceJoin.x) * 0.55,
-      faceJoin.y * 0.55,
+    const stemFoot = outerTop.clone().addScaledVector(
+      armDirection,
+      weightPoint.clone().sub(outerTop).dot(armDirection),
     );
-    // Brown's pallet arms are broad flat bars: widen the pivot-to-pallet arm
-    // outward (away from the wheel) to about 0.42.
-    const armDirection = padEndBack.clone().normalize();
-    let armOutward = new THREE.Vector2(-armDirection.y, armDirection.x);
-    if (armOutward.dot(padEndBack.clone().multiplyScalar(0.5)
-      .sub(localWheelCenter)) < 0) armOutward.multiplyScalar(-1);
-    armOutward = armOutward.multiplyScalar(0.14);
+    const stemOutward = weightPoint.clone().sub(stemFoot).normalize();
+    const weightRadius = 0.30;
+    const stemTip = weightPoint.clone().addScaledVector(stemOutward, weightRadius + 0.12);
     const arm = plateRegistry.add({
-      key: `${side > 0 ? 'right' : 'left'}-arms`,
+      key: `${side > 0 ? 'right' : 'left'}-pallet-plate`,
       material: palletMaterial,
       owner: group,
       primitives: [
-        plateBand(new THREE.Vector2(0, 0), padEndBack, 0.14),
-        plateBand(armOutward.clone(), padEndBack.clone().add(armOutward), 0.28),
-        plateBand(padStartBack, nibBack, 0.13),
-        plateDisc(padEndBack, 0.09),
-        plateBand(new THREE.Vector2(0, 0), forkPoint, 0.17),
-        plateDisc(forkPoint, 0.13),
-        plateBand(armPoint, weightPoint, 0.105),
-        plateDisc(new THREE.Vector2(0, 0), 0.15),
+        platePolygon(armOutline),
+        plateDisc(new THREE.Vector2(0, 0), hubRadius),
+        plateBand(stemFoot.clone().addScaledVector(stemOutward, -0.04), stemTip, 0.09),
       ],
-      role: `${sideName}-pallet-arm-C`,
-      z0: workingZ1,
-      z1: armZ1,
+      role: `${sideName}-pallet-plate-with-lifting-face-and-stop`,
+      z0: -armPlaneHalfDepth - palletPlaneZ,
+      z1: armPlaneHalfDepth - palletPlaneZ,
     });
-    const faceBacking = arm;
-    const forkRod = arm;
+    const forkPoint = forkLocalPoint(side);
+    const forkRod = plateRegistry.add({
+      key: `${side > 0 ? 'right' : 'left'}-half-fork`,
+      material: palletMaterial,
+      owner: group,
+      primitives: [
+        plateBand(new THREE.Vector2(0, 0), forkPoint, 0.12),
+        plateDisc(new THREE.Vector2(0, 0), 0.12),
+        plateDisc(forkPoint, 0.1),
+      ],
+      role: `${sideName}-half-fork-to-pin-${side > 0 ? 'P' : 'Q'}`,
+      z0: forkBarZ0 - palletPlaneZ,
+      z1: forkBarZ1 - palletPlaneZ,
+    });
+    const forkPinFrontZ = pendulumPlaneZ + 0.12;
     const forkPin = cylinderAlongZ(
       forkPinRadius,
-      0.72,
+      forkPinFrontZ - forkBarZ0,
       darkMaterial,
       24,
     );
-    forkPin.position.set(forkPoint.x, forkPoint.y, 0.36);
+    forkPin.position.set(forkPoint.x, forkPoint.y,
+      (forkPinFrontZ + forkBarZ0) / 2 - palletPlaneZ);
     forkPin.userData.label = side > 0 ? 'P' : 'Q';
     forkPin.userData.role = `${sideName}-fork-pin-${side > 0 ? 'P' : 'Q'}`;
     group.add(forkPin);
 
-    const weightStem = arm;
-    // Brown draws the weights as balls on the pallet stems.
     const weight = new THREE.Mesh(
-      new THREE.SphereGeometry(0.30, 32, 20),
+      new THREE.SphereGeometry(weightRadius, 40, 24),
       weightMaterial,
     );
-    weight.position.set(weightPoint.x, weightPoint.y,
-      (workingZ1 + armZ1) / 2);
+    weight.position.set(weightPoint.x, weightPoint.y, 0);
     weight.userData.mass = palletWeightMass;
     weight.userData.role = `${sideName}-gravity-impulse-weight`;
     group.add(weight);
 
-    const arborRearZ = -0.62 - palletPlaneZ;
-    const arborFrontZ = armZ1 - 0.02;
+    // Arbor C joins the arm plate and the half-fork.
+    const arborRearZ = -armPlaneHalfDepth - 0.02;
+    const arborFrontZ = forkBarZ1 + 0.02;
     const arborHub = cylinderAlongZ(0.075, arborFrontZ - arborRearZ,
       darkMaterial, 24);
-    arborHub.position.z = (arborFrontZ + arborRearZ) / 2;
+    arborHub.position.z = (arborFrontZ + arborRearZ) / 2 - palletPlaneZ;
     arborHub.userData.role = `${sideName}-independent-arbor-C`;
     group.add(arborHub);
 
     return {
       arborHub,
       arm,
-      faceBacking,
+      faceBacking: arm,
       forkPin,
       forkRod,
       group,
-      liftFace,
+      liftFace: arm,
       liftFacePoints,
       lockFacePoints,
-      lockingNib,
+      lockingNib: arm,
       weight,
-      weightStem,
+      weightStem: arm,
     };
   };
 
@@ -1355,9 +1391,9 @@ function mudgeGravityEscapement(movement) {
   root.userData.gravityPotentialAt = gravityPotentialAt;
   root.userData.liftFaceLocalPointAt = liftFaceLocalPointAt;
   root.userData.lockFaceLocalPointAt = lockFaceLocalPointAt;
-  root.userData.mechanism = 'Mudge’s gravity escapement: two independent weighted pallets A/P and B/Q turn on separate adjacent arbors C. The pendulum alternately lifts one fork-pin just enough to free its locking nib; the clockwise thirty-tooth wheel advances one pitch and raises the opposite pallet along its acting face; on the return swing that stored pallet falls past its pickup position and gives a weight-controlled impulse directly to the pendulum.';
+  root.userData.mechanism = 'Mudge’s gravity escapement: two independent weighted pallets A/P and B/Q turn on separate adjacent arbors C. The pendulum alternately lifts one fork-pin just enough to free its locking nib; the clockwise thirty-tooth wheel advances half a pitch and raises the opposite pallet along its acting face; on the return swing that stored pallet falls past its pickup position and gives a weight-controlled impulse directly to the pendulum.';
   root.userData.palletWorldPoint = palletWorldPoint;
-  root.userData.presentation = 'front-oblique reconstruction of Brown’s paired-arbor elevation, separating the wheel, two acting faces and nibs, weighted pallet arms, long half-forks P/Q, and the pendulum that plays between them';
+  root.userData.presentation = 'front elevation of Brown’s paired-arbor escapement: the wheel and two flat pallet plates in its plane, each with its lifting face and locking stop, ball weights, and the long half-forks P/Q in front, between which the (undrawn) pendulum plays';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
@@ -1451,7 +1487,7 @@ function mudgeGravityEscapement(movement) {
     toothCount,
     wheelAdvancePerBeatRadians: wheelAdvancePerBeat,
     wheelAdvancePerCycleRadians: wheelAdvancePerCycle,
-    wheelCyclesPerRevolution: toothCount / 2,
+    wheelCyclesPerRevolution: toothCount,
   };
   root.userData.weightCenterAt = weightCenterAt;
   root.userData.wheelAngleAtCycleStart = wheelAngleAtCycleStart;

@@ -23,12 +23,12 @@ test('movement 183 opens on the ascending stroke in the plate pose', () => {
   assert.deepEqual([...PU], [275, 128]);
   assert.deepEqual([...PL], [283, 353]);
   assert.deepEqual([...studs.upper], [238, 265]);
-  // Brown draws no markers. The shafts' back bar, the rod guide, the steam
-  // cylinder and the back weights are supports and real rod ends that lie
-  // outside the plate's framing.
+  // Brown draws no markers. The back weights are real rod ends outside the
+  // plate's framing; the reconstructed back bar, rod guide and cylinder are
+  // not presented (p60 support policy).
   const roles = [];
   model.root.traverse((o) => { if (o.isMesh) roles.push(o.userData.role); });
   assert.ok(!roles.some((r) => /marker|index|gravity-weight/.test(r)), roles.join());
-  d.blocks.workingSupport.traverse((o) => assert.equal(o.userData.runsPastCrop, true));
-  assert.ok(roles.includes('fixed-handle-shaft-boss') && roles.includes('upper-back-weight'));
+  assert.ok(!roles.some((r) => /fixed-back-bar|fixed-piston-rod-guide|fixed-steam-cylinder|fixed-handle-shaft-boss/.test(r)), roles.join());
+  assert.ok(roles.includes('upper-back-weight'));
 });

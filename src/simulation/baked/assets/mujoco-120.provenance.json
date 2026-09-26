@@ -1,0 +1,67 @@
+{
+  "id": 120,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-120.json.gz",
+  "bytes": 15147,
+  "assetSha256": "38aa610064f34965bc185ecf8108e76633837921576fac6e8fd2d3ba4b14528f",
+  "motionSources": {
+    "src/simulation/mujoco-segment-clamp/contact.js": "6b630574d0eb314f4f473acdf850c84016b9a3981d4c9007362806e4f21ce9a4",
+    "src/simulation/mujoco-segment-clamp/physics.js": "00622720251ee67d9b3a3d62b7f02ea103f252c02620a9f994bd4bd24e496510",
+    "src/simulation/mujoco-segment-clamp/profile.js": "76f70c2eb417e80ae56868b8335e6ff69ed2e0b8584e834c6a58b4115d29d5fd",
+    "src/simulation/mujoco-segment-clamp/source.js": "6c208ad3ea4e2a462e65c3920340e72fb202ce75d6c3ba6af9cb6adf44c4a6ed",
+    "src/simulation/mujoco-segment-clamp/visual.js": "ee8511a6043e8a8e7465edbff88b4f130195b7e5ac815bbff8f47df69cd52f0d",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-segment-clamp/geometry.js": "0bcb60f081ecd94b5b19f0cd52e2f19293febc7f7af65d273d917609024f8f6f"
+  },
+  "physicsXmlSha256": {
+    "default": "6fff920abddd3d5f9774fac124e556122d2ef8ec67477851eb06b37e239a866f"
+  },
+  "fullXmlSha256": {
+    "default": "fbe404c6722c4cdcbc489136c36e7c4a3d606416901a54c70e943c1f1a19add8"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-segment-clamp"
+  },
+  "cycleDesign": "Reversing shaft stroke: the jaws close point to point, dwell under torque and reopen; one drive period closes the loop.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 5,
+        "samples": 500,
+        "dt": 0.01,
+        "startTime": 25,
+        "periods": 1,
+        "drivePeriod": 5
+      },
+      "closure": {
+        "rawSeamPixels": 8.651337675363985e-12,
+        "maximumCorrectionPixels": 0,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": []
+      },
+      "roundTripPixels": 0.000011090845882904947,
+      "seam": {
+        "seamStepPixels": 0.017490240298250616,
+        "interiorStepPixels": 1.0184433007769083,
+        "seamSecondPixels": 0.011299084422498613,
+        "interiorSecondPixels": 0.6070997132399405
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 33.36643992090225
+}

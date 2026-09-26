@@ -538,7 +538,9 @@ function rockShaftToeAndPoppetLifter(movement) {
     guide.position.set(valveRodX, y, rodAxisZ);
     guide.userData.role = index === 0 ? 'upper-bored-valve-rod-guide' : 'lower-bored-valve-rod-guide';
     const web = new THREE.Mesh(
-      new THREE.BoxGeometry(0.2, 0.14, supportFront - (rodAxisZ - 0.3)),
+      // Positive depth: the web runs from the bar's front face forward to
+      // just behind the guide (a negative extent renders inside out).
+      new THREE.BoxGeometry(0.2, 0.14, (rodAxisZ - 0.3) - supportFront),
       frameMaterial,
     );
     web.position.set(valveRodX, y, (supportFront + rodAxisZ - 0.3) / 2);

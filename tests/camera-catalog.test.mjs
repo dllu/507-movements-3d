@@ -46,7 +46,7 @@ test('actual engine camera fit contains sampled rendered vertices of all 507 mod
             count += 1;
           }
         });
-        assert.ok(count > 0);
+        assert.ok(count > 0, 'movement ' + movement.id + ' phase ' + phase + ': no rendered vertex inside the crop');
         previousPhase = phase;
       }
     }

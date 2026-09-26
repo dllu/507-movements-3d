@@ -653,7 +653,9 @@ function frictionWindlass(movement) {
     [0, 0], [0.085, 0], [0.105, 0.02], [0.105, 0.09], [0.075, 0.12],
     [0.072, 0.30], [0.10, 0.46], [0.15, 0.62], [0.182, 0.76],
     [0.176, 0.86], [0.14, 0.94], [0.08, 0.985], [0, 1],
-  ].map(([radius, along]) => new THREE.Vector2(radius, -along * gripLength));
+  ].map(([radius, along]) => new THREE.Vector2(radius, -along * gripLength))
+    // Lathe profiles must climb in y for outward normals.
+    .reverse();
   const handGrip = new THREE.Mesh(
     new THREE.LatheGeometry(gripProfile, 40),
     matte(PALETTE.ink, { metalness: 0.12, roughness: 0.62 }),

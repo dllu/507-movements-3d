@@ -4,9 +4,9 @@
     182
   ],
   "poses": 129,
-  "meshes": 37,
-  "pairs": 554,
-  "queries": 8113762,
+  "meshes": 40,
+  "pairs": 662,
+  "queries": 8053390,
   "intersections": {},
   "method": "Every cross-family pair in the serialized visible assembly, including new finger supports and axial webs. Bidirectional vertices, edge midpoints and face centers. Both variants share this full cycle. Sampled evidence, not continuous proof.",
   "sources": [
@@ -16,7 +16,7 @@
     },
     {
       "file": "src/simulation/baked/assets/181.json.gz",
-      "sha256": "f4062aed81102487e48d0aced0e8112ec0266a8c0e632473f44ca2d4dcbf8bcb"
+      "sha256": "6fd79d2bd6bbc52a020757db188ea33289f156ef31df1d992a2d7bc2cea80900"
     },
     {
       "file": "src/simulation/baked/diagonal-catch.js",
@@ -28,7 +28,7 @@
     },
     {
       "file": "src/simulation/mujoco-diagonal-catch/update-solids.js",
-      "sha256": "36bfc2a8a8b836c67ab234de177fcabacd751c7383281cf405988bc9c4be594c"
+      "sha256": "d2e3cfcffc91eed5bd67e72de33ced3d6989673d17eba2c131da0162448c9795"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

@@ -1,4 +1,3 @@
-import { assertReadableTiming } from './helpers/display-timing.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
@@ -340,7 +339,7 @@ test('movement 264 renders the exact same-direction rates and readable indices',
 
   assert.equal(driveSchedule.sourcePrescribesAbsoluteSpeed, false);
   assert.equal(driveSchedule.sourcePrescribesDirection, false);
-  assert.match(driveSchedule.referenceDisplayCycle, /continuous-unreset-time/);
+  assert.match(driveSchedule.referenceDisplayCycle, /full-202-second-beat/);
   for (const time of [0, 0.08, 1.7, 4, 8, 23.4]) {
     model.update(time);
     const state = stateAtTime(time);
@@ -378,9 +377,22 @@ test('movement 264 stays continuous, closes its beat, and leaves 269 authored', 
   const { animationTiming, blocks, stateAtTime, timeline } = model.root.userData;
   const epsilon = 1e-6;
 
-  assert.equal(animationTiming.authoredCyclePeriod, 240);
-  assert.equal(animationTiming.targetCycleDuration, 2);
-  assertReadableTiming(animationTiming);
+  // The display loop is the whole beat, played in real time, so the 1%
+  // difference visibly accumulates: the needles part by about 18 degrees in
+  // 10 s and by a whole turn over the seamless loop.
+  near(animationTiming.authoredCyclePeriod, timeline.fullBeatPeriod, 0,
+    'display loop is the full beat');
+  near(timeline.fullBeatPeriod, 202, 1e-9, 'full beat');
+  assert.equal(animationTiming.playbackTimeScale, 1);
+  near(animationTiming.displayCycleDuration, 202, 1e-9, 'display loop');
+  const gainIn10s = stateAtTime(10).fastWheelGainAngle * 180 / Math.PI;
+  assert.ok(Math.abs(gainIn10s) > 15, `needles part ${gainIn10s} degrees in 10 s`);
+  assert.ok(Math.abs(stateAtTime(0.5).wheel100AngularSpeed) < 2 * Math.PI,
+    'the wheels and needles turn under one revolution per second');
+  const endState = stateAtTime(timeline.fullBeatPeriod);
+  near(Math.cos(endState.wormAngle), 1, 1e-9, 'worm closes the loop');
+  near(Math.cos(endState.wheel100Angle), 1, 1e-9, '100-tooth wheel closes the loop');
+  near(Math.cos(endState.wheel101Angle), 1, 1e-9, '101-tooth wheel closes the loop');
   model.update(timeline.demonstrationPeriod - epsilon);
   const before100 = blocks.wheel100.userData.rotor.quaternion.clone();
   const before101 = blocks.wheel101.userData.rotor.quaternion.clone();

@@ -477,7 +477,12 @@ function twinWormWheelDifferential(movement) {
     baseRail,
   );
 
-  const wheel100RevolutionPeriod = 240;
+  // The point of the plate is that the wheels differ by one tooth in 100:
+  // the 100-tooth wheel gains 3.6 degrees per turn and one whole turn in
+  // 101. At 30 rpm (one wheel turn in 2 s, the worm at 3000 rpm) the needles
+  // visibly part (about 18 degrees in 10 s) and the display loop is the full
+  // 202 s beat, after which every part is exactly back in phase.
+  const wheel100RevolutionPeriod = 2;
   const wormAngularSpeed = FULL_TURN
     * wheel100Teeth / wheel100RevolutionPeriod;
   const wheel100AngularSpeed = -wormHandedness
@@ -591,7 +596,7 @@ function twinWormWheelDifferential(movement) {
   root.userData.driveSchedule = {
     input: 'uniform-positive-rotation-of-the-single-common-worm',
     referenceDisplayCycle:
-      'one-revolution-of-the-100-tooth-wheel-with-continuous-unreset-time',
+      'full-202-second-beat-in-which-the-100-tooth-wheel-gains-one-revolution',
     sourcePrescribesAbsoluteSpeed: false,
     sourcePrescribesDirection: false,
   };
@@ -726,9 +731,13 @@ function twinWormWheelDifferential(movement) {
   root.traverse(o => {for (const material of (Array.isArray(o.material) ? o.material : [o.material])) if (material) material.fog = false;});
   root.userData.hideGround = true;
   root.userData.materialsIgnoreSceneFog = true;
-  root.userData.minimumDisplayCycleSeconds = 240;
+  root.userData.animationTiming = { authoredCyclePeriod: fullBeatPeriod };
+  // Real-time playback: the global display caps would slow the worm back to
+  // one turn per second and hide the differential entirely.
+  root.userData.authoredPlaybackTimeScale = 1;
+  root.userData.minimumDisplayCycleSeconds = fullBeatPeriod;
   root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-1.85, -1.76, -.92), new THREE.Vector3(1.45, 2.72, .92));
-  root.userData.reconstructionNote = 'One worm turn advances each wheel one tooth. The 100/101 pointers separate by one turn after 10,100 input turns (6 h 44 min at this speed). Equal outside diameters use separately generated flanks, not equal operating pitches.';
+  root.userData.reconstructionNote = 'One worm turn advances each wheel one tooth. The worm runs at 3000 rpm and the wheels at about 30 rpm, so the needle of the 100-tooth wheel visibly gains on that of the 101-tooth wheel, 3.6 degrees per turn, and laps it once in 10,100 worm turns (202 s, the display loop). Equal outside diameters use separately generated flanks, not equal operating pitches.';
   root.userData.contactQualification = {method: 'independent offline envelopes of the same finite common worm', clearance: .0025, nominalPitchRadiiAreReferenceOnly: true};
   update(0);
   markShadows(root);

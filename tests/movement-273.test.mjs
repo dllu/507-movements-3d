@@ -371,6 +371,13 @@ test('movement 273 always sends C and D opposite to A and B while all guides rem
       `A/B rods cover guides at sample ${sample}`);
     assert.ok(state.verticalGuideCoverage > 0.1578,
       `C/D rods cover guides at sample ${sample}`);
+    // The corner eyes (radius 0.21) never reach a guide's inner end.
+    assert.ok(geometry.horizontalGuideDistance - geometry.guideLength / 2
+      - state.horizontalHalfSpan - 0.21 > 0.08,
+    `A/B corner eyes clear their guides at sample ${sample}`);
+    assert.ok(geometry.verticalGuideDistance - geometry.guideLength / 2
+      - state.verticalHalfSpan - 0.21 > 0.08,
+    `C/D corner eyes clear their guides at sample ${sample}`);
     near(state.symmetryPositionError, 0, 0,
       `symmetric positions at sample ${sample}`);
     near(state.symmetryVelocityError, 0, 0,

@@ -1269,11 +1269,12 @@ function coltCylinderRatchet(movement) {
   mainspringClamp.userData.role = 'fixed-mainspring-root-block';
   mainspringFrame.add(mainspringClamp);
 
-  // The lock plate (frame side) behind the working parts: one plain plate
-  // that carries the tumbler arbor, spring c's block, the mainspring's root
-  // block and, through a lug standing forward beside the ratchet, the
-  // cylinder arbor. Its outline is the hull round those mounts, kept
-  // clear of the ratchet's crests on the left.
+  // The lock plate (frame side) behind the working parts, kept small and
+  // out of sight: a boss round the tumbler arbor with three narrow arms (one
+  // plain plate) to spring c's block, the lug for the cylinder arbor and the
+  // mainspring's root block. The boss and the upper arms lie behind the
+  // hammer; the arm to the mainspring root runs low, behind the hammer's
+  // foot and under the leaf, so nothing large stands behind the stirrup.
   const blockFoot = rasterToModel([176, 200]);
   const clampCentre = [
     mainspringRoot[0] - 0.28 * Math.cos(mainspringAngle),
@@ -1281,14 +1282,21 @@ function coltCylinderRatchet(movement) {
   ];
   const arborLugCentre = [-1.64, cylinderCenterY];
   const arborLugHalf = [0.22, 0.3];
+  const blockCentre = springBlockOutline.reduce((sum, point) => [sum[0] + point[0] / springBlockOutline.length,
+    sum[1] + point[1] / springBlockOutline.length], [0, 0]);
+  const armHalfWidth = 0.13;
+  const lowerArmKnee = [0.55, -0.62];
+  const arm = (a, b, radius = armHalfWidth) => poly(hullOfCircles([[a, radius], [b, radius]]));
   const lockPlateOutline = polygonClipping.difference(
-    poly(hullOfCircles([
-      [[0, 0], 0.55],
-      [blockFoot, 0.3],
-      [clampCentre, 0.35],
-      [arborLugCentre, 0.24],
-      ...springBlockOutline.map((point) => [point, 0.08]),
-    ])),
+    polygonClipping.union(
+      [[circle([0, 0], 0.42, 72)]],
+      arm([0, 0], arborLugCentre),
+      arm(arborLugCentre, blockCentre),
+      arm(blockFoot, blockCentre),
+      arm([0, 0], lowerArmKnee),
+      arm(lowerArmKnee, clampCentre),
+      [[circle(clampCentre, 0.3, 48)]],
+    ),
     [[circle([0, 0], 0.235, 72)]],
   );
   const lockPlate = new THREE.Mesh(

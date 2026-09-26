@@ -92,49 +92,62 @@ function annularSectorPrism({
   return mesh;
 }
 
+// Brown's partitions B: each is a straight wall running in from the drum
+// shell along a line offset from the axis, which then hooks round the central
+// inlet a in a spiral, so the four inner ends nest round the inlet as the
+// chamber mouths (the plate's pinwheel of hooked chambers). Wall k starts its
+// hook at angle k * 90 degrees; its straight part runs clockwise-tangent out to
+// the shell. One solid extruded sheet per partition.
+export function hookedPartitionCenterline({
+  hookRadius = 0.66,
+  hookEndRadius = 0.44,
+  hookSweep = THREE.MathUtils.degToRad(150),
+  shellRadius = 1.87,
+} = {}) {
+  const points = [];
+  const straightLength = Math.sqrt(shellRadius ** 2 - hookRadius ** 2);
+  for (let sample = 0; sample <= 8; sample += 1) {
+    const s = straightLength * (1 - sample / 8);
+    points.push(new THREE.Vector2(hookRadius, -s));
+  }
+  for (let sample = 1; sample <= 40; sample += 1) {
+    const phi = hookSweep * sample / 40;
+    const radius = THREE.MathUtils.lerp(hookRadius, hookEndRadius, sample / 40);
+    points.push(new THREE.Vector2(radius * Math.cos(phi), radius * Math.sin(phi)));
+  }
+  return points;
+}
+
+function thickPolylineShape(points, thickness) {
+  const normals = points.map((point, index) => {
+    const previous = points[Math.max(0, index - 1)];
+    const next = points[Math.min(points.length - 1, index + 1)];
+    const tangent = next.clone().sub(previous).normalize();
+    return new THREE.Vector2(-tangent.y, tangent.x);
+  });
+  const half = thickness / 2;
+  const left = points.map((point, index) => point.clone().addScaledVector(normals[index], half));
+  const right = points.map((point, index) => point.clone().addScaledVector(normals[index], -half));
+  return new THREE.Shape([...left, ...right.reverse()]);
+}
+
 function curvedPartition({
   index,
   depth,
   material,
-  innerRadius,
-  outerRadius,
+  thickness = 0.062,
 }) {
   const group = new THREE.Group();
   group.rotation.z = index * QUARTER_TURN;
   group.userData.role = `helical-measuring-partition-${index + 1}`;
-  const points = [];
-  for (let sample = 0; sample <= 13; sample += 1) {
-    const progress = sample / 13;
-    const radius = THREE.MathUtils.lerp(
-      innerRadius,
-      outerRadius,
-      progress,
-    );
-    const angle = THREE.MathUtils.lerp(-0.30, 0.47, progress);
-    points.push(new THREE.Vector2(
-      radius * Math.cos(angle),
-      radius * Math.sin(angle),
-    ));
-  }
-  for (let indexPoint = 0; indexPoint < points.length - 1;
-    indexPoint += 1) {
-    const start = points[indexPoint];
-    const end = points[indexPoint + 1];
-    const delta = end.clone().sub(start);
-    const segment = new THREE.Mesh(
-      new THREE.BoxGeometry(delta.length() + 0.025, 0.065, depth),
-      material,
-    );
-    segment.position.set(
-      (start.x + end.x) / 2,
-      (start.y + end.y) / 2,
-      0,
-    );
-    segment.rotation.z = Math.atan2(delta.y, delta.x);
-    segment.userData.role =
-      `sheet-segment-${indexPoint + 1}-of-partition-${index + 1}`;
-    group.add(segment);
-  }
+  const geometry = new THREE.ExtrudeGeometry(
+    thickPolylineShape(hookedPartitionCenterline(), thickness),
+    { bevelEnabled: false, curveSegments: 1, depth, steps: 1 },
+  );
+  geometry.translate(0, 0, -depth / 2);
+  const sheet = new THREE.Mesh(geometry, material);
+  sheet.userData.role = `hooked-sheet-of-partition-${index + 1}`;
+  group.add(sheet);
   return group;
 }
 
@@ -448,11 +461,9 @@ function wetGasMeter(movement) {
   const gasPocketMaterials = [];
   for (let index = 0; index < chamberCount; index += 1) {
     const partition = curvedPartition({
-      depth: drumDepthSceneUnit * 0.88,
+      depth: 1.0,
       index,
-      innerRadius: 0.38,
       material: partitionMaterial,
-      outerRadius: 1.84,
     });
     drum.add(partition);
     partitions.push(partition);
@@ -679,7 +690,7 @@ function wetGasMeter(movement) {
     },
     geometry,
     mechanism:
-      'Stationary case A contains water above its horizontal centerline and one freely revolving drum. Four equal B compartments are separated by curved, approximately helical partitions. Fixed pipe a passes through the hollow journal and turns upward above the water into the central inlet region. As the drum turns counterclockwise, the four rear inlet slots admit gas sequentially; each chamber displaces its water, becomes water-sealed at a known volume, then exposes its front peripheral outlet and fills with water again. Four chamber volumes pass per drum revolution. Dial-work totalizes those revolutions; no belt, reciprocating linkage, or moving outer case is used.',
+      'Stationary case A contains water above its horizontal centerline and one freely revolving drum. Four equal B compartments are separated by curved, approximately helical partitions. Fixed pipe a passes through the hollow journal and turns upward above the water into the central inlet region. Each partition runs in from the shell and hooks round pipe a, so the four chamber mouths nest round the inlet. As the drum turns counterclockwise, those hooked mouths admit gas sequentially; each chamber displaces its water, becomes water-sealed at a known volume, then exposes its front peripheral outlet and fills with water again. Four chamber volumes pass per drum revolution. Dial-work totalizes those revolutions; no belt, reciprocating linkage, or moving outer case is used.',
     motion: {
       dialPointerDirection: 'clockwise through an engineered 10:1 reduction',
       drumDirectionViewedFromFront: 'counterclockwise',
@@ -747,7 +758,6 @@ function wetGasMeter(movement) {
   // above it. Water is drawn distinctly below that line; each chamber's gas
   // tint is clipped to the space above the stationary surface, so the fill
   // never reads as a vertical gas/water split while the drum turns.
-  caseWater.material.opacity = 0.30;
   const waterSurfaceClip = new THREE.Plane(new THREE.Vector3(0, 1, 0), -waterSurfaceY);
   for (const material of gasPocketMaterials) material.clippingPlanes = [waterSurfaceClip];
   root.userData.localClippingEnabled = true;
@@ -774,6 +784,21 @@ function wetGasMeter(movement) {
     head.material.color.setHex(PALETTE.paper);
     head.material.opacity = 0.04;
   }
+  // The rear drum head closes the chambers behind Brown's section: an opaque
+  // plain paper-white face (like the case head behind it), with no shadows,
+  // so the chambers read blank above the water and water-filled below it.
+  const rearDrumHead = root.userData.blocks.drumHeads?.[0];
+  if (rearDrumHead) {
+    rearDrumHead.material = matte(PALETTE.paper, { roughness: 0.95, side: THREE.DoubleSide });
+    rearDrumHead.receiveShadow = false;
+  }
+  // Brown fills case and chambers alike to just above the centre: the water
+  // reads as a clear blue body in every compartment, not a faint tint.
+  caseWater.material.opacity = 0.42;
+  // Its front face stands just behind the section plane (z = 0.48), so the
+  // cut leaves a real water face across the chambers instead of an open
+  // volume whose only visible face is hidden behind the rear drum head.
+  caseWater.geometry.scale(1, 1, 1.17 / (caseDepthSceneUnit - 0.12)).translate(0, 0, -0.115);
   // Brown's plate is a flat end section of case and drum.
   root.userData.cameraDirection.set(0.05, 0.08, 15);
   root.userData.cameraFov = 10;
@@ -784,6 +809,8 @@ function wetGasMeter(movement) {
   rearCaseHead.receiveShadow = false;
   caseWater.castShadow = false;
   drumShell.castShadow = false;
+  if (rearDrumHead) rearDrumHead.receiveShadow = false;
+  caseWater.receiveShadow = false;
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

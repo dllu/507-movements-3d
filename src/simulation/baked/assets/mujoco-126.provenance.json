@@ -1,0 +1,73 @@
+{
+  "id": 126,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-126.json.gz",
+  "bytes": 311130,
+  "assetSha256": "c72439cab5722523dd067794a8b9bca264716bf221d71994f0f8a65959dec7e2",
+  "motionSources": {
+    "src/simulation/mujoco-bell-crank/cord-path.js": "81035664772ab1a1c4520b573da89e8c1e5251c1cae832332ac97000e4d2b196",
+    "src/simulation/mujoco-bell-crank/ends.js": "7d3acd136f0716dabbb883674c678035f50c5e102a3963f5ec54952a416c7161",
+    "src/simulation/mujoco-bell-crank/finish.js": "fa3a8e766868787fdf812364bb76fe4d7dbdc427697b92331328fff58d9cd95b",
+    "src/simulation/mujoco-bell-crank/physics.js": "5056c74dd1bafe48c84c79a39d22eb447608fff67d3547428876cdbf02fd70d5",
+    "src/simulation/mujoco-bell-crank/source.js": "28e378407f8b8b91d0513920d7e220638908e98cc15ebfb74e6399b1c3390515",
+    "src/simulation/mujoco-bell-crank/visual.js": "e441e23d54f6814d290b34668042a79d190a4673d4baf5b7c13e50eb2b1f0633",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-bell-crank/geometry.js": "a686cb134e04e0ca918f993893a3fbbc13967263ca36a5f97157ac622a2325c6"
+  },
+  "physicsXmlSha256": {
+    "default": "1e6827c48e7c44ce18fc1deb6c6ccd27d106197a6a3cdf3064a52477358bdc08"
+  },
+  "fullXmlSha256": {
+    "default": "8bb25ba0b319205b387cea5239e5bfc84fca2e957a36a64e4b07573cf35e1429"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 4,
+    "maxLoopPeriods": 10,
+    "searchPeriods": 20,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-bell-crank",
+    "curves": {},
+    "derivedMeshes": [
+      "/ropeEndsBeyondCrop#0/outputLead#0"
+    ],
+    "qpos": false
+  },
+  "cycleDesign": "The input grip is drawn up and down on a sinusoidal stroke after the start-up ramp; the cord turns the pulley by friction and the bell crank pulls the loaded output cord. The frictional cords take several strokes to settle, and three strokes close within 0.25 px. Both laid-rope cords are stored as recorded centrelines and rebuilt in playback, with the output lead beyond the crop derived from the output cord end.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 12,
+        "samples": 750,
+        "dt": 0.016,
+        "startTime": 100,
+        "periods": 3,
+        "drivePeriod": 4
+      },
+      "closure": {
+        "rawSeamPixels": 0.23262631039696338,
+        "maximumCorrectionPixels": 0.23262631039696338,
+        "maximumRotationCorrection": 0.0030917188290814153,
+        "wraps": []
+      },
+      "roundTripPixels": 0.2330272356575172,
+      "seam": {
+        "seamStepPixels": 1.3943910350265252,
+        "interiorStepPixels": 1.504990588051688,
+        "seamSecondPixels": 0.4129528326888172,
+        "interiorSecondPixels": 0.8337659891457684
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 130.9856327943802
+}

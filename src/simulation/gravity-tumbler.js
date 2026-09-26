@@ -5,6 +5,8 @@ import profile from '../data/gravity-tumbler-worm-profile.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
 import { cylindricalWormGeometry, wormWheelGeometry } from './worm-gear-geometry.js';
 import { PALETTE, matte, markShadows } from './primitives.js';
+import { makeSeeThrough } from './see-through-part.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 
 export function makeGravityTumbler(options = {}) {
   const { wormProfile = profile, wormOffset = -10 / (280 / 1.375), wheelPhase = 0.10864674593664701, pinOuter = 0.55,
@@ -49,8 +51,11 @@ export function makeGravityTumbler(options = {}) {
   collar.position.z = p.collarLowZ;
   const tumbler = add('tumblerPlate', plate.geometry, PALETTE.brass, weight, 'weight');
   tumbler.position.z = p.plateLowZ;
-  // Brown dots wheel B behind E; E stays opaque and the viewer rotates to see B.
-  tumbler.material = matte(PALETTE.brass, { metalness: 0.15, roughness: 0.64 });
+  // Brown dots wheel B and the shaft's pin behind E; E is see-through
+  // (see-through-part.js) so they show as working parts.
+  makeSeeThrough(tumbler);
+  // The plain sleeve carries the shared quadrant rotation cue.
+  applyRotationIndicator(parts.weightSleeve, { axis: 'auto' });
   wormMount.rotation.z = Math.PI; wormAxis.position.y = p.wormCenterDistance; wormAxis.rotation.y = Math.PI / 2;
   worm.position.z = -p.wormOffset;
   add('wormThread', cylindricalWormGeometry({ pitchRadius: p.wormPitchRadius, module: p.module,
@@ -69,6 +74,5 @@ export function makeGravityTumbler(options = {}) {
     animationTiming: { authoredCyclePeriod: p.cycleDuration }, minimumDisplayCycleSeconds: 24,
     idealConstraints: 'Grounded shaft bearings and constant-speed motor are ideal. Gravity acts on uniform component masses. Explicit viscous bearing resistance dissipates energy. Pin catch is perfectly inelastic. Tooth count and worm proportions are regularized from the engraving.' };
   update(0); markShadows(root);
-  tumbler.castShadow = false;
   return { root, update, motion, cameraDirection: new THREE.Vector3(0, 0, 10) };
 }

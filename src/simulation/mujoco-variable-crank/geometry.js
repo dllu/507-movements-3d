@@ -3,6 +3,7 @@ import source from './source.js';
 import {plate,poly,circle,capsule,disk,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 import {cubicPolyline} from '../cubic-polyline.js';
+import {makeSeeThrough} from '../see-through-part.js';
 
 export {THREE};
 export function makeVariableCrankGeometry({segments=384,frontOpacity=1,clearance=.00025}={}) {
@@ -43,10 +44,13 @@ export function makeVariableCrankGeometry({segments=384,frontOpacity=1,clearance
   const slotProfiles=slots.map(s=>capsule(...s.ends.map(r=>[r*Math.cos(s.angle),r*Math.sin(s.angle)]),s.halfWidth,64));
   const frontProfile=clip.difference(poly(circle([0,0],diskRadius,256)),poly(circle([0,0],shaftRadius+.0015,128)),...slotProfiles);
   const front=attach('radialPlate',plate(frontProfile,.04,.20),'frame',PALETTE.muted);
-  front.material.transparent=frontOpacity<1;front.material.opacity=frontOpacity;front.material.depthWrite=frontOpacity===1;front.renderOrder=1;
+  // Brown dots the spiral groove because the slotted plate hides it: the
+  // slotted plate is see-through (see-through-part.js), so the real grooved
+  // plate and the bolt's shank show behind it as well as through the slots.
+  if(frontOpacity<1){front.material.transparent=true;front.material.opacity=frontOpacity;front.material.depthWrite=false;front.renderOrder=1;}
+  else makeSeeThrough(front);
   attach('frontHub',ring(shaftRadius+.0015,hubRadius,.20,.28,128),'frame',PALETTE.muted);
-  // Brown dashes the spiral groove only because the slotted plate hides it;
-  // the real grooved plate behind shows through the slots and from the back.
+  // The real grooved plate behind also shows from the back.
   // A stepped shank preserves the engraving's narrower rear groove. Its
   // shoulder lies entirely between the two plates; the hidden step is inferred.
   attach('boltNeck',disk(neckRadius,-.25,.02,96),'bolt',PALETTE.brass);

@@ -1,0 +1,82 @@
+{
+  "id": 117,
+  "generator": "scripts/bake-mujoco-movement.mjs",
+  "format": "mujoco-loop",
+  "version": 1,
+  "asset": "src/simulation/baked/assets/mujoco-117.json.gz",
+  "bytes": 11303,
+  "assetSha256": "49be589313e2e1b157eaa862fc675c510253023820ef900a83d4e7008052c7d8",
+  "motionSources": {
+    "src/simulation/mujoco-roller-yoke/physics.js": "dded86be74c975940ad6370a9a996868399a4a82baaf85006f2e923956d071ac",
+    "src/simulation/mujoco-roller-yoke/profile.js": "4e8a28bfe537467c6f7a7d1aab29ea53cc154ceeaffcbc8645750e51ab21abe9",
+    "src/simulation/mujoco-roller-yoke/source.js": "fd6fe4e309643fda2c893143ced1c7880787f46467e8cb2ecce44e9334649c22",
+    "src/simulation/mujoco-roller-yoke/visual.js": "b71def54b1f8857360553319a6fffc33061d2fc9f237c4ce6358c7076b7807ba",
+    "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
+  },
+  "visualSourcesAtBake": {
+    "src/simulation/mujoco-roller-yoke/geometry.js": "0a5ff6b48af6767cdf50bcb5bfcecf05401497b3567139b2fbaf6241f8035b33"
+  },
+  "physicsXmlSha256": {
+    "default": "16ed3453ed2b06c1180601cc21bb8fe95ca54d2373f947dd87dd38ae4706cf2f"
+  },
+  "fullXmlSha256": {
+    "default": "4119d41b4c51f30feb9ba065d07ec3de8bd03ea3e44ba390fb3df2cba4f3f96f"
+  },
+  "config": {
+    "sampleRate": 60,
+    "warmupPeriods": 2,
+    "maxLoopPeriods": 6,
+    "searchPeriods": 6,
+    "tolerancePixels": 0.25,
+    "velocitySamples": 2,
+    "minLoopSeconds": 0,
+    "cycle": "periodic",
+    "directory": "src/simulation/mujoco-roller-yoke"
+  },
+  "cycleDesign": "The cam turns at constant speed and drives the yoke up and down through the two free rollers; one cam turn closes the loop, with each roller carried forward by its own turn.",
+  "variants": {
+    "default": {
+      "loop": {
+        "mode": "periodic",
+        "duration": 5,
+        "samples": 400,
+        "dt": 0.0125,
+        "startTime": 60,
+        "periods": 1,
+        "drivePeriod": 5
+      },
+      "closure": {
+        "rawSeamPixels": 0.03696444905239162,
+        "maximumCorrectionPixels": 3.604450071748033e-10,
+        "maximumRotationCorrection": 2.9802322387695312e-8,
+        "wraps": [
+          {
+            "key": "blocks.input",
+            "angle": 6.283185307209851,
+            "rawAngle": 6.283185307209851
+          },
+          {
+            "key": "blocks.upper",
+            "angle": 21.01210625534293,
+            "rawAngle": 21.01210625534293
+          },
+          {
+            "key": "blocks.lower",
+            "angle": 13.14858431393489,
+            "rawAngle": 13.14858431393489
+          }
+        ]
+      },
+      "roundTripPixels": 0.004347804767834695,
+      "seam": {
+        "seamStepPixels": 1.3441905626705593,
+        "interiorStepPixels": 1.6410565328654467,
+        "seamSecondPixels": 0.03510455073254119,
+        "interiorSecondPixels": 0.11387104445941018
+      }
+    }
+  },
+  "extras": [],
+  "removed": [],
+  "bakeSeconds": 15.357261550426482
+}
