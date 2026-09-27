@@ -204,6 +204,7 @@ body[data-view="detail"] {
 .about-content { padding: 3rem 0; }
 .about-inner { max-width: 640px; }
 .about-inner p { font-size: 1.15rem; line-height: 1.65; }
+.about-seal { display: block; width: min(320px, 70%); height: auto; margin: 2.5rem auto 0; mix-blend-mode: multiply; }
 /* On a movement page the header aligns to the composition below it. */
 body[data-view="detail"] .header-inner { width: min(calc(100% - 2rem), var(--chrome-w)); height: var(--header-h); }
 
@@ -267,3 +268,4 @@ body[data-view="detail"] .header-inner { width: min(calc(100% - 2rem), var(--chr
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
 }
+.nowrap { white-space: nowrap; }

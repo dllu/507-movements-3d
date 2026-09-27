@@ -365,6 +365,8 @@ function aboutView() {
         <p>3D reconstructions of Henry T. Brown’s <cite>507 Mechanical Movements</cite>, with the original engravings and descriptions.</p>
         <p>Descriptions come from the public-domain 1908 edition. The engravings and motion references are from <a href="https://507movements.com/" target="_blank" rel="noreferrer">507movements.com</a>. Its animations are used for reference and are not included here.</p>
         <p>The models use analytical motion or MuJoCo simulation. Inferred geometry and known limitations are recorded in each model’s reconstruction notes where available.</p>
+        <p>The source is on <a href="https://github.com/dllu/507-movements-3d" target="_blank" rel="noreferrer">GitHub</a>. The code and models were written with the help of <span class="nowrap">GPT-5.6 Sol</span>, <span class="nowrap">GPT-6 Astra</span> and <span class="nowrap">Claude Opus 5.5</span>.</p>
+        <img class="about-seal" src="./vibe-coded-slop.webp" width="640" height="640" alt="An engraved seal reading “100% vibe coded slop”">
       </div>
     </section>`;
   document.title = 'About — 507 Movements in 3D';
