@@ -14,23 +14,24 @@ test('opposite-pitch halves close and keep the input on the groove centerline', 
   assert.equal(grooveDrumState(0).rodY, grooveDrumState(g.period).rodY);
 });
 
-test('finite spherical stud fits conservatively through the entire channel', () => {
-  // A sphere is inside its radius-sized cube. Bound both its axial offset
-  // and the Lipschitz variation of channel height over its angular extent;
-  // the sinusoidal groove's steepest slope is amplitude per radian.
-  const angularExtent = Math.asin(g.studRadius / g.studCenterRadius);
-  const maximumAxialExtent = g.studRadius + g.amplitude * angularExtent;
-  // The tighter spherical bound samples meridians, independent of mesh facets.
+test('finite spherical stud fits the channel walls and runs snug above the floor', () => {
+  // Every sphere point (radial u, axial v, tangential z) lies at polar angle
+  // atan2(|z|, c + u) from the stud axis; over that angle the planar groove's
+  // height changes by at most amplitude per radian. Sample the whole sphere.
+  const c = g.studCenterRadius, R = g.studRadius;
   let maximum = 0;
-  for (let i = 0; i <= 10000; i++) {
-    const z = g.studRadius * (2 * i / 10000 - 1);
-    const axial = Math.sqrt(Math.max(0, g.studRadius ** 2 - z ** 2));
-    const angle = Math.atan2(Math.abs(z), g.studCenterRadius - g.studRadius);
-    maximum = Math.max(maximum, axial + g.amplitude * angle);
+  for (let i = 0; i <= 400; i++) {
+    const theta = Math.PI * i / 400;
+    for (let j = 0; j <= 200; j++) {
+      const phi = 2 * Math.PI * j / 200;
+      const u = R * Math.cos(theta), v = R * Math.sin(theta) * Math.cos(phi), z = R * Math.sin(theta) * Math.sin(phi);
+      maximum = Math.max(maximum, Math.abs(v) + g.amplitude * Math.atan2(Math.abs(z), c + u));
+    }
   }
   assert.ok(maximum < g.slotHalfHeight - .01);
-  assert.ok(maximum <= maximumAxialExtent);
-  assert.ok(g.studCenterRadius - g.studRadius > g.floorRadius + .01);
+  // The tip clears the groove floor by a small running clearance, not a gap.
+  const floorClearance = c - R - g.floorRadius;
+  assert.ok(floorClearance > .003 && floorClearance < .01, `floor clearance ${floorClearance}`);
 });
 
 test('harmonic input and output position remain continuous across reversals', () => {

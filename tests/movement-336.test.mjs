@@ -435,11 +435,11 @@ test('movement 336 renderer binds all five pins and real 3D layers', () => {
     1.2e-15, `side-lever R anchor at ${time}`);
     vector3Near(blocks.parallelRodStartAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.beamMidPoint.x, state.beamMidPoint.y, 0.37),
+    new THREE.Vector3(state.beamMidPoint.x, state.beamMidPoint.y, 0.40),
     0, `parallel rod at M at ${time}`);
     vector3Near(blocks.parallelRodEndAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.37),
+    new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.40),
     1.3e-15, `parallel rod at Q at ${time}`);
     vector3Near(blocks.sideRodStartAnchor.getWorldPosition(
       new THREE.Vector3()),
@@ -454,11 +454,11 @@ test('movement 336 renderer binds all five pins and real 3D layers', () => {
     1.5e-15, `side rod at S at ${time}`);
     vector3Near(blocks.crossbarStartAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.68),
+    new THREE.Vector3(state.pointQ.x, state.pointQ.y, 0.585),
     0, `crossbar at Q at ${time}`);
     vector3Near(blocks.crossbarEndAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointN.x, state.pointN.y, 0.68),
+    new THREE.Vector3(state.pointN.x, state.pointN.y, 0.585),
     1.8e-15, `crossbar at N at ${time}`);
     vector3Near(blocks.radiusArmEndAnchor.getWorldPosition(
       new THREE.Vector3()),

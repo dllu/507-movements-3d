@@ -9,7 +9,7 @@
     "centerY": 0.21,
     "amplitude": 1.218,
     "studRadius": 0.065,
-    "studCenterRadius": 0.53,
+    "studCenterRadius": 0.471,
     "rodX": 1.05,
     "rodRadius": 0.112,
     "rodLength": 5.39,
@@ -18,7 +18,7 @@
   "poses": 129,
   "meshes": 8,
   "pairs": 16,
-  "queries": 10854556,
+  "queries": 11431548,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the four-second analytic cycle. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
@@ -29,7 +29,7 @@
     },
     {
       "file": "src/simulation/reversing-groove-drum.js",
-      "sha256": "e6fa63fd8dd2c0a5a7edaa3b9fa2293e9760bbc2cdc6d13ab6437e978e80724d"
+      "sha256": "65013377192161732f134addf7ba1e6016ed9b4f3edb2f21d4b07cf8b7b8df91"
     },
     {
       "file": "src/simulation/primitives.js",

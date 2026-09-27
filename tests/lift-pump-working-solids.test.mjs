@@ -8,15 +8,22 @@ for(const id of [448,449])test(`${id} finite bucket, valve, rod and fixed-wall i
   const model=createAuthoredLiftPumpMovement({id}),d=model.root.userData,b=d.blocks;
   const pairs=[[b.pistonBody,b.barrel],[b.yoke,b.barrel],[b.yoke,b.pistonValveDisk],
     [b.pistonValveDisk,b.pistonValveSeat],[b.footValveDisk,b.footValveSeat],
-    [b.footValveDisk,b.suctionPipe]];
+    [b.footValveDisk,b.suctionPipe],
+    // Both checks are hinged clack flaps with domes (pass 78 for the bucket
+    // flaps and 448's lower flap).
+    [b.footFlapLug,b.footValveSeat],[b.footFlapLug,b.barrel],[b.footValveDisk,b.barrel],[b.footFlapHinge,b.footValveSeat],
+    ...b.footFlapBearings.flatMap(o=>[[b.footFlapHinge,o],[b.footFlapLug,o],[b.footValveDisk,o]]),
+    [b.pistonFlapLug,b.pistonValveSeat],[b.pistonFlapLug,b.pistonBody],[b.pistonFlapHinge,b.pistonValveSeat],
+    ...b.pistonFlapBearings.flatMap(o=>[[b.pistonFlapHinge,o],[b.pistonFlapLug,o],[b.pistonValveDisk,o],[b.valveDomes[1],o]]),
+    [b.valveDomes[1],b.yoke],[b.valveDomes[0],b.barrel],[b.valveDomes[1],b.pistonValveSeat]];
+  assert.ok(b.footFlapBearings.length===2&&b.pistonFlapBearings.length===2);
   if(id===449)pairs.push([b.pumpRod,b.topCover],...[...b.stuffingBox.children].map(o=>[b.pumpRod,o]),
     [b.pumpRod,b.pistonValveDisk],[b.yoke,b.topCover],
     [b.deliveryFlap,b.deliveryFlapSeat],[b.deliveryFlap,b.deliveryBell],
     [b.deliveryFlap,b.deliveryPipe],[b.deliveryFlap,b.flapHinge],[b.flapLug,b.flapHinge],
     [b.flapLug,b.deliveryFlapSeat],[b.flapLug,b.deliveryBell],
     ...b.flapBearings.flatMap(o=>[[b.flapHinge,o],[b.flapLug,o],[b.deliveryFlap,o]]),
-    [b.footFlapLug,b.footValveSeat],[b.footFlapLug,b.barrel],[b.footValveDisk,b.barrel],[b.footFlapHinge,b.footValveSeat],
-    ...b.footFlapBearings.flatMap(o=>[[b.footFlapHinge,o],[b.footFlapLug,o],[b.footValveDisk,o]]));
+    [b.valveDomes[1],b.pumpRod],[b.valveDomes[2],b.deliveryBell],[b.valveDomes[2],b.deliveryPipe]);
   else pairs.push([b.connectingRod,b.barrel],[b.connectingRod,b.yoke],
     [b.lever.children[1],b.leverSupport],[b.lever.children[2],b.connectingRod],[b.jointPin,b.connectingRod]);
   const data=pairs.map(([moving,fixed])=>({moving,fixed,points:surfacePoints(moving.geometry),surface:solidSurface(fixed.geometry)}));
@@ -55,7 +62,8 @@ for(const id of [448,449])test(`${id} water passages are open through the render
     const surface=solidSurface(seat.geometry);
     const center=new THREE.Vector3(0,0,0);
     assert.equal(surface.inside(center),false,`${id} valve bore is filled`);
-    // Guard the surface-query orientation: material outside the bore is solid.
-    assert.equal(surface.inside(new THREE.Vector3(.33,0,0)),true);
+    // Guard the surface-query orientation: material outside the bore is solid
+    // (probed across the hinge axis, away from the lug recess).
+    assert.equal(surface.inside(new THREE.Vector3(0,-.01,-.33)),true);
   }
 });

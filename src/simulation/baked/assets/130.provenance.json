@@ -34,11 +34,11 @@
     10
   ],
   "source": {
-    "reportSha256": "8f9cc9807103417dd0da7d8c1f0311a746c17cb691cf41f35ec4afaed7bf8f4e",
+    "reportSha256": "4fd672cf95aa1e502f82f8ee4d17ec91465aabbb222710e960886deb41f496c9",
     "simulationSources": [
       {
         "file": "src/simulation/mujoco-plate-shears/geometry.js",
-        "sha256": "6299a66240e2aca2c9b7bab415718c6247ef3038fc2b4a400215d34ebfe50c25"
+        "sha256": "e7c1471e6c0084171ea8f2a342751e0b484270cdaacb1233a76c7d79757aa375"
       },
       {
         "file": "src/simulation/mujoco-plate-shears/physics.js",
@@ -103,6 +103,6 @@
     "maximumPenetrationPixels": 0.00021767707832909267
   },
   "samples": 10421,
-  "bytes": 264045,
-  "assetSha256": "6084d33e46ac0381e61cf51911af6754e30c798a13e4f36f5624488af23cbf84"
+  "bytes": 264258,
+  "assetSha256": "38ff1db7e776c15669d1c6b854dd3bb0eef1bbadbc9f9fc7c5fa098e9e1fe485"
 }

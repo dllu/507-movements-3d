@@ -75,7 +75,7 @@ export function makeSpringJumpCam(options = {}) {
   const extrusion = (shape, depth, segments = 192) => new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled: false, curveSegments: segments });
   Object.assign(p, { wheelTeeth: 24, wheelOuterRadius: 1.375, wormPitchRadius: 0.33,
     wormLength: 1.60, wheelDepth: 0.22, pressureAngle: Math.PI / 9,
-    shaftRadius: 0.285, sleeveBore: 0.305, sleeveRadius: 0.425,
+    shaftRadius: 0.302, sleeveBore: 0.305, sleeveRadius: 0.425,
     pinWidth: 0.115, pinInner: 0.28, pinOuter: 0.55,
     camZ: 0.47, sleeveLowZ: 0.14, sleeveHighZ: 0.77, collarLowZ: 0.77, collarHighZ: 0.94,
     pinZ: 0.855, followerZ: 0.695, followerDepth: 0.11, rollerLowZ: 0.47, rollerHighZ: 0.65,

@@ -6,7 +6,8 @@ const TAU = 2 * Math.PI;
 export const grooveDrumGeometry = Object.freeze({
   radius: .56, length: 4.76, floorRadius: .40, slotHalfHeight: .195,
   centerY: .21, amplitude: 1.218, studRadius: .065,
-  studCenterRadius: .53, rodX: 1.05, rodRadius: .112,
+  // The stud tip runs 0.006 above the groove floor: a snug running fit.
+  studCenterRadius: .471, rodX: 1.05, rodRadius: .112,
   rodLength: 5.39, period: 4,
 });
 // Brown draws the front half of the groove as a straight band of constant

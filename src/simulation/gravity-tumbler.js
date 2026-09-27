@@ -19,7 +19,7 @@ export function makeGravityTumbler(options = {}) {
     module: 2 * dimensions.pitchRadius / dimensions.teeth, wormPitchRadius: dimensions.wormPitchRadius,
     wormLength: dimensions.wormLength, wormCenterDistance: dimensions.pitchRadius + dimensions.wormPitchRadius,
     pressureAngle: dimensions.pressureAngle, wormOffset, wheelPhase, wormShaftLow, wormShaftHigh,
-    shaftRadius: 0.33, pinInner: 0.325, pinOuter, pinDepth: 0.07, pinZ: 0.855,
+    shaftRadius: 0.347, pinInner: 0.325, pinOuter, pinDepth: 0.07, pinZ: 0.855,
     sleeveLowZ: 0.14, sleeveHighZ: 0.77, collarLowZ: 0.77, collarHighZ: 0.94,
     plateLowZ: 0.47, plateHighZ: 0.69, plateBore: 0.425, plateArea: plate.area };
   const root = new THREE.Group(), input = new THREE.Group(), weight = new THREE.Group();

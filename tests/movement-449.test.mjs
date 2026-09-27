@@ -53,7 +53,8 @@ test('movement 449 has a stuffing-box rod, valved bucket, lower check, and upwar
   assert.equal(blocks.stuffingBox.parent, model.root);
   assert.equal(blocks.pumpRod.parent, model.root);
   assert.equal(blocks.piston.parent, model.root);
-  assert.equal(blocks.pistonValveDisk.parent, blocks.piston);
+  assert.equal(blocks.pistonFlapPivot.parent, blocks.piston);
+  assert.equal(blocks.pistonValveDisk.parent, blocks.pistonFlapPivot, 'bucket check is a hinged clack flap');
   assert.equal(blocks.footFlapPivot.parent, model.root);
   assert.equal(blocks.footValveDisk.parent, blocks.footFlapPivot, 'lower check is a hinged flap');
   assert.equal(blocks.deliveryPipe.parent, model.root);
@@ -288,9 +289,9 @@ test('movement 449 update maps piston, rod, checks, and upward flap exactly whil
     near(blocks.footFlapPivot.rotation.z,
       geometry.maximumFootFlapAngle * state.footValveOpen, 0,
     `lower flap transform at ${phase}`);
-    near(blocks.pistonValveDisk.position.y,
-      geometry.pistonThickness / 2 + 0.07 + state.pistonValveLift, 0,
-    `bucket check transform at ${phase}`);
+    near(blocks.pistonFlapPivot.rotation.z,
+      geometry.maximumBucketFlapAngle * state.pistonValveOpen, 0,
+    `bucket check flap at ${phase}`);
     near(blocks.deliveryFlapPivot.rotation.z,
       state.deliveryFlapAngle, 0,
     `upward flap transform at ${phase}`);

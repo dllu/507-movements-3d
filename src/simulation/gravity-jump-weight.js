@@ -14,7 +14,7 @@ export function makeGravityJumpWeight(options = {}) {
     module: 2 * dimensions.pitchRadius / dimensions.teeth, wormPitchRadius: dimensions.wormPitchRadius,
     wormLength: dimensions.wormLength, wormCenterDistance: dimensions.pitchRadius + dimensions.wormPitchRadius,
     pressureAngle: dimensions.pressureAngle, wormOffset, wheelPhase, wormShaftLow, wormShaftHigh,
-    shaftRadius: 0.25, pinInner: 0.245, pinOuter, pinDepth: 0.07, pinZ: 0.855,
+    shaftRadius: 0.267, pinInner: 0.245, pinOuter, pinDepth: 0.07, pinZ: 0.855,
     sleeveLowZ: 0.14, sleeveHighZ: 0.77, collarLowZ: 0.77, collarHighZ: 0.94,
     armLowZ: 0.625, armHighZ: 0.735, bobLowZ: 0.63, bobHighZ: 0.95 };
   const root = new THREE.Group(), input = new THREE.Group(), weight = new THREE.Group();

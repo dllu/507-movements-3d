@@ -191,3 +191,4 @@ Lane p77-dc found two classification bugs that produced false floats:
 - **Any role ending in a medium word was treated as fluid.** The suffix rule (`...-water`, `...-steam`, `...-mercury`) now excludes solids described as standing, immersed, submerged, dipping or resting in the medium, and `in-water`-style endings (e.g. `shaft-exhaust-pipe-standing-in-water`). The combined classifier is exported as `isFluidRole`.
 
 After the fixes, 473 (ropes and the tub pipe) screens clean.
+- **Instanced meshes were skipped.** Generated teeth drawn as an `InstancedMesh` (e.g. 195's face teeth) are now merged per phase into one geometry in the mesh's frame, so they join the part they belong to; they are excluded only from the open-end check. 195 now screens clean.

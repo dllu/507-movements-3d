@@ -34,6 +34,33 @@ export function portedBarrel(inner, outer, low, high, portY, portHalfHeight, sid
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
 }
 
+// Brown's clack valve: a flat plate with a raised dome, hinged at one edge.
+// `side` is +1 when the plate runs toward +x from its hinge. The pin, a bored
+// lug on the plate and two journals standing on the seat make the hinge; the
+// journals stand where the round plate has already turned away from the pin.
+function addDome(disk,radius){
+  const h=disk.geometry.parameters.height,profile=[[0,0],[0,radius]];
+  for(let i=1;i<=24;i++){const a=i/24*Math.PI/2;profile.push([radius*Math.sin(a),i===24?0:radius*Math.cos(a)]);}
+  const dome=new THREE.Mesh(horizontalTurned(profile),disk.material);
+  dome.position.y=h/2-.0005;dome.userData.role=`${disk.userData.role}-raised-dome`;disk.add(dome);return dome;
+}
+function clackHinge({pivot,frame,side,disk,seatMaterial,pinRadius,pinLength,boss,arm,journal,journalZ}){
+  const flip=side<0?Math.PI:0;
+  const pin=new THREE.Mesh(new THREE.CylinderGeometry(pinRadius,pinRadius,pinLength,32),seatMaterial);
+  pin.rotation.x=Math.PI/2;pin.userData.role=`${disk.userData.role}-hinge-pin`;pivot.add(pin);
+  const bore=pinRadius+.003;
+  const lug=new THREE.Mesh(plate(polygonClipping.difference(polygonClipping.union(poly(circle([0,0],boss,64)),
+    poly([[0,-.02],[.20,-.015],[.20,arm],[0,arm]])),poly(circle([0,0],bore,64))),-.06,.06),disk.material);
+  lug.rotation.y=flip;lug.userData.role=`bored-${disk.userData.role}-lug`;pivot.add(lug);
+  const bearings=[-1,1].map(sign=>{
+    const bearing=new THREE.Mesh(plate(polygonClipping.difference(polygonClipping.union(poly(circle([0,0],journal.radius,64)),
+      capsule([0,0],journal.foot,journal.footRadius,16)),poly(circle([0,0],bore,64))),-.025,.025),seatMaterial);
+    bearing.position.copy(pivot.position);bearing.position.z=sign*journalZ;bearing.rotation.y=flip;
+    bearing.userData.role=`fixed-${disk.userData.role}-journal`;frame.add(bearing);return bearing;
+  });
+  return {pin,lug,bearings};
+}
+
 export function correctLiftPumpParts(root, id) {
   const d=root.userData,b=d.blocks,g=d.geometry,modern=id===449;
   b.base.visible=false;
@@ -102,28 +129,6 @@ export function correctLiftPumpParts(root, id) {
       bearing.position.copy(b.deliveryFlapPivot.position);bearing.position.z=sign*.10;
       bearing.userData.role='fixed-outlet-flap-journal';root.add(bearing);return bearing;
     });
-    // Pass 70: the lower check is Brown's hinged flap. It closes flat on the
-    // seat ring (0.08 lap over the 0.32 bore) and turns on a pin carried by
-    // two journals standing on the seat, with the same bored lug as the
-    // delivery flap.
-    // The hinge sits inside the suction pipe's rim (r 0.465), so its boss
-    // stays clear of the pipe top under the seat; the journals stand at
-    // z ±0.31, where the round flap has already turned away from the pin.
-    {const pivot=b.footFlapPivot,pin=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.68,32),b.flapHinge.material);
-     pin.rotation.x=Math.PI/2;pin.userData.role='lower-flap-hinge-pin';pivot.add(pin);
-     const footLugOutline=polygonClipping.difference(polygonClipping.union(poly(circle([0,0],.042,64)),
-       poly([[0,-.02],[.20,-.015],[.20,.04],[0,.04]])),poly(circle([0,0],.028,64)));
-     const footLug=new THREE.Mesh(plate(footLugOutline,-.06,.06),b.footValveDisk.material);footLug.userData.role='bored-lower-flap-lug';pivot.add(footLug);
-     b.footFlapHinge=pin;b.footFlapLug=footLug;
-     // A shallow recess in the seat ring's top clears the lug's boss; the ring
-     // stays whole beneath it and round the bore, so nothing bypasses the flap.
-     {const top=.08-b.footValveDisk.geometry.parameters.height/2,x=pivot.position.x,ring=polygonClipping.difference(poly(circle([0,0],.70,128)),poly(circle([0,0],.32,128)));
-      replace(b.footValveSeat,mergePassageParts([horizontalPlate(ring,top-.10,top-.031),horizontalPlate(polygonClipping.difference(ring,poly([[x-.08,-.071],[x+.075,-.071],[x+.075,.071],[x-.08,.071]])),top-.030,top)]));}
-     b.footFlapBearings=[-1,1].map(sign=>{
-       const bearing=new THREE.Mesh(plate(polygonClipping.difference(polygonClipping.union(poly(circle([0,0],.05,64)),capsule([0,0],[-.12,-.02],.03,16)),poly(circle([0,0],.028,64))),-.025,.025),b.footValveSeat.material);
-       bearing.position.copy(pivot.position);bearing.position.z=sign*.31;
-       bearing.userData.role='fixed-lower-flap-journal';root.add(bearing);return bearing;
-     });}
     // Old ornamental end rims overlap the newly widened chamber.
     for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.x===1.45)o.visible=false;
   } else {
@@ -158,10 +163,31 @@ export function correctLiftPumpParts(root, id) {
     const support=new THREE.Mesh(plate(supportProfile,-.30,-.20),b.base.material);
     support.userData.role='fixed-bored-lever-bracket';root.add(support);b.leverSupport=support;
     replace(b.spout,curvedPipeWall(b.spout.geometry.parameters.path,.19,.25,72));
-    // The old decorative cross-pin intersected the translating foot disk.
-    const oldHinge=root.children.find(o=>o.geometry?.type==='CylinderGeometry'&&o.position.x===.40);
-    if(oldHinge)oldHinge.visible=false;
   }
+  // Pass 70/78: the lower check is Brown's hinged clack flap (449 hinged at
+  // its left edge, 448 at its right, where Brown draws its knuckle). It
+  // closes flat on the seat ring (0.08 lap over the 0.32 bore) and turns on a
+  // pin carried by two journals standing on the seat. The hinge sits inside
+  // the suction pipe's rim, so its boss stays clear of the pipe top.
+  {const pivot=b.footFlapPivot,side=pivot.position.x<0?1:-1;
+   const hinge=clackHinge({pivot,frame:root,side,disk:b.footValveDisk,seatMaterial:b.footValveSeat.material,
+     pinRadius:.025,pinLength:.68,boss:.042,arm:.04,journal:{radius:.05,foot:[-.12,-.02],footRadius:.03},journalZ:.31});
+   b.footFlapHinge=hinge.pin;b.footFlapLug=hinge.lug;b.footFlapBearings=hinge.bearings;
+   hinge.pin.userData.role='lower-flap-hinge-pin';hinge.lug.userData.role='bored-lower-flap-lug';
+   for(const o of hinge.bearings)o.userData.role='fixed-lower-flap-journal';
+   // A shallow recess in the seat ring's top clears the lug's boss; the ring
+   // stays whole beneath it and round the bore, so nothing bypasses the flap.
+   const top=.08-b.footValveDisk.geometry.parameters.height/2,x=pivot.position.x,ring=polygonClipping.difference(poly(circle([0,0],.70,128)),poly(circle([0,0],.32,128)));
+   const [x0,x1]=side>0?[x-.08,x+.075]:[x-.075,x+.08];
+   replace(b.footValveSeat,mergePassageParts([horizontalPlate(ring,top-.10,top-.031),horizontalPlate(polygonClipping.difference(ring,poly([[x0,-.071],[x1,-.071],[x1,.071],[x0,.071]])),top-.030,top)]));}
+  // The bucket check is the same clack flap, hinged at its left edge on
+  // journals standing on the bucket's seat ring, so it is held as it opens.
+  {const pivot=b.pistonFlapPivot;
+   const hinge=clackHinge({pivot,frame:b.piston,side:1,disk:b.pistonValveDisk,seatMaterial:b.pistonValveSeat.material,
+     pinRadius:.02,pinLength:.50,boss:.036,arm:.035,journal:{radius:.045,foot:[-.07,-.03],footRadius:.025},journalZ:.22});
+   b.pistonFlapHinge=hinge.pin;b.pistonFlapLug=hinge.lug;b.pistonFlapBearings=hinge.bearings;}
+  b.valveDomes=[addDome(b.footValveDisk,.12),addDome(b.pistonValveDisk,.10)];
+  if(b.deliveryFlap)b.valveDomes.push(addDome(b.deliveryFlap,.09));
   // Brown's section as ONE clean cutaway on the plane facing the camera:
   // opaque walls with plain cut faces. The bucket, its packing, the checks
   // and their seats lie inside the sectioned barrel, so they are cut on the
@@ -172,9 +198,11 @@ export function correctLiftPumpParts(root, id) {
   // trough from the side).
   const shells=[b.barrel,b.suctionPipe,modern?b.spout:null,b.deliveryPipe,b.deliveryBell,b.topCover,b.stuffingBox?.children[0],
     b.pistonBody,b.pistonValveSeat,b.pistonValveDisk,b.footValveSeat,b.footValveDisk,
-    b.deliveryFlapSeat,b.deliveryFlap,b.flapHinge,b.flapLug,b.footFlapHinge,b.footFlapLug].filter(Boolean);
+    b.deliveryFlapSeat,b.deliveryFlap,b.flapHinge,b.flapLug,b.footFlapHinge,b.footFlapLug,
+    b.pistonFlapHinge,b.pistonFlapLug,...b.valveDomes].filter(Boolean);
   if(b.flapBearings)b.flapBearings[1].visible=false; // its cut-away half would float in front of the section
   if(b.footFlapBearings)b.footFlapBearings[1].visible=false;
+  if(b.pistonFlapBearings)b.pistonFlapBearings[1].visible=false;
   const waters=[b.suctionWater,b.lowerChamberWater,b.upperChamberWater,b.headWater,b.spoutWater,b.deliveryWater].filter(Boolean);
   for(const mesh of shells)sectionMeshInPlace(mesh,root);
   if(!modern){b.spout.material=b.barrel.material[0];b.spout.castShadow=b.spout.receiveShadow=true;}

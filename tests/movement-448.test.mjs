@@ -52,10 +52,12 @@ test('movement 448 has a foot check, a check inside the bucket, a lever drive, s
   assert.equal(blocks.barrel.parent, model.root);
   assert.equal(blocks.suctionPipe.parent, model.root);
   assert.equal(blocks.footValveSeat.parent, model.root);
-  assert.equal(blocks.footValveDisk.parent, model.root);
+  assert.equal(blocks.footFlapPivot.parent, model.root);
+  assert.equal(blocks.footValveDisk.parent, blocks.footFlapPivot, 'lower check is a hinged clack flap');
   assert.equal(blocks.piston.parent, model.root);
   assert.equal(blocks.pistonValveSeat.parent, blocks.piston);
-  assert.equal(blocks.pistonValveDisk.parent, blocks.piston);
+  assert.equal(blocks.pistonFlapPivot.parent, blocks.piston);
+  assert.equal(blocks.pistonValveDisk.parent, blocks.pistonFlapPivot, 'bucket check is a hinged clack flap');
   assert.equal(blocks.lever.parent, model.root);
   assert.equal(blocks.connectingRod.parent, model.root);
   assert.equal(blocks.spout.parent, model.root);
@@ -287,12 +289,13 @@ test('movement 448 update maps linkage, piston, checks, and water extents exactl
       `piston transform at ${phase}`);
     near(blocks.lever.rotation.z, state.leverAngle, 0,
       `lever transform at ${phase}`);
-    near(blocks.footValveDisk.position.y,
-      geometry.footValveSeatY + 0.08 + state.footValveLift, 0,
-    `foot check lift at ${phase}`);
-    near(blocks.pistonValveDisk.position.y,
-      geometry.pistonThickness / 2 + 0.07 + state.pistonValveLift, 0,
-    `bucket check lift at ${phase}`);
+    // The lower flap is hinged at its right edge, the bucket's at its left.
+    near(blocks.footFlapPivot.rotation.z,
+      -geometry.maximumFootFlapAngle * state.footValveOpen, 0,
+    `foot check flap at ${phase}`);
+    near(blocks.pistonFlapPivot.rotation.z,
+      geometry.maximumBucketFlapAngle * state.pistonValveOpen, 0,
+    `bucket check flap at ${phase}`);
     near(blocks.connectingRod.scale.y,
       geometry.connectingRodLength, 5e-16,
     `rendered rigid-link length at ${phase}`);

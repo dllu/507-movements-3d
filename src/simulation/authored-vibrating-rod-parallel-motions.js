@@ -364,14 +364,21 @@ function midpointVibratingRodParallelMotion(movement) {
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role = 'fixed-beam-shaft-O-and-radius-pin-F';
   const beamShaftRadius = 0.62 * sourceScale;
-  const beamBoreRadius = beamShaftRadius + 0.02;
+  // Close fits: a moving eye is bored to its pin plus runningFit; a pin
+  // fixed in a member sits in a bore of pressFit. The layers are stacked
+  // with small running clearances so every joint reads as seated.
+  const runningFit = 0.004;
+  const pressFit = 0.0015;
+  const vibratingPlaneZ = 0.33;
+  const radiusPlaneZ = 0.54;
+  const beamBoreRadius = beamShaftRadius + runningFit;
   const beamShaft = cylinderAlongZ(beamShaftRadius, 0.62, darkMaterial, 40);
   beamShaft.position.set(0, 0, 0.04);
   beamShaft.userData.fixed = true;
   beamShaft.userData.role = 'fixed-shaft-through-beam-fulcrum-O';
   const radiusShaft = cylinderAlongZ(0.23 * sourceScale, 0.34,
     darkMaterial, 32);
-  radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, 0.70);
+  radiusShaft.position.set(radiusPivotF.x, radiusPivotF.y, radiusPlaneZ);
   radiusShaft.userData.fixed = true;
   radiusShaft.userData.role = 'fixed-pin-at-radius-pivot-F';
   fixedFrame.add(beamShaft, radiusShaft);
@@ -396,7 +403,8 @@ function midpointVibratingRodParallelMotion(movement) {
   beamShape.lineTo(-10.04 * sourceScale, 0.50 * sourceScale);
   beamShape.closePath();
   const beamFulcrumHole = new THREE.Path();
-  beamFulcrumHole.absarc(0, 0, beamBoreRadius, 0, FULL_TURN, true);
+  // The body's own hole, hidden inside the boss, allows for the bevel.
+  beamFulcrumHole.absarc(0, 0, beamBoreRadius + 0.012, 0, FULL_TURN, true);
   beamShape.holes.push(beamFulcrumHole);
   const beamBody = new THREE.Mesh(
     centeredExtrusion(beamShape, 0.28, 0.009),
@@ -437,13 +445,15 @@ function midpointVibratingRodParallelMotion(movement) {
     depth: 0.18,
     eyeMaterial: darkMaterial,
     length: vibratingRodLength,
-    planeZ: 0.39,
+    planeZ: vibratingPlaneZ,
     role: 'short-five-point-five-eight-two-one-nine-six-unit-vibrating-rod-B-D',
+    boreRadius: 0.22 * sourceScale + runningFit,
     width: 0.38 * sourceScale,
   });
-  vibratingParts.rod.userData.addPinEye(vibratingRodMidpointDistance, 0.22 * sourceScale + 0.006);
+  vibratingParts.rod.userData.addPinEye(vibratingRodMidpointDistance, 0.20 * sourceScale + runningFit,
+    0.22 * sourceScale + 0.041);
   const pointCAnchor = new THREE.Object3D();
-  pointCAnchor.position.set(vibratingRodMidpointDistance, 0, 0.39);
+  pointCAnchor.position.set(vibratingRodMidpointDistance, 0, vibratingPlaneZ);
   pointCAnchor.userData.role = 'analytic-vibrating-rod-midpoint-C';
   vibratingParts.rod.add(pointCAnchor);
   root.add(vibratingParts.rod);
@@ -453,8 +463,10 @@ function midpointVibratingRodParallelMotion(movement) {
     depth: 0.18,
     eyeMaterial: darkMaterial,
     length: radiusRodLength,
-    planeZ: 0.70,
+    planeZ: radiusPlaneZ,
     role: 'ten-unit-fixed-radius-rod-F-D',
+    startBoreRadius: 0.23 * sourceScale + runningFit,
+    boreRadius: 0.22 * sourceScale + pressFit,
     width: 0.34 * sourceScale,
   });
   root.add(radiusParts.rod);
@@ -464,7 +476,7 @@ function midpointVibratingRodParallelMotion(movement) {
   const output = new THREE.Group();
   output.userData.rotationDegreesOfFreedom = 0;
   output.userData.role = 'piston-rod-attached-to-vibrating-rod-midpoint-C';
-  const outputPlaneZ = 0.90;
+  const outputPlaneZ = 0.74;
   const crossheadBoss = cylinderAlongZ(0.36 * sourceScale, 0.16,
     outputMaterial, 34);
   crossheadBoss.position.z = outputPlaneZ;
@@ -488,7 +500,7 @@ function midpointVibratingRodParallelMotion(movement) {
   pistonRodBeyondCrop.userData.role = 'piston-rod-running-on-into-its-cylinder';
   pistonRodBeyondCrop.userData.beyondPlateCrop = true;
   root.add(glandCylinder({ x: -2.713, topY: cylinderTopY337, z: outputPlaneZ, length: 2.6,
-    glandRadius: 0.1, boreRadius: 0.3, outerRadius: 0.42, role: 'piston-cylinder-below-plate-crop' }));
+    glandRadius: 0.078, boreRadius: 0.3, outerRadius: 0.42, role: 'piston-cylinder-below-plate-crop' }));
   const outputAnchor = new THREE.Object3D();
   outputAnchor.position.z = outputPlaneZ;
   outputAnchor.userData.role = 'analytic-piston-point-C';
@@ -503,15 +515,16 @@ function midpointVibratingRodParallelMotion(movement) {
   // Each working pin is rigid with one member and turns in true bores of the
   // others: B in the beam, C in the crosshead and D in the radius rod.
   const jointPins = {
-    B: cylinderAlongZ(0.22 * sourceScale, 0.55, whiteMaterial, 30),
-    C: cylinderAlongZ(0.20 * sourceScale, 0.70, whiteMaterial, 30),
-    D: cylinderAlongZ(0.22 * sourceScale, 0.52, whiteMaterial, 30),
+    B: cylinderAlongZ(0.22 * sourceScale, 0.45, whiteMaterial, 30),
+    // C stands just proud of the crosshead face (never coplanar with it).
+    C: cylinderAlongZ(0.20 * sourceScale, 0.60, whiteMaterial, 30),
+    D: cylinderAlongZ(0.22 * sourceScale, 0.415, whiteMaterial, 30),
   };
-  jointPins.B.position.set(-beamPinRadius, 0, 0.26);
+  jointPins.B.position.set(-beamPinRadius, 0, 0.215);
   beam.add(jointPins.B);
-  jointPins.C.position.set(0, 0, 0.63);
+  jointPins.C.position.set(0, 0, 0.53);
   output.add(jointPins.C);
-  jointPins.D.position.set(radiusRodLength, 0, 0.545);
+  jointPins.D.position.set(radiusRodLength, 0, 0.4375);
   radiusParts.rod.add(jointPins.D);
   Object.entries(jointPins).forEach(([name, pin]) => {
     pin.userData.role = `common-working-pin-${name}`;
@@ -542,7 +555,7 @@ function midpointVibratingRodParallelMotion(movement) {
     radiusPivotF: {
       fixedMember: fixedFrame,
       movingMember: radiusParts.rod,
-      point: new THREE.Vector3(radiusPivotF.x, radiusPivotF.y, 0.70),
+      point: new THREE.Vector3(radiusPivotF.x, radiusPivotF.y, radiusPlaneZ),
       type: 'fixed-revolute-pair-F',
     },
   };
@@ -571,9 +584,9 @@ function midpointVibratingRodParallelMotion(movement) {
       state.pointCAcceleration.y,
       0,
     );
-    contacts.beamAtB.point.set(state.pointB.x, state.pointB.y, 0.30);
-    contacts.pistonAtC.point.set(state.pointC.x, state.pointC.y, 0.63);
-    contacts.radiusAtD.point.set(state.pointD.x, state.pointD.y, 0.55);
+    contacts.beamAtB.point.set(state.pointB.x, state.pointB.y, 0.23);
+    contacts.pistonAtC.point.set(state.pointC.x, state.pointC.y, 0.535);
+    contacts.radiusAtD.point.set(state.pointD.x, state.pointD.y, 0.435);
     root.userData.kinematics = state;
   };
 

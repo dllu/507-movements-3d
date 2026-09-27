@@ -40,6 +40,26 @@ export const isMediumSuffix = (role) => /(^|-)(water|steam|mercury|quicksilver|l
 export const isFluidRole = (role) => FLUID.test(role) || isMediumSuffix(role);
 // A plain copy of a geometry's shape; custom geometry classes (laid rope)
 // cannot be cloned without their constructor arguments.
+// All instances of an InstancedMesh (e.g. generated gear teeth) as one
+// geometry in the mesh's own frame, so the teeth join the part they belong to.
+function mergeInstances(mesh) {
+  const base = mesh.geometry.attributes.position, index = mesh.geometry.index;
+  const count = mesh.count, m = new THREE.Matrix4(), v = new THREE.Vector3();
+  const positions = new Float32Array(base.count * 3 * count);
+  const indices = [];
+  for (let c = 0; c < count; c += 1) {
+    mesh.getMatrixAt(c, m);
+    for (let i = 0; i < base.count; i += 1) {
+      v.fromBufferAttribute(base, i).applyMatrix4(m);
+      positions.set([v.x, v.y, v.z], (c * base.count + i) * 3);
+    }
+    if (index) for (let i = 0; i < index.count; i += 1) indices.push(index.getX(i) + c * base.count);
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  if (index) merged.setIndex(indices);
+  return merged;
+}
 function snapshotGeometry(geometry) {
   const copy = new THREE.BufferGeometry();
   copy.setAttribute('position', geometry.attributes.position.clone());
@@ -129,7 +149,8 @@ export function screenModel(model, id, options = DEFAULTS) {
   let instanced = 0;
   root.traverse((object) => {
     if (!object.isMesh || !object.geometry?.attributes.position) return;
-    if (object.isInstancedMesh || object.isSkinnedMesh) { instanced += 1; return; }
+    if (object.isSkinnedMesh) return;
+    if (object.isInstancedMesh) instanced += 1;
     let named = object;
     while (named && !(named.userData.role || named.name)) named = named.parent;
     const label = named ? String(named.userData.role || named.name) : 'root';
@@ -140,7 +161,7 @@ export function screenModel(model, id, options = DEFAULTS) {
     const invisibleMaterial = materials.every((m) => m.visible === false || (m.opacity ?? 1) < 0.05 || m.colorWrite === false);
     const fluid = isFluidRole(role) || (translucent && !seeThrough);
     const rope = object.geometry.userData?.crossSection === 'laid-rope' || CONNECTOR.test(role);
-    items.push({ mesh: object, index: items.length, role, fluid, rope, invisibleMaterial, matrices: [], visible: [], geometries: [], versions: [], snapshots: [] });
+    items.push({ mesh: object, index: items.length, role, fluid, rope, invisibleMaterial, instancedMesh: Boolean(object.isInstancedMesh), matrices: [], visible: [], geometries: [], versions: [], snapshots: [] });
   });
 
   const phases = options.phases;
@@ -153,15 +174,16 @@ export function screenModel(model, id, options = DEFAULTS) {
       item.matrices.push(item.mesh.matrixWorld.clone());
       item.visible.push(effectiveVisible(item.mesh) && !item.invisibleMaterial);
       item.geometries.push(item.mesh.geometry);
-      item.versions.push(item.mesh.geometry.attributes.position.version);
+      item.versions.push(item.instancedMesh ? `${item.mesh.geometry.attributes.position.version}:${item.mesh.instanceMatrix.version}:${item.mesh.count}` : item.mesh.geometry.attributes.position.version);
       // A deforming mesh (rope, sagging band, flexing water) is measured in
       // the shape it has at this phase, not the shape after the last update.
       const last = item.snapshots.at(-1);
       const changed = !last || item.geometries.at(-1) !== item.geometries.at(-2) || item.versions.at(-1) !== item.versions.at(-2);
-      item.snapshots.push(changed ? snapshotGeometry(item.mesh.geometry) : last);
+      item.snapshots.push(changed ? (item.instancedMesh ? mergeInstances(item.mesh) : snapshotGeometry(item.mesh.geometry)) : last);
       if (k === 0 && item.visible[0] && !item.fluid) {
-        item.mesh.geometry.computeBoundingBox();
-        box.union(tmp.copy(item.mesh.geometry.boundingBox).applyMatrix4(item.mesh.matrixWorld));
+        const g = item.snapshots[0];
+        g.computeBoundingBox();
+        box.union(tmp.copy(g.boundingBox).applyMatrix4(item.mesh.matrixWorld));
       }
     }
   }
@@ -491,7 +513,7 @@ export function screenModel(model, id, options = DEFAULTS) {
   const openEnds = [];
   const local = new THREE.Vector3();
   for (const item of live) {
-    if (item.connector || !item.visible[0]) continue;
+    if (item.connector || !item.visible[0] || item.instancedMesh) continue;
     const type = item.mesh.geometry.type;
     if (!/Tube|Cylinder|Lathe|Capsule/.test(type)) continue;
     const loops = boundaryLoops(item.mesh.geometry);

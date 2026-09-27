@@ -14752,14 +14752,17 @@ function quadratureTwinCrankShaftCoupling() {
   const rearPinCenterZ = -0.98;
   const rearPinLength = 0.68;
   const crankPinRadius = 0.105;
-  const pinBearingClearance = 0.014;
+  // The liner bore is a close running fit on the pin; the rod plate's eye
+  // carries the liner.
+  const pinBearingClearance = 0.005;
   const rodEyeInnerRadius = crankPinRadius + pinBearingClearance + 0.035;
   const rodEyeOuterRadius = 0.245;
   const connectingRodDepth = 0.19;
   const rearCrankDepth = 0.23;
   const rearCrankEyeOuterRadius = 0.255;
   const rearCrankEyeInnerRadius = shaftRadius + 0.045;
-  const rearCrankPinEyeInnerRadius = rodEyeInnerRadius;
+  // The rear pin is fixed in its crank eye (a press fit, not a bearing).
+  const rearCrankPinEyeInnerRadius = crankPinRadius;
 
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.14,
@@ -15368,7 +15371,8 @@ function dragLinkDoubleCrankMotion() {
   const shaftRadius = 0.15;
   const pivotEyeInnerRadius = shaftRadius + 0.045;
   const crankPinRadius = 0.075;
-  const pinBearingClearance = 0.014;
+  // The coupler liners are a close running fit on the pins.
+  const pinBearingClearance = 0.005;
   const movingEyeInnerRadius = crankPinRadius + pinBearingClearance + 0.034;
   // Each pin spans only its own crank and the coupler layer.
   const inputCrankPinCenterZ = -0.13;
@@ -15525,7 +15529,8 @@ function dragLinkDoubleCrankMotion() {
           crankLength,
           crankEyeOuterRadius,
           pivotEyeInnerRadius,
-          movingEyeInnerRadius,
+          // The coupler pin is fixed in its own crank eye.
+          crankPinRadius,
         ),
         crankDepth,
         0.008,

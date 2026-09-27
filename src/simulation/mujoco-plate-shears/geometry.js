@@ -16,7 +16,8 @@ export function makePlateShearsGeometry(){
  const base=shape([['moveTo',134,430],['lineTo',498,430],['lineTo',498,480],['lineTo',134,480]]);
  const baseMesh=mesh(base,-.183,.18,PALETTE.frame);baseMesh.name='base';root.add(baseMesh);
  const pin=(radius,length,x,y)=>{const g=new THREE.CylinderGeometry(radius,radius,length,48);g.rotateX(Math.PI/2);const m=new THREE.Mesh(g,matte(PALETTE.ink));m.position.set(x,y,.06);root.add(m);};
- pin(.10,.34,0,0);pin(.095,.30,-2.47,-.66);
+ // Snug running fits: jaw pivot pin in its .115 bores, cam-shaft pin in the cam's .105 bore.
+ pin(.112,.34,0,0);pin(.102,.30,-2.47,-.66);
  const contour=upper.getPoints(24),holes=upper.holes.map(h=>h.getPoints(24));
  const cells=[];
  // ShapeUtils removes closing duplicates, so use open contours consistently.

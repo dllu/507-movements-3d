@@ -14,9 +14,11 @@ export function irregularCircularProfile(radius,teeth,depth,bore){
 export function correctIrregularGearFamily(root,id,update){
  const b=root.userData.blocks,g=root.userData.geometry;
  if(id===201){
-  const body=b.eccentricGear.userData.rotor.children[0],profile=irregularCircularProfile(g.driverPitchRadius,g.driverTeeth,.34,.13),offset=g.driverEccentricOffset;
-  const outline=profile.userData.outline.map(p=>p.clone().add(offset)),shape=new THREE.Shape(outline),hole=new THREE.Path();hole.absarc(0,0,.13,0,2*Math.PI,true);shape.holes.push(hole);
+  const body=b.eccentricGear.userData.rotor.children[0],profile=irregularCircularProfile(g.driverPitchRadius,g.driverTeeth,.34,.098),offset=g.driverEccentricOffset;
+  const outline=profile.userData.outline.map(p=>p.clone().add(offset)),shape=new THREE.Shape(outline),hole=new THREE.Path();hole.absarc(0,0,.098,0,2*Math.PI,true);shape.holes.push(hole);
   const geometry=new THREE.ExtrudeGeometry(shape,{depth:.34,bevelEnabled:false,curveSegments:64}).translate(0,0,-.17);geometry.userData={...profile.userData,outline,boreCenter:[0,0]};replace(body,geometry);profile.dispose();
+  // The bore is a snug fit (0.003 clear) on the 0.095 input shaft the gear is keyed to.
+  b.eccentricGear.userData.boreRadius=.098;
   const rotor=b.pinion.userData.rotor;replace(rotor.children[0],irregularCircularProfile(g.pinionPitchRadius,g.pinionTeeth,.34,.084));
   // The original quarter-pitch convention belonged to trapezoidal teeth.
   rotor.children[0].geometry.rotateZ(-Math.PI/(2*g.pinionTeeth));

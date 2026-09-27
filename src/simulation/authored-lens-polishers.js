@@ -203,7 +203,8 @@ function eccentricLensPolisher(movement) {
   const cupOuterRadius = 1.50;
   const cupCapAngle = 0.72;
   const eccentricTilt = 0.34;
-  const renderContactGap = 0.028;
+  // The pad is seated on the glass: the gap only covers sphere faceting.
+  const renderContactGap = 0.004;
   const carrierOrbitRadius = cupOuterRadius * Math.sin(eccentricTilt);
   const ballJointHeight = cupOuterRadius * Math.cos(eccentricTilt);
   const shaftOrbitDuration = 6;

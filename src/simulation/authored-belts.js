@@ -2078,8 +2078,9 @@ function singleMovableHoist() {
     hand.position.copy(path.effortEnd);
     movablePulley.position.copy(path.movableCenter).setZ(0);
     movableHanger.position.copy(movablePulley.position);
+    // The load's eye wire rests in the bottom of the hook's bowl.
     weight.position.copy(movableHanger.position).add(movableHanger.userData.attachment)
-      .add(new THREE.Vector3(0, -0.20, 0));
+      .add(new THREE.Vector3(0, -0.22, 0));
     const fixedAngularSpeed = -Math.sign(fixedArc.sweep) * effortSpeed / fixedPitchRadius;
     const movableAngularSpeed = -loadSpeed / movablePitchRadius;
     setSpin(fixedPulley, -Math.sign(fixedArc.sweep) * effortTravel / fixedPitchRadius);
@@ -2216,7 +2217,8 @@ function blockAndTackle() {
   bottomGroup.add(bottomCase);
   const weight = makeHoistLoad({ radius: 0.26, round: true });
   bottomGroup.add(weight);
-  weight.position.copy(bottomCase.userData.attachment).add(new THREE.Vector3(0, -0.2, 0));
+  // The load's eye wire rests in the bottom of the hook's bowl.
+  weight.position.copy(bottomCase.userData.attachment).add(new THREE.Vector3(0, -0.22, 0));
 
   // All upper sheaves share one axle line and all lower ones another, so the
   // four tangent points in the XY projection are common to every pair.

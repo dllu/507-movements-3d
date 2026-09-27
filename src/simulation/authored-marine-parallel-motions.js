@@ -587,8 +587,12 @@ function sideLeverRockshaftParallelMotion(movement) {
   sideLever.userData.axis = Z_AXIS.clone();
   sideLever.userData.role =
     'ten-unit-side-lever-O-R-with-three-unit-parallel-rod-station-M';
+  // Close running fits: each moving eye is bored to its own pin plus
+  // runningFit, and a pin fixed in a member sits in a bore of pressFit.
+  const runningFit = 0.004;
+  const pressFit = 0.0015;
   const leverBores = [
-    { x: 0, y: 0, radius: 0.37 * s + pinClearance },
+    { x: 0, y: 0, radius: 0.37 * s + runningFit },
   ];
   const leverOutline = clip.difference(
     clip.union(
@@ -637,8 +641,12 @@ function sideLeverRockshaftParallelMotion(movement) {
     depth: 0.17,
     eyeMaterial: darkMaterial,
     length: parallelRodLength,
-    planeZ: 0.37,
+    // Same layer as the side rod (the two never overlap), directly under
+    // the crossbar.
+    planeZ: 0.40,
     role: 'eight-and-one-half-unit-parallel-rod-M-Q',
+    startBoreRadius: 0.22 * s + runningFit,
+    boreRadius: 0.24 * s + pressFit,
     width: 0.34 * sourceScale,
   });
   const sideRodParts = makeRigidRod({
@@ -648,6 +656,7 @@ function sideLeverRockshaftParallelMotion(movement) {
     length: sideRodLength,
     planeZ: 0.40,
     role: 'ten-unit-side-rod-R-S-through-N',
+    boreRadius: 0.24 * s + runningFit,
     width: 0.34 * sourceScale,
   });
   const sideRodIntermediateBoss = null;
@@ -658,15 +667,19 @@ function sideLeverRockshaftParallelMotion(movement) {
     0.40,
   );
   sideRodIntermediateAnchor.userData.role = 'analytic-side-rod-point-N';
-  sideRodParts.rod.userData.addPinEye(sideRodIntermediateDistance, 0.22 * sourceScale + 0.005);
+  sideRodParts.rod.userData.addPinEye(sideRodIntermediateDistance, 0.22 * sourceScale + pressFit);
   sideRodParts.rod.add(sideRodIntermediateAnchor);
   const crossbarParts = makeRigidRod({
     bodyMaterial: crossbarMaterial,
     depth: 0.17,
     eyeMaterial: darkMaterial,
     length: crossbarLength,
-    planeZ: 0.68,
+    // Stacked just in front of the side rod, with a small running
+    // clearance, so the Q-N crossbar reads as seated on its pins.
+    planeZ: 0.585,
     role: 'seven-unit-parallelogram-crossbar-Q-N',
+    startBoreRadius: 0.24 * s + runningFit,
+    boreRadius: 0.22 * s + runningFit,
     width: 0.34 * sourceScale,
   });
   const radiusArmParts = makeRigidRod({
@@ -676,7 +689,8 @@ function sideLeverRockshaftParallelMotion(movement) {
     length: radiusArmLength,
     planeZ: radiusArmPlaneZ,
     role: 'one-point-seven-five-seven-five-five-six-unit-rockshaft-arm-F-Q',
-    boreRadius: 0.24 * sourceScale + 0.005,
+    startBoreRadius: 0.19 * s + runningFit,
+    boreRadius: 0.24 * s + runningFit,
     width: 0.46 * sourceScale,
   });
   root.add(
@@ -739,11 +753,11 @@ function sideLeverRockshaftParallelMotion(movement) {
   };
   const leverBack = leverPlaneZ - leverHalfDepth - 0.02;
   const jointPins = {
-    M: pinOn(sideLever, 'M', 0.22 * s, sideLeverMidRadius, leverBack, 0.475),
+    M: pinOn(sideLever, 'M', 0.22 * s, sideLeverMidRadius, leverBack, 0.505),
     N: pinOn(sideRodParts.rod, 'N', 0.22 * s, sideRodIntermediateDistance,
-      0.295, 0.785),
+      0.295, 0.69),
     Q: pinOn(parallelRodParts.rod, 'Q', 0.24 * s, parallelRodLength,
-      radiusArmPlaneZ - 0.10, 0.785),
+      radiusArmPlaneZ - 0.10, 0.69),
     R: pinOn(sideLever, 'R', 0.24 * s, sideLeverRightRadius, leverBack, 0.505),
     S: pinOn(output, 'S', 0.24 * s, 0, crossheadHigh - 0.02, 0.505),
   };

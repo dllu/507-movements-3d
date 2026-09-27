@@ -2079,7 +2079,8 @@ function screwThrustLeverClamp() {
   workpiece.add(workpieceTopWitness);
 
   const frameModelPoints = sourceFrameOutline.map(sourcePointToModel);
-  const frameDepth = 0.42;
+  // 0.005 clear of each holder cheek, which turns on the fulcrum pin beside it.
+  const frameDepth = 0.51;
   const fixedFrame = new THREE.Mesh(
     extrudeModelOutline({
       depth: frameDepth,
@@ -2113,16 +2114,56 @@ function screwThrustLeverClamp() {
     rectangle(shankLeft - 0.006 - bench.position.x, bench.position.z - shankHalfDepth - 0.006,
       shankRight + 0.006 - bench.position.x, bench.position.z + shankHalfDepth + 0.006)),
     -(benchTopY - benchBottomY) / 2, (benchTopY - benchBottomY) / 2).rotateX(-Math.PI / 2);
+  // Recover the intended straight bearing land from its two-pixel slope
+  // in the hand engraving. Keep the source points in measurement metadata.
+  const holderModelPoints = sourceHolderOutline.map(point => sourcePointToModel(
+    point.x >= 327 && point.y >= 324 ? new THREE.Vector2(point.x, sourceHolderBearingFaceY) : point));
+  const holderLocalPoints = holderModelPoints.map((point) => point.clone().sub(
+    holderPivot,
+  ));
+  // Brown's holder outline stops at the standard's head, which is drawn in
+  // front of it; behind the head the holder is whole. Its outline runs on
+  // straight under the head (source points 307,311 to 249,305) and carries a
+  // round boss at the fulcrum, so both cheeks really turn on the pin.
+  const holderFilledLocalPoints = holderLocalPoints.filter((_, index) => index <= 15 || index >= 24);
+  const holderBossRadius = 0.28;
+  const holderCheekRegion = polygonClipping.union(
+    poly(holderFilledLocalPoints.map(point => point.toArray())),
+    poly(circle([0, 0], holderBossRadius, 128)));
   const upright = plate(polygonClipping.difference(poly(frameModelPoints.map(p => p.toArray())),
     rectangle(armLeft, armLow - 0.01, armRight + 0.01, armHigh + 0.000001),
-    poly(circle(holderPivot.toArray(), 0.19, 128))), -frameDepth / 2, frameDepth / 2);
+    poly(circle(holderPivot.toArray(), 0.1605, 128))), -frameDepth / 2, frameDepth / 2);
+  // The standard is forked round the holder: a front and a rear plate of its
+  // outline stand 0.005 outside the cheeks (so its head is in front of the
+  // holder, as drawn), and below the cheeks' swept path the fork is solid.
+  const standardRegion = polygonClipping.intersection(poly(frameModelPoints.map(p => p.toArray())),
+    rectangle(frameModelPoints.reduce((m, p) => Math.min(m, p.x), Infinity) - 1, benchTopY - 1, armLeft, 5));
+  const forkInner = holderCheekCenterZ + holderPlateDepth / 2 + 0.005;
+  const forkOuter = forkInner + 0.085;
+  const sweptCheeks = polygonClipping.union(...[-0.07, -0.04, -0.02, 0, 0.02].flatMap(angle => (
+    [[0, 0], [0.03, 0], [-0.03, 0], [0, 0.03], [0, -0.03], [0.021, -0.021], [-0.021, -0.021]].map(([dx, dy]) => (
+      holderCheekRegion.map(polygon => polygon.map(ring => ring.map(point => {
+        const [x, y] = [point[0] * Math.cos(angle) - point[1] * Math.sin(angle),
+          point[0] * Math.sin(angle) + point[1] * Math.cos(angle)];
+        return [holderPivot.x + x + dx, holderPivot.y + y + dy];
+      }))))))));
+  const forkHole = poly(circle(holderPivot.toArray(), 0.1605, 128));
+  const forkParts = [];
+  for (const side of [-1, 1]) {
+    const [plateLow, plateHigh] = side > 0 ? [forkInner, forkOuter] : [-forkOuter, -forkInner];
+    const [fillLow, fillHigh] = side > 0 ? [frameDepth / 2, forkInner] : [-forkInner, -frameDepth / 2];
+    forkParts.push(plate(polygonClipping.difference(standardRegion, forkHole), plateLow, plateHigh));
+    forkParts.push(plate(polygonClipping.difference(standardRegion, sweptCheeks), fillLow, fillHigh));
+  }
   const lowerArm = plate(polygonClipping.difference(rectangle(armLeft, -0.38, armRight, 0.38),
     poly(circle([screwAxisX, 0], threadCrestRadius + 0.004, 128))), armLow, armHigh)
     .rotateX(-Math.PI / 2);
   // Both generators are non-indexed; omit UVs to merge consistent attributes.
   upright.deleteAttribute('uv'); lowerArm.deleteAttribute('uv'); shank.deleteAttribute('uv');
-  fixedFrame.geometry.dispose(); fixedFrame.geometry = mergeGeometries([upright, lowerArm, shank]);
+  for (const part of forkParts) part.deleteAttribute('uv');
+  fixedFrame.geometry.dispose(); fixedFrame.geometry = mergeGeometries([upright, ...forkParts, lowerArm, shank]);
   upright.dispose(); lowerArm.dispose(); shank.dispose();
+  for (const part of forkParts) part.dispose();
   fixedFrame.userData.fixed = true;
   fixedFrame.userData.role =
     'fixed-central-fulcrum-standard-and-lower-threaded-arm';
@@ -2132,24 +2173,13 @@ function screwThrustLeverClamp() {
   holder.userData.axis = Z_AXIS.clone();
   holder.userData.role =
     'one-rigid-two-cheek-holder-lever-on-fixed-fulcrum';
-  // Recover the intended straight bearing land from its two-pixel slope
-  // in the hand engraving. Keep the source points in measurement metadata.
-  const holderModelPoints = sourceHolderOutline.map(point => sourcePointToModel(
-    point.x >= 327 && point.y >= 324 ? new THREE.Vector2(point.x, sourceHolderBearingFaceY) : point));
-  const holderLocalPoints = holderModelPoints.map((point) => point.clone().sub(
-    holderPivot,
-  ));
   const holderCheeks = [-1, 1].map((sideSign) => {
+    // Snug fits: the fixed fulcrum pin (r 0.16) turns in the cheeks and the
+    // shoe pin (r 0.125) is held in them.
     const cheek = new THREE.Mesh(
-      extrudeModelOutline({
-        bevel: 0,
-        depth: holderPlateDepth,
-        holes: [
-          { center: new THREE.Vector2(0, 0), radius: 0.18 },
-          { center: shoePinLocal, radius: 0.145 },
-        ],
-        modelPoints: holderLocalPoints,
-      }),
+      plate(polygonClipping.difference(holderCheekRegion,
+        poly(circle([0, 0], 0.163, 96)),
+        poly(circle(shoePinLocal.toArray(), 0.1265, 96))), -holderPlateDepth / 2, holderPlateDepth / 2),
       holderMaterial,
     );
     cheek.position.z = sideSign * holderCheekCenterZ;
@@ -2182,13 +2212,13 @@ function screwThrustLeverClamp() {
     (sourceShoePin.y - point.y) * sourceScale,
   ));
   // The shoe sits between the holder cheeks (inner faces at z = 0.26) with
-  // clear of them; no bevel, so the sole seats flush.
-  const shoeDepth = 0.40;
+  // a 0.01 running clearance each side; no bevel, so the sole seats flush.
+  const shoeDepth = 0.50;
   const shoePlate = new THREE.Mesh(
     extrudeModelOutline({
       bevel: 0,
       depth: shoeDepth,
-      holes: [{ center: new THREE.Vector2(0, 0), radius: 0.14 }],
+      holes: [{ center: new THREE.Vector2(0, 0), radius: 0.128 }],
       modelPoints: shoeLocalPoints,
     }),
     shoeMaterial,
@@ -2206,15 +2236,17 @@ function screwThrustLeverClamp() {
   shoeContactIndex.userData.role = 'white-index-on-pressure-shoe-sole';
   shoe.add(shoePlate, shoeContactIndex);
 
-  const fulcrumPin = cylinderAlongZ(0.16, 1.02, darkMaterial, 40);
-  fulcrumPin.position.set(holderPivot.x, holderPivot.y, 0);
+  // The pin runs from the rear fork plate's back face into the front head.
+  const fulcrumPin = cylinderAlongZ(0.16, 2 * forkOuter + 0.05, darkMaterial, 40);
+  fulcrumPin.position.set(holderPivot.x, holderPivot.y, 0.025);
   fulcrumPin.userData.fixed = true;
   fulcrumPin.userData.role = 'fixed-fulcrum-pin-through-frame-and-holder-cheeks';
   const fulcrumHead = cylinderAlongZ(0.25, 0.11, darkMaterial, 42);
   fulcrumHead.position.set(
     holderPivot.x,
     holderPivot.y,
-    holderCheekCenterZ + holderPlateDepth / 2 + 0.105,
+    // Seated on the front fork plate.
+    forkOuter + 0.055,
   );
   fulcrumHead.userData.fixed = true;
   fulcrumHead.userData.role = 'front-head-on-fixed-holder-fulcrum-pin';

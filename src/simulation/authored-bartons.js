@@ -143,7 +143,8 @@ function spanishBarton(nominalAdvantage) {
     }
     load.position.y = path.loadY;
     carrier.position.y = path.carrierY;
-    weight.position.copy(load.position).add(load.userData.lowerAttachment).add(new THREE.Vector3(0, -0.20, 0));
+    // The load's eye wire rests in the bottom of the hook's bowl.
+    weight.position.copy(load.position).add(load.userData.lowerAttachment).add(new THREE.Vector3(0, -0.22, 0));
     primary.userData.setCurve(path.primary);
     secondary.userData.setCurve(path.secondary);
     const haulPerLoad = effortDerivative.dot(effortDirection);

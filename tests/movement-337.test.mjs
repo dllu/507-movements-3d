@@ -381,31 +381,31 @@ test('movement 337 renderer binds B, midpoint C, D, and both fixed pivots', () =
     8e-16, `beam pin B at ${time}`);
     vector3Near(blocks.vibratingRodStartAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointB.x, state.pointB.y, 0.39),
+    new THREE.Vector3(state.pointB.x, state.pointB.y, 0.33),
     0, `short rod at B at ${time}`);
     vector3Near(blocks.vibratingRodMidpointAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointC.x, state.pointC.y, 0.39),
+    new THREE.Vector3(state.pointC.x, state.pointC.y, 0.33),
     1.3e-15, `short rod midpoint C at ${time}`);
     vector3Near(blocks.vibratingRodEndAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointD.x, state.pointD.y, 0.39),
+    new THREE.Vector3(state.pointD.x, state.pointD.y, 0.33),
     2e-15, `short rod at D at ${time}`);
     vector3Near(blocks.radiusRodEndAnchor.getWorldPosition(
       new THREE.Vector3()),
-    new THREE.Vector3(state.pointD.x, state.pointD.y, 0.70),
+    new THREE.Vector3(state.pointD.x, state.pointD.y, 0.54),
     3e-15, `radius rod at D at ${time}`);
     vector3Near(blocks.outputAnchor.getWorldPosition(new THREE.Vector3()),
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.90),
+      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.74),
     0, `piston point C at ${time}`);
     vector3Near(contacts.beamAtB.point,
-      new THREE.Vector3(state.pointB.x, state.pointB.y, 0.30), 0,
+      new THREE.Vector3(state.pointB.x, state.pointB.y, 0.23), 0,
     `live B contact at ${time}`);
     vector3Near(contacts.pistonAtC.point,
-      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.63), 0,
+      new THREE.Vector3(state.pointC.x, state.pointC.y, 0.535), 0,
     `live C contact at ${time}`);
     vector3Near(contacts.radiusAtD.point,
-      new THREE.Vector3(state.pointD.x, state.pointD.y, 0.55), 0,
+      new THREE.Vector3(state.pointD.x, state.pointD.y, 0.435), 0,
     `live D contact at ${time}`);
     assert.ok(blocks.fixedFrame.matrixWorld.equals(fixedFrameMatrix));
   }

@@ -755,6 +755,11 @@ function reciprocatingWellLift(movement) {
   }), 'single-start-spiral-alternately-meshing-one-worm-wheel-at-a-time');
   worm.position.set(0, -carrierCenterDistance, 0);
   wormCarrier.add(worm);
+  // The thread is formed on its core: the core reaches the thread's root
+  // (pitch radius less the thread radius), so the spiral is not a loose wire.
+  {const core=worm.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');
+   const coreRadius=wormPitchRadius-0.045+0.004;
+   core.geometry.dispose();core.geometry=new THREE.CylinderGeometry(coreRadius,coreRadius,wormLength,40);}
 
   const makeWheelAssembly = (side, color) => {
     const center = gearCenters[side];
@@ -778,7 +783,10 @@ function reciprocatingWellLift(movement) {
           [pinOuterRadius, pinHalfWidth], [0.30, pinHalfWidth]]
           .map(([x, y]) => [x * c - y * s, x * s + y * c]));
       })), poly(circle([0, 0], 0.105, 64)));
-    const star = addRole(new THREE.Mesh(plate(starOutline, -0.10, 0.10),
+    // The star is a thin plate (0.10 deep): deeper square pins reach round
+    // the helix off the mesh plane and cut into the thread. At this depth the
+    // engaged pins run 0 to 0.006 off the thread flank, with no overlap.
+    const star = addRole(new THREE.Mesh(plate(starOutline, -0.05, 0.05),
       matte(color, { metalness: 0.12 })), `${side}-pinned-star-worm-wheel`);
     gearRotor.add(star);
     gear.position.copy(center);
