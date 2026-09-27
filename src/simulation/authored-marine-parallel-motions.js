@@ -538,26 +538,57 @@ function sideLeverRockshaftParallelMotion(movement) {
 
   const standardLow = -0.62;
   const standardHigh = -0.30;
-  const rockshaftStandard = fixedPart(new THREE.Mesh(plate(poly([
-    [4.34, 10.7], [5.88, 10.7], [5.88, 7.3], [6.25, 6.4], [7.0, 5.6],
-    [5.2, 5.0], [4.9, 6.2], [4.34, 7.35],
-  ].map(([x, y]) => [x * s, y * s])), standardLow, standardHigh),
-  frameMaterial), 'fixed-standard-on-cylinder-carrying-rockshaft-F');
-  // Brown breaks this member off at the upper left. It is whole: it runs on
-  // beyond the plate to a flange bolted to the engine framing there.
+  // Brown breaks the diagonal member off at the upper left. It is whole: it
+  // runs on beyond the plate to a flange bolted to the engine framing there.
   const diagonalDrawnStart = new THREE.Vector2(-1.6, 11.2);
   const diagonalEnd = new THREE.Vector2(6.9, 6.2);
   const diagonalOutward = diagonalDrawnStart.clone().sub(diagonalEnd).normalize();
   const diagonalStart = diagonalDrawnStart.clone().addScaledVector(diagonalOutward, 7);
   const diagonalNormal = diagonalEnd.clone().sub(diagonalStart).normalize()
     .rotateAround(new THREE.Vector2(), Math.PI / 2).multiplyScalar(0.40);
-  const diagonalFrame = fixedPart(new THREE.Mesh(plate(poly([
-    diagonalStart.clone().add(diagonalNormal),
-    diagonalEnd.clone().add(diagonalNormal),
-    diagonalEnd.clone().sub(diagonalNormal),
-    diagonalStart.clone().sub(diagonalNormal),
-  ].map((point) => [point.x * s, point.y * s])), standardLow, standardHigh),
-  frameMaterial), 'fixed-diagonal-engine-frame-member');
+  // Standard F and the diagonal member are one casting, drawn without a
+  // dividing line: a single outline extruded once. The standard's foot
+  // stands on the casing step (y 5.0) up to the top flange's end (x 6.6),
+  // and the diagonal's toe runs down onto the top flange (y 5.6).
+  const diagonalUpper = diagonalStart.clone().add(diagonalNormal);
+  const diagonalLower = diagonalStart.clone().sub(diagonalNormal);
+  const diagonalSlope = (diagonalEnd.y - diagonalStart.y)
+    / (diagonalEnd.x - diagonalStart.x);
+  const upperAt = (x) => new THREE.Vector2(x,
+    diagonalUpper.y + (x - diagonalUpper.x) * diagonalSlope);
+  const lowerAt = (x) => new THREE.Vector2(x,
+    diagonalLower.y + (x - diagonalLower.x) * diagonalSlope);
+  const standardLeft = 4.34;
+  const standardRight = 5.88;
+  const toeStart = upperAt(7.0);
+  // Seated 0.015 source unit into the casing and flange it stands on, so
+  // no face of the frame lies on theirs.
+  const seat = 0.015;
+  const toeEnd = new THREE.Vector2(7.55, 5.6 - seat);
+  const flareEnd = lowerAt(4.40);
+  const frameOutline = [
+    diagonalUpper,
+    upperAt(standardLeft),
+    new THREE.Vector2(standardLeft, 10.7),
+    new THREE.Vector2(standardRight, 10.7),
+    upperAt(standardRight),
+    toeStart,
+    ...new THREE.QuadraticBezierCurve(toeStart,
+      new THREE.Vector2(7.55, toeStart.y + (7.55 - toeStart.x) * diagonalSlope),
+      toeEnd).getPoints(24).slice(1),
+    new THREE.Vector2(6.6 + seat, 5.6 - seat),
+    new THREE.Vector2(6.6 + seat, 5.0 - seat),
+    new THREE.Vector2(5.2, 5.0 - seat),
+    ...new THREE.QuadraticBezierCurve(new THREE.Vector2(5.2, 5.0 - seat),
+      new THREE.Vector2(4.52, 5.75), flareEnd).getPoints(24).slice(1),
+    diagonalLower,
+  ];
+  const standardAndDiagonal = fixedPart(new THREE.Mesh(plate(poly(
+    frameOutline.map((point) => [point.x * s, point.y * s]),
+  ), standardLow, standardHigh), frameMaterial),
+  'fixed-one-piece-standard-F-and-diagonal-frame-member');
+  const rockshaftStandard = standardAndDiagonal;
+  const diagonalFrame = standardAndDiagonal;
   const diagonalFlange = fixedPart(new THREE.Mesh(plate(poly([
     diagonalStart.clone().addScaledVector(diagonalNormal, 3),
     diagonalStart.clone().addScaledVector(diagonalNormal, -3),
@@ -565,8 +596,8 @@ function sideLeverRockshaftParallelMotion(movement) {
     diagonalStart.clone().addScaledVector(diagonalNormal, 3).addScaledVector(diagonalOutward, 0.6),
   ].map((point) => [point.x * s, point.y * s])), standardLow - 0.12, standardHigh + 0.12),
   frameMaterial), 'fixed-flange-of-diagonal-frame-member-beyond-plate');
-  const rockshaftSupports = [rockshaftStandard, diagonalFrame];
-  const rockshaftBearings = [rockshaftStandard];
+  const rockshaftSupports = [standardAndDiagonal];
+  const rockshaftBearings = [standardAndDiagonal];
 
   const beamShaftLow = leverPlaneZ - leverHalfDepth - 0.14;
   const beamShaftHigh = leverPlaneZ + leverHalfDepth + 0.02;
@@ -574,7 +605,8 @@ function sideLeverRockshaftParallelMotion(movement) {
     beamShaftHigh - beamShaftLow, darkMaterial, 34),
   'fixed-sectioned-side-lever-shaft-O');
   beamShaft.position.z = (beamShaftLow + beamShaftHigh) / 2;
-  const rockshaftLow = standardLow;
+  // The fixed shaft ends 0.01 inside the standard, not flush with its back.
+  const rockshaftLow = standardLow + 0.01;
   const rockshaftHigh = radiusArmPlaneZ + 0.095;
   const rockshaft = fixedPart(cylinderAlongZ(0.19 * s,
     rockshaftHigh - rockshaftLow, darkMaterial, 34),

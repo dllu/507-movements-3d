@@ -13,7 +13,13 @@
 //               joint axis (a bore with clearance) or not (a link stopping
 //               short of its pin);
 //   openEnds  - tube / cylinder / lathe meshes whose open boundary loops are
-//               not capped by another mesh (rod or leg ends left hollow).
+//               not capped by another mesh (rod or leg ends left hollow);
+//   slivers   - joints that touch or overlap, but by a patch that is tiny
+//               against the parts' sections, where that joint is the only
+//               structural connection (see sliverScreen; --sliver=0 skips,
+//               --sliver-all=1 also lists the unflagged attachments);
+//   lips      - rod or arm ends that overhang the boss they run into by a
+//               small step (see lipScreen).
 // Ropes, cords, belts, chains, springs and other deforming meshes, plus fluid
 // volumes, act as connectors: they join the graph but are never flagged.
 // Thresholds are fractions of the model's bounding diagonal. This is triage
@@ -42,7 +48,7 @@ export const isFluidRole = (role) => FLUID.test(role) || isMediumSuffix(role);
 // cannot be cloned without their constructor arguments.
 // All instances of an InstancedMesh (e.g. generated gear teeth) as one
 // geometry in the mesh's own frame, so the teeth join the part they belong to.
-function mergeInstances(mesh) {
+export function mergeInstances(mesh) {
   const base = mesh.geometry.attributes.position, index = mesh.geometry.index;
   const count = mesh.count, m = new THREE.Matrix4(), v = new THREE.Vector3();
   const positions = new Float32Array(base.count * 3 * count);
@@ -60,7 +66,7 @@ function mergeInstances(mesh) {
   if (index) merged.setIndex(indices);
   return merged;
 }
-function snapshotGeometry(geometry) {
+export function snapshotGeometry(geometry) {
   const copy = new THREE.BufferGeometry();
   copy.setAttribute('position', geometry.attributes.position.clone());
   if (geometry.index) copy.setIndex(geometry.index.clone());
@@ -70,7 +76,7 @@ export const CONNECTOR = /rope|cord|belt|chain|string|thong|cable|wire|band(?!-?
 export const PINLIKE = /pin|pivot|stud|axle|shaft|arbor|bolt|rivet|journal|trunnion|gudgeon|fulcrum|eye|boss|collar|hub|bearing|knuckle|joint|wrist|shackle|crank-?pin|hinge/i;
 export const DEFAULTS = { touch: 0.0015, connect: 0.012, figure: 0.04, phases: 6, spacing: 1 / 350, maxPoints: 5000 };
 
-function expandIds(text) {
+export function expandIds(text) {
   return text.split(',').flatMap((part) => {
     const [a, b] = part.split('-').map(Number);
     return b ? Array.from({ length: b - a + 1 }, (_, i) => a + i) : [a];
@@ -121,6 +127,12 @@ export function angularCoverage(points, origin, axis, axial, band, THREE) {
 // source presentation applied), not the synchronous registry fallback, which
 // differs for the MuJoCo and baked movements. Baked data is fetched from disk.
 async function worker(id, options) {
+  return screenModel(await loadProductionModel(id), id, options);
+}
+
+// Loads movement `id` as the browser does (model-loader.js), serving the
+// baked data files from disk. Shared with screen-coincident-faces.mjs.
+export async function loadProductionModel(id) {
   const root = fileURLToPath(new URL('..', import.meta.url));
   const realFetch = globalThis.fetch;
   globalThis.fetch = async (url, init) => {
@@ -131,7 +143,7 @@ async function worker(id, options) {
   };
   const { loadMovementModel } = await import('../src/simulation/model-loader.js');
   const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url))).movements;
-  return screenModel(await loadMovementModel(catalog[id - 1]), id, options);
+  return loadMovementModel(catalog[id - 1]);
 }
 
 // Screens any model exposing { root, update(time, delta) }.
@@ -541,19 +553,559 @@ export function screenModel(model, id, options = DEFAULTS) {
       nearest: Number.isFinite(worst) ? round(worst) : null, at: at ? at.toArray().map(round) : null });
   }
 
+  const { slivers, lips, structuralJoints, attachmentsMeasured, attachmentsExcluded } = options.sliver === false
+    ? { slivers: [], lips: [], structuralJoints: 0, attachmentsMeasured: 0, attachmentsExcluded: 0 }
+    : sliverScreen({ live, gaps, phases, times, period, touch, diagonal, spacing, options, relation, prepare, worldBox, scaleOf, round });
+
   return {
     id, period, phases, diagonal: round(diagonal), touch: round(touch), connect: round(connect),
     meshes: live.length, connectors: live.filter((item) => item.connector).length, instanced,
     detached: [...detached.values()].map(({ raw, ...rest }) => rest).sort((x, y) => y.gap - x.gap),
     nearMiss: nearMiss.slice(0, 60), nearMissTotal: nearMiss.length,
     openEnds,
+    structuralJoints, attachmentsMeasured, attachmentsExcluded, slivers, lips,
   };
+}
+
+// Ranges of a point cloud along its principal axes, largest first, with the
+// axes (Jacobi eigen-decomposition of the covariance).
+export function principalExtents(points) {
+  if (!points.length) return { extents: [0, 0, 0], axes: [], center: null };
+  const c = [0, 0, 0];
+  for (const p of points) { c[0] += p.x; c[1] += p.y; c[2] += p.z; }
+  c.forEach((_, i) => { c[i] /= points.length; });
+  const a = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  for (const p of points) {
+    const d = [p.x - c[0], p.y - c[1], p.z - c[2]];
+    for (let i = 0; i < 3; i += 1) for (let j = 0; j < 3; j += 1) a[i][j] += d[i] * d[j];
+  }
+  const v = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  for (let sweep = 0; sweep < 30; sweep += 1) {
+    let off = 0;
+    for (let p = 0; p < 3; p += 1) for (let q = p + 1; q < 3; q += 1) off += a[p][q] ** 2;
+    if (off < 1e-24) break;
+    for (let p = 0; p < 3; p += 1) for (let q = p + 1; q < 3; q += 1) {
+      if (Math.abs(a[p][q]) < 1e-30) continue;
+      const theta = (a[q][q] - a[p][p]) / (2 * a[p][q]);
+      const t = Math.sign(theta || 1) / (Math.abs(theta) + Math.sqrt(theta * theta + 1));
+      const cs = 1 / Math.sqrt(t * t + 1), sn = t * cs;
+      for (let k = 0; k < 3; k += 1) {
+        const akp = a[k][p], akq = a[k][q];
+        a[k][p] = cs * akp - sn * akq; a[k][q] = sn * akp + cs * akq;
+      }
+      for (let k = 0; k < 3; k += 1) {
+        const apk = a[p][k], aqk = a[q][k];
+        a[p][k] = cs * apk - sn * aqk; a[q][k] = sn * apk + cs * aqk;
+      }
+      for (let k = 0; k < 3; k += 1) {
+        const vkp = v[k][p], vkq = v[k][q];
+        v[k][p] = cs * vkp - sn * vkq; v[k][q] = sn * vkp + cs * vkq;
+      }
+    }
+  }
+  const axes = [0, 1, 2].map((i) => new THREE.Vector3(v[0][i], v[1][i], v[2][i]).normalize());
+  const rows = axes.map((axis) => {
+    let lo = Infinity, hi = -Infinity;
+    for (const p of points) {
+      const s = (p.x - c[0]) * axis.x + (p.y - c[1]) * axis.y + (p.z - c[2]) * axis.z;
+      if (s < lo) lo = s; if (s > hi) hi = s;
+    }
+    return [hi - lo, axis];
+  }).sort((x, y) => y[0] - x[0]);
+  return { extents: rows.map((r) => r[0]), axes: rows.map((r) => r[1]), center: new THREE.Vector3(...c) };
+}
+
+// A patch that rings an axis (a bore on a shaft, an eye on a pin, a hub on
+// an arbor): the fraction of 12 angular bins, about the best principal axis,
+// holding points of a hollow band (inner radius over 0.35 of the outer).
+export function ringCoverage(all, principal = principalExtents(all)) {
+  if (all.length < 12) return 0;
+  const points = all.length > 6000 ? Array.from({ length: 6000 }, (_, i) => all[Math.floor(i * all.length / 6000)]) : all;
+  let best = 0;
+  for (const axis of principal.axes) {
+    const e1 = new THREE.Vector3(1, 0, 0);
+    if (Math.abs(axis.dot(e1)) > 0.8) e1.set(0, 1, 0);
+    e1.sub(axis.clone().multiplyScalar(axis.dot(e1))).normalize();
+    const e2 = axis.clone().cross(e1), d = new THREE.Vector3();
+    const rows = points.map((p) => { d.copy(p).sub(principal.center); const x = d.dot(e1), y = d.dot(e2); return [Math.hypot(x, y), Math.atan2(y, x)]; });
+    const rmax = rows.reduce((m, r) => Math.max(m, r[0]), 0);
+    if (!(rmax > 0)) continue;
+    // Hollow: nearly no points near the axis.
+    const innerShare = rows.filter((r) => r[0] < 0.35 * rmax).length / rows.length;
+    if (innerShare > 0.02) continue;
+    const bins = new Set(rows.map(([, a]) => Math.floor(((a + Math.PI) / (2 * Math.PI)) * 12) % 12));
+    best = Math.max(best, bins.size / 12);
+  }
+  return best;
+}
+
+export const SLIVER_DEFAULTS = { sliverNeck: 0.35, sliverArea: 0.25, sliverCap: 0.5, sliverWide: 0.1, sliverEmbed: 0.5, sliverTol: 0.0003, lipStep: 0.3, lipMin: 0.0015 };
+// Sheets and scenery that rest on or wrap a part rather than being joined to
+// it; and, for joints that are not rigid, roles naming a designed bearing or
+// working contact (a pintle seated in a cup, a pad against a lever).
+export const SLIVER_SHEET = /cloth|warp|fabric|paper|leather|canvas/i;
+export const SLIVER_SCENERY = /(^|-)(river|stream|sea|ground|earth|terrain|soil|pavement|road)(-|$)/i;
+export const SLIVER_WORKING = /contact|touching|resting|seated|against|pintle|pivot-point|knife-edge/i;
+
+// Sliver joints: parts that touch or overlap, but only by a sliver.
+// A structural joint is a pair of solid meshes that touch (gap <= --touch)
+// in every sampled phase and either move rigidly together, turn about a
+// hinge whose axis passes through their contact (a pin in an eye, not a
+// pawl tip on a fixed ratchet), or keep the same contact spot in both
+// bodies' frames (a ball joint). Working contacts (pawls on teeth, sliders
+// in guides, gear teeth, cams, intermittent drives) fail those tests and are
+// not joints. In the graph of structural joints plus rope/belt/spring links,
+// each attachment that is the ONLY structural connection between two sides
+// (a bridge, or one mesh held by two or three touching neighbours, like a
+// crank arm standing on a shaft and its hub) is measured at fine sampling:
+//   neck   - principal extents of the contact patch (the surface of either
+//            mesh within the pair gap + --sliver-tol x diagonal of, or
+//            inside, the other; the smaller of the two sides' patches);
+//   section- each member's local cross-section at the joint (principal
+//            extents of its surface within ~1.5 of its thickness);
+//   depth  - the deepest sample of either mesh inside the other.
+// Attachments whose patch rings an axis (a hub on a shaft, an eye on a pin)
+// or whose depth reaches --sliver-embed of the thinner section (a pin set
+// into a hole) are solid. Otherwise the attachment is a sliver when
+//   narrow-neck: neck width < --sliver-neck x the thinner member's width,
+//   small-patch: neck area < --sliver-area x its section area, or
+//   cap:         neck area < --sliver-cap x the thinner section AND
+//                < --sliver-wide x the wider member's section (a ball or a
+//                block hung from a stem end by a small cap of its surface).
+// Fluids never join; ropes, belts and springs join the graph but their
+// attachments are not measured; sheets and scenery (SLIVER_SHEET,
+// SLIVER_SCENERY) are skipped, as are non-rigid joints whose roles name a
+// designed bearing or working contact (SLIVER_WORKING).
+function sliverScreen(ctx) {
+  const { live, gaps, phases, times, period, touch, diagonal, spacing, options, relation, prepare, worldBox, scaleOf, round } = ctx;
+  const o = { ...SLIVER_DEFAULTS, ...options };
+  const n = live.length;
+  const keyOf = (i, j) => (i < j ? `${i}:${j}` : `${j}:${i}`);
+  const worldPts = (item, k) => prepare(item, k).points.map((p) => p.clone().applyMatrix4(item.matrices[k]));
+  const extentCache = new Map();
+  const globalExtents = (item, k) => {
+    const key = `${item.index}:${(item.snapshots[k] ?? item.mesh.geometry).uuid}`;
+    if (!extentCache.has(key)) extentCache.set(key, principalExtents(worldPts(item, k)).extents);
+    return extentCache.get(key);
+  };
+  const inv = (m) => new THREE.Matrix4().copy(m).invert();
+  // Coarse patch (cached samples) of a against b and b against a.
+  const coarsePatch = (a, b, k, tol) => {
+    const out = [];
+    for (const [x, y] of [[a, b], [b, a]]) {
+      const ty = prepare(y, k), toY = inv(y.matrices[k]).multiply(x.matrices[k]), sy = scaleOf(y.matrices[k]);
+      const box = worldBox(y, k).expandByScalar(tol), w = new THREE.Vector3(), q = new THREE.Vector3();
+      for (const p of prepare(x, k).points) {
+        w.copy(p).applyMatrix4(x.matrices[k]);
+        if (!box.containsPoint(w)) continue;
+        q.copy(p).applyMatrix4(toY);
+        const d = ty.surface.distance(q, tol / sy) * sy;
+        if (d <= tol || (ty.closed && ty.surface.inside(q))) out.push(w.clone());
+      }
+    }
+    return out;
+  };
+  const centroid = (points) => points.reduce((acc, p) => acc.add(p), new THREE.Vector3()).multiplyScalar(1 / Math.max(1, points.length));
+
+  // 1. Structural joints.
+  const joints = new Map();
+  const allKeys = new Set();
+  for (const map of gaps) for (const key of map.keys()) allKeys.add(key);
+  for (const key of allKeys) {
+    const [i, j] = key.split(':').map(Number);
+    const a = live[i], b = live[j];
+    if (a.fluid || b.fluid || a.connector || b.connector) continue;
+    let seen = 0, persistent = true;
+    for (let k = 0; k < phases; k += 1) {
+      if (!a.visible[k] || !b.visible[k]) continue;
+      seen += 1;
+      if (!(gaps[k].get(key)?.gap <= touch)) { persistent = false; break; }
+    }
+    if (!seen || !persistent) continue;
+    const r = relation(a, b);
+    let structural = r.kind === 'rigid', why = r.kind;
+    if (!structural) {
+      const ks = [...Array(phases).keys()].filter((k) => a.visible[k] && b.visible[k]);
+      const cents = ks.map((k) => centroid(coarsePatch(a, b, k, touch)));
+      const ea = globalExtents(a, ks[0]), eb = globalExtents(b, ks[0]);
+      const thin = Math.min(ea[2], eb[2]), mid = Math.min(ea[1], eb[1]);
+      if (r.kind === 'hinge') {
+        // The contact lies on the hinge axis (pin in eye), not out at a
+        // working face (a pawl tip on a fixed ratchet).
+        const worst = Math.max(...ks.map((k, m) => {
+          const origin = r.pointLocal.clone().applyMatrix4(a.matrices[k]);
+          const axis = r.axisLocal.clone().transformDirection(a.matrices[k]);
+          const d = cents[m].clone().sub(origin);
+          return d.sub(axis.multiplyScalar(d.dot(axis))).length();
+        }));
+        structural = worst <= 0.75 * mid + touch;
+        why = structural ? 'hinge' : 'hinge-working-face';
+      } else {
+        // Same contact spot in both bodies' frames (ball joint), not a
+        // sliding or rolling contact whose spot travels.
+        const drift = (item) => {
+          const local = ks.map((k, m) => cents[m].clone().applyMatrix4(inv(item.matrices[k])).multiplyScalar(scaleOf(item.matrices[k])));
+          const c = centroid(local);
+          return Math.max(...local.map((p) => p.distanceTo(c)));
+        };
+        structural = Math.max(drift(a), drift(b)) <= Math.max(2 * touch, 0.25 * thin);
+        why = structural ? 'fixed-spot' : 'working';
+      }
+    }
+    if (structural) joints.set(key, { i, j, relation: r.kind, why });
+  }
+
+  // 2. Attachments: at each phase, for every mesh v and every component C
+  // of the structural graph with v removed, the joints between v and C are
+  // the only structural connection between C and v's side. A single joint is
+  // a bridge; a mesh can also be held by two or three touching neighbours
+  // that are themselves joined (a crank arm standing on a shaft and its hub),
+  // which is measured as one joint. Attachments through a rope, belt or
+  // spring are not measured.
+  const cuts = new Map();
+  for (let k = 0; k < phases; k += 1) {
+    const ok = (i) => live[i].visible[k] && !live[i].fluid;
+    const adjacency = Array.from({ length: n }, () => []);
+    const add = (i, j, key) => { adjacency[i].push([j, key]); adjacency[j].push([i, key]); };
+    const seenEdge = new Set();
+    for (const [key, joint] of joints) if (ok(joint.i) && ok(joint.j)) { seenEdge.add(key); add(joint.i, joint.j, key); }
+    for (const [key, { gap }] of gaps[k]) {
+      const [i, j] = key.split(':').map(Number);
+      if (seenEdge.has(key) || !ok(i) || !ok(j) || !(live[i].connector || live[j].connector)) continue;
+      if (gap <= 3 * touch) add(i, j, null);
+    }
+    // Component labels of the whole graph and of the graph without v.
+    const label = (skip) => {
+      const out = new Array(n).fill(-1);
+      let c = 0;
+      for (let s0 = 0; s0 < n; s0 += 1) {
+        if (s0 === skip || out[s0] >= 0 || !ok(s0)) continue;
+        const stack = [s0]; out[s0] = c;
+        while (stack.length) {
+          const x = stack.pop();
+          for (const [y] of adjacency[x]) if (y !== skip && out[y] < 0) { out[y] = c; stack.push(y); }
+        }
+        c += 1;
+      }
+      return out;
+    };
+    const whole = label(-1);
+    const sizeOf = (labels, c) => labels.reduce((m, l, x) => m + (l === c && x !== undefined ? 1 : 0), 0);
+    for (let v = 0; v < n; v += 1) {
+      if (!ok(v) || live[v].connector || !adjacency[v].length) continue;
+      const without = label(v);
+      const byComponent = new Map();
+      for (const [u, key] of adjacency[v]) {
+        const c = without[u];
+        if (!byComponent.has(c)) byComponent.set(c, []);
+        byComponent.get(c).push([u, key]);
+      }
+      const total = sizeOf(whole, whole[v]);
+      for (const [c, list] of byComponent) {
+        if (list.length > 3 || list.some(([u, key]) => !key || live[u].connector)) continue;
+        const cutKey = list.map(([, key]) => key).sort().join('|');
+        if (!cuts.has(cutKey)) {
+          const cSize = sizeOf(without, c), vSide = total - cSize;
+          const members = (cSize <= vSide ? [...without.keys()].filter((x) => without[x] === c)
+            : [...whole.keys()].filter((x) => whole[x] === whole[v] && without[x] !== c));
+          cuts.set(cutKey, { v, us: list.map(([u]) => u), keys: list.map(([, key]) => key), phases: [],
+            held: cSize <= vSide ? 'far' : 'v', holds: members.map((x) => live[x].role) });
+        }
+        cuts.get(cutKey).phases.push(k);
+      }
+    }
+  }
+
+  // 3. Fine measurement of each bridging joint.
+  const triCache = new Map();
+  const trianglesOf = (item, k) => {
+    const g = item.snapshots[k] ?? item.mesh.geometry;
+    if (!triCache.has(g.uuid)) {
+      const p = g.attributes.position, index = g.index, list = [];
+      for (let t = 0; t < (index?.count ?? p.count); t += 3) {
+        const v = [0, 1, 2].map((m) => new THREE.Vector3().fromBufferAttribute(p, index ? index.getX(t + m) : t + m));
+        const tri = new THREE.Triangle(...v);
+        const area = tri.getArea();
+        if (area > 1e-16) list.push({ v, box: new THREE.Box3().setFromPoints(v), area, normal: tri.getNormal(new THREE.Vector3()) });
+      }
+      triCache.set(g.uuid, list);
+    }
+    return triCache.get(g.uuid);
+  };
+  const localBox = (worldBoxValue, matrix) => {
+    const m = inv(matrix), out = new THREE.Box3(), c = new THREE.Vector3();
+    for (let b = 0; b < 8; b += 1) {
+      c.set(b & 1 ? worldBoxValue.max.x : worldBoxValue.min.x, b & 2 ? worldBoxValue.max.y : worldBoxValue.min.y, b & 4 ? worldBoxValue.max.z : worldBoxValue.min.z);
+      out.expandByPoint(c.applyMatrix4(m));
+    }
+    return out;
+  };
+  // Samples (world points + world normals) of `item`'s triangles meeting a
+  // world box, at a world step, capped at `cap` samples.
+  const sampleRegion = (item, k, region, step, cap = 30000) => {
+    const scale = scaleOf(item.matrices[k]), lb = localBox(region, item.matrices[k]);
+    const tris = trianglesOf(item, k).filter((t) => t.box.intersectsBox(lb));
+    const area = tris.reduce((s, t) => s + t.area, 0) * scale * scale;
+    const worldStep = Math.max(step, Math.sqrt(area / cap));
+    const localStep = worldStep / scale, points = [], normals = [];
+    const nm = new THREE.Matrix3().getNormalMatrix(item.matrices[k]);
+    const start = new THREE.Vector3();
+    for (const t of tris) {
+      const [a0, b0, c0] = t.v;
+      const edges = [[a0, b0, c0], [b0, c0, a0], [c0, a0, b0]];
+      const [p, q, apex] = edges.reduce((best, e) => (e[0].distanceTo(e[1]) > best[0].distanceTo(best[1]) ? e : best));
+      const length = p.distanceTo(q), height = 2 * t.area / length;
+      const along = Math.max(1, Math.ceil(length / localStep)), across = Math.max(1, Math.ceil(height / localStep));
+      const normal = t.normal.clone().applyMatrix3(nm).normalize();
+      for (let j = 0; j <= across; j += 1) {
+        const s = j / across, count = Math.max(1, Math.ceil(along * (1 - s)));
+        for (let i = 0; i <= count; i += 1) {
+          start.lerpVectors(p, q, i / count);
+          const w = start.clone().lerp(apex, s).applyMatrix4(item.matrices[k]);
+          if (!region.containsPoint(w)) continue;
+          points.push(w); normals.push(normal);
+        }
+      }
+    }
+    return { points, normals, step: worldStep };
+  };
+  const localSection = (item, k, at, rho, step) => {
+    const region = new THREE.Box3().setFromCenterAndSize(at, new THREE.Vector3(2 * rho, 2 * rho, 2 * rho));
+    const { points } = sampleRegion(item, k, region, step, 12000);
+    const near = points.filter((p) => p.distanceTo(at) <= rho);
+    return principalExtents(near).extents;
+  };
+  // Contact patches of one joint: each side's surface samples within the
+  // pair gap + --sliver-tol of the other, or inside it (closed meshes), and
+  // the deepest inside sample. Cached per pair and phase.
+  const patchCache = new Map();
+  const patches = (a, b, k) => {
+    const key = `${keyOf(live.indexOf(a), live.indexOf(b))}@${k}`;
+    if (patchCache.has(key)) {
+      const hit = patchCache.get(key);
+      return hit.first === a ? hit.value : { ...hit.value, sides: [hit.value.sides[1], hit.value.sides[0]] };
+    }
+    const gap = gaps[k].get(keyOf(live.indexOf(a), live.indexOf(b)))?.gap ?? 0;
+    const tol = Math.max(0, gap) + o.sliverTol * diagonal;
+    const ga = globalExtents(a, k), gb = globalExtents(b, k);
+    const step = Math.max(diagonal / 6000, Math.min(spacing / 2, Math.min(ga[2], gb[2]) / 16));
+    const region = worldBox(a, k).intersect(worldBox(b, k).expandByScalar(tol)).expandByScalar(tol);
+    const sides = [];
+    let depth = 0;
+    for (const [x, y] of [[a, b], [b, a]]) {
+      if (region.isEmpty()) { sides.push({ patch: [], step }); continue; }
+      const ty = prepare(y, k), toY = inv(y.matrices[k]), sy = scaleOf(y.matrices[k]);
+      const { points, step: used } = sampleRegion(x, k, region, step);
+      const patch = [], q = new THREE.Vector3();
+      for (const w of points) {
+        q.copy(w).applyMatrix4(toY);
+        const d = ty.surface.distance(q, (tol * 1.01) / sy) * sy;
+        if (d <= tol) { patch.push(w); continue; }
+        if (ty.closed && ty.surface.inside(q)) {
+          patch.push(w);
+          depth = Math.max(depth, ty.surface.distance(q, (0.2 * diagonal) / sy) * sy);
+        }
+      }
+      sides.push({ patch, step: used });
+    }
+    const value = { gap, sides, depth, step };
+    patchCache.set(key, { first: a, value });
+    return value;
+  };
+  const describe = (patch, step) => {
+    const pe = principalExtents(patch);
+    return { patch, extents: pe.extents.map((e) => (patch.length ? e + step : 0)), wrap: ringCoverage(patch, pe) };
+  };
+  // A cut: mesh v joined to meshes us. The neck is the smaller (by principal
+  // area) of v's union patch and the union of the neighbours' patches.
+  const measure = (v, us, k) => {
+    const vPatch = [], uPatch = [], perU = [];
+    let depth = 0, step = Infinity, gap = 0;
+    for (const u of us) {
+      const m = patches(v, u, k);
+      for (const w of m.sides[0].patch) vPatch.push(w);
+      for (const w of m.sides[1].patch) uPatch.push(w);
+      perU.push([u, m.sides[1].patch]);
+      depth = Math.max(depth, m.depth); step = Math.min(step, m.sides[0].step, m.sides[1].step); gap = Math.max(gap, m.gap);
+    }
+    const sides = [describe(vPatch, step), describe(uPatch, step)];
+    const neckSide = sides.reduce((best, x) => (x.extents[0] * x.extents[1] < best.extents[0] * best.extents[1] ? x : best));
+    const all = vPatch.concat(uPatch);
+    if (!all.length) return null;
+    const at = centroid(all);
+    const sections = [[v, at], ...perU.map(([u, p]) => [u, p.length ? centroid(p) : at])].map(([item, where]) => {
+      const g = globalExtents(item, k);
+      return localSection(item, k, where, 1.5 * g[2] + neckSide.extents[0] / 2, step);
+    });
+    const width = Math.min(...sections.map((x) => x[2] || Infinity));
+    const area = Math.min(...sections.map((x) => (x[1] * x[2]) || Infinity));
+    return { gap, neck: neckSide.extents.slice(0, 2), sections, width, area, depth, points: neckSide.patch.length, at, step,
+      wrap: Math.max(...sides.map((x) => x.wrap)) };
+  };
+
+  const slivers = [];
+  let excluded = 0;
+  for (const cut of cuts.values()) {
+    const v = live[cut.v], us = cut.us.map((u) => live[u]);
+    const roles = [v, ...us].map((item) => item.role);
+    const rigidOnly = cut.keys.every((key) => joints.get(key).relation === 'rigid');
+    if (roles.some((role) => SLIVER_SHEET.test(role) || SLIVER_SCENERY.test(role))
+      || (!rigidOnly && roles.some((role) => SLIVER_WORKING.test(role)))) { excluded += 1; continue; }
+    const sample = rigidOnly ? [cut.phases[0]] : [...new Set(cut.phases)];
+    let worst = null;
+    for (const k of sample) {
+      const m = measure(v, us, k);
+      if (!m || !Number.isFinite(m.width)) continue;
+      m.k = k;
+      m.neckRatio = m.neck[1] / m.width;
+      m.areaRatio = (m.neck[0] * m.neck[1]) / m.area;
+      // Neck area against the wider member's section: a ball or block hung
+      // from the end of a stem by a small cap of its surface.
+      m.wideRatio = (m.neck[0] * m.neck[1]) / Math.max(...m.sections.map((x) => x[1] * x[2]));
+      m.depthRatio = m.depth / m.width;
+      m.state = m.points === 0 ? 'unmeasured' : m.wrap >= 0.75 ? 'wrapped' : m.depthRatio >= o.sliverEmbed ? 'embedded' : 'open';
+      m.score = m.state !== 'open' ? Infinity
+        : Math.min(m.neckRatio / o.sliverNeck, m.areaRatio / o.sliverArea, Math.max(m.areaRatio / o.sliverCap, m.wideRatio / o.sliverWide));
+      if (!worst || m.score < worst.score) worst = m;
+    }
+    if (!worst) continue;
+    const reasons = [];
+    if (worst.state === 'open') {
+      if (worst.neckRatio < o.sliverNeck) reasons.push('narrow-neck');
+      if (worst.areaRatio < o.sliverArea) reasons.push('small-patch');
+      if (worst.areaRatio < o.sliverCap && worst.wideRatio < o.sliverWide) reasons.push('cap');
+    }
+    const relations = [...new Set(cut.keys.map((key) => joints.get(key).why))];
+    slivers.push({ parts: roles, joints: cut.keys.length, relation: relations.join('+'), flagged: reasons.length > 0, reasons, state: worst.state,
+      score: Number.isFinite(worst.score) ? round(worst.score) : null, neck: worst.neck.map(round), neckRatio: round(worst.neckRatio), areaRatio: round(worst.areaRatio),
+      wideRatio: round(worst.wideRatio), sectionWidth: round(worst.width), sectionArea: round(worst.area), depth: round(worst.depth), depthRatio: round(worst.depthRatio),
+      sections: worst.sections.map((sec) => sec.map(round)), wrap: round(worst.wrap),
+      gap: round(worst.gap), patchPoints: worst.points, step: round(worst.step),
+      phase: round(times[worst.k] / period), cutPhases: cut.phases.length, at: worst.at.toArray().map(round),
+      holds: cut.holds.slice(0, 8), holdsCount: cut.holds.length });
+  }
+  // Repeated parts with one role (twelve teeth, four blades) collapse into
+  // their worst row.
+  const unique = new Map();
+  for (const row of slivers.sort((x, y) => (x.score ?? Infinity) - (y.score ?? Infinity))) {
+    const key = row.parts.join('|');
+    if (unique.has(key)) unique.get(key).repeats += 1;
+    else unique.set(key, Object.assign(row, { repeats: 1 }));
+  }
+  slivers.length = 0;
+  slivers.push(...unique.values());
+  slivers.sort((x, y) => (x.score ?? Infinity) - (y.score ?? Infinity));
+  const lips = lipScreen({ ...ctx, o, joints, globalExtents, sampleRegion, worldPts });
+  return { slivers: slivers.filter((r) => r.flagged).concat(o.sliverAll ? slivers.filter((r) => !r.flagged) : []), lips,
+    structuralJoints: joints.size, attachmentsMeasured: slivers.length, attachmentsExcluded: excluded };
+}
+
+// Overhang lips. For every elongated mesh (a rod, arm or lever: longest
+// principal extent at least 3x the next) whose end runs into rigidly joined
+// meshes (a boss, hub or eye), compare the rod's cross-section just outside
+// the entry with the joined meshes' outline over the entered length, along
+// the rod's two cross-section axes (v along the joined meshes' thinnest
+// direction). A rod face standing proud of the joined outline by under
+// --lip-step of the rod's width is an overhang lip (the 100 tail rod, thicker
+// than its boss plate and entering it only at the rim). Larger differences
+// are a rod passing a small part, not a lip; differences under --lip-min of
+// the diagonal read flush. A boss standing proud of the rod is a normal
+// shoulder and is not reported.
+function lipScreen(ctx) {
+  const { live, joints, o, diagonal, spacing, sampleRegion, worldPts, worldBox, round, times, period } = ctx;
+  const neighbours = new Map();
+  for (const joint of joints.values()) {
+    if (joint.relation !== 'rigid') continue;
+    for (const [a, b] of [[joint.i, joint.j], [joint.j, joint.i]]) {
+      if (!neighbours.has(a)) neighbours.set(a, []);
+      neighbours.get(a).push(b);
+    }
+  }
+  const rows = [];
+  const range = (values) => values.reduce(([lo, hi], x) => [Math.min(lo, x), Math.max(hi, x)], [Infinity, -Infinity]);
+  for (const [i, list] of neighbours) {
+    const rod = live[i], k = rod.visible.indexOf(true);
+    if (k < 0 || rod.connector) continue;
+    const pe = principalExtents(worldPts(rod, k));
+    if (pe.extents[0] < 3 * pe.extents[1] || !(pe.extents[1] > 0)) continue;
+    const axis = pe.axes[0], c = pe.center, width = pe.extents[1];
+    let u = pe.axes[1], v = pe.axes[2];
+    const coords = (p) => { const d = p.clone().sub(c); return [d.dot(axis), d.dot(u), d.dot(v)]; };
+    const coarse = worldPts(rod, k).map(coords);
+    const [smin, smax] = range(coarse.map((q) => q[0]));
+    const step = Math.max(diagonal / 6000, Math.min(spacing / 2, pe.extents[2] / 12 || spacing / 2));
+    for (const sign of [1, -1]) {
+      const tEnd = sign > 0 ? smax : -smin;
+      const endPoint = c.clone().add(axis.clone().multiplyScalar(sign * tEnd));
+      const reach = new THREE.Box3().setFromCenterAndSize(endPoint, new THREE.Vector3(1, 1, 1).multiplyScalar(2 * width));
+      const near = list.filter((j) => live[j].visible[k] && !live[j].connector && worldBox(live[j], k).intersectsBox(reach));
+      if (!near.length) continue;
+      const region = new THREE.Box3();
+      worldPts(rod, k).forEach((p, m) => { if (sign * coarse[m][0] >= tEnd - 3 * width) region.expandByPoint(p); });
+      region.expandByScalar(1.5 * width);
+      const toT = (q) => [sign * q[0], q[1], q[2]];
+      const otherWorld = near.flatMap((j) => sampleRegion(live[j], k, region, step).points);
+      if (otherWorld.length < 12) continue;
+      // Cross-section axes: v along the joined meshes' thinnest direction
+      // (a boss plate's normal), u across it, so a round rod is compared
+      // face-on and edge-on.
+      const thin = principalExtents(otherWorld).axes[2];
+      const vt = thin.clone().sub(axis.clone().multiplyScalar(thin.dot(axis)));
+      if (vt.lengthSq() > 1e-6) { v = vt.normalize(); u = axis.clone().cross(v).normalize(); }
+      const rodPts = sampleRegion(rod, k, region, step).points.map(coords).map(toT);
+      const others = otherWorld.map(coords).map(toT);
+      const endPts = rodPts.filter((q) => q[0] >= tEnd - 3 * width);
+      if (endPts.length < 12 || !others.length) continue;
+      const [ru0, ru1] = range(endPts.map((q) => q[1])), [rv0, rv1] = range(endPts.map((q) => q[2]));
+      const foot = others.filter((q) => q[1] >= ru0 && q[1] <= ru1 && q[2] >= rv0 && q[2] <= rv1 && q[0] <= tEnd + step);
+      if (!foot.length) continue;
+      const tEntry = foot.reduce((m, q) => Math.min(m, q[0]), Infinity);
+      if (tEntry >= tEnd - 2 * step) continue;
+      // The rod must end in the boss: the joined outline runs on past the
+      // rod's end (not a bushing or pin carried partway along a bar).
+      const beyond = others.filter((q) => q[1] >= ru0 && q[1] <= ru1 && q[2] >= rv0 && q[2] <= rv1).reduce((m, q) => Math.max(m, q[0]), -Infinity);
+      if (beyond < tEnd + 0.25 * width) continue;
+      const shank = rodPts.filter((q) => q[0] >= tEntry - width && q[0] <= tEntry);
+      if (shank.length < 8) continue;
+      const [su0, su1] = range(shank.map((q) => q[1])), [sv0, sv1] = range(shank.map((q) => q[2]));
+      const inWindow = others.filter((q) => q[0] >= tEntry && q[0] <= tEnd);
+      const [bu0, bu1] = range(inWindow.filter((q) => q[2] >= sv0 && q[2] <= sv1).map((q) => q[1]));
+      const [bv0, bv1] = range(inWindow.filter((q) => q[1] >= su0 && q[1] <= su1).map((q) => q[2]));
+      if (![bu0, bu1, bv0, bv1].every(Number.isFinite)) continue;
+      const sides = [['+u', su1 - bu1, su1 - su0], ['-u', bu0 - su0, su1 - su0], ['+v', sv1 - bv1, sv1 - sv0], ['-v', bv0 - sv0, sv1 - sv0]];
+      const found = [];
+      for (const [side, margin, span] of sides) {
+        if (Math.abs(margin) <= o.lipMin * diagonal || !(span > 0)) continue;
+        if (margin > 0 && margin < o.lipStep * span) found.push({ side, size: round(margin), relative: round(margin / span) });
+      }
+      if (!found.length) continue;
+      const entryPoint = c.clone().add(axis.clone().multiplyScalar(sign * tEntry));
+      rows.push({ rod: rod.role, joined: near.map((j) => live[j].role), lips: found, rodSection: [round(su1 - su0), round(sv1 - sv0)],
+        bossSection: [round(bu1 - bu0), round(bv1 - bv0)], entered: round(tEnd - tEntry), phase: round(times[k] / period),
+        at: entryPoint.toArray().map(round) });
+    }
+  }
+  const unique = new Map();
+  for (const row of rows) {
+    const key = `${row.rod}|${row.joined.join()}`;
+    if (unique.has(key)) unique.get(key).repeats += 1;
+    else unique.set(key, Object.assign(row, { repeats: 1 }));
+  }
+  // Largest overhang first (in units of the diagonal).
+  const size = (row) => Math.max(...row.lips.map((lip) => lip.size));
+  return [...unique.values()].map((row) => Object.assign(row, { sizeRelative: round(size(row) / diagonal) }))
+    .sort((x, y) => size(y) - size(x));
 }
 
 function parseOptions() {
   const num = (name, fallback) => (value(name) === undefined ? fallback : Number(value(name)));
   return { touch: num('--touch', DEFAULTS.touch), figure: num('--figure', DEFAULTS.figure), connect: num('--connect', DEFAULTS.connect), phases: num('--phases', DEFAULTS.phases),
-    spacing: num('--spacing', DEFAULTS.spacing), maxPoints: num('--max-points', DEFAULTS.maxPoints) };
+    spacing: num('--spacing', DEFAULTS.spacing), maxPoints: num('--max-points', DEFAULTS.maxPoints),
+    sliver: value('--sliver') !== '0', sliverAll: value('--sliver-all') === '1',
+    sliverNeck: num('--sliver-neck', SLIVER_DEFAULTS.sliverNeck), sliverArea: num('--sliver-area', SLIVER_DEFAULTS.sliverArea),
+    sliverCap: num('--sliver-cap', SLIVER_DEFAULTS.sliverCap), sliverWide: num('--sliver-wide', SLIVER_DEFAULTS.sliverWide),
+    sliverEmbed: num('--sliver-embed', SLIVER_DEFAULTS.sliverEmbed), sliverTol: num('--sliver-tol', SLIVER_DEFAULTS.sliverTol),
+    lipStep: num('--lip-step', SLIVER_DEFAULTS.lipStep), lipMin: num('--lip-min', SLIVER_DEFAULTS.lipMin) };
 }
 
 
@@ -562,15 +1114,15 @@ if (isMain && value('--worker')) {
   const result = await worker(Number(value('--worker')), parseOptions());
   console.log(JSON.stringify(result));
 } else if (isMain) {
-  for (const arg of args) if (!/^--(ids|out|timeout-ms|jobs|touch|figure|connect|phases|spacing|max-points|max-old-space-size)=/.test(arg)) throw new Error(`Unknown argument: ${arg}`);
+  for (const arg of args) if (!/^--(ids|out|timeout-ms|jobs|touch|figure|connect|phases|spacing|max-points|max-old-space-size|sliver|sliver-all|sliver-neck|sliver-area|sliver-cap|sliver-wide|sliver-embed|sliver-tol|lip-step|lip-min)=/.test(arg)) throw new Error(`Unknown argument: ${arg}`);
   const ids = expandIds(value('--ids') ?? '1-507');
   const timeout = Number(value('--timeout-ms') ?? 900000);
   const jobs = Number(value('--jobs') ?? 1);
   const heap = value('--max-old-space-size') ?? '6144';
   const out = resolve(value('--out') ?? '/dev/shm/507-disconnected-parts.json');
-  const extra = args.filter((arg) => /^--(touch|figure|connect|phases|spacing|max-points)=/.test(arg));
+  const extra = args.filter((arg) => /^--(touch|figure|connect|phases|spacing|max-points|sliver|sliver-all|sliver-neck|sliver-area|sliver-cap|sliver-wide|sliver-embed|sliver-tol|lip-step|lip-min)=/.test(arg));
   let report = { generatedAt: new Date().toISOString(), options: parseOptions(),
-    scope: 'Rendered-surface gaps between visible meshes at sampled phases; connectors (ropes, belts, springs, deforming meshes, fluids) join but are not flagged; triage for visual review.', movements: [] };
+    scope: 'Rendered-surface gaps between visible meshes at sampled phases; connectors (ropes, belts, springs, deforming meshes, fluids) join but are not flagged; slivers are the only structural attachments whose contact patch is tiny against the parts\' sections; lips are rod ends overhanging their boss; triage for visual review.', movements: [] };
   try {
     const previous = JSON.parse(await readFile(out, 'utf8'));
     if (previous?.movements) report.movements = previous.movements.filter((m) => !ids.includes(m.id));
@@ -591,7 +1143,7 @@ if (isMain && value('--worker')) {
       report.movements = report.movements.filter((m) => m.id !== id).concat(result).sort((a, b) => a.id - b.id);
       await writeFile(out, `${JSON.stringify(report, null, 2)}\n`);
       const hinge = result.nearMiss?.filter((row) => row.joint === 'short-of-pin').length ?? 0;
-      console.log(`${id}: ${result.status ?? `${result.meshes} meshes; detached ${result.detached.length} (floating ${result.detached.filter((row) => row.kind === 'floating').length}), near-miss pairs ${result.nearMissTotal} (short-of-pin ${hinge}), open ends ${result.openEnds.length}`} ${result.seconds}s`);
+      console.log(`${id}: ${result.status ?? `${result.meshes} meshes; detached ${result.detached.length} (floating ${result.detached.filter((row) => row.kind === 'floating').length}), near-miss pairs ${result.nearMissTotal} (short-of-pin ${hinge}), open ends ${result.openEnds.length}, slivers ${result.slivers?.filter((row) => row.flagged).length ?? 0}, lips ${result.lips?.length ?? 0}`} ${result.seconds}s`);
     }
   };
   await Promise.all(Array.from({ length: jobs }, run));

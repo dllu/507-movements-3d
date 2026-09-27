@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import { createAuthoredJointedParallelRulerMovement } from '../src/simulation/authored-jointed-parallel-rulers.js';
 import { createAuthoredParallelRulerMovement } from '../src/simulation/authored-parallel-rulers.js';
 import { rulerArmProfiles } from '../src/simulation/ruler-arm-profiles.js';
+import { rulerArmOutline, rulerArmHalfWidth } from '../src/simulation/ornamental-ruler-arm.js';
 import { disposeObject3D } from '../src/simulation/dispose-model.js';
 import { surfacePoints, solidSurface } from './helpers/solid-surface.mjs';
 const make = id => (id === 349 ? createAuthoredJointedParallelRulerMovement : createAuthoredParallelRulerMovement)({ id });
@@ -39,6 +40,33 @@ test('extracted ornamental profiles identify the exact engraving and normalized 
     const p = rulerArmProfiles[id];
     assert.equal(p.sourceSha256, createHash('sha256').update(readFileSync(`public/engravings/mm_${id}.png`)).digest('hex'));
     assert.ok(p.points.length > 25 && p.points.length < 150);
+  }
+});
+
+test('links are one smooth extrusion: symmetric spline body, eyes concentric with the pins', () => {
+  for (const [id, length, r0, r1] of [[349, 1, .104, .119], [367, 1.6, .089, .089]]) {
+    const polygons = rulerArmOutline(id, length, r0, r1);
+    assert.equal(polygons.length, 1, `${id}: one piece`);
+    const [outer, ...holes] = polygons[0];
+    assert.equal(holes.length, 2, `${id}: two bores`);
+    assert.ok(outer.length > 400, `${id}: densely sampled, not low-poly (${outer.length})`);
+    // Mirror symmetry about the pin line: every outline vertex's mirror lies
+    // on the outline.
+    const onOutline = ([x, y]) => outer.some(([u, v], i) => {
+      const [a, b] = outer[(i + 1) % outer.length];
+      const dx = a - u, dy = b - v, t = Math.max(0, Math.min(1, ((x - u) * dx + (y - v) * dy) / (dx * dx + dy * dy)));
+      return Math.hypot(u + t * dx - x, v + t * dy - y) < 2e-3;
+    });
+    for (const [x, y] of outer.filter((_, i) => i % 7 === 0)) assert.ok(onOutline([x, -y]), `${id}: symmetric about pin line at ${x},${y}`);
+    // The body's half-width is symmetric about the midpoint.
+    for (let t = 0; t <= .5; t += .05) assert.ok(Math.abs(rulerArmHalfWidth(id, t) - rulerArmHalfWidth(id, 1 - t)) < 1e-9);
+    // Ends are circular arcs concentric with the pins.
+    const endPoints = outer.filter(([x]) => x < -r0 * .5 || x > length + r1 * .5);
+    assert.ok(endPoints.length > 20);
+    for (const [x, y] of endPoints) {
+      const d = x < 0 ? Math.hypot(x, y) - (r0 + .04) : Math.hypot(x - length, y) - (r1 + .04);
+      assert.ok(Math.abs(d) < 2e-3, `${id}: eye arc concentric`);
+    }
   }
 });
 

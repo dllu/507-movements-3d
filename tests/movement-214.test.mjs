@@ -144,8 +144,8 @@ test('movement 214 is the source ten-to-twelve gear-finger stop, not a generic i
   assert.equal(geometry.driverGearOutline.length, 10 * 19);
   assert.equal(geometry.drivenGearOutline.length, 12 * 19);
   // Brown's teardrops: tangent point, point, tangent point, then the boss arc.
-  assert.equal(geometry.driverFingerLocal.length, 66);
-  assert.equal(geometry.drivenFingerLocal.length, 66);
+  assert.equal(geometry.driverFingerLocal.length, 83);
+  assert.equal(geometry.drivenFingerLocal.length, 83);
   assert.equal(geometry.driverBoreLocal.length, 4);
   assert.equal(geometry.drivenBoreLocal.length, 4);
   assert.equal(
@@ -292,31 +292,31 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
     'source point maps to raster center',
   );
 
-  // From the plate pose Brown's teardrops meet 1.34 input turns forward and
-  // 4.48 turns back: one blocking encounter approached from both sides,
+  // From the plate pose Brown's teardrops meet 1.33 input turns forward and
+  // 4.47 turns back: one blocking encounter approached from both sides,
   // short of the six-turn relative period. (The site's triangles, from its
   // own start pose, met after exactly three turns.)
-  near(geometry.forwardInputLimit, 8.418904749210622, 1e-12,
+  near(geometry.forwardInputLimit, 8.325470045045869, 1e-12,
     'plate-finger forward stop');
   near(
     geometry.reverseInputLimit,
-    -28.173733936209544,
+    -28.103004129716965,
     1e-12,
     'opposite-flank reverse stop',
   );
   near(
     transmission.inputTurnsBetweenStops,
-    5.823899327560335,
+    5.797771734208958,
     1e-12,
     'finite input travel between finger flanks',
   );
   assert.ok(transmission.inputTurnsBetweenStops < 6,
     'the stops fall inside one relative period');
-  near(transmission.forwardInputTurnsFromSourcePose, 1.339910306256704,
+  near(transmission.forwardInputTurnsFromSourcePose, 1.3250397112325545,
     1e-12, 'forward plate-pose travel');
   near(
     transmission.reverseInputTurnsFromSourcePose,
-    4.48398902130363,
+    4.472732022976404,
     1e-12,
     'reverse plate-pose travel',
   );
@@ -325,14 +325,14 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
     [
       'forward',
       geometry.forwardStopContact,
-      0.7114215682184366,
-      0.9410328961660996,
+      0.829994826159767,
+      1.629779340928117,
     ],
     [
       'reverse',
       geometry.reverseStopContact,
-      0.6703344028054864,
-      1.250919624328983,
+      0.7787458820710101,
+      1.7510135266740612,
     ],
   ]) {
     assert.equal(contact.side, side);
@@ -348,8 +348,10 @@ test('movement 214 reproduces the official dimensions, phases, six half-turn tra
       `${side} contact tangent is unit length`);
     near(contact.normal.dot(contact.tangent), 0, 2e-16,
       `${side} contact frame is orthogonal`);
-    assert.ok(contact.tip.distanceTo(contact.projectedPoint) < 4e-7,
-      `${side} finger point reaches the other finger's flank`);
+    // The round end (radius 0.18) touches the other finger's flank.
+    near(contact.tip.distanceTo(contact.projectedPoint), contact.tipRadius, 4e-7,
+      `${side} finger end reaches the other finger's flank`);
+    near(contact.tipRadius, 0.18, 0, `${side} finger end is rounded`);
     near(
       side === 'forward'
         ? geometry.forwardBlockedClosingRate

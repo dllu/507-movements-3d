@@ -27,8 +27,14 @@ export function correctWatchRegulator(root){
   // balance spring shows as one spiral from the collet out to stud R.
   replace(b.fixedRing,tube(.28,.20,.17).rotateX(Math.PI/2));b.fixedRing.position.z=.98;
   replace(b.regulatorRing,tube(.40,.16,.282).rotateX(Math.PI/2));
-  replace(b.regulatorArm,new THREE.BoxGeometry(.18,g.pointerRadius-.38,.16));
-  b.regulatorArm.position.y=-(g.pointerRadius+.38)/2;
+  // The arm ends at the base of the pointer's triangular tip, so the two
+  // abut on one face instead of overlapping with z-fighting coplanar faces.
+  {
+    b.pointer.geometry.computeBoundingBox();
+    const armEnd=-(b.pointer.position.y+b.pointer.geometry.boundingBox.max.y);
+    replace(b.regulatorArm,new THREE.BoxGeometry(.18,armEnd-.38,.16));
+    b.regulatorArm.position.y=-(armEnd+.38)/2;
+  }
   g.fixedRingInnerRadius=.17;g.fixedRingOuterRadius=.28;
   // The rate scale is a plain silvered sector: no engraved grid of arcs and
   // divisions (tick notation).

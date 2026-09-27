@@ -7,7 +7,7 @@
     },
     {
       "file": "src/simulation/authored-expanding-pulleys.js",
-      "sha256": "64bf3ea5aee5c0b3369d053073a0f2ba2aabecd02d81f1ca90fb4392462d774c"
+      "sha256": "d7dcb1d61dfccc4da35047a69fba8a9a0a81b74135f51e73ab80d004c4ac1929"
     },
     {
       "file": "src/simulation/authored-scroll-gears.js",
@@ -39,7 +39,7 @@
     },
     {
       "file": "scripts/review-variable-face-contact.mjs",
-      "sha256": "259d968617311915cf26a7780c16b8a12c1739bbd3aa76c1196a49831b4f51e7"
+      "sha256": "ce16c8b2b4ca96b18ef488195044a0b81e8034382422f46fd0745e0b02510e3d"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
@@ -61,14 +61,15 @@
     {
       "id": 224,
       "poses": 17,
-      "tested": 6652236,
+      "tested": 7672168,
       "inside": 0,
       "maxPenetration": 0,
-      "maxWorkingGap": 0.0009506478283761708,
+      "maxWorkingGap": 0.0009197893286935693,
       "categories": {
         "gear": 0,
         "slot": 0,
-        "guide": 0
+        "guide": 0,
+        "click": 0
       }
     },
     {

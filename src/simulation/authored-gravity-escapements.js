@@ -5262,6 +5262,9 @@ function bloxamGravityEscapement(movement) {
         ...plateStroke(lowerCrosspiecePoints, 0.19),
         plateDisc(new THREE.Vector2(0, 0), 0.15),
         plateDisc(forkLocal, 0.13),
+        // A round pad ends the crosspiece under the whole pallet-face stem,
+        // so the stem stands on (and is sunk into) the arm, not its corner.
+        plateDisc(faceBack, 0.19 / 2),
       ],
       role: `${sideName}-thin-tubular-main-arm`,
       z0: -armHalfDepth,
@@ -5292,7 +5295,8 @@ function bloxamGravityEscapement(movement) {
       owner: group,
       primitives: [plateDisc(faceBack, 0.075)],
       role: `${sideName}-pallet-face-stem`,
-      z0: armHalfDepth,
+      // Sunk to the arm's mid-plane: the stem is set into the arm.
+      z0: 0,
       z1: palletSlabZ0,
     });
 

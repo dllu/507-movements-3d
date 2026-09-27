@@ -370,9 +370,11 @@ test('movement 370 common-shaft eccentric gives the exact harmonic click-carrier
       * (1 - Math.cos(FULL_TURN * state.phase));
     near(state.carrierFraction, expectedFraction, 3e-16,
       'eccentric harmonic carrier fraction');
+    // The carrier swings a pitch plus the click's backlash.
     near(state.carrierAngle,
       geometry.carrierBaseAngle
-        + geometry.clickHand * geometry.ratchetToothPitch
+        + geometry.clickHand
+          * (geometry.ratchetToothPitch + geometry.clickBacklash)
           * state.carrierFraction,
       0, 'click-carrier angle');
     near(
@@ -428,6 +430,10 @@ test('movement 370 click advances exactly one tooth on each forward half-turn an
   const pitch = geometry.clickHand * geometry.ratchetToothPitch;
   assert.equal(geometry.clickHand, -1);
 
+  const backlash = geometry.clickBacklash;
+  const stroke = geometry.ratchetToothPitch + backlash;
+  const click = data.blocks.finiteClick;
+  const liftAt = (state) => click.angleAt(state.ratchetAngle - state.carrierAngle);
   for (let cycle = 0; cycle < 16; cycle += 1) {
     const start = stateAtTime(cycle * period);
     const driveMid = stateAtTime((cycle + 0.25) * period);
@@ -436,8 +442,10 @@ test('movement 370 click advances exactly one tooth on each forward half-turn an
     const next = stateAtTime((cycle + 1) * period);
     near(start.ratchetAngle, cycle * pitch, 2e-15,
       `cycle ${cycle} start index`);
-    near(driveMid.ratchetAngle, (cycle + 0.5) * pitch, 2e-15,
-      `cycle ${cycle} half tooth`);
+    // The drive first takes up the backlash, then carries the wheel.
+    near(driveMid.ratchetAngle,
+      cycle * pitch + geometry.clickHand * (stroke / 2 - backlash), 2e-15,
+      `cycle ${cycle} mid-stroke advance`);
     near(driveEnd.ratchetAngle, (cycle + 1) * pitch, 2e-15,
       `cycle ${cycle} drive completion`);
     near(returnMid.ratchetAngle, driveEnd.ratchetAngle, 0,
@@ -445,12 +453,19 @@ test('movement 370 click advances exactly one tooth on each forward half-turn an
     near(next.ratchetAngle, driveEnd.ratchetAngle, 2e-15,
       `cycle ${cycle} boundary continuity`);
     near(driveMid.ratchetAngle - cycle * pitch,
-      driveMid.carrierAngle - geometry.carrierBaseAngle, 8e-16,
+      driveMid.carrierAngle - geometry.carrierBaseAngle
+        - geometry.clickHand * backlash, 8e-16,
       `cycle ${cycle} carrier drives wheel`);
     near(driveMid.pawlTipWorld.distanceTo(driveMid.selectedToothWorld),
       0, 5e-16, `cycle ${cycle} engaged click contact`);
     near(driveMid.pawlLift, 0, 0,
       `cycle ${cycle} click seated on drive`);
+    // The finite hook: off the face by the backlash at the start of the
+    // drive, seated in the root while driving, lifted over a tooth on return.
+    assert.ok(Math.abs(liftAt(start)) > 1e-3, `cycle ${cycle} backlash at drive start`);
+    near(liftAt(driveMid), 0, 1e-12, `cycle ${cycle} hook seated in the root`);
+    near(liftAt(driveEnd), 0, 1e-12, `cycle ${cycle} hook seated at drive end`);
+    assert.ok(Math.abs(liftAt(returnMid)) > 0.05, `cycle ${cycle} hook rides over a tooth`);
     near(returnMid.ratchetAngularSpeed, 0, 0,
       `cycle ${cycle} wheel dwell speed`);
     near(returnMid.pawlLift, geometry.pawlMaximumLift, 2e-16,

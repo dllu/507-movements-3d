@@ -81,9 +81,7 @@ test('movement 379 is a C-frame portable drill with separate coaxial upper drill
   for (const component of [
     blocks.drillHousing,
     blocks.fixedFeedNut,
-    blocks.frameBack,
-    blocks.frameBottom,
-    blocks.frameTop,
+    blocks.cFrame,
   ]) assert.equal(component.parent, blocks.crampFrame);
   for (const component of [
     blocks.drillBit,

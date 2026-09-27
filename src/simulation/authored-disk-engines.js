@@ -1469,9 +1469,14 @@ function diskEngine(movement) {
   crankBearings[0].standard.visible = false;
   {
     const { standard } = crankBearings[1];
-    const standardHeight = crankCenter.y - 0.40 - standardFootY;
+    // The standard's top beds the bearing ring: it rises 0.12 into the
+    // ring's lower rim (still 0.07 clear of the shaft) instead of meeting
+    // the round ring along a tangent line. It is no wider or deeper than the
+    // ring where it enters (0.01 inside its end faces, so no faces are
+    // coplanar), and no corner stands out past the ring.
+    const standardHeight = crankCenter.y - 0.28 - standardFootY;
     standard.geometry.dispose();
-    standard.geometry = new THREE.BoxGeometry(0.34, standardHeight, 0.70);
+    standard.geometry = new THREE.BoxGeometry(0.28, standardHeight, 0.56);
     standard.position.y = standardFootY + standardHeight / 2;
   }
   // A pedestal under the casing, behind the section plane.

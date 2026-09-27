@@ -2,27 +2,78 @@ import * as THREE from 'three';
 import { PALETTE, matte } from './primitives.js';
 import { capsule, circle, plate, poly, polygonClipping, ring } from './finite-plate-geometry.js';
 
-// A finite rounded hook bridges the separated lever leaves to the rack plane.
-// Its toe is integral to the pawl; it is not a freely rotating roller.
-export function makeSteppedRatchetPawl({ color, length, role, rootZ, noseRadius }) {
+// Each pawl is one flat plate in the rack's plane: a round boss bored for its
+// lever pin, a straight bar of constant width, a circular elbow and a short
+// finger dropping into the teeth, as Brown draws the two hooks. The finger's
+// working (left) face lies along the vertical tooth face and its underside
+// along the return ramp, meeting in a small rounded nose that seats in the
+// root. The outline is laid out at the pawl's steepest working angle, so over
+// the rest of the stroke the face leans off the tooth; the underside is
+// relieved by the pawl's working swing so it never digs into the ramp.
+export function makeSteppedRatchetPawl({
+  color, length, role, noseRadius, rampAngle, workingAngles, toothHeight,
+  width = 0.07, bossRadius = 0.13, boreRadius = 0.087, elbowRadius = 0.06, low = -0.1, high = 0.1,
+}) {
   const pawl = new THREE.Group();
   const material = matte(color, { metalness: 0.13, roughness: 0.61 });
-  const shoulder = [length - 0.16, -0.20];
-  const outline = polygonClipping.union(capsule([0, 0], shoulder, 0.06, 32), poly(circle([0, 0], 0.115, 64)));
-  const bored = polygonClipping.difference(outline, poly(circle([0, 0], 0.087, 64)));
-  const beam = new THREE.Mesh(plate(bored, -0.07, 0.07), material);
-  beam.userData.role = `${role}-bored-rigid-beam`;
-  const hookOutline = polygonClipping.union(capsule(shoulder, [length, 0], 0.019, 32), poly(circle([length, 0], noseRadius, 128)));
-  const hook = new THREE.Mesh(plate(hookOutline, -0.08 - rootZ, 0.12 - rootZ), material);
-  hook.userData.role = `${role}-finite-working-hook`;
-  const bridge = new THREE.Mesh(plate(poly(circle(shoulder, 0.055, 64)), -0.02 - rootZ, 0.04), material);
-  bridge.userData.role = `${role}-axial-hook-shoulder`;
-  // A transform-only witness at the toe center keeps the kinematic API explicit.
-  const nose = new THREE.Object3D();
-  nose.position.set(length, 0, 0.02 - rootZ);
-  nose.userData.role = `${role}-rounded-toe-center`;
-  pawl.add(beam, hook, bridge, nose);
-  Object.assign(pawl.userData, { role, length, beam, hook, bridge, nose, noseRadius, hookOutline, shoulder, boreRadius: 0.087 });
+  const layoutAngle = Math.max(...workingAngles) + THREE.MathUtils.degToRad(0.1);
+  const relief = layoutAngle - Math.min(...workingAngles) + THREE.MathUtils.degToRad(0.4);
+  const chamferAngle = rampAngle + relief;
+  // Layout frame: world orientation, origin at the pin, nose at N.
+  const nose = [length * Math.cos(layoutAngle), length * Math.sin(layoutAngle)];
+  const faceX = nose[0] - noseRadius;
+  const rootY = nose[1] - noseRadius * (Math.tan(rampAngle) + 1 / Math.cos(rampAngle));
+  const half = width / 2, fingerX = faceX + half;
+  const elbowY = rootY + toothHeight + 0.035 + half;
+  const elbowCenter = [fingerX + elbowRadius, elbowY];
+  // The bar leaves the elbow tangentially, aimed at the pin.
+  let heading = Math.PI / 2;
+  for (let i = 0; i < 20; i++) {
+    const end = [elbowCenter[0] + elbowRadius * Math.cos(heading + Math.PI / 2), elbowCenter[1] + elbowRadius * Math.sin(heading + Math.PI / 2)];
+    heading = Math.atan2(-end[1], -end[0]);
+  }
+  const center = [[fingerX, rootY - 0.08]];
+  const normals = [[-1, 0]];
+  const arcCount = 48;
+  for (let i = 0; i <= arcCount; i++) {
+    const t = Math.PI + (heading + Math.PI / 2 - Math.PI) * i / arcCount;
+    center.push([elbowCenter[0] + elbowRadius * Math.cos(t), elbowCenter[1] + elbowRadius * Math.sin(t)]);
+    normals.push([Math.cos(t), Math.sin(t)]);
+  }
+  center.push([0, 0]);
+  normals.push(normals.at(-1));
+  const left = center.map((q, i) => [q[0] + half * normals[i][0], q[1] + half * normals[i][1]]);
+  const right = center.map((q, i) => [q[0] - half * normals[i][0], q[1] - half * normals[i][1]]);
+  const band = poly([...left, ...right.reverse()]);
+  // Cut the tip: nothing left of the working face, nothing below the
+  // relieved underside, and a nose of the seat radius between them.
+  const tangentStart = Math.PI, tangentEnd = 1.5 * Math.PI + chamferAngle;
+  const arc = Array.from({ length: 33 }, (_, i) => {
+    const t = tangentStart + (tangentEnd - tangentStart) * i / 32;
+    return [nose[0] + noseRadius * Math.cos(t), nose[1] + noseRadius * Math.sin(t)];
+  });
+  const reach = 2 * width, tangent = arc.at(-1);
+  const cut = poly([
+    [faceX - 0.3, elbowY], [faceX, elbowY], ...arc,
+    [tangent[0] + reach, tangent[1] + reach * Math.tan(chamferAngle)],
+    [tangent[0] + reach, rootY - 0.3], [faceX - 0.3, rootY - 0.3],
+  ]);
+  const outline = polygonClipping.difference(
+    polygonClipping.union(band, poly(circle([0, 0], bossRadius, 96))),
+    cut, poly(circle([0, 0], boreRadius, 96)));
+  const toLocal = q => [q[0] * Math.cos(-layoutAngle) - q[1] * Math.sin(-layoutAngle), q[0] * Math.sin(-layoutAngle) + q[1] * Math.cos(-layoutAngle)];
+  const local = outline.map(polygon => polygon.map(ring => ring.map(toLocal)));
+  const body = new THREE.Mesh(plate(local, low, high), material);
+  body.userData.role = `${role}-flat-hook-plate`;
+  // A transform-only witness at the nose center keeps the kinematic API explicit.
+  const noseWitness = new THREE.Object3D();
+  noseWitness.position.set(length, 0, 0);
+  noseWitness.userData.role = `${role}-rounded-toe-center`;
+  pawl.add(body, noseWitness);
+  Object.assign(pawl.userData, {
+    role, length, body, nose: noseWitness, noseRadius, boreRadius, bossRadius, width,
+    layoutAngle, chamferAngle, outline: local,
+  });
   return pawl;
 }
 
@@ -78,8 +129,10 @@ export function finishRatchetBarSupports(root) {
   for (const pin of b.leverPins) {
     pin.geometry.dispose();
     const center = pin.userData.role === 'fixed-middle-fulcrum-pin';
-    pin.geometry = new THREE.CylinderGeometry(center ? 0.13 : 0.085, center ? 0.13 : 0.085, 0.64, 64);
-    pin.position.z = 0;
+    // The pawl pins pass through the pawl bosses (in the rack's plane) and
+    // the lever plate in front of them.
+    pin.geometry = new THREE.CylinderGeometry(center ? 0.13 : 0.085, center ? 0.13 : 0.085, 0.43, 64);
+    pin.position.z = -0.09;
     // The lever turns on the stationary fulcrum shaft; a second, rotating
     // copy of that shaft would occupy the same solid.
     if (center) pin.visible = false;

@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { PALETTE, matte, markShadows } from './primitives.js';
 import { turnedClutchGeometry } from './clutch-section-geometry.js';
+import { polygonClipping as clip } from './finite-plate-geometry.js';
+import bakedStopOutline from '../data/tappet-stud-stop-outline.js';
 import { makeTappetStudStopContact, TAU, add, sub, scale, norm, rotate, polar, closestSegment } from './tappet-stud-stop-contact.js';
 
 function simplify(points, tolerance=2e-7) {
@@ -15,7 +17,7 @@ function simplify(points, tolerance=2e-7) {
   return [...simplify(points.slice(0,index+1),tolerance).slice(0,-1),...simplify(points.slice(index),tolerance)];
 }
 
-export function makeTappetStudStop(options={}) {
+export function makeTappetStudStop({computeStopOutline=false,...options}={}) {
   const motion=makeTappetStudStopContact({toeRadius:0,leftExtension:.05,rightExtension:-.03,...options});
   const {p}=motion, root=new THREE.Group(), input=new THREE.Group(), output=new THREE.Group(), stop=new THREE.Group();
   root.add(input,output,stop);output.position.x=p.D;stop.position.set(...p.pivot,0);
@@ -39,7 +41,10 @@ export function makeTappetStudStop(options={}) {
   const first=Math.atan2(notch[0][1],notch[0][0]),last=Math.atan2(notch.at(-1)[1],notch.at(-1)[0]);
   const rim=Array.from({length:4096},(_,i)=>polar(p.driverRadius,TAU*i/4096)).filter(q=>{const a=Math.atan2(q[1],q[0]);return a<first||a>last;});
   paths.cam=[...simplify(notch.map(q=>q.map(Math.fround))),...rim].sort((a,b)=>Math.atan2(a[1],a[0])-Math.atan2(b[1],b[0]));
-  attach('driverDisk',extrusion(polygon(paths.cam),-.10,.10),PALETTE.driver,input,'input');
+  // C's plain disk is deep enough to reach the stop's plane, so the stop is
+  // one flat plate whose own corner rides C's rim and drops into the notch.
+  const driverDiskDepth=[-.10,.31];p.driverDiskDepth=driverDiskDepth;
+  attach('driverDisk',extrusion(polygon(paths.cam),...driverDiskDepth),PALETTE.driver,input,'input');
   attach('driverHub',drum(.26,0,-.15,.475),PALETTE.driver,input,'input');
   attach('driverShaft',drum(.17,0,-.35,.49),PALETTE.ink,input,'input');
   attach('drivenDisk',drum(1.26,0,-.10,.10),PALETTE.driven,output,'output');
@@ -55,7 +60,9 @@ export function makeTappetStudStop(options={}) {
   tappet.absarc(...p.tipCenter,p.tipRadius,-Math.PI/2,tangentAngle,false);
   tappet.lineTo(...upper);tappet.quadraticCurveTo(-.11,.12,-.10,-.06);tappet.quadraticCurveTo(-.08,-.22,.11,-p.h);tappet.closePath();
   paths.tappet=tappet.getPoints(512).map(q=>q.toArray());
-  attach('tappet',extrusion(tappet,.325,.435,512),PALETTE.accent,input,'input');
+  // Tappet A lies on C's (deepened) front face, in front of the stop and
+  // clear of the end of the stop's fixed pin.
+  attach('tappet',extrusion(tappet,.31,.42,512),PALETTE.accent,input,'input');
   const localPixel=(x,y)=>sub([(x-352)/260,(415-y)/260],p.pivot);
   const outline=new THREE.Shape();outline.moveTo(...p.toeCenter);
   const quadratic=(cx,cy,x,y)=>outline.quadraticCurveTo(...localPixel(cx,cy),...localPixel(x,y));
@@ -64,11 +71,42 @@ export function makeTappetStudStop(options={}) {
   quadratic(805,735,844,725);outline.lineTo(...p.tooth[0]);outline.lineTo(...p.tooth[1]);outline.lineTo(...p.tooth[2]);
   quadratic(1000,713,948,746);quadratic(832,793,763,814);quadratic(710,820,671,817);
   quadratic(550,857,440,835);line(390,822);outline.closePath();
-  paths.stop=outline.getPoints(96).map(q=>q.toArray());
-  const bore=new THREE.Path();bore.absarc(0,0,.174,0,TAU,false);outline.holes.push(bore);
-  attach('stopBody',extrusion(outline,.145,.265,96),PALETTE.accent,stop,'stop');
+  // The stop is a single flat plate in the studs' plane. Its toe is part of
+  // the same outline: the toe point rides C's rim and drops into C's notch,
+  // and the plate is trimmed wherever C (deepened to this plane) sweeps
+  // through it during the index, so only the toe point meets C.
   paths.toe=[p.toeCenter,add(p.toeCenter,[.12,-.25]),add(p.toeCenter,[-.08,-.34])];
-  attach('stopToe',extrusion(polygon(paths.toe),-.07,.17),PALETTE.accent,stop,'stop');
+  // The trimmed outline is computed offline (the swept clip is slow) by
+  // scripts/generate-tappet-stud-stop-outline.mjs; the 065 tests recompute it.
+  const trimStop=(poses=480)=>{
+    const ring=points=>{const r=points.map(q=>[q[0],q[1]]);r.push(r[0]);return r;};
+    const drawn=clip.union([ring(outline.getPoints(96).map(q=>q.toArray()))],[ring(paths.toe)]);
+    const toStop=(q,gamma,theta)=>rotate(sub(rotate(q,gamma),p.pivot),-theta);
+    const near=q=>norm(sub(q,p.toeCenter))<.45;
+    const stopRelief=.006,toePocket=[ring(Array.from({length:48},(_,i)=>add(p.toeCenter,polar(.03,TAU*i/48))))];
+    const rimArc=Array.from({length:2048},(_,i)=>sub(polar(p.driverRadius,TAU*i/2048),p.pivot)).filter(near);
+    let trimmed=clip.difference(drawn,[ring([...rimArc,sub([0,0],p.pivot)])]);
+    for(let i=0;i<=poses;i++){
+      const gamma=p.gammaStart+(p.gammaEnd-p.gammaStart)*i/poses,theta=motion.stopAt(motion.motion(gamma).beta).theta;
+      // Away from the toe point the trimmed edge keeps a running clearance.
+      const keep=(q,k)=>{const d=norm(sub(toStop(q,gamma,theta),p.toeCenter));return d<.05||(d<.25&&k%8===0)||k%128===0;};
+      const exact=paths.cam.filter(keep).map(q=>toStop(q,gamma,theta));
+      const relieved=paths.cam.filter(keep).map(q=>toStop(scale(q,1+stopRelief/norm(q)),gamma,theta));
+      trimmed=clip.difference(trimmed,[ring(exact)],clip.difference([ring(relieved)],toePocket));
+    }
+    trimmed=trimmed.sort((a,b)=>b[0].length-a[0].length)[0][0];
+    const points=[];
+    for(const q of trimmed.slice(0,-1)){
+      const last=points.at(-1);
+      if(!last||norm(sub(q,last))>2e-4||norm(sub(q,p.toeCenter))<1e-9)points.push(q);
+      else if(norm(sub(last,p.toeCenter))>1e-9&&norm(sub(q,p.toeCenter))<norm(sub(last,p.toeCenter)))points[points.length-1]=q;
+    }
+    return points;
+  };
+  paths.stop=computeStopOutline||!bakedStopOutline.points?trimStop():bakedStopOutline.points;
+  const stopShape=new THREE.Shape(paths.stop.map(q=>new THREE.Vector2(...q)));
+  const bore=new THREE.Path();bore.absarc(0,0,.174,0,TAU,false);stopShape.holes.push(bore);
+  attach('stopBody',extrusion(stopShape,.145,.265,96),PALETTE.accent,stop,'stop');
   const pivot=attach('fixedPivot',drum(.17,0,-.18,.30),PALETTE.ink,root,'fixed');pivot.position.set(...p.pivot,0);
   for(const [name,lo,hi] of [['rearPivotHead',.115,.135],['frontPivotHead',.275,.295]]){
     const head=attach(name,drum(.23,.17,lo,hi),PALETTE.ink,root,'fixed');head.position.set(...p.pivot,0);

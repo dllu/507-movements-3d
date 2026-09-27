@@ -168,6 +168,18 @@ test('movement 277 dog a is one rigid bored plate turning on a smaller pin in th
   const bore = polygons[0][1];
   for (const [x, y] of bore) near(Math.hypot(x, y), geometry.boreRadius, 1e-6, 'bore radius');
   near(high - low, geometry.dogThickness, 1e-12, 'dog thickness');
+  // One smooth finger ending in the chisel tip: no tail or spur rises above
+  // the flat working face, and the tip is the part nearest the ratchet.
+  const outer = polygons[0][0];
+  const pivot = geometry.dogPivotRest;
+  const face = geometry.dogWorkingFace;
+  const faceY = face.left[1] - pivot.y;
+  const tipX = face.left[0] - pivot.x;
+  for (const [x, y] of outer) {
+    assert.ok(y <= faceY + 1e-9, `nothing rises above the working face (${y} > ${faceY})`);
+    assert.ok(x >= tipX - 1e-9, 'the chisel tip is the leftmost point');
+  }
+  assert.ok(face.right[0] > geometry.ratchetCrestX, 'the flat working face spans the tooth depth');
 
   const restVertices = blocks.dogBody.geometry.attributes.position.array.slice();
   const pinAxis = new THREE.Vector3();

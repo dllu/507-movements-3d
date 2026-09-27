@@ -3,6 +3,7 @@ import { makeBoredLinkRod } from './bored-link-rod.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
 import * as THREE from 'three';
+import { makePlateChainLink as makeFlexibleChainLink } from './plate-chain-links.js';
 import { glandCylinder, pinWallBracket, flangeColumn } from './beyond-crop-hardware.js';
 import {
   PALETTE,
@@ -270,25 +271,38 @@ function makeBeamAndSectors({
 
   // Brown's bracing: a radial strut from the beam's lower corner to the foot
   // of the sector, a diagonal brace back under the beam, and a short strut
-  // from the sector's upper end down to the beam top.
-  const spokeEnds = [
-    new THREE.Vector2(-27.60, -7.60),
-    new THREE.Vector2(-27.60, -7.60),
-    new THREE.Vector2(-27.10, 7.40),
-  ].map((point) => point.multiplyScalar(sourceScale));
-  const spokeStarts = [
-    new THREE.Vector2(-26.00, 1.10),
-    new THREE.Vector2(-14.00, 0.90),
-    new THREE.Vector2(-24.80, 4.40),
-  ].map((point) => point.multiplyScalar(sourceScale));
-  const sectorSpokes = spokeEnds.map((end, index) => {
-    const spoke = beamBetween(
-      spokeStarts[index],
-      end,
-      0.13,
-      0.18,
+  // from the sector's upper end down to the beam top. Each is one flat bar,
+  // a little thinner than the beam, whose ends run well into the beam and
+  // into the sector's rim band (clipped inside its root circle and its end
+  // radii), so both joints are buried seats rather than touching corners.
+  const braceHalfWidth = 0.45;
+  const rimClipRadius = sectorRootRadius / sourceScale - 0.45;
+  const wedge = poly([[0, 0],
+    ...Array.from({ length: 33 }, (_, i) => {
+      const angle = sectorWebStart + 0.002 + (sectorWebEnd - sectorWebStart - 0.004) * i / 32;
+      return [40 * Math.cos(angle), 40 * Math.sin(angle)];
+    })]);
+  const braceRegion = clip.intersection(wedge, poly(circle([0, 0], rimClipRadius, 256)));
+  const braceBar = ([sx, sy], [ex, ey]) => {
+    const length = Math.hypot(ex - sx, ey - sy);
+    const ux = (ex - sx) / length, uy = (ey - sy) / length;
+    const nx = -uy * braceHalfWidth, ny = ux * braceHalfWidth;
+    // Run on 3 units past the rim so the clip, not the bar end, closes it.
+    const fx = ex + ux * 3, fy = ey + uy * 3;
+    return clip.intersection(braceRegion, poly([[sx + nx, sy + ny], [sx - nx, sy - ny],
+      [fx - nx, fy - ny], [fx + nx, fy + ny]]));
+  };
+  const braceLines = [
+    [[-25.20, 2.50], [-27.60, -7.60]],
+    [[-11.10, 2.70], [-27.60, -7.60]],
+    [[-23.30, 2.60], [-27.35, 6.90]],
+  ];
+  const sectorSpokes = braceLines.map(([start, end]) => {
+    const region = braceBar(start, end).map((polygon) => polygon.map((ring) =>
+      ring.map(([x, y]) => [x * sourceScale, y * sourceScale])));
+    const spoke = new THREE.Mesh(
+      plate(region, beamPlaneZ - 0.09, beamPlaneZ + 0.09),
       beamMaterial,
-      beamPlaneZ + 0.01,
     );
     spoke.userData.role = 'rigid-open-sector-C-web-brace';
     beam.add(spoke);
@@ -316,21 +330,50 @@ function makeBeamAndSectors({
     'curved-chain-suspension-shoe-concentric-with-pivot-F';
   beam.add(chainShoe);
 
+  // Brown's gudgeon at F: a bracket plate hangs from the beam's underside,
+  // flaring into it with concave flanks, and carries the bored boss round
+  // the fixed shaft. It is a little thinner than the beam, and its top runs
+  // well up inside it, so the seat is a buried overlap with no visible pad.
+  const pivotBoreRadius = geometry.pivotShaftRadius + 0.012;
+  const bossRadius = 0.80;
+  const flank = (side) => {
+    // Quadratic flank from the beam's underside, tangent to it, down to a
+    // point on the boss where it meets the circle tangentially.
+    const at = -20 * Math.PI / 180;
+    const p = [side * bossRadius * Math.cos(at), bossRadius * Math.sin(at)];
+    const c = [p[0] + side * 0.342 * 0.85, p[1] + 0.94 * 0.85];
+    const start = [side * 1.95, 0.70];
+    return Array.from({ length: 25 }, (_, i) => {
+      const t = i / 24, u = 1 - t;
+      return [u * u * start[0] + 2 * u * t * c[0] + t * t * p[0],
+        u * u * start[1] + 2 * u * t * c[1] + t * t * p[1]];
+    });
+  };
+  const hangerOutline = [[-1.95, 2.0], [1.95, 2.0], ...flank(1),
+    ...flank(-1).reverse()];
+  const hangerRegion = clip.difference(
+    clip.union(poly(hangerOutline), poly(circle([0, 0], bossRadius, 96))),
+    poly(circle([0, 0], pivotBoreRadius / sourceScale, 96)),
+  ).map((polygon) => polygon.map((ring) =>
+    ring.map(([x, y]) => [x * sourceScale, y * sourceScale])));
+  const pivotBoss = new THREE.Mesh(
+    plate(hangerRegion, beamPlaneZ - 0.10, beamPlaneZ + 0.10),
+    beamMaterial,
+  );
+  pivotBoss.userData.bores = [{ x: 0, y: 0, radius: pivotBoreRadius }];
+  pivotBoss.userData.role = 'beam-D-gudgeon-bracket-and-pivot-boss-at-F';
+
+  // The gudgeon strap: one flat bar on the beam's front face from the boss,
+  // clear of the bore, up to a washer plate seated in the beam's top edge.
+  // Its back runs into both the beam and the bracket.
   const gudgeonStrap = new THREE.Mesh(plate(clip.union(
-    poly([[-0.40, 0.90], [0.40, 0.90], [0.40, 5.30], [-0.40, 5.30]]
+    poly([[-0.40, 0.55], [0.40, 0.55], [0.40, 4.90], [-0.40, 4.90]]
       .map(([x, y]) => [x * sourceScale, y * sourceScale])),
-    poly([[-0.90, 5.30], [0.90, 5.30], [0.90, 5.80], [-0.90, 5.80]]
+    poly([[-0.90, 4.45], [0.90, 4.45], [0.90, 5.05], [-0.90, 5.05]]
       .map(([x, y]) => [x * sourceScale, y * sourceScale])),
-  ), beamPlaneZ + 0.125, beamPlaneZ + 0.17), beamMaterial);
+  ), beamPlaneZ + 0.08, beamPlaneZ + 0.165), beamMaterial);
   gudgeonStrap.userData.role = 'gudgeon-strap-and-nut-over-F-on-beam-D';
   beam.add(gudgeonStrap);
-  const pivotBoreRadius = geometry.pivotShaftRadius + 0.012;
-  const pivotBoss = new THREE.Mesh(plate(clip.difference(
-    poly(circle([0, 0], 0.70 * sourceScale, 64)),
-    poly(circle([0, 0], pivotBoreRadius, 64)),
-  ), beamPlaneZ - 0.17, beamPlaneZ + 0.17), beamMaterial);
-  pivotBoss.userData.bores = [{ x: 0, y: 0, radius: pivotBoreRadius }];
-  pivotBoss.userData.role = 'beam-D-working-pivot-boss-at-F';
   const pivotBore = pivotBoss;
 
   const chainAttachmentBoss = cylinderAlongZ(0.34 * sourceScale, 0.20,
@@ -474,85 +517,6 @@ function makeRack({
     originAnchor,
     rack,
     rackTeeth,
-  };
-}
-
-// Links alternate as in a plate chain: inner links carry one central bored
-// plate, outer links straddle them with two side plates and own both pins.
-function makeFlexibleChainLink({
-  chainMaterial,
-  darkMaterial,
-  geometry,
-  nominalPitch,
-  outer,
-  width,
-}) {
-  const { chainInnerHalfDepth, chainLineZ, chainOuterHigh, chainOuterLow,
-    chainPinRadius } = geometry;
-  const link = new THREE.Group();
-  link.userData.flexibleChainElement = true;
-  link.userData.nominalArcPitch = nominalPitch;
-  link.userData.outerLink = outer;
-  link.userData.role = 'articulated-link-of-D-suspension-chain';
-  const eyeRadius = width * 0.47;
-  const boreRadius = chainPinRadius + 0.008;
-  const outline = clip.union(
-    poly([[0, -width * 0.27], [nominalPitch, -width * 0.27],
-      [nominalPitch, width * 0.27], [0, width * 0.27]]),
-    poly(circle([0, 0], eyeRadius, 48)),
-    poly(circle([nominalPitch, 0], eyeRadius, 48)),
-  );
-  const bored = clip.difference(outline,
-    poly(circle([0, 0], boreRadius, 48)),
-    poly(circle([nominalPitch, 0], boreRadius, 48)));
-  const plateSpans = outer
-    ? [[chainOuterLow, chainOuterLow + 0.04], [chainOuterHigh - 0.04, chainOuterHigh]]
-    : [[chainLineZ - chainInnerHalfDepth, chainLineZ + chainInnerHalfDepth]];
-  const plates = plateSpans.map(([low, high]) => {
-    const mesh = new THREE.Mesh(plate(outer ? outline : bored, low, high),
-      chainMaterial);
-    mesh.position.x = -nominalPitch / 2;
-    if (!outer) {
-      mesh.userData.bores = [
-        { x: 0, y: 0, radius: boreRadius },
-        { x: nominalPitch, y: 0, radius: boreRadius },
-      ];
-    }
-    mesh.userData.role = outer
-      ? 'chain-outer-side-plate'
-      : 'chain-inner-bored-plate';
-    return mesh;
-  });
-  const body = new THREE.Group();
-  body.position.x = nominalPitch / 2;
-  body.userData.role = 'chain-side-plate-between-adjacent-pins';
-  body.add(...plates);
-  const pins = outer ? [0, nominalPitch].map((x) => {
-    const pin = cylinderAlongZ(chainPinRadius,
-      chainOuterHigh - chainOuterLow, darkMaterial, 22);
-    pin.position.set(x - nominalPitch / 2, 0,
-      (chainOuterHigh + chainOuterLow) / 2);
-    pin.userData.role = x === 0 ? 'chain-link-start-pin' : 'chain-link-end-pin';
-    body.add(pin);
-    return pin;
-  }) : [null, null];
-  const startAnchor = new THREE.Object3D();
-  startAnchor.position.z = chainLineZ;
-  startAnchor.userData.role = 'analytic-chain-link-start';
-  const endAnchor = new THREE.Object3D();
-  endAnchor.position.set(nominalPitch, 0, chainLineZ);
-  endAnchor.userData.role = 'analytic-chain-link-end';
-  link.add(body, startAnchor, endAnchor);
-  return {
-    body,
-    endAnchor,
-    endBoss: plates[0],
-    endPin: pins[1],
-    link,
-    plates,
-    startAnchor,
-    startBoss: plates[0],
-    startPin: pins[0],
   };
 }
 
@@ -871,7 +835,7 @@ function singleActingBeamRackParallelMotion(movement) {
   pivotPedestal.userData.fixed = true;
   pivotPedestal.userData.role = 'fixed-pedestal-and-bearing-F';
   const pivotShaftLow = -0.47;
-  const pivotShaftHigh = beamPlaneZ + 0.19;
+  const pivotShaftHigh = beamPlaneZ + 0.125;
   const pivotShaft = cylinderAlongZ(geometry.pivotShaftRadius,
     pivotShaftHigh - pivotShaftLow, darkMaterial, 38);
   pivotShaft.position.z = (pivotShaftLow + pivotShaftHigh) / 2;

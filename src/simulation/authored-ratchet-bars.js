@@ -184,17 +184,20 @@ function alternatingPawlRatchetBar(movement) {
   const measuredHandleEndAtSource = sourceToModel(sourceHandleEndPixels);
 
   // Brown engraves about 22 small teeth, 10.5 px apart and about 6 px deep
-  // (tips at the hook line, 284 px; roots at 290 px). A slim hook nose (0.022)
-  // working 0.04 below the crests clears the next ramp at pickup at that
-  // depth. They sit on a
+  // (tips at the hook line, 284 px; roots at 290 px). They sit on a
   // thin bar lying on a table; the short pawl sits eight pitches behind.
   const rackPitch = 10.5 * sourceScale;
   const toothTipY = measuredLongNoseAtSource.y;
-  const noseRadius = 0.022;
-  const contactY = toothTipY - 0.04;
+  const toothRootY = sourceToModel(new THREE.Vector2(432, 290)).y;
+  // Each hook's tip is cut to the valley: its working face lies along the
+  // vertical tooth face and its underside along the return ramp, with a small
+  // rounded nose (radius 0.015) that seats in the root corner. The nose center
+  // is then tangent to both flanks when the hook pulls.
+  const noseRadius = 0.015;
+  const rampAngle = Math.atan2(toothTipY - toothRootY, rackPitch);
+  const contactY = toothRootY + noseRadius * (Math.tan(rampAngle) + 1 / Math.cos(rampAngle));
   const pickupTravel = 0.05;
   const pawlStroke = rackPitch + pickupTravel;
-  const toothRootY = sourceToModel(new THREE.Vector2(432, 290)).y;
   const rackBaseBottomY = sourceToModel(new THREE.Vector2(432, 296)).y;
   const longPawlLength = measuredLongAnchorAtSource.distanceTo(
     new THREE.Vector2(measuredLongNoseAtSource.x, contactY),
@@ -344,6 +347,42 @@ function alternatingPawlRatchetBar(movement) {
     };
   };
 
+  // A hook dropping into (or picking up in) a valley rests its nose on the
+  // return ramp: the nose center runs along the line parallel to the ramp
+  // from the seated point (face + r, contactY). Solving the pawl circle on
+  // that line gives the tip, and implicit differentiation its rates. The bar
+  // (and so the line) may be moving with the given speed and acceleration.
+  const rampDirection = new THREE.Vector2(Math.cos(rampAngle), Math.sin(rampAngle));
+  const rampSeatState = ({ anchor, length, faceX, faceSpeed = 0, faceAcceleration = 0 }) => {
+    const seat = new THREE.Vector2(faceX + noseRadius, contactY);
+    const offset = seat.clone().sub(anchor.position);
+    const along = offset.dot(rampDirection);
+    const discriminant = along ** 2 - offset.lengthSq() + length ** 2;
+    const s = -along - Math.sqrt(Math.max(0, discriminant));
+    const tip = seat.clone().addScaledVector(rampDirection, s);
+    const relative = tip.clone().sub(anchor.position);
+    const offsetSpeed = new THREE.Vector2(faceSpeed, 0).sub(anchor.velocity);
+    const offsetAcceleration = new THREE.Vector2(faceAcceleration, 0).sub(anchor.acceleration);
+    const denominator = relative.dot(rampDirection);
+    const sSpeed = -relative.dot(offsetSpeed) / denominator;
+    const relativeSpeed = offsetSpeed.clone().addScaledVector(rampDirection, sSpeed);
+    const sAcceleration = -(relativeSpeed.lengthSq() + relative.dot(offsetAcceleration)) / denominator;
+    const tipSpeed = new THREE.Vector2(faceSpeed, 0).addScaledVector(rampDirection, sSpeed);
+    const tipAcceleration = new THREE.Vector2(faceAcceleration, 0).addScaledVector(rampDirection, sAcceleration);
+    const relativeTipSpeed = tipSpeed.clone().sub(anchor.velocity);
+    return {
+      angle: Math.atan2(relative.y, relative.x),
+      angularSpeed: (relative.x * relativeTipSpeed.y - relative.y * relativeTipSpeed.x) / length ** 2,
+      lengthError: Math.abs(relative.length() - length),
+      rampTravel: s,
+      tip,
+      tipAcceleration,
+      tipSpeed,
+    };
+  };
+  const belowRamp = (state, faceX) => state.tip.y
+    < contactY + Math.tan(rampAngle) * (state.tip.x - faceX - noseRadius) - 1e-15;
+
   const stateAtCycleCoordinate = (coordinate) => {
     const cycleCoordinate = normalizedCycleCoordinate(coordinate);
     const cycleIndex = Math.floor(cycleCoordinate);
@@ -373,18 +412,37 @@ function alternatingPawlRatchetBar(movement) {
       ? (cyclePhase - 0.5) * 2
       : null;
     const shortResetFraction = longDriving ? cyclePhase * 2 : null;
-    const pawlState = (anchor, length, resetFraction) => {
-      if (resetFraction === null) {
-        return constrainedPawlState({
-          anchor,
-          length,
-          targetY: contactY,
-          targetYAcceleration: 0,
-          targetYSpeed: 0,
-        });
-      }
+    const activeFaceIndex = longDriving
+      ? cycleIndex * 2
+      : shortFaceOffset + cycleIndex * 2;
+    const activeFaceLocalX = baseFace + activeFaceIndex * rackPitch;
+    const halfStrokeStart = -2 * rackPitch * cycleIndex - (longDriving ? 0 : rackPitch);
+    // The driving hook first slides down the ramp of its held valley into
+    // the root (the pickup), then pulls with its nose seated in the root.
+    const activeAnchor = longDriving ? longAnchor : shortAnchor;
+    const activeLength = longDriving ? longPawlLength : shortPawlLength;
+    const seatedPawl = constrainedPawlState({
+      anchor: activeAnchor,
+      length: activeLength,
+      targetY: contactY,
+      targetYAcceleration: 0,
+      targetYSpeed: 0,
+    });
+    const proposedDisplacement = seatedPawl.tip.x - noseRadius - activeFaceLocalX;
+    const engaged = proposedDisplacement <= halfStrokeStart + 1e-12;
+    const barDisplacement = Math.min(halfStrokeStart, proposedDisplacement);
+    const activePawl = engaged ? seatedPawl : rampSeatState({
+      anchor: activeAnchor,
+      length: activeLength,
+      faceX: activeFaceLocalX + halfStrokeStart,
+    });
+    const barSpeedNow = engaged ? seatedPawl.tipSpeed.x : 0;
+    const barAccelerationNow = engaged ? seatedPawl.tipAcceleration.x : 0;
+    // The resetting hook rides clear on its prescribed lift and lands on the
+    // ramp of the valley it will pull next, sliding down with the bar.
+    const resetPawl = (anchor, length, resetFraction) => {
       const resetRate = 2 * cyclesPerSecond;
-      return constrainedPawlState({
+      const lifted = constrainedPawlState({
         anchor,
         length,
         targetY: contactY + resetLift * liftEnvelope(resetFraction),
@@ -393,27 +451,18 @@ function alternatingPawlRatchetBar(movement) {
         targetYSpeed: resetLift
           * liftEnvelopeDerivative(resetFraction) * resetRate,
       });
+      // The ramp under the nose: as it leaves the root it rides up the ramp
+      // until the lift carries it clear, and it lands on the next ramp.
+      const faceIndex = Math.floor((lifted.tip.x - noseRadius - baseFace - barDisplacement) / rackPitch + 1e-9);
+      const faceX = baseFace + faceIndex * rackPitch + barDisplacement;
+      if (!belowRamp(lifted, faceX)) return lifted;
+      return rampSeatState({ anchor, length, faceX, faceSpeed: barSpeedNow, faceAcceleration: barAccelerationNow });
     };
-    const longPawl = pawlState(
-      longAnchor,
-      longPawlLength,
-      longResetFraction,
-    );
-    const shortPawl = pawlState(
-      shortAnchor,
-      shortPawlLength,
-      shortResetFraction,
-    );
-    const activePawl = longDriving ? longPawl : shortPawl;
+    const longPawl = longDriving ? activePawl
+      : resetPawl(longAnchor, longPawlLength, longResetFraction);
+    const shortPawl = shortDriving ? activePawl
+      : resetPawl(shortAnchor, shortPawlLength, shortResetFraction);
     const activePawlKey = longDriving ? 'long-upper' : 'short-lower';
-    const activeFaceIndex = longDriving
-      ? cycleIndex * 2
-      : shortFaceOffset + cycleIndex * 2;
-    const activeFaceLocalX = baseFace + activeFaceIndex * rackPitch;
-    const halfStrokeStart = -2 * rackPitch * cycleIndex - (longDriving ? 0 : rackPitch);
-    const proposedDisplacement = activePawl.tip.x - noseRadius - activeFaceLocalX;
-    const barDisplacement = Math.min(halfStrokeStart, proposedDisplacement);
-    const engaged = proposedDisplacement <= halfStrokeStart + 1e-12;
     const cycleBaseDisplacement = -2 * rackPitch * cycleIndex;
     const renderedBarDisplacement = barDisplacement - cycleBaseDisplacement;
     const renderedFaceIndex = longDriving ? 0 : shortFaceOffset;
@@ -436,14 +485,14 @@ function alternatingPawlRatchetBar(movement) {
       activePawl: activePawlKey,
       activePawlContactError: Math.abs(activePawl.tip.x - noseRadius - activeContactPoint.x),
       engaged,
-      pickupClearance: Math.max(0, proposedDisplacement - halfStrokeStart),
+      pickupClearance: engaged ? 0 : activePawl.rampTravel,
       activePawlLengthError: activePawl.lengthError,
       atHandoff,
-      barAcceleration: engaged ? activePawl.tipAcceleration.x : 0,
+      barAcceleration: barAccelerationNow,
       barDisplacement,
       barDirection: 'left',
       barPitchesAdvanced: -barDisplacement / rackPitch,
-      barSpeed: engaged ? activePawl.tipSpeed.x : 0,
+      barSpeed: barSpeedNow,
       cycleCoordinate,
       cycleIndex,
       cyclePhase,
@@ -511,13 +560,19 @@ function alternatingPawlRatchetBar(movement) {
     const zero = { acceleration: new THREE.Vector2(), velocity: new THREE.Vector2() };
     const longAnchor = { ...zero, position: rotateVector(longAnchorLocal, leverAngle) };
     const shortAnchor = { ...zero, position: rotateVector(shortAnchorLocal, leverAngle) };
-    const pawl = (anchor, length, lift) => constrainedPawlState({
-      anchor, length, targetY: contactY + returnLift * lift,
-      targetYAcceleration: 0, targetYSpeed: 0,
-    });
     const barStart = -2 * driveVibrations * rackPitch;
+    const barDisplacement = barStart * (1 - quinticRamp(u, 0.3, 0.7));
+    const pawl = (anchor, length, lift) => {
+      const lifted = constrainedPawlState({
+        anchor, length, targetY: contactY + returnLift * lift,
+        targetYAcceleration: 0, targetYSpeed: 0,
+      });
+      const faceIndex = Math.floor((lifted.tip.x - noseRadius - baseFace - barDisplacement) / rackPitch + 1e-9);
+      const faceX = baseFace + faceIndex * rackPitch + barDisplacement;
+      return belowRamp(lifted, faceX) ? rampSeatState({ anchor, length, faceX }) : lifted;
+    };
     return {
-      barDisplacement: barStart * (1 - quinticRamp(u, 0.3, 0.7)),
+      barDisplacement,
       leverAngle,
       longAnchor: longAnchor.position,
       longPawl: pawl(longAnchor, longPawlLength, liftBump(u, 0, 0.15)),
@@ -656,7 +711,7 @@ function alternatingPawlRatchetBar(movement) {
   const leverRotor = new THREE.Group();
   leverRotor.userData.role = 'rigid-vibrating-lever-rotor';
   lever.add(leverRotor);
-  lever.position.z = 0.72;
+  lever.position.z = 0.345;
   root.add(lever);
   const leverMaterial = matte(PALETTE.driver, {
     metalness: 0.11,
@@ -716,34 +771,45 @@ function alternatingPawlRatchetBar(movement) {
     return pin;
   });
   const fixedFulcrum = makeAxialPin({
-    depth: 1.16,
+    depth: 0.8,
     radius: 0.13,
     role: 'stationary-lever-fulcrum-shaft',
   });
-  fixedFulcrum.position.z = 0.34;
+  fixedFulcrum.position.z = 0.1;
   root.add(fixedFulcrum);
 
+  // Both pawls lie in the rack's plane (they never cross), with the lever
+  // plate just in front of them on the same pins.
+  const workingAngles = (key) => {
+    const angles = [];
+    for (let i = 0; i <= 400; i += 1) {
+      const state = stateAtCycleCoordinate(i / 400);
+      if (key === 'long' ? state.longDriving : state.shortDriving) angles.push(state[`${key}PawlAngle`]);
+    }
+    return [Math.min(...angles), Math.max(...angles)];
+  };
+  const pawlPlaneZ = 0.14;
   const longPawl = makeSteppedRatchetPawl({
-    rootZ: 0.91,
-    noseRadius,
     color: PALETTE.accent,
-    depth: 0.18,
     length: longPawlLength,
+    noseRadius,
+    rampAngle,
     role: 'long-upper-alternating-pull-pawl',
-    width: 0.14,
+    toothHeight: toothTipY - toothRootY,
+    workingAngles: workingAngles('long'),
   });
-  longPawl.position.z = 0.91;
+  longPawl.position.z = pawlPlaneZ;
   root.add(longPawl);
   const shortPawl = makeSteppedRatchetPawl({
-    rootZ: 0.53,
-    noseRadius,
     color: PALETTE.brass,
-    depth: 0.18,
     length: shortPawlLength,
+    noseRadius,
+    rampAngle,
     role: 'short-lower-alternating-pull-pawl',
-    width: 0.14,
+    toothHeight: toothTipY - toothRootY,
+    workingAngles: workingAngles('short'),
   });
-  shortPawl.position.z = 0.53;
+  shortPawl.position.z = pawlPlaneZ;
   root.add(shortPawl);
 
   const longContactMarker = new THREE.Mesh(
@@ -1059,7 +1125,7 @@ function alternatingPawlRatchetBar(movement) {
   root.traverse(object => {
     for (const material of [].concat(object.material ?? [])) material.fog = false;
   });
-  root.userData.reconstructionNote = 'Finite stepped hooks engage the rack faces below the crests. Each lever half-stroke includes 0.05 of pickup travel before one tooth-pitch advance; the returning hook follows a prescribed smooth lift and drop. After two vibrations both hooks lift and the bar slides back four pitches in view (a prescribed demonstration reset, not a wrap). The unloaded bar is held during pickup; gravity, pawl bias, friction and inertial coast are not solved. No official animation is registered.';
+  root.userData.reconstructionNote = 'Both pawls are flat hook plates in the rack plane; each nose seats in a tooth root, its working face along the vertical tooth face and its underside along the ramp. Each lever half-stroke begins with a pickup in which the dropped hook slides down the ramp into the root, then pulls one tooth pitch; the returning hook follows a prescribed smooth lift and drop onto the next ramp. After two vibrations both hooks lift and the bar slides back four pitches in view (a prescribed demonstration reset, not a wrap). The unloaded bar is held during pickup; gravity, pawl bias, friction and inertial coast are not solved. No official animation is registered.';
   update(0);
   markShadows(root);
   // The pawls and lever stand in front of the table; their cast shadows

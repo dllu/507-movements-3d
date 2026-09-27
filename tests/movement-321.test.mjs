@@ -290,10 +290,23 @@ test('movement 321 holds the larger ratchet with T while B winds and the spring 
       'ratcheting-over-reversing-barrel-teeth');
     assert.equal(state.clickTMode,
       'engaged-holding-large-ratchet-against-fallback');
-    near(state.largeRatchetAngle, FULL_TURN * geometry.windingStartPhase, 3e-15,
-      `T holds larger ratchet at ${sample}`);
-    near(state.largeRatchetAngularVelocity, 0, 0,
-      `held ratchet speed at ${sample}`);
+    // Backlash: the larger ratchet slips back onto T early in winding, then
+    // T holds it there.
+    const progress = sample / 256;
+    const heldAngle = FULL_TURN * geometry.windingStartPhase
+      - geometry.clickTBacklash;
+    if (progress >= geometry.clickTRecoilWindow) {
+      near(state.largeRatchetAngle, heldAngle, 3e-15,
+        `T holds larger ratchet at ${sample}`);
+      near(state.largeRatchetAngularVelocity, 0, 0,
+        `held ratchet speed at ${sample}`);
+    } else {
+      assert.ok(state.largeRatchetAngle >= heldAngle - 3e-15
+        && state.largeRatchetAngle <= FULL_TURN * geometry.windingStartPhase,
+      `recoil stays within the backlash at ${sample}`);
+      assert.ok(state.largeRatchetAngularVelocity <= 0,
+        `the ratchet only slips back onto T at ${sample}`);
+    }
     near(state.contacts.T.clearance, 0, 5e-15,
       `T remains seated at ${sample}`);
     near(state.rope.slipError, 0, 8e-16,
@@ -302,8 +315,15 @@ test('movement 321 holds the larger ratchet with T while B winds and the spring 
       `spring supplies energy at ${sample}`);
     assert.ok(state.greatWheelAngle > previousGreatAngle,
       `G continues forward at ${sample}`);
-    assert.ok(state.weightPosition.y >= previousWeightY - 3e-12,
-      `winding lifts the weight at ${sample}`);
+    // Winding lifts the weight; once R has dropped behind its last tooth
+    // the released barrel settles forward by R's backlash only.
+    if (progress <= geometry.clickRSettleStart) {
+      assert.ok(state.weightPosition.y >= previousWeightY - 3e-12,
+        `winding lifts the weight at ${sample}`);
+    } else {
+      assert.ok(state.weightPosition.y <= previousWeightY + 3e-12,
+        `released barrel settles onto R at ${sample}`);
+    }
     assert.ok(state.springTorque > geometry.goingLoadTorque,
       `positive reserve torque at ${sample}`);
     maximumRClearance = Math.max(maximumRClearance,
@@ -314,6 +334,44 @@ test('movement 321 holds the larger ratchet with T while B winds and the spring 
   }
   assert.ok(maximumRClearance > 0.02,
     'carried click R visibly rides over the barrel teeth');
+  disposeModel(model.root);
+});
+
+test('movement 321 clicks seat fully in the tooth roots after each backlash', () => {
+  const model = createMovementModel(catalog.movements[320]);
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const [clickR, clickT] = blocks.finiteClicks;
+  assert.equal(clickR.name, 'R');
+  assert.equal(clickT.name, 'T');
+  const period = geometry.demonstrationPeriod;
+  const span = geometry.windingEndPhase - geometry.windingStartPhase;
+  const at = (phase) => stateAtTime(period * phase);
+  const liftR = (state) => clickR.angleAt(state.barrelAngle - state.largeRatchetAngle);
+  const liftT = (state) => clickT.angleAt(state.largeRatchetAngle);
+  // Going: R stays seated in its root, driving.
+  for (let sample = 0; sample <= 32; sample += 1) {
+    near(liftR(at(geometry.windingStartPhase * sample / 32)), 0, 1e-12,
+      `R seated while going at ${sample}`);
+  }
+  // Winding begins with T just past a drop, up the flank by the backlash;
+  // the recoil then seats it, and it stays seated.
+  assert.ok(Math.abs(liftT(at(geometry.windingStartPhase))) > 5e-3,
+    'T rests on the flank before the recoil');
+  for (let sample = 0; sample <= 32; sample += 1) {
+    const phase = geometry.windingStartPhase
+      + span * (geometry.clickTRecoilWindow + (1 - geometry.clickTRecoilWindow) * sample / 32);
+    near(liftT(at(phase)), 0, 1e-12, `T seated while holding at ${sample}`);
+  }
+  // B overruns R's last tooth, then the weight draws it back onto R.
+  const overrun = at(geometry.windingStartPhase + span * geometry.clickRSettleStart);
+  assert.ok(Math.abs(liftR(overrun)) > 2e-3, 'R has dropped past its tooth');
+  near(liftR(at(geometry.windingEndPhase)), 0, 1e-12, 'R seated after the settle');
+  // Seated noses sit in the roots, clear of the teeth by a hair.
+  for (const click of [clickR, clickT]) {
+    const { nose } = click.clickOutline;
+    const profile = click.wheel.userData.ratchetProfile;
+    near(Math.hypot(...nose), profile.rootRadius, 0.006, `${click.name} nose in the root`);
+  }
   disposeModel(model.root);
 });
 
@@ -461,9 +519,16 @@ test('movement 321 draws S-S-prime as Brown’s single hairpin wire that opens a
   // the larger ratchet and G runs 45 degrees ahead, then closes again.
   assert.ok(minimumOpening < 1e-9, `hairpin at the going preload ${minimumOpening}`);
   assert.ok(maximumOpening > 0.3 && maximumOpening < 0.6, `opening ${maximumOpening}`);
-  near(maximumSweep - minimumSweep, geometry.largeRatchetLagMaximum, 1e-9,
+  // The lag includes the larger ratchet's backlash recoil onto T.
+  near(maximumSweep - minimumSweep,
+    geometry.largeRatchetLagMaximum + geometry.clickTBacklash, 1e-9,
     'the wire takes up the whole ratchet lag');
-  assert.ok(maximumOpeningStep < 0.02, 'the wire flexes smoothly');
+  // The recovery takes up the lag plus T's backlash in the same time, so the
+  // step bound scales with that lag.
+  const lagScale = (geometry.largeRatchetLagMaximum + geometry.clickTBacklash)
+    / geometry.largeRatchetLagMaximum;
+  assert.ok(maximumOpeningStep < 0.02 * lagScale,
+    `the wire flexes smoothly ${maximumOpeningStep}`);
   assert.equal(crossings, 0, 'the wire never crosses itself');
   assert.ok(minimumRadius > 0.6, `the hairpin stays clear of the arbor ${minimumRadius}`);
   disposeModel(model.root);

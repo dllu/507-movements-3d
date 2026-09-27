@@ -1,6 +1,7 @@
 import {correctVariableSectors} from './variable-sector-parts.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import * as THREE from 'three';
+import {polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeShaft,
@@ -147,6 +148,21 @@ function involuteToothShape({
   };
 }
 
+function clipToSector(shape, startAngle, endAngle, radius) {
+  const wedge = [[0, 0]];
+  const segments = Math.max(8, Math.ceil((endAngle - startAngle) / (Math.PI / 32)));
+  for (let index = 0; index <= segments; index += 1) {
+    const angle = THREE.MathUtils.lerp(startAngle, endAngle, index / segments);
+    wedge.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+  }
+  wedge.push([0, 0]);
+  const ring = shape.getPoints().map((point) => [point.x, point.y]);
+  ring.push(ring[0]);
+  const clipped = polygonClipping.intersection([ring], [wedge]);
+  if (clipped.length !== 1) throw new Error('Sector edge must leave one tooth piece');
+  return new THREE.Shape(clipped[0][0].slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y)));
+}
+
 function makeInvoluteSector({
   color,
   depth,
@@ -235,8 +251,13 @@ function makeInvoluteSector({
     });
     baseRadius = toothProfile.baseRadius;
     involuteStartRadius = toothProfile.involuteStartRadius;
+    // The changeover teeth are centred on the sector's radial edges; cut
+    // them flush with the edge so no half tooth hangs past the sector.
+    const toothShape = isBoundaryTooth
+      ? clipToSector(toothProfile.shape, sectorStart, sectorEnd, outerRadius * 2)
+      : toothProfile.shape;
     const tooth = new THREE.Mesh(
-      centeredExtrusion(toothProfile.shape, depth, 0),
+      centeredExtrusion(toothShape, depth, 0),
       material,
     );
     tooth.userData.centerAngle = centerAngle;

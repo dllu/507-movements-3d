@@ -702,45 +702,80 @@ function reciprocatingWellLift(movement) {
     arm.userData.role = 'arm-joining-wind-wheel-to-hub';
     windRotor.add(arm);
   }
+  // Pass 86: Brown's upright shaft runs down to a square block at the
+  // spiral's head; the spiral rocks sideways under it while both turn. The
+  // joint is a Hooke coupling: the square block is the spider, turning with
+  // both shafts, with two trunnions along its local x for a fork on the
+  // wind-wheel shaft and two along its local z for a fork on the spiral's
+  // shaft. The spider's centre is the carrier's rocking point (carrierTop).
+  // Fork cheeks: 0.06 plates at 0.12-0.18 from the centre, bored 0.042 for
+  // the 0.04 trunnions; bridges at 0.12-0.17 beyond the 0.20 block.
+  const forkCheek = (up) => {
+    const ring = [[-0.06, up * 0.17], [-0.06, 0]];
+    for (let i = 1; i < 24; i += 1) {
+      // Round end on the far side of the trunnion from the bridge.
+      const a = Math.PI + up * Math.PI * i / 24;
+      ring.push([0.06 * Math.cos(a), 0.06 * Math.sin(a)]);
+    }
+    ring.push([0.06, 0], [0.06, up * 0.17]);
+    return polygonClipping.difference(poly(ring), poly(circle([0, 0], 0.042, 48)));
+  };
+  const cleanParts = (parts) => mergeGeometries(parts.map((g) => {
+    const n = g.index ? g.toNonIndexed() : g;
+    for (const k of Object.keys(n.attributes)) if (!['position', 'normal'].includes(k)) n.deleteAttribute(k);
+    return n;
+  }));
+  const couplingMaterial = matte(PALETTE.accent, { metalness: 0.22, roughness: 0.48 });
   // The wind-wheel shaft turns with the wheel (one body with its hub) and
-  // ends on the coupling block's top face instead of entering it.
+  // ends on its fork's bridge (0.17 above the spider's centre).
   const upperShaft = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.10, 0.10, 0.63, 24),
+    new THREE.CylinderGeometry(0.10, 0.10, 0.57, 24),
     darkMaterial,
   ), 'fixed-axis-upper-wind-wheel-shaft');
-  upperShaft.position.set(0, 3.855 - 4.18, 0);
+  upperShaft.position.set(0, 3.855 - 4.18 + 0.03, 0);
   windRotor.add(upperShaft);
+  // Upper fork: cheeks at x ±0.12..0.18, hanging from a bridge over the block.
+  const upperFork = addRole(new THREE.Mesh(cleanParts([
+    new THREE.BoxGeometry(0.36, 0.05, 0.12).translate(0, 0.145, 0),
+    ...[[0.12, 0.18], [-0.18, -0.12]].map(([x0, x1]) => plate(forkCheek(1), x0, x1).rotateY(Math.PI / 2)),
+  ]), darkMaterial), 'coupling-fork-on-wind-wheel-shaft');
+  upperFork.position.copy(carrierTop).sub(windRotor.position);
+  windRotor.add(upperFork);
 
   const flexibleCoupling = addRole(new THREE.Group(),
     'flexible-coupling-permitting-small-lateral-worm-vibration');
   flexibleCoupling.position.copy(carrierTop);
   root.add(flexibleCoupling);
   const couplingBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 0.22, 0.30),
-    matte(PALETTE.accent, { metalness: 0.22, roughness: 0.48 }),
+    new THREE.BoxGeometry(0.20, 0.20, 0.20),
+    couplingMaterial,
   );
+  couplingBlock.userData.role = 'coupling-spider-block';
   flexibleCoupling.add(couplingBlock);
-  const couplingPin = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.055, 0.48, 18),
-    darkMaterial,
-  );
-  couplingPin.rotation.z = Math.PI / 2;
+  // Two crossed trunnion bars (x for the upper fork, z for the lower).
+  const couplingPin = new THREE.Mesh(cleanParts([
+    new THREE.CylinderGeometry(0.04, 0.04, 0.36, 24).rotateZ(Math.PI / 2),
+    new THREE.CylinderGeometry(0.04, 0.04, 0.36, 24).rotateX(Math.PI / 2),
+  ]), darkMaterial);
+  couplingPin.userData.role = 'coupling-spider-trunnions';
   flexibleCoupling.add(couplingPin);
 
   const wormCarrier = addRole(new THREE.Group(),
     'laterally-rocking-lower-shaft-carrying-one-single-start-worm');
   wormCarrier.position.copy(carrierTop);
   root.add(wormCarrier);
-  // The shaft runs from just below the coupling block (clear of it and its
-  // cross pin through the carrier's small rocking angle) to the worm's top;
+  // The spiral's shaft runs from its lower fork's bridge to the worm's top;
   // a short stub below the worm turns in the step's bore.
   const wormTop = -carrierCenterDistance + wormLength / 2;
   const wormBottom = -carrierCenterDistance - wormLength / 2;
-  const lowerShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, -0.12 - wormTop, 24),
-    darkMaterial,
-  );
-  lowerShaft.position.y = (-0.12 + wormTop) / 2;
+  const lowerShaft = new THREE.Mesh(cleanParts([
+    new THREE.CylinderGeometry(0.075, 0.075, -0.15 - wormTop, 24)
+      .translate(0, (-0.15 + wormTop) / 2, 0),
+    // Lower fork: cheeks at z ±0.12..0.18, rising from a bridge under the block.
+    new THREE.BoxGeometry(0.12, 0.05, 0.36).translate(0, -0.145, 0),
+    ...[[0.12, 0.18], [-0.18, -0.12]].map(([z0, z1]) => plate(forkCheek(-1), z0, z1)),
+  ]), darkMaterial);
+  lowerShaft.userData.role = 'spiral-shaft-with-coupling-fork';
   wormCarrier.add(lowerShaft);
   const lowerStub = new THREE.Mesh(
     // Short enough to stay clear of the tappet arm meeting the step below.
@@ -760,6 +795,18 @@ function reciprocatingWellLift(movement) {
   }), 'single-start-spiral-alternately-meshing-one-worm-wheel-at-a-time');
   worm.position.set(0, -carrierCenterDistance, 0);
   wormCarrier.add(worm);
+  // The spiral's shaft and its fork turn with the worm: carry them on the
+  // worm's rotor (its local z is the carrier's +y), re-expressed there.
+  {
+    const rotor = worm.userData.rotor;
+    const spin = rotor.rotation.z;
+    rotor.rotation.z = 0;
+    wormCarrier.updateMatrixWorld(true);
+    const toRotor = rotor.matrixWorld.clone().invert().multiply(wormCarrier.matrixWorld);
+    rotor.rotation.z = spin;
+    lowerShaft.geometry.applyMatrix4(toRotor);
+    rotor.add(lowerShaft);
+  }
   // The thread is formed on its core: the core reaches the thread's root
   // (pitch radius less the thread radius), so the spiral is not a loose wire.
   {const core=worm.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');
@@ -1107,11 +1154,24 @@ function reciprocatingWellLift(movement) {
   const updateStreams = collectWaterStreams(root);
 
   const wheelPhase = Math.PI / (2 * wheelTeeth);
+  const spiderAxes = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  const spiderBasis = new THREE.Matrix4();
   const update = (time) => {
     const state = stateAtTime(time);
     windRotor.rotation.y = state.wormAngle;
     wormCarrier.rotation.z = state.carrierAngle;
     setSpin(worm, state.wormAngle);
+    // Hooke spider: its x trunnions lie on the upper fork's pin axis and its
+    // z trunnions on the lower fork's (made exactly perpendicular; the
+    // O(tilt^2) Hooke speed ripple, below 0.003 rad here, is not shown).
+    {
+      const c = Math.cos(state.wormAngle), s = Math.sin(state.wormAngle);
+      const a1 = spiderAxes[0].set(c, 0, -s);
+      const a2 = spiderAxes[1].set(s, 0, c).applyAxisAngle(spiderAxes[3].set(0, 0, 1), state.carrierAngle);
+      a2.addScaledVector(a1, -a1.dot(a2)).normalize();
+      const up = spiderAxes[2].crossVectors(a2, a1);
+      flexibleCoupling.quaternion.setFromRotationMatrix(spiderBasis.makeBasis(a1, up, a2));
+    }
     setSpin(leftAssembly.gear, wheelPhase + state.pulleyAngle
       - leftMeshPhase / wheelTeeth);
     setSpin(rightAssembly.gear, wheelPhase + state.pulleyAngle

@@ -131,8 +131,9 @@ test('movement 488 blade points lie exactly on one constant-lead helicoid', () =
   } = model.root.userData;
   for (let radialIndex = 0; radialIndex <= 40; radialIndex += 1) {
     const radialFraction = radialIndex / 40;
+    // Pass 86: the drawn surface starts sunk in the hub wall.
     const expectedRadius = THREE.MathUtils.lerp(
-      geometry.rootRadiusSceneUnit,
+      geometry.bladeSunkRootRadiusSceneUnit,
       geometry.tipRadiusSceneUnit,
       radialFraction,
     );
@@ -151,6 +152,11 @@ test('movement 488 blade points lie exactly on one constant-lead helicoid', () =
         3e-16, `finite blade patch angle u${radialIndex} v${chordIndex}`);
     }
   }
+  // The blade roots are sunk into the hub wall (bore 0.184, face 0.43) by
+  // more than the 0.045 blade thickness, not laid on its face.
+  assert.ok(geometry.bladeSunkRootRadiusSceneUnit > 0.184 + 0.05
+    && geometry.bladeSunkRootRadiusSceneUnit < 0.43 - 0.1,
+  `sunk blade root ${geometry.bladeSunkRootRadiusSceneUnit}`);
   near(geometry.helicalLeadCoefficientSceneUnit,
     geometry.screwPitchSceneUnitPerTurn / FULL_TURN, 0,
     'lead coefficient');

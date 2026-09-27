@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import {applyCutawayFor} from './cutaway-presentations.js';
+import {CUTAWAY_SPECS, applyCutawayFor} from './cutaway-presentations.js';
 import {PALETTE, markShadows, matte} from './primitives.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {circle, plate, poly, polygonClipping as clip} from './finite-plate-geometry.js';
@@ -98,17 +98,100 @@ function pipePath(x, topY, runY, endX, bend) {
   return path;
 }
 
-// One connected water body: outside the bell at the free level, inside it
-// at the level held down by the gas pressure, a ring under the bell's rim
-// joining them (it follows the rim), and any extra rings supplied.
-function buildWater(root, material, {floorY, pitRadius, bellRadius, bellWall, outerLevel, innerLevel, innerHoles, innerCore = 0}) {
-  const gap = 0.004;
-  const prism = (polys, low, high) => horizontalPlate(polys, low, high);
-  const outer = addMesh(root, prism(annulus(bellRadius + gap, pitRadius - gap), floorY + gap, outerLevel), material, 'outer-water-annulus-at-atmospheric-level');
-  const inner = addMesh(root, prism(annulus(innerCore, bellRadius - bellWall - gap, innerHoles), floorY + gap, innerLevel), material, 'inner-water-column-depressed-by-gas-pressure');
-  const underRim = addMesh(root, prism(annulus(bellRadius - bellWall - gap, bellRadius + gap), 0, 1), material, 'water-annulus-under-bell-rim-joining-inner-and-outer-water');
-  underRim.position.y = floorY + gap;
-  return {inner, outer, underRim};
+// Pass 87: the water is ONE closed body with no internal faces, so nothing
+// divides it where the bell's wall used to be once the bell has lifted. It is
+// a stack of horizontal layers, layer i filling plan region regions[i] between
+// levels i and i+1. Only the true boundary is emitted: each layer's side
+// walls, the bottom of the first, the top of the last, and at each interface
+// the part of one layer's region not covered by its neighbour's. The levels
+// (floor, bell rim, inner and outer water) move every frame; the topology does
+// not, so an update only rewrites the vertex heights.
+function layeredWater(regions) {
+  const positions = [], normals = [], levels = [];
+  const toVectors = (ring) => {
+    const points = ring.slice(0, -1).map(([x, y]) => new THREE.Vector2(x, y));
+    return points.filter((p, i) => p.distanceTo(points[(i + 1) % points.length]) > 1e-9);
+  };
+  const cap = (multipolygon, level, up) => {
+    for (const [outerRing, ...holeRings] of multipolygon) {
+      const contour = toVectors(outerRing), holes = holeRings.map(toVectors);
+      const all = [...contour, ...holes.flat()];
+      for (const triangle of THREE.ShapeUtils.triangulateShape(contour, holes)) {
+        let [a, b, c] = triangle.map((i) => all[i]);
+        // world (x, y, z) = (plan x, level, -plan y): +y needs clockwise in plan.
+        const ccw = (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x) > 0;
+        if (ccw === up) [b, c] = [c, b];
+        for (const p of [a, b, c]) {positions.push(p.x, 0, -p.y);normals.push(0, up ? 1 : -1, 0);levels.push(level);}
+      }
+    }
+  };
+  const walls = (multipolygon, low, high) => {
+    for (const polygon of multipolygon) {
+      polygon.forEach((ring, index) => {
+        let points = toVectors(ring);
+        // outer rings anticlockwise, holes clockwise: the material is on the left.
+        if (THREE.ShapeUtils.isClockWise(points) === (index === 0)) points = points.reverse();
+        const n = points.length;
+        const edgeNormal = (i) => {
+          const a = points[i], b = points[(i + 1) % n];
+          return new THREE.Vector2(b.y - a.y, -(b.x - a.x)).normalize();
+        };
+        const vertexNormal = (i, edge) => {
+          const here = edgeNormal(edge), other = edgeNormal(edge === i ? (i + n - 1) % n : i);
+          return here.dot(other) > Math.cos(Math.PI / 6) ? here.clone().add(other).normalize() : here;
+        };
+        for (let i = 0; i < n; i += 1) {
+          const j = (i + 1) % n, a = points[i], b = points[j], na = vertexNormal(i, i), nb = vertexNormal(j, i);
+          const quad = [[a, na, low], [b, nb, low], [b, nb, high], [a, na, low], [b, nb, high], [a, na, high]];
+          for (const [p, q, level] of quad) {positions.push(p.x, 0, -p.y);normals.push(q.x, 0, -q.y);levels.push(level);}
+        }
+      });
+    }
+  };
+  regions.forEach((region, i) => {
+    walls(region, i, i + 1);
+    if (i === 0) cap(region, 0, false);
+    const next = regions[i + 1];
+    if (!next) {cap(region, i + 1, true);return;}
+    cap(clip.difference(region, next), i + 1, true);
+    cap(clip.difference(next, region), i + 1, false);
+  });
+  // Fix winding against the authored normals (walls were emitted unordered).
+  for (let t = 0; t < positions.length; t += 9) {
+    const p = (k) => new THREE.Vector3(positions[t + 3 * k], levels[t / 3 + k], positions[t + 3 * k + 2]);
+    const face = new THREE.Vector3().subVectors(p(1), p(0)).cross(new THREE.Vector3().subVectors(p(2), p(0)));
+    const want = new THREE.Vector3(normals[t] + normals[t + 3] + normals[t + 6], normals[t + 1] + normals[t + 4] + normals[t + 7], normals[t + 2] + normals[t + 5] + normals[t + 8]);
+    if (face.dot(want) < 0) {
+      for (let k = 0; k < 3; k += 1) {
+        [positions[t + 3 + k], positions[t + 6 + k]] = [positions[t + 6 + k], positions[t + 3 + k]];
+        [normals[t + 3 + k], normals[t + 6 + k]] = [normals[t + 6 + k], normals[t + 3 + k]];
+      }
+      [levels[t / 3 + 1], levels[t / 3 + 2]] = [levels[t / 3 + 2], levels[t / 3 + 1]];
+    }
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  const levelOf = Uint8Array.from(levels);
+  const setLevels = (heights) => {
+    const position = geometry.attributes.position;
+    for (let i = 0; i < levelOf.length; i += 1) position.setY(i, heights[levelOf[i]]);
+    position.needsUpdate = true;
+    geometry.computeBoundingBox();
+    geometry.computeBoundingSphere();
+  };
+  geometry.userData.waterLayers = {count: regions.length};
+  return {geometry, setLevels};
+}
+
+// Brown's water: outside the bell at the free level, inside it at the level
+// held down by the gas pressure, joined under the bell's rim.
+function buildWater(root, material, {floorY, regions, role}) {
+  const {geometry, setLevels} = layeredWater(regions);
+  const body = addMesh(root, geometry, material, role);
+  let heights = null;
+  const set = (next) => {heights = next;setLevels(next);};
+  return {body, floorY, get heights() {return heights;}, set};
 }
 
 function presentSection(root) {
@@ -212,8 +295,17 @@ function singleLiftCounterweightedGasometer(movement) {
   const bellShell = addMesh(bellA, bell.geometry, bellMaterial, 'open-bottomed-domed-vessel-A');
   root.add(bellA);
 
-  const water = buildWater(root, waterMaterial, {floorY, pitRadius, bellRadius, bellWall, outerLevel: waterY, innerLevel: innerWaterY,
-    innerHoles: pipeXs.map((x) => planCircle([x, 0], pipeOuter + 0.004, 64))});
+  // One water body in three layers: floor to just under the rim (the whole
+  // pit), rim to the inner level (inside and outside the bell's wall), inner
+  // to free level (outside only).
+  const gap = 0.004;
+  const pipeHoles = pipeXs.map((x) => planCircle([x, 0], pipeOuter + gap, 64));
+  const outerWater = annulus(bellRadius + gap, pitRadius - gap);
+  const water = buildWater(root, waterMaterial, {floorY, role: 'one-connected-water-column-in-tank-B-inside-and-outside-A', regions: [
+    annulus(0, pitRadius - gap, pipeHoles),
+    clip.union(annulus(0, bellRadius - bellWall - gap, pipeHoles), outerWater),
+    outerWater,
+  ]});
 
   // Pulleys: plain flanged discs on short axle stubs, as Brown draws them.
   const tread = pulleyRadius - bandThickness / 2;
@@ -265,7 +357,7 @@ function singleLiftCounterweightedGasometer(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     bellA.position.y = state.bellY;
-    water.underRim.scale.y = Math.max(1e-4, state.bellY - floorY - 0.008);
+    water.set([floorY + gap, state.bellY - gap, innerWaterY, waterY]);
     pulleyCenters.forEach((center, index) => {
       const side = Math.sign(center.x);
       pulleys[index].rotor.rotation.z = side * state.pulleyAngle;
@@ -303,7 +395,7 @@ function singleLiftCounterweightedGasometer(movement) {
   presentSection(root);
   fitBounds(root, update, cycleDuration);
   markShadows(root);
-  for (const mesh of [water.inner, water.outer, water.underRim]) {mesh.castShadow = false;mesh.receiveShadow = false;}
+  water.body.castShadow = false;water.body.receiveShadow = false;
   return {cameraDirection: root.userData.cameraDirection, root, update};
 }
 
@@ -391,39 +483,50 @@ function centerGuidedGasometer(movement) {
   const sleeveA = addMesh(bellA, boredLatheGeometry([
     {radial: sleeveOuter, axial: 0}, {radial: sleeveOuter, axial: sleeveTop},
   ], sleeveInner, 96), sleeveMaterial, 'sliding-sleeve-a-secured-within-A');
+  // Brown draws A's bottom closed by a base from the skirt to sleeve a, which
+  // the two fixed pipes pass through with running clearance. It sits 0.003
+  // above the rim so that no face of it lies on the skirt's or sleeve's.
+  const baseThickness = 0.05, baseLift = 0.003, pipeClearance = 0.03;
+  const baseHoles = pipeXs.map((x) => planCircle([x, 0], pipeOuter + pipeClearance, 64));
+  const baseA = addMesh(bellA, horizontalPlate(annulus(sleeveOuter - (sleeveOuter - sleeveInner) / 2, bellRadius - bellWall / 2, baseHoles),
+    baseLift, baseThickness), bellMaterial, 'base-of-vessel-A-from-skirt-to-sleeve-a-pierced-by-the-pipes');
   root.add(bellA);
 
-  const holes = pipeXs.map((x) => planCircle([x, 0], pipeOuter + 0.004, 64));
-  const water = buildWater(root, waterMaterial, {floorY, pitRadius, bellRadius, bellWall, outerLevel: waterY, innerLevel: innerWaterY,
-    innerHoles: holes, innerCore: sleeveOuter + 0.004});
-  // Between a and b the water stands at the free level (the gap is open to
-  // the air at the top of a); under a's lower end a ring joins it.
+  // One water body in four layers: floor to under the base (the whole pit
+  // round b); the base's own depth (outside A, between a and b, and in the
+  // clearance round each pipe); above the base to the inner level (inside A
+  // as well); inner to free level (outside A and between a and b, which is
+  // open to the air at the top of a).
   const gap = 0.004;
-  const sleeveGapWater = addMesh(root, horizontalPlate(annulus(tubeOuter + gap, sleeveInner - gap), floorY + gap, waterY), waterMaterial,
-    'water-annulus-in-gap-between-tubes-a-and-b-at-atmospheric-level');
-  const underSleeveWater = addMesh(root, horizontalPlate(annulus(sleeveInner - gap, sleeveOuter + gap), 0, 1), waterMaterial, 'water-annulus-under-sleeve-a');
-  underSleeveWater.position.y = floorY + gap;
+  const pipeHoles = pipeXs.map((x) => planCircle([x, 0], pipeOuter + gap, 64));
+  const outerWater = annulus(bellRadius + gap, pitRadius - gap);
+  const sleeveGapWater = annulus(tubeOuter + gap, sleeveInner - gap);
+  const clearanceWater = clip.union(...pipeXs.map((x) => clip.difference(planCircle([x, 0], pipeOuter + pipeClearance - gap, 64), planCircle([x, 0], pipeOuter + gap, 64))));
+  const water = buildWater(root, waterMaterial, {floorY, role: 'one-connected-water-column-in-tank-B-round-b-and-inside-and-outside-A', regions: [
+    annulus(tubeOuter + gap, pitRadius - gap, pipeHoles),
+    clip.union(outerWater, sleeveGapWater, clearanceWater),
+    clip.union(annulus(sleeveOuter + gap, bellRadius - bellWall - gap, pipeHoles), outerWater, sleeveGapWater),
+    clip.union(outerWater, sleeveGapWater),
+  ]});
 
   const update = (time) => {
     const state = stateAtTime(time);
     bellA.position.y = state.bellY;
-    const lift = Math.max(1e-4, state.bellY - floorY - 2 * gap);
-    water.underRim.scale.y = lift;
-    underSleeveWater.scale.y = lift;
+    water.set([floorY + gap, state.bellY - gap, state.bellY + baseThickness + gap, innerWaterY, waterY]);
   };
 
   const geometry = {
-    amplitude, bellMassKilogram, bellRadius, bellWall, cycleDuration, floorY, gaugePressurePascal, groundY, headSceneUnit,
+    amplitude, baseThickness, bellMassKilogram, bellRadius, bellWall, cycleDuration, floorY, gaugePressurePascal, groundY, headSceneUnit,
     innerWaterY, midRimY, pipeTopY, pipeXs, pitRadius, rise, skirtHeight, sleeveInner, sleeveOuter, sleeveTop, tubeInner,
-    tubeOuter, tubeTopY, waterY,
+    pipeClearance, tubeOuter, tubeTopY, waterY,
   };
   root.userData = {
     animationTiming: {authoredCyclePeriod: cycleDuration, targetCycleDuration: 4},
     archetype: movement.archetype,
-    blocks: {bellA, bellShell, gasPipes, pit, sleeveA, sleeveGapWater, tubeB, tubeShell, underSleeveWater, water},
+    blocks: {baseA, bellA, bellShell, gasPipes, pit, sleeveA, tubeB, tubeShell, water},
     fidelity: 'authored',
     geometry,
-    mechanism: 'Vessel A carries the central sleeve a, which slides on the fixed tube b standing in the centre of the masonry tank B, so A rises and falls square without counterweights. Gas enters by the right pipe and leaves by the left, both rising through the floor of B above the water. The water inside A stands below the free level by the head of the gas pressure, set by the weight of A; between a and b, open to the air at the top, it stands at the free level.',
+    mechanism: 'Vessel A carries the central sleeve a, which slides on the fixed tube b standing in the centre of the masonry tank B, so A rises and falls square without counterweights. A\u2019s base joins its skirt to a and is pierced with running clearance by the two fixed pipes, through which the water inside A joins the tank. Gas enters by the right pipe and leaves by the left, both rising through the floor of B and A\u2019s base above the water. The water inside A stands below the free level by the head of the gas pressure, set by the weight of A; between a and b, open to the air at the top, it stands at the free level.',
     reconstruction: 'Proportions are measured on Brown’s plate. The pit is round in plan and the ground is shown as a square block; the pipes run out in a channel under the floor and b stands on a flanged foot in the ground. Brown’s pose is mid-stroke. Pressure is quasi-static.',
     sourceAnimation: {available: false, reason: 'The official Movement 480 page marks Animated unavailable.'},
     sourceReference: {officialPage: movement.sourceUrl, plate: 'Brown 1868, Movement 480', pixelScale: 'x=(px2-487)*0.0095, y=0.20+(560-py2)*0.0095 (2x pixels)'},
@@ -435,12 +538,14 @@ function centerGuidedGasometer(movement) {
   presentSection(root);
   fitBounds(root, update, cycleDuration);
   markShadows(root);
-  for (const mesh of [water.inner, water.outer, water.underRim, sleeveGapWater, underSleeveWater]) {mesh.castShadow = false;mesh.receiveShadow = false;}
+  water.body.castShadow = false;water.body.receiveShadow = false;
   return {cameraDirection: root.userData.cameraDirection, root, update};
 }
 
 export function createAuthoredGasometerMovement(movement) {
   if (movement.id === 479) return applyCutawayFor(singleLiftCounterweightedGasometer(movement), movement.id);
-  if (movement.id === 480) return applyCutawayFor(centerGuidedGasometer(movement), movement.id);
+  // A's base is cut on Brown's section with the rest of A.
+  if (movement.id === 480) return applyCutawayFor(centerGuidedGasometer(movement), movement.id,
+    {cut: [...CUTAWAY_SPECS[480].cut, 'base-of-vessel-A-from-skirt-to-sleeve-a-pierced-by-the-pipes']});
   return null;
 }

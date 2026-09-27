@@ -460,25 +460,96 @@ function compensationBalance(movement) {
   );
   mainBar.userData.role = 'thermally-expanding-main-balance-bar-t-a-t-prime';
 
-  const compoundArmSegmentCount = 42;
-  const compoundArmSegments = [1, -1].map((side) => (
-    Array.from({ length: compoundArmSegmentCount }, () => {
-      const steel = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 0.105, 0.42),
-        steelMaterial,
-      );
-      steel.userData.layer = 'radially-inner-steel';
-      steel.userData.role = 'inner-steel-layer-of-compound-balance-arm';
-      const brass = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 0.105, 0.42),
-        brassMaterial,
-      );
-      brass.userData.layer = 'radially-outer-brass';
-      brass.userData.role = 'outer-brass-layer-of-compound-balance-arm';
-      balanceAssembly.add(steel, brass);
-      return { brass, side, steel };
-    })
-  ));
+  // Each compound bar is two continuous laminae, brass outside and steel
+  // inside, each one swept rectangular section (0.105 thick, 0.42 deep)
+  // whose vertices are rewritten in place as the bar bends. A lamina runs
+  // from inside the bar head at t (parameter 0) through weight b (parameter
+  // 1) on to Brown's free end past it (parameter armFreeEndParameter).
+  const compoundArmSegmentCount = 96;
+  const armFreeEndParameter = 1.22;
+  const laminaHalfThickness = 0.0525;
+  const laminaOffset = 0.055;
+  const laminaHalfDepth = 0.21;
+  const ribbonGeometry = () => {
+    const rings = compoundArmSegmentCount + 1;
+    // Four side faces with their own vertices (sharp section corners), plus
+    // two end caps.
+    const geometry = new THREE.BufferGeometry();
+    const vertexCount = 4 * 2 * rings + 8;
+    geometry.setAttribute('position',
+      new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3));
+    geometry.setAttribute('normal',
+      new THREE.BufferAttribute(new Float32Array(vertexCount * 3), 3));
+    const index = [];
+    for (let face = 0; face < 4; face += 1) {
+      const base = face * 2 * rings;
+      for (let i = 0; i < rings - 1; i += 1) {
+        const a = base + 2 * i, b = a + 1, c = a + 2, d = a + 3;
+        index.push(a, c, b, b, c, d);
+      }
+    }
+    const cap = 8 * rings;
+    index.push(cap, cap + 1, cap + 2, cap, cap + 2, cap + 3);
+    index.push(cap + 4, cap + 6, cap + 5, cap + 4, cap + 7, cap + 6);
+    geometry.setIndex(index);
+    return geometry;
+  };
+  const compoundArmSegments = [1, -1].map((side) => {
+    const steel = new THREE.Mesh(ribbonGeometry(), steelMaterial);
+    steel.userData.layer = 'radially-inner-steel';
+    steel.userData.role = 'inner-steel-lamina-of-compound-balance-bar';
+    steel.userData.radialOffset = -laminaOffset;
+    const brass = new THREE.Mesh(ribbonGeometry(), brassMaterial);
+    brass.userData.layer = 'radially-outer-brass';
+    brass.userData.role = 'outer-brass-lamina-of-compound-balance-bar';
+    brass.userData.radialOffset = laminaOffset;
+    for (const lamina of [steel, brass]) lamina.frustumCulled = false;
+    balanceAssembly.add(steel, brass);
+    return [{ brass, side, steel }];
+  });
+  const writeLamina = (mesh, centers, normals) => {
+    const position = mesh.geometry.attributes.position;
+    const normal = mesh.geometry.attributes.normal;
+    const rings = centers.length;
+    const offset = mesh.userData.radialOffset;
+    // Faces: outer, front, inner, back; each ring contributes two vertices.
+    const corners = [
+      [[1, 1], [1, -1]], [[-1, 1], [1, 1]], [[-1, -1], [-1, 1]],
+      [[1, -1], [-1, -1]],
+    ];
+    const at = (i, [r, z]) => {
+      const radial = offset + r * laminaHalfThickness;
+      return [centers[i].x + normals[i].x * radial,
+        centers[i].y + normals[i].y * radial, z * laminaHalfDepth];
+    };
+    for (let face = 0; face < 4; face += 1) {
+      for (let i = 0; i < rings; i += 1) {
+        const n = face === 0 ? [normals[i].x, normals[i].y, 0]
+          : face === 2 ? [-normals[i].x, -normals[i].y, 0]
+            : face === 1 ? [0, 0, 1] : [0, 0, -1];
+        for (let k = 0; k < 2; k += 1) {
+          const v = face * 2 * rings + 2 * i + k;
+          position.setXYZ(v, ...at(i, corners[face][k]));
+          normal.setXYZ(v, ...n);
+        }
+      }
+    }
+    const cap = 8 * rings;
+    const ends = [[0, -1], [rings - 1, 1]];
+    for (const [e, [i, sign]] of ends.entries()) {
+      const next = sign < 0 ? centers[1] : centers[rings - 2];
+      const t = centers[i].clone().sub(next).normalize();
+      const quad = [[1, 1], [1, -1], [-1, -1], [-1, 1]];
+      for (let k = 0; k < 4; k += 1) {
+        position.setXYZ(cap + 4 * e + k, ...at(i, quad[k]));
+        normal.setXYZ(cap + 4 * e + k, t.x, t.y, 0);
+      }
+    }
+    position.needsUpdate = true;
+    normal.needsUpdate = true;
+    mesh.geometry.computeBoundingBox();
+    mesh.geometry.computeBoundingSphere();
+  };
 
   const makeCompensationWeight = (side) => {
     const group = new THREE.Group();
@@ -617,39 +688,29 @@ function compensationBalance(movement) {
     segment.scale.y = length;
   };
 
-  const update = (time) => {
+  let update = (time) => {
     const state = stateAtTime(time);
     balanceAssembly.rotation.z = state.balanceAngle;
     mainBar.scale.y = 2 * state.attachmentRadius;
     for (const [armIndex, side] of [1, -1].entries()) {
-      const segments = compoundArmSegments[armIndex];
-      for (let index = 0; index < compoundArmSegmentCount;
-        index += 1) {
-        const startParameter = index / compoundArmSegmentCount;
-        const endParameter = (index + 1) / compoundArmSegmentCount;
-        const startAngle = Math.PI * startParameter / 2;
-        const endAngle = Math.PI * endParameter / 2;
-        const unrotatedStart = new THREE.Vector3(
-          side * state.weightRadius * Math.sin(startAngle),
-          side * state.attachmentRadius * Math.cos(startAngle),
-          0,
-        );
-        const unrotatedEnd = new THREE.Vector3(
-          side * state.weightRadius * Math.sin(endAngle),
-          side * state.attachmentRadius * Math.cos(endAngle),
-          0,
-        );
-        const start = unrotatedStart.applyAxisAngle(
-          Z_AXIS,
-          freeEndAngleOffset * startParameter,
-        );
-        const end = unrotatedEnd.applyAxisAngle(
-          Z_AXIS,
-          freeEndAngleOffset * endParameter,
-        );
-        setLinearSegment(segments[index].brass, start, end, 0.055);
-        setLinearSegment(segments[index].steel, start, end, -0.055);
+      const centers = [];
+      for (let index = 0; index <= compoundArmSegmentCount; index += 1) {
+        const parameter = armFreeEndParameter * index / compoundArmSegmentCount;
+        const angle = Math.PI * parameter / 2;
+        centers.push(new THREE.Vector2(
+          side * state.weightRadius * Math.sin(angle),
+          side * state.attachmentRadius * Math.cos(angle),
+        ).rotateAround(new THREE.Vector2(), freeEndAngleOffset * parameter));
       }
+      const normals = centers.map((center, index) => {
+        const tangent = centers[Math.min(index + 1, centers.length - 1)]
+          .clone().sub(centers[Math.max(index - 1, 0)]).normalize();
+        const normal = new THREE.Vector2(tangent.y, -tangent.x);
+        return normal.dot(center) < 0 ? normal.negate() : normal;
+      });
+      const { brass, steel } = compoundArmSegments[armIndex][0];
+      writeLamina(brass, centers, normals);
+      writeLamina(steel, centers, normals);
     }
     rightWeight.group.position.set(
       state.weightRadius * Math.cos(freeEndAngleOffset),
@@ -838,12 +899,40 @@ function compensationBalance(movement) {
   };
 
   correctCompensationBalance(root);
-  // Brown's timing screws t, t' stand on the bar ends above the roots of the
-  // compound arms. Start each stem at the outer face of the brass layer
-  // (0.1075 beyond the bar end) instead of running it down through the arm
-  // root; the outer end is unchanged.
+  // Brown's timing screws t, t' rise from the bar heads: each stem starts
+  // 0.14 inside its head; the outer end is unchanged.
+  // Brown draws each end of the main bar as a squared head: the compound
+  // bar's root is buried in its side and the timing screw rises from its
+  // top. The head is 0.02 deeper than the laminae, so their roots end inside
+  // it, and the bar end runs 0.25 up into it.
+  for (const [side, weight] of [[1, rightWeight], [-1, leftWeight]]) {
+    for (const extension of weight.armExtensions ?? []) {
+      extension.geometry.dispose();
+      weight.group.remove(extension);
+    }
+    weight.armExtensions = [];
+  }
+  const barHeads = [1, -1].map((side) => {
+    const head = new THREE.Mesh(
+      new THREE.BoxGeometry(0.40, 0.41, 2 * laminaHalfDepth + 0.02),
+      balanceMaterial,
+    );
+    head.userData.side = side;
+    head.userData.role = side > 0
+      ? 'main-bar-head-at-t-carrying-compound-bar-and-timing-screw'
+      : 'main-bar-head-at-t-prime-carrying-compound-bar-and-timing-screw';
+    balanceAssembly.add(head);
+    return head;
+  });
+  root.userData.blocks.barHeads = barHeads;
+  const baseUpdate = update;
+  update = (time) => {
+    baseUpdate(time);
+    const radius = root.userData.renderState.attachmentRadius;
+    for (const head of barHeads) head.position.set(0, head.userData.side * (radius - 0.045), 0);
+  };
   for (const [side, screw] of [[1, topTimingScrew], [-1, bottomTimingScrew]]) {
-    const innerEnd = -timingScrewOffset + 0.115;
+    const innerEnd = -timingScrewOffset + 0.02;
     const outerEnd = 0.02 + 0.55;
     screw.stem.geometry.dispose();
     screw.stem.geometry = new THREE.CylinderGeometry(

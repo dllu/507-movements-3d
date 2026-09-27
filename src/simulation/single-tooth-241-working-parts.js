@@ -6,18 +6,13 @@ import { poly, circle, plate, ring, polygonClipping } from './finite-plate-geome
 export function finishSingleTooth241(model) {
   const { root } = model, { blocks: b, geometry: g } = root.userData;
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
-  // Brown draws the single tooth as a broad curled tadpole on the disk face:
-  // a round head bored over the arbor, its body sweeping out and curling
-  // into the working tip. The working tip keeps the source outline; the
-  // broad head and body stay inside the disk rim (radius 0.55 at most).
-  const toothOutline = poly(g.driverToothOutlinePoints.map(p => p.toArray()));
-  const head = 0.24, body = [];
-  for (let i = 0; i <= 40; i++) { const a = THREE.MathUtils.degToRad(70 + 190 * i / 40); body.push([head * Math.cos(a), head * Math.sin(a)]); }
-  // Lower flank: from under the head out to the tip's outer base corner.
-  for (let i = 1; i <= 12; i++) { const t = i / 12; body.push([-0.08 + (0.47 + 0.08) * t, -0.225 - 0.03 * Math.sin(Math.PI * t) - 0.025 * t]); }
-  // Upper flank: concave, from the tip's inner base corner back to the head.
-  for (let i = 0; i <= 12; i++) { const t = i / 12; body.push([0.54 - (0.54 - 0.082) * t, -0.09 + (0.09 + 0.226) * t - 0.07 * Math.sin(Math.PI * t)]); }
-  const tadpole = polygonClipping.difference(polygonClipping.union(toothOutline, poly(body)), poly(circle([0, 0], 0.165, 96)));
+  // Brown draws the single tooth as a comma on the disk face: a round head
+  // bored over the arbor and one tapering tail out to the working tip. The
+  // tail is the source horn (its working tip and flanks unchanged) joined to
+  // the head by a straight-sided neck, with no curl.
+  const head = 0.24, toothOutline = poly(g.driverToothOutlinePoints.map(p => p.toArray()));
+  const neck = poly([[0.02, 0.2], [0.56, -0.08], [0.47, -0.26], [0.02, -0.2]]);
+  const tadpole = polygonClipping.difference(polygonClipping.union(toothOutline, neck, poly(circle([0, 0], head, 96))), poly(circle([0, 0], 0.165, 96)));
   replace(b.driverTooth, plate(tadpole, -0.09, 0.09));
   // A darker shade of the disk's colour, so the tooth plate reads on its face.
   b.driverTooth.material = b.driverTooth.material.clone();

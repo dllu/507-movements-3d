@@ -44,8 +44,24 @@ test('284 ratchet faces lean back as Brown cuts them and face clockwise', () => 
     const turn = Math.atan2(next[1], next[0]) - Math.atan2(tip[1], tip[0]);
     assert.ok(((turn % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI) < pitch + 1e-9);
   }
-  // The claw's working edge rises as Brown's does (about 16 degrees).
-  assert.ok(Math.abs(g.clawRise * 180 / Math.PI - 16) < 1);
+  // The claw's working edge lies along the tooth face it pulls: over every
+  // pull it stands within 2 degrees under the face, never steeper (catch and
+  // wheel turn about different centres, so a sliver remains).
+  let pulls = 0;
+  for (let k = 0; k < 4000; k += 1) {
+    const state = model.root.userData.stateAtTime(k * g.loopPeriod / 4000);
+    if (!state.driving) continue;
+    const noseAngle = Math.atan2(state.nose[1], state.nose[0]);
+    const n = Math.round((noseAngle - state.wheelAngle - g.mountPhase) / pitch);
+    const theta = g.mountPhase + n * pitch + state.wheelAngle;
+    const root = [g.ratchetRootRadius * Math.cos(theta), g.ratchetRootRadius * Math.sin(theta)];
+    const tip = [g.ratchetTipRadius * Math.cos(theta + g.toothTipLead), g.ratchetTipRadius * Math.sin(theta + g.toothTipLead)];
+    const mismatch = (Math.atan2(tip[1] - root[1], tip[0] - root[0]) - g.clawRise - state.catchAngle) * 180 / Math.PI;
+    assert.ok(mismatch > 0 && mismatch < 2, `claw edge vs face ${mismatch} at ${k}`);
+    assert.ok(Math.hypot(state.nose[0] - root[0], state.nose[1] - root[1]) < 0.004, 'claw point in the pocket corner');
+    pulls += 1;
+  }
+  assert.ok(pulls > 1000);
 });
 
 test('284 feeds one tooth anticlockwise per crank turn and never runs back while feeding', () => {

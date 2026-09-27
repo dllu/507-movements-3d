@@ -1,5 +1,6 @@
 import { finishOtis278Parts } from './release-mechanism-working-parts.js';
 import * as THREE from 'three';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeBeam,
@@ -126,14 +127,23 @@ function otisSafetyStop(movement) {
   );
   const elbowAngle = sourceLowerArmAngle - trippedLeverAngle;
   const upperArmVisibleLength = 1.58;
-  const pawlLength = sourceLeftLowerJoint.x
-    - sourcePointToModel(sourceRasterLeftPawlTip).x;
   const pawlThickness = 0.18;
   const rackToothTipX = Math.abs(
     sourcePointToModel(sourceRasterLeftRackTip).x,
   );
-  const rackToothRootX = rackToothTipX + 0.30;
-  const rackPitch = 0.52;
+  // Brown's hook teeth are shallow: about 8.5 px deep (0.10) on a 22 px
+  // pitch (0.264), each a flat upper seat above an undercut that slopes back
+  // to the root over most of the pitch (0.21 of it).
+  const rackToothDepth = 0.10;
+  const rackToothRootX = rackToothTipX + rackToothDepth;
+  const rackPitch = 0.264;
+  const rackUndercutHeight = 0.21;
+  // Each pawl runs right into the root of its tooth gap when caught, its
+  // square toe 0.004 from the root face and its underside on the seat.
+  const pawlRootGap = 0.004;
+  const pawlLength = sourceLeftLowerJoint.x
+    + rackToothRootX - pawlRootGap;
+  const pawlCenterY = sourceLeftLowerJoint.y;
   const catchSeatY = sourcePointToModel(sourceRasterLeftRackTip).y;
   const sourcePlatformY = 0;
   const hoistHeight = 1.20;
@@ -191,6 +201,20 @@ function otisSafetyStop(movement) {
     0,
   );
 
+  const releaseLagStart = 0.45;
+  const releaseLag = (position) => {
+    const span = 1 - releaseLagStart;
+    const u = THREE.MathUtils.clamp((position - releaseLagStart) / span, 0, 1);
+    return {
+      // Evaluated from the nearer end so it stays monotone to rounding.
+      value: u <= 0.5
+        ? u ** 3 * (10 - 15 * u + 6 * u * u)
+        : 1 - (1 - u) ** 3 * (10 - 15 * (1 - u) + 6 * (1 - u) ** 2),
+      slope: 30 * u * u * (1 - u) ** 2 / span,
+      curvature: 60 * u * (1 - u) * (1 - 2 * u) / span ** 2,
+    };
+  };
+
   const stateAtCycleTime = (cycleTime) => {
     let springRelease;
     let springReleaseSpeed;
@@ -242,9 +266,14 @@ function otisSafetyStop(movement) {
       stage = 'normal-lowering-rope-taut-pawls-clear';
     } else if (cycleTime < catchTime) {
       const motion = quinticWindow(cycleTime, normalLowerEnd, catchTime);
-      springRelease = motion.position;
-      springReleaseSpeed = motion.velocity;
-      springReleaseAcceleration = motion.acceleration;
+      // The platform falls freely at once; the spring drives the pawls out
+      // over the later part of the drop, so each squared toe passes the
+      // tooth tips only after it has fallen below the undercut above.
+      const lag = releaseLag(motion.position);
+      springRelease = lag.value;
+      springReleaseSpeed = lag.slope * motion.velocity;
+      springReleaseAcceleration = lag.curvature * motion.velocity ** 2
+        + lag.slope * motion.acceleration;
       platformY = rackPitch * (1 - motion.position);
       platformSpeed = -rackPitch * motion.velocity;
       platformAcceleration = -rackPitch * motion.acceleration;
@@ -295,26 +324,31 @@ function otisSafetyStop(movement) {
       leftLowerAcceleration.y,
       leftLowerAcceleration.z,
     );
-    const leftPawlTip = leftLowerJoint.clone()
-      .add(new THREE.Vector3(-pawlLength, 0, 0));
-    const rightPawlTip = rightLowerJoint.clone()
-      .add(new THREE.Vector3(pawlLength, 0, 0));
+    // Each pawl slides level in its guide at the arrested height; the lever
+    // pin rises 0.037 in a short vertical slot in the pawl eye as the lever
+    // swings back, so only its horizontal motion reaches the pawl.
+    const leftPawlTip = new THREE.Vector3(
+      leftLowerJoint.x - pawlLength,
+      pawlCenterY,
+      leftLowerJoint.z,
+    );
+    const rightPawlTip = new THREE.Vector3(
+      rightLowerJoint.x + pawlLength,
+      pawlCenterY,
+      rightLowerJoint.z,
+    );
     const leftPawlGlobal = leftPawlTip.clone();
     const rightPawlGlobal = rightPawlTip.clone();
     leftPawlGlobal.y += platformY;
     rightPawlGlobal.y += platformY;
-    const leftPawlGlobalVelocity = leftLowerVelocity.clone().add(
-      new THREE.Vector3(0, platformSpeed, 0),
-    );
-    const rightPawlGlobalVelocity = rightLowerVelocity.clone().add(
-      new THREE.Vector3(0, platformSpeed, 0),
-    );
-    const leftPawlGlobalAcceleration = leftLowerAcceleration.clone().add(
-      new THREE.Vector3(0, platformAcceleration, 0),
-    );
-    const rightPawlGlobalAcceleration = rightLowerAcceleration.clone().add(
-      new THREE.Vector3(0, platformAcceleration, 0),
-    );
+    const leftPawlGlobalVelocity = new THREE.Vector3(
+      leftLowerVelocity.x, platformSpeed, 0);
+    const rightPawlGlobalVelocity = new THREE.Vector3(
+      rightLowerVelocity.x, platformSpeed, 0);
+    const leftPawlGlobalAcceleration = new THREE.Vector3(
+      leftLowerAcceleration.x, platformAcceleration, 0);
+    const rightPawlGlobalAcceleration = new THREE.Vector3(
+      rightLowerAcceleration.x, platformAcceleration, 0);
     const pawlUndersideY = leftPawlGlobal.y - pawlThickness / 2;
     const verticalCatchClearance = pawlUndersideY - catchSeatY;
     const lateralRackClearance = rackToothTipX
@@ -441,53 +475,55 @@ function otisSafetyStop(movement) {
   // Brown crops the uprights A just above the rope eye and below the legs
   // of B; the hoistway beyond them is not drawn.
   const rackHeight = 6.3;
+  // The teeth are cut in the upright's front, forward of the platform legs
+  // (which run behind them, clear of the tooth tips).
+  const uprightBackZ = -0.53;
+  const uprightFrontZ = 0.45;
+  const rackBackZ = -0.18;
   const rackCenterY = 0.1;
   const leftUpright = new THREE.Mesh(
-    new THREE.BoxGeometry(0.46, rackHeight, 0.74),
+    new THREE.BoxGeometry(0.46, rackHeight, uprightFrontZ - uprightBackZ),
     frameMaterial,
   );
-  leftUpright.position.set(-2.56, rackCenterY, -0.16);
+  leftUpright.position.set(-2.56, rackCenterY, (uprightFrontZ + uprightBackZ) / 2);
   leftUpright.userData.role = 'fixed-left-upright-A';
   const rightUpright = leftUpright.clone();
   rightUpright.position.x = 2.56;
   rightUpright.userData.role = 'fixed-right-upright-A';
   root.add(leftUpright, rightUpright);
 
+  // One pitch of Brown's continuous hook rack: the flat seat, the undercut
+  // sloping back to the root, a short root flat, all backed onto upright A.
+  const rackBackX = 2.36;
   const makeRackToothGeometry = (side) => {
     const shape = new THREE.Shape();
-    const rootX = side * rackToothRootX;
-    const tipX = side * rackToothTipX;
-    const points = side < 0
-      ? [
-        [rootX, -rackPitch * 0.45],
-        [tipX, -0.08],
-        [tipX, 0.02],
-        [rootX, 0.02],
-      ]
-      : [
-        [rootX, -rackPitch * 0.45],
-        [rootX, 0.02],
-        [tipX, 0.02],
-        [tipX, -0.08],
-      ];
+    const points = [
+      [rackBackX, 0],
+      [rackToothTipX, 0],
+      [rackToothRootX, -rackUndercutHeight],
+      [rackToothRootX, -rackPitch],
+      [rackBackX, -rackPitch],
+    ].map(([x, y]) => [side * x, y]);
+    if (side > 0) points.reverse();
     points.forEach(([x, y], index) => {
       if (index === 0) shape.moveTo(x, y);
       else shape.lineTo(x, y);
     });
     shape.closePath();
-    return centeredExtrusion(shape, 0.46, 0.006);
+    return centeredExtrusion(shape, uprightFrontZ - rackBackZ, 0);
   };
   const leftToothGeometry = makeRackToothGeometry(-1);
   const rightToothGeometry = makeRackToothGeometry(1);
+  // Brown cuts the teeth in upright A itself, so they share its material.
   const rackTeeth = [];
-  for (let index = -4; index <= 7; index += 1) {
+  for (let index = -8; index <= 15; index += 1) {
     const seatY = catchSeatY + index * rackPitch;
-    const leftTooth = new THREE.Mesh(leftToothGeometry, darkMaterial);
-    leftTooth.position.set(0, seatY, 0.22);
-    leftTooth.userData.role = `fixed-left-upward-hook-rack-tooth-${index + 6}`;
-    const rightTooth = new THREE.Mesh(rightToothGeometry, darkMaterial);
-    rightTooth.position.set(0, seatY, 0.22);
-    rightTooth.userData.role = `fixed-right-upward-hook-rack-tooth-${index + 6}`;
+    const leftTooth = new THREE.Mesh(leftToothGeometry, frameMaterial);
+    leftTooth.position.set(0, seatY, (uprightFrontZ + rackBackZ) / 2);
+    leftTooth.userData.role = `fixed-left-upward-hook-rack-tooth-${index + 9}`;
+    const rightTooth = new THREE.Mesh(rightToothGeometry, frameMaterial);
+    rightTooth.position.set(0, seatY, (uprightFrontZ + rackBackZ) / 2);
+    rightTooth.userData.role = `fixed-right-upward-hook-rack-tooth-${index + 9}`;
     root.add(leftTooth, rightTooth);
     rackTeeth.push(leftTooth, rightTooth);
   }
@@ -928,15 +964,23 @@ function otisSafetyStop(movement) {
     leftPivot: leftPivot.clone(),
     lowerArmLength,
     maximumRopeGap,
+    pawlCenterY,
     pawlLength,
+    pawlRootGap,
     pawlThickness,
     platformBottomY,
     platformLeftX,
     platformRightX,
     platformTopY,
     rackPitch,
+    rackToothDepth,
     rackToothRootX,
     rackToothTipX,
+    rackUndercutHeight,
+    releaseLagStart,
+    rackBackZ,
+    uprightBackZ,
+    uprightFrontZ,
     rightPivot: rightPivot.clone(),
     ropeEyeOffset,
     sourcePlatformY,
@@ -1237,6 +1281,90 @@ export function createAuthoredSafetyStopMovement(movement) {
     new THREE.Vector3(0, 0.175, 0),
     new THREE.Vector3(0, finishedGeometry.tongueBottomY + 0.25, 0),
   );
+  // The working-parts pass re-plates the teeth at a fixed depth; restore
+  // their depth so the rack reads as teeth cut in upright A.
+  {
+    const { rackBackZ, uprightFrontZ } = finishedGeometry;
+    for (const tooth of result.root.userData.blocks.rackTeeth) {
+      tooth.geometry.computeBoundingBox();
+      const box = tooth.geometry.boundingBox;
+      tooth.geometry.scale(1, 1, (uprightFrontZ - rackBackZ) / (box.max.z - box.min.z));
+    }
+  }
+  // Each pawl d is one flat bar whose toe fits its tooth gap: a short square
+  // face against the root and a chamfer lying just under, and parallel to,
+  // the undercut of the tooth above, so it drops right into the root. Its eye
+  // is a short vertical slot for the lever pin, so the bar itself slides
+  // level in its guide on the platform leg.
+  {
+    const { pawlLength, pawlThickness, rackPitch, rackToothDepth,
+      rackUndercutHeight, pawlRootGap, pawlCenterY, leftPivot,
+      lowerArmLength, elbowAngle } = finishedGeometry;
+    const half = pawlThickness / 2;
+    const slope = rackUndercutHeight / rackToothDepth;
+    const toeFace = rackPitch - rackUndercutHeight - slope * pawlRootGap;
+    const chamferRun = (pawlThickness - toeFace) / slope;
+    const slotRise = leftPivot.y + lowerArmLength * Math.sin(elbowAngle)
+      - pawlCenterY;
+    const bossRadius = 0.145;
+    const boreRadius = 0.109;
+    const obround = (radius) => {
+      const points = [];
+      for (let index = 0; index <= 32; index += 1) {
+        const angle = Math.PI * index / 32;
+        points.push([radius * Math.cos(angle), slotRise + radius * Math.sin(angle)]);
+      }
+      for (let index = 0; index <= 32; index += 1) {
+        const angle = Math.PI + Math.PI * index / 32;
+        points.push([radius * Math.cos(angle), radius * Math.sin(angle)]);
+      }
+      return poly(points);
+    };
+    const { blocks } = result.root.userData;
+    const parts = result.root.userData.releaseWorkingParts;
+    parts.pawlPlates.forEach((mesh, index) => {
+      const side = index === 0 ? -1 : 1;
+      const outline = [
+        [0, -half],
+        [side * pawlLength, -half],
+        [side * pawlLength, toeFace - half],
+        [side * (pawlLength - chamferRun), half],
+        [0, half],
+      ];
+      const shape = polygonClipping.difference(
+        polygonClipping.union(poly(outline), obround(bossRadius)),
+        obround(boreRadius),
+      );
+      mesh.geometry.dispose();
+      mesh.geometry = plate(shape, -0.07, 0.07);
+      mesh.userData.toeChamfer = { toeFace, chamferRun, slope };
+      mesh.userData.eyeSlot = { slotRise, boreRadius, bossRadius };
+      blocks[index === 0 ? 'leftPawl' : 'rightPawl'].userData.setEndpoints = (joint, tip) => {
+        mesh.position.set(joint.x, tip.y, joint.z);
+        mesh.rotation.z = 0;
+      };
+    });
+    // The guides are the hatched cheeks of Brown's platform legs: blocks on
+    // each leg's front face that bear on the pawl's upper and lower faces.
+    const guideClearance = 0.004;
+    const guideThickness = 0.10;
+    const legFrontZ = -0.28;
+    for (const guide of blocks.pawlGuides) {
+      const side = Math.sign(guide.position.x);
+      const vertical = /upper$/.test(guide.userData.role) ? 1 : -1;
+      const x0 = 1.84;
+      const x1 = finishedGeometry.rackToothTipX - 0.012;
+      const z0 = legFrontZ - 0.02;
+      const z1 = 0.40;
+      guide.geometry.dispose();
+      guide.geometry = new THREE.BoxGeometry(x1 - x0, guideThickness, z1 - z0);
+      guide.position.set(
+        side * (x0 + x1) / 2,
+        pawlCenterY + vertical * (half + guideClearance + guideThickness / 2),
+        (z0 + z1) / 2,
+      );
+    }
+  }
   // Brown draws no index marks on the pin, platform or rack seats.
   const whiteIndices = [];
   result.root.traverse((object) => {

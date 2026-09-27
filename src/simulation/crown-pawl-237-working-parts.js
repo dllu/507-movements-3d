@@ -35,16 +35,32 @@ export function crown237Closest(center, triangles) {
 export function installCrown237Parts(root) {
   const b = root.userData.blocks, g = root.userData.geometry;
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
-  const curve = new THREE.SplineCurve([new THREE.Vector2(-0.14, 0), new THREE.Vector2(-0.25, -0.14), new THREE.Vector2(-0.34, -0.36), new THREE.Vector2(-0.385, -0.59)]);
-  const outline = [1, -1].flatMap(side => Array.from({length: 49}, (_, i) => {
-    const t = side === 1 ? i / 48 : 1 - i / 48, p = curve.getPoint(t), tangent = curve.getTangent(t);
-    const width = 0.025 + 0.012 * Math.sin(Math.PI * t);
-    return [p.x - side * tangent.y * width, p.y + side * tangent.x * width];
-  }));
-  const body = plate([[outline]], -0.055, 0.055);
+  // One smooth curved plate of even width whose rounded end is the working
+  // nose (radius pawlNoseRadius about the old nose centre): no separate ball.
+  // 0.001 inside the round nose it replaces, for the plate's flat faces.
+  const tip = new THREE.Vector2(b.pawlNose.position.y, b.pawlNose.position.z), r = g.pawlNoseRadius - 0.001;
+  const curve = new THREE.SplineCurve([new THREE.Vector2(-0.14, 0), new THREE.Vector2(-0.25, -0.14), new THREE.Vector2(-0.34, -0.36), tip]);
+  const side = sign => Array.from({length: 49}, (_, i) => {
+    const t = sign === 1 ? i / 48 : 1 - i / 48, p = curve.getPoint(t), tangent = curve.getTangent(t);
+    const w = r * (0.75 + 0.25 * t ** 8); // swells only into the nose
+    return [p.x - sign * tangent.y * w, p.y + sign * tangent.x * w];
+  });
+  const end = curve.getTangent(1), endAngle = Math.atan2(end.y, end.x);
+  const cap = Array.from({length: 23}, (_, i) => {
+    const a = endAngle - Math.PI / 2 + Math.PI * (i + 1) / 24;
+    return [tip.x + r * Math.cos(a), tip.y + r * Math.sin(a)];
+  });
+  const outline = [...side(1), ...cap, ...side(-1)];
+  const body = plate([[outline]], -0.022, 0.022);
   body.applyMatrix4(new THREE.Matrix4().set(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1));
+  // Curve the plate with the crown: its tangential coordinate scales with
+  // radius, so the rounded nose's front lies on each radial tooth face
+  // across the plate's thickness, as the round nose it replaces did.
+  { const R = b.pawl.position.x, p = body.attributes.position;
+    for (let i = 0; i < p.count; i++) p.setY(i, p.getY(i) * (R + p.getX(i)) / R);
+    p.needsUpdate = true; body.computeVertexNormals(); body.computeBoundingBox(); body.computeBoundingSphere(); }
   replace(b.pawlBody, body);
-  replace(b.pawlNose, new THREE.SphereGeometry(g.pawlNoseRadius, 64, 32));
+  b.pawlNose.visible = false; b.pawlNose.userData.hiddenReason = 'the nose is the rounded end of the pawl plate';
   b.pawlIndicator.visible = false;
   // Radial hinge:
   // Bored eye around a distinct arm-fixed pin.

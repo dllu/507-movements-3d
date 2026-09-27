@@ -1,474 +1,105 @@
 import { assertReadableTiming } from './helpers/display-timing.mjs';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
+import polygonClipping from 'polygon-clipping';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { DESIGN, rotate, toothGeometry } from '../src/simulation/six-point-anchor-238.js';
 
-const catalog = JSON.parse(await readFile(
-  new URL('../src/data/movements.json', import.meta.url),
-  'utf8',
-));
-const FULL_TURN = Math.PI * 2;
+const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
+const model = createMovementModel(catalog.movements[237]);
+const d = model.root.userData, g = d.geometry, e = d.escapement238;
+const closed = ring => [[...ring, ring[0]]];
+const area = polygons => polygons.reduce((sum, polygon) => sum + polygon.reduce((s, ring, k) => {
+  let a = 0; for (let i = 0; i + 1 < ring.length; i++) a += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+  return s + (k ? -1 : 1) * Math.abs(a) / 2;
+}, 0), 0);
+const posed = state => ({
+  star: e.star.map(p => rotate(p, state.wheelAngle)),
+  anchor: e.anchor.outline.map(p => rotate(p, state.palletAngle, DESIGN.pivotA)),
+});
+const lineDistance = (p, a, u) => Math.abs((p[0] - a[0]) * u[1] - (p[1] - a[1]) * u[0]);
 
-function near(actual, expected, tolerance, message) {
-  assert.ok(
-    Math.abs(actual - expected) <= tolerance,
-    `${message}: expected ${expected}, received ${actual}`,
-  );
-}
-
-function vectorNear(actual, expected, tolerance, message) {
-  assert.ok(
-    actual.distanceTo(expected) <= tolerance,
-    `${message}: expected ${expected.toArray()}, received ${actual.toArray()}`,
-  );
-}
-
-function disposeModel(root) {
-  const geometries = new Set();
-  const materials = new Set();
-  root.traverse((object) => {
-    if (object.geometry) geometries.add(object.geometry);
-    if (Array.isArray(object.material)) {
-      object.material.forEach((material) => materials.add(material));
-    } else if (object.material) {
-      materials.add(object.material);
-    }
-  });
-  geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((material) => material.dispose());
-}
-
-test('movement 238 is one seven-tooth wheel and one rigid B-C pallet carrier', () => {
-  const movement = catalog.movements[237];
-  const model = createMovementModel(movement);
-  const {
-    archetype,
-    blocks,
-    fidelity,
-    sourceAnimation,
-    transmission,
-  } = model.root.userData;
-
-  assert.equal(movement.id, 238);
-  assert.equal(movement.number, '238');
-  assert.equal(movement.title, 'Seven-Tooth Anchor Escapement');
-  assert.equal(movement.category, 'Escapements & horology');
-  assert.equal(movement.fidelity, 'authored');
-  assert.equal(fidelity, 'authored');
-  assert.equal(
-    archetype,
-    'seven-tooth-star-wheel-two-pallet-anchor-escapement',
-  );
-  assert.equal(archetype, movement.archetype);
-  assert.equal(sourceAnimation.available, false);
-  assert.equal(sourceAnimation.independentlyReconstructed, true);
-  assert.match(sourceAnimation.reason, /unavailable/);
-  assert.equal(transmission.palletsShareRigidCarrier, true);
-  assert.equal(transmission.escapeWheelDirection, 'counterclockwise');
-  assert.equal(transmission.beatsPerCycle, 2);
-  near(transmission.outputAdvancePerBeatInToothPitches, 0.5, 0,
-    'half a tooth per beat');
-  near(transmission.outputAdvancePerOscillationInToothPitches, 1, 2e-15,
-    'one tooth per pallet oscillation');
-  near(transmission.contactAdvancePerBeatInToothPitches, 5 / (360 / 7), 2e-15,
-    'working-face impulse advance');
-  near(transmission.dropPerBeatInToothPitches, 0.5 - 5 / (360 / 7), 2e-15,
-    'positive free drop');
-  assert.equal(blocks.escapeWheel.userData.teeth, 7);
-  assert.equal(blocks.escapeWheel.userData.tipRidges.length, 7);
-  assert.equal(blocks.palletBody.parent, blocks.palletCarrier);
-  assert.equal(blocks.bPallet.face.parent, blocks.palletCarrier);
-  assert.equal(blocks.cPallet.face.parent, blocks.palletCarrier);
-  assert.equal(blocks.palletHub.parent, blocks.palletCarrier);
-  assert.equal(blocks.palletShaft.parent, model.root);
-  let carrierCount = 0;
-  model.root.traverse((object) => {
-    if (object.userData.role === 'rigid-two-pallet-carrier-pivoted-at-A') {
-      carrierCount += 1;
-    }
-  });
-  assert.equal(carrierCount, 1);
-  disposeModel(model.root);
+test('238 has Brown\'s six-point star and one flat anchor in the wheel\'s plane', () => {
+  assert.equal(g.toothCount, 6);
+  assert.equal(d.blocks.escapeWheel.userData.teeth, 6);
+  assert.equal(d.archetype, catalog.movements[237].archetype);
+  assert.equal(d.transmission.palletsShareRigidCarrier, true);
+  // Every working part is a single extrusion centred on z = 0.
+  for (const mesh of [d.blocks.wheelBody, d.blocks.palletBody]) {
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox;
+    assert.ok(Math.abs(box.min.z + g.plateDepth / 2) < 1e-6 && Math.abs(box.max.z - g.plateDepth / 2) < 1e-6);
+  }
+  // The star's points are identical (rotational symmetry) and blunt enough
+  // to be sturdy: root radius over tip radius at least 0.6.
+  assert.ok(DESIGN.rootRadius / DESIGN.tipRadius >= 0.6);
+  const tips = Array.from({length: 6}, (_, k) => toothGeometry(k));
+  for (const t of tips) assert.ok(Math.abs(Math.hypot(...t.center) - (DESIGN.tipRadius - DESIGN.tipRound)) < 1e-12);
+  // No marker, index or standoff parts: 2 plates, 2 bosses, 2 arbors, 1 journal.
+  let meshes = 0; model.root.traverse(o => { if (o.isMesh && o.visible) meshes++; });
+  assert.ok(meshes <= 8, `${meshes} meshes`);
 });
 
-test('movement 238 preserves source axes and B root with an explicitly shortened reconstructed face', () => {
-  const model = createMovementModel(catalog.movements[237]);
-  const {
-    geometry,
-    sourceReference,
-    stateAtCycleCoordinate,
-  } = model.root.userData;
-  const plate = sourceReference.plate238;
-
-  assert.deepEqual(plate.rasterWheelCenterD.toArray(), [214, 210]);
-  assert.deepEqual(plate.rasterPalletPivotA.toArray(), [264, 354]);
-  assert.deepEqual(plate.rasterBRootContact.toArray(), [170, 253]);
-  assert.deepEqual(plate.rasterBFaceEnd.toArray(), [207, 244]);
-  assert.deepEqual(plate.rasterCInnerTip.toArray(), [290, 185]);
-  assert.deepEqual(plate.rasterCOuterTip.toArray(), [331, 161]);
-  assert.equal(plate.imageWidth, 525);
-  assert.equal(plate.imageHeight, 525);
-  assert.equal(plate.inferredEscapeWheelTeeth, 7);
-  assert.equal(plate.officialAnimationAvailable, false);
-  assert.match(plate.inferredTopology, /one rigid anchor pivoted at A/);
-  assert.deepEqual(sourceReference.primaryScan, {
-    archiveIdentifier: 'fivehundredseven00browiala',
-    descriptionPage: 61,
-    edition: 21,
-    illustrationPage: 60,
-    publicationYear: 1908,
-  });
-  vectorNear(
-    geometry.palletPivot,
-    new THREE.Vector2(0.825, -2.376),
-    2e-15,
-    'source A-to-D offset',
-  );
-  const sourceBRoot = new THREE.Vector2(-0.726, -0.7095);
-  near(geometry.contactRadius, sourceBRoot.length(), 2e-15,
-    'source D-to-B tooth-tip radius');
-  near(geometry.wheelMountPhase, Math.atan2(-0.7095, -0.726), 2e-15,
-    'source star mounting phase');
-  const source = model.root.userData.nominalKinematics238.stateAtCycleCoordinate(0);
-  assert.equal(source.stage, 'B-root-lock');
-  assert.equal(source.activePallet, 'B');
-  assert.equal(source.activeToothIndex, 0);
-  assert.equal(source.dwell, true);
-  assert.equal(source.drivingContact, false);
-  near(source.palletAngle, geometry.lowPalletAngle, 0,
-    'source carrier angle');
-  near(source.wheelAngle, 0, 0, 'source wheel angle');
-  near(source.contact.contactCoordinate, 0, 2e-15,
-    'source tooth sits at B root');
-  near(source.contact.lineSeparation, 0, 2e-15,
-    'source tooth lies on B face');
-  const sourceBTipRaster = new THREE.Vector2(
-    214 + geometry.sourceBTipWorld.x / geometry.sourceScale,
-    210 - geometry.sourceBTipWorld.y / geometry.sourceScale,
-  );
-  assert.ok(
-    sourceBTipRaster.distanceTo(plate.rasterBFaceEnd) > 18 && sourceBTipRaster.distanceTo(plate.rasterBFaceEnd) < 20,
-    `derived B face end ${sourceBTipRaster.toArray()} is shorter than the drawn face to accommodate finite clearance`,
-  );
-  assert.ok(geometry.sourceNearestCTooth.segmentClearance > 0.36);
-  assert.ok(geometry.sourceNearestCTooth.segmentClearance < 0.37);
-  disposeModel(model.root);
+test('238 wheel motion is the baked contact search of the current design', async () => {
+  const text = await readFile(new URL('../src/simulation/six-point-anchor-238.js', import.meta.url));
+  assert.equal(e.wheel.source.sha256, createHash('sha256').update(text).digest('hex'), 'rerun scripts/bake-six-point-anchor-238.mjs');
+  assert.ok(Math.abs(e.wheel.closure - g.toothPitch) < 1e-8, 'one tooth per oscillation');
 });
 
-test('movement 238 builds seven equally spaced star tips in the source phase', () => {
-  const model = createMovementModel(catalog.movements[237]);
-  const { blocks, geometry } = model.root.userData;
-  const { escapeWheel, palletCarrier } = blocks;
-
-  vectorNear(escapeWheel.userData.axis, new THREE.Vector3(0, 0, 1), 0,
-    'escape-wheel axis');
-  vectorNear(palletCarrier.userData.axis, new THREE.Vector3(0, 0, 1), 0,
-    'pallet-carrier axis');
-  near(geometry.toothPitch, FULL_TURN / 7, 0, 'seven-tooth pitch');
-  near(geometry.halfToothPitch, Math.PI / 7, 0, 'half pitch per beat');
-  near(geometry.dropAngle, geometry.toothPitch / 2 - THREE.MathUtils.degToRad(5), 2e-16,
-    'positive drop angle');
-  near(geometry.contactAdvance, THREE.MathUtils.degToRad(5), 2e-16,
-    'contact advance');
-  for (const [index, point] of escapeWheel.userData.toothTips.entries()) {
-    near(point.length(), geometry.contactRadius, 3e-16,
-      `tooth ${index} contact radius`);
-    near(
-      Math.atan2(point.y, point.x),
-      THREE.MathUtils.euclideanModulo(
-        geometry.wheelMountPhase + index * geometry.toothPitch + Math.PI,
-        FULL_TURN,
-      ) - Math.PI,
-      2e-15,
-      `tooth ${index} source angle`,
-    );
-    assert.equal(escapeWheel.userData.tipRidges[index].userData.index, index);
-  }
-  assert.equal(
-    escapeWheel.userData.body.userData.role,
-    'seven-point-source-star-wheel-body-D',
-  );
-  assert.equal(
-    blocks.bPallet.face.userData.role,
-    'B-straight-working-pallet-face',
-  );
-  assert.equal(
-    blocks.cPallet.face.userData.role,
-    'C-straight-working-pallet-face',
-  );
-  disposeModel(model.root);
+test('238 B and C seat flat on a flank with their points in the root', () => {
+  // Plate pose: B holds tooth 0 along its whole leading flank.
+  const s0 = d.stateAtTime(0);
+  assert.equal(s0.palletAngle, 0);
+  assert.ok(Math.abs(s0.wheelAngle) < 1e-6);
+  const t0 = toothGeometry(0), uB = e.anchor.B.direction;
+  for (const p of [t0.leadingTangent, t0.leadingRoot]) assert.ok(lineDistance(p, e.anchor.B.corner, uB) < 2e-4);
+  const bRoot = Math.hypot(...e.anchor.B.corner);
+  assert.ok(bRoot < DESIGN.rootRadius + 0.05, `B corner ${bRoot} sits in the root`);
+  // Half a cycle on: C holds tooth 2 the same way, half a pitch later.
+  const s5 = d.stateAtTime(g.cyclePeriod / 2);
+  assert.ok(Math.abs(s5.palletAngle - g.swing) < 1e-12);
+  assert.ok(Math.abs(s5.wheelAngle - g.toothPitch / 2) < 2e-4);
+  const t2 = toothGeometry(2), cPoint = rotate(e.anchor.C.point, g.swing, DESIGN.pivotA), uC = rotate(e.anchor.C.direction, g.swing);
+  for (const p of [t2.leadingTangent, t2.leadingRoot].map(q => rotate(q, s5.wheelAngle))) assert.ok(lineDistance(p, cPoint, uC) < 2e-3);
+  assert.ok(Math.hypot(...cPoint) < DESIGN.rootRadius + 0.05, 'C point sits in the root');
+  // C's point in the plate pose is within 5 px of Brown's (290, 185).
+  const c = e.anchor.C.point, source = [c[0] / 0.0165 + 214, 210 - c[1] / 0.0165];
+  assert.ok(Math.hypot(source[0] - 290, source[1] - 185) < 5, `${source}`);
 });
 
-test('movement 238 B nominal point law runs root-to-tip without reversal (finite support checked separately)', () => {
-  const model = createMovementModel(catalog.movements[237]);
-  const { geometry } = model.root.userData;
-  const { stateAtCycleCoordinate } = model.root.userData.nominalKinematics238;
-  const { start, end } = geometry.phases.bDrive;
-  let previousCoordinate = -Infinity;
-  let previousWheelAngle = -Infinity;
-  let maximumSpeed = 0;
-
-  for (let sample = 0; sample < 8192; sample += 1) {
-    const coordinate = THREE.MathUtils.lerp(start, end, sample / 8192);
-    const state = stateAtCycleCoordinate(coordinate);
-    assert.equal(state.stage, 'B-tooth-slides-root-to-tip');
-    assert.equal(state.activePallet, 'B');
-    assert.equal(state.activeToothIndex, 0);
-    assert.equal(state.drivingContact, true);
-    assert.equal(state.dwell, false);
-    assert.ok(state.contact.contactCoordinate >= previousCoordinate - 2e-14);
-    assert.ok(state.contact.contactCoordinate >= -2e-14);
-    assert.ok(state.contact.contactCoordinate <= 1 + 2e-14);
-    assert.ok(state.wheelAngle >= previousWheelAngle - 2e-14);
-    assert.ok(state.wheelAngularSpeed >= -2e-13);
-    near(state.contact.point.length(), geometry.contactRadius, 5e-16,
-      `B tooth-tip orbit at ${coordinate}`);
-    near(state.contact.lineSeparation, 0, 8e-16,
-      `B face contact at ${coordinate}`);
-    near(state.contact.normalVelocityError, 0, 2e-15,
-      `B contact normal velocity at ${coordinate}`);
-    previousCoordinate = state.contact.contactCoordinate;
-    previousWheelAngle = state.wheelAngle;
-    maximumSpeed = Math.max(maximumSpeed, state.wheelAngularSpeed);
+test('238 star never cuts the anchor, and each lock is a touching contact', () => {
+  let worst = 0;
+  for (let i = 0; i < 480; i++) {
+    const s = posed(d.stateAtTime(g.cyclePeriod * i / 480));
+    worst = Math.max(worst, area(polygonClipping.intersection(closed(s.star), closed(s.anchor))));
   }
-  const rootLock = stateAtCycleCoordinate(start);
-  const release = stateAtCycleCoordinate(end);
-  near(rootLock.contact.contactCoordinate, 0, 2e-15,
-    'B impulse begins at root');
-  near(release.wheelAngle, geometry.contactAdvance, 4e-16,
-    'B release advance');
-  near(release.palletAngle, geometry.highPalletAngle, 0,
-    'B release carrier angle');
-  assert.equal(release.stage, 'B-releases-free-drop-to-C-root');
-  assert.ok(maximumSpeed > 0.15);
-  disposeModel(model.root);
+  assert.ok(worst < 2e-5, `overlap area ${worst}`);
+  for (const t of [0, 0.5]) {
+    const s = d.stateAtTime(g.cyclePeriod * t);
+    assert.equal(e.overlaps(s.wheelAngle + 0.003, s.palletAngle), true, `locked at ${t}`);
+  }
 });
 
-test('movement 238 has two prescribed positive nominal drops and stationary lock intervals', () => {
-  const model = createMovementModel(catalog.movements[237]);
-  const { geometry } = model.root.userData;
-  const { stateAtCycleCoordinate } = model.root.userData.nominalKinematics238;
-  const first = geometry.phases.firstDrop;
-  const second = geometry.phases.secondDrop;
-
-  const bLock = stateAtCycleCoordinate(0.05);
-  assert.equal(bLock.stage, 'B-root-lock');
-  assert.equal(bLock.activePallet, 'B');
-  assert.equal(bLock.dwell, true);
-  near(bLock.wheelAngularSpeed, 0, 0, 'B lock wheel speed');
-  near(bLock.contact.contactCoordinate, 0, 2e-15,
-    'B lock at working-face root');
-
-  const cLock = stateAtCycleCoordinate(0.49);
-  assert.equal(cLock.stage, 'C-root-lock');
-  assert.equal(cLock.activePallet, 'C');
-  assert.equal(cLock.activeToothIndex, 3);
-  assert.equal(cLock.dwell, true);
-  near(cLock.wheelAngle, geometry.halfToothPitch, 4e-16,
-    'C lock follows one half-pitch beat');
-  near(cLock.wheelAngularSpeed, 0, 0, 'C lock wheel speed');
-  near(cLock.contact.contactCoordinate, 0, 2e-15,
-    'C lock at working-face root');
-
-  for (const [name, segment] of [['first', first], ['second', second]]) {
-    const start = stateAtCycleCoordinate(segment.start);
-    const end = stateAtCycleCoordinate(segment.end);
-    near(end.wheelAngle - start.wheelAngle, geometry.dropAngle, 5e-16,
-      `${name} free-drop advance`);
-    near(end.palletAngle, start.palletAngle, 0,
-      `${name} carrier holds through free drop`);
-    for (let sample = 1; sample < 4096; sample += 1) {
-      const coordinate = THREE.MathUtils.lerp(
-        segment.start,
-        segment.end,
-        sample / 4096,
-      );
-      const state = stateAtCycleCoordinate(coordinate);
-      assert.equal(state.freeDrop, true);
-      assert.equal(state.activePallet, null);
-      assert.equal(state.contact, null);
-      assert.ok(state.wheelAngularSpeed > 0);
-      assert.ok(state.freeDropState.escapingClearance > 0);
-      assert.ok(state.freeDropState.approachingClearance > 0);
-    }
+test('238 one tooth per oscillation: lock, impulse, drop and small recoil', () => {
+  let previous = d.stateAtTime(0).wheelAngle, recoil = 0, back = 0, maxStep = 0;
+  for (let i = 1; i <= 2400; i++) {
+    const w = d.stateAtTime(2 * g.cyclePeriod * i / 2400).wheelAngle;
+    if (w < previous) back += previous - w; else { recoil = Math.max(recoil, back); back = 0; }
+    maxStep = Math.max(maxStep, w - previous);
+    previous = w;
   }
-  const firstMiddle = stateAtCycleCoordinate((first.start + first.end) / 2);
-  const secondMiddle = stateAtCycleCoordinate((second.start + second.end) / 2);
-  near(firstMiddle.freeDropState.escapingClearance, 0.1832494835615878,
-    2e-15, 'B release midpoint clearance');
-  near(firstMiddle.freeDropState.approachingClearance,
-    firstMiddle.freeDropState.escapingClearance, 2e-15,
-    'first drop has equal midpoint clearances');
-  near(secondMiddle.freeDropState.escapingClearance,
-    firstMiddle.freeDropState.escapingClearance, 2e-15,
-    'opposed drop has the same clearance');
-  disposeModel(model.root);
-});
-
-test('movement 238 C nominal point law is opposed and completes one pitch', () => {
-  const model = createMovementModel(catalog.movements[237]);
-  const { geometry, stateAtCycleCoordinate } = model.root.userData;
-  const { start, end } = geometry.phases.cDrive;
-  let previousCoordinate = -Infinity;
-  let previousWheelAngle = -Infinity;
-  let maximumSpeed = 0;
-
-  for (let sample = 0; sample < 8192; sample += 1) {
-    const coordinate = THREE.MathUtils.lerp(start, end, sample / 8192);
-    const state = stateAtCycleCoordinate(coordinate);
-    assert.equal(state.stage, 'C-tooth-slides-root-to-tip');
-    assert.equal(state.activePallet, 'C');
-    assert.equal(state.activeToothIndex, 3);
-    assert.equal(state.drivingContact, true);
-    assert.equal(state.dwell, false);
-    assert.ok(state.contact.contactCoordinate >= previousCoordinate - 2e-14);
-    assert.ok(state.contact.contactCoordinate >= -2e-14);
-    assert.ok(state.contact.contactCoordinate <= 1 + 2e-14);
-    assert.ok(state.wheelAngle >= previousWheelAngle - 2e-14);
-    assert.ok(state.wheelAngularSpeed >= -2e-13);
-    near(state.contact.point.length(), geometry.contactRadius, 5e-16,
-      `C tooth-tip orbit at ${coordinate}`);
-    near(state.contact.lineSeparation, 0, 8e-16,
-      `C face contact at ${coordinate}`);
-    near(state.contact.normalVelocityError, 0, 2e-15,
-      `C contact normal velocity at ${coordinate}`);
-    previousCoordinate = state.contact.contactCoordinate;
-    previousWheelAngle = state.wheelAngle;
-    maximumSpeed = Math.max(maximumSpeed, state.wheelAngularSpeed);
-  }
-  const rootLock = stateAtCycleCoordinate(start);
-  const release = stateAtCycleCoordinate(end);
-  near(rootLock.contact.contactCoordinate, 0, 2e-15,
-    'C impulse begins at root');
-  near(
-    release.wheelAngle,
-    geometry.toothPitch - geometry.dropAngle,
-    5e-16,
-    'C release leaves only the second positive drop',
-  );
-  near(release.palletAngle, geometry.lowPalletAngle, 0,
-    'C release carrier angle');
-  assert.equal(release.stage, 'C-releases-free-drop-to-B-root');
-  assert.ok(maximumSpeed > 0.15);
-  disposeModel(model.root);
-});
-
-test('movement 238 analytic wheel and pallet derivatives match finite differences', () => {
-  const model = createMovementModel(catalog.movements[237]);
-  const { geometry, stateAtTime } = model.root.userData;
-  const h = 2e-5;
-
-  for (const cyclePhase of [
-    0.14, 0.19, 0.25, 0.3,
-    0.36, 0.38,
-    0.62, 0.68, 0.74, 0.79,
-    0.84, 0.86,
-  ]) {
-    const time = cyclePhase * geometry.cyclePeriod;
-    const before = stateAtTime(time - h);
-    const state = stateAtTime(time);
-    const after = stateAtTime(time + h);
-    for (const [name, angleKey, speedKey, accelerationKey] of [
-      ['wheel', 'wheelAngle', 'wheelAngularSpeed', 'wheelAngularAcceleration'],
-      ['pallet', 'palletAngle', 'palletAngularSpeed',
-        'palletAngularAcceleration'],
-    ]) {
-      const finiteSpeed = (after[angleKey] - before[angleKey]) / (2 * h);
-      const finiteAcceleration = (
-        after[angleKey] - 2 * state[angleKey] + before[angleKey]
-      ) / h ** 2;
-      near(finiteSpeed, state[speedKey], 1e-7,
-        `${name} speed at phase ${cyclePhase}`);
-      near(finiteAcceleration, state[accelerationKey], 5e-6,
-        `${name} acceleration at phase ${cyclePhase}`);
-    }
-  }
-  disposeModel(model.root);
-});
-
-test('movement 238 remains one-way, renders its constraints, and closes before 252', () => {
-  const model = createMovementModel(catalog.movements[237]);
-  const {
-    animationTiming,
-    blocks,
-    geometry,
-    stateAtCycleCoordinate,
-    stateAtTime,
-  } = model.root.userData;
-  let previousWheelAngle = stateAtCycleCoordinate(0).wheelAngle;
-  let dwellSamples = 0;
-  for (let sample = 1; sample <= 65_536; sample += 1) {
-    const state = stateAtCycleCoordinate(7 * sample / 65_536);
-    assert.ok(state.wheelAngle >= previousWheelAngle - 3e-14,
-      `escape wheel does not reverse at sample ${sample}`);
-    assert.ok(state.wheelAngularSpeed >= -3e-13);
-    if (state.dwell) dwellSamples += 1;
-    previousWheelAngle = state.wheelAngle;
-  }
-  assert.ok(dwellSamples > 25_000,
-    `escapement includes visible locks (${dwellSamples} samples)`);
-  for (let cycle = 0; cycle <= 14; cycle += 1) {
-    const closure = stateAtCycleCoordinate(cycle);
-    near(closure.wheelAngle, cycle * geometry.toothPitch + model.root.userData.bContactBranch.initialWheelAngle, 1e-7,
-      `accumulated tooth index ${cycle}`);
-    near(closure.palletAngle, geometry.lowPalletAngle, 0,
-      `carrier closes cycle ${cycle}`);
-    assert.equal(closure.activePallet, 'B');
-    assert.equal(closure.activeToothIndex, (7 - cycle % 7) % 7);
-  }
-  near(stateAtCycleCoordinate(7).wheelAngle - stateAtCycleCoordinate(0).wheelAngle, FULL_TURN, 2e-15,
-    'seven oscillations close one wheel revolution');
-  near(stateAtCycleCoordinate(14).wheelAngle - stateAtCycleCoordinate(0).wheelAngle, 2 * FULL_TURN, 4e-15,
-    'fourteen oscillations close two wheel revolutions');
-
-  for (const time of [0, 0.5, 0.88, 1.48, 1.96, 2.8, 3.4, 4]) {
+  assert.ok(Math.abs(previous - 2 * g.toothPitch) < 1e-6);
+  assert.ok(recoil > 0 && recoil < THREE.MathUtils.degToRad(5), `recoil ${recoil}`);
+  assert.ok(maxStep > 0, 'drops');
+  for (const time of [0, 1.2, 2.2, 3.7, 5.1]) {
     model.update(time);
-    const state = stateAtTime(time);
-    near(blocks.escapeWheel.userData.rotor.rotation.z, state.wheelAngle, 0,
-      `rendered escape wheel at ${time}`);
-    near(blocks.escapeShaft.userData.rotor.rotation.z, state.wheelAngle, 0,
-      `rendered escape arbor at ${time}`);
-    near(blocks.palletCarrier.rotation.z, state.palletAngle, 0,
-      `rendered pallet carrier at ${time}`);
-    assert.equal(blocks.bContactMarker.visible, false);
-    assert.equal(blocks.cContactMarker.visible, false);
-    if (state.contact) {
-      const marker = state.activePallet === 'B'
-        ? blocks.bContactMarker
-        : blocks.cContactMarker;
-      vectorNear(
-        new THREE.Vector2(marker.position.x, marker.position.y),
-        state.contact.point,
-        0,
-        `rendered ${state.activePallet} contact at ${time}`,
-      );
-    }
-    assert.equal(
-      model.root.userData.contacts.freeDrop !== null,
-      state.freeDrop,
-    );
+    const s = d.stateAtTime(time);
+    assert.equal(d.blocks.escapeWheel.userData.rotor.rotation.z, s.wheelAngle);
+    assert.equal(d.blocks.palletCarrier.rotation.z, s.palletAngle);
   }
-  assert.equal(animationTiming.authoredCyclePeriod, geometry.cyclePeriod);
-  assert.ok(model.root.userData.minimumDisplayCycleSeconds >= 6);
-  assertReadableTiming(animationTiming);
-  model.root.updateMatrixWorld(true);
-  const size = new THREE.Box3().setFromObject(model.root)
-    .getSize(new THREE.Vector3());
-  assert.ok(size.x > 4.8);
-  assert.ok(size.y > 5.2);
-  assert.ok(size.z > 1.1);
-  let meshCount = 0;
-  model.root.traverse((object) => { if (object.isMesh) meshCount += 1; });
-  assert.ok(meshCount >= 25); // Replaced multi-mesh beams with single finite plates.
-
-  const movement507 = catalog.movements[506];
-  const model289 = createMovementModel(movement507);
-  assert.equal(movement507.id, 507);
-  assert.equal(movement507.fidelity, 'authored');
-  assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
-  assert.equal(model289.root.userData.fidelity, 'authored');
-  disposeModel(model.root);
-  disposeModel(model289.root);
+  assert.equal(d.animationTiming.authoredCyclePeriod, g.cyclePeriod);
+  assertReadableTiming(d.animationTiming);
 });

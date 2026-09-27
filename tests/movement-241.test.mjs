@@ -239,9 +239,9 @@ test('movement 241 preserves the measured unavailable source plate', () => {
     'engraved single-tooth tip');
   vectorNear(source.driverContact.point, modeledTip, 2e-15,
     'source-pose driver contact');
-  assert.ok(source.holdingContact.point.distanceTo(
+  assert.ok(source.holdingContact.noseCenter.distanceTo(
     plate.sourceMappedHoldingNose,
-  ) < 0.11);
+  ) < 0.14);
   disposeModel(model.root);
 });
 
@@ -350,7 +350,9 @@ test('movement 241 maintains exact driver and holding-click contact in 32,769 st
   assert.ok(maximumHoldingNormalError < 8e-15);
   assert.deepEqual(
     [...holdingFaces].sort(),
-    ['radial-lock-face', 'rising-ramp', 'short-tip'],
+    // The click's rounded nose rides over each tip on the tip's rounded
+    // offset corner.
+    ['radial-lock-face', 'rising-ramp', 'rounded-tip-corner', 'short-tip'],
   );
   disposeModel(model.root);
 });

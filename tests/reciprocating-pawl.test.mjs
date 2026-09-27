@@ -112,7 +112,7 @@ test('075 seeking repeats one clockwise tooth step with continuous overshoot, dr
   assert.ok(maxPawlSpeed<4,'A pawl must not jump between disconnected contact pockets');
   assert.ok(freeDrop>20,'The right pawl must fall through free space after the crest clears');
   const held=samples[Math.round(4000*.85)].wheelAngle,minimum=Math.min(...samples.map(s=>s.wheelAngle));
-  assert.ok(held-minimum>.02&&held-minimum<.16,'Wheel must overtravel before settling against the holding pawl');
+  assert.ok(held-minimum>.02&&held-minimum<.11,'Wheel must overtravel a little before settling back against the holding pawl');
   for(const fraction of [.8,.85,.9])near(samples[Math.round(4000*fraction)].wheelAngle,held,1e-8);
   near(p.period,4);dispose(model);
 });
@@ -149,6 +149,56 @@ test('075 independent finite parts clear each other through drive, pickup and re
         }
       }
     }
+  }
+  dispose(model);
+});
+
+// Pass 86: each pawl is one smooth plate (boss, two smooth edges, straight
+// flanks and a round nose), and its wedge tip fills the valley it seats in.
+test('075 pawls are smooth, thick wedge-tipped plates seated in the tooth root',()=>{
+  const model=makeReciprocatingPawlRatchet(),u=model.root.userData,p=u.geometry;
+  const walls=(local,points)=>{
+    const list=points.map((a,i)=>{const b=points[(i+1)%points.length],d=[b[0]-a[0],b[1]-a[1]],
+      t=Math.max(0,Math.min(1,((local[0]-a[0])*d[0]+(local[1]-a[1])*d[1])/(d[0]**2+d[1]**2))),
+      q=[local[0]-a[0]-t*d[0],local[1]-a[1]-t*d[1]],l=Math.hypot(...q);return{distance:l,normal:q.map(v=>v/l)};}).sort((a,b)=>a.distance-b.distance);
+    return[list[0],list.find(e=>e.normal[0]*list[0].normal[0]+e.normal[1]*list[0].normal[1]<.5)];
+  };
+  for(const [name,kind,time] of [['movingPawlBody','B',0],['holdingPawlBody','H',.8*p.period]]){
+    const descriptor=u.profile.parts.find(part=>part.name===name),[rings]=descriptor.shape.polygons;
+    assert.equal(descriptor.shape.polygons.length,1,`${name}: one plate`);assert.equal(rings.length,2,`${name}: outline and pin bore only`);
+    const ring=rings[0].slice(0,-1),n=ring.length;
+    // Smooth outline: no corner turns more than 25 degrees between segments.
+    let sharpest=0;
+    for(let i=0;i<n;i++){
+      const a=ring[(i+n-1)%n],b=ring[i],c=ring[(i+1)%n],u1=[b[0]-a[0],b[1]-a[1]],u2=[c[0]-b[0],c[1]-b[1]];
+      sharpest=Math.max(sharpest,Math.abs(Math.atan2(u1[0]*u2[1]-u1[1]*u2[0],u1[0]*u2[0]+u1[1]*u2[1])));
+    }
+    assert.ok(sharpest<25*Math.PI/180,`${name}: outline has a ${sharpest} rad corner`);
+    // Seated: the nose touches both valley walls at the hold.
+    const s=u.stateAtTime(time),center=kind==='B'?s.B.center:s.H.center,
+      local=[center[0]*Math.cos(-s.wheelAngle)-center[1]*Math.sin(-s.wheelAngle),center[0]*Math.sin(-s.wheelAngle)+center[1]*Math.cos(-s.wheelAngle)],
+      [face,back]=walls(local,u.profile.points);
+    near(face.distance,p.noseRadius,2e-4);near(back.distance,p.noseRadius,2e-4);
+    // The tip is a wedge within 9 degrees of each wall: plate points just
+    // behind the nose on each side lie close to the walls, not a needle.
+    const noseLocal=kind==='B'?[p.VB[0]*Math.cos(p.sourceBarAngle)-p.VB[1]*Math.sin(p.sourceBarAngle),p.VB[0]*Math.sin(p.sourceBarAngle)+p.VB[1]*Math.cos(p.sourceBarAngle)]
+      :[p.VH[0]*Math.cos(p.sourceHAngle)-p.VH[1]*Math.sin(p.sourceHAngle),p.VH[0]*Math.sin(p.sourceHAngle)+p.VH[1]*Math.cos(p.sourceHAngle)];
+    const dense=ring.flatMap((a,i)=>{const b=ring[(i+1)%n],k=Math.ceil(Math.hypot(b[0]-a[0],b[1]-a[1])/.002);
+      return Array.from({length:k},(_,j)=>[a[0]+(b[0]-a[0])*j/k,a[1]+(b[1]-a[1])*j/k]);});
+    const width=dense.filter(q=>Math.abs(Math.hypot(q[0]-noseLocal[0],q[1]-noseLocal[1])-.06)<.01);
+    let spread=0;for(const a of width)for(const b of width)spread=Math.max(spread,Math.hypot(a[0]-b[0],a[1]-b[1]));
+    assert.ok(spread>.03,`${name}: tip is ${spread} wide 0.06 behind the nose`);
+    // Consistent working thickness: away from the boss and the tip wedge, the
+    // nearest point across the plate (more than 0.12 away along the outline)
+    // is at least 0.085 away.
+    const along=[0];for(let i=1;i<dense.length;i++)along.push(along[i-1]+Math.hypot(dense[i][0]-dense[i-1][0],dense[i][1]-dense[i-1][1]));
+    const perimeter=along.at(-1);let minimum=Infinity;
+    for(let i=0;i<dense.length;i+=3){
+      const q=dense[i];if(Math.hypot(q[0]-noseLocal[0],q[1]-noseLocal[1])<.16||Math.hypot(...q)<.13)continue;
+      for(let j=0;j<dense.length;j++){const gap=Math.abs(along[j]-along[i]);if(Math.min(gap,perimeter-gap)<.12)continue;
+        minimum=Math.min(minimum,Math.hypot(dense[j][0]-q[0],dense[j][1]-q[1]));}
+    }
+    assert.ok(minimum>.085,`${name}: thinnest section ${minimum}`);
   }
   dispose(model);
 });

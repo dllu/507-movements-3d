@@ -49,12 +49,23 @@ export function correctSlottedGuide(root){
   replace(b.bearingBore,tube(.178,.175,.44));b.bearingBore.position.z=-.08;
   b.bearingBraces=[];
   for(const side of[-1,1])for(const end of[1,-1]){const brace=link(new THREE.Vector2(side*.25,end*.25),new THREE.Vector2(side*(end>0?g.guideInnerX:1.02),end>0?g.guideTopY:-2.46),.08,.08,-.08,b.bearingHousing.material);brace.userData.role='fixed-diagonal-brace-carrying-main-journal';b.fixedFrame.add(brace);b.bearingBraces.push(brace);}
+  // Each shoe is one C-section extrusion running along the pillar: an inner
+  // web bearing on the pillar's planed inner face and two flanges lapping
+  // its front and rear faces, with the front flange running up into the yoke
+  // end. It is open outward, so nothing shows beyond the yoke in front, and
+  // it spans the yoke end's own height, just inside its faces.
+  const pillarFront=g.frameFrontZ,pillarBack=g.frameBackZ,cl=g.guideRunningClearance??.002;
+  const webInner=g.guideInnerX-.07,webFace=g.guideInnerX-cl,flangeEnd=g.guideInnerX+.105;
+  const section=clip.difference(rect(flangeEnd-webInner,g.crossheadPlaneZ-(pillarBack-.08),(flangeEnd+webInner)/2,(g.crossheadPlaneZ+pillarBack-.08)/2),
+    rect(1,pillarFront-pillarBack+2*cl,webFace+.5,(pillarFront+pillarBack)/2));
+  const yokeTop=2*g.sourceScale-.01,yokeBottom=-4*g.sourceScale+.01;
   for(const[side,shoe]of[[-1,b.leftGuideShoe],[1,b.rightGuideShoe]]){
-    const[front,rear,web,liner]=shoe.children,outer=g.guideOuterX+.08,inner=g.guideInnerX-.01;
-    replace(front,new THREE.BoxGeometry(outer-inner,1.44,.56));front.position.set(side*(outer+inner)/2,-.24,.465);
-    replace(rear,new THREE.BoxGeometry(outer-inner,1.44,.11));rear.position.x=side*(outer+inner)/2;
-    replace(web,new THREE.BoxGeometry(.06,1.44,.60));web.position.set(side*(g.guideOuterX+.048),-.24,-.005);
-    replace(liner,new THREE.BoxGeometry(.045,1.32,.30));liner.position.set(side*(g.guideInnerX-.0245),-.24,-.02);
+    for(const child of[...shoe.children]){child.geometry.dispose();shoe.remove(child);}
+    const mirrored=side<0?section.map(p=>p.map(r=>r.map(([x,z])=>[-x,z]).reverse())):section;
+    const body=new THREE.Mesh(plate(mirrored,-yokeTop,-yokeBottom).rotateX(Math.PI/2),b.yokeBody.material);
+    body.userData.role=`${side<0?'left':'right'}-one-piece-C-section-shoe-body-lapping-pillar-D`;
+    body.userData.contactX=side*g.guideInnerX;
+    shoe.add(body);shoe.userData.contactLiner=body;
   }
   for(const[side,face]of[[-1,b.guideFaces[0]],[1,b.guideFaces[1]]]){replace(face,new THREE.BoxGeometry(.02,g.guideTopY-g.guideBottomY,.34));face.position.set(side*(g.guideInnerX+.01),(g.guideTopY+g.guideBottomY)/2,-.02);
     // The strip lay inside the pillar, its faces flush with the pillar's (z-fighting dark

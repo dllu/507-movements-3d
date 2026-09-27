@@ -88,6 +88,14 @@ test('movement 318 is one complete curb-pin watch regulator, not a generic escap
   assert.equal(blocks.balanceStaff.parent, blocks.balanceAssembly);
   assert.equal(blocks.pointer.parent, blocks.regulatorCarrier);
   assert.equal(blocks.curbPins.length, 2);
+  {
+    // The arm ends exactly at the base of the triangular tip: they abut and
+    // do not overlap (overlapping coplanar faces z-fight).
+    const armBox = new THREE.Box3().setFromObject(blocks.regulatorArm);
+    const tipBox = new THREE.Box3().setFromObject(blocks.pointer);
+    assert.ok(Math.abs(armBox.min.y - tipBox.max.y) < 1e-6,
+      `arm ends at tip base (${armBox.min.y} vs ${tipBox.max.y})`);
+  }
   assert.equal(blocks.balanceSpokes.length, 3);
   assert.equal(blocks.springSegments.length, 180);
   assert.equal(blocks.springSamples.length, 181);

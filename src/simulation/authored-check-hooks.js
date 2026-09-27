@@ -249,12 +249,14 @@ function centrifugalMineDrumCheckHooks(movement) {
   ];
   // Pointed barb: square outer end, then a forward point whose inner edge
   // raked back toward the pivot forms the crook that holds stud D.
+  // Its inner edge stands just clear of the seated stud, so stud D rests in
+  // the crook against both the bar face and the barb.
   const hookBarbOutline = [
-    barPoint(2.6, -hookBarRadius),
-    barPoint(3.0, -hookBarRadius),
-    barPoint(2.8, 1.0),
-    barPoint(2.75, hookBarRadius),
-    barPoint(2.6, hookBarRadius),
+    barPoint(2.53, -hookBarRadius),
+    barPoint(2.96, -hookBarRadius),
+    barPoint(2.75, 1.0),
+    barPoint(2.695, hookBarRadius),
+    barPoint(2.53, hookBarRadius),
   ];
   const hookContactIndex = 1;
   const hookContactLocal = hookCenterline[hookContactIndex];

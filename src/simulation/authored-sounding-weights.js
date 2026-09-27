@@ -1,4 +1,10 @@
 import { finishSounding247Parts } from './release-mechanism-working-parts.js';
+import {
+  capsule,
+  plate as finitePlate,
+  poly,
+  polygonClipping,
+} from './finite-plate-geometry.js';
 import * as THREE from 'three';
 import { makeLaidRopeMesh } from './laid-rope.js';
 import { makeHaulingHand } from './hauling-hand.js';
@@ -83,39 +89,6 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
 
 // Closes an open TubeGeometry with a flat fan at each end that reuses the
 // end-ring vertices, so the tube is a watertight solid.
-function capTubeEnds(geometry, tubularSegments, radialSegments) {
-  const position = geometry.attributes.position;
-  const normal = geometry.attributes.normal;
-  const uv = geometry.attributes.uv;
-  const ring = radialSegments + 1;
-  const positions = Array.from(position.array);
-  const normals = Array.from(normal.array);
-  const uvs = Array.from(uv.array);
-  const indices = Array.from(geometry.index.array);
-  for (const [ringIndex, sign] of [[0, -1], [tubularSegments, 1]]) {
-    const start = ringIndex * ring;
-    const center = new THREE.Vector3();
-    for (let j = 0; j < radialSegments; j += 1) {
-      center.add(new THREE.Vector3().fromBufferAttribute(position, start + j));
-    }
-    center.multiplyScalar(1 / radialSegments);
-    const centerIndex = positions.length / 3;
-    positions.push(center.x, center.y, center.z);
-    normals.push(0, 0, 0);
-    uvs.push(0.5, 0.5);
-    for (let j = 0; j < radialSegments; j += 1) {
-      const a = start + j;
-      const b = start + j + 1;
-      if (sign > 0) indices.push(centerIndex, a, b);
-      else indices.push(centerIndex, b, a);
-    }
-  }
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-  geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
-  geometry.setIndex(indices);
-}
-
 function openCylinderAlongY({
   centerY,
   cutawayHalfAngle,
@@ -235,7 +208,7 @@ function seabedTriggeredSoundingWeight(movement) {
   const root = new THREE.Group();
 
   // Brown's plate is a longitudinal section. The measurements below retain
-  // its one sliding bottom probe, one fixed-axis bell crank, curved detent,
+  // its one sliding bottom probe, one fixed-axis bell crank, curved spring,
   // and the lower catch that supports the bored weight. The 3D model leaves
   // a front sector open so that the otherwise enclosed trip can be inspected.
   const sourceImageWidth = 525;
@@ -398,6 +371,142 @@ function seabedTriggeredSoundingWeight(movement) {
     velocity: 0,
   });
 
+  // Inverse of probeRiseAtAngle on the working branch (angle 0 at no rise):
+  // ux sin(a) + uy cos(a) = uy + rise.
+  const upperReach = Math.hypot(upperContactLocal.x, upperContactLocal.y);
+  const upperPhase = Math.atan2(upperContactLocal.y, upperContactLocal.x);
+  const angleStateForProbeRise = (rise) => {
+    const value = Math.PI
+      - Math.asin((upperContactLocal.y + rise.value) / upperReach)
+      - upperPhase;
+    const sine = Math.sin(value);
+    const cosine = Math.cos(value);
+    const lever = upperContactLocal.x * cosine - upperContactLocal.y * sine;
+    const velocity = rise.velocity / lever;
+    const acceleration = (rise.acceleration
+      + (upperContactLocal.x * sine + upperContactLocal.y * cosine)
+        * velocity ** 2) / lever;
+    return { acceleration, value, velocity };
+  };
+
+  // Brown's catch is a sloped barb: a rounded seat on top (the finite seat's
+  // capsule) and, below it, a convex face running down and in to a tip
+  // inside the bore. A weight pushed up the rod meets that face and cams the
+  // sprung catch aside; once its lower opening passes the seat, the spring
+  // swings the catch out under it. The same outline limits the catch while
+  // it rubs up the spent weight's bore after the trip.
+  const catchSeatStartLocal = [0.30, -0.84];
+  const catchSeatRadius = 0.025;
+  const catchNoseHalfDepth = 0.05;
+  const catchTipCenter = [0.40, -1.08];
+  const catchTipRadius = 0.03;
+  const catchNoseProfile = (() => {
+    const quadratic = (a, c, b, u) => [
+      (1 - u) ** 2 * a[0] + 2 * (1 - u) * u * c[0] + u ** 2 * b[0],
+      (1 - u) ** 2 * a[1] + 2 * (1 - u) * u * c[1] + u ** 2 * b[1],
+    ];
+    const tipPoint = (degrees) => [
+      catchTipCenter[0] + catchTipRadius * Math.cos(degrees * Math.PI / 180),
+      catchTipCenter[1] + catchTipRadius * Math.sin(degrees * Math.PI / 180),
+    ];
+    // The face leaves the seat's rounded end tangentially.
+    const seatEnd = catchSupportLocal.toArray();
+    const faceStartAngle = -20 * Math.PI / 180;
+    const faceStart = [
+      seatEnd[0] + catchSeatRadius * Math.cos(faceStartAngle),
+      seatEnd[1] + catchSeatRadius * Math.sin(faceStartAngle),
+    ];
+    const faceControl = [
+      faceStart[0] + 0.2 * Math.sin(faceStartAngle),
+      faceStart[1] - 0.2 * Math.cos(faceStartAngle),
+    ];
+    const faceEnd = tipPoint(-40);
+    // A tapered blade hung from the eye: its right edge runs down inside
+    // the bore to the seat, which is the only part standing out under the
+    // weight; the left edge runs straight down to the tip.
+    const points = [[0.08, -0.17], [0.44, -0.77], seatEnd];
+    for (let i = 0; i <= 32; i += 1) {
+      points.push(quadratic(faceStart, faceControl, faceEnd, i / 32));
+    }
+    for (let i = 1; i <= 16; i += 1) points.push(tipPoint(-40 - 108 * i / 16));
+    points.push([-0.07, -0.17]);
+    return polygonClipping.union(
+      poly(points),
+      capsule(catchSeatStartLocal, catchSupportLocal.toArray(),
+        catchSeatRadius, 64),
+    );
+  })();
+  // Outer-ring samples that can meet the weight (x > 0.15 in the catch).
+  const catchNoseRing = catchNoseProfile[0][0];
+  // The ring resampled at 0.01 or finer, so no edge slips between samples.
+  const catchNoseSamples = [];
+  for (let i = 0; i + 1 < catchNoseRing.length; i += 1) {
+    const [ax, ay] = catchNoseRing[i];
+    const [bx, by] = catchNoseRing[i + 1];
+    const count = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 0.01));
+    for (let k = 0; k < count; k += 1) {
+      const x = ax + (bx - ax) * k / count;
+      const y = ay + (by - ay) * k / count;
+      if (x > 0.15) catchNoseSamples.push(new THREE.Vector2(x, y));
+    }
+  }
+  const insideCatchNose = (x, y) => {
+    let inside = false;
+    for (let i = 0, j = catchNoseRing.length - 1; i < catchNoseRing.length; j = i, i += 1) {
+      const [xi, yi] = catchNoseRing[i];
+      const [xj, yj] = catchNoseRing[j];
+      if ((yi > y) !== (yj > y)
+        && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  // The faceted shell's inner facets (112 segments over the open sweep).
+  const weightFacetBore = boreRadius * Math.cos(
+    (FULL_TURN - 2 * weightCutawayHalfAngle) / (2 * 112),
+  );
+  const springContactClearance = 0.003;
+  const catchHitsWeight = (angle, weightRelativeY) => {
+    const cosine = Math.cos(angle);
+    const sine = Math.sin(angle);
+    const bore = weightFacetBore - springContactClearance;
+    const outer = weightOuterRadius + springContactClearance;
+    for (const point of catchNoseSamples) {
+      const x = pivot.x + point.x * cosine - point.y * sine;
+      const y = pivot.y + point.x * sine + point.y * cosine - weightRelativeY;
+      if (Math.hypot(x, catchNoseHalfDepth) > bore
+        && x * x + catchNoseHalfDepth ** 2 + y * y < outer * outer) return true;
+    }
+    // The bore's rims (at the nose's face depth) against the nose outline,
+    // so that sliding over a rim is resolved continuously.
+    const rimX = Math.sqrt(bore * bore - catchNoseHalfDepth ** 2) - pivot.x;
+    const rimHeight = Math.sqrt(outer * outer - bore * bore);
+    for (const rimY of [-rimHeight, rimHeight]) {
+      const ry = weightRelativeY + rimY - pivot.y;
+      if (insideCatchNose(rimX * cosine + ry * sine, -rimX * sine + ry * cosine)) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const weightLimitedAngle = (weightRelativeY) => {
+    if (!catchHitsWeight(0, weightRelativeY)) return 0;
+    // The spring swings the catch out from the retracted side until it
+    // first meets the weight: scan outward, then refine.
+    let clear = heldRetractedAngle - 0.02;
+    let blocked = clear + 0.005;
+    while (blocked < 0 && !catchHitsWeight(blocked, weightRelativeY)) {
+      clear = blocked;
+      blocked += 0.005;
+    }
+    blocked = Math.min(blocked, 0);
+    for (let iteration = 0; iteration < 30; iteration += 1) {
+      const middle = (clear + blocked) / 2;
+      if (catchHitsWeight(middle, weightRelativeY)) blocked = middle;
+      else clear = middle;
+    }
+    return clear;
+  };
+
   const catchStateForTime = (cycleTime) => {
     if (cycleTime < timeline.seabedContact) return zeroAngleState;
     if (cycleTime < timeline.supportRelease) {
@@ -418,15 +527,19 @@ function seabedTriggeredSoundingWeight(movement) {
         heldRetractedAngle,
       );
     }
-    if (cycleTime < timeline.detentReleased) return heldAngleState;
-    if (cycleTime < timeline.catchSet) {
-      return transitionState(
+    if (cycleTime < timeline.weightImpact) return heldAngleState;
+    // The leaf spring keeps the upper arm's roller down on the pusher pad,
+    // so the catch follows the probe back out as the rod is lifted off the
+    // bottom (the weight's bore may stop it first: see catchStateWithWeight).
+    if (cycleTime < timeline.probeDecompressed) {
+      const rise = transitionState(
         cycleTime,
-        timeline.detentReleased,
-        timeline.catchSet,
-        heldRetractedAngle,
+        timeline.weightImpact,
+        timeline.probeDecompressed,
+        maximumProbeRise,
         0,
       );
+      return angleStateForProbeRise(rise);
     }
     return zeroAngleState;
   };
@@ -610,16 +723,16 @@ function seabedTriggeredSoundingWeight(movement) {
     }
     if (cycleTime < timeline.weightImpact) return 'weight-free-fall';
     if (cycleTime < timeline.probeDecompressed) {
-      return 'probe-decompression-with-detent-held';
+      return 'probe-decompression-catch-sprung-against-bore';
     }
     if (cycleTime < timeline.rodRecovered) {
       return 'rod-hauled-up-out-of-view-spent-weight-left-on-bottom';
     }
     if (cycleTime < timeline.freshWeightRaised) {
-      return 'fresh-weight-slid-up-past-retracted-catch';
+      return 'fresh-weight-pushed-up-camming-sprung-catch-aside';
     }
     if (cycleTime < timeline.catchSet) {
-      return 'detent-released-catch-set-under-raised-weight';
+      return 'catch-sprung-out-under-raised-weight';
     }
     if (cycleTime < timeline.weightSeated) {
       return 'fresh-weight-let-down-onto-catch';
@@ -630,10 +743,38 @@ function seabedTriggeredSoundingWeight(movement) {
     return 're-armed-rod-returns-to-brown-pose-as-vessel-moves-to-next-station';
   };
 
+  // While no weight rests on it (after the spent weight lands, until the
+  // fresh one is let down), the sprung catch stands as far out as the probe
+  // pad and the weight's bore and faces allow.
+  const weightLimitActive = (cycleTime) => cycleTime >= timeline.weightImpact
+    && cycleTime < timeline.catchSet;
+  const sprungCatchAngle = (cycleTime) => {
+    const base = catchStateForTime(cycleTime);
+    if (!weightLimitActive(cycleTime)) return base.value;
+    const body = bodyStateForTime(cycleTime, base);
+    const weight = weightStateForTime(cycleTime, body, base);
+    return Math.min(base.value, weightLimitedAngle(weight.value - body.value));
+  };
+  const catchStateWithWeight = (cycleTime) => {
+    const base = catchStateForTime(cycleTime);
+    if (!weightLimitActive(cycleTime)) return { ...base, weightLimited: false };
+    const value = sprungCatchAngle(cycleTime);
+    if (value >= base.value) return { ...base, weightLimited: false };
+    const step = 1e-4;
+    const before = sprungCatchAngle(cycleTime - step);
+    const after = sprungCatchAngle(cycleTime + step);
+    return {
+      acceleration: (after - 2 * value + before) / step ** 2,
+      value,
+      velocity: (after - before) / (2 * step),
+      weightLimited: true,
+    };
+  };
+
   const stateAtTime = (time) => {
     const cycleTime = positiveModulo(time, cyclePeriod);
     const parity = positiveModulo(Math.round((time - cycleTime) / cyclePeriod), 2);
-    const catchAngleState = catchStateForTime(cycleTime);
+    const catchAngleState = catchStateWithWeight(cycleTime);
     const catchUpper = rigidPointState(
       upperContactLocal,
       catchAngleState,
@@ -685,14 +826,12 @@ function seabedTriggeredSoundingWeight(movement) {
     const weightUpperOpeningY = weight.value + weightOpeningHalfHeight;
     const supportRadialReach = catchSupportWorld.x;
     const supportOverlap = supportRadialReach - boreRadius;
-    const detentLatched = cycleTime >= timeline.supportRelease
-      && cycleTime < timeline.detentReleased;
+    const catchSprungAgainstWeight = catchAngleState.weightLimited;
     const freshWeightReload = cycleTime >= timeline.freshWeightAtRod
       && cycleTime < timeline.weightSeated;
-    const probeToCatchContactActive = (
-      cycleTime < timeline.weightImpact
-      || cycleTime >= timeline.catchSet
-    );
+    // The spring holds the roller on the pad unless the weight holds the
+    // catch further in.
+    const probeToCatchContactActive = !catchSprungAgainstWeight;
     const catchToWeightContactActive = (
       cycleTime < timeline.supportRelease
       || cycleTime >= timeline.weightSeated
@@ -722,7 +861,7 @@ function seabedTriggeredSoundingWeight(movement) {
       catchUpperPosition: catchUpperWorld,
       cyclePhase: cycleTime / cyclePeriod,
       cycleTime,
-      detentLatched,
+      catchSprungAgainstWeight,
       freshWeightReload,
       probeAcceleration,
       probeFootContactY,
@@ -985,35 +1124,133 @@ function seabedTriggeredSoundingWeight(movement) {
   pivotPin.userData.role = 'fixed-bell-crank-pivot-pin';
   bodyAssembly.add(pivotPin);
 
-  // One smoothly bent flat-ended spring rebuilt each frame (a deforming
-  // part), rather than straight segments overlapping at every bend.
-  // Its buffers are allocated once and rewritten in place.
-  const springTube = (points) => {
-    const curve = new THREE.CatmullRomCurve3(points, false, 'centripetal');
-    const tube = new THREE.TubeGeometry(curve, 24, 0.035, 10, false);
-    capTubeEnds(tube, 24, 10);
-    return tube;
+  // Brown's curved spring: a flat steel leaf fixed in the underside of the
+  // solid rod above the window, bowed out to the right and ending in a
+  // rolled curl that bears on the right edge of the upper arm. It presses
+  // the arm to the left, which turns the catch outward (into engagement) and
+  // keeps the arm's roller down on the probe pad; the probe's rise turns the
+  // catch in against it and deflects the leaf. It is rebuilt in place each
+  // frame (a deforming part) with a fixed vertex count.
+  const springThickness = 0.04;
+  const springHalfDepth = 0.05;
+  const springCurlRadius = 0.055;
+  // Set right of the arm's retracted top, so the swinging arm clears it.
+  const springAnchor = new THREE.Vector2(0.22, 1.95);
+  const springAnchorTangent = new THREE.Vector2(0.35, -0.94).normalize();
+  const upperArmHalfWidth = 0.065;
+  const upperArmDirection = upperContactLocal.clone().normalize();
+  const upperArmRightNormal = new THREE.Vector2(
+    upperArmDirection.y,
+    -upperArmDirection.x,
+  );
+  const springBearingDistance = 0.72 * upperContactLocal.length();
+  // Faceting allowance, so the rendered curl rests on the arm's edge.
+  const springBearingClearance = 0.004;
+  const springBowSamples = 30;
+  const springCurlSamples = 16;
+  const springSamples = springBowSamples + springCurlSamples;
+  const springCenterline = (catchAngle) => {
+    const along = rotateVector2(
+      upperArmDirection.clone().multiplyScalar(springBearingDistance),
+      catchAngle,
+    ).add(pivot);
+    const normal = rotateVector2(upperArmRightNormal, catchAngle);
+    const curlCenter = along.clone().addScaledVector(
+      normal,
+      upperArmHalfWidth + springCurlRadius + springThickness / 2
+        + springBearingClearance,
+    );
+    const curlStart = curlCenter.clone().add(
+      new THREE.Vector2(springCurlRadius, 0),
+    );
+    const c1 = springAnchor.clone().addScaledVector(springAnchorTangent, 0.3);
+    const c2 = curlStart.clone().add(new THREE.Vector2(0, 0.34));
+    const points = [];
+    for (let i = 0; i < springBowSamples; i += 1) {
+      const u = i / springBowSamples;
+      const v = 1 - u;
+      points.push(new THREE.Vector2(
+        v ** 3 * springAnchor.x + 3 * v * v * u * c1.x
+          + 3 * v * u * u * c2.x + u ** 3 * curlStart.x,
+        v ** 3 * springAnchor.y + 3 * v * v * u * c1.y
+          + 3 * v * u * u * c2.y + u ** 3 * curlStart.y,
+      ));
+    }
+    // The curl runs on past its bearing point, which faces the arm.
+    const bearingAngle = Math.atan2(-normal.y, -normal.x);
+    const curlEnd = (bearingAngle > 0 ? bearingAngle - FULL_TURN : bearingAngle)
+      - 0.9;
+    for (let i = 0; i < springCurlSamples; i += 1) {
+      const angle = curlEnd * i / (springCurlSamples - 1);
+      points.push(new THREE.Vector2(
+        curlCenter.x + springCurlRadius * Math.cos(angle),
+        curlCenter.y + springCurlRadius * Math.sin(angle),
+      ));
+    }
+    return { bearing: along.addScaledVector(normal, upperArmHalfWidth), points };
   };
+  // A closed, welded strip: four corners per sample, four side faces and
+  // two end caps.
+  const springGeometry = new THREE.BufferGeometry();
+  springGeometry.setAttribute('position', new THREE.BufferAttribute(
+    new Float32Array(springSamples * 4 * 3), 3,
+  ));
+  {
+    const index = [];
+    // Corners: 0 (+side, back), 1 (+side, front), 2 (-side, front),
+    // 3 (-side, back); faces run 0-1, 1-2, 2-3, 3-0.
+    for (let i = 0; i < springSamples - 1; i += 1) {
+      for (let c = 0; c < 4; c += 1) {
+        const a = i * 4 + c;
+        const b = i * 4 + (c + 1) % 4;
+        const a2 = a + 4;
+        const b2 = b + 4;
+        index.push(a, b, a2, b, b2, a2);
+      }
+    }
+    const last = (springSamples - 1) * 4;
+    index.push(0, 2, 1, 0, 3, 2);
+    index.push(last, last + 1, last + 2, last, last + 2, last + 3);
+    springGeometry.setIndex(index);
+  }
+  const springFront = 0.25 + springHalfDepth;
+  const springBack = 0.25 - springHalfDepth;
+  const springCorners = [[1, springBack], [1, springFront], [-1, springFront],
+    [-1, springBack]];
+  const writeSpring = (catchAngle) => {
+    const { points } = springCenterline(catchAngle);
+    const position = springGeometry.attributes.position;
+    for (let i = 0; i < springSamples; i += 1) {
+      const previous = points[Math.max(0, i - 1)];
+      const next = points[Math.min(points.length - 1, i + 1)];
+      const tangent = next.clone().sub(previous).normalize();
+      springCorners.forEach(([side, z], c) => {
+        position.setXYZ(
+          i * 4 + c,
+          points[i].x - tangent.y * side * springThickness / 2,
+          points[i].y + tangent.x * side * springThickness / 2,
+          z,
+        );
+      });
+    }
+    position.needsUpdate = true;
+    springGeometry.computeVertexNormals();
+    springGeometry.computeBoundingSphere();
+    springGeometry.computeBoundingBox();
+  };
+  writeSpring(0);
   const detentSpring = new THREE.Group();
   const detentSpringMesh = new THREE.Mesh(
-    springTube([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 1, 0)]),
-    matte(PALETTE.ink, { roughness: 0.78 }),
+    springGeometry,
+    matte(PALETTE.ink, { metalness: 0.3, roughness: 0.5 }),
   );
   detentSpringMesh.userData.role =
-    'curved-spring-detent-holding-catch-after-release';
+    'curled-leaf-spring-loading-catch-into-engagement';
   detentSpring.add(detentSpringMesh);
-  detentSpring.userData.setPoints = (points) => {
-    const tube = springTube(points);
-    for (const name of ['position', 'normal']) {
-      detentSpringMesh.geometry.attributes[name].array.set(tube.attributes[name].array);
-      detentSpringMesh.geometry.attributes[name].needsUpdate = true;
-    }
-    detentSpringMesh.geometry.computeBoundingSphere();
-    detentSpringMesh.geometry.computeBoundingBox();
-    tube.dispose();
-  };
+  detentSpring.userData.setAngle = writeSpring;
+  detentSpring.userData.centerline = springCenterline;
   detentSpring.userData.role =
-    'curved-spring-detent-holding-catch-after-release';
+    'curled-leaf-spring-loading-catch-into-engagement';
   bodyAssembly.add(detentSpring);
   root.add(bodyAssembly);
 
@@ -1071,7 +1308,7 @@ function seabedTriggeredSoundingWeight(movement) {
   root.userData.archetype =
     'seabed-triggered-sounding-weight-release-with-sliding-probe-and-latched-bell-crank';
   root.userData.mechanism =
-    'bottom-probe-slides-upward-against-a-bell-crank-which-withdraws-and-detent-latches-the-catch-from-beneath-the-bored-sounding-weight';
+    'bottom-probe-slides-upward-against-a-spring-loaded-bell-crank-which-withdraws-the-sloped-catch-from-beneath-the-bored-sounding-weight';
   root.userData.blocks = {
     bodyAssembly,
     catchAssembly,
@@ -1098,6 +1335,8 @@ function seabedTriggeredSoundingWeight(movement) {
     windowShell,
   };
   root.userData.geometry = {
+    catchNoseHalfDepth,
+    catchNoseProfile,
     boreRadialClearance,
     boreRadius,
     catchSupportLocal: catchSupportLocal.clone(),
@@ -1138,7 +1377,9 @@ function seabedTriggeredSoundingWeight(movement) {
   };
   root.userData.transmission = {
     automaticReset: false,
-    catchDetainedAfterTrip: true,
+    catchDetainedAfterTrip: false,
+    catchSpringLoadedIntoEngagement: true,
+    catchSelfSetsOnReload: true,
     catchType: 'single-pivot-bell-crank-with-radial-support-nose',
     input: 'bottom-projecting-seabed-probe',
     loopReset:
@@ -1163,7 +1404,7 @@ function seabedTriggeredSoundingWeight(movement) {
       imageHeight: sourceImageHeight,
       imageWidth: sourceImageWidth,
       inferredTopology:
-        'one bottom slider contacts one pivoted catch; a curved detent retains the catch while a bored spherical weight drops',
+        'one bottom slider contacts one pivoted catch with a sloped nose; a curved leaf spring loads the catch outward under the bored spherical weight',
       measurementUncertaintyPixels: 4,
       officialAnimationAvailable: false,
       rasterCatchSupport: sourceCatchSupport.clone(),
@@ -1184,6 +1425,7 @@ function seabedTriggeredSoundingWeight(movement) {
       publicationYear: 1908,
     },
   };
+  root.userData.catchWeightLimit = { catchHitsWeight, weightLimitedAngle };
   root.userData.stateAtCyclePhase = stateAtCyclePhase;
   root.userData.stateAtTime = stateAtTime;
   root.userData.canonicalStates = {
@@ -1201,25 +1443,7 @@ function seabedTriggeredSoundingWeight(movement) {
     catchAssembly.rotation.z = state.catchAngle;
     weightAssembly.position.y = state.weightCenterY;
 
-    const detentContactLocal = rotateVector2(
-      new THREE.Vector2(-0.28, 1.12),
-      state.catchAngle,
-    ).add(pivot);
-    detentSpring.userData.setPoints([
-      new THREE.Vector3(-0.02, 1.93, 0.25),
-      new THREE.Vector3(0.18, 1.81, 0.25),
-      new THREE.Vector3(0.25, 1.57, 0.25),
-      new THREE.Vector3(
-        detentContactLocal.x + 0.09,
-        detentContactLocal.y + 0.08,
-        0.25,
-      ),
-      new THREE.Vector3(
-        detentContactLocal.x,
-        detentContactLocal.y,
-        0.25,
-      ),
-    ]);
+    detentSpring.userData.setAngle(state.catchAngle);
 
     // The line leaves the top of the eye, knotted there.
     const eyeTop = new THREE.Vector3(0, state.bodyPositionY + rodTopLocalY + 0.13 + 0.13, 0);
@@ -1263,9 +1487,10 @@ function seabedTriggeredSoundingWeight(movement) {
       0,
     );
     root.userData.contacts = {
-      catchDetent: {
-        active: state.detentLatched,
-        automaticReset: false,
+      catchSpring: {
+        active: true,
+        sprungAgainstWeight: state.catchSprungAgainstWeight,
+        automaticReset: true,
         catchAngle: state.catchAngle,
       },
       catchToWeight: {
@@ -1323,6 +1548,19 @@ function seabedTriggeredSoundingWeight(movement) {
 export function createAuthoredSoundingWeightMovement(movement) {
   if (movement.id === 247) {
     const model = finishSounding247Parts(seabedTriggeredSoundingWeight(movement));
+    // Brown's sloped barb: the finite seat's rounded top with the convex
+    // camming face below it, one plain extrusion in the catch's plane.
+    {
+      const { catchNose } = model.root.userData.blocks;
+      const { catchNoseHalfDepth, catchNoseProfile } = model.root.userData.geometry;
+      catchNose.geometry.dispose();
+      catchNose.geometry = finitePlate(
+        catchNoseProfile,
+        -catchNoseHalfDepth,
+        catchNoseHalfDepth,
+      );
+      catchNose.userData.role = 'sloped-barb-catch-nose-under-weight';
+    }
     // Keep the stem-to-pad bridge in front of the bell-crank plane with the
     // stem it joins.
     const bridge = model.root.userData.releaseWorkingParts?.bridge;

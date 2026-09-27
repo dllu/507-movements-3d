@@ -308,8 +308,7 @@ export default {
     note: 'Oblique view from about 24 degrees above: the thin open crown cup with upright saw teeth round its rim, the output shaft hanging below, and the top arm on a low boss on the stud rising from the floor of the cup, pointing away and upward to the right with the pawl at the rim; no lower bearing collar, face collar, face ring, hub outline, white indices or contact markers are drawn.',
   },
   238: {
-    remove: ['white-escape-wheel-rotation-index', 'white-pallet-carrier-motion-index'],
-    note: 'Face view of the seven-point wheel D in the notch of the anchor, B below it and C at the hooked tip, pivoted at A; B and C are blocks of the anchor itself, and no witness marks or edge lines are drawn.',
+    note: 'Face view of the six-point star wheel D in the notch of the anchor, B below it and C at the hooked tip, pivoted at A; the anchor is one flat plate, and no witness marks or edge lines are drawn.',
   },
   239: {
     remove: ['fixed-spur-stop-support-rail', 'fixed-spur-gear-bearing-post', '(?:left|right|output)-journal-support-post'],

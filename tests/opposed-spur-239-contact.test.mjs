@@ -16,26 +16,30 @@ function normalAt(mesh, world) {
   throw new Error(`No actual contact face at ${world.toArray()}`);
 }
 
-test('239 both finite load lands oppose the intended wheel rotation over a nonzero face span', () => {
-  const m = make(), d = m.root.userData, b = d.blocks;
+test('239 each stop nose seats flat on the flank it holds and opposes that rotation', () => {
+  const m = make(), d = m.root.userData, b = d.blocks, g = d.geometry;
   const moments = {};
   for (const side of ['left', 'right']) {
-    const s = at(m, side === 'left' ? 0.5 : 0), metric = s.contact, stop = b[`${side}Stop`].userData.body;
+    const s = at(m, side === 'left' ? 0 : 0.5), metric = s.contact, stop = b[`${side}Stop`].userData.body;
+    assert.equal(s.activeStop, side);
+    assert.ok(Math.abs(metric.clearance) < 1e-12);
     const tangent = metric.segment.outer.clone().sub(metric.segment.root).normalize();
-    for (const along of [-0.004, 0, 0.014]) {
-      const q = metric.nose.clone().addScaledVector(tangent, along), p = new THREE.Vector3(q.x, q.y, 0.1);
+    // Line contact along most of the flank, not a point on a narrow finger.
+    for (const along of [0.1, 0.3, 0.5]) {
+      const q = metric.segment.root.clone().addScaledVector(tangent, along), p = new THREE.Vector3(q.x, q.y, 0.1);
       const n = normalAt(b.gearBody, p), opposed = normalAt(stop, p);
       assert.ok(n.dot(opposed) < -0.99999999, `${side} real mating normals`);
       assert.ok(n.dot(new THREE.Vector3(metric.flankNormal.x, metric.flankNormal.y, 0)) > 0.99999999);
+      // Reaction on the wheel: left resists counter-clockwise, right clockwise.
       const moment = -cross(q, n);
-      assert.ok(side === 'left' ? moment > 2.2 : moment < -2.15);
+      assert.ok(side === 'left' ? moment < -2 : moment > 2, `${side} moment ${moment}`);
       moments[side] = moment;
     }
-    // Attempted overtravel enters actual wheel triangles at the load land.
-    const contact = new THREE.Vector3(metric.nose.x, metric.nose.y, 0.1), wheelField = solidSurface(b.gearBody.geometry);
-    b.gear.userData.rotor.rotation.z = s.wheelAngle + (side === 'left' ? -0.001 : 0.001);
+    // Overtravel in the blocked direction enters the stop.
+    const q = metric.segment.root.clone().addScaledVector(tangent, 0.3), contact = new THREE.Vector3(q.x, q.y, 0.1), wheelField = solidSurface(b.gearBody.geometry);
+    b.gear.userData.rotor.rotation.z = s.wheelAngle + (side === 'left' ? 0.002 : -0.002);
     m.root.updateMatrixWorld(true);
-    assert.ok(wheelField.signedDistance(contact.applyMatrix4(b.gearBody.matrixWorld.clone().invert())) < -0.0021);
+    assert.ok(wheelField.signedDistance(contact.applyMatrix4(b.gearBody.matrixWorld.clone().invert())) < -0.003);
   }
   console.log({ opposedActualFaceMoments: moments });
 });
@@ -91,7 +95,7 @@ test('239 full gear and source pivots remain, and the prescribed free play is sm
   assert.equal(d.blocks.gear.userData.toothProfile,'source-square-straight-flank');
   assert.equal(d.blocks.gear.userData.teeth,18);
   assert.deepEqual(g.leftPivot.toArray(),[-3.152,1.264]); assert.deepEqual(g.rightPivot.toArray(),[4.384,1.76]);
-  assert.ok(-g.clockwiseLimit/g.toothPitch > 0.24 && -g.clockwiseLimit/g.toothPitch < 0.25);
+  assert.ok(Math.abs((g.counterclockwiseLimit - g.clockwiseLimit) / g.toothPitch - 0.2) < 1e-12);
   for(const phase of [0,0.16,0.38,0.58,0.8,1]) {
     const a=d.stateAtCycleCoordinate(phase-1e-7),b=d.stateAtCycleCoordinate(phase+1e-7);
     assert.ok(Math.abs(a.wheelAngle-b.wheelAngle)<1e-10);

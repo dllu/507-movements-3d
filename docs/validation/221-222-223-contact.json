@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-stepped-sector-gears.js",
-      "sha256": "eefcffb6e756f8bc8d344fe98fe17b79b40ec98d23c601a50bad2d9520242a63"
+      "sha256": "c0342d29ebb60bf585e15dc82dd4920acfea7ae3011f87d4a408dbd512eb6978"
     },
     {
       "file": "src/simulation/variable-idler-gear-parts.js",

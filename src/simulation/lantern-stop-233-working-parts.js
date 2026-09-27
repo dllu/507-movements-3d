@@ -4,12 +4,9 @@ import { boredPlanarLinkGeometry } from './bored-planar-link.js';
 const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
 export function installLanternStop233(root, latchShape, update) {
   const d=root.userData,b=d.blocks,g=d.geometry,rotor=b.rollerWheel.userData.rotor;
-  // The working edge is the actual analytical trundle envelope. A bevel must
-  // not inflate it toward the cylinder it is meant to contact.
-  const outline=latchShape.getPoints(18).map((p,i)=>{
-    if(i<g.latchFacePoints.length)p=p.clone().addScaledVector(d.latchEnvelopeAtProgress(i/(g.latchFacePoints.length-1)).localNormal,.000015);
-    return p.toArray();
-  });
+  // The flat bar with its slanted end, extruded without a bevel so its
+  // underside and slant keep their running clearance to the trundles.
+  const outline=latchShape.getPoints(18).map(p=>p.toArray());
   replace(b.latchBody, plate([[outline,circle([0,0],.099,64)]],-.08,.08));
   const [disk,rim]=rotor.children;
   replace(disk,ring(.099,g.rollerRadius,-.09,.09,192));disk.rotation.x=0;
@@ -36,7 +33,7 @@ export function installLanternStop233(root, latchShape, update) {
   b.wheelIndicator.position.z=.298;
   const trundles=b.wheel.userData.trundles;
   for(const pin of trundles)replace(pin,new THREE.CylinderGeometry(g.trundleRadius,g.trundleRadius,.92,128));
-  d.lanternStop233Parts={disk,rim,spindle,armPlate,latchRunningClearance:.000015};
+  d.lanternStop233Parts={disk,rim,spindle,armPlate,latchRunningClearance:.004};
   d.minimumDisplayCycleSeconds=g.cyclePeriod;d.hideGround=true;d.cameraFov=8;
   d.reconstructionNote='The roller and latch are alternative stops, demonstrated separately with prescribed withdrawal and opposite wheel strokes. Their finite working faces follow the trundles; gravity or spring bias, holding force, friction and impacts are not dynamically solved. The official page has no registered animation.';
   root.traverse(o=>{for(const m of [].concat(o.material??[]))m.fog=false;});

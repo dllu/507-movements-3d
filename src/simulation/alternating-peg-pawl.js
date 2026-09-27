@@ -42,16 +42,28 @@ export function makeAlternatingPegPawlDrive(){
  attach('leverBody',plate(leverShape,.21,.29),'lever',PALETTE.driver);
  attach('fixedPivotA',disk(.041,-.15,.34),'fixed',PALETTE.muted,[...p.A,0]);
  attach('fixedPivotCap',disk(.061,.34,.35),'fixed',PALETTE.muted,[...p.A,0]);
- const determinant=Math.cos(upperFace)*Math.sin(lowerFace)-Math.sin(upperFace)*Math.cos(lowerFace),
-  corner=[pinRadius*(Math.sin(lowerFace)-Math.sin(upperFace))/determinant,pinRadius*(Math.cos(upperFace)-Math.cos(lowerFace))/determinant],
-  arc=(a,b)=>Array.from({length:97},(_,i)=>{const t=i/96,r=pinRadius+(mouthRadius-pinRadius)*t*t*(3-2*t);return rotate([r,0],a+(b-a)*t);}),
-  upper=arc(upperFace,mouthAngle),lower=arc(lowerFace,mouthLower),lowerTip=rotate([mouthRadius,0],mouthLower),
-  cavity=[[-.3,.3],...upper.slice().reverse(),corner,...lower,...(lowerMouthAngle===null?[]:[add(lowerTip,rotate([.4,0],mouthLower))]),[-.3,-.3]],profiles={};
+ // Each hook head is a plain C of true circular arcs: a round socket for the
+ // peg, a concentric outer rim of constant thickness and round-ended lips,
+ // identical on both pawls. The socket is 0.009 wider in radius than the peg
+ // and offset toward the mouth, so the seated peg (centre unchanged) bears on
+ // its back at -40 degrees, where the pull is taken, and clears the upper lip
+ // as it leaves. The lower jaw stops at -55 degrees, clear of the next peg
+ // below; the upper lip hooks over the peg to 125 degrees, as Brown draws it.
+ const socketClearance=.009,backAngle=-40*Math.PI/180,socketRadius=pinRadius+socketClearance,rimRadius=.09,
+  capRadius=(rimRadius-socketRadius)/2,midRadius=(rimRadius+socketRadius)/2,capSweep=capRadius/midRadius,
+  lipUpper=125*Math.PI/180-capSweep,lipLower=-55*Math.PI/180+capSweep,socketOffset=rotate([-socketClearance,0],backAngle),
+  hookOutline=(()=>{
+   const points=[],steps=1024,arc=(radius,a,b,n)=>{for(let i=0;i<=n;i++)points.push(rotate([radius,0],a+(b-a)*i/n));},
+    cap=(angle,a,b)=>{const center=rotate([midRadius,0],angle);for(let i=1;i<64;i++)points.push(add(center,rotate([capRadius,0],a+(b-a)*i/64)));};
+   arc(rimRadius,lipLower,lipUpper,steps);cap(lipUpper,lipUpper,lipUpper+Math.PI);
+   arc(socketRadius,lipUpper,lipLower,steps);cap(lipLower,lipLower+Math.PI,lipLower+2*Math.PI);
+   return points.map(v=>add(v,socketOffset));
+  })(),profiles={};
  for(const key of ['upper','lower']){
-  const L=p.lengths[key],center=[-L,0],outerHead=lowerHeadRadius===headRadius?circle(center,headRadius):Array.from({length:512},(_,i)=>{
-    const angle=2*Math.PI*i/512,radius=headRadius-(headRadius-lowerHeadRadius)*Math.min(0,Math.sin(angle))**2;return add(center,rotate([radius,0],angle));
-   }),head=clip.difference(poly(outerHead),poly(cavity.map(v=>add(center,v)))),
-   body=clip.union(head,capsule([0,0],[-L+headRadius*.65,0],.019),poly(circle([0,0],.056))),shape=clip.difference(body,poly(cavity.map(v=>add(center,v))),poly(circle([0,0],.037))),
+  const L=p.lengths[key],center=[-L,0],
+   // The rod's rounded end lies wholly inside the hook's back wall.
+   body=clip.union(poly(hookOutline.map(v=>add(center,v))),capsule([0,0],[-L+.07,0],.019),poly(circle([0,0],.056))),
+   shape=clip.difference(body,poly(circle([0,0],.037))),
    mesh=attach(key+'Pawl',plate(shape,.12,.185),key,PALETTE.brass);
   const outline=mesh.geometry.parameters.shapes[0].getPoints().map(v=>v.toArray());if(outline[0][0]===outline.at(-1)[0]&&outline[0][1]===outline.at(-1)[1])outline.pop();profiles[key]=outline;
   attach(key+'PivotPin',disk(.034,.10,.29),'lever',PALETTE.muted,[...p.arms[key],0]);
@@ -63,7 +75,7 @@ export function makeAlternatingPegPawlDrive(){
   root.userData.kinematics={q,theta,upperAngle,lowerAngle};root.updateMatrixWorld(true);
  };
  const masses=Object.fromEntries(['wheel','lever','upper','lower'].map(family=>[family,familyMass(parts,families,family)]));
- root.userData={parts,families,blocks,geometry:{...p,pinCenters,corner},profiles,masses,motion,setState,hideGround:true,cameraFov:8,
+ root.userData={parts,families,blocks,geometry:{...p,pinCenters,socketRadius,socketOffset},profiles,masses,motion,setState,hideGround:true,cameraFov:8,
   fullCameraDirection:new THREE.Vector3(0,0,10),shadowCameraHalfExtent:2.5,shadowBias:-.00003,shadowNormalBias:.005,
   mechanism:'alternating-pawl-peg-ratchet-drive',fidelity:'authored',reconstructionStatus:'rebuilt',profile,playbackPeriod:profile.playbackPeriod,
   animationTiming:{authoredCyclePeriod:profile.playbackPeriod},minimumDisplayCycleSeconds:profile.playbackPeriod,

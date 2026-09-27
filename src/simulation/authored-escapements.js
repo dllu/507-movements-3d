@@ -1,8 +1,15 @@
 import { DEBAUFRE_300_301_PALLET } from './baked/debaufre-300-301-pallet.js';
-import { finishSevenTooth238Contact } from './seven-tooth-238-contact.js';
-import { finishSevenTooth238 } from './seven-tooth-238-working-parts.js';
+import ANCHOR_238_WHEEL from './baked/six-point-anchor-238-wheel.js';
+import {
+  DESIGN as ANCHOR_238,
+  anchorOutline as anchorOutline238,
+  makeOverlapTest as makeOverlapTest238,
+  palletAngleAt as palletAngle238,
+  rotate as rotate238,
+  starOutline as starOutline238,
+} from './six-point-anchor-238.js';
 import * as THREE from 'three';
-import { polygonClipping, ring } from './finite-plate-geometry.js';
+import { plate, polygonClipping, ring } from './finite-plate-geometry.js';
 import { makeSpokedWheel } from './spoked-wheel.js';
 import { backBar, freezeFitBoundsWithout, supportMaterial } from './back-plate-support.js';
 import {
@@ -1183,782 +1190,145 @@ function vergeAndCrownWheelEscapement(
   return finish(root, update, new THREE.Vector3(6.2, -8.1, 6.9));
 }
 
-function sevenToothAnchorEscapement(movement) {
+function circleRing(radius, count = 96) {
+  const points = Array.from({ length: count }, (_, i) => [
+    radius * Math.cos(i * FULL_TURN / count),
+    radius * Math.sin(i * FULL_TURN / count),
+  ]);
+  return [...points, points[0]];
+}
+
+function sixPointAnchorEscapement(movement) {
+  // Brown draws a six-point star (the catalogue title's "seven" is not in
+  // the plate). Star D and the anchor carrying B and C are one plane of
+  // plain extrusions; see six-point-anchor-238.js for the working edges and
+  // the contact search behind the baked wheel motion.
   const root = new THREE.Group();
-  const toothCount = 7;
+  const toothCount = ANCHOR_238.teeth;
   const toothPitch = FULL_TURN / toothCount;
-  const halfToothPitch = toothPitch / 2;
-  const dropFractionOfPitch = 0.5 - 5 / (360 / toothCount);
-  const dropAngle = toothPitch * dropFractionOfPitch;
-  const contactAdvance = halfToothPitch - dropAngle;
-  const sourceScale = 0.0165;
-  const sourceWheelCenter = new THREE.Vector2(214, 210);
-  const sourcePalletPivot = new THREE.Vector2(264, 354);
-  // The lower-left star tip touches B's top face at (170, 253), 61.5 raster
-  // pixels from D.  B's outer corner (158, 255) lies beyond that tip; using
-  // the corner as the contact made the star 9% too wide for the anchor.
-  const sourceBRootContact = new THREE.Vector2(170, 253);
-  const sourceBFaceEnd = new THREE.Vector2(207, 244);
-  const sourceCInnerTip = new THREE.Vector2(290, 185);
-  const sourceCOuterTip = new THREE.Vector2(331, 161);
-  const sourceToModel = (point) => new THREE.Vector2(
-    (point.x - sourceWheelCenter.x) * sourceScale,
-    (sourceWheelCenter.y - point.y) * sourceScale,
-  );
-  const palletPivot = sourceToModel(sourcePalletPivot);
-  const sourceBRoot = sourceToModel(sourceBRootContact);
-  const contactRadius = sourceBRoot.length();
-  const wheelMountPhase = Math.atan2(sourceBRoot.y, sourceBRoot.x);
-  const wheelRootRadius = 0.58;
-  const wheelDepth = 0.3;
-  const wheelPlaneZ = 0.42;
-  const palletAmplitude = THREE.MathUtils.degToRad(4);
-  const lowPalletAngle = -palletAmplitude;
-  const highPalletAngle = palletAmplitude;
-  const palletBodyDepth = 0.22;
-  const palletFaceDepth = 0.18;
-  const palletFaceThickness = 0.095;
-  const palletPlaneZ = 0.42;
-  const cyclePeriod = 4;
-  const cyclesPerSecond = 1 / cyclePeriod;
-  const initialCyclePhase = 0;
-  const phases = {
-    bDrive: { start: 0.1, end: 0.34 },
-    firstDrop: { start: 0.34, end: 0.4 },
-    cDrive: { start: 0.58, end: 0.82 },
-    secondDrop: { start: 0.82, end: 0.88 },
-  };
+  const cyclePeriod = 6;
+  const plateDepth = 0.24;
+  const pivot = new THREE.Vector2(...ANCHOR_238.pivotA);
+  const star = starOutline238(12);
+  const anchor = anchorOutline238(16);
+  const wheelBore = 0.089;
+  const pivotBore = 0.094;
 
-  const rotateVector = (vector, angle) => new THREE.Vector2(
-    vector.x * Math.cos(angle) - vector.y * Math.sin(angle),
-    vector.x * Math.sin(angle) + vector.y * Math.cos(angle),
-  );
-  const perpendicular = (vector) => new THREE.Vector2(
-    -vector.y,
-    vector.x,
-  );
-  const unwrapNear = (angle, target) => {
-    let unwrapped = angle;
-    while (unwrapped - target > Math.PI) unwrapped -= FULL_TURN;
-    while (unwrapped - target < -Math.PI) unwrapped += FULL_TURN;
-    return unwrapped;
-  };
-  const pointAtAngle = (angle) => new THREE.Vector2(
-    Math.cos(angle) * contactRadius,
-    Math.sin(angle) * contactRadius,
-  );
-  const pointInNeutralPallet = (worldPoint, palletAngle) => (
-    palletPivot.clone().add(
-      rotateVector(worldPoint.clone().sub(palletPivot), -palletAngle),
-    )
-  );
-  const pointAtPalletAngle = (neutralPoint, palletAngle) => (
-    palletPivot.clone().add(
-      rotateVector(neutralPoint.clone().sub(palletPivot), palletAngle),
-    )
-  );
+  const wheelMaterial = matte(PALETTE.driven, { metalness: 0.12, roughness: 0.62 });
+  const anchorMaterial = matte(PALETTE.driver, { metalness: 0.11, roughness: 0.63 });
+  const inkMaterial = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.49 });
 
-  const bRootNeutral = pointInNeutralPallet(
-    pointAtAngle(wheelMountPhase),
-    lowPalletAngle,
-  );
-  const bTipNeutral = pointInNeutralPallet(
-    pointAtAngle(wheelMountPhase + contactAdvance),
-    highPalletAngle,
-  );
-  const cRootNeutral = pointInNeutralPallet(
-    pointAtAngle(wheelMountPhase + Math.PI),
-    highPalletAngle,
-  );
-  const cTipNeutral = pointInNeutralPallet(
-    pointAtAngle(wheelMountPhase + Math.PI + contactAdvance),
-    lowPalletAngle,
-  );
-  const faceDefinitions = {
-    B: {
-      rootNeutral: bRootNeutral,
-      tipNeutral: bTipNeutral,
-    },
-    C: {
-      rootNeutral: cRootNeutral,
-      tipNeutral: cTipNeutral,
-    },
-  };
-
-  const faceAt = (side, palletAngle) => {
-    const definition = faceDefinitions[side];
-    const rootPoint = pointAtPalletAngle(
-      definition.rootNeutral,
-      palletAngle,
-    );
-    const tipPoint = pointAtPalletAngle(
-      definition.tipNeutral,
-      palletAngle,
-    );
-    const faceVector = tipPoint.clone().sub(rootPoint);
-    const length = faceVector.length();
-    const tangent = faceVector.clone().multiplyScalar(1 / length);
-    const normal = perpendicular(tangent);
-    return {
-      length,
-      normal,
-      rootPoint,
-      tangent,
-      tipPoint,
-    };
-  };
-
-  const solveFaceContact = (side, palletAngle, expectedAngle) => {
-    const face = faceAt(side, palletAngle);
-    const projection = face.rootPoint.dot(face.tangent);
-    const discriminant = projection ** 2
-      - (face.rootPoint.lengthSq() - contactRadius ** 2);
-    if (discriminant < -1e-12) {
-      throw new RangeError(`Pallet ${side} does not intersect the tooth orbit.`);
-    }
-    const root = Math.sqrt(Math.max(0, discriminant));
-    const candidates = [-projection - root, -projection + root].map(
-      (distance) => {
-        const point = face.rootPoint.clone().addScaledVector(
-          face.tangent,
-          distance,
-        );
-        const angle = unwrapNear(
-          Math.atan2(point.y, point.x),
-          expectedAngle,
-        );
-        return {
-          angle,
-          contactCoordinate: distance / face.length,
-          point,
-        };
-      },
-    ).sort((left, right) => (
-      Math.abs(left.angle - expectedAngle)
-        - Math.abs(right.angle - expectedAngle)
-    ));
-    const solution = candidates[0];
-    const toothTangent = perpendicular(solution.point);
-    const numerator = solution.point.clone().sub(palletPivot)
-      .dot(face.tangent);
-    const denominator = solution.point.dot(face.tangent);
-    const angleDerivative = numerator / denominator;
-    const pointDerivative = toothTangent.clone().multiplyScalar(
-      angleDerivative,
-    );
-    const numeratorDerivative = pointDerivative.dot(face.tangent)
-      + solution.point.clone().sub(palletPivot).dot(face.normal);
-    const denominatorDerivative = pointDerivative.dot(face.tangent)
-      + solution.point.dot(face.normal);
-    const angleSecondDerivative = (
-      numeratorDerivative * denominator
-        - numerator * denominatorDerivative
-    ) / denominator ** 2;
-    return {
-      ...face,
-      ...solution,
-      angleDerivative,
-      angleSecondDerivative,
-      lineSeparation: solution.point.clone().sub(face.rootPoint)
-        .dot(face.normal),
-    };
-  };
-
-  const palletMetrics = (
-    side,
-    physicalToothIndex,
-    palletAngle,
-    wheelAngle,
-  ) => {
-    const face = faceAt(side, palletAngle);
-    const toothWorldAngle = wheelMountPhase
-      + physicalToothIndex * toothPitch
-      + wheelAngle;
-    const point = pointAtAngle(toothWorldAngle);
-    const offset = point.clone().sub(face.rootPoint);
-    const contactCoordinate = offset.dot(face.tangent) / face.length;
-    const lineSeparation = offset.dot(face.normal);
-    const clampedCoordinate = THREE.MathUtils.clamp(
-      contactCoordinate,
-      0,
-      1,
-    );
-    const closestPoint = face.rootPoint.clone().addScaledVector(
-      face.tangent,
-      clampedCoordinate * face.length,
-    );
-    return {
-      ...face,
-      closestPoint,
-      contactCoordinate,
-      lineSeparation,
-      physicalToothIndex,
-      point,
-      segmentClearance: point.distanceTo(closestPoint),
-      side,
-      toothIndex: positiveModulo(physicalToothIndex, toothCount),
-      toothWorldAngle,
-    };
-  };
-
-  const makeEscapeWheel = () => {
-    const wheel = new THREE.Group();
-    const rotor = new THREE.Group();
-    wheel.add(rotor);
-    wheel.userData.axis = Z_AXIS.clone();
-    wheel.userData.rotor = rotor;
-    wheel.userData.role = 'seven-tooth-counterclockwise-escape-wheel-D';
-    const wheelMaterial = matte(PALETTE.driven, {
-      metalness: 0.12,
-      roughness: 0.62,
-    });
-    const darkMaterial = matte(PALETTE.ink, {
-      metalness: 0.23,
-      roughness: 0.48,
-    });
-    const starShape = new THREE.Shape();
-    const toothTips = [];
-    for (let vertex = 0; vertex < toothCount * 2; vertex += 1) {
-      const isTip = vertex % 2 === 0;
-      const angle = wheelMountPhase + vertex * Math.PI / toothCount;
-      const radius = isTip ? contactRadius : wheelRootRadius;
-      const point = new THREE.Vector2(
-        Math.cos(angle) * radius,
-        Math.sin(angle) * radius,
-      );
-      if (vertex === 0) starShape.moveTo(point.x, point.y);
-      else starShape.lineTo(point.x, point.y);
-      if (isTip) toothTips.push(point);
-    }
-    starShape.closePath();
-    const body = new THREE.Mesh(
-      centeredExtrusion(starShape, wheelDepth),
-      wheelMaterial,
-    );
-    body.userData.role = 'seven-point-source-star-wheel-body-D';
-    rotor.add(body);
-    const hub = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.22, 0.22, wheelDepth * 1.45, 30),
-      darkMaterial,
-    );
-    hub.rotation.x = Math.PI / 2;
-    hub.userData.role = 'escape-wheel-hub-D';
-    rotor.add(hub);
-    const indicator = new THREE.Mesh(
-      new THREE.BoxGeometry(0.48, 0.05, 0.025),
-      matte(PALETTE.white, { roughness: 0.46 }),
-    );
-    indicator.position.set(0.35, 0, wheelDepth / 2 + 0.035);
-    indicator.userData.role = 'white-escape-wheel-rotation-index';
-    rotor.add(indicator);
-    const tipRidges = toothTips.map((point, index) => {
-      const ridge = new THREE.Mesh(
-        new THREE.SphereGeometry(0.032, 14, 9),
-        darkMaterial,
-      );
-      ridge.position.set(point.x, point.y, wheelDepth / 2 + 0.012);
-      ridge.userData.index = index;
-      ridge.userData.role = 'escape-tooth-contact-tip';
-      rotor.add(ridge);
-      return ridge;
-    });
-    wheel.userData.body = body;
-    wheel.userData.hub = hub;
-    wheel.userData.indicator = indicator;
-    wheel.userData.teeth = toothCount;
-    wheel.userData.tipRidges = tipRidges;
-    wheel.userData.toothTips = toothTips;
-    wheel.userData.toothPitch = toothPitch;
-    return wheel;
-  };
-
-  const escapeWheel = makeEscapeWheel();
-  escapeWheel.position.z = wheelPlaneZ;
+  const escapeWheel = new THREE.Group();
+  const rotor = new THREE.Group();
+  escapeWheel.add(rotor);
+  escapeWheel.userData.axis = Z_AXIS.clone();
+  escapeWheel.userData.rotor = rotor;
+  escapeWheel.userData.role = 'six-point-counterclockwise-star-wheel-D';
+  escapeWheel.userData.teeth = toothCount;
+  const wheelBody = new THREE.Mesh(plate(
+    polygonClipping.difference([[[...star, star[0]]]], [[circleRing(wheelBore)]]),
+    -plateDepth / 2,
+    plateDepth / 2,
+  ), wheelMaterial);
+  wheelBody.userData.role = 'six-point-star-wheel-body-D';
+  const wheelHub = new THREE.Mesh(ring(wheelBore, 0.15, -0.17, 0.17, 96), wheelMaterial);
+  wheelHub.userData.role = 'star-wheel-boss-D';
+  rotor.add(wheelBody, wheelHub);
   root.add(escapeWheel);
-  const escapeShaft = makeShaft({
-    axis: Z_AXIS,
-    color: PALETTE.ink,
-    length: 1.05,
-    radius: 0.085,
-  });
-  escapeShaft.position.z = wheelPlaneZ - 0.18;
+  const escapeShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 0.62, radius: 0.085 });
   escapeShaft.userData.role = 'escape-wheel-arbor-D';
   root.add(escapeShaft);
 
   const palletCarrier = new THREE.Group();
-  palletCarrier.position.set(palletPivot.x, palletPivot.y, 0);
+  palletCarrier.position.set(pivot.x, pivot.y, 0);
   palletCarrier.userData.axis = Z_AXIS.clone();
-  palletCarrier.userData.role = 'rigid-two-pallet-carrier-pivoted-at-A';
-  const sourcePointToCarrierLocal = (point) => rotateVector(
-    sourceToModel(point).sub(palletPivot),
-    -lowPalletAngle,
-  );
-  const palletShape = new THREE.Shape();
-  const start = sourcePointToCarrierLocal(sourceCOuterTip);
-  palletShape.moveTo(start.x, start.y);
-  const curveTo = (controlPixel, endPixel) => {
-    const control = sourcePointToCarrierLocal(controlPixel);
-    const end = sourcePointToCarrierLocal(endPixel);
-    palletShape.quadraticCurveTo(control.x, control.y, end.x, end.y);
-  };
-  curveTo(new THREE.Vector2(383, 184), new THREE.Vector2(403, 229));
-  curveTo(new THREE.Vector2(411, 265), new THREE.Vector2(382, 309));
-  curveTo(new THREE.Vector2(346, 365), new THREE.Vector2(282, 417));
-  curveTo(new THREE.Vector2(244, 441), new THREE.Vector2(207, 420));
-  curveTo(new THREE.Vector2(173, 397), new THREE.Vector2(171, 340));
-  curveTo(new THREE.Vector2(168, 287), new THREE.Vector2(158, 255));
-  const bInner = sourcePointToCarrierLocal(sourceBFaceEnd);
-  palletShape.lineTo(bInner.x, bInner.y);
-  curveTo(new THREE.Vector2(215, 275), new THREE.Vector2(242, 279));
-  curveTo(new THREE.Vector2(321, 284), new THREE.Vector2(350, 263));
-  curveTo(new THREE.Vector2(374, 238), new THREE.Vector2(350, 207));
-  const cInner = sourcePointToCarrierLocal(sourceCInnerTip);
-  palletShape.lineTo(cInner.x, cInner.y);
-  palletShape.lineTo(start.x, start.y);
-  palletShape.closePath();
-  const palletBody = new THREE.Mesh(
-    centeredExtrusion(palletShape, palletBodyDepth),
-    matte(PALETTE.driver, { metalness: 0.11, roughness: 0.63 }),
-  );
-  palletBody.userData.role = 'source-shaped-anchor-body-carrying-B-and-C';
-  palletCarrier.add(palletBody);
-
-  const makePalletFace = (side, color) => {
-    const definition = faceDefinitions[side];
-    const rootLocal = definition.rootNeutral.clone().sub(palletPivot);
-    const tipLocal = definition.tipNeutral.clone().sub(palletPivot);
-    // Brown draws B and C as edges of the anchor itself. Each working face is
-    // a block of the anchor standing on its front face (z = 0.11) and
-    // reaching the wheel plane, rather than a separate tab on a pin.
-    const faceBack = palletBodyDepth / 2, faceFront = palletPlaneZ + palletFaceDepth / 2;
-    const face = makeBeam(
-      new THREE.Vector3(rootLocal.x, rootLocal.y, (faceBack + faceFront) / 2),
-      new THREE.Vector3(tipLocal.x, tipLocal.y, (faceBack + faceFront) / 2),
-      {
-        color: PALETTE.driver,
-        depth: faceFront - faceBack,
-        thickness: palletFaceThickness,
-      },
-    );
-    void color;
-    face.userData.role = `${side}-straight-working-pallet-face`;
-    const faceIndex = makeBeam(
-      new THREE.Vector3(rootLocal.x, rootLocal.y, palletPlaneZ + 0.1),
-      new THREE.Vector3(tipLocal.x, tipLocal.y, palletPlaneZ + 0.1),
-      { color: PALETTE.ink, depth: 0.022, thickness: 0.022 },
-    );
-    faceIndex.userData.role = `${side}-pallet-working-edge-index`;
-    const midpoint = rootLocal.clone().lerp(tipLocal, 0.5);
-    const standoff = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.075, 0.075, palletPlaneZ, 22),
-      matte(PALETTE.ink, { metalness: 0.2, roughness: 0.5 }),
-    );
-    standoff.rotation.x = Math.PI / 2;
-    standoff.position.set(midpoint.x, midpoint.y, palletPlaneZ / 2);
-    standoff.userData.role = `${side}-pallet-axial-standoff`;
-    palletCarrier.add(face, faceIndex, standoff);
-    return { face, faceIndex, standoff };
-  };
-  const bPallet = makePalletFace('B', PALETTE.brass);
-  const cPallet = makePalletFace('C', PALETTE.accent);
-  const palletHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.3, 0.3, 0.28, 34),
-    matte(PALETTE.driver, { metalness: 0.13, roughness: 0.59 }),
-  );
-  palletHub.rotation.x = Math.PI / 2;
-  palletHub.userData.role = 'pallet-carrier-hub-at-A';
-  palletCarrier.add(palletHub);
-  const palletHubRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.31, 0.035, 9, 38),
-    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.49 }),
-  );
-  palletHubRing.position.z = 0.17;
-  palletHubRing.userData.role = 'pallet-axis-A-outline';
-  palletHubRing.visible = false;
-  palletHubRing.userData.retiredInkOutline = true;
-  palletCarrier.add(palletHubRing);
-  const palletIndicator = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 0.05, 0.027),
-    matte(PALETTE.white, { roughness: 0.46 }),
-  );
-  const indicatorPoint = sourcePointToCarrierLocal(
-    new THREE.Vector2(269, 392),
-  );
-  palletIndicator.position.set(indicatorPoint.x, indicatorPoint.y, 0.15);
-  palletIndicator.rotation.z = Math.atan2(
-    indicatorPoint.y,
-    indicatorPoint.x,
-  );
-  palletIndicator.userData.role = 'white-pallet-carrier-motion-index';
-  palletCarrier.add(palletIndicator);
+  palletCarrier.userData.role = 'one-piece-anchor-B-C-pivoted-at-A';
+  const local = anchor.outline.map(([x, y]) => [x - pivot.x, y - pivot.y]);
+  const palletBody = new THREE.Mesh(plate(
+    polygonClipping.difference([[[...local, local[0]]]], [[circleRing(pivotBore)]]),
+    -plateDepth / 2,
+    plateDepth / 2,
+  ), anchorMaterial);
+  palletBody.userData.role = 'anchor-plate-with-step-B-and-hook-C';
+  const palletHub = new THREE.Mesh(ring(pivotBore, 0.3, -0.16, 0.16, 96), anchorMaterial);
+  palletHub.userData.role = 'anchor-boss-at-A';
+  palletCarrier.add(palletBody, palletHub);
   root.add(palletCarrier);
-
-  const palletShaft = makeShaft({
-    axis: Z_AXIS,
-    color: PALETTE.ink,
-    length: 0.9,
-    radius: 0.09,
-  });
-  palletShaft.position.set(palletPivot.x, palletPivot.y, 0.18);
+  const palletShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 0.58, radius: 0.09 });
+  palletShaft.position.set(pivot.x, pivot.y, -0.03);
   palletShaft.userData.role = 'fixed-pallet-axis-A';
-  root.add(palletShaft);
-  const frameRail = makeBeam(
-    new THREE.Vector3(-1.35, -4.05, -0.3),
-    new THREE.Vector3(3.55, -4.05, -0.3),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.16 },
-  );
-  frameRail.userData.role = 'fixed-escapement-base-rail';
-  const palletBearingPost = makeBeam(
-    new THREE.Vector3(palletPivot.x, -4.05, -0.3),
-    new THREE.Vector3(palletPivot.x, palletPivot.y, -0.3),
-    { color: PALETTE.frame, depth: 0.2, thickness: 0.15 },
-  );
-  palletBearingPost.userData.role = 'fixed-support-for-axis-A';
-  root.add(frameRail, palletBearingPost);
+  const bearing = new THREE.Mesh(ring(pivotBore, 0.24, -0.29, -0.17, 96), inkMaterial);
+  bearing.position.set(pivot.x, pivot.y, 0);
+  bearing.userData.role = 'bored-fixed-journal-at-A';
+  root.add(palletShaft, bearing);
 
-  const bContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.045, 18, 12),
-    matte(PALETTE.white, { roughness: 0.45 }),
-  );
-  bContactMarker.position.z = palletPlaneZ + 0.12;
-  bContactMarker.userData.role = 'active-B-pallet-contact-marker';
-  const cContactMarker = bContactMarker.clone();
-  cContactMarker.userData.role = 'active-C-pallet-contact-marker';
-  root.add(bContactMarker, cContactMarker);
-
-  const contactAt = ({
-    palletAngle,
-    palletAngularSpeed,
-    physicalToothIndex,
-    side,
-    wheelAngle,
-    wheelAngularSpeed,
-  }) => {
-    const metrics = palletMetrics(
-      side,
-      physicalToothIndex,
-      palletAngle,
-      wheelAngle,
-    );
-    const wheelVelocity = perpendicular(metrics.point).multiplyScalar(
-      wheelAngularSpeed,
-    );
-    const palletVelocity = perpendicular(
-      metrics.point.clone().sub(palletPivot),
-    ).multiplyScalar(palletAngularSpeed);
-    const relativeVelocity = wheelVelocity.clone().sub(palletVelocity);
+  const table = ANCHOR_238_WHEEL.table;
+  const steps = ANCHOR_238_WHEEL.steps;
+  const wheelAngleAtCycle = (coordinate) => {
+    const cycle = Math.floor(coordinate);
+    const u = (coordinate - cycle) * steps;
+    const i = Math.floor(u);
+    const a = table[i];
+    const b = i + 1 < steps ? table[i + 1] : table[0] + toothPitch;
+    return cycle * toothPitch + a + (b - a) * (u - i);
+  };
+  const stateAtTime = (time) => {
+    const coordinate = time / cyclePeriod;
+    const phase = coordinate - Math.floor(coordinate);
+    const h = 0.5 / steps;
+    const wheelAngle = wheelAngleAtCycle(coordinate);
+    const palletAngle = palletAngle238(phase);
     return {
-      ...metrics,
-      normalVelocityError: relativeVelocity.dot(metrics.normal),
-      palletVelocity,
-      slidingVelocity: relativeVelocity.dot(metrics.tangent),
-      wheelVelocity,
+      cyclePhase: phase,
+      palletAngle,
+      palletAngularSpeed: (palletAngle238(phase + h) - palletAngle238(phase - h)) / (2 * h * cyclePeriod),
+      wheelAngle,
+      wheelAngularSpeed: (wheelAngleAtCycle(coordinate + h) - wheelAngleAtCycle(coordinate - h)) / (2 * h * cyclePeriod),
     };
   };
 
-  const stateAtCycleCoordinate = (cycleCoordinate) => {
-    const cycleIndex = Math.floor(cycleCoordinate);
-    const cyclePhase = cycleCoordinate - cycleIndex;
-    const cycleWheelBase = cycleIndex * toothPitch;
-    const bPhysicalToothIndex = -cycleIndex;
-    const cPhysicalToothIndex = bPhysicalToothIndex
-      + (toothCount - 1) / 2;
-    const nextBPhysicalToothIndex = bPhysicalToothIndex - 1;
-    let activePallet = 'B';
-    let activePhysicalToothIndex = bPhysicalToothIndex;
-    let drivingContact = false;
-    let dwell = true;
-    let freeDrop = false;
-    let freeDropProgress = null;
-    let palletAngle = lowPalletAngle;
-    let palletAngleDerivative = 0;
-    let palletAngleSecondDerivative = 0;
-    let wheelAngle = cycleWheelBase;
-    let wheelAngleDerivative = 0;
-    let wheelAngleSecondDerivative = 0;
-    let stage = 'B-root-lock';
-    let escaping = null;
-    let approaching = null;
-
-    if (
-      cyclePhase >= phases.bDrive.start
-      && cyclePhase < phases.bDrive.end
-    ) {
-      const motion = segmentProgress(
-        cyclePhase,
-        phases.bDrive.start,
-        phases.bDrive.end,
-      );
-      palletAngle = lowPalletAngle
-        + 2 * palletAmplitude * motion.progress;
-      palletAngleDerivative = 2 * palletAmplitude * motion.speed;
-      palletAngleSecondDerivative = 2 * palletAmplitude
-        * motion.acceleration;
-      const expectedAngle = wheelMountPhase
-        + contactAdvance * motion.progress;
-      const solution = solveFaceContact('B', palletAngle, expectedAngle);
-      wheelAngle = solution.angle
-        - wheelMountPhase
-        - bPhysicalToothIndex * toothPitch;
-      wheelAngleDerivative = solution.angleDerivative
-        * palletAngleDerivative;
-      wheelAngleSecondDerivative = solution.angleSecondDerivative
-        * palletAngleDerivative ** 2
-        + solution.angleDerivative * palletAngleSecondDerivative;
-      drivingContact = true;
-      dwell = false;
-      stage = 'B-tooth-slides-root-to-tip';
-    } else if (
-      cyclePhase >= phases.firstDrop.start
-      && cyclePhase < phases.firstDrop.end
-    ) {
-      const motion = segmentProgress(
-        cyclePhase,
-        phases.firstDrop.start,
-        phases.firstDrop.end,
-      );
-      palletAngle = highPalletAngle;
-      wheelAngle = cycleWheelBase + contactAdvance
-        + dropAngle * motion.progress;
-      wheelAngleDerivative = dropAngle * motion.speed;
-      wheelAngleSecondDerivative = dropAngle * motion.acceleration;
-      activePallet = null;
-      activePhysicalToothIndex = null;
-      drivingContact = false;
-      dwell = false;
-      freeDrop = true;
-      freeDropProgress = motion.progress;
-      escaping = palletMetrics(
-        'B',
-        bPhysicalToothIndex,
-        palletAngle,
-        wheelAngle,
-      );
-      approaching = palletMetrics(
-        'C',
-        cPhysicalToothIndex,
-        palletAngle,
-        wheelAngle,
-      );
-      stage = 'B-releases-free-drop-to-C-root';
-    } else if (
-      cyclePhase >= phases.firstDrop.end
-      && cyclePhase < phases.cDrive.start
-    ) {
-      activePallet = 'C';
-      activePhysicalToothIndex = cPhysicalToothIndex;
-      palletAngle = highPalletAngle;
-      wheelAngle = cycleWheelBase + halfToothPitch;
-      stage = 'C-root-lock';
-    } else if (
-      cyclePhase >= phases.cDrive.start
-      && cyclePhase < phases.cDrive.end
-    ) {
-      const motion = segmentProgress(
-        cyclePhase,
-        phases.cDrive.start,
-        phases.cDrive.end,
-      );
-      activePallet = 'C';
-      activePhysicalToothIndex = cPhysicalToothIndex;
-      palletAngle = highPalletAngle
-        - 2 * palletAmplitude * motion.progress;
-      palletAngleDerivative = -2 * palletAmplitude * motion.speed;
-      palletAngleSecondDerivative = -2 * palletAmplitude
-        * motion.acceleration;
-      const expectedAngle = wheelMountPhase + Math.PI
-        + contactAdvance * motion.progress;
-      const solution = solveFaceContact('C', palletAngle, expectedAngle);
-      wheelAngle = solution.angle
-        - wheelMountPhase
-        - cPhysicalToothIndex * toothPitch;
-      wheelAngleDerivative = solution.angleDerivative
-        * palletAngleDerivative;
-      wheelAngleSecondDerivative = solution.angleSecondDerivative
-        * palletAngleDerivative ** 2
-        + solution.angleDerivative * palletAngleSecondDerivative;
-      drivingContact = true;
-      dwell = false;
-      stage = 'C-tooth-slides-root-to-tip';
-    } else if (
-      cyclePhase >= phases.secondDrop.start
-      && cyclePhase < phases.secondDrop.end
-    ) {
-      const motion = segmentProgress(
-        cyclePhase,
-        phases.secondDrop.start,
-        phases.secondDrop.end,
-      );
-      palletAngle = lowPalletAngle;
-      wheelAngle = cycleWheelBase + toothPitch - dropAngle
-        + dropAngle * motion.progress;
-      wheelAngleDerivative = dropAngle * motion.speed;
-      wheelAngleSecondDerivative = dropAngle * motion.acceleration;
-      activePallet = null;
-      activePhysicalToothIndex = null;
-      drivingContact = false;
-      dwell = false;
-      freeDrop = true;
-      freeDropProgress = motion.progress;
-      escaping = palletMetrics(
-        'C',
-        cPhysicalToothIndex,
-        palletAngle,
-        wheelAngle,
-      );
-      approaching = palletMetrics(
-        'B',
-        nextBPhysicalToothIndex,
-        palletAngle,
-        wheelAngle,
-      );
-      stage = 'C-releases-free-drop-to-B-root';
-    } else if (cyclePhase >= phases.secondDrop.end) {
-      activePallet = 'B';
-      activePhysicalToothIndex = nextBPhysicalToothIndex;
-      palletAngle = lowPalletAngle;
-      wheelAngle = cycleWheelBase + toothPitch;
-      stage = 'next-B-root-lock';
+  // Fit the view to the star and the anchor at both ends of its swing.
+  const bounds = new THREE.Box3();
+  for (const angle of [0, anchor.swing]) {
+    for (const p of anchor.outline) {
+      const q = rotate238(p, angle, ANCHOR_238.pivotA);
+      bounds.expandByPoint(new THREE.Vector3(q[0], q[1], 0));
     }
+  }
+  bounds.expandByPoint(new THREE.Vector3(-ANCHOR_238.tipRadius, ANCHOR_238.tipRadius, 0));
+  bounds.min.z = -0.3;
+  bounds.max.z = 0.3;
+  bounds.expandByScalar(0.05);
 
-    const palletAngularSpeed = palletAngleDerivative * cyclesPerSecond;
-    const palletAngularAcceleration = palletAngleSecondDerivative
-      * cyclesPerSecond ** 2;
-    const wheelAngularSpeed = wheelAngleDerivative * cyclesPerSecond;
-    const wheelAngularAcceleration = wheelAngleSecondDerivative
-      * cyclesPerSecond ** 2;
-    const contact = activePallet === null ? null : contactAt({
-      palletAngle,
-      palletAngularSpeed,
-      physicalToothIndex: activePhysicalToothIndex,
-      side: activePallet,
-      wheelAngle,
-      wheelAngularSpeed,
-    });
-    const freeDropState = freeDrop ? {
-      approaching,
-      approachingClearance: approaching.segmentClearance,
-      escaping,
-      escapingClearance: escaping.segmentClearance,
-      progress: freeDropProgress,
-    } : null;
-    return {
-      activePallet,
-      activePhysicalToothIndex,
-      activeToothIndex: activePhysicalToothIndex === null
-        ? null
-        : positiveModulo(activePhysicalToothIndex, toothCount),
-      contact,
-      cycleCoordinate,
-      cycleIndex,
-      cyclePhase,
-      drivingContact,
-      dwell,
-      freeDrop,
-      freeDropState,
-      palletAngle,
-      palletAngularAcceleration,
-      palletAngularSpeed,
-      stage,
-      teethAdvanced: wheelAngle / toothPitch,
-      wheelAngle,
-      wheelAngularAcceleration,
-      wheelAngularSpeed,
-    };
-  };
-  const stateAtTime = (time) => stateAtCycleCoordinate(
-    initialCyclePhase + time * cyclesPerSecond,
-  );
-
-  const sourceState = stateAtCycleCoordinate(0);
-  const closureState = stateAtCycleCoordinate(1);
-  const sourceBTipWorld = pointAtPalletAngle(
-    bTipNeutral,
-    lowPalletAngle,
-  );
-  const sourceCFace = faceAt('C', lowPalletAngle);
-  const sourceNearestCTooth = palletMetrics(
-    'C',
-    4,
-    lowPalletAngle,
-    0,
-  );
-  root.userData.archetype =
-    'seven-tooth-star-wheel-two-pallet-anchor-escapement';
-  root.userData.blocks = {
-    bContactMarker,
-    bPallet,
-    cContactMarker,
-    cPallet,
-    escapeShaft,
-    escapeWheel,
-    frameRail,
-    palletBearingPost,
-    palletBody,
-    palletCarrier,
-    palletHub,
-    palletHubRing,
-    palletIndicator,
-    palletShaft,
-  };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.45, -4.18, -0.45),
-    new THREE.Vector3(3.45, 1.18, 0.75),
-  );
-  root.userData.canonicalTimes = {
-    bDriveMidpoint: cyclePeriod
-      * (phases.bDrive.start + phases.bDrive.end) / 2,
-    cDriveMidpoint: cyclePeriod
-      * (phases.cDrive.start + phases.cDrive.end) / 2,
-    firstDropMidpoint: cyclePeriod
-      * (phases.firstDrop.start + phases.firstDrop.end) / 2,
-    secondDropMidpoint: cyclePeriod
-      * (phases.secondDrop.start + phases.secondDrop.end) / 2,
-    sourcePose: 0,
-  };
-  root.userData.contactAt = contactAt;
-  root.userData.faceAt = faceAt;
+  root.userData.archetype = movement.archetype;
+  root.userData.blocks = { escapeShaft, escapeWheel, palletBody, palletCarrier, palletHub, palletShaft, bearing, wheelBody, wheelHub };
+  root.userData.cameraFitBounds = bounds;
+  root.userData.animationTiming = { authoredCyclePeriod: cyclePeriod };
+  root.userData.minimumDisplayCycleSeconds = cyclePeriod;
+  root.userData.hideGround = true;
   root.userData.geometry = {
-    bRootNeutral,
-    bTipNeutral,
-    cRootNeutral,
-    cTipNeutral,
-    contactAdvance,
-    contactRadius,
     cyclePeriod,
-    cyclesPerSecond,
-    dropAngle,
-    dropFractionOfPitch,
-    halfToothPitch,
-    highPalletAngle,
-    initialCyclePhase,
-    lowPalletAngle,
-    palletAmplitude,
-    palletBodyDepth,
-    palletFaceDepth,
-    palletFaceThickness,
-    palletPivot,
-    palletPlaneZ,
-    phases,
-    sourceBTipWorld,
-    sourceCFace,
-    sourceNearestCTooth,
-    sourceScale,
+    palletPivot: pivot,
+    plateDepth,
+    rootRadius: ANCHOR_238.rootRadius,
+    swing: anchor.swing,
+    tipRadius: ANCHOR_238.tipRadius,
     toothCount,
     toothPitch,
-    wheelDepth,
-    wheelMountPhase,
-    wheelPlaneZ,
-    wheelRootRadius,
   };
-  root.userData.mechanism =
-    'B-and-C-alternately-lock-and-impulse-a-seven-tooth-counterclockwise-star-wheel-with-positive-drops';
-  root.userData.palletMetrics = palletMetrics;
-  root.userData.solveFaceContact = solveFaceContact;
+  root.userData.escapement238 = { anchor, star, overlaps: makeOverlapTest238(star, anchor.outline), wheel: ANCHOR_238_WHEEL };
+  root.userData.stateAtTime = stateAtTime;
+  root.userData.mechanism = 'one-piece anchor swings; step B and hook C alternately enter the roots of a six-point star wheel urged counter-clockwise';
+  root.userData.transmission = {
+    beatsPerCycle: 2,
+    escapeWheelDirection: 'counterclockwise',
+    outputAdvancePerOscillationInToothPitches: ANCHOR_238_WHEEL.closure / toothPitch,
+    palletsShareRigidCarrier: true,
+  };
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
-    reason: 'The official Movement 238 page marks its animation unavailable.',
+    reason: 'Animation unavailable: fetched source has no inline add_model or mm_present program.',
     sourceUrl: movement.sourceUrl,
   };
   root.userData.sourceReference = {
@@ -1966,16 +1336,11 @@ function sevenToothAnchorEscapement(movement) {
     plate238: {
       imageHeight: 525,
       imageWidth: 525,
-      inferredEscapeWheelTeeth: toothCount,
-      inferredTopology:
-        'one seven-tooth planar escape wheel D and one rigid anchor pivoted at A carrying entry pallet B and hidden-extension exit pallet C',
-      officialAnimationAvailable: false,
-      rasterBFaceEnd: sourceBFaceEnd,
-      rasterBRootContact: sourceBRootContact,
-      rasterCInnerTip: sourceCInnerTip,
-      rasterCOuterTip: sourceCOuterTip,
-      rasterPalletPivotA: sourcePalletPivot,
-      rasterWheelCenterD: sourceWheelCenter,
+      starPoints: toothCount,
+      rasterWheelCenterD: new THREE.Vector2(214, 210),
+      rasterPalletPivotA: new THREE.Vector2(264, 354),
+      rasterCPoint: new THREE.Vector2(290, 185),
+      note: 'Brown draws six star points; the catalogue title says seven.',
     },
     primaryScan: {
       archiveIdentifier: 'fivehundredseven00browiala',
@@ -1986,50 +1351,23 @@ function sevenToothAnchorEscapement(movement) {
     },
     sourceUrl: movement.sourceUrl,
   };
-  root.userData.stateAtCycleCoordinate = stateAtCycleCoordinate;
-  root.userData.stateAtTime = stateAtTime;
-  root.userData.transmission = {
-    beatsPerCycle: 2,
-    contactAdvancePerBeatInToothPitches: contactAdvance / toothPitch,
-    dropPerBeatInToothPitches: dropAngle / toothPitch,
-    escapeWheelDirection: 'counterclockwise',
-    outputAdvancePerBeatInToothPitches: 0.5,
-    outputAdvancePerOscillationInToothPitches: (
-      closureState.wheelAngle - sourceState.wheelAngle
-    ) / toothPitch,
-    palletsShareRigidCarrier: true,
-  };
+  root.userData.reconstructionNote = 'Six-point star and one-piece anchor in one plane. B lies along the locked point\'s flank with its corner in the root (plate pose); C\'s hook nests in the opposite root at the other end of a 14° swing. The anchor\'s sinusoidal swing is prescribed (the pendulum); the urged wheel\'s motion comes from an offline polygon contact search (lock, slide, free drop, recoil). Friction, inertia of the anchor and impact bounce are not modelled.';
 
   const update = (time) => {
     const state = stateAtTime(time);
-    setSpin(escapeWheel, state.wheelAngle);
+    rotor.rotation.z = state.wheelAngle;
     setSpin(escapeShaft, state.wheelAngle);
     palletCarrier.rotation.z = state.palletAngle;
-    bContactMarker.visible = false;
-    cContactMarker.visible = false;
-    if (state.contact) {
-      const marker = state.activePallet === 'B'
-        ? bContactMarker
-        : cContactMarker;
-      marker.position.set(
-        state.contact.point.x,
-        state.contact.point.y,
-        palletPlaneZ + 0.12,
-      );
-    }
     escapeWheel.userData.angularSpeed = state.wheelAngularSpeed;
     escapeShaft.userData.angularSpeed = state.wheelAngularSpeed;
     palletCarrier.userData.angularSpeed = state.palletAngularSpeed;
-    root.userData.contacts = {
-      BToothContact: state.activePallet === 'B' ? state.contact : null,
-      CToothContact: state.activePallet === 'C' ? state.contact : null,
-      freeDrop: state.freeDropState,
-    };
     root.userData.kinematics = state;
   };
-  finishSevenTooth238(root);
   update(0);
-  return finishSevenTooth238Contact(finish(root, update, new THREE.Vector3(0.8, -0.5, 18)));
+  root.traverse((object) => {
+    if (object.isMesh) for (const material of [].concat(object.material)) material.fog = false;
+  });
+  return finish(root, update, new THREE.Vector3(0.8, -0.5, 18));
 }
 
 function classicWatchVergeEscapement(
@@ -5466,7 +4804,7 @@ export function createAuthoredEscapementMovement(movement) {
       // the right flag's impulse.
       displayCycleOffset: 0.22,
     }));
-    case 238: return sevenToothAnchorEscapement(movement);
+    case 238: return sixPointAnchorEscapement(movement);
     case 299: return oldFashionedClockVergeEscapement(movement);
     case 300: return debaufreFrictionalRestEscapement(movement);
     case 301: return debaufreFrictionalRestEscapement(movement, {

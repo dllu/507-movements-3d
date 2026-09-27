@@ -490,7 +490,19 @@ test('movement 336 renderer binds all five pins and real 3D layers', () => {
   assert.ok(size.z > 1.5,
     'casing, standard, side lever, upright rods, crossbar and pins use real depth');
   assert.equal(blocks.rockshaftBearings.length, 1);
-  assert.equal(blocks.rockshaftSupports.length, 2);
+  assert.equal(blocks.rockshaftSupports.length, 1);
+  assert.equal(blocks.diagonalFrame, blocks.rockshaftStandard,
+    'standard F and the diagonal member are one extrusion');
+  const frame = new THREE.Box3().setFromObject(blocks.rockshaftStandard);
+  const step = new THREE.Box3().setFromObject(blocks.cylinderBack);
+  const flange = new THREE.Box3().setFromObject(blocks.cylinderTopFlange);
+  assert.ok(frame.min.y < step.max.y && frame.min.y > step.max.y - 0.01,
+    'the frame foot is seated just into the casing step, with no gap');
+  const outline = blocks.rockshaftStandard.geometry.userData.plate.polygons;
+  assert.equal(outline.length, 1, 'one outline, no separate pieces');
+  assert.ok(outline[0][0].some(([x, y]) => y < flange.max.y
+    && y > flange.max.y - 0.01 && x > flange.min.x + 0.05),
+  'the diagonal toe is seated on the top flange');
   const undrawn = [];
   model.root.traverse((object) => {
     if (/guide-rail|deck|frame-post|piston-head/.test(object.userData.role ?? '')) {

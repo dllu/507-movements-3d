@@ -33,7 +33,9 @@ test('237 finite curved shoulder and rendered nose clear tooth solids',()=>{
       }
     }
   }
-  assert.ok(bodyGap>.025);console.log({bodyGap,renderedNoseGap:noseGap});
+  // The pawl is one curved plate whose rounded end is the working nose: no
+  // separate ball is drawn, and the plate itself comes to the teeth.
+  assert.equal(b.pawlNose.visible,false);assert.ok(bodyGap<.005);console.log({bodyGap,renderedNoseGap:noseGap});
 });
 
 test('237 actual drive face gives clockwise torque and ramp normal lifts the radial hinge',()=>{

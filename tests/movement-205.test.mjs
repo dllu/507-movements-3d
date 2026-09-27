@@ -794,3 +794,68 @@ test('movement 205 runtime binds every marker and rotor to exact state while mov
   disposeModel(nextModel.root);
   disposeModel(model.root);
 });
+
+test('movement 205 seats every tooth into the wheel rim on a root key the cams never reach', () => {
+  const model = createMovementModel(catalog.movements[204]);
+  const { blocks, geometry } = model.root.userData;
+  const key = geometry.toothRootKey;
+  model.root.updateMatrixWorld(true);
+  const bodyBox = new THREE.Box3().setFromObject(blocks.wheelBody);
+  const cams = [];
+  model.root.traverse((object) => {
+    if (object.isMesh && /single-lobe-involute-cam-for/.test(object.userData.role)) cams.push(object);
+  });
+  let keys = 0;
+  for (const row of blocks.wheelRows) {
+    const front = row.position.z > 0;
+    for (const tooth of row.userData.teeth) {
+      const found = tooth.children.filter((child) => child.userData.role === 'tooth-root-key-sunk-into-wheel-rim');
+      assert.equal(found.length, 1);
+      keys += 1;
+      const box = new THREE.Box3().setFromObject(found[0]);
+      const toothBox = new THREE.Box3().setFromObject(tooth, true);
+      found[0].geometry.computeBoundingBox();
+      const local = found[0].geometry.boundingBox;
+      // Axially the key runs 0.06 into the body and 0.02 into the tooth.
+      if (front) {
+        near(box.min.z, bodyBox.max.z - 0.06, 1e-6, 'front key embed');
+        assert.ok(box.max.z >= toothBox.min.z + 0.019);
+      } else {
+        near(box.max.z, bodyBox.min.z + 0.06, 1e-6, 'rear key embed');
+      }
+      // Radially it sinks 0.14 into the rim and stays inside the tooth root.
+      assert.ok(Math.hypot(local.min.x, 0) < geometry.wheelRootRadius);
+      near(key.inner, geometry.wheelRootRadius - 0.14, 1e-12, 'key inner radius');
+      assert.ok(key.angles[0] > -geometry.wheelBaseHalfToothAngle + 0.07);
+      assert.ok(key.angles[1] < geometry.wheelBaseHalfToothAngle);
+    }
+  }
+  assert.equal(keys, 22);
+  // Neither cam ever sweeps the key's angular band inside the tooth tips.
+  const period = geometry.inputCyclePeriod ?? model.root.userData.transmission.inputCyclePeriod;
+  const point = new THREE.Vector3();
+  let closest = Infinity;
+  for (let step = 0; step <= 600; step += 1) {
+    model.update(period * 11 * step / 600);
+    model.root.updateMatrixWorld(true);
+    for (const cam of cams) {
+      const front = /front/.test(cam.userData.role);
+      const position = cam.geometry.attributes.position;
+      for (const row of blocks.wheelRows) {
+        if ((row.position.z > 0) !== front) continue;
+        for (const tooth of row.userData.teeth) {
+          const inverse = tooth.matrixWorld.clone().invert();
+          for (let index = 0; index < position.count; index += 1) {
+            point.fromBufferAttribute(position, index).applyMatrix4(cam.matrixWorld).applyMatrix4(inverse);
+            const angle = Math.atan2(point.y, point.x);
+            if (angle > key.angles[0] - 0.005 && angle < key.angles[1] + 0.005) {
+              closest = Math.min(closest, Math.hypot(point.x, point.y));
+            }
+          }
+        }
+      }
+    }
+  }
+  assert.ok(closest > key.outer + 0.05, `cam reaches radius ${closest} over the key`);
+  disposeModel(model.root);
+});

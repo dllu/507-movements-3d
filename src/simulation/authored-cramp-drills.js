@@ -7,6 +7,17 @@ import {
 
 import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
 import {boreBoxY,replaceYJournal,closeFeedThread} from './drill-feed-parts.js';
+import {plate,poly} from './finite-plate-geometry.js';
+
+// The C-shaped cramp frame is one flat extrusion of Brown's outline: the back
+// and both arms share one section thickness. Each arm ends buried inside its
+// journal (drill housing or feed nut) wall, clear of that journal's bore.
+function cFrameMesh(outline, depth, material) {
+  const mesh = new THREE.Mesh(plate(poly(outline), -depth / 2, depth / 2), material);
+  mesh.userData.role = 'fixed-one-piece-c-frame';
+  mesh.userData.outline = outline;
+  return mesh;
+}
 
 const FULL_TURN = Math.PI * 2;
 
@@ -156,27 +167,22 @@ function opposingFeedScrewCrampDrill(movement) {
   crampFrame.userData.role =
     'fixed-c-shaped-portable-cramp-drill-frame';
   root.add(crampFrame);
-  const frameBack = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 2.66, 0.52),
-    frameMaterial,
-  );
-  frameBack.position.set(-1.48, 1.02, 0);
-  frameBack.userData.role = 'fixed-c-frame-back';
-  crampFrame.add(frameBack);
-  const frameTop = new THREE.Mesh(
-    new THREE.BoxGeometry(2.40, 0.32, 0.52),
-    frameMaterial,
-  );
-  frameTop.position.set(-0.44, 2.33, 0);
-  frameTop.userData.role = 'fixed-c-frame-upper-arm';
-  crampFrame.add(frameTop);
-  const frameBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(2.40, 0.34, 0.62),
-    frameMaterial,
-  );
-  frameBottom.position.set(-0.44, nutCenterY, 0);
-  frameBottom.userData.role = 'fixed-c-frame-lower-arm';
-  crampFrame.add(frameBottom);
+  // Back, upper arm and lower arm are all 0.32 thick and 0.52 deep.
+  const frameThickness = 0.32;
+  const frameBackX = -1.64;
+  const frameTopY = 2.49;
+  const frameLowY = nutCenterY - 0.16;
+  const cFrame = cFrameMesh([
+    [frameBackX, frameLowY],
+    [commonAxisX - 0.20, frameLowY],
+    [commonAxisX - 0.20, frameLowY + frameThickness],
+    [frameBackX + frameThickness, frameLowY + frameThickness],
+    [frameBackX + frameThickness, frameTopY - frameThickness],
+    [commonAxisX - 0.17, frameTopY - frameThickness],
+    [commonAxisX - 0.17, frameTopY],
+    [frameBackX, frameTopY],
+  ], 0.52, frameMaterial);
+  crampFrame.add(cFrame);
   const drillHousing = cylinderAlongY(
     0.34,
     0.72,
@@ -187,7 +193,7 @@ function opposingFeedScrewCrampDrill(movement) {
   drillHousing.userData.role = 'fixed-upper-drill-spindle-bearing';
   crampFrame.add(drillHousing);
   const fixedFeedNut = cylinderAlongY(
-    0.31,
+    0.34,
     0.40,
     frameMaterial,
     36,
@@ -355,9 +361,7 @@ function opposingFeedScrewCrampDrill(movement) {
   feedScrewRotor.add(feedIndex);
 
   replaceYJournal(drillHousing,.34,.109,.72);
-  replaceYJournal(fixedFeedNut,.31,.189,.40);
-  boreBoxY(frameTop,.115,commonAxisX-frameTop.position.x);
-  boreBoxY(frameBottom,.195,commonAxisX-frameBottom.position.x);
+  replaceYJournal(fixedFeedNut,.34,.189,.40);
   const nutThread=closeFeedThread(feedThread,fixedFeedNut,{inner:.13,outer:.185,
     low:threadMinimumY,high:threadMaximumY,lead:threadLead,feedBaseY,nutY:nutCenterY,nutLength:.40});
 
@@ -394,9 +398,7 @@ function opposingFeedScrewCrampDrill(movement) {
       feedScrewRotor,
       feedThread,
       fixedFeedNut, nutThread,
-      frameBack,
-      frameBottom,
-      frameTop,
+      cFrame,
       handwheelArms,
       handwheelHub,
       handwheelKnobs,
@@ -622,29 +624,30 @@ function throughFeedScrewCrampDrill(movement) {
   crampFrame.userData.role =
     'fixed-c-shaped-through-feed-screw-cramp-frame';
   root.add(crampFrame);
-  const frameBack = new THREE.Mesh(
-    new THREE.BoxGeometry(0.32, 2.78, 0.54),
-    frameMaterial,
-  );
-  frameBack.position.set(-1.39, 0.05, 0);
-  frameBack.userData.role = 'fixed-c-frame-back';
-  crampFrame.add(frameBack);
-  const frameTop = new THREE.Mesh(
-    new THREE.BoxGeometry(2.26, 0.34, 0.54),
-    frameMaterial,
-  );
-  frameTop.position.set(-0.34, 1.34, 0);
-  frameTop.userData.role = 'fixed-c-frame-threaded-upper-arm';
-  crampFrame.add(frameTop);
-  const frameBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(2.36, 0.34, 0.64),
-    frameMaterial,
-  );
-  frameBottom.position.set(-0.29, -1.16, 0);
-  frameBottom.userData.role = 'fixed-c-frame-lower-anvil-arm';
-  crampFrame.add(frameBottom);
+  // One 0.34-thick section throughout. As Brown draws, the work rest's top
+  // is flush with the lower arm's inner face, the rest standing out beyond
+  // the arm, whose underside is chamfered up to the rest.
+  const frameThickness = 0.34;
+  const frameBackX = -1.55;
+  const frameTopY = 1.51;
+  const restLeftX = commonAxisX - 0.44;
+  const restBottomY = fixedWorkRestTopY - 0.19;
+  const frameLowY = fixedWorkRestTopY - frameThickness;
+  const cFrame = cFrameMesh([
+    [frameBackX, frameLowY],
+    [restLeftX + 0.12, frameLowY],
+    [restLeftX + 0.12 + (restBottomY - frameLowY), restBottomY],
+    [restLeftX, restBottomY],
+    [restLeftX, fixedWorkRestTopY],
+    [frameBackX + frameThickness, fixedWorkRestTopY],
+    [frameBackX + frameThickness, frameTopY - frameThickness],
+    [commonAxisX - 0.339, frameTopY - frameThickness],
+    [commonAxisX - 0.339, frameTopY],
+    [frameBackX, frameTopY],
+  ], 0.54, frameMaterial);
+  crampFrame.add(cFrame);
   const fixedFeedNut = cylinderAlongY(
-    0.39,
+    0.44,
     0.70,
     frameMaterial,
     40,
@@ -655,7 +658,8 @@ function throughFeedScrewCrampDrill(movement) {
     'fixed-upper-frame-nut-around-hollow-feed-screw';
   crampFrame.add(fixedFeedNut);
   const fixedWorkRest = new THREE.Mesh(
-    new THREE.BoxGeometry(0.88, 0.19, 0.76),
+    // As deep as the arm it stands on, so no lip overhangs the arm sides.
+    new THREE.BoxGeometry(0.88, 0.19, 0.54),
     frameMaterial,
   );
   fixedWorkRest.position.set(
@@ -842,11 +846,10 @@ function throughFeedScrewCrampDrill(movement) {
 
   replaceYJournal(hollowSleeve,outerSleeveRadius,innerBoreRadius,sleeveLength);
   // End rings remain inspection faces; the sleeve itself now includes its inner wall.
-  replaceYJournal(fixedFeedNut,.39,.325,.70);
+  replaceYJournal(fixedFeedNut,.44,.325,.70);
   replaceYJournal(feedHandleHub,.34,innerBoreRadius,.22);
   replaceYJournal(thrustCollar,.32,.095,.28);
   boreBoxY(feedHandleBar,innerBoreRadius);
-  boreBoxY(frameTop,.331,commonAxisX-frameTop.position.x);
   const nutThread=closeFeedThread(feedThread,fixedFeedNut,{inner:outerSleeveRadius,outer:.321,
     low:sleeveMinimumY,high:sleeveMaximumY,lead:threadLead,feedBaseY,nutY:1.33,nutLength:.70});
   // A hollow neck connects the cross handle to the sleeve; opposed rotating
@@ -895,9 +898,7 @@ function throughFeedScrewCrampDrill(movement) {
       feedThread,
       fixedFeedNut, nutThread,
       fixedWorkRest,
-      frameBack,
-      frameBottom,
-      frameTop,
+      cFrame,
       hollowSleeve, sleeveNeck, lowerSleeveNeck, thrustRings,
       sleeveEndRings,
       thrustCollar,

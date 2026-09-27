@@ -68,57 +68,35 @@ export function makeRatchetBevel() {
   const outputShaft = rotor(new THREE.Vector3(0, 1, 0));
   const outputShaftBody = turned([[0.58, 0], [0.58, 0.075], [1.48, 0.075], [1.48, 0]], PALETTE.ink);
   outputShaft.userData.rotor.add(outputShaftBody);
-  const armShape = new THREE.Shape(), hubRadius = 0.15, stemHalf = 0.055;
+  // Each keyed arm runs from its hub to the pawl pin; the pawl hangs from the
+  // pin in the ratchet's plane. Arm and pawl are plain flat plates.
+  const pin = f.pivot, armLength = pin.length(), armTurn = Math.atan2(-pin.x, pin.y);
+  const armOutline = new THREE.Shape(), hubRadius = 0.15, stemHalf = 0.055;
   const hubAngle = Math.acos(stemHalf / hubRadius), hubY = Math.sqrt(hubRadius ** 2 - stemHalf ** 2);
-  armShape.moveTo(0.08, p.armRadius); armShape.lineTo(stemHalf, hubY);
-  armShape.absarc(0, 0, hubRadius, hubAngle, Math.PI - hubAngle, true);
-  armShape.lineTo(-0.08, p.armRadius); armShape.absarc(0, p.armRadius, 0.08, Math.PI, 0, true); armShape.closePath();
-  keyedHole(armShape, carrierBore, keyHalfWidth, keyTop); circleHole(armShape, 0, p.armRadius, pivotBore);
+  armOutline.moveTo(0.08, armLength); armOutline.lineTo(stemHalf, hubY);
+  armOutline.absarc(0, 0, hubRadius, hubAngle, Math.PI - hubAngle, true);
+  armOutline.lineTo(-0.08, armLength); armOutline.absarc(0, armLength, 0.08, Math.PI, 0, true); armOutline.closePath();
+  const armShape = new THREE.Shape(armOutline.getPoints(32).map((v) => v.clone().rotateAround(new THREE.Vector2(), armTurn)));
+  keyedHole(armShape, carrierBore, keyHalfWidth, keyTop); circleHole(armShape, pin.x, pin.y, pivotBore);
   const armGeometry = extruded(armShape, armDepth, armZ);
-  const pawlShape = new THREE.Shape();
-  pawlShape.moveTo(p.heelRadius, p.heelLength);
-  pawlShape.absarc(0, p.heelLength, p.heelRadius, 0, Math.PI, false);
-  pawlShape.lineTo(-0.030, 0); pawlShape.lineTo(-0.016, -f.length + 0.016);
-  pawlShape.lineTo(-p.noseRadius, -f.length);
-  pawlShape.absarc(0, -f.length, p.noseRadius, Math.PI, 2 * Math.PI, false);
-  pawlShape.lineTo(0.016, -f.length + 0.016); pawlShape.lineTo(0.030, 0); pawlShape.closePath();
+  const pawlShape = new THREE.Shape(f.pawlOutline.map((v) => v.clone().sub(pin)));
   circleHole(pawlShape, 0, 0, pivotBore);
   const pawlGeometry = extruded(pawlShape, pawlDepth, 0);
   const makeCarrier = (side, gear, color) => {
     const carrier = rotor(new THREE.Vector3(side, 0, 0));
     const arm = new THREE.Mesh(armGeometry, matte(PALETTE.frame));
-    const pawl = new THREE.Group(); pawl.position.set(0, p.armRadius, ratchetZ);
+    const pawl = new THREE.Group(); pawl.position.set(pin.x, pin.y, ratchetZ);
     const pawlBody = new THREE.Mesh(pawlGeometry, matte(PALETTE.ink)); pawl.add(pawlBody);
     const pivotPin = turned([[1.275, 0], [1.275, pivotRadius], [1.565, pivotRadius], [1.565, 0]], PALETTE.brass);
-    pivotPin.position.y = p.armRadius;
-    const stop = new THREE.Vector2(-p.heelRadius - p.stopRadius, p.heelLength).rotateAround(new THREE.Vector2(), f.restAngle);
-    const stopPin = turned([[1.285, 0], [1.285, p.stopRadius], [1.565, p.stopRadius], [1.565, 0]], PALETTE.brass);
-    stopPin.position.set(stop.x, p.armRadius + stop.y, 0);
+    pivotPin.position.set(pin.x, pin.y, 0);
     const ratchetShape = new THREE.Shape(f.outline); circleHole(ratchetShape, 0, 0, looseBoreRadius);
     const ratchetGeometry = extruded(ratchetShape, ratchetDepth, ratchetZ);
     ratchetGeometry.rotateZ(-Math.PI / 2);
     ratchetGeometry.userData.outline = f.outline.map((v) => new THREE.Vector2(Math.fround(v.y), -Math.fround(v.x)));
     const ratchet = new THREE.Mesh(ratchetGeometry, matte(color, { metalness: 0.17, roughness: 0.59 }));
     gear.userData.rotor.add(ratchet);
-    // A small torsion coil occupies the gap between pawl and carrier. Its
-    // free leg follows the heel; elastic stresses are outside this model.
-    const springMaterial = matte(PALETTE.brass), spring = new THREE.Mesh(new THREE.BufferGeometry(), springMaterial);
-    let previousAngle = Infinity;
-    const updateSpring = (angle) => {
-      if (Math.abs(angle - previousAngle) < 1e-10) return; previousAngle = angle;
-      const points = [];
-      points.push(new THREE.Vector3(0.031, p.armRadius, 1.49));
-      for (let i = 0; i <= 96; i += 1) {
-        const turn = i / 96 * (6 * Math.PI + angle - f.restAngle);
-        points.push(new THREE.Vector3(0.029 * Math.cos(turn), p.armRadius + 0.029 * Math.sin(turn), 1.445 - 0.04 * i / 96));
-      }
-      const heel = new THREE.Vector2(0, p.heelLength).rotateAround(new THREE.Vector2(), angle);
-      points.push(new THREE.Vector3(heel.x, p.armRadius + heel.y, 1.39));
-      points.push(new THREE.Vector3(heel.x, p.armRadius + heel.y, ratchetZ + pawlDepth / 2));
-      spring.geometry.dispose(); spring.geometry = new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points), 160, 0.0025, 6, false);
-    };
-    carrier.userData.rotor.add(arm, pawl, pivotPin, stopPin, spring);
-    carrier.userData.parts = { arm, pawl, pawlBody, pivotPin, stopPin, ratchet, spring, updateSpring };
+    carrier.userData.rotor.add(arm, pawl, pivotPin);
+    carrier.userData.parts = { arm, pawl, pawlBody, pivotPin, ratchet };
     return carrier;
   };
   const rightCarrier = makeCarrier(1, rightGear, PALETTE.driver), leftCarrier = makeCarrier(-1, leftGear, PALETTE.accent);
@@ -151,17 +129,17 @@ export function makeRatchetBevel() {
     shaft.userData.rotor.rotation.z = state.inputAngle;
     for (const [carrier, sign, angle] of [[rightCarrier, 1, state.rightPawlAngle], [leftCarrier, -1, state.leftPawlAngle]]) {
       carrier.userData.rotor.rotation.z = sign * state.inputAngle;
-      carrier.userData.parts.pawl.rotation.z = angle; carrier.userData.parts.updateSpring(angle);
+      carrier.userData.parts.pawl.rotation.z = angle;
     }
     root.userData.ratchetState = state; root.userData.kinematics = state;
   };
-  root.userData = { fidelity: 'authored', mechanism: 'equal-miter-gears-with-contact-driven-opposed-pawls', motion,
+  root.userData = { fidelity: 'authored', mechanism: 'equal-miter-gears-with-gravity-seated-opposed-pawls', motion,
     cameraFov: 17, hideGround: true, fullCameraDirection: new THREE.Vector3(4.8, 3.2, 8),
     blocks: { rightGear, leftGear, outputGear, rightCarrier, leftCarrier, shaft, shaftBody, feathers,
       outputShaft, outputShaftBody, bearings },
     geometry: { ...motion.parameters, ...p, teeth, ratchetTeeth: p.teeth, innerDistance, outerDistance, pitchConeAngle, shaftRadius, looseBoreRadius,
       carrierBore, ratchetZ, ratchetDepth, armZ, armDepth, pawlDepth, keyHalfWidth, keyTop, pivotBore, pivotRadius,
-      pawlLength: f.length, pawlRestAngle: f.restAngle, cycleMeaning: 'one-oscillation-of-the-horizontal-shaft' } };
+      pawlLength: f.length, pawlRestAngle: f.restAngle, pawlPivot: pin.toArray(), valleyAngle: f.valleyAngle, cycleMeaning: 'one-oscillation-of-the-horizontal-shaft' } };
   update(0); markShadows(root);
   return { root, update, cameraDirection: new THREE.Vector3(0.02, 0.02, 10) };
 }

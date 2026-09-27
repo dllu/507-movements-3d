@@ -1612,7 +1612,7 @@ function addCeiling(root, width = 4.8, y = 2.25) {
 
 // Brown hangs a fixed sheave by an open hook from a staple under the hatched
 // ceiling. The staple links through the hook curl above the hanger shoulder.
-function addHookStaple(parent, shoulder, { width = 2.4, offset = 0, x = 0 } = {}) {
+function addHookStaple(parent, shoulder, { width = 2.4, offset = 0, x = 0, eyeBolt = false } = {}) {
   const stapleY = shoulder + 0.433;
   const staple = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.022, 12, 40), matte(PALETTE.ink));
   staple.rotation.y = Math.PI / 2;
@@ -1620,7 +1620,17 @@ function addHookStaple(parent, shoulder, { width = 2.4, offset = 0, x = 0 } = {}
   const ceiling = new THREE.Mesh(new THREE.BoxGeometry(width, 0.12, 0.55), matte(PALETTE.frame));
   ceiling.position.set(x + offset, stapleY + 0.097 + 0.06, 0);
   parent.add(staple, ceiling);
-  return { staple, ceiling, underside: stapleY + 0.097 };
+  let shank = null;
+  if (eyeBolt) {
+    // An eye bolt: the ring's shank rises from inside the ring's crown
+    // (a full wire radius below its top) and runs 0.08 up into the beam.
+    const bottom = stapleY + 0.075 - 0.011, top = stapleY + 0.097 + 0.08;
+    shank = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, top - bottom, 20), matte(PALETTE.ink));
+    shank.position.set(x, (bottom + top) / 2, 0);
+    shank.userData.role = 'eye-bolt-shank-into-beam';
+    parent.add(shank);
+  }
+  return { staple, ceiling, shank, underside: stapleY + 0.097 };
 }
 
 // On a quarter-turn belt each run must approach its pulley in that pulley's
@@ -1811,12 +1821,12 @@ function fixedHoist() {
   const suspension = makeSheaveHanger({ radius: pitchRadius, width: 0.34, openHook: true });
   suspension.position.copy(center);
   const { pin } = suspension.userData;
-  const { staple: hook, ceiling: support } = addHookStaple(suspension,
-    pitchRadius + 0.15, { width: 2.4, offset: -0.2 });
+  const { staple: hook, ceiling: support, shank: eyeBoltShank } = addHookStaple(suspension,
+    pitchRadius + 0.15, { width: 2.4, offset: -0.2, eyeBolt: true });
   root.add(markShadows(suspension));
   const hand = makeHaulingHand(effortDirection, 0.042);
   root.add(hand);
-  root.userData.blocks = { pulley, rope, weight, suspension, pin, hook, support, hand };
+  root.userData.blocks = { pulley, rope, weight, suspension, pin, hook, eyeBoltShank, support, hand };
   root.userData.cameraFov = 18;
   root.userData.mechanism = 'fixed-pulley-hoist';
   root.userData.ropeContact = {

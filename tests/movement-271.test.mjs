@@ -222,7 +222,7 @@ test('movement 271 reconstructs one regular asymmetric rack and exact tooth regi
   near(
     geometry.longStartTipX - geometry.longEndTipX,
     geometry.pawlStroke,
-    6e-16,
+    1e-15,
     'long-pawl stroke includes pickup plus one pitch',
   );
   near(

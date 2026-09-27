@@ -445,3 +445,38 @@ test('movement 253 is collision-free, closes in twelve seconds, and leaves 269 a
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 253 hooks have Brown\'s bored eye bosses and seat stud D in the crook of the barb', () => {
+  const model = createMovementModel(catalog.movements[252]);
+  const { geometry, stateAtTime, timeline, workingHooks, blocks } = model.root.userData;
+  // A proportionate pin fills a small bore inside a visible eye boss.
+  assert.ok(workingHooks.pinRadius < workingHooks.boreRadius);
+  assert.ok(workingHooks.boreRadius - workingHooks.pinRadius <= 0.012);
+  assert.ok(workingHooks.eyeRadius - workingHooks.boreRadius >= 0.18, 'eye boss wall is solid');
+  assert.ok(workingHooks.eyeRadius > 2 * geometry.hookBarRadius, 'eye boss stands proud of the bar');
+  for (const pivot of blocks.hookPivots) {
+    const pin = pivot.children.find((o) => o.userData.role?.endsWith('pivot-pin'));
+    near(pin.geometry.parameters.radiusTop, workingHooks.pinRadius, 1e-12, 'pin radius');
+  }
+  // At the catch each stud touches the bar face and stands just clear of
+  // the barb's inner edge.
+  const state = stateAtTime(timeline.catchTime);
+  for (let index = 0; index < geometry.hookCount; index += 1) {
+    near(state.pairedContactClearances[index], 0, 1e-9, `stud ${index} on the bar face`);
+    const { pivotCenter } = state.hookCenters[index];
+    const angle = state.flangeAngle + geometry.patternPhase + geometry.sectorPitch * index
+      + state.hookAngle;
+    const barb = geometry.hookBarbOutline.map((p) => pivotCenter.clone()
+      .add(p.clone().rotateAround(new THREE.Vector2(), angle)));
+    const stud = geometry.studCenters[index];
+    let distance = Infinity;
+    barb.forEach((a, k) => {
+      const edge = barb[(k + 1) % barb.length].clone().sub(a);
+      const t = THREE.MathUtils.clamp(stud.clone().sub(a).dot(edge) / edge.lengthSq(), 0, 1);
+      distance = Math.min(distance, stud.distanceTo(a.clone().addScaledVector(edge, t)));
+    });
+    const gap = distance - geometry.studRadius;
+    assert.ok(gap > 0 && gap < 0.01, `stud ${index} nestles in the crook (${gap})`);
+  }
+  disposeModel(model.root);
+});

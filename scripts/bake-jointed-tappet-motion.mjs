@@ -5,7 +5,7 @@
 // and a JSON report under artifacts/review/.
 import {writeFile} from 'node:fs/promises';
 import {makeJointedTappetCounter} from '../src/simulation/jointed-tappet.js';
-import {makeJointedTappetDynamics,advanceJointedTappetStep} from './lib/jointed-tappet-dynamics-study.mjs';
+import {makeJointedTappet076Dynamics as makeJointedTappetDynamics,advanceJointedTappetStep} from './lib/jointed-tappet-076-dynamics.mjs';
 
 // The driver turns once in 24 s and carries one stud on each of its four
 // spokes, so the tappet is struck every 6 s: one strike cycle is baked.

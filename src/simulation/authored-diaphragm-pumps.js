@@ -512,7 +512,8 @@ function diaphragmForcePump(movement) {
     flap.position.x -= 0.25;
     root.add(flap);
     const disk = new THREE.Mesh(
-      new THREE.BoxGeometry(0.50, 0.065, 0.46),
+      // 0.42 wide (pass 86) to clear the seat's knuckle lugs at |z| 0.22.
+      new THREE.BoxGeometry(0.50, 0.065, 0.42),
       material,
     );
     disk.position.x = 0.25;

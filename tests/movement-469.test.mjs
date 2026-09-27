@@ -477,3 +477,42 @@ test('movement 469 air pipe ends in a hood fitted closely under the wheel', () =
     'hood clears the back wall');
   disposeModel(model.root);
 });
+
+test('movement 469 water bodies share no face plane with their cistern walls or floor', () => {
+  const { model } = movementModel();
+  const { root } = model;
+  root.updateMatrixWorld(true);
+  const boxOf = (role) => {
+    let found = null;
+    root.traverse((o) => { if (o.userData?.role === role) found = o; });
+    assert.ok(found, role);
+    return new THREE.Box3().setFromObject(found);
+  };
+  const planes = (box) => [
+    ['x', box.min.x], ['x', box.max.x], ['y', box.min.y], ['y', box.max.y],
+    ['z', box.min.z], ['z', box.max.z]];
+  for (const prefix of ['natural-temperature-left', 'higher-temperature-right']) {
+    const water = boxOf(`${prefix}-water-body`);
+    const walls = ['cistern-base', 'cistern-end-wall-left', 'cistern-end-wall-right',
+      'cistern-back-wall', 'cistern-cutaway-front'].map((w) => boxOf(`${prefix}-${w}`));
+    for (const [axis, value] of planes(water)) {
+      for (const wall of walls) {
+        for (const [wallAxis, wallValue] of planes(wall)) {
+          if (axis !== wallAxis) continue;
+          assert.ok(Math.abs(value - wallValue) > 0.005,
+            `${prefix} water ${axis}=${value} is off every wall face (${wallValue})`);
+        }
+      }
+    }
+    // Sunk into the floor and the end and back walls; front face just
+    // behind the z = 0.6 section plane.
+    const base = boxOf(`${prefix}-cistern-base`);
+    assert.ok(water.min.y < base.max.y - 0.02, 'water bottom sunk into the floor');
+    const left = boxOf(`${prefix}-cistern-end-wall-left`);
+    const right = boxOf(`${prefix}-cistern-end-wall-right`);
+    assert.ok(water.min.x < left.max.x - 0.02 && water.max.x > right.min.x + 0.02, 'water sides sunk into the end walls');
+    const back = boxOf(`${prefix}-cistern-back-wall`);
+    assert.ok(water.min.z < back.max.z - 0.02, 'water back sunk into the back wall');
+    assert.ok(water.max.z < 0.6 && water.max.z > 0.58, 'water front just behind the section plane');
+  }
+});

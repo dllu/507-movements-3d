@@ -512,13 +512,13 @@ test('movement 342 renderer binds the beam, chain, and piston in the plate crop'
     model.root.updateMatrixWorld(true);
     vector3Near(worldPosition(blocks.chainAttachmentAnchor),
       new THREE.Vector3(state.chain.attachmentPoint.x,
-        state.chain.attachmentPoint.y, 0.76), 3e-15,
+        state.chain.attachmentPoint.y, geometry.chainLineZ), 3e-15,
     `rendered chain attachment at ${time}`);
     vector3Near(worldPosition(blocks.pistonTopAnchor),
-      new THREE.Vector3(state.pistonTop.x, state.pistonTop.y, 0.42),
+      new THREE.Vector3(state.pistonTop.x, state.pistonTop.y, geometry.chainLineZ),
       1e-15, `rendered piston-chain pin at ${time}`);
     vector3Near(worldPosition(blocks.pistonHeadAnchor),
-      new THREE.Vector3(state.pistonHead.x, state.pistonHead.y, .42),
+      new THREE.Vector3(state.pistonHead.x, state.pistonHead.y, geometry.chainLineZ),
       1e-15, `rendered piston head at ${time}`);
 
     blocks.chainLinks.forEach((parts, index) => {
@@ -531,35 +531,36 @@ test('movement 342 renderer binds the beam, chain, and piston in the plate crop'
         (index + 1) * geometry.chainLinkPitch,
       ).point;
       vector3Near(worldPosition(parts.startAnchor),
-        new THREE.Vector3(expectedStart.x, expectedStart.y, 0.76), 2e-15,
+        new THREE.Vector3(expectedStart.x, expectedStart.y, geometry.chainLineZ), 2e-15,
       `rendered chain link ${index} start at ${time}`);
       vector3Near(worldPosition(parts.endAnchor),
-        new THREE.Vector3(expectedEnd.x, expectedEnd.y, 0.76), 3e-15,
+        new THREE.Vector3(expectedEnd.x, expectedEnd.y, geometry.chainLineZ), 3e-15,
       `rendered chain link ${index} end at ${time}`);
     });
     const lastPoint = chainPointAtDistance(
       state,
       geometry.chainLinkCount * geometry.chainLinkPitch,
     ).point;
-    const renderedTerminalStart = blocks.chainTerminalConnector.localToWorld(
-      new THREE.Vector3(-terminalNominalLength / 2, 0, 0),
-    );
-    const renderedTerminalEnd = blocks.chainTerminalConnector.localToWorld(
-      new THREE.Vector3(terminalNominalLength / 2, 0, 0),
-    );
+    const terminalParts = blocks.chainTerminalConnector.userData.parts;
+    const renderedTerminalStart = worldPosition(terminalParts.startAnchor);
+    const renderedTerminalEnd = worldPosition(terminalParts.endAnchor);
     vector3Near(renderedTerminalStart,
-      new THREE.Vector3(lastPoint.x, lastPoint.y, 0.76), 3e-15,
+      new THREE.Vector3(lastPoint.x, lastPoint.y, geometry.chainLineZ), 3e-15,
     `rendered terminal connector start at ${time}`);
     vector3Near(renderedTerminalEnd,
       new THREE.Vector3(state.chain.attachmentPoint.x,
-        state.chain.attachmentPoint.y, 0.76), 3e-15,
+        state.chain.attachmentPoint.y, geometry.chainLineZ), 3e-15,
     `rendered terminal connector end at ${time}`);
+    vector3Near(worldPosition(terminalParts.endPin),
+      new THREE.Vector3(state.chain.attachmentPoint.x,
+        state.chain.attachmentPoint.y, geometry.chainLineZ), 3e-15,
+    `terminal pin sits in the beam lug at ${time}`);
     vector3Near(contacts.chainAtPiston.point,
-      new THREE.Vector3(state.pistonTop.x, state.pistonTop.y, 0.76), 0,
+      new THREE.Vector3(state.pistonTop.x, state.pistonTop.y, geometry.chainLineZ), 0,
     `piston-chain contact at ${time}`);
     vector3Near(contacts.chainAtBeam.point,
       new THREE.Vector3(state.chain.attachmentPoint.x,
-        state.chain.attachmentPoint.y, 0.76), 0,
+        state.chain.attachmentPoint.y, geometry.chainLineZ), 0,
     `beam-chain contact at ${time}`);
     vector3Near(contacts.chainAtShoeTangent.surfaceVelocityError,
       new THREE.Vector3(), 0, `rendered no-slip tangent at ${time}`);
@@ -568,7 +569,15 @@ test('movement 342 renderer binds the beam, chain, and piston in the plate crop'
     `rendered constant chain at ${time}`);
   }
 
-  assert.equal(blocks.shoeIndexBosses.length, 4);
+  // Brown's slot shows nothing through it: the head is solid, the slot is a
+  // raised panel, and no bolts stand in it.
+  assert.equal(blocks.shoeIndexBosses, undefined);
+  assert.equal(blocks.chainShoe.geometry.parameters.shapes.holes.length, 0);
+  assert.equal(blocks.slotPanel.parent, blocks.beam);
+  const panel = new THREE.Box3().setFromObject(blocks.slotPanel);
+  const head = new THREE.Box3().setFromObject(blocks.chainShoe);
+  assert.ok(panel.min.z < head.max.z && panel.max.z > head.max.z + 0.01,
+    'slot panel is sunk into and stands proud of the head face');
   const bounds = new THREE.Box3().setFromObject(model.root);
   const size = bounds.getSize(new THREE.Vector3());
   assert.ok(size.x > 6.4);
@@ -620,7 +629,8 @@ test('movement 342 closes exactly and leaves movement 507 as the next draft', ()
   model.update(canonicalTimes.cycleClosure);
   model.root.updateMatrixWorld(true);
   vector3Near(worldPosition(blocks.pistonTopAnchor),
-    new THREE.Vector3(start.pistonTop.x, start.pistonTop.y, 0.42), 1e-14,
+    new THREE.Vector3(start.pistonTop.x, start.pistonTop.y,
+      model.root.userData.geometry.chainLineZ), 1e-14,
   'rendered piston closure');
 
   const movement507 = catalog.movements[506];

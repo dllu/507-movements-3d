@@ -181,22 +181,31 @@ function straightenSourceRisers(root) {
   b.boilerRim.geometry.dispose();
   b.boilerRim.geometry = new THREE.TorusGeometry(
     BOILER_RIM_RADIUS + 0.02, 0.075, 10, 96);
-  // Brown's handles are strap loops lying along the rim (tangential), not
-  // radial ears: the right one leaves the rim at the front, runs back and
-  // out, drops forward and returns into the flank lower down; the left one
-  // is the same loop turned half round, so its top bar shows above the rim
-  // running back to the riser. Both ends are sunk into the boiler wall.
-  const handlePoints = [
-    [1.73, 0.30, 0.38], [1.88, 0.33, 0.33], [2.10, 0.42, -0.22],
-    [1.95, -0.28, -0.04], [1.74, -0.50, 0.42], [1.58, -0.55, 0.46],
-  ];
+  // Each handle is one upright loop of round rod, mirror-symmetric about the
+  // x = 0 plane and about its own radial mid-plane: two horizontal stubs
+  // leave the flank below the rim, turn up into two legs beside the rim, and
+  // a top bar joins the legs above it (a Pi seen head-on, an L from the
+  // side). Both stub ends are sunk into the boiler wall.
+  const handleStubY = -0.28, handleTopY = 0.52, handleOuterX = 2.10;
+  const handleHalfWidth = 0.40, handleSunkX = 1.60;
   b.boilerHandles.forEach((handle, index) => {
-    const turn = index ? 1 : -1;
-    const curve = filletedPolyline(handlePoints.map(([x, y, z]) =>
-      new THREE.Vector3(turn * x, y, turn * z)), 0.26);
+    const side = index ? 1 : -1;
+    const points = [
+      [handleSunkX, handleStubY, -handleHalfWidth],
+      [handleOuterX, handleStubY, -handleHalfWidth],
+      [handleOuterX, handleTopY, -handleHalfWidth],
+      [handleOuterX, handleTopY, handleHalfWidth],
+      [handleOuterX, handleStubY, handleHalfWidth],
+      [handleSunkX, handleStubY, handleHalfWidth],
+    ].map(([x, y, z]) => new THREE.Vector3(side * x, y, z));
+    const curve = filletedPolyline(points, 0.16);
     handle.geometry.dispose();
-    handle.geometry = cappedTubeGeometry(curve, 0.085, 96);
+    handle.geometry = cappedTubeGeometry(curve, 0.085, 160);
   });
+  d.geometry.boilerHandleLoop = {
+    stubY: handleStubY, topY: handleTopY, outerX: handleOuterX,
+    halfWidth: handleHalfWidth, sunkX: handleSunkX, radius: 0.085,
+  };
   // Cap the free feet of the four cabriole legs; their heads are sunk in
   // the flank.
   b.standLegs.forEach((leg, index) => {

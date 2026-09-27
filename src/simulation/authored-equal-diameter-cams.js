@@ -521,8 +521,11 @@ function equalDiameterCam(movement) {
   // Brown draws a round rod. Its two runs are cylinders; the middle is a
   // flat yoke plate with a real oblong eye around the fixed input bearing,
   // hidden behind the cam in the source view and seated inside both runs.
+  // The yoke is as deep and as tall as the round rod, so each run's end sits
+  // wholly within the yoke's section instead of overhanging a thin plate.
   const yokePlateHalfLength = pitchAmplitude + yokeEyeOuterRadius + 0.1;
-  const yokePlateHalfHeight = barHalfHeight * 0.86;
+  const yokePlateHalfHeight = barHalfHeight;
+  const yokeDepth = barHalfHeight * 2;
   const yokeOuter = polygonClipping.union(
     poly([
       [-yokePlateHalfLength, -yokePlateHalfHeight],
@@ -534,7 +537,7 @@ function equalDiameterCam(movement) {
   );
   const yokeSection = polygonClipping.difference(yokeOuter,
     capsule([-pitchAmplitude, 0], [pitchAmplitude, 0], bearingReliefRadius, 48));
-  const bar = new THREE.Mesh(plate(yokeSection, -barDepth / 2, barDepth / 2), drivenMaterial);
+  const bar = new THREE.Mesh(plate(yokeSection, -yokeDepth / 2, yokeDepth / 2), drivenMaterial);
   bar.position.z = barZ;
   bar.userData.role = 'reciprocating-rectilinear-bar';
   yoke.add(bar);
@@ -702,6 +705,7 @@ function equalDiameterCam(movement) {
   root.userData.geometry = {
     arcLengthSampleCount: arcLength.sampleCount,
     barDepth,
+    yokeDepth,
     barHalfHeight,
     barHalfLength,
     barRightEnd,

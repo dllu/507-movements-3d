@@ -3,11 +3,24 @@ import {horizontalRing, horizontalTurned, horizontalPlate} from './horizontal-tu
 import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {circle, poly, plate, polygonClipping} from './finite-plate-geometry.js';
+import {creaseIndexedNormals} from './crease-normals.js';
+import {saddleEndPipeWall} from './force-pump-working-parts.js';
 
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 
 // Layered finite wall; each rectangular side port has returns across the wall thickness.
+// Pass 86: a port may instead be round ({side, y, z, radius}): a hole of that
+// radius about a horizontal axis along x at (y, z), fitted to the pipe that
+// enters it. The wall is cut by the square round it and the square is filled
+// by a patch of the same wall, bored for the pipe.
 export function pumpPortedWall(inner,outer,low,high,ports=[]) {
+  const patches=[];
+  ports=ports.map(p=>{
+    if(!p.radius)return p;
+    const half=p.radius+(p.margin??.06);
+    patches.push(roundPortPatch(inner,outer,p.side,p.y,p.z??0,p.radius,half));
+    return {side:p.side,y:p.y,z:p.z??0,halfHeight:half,halfWidth:half};
+  });
   const levels=[low,high,...ports.flatMap(p=>[Math.max(low,p.y-p.halfHeight),Math.min(high,p.y+p.halfHeight)])].sort((a,b)=>a-b);
   const annulus=polygonClipping.difference(poly(circle([0,0],outer,128)),poly(circle([0,0],inner,128))),parts=[];
   for(let i=0;i<levels.length-1;i++){
@@ -15,11 +28,45 @@ export function pumpPortedWall(inner,outer,low,high,ports=[]) {
     let section=annulus;
     for(const p of ports)if((a+b)/2>p.y-p.halfHeight&&(a+b)/2<p.y+p.halfHeight){
       const x0=p.side>0?0:-outer-.05,x1=p.side>0?outer+.05:0;
-      section=polygonClipping.difference(section,poly([[x0,-p.halfWidth],[x1,-p.halfWidth],[x1,p.halfWidth],[x0,p.halfWidth]]));
+      // horizontalPlate maps the outline's second coordinate to world -z.
+      const v=-(p.z??0);
+      section=polygonClipping.difference(section,poly([[x0,v-p.halfWidth],[x1,v-p.halfWidth],[x1,v+p.halfWidth],[x0,v+p.halfWidth]]));
     }
     parts.push(horizontalPlate(section,a,b));
   }
-  return mergePassageParts(parts);
+  return mergePassageParts([...parts,...patches]);
+}
+
+// The square (half side `half`, centred at y, z) of a cylindrical wall
+// (radii inner..outer about the y axis, on the side x·side > 0), bored with
+// a round hole of `radius` along x. Built on a polar grid round the hole, so
+// the bore is truly round and the faces follow the wall's curvature.
+function roundPortPatch(inner,outer,side,yc,zc,radius,half,sectors=64,rings=6){
+  const at=(t,z,y)=>new THREE.Vector3(side*Math.sqrt(t*t-z*z),y,z);
+  const grid=(t)=>Array.from({length:rings+1},(_,j)=>Array.from({length:sectors},(_,k)=>{
+    const a=2*Math.PI*k/sectors,c=Math.cos(a),s=Math.sin(a),edge=half/Math.max(Math.abs(c),Math.abs(s)),u=j/rings;
+    const r=radius+(edge-radius)*u;return at(t,zc+r*c,yc+r*s);
+  }));
+  const G=[grid(outer),grid(inner)],positions=[];
+  const tri=(a,b,c,out)=>{const n=new THREE.Vector3().subVectors(b,a).cross(new THREE.Vector3().subVectors(c,a));
+    if(n.dot(out)<0)[b,c]=[c,b];positions.push(...a.toArray(),...b.toArray(),...c.toArray());};
+  const quad=(a,b,c,d,out)=>{tri(a,b,c,out);tri(a,c,d,out);};
+  for(let j=0;j<rings;j++)for(let k=0;k<sectors;k++){
+    const k1=(k+1)%sectors;
+    for(const [g,sign] of [[G[0],1],[G[1],-1]]){
+      const a=g[j][k],out=new THREE.Vector3(a.x,0,a.z).normalize().multiplyScalar(sign);
+      quad(a,g[j][k1],g[j+1][k1],g[j+1][k],out);
+    }
+  }
+  for(let k=0;k<sectors;k++){
+    const k1=(k+1)%sectors;
+    // Bore (facing the hole's axis) and the square's edge (facing out of it).
+    for(const [j,sign] of [[0,-1],[rings,1]]){
+      const a=G[0][j][k],out=new THREE.Vector3(0,a.y-yc,a.z-zc).normalize().multiplyScalar(sign);
+      quad(a,G[0][j][k1],G[1][j][k1],G[1][j][k],out);
+    }
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
 }
 
 function planarLever(body,outline,bores,depth) {
@@ -102,7 +149,7 @@ export function correctFlexiblePumpParts(root,id) {
     replace(b.chamberRim,horizontalPlate(rim,-.055,.055));b.chamberRim.rotation.set(0,0,0);b.chamberRim.material=b.chamberBottom.material;
     const floor=polygonClipping.difference(poly(circle([0,0],1.34,128)),poly(circle([0,-.38],.44,96)));
     replace(b.chamberBottom,horizontalPlate(floor,-.07,.07));
-    replace(b.chamberShell,pumpPortedWall(1.25,1.31,-(g.diaphragmRimY-g.chamberBottomY)/2,(g.diaphragmRimY-g.chamberBottomY)/2,[{side:1,y:.34-b.chamberShell.position.y,halfHeight:.30,halfWidth:.68}]));
+    replace(b.chamberShell,pumpPortedWall(1.25,1.31,-(g.diaphragmRimY-g.chamberBottomY)/2,(g.diaphragmRimY-g.chamberBottomY)/2,[{side:1,y:.34-b.chamberShell.position.y,z:.38,radius:.27}]));
     for(const key of['suctionPipe','deliveryBranch','deliveryRiser']){const pipe=b[key].shell;replace(pipe,curvedPipeWall(pipe.userData.curve,pipe.geometry.parameters.radius-.045,pipe.geometry.parameters.radius,72));}
     for(const valve of[b.suctionValve,b.deliveryValve]){
       const seat=valve.userData.seat,outline=polygonClipping.difference(poly(circle([0,0],.45,128)),poly([[-.19,-.16],[.19,-.16],[.19,.16],[-.19,.16]]),poly([[-.33,-.30],[-.175,-.30],[-.175,.30],[-.33,.30]]));
@@ -110,9 +157,28 @@ export function correctFlexiblePumpParts(root,id) {
       replace(valve.userData.body,horizontalTurned([[-.30,lowerRadius-.045],[-.30,lowerRadius],[-.14,.50],[.30,.50],[.40,.31],[.40,.265],[.30,.45],[-.14,.45]]));
       const pair=suction?b.suctionPipe:b.deliveryBranch;
       const points=suction?pair.shell.userData.curve.points.map(p=>p.clone()):[new THREE.Vector3(1.15,.34,.38),new THREE.Vector3(1.5,.34,.38),new THREE.Vector3(2.02,.60,.38),new THREE.Vector3(2.02,.88,.38)];points[points.length-1]=valve.userData.body.position.clone().add(new THREE.Vector3(0,-.30,0));
-      const curve=new THREE.CatmullRomCurve3(points);replace(pair.shell,curvedPipeWall(curve,lowerRadius-.045,lowerRadius,64));pair.shell.userData.curve=curve;replace(pair.water,new THREE.TubeGeometry(curve,64,lowerRadius*.60,12,false));
+      const curve=new THREE.CatmullRomCurve3(points);
+      if(suction)replace(pair.shell,curvedPipeWall(curve,lowerRadius-.045,lowerRadius,64));
+      else{
+        // Pass 86: the branch wall starts inside the chamber and each of its
+        // generators begins on the wall's mid-radius (1.28), so its end is a
+        // saddle seated in the chamber's round port (radius 0.27, the pipe's
+        // outside), sealed all round.
+        const wallCurve=new THREE.CatmullRomCurve3([new THREE.Vector3(.95,.34,.38),new THREE.Vector3(1.30,.34,.38),...points.slice(1)]);
+        replace(pair.shell,saddleEndPipeWall(wallCurve,0,lowerRadius-.045,lowerRadius,72,24,p=>Math.hypot(p.x,p.z)-1.28));
+      }pair.shell.userData.curve=curve;replace(pair.water,new THREE.TubeGeometry(curve,64,lowerRadius*.60,12,false));
       if(!suction){const points=b.deliveryRiser.shell.userData.curve.points.map(p=>p.clone());points[0]=valve.userData.body.position.clone().add(new THREE.Vector3(0,.40,0));const curve=new THREE.CatmullRomCurve3(points);replace(b.deliveryRiser.shell,curvedPipeWall(curve,.265,.31,48));replace(b.deliveryRiser.water,new THREE.TubeGeometry(curve,48,.18,12,false));}
-      replace(seat,horizontalPlate(outline,-.065,0));seat.position.y=valve.position.y-.0325;
+      // Pass 86: the flap's knuckle (r 0.07, z ±0.28) lay tangent in the
+      // seat's hinge slot. Two lugs cast on the seat now carry it: each is
+      // bored for the knuckle round its axis (x -0.25, 0.0325 above the seat
+      // top) and stands just outside the narrowed flap (z ±0.21), so the
+      // knuckle turns in two bearings instead of resting on a line.
+      const axis=[-.25,.0325],lugRing=[[-.35,-.065],[-.15,-.065]];
+      for(let i=0;i<=32;i++){const a=Math.PI*i/32;lugRing.push([axis[0]+.10*Math.cos(a),axis[1]+.10*Math.sin(a)]);}
+      const lugOutline=polygonClipping.difference(poly(lugRing),poly(circle(axis,.07,64)));
+      // plate() extrudes the x-y (y up) outline along z in the seat's frame.
+      const lugs=[[.22,.28],[-.28,-.22]].map(([z0,z1])=>plate(lugOutline,z0,z1));
+      replace(seat,mergePassageParts([horizontalPlate(outline,-.065,0),...lugs]));seat.position.y=valve.position.y-.0325;
     }
     d.updateSolids=()=>{b.connectingRod.position.z=.34;};
   }

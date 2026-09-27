@@ -64,14 +64,16 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
   assert.equal(archetype, movement.archetype);
   assert.equal(
     mechanism,
-    'bottom-probe-slides-upward-against-a-bell-crank-which-withdraws-and-detent-latches-the-catch-from-beneath-the-bored-sounding-weight',
+    'bottom-probe-slides-upward-against-a-spring-loaded-bell-crank-which-withdraws-the-sloped-catch-from-beneath-the-bored-sounding-weight',
   );
   assert.equal(sourceAnimation.available, false);
   assert.equal(sourceAnimation.independentlyReconstructed, true);
   assert.match(sourceAnimation.reason, /unavailable/);
   assert.equal(transmission.oneShotRelease, true);
   assert.equal(transmission.automaticReset, false);
-  assert.equal(transmission.catchDetainedAfterTrip, true);
+  assert.equal(transmission.catchDetainedAfterTrip, false);
+  assert.equal(transmission.catchSpringLoadedIntoEngagement, true);
+  assert.equal(transmission.catchSelfSetsOnReload, true);
   assert.match(transmission.loopReset, /re-armed-far-above-view.*vessel-moves-to-next-station.*bottom-and-spent-weight-off-sideways/);
   assert.equal(blocks.resetSling, undefined, 'no reload sling');
   assert.equal(
@@ -136,7 +138,7 @@ test('movement 247 preserves the measured unavailable sectional plate', () => {
   assert.deepEqual(plate.rasterProbeContact.toArray(), [258, 229]);
   assert.deepEqual(plate.rasterCatchSupport.toArray(), [322, 375]);
   assert.deepEqual(plate.rasterDetentTip.toArray(), [292, 266]);
-  assert.match(plate.inferredTopology, /curved detent/);
+  assert.match(plate.inferredTopology, /curved leaf spring loads the catch outward/);
   assert.deepEqual(sourceReference.primaryScan, {
     archiveIdentifier: 'fivehundredseven00browiala',
     descriptionPage: 63,
@@ -148,7 +150,8 @@ test('movement 247 preserves the measured unavailable sectional plate', () => {
   assert.equal(source.sourcePose, true);
   assert.equal(source.stage, 'loaded-dwell');
   assert.equal(source.catchToWeightContactActive, true);
-  assert.equal(source.detentLatched, false);
+  assert.equal(source.catchSprungAgainstWeight, false);
+  assert.equal(source.probeToCatchContactActive, true);
   disposeModel(model.root);
 });
 
@@ -253,51 +256,72 @@ test('movement 247 retains its historical point-support and ballistic law separa
   disposeModel(model.root);
 });
 
-test('movement 247 detent holds the catch clear while the light rod is recovered', () => {
+test('movement 247 spring holds the catch against the spent weight\'s bore, then out once the rod is clear', () => {
   const model = createMovementModel(catalog.movements[246]);
   const { geometry, stateAtTime, timeline } = model.root.userData;
   let minimumBoreClearance = Infinity;
   let minimumProbeClearance = Infinity;
   let maximumGroundedWeightError = 0;
+  let maximumStep = 0;
+  let previousAngle = null;
+  let sprungSamples = 0;
+  let returnedAt = null;
 
   for (let sample = 0; sample < 32768; sample += 1) {
     const time = timeline.weightImpact
       + (timeline.rodRecovered - timeline.weightImpact)
         * sample / 32768;
     const state = stateAtTime(time);
-    minimumBoreClearance = Math.min(
-      minimumBoreClearance,
-      state.supportRadialClearance,
+    minimumProbeClearance = Math.min(
+      minimumProbeClearance,
+      state.probePusherClearance,
     );
-    if (time >= timeline.probeDecompressed) {
-      minimumProbeClearance = Math.min(
-        minimumProbeClearance,
-        state.probePusherClearance,
-      );
+    if (state.catchSprungAgainstWeight) {
+      sprungSamples += 1;
+      // Rubbing the bore: the seat stands inside it.
+      if (state.catchSupportPosition.y < state.weightUpperOpeningY) {
+        minimumBoreClearance = Math.min(
+          minimumBoreClearance,
+          state.supportRadialClearance,
+        );
+      }
+      assert.ok(state.probePusherClearance >= -1e-12);
+    } else {
+      // Otherwise the spring holds the roller down on the pusher pad.
+      near(state.probePusherClearance, 0, 1e-12, `roller on pad at ${time}`);
+      if (time > timeline.probeDecompressed && returnedAt === null) {
+        returnedAt = time;
+      }
     }
+    if (previousAngle !== null) {
+      maximumStep = Math.max(maximumStep, Math.abs(state.catchAngle - previousAngle));
+    }
+    previousAngle = state.catchAngle;
     maximumGroundedWeightError = Math.max(
       maximumGroundedWeightError,
       Math.abs(state.weightLowerOpeningY - geometry.seabedY),
     );
-    if (time >= timeline.rodRecovered) {
-      assert.ok(state.bodyPositionY >= geometry.recoveredBodyY - 1e-12);
-    }
-    assert.equal(state.detentLatched, true);
+    assert.ok(state.catchAngle <= 0);
+    assert.ok(state.catchAngle >= geometry.heldRetractedAngle - 1e-12);
     assert.equal(state.catchToWeightContactActive, false);
     assert.equal(state.weightExternallySupported, false);
   }
-  assert.ok(minimumBoreClearance > 0.016);
-  // The wider 0.545 bore (roller clearance) needs a deeper held retraction,
-  // which brings the pusher about 1 mm closer than the old 0.096.
-  assert.ok(minimumProbeClearance > 0.094);
+  assert.ok(sprungSamples > 1000, 'catch rubs up the bore after the trip');
+  assert.ok(minimumBoreClearance > 0);
+  assert.ok(minimumProbeClearance >= -1e-12);
+  // The catch swings out over the weight's upper rim continuously.
+  assert.ok(maximumStep < 0.02, `largest catch step ${maximumStep}`);
+  assert.ok(returnedAt !== null && returnedAt < timeline.rodRecovered - 1,
+    'catch springs back out once clear of the weight');
   assert.ok(maximumGroundedWeightError < 2e-15);
+  assert.equal(stateAtTime(timeline.rodRecovered - 1e-9).catchAngle, 0);
 
   const recovered = stateAtTime(timeline.rodRecovered + 1e-9);
   assert.ok(recovered.probeFootContactY > recovered.weightUpperOpeningY);
   assert.ok(
     recovered.catchSupportPosition.y > recovered.weightUpperOpeningY,
   );
-  assert.equal(recovered.stage, 'fresh-weight-slid-up-past-retracted-catch');
+  assert.equal(recovered.stage, 'fresh-weight-pushed-up-camming-sprung-catch-aside');
   disposeModel(model.root);
 });
 
@@ -310,12 +334,28 @@ test('movement 247 re-arms far above view, moves on to the next station, and no 
   const rising = stateAtTime((timeline.freshWeightAtRod + timeline.freshWeightRaised) / 2);
   const setting = stateAtTime((timeline.detentReleased + timeline.catchSet) / 2);
   const armed = stateAtTime((timeline.weightSeated + timeline.cycleClosure) / 2);
-  assert.equal(rising.stage, 'fresh-weight-slid-up-past-retracted-catch');
-  assert.equal(rising.detentLatched, true);
+  assert.equal(rising.stage, 'fresh-weight-pushed-up-camming-sprung-catch-aside');
+  // The rising weight has cammed the sprung catch aside on its sloped face.
+  assert.equal(rising.catchSprungAgainstWeight, true);
+  assert.ok(rising.catchAngle < 0);
   near(rising.bodyPositionY, geometry.rearmBodyY, 0, 'rod hauled up for re-arming');
-  assert.equal(setting.detentLatched, false);
-  assert.ok(setting.catchAngle < 0);
+  // Once the weight's lower opening passes the seat, the spring has swung
+  // the catch out under it.
+  assert.equal(setting.catchSprungAgainstWeight, false);
+  assert.equal(setting.catchAngle, 0);
   assert.equal(setting.catchToWeightContactActive, false);
+  let maximumStep = 0;
+  let previousCatch = stateAtTime(timeline.freshWeightAtRod).catchAngle;
+  let cammed = false;
+  for (let sample = 1; sample <= 20000; sample += 1) {
+    const state = stateAtTime(timeline.freshWeightAtRod
+      + (timeline.catchSet - timeline.freshWeightAtRod) * sample / 20000);
+    maximumStep = Math.max(maximumStep, Math.abs(state.catchAngle - previousCatch));
+    previousCatch = state.catchAngle;
+    cammed ||= state.catchSprungAgainstWeight;
+  }
+  assert.ok(cammed);
+  assert.ok(maximumStep < 0.03, `the cam and snap are continuous (${maximumStep})`);
   assert.equal(armed.catchAngle, 0);
   assert.equal(armed.catchToWeightContactActive, true);
 
@@ -555,4 +595,49 @@ test('movement 247 reported rates close away from edge release and leave movemen
   assert.equal(model289.root.userData.fidelity, 'authored');
   disposeModel(model.root);
   disposeModel(model289.root);
+});
+
+test('movement 247 curled leaf spring bears on the upper arm and loads the catch outward; the sloped barb cams a rising weight', () => {
+  const model = createMovementModel(catalog.movements[246]);
+  const { blocks, geometry, stateAtTime, timeline } = model.root.userData;
+  const spring = blocks.detentSpring;
+  assert.equal(spring.userData.role, 'curled-leaf-spring-loading-catch-into-engagement');
+  const { pivot, upperContactLocal } = geometry;
+  const halfWidth = 0.065;
+  const thickness = 0.04;
+  const armLength = Math.hypot(upperContactLocal.x, upperContactLocal.y);
+  for (const time of [0, 3.6, 4.2, timeline.supportRelease, 4.6, 5.45, 6.01, 8.1]) {
+    const angle = stateAtTime(time).catchAngle;
+    const { points } = spring.userData.centerline(angle);
+    // The anchor is set in the solid rod above the window (top y 1.9).
+    assert.ok(points[0].y > 1.9);
+    const direction = new THREE.Vector2(upperContactLocal.x, upperContactLocal.y)
+      .normalize().rotateAround(new THREE.Vector2(), angle);
+    let minimumGap = Infinity;
+    for (const point of points) {
+      const local = point.clone().sub(pivot);
+      const along = THREE.MathUtils.clamp(local.dot(direction), 0, armLength);
+      minimumGap = Math.min(minimumGap,
+        local.distanceTo(direction.clone().multiplyScalar(along))
+          - halfWidth - thickness / 2);
+    }
+    // The curl bears on the arm's right edge without entering it.
+    near(minimumGap, 0.003, 3e-3, `curl on arm at ${time}`);
+    // Its push (to the left, -normal) at a point along the arm turns the
+    // catch anticlockwise: outward, into engagement.
+    const push = new THREE.Vector2(-direction.y, direction.x);
+    assert.ok(direction.x * push.y - direction.y * push.x > 0);
+  }
+
+  // The barb: a rounded seat with a convex face falling inward to a tip
+  // inside the bore, so a weight pushed up the rod meets the face.
+  const ring = geometry.catchNoseProfile[0][0];
+  const lowest = ring.reduce((a, b) => (b[1] < a[1] ? b : a));
+  assert.ok(pivot.x + lowest[0] < geometry.boreRadius - 0.05, 'tip inside the bore');
+  assert.ok(pivot.x + geometry.catchSupportLocal.x > geometry.boreRadius + 0.15, 'seat under the weight');
+  assert.ok(lowest[1] < geometry.catchSupportLocal.y - 0.3, 'face runs well below the seat');
+  // The retracted tip stays above the lower guide block.
+  const retracted = new THREE.Vector2(...lowest).rotateAround(new THREE.Vector2(), geometry.heldRetractedAngle);
+  assert.ok(pivot.y + retracted.y - 0.03 > -0.89);
+  disposeModel(model.root);
 });

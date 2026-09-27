@@ -82,7 +82,8 @@ test('049 finite-pitch rectification preserves angle and torque balance across r
       assert.ok(Math.abs(a.outputAngle - b.outputAngle) < 2 * p.inputAmplitude * p.frequency * epsilon + 1e-10);
     }
   }
-  assert.equal(motions[0].parameters.backlashTravel, 0);
+  assert.ok(Math.abs(motions[0].parameters.backlashTravel - 0.15 * motions[0].follower.pitch) < 1e-12,
+    'the default stroke overtravels so each idle pawl seats before it drives');
   const model = makeRatchetBevel(), expected = model.root.userData.motion.stateAt(7.21);
   for (const step of [0, 1 / 240, 1 / 60, 0.05, 0.1, 0.4]) {
     model.update(0); for (let t = step; step > 0 && t < 7.21; t += step) model.update(t, step);
@@ -108,7 +109,7 @@ test('049 the complete pawl skins clear the actual ratchet teeth through both ha
       }
     }
   }
-  assert.ok(minimum > 0 && minimum < 0.00002);
+  assert.ok(minimum > -1e-7 && minimum < 0.00002, `seated flush (${minimum})`);
   console.log(JSON.stringify({ movement: 49, pawlSurfaceChecks: checks, minimumClearance: minimum }));
 });
 
@@ -128,7 +129,9 @@ test('049 each driving pawl contacts its real working face and each overrunning 
       if (side !== state.activeSide) continue;
       assert.ok(Math.abs(pawl.rotation.z - f.restAngle) < 1e-12);
       pawlBody.material.side = THREE.DoubleSide; ratchet.material.side = THREE.DoubleSide;
-      const center = new THREE.Vector3(f.restCenter.x, f.restCenter.y, g.ratchetZ).applyMatrix4(carrier.userData.rotor.matrixWorld);
+      const onFace = f.tip.clone().addScaledVector(new THREE.Vector2(Math.cos(g.faceAngle), Math.sin(g.faceAngle)), 0.03)
+        .addScaledVector(new THREE.Vector2(Math.sin(g.faceAngle), -Math.cos(g.faceAngle)), 0.01);
+      const center = new THREE.Vector3(onFace.x, onFace.y, g.ratchetZ).applyMatrix4(carrier.userData.rotor.matrixWorld);
       const direction = new THREE.Vector3(-Math.sin(g.faceAngle), Math.cos(g.faceAngle), 0).transformDirection(carrier.userData.rotor.matrixWorld);
       ray.set(center, direction);
       const noseHit = ray.intersectObject(pawlBody, false)[0], wheelHit = ray.intersectObject(ratchet, false)[0];
@@ -142,32 +145,64 @@ test('049 each driving pawl contacts its real working face and each overrunning 
   console.log(JSON.stringify({ movement: 49, drivingContactRays: rays, maximumContactGap, liftedPoses: lifted }));
 });
 
-test('049 heel stops, pivot pins and torsion coils remain clear during lift', () => {
+test('049 each pawl is one flat plate hung on its pin whose wedge tip fills the root', () => {
   const model = makeRatchetBevel(), b = model.root.userData.blocks, g = model.root.userData.geometry;
-  const points = surfacePoints(b.rightCarrier.userData.parts.pawlBody.geometry);
-  let stopGap = Infinity, pivotGap = Infinity, springPinGap = Infinity, springStopGap = Infinity;
+  const f = model.root.userData.motion.follower;
+  for (const carrier of [b.rightCarrier, b.leftCarrier]) {
+    const parts = carrier.userData.parts;
+    assert.deepEqual(Object.keys(parts).sort(), ['arm', 'pawl', 'pawlBody', 'pivotPin', 'ratchet'], 'no stop pin or spring');
+    assert.equal(parts.pawl.children.length, 1, 'the pawl is a single body');
+    const box = new THREE.Box3().setFromBufferAttribute(parts.pawlBody.geometry.attributes.position);
+    assert.ok(Math.abs(box.min.z + g.pawlDepth / 2) < 1e-6 && Math.abs(box.max.z - g.pawlDepth / 2) < 1e-6, 'one uniform extrusion');
+    assert.ok(Math.abs(parts.pawl.position.z - g.ratchetZ) < 1e-12, 'in the ratchet plane');
+  }
+  // The tip's two flanks lie along the tooth face and the preceding back,
+  // and at the seat the tip sits in the root corner.
+  const face = new THREE.Vector2(Math.cos(g.faceAngle), Math.sin(g.faceAngle));
+  const back = new THREE.Vector2(g.tipRadius * Math.cos(g.faceAngle - 0.9 * f.pitch), g.tipRadius * Math.sin(g.faceAngle - 0.9 * f.pitch)).sub(f.root).normalize();
+  assert.ok(Math.abs(f.W.clone().sub(f.tip).normalize().dot(face) - 1) < 1e-12);
+  assert.ok(Math.abs(f.U.clone().sub(f.tip).normalize().dot(back) - 1) < 1e-12);
+  assert.ok(Math.abs(f.valleyAngle - Math.acos(face.dot(back))) < 1e-12);
+  assert.ok(f.tip.distanceTo(f.root) < 2e-5, 'tip nestles in the root');
+  assert.ok(f.W.length() > g.tipRadius, 'the working flank covers the whole tooth face');
+  assert.ok(f.clearanceAt(0, 0) >= 0 && f.clearanceAt(0, 0) < 2e-5, 'seated flush without penetration');
+  // Solid proportions: the boss surrounds the bore generously and the pawl
+  // is broad along its whole length.
+  assert.ok(g.bossRadius - g.pivotBore > 0.03);
+  for (let i = 0; i <= 20; i += 1) {
+    const t = i / 20, q = f.tip.clone().lerp(f.pivot, 0.25 + 0.5 * t);
+    const inside = (v) => { let c = false; const o = f.pawlOutline;
+      for (let k = 0, j = o.length - 1; k < o.length; j = k, k += 1)
+        if ((o[k].y > v.y) !== (o[j].y > v.y) && v.x < (o[j].x - o[k].x) * (v.y - o[k].y) / (o[j].y - o[k].y) + o[k].x) c = !c; return c; };
+    const axis = f.pivot.clone().sub(f.tip).normalize(), normal = new THREE.Vector2(-axis.y, axis.x);
+    let width = 0;
+    for (const side of [-1, 1]) for (let w = 0; inside(q.clone().addScaledVector(normal, side * (w + 0.001))); w += 0.001) width += 0.001;
+    assert.ok(width > 0.075, `pawl broad along its length (${width})`);
+  }
+  // Gravity seats it: the pin is above the pawl's centroid side so that the
+  // weight turns the tip into the wheel at every carrier angle of the stroke.
+  let area = 0, cx = 0, cy = 0; const o = f.pawlOutline;
+  for (let i = 0; i < o.length; i += 1) { const a = o[i], c = o[(i + 1) % o.length], w = a.x * c.y - c.x * a.y; area += w / 2; cx += (a.x + c.x) * w / 6; cy += (a.y + c.y) * w / 6; }
+  const centroid = new THREE.Vector2(cx / area, cy / area).sub(f.pivot);
+  for (const tilt of [-g.inputAmplitude, 0, g.inputAmplitude]) {
+    const gravity = new THREE.Vector2(Math.sin(tilt), -Math.cos(tilt));
+    const torque = centroid.x * gravity.y - centroid.y * gravity.x;
+    // A counterclockwise (positive) turn of the pawl carries its tip inward.
+    const tipArm = f.tip.clone().sub(f.pivot), inwardRate = -(-tipArm.y * f.tip.x + tipArm.x * f.tip.y) / f.tip.length();
+    assert.ok(inwardRate > 0.1);
+    assert.ok(torque / area > 0.01, `weight holds the tip on the teeth at tilt ${tilt} (${torque / area})`);
+  }
+  // The pin fills the pawl's and arm's bores through the lift.
+  let pivotGap = Infinity;
   for (let pose = 0; pose <= 256; pose += 1) {
     model.update(g.cycleDuration * pose / 256); model.root.updateMatrixWorld(true);
     for (const carrier of [b.rightCarrier, b.leftCarrier]) {
-      const { pawl, pivotPin, stopPin, spring } = carrier.userData.parts;
-      const transform = pawl.matrix;
-      for (const point of points) {
-        const v = point.clone().applyMatrix4(transform);
-        stopGap = Math.min(stopGap, Math.hypot(v.x - stopPin.position.x, v.y - stopPin.position.y) - g.stopRadius);
-        pivotGap = Math.min(pivotGap, Math.hypot(v.x, v.y - pivotPin.position.y) - g.pivotRadius);
-      }
-      const a = spring.geometry.attributes.position;
-      for (let i = 0; i < a.count; i += 1) {
-        const x = a.getX(i), y = a.getY(i);
-        springPinGap = Math.min(springPinGap, Math.hypot(x, y - g.armRadius) - g.pivotRadius);
-        springStopGap = Math.min(springStopGap, Math.hypot(x - stopPin.position.x, y - stopPin.position.y) - g.stopRadius);
-      }
+      const { pawl, pivotPin } = carrier.userData.parts;
+      assert.ok(Math.hypot(pawl.position.x - pivotPin.position.x, pawl.position.y - pivotPin.position.y) < 1e-12);
     }
   }
-  assert.ok(stopGap >= -1e-7 && stopGap < 1e-6, 'heel rests on the physical stop without passing through it');
-  assert.ok(pivotGap > 0.0014);
-  assert.ok(springPinGap > 0.003 && springStopGap > 0.003);
-  console.log(JSON.stringify({ movement: 49, stopGap, pivotGap, springPinGap, springStopGap }));
+  pivotGap = g.pivotBore - g.pivotRadius; assert.ok(pivotGap > 0 && pivotGap < 0.003);
+  console.log(JSON.stringify({ movement: 49, valleyDegrees: f.valleyAngle * 180 / Math.PI, pawlArea: area }));
 });
 
 test('049 real keyed carriers and loose bores clear the horizontal shaft', () => {

@@ -58,37 +58,42 @@ test('343: round piston joins its rod and stays inside the plate cylinder barrel
   disposeObject3D(root);
 });
 
-test('342: alternating bored chain plates engage common pins and rollers meet the shoe', () => {
+test('342: plate chain rides on the segment rim in the beam plane with headed pins', () => {
   const { root, update } = createAuthoredAtmosphericBeamEngine({ id: 342 });
   const b = root.userData.blocks, g = root.userData.geometry;
+  const links = [...b.chainLinks, b.chainTerminalConnector.userData.parts];
+  const head = bounds(b.chainShoe);
   for (let i = 0; i <= 64; i++) {
     update(4 * i / 64); root.updateMatrixWorld(true);
-    for (const [j, link] of b.chainLinks.entries()) {
-      for (const [boss, pin] of [[link.startBoss, link.startPin], [link.endBoss, link.endPin]]) {
-        clearsBore(boss, world(pin), .051); clearsBore(link.body, world(pin), .051); pinSpans(pin, boss);
+    const beamHead = bounds(b.chainShoe);
+    for (const [j, link] of links.entries()) {
+      const outer = j % 2 === 0 || j === links.length - 1;
+      assert.equal(Boolean(link.startPin), outer, 'outer links own both pins');
+      if (outer) {
+        for (const pin of [link.startPin, link.endPin]) {
+          const p = bounds(pin);
+          for (const plate of link.plates) {
+            const q = bounds(plate);
+            assert.ok(p.min.z < q.min.z - .005 || p.max.z > q.max.z + .005, 'pin head stands proud of its plate');
+          }
+          assert.ok(p.min.z < g.chainOuterLow - .01 && p.max.z > g.chainOuterHigh + .01, 'pin heads proud of both faces');
+          assert.ok(p.min.z > beamHead.min.z && p.max.z < beamHead.max.z, 'chain lies within the head face');
+        }
+      } else {
+        const neighbours = [links[j - 1].endPin, links[j + 1]?.startPin].filter(Boolean);
+        for (const pin of neighbours) clearsBore(link.plates[0], world(pin), g.chainPinRadius);
       }
-      clearsBore(link.roller, world(link.startPin), .051); pinSpans(link.startPin, link.roller);
-      if (j) {
-        const previous = b.chainLinks[j - 1];
-        assert.ok(world(previous.endPin).distanceTo(world(link.startPin)) < 1e-12);
-        const a = bounds(previous.endBoss), c = bounds(link.startBoss);
-        assert.ok(a.max.z < c.min.z || c.max.z < a.min.z, 'adjacent plates leave articulation clearance');
-      }
-      const center = world(link.roller); const radial = Math.hypot(center.x, center.y);
-      assert.ok(radial - .09 >= g.pitchRadius - .09 - 1e-12, 'roller does not cut into circular shoe');
-      if (Math.abs(radial - g.pitchRadius) < 1e-10) {
-        const ray = new THREE.Raycaster(center, new THREE.Vector3(-center.x, -center.y, 0).normalize());
-        const hits = ray.intersectObject(b.chainShoe, false);
-        assert.ok(hits.length && Math.abs(hits[0].distance - .09) < .001, 'actual shoe face is within mesh tolerance of roller tread');
+      for (const anchor of [link.startAnchor, link.endAnchor]) {
+        const p = world(anchor), radial = Math.hypot(p.x, p.y);
+        assert.ok(radial - g.chainWidth * .47 > g.shoeOuterRadius + .005 - 1e-12 || p.y < -1e-9,
+          'link eyes on the pitch circle clear the 11.7-unit rim');
       }
     }
-    for (const eye of b.terminalEyes) clearsBore(eye, world(eye), .051);
-    assert.ok(world(b.terminalEyes[0]).distanceTo(world(b.terminalEyes[1])) > .2, 'terminal eyes have room for both pins');
-    for (const [part, pin] of [[b.pivotBearing, b.pivotShaft], [b.pivotBoss, b.pivotShaft],
-      [b.pistonTopBoss, b.chainLinks[0].startPin]]) {
-      clearsBore(part, world(pin), pin.geometry.parameters.radiusTop); pinSpans(pin, part);
-    }
+    for (const [part, pin] of [[b.pistonTopBoss, b.chainLinks[0].startPin],
+      [b.chainLug, b.chainAttachmentPin]]) clearsBore(part, world(pin), g.chainPinRadius);
+    assert.ok(bounds(b.pistonCrosshead).max.y < bounds(b.chainLinks[0].plates[0]).min.y, 'crosshead top clears the first link');
   }
+  assert.ok(head.min.z < g.chainOuterLow && head.max.z > g.chainOuterHigh, 'head face spans the chain');
   disposeObject3D(root);
 });
 

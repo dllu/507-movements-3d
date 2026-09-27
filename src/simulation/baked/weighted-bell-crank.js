@@ -57,6 +57,17 @@ function plainStudEnds(root){
  root.traverse(o=>{if(!o.isMesh||!o.visible||o.material.color?.getHex()!==0xfaf9f5)return;o.material=o.material.clone();o.material.color.setHex(0x252a2d);});
 }
 
+// The baked eye stands tangent on the ball. A tapered shank, filleted into
+// the ball's crown and rising into the eye's lower rim, sinks the eye into
+// the ball as a forged eye bolt (presentation only; the cord still ends at
+// the eye's baked attachment).
+function sinkWeightEye(root){
+ const weight=root.getObjectByName('body:weight');let eye=null;
+ weight?.traverse(o=>{if(o.isMesh&&o.material.color?.getHex()===0x252a2d)eye=o;});
+ if(!eye)return;
+ const shank=new THREE.Mesh(new THREE.LatheGeometry([[0,.40],[.10,.40],[.10,.45],[.06,.50],[.035,.545],[0,.545]].map(([x,y])=>new THREE.Vector2(x,y)),48),eye.material);
+ shank.name='weight-eye-shank';shank.castShadow=true;shank.receiveShadow=true;weight.add(shank);
+}
 export function makeWeightedBellCrankModel(bundle){
  const model=makeBakedRigidMovement(bundle,{mechanism:'passive-three-stud-weighted-bell-crank',slideAxes:{weight:'y'},note:'Three disk studs lift the weight through an elbow and a cord over the pulley. Cord tension returns the elbow onto a stop. The stop, bearings and rope fittings are reconstructed; the weight follows an ideal vertical guide.'});
  const g=bundle.cordGeometry,cord=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({color:0x41413b,roughness:.65,metalness:.12,fog:false}));
@@ -65,6 +76,7 @@ export function makeWeightedBellCrankModel(bundle){
  model.update=time=>{rigidUpdate(time);const state=model.root.userData.state;updateWeightedCord(cord,g,model.root.userData.blocks.weight.position.y,weightedCordGeometry(g,state.qpos.lever));};
  presentSourceSupports(model.root,g);
  plainStudEnds(model.root);
+ sinkWeightEye(model.root);
  model.reset=()=>model.update(0);model.root.userData.cameraFov=18;model.root.userData.reconstructionStatus='reconstructed';model.update(0);return model;
 }
 export async function makeBakedWeightedBellCrank(){return makeWeightedBellCrankModel(await loadBakedBundle(new URL('./assets/154.json.gz',import.meta.url)));}

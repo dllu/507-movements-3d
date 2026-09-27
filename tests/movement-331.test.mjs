@@ -105,6 +105,28 @@ test('movement 331 is the flywheel Scotch-yoke engine in pillar guides D-D', () 
   assert.equal(roles.filter((role) => /guide-shoe-embracing-pillar-D$/.test(role))
     .length, 2);
   assert.equal(roles.some((role) => /generic|procedural/i.test(role)), false);
+
+  // Brown draws the crossbeam and pediment as one piece with a cloud-shaped
+  // hand hole dipping into the beam; the pillars run up into it.
+  const crownShapes = blocks.topBeam.geometry.parameters.shapes;
+  assert.equal(crownShapes.holes.length, 1, 'one hand hole in the crown');
+  assert.equal(roles.some((role) => /pediment-with-real-hand-hole$/.test(role)),
+    false, 'no separate pediment strap');
+  const crownBox = new THREE.Box3().setFromObject(blocks.topBeam);
+  const holeBottom = Math.min(...crownShapes.holes[0].getPoints(24).map((p) => p.y));
+  assert.ok(holeBottom < 8 * 0.24 && holeBottom > crownBox.min.y + 0.1,
+    'hand hole dips into the beam but leaves a solid beam under it');
+  for (const post of blocks.guidePosts) {
+    const postBox = new THREE.Box3().setFromObject(post);
+    assert.ok(postBox.max.y - crownBox.min.y > 0.1, 'pillar seated up inside the beam');
+    assert.ok(postBox.min.z > crownBox.min.z && postBox.max.z < crownBox.max.z,
+      'pillar faces inside the crown faces');
+  }
+  // Each shoe is one C-section extrusion, no separate cheeks or liner strip.
+  for (const shoe of [blocks.leftGuideShoe, blocks.rightGuideShoe]) {
+    assert.equal(shoe.children.length, 1);
+    assert.equal(shoe.userData.contactLiner, shoe.children[0]);
+  }
   disposeModel(model.root);
 });
 
@@ -448,7 +470,7 @@ test('movement 331 renderer binds the rotor, journal, yoke, and piston in 3D', (
   assert.equal(model330.root.userData.fidelity, 'authored');
   assert.notEqual(model330.root.userData.archetype,
     model.root.userData.archetype);
-  assert.equal(model330.root.userData.blocks.forkProngs.length, 2);
+  assert.ok(model330.root.userData.blocks.forkBody.isMesh);
   assert.equal(blocks.flywheelSpokes.length, 6);
   disposeModel(model330.root);
   disposeModel(model.root);

@@ -14,6 +14,33 @@ const trace = commands => {
   return path.getPoints(48).map(p => p.toArray());
 };
 
+// Blade in model units about the shaft (y up). Angles in radians.
+export const WIPER_BLADE = {rootRadius: px(38), rootAngle: 110 * Math.PI / 180, tipRadius: px(146), tipAngle: 130 * Math.PI / 180,
+  sagitta: px(14), rootHalfWidth: px(28), tipHalfWidth: px(8)};
+export function wiperBlade(turn = 0, blade = WIPER_BLADE, samples = 96) {
+  const {rootRadius, rootAngle, tipRadius, tipAngle, sagitta, rootHalfWidth, tipHalfWidth} = blade;
+  const polar = (r, a) => [r * Math.cos(a + turn), r * Math.sin(a + turn)];
+  const p0 = polar(rootRadius, rootAngle), p1 = polar(tipRadius, tipAngle), chord = Math.hypot(p1[0] - p0[0], p1[1] - p0[1]);
+  // Bulge toward the leading (clockwise) side: the right of the root-to-tip chord.
+  const u = [(p1[0] - p0[0]) / chord, (p1[1] - p0[1]) / chord], right = [u[1], -u[0]];
+  const R = (chord * chord / 4 + sagitta * sagitta) / (2 * sagitta), mid = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
+  const O = [mid[0] - right[0] * (R - sagitta), mid[1] - right[1] * (R - sagitta)];
+  const a0 = Math.atan2(p0[1] - O[1], p0[0] - O[0]), a1 = Math.atan2(p1[1] - O[1], p1[0] - O[0]);
+  let da = a1 - a0; while (da > Math.PI) da -= 2 * Math.PI; while (da < -Math.PI) da += 2 * Math.PI;
+  const center = t => [O[0] + R * Math.cos(a0 + da * t), O[1] + R * Math.sin(a0 + da * t)];
+  const normal = t => {const a = a0 + da * t; return [Math.cos(a), Math.sin(a)];};
+  // Width tapers linearly, so each edge is a smooth spiral-like curve.
+  const half = t => tipHalfWidth + (rootHalfWidth - tipHalfWidth) * (1 - t);
+  const outer = [], inner = [];
+  for (let i = 0; i <= samples; i++) {
+    const t = i / samples, c = center(t), n = normal(t), w = half(t);
+    outer.push([c[0] + n[0] * w, c[1] + n[1] * w]); inner.push([c[0] - n[0] * w, c[1] - n[1] * w]);
+  }
+  const cap = [], tip = center(1), n1 = normal(1), capStart = Math.atan2(n1[1], n1[0]), sense = Math.sign(da);
+  for (let i = 1; i < 32; i++) {const a = capStart + sense * Math.PI * i / 32; cap.push([tip[0] + tipHalfWidth * Math.cos(a), tip[1] + tipHalfWidth * Math.sin(a)]);}
+  return [...outer, ...cap, ...inner.reverse()];
+}
+
 export function makeWiperStampGeometry() {
   const root = new THREE.Group(), parts = {}, families = {}, blocks = {}, profiles = {};
   for (const family of ['fixed', 'cam', 'stamp']) {blocks[family] = new THREE.Group(); root.add(blocks[family]);}
@@ -23,7 +50,10 @@ export function makeWiperStampGeometry() {
   };
   const layers = {cam: [0, .10], bearing: [-.55, -.36], standard: [-.60, -.26]};
   const bore = px(measured.shaftRadius), bearingBore = px(measured.shaftRadius + 1), rod = measured.rod, b = measured.projection;
-  profiles.wipers = ['upperWiper', 'lowerWiper'].map(name => sourcePoly(trace(measured[name])));
+  // Two identical wipers 180 degrees apart. Brown's hand-drawn pair differ in
+  // sweep and width; each is regularized to one ideal swept-back blade whose
+  // centerline is a circular arc, tapering from the hub to a round tip.
+  profiles.wipers = [0, Math.PI].map(turn => poly(wiperBlade(turn)));
   profiles.camOuter = clip.union(poly(circle([0, 0], px(measured.hubRadius), 256)), ...profiles.wipers);
   profiles.cam = clip.difference(profiles.camOuter, poly(circle([0, 0], bore, 128)));
   attach('twoWipers', conformingPlateMesh(plate(profiles.cam, ...layers.cam)), 'cam', PALETTE.driver);

@@ -17,7 +17,7 @@ test('232 lift, backward travel, drop, capture and draw are separate continuous 
  const samples=[[.08,'lift'],[.25,'back'],[.48,'drop'],[.59,'capture'],[.77,'draw'],[.96,'reseat']];
  for(const[c,name]of samples)assert.equal(d.stateAtCycleCoordinate(c).stage,name);
  const source=d.stateAtCycleCoordinate(0),top=d.stateAtCycleCoordinate(.4),ready=d.stateAtCycleCoordinate(.56),end=d.stateAtCycleCoordinate(.92);
- near(source.carrierAngle,0);near(source.pawlAngle,0);near(top.hookPolarAngle-source.hookPolarAngle,pitch);near(top.hookRadius,g.wheelOuterRadius+g.workingTipRadius+.04);
+ near(source.carrierAngle,0);near(source.pawlAngle,0);near(top.hookPolarAngle-source.hookPolarAngle,pitch+g.drawBacklashAngle);near(top.hookRadius,g.liftedHookRadius);assert.ok(g.liftedHookRadius-g.fingerEndRadius>g.wheelOuterRadius-g.wheelRootRadius,'the oblong finger lifts clear of the tips');
  near(ready.hookRadius,source.hookRadius);near(ready.wheelAngle,0);near(end.wheelAngle,-pitch);near(end.inputAngle,0);near(end.carrierAngle,0);
  assert.ok(top.inputAngle>ready.inputAngle,'B starts lowering during drop');assert.ok(d.stateAtCycleCoordinate(.08).carrierAngle<0,'A rocks to provide a different lift path');
 });
@@ -31,9 +31,9 @@ test('232 exact inverse geometry closes both equal-link sides over repeated cycl
  }
 });
 
-test('232 wheel law comes from the actual finite rounded tip against the radial tooth flank',()=>{
+test('232 wheel law comes from the oblong finger\'s working side against the radial tooth flank',()=>{
  for(let cycle=0;cycle<3;cycle++)for(let i=0;i<=64;i++){const s=d.stateAtCycleCoordinate(cycle+.62+.3*i/64),q=s.contact.wheelPoint,tip=s.hookPoint,local=q.clone().rotateAround({x:0,y:0},-s.wheelAngle),flank=g.gapMountPhase-g.gapHalfAngle+(cycle+1)*pitch;
-  near(local.x,g.drawFaceRadius*Math.cos(flank));near(local.y,g.drawFaceRadius*Math.sin(flank));near(tip.distanceTo(q),g.workingTipRadius);
+  near(local.x,g.drawFaceRadius*Math.cos(flank));near(local.y,g.drawFaceRadius*Math.sin(flank));near(tip.distanceTo(q),g.drawContactOffset);
   near(s.contact.outputMomentArm,-g.drawFaceRadius);assert.equal(s.contact.forceSolved,false);
  }
 });

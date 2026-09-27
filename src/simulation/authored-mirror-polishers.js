@@ -1,4 +1,11 @@
 import { correctMirrorPolisher } from './polishing-joint-parts.js';
+import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import {
+  followerTable,
+  makeSeatedFollower,
+  sawRatchetOutline,
+  seatedClickOutline,
+} from './seated-ratchet-click.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -22,6 +29,92 @@ function cylinderAlongZ(radius, length, material, segments = 28) {
   );
   cylinder.rotation.x = Math.PI / 2;
   return cylinder;
+}
+
+// Brown's click is a hook: from its eye on the carrier it comes round the
+// bar's edge and down the ratchet's left side, its nose turned back into a
+// tooth root so the carrier draws the tooth up. One planar plate with a
+// bored boss; the nose lies along the flank and is cut along the tooth face.
+function seatMirrorClick(root) {
+  const b = root.userData.blocks;
+  const g = root.userData.geometry;
+  const old = b.finiteClick;
+  const hand = g.clickHand;
+  const teeth = g.ratchetToothCount;
+  const radius = g.ratchetOuterRadius;
+  const pitch = FULL_TURN / teeth;
+  // Engaged, the wheel stands this far round from the carrier (mod pitch).
+  const seatWheelAngle = -g.carrierBaseAngle - hand * g.clickBacklash;
+  // Brown's nose engages the ratchet's left side, below the carrier eye.
+  const noseAngle = THREE.MathUtils.degToRad(34);
+  const wheel = sawRatchetOutline({
+    radius,
+    rootRadius: radius * 0.8,
+    teeth,
+    hand,
+    rootAngle: noseAngle - seatWheelAngle,
+    rake: 0.06,
+  });
+  const depth = 0.14;
+  const bore = 0.107;
+  b.ratchetWheel.geometry.dispose();
+  b.ratchetWheel.geometry = plate(polygonClipping.difference(
+    poly(wheel.outline),
+    poly(circle([0, 0], bore, 96)),
+  ), -depth / 2, depth / 2);
+  b.ratchetWheel.rotation.z = 0;
+  b.ratchetWheel.userData.ratchetProfile = {
+    outline: wheel.outline, radius, bore, teeth, hand, phase: wheel.phase, depth,
+    rootRadius: wheel.rootRadius, rake: wheel.rake,
+  };
+  const pawl = old.group;
+  const pivot = [pawl.position.x, pawl.position.y];
+  const at = (r, a) => [r * Math.cos(a + seatWheelAngle), r * Math.sin(a + seatWheelAngle)];
+  const apex = at(wheel.rootRadius, wheel.rootAngle);
+  const unit = (to) => {
+    const v = [to[0] - apex[0], to[1] - apex[1]];
+    const l = Math.hypot(v[0], v[1]);
+    return [v[0] / l, v[1] / l];
+  };
+  const outline = seatedClickOutline({
+    pivot,
+    apex,
+    face: unit(at(radius, wheel.rootAngle + hand * wheel.rake * pitch)),
+    flank: unit(at(radius, wheel.rootAngle - hand * (1 - wheel.rake) * pitch)),
+    width: 0.085,
+    bossRadius: 0.13,
+    boreRadius: 0.082,
+    shank: 0.10,
+    fillet: 0.10,
+    trimRadius: 0.16,
+  });
+  const local = outline.polygons.map((polygon) => polygon.map((ring) => ring.map((p) => [p[0] - pivot[0], p[1] - pivot[1]])));
+  old.body.geometry.dispose();
+  old.body.geometry = plate(local, -0.06, 0.06);
+  old.body.userData.role = 'finite-bored-hooked-click';
+  // A dark hook reads apart from the brass ratchet it draws round.
+  old.body.material = matte(PALETTE.ink, { metalness: 0.24, roughness: 0.48 });
+  old.body.material.fog = false;
+  pawl.rotation.z = 0;
+  // A hair of running clearance keeps the dark hook visibly off the brass.
+  const core = makeSeatedFollower({ outline, wheel, pivot, seatWheelAngle, runningClearance: 0.0015 });
+  const angleAt = (relativeWheelAngle) => core.angleAt(hand * (relativeWheelAngle - seatWheelAngle));
+  const playbackAngleAt = followerTable(angleAt, pitch);
+  b.finiteClick = {
+    group: pawl,
+    body: old.body,
+    pin: old.pin,
+    wheel: b.ratchetWheel,
+    pivot,
+    outline: wheel.outline,
+    clickOutline: outline,
+    seatWheelAngle,
+    liftSign: core.liftSign,
+    angleAt,
+    playbackAngleAt,
+    update(angle) { pawl.rotation.z = playbackAngleAt(angle); },
+  };
+  root.userData.updatePolishingInterfaces = (state) => b.finiteClick.update(state.ratchetAngle - state.carrierAngle);
 }
 
 function makeRatchetWheel({
@@ -162,6 +255,8 @@ function mirrorPolishingCompoundMotion(movement) {
   const carrierPivotRadius = 0.68;
   const pawlContactRadius = ratchetOuterRadius;
   const pawlMaximumLift = 0.105;
+  // Carrier travel taken up before the click's nose meets the tooth face.
+  const clickBacklash = 0.12 * ratchetToothPitch;
   const eccentricity = 0.18;
   const mirrorRotorZ = -0.60;
   // World depths: the ratchet/click plane behind the lower rail (rail back
@@ -247,13 +342,23 @@ function mirrorPolishingCompoundMotion(movement) {
 
     const carrierFraction = 0.5 * (1 - cosine);
     const carrierFractionRate = 0.5 * sine * inputAngularSpeed;
+    // Backlash: the carrier swings one pitch plus the click's backlash, so
+    // on the return the click drops fully past the next tooth; on the drive
+    // it first takes up that backlash, then carries the wheel one pitch.
+    const carrierStroke = ratchetToothPitch + clickBacklash;
     const carrierAngle = carrierBaseAngle
-      + clickHand * ratchetToothPitch * carrierFraction;
-    const carrierAngularSpeed = clickHand * ratchetToothPitch
+      + clickHand * carrierStroke * carrierFraction;
+    const carrierAngularSpeed = clickHand * carrierStroke
       * carrierFractionRate;
     const drivingStroke = phase <= 0.5;
-    const stepFraction = drivingStroke ? carrierFraction : 1;
-    const stepFractionRate = drivingStroke ? carrierFractionRate : 0;
+    const carrierTravel = carrierStroke * carrierFraction;
+    const engagedStroke = drivingStroke && carrierTravel > clickBacklash;
+    const stepFraction = drivingStroke
+      ? Math.max(0, carrierTravel - clickBacklash) / ratchetToothPitch
+      : 1;
+    const stepFractionRate = engagedStroke
+      ? carrierStroke * carrierFractionRate / ratchetToothPitch
+      : 0;
     const ratchetAngle = clickHand * (cycleIndex * ratchetToothPitch
       + ratchetToothPitch * stepFraction);
     const ratchetAngularSpeed = clickHand * ratchetToothPitch
@@ -730,6 +835,7 @@ function mirrorPolishingCompoundMotion(movement) {
       mirrorThickness,
       pawlContactRadius,
       pawlMaximumLift,
+      clickBacklash,
       ratchetOuterRadius,
       ratchetRootRadius,
       ratchetToothCount,
@@ -791,15 +897,16 @@ function mirrorPolishingCompoundMotion(movement) {
       barMotionLaw:
         'distance from upper eye to fixed guide is the longitudinal slide coordinate, while the direction of that line is the bar oscillation coordinate',
       clickCarrierLaw:
-        'the shaft eccentric gives carrier fraction (1-cos(input phase))/2: the carrier advances one tooth pitch during the first half-turn and returns during the second',
+        'the shaft eccentric gives carrier fraction (1-cos(input phase))/2: the carrier advances one tooth pitch plus the click backlash during the first half-turn and returns during the second',
       compoundMirrorLaw:
         'mirror center follows its fixed station on the sliding/oscillating bar, and mirror world angle equals bar angle plus cumulative ratchet angle',
       ratchetLaw:
-        'the click drives the wheel with the carrier on the forward half-turn; on the return half-turn the wheel dwells while the click lifts and overruns',
+        'the click takes up its backlash, then drives the wheel with the carrier on the forward half-turn; on the return half-turn the wheel dwells while the click lifts, overruns and drops into the next root',
     },
   };
 
   correctMirrorPolisher(root);
+  seatMirrorClick(root);
   update(0);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-2.48, -3.88, -0.55),

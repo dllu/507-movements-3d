@@ -77,6 +77,7 @@ test('movement 240 is one ratchet wheel with three alternative stop forms', () =
   assert.match(sourceAnimation.reason, /unavailable/);
   assert.equal(transmission.alternativeCount, 3);
   assert.equal(transmission.alternativesSimultaneouslyLoaded, false);
+  // The hook and straight stops alternate; stop C stays down throughout.
   assert.equal(transmission.oneStopEngagedAtATime, true);
   assert.equal(transmission.actuationDepictedBySource, false);
   assert.equal(transmission.sourceIsComparisonPlate, true);
@@ -121,9 +122,11 @@ test('movement 240 preserves the measured comparison plate and spring joint', ()
   assert.deepEqual(plate.rasterHookNose.toArray(), [151, 121]);
   assert.deepEqual(plate.rasterStraightPivot.toArray(), [478, 140]);
   assert.deepEqual(plate.rasterStraightNose.toArray(), [302, 113]);
-  assert.deepEqual(plate.rasterSpringJoint.toArray(), [214, 365]);
-  assert.deepEqual(plate.rasterSpringNose.toArray(), [169, 382]);
-  assert.deepEqual(plate.rasterSpringAnchor.toArray(), [239, 465]);
+  // Stop C's own hole (its pivot), its upper right tip and the S-spring's
+  // anchor eye, traced from the plate.
+  assert.deepEqual(plate.rasterSpringJoint.toArray(), [213.75, 386.25]);
+  assert.deepEqual(plate.rasterSpringNose.toArray(), [238.75, 347.5]);
+  assert.deepEqual(plate.rasterSpringAnchor.toArray(), [255, 455]);
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
   assert.equal(plate.inferredToothCount, 18);
@@ -157,17 +160,17 @@ test('movement 240 preserves the measured comparison plate and spring joint', ()
   );
   vectorNear(
     geometry.stopDefinitions[2].pivot,
-    new THREE.Vector2(0.364, -3.234),
+    new THREE.Vector2(0.0105, -2.1315),
     2e-15,
-    'spring fixed anchor',
+    'stop C turns on its own drawn hole',
   );
   vectorNear(
     geometry.springBearingLocal,
-    new THREE.Vector2(-0.35, 1.4),
+    new THREE.Vector2(-0.5775, 0.9625),
     2e-15,
     'carried upper spring joint',
   );
-  assert.equal(transmission.direction, 'clockwise-free-running-and-reverse-locked');
+  assert.equal(transmission.direction, 'counterclockwise-free-running-and-clockwise-locked');
   const source = stateAtTime(0);
   assert.equal(source.sourcePose, true);
   assert.equal(source.activeAlternative, 'hook-gravity-stop');
@@ -175,7 +178,8 @@ test('movement 240 preserves the measured comparison plate and spring joint', ()
   assert.equal(source.pawls[0].mode, 'reverse-locked-on-steep-face');
   assert.equal(source.pawls[0].contact.edge.type, 'reverse-lock-face');
   assert.equal(source.pawls[1].parked, true);
-  assert.equal(source.pawls[2].parked, true);
+  assert.equal(source.pawls[2].parked, false);
+  assert.equal(source.pawls[2].engaged, true);
   disposeModel(model.root);
 });
 
@@ -253,15 +257,17 @@ test('movement 240 never selects more than one alternative in 32,769 states', ()
   let maximumContactCoincidenceError = 0;
   for (let index = 0; index <= 32768; index += 1) {
     const state = stateAtCycleCoordinate(index / 32768);
-    const engaged = state.pawls.filter((pawl) => pawl.engaged);
-    const contacts = state.pawls.filter((pawl) => pawl.contact !== null);
+    // Stop C stays down through every stroke; the hook and straight stops
+    // alternate one at a time.
+    assert.equal(state.pawls[2].engaged, true);
+    const engaged = state.pawls.slice(0, 2).filter((pawl) => pawl.engaged);
+    const contacts = state.pawls.slice(0, 2)
+      .filter((pawl) => pawl.contact !== null);
     assert.ok(engaged.length <= 1);
-    assert.equal(engaged.length, state.activeAlternativeCount);
-    assert.ok(contacts.length <= state.activeAlternativeCount);
-    assert.equal(
-      state.activeAlternative,
-      engaged.length === 1 ? engaged[0].key : null,
-    );
+    assert.ok(contacts.length <= 1);
+    if (engaged.length === 1) {
+      assert.equal(state.activeAlternative, engaged[0].key);
+    }
     for (const pawl of state.pawls) {
       for (const value of [
         pawl.angle,
@@ -302,7 +308,7 @@ test('movement 240 never selects more than one alternative in 32,769 states', ()
   disposeModel(model.root);
 });
 
-test('movement 240 advances exactly one clockwise pitch under each stop', () => {
+test('movement 240 advances exactly one counterclockwise pitch under each stop', () => {
   const model = createMovementModel(catalog.movements[239]);
   const {
     contactAtWheelAngle,
@@ -315,13 +321,13 @@ test('movement 240 advances exactly one clockwise pitch under each stop', () => 
     const variantIndex = stop.index;
     const start = stateAtCycleCoordinate((variantIndex + driveStart) / 3);
     const end = stateAtCycleCoordinate((variantIndex + driveEnd) / 3);
-    near(start.wheelAngle, -variantIndex * geometry.toothPitch, 2e-15,
+    near(start.wheelAngle, variantIndex * geometry.toothPitch, 2e-15,
       `${stop.key} starts at its indexed gap`);
-    near(end.wheelAngle, -(variantIndex + 1) * geometry.toothPitch, 2e-15,
-      `${stop.key} ends one clockwise pitch later`);
-    assert.equal(start.pawls[variantIndex].contact.edge.type,
+    near(end.wheelAngle, (variantIndex + 1) * geometry.toothPitch, 2e-15,
+      `${stop.key} ends one counterclockwise pitch later`);
+    assert.equal(start.pawls[variantIndex].finiteContact.edge.type,
       'reverse-lock-face');
-    assert.equal(end.pawls[variantIndex].contact.edge.type,
+    assert.equal(end.pawls[variantIndex].finiteContact.edge.type,
       'reverse-lock-face');
     const encounteredFaces = new Set();
     let maximumLift = 0;
@@ -336,7 +342,11 @@ test('movement 240 advances exactly one clockwise pitch under each stop', () => 
       const state = stateAtCycleCoordinate((variantIndex + stepPhase) / 3);
       const pawl = state.pawls[variantIndex];
       assert.equal(state.activeAlternative, stop.key);
-      assert.ok(state.wheelAngle <= previousWheelAngle + 2e-15);
+      // The wheel runs about 0.11 pitch past, then slips back so the stop
+      // seats in the root.
+      assert.ok(state.wheelAngle >= start.wheelAngle - 2e-15);
+      assert.ok(state.wheelAngle <= start.wheelAngle
+        + 1.12 * geometry.toothPitch);
       assert.ok(pawl.finiteContact.normalClearance > .0003);
       encounteredFaces.add(pawl.finiteContact.edge.type);
       const lift = stop.liftSign * pawl.angleDelta;
@@ -355,13 +365,8 @@ test('movement 240 advances exactly one clockwise pitch under each stop', () => 
     );
     near(maximumLift, stop.maximumContactLift, 1e-6,
       `${stop.key} reaches its analytic lift`);
-    const reverseOvertravel = contactAtWheelAngle(
-      stop.key,
-      start.wheelAngle + geometry.toothPitch * 0.01,
-    );
-    assert.equal(reverseOvertravel.contact, true);
-    assert.equal(reverseOvertravel.edge.type, 'reverse-lock-face');
-    assert.ok(reverseOvertravel.lift > 0);
+    // Reverse locking on the steep face is checked on the finite toes in
+    // ratchet-stop-240-working-parts.test.mjs.
   }
   disposeModel(model.root);
 });
@@ -483,7 +488,7 @@ test('movement 240 closes in six comparison cycles and leaves 269 authored', () 
     );
     near(
       state.wheelAngle - source.wheelAngle,
-      -cycle * 3 * geometry.toothPitch,
+      cycle * 3 * geometry.toothPitch,
       2e-14,
       `three indexes in comparison cycle ${cycle}`,
     );
@@ -493,9 +498,9 @@ test('movement 240 closes in six comparison cycles and leaves 269 authored', () 
     }
   }
   const closure = stateAtCycleCoordinate(geometry.initialCycleCoordinate + 6);
-  near(closure.wheelAngle - source.wheelAngle, -FULL_TURN, 3e-14,
+  near(closure.wheelAngle - source.wheelAngle, FULL_TURN, 3e-14,
     'eighteen demonstrated teeth close one wheel revolution');
-  assert.equal(model.root.userData.transmission.wheelRevolutionsPerSixCycles, -1);
+  assert.equal(model.root.userData.transmission.wheelRevolutionsPerSixCycles, 1);
 
   const movement507 = catalog.movements[506];
   const model289 = createMovementModel(movement507);

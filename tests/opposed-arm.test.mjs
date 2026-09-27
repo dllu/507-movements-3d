@@ -19,7 +19,7 @@ test('079 follows the engraved joints and 33-tooth axial face ratchet',()=>{
  source([1232.452865064695,769.3401109057302]).forEach((v,i)=>near(p.sourceSlider[i],v));
  const wheel=u.parts.wheelBody.geometry.userData.faceRatchet;
  assert.ok(wheel.crest>wheel.valley&&wheel.valley>wheel.web&&wheel.web>wheel.back);assert.equal(wheel.teeth,33);
- assert.match(u.idealConstraints,/torsional hinge preload/);dispose(model);
+ assert.match(u.idealConstraints,/falls under gravity onto the crown teeth/);dispose(model);
 });
 
 test('079 all rendered components have closed oriented triangle surfaces',()=>{
@@ -52,15 +52,19 @@ test('079 both fixed-length rods close through the entire horizontal stroke',()=
  dispose(model);
 });
 
-test('079 preserves startup, continuous four-tooth advance and deterministic seeking',()=>{
+test('079 preserves startup, nearly continuous three-tooth advance and deterministic seeking',()=>{
  const model=makeOpposedArmDrive(),u=model.root.userData,p=u.geometry;
- near(sampleOpposedArmMotion(0).theta,0);near(-sampleOpposedArmMotion(4).theta/p.pitch,3.6850632702,1e-7);
+ near(sampleOpposedArmMotion(0).theta,0);near(-sampleOpposedArmMotion(4).theta/p.pitch,2.2569687534,1e-7);
  for(const time of [4,4.11,5.7,7.99,12.8,133.71]){
-  const a=sampleOpposedArmMotion(time),b=sampleOpposedArmMotion(time+4);near(b.theta-a.theta,-4*p.pitch);
+  const a=sampleOpposedArmMotion(time),b=sampleOpposedArmMotion(time+4);near(b.theta-a.theta,-3*p.pitch,1e-9);
   for(const key of ['upperBeta','lowerBeta','sliderX'])near(a[key],b[key]);
   model.update(time);const state={...u.kinematics};model.update(time+17);model.update(time);assert.deepEqual(u.kinematics,state);
  }
- for(let i=0;i<4000;i++)assert.ok(sampleOpposedArmMotion(4+(i+1)/1000).theta<sampleOpposedArmMotion(4+i/1000).theta);
+ // The wheel never runs back and coasts between pushes, standing still for
+ // under 3% of the cycle.
+ let standing=0;
+ for(let i=0;i<4000;i++){const a=sampleOpposedArmMotion(4+i/1000).theta,b=sampleOpposedArmMotion(4+(i+1)/1000).theta;assert.ok(b<=a);if(b===a)standing++;}
+ assert.ok(standing<.03*4000,`standing ${standing}`);
  for(const cycle of [1,2,33,60])for(const key of ['theta','upperBeta','lowerBeta','sliderX'])near(sampleOpposedArmMotion(cycle*4-1e-9)[key],sampleOpposedArmMotion(cycle*4+1e-9)[key],1e-8);
  const normal=sampleOpposedArmMotion(4.57),fast=sampleOpposedArmMotion(2.285,{period:2});
  for(const key of ['theta','upperBeta','lowerBeta','sliderX'])near(normal[key],fast[key]);
@@ -85,7 +89,7 @@ test('079 radial arms and both rod ends contain real shaft bores',()=>{
 
 test('079 each driving pawl bears against actual ratchet tooth material',()=>{
  const model=makeOpposedArmDrive(),u=model.root.userData,wheel=u.parts.wheelBody,solid=solidSurface(wheel.geometry);
- for(const [time,key]of [[15.988999999985412/2,'upper'],[12.125999999994415/2,'lower']]){
+ for(const [time,key]of [[4.3,'upper'],[6.4,'lower']]){
   const pawl=u.parts[key+'Pawl'],points=surfacePoints(pawl.geometry),penetrates=()=>{
    const matrix=wheel.matrixWorld.clone().invert().multiply(pawl.matrixWorld);
    return points.some(v=>{const q=v.clone().applyMatrix4(matrix);return solid.box.containsPoint(q)&&solid.inside(q)&&solid.distance(q)>1e-6;});
@@ -96,15 +100,46 @@ test('079 each driving pawl bears against actual ratchet tooth material',()=>{
  dispose(model);
 });
 
-test('079 independent solid families clear at reversals, contacts and the repaired interpolation',()=>{
+test('079 independent solid families clear at reversals and contacts',()=>{
  const model=makeOpposedArmDrive(),u=model.root.userData,parts=Object.entries(u.parts).map(([name,mesh])=>({name,mesh,solid:solidSurface(mesh.geometry),points:surfacePoints(mesh.geometry)}));
- for(const time of [0,.4,1,2,3,4,8.135343750003717/2,5,12.125999999994415/2,7,15.988999999985412/2,8,16]){
+ for(const time of [0,.4,1,2,3,4,4.3,5,6,6.4,7,7.95,8,16]){
   model.update(time);const boxes=parts.map(p=>p.solid.box.clone().applyMatrix4(p.mesh.matrixWorld));
   for(let i=0;i<parts.length;i++)for(let j=i+1;j<parts.length;j++)if(u.families[parts[i].name]!==u.families[parts[j].name]&&boxes[i].intersectsBox(boxes[j])){
    for(const [a,b]of [[parts[i],parts[j]],[parts[j],parts[i]]]){
     const matrix=b.mesh.matrixWorld.clone().invert().multiply(a.mesh.matrixWorld);
     for(const v of a.points){const q=v.clone().applyMatrix4(matrix);if(b.solid.box.containsPoint(q)&&b.solid.inside(q))assert.ok(b.solid.distance(q)<=1e-6,`${time}: ${a.name}/${b.name}`);}
    }
+  }
+ }
+ dispose(model);
+});
+
+test('079 both pawls are the same simple blade on their drawn pivots, seated on the teeth',()=>{
+ const model=makeOpposedArmDrive(),u=model.root.userData,p=u.geometry,[a,b]=['upper','lower'].map(k=>u.parts[k+'Pawl'].geometry.attributes.position.array);
+ assert.deepEqual(Array.from(a),Array.from(b));
+ for(const key of ['upper','lower']){
+  // Every outline vertex lies on one of two circular arcs meeting at the tip.
+  const ring=p.arms[key].pawlContour[0][0].slice(0,-1),tip=p.arms[key].pawlTip;
+  near(tip[0],0);near(tip[1],-p.pawl.length);
+  for(const side of [-1,1]){
+   const arc=ring.filter(([x,y])=>side*x>=-1e-12&&y<-p.pawl.root+1e-9),fit=(u,v,w)=>{
+    const d=2*(u[0]*(v[1]-w[1])+v[0]*(w[1]-u[1])+w[0]*(u[1]-v[1])),s=q=>q[0]*q[0]+q[1]*q[1];
+    return[(s(u)*(v[1]-w[1])+s(v)*(w[1]-u[1])+s(w)*(u[1]-v[1]))/d,(s(u)*(w[0]-v[0])+s(v)*(u[0]-w[0])+s(w)*(v[0]-u[0]))/d];
+   },c=fit(arc[0],arc[Math.floor(arc.length/2)],arc.at(-1)),r=Math.hypot(arc[0][0]-c[0],arc[0][1]-c[1]);
+   for(const q of arc)near(Math.hypot(q[0]-c[0],q[1]-c[1]),r,1e-9);
+  }
+ }
+ // Each tilt is the deepest the teeth allow: tipping the pawl further down
+ // by 0.002 rad at any sampled pose drives it into the wheel.
+ const wheel=u.parts.wheelBody,solid=solidSurface(wheel.geometry);
+ for(let i=0;i<40;i++){
+  const time=4+i/10,state=sampleOpposedArmMotion(time);model.update(time);
+  for(const key of ['upper','lower']){
+   const pawl=u.parts[key+'Pawl'],points=surfacePoints(pawl.geometry);
+   u.setState({...state,[key+'Beta']:state[key+'Beta']+.002});
+   const matrix=wheel.matrixWorld.clone().invert().multiply(pawl.matrixWorld);
+   assert.ok(points.some(v=>{const q=v.clone().applyMatrix4(matrix);return solid.box.containsPoint(q)&&solid.inside(q);}),`${key} floats at ${time}`);
+   model.update(time);
   }
  }
  dispose(model);

@@ -8,6 +8,24 @@ const rectangle=(l,b,r,t)=>poly([[l,b],[r,b],[r,t],[l,t]]);
 const alongX=g=>g.applyMatrix4(new THREE.Matrix4().set(0,0,1,0,1,0,0,0,0,1,0,0,0,0,0,1));
 export {THREE};
 
+/**
+ * The follower's head for 106 and 107: a collar clamped round the rod by the
+ * cross pin, and a round stem that runs from the collar's underside, through
+ * a concave fillet, straight down into the working pin. Both are symmetric
+ * about the pin's axis and centred on the rod's mid-plane (the pin's plane),
+ * so the stem is buried in the collar above and in the pin below.
+ */
+export function followerHead(f,{width,top,stemRadius,stemEnd,collarRadius,fillet}) {
+  const x=f.initialTip,bottom=f.rodY-f.rodHalfHeight-.04,half=width/2,corner=.03,depth=f.rodHalfDepth+.04,outline=[];
+  for(const [cx,cy,start] of [[x+half-corner,top-corner,0],[x-half+corner,top-corner,Math.PI/2],[x-half+corner,bottom+corner,Math.PI],[x+half-corner,bottom+corner,1.5*Math.PI]])
+    for(let i=0;i<=8;i++){const a=start+Math.PI/2*i/8;outline.push([cx+corner*Math.cos(a),cy+corner*Math.sin(a)]);}
+  const pinCenter=[x,f.rodY];
+  const profile=[[stemEnd,0],[stemEnd,stemRadius]];
+  for(let i=0;i<=16;i++){const t=Math.PI/2*i/16;profile.push([bottom-fillet+fillet*Math.sin(t),stemRadius+fillet*(1-Math.cos(t))]);}
+  profile.push([bottom+.02,collarRadius],[bottom+.02,0]);
+  return {pinCenter,depth,outline,stem:turned(profile,128).rotateX(-Math.PI/2).translate(x,0,0)};
+}
+
 export function makeBarrelCamGeometry(options={}) {
   const f=makeBarrelCamProfile(options),e=source.edges,root=new THREE.Group(),parts={},families={},blocks={},collision={};
   const add=(name,geometry,family,color)=>{
@@ -31,15 +49,16 @@ export function makeBarrelCamGeometry(options={}) {
     const bore=rectangle(f.rodY-f.rodHalfHeight-.003,-f.rodHalfDepth-.003,f.rodY+f.rodHalfHeight+.003,f.rodHalfDepth+.003);
     add(side+'Guide',alongX(plate(clip.difference(outline,bore),f.x(e[side+'GuideLeft']),f.x(e[side+'GuideRight']))),'frame',PALETTE.frame);
   }
-  const pinCenter=[f.x(source.pin.center[0]),f.rodY],pinRadius=source.pin.radius/100;
-  const pinHole=poly(circle(pinCenter,pinRadius+.0015,128));
+  const pinRadius=source.pin.radius/100;
+  // Brown's head is a block on the rod with a neck bending down to the ball;
+  // modelled symmetric about the ball's axis (the block moves 0.044 right).
+  const h=followerHead(f,{width:(e.headRight-e.headLeft)/100,top:f.y(e.headTop),stemRadius:.05,stemEnd:(f.pinLow+f.pinHigh)/2,collarRadius:.085,fillet:.035});
+  const pinHole=poly(circle(h.pinCenter,pinRadius+.0015,128));
   add('rod',plate(clip.difference(rectangle(f.x(source.rodEnds[0]),f.rodY-f.rodHalfHeight,f.x(source.rodEnds[1]),f.rodY+f.rodHalfHeight),pinHole),-f.rodHalfDepth,f.rodHalfDepth),'follower',PALETTE.driven);
-  const head=new THREE.Shape();head.moveTo(e.headLeft,e.headTop);head.lineTo(e.headRight,e.headTop);head.lineTo(e.headRight,209);
-  head.bezierCurveTo(274,214,268,215,268,223);head.lineTo(268,236);head.lineTo(263,236);
-  head.bezierCurveTo(264,220,261,215,e.headLeft,210);head.closePath();
-  const headContour=head.getPoints(32).map(p=>[f.x(p.x),f.y(p.y)]);
-  add('head',plate(clip.difference(poly(headContour),pinHole),f.rodHalfDepth,f.rodHalfDepth+.08),'follower',PALETTE.driven);
-  add('crossPin',disk(pinRadius,-f.rodHalfDepth-.015,f.rodHalfDepth+.09,128).translate(...pinCenter,0),'follower',PALETTE.ink);
+  const headContour=h.outline;
+  add('head',plate(clip.difference(poly(headContour),pinHole),-h.depth,h.depth),'follower',PALETTE.driven);
+  add('stem',h.stem,'follower',PALETTE.driven);
+  add('crossPin',disk(pinRadius,-h.depth-.015,h.depth+.015,128).translate(...h.pinCenter,0),'follower',PALETTE.ink);
   const cap=[];
   for(let i=0;i<=24;i++){const a=-Math.PI/2+Math.PI*i/48;cap.push([f.pinLow+f.pinRadius*Math.sin(a),f.pinRadius*Math.cos(a)]);}
   for(let i=0;i<=24;i++){const a=Math.PI*i/48;cap.push([f.pinHigh+f.pinRadius*Math.sin(a),f.pinRadius*Math.cos(a)]);}

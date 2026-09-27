@@ -7,42 +7,13 @@ import {
 } from './primitives.js';
 
 import { fitPistonGuide } from './piston-guide-parts.js';
+import { plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { toCreasedNormals } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
-}
-
-function cylinderBetween(start, end, radius, material, segments = 12) {
-  const direction = end.clone().sub(start);
-  const length = direction.length();
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    direction.normalize(),
-  );
-  return cylinder;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const direction = end.clone().sub(start);
-  const length = direction.length();
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(length, width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.quaternion.setFromUnitVectors(
-    new THREE.Vector3(1, 0, 0),
-    direction.normalize(),
-  );
-  return beam;
 }
 
 class CycloidalCheekCurve extends THREE.Curve {
@@ -301,14 +272,9 @@ function cycloidalIsochronousPendulum(movement) {
     oscillationAmplitude,
   );
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.17,
-    roughness: 0.64,
-  });
   const cheekMaterial = matte(PALETTE.driver, {
     metalness: 0.12,
     roughness: 0.59,
-    side: THREE.DoubleSide,
   });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.25,
@@ -320,51 +286,76 @@ function cycloidalIsochronousPendulum(movement) {
   });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.43 });
 
-  const makeCheekPlate = (side) => {
-    const shape = new THREE.Shape();
-    const samples = 256;
-    for (let index = 0; index <= samples; index += 1) {
-      const magnitude = maximumCheekParameter * index / samples;
-      const theta = side * magnitude;
-      const point = cheekPointAtParameter(theta, 0);
-      point.x += side * (cordRadius + contactClearance) * Math.cos(theta / 2);
-      point.y += (cordRadius + contactClearance) * Math.sin(magnitude / 2);
-      if (index === 0) shape.moveTo(point.x, point.y);
-      else shape.lineTo(point.x, point.y);
-    }
-    for (let index = samples; index >= 0; index -= 1) {
-      const magnitude = maximumCheekParameter * index / samples;
-      const theta = side * magnitude;
-      const point = cheekPointAtParameter(theta, 0);
-      point.x += side * (cordRadius + contactClearance) * Math.cos(theta / 2);
-      point.y += (cordRadius + contactClearance) * Math.sin(magnitude / 2);
-      shape.lineTo(
-        point.x + side * cheekThickness * 0.10,
-        point.y + cheekThickness,
-      );
-    }
-    shape.closePath();
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: false,
-      bevelSegments: 2,
-      bevelSize: 0.018,
-      bevelThickness: 0.018,
-      curveSegments: 1,
-      depth: cheekDepth,
-    });
-    geometry.translate(0, 0, mechanismPlaneZ - cheekDepth / 2);
-    const plate = new THREE.Mesh(geometry, cheekMaterial);
-    plate.userData.fixed = true;
-    plate.userData.role = side > 0
-      ? 'fixed-right-cycloidal-cheek-contact-surface'
-      : 'fixed-left-cycloidal-cheek-contact-surface';
-    return plate;
+  // Brown draws the crossbar, the two posts, the triangular bracing and the
+  // two cycloidal cheeks with no line between them: one casting. It is one
+  // flat extrusion in the cheeks' plane, bounded below by the exact cycloidal
+  // contact curves (offset by the cord radius), with two triangular lightening
+  // holes inside each bracket, placed from the plate.
+  const contactOffset = cordRadius + contactClearance;
+  const contactPoint = (magnitude) => {
+    const point = cheekPointAtParameter(magnitude, 0);
+    return [
+      point.x + contactOffset * Math.cos(magnitude / 2),
+      point.y + contactOffset * Math.sin(magnitude / 2),
+    ];
   };
-  const cheekPlates = [-1, 1].map((side) => {
-    const cheek = makeCheekPlate(side);
-    root.add(cheek);
-    return cheek;
-  });
+  const cheekSamples = 256;
+  const contactCurve = Array.from({ length: cheekSamples + 1 },
+    (_, index) => contactPoint(maximumCheekParameter * index / cheekSamples));
+  // The cheek band: the contact curve and its back, a thin double-lined band.
+  const cheekBand = [
+    ...contactCurve,
+    ...contactCurve.slice().reverse().map(([x, y]) => [
+      x + cheekThickness * 0.10,
+      y + cheekThickness,
+    ]),
+  ];
+  // Brown's crossbar spans 240 of the cheeks' 515 px; its underside is at
+  // the cusp, where the cord is tied: the cord's end bears on it.
+  const barHalfSpan = 0.99;
+  const barLow = cuspY;
+  const barHigh = cuspY + 0.215;
+  const postHalfSpan = 0.76;
+  const postWidth = 0.14;
+  const postOuterX = postHalfSpan + postWidth / 2;
+  const postInnerX = postHalfSpan - postWidth / 2;
+  // The bracket web fills the region between the crossbar, the post and the
+  // contact curve.
+  const webContact = contactCurve.filter(([x]) => x < postOuterX);
+  const bracketWeb = [
+    ...webContact,
+    [postOuterX, webContact.at(-1)[1]],
+    [postOuterX, barLow + 0.05],
+    [webContact[0][0], barLow + 0.05],
+  ];
+  // Plate pixels (Brown's cusp at 273, 146; 0.00825 per px): hole A under
+  // the crossbar, hole B against the post, the diagonal brace between them.
+  const holes = [
+    [[0.223, -0.012], [0.652, -0.012], [0.355, -0.314]],
+    [[postInnerX, -0.18], [0.412, -0.47], [postInnerX, -0.742]],
+  ];
+  const mirror = (outline, side) => outline.map(([x, y]) => [side * x, y]);
+  const sided = (outline, side) => (side > 0 ? mirror(outline, side) : mirror(outline, side).reverse());
+  let castingOutline = polygonClipping.union(
+    poly([[-barHalfSpan, barLow], [barHalfSpan, barLow], [barHalfSpan, barHigh], [-barHalfSpan, barHigh]]),
+    ...[-1, 1].flatMap((side) => [poly(sided(bracketWeb, side)), poly(sided(cheekBand, side))]),
+  );
+  for (const side of [-1, 1]) {
+    for (const hole of holes) {
+      castingOutline = polygonClipping.difference(castingOutline,
+        poly(sided(hole.map(([x, y]) => [x, cuspY + y]), side)));
+    }
+  }
+  const castingFlat = plate(castingOutline, mechanismPlaneZ - cheekDepth / 2, mechanismPlaneZ + cheekDepth / 2);
+  const castingGeometry = toCreasedNormals(castingFlat, Math.PI / 6);
+  castingGeometry.userData.plate = castingFlat.userData.plate;
+  castingFlat.dispose();
+  const frameCasting = new THREE.Mesh(castingGeometry, cheekMaterial);
+  frameCasting.userData.fixed = true;
+  frameCasting.userData.role = 'fixed-one-piece-frame-with-bracing-and-cycloidal-cheek-contact-surfaces';
+  frameCasting.userData.holes = holes;
+  root.add(frameCasting);
+  const cheekPlates = [frameCasting];
 
   const cheekCurves = {
     left: new CycloidalCheekCurve({
@@ -402,45 +393,8 @@ function cycloidalIsochronousPendulum(movement) {
     return rail;
   });
 
-  const topBeam = new THREE.Mesh(
-    // Brown's crossbar spans 240 of the cheeks' 515 px, its underside at
-    // the cusp.
-    new THREE.BoxGeometry(1.98, 0.21, 0.48),
-    frameMaterial,
-  );
-  topBeam.position.set(0, cuspY + 0.125, -0.03);
-  topBeam.userData.fixed = true;
-  topBeam.userData.role = 'fixed-upper-crossbar-over-cycloidal-cheeks';
-  root.add(topBeam);
-  // Upper surface of a cheek plate at |x| (cheek contact curve plus its
-  // thickness), found by bisection on the cycloid parameter.
-  const cheekTopYAt = (x) => {
-    let low = 0;
-    let high = maximumCheekParameter;
-    for (let iteration = 0; iteration < 60; iteration += 1) {
-      const middle = (low + high) / 2;
-      if (cycloidRadius * (middle - Math.sin(middle)) < x) low = middle;
-      else high = middle;
-    }
-    return cheekPointAtParameter(low, 0).y + cheekThickness * 0.9;
-  };
-  // Brown's brackets hang close in under the crossbar (about 0.76 out),
-  // each an upright post down to its cheek with a triangular brace inside.
-  const postHalfSpan = 0.76;
-  const postWidth = 0.14;
-  const sidePosts = [-1, 1].map((side) => {
-    const bottomY = cheekTopYAt(postHalfSpan - postWidth / 2) + 0.01;
-    const topY = cuspY + 0.03;
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(postWidth, topY - bottomY, 0.38),
-      frameMaterial,
-    );
-    post.position.set(side * postHalfSpan, (topY + bottomY) / 2, -0.04);
-    post.userData.fixed = true;
-    post.userData.role = 'fixed-side-bracket-supporting-cycloidal-cheek';
-    root.add(post);
-    return post;
-  });
+  // The cord is tied at the cusp, inside the crossbar; Brown draws no boss
+  // or stud there. Both are kept as hidden data only.
   const suspensionBoss = new THREE.Mesh(
     new THREE.CylinderGeometry(0.105, 0.105, 0.43, 28),
     darkMaterial,
@@ -450,41 +404,14 @@ function cycloidalIsochronousPendulum(movement) {
   suspensionBoss.userData.fixed = true;
   suspensionBoss.userData.role =
     'central-cusp-anchor-of-inextensible-pendulum-cord';
+  suspensionBoss.visible = false;
   root.add(suspensionBoss);
   const anchorPin = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.07, 24), darkMaterial);
   anchorPin.rotation.x = Math.PI / 2;
   anchorPin.position.set(0, cuspY, mechanismPlaneZ - cordRadius - 0.036);
   anchorPin.userData.role = 'cord-anchor-stud-to-rear-suspension-boss';
+  anchorPin.visible = false;
   root.add(anchorPin);
-
-  const braceMembers = [];
-  for (const side of [-1, 1]) {
-    const inner = new THREE.Vector3(side * 0.34, cuspY - 0.01, -0.22);
-    const outerTop = new THREE.Vector3(
-      side * (postHalfSpan - postWidth / 2 - 0.03),
-      cuspY - 0.01,
-      -0.22,
-    );
-    const outerLow = new THREE.Vector3(
-      side * (postHalfSpan - postWidth / 2 - 0.03),
-      cheekTopYAt(postHalfSpan) + 0.20,
-      -0.22,
-    );
-    const triangle = [[inner, outerLow], [outerLow, outerTop], [outerTop, inner]];
-    for (const [start, end] of triangle) {
-      const brace = beamBetween(
-        start,
-        end,
-        0.055,
-        0.10,
-        frameMaterial,
-      );
-      brace.userData.fixed = true;
-      brace.userData.role = 'triangular-cheek-support-brace';
-      root.add(brace);
-      braceMembers.push(brace);
-    }
-  }
 
   const bobPathCurve = new CycloidalBobPathCurve({
     amplitude: oscillationAmplitude,
@@ -600,14 +527,12 @@ function cycloidalIsochronousPendulum(movement) {
       bob,
       bobIndex,
       bobSphere,
-      braceMembers,
       cheekContactRails,
       cheekPlates,
+      frameCasting,
       contactBead,
       cord,
-      sidePosts,
       suspensionBoss,
-      topBeam,
     },
     curves: {
       bobPath: bobPathCurve,

@@ -14,7 +14,7 @@ test('107 closed solids and compiled convex prisms preserve the actual groove wa
   let vertices=0;
   try {
     assert.equal(p.model.nq,2);assert.equal(p.model.nu,1);assert.equal(p.model.neq,0);assert.equal(p.model.jnt_stiffness[1],0);
-    assert.equal(Object.keys(u.parts).length,11);assert.equal(p.model.nmesh,4*f.segments/f.repetitions);
+    assert.equal(Object.keys(u.parts).length,12);assert.equal(p.model.nmesh,4*f.segments/f.repetitions);
     for(const part of Object.values(u.parts)) {
       const a=inspectWeightedClutchSolid(part.geometry);assert.equal(a.components,1);assert.ok(a.volume>0);
       for(const key of ['degenerate','wrongNormals','nonfinite','unmatchedEdges'])assert.equal(a[key],0,part.name+' '+key);
@@ -50,7 +50,7 @@ test('107 closed solids and compiled convex prisms preserve the actual groove wa
       assert.ok(Math.abs(law.derivative)<=f.peakSlope+1e-12);
     }
     assert.ok(100/curvature>9,'the U-shaped reversals must stay broad');
-    t.diagnostic(JSON.stringify({minimumPitchRadiusPixels:100/curvature,compiledVertices:vertices,solids:11,contactGeometries:p.model.ngeom}));
+    t.diagnostic(JSON.stringify({minimumPitchRadiusPixels:100/curvature,compiledVertices:vertices,solids:12,contactGeometries:p.model.ngeom}));
   }finally{v.dispose();}
 });
 
@@ -119,4 +119,17 @@ test('107 two output cycles retain the stroke under timestep and groove refineme
     t.diagnostic(JSON.stringify({timestepDifferencePixels:100*first,refinedDifferencePixels:100*second,meshDifferencePixels:100*mesh}));
     assert.ok(first*100<.2);assert.ok(second<first);assert.ok(mesh*100<.2);
   }finally{for(const v of variants)v.dispose();}
+});
+
+test('107 stem shoulders onto the pin and is buried in the collar, symmetric about the pin axis',()=>{
+  const v=makeMujocoSerpentineCam(mujoco),u=v.root.userData,f=u.profile;
+  try {
+    const box=name=>{const g=u.parts[name].geometry;g.computeBoundingBox();return g.boundingBox;};
+    const stem=box('stem'),head=box('head'),shoe=box('shoe'),x=f.initialTip;
+    for(const b of [stem,head,shoe]){assert.ok(Math.abs((b.min.x+b.max.x)/2-x)<1e-6);assert.ok(Math.abs(b.min.z+b.max.z)<1e-6);}
+    assert.ok(Math.abs(stem.min.y-f.pinHigh)<1e-6&&shoe.max.y>stem.min.y+.02,'pin runs up into the stem');
+    assert.ok(stem.min.y-f.radius>.01,'stem end clears the barrel');
+    assert.ok(stem.max.y>head.min.y+.01,'stem enters the collar');
+    assert.ok(head.max.z>f.rodHalfDepth&&head.min.z<-f.rodHalfDepth,'collar wraps the rod');
+  }finally{v.dispose();}
 });

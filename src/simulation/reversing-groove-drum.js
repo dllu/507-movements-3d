@@ -83,7 +83,11 @@ export function makeReversingGrooveDrum() {
   add('shaft', new THREE.CylinderGeometry(.105, .105, 5.628, 48), 'rotor', PALETTE.ink);
   const rodLocalY = (272 - (79 + 464) / 2) * .014 - (g.centerY - g.amplitude);
   add('rod', new THREE.CylinderGeometry(g.rodRadius, g.rodRadius, g.rodLength, 48), 'rod', PALETTE.driven, [g.rodX, rodLocalY, 0]);
-  add('studSeat', new THREE.BoxGeometry(.196, .616, .196), 'rod', PALETTE.brass, [.84, 0, 0]);
+  // The seat runs on into the rod as far as its axis, so the rod passes
+  // through the seat's back (its corners stay inside the rod) instead of
+  // touching the flat seat along one line.
+  const seatLeft = .742, seatRight = g.rodX;
+  add('studSeat', new THREE.BoxGeometry(seatRight - seatLeft, .616, .196), 'rod', PALETTE.brass, [(seatLeft + seatRight) / 2, 0, 0]);
   const stemLength = .84 - g.studCenterRadius;
   const stem = add('studStem', new THREE.CylinderGeometry(.055, .055, stemLength, 48), 'rod', PALETTE.ink, [g.studCenterRadius + stemLength / 2, 0, 0]);
   stem.rotation.z = Math.PI / 2;

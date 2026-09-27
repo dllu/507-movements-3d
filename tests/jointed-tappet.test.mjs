@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import {makeJointedTappetCounter} from '../src/simulation/jointed-tappet.js';
 import {sampleJointedTappetMotion} from '../src/simulation/jointed-tappet-motion.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
+import {polygonClipping} from '../src/simulation/finite-plate-geometry.js';
 
 const near=(a,b,tolerance=1e-9)=>assert.ok(Math.abs(a-b)<=tolerance,`${a} != ${b}`);
 const dispose=model=>model.root.traverse(x=>{x.geometry?.dispose();x.material?.dispose();});
@@ -27,7 +28,7 @@ test('076 locates C, the hinged end B, the holding pawl and D on a complete coax
   for(let i=1;i<4;i++){const other=u.parts[`driverStud${i}`].position,angle=Math.atan2(stud.y,stud.x)+i*Math.PI/2;
     near(other.x,p.studOrbit*Math.cos(angle),1e-12);near(other.y,p.studOrbit*Math.sin(angle),1e-12);}
   assert.deepEqual(u.blocks.driver.position.toArray(),[0,0,0]);assert.deepEqual(u.blocks.wheel.position.toArray(),[0,0,0]);
-  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,29);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
+  assert.equal(p.teeth,20);assert.equal(Object.keys(u.parts).length,24);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
   assert.match(u.idealConstraints,/reconstruction assumptions/);near(u.profile.physics.load,3);assert.deepEqual(u.profile.physics.damping,[3,.008,100,.003]);
   for(const family of ['driver','wheel','tappet','dog','holding']){
     near(u.masses[family].volume*u.profile.physics.density,u.profile.physics.mass[family].mass,1e-10);
@@ -62,7 +63,7 @@ test('076 every physical mesh is closed, connected, outward and nondegenerate',(
 
 test('076 all four bearings have real bores with supporting material around them',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
-  for(const [name,center,z,r] of [['driverBody',[0,0],-.25,.106],['wheelBody',[0,0],0,.106],['tappetBody',[0,0],.13,.056],['tappetBody',p.B,.13,.032],['dogBody',[0,0],.22,.032],['holdingBody',[0,0],.22,.039]]){
+  for(const [name,center,z,r] of [['driverBody',[0,0],-.25,.106],['wheelBody',[0,0],0,.106],['tappetBody',[0,0],.06,.056],['tappetBody',p.B,.06,.032],['tappetRearCheek',[0,0],-.06,.056],['tappetRearCheek',p.B,-.06,.032],['tappetWeb',[0,0],0,.056],['dogBody',[0,0],0,.032],['holdingBody',[0,0],0,.039]]){
     const solid=solidSurface(u.parts[name].geometry);
     for(let i=0;i<8;i++){
       const angle=2*Math.PI*(i+.37)/8;
@@ -76,9 +77,10 @@ test('076 all four bearings have real bores with supporting material around them
 
 test('076 settles one counterclockwise tooth per stud, four per clockwise driver turn, and resets its joint',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
-  near(pose(model,0).q,0);near(pose(model,.2).q,.3);
+  near(pose(model,0).q,0);near(pose(model,.3).q,.3);
   assert.ok(pose(model,1).theta>p.wheelStart+1.1*p.pitch,'The wheel must pass one tooth for the holding pawl to drop in');
-  assert.ok(pose(model,1.556).alpha<-.9,'The joint must fold to pass the return tooth');
+  let fold=0;for(let t=1;t<2.2;t+=.01)fold=Math.min(fold,pose(model,t).alpha);
+  assert.ok(fold<-.8,'The joint must fold to pass the return tooth');
   // The stud tips the tappet only far enough to index one tooth: it
   // releases B within 60° of rest and the wheel overtravels under 1.25 teeth.
   let qMin=Infinity,thetaMax=-Infinity;
@@ -86,7 +88,7 @@ test('076 settles one counterclockwise tooth per stud, four per clockwise driver
   assert.ok(p.restQ-qMin<Math.PI/3&&qMin<-.6,`tappet swing ${p.restQ-qMin}`);
   assert.ok(thetaMax<p.wheelStart+1.25*p.pitch,`wheel overtravel ${(thetaMax-p.wheelStart)/p.pitch}`);
   for(const cycle of [0,1,2,9,19,20,63]){
-    const held=pose(model,cycle*3+2);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,.3);near(held.alpha,0);near(held.holdingAngle,0);
+    const held=pose(model,cycle*3+2.5);near(held.theta,p.wheelStart+(cycle+1)*p.pitch);near(held.q,.3);near(held.alpha,0);near(held.holdingAngle,0);
     const next=pose(model,(cycle+1)*3);near(next.theta,held.theta);near(next.driverAngle,-2*Math.PI*(cycle+1)/4);near(next.q,.3);
   }
   for(const time of [3.07,3.53,4.1,5.2]){
@@ -108,13 +110,13 @@ test('076 the cached clock is continuous at wraps, clamps negative time and reje
   slow.angularVelocities.forEach((v,k)=>near(fast.angularVelocities[k],v*1.5));
 });
 
-test('076 actual working noses and mechanical stops resist motion into their contacting surfaces',()=>{
+test('076 the pawls\' own tips and B\'s heel resist motion into their contacting surfaces',()=>{
   const model=makeJointedTappetCounter(),u=model.root.userData;
   const cases=[
-    {time:.8,a:'dogNose',b:'wheelBody',block:'wheel',delta:-1e-4},
-    {time:2,a:'holdingNose',b:'wheelBody',block:'wheel',delta:-1e-4},
-    {time:0,a:'dogStopPin',b:'dogStopSector',block:'dog',delta:1e-3},
-    {time:2,a:'tappetRestPin',b:'tappetRestSector',block:'tappet',delta:1e-3},
+    {time:.8,a:'dogBody',b:'wheelBody',block:'wheel',delta:-1e-4},
+    {time:2.5,a:'holdingBody',b:'wheelBody',block:'wheel',delta:-1e-4},
+    {time:.8,a:'dogBody',b:'tappetWeb',block:'dog',delta:1e-3},
+    {time:2.5,a:'tappetRestPin',b:'tappetBody',block:'tappet',delta:1e-3},
     {time:.7,a:'driverStud',b:'tappetBody',block:'driver',delta:-1e-4},
   ];
   for(const c of cases){
@@ -122,11 +124,12 @@ test('076 actual working noses and mechanical stops resist motion into their con
       points:surfacePoints(u.parts[a].geometry),solid:solidSurface(u.parts[b].geometry)}));
     // The long stud spans past both faces of the thin bar. Probe its actual
     // straight side generators inside the bar's axial interval as well.
-    if(c.a==='driverStud'){
-      const position=u.parts.driverStud.geometry.attributes.position;
+    // The rest pin likewise spans the whole bar; probe its side at mid-cheek.
+    if(c.a==='driverStud'||c.a==='tappetRestPin'){
+      const position=u.parts[c.a].geometry.attributes.position,radius=c.a==='driverStud'?.06:.02;
       for(let i=0;i<position.count;i++){
         const point=new THREE.Vector3().fromBufferAttribute(position,i);
-        if(Math.hypot(point.x,point.y)>.06){point.z=.13;pairs[0].points.push(point);}
+        if(Math.hypot(point.x,point.y)>radius){point.z=.06;pairs[0].points.push(point);}
       }
     }
     const penetrates=()=>{
@@ -192,5 +195,48 @@ test('076 default view frames A, the pawls and the tappet throughout and Brown\'
     return fit.containsPoint(stud.setZ(0));};
   assert.ok(studInView(0));assert.ok([3,4.5,6,7.5].some(time=>!studInView(time)),'D leaves the view');assert.ok(studInView(4*u.profile.period));
   near(Math.hypot(...studVector),u.geometry.studOrbit,1e-12);
+  dispose(model);
+});
+
+test('076 B and the click are single plain plates in the wheel\'s plane, with no noses, pins or stop pieces',()=>{
+  const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry;
+  for(const family of ['dog','holding']){
+    const meshes=Object.keys(u.parts).filter(name=>u.families[name]===family);assert.equal(meshes.length,1,family);
+    const {low,high}=u.parts[meshes[0]].geometry.userData.plate;
+    assert.ok(low>=p.Z.wheel[0]&&high<=p.Z.wheel[1],`${family} lies within the wheel's thickness`);
+  }
+  for(const name of Object.keys(u.parts))assert.doesNotMatch(name,/Nose|StopSector|StopPin|RestSector|RestMount/);
+  // The tappet is one outline in three layers; the web's slot is B's swing.
+  for(const name of ['tappetBody','tappetRearCheek'])assert.deepEqual(u.parts[name].geometry.userData.plate.polygons,u.outlines.bar);
+  assert.ok(u.parts.tappetWeb.geometry.userData.plate.low>=p.Z.rear[1]-1e-12&&u.parts.tappetWeb.geometry.userData.plate.high<=p.Z.front[0]+1e-12);
+  dispose(model);
+});
+
+test('076 the click drops fully into the root after the overtravel and holds there; B drives the face',()=>{
+  const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry,c=u.contact,rot=(a,t)=>[a[0]*Math.cos(t)-a[1]*Math.sin(t),a[0]*Math.sin(t)+a[1]*Math.cos(t)];
+  let thetaMax=-Infinity;for(let t=3;t<6;t+=.002)thetaMax=Math.max(thetaMax,sampleJointedTappetMotion(t).theta);
+  assert.ok(thetaMax>p.wheelStart+2.1*p.pitch,'A must overrun a tooth so the click can drop');
+  for(const time of [2.5,5.5,8.7]){
+    const s=pose(model,time),nose=rot([p.PH[0]+rot(p.holdingNose,s.holdingAngle)[0],p.PH[1]+rot(p.holdingNose,s.holdingAngle)[1]],-s.theta);
+    const touching=c.wheel.features(nose).filter(f=>Math.abs(f.distance-p.noseRadius)<1e-5);
+    assert.equal(touching.length,2,`click tip seated on both flanks of the root at ${time}`);
+  }
+  // During the lift B's tip is on the face of the tooth it drives.
+  let driving=0;for(let t=.62;t<.8;t+=.01){const s=pose(model,t);if(Math.abs(c.gap(s.q,s.theta,s.alpha))<1e-5)driving++;}
+  assert.ok(driving>12,`B drives the tooth face through the lift (${driving})`);
+  dispose(model);
+});
+
+test('076 B and the click outlines stay clear of the ratchet outline throughout the cycle',()=>{
+  const model=makeJointedTappetCounter(),u=model.root.userData,p=u.geometry,clip=polygonClipping,
+    rot=(a,t)=>[a[0]*Math.cos(t)-a[1]*Math.sin(t),a[0]*Math.sin(t)+a[1]*Math.cos(t)],add=(a,b)=>[a[0]+b[0],a[1]+b[1]];
+  const area=mp=>mp.reduce((s,poly)=>s+poly.reduce((t,ring,i)=>{let A=0;for(let k=0;k<ring.length-1;k++)A+=ring[k][0]*ring[k+1][1]-ring[k+1][0]*ring[k][1];return t+(i?-1:1)*Math.abs(A/2);},0),0);
+  for(let t=0;t<6.2;t+=.01){
+    const s=sampleJointedTappetMotion(t),wheel=[[u.contact.wheel.points.map(q=>rot(q,s.theta))]],pivB=add(p.C,rot(p.B,s.q)),
+      dog=u.outlines.dog.map(r=>r.map(ring=>ring.map(q=>add(pivB,rot(q,s.q+s.alpha))))),
+      click=u.outlines.holding.map(r=>r.map(ring=>ring.map(q=>add(p.PH,rot(q,s.holdingAngle)))));
+    assert.ok(area(clip.intersection(dog,wheel))<1e-7,`B overlaps A at ${t}`);
+    assert.ok(area(clip.intersection(click,wheel))<1e-7,`click overlaps A at ${t}`);
+  }
   dispose(model);
 });

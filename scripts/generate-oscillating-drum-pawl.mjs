@@ -1,14 +1,53 @@
+// Offline design and lift table for movement 360's drum-mounted pawl.
+// The pawl is one flat bored link whose chisel nose lies along the ratchet's
+// radial driving face and the back of the tooth behind it, so while it
+// drives it sits in the root. The lift table is the least pawl rotation that
+// keeps the finite outline clear of the finite ratchet, as a function of the
+// relative tooth phase: during overrun the pawl rides each tooth back and
+// drops into the next root as the tooth corner passes, and the flywheel's
+// further run past that drop is the backlash that lets it seat before the
+// drum catches up with the face. No force integration.
 import fs from 'node:fs';
-import {drumContact as p,drumContactState as state} from '../src/simulation/oscillating-drum-contact.js';
-function polygonDistance(q){let best=Infinity,inside=false;const v=p.profile;for(let i=0,j=v.length-1;i<v.length;j=i++){const a=v[j],b=v[i],dx=b[0]-a[0],dy=b[1]-a[1],x=q[0]-a[0],y=q[1]-a[1],t=Math.max(0,Math.min(1,(x*dx+y*dy)/(dx*dx+dy*dy)));best=Math.min(best,Math.hypot(x-t*dx,y-t*dy));if((b[1]>q[1])!==(a[1]>q[1])&&q[0]<(a[0]-b[0])*(q[1]-b[1])/(a[1]-b[1])+b[0])inside=!inside;}return inside?-best:best;}
-function gap(lift,time){const a=p.base-lift,x=p.pivot[0]+p.length*Math.cos(a),y=p.pivot[1]+p.length*Math.sin(a),phase=state(time).relativeAngle;let result=Math.hypot(x,y)-p.rootRadius;const at=Math.floor((Math.atan2(y,x)-phase)/p.pitch);for(let j=at-1;j<=at+1;j++){const a=phase+j*p.pitch,c=Math.cos(a),s=Math.sin(a);result=Math.min(result,polygonDistance([c*x+s*y,-s*x+c*y]));}return result-p.rollerRadius;}
-// Find a bounded continuous outward path through the free-overrun interval.
-// The load interval is held at the exact seating angle. No force integration.
-const count=1536,levels=481,maxLift=.75,start=p.releaseTime,end=p.period+p.catchTime,step=maxLift/(levels-1),parents=new Int16Array((count+1)*levels).fill(-1);
-let costs=new Float64Array(levels).fill(Infinity);costs[0]=0;
-for(let i=1;i<=count;i++){const t=start+(end-start)*i/count,next=new Float64Array(levels).fill(Infinity);for(let j=0;j<levels;j++){const lift=j*step;if(gap(lift,t)<(j===0?-1e-9:.000025))continue;for(let k=Math.max(0,j-7);k<=Math.min(levels-1,j+7);k++){const cost=costs[k]+lift*lift*.002+(j-k)**2*.00001;if(cost<next[j]){next[j]=cost;parents[i*levels+j]=k;}}}costs=next;}
-if(!Number.isFinite(costs[0]))throw Error('No bounded overrun path');
-const rows=Array(count+1);let at=0;for(let i=count;i>=0;i--){rows[i]=at*step;if(i)at=parents[i*levels+at];}
-let residual=0;for(let i=0;i<count;i++)for(const f of[0,.25,.5,.75])residual=Math.min(residual,gap(rows[i]*(1-f)+rows[i+1]*f,start+(end-start)*(i+f)/count));
-if(residual<-.00002)throw Error(JSON.stringify({residual}));
-fs.writeFileSync(new URL('../src/simulation/oscillating-drum-pawl-data.js',import.meta.url),`// Offline continuous finite-clearance path during the free coast interval.\nexport const drumPawlPath=${JSON.stringify({start,end,rows:rows.map(v=>+v.toFixed(9))})};\n`);console.log({count,residual,catchTime:p.catchTime,releaseTime:p.releaseTime});
+import {polygonClipping as clip} from '../src/simulation/finite-plate-geometry.js';
+import {drumContact as p} from '../src/simulation/oscillating-drum-contact.js';
+const rot=(q,a)=>[q[0]*Math.cos(a)-q[1]*Math.sin(a),q[0]*Math.sin(a)+q[1]*Math.cos(a)];
+const polar=(r,a)=>[r*Math.cos(a),r*Math.sin(a)];
+const area=mp=>mp.reduce((s,polygon)=>s+polygon.reduce((t,ring,k)=>{let A=0;for(let i=0,j=ring.length-1;i<ring.length;j=i++)A+=(ring[j][0]+ring[i][0])*(ring[j][1]-ring[i][1]);return t+(k?-1:1)*Math.abs(A/2);},0),0);
+const face=p.lockPhase,P=p.pivot,pitch=p.pitch,root=p.rootRadius,tip=p.tipRadius;
+const width=.075,halfWidth=width/2,noseClearance=.002,faceGap=0;
+const A=polar(root+noseClearance,face-noseClearance/root);
+// The drum pivot trails the face and lies well outside the teeth, so the
+// link meets the root almost along the back of the tooth behind: its
+// underside runs straight from the nose vertex A (parallel to the link axis)
+// and clears that tooth back, and the working face squares off the nose.
+let axis=Math.atan2(A[1]-P[1],A[0]-P[0]);
+for(let i=0;i<20;i++){const out=[-Math.sin(axis),Math.cos(axis)];const s=(out[0]*A[0]+out[1]*A[1]>0)?1:-1;const C=[A[0]+s*halfWidth*out[0],A[1]+s*halfWidth*out[1]];axis=Math.atan2(C[1]-P[1],C[0]-P[0]);}
+const base=axis,length=Math.hypot(A[0]-P[0],A[1]-P[1]);
+const toLocal=q=>rot([q[0]-P[0],q[1]-P[1]],-base);
+const radial=[Math.cos(face),Math.sin(face)];
+let back=[-Math.cos(base),-Math.sin(base)];
+// The seated clearance check below confirms that this underside clears the tooth back.
+const big=2,side=(through,dir,s)=>{const n=[-dir[1]*s,dir[0]*s];return[[through[0]+big*dir[0],through[1]+big*dir[1]],[through[0]+big*dir[0]-big*n[0],through[1]+big*dir[1]-big*n[1]],[through[0]-big*dir[0]-big*n[0],through[1]-big*dir[1]-big*n[1]],[through[0]-big*dir[0],through[1]-big*dir[1]]];};
+const choose=(through,dir,test)=>{for(const s of[1,-1]){const h=side(through,dir,s),box=[[test[0]-1e-3,test[1]-1e-3],[test[0]+1e-3,test[1]-1e-3],[test[0]+1e-3,test[1]+1e-3],[test[0]-1e-3,test[1]+1e-3]];if(area(clip.intersection([h],[box]))>1e-7)return h;}throw Error('half-plane');};
+// Working face exactly on the radial driving face (faceGap), back relieved.
+const faceThrough=polar(root,face-faceGap/root);
+const faceHalf=choose(faceThrough,radial,polar(root+.05,face-.06));
+const backHalf=choose(A,back,polar(tip+.03,face-.02));
+const u=[Math.cos(base),Math.sin(base)],n=[-u[1],u[0]],far=length+.2;
+const strip=[[P[0]+halfWidth*n[0],P[1]+halfWidth*n[1]],[P[0]+far*u[0]+halfWidth*n[0],P[1]+far*u[1]+halfWidth*n[1]],[P[0]+far*u[0]-halfWidth*n[0],P[1]+far*u[1]-halfWidth*n[1]],[P[0]-halfWidth*n[0],P[1]-halfWidth*n[1]]];
+const body=clip.intersection([strip],[faceHalf],[backHalf]);
+if(body.length!==1)throw Error('pawl body not one piece');
+const outline=body[0][0].slice(0,-1).map(toLocal).map(q=>q.map(v=>+v.toFixed(9)));
+const rootDisk=Array.from({length:192},(_,i)=>polar(root,2*Math.PI*i/192));
+function ratchetAt(angle,near){const out=[[rootDisk]];const j0=Math.round((near-angle)/pitch);for(let j=j0-2;j<=j0+2;j++)out.push([p.profile.map(q=>rot(q,angle+j*pitch))]);return out;}
+const pawlAt=lift=>[outline.map(q=>{const r=rot(q,base-lift);return[r[0]+P[0],r[1]+P[1]];})];
+const hits=(lift,angle)=>{const pawl=pawlAt(lift);for(const part of ratchetAt(angle,face))if(area(clip.intersection([pawl],part))>1e-9)return true;return false;};
+// Positive lift must raise the nose away from the axis.
+{const nearest=poly=>Math.min(...poly[0].map(q=>Math.hypot(...q)));if(nearest(pawlAt(.05))<=nearest(pawlAt(0)))throw Error('lift sign');}
+if(hits(0,face))throw Error('pawl not clear when seated');
+const count=512;
+// Relative tooth phase s: the ratchet stands at face + s*pitch relative to the drum.
+const lifts=Array.from({length:count},(_,s)=>{const angle=face+pitch*s/count;if(!hits(0,angle))return 0;let lo=0,hi=.02;while(hits(hi,angle)){lo=hi;hi+=.02;if(hi>1)throw Error('no clear lift');}for(let j=0;j<40;j++){const mid=(lo+hi)/2;if(hits(mid,angle))lo=mid;else hi=mid;}return +(hi+.0005).toFixed(9);});
+const out={count,base:+base.toFixed(12),length:+length.toFixed(12),width,outline,lifts};
+fs.writeFileSync(new URL('../src/simulation/oscillating-drum-pawl-data.js',import.meta.url),`// Generated by scripts/generate-oscillating-drum-pawl.mjs: movement 360's finite pawl\n// outline and least-clearance lift against relative tooth phase.\nexport const drumPawl=${JSON.stringify(out)};\n`);
+console.log({length,base,seated:lifts.filter(v=>v===0).length,max:Math.max(...lifts),outline});

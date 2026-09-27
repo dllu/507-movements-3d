@@ -96,7 +96,9 @@ test('movement 235 preserves the measured engraving layout and straight-face des
   assert.deepEqual(plate.rasterCarrierPivot.toArray(), [455, 338]);
   assert.deepEqual(plate.rasterTappetHinge.toArray(), [319, 331]);
   assert.deepEqual(plate.rasterTappetNose.toArray(), [192, 303]);
-  assert.deepEqual(plate.rasterHoldingClickPivot.toArray(), [159, 153]);
+  // The click's eye sits a little above Brown's hole (153) so the hook
+  // runs round the points in one sweep.
+  assert.deepEqual(plate.rasterHoldingClickPivot.toArray(), [159, 141]);
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
   assert.equal(plate.inferredRatchetTeeth, 6);
@@ -111,9 +113,9 @@ test('movement 235 preserves the measured engraving layout and straight-face des
   near(geometry.toothPitch, FULL_TURN / 6, 0, 'six-tooth pitch');
   near(
     geometry.driveFaceAngularSpan,
-    THREE.MathUtils.degToRad(35),
+    THREE.MathUtils.degToRad(52),
     0,
-    'source-like straight drive-face span',
+    'raked teeth: an almost radial working face (8 degrees) and a long back',
   );
   assert.ok(geometry.ratchetRootRadius < geometry.ratchetOuterRadius * 0.5);
   assert.ok(geometry.sourceContactFraction > 0.1);
@@ -182,7 +184,7 @@ test('movement 235 keeps the spring-held tappet exactly on one drive face', () =
   }
   near(minimumContactFraction, geometry.sourceContactFraction, 2e-12,
     'drive starts at the measured face fraction');
-  assert.ok(maximumContactFraction > 0.84);
+  assert.ok(maximumContactFraction > 0.8);
   assert.ok(maximumWheelSpeed > 2);
   const indexed = stateAtCycleCoordinate(timeline.driveEndPhase);
   near(indexed.wheelAngle, geometry.toothPitch, 3e-15,
@@ -232,7 +234,7 @@ test('movement 235 tappet yields only on return and clears the tooth before spri
     'arm-rising-from-low-clearance-to-drive-face',
   ]);
   assert.ok(contactSegments.size >= 2, 'the nose traverses adjacent tooth faces');
-  assert.ok(maximumReturnDeflection > .44 && maximumReturnDeflection <= .450001);
+  assert.ok(maximumReturnDeflection > .42 && maximumReturnDeflection <= .44);
   assert.equal(stateAtCycleCoordinate(0).tappetDelta, 0);
   assert.ok(stateAtCycleCoordinate(timeline.topOvertravelEndPhase).tappetClearance > .0003,
     'the prescribed transfer dwell releases the tappet without penetrating the star');
@@ -284,8 +286,8 @@ test('movement 235 upper click lifts for forward indexing and locks reverse dwel
     }
   }
   assert.ok(deflectedSamples > 500);
-  assert.ok(maximumClickLift > THREE.MathUtils.degToRad(18));
-  assert.ok(maximumClickLift < THREE.MathUtils.degToRad(19));
+  assert.ok(maximumClickLift > THREE.MathUtils.degToRad(25));
+  assert.ok(maximumClickLift < THREE.MathUtils.degToRad(27));
   disposeModel(model.root);
 });
 

@@ -3,7 +3,7 @@ import source from './source.js';
 import {toWeightedClutchWorld as world} from './linkage.js';
 import {makeWeightedClutchSourceFit,sourceFitStudContacts} from './source-fit.js';
 import {makeWeightedClutchKeyCandidate,THREE} from './key-geometry.js';
-import {poly,circle,capsule,plate,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {poly,circle,capsule,sector,plate,disk,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {conformingPlateMesh} from '../conforming-plate-mesh.js';
 export {THREE};
 const sub=(a,b)=>a.map((v,i)=>v-b[i]),rect=(x0,x1,y0,y1)=>poly([[x0,y0],[x1,y0],[x1,y1],[x0,y1]]);
@@ -28,6 +28,7 @@ export function canonicalWeightedClutchFit({shifts,freeAngle}){
 
 // An independently reviewable source-fit candidate. Previously verified
 // factories and their frozen geometry remain unchanged.
+export const QUADRANT_RIM=.14,QUADRANT_FLANK=.5;
 export function makeWeightedClutchDistributedCandidate(options){
   const model=makeWeightedClutchKeyCandidate({pinAdjustmentPixels:0}),u=model.root.userData,
     parts=u.parts,old=u.linkage.parameters,linkage=canonicalWeightedClutchFit(options),L=linkage.parameters,
@@ -64,6 +65,30 @@ export function makeWeightedClutchDistributedCandidate(options){
   shape('slotFollowerCarrier',clip.difference(clip.union(capsule([0,0],elbow,.025,64),capsule(elbow,follower,.025,64),
     poly(circle([0,0],.20,128))),poly(circle([0,0],.142,128))));
   move('slotFollowerPin',follower);
+  // The slotted quadrant is drawn with ideal circular arcs: a rim band of
+  // constant radial width concentric with the (unchanged) slot, round-ended
+  // about the slot's end circles, joined to the pivot boss by a web whose two
+  // concave flanks are circular arcs tangent to the boss and to the rim's end
+  // caps. Brown's hand-drawn outer arc was irregular and too thin.
+  const q=source.quadrant,slotRadius=q.radius/source.scale,slotHalf=q.slotHalfWidth/source.scale,rim=QUADRANT_RIM,
+    qa=q.startDegrees*Math.PI/180,qb=q.endDegrees*Math.PI/180,cap=slotHalf+rim,boss=.225,
+    ends=[qa,qb].map(t=>[slotRadius*Math.cos(t),slotRadius*Math.sin(t)]),
+    band=clip.union(sector(slotRadius-cap,slotRadius+cap,qa,qb,256),...ends.map(e=>poly(circle(e,cap,128)))),
+    flank=(e,side)=>{
+      // Arc of a circle of radius QUADRANT_FLANK tangent to both the boss
+      // and the end cap, on the web's outer side, between its tangent points.
+      const r1=boss+QUADRANT_FLANK,r2=cap+QUADRANT_FLANK,d=Math.hypot(...e),x=(r1*r1-r2*r2+d*d)/(2*d),y=Math.sqrt(r1*r1-x*x),
+        u=[e[0]/d,e[1]/d],n=[-u[1],u[0]],c=[u[0]*x+n[0]*y*side,u[1]*x+n[1]*y*side],
+        from=Math.atan2(-c[1],-c[0]),to=Math.atan2(e[1]-c[1],e[0]-c[0]);
+      let sweep=to-from;while(sweep>Math.PI)sweep-=2*Math.PI;while(sweep<-Math.PI)sweep+=2*Math.PI;
+      return Array.from({length:129},(_,i)=>[c[0]+QUADRANT_FLANK*Math.cos(from+sweep*i/128),c[1]+QUADRANT_FLANK*Math.sin(from+sweep*i/128)]);
+    },
+    right=flank(ends[0],-1),left=flank(ends[1],1),
+    spine=Array.from({length:65},(_,i)=>{const t=qa+(qb-qa)*i/64;return [slotRadius*Math.cos(t),slotRadius*Math.sin(t)];}),
+    web=poly([[0,0],...right,...spine,...left.reverse()]);
+  const quadrant=clip.difference(clip.union(web,band,poly(circle([0,0],boss,128))),
+    u.profiles.slot,poly(circle([0,0],.157,128)));
+  shape('slottedQuadrant',quadrant);u.profiles.quadrant=quadrant;u.geometry.quadrantRim=rim;
   for(const name of ['E','pinion'])u.gears[name].position.set(...L.E,0);
   move('studWheelRearBearing',L.E);
   move('reversingStud',L.studOffset);move('reversingStudPin',L.studOffset);

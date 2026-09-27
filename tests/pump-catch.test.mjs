@@ -16,7 +16,14 @@ const poses=[0,.04,.25,1,1.25,1.345,1.75,2.5,3.245,3.47,3.6525,3.75,4.0167,4.25,
 test('086 completes the measured loose wheel and input band with real shaft and rope passages',()=>{
  const model=makePumpCatchDrive(),u=model.root.userData,h=u.completeHardware;
  // p60 support policy: Brown draws no second sheave, stand or pump hardware.
- assert.equal(Object.keys(u.parts).length,28);
+ assert.equal(Object.keys(u.parts).length,25);
+ // p86: catch B is one plain extrusion of Brown's outline in its own plane,
+ // with no slab behind its head and no heel lug or wheel stop.
+ assert.deepEqual(Object.keys(u.parts).filter(n=>/HeadBack|Heel/.test(n)),[]);
+ assert.deepEqual(Object.entries(u.families).filter(([,f])=>f==='catch').map(([n])=>n),['hookedCatchB']);
+ u.parts.hookedCatchB.geometry.computeBoundingBox();
+ near(u.parts.hookedCatchB.geometry.boundingBox.min.z,0,1e-6);near(u.parts.hookedCatchB.geometry.boundingBox.max.z,.13,1e-6);
+ assert.equal(u.heelStop,undefined);assert.equal(u.geometry.headBackDepth,undefined);
  assert.deepEqual(Object.keys(u.parts).filter(n=>/^remote|Barrel|Guide|Hanger|LowerBed|Crosshead/.test(n)),[]);
  assert.equal(u.blocks.remoteInput,undefined);assert.equal(u.fidelity,'authored');assert.equal(u.hideGround,true);
  assert.notEqual(u.blocks.wheel,u.blocks.cam);assert.equal(u.blocks.catch.parent,u.blocks.wheel);
@@ -63,7 +70,9 @@ test('086 production has exact candidate pose, rigid geometry and live rope pari
  // end, opens the band and runs the plinth slab left to abut post B as Brown
  // draws it; every other part matches the qualified candidate.
  assert.deepEqual(u.families,Object.fromEntries(Object.entries(v.families).filter(([n])=>!u.prunedHardware.includes(n))));
- assert.deepEqual(u.geometry,v.geometry);assert.deepEqual(u.completeHardware,v.completeHardware);
+ const {headBackDepth,headWeightQualification,...integrated}=v.geometry;
+ assert.equal(headBackDepth,.1);assert.equal(u.displayOmitsIntegratedCatchDetails.headBackDepth,.1);
+ assert.deepEqual(u.geometry,integrated);assert.deepEqual(u.completeHardware,v.completeHardware);
  const reshaped=new Set(['pumpOutputRod','inputDriveRope','basePlinth']);
  const plinth=new THREE.Box3().setFromObject(u.parts.basePlinth),post=new THREE.Box3().setFromObject(u.parts.overheadPost);
  assert.ok(Math.abs(plinth.min.x-post.max.x)<1e-6,'plinth slab abuts post B');

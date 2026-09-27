@@ -81,9 +81,7 @@ test('movement 380 is a C-frame drill whose inner spindle passes through a separ
   for (const component of [
     blocks.fixedFeedNut,
     blocks.fixedWorkRest,
-    blocks.frameBack,
-    blocks.frameBottom,
-    blocks.frameTop,
+    blocks.cFrame,
   ]) assert.equal(component.parent, blocks.crampFrame);
   for (const component of [
     blocks.feedHandleBar,

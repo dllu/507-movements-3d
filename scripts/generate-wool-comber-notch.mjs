@@ -16,16 +16,14 @@ try {
     const state = u.stateAtInputTravel((start + (end - start) * i / 128) * Math.PI * 2, 0, 0);
     const center = state.catchHookWorld.clone().sub(g.outputCenter)
       .rotateAround(new THREE.Vector2(), -state.outputAngle + rotation - g.notchPhaseAngle);
-    for (let j = 0; j < 64; j++) {
-      const angle = j * Math.PI / 32;
+    for (let j = 0; j < 128; j++) {
+      const angle = j * Math.PI / 64;
       cloud.push([center.x + radius * Math.cos(angle), center.y + radius * Math.sin(angle)]);
     }
   }
-  // Brown cuts square notches: square the root corner under the radial
-  // (upper) flank. It lies below the hook's flank contact, so the driving fit
-  // is unchanged; the oblique exit flank must stay rounded to keep contact.
-  const seat = g.engagedHookRadius - radius;
-  cloud.push([seat, radius]);
+  // 218's catch is a flat plate whose straight lug ends in this round tip,
+  // so the root follows the tip and the lug nestles in it with only the
+  // milling clearance (Brown's square root corner would leave a void).
   cloud.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
   const cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
   const half = points => {

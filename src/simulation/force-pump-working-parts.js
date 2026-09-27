@@ -5,6 +5,7 @@ import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {capsule,circle,poly,plate,polygonClipping} from './finite-plate-geometry.js';
 import {latheSectionGeometry} from './cutaway-section.js';
+import {creaseIndexedNormals} from './crease-normals.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 
 function risingElbow(startX,axisX,entryY,radius){
@@ -43,6 +44,36 @@ function chamberContents(mesh,profile){
     mesh.geometry.computeVertexNormals();mesh.geometry.computeBoundingBox();mesh.geometry.computeBoundingSphere();
   };
   return{update,levelAt,volumeTo,total,low,high,radiusAt};
+}
+
+// Closed pipe wall along curve from t0 to 1 (arc-length parameter) whose
+// start is trimmed per generator: generator j begins at the first u >= t0
+// where inside(point) >= 0 (a signed distance to the surface it meets), and
+// its rings are spread from there to the end. Same topology as
+// curvedPipeWall, so the wall stays watertight.
+export function saddleEndPipeWall(curve,t0,inner,outer,segments,sides,inside){
+  const frames=curve.computeFrenetFrames(segments*4,false),positions=[],indices=[];
+  const frameAt=u=>Math.min(segments*4,Math.max(0,Math.round(u*segments*4)));
+  const offset=(u,radius,angle)=>{const k=frameAt(u);return curve.getPointAt(u).addScaledVector(frames.normals[k],radius*Math.cos(angle)).addScaledVector(frames.binormals[k],radius*Math.sin(angle));};
+  const starts=[outer,inner].map(radius=>Array.from({length:sides},(_,j)=>{
+    const angle=j*2*Math.PI/sides;let lo=t0,hi=Math.min(1,t0+.5);
+    if(inside(offset(lo,radius,angle))>=0)return lo;
+    for(let i=0;i<50;i++){const mid=(lo+hi)/2;if(inside(offset(mid,radius,angle))>=0)hi=mid;else lo=mid;}
+    return hi;
+  }));
+  const radii=[outer,inner];
+  radii.forEach((radius,r)=>{for(let i=0;i<=segments;i++)for(let j=0;j<sides;j++){
+    const u0=starts[r][j],u=Math.min(1,u0+(1-u0)*i/segments);positions.push(...offset(u,radius,j*2*Math.PI/sides).toArray());}});
+  const off=(segments+1)*sides;
+  for(let i=0;i<segments;i++)for(let j=0;j<sides;j++){
+    const a=i*sides+j,b=i*sides+(j+1)%sides,c=b+sides,d=a+sides;
+    indices.push(a,b,c,a,c,d,off+a,off+c,off+b,off+a,off+d,off+c);
+  }
+  for(let j=0;j<sides;j++){
+    const a=j,b=(j+1)%sides,c=segments*sides+j,d=segments*sides+(j+1)%sides;
+    indices.push(a,off+b,b,a,off+a,off+b,c,d,off+d,c,off+d,off+c);
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.setIndex(indices);return creaseIndexedNormals(g);
 }
 
 export function correctForcePumpParts(root,id){
@@ -155,7 +186,14 @@ export function correctForcePumpParts(root,id){
     // axis, a stub across the valve box above the check).
     let t0=0;while(sideFull.getPointAt(t0).x>x-.50)t0+=.0005;
     const side=new THREE.Curve();side.getPoint=(t,target=new THREE.Vector3())=>sideFull.getPointAt(t0+(1-t0)*t,target);
-    replace(b.selectedOutlet,curvedPipeWall(side,.17,.24,80));replace(b.selectedOutletWater,new THREE.TubeGeometry(side,80,.15,14,false));output=side;
+    // Pass 86: the pipe's square-cut end met the round neck with a wedge gap
+    // at its sides (the neck face curves away from a flat end). The wall now
+    // starts inside the bore, and each of its generators begins where it
+    // crosses the mid-wall cylinder (r 0.50 of the 0.475-0.53 wall), so the
+    // whole end is a saddle seated in the neck wall round the 0.205 port.
+    let t1=0;while(sideFull.getPointAt(t1).x>x-.40)t1+=.0005;
+    const outletWall=saddleEndPipeWall(sideFull,t1,.17,.24,80,24,p=>Math.hypot(p.x-x,p.z)-.50);
+    replace(b.selectedOutlet,outletWall);replace(b.selectedOutletWater,new THREE.TubeGeometry(side,80,.15,14,false));output=side;
     const dip=new THREE.LineCurve3(new THREE.Vector3(x,1.25,0),new THREE.Vector3(x,4.10,0));
     replace(b.alternativeOutlet,curvedPipeWall(dip,.145,.20,32));
     // Pass 70: the open dip tube's water stands at the side mouth's level

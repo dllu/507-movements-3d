@@ -1,4 +1,11 @@
 import { correctGoingBarrel } from './maintaining-clock-parts.js';
+import clickPaths from './baked/maintaining-clock-clicks.js';
+import {
+  followerTable,
+  makeSeatedFollower,
+  sawRatchetOutline,
+  seatedClickOutline,
+} from './seated-ratchet-click.js';
 import {
   circle,
   plate,
@@ -32,6 +39,19 @@ function smootherstepFirst(value) {
 
 function smootherstepSecond(value) {
   return 60 * value * (1 - value) * (1 - 2 * value);
+}
+
+// Smootherstep over [start, end] of a unit progress, with derivatives
+// with respect to that progress.
+function windowedStep(progress, start, end) {
+  const width = end - start;
+  const u = THREE.MathUtils.clamp((progress - start) / width, 0, 1);
+  const inside = progress > start && progress < end;
+  return {
+    value: smootherstep(u),
+    first: inside ? smootherstepFirst(u) / width : 0,
+    second: inside ? smootherstepSecond(u) / width ** 2 : 0,
+  };
 }
 
 function cylinderAlongZ(radius, length, material, segments = 32) {
@@ -163,6 +183,146 @@ function setBoxBetween(box, start, end) {
   box.scale.x = displacement.length();
 }
 
+// Brown's clicks T and R are flat curved blades with a round bored eye. Each
+// is one planar plate whose nose fills the valley at the tooth root, riding
+// the saw-toothed ratchet by an exact geometric follower. Both ratchets are
+// re-cut as saw teeth with a nearly radial working face.
+function seatGoingBarrelClicks(root) {
+  const b = root.userData.blocks;
+  const g = root.userData.geometry;
+  const [clickRFollower, clickTFollower] = b.finiteClicks;
+  const setups = [
+    {
+      name: 'R',
+      follower: clickRFollower,
+      mesh: b.barrelRatchet,
+      teeth: g.barrelRatchetToothCount,
+      hand: -1,
+      radius: g.barrelRatchetPitchRadius * 1.04,
+      bore: 0.142,
+      depth: 0.16,
+      // Going: B and the larger ratchet turn together, R seated.
+      seatWheelAngle: 0,
+      width: 0.15,
+      shank: 0.58,
+      // The face leans a little more than R's nose drifts as it drops about
+      // its pivot, so R slides down the face instead of snapping past it.
+      rake: 0.08,
+    },
+    {
+      name: 'T',
+      follower: clickTFollower,
+      mesh: b.largeRatchetMesh,
+      teeth: g.largeRatchetToothCount,
+      hand: 1,
+      radius: g.largeRatchetOuterRadius,
+      bore: g.largeRatchetInnerRadius,
+      depth: 0.19,
+      // Winding: the larger ratchet slips back onto T.
+      seatWheelAngle: -g.clickTBacklash,
+      width: 0.14,
+      shank: 0.75,
+      rake: 0.04,
+      fillet: 1.0,
+    },
+  ];
+  b.finiteClicks = setups.map((setup) => {
+    const { follower, mesh, teeth, hand, radius, bore, depth, seatWheelAngle, width } = setup;
+    const pawl = follower.group;
+    const pivot = [pawl.position.x, pawl.position.y];
+    const contact = pawl.userData.contact;
+    const contactAngle = Math.atan2(contact.y, contact.x);
+    const wheel = sawRatchetOutline({
+      radius,
+      rootRadius: radius * 0.85,
+      teeth,
+      hand,
+      rootAngle: contactAngle - seatWheelAngle,
+      rake: setup.rake,
+    });
+    const geometry = plate(polygonClipping.difference(
+      poly(wheel.outline),
+      poly(circle([0, 0], bore, 96)),
+    ), -depth / 2, depth / 2);
+    mesh.geometry.dispose();
+    mesh.geometry = geometry;
+    mesh.rotation.z = 0;
+    mesh.userData.toothCount = teeth;
+    mesh.userData.ratchetProfile = {
+      outline: wheel.outline, radius, bore, teeth, hand, phase: wheel.phase, depth,
+      rootRadius: wheel.rootRadius, rake: wheel.rake,
+    };
+    // Seated pose, in the carrier frame.
+    const at = (r, a) => [r * Math.cos(a + seatWheelAngle), r * Math.sin(a + seatWheelAngle)];
+    const apex = at(wheel.rootRadius, wheel.rootAngle);
+    const faceTip = at(radius, wheel.rootAngle + hand * wheel.rake * wheel.pitch);
+    const flankTip = at(radius, wheel.rootAngle - hand * (1 - wheel.rake) * wheel.pitch);
+    const unit = (to) => {
+      const v = [to[0] - apex[0], to[1] - apex[1]];
+      const l = Math.hypot(v[0], v[1]);
+      return [v[0] / l, v[1] / l];
+    };
+    const outline = seatedClickOutline({
+      pivot,
+      apex,
+      face: unit(faceTip),
+      flank: unit(flankTip),
+      shank: setup.shank,
+      fillet: setup.fillet,
+      width,
+      bossRadius: 0.16,
+      boreRadius: 0.082,
+    });
+    const local = outline.polygons.map((polygon) => polygon.map((ring) => ring.map((p) => [p[0] - pivot[0], p[1] - pivot[1]])));
+    follower.body.geometry.dispose();
+    follower.body.geometry = plate(local, -0.06, 0.06);
+    follower.body.userData.role = 'finite-bored-clock-click';
+    pawl.rotation.z = 0;
+    const core = makeSeatedFollower({ outline, wheel, pivot, seatWheelAngle });
+    const angleAt = (relativeWheelAngle) => core.angleAt(hand * (relativeWheelAngle - seatWheelAngle));
+    const bakeKey = `321-${setup.name}`;
+    const bakeSignature = {
+      clickOutline: outline.polygons[0][0].map((p) => [Number(p[0].toFixed(9)), Number(p[1].toFixed(9))]),
+      hand, pivot, radius, rootRadius: wheel.rootRadius, rake: wheel.rake, seatWheelAngle, teeth,
+    };
+    const path = clickPaths[bakeKey];
+    const baked = path && JSON.stringify(path.signature) === JSON.stringify(bakeSignature);
+    const playbackAngleAt = baked ? (angle) => {
+      const phase = positiveModulo(angle / path.pitch, 1);
+      const coordinate = phase * path.phaseScale;
+      const knots = path.knots;
+      let lo = 0;
+      let hi = knots.length - 1;
+      while (hi - lo > 1) {
+        const mid = (lo + hi) >> 1;
+        if (knots[mid][0] <= coordinate) lo = mid;
+        else hi = mid;
+      }
+      const a = knots[lo];
+      const c = knots[hi];
+      return a[1] + (coordinate - a[0]) / (c[0] - a[0]) * (c[1] - a[1]);
+    } : followerTable(angleAt, wheel.pitch);
+    return {
+      name: setup.name,
+      group: pawl,
+      body: follower.body,
+      pin: follower.pin,
+      wheel: mesh,
+      pivot,
+      outline: wheel.outline,
+      clickOutline: outline,
+      seatWheelAngle,
+      liftSign: core.liftSign,
+      angleAt,
+      playbackAngleAt,
+      bakeKey,
+      bakeSignature,
+      bakedPlayback: Boolean(baked),
+      update(angle) { pawl.rotation.z = playbackAngleAt(angle); },
+    };
+  });
+}
+
 function harrisonGoingBarrel(movement) {
   const root = new THREE.Group();
 
@@ -198,7 +358,8 @@ function harrisonGoingBarrel(movement) {
   );
   const largeRatchetOuterRadius = largeRatchetPitchRadius * 1.025;
   const largeRatchetInnerRadius = 1.50;
-  const barrelRatchetToothCount = 12;
+  // Brown's small ratchet on B has about eighteen teeth.
+  const barrelRatchetToothCount = 18;
   const barrelRatchetPitchRadius = Math.hypot(
     (sourceRasterCarriedClickContactR.x - sourceRasterCenter.x) * sourceScale,
     (sourceRasterCarriedClickContactR.y - sourceRasterCenter.y) * sourceScale,
@@ -217,7 +378,11 @@ function harrisonGoingBarrel(movement) {
   const ropeDrumPitchRadius = 0.20;
   const weightHalfHeight = 0.45;
   const greatWheelTipClearanceY = -3.12;
-  const windingOvershootAngle = FULL_TURN * (1 - windingStartPhase);
+  // B is wound back past the plate pose by the recoil of the larger ratchet
+  // and the overrun that lets R drop behind its tooth (see the backlash).
+  const windingOvershootAngle = FULL_TURN * (1 - windingStartPhase)
+    + 0.08 * FULL_TURN / largeRatchetToothCount
+    + 0.12 * FULL_TURN / barrelRatchetToothCount;
   const referenceWeightY = greatWheelTipClearanceY - weightHalfHeight
     - ropeDrumPitchRadius * windingOvershootAngle;
   const weightX = -ropeDrumPitchRadius;
@@ -246,6 +411,12 @@ function harrisonGoingBarrel(movement) {
   const greatWheelAngularVelocity = FULL_TURN / demonstrationPeriod;
   const largeRatchetToothPitch = FULL_TURN / largeRatchetToothCount;
   const barrelRatchetToothPitch = FULL_TURN / barrelRatchetToothCount;
+  // Ratchet backlash: each wheel runs a little past a seat, then slips back
+  // so its click drops fully into the root against the tooth face.
+  const clickTBacklash = 0.08 * largeRatchetToothPitch;
+  const clickRBacklash = 0.12 * barrelRatchetToothPitch;
+  const clickTRecoilWindow = 0.3;
+  const clickRSettleStart = 0.88;
 
   const springSweep = (greatWheelAngle, largeRatchetAngle) =>
     springInnerBaseAngle + largeRatchetAngle
@@ -393,20 +564,30 @@ function harrisonGoingBarrel(movement) {
       barrelPhaseAcceleration = 0;
       mode = 'going-weight-drives-B-through-R-spring-and-G';
     } else if (phase <= windingEndPhase) {
-      const windingProgress = (
-        phase - windingStartPhase
-      ) / (windingEndPhase - windingStartPhase);
-      const shaped = smootherstep(windingProgress);
-      const shapedFirst = smootherstepFirst(windingProgress);
-      const shapedSecond = smootherstepSecond(windingProgress);
-      largeRatchetLocalAngle = FULL_TURN * windingStartPhase;
-      largeRatchetPhaseRate = 0;
-      largeRatchetPhaseAcceleration = 0;
-      barrelAngle = FULL_TURN * windingStartPhase - FULL_TURN * shaped;
-      barrelPhaseRate = -FULL_TURN * shapedFirst
-        / (windingEndPhase - windingStartPhase);
-      barrelPhaseAcceleration = -FULL_TURN * shapedSecond
-        / (windingEndPhase - windingStartPhase) ** 2;
+      const span = windingEndPhase - windingStartPhase;
+      const windingProgress = (phase - windingStartPhase) / span;
+      // Backlash: as the weight's torque leaves the larger ratchet, the
+      // spring lets it slip back a little until the face of the tooth T has
+      // just dropped behind comes against T's nose (T seats in the root).
+      const recoil = windowedStep(windingProgress, 0, clickTRecoilWindow);
+      // B is wound a little past its last tooth so that R drops fully behind
+      // it; released, the weight draws B forward until that face meets R.
+      const wind = windowedStep(windingProgress, 0, clickRSettleStart);
+      const settle = windowedStep(windingProgress, clickRSettleStart, 1);
+      largeRatchetLocalAngle = FULL_TURN * windingStartPhase
+        - clickTBacklash * recoil.value;
+      largeRatchetPhaseRate = -clickTBacklash * recoil.first / span;
+      largeRatchetPhaseAcceleration = -clickTBacklash * recoil.second
+        / span ** 2;
+      barrelAngle = largeRatchetLocalAngle
+        - (FULL_TURN + clickRBacklash) * wind.value
+        + clickRBacklash * settle.value;
+      barrelPhaseRate = largeRatchetPhaseRate
+        + (-(FULL_TURN + clickRBacklash) * wind.first
+          + clickRBacklash * settle.first) / span;
+      barrelPhaseAcceleration = largeRatchetPhaseAcceleration
+        + (-(FULL_TURN + clickRBacklash) * wind.second
+          + clickRBacklash * settle.second) / span ** 2;
       mode = 'winding-B-backward-R-ratcheting-T-holds-spring-drives-G';
     } else {
       const recoveryProgress = (
@@ -416,12 +597,13 @@ function harrisonGoingBarrel(movement) {
       const shapedFirst = smootherstepFirst(recoveryProgress);
       const shapedSecond = smootherstepSecond(recoveryProgress);
       const greatLocalAngle = FULL_TURN * phase;
-      const lag = largeRatchetLagMaximum * (1 - shaped);
+      const lagAtRelease = largeRatchetLagMaximum + clickTBacklash;
+      const lag = lagAtRelease * (1 - shaped);
       largeRatchetLocalAngle = greatLocalAngle - lag;
       largeRatchetPhaseRate = FULL_TURN
-        + largeRatchetLagMaximum * shapedFirst
+        + lagAtRelease * shapedFirst
           / (1 - windingEndPhase);
-      largeRatchetPhaseAcceleration = largeRatchetLagMaximum
+      largeRatchetPhaseAcceleration = lagAtRelease
         * shapedSecond / (1 - windingEndPhase) ** 2;
       barrelAngle = largeRatchetLocalAngle - FULL_TURN;
       barrelPhaseRate = largeRatchetPhaseRate;
@@ -944,6 +1126,10 @@ function harrisonGoingBarrel(movement) {
     barrelRatchetPitchRadius,
     barrelRatchetToothCount,
     barrelRatchetToothPitch,
+    clickRBacklash,
+    clickRSettleStart,
+    clickTBacklash,
+    clickTRecoilWindow,
     demonstrationPeriod,
     goingLoadTorque,
     greatWheelAngularVelocity,
@@ -1035,6 +1221,8 @@ function harrisonGoingBarrel(movement) {
   };
 
   correctGoingBarrel(root);
+  seatGoingBarrelClicks(root);
+
   // Brown draws no frame, bearing or stud: T turns on a short journal pin
   // through its eye, and the common arbor ends as a plain cut stub just
   // behind G, so no undrawn back bar is needed.

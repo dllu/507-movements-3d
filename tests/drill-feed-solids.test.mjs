@@ -21,7 +21,7 @@ function clear(mesh,points,moving,surface){
 for(const id of [379,380])test(`${id} closed feed threads pass through the actual nut and bored frame throughout advance and return`,()=>{
  const {root,update}=createMovementModel(catalog[id-1]),b=root.userData.blocks;
  const points=surfacePoints(b.feedThread.geometry).filter((_,i)=>i%8===0);
- const targets=[b.nutThread,id===379?b.frameBottom:b.frameTop].map(o=>[o,solidSurface(o.geometry)]);
+ const targets=[b.nutThread,b.cFrame].map(o=>[o,solidSurface(o.geometry)]);
  let closest=Infinity,queries=0;
  for(let i=0;i<=32;i++){
   update(i*4/32);root.updateMatrixWorld(true);
@@ -135,5 +135,33 @@ test('366 source-facing upper pinion mounting clears its fixed bearing and movin
   assert.ok(bearing.min.y-bounds(b.pinionBearingCollars[0]).max.y>.019);
   assert.ok(bounds(b.pinionBearingCollars[1]).min.y-bearing.max.y>.019);
   assert.ok(d.stateAtTime(i*8/128).drillShaftAngularSpeed<0,'physical spindle phase follows the upward pinion axis');
+ }
+});
+
+test('379 and 380 C-frames are one extrusion of one section thickness, arm ends buried in their journals clear of the bores',()=>{
+ for(const [id,thickness,bores] of [[379,.32,{drillHousing:.109,fixedFeedNut:.189}],[380,.34,{fixedFeedNut:.325}]]){
+  const {root}=createMovementModel(catalog[id-1]),b=root.userData.blocks;root.updateMatrixWorld(true);
+  const outline=b.cFrame.userData.outline;
+  assert.equal(b.cFrame.geometry.userData.plate.polygons.length,1);
+  const xs=outline.map(p=>p[0]),ys=outline.map(p=>p[1]);
+  const box={min:{x:Math.min(...xs),y:Math.min(...ys)},max:{x:Math.max(...xs),y:Math.max(...ys),z:b.cFrame.geometry.userData.plate.high}};
+  // back, top arm and lower arm widths
+  const backInner=Math.min(...xs.filter(x=>x>box.min.x+1e-9));
+  assert.ok(Math.abs(backInner-box.min.x-thickness)<1e-9,`${id} back thickness`);
+  const topInner=Math.max(...ys.filter(y=>y<box.max.y-1e-9&&y>0));
+  assert.ok(Math.abs(box.max.y-topInner-thickness)<1e-9,`${id} top arm thickness`);
+  const lowInner=Math.min(...outline.filter(([x])=>Math.abs(x-backInner)<1e-9).map(p=>p[1]));
+  assert.ok(Math.abs(lowInner-box.min.y-thickness)<1e-9,`${id} lower arm thickness`);
+  for(const [name,bore] of Object.entries(bores)){
+   const journal=b[name],center=journal.position;
+   journal.geometry.computeBoundingBox();const outer=journal.geometry.boundingBox.max.x,depth=box.max.z;
+   const half=journal.geometry.boundingBox.max.y;
+   const ends=outline.filter(([x,y])=>Math.abs(y-center.y)<=half+1e-9&&x>center.x-outer);
+   assert.ok(ends.length>=2,`${id} ${name}: arm reaches the journal`);
+   for(const [x] of ends){
+    assert.ok(Math.hypot(center.x-x,depth)<outer,`${id} ${name}: arm end corners are inside the journal`);
+    assert.ok(center.x-x>bore+.005,`${id} ${name}: arm end clears the bore`);
+   }
+  }
  }
 });

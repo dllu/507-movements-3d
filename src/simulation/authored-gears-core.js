@@ -4,7 +4,7 @@ import {correctFeedWormAssembly} from './feed-worm-assembly-parts.js';
 import { correctSkewFrictionParts } from './skew-friction-working-parts.js';
 import { makeMiterGear, makeCircularAnnulusGeometry } from './miter-gear.js';
 import { squareToothOutline } from './square-tooth-outline.js';
-import { spurStopProfile239, finishOpposedSpur239 } from './opposed-spur-239-working-parts.js';
+import { spurStopProfile239, finishOpposedSpur239, flankPoint239 } from './opposed-spur-239-working-parts.js';
 import { finishPartialLanternRack } from './partial-lantern-rack-parts.js';
 import { finishMangleRackWorkingParts } from './mangle-rack-working-parts.js';
 import { fitRadialPinManglePinion, discloseRadialPinMangleContact } from './radial-pin-mangle-contact.js';
@@ -32660,6 +32660,31 @@ function splitTwoCamInvolutePinionDrive() {
   root.userData.geometry.frontSeriesFaceBar = {
     inner: faceBarInner, outer: faceBarOuter, width: faceBarWidth, front: faceBarFront,
   };
+  // Each tooth runs into the rim on a short root key (pass 86): the rows
+  // stand beside the wheel body, so without it a tooth met the rim only along
+  // its back edge. The key lies inside the tooth's root width, where neither
+  // cam ever reaches, sinks into the rim and runs back into the body.
+  const toothKeyAngles = [0.008, 0.062];
+  const toothKeyShape = new THREE.Shape();
+  toothKeyShape.absarc(0, 0, wheelRootRadius + 0.08, toothKeyAngles[0], toothKeyAngles[1], false);
+  toothKeyShape.absarc(0, 0, wheelRootRadius - 0.14, toothKeyAngles[1], toothKeyAngles[0], true);
+  toothKeyShape.closePath();
+  const toothKeyDepth = 0.08;
+  const toothKeyGeometries = rowAxialPositions.map((axialPosition) => new THREE.ExtrudeGeometry(
+    toothKeyShape,
+    { depth: toothKeyDepth, bevelEnabled: false, curveSegments: 8 },
+  ).translate(0, 0, axialPosition > 0 ? -toothDepth / 2 - 0.06 : toothDepth / 2 - 0.02));
+  for (const [rowIndex, row] of wheelRows.entries()) {
+    for (const tooth of row.userData.teeth) {
+      const key = new THREE.Mesh(toothKeyGeometries[rowIndex], tooth.material);
+      key.userData.role = 'tooth-root-key-sunk-into-wheel-rim';
+      tooth.add(key);
+    }
+  }
+  root.userData.geometry.toothRootKey = {
+    angles: toothKeyAngles, inner: wheelRootRadius - 0.14, outer: wheelRootRadius + 0.08,
+    depth: toothKeyDepth, bodyEmbed: 0.06,
+  };
   return finish(root, update, new THREE.Vector3(1.3, -1.6, 12));
 }
 
@@ -34536,6 +34561,13 @@ function sixEqualMiterGearAccumulativeTrain(movement) {
 }
 
 function pairedStopsForSpurGear(movement) {
+  // Two flat stops, pivoted left and right, drop their wedge noses into two
+  // upper tooth gaps. Brown's left nose has its long straight edge on the
+  // right, against the left flank of the tooth beyond it, so it stops the
+  // wheel turning counter-clockwise; the right nose is its mirror and stops
+  // clockwise turning. Between them the wheel has a small play, shown by an
+  // alternating test torque. The stop outlines are built in
+  // opposed-spur-239-working-parts.js.
   const root = new THREE.Group();
   const fullTurn = Math.PI * 2;
   const toothCount = 18;
@@ -34543,155 +34575,68 @@ function pairedStopsForSpurGear(movement) {
   const sourceScale = 0.016;
   const sourceGearCenter = new THREE.Vector2(222, 363);
   const sourceLeftPivot = new THREE.Vector2(25, 284);
-  const sourceLeftNose = new THREE.Vector2(177, 225);
   const sourceRightPivot = new THREE.Vector2(496, 253);
-  const sourceRightNose = new THREE.Vector2(319, 268);
   const sourceToModel = (point) => new THREE.Vector2(
     (point.x - sourceGearCenter.x) * sourceScale,
     (sourceGearCenter.y - point.y) * sourceScale,
   );
   const leftPivot = sourceToModel(sourceLeftPivot);
-  const leftNose = sourceToModel(sourceLeftNose);
   const rightPivot = sourceToModel(sourceRightPivot);
-  const rightNose = sourceToModel(sourceRightNose);
   const gearRootRadius = 2.06;
   const gearOuterRadius = 2.68;
   const gearPitchRadius = 2.4;
   const gearDepth = 0.42;
   const workingProfile = spurStopProfile239({ teeth: toothCount, pitchRadius: gearPitchRadius, rootRadius: gearRootRadius, outerRadius: gearOuterRadius });
-  const rootHalfToothAngle = workingProfile.halfRoot;
-  const tipHalfToothAngle = workingProfile.halfTip;
+  // Tooth 1's right flank meets Brown's right nose point (302, 258) and
+  // tooth 3's left flank lies 4° from his left nose (197, 227).
+  const gearMountPhase = THREE.MathUtils.degToRad(38.5);
+  // The play between the two stops: the plate pose is its counter-clockwise
+  // end, with the left stop seated.
+  const counterclockwiseLimit = 0;
+  const clockwiseLimit = THREE.MathUtils.degToRad(-4);
   const cyclePeriod = 4;
   const cyclesPerSecond = 1 / cyclePeriod;
   const phases = {
     clockwiseTraverse: { start: 0.16, end: 0.38 },
-    leftLock: { start: 0.38, end: 0.58 },
+    rightLock: { start: 0.38, end: 0.58 },
     counterclockwiseTraverse: { start: 0.58, end: 0.8 },
   };
+  const smoother = (u) => { const v = THREE.MathUtils.clamp(u, 0, 1); return v ** 3 * (10 + v * (-15 + 6 * v)); };
+  const smootherDerivative = (u) => (u <= 0 || u >= 1 ? 0 : 30 * u ** 2 * (1 - u) ** 2);
+  const smootherSecond = (u) => (u <= 0 || u >= 1 ? 0 : 60 * u * (1 - u) * (1 - 2 * u));
 
-  const rotateVector2 = (vector, angle) => new THREE.Vector2(
-    vector.x * Math.cos(angle) - vector.y * Math.sin(angle),
-    vector.x * Math.sin(angle) + vector.y * Math.cos(angle),
-  );
-  const normalizeAngle = (angle) => Math.atan2(
-    Math.sin(angle),
-    Math.cos(angle),
-  );
-  const polarPoint = (radius, angle) => new THREE.Vector2(
-    Math.cos(angle) * radius,
-    Math.sin(angle) * radius,
-  );
-  const smoother = (value) => {
-    const u = THREE.MathUtils.clamp(value, 0, 1);
-    return u ** 3 * (10 + u * (-15 + 6 * u));
+  const stops = {
+    left: {
+      pivot: leftPivot, tooth: 3, flank: 1, limit: counterclockwiseLimit, otherLimit: clockwiseLimit,
+      noseLift: 0.08, tipWidth: 0.07, faceTopRadius: 3.0, backClearance: 0.05, bossRadius: 0.26,
+      upperControl: sourceToModel(new THREE.Vector2(100, 178)),
+      lowerControl: sourceToModel(new THREE.Vector2(100, 232)),
+      blockingDirection: 'counterclockwise',
+    },
+    right: {
+      pivot: rightPivot, tooth: 1, flank: -1, limit: clockwiseLimit, otherLimit: counterclockwiseLimit,
+      noseLift: 0.08, tipWidth: 0.07, faceTopRadius: 2.95, backClearance: 0.05, bossRadius: 0.26,
+      upperControl: sourceToModel(new THREE.Vector2(410, 207)),
+      lowerControl: sourceToModel(new THREE.Vector2(420, 247)),
+      blockingDirection: 'clockwise',
+    },
   };
-  const smootherDerivative = (value) => {
-    if (value <= 0 || value >= 1) return 0;
-    return 30 * value ** 2 * (1 - value) ** 2;
+  const geometry = {
+    clockwiseLimit, counterclockwiseLimit, cyclePeriod, cyclesPerSecond, gearDepth, gearMountPhase,
+    gearOuterRadius, gearPitchRadius, gearRootRadius, leftPivot, phases, rightPivot, sourceScale, stops,
+    toothCount, toothPitch, workingProfile,
   };
-  const smootherSecondDerivative = (value) => {
-    if (value <= 0 || value >= 1) return 0;
-    return 60 * value * (1 - value) * (1 - 2 * value);
-  };
-  const segmentMotion = (cyclePhase, start, end) => {
-    const span = end - start;
-    const u = (cyclePhase - start) / span;
-    return {
-      acceleration: smootherSecondDerivative(u) / span ** 2,
-      progress: smoother(u),
-      speed: smootherDerivative(u) / span,
-    };
-  };
-
-  const localFlankSegment = (side) => ({
-    outer: polarPoint(gearOuterRadius, side * tipHalfToothAngle),
-    root: polarPoint(gearRootRadius, side * rootHalfToothAngle),
-  });
-  const pointOnLocalFlankAtRadius = workingProfile.pointAtRadius;
-  const rightFlankAtNose = pointOnLocalFlankAtRadius(
-    1,
-    rightNose.length(),
-  );
-  const leftFlankAtNose = pointOnLocalFlankAtRadius(
-    -1,
-    leftNose.length(),
-  );
-  const rightNoseAngle = Math.atan2(rightNose.y, rightNose.x);
-  const leftNoseAngle = Math.atan2(leftNose.y, leftNose.x);
-  const gearMountPhase = rightNoseAngle - rightFlankAtNose.angle;
-  const leftBlockingToothIndex = 4;
-  const clockwiseLimit = normalizeAngle(
-    leftNoseAngle - (
-      gearMountPhase
-      + leftBlockingToothIndex * toothPitch
-      + leftFlankAtNose.angle
-    ),
-  );
-  if (!(clockwiseLimit < 0 && clockwiseLimit > -toothPitch)) {
-    throw new RangeError('Source stop spacing does not trap one tooth gap.');
-  }
-
-  const flankSegmentAt = (side, toothIndex, wheelAngle) => {
-    const local = localFlankSegment(side);
-    const angle = gearMountPhase + toothIndex * toothPitch + wheelAngle;
-    return {
-      outer: rotateVector2(local.outer, angle),
-      root: rotateVector2(local.root, angle),
-    };
-  };
-  const closestPointOnSegment = (point, start, end) => {
-    const delta = end.clone().sub(start);
-    const coordinate = THREE.MathUtils.clamp(
-      point.clone().sub(start).dot(delta) / delta.lengthSq(),
-      0,
-      1,
-    );
-    return {
-      coordinate,
-      point: start.clone().addScaledVector(delta, coordinate),
-    };
-  };
+  // Signed gap between a stop's working edge and the flank it holds (along
+  // the flank's normal, positive = clear), at the flank's mid-height.
   const stopMetricsAtWheelAngle = (side, wheelAngle) => {
-    const isLeft = side === 'left';
-    const nose = isLeft ? leftNose : rightNose;
-    const toothIndex = isLeft ? leftBlockingToothIndex : 0;
-    const flankSide = isLeft ? -1 : 1;
-    const localSegment = pointOnLocalFlankAtRadius(flankSide, nose.length()).segment;
-    const segmentAngle = gearMountPhase + toothIndex * toothPitch + wheelAngle;
-    const segment = {root: rotateVector2(localSegment.root, segmentAngle), outer: rotateVector2(localSegment.outer, segmentAngle)};
-    const closest = closestPointOnSegment(
-      nose,
-      segment.root,
-      segment.outer,
-    );
-    const noseRadius = nose.length();
-    const sameRadiusPoint = pointOnLocalFlankAtRadius(
-      flankSide,
-      noseRadius,
-    );
-    const sameRadiusAngle = gearMountPhase
-      + toothIndex * toothPitch
-      + wheelAngle
-      + sameRadiusPoint.angle;
-    const angularClearance = isLeft
-      ? normalizeAngle(sameRadiusAngle - leftNoseAngle)
-      : normalizeAngle(rightNoseAngle - sameRadiusAngle);
-    const tangent = segment.outer.clone().sub(segment.root).normalize();
-    const normal = isLeft ? new THREE.Vector2(tangent.y, -tangent.x) : new THREE.Vector2(-tangent.y, tangent.x);
-    return {
-      angularClearance,
-      blockingDirection: isLeft ? 'clockwise' : 'counterclockwise',
-      clearance: closest.point.distanceTo(nose),
-      closestPoint: closest.point,
-      contactCoordinate: closest.coordinate,
-      flankNormal: normal,
-      flankSide,
-      nose,
-      radialClearance: angularClearance * noseRadius,
-      segment,
-      side,
-      toothIndex,
-    };
+    const s = stops[side], r = (gearRootRadius + gearOuterRadius) / 2;
+    const atLimit = flankPoint239(geometry, s.tooth, s.flank, r, s.limit);
+    const now = flankPoint239(geometry, s.tooth, s.flank, r, wheelAngle);
+    const root = flankPoint239(geometry, s.tooth, s.flank, gearRootRadius, wheelAngle);
+    const outer = flankPoint239(geometry, s.tooth, s.flank, gearOuterRadius, wheelAngle);
+    const tangent = outer.clone().sub(root).normalize();
+    const normal = new THREE.Vector2(-tangent.y, tangent.x).multiplyScalar(s.flank);
+    return { blockingDirection: s.blockingDirection, clearance: atLimit.clone().sub(now).dot(normal), flankNormal: normal, segment: { root, outer }, side, toothIndex: s.tooth };
   };
 
   const gear = new THREE.Group();
@@ -34700,189 +34645,45 @@ function pairedStopsForSpurGear(movement) {
   gear.userData.axis = Z_AXIS.clone();
   gear.userData.rotor = gearRotor;
   gear.userData.role = 'eighteen-tooth-source-spur-gear';
-  const gearShape = new THREE.Shape();
-  let firstGearPoint = true;
-  for (const point of workingProfile.outline) {
-    const p = rotateVector2(point, gearMountPhase);
-    if (firstGearPoint) { gearShape.moveTo(p.x, p.y); firstGearPoint = false; }
-    else gearShape.lineTo(p.x, p.y);
-  }
+  const gearShape = new THREE.Shape(workingProfile.outline.map((p) => p.clone().rotateAround(new THREE.Vector2(), gearMountPhase)));
   gearShape.closePath();
   const bore = new THREE.Path(); bore.absarc(0, 0, 0.108, 0, fullTurn, true); gearShape.holes.push(bore);
   const gearGeometry = new THREE.ExtrudeGeometry(gearShape, { bevelEnabled: false, curveSegments: 96, depth: gearDepth });
   gearGeometry.translate(0, 0, -gearDepth / 2);
-  const gearBody = new THREE.Mesh(
-    gearGeometry,
-    matte(PALETTE.driven, { metalness: 0.13, roughness: 0.62 }),
-  );
+  const gearMaterial = matte(PALETTE.driven, { metalness: 0.13, roughness: 0.62 });
+  const gearBody = new THREE.Mesh(gearGeometry, gearMaterial);
   gearBody.userData.role = 'complete-source-inferred-spur-gear-body';
-  gearRotor.add(gearBody);
-  const gearHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.46, 0.46, gearDepth * 1.42, 36),
-    matte(PALETTE.driven, { metalness: 0.15, roughness: 0.58 }),
-  );
-  gearHub.rotation.x = Math.PI / 2;
+  const gearHub = new THREE.Mesh(new THREE.BufferGeometry(), gearMaterial);
   gearHub.userData.role = 'spur-gear-hub';
-  gearRotor.add(gearHub);
-  const gearHubRing = new THREE.Mesh(
-    new THREE.TorusGeometry(0.49, 0.045, 10, 42),
-    matte(PALETTE.ink, { metalness: 0.22, roughness: 0.49 }),
-  );
-  gearHubRing.position.z = gearDepth / 2 + 0.025;
-  gearHubRing.userData.role = 'spur-gear-hub-outline';
-  retireInkOutline(gearHubRing);
-  gearRotor.add(gearHubRing);
-  const gearIndicator = new THREE.Mesh(
-    new THREE.BoxGeometry(0.9, 0.055, 0.025),
-    matte(PALETTE.white, { roughness: 0.47 }),
-  );
-  gearIndicator.position.set(0.55, 0, gearDepth / 2 + 0.065);
-  gearIndicator.rotation.z = gearMountPhase;
-  gearIndicator.userData.role = 'spur-gear-backlash-index';
-  gearRotor.add(gearIndicator);
-  gear.userData.angularPitch = toothPitch;
-  gear.userData.body = gearBody;
-  gear.userData.hub = gearHub;
-  gear.userData.indicator = gearIndicator;
-  gear.userData.outerRadius = gearOuterRadius;
-  gear.userData.pitchRadius = gearPitchRadius;
-  gear.userData.rootRadius = gearRootRadius;
+  gearRotor.add(gearBody, gearHub);
   gear.userData.teeth = toothCount;
   gear.userData.toothProfile = 'source-square-straight-flank';
   root.add(gear);
-
-  const gearShaft = makeShaft({
-    axis: Z_AXIS,
-    color: PALETTE.ink,
-    length: 1.05,
-    radius: 0.105,
-  });
+  const gearShaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 1.05, radius: 0.105 });
   gearShaft.position.z = -0.08;
   gearShaft.userData.role = 'spur-gear-arbor';
   root.add(gearShaft);
 
-  const centeredStopGeometry = (shape, depth) => {
-    const geometry = new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: true,
-      bevelSegments: 1,
-      bevelSize: 0.022,
-      bevelThickness: 0.022,
-      curveSegments: 18,
-      depth,
-    });
-    geometry.translate(0, 0, -depth / 2);
-    return geometry;
-  };
-  const makeSourceStop = ({
-    side,
-    pivot,
-    sourcePivot,
-  }) => {
+  const makeStop = (side) => {
     const group = new THREE.Group();
-    group.position.set(pivot.x, pivot.y, 0.2);
+    group.position.set(stops[side].pivot.x, stops[side].pivot.y, 0.2);
     group.userData.axis = Z_AXIS.clone();
     group.userData.role = `${side}-gravity-seated-spur-gear-stop`;
-    const localPoint = (x, y) => sourceToModel(
-      new THREE.Vector2(x, y),
-    ).sub(pivot);
-    const shape = new THREE.Shape();
-    if (side === 'left') {
-      let point = localPoint(17, 301);
-      shape.moveTo(point.x, point.y);
-      let control = localPoint(5, 300);
-      point = localPoint(5, 286);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-      control = localPoint(4, 274);
-      point = localPoint(16, 270);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-      for (const [x, y] of [
-        [145, 217], [158, 210], [177, 225], [202, 218], [210, 169],
-      ]) {
-        point = localPoint(x, y);
-        shape.lineTo(point.x, point.y);
-      }
-      control = localPoint(111, 194);
-      point = localPoint(31, 261);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-      control = localPoint(17, 268);
-      point = localPoint(10, 277);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-      control = localPoint(3, 289);
-      point = localPoint(17, 301);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-    } else {
-      let point = localPoint(496, 272);
-      shape.moveTo(point.x, point.y);
-      let control = localPoint(510, 273);
-      point = localPoint(515, 261);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-      control = localPoint(518, 248);
-      point = localPoint(506, 241);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-      control = localPoint(410, 207);
-      point = localPoint(309, 198);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-      for (const [x, y] of [
-        [298, 246], [319, 268], [341, 238],
-      ]) {
-        point = localPoint(x, y);
-        shape.lineTo(point.x, point.y);
-      }
-      control = localPoint(420, 247);
-      point = localPoint(496, 272);
-      shape.quadraticCurveTo(control.x, control.y, point.x, point.y);
-    }
-    shape.closePath();
-    const depth = 0.3;
-    const body = new THREE.Mesh(
-      centeredStopGeometry(shape, depth),
-      matte(
-        side === 'left' ? PALETTE.driver : PALETTE.accent,
-        { metalness: 0.1, roughness: 0.64 },
-      ),
-    );
+    const material = matte(side === 'left' ? PALETTE.driver : PALETTE.accent, { metalness: 0.1, roughness: 0.64 });
+    const body = new THREE.Mesh(new THREE.BufferGeometry(), material);
     body.userData.role = `${side}-source-shaped-stop-body`;
-    group.add(body);
-    const hub = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.18, 0.18, depth * 1.42, 28),
-      matte(PALETTE.ink, { metalness: 0.21, roughness: 0.5 }),
-    );
-    hub.rotation.x = Math.PI / 2;
-    hub.userData.role = `${side}-stop-pivot-hub`;
-    group.add(hub);
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.2, 0.03, 8, 32),
-      matte(PALETTE.ink, { metalness: 0.2, roughness: 0.52 }),
-    );
-    ring.position.z = depth / 2 + 0.025;
-    ring.userData.role = `${side}-stop-pivot-outline`;
-    retireInkOutline(ring);
-    group.add(ring);
+    const hub = new THREE.Mesh(new THREE.BufferGeometry(), material);
+    hub.userData.role = `${side}-stop-pivot-boss`;
+    group.add(body, hub);
     group.userData.body = body;
     group.userData.hub = hub;
-    group.userData.ring = ring;
-    group.userData.sourcePivot = sourcePivot.clone();
     return group;
   };
-  const leftStop = makeSourceStop({
-    pivot: leftPivot,
-    side: 'left',
-    sourcePivot: sourceLeftPivot,
-  });
-  const rightStop = makeSourceStop({
-    pivot: rightPivot,
-    side: 'right',
-    sourcePivot: sourceRightPivot,
-  });
+  const leftStop = makeStop('left');
+  const rightStop = makeStop('right');
   root.add(leftStop, rightStop);
-
   const makePivotShaft = (pivot, side) => {
-    const shaft = makeShaft({
-      axis: Z_AXIS,
-      color: PALETTE.ink,
-      length: 0.92,
-      radius: 0.075,
-    });
+    const shaft = makeShaft({ axis: Z_AXIS, color: PALETTE.ink, length: 0.92, radius: 0.075 });
     shaft.position.set(pivot.x, pivot.y, 0.05);
     shaft.userData.role = `${side}-fixed-stop-pivot-shaft`;
     root.add(shaft);
@@ -34890,172 +34691,59 @@ function pairedStopsForSpurGear(movement) {
   };
   const leftPivotShaft = makePivotShaft(leftPivot, 'left');
   const rightPivotShaft = makePivotShaft(rightPivot, 'right');
-  const frameRail = makeBeam(
-    new THREE.Vector3(-3.55, -3.35, -0.32),
-    new THREE.Vector3(4.85, -3.35, -0.32),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.15 },
-  );
-  frameRail.userData.role = 'fixed-spur-stop-support-rail';
-  const bearingPost = makeBeam(
-    new THREE.Vector3(0, -3.35, -0.32),
-    new THREE.Vector3(0, 0, -0.32),
-    { color: PALETTE.frame, depth: 0.18, thickness: 0.14 },
-  );
+  const bearingPost = makeBeam(new THREE.Vector3(0, -3.35, -0.32), new THREE.Vector3(0, 0, -0.32), { color: PALETTE.frame, depth: 0.18, thickness: 0.14 });
   bearingPost.userData.role = 'fixed-spur-gear-bearing-post';
-  root.add(frameRail, bearingPost);
-
-  const leftContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.065, 18, 12),
-    matte(PALETTE.white, { roughness: 0.45 }),
-  );
-  leftContactMarker.position.set(leftNose.x, leftNose.y, 0.43);
-  leftContactMarker.userData.role = 'left-stop-active-contact-marker';
-  const rightContactMarker = leftContactMarker.clone();
-  rightContactMarker.position.set(rightNose.x, rightNose.y, 0.43);
-  rightContactMarker.userData.role = 'right-stop-active-contact-marker';
-  root.add(leftContactMarker, rightContactMarker);
+  const frameRail = makeBeam(new THREE.Vector3(-3.55, -3.35, -0.32), new THREE.Vector3(4.85, -3.35, -0.32), { color: PALETTE.frame, depth: 0.18, thickness: 0.15 });
+  frameRail.userData.role = 'fixed-spur-stop-support-rail';
+  root.add(bearingPost, frameRail);
 
   const stateAtCycleCoordinate = (cycleCoordinate) => {
     const cycleIndex = Math.floor(cycleCoordinate);
     const cyclePhase = cycleCoordinate - cycleIndex;
-    let activeStop = 'right';
-    let demonstrationTorque = 'counterclockwise-blocked';
-    let dwell = true;
-    let stage = 'right-stop-holds-counterclockwise-limit';
-    let wheelAngle = 0;
-    let wheelAngleDerivative = 0;
-    let wheelAngleSecondDerivative = 0;
-    if (
-      cyclePhase >= phases.clockwiseTraverse.start
-      && cyclePhase < phases.clockwiseTraverse.end
-    ) {
-      const motion = segmentMotion(
-        cyclePhase,
-        phases.clockwiseTraverse.start,
-        phases.clockwiseTraverse.end,
-      );
-      activeStop = null;
-      demonstrationTorque = 'clockwise-through-trapped-clearance';
-      dwell = false;
+    const span = clockwiseLimit - counterclockwiseLimit;
+    let activeStop = 'left', stage = 'left-stop-holds-counterclockwise-limit', dwell = true;
+    let wheelAngle = counterclockwiseLimit, speed = 0, acceleration = 0;
+    const move = (start, end, from, delta) => {
+      const u = (cyclePhase - start) / (end - start);
+      wheelAngle = from + delta * smoother(u);
+      speed = delta * smootherDerivative(u) / (end - start);
+      acceleration = delta * smootherSecond(u) / (end - start) ** 2;
+      activeStop = null; dwell = false;
+    };
+    if (cyclePhase >= phases.clockwiseTraverse.start && cyclePhase < phases.clockwiseTraverse.end) {
+      move(phases.clockwiseTraverse.start, phases.clockwiseTraverse.end, counterclockwiseLimit, span);
       stage = 'clockwise-free-play-between-opposed-stops';
-      wheelAngle = clockwiseLimit * motion.progress;
-      wheelAngleDerivative = clockwiseLimit * motion.speed;
-      wheelAngleSecondDerivative = clockwiseLimit * motion.acceleration;
-    } else if (
-      cyclePhase >= phases.leftLock.start
-      && cyclePhase < phases.leftLock.end
-    ) {
-      activeStop = 'left';
-      demonstrationTorque = 'clockwise-blocked';
-      stage = 'left-stop-holds-clockwise-limit';
-      wheelAngle = clockwiseLimit;
-    } else if (
-      cyclePhase >= phases.counterclockwiseTraverse.start
-      && cyclePhase < phases.counterclockwiseTraverse.end
-    ) {
-      const motion = segmentMotion(
-        cyclePhase,
-        phases.counterclockwiseTraverse.start,
-        phases.counterclockwiseTraverse.end,
-      );
-      activeStop = null;
-      demonstrationTorque = 'counterclockwise-through-trapped-clearance';
-      dwell = false;
+    } else if (cyclePhase >= phases.rightLock.start && cyclePhase < phases.rightLock.end) {
+      activeStop = 'right'; stage = 'right-stop-holds-clockwise-limit'; wheelAngle = clockwiseLimit;
+    } else if (cyclePhase >= phases.counterclockwiseTraverse.start && cyclePhase < phases.counterclockwiseTraverse.end) {
+      move(phases.counterclockwiseTraverse.start, phases.counterclockwiseTraverse.end, clockwiseLimit, -span);
       stage = 'counterclockwise-free-play-between-opposed-stops';
-      wheelAngle = clockwiseLimit * (1 - motion.progress);
-      wheelAngleDerivative = -clockwiseLimit * motion.speed;
-      wheelAngleSecondDerivative = -clockwiseLimit * motion.acceleration;
     }
     const leftMetrics = stopMetricsAtWheelAngle('left', wheelAngle);
     const rightMetrics = stopMetricsAtWheelAngle('right', wheelAngle);
-    const wheelAngularSpeed = wheelAngleDerivative * cyclesPerSecond;
-    const wheelAngularAcceleration = wheelAngleSecondDerivative
-      * cyclesPerSecond ** 2;
-    const contactMetrics = activeStop === 'left'
-      ? leftMetrics
-      : activeStop === 'right' ? rightMetrics : null;
     return {
       activeStop,
-      contact: contactMetrics,
-      cycleCoordinate,
-      cycleIndex,
-      cyclePhase,
-      demonstrationTorque,
-      dwell,
-      leftClearance: leftMetrics.clearance,
-      leftMetrics,
-      rightClearance: rightMetrics.clearance,
-      rightMetrics,
-      stage,
-      wheelAngle,
-      wheelAngularAcceleration,
-      wheelAngularSpeed,
+      contact: activeStop === 'left' ? leftMetrics : activeStop === 'right' ? rightMetrics : null,
+      cycleCoordinate, cycleIndex, cyclePhase, dwell,
+      leftClearance: leftMetrics.clearance, leftMetrics,
+      rightClearance: rightMetrics.clearance, rightMetrics,
+      stage, wheelAngle,
+      wheelAngularAcceleration: acceleration * cyclesPerSecond ** 2,
+      wheelAngularSpeed: speed * cyclesPerSecond,
     };
   };
-  const stateAtTime = (time) => stateAtCycleCoordinate(
-    time * cyclesPerSecond,
-  );
+  const stateAtTime = (time) => stateAtCycleCoordinate(time * cyclesPerSecond);
 
-  root.userData.archetype =
-    'paired-opposed-gravity-stops-eighteen-tooth-spur-gear';
-  root.userData.blocks = {
-    bearingPost,
-    frameRail,
-    gear,
-    gearBody,
-    gearHub,
-    gearHubRing,
-    gearIndicator,
-    gearShaft,
-    leftContactMarker,
-    leftPivotShaft,
-    leftStop,
-    rightContactMarker,
-    rightPivotShaft,
-    rightStop,
-  };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.55, -3.5, -0.48),
-    new THREE.Vector3(4.85, 3.2, 0.62),
-  );
+  root.userData.archetype = 'paired-opposed-gravity-stops-eighteen-tooth-spur-gear';
+  root.userData.blocks = { bearingPost, frameRail, gear, gearBody, gearHub, gearShaft, leftPivotShaft, leftStop, rightPivotShaft, rightStop };
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-3.55, -3.5, -0.48), new THREE.Vector3(4.85, 3.2, 0.62));
   root.userData.canonicalTimes = {
-    clockwiseFreePlayMidpoint: cyclePeriod
-      * (phases.clockwiseTraverse.start + phases.clockwiseTraverse.end) / 2,
-    leftStopLock: cyclePeriod * phases.leftLock.start,
-    rightStopLock: 0,
-    returnFreePlayMidpoint: cyclePeriod
-      * (phases.counterclockwiseTraverse.start
-        + phases.counterclockwiseTraverse.end) / 2,
+    leftStopLock: 0,
+    rightStopLock: cyclePeriod * phases.rightLock.start,
     sourcePose: 0,
   };
-  root.userData.geometry = {
-    clockwiseLimit,
-    workingProfile,
-    cyclePeriod,
-    cyclesPerSecond,
-    gearDepth,
-    gearMountPhase,
-    gearOuterRadius,
-    gearPitchRadius,
-    gearRootRadius,
-    leftBlockingToothIndex,
-    leftFlankAtNose,
-    leftNose,
-    leftNoseAngle,
-    leftPivot,
-    phases,
-    rightFlankAtNose,
-    rightNose,
-    rightNoseAngle,
-    rightPivot,
-    rootHalfToothAngle,
-    sourceScale,
-    tipHalfToothAngle,
-    toothCount,
-    toothPitch,
-  };
-  root.userData.mechanism =
-    'two-source-shaped-stops-limit-an-eighteen-tooth-spur-gear-to-the-clearance-between-opposed-working-flanks';
+  root.userData.geometry = geometry;
+  root.userData.mechanism = 'two-flat-stops-limit-an-eighteen-tooth-spur-gear-to-the-play-between-opposed-working-flanks';
   root.userData.sourceAnimation = {
     available: false,
     independentlyReconstructed: true,
@@ -35068,16 +34756,10 @@ function pairedStopsForSpurGear(movement) {
       imageHeight: 525,
       imageWidth: 525,
       inferredFullToothCount: toothCount,
-      inferredTopology:
-        'one symmetric spur gear held by two separately pivoted stops entering different upper tooth gaps',
-      officialAnimationAvailable: false,
       rasterGearCenter: sourceGearCenter,
-      rasterLeftNose: sourceLeftNose,
       rasterLeftPivot: sourceLeftPivot,
-      rasterRightNose: sourceRightNose,
       rasterRightPivot: sourceRightPivot,
       sourceBreakLineAbbreviatesLowerGearHalf: true,
-      visibleUpperToothTipCount: 10,
     },
     primaryScan: {
       archiveIdentifier: 'fivehundredseven00browiala',
@@ -35088,28 +34770,23 @@ function pairedStopsForSpurGear(movement) {
     },
     sourceUrl: movement.sourceUrl,
   };
-  root.userData.flankSegmentAt = flankSegmentAt;
-  root.userData.pointOnLocalFlankAtRadius = pointOnLocalFlankAtRadius;
   root.userData.stateAtCycleCoordinate = stateAtCycleCoordinate;
   root.userData.stateAtTime = stateAtTime;
   root.userData.stopMetricsAtWheelAngle = stopMetricsAtWheelAngle;
   root.userData.transmission = {
     actuationDepictedBySource: false,
-    counterclockwiseLimit: 0,
     clockwiseLimit,
+    counterclockwiseLimit,
     fullRotationPermittedWhileStopsSeated: false,
-    gearTravelInToothPitches: -clockwiseLimit / toothPitch,
+    gearTravelInToothPitches: (counterclockwiseLimit - clockwiseLimit) / toothPitch,
     separatelyPivotedStopCount: 2,
-    sourceLimitedDemonstration:
-      'alternating externally applied torque across the trapped clearance',
+    sourceLimitedDemonstration: 'alternating externally applied torque across the trapped play',
   };
 
   const update = (time) => {
     const state = stateAtTime(time);
     setSpin(gear, state.wheelAngle);
     setSpin(gearShaft, state.wheelAngle);
-    leftContactMarker.visible = state.activeStop === 'left';
-    rightContactMarker.visible = state.activeStop === 'right';
     gear.userData.angularSpeed = state.wheelAngularSpeed;
     gearShaft.userData.angularSpeed = state.wheelAngularSpeed;
     leftStop.userData.angularSpeed = 0;

@@ -1,7 +1,8 @@
 // Offline bounded, prescribed free-run/drop; Node18+ and project npm deps.
 import assert from 'node:assert/strict';import{readFile,writeFile}from'node:fs/promises';
 import{createAuthoredIntermittentMovement as create}from'../src/simulation/authored-intermittent.js';
-import{stop240Definitions,stop240Contact}from'../src/simulation/ratchet-stop-240-contact.js';
+import{stop240Definitions,stop240Contact,stop240Advance}from'../src/simulation/ratchet-stop-240-contact.js';
+const wheelAt=q=>stop240Advance(q).value;
 const d=create({id:240}).root.userData,g=d.geometry,stops=stop240Definitions(g.stopDefinitions,g.localProfilePoints),N=512,step=.002,width=401,limit=5;
 // Each stop is a flat plate in the wheel's plane, so its whole outline (not
 // only the toe circle) must clear the teeth. Only outline points that can
@@ -18,9 +19,9 @@ export function bodyGap240(stop,lift,wheelAngle){
 }
 const paths=stops.map(stop=>{let costs=new Float64Array(width).fill(Infinity);costs[0]=0;const parents=[];
  for(let i=1;i<=N;i++){const next=new Float64Array(width).fill(Infinity),back=new Int16Array(width).fill(-1);
-  for(let j=0;j<width;j++){if(i===N&&j)continue;const lift=j*step,gap=Math.min(stop240Contact(stop,lift,-g.toothPitch*i/N,g.localProfilePoints).normalClearance,bodyGap240(stop,lift,-g.toothPitch*i/N));if(gap<(i===N?-1e-10:.00035))continue;
+  for(let j=0;j<width;j++){if(i===N&&j)continue;const lift=j*step,gap=Math.min(stop240Contact(stop,lift,g.toothPitch*wheelAt(i/N),g.localProfilePoints).normalClearance,bodyGap240(stop,lift,g.toothPitch*wheelAt(i/N)));if(gap<(i===N?-1e-10:.00035))continue;
    for(let k=Math.max(0,j-limit);k<=Math.min(width-1,j+limit);k++){if(!Number.isFinite(costs[k]))continue;let clear=true;
-    for(const f of[.25,.5,.75])if(stop240Contact(stop,(k+(j-k)*f)*step,-g.toothPitch*(i-1+f)/N,g.localProfilePoints).normalClearance<-.0001){clear=false;break;}
+    for(const f of[.25,.5,.75])if(stop240Contact(stop,(k+(j-k)*f)*step,g.toothPitch*wheelAt((i-1+f)/N),g.localProfilePoints).normalClearance<-.0001){clear=false;break;}
     if(!clear)continue;const cost=costs[k]+lift*lift+.5*((j-k)*step)**2;if(cost<next[j]){next[j]=cost;back[j]=k;}
    }
   }if(!next.some(Number.isFinite))throw Error(`${stop.key}: no path ${i/N}`);costs=next;parents.push(back);

@@ -1,12 +1,47 @@
 import * as THREE from 'three';
 import source from './source.js';
 import {makeTreadleRatchetLinkage,treadleSourcePoint as point} from './linkage.js';
-import {plate,poly,circle,capsule,ring,disk,rotate,sub,spline,polygonClipping as clip} from '../finite-plate-geometry.js';
+import {plate,poly,circle,capsule,ring,disk,rotate,add,sub,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE,matte,markShadows} from '../primitives.js';
 
+// One pawl for both arms. Both pivots sit at the same radius, so the same
+// outline, turned about the wheel axis, seats identically on either arm. It is
+// a band of even width between two concentric circular arcs, bowed away from
+// the wheel as Brown draws it, grown from a round bored boss. Its end is cut
+// along the tooth's steep face and its inner corner is the nose that seats in
+// the root. The outline is given in the pawl's frame at the source pose: the
+// pivot at the origin and the nose in the root `advance` radians ahead of it.
+export const treadlePawl={advance:.36,width:.07,arcRadius:.62,bossRadius:.108,noseRound:.002};
+export function treadlePawlOutline({pivot,...options}){
+ // Built with the pivot on the x axis, then turned, so both arms get the same vertices.
+ const turn=Math.atan2(pivot[1],pivot[0]);
+ return canonicalPawlOutline({pivot:[Math.hypot(...pivot),0],...options}).map(polygon=>polygon.map(ring=>ring.map(q=>rotate(q,turn))));
+}
+function canonicalPawlOutline({pivot,rootRadius,outerRadius,pitch,shortFaceFraction,advance,width,arcRadius,bossRadius,noseRound}){
+ const unit=v=>{const l=Math.hypot(...v);return[v[0]/l,v[1]/l];},dot=(a,b)=>a[0]*b[0]+a[1]*b[1],
+  pivotAngle=Math.atan2(pivot[1],pivot[0]),rootAngle=pivotAngle+advance,
+  nose=sub(rotate([rootRadius,0],rootAngle),pivot),
+  face=unit(sub(rotate([outerRadius,0],rootAngle+shortFaceFraction*pitch),rotate([rootRadius,0],rootAngle))),
+  // Inner arc through the nose; centre line (radius arcRadius+width/2) through the pivot.
+  a=arcRadius,b=arcRadius+width/2,d=Math.hypot(...nose),x=(b*b-a*a+d*d)/(2*d),h=Math.sqrt(b*b-x*x),
+  along=[nose[0]/d,nose[1]/d],across=[-along[1],along[0]],
+  centres=[1,-1].map(s=>[along[0]*x+across[0]*h*s,along[1]*x+across[1]*h*s]),
+  // The centre lies on the wheel side, so the band bows outward.
+  centre=centres.sort((p,q)=>Math.hypot(...add(p,pivot))-Math.hypot(...add(q,pivot)))[0],
+  angleOf=p=>Math.atan2(p[1]-centre[1],p[0]-centre[0]),start=angleOf([0,0]),
+  wrap=v=>Math.atan2(Math.sin(v),Math.cos(v)),noseAngle=start+wrap(angleOf(nose)-start),
+  // Outer arc meets the face line: centre + R u = nose + s face.
+  R=arcRadius+width,w=sub(nose,centre),B=dot(w,face),s=-B+Math.sqrt(B*B-(dot(w,w)-R*R)),tip=add(nose,[face[0]*s,face[1]*s]),
+  tipAngle=start+wrap(angleOf(tip)-start),back=start-Math.sign(noseAngle-start)*bossRadius/arcRadius,
+  arc=(r,from,to,n=64)=>Array.from({length:n+1},(_,k)=>add(centre,rotate([r,0],from+(to-from)*k/n))),
+  // A small round on the nose keeps the corner solid; it still reaches the root.
+  noseCut=[nose,add(nose,[face[0]*noseRound,face[1]*noseRound])],
+  band=[...arc(arcRadius,back,noseAngle-Math.sign(noseAngle-start)*noseRound/arcRadius),...noseCut.slice(1),tip,...arc(R,tipAngle,back)];
+ return clip.union(poly(band),poly(circle([0,0],bossRadius,128)));
+}
 // Geometry and linkage candidate. Wheel and pawl motion are deliberately
 // supplied separately until the actual finite-contact dynamics are solved.
-export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.shortFaceFraction,treadleInset=.055,rodEndOffset=.12}={}){
+export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.shortFaceFraction,treadleInset=.055,rodEndOffset=.12,pawl:pawlOptions={}}={}){
  const linkage=makeTreadleRatchetLinkage({treadleInset}),p=linkage.parameters,initial=linkage.atTime(0),
   root=new THREE.Group(),parts={},families={},blocks={},profiles={},scale=source.scale,
   attach=(name,g,family,color,position=[0,0,0])=>{
@@ -15,7 +50,7 @@ export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.sh
    blocks[family].add(mesh);parts[name]=mesh;families[name]=family;return mesh;
   },bored=(outline,holes)=>clip.difference(outline,...holes.map(([at,r])=>poly(circle(at,r,128)))),
   rootRadius=source.ratchet.rootRadiusPixels/scale,outerRadius=source.ratchet.outerRadiusPixels/scale,
-  pitch=2*Math.PI/source.ratchet.teeth,wheelPoints=[];
+  pitch=2*Math.PI/source.ratchet.teeth,wheelPoints=[],pawl={...treadlePawl,...pawlOptions},pawlNoses={};
  for(let i=0;i<source.ratchet.teeth;i++){
   const a=source.ratchet.tipPhase+i*pitch,span=(1-shortFaceFraction)*pitch,
    tip=rotate([outerRadius,0],a),valley=rotate([rootRadius,0],a+span),
@@ -29,13 +64,12 @@ export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.sh
  for(let i=0;i<2;i++){
   const a=p.arms[i],name=a.name,af=name+'Arm',tf=name+'Treadle',rf=name+'Rod',pf=name+'Pawl',
    armShape=bored(clip.union(capsule([0,0],a.armRodLocal,.027,32),poly(circle([0,0],source.circles.wheelHub.radius/scale,128)),
-    poly(circle(a.pawlLocal,source.circles[name+'PawlPivot'].radius/scale,128)),poly(circle(a.armRodLocal,.105,128))),
+    poly(circle(a.pawlLocal,pawl.bossRadius,128)),poly(circle(a.armRodLocal,.105,128))),
     [[[0,0],.17],[a.pawlLocal,.032],[a.armRodLocal,.032]]);
   attach(name+'ArmBody',plate(armShape,a.armPlane-.03,a.armPlane+.03),af,PALETTE.driver);
   const pawlZ=i===0?-.041:.041,pawlPivot=initial.arms[i].pawlPivot,
-   outline=source[name+'Pawl'],outer=spline(outline.outer.map(q=>sub(point(q),pawlPivot))),inner=spline(outline.inner.map(q=>sub(point(q),pawlPivot))),
-   pawlShape=bored(clip.union(poly([...outer,...inner.reverse()]),poly(circle([0,0],source.circles[name+'PawlPivot'].radius/scale,128))),[[[0,0],.034]]);
-  profiles[pf]=pawlShape;attach(name+'PawlBody',plate(pawlShape,pawlZ-.03,pawlZ+.03),pf,PALETTE.brass);
+   pawlShape=bored(treadlePawlOutline({pivot:pawlPivot,rootRadius,outerRadius,pitch,shortFaceFraction,...pawl}),[[[0,0],.034]]);
+  profiles[pf]=pawlShape;pawlNoses[name]=sub(rotate([rootRadius,0],Math.atan2(pawlPivot[1],pawlPivot[0])+pawl.advance),pawlPivot);attach(name+'PawlBody',plate(pawlShape,pawlZ-.03,pawlZ+.03),pf,PALETTE.brass);
   attach(name+'PawlPin',disk(.031,pawlZ-.033,a.armPlane+.033,128),af,PALETTE.muted,[...a.pawlLocal,0]);
   const toe=rotate(sub(point(source.treadles[name==='upper'?'upperToe':'lowerToe']),p.fulcrum),-a.sourceTreadleAngle),
    leverOutline=clip.union(capsule([0,0],toe,.027,32),poly(circle([0,0],.15,128)),
@@ -99,7 +133,7 @@ export function makeTreadleRatchetCandidate({shortFaceFraction=source.ratchet.sh
   }
   setStrap(s.cable);root.updateMatrixWorld(true);root.userData.kinematics={...s,wheelAngle,pawlAngles,pulleyAngle};
  };
- root.userData={parts,families,blocks,profiles,linkage,geometry:{source,pulleyRadius,width,options:{shortFaceFraction,treadleInset,rodEndOffset}},setState,setStrap,
+ root.userData={parts,families,blocks,profiles,linkage,geometry:{source,pulleyRadius,width,rootRadius,pitch,pawl,pawlNoses,options:{shortFaceFraction,treadleInset,rodEndOffset}},setState,setStrap,
   mechanism:'isolated-treadle-ratchet-candidate',fidelity:'candidate',hideGround:true,cameraFov:8,
   qualification:'Candidate geometry and equalizer linkage with externally supplied free wheel/pawl motion. Pulley rotation is a rolling approximation with axial creep. Complete mechanical qualification and pulley traction remain pending.'};
  setState();markShadows(root);return{root,setState,update:()=>setState(),cameraDirection:new THREE.Vector3(0,0,10)};

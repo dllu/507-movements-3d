@@ -64,7 +64,8 @@ function horizontalOvershotWaterWheel(movement) {
   const bladeCenterRadius = (bladeInnerRadius + bladeOuterRadius) / 2;
   const bladeRadialLength = bladeOuterRadius - bladeInnerRadius;
   const sourcePoseBladeOffset = 0;
-  // Pass 80: the hub fills the support ring and the boards butt on it.
+  // Pass 80: the hub fills the support ring; pass 86 sinks the boards' roots
+  // 0.24 into it and deepens it to enclose their pitched section.
   const hubRadius = 0.52;
   const shaftRadius = 0.19;
   // Pass 70: the runner turns clockwise seen from above (spin -1 about +y).
@@ -305,7 +306,9 @@ function horizontalOvershotWaterWheel(movement) {
     // Brown draws broad flat radial boards, pitched about their radial axis
     // so their faces show from his raised viewpoint; no scoop lips.
     bladeFloor.geometry.dispose();
-    bladeFloor.geometry = horizontalVane([new THREE.Vector3(bladeInnerRadius, 0, 0),
+    // The pitched board's root runs 0.24 into the hub (to r 0.28) so it is
+    // sunk in, not butted edge-on against the hub's curved face.
+    bladeFloor.geometry = horizontalVane([new THREE.Vector3(bladeInnerRadius - 0.24, 0, 0),
       new THREE.Vector3(bladeOuterRadius, 0, 0)], .04, -.28, .28).rotateX(-.62);
     bladeFloor.position.y = .16;
     catchingLip.visible = false;
@@ -314,10 +317,12 @@ function horizontalOvershotWaterWheel(movement) {
   }
 
   const hub = new THREE.Mesh(
-    new THREE.CylinderGeometry(hubRadius, hubRadius, 0.34, 40),
+    new THREE.CylinderGeometry(hubRadius, hubRadius, 0.56, 40),
     wheelMaterial,
   );
-  hub.position.y = 0.18;
+  // Deep enough (y -0.12..0.44) to enclose the pitched boards' roots, whose
+  // 35-degree tilt spans y -0.09..0.41.
+  hub.position.y = 0.16;
   hub.userData.role = 'horizontal-wheel-hub-fast-on-vertical-shaft';
   rotor.add(hub);
   const hubRing = new THREE.Mesh(

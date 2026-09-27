@@ -6,6 +6,12 @@ import {makeLaidRopeMesh,replaceWithLaidRope} from '../laid-rope.js';
 import {matte,PALETTE} from '../primitives.js';
 export function makeCordTreadleModel(bundle){
  const root=new THREE.ObjectLoader().parse(bundle.object),blocks=Object.fromEntries(['disk','treadle','pulley'].map(n=>[n,root.getObjectByName('body:'+n)]));
+ // The baked cord pin stands on the treadle's front face by its flat end.
+ // Its shank is carried on back through the treadle (to just short of the
+ // rear face), so the pin is set into the bar rather than butting on it.
+ {const pin=blocks.treadle.children.find(o=>o.isMesh&&o.material.color?.getHex()===0x252a2d);
+  if(pin){const shank=new THREE.Mesh(new THREE.CylinderGeometry(.055,.055,.24,40).rotateX(Math.PI/2).translate(-2.54,0,.18),pin.material);
+   shank.name='cord-pin-shank-through-treadle';shank.castShadow=shank.receiveShadow=true;blocks.treadle.add(shank);}}
  const segments=256;
  // Brown hatches the cord as a laid rope: the shared three-strand rope along
  // the ideal centreline. Its lay is fixed in the material from the crank pin.

@@ -36,9 +36,17 @@ engraving's irregular, nearly square teeth; they are reconstruction choices.
 The ratchet has a long rising spiral over 92% of each tooth pitch and a short,
 straight locking face. Root and tip radii are 26.29614 and 34.60110 pixels.
 The fitted six-tooth contour replaces the earlier twelve shallow triangles.
-The pawl pivots at the measured point (209, 259) pixels. Its finite rounded
-nose and underside contact the ratchet directly; there is no auxiliary rod
-or prescribed engagement correction.
+The pawl pivots at the measured point (209, 259) pixels. Since pass 86 each
+pawl is one flat bored plate in its ratchet's plane, following Brown's hooked
+outline: a round boss (3.2-pixel radius, 1.3-pixel bore), a body whose top
+arches over the ratchet, and a short claw. The claw's working face lies along
+the ratchet's locking face over 60% of its height, and its tip corner seats
+in the root, 0.02 pixel clear of both flanks in the built (seated) pose. The
+underside is a straight edge from the boss to the claw, joined by a 0.9-pixel
+fillet, so a passing tooth tip slides along one flat face while the pawl
+clicks. There is no auxiliary rod or prescribed engagement correction. The
+earlier pawl, a 5.2-pixel capsule whose round nose bore on the middle of the
+face, was replaced because it never seated in the root.
 
 Actual rendered-edge distances at the initial native pose:
 
@@ -58,9 +66,8 @@ Actual rendered-edge distances at the initial native pose:
 Gear measurements omit the top and bottom regions where rack ink merges
 with the wheel. The final measurement also excludes seven such readings
 retained in the preliminary fit. Tooth-center residuals measure spacing,
-not the whole silhouette. The pawl is a simpler, straighter working arm than
-the drawn curved outline; its detailed outline and the hidden axial spacing
-are not independently fitted. The source cannot be exactly superimposed
+not the whole silhouette. The pawl follows the drawn hook in outline, but
+its outline and the hidden axial spacing are not independently fitted. The source cannot be exactly superimposed
 while retaining compatible, regularly spaced teeth.
 
 ## Native mechanics and limits
@@ -75,17 +82,23 @@ uniform density normalized to frame mass 1.
 
 The input has constant working velocity and short, twice differentiable
 reversals. Its nominal triangle amplitude is `pitchRadius × π/2`; a quartic
-cap rounds each peak over ±0.18 seconds. This slightly shortens the stroke,
-allowing the passive shaft to coast during reversal while preserving clutch
-phase. A 0.15-second exponential startup brings the frame smoothly to speed.
+cap rounds each peak over ±0.18 seconds, which lets the passive shaft coast
+through each reversal. Since pass 86 the nominal amplitude is
+`pitchRadius × (π/2 + 0.008)`: the capped stroke ends 0.0036 world unit
+further out, so the idle pawl passes the root of the next tooth before its
+pinion reverses and drops fully into it. The reversed pinion then takes up
+that small backlash (about 0.4 degree of ratchet) before its already seated
+pawl picks up the drive. With the earlier stroke the new claw reached the
+face while still on the tooth tip and slid down it, wedging the shaft ahead;
+without the backlash the model skipped teeth. A 0.15-second exponential startup brings the frame smoothly to speed.
 An ideal position servo drives that input. Output motion is never overwritten
 or wrapped during stepping.
 
-Pawls have inferred torsion springs of 0.001 with rest angle −0.2 radians
-and damping 0.00005. The output hinge uses damping 0.00005. These values are
-not material or load calibration. Both pawls start at −0.13 radians, and the
-shaft at −0.005 radians: this seats the arms on the locking side without
-initial penetration. This is an initial assembly pose, not a runtime jump.
+Pawls have inferred torsion springs of 0.001 with rest angle −0.07 radians
+past the seated pose, and damping 0.00005. The output hinge uses damping
+0.00005. These values are not material or load calibration. Both pawls and
+the shaft start at zero, the seated assembly pose, without initial
+penetration.
 Starting the pawls open lost one ratchet pitch during startup; overly strong
 springs caused substantial speed ripple. Gravity assists engagement, but
 removing the springs entirely allowed a pawl to overturn.
@@ -101,37 +114,50 @@ describes the convex contact pipeline and discrete constraint integration.
 This is a numerical choice for the ideal planar joints, not a proof that
 all collision configurations or material parameters behave equivalently.
 
-Ten cycles (60 native seconds) maintain the full reversing frame stroke
-from −0.74152602 to +0.74152534 world units. Maximum rack/pinion displacement
-error is 0.08764336 source pixel, input error 0.04780147 pixel and reported
-native penetration 0.15824464 pixel. There are no automatic resets. The
-largest reverse shaft increment is 0.00000180 radian during startup, below
-0.00011 degree. After startup every step turns clockwise.
+Pass 86 figures. Ten cycles (60 native seconds) maintain the full reversing
+frame stroke from −0.74528895 to +0.74528925 world units. Maximum rack/pinion
+displacement error is 0.06305862 source pixel, input error 0.04669590 pixel
+and reported native penetration 0.15869046 pixel. There are no automatic
+resets. The largest reverse shaft increment is 0.00000224 radian, during
+startup. After startup every step turns clockwise. Pawl hinges stay within
+−0.0014 to 0.409 radian: the claws never overshoot the tooth-tip height.
 
-After two seconds, mean shaft speed is −1.04719522 rad/s, matching the ideal
-−π/3 rad/s. Individual integration steps range from −1.08963 to −0.69743
-rad/s; brief contact impulses therefore prevent exact instantaneous uniformity.
-Over 20 ms intervals, speed ranges from −1.08833 to −1.00120 rad/s, within
-4.4% of ideal. These measured variations remain visible physics; the model
-does not smooth or prescribe the displayed output angle.
+Away from the reversals the driving pawl sits in the root, within 0.0014
+radian of its seated pose and 0.08 degree of the locking face. At every
+reversal the idle pawl drops fully into a root while still clear of the face.
 
-Two-cycle sensitivity checks on the final solid construction:
+After two seconds, mean shaft speed is −1.04720178 rad/s, matching the ideal
+−π/3 rad/s. Individual integration steps range from −1.07789 to −0.97853
+rad/s: the shaft is driven 0.4% fast through each stroke and coasts slightly
+slow while the reversed pinion takes up the backlash. These measured
+variations remain visible physics; the model does not smooth or prescribe the
+displayed output angle.
+
+Two-cycle sensitivity checks on the pre-pass-86 construction (capsule pawls):
 
 | Trial | Maximum penetration, pixels | Maximum mesh error, pixels | Mean speed after 2 s, rad/s |
 | --- | ---: | ---: | ---: |
 | 0.25 ms timestep | 0.13226 | 0.07331 | −1.04720620 |
 | 128 pinion / 96 ratchet samples, 4,096 cutter steps | 0.15862 | 0.07451 | −1.04711524 |
 
+Pass-86 checks on the seated-claw pawls: a 0.25 ms timestep gives maximum
+penetration 0.140 pixel, step speeds −1.076 to −0.984 rad/s and seated pawls
+(within 0.0014 radian and 0.05 degree). A doubled pawl spring (0.002) and
+backlash values from 0.005 to 0.012 also seat every stroke over 30 to 60 s;
+backlash 0.003 is marginal and 0 skips teeth.
+
 These check numerical behavior, not contact-force convergence. An earlier
 friction-0.1 trial produced reverse steps and excessive speed variation;
 nonzero friction and applied shaft loads are not qualified. The verified
 scope is the unloaded, frictionless reconstruction with ideal bearings.
 
-All 18,936 compiled collision vertices match their visible construction
-within 0.00001150 source pixel. The independent 25-pose surface audit makes
-5,162,318 vertex, edge-midpoint and triangle-centroid queries across all
-hardware and checks the full-stroke camera bounds. Maximum sampled intended
-penetration is 0.00130678 pixel; no unintended penetration is found. Only
+All 19,292 compiled collision vertices match their visible construction
+within 0.00001022 source pixel. The independent 25-pose surface audit (pass 86)
+makes 5,218,774 vertex, edge-midpoint and triangle-centroid queries across all
+hardware and checks the full-stroke camera bounds, except for the pass-60
+stub run-ons and the shaft's rear stub, which deliberately leave the view.
+Maximum sampled intended penetration is 0.0916 pixel, at a claw on its
+ratchet; no unintended penetration is found. Only
 bounded rack/pinion and ratchet/pawl working regions allow soft penetration.
 On return strokes a tooth can lift the underside of the pawl as well as its
 nose; the pivot eye remains excluded. Surface sampling is not continuous
@@ -143,8 +169,8 @@ still turns both pinions. Disabling either pawl separately leaves the other
 able to turn the shaft clockwise; its return-stroke driving impulse is less
 than 5% of its working-stroke impulse. Restart, backward seeking and frame
 partitioning reproduce native state exactly. Disposal frees native model
-and data allocations. Six mechanism tests and ten shared geometry, engine
-and runtime tests pass.
+and data allocations. Seven mechanism tests (pass 86 adds the pawl seating
+checks) and the shared geometry, engine and runtime tests pass.
 
 All fourteen integrated views have been inspected, including the source
 overlay, stroke ends, both rack contacts, both pawls, axial, oblique and rear

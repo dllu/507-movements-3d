@@ -12,10 +12,20 @@ export function makeMujocoTreadle(mujoco,options={}) {
  catch(error){disposeObject3D(visual.root);throw error;}
  const {model,data}=physics;
  const sourceCable=u.linkage.atTime(0).cable;
- const spring=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({color:0x555a5d,metalness:.45,roughness:.45}));
- spring.name='passive-lower-pawl-torsion-spring';spring.position.set(...p.arms[0].pawlLocal,0);u.blocks.lowerArm.add(spring);
- spring.visible=physics.description.options.lowerSpring>0;
- let lastSpringAngle=Infinity;
+ // Both pawls carry the same torsion spring round their pins, between the pawl
+ // and its arm. Its leg lies on the pawl's face along the band.
+ const initialArms=u.linkage.atTime(0).arms,springs=['lower','upper'].map((name,i)=>{
+  const arm=p.arms[i],stiffness=physics.description.options[name+'Spring'],
+   spring=new THREE.Mesh(new THREE.BufferGeometry(),new THREE.MeshStandardMaterial({color:0x555a5d,metalness:.45,roughness:.45}));
+  spring.name=`passive-${name}-pawl-torsion-spring`;spring.position.set(...arm.pawlLocal,0);u.blocks[name+'Arm'].add(spring);
+  spring.visible=stiffness>0;
+  const outline=u.profiles[name+'Pawl'][0][0],inside=q=>{let c=false;for(let j=0,k=outline.length-1;j<outline.length;k=j++){const a=outline[j],b=outline[k];
+   if((a[1]>q[1])!==(b[1]>q[1])&&q[0]<(b[0]-a[0])*(q[1]-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;};
+  const hits=Array.from({length:720},(_,k)=>k*Math.PI/360).filter(a=>inside([.16*Math.cos(a),.16*Math.sin(a)]));
+  const legAngle=Math.atan2(hits.reduce((t,a)=>t+Math.sin(a),0),hits.reduce((t,a)=>t+Math.cos(a),0));
+  const armLow=arm.armPlane-.03,pawlTop=(i===0?-.041:.041)+.03;
+  return {name,spring,last:Infinity,legAngle:legAngle-initialArms[i].armAngle,armLow,pawlTop};
+ });
  function sync(){
   mujoco.mj_forward(model,data);
   for(const [name,id]of Object.entries(physics.bodies)){
@@ -31,13 +41,14 @@ export function makeMujocoTreadle(mujoco,options={}) {
   u.setStrap(cable);u.blocks.lowerStrapEye.position.set(...front,0);u.blocks.upperStrapEye.position.set(...rear,0);
   const pulleyAngle=(frontLength-rearLength-sourceCable.frontLength+sourceCable.rearLength)/(2*p.radius);
   u.parts.pulleyBody.rotation.x=pulleyAngle;
-  const springAngle=data.qpos[physics.joints.lowerPawl.q];
-  if(spring.visible&&Math.abs(springAngle-lastSpringAngle)>1e-6){
-   lastSpringAngle=springAngle;const endAngle=6*Math.PI+Math.PI/2-p.arms[0].sourceArmAngle+springAngle;
-   const points=[new THREE.Vector3(.10,0,.18),new THREE.Vector3(.06,0,.12)];
-   for(let i=1;i<=96;i++){const t=i/96,a=t*endAngle;points.push(new THREE.Vector3(.06*Math.cos(a),.06*Math.sin(a),.12-.09*t));}
-   points.push(new THREE.Vector3(.16*Math.cos(endAngle),.16*Math.sin(endAngle),-.011));
-   spring.geometry.dispose();spring.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),128,.006,6,false);
+  for(const s of springs){
+   const springAngle=data.qpos[physics.joints[s.name+'Pawl'].q];
+   if(!s.spring.visible||Math.abs(springAngle-s.last)<=1e-6)continue;
+   s.last=springAngle;const endAngle=6*Math.PI+s.legAngle+springAngle,top=s.armLow-.03,bottom=s.pawlTop+.04;
+   const points=[new THREE.Vector3(.10,0,s.armLow+.03),new THREE.Vector3(.06,0,top)];
+   for(let i=1;i<=96;i++){const t=i/96,a=t*endAngle;points.push(new THREE.Vector3(.06*Math.cos(a),.06*Math.sin(a),top+(bottom-top)*t));}
+   points.push(new THREE.Vector3(.16*Math.cos(endAngle),.16*Math.sin(endAngle),s.pawlTop));
+   s.spring.geometry.dispose();s.spring.geometry=new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),128,.006,6,false);
   }
   u.kinematics={time:data.time,wheelAngle:data.qpos[physics.joints.wheel.q],treadleAngles:angles,cable,pulleyAngle};visual.root.updateMatrixWorld(true);
   return u.kinematics;
@@ -47,10 +58,10 @@ export function makeMujocoTreadle(mujoco,options={}) {
  const dispose=()=>{if(disposed)return;disposed=true;physics.dispose();disposeObject3D(visual.root);};
  Object.assign(u,{mechanism:'mujoco-passive-treadle-ratchet',fidelity:'authored',reconstructionStatus:'integrated',physics,hideGround:true,
   simulationBackend:'mujoco',supportsRestart:true,
-  reconstructionNote:'The lower pawl uses an inferred torsion spring to hold it against the ratchet. The engraving does not establish this spring. Belt traction is approximated.',
+  reconstructionNote:'Both pawls are one part and carry the same inferred torsion spring, which holds them against the ratchet; the engraving does not establish the spring. A steady load torque on the wheel stands for the work it drives, so the wheel slips back onto the pawls after each advance. Belt traction is approximated.',
   animationTiming:{authoredCyclePeriod:4,displayCycleDuration:4,playbackTimeScale:1},
   cameraFitBounds:new THREE.Box3(new THREE.Vector3(-1.28,-2.83,-.6),new THREE.Vector3(3.6,1.4,.7)),
   sampledMotionBounds:{min:[-1.28,-2.83,-.6],max:[3.6,1.4,.7]},
-  qualification:'MuJoCo advances the passive wheel and hinged pawls. A visible passive torsion spring closes the lower pawl; its presence and stiffness are reconstruction assumptions. One motor drives the treadle; rods and the equalizer transmit that input.'});
+  qualification:'MuJoCo advances the passive wheel and hinged pawls. Identical visible torsion springs close both pawls; their presence and stiffness are reconstruction assumptions, as is the steady load torque on the wheel. One motor drives the treadle; rods and the equalizer transmit that input.'});
  sync();return {...visual,physics,sync,advance,update,reset,dispose};
 }

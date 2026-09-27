@@ -98,10 +98,12 @@ const CATCH_HINGE = [PLATE.catchHinge[0], PLATE.catchHinge[1] + CATCH_HINGE_DROP
 // The claw point, at the pocket corner of Brown's pose. Its upper (working)
 // edge follows the leaning tooth face it pulls on.
 const CATCH_CLAW_TIP = [240.2, 338.6];
-// The working edge rises 16 degrees as Brown's does: the tooth face there
-// stands at about 7.6 + 12 degrees, so the claw seats on it without cutting
-// into the tooth above.
-const CLAW_RISE = 16 * Math.PI / 180;
+// The working edge lies along the tooth face it pulls: over the pull that
+// face stands 19.7-21.1 degrees (about 7.6 + 12, as the catch swings), so
+// the edge rises 19.6 degrees, just under the face's shallowest pose, and
+// the claw fills the pocket with at most a 1.5 degree sliver (catch and
+// wheel turn about different centres, so it cannot close entirely).
+const CLAW_RISE = 19.6 * Math.PI / 180;
 // Brown's steep tooth faces are not radial: measured round the free side of
 // the wheel, each tip stands 10-13 degrees (about 0.6 degree of wheel turn)
 // ahead of its root, leaning back over its own tooth. The lean lets the

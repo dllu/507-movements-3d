@@ -24,25 +24,33 @@ export function correctFriction267(model){
 export function correctFriction280(model){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry,oldState=d.stateAtTime,oldUpdate=model.update;
  const R=g.wheelRadius,Ri=g.wheelInnerRadius,P=d.fourBar.shortLeverPivot.length(),L=g.rockerLength,C=g.couplerLength,H=d.fourBar.handlePivot.clone(),crank=g.inputCrankLength;
- const released=-.09,step=g.outputStopPitch,engage=g.inputEngageAngle,oldPower=g.inputPowerAngle;
+ const released=-.09,step=g.outputStopPitch,overshoot=frictionBackstopData.overshoot,engage=g.inputEngageAngle,oldPower=g.inputPowerAngle;
  const solve=(input,beta)=>{const upper=H.clone().add(V(crank*Math.cos(input),crank*Math.sin(input))),v=V(P+L*Math.cos(beta),L*Math.sin(beta)),r=v.length(),u=upper.length(),k=(u*u+r*r-C*C)/(2*u*r);if(Math.abs(k)>1)throw Error('Moving jaw circle closure unreachable');const angle=Math.atan2(upper.y,upper.x)-Math.acos(k)-Math.atan2(v.y,v.x);return{angle,upper,lower:rot(v,angle),pivot:V(P*Math.cos(angle),P*Math.sin(angle))};};
- const engageAngle=solve(engage,0).angle;let lo=oldPower,hi=engage;for(let i=0;i<48;i++){const mid=(lo+hi)/2;if(solve(mid,0).angle-engageAngle>step)lo=mid;else hi=mid;}const power=(lo+hi)/2;
+ const engageAngle=solve(engage,0).angle;let lo=oldPower,hi=engage;for(let i=0;i<48;i++){const mid=(lo+hi)/2;if(solve(mid,0).angle-engageAngle>step+overshoot)lo=mid;else hi=mid;}const power=(lo+hi)/2;
+ // Backlash: each stroke carries the wheel a little past the half tooth so the
+ // next pawl drops fully into its root; once the jaw lets go, the load turns
+ // the wheel back that little until the locking face bears on the pawl nose.
+ const slipStart=d.timeline.topDwellEnd,slipEnd=slipStart+.3,slip=t=>{const u=Math.min(1,Math.max(0,(t-slipStart)/(slipEnd-slipStart)));return u*u*u*(10-15*u+6*u*u);};
  const position=time=>{const s=oldState(time);let input=s.inputAngle,rateScale=1;if(s.stage==='upstroke-rim-clamped-friction-drive'||s.stage==='top-handle-dwell-rim-clamped'){rateScale=(power-engage)/(oldPower-engage);input=engage+(input-engage)*rateScale;}else if(s.stage==='downstroke-clamp-released-wheel-held'){rateScale=(g.inputReturnAngle-power)/(g.inputReturnAngle-oldPower);input=power+(input-oldPower)*rateScale;}
-  const beta=released*s.shoeGap/g.maximumShoeGap,q=solve(input,beta),contact=rot(V(P,0).add(rot(V(R*Math.cos(.12)-P,R*Math.sin(.12)),beta)),q.angle),actualGap=Math.max(0,contact.length()-R),advance=s.driving?q.angle-engageAngle:s.cycleTime>=d.timeline.driveEnd?step:0;
+  const beta=released*s.shoeGap/g.maximumShoeGap,q=solve(input,beta),contact=rot(V(P,0).add(rot(V(R*Math.cos(.12)-P,R*Math.sin(.12)),beta)),q.angle),actualGap=Math.max(0,contact.length()-R),advance=s.driving?q.angle-engageAngle:s.cycleTime>=d.timeline.driveEnd?step+overshoot*(1-slip(s.cycleTime)):0;
   return{...s,inputAngle:input,inputAngularSpeed:s.inputAngularSpeed*rateScale,inputAngularAcceleration:s.inputAngularAcceleration*rateScale,jawAngle:q.angle,relativeLeverAngle:beta,shoeCenter:contact,shoeGap:actualGap,rockerAngle:q.angle+beta,shortLeverPivot:q.pivot,upperPin:q.upper,lowerPin:q.lower,wheelAngle:s.cycleIndex*step+advance,couplerLengthError:q.upper.distanceTo(q.lower)-C,rockerLengthError:q.pivot.distanceTo(q.lower)-L,outputDirection:'counterclockwise',noSlipArcSpeedError:s.clampActive?0:null};};
- const state=time=>{const s=position(time),h=1e-5,a=position(time-h),c=position(time+h);s.jawAngularSpeed=(c.jawAngle-a.jawAngle)/(2*h);s.wheelAngularSpeed=s.driving?s.jawAngularSpeed:0;s.rockerAngularSpeed=(c.rockerAngle-a.rockerAngle)/(2*h);s.shoeVelocity=c.shoeCenter.clone().sub(a.shoeCenter).multiplyScalar(1/(2*h));return s;};
+ const state=time=>{const s=position(time),h=1e-5,a=position(time-h),c=position(time+h);s.jawAngularSpeed=(c.jawAngle-a.jawAngle)/(2*h);s.wheelAngularSpeed=s.driving?s.jawAngularSpeed:s.cycleTime>slipStart&&s.cycleTime<slipEnd?(c.wheelAngle-a.wheelAngle)/(2*h):0;s.rockerAngularSpeed=(c.rockerAngle-a.rockerAngle)/(2*h);s.shoeVelocity=c.shoeCenter.clone().sub(a.shoeCenter).multiplyScalar(1/(2*h));return s;};
  // A rear web and true annular rim leave a working inner surface for the jaws.
  replace(b.wheelDisk,bore(R-.05,.235,.08).rotateX(Math.PI/2));b.wheelDisk.position.z=0;b.wheelDisk.rotation.set(0,0,0);
  replace(b.outerRim,bore(R,Ri,.70,768).rotateX(Math.PI/2));
  const oldLine=b.wheelRotor.children.find(o=>o.userData.role==='visible-inner-surface-of-wheel-rim');if(oldLine)oldLine.visible=false;
  b.ratchetWheel.position.z=.67;
  for(const tooth of b.ratchetTeeth)replace(tooth,plate(poly(frictionBackstopData.profile),-.08,.08));
- for(const [i,pawl]of[b.upperPawl,b.lowerPawl].entries()){pawl.children[0].visible=false;const row=frictionBackstopData.rows[i];mesh(pawl,plate(clip.difference(clip.union(capsule([0,0],[row.length,0],.065,32),poly(circle([0,0],.18,64))),poly(circle([0,0],.094,96))),-.06,.06),b.wheelDisk.material,'bored-holding-pawl-arm');}
+ // Each holding pawl is one flat bored link, as broad as the coupler, whose
+ // chisel nose lies along the radial locking face and the back of the tooth
+ // behind it (outline designed offline with its lift table).
+ for(const [i,pawl]of[b.upperPawl,b.lowerPawl].entries()){for(const o of pawl.children)o.visible=false;const row=frictionBackstopData.rows[i];mesh(pawl,plate(clip.difference(clip.union(poly(row.outline),poly(circle([0,0],.18,64))),poly(circle([0,0],.094,96))),-.06,.06),b.wheelDisk.material,'bored-holding-pawl-arm');}
+ b.ratchetWheel.rotation.z=frictionBackstopData.toothOffset;
  // Brown draws both pawls as plain links, as broad as the coupler, with
  // eyes round small pins; the pins stay inside those eyes.
  for(const pawl of[b.upperPawl,b.lowerPawl])pawl.position.z=.67;
  for(const pin of b.holdingPawlPivotPins){pin.position.z=.67;replace(pin,new T.CylinderGeometry(.09,.09,.48,40));}
- b.upperPawlTip.material=b.lowerPawlTip.material=b.wheelDisk.material;
+ b.upperPawlTip.visible=b.lowerPawlTip.visible=false;
  const jaw=new T.Group();jaw.userData.role='cast-jaw-travelling-circumferentially-with-the-rim';root.add(jaw);b.movingJaw=jaw;
  for(const o of b.jawSides){o.visible=false;}
  for(const flange of b.jawFlanges){jaw.add(flange);flange.position.set(0,0,0);replace(flange,plate(sector(Ri-.14,Ri,-.18,.18,96),flange===b.jawFlanges[0]?-.46:.10,flange===b.jawFlanges[0]?-.10:.46));}
@@ -70,14 +78,14 @@ export function correctFriction280(model){
  const ratchetCarrier=mesh(b.wheelRotor,bore(g.ratchetRootRadius,.235,.05),b.wheelDisk.material,'rear-web-carrying-backstop-ratchet');ratchetCarrier.rotation.x=Math.PI/2;ratchetCarrier.position.z=.60;b.ratchetCarrier=ratchetCarrier;
  d.stateAtTime=state;d.legacyGroundedFourBar=d.fourBar;delete d.fourBar;
  d.geometry={...g,movingJawPivotRadius:P,relativeReleaseAngle:released,shoeContactPoint:V(...tip),inputPowerAngle:power,engageJawAngle:engageAngle};
- d.workingPartsReview={qualification:'Moving-jaw circle closure and finite inner/outer friction faces are reconstructed. Lever take-up, friction lock and backstop selection are prescribed; load capacity and passive pawl contacts are unqualified.',sourceCorrection:'The cast block travels with the rim; its lever pin is fixed in that block, not grounded. Upward pull advances this reconstruction counterclockwise.'};
+ d.workingPartsReview={qualification:'Moving-jaw circle closure and finite inner/outer friction faces are reconstructed. Lever take-up, friction lock and backstop selection are prescribed; the finite pawls follow a geometric least-clearance lift, drop into each root and take the backlash on the locking face, but load capacity, pawl drop dynamics and friction are unqualified.',sourceCorrection:'The cast block travels with the rim; its lever pin is fixed in that block, not grounded. Upward pull advances this reconstruction counterclockwise.'};
  d.mechanism='one alternating long hand lever and one rigid coupler move a rim-travelling two-jaw cast-iron block; its eccentric short lever clamps the rim for the upward stroke, then the downstroke releases and slides while two staggered pawls are prescribed to prevent reverse motion';
- model.update=time=>{oldUpdate(time);const s=state(time);b.handLever.rotation.z=s.inputAngle;jaw.rotation.z=s.jawAngle;b.shortLever.rotation.z=s.relativeLeverAngle;b.clampShoe.position.set(0,0,0);b.wheelRotor.rotation.z=s.wheelAngle;link.position.copy(s.upperPin);link.position.z=.90;link.rotation.z=Math.atan2(s.lowerPin.y-s.upperPin.y,s.lowerPin.x-s.upperPin.x);const phase=((s.wheelAngle/frictionBackstopData.pitch)%1+1)%1,u=phase*frictionBackstopData.count,j=Math.floor(u),f=u-j;
- for(const [i,pawl]of[b.upperPawl,b.lowerPawl].entries()){const row=frictionBackstopData.rows[i],lift=row.lifts[j]*(1-f)+row.lifts[(j+1)%frictionBackstopData.count]*f;pawl.rotation.z=row.base-lift;}
- d.kinematics=s;d.contacts.upperHoldingPawl={active:false,qualification:'prescribed outward envelope; passive seating unqualified'};d.contacts.lowerHoldingPawl={active:false,qualification:'prescribed outward envelope; passive seating unqualified'};d.contacts.shoeRim={active:s.clampActive,gap:s.shoeGap,noSlipArcSpeedError:s.noSlipArcSpeedError};};
+ model.update=time=>{oldUpdate(time);const s=state(time);b.handLever.rotation.z=s.inputAngle;jaw.rotation.z=s.jawAngle;b.shortLever.rotation.z=s.relativeLeverAngle;b.clampShoe.position.set(0,0,0);b.wheelRotor.rotation.z=s.wheelAngle;link.position.copy(s.upperPin);link.position.z=.90;link.rotation.z=Math.atan2(s.lowerPin.y-s.upperPin.y,s.lowerPin.x-s.upperPin.x);const rawPhase=((s.wheelAngle/frictionBackstopData.pitch)%1+1)%1,phase=1-rawPhase<1e-9?0:rawPhase,u=phase*frictionBackstopData.count,j=Math.floor(u),f=u-j,seats=[];
+ for(const [i,pawl]of[b.upperPawl,b.lowerPawl].entries()){const row=frictionBackstopData.rows[i],a=row.lifts[j],c=row.lifts[(j+1)%frictionBackstopData.count],lift=c<a-.01?a:a*(1-f)+c*f;pawl.rotation.z=row.base-lift;seats[i]=lift===0;}
+ d.kinematics=s;for(const[i,key]of['upperHoldingPawl','lowerHoldingPawl'].entries()){const row=frictionBackstopData.rows[i],off=((s.wheelAngle-row.hold)/frictionBackstopData.pitch%1+1)%1;d.contacts[key]={active:seats[i]&&Math.min(off,1-off)<1e-9,seated:seats[i],qualification:'geometric least-clearance lift; seats in the root, bears on the locking face after the backlash slip'};}d.contacts.shoeRim={active:s.clampActive,gap:s.shoeGap,noSlipArcSpeedError:s.noSlipArcSpeedError};};
  d.transmission.inputOutputDirection='The rising outer lever end drives the rim-travelling jaw and wheel counterclockwise; return is unloaded and held.';d.transmission.outputTurnsPerInputStroke=step/(2*Math.PI);delete d.transmission.outputRatio;delete d.stateAtInputAngle;delete d.inputScheduleAtTime;delete d.sourceReference.plate280.sourceIdealizationPixelErrors;
  d.transmission.outputDirection='counterclockwise';d.transmission.outputAdvancePerCycle=step;
- d.backstopReview={direction:'counterclockwise overrun; radial locking face opposes clockwise motion',playback:'Baked continuous outward clearance envelope; no passive seating/load claim.'};
+ d.backstopReview={direction:'counterclockwise overrun; radial locking face opposes clockwise motion',playback:'Baked least-clearance lift of the finite pawl outlines: each pawl drops into the root as the tooth corner passes, the wheel overshoots by the backlash and slips back onto the seated nose; no load or drop-dynamics claim.'};
  model.update(0);return model;
 }
 

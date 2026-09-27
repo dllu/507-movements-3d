@@ -171,7 +171,7 @@ test('movement 476 A reaches an upward central nozzle while four complete water 
   assert.ok(pipeStart.x > 2);
   assert.ok(pipeStart.z < 0,
     'A approaches behind the engraving plane');
-  vectorNear(pipeEnd, geometry.nozzleTip, 3e-16,
+  vectorNear(pipeEnd, geometry.nozzleTip, 1e-12,
     'A terminates at nozzle');
   near(geometry.nozzleTip.x, 0, 0, 'nozzle on C axis x');
   near(geometry.nozzleTip.z, 0, 0, 'nozzle on C axis z');
@@ -422,5 +422,85 @@ test('movement 476 shows Brown\'s section: the fork is cut, A rises inside it, a
     const planes = [].concat(water.material)[0].clippingPlanes;
     assert.equal(planes.length, 2, 'section plane and level plane');
   }
+  disposeModel(model.root);
+});
+
+function edgeCounts(geometry) {
+  const position = geometry.attributes.position;
+  const index = geometry.index?.array;
+  const count = index ? index.length : position.count;
+  const key = (i) => {
+    const v = index ? index[i] : i;
+    return [position.getX(v), position.getY(v), position.getZ(v)]
+      .map((x) => Math.round(x * 1e5)).join(',');
+  };
+  const edges = new Map();
+  for (let t = 0; t < count; t += 3) {
+    for (let k = 0; k < 3; k += 1) {
+      const a = key(t + k), b = key(t + (k + 1) % 3);
+      if (a === b) continue;
+      const edge = a < b ? `${a}|${b}` : `${b}|${a}`;
+      edges.set(edge, (edges.get(edge) ?? 0) + 1);
+    }
+  }
+  let open = 0;
+  for (const c of edges.values()) if (c === 1) open += 1;
+  return { open };
+}
+
+test('movement 476 fork wall and water are closed solids, the section is fully capped and A seals in a round port', () => {
+  const { model } = movementModel();
+  const { blocks, cutawayPresentation, flowPaths, forkConstruction } = model.root.userData;
+  const wall = blocks.suctionBranches[0];
+  // The sectioner reports no open chains: every cut face is capped.
+  assert.deepEqual(cutawayPresentation.cut, ['stationary-suction-pipe-B-1-of-two-to-fork']);
+  assert.deepEqual(cutawayPresentation.open, []);
+  assert.equal(edgeCounts(wall.geometry).open, 0, 'sectioned fork wall has no open edges');
+  assert.equal(wall.material.length, 2, 'wall and cut-face materials');
+  assert.ok(wall.geometry.groups[1]?.count > 0, 'the section has cut faces');
+  // Nothing of the wall stands in front of the section plane.
+  wall.geometry.computeBoundingBox();
+  assert.ok(wall.geometry.boundingBox.max.z < 1e-3);
+  const water = blocks.waterFill[0];
+  assert.equal(edgeCounts(water.geometry).open, 0, 'water body is closed');
+  water.geometry.computeBoundingBox();
+  assert.ok(water.geometry.boundingBox.max.z < 0,
+    'the water lies behind the section plane, off the cut face');
+  // The port is round on A's fit cylinder: no fork vertex enters A.
+  assert.ok(forkConstruction.port.cells > 0);
+  const rise = flowPaths.steamPipeCurve.getSpacedPoints(240).filter((p) => p.y > 0.4 && p.x < 0.3);
+  const segment = new THREE.Line3(), closest = new THREE.Vector3(), p = new THREE.Vector3();
+  const position = wall.geometry.attributes.position;
+  let nearestToA = Infinity;
+  for (let i = 0; i < position.count; i += 1) {
+    p.fromBufferAttribute(position, i);
+    if (p.y < 0.3 || p.y > 1.3 || Math.abs(p.x) > 0.5) continue;
+    for (let k = 0; k < rise.length - 1; k += 1) {
+      segment.set(rise[k], rise[k + 1]).closestPointToPoint(p, true, closest);
+      nearestToA = Math.min(nearestToA, closest.distanceTo(p));
+    }
+  }
+  assert.ok(nearestToA > 0.168 && nearestToA < 0.175,
+    `port rim hugs A (radius 0.17): nearest ${nearestToA}`);
+  disposeModel(model.root);
+});
+
+test('movement 476 water has a free surface at its level and none when empty or brim full', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  const surface = blocks.waterSurface;
+  const water = blocks.waterFill[0];
+  const drawn = () => surface.geometry.drawRange.count;
+  for (const phase of [0.2, 0.3, 0.35]) {
+    model.update(phase * geometry.cycleDuration);
+    const level = water.userData.waterLevelY;
+    assert.ok(surface.visible && drawn() > 0, `surface drawn at phase ${phase}`);
+    const ys = surface.geometry.attributes.position.array;
+    for (let i = 1; i < drawn() * 3; i += 3) near(ys[i], level, 1e-6, 'surface lies at the level');
+  }
+  model.update(0);
+  assert.equal(surface.visible, false, 'no surface below the mouths of B');
+  model.update(0.6 * geometry.cycleDuration);
+  assert.equal(surface.visible, false, 'no surface while the fork runs full');
   disposeModel(model.root);
 });

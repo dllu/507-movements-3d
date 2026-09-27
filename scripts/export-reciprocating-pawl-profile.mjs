@@ -12,7 +12,7 @@ const trajectoryFile=process.env.TRAJECTORY||'artifacts/review/075-continuous-dy
   a=-oldProfile.parameters.sourceBarAngle,rodJoint=[sourceRod[0]*Math.cos(a)-sourceRod[1]*Math.sin(a),sourceRod[0]*Math.sin(a)+sourceRod[1]*Math.cos(a)],
   parameters={...oldProfile.parameters,period:4,sourcePhase:trajectory.parameters.sourcePhase,rodJoint,rodLength:1.16,overtravel:trajectory.parameters.overtravel},
   motionOverride=makeReciprocatingPawlMotion({...oldProfile,parameters,playback}),
-  model=makeReciprocatingPawlCandidate({clockwiseTeeth:true,faceAngle:-.04,backBulge:.035,planarPawls:true,motionOverride}),u=model.root.userData,parts=[];
+  model=makeReciprocatingPawlCandidate({clockwiseTeeth:true,faceAngle:-.04,backBulge:.035,planarPawls:true,smoothPawls:true,motionOverride}),u=model.root.userData,parts=[];
 if(trajectory.failures.length)throw Error('Cannot export a failed contact integration');
 for(const key of ['slotAngle','slotLow','slotHigh'])delete u.geometry[key];
 u.geometry.period=4;

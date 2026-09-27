@@ -61,10 +61,19 @@ test('movement 369 contains two opposed cycloidal cheeks, one wrapping cord, a b
   assert.match(degreesOfFreedom.coordinate, /signed arc distance/);
   assert.match(degreesOfFreedom.note, /active side from that one coordinate/);
 
-  assert.equal(blocks.cheekPlates.length, 2);
+  // Crossbar, posts, bracing and both cheeks are one flat extrusion with
+  // two triangular holes per bracket (Brown draws no line between them).
+  assert.equal(blocks.cheekPlates.length, 1);
+  assert.equal(blocks.cheekPlates[0], blocks.frameCasting);
+  {
+    const polygons = blocks.frameCasting.geometry.userData.plate.polygons;
+    assert.equal(polygons.length, 1, 'one piece');
+    assert.equal(polygons[0].length - 1, 4, 'four triangular holes');
+    const box = new THREE.Box3().setFromObject(blocks.frameCasting);
+    assert.ok(Math.abs(box.min.x + box.max.x) < 1e-6, 'symmetric');
+  }
+  assert.ok(!blocks.suspensionBoss.visible, 'no undrawn cusp boss');
   assert.equal(blocks.cheekContactRails.length, 2);
-  assert.equal(blocks.sidePosts.length, 2);
-  assert.equal(blocks.braceMembers.length, 6);
   assert.equal(blocks.pathDashes, undefined, 'Brown\'s dotted bob path is notation, not drawn');
   // One continuous three-strand laid rope in place of 66 cylinder segments.
   assert.equal(blocks.cord.children.length, 1);
@@ -74,9 +83,6 @@ test('movement 369 contains two opposed cycloidal cheeks, one wrapping cord, a b
   for (const component of [
     ...blocks.cheekPlates,
     ...blocks.cheekContactRails,
-    ...blocks.sidePosts,
-    ...blocks.braceMembers,
-    blocks.topBeam,
     blocks.suspensionBoss,
     blocks.cord,
     blocks.contactBead,
@@ -95,8 +101,7 @@ test('movement 369 contains two opposed cycloidal cheeks, one wrapping cord, a b
       || object.userData.selectorBelt) beltObjects.push(object);
   });
   for (const role of [
-    'fixed-left-cycloidal-cheek-contact-surface',
-    'fixed-right-cycloidal-cheek-contact-surface',
+    'fixed-one-piece-frame-with-bracing-and-cycloidal-cheek-contact-surfaces',
     'left-cycloidal-cheek-exact-cord-contact-edge',
     'right-cycloidal-cheek-exact-cord-contact-edge',
     'central-cusp-anchor-of-inextensible-pendulum-cord',

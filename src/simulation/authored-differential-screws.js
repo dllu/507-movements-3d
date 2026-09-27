@@ -718,10 +718,20 @@ function twoPitchDifferentialScrew(movement) {
       .rotateX(Math.PI / 2),
     shaftMaterial,
   );
-  handleGrip.position.set(0, 0.62, -2.72 - 0.26);
+  // The grip's inner end runs fully into a round eye at the arm's head, so
+  // arm and grip share a solid, generous joint rather than touching edge-on.
+  handleGrip.position.set(0, 0.62, -2.72 - 0.2);
   handleGrip.userData.role = 'crank-grip-pointing-outboard';
-  shaftRotor.add(handleGrip);
-  Object.assign(root.userData.blocks, { fixedUpright, handleGrip, plank });
+  const handleEye = cylinderAlongLocalZ(0.12, 0.16, shaftMaterial, 28);
+  handleEye.position.set(0, 0.62, -2.72);
+  handleEye.userData.role = 'crank-arm-eye-carrying-grip';
+  shaftRotor.add(handleGrip, handleEye);
+  Object.assign(root.userData.blocks, {
+    fixedUpright,
+    handleEye,
+    handleGrip,
+    plank,
+  });
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.2, -1.3, -0.7),
     new THREE.Vector3(3.2, 0.9, 0.7),

@@ -29,12 +29,12 @@ function renderedOutline(mesh, rack) {
   })));
 }
 
-test('271 finite hook and stepped shoulder clear every tooth on both complete strokes', () => {
+test('271 flat hook plates clear every tooth on both complete strokes', () => {
   const model = create(), { blocks: b } = model.root.userData, teeth = rackOutline(model);
   let maximumArea = 0;
   for (let i = 0; i <= 512; i++) {
     at(model, i / 512);
-    for (const pawl of [b.longPawl, b.shortPawl]) for (const name of ['hook', 'bridge']) {
+    for (const pawl of [b.longPawl, b.shortPawl]) for (const name of ['body']) {
       const overlap = area(polygonClipping.intersection(renderedOutline(pawl.userData[name], b.rack), teeth));
       maximumArea = Math.max(maximumArea, overlap);
       assert.ok(overlap < 1e-10, `${pawl.userData.role}/${name}, phase ${i / 512}, area ${overlap}`);
@@ -50,14 +50,14 @@ test('271 active finite surfaces share depth and drive the face with a seating r
   for (const phase of [0.2, 0.3, 0.45, 0.7, 0.8, 0.95]) {
     const state = at(model, phase), pawl = state.longDriving ? b.longPawl : b.shortPawl;
     assert.ok(state.engaged);
-    const hook = pawl.userData.hook;
+    const hook = pawl.userData.body;
     const relative = new THREE.Matrix4().copy(b.rackTeeth.matrixWorld).invert().multiply(hook.matrixWorld);
     const distances = surfacePoints(hook.geometry).map(point => field.signedDistance(point.applyMatrix4(relative)));
     const gap = Math.min(...distances);
     assert.ok(gap > -3e-7 && gap < 1.2e-5, `actual finite gap ${gap}`);
     maximumGap = Math.max(maximumGap, gap);
     const bounds = new THREE.Box3().setFromObject(hook), rackBounds = new THREE.Box3().setFromObject(b.rackTeeth);
-    assert.ok(Math.min(bounds.max.z, rackBounds.max.z) - Math.max(bounds.min.z, rackBounds.min.z) > 0.1999);
+    assert.ok(Math.min(bounds.max.z, rackBounds.max.z) - Math.max(bounds.min.z, rackBounds.min.z) > 0.199);
     const anchor = state.longDriving ? state.longAnchor : state.shortAnchor;
     // The vertical tooth face has outward +X normal. Its reaction on the hook
     // gives +Z torque: the leftward hook rotates down into its seat.
@@ -69,17 +69,47 @@ test('271 active finite surfaces share depth and drive the face with a seating r
   console.log({ maximumActiveSurfaceGap: maximumGap, minimumSeatingMomentPerUnitForce: minimumMoment });
 });
 
+test('271 pawls are single flat plates in the rack plane, seated in the root when pulling', () => {
+  const model = create(), { blocks: b, geometry: g } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  const rackBounds = new THREE.Box3().setFromObject(b.rackTeeth);
+  for (const pawl of [b.longPawl, b.shortPawl]) {
+    // One extruded plate: no extra pins, shoulders or offset arms.
+    assert.equal(pawl.children.filter(child => child.isMesh).length, 1);
+    const plate = pawl.userData.body.geometry.userData.plate;
+    assert.ok(pawl.position.z + plate.low >= rackBounds.min.z && pawl.position.z + plate.high <= rackBounds.max.z);
+    assert.equal(plate.polygons.length, 1);
+  }
+  // Both hooks share one outline apart from their lengths and swing.
+  assert.equal(b.longPawl.userData.width, b.shortPawl.userData.width);
+  assert.equal(b.longPawl.userData.bossRadius, b.shortPawl.userData.bossRadius);
+  let seated = 0;
+  for (let i = 0; i <= 256; i++) {
+    const state = at(model, i / 256);
+    if (!state.engaged) continue;
+    const tip = state.longDriving ? state.longTip : state.shortTip;
+    // The nose sits in the root corner, tangent to the face and the ramp.
+    assert.ok(Math.abs(tip.y - g.contactY) < 1e-12);
+    assert.ok(tip.y - g.noseRadius - g.toothRootY < 0.012);
+    seated++;
+  }
+  assert.ok(seated > 128);
+});
+
 test('271 pawl roots, lever and fixed bearing contain real shaft bores', () => {
   const model = create(), { blocks: b } = model.root.userData;
   for (const pawl of [b.longPawl, b.shortPawl]) {
-    const field = solidSurface(pawl.userData.beam.geometry);
+    const field = solidSurface(pawl.userData.body.geometry);
     for (let i = 0; i < 64; i++) {
       const a = 2 * Math.PI * i / 64, point = new THREE.Vector3(0.085 * Math.cos(a), 0.085 * Math.sin(a), 0);
       assert.ok(field.signedDistance(point) > 0.0018);
     }
-    const beam = pawl.userData.beam.geometry.userData.plate;
-    const leverFront = 0.82, leverBack = 0.62;
-    assert.ok(pawl.position.z + beam.low >= leverFront + 0.0199 || pawl.position.z + beam.high <= leverBack - 0.0199);
+    const beam = pawl.userData.body.geometry.userData.plate;
+    const leverFront = 0.445, leverBack = 0.245;
+    // Each pawl lies just behind the lever plate on its pin: a running
+    // clearance, not a visible gap.
+    const clearance = leverBack - (pawl.position.z + beam.high);
+    assert.ok(clearance > 0.004 && clearance < 0.01, `pawl-to-lever clearance ${clearance}`);
   }
   const lever = b.leverBody.children[0], field = solidSurface(lever.geometry);
   for (const pin of b.leverPins) for (let i = 0; i < 32; i++) {

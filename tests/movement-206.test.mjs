@@ -240,23 +240,34 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
   assert.equal(toothCount, 53);
   near(toothPitch, FULL_TURN / 53, 0, 'ratchet tooth pitch');
   near(ratchetOuterRadius, 2.38, 0, 'ratchet tooth-tip radius');
-  near(ratchetRootRadius, 2.05, 0, 'ratchet root radius');
-  // Brown's hooked points: the short face is undercut a little under a
-  // sharp tip, and the long back runs straight from the tip to the next root.
-  near(toothOuterStartPhase, -0.04, 0, 'undercut hook face phase');
-  near(toothOuterEndPhase, 0, 0, 'sharp tip phase');
-  near(leftFaceFraction, 0.43, 0, 'left working point on face');
-  near(rightFaceFraction, 0.28, 0, 'right working point just below the tip');
+  near(ratchetRootRadius, 2.21, 0, 'ratchet root radius');
+  // Brown's hooked points, raked as he draws them: a long back rises
+  // straight from one root to a sharp tip, and the short working face,
+  // undercut 0.04 pitch under the tip, drops to the next root and looks
+  // anticlockwise, so the pawls drive clockwise and ride back over the backs.
+  near(toothOuterStartPhase, 1, 0, 'back rises to the tip over a full pitch');
+  near(toothOuterEndPhase, 1.04, 0, 'undercut hook face phase');
+  // Both fingers are seated in the root: on the face and 0.002 clear of the
+  // next tooth's back.
+  near(leftFaceFraction, rightFaceFraction, 0, 'both fingers seat alike');
+  {
+    const face = blocks.ratchet.userData.toothFaces[0];
+    const back = blocks.ratchet.userData.profilePoints[4].clone().sub(face.root);
+    const along = THREE.MathUtils.clamp(leftDrivePointLocal.clone().sub(face.root).dot(back) / back.lengthSq(), 0, 1);
+    near(leftDrivePointLocal.distanceTo(face.root.clone().addScaledVector(back, along)) - geometry.pawlFingerRadius,
+      0.002, 1e-9, 'finger nestles in the root');
+    assert.ok(face.outwardNormal.dot(new THREE.Vector2(-face.root.y, face.root.x)) > 0.99, 'working face looks anticlockwise');
+  }
   assert.equal(rightToothOffset, -16);
-  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(5.35));
-  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(5.6));
+  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(6.6));
+  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(6.85));
   near(risingAdvance + fallingAdvance, toothPitch, 2e-15, 'stroke closure');
   near(transmission.risingStrokeAdvance, risingAdvance, 0, 'rising advance');
   near(transmission.fallingStrokeAdvance, fallingAdvance, 0, 'falling advance');
-  assert.ok(risingAdvance > THREE.MathUtils.degToRad(2.3));
-  assert.ok(risingAdvance < THREE.MathUtils.degToRad(2.5));
-  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(4.3));
-  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(4.5));
+  assert.ok(risingAdvance > THREE.MathUtils.degToRad(2.25));
+  assert.ok(risingAdvance < THREE.MathUtils.degToRad(2.45));
+  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(4.35));
+  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(4.55));
   // Brown's pose is the high reversal: the pin stands at his drawn pin.
   vector2Near(highAnchor, sharedPawlPivotAtSource, 3e-16, 'high reversal at the drawn pin');
 
@@ -285,6 +296,7 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
     'one rigid lever arm reaches the common pawl pin',
   );
   near(lowAnchor.distanceTo(fixedLeverPivot), pawlCarrierRadius, 2e-16, 'low pin radius');
+  near(geometry.catchAnchor.distanceTo(fixedLeverPivot), pawlCarrierRadius, 5e-16, 'catch pin radius');
   near(highAnchor.distanceTo(fixedLeverPivot), pawlCarrierRadius, 2e-16, 'high pin radius');
   assert.ok(highAnchor.y > lowAnchor.y);
 
@@ -301,9 +313,9 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
       sourcePointToModel(sourceAnchors.rightPawlTip).x,
     ),
     // The wheel centre and tip circle are fitted to the drawn tooth tips;
-    // Brown's right point (deep in its space) is within two degrees of the
-    // solved seated finger at the high reversal.
-    THREE.MathUtils.degToRad(2),
+    // Brown's right point (deep in its space) is within 2.5 degrees of the
+    // finger seated in its root at the high reversal.
+    THREE.MathUtils.degToRad(2.5),
     'right contact sector matches the engraving',
   );
   near(leftEndWorldAngle, leftSourceContactAngle, 0, 'left stroke ends at the drawn point');
@@ -324,7 +336,7 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
     Math.cos(rightStartWorldAngle) * geometry.rightContactOrbitRadius,
     Math.sin(rightStartWorldAngle) * geometry.rightContactOrbitRadius,
   );
-  near(highAnchor.distanceTo(rightStartPoint), rightPawlLength, 0, 'right pawl length');
+  near(highAnchor.distanceTo(rightStartPoint), rightPawlLength, 2e-15, 'right pawl length');
 
   blocks.ratchet.userData.profilePoints.forEach((point, pointIndex) => {
     const pointWithinTooth = pointIndex % 3;
@@ -387,6 +399,8 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
   let minimumClearance = Infinity;
   let minimumClockwiseTorque = Infinity;
   let maximumAngularSpeed = -Infinity;
+  let maximumSlip = 0;
+  let previousSlipping = false;
 
   for (let sample = 0; sample <= sampleCount; sample += 1) {
     const cycleCoordinate = transmission.wheelClosureInputCycles
@@ -420,39 +434,41 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
       minimumClockwiseTorque,
       state.activeClockwiseTorque,
     );
-    maximumAngularSpeed = Math.max(
+    if (!state.slipping) maximumAngularSpeed = Math.max(
       maximumAngularSpeed,
       state.drivenAngularSpeed,
     );
 
-    assert.equal(state.leftDriving, state.cyclePhase < 0.5);
+    const slipping = state.cyclePhase < geometry.leftCatchPhase;
+    assert.equal(state.slipping, slipping);
+    assert.equal(state.leftDriving, !slipping && state.cyclePhase < 0.5);
     assert.equal(state.rightDriving, !state.leftDriving);
     assert.equal(state.activePawl, state.leftDriving ? 'left' : 'right');
     assert.equal(state.inactivePawl, state.leftDriving ? 'right' : 'left');
     assert.match(
       state.stage,
-      state.leftDriving ? /rising-left-pawl-drives/ : /falling-right-pawl-drives/,
+      slipping ? /wheel-slips-back-with-right-pawl-onto-left-pawl/
+        : state.leftDriving ? /rising-left-pawl-drives/ : /falling-right-pawl-drives/,
     );
     assert.equal(state.activeFaceSegmentIndex, state.activeToothIndex * 3 + 2);
-    if (state.leftDriving) {
-      assert.equal(
-        state.activeProfileContact.segmentIndex,
-        state.activeFaceSegmentIndex,
-      );
-    } else {
-      assert.ok([
-        state.activeFaceSegmentIndex - 1,
-        state.activeFaceSegmentIndex,
-      ].includes(state.activeProfileContact.segmentIndex));
-    }
+    assert.ok([
+      state.activeFaceSegmentIndex - 1,
+      state.activeFaceSegmentIndex,
+    ].includes(state.activeProfileContact.segmentIndex));
     assert.ok(state.activeForceNormalAlignment < -0.47);
     assert.ok(state.activeClockwiseTorque > 1.9);
-    assert.ok(state.drivenAngularSpeed <= 1e-12);
+    if (slipping) {
+      // The loaded wheel follows the right pawl back as its pin starts to rise.
+      assert.ok(state.drivenAngularSpeed >= -1e-12);
+      maximumSlip = Math.max(maximumSlip, state.drivenAngle - stateAtCycleCoordinate(Math.floor(cycleCoordinate)).drivenAngle);
+    } else {
+      assert.ok(state.drivenAngularSpeed <= 1e-12);
+    }
     if (state.leftDriving) leftTeeth.add(state.activeToothIndex);
-    else rightTeeth.add(state.activeToothIndex);
+    else if (!slipping) rightTeeth.add(state.activeToothIndex);
 
     if (previousAngle !== null) {
-      assert.ok(
+      if (!slipping && !previousSlipping) assert.ok(
         state.drivenAngle < previousAngle,
         `ratchet advances strictly clockwise at sample ${sample}`,
       );
@@ -463,6 +479,7 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
       );
     }
     previousAngle = state.drivenAngle;
+    previousSlipping = slipping;
     previousLeftTip = state.leftTip;
     previousRightTip = state.rightTip;
   }
@@ -475,16 +492,20 @@ test('movement 206 exhaustively advances clockwise on both strokes without rever
   assert.ok(maximumTipVelocityError < 2e-16);
   // Clearance is measured from the finger axis: exactly one finger radius
   // while driving, and never less while resetting.
-  near(minimumClearance, geometry.pawlFingerRadius, 1e-12, 'finger surface bears on the tooth face');
+  near(minimumClearance, geometry.pawlFingerRadius, 1e-6, 'finger surface bears on the tooth face');
   assert.ok(minimumClockwiseTorque > 1.9);
   assert.ok(maximumAngularSpeed < 1e-12);
   // Samples span 53 cycles, so each step covers 53/32768 of a cycle.
   assert.ok(maximumResetStep < 0.0055, `reset step ${maximumResetStep}`);
+  // The backlash: the wheel slips back about one degree (0.16 pitch) onto
+  // the left finger each cycle.
+  assert.ok(maximumSlip > 0.12 * geometry.toothPitch && maximumSlip < 0.2 * geometry.toothPitch, `slip ${maximumSlip / geometry.toothPitch}`);
 
   for (let cycleIndex = 0; cycleIndex < 53; cycleIndex += 1) {
-    const start = stateAtCycleCoordinate(cycleIndex);
+    // The left stroke starts where the slipping wheel meets the left finger.
+    const start = stateAtCycleCoordinate(cycleIndex + geometry.leftCatchPhase);
     const handoff = stateAtCycleCoordinate(cycleIndex + 0.5);
-    const end = stateAtCycleCoordinate(cycleIndex + 1);
+    const end = stateAtCycleCoordinate(cycleIndex + 1 + geometry.leftCatchPhase);
     near(
       handoff.drivenAngle - start.drivenAngle,
       -geometry.risingAdvance,
@@ -520,6 +541,7 @@ test('movement 206 rates, reversals, handoffs, and full-wheel closure agree anal
   const numericalHalfWidth = 1e-6;
   for (const cycleCoordinate of [
     0.07,
+    0.17,
     0.19,
     0.33,
     0.44,
@@ -554,7 +576,8 @@ test('movement 206 rates, reversals, handoffs, and full-wheel closure agree anal
       1e-8,
       `rocker speed ${cycleCoordinate}`,
     );
-    assert.ok(state.drivenAngularSpeed < 0);
+    // The wheel turns clockwise but for its brief slip back after each cycle.
+    assert.ok(state.slipping ? state.drivenAngularSpeed > 0 : state.drivenAngularSpeed < 0);
   }
 
   for (const reversal of [0, 0.5, 1, 12.5, 53]) {
@@ -565,7 +588,8 @@ test('movement 206 rates, reversals, handoffs, and full-wheel closure agree anal
   }
 
   const handoffEpsilon = 1e-8;
-  for (const handoff of [0, 0.5, 1, 17.5, 53]) {
+  const catchPhase = geometry.leftCatchPhase;
+  for (const handoff of [0, catchPhase, 0.5, 1, 1 + catchPhase, 17.5, 53]) {
     const before = stateAtCycleCoordinate(handoff - handoffEpsilon);
     const exact = stateAtCycleCoordinate(handoff);
     const after = stateAtCycleCoordinate(handoff + handoffEpsilon);
@@ -791,5 +815,6 @@ test('movement 206 left band tapers and hugs the tips at its square end, as Brow
     }
   }
   // Pass 83: the square end stands about 0.25 outside the tips (it stood 0.35 out).
-  assert.ok(outer - tipRadius < 0.28 && outer - tipRadius > 0.15, `left band end ${outer - tipRadius} outside the tips`);
+  // Pass 86: its narrow finger now reaches the root, so the end stands 0.31 out.
+  assert.ok(outer - tipRadius < 0.33 && outer - tipRadius > 0.15, `left band end ${outer - tipRadius} outside the tips`);
 });

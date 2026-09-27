@@ -105,10 +105,10 @@ test('movement 330 is Brown’s prolonged-rod and forked-connecting-rod guide', 
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
-    /lower-fork-prong-clearing-prolonged-piston-rod$/.test(role)).length,
-  2);
+    role === 'one-piece-forked-rod-body-stem-horseshoe-and-prongs').length,
+  1, 'stem, horseshoe and both prongs are one extrusion');
   assert.equal(roles.filter((role) =>
-    /fork-transition-branch$/.test(role)).length, 2);
+    /fork-transition-branch$|lower-fork-prong-clearing/.test(role)).length, 0);
   assert.equal(roles.filter((role) =>
     /fork-wrist-eye$/.test(role)).length, 2);
   assert.equal(roles.filter((role) =>
@@ -301,8 +301,7 @@ test('movement 330 fork gives the piston rod real clearance in depth', () => {
     stateAtTime,
   } = model.root.userData;
 
-  assert.equal(blocks.forkProngs.length, 2);
-  assert.equal(blocks.forkBranches.length, 2);
+  assert.equal(blocks.forkBody.parent, blocks.forkedConnectingRod);
   assert.equal(blocks.forkWristAnchors.length, 2);
   assert.equal(blocks.forkWristEyes.length, 4);
   near(geometry.forkDepthClearance,
@@ -310,10 +309,20 @@ test('movement 330 fork gives the piston rod real clearance in depth', () => {
       - geometry.pistonRodDepth / 2,
   0, 'surface-to-surface fork clearance');
   assert.ok(geometry.forkDepthClearance > 0.15);
-  near(blocks.forkProngs[0].position.z,
-    -geometry.forkHalfSpacing, 0, 'rear prong plane');
-  near(blocks.forkProngs[1].position.z,
-    geometry.forkHalfSpacing, 0, 'front prong plane');
+  // One flat outline in the rod's (axis, depth) plane: straight prongs
+  // centred on the front and rear wrist planes, inside the wrist bosses.
+  {
+    const outline = blocks.forkBody.userData.outline;
+    const prongCentres = new Set(outline
+      .filter(([u]) => Math.abs(u - (blocks.forkCenterWristAnchor.position.x - 0.15)) < 1e-9)
+      .map(([, w]) => Math.round(Math.abs(w) * 1e6)));
+    assert.equal(prongCentres.size, 2, 'each prong ends in one inner and one outer corner');
+    const [inner, outer] = [...prongCentres].sort((a, b) => a - b).map((w) => w / 1e6);
+    near((inner + outer) / 2, geometry.forkHalfSpacing, 1e-6, 'prong centre plane');
+    assert.ok(outer - inner < geometry.forkProngDepth, 'prong just inside the wrist boss faces');
+    const box = new THREE.Box3().setFromBufferAttribute(blocks.forkBody.geometry.attributes.position);
+    near(box.max.y - box.min.y, 0.13, 1e-6, 'constant extrusion thickness');
+  }
   near(blocks.pistonRod.position.z, geometry.connectingRodPlaneZ, 0,
     'piston rod occupies the fork mid-plane');
 
@@ -473,7 +482,7 @@ test('movement 330 renderer binds the crank, fork, guide, and piston in 3D', () 
   assert.notEqual(model329.root.userData.archetype,
     model.root.userData.archetype);
   assert.equal(model329.root.userData.blocks.planetGearB.userData.teeth, 24);
-  assert.equal(model.root.userData.blocks.forkProngs.length, 2);
+  assert.ok(model.root.userData.blocks.forkBody.isMesh);
   disposeModel(model329.root);
   disposeModel(model.root);
 });

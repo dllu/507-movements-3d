@@ -131,3 +131,22 @@ test('077 every physical mesh is closed, connected, outward and nondegenerate',(
   }
   dispose(model);
 });
+
+test('077 both hook heads are the same C of true circular arcs, seating the peg at their back',()=>{
+ const model=makeAlternatingPegPawlDrive(),u=model.root.userData,p=u.geometry,heads={};
+ for(const key of ['upper','lower']){
+  const center=[-p.lengths[key]+p.socketOffset[0],p.socketOffset[1]],radii=u.profiles[key]
+   .map(([x,y])=>Math.hypot(x-center[0],y-center[1])).filter(r=>r<.1);
+  // Outline vertices of the head lie on the socket, the rim or the two round lip ends.
+  const onSocket=radii.filter(r=>Math.abs(r-p.socketRadius)<1e-6).length,onRim=radii.filter(r=>Math.abs(r-.09)<1e-6).length;
+  assert.ok(onSocket>500&&onRim>500,key+': circular socket and rim '+onSocket+' '+onRim);
+  assert.ok(.09-p.socketRadius>.03,key+': rim thickness');
+  heads[key]=u.profiles[key].map(([x,y])=>[x+p.lengths[key],y]).filter(([x,y])=>Math.hypot(x,y)<.1);
+  // The seated peg (centred on the hook) touches the socket at one point.
+  near(Math.hypot(...p.socketOffset)+p.pinRadius,p.socketRadius,1e-12);
+ }
+ assert.equal(heads.upper.length,heads.lower.length);
+ for(const [a,b]of [[heads.upper,heads.lower],[heads.lower,heads.upper]])
+  for(const q of a)assert.ok(Math.min(...b.map(v=>Math.hypot(v[0]-q[0],v[1]-q[1])))<1e-6,'heads differ');
+ dispose(model);
+});

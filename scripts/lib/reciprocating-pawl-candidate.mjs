@@ -43,6 +43,55 @@ const disk=(r,low,high)=>turned([[low,0],[low,r],[high,r],[high,0]]);
 const ring=(inner,outer,low,high)=>turned([[low,inner],[low,outer],[high,outer],[high,inner]]);
 const spline=points=>new THREE.SplineCurve(points.map(p=>new THREE.Vector2(...p))).getPoints(128).map(p=>p.toArray());
 
+
+// A pawl is one smooth plate: a round boss bored for its pin, two smooth
+// cubic edges of equal thickness, straight flanks that lie just inside the
+// two walls of the seated tooth valley, and the finite contact nose as the
+// round of the wedge tip. The flanks turn `relief` radians inward from the
+// walls so the wedge fills the valley without touching either wall.
+export function smoothPawlOutline({nose,noseRadius:r,normals,start,startDirection,thickness,startThickness=thickness,relief=.05,
+  startHandle=.35,endHandle=.35,samples=96}){
+  const unit=v=>{const l=Math.hypot(...v);return v.map(x=>x/l);},perp=v=>[-v[1],v[0]],
+    dot2=(a,b)=>a[0]*b[0]+a[1]*b[1],cross2=(a,b)=>a[0]*b[1]-a[1]*b[0],scale=(v,k)=>v.map(x=>x*k);
+  const u=unit(add(normals[0],normals[1])),half=Math.acos(Math.max(-1,Math.min(1,dot2(u,normals[0])))),
+    reliefs=Array.isArray(relief)?relief:[relief,relief];
+  // Half the valley angle is pi/2 - half; each flank turns in by its relief
+  // (one value, or one per wall in `normals` order).
+  const flankHalf=Math.PI/2-half-(reliefs[0]+reliefs[1])/2;
+  if(!(flankHalf>.05))throw new Error('Valley too narrow for a wedge pawl tip');
+  const along=(thickness/2-r)/Math.tan(flankHalf),edges=normals.map((n,index)=>{const relief=reliefs[index];
+    // Flank direction: along the wall, away from the root, turned toward u.
+    let f=unit(perp(n));if(dot2(f,u)<0)f=scale(f,-1);
+    const turn=Math.sign(cross2(f,u)),c=Math.cos(turn*relief),s=Math.sin(turn*relief);f=[f[0]*c-f[1]*s,f[0]*s+f[1]*c];
+    let m=perp(f);if(dot2(m,n)<0)m=scale(m,-1);
+    const tangent=sub(nose,scale(m,r)),end=add(tangent,scale(f,along/Math.cos(flankHalf)));
+    return{n,f,m,tangent,end,relief,left:cross2(scale(u,-1),sub(end,nose))>0};
+  });
+  const d0=unit(startDirection),left=perp(d0),bezier=(a,b,c,d)=>Array.from({length:samples+1},(_,i)=>{
+    const t=i/samples,v=1-t;return[0,1].map(k=>v*v*v*a[k]+3*v*v*t*b[k]+3*v*t*t*c[k]+t*t*t*d[k]);});
+  const edge=e=>{
+    const s0=add(start,scale(left,(e.left?1:-1)*startThickness/2)),chord=Math.hypot(...sub(e.end,s0));
+    return[...bezier(s0,add(s0,scale(d0,startHandle*chord)),add(e.end,scale(e.f,endHandle*chord)),e.end),e.tangent];
+  };
+  const [a,b]=edges[0].left?edges:[edges[1],edges[0]],edgeA=edge(a),edgeB=edge(b);
+  // Nose arc from a's tangent point round the tip (the side facing -u) to b's.
+  const angleA=Math.atan2(-a.m[1],-a.m[0]),angleB=Math.atan2(-b.m[1],-b.m[0]),tip=Math.atan2(-u[1],-u[0]);
+  let sweep=angleB-angleA;while(sweep>0)sweep-=2*Math.PI;
+  const wrap=x=>((x%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+  if(wrap(angleA-tip)>-sweep)sweep+=2*Math.PI;
+  const arc=Array.from({length:24},(_,i)=>{const t=angleA+sweep*(i+1)/25;return add(nose,[r*Math.cos(t),r*Math.sin(t)]);});
+  return{outline:[...edgeA,...arc,...edgeB.slice().reverse()],axis:u,flankHalf,along,edges};
+}
+// Wheel-local wall normals of the tooth valley at the nose seat.
+export function seatWallNormals(points,seat,radius){
+  const list=points.map((a,i)=>{const b=points[(i+1)%points.length],d=sub(b,a),t=Math.max(0,Math.min(1,
+    ((seat[0]-a[0])*d[0]+(seat[1]-a[1])*d[1])/(d[0]*d[0]+d[1]*d[1]))),c=add(a,d.map(v=>v*t)),delta=sub(seat,c),l=Math.hypot(...delta);
+    return{distance:l,normal:delta.map(v=>v/l)};}).sort((a,b)=>a.distance-b.distance);
+  const first=list[0],second=list.find(e=>first.normal[0]*e.normal[0]+first.normal[1]*e.normal[1]<.5);
+  if(Math.abs(first.distance-radius)>1e-4||Math.abs(second.distance-radius)>1e-4)throw new Error('Seat is not tangent to two valley walls');
+  return[first.normal,second.normal];
+}
+
 export function meshFamilyMass(parts,families,family){
   let volume=0,moment=[0,0,0];
   for(const [name,mesh] of Object.entries(parts))if(families[name]===family){
@@ -82,27 +131,50 @@ export function makeReciprocatingPawlCandidate(options={}){
   attach('holdingPawlRearCollar',disk(.066,-.15,options.planarPawls?-.058:.12),'fixed',PALETTE.brass,[...p.PH,0]);
   const definitions=[
     {family:'movingPawl',kind:'B',outer:[[256,363],[300,325],[350,299],[397,288],[441,291],[479,304],[501,320]],
-      inner:[[295,390],[333,354],[377,326],[419,311],[456,307],[483,313],[501,320]],head:.09,hole:.043},
+      inner:[[295,390],[333,354],[377,326],[419,311],[456,307],[483,313],[501,320]],head:.09,hole:.043,
+      smooth:{thickness:.1,startHandle:.32,endHandle:.3,relief:.07}},
     {family:'holdingPawl',kind:'H',outer:[[1000,305],[1014,340],[1011,381],[994,420],[977,446],[958,466]],
-      inner:[[976,345],[970,375],[961,400],[953,417],[952,444],[948,479]],head:.108,hole:.046}
+      inner:[[976,345],[970,375],[961,400],[953,417],[952,444],[948,479]],head:.108,hole:.046,
+      smooth:{thickness:.1,startHandle:.4,endHandle:.4,startDirection:[.5,-1],relief:[.05,.14]}}
   ];
+  // Seat each smooth pawl in its valley: find the pawl angle whose nose lies on
+  // the seat radius, then express the valley walls in the pawl's own frame.
+  const smoothOutline=(d,pivot,nose,local)=>{
+    const radiusAt=a=>Math.hypot(...add(pivot,rotate(nose,a)));let low=-.3,high=.3;
+    const target=p.seatRadius,sign=Math.sign(radiusAt(high)-target);
+    if(sign===Math.sign(radiusAt(low)-target))throw new Error('No seated pawl angle');
+    for(let i=0;i<60;i++){const m=(low+high)/2;if(Math.sign(radiusAt(m)-target)===sign)high=m;else low=m;}
+    const a=(low+high)/2,world=add(pivot,rotate(nose,a)),w=Math.atan2(world[1],world[0])-p.seatAngle,
+      normals=seatWallNormals(motion.points,p.seat,p.noseRadius).map(n=>rotate(n,w-a)),
+      center=[0,1,2].map(i=>local(d.outer[i]).map((v,k)=>(v+local(d.inner[i])[k])/2)),
+      startDirection=d.smooth.startDirection??center[1];
+    // The edges leave the boss tangentially: they start on its rim, square to
+    // the start direction.
+    return smoothPawlOutline({nose,noseRadius:p.noseRadius,normals,start:[0,0],startThickness:2*d.head*.995,...d.smooth,startDirection}).outline;
+  };
+  const area=polygons=>polygons.reduce((sum,[outer,...holes])=>sum+[outer,...holes].reduce((a,ring,k)=>{
+    let v=0;for(let i=0;i+1<ring.length;i++)v+=ring[i][0]*ring[i+1][1]-ring[i+1][0]*ring[i][1];return a+(k?-1:1)*Math.abs(v)/2;},0),0),reliefArea={};
   for(const d of definitions){
     const pivot=source[d.kind].pivot,nose=sub(source[d.kind].center,pivot),
       local=point=>sub(pawlSourcePoint(point),pivot),
       outer=spline([...d.outer.slice(0,-1).map(local),nose]),inner=spline([...d.inner.slice(0,-1).map(local),nose]),
-      outline=[...outer,...inner.slice(0,-1).reverse()],
-      body=polygonClipping.difference(polygonClipping.union(poly(outline),poly(circle([0,0],d.head)),poly(circle(nose,p.noseRadius))),poly(circle([0,0],d.hole)));
+      outline=options.smoothPawls?smoothOutline(d,pivot,nose,local):[...outer,...inner.slice(0,-1).reverse()],
+      body=polygonClipping.difference(polygonClipping.union(poly(outline),poly(circle([0,0],d.head)),...(options.smoothPawls?[]:[poly(circle(nose,p.noseRadius))])),poly(circle([0,0],d.hole)));
     let fitted=body;
     if(options.planarPawls){
       // Relieve the source outline against the complete relative tooth sweep.
       // The solid pawl itself now reaches the wheel's working plane.
-      for(let i=0;i<=512;i++){
-        const s=motion.atPhase(i/512),angle=d.kind==='B'?(s.angleB??s.barAngle-p.sourceBarAngle+s.B.angle):(s.angleH??s.H.angle-p.sourceHAngle),
+      const sweepSamples=options.smoothPawls?Number(process.env.SWEEP_SAMPLES??4096):512;
+      for(let i=0;i<=sweepSamples;i++){
+        const s=motion.atPhase(i/sweepSamples),angle=d.kind==='B'?(s.angleB??s.barAngle-p.sourceBarAngle+s.B.angle):(s.angleH??s.H.angle-p.sourceHAngle),
           pivot=s[d.kind].pivot,obstacle=poly(motion.points.map(point=>rotate(sub(rotate(point,s.wheelAngle),pivot),-angle)));
         fitted=polygonClipping.difference(fitted,obstacle);
       }
-      fitted=polygonClipping.union(fitted,poly(circle(nose,p.noseRadius)));
+      // The smooth tip already ends in the nose round; restore only the nose round that the
+      // sweep grazes at its tangent contacts.
+      fitted=polygonClipping.union(fitted,options.smoothPawls?polygonClipping.intersection(body,poly(circle(nose,p.noseRadius,96))):poly(circle(nose,p.noseRadius)));
     }
+    reliefArea[d.kind]=area(body)-area(fitted);reliefArea[d.kind+"Removed"]=polygonClipping.difference(body,fitted);
     attach(d.family+'Body',plate(fitted,options.planarPawls?-.055:.151,options.planarPawls?.045:.195),d.family,PALETTE.brass);
     if(!options.planarPawls)attach(d.family+'Nose',disk(p.noseRadius,-.058,.151),d.family,PALETTE.brass,[...nose,0]);
   }
@@ -128,7 +200,7 @@ export function makeReciprocatingPawlCandidate(options={}){
     blocks.rod.position.set(...s.rodPosition,0);blocks.rod.rotation.z=s.rodAngle;root.userData.kinematics=s;
   };
   root.userData={parts,families,blocks,motion,atPhase,stateAtTime,geometry:{...p,period,rodJoint,rodLength,rodX,pinRadius,bore},
-    mass:{B:massB,H:massH,density},mechanism:'isolated-reciprocating-rod-pawl-ratchet',fidelity:'candidate',hideGround:true,cameraFov:8,
+    mass:{B:massB,H:massH,density},reliefArea,mechanism:'isolated-reciprocating-rod-pawl-ratchet',fidelity:'candidate',hideGround:true,cameraFov:8,
     animationTiming:{authoredCyclePeriod:period},shadowCameraHalfExtent:2.5,shadowBias:-.00003,shadowNormalBias:.005,
     qualification:'Isolated finite-solid candidate. Uses planar quasistatic pawl contact; actual mesh mass, forces, all independent clearances and source appearance require verification. No inertia is included.'};
   update(0);markShadows(root);return{root,update,motion,cameraDirection:new THREE.Vector3(0,0,10)};

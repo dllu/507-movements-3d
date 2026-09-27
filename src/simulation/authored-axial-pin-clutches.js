@@ -1024,6 +1024,18 @@ function axialPinPulleyClutch(movement) {
 export function createAuthoredAxialPinClutchMovement(movement) {
   if (movement.id === 361) {
     const model = finishOneWayFamily(correctAxialPinParts(axialPinPulleyClutch(movement)), 361);
+    // The radial pin is set into the shaft down to its axis, so the round
+    // shaft closes round the pin's root rather than meeting its flat end on
+    // a line. Its working tip stays where the working-parts pass put it.
+    {
+      const { shaftDog } = model.root.userData.blocks;
+      const { height, radiusTop, radialSegments } = shaftDog.geometry.parameters;
+      const sink = shaftDog.position.y - height / 2;
+      shaftDog.geometry.dispose();
+      shaftDog.geometry = new THREE.CylinderGeometry(radiusTop, radiusTop, height + sink, radialSegments)
+        .translate(0, -sink / 2, 0);
+      model.root.userData.geometry.shaftDogRootY = 0;
+    }
     // Brown's plate is a flat front elevation of the frame, shafts and band.
     model.cameraDirection = new THREE.Vector3(-0.10, 0.02, 1);
     model.root.userData.cameraDirection = model.cameraDirection;

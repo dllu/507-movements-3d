@@ -6,7 +6,7 @@
     },
     {
       "file": "src/simulation/authored-differential-screws.js",
-      "sha256": "fb7b3f3b7c25b350a0cab7d1aef3d73149267af7f4e96ff93a58af377ba3cd3d"
+      "sha256": "de54352644a9512986fd599ad674e32511670a64809b3a7ce2eb900d47fd3db1"
     },
     {
       "file": "src/simulation/authored-worm-racks.js",

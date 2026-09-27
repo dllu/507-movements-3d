@@ -28,7 +28,7 @@ for(let i=0;i<count;i++){
  const outputSpeed=(after.outputAngle-before.outputAngle)/(2*h),stopSpeed=(after.stopAngle-before.stopAngle)/(2*h);
  const tappet=pair('tappet','stud0','input','output',-p.inputSpeed,outputSpeed);
  const stud=pair('stopBody','stud2','stop','output',stopSpeed,outputSpeed);
- const cam=pair('driverDisk','stopToe','input','stop',-p.inputSpeed,stopSpeed);
+ const cam=pair('driverDisk','stopBody','input','stop',-p.inputSpeed,stopSpeed);
  const studReaction=.25,tappetReaction=(1-stud.torqueB*studReaction)/tappet.torqueB,camReaction=-stud.torqueA*studReaction/cam.torqueB;
  rows.push({time,phase,stage:state.stage,outputSpeed,stopSpeed,tappet,stud,cam,reactions:{stud:studReaction,tappet:tappetReaction,cam:camReaction},
   outputTorqueResidual:tappet.torqueB*tappetReaction+stud.torqueB*studReaction-1,stopTorqueResidual:cam.torqueB*camReaction+stud.torqueA*studReaction});
@@ -38,7 +38,7 @@ const locks=[];
 for(let cycle=0;cycle<10;cycle++){
  const time=(p.sourceGamma-p.gammaStart+1+cycle*Math.PI*2)/p.inputSpeed;m.update(time);m.root.updateMatrixWorld(true);
  const gaps=Array.from({length:10},(_,i)=>{const A=parts.stopBody,B=parts['stud'+i],hit=meshPairDistance(trees.stopBody,trees['stud'+i],B.matrixWorld.clone().invert().multiply(A.matrixWorld),.05);return{stud:i,gap:hit.distance};}).sort((a,b)=>a.gap-b.gap).slice(0,2);
- const contacts=gaps.map(g=>pair('stopBody','stud'+g.stud,'stop','output',0,0)),cam=pair('driverDisk','stopToe','input','stop',-p.inputSpeed,0);
+ const contacts=gaps.map(g=>pair('stopBody','stud'+g.stud,'stop','output',0,0)),cam=pair('driverDisk','stopBody','input','stop',-p.inputSpeed,0);
  const constraints=[[0,cam.torqueB],...contacts.map(q=>[q.torqueB,q.torqueA])];
  let maximumMinimumClearanceVelocity=-Infinity;
  for(let j=0;j<7200;j++){const angle=2*Math.PI*j/7200,velocity=[Math.cos(angle),Math.sin(angle)],minimum=Math.min(...constraints.map(([a,b])=>a*velocity[0]+b*velocity[1]));maximumMinimumClearanceVelocity=Math.max(maximumMinimumClearanceVelocity,minimum);}

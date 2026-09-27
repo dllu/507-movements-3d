@@ -4,24 +4,24 @@
   "format": "mujoco-loop",
   "version": 1,
   "asset": "src/simulation/baked/assets/mujoco-082.json.gz",
-  "bytes": 638522,
-  "assetSha256": "81a04228e654ec372dff00b36df8fc11d543092b4e7a11fa1cb4231436ca8905",
+  "bytes": 256985,
+  "assetSha256": "7133124576c6eda519e3242394289962df88da8e7b0082ed6b6773df6c5cc0b9",
   "motionSources": {
     "src/simulation/mujoco-treadle/collision.js": "c242f9c33b002058a16bfc5113f8d6aae413efd3731bc09ad365e9513d7ebf00",
-    "src/simulation/mujoco-treadle/linkage.js": "632fd75de23175b11fc8fe5cb4263911bad4243fdaf59cedc136cb340fc467bf",
-    "src/simulation/mujoco-treadle/physics.js": "ad8b55b2256982e9590681373a39adaa261526d0e4baa4f725b1a7053a446cbc",
+    "src/simulation/mujoco-treadle/linkage.js": "ac66eb64508221a8719ca9fca51c2c85224f9e9c62a974de38be5ebb293bdd1f",
+    "src/simulation/mujoco-treadle/physics.js": "7c80b64246c9f4b3142013219dfa7c2c291ca0a4ca92068ed2a8fad57d5f6516",
     "src/simulation/mujoco-treadle/source.js": "a4ccbe2793e8b37024141d3cd340a4fd39965cfb8b1729023404e13fc16ebb6d",
-    "src/simulation/mujoco-treadle/visual.js": "efe16859c8c3b3f36a311abb4db56619ba5ef10455c5998235ed6b4cb1fefa3c",
+    "src/simulation/mujoco-treadle/visual.js": "b094a29bc34b87ea46575146258870cb787637537f706e62387617f91a8063ad",
     "src/simulation/mujoco/simulation.js": "425b09d5a4eb3dfd10edc1af6453a069cfa9b880b8239c06431fe46fabedde9e"
   },
   "visualSourcesAtBake": {
-    "src/simulation/mujoco-treadle/geometry.js": "653a2523c1c38b70d4352c6893115aedf902002108c266bed001beec6fd2488e"
+    "src/simulation/mujoco-treadle/geometry.js": "9a11539af9582e76e92b52beb6dde3bf9f97b38e4a60d741cdb7318c0384aa98"
   },
   "physicsXmlSha256": {
-    "default": "d2625632789d8a3a7c16f8f40fb69ec932aebdc29a6b52837c0779d9766f361a"
+    "default": "2dad12ad6191d56bce74fb533b89aa26d921a26fd36622a69852eec340163113"
   },
   "fullXmlSha256": {
-    "default": "edaeeae66c2a8140211e14b16bc5eb7ec340a0045443a6c33585adc08c5690a2"
+    "default": "8dd37a954529e44299f7a9b5c2844282258a5154703a899a5b8e6bbd00bdebc2"
   },
   "config": {
     "sampleRate": 60,
@@ -44,37 +44,38 @@
     "default": {
       "loop": {
         "mode": "periodic",
-        "duration": 20,
-        "samples": 1250,
+        "duration": 4,
+        "samples": 250,
         "dt": 0.016,
-        "startTime": 108,
-        "periods": 5,
+        "startTime": 56,
+        "periods": 1,
         "drivePeriod": 4
       },
       "closure": {
-        "rawSeamPixels": 0.47097343039664735,
-        "maximumCorrectionPixels": 0.04091227331419547,
-        "maximumRotationCorrection": 0.002733952669553939,
+        "rawSeamPixels": 0.005161915557870137,
+        "maximumCorrectionPixels": 0.003779742909549124,
+        "maximumRotationCorrection": 0.00017190583809614695,
         "wraps": [
           {
             "key": "blocks.wheel",
-            "angle": 3.383253626942854,
-            "rawAngle": 3.3805196742774974
+            "angle": 0.483321946706122,
+            "rawAngle": 0.4833028538948978
           }
         ]
       },
-      "roundTripPixels": 0.3336582541963853,
+      "roundTripPixels": 0.00826654331425076,
       "seam": {
-        "seamStepPixels": 0.8681765999707198,
-        "interiorStepPixels": 3.188184196370083,
-        "seamSecondPixels": 0.5719830648204073,
-        "interiorSecondPixels": 3.7723848413669936
+        "seamStepPixels": 0.8380629706441617,
+        "interiorStepPixels": 4.034730964057751,
+        "seamSecondPixels": 0.04914194102758208,
+        "interiorSecondPixels": 4.296547892228218
       }
     }
   },
   "extras": [
-    "blocks.lowerArm/passive-lower-pawl-torsion-spring#0"
+    "blocks.lowerArm/passive-lower-pawl-torsion-spring#0",
+    "blocks.upperArm/passive-upper-pawl-torsion-spring#0"
   ],
   "removed": [],
-  "bakeSeconds": 28.370074897289275
+  "bakeSeconds": 36.557858527183534
 }

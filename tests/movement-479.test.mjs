@@ -23,6 +23,28 @@ function disposeModel(root) {
     for (const material of [].concat(object.material ?? [])) material.dispose();
   });
 }
+// Pass 87: the water is one closed body (every edge shared by two faces in
+// opposite directions), and below the bell's rim its only side walls are the
+// tank's (and b's), so nothing divides it where the bell's wall used to be.
+function assertWaterWhole(body, {rimY, radii, pipeXs, pipeOuter, message}) {
+  const p = body.geometry.attributes.position, n = body.geometry.attributes.normal;
+  const key = (i) => [p.getX(i), p.getY(i), p.getZ(i)].map((v) => Math.round(v * 1e5)).join(',');
+  const edges = new Map();
+  for (let i = 0; i < p.count; i += 3) for (const [a, b] of [[i, i + 1], [i + 1, i + 2], [i + 2, i]]) {
+    const ka = key(a), kb = key(b), k = ka < kb ? `${ka}|${kb}` : `${kb}|${ka}`;
+    edges.set(k, (edges.get(k) ?? 0) + (ka < kb ? 1 : -1));
+  }
+  assert.equal([...edges.values()].filter((v) => v !== 0).length, 0, `${message}: water closed and oriented`);
+  for (let i = 0; i < p.count; i += 3) {
+    if (Math.abs(n.getY(i)) > 0.5) continue;
+    const ys = [0, 1, 2].map((k) => p.getY(i + k));
+    if (Math.max(...ys) > rimY - 0.004 + 1e-6) continue;
+    const x = (p.getX(i) + p.getX(i + 1) + p.getX(i + 2)) / 3, z = (p.getZ(i) + p.getZ(i + 1) + p.getZ(i + 2)) / 3;
+    if (pipeXs.some((px) => Math.hypot(x - px, z) < pipeOuter + 0.02)) continue;
+    const r = Math.hypot(x, z);
+    assert.ok(radii.some((allowed) => Math.abs(r - allowed) < 0.01), `${message}: water wall at r ${r.toFixed(3)} below the rim`);
+  }
+}
 function roles(root) {
   const out = [];
   root.traverse((object) => {if (object.userData.role) out.push(object.userData.role);});
@@ -69,7 +91,12 @@ test('movement 479 keeps the water seal, the pipes above the water and the bell 
     assert.ok(s.bellY > g.floorY + 0.5, `rim above the floor at ${t}`);
     assert.ok(g.pipeTopY > g.innerWaterY && g.pipeTopY < s.bellY + g.skirtHeight, `pipes open inside the gas space at ${t}`);
     model.update(t);
-    near(blocks.water.underRim.position.y + blocks.water.underRim.scale.y, s.bellY - 0.004, 1e-9, `water under the rim meets it at ${t}`);
+    if (i % 8 === 0) {
+      assertWaterWhole(blocks.water.body, {rimY: s.bellY, radii: [g.pitRadius - 0.004], pipeXs: g.pipeXs, pipeOuter: 0.125, message: `t ${t}`});
+      const box = new THREE.Box3().setFromObject(blocks.water.body);
+      near(box.max.y, g.waterY, 1e-6, `free level at ${t}`);
+      near(box.min.y, g.floorY + 0.004, 1e-6, `water on the floor at ${t}`);
+    }
     // Weights never reach the ground or their pulleys.
     assert.ok(s.counterweightY - g.ballRadius > g.groundY && s.counterweightY + g.ballRadius < g.pulleyCenters[0].y - g.pulleyRadius);
   }

@@ -25,7 +25,8 @@ test('225 real driving triangles have a useful positive normal moment through th
     normal.transformDirection(wheel.matrixWorld); nearest.applyMatrix4(wheel.matrixWorld);
     const moment = -(nearest.x * normal.y - nearest.y * normal.x);
     minimumMoment = Math.min(minimumMoment, moment);
-    assert.ok(moment > 1.39, `finite face moment ${moment}`);
+    // The nose bears low on the face, in the root, so the arm is a little shorter.
+    assert.ok(moment > 1.3, `finite face moment ${moment}`);
     assert.ok(normal.dot(new THREE.Vector3(state.contactNormal.x, state.contactNormal.y, 0)) > 0.999999);
     maximumGap = Math.max(maximumGap, state.pawlContactError);
     assert.ok(state.pawlToothNormalVelocityError < 1e-15);
@@ -120,14 +121,13 @@ test('225 deterministic curved plate has one continuous finite body and a retain
   assert.equal(polygons.length, 1);
   assert.equal(polygons[0].length, 2);
   const field = solidSurface(geometry), length = d.geometry.pawlLength;
-  // Brown's plain curved bar: one circular arc from the hinge to the nose.
-  const sagitta = d.geometry.pawlBarSagitta, radius = d.geometry.pawlBarArcRadius;
-  assert.ok(sagitta > 0 && sagitta < 0.2 * length, 'a plain arc, not a hook');
-  const half = Math.asin(length / 2 / radius);
-  for (let i = 2; i <= 24; i++) {
-    const a = -half + 2 * half * i / 24;
-    const center = new THREE.Vector3(length / 2 + radius * Math.sin(a), -(radius * Math.cos(a) - (radius - sagitta)), 0);
-    assert.ok(field.signedDistance(center) < -0.025, `finite curved body at ${i / 24}`);
+  // Brown's plain curved bar: a shallow arch from the hinge whose end turns
+  // down into the tooth space; the body is solid all along its centre line.
+  const sagitta = d.geometry.pawlBarSagitta;
+  assert.ok(sagitta > 0 && sagitta < 0.2 * length, 'a shallow arch');
+  const line = d.geometry.pawlCenterLine;
+  for (let i = 4; i < line.length - 2; i++) {
+    assert.ok(field.signedDistance(new THREE.Vector3(line[i][0], line[i][1], 0)) < -0.025, `finite curved body at ${i / (line.length - 1)}`);
   }
   assert.ok(field.signedDistance(new THREE.Vector3()) > 0.073);
   const outline = polygons[0][0], cross = (a, b, c) => (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);

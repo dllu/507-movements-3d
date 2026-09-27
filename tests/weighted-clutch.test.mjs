@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import * as THREE from 'three';
 import {makeWeightedClutch} from '../src/simulation/weighted-clutch.js';
 import profile from '../src/data/weighted-clutch-profile.js';
+import {QUADRANT_RIM} from '../src/simulation/weighted-clutch/distributed-geometry.js';
 import {makeWeightedClutchDistributedCandidate} from '../scripts/lib/weighted-clutch-distributed-candidate.mjs';
 import {makeWeightedClutchNativeJawsPruned} from '../scripts/lib/weighted-clutch-native-jaws-pruned.mjs';
 import {makeWeightedClutchNativeStud} from '../scripts/lib/weighted-clutch-native-stud.mjs';
@@ -24,10 +25,13 @@ after(() => dispose(model));
 
 test('087 promoted solids and articulation match the independently checked reconstruction', () => {
   const candidate = makeWeightedClutchDistributedCandidate(profile.options), v = candidate.root.userData;
-  assert.deepEqual(u.source, v.source); assert.deepEqual(u.geometry, v.geometry);
+  // Pass 86 regularized only the slotted quadrant's outline (see the next test).
+  const {quadrantRim, ...geometry} = u.geometry; assert.equal(quadrantRim, QUADRANT_RIM);
+  assert.deepEqual(u.source, v.source); assert.deepEqual(geometry, v.geometry);
   assert.deepEqual(u.families, v.families); assert.equal(Object.keys(u.parts).length, 213);
   for (const [name, mesh] of Object.entries(u.parts)) {
     const other = v.parts[name];
+    if (name === 'slottedQuadrant') continue;
     for (const [key, attribute] of Object.entries(mesh.geometry.attributes)) assert.deepEqual(attribute.array, other.geometry.attributes[key].array, name + '/' + key);
     assert.deepEqual(mesh.geometry.index?.array, other.geometry.index?.array, name + ' faces');
   }
@@ -35,6 +39,25 @@ test('087 promoted solids and articulation match the independently checked recon
     const state = u.stateAtTime(time); model.update(time); candidate.setCoordinates(state.q, state.inputAngle);
     for (const [name, mesh] of Object.entries(u.parts)) assert.deepEqual(mesh.matrixWorld.elements, v.parts[name].matrixWorld.elements, name + ' transform');
   }
+  dispose(candidate);
+});
+
+test('087 slotted quadrant has a constant-width circular rim concentric with its unchanged slot', () => {
+  const candidate = makeWeightedClutchDistributedCandidate(profile.options), v = candidate.root.userData;
+  assert.deepEqual(u.profiles.slot, v.profiles.slot);
+  const q = u.source.quadrant, R = q.radius / u.source.scale, h = q.slotHalfWidth / u.source.scale;
+  const a = q.startDegrees * Math.PI / 180, b = q.endDegrees * Math.PI / 180;
+  const [outer, ...holes] = u.parts.slottedQuadrant.geometry.userData.plate.polygons[0];
+  assert.equal(holes.length, 2);
+  // Every outline vertex within the slot's angular span and above the web is on
+  // the rim's outer circle; none lies between the slot and that circle.
+  let onRim = 0;
+  for (const p of outer) {
+    const r = Math.hypot(...p), t = Math.atan2(p[1], p[0]);
+    if (t > a + .02 && t < b - .02 && r > R) { assert(Math.abs(r - (R + h + QUADRANT_RIM)) < 1e-4, `rim radius ${r}`); onRim++; }
+  }
+  assert(onRim > 100);
+  assert(QUADRANT_RIM >= .75 * h);
   dispose(candidate);
 });
 

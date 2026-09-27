@@ -14,7 +14,7 @@ test('106 closed solids and compiled convex prisms preserve the actual groove wa
   let vertices=0;
   try {
     assert.equal(p.model.nq,2);assert.equal(p.model.nu,1);assert.equal(p.model.neq,0);assert.equal(p.model.jnt_stiffness[1],0);
-    assert.equal(Object.keys(u.parts).length,11);
+    assert.equal(Object.keys(u.parts).length,12);
     for(const part of Object.values(u.parts)) {
       const a=inspectWeightedClutchSolid(part.geometry);assert.equal(a.components,1);assert.ok(a.volume>0);
       for(const key of ['degenerate','wrongNormals','nonfinite','unmatchedEdges'])assert.equal(a[key],0,part.name+' '+key);
@@ -42,7 +42,7 @@ test('106 closed solids and compiled convex prisms preserve the actual groove wa
       assert.ok(Math.abs(f.law(a-f.phase).derivative-f.slope)<1e-12);
       assert.ok(Math.abs(f.law(2*Math.PI-a-f.phase).derivative+f.slope)<1e-12);
     }
-    t.diagnostic(JSON.stringify({compiledVertices:vertices,solids:11,contactGeometries:p.model.ngeom}));
+    t.diagnostic(JSON.stringify({compiledVertices:vertices,solids:12,contactGeometries:p.model.ngeom}));
   }finally{v.dispose();}
 });
 
@@ -107,4 +107,16 @@ test('106 timestep and groove refinement retain the complete stroke',t=>{
     t.diagnostic(JSON.stringify({timestepDifferencePixels:100*first,refinedDifferencePixels:100*second,meshDifferencePixels:100*mesh}));
     assert.ok(first*100<.1);assert.ok(second<first);assert.ok(mesh*100<.1);
   }finally{for(const v of variants)v.dispose();}
+});
+
+test('106 stem is buried in the collar and the ball, symmetric about the ball axis',()=>{
+  const v=makeMujocoBarrelCam(mujoco),u=v.root.userData,f=u.profile;
+  try {
+    const box=name=>{const g=u.parts[name].geometry;g.computeBoundingBox();return g.boundingBox;};
+    const stem=box('stem'),head=box('head'),shoe=box('shoe'),x=f.initialTip;
+    for(const b of [stem,head,shoe]){assert.ok(Math.abs((b.min.x+b.max.x)/2-x)<1e-6);assert.ok(Math.abs(b.min.z+b.max.z)<1e-6);}
+    assert.ok(stem.min.y<=(f.pinLow+f.pinHigh)/2+1e-6,'stem reaches the ball centre');
+    assert.ok(stem.max.y>head.min.y+.01,'stem enters the collar');
+    assert.ok(head.max.z>f.rodHalfDepth&&head.min.z<-f.rodHalfDepth,'collar wraps the rod');
+  }finally{v.dispose();}
 });

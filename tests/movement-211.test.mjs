@@ -211,11 +211,17 @@ test('movement 211 keeps Brown\'s fine 45:18 teeth, lock pocket, epicycloidal gu
     ) < 0.2,
     'concave lock arc closes back to the lower corner',
   );
-  near(geometry.guideOutlineRaw[0].x, 1.75, 0, 'guide root construction point');
-  assert.ok(
-    Math.max(...geometry.guideOutlineRaw.map(({ x }) => x)) > 4.71,
-    'guide reaches out along the entry pin path',
-  );
+  // The tongue grows from a boss round the shaft, arches up over one
+  // circular crown and droops to its tip, as Brown draws it.
+  near(Math.min(...geometry.guideOutlineRaw.map(({ x }) => x)),
+    -geometry.guideBossRadius, 1e-9, 'guide boss surrounds the shaft');
+  const guideTipX = Math.max(...geometry.guideOutlineRaw.map(({ x }) => x));
+  assert.ok(guideTipX > 5.5 && guideTipX < 6.3, 'tongue reaches the plate\'s length');
+  const crown = geometry.guideOutlineRaw.filter(({ x }) => x > 2)
+    .reduce((best, point) => (point.y > best.y ? point : best));
+  near(crown.x, geometry.guideHumpCenter.x, 0.05, 'crown above the hump centre');
+  const tipPoint = geometry.guideOutlineRaw.find(({ x }) => x === guideTipX);
+  assert.ok(tipPoint.y < crown.y - 0.4, 'the tongue droops past its crown');
   for (let index = 1; index < geometry.driverToothCenterAngles.length; index += 1) {
     near(
       geometry.driverToothCenterAngles[index - 1]
@@ -236,9 +242,9 @@ test('movement 211 keeps Brown\'s fine 45:18 teeth, lock pocket, epicycloidal gu
   }
   assert.deepEqual(
     geometry.pinionMissingToothCenterAngles.map((angle) => (
-      THREE.MathUtils.radToDeg(angle)
+      Math.round(THREE.MathUtils.radToDeg(angle) * 1e9) / 1e9
     )),
-    [-40, -20, 0, 20, 40],
+    [-60, -40, -20, 0, 20],
   );
 
   assert.equal(sourceRaster.width, 525);
@@ -300,9 +306,16 @@ test('movement 211 preserves every mesh, guide clearance, and lock constraint th
 
     if (state.indexing) {
       indexingStates += 1;
-      near(state.pinionAngularSpeed,
-        transmission.indexingSpeedRatio * state.driverAngularSpeed,
-        0, `active ratio at state ${index}`);
+      if (state.phase >= geometry.guideHandoffPhase) {
+        near(state.pinionAngularSpeed,
+          transmission.indexingSpeedRatio * state.driverAngularSpeed,
+          0, `active ratio at state ${index}`);
+      } else if (state.phase > 0) {
+        // The pin presses the tongue's crown, turning the pinion about
+        // 2.2-2.8 times as fast as the wheel (its first table step less).
+        const ratio = -state.pinionAngularSpeed / state.driverAngularSpeed;
+        assert.ok(ratio > 0.9 && ratio < 3, `guide push ratio ${ratio} at state ${index}`);
+      }
       near(state.outputTurns,
         -(state.completedInputTurns + state.phase * 2.5 / FULL_TURN),
         1e-15, `index progress at state ${index}`);
@@ -364,15 +377,15 @@ test('movement 211 preserves every mesh, guide clearance, and lock constraint th
     'the official anti-jam construction retains positive pin clearance');
   near(minimumGuideClearance, geometry.minimumGuideClearance, 5e-8,
     'sampled closest guide pass');
-  assert.equal(guideEngagedStates, 2093);
+  assert.equal(guideEngagedStates, 1359);
   assert.equal(indexingStates, 13109);
   assert.equal(dwellStates, 19660);
   assert.ok(lockArcStates > dwellStates * 0.97,
     'the plain circular rim occupies essentially the full locked dwell');
   assert.deepEqual(Object.fromEntries(stages), {
-    'entry-pin-and-guide-transfer': 2186,
+    'entry-pin-and-guide-transfer': 1458,
     'eleven-tooth-indexing-mesh': 8010,
-    'relocking-transition': 2913,
+    'relocking-transition': 3641,
     'plain-rim-locked-dwell': 19660,
   });
   disposeModel(model.root);
@@ -414,10 +427,15 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
     const state = stateAtDriverAngle(angle);
     const previous = pinionAngleAtDriverAngle(angle - angleStep);
     const next = pinionAngleAtDriverAngle(angle + angleStep);
+    // During the pin's push the rate follows the solved pin/crown contact
+    // (tabulated every 0.01 degree, so a finite difference may straddle a
+    // table step); elsewhere it is exactly 2.5 or zero.
+    const pushing = angle > 0 && angle < geometry.guideHandoffPhase;
     near(
       (next - previous) / (2 * angleStep),
-      state.indexing ? -2.5 : 0,
-      3e-9,
+      pushing ? state.pinionAngularSpeed / state.driverAngularSpeed
+        : state.indexing ? -2.5 : 0,
+      pushing ? 0.05 : 3e-9,
       `piecewise angular ratio at sample ${index}`,
     );
   }
@@ -455,9 +473,21 @@ test('movement 211 has the exact two-to-one index, intentional speed jumps, half
   const beforeStrike = stateAtDriverAngle(FULL_TURN - boundaryStep);
   const afterStrike = stateAtDriverAngle(FULL_TURN + boundaryStep);
   near(beforeStrike.pinionAngularSpeed, 0, 0, 'pre-strike dwell speed');
-  near(afterStrike.pinionAngularSpeed,
+  // The pin strikes the crown and the pinion starts at the contact's own
+  // rate (about 1 to 2.3 times the wheel), not the full 2.5.
+  const strikeRatio = -afterStrike.pinionAngularSpeed
+    / transmission.inputAngularSpeed;
+  assert.ok(strikeRatio > 0.9 && strikeRatio < 2.4,
+    `post-strike pin/crown speed ratio ${strikeRatio}`);
+  const beforeHandoff = stateAtDriverAngle(
+    FULL_TURN + geometry.guideHandoffPhase - boundaryStep);
+  const afterHandoff = stateAtDriverAngle(
+    FULL_TURN + geometry.guideHandoffPhase + boundaryStep);
+  near(beforeHandoff.pinionAngle, afterHandoff.pinionAngle,
+    boundaryStep * 5.2, 'position continuous at the tooth handoff');
+  near(afterHandoff.pinionAngularSpeed,
     transmission.indexingSpeedRatio * transmission.inputAngularSpeed,
-    0, 'post-strike indexing speed');
+    0, 'teeth run the pinion at 2.5 after the handoff');
   near(beforeStrike.pinionAngle, afterStrike.pinionAngle,
     boundaryStep * 2.6, 'position remains continuous at entry strike');
 

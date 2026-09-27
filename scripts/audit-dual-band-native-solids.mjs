@@ -5,7 +5,8 @@ const file=process.argv[2],result=JSON.parse(fs.readFileSync(file)),m=create({id
 const pairs=[['open',b.openCarrier,b.openRatchet],['crossed',b.crossedCarrier,b.crossedRatchet]].flatMap(([name,c,w])=>[
   {name:name+' pawl/wheel',a:c.userData.pawlBody,target:w},
   {name:name+' pawl/stop',a:c.userData.pawlBody,target:c.userData.pawlStop},
-]).map(p=>({...p,points:surfacePoints(p.a.geometry),field:solidSurface(p.target.geometry)}));
+]).filter(p=>p.target).map(p=>({...p,points:surfacePoints(p.a.geometry),field:solidSurface(p.target.geometry)}));
+// Production has no pawl stop since pass 86 (the ratchet root seats the pawl); the native study keeps its own stop geometry.
 const phase=result.summary.options.inputPhase??0,omega=2*Math.PI/8,A=m.root.userData.geometry.carrierAmplitude;
 const eligible=result.samples.filter(s=>s.time>=8-1e-6),stride=Math.max(1,Math.floor(eligible.length/1024)),samples=eligible.filter((_,i)=>i%stride===0),report=[];
 for(const mode of['native-carriers','exact-band-carriers']){

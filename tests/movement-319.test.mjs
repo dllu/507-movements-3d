@@ -90,8 +90,13 @@ test('movement 319 is Brown’s complete cut-rim bimetallic compensation balance
   assert.equal(blocks.bottomTimingScrew.group.parent,
     blocks.balanceAssembly);
   assert.equal(blocks.compoundArmSegments.length, 2);
-  assert.equal(blocks.compoundArmSegments[0].length, 42);
-  assert.equal(blocks.compoundArmSegments[1].length, 42);
+  assert.equal(blocks.compoundArmSegments[0].length, 1,
+    'each compound bar is one continuous brass and one steel lamina');
+  assert.equal(blocks.compoundArmSegments[1].length, 1);
+  assert.equal(blocks.barHeads.length, 2);
+  for (const head of blocks.barHeads) {
+    assert.equal(head.parent, blocks.balanceAssembly);
+  }
   assert.equal(blocks.springSegments.length, 112);
   assert.deepEqual(blocks.balanceAssembly.userData.axis,
     new THREE.Vector3(0, 0, 1));
@@ -99,9 +104,11 @@ test('movement 319 is Brown’s complete cut-rim bimetallic compensation balance
   const roles = [];
   model.root.traverse((object) => roles.push(object.userData.role ?? ''));
   assert.equal(roles.filter((role) =>
-    role === 'outer-brass-layer-of-compound-balance-arm').length, 84);
+    role === 'outer-brass-lamina-of-compound-balance-bar').length, 2);
   assert.equal(roles.filter((role) =>
-    role === 'inner-steel-layer-of-compound-balance-arm').length, 84);
+    role === 'inner-steel-lamina-of-compound-balance-bar').length, 2);
+  assert.equal(roles.filter((role) => /projecting-.*-balance-arm/.test(role))
+    .length, 0, 'no separate straight arm stubs past the weights');
   assert.equal(roles.filter((role) =>
     role === 'bimetal-arm-carried-compensation-weight').length, 2);
   assert.equal(roles.filter((role) =>
@@ -408,13 +415,18 @@ test('movement 319 renderer keeps brass outside steel and binds all four radial 
     vectorNear(bottomWorld, expected.bottomTimingScrew.position, 3e-15,
       `rendered bottom timing screw at ${time}`);
 
-    for (const arm of blocks.compoundArmSegments) {
-      for (const index of [0, 10, 21, 31, 41]) {
-        const { brass, steel } = arm[index];
-        assert.equal(brass.userData.layer, 'radially-outer-brass');
-        assert.equal(steel.userData.layer, 'radially-inner-steel');
-        assert.ok(brass.position.length() > steel.position.length(),
-          `brass outside steel in arm segment ${index} at ${time}`);
+    for (const [arm] of blocks.compoundArmSegments) {
+      const { brass, steel } = arm;
+      assert.equal(brass.userData.layer, 'radially-outer-brass');
+      assert.equal(steel.userData.layer, 'radially-inner-steel');
+      // Outer-face vertices of each ring (face 0): brass lies outside steel
+      // at every station along the bar.
+      const b = brass.geometry.attributes.position;
+      const st = steel.geometry.attributes.position;
+      for (let v = 0; v < 2 * 97; v += 13) {
+        assert.ok(Math.hypot(b.getX(v), b.getY(v))
+          > Math.hypot(st.getX(v), st.getY(v)) + 0.1,
+        `brass outside steel at vertex ${v} at ${time}`);
       }
     }
 
@@ -443,6 +455,57 @@ test('movement 319 renderer keeps brass outside steel and binds all four radial 
       expected.inertiaError, 0,
     `published compensation error at ${time}`);
   }
+  disposeModel(model.root);
+});
+
+test('movement 319 laminae run into the bar heads, through the weights, and clear the weights', async () => {
+  const { surfacePoints, solidSurface } = await import('./helpers/solid-surface.mjs');
+  const model = createMovementModel(catalog.movements[318]);
+  const { blocks, geometry } = model.root.userData;
+  const weightSolid = solidSurface(blocks.rightWeight.block.geometry);
+  const headSolid = solidSurface(blocks.barHeads[0].geometry);
+  const stemSolid = solidSurface(blocks.topTimingScrew.stem.geometry);
+  let minimumWeightGap = Infinity;
+  for (let i = 0; i <= 32; i += 1) {
+    model.update(geometry.thermalCyclePeriod * i / 32);
+    model.root.updateMatrixWorld(true);
+    for (const [[arm], weight, head, screw] of [
+      [blocks.compoundArmSegments[0], blocks.rightWeight, blocks.barHeads[0], blocks.topTimingScrew],
+      [blocks.compoundArmSegments[1], blocks.leftWeight, blocks.barHeads[1], blocks.bottomTimingScrew],
+    ]) {
+      for (const lamina of [arm.brass, arm.steel]) {
+        const toWeight = weight.block.matrixWorld.clone().invert()
+          .multiply(lamina.matrixWorld);
+        const toHead = head.matrixWorld.clone().invert().multiply(lamina.matrixWorld);
+        let buried = 0;
+        for (const point of surfacePoints(lamina.geometry)) {
+          const q = point.clone().applyMatrix4(toWeight);
+          if (weightSolid.inside(q)) {
+            assert.ok(weightSolid.distance(q) < 1e-5,
+              `${lamina.userData.role} enters weight at ${i}`);
+          } else if (weightSolid.box.distanceToPoint(q) < 0.05) {
+            minimumWeightGap = Math.min(minimumWeightGap, weightSolid.distance(q));
+          }
+          if (headSolid.inside(point.clone().applyMatrix4(toHead))) buried += 1;
+        }
+        assert.ok(buried > 20, `${lamina.userData.role} root buried in its bar head at ${i}`);
+      }
+      // The timing-screw stem starts inside the head, not above it.
+      const stemEnds = [1, -1].map((sign) => new THREE.Vector3(0,
+        sign * (screw.stem.geometry.parameters.height / 2 - 0.01), 0)
+        .applyMatrix4(screw.stem.matrixWorld));
+      const stemBottom = stemEnds.sort((a, b) => a.length() - b.length())[0]
+        .applyMatrix4(head.matrixWorld.clone().invert());
+      assert.ok(headSolid.inside(stemBottom), `timing screw seated in its head at ${i}`);
+      // The bar end runs up into the head.
+      const barEnd = new THREE.Vector3(0, Math.sign(head.position.y) * 0.49, 0)
+        .applyMatrix4(blocks.mainBar.matrixWorld)
+        .applyMatrix4(head.matrixWorld.clone().invert());
+      assert.ok(headSolid.inside(barEnd), `main bar end inside its head at ${i}`);
+    }
+  }
+  // The passage is 0.44 deep for 0.42-deep laminae: 0.01 face clearance.
+  assert.ok(minimumWeightGap > 0.005, `laminae clear the weight passage by ${minimumWeightGap}`);
   disposeModel(model.root);
 });
 

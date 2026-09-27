@@ -19,6 +19,9 @@ try {
   v.update(time);const boxes=new Map(),issues=[];
   for(const [name,m]of entries) {
    boxes.set(name,new THREE.Box3().setFromObject(m,true));bounds.union(boxes.get(name));
+   // The pass-60 stub run-ons and the shaft's rear stub are added after the
+   // fit bounds and deliberately run on out of the drawn view.
+   if(/^(stubExtension|shaftTail)/.test(name))continue;
    const p=m.geometry.attributes.position;for(let j=0;j<p.count;j++)assert(u.cameraFitBounds.containsPoint(new THREE.Vector3().fromBufferAttribute(p,j).applyMatrix4(m.matrixWorld)),name+' outside camera bounds');
   }
   for(let i=0;i<entries.length;i++)for(let j=i+1;j<entries.length;j++) {

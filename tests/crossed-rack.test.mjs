@@ -16,6 +16,8 @@ test('080 follows the measured finite rack, joint centers and crossed pawl layer
   u.source(pixel).forEach((v,i)=>near(p.anchors[key][i],v));
  }
  assert(p.layers.right[0]>p.layers.left[1]);assert(p.layers.left[0]>p.layers.rack[1]);
+ // The pawls lie just in front of the rack, so the hook webs reach back no further than needed.
+ assert(p.layers.left[0]-p.layers.rack[1]<=.02&&p.layers.right[0]-p.layers.left[1]<=.02&&p.layers.right[1]<=.17);
  assert.match(u.idealConstraints,/ideal prismatic/);assert.equal(u.playbackDuration,undefined);near(u.minimumDisplayCycleSeconds,4);dispose(model);
 });
 

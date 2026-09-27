@@ -13,7 +13,7 @@ import {disk} from './finite-plate-geometry.js';
 // right edge and ends cleanly far beyond it, and the rope carries a plain pump rod that
 // hangs below the plinth. The remote sheave, its stand and base, and the pump
 // crosshead, guides, beds, hangers and barrel are not built.
-const UNDRAWN_PARTS=/^(remote(?:Drive(?:Rim|Web|Hub)|InputShaft|BearingStandard|BearingLip|Base)|pump(?:Crosshead|LowerBed|Barrel(?:Gland|Foot|HangerLeft|HangerRight)?|Guide(?:Left|Right|Crossbar)|GuidePillar(?:Left|Right)))$/;
+const UNDRAWN_PARTS=/^(catchHeadBack|catchHeelLug|wheelHeelStop|remote(?:Drive(?:Rim|Web|Hub)|InputShaft|BearingStandard|BearingLip|Base)|pump(?:Crosshead|LowerBed|Barrel(?:Gland|Foot|HangerLeft|HangerRight)?|Guide(?:Left|Right|Crossbar)|GuidePillar(?:Left|Right)))$/;
 // Far enough that the cleanly capped run ends stay outside the frame of
 // every orbit even at the maximum zoom-out (three times the fit distance).
 export const PUMP_CATCH_BAND_END=26;
@@ -34,6 +34,15 @@ function pruneUndrawnHardware(model){
   const band=u.parts.inputDriveRope,travel=band.geometry.userData.travel??0;band.geometry.dispose();
   band.geometry=new LaidRopeGeometry(path,Math.ceil(path.getLength()*68),ropeRadius,8,false,{travel});
   u.rearDrive={...u.rearDrive,bandEnd:end,bandLength:path.getLength(),openBand:true};
+  // Catch B is one plain extrusion of Brown's outline (p86): the hidden
+  // slab behind its head and the heel lug with its wheel stop are not built.
+  // The playback was integrated with them (see limits), so the catch's hold
+  // at -0.12 rad against the wheel during the return is supplied by that
+  // trajectory, not by a drawn contact.
+  delete u.heelStop;
+  u.displayOmitsIntegratedCatchDetails={headBackDepth:u.geometry.headBackDepth,heelStop:true,
+    note:'The trajectory was integrated with a 0.1-deep head backing and a heel lug/stop behind the catch; neither is displayed.'};
+  delete u.geometry.headBackDepth;delete u.geometry.headWeightQualification;
   u.prunedHardware=removed;
   return removed;
 }

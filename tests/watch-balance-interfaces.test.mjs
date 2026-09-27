@@ -7,7 +7,9 @@ import { solidSurface, surfacePoints } from './helpers/solid-surface.mjs';
 for(const id of [318,319])test(`${id}: finite staff, spring and arm interfaces over a complete demonstration`,()=>{
   const model=(id===318?watch:balance)({id,description:''}),r=model.root,b=r.userData.blocks,g=r.userData.geometry;
   const pairs=id===318?[[b.balanceStaff,b.lowerBearing],[b.balanceStaff,b.balanceHub],[b.balanceStaff,b.springCollet],[b.regulatorRing,b.fixedRing],...b.springSegments.flatMap(s=>b.curbPins.map(p=>[s,p]))]
-    :[[b.staff,b.fixedBearing],[b.staff,b.hub],[b.staff,b.springCollet],[b.staff,b.mainBar],...b.compoundArmSegments.flat().flatMap(s=>[b.rightWeight,b.leftWeight].flatMap(w=>[[s.steel,w.block],[s.brass,w.block],[s.steel,w.clampScrew],[s.brass,w.clampScrew]])),...[b.topTimingScrew,b.bottomTimingScrew].map(s=>[s.stem,s.nut])];
+    :[[b.staff,b.fixedBearing],[b.staff,b.hub],[b.staff,b.springCollet],[b.staff,b.mainBar],...[b.topTimingScrew,b.bottomTimingScrew].map(s=>[s.stem,s.nut])];
+  // 319's laminae deform in place, so tests/movement-319.test.mjs resamples
+  // them at every pose against the weights and bar heads.
   const samples=new Map(),solids=new Map();
   for(const[a,c]of pairs){if(!samples.has(a))samples.set(a,surfacePoints(a.geometry));if(!solids.has(c))solids.set(c,solidSurface(c.geometry));}
   const period=g.adjustmentCyclePeriod??g.thermalCyclePeriod;let queries=0,minCurbGap=Infinity;

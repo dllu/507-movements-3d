@@ -517,3 +517,33 @@ test('movement 474 bowl mouth ends flush under the lid with no ledge or overlap 
   near(radius(lid), radius(bowl), 1e-3, 'lid edge flush with the bowl mouth');
   disposeModel(model.root);
 });
+
+test('movement 474 handles are symmetric upright loops: stubs out of the flank, legs up, top bar above the rim', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  const loop = geometry.boilerHandleLoop;
+  assert.ok(loop, 'handle loop dimensions are published');
+  assert.equal(blocks.boilerHandles.length, 2);
+  const boxes = blocks.boilerHandles.map((h) => new THREE.Box3().setFromObject(h));
+  const [left, right] = boxes[0].max.x < 0 ? boxes : [boxes[1], boxes[0]];
+  // Mirror images across x = 0, each symmetric about its own z = 0 plane.
+  near(left.min.x, -right.max.x, 1e-6, 'outer faces mirror');
+  near(left.max.x, -right.min.x, 1e-6, 'sunk ends mirror');
+  for (const box of [left, right]) {
+    near(box.min.z, -box.max.z, 1e-6, 'loop symmetric front to back');
+    near(box.max.z - box.min.z, 2 * (loop.halfWidth + loop.radius), 1e-3, 'loop width');
+    near(box.min.y, loop.stubY - loop.radius, 1e-3, 'stubs at the bottom');
+    near(box.max.y, loop.topY + loop.radius, 1e-3, 'top bar at the top');
+  }
+  const lid = new THREE.Box3().setFromObject(blocks.boilerLid);
+  assert.ok(loop.topY > lid.max.y, 'top bar rises above the rim');
+  assert.ok(loop.stubY < lid.min.y - 0.3, 'stubs leave the flank below the rim');
+  // Both stub ends are sunk into the bowl wall (outer radius at the stub
+  // height exceeds the sunk end's radius plus the rod radius).
+  const reach = Math.hypot(loop.sunkX, loop.halfWidth + loop.radius);
+  assert.ok(reach < 1.70, `stub end sunk inside the flank (${reach})`);
+  // Each handle is one continuous swept rod.
+  blocks.boilerHandles.forEach((h) => assert.equal(h.children.length, 0));
+  disposeModel(model.root);
+});

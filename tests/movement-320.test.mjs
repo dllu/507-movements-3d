@@ -439,3 +439,42 @@ test('movement 320 exposes finite smooth rates at all phase boundaries', () => {
     'ratchet begins freewheeling smoothly');
   disposeModel(model.root);
 });
+
+test('movement 320 click is seated in a root against a tooth face whenever it holds p', () => {
+  const model = createMovementModel(catalog.movements[319]);
+  const { blocks, geometry } = model.root.userData;
+  const click = blocks.finiteClicks[0];
+  const pitch = geometry.ratchetToothPitch;
+  // One flat plate: the old pin-and-cone click is gone.
+  assert.equal(click.group.children.filter((o) => o.isMesh && o.visible).length, 1);
+  assert.equal(click.body.geometry.userData.plate.polygons.length, 1);
+  const noseWorld = () => {
+    model.root.updateMatrixWorld(true);
+    return new THREE.Vector3(geometry.clickLength, 0, 0).applyMatrix4(click.group.matrixWorld);
+  };
+  const center = blocks.ratchetPulley.position;
+  let previous = -Infinity;
+  for (let sample = 0; sample <= 400; sample += 1) {
+    const phase = sample / 400;
+    model.update(geometry.demonstrationPeriod * phase);
+    const state = model.root.userData.renderState;
+    const wheel = state.renderedRatchetAngle;
+    if (phase >= 0.05 && phase <= 0.5) {
+      // Going: p is held with a tooth face on the click and the nose in its root.
+      near(((wheel / pitch) % 1 + 1) % 1 < 0.5 ? (wheel / pitch) % 1 : 0, 0, 1e-9, `locked on a seat at ${phase}`);
+      near(click.group.rotation.z, geometry.clickSeatRotation, 2e-6, `click seated at ${phase}`);
+      const nose = noseWorld();
+      near(Math.hypot(nose.x - center.x, nose.y - center.y), geometry.ratchetRootRadius, 1e-9, `nose in the root at ${phase}`);
+    }
+    if (phase > 0.5 && phase < 1) assert.ok(wheel >= previous - 1e-12, `p only advances while winding (${phase})`);
+    previous = wheel;
+  }
+  // The winding carries p just past the seat, so the click drops fully into
+  // the root before the load turns p back onto it.
+  model.update(geometry.demonstrationPeriod * 0.9999);
+  const end = model.root.userData.renderState;
+  near(end.renderedRatchetAngle - end.pulleys.A.angle, geometry.ratchetOvershoot, 1e-4, 'overshoot before the settle');
+  const nose = noseWorld();
+  assert.ok(Math.hypot(nose.x - center.x, nose.y - center.y) < geometry.ratchetRootRadius + 0.02, 'click has dropped into the root');
+  disposeModel(model.root);
+});

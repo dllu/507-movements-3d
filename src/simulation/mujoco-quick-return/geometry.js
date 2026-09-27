@@ -33,16 +33,23 @@ export function makeQuickReturnGeometry(options={}) {
   // Brown draws the tail as a round rod broken off with an oblique cut. Model
   // it whole: a round rod on the drawn tail centreline with a rounded end
   // at the drawn tip. Its diameter follows the drawn tail width.
+  let bossHalfDepth;
   {const o=source.output,a=f.local([(o[0][0]+o.at(-1)[0])/2,(o[0][1]+o.at(-1)[1])/2]),b=f.local([496,330]);
    const dx=b[0]-a[0],dy=b[1]-a[1],angle=Math.atan2(dy,dx),r=Math.hypot(o[0][0]-o.at(-1)[0],o[0][1]-o.at(-1)[1])/200;
-   const start=source.pivotRadius/100-.04,end=Math.hypot(...b),length=end-start-r;
+   // The rod (diameter 0.37) is thicker than the 0.18 lever plate, so the
+   // boss is a hub deep enough to take it whole: the rod's end face lies
+   // inside the boss cylinder, clear of the bore, and nothing overhangs.
+   const pivotRadius=source.pivotRadius/100,start=(pivotShaftRadius+Math.sqrt(pivotRadius**2-r*r))/2,end=Math.hypot(...b),length=end-start-r;
    // One closed turned solid: straight shank then a hemispherical end.
    const profile=[[start,0],[start,r]];
    for(let i=0;i<=16;i++){const t=i/16*Math.PI/2;profile.push([start+length+r*Math.sin(t),r*Math.cos(t)]);}
    const shape=turned(profile,96).rotateY(Math.PI/2).rotateZ(angle);
-   attach('tailRod',shape,'rocker',PALETTE.driven,[0,0,.09]);}
-  attach('pivotBoss',plate(clip.difference(boss,bore),.18,.24),'rocker',PALETTE.driven);
-  attach('pivotShaft',disk(pivotShaftRadius,-.85,.26,128),'frame',PALETTE.ink,[...f.pivot,0]);
+   attach('tailRod',shape,'rocker',PALETTE.driven,[0,0,.09]);bossHalfDepth=r+.02;}
+  // Hub symmetric about the tail rod's axis (z 0.09), 0.02 proud of the rod
+  // on each side, so the rod runs cleanly into its curved face.
+  const hub=[.09-bossHalfDepth,.09+bossHalfDepth];
+  attach('pivotBoss',plate(clip.difference(boss,bore),...hub),'rocker',PALETTE.driven);
+  attach('pivotShaft',disk(pivotShaftRadius,-.85,hub[1]+.02,128),'frame',PALETTE.ink,[...f.pivot,0]);
   const rearOutline=clip.union(capsule([0,0],f.pivot,.075,32),poly(circle([0,0],.27,96)),poly(circle(f.pivot,.28,96)));
   const rear=clip.difference(rearOutline,poly(circle([0,0],shaftRadius+.003,128)),poly(circle(f.pivot,pivotShaftRadius+.003,128)));
   attach('rearFrame',plate(rear,-.75,-.63),'frame',PALETTE.muted);

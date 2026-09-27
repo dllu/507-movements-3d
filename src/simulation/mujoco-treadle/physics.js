@@ -16,7 +16,7 @@ function fitEqualizer(linkage) {
  return {coefficients,maximumError};
 }
 
-export function buildTreadleMjcf(visual,{timestep=.0005,lowerSpring=4,friction=.35,contactTime=.001}={}) {
+export function buildTreadleMjcf(visual,{timestep=.0005,lowerSpring=10,upperSpring=10,springReference=.45,load=300,friction=.35,contactTime=.001}={}) {
  const u=visual.root.userData,p=u.linkage.parameters,initial=u.linkage.atTime(0),assets=[],collision={},bodyNames=[],density=1/familyMass(u.parts,u.families,'lowerPawl').volume;
  const inertial=family=>{const raw=familyMass(u.parts,u.families,family),mass=raw.volume*density,I=raw.centralPolar*density;
   return `<inertial pos="${vec(raw.centroid)}" mass="${mass}" diaginertia="${I*.51} ${I*.51} ${I}"/>`;};
@@ -34,7 +34,7 @@ export function buildTreadleMjcf(visual,{timestep=.0005,lowerSpring=4,friction=.
   const arm=p.arms[i],s=initial.arms[i],name=arm.name,rodAngle=Math.atan2(s.bottom[1]-s.top[1],s.bottom[0]-s.top[0]);
   bodyNames.push(name+'Arm',name+'Pawl',name+'Rod',name+'Treadle');
   bodies+=`<body name="${name}Arm" quat="${vec(quat(s.armAngle))}"><joint name="${name}Arm" type="hinge" axis="0 0 1" damping=".01"/>${inertial(name+'Arm')}
-   <body name="${name}Pawl" pos="${vec([...arm.pawlLocal,0])}" quat="${vec(quat(-s.armAngle))}"><joint name="${name}Pawl" type="hinge" axis="0 0 1" damping=".008" stiffness="${i===0?lowerSpring:0}" springref=".45"/>${inertial(name+'Pawl')}${colliders(name+'Pawl',u.parts[name+'PawlBody'],2)}</body>
+   <body name="${name}Pawl" pos="${vec([...arm.pawlLocal,0])}" quat="${vec(quat(-s.armAngle))}"><joint name="${name}Pawl" type="hinge" axis="0 0 1" damping=".008" stiffness="${i===0?lowerSpring:upperSpring}" springref="${springReference}"/>${inertial(name+'Pawl')}${colliders(name+'Pawl',u.parts[name+'PawlBody'],2)}</body>
    <body name="${name}Rod" pos="${vec([...arm.armRodLocal,0])}" quat="${vec(quat(rodAngle-s.armAngle))}"><joint name="${name}Rod" type="hinge" axis="0 0 1" damping=".01"/>${inertial(name+'Rod')}<site name="${name}RodEnd" pos="${arm.rodLength} 0 0"/></body>
   </body>
   <body name="${name}Treadle" pos="${vec([...p.fulcrum,0])}" quat="${vec(quat(s.treadleAngle))}"><joint name="${name}Treadle" type="hinge" axis="0 0 1" damping=".1"/>${inertial(name+'Treadle')}<site name="${name}TreadlePin" pos="${vec([...arm.rodLocal,0])}"/></body>`;
@@ -45,18 +45,23 @@ export function buildTreadleMjcf(visual,{timestep=.0005,lowerSpring=4,friction=.
  <asset>${assets.join('')}</asset><worldbody>${bodies}</worldbody>
  <equality><connect site1="lowerRodEnd" site2="lowerTreadlePin"/><connect site1="upperRodEnd" site2="upperTreadlePin"/><joint joint1="upperTreadle" joint2="lowerTreadle" polycoef="${vec(equalizer.coefficients)}"/></equality>
  <actuator><position name="foot" joint="lowerTreadle" kp="1000000" kv="2000"/></actuator></mujoco>`;
- return {xml,collision,equalizer,bodyNames,options:{timestep,lowerSpring,friction,contactTime},density};
+ return {xml,collision,equalizer,bodyNames,options:{timestep,lowerSpring,upperSpring,springReference,load,friction,contactTime},density};
 }
 
+// Pawl angles resting on the wheel at its start angle (scripts/lib/treadle-ratchet-contact.mjs).
+export const initialPawlAngles=[-.0204,-.0164];
+
 export function makeTreadlePhysics(mujoco,visual,options={}) {
- const description=buildTreadleMjcf(visual,options),p=visual.root.userData.linkage.parameters;
+ const description=buildTreadleMjcf(visual,options),p=visual.root.userData.linkage.parameters,{load}=description.options;
+ let wheelDof=0;
  const simulation=createMujocoSimulation(mujoco,{
   xml:description.xml,
   initialize:({model,data,id})=>{
    const set=(name,value)=>{data.qpos[model.jnt_qposadr[id('mjOBJ_JOINT',name)]]=value;};
-   set('wheel',.03);set('lowerPawl',-.05545);set('upperPawl',-.05002);
+   wheelDof=model.jnt_dofadr[id('mjOBJ_JOINT','wheel')];
+   set('wheel',.03);set('lowerPawl',initialPawlAngles[0]);set('upperPawl',initialPawlAngles[1]);
   },
-  beforeStep:({data,time})=>{data.ctrl[0]=p.amplitude*Math.cos(time*2*Math.PI/p.period+p.sourcePhase)+p.sourceAngle;},
+  beforeStep:({data,time})=>{data.ctrl[0]=p.amplitude*Math.cos(time*2*Math.PI/p.period+p.sourcePhase)+p.sourceAngle;data.qfrc_applied[wheelDof]=-load;},
  });
  const {model,data,id}=simulation;
  const joints=Object.fromEntries(description.bodyNames.map(name=>{const j=id('mjOBJ_JOINT',name);return [name,{q:model.jnt_qposadr[j],v:model.jnt_dofadr[j]}];}));

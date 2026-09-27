@@ -1,6 +1,8 @@
 import {boredCylinderGeometry, fitPistonGuide} from './piston-guide-parts.js';
 import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import * as THREE from 'three';
+import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geometry.js';
+import { makePlateChainLink } from './plate-chain-links.js';
 import {
   PALETTE,
   markShadows,
@@ -70,8 +72,27 @@ function pivotNotch(radius, y) {
   return arcPoints(radius, Math.atan2(y, half), Math.atan2(y, -half), 32);
 }
 
-// One casting in the beam frame: Brown's slotted arched segment head, its
-// round ends, filleted roots and the straight beam running past the pivot.
+// Brown's segment-head slot outline (beam frame, source units): an arc band
+// about the mid radius with round ends concentric with their end centres.
+function segmentSlotOutline(mid, slotHalfWidth, slotStart, slotEnd) {
+  const radialAt = angle => new THREE.Vector2(Math.cos(angle), Math.sin(angle));
+  const tangentAt = angle => new THREE.Vector2(-Math.sin(angle), Math.cos(angle));
+  const slotStartRadial = radialAt(slotStart);
+  const slotEndRadial = radialAt(slotEnd);
+  return [
+    ...arcPoints(mid + slotHalfWidth, slotStart, slotEnd, 60),
+    ...roundEnd(slotEndRadial.clone().multiplyScalar(mid), slotHalfWidth,
+      slotEndRadial, tangentAt(slotEnd), 1, 10),
+    ...arcPoints(mid - slotHalfWidth, slotEnd, slotStart, 60),
+    ...roundEnd(slotStartRadial.clone().multiplyScalar(mid), slotHalfWidth,
+      slotStartRadial, tangentAt(slotStart), -1, 10),
+  ];
+}
+
+// One casting in the beam frame: Brown's arched segment head, its round
+// ends, filleted roots and the straight beam running past the pivot. The
+// plate's slot is not see-through, so the head is solid here and the slot
+// is a raised panel on its face (segmentSlotOutline).
 function segmentHeadBeamGeometry({
   beamBottom,
   beamEnd,
@@ -83,9 +104,6 @@ function segmentHeadBeamGeometry({
   outerRadius,
   pivotBossRadius,
   scale,
-  slotEnd,
-  slotHalfWidth,
-  slotStart,
   startAngle,
   topFillet,
 }) {
@@ -112,114 +130,8 @@ function segmentHeadBeamGeometry({
     ...roundEnd(startRadial.clone().multiplyScalar(mid), cap, startRadial,
       tangentAt(startAngle), -1, 16),
   ];
-  const slotStartRadial = radialAt(slotStart);
-  const slotEndRadial = radialAt(slotEnd);
-  const slot = [
-    ...arcPoints(mid + slotHalfWidth, slotStart, slotEnd, 60),
-    ...roundEnd(slotEndRadial.clone().multiplyScalar(mid), slotHalfWidth,
-      slotEndRadial, tangentAt(slotEnd), 1, 10),
-    ...arcPoints(mid - slotHalfWidth, slotEnd, slotStart, 60),
-    ...roundEnd(slotStartRadial.clone().multiplyScalar(mid), slotHalfWidth,
-      slotStartRadial, tangentAt(slotStart), -1, 10),
-  ];
   const shape = new THREE.Shape(outline.map(point => point.multiplyScalar(scale)));
-  shape.holes.push(new THREE.Path(slot.map(point => point.multiplyScalar(scale))));
   return extrudeCentered(shape, depth);
-}
-
-// A side plate spanning two pin centres whose ends are hollowed to seat
-// against the round end bosses instead of passing through them.
-function concaveEndPlateGeometry(length, width, depth, endRadius) {
-  const half = width / 2;
-  const inset = Math.sqrt(endRadius ** 2 - half ** 2);
-  const swing = Math.atan2(half, inset);
-  const left = -length / 2;
-  const right = length / 2;
-  const points = [
-    new THREE.Vector2(left + inset, -half),
-    new THREE.Vector2(right - inset, -half),
-    ...arcPoints(endRadius, Math.PI + swing, Math.PI - swing, 12)
-      .map(point => point.add(new THREE.Vector2(right, 0))).slice(1, -1),
-    new THREE.Vector2(right - inset, half),
-    new THREE.Vector2(left + inset, half),
-    ...arcPoints(endRadius, swing, -swing, 12)
-      .map(point => point.add(new THREE.Vector2(left, 0))).slice(1, -1),
-  ];
-  return extrudeCentered(new THREE.Shape(points), depth);
-}
-
-function makeFlexibleChainLink({
-  chainMaterial,
-  darkMaterial,
-  depth,
-  nominalPitch,
-  planeZ,
-  width,
-}) {
-  const link = new THREE.Group();
-  link.userData.nominalPitch = nominalPitch;
-  link.userData.role = 'articulated-atmospheric-engine-chain-link';
-  const body = new THREE.Mesh(
-    concaveEndPlateGeometry(nominalPitch, width, depth, width * 0.62 + .001),
-    chainMaterial,
-  );
-  body.position.set(nominalPitch / 2, 0, planeZ);
-  body.userData.role = 'green-chain-link-side-plate';
-  const startBoss = cylinderAlongZ(width * 0.62, depth * 1.25,
-    chainMaterial, 28);
-  startBoss.geometry.dispose();
-  startBoss.geometry = boredCylinderGeometry(width * .62, .054, depth * 1.25);
-  startBoss.position.z = planeZ;
-  startBoss.userData.role = 'chain-link-start-boss';
-  const endBoss = cylinderAlongZ(width * 0.62, depth * 1.25,
-    chainMaterial, 28);
-  endBoss.geometry.dispose();
-  endBoss.geometry = boredCylinderGeometry(width * .62, .054, depth * 1.25);
-  endBoss.position.set(nominalPitch, 0, planeZ);
-  endBoss.userData.role = 'chain-link-end-boss';
-  const startPin = cylinderAlongZ(.051, .84,
-    darkMaterial, 22);
-  startPin.position.z = .57;
-  startPin.userData.role = 'chain-link-start-pin';
-  const endPin = cylinderAlongZ(.051, .84,
-    darkMaterial, 22);
-  endPin.position.set(nominalPitch, 0, .57);
-  endPin.userData.role = 'chain-link-end-pin';
-  const startAnchor = new THREE.Object3D();
-  startAnchor.position.z = 0.76;
-  startAnchor.userData.role = 'analytic-chain-link-start';
-  const endAnchor = new THREE.Object3D();
-  endAnchor.position.set(nominalPitch, 0, 0.76);
-  endAnchor.userData.role = 'analytic-chain-link-end';
-  const roller = cylinderAlongZ(.09, .20, chainMaterial, 64);
-  roller.geometry.dispose();
-  roller.geometry = boredCylinderGeometry(.09, .054, .20);
-  roller.position.z = .30;
-  roller.userData.role = 'chain-pin-roller-bearing-on-circular-shoe';
-  const endRoller = roller.clone();
-  endRoller.position.x = nominalPitch;
-  link.add(roller, endRoller);
-  link.add(
-    body,
-    startBoss,
-    endBoss,
-    startPin,
-    endPin,
-    startAnchor,
-    endAnchor,
-  );
-  return {
-    roller,
-    endRoller,
-    body,
-    endAnchor,
-    endBoss,
-    endPin,
-    link,
-    startAnchor,
-    startBoss,
-    startPin,
-  };
 }
 
 function atmosphericChainBeamPumpingEngine(movement) {
@@ -297,6 +209,19 @@ function atmosphericChainBeamPumpingEngine(movement) {
   const pumpRodLength = sourcePumpRodLength * sourceScale;
   const chainLinkPitch = sourceChainLinkPitch * sourceScale;
   const chainLinkCount = 10;
+  // The chain runs in the beam's own mid-plane and wraps on the segment
+  // head's rim, as in 334: the 0.40-deep head's face spans the whole chain.
+  // Its eyes (0.47 x width) sit 0.032 source unit clear of the 11.7 rim when
+  // the pins lie on the 12-unit pitch circle.
+  const chainLineZ = 0.30;
+  const chainWidth = 0.57 * sourceScale;
+  const plateChain = {
+    chainInnerHalfDepth: 0.045,
+    chainLineZ,
+    chainOuterHigh: chainLineZ + 0.095,
+    chainOuterLow: chainLineZ - 0.095,
+    chainPinRadius: 0.16 * chainWidth,
+  };
 
   const rotatePoint = (point, angle) => new THREE.Vector2(
     point.x * Math.cos(angle) - point.y * Math.sin(angle),
@@ -645,7 +570,9 @@ function atmosphericChainBeamPumpingEngine(movement) {
     canvasPistonStartY,
     chainAttachmentAngle: sourceChainAttachmentAngle,
     chainAttachmentRadius,
+    ...plateChain,
     chainLinkCount,
+    chainWidth,
     chainLinkPitch,
     constantChainPathLength,
     cyclePeriod,
@@ -756,7 +683,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
   fixedFrame.add(masonryPier, floorBeam, bearingPedestal,
     pivotBearing, pivotShaft);
 
-  const cylinderZ = .42;
+  const cylinderZ = chainLineZ;
   const cylinderTopY = -9.79 * sourceScale;
   const cylinderBottomY = -23.2 * sourceScale;
   const cylinderBoreRadius = 2.40 * sourceScale;
@@ -770,11 +697,16 @@ function atmosphericChainBeamPumpingEngine(movement) {
   openCylinder.position.set(pistonLineX, 0, cylinderZ);
   openCylinder.userData.fixed = true;
   openCylinder.userData.role = 'open-top-atmospheric-cylinder-with-flared-rim';
+  // The bottom plugs the bore, seated 0.006 into the barrel wall and set
+  // 0.004 up from its end so no face lies on the barrel's own faces.
+  const cylinderBottomLow = cylinderBottomY + 0.004;
+  const cylinderBottomHigh = cylinderBottomY + 0.6 * sourceScale;
   const cylinderBottom = new THREE.Mesh(new THREE.CylinderGeometry(
-    cylinderBarrelRadius, cylinderBarrelRadius, 0.6 * sourceScale, 72,
+    cylinderBoreRadius + 0.006, cylinderBoreRadius + 0.006,
+    cylinderBottomHigh - cylinderBottomLow, 72,
   ), frameMaterial);
   cylinderBottom.position.set(pistonLineX,
-    cylinderBottomY + 0.3 * sourceScale, cylinderZ);
+    (cylinderBottomLow + cylinderBottomHigh) / 2, cylinderZ);
   cylinderBottom.userData.fixed = true;
   cylinderBottom.userData.role = 'closed-bottom-of-open-top-cylinder';
   fixedFrame.add(openCylinder, cylinderBottom);
@@ -801,9 +733,6 @@ function atmosphericChainBeamPumpingEngine(movement) {
       outerRadius: sourceShoeOuterRadius,
       pivotBossRadius: 0.7,
       scale: sourceScale,
-      slotEnd: THREE.MathUtils.degToRad(202),
-      slotHalfWidth: 0.24,
-      slotStart: THREE.MathUtils.degToRad(158),
       startAngle: sourceShoeStartAngle,
       topFillet: {
         control: new THREE.Vector2(-10.1, beamTopY),
@@ -850,40 +779,39 @@ function atmosphericChainBeamPumpingEngine(movement) {
   pivotBoss.position.z = 0.30;
   pivotBoss.userData.role = 'moving-main-beam-pivot-boss';
   const pivotBore = pivotBoss;
-  const chainLug = new THREE.Mesh(
-    new THREE.BoxGeometry(1.3 * sourceScale, 0.9 * sourceScale, 0.40),
-    beamMaterial,
-  );
-  chainLug.position.set(
-    11.65 * sourceScale * Math.cos(sourceChainAttachmentAngle),
-    11.65 * sourceScale * Math.sin(sourceChainAttachmentAngle),
-    0.30,
-  );
-  chainLug.rotation.z = sourceChainAttachmentAngle;
+  // The chain's terminal lug: a tongue in the chain's mid-plane, thick as an
+  // inner plate, running out of the head's round end to an eye concentric
+  // with the terminal pin. The terminal outer link straddles it.
+  const chainBoreRadius = plateChain.chainPinRadius + 0.008;
+  const lugEyeRadius = chainWidth * 0.47;
+  const attachmentDirection = rawChainAttachment.clone().normalize();
+  const lugRootCenter = attachmentDirection.clone()
+    .multiplyScalar(11.1 * sourceScale);
+  const lugSide = new THREE.Vector2(-attachmentDirection.y,
+    attachmentDirection.x).multiplyScalar(lugEyeRadius);
+  const lugOutline = clip.difference(clip.union(
+    poly([
+      lugRootCenter.clone().add(lugSide),
+      lugRootCenter.clone().sub(lugSide),
+      rawChainAttachment.clone().sub(lugSide),
+      rawChainAttachment.clone().add(lugSide),
+    ].map(point => [point.x, point.y])),
+    poly(circle([rawChainAttachment.x, rawChainAttachment.y],
+      lugEyeRadius, 64)),
+  ), poly(circle([rawChainAttachment.x, rawChainAttachment.y],
+    chainBoreRadius, 48)));
+  const chainLug = new THREE.Mesh(plate(lugOutline,
+    chainLineZ - plateChain.chainInnerHalfDepth,
+    chainLineZ + plateChain.chainInnerHalfDepth), beamMaterial);
+  chainLug.userData.bores = [{
+    x: rawChainAttachment.x, y: rawChainAttachment.y, radius: chainBoreRadius,
+  }];
   chainLug.userData.role = 'segment-head-chain-lug';
-  const chainAttachmentBoss = cylinderAlongZ(0.46 * sourceScale, .20,
-    chainMaterial, 32);
-  chainAttachmentBoss.geometry.dispose();
-  chainAttachmentBoss.geometry = boredCylinderGeometry(.46 * sourceScale, .054, .20);
-  chainAttachmentBoss.position.set(
-    rawChainAttachment.x,
-    rawChainAttachment.y,
-    .40,
-  );
-  chainAttachmentBoss.userData.role = 'beam-chain-terminal-boss';
-  const chainAttachmentPin = cylinderAlongZ(0.17 * sourceScale, .80,
-    whiteMaterial, 26);
-  chainAttachmentPin.position.set(
-    rawChainAttachment.x,
-    rawChainAttachment.y,
-    0.63,
-  );
-  chainAttachmentPin.userData.role = 'beam-chain-terminal-pin';
   const chainAttachmentAnchor = new THREE.Object3D();
   chainAttachmentAnchor.position.set(
     rawChainAttachment.x,
     rawChainAttachment.y,
-    0.76,
+    chainLineZ,
   );
   chainAttachmentAnchor.userData.role = 'analytic-chain-terminal-on-beam';
   beam.add(
@@ -892,8 +820,6 @@ function atmosphericChainBeamPumpingEngine(movement) {
     ...strapParts,
     pivotBoss,
     chainLug,
-    chainAttachmentBoss,
-    chainAttachmentPin,
     chainAttachmentAnchor,
   );
 
@@ -944,39 +870,49 @@ function atmosphericChainBeamPumpingEngine(movement) {
     beam.add(pin);
     return pin;
   });
-  const shoeIndexBosses = [[160.5, 0.18], [172.5, 0.18], [186, 0.3], [201, 0.18]]
-    .map(([degrees, head], index) => {
-      const point = polarPoint(11.05, degrees).multiplyScalar(sourceScale);
-      const bolt = cylinderAlongZ(0.18 * sourceScale, 0.44, darkMaterial, 20);
-      bolt.position.set(point.x, point.y, 0.30);
-      bolt.userData.role = `segment-slot-bolt-${index + 1}`;
-      const boss = cylinderAlongZ(head * sourceScale, 0.06, darkMaterial, 24);
-      boss.position.set(point.x, point.y, 0.53);
-      boss.userData.role = `segment-slot-bolt-head-${index + 1}`;
-      beam.add(bolt, boss);
-      return { bolt, boss };
-    });
+  // Brown's slot in the segment head shows nothing through it, so it is a
+  // shallow raised panel on the head's face (sunk 0.01 into the face so no
+  // face lies coplanar with it), not an opening with bolts.
+  const slotPanelDepth = 0.03;
+  const slotPanel = new THREE.Mesh(extrudeCentered(new THREE.Shape(
+    segmentSlotOutline(11.05, 0.24, THREE.MathUtils.degToRad(158),
+      THREE.MathUtils.degToRad(202))
+      .map(point => point.multiplyScalar(sourceScale)),
+  ), slotPanelDepth), beamMaterial);
+  slotPanel.position.z = 0.50 - 0.01 + slotPanelDepth / 2;
+  slotPanel.userData.role = 'raised-panel-where-brown-draws-the-segment-slot';
+  beam.add(slotPanel);
   root.add(beam);
 
   const piston = new THREE.Group();
   piston.userData.rotationDegreesOfFreedom = 0;
   piston.userData.role =
     'vertical-piston-and-rod-in-open-top-atmospheric-cylinder';
-  const pistonTopBoss = cylinderAlongZ(0.43 * sourceScale, 0.12,
-    pistonMaterial, 32);
-  pistonTopBoss.geometry.dispose();
-  pistonTopBoss.geometry = boredCylinderGeometry(.43 * sourceScale, .054, .12);
-  pistonTopBoss.position.z = 0.48;
+  // The piston's chain eye is a tongue in the chain's mid-plane, as thick as
+  // an inner plate, rising from the crosshead to an eye concentric with the
+  // first pin; the first (outer) link straddles it.
+  const pistonEyeRadius = chainWidth * 0.47;
+  const crossheadHeight = 0.9 * sourceScale;
+  const crossheadTop = -(pistonEyeRadius + 0.012);
+  const pistonTopBoss = new THREE.Mesh(plate(clip.difference(clip.union(
+    poly([[-pistonEyeRadius, crossheadTop - 0.01],
+      [pistonEyeRadius, crossheadTop - 0.01],
+      [pistonEyeRadius, 0], [-pistonEyeRadius, 0]]),
+    poly(circle([0, 0], pistonEyeRadius, 64)),
+  ), poly(circle([0, 0], chainBoreRadius, 48))),
+  chainLineZ - plateChain.chainInnerHalfDepth,
+  chainLineZ + plateChain.chainInnerHalfDepth), pistonMaterial);
+  pistonTopBoss.userData.bores = [{ x: 0, y: 0, radius: chainBoreRadius }];
   pistonTopBoss.userData.role = 'piston-rod-chain-connection-eye';
   const pistonCrosshead = new THREE.Mesh(
-    new THREE.BoxGeometry(1.14 * sourceScale, 0.9 * sourceScale, 0.26),
+    new THREE.BoxGeometry(1.14 * sourceScale, crossheadHeight, 0.26),
     pistonMaterial,
   );
-  // Brown hangs the chain straight into the top of the crosshead block, so
-  // the block's top sits at the chain eye; at the plate pose it then clears
-  // the cylinder rim by about 0.4 source units as drawn instead of dipping
-  // into it.
-  pistonCrosshead.position.set(0, -0.45 * sourceScale, cylinderZ);
+  // Brown hangs the chain straight into the top of the crosshead block; the
+  // block's top sits just below the first link's eyes, and at the plate pose
+  // it clears the cylinder rim as drawn instead of dipping into it.
+  pistonCrosshead.position.set(0, crossheadTop - crossheadHeight / 2,
+    cylinderZ);
   pistonCrosshead.userData.role = 'chain-crosshead-block-on-piston-rod';
   const pistonRodTop = -0.85 * sourceScale;
   const pistonRodBottom = pistonHeadCenterOffset + 0.4 * sourceScale;
@@ -995,10 +931,10 @@ function atmosphericChainBeamPumpingEngine(movement) {
   pistonHead.position.set(0, pistonHeadCenterOffset, cylinderZ);
   pistonHead.userData.role = 'working-atmospheric-piston-head';
   const pistonTopAnchor = new THREE.Object3D();
-  pistonTopAnchor.position.z = 0.42;
+  pistonTopAnchor.position.z = chainLineZ;
   pistonTopAnchor.userData.role = 'analytic-top-of-piston-rod';
   const pistonHeadAnchor = new THREE.Object3D();
-  pistonHeadAnchor.position.set(0, pistonHeadCenterOffset, .42);
+  pistonHeadAnchor.position.set(0, pistonHeadCenterOffset, chainLineZ);
   pistonHeadAnchor.userData.role = 'analytic-piston-head-center';
   piston.add(
     pistonTopBoss,
@@ -1011,39 +947,37 @@ function atmosphericChainBeamPumpingEngine(movement) {
   root.add(piston);
 
   const chainLinks = Array.from({ length: chainLinkCount }, (_, index) => {
-    const parts = makeFlexibleChainLink({
+    const parts = makePlateChainLink({
       chainMaterial,
       darkMaterial,
-      depth: 0.13,
+      geometry: plateChain,
       nominalPitch: chainLinkPitch,
-      planeZ: index % 2 ? .87 : .64,
-      width: 0.57 * sourceScale,
+      outer: index % 2 === 0,
+      role: 'articulated-atmospheric-engine-chain-link',
+      width: chainWidth,
     });
     parts.link.userData.index = index;
-    parts.endPin.visible = index === chainLinkCount - 1;
-    parts.endRoller.visible = index === chainLinkCount - 1;
     root.add(parts.link);
     return parts;
   });
-  // The first pin never reaches the segment; the piston eye replaces its roller.
-  chainLinks[0].roller.visible = false;
+  // The remainder of the constant chain beyond ten whole links: one short
+  // outer link from the tenth link's end to the beam lug, owning both pins.
   const terminalConnectorNominalLength = constantChainPathLength
     - chainLinkCount * chainLinkPitch;
-  const chainTerminalConnector = new THREE.Mesh(
-    concaveEndPlateGeometry(terminalConnectorNominalLength,
-      0.14 * sourceScale, .05, .10),
+  const terminalLink = makePlateChainLink({
     chainMaterial,
-  );
-  chainTerminalConnector.position.z = 0.76;
+    darkMaterial,
+    geometry: plateChain,
+    nominalPitch: terminalConnectorNominalLength,
+    outer: true,
+    role: 'short-terminal-chain-connector-to-rocking-beam',
+    width: chainWidth,
+  });
+  const chainTerminalConnector = terminalLink.link;
   chainTerminalConnector.userData.nominalLength =
     terminalConnectorNominalLength;
-  chainTerminalConnector.userData.role =
-    'short-terminal-chain-connector-to-rocking-beam';
-  const terminalEyes = [0, 1].map(() => {
-    const eye = cylinderAlongZ(.10, .05, chainMaterial);
-    eye.geometry.dispose(); eye.geometry = boredCylinderGeometry(.10, .054, .05);
-    eye.userData.role = 'bored-last-chain-link-eye'; root.add(eye); return eye;
-  });
+  chainTerminalConnector.userData.parts = terminalLink;
+  const chainAttachmentPin = terminalLink.endPin;
   root.add(chainTerminalConnector);
 
   const contacts = {
@@ -1060,7 +994,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
     },
     chainAtShoeTangent: {
       members: [beam, ...chainLinks.map(({ link }) => link)],
-      point: new THREE.Vector3(-pitchRadius, 0, 0.76),
+      point: new THREE.Vector3(-pitchRadius, 0, chainLineZ),
       type: 'tangent-continuous-chain-on-circular-beam-segment',
     },
     chainAtBeam: {
@@ -1070,15 +1004,15 @@ function atmosphericChainBeamPumpingEngine(movement) {
     },
   };
 
-  const placeSpan = (mesh, start, end, nominalLength) => {
+  const placeLink = (parts, start, end, nominalLength) => {
     const delta = end.clone().sub(start);
-    mesh.position.set(
-      (start.x + end.x) / 2,
-      (start.y + end.y) / 2,
-      0.76,
-    );
-    mesh.rotation.z = Math.atan2(delta.y, delta.x);
-    mesh.scale.x = delta.length() / nominalLength;
+    const chordLength = delta.length();
+    parts.link.position.set(start.x, start.y, 0);
+    parts.link.rotation.z = Math.atan2(delta.y, delta.x);
+    parts.body.scale.x = chordLength / nominalLength;
+    parts.body.position.x = chordLength / 2;
+    parts.endAnchor.position.x = chordLength;
+    parts.link.userData.chordLength = chordLength;
   };
 
   const update = (time) => {
@@ -1099,49 +1033,28 @@ function atmosphericChainBeamPumpingEngine(movement) {
     );
 
     chainLinks.forEach((parts, index) => {
-      const start = chainPointAtDistance(state, index * chainLinkPitch).point;
-      const end = chainPointAtDistance(
-        state,
-        (index + 1) * chainLinkPitch,
-      ).point;
-      const delta = end.clone().sub(start);
-      const chordLength = delta.length();
-      parts.link.position.set(start.x, start.y, 0);
-      parts.link.rotation.z = Math.atan2(delta.y, delta.x);
-      parts.body.scale.x = chordLength / chainLinkPitch;
-      parts.body.position.x = chordLength / 2;
-      parts.endBoss.position.x = chordLength;
-      parts.endPin.position.x = chordLength;
-      parts.endRoller.position.x = chordLength;
-      parts.endAnchor.position.x = chordLength;
-      parts.link.userData.chordLength = chordLength;
-      parts.link.userData.startCurve = chainPointAtDistance(
-        state,
-        index * chainLinkPitch,
-      ).curve;
-      parts.link.userData.endCurve = chainPointAtDistance(
-        state,
-        (index + 1) * chainLinkPitch,
-      ).curve;
+      const start = chainPointAtDistance(state, index * chainLinkPitch);
+      const end = chainPointAtDistance(state, (index + 1) * chainLinkPitch);
+      placeLink(parts, start.point, end.point, chainLinkPitch);
+      parts.link.userData.startCurve = start.curve;
+      parts.link.userData.endCurve = end.curve;
     });
     const lastChainPoint = chainPointAtDistance(
       state,
       chainLinkCount * chainLinkPitch,
     ).point;
-    terminalEyes[0].position.set(lastChainPoint.x, lastChainPoint.y, .76);
-    terminalEyes[1].position.set(state.chain.attachmentPoint.x, state.chain.attachmentPoint.y, .76);
-    placeSpan(chainTerminalConnector, lastChainPoint,
-      state.chain.attachmentPoint, terminalConnectorNominalLength);
+    placeLink(terminalLink, lastChainPoint, state.chain.attachmentPoint,
+      terminalConnectorNominalLength);
 
     contacts.chainAtPiston.point.set(
       state.pistonTop.x,
       state.pistonTop.y,
-      0.76,
+      chainLineZ,
     );
     contacts.chainAtBeam.point.set(
       state.chain.attachmentPoint.x,
       state.chain.attachmentPoint.y,
-      0.76,
+      chainLineZ,
     );
     contacts.chainAtShoeTangent.chainSurfaceVelocity = new THREE.Vector3(
       0,
@@ -1183,13 +1096,11 @@ function atmosphericChainBeamPumpingEngine(movement) {
     beam,
     bearingPedestal,
     chainAttachmentAnchor,
-    chainAttachmentBoss,
     chainAttachmentPin,
     chainLinks,
     chainLug,
     chainShoe,
     chainTerminalConnector,
-    terminalEyes,
     cylinderBottom,
     fixedFrame,
     floorBeam,
@@ -1208,7 +1119,7 @@ function atmosphericChainBeamPumpingEngine(movement) {
     pivotBore,
     pivotBoss,
     pivotShaft,
-    shoeIndexBosses,
+    slotPanel,
     stayPins,
     stays,
     strapParts,

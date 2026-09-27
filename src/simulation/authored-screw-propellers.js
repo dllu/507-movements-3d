@@ -131,9 +131,15 @@ function screwPropeller(movement) {
   const halfChordAngleAt = (radialFraction) => tipCorner(radialFraction)
     * (trailingAngleAt(radialFraction) - leadingAngleAt(radialFraction)) / 2;
   const skewAngleAt = (radialFraction) => (trailingAngleAt(radialFraction) + leadingAngleAt(radialFraction)) / 2;
+  // Pass 86: the blade surface starts 0.12 inside the 0.43 hub (between its
+  // 0.184 bore and its face), so each root is sunk into the hub wall rather
+  // than lying on it as a thin edge line. Hydrodynamic quantities keep the
+  // 0.42 root radius; the planform is a function of radius, so it is
+  // unchanged outside the hub.
+  const bladeSunkRootRadiusSceneUnit = rootRadiusSceneUnit - 0.12;
   const bladeSurfacePointScene = (radialFraction, chordFraction) => {
     const radius = THREE.MathUtils.lerp(
-      rootRadiusSceneUnit,
+      bladeSunkRootRadiusSceneUnit,
       tipRadiusSceneUnit,
       radialFraction,
     );
@@ -503,6 +509,7 @@ function screwPropeller(movement) {
     physicalDiameterMetre,
     physicalRadiusMetre,
     physicalScrewPitchMetrePerTurn,
+    bladeSunkRootRadiusSceneUnit,
     radialSegments,
     resistingWaterTorqueXNewtonMetre,
     rootRadiusSceneUnit,

@@ -36,24 +36,51 @@ test('116 compiled collision vertices match rendered solids in their initial nat
  }finally{v.dispose();}
 });
 
-test('116 native pawls alternate driving a nearly uniform clockwise shaft for two cycles',t=>{
- const v=makeMujocoRackRectifier(mujoco),p=v.physics,f=v.root.userData.profile;let mesh=0,pen=0,reverse=0,vmin=Infinity,vmax=-Infinity,previous=p.data.qpos[p.joints.output.q];
+test('116 native pawls seat in the ratchet roots and alternately drive a nearly uniform clockwise shaft for two cycles',t=>{
+ const v=makeMujocoRackRectifier(mujoco),p=v.physics,f=v.root.userData.profile,rp=Math.PI/3,rel=x=>{x=((x%rp)+rp)%rp;return x>rp/2?x-rp:x;};let mesh=0,pen=0,reverse=0,vmin=Infinity,vmax=-Infinity,previous=p.data.qpos[p.joints.output.q],lift=0,offset=0,at3;
+ // Reversals of the frame fall 1.65 s into each 3 s stroke (0.15 s startup lag).
+ const dropped=new Set();
  try{
   for(let i=0;i<12/p.timestep;i++){
    p.step();const d=p.data,q=n=>d.qpos[p.joints[n].q],speed=d.qvel[p.joints.output.v];assert([...d.qpos,...d.qvel].every(Number.isFinite));assert(Math.abs(d.time-(i+1)*p.timestep)<1e-8);
    mesh=Math.max(mesh,Math.abs(q('frame')+f.pitchRadius*q('upper')),Math.abs(q('frame')-f.pitchRadius*q('lower')));reverse=Math.max(reverse,q('output')-previous);previous=q('output');
-   if(d.time>2){vmin=Math.min(vmin,speed);vmax=Math.max(vmax,speed);assert(speed<0);assert(Math.abs(speed+2*Math.PI/6)<.04);}
+   if(Math.abs(d.time-3)<p.timestep/2)at3=q('output');
+   // Backlash: the output coasts a little while the reversed pinion takes up
+   // the small gap between its already seated pawl and the locking face.
+   if(d.time>2){vmin=Math.min(vmin,speed);vmax=Math.max(vmax,speed);assert(speed<0);assert(Math.abs(speed+Math.PI/3)<.08);}
+   const phase=d.time%3;
+   if(d.time>2&&Math.abs(phase-1.65)>.75){const n=d.qvel[p.joints.upper.v]<0?'upper':'lower';lift=Math.max(lift,Math.abs(q(n+'Pawl')));offset=Math.max(offset,Math.abs(rel(q(n)-q('output'))));}
+   // The idle pawl passes the root and drops fully into it before the face returns to it.
+   if(d.time>3&&Math.abs(phase-1.65)<.5)for(const n of ['upper','lower'])if(q(n+'Pawl')<.02&&rel(q(n)-q('output'))>.001)dropped.add(Math.floor(d.time/3));
    for(const n of ['upper','lower','upperPawl','lowerPawl','output'])assert.equal(d.qfrc_actuator[p.joints[n].v],0,n+' actuator');
    const cs=d.contact;try{for(let j=0;j<cs.size();j++){const c=cs.get(j);try{pen=Math.max(pen,-c.dist);}finally{c.delete();}}}finally{cs.delete();}
   }
-  assert(previous<-12.3&&previous>-12.5);assert(mesh<.0015);assert(pen<.002);assert(reverse<3e-6);
-  t.diagnostic(JSON.stringify({output:previous,meshPixels:100*mesh,penetrationPixels:100*pen,reverseStep:reverse,speed:[vmin,vmax]}));
+  const mean=(previous-at3)/9;
+  assert(previous<-12.3&&previous>-12.5);assert(Math.abs(mean+Math.PI/3)<.003);assert(mesh<.0015);assert(pen<.002);assert(reverse<3e-6);
+  // Driving pawls sit in the root: hinge within 0.003 rad of the seated pose, face within 0.2 degree.
+  assert(lift<.003);assert(offset<.2*Math.PI/180);assert.deepEqual([...dropped].sort(),[1,2,3]);
+  t.diagnostic(JSON.stringify({output:previous,mean,meshPixels:100*mesh,penetrationPixels:100*pen,reverseStep:reverse,speed:[vmin,vmax],seatedLift:lift,seatedOffsetDegrees:offset*180/Math.PI}));
  }finally{v.dispose();v.dispose();}assert(p.model.isDeleted()&&p.data.isDeleted());
+});
+
+test('116 pawls are single bored plates whose claw seats in the ratchet root along the locking face',()=>{
+ const v=makeRackRectifierGeometry(),u=v.root.userData,f=u.profile,{a,b,normal}=f.ratchetFace,P=f.pawlPivot;
+ try{
+  for(const n of ['upperPawl','lowerPawl']){const a=inspectWeightedClutchSolid(u.parts[n].geometry);assert.equal(a.components,1,n);}
+  const tip=[f.pawlTip[0]+P[0],f.pawlTip[1]+P[1]],heel=[f.pawlHeel[0]+P[0],f.pawlHeel[1]+P[1]];
+  // The claw corner sits in the root, no more than 0.03 source pixel from it.
+  assert(Math.hypot(tip[0]-b[0],tip[1]-b[1])<.0003);
+  // The working face runs along the locking face over most of its height.
+  const face=[a[0]-b[0],a[1]-b[1]],work=[heel[0]-tip[0],heel[1]-tip[1]],cos=(face[0]*work[0]+face[1]*work[1])/Math.hypot(...face)/Math.hypot(...work);
+  assert(cos>.99999);assert(Math.hypot(...work)>.5*Math.hypot(...face));
+  const gap=(heel[0]-b[0])*normal[0]+(heel[1]-b[1])*normal[1];assert(gap>0&&gap<.0003);
+  assert.equal(f.pawlBoss.bore,.013);assert(f.pawlBoss.radius>2*f.pawlBoss.bore);
+ }finally{disposeObject3D(v.root);}
 });
 
 test('116 removing clutch contacts disconnects the output while the rack still turns its pinions',()=>{
  const v=makeMujocoRackRectifier(mujoco),p=v.physics;
- try{disable(p,['output']);v.update(1.5);assert(Math.abs(p.data.qpos[p.joints.output.q]+.005)<1e-8);assert(p.data.qpos[p.joints.upper.q]>1.4);assert(p.data.qpos[p.joints.lower.q]<-1.4);}
+ try{disable(p,['output']);v.update(1.5);assert(Math.abs(p.data.qpos[p.joints.output.q])<1e-8);assert(p.data.qpos[p.joints.upper.q]>1.4);assert(p.data.qpos[p.joints.lower.q]<-1.4);}
  finally{v.dispose();}
 });
 

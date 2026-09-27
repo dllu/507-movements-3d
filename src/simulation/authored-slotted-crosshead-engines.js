@@ -104,37 +104,36 @@ function crossheadYokeShape(scale) {
   return shape;
 }
 
-function pedimentShape(scale) {
+// Brown draws the crossbeam and its pediment as one piece: no line divides
+// them, and the cloud-shaped hand hole dips below the beam's top edge. The
+// crown is therefore one extrusion: the beam (source y 7..8), the pediment
+// rising from x +-5.7 to a rounded apex near y 10.6, and the hand hole.
+function crownShape(scale) {
   const s = (value) => value * scale;
   const shape = new THREE.Shape();
   shape.moveTo(s(-8), s(7));
-  shape.lineTo(s(-8), s(8));
-  shape.lineTo(s(-6), s(8));
-  shape.lineTo(s(-1.341641), s(10.32918));
-  shape.quadraticCurveTo(s(0), s(10.80), s(1.341641), s(10.32918));
-  shape.lineTo(s(6), s(8));
-  shape.lineTo(s(8), s(8));
   shape.lineTo(s(8), s(7));
-  shape.lineTo(s(6), s(7));
-  shape.lineTo(s(2.50), s(9.00));
-  shape.lineTo(s(-2.50), s(9.00));
-  shape.lineTo(s(-6), s(7));
+  shape.lineTo(s(8), s(8));
+  shape.lineTo(s(5.7), s(8));
+  shape.lineTo(s(1.6), s(10.158));
+  shape.quadraticCurveTo(s(0), s(11), s(-1.6), s(10.158));
+  shape.lineTo(s(-5.7), s(8));
+  shape.lineTo(s(-8), s(8));
   shape.closePath();
 
-  // horizontalCapsuleHole is centered at y=0. Rebuild its published opening
-  // at y=8.375 so the extrusion contains a true void.
-  const opening = new THREE.Path();
-  const left = s(-1.471872);
-  const right = s(1.471872);
-  const y = s(8.375);
-  const radius = s(0.625);
-  opening.moveTo(left, y - radius);
-  opening.absarc(left, y, radius, -Math.PI / 2, -Math.PI * 1.5, true);
-  opening.lineTo(right, y + radius);
-  opening.absarc(right, y, radius, Math.PI / 2, -Math.PI / 2, true);
-  opening.lineTo(left, y - radius);
-  opening.closePath();
-  shape.holes.push(opening);
+  // The hand hole: flat bottom, rounded lower corners, two low shoulders
+  // and a central dome, as engraved.
+  const hole = new THREE.Path();
+  hole.moveTo(s(-2.45), s(7.45));
+  hole.lineTo(s(2.45), s(7.45));
+  hole.quadraticCurveTo(s(2.95), s(7.45), s(2.95), s(7.95));
+  hole.bezierCurveTo(s(2.95), s(8.45), s(2.75), s(8.62), s(2.35), s(8.62));
+  hole.bezierCurveTo(s(2.0), s(8.62), s(1.85), s(8.72), s(1.7), s(8.85));
+  hole.bezierCurveTo(s(1.25), s(9.5), s(-1.25), s(9.5), s(-1.7), s(8.85));
+  hole.bezierCurveTo(s(-1.85), s(8.72), s(-2.0), s(8.62), s(-2.35), s(8.62));
+  hole.bezierCurveTo(s(-2.75), s(8.62), s(-2.95), s(8.45), s(-2.95), s(7.95));
+  hole.quadraticCurveTo(s(-2.95), s(7.45), s(-2.45), s(7.45));
+  shape.holes.push(hole);
   return shape;
 }
 
@@ -487,9 +486,9 @@ function slottedCrossheadPillarEngine(movement) {
     'fixed-engine-framing-with-two-pillar-guides-D-D';
 
   // The official animation's guide travel ends at y 6.4, but the pillars
-  // themselves run on up to the underside of the crossbeam (source y 7),
-  // as Brown draws their capitals meeting it.
-  const pillarTopY = 7 * sourceScale;
+  // themselves run on up into the crossbeam (source y 7..8), seated half
+  // its height inside it, as Brown draws their capitals meeting it.
+  const pillarTopY = 7.5 * sourceScale;
   const guidePosts = [-1, 1].map((side) => {
     const post = new THREE.Mesh(
       new THREE.BoxGeometry(
@@ -527,22 +526,21 @@ function slottedCrossheadPillarEngine(movement) {
     return face;
   });
 
-  const topPediment = new THREE.Mesh(
-    centeredExtrusion(pedimentShape(sourceScale), frameDepth, 0.010),
-    frameMaterial,
-  );
-  topPediment.position.z = frameCenterZ;
-  topPediment.userData.fixed = true;
-  topPediment.userData.role =
-    'source-proportioned-overhead-pediment-with-real-hand-hole';
-
+  // One crown extrusion (beam and pediment) deep enough to house the
+  // pillar tops, which run half-way up into the beam.
+  const crownDepth = 0.44;
   const topBeam = new THREE.Mesh(
-    new THREE.BoxGeometry(16 * sourceScale, 1 * sourceScale, 0.58),
+    new THREE.ExtrudeGeometry(crownShape(sourceScale), {
+      bevelEnabled: false,
+      curveSegments: 48,
+      depth: crownDepth,
+    }).translate(0, 0, -crownDepth / 2),
     frameMaterial,
   );
-  topBeam.position.set(0, 7.5 * sourceScale, -0.05);
+  topBeam.position.z = frameCenterZ;
   topBeam.userData.fixed = true;
-  topBeam.userData.role = 'fixed-crossbeam-joining-pillar-guides-D-D';
+  topBeam.userData.role =
+    'fixed-crossbeam-and-pediment-with-hand-hole-joining-pillar-guides-D-D';
 
   const cylinderTop = new THREE.Mesh(
     new THREE.BoxGeometry(3 * sourceScale, 1 * sourceScale, 0.74),
@@ -559,11 +557,18 @@ function slottedCrossheadPillarEngine(movement) {
   cylinderBore.userData.fixed = true;
   cylinderBore.userData.role = 'visible-piston-rod-passage-in-cylinder-gland';
 
+  // The crossbase stops 0.02 in front of the flywheel's front face (z -0.38)
+  // so the spokes sweep behind it; at the front it still carries the gland
+  // neck (z 0.26..1.02) and the legs.
+  const crossBaseBackZ = -0.36;
+  const crossBaseFrontZ = 0.38;
   const lowerCrossBase = new THREE.Mesh(
-    new THREE.BoxGeometry(9 * sourceScale, 1 * sourceScale, 0.88),
+    new THREE.BoxGeometry(9 * sourceScale, 1 * sourceScale,
+      crossBaseFrontZ - crossBaseBackZ),
     frameMaterial,
   );
-  lowerCrossBase.position.set(0, -10.25 * sourceScale, -0.06);
+  lowerCrossBase.position.set(0, -10.25 * sourceScale,
+    (crossBaseFrontZ + crossBaseBackZ) / 2);
   lowerCrossBase.userData.fixed = true;
   lowerCrossBase.userData.role = 'lower-engine-crossbase-from-official-model';
 
@@ -601,7 +606,6 @@ function slottedCrossheadPillarEngine(movement) {
   fixedFrame.add(
     ...guidePosts,
     ...guideFaces,
-    topPediment,
     topBeam,
     cylinderTop,
     cylinderBore,
@@ -949,6 +953,7 @@ function slottedCrossheadPillarEngine(movement) {
     cylinderBore,
     cylinderTop,
     fixedFrame,
+    topBeam,
     flywheelHub: rotorParts.hub,
     flywheelIndex: rotorParts.flywheelIndex,
     flywheelRim: rotorParts.rim,

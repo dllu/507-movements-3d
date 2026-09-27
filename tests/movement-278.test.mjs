@@ -76,7 +76,7 @@ test('movement 278 is the bilateral rope-tension-released Otis elevator safety s
   assert.equal(blocks.leftUpright.parent, model.root);
   assert.equal(blocks.rightUpright.parent, model.root);
   // Pass 51 cropped the uprights to Brown's view: 12 seats per side.
-  assert.equal(blocks.rackTeeth.length, 24);
+  assert.equal(blocks.rackTeeth.length, 48);
   assert.ok(blocks.rackTeeth.every((tooth) => tooth.parent === model.root));
   assert.equal(blocks.leftLever.parent, blocks.carriage);
   assert.equal(blocks.rightLever.parent, blocks.carriage);
@@ -105,7 +105,7 @@ test('movement 278 is the bilateral rope-tension-released Otis elevator safety s
   assert.equal(roles.filter((role) => /guided-safety-pawl-d$/.test(role))
     .length, 2);
   assert.equal(roles.filter((role) => /upward-hook-rack-tooth/.test(role))
-    .length, 24);
+    .length, 48);
   assert.equal(roles.filter((role) => /belt|pulley/.test(role)).length, 0);
   disposeModel(model.root);
 });
@@ -220,13 +220,19 @@ test('movement 278 preserves two rigid mirrored elbows while their inner arms sl
       Math.abs(state.rightLowerJoint.distanceTo(geometry.rightPivot)
         - geometry.lowerArmLength),
     );
+    // The pawl runs level at the arrested height; its lever pin stays
+    // inside the short vertical slot of the pawl eye.
     maximumPawlLengthError = Math.max(
       maximumPawlLengthError,
-      Math.abs(state.leftPawlTip.distanceTo(state.leftLowerJoint)
+      Math.abs(state.leftLowerJoint.x - state.leftPawlTip.x
         - geometry.pawlLength),
-      Math.abs(state.rightPawlTip.distanceTo(state.rightLowerJoint)
+      Math.abs(state.rightPawlTip.x - state.rightLowerJoint.x
         - geometry.pawlLength),
+      Math.abs(state.leftPawlTip.y - geometry.pawlCenterY),
+      Math.abs(state.rightPawlTip.y - geometry.pawlCenterY),
     );
+    const pinRise = state.leftLowerJoint.y - geometry.pawlCenterY;
+    assert.ok(pinRise >= -1e-12 && pinRise <= 0.0375, `pin in slot ${pinRise}`);
     maximumMirrorError = Math.max(
       maximumMirrorError,
       Math.abs(state.leftLowerJoint.x + state.rightLowerJoint.x),
@@ -284,7 +290,8 @@ test('movement 278 keeps both pawls clear throughout normal hoisting and lowerin
     'one pitch above arrest seat before failure');
   near(failureReady.platformSpeed, 0, 0,
     'zero speed at selected failure instant');
-  assert.ok(start.lateralRackClearance > 0.08);
+  // Brown's shallow teeth (0.10 deep) leave the retracted toe 0.039 clear.
+  assert.ok(start.lateralRackClearance > 0.035);
   near(minimumRackClearance, start.lateralRackClearance, 2e-15,
     'constant normal pawl clearance');
   near(maximumRopeGap, 0, 0, 'taut rope has no break gap');
@@ -364,10 +371,22 @@ test('movement 278 analytic platform, lever, eye, and pawl rates match finite di
     const before = stateAtTime(time - step);
     const state = stateAtTime(time);
     const after = stateAtTime(time + step);
-    const speed = (key) => (after[key] - before[key]) / (2 * step);
-    const acceleration = (key) => (
-      after[key] - 2 * state[key] + before[key]
-    ) / step ** 2;
+    // Richardson-extrapolated central differences: the delayed spring
+    // release makes the lever's third derivative large near 5.1 s.
+    const halfBefore = stateAtTime(time - step / 2);
+    const halfAfter = stateAtTime(time + step / 2);
+    const richardson = (value) => (
+      4 * (value(halfAfter) - value(halfBefore)) / step
+      - (value(after) - value(before)) / (2 * step)
+    ) / 3;
+    const speed = (key) => richardson((s) => s[key]);
+    const twoBefore = stateAtTime(time - 2 * step);
+    const twoAfter = stateAtTime(time + 2 * step);
+    const curvature = (value) => (
+      4 * (value(after) - 2 * value(state) + value(before))
+      - (value(twoAfter) - 2 * value(state) + value(twoBefore)) / 4
+    ) / (3 * step ** 2);
+    const acceleration = (key) => curvature((s) => s[key]);
     near(speed('platformY'), state.platformSpeed, 5e-8,
       `platform speed at ${time}`);
     near(acceleration('platformY'), state.platformAcceleration, 4e-7,
@@ -377,24 +396,27 @@ test('movement 278 analytic platform, lever, eye, and pawl rates match finite di
     near(acceleration('leverAngle'), state.leverAngularAcceleration, 4e-7,
       `lever acceleration at ${time}`);
     near(
-      (after.pinEye.y - before.pinEye.y) / (2 * step),
+      richardson((s) => s.pinEye.y),
       state.pinEyeSpeed,
       5e-8,
       `eye speed at ${time}`,
     );
     near(
-      (after.pinEye.y - 2 * state.pinEye.y + before.pinEye.y) / step ** 2,
+      curvature((s) => s.pinEye.y),
       state.pinEyeAcceleration,
       4e-7,
       `eye acceleration at ${time}`,
     );
-    const pawlSpeed = after.leftPawlGlobal.clone()
-      .sub(before.leftPawlGlobal)
-      .multiplyScalar(1 / (2 * step));
-    const pawlAcceleration = after.leftPawlGlobal.clone()
-      .add(before.leftPawlGlobal)
-      .addScaledVector(state.leftPawlGlobal, -2)
-      .multiplyScalar(1 / step ** 2);
+    const pawlSpeed = new THREE.Vector3(
+      richardson((s) => s.leftPawlGlobal.x),
+      richardson((s) => s.leftPawlGlobal.y),
+      richardson((s) => s.leftPawlGlobal.z),
+    );
+    const pawlAcceleration = new THREE.Vector3(
+      curvature((s) => s.leftPawlGlobal.x),
+      curvature((s) => s.leftPawlGlobal.y),
+      curvature((s) => s.leftPawlGlobal.z),
+    );
     vectorNear(pawlSpeed, state.leftPawlGlobalVelocity, 5e-8,
       `left pawl speed at ${time}`);
     vectorNear(pawlAcceleration, state.leftPawlGlobalAcceleration, 4e-7,
@@ -427,9 +449,13 @@ test('movement 278 update binds platform travel, mirrored levers, spring, split 
       `right lever rotation at ${time}`);
     for (const [side, joint, tip] of [['left', expected.leftLowerJoint, expected.leftPawlTip], ['right', expected.rightLowerJoint, expected.rightPawlTip]]) {
       const mesh=blocks[side+'Pawl'].children[0];
-      vectorNear(mesh.position,joint,0,`${side} bored pawl joint at ${time}`);
-      const end=new THREE.Vector3(model.root.userData.geometry.pawlLength,0,0).applyQuaternion(mesh.quaternion).add(mesh.position);
+      vectorNear(mesh.position,new THREE.Vector3(joint.x,tip.y,joint.z),0,`${side} slotted pawl eye at ${time}`);
+      const sign=side==='left'?-1:1;
+      const end=new THREE.Vector3(sign*model.root.userData.geometry.pawlLength,0,0).applyQuaternion(mesh.quaternion).add(mesh.position);
       vectorNear(end,tip,1e-14,`${side} finite pawl tip at ${time}`);
+      const {slotRise,boreRadius}=mesh.userData.eyeSlot;
+      assert.ok(joint.y-tip.y>=-1e-12&&joint.y-tip.y<=slotRise+1e-12,`${side} lever pin inside the eye slot at ${time}`);
+      assert.ok(boreRadius>=blocks.lowerJointPins[0].geometry.parameters.radiusTop);
     }
     vectorNear(blocks.lowerJointPins[0].position,
       expected.leftLowerJoint, 0, `left joint pin at ${time}`);
@@ -517,5 +543,59 @@ test('movement 278 closes its arrested demonstration exactly while movement 339 
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
   assert.equal(model289.root.userData.fidelity, 'authored');
   disposeModel(model289.root);
+  disposeModel(model.root);
+});
+
+test('movement 278 pawls seat in the root of Brown\'s shallow hook teeth with a toe fitted to the gap', () => {
+  const model = createMovementModel(catalog.movements[277]);
+  const { geometry, stateAtTime, timeline, releaseWorkingParts } = model.root.userData;
+  // Brown's teeth: about 22 px pitch and 8.5 px depth at 0.012 per px.
+  near(geometry.rackPitch, 0.264, 0, 'Brown rack pitch');
+  near(geometry.rackToothRootX - geometry.rackToothTipX, 0.10, 1e-12, 'tooth depth');
+  const held = stateAtTime(0);
+  const caught = stateAtTime(timeline.catchTime);
+  for (const state of [held, caught]) {
+    near(Math.abs(state.leftPawlTip.x), geometry.rackToothRootX - geometry.pawlRootGap,
+      1e-12, 'left toe at the root');
+    near(Math.abs(state.rightPawlTip.x), geometry.rackToothRootX - geometry.pawlRootGap,
+      1e-12, 'right toe at the root');
+    assert.ok(geometry.pawlRootGap <= 0.005);
+    near(state.verticalCatchClearance, 0, 2e-16, 'underside on the seat');
+  }
+  // The chamfer runs parallel to the undercut above the gap.
+  for (const mesh of releaseWorkingParts.pawlPlates) {
+    const { slope, toeFace, chamferRun } = mesh.userData.toeChamfer;
+    near(slope, geometry.rackUndercutHeight / (geometry.rackToothRootX - geometry.rackToothTipX),
+      1e-12, 'chamfer slope');
+    assert.ok(toeFace > 0 && toeFace < geometry.pawlThickness);
+    near(toeFace + slope * chamferRun, geometry.pawlThickness, 1e-12, 'chamfer reaches the top edge');
+  }
+  // Guides are cheeks on the platform legs bearing on the level pawl.
+  const { blocks } = model.root.userData;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  for (const guide of blocks.pawlGuides) {
+    const box = new THREE.Box3().setFromObject(guide);
+    const half = geometry.pawlThickness / 2;
+    const gap = guide.position.y > geometry.pawlCenterY
+      ? box.min.y - (geometry.pawlCenterY + half)
+      : geometry.pawlCenterY - half - box.max.y;
+    assert.ok(gap > 0 && gap <= 0.0045, `guide running clearance ${gap}`);
+    assert.ok(box.min.z <= -0.28, 'guide seated on the leg front face');
+  }
+  // The toe stays below the undercut of the tooth above while it enters.
+  for (let index = 0; index <= 4096; index += 1) {
+    const time = timeline.normalLowerEnd
+      + (timeline.catchTime - timeline.normalLowerEnd) * index / 4096;
+    const state = stateAtTime(time);
+    const x = Math.abs(state.leftPawlTip.x);
+    if (x <= geometry.rackToothTipX) continue;
+    const seatAbove = geometry.catchSeatY + geometry.rackPitch;
+    const undercutAtToe = seatAbove - geometry.rackUndercutHeight
+      * (x - geometry.rackToothTipX) / (geometry.rackToothRootX - geometry.rackToothTipX);
+    const toeTop = state.leftPawlGlobal.y - geometry.pawlThickness / 2
+      + releaseWorkingParts.pawlPlates[0].userData.toeChamfer.toeFace;
+    assert.ok(toeTop <= undercutAtToe + 1e-12, `toe under the undercut at ${time}`);
+  }
   disposeModel(model.root);
 });

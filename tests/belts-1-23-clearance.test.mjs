@@ -181,6 +181,12 @@ test('belts-1-23: 012 and 013 fixed sheaves hang by an open hook from a ceiling 
   twelve.suspension.updateMatrixWorld(true);
   assert.ok(Math.abs(box(twelve.hook).max.y - box(twelve.support).min.y) < 1e-6,
     'the staple is seated on the ceiling underside');
+  // 12's eye is an eye bolt: its shank runs from inside the ring's crown up
+  // into the beam, so the ring is not held by a tangent touch.
+  const shank = box(twelve.eyeBoltShank), ring = box(twelve.hook), beam = box(twelve.support);
+  assert.ok(shank.min.y < ring.max.y - 0.02 && shank.max.y > beam.min.y + 0.06 && shank.max.y < beam.max.y,
+    'the shank is buried in both the ring and the beam');
+  assert.ok(Math.abs((shank.min.x + shank.max.x) / 2 - (ring.min.x + ring.max.x) / 2) < 1e-6);
   const thirteen = modelFor(13).root.userData.blocks;
   thirteen.fixedHanger.updateMatrixWorld(true);
   assert.ok(hasTube(thirteen.fixedHanger));

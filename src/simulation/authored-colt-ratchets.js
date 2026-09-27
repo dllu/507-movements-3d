@@ -360,40 +360,46 @@ function coltCylinderRatchet(movement) {
   // relative to its pivot on the tumbler.
   const hookTop = [ratchetLandX + clearance, cylinderCenterY - 0.17];
   const hookUnder = [ratchetCrestX + 0.03, hookTop[1] - 0.065];
-  // The hook's short top face ends just clear of the tooth crests; above it
-  // the dog's upper arm rises beside the ratchet as in Brown's plate, set
-  // back far enough that the arm never reaches the teeth when the dog leans
-  // over at full cock.
-  const hookShoulder = [ratchetCrestX + 0.035, hookTop[1]];
   const eyeRadius = 0.19;
   const pivot = [dogPivotRest.x, dogPivotRest.y];
-  const dogRasterRightEdge = [[149, 238], [156, 268], [186, 334], [224, 373]];
-  const dogRightEdge = dogRasterRightEdge.map(rasterToModel);
-  const dogRasterUpperLeft = [143, 240];
-  const dogRasterLeftEdge = [[198, 383], [160, 349]];
-  // Brown's slender finger (its traced left and right edges) keeps its own
-  // outline; the working hook is a short spur off its left edge at the
-  // height where the lift can turn the ratchet, instead of a broad wedge
-  // filling the whole span between the finger and the ratchet face.
-  const brownLeftEdgeAt = (rasterY) => {
-    const [[x0, y0], [x1, y1]] = [dogRasterUpperLeft, dogRasterLeftEdge[1]];
-    return rasterToModel([x0 + (x1 - x0) * (rasterY - y0) / (y1 - y0), rasterY]);
+  // Dog a is one smooth tapered finger: Brown's lower edges and bored eye,
+  // curving up and over to a chisel tip whose flat top is the working face
+  // (it lies along the radial tooth face in the dog's plane) and whose
+  // underside is the chamfer that rides back over the next tooth. The finger
+  // ends at that tip: a page-plane dog can turn the face ratchet only near
+  // the axis, so Brown's upper end (about 67 px higher) is not modelled as a
+  // separate tail above the working hook.
+  const dogRasterRightEdge = [[158, 303], [176, 312], [196, 328], [214, 352], [222, 375]];
+  const dogRasterLeftEdge = [[198, 383], [160, 349], [148, 327], [137, 313]];
+  const hookTopRight = [ratchetCrestX + 0.09, hookTop[1]];
+  const catmullRom = (points, samples = 8) => {
+    const out = [];
+    for (let index = 0; index < points.length - 1; index += 1) {
+      const p0 = points[Math.max(0, index - 1)];
+      const p1 = points[index];
+      const p2 = points[index + 1];
+      const p3 = points[Math.min(points.length - 1, index + 2)];
+      for (let step = 0; step < samples; step += 1) {
+        const t = step / samples;
+        const t2 = t * t;
+        const t3 = t2 * t;
+        out.push([0, 1].map((k) => 0.5 * (2 * p1[k] + (-p0[k] + p2[k]) * t
+          + (2 * p0[k] - 5 * p1[k] + 4 * p2[k] - p3[k]) * t2
+          + (-p0[k] + 3 * p1[k] - 3 * p2[k] + p3[k]) * t3)));
+      }
+    }
+    out.push(points.at(-1));
+    return out;
   };
-  const hookRasterY = sourceRasterHammerPivot.y - hookTop[1] / sourceScale;
-  const spurUpper = brownLeftEdgeAt(hookRasterY - 14);
-  const spurLower = brownLeftEdgeAt(hookRasterY + 20);
+  const dogRightEdge = catmullRom([hookTopRight, ...dogRasterRightEdge.map(rasterToModel)]);
+  const dogLeftEdge = catmullRom([...dogRasterLeftEdge.map(rasterToModel), hookUnder]);
   const dogWorldOutline = polygonClipping.union(
     poly([
       [hookTop[0], hookTop[1] - 0.02],
       hookTop,
-      hookShoulder,
-      spurUpper,
-      rasterToModel(dogRasterUpperLeft),
       ...dogRightEdge,
       [pivot[0], pivot[1]],
-      ...dogRasterLeftEdge.map(rasterToModel),
-      spurLower,
-      hookUnder,
+      ...dogLeftEdge,
     ]),
     [[circle(pivot, eyeRadius, 96)]],
   );
@@ -502,10 +508,7 @@ function coltCylinderRatchet(movement) {
   );
   // Signed 2D clearance of the spring leaf from the dog's right edge (the
   // only part of the dog the leaf can reach), both in the same plane.
-  const dogEdgeLocal = [
-    rasterToModel(dogRasterUpperLeft),
-    ...dogRightEdge,
-  ].map(toLocal);
+  const dogEdgeLocal = [hookTop, ...dogRightEdge].map(toLocal);
   const springSamples = Array.from({ length: 25 }, (_, index) => {
     const u = index / 24;
     return {
@@ -1270,7 +1273,6 @@ function coltCylinderRatchet(movement) {
   // The boss and the arms lie behind the hammer.
   const blockFoot = rasterToModel([176, 200]);
   const arborLugCentre = [-1.64, cylinderCenterY];
-  const arborLugHalf = [0.22, 0.3];
   const blockCentre = springBlockOutline.reduce((sum, point) => [sum[0] + point[0] / springBlockOutline.length,
     sum[1] + point[1] / springBlockOutline.length], [0, 0]);
   const armHalfWidth = 0.13;
@@ -1293,12 +1295,9 @@ function coltCylinderRatchet(movement) {
   // The lug stands from the plate to just behind the dog's plane and takes
   // the rear end of the cylinder arbor.
   const arborLug = new THREE.Mesh(
-    plate(poly([
-      [arborLugCentre[0] - arborLugHalf[0], arborLugCentre[1] - arborLugHalf[1]],
-      [arborLugCentre[0] + arborLugHalf[0], arborLugCentre[1] - arborLugHalf[1]],
-      [arborLugCentre[0] + arborLugHalf[0], arborLugCentre[1] + arborLugHalf[1]],
-      [arborLugCentre[0] - arborLugHalf[0], arborLugCentre[1] + arborLugHalf[1]],
-    ]), lockPlateFront, dogLow - 0.03),
+    // A small round boss round the arbor's rear end, not a square block
+    // standing behind dog a's working tip.
+    plate([[circle(arborLugCentre, 0.17, 64)]], lockPlateFront, dogLow - 0.03),
     frameMaterial,
   );
   arborLug.userData.role = 'lock-plate-lug-carrying-cylinder-arbor';
@@ -1395,6 +1394,7 @@ function coltCylinderRatchet(movement) {
     cylinderRearX,
     cylinderTopY,
     dogPivotRest: dogPivotRest.clone(),
+    dogWorkingFace: { left: hookTop.slice(), right: hookTopRight.slice() },
     dogPlaneZ,
     dogThickness,
     fallEnd,

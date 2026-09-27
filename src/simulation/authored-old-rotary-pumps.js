@@ -32,6 +32,8 @@ const ROTOR_WALL = 0.18;
 const SHAFT_RADIUS = 0.22;
 const FLAT_SPAN = deg(52); // angular span of each chordal flat
 const KNUCKLE = 0.075; // hinge knuckle radius, tangent inside the drum
+const HINGE_PIN = 0.036; // pin through the knuckle (Brown's hinge circle)
+const WEB_DEPTH = 0.06; // rotor rear web, closing the bore and recesses
 const CLEAR = 0.006; // running clearance of knuckle, flats and abutment
 const TIP_CLEAR = 0.004; // valve edge to bore when bearing on the casing
 const CONTACT_GAP = 0.002; // film left where a valve bears on the abutment
@@ -297,7 +299,10 @@ function oldRotaryPump(movement) {
   // bearing boss and ends a little beyond it. Brown leaves the bore blank,
   // as he leaves the case back blank: both lie behind the section plane,
   // so the web's face takes the same plain finish as the rear cover.
-  const rotorRearWeb = named(new THREE.Mesh(plate(bore, -ROTOR_HALF_DEPTH, -ROTOR_HALF_DEPTH + 0.06), paperMaterial),
+  // Pass 86: the web also closes the back of both valve recesses (it is the
+  // drum's whole section less the wall), so it can carry the hinge pins.
+  const webSection = clip.difference(poly(circle([0, 0], r, 720)), drumSection);
+  const rotorRearWeb = named(new THREE.Mesh(plate(webSection, -ROTOR_HALF_DEPTH, -ROTOR_HALF_DEPTH + WEB_DEPTH), paperMaterial),
     'rotor-rear-end-web-behind-hollow-drum');
   rotor.add(rotorRearWeb);
   const shaftBack = -CASING_HALF_DEPTH - 0.46;
@@ -307,7 +312,13 @@ function oldRotaryPump(movement) {
   shaft.position.z = (-ROTOR_HALF_DEPTH + shaftBack) / 2;
   rotor.add(shaft);
 
-  const valveGeometry = plate(poly(sections.valve), -ROTOR_HALF_DEPTH, ROTOR_HALF_DEPTH);
+  // Pass 86: each valve turns on a hinge pin (Brown's small circle at each
+  // hinge) through a bore in its knuckle. The pin is fast in the rear web and
+  // runs out flush with the drum's front face; the valve stands just clear of
+  // the web. Before this the loose knuckle only lay in an open cradle and
+  // touched the drum along its thin root.
+  const valveGeometry = plate(clip.difference(poly(sections.valve), poly(circle(pivot, HINGE_PIN + CLEAR / 2, 48))),
+    -ROTOR_HALF_DEPTH + WEB_DEPTH + CLEAR, ROTOR_HALF_DEPTH);
   valveGeometry.translate(-pivot[0], -pivot[1], 0);
   const pocketWater = [];
   const valves = [0, 1].map(index => {
@@ -320,6 +331,11 @@ function oldRotaryPump(movement) {
     const blade = named(new THREE.Mesh(valveGeometry, valveMaterial),
       `segment-valve-${index + 1}-with-drum-radius-arc-back`);
     hinge.add(blade);
+    const pin = named(new THREE.Mesh(new THREE.CylinderGeometry(HINGE_PIN, HINGE_PIN, 2 * ROTOR_HALF_DEPTH, 32), darkMaterial),
+      `hinge-pin-${index + 1}-fast-in-rotor-web`);
+    pin.rotation.x = Math.PI / 2;
+    pin.position.set(pivot[0], pivot[1], 0);
+    carrier.add(pin);
     const water = new PocketWater(sections.recessInDrum[0][0], waterMaterial);
     water.userData.role = `water-in-drum-recess-${index + 1}-behind-open-valve`;
     carrier.add(water);

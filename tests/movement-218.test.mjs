@@ -127,9 +127,17 @@ test('movement 218 is the independently authored output plate of 217', () => {
   });
   assert.ok(visibleRoles.includes('F-solid-eight-notch-wheel'));
   assert.ok(visibleRoles.includes('curved-rocker-link-A-to-G'));
-  assert.ok(visibleRoles.includes('G-catch-trip-boss-struck-at-e'));
-  // G's lug is the flat end of the catch bar; the wire tongue is hidden.
+  // Catch G is one flat extrusion in F's plane: its lug and the G stud are
+  // parts of its outline, so no pin enters the notch and no trip roller or
+  // wire tongue stands proud of it.
+  assert.equal(visibleRoles.includes('G-catch-trip-boss-struck-at-e'), false);
+  assert.equal(visibleRoles.includes('catch-G-hook-entering-F-notch'), false);
   assert.equal(visibleRoles.includes('G-visible-hook-tongue'), false);
+  assert.equal(blocks.catchBar.position.z, geometry.wheelCenterZ);
+  assert.ok(geometry.catchDepth <= geometry.wheelDepth);
+  let catchVisibleMeshes = 0;
+  blocks.catchLink.traverseVisible((object) => { if (object.isMesh) catchVisibleMeshes += 1; });
+  assert.equal(catchVisibleMeshes, 1);
   assert.equal(visibleRoles.some((role) => /heart-cam-land/.test(role)), false);
   assert.equal(visibleRoles.some((role) => /belt/i.test(role)), false);
   disposeModel(model.root);
@@ -446,5 +454,31 @@ test('movement 218 runtime exposes release and dwell while 262 stays authored', 
   );
   disposeModel(movement217.root);
   disposeModel(movement507.root);
+  disposeModel(model.root);
+});
+
+test('movement 218 catch G is a flat plate whose lug seats in F and never cuts it', async () => {
+  const {polygonClipping} = await import('../src/simulation/finite-plate-geometry.js');
+  const model = createMovementModel(catalog.movements[217]);
+  const {geometry: g, motion} = model.root.userData;
+  const area = (polygons) => Math.abs(polygons.flat().reduce((sum, ring) => {
+    for (let i = 0; i < ring.length - 1; i++) sum += ring[i][0] * ring[i + 1][1] - ring[i + 1][0] * ring[i][1];
+    return sum;
+  }, 0) / 2);
+  const held = [];
+  for (let frame = 0; frame <= 512; frame++) {
+    const state = model.root.userData.stateAtInputTravel(frame / 512 * FULL_TURN);
+    const wheel = [g.wheelPoints.map((p) => p.clone().rotateAround(new THREE.Vector2(), state.outputAngle)
+      .add(g.outputCenter).toArray())];
+    const pawl = [g.catchOutlineLocal.map((p) => p.clone().rotateAround(new THREE.Vector2(), state.catchAngle)
+      .add(state.catchPivotWorld).toArray())];
+    assert.ok(area(polygonClipping.intersection(wheel, pawl)) < 1e-9, `G cuts F at frame ${frame}`);
+    if (state.catchEngaged) held.push(state.catchSolidClearance);
+  }
+  // While driving, the rounded lug tip nestles in the milled root with only
+  // the milling clearance.
+  assert.ok(held.length > 200);
+  for (const clearance of held) assert.ok(clearance > 0.0018 && clearance < 0.0021, `seat ${clearance}`);
+  assert.ok(motion.catchLiftAngle > 0);
   disposeModel(model.root);
 });

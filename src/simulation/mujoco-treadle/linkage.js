@@ -19,6 +19,9 @@ export function makeTreadleRatchetLinkage({amplitude=.10,period=4,treadleInset=0
    if(frontLength<=0||rearLength<=0)throw Error('Strap end above pulley tangent');
    return{front:f,rear:r,frontLength,rearLength,transverseLength,dx,length:Math.hypot(transverseLength,dx)};
   },targetLength=strand(-sourceAngle,sourceAngle).length,
+  // Both pawls are one part, so both arms carry them at one radius: the mean
+  // of the drawn pivots (313 and 331 px), 9 px from either.
+  pawlRadius=(length(treadleSourcePoint(source.circles.lowerPawlPivot.center))+length(treadleSourcePoint(source.circles.upperPawlPivot.center)))/2,
   arms=[['lower',-sourceAngle],['upper',sourceAngle]].map(([name,phi],i)=>{
    const pawl=treadleSourcePoint(source.circles[name+'PawlPivot'].center),top=treadleSourcePoint(source.circles[name+'RodTop'].center),
     bottom=treadleSourcePoint(source[name+'RodBottom']),sourceArmAngle=angle(pawl),
@@ -30,7 +33,7 @@ export function makeTreadleRatchetLinkage({amplitude=.10,period=4,treadleInset=0
     candidates=[-1,1].map(sign=>({sign,beta:gamma+sign*Math.acos(Math.max(-1,Math.min(1,cosine)))-armRodOffset})),
     difference=a=>Math.atan2(Math.sin(a-sourceArmAngle),Math.cos(a-sourceArmAngle)),
     branch=candidates.sort((a,b)=>Math.abs(difference(a.beta))-Math.abs(difference(b.beta)))[0].sign;
-   return{name,sourceTreadleAngle:phi,sourceArmAngle,pawlLocal:rotate(pawl,-sourceArmAngle),rodLocal,armRodLocal,
+   return{name,sourceTreadleAngle:phi,sourceArmAngle,pawlLocal:[pawlRadius,0],rodLocal,armRodLocal,
     armRodRadius,armRodOffset,rodLength,branch,endpointAngle,armPlane:.18+i*.13,treadlePlane:(i===0?1:-1)*(radius-treadleInset)};
   });
  const atAngle=frontAngle=>{

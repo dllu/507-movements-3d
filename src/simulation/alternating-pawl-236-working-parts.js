@@ -26,7 +26,8 @@ export function installAlternatingPawl236(root) {
     const [lower, upper] = g.pawlFlankPolylines(length);
     const outline = polygonClipping.union(poly([
       ...lower.slice(1).reverse(), ...toe, ...upper.slice(1),
-    ]), poly(circle([0, 0], 0.1, 64)));
+    // A round eye boss with a solid wall round the hinge pin's bore.
+    ]), poly(circle([0, 0], 0.14, 64)));
     replace(body, plate(polygonClipping.difference(outline, poly(circle([0, 0], 0.075, 64))), -0.065, 0.065)); // bore opened past the hub's own bore
     replace(pivotHub, ring(0.071, 0.105, -0.117, 0.117, 64));
     pivotHub.rotation.set(0, 0, 0);

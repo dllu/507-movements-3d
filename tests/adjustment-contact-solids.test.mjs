@@ -36,10 +36,10 @@ test('381 wedges actually overlap the board, match the inclined dovetail and rea
 test('382 stem, hinge pin and offset mirror clear their real bored supports across all three adjustments',()=>{
  const {root,update}=createMovementModel(catalog[381]),b=root.userData.blocks;
  const checks=[
-  [b.stemCore,[b.pillar,b.socketCollar,b.socketBoss,b.socketScrewCore,b.mirrorGlass,...b.mirrorFrameBars,b.centerHingeBarrel]],
+  [b.stemCore,[b.pillar,b.socketScrewCore,b.mirrorGlass,...b.mirrorFrameBars,b.centerHingeBarrel]],
   [b.hingeScrewCore,[...b.hingeOuterBarrels,b.centerHingeBarrel,b.mirrorBackBracket]],
-  [b.socketScrewCore,[b.socketCollar,b.socketBoss]],
-  [b.socketThread,[b.socketCollar,b.socketBoss,b.stemCore]],
+  [b.socketScrewCore,[b.pillar]],
+  [b.socketThread,[b.pillar,b.stemCore]],
   [b.hingeThread,[...b.hingeOuterBarrels,b.centerHingeBarrel]],
   [b.mirrorBackBracket,[b.stemCore,b.yokeBridge]],
  ].map(([moving,targets])=>[moving,surfacePoints(moving.geometry),targets.map(o=>[o,solidSurface(o.geometry)])]);

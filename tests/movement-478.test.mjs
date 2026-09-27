@@ -222,14 +222,15 @@ test('movement 478 renderer keeps B fixed, grows A from B, and binds plunger and
       `plunger at ${time}`);
     near(blocks.leverD.rotation.z, state.leverAngle, 0,
       `lever angle at ${time}`);
-    near(
-      geometry.leverPivot.x
-        + geometry.leverPlungerContactRadiusSceneUnit
-          * Math.sin(state.leverAngle),
-      state.externalPadX,
-      4e-16,
-      `lever-to-pad x contact at ${time}`,
-    );
+    // The crowned plunger end touches D's straight inner edge: its centre
+    // lies edge offset + crown radius from the edge line.
+    const crownCentre = new THREE.Vector3(
+      state.externalPadX - geometry.plungerCrownRadius, geometry.pipeAxisY, 0);
+    const edgeNormal = new THREE.Vector3(-Math.cos(state.leverAngle),
+      -Math.sin(state.leverAngle), 0);
+    near(crownCentre.sub(geometry.leverPivot).dot(edgeNormal),
+      geometry.leverEdgeOffset + geometry.plungerCrownRadius, 1e-12,
+      `crown-to-edge contact at ${time}`);
   }
   vectorNear(blocks.fixedSupportB.position, supportPosition, 0,
     'support B remains fixed');
@@ -261,7 +262,7 @@ test('movement 478 weighted lever rests on b-c when open and supplies closing lo
     * hot.weightHorizontalMomentArmSceneUnit;
   near(hot.clockwiseWeightTorqueNewtonSceneUnit, expectedTorque, 0,
     'weight torque');
-  assert.match(transmission.leverConstraintEquation, /theta=asin/);
+  assert.match(transmission.leverConstraintEquation, /a\*cos\(theta\)\+b\*sin\(theta\)=e\+Rc/);
   assert.match(transmission.stopAdjustment,
     /sets the cold valve-tip location.*closing temperature/);
   disposeModel(model.root);
@@ -397,5 +398,94 @@ test('movement 478 declared bounds contain every pose and movement 507 remains t
   assert.equal(next.number, '507');
   assert.equal(next.archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
   assert.equal(next.fidelity, 'authored');
+  disposeModel(model.root);
+});
+
+test('movement 478 casting C is one sealed section: A and the plunger fill its hub bores and it shades smoothly', () => {
+  const { model } = movementModel();
+  const { blocks, geometry } = model.root.userData;
+  const casting = blocks.castingC;
+  assert.equal(casting.parent, blocks.hollowSphereC);
+  assert.equal(blocks.stuffingBody, casting, 'the stuffing-box is C\'s own right hub');
+  // Only the pipe shell, no separate end rim duplicating its end face.
+  assert.equal(blocks.pipeFreeEndRim.isMesh, undefined);
+  assert.equal(geometry.pipeOuterRadius, geometry.plungerRadius);
+  near(geometry.hubBoreRadius - geometry.pipeOuterRadius, 0.003, 1e-12,
+    'packed running clearance of A and the plunger in the hubs');
+  const position = casting.geometry.getAttribute('position');
+  const normal = casting.geometry.getAttribute('normal');
+  const point = new THREE.Vector3(), n = new THREE.Vector3();
+  let innerCount = 0, worst = 0, maxZ = -Infinity;
+  for (let i = 0; i < position.count; i += 1) {
+    point.fromBufferAttribute(position, i);n.fromBufferAttribute(normal, i);
+    maxZ = Math.max(maxZ, point.z);
+    const radial = point.clone().sub(geometry.sphereCenter);
+    if (n.z < 0.99 && Math.abs(radial.length() - geometry.sphereInnerRadius) < 1e-5
+      && Math.abs(radial.x) < 0.8 && radial.y > -0.8) {
+      innerCount += 1;
+      worst = Math.max(worst, n.clone().add(radial.normalize()).length());
+    }
+  }
+  assert.ok(maxZ < 1e-6, 'the casting is cut on z = 0');
+  assert.ok(innerCount > 1000);
+  assert.ok(worst < 1e-5, `inner sphere normals are exact and radial (${worst})`);
+  disposeModel(model.root);
+});
+
+test('movement 478 stop-screw b passes through D\'s lower arm and its tip meets stop c', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const box = new THREE.Box3().setFromBufferAttribute(
+    blocks.stopScrewB.geometry.getAttribute('position'));
+  const arm = new THREE.Box3().setFromBufferAttribute(
+    blocks.lowerLeverArm.geometry.getAttribute('position'));
+  assert.ok(box.min.x < -geometry.leverEdgeOffset - 0.1, 'tip stands out of the inner edge');
+  assert.ok(box.max.x > 0.3, 'shank runs out beyond the outer edge to head b');
+  const head = blocks.screwHeadB.position.x;
+  assert.ok(head - 0.1 > 0.2, 'head b stands clear of the arm');
+  assert.ok(arm.max.z < 0.1 && box.max.z < 0.1);
+  model.update(0);model.root.updateMatrixWorld(true);
+  const post = new THREE.Box3().setFromObject(blocks.stopPost);
+  near(post.max.x, stateAtTime(0).stopScrewTip.x, 1e-6, 'b meets c cold');
+  const hub = new THREE.Box3().setFromObject(blocks.castingC);
+  assert.ok(post.max.y > geometry.pipeAxisY - 0.4, 'c reaches up under the stuffing-box hub');
+  assert.ok(hub.max.x > post.max.x, 'the hub overhangs c, no shared face');
+  disposeModel(model.root);
+});
+
+test('movement 478 condensate runs as one sheet from the gap at valve a, down C and out through the outlet', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const drain = blocks.condensateDrain;
+  const c = geometry.sphereCenter;
+  const neckTop = c.y - Math.sqrt(geometry.sphereInnerRadius ** 2 - 0.15 ** 2);
+  const point = new THREE.Vector3();
+  let checked = 0;
+  for (let k = 0; k < 64; k += 1) {
+    const time = geometry.cycleDuration * k / 64, state = stateAtTime(time);
+    model.update(time);
+    if (!drain.visible) {
+      assert.ok(state.flowFraction <= 1e-3);
+      continue;
+    }
+    const position = drain.geometry.getAttribute('position');
+    for (let i = 0; i < position.count; i += 1) {
+      point.fromBufferAttribute(position, i);
+      if (point.y > geometry.pipeAxisY - geometry.pipeOuterRadius) {
+        assert.ok(point.x > state.pipeEndX && point.x < state.valveTipX,
+          `inside the gap at ${time}: ${point.x}`);
+      } else if (point.y > neckTop) {
+        assert.ok(point.distanceTo(c) < geometry.sphereInnerRadius, `inside C at ${time}`);
+      } else {
+        assert.ok(Math.hypot(point.x - c.x, point.z) < 0.15, `inside the outlet bore at ${time}`);
+      }
+      checked += 1;
+    }
+    // One continuous sheet: first and last sections at the gap and outlet.
+    const top = drain.path.points[0], bottom = drain.path.points.at(-1);
+    assert.ok(top.y > geometry.pipeAxisY - geometry.pipeBoreRadius);
+    assert.ok(bottom.y < -2.3);
+  }
+  assert.ok(checked > 1000);
   disposeModel(model.root);
 });

@@ -154,6 +154,9 @@ function wheelHoodGeometry({cx, cy, xL, xR, yBottom, arcRadius, zC, halfWidth, w
   return mergePassageParts(parts);
 }
 
+// The cutaway section (cutaway-presentations.js, 469) is the plane z = 0.6.
+const TANK_WATER_FRONT_Z = 0.59;
+
 function createTank({
   centerX,
   tankWidth,
@@ -161,6 +164,7 @@ function createTank({
   tankBottomY,
   tankTopY,
   waterTopY,
+  waterFrontZ,
   waterMaterial,
   wallMaterial,
   rolePrefix,
@@ -210,20 +214,30 @@ function createTank({
   );
   tank.add(cutawayFront);
 
-  const waterHeight = waterTopY - tankBottomY - wallThickness;
+  // The water runs 0.03 into the floor, end walls and back wall, so none of
+  // its faces lies on a wall face (coplanar faces z-fight); the buried faces
+  // are hidden by the opaque walls. Its front face stands 0.01 behind the
+  // section plane (z 0.6), where the cut end walls' faces lie, so the cut
+  // water shows as a real face instead of only its far side.
+  const waterSink = 0.03;
+  const waterBottomY = tankBottomY + wallThickness / 2 - waterSink;
+  const waterHeight = waterTopY - waterBottomY;
+  const waterBackZ = -tankDepth / 2 + wallThickness - waterSink;
+  const waterDepth = waterFrontZ - waterBackZ;
   const water = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(
-      tankWidth - 2 * wallThickness,
+      tankWidth - 2 * wallThickness + 2 * waterSink,
       waterHeight,
-      tankDepth - 2 * wallThickness,
+      waterDepth,
     ),
     waterMaterial,
   ), `${rolePrefix}-water-body`);
   water.position.set(
     centerX,
-    tankBottomY + wallThickness / 2 + waterHeight / 2,
-    0,
+    waterBottomY + waterHeight / 2,
+    waterBackZ + waterDepth / 2,
   );
+  water.userData.sunkIntoWalls = waterSink;
   tank.add(water);
   return {
     base,
@@ -338,6 +352,7 @@ function temperatureAirMachine(movement) {
     wallMaterial,
     waterMaterial: coldWaterMaterial,
     waterTopY,
+    waterFrontZ: TANK_WATER_FRONT_Z,
   });
   const warmTankParts = createTank({
     centerX: warmTankCenterX,
@@ -349,6 +364,7 @@ function temperatureAirMachine(movement) {
     wallMaterial,
     waterMaterial: warmWaterMaterial,
     waterTopY,
+    waterFrontZ: TANK_WATER_FRONT_Z,
   });
   root.add(coldTankParts.tank, warmTankParts.tank);
 

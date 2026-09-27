@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {plate,poly,circle,capsule,sector as wedge,polygonClipping as clip} from './finite-plate-geometry.js';
-import {horizontalRing} from './horizontal-turbine-solids.js';
+import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {bandInvoluteGear,involute} from './band-epicyclic-geometry.js';
 import {hollowPipeBall} from './folding-joint-parts.js';
 import {curvedPipeWall} from './finite-fluid-passages.js';
@@ -68,7 +69,18 @@ export function correctElasticGaugeParts(root,id,update){
   socketLink(b.connectingRod,d.linkage.connectingRodLength,.16,true);
   replace(b.diaphragmBoss,new THREE.CylinderGeometry(.035,.035,.20,40));
   const curve=b.inletPipe.geometry.parameters.path;replace(b.inletPipe,curvedPipeWall(curve,.145,.17,72,32));replace(b.inletCollar,horizontalRing(.255,.42,-.135,.135,64));
-  replace(b.chamber,plate(clip.difference(poly(circle([0,0],1.55,128)),poly(circle([0,0],1.48,128)),poly([[-.18,-1.65],[.18,-1.65],[.18,-1.3],[-.18,-1.3]])),-.26,.26));b.chamber.rotation.set(0,0,0);
+  // Pass 86: the inlet ran up through an open slot the full depth of the
+  // chamber wall and ended under clamp ring A, touching it along a line. The
+  // slot is now filled by a boss bored round for the pipe (0.17, centred on
+  // the pipe at chamber z -0.05), and the pipe ends flush with the wall's
+  // inner face, sealed in the bore.
+  const port=[[-.18,-1.65],[.18,-1.65],[.18,-1.3],[-.18,-1.3]];
+  const boss=horizontalPlate(clip.difference(poly([[-.18,-.26],[.18,-.26],[.18,.26],[-.18,.26]]),poly(circle([0,.05],.17,64))),-1.55,-1.47);
+  // Its front edge carries an inner lip (r 1.40-1.48, 0.06 deep) in which
+  // clamp ring A (tube 0.095 round r 1.34, 0.22 in front of the chamber's
+  // mid-plane) is bedded; the ring had floated 0.045 clear of the wall.
+  const lip=plate(clip.difference(poly(circle([0,0],1.48,128)),poly(circle([0,0],1.40,128))),.20,.26);
+  replace(b.chamber,mergeGeometries([plate(clip.difference(poly(circle([0,0],1.55,128)),poly(circle([0,0],1.48,128)),poly(port)),-.26,.26),boss,lip].map(g=>{const n=g.index?g.toNonIndexed():g;for(const k of Object.keys(n.attributes))if(!['position','normal'].includes(k))n.deleteAttribute(k);return n;})));b.chamber.rotation.set(0,0,0);
   replace(b.chamberBack,new THREE.CylinderGeometry(1.55,1.55,.05,96).rotateX(Math.PI/2));
  }
  d.minimumDisplayCycleSeconds=g.cycleDuration;d.workingPartsReview={status:'bounded-geometry',residual:'Pressure history and elastic deformation remain prescribed; exact linkage closure is analytical. Elastic stress, hysteresis, backlash dynamics, friction, seals and pressure transients are not simulated.'};

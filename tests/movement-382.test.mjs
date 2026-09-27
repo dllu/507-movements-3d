@@ -91,7 +91,6 @@ test('movement 382 is one socketed elevating/yawing stem carrying one independen
     ...blocks.baseTiers,
     blocks.pillar,
     blocks.socketBoreWitness,
-    blocks.socketCollar,
   ]) assert.equal(component.parent, blocks.base);
   for (const component of [
     blocks.socketScrewCore,
@@ -427,4 +426,48 @@ test('movement 382 closes one elevation/yaw cycle and two tilt cycles before mov
   assert.equal(model507.root.userData.fidelity, 'authored');
   disposeModel(model.root);
   disposeModel(model507.root);
+});
+
+test('movement 382 set screw enters the tapped pillar neck and the mirror back is symmetric and moulded', () => {
+  const model = createMovementModel(catalog.movements[381]);
+  const { blocks } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  // The screw's axis is the neck hole's axis, and the neck is a straight
+  // bored band between the vase and the bead collar.
+  const hole = blocks.pillar.geometry.userData;
+  const screwAxis = new THREE.Vector3(1, 0, 0).applyQuaternion(blocks.socketSetScrew.quaternion);
+  assert.ok(Math.abs(Math.atan2(screwAxis.x, screwAxis.z) - hole.holeTheta) < 1e-9, 'screw on the hole axis');
+  assert.ok(Math.abs(blocks.socketSetScrew.position.y - hole.holeY) < 1e-12, 'screw at the hole height');
+  const threadOuter = 0.079;
+  assert.ok(hole.holeRadius > threadOuter && hole.holeRadius - threadOuter < 0.01, 'tapped hole fits the thread');
+  assert.equal(blocks.socketBoss, undefined, 'no undrawn boss');
+  // One turned pillar: the bore runs through, the neck is straight round
+  // the hole, and the hole has a wall.
+  const position = blocks.pillar.geometry.attributes.position;
+  for (let i = 0; i < position.count; i++) {
+    const r = Math.hypot(position.getX(i), position.getZ(i));
+    assert.ok(r > hole.boreRadius - 1e-5, 'bore stays open');
+    if (Math.abs(position.getY(i) - hole.holeY) < 0.09) assert.ok(r < hole.outer + 1e-5, 'straight neck round the hole');
+  }
+  // Rays along the screw axis (and just inside the hole's edge) pass
+  // through the neck wall and first meet the far side of the bore.
+  const pillarWorld = blocks.pillar.matrixWorld;
+  for (const [du, dv] of [[0, 0], [0.07, 0], [-0.07, 0], [0, 0.07], [0, -0.07]]) {
+    const side = new THREE.Vector3(Math.cos(hole.holeTheta), 0, -Math.sin(hole.holeTheta));
+    const start = new THREE.Vector3(Math.sin(hole.holeTheta), 0, Math.cos(hole.holeTheta)).multiplyScalar(0.6)
+      .addScaledVector(side, du).setY(hole.holeY + dv).applyMatrix4(pillarWorld);
+    const toward = new THREE.Vector3(-Math.sin(hole.holeTheta), 0, -Math.cos(hole.holeTheta)).transformDirection(pillarWorld);
+    const hit = new THREE.Raycaster(start, toward).intersectObject(blocks.pillar, false)[0];
+    assert.ok(hit && hit.distance > 0.6 + Math.sqrt(hole.boreRadius ** 2 - du ** 2) - 1e-3, `ray through the hole (${du}, ${dv}): ${hit?.distance}`);
+  }
+  // The mirror back's two recessed panels mirror each other about x = 0.
+  const [left, right] = blocks.mirrorBackLand.userData.panels.map((panel) => panel[0][0]);
+  assert.equal(left.length, right.length);
+  for (const [x, y] of right) assert.ok(left.some(([u, v]) => Math.abs(u + x) < 1e-9 && Math.abs(v - y) < 1e-9));
+  // The frame is one smooth moulded solid with a raised bead on its back.
+  const frame = blocks.mirrorFrameBars[0];
+  frame.geometry.computeBoundingBox();
+  assert.ok(frame.geometry.boundingBox.max.z > 0.13, 'moulded bead stands proud of the back board');
+  assert.ok(Math.abs(frame.geometry.boundingBox.max.x + frame.geometry.boundingBox.min.x) < 1e-6);
+  disposeModel(model.root);
 });

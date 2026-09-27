@@ -83,3 +83,21 @@ test('363 state queries preserve geometry and enforce source-period, fogless pla
   assert.match(data.reconstructionNote,/rider forces and bearing friction are not simulated/);
   model.root.traverse(o=>{for(const m of [].concat(o.material??[]))assert.equal(m.fog,false);});
 });
+
+test('363 braces are flat bars seated level on the base and plumb into the fulcrum cheeks', () => {
+  model.update(0); model.root.updateMatrixWorld(true);
+  const baseTop = new THREE.Box3().setFromObject(b.base).max.y;
+  for (const leg of b.frameLegs) {
+    const box = new THREE.Box3().setFromObject(leg);
+    assert.ok(Math.abs(box.min.y - (baseTop - .01)) < 1e-6, 'foot sunk 0.01 into the base');
+    // Every foot-end vertex lies on the level cut, every head-end vertex on the plumb cut.
+    const position = leg.geometry.attributes.position, xs = [], ys = [];
+    for (let i = 0; i < position.count; i++) { xs.push(Math.abs(position.getX(i))); ys.push(position.getY(i)); }
+    const footCount = ys.filter(y => Math.abs(y - box.min.y) < 1e-6).length;
+    const headCount = xs.filter(x => Math.abs(x - .24) < 1e-6).length;
+    assert.ok(footCount >= 4 && headCount >= 4, 'full-section seats at both ends');
+    const cheek = new THREE.Box3().setFromObject(b.apexCaps.find(c => c.userData.planeZ === leg.userData.planeZ));
+    assert.ok(cheek.min.z < box.min.z && cheek.max.z > box.max.z, 'brace lies within the cheek plane');
+    assert.ok(box.max.y < cheek.max.y, 'head bears on the cheek');
+  }
+});

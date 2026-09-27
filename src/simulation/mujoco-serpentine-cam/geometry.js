@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import source from './source.js';
 import {makeSerpentineCamProfile} from './profile.js';
 import {barrelLand} from '../mujoco-barrel-cam/groove.js';
+import {followerHead} from '../mujoco-barrel-cam/geometry.js';
 import {plate,poly,circle,turned,disk,ring,polygonClipping as clip} from '../finite-plate-geometry.js';
 import {matte,PALETTE,markShadows} from '../primitives.js';
 const rectangle=(l,b,r,t)=>poly([[l,b],[r,b],[r,t],[l,t]]);
@@ -31,20 +32,17 @@ export function makeSerpentineCamGeometry(options={}) {
     const bore=rectangle(f.rodY-f.rodHalfHeight-.003,-f.rodHalfDepth-.003,f.rodY+f.rodHalfHeight+.003,f.rodHalfDepth+.003);
     add(side+'Guide',alongX(plate(clip.difference(outline,bore),f.x(e[side+'GuideLeft']),f.x(e[side+'GuideRight']))),'frame',PALETTE.frame);
   }
-  const pinCenter=[f.x(source.pin.center[0]),f.rodY],pinRadius=source.pin.radius/100;
-  const pinHole=poly(circle(pinCenter,pinRadius+.0015,128));
+  const pinRadius=source.pin.radius/100;
+  // Brown's block and tapered stem, made symmetric about the working pin's
+  // axis: a collar round the rod and a round stem (Brown's 7.5 px width)
+  // that shoulders onto the pin just above the barrel.
+  const h=followerHead(f,{width:(e.headRight-e.headLeft)/100,top:f.y(e.headTop),stemRadius:.0375,stemEnd:f.pinHigh,collarRadius:.07,fillet:.0325});
+  const pinHole=poly(circle(h.pinCenter,pinRadius+.0015,128));
   add('rod',plate(clip.difference(rectangle(f.x(source.rodEnds[0]),f.rodY-f.rodHalfHeight,f.x(source.rodEnds[1]),f.rodY+f.rodHalfHeight),pinHole),-f.rodHalfDepth,f.rodHalfDepth),'follower',PALETTE.driven);
-  const head=new THREE.Shape();head.moveTo(e.headLeft,e.headTop);head.lineTo(e.headRight,e.headTop);head.lineTo(e.headRight,212);
-  head.lineTo(e.stemRight,217);head.lineTo(e.stemRight,229);head.lineTo(f.axis[0]+100*f.initialTip+2,238);head.lineTo(f.axis[0]+100*f.initialTip-2,238);
-  head.lineTo(e.stemLeft,229);head.lineTo(e.stemLeft,217);head.lineTo(e.headLeft,212);head.closePath();
-  const headContour=head.getPoints(32).map(p=>[f.x(p.x),f.y(p.y)]);
-  const headGeometry=plate(clip.difference(poly(headContour),pinHole),f.rodHalfDepth,f.rodHalfDepth+.08),vertices=headGeometry.attributes.position;
-  // The thin lower stem bends back from the rod's front face to the working
-  // pin's plane. Its complete end remains above the barrel's outer radius.
-  for(let i=0;i<vertices.count;i++){const pixelY=f.axis[1]-100*vertices.getY(i),t=THREE.MathUtils.clamp((pixelY-217)/21,0,1);vertices.setZ(i,.1*(1-t)+(vertices.getZ(i)-.1)/.04*(.04*(1-t)+.008*t));}
-  headGeometry.computeVertexNormals();headGeometry.computeBoundingBox();headGeometry.computeBoundingSphere();
-  add('head',headGeometry,'follower',PALETTE.driven);
-  add('crossPin',disk(pinRadius,-f.rodHalfDepth-.015,f.rodHalfDepth+.09,128).translate(...pinCenter,0),'follower',PALETTE.ink);
+  const headContour=h.outline;
+  add('head',plate(clip.difference(poly(headContour),pinHole),-h.depth,h.depth),'follower',PALETTE.driven);
+  add('stem',h.stem,'follower',PALETTE.driven);
+  add('crossPin',disk(pinRadius,-h.depth-.015,h.depth+.015,128).translate(...h.pinCenter,0),'follower',PALETTE.ink);
   const cap=[];
   for(let i=0;i<=24;i++){const a=-Math.PI/2+Math.PI*i/48;cap.push([f.pinLow+f.pinRadius*Math.sin(a),f.pinRadius*Math.cos(a)]);}
   for(let i=0;i<=24;i++){const a=Math.PI*i/48;cap.push([f.pinHigh+f.pinRadius*Math.sin(a),f.pinRadius*Math.cos(a)]);}

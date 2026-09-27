@@ -160,17 +160,32 @@ function seesawMovement(movement) {
   centerPost.position.set(0, (pivot.y - 0.27) / 2, 0);
   centerPost.userData.role = 'central-vertical-fulcrum-post';
   frame.add(centerPost);
+  // Each straight brace is one flat bar in its outer plane, cut to seat on
+  // what it joins: its foot is cut level and sunk 0.01 into the base, and its
+  // head is cut plumb and sunk 0.01 into the fulcrum cheek (x = +-0.25), so
+  // it bears on both over its full section with no gap or sliver.
   const frameLegs = [];
+  const legFoot = new THREE.Vector2(1.18, baseY + 0.18);
+  const legHead = new THREE.Vector2(0, pivot.y - 0.95);
+  const legWidth = 0.16;
+  const legDepth = 0.12;
+  const legSeatX = 0.25 - 0.01;
+  const legSeatY = baseY + 0.18 - 0.01;
   for (const z of [-0.43, 0.43]) {
     for (const side of [-1, 1]) {
-      const leg = makeBeam(
-        new THREE.Vector3(side * 1.18, baseY + 0.18, z),
-        new THREE.Vector3(0, pivot.y - 0.95, z),
-        { color: PALETTE.frame, depth: 0.12, thickness: 0.16 },
-      );
+      const direction = legHead.clone().sub(legFoot).normalize();
+      const normal = new THREE.Vector2(-direction.y, direction.x).multiplyScalar(legWidth / 2);
+      const edges = [legFoot.clone().add(normal), legFoot.clone().sub(normal)];
+      // Where each long edge crosses the level foot cut and the plumb head cut.
+      const atY = (point, y) => point.clone().add(direction.clone().multiplyScalar((y - point.y) / direction.y));
+      const atX = (point, x) => point.clone().add(direction.clone().multiplyScalar((x - point.x) / direction.x));
+      const outline = [atY(edges[0], legSeatY), atY(edges[1], legSeatY), atX(edges[1], legSeatX), atX(edges[0], legSeatX)]
+        .map((point) => [side * point.x, point.y]);
+      const leg = new THREE.Mesh(plate(poly(side > 0 ? outline : outline.slice().reverse()), z - legDepth / 2, z + legDepth / 2), frameMaterial);
       leg.userData.role = 'inclined-leg-of-fixed-a-frame';
       leg.userData.side = side;
       leg.userData.planeZ = z;
+      leg.userData.seats = { footY: legSeatY, headX: side * legSeatX };
       frame.add(leg);
       frameLegs.push(leg);
     }

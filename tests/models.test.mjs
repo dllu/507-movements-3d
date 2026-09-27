@@ -3577,7 +3577,7 @@ test('movement 48 uses the rebuilt long jaw clutch and rack-generated loose gear
 
 test('movement 49 couples equal bevel gears through real pivoted pawls and keyed carriers', () => {
   const model = createMovementModel(catalog.movements[48]);
-  assert.equal(model.root.userData.mechanism, 'equal-miter-gears-with-contact-driven-opposed-pawls');
+  assert.equal(model.root.userData.mechanism, 'equal-miter-gears-with-gravity-seated-opposed-pawls');
   const b = model.root.userData.blocks, g = model.root.userData.geometry;
   assert.equal(b.rightGear.userData.teeth, b.leftGear.userData.teeth);
   assert.equal(b.rightGear.userData.teeth, b.outputGear.userData.teeth);
@@ -3800,7 +3800,7 @@ test('movement 65 wires the finite tappet, bored stop and ten-stud wheel', () =>
   assert.equal(data.mechanism,'single-tappet-ten-stud-index-with-alternating-notch-stop');
   assert.equal(data.parts.tappet.parent,data.blocks.input);
   assert.equal(data.parts.stopBody.parent,data.blocks.stop);
-  assert.equal(data.parts.stopToe.parent,data.blocks.stop);
+  assert.equal(data.parts.stopToe,undefined,'the toe is part of the one-plate stop');
   assert.equal(data.parts.fixedPivot.parent,model.root);
   assert.equal(Object.keys(data.parts).filter(name=>/^stud\d+$/.test(name)).length,10);
   assert.equal(data.hideGround,true);

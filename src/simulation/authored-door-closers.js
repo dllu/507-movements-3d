@@ -117,7 +117,9 @@ function makeHangingWeight({ material, whiteMaterial }) {
 
   // Brown's weight is a small pear-shaped bulb, about a quarter of a link
   // length tall, hanging close under its neck.
+  // The profile is closed on the axis at both ends, so the bulb is solid.
   const profile = [
+    new THREE.Vector2(0, -0.291),
     new THREE.Vector2(0.062, -0.291),
     new THREE.Vector2(0.186, -0.267),
     new THREE.Vector2(0.260, -0.143),
@@ -125,6 +127,7 @@ function makeHangingWeight({ material, whiteMaterial }) {
     new THREE.Vector2(0.174, 0.149),
     new THREE.Vector2(0.100, 0.229),
     new THREE.Vector2(0.090, 0.267),
+    new THREE.Vector2(0, 0.267),
   ];
   const body = new THREE.Mesh(
     new THREE.LatheGeometry(profile, 48),
@@ -134,8 +137,10 @@ function makeHangingWeight({ material, whiteMaterial }) {
   body.userData.role = 'pear-shaped-door-closing-weight';
   group.add(body);
 
-  const neck = cylinderAlongY(0.09, 0.13, material, 28);
-  neck.position.y = 0.47;
+  // The neck is centred on the bulb and sunk 0.10 into its top, so the
+  // bulb closes round it instead of meeting it along the rim.
+  const neck = cylinderAlongY(0.09, 0.23, material, 28);
+  neck.position.y = 0.42;
   neck.userData.role = 'weight-neck';
   group.add(neck);
 
@@ -768,5 +773,27 @@ function russianWeightedDoorCloser(movement) {
 
 export function createAuthoredDoorCloserMovement(movement) {
   if (movement.id !== 385) return null;
-  return correctDoorCloserParts(russianWeightedDoorCloser(movement));
+  const model = correctDoorCloserParts(russianWeightedDoorCloser(movement));
+  // The working-parts pass moves the eye (and neck) 0.15 along the lower
+  // pin, clear of the suspension plate, which left the neck standing half
+  // off the bulb's top. Centre the bulb, neck and height index under the
+  // eye, so the neck is sunk squarely into the bulb, then refit the camera
+  // bounds to the moved bulb.
+  const { weightEye } = model.root.userData.blocks;
+  const eyeZ = weightEye.position.z;
+  for (const role of ['pear-shaped-door-closing-weight', 'weight-neck', 'white-weight-height-index']) {
+    weightEye.parent.traverse((o) => { if (o.userData.role === role) o.position.z += eyeZ - (role === 'weight-neck' ? o.position.z : 0); });
+  }
+  const bounds = model.root.userData.cameraFitBounds, box = new THREE.Box3();
+  for (let i = 0; i <= 32; i += 1) {
+    model.update(10 * i / 32);
+    model.root.updateMatrixWorld(true);
+    model.root.traverseVisible((o) => {
+      if (!o.geometry) return;
+      o.geometry.computeBoundingBox();
+      bounds.union(box.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld));
+    });
+  }
+  model.update(0);
+  return model;
 }

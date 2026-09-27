@@ -80,6 +80,7 @@ function makeForkedConnectingRod({
   forkHalfSpacing,
   forkStartFraction,
   length,
+  pistonRodTopLocalY,
   prongDepth,
   rodMaterial,
 }) {
@@ -88,50 +89,69 @@ function makeForkedConnectingRod({
   rod.userData.role =
     'one-rigid-connecting-rod-with-two-depth-separated-lower-prongs';
   const stemEnd = length * forkStartFraction;
-  const branchLength = Math.min(length * 0.12, 0.52);
-  const branchStart = stemEnd - branchLength * 0.52;
-  const branchEnd = stemEnd + branchLength * 0.48;
 
-  const stem = new THREE.Mesh(
-    new THREE.BoxGeometry(branchStart + .06 - .14, 0.15, 0.16),
+  // The rod body is one flat outline in the plate's plane (rod axis u along
+  // local x, fork spread w along local z), extruded a constant 0.13 across
+  // the swing plane: a single stem, a G1 fillet into a horseshoe arch whose
+  // outer and inner edges are concentric semicircles, and two straight
+  // prongs. The stem runs into the crank boss and the prongs into the wrist
+  // bosses, each just inside the boss faces (no coincident faces) and clear
+  // of the bores.
+  const bodyThickness = 0.13;
+  const stemHalf = 0.08;
+  const prongHalf = prongDepth / 2 - 0.005;
+  const outerRadius = forkHalfSpacing + prongHalf;
+  const innerRadius = forkHalfSpacing - prongHalf;
+  // The arch crowns at Brown's junction unless the prolonged piston rod
+  // needs the crotch higher: the inner apex stays 0.12 above the rod's top.
+  const archCenter = Math.min(stemEnd + outerRadius,
+    length - pistonRodTopLocalY - 0.12 + innerRadius);
+  const stemTop = 0.14;
+  const prongBottom = length - 0.15;
+  const filletAngle = 35 * Math.PI / 180;
+  const archPoint = (radius, angle) =>
+    [archCenter - radius * Math.cos(angle), radius * Math.sin(angle)];
+  const filletEnd = archPoint(outerRadius, filletAngle);
+  const filletReach = (filletEnd[1] - stemHalf) / Math.cos(filletAngle);
+  const filletControl = [filletEnd[0] - filletReach * Math.sin(filletAngle), stemHalf];
+  const filletStart = [filletControl[0] - 0.16, stemHalf];
+  const quadratic = (p0, c, p1, count) => Array.from({ length: count + 1 }, (_, i) => {
+    const t = i / count, v = 1 - t;
+    return [v * v * p0[0] + 2 * v * t * c[0] + t * t * p1[0],
+      v * v * p0[1] + 2 * v * t * c[1] + t * t * p1[1]];
+  });
+  const arc = (radius, from, to, count) => Array.from({ length: count + 1 },
+    (_, i) => archPoint(radius, from + (to - from) * i / count));
+  const half = [
+    [stemTop, stemHalf],
+    ...quadratic(filletStart, filletControl, filletEnd, 16),
+    ...arc(outerRadius, filletAngle, Math.PI / 2, 32).slice(1),
+    [prongBottom, outerRadius],
+    [prongBottom, innerRadius],
+  ];
+  const mirror = (points) => points.map(([u, w]) => [u, -w]).reverse();
+  const outline = [
+    ...half,
+    ...arc(innerRadius, Math.PI / 2, -Math.PI / 2, 64),
+    ...mirror(half),
+  ];
+  const body = new THREE.Mesh(
+    plate(poly(outline), -bodyThickness / 2, bodyThickness / 2)
+      .rotateX(Math.PI / 2),
     rodMaterial,
   );
-  stem.position.x = (branchStart + .06 + .14) / 2;
-  stem.userData.role = 'single-upper-stem-of-forked-connecting-rod';
+  body.userData.role = 'one-piece-forked-rod-body-stem-horseshoe-and-prongs';
+  body.userData.outline = outline;
   const crankBoss = boredJournal(.20,.114,.20,rodMaterial);
   crankBoss.userData.role = 'forked-rod-upper-crank-eye-boss';
   const crankEye = boredJournal(.18,.114,.02,darkMaterial);
   crankEye.position.z = .11;
   crankEye.userData.role = 'forked-rod-upper-crank-pin-eye';
 
-  const branches = [];
-  const prongs = [];
   const wristEyes = [];
   const wristAnchors = [];
   for (const side of [-1, 1]) {
     const sideName = side < 0 ? 'rear' : 'front';
-    const branch = beamBetween3D(
-      new THREE.Vector3(branchStart, 0, 0),
-      new THREE.Vector3(branchEnd, 0, side * forkHalfSpacing),
-      0.13,
-      prongDepth,
-      rodMaterial,
-    );
-    branch.userData.role = `${sideName}-fork-transition-branch`;
-    branches.push(branch);
-    const prongLength = length - .14 - branchEnd;
-    const prong = new THREE.Mesh(
-      new THREE.BoxGeometry(prongLength, 0.12, prongDepth),
-      rodMaterial,
-    );
-    prong.position.set(
-      (branchEnd + length - .14) / 2,
-      0,
-      side * forkHalfSpacing,
-    );
-    prong.userData.role =
-      `${sideName}-lower-fork-prong-clearing-prolonged-piston-rod`;
-    prongs.push(prong);
     const wristBoss = boredJournal(.21,.132,prongDepth,rodMaterial);
     wristBoss.position.set(length, 0, side * forkHalfSpacing);
     wristBoss.userData.role = `${sideName}-fork-wrist-boss`;
@@ -156,23 +176,19 @@ function makeForkedConnectingRod({
   centerWristAnchor.userData.role =
     'analytic-common-center-of-forked-rod-wrist';
   rod.add(
-    stem,
+    body,
     crankBoss,
     crankEye,
-    ...branches,
-    ...prongs,
     ...wristEyes,
     crankAnchor,
     centerWristAnchor,
     ...wristAnchors,
   );
   return {
-    branches,
+    body,
     centerWristAnchor,
     crankAnchor,
-    prongs,
     rod,
-    stem,
     wristAnchors,
     wristEyes,
   };
@@ -539,6 +555,7 @@ function ForkedPistonRodGuide(movement) {
     forkHalfSpacing,
     forkStartFraction,
     length: connectingRodLength,
+    pistonRodTopLocalY,
     prongDepth: forkProngDepth,
     rodMaterial,
   });
@@ -851,10 +868,9 @@ function ForkedPistonRodGuide(movement) {
     flywheelArms,
     flywheelHub,
     flywheelRim,
-    forkBranches: forkParts.branches,
+    forkBody: forkParts.body,
     forkCenterWristAnchor: forkParts.centerWristAnchor,
     forkCrankAnchor: forkParts.crankAnchor,
-    forkProngs: forkParts.prongs,
     forkWristAnchors: forkParts.wristAnchors,
     forkWristEyes: forkParts.wristEyes,
     forkedConnectingRod: forkParts.rod,

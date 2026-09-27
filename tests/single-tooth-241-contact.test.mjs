@@ -39,10 +39,15 @@ test('241 actual driving and retaining surfaces provide the required clockwise n
     const s = at(m, phase), p = new THREE.Vector3(s.holdingContact.point.x, s.holdingContact.point.y, 0.1);
     const normal = contactNormals(b.outputWheelBody, p).find(n => -cross(p, n) < -1);
     assert.ok(normal);
-    assert.ok(Math.abs(cross(p, normal) - 1.7) < 2e-6, 'retaining face opposes counterclockwise backslip');
-    assertCornerSupports(contactNormals(b.holdingClickBody, p), normal.clone().negate());
+    // The click's rounded nose bears on the radial lock face just above
+    // the root; the reaction's arm is the contact radius (about 1.7).
+    assert.ok(Math.abs(cross(p, normal) - Math.hypot(p.x, p.y)) < 2e-6 && cross(p, normal) > 1.7, 'retaining face opposes counterclockwise backslip');
+    const nose = s.holdingContact.noseCenter;
+    assert.ok(Math.abs(Math.hypot(nose.x - p.x, nose.y - p.y) - d.geometry.holdingNoseRadius) < 1e-9, 'the nose circle touches the face');
+    const along = new THREE.Vector2(p.x - nose.x, p.y - nose.y).normalize();
+    assert.ok(along.x * normal.x + along.y * normal.y < -0.9999, 'nose normal opposes the face normal');
   }
-  console.log({ minimumClockwiseDriverMomentMagnitude: minDriveMoment, clockwiseHoldingMomentMagnitude: 1.7 });
+  console.log({ minimumClockwiseDriverMomentMagnitude: minDriveMoment });
 });
 
 test('241 unexpanded finite curved bodies clear the actual wheel through engagement and full return', () => {
@@ -73,7 +78,7 @@ test('241 preserved one-tooth law has continuous positions and explicit ideal im
     const a = d.stateAtCycleCoordinate(boundary - epsilon), b = d.stateAtCycleCoordinate(boundary + epsilon);
     assert.ok(Math.abs(a.outputAngle - b.outputAngle) < 1e-8);
     assert.ok(Math.abs(a.holdingAngleDelta - b.holdingAngleDelta) < 2e-5);
-    assert.ok(a.holdingContact.point.distanceTo(b.holdingContact.point) < 4e-5);
+    assert.ok(a.holdingContact.noseCenter.distanceTo(b.holdingContact.noseCenter) < 4e-5);
   }
   for (let i = 0; i < 19; i++) {
     const a = d.stateAtCycleCoordinate(i), b = d.stateAtCycleCoordinate(i + 1);

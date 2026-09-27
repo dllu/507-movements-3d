@@ -309,73 +309,46 @@ test('movement 233 roller has exact two-circle contact and true rolling rate', (
   disposeModel(model.root);
 });
 
-test('movement 233 latch face is the exact trundle-envelope curve', () => {
+test('movement 233 latch is a flat bar with a slanted end that rides the lower trundle and falls into the next space', () => {
   const model = createMovementModel(catalog.movements[232]);
   const {
     geometry,
     latchEnvelopeAtProgress,
   } = model.root.userData;
+  // The slant runs at Brown's angle from the tip; the bar keeps one width.
+  const face = geometry.latchFacePoints.at(-1).clone()
+    .sub(geometry.latchFacePoints[0]);
+  near(Math.atan2(face.y, face.x), geometry.latchFaceSlope, 1e-12,
+    'slanted end at the drawn angle');
+  near(geometry.latchWidth, 2 * face.y / Math.sin(geometry.latchFaceSlope)
+    * Math.sin(geometry.latchFaceSlope) / 2, 1e-12, 'bar width');
   let minimumLatchAngle = 0;
-  let maximumNormalVelocityError = 0;
-  let previousLocalX = Infinity;
-  let previousLocalY = -Infinity;
-  for (let index = 0; index <= 32768; index += 1) {
-    const progress = index / 32768;
+  let fallProgress = null;
+  for (let index = 0; index <= 4096; index += 1) {
+    const progress = index / 4096;
     const contact = latchEnvelopeAtProgress(progress);
-    near(
-      contact.worldContactPoint.distanceTo(contact.pinCenter),
-      geometry.trundleRadius,
-      1.5e-15,
-      'latch face is tangent to the trundle',
-    );
-    near(
-      contact.localContactPoint.distanceTo(contact.localPinCenter),
-      geometry.trundleRadius,
-      1.5e-15,
-      'local latch envelope offset',
-    );
-    near(
-      contact.localPinCenterDerivative.dot(contact.localNormal),
-      0,
-      7e-16,
-      'relative trundle travel is tangent to the latch face',
-    );
-    near(
-      contact.normalVelocityError,
-      0,
-      1.3e-15,
-      'latch and trundle have no normal separation speed',
-    );
-    assert.ok(contact.localContactPoint.x <= previousLocalX + 2e-14);
-    assert.ok(contact.localContactPoint.y >= previousLocalY - 2e-14);
-    previousLocalX = contact.localContactPoint.x;
-    previousLocalY = contact.localContactPoint.y;
+    // The solved lift is tabulated (512 steps); interpolation may undercut
+    // the 0.002 running clearance slightly, never into the trundle.
+    assert.ok(contact.gap >= 0.0015,
+      `bar clear of every trundle at ${progress}: ${contact.gap}`);
+    assert.ok(contact.latchAngle <= 1e-12);
     minimumLatchAngle = Math.min(minimumLatchAngle, contact.latchAngle);
-    maximumNormalVelocityError = Math.max(
-      maximumNormalVelocityError,
-      Math.abs(contact.normalVelocityError),
-    );
+    if (fallProgress === null && progress > 0.5
+      && contact.latchAngle > -1e-9) fallProgress = progress;
   }
-  near(minimumLatchAngle, -geometry.latchLiftAmplitude, 2e-16,
-    'latch reaches its designed lift');
-  assert.ok(maximumNormalVelocityError < 1.3e-15);
-  near(latchEnvelopeAtProgress(0).latchAngle, 0, 0,
-    'latch begins seated');
-  near(latchEnvelopeAtProgress(1).latchAngle, 0, 2e-17,
-    'latch reseats at the adjacent gap');
-  assert.equal(geometry.latchFacePoints.length, 129);
-  vectorNear(
-    geometry.latchFacePoints[0],
-    latchEnvelopeAtProgress(0).localContactPoint,
-    0,
-    'rendered latch face begins on the analytic envelope',
-  );
-  vectorNear(
-    geometry.latchFacePoints.at(-1),
-    latchEnvelopeAtProgress(1).localContactPoint,
-    0,
-    'rendered latch face ends on the analytic envelope',
-  );
+  near(minimumLatchAngle, -geometry.latchLiftAmplitude, 1e-9,
+    'latch reaches its solved lift');
+  assert.ok(geometry.latchLiftAmplitude > 0.15,
+    'the lower trundle lifts the bar clear of the tip');
+  assert.ok(fallProgress !== null && fallProgress < 1,
+    'the bar falls back into the next space within the stroke');
+  near(latchEnvelopeAtProgress(0).latchAngle, 0, 0, 'latch begins seated');
+  near(latchEnvelopeAtProgress(1).latchAngle, 0, 1e-12,
+    'latch reseats in the adjacent space');
+  // At rest the bar lies on the lower trundle and its tip stands between
+  // the two, below the upper trundle's centre.
+  const rest = latchEnvelopeAtProgress(0);
+  near(rest.gap, 0.004, 1e-9, 'bar rests on the lower trundle');
   disposeModel(model.root);
 });
 
@@ -415,9 +388,13 @@ test('movement 233 analytic velocities and accelerations match finite difference
       const latchAcceleration = (
         after.latchAngle - 2 * state.latchAngle + before.latchAngle
       ) / h ** 2;
-      near(latchSpeed, state.latchAngularSpeed, 2e-9,
+      // The latch's lift is a C1 monotone spline through its solved table,
+      // so its acceleration steps at the table knots.
+      near(latchSpeed, state.latchAngularSpeed,
+        1e-4 * (1 + Math.abs(state.latchAngularSpeed)),
         'latch angular speed finite difference');
-      near(latchAcceleration, state.latchAngularAcceleration, 2e-5,
+      near(latchAcceleration, state.latchAngularAcceleration,
+        0.3 * (1 + Math.abs(state.latchAngularAcceleration)),
         'latch angular acceleration finite difference');
     }
   }

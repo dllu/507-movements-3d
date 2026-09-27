@@ -12,19 +12,34 @@ const model=makeEccentricTwoStop(),u=model.root.userData,near=(a,b,t=1e-10)=>ass
 const dispose=model=>{const g=new Set(),m=new Set();model.root.traverse(o=>{if(o.geometry)g.add(o.geometry);if(o.material)m.add(o.material);});g.forEach(g=>g.dispose());m.forEach(m=>m.dispose());};
 after(()=>dispose(model));
 
-test('088 source cam, solid stepped stops and press-fit shaft seats preserve checked geometry',()=>{
+test('088 source cam, plain square stops and press-fit shaft seats preserve checked geometry',()=>{
   const candidate=makeEccentricTwoStopCenteredCandidate(profile.options),v=candidate.root.userData;
-  assert.equal(Object.keys(u.parts).length,12);assert.deepEqual(u.geometry,v.geometry);assert.deepEqual(u.source,v.source);
+  assert.equal(Object.keys(u.parts).length,10);assert.deepEqual(u.geometry,v.geometry);assert.deepEqual(u.source,v.source);
   for(const [name,mesh]of Object.entries(u.parts)){
     const other=v.parts[name],topology=inspectWeightedClutchSolid(mesh.geometry);
     assert.equal(topology.components,1,name);assert.ok(topology.volume>0);assert.equal(topology.unmatchedEdges,0,name);
     assert.equal(topology.degenerate+topology.wrongNormals+topology.nonfinite,0,name);
+    if(/^stop[CD]Foot$/.test(name))continue;
     for(const [key,attribute]of Object.entries(mesh.geometry.attributes))assert.deepEqual(attribute.array,other.geometry.attributes[key].array,name+'/'+key);
     assert.deepEqual(mesh.geometry.index?.array,other.geometry.index?.array,name+' topology');
   }
   for(const time of [0,.1,1,1.2,3.6,5,5.3,8,9.6,20]){
     const state=u.stateAtTime(time);model.update(time);candidate.setCoordinates(state.inputAngle,state.outputAngle);
     for(const [name,mesh]of Object.entries(u.parts))assert.deepEqual(mesh.matrixWorld.elements,v.parts[name].matrixWorld.elements,name+' pose');
+  }
+  // Each stop is one plain block the size of Brown's square, standing from
+  // B's face through the cam's plane, with the studied working face.
+  assert.ok(!u.parts.stopCBody&&!u.parts.stopDBody,'no overhanging caps');
+  const S=u.source.stopC,b=u.stopBlocks.pixels;
+  near(b.right-b.left,S.right-S.left);near(b.bottom-b.top,S.bottom-S.top);near(b.right,u.geometry.footInner);
+  for(const label of ['C','D']){
+    const box=new THREE.Box3().setFromBufferAttribute(u.parts['stop'+label+'Foot'].geometry.attributes.position);
+    near(box.max.x-box.min.x,(S.right-S.left)/100,1e-6);near(box.max.y-box.min.y,(S.bottom-S.top)/100,1e-6);
+    near(box.min.z,u.geometry.footSpan[0],1e-7);near(box.max.z,u.geometry.footSpan[1],1e-7);
+    assert.ok(box.min.z<u.geometry.camSpan[0]&&box.max.z>u.geometry.camSpan[1]);
+    const other=v.parts['stop'+label+'Foot'].geometry.attributes.position,face=label==='C'?-Infinity:Infinity;
+    let studied=face;for(let i=0;i<other.count;i++)studied=label==='C'?Math.max(studied,other.getX(i)):Math.min(studied,other.getX(i));
+    near(label==='C'?box.max.x:box.min.x,studied,1e-6);
   }
   assert(u.geometry.bodySpan[0]>u.geometry.camSpan[1]);
   assert(u.geometry.footSpan[0]<u.geometry.camSpan[0]&&u.geometry.footSpan[1]>u.geometry.bodySpan[0]);

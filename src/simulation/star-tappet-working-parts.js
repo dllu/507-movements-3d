@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import paths from './baked/star-tappet-paths.js';
 import {plate,poly,circle,capsule,ring,add,sub,rotate,polygonClipping as clip} from './finite-plate-geometry.js';
-const TAPPET_NOSE_START=-2.35,TAPPET_EDGE_REACH=.65,TAPPET_NOSE_END=1.2;
+const TAPPET_NOSE_START=-2.6,TAPPET_EDGE_REACH=.65,TAPPET_NOSE_END=1.2;
 function sample(values,q){const x=q*(values.length-1),i=Math.min(values.length-2,Math.floor(x)),f=x-i;return{angle:values[i]*(1-f)+values[i+1]*f,derivative:(Math.abs(f)<1e-7&&i>0?(values[i+1]-values[i-1])/2:values[i+1]-values[i])*(values.length-1)};}
 export function starTappetState(s,g,profileClearanceAt){
   if(s.stage==='arm-rising-clear-after-index')s.stage='handoff-dwell-after-index';
@@ -24,32 +24,35 @@ export function starTappetState(s,g,profileClearanceAt){
   s.ratchetLockedAgainstReverse=s.wheelDwelling&&s.holdingClickEngaged;
   s.prescribedReturnAndDrop=true;return s;
 }
-// Brown's holding click is a slender spring hook that runs round outside the
-// star's points from its pivot eye above and drops its rounded nose into the
-// space before a point. Set out at rest in the star's frame (wheel angle 0):
-// a band concentric with the star, clear of the tips, then a straight hook,
-// tapering to the nose circle, into the tooth space. Returned in the click's
-// frame (pivot at the origin, nose centre on +x).
-export const CLICK_BAND_HALF_WIDTH=.06,CLICK_BAND_CLEARANCE=.05,CLICK_EYE_RADIUS=.09,CLICK_HOOK_TURN=0;
+// Brown's holding click is one smooth crescent: from its pivot eye above the
+// star it sweeps round outside the points on a single circular arc and ends
+// in a rounded nose seated in the root of a space, against the next point's
+// almost radial face. Set out at rest in the star's frame (wheel angle 0);
+// returned in the click's frame (pivot at the origin, nose centre on +x).
+export const CLICK_BAND_HALF_WIDTH=.1,CLICK_BAND_CLEARANCE=.05,CLICK_EYE_RADIUS=.14,CLICK_HOOK_TURN=0;
 export function holdingClickOutline(g){
-  const P=g.holdingClickPivot,a0=g.holdingClickRestAngle,Lc=g.holdingClickLength,rc=g.holdingClickRadius-.0005,w=CLICK_BAND_HALF_WIDTH;
-  const C=[P.x+Lc*Math.cos(a0),P.y+Lc*Math.sin(a0)],Rb=g.ratchetOuterRadius+CLICK_BAND_CLEARANCE+w;
-  const out=[Math.cos(Math.atan2(C[1],C[0])+CLICK_HOOK_TURN),Math.sin(Math.atan2(C[1],C[0])+CLICK_HOOK_TURN)];
-  const along=C[0]*out[0]+C[1]*out[1],t=-along+Math.sqrt(along*along-(C[0]*C[0]+C[1]*C[1])+Rb*Rb),K=[C[0]+t*out[0],C[1]+t*out[1]];
-  const pa=Math.atan2(P.y,P.x);let ka=Math.atan2(K[1],K[0]);while(ka-pa>Math.PI)ka-=2*Math.PI;while(ka-pa<-Math.PI)ka+=2*Math.PI;
-  const pr=Math.hypot(P.x,P.y),fillet=.16,arc=[];
-  for(let i=0;i<=60;i++){const f=i/60,angle=pa+(ka-pa)*f,s=Math.min(1,f/.3),r=pr+(Rb-pr)*s*s*(3-2*s);arc.push([r*Math.cos(angle),r*Math.sin(angle)]);}
-  // Trim the arc a fillet length short of the corner and round the corner.
-  let run=0,cut=arc.length-1;for(let i=arc.length-1;i>0;i--){run+=Math.hypot(...sub(arc[i],arc[i-1]));if(run>=fillet){cut=i-1;break;}}
-  const start=arc[cut],end=add(K,[-out[0]*fillet,-out[1]*fillet]),line=arc.slice(0,cut+1).map(p=>[p,w]);
-  for(let i=1;i<=10;i++){const f=i/10;line.push([[start[0]*(1-f)**2+2*K[0]*(1-f)*f+end[0]*f*f,start[1]*(1-f)**2+2*K[1]*(1-f)*f+end[1]*f*f],w]);}
-  for(let i=1;i<=12;i++){const f=i/12;line.push([add(end,[(C[0]-end[0])*f,(C[1]-end[1])*f]),w+(rc-w)*Math.min(1,f/.8)]);}
-  const local=line.map(([p,r])=>[rotate(sub(p,[P.x,P.y]),-a0),r]),upper=[],lower=[];
-  local.forEach(([p,r],i)=>{const q=local[Math.min(local.length-1,i+1)][0],o=local[Math.max(0,i-1)][0],d=sub(q,o),n=Math.hypot(...d),nx=-d[1]/n,ny=d[0]/n;upper.push([p[0]+nx*r,p[1]+ny*r]);lower.push([p[0]-nx*r,p[1]-ny*r]);});
-  const [tip]=local.at(-1),d=sub(tip,local.at(-2)[0]),ta=Math.atan2(d[1],d[0]),nose=[];
+  const P=[g.holdingClickPivot.x,g.holdingClickPivot.y],a0=g.holdingClickRestAngle,Lc=g.holdingClickLength,rc=g.holdingClickRadius-.0005,w=CLICK_BAND_HALF_WIDTH;
+  const C=[P[0]+Lc*Math.cos(a0),P[1]+Lc*Math.sin(a0)];
+  // The arc's apex stands just outside the tip circle midway round.
+  let aP=Math.atan2(P[1],P[0]),aC=Math.atan2(C[1],C[0]);while(aC<aP)aC+=2*Math.PI;
+  const aM=(aP+aC)/2,Rm=g.ratchetOuterRadius+CLICK_BAND_CLEARANCE+w,M=[Rm*Math.cos(aM),Rm*Math.sin(aM)];
+  // Circle through P, M and C.
+  const d=2*(P[0]*(M[1]-C[1])+M[0]*(C[1]-P[1])+C[0]*(P[1]-M[1])),s2=q=>q[0]*q[0]+q[1]*q[1];
+  const Q=[(s2(P)*(M[1]-C[1])+s2(M)*(C[1]-P[1])+s2(C)*(P[1]-M[1]))/d,(s2(P)*(C[0]-M[0])+s2(M)*(P[0]-C[0])+s2(C)*(M[0]-P[0]))/d];
+  const R=Math.hypot(P[0]-Q[0],P[1]-Q[1]);
+  let tP=Math.atan2(P[1]-Q[1],P[0]-Q[0]),tM=Math.atan2(M[1]-Q[1],M[0]-Q[0]),tC=Math.atan2(C[1]-Q[1],C[0]-Q[0]);
+  // Go from P to C through M.
+  const ccw=(x,y)=>{let v=y-x;while(v<0)v+=2*Math.PI;return v;};
+  const sweep=ccw(tP,tM)<ccw(tP,tC)?ccw(tP,tC):-ccw(tC,tP);
+  const n=72,local=[];
+  for(let i=0;i<=n;i++){const f=i/n,t=tP+sweep*f,p=[Q[0]+R*Math.cos(t),Q[1]+R*Math.sin(t)];
+   const half=w+(rc-w)*Math.max(0,(f-.55)/.45)**1.5;local.push([rotate(sub(p,P),-a0),half]);}
+  const upper=[],lower=[];
+  local.forEach(([p,r],i)=>{const q=local[Math.min(local.length-1,i+1)][0],o=local[Math.max(0,i-1)][0],dd=sub(q,o),l=Math.hypot(...dd),nx=-dd[1]/l,ny=dd[0]/l;upper.push([p[0]+nx*r,p[1]+ny*r]);lower.push([p[0]-nx*r,p[1]-ny*r]);});
+  const [tip]=local.at(-1),dt=sub(tip,local.at(-2)[0]),ta=Math.atan2(dt[1],dt[0]),nose=[];
   for(let i=1;i<24;i++){const t=ta+Math.PI/2-Math.PI*i/24;nose.push(add(tip,[rc*Math.cos(t),rc*Math.sin(t)]));}
-  const ring=[...upper,...nose,...lower.reverse()];
-  return clip.union(poly(ring),poly(circle([0,0],CLICK_EYE_RADIUS,64)));
+  const ringPoints=[...upper,...nose,...lower.reverse()];
+  return clip.union(poly(ringPoints),poly(circle([0,0],CLICK_EYE_RADIUS,64)));
 }
 export function finishStarTappet(root){
   const d=root.userData,b=d.blocks,g=d.geometry;

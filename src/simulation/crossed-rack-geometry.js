@@ -28,7 +28,7 @@ const pawlContours={
 export function makeCrossedRackGeometry({hookRelief={left:704,right:524}}={}){
  const root=new THREE.Group(),parts={},families={},blocks={},profiles={},
   p={center:measured.center,scale:measured.scale,teeth:measured.teeth,pitch:measured.pitch/measured.scale,hookRelief,
-   source:measured,initialAngles:{left:0,right:0},anchors:{},layers:{rack:[-.06,.06],lever:[-.22,-.14],left:[.16,.21],right:[.32,.37]}};
+   source:measured,initialAngles:{left:0,right:0},anchors:{},layers:{rack:[-.06,.06],lever:[-.22,-.14],left:[.07,.11],right:[.12,.16]}};
  for(const family of ['fixed','rack','lever','left','right']){blocks[family]=new THREE.Group();root.add(blocks[family]);}
  const attach=(name,geometry,family,color,position=[0,0,0])=>{
   const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.18,roughness:.58}));mesh.name=name;mesh.position.fromArray(position);

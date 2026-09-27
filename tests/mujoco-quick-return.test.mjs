@@ -118,3 +118,17 @@ test('100 timestep refinement bounds the fast return and the slow stroke',t=>{
     t.diagnostic(JSON.stringify({timestepDegrees:first*180/Math.PI,refinedTimestepDegrees:second*180/Math.PI}));assert.ok(first*180/Math.PI<.05);assert.ok(second<first);
   }finally{a.dispose();b.dispose();c.dispose();}
 });
+
+test('100 tail rod runs into the pivot hub with no overhang',()=>{
+  const v=makeMujocoQuickReturn(mujoco),u=v.root.userData;
+  try {
+    const box=name=>{const g=u.parts[name].geometry;g.computeBoundingBox();return g.boundingBox.clone().translate(u.parts[name].position);};
+    const rod=box('tailRod'),hub=box('pivotBoss'),hubRadius=u.source.pivotRadius/100,r=(rod.max.z-rod.min.z)/2;
+    assert.ok(hub.min.z<rod.min.z-.01&&hub.max.z>rod.max.z+.01,'hub is deeper than the rod');
+    // The rod's flat end face (nearest the pivot) lies inside the hub and clear of the bore.
+    const pos=u.parts.tailRod.geometry.attributes.position;
+    const start=Math.min(...Array.from({length:pos.count},(_,i)=>Math.hypot(pos.getX(i),pos.getY(i))));
+    assert.ok(start>u.geometry.pivotShaftRadius+.01,'rod end clears the bore');
+    assert.ok(Math.hypot(start,r)<hubRadius-.01,'rod end face corners inside the hub');
+  }finally{v.dispose();}
+});

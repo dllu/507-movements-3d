@@ -622,3 +622,57 @@ test('movement 334 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 334 chain pins stand proud of the outer plates instead of lying flush', () => {
+  const model = createMovementModel(catalog.movements[333]);
+  const { blocks, geometry } = model.root.userData;
+  model.update(0.7);
+  model.root.updateMatrixWorld(true);
+  const shoe = new THREE.Box3().setFromObject(blocks.chainShoe);
+  let pins = 0;
+  for (const parts of blocks.chainLinks) {
+    if (!parts.startPin) continue;
+    for (const pin of [parts.startPin, parts.endPin]) {
+      const box = new THREE.Box3().setFromObject(pin);
+      assert.ok(box.min.z < geometry.chainOuterLow - 0.01, 'back head proud');
+      assert.ok(box.max.z > geometry.chainOuterHigh + 0.01, 'front head proud');
+      assert.ok(box.max.z < shoe.max.z, 'heads stay behind the shoe face');
+      assert.ok(pin.geometry.userData.headRadius > geometry.chainPinRadius);
+      pins += 1;
+    }
+  }
+  assert.equal(pins, 10);
+  disposeModel(model.root);
+});
+
+test('movement 334 braces and gudgeon bracket are seated solidly in the beam and sector', async () => {
+  const { surfacePoints, solidSurface } = await import('./helpers/solid-surface.mjs');
+  const model = createMovementModel(catalog.movements[333]);
+  const { blocks } = model.root.userData;
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const inside = (part, host) => {
+    const solid = solidSurface(host.geometry);
+    const toHost = host.matrixWorld.clone().invert().multiply(part.matrixWorld);
+    const points = surfacePoints(part.geometry);
+    return points.filter((p) => solid.inside(p.clone().applyMatrix4(toHost))).length / points.length;
+  };
+  // Each brace is one flat plate: one end buried in the beam, the other in
+  // the sector's rim band, both by a generous share of the brace surface.
+  assert.equal(blocks.sectorSpokes.length, 3);
+  for (const spoke of blocks.sectorSpokes) {
+    assert.ok(inside(spoke, blocks.beamBody) > 0.06, `${spoke.userData.role} seated in beam`);
+    assert.ok(inside(spoke, blocks.sectorWeb) > 0.01, `${spoke.userData.role} seated in rim`);
+    const box = new THREE.Box3().setFromObject(spoke);
+    assert.ok(box.max.z < new THREE.Box3().setFromObject(blocks.beamBody).max.z,
+      'brace faces stay inside the beam faces');
+  }
+  // The gudgeon bracket's top runs up into the beam; the strap reaches down
+  // into the bracket and its washer sits in the beam's top edge.
+  assert.ok(inside(blocks.beamPivotBoss, blocks.beamBody) > 0.08, 'bracket seated in beam');
+  let strap;
+  blocks.beam.traverse((o) => { if (o.userData.role === 'gudgeon-strap-and-nut-over-F-on-beam-D') strap = o; });
+  assert.ok(inside(strap, blocks.beamBody) > 0.05, 'strap seated in beam');
+  assert.ok(inside(strap, blocks.beamPivotBoss) > 0.005, 'strap reaches the bracket');
+  disposeModel(model.root);
+});

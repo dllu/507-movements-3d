@@ -506,6 +506,13 @@ function makeFeedBarB({
   followerPad.userData.role =
     'underside-pad-resting-by-gravity-on-radial-cam-prominence';
   bar.add(followerPad);
+  // A short stem runs from inside the bar down to the ball's centre, so the
+  // ball is carried on a solid neck rather than touching the bar at a point.
+  const followerPadStem = cylinderAlongAxis(0.055, -followerOffsetY,
+    new THREE.Vector3(0, 1, 0), darkMaterial, 28);
+  followerPadStem.position.set(followerArm, followerOffsetY / 2, 0);
+  followerPadStem.userData.role = 'underside-pad-stem-set-into-bar-B';
+  bar.add(followerPadStem);
 
   const dog = new THREE.Group();
   dog.position.set(dogX, 0.07, 0);

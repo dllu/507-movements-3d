@@ -1,5 +1,7 @@
 import { correctEndlessMaintainingChain } from './maintaining-clock-parts.js';
 import * as THREE from 'three';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import clickPaths from './baked/maintaining-clock-clicks.js';
 import {
   CircularArcCurve3,
   PALETTE,
@@ -409,6 +411,177 @@ function makeRatchetDisk(radius, depth, toothCount) {
 
 function setRotorAngle(pulley, angle) {
   pulley.userData.rotor.rotation.z = angle;
+}
+
+// Click and ratchet at p, rebuilt as one working pair. Each steep tooth face
+// runs from its root nearly along the click's swing (undercut 10 degrees so
+// the load draws the click into the root), and the back of the tooth runs
+// straight to the next root. The click is one flat plate: a boss bored for
+// its pin and a straight tapered finger whose toe fills the valley, its
+// working face along the steep face and its underside along the back, meeting
+// in a small rounded nose. At every locked pose the nose sits in a root with
+// the working face on the tooth face. The click rests on the wheel under its
+// own weight: its angle is the highest contact of the two outlines, found
+// exactly (vertex circles against edges both ways) and baked offline.
+const CLICK_NOSE_RADIUS = 0.012;
+const CLICK_FACE_UNDERCUT = THREE.MathUtils.degToRad(10);
+// After each winding the wheel runs this far past the seat (the click drops
+// into the root and rides a little up the next back), then the chain load
+// turns it back onto the click at the start of going.
+const RATCHET_OVERSHOOT = 0.05;
+
+function seatClickAndRatchet(root) {
+  const b = root.userData.blocks;
+  const old = b.finiteClicks[0];
+  const wheel = old.wheel;
+  const profile = wheel.userData.ratchetProfile;
+  const { radius, bore, teeth, depth } = profile;
+  const rootRadius = radius * 0.84;
+  const pitch = FULL_TURN / teeth;
+  const pivot = old.pivot;
+  const turn = (q, a) => [q[0] * Math.cos(a) - q[1] * Math.sin(a), q[0] * Math.sin(a) + q[1] * Math.cos(a)];
+  const sub = (a, c) => [a[0] - c[0], a[1] - c[1]];
+  const add = (a, c) => [a[0] + c[0], a[1] + c[1]];
+  const scale = (a, k) => [a[0] * k, a[1] * k];
+  const dot = (a, c) => a[0] * c[0] + a[1] * c[1];
+  const unit = (a) => scale(a, 1 / Math.hypot(a[0], a[1]));
+  const wrap = (a) => Math.atan2(Math.sin(a), Math.cos(a));
+  // Seat: the root at Brown's click angle (top of p, a little left).
+  const seatAngle = Math.atan2(0.73, -0.12);
+  const root0 = [rootRadius * Math.cos(seatAngle), rootRadius * Math.sin(seatAngle)];
+  const arm = sub(root0, pivot);
+  const clickLength = Math.hypot(...arm);
+  const ahead = [-Math.sin(seatAngle), Math.cos(seatAngle)];
+  let swing = unit([-arm[1], arm[0]]);
+  if (dot(swing, root0) < 0) swing = scale(swing, -1);
+  const undercutSign = Math.sign(dot(turn(swing, 1e-3), ahead) - dot(swing, ahead));
+  const face = turn(swing, undercutSign * CLICK_FACE_UNDERCUT);
+  const along = dot(root0, face);
+  const faceLength = -along + Math.sqrt(along ** 2 - rootRadius ** 2 + radius ** 2);
+  const tip0 = add(root0, scale(face, faceLength));
+  const tipLead = wrap(Math.atan2(tip0[1], tip0[0]) - seatAngle);
+  const outline = [];
+  for (let i = 0; i < teeth; i += 1) {
+    const a = seatAngle + i * pitch;
+    outline.push([rootRadius * Math.cos(a), rootRadius * Math.sin(a)]);
+    outline.push([radius * Math.cos(a + tipLead), radius * Math.sin(a + tipLead)]);
+  }
+  wheel.geometry.dispose();
+  wheel.geometry = plate(polygonClipping.difference(poly(outline), poly(circle([0, 0], bore, 64))), -depth / 2, depth / 2);
+  wheel.userData.ratchetProfile = { ...profile, outline, rootRadius, tipLead, seatAngle, faceUndercut: CLICK_FACE_UNDERCUT };
+
+  // Click toe in the seated valley (wheel-relative coordinates at A = 0).
+  const previousTip = outline.at(-1);
+  const back = unit(sub(previousTip, root0));
+  const half = Math.acos(dot(face, back)) / 2;
+  const bisector = unit(add(face, back));
+  const noseCenter = add(root0, scale(bisector, CLICK_NOSE_RADIUS / Math.sin(half)));
+  const faceEnd = add(root0, scale(face, 0.8 * faceLength));
+  const backEnd = add(root0, scale(back, 0.07));
+  const hullOf = (points) => {
+    const sorted = [...points].sort((p, q) => p[0] - q[0] || p[1] - q[1]);
+    const cross = (o, p, q) => (p[0] - o[0]) * (q[1] - o[1]) - (p[1] - o[1]) * (q[0] - o[0]);
+    const chain = (list) => {
+      const out = [];
+      for (const point of list) {
+        while (out.length > 1 && cross(out.at(-2), out.at(-1), point) <= 0) out.pop();
+        out.push(point);
+      }
+      return out.slice(0, -1);
+    };
+    return [...chain(sorted), ...chain([...sorted].reverse())];
+  };
+  const finger = hullOf([
+    ...circle(pivot, 0.07, 48), faceEnd, backEnd, ...circle(noseCenter, CLICK_NOSE_RADIUS, 48),
+  ]);
+  const seatRotation = Math.atan2(arm[1], arm[0]);
+  const worldShape = polygonClipping.difference(
+    polygonClipping.union(poly(finger), poly(circle(pivot, 0.13, 64))),
+    poly(circle(pivot, 0.082, 48)),
+  );
+  const local = worldShape.map((polygon) => polygon.map((ring) => ring.map((q) => turn(sub(q, pivot), -seatRotation))));
+  old.body.geometry.dispose();
+  old.body.geometry = plate(local, -0.06, 0.06);
+  old.body.userData.role = 'flat-click-with-valley-toe';
+
+  // Exact rest angle on the wheel.
+  const clickRing = local[0][0].slice(0, -1);
+  const toe = clickRing.filter((q) => Math.hypot(...add(pivot, turn(q, seatRotation))) < radius + 0.05);
+  const toeEdges = [];
+  for (let i = 0; i < clickRing.length; i += 1) {
+    const q = clickRing[i], r = clickRing[(i + 1) % clickRing.length];
+    if (toe.includes(q) || toe.includes(r)) toeEdges.push([q, r]);
+  }
+  const noseRadial = (rotation) => Math.hypot(...add(pivot, turn([clickLength, 0], rotation)));
+  const liftSign = Math.sign(noseRadial(seatRotation + 1e-4) - noseRadial(seatRotation));
+  const circleSegment = (center, r, a, c, callback) => {
+    const d = sub(c, a), f = sub(a, center);
+    const A = dot(d, d), B = 2 * dot(f, d), C = dot(f, f) - r * r, disc = B * B - 4 * A * C;
+    if (disc < 0 || A === 0) return;
+    const sq = Math.sqrt(disc);
+    for (const t of [(-B - sq) / (2 * A), (-B + sq) / (2 * A)]) if (t >= 0 && t <= 1) callback(add(a, scale(d, t)));
+  };
+  const angleAt = (wheelAngle) => {
+    const world = outline.map((q) => turn(q, wheelAngle));
+    const near = [];
+    for (let i = 0; i < world.length; i += 1) {
+      const q = world[i];
+      if (Math.abs(wrap(Math.atan2(q[1], q[0]) - seatAngle)) < 1.2) near.push([q, world[(i + 1) % world.length]]);
+    }
+    let lift = -0.3;
+    const take = (rotation) => {
+      const candidate = liftSign * wrap(rotation - seatRotation);
+      if (candidate > lift && candidate < 0.6) lift = candidate;
+    };
+    for (const q of toe) {
+      const r = Math.hypot(...q), base = Math.atan2(q[1], q[0]);
+      for (const [a, c] of near) circleSegment(pivot, r, a, c, (x) => take(Math.atan2(x[1] - pivot[1], x[0] - pivot[0]) - base));
+    }
+    for (const [q] of near) {
+      const v = sub(q, pivot), r = Math.hypot(...v), base = Math.atan2(v[1], v[0]);
+      for (const [a, c] of toeEdges) circleSegment([0, 0], r, a, c, (x) => take(base - Math.atan2(x[1], x[0])));
+    }
+    return seatRotation + liftSign * lift;
+  };
+  const bakeKey = '320-p';
+  const bakeSignature = { pivot, length: clickLength, base: seatRotation, sign: liftSign, outline };
+  const path = clickPaths[bakeKey];
+  const baked = path && JSON.stringify(path.signature) === JSON.stringify(bakeSignature);
+  const playbackAngleAt = baked ? (angle) => {
+    const phase = (((angle / path.pitch) % 1) + 1) % 1, coordinate = phase * path.phaseScale, knots = path.knots;
+    let lo = 0, hi = knots.length - 1;
+    while (hi - lo > 1) { const mid = (lo + hi) >> 1; if (knots[mid][0] <= coordinate) lo = mid; else hi = mid; }
+    const a = knots[lo], c = knots[hi], t = (coordinate - a[0]) / (c[0] - a[0]);
+    return a[1] + t * (c[1] - a[1]);
+  } : angleAt;
+  const follower = {
+    ...old, outline, length: clickLength, base: seatRotation, sign: liftSign, angleAt, playbackAngleAt, bakeKey, bakeSignature,
+    seatRotation, noseRadius: CLICK_NOSE_RADIUS,
+    update(angle) { old.group.rotation.z = playbackAngleAt(angle); },
+  };
+  b.finiteClicks = [follower];
+  // The overshoot and settle, as a wheel angle added to the chain's p.
+  const slipAt = (phase) => (phase < 0.5
+    ? RATCHET_OVERSHOOT * (1 - smoothstep(Math.min(1, phase / 0.05)))
+    : RATCHET_OVERSHOOT * smoothstep((phase - 0.5) / 0.5));
+  root.userData.ratchetSlipAt = slipAt;
+  root.userData.updateClockInterfaces = (state) => {
+    const angle = state.pulleys.A.angle + slipAt(state.phase);
+    setRotorAngle(b.ratchetPulley, angle);
+    follower.update(angle);
+    state.renderedRatchetAngle = angle;
+  };
+  root.userData.reconstructionNote = 'The endless chain preserves its length and no-slip travel through the prescribed winding cycle. Grooves and moving journals have finite clearances. The click rests on the ratchet by its own weight (exact outline contact, baked offline); each winding carries p 0.05 rad past the seat so the click drops fully into the root, and p then settles back onto the click at the start of going. That settle is applied to p alone: the chain\'s matching take-up at w is not shown. Weight forces, friction and impact are not dynamically validated.';
+  Object.assign(root.userData.geometry, {
+    clickNoseRadius: CLICK_NOSE_RADIUS,
+    clickFaceUndercut: CLICK_FACE_UNDERCUT,
+    ratchetOvershoot: RATCHET_OVERSHOOT,
+    ratchetRootRadius: rootRadius,
+    ratchetTipLead: tipLead,
+    ratchetSeatAngle: seatAngle,
+    clickSeatRotation: seatRotation,
+    clickLength,
+  });
 }
 
 function endlessChainMaintainingPower(movement) {
@@ -1196,6 +1369,7 @@ function endlessChainMaintainingPower(movement) {
   };
 
   correctEndlessMaintainingChain(root);
+  seatClickAndRatchet(root);
   update(0);
   root.traverse((object) => {
     const materials = Array.isArray(object.material)

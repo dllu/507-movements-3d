@@ -1,4 +1,4 @@
-import { dualBandPawlDimensions, pawl390Angle, install390Pawls } from './dual-band-pawl-contact.js';
+import { dualBandPawlDimensions, pawl390Angle, pawl390RestingLift, install390Pawls } from './dual-band-pawl-contact.js';
 import { boredAxialCylinder, correctDualBandInterfaces, finishAlternatingDrive } from './alternating-drive-finite-parts.js';
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
@@ -688,6 +688,45 @@ function dualBandOscillationRectifier(movement) {
     };
   };
 
+  // Relative (flywheel minus carrier) angles alone, for the pawl drop history.
+  const relativeAnglesAt = (time) => {
+    const phase = positiveModulo(time, cycleDuration) / cycleDuration;
+    const rocker = rockerAmplitude * Math.sin(FULL_TURN * phase);
+    const open = pulleyRatio * rocker, crossed = -pulleyRatio * rocker;
+    const flywheel = phase < .25 ? open
+      : phase < .75 ? Math.max(carrierAmplitude, crossed + Math.PI)
+        : Math.max(carrierAmplitude + Math.PI, open + FULL_TURN);
+    return { open: flywheel - open, crossed: flywheel - crossed };
+  };
+  // A pawl cannot fall into the root in zero time. Its lift over one cycle is
+  // integrated once here: it never sits below the least-clearance lift, falls
+  // at a finite rate (0.35 rad in 0.06 s) after a crest passes, and while the
+  // receding flank still stands in front of the nose it rests on that flank.
+  // The motion is periodic, so a warm-up cycle fixes the starting state.
+  const pawlDropRate = 0.35 / 0.06;
+  const liftSteps = 32000;
+  const liftTables = {};
+  for (const key of ['open', 'crossed']) {
+    const dt = cycleDuration / liftSteps;
+    let lift = 0;
+    const table = new Float64Array(liftSteps + 1);
+    for (let pass = 0; pass < 2; pass += 1) {
+      for (let i = 0; i <= liftSteps; i += 1) {
+        const relative = relativeAnglesAt(i * dt)[key];
+        const least = pawl390Angle(relative) - dualBandPawlDimensions.seatAngle;
+        lift = Math.min(least, lift + pawlDropRate * dt);
+        lift = pawl390RestingLift(relative, lift);
+        table[i] = lift;
+      }
+    }
+    liftTables[key] = table;
+  }
+  const droppedLift = (time, key) => {
+    const x = positiveModulo(time, cycleDuration) / cycleDuration * liftSteps;
+    const i = Math.min(liftSteps - 1, Math.floor(x)), f = x - i, table = liftTables[key];
+    return table[i] + f * (table[i + 1] - table[i]);
+  };
+
   const stateAtTime = (time) => {
     const cycleTime = positiveModulo(time, cycleDuration);
     const phase = cycleTime / cycleDuration;
@@ -726,6 +765,8 @@ function dualBandOscillationRectifier(movement) {
       phase < .25 || phase >= .75,
       flywheelAngle - crossedPulleyAngle + (phase < .25 ? Math.PI : -Math.PI),
     );
+    openPawl.liftAngle = droppedLift(time, 'open');
+    crossedPawl.liftAngle = droppedLift(time, 'crossed');
     const openCurve = openCurveAtAngle(rockerAngle);
     const crossedCurve = crossedCurveAtAngle(rockerAngle);
     return {

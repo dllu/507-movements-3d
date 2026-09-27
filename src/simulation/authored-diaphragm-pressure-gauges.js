@@ -629,7 +629,8 @@ function diaphragmPressureGauge(movement) {
     new THREE.Vector3(0, -5.27, -0.73),
     new THREE.Vector3(0, -3.20, -0.73),
     new THREE.Vector3(0, -2.48, -0.76),
-    new THREE.Vector3(0, -1.40, -0.75),
+    // Ends flush with the chamber wall's inner face, in its bored port.
+    new THREE.Vector3(0, -1.475, -0.75),
   ];
   const inletCurve = new THREE.CatmullRomCurve3(
     inletPipePoints,

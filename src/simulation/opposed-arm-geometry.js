@@ -66,9 +66,10 @@ export function rigidFamilyMass(parts,families,family){
 }
 
 export function makeOpposedArmGeometry({phase=.04480311998100515,crest=.035,pivotZ=.09,
- sourceBeta={upper:.25,lower:.32},stroke=.24,segments=24}={}){
+ sourceBeta={upper:.25,lower:.32},stroke=.24,segments=24,pawlLength=.22}={}){
  const root=new THREE.Group(),parts={},families={},blocks={},p={center:sourceCenter,scale:sourceScale,teeth:33,pitch:2*Math.PI/33,phase,
-  outerRadius:1,innerRadius:338.90038109631433/sourceScale,crest,valley:-.02,pivotZ,sourceBeta,stroke,sourceSlider:source(measured.slider),arms:{}};
+  outerRadius:1,innerRadius:338.90038109631433/sourceScale,crest,valley:-.02,pivotZ,sourceBeta,stroke,sourceSlider:source(measured.slider),arms:{},
+  pawl:{halfWidth:.029,root:.03,length:pawlLength,sagitta:.008,halfThickness:.011}};
  for(const family of ['wheel','upperArm','lowerArm','upperRod','lowerRod','upper','lower','slider']){blocks[family]=new THREE.Group();root.add(blocks[family]);}
  const attach=(name,geometry,family,color,position=[0,0,0])=>{
   const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.16,roughness:.58}));mesh.name=name;mesh.position.fromArray(position);
@@ -79,11 +80,21 @@ export function makeOpposedArmGeometry({phase=.04480311998100515,crest=.035,pivo
  attach('wheelAxle',disk(.108,-.16,.315,256),'wheel',PALETTE.muted);
  attach('wheelAxleRearCap',disk(.13,-.177,-.16,256),'wheel',PALETTE.muted);
  attach('wheelAxleFrontCap',disk(.122,.315,.330,256),'wheel',PALETTE.muted);
- const pawlContours={
-  upper:[['M',641,538],['Q',646,546,653,550],['L',671,572],['Q',678,590,694,599],['L',728,611],
-   ['Q',724,582,712,564],['L',676,529],['Q',666,520,654,524],['L',641,538]],
-  lower:[['M',639,1033],['Q',634,1043,629,1051],['L',585,1077],['Q',571,1087,579,1090],
-   ['Q',605,1087,623,1075],['L',659,1059],['Q',671,1052,667,1041],['L',639,1033]]};
+ // Both pawls have the same role, so they share one blade: two circular
+ // arcs meeting at a point, springing from the full width of the radial
+ // journal (which they overlap) and lying in the pawl's own plane. Local x is
+ // radial, local -y points clockwise along the teeth.
+ const blade=(()=>{
+  const {halfWidth,root,length,sagitta}=p.pawl,tip=[0,-length],arc=(from,to,side)=>{
+   const middle=[(from[0]+to[0])/2,(from[1]+to[1])/2],chord=Math.hypot(to[0]-from[0],to[1]-from[1]),
+    normal=[side*(to[1]-from[1])/chord,-side*(to[0]-from[0])/chord],radius=(chord*chord/4+sagitta*sagitta)/(2*sagitta),
+    center=[middle[0]-(radius-sagitta)*normal[0],middle[1]-(radius-sagitta)*normal[1]],
+    a0=Math.atan2(from[1]-center[1],from[0]-center[0]),a1=Math.atan2(to[1]-center[1],to[0]-center[0]),
+    sweep=Math.atan2(Math.sin(a1-a0),Math.cos(a1-a0));
+   return Array.from({length:33},(_,i)=>[center[0]+radius*Math.cos(a0+sweep*i/32),center[1]+radius*Math.sin(a0+sweep*i/32)]);
+  };
+  return[...arc([-halfWidth,-root],tip,1),...arc(tip,[halfWidth,-root],1).slice(1)];
+ })();
  for(const key of ['upper','lower']){
   const P=source(measured[key+'Pawl']),J=source(measured[key+'Rod']),psi=Math.atan2(P[1],P[0]),
    armFamily=key+'Arm',rodFamily=key+'Rod',armLow=key==='upper'?.205:.14,armHigh=armLow+.045,
@@ -118,12 +129,10 @@ export function makeOpposedArmGeometry({phase=.04480311998100515,crest=.035,pivo
   }
   attach(key+'PawlFastenerSeat',ring(.032,.054,armHigh,armHigh+.012,128),armFamily,PALETTE.brass,[...P,0]);
   attach(key+'PawlFastener',disk(.030,armHigh-.010,armHigh+.014,128),armFamily,PALETTE.muted,[...P,0]);
-  const local=v=>{const xy=rotate(sub(source(v),P),-psi);return[xy[0],xy[1]/Math.cos(sourceBeta[key])];},
-   outline=contour(pawlContours[key],local),trimmed=clip.intersection(poly(outline),poly([[-.2,-.6],[.2,-.6],[.2,-.04],[-.2,-.04]])),
-   journal=clip.difference(poly([[-.025,-.04],[.025,-.04],[.025,.025],[-.025,.025]]),poly(circle([0,0],.012,128)));
-  attach(key+'Pawl',plate(trimmed,-.008,.008),key,PALETTE.brass);
+  const trimmed=poly(blade),journal=clip.difference(poly([[-.025,-.04],[.025,-.04],[.025,.025],[-.025,.025]]),poly(circle([0,0],.012,128)));
+  attach(key+'Pawl',plate(trimmed,-p.pawl.halfThickness,p.pawl.halfThickness),key,PALETTE.brass);
   attach(key+'PawlJournal',axisGeometry(plate(journal,-.029,.029)),key,PALETTE.brass);
-  a.pawlContour=trimmed;a.pawlTip=local(key==='upper'?[728,611]:[579,1090]);
+  a.pawlContour=trimmed;a.pawlTip=[0,-p.pawl.length];
  }
  const B=p.sourceSlider,sliderShape=clip.difference(clip.union(poly(circle([0,0],.127,128)),
   poly([[.05,-.081],[.297,-.081],[.297,.081],[.05,.081]])),poly(circle([0,0],.035,96)));
