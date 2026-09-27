@@ -105,8 +105,12 @@ export function finishRatchetBarSupports(root) {
   const frameMaterial = b.pivotStand.material;
   const sourceX = x => (x - 432) * 0.018, sourceY = y => (246 - y) * 0.018;
   const tableTop = g.rackBaseBottomY - 0.002, tableBottom = sourceY(342);
-  const table = new THREE.Mesh(new THREE.BoxGeometry(sourceX(413) - sourceX(135), tableTop - tableBottom, 0.6), frameMaterial);
-  table.position.set((sourceX(135) + sourceX(413)) / 2, (tableTop + tableBottom) / 2, -0.06);
+  // Brown runs the table's top and bottom edges into the post's left face,
+  // so the plank ends against the post (the post stands 7 px right of the
+  // plate's, clearing the bar's in-view return).
+  const tableRight = b.pivotStand.position.x - b.pivotStand.geometry.parameters.width / 2;
+  const table = new THREE.Mesh(new THREE.BoxGeometry(tableRight - sourceX(135), tableTop - tableBottom, 0.6), frameMaterial);
+  table.position.set((sourceX(135) + tableRight) / 2, (tableTop + tableBottom) / 2, -0.06);
   table.userData.role = 'source-plank-table-carrying-the-ratchet-bar';
   root.add(table);
   b.table = table;

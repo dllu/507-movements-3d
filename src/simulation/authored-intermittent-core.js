@@ -14880,8 +14880,10 @@ function parallelogramLiftAndDrawPawlRatchet(movement) {
       trailingCorners.push(points[0]);
     }
     shape.closePath();
+    // The wheel is fast on its output shaft (r 0.105): the bore is the
+    // shaft's own radius, so no annular gap shows round the shaft.
     const bore = new THREE.Path();
-    bore.absarc(0, 0, 0.18, 0, fullTurn, true);
+    bore.absarc(0, 0, 0.105, 0, fullTurn, true);
     shape.holes.push(bore);
     const wheelDepth = 0.38;
     const body = new THREE.Mesh(

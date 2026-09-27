@@ -8811,11 +8811,11 @@
       "id": 232,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-85 lane, integrated by primary agent",
+        "reviewPass": 85,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-fa-review.md",
-        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p85-review.md",
+        "note": "Pass 85: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8833,7 +8833,8 @@
         "docs/p79-disconnected-triage.md",
         "docs/p80-1-review.md",
         "docs/p81-audit-review.md",
-        "docs/p81-fa-review.md"
+        "docs/p81-fa-review.md",
+        "docs/p85-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -8845,7 +8846,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Short tip/contact corrected with inferred rocking A carrier; carrier lift, bias and holding prescribed after unsuccessful native trial. Handle B's eye (r 0.16) is fitted on its shaft, slightly fuller than the bar. Pawl C is one flat plate in the wheel's tooth plane drawing on the flank with its own finger; the retaining click is removed because Brown draws none, so the wheel dwells by prescribed friction; the band runs just outside the tips where Brown overlaps them.",
+      "limits": "Short tip/contact corrected with inferred rocking A carrier; carrier lift, bias and holding prescribed after unsuccessful native trial. Handle B's eye (r 0.16) is fitted on its shaft, slightly fuller than the bar. Pawl C is one flat plate in the wheel's tooth plane drawing on the flank with its own finger; the retaining click is removed because Brown draws none, so the wheel dwells by prescribed friction; the band runs just outside the tips where Brown overlaps them. The wheel is fast on its output shaft (bored to the shaft's radius).",
       "assessment": "reasonable"
     },
     {
@@ -10242,11 +10243,11 @@
       "id": 271,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 read-only audit lane",
-        "reviewPass": 64,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-audit-review.md",
-        "note": "Pass-64 audit: clean in default, rotated, top, back and near-seam phase captures beside the plate."
+        "reviewer": "Claude Opus 5.5 — pass-85 lane, integrated by primary agent",
+        "reviewPass": 85,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p85-review.md",
+        "note": "Pass 85: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10265,16 +10266,17 @@
         "docs/m14-last-residuals-review.md",
         "docs/pass53-user-review.md",
         "docs/p56-c-review.md",
-        "docs/p64-audit-review.md"
+        "docs/p64-audit-review.md",
+        "docs/p85-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-ratchet-bars.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "The in-view bar return after two vibrations is a prescribed demonstration reset; Brown draws no pulley bearing.",
+      "limits": "The in-view bar return after two vibrations is a prescribed demonstration reset; Brown draws no pulley bearing. The plank table runs to the fulcrum post's left face, as Brown draws it.",
       "assessment": "reasonable"
     },
     {
@@ -19265,11 +19267,11 @@
       "id": 500,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
-        "reviewPass": 84,
+        "reviewer": "Claude Opus 5.5 — pass-85 lane, integrated by primary agent",
+        "reviewPass": 85,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p84-d-review.md",
-        "note": "Pass 84: With the camera turned 32° or more toward the gauge's side (53° toward the section's side) the section figure overlaps the gauge in projection."
+        "evidence": "docs/p85-review.md",
+        "note": "Pass 85: With the camera turned 32° or more toward the gauge's side (53° toward the section's side) the section figure overlaps the gauge in projection."
       },
       "intersections": {
         "status": "known",
@@ -19294,7 +19296,8 @@
         "docs/p77-dc-review.md",
         "docs/p81-audit-review.md",
         "docs/p82-fig-review.md",
-        "docs/p84-d-review.md"
+        "docs/p84-d-review.md",
+        "docs/p85-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19303,7 +19306,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "With the camera turned 32° or more toward the gauge's side (53° toward the section's side) the section figure overlaps the gauge in projection.",
-      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads. Clearing ±60° views with the half-gauge section needs a gap of about 4.9 with the section 0.5 forward, or 7.3 without, against the present 1.86 (the plate's is about 0.2); moving it forward only balances the two sides at about 40°. In the face view the pinion journal and sector pivot bearing are carried by nothing fixed; the section's dial and glass are seated in the case wall. Brown's stem and hex union nut are modelled below the case (sizes measured from the plate).",
+      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads. Clearing ±60° views with the half-gauge section needs a gap of about 4.9 with the section 0.5 forward, or 7.3 without, against the present 1.86 (the plate's is about 0.2); moving it forward only balances the two sides at about 40°. In the face view the pinion journal and sector pivot bearing are carried by nothing fixed; the section's dial and glass are seated in the case wall. Brown's stem and hex union nut are modelled below the case (sizes measured from the plate). The dial ring runs under the bezel's inner edge.",
       "assessment": "minor"
     },
     {

@@ -574,7 +574,9 @@ function diaphragmPressureGauge(movement) {
   const pointerZeroAngle = Math.PI / 2 + maximumSectorAngle * gearRatio / 2;
 
   const dialFace = addRole(new THREE.Mesh(
-    new THREE.RingGeometry(1.56, 3.08, 96),
+    // The outer edge runs 0.01 under the bezel's inner edge (r 3.11 once the
+    // bezel is seated at the dial's plane), so no slot opens between them.
+    new THREE.RingGeometry(1.56, 3.12, 96),
     dialMaterial,
   ), 'annular-dial-face-with-center-cutaway-showing-disk-A');
   dialFace.position.z = 0.50;
