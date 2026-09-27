@@ -12,7 +12,7 @@ const meshes = {}, families = {}, assigned = new Set();
 for (const [family, names] of Object.entries({
   shaft:['inputRotor'], ahead:['aheadStrap'], astern:['asternStrap'],
   link:['linkGroup'], die:['dieBlock'], output:['outputRadiusRod'],
-  slide:['curvedSlide'], follower:['followerPin'],
+  slide:['curvedSlide'], follower:['followerPin','rockshaftArm','rockshaftStub'],
   fixed:['dieGuide','trunnionFace','trunnionShaft','slideGuidePosts'],
   reach:['reversingReachRod'],
 })) for(const name of names) for(const [j,root] of [blocks[name]].flat().entries()) {

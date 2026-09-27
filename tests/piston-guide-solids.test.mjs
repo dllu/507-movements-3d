@@ -106,11 +106,12 @@ for(const id of [328,330])test(`${id}: full-stroke swept bounds, plate crop and 
    assert.ok(m.root.userData.sweptBounds.containsBox(box(m.root)));
   }
   if(id===328){
-   // 328 frames the whole flywheel and the whole cylinder down to its bed
-   // plate rather than Brown's crop, so neither reads as broken off.
-   const fit=m.root.userData.cameraFitBounds;let cylinder,flywheel;
-   m.root.traverse(o=>{if(o.userData.role==='fixed-upright-cylinder-below-piston-rod-B')cylinder=o;if(o.userData.role==='Cartwright-input-flywheel-rim')flywheel=o;});
-   for(const part of [cylinder,flywheel]){const b=new THREE.Box3().setFromObject(part);assert.ok(fit.min.y<=b.min.y+1e-6&&fit.max.y>=b.max.y-1e-6,part.userData.role);}
+   // 328 keeps Brown's crop: the flywheel in view, the cylinder cropped
+   // below its cover (camera cropping only; the cylinder is whole).
+   const fit=m.root.userData.cameraFitBounds;let cylinder,cover;
+   m.root.traverse(o=>{if(o.userData.role==='fixed-upright-cylinder-below-piston-rod-B')cylinder=o;if(o.userData.role==='fixed-cylinder-top-cap')cover=o;});
+   const cb=new THREE.Box3().setFromObject(cover),yb=new THREE.Box3().setFromObject(cylinder);
+   assert.ok(fit.min.y<=cb.min.y&&fit.min.y>yb.min.y);
   }else{
    assert.ok(m.root.userData.cameraDistanceScale<1);
    assert.ok(!m.root.userData.sweptBounds.equals(m.root.userData.cameraFitBounds));

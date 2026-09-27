@@ -185,7 +185,9 @@ function steamHammer(movement) {
   const impactKineticEnergyJoule = 0.5 * movingMassKilogram
     * impactSpeed ** 2;
   const impactImpulseNewtonSecond = movingMassKilogram * impactSpeed;
-  const anvilTopY = -0.52;
+  // Pass 71: Brown's anvil is a low, broad block on the floor between the
+  // feet (its top 0.16 above the floor at -1.12); the rod is longer to suit.
+  const anvilTopY = -0.96;
   const hammerHeadHeight = 0.50;
   const hammerHeadBottomCenterY = anvilTopY + hammerHeadHeight / 2;
   const pistonBottomCenterY = 1.62;
@@ -540,17 +542,22 @@ function steamHammer(movement) {
 
   const anvil = addRole(new THREE.Group(), 'fixed-anvil');
   root.add(anvil);
+  const anvilMaterial = matte(PALETTE.frame, { metalness: 0.22, roughness: 0.55 });
+  const anvilFaceHeight = 0.03;
   const anvilBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.34, 0.46, 0.42, 36),
-    matte(PALETTE.brass, { metalness: 0.38, roughness: 0.40 }),
+    // Built one face-height high: hammer-working-parts.js lowers the body
+    // by the face height so the face sits on it.
+    plate(poly([[-0.6, -1.12 + anvilFaceHeight], [0.6, -1.12 + anvilFaceHeight], [0.6, -1.08 + anvilFaceHeight],
+      [0.53, -1.02 + anvilFaceHeight], [0.53, anvilTopY], [-0.53, anvilTopY], [-0.53, -1.02 + anvilFaceHeight],
+      [-0.6, -1.08 + anvilFaceHeight]]), -0.45, 0.45),
+    anvilMaterial,
   );
-  anvilBody.position.y = anvilTopY - 0.21;
   anvil.add(anvilBody);
   const anvilFace = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.40, 0.40, 0.055, 38),
-    darkMaterial,
+    plate(poly([[-0.53, anvilTopY - anvilFaceHeight], [0.53, anvilTopY - anvilFaceHeight], [0.5, anvilTopY], [-0.5, anvilTopY]]), -0.45, 0.45),
+    anvilMaterial,
   ), 'anvil-contact-face');
-  anvilFace.position.y = anvilTopY - 0.0275;
+  anvilFace.geometry.parameters = { height: anvilFaceHeight };
   anvil.add(anvilFace);
 
   const steamChamber = addRole(new THREE.Mesh(

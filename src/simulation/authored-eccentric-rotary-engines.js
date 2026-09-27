@@ -1,700 +1,232 @@
 import * as THREE from 'three';
-import {portedCasingGeometry, roundPortPipeGeometry} from './round-port-pipes.js';
-import { addBackCover } from './cutaway-back-plates.js';
-import {capsule,circle,plate,poly,polygonClipping,sector,spline} from './finite-plate-geometry.js';
+import { PALETTE, markShadows, matte } from './primitives.js';
+import { latheSectionGeometry } from './cutaway-section.js';
 import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
+  circlePolygon,
+  partPlate,
+  pointInPolygon,
+  polygonClipping,
+  ringPolygon,
+  safeClip,
+  sectionPlate,
+  steamVolume,
+} from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
+const DEG = Math.PI / 180;
+const rect = (x0, y0, x1, y1) => ringPolygon([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
 
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function makeTubeThrough(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points,
-    false,
-    'centripetal',
-  );
-  const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, points.length * 4, radius, 10, false),
-    material,
-  );
-  tube.userData.role = role;
-  return tube;
-}
-
-function arcPoints(radius, startAngle, endAngle, z, count = 88) {
-  const points = [];
-  for (let index = 0; index <= count; index += 1) {
-    const angle = THREE.MathUtils.lerp(
-      startAngle,
-      endAngle,
-      index / count,
-    );
-    points.push(new THREE.Vector3(
-      radius * Math.cos(angle),
-      radius * Math.sin(angle),
-      z,
-    ));
-  }
-  return points;
-}
-
+// Movement 425, rotary engine with an eccentric piston and a sliding
+// abutment (pass 71 rebuild from Brown's plate).
+//
+// Shaft B runs through the centre of cylinder A; piston C is an eccentric
+// fast on it and touches the bore along one line, sealed by the packing
+// strip Brown hatches in C. Abutment D slides in a guide in the top of the
+// casing and rides on C, so the crescent between C and the bore is divided
+// at D and at the contact line. The right neck admits steam just right of D
+// (Brown's downward arrow); the left neck educts just left of it. C turns
+// clockwise (Brown's arrow): the space from D round to the contact line takes
+// steam and grows; the space from the contact line round to D is swept out.
+// While the contact line passes between the two ports the live space is
+// open to the eduction port as well: this engine's dead point.
 function eccentricRotaryEngine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
-  const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const sourceScale = 0.42;
-  const sourceEccentricity = 2;
-  const sourcePistonRadius = 5;
-  const sourceCylinderInnerRadius = 7;
-  const sourceCylinderOuterRadius = 8;
-  const sourceAbutmentNoseRadius = 1;
-  const sourceAbutmentLocalNoseCenter = 5.133975;
-  const sourceSealShoeInnerRadius = 6;
-  const sourceSealShoeOuterRadius = 6.974937;
-  const sourceSealShoeHalfWidth = 0.5;
-  const eccentricity = sourceEccentricity * sourceScale;
-  const pistonRadius = sourcePistonRadius * sourceScale;
-  const cylinderInnerRadius = sourceCylinderInnerRadius * sourceScale;
-  const cylinderOuterRadius = sourceCylinderOuterRadius * sourceScale;
-  const abutmentNoseRadius = sourceAbutmentNoseRadius * sourceScale;
-  const abutmentLocalNoseCenter = sourceAbutmentLocalNoseCenter
-    * sourceScale;
-  const sealShoeInnerRadius = sourceSealShoeInnerRadius * sourceScale;
-  const sealShoeOuterRadius = sourceSealShoeOuterRadius * sourceScale;
-  const sealShoeHalfWidth = sourceSealShoeHalfWidth * sourceScale;
-  const contactCenterDistance = pistonRadius + abutmentNoseRadius;
-  const shaftCenter = new THREE.Vector3(0, 0, 0);
-  const passClearance = cylinderInnerRadius - sealShoeOuterRadius;
+  const angularSpeed = FULL_TURN / cycleDuration; // clockwise
 
-  const stateAtInputAngle = (
-    inputAngle,
-    inputSpeed = inputAngularSpeed,
-    inputAcceleration = 0,
-  ) => {
-    const cosine = Math.cos(inputAngle);
-    const sine = Math.sin(inputAngle);
-    const rotorAngle = -inputAngle;
-    const rotorAngularSpeed = -inputSpeed;
-    const rotorAngularAcceleration = -inputAcceleration;
-    const eccentricCenter = new THREE.Vector3(
-      -eccentricity * sine,
-      -eccentricity * cosine,
-      0,
-    );
-    const eccentricCenterPrime = new THREE.Vector3(
-      -eccentricity * cosine,
-      eccentricity * sine,
-      0,
-    );
-    const eccentricCenterSecond = new THREE.Vector3(
-      eccentricity * sine,
-      eccentricity * cosine,
-      0,
-    );
-    const eccentricCenterVelocity = eccentricCenterPrime.clone()
-      .multiplyScalar(inputSpeed);
-    const eccentricCenterAcceleration = eccentricCenterSecond.clone()
-      .multiplyScalar(inputSpeed ** 2)
-      .addScaledVector(eccentricCenterPrime, inputAcceleration);
+  // Official-trace units (bore 7), checked against Brown's plate at 37.9 px
+  // of the doubled raster per unit.
+  const boreRadius = 7;
+  const eccentricity = 2;
+  const pistonRadius = boreRadius - eccentricity - 0.005;
+  const shaftRadius = 1.45;
+  const abutmentHalfWidth = 0.55;
+  const slotHalfWidth = 0.58;
+  const abutmentLength = 5.8;
+  const slotTop = 13.8;
+  const towerHalfWidth = 1.45;
+  const towerTop = 14.6;
+  const neckTop = 10.4;
+  const channelInner = 2.1;
+  const channelOuter = 3.5;
+  const depth = 2.4;
+  const zBack = -depth;
+  const backThickness = 0.35;
 
-    const contactRadicand = contactCenterDistance ** 2
-      - eccentricCenter.x ** 2;
-    const verticalContactSeparation = Math.sqrt(contactRadicand);
-    const verticalContactSeparationPrime = -eccentricCenter.x
-      * eccentricCenterPrime.x / verticalContactSeparation;
-    const verticalContactSeparationSecond = -(
-      eccentricCenterPrime.x ** 2
-        + eccentricCenter.x * eccentricCenterSecond.x
-    ) / verticalContactSeparation - (
-      eccentricCenter.x * eccentricCenterPrime.x
-    ) ** 2 / verticalContactSeparation ** 3;
-    const abutmentNoseCenter = new THREE.Vector3(
-      0,
-      eccentricCenter.y + verticalContactSeparation,
-      0,
-    );
-    const abutmentNoseCenterPrime = new THREE.Vector3(
-      0,
-      eccentricCenterPrime.y + verticalContactSeparationPrime,
-      0,
-    );
-    const abutmentNoseCenterSecond = new THREE.Vector3(
-      0,
-      eccentricCenterSecond.y + verticalContactSeparationSecond,
-      0,
-    );
-    const abutmentVelocity = abutmentNoseCenterPrime.clone()
-      .multiplyScalar(inputSpeed);
-    const abutmentAcceleration = abutmentNoseCenterSecond.clone()
-      .multiplyScalar(inputSpeed ** 2)
-      .addScaledVector(abutmentNoseCenterPrime, inputAcceleration);
-    const abutmentSourceGroupY = abutmentNoseCenter.y
-      + abutmentLocalNoseCenter;
-    const centerLine = abutmentNoseCenter.clone().sub(eccentricCenter);
-    const contactNormal = centerLine.clone().multiplyScalar(
-      1 / contactCenterDistance,
-    );
-    const pistonAbutmentContactPoint = eccentricCenter.clone()
-      .addScaledVector(contactNormal, pistonRadius);
-    const abutmentContactPoint = abutmentNoseCenter.clone()
-      .addScaledVector(contactNormal, -abutmentNoseRadius);
-
-    const cylinderContactDirection = eccentricCenter.clone()
-      .multiplyScalar(1 / eccentricity);
-    const pistonCylinderContactPoint = eccentricCenter.clone()
-      .addScaledVector(cylinderContactDirection, pistonRadius);
-    const cylinderInnerContactPoint = cylinderContactDirection.clone()
-      .multiplyScalar(cylinderInnerRadius);
-    const sealShoeOuterPoint = cylinderContactDirection.clone()
-      .multiplyScalar(sealShoeOuterRadius);
-    const pistonCylinderTangencyResidual = pistonCylinderContactPoint
-      .distanceTo(cylinderInnerContactPoint);
-    const pistonAbutmentContactResidual = pistonAbutmentContactPoint
-      .distanceTo(abutmentContactPoint);
-    const abutmentCenterDistanceResidual = centerLine.length()
-      - contactCenterDistance;
-    const sealShoePassVerticalClearance = inputAngle === Math.PI
-      ? abutmentNoseCenter.y - abutmentNoseRadius
-        - sealShoeOuterPoint.y
-      : null;
-
-    return {
-      abutmentAcceleration,
-      abutmentCenterDistanceResidual,
-      abutmentContactPoint,
-      abutmentGuideResidual: abutmentNoseCenter.x,
-      abutmentNoseCenter,
-      abutmentNoseCenterPrime,
-      abutmentNoseCenterSecond,
-      abutmentSourceGroupY,
-      abutmentVelocity,
-      contactNormal,
-      contactRadicand,
-      cylinderInnerContactPoint,
-      eccentricCenter,
-      eccentricCenterAcceleration,
-      eccentricCenterPrime,
-      eccentricCenterSecond,
-      eccentricCenterVelocity,
-      inductionSide: 'right-of-abutment-D',
-      inputAcceleration,
-      inputAngle,
-      inputSpeed,
-      pistonAbutmentContactPoint,
-      pistonAbutmentContactResidual,
-      pistonCylinderContactPoint,
-      pistonCylinderTangencyResidual,
-      rotorAngle,
-      rotorAngularAcceleration,
-      rotorAngularSpeed,
-      sealShoeOuterPoint,
-      sealShoePassVerticalClearance,
-      steamFlowDirection: 'right-port-to-chamber-to-left-port',
-      verticalContactSeparation,
-      verticalContactSeparationPrime,
-      verticalContactSeparationSecond,
-    };
-  };
+  const channelAngle = (x) => Math.asin(x / boreRadius);
+  const inletOpen = [channelAngle(channelInner), channelAngle(channelOuter)];
+  const exhaustOpen = [FULL_TURN - inletOpen[1], FULL_TURN - inletOpen[0]];
 
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
+    // clockwise angle of the contact line from the top; Brown: at the bottom
+    const contactAngle = THREE.MathUtils.euclideanModulo(Math.PI + angularSpeed * cycleTime, FULL_TURN);
+    const direction = [Math.sin(contactAngle), Math.cos(contactAngle)];
+    const pistonCenter = [eccentricity * direction[0], eccentricity * direction[1]];
+    const noseCenterY = pistonCenter[1]
+      + Math.sqrt((pistonRadius + abutmentHalfWidth) ** 2 - pistonCenter[0] ** 2);
+    const rotorAngle = -(angularSpeed * cycleTime);
+    // live space A (D round to the contact line): the inlet opens as the
+    // contact line crosses its mouth; the space blows down as the line
+    // crosses the eduction mouth.
+    const opening = THREE.MathUtils.smoothstep(contactAngle, inletOpen[0], inletOpen[1]);
+    const release = THREE.MathUtils.smootherstep(contactAngle, exhaustOpen[0], exhaustOpen[1]);
     return {
-      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
-      cycleTime,
-      phase: cycleTime / cycleDuration,
+      cycleTime, phase: cycleTime / cycleDuration, contactAngle, direction, pistonCenter, noseCenterY, rotorAngle,
+      livePressure: opening * (1 - release),
+      contactPoint: [boreRadius * direction[0], boreRadius * direction[1]],
+      abutmentTop: noseCenterY + abutmentLength,
     };
   };
 
-  const lowAbutmentState = stateAtInputAngle(0);
-  const highAbutmentState = stateAtInputAngle(Math.PI);
-  const abutmentMinimumNoseCenterY = lowAbutmentState.abutmentNoseCenter.y;
-  const abutmentMaximumNoseCenterY = highAbutmentState.abutmentNoseCenter.y;
-  const abutmentStroke = abutmentMaximumNoseCenterY
-    - abutmentMinimumNoseCenterY;
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.24, roughness: 0.54 });
+  const backMaterial = matte(0x7d8786, { metalness: 0.18, roughness: 0.6 });
+  const pistonMaterial = matte(PALETTE.driver, { metalness: 0.2, roughness: 0.46 });
+  const abutmentMaterial = matte(PALETTE.driven, { metalness: 0.21, roughness: 0.46 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.3, roughness: 0.43 });
 
-  const geometry = {
-    abutmentLocalNoseCenter,
-    abutmentMaximumNoseCenterY,
-    abutmentMinimumNoseCenterY,
-    abutmentNoseRadius,
-    abutmentStroke,
-    contactCenterDistance,
-    cycleDuration,
-    cylinderInnerRadius,
-    cylinderOuterRadius,
-    eccentricity,
-    inputAngularSpeed,
-    passClearance,
-    pistonRadius,
-    sealShoeHalfWidth,
-    sealShoeInnerRadius,
-    sealShoeOuterRadius,
-    shaftCenter: shaftCenter.clone(),
-    sourceAbutmentLocalNoseCenter,
-    sourceAbutmentNoseRadius,
-    sourceCylinderInnerRadius,
-    sourceCylinderOuterRadius,
-    sourceEccentricity,
-    sourcePistonRadius,
-    sourceScale,
-    sourceSealShoeHalfWidth,
-    sourceSealShoeInnerRadius,
-    sourceSealShoeOuterRadius,
+  // ---- casing A (sectioned) -------------------------------------------------------------------
+  const flank = new THREE.SplineCurve([
+    [4.25, 7.2], [5.7, 6.0], [7.45, 3.5], [8.2, 0], [7.75, -3.4], [6.55, -5.5], [5.55, -6.35], [6.3, -6.9], [7.85, -7.0],
+  ].map(([x, y]) => new THREE.Vector2(x, y))).getPoints(96).map((p) => [p.x, p.y]);
+  const rightSide = [
+    [towerHalfWidth, towerTop], [towerHalfWidth, neckTop], [5.1, neckTop], [5.1, 9.6], [4.25, 9.6],
+    ...flank, [7.85, -8.05],
+  ];
+  const outline = ringPolygon([...rightSide, ...rightSide.slice().reverse().map(([x, y]) => [-x, y])]);
+  const bore = circlePolygon([0, 0], boreRadius, 360);
+  const channels = {
+    inlet: polygonClipping.difference(rect(channelInner, 5, channelOuter, neckTop + 0.2), bore),
+    eduction: polygonClipping.difference(rect(-channelOuter, 5, -channelInner, neckTop + 0.2), bore),
   };
+  const slot = rect(-slotHalfWidth, 5, slotHalfWidth, slotTop);
+  const cavity = polygonClipping.union(bore, channels.inlet, channels.eduction, slot);
+  const casing = sectionPlate(polygonClipping.difference(outline, cavity), zBack, 0, frameMaterial,
+    'sectioned-cylinder-A-with-two-port-necks-and-abutment-guide');
+  root.add(casing);
+  const back = sectionPlate(polygonClipping.difference(outline, circlePolygon([0, 0], shaftRadius * 0.55 + 0.01, 48)),
+    zBack - backThickness, zBack, backMaterial, 'solid-back-cover-of-cylinder-A');
+  back.material = [backMaterial, backMaterial];
+  root.add(back);
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.24,
-    roughness: 0.54,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.34,
-    roughness: 0.41,
-  });
-  const pistonMaterial = matte(PALETTE.driver, {
-    metalness: 0.20,
-    roughness: 0.46,
-  });
-  const abutmentMaterial = matte(PALETTE.driven, {
-    metalness: 0.21,
-    roughness: 0.46,
-  });
-  const steamMaterial = matte(0xe66f4a, {
-    opacity: 0.21,
-    roughness: 0.60,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const exhaustMaterial = matte(0x4a93a8, {
-    opacity: 0.19,
-    roughness: 0.64,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
-
-  const topGapHalfAngle = Math.asin(0.5 / sourceCylinderInnerRadius);
-  const housingArcStart = Math.PI / 2 + topGapHalfAngle;
-  const housingArcEnd = Math.PI / 2 + FULL_TURN - topGapHalfAngle;
-  // Brown's two ports pierce the top of the bore on either side of the
-  // abutment and rise through the casing into the necks.
-  const portInnerX = 0.97;
-  const portOuterX = 1.45;
-  const portWallThickness = 0.08;
-  const portMeanRadius = (cylinderInnerRadius + cylinderOuterRadius) / 2;
-  const portNearAngle = Math.asin(portInnerX / portMeanRadius);
-  const portFarAngle = Math.asin(portOuterX / portMeanRadius);
-  const boreSectors = (inner, outer) => polygonClipping.union(
-    sector(inner, outer, housingArcStart, Math.PI / 2 + portNearAngle, 256),
-    sector(inner, outer, Math.PI / 2 + portFarAngle, FULL_TURN + Math.PI / 2 - portFarAngle, 1280),
-    sector(inner, outer, Math.PI / 2 - portNearAngle, housingArcEnd - FULL_TURN, 256),
-  );
-  const housingBack = new THREE.Mesh(
-    plate(boreSectors(cylinderInnerRadius + 0.00003, cylinderOuterRadius), -0.41, 0.63),
-    frameMaterial,
-  );
-  housingBack.position.z = 0;
-  housingBack.userData.role = 'fixed-annular-cutaway-body-of-cylinder-A';
-  root.add(housingBack);
-  const innerCylinderWall = makeTubeThrough(
-    arcPoints(
-      cylinderInnerRadius,
-      housingArcStart,
-      housingArcEnd,
-      -0.04,
-    ),
-    0.12,
-    frameMaterial,
-    'fixed-inner-circular-wall-of-cylinder-A',
-  );
-  const outerCylinderWall = makeTubeThrough(
-    arcPoints(
-      cylinderOuterRadius,
-      housingArcStart,
-      housingArcEnd,
-      -0.04,
-    ),
-    0.12,
-    frameMaterial,
-    'fixed-outer-circular-wall-of-cylinder-A',
-  );
-  innerCylinderWall.geometry.dispose(); outerCylinderWall.geometry.dispose();
-  innerCylinderWall.geometry = plate(boreSectors(cylinderInnerRadius + 0.00003, cylinderInnerRadius + 0.12), 0.63, 0.67);
-  outerCylinderWall.geometry = plate(boreSectors(cylinderOuterRadius - 0.12, cylinderOuterRadius), 0.63, 0.67);
-  root.add(innerCylinderWall, outerCylinderWall);
-
-  const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(8.10, 0.28, 1.42),
-    frameMaterial,
-  );
-  foundation.position.set(0, -cylinderOuterRadius - 0.14, -0.14);
-  foundation.userData.role = 'fixed-foundation-of-rotary-engine-A';
-  root.add(foundation);
-
-  // Brown's pear-shaped outer casing: its wall swells out round the bore,
-  // pinches in above the feet and rises at the top into two necks whose
-  // flanges meet the abutment guide. Each port is a walled passage from its
-  // window in the bore up through the flange. Coordinates are scaled from
-  // the plate about the centre of B (0.0113 units per half-pixel), with the
-  // swell widened slightly for the source's thicker bore wall.
-  const pearLeft = spline([
-    [-2.70, -3.29], [-2.42, -3.05], [-2.45, -2.85], [-3.00, -2.25],
-    [-3.60, -1.16], [-3.77, -0.03], [-3.70, 0.87], [-3.33, 1.80],
-    [-2.45, 2.70], [-1.88, 3.25], [-1.83, 3.60], [-1.83, 4.08],
-  ]);
-  const flangeBottom = 4.04;
-  const flangeTop = 4.43;
-  const guideRailOuterX = 0.44;
-  const casingHalf = side => {
-    const m = ([x, y]) => [side * x, y];
-    const rect = (x0, x1, y0, y1) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]].map(m));
-    const solid = polygonClipping.union(
-      ...pearLeft.slice(1).map((point, index) => capsule(m(pearLeft[index]), m(point), 0.08, 8)),
-      rect(-2.17, -guideRailOuterX, flangeBottom, flangeTop),
-      rect(-2.17, -1.83, flangeBottom - 0.24, flangeBottom),
-      poly([[-2.40, -2.98], [-3.15, -cylinderOuterRadius], [-2.20, -cylinderOuterRadius]].map(m)),
-    );
-    return polygonClipping.difference(solid,
-      poly(circle([0, 0], cylinderOuterRadius, 1536)),
-      poly([[-9, -9], [9, -9], [9, -cylinderOuterRadius], [-9, -cylinderOuterRadius]]));
-  };
-  // Pass 56: each port neck is a round bored pipe standing on the cylinder
-  // and rising through the flange; its bore opens at the flange top by a
-  // square hole in the flange's middle layer only.
-  const portZ = 0.11, portBore = (portOuterX - portInnerX) / 2, portPipeOuter = portBore + portWallThickness;
-  const portCenterX = (portInnerX + portOuterX) / 2;
-  const portHole = side => poly([[side * portInnerX, 2.0], [side * portOuterX, 2.0], [side * portOuterX, flangeTop + 1], [side * portInnerX, flangeTop + 1]]);
-  const neckLeft = new THREE.Mesh(portedCasingGeometry(casingHalf(1), -0.41, 0.63, portZ, portBore, [portHole(-1)]), frameMaterial);
-  neckLeft.userData.role = 'left-half-of-pear-casing-with-eduction-neck-of-cylinder-A';
-  const neckRight = new THREE.Mesh(portedCasingGeometry(casingHalf(-1), -0.41, 0.63, portZ, portBore, [portHole(1)]), frameMaterial);
-  neckRight.userData.role = 'right-half-of-pear-casing-with-induction-neck-of-cylinder-A';
-  root.add(neckLeft, neckRight);
-  const portFootY = Math.sqrt(cylinderOuterRadius ** 2 - (portCenterX + portPipeOuter) ** 2) + 0.005;
-  const portPipes = [-1, 1].map((side) => {
-    const pipe = new THREE.Mesh(roundPortPipeGeometry(new THREE.Vector3(side * portCenterX, portFootY, portZ),
-      new THREE.Vector3(side * portCenterX, flangeTop, portZ), portBore, portPipeOuter), frameMaterial);
-    pipe.userData.role = side < 0 ? 'left-round-eduction-port-pipe' : 'right-round-induction-port-pipe';
-    root.add(pipe);
-    return pipe;
-  });
-
-  const guideTower = new THREE.Group();
-  guideTower.userData.role = 'fixed-vertical-guide-for-sliding-abutment-D';
-  for (const side of [-1, 1]) {
-    const rail = new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, 3.10, 0.92),
-      frameMaterial,
-    );
-    rail.position.set(side * 0.33, 4.55, 0.25);
-    rail.userData.role = side < 0
-      ? 'left-guide-rail-for-abutment-D'
-      : 'right-guide-rail-for-abutment-D';
-    guideTower.add(rail);
-  }
-  // The cap is flush with the rails' outer faces and depth, so it reads as
-  // the top of one guide rather than a separate block above it.
-  const guideCap = new THREE.Mesh(
-    new THREE.BoxGeometry(0.88, 0.24, 0.92),
-    frameMaterial,
-  );
-  guideCap.position.set(0, 6.219, 0.25);
-  guideCap.userData.role = 'cap-of-abutment-D-guide';
-  guideTower.add(guideCap);
-  root.add(guideTower);
-
+  // ---- piston C on shaft B, abutment D ---------------------------------------------------------
   const rotor = new THREE.Group();
   rotor.userData.role = 'eccentric-piston-C-fast-on-shaft-B';
-  const eccentricPiston = cylinderAlongZ(
-    pistonRadius,
-    0.70,
-    pistonMaterial,
-    512,
-  );
-  eccentricPiston.position.set(0, -eccentricity, 0.22);
-  eccentricPiston.userData.role = 'circular-body-of-eccentric-piston-C';
-  rotor.add(eccentricPiston);
-  const eccentricMarker = cylinderAlongZ(0.17, 0.82, whiteMaterial, 24);
-  eccentricMarker.position.set(0, -eccentricity, 0.31);
-  eccentricMarker.userData.role = 'visible-center-marker-of-eccentric-piston-C';
-  rotor.add(eccentricMarker);
-  const sealShoe = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      2 * sealShoeHalfWidth,
-      sealShoeOuterRadius - sealShoeInnerRadius,
-      0.80,
-    ),
-    pistonMaterial,
-  );
-  sealShoe.position.set(
-    0,
-    -(sealShoeInnerRadius + sealShoeOuterRadius) / 2,
-    0.24,
-  );
-  sealShoe.userData.role =
-    'outer-sealing-tongue-of-piston-C-that-passes-abutment-D';
-  rotor.add(sealShoe);
-  const shaftToEccentricCenter = new THREE.Mesh(
-    new THREE.BoxGeometry(eccentricity, 0.16, 0.34),
-    darkMaterial,
-  );
-  shaftToEccentricCenter.position.set(0, -eccentricity / 2, 0.62);
-  shaftToEccentricCenter.rotation.z = Math.PI / 2;
-  shaftToEccentricCenter.userData.role =
-    'rigid-eccentric-offset-from-shaft-B-to-piston-C-center';
-  rotor.add(shaftToEccentricCenter);
+  const packingHalf = 0.46;
+  // In the rotor frame at angle 0 the contact line is at the bottom.
+  const pistonC = partPlate(polygonClipping.difference(
+    circlePolygon([0, -eccentricity], pistonRadius, 256),
+    rect(-packingHalf, -eccentricity - pistonRadius - 0.1, packingHalf, -eccentricity - pistonRadius + 0.8),
+    circlePolygon([0, 0], shaftRadius, 64)),
+  zBack + 0.01, -0.01, pistonMaterial, 'eccentric-piston-C');
+  const packing = partPlate(polygonClipping.intersection(
+    rect(-packingHalf + 0.004, -eccentricity - pistonRadius - 0.1, packingHalf - 0.004, -eccentricity - pistonRadius + 0.8),
+    circlePolygon([0, -eccentricity], pistonRadius, 256)),
+  zBack + 0.01, -0.01, darkMaterial, 'packing-strip-of-C-on-the-contact-line');
+  const shaftB = new THREE.Mesh(latheSectionGeometry(
+    [[0, zBack - backThickness - 1.0], [shaftRadius * 0.55, zBack - backThickness - 1.0],
+      [shaftRadius * 0.55, zBack], [shaftRadius, zBack], [shaftRadius, -0.012], [0, -0.012]],
+    { segments: 64, phiStart: 0, phiLength: FULL_TURN }), darkMaterial);
+  shaftB.rotation.x = Math.PI / 2;
+  shaftB.userData.role = 'central-shaft-B';
+  rotor.add(pistonC, packing, shaftB);
   root.add(rotor);
 
-  const shaftB = cylinderAlongZ(0.30, 1.24, darkMaterial, 36);
-  shaftB.position.z = 0.34;
-  shaftB.userData.role = 'central-main-shaft-B';
-  // B turns with the piston C keyed fast on it.
-  rotor.add(shaftB);
-
-  const abutmentD = new THREE.Group();
-  abutmentD.userData.role =
-    'single-vertically-sliding-abutment-D-between-induction-and-eduction';
-  const abutmentNose = cylinderAlongZ(
-    abutmentNoseRadius,
-    0.74,
-    abutmentMaterial,
-    40,
+  const noseOutline = polygonClipping.union(
+    circlePolygon([0, 0], abutmentHalfWidth, 48),
+    rect(-abutmentHalfWidth, 0, abutmentHalfWidth, abutmentLength),
   );
-  // The source nose is a 60-degree circular cap, not a full round roller.
-  const noseHalfAngle = Math.PI / 6;
-  const noseArc = Array.from({length:129},(_,i)=>{
-    const angle=3*Math.PI/2-noseHalfAngle+2*noseHalfAngle*i/128;
-    return [abutmentNoseRadius*Math.cos(angle),abutmentNoseRadius*Math.sin(angle)];
-  });
-  abutmentNose.geometry.dispose();
-  abutmentNose.geometry = plate(poly(noseArc),-0.37,0.37);
-  abutmentNose.rotation.set(0,0,0);
-  abutmentNose.position.z = 0.26;
-  abutmentNose.userData.role =
-    'radius-one-contact-nose-of-sliding-abutment-D';
-  abutmentD.add(abutmentNose);
-  const abutmentStem = new THREE.Mesh(
-    new THREE.BoxGeometry(0.42, 2.68 + abutmentNoseRadius*Math.cos(Math.PI/6), 0.74),
-    abutmentMaterial,
-  );
-  abutmentStem.position.set(0, (2.68-abutmentNoseRadius*Math.cos(Math.PI/6))/2, 0.26);
-  abutmentStem.userData.role = 'guided-stem-of-sliding-abutment-D';
-  abutmentD.add(abutmentStem);
+  const abutmentD = partPlate(noseOutline, zBack + 0.01, -0.01, abutmentMaterial, 'sliding-abutment-D');
   root.add(abutmentD);
 
-  const pistonAbutmentContactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.11, 22, 14),
-    whiteMaterial,
-  );
-  pistonAbutmentContactMarker.userData.role =
-    'instantaneous-sealing-contact-between-C-and-D';
-  root.add(pistonAbutmentContactMarker);
-
-  // The dark back of each port passage, from the bore window to the flange.
-  const inductionPort = new THREE.Mesh(
-    new THREE.BoxGeometry(portOuterX - portInnerX, flangeTop - 2.80, 0.06),
-    frameMaterial,
-  );
-  inductionPort.position.set((portInnerX + portOuterX) / 2, (flangeTop + 2.80) / 2, -0.38);
-  inductionPort.userData.role = 'right-induction-port';
-  const eductionPort = inductionPort.clone();
-  eductionPort.position.x = -(portInnerX + portOuterX) / 2;
-  eductionPort.userData.role = 'left-eduction-port';
-  root.add(inductionPort, eductionPort);
-  const inductionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 22, 14),
-    steamMaterial,
-  );
-  inductionIndicator.position.set(1.23, 3.10, 0.45);
-  inductionIndicator.userData.role =
-    'right-to-chamber-induction-flow-indicator';
-  const eductionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 22, 14),
-    exhaustMaterial,
-  );
-  eductionIndicator.position.set(-1.23, 3.10, 0.45);
-  eductionIndicator.userData.role =
-    'chamber-to-left-eduction-flow-indicator';
-  root.add(inductionIndicator, eductionIndicator);
+  // ---- steam --------------------------------------------------------------------------------------
+  const steamZ = [zBack + 0.015, -0.015];
+  const steam = {
+    live: steamVolume('steam-in-space-from-D-to-the-contact-line', ...steamZ),
+    swept: steamVolume('steam-in-space-from-the-contact-line-to-D', ...steamZ),
+    inlet: steamVolume('live-steam-in-right-induction-neck', ...steamZ),
+    eduction: steamVolume('exhaust-steam-in-left-eduction-neck', ...steamZ),
+  };
+  for (const mesh of Object.values(steam)) root.add(mesh);
+  steam.inlet.userData.setRegion(channels.inlet, 1);
+  steam.eduction.userData.setRegion(channels.eduction, 0);
+  const report = { pieces: [] };
+  const updateSteam = (state) => {
+    const [dx, dy] = state.direction;
+    const splitter = ringPolygon([[-0.012, 6.6], [0.012, 6.6], [0.012, 7.2], [-0.012, 7.2]]
+      .map(([x, y]) => [x * dy + y * dx, -x * dx + y * dy]));
+    const pieces = safeClip('difference', bore,
+      circlePolygon(state.pistonCenter, pistonRadius + 0.01, 256),
+      polygonClipping.union(circlePolygon([0, state.noseCenterY], abutmentHalfWidth + 0.01, 32),
+        rect(-abutmentHalfWidth - 0.01, state.noseCenterY, abutmentHalfWidth + 0.01, boreRadius + 1)),
+      splitter);
+    // a point midway across the crescent at the given clockwise angle
+    const mid = (angle) => {
+      const u = [Math.sin(angle), Math.cos(angle)];
+      const cu = state.pistonCenter[0] * u[0] + state.pistonCenter[1] * u[1];
+      const surface = cu + Math.sqrt(pistonRadius ** 2 - eccentricity ** 2 + cu ** 2);
+      const radius = (surface + boreRadius) / 2;
+      return [radius * u[0], radius * u[1]];
+    };
+    const probe = mid(state.contactAngle / 2);
+    const live = [];
+    const swept = [];
+    for (const piece of pieces) {
+      (pointInPolygon(probe, piece) ? live : swept).push(piece);
+    }
+    steam.live.userData.setRegion(live, state.livePressure);
+    steam.swept.userData.setRegion(swept, 0);
+    report.pieces = pieces.length;
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
-    rotor.rotation.z = state.rotorAngle;
-    abutmentD.position.set(0, state.abutmentNoseCenter.y, 0);
-    pistonAbutmentContactMarker.position.copy(
-      state.pistonAbutmentContactPoint,
-    );
-    pistonAbutmentContactMarker.position.z = 0.72;
-    const liftFraction = (
-      state.abutmentNoseCenter.y - abutmentMinimumNoseCenterY
-    ) / abutmentStroke;
-    inductionIndicator.scale.setScalar(0.72 + 0.20 * (1 - liftFraction));
-    eductionIndicator.scale.setScalar(0.72 + 0.20 * liftFraction);
+    rotor.rotation.z = Math.atan2(state.direction[0], -state.direction[1]);
+    abutmentD.position.set(0, state.noseCenterY, 0);
+    updateSteam(state);
+    return state;
   };
 
-  const sourceState = stateAtInputAngle(0);
   root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'shaft-fast-eccentric-circular-piston-tangent-to-fixed-cylinder-with-cam-lifted-sliding-port-abutment',
-    blocks: {
-      abutmentD,
-      abutmentNose,
-      abutmentStem,
-      eccentricMarker,
-      eccentricPiston,
-      eductionIndicator,
-      eductionPort,
-      foundation,
-      guideCap,
-      guideTower,
-      housingBack,
-      inductionIndicator,
-      inductionPort,
-      innerCylinderWall,
-      neckLeft,
-      neckRight,
-      outerCylinderWall,
-      pistonAbutmentContactMarker,
-      rotor,
-      sealShoe,
-      shaftB,
-      shaftToEccentricCenter,
-    },
-    degreesOfFreedom: {
-      abutmentVerticalPositionIndependent: false,
-      eccentricPistonRotationIndependent: false,
-      independentPrescribedInputs: 1,
-      operatingDegreesOfFreedom: 1,
-    },
+    animationTiming: { authoredCyclePeriod: cycleDuration, targetCycleDuration: cycleDuration },
+    archetype: 'shaft-fast-eccentric-circular-piston-tangent-to-fixed-cylinder-with-cam-lifted-sliding-port-abutment',
+    blocks: { casing, back, rotor, pistonC, packing, shaftB, abutmentD, steam },
+    degreesOfFreedom: { independentPrescribedInputs: 1, operatingDegreesOfFreedom: 1 },
     dynamics: {
-      abutmentConstraint:
-        'D is treated as a massless translating cam follower held tangent to C; spring force and impact are not solved.',
-      portIndicators:
-        'The right induction and left eduction markers reproduce Brown’s arrows; they are not pressure or mass-flow solutions.',
-      pressureExpansionCutoffLeakageFrictionInertiaAndLoadsModeled: false,
-      sourceSpecifiesAbsoluteDimensionsTimingMaterialsPressuresOrLoads: false,
+      steam: 'Steam volumes are the actual pieces of the crescent after C, D and the contact line divide it. The space from D round to the contact line is live once the contact line has passed the induction mouth and is blown down as it passes the eduction mouth; the space ahead of the contact line is swept to the eduction neck.',
+      abutmentLoad: 'D is kept on C; the steam or spring load that does it is not modelled.',
     },
     fidelity: 'authored',
-    geometry,
-    mechanism:
-      'Fixed cylinder A has a central shaft B and a 7-unit inner radius. Circular piston C is fast on B with a 2-unit eccentricity and 5-unit radius, so C remains internally tangent to A at exactly one point while rotating with the shaft. The single abutment D slides only on the vertical centerline between the right induction and left eduction ports. Its radius-1 nose remains externally tangent to C by exact circle-line cam closure, lifting four units as C approaches the top so the outer sealing tongue can pass.',
-    motion: {
-      abutmentStroke,
-      crankDirection: 'clockwise',
-      cycleDuration,
-      inputAngularSpeed,
-      pistonRevolutionsPerCycle: 1,
+    geometry: {
+      cycleDuration, boreRadius, eccentricity, pistonRadius, shaftRadius, abutmentHalfWidth, slotHalfWidth,
+      abutmentLength, slotTop, channelInner, channelOuter, depth, inletOpen, exhaustOpen, channels,
     },
-    sourceAnimation: {
-      available: true,
-      independentlyReconstructed: true,
-      officialCanvasCyclePeriod: 4,
-      officialCanvasCyclesPerMinute: 15,
-      officialCanvasModelPresent: true,
-      reason:
-        'The official Movement 425 page embeds a five-part Canvas construction. Its clockwise eccentric, radii 5/7/8, eccentricity 2, sealing tongue dimensions, vertical D guide, radius-1 follower nose, and exact cam-contact lift were extracted and independently reconstructed.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourcePose: {
-      abutmentNoseCenter: sourceState.abutmentNoseCenter.clone(),
-      abutmentSourceGroupY: sourceState.abutmentSourceGroupY,
-      eccentricCenter: sourceState.eccentricCenter.clone(),
-      pistonAbutmentContactPoint:
-        sourceState.pistonAbutmentContactPoint.clone(),
-      pistonCylinderContactPoint:
-        sourceState.pistonCylinderContactPoint.clone(),
-      rotorAngle: sourceState.rotorAngle,
-    },
+    mechanism: 'Piston C is an eccentric fast on central shaft B and touches cylinder A along one packed line. Abutment D slides in a guide between the two ports and rides on C. Steam admitted right of D drives C clockwise; the space ahead of the contact line exhausts left of D.',
+    motion: { cycleDuration, direction: 'clockwise' },
     sourceReference: {
-      brownPlate425: {
-        abutmentDApproximateBoundsPixels: [258, 43, 301, 255],
-        cylinderAApproximateCenterPixels: [271, 336],
-        cylinderAApproximateInnerRadiusPixels: 145,
-        eccentricPistonCApproximateCenterPixels: [272, 356],
-        imageHeight: 525,
-        imageWidth: 525,
-        mainShaftBApproximateCenterPixels: [271, 320],
-        measurementUncertaintyPixels: 12,
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'A is the cylinder',
-          'shaft B passes centrally through A',
-          'piston C is an eccentric fast on B',
-          'C contacts the cylinder at one point',
-          'steam induction and eduction follow the arrows',
-          'steam pressure on one side rotates C and B',
-          'sliding abutment D lies between the ports',
-          'D moves out of the way to let C pass',
-        ],
-        engravingEvidence:
-          'Brown’s cutaway shows a circular housing A, central shaft B, eccentric circular piston C with an outer sealing tongue, a vertical top abutment D, and opposed flow arrows at the two top ports.',
-        officialCanvasEvidence:
-          'The official model uses eccentricity 2, piston radius 5, cylinder inner/outer radii 7/8, a sealing tongue from radius 6 to 6.974937 with half-width 0.5, and a radius-1 D nose. D’s source transform rises from y=9.133975 to 13.133975 while maintaining exact external tangency to C.',
-        reconstructionDisclosure:
-          'Brown gives no absolute scale, axial depth, abutment loading, seal force, valve timing, pressure cycle, speed, materials, inertia, or loads. The cutaway depth, guide construction, colors, and flow markers are independently engineered; all planar contact dimensions and motion laws come from the official model.',
-      },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 425',
+      reconstructionDisclosure: 'The bore, eccentric, abutment and neck positions follow the official trace and Brown’s plate. The casing depth, the open neck tops (Brown’s flanges) and the load that keeps D on C are engineered.',
     },
-    stateAtInputAngle,
     stateAtTime,
-    transmission: {
-      abutmentCamLaw:
-        'DnoseY=CcenterY+sqrt((pistonRadius+noseRadius)^2-CcenterX^2)',
-      eccentricCenterLaw:
-        'Ccenter=[-eccentricity*sin(inputAngle),-eccentricity*cos(inputAngle)]',
-      externalAbutmentTangency:
-        '|DnoseCenter-Ccenter|=pistonRadius+noseRadius',
-      internalCylinderTangency:
-        'eccentricity+pistonRadius=cylinderInnerRadius',
-    },
+    steamReport: report,
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.15, -3.78, -1.00),
-    new THREE.Vector3(4.15, 6.48, 1.38),
-  );
-  root.userData.cameraDistanceScale = 1.03;
-  root.userData.cameraDirection = new THREE.Vector3(5.0, 3.8, 12.8);
-  root.userData.groundFloorY = -3.78;
+  root.userData.cameraDirection = new THREE.Vector3(0.08, 0.05, 1);
+  root.userData.cameraFov = 8;
+  root.userData.cameraFitBounds = new THREE.Box3(new THREE.Vector3(-2.59, -2.59, -1.18), new THREE.Vector3(2.59, 4.43, 0.05));
   root.userData.hideGround = true;
-  root.userData.solidReview = { chamberRadialClearance: 0.00003,
-    portWindowAnglesFromTop: [portNearAngle, portFarAngle],
-    qualification: 'Closed annular working wall and source circular-cap abutment with full-stroke guide clearance. Circle contact is prescribed; return loading, steam sealing, pressure and friction are not simulated.' };
-  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[]) material.fog=false;});
-  markShadows(root);
-  foundation.receiveShadow = true;
+  root.scale.setScalar(0.3);
   update(0);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  root.traverse((object) => {
+    for (const material of object.material ? [].concat(object.material) : []) material.fog = false;
+  });
+  markShadows(root);
+  for (const mesh of Object.values(steam)) { mesh.castShadow = false; mesh.receiveShadow = false; }
+  return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 
 export function createAuthoredEccentricRotaryEngineMovement(movement) {
   if (movement.id !== 425) return null;
-  const model = eccentricRotaryEngine(movement);
-  // Pass 55: Brown's face section removes only the front cover; the back
-  // cover closes the casing and passages so they are not open rings.
-  addBackCover(model.root, ['fixed-annular-cutaway-body-of-cylinder-A',
-    'left-half-of-pear-casing-with-eduction-neck-of-cylinder-A',
-    'right-half-of-pear-casing-with-induction-neck-of-cylinder-A'],
-    { alsoCover: ['left-guide-rail-for-abutment-D', 'right-guide-rail-for-abutment-D'] });
-  return model;
+  return eccentricRotaryEngine(movement);
 }

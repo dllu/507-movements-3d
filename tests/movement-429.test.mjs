@@ -77,8 +77,9 @@ test('movement 429 has two distinct conjugate toothed elliptical pistons on fixe
   assert.equal(blocks.rightRotor.parent, model.root);
   assert.equal(blocks.leftShaft.parent, model.root);
   assert.equal(blocks.rightShaft.parent, model.root);
-  assert.equal(blocks.leftPackingStrips.length, 2);
-  assert.equal(blocks.rightPackingStrips.length, 2);
+  // Brown's packing strips are painted marks; pass 71 builds none.
+  assert.equal(blocks.leftPackingStrips.length, 0);
+  assert.equal(blocks.rightPackingStrips.length, 0);
 
   const roles = [];
   const belts = [];
@@ -90,9 +91,10 @@ test('movement 429 has two distinct conjugate toothed elliptical pistons on fixe
   for (const role of [
     'left-exact-official-profile-elliptical-piston',
     'right-swept-conjugate-profile-elliptical-piston',
-    'top-center-steam-induction-neck',
-    'bottom-center-steam-eduction-neck',
-    'fixed-inner-double-lobed-cylinder-wall',
+    'fixed-double-lobed-cylinder-around-both-elliptical-pistons',
+    'fixed-solid-back-cover-of-double-lobed-casing',
+    'live-steam-in-top-induction-channel',
+    'exhaust-steam-in-bottom-eduction-channel',
     'left-piston-shaft-in-fixed-bearing',
     'right-piston-shaft-in-fixed-bearing',
   ]) assert.ok(roles.includes(role), role);
@@ -356,7 +358,7 @@ test('movement 429 update counterrotates only the two piston groups and closes t
   const { blocks, geometry, stateAtTime } = model.root.userData;
   const leftShaftPosition = blocks.leftShaft.position.clone();
   const rightShaftPosition = blocks.rightShaft.position.clone();
-  const housingPosition = blocks.innerHousingWall.position.clone();
+  const housingPosition = blocks.rearHousing.position.clone();
 
   for (const time of [0, 0.19, 0.53, 0.91, 1.34, 1.78, 2.21,
     2.66, 3.08, 3.47, 3.83]) {
@@ -370,7 +372,7 @@ test('movement 429 update counterrotates only the two piston groups and closes t
       'left shaft bearing fixed');
     vectorNear(blocks.rightShaft.position, rightShaftPosition, 0,
       'right shaft bearing fixed');
-    vectorNear(blocks.innerHousingWall.position, housingPosition, 0,
+    vectorNear(blocks.rearHousing.position, housingPosition, 0,
       'cylinder fixed');
   }
   const source = stateAtTime(0);
@@ -398,4 +400,29 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model429.root);
   disposeModel(model507.root);
+});
+
+test('429 (pass 71): pistons fill the bores\' depth; steam at the top drives them and is released at the bottom', () => {
+  const model = createMovementModel(catalog.movements[428]);
+  const { blocks, geometry, steamReport } = model.root.userData;
+  try {
+    for (const piston of [blocks.leftPiston, blocks.rightPiston]) {
+      piston.geometry.computeBoundingBox();
+      const box = piston.geometry.boundingBox;
+      assert.ok(piston.position.z + box.min.z < -0.5 && piston.position.z + box.max.z > 0.68, 'full-depth piston');
+    }
+    // four pockets are released per turn, one every quarter turn
+    assert.equal(steamReport.releaseAngles.length, 4);
+    const { live, carried, exhaust, induction, eduction } = blocks.steam;
+    assert.equal(induction.userData.pressure, 1);
+    assert.equal(eduction.userData.pressure, 0);
+    for (let i = 0; i <= 64; i += 1) {
+      model.update(geometry.cycleDuration * i / 64);
+      assert.ok(live.userData.area > 1, 'live space between the pistons at the top');
+      assert.equal(live.userData.pressure, 1);
+      assert.equal(carried.userData.pressure, 1);
+      assert.ok(exhaust.userData.pressure < 0.6);
+      assert.ok(live.userData.area + carried.userData.area + exhaust.userData.area > 7);
+    }
+  } finally { disposeModel(model.root); }
 });

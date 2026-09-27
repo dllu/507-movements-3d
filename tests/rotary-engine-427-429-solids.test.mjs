@@ -30,14 +30,18 @@ for(const[id,create]of factories)test(`${id}: finite working walls, mating profi
   const model=create({id}),u=model.root.userData,b=u.blocks;try{
     const pairs=[];
     if(id===427){
-      for(const moving of[b.hubC,b.leftPackingBody,b.rightPackingBody,b.leftPistonBody,b.rightPistonBody,b.leftPistonSeal,b.rightPistonSeal])pairs.push([moving,b.cylinderA]);
-      for(const moving of[b.leftPackingBody,b.rightPackingBody,b.leftPistonBody,b.rightPistonBody,b.leftPistonSeal,b.rightPistonSeal])pairs.push([moving,b.hubC]);
-      for(const side of['left','right']){
-        for(const moving of[b[side+'PistonBody'],b[side+'PistonSeal'],b[side+'GuidePin']])pairs.push([moving,b[side+'PackingBody']]);
-        for(const ring of[b.guideRingInner,b.guideRingOuter])pairs.push([b[side+'GuidePin'],ring],[b[side+'PistonBody'],ring]);
-        assert.ok(!solidSurface(b[side+'PackingBody'].geometry).inside(new THREE.Vector3(0,0,.5)),'packing has a real blade slot');
-        assert.ok(solidSurface(b[side+'PackingBody'].geometry).inside(new THREE.Vector3(0,0,.18)),'rear packing web joins the two sides');
+      // pass 71: pistons fast on their rings about the cylinder centre slide
+      // through rolling packings in the rim of hub C on eccentric shaft B
+      const [u1,u2]=b.pistonUnits;
+      for(const unit of[u1,u2]){
+        for(const fixed of[b.casing,b.back,b.boss,b.rim,b.web,b.shaftB])pairs.push([unit.piston,fixed]);
+        pairs.push([unit.ring,b.boss],[unit.ring,b.rim],[unit.ring,b.shaftB],[unit.ring,b.back],[unit.ring,b.web]);
       }
+      pairs.push([u1.piston,u2.piston],[u1.piston,u2.ring],[u2.piston,u1.ring],[u1.ring,u2.ring]);
+      for(const packing of b.packings){
+        for(const other of[b.rim,b.web,b.casing,b.back,u1.piston,u2.piston])pairs.push([packing,other]);
+      }
+      pairs.push([b.rim,b.casing],[b.rim,b.back],[b.rim,b.boss],[b.shaftB,b.boss],[b.shaftB,b.back],[b.web,b.boss]);
     }else if(id===428){
       // pass 69: rollers on their pins at the arm ends, inside the casing
       const rollerBodies=b.rollers.map(roller=>roller.children[0]);

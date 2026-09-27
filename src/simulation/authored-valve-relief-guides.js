@@ -9,6 +9,7 @@ import {
   matte,
 } from './primitives.js';
 import { creaseIndexedNormals } from './crease-normals.js';
+import { sectionPlate, steamVolume, ringPolygon } from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
 const GAUSS_NODES = [
@@ -87,7 +88,9 @@ function valveReliefGuide(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const valveAmplitude = 0.95;
+  // Pass 71: a working slide-valve travel, a port width plus lap each way
+  // (it was 0.95, more than half of A, which no port layout could serve).
+  const valveAmplitude = 0.45;
   const valvePinY = -1.12;
   const rodLength = 3.50;
   const rollerFraction = 1 / 3;
@@ -322,20 +325,22 @@ function valveReliefGuide(movement) {
 
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-valve-seat-and-suspended-guide-frame';
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(5.30, 0.40, 1.55),
-    frameMaterial,
-  );
-  base.position.set(0, -2.38, -0.34);
-  base.userData.role = 'fixed-slide-valve-foundation';
-  fixedFrame.add(base);
+  // Brown's hatched ground under the seat is the cylinder casting built
+  // below (pass 71); no separate foundation slab is drawn.
   // Brown's port under A is a cavity in the seat, not a part: the seat is
   // bored through with a plain port that A covers at mid-stroke (the p57
   // dark port stub hung below the seat and is not built).
+  // Pass 71: the seat has Brown's three ports: an exhaust port in the
+  // middle and a steam port either side, each running down into the
+  // cylinder casting below (Brown's hatched ground). A is a D slide valve:
+  // its hollow joins one steam port to the exhaust while the other is
+  // uncovered to the chest.
+  const ports = { exhaust: [-0.12, 0.12], left: [-0.85, -0.5], right: [0.5, 0.85] };
+  const portHalfDepth = 0.3;
   const valveSeat = new THREE.Mesh(
     plate(clip.difference(
       poly([[-2.10, -0.63], [2.10, -0.63], [2.10, 0.63], [-2.10, 0.63]]),
-      poly([[-0.18, -0.30], [0.18, -0.30], [0.18, 0.30], [-0.18, 0.30]]),
+      ...Object.values(ports).map(([x0, x1]) => poly([[x0, -portHalfDepth], [x1, -portHalfDepth], [x1, portHalfDepth], [x0, portHalfDepth]])),
     ), -0.09, 0.09),
     frameMaterial,
   );
@@ -344,6 +349,43 @@ function valveReliefGuide(movement) {
   valveSeat.position.set(0, -2.09, 0);
   valveSeat.userData.role = 'fixed-horizontal-valve-seat';
   fixedFrame.add(valveSeat);
+  // The cylinder casting under the seat, cut on the section plane like the
+  // casing, with the three passages: the exhaust straight down under an
+  // arch, the steam passages bending out and down to the cylinder ends.
+  const seatBottom = -2.18;
+  const blockBottom = -2.8;
+  const bend = (x0, x1, side) => {
+    const points = [];
+    for (let i = 0; i <= 16; i += 1) {
+      const t = i / 16;
+      const y = seatBottom + 0.02 - t * (seatBottom + 0.02 - blockBottom - 0.02);
+      const shift = side * 0.55 * t * t;
+      points.push([x0 + shift, y]);
+    }
+    const back = [];
+    for (let i = 16; i >= 0; i -= 1) {
+      const t = i / 16;
+      const y = seatBottom + 0.02 - t * (seatBottom + 0.02 - blockBottom - 0.02);
+      back.push([x1 + side * 0.55 * t * t, y]);
+    }
+    return ringPolygon([...points, ...back]);
+  };
+  const passages = {
+    left: bend(-0.85, -0.5, -1),
+    right: bend(0.5, 0.85, 1),
+    exhaust: clip.union(
+      poly([[-0.12, seatBottom + 0.02], [0.12, seatBottom + 0.02], [0.12, -2.55], [-0.12, -2.55]]),
+      clip.intersection(poly(circle([0, blockBottom - 0.02], 0.42, 64)),
+        poly([[-0.5, blockBottom - 0.03], [0.5, blockBottom - 0.03], [0.5, -2.5], [-0.5, -2.5]]))),
+  };
+  // The passages are cut in half by the section: their back halves stay in
+  // the casting behind z = -0.3, the depth of the seat ports.
+  const cylinderOutline = poly([[-2.10, blockBottom], [2.10, blockBottom], [2.10, seatBottom], [-2.10, seatBottom]]);
+  const cylinderCasting = sectionPlate(clip.difference(cylinderOutline, ...Object.values(passages)),
+    -portHalfDepth, 0.48, frameMaterial, 'fixed-cylinder-casting-under-the-seat-with-three-passages');
+  const castingBack = new THREE.Mesh(plate(cylinderOutline, -0.63, -portHalfDepth), frameMaterial);
+  castingBack.userData.role = 'fixed-back-half-of-cylinder-casting-behind-the-passages';
+  fixedFrame.add(cylinderCasting, castingBack);
   // The seat is the floor of the valve chest: a back wall and two end walls
   // (cut at the same section plane as the casing) join it to the chest
   // cover above, so it no longer floats below the chest.
@@ -463,10 +505,20 @@ function valveReliefGuide(movement) {
   const valveA = new THREE.Group();
   valveA.position.set(0, valvePinY, 0);
   valveA.userData.role = 'horizontally-sliding-valve-A';
-  const valveBody = new THREE.Mesh(
-    new THREE.BoxGeometry(1.80, 0.45, 1.08),
-    valveMaterial,
+  // A D slide valve: the hollow underneath is closed front and back.
+  const valveHalfLength = 0.9;
+  const hollowHalf = 0.45;
+  const valveBody = new THREE.Group();
+  valveBody.add(
+    new THREE.Mesh(plate(clip.difference(
+      poly([[-valveHalfLength, -0.225], [valveHalfLength, -0.225], [valveHalfLength, 0.225], [-valveHalfLength, 0.225]]),
+      poly([[-hollowHalf, -0.24], [hollowHalf, -0.24], [hollowHalf, 0.0], [-hollowHalf, 0.0]])), -0.44, 0.44), valveMaterial),
+    new THREE.Mesh(plate(poly([[-valveHalfLength, -0.225], [valveHalfLength, -0.225], [valveHalfLength, 0.225], [-valveHalfLength, 0.225]]),
+      0.44, 0.54), valveMaterial),
+    new THREE.Mesh(plate(poly([[-valveHalfLength, -0.225], [valveHalfLength, -0.225], [valveHalfLength, 0.225], [-valveHalfLength, 0.225]]),
+      -0.54, -0.44), valveMaterial),
   );
+  valveBody.children.forEach((mesh, index) => { mesh.userData.role = ['valve-A-with-D-hollow', 'valve-A-front-wall', 'valve-A-back-wall'][index]; });
   // Brown draws A broad and low on its seat, the pin block rising from it.
   valveBody.position.y = -0.655;
   valveBody.userData.role = 'flat-slide-valve-A-body-on-seat';
@@ -526,9 +578,45 @@ function valveReliefGuide(movement) {
   rollerC.add(rollerBody);
   root.add(rollerC);
 
+  // ---- steam (pass 71) ------------------------------------------------------------------------
+  const steamZ = [-0.55, 0.47];
+  const passageZ = [-portHalfDepth + 0.015, 0.47];
+  const steam = {
+    chest: steamVolume('live-steam-in-the-valve-chest', ...steamZ),
+    left: steamVolume('steam-in-left-port-and-passage', ...passageZ),
+    right: steamVolume('steam-in-right-port-and-passage', ...passageZ),
+    exhaust: steamVolume('exhaust-steam-in-middle-port-and-passage', ...passageZ),
+  };
+  for (const mesh of Object.values(steam)) root.add(mesh);
+  const seatTop = -2.0;
+  const portColumn = ([x0, x1]) => poly([[x0, seatBottom + 0.03], [x1, seatBottom + 0.03], [x1, seatTop], [x0, seatTop]]);
+  steam.left.userData.base = clip.union(passages.left, portColumn(ports.left));
+  steam.right.userData.base = clip.union(passages.right, portColumn(ports.right));
+  steam.exhaust.userData.setRegion(clip.union(passages.exhaust, portColumn(ports.exhaust)), 0);
+  const overlap = ([a0, a1], [b0, b1]) => Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
+  const portPressure = (port, valveX) => {
+    const width = port[1] - port[0];
+    const covered = overlap(port, [valveX - valveHalfLength, valveX + valveHalfLength]);
+    const toChest = width - covered;
+    const toHollow = overlap(port, [valveX - hollowHalf, valveX + hollowHalf]);
+    return THREE.MathUtils.smoothstep(toChest - toHollow, -0.03, 0.03);
+  };
+  const chestInterior = poly([[-1.98, seatTop], [1.98, seatTop], [1.98, -0.57], [-1.98, -0.57]]);
+  const updateSteam = (state) => {
+    const x = state.valveX;
+    const valveOutline = poly([[x - valveHalfLength, seatTop - 0.01], [x + valveHalfLength, seatTop - 0.01],
+      [x + valveHalfLength, seatTop + 0.46], [x - valveHalfLength, seatTop + 0.46]]);
+    steam.chest.userData.setRegion(clip.difference(chestInterior, valveOutline,
+      poly(circle([x, valvePinY], 0.21, 48)), poly([[x - 0.35, seatTop + 0.44], [x + 0.35, seatTop + 0.44], [x + 0.35, valvePinY], [x - 0.35, valvePinY]]),
+    ), 1);
+    steam.left.userData.setRegion(steam.left.userData.base, portPressure(ports.left, x));
+    steam.right.userData.setRegion(steam.right.userData.base, portPressure(ports.right, x));
+  };
+
   const update = (time) => {
     const state = stateAtTime(time);
     valveA.position.x = state.valveX;
+    updateSteam(state);
     upperPinSlider.position.y = state.upperPin.y;
     rodB.userData.setEndpoints(state.lowerPin, state.upperPin);
     rollerC.position.copy(state.rollerCenter);
@@ -651,7 +739,7 @@ function valveReliefGuide(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.25, -2.58, -1.55),
+    new THREE.Vector3(-3.25, -2.98, -1.55),
     new THREE.Vector3(3.25, 4.12, 1.18),
   );
   root.userData.cameraDistanceScale = 1.02;
@@ -660,9 +748,10 @@ function valveReliefGuide(movement) {
   root.userData.reconstruction = { rodPlaneZ,
     assumptions: 'The bored rod sits behind the roller guide; finite axles join the separated members. The existing prescribed input and illustrative roller-spin law do not solve steam loads or clearance take-up.' };
   root.traverse(object => { for (const material of [].concat(object.material ?? [])) material.fog = false; });
-  root.userData.groundFloorY = -2.58;
+  root.userData.groundFloorY = -2.8;
   markShadows(root);
-  base.receiveShadow = true;
+  cylinderCasting.receiveShadow = true;
+  for (const mesh of Object.values(steam)) { mesh.castShadow = false; mesh.receiveShadow = false; }
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

@@ -1,6 +1,5 @@
 import * as THREE from 'three';
 import {plate,poly,circle,polygonClipping} from './finite-plate-geometry.js';
-import {portedCasingGeometry, roundPortPipeGeometry} from './round-port-pipes.js';
 import {
   PALETTE,
   markShadows,
@@ -12,6 +11,7 @@ import {
 } from './movement-429-source-profiles.js';
 
 import hollyMate from './generated-holly-mate.js';
+import { multiArea, pointInPolygon, safeClip, sectionPlate, steamVolume } from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -344,143 +344,45 @@ function doubleEllipticalRotaryEngine(movement) {
     metalness: 0.22,
     roughness: 0.44,
   });
-  const inletMaterial = matte(PALETTE.driver, {
-    opacity: 0.22,
-    roughness: 0.62,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const exhaustMaterial = matte(PALETTE.fluid, {
-    opacity: 0.24,
-    roughness: 0.62,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
 
-  const rearHousingShape = new THREE.Shape();
-  const outerPoints = capsulePoints(
-    halfCenterDistance,
-    outerHousingRadius,
-    0,
-  );
-  rearHousingShape.moveTo(outerPoints[0].x, outerPoints[0].y);
-  for (const point of outerPoints.slice(1)) {
-    rearHousingShape.lineTo(point.x, point.y);
-  }
-  rearHousingShape.closePath();
-  const innerPoints = capsulePoints(
-    halfCenterDistance,
-    innerHousingRadius,
-    0,
-  ).reverse();
-  const housingHole = new THREE.Path();
-  housingHole.moveTo(innerPoints[0].x, innerPoints[0].y);
-  for (const point of innerPoints.slice(1)) {
-    housingHole.lineTo(point.x, point.y);
-  }
-  housingHole.closePath();
-  rearHousingShape.holes.push(housingHole);
-  const rearHousingGeometry = new THREE.ExtrudeGeometry(rearHousingShape, {
-    bevelEnabled: false,
-    curveSegments: 1,
-    depth: 0.32,
-  });
-  rearHousingGeometry.translate(0, 0, -0.66);
-  const rearHousing = new THREE.Mesh(rearHousingGeometry, frameMaterial);
+  // Pass 71: Brown draws the casing in section. It is one plate cut on the
+  // front plane z = zCut, holding both bores and the two port channels, which
+  // run straight through the necks into the throats between the bores; the
+  // back cover closes it behind. The pistons fill the bores' whole depth.
+  const zCut = 0.70, zBack = -0.52;
   const rectangle=(left,bottom,right,top)=>poly([[left,bottom],[right,bottom],[right,top],[left,top]]);
-  // Brown's casing is one oval (stadium) round both bores, with short
-  // induction and eduction necks at the top and bottom centre.
-  const neckTop = outerHousingRadius + 0.85;
-  // Pass 56: the necks are round bored pipes; each bore opens through the
-  // oval wall into the throat between the bores by a square hole in the
-  // wall's middle layer only, so the wall stays whole in front and behind.
-  const outerSection=polygonClipping.union(poly(circle([-halfCenterDistance,0],outerHousingRadius,1024)),
-    poly(circle([halfCenterDistance,0],outerHousingRadius,1024)),
-    rectangle(-halfCenterDistance,-outerHousingRadius,halfCenterDistance,outerHousingRadius));
-  const cavitySection=polygonClipping.union(poly(circle([-halfCenterDistance,0],innerHousingRadius+0.00006,1024)),
-    poly(circle([halfCenterDistance,0],innerHousingRadius+0.00006,1024)));
-  const housingSection=polygonClipping.difference(outerSection,cavitySection);
-  const portZ = 0.01, portBore = 0.26, portOuter = 0.475;
-  rearHousing.geometry.dispose();rearHousing.geometry=portedCasingGeometry(housingSection,-0.66,0.68,portZ,portBore,
-    [rectangle(-portBore,0,portBore,neckTop),rectangle(-portBore,-neckTop,portBore,0)]);
-  rearHousing.userData.role =
-    'fixed-double-lobed-cylinder-around-both-elliptical-pistons';
+  const neckTop = outerHousingRadius + 0.85, portBore = 0.26, portOuter = 0.475;
+  const outerSection=polygonClipping.union(poly(circle([-halfCenterDistance,0],outerHousingRadius,512)),
+    poly(circle([halfCenterDistance,0],outerHousingRadius,512)),
+    rectangle(-halfCenterDistance,-outerHousingRadius,halfCenterDistance,outerHousingRadius),
+    rectangle(-portOuter,-neckTop,portOuter,neckTop));
+  const boreSection=polygonClipping.union(poly(circle([-halfCenterDistance,0],innerHousingRadius+0.00006,512)),
+    poly(circle([halfCenterDistance,0],innerHousingRadius+0.00006,512)));
+  const portChannels = {
+    induction: polygonClipping.difference(rectangle(-portBore,0,portBore,neckTop+0.01),boreSection),
+    eduction: polygonClipping.difference(rectangle(-portBore,-neckTop-0.01,portBore,0),boreSection),
+  };
+  const rearHousing = sectionPlate(polygonClipping.difference(outerSection,boreSection,portChannels.induction,portChannels.eduction),
+    zBack, zCut, frameMaterial, 'fixed-double-lobed-cylinder-around-both-elliptical-pistons');
   root.add(rearHousing);
-  const innerHousingWall = makeClosedTube(
-    capsulePoints(halfCenterDistance, innerHousingRadius, 0.00),
-    0.095,
-    frameMaterial,
-    'fixed-inner-double-lobed-cylinder-wall',
-  );
-  const outerHousingWall = makeClosedTube(
-    capsulePoints(halfCenterDistance, outerHousingRadius, -0.18),
-    0.11,
-    frameMaterial,
-    'fixed-outer-double-lobed-cylinder-wall',
-  );
-  innerHousingWall.geometry.dispose();outerHousingWall.geometry.dispose();
-  innerHousingWall.geometry=plate(housingSection,0.68,0.70);
-  // Brown's casing is one piece: its back cover is the whole oval with its
-  // necks, so the two bores and the port channels are closed behind and the
-  // casing is cut only on the front plane of the section.
-  outerHousingWall.geometry=plate(outerSection,-0.68,-0.52);
-  outerHousingWall.userData.role='fixed-solid-back-cover-of-double-lobed-casing';
-  root.add(innerHousingWall, outerHousingWall);
-
-  const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(8.05, 0.29, 1.42),
-    frameMaterial,
-  );
-  foundation.geometry.dispose();foundation.geometry=plate(polygonClipping.difference(rectangle(-4.025,-0.145,4.025,0.145),
-    rectangle(-0.26,-0.15,0.26,0.15)),-0.71,0.71);
-  foundation.position.set(0, -4.055, -0.18);
-  foundation.userData.role = 'fixed-foundation-of-Holly-rotary-engine';
-  root.add(foundation);
-  for (const side of [-1, 1]) {
-    const neck = new THREE.Mesh(
-      new THREE.BoxGeometry(1.05, 1.62, 0.96),
-      frameMaterial,
-    );
-    // Only the stub standing proud of the oval, clear of the piston sweep.
-    // The pipe foot sits just above the bores' highest point under the pipe
-    // and below the flat top of the oval.
-    const footY = Math.sqrt((innerHousingRadius + 0.00006) ** 2 - (halfCenterDistance - portOuter) ** 2) + 0.008;
-    neck.geometry.dispose();neck.geometry=roundPortPipeGeometry(new THREE.Vector3(0, side * footY, portZ),
-      new THREE.Vector3(0, side * neckTop, portZ), portBore, portOuter);
-    neck.userData.role = side > 0
-      ? 'top-center-steam-induction-neck'
-      : 'bottom-center-steam-eduction-neck';
-    root.add(neck);
-    const passage = new THREE.Mesh(
-      new THREE.BoxGeometry(0.52, 1.74, 0.58),
-      side > 0 ? inletMaterial : exhaustMaterial,
-    );
-    passage.position.set(0, side * (neckTop - 0.79), 0.36);
-    passage.userData.role = side > 0
-      ? 'downward-induction-steam-arrow-region'
-      : 'downward-eduction-steam-arrow-region';
-    root.add(passage);
-  }
+  const outerHousingWall = sectionPlate(outerSection, -0.68, zBack, frameMaterial, 'fixed-solid-back-cover-of-double-lobed-casing');
+  outerHousingWall.material = [frameMaterial, frameMaterial];
+  root.add(outerHousingWall);
 
   const leftRotor = new THREE.Group();
   leftRotor.position.copy(leftCenter);
   leftRotor.userData.role =
     'left-Holly-conjugate-toothed-elliptical-piston';
   const leftPiston = new THREE.Mesh(
-    makeProfileGeometry(leftProfile, sourceScale, 0.58),
+    makeProfileGeometry(leftProfile, sourceScale, 1.2),
     leftMaterial,
   );
-  leftPiston.position.z = 0.32;
+  leftPiston.position.z = 0.09;
   leftPiston.userData.role =
     'left-exact-official-profile-elliptical-piston';
   leftRotor.add(leftPiston);
-  const leftPackingStrips = makePackingStrips(
-    HOLLY_LEFT_PROFILE_PATHS,
-    sourceScale,
-    darkMaterial,
-    'left-piston',
-  );
-  leftRotor.add(...leftPackingStrips);
+  // Brown's packing strips are painted marks; none are built.
+  const leftPackingStrips = [];
   root.add(leftRotor);
 
   const rightRotor = new THREE.Group();
@@ -488,37 +390,132 @@ function doubleEllipticalRotaryEngine(movement) {
   rightRotor.userData.role =
     'right-Holly-conjugate-toothed-elliptical-piston';
   const rightPiston = new THREE.Mesh(
-    makeProfileGeometry({points:hollyMate.outline.map(p=>new THREE.Vector2(...p))}, 1, 0.58),
+    makeProfileGeometry({points:hollyMate.outline.map(p=>new THREE.Vector2(...p))}, 1, 1.2),
     rightMaterial,
   );
-  rightPiston.position.z = 0.32;
+  rightPiston.position.z = 0.09;
   rightPiston.userData.role =
     'right-swept-conjugate-profile-elliptical-piston';
   rightRotor.add(rightPiston);
-  const rightPackingStrips = makePackingStrips(
-    HOLLY_RIGHT_PROFILE_PATHS,
-    sourceScale,
-    darkMaterial,
-    'right-piston',
-  );
-  rightRotor.add(...rightPackingStrips);
+  // Brown's packing strips are painted marks; none are built.
+  const rightPackingStrips = [];
   root.add(rightRotor);
 
-  const leftShaft = cylinderAlongZ(shaftRadius, 1.78, darkMaterial, 36);
+  const leftShaft = cylinderAlongZ(shaftRadius, 1.30, darkMaterial, 36);
   leftShaft.position.copy(leftCenter);
   // Set into the solid back cover, so the fixed shaft is carried by the casing.
-  leftShaft.position.z = 0.29;
+  leftShaft.position.z = 0.04;
   leftShaft.userData.role = 'left-piston-shaft-in-fixed-bearing';
-  const rightShaft = cylinderAlongZ(shaftRadius, 1.78, darkMaterial, 36);
+  const rightShaft = cylinderAlongZ(shaftRadius, 1.30, darkMaterial, 36);
   rightShaft.position.copy(rightCenter);
   // Set into the solid back cover, so the fixed shaft is carried by the casing.
-  rightShaft.position.z = 0.29;
+  rightShaft.position.z = 0.04;
   rightShaft.userData.role = 'right-piston-shaft-in-fixed-bearing';
   root.add(leftShaft, rightShaft);
+
+  // ---- steam (pass 71) -------------------------------------------------------------------------
+  // The working space is the two bores less the two pistons. The piece open
+  // to the top throat takes live steam, which presses the pistons apart; the
+  // pockets each piston carries round against the bore stay at inlet
+  // pressure until they open into the bottom throat and are released there.
+  const steamZ = [zBack + 0.015, zCut - 0.015];
+  const steam = {
+    live: steamVolume('live-steam-between-the-pistons-at-the-top', ...steamZ),
+    carried: steamVolume('steam-carried-round-between-the-lobes-and-the-bore', ...steamZ),
+    exhaust: steamVolume('exhaust-steam-between-the-pistons-at-the-bottom', ...steamZ),
+    induction: steamVolume('live-steam-in-top-induction-channel', ...steamZ),
+    eduction: steamVolume('exhaust-steam-in-bottom-eduction-channel', ...steamZ),
+  };
+  for (const mesh of Object.values(steam)) root.add(mesh);
+  steam.induction.userData.setRegion(portChannels.induction, 1);
+  steam.eduction.userData.setRegion(portChannels.eduction, 0);
+  // The working faces run with small clearances (up to 0.0134 at the mesh),
+  // so the outlines are grown by 0.012 and the bores shrunk by 0.012 to
+  // divide the space where the faces seal.
+  const grow = (outline, distance) => {
+    let area = 0;
+    for (let i = 0; i < outline.length; i += 1) {
+      const [ax, ay] = outline[i];
+      const [bx, by] = outline[(i + 1) % outline.length];
+      area += ax * by - bx * ay;
+    }
+    const sign = area > 0 ? 1 : -1;
+    return outline.map((point, i) => {
+      const [px, py] = outline[(i + outline.length - 1) % outline.length];
+      const [nx, ny] = outline[(i + 1) % outline.length];
+      const tx = nx - px;
+      const ty = ny - py;
+      const length = Math.hypot(tx, ty) || 1;
+      return [point[0] + sign * distance * ty / length, point[1] - sign * distance * tx / length];
+    });
+  };
+  const leftOutline = grow(leftProfile.points.map((p) => [p.x * sourceScale, p.y * sourceScale]), 0.012);
+  const rightOutline = grow(hollyMate.outline.filter((_, i) => i % 3 === 0), 0.012);
+  const workingSpace = polygonClipping.union(poly(circle([-halfCenterDistance,0],innerHousingRadius-0.012,512)),
+    poly(circle([halfCenterDistance,0],innerHousingRadius-0.012,512)));
+  const placeOutline = (outline, center, angle) => [[outline.map(([x, y]) => [
+    center.x + x * Math.cos(angle) - y * Math.sin(angle), center.y + x * Math.sin(angle) + y * Math.cos(angle)])]];
+  const throatY = Math.sqrt(innerHousingRadius ** 2 - halfCenterDistance ** 2);
+  const topMouth = rectangle(-portBore, throatY - 0.12, portBore, throatY + 0.2);
+  const bottomMouth = rectangle(-portBore, -throatY - 0.2, portBore, -throatY + 0.12);
+  const opens = (piece, mouth) => multiArea(safeClip('intersection', [piece], mouth)) > 1e-4;
+  const piecesAt = (state) => {
+    const pieces = safeClip('difference', workingSpace,
+      placeOutline(leftOutline, leftCenter, state.leftAngle), placeOutline(rightOutline, rightCenter, state.rightAngle));
+    const out = { live: [], carried: [], exhaust: [], large: 0 };
+    for (const piece of pieces) {
+      if (opens(piece, topMouth)) out.live.push(piece);
+      else if (opens(piece, bottomMouth)) out.exhaust.push(piece);
+      else {
+        const area = multiArea([piece]);
+        if (area > 1e-3) out.carried.push(piece);
+        if (area > 0.2) out.large += 1;
+      }
+    }
+    return out;
+  };
+  // Release events: a carried pocket opens into the bottom throat. Found by
+  // sampling one revolution; the exhaust space is shown blowing down for 12°
+  // after each.
+  const releaseAngles = [];
+  const releaseFractions = [];
+  {
+    const samples = 120;
+    let previous = null;
+    for (let i = 0; i <= samples; i += 1) {
+      const angle = FULL_TURN * i / samples;
+      const pieces = piecesAt(stateAtInputAngle(angle));
+      const exhaustArea = multiArea(pieces.exhaust);
+      if (previous !== null && pieces.large < previous.large) {
+        releaseAngles.push(angle);
+        // isothermal mixing of the released pocket into the exhaust space
+        releaseFractions.push(THREE.MathUtils.clamp((exhaustArea - previous.exhaustArea) / exhaustArea, 0, 1));
+      }
+      previous = { large: pieces.large, exhaustArea };
+    }
+  }
+  const blowdown = 12 * Math.PI / 180;
+  const exhaustPressure = (angle) => {
+    let pressure = 0;
+    releaseAngles.forEach((release, k) => {
+      const since = THREE.MathUtils.euclideanModulo(angle - release, FULL_TURN);
+      pressure = Math.max(pressure, releaseFractions[k] * (1 - THREE.MathUtils.smootherstep(since, 0, blowdown)));
+    });
+    return pressure;
+  };
+  const steamReport = { releaseAngles, releaseFractions };
+  const updateSteam = (state) => {
+    const pieces = piecesAt(state);
+    steam.live.userData.setRegion(pieces.live, 1);
+    steam.carried.userData.setRegion(pieces.carried, 1);
+    steam.exhaust.userData.setRegion(pieces.exhaust, exhaustPressure(THREE.MathUtils.euclideanModulo(state.inputAngle, FULL_TURN)));
+    steamReport.last = { carried: pieces.carried.length };
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
     leftRotor.rotation.z = state.leftAngle;
+    updateSteam(state);
     rightRotor.rotation.z = state.rightAngle;
   };
 
@@ -531,8 +528,8 @@ function doubleEllipticalRotaryEngine(movement) {
     archetype:
       'holly-double-conjugate-toothed-elliptical-pistons-counterrotating-one-to-one-between-central-steam-ports',
     blocks: {
-      foundation,
-      innerHousingWall,
+      portChannels,
+      steam,
       leftPackingStrips,
       leftPiston,
       leftRotor,
@@ -558,6 +555,7 @@ function doubleEllipticalRotaryEngine(movement) {
     },
     fidelity: 'authored',
     geometry,
+    steamReport,
     mechanism:
       'Holly’s two distinct conjugate toothed elliptical piston profiles turn about fixed centers eight source units apart. The left piston turns counterclockwise while the right turns clockwise at exactly the same speed. Their source profiles contain the required quarter-turn major-axis offset; the right working outline receives a small swept mating correction, so left angle plus right angle remains zero and their teeth stay phased. Steam enters between them from the top and drives the rotors apart toward the enclosing double-lobed cylinder before exhausting below.',
     motion: {
@@ -643,18 +641,18 @@ function doubleEllipticalRotaryEngine(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.08, -4.24, -1.04),
-    new THREE.Vector3(4.08, 3.94, 1.42),
+    new THREE.Vector3(-3.85, -3.06, -0.73),
+    new THREE.Vector3(3.88, 3.06, 0.75),
   );
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(5.1, 3.6, 12.2);
-  root.userData.groundFloorY = -3.94;
+  root.userData.groundFloorY = -3.06;
   root.userData.hideGround=true;
   root.userData.solidReview={housingRadialClearance:0.00006,
     qualification:'Unexpanded official mating profiles, bored shafts, closed double-circle working casing and open central port throats. The right profile receives offline swept relief from the unchanged left rotor, retaining over 99.7 percent of source area with less than 0.0145 boundary displacement. Sampled actual-profile overlap and clearance are qualified separately in the saved contact report. Exact pressure, sealing, packing compression and load response are not modeled.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   markShadows(root);
-  foundation.receiveShadow = true;
+  for (const mesh of Object.values(steam)) { mesh.castShadow = false; mesh.receiveShadow = false; }
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

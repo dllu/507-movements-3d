@@ -562,7 +562,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
   };
 
   const selectorPeriod = 24;
-  const inputTurnsPerSelectorCycle = 8;
+  const inputTurnsPerSelectorCycle = 1; // net forward turns (pass 71: the shaft reverses with the gear)
   const selectorBreaks = Object.freeze({
     sourceHoldEnd: 0.08,
     forwardTransitionEnd: 0.17,
@@ -681,6 +681,30 @@ function locomotiveStephensonExpansionLinkValveGear() {
   const selectorAtTime = (time) => selectorLawAtCyclePhase(
     time / selectorPeriod,
   ).value;
+  // Pass 71: the lever reverses the engine. The shaft turns forward in
+  // forward gear and backward in backward gear, and stops in mid gear; its
+  // speed follows the gear as tanh(-selector / 0.1), so partial forward gear
+  // (Brown's setting) runs at nearly full speed. The speed is scaled so the
+  // loop nets exactly one forward turn and closes seamlessly.
+  const gearSpeed = (selector) => -Math.tanh(selector / 0.1);
+  const angleTableSize = 9600;
+  const rawAngle = new Float64Array(angleTableSize + 1);
+  for (let i = 1; i <= angleTableSize; i += 1) {
+    const p0 = (i - 1) / angleTableSize;
+    const p1 = i / angleTableSize;
+    rawAngle[i] = rawAngle[i - 1] + (p1 - p0) / 6 * (
+      gearSpeed(selectorLawAtCyclePhase(p0).value)
+      + 4 * gearSpeed(selectorLawAtCyclePhase((p0 + p1) / 2).value)
+      + gearSpeed(selectorLawAtCyclePhase(p1 === 1 ? 0.999999999 : p1).value));
+  }
+  const netForwardTurns = inputTurnsPerSelectorCycle;
+  const angleScale = FULL_TURN * netForwardTurns / rawAngle[angleTableSize];
+  const inputAngleAtPhase = (phase) => {
+    const x = phase * angleTableSize;
+    const i = Math.min(angleTableSize - 1, Math.floor(x));
+    const f = x - i;
+    return angleScale * (rawAngle[i] * (1 - f) + rawAngle[i + 1] * f);
+  };
   const stateAtTime = (time) => {
     const cyclePhase = THREE.MathUtils.euclideanModulo(
       time / selectorPeriod,
@@ -688,13 +712,13 @@ function locomotiveStephensonExpansionLinkValveGear() {
     );
     const selectorLaw = selectorLawAtCyclePhase(cyclePhase);
     const state = stateAtInputAngle(
-      FULL_TURN * inputTurnsPerSelectorCycle * cyclePhase,
+      inputAngleAtPhase(cyclePhase),
       selectorLaw.value,
     );
+    state.inputAngularSpeed = angleScale * gearSpeed(selectorLaw.value) / selectorPeriod;
+    state.shaftDirection = state.inputAngularSpeed > 1e-6 ? 'forward'
+      : state.inputAngularSpeed < -1e-6 ? 'backward' : 'stopped';
     state.cyclePhase = cyclePhase;
-    state.inputAngularSpeed = FULL_TURN
-      * inputTurnsPerSelectorCycle
-      / selectorPeriod;
     state.selectorAcceleration = selectorLaw.accelerationPerPhaseSquared
       / selectorPeriod ** 2;
     state.selectorRate = selectorLaw.ratePerPhase / selectorPeriod;
@@ -1489,6 +1513,8 @@ function locomotiveStephensonExpansionLinkValveGear() {
     'two-opposed-eccentrics-finite-rods-suspended-curved-slotted-link-captured-die-rocker-guided-valve';
   root.userData.reversingAnchorAt = reversingAnchorAt;
   root.userData.selectorAtTime = selectorAtTime;
+  root.userData.inputAngleAtPhase = inputAngleAtPhase;
+  root.userData.animationTiming = { authoredCyclePeriod: selectorPeriod };
   root.userData.selectorLawAtCyclePhase = selectorLawAtCyclePhase;
   root.userData.solveLinkPose = solveLinkPose;
   root.userData.sourceAnimation = {

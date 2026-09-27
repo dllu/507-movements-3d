@@ -79,7 +79,11 @@ test('movement 329 is the fixed-annulus epicyclic piston-rod guide', () => {
   assert.equal(blocks.cylinderBody.parent, blocks.fixedFrame);
   assert.equal(blocks.inputCarrierC.parent, model.root);
   assert.equal(blocks.flywheelRim.parent, blocks.inputCarrierC);
-  assert.equal(blocks.carrierCrankArmC.parent, blocks.inputCarrierC);
+  // Plate C is Brown's round disk (no replacement crank arm), large enough
+  // to carry B's crank-pin inside its rim.
+  assert.equal(blocks.carrierCrankArmC, undefined);
+  assert.ok(blocks.centralPlateC.geometry.parameters.radiusTop
+    > model.root.userData.geometry.carrierCrankRadius + 0.1);
   assert.equal(blocks.carrierCrankPin.parent, blocks.inputCarrierC);
   assert.equal(blocks.inputShaft.parent, blocks.inputCarrierC);
   assert.equal(blocks.planetGearB.parent, model.root);

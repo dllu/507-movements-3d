@@ -765,8 +765,7 @@ export default {
     note: 'Near-face elevation of the plain flywheel disc and crank B, spring A coiled on its keyed arbor with its tail hooked to crank pin B, the pitman, and the slim treadle bar on its intermediate pivot lug. Brown draws no frame, so arbor A, the crankshaft and the treadle pivot are short fixed stubs.',
   },
   418: {
-    remove: ['fixed-slide-valve-foundation'],
-    note: 'Section of the conical casing on the chest cover with its recess, the suspended guide D on its adjusting screw, valve A, rod B and roller C; valve A slides on its one seat plate over the port, with no second foundation slab.',
+    note: 'Section of the conical casing on the chest cover with its recess, the suspended guide D on its adjusting screw, valve A, rod B and roller C. A is a D slide valve on its seat over Brown\'s three ports, which run down into the cylinder casting (his hatched ground): the middle one educts, the outer ones lead to the cylinder ends. Translucent steam fills the chest and the steam port A uncovers; the exhaust port and the port joined to it through A\'s hollow are faint.',
   },
   419: {
     remove: ['representative-cradle-body-on-rocker-E'],
@@ -788,13 +787,11 @@ export default {
   },
   424: {
     camera: [0, 0, 1],
-    remove: ['fixed-foundation-of-square-piston-engine', '(?:left|right)-B-port-admission-indicator', '(?:top|bottom)-C-port-admission-indicator'],
-    note: 'Flat elevation of the oblong cylinder A with the sliding frame piston B, the nested piston C and crank wrist a on shaft b (Brown\'s dotted wrist path is not drawn); no bed plate or steam markers are drawn.',
+    note: 'Section of the oblong cylinder A (front cover removed) with frame piston B, piston C nested in it and wrist a in C; Brown\'s dotted crank b works in a pocket behind C and its shaft runs out through the back cover. The black ports are passages: B\'s in A\'s end walls, C\'s in A\'s top and bottom walls, reaching C through slots in the back of B\'s top and bottom walls. Translucent steam fills each working space while it grows; shrinking spaces are faint.',
   },
   425: {
     camera: [0.08, 0.05, 1],
-    remove: ['visible-center-marker-of-eccentric-piston-C', 'instantaneous-sealing-contact-between-C-and-D', 'right-to-chamber-induction-flow-indicator', 'chamber-to-left-eduction-flow-indicator', 'right-induction-port', 'left-eduction-port'],
-    note: 'Front elevation of the casing with its two port necks and the abutment guide, eccentric piston C on shaft B and abutment D, as Brown draws it; no centre or contact markers or flow spheres are drawn.',
+    note: 'Section of cylinder A with its two port necks and the guide of abutment D, eccentric piston C on central shaft B with its packing strip on the contact line, and D riding on C. Translucent steam fills the space from D round to the contact line once the right neck admits to it; the space ahead of the contact line, swept to the left neck, is faint.',
   },
   426: {
     camera: [0.08, 0.05, 1],
@@ -802,8 +799,7 @@ export default {
   },
   427: {
     camera: [0.08, 0.05, 1],
-    remove: ['(?:left|right)-orbit-piston-A-angle-marker', '(?:left|right)-orbit-packing-orientation-marker', '(?:induction|eduction)-flow-arrow-indicator'],
-    note: 'Front elevation of the casing on its cast foot, drum B and pivoted pistons a, as Brown draws it; no bed slab, rotation markers or flow spheres are drawn.',
+    note: 'Section of the cylinder on its cast foot with its two port necks, hub C on the eccentric shaft B touching the bore at the top, and pistons A passing through the rolling packings a; the rings that keep A radial turn on a hub centred on the cylinder and are seen through the front web of C (Brown dots them). Translucent steam fills the space behind the piston that has passed the right neck and, expanding, the space between the pistons until the leading piston reaches the left neck; the swept space is faint.',
   },
   428: {
     camera: [0.08, 0.05, 1],
@@ -811,8 +807,7 @@ export default {
   },
   429: {
     camera: [0.08, 0.05, 1],
-    remove: ['fixed-foundation-of-Holly-rotary-engine', 'downward-(?:induction|eduction)-steam-arrow-region', '(?:left|right)-.*-radial-packing-strip-\\d+'],
-    note: 'Section of the one-piece two-lobed casing (solid back cover, cut on the front plane) with its top induction and bottom eduction port channels and the toothed pistons, as Brown draws it; no stand, steam tints or painted packing marks are drawn.',
+    note: 'Section of the one-piece two-lobed casing (solid back cover, cut on the front plane) with its top induction and bottom eduction channels and the two toothed elliptical pistons filling the bores\' depth, as Brown draws it; no stand or painted packing marks are drawn. Translucent steam fills the space between the pistons at the top and the pockets they carry round against the bore; the space at the bottom, into which each pocket is released, is faint.',
   },
   430: {
     camera: [0.08, 0.05, 1],

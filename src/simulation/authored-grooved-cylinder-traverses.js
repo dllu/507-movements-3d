@@ -55,7 +55,11 @@ function rotatingObliqueGrooveTraverse(movement) {
   const followerAmplitude = 0.32;
   const outputStroke = followerAmplitude * 2;
   const groovePitchMagnitude = followerAmplitude;
-  const contactWorldAngle = -0.70;
+  // Brown's pin hangs straight down from the upper shaft into the groove at
+  // the top of the lower cylinder; at his pose the pin sits at the groove's
+  // left extreme, so the oblique groove is seen edgewise as one straight
+  // diagonal.
+  const contactWorldAngle = 0;
   const sourceDriverAngle = -contactWorldAngle;
   const contactY = lowerAxisY
     + grooveCenterRadius * Math.cos(contactWorldAngle);
@@ -373,16 +377,19 @@ function rotatingObliqueGrooveTraverse(movement) {
   upperTranslationIndex.userData.role =
     'white-straight-index-on-nonrotating-traversing-upper-drum';
   upperSlide.add(upperTranslationIndex);
+  // Brown's pin is one straight bar through the end of the upper shaft,
+  // standing a little above it and reaching down into the groove.
   const followerBridge = makeBeam(
-    new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(0, 0, contactZ),
+    new THREE.Vector3(0, -0.01, 0),
+    new THREE.Vector3(0, 0.01, 0),
     { color: PALETTE.accent, depth: 0.105, thickness: 0.105 },
   );
   followerBridge.userData.role =
     'radial-bridge-from-upper-shaft-end-to-groove-follower';
+  followerBridge.visible = false;
   upperSlide.add(followerBridge);
   const followerStem = makeBeam(
-    new THREE.Vector3(0, 0, contactZ),
+    new THREE.Vector3(0, 0.42, contactZ),
     new THREE.Vector3(0, contactY - upperAxisY, contactZ),
     { color: PALETTE.accent, depth: 0.105, thickness: 0.105 },
   );

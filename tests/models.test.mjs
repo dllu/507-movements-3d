@@ -58176,9 +58176,11 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
         1e-14, 'slot center stays in the vertical frame guide');
       near(state.slotContactError, 0, 1e-14,
         'pin remains on the circular slot centerline');
-      near(state.followerArmLengthError, 0, 4e-16,
+      // pass 71: the arm now reaches in from the rock shaft off the plate
+      // (length about 2.7), so round-off is scaled accordingly.
+      near(state.followerArmLengthError, 0, 2e-15,
         'finite rockshaft follower arm');
-      near(state.valveLinkLengthError, 0, 4e-16,
+      near(state.valveLinkLengthError, 0, 2e-15,
         'finite rockshaft-to-valve link');
       near(state.valveStemGuideError, 0, 1e-15,
         'valve stem remains on its cylinder guide');
@@ -58272,18 +58274,29 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
   assert.ok(dense.crankRadius < 1e-15);
   assert.ok(dense.dieGuide < 9e-15);
   assert.ok(dense.eccentricOpposition < 1e-15);
-  assert.ok(dense.followerArm < 7e-16);
+  assert.ok(dense.followerArm < 2e-15);
   assert.ok(dense.linkPinSpacing < 7e-16);
   assert.ok(dense.outputRod < 1e-12);
-  assert.ok(dense.slotContact < 7e-16);
+  assert.ok(dense.slotContact < 3e-15);
   assert.ok(dense.unitCylinderAxis < 4e-16);
-  assert.ok(dense.valveGuide < 1e-15);
-  assert.ok(dense.valveLink < 7e-16);
+  assert.ok(dense.valveGuide < 3e-15);
+  assert.ok(dense.valveLink < 2e-15);
   assert.ok(maximumIterations <= 6);
   assert.ok(maximumCylinderAngle > 0.10);
   assert.ok(maximumCylinderAngle < 0.11);
   assert.ok(maximumLinkAngle > 0.1);
-  assert.ok(maximumRockshaftAngle > 0.1);
+  // pass 71: the rock-shaft arm reaches in from off the plate, as Brown
+  // draws it, so it swings through a smaller angle for the same pin travel.
+  assert.ok(maximumRockshaftAngle > 0.05);
+
+  // pass 71: reversing the link reverses the engine: the shaft turns one
+  // way in full gear ahead, the other in full gear astern, stops in mid gear
+  // and returns to its start at the end of the loop.
+  assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, geometry.selectorPeriod);
+  assert.ok(stateAtTime(canonicalTimes.aheadFullGear).inputAngularSpeed > 1);
+  assert.ok(stateAtTime(canonicalTimes.asternFullGear).inputAngularSpeed < -1);
+  near(stateAtTime(canonicalTimes.sourceMidGear).inputAngularSpeed, 0, 1e-12, 'stopped in mid gear');
+  near(model.root.userData.inputAngleAtTime(geometry.selectorPeriod), 0, 1e-12, 'shaft angle closes the loop');
   assert.ok(maximumSlotParameter < geometry.lowerHalfAngle - 0.045 / geometry.slotRadius,
     'finite follower remains clear of the lower slot ends');
   assert.ok(minimumSlideStroke < 0);
@@ -58343,7 +58356,7 @@ test('movement 171 closes the reconstructed asymmetric two-eccentric Stephenson 
     vectorNear(
       new THREE.Vector2(followerPinWorld.x, followerPinWorld.y),
       state.followerPinWorld,
-      2e-15,
+      6e-15,
       'rendered slot follower pin',
     );
     near(inputRotor.rotation.z, state.inputAngle, 1e-15,

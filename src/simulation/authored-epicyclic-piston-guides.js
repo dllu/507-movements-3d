@@ -118,29 +118,16 @@ function makeCarrierFlywheel({
     flywheelSpokes.push(spoke);
   }
 
+  // Brown's plate C is a round disk fast on the shaft, about half the
+  // diameter of D's outer ring, carrying B's crank-pin near its rim.
   const centralPlateC = cylinderAlongZ(
-    1.75 * sourceScale,
+    4.6 * sourceScale,
     0.20,
     driverMaterial,
-    48,
+    96,
   );
   centralPlateC.position.z = carrierPlaneZ;
   centralPlateC.userData.role = 'shaft-fast-central-plate-C';
-  const carrierCrankArmC = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      carrierCrankRadius,
-      0.70 * sourceScale,
-      0.18,
-    ),
-    driverMaterial,
-  );
-  carrierCrankArmC.position.set(
-    carrierCrankRadius / 2,
-    0,
-    carrierPlaneZ,
-  );
-  carrierCrankArmC.userData.role =
-    'source-animation-replacement-crank-arm-for-circular-plate-C';
   const shaft = cylinderAlongZ(
     0.72 * sourceScale,
     planetGearPlaneZ - flywheelPlaneZ + 0.74,
@@ -212,7 +199,6 @@ function makeCarrierFlywheel({
     hub,
     shaft,
     centralPlateC,
-    carrierCrankArmC,
     carrierCrankPin,
     carrierCrankPinAnchor,
     flywheelIndex,
@@ -220,7 +206,6 @@ function makeCarrierFlywheel({
   );
   return {
     carrier,
-    carrierCrankArmC,
     carrierCrankPin,
     carrierCrankPinAnchor,
     carrierIndex,
@@ -897,7 +882,6 @@ function EpicyclicPistonRodGuide(movement) {
     'fixed-annulus-planet-wrist-straight-line-piston-guide';
   root.userData.blocks = {
     annulusOuterBand: fixedParts.annulusOuterBand,
-    carrierCrankArmC: carrierParts.carrierCrankArmC,
     carrierCrankPin: carrierParts.carrierCrankPin,
     carrierCrankPinAnchor: carrierParts.carrierCrankPinAnchor,
     carrierIndex: carrierParts.carrierIndex,

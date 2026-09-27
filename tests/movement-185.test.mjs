@@ -561,12 +561,15 @@ test('movement 185 closes both eccentric rods, suspension, curved die, rocker, a
     'suspensionPin',
     'valveStemPoint',
   ]) vector2Near(closedTime[key], sourceTime[key], 0, `closed ${key}`);
-  near(
-    sourceTime.inputAngularSpeed * geometry.selectorPeriod / FULL_TURN,
-    geometry.inputTurnsPerSelectorCycle,
-    1e-15,
-    'integer shaft turns per selector demonstration',
-  );
+  // Pass 71: the lever reverses the engine. The shaft turns forward in
+  // forward gear, backward in backward gear and stops in mid gear; the loop
+  // nets exactly one forward turn, so it closes seamlessly.
+  near(model.root.userData.inputAngleAtPhase(1), FULL_TURN, 1e-9, 'one net forward turn per demonstration');
+  assert.ok(stateAtTime(canonicalTimes.forwardFullGear).inputAngularSpeed > 1);
+  assert.ok(stateAtTime(canonicalTimes.backwardFullGear).inputAngularSpeed < -1);
+  near(stateAtTime(canonicalTimes.midGear).inputAngularSpeed, 0, 1e-12, 'engine stopped in mid gear');
+  assert.ok(sourceTime.inputAngularSpeed > 1, 'Brown\'s partial forward gear runs forward');
+  assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, geometry.selectorPeriod);
   for (const selector of [-1, -0.25, 0, 0.4, 1]) {
     vector2Near(
       reversingAnchorAt(selector),
@@ -725,12 +728,9 @@ test('movement 185 rendered transforms keep every analytical joint visibly attac
   assert.equal(cameraEnvelope.receiveShadow, false);
 
   const physicalBounds = new THREE.Box3();
-  for (const time of [
-    canonicalTimes.sourcePartialGear,
-    canonicalTimes.forwardFullGear,
-    canonicalTimes.midGear,
-    canonicalTimes.backwardFullGear,
-  ]) {
+  // Pass 71: sampled over the whole demonstration (the shaft angle at the
+  // canonical gear settings changed when the lever began reversing it).
+  for (const time of Array.from({ length: 49 }, (_, i) => geometry.selectorPeriod * i / 48)) {
     model.update(time, 0.016);
     model.root.updateMatrixWorld(true);
     for (const object of [

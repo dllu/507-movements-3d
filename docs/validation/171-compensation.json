@@ -2,32 +2,32 @@
   "movement": 171,
   "poses": 3605,
   "playbackPoses": 721,
-  "neutralAngleError": 5.551115123125783e-16,
+  "neutralAngleError": 4.440892098500626e-16,
   "slotCenterError": 0,
   "armLengthError": 8.881784197001252e-16,
-  "slotRadiusError": 8.881784197001252e-16,
+  "slotRadiusError": 1.7763568394002505e-15,
   "guideMotion": 0,
   "outputRodHorizontalSpan": 0,
   "offNeutral": [
     {
       "stroke": -0.18,
-      "relativeAngleRange": 0.024991764028030827
+      "relativeAngleRange": 0.003291897936931021
     },
     {
       "stroke": -0.1,
-      "relativeAngleRange": 0.01155747808729668
+      "relativeAngleRange": 0.0017874613984878995
     },
     {
       "stroke": 0,
-      "relativeAngleRange": 9.992007221626409e-16
+      "relativeAngleRange": 7.771561172376096e-16
     },
     {
       "stroke": 0.1,
-      "relativeAngleRange": 0.017229939924799265
+      "relativeAngleRange": 0.0020763345650621212
     },
     {
       "stroke": 0.24,
-      "relativeAngleRange": 0.10439692081992669
+      "relativeAngleRange": 0.006364154810731659
     }
   ],
   "source": "https://www.gutenberg.org/cache/epub/10998/pg10998-images.html",
@@ -40,7 +40,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "ccd4ec0d1de76e6c245ace936efdae7002c6d7c4544ebbf78f1346bb0ac16f0c"
+      "sha256": "095390c2de4a286cb46cd5619db53f07e2f5d8bc93c90e6fe8c0a4a2dac748c3"
     }
   ]
 }

@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { makeBoredLinkRod } from './bored-link-rod.js';
 import { fitPistonGuide, boredJournal } from './piston-guide-parts.js';
-import { rectangularRodPassageGeometry } from './authored-oscillating-engines.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -400,81 +399,38 @@ function tableEngine(movement) {
   fixedFrame.add(tablePlinth);
   const tableLegs = [tablePlinth];
 
-  const cylinderWallThickness = (
-    sourceCylinderOuterHalfWidth - sourceCylinderInnerHalfWidth
-  ) * sourceScale;
-  const cylinderBoreHeight = cylinderBoreMaximumY
-    - cylinderBoreMinimumY;
-  const cylinderWalls = [-1, 1].map((side, index) => {
-    const wall = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        cylinderWallThickness,
-        cylinderBoreHeight,
-        0.94,
-      ),
-      frameMaterial,
-    );
-    wall.position.set(
-      side * (sourceCylinderOuterHalfWidth
-        + sourceCylinderInnerHalfWidth) * sourceScale / 2,
-      (cylinderBoreMinimumY + cylinderBoreMaximumY) / 2,
-      -0.05,
-    );
-    wall.userData.role = `fixed-open-cylinder-side-wall-${index + 1}`;
-    fixedFrame.add(wall);
-    return wall;
-  });
-  const lowerCylinderCover = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourceCylinderOuterHalfWidth * 2.5 * sourceScale,
-      (sourceCylinderBoreMinimumY - sourceCylinderShellMinimumY)
-        * sourceScale,
-      0.84,
-    ),
+  // Brown draws a round, closed cylinder: one turned casting (barrel, bottom
+  // cover and top cover with their flanges) revolved about the piston-rod
+  // axis, bored through the top cover for the rod (the lathe profile keeps
+  // the same small bore through the bottom cover, closed by the table top,
+  // so no triangles collapse on the axis); the piston is hidden.
+  const cylinderAxisZ = 0.14;
+  const rodBoreRadius = sourcePistonRodHalfWidth + 0.02;
+  const flangeHalfWidth = 1.8;
+  const cylinderProfile = [
+    [rodBoreRadius, sourceCylinderShellMaximumY],
+    [flangeHalfWidth, sourceCylinderShellMaximumY],
+    [flangeHalfWidth, sourceCylinderShellMaximumY - 0.25],
+    [sourceCylinderOuterHalfWidth, sourceCylinderShellMaximumY - 0.25],
+    [sourceCylinderOuterHalfWidth, sourceCylinderShellMinimumY + 0.25],
+    [flangeHalfWidth, sourceCylinderShellMinimumY + 0.25],
+    [flangeHalfWidth, sourceCylinderShellMinimumY],
+    [rodBoreRadius, sourceCylinderShellMinimumY],
+    [rodBoreRadius, sourceCylinderBoreMinimumY],
+    [sourceCylinderInnerHalfWidth, sourceCylinderBoreMinimumY],
+    [sourceCylinderInnerHalfWidth, sourceCylinderBoreMaximumY],
+    [rodBoreRadius, sourceCylinderBoreMaximumY],
+    [rodBoreRadius, sourceCylinderShellMaximumY],
+  ].reverse().map(([r, y]) => new THREE.Vector2(r * sourceScale, y * sourceScale));
+  const cylinderCasting = new THREE.Mesh(
+    new THREE.LatheGeometry(cylinderProfile, 64),
     frameMaterial,
   );
-  lowerCylinderCover.position.set(
-    0,
-    (sourceCylinderShellMinimumY + sourceCylinderBoreMinimumY)
-      * sourceScale / 2,
-    -0.05,
-  );
-  lowerCylinderCover.userData.role = 'fixed-table-engine-lower-cylinder-cover';
-  const upperCylinderCover = new THREE.Mesh(
-    rectangularRodPassageGeometry(
-      sourceCylinderOuterHalfWidth * 2.5 * sourceScale,
-      (sourceCylinderShellMaximumY - sourceCylinderBoreMaximumY) * sourceScale,
-      0.84, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.116, 0.19,
-    ),
-    frameMaterial,
-  );
-  upperCylinderCover.position.set(
-    0,
-    (sourceCylinderBoreMaximumY + sourceCylinderShellMaximumY)
-      * sourceScale / 2,
-    -0.05,
-  );
-  upperCylinderCover.userData.role = 'fixed-table-engine-upper-cylinder-cover';
-  const cylinderEndPlates = [lowerCylinderCover, upperCylinderCover];
-  // Brown draws the cylinder as a closed casting, so its bore is closed by
-  // opaque front and back faces between the side walls; the piston is hidden.
-  const boreBack = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourceCylinderOuterHalfWidth * 2 * sourceScale,
-      cylinderBoreHeight,
-      0.05,
-    ),
-    frameMaterial,
-  );
-  boreBack.position.set(
-    0,
-    (cylinderBoreMinimumY + cylinderBoreMaximumY) / 2,
-    -0.545,
-  );
-  boreBack.userData.role = 'fixed-closed-table-engine-cylinder-back-face';
-  const boreFront = boreBack.clone();
-  boreFront.position.z = 0.445;
-  boreFront.userData.role = 'fixed-closed-table-engine-cylinder-front-face';
+  cylinderCasting.position.z = cylinderAxisZ;
+  cylinderCasting.userData.role = 'fixed-closed-round-table-engine-cylinder';
+  fixedFrame.add(cylinderCasting);
+  const cylinderWalls = [cylinderCasting];
+  const cylinderEndPlates = [];
   const gland = new THREE.Group();
   gland.userData.role = 'fixed-piston-rod-gland-atop-cylinder';
   [
@@ -482,19 +438,16 @@ function tableEngine(movement) {
     { halfWidth: 0.375, maximumY: 8.0, minimumY: 7.75 },
   ].forEach((specification, index) => {
     const collar = new THREE.Mesh(
-      rectangularRodPassageGeometry(
-        specification.halfWidth * 2 * sourceScale,
-        (specification.maximumY - specification.minimumY) * sourceScale,
-        0.91, sourcePistonRodHalfWidth * sourceScale + 0.006, 0.116, 0.16,
-      ),
+      new THREE.LatheGeometry([
+        [rodBoreRadius, specification.maximumY],
+        [specification.halfWidth, specification.maximumY],
+        [specification.halfWidth, specification.minimumY],
+        [rodBoreRadius, specification.minimumY],
+        [rodBoreRadius, specification.maximumY],
+      ].reverse().map(([r, y]) => new THREE.Vector2(r * sourceScale, y * sourceScale)), 48),
       frameMaterial,
     );
-    collar.position.set(
-      0,
-      (specification.minimumY + specification.maximumY)
-        * sourceScale / 2,
-      -0.02,
-    );
+    collar.position.z = cylinderAxisZ;
     collar.userData.role = `fixed-gland-collar-${index + 1}`;
     gland.add(collar);
   });
@@ -576,11 +529,13 @@ function tableEngine(movement) {
   const guideSlotArch = new THREE.Mesh(guideSlotArchGeometry, frameMaterial);
   guideSlotArch.position.set(0, 14.0 * sourceScale, 0.19);
   guideSlotArch.userData.role = 'fixed-inner-semicircular-end-of-guide-slot';
-  const guideFoot = new THREE.Mesh(
-    rectangularRodPassageGeometry(2.75 * sourceScale, 0.22 * sourceScale, 0.82,
-      sourcePistonRodHalfWidth * sourceScale + 0.006, 0.116, 0.18),
-    frameMaterial,
-  );
+  const guideFootGeometry = plate(polygonClipping.difference(
+    poly([[-1.375 * sourceScale, -0.41], [1.375 * sourceScale, -0.41],
+      [1.375 * sourceScale, 0.41], [-1.375 * sourceScale, 0.41]]),
+    poly(circle([0, cylinderAxisZ + 0.04], rodBoreRadius * sourceScale, 48)),
+  ), -0.11 * sourceScale, 0.11 * sourceScale);
+  guideFootGeometry.rotateX(Math.PI / 2);
+  const guideFoot = new THREE.Mesh(guideFootGeometry, frameMaterial);
   guideFoot.position.set(0, 7.86 * sourceScale, -0.04);
   guideFoot.userData.role = 'fixed-guide-frame-foot-on-cylinder';
 
@@ -595,10 +550,6 @@ function tableEngine(movement) {
   fixedFrame.add(
     tabletop,
     tableTopEdge,
-    lowerCylinderCover,
-    upperCylinderCover,
-    boreBack,
-    boreFront,
     gland,
     guideArch,
     guideSlotArch,
@@ -695,29 +646,24 @@ function tableEngine(movement) {
     sourcePistonRodTopY - sourcePistonRodBottomY
   ) * sourceScale;
   const pistonRod = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonRodHalfWidth * 2 * sourceScale,
-      pistonRodLength,
-      0.22,
-    ),
+    new THREE.CylinderGeometry(sourcePistonRodHalfWidth * sourceScale,
+      sourcePistonRodHalfWidth * sourceScale, pistonRodLength, 32),
     pistonMaterial,
   );
   pistonRod.position.set(
     0,
     (sourcePistonRodTopY + sourcePistonRodBottomY)
       * sourceScale / 2,
-    0.14,
+    cylinderAxisZ,
   );
   pistonRod.userData.role = 'vertical-piston-rod-rigid-with-crosshead';
+  // A round piston fitting the bore with a small running clearance.
   const pistonHead = new THREE.Mesh(
-    new THREE.BoxGeometry(
-      sourcePistonHeadHalfWidth * 2 * sourceScale,
-      pistonHeadThickness,
-      0.58,
-    ),
+    new THREE.CylinderGeometry(pistonHeadHalfWidth - 0.012,
+      pistonHeadHalfWidth - 0.012, pistonHeadThickness, 64),
     pistonMaterial,
   );
-  pistonHead.position.set(0, pistonHeadOffsetY, 0.10);
+  pistonHead.position.set(0, pistonHeadOffsetY, cylinderAxisZ);
   pistonHead.userData.role = 'moving-piston-head-inside-fixed-cylinder';
   const pistonHeadIndex = new THREE.Mesh(
     new THREE.BoxGeometry(
@@ -850,8 +796,6 @@ function tableEngine(movement) {
 
   root.userData.archetype = 'table-engine-two-side-rods-parallel-cranks';
   root.userData.blocks = {
-    boreBack,
-    boreFront,
     crankArms,
     crankBearingBlocks,
     crankIndexMarks,

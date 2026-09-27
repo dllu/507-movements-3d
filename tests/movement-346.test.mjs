@@ -101,8 +101,18 @@ test('movement 346 is the fixed-cylinder table engine with two side rods', () =>
   assert.equal(blocks.crankPinBosses.length, 2);
   assert.equal(blocks.crankIndexMarks.length, 2);
   assert.equal(blocks.crossheadPinCaps.length, 2);
-  assert.equal(blocks.cylinderWalls.length, 2);
-  assert.equal(blocks.cylinderEndPlates.length, 2);
+  // Brown's cylinder is one round, closed turned casting (barrel and both
+  // covers), not a box of walls and plates.
+  assert.equal(blocks.cylinderWalls.length, 1);
+  assert.equal(blocks.cylinderWalls[0].geometry.type, 'LatheGeometry');
+  assert.equal(blocks.cylinderEndPlates.length, 0);
+  assert.equal(blocks.pistonHead.geometry.type, 'CylinderGeometry');
+  const boreRadius = Math.max(...blocks.cylinderWalls[0].geometry.parameters.points
+    .filter((point) => point.y > 2.3 * 0.36 && point.y < 7.45 * 0.36 && point.x < 0.5)
+    .map((point) => point.x));
+  const pistonRadius = blocks.pistonHead.geometry.parameters.radiusTop;
+  assert.ok(pistonRadius < boreRadius && boreRadius - pistonRadius < 0.02,
+    'the round piston fits its bore');
   assert.equal(blocks.guideRails.length, 2);
   assert.equal(blocks.guideStandards.length, 2);
   // Brown's table-like base is one solid plinth, not two legs.

@@ -353,3 +353,31 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model418.root);
   disposeModel(model507.root);
 });
+
+test('418 (pass 71): D slide valve A admits steam to one port while its hollow joins the other to the exhaust', () => {
+  const model = createMovementModel(catalog.movements[417]);
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const steam = {};
+  model.root.traverse((object) => {
+    if (object.userData.steamVolume) steam[object.userData.role] = object;
+  });
+  const left = steam['steam-in-left-port-and-passage'];
+  const right = steam['steam-in-right-port-and-passage'];
+  const exhaust = steam['exhaust-steam-in-middle-port-and-passage'];
+  const chest = steam['live-steam-in-the-valve-chest'];
+  assert.ok(left && right && exhaust && chest);
+  for (let i = 0; i <= 64; i += 1) {
+    const time = geometry.cycleDuration * i / 64;
+    model.update(time);
+    const x = stateAtTime(time).valveX;
+    assert.equal(chest.userData.pressure, 1);
+    assert.equal(exhaust.userData.pressure, 0);
+    if (x > 0.1) { assert.equal(left.userData.pressure, 1); assert.equal(right.userData.pressure, 0); }
+    if (x < -0.1) { assert.equal(left.userData.pressure, 0); assert.equal(right.userData.pressure, 1); }
+    assert.ok(Math.abs(x) <= geometry.valveAmplitude + 1e-12);
+  }
+  // the travel is a port width plus lap each way: A (half-length 0.9) never
+  // uncovers the exhaust port to the chest
+  assert.ok(geometry.valveAmplitude + 0.12 < 0.9);
+  assert.ok(blocks);
+});

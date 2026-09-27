@@ -423,7 +423,11 @@ function oscillatingMarineEngineStephensonValveGear() {
   const lowerGuideCenterY = (468 - 428) * sourceUnitsPerPixel;
   const lowerGuideLength = (507 - 349) * sourceUnitsPerPixel;
   const sourceRasterBlockBounds = [[35, 406, 64, 457], [207, 404, 234, 455]];
-  const rockshaftPivotLocal = new THREE.Vector2(-0.55, 0.62);
+  // Pass 71: Brown draws the rock-shaft arm entering from the left, over
+  // the left guide block and along the outside of the slide to the pin at
+  // the top of the slot; the rock shaft lies off the plate to the left, on
+  // the cylinder.
+  const rockshaftPivotLocal = new THREE.Vector2(-2.6, 0.7);
   const sourceFollowerPinLocal = new THREE.Vector2(0, slotRadius);
   const followerArmLocal = sourceFollowerPinLocal.clone().sub(
     rockshaftPivotLocal,
@@ -434,7 +438,7 @@ function oscillatingMarineEngineStephensonValveGear() {
     followerArmLocal.x,
   );
   const valveArmLocal = new THREE.Vector2(-0.50, -0.30);
-  const valveGuideX = -1.36;
+  const valveGuideX = rockshaftPivotLocal.x - 0.81;
   // Unillustrated diagnostic output linkage: allow the full rockshaft arm
   // sweep without constraining the source-measured slide geometry.
   const valveLinkLength = Math.abs(rockshaftPivotLocal.x - valveGuideX)
@@ -622,20 +626,44 @@ function oscillatingMarineEngineStephensonValveGear() {
   };
 
   const selectorPeriod = 18;
-  // Three six-second crank revolutions close with one reversing traversal.
-  const inputAngularSpeed = 3 * FULL_TURN / selectorPeriod;
-  const selectorAtTime = (time) => Math.sin(
-    FULL_TURN * time / selectorPeriod,
-  );
+  // Pass 71: reversing the link reverses the engine. The reach rod is thrown
+  // over while the engine is stopped in mid gear; in full gear ahead the
+  // shaft turns one way and in full gear astern the other, at a speed that
+  // follows the gear. The selector dwells in full gear for about 46% of each
+  // half cycle; the shaft angle is the integral of the speed, and returns to
+  // zero at the end of the loop.
+  const cruiseAngularSpeed = FULL_TURN / 4;
+  const selectorAtTime = (time) => {
+    const x = Math.sin(FULL_TURN * time / selectorPeriod);
+    return Math.sign(x) * THREE.MathUtils.smootherstep(Math.abs(x), 0, 0.75);
+  };
+  const angularSpeedAtTime = (time) => -cruiseAngularSpeed * selectorAtTime(time);
+  const angleTableSize = 7200;
+  const angleTable = new Float64Array(angleTableSize + 1);
+  for (let i = 1; i <= angleTableSize; i += 1) {
+    const t0 = selectorPeriod * (i - 1) / angleTableSize;
+    const t1 = selectorPeriod * i / angleTableSize;
+    // Simpson's rule on each step
+    angleTable[i] = angleTable[i - 1] + (t1 - t0) / 6
+      * (angularSpeedAtTime(t0) + 4 * angularSpeedAtTime((t0 + t1) / 2) + angularSpeedAtTime(t1));
+  }
+  const closureResidual = angleTable[angleTableSize];
+  for (let i = 0; i <= angleTableSize; i += 1) angleTable[i] -= closureResidual * i / angleTableSize;
+  const inputAngleAtTime = (time) => {
+    const x = THREE.MathUtils.euclideanModulo(time, selectorPeriod) / selectorPeriod * angleTableSize;
+    const i = Math.min(angleTableSize - 1, Math.floor(x));
+    const f = x - i;
+    return angleTable[i] * (1 - f) + angleTable[i + 1] * f;
+  };
   const stateAtTime = (time) => {
     const state = stateAtInputAngle(
-      inputAngularSpeed * time,
+      inputAngleAtTime(time),
       selectorAtTime(time),
     );
-    state.inputAngularSpeed = inputAngularSpeed;
-    state.selectorRate = FULL_TURN / selectorPeriod * Math.cos(
-      FULL_TURN * time / selectorPeriod,
-    );
+    state.inputAngularSpeed = angularSpeedAtTime(time);
+    state.shaftDirection = state.inputAngularSpeed > 1e-6 ? 'ahead' : state.inputAngularSpeed < -1e-6 ? 'astern' : 'stopped';
+    const dt = 1e-4;
+    state.selectorRate = (selectorAtTime(time + dt) - selectorAtTime(time - dt)) / (2 * dt);
     state.time = time;
     return state;
   };
@@ -751,8 +779,10 @@ function oscillatingMarineEngineStephensonValveGear() {
     group.position.set(localPoint.x, localPoint.y, 0);
     group.userData.role = role;
     const eye = makeEye(0.13, 0.055, drivenMaterial, z + Math.sign(z) * .14);
-    const pin = cylinderAlongZ(0.07, 0.72, darkMaterial, 24);
-    pin.position.z = z;
+    // Pass 71: the pin spans the link plate and the rod eye only; it used
+    // to run on into the output rod's layer and clip it in full gear.
+    const pin = cylinderAlongZ(0.07, 0.58, darkMaterial, 24);
+    pin.position.z = Math.sign(z) * 0.18;
     group.add(eye, pin);
     linkGroup.add(group);
     return group;
@@ -869,7 +899,9 @@ function oscillatingMarineEngineStephensonValveGear() {
   const slideEyeRing = new THREE.Mesh(plate(clip.difference(clip.union(
     poly(circle([0, 0], .21, 96)), capsule([0, slotRadius + .18 - slideEyeRadius], [0, 0], .10)),
     poly(circle([0, 0], .079, 96))), -.075, .075), drivenMaterial);
-  const slideEyePin = cylinderAlongZ(0.075, 0.90, darkMaterial, 24);
+  // Front of the slide only: the rock-shaft arm passes behind it.
+  const slideEyePin = cylinderAlongZ(0.075, 0.52, darkMaterial, 24);
+  slideEyePin.position.z = 0.185;
   slideEye.add(slideEyeRing, slideEyePin);
   curvedSlide.add(slideEye);
   slideCarrier.add(curvedSlide);
@@ -883,10 +915,37 @@ function oscillatingMarineEngineStephensonValveGear() {
   rockshaftRotor.userData.axis = Z_AXIS.clone();
   rockshaftRotor.userData.role =
     'valve-rockshaft-with-slot-follower-and-opposite-valve-arm';
-  const followerPin = cylinderAlongZ(0.045, 0.68, whiteMaterial, 28);
-  followerPin.position.set(followerArmLocal.x, followerArmLocal.y, 0);
-  followerPin.userData.role = 'white-pin-captured-within-curved-slide-slot';
-  rockshaftRotor.add(followerPin);
+  const followerPin = cylinderAlongZ(0.045, 0.25, darkMaterial, 28);
+  followerPin.position.set(followerArmLocal.x, followerArmLocal.y, 0.135 - 0.34);
+  followerPin.userData.role = 'pin-of-rock-shaft-arm-captured-within-curved-slide-slot';
+  // The arm: a curved flat bar from the rock shaft, over the left guide
+  // block, along the outside of the slide and in behind it to the pin.
+  const armCentreLine = new THREE.SplineCurve([
+    [-2.6, 0.7], [-2.13, 0.95], [-1.75, 1.25], [-1.42, 1.45], [-1.05, 1.57], [-0.7, 1.64], [-0.38, 1.67], [-0.14, 1.65], [0, 1.53],
+  ].map(([x, y]) => new THREE.Vector2(x - rockshaftPivotLocal.x, y - rockshaftPivotLocal.y))).getPoints(64)
+    .map((point) => [point.x, point.y]);
+  const armHalfWidth = 0.065;
+  const armLeft = [];
+  const armRight = [];
+  armCentreLine.forEach((point, index) => {
+    const a = armCentreLine[Math.max(0, index - 1)];
+    const b = armCentreLine[Math.min(armCentreLine.length - 1, index + 1)];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1;
+    const normal = [-(b[1] - a[1]) / length, (b[0] - a[0]) / length];
+    armLeft.push([point[0] + normal[0] * armHalfWidth, point[1] + normal[1] * armHalfWidth]);
+    armRight.push([point[0] - normal[0] * armHalfWidth, point[1] - normal[1] * armHalfWidth]);
+  });
+  const armOutline = clip.difference(clip.union(
+    poly([...armLeft, ...armRight.reverse()]),
+    poly(circle([0, 0], 0.13, 48)),
+    capsule([armCentreLine.at(-1)[0], armCentreLine.at(-1)[1]], [followerArmLocal.x, followerArmLocal.y], 0.085),
+  ), poly(circle([0, 0], 0.055, 32)), poly(circle([followerArmLocal.x, followerArmLocal.y], 0.046, 32)));
+  const rockshaftArm = new THREE.Mesh(plate(armOutline, 0.012 - 0.34, 0.074 - 0.34), accentMaterial);
+  rockshaftArm.userData.role = 'rock-shaft-arm-carrying-the-slot-pin';
+  const rockshaftStub = cylinderAlongZ(0.052, 0.5, darkMaterial, 24);
+  rockshaftStub.position.z = 0.04 - 0.34 - 0.2;
+  rockshaftStub.userData.role = 'rock-shaft-stub-on-the-cylinder';
+  rockshaftRotor.add(followerPin, rockshaftArm, rockshaftStub);
   cylinderCarrier.add(rockshaftRotor);
   root.add(cylinderCarrier);
 
@@ -940,6 +999,8 @@ function oscillatingMarineEngineStephensonValveGear() {
     dieIndex,
     diePin,
     followerPin,
+    rockshaftArm,
+    rockshaftStub,
     inputRotor,
     inputShaft,
     linkEndBridges,
@@ -1112,6 +1173,8 @@ function oscillatingMarineEngineStephensonValveGear() {
   root.userData.mechanism =
     'opposed-eccentric-stephenson-link-trunnion-centered-oscillating-cylinder-valve-gear';
   root.userData.selectorAtTime = selectorAtTime;
+  root.userData.inputAngleAtTime = inputAngleAtTime;
+  root.userData.animationTiming = { authoredCyclePeriod: selectorPeriod };
   root.userData.sourcePointFromRaster = sourcePointFromRaster;
   root.userData.stateAtInputAngle = stateAtInputAngle;
   root.userData.stateAtTime = stateAtTime;

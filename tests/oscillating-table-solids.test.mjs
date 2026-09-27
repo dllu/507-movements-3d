@@ -111,10 +111,16 @@ test('346: actual rod cross-section passes through the cover, gland and guide fo
   const b = root.userData.blocks;
   root.updateMatrixWorld(true);
   const ray = new THREE.Raycaster();
-  for (const x of [-0.045, 0, 0.045]) for (const z of [0.03, 0.14, 0.25]) {
+  // Probe inside the round rod's cross-section (radius 0.045 about its axis).
+  const rodBox = new THREE.Box3().setFromObject(b.pistonRod), axis = rodBox.getCenter(new THREE.Vector3());
+  for (const [dx, dz] of [[0, 0], [0.03, 0], [-0.03, 0], [0, 0.03], [0, -0.03], [0.02, 0.02], [-0.02, -0.02]]) {
+    const x = axis.x + dx, z = axis.z + dz;
     ray.set(new THREE.Vector3(x, 10, z), new THREE.Vector3(0, -1, 0));
-    for (const part of [b.cylinderEndPlates[1], b.guideFoot, ...b.gland.children]) {
-      assert.equal(ray.intersectObject(part, false).length, 0, part.userData.role);
+    // Pass 71 casts the covers with the barrel as one casting (cylinderWalls[0]).
+    for (const part of [b.cylinderEndPlates[1] ?? b.cylinderWalls[0], b.guideFoot, ...b.gland.children]) {
+      // Only the top cover and above matter; the rod never reaches the bottom cover.
+      const hits = ray.intersectObject(part, false).filter((hit) => hit.point.y > rodBox.min.y);
+      assert.equal(hits.length, 0, part.userData.role);
     }
   }
   disposeObject3D(root);

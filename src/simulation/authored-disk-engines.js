@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { circle, poly, polygonClipping as clip } from './finite-plate-geometry.js';
+import { STEAM_COLORS, STEAM_OPACITY, steamMaterial } from './steam-section-kit.js';
 import {
   PALETTE,
   markShadows,
@@ -215,6 +216,133 @@ function halfRevolvedRegionGeometry(polygons, segments = 96) {
     positions = sidePositions;
   }
   // Group 0: revolved surfaces; group 1: the flat cut faces of the section.
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute([...sidePositions, ...capPositions], 3));
+  geometry.addGroup(0, sidePositions.length / 3, 0);
+  geometry.addGroup(sidePositions.length / 3, capPositions.length / 3, 1);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+// Like halfRevolvedRegionGeometry, but the revolved region may change along
+// the half-turn: `intervals` is a list of {phi0, phi1, region} covering
+// [pi, 2pi] in order. Where the region changes, the step between the two
+// regions is closed by flat radial faces (a port's walls, a divider's
+// faces), so the solid stays watertight. Only the end caps on z = 0 take
+// the section-face material group.
+function revolvedRegionIntervalsGeometry(sourceIntervals, segmentsPerRadian = 30) {
+  // Conform every ring to the union of all vertices, so the side surfaces of
+  // neighbouring intervals and the step faces between them meet edge to
+  // edge (no T-junctions).
+  const steps = sourceIntervals.slice(1).map(({ region }, index) => [
+    clip.difference(sourceIntervals[index].region, region),
+    clip.difference(region, sourceIntervals[index].region),
+  ]);
+  const vertices = [];
+  const collect = (multi) => multi.forEach((polygon) => polygon.forEach((ring) => ring.forEach((v) => vertices.push(v))));
+  sourceIntervals.forEach(({ region }) => collect(region));
+  steps.forEach(([a, b]) => { collect(a); collect(b); });
+  const conform = (multi) => multi.map((polygon) => polygon.map((ring) => {
+    const out = [];
+    for (let i = 0; i < ring.length - 1; i += 1) {
+      const [a0, b0] = ring[i], [a1, b1] = ring[i + 1];
+      const da = a1 - a0, db = b1 - b0, lengthSq = da * da + db * db;
+      out.push(ring[i]);
+      if (lengthSq < 1e-20) continue;
+      const inserted = [];
+      for (const v of vertices) {
+        const t = ((v[0] - a0) * da + (v[1] - b0) * db) / lengthSq;
+        if (t <= 1e-9 || t >= 1 - 1e-9) continue;
+        const off = Math.abs((v[0] - a0) * db - (v[1] - b0) * da) / Math.sqrt(lengthSq);
+        if (off < 1e-9) inserted.push([t, v]);
+      }
+      inserted.sort((x, y) => x[0] - y[0]);
+      for (const [, v] of inserted) {
+        const last = out.at(-1);
+        if (Math.hypot(v[0] - last[0], v[1] - last[1]) > 1e-12) out.push(v);
+      }
+    }
+    out.push(ring.at(-1));
+    return out;
+  }));
+  const intervals = sourceIntervals.map((interval) => ({ ...interval, region: conform(interval.region) }));
+  const sidePositions = [], capPositions = [];
+  const point = (a, b, phi) => [a, b * Math.cos(phi), b * Math.sin(phi)];
+  const pushTriangle = (target, p, q, r, outward) => {
+    const u = new THREE.Vector3(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
+    const v = new THREE.Vector3(r[0] - p[0], r[1] - p[1], r[2] - p[2]);
+    const normal = u.cross(v);
+    if (normal.lengthSq() < 1e-20) return;
+    if (normal.dot(outward) < 0) target.push(...p, ...r, ...q);
+    else target.push(...p, ...q, ...r);
+  };
+  // Flat faces: ear-clip the raw polygon, then split each triangle at any
+  // shared vertex lying inside one of its edges, so the faces meet the
+  // conformed side strips edge to edge without zero-area slivers.
+  const interiorVertex = (p, q) => {
+    const da = q[0] - p[0], db = q[1] - p[1], lengthSq = da * da + db * db;
+    let best = null;
+    for (const v of vertices) {
+      const t = ((v[0] - p[0]) * da + (v[1] - p[1]) * db) / lengthSq;
+      if (t <= 1e-9 || t >= 1 - 1e-9) continue;
+      if (Math.abs((v[0] - p[0]) * db - (v[1] - p[1]) * da) / Math.sqrt(lengthSq) >= 1e-9) continue;
+      if (Math.hypot(v[0] - p[0], v[1] - p[1]) < 1e-12 || Math.hypot(v[0] - q[0], v[1] - q[1]) < 1e-12) continue;
+      if (!best || Math.abs(t - 0.5) < Math.abs(best[0] - 0.5)) best = [t, v];
+    }
+    return best?.[1] ?? null;
+  };
+  const flatFaces = (polygons, phi, outward, target) => {
+    const emit = (a, b, c, depth = 0) => {
+      if (depth < 64) {
+        for (const [p, q, r] of [[a, b, c], [b, c, a], [c, a, b]]) {
+          const v = interiorVertex(p, q);
+          if (v) { emit(p, v, r, depth + 1); emit(v, q, r, depth + 1); return; }
+        }
+      }
+      pushTriangle(target, point(a[0], a[1], phi), point(b[0], b[1], phi), point(c[0], c[1], phi), outward);
+    };
+    for (const [outer, ...holes] of polygons) {
+      const contour = outer.slice(0, -1).map(([a, b]) => new THREE.Vector2(a, b));
+      const holeRings = holes.map((ring) => ring.slice(0, -1).map(([a, b]) => new THREE.Vector2(a, b)));
+      const all = [...contour, ...holeRings.flat()].map((v) => [v.x, v.y]);
+      for (const [i, j, k] of THREE.ShapeUtils.triangulateShape(contour, holeRings)) emit(all[i], all[j], all[k]);
+    }
+  };
+  intervals.forEach(({ phi0, phi1, region }, index) => {
+    const segments = Math.max(1, Math.ceil((phi1 - phi0) * segmentsPerRadian));
+    const phis = Array.from({ length: segments + 1 }, (_, i) => phi0 + (phi1 - phi0) * i / segments);
+    for (const polygon of region) {
+      for (const ring of polygon) {
+        const points = ring.slice(0, -1);
+        for (let i = 0; i < points.length; i += 1) {
+          const [a0, b0] = points[i], [a1, b1] = points[(i + 1) % points.length];
+          let na = b1 - b0, nb = -(a1 - a0);
+          const length = Math.hypot(na, nb);
+          if (length < 1e-12) continue;
+          na /= length; nb /= length;
+          const ma = (a0 + a1) / 2 + na * 1e-4, mb = (b0 + b1) / 2 + nb * 1e-4;
+          if (insideRegion(region, ma, mb)) { na = -na; nb = -nb; }
+          for (let j = 0; j < segments; j += 1) {
+            const phi = (phis[j] + phis[j + 1]) / 2;
+            const outward = new THREE.Vector3(na, nb * Math.cos(phi), nb * Math.sin(phi));
+            const p00 = point(a0, b0, phis[j]), p10 = point(a1, b1, phis[j]);
+            const p01 = point(a0, b0, phis[j + 1]), p11 = point(a1, b1, phis[j + 1]);
+            pushTriangle(sidePositions, p00, p10, p11, outward);
+            pushTriangle(sidePositions, p00, p11, p01, outward);
+          }
+        }
+      }
+    }
+    const raw = sourceIntervals[index].region;
+    if (index === 0) flatFaces(raw, phi0, new THREE.Vector3(0, 0, 1), capPositions);
+    if (index === intervals.length - 1) flatFaces(raw, phi1, new THREE.Vector3(0, 0, 1), capPositions);
+    if (index > 0) {
+      const [solidBefore, solidAfter] = steps[index - 1];
+      const tangent = new THREE.Vector3(0, -Math.sin(phi0), Math.cos(phi0));
+      flatFaces(solidBefore, phi0, tangent, sidePositions);
+      flatFaces(solidAfter, phi0, tangent.clone().negate(), sidePositions);
+    }
+  });
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute('position', new THREE.Float32BufferAttribute([...sidePositions, ...capPositions], 3));
   geometry.addGroup(0, sidePositions.length / 3, 0);
@@ -1280,13 +1408,81 @@ function diskEngine(movement) {
   };
   setGeometry(sphericalZone, halfRevolvedRegionGeometry(clip.intersection(casingRegion, zoneRegion)));
   sphericalZone.userData.role = 'fixed-rear-half-spherical-zone-and-outer-skin-section';
+  // Ports and steam chests (pass 71). Each conical head is pierced by two
+  // rectangular ports just clear of the diaphragm: the admission port above
+  // it and the eduction port below. Each side of the disk lies against one
+  // cone, so each cone's ports serve that side alone. The hollow behind each
+  // head is divided on the diaphragm's plane: the upper half is the steam
+  // chest feeding the admission ports, the lower half the eduction chest.
+  // Brown draws no pipes; the chests' supply and exhaust connections are
+  // taken to lie in the front half removed by his section.
+  const diaphragmPhi = 1.5 * Math.PI;
+  const portInner = 1.30, portOuter = 1.72;
+  const portNear = THREE.MathUtils.degToRad(4.5), portFar = THREE.MathUtils.degToRad(19);
+  const dividerHalf = 0.05 / 1.2;
+  const portCut = (side) => poly([
+    [side * (coneOffset + portInner * tanBeta - 0.03), portInner],
+    [side * (headOffset + portInner * tanBeta + 0.03), portInner],
+    [side * (headOffset + portOuter * tanBeta + 0.03), portOuter],
+    [side * (coneOffset + portOuter * tanBeta - 0.03), portOuter],
+  ]);
+  const chestRegion = (side) => clip.difference(headInterior(side),
+    rodOpening(side, (side < 0 ? 0.105 : 0.10) + 0.06));
+  const casingSolid = (hollows) => clip.difference(
+    rect(-casingEndX, 0, casingEndX, casingOuterRadius),
+    cavity, ...hollows,
+    halfDisk(centralBallRadius + 0.006),
+    rodOpening(-1, 0.105), rodOpening(1, 0.10),
+  );
+  const sleevedCasingRegion = casingSolid([chestRegion(-1), chestRegion(1)]);
+  const dividedCasingRegion = casingSolid([]);
   conicalHeads.forEach((head, index) => {
     const side = index === 0 ? -1 : 1;
-    setGeometry(head, halfRevolvedRegionGeometry(clip.intersection(
-      clip.difference(casingRegion, zoneRegion),
-      side < 0 ? rect(-far, 0, 0, far) : rect(0, 0, far, far),
-    )));
+    const halfPlane = side < 0 ? rect(-far, 0, 0, far) : rect(0, 0, far, far);
+    // The rod's conical passage runs through the hollow in a sleeve, so the
+    // chests never open to it.
+    const sleeved = clip.intersection(clip.difference(sleevedCasingRegion, zoneRegion), halfPlane);
+    const ported = clip.difference(sleeved, portCut(side));
+    const divided = clip.intersection(clip.difference(dividedCasingRegion, zoneRegion), halfPlane);
+    setGeometry(head, revolvedRegionIntervalsGeometry([
+      { phi0: Math.PI, phi1: diaphragmPhi - portFar, region: sleeved },
+      { phi0: diaphragmPhi - portFar, phi1: diaphragmPhi - portNear, region: ported },
+      { phi0: diaphragmPhi - portNear, phi1: diaphragmPhi - dividerHalf, region: sleeved },
+      { phi0: diaphragmPhi - dividerHalf, phi1: diaphragmPhi + dividerHalf, region: divided },
+      { phi0: diaphragmPhi + dividerHalf, phi1: diaphragmPhi + portNear, region: sleeved },
+      { phi0: diaphragmPhi + portNear, phi1: diaphragmPhi + portFar, region: ported },
+      { phi0: diaphragmPhi + portFar, phi1: 2 * Math.PI, region: sleeved },
+    ]));
+    head.userData.ports = { admission: [diaphragmPhi + portNear, diaphragmPhi + portFar],
+      eduction: [diaphragmPhi - portFar, diaphragmPhi - portNear], radial: [portInner, portOuter] };
   });
+  // Steam in the chests: live above the divider, exhaust below.
+  const chestSteam = [];
+  for (const side of [-1, 1]) {
+    const hollow = chestRegion(side);
+    const inset = (multi) => multi.map((polygon) => polygon.map((ring) => {
+      const cx = ring.reduce((sum, [a]) => sum + a, 0) / ring.length;
+      const cy = ring.reduce((sum, [, b]) => sum + b, 0) / ring.length;
+      return ring.map(([a, b]) => [cx + (a - cx) * 0.985, cy + (b - cy) * 0.985]);
+    }));
+    const chestShape = inset(hollow);
+    for (const [kind, phi0, phi1] of [
+      ['live', diaphragmPhi + dividerHalf + 0.02, 2 * Math.PI - 0.004],
+      ['exhaust', Math.PI + 0.004, diaphragmPhi - dividerHalf - 0.02],
+    ]) {
+      const geometry = revolvedRegionIntervalsGeometry([{ phi0, phi1, region: chestShape }]);
+      geometry.clearGroups();
+      const material = steamMaterial(kind);
+      material.side = THREE.DoubleSide;
+      const volume = new THREE.Mesh(geometry, material);
+      volume.userData.role = `steam-${kind === 'live' ? 'admission' : 'eduction'}-chest-behind-${side < 0 ? 'left' : 'right'}-head`;
+      volume.userData.steamVolume = true;
+      volume.renderOrder = 2;
+      fixedChamber.add(volume);
+      chestSteam.push(volume);
+    }
+  }
+  root.userData.blocks.chestSteam = chestSteam;
   // The section solid replaces the former translucent shells, rib lines and
   // rings, the cradle and the white contact and roll indices.
   for (const hidden of [...chamberJunctionRings, ...centralSeatRings, ...chamberShellRibs,
@@ -1450,8 +1646,223 @@ function diskEngine(movement) {
   root.userData.cameraFov = 12;
   Object.assign(geometry, { casingEndX, casingOuterRadius, coneOffset, flywheelRadius });
 
-  update(0);
+  // Steam in the rear half of the chamber (pass 71). The working space is
+  // the zone between the two cones, the ball and the sphere. The disk
+  // splits it into two sides, each touching one cone along a line (the
+  // pinch) that travels round the axis with the crank. The fixed diaphragm
+  // (the rear horizontal half-plane) cuts each side into two cells: the one
+  // behind the travelling pinch, just above the diaphragm, grows and takes
+  // live steam from the admission side; the one ahead of the pinch is swept
+  // out through the eduction side below the diaphragm. Both sides work, their
+  // pinches half a turn apart, so the engine has no dead point. The cells
+  // are rebuilt every frame from the disk position; only the rear half
+  // (behind Brown's section plane) is shown, as translucent volumes.
+  const steamGroup = new THREE.Group();
+  steamGroup.position.copy(ballCenter);
+  steamGroup.userData.role = 'steam-volumes-in-rear-half-of-disk-chamber';
+  root.add(steamGroup);
+  // Each volume stands a few thousandths clear of the walls it fills, so its
+  // faces never coincide with the casting's.
+  const steamInner = centralBallRadius + 0.02;
+  const steamOuter = chamberRadius - 0.012;
+  const steamFaceOffset = pistonDiscThickness / 2 + 0.012;
+  const partitionHalf = radialPartitionThickness / 2 + 0.012;
+  const coneSine = coneOffset * Math.cos(nutationHalfAngle) - 0.008;
+  const steamCells = [];
+  const cellSegments = { u: 40, lambda: 8, r: 4 };
+  const cellCapacity = 4 * 6 * (2 * cellSegments.u * cellSegments.lambda
+    + 2 * cellSegments.u * cellSegments.r + 2 * cellSegments.lambda * cellSegments.r);
+  // One volume per side of the disk; its admission and eduction cells meet
+  // at the pinch, so when the pinch crosses the diaphragm the full live
+  // space simply becomes the eduction cell (per-vertex colour and alpha).
+  for (const side of [1, -1]) {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(cellCapacity * 3);
+    const colors = new Float32Array(cellCapacity * 4);
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3)
+      .setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(cellCapacity * 3), 3)
+      .setUsage(THREE.DynamicDrawUsage));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4)
+      .setUsage(THREE.DynamicDrawUsage));
+    geometry.setDrawRange(0, 0);
+    const material = steamMaterial('live');
+    material.side = THREE.DoubleSide;
+    material.vertexColors = true;
+    material.color.set(0xffffff);
+    material.opacity = 1;
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.role = `steam-in-working-space-on-${side > 0 ? 'crank' : 'far'}-side-of-disk`;
+    mesh.userData.steamVolume = true;
+    mesh.castShadow = false;
+    mesh.receiveShadow = false;
+    mesh.renderOrder = 2;
+    mesh.frustumCulled = false;
+    steamGroup.add(mesh);
+    steamCells.push({ side, mesh, positions, colors });
+  }
+  // Latitude interval (lambda from the YZ plane toward +X) of side `side` of
+  // the disk at radius r and azimuth phi (about X from +Y toward +Z).
+  const latitudeInterval = (normal, side, r, phi) => {
+    const coneLimit = nutationHalfAngle + Math.asin(Math.min(1, coneSine / r));
+    const a = normal.x;
+    const c = normal.y * Math.cos(phi) + normal.z * Math.sin(phi);
+    const magnitude = Math.hypot(a, c);
+    const k = Math.min(1, steamFaceOffset / (r * magnitude));
+    const delta = Math.atan2(c, a);
+    const base = side > 0
+      ? [Math.asin(k) - delta, Math.PI - Math.asin(k) - delta]
+      : [-Math.PI + Math.asin(k) - delta, -Math.asin(k) - delta];
+    let best = null;
+    for (const shift of [-2 * Math.PI, 0, 2 * Math.PI]) {
+      const lo = Math.max(-coneLimit, base[0] + shift);
+      const hi = Math.min(coneLimit, base[1] + shift);
+      if (hi > lo && (!best || hi - lo > best[1] - best[0])) best = [lo, hi];
+    }
+    if (best) return best;
+    // Pinched: collapse onto the cone that the disk face has just crossed.
+    let edge = coneLimit, gap = Infinity;
+    for (const shift of [-2 * Math.PI, 0, 2 * Math.PI]) {
+      const lo = base[0] + shift, hi = base[1] + shift;
+      if (lo >= coneLimit && lo - coneLimit < gap) { gap = lo - coneLimit; edge = coneLimit; }
+      if (hi <= -coneLimit && -coneLimit - hi < gap) { gap = -coneLimit - hi; edge = -coneLimit; }
+    }
+    return [edge, edge];
+  };
+  const steamPoint = (normal, side, u, b, r, out) => {
+    // u is the azimuth measured from the diaphragm (phi = -pi/2) toward +phi.
+    let phi = u - Math.PI / 2;
+    let [lo, hi] = latitudeInterval(normal, side, r, phi);
+    let lambda = lo + (hi - lo) * b;
+    out.set(r * Math.sin(lambda), r * Math.cos(lambda) * Math.cos(phi), r * Math.cos(lambda) * Math.sin(phi));
+    return out;
+  };
+  const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3(), tmpC = new THREE.Vector3();
+  const tmpD = new THREE.Vector3(), edge1 = new THREE.Vector3(), edge2 = new THREE.Vector3();
+  const faceNormal = new THREE.Vector3(), hintVector = new THREE.Vector3();
+  const tmpE = new THREE.Vector3(), tmpF = new THREE.Vector3();
+  // Azimuth of the diaphragm face at (r, lambda) on the admission (+) or
+  // eduction (-) side, and of the section plane z = 0.
+  const partitionU = (r, sign) => {
+    const half = Math.asin(Math.min(1, partitionHalf / (r * Math.cos(nutationHalfAngle))));
+    return sign > 0 ? half : 2 * Math.PI - half;
+  };
+  const liveColor = new THREE.Color(STEAM_COLORS.live);
+  const exhaustColor = new THREE.Color(STEAM_COLORS.exhaust);
+  const pieceColor = new THREE.Color();
+  const buildPiece = (cell, normal, pieces) => {
+    const { positions, colors } = cell;
+    const normals = cell.mesh.geometry.attributes.normal.array;
+    let count = 0;
+    let alpha = 1;
+    const push = (v) => {
+      positions[count * 3] = v.x; positions[count * 3 + 1] = v.y; positions[count * 3 + 2] = v.z;
+      colors[count * 4] = pieceColor.r; colors[count * 4 + 1] = pieceColor.g;
+      colors[count * 4 + 2] = pieceColor.b; colors[count * 4 + 3] = alpha;
+      count += 1;
+    };
+    // Quads wound outward: `hint` points out of the cell at this face.
+    const quad = (a, b, c, d, hint) => {
+      edge1.subVectors(c, a); edge2.subVectors(d, b);
+      faceNormal.crossVectors(edge1, edge2);
+      if (faceNormal.lengthSq() < 1e-12) return;
+      faceNormal.normalize();
+      const order = faceNormal.dot(hint) < 0 ? [a, c, b, a, d, c] : [a, b, c, a, c, d];
+      if (faceNormal.dot(hint) < 0) faceNormal.negate();
+      for (const v of order) {
+        normals[count * 3] = faceNormal.x; normals[count * 3 + 1] = faceNormal.y; normals[count * 3 + 2] = faceNormal.z;
+        push(v);
+      }
+    };
+    for (const [uStart, uEnd, pressure] of pieces) {
+      pieceColor.copy(exhaustColor).lerp(liveColor, pressure);
+      alpha = THREE.MathUtils.lerp(STEAM_OPACITY.exhaust, STEAM_OPACITY.live, pressure);
+      const uAt = (a, r) => {
+        const start = typeof uStart === 'function' ? uStart(r) : uStart;
+        const end = typeof uEnd === 'function' ? uEnd(r) : uEnd;
+        return start + (end - start) * a;
+      };
+      const radiusAt = (c) => steamInner + (steamOuter - steamInner) * c;
+      const point = (a, b, c, out) => {
+        const r = radiusAt(c);
+        return steamPoint(normal, cell.side, uAt(a, r), b, r, out);
+      };
+      const { u: nu, lambda: nl, r: nr } = cellSegments;
+      const hint = (face, inner) => hintVector.subVectors(face, inner);
+      // Inner and outer spherical faces.
+      for (const c of [0, 1]) for (let i = 0; i < nu; i += 1) for (let j = 0; j < nl; j += 1) {
+        quad(point(i / nu, j / nl, c, tmpA), point((i + 1) / nu, j / nl, c, tmpB),
+          point((i + 1) / nu, (j + 1) / nl, c, tmpC), point(i / nu, (j + 1) / nl, c, tmpD),
+          hint(point((i + 0.5) / nu, (j + 0.5) / nl, c, tmpE), point((i + 0.5) / nu, (j + 0.5) / nl, 0.5, tmpF)));
+      }
+      // Disk face and cone face (their outward sense from the radial
+      // direction of latitude, which stays defined where a cell pinches).
+      for (const b of [0, 1]) for (let i = 0; i < nu; i += 1) for (let k = 0; k < nr; k += 1) {
+        const lambdaSign = b === 1 ? 1 : -1;
+        point((i + 0.5) / nu, b, (k + 0.5) / nr, tmpE);
+        const radial = Math.hypot(tmpE.y, tmpE.z) || 1;
+        // d/dlambda of (r sin l, r cos l cos phi, r cos l sin phi) ~ (cos l, -sin l cos phi, -sin l sin phi)
+        const r = tmpE.length() || 1;
+        hintVector.set(radial / r, -tmpE.x * tmpE.y / (r * radial), -tmpE.x * tmpE.z / (r * radial))
+          .multiplyScalar(lambdaSign);
+        quad(point(i / nu, b, k / nr, tmpA), point((i + 1) / nu, b, k / nr, tmpB),
+          point((i + 1) / nu, b, (k + 1) / nr, tmpC), point(i / nu, b, (k + 1) / nr, tmpD), hintVector);
+      }
+      // Diaphragm, section-plane or pinch ends (outward along -/+ azimuth).
+      for (const a of [0, 1]) for (let j = 0; j < nl; j += 1) for (let k = 0; k < nr; k += 1) {
+        point(a, (j + 0.5) / nl, (k + 0.5) / nr, tmpE);
+        hintVector.set(0, -tmpE.z, tmpE.y).multiplyScalar(a === 1 ? 1 : -1);
+        quad(point(a, j / nl, k / nr, tmpA), point(a, (j + 1) / nl, k / nr, tmpB),
+          point(a, (j + 1) / nl, (k + 1) / nr, tmpC), point(a, j / nl, (k + 1) / nr, tmpD), hintVector);
+      }
+    }
+    const geometry = cell.mesh.geometry;
+    geometry.setDrawRange(0, count);
+    geometry.attributes.position.needsUpdate = true;
+    geometry.attributes.normal.needsUpdate = true;
+    geometry.attributes.color.needsUpdate = true;
+    cell.mesh.visible = count > 0;
+  };
+  const steamRelease = THREE.MathUtils.degToRad(24);
+  const updateSteam = (state) => {
+    const normal = state.disk.normal;
+    const psi = Math.atan2(normal.z, normal.y);
+    const upper = [(r) => partitionU(r, 1), Math.PI / 2];
+    const lower = [3 * Math.PI / 2, (r) => partitionU(r, -1)];
+    for (const cell of steamCells) {
+      // Side +1 is pinched where the disk meets the -X cone (phi = psi),
+      // side -1 where it meets the +X cone (phi = psi + pi).
+      const pinchPhi = cell.side > 0 ? psi : psi + Math.PI;
+      const pinchU = positiveModulo(pinchPhi + Math.PI / 2, FULL_TURN);
+      const pieces = [];
+      const clampPiece = ([s0, s1], lo, hi, pressure) => {
+        // Intersect [s0, s1] (possibly r-dependent ends) with [lo, hi].
+        const numeric = (v) => (typeof v === 'function' ? v(steamOuter) : v);
+        const start = numeric(s0) >= lo ? s0 : lo;
+        const end = numeric(s1) <= hi ? s1 : hi;
+        if (numeric(end) - numeric(start) > 1e-4) pieces.push([start, end, pressure]);
+      };
+      // The cell behind the pinch holds live steam; just after the pinch
+      // crosses the diaphragm the full cell opens to eduction and blows down.
+      const eductionPressure = 1 - THREE.MathUtils.smoothstep(pinchU, 0, steamRelease);
+      clampPiece(upper, 0, pinchU, 1);
+      clampPiece(lower, 0, pinchU, 1);
+      clampPiece(upper, pinchU, FULL_TURN, eductionPressure);
+      clampPiece(lower, pinchU, FULL_TURN, eductionPressure);
+      buildPiece(cell, normal, pieces);
+      cell.mesh.userData.eductionPressure = eductionPressure;
+      cell.mesh.userData.pinchU = pinchU;
+    }
+  };
+  const updateWithSteam = (time) => {
+    update(time);
+    updateSteam(root.userData.kinematics);
+  };
+  Object.assign(root.userData.blocks, { steamCells: steamCells.map((cell) => cell.mesh), steamGroup });
+
+  updateWithSteam(0);
   markShadows(root);
+  for (const part of [...steamCells.map((cell) => cell.mesh), ...chestSteam]) { part.castShadow = false; part.receiveShadow = false; }
   // The key light falls from above the section plane, so the casing's own
   // upper wall would black out the upper half of the opened chamber. The
   // cut casing is lit but takes no cast shadows, so both halves read open.
@@ -1459,7 +1870,7 @@ function diskEngine(movement) {
   return {
     cameraDirection: new THREE.Vector3(0, 0.03, 1),
     root,
-    update,
+    update: updateWithSteam,
   };
 }
 

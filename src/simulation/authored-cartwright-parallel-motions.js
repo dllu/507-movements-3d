@@ -1268,57 +1268,15 @@ function CartwrightParallelMotion(movement) {
     wheelToWheelRatio: -1,
   };
 
-  {
-    // With the whole cylinder in view, the engine needs its undrawn
-    // supports: a bed plate under the cylinder, two plain standards carrying
-    // the ends of the upper bed, and a hanger from the bed whose bore takes
-    // the flywheel shaft's front end.
-    const cylinderBox = new THREE.Box3();
-    let flywheelShaft = null;
-    root.updateMatrixWorld(true);
-    root.traverse((o) => {
-      if (o.userData.role === 'fixed-upright-cylinder-below-piston-rod-B') cylinderBox.setFromObject(o);
-      if (o.userData.role === 'input-flywheel-and-pinion-shaft') flywheelShaft = o;
-    });
-    const baseTop = cylinderBox.min.y, baseHeight = 0.16;
-    const basePlate = new THREE.Mesh(new THREE.BoxGeometry(bedRightX - bedLeftX + 0.3, baseHeight, 2.1), frameMaterial);
-    basePlate.position.set((bedLeftX + bedRightX) / 2, baseTop - baseHeight / 2, 0.6);
-    basePlate.userData.fixed = true;
-    basePlate.userData.role = 'fixed-engine-base-plate';
-    const standards = [bedLeftX + 0.15, bedRightX - 0.15].map((x, index) => {
-      const standard = new THREE.Mesh(
-        new THREE.BoxGeometry(0.3, bedBottomY - baseTop + 0.01, bedFrontZ - bedBackZ), frameMaterial);
-      standard.position.set(x, (bedBottomY + baseTop) / 2, (bedFrontZ + bedBackZ) / 2);
-      standard.userData.fixed = true;
-      standard.userData.role = `fixed-${index ? 'right' : 'left'}-standard-carrying-upper-bed`;
-      return standard;
-    });
-    const shaftFront = bedFrontZ - 0.03;
-    const shaftBack = flywheelShaft.position.z - flywheelShaft.geometry.parameters.height / 2;
-    const shaftRadius = flywheelShaft.geometry.parameters.radiusTop;
-    flywheelShaft.geometry.dispose();
-    flywheelShaft.geometry = new THREE.CylinderGeometry(shaftRadius, shaftRadius, shaftFront - shaftBack, 36);
-    flywheelShaft.position.z = (shaftFront + shaftBack) / 2;
-    const hangerShape = new THREE.Shape([
-      new THREE.Vector2(-0.22, -0.3), new THREE.Vector2(0.22, -0.3),
-      new THREE.Vector2(0.22, bedBottomY + 0.01), new THREE.Vector2(-0.22, bedBottomY + 0.01)]);
-    hangerShape.holes.push(new THREE.Path().absarc(0, 0, shaftRadius + 0.012, 0, Math.PI * 2, true));
-    const hanger = new THREE.Mesh(new THREE.ExtrudeGeometry(hangerShape,
-      {bevelEnabled: false, curveSegments: 32, depth: bedFrontZ - bedBackZ}), frameMaterial);
-    hanger.position.z = bedBackZ;
-    hanger.userData.fixed = true;
-    hanger.userData.role = 'fixed-hanger-bearing-flywheel-shaft-front-end';
-    root.add(basePlate, hanger, ...standards);
-    Object.assign(root.userData.blocks, {basePlate, bedStandards: standards, flywheelShaftHanger: hanger});
-  }
   fitPistonGuide(root,update,assemblyClosurePeriod);
   root.userData.sweptBounds = root.userData.cameraFitBounds;
-  // Brown crops from the bed's left end to the flywheel's right rim, and from
-  // the rim top down to the cylinder cover; the view frames the whole
-  // flywheel and the whole cylinder down to its foot.
+  // Brown's crop: from the bed's left end to the flywheel's right rim, and
+  // from the tops of wheels C down to the cylinder cover. Brown draws no
+  // standards, bed plate or flywheel-shaft hanger, so none is built; the
+  // whole cylinder runs on below the crop and ends at its foot.
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.65, -7.45, -0.6),
-    new THREE.Vector3(3.05, 2.9, 1.45),
+    new THREE.Vector3(-3.65, -3.5, -0.6),
+    new THREE.Vector3(3.05, 3.15, 1.45),
   );
   root.userData.cameraDistanceScale = 1.0;
   root.userData.cameraFov = 8;

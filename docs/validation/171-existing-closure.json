@@ -4,71 +4,71 @@
   "poses": 3605,
   "maximumLengthError": 1.3322676295501878e-14,
   "maximumDieGuideError": 4.551914400963142e-15,
-  "maximumSlotAngle": 0.3381789683575146,
+  "maximumSlotAngle": 0.15918809135055106,
   "runs": [
     {
       "selector": -1,
-      "minimumValve": -1.1651855803653173,
-      "maximumValve": -1.0199348663652168,
-      "valveStroke": 0.14525071400010048,
+      "minimumValve": -0.9970803412242673,
+      "maximumValve": -0.9624185358677699,
+      "valveStroke": 0.03466180535649732,
       "minimumSlide": -0.03610910261967715,
       "maximumSlide": 0.1807869040492185,
       "valveFirstHarmonic": {
-        "sine": 0.07329951477464128,
-        "cosine": 0.005785081821142766,
-        "amplitude": 0.07352745091375854
+        "sine": 0.017320143044334695,
+        "cosine": 0.0013408495020649823,
+        "amplitude": 0.017371966856501983
       }
     },
     {
       "selector": -0.5,
-      "minimumValve": -1.1043119084503081,
-      "maximumValve": -1.046314802036808,
-      "valveStroke": 0.05799710641350009,
+      "minimumValve": -0.9806825158046749,
+      "maximumValve": -0.9679756957921993,
+      "valveStroke": 0.012706820012475584,
       "minimumSlide": -0.0026889020566542854,
       "maximumSlide": 0.07520041045343895,
       "valveFirstHarmonic": {
-        "sine": 0.022360937274688127,
-        "cosine": 0.018625487371107727,
-        "amplitude": 0.029101895051934855
+        "sine": 0.004903689179330552,
+        "cosine": 0.004062517941654159,
+        "amplitude": 0.006367905432223808
       }
     },
     {
       "selector": 0,
-      "minimumValve": -1.0994363595281158,
-      "maximumValve": -1.0340022294441338,
-      "valveStroke": 0.06543413008398202,
+      "minimumValve": -0.9794554664417165,
+      "maximumValve": -0.9653873644254397,
+      "valveStroke": 0.01406810201627684,
       "minimumSlide": -0.018264551792603,
       "maximumSlide": 0.06745406759316297,
       "valveFirstHarmonic": {
-        "sine": -0.027043503424097063,
-        "cosine": 0.01856545000633075,
-        "amplitude": 0.03280285065945818
+        "sine": -0.005808707705805017,
+        "cosine": 0.0039975549940716535,
+        "amplitude": 0.007051349597212281
       }
     },
     {
       "selector": 0.5,
-      "minimumValve": -1.1320087310902152,
-      "maximumValve": -1.0005219152833815,
-      "valveStroke": 0.13148681580683363,
+      "minimumValve": -0.9870240627301989,
+      "maximumValve": -0.958430974317758,
+      "valveStroke": 0.028593088412440903,
       "minimumSlide": -0.059720432518881594,
       "maximumSlide": 0.11491633275901258,
       "valveFirstHarmonic": {
-        "sine": -0.06501702930737184,
-        "cosine": 0.011339067447486752,
-        "amplitude": 0.0659983980906681
+        "sine": -0.01410260966444949,
+        "cosine": 0.002461209429709132,
+        "amplitude": 0.014315765826693078
       }
     },
     {
       "selector": 1,
-      "minimumValve": -1.1576725001109367,
-      "maximumValve": -0.9792260315744874,
-      "valveStroke": 0.1784464685364493,
+      "minimumValve": -0.9937764418976197,
+      "maximumValve": -0.9540291383620612,
+      "valveStroke": 0.039747303535558554,
       "minimumSlide": -0.08559451865141043,
       "maximumSlide": 0.15797321479663684,
       "valveFirstHarmonic": {
-        "sine": -0.08989242003617055,
-        "cosine": 0.002548397842406816,
-        "amplitude": 0.08992853557977303
+        "sine": -0.019883778850120704,
+        "cosine": 0.0005526472965497226,
+        "amplitude": 0.019891457472867368
       }
     }
   ],
@@ -128,10 +128,10 @@
         382
       ],
       "projected": [
-        134,
+        133.99999999999997,
         381.99999999999994
       ],
-      "pixelError": 5.684341886080802e-14
+      "pixelError": 6.355287432313019e-14
     }
   ],
   "selectorCycle": {
@@ -147,7 +147,7 @@
     },
     {
       "file": "src/simulation/authored-marine-valve-gears.js",
-      "sha256": "ccd4ec0d1de76e6c245ace936efdae7002c6d7c4544ebbf78f1346bb0ac16f0c"
+      "sha256": "095390c2de4a286cb46cd5619db53f07e2f5d8bc93c90e6fe8c0a4a2dac748c3"
     },
     {
       "file": "public/engravings/mm_171.png",
