@@ -5960,11 +5960,11 @@
       "id": 159,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
-        "reviewPass": 72,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p72-b-review.md",
-        "note": "Pass 72: The slack cord hangs in a deep sag under the crank pin for about a third of the turn (slack is forced: a taut cord puts the foot 133 px below the floor)."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-f-review.md",
+        "note": "Pass 84: The slack cord hangs in a deep sag under the crank pin for about a third of the turn (slack is forced: a taut cord puts the foot 133 px below the floor)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5983,16 +5983,17 @@
         "docs/p53-style-review.md",
         "docs/p54-geo-a-review.md",
         "docs/p62-supports-a-review.md",
-        "docs/p72-b-review.md"
+        "docs/p72-b-review.md",
+        "docs/p84-f-review.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/cord-treadle.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-27",
       "visibleFlaws": "The slack cord hangs in a deep sag under the crank pin for about a third of the turn (slack is forced: a taut cord puts the foot 133 px below the floor).",
-      "limits": "The vertical run hangs straight and the slack is a gravity parabola in the diagonal run; laid-rope meshes on computed paths; tension not simulated.",
+      "limits": "The vertical run hangs straight and the slack is a gravity parabola in the diagonal run; laid-rope meshes on computed paths; tension not simulated. p84: a taut cord needs the treadle at 0.84 rad but the floor stops it at 0.35; a treadle short enough would be at most 141 px against Brown's 297; wrapping on the rim or shaft only lengthens the path, and retying shorter lifts the drawn treadle above its pivot.",
       "assessment": "minor"
     },
     {
@@ -6401,11 +6402,11 @@
       "id": 170,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-f-review.md",
+        "note": "Pass 84: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6425,7 +6426,8 @@
         "docs/p56-b-review.md",
         "docs/p64-audit-review.md",
         "docs/p76-da-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-f-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6433,9 +6435,9 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The bow's ends reach about 0.3 rad past the arms at the drawn pose, against Brown's 0.1 rad, so they clear the full baked spread.",
-      "limits": "Governor masses, loads, bearings and hidden depths inferred; selected periodic operating cycle baked. The bow's depth, its spindle seat and the arm windows are inferred.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Governor masses, loads, bearings and hidden depths inferred; selected periodic operating cycle baked. The bow's depth, its spindle seat and the arm windows are inferred. The bow ends at Brown's 0.69 rad. Each arm window runs out through the bow's end, so at wide spread the arm leaves the open slot and returns (rebaked; baked-solid clearance regenerated at 129 poses).",
+      "assessment": "reasonable"
     },
     {
       "id": 171,
@@ -8020,11 +8022,11 @@
       "id": 211,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
-        "reviewPass": 72,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p72-a-review.md",
-        "note": "Pass 72: After the eleven teeth (88°, as drawn) the wheel is relieved at root depth for another 29° before its plain rim, so the cut arc spans about 137° against Brown's ~95°."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-e-review.md",
+        "note": "Pass 84: After the eleven teeth (88°, as drawn) the wheel is relieved at root depth for another 29° before its plain rim, so the cut arc spans about 137° against Brown's ~95°."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8044,16 +8046,17 @@
         "docs/m2-intermittent-review.md",
         "docs/p62-shapes-review.md",
         "docs/p64-deep-mech-review.md",
-        "docs/p72-a-review.md"
+        "docs/p72-a-review.md",
+        "docs/p84-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-intermittent-core.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-27",
       "visibleFlaws": "After the eleven teeth (88°, as drawn) the wheel is relieved at root depth for another 29° before its plain rim, so the cut arc spans about 137° against Brown's ~95°.",
-      "limits": "The 99° arc and the 16-position pinion are needed for a one-turn index; the tongue's working edge follows the pin's epicycloid, so it curves upward; Brown's arc does not close kinematically, so about 22° of relocking is prescribed. 45:18 positions at 5:2; one pinion turn takes 144° of wheel; about 30° of relocking is prescribed motion; the tongue's edge follows the pin's epicycloid. The plate's own pitches (wheel 8°, pinion 20°) fix the ratio at 2.5, so one pinion turn takes 144° of wheel; Brown's 95° arc would need a ratio of about 3.8, which his tooth pitches contradict.",
+      "limits": "The tongue's working edge follows the pin's epicycloid, so it curves upward; about 22–30° of relocking is prescribed motion. The plate's centre distance and tip radius (8.9, inside the 9.1–9.25 rim) fix the ratio at 2.5, so one pinion turn takes 144° of wheel and the single concave gives a 137° cut; Brown's ≤96° cut needs a ratio of at least 3.5, putting the pitch circle (9.33) outside his rim and leaving about 12 pinion positions. p84 tried ratios 2.8 and 3.14, a larger concave, two concaves, moving the teeth, and phase or camera changes.",
       "assessment": "minor"
     },
     {
@@ -9355,11 +9358,11 @@
       "id": 247,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-d-review.md",
+        "note": "Pass 84: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9386,7 +9389,8 @@
         "docs/p66-247-review.md",
         "docs/p68-review.md",
         "docs/p75-fa-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -9394,9 +9398,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The sea bottom's surface shows at the lower edge of the default pose (Brown draws none), and the spent ball visibly sinks into the bottom.",
-      "limits": "The world is fixed; the spent weight settles into the bottom and the fresh weight is carried back out of view (a reconstruction device to close the loop, not from the caption); the carrying gear is not modelled and its hidden route could be seen by panning far to the side.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The camera looks up 5° from the bottom's level, so the bottom is edge-on at the lower frame edge (it would show below the foot only at aspects narrower than about 0.5, where the width governs the fit). Between soundings the vessel moves on 40 to the next station: the bottom and the spent weight move off sideways together while the rod returns (a reconstruction device to close the loop, not from the caption). The weight left at the previous station is lifted and carried back by unmodelled gear far to the side and above; that route could be seen by panning far to the side.",
+      "assessment": "reasonable"
     },
     {
       "id": 248,
@@ -10154,11 +10158,11 @@
       "id": 269,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-e-review.md",
+        "note": "Pass 84: The frame is about 15% longer than Brown's (6.10 against 5.31 units), all of it between the gear and the closed end (2.30 against 1.40 at the source pose); the gear has 20 teeth against his 18."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10183,7 +10187,8 @@
         "docs/p64-deep-mech-review.md",
         "docs/p72-d-review.md",
         "docs/p73-res-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10191,8 +10196,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The frame is about 15% longer than Brown's (the closed end stands about 2 pitches further from the last tooth); the gear has 20 teeth against his 18.",
-      "limits": "The closed end is flush with the rails and the rod leaves its outer face as drawn; the gear's 3.5-pitch tip radius needs 1.9 extra pitches past the last tooth so the gear never crosses the closed end. The closed end must sit 2.32 pitches past the last tooth (Brown 0.25); idling his lower two teeth would save only 5%.",
+      "visibleFlaws": "The frame is about 15% longer than Brown's (6.10 against 5.31 units), all of it between the gear and the closed end (2.30 against 1.40 at the source pose); the gear has 20 teeth against his 18.",
+      "limits": "The closed end is flush with the rails and the rod leaves its outer face as drawn; the gear's 3.5-pitch tip radius needs 1.9 extra pitches past the last tooth so the gear never crosses the closed end. The closed end must sit 2.32 pitches past the last tooth (Brown 0.25); idling his lower two teeth would save only 5%. p84: Brown's drawing cannot close: meshing his lower pair puts the gear's tips 43 px past his inner face, and the gear (0.46 deep) is deeper than the frame (0.42). 21, 22 or 24 teeth give +11%, +7% or +1%, idling the lower pair +9%, stub teeth save 0.02; each adds teeth over Brown's 18 or drops his drawn engagement, so 20 teeth with a flush closed end is kept.",
       "assessment": "minor"
     },
     {
@@ -10734,11 +10739,11 @@
       "id": 284,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-63 lane, integrated by primary agent",
-        "reviewPass": 63,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p63-b-review.md",
-        "note": "Pass 63: The slider stands 4 px low on its feed screw (Brown's drawn setting cannot feed with the drawn crank)."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-f-review.md",
+        "note": "Pass 84: The slider stands 4 px low on its feed screw (Brown's drawn setting cannot feed with the drawn crank)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10756,16 +10761,17 @@
         "docs/p56-c-review.md",
         "docs/p61-b-review.md",
         "docs/p62-horology-review.md",
-        "docs/p63-b-review.md"
+        "docs/p63-b-review.md",
+        "docs/p84-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-saw-feeds.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-27",
       "visibleFlaws": "The slider stands 4 px low on its feed screw (Brown's drawn setting cannot feed with the drawn crank).",
-      "limits": "The carriage run-back after eight strokes is inferred; gravity, contact and carriage load are prescribed; overtravel is 0.03 tooth; tooth faces lean 12° as measured.",
+      "limits": "The carriage run-back after eight strokes is inferred; gravity, contact and carriage load are prescribed; overtravel is 0.03 tooth; tooth faces lean 12° as measured. p84: Brown's setting sweeps 1.16 teeth where 1.35 are needed; the alternatives (a 14% longer crank or a moved rod joint) are larger visible departures.",
       "assessment": "minor"
     },
     {
@@ -11313,11 +11319,11 @@
       "id": 299,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-b-review.md",
-        "note": "Pass 65: The journal stands slightly higher above the tips than drawn (0.19 pitch against about 0.15); the far teeth by the verge read more solid than Brown's lines."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-e-review.md",
+        "note": "Pass 84: The journal stands slightly higher above the tips than drawn (0.19 pitch against about 0.15); the far teeth by the verge read more solid than Brown's lines."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11342,16 +11348,17 @@
         "docs/p54-marks-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p64-fix-b2-review.md",
-        "docs/p65-b-review.md"
+        "docs/p65-b-review.md",
+        "docs/p84-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-escapements.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-27",
       "visibleFlaws": "The journal stands slightly higher above the tips than drawn (0.19 pitch against about 0.15); the far teeth by the verge read more solid than Brown's lines.",
-      "limits": "Wider pallet angle (108° against about 106°) and 0.34-wide pallets trade against staff height; tooth backs power 1.8 against 1.6; foliot and recoil prescribed; contact tangent only.",
+      "limits": "Wider pallet angle (108° against about 106°) and 0.34-wide pallets trade against staff height; tooth backs power 1.8 against 1.6; foliot and recoil prescribed; contact tangent only. p84 re-sweep: at 106° with the journal at 0.15 pitch, the idle pallet's inner edge cuts the approaching tooth's leading face near mid-swing unless the pallets shrink to 0.53 pitch (Brown 0.60–0.65) or the backs deepen to exponent 2.4 (mid-back 0.19 against 0.36); pallet thickness, width, rake, tooth height, catch angle and swing do not help. The far teeth are solid 3D teeth; Brown draws them as lines.",
       "assessment": "minor"
     },
     {
@@ -11688,11 +11695,11 @@
       "id": 309,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-e-review.md",
+        "note": "Pass 84: B's bottom edge drops into its small nib about 16 px left of and shallower than Brown's (point near x 128, not 145); his position lies in the cocking tooth's path."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11717,7 +11724,8 @@
         "docs/p67-horology-review.md",
         "docs/p79-disconnected-triage.md",
         "docs/p80-2-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11725,8 +11733,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "Brown's B bottom edge drops into a small nib past x 124; here it turns up into the lifting face (the nib lies in the lifting tooth's path).",
-      "limits": "Mirror-symmetric lock stations at 129°/51°; Brown's hook a sits near 39°. Flat pallet plates cut to the tooth paths; ratchet teeth with Brown's slant; wheel steps half a pitch per beat; pendulum not shown. The fixed suspension stud is drawn end-on with no frame, 0.029 clear of the arbor eyes; it stands 0.15 above the arbor line where Brown's stands about 0.21.",
+      "visibleFlaws": "B's bottom edge drops into its small nib about 16 px left of and shallower than Brown's (point near x 128, not 145); his position lies in the cocking tooth's path.",
+      "limits": "Mirror-symmetric lock stations at 129°/51°; Brown's hook a sits near 39°. Flat pallet plates cut to the tooth paths; ratchet teeth with Brown's slant; wheel steps half a pitch per beat; pendulum not shown. The fixed suspension stud is drawn end-on with no frame, 0.029 clear of the arbor eyes; it stands 0.15 above the arbor line where Brown's stands about 0.21. B's toe nib stays short of the cocking tooth's path under the lifting face (right of Brown's x ≈ 129) and is trimmed to running clearance above the next tooth's tip; Brown's position would need a smaller pallet fall, which changes the impulse.",
       "assessment": "minor"
     },
     {
@@ -11890,11 +11898,11 @@
       "id": 314,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-esc2-review.md",
-        "note": "Pass 64: C reaches 1.60 against Brown's 1.70–1.74, because it must pass back between the locked teeth."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-e-review.md",
+        "note": "Pass 84: C reaches 1.60 against Brown's 1.70–1.74, because it must pass back between the locked teeth."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11919,16 +11927,17 @@
         "docs/p61-followup-review.md",
         "docs/p62-horology-review.md",
         "docs/p64-deep-horology-review.md",
-        "docs/p64-fix-esc2-review.md"
+        "docs/p64-fix-esc2-review.md",
+        "docs/p84-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-lever-chronometers.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-27",
       "visibleFlaws": "C reaches 1.60 against Brown's 1.70–1.74, because it must pass back between the locked teeth.",
-      "limits": "Thirteen teeth as Brown draws; the dashed guard pin and screw dots are not modelled. The C blade continues inward to a collet on the staff (forced). No frame: the arbors and banking pins end as plain stubs. Spoked web built by the shared filleted spoked-wheel builder. Wheel phase 1.9° upstream of the regular phase through his A; the free wheel accelerates uniformly and strikes C, B and A; motion is prescribed kinematics.",
+      "limits": "Thirteen teeth as Brown draws; the dashed guard pin and screw dots are not modelled. The C blade continues inward to a collet on the staff (forced). No frame: the arbors and banking pins end as plain stubs. Spoked web built by the shared filleted spoked-wheel builder. Wheel phase 1.9° upstream of the regular phase through his A; the free wheel accelerates uniformly and strikes C, B and A; motion is prescribed kinematics. p84 re-study: C passes back cleanly only below a reach of about 1.67 (its end's lens equals the 27.7° pitch at 1.695). Reaching 1.65 needs the wheel 1.5° further upstream, moving A's tip from 6 to 10 px off Brown's A and cutting the short transfer to 0.04 pitch, to gain 2.8 px. At the plate pose C's end already meets the waiting tooth's tip, as drawn; the shortfall comes from that tip's fitted 176 px radius against Brown's about 171.",
       "assessment": "minor"
     },
     {
@@ -13576,11 +13585,11 @@
       "id": 358,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-63 lane, integrated by primary agent",
-        "reviewPass": 63,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p63-a-review.md",
-        "note": "Pass 63: The band is about 2/3 of the plate's thickness (two cords share one groove station); Brown's lower bar passes under the fusee's large end, the model's sits symmetric to clear the crank's sweep."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-f-review.md",
+        "note": "Pass 84: The band is about 2/3 of the plate's thickness (two cords share one groove station); Brown's lower bar passes under the fusee's large end, the model's sits symmetric to clear the crank's sweep."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13604,16 +13613,17 @@
         "docs/p56-c-review.md",
         "docs/p59-fixes-review.md",
         "docs/p62-auditfix-a-review.md",
-        "docs/p63-a-review.md"
+        "docs/p63-a-review.md",
+        "docs/p84-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-fusee-traverses.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
+      "updatedOn": "2026-09-27",
       "visibleFlaws": "The band is about 2/3 of the plate's thickness (two cords share one groove station); Brown's lower bar passes under the fusee's large end, the model's sits symmetric to clear the crank's sweep.",
-      "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths. The band ends are ideal fixed points off-view. The long carriage side bars end cleanly off the view.",
+      "limits": "The camera follows the carriage because the traverse is ≈8 carriage lengths. The band ends are ideal fixed points off-view. The long carriage side bars end cleanly off the view. p84: two cords sharing one groove turn cap the cord radius at about 0.036 (the fusee's 10 turns follow the official animation); Brown's lower bar at 0.71 from the shaft would sit below the 0.85 rail top to clear the crank.",
       "assessment": "minor"
     },
     {
@@ -14305,11 +14315,11 @@
       "id": 377,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-83 lane, integrated by primary agent",
-        "reviewPass": 83,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p83-c-review.md",
-        "note": "Pass 83: The gait still reads somewhat seated from behind (forced: 14 radial boards give a 0.82 step, 57% of leg length; an upright stance drives the knee through the board above)."
+        "evidence": "docs/p84-f-review.md",
+        "note": "Pass 84: The gait reads somewhat seated (forced: Brown's ~14 boards and one-board step match the model, but an upright stance drives the raised knee into the board above unless the man stands about 1 unit higher than drawn)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14336,7 +14346,8 @@
         "docs/p75-figures-review.md",
         "docs/p81-audit-review.md",
         "docs/p82-fig-review.md",
-        "docs/p83-c-review.md"
+        "docs/p83-c-review.md",
+        "docs/p84-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14344,8 +14355,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The gait still reads somewhat seated from behind (forced: 14 radial boards give a 0.82 step, 57% of leg length; an upright stance drives the knee through the board above).",
-      "limits": "Each trouser leg is one continuous Blender limb bending at a modelled knee, so thigh and shin never part; the hip/seat and cuff/shoe overlaps are intended; balance is not checked. Shoes are Blender laced shoes on the old footprint.",
+      "visibleFlaws": "The gait reads somewhat seated (forced: Brown's ~14 boards and one-board step match the model, but an upright stance drives the raised knee into the board above unless the man stands about 1 unit higher than drawn).",
+      "limits": "Each trouser leg is one continuous Blender limb bending at a modelled knee, so thigh and shin never part; the hip/seat and cuff/shoe overlaps are intended; balance is not checked. Shoes are Blender laced shoes on the old footprint. p84 2-D study of about 26,000 gait variants (10–28 boards, board depth, hip position, timing): no board-clear gait with the hip at most 1.0 above the axle averages the standing thigh under 87° from vertical (currently 98°); stepped treads with risers are worse.",
       "assessment": "minor"
     },
     {
@@ -14768,11 +14779,11 @@
       "id": 389,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
-        "reviewPass": 70,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p70-b-review.md",
-        "note": "Pass 70: The upper stop sits one tooth higher than drawn, and the eccentric's throw is 18.7 px against Brown's 14 (both forced by the full ratchet stroke with Brown's 12 px teeth)."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-e-review.md",
+        "note": "Pass 84: The eccentric's throw is 18.7 px against Brown's 14, and the shaft sits 3.5 px right: the full ratchet stroke needs about 41 px of nose travel and Brown's horn geometry gives at most 2.36 × throw."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14793,16 +14804,17 @@
         "docs/p60-loops-review.md",
         "docs/p62-audit-review.md",
         "docs/p69-pawls-review.md",
-        "docs/p70-b-review.md"
+        "docs/p70-b-review.md",
+        "docs/p84-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-eccentric-jacks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
-      "visibleFlaws": "The upper stop sits one tooth higher than drawn, and the eccentric's throw is 18.7 px against Brown's 14 (both forced by the full ratchet stroke with Brown's 12 px teeth).",
-      "limits": "Both curved pawls seat fully in the tooth roots on every engagement. Minimal undrawn rear spine and bridges carry the two fixed pins; the eccentric rocks over half a turn; lowering is the lifting played backward, with the stop held off by hand.",
+      "updatedOn": "2026-09-27",
+      "visibleFlaws": "The eccentric's throw is 18.7 px against Brown's 14, and the shaft sits 3.5 px right: the full ratchet stroke needs about 41 px of nose travel and Brown's horn geometry gives at most 2.36 × throw.",
+      "limits": "Both curved pawls seat fully in the tooth roots on every engagement. Minimal undrawn rear spine and bridges carry the two fixed pins; the eccentric rocks over half a turn; lowering is the lifting played backward, with the stop held off by hand. The stop sits on Brown's tooth, three pitches above the lifting nose, working in its own lane behind the strap on the same full-width teeth, its pin flush with its face; the rising horn passes in front of it near the top of each stroke (in one plane it would cut the stop by 0.11).",
       "assessment": "minor"
     },
     {
@@ -14975,11 +14987,11 @@
       "id": 394,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
-        "reviewPass": 72,
-        "reviewedOn": "2026-09-26",
-        "evidence": "docs/p72-d-review.md",
-        "note": "Pass 72: Brown's rack teeth are finer than his pinion's and box-shaped; here one module of 25° stub involute teeth serves both."
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
+        "reviewedOn": "2026-09-27",
+        "evidence": "docs/p84-e-review.md",
+        "note": "Pass 84: Brown's rack teeth are box-shaped and finer than his pinion's; here one module of 22.5° involute teeth serves both. The rack notches have square roots and Brown's half-pitch depth, but the tooth tips taper (0.32 pitch wide against about 0.5)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15001,16 +15013,17 @@
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
         "docs/p69-gears-review.md",
-        "docs/p72-d-review.md"
+        "docs/p72-d-review.md",
+        "docs/p84-e-review.md"
       ],
       "mujoco": {
         "mode": "none",
         "evidence": "src/simulation/authored-parsons-racks.js",
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
-      "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown's rack teeth are finer than his pinion's and box-shaped; here one module of 25° stub involute teeth serves both.",
-      "limits": "Rebuilt with a 10-tooth involute pinion and a matching 42-tooth endless rack, every tooth meshing once per cycle; the flanges only stop the pinion going too deep, holding it in mesh against the tooth force is prescribed.",
+      "updatedOn": "2026-09-27",
+      "visibleFlaws": "Brown's rack teeth are box-shaped and finer than his pinion's; here one module of 22.5° involute teeth serves both. The rack notches have square roots and Brown's half-pitch depth, but the tooth tips taper (0.32 pitch wide against about 0.5).",
+      "limits": "Rebuilt with a 10-tooth involute pinion and a matching 42-tooth endless rack, every tooth meshing once per cycle; the flanges only stop the pinion going too deep, holding it in mesh against the tooth force is prescribed. Pass 84 tooth form: 22.5° involute, addendum 0.7m, pinion shifted +0.2m, internal-end tips trimmed to 0.6m, square-walled relief below the pinion tips' reach; contact ratio 1.06 on the rows (the old 25° stub had 0.91) and 1.07 on the ends. Lower pressure angles foul the internal ends, drop a contact ratio below 1, or point the pinion teeth.",
       "assessment": "minor"
     },
     {
@@ -15098,11 +15111,11 @@
       "id": 397,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-f-review.md",
+        "note": "Pass 84: The slot's upper end runs about 8 px past Brown's stop. The crescent is a deeper arc than his, and its upper end curls about 12° further right."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15126,7 +15139,8 @@
         "docs/p73-res-review.md",
         "docs/p79-disconnected-triage.md",
         "docs/p80-2-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15134,19 +15148,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The slot's upper end runs past Brown's stop (the pin reaches 268 px from the pivot against his 238); the table lug is about 12 px left of Brown's (link 2.30 against 2.02).",
-      "limits": "The rocker stands upright at rest as drawn; one circular slot arc; near-rest, not a true dwell; the link must exceed the 2.22 drop of the top joint at the 65° swing. Closing the slot to Brown's stop needs the crank 31% shorter or its centre moved 30 px. About 0.29 of the link pin shows between the bar's lug and the link, which sits in the rocker's plane.",
+      "visibleFlaws": "The slot's upper end runs about 8 px past Brown's stop. The crescent is a deeper arc than his, and its upper end curls about 12° further right.",
+      "limits": "The rocker stands upright at rest as drawn; one circular slot arc; near-rest, not a true dwell. Crank centre and pin sit 9 px from Brown's and the throw is 1.00 (his 1.18), sharing his crank/slot inconsistency; the link is his 2.14 (remeasured eye to eye) at a 57° swing; sagitta 0.8 is kept for the near-rest (0.6 would cut it from 38% to 23%). About 0.29 of the link pin shows between the bar's lug and the link, which sits in the rocker's plane.",
       "assessment": "minor"
     },
     {
       "id": 398,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-f-review.md",
+        "note": "Pass 84: The crank throw is 0.40 against Brown's about 0.6, and the crank points up-right where Brown's points up-left (his pose is inconsistent with the roller on a lobe tip)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15169,7 +15183,8 @@
         "docs/p73-res-review.md",
         "docs/p79-disconnected-triage.md",
         "docs/p80-2-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-f-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15178,7 +15193,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "The crank throw is 0.40 against Brown's about 0.6, and the crank points up-right where Brown's points up-left (his pose is inconsistent with the roller on a lobe tip).",
-      "limits": "The groove centreline is derived from the in-line slider-crank so the wheel makes three full turns per cam turn at varying speed (9:1 speed ratio); at the crank's dead centres the prescribed law picks the direction; the official 2D animation only rocks the wheel. The groove fixes the throw at 0.19 of the cam radius (Brown 0.375); pointing the crank Brown's way turns the cam lobes 24°. The crosshead carries an eye round the roller's upper end, as Brown's rod eye does.",
+      "limits": "The groove centreline is derived from the in-line slider-crank so the wheel makes three full turns per cam turn at varying speed (9:1 speed ratio); at the crank's dead centres the prescribed law picks the direction; the official 2D animation only rocks the wheel. The groove fixes the throw at 0.19 of the cam radius (Brown 0.375); pointing the crank Brown's way turns the cam lobes 24°. The crosshead carries an eye round the roller's upper end, as Brown's rod eye does. p84: Brown's own groove supports a throw of only about 0.16 of the cam radius while his crank is 0.33; deepening the groove further would reach the hub; with the roller at a lobe tip the crank must point away from the crosshead.",
       "assessment": "minor"
     },
     {
@@ -17589,11 +17604,11 @@
       "id": 459,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-d-review.md",
+        "note": "Pass 84: The two star-wheel axles and their journals have no carrier (Brown draws none) and join the rest only through the worm's designed 0.054 clearance."
       },
       "intersections": {
         "status": "known",
@@ -17623,7 +17638,8 @@
         "docs/p78-b-review.md",
         "docs/p79-disconnected-triage.md",
         "docs/p80-3-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17632,7 +17648,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "The two star-wheel axles and their journals have no carrier (Brown draws none) and join the rest only through the worm's designed 0.054 clearance.",
-      "limits": "Trip and tipping are prescribed; the buckets start and stop abruptly at pick-up; worm meshing is not qualified. Engaged star pins run 0–0.006 off the thread flank, which sits on its core; the thread clears the pins by 0.045 at the mid-exchange crossing, by design. The central post stands on the well floor as drawn, and the tappet arm meets a solid step disc under the worm; the tappet reversal is scripted.",
+      "limits": "Trip and tipping are prescribed; the buckets start and stop abruptly at pick-up; worm meshing is not qualified. Engaged star pins run 0–0.006 off the thread flank, which sits on its core; the thread clears the pins by 0.045 at the mid-exchange crossing, by design. The central post stands on the well floor as drawn, and the tappet arm meets a solid step disc under the worm; the tappet reversal is scripted. The nearest fixed part Brown draws is the central post's top, 1.31 below and 0.72 inboard of the journals, so a carrier would be a member of at least 1.1–1.5 that Brown does not draw.",
       "assessment": "minor"
     },
     {
@@ -17757,11 +17773,11 @@
       "id": 463,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-d-review.md",
+        "note": "Pass 84: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17786,7 +17802,8 @@
         "docs/p66-audit-review.md",
         "docs/p69-w3-review.md",
         "docs/p73-fb2-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17794,9 +17811,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The upper leaf is a plain plank, so the ordinary head stands 0.14 over its crest where Brown shows the water leaving below the leaf top (the caption's notch in the upper leaf).",
-      "limits": "The overflow spills as one full-width sheet; the pivot pins end at the channel-wall planes, which the section cuts away; head water and flow are scheduled.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The ordinary flow leaves through a 1.20-wide, 1.20-deep notch in the middle of the upper leaf, with the head 0.94 below its top as on the plate; the notch passes the flood too (about 4.9× the ordinary flow), so nothing overtops the shoulders. The pivot pins end at the channel-wall planes, which the section cuts away; head water and flow are scheduled.",
+      "assessment": "reasonable"
     },
     {
       "id": 464,
@@ -18548,11 +18565,11 @@
       "id": 482,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p81-audit-review.md",
-        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
+        "evidence": "docs/p84-d-review.md",
+        "note": "Pass 84: flaw fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -18574,7 +18591,8 @@
         "docs/p63-audit-review.md",
         "docs/p69-w4-review.md",
         "docs/p73-fb2-review.md",
-        "docs/p81-audit-review.md"
+        "docs/p81-audit-review.md",
+        "docs/p84-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18582,9 +18600,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The case layout departs from Brown's round section (mercury channels in the walls).",
-      "limits": "One clean cutaway; outlet F opens into the delivery pipe; the separate view of valve D is not modelled; mercury levels are static.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "One clean cutaway of a round case whose outer wall forms the quicksilver channel and whose deep well is the chamber; F is a round port in the back of the well, from which the delivery pipe runs out under the channel floor; the well floor is left whole in front of the cut, carrying lever d's stand; valve D hangs from lever d's pin by its slotted hanger, which runs back to the section plane; the separate view of valve D is not modelled; mercury levels are static.",
+      "assessment": "reasonable"
     },
     {
       "id": 483,
@@ -19247,11 +19265,11 @@
       "id": 500,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
-        "reviewPass": 81,
+        "reviewer": "Claude Opus 5.5 — pass-84 lane, integrated by primary agent",
+        "reviewPass": 84,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p82-fig-review.md",
-        "note": "Pass 81: At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap)."
+        "evidence": "docs/p84-d-review.md",
+        "note": "Pass 84: With the camera turned 32° or more toward the gauge's side (53° toward the section's side) the section figure overlaps the gauge in projection."
       },
       "intersections": {
         "status": "known",
@@ -19275,7 +19293,8 @@
         "docs/p72-c-review.md",
         "docs/p77-dc-review.md",
         "docs/p81-audit-review.md",
-        "docs/p82-fig-review.md"
+        "docs/p82-fig-review.md",
+        "docs/p84-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19283,8 +19302,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap).",
-      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads. Clearing both ±60° views with the half-gauge section needs a gap of about 7.3 against the present 1.86 (the plate's is about 0.2). In the face view the pinion journal and sector pivot bearing are carried by nothing fixed; the section's dial and glass are seated in the case wall. Brown's stem and hex union nut are modelled below the case (sizes measured from the plate).",
+      "visibleFlaws": "With the camera turned 32° or more toward the gauge's side (53° toward the section's side) the section figure overlaps the gauge in projection.",
+      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads. Clearing ±60° views with the half-gauge section needs a gap of about 4.9 with the section 0.5 forward, or 7.3 without, against the present 1.86 (the plate's is about 0.2); moving it forward only balances the two sides at about 40°. In the face view the pinion journal and sector pivot bearing are carried by nothing fixed; the section's dial and glass are seated in the case wall. Brown's stem and hex union nut are modelled below the case (sizes measured from the plate).",
       "assessment": "minor"
     },
     {

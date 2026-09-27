@@ -612,3 +612,31 @@ test("movement 309 cuts Brown's slanted ratchet teeth and joins each pallet arm 
   disposeLike(root);
 });
 function disposeLike(root) { root.traverse((o) => o.geometry?.dispose?.()); }
+
+test("movement 309 drops B's bottom edge into Brown's small nib short of the cocking tooth's sweep", () => {
+  const model = createMovementModel(catalog.movements[308]);
+  const root = model.root;
+  model.update(0, 0.016);
+  root.updateMatrixWorld(true);
+  let plate;
+  root.traverse((o) => {
+    if (o.userData.role === 'left-B-Q-pallet-plate-with-lifting-face-and-stop') plate = o;
+  });
+  const toModel = root.userData.sourcePointToModel;
+  const ray = new THREE.Raycaster();
+  const solidAt = (x, y) => {
+    const p = toModel({ x, y });
+    const origin = root.localToWorld(new THREE.Vector3(p.x, p.y, 5));
+    ray.set(origin, new THREE.Vector3(0, 0, -1).transformDirection(root.matrixWorld));
+    return ray.intersectObject(plate).length > 0;
+  };
+  // Brown's level bottom edge (y ~206) with open space below it...
+  assert.ok(solidAt(112, 204), 'level bottom edge');
+  assert.ok(!solidAt(112, 208.5), 'open below the level bottom');
+  // ...then the edge drops into a nib hanging about 5 px below it.
+  assert.ok(solidAt(127.8, 210.8), 'nib hangs below the bottom line');
+  assert.ok(!solidAt(124, 210.8), 'nib is a point, not a thickened bottom');
+  // Everything under the lifting face, where the cocking tooth passes, is cut.
+  assert.ok(!solidAt(134, 205), 'no material in the cocking tooth sweep');
+  disposeLike(root);
+});

@@ -72,7 +72,7 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
   assert.equal(transmission.oneShotRelease, true);
   assert.equal(transmission.automaticReset, false);
   assert.equal(transmission.catchDetainedAfterTrip, true);
-  assert.match(transmission.loopReset, /fixed-bottom.*spent-weight-settles-into-bottom.*re-armed-far-above-view/);
+  assert.match(transmission.loopReset, /re-armed-far-above-view.*vessel-moves-to-next-station.*bottom-and-spent-weight-off-sideways/);
   assert.equal(blocks.resetSling, undefined, 'no reload sling');
   assert.equal(
     blocks.probeAssembly.userData.role,
@@ -86,14 +86,12 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
     blocks.weightAssembly.userData.role,
     'detachable-bored-spherical-sounding-weight-with-front-section-cutaway',
   );
-  assert.equal(blocks.seabed.userData.fixed, true);
-  // The sea bottom is a plain fixed block of soft bottom, deep enough to
-  // hold a wholly buried spent weight.
+  // The sea bottom is a plain block whose top is the contact plane, long
+  // enough that its ends stay far beyond any view at both stations.
   const bed = new THREE.Box3().setFromObject(blocks.seabedSlab);
-  const { weightOpeningHalfHeight, buriedWeightCenterY } = model.root.userData.geometry;
-  assert.ok(buriedWeightCenterY + weightOpeningHalfHeight < bed.max.y);
-  assert.ok(buriedWeightCenterY - weightOpeningHalfHeight > bed.min.y);
+  const { stationDrift } = model.root.userData.geometry;
   near(bed.max.y, model.root.userData.geometry.seabedY, 1e-6, 'bed top is the contact plane');
+  assert.ok(stationDrift >= 40 && bed.min.x < -60 && bed.max.x > 60);
   disposeModel(model.root);
 });
 
@@ -303,7 +301,7 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
   disposeModel(model.root);
 });
 
-test('movement 247 re-arms far above view in a fixed world: the bottom never moves and no weight pops in any view', () => {
+test('movement 247 re-arms far above view, moves on to the next station, and no weight pops or passes into the bottom in any view', () => {
   const model = createMovementModel(catalog.movements[246]);
   const { geometry, stateAtTime, timeline, transmission, displayFrame247, blocks } =
     model.root.userData;
@@ -321,27 +319,37 @@ test('movement 247 re-arms far above view in a fixed world: the bottom never mov
   assert.equal(armed.catchAngle, 0);
   assert.equal(armed.catchToWeightContactActive, true);
 
-  // The default view (the fit) holds Brown's rod pose and the bottom's
-  // surface; "any view" is taken as the fit zoomed out three times.
+  // The default view (the fit) holds Brown's rod pose and not the bottom:
+  // its crop floor stands above the bottom (the camera looks up from the
+  // bottom's level, so the bottom is edge-on at the frame edge). "Any
+  // view" is taken as the fit zoomed out three times.
   const fit = model.root.userData.cameraFitBounds;
-  assert.ok(fit.min.y < geometry.seabedY && fit.min.y > geometry.seabedY - 0.2);
-  const fitHeight = fit.max.y - fit.min.y;
-  const center = (fit.max.y + fit.min.y) / 2;
+  assert.ok(fit.min.y > geometry.seabedY + 0.3);
+  assert.ok(model.cameraDirection.y < 0, 'camera looks up from the bottom level');
+  const fitHeight = fit.max.y - geometry.seabedY;
+  const center = (fit.max.y + geometry.seabedY) / 2;
   // Three times the fit height at a 16:9 aspect.
   const wide = { minY: center - 1.5 * fitHeight, maxY: center + 1.5 * fitHeight,
     halfWidth: 1.5 * fitHeight * 16 / 9 };
-  const bedBox = new THREE.Box3().setFromObject(blocks.seabedSlab);
+  const view = { halfWidth: fitHeight / 2 * 16 / 9 };
+  const bedTop = new THREE.Box3().setFromObject(blocks.seabedSlab).max.y;
   const weights = [blocks.weightAssembly, blocks.spareWeightAssembly];
   const previous = weights.map(() => null);
+  let previousBedX = null;
   const period = model.root.userData.animationTiming.authoredCyclePeriod;
   near(period, 2 * timeline.cycleClosure, 0, 'two soundings per loop');
   for (let sample = 0; sample <= 4000; sample += 1) {
     const time = period * sample / 4000;
     model.update(time);
     model.root.updateMatrixWorld(true);
-    // The world is fixed: the bottom never moves.
     assert.equal(displayFrame247.position.y, 0);
-    near(new THREE.Box3().setFromObject(blocks.seabedSlab).max.y, bedBox.max.y, 0, 'fixed bottom');
+    const bedBox = new THREE.Box3().setFromObject(blocks.seabedSlab);
+    // The bottom only ever moves sideways, as one body, with its ends far
+    // beyond any view.
+    near(bedBox.max.y, bedTop, 0, 'bottom level fixed');
+    assert.ok(bedBox.min.x < -wide.halfWidth - 20 && bedBox.max.x > wide.halfWidth + 20, `bottom ends in view at ${time}`);
+    const bedX = blocks.seabed.position.x;
+    if (previousBedX !== null) assert.ok(Math.abs(bedX - previousBedX) < 0.5, `bottom continuous at ${time}`);
     const state = model.root.userData.kinematics;
     const t = state.cycleTime;
     const rod = new THREE.Box3().setFromObject(blocks.housingTop)
@@ -350,26 +358,57 @@ test('movement 247 re-arms far above view in a fixed world: the bottom never mov
     weights.forEach((weight, index) => {
       assert.equal(weight.visible, true);
       const box = new THREE.Box3().setFromObject(weight);
+      // No weight ever passes into the bottom.
+      assert.ok(box.min.y >= bedTop - 0.02, `weight ${index} in the bottom at ${time}`);
       // Every weight moves continuously (no pops, even out of view).
       if (previous[index]) {
-        assert.ok(box.min.distanceTo(previous[index].min) < 1, `weight ${index} continuous at ${time}`);
+        assert.ok(box.min.distanceTo(previous[index].box.min) < 1, `weight ${index} continuous at ${time}`);
       }
-      previous[index] = box;
-      if (box.max.y > bedBox.max.y && box.max.y > fit.min.y && box.min.y < fit.max.y) shown = true;
+      const lying = box.min.y < bedTop + 0.2;
+      // A weight lying on the bottom moves only with the bottom.
+      if (previous[index]?.lying && lying) {
+        const moved = box.getCenter(new THREE.Vector3()).x - previous[index].x;
+        near(moved, bedX - previousBedX, 1e-9, `weight ${index} slides over the bottom at ${time}`);
+      }
+      previous[index] = { box, lying, x: box.getCenter(new THREE.Vector3()).x };
+      if (box.max.y > fit.min.y && box.min.y < fit.max.y
+        && box.max.x > -view.halfWidth && box.min.x < view.halfWidth) shown = true;
       if (box.max.y < wide.minY || box.min.y > wide.maxY || box.min.x > wide.halfWidth
-        || box.max.x < -wide.halfWidth || bedBox.containsBox(box)) return;
+        || box.max.x < -wide.halfWidth) return;
       // A weight in view is always seated on the rod, falling, or lying
-      // on (or settling into) the bottom: never lifted or carried by nothing.
+      // on the bottom: never lifted or carried by nothing.
       const onRod = Math.abs(box.getCenter(new THREE.Vector3()).y - state.weightCenterY) < 1e-9
         && weight === model.root.userData.activeWeightAssembly
         && (t < timeline.supportRelease + 1 || t >= timeline.weightSeated);
-      const onBottom = box.min.y < bedBox.max.y + 0.2
-        && Math.abs(box.getCenter(new THREE.Vector3()).x) < 1e-9;
       const falling = t >= timeline.supportRelease && t < timeline.weightImpact;
-      assert.ok(onRod || onBottom || falling, `weight ${index} in view unsupported at ${time}`);
+      assert.ok(onRod || lying || falling, `weight ${index} in view unsupported at ${time}`);
     });
+    previousBedX = bedX;
     assert.ok(shown, `view empty at ${time}`);
   }
+  disposeModel(model.root);
+});
+
+test('movement 247 moves on to the next station slowly while the spent weight is in view', () => {
+  const model = createMovementModel(catalog.movements[246]);
+  const { blocks, cameraFitBounds, geometry, animationTiming } = model.root.userData;
+  const halfWidth = (cameraFitBounds.max.y - geometry.seabedY) / 2 * 16 / 9 + geometry.weightOuterRadius;
+  const weights = [blocks.weightAssembly, blocks.spareWeightAssembly];
+  const previous = [null, null];
+  let fastest = 0;
+  const step = 0.005;
+  for (let time = 0; time <= animationTiming.authoredCyclePeriod; time += step) {
+    model.update(time);
+    weights.forEach((weight, index) => {
+      const { x, y } = weight.position;
+      if (previous[index] && Math.abs(x) < halfWidth && y < geometry.groundedWeightCenterY + 1e-9
+        && Math.abs(previous[index].y - y) < 1e-12) {
+        fastest = Math.max(fastest, Math.abs(x - previous[index].x) / step);
+      }
+      previous[index] = { x, y };
+    });
+  }
+  assert.ok(fastest > 0 && fastest < 7, `in-view station move ${fastest}`);
   disposeModel(model.root);
 });
 

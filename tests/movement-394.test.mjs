@@ -4,7 +4,7 @@ import test from 'node:test';
 import polygonClipping from 'polygon-clipping';
 import { createMovementModel } from '../src/simulation/registry.js';
 import {
-  parsonsDesign, parsonsPathPoint, parsonsPinionOutline, parsonsRackVoid,
+  parsonsDesign, parsonsMeshRatios, parsonsPathPoint, parsonsPinionOutline, parsonsRackVoid,
 } from '../src/simulation/authored-parsons-racks.js';
 
 const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
@@ -89,4 +89,25 @@ test('394 flanges clear their rebates and the band while bounding the mesh depth
     assert.equal(area(polygonClipping.intersection([[disc(g.largeFlangeRadius, c)]], large)), 0);
     assert.equal(area(polygonClipping.intersection([[disc(g.smallFlangeRadius, c)]], small)), 0);
   }
+});
+
+test('394 rack teeth are deep with square-walled roots, and every mesh keeps a contact ratio above one', () => {
+  const r = parsonsMeshRatios(g);
+  assert.ok(g.pressureAngle <= 22.5 * Math.PI / 180 + 1e-12, 'flanks no flatter than 22.5 degrees');
+  assert.ok((g.addendum + g.dedendum) / g.pitch >= 0.5, 'rack teeth at least half a pitch deep (Brown about 0.5)');
+  assert.ok(r.straightRows >= 1.05, `straight-row contact ratio ${r.straightRows}`);
+  assert.ok(r.internalEnds >= 1.05, `internal-end contact ratio ${r.internalEnds}`);
+  assert.ok(r.pinionTipThickness >= 0.6 * g.module, 'pinion tips stay square, not pointed');
+  // Below the pinion tips' reach each row space has vertical walls to a flat root.
+  const rootY = g.endPitchRadius + g.profileShift + g.dedendum;
+  const reachY = g.endPitchRadius + g.profileShift + g.addendum;
+  let walls = 0;
+  for (const polygon of parsonsRackVoid(g)) for (const ring of polygon) for (let i = 0; i + 1 < ring.length; i += 1) {
+    const [a, b] = [ring[i], ring[i + 1]];
+    if (Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[0]) < g.halfStraight
+      && Math.abs(Math.abs(a[1]) - reachY) + Math.abs(Math.abs(b[1]) - rootY) < 1e-6) walls += 1;
+    else if (Math.abs(a[0] - b[0]) < 1e-9 && Math.abs(a[0]) < g.halfStraight
+      && Math.abs(Math.abs(b[1]) - reachY) + Math.abs(Math.abs(a[1]) - rootY) < 1e-6) walls += 1;
+  }
+  assert.ok(walls >= 4 * (g.straightPitches - 1), `square-walled row roots ${walls}`);
 });

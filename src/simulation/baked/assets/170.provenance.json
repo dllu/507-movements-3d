@@ -72,7 +72,7 @@
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/solids.js",
-      "sha256": "b736892ab28dd5af2a8962b152ad84ab8cb82ce324004f3db16423cc0b689b34"
+      "sha256": "b4a52fbdcae443e7be5706389d6b42f9067f942f41099d5590220ff006c0c9fc"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/update-solids.js",
@@ -100,6 +100,6 @@
     }
   ],
   "samples": 481,
-  "bytes": 524675,
-  "sha256": "6688f4462aa0626772ed1c60296f065a7360048e5311638e68557a6b3c0cb2f2"
+  "bytes": 523727,
+  "sha256": "6e496036e58910259f7b25ffeb02f13f82e6750c2259b6ef8dcb0f4dc59c8c09"
 }

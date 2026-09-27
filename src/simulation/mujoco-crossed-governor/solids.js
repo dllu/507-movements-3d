@@ -34,8 +34,11 @@ export function makeCrossedGovernorSolids() {
   // spindle passes through a square seat in its middle, and each arm swings
   // radially through its own window, whose angular extent covers the baked
   // spread range (0.517-0.761 rad) plus the arm's half-width and clearance.
-  // The bow's ends reach just past the windows.
-  const bowInner = arcRadius - .075, bowOuter = arcRadius + .075, bowEnd = .86, window = [.475, .805];
+  // The bow's ends stand where Brown draws them, about 0.69 rad from the
+  // spindle (0.17 past the drawn arms), so each window runs out through the
+  // bow's end: at wide spread the arm leaves the open-ended slot between the
+  // bow's front and back plates and returns into it.
+  const bowInner = arcRadius - .075, bowOuter = arcRadius + .075, bowEnd = .69, window = [.475, bowEnd + .05];
   const bow = sector(bowInner, bowOuter, -Math.PI / 2 - bowEnd, -Math.PI / 2 + bowEnd, 128);
   const armWindow = sign => sector(bowInner - .01, bowOuter + .01,
     -Math.PI / 2 + sign * (sign < 0 ? window[1] : window[0]), -Math.PI / 2 + sign * (sign < 0 ? window[0] : window[1]), 32);

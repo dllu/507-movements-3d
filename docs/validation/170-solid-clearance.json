@@ -20,7 +20,7 @@
   "poses": 129,
   "meshes": 83,
   "pairs": 2229,
-  "queries": 55726898,
+  "queries": 55890986,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the settled native cycle, phased near the engraving. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
@@ -31,7 +31,7 @@
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/solids.js",
-      "sha256": "b736892ab28dd5af2a8962b152ad84ab8cb82ce324004f3db16423cc0b689b34"
+      "sha256": "b4a52fbdcae443e7be5706389d6b42f9067f942f41099d5590220ff006c0c9fc"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/update-solids.js",

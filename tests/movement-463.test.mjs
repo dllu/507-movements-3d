@@ -59,15 +59,27 @@ test('movement 463 is one unequal two-leaf self-acting weir with a notch and a b
   assert.equal(blocks.lowerLeaf.parent, model.root);
   assert.equal(blocks.upperBody.parent, blocks.upperLeaf);
   assert.equal(blocks.lowerBody.parent, blocks.lowerLeaf);
-  // Brown draws the upper leaf as a plain plank: no notch shoulders; the
-  // ordinary sheet spills over its full-width crest.
-  assert.equal(blocks.upperShoulders.length, 0);
-  assert.equal(geometry.notchDepth, 0);
-  assert.equal(geometry.notchWidth, geometry.gateWidth);
+  // The caption's notch: cut down from the top of the upper leaf across
+  // the middle of the channel, leaving full-height shoulders at the leaf
+  // ends (Brown's section shows the near end at full height).
+  assert.equal(blocks.upperShoulders.length, 2);
+  assert.ok(geometry.notchDepth > 0.9 && geometry.notchWidth < geometry.gateWidth);
   blocks.upperBody.geometry.computeBoundingBox();
   const plank = blocks.upperBody.geometry.boundingBox;
-  assert.ok(Math.abs(plank.max.y - geometry.upperTopLocal) < 1e-6, 'plank reaches the crest');
+  near(plank.max.y, geometry.notchBottomLocal, 1e-6, 'full-width body ends at the notch sill');
   assert.ok(Math.abs(plank.max.z - plank.min.z - geometry.gateWidth) < 1e-6, 'plank spans the channel');
+  for (const shoulder of blocks.upperShoulders) {
+    assert.equal(shoulder.parent, blocks.upperLeaf);
+    shoulder.geometry.computeBoundingBox();
+    const box = shoulder.geometry.boundingBox;
+    near(box.min.y, geometry.notchBottomLocal, 1e-6, 'shoulder stands on the sill line');
+    near(box.max.y, geometry.upperTopLocal, 1e-6, 'shoulder reaches the leaf top');
+    assert.ok(Math.min(Math.abs(box.min.z), Math.abs(box.max.z)) >= geometry.notchWidth / 2 - 1e-6, 'shoulder clear of the notch');
+    assert.ok(Math.max(Math.abs(box.min.z), Math.abs(box.max.z)) >= geometry.gateWidth / 2 - 1e-6, 'shoulder reaches the leaf end');
+  }
+  for (const rail of blocks.upperReinforcements) {
+    assert.ok(rail.position.y + 0.0375 < geometry.notchBottomLocal, 'battens stay below the notch sill');
+  }
   // The fixed pivot pins end flush with the leaf ends; no stub bearings.
   for (const assembly of [blocks.upperPivotAssembly, blocks.lowerPivotAssembly]) {
     assembly.axle.geometry.computeBoundingBox();
@@ -241,19 +253,20 @@ test('movement 463 schedule demonstrates ordinary notch overflow, flood opening,
   assert.ok(opening.contactDrive > 0 && opening.contactDrive < 1);
   assert.match(opening.regime, /rising-head/);
   near(scour.contactDrive, 1, 1e-12, 'fully open scour state');
-  // Brown's open weir spills over its lowered, turned upper leaf: the head
-  // always stands over the crest (the sheet never stops), never more than
-  // the flood head above it, and the overflow follows the head over the
-  // lowered crest.
+  // All flow leaves through the notch: the head always stands over the
+  // (possibly lowered) notch sill, so the sheet never stops, and below the
+  // shoulders, so none overtops the leaf. Brown's ordinary head stands
+  // well below the leaf top.
   assert.ok(scour.notchFlowFraction > ordinary.notchFlowFraction);
-  const floodHead = geometry.floodWaterLevel - geometry.notchBottomY;
+  const cornerY = (state, local) => geometry.upperPivot.y
+    - (geometry.upperThickness / 2) * Math.sin(state.upperAngle)
+    + local * Math.cos(state.upperAngle);
+  assert.ok(cornerY(ordinary, geometry.upperTopLocal) - ordinary.waterLevel > 0.8,
+    'ordinary head stands well below the leaf top');
   for (let i = 0; i <= 200; i += 1) {
     const state = stateAtPhase(i / 200);
-    const topEdgeY = geometry.upperPivot.y
-      - (geometry.upperThickness / 2) * Math.sin(state.upperAngle)
-      + geometry.upperTopLocal * Math.cos(state.upperAngle);
-    assert.ok(state.waterLevel > topEdgeY, `head over the crest at ${i / 200}`);
-    assert.ok(state.waterLevel <= topEdgeY + floodHead + 1e-12, `head at most the flood head at ${i / 200}`);
+    assert.ok(state.waterLevel > cornerY(state, geometry.notchBottomLocal), `head over the notch sill at ${i / 200}`);
+    assert.ok(state.waterLevel < cornerY(state, geometry.upperTopLocal), `head below the shoulders at ${i / 200}`);
   }
   near(scour.bedFlowFraction, 1, 1e-12, 'full bed flow');
   assert.ok(scour.sedimentRemainingFraction < ordinary.sedimentRemainingFraction);

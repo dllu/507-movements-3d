@@ -485,18 +485,33 @@ test('movement 482 fits every regulator pose and leaves spinning movement 507 as
   disposeModel(model.root);
 });
 
-test('movement 482 domed cover is closed at its rear end, so the section shows its inside', () => {
+test('movement 482 is a round case: the lid, case wall, channel, well, cup H and valve D are all round about their axes', () => {
   const { model } = movementModel();
-  const cover = model.root.userData.blocks.domedCover;
+  const { blocks, geometry } = model.root.userData;
+  const round = geometry.roundCase;
   model.root.updateMatrixWorld(true);
-  let rearEnd = false;
-  cover.traverse((mesh) => {
-    if (!mesh.isMesh) return;
-    mesh.geometry.computeBoundingBox();
-    const box = mesh.geometry.boundingBox;
-    // A full-height end plate spanning the arch from its flange to its crown.
-    if (box.max.z <= -1.0 && box.max.x - box.min.x > 5.9 && box.max.y - box.min.y > 0.8) rearEnd = true;
-  });
-  assert.ok(rearEnd, 'rear end plate of the cover');
+  // The whole cut remains a round section: every cut casting part keeps its
+  // back half, whose extent in depth is its radius.
+  const box = (object) => new THREE.Box3().setFromObject(object);
+  const caseBox = box(blocks.outerMercuryChannels[0].trough);
+  near(caseBox.min.z, -round.caseOuter, 0.01, 'case wall round (back)');
+  near(caseBox.max.x, round.caseOuter, 0.01, 'case wall round (side)');
+  const lid = box(blocks.domedCover);
+  assert.ok(lid.min.z < -round.caseOuter && lid.max.x > round.caseOuter, 'lid laps over the round case wall');
+  // The channel is formed in the case: its floor runs from the well wall
+  // to the case wall, and the quicksilver fills it between them.
+  const mercury = box(blocks.outerMercuryChannels[0].mercury);
+  assert.ok(mercury.min.z < -round.caseInner + 0.01 && mercury.max.x < round.caseInner, 'quicksilver ring in the case channel');
+  // Cup H's rim runs in the channel clear of both walls, at every pose.
+  assert.ok(round.rimInner > round.wellOuter && round.rimOuter < round.caseInner);
+  assert.ok(round.cupTopRadius < round.caseInner);
+  // Valve D's round cup stands inside the well, merged with its wall.
+  assert.ok(geometry.valveCenterX + round.dCupWallInner < round.wellInner, 'D channel inside the well');
+  // The delivery pipe leaves the well through the port F in its back wall
+  // and passes under the channel floor.
+  const port = blocks.outletChamber.portCentre;
+  assert.ok(port.z < -1 && port.x < -1, 'port F in the back of the well');
+  const pipe = box(blocks.outletPipeF);
+  assert.ok(pipe.max.y < round.channelFloorBottom, 'pipe under the channel floor');
   disposeModel(model.root);
 });

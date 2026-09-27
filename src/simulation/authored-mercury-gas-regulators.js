@@ -1,6 +1,8 @@
 import {correctGasMeterParts} from './gas-meter-working-parts.js';
-import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
-import {curvedPipeWall} from './finite-fluid-passages.js';
+import {capsule, circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
+import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
+import {latheSectionGeometry} from './cutaway-section.js';
+import {horizontalPlate} from './horizontal-turbine-solids.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {
@@ -11,49 +13,34 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 
-// Brown covers the regulator with a domed lid whose flange overhangs the
-// walls, the rod of cup H rising into a knob at its crown. The lid is one
-// section plate in the elevation plane, slotted where the rod passes.
-function addDomedCover(root, material, rodX) {
-  const baseY = 1.84;
-  const arc = (rx, ry, count = 96) => Array.from({ length: count + 1 }, (_, i) => {
-    const angle = Math.PI * i / count;
-    return [rx * Math.cos(angle), baseY + ry * Math.sin(angle)];
+// Brown covers the regulator with a round domed lid whose edge laps down
+// over the case wall, the rod of cup H rising through its crown into a
+// turned knob. The lid is one solid of revolution about the case axis,
+// bored for the rod, seated on the top of the case wall.
+function addDomedCover(root, material, rodX, round) {
+  const baseY = round.caseTop;
+  const outer = { rx: round.caseOuter + 0.12, ry: 0.78 };
+  const inner = { rx: round.caseOuter - 0.06, ry: 0.60 };
+  // The bore is a running fit on the 0.075 rod, which it guides.
+  const hole = 0.079;
+  const lap = 0.18;
+  const arc = ({ rx, ry }, from, to, count = 64) => Array.from({ length: count + 1 }, (_, i) => {
+    const r = from + (to - from) * i / count;
+    return [r, baseY + ry * Math.sqrt(Math.max(0, 1 - (r / rx) ** 2))];
   });
-  const shell = polygonClipping.difference(
-    poly([[3.02, baseY - 0.06], ...arc(2.98, 0.78), [-3.02, baseY - 0.06]]),
-    poly([...arc(2.80, 0.60)].reverse()),
-  );
-  const knobTop = baseY + 0.78 + 0.30;
-  // Only a square rod passage is cut through the crown; the rest of the
-  // lid is unbroken across its depth.
-  const hole = 0.095;
-  const slot = poly([
-    [rodX - hole, baseY - 0.1], [rodX + hole, baseY - 0.1],
-    [rodX + hole, knobTop + 0.1], [rodX - hole, knobTop + 0.1],
-  ]);
-  // Each slab is built as closed left and right halves meeting at the rod.
-  const halves = [
-    polygonClipping.intersection(shell, poly([[-4, 0], [rodX, 0], [rodX, 5], [-4, 5]])),
-    polygonClipping.intersection(shell, poly([[rodX, 0], [4, 0], [4, 5], [rodX, 5]])),
-  ];
-  // The lid is closed at both ends: without end plates the vault is an
-  // open tunnel, and from the front (cut on the section plane) it read as a
-  // thin arch with the background showing through beneath it.
-  const endPlate = poly([[3.02, baseY - 0.06], ...arc(2.98, 0.78), [-3.02, baseY - 0.06]]);
-  const endThickness = 0.18;
-  const geometries = [
-    ...halves.map(half => plate(half, -1.20 + endThickness, -hole)),
-    plate(polygonClipping.difference(shell, slot), -hole, hole),
-    ...halves.map(half => plate(half, hole, 1.20 - endThickness)),
-    plate(endPlate, -1.20, -1.20 + endThickness),
-    plate(endPlate, 1.20 - endThickness, 1.20),
+  const profile = [
+    ...arc(inner, hole, inner.rx),
+    [round.caseOuter, baseY], [round.caseOuter, baseY - lap],
+    [outer.rx, baseY - lap],
+    ...arc(outer, outer.rx, hole),
   ];
   const cover = new THREE.Group();
-  geometries.forEach(geometry => cover.add(new THREE.Mesh(geometry, material)));
+  const shell = new THREE.Mesh(latheSectionGeometry(profile, { phiStart: 0, phiLength: FULL_TURN, segments: 192 }), material);
+  shell.userData.role = 'round-domed-lid-shell';
+  cover.add(shell);
   cover.userData.role = 'fixed-domed-cover-with-rod-knob';
-  // Brown's knob is a small turned boss on the crown, bored for the rod.
-  const crownOuter = baseY + 0.78 * Math.sqrt(Math.max(0, 1 - (rodX / 2.98) ** 2));
+  const crownOuter = baseY + outer.ry * Math.sqrt(Math.max(0, 1 - (rodX / outer.rx) ** 2));
+  const knobTop = crownOuter + 0.30;
   const knob = new THREE.Mesh(new THREE.LatheGeometry([
     new THREE.Vector2(hole, crownOuter - 0.01),
     new THREE.Vector2(0.20, crownOuter - 0.01),
@@ -67,9 +54,6 @@ function addDomedCover(root, material, rodX) {
   cover.add(knob);
   root.add(cover);
   root.userData.blocks.domedCover = cover;
-  const bounds = root.userData.cameraFitBounds;
-  cover.updateMatrixWorld(true);
-  bounds.union(new THREE.Box3().setFromObject(cover));
 }
 
 function cylinderBetween(start, end, radius, material, role, sides = 24) {
@@ -998,6 +982,18 @@ function powersMercuryRegulator(movement) {
     const seatZ = 0.67;
     b.leverStand.position.z = seatZ;
     for (const seat of b.sliderSeats) seat.position.z = seatZ;
+    // Valve D's seat is its hanger: the slotted plate runs back from the
+    // lever's plane into D's round top, to the section plane (z 0.29) where
+    // D is cut, so D visibly hangs from lever d's pin (the pin rides only in
+    // the front of the slot).
+    {
+      const hanger = b.sliderSeats[1];
+      hanger.geometry.dispose();
+      hanger.geometry = plate(polygonClipping.difference(poly([[-0.30, -0.12], [0.30, -0.12], [0.30, 0.12], [-0.30, 0.12]]),
+        capsule([-0.22, 0], [0.22, 0], 0.074, 32)),
+      0.28 - seatZ, 0.04);
+      hanger.userData.role = 'finite-horizontal-pin-slot-hanger-of-valve-D';
+    }
     b.cupH.traverse((object) => {
       if (object.userData.role === 'rigid-cup-roof-to-sliding-pin-seat') {
         object.position.z = seatZ;
@@ -1015,143 +1011,208 @@ function powersMercuryRegulator(movement) {
   // Brown's regulator is a flat section; view it square to the cut.
   root.userData.cameraDirection.set(0.05, 0.08, 15);
   root.userData.cameraFov = 10;
-  addDomedCover(root, frameMaterial, cupConnectorX);
-  // Brown cuts the regulator through its middle: cup H is a thin inverted U
-  // whose two rims dip into the left and right quicksilver channels, and
-  // valve D's skirt dips into the channel round E. The finite ring troughs,
-  // their quicksilver and cup H stay whole (they are what the contact checks
-  // use) but are drawn cut at the section plane z = SECTION_Z: the troughs
-  // and quicksilver show only their section faces, so their front and rear
-  // runs no longer read as one dark slab, and cup H shows its cut top and
-  // rims without a tinted front skirt. The quicksilver is a light, visible
-  // liquid, and the back of the section is left plain paper-white.
-  const SECTION_Z = 0.30;
-  const frontCut = [new THREE.Plane(new THREE.Vector3(0, 0, -1), SECTION_Z)];
+  // Pass 84: Brown's regulator is round. His section cuts a round cast case
+  // whose own wall forms the outer quicksilver channel: the thick outer wall
+  // rises from the channel floor to the domed lid, and the channel's inner
+  // wall is the wall of the deep round well (the chamber) under cup H. Valve
+  // D's channel is a round cup round inlet E standing in the well, its outer
+  // wall merged with the well wall as Brown draws it, and E itself its inner
+  // wall. Cup H and valve D are round inverted cups. The outlet F is a round
+  // port in the back of the well wall, from which the delivery pipe runs out
+  // under the channel floor to the burners. (Before, a square box case stood
+  // round free-standing rectangular troughs.)
   const blocks = root.userData.blocks;
-  const box = (x0, x1, y0, y1) =>
-    poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
-  const mirrored = (x0, x1, y0, y1, cx = 0) =>
-    [box(cx - x1, cx - x0, y0, y1), box(cx + x0, cx + x1, y0, y1)];
-  const sectionFace = (parts, material, role) => {
-    const face = new THREE.Mesh(
-      plate(polygonClipping.union(...parts), SECTION_Z - 0.006, SECTION_Z),
-      material,
-    );
-    face.userData.role = role;
-    root.add(face);
-    return face;
+  const ROUND = {
+    wellInner: 1.78, wellOuter: 1.96, wellBottom: -1.98, wellTop: 0.0,
+    floorTop: -1.78, channelFloorBottom: -1.08, channelFloorTop: -0.96,
+    caseInner: 2.30, caseOuter: 2.55, caseTop: 1.84, seatBottom: 1.72,
+    rimInner: 2.00, rimOuter: 2.16, cupTopRadius: 2.18,
+    mercuryTop: -0.205, mercuryBottom: -0.955,
+    dCupWallInner: 0.70, dCupWallOuter: 0.81, dCupWallTop: -0.24, dBaseTop: -0.95,
+    dBaseBottom: -1.15, inletOuter: 0.24,
+    valveSkirtInner: 0.555, valveSkirtOuter: 0.595,
+    outletY: -1.50, outletBore: 0.20, outletWall: 0.27,
   };
-  // Outer ring trough (walls 2.14-2.26 and 1.75-1.80, floor below) and its
-  // quicksilver (1.80-2.14), as rebuilt by correctGasMeterParts.
-  const troughFaceMaterial = matte(PALETTE.frame, { roughness: 0.6 });
-  const troughFace = sectionFace([
-    ...mirrored(2.14, 2.26, -0.96, -0.16),
-    ...mirrored(1.75, 1.80, -0.96, -0.16),
-    ...mirrored(1.75, 2.26, -1.02, -0.96),
-    // Channel round E: walls 0.72-0.815 and 0.335-0.395 about D's axis.
-    ...mirrored(0.72, 0.815, -0.95, -0.24, valveCenterX),
-    ...mirrored(0.335, 0.395, -0.95, -0.24, valveCenterX),
-  ], troughFaceMaterial, 'section-face-of-fixed-quicksilver-troughs');
-  const quicksilverFaceMaterial = matte(0xb9c3c6, {
-    metalness: 0.3,
-    opacity: 0.55,
-    roughness: 0.3,
-    transparent: true,
-  });
-  quicksilverFaceMaterial.depthWrite = false;
-  const quicksilverFace = sectionFace([
-    ...mirrored(1.80, 2.14, -0.955, -0.205),
-    ...mirrored(0.395, 0.72, -0.94, innerMercurySurfaceY, valveCenterX),
-  ], quicksilverFaceMaterial, 'section-face-of-quicksilver-seals');
-  blocks.sectionFaces = [troughFace, quicksilverFace];
-  const trough = blocks.outerMercuryChannels[0].trough;
-  trough.material.clippingPlanes = frontCut;
-  mercuryMaterial.color.setHex(0xb9c3c6);
-  mercuryMaterial.opacity = 0.55;
-  mercuryMaterial.clippingPlanes = frontCut;
-  cupMaterial.clippingPlanes = frontCut;
-  for (const skirt of blocks.cupCrossSkirts ?? []) {
-    skirt.material.clippingPlanes = frontCut;
-    skirt.material.opacity = 0.02;
+  root.userData.geometry.roundCase = ROUND;
+  const replaceGeometry = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
+  const fullLathe = (profile, segments = 160) =>
+    latheSectionGeometry(profile, { phiStart: 0, phiLength: FULL_TURN, segments });
+  // A curved wall (or skirt) about a vertical axis, built from a flat
+  // (s, y) outline: s is arc length on the inner radius about the centre
+  // angle phi0, and the wall runs radially outward by `thickness`. The
+  // outline is cut into narrow columns so that the flat triangles hug the
+  // curve; the inner and outer faces get radial normals.
+  const bentWall = (polygons, { inner, thickness, phi0, column = 0.03 }) => {
+    const bounds = polygons.flat(2).reduce((b, [s]) => [Math.min(b[0], s), Math.max(b[1], s)], [Infinity, -Infinity]);
+    const count = Math.max(1, Math.ceil((bounds[1] - bounds[0]) / column));
+    const parts = [];
+    for (let i = 0; i < count; i += 1) {
+      const s0 = bounds[0] + (bounds[1] - bounds[0]) * i / count;
+      const s1 = bounds[0] + (bounds[1] - bounds[0]) * (i + 1) / count;
+      const piece = polygonClipping.intersection(polygons, poly([[s0, -99], [s1, -99], [s1, 99], [s0, 99]]));
+      if (piece.length) parts.push(plate(piece, 0, thickness));
+    }
+    const merged = mergePassageParts(parts);
+    const position = merged.attributes.position, normal = merged.attributes.normal;
+    const radialFaces = [];
+    for (let i = 0; i < position.count; i += 1) {
+      const s = position.getX(i), y = position.getY(i), w = position.getZ(i);
+      const phi = phi0 + s / inner, radius = inner + w;
+      radialFaces.push(Math.abs(normal.getZ(i)) > 0.99 ? Math.sign(normal.getZ(i)) : 0);
+      position.setXYZ(i, radius * Math.sin(phi), y, radius * Math.cos(phi));
+    }
+    merged.computeVertexNormals();
+    for (let i = 0; i < position.count; i += 1) {
+      if (!radialFaces[i]) continue;
+      const length = Math.hypot(position.getX(i), position.getZ(i));
+      normal.setXYZ(i, radialFaces[i] * position.getX(i) / length, 0, radialFaces[i] * position.getZ(i) / length);
+    }
+    merged.computeBoundingBox();
+    merged.computeBoundingSphere();
+    return merged;
+  };
+  const circlePoly = (cx, cy, radius, count = 64) => poly(Array.from({ length: count },
+    (_, i) => [cx + radius * Math.cos(FULL_TURN * i / count), cy + radius * Math.sin(FULL_TURN * i / count)]));
+
+  // The case casting: the outer wall and channel floor.
+  const caseBody = blocks.outerMercuryChannels[0].trough;
+  replaceGeometry(caseBody, fullLathe([
+    [ROUND.wellOuter, ROUND.channelFloorBottom], [ROUND.caseOuter, ROUND.channelFloorBottom],
+    [ROUND.caseOuter, ROUND.seatBottom], [ROUND.caseInner, ROUND.seatBottom],
+    [ROUND.caseInner, ROUND.channelFloorTop], [ROUND.wellOuter, ROUND.channelFloorTop],
+  ]));
+  caseBody.position.set(0, 0, 0);
+  // The top of the case wall, on which the lid seats.
+  replaceGeometry(housingRoof, fullLathe([[ROUND.caseInner, ROUND.seatBottom], [ROUND.caseOuter, ROUND.seatBottom],
+    [ROUND.caseOuter, ROUND.caseTop], [ROUND.caseInner, ROUND.caseTop]]));
+  housingRoof.position.set(0, 0, 0);
+  housingRoof.userData.role = 'fixed-domed-case-roof-reconstruction';
+  // The well wall (the channel's inner wall), with the round outlet port F in
+  // its back: a revolved wall with a narrow window, and the window's panel
+  // bored for F.
+  const outletPhi = Math.atan2(-1.30, -Math.sqrt(ROUND.wellInner ** 2 - 1.30 ** 2));
+  const windowHalf = THREE.MathUtils.degToRad(12);
+  const [wellWall, wellPanel] = housingPosts;
+  replaceGeometry(wellWall, latheSectionGeometry([[ROUND.wellInner, ROUND.wellBottom], [ROUND.wellOuter, ROUND.wellBottom],
+    [ROUND.wellOuter, ROUND.wellTop], [ROUND.wellInner, ROUND.wellTop]],
+  { phiStart: outletPhi + windowHalf, phiLength: FULL_TURN - 2 * windowHalf, segments: 160 }));
+  const panelHalf = ROUND.wellInner * windowHalf;
+  replaceGeometry(wellPanel, bentWall(polygonClipping.difference(
+    poly([[-panelHalf, ROUND.wellBottom], [panelHalf, ROUND.wellBottom], [panelHalf, ROUND.wellTop], [-panelHalf, ROUND.wellTop]]),
+    circlePoly(0, ROUND.outletY, ROUND.outletBore)),
+  { inner: ROUND.wellInner, thickness: ROUND.wellOuter - ROUND.wellInner, phi0: outletPhi, column: 0.025 }));
+  for (const wall of [wellWall, wellPanel]) {
+    wall.position.set(0, 0, 0);
+    wall.rotation.set(0, 0, 0);
   }
-  cupHPressureVolume.material.clippingPlanes = frontCut;
-  cupHPressureVolume.material.opacity = 0.012;
-  housingShell.material = matte(PALETTE.paper, {
-    roughness: 0.95,
-    side: THREE.DoubleSide,
+  wellWall.userData.role = 'fixed-side-wall-1';
+  wellPanel.userData.role = 'fixed-side-wall-2-bored-for-outlet-F';
+  // The well floor: whole, carrying the lever stand in front of the cut.
+  replaceGeometry(housingFloor, horizontalPlate(polygonClipping.difference(
+    poly(circle([0, 0], ROUND.wellInner, 160)), poly(circle([valveCenterX, 0], ROUND.inletOuter, 64))), -0.10, 0.10));
+  // No box case: no back panel.
+  housingShell.removeFromParent();
+  delete blocks.housingShell;
+  // Quicksilver in the outer channel.
+  const outerMercury = blocks.outerMercuryChannels[0].mercury;
+  replaceGeometry(outerMercury, fullLathe([[ROUND.wellOuter + 0.001, ROUND.mercuryBottom], [ROUND.caseInner - 0.001, ROUND.mercuryBottom],
+    [ROUND.caseInner - 0.001, ROUND.mercuryTop], [ROUND.wellOuter + 0.001, ROUND.mercuryTop]]));
+  outerMercury.position.set(0, 0, 0);
+  // Valve D's channel: a round cup on a pedestal from the well floor, E its
+  // inner wall (the cup is cast round E, so the quicksilver cannot leak).
+  const dBase = blocks.innerMercuryChannel.children.find(o => o.userData.role === 'fixed-base-of-valve-D-mercury-seat');
+  replaceGeometry(dBase, fullLathe([[ROUND.inletOuter, -0.10], [ROUND.dCupWallOuter, -0.10],
+    [ROUND.dCupWallOuter, 0.10], [ROUND.inletOuter, 0.10]], 96));
+  dBase.position.set(valveCenterX, (ROUND.dBaseTop + ROUND.dBaseBottom) / 2, 0);
+  replaceGeometry(blocks.innerTroughWalls, mergePassageParts([
+    fullLathe([[ROUND.dCupWallInner, ROUND.dBaseTop], [ROUND.dCupWallOuter, ROUND.dBaseTop],
+      [ROUND.dCupWallOuter, ROUND.dCupWallTop], [ROUND.dCupWallInner, ROUND.dCupWallTop]], 96),
+    fullLathe([[ROUND.inletOuter, ROUND.floorTop], [ROUND.dCupWallOuter, ROUND.floorTop],
+      [ROUND.dCupWallOuter, ROUND.dBaseBottom], [ROUND.inletOuter, ROUND.dBaseBottom]], 96),
+  ]));
+  blocks.innerTroughWalls.position.set(valveCenterX, 0, 0);
+  replaceGeometry(blocks.innerMercuryBlocks[0], fullLathe([[ROUND.inletOuter + 0.001, ROUND.dBaseTop + 0.01],
+    [ROUND.dCupWallInner - 0.001, ROUND.dBaseTop + 0.01], [ROUND.dCupWallInner - 0.001, innerMercurySurfaceY],
+    [ROUND.inletOuter + 0.001, innerMercurySurfaceY]], 96));
+  blocks.innerMercuryBlocks[0].position.set(valveCenterX, 0, 0);
+  // Cup H: a round inverted cup; its rim is one round skirt, kept as two
+  // halves.
+  replaceGeometry(cupHTop, new THREE.CylinderGeometry(ROUND.cupTopRadius, ROUND.cupTopRadius, 0.18, 160));
+  cupHSkirts.forEach((skirt, index) => {
+    replaceGeometry(skirt, latheSectionGeometry([[ROUND.rimInner, -0.76], [ROUND.rimOuter, -0.76],
+      [ROUND.rimOuter, 1.46], [ROUND.rimInner, 1.46]], { phiStart: index * Math.PI, phiLength: Math.PI, segments: 160 }));
+    skirt.position.set(0, 0, 0);
   });
-  // Brown's case is a solid hatched section: thick walls running down from
-  // the dome into the outer quicksilver channels, and a floor. Show the cut
-  // faces of the walls (trough wall to case wall) and floor.
-  sectionFace([
-    ...mirrored(2.14, 2.86, -1.98, 1.84),
-    box(-2.86, 2.86, -1.98, -1.78),
-  ], troughFaceMaterial, 'section-face-of-solid-regulator-case');
-  // The outlet chamber inside cup H: open at the top above the quicksilver,
-  // with Brown's oval outlet F in its back wall. Pass 69: F is the mouth of
-  // the delivery pipe, which leaves the back wall, turns left behind the
-  // chamber, runs under the outer channel and out through the case wall.
-  // (The pipe used to butt blind against the chamber's left wall while F
-  // opened onto a dark blind disc, so the regulated gas had no way out.)
-  const chamberX0 = -1.70, chamberX1 = 0.12, chamberTop = 0.0;
-  const chamberFloor = -1.78, chamberBack = -0.55, chamberWall = 0.12;
-  const outletPipeZ = -0.87, outletBendRadius = 0.30;
-  const outletY = -1.30, outletX = -1.22;
-  const chamberMaterial = matte(PALETTE.frame, { roughness: 0.6 });
-  const chamberBackWall = new THREE.Mesh(plate(polygonClipping.difference(
-    box(chamberX0, chamberX1, chamberFloor, chamberTop),
-    poly(Array.from({ length: 48 }, (_, i) => [
-      outletX + 0.12 * Math.cos(i * Math.PI / 24),
-      outletY + 0.19 * Math.sin(i * Math.PI / 24)]))),
-  chamberBack, chamberBack + chamberWall), housingShell.material);
-  chamberBackWall.userData.role = 'fixed-outlet-chamber-back-wall-with-round-outlet-F';
-  const chamberSides = new THREE.Mesh(plate(polygonClipping.union(
-    box(chamberX0, chamberX0 + chamberWall, chamberFloor, chamberTop),
-    box(chamberX1 - chamberWall, chamberX1, chamberFloor, chamberTop),
-    box(chamberX0, chamberX1, chamberFloor, chamberFloor + chamberWall),
-  ), chamberBack + chamberWall, SECTION_Z - 0.006), chamberMaterial);
-  chamberSides.userData.role = 'fixed-outlet-chamber-side-walls-and-bottom';
-  root.add(chamberBackWall, chamberSides);
-  sectionFace([
-    box(chamberX0, chamberX0 + chamberWall, chamberFloor, chamberTop),
-    box(chamberX1 - chamberWall, chamberX1, chamberFloor, chamberTop),
-    box(chamberX0, chamberX1, chamberFloor, chamberFloor + chamberWall),
-  ], troughFaceMaterial, 'section-face-of-outlet-chamber');
-  // Delivery pipe F: bore 0.20, wall to 0.27. Its mouth ends on the back
-  // face of the chamber's back wall round F; a quarter bend turns it left
-  // behind the chamber, below the outer channel's floor (-1.02) and in front
-  // of the case back (-1.16), and it leaves through the case's left wall.
+  for (const skirt of blocks.cupCrossSkirts ?? []) {
+    skirt.removeFromParent();
+    skirt.geometry.dispose();
+  }
+  blocks.cupCrossSkirts = [];
+  // H's guide rod rises on the case axis, through the lid's crown and knob,
+  // as Brown draws it; the knob's bore guides it.
+  cupHGuideRod.position.x = 0;
+  guideBushing.visible = false;
+  guideBushing.position.x = 0;
+  // Valve D: a round inverted cup; its skirt carries the four notches b.
+  replaceGeometry(valveTop, new THREE.CylinderGeometry(ROUND.valveSkirtOuter, ROUND.valveSkirtOuter, 0.24, 96));
+  const skirtHalf = ROUND.valveSkirtInner * Math.PI / 4;
+  const notchHalf = 0.28 * ROUND.valveSkirtInner / 0.575;
+  const skirtOutline = polygonClipping.difference(
+    poly([[-skirtHalf, valveNotchBottomLocalY], [skirtHalf, valveNotchBottomLocalY], [skirtHalf, 0.74], [-skirtHalf, 0.74]]),
+    poly([[-notchHalf, valveNotchBottomLocalY - 0.01], [notchHalf, valveNotchBottomLocalY - 0.01], [0, valveNotchApexLocalY]]));
+  const skirtPhi = {
+    'front-skirt-of-D-around-notch-b-1': 0,
+    'rear-skirt-of-D-around-notch-b-2': Math.PI,
+    'right-skirt-of-D-around-notch-b-3': Math.PI / 2,
+    'left-skirt-of-D-around-notch-b-4': -Math.PI / 2,
+  };
+  for (const face of valveSkirtFaces) {
+    replaceGeometry(face, bentWall(skirtOutline, { inner: ROUND.valveSkirtInner,
+      thickness: ROUND.valveSkirtOuter - ROUND.valveSkirtInner, phi0: skirtPhi[face.userData.role], column: 0.02 }));
+    face.position.set(0, 0, 0);
+    face.rotation.set(0, 0, 0);
+  }
+  for (const post of valveCornerPosts) {
+    post.removeFromParent();
+    post.geometry.dispose();
+  }
+  valveCornerPosts.length = 0;
+  addDomedCover(root, frameMaterial, 0, ROUND);
+  // Delivery pipe F: from the port in the back of the well wall it runs out
+  // radially, turns to the left under the channel floor (clear below it)
+  // and leaves the case's side, ending in the flange for the burners' pipe.
   {
-    const pipeStart = -3.22, bendX = outletX - outletBendRadius;
+    const radial = new THREE.Vector3(Math.sin(outletPhi), 0, Math.cos(outletPhi));
+    const at = (radius) => radial.clone().multiplyScalar(radius).setY(ROUND.outletY);
+    const corner = at(ROUND.caseOuter);
+    const turned = corner.clone().add(new THREE.Vector3(-0.30, 0, 0));
     const path = new THREE.CurvePath();
-    path.add(new THREE.LineCurve3(new THREE.Vector3(pipeStart, outletY, outletPipeZ),
-      new THREE.Vector3(bendX, outletY, outletPipeZ)));
-    const bend = new THREE.Curve();
-    bend.getPoint = (t, target = new THREE.Vector3()) => target.set(
-      bendX + outletBendRadius * Math.sin(t * Math.PI / 2), outletY,
-      outletPipeZ + outletBendRadius * (1 - Math.cos(t * Math.PI / 2)));
-    path.add(bend);
-    path.add(new THREE.LineCurve3(new THREE.Vector3(outletX, outletY, outletPipeZ + outletBendRadius),
-      new THREE.Vector3(outletX, outletY, chamberBack)));
+    path.add(new THREE.LineCurve3(new THREE.Vector3(-3.22, ROUND.outletY, corner.z), turned));
+    path.add(new THREE.QuadraticBezierCurve3(turned, corner, at(2.20)));
+    // The pipe's end sits 0.02 into the wall's outer face, round the port.
+    path.add(new THREE.LineCurve3(at(2.20), at(ROUND.wellOuter - 0.02)));
     outletPipeF.geometry.dispose();
-    outletPipeF.geometry = curvedPipeWall(path, 0.20, 0.27, 96, 36);
+    outletPipeF.geometry = curvedPipeWall(path, ROUND.outletBore, ROUND.outletWall, 128, 36);
     outletPipeF.position.set(0, 0, 0);
     outletPipeF.quaternion.identity();
     outletPipeF.scale.set(1, 1, 1);
-    outletFlangeF.position.set(-3.19, outletY, outletPipeZ);
-    outletFlangeF.updateMatrixWorld(true);
-    root.userData.cameraFitBounds.union(new THREE.Box3().setFromObject(outletFlangeF).expandByScalar(0.001));
-    const left = blocks.housingPosts[0];
-    left.geometry.dispose();
-    // rotateY(+90) maps plate x to world -z.
-    left.geometry = plate(polygonClipping.difference(
-      box(-1.20, 1.20, -1.84, 1.84),
-      poly(Array.from({ length: 64 }, (_, i) => [
-        -outletPipeZ + 0.275 * Math.cos(i * Math.PI / 32), outletY + 0.275 * Math.sin(i * Math.PI / 32)]))),
-    -0.09, 0.09).rotateY(Math.PI / 2);
+    outletFlangeF.position.set(-3.19, ROUND.outletY, corner.z);
+    blocks.outletChamber = { wall: wellWall, port: wellPanel, pipe: outletPipeF, portCentre: at(ROUND.wellInner) };
+    // The gas path from E through a notch b, over the well under H, down to
+    // the port F and out along the delivery pipe.
+    const flowPoints = [
+      new THREE.Vector3(-0.10, 0.42, 0.18),
+      new THREE.Vector3(-0.85, -0.55, -0.35),
+      at(ROUND.wellInner - 0.25),
+      at(ROUND.wellInner + 0.10),
+      path.getPointAt(0.80),
+      path.getPointAt(0.55),
+      path.getPointAt(0.25),
+      new THREE.Vector3(-3.28, ROUND.outletY, corner.z),
+    ];
+    flowCurve.points.splice(4, flowCurve.points.length - 4, ...flowPoints);
+    flowCurve.updateArcLengths();
   }
-  blocks.outletChamber = { back: chamberBackWall, sides: chamberSides, pipe: outletPipeF };
-  root.userData.localClippingEnabled = true;
   markShadows(root);
   housingShell.receiveShadow = false;
   housingShell.castShadow = false;
@@ -1170,5 +1231,18 @@ function powersMercuryRegulator(movement) {
 
 export function createAuthoredMercuryGasRegulatorMovement(movement) {
   if (movement.id !== 482) return null;
-  return applyCutawayFor(powersMercuryRegulator(movement), movement.id);
+  const model = applyCutawayFor(powersMercuryRegulator(movement), movement.id);
+  // Fit what remains after the cut (the round case's front half is gone),
+  // over the whole cycle.
+  const { root, update } = model;
+  const period = root.userData.geometry.cycleDuration;
+  const bounds = new THREE.Box3();
+  for (let i = 0; i <= 64; i += 1) {
+    update(period * i / 64);
+    root.updateMatrixWorld(true);
+    bounds.union(new THREE.Box3().setFromObject(root));
+  }
+  update(0);
+  root.userData.cameraFitBounds = bounds.expandByScalar(0.03);
+  return model;
 }

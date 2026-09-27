@@ -325,19 +325,19 @@ export const CUTAWAY_SPECS = {
     hide: [/^gas-displacing-water-in-compartment-/, 'stationary-level-water-surface-line'],
   },
   482: {
-    // One cut on Brown's section plane (z = 0.29) through case, cover, troughs,
-    // cup H and valve D; lever d, its stand and the floor plate stay whole in
-    // front. Quicksilver is silvery metal. The separate flat "section face"
-    // plates are replaced by the true cut faces.
+    // One cut on Brown's section plane (z = 0.29) through the round case
+    // casting (outer wall, channel floor, well wall and D's channel), the
+    // lid, cup H and valve D; lever d, its stand and the well floor stay
+    // whole in front. Quicksilver is silvery metal. The whole casting takes
+    // one colour, as Brown hatches it as one piece.
     plane: {point: new THREE.Vector3(0, 0, 0.29)},
-    // The back panel fits between the side walls instead of sharing (and
-    // z-fighting on) their outer faces.
-    prepare(root) {findRole(root, 'transparent-fixed-outer-case').scale.x = 2.67 / 2.85;},
-    cut: [/^fixed-side-wall-/, 'fixed-domed-case-roof-reconstruction', 'fixed-domed-cover-with-rod-knob', 'fixed-outlet-chamber-side-walls-and-bottom',
+    cut: [/^fixed-side-wall-/, 'fixed-domed-case-roof-reconstruction', 'round-domed-lid-shell', 'fixed-turned-knob-on-cover-crown',
       'outer-quicksilver-channel-sealing-cup-H-1', 'finite-open-mercury-trough-around-D', 'fixed-base-of-valve-D-mercury-seat',
-      /^lower-rim-\d-of-H-dipping/, 'closed-top-of-inverted-cup-H', 'finite-front-or-rear-pressure-cup-skirt',
-      'closed-top-of-inverted-valve-D', /^valve-D-skirt-corner-/, /-skirt-of-D-around-notch-b-/],
-    colors: {'outer-quicksilver-channel-sealing-cup-H-1': 0x59605f, 'finite-open-mercury-trough-around-D': 0x59605f},
+      /^lower-rim-\d-of-H-dipping/, 'closed-top-of-inverted-cup-H',
+      'closed-top-of-inverted-valve-D', /-skirt-of-D-around-notch-b-/],
+    colors: {'outer-quicksilver-channel-sealing-cup-H-1': 0x59605f, 'finite-open-mercury-trough-around-D': 0x59605f,
+      'fixed-side-wall-1': 0x59605f, 'fixed-side-wall-2-bored-for-outlet-F': 0x59605f, 'fixed-base-of-valve-D-mercury-seat': 0x59605f,
+      'fixed-domed-case-roof-reconstruction': 0x59605f},
     mercury: [/^quicksilver-volume-for-cup-H-rim-/, /quicksilver-seat-volume-for-D$/],
     cutMercury: true,
     mercuryBehindWalls: true,

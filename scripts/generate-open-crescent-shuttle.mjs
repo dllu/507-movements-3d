@@ -2,7 +2,7 @@ import {writeFile} from 'node:fs/promises';
 import * as THREE from 'three';
 import {openCrescentShuttleLaw} from '../src/simulation/open-crescent-shuttle-motion.js';
 import {capsule,circle,poly,polygonClipping as clip} from '../src/simulation/finite-plate-geometry.js';
-const law=openCrescentShuttleLaw({crankCenter:new THREE.Vector2(.68,.07),rockerPivot:new THREE.Vector2(0,-2),crankRadius:1.18,reference:Math.PI*150/180,period:6});
+const law=openCrescentShuttleLaw({crankCenter:new THREE.Vector2(.575,.02),rockerPivot:new THREE.Vector2(0,-2),crankRadius:1,reference:Math.PI*145/180,period:6});
 const points=Array.from({length:513},(_,i)=>law.pointAtRadius(law.low+(law.high-law.low)*i/512).toArray());
 const stroke=r=>clip.union(...points.slice(1).map((p,i)=>capsule(points[i],p,r,12)));
 const pocket=stroke(.1215),outer=stroke(.29),first=points[0],last=points.at(-1);

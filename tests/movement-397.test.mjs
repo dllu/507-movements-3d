@@ -6,7 +6,7 @@ const m=create({id:397}),d=m.root.userData,g=d.geometry,T=d.motion.cycleDuration
 const near=(a,b,tol)=>assert.ok(Math.abs(a-b)<tol,`${a} != ${b}`);
 test('397 restores the source open crescent instead of a synthesized closed two-dwell loop',()=>{
  const curve=d.slotSynthesis.curve;assert.equal(curve.closed,false);
- assert.ok(curve.points[0].distanceTo(curve.points.at(-1))>2);
+ assert.ok(curve.points[0].distanceTo(curve.points.at(-1))>1.9*g.crankRadius);
  for(let i=1;i<curve.points.length;i++)assert.ok(Math.hypot(curve.points[i].x,curve.points[i].y)>Math.hypot(curve.points[i-1].x,curve.points[i-1].y));
  assert.equal(d.sourceAnimation.available,false);assert.match(d.sourceReference.constructionEvidence.reconstructionDisclosure,/open crescent/);
  assert.equal(create({id:398}),null);

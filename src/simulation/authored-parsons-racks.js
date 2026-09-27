@@ -19,12 +19,11 @@ import {PALETTE, markShadows, matte} from './primitives.js';
 // shifts up and down by 2e while the pinion goes round each end; the
 // oscillating cylinder the rod belongs to allows that.
 //
-// Tooth forms: the pinion is a true involute (25 degree pressure angle, stub
-// addendum 0.6m, dedendum 0.8m); the straight rows are the conjugate straight-
-// flanked rack of the same module and pressure angle; the ends are internal
-// involute gears of the same module. With 10 pinion teeth and 14-tooth
-// internal ends (a tooth difference of four) the stub form is what clears
-// internal tip interference; this is checked with exact polygons.
+// Tooth forms: the pinion is a true involute; the straight rows are the
+// conjugate straight-flanked rack of the same module and pressure angle; the
+// ends are internal involute gears of the same module (see parsonsDesign).
+// With 10 pinion teeth and 14-tooth internal ends (a tooth difference of
+// four) internal tip interference is checked with exact polygons.
 //
 // The two concentric flanges of different diameters sit behind the pinion
 // and run against two stepped rebates ("grooves on its side") in the back of
@@ -78,73 +77,123 @@ const stadium = (halfStraight, radius, count = 96) => {
   return points;
 };
 
-export function parsonsDesign() {
+// Tooth form (pass 84): 22.5 degree involute, addendum 0.7m, working depth
+// 1.4m, the pinion shifted out by 0.2m (the rows and the internal ends move
+// out with it, so the path and centre distances are unchanged) and the
+// internal ends' tips trimmed to 0.6m. Against the earlier 25 degree 0.6m stub
+// this gives steeper, deeper rack teeth (0.53 pitch deep, Brown about 0.5) and
+// lifts the straight-row contact ratio from 0.91 to 1.06 (ends 1.07); lower
+// pressure angles either foul the 10/14 internal ends or drop a contact ratio
+// below 1. Below the pinion's tip reach each rack space is relieved with
+// vertical walls to a flat root, so the rows read as Brown's square notches
+// where no involute action is needed.
+export function parsonsDesign(overrides = {}) {
   const pinionTeeth = 10;
   const endTeeth = 14; // full-circle count of each toothed semicircular end
   const straightPitches = 14; // pitches along each straight row
   const module = 0.13;
-  const pressureAngle = 25 * Math.PI / 180;
-  const addendum = 0.6 * module;
-  const dedendum = 0.8 * module;
-  const backlash = 0.02 * module;
+  const pressureAngle = (overrides.pressureDeg ?? 22.5) * Math.PI / 180;
+  const addendum = (overrides.addendum ?? 0.7) * module;
+  const dedendum = (overrides.dedendum ?? 0.95) * module;
+  const profileShift = (overrides.profileShift ?? 0.2) * module;
+  const endAddendum = (overrides.endAddendum ?? 0.6) * module;
+  const backlash = (overrides.backlash ?? 0.02) * module;
   const pitch = Math.PI * module;
   const pinionPitchRadius = pinionTeeth * module / 2;
   const endPitchRadius = endTeeth * module / 2;
   const halfStraight = straightPitches * pitch / 2;
   const eccentricity = endPitchRadius - pinionPitchRadius;
-  const bandOuterRadius = endPitchRadius + dedendum + 0.52;
+  const bandOuterRadius = endPitchRadius + 0.8 * module + 0.52;
   const largeFlangeRadius = 1.0;
   const smallFlangeRadius = 0.85;
   const rebateClearance = 0.01;
   const pathLength = 4 * halfStraight + FULL_TURN * eccentricity;
   return {
-    addendum, backlash, bandOuterRadius, dedendum, eccentricity, endPitchRadius,
+    addendum, backlash, bandOuterRadius, dedendum, eccentricity, endAddendum, endPitchRadius,
     endTeeth, halfStraight, largeFlangeRadius, module, pathLength, pinionPitchRadius,
-    pinionTeeth, pitch, pressureAngle, rebateClearance, smallFlangeRadius, straightPitches,
+    pinionTeeth, pitch, pressureAngle, profileShift, rebateClearance, smallFlangeRadius, straightPitches,
     rackToothCount: 2 * straightPitches + endTeeth,
     pinionTurnsPerCycle: pathLength / (FULL_TURN * pinionPitchRadius),
+  };
+}
+
+// Transverse contact ratios of the pinion with the straight rows and with the
+// internal ends, and the pinion's tip thickness.
+export function parsonsMeshRatios(g) {
+  const {pressureAngle: al, pinionPitchRadius: rp, endPitchRadius: R, profileShift: x} = g;
+  const rb = rp * Math.cos(al), Rb = R * Math.cos(al);
+  const ra = rp + x + g.addendum, Ra = R + x - g.endAddendum;
+  const pb = g.pitch * Math.cos(al);
+  const approach = Math.sqrt(ra * ra - rb * rb);
+  const inv = (a) => Math.tan(a) - a;
+  const s = g.pitch / 2 - g.backlash / 2 + 2 * x * Math.tan(al);
+  return {
+    straightRows: (approach - rp * Math.sin(al) + (g.addendum - x) / Math.sin(al)) / pb,
+    internalEnds: (approach - Math.sqrt(Ra * Ra - Rb * Rb) + (R - rp) * Math.sin(al)) / pb,
+    pinionTipThickness: 2 * ra * (s / (2 * rp) + inv(al) - inv(Math.acos(rb / ra))),
   };
 }
 
 // The air inside the toothed band: the region the band does not occupy.
 export function parsonsRackVoid(g) {
   const {addendum, backlash, dedendum, endPitchRadius: H, halfStraight: L,
-    pitch, pressureAngle, module} = g;
+    pitch, pressureAngle, module, profileShift: shift} = g;
   const tan = Math.tan(pressureAngle);
-  const tipY = H - addendum;
-  const rootY = H + dedendum;
+  const tipY = H + shift - addendum;
+  const reachY = H + shift + addendum; // the pinion tips' deepest reach
+  const rootY = H + shift + dedendum;
   const parts = [poly([[-L, -tipY], [L, -tipY], [L, tipY], [-L, tipY]])];
-  // Straight rows: a tooth space is centred on every pitch mark from -L to L.
+  // Straight rows: a tooth space is centred on every pitch mark from -L to L;
+  // straight involute flanks over the working depth, square below it. The two
+  // junction spaces are left whole so the half cut by the end's involute and
+  // the half cut by the row both stand clear.
+  const halfAtTip = pitch / 4 + backlash / 2 + addendum * tan;
+  const halfAtReach = pitch / 4 + backlash / 2 - addendum * tan;
   for (let k = 0; k <= g.straightPitches; k += 1) {
     const x = -L + k * pitch;
-    const halfAtTip = pitch / 4 + backlash / 2 + addendum * tan;
-    const halfAtRoot = pitch / 4 + backlash / 2 - dedendum * tan;
     for (const s of [1, -1]) {
       const pts = [[x - halfAtTip, s * (tipY - 1e-4)], [x + halfAtTip, s * (tipY - 1e-4)],
-        [x + halfAtRoot, s * rootY], [x - halfAtRoot, s * rootY]];
-      const clipped = clip.intersection(poly(pts), poly([[-L, -2 * H], [L, -2 * H], [L, 2 * H], [-L, 2 * H]]));
-      if (clipped.length) parts.push(clipped);
+        [x + halfAtReach, s * reachY], [x + halfAtReach, s * rootY],
+        [x - halfAtReach, s * rootY], [x - halfAtReach, s * reachY]];
+      if (k === 0 || k === g.straightPitches) parts.push(poly(pts));
+      else parts.push(clip.intersection(poly(pts), poly([[-L, -2 * H], [L, -2 * H], [L, 2 * H], [-L, 2 * H]])));
     }
   }
   // Toothed ends: the internal gear's spaces are the teeth of a 14-tooth
-  // external "cutter" of the same module, a space centred at each junction.
-  const cutter = involuteGearOutline({teeth: g.endTeeth, module, pressureAngle,
-    tipRadius: H + dedendum, rootRadius: H - addendum, pitchThickness: pitch / 2 + backlash / 2})
-    .map(([x, y]) => [-y, x]); // rotate +90 degrees: a space at the top junction
+  // external "cutter" of the same module and shift, a space centred at each
+  // junction. Like the rows, each space is involute out to the pinion tips'
+  // reach and continues with parallel walls to the rows' root line.
+  const pitchThickness = pitch / 2 + backlash / 2 + 2 * shift * tan;
+  const cutterTeeth = involuteGearOutline({teeth: g.endTeeth, module, pressureAngle,
+    tipRadius: reachY, rootRadius: H + shift - g.endAddendum, pitchThickness});
+  const baseRadius = H * Math.cos(pressureAngle);
+  const inv = (a) => Math.tan(a) - a;
+  const reachHalf = reachY * (pitchThickness / (2 * H) + inv(pressureAngle)
+    - inv(Math.acos(baseRadius / reachY)));
+  const reliefs = [];
+  for (let k = 0; k < g.endTeeth; k += 1) {
+    const c = k * FULL_TURN / g.endTeeth, u = [Math.cos(c), Math.sin(c)], n = [-u[1], u[0]];
+    const at = (r, w) => [r * u[0] + w * n[0], r * u[1] + w * n[1]];
+    const inner = reachY * Math.cos(reachHalf / reachY) - 1e-3;
+    reliefs.push(poly([at(inner, -reachHalf), at(rootY, -reachHalf), at(rootY, reachHalf), at(inner, reachHalf)]));
+  }
+  const cutter = clip.union(poly(cutterTeeth), ...reliefs)
+    .map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [-y, x]))); // a space at the top junction
   for (const side of [1, -1]) {
-    const moved = cutter.map(([x, y]) => [side * L + x, y]);
+    const moved = cutter.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [side * L + x, y])));
     const half = side > 0
       ? poly([[L, -2 * H], [L + 2 * H, -2 * H], [L + 2 * H, 2 * H], [L, 2 * H]])
       : poly([[-L - 2 * H, -2 * H], [-L, -2 * H], [-L, 2 * H], [-L - 2 * H, 2 * H]]);
-    parts.push(clip.intersection(poly(moved), half));
+    parts.push(clip.intersection(moved, half));
   }
   return clip.union(...parts);
 }
 
 export function parsonsPinionOutline(g) {
   return involuteGearOutline({teeth: g.pinionTeeth, module: g.module, pressureAngle: g.pressureAngle,
-    tipRadius: g.pinionPitchRadius + g.addendum, rootRadius: g.pinionPitchRadius - g.dedendum,
-    pitchThickness: g.pitch / 2 - g.backlash / 2});
+    tipRadius: g.pinionPitchRadius + g.profileShift + g.addendum,
+    rootRadius: g.pinionPitchRadius + g.profileShift - g.dedendum,
+    pitchThickness: g.pitch / 2 - g.backlash / 2 + 2 * g.profileShift * Math.tan(g.pressureAngle)});
 }
 
 // Pinion centre on its stadium path (rack frame) at path distance s, running

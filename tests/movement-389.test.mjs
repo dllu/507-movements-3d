@@ -373,3 +373,23 @@ test('movement 389 closes its disclosed demonstration before movement 507 remain
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 389 stop seats on Brown\'s tooth, three pitches above the lifting nose, in its own lane behind the strap', () => {
+  const model = createMovementModel(catalog.movements[388]);
+  const { blocks, geometry } = model.root.userData;
+  assert.equal(geometry.stopBaseToothIndex, 3);
+  near(geometry.stopSeatY - geometry.driveReferenceY, 3 * geometry.toothPitch, 1e-9, 'stop seat three pitches above');
+  const zRange = (object) => {
+    object.updateWorldMatrix(true, true);
+    const box = new THREE.Box3().setFromObject(object);
+    return [box.min.z, box.max.z];
+  };
+  const [, stopFront] = zRange(blocks.holdingPawlBody);
+  const [strapBack] = zRange(blocks.eccentricStrap);
+  assert.ok(stopFront < strapBack - 0.03, `stop front ${stopFront} behind strap back ${strapBack}`);
+  const pin = blocks.holdingPawl.children.find((child) => child.userData.role === 'upper-stop-pawl-fixed-pivot-pin');
+  near(zRange(pin)[1], stopFront, 1e-6, 'stop pin ends flush with the stop face');
+  const rackTeeth = zRange(blocks.rack);
+  assert.ok(rackTeeth[0] <= zRange(blocks.holdingPawlBody)[0] + 1e-9, 'teeth span the stop lane');
+  disposeModel(model.root);
+});

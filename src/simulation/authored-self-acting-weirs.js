@@ -54,20 +54,27 @@ function selfActingWeir(movement) {
   const upperTopLocal = upperLength - upperPivotFromBottom;
   const lowerTopLocal = lowerLength - lowerPivotFromBottom;
   const gateWidth = 2.40;
-  // The upper leaf is a plain plank, as Brown draws it in both figures:
-  // the ordinary flow spills over its whole top edge as one sheet across
-  // the channel (Brown's caption speaks of a notch; the plate draws none,
-  // so the 'notch' here is the full-width crest).
-  const notchWidth = gateWidth;
-  const notchDepth = 0;
+  // The caption's notch: a rectangular slot cut down from the top edge of
+  // the upper leaf across the middle half of the channel. Brown's section
+  // (the near end of the leaf) shows the full-height plank, with the head
+  // standing about 0.37 of the leaf's height below its top and the water
+  // leaving the downstream face below the top: that water runs through the
+  // notch, which lies behind the section's near end.
+  const notchWidth = 1.20;
+  const notchDepth = 1.20;
   const notchBottomLocal = upperTopLocal - notchDepth;
   const notchBottomY = upperPivot.y + notchBottomLocal;
   const maximumUpperAngle = THREE.MathUtils.degToRad(40);
   const cycleDuration = 12;
-  // Ordinary head over the notch sill: enough for the overflow to fall as a
-  // visible sheet, well below the notch depth.
-  const ordinaryCrestHead = 0.14;
-  const floodCrestHead = 0.26;
+  // Ordinary head over the notch sill: the plate's head (0.95 below the
+  // leaf top, scaled to this leaf) less the sill depth. The flood head
+  // (about five times the ordinary notch flow) stands below the shoulders,
+  // and the turned leaf of Brown's right figure holds it at about its top;
+  // the level is capped just under the shoulders, so every flow leaves
+  // through the notch and none overtops the leaf's full-width top.
+  const ordinaryCrestHead = 0.26;
+  const shoulderFreeboard = 0.04;
+  const floodCrestHead = 0.75;
   const ordinaryWaterLevel = notchBottomY + ordinaryCrestHead;
   const floodWaterLevel = notchBottomY + floodCrestHead;
   const downstreamWaterLevel = 0.46;
@@ -201,15 +208,15 @@ function selfActingWeir(movement) {
       0,
       1,
     );
-    // The turned upper leaf lowers its crest. The head over the crest can
-    // never exceed the flood head: the water spills over the lowered crest
-    // instead, so the scheduled level falls with it.
+    // The turned upper leaf lowers its notch sill and shoulders. The head
+    // never overtops the shoulders: the notch passes the flood, so the
+    // scheduled level falls with the lowered leaf.
     const upstreamCornerY = (localY) => upperPivot.y
       - (upperThickness / 2) * Math.sin(gate.upperAngle)
       + localY * Math.cos(gate.upperAngle);
     const upperTopEdgeY = upstreamCornerY(upperTopLocal);
     const notchSillY = upstreamCornerY(notchBottomLocal);
-    waterLevel = Math.min(waterLevel, upperTopEdgeY + floodCrestHead);
+    waterLevel = Math.min(waterLevel, upperTopEdgeY - shoulderFreeboard);
     // Notch discharge follows the head over the (possibly lowered) sill as
     // a sharp-crested weir, q ~ h^(3/2), scaled so the ordinary head gives
     // the ordinary flow.
@@ -301,16 +308,24 @@ function selfActingWeir(movement) {
     'larger-upper-leaf-turning-downstream-about-below-center-pivot');
   upperLeaf.position.copy(upperPivot);
   root.add(upperLeaf);
-  const upperBodyHeight = notchBottomLocal + upperPivotFromBottom;
+  const upperBodyHeight = upperTopLocal + upperPivotFromBottom;
   const upperBody = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(upperThickness, upperBodyHeight, gateWidth),
     upperMaterial,
-  ), 'upper-leaf-plain-full-width-plank-overflowed-at-its-crest');
-  upperBody.position.y = (-upperPivotFromBottom + notchBottomLocal) / 2;
+  ), 'upper-leaf-plank-with-central-overflow-notch');
+  upperBody.position.y = (-upperPivotFromBottom + upperTopLocal) / 2;
   upperLeaf.add(upperBody);
-  // A plain plank: no notch shoulders.
-  const upperShoulders = [];
-  const upperReinforcements = [-0.34, 0.30, 0.94].map((y, index) => {
+  // The two shoulders beside the notch rise from the body's full-width
+  // part below the sill to the leaf top (geometry built below).
+  const upperShoulders = [-1, 1].map((sign) => {
+    const shoulder = addRole(new THREE.Mesh(new THREE.BufferGeometry(), upperMaterial),
+      `upper-leaf-${sign < 0 ? 'far' : 'near'}-shoulder-beside-notch`);
+    shoulder.userData.zRange = sign < 0 ? [-gateWidth / 2, -notchWidth / 2] : [notchWidth / 2, gateWidth / 2];
+    upperLeaf.add(shoulder);
+    return shoulder;
+  });
+  // The battens stay below the notch sill.
+  const upperReinforcements = [-0.34, 0.20, 0.60].map((y, index) => {
     const rail = addRole(new THREE.Mesh(
       new THREE.BoxGeometry(0.055, 0.075, gateWidth + 0.09),
       darkMaterial,
@@ -523,7 +538,7 @@ function selfActingWeir(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'Two unequal leaves pivot below their centers across a left-to-right stream. At ordinary head they stand vertical and overlap, while a shallow sheet spills over the full width of the crest of the plain upper leaf. Rising head turns the much larger upper leaf downstream; its upstream bottom edge slides along and pushes the lower leaf upstream, opening a bed-level scouring passage. Falling head permits the same contact-coupled pair to return vertical.',
+      'Two unequal leaves pivot below their centers across a left-to-right stream. At ordinary head they stand vertical and overlap, while the ordinary flow leaves through a notch cut down from the top of the upper leaf, below its shoulders. Rising head turns the much larger upper leaf downstream; its upstream bottom edge slides along and pushes the lower leaf upstream, opening a bed-level scouring passage. Falling head permits the same contact-coupled pair to return vertical.',
     motion: {
       cycleDuration,
       motionType:
@@ -604,16 +619,31 @@ function selfActingWeir(movement) {
   // The shared correction bores the leaves at its thin-board thickness;
   // rebuild them as Brown's planks with the same bored pivot bosses.
   for (const [body, length, offset, thickness] of [
-    [upperBody, upperBodyHeight, (-upperPivotFromBottom + notchBottomLocal) / 2, upperThickness],
+    [upperBody, upperBodyHeight, (-upperPivotFromBottom + upperTopLocal) / 2, upperThickness],
     [lowerBody, lowerLength, (lowerTopLocal - lowerPivotFromBottom) / 2, lowerThickness],
   ]) {
     const x0 = body === lowerBody ? lowerCentreOffset : 0;
     const plank = poly([[x0 - thickness / 2, offset - length / 2], [x0 + thickness / 2, offset - length / 2],
       [x0 + thickness / 2, offset + length / 2], [x0 - thickness / 2, offset + length / 2]]);
+    const bored = polygonClipping.difference(polygonClipping.union(plank,
+      poly(circle([0, 0], 0.16, 64))), poly(circle([0, 0], 0.097, 64)));
     body.geometry.dispose();
-    body.geometry = plate(polygonClipping.difference(polygonClipping.union(plank,
-      poly(circle([0, 0], 0.16, 64))), poly(circle([0, 0], 0.097, 64))),
-    -gateWidth / 2, gateWidth / 2);
+    if (body === upperBody) {
+      // Full width below the notch sill; the two shoulders rise beside the
+      // notch to the leaf top.
+      const sill = notchBottomLocal;
+      const below = polygonClipping.intersection(bored, poly([[-1, offset - length / 2 - 1],
+        [1, offset - length / 2 - 1], [1, sill], [-1, sill]]));
+      const shoulder = poly([[x0 - thickness / 2, sill], [x0 + thickness / 2, sill],
+        [x0 + thickness / 2, upperTopLocal], [x0 - thickness / 2, upperTopLocal]]);
+      body.geometry = plate(below, -gateWidth / 2, gateWidth / 2);
+      for (const mesh of upperShoulders) {
+        mesh.geometry.dispose();
+        mesh.geometry = plate(shoulder, ...mesh.userData.zRange);
+      }
+    } else {
+      body.geometry = plate(bored, -gateWidth / 2, gateWidth / 2);
+    }
   }
   // Head and tail water are translucent bodies across the channel width.
   // The head water's downstream boundary is the leaves themselves: its

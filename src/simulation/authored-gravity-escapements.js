@@ -1054,12 +1054,18 @@ function mudgeGravityEscapement(movement) {
       const toPivot = stopEnd.clone().multiplyScalar(-1).normalize();
       const notchBack = stopEnd.clone().addScaledVector(toPivot, 0.14);
       // Brown's B end: a well-rounded outer corner at his (101.7, 202.5)
-      // and his level bottom edge (y 206.5) running on to x 124, where it
-      // turns up into the lifting face. Brown's bottom continues to x 131
-      // and drops into a small nib hanging in the tooth space; that region
-      // is where the lifting tooth passes, so the swept cut removes it.
+      // and his level bottom edge (y 206.5), which drops into a small nib
+      // before rising into the lifting face. Brown hangs his nib in the
+      // tooth space behind the locked tooth (x 135-151, down to y 215),
+      // but the cocking tooth sweeps everything under the lifting face
+      // (right of x ~129), so the nib hangs just short of that sweep: the
+      // bottom runs to x 121.5, slopes down to a point at (128.3, 212.3)
+      // and its right side rises beside the swept path into the lifting
+      // face. The bake trims its lower edge clear of the next tooth's tip.
       const bluntCorner = sourceLocal(new THREE.Vector2(101.7, 202.5));
-      const brownBottomEnd = sourceLocal(new THREE.Vector2(124, 206.5));
+      const brownBottomEnd = sourceLocal(new THREE.Vector2(121.5, 206.1));
+      const nibPoint = sourceLocal(new THREE.Vector2(128.3, 212.3));
+      const nibRise = sourceLocal(new THREE.Vector2(130.5, 200));
       const bottomDirection = brownBottomEnd.clone().sub(bluntCorner).normalize();
       const round = 0.14;
       const cornerIn = bluntCorner.clone().addScaledVector(armDirection, -round);
@@ -1076,6 +1082,8 @@ function mudgeGravityEscapement(movement) {
         ...cornerArc,
         cornerOut,
         brownBottomEnd,
+        nibPoint,
+        nibRise,
         ...liftFacePoints,
         ...stopArc.slice(1),
         notchBack,

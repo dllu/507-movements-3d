@@ -319,13 +319,14 @@ function eccentricPawlJack(movement) {
     return [[rootX, y], [rootX + toothDepth, y], [rootX, y + toothPitch]];
   });
 
-  // Brown draws the stop nose three teeth above the lifting nose; it sits one
-  // pitch higher so the lifting horn, rising through its full ratchet
-  // stroke, passes clear beneath the stop's eye. With the stop on Brown's
-  // tooth, the horn (Brown's outline, 26 px below the eye at rest) rises and
-  // turns into the eye by about 0.05 once the rack has risen one pitch,
-  // whatever the throw or tooth depth (checked for throws 0.24-0.34 and tooth depths 6-12 px).
-  const stopBaseToothIndex = 4;
+  // Brown draws the stop nose three teeth above the lifting nose, and so is it
+  // here. In one depth plane the lifting horn, rising through its full
+  // ratchet stroke (one pitch plus the stop's ride-out), would turn into the
+  // stop's blade and eye by 0.11; so the stop works in its own lane behind
+  // the strap, on the same full-width teeth, and the horn passes in front of
+  // it near the top of each stroke.
+  const stopBaseToothIndex = 3;
+  const stopZ = -mechanismZ;
   const stopSeatY = driveReferenceY + stopBaseToothIndex * toothPitch;
   const holdingOffset = new THREE.Vector3((276 - 243) * PLATE_SCALE, (91 - 121) * PLATE_SCALE, 0);
   const holdingPivot = new THREE.Vector3(rootX, stopSeatY, 0).add(holdingOffset);
@@ -484,11 +485,14 @@ function eccentricPawlJack(movement) {
   const holdingPawlBody = new THREE.Mesh(plate(clip.difference(
     clip.union(poly(stopOutline), poly(circle([0, 0], stopEyeRadius, 64))),
     poly(circle([0, 0], stopPinRadius + 0.004, 48)),
-  ), mechanismZ - mechanismHalfDepth, mechanismZ + mechanismHalfDepth), pawlMaterial);
+  ), stopZ - mechanismHalfDepth, stopZ + mechanismHalfDepth), pawlMaterial);
   holdingPawlBody.userData.role = 'upper-stop-pawl-rigid-body';
   holdingPawl.add(holdingPawlBody);
-  const holdingPivotPin = cylinderAlongZ(stopPinRadius, 0.84, pinMaterial, 32);
-  holdingPivotPin.position.z = -0.12;
+  // The pin runs from its rear boss and ends flush with the stop's front
+  // face, so the lifting horn passes clear in front of it.
+  const stopPinBack = -0.54, stopPinFront = stopZ + mechanismHalfDepth;
+  const holdingPivotPin = cylinderAlongZ(stopPinRadius, stopPinFront - stopPinBack, pinMaterial, 32);
+  holdingPivotPin.position.z = (stopPinFront + stopPinBack) / 2;
   holdingPivotPin.userData.role = 'upper-stop-pawl-fixed-pivot-pin';
   holdingPawl.add(holdingPivotPin);
   root.add(holdingPawl);
@@ -823,7 +827,7 @@ function eccentricPawlJack(movement) {
         engravingEvidence:
           'the plate shows a load head on a vertically guided one-sided rack whose teeth have flat undersides, a circular eccentric strap with an integral curved pointed lifting pawl, and a separately fixed-pivot curved upper pawl, both noses sitting in tooth roots',
         reconstructionDisclosure:
-          'no official animation is available; the rocking eccentric, stroke, contact rides, timing, reversed lowering strokes, materials, depth and camera are independently engineered; the eccentric throw (18.7 px against Brown\'s 14 px), the shaft 3.5 px right, the noses sharpened to a 16–22 degree wedge and the stop one pitch higher than drawn are what the full ratchet stroke needs',
+          'no official animation is available; the rocking eccentric, stroke, contact rides, timing, reversed lowering strokes, materials, depth and camera are independently engineered; the eccentric throw (18.7 px against Brown\'s 14 px), the shaft 3.5 px right and the noses sharpened to a 16–22 degree wedge are what the full ratchet stroke needs; the stop keeps Brown\'s tooth but works in its own lane behind the strap, so the rising horn passes in front of it',
       },
       officialPage: movement.sourceUrl,
       primaryScan: {

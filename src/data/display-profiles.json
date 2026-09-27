@@ -4690,19 +4690,19 @@
       }
     },
     "247": {
-      "peakAngularSpeed": 0.5649067043211886,
-      "peakVisibleAngularSpeed": 0.17589287137608825,
+      "peakAngularSpeed": 2.240452918652841,
+      "peakVisibleAngularSpeed": 0.2964722094073968,
       "sustainedVisibleAngularSpeed": 0,
       "floorY": -3.599999952316284,
-      "fastestPart": "single-rigid-bell-crank-and-weight-support-catch",
+      "fastestPart": "Mesh",
       "motionBounds": {
         "min": [
-          -42,
+          -120,
           -3.599999952316284,
           -1.7000000476837158
         ],
         "max": [
-          42,
+          120,
           31.932548013396378,
           1.7000000476837158
         ]
@@ -7391,12 +7391,12 @@
       "peakAngularSpeed": 3.0271359366058235,
       "peakVisibleAngularSpeed": 3.0271359366058235,
       "sustainedVisibleAngularSpeed": 2.7154686886054735,
-      "floorY": -1.1699999570846558,
+      "floorY": -1.1699999765668592,
       "fastestPart": "continuously-rotating-eccentric-driver",
       "motionBounds": {
         "min": [
           -1.9714285135269165,
-          -1.1699999570846558,
+          -1.1699999765668592,
           -0.7542856931686401
         ],
         "max": [
@@ -7540,19 +7540,19 @@
       }
     },
     "397": {
-      "peakAngularSpeed": 2.0582211440079563,
-      "peakVisibleAngularSpeed": 2.0582211440079563,
+      "peakAngularSpeed": 1.592491356524825,
+      "peakVisibleAngularSpeed": 1.592491356524825,
       "sustainedVisibleAngularSpeed": 1.0471975511982947,
       "floorY": -2.5500000014901163,
       "fastestPart": "bottom-pivoted-rocker-carrying-one-open-crescent-cam-slot",
       "motionBounds": {
         "min": [
-          -3.21423526213752,
+          -3.2145735135398548,
           -2.5500000014901163,
           -0.4500000238418579
         ],
         "max": [
-          5.778777074200834,
+          4.682677627262486,
           2.250000003576279,
           0.960000013113022
         ]
@@ -8807,7 +8807,7 @@
         ],
         "max": [
           3.5,
-          3.5953750610351562,
+          3.3343715715553937,
           1.725000023841858
         ]
       }
@@ -9164,12 +9164,12 @@
         "min": [
           -3.2999999994039535,
           -2.459999997317791,
-          -1.2700000059604646
+          -2.6700000762939453
         ],
         "max": [
-          3.0199999809265137,
+          2.6700000762939453,
           2.9200000762939453,
-          1.2200000286102295
+          1.7799999713897705
         ]
       }
     },

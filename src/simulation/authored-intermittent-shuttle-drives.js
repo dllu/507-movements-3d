@@ -124,11 +124,16 @@ function intermittentShuttleDrive(movement) {
   // Radius about the fixed rocker pivot selects a unique groove station.
   const cycleDuration = 6;
   // Plate: crank centre (381, 242) and pin (300, 195) px against the rocker
-  // pivot (327, 407), at 79.7 px per unit (pivot to top joint 3.75).
-  const crankCenter = new THREE.Vector2(0.68, 0.07);
+  // pivot (327, 407), at 79.7 px per unit (pivot to top joint 3.75). Brown's
+  // slot stops 238 px from the pivot, but his crank would carry the pin to
+  // 268 px (centre distance plus throw), and the slot must reach the pin.
+  // The difference is shared: the centre stands 9 px left of and below his
+  // (0.575, 0.02), the throw is 1.00 (his 1.18), and the pin is drawn 9 px
+  // from his, so the slot's upper end runs 9 px past his stop, not 30.
+  const crankCenter = new THREE.Vector2(0.575, 0.02);
   const rockerPivot = new THREE.Vector2(0, -2.00);
-  const crankRadius = 1.18;
-  const crankReferenceAngle = THREE.MathUtils.degToRad(150);
+  const crankRadius = 1.00;
+  const crankReferenceAngle = THREE.MathUtils.degToRad(145);
   const crankAngularSpeed = FULL_TURN / cycleDuration;
   const topJointRadius = 3.75;
   // Brown draws the rocker upright while it rests (his pose). The slot's
@@ -139,12 +144,13 @@ function intermittentShuttleDrive(movement) {
     topJointRadius * Math.sin(restLean),
     topJointRadius * Math.cos(restLean),
   );
-  // Plate: the link runs level from the top joint to the table lug 161 px
-  // (2.02 units) to its left, the joint about 0.03 above the top joint. At
-  // the full swing (about 65 degrees) the top joint falls 2.2 below the
-  // guide, so the link must be longer than that: 2.30 keeps it off vertical.
+  // Plate: the link runs level from the top joint to the table lug, eye
+  // centre to eye centre 169 px (2.14 units) to its left, the joint about
+  // 0.03 above the top joint. At the full swing (about 57 degrees) the top
+  // joint falls 1.74 below the guide, so the link stays 36 degrees off
+  // vertical.
   const guideY = rockerPivot.y + topJointRadius + 0.03;
-  const connectingRodLength = 2.30;
+  const connectingRodLength = 2.14;
   const pinRadius = 0.12;
   const sourcePoseLawPhase = 0.35;
   const slotSampleCount = 513;
@@ -219,13 +225,13 @@ function intermittentShuttleDrive(movement) {
   // Brown draws the shuttle as one flat bar that runs from just behind the
   // link lug to beyond the rocker head.
   // Plate: 290 px long and 14 px deep, running at rest from 3.2 left of the
-  // top joint to 0.69 right of it (fitted in the default view); with the
-  // longer link the joint rests 2.30 left of the top joint.
+  // top joint to 0.69 right of it (fitted in the default view); the link
+  // joint rests 2.14 left of the top joint.
   const shuttleBar = new THREE.Mesh(
     new THREE.BoxGeometry(3.89, 0.18, 0.28),
     outputMaterial,
   );
-  shuttleBar.position.set(1.045, 0.38, 0);
+  shuttleBar.position.set(0.885, 0.38, 0);
   shuttleBar.userData.role = 'sewing-machine-or-printing-press-output-slide';
   // Brown's lug under the bar's left end: a round eye on the link pin with
   // a neck leaning up to the right into the bar's underside, one piece with
