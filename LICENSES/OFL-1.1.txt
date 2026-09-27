@@ -1,3 +1,8 @@
+The site's typeface, EB Garamond (bundled from the @fontsource/eb-garamond
+package), is Copyright 2017 The EB Garamond Project Authors
+(https://github.com/octaviopardo/EBGaramond12), and is likewise licensed under
+the SIL Open Font License, Version 1.1, copied below.
+
 Digitized data copyright (c) 2010 Google Corporation
 with Reserved Font Arimo, Tinos and Cousine.
 Copyright (c) 2012 Red Hat, Inc.

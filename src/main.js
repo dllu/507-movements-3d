@@ -1,5 +1,9 @@
 import catalog from './data/movements.json';
 import { MovementEngine } from './simulation/async-engine.js';
+import '@fontsource/eb-garamond/400.css';
+import '@fontsource/eb-garamond/400-italic.css';
+import '@fontsource/eb-garamond/500.css';
+import '@fontsource/eb-garamond/600.css';
 import './styles.css';
 
 const PAGE_SIZE = 12;
@@ -51,13 +55,14 @@ function sourceImagePath(movement) {
   return `./engravings/mm_${movement.number}.png`;
 }
 
-function appShell(content, active = 'catalog') {
+function appShell(content, active = 'catalog', view = 'page') {
+  document.body.dataset.view = view;
   return `
     <header class="site-header">
       <div class="header-inner">
         <a class="brand" href="#/catalog?page=1" aria-label="507 Movements home">
           <span class="brand-mark">507</span>
-          <span class="brand-copy">Mechanical Movements</span>
+          <span class="brand-copy">Mechanical Movements <i>in three dimensions</i></span>
         </a>
         <nav class="site-nav" aria-label="Primary navigation">
           <a href="#/catalog?page=1" ${active === 'catalog' ? 'aria-current="page"' : ''}>Catalog</a>
@@ -187,14 +192,14 @@ async function detailView(movement) {
     <section class="detail-page">
       <div class="detail-inner">
         <div class="detail-heading">
-          <div>
-            <p class="eyebrow">Movement ${movement.number} · ${escapeHtml(movement.category)}</p>
+          <div class="detail-title">
+            <p class="eyebrow">No. ${movement.id} <span aria-hidden="true">·</span> ${escapeHtml(movement.category)}</p>
             <h1>${escapeHtml(movement.title)}</h1>
           </div>
-          <div class="detail-sequence" aria-label="Movement navigation">
-            ${previous ? `<a href="#/movement/${previous.number}" aria-label="Previous movement, ${escapeHtml(previous.title)}">← <span>${previous.number}</span></a>` : '<span class="is-disabled">←</span>'}
-            ${next ? `<a href="#/movement/${next.number}" aria-label="Next movement, ${escapeHtml(next.title)}"><span>${next.number}</span> →</a>` : '<span class="is-disabled">→</span>'}
-          </div>
+          <nav class="detail-sequence" aria-label="Movement navigation">
+            ${previous ? `<a class="sequence-link" href="#/movement/${previous.number}" rel="prev" aria-label="Previous movement, ${previous.id}: ${escapeHtml(previous.title)}"><span class="sequence-arrow" aria-hidden="true">←</span><span class="sequence-number">${previous.id}</span></a>` : '<span class="sequence-link is-disabled" aria-hidden="true"><span class="sequence-arrow">←</span></span>'}
+            ${next ? `<a class="sequence-link" href="#/movement/${next.number}" rel="next" aria-label="Next movement, ${next.id}: ${escapeHtml(next.title)}"><span class="sequence-number">${next.id}</span><span class="sequence-arrow" aria-hidden="true">→</span></a>` : '<span class="sequence-link is-disabled" aria-hidden="true"><span class="sequence-arrow">→</span></span>'}
+          </nav>
         </div>
         <div class="detail-workspace">
           <div class="detail-layout">
@@ -238,7 +243,20 @@ async function detailView(movement) {
     </section>`;
 
   document.title = `${movement.number} · ${movement.title} — 507 Movements`;
-  app.innerHTML = appShell(content, 'catalog');
+  app.innerHTML = appShell(content, 'catalog', 'detail');
+  // The header, heading and toolbar align to the 3:2 (or 2:3) composition,
+  // whose width depends on the viewport; publish it as a CSS variable.
+  const layout = document.querySelector('.detail-layout');
+  const frameObserver = new ResizeObserver(([entry]) => {
+    document.documentElement.style.setProperty('--frame-width', `${Math.round(entry.contentRect.width)}px`);
+  });
+  frameObserver.observe(layout);
+  const onSequenceKey = (event) => {
+    if (event.target.closest?.('input, select, textarea, canvas') || event.metaKey || event.ctrlKey || event.altKey) return;
+    if (event.key === 'ArrowLeft' && previous) location.hash = `/movement/${previous.number}`;
+    if (event.key === 'ArrowRight' && next) location.hash = `/movement/${next.number}`;
+  };
+  document.addEventListener('keydown', onSequenceKey);
   const stage = document.querySelector('#simulation-stage');
   const toolbar = document.querySelector('.simulation-toolbar');
   const abortController = new AbortController();
@@ -251,6 +269,9 @@ async function detailView(movement) {
     if (event.key.toLowerCase() === 'r') engine?.resetView();
   };
   activeCleanup = () => {
+    frameObserver.disconnect();
+    document.removeEventListener('keydown', onSequenceKey);
+    document.documentElement.style.removeProperty('--frame-width');
     abortController.abort();
     engine?.renderer.domElement.removeEventListener('keydown', onCanvasKeyDown);
     engine?.dispose();
