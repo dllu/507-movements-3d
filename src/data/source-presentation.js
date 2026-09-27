@@ -250,8 +250,8 @@ export default {
     note: 'The two focus-mounted ellipses and the solid flat forked horn on the right one; no pitch-contact marker is drawn.',
   },
   212: {
-    remove: ['geneva-stop-fixed-base-rail', 'geneva-stop-fixed-bearing-upright', '(?:driver-A|stop-wheel-B)-rear-bearing-arm', 'geneva-stop-(?:left|right)-transverse-foot', '212-bored-fixed-shaft-support-\\d'],
-    note: 'Face view of driver A and stop wheel B; no frame is drawn.',
+    remove: ['geneva-stop-fixed-base-rail', 'geneva-stop-fixed-bearing-upright', '(?:driver-A|stop-wheel-B)-rear-bearing-arm', 'fixed-(?:driver-A|stop-wheel-B)-bearing', 'geneva-stop-(?:left|right)-transverse-foot', '212-bored-fixed-shaft-support-\\d'],
+    note: 'Face view of driver A and stop wheel B; no frame or shaft bearings are drawn, so both shafts end as plain stubs.',
   },
   213: {
     remove: ['friction-stop-fixed-base-rail', 'friction-stop-fixed-bearing-upright', '(?:winding-arbor|split-stop-stud)-rear-bearing-arm', 'fixed-(?:winding-arbor|split-stop-wheel)-bearing', 'friction-stop-(?:left|right)-transverse-foot','winding-ratchet-radial-speed-index', 'split-stop-wheel-radial-speed-index', 'face-pin-front-motion-index', 'moving-face-pin-to-partial-tooth-contact-marker', 'face-pin-to-uncut-rim-hard-stop-contact-marker'],
@@ -262,8 +262,8 @@ export default {
     note: 'Face view of the two finger-stop wheels; no frame is drawn.',
   },
   215: {
-    remove: ['crescent-stop-base-rail', '(?:crescent-driver|six-slot-wheel)-bearing-upright', 'crescent-stop-(?:left|right)-foot', '215-bored-fixed-shaft-support-\\d', 'uncut-convex-terminal-sector-highlight', '(?:crescent-driver|six-slot-wheel)-angular-rate-index', 'visible-face-pin-contact-cap', '(?:forward|reverse)-convex-sector-to-(?:upper|lower)-crescent-cusp-contact'],
-    note: 'Face view of the crescent driver and the six-slot wheel at Brown\'s pose, the pin on the line of centres in the left slot; no frame, gold sector strip, white rate indices or contact markers are drawn.',
+    remove: ['crescent-stop-base-rail', '(?:crescent-driver|six-slot-wheel)-bearing-upright', 'fixed-(?:crescent-driver|six-slot-wheel)-bearing', 'crescent-stop-(?:left|right)-foot', '215-bored-fixed-shaft-support-\\d', 'uncut-convex-terminal-sector-highlight', '(?:crescent-driver|six-slot-wheel)-angular-rate-index', 'visible-face-pin-contact-cap', '(?:forward|reverse)-convex-sector-to-(?:upper|lower)-crescent-cusp-contact'],
+    note: 'Face view of the crescent driver and the six-slot wheel at Brown\'s pose, the pin on the line of centres in the left slot; no frame, shaft bearings, gold sector strip, white rate indices or contact markers are drawn.',
   },
   216: {
     camera: [0.02, 0.015, 1],
@@ -353,8 +353,8 @@ export default {
     note: 'Side elevation of the disk with its bevelled rim and wavy face on the bare shaft, and the inclined rod in its two guides. Like the plate, no base, posts, shaft bearings or guide brackets are drawn; the shaft axis and the two guide stations are fixed ideal constraints.',
   },
   276: {
-    remove: ['fixed-(?:left|right)-guide-support-post', 'fixed-equal-diameter-cam-display-base', 'fixed-cam-bearing-arm', 'fixed-rear-cam-bearing-post', 'fixed-(?:left|right)-straight-bar-guide'],
-    note: 'Face-on elevation of the three-lobed cam between the rollers of the level sliding bar; no base, posts, bearing arm or bar guides are drawn.',
+    remove: ['fixed-(?:left|right)-guide-support-post', 'fixed-equal-diameter-cam-display-base', 'fixed-cam-bearing-arm', 'fixed-rear-cam-bearing-post', 'fixed-rear-cam-shaft-bearing', 'fixed-(?:left|right)-straight-bar-guide'],
+    note: 'Face-on elevation of the three-lobed cam between the rollers of the level sliding bar; no base, posts, bearing arm, shaft bearing or bar guides are drawn, so the cam shaft ends as a plain stub behind the bar.',
   },
   279: {
     remove: ['fixed-(?:left|right)-crosshead-guide-post', 'fixed-crosshead-display-base', '(?:left|right)-fixed-crosshead-guide-(?:upper|lower)'],

@@ -746,7 +746,10 @@ function spiralCylinderScriber(movement) {
   // rack runs down (by whole tooth pitches, keeping the pinion phase) and
   // seats on the marking carriage.
   const rackLocalBottom = 1.02 - 5 * rackPitch;
-  const rackLength = 4.06 + 5 * rackPitch;
+  // Two whole pitches above that keep the rack's top end inside the upper
+  // guide (top y 4.025) at the bottom of the stroke; Brown's rack runs out
+  // of the top of the plate, so the extra length is beyond his break.
+  const rackLength = 4.06 + 7 * rackPitch;
   const rack = makeVerticalRack({
     bodyDepth: 0.15,
     bodyWidth: 0.30,

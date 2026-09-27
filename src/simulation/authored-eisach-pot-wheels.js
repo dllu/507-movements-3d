@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { ring, plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
+import { ring, plate, poly } from './finite-plate-geometry.js';
 import { makeCellWaterGeometry, updateClippedCell } from './clipped-fluid-cell.js';
 import { waterVolume } from './water-volume.js';
 import { WaterStream, collectWaterStreams } from './water-stream.js';
@@ -117,7 +117,10 @@ function eisachPotWheel(movement) {
   const potRadialDepth = 0.58;
   const potAxialWidth = 1.20;
   const potLozengeRadius = 0.30;
-  const potLozengeHalfLength = 0.62;
+  // Pass 80: the pointed pot ends run into the rims, which pass through
+  // the pot axes (r = potPivotRadius - potLozengeCenterY), so each pot is
+  // held between the two rims as Brown draws it.
+  const potLozengeHalfLength = 0.72;
   const potLozengeCenterY = -0.30;
   const potMouthHalfAngle = THREE.MathUtils.degToRad(38);
   const potCapacity = 0.0036;
@@ -291,9 +294,10 @@ function eisachPotWheel(movement) {
   wheel.userData.role =
     'one-rigid-counterclockwise-eisach-pot-wheel';
   root.add(wheel);
+  const rimRadius = potPivotRadius - potLozengeCenterY;
   const rims = [-1, 1].map((sign) => {
     const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(wheelRadius, 0.085, 10, 96),
+      new THREE.TorusGeometry(rimRadius, 0.085, 10, 96),
       wheelMaterial,
     );
     rim.position.z = sign * rimDepth / 2;
@@ -329,7 +333,9 @@ function eisachPotWheel(movement) {
         wheelMaterial,
       );
       spoke.geometry.dispose();
-      spoke.geometry = plate(polygonClipping.difference(poly([[-wheelRadius*.89,-.0375],[wheelRadius*.89,-.0375],[wheelRadius*.89,.0375],[-wheelRadius*.89,.0375]]),poly(circle([0,0],.184,128))),-.0375,.0375);
+      // One radial spoke per pot, from inside the hub into the rear rim
+      // (a full diameter bar per pot doubled every spoke).
+      spoke.geometry = plate(poly([[0.30,-.0375],[rimRadius,-.0375],[rimRadius,.0375],[0.30,.0375]]),-.0375,.0375);
       spoke.position.z = z;
       spoke.rotation.z = baseAngle;
       spoke.userData.role = `rigid-pot-wheel-spoke-${index + 1}`;
@@ -600,6 +606,7 @@ function eisachPotWheel(movement) {
     potTangentialWidth,
     representativeCurrentForce,
     rimDepth,
+    rimRadius,
     sourceWheelAngle,
     streamSurfaceY,
     streamVelocityX,

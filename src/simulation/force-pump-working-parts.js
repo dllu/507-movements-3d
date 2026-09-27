@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {portedBarrel} from './lift-pump-working-parts.js';
+import {roundPortedBarrel} from './lift-pump-working-parts.js';
 import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {capsule,circle,poly,plate,polygonClipping} from './finite-plate-geometry.js';
@@ -50,11 +50,20 @@ export function correctForcePumpParts(root,id){
   b.base.visible=false;b.sourceWell.visible=false;b.sourceWater.visible=false;
   b.barrel.material.opacity=.18;b.cylinderWater.material.opacity=.26;
   for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.y < -1.8)o.visible=false;
-  replace(b.barrel,portedBarrel(.705,.79,-1.27,air?2.21:2.25,air?-.15:-.72,.33,-1));
+  // Pass 80: the delivery pipe leaves through a round port it fills (the
+  // hole's edge lies within the pipe wall), where a larger square port left
+  // a gap round the pipe; the pipe starts in the barrel wall, not the bore.
+  replace(b.barrel,roundPortedBarrel(.705,.79,-1.27,air?2.21:2.25,air?-.15:-.72,air?.245:.26,-1));
   b.barrel.position.set(pumpX,0,0);
   const p=b.suctionPipe.geometry.parameters;
+  // Pass 80: the suction pipe rises to butt on the underside of the check
+  // seat ring (it stopped 0.025-0.035 short), with its water column.
+  const seatBottom=g.suctionValveSeatY-.065,pipeTop=seatBottom-b.suctionPipe.position.y;
+  const taper=(r0,r1,h)=>r0+(r1-r0)*(pipeTop+p.height/2)/h;
   replace(b.suctionPipe,horizontalTurned([[-p.height/2,p.radiusBottom-.045],[-p.height/2,p.radiusBottom],
-    [p.height/2,p.radiusTop],[p.height/2,p.radiusTop-.045]]));
+    [pipeTop,taper(p.radiusBottom,p.radiusTop,p.height)],[pipeTop,taper(p.radiusBottom,p.radiusTop,p.height)-.045]]));
+  {const w=b.suctionWater.geometry.parameters,bottom=-w.height/2,height=pipeTop-bottom,top=w.radiusBottom+(w.radiusTop-w.radiusBottom)*height/w.height;
+   replace(b.suctionWater,new THREE.CylinderGeometry(top,w.radiusBottom,height,48).translate(0,bottom+height/2,0));}
   replace(b.suctionValveSeat,horizontalRing(.30,.704,-.065,.035));b.suctionValveSeat.rotation.set(0,0,0);
   // Brown's handle is a flat bar pinned straight to the rod top; its left
   // end rides on a swing link hung from a lug cast on the barrel side
@@ -93,7 +102,7 @@ export function correctForcePumpParts(root,id){
   const clevis=new THREE.Mesh(clevisGeometry,b.pumpRod.material);clevis.userData.role='rod-top-clevis-straddling-handle';root.add(clevis);b.rodClevis=clevis;
   let inlet,output,liquid,gas;
   if(!air){
-    const axisX=-1.48;inlet=risingElbow(-.54,axisX,-.72,.40);
+    const axisX=-1.48;inlet=risingElbow(-.71,axisX,-.72,.40);
     const upper=new THREE.LineCurve3(new THREE.Vector3(axisX,g.deliveryValveSeatY+.42,0),new THREE.Vector3(axisX,3.45,0));
     replace(b.deliveryPipe,mergePassageParts([curvedPipeWall(inlet,.235,.29,80),curvedPipeWall(upper,.235,.29,24)]));
     replace(b.deliveryValveBody,horizontalTurned([[-.40,.235],[-.40,.29],[-.23,.48],[.30,.48],[.42,.29],[.42,.235],[.30,.425],[-.23,.425]]));
@@ -103,16 +112,21 @@ export function correctForcePumpParts(root,id){
     replace(b.deliveryWater,new THREE.TubeGeometry(output,128,.18,16,false));
   }else{
     const x=g.chamberCenter.x;g.chamberCenter.y=2.15;
-    inlet=risingElbow(pumpX-.55,x,-.15,.55);
+    inlet=risingElbow(pumpX-.71,x,-.15,.55);
     replace(b.pumpDeliveryPipe,curvedPipeWall(inlet,.215,.27,96));
     replace(b.pumpDeliveryWater,new THREE.TubeGeometry(inlet,96,.18,16,false));
-    replace(b.chamberNeck,portedBarrel(.475,.53,.40,1.20,.95,.23,-1));b.chamberNeck.position.set(x,0,0);
+    // Pass 80: the valve box under the bulb has a floor the delivery pipe
+    // enters (its end stood open 0.2 inside the neck's bore), and the side
+    // outlet leaves through a round port it fills.
+    replace(b.chamberNeck,mergePassageParts([roundPortedBarrel(.475,.53,.40,1.20,.95,.205,-1),horizontalRing(.245,.53,.335,.395)]));b.chamberNeck.position.set(x,0,0);
     // Brown's vessel is a smooth bulb: a rounded bottom rising from the neck
     // to its widest girth, closed by an elliptical dome round the dip tube.
     // Dense sampling keeps the piecewise-linear volume law while the
     // rendered outline reads round.
     const vessel=wall=>{
-      const points=[],girth=.98-wall,topR=.28-wall;
+      // Pass 80: the dome's top opening fits the dip tube (0.20 outside),
+      // where a 0.225 opening left the air vessel open round it.
+      const points=[],girth=.98-wall,topR=.255-wall;
       for(let i=0;i<=24;i++){const a=Math.PI/2*i/24;points.push([2.55-(1.35-wall)*Math.cos(a),.53-wall+.45*Math.sin(a)]);}
       const end=Math.acos(topR/girth);
       for(let i=1;i<=24;i++){const a=end*i/24;points.push([2.55+(1.15-wall)*Math.sin(a),girth*Math.cos(a)]);}
@@ -131,7 +145,11 @@ export function correctForcePumpParts(root,id){
     // bottom and rises beside it. The dip is kept shallow enough that the
     // centreline radius stays above 0.32 everywhere (the pipe's outer radius
     // is 0.24), so the inner wall of the bend never folds into a sliver.
-    const side=new THREE.CatmullRomCurve3([[x,.95],[x-.40,.95],[x-.78,.88],[x-1.10,.90],[x-1.35,1.08],[x-1.46,1.40],[x-1.47,1.80],[x-1.47,2.75]].map(([px,py])=>new THREE.Vector3(px,py,0)),false,'centripetal');
+    const sideFull=new THREE.CatmullRomCurve3([[x,.95],[x-.40,.95],[x-.78,.88],[x-1.10,.90],[x-1.35,1.08],[x-1.46,1.40],[x-1.47,1.80],[x-1.47,2.75]].map(([px,py])=>new THREE.Vector3(px,py,0)),false,'centripetal');
+    // Pass 80: the outlet starts in the neck wall (it began on the neck's
+    // axis, a stub across the valve box above the check).
+    let t0=0;while(sideFull.getPointAt(t0).x>x-.50)t0+=.0005;
+    const side=new THREE.Curve();side.getPoint=(t,target=new THREE.Vector3())=>sideFull.getPointAt(t0+(1-t0)*t,target);
     replace(b.selectedOutlet,curvedPipeWall(side,.17,.24,80));replace(b.selectedOutletWater,new THREE.TubeGeometry(side,80,.15,14,false));output=side;
     const dip=new THREE.LineCurve3(new THREE.Vector3(x,1.25,0),new THREE.Vector3(x,4.10,0));
     replace(b.alternativeOutlet,curvedPipeWall(dip,.145,.20,32));

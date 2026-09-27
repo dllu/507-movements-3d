@@ -80,7 +80,7 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/solids.js",
-      "sha256": "e91fbb0d4b8e586e62b0eec2b51382b5871b22361a06abde17646c2880395867"
+      "sha256": "bc5a03070aa87a6f5ef4217a4454ddc0d260158b748d5e132eb3cb629a45db9f"
     },
     {
       "file": "src/simulation/mujoco-water-governor/update-solids.js",
@@ -112,7 +112,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "166b5cad3d2d590379a57cf81d4376771f1059102dfd8e5d0d25e74b9e785e18"
+      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
     },
     {
       "file": "src/simulation/mujoco-ball-governor/equilibrium.js",
@@ -196,6 +196,6 @@
   "maximumNativeError": 0.00007317514991340812,
   "nativeSamples": 83553,
   "samples": 1490,
-  "bytes": 462195,
-  "sha256": "1ee4b89bcc16d930c83cba480839b600399af724c8258bf99e73c59c804ce55c"
+  "bytes": 482597,
+  "sha256": "0a174b3fbc29836f7909734f3d743a85202818e776773f0bb342f743e0b85173"
 }

@@ -90,7 +90,16 @@ function makeFollower({
   follower.add(roller);
 
   const pivotOffset = 8.197955 * scale;
-  const railStart = 0.57 * scale;
+  // The rails run into an eye round the roller's upper end, which stands
+  // above the cam land (z 0.30), so the crosshead carries the roller as
+  // Brown's rod eye does.
+  const railStart = 0.17;
+  const rollerEye = new THREE.Mesh(plate(clip.difference(
+    poly(circle([0, 0], 0.22, 72)),
+    poly(circle([0, 0], rollerRadius + 0.0005, 72)),
+  ), 0.471, 0.629), followerMaterial);
+  rollerEye.userData.role = 'crosshead-eye-carrying-cam-roller';
+  follower.add(rollerEye);
   const railEnd = 7.43 * scale;
   const rails = [-0.095, 0.095].map((y) => {
     const rail = beamBetween(

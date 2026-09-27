@@ -2008,7 +2008,7 @@
       "tappetSupport"
     ]
   ],
-  "queries": 73686844,
+  "queries": 73699356,
   "intersections": {},
   "method": "Every cross-rigid-family pair; finite mesh vertices, edge midpoints and face centers. All physical meshes classified; standalone contact has a separate dense audit. Sampled clearance only.",
   "sources": [
@@ -2018,7 +2018,7 @@
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/assembly.js",
-      "sha256": "06a0eb7d79589f423d27c154873e1d5aab69c48e09356e2210d6ef5122a1751b"
+      "sha256": "6ac350ff4380ba7de32f78f0d6799a84bce883f1aeba1b1940319aee80a8ea3f"
     },
     {
       "file": "src/simulation/mujoco-silk-tappet/solids.js",

@@ -22,7 +22,8 @@ export function finishRockingPawl232(model){
  }
  // A remains the long side of the parallelogram, but is now a carrier journal
  // on the wheel axis. Existing ground pins run in inferred curved guide slots.
- b.upperPivotPin.geometry.dispose();b.upperPivotPin.geometry=new T.CylinderGeometry(.075,.075,.42,64);b.upperPivotPin.position.z=.43;
+ // The upper pin is seated in A's .09 bore and runs in pawl C's .09 bore.
+ b.upperPivotPin.geometry.dispose();b.upperPivotPin.geometry=new T.CylinderGeometry(.088,.088,.42,64);b.upperPivotPin.position.z=.43;
  const carrier=new T.Group();carrier.userData.role='232-inferred-rocking-carrier-A';model.root.add(carrier);carrier.add(b.framePlate,b.upperPivotPin);b.carrier=carrier;
  const lo=inverse(j(clearRadius),j(seatAngle)).carrier.x-.006,hi=pitch+.006,slots=[];
  for(const p of[g.retainingPivot,new T.Vector2(.97,-.27)]){const centers=Array.from({length:65},(_,i)=>p.clone().rotateAround({x:0,y:0},-(lo+(hi-lo)*i/64)).toArray());for(let i=1;i<centers.length;i++)slots.push(capsule(centers[i-1],centers[i],.074,24));}

@@ -1179,8 +1179,9 @@ export function createAuthoredRollingFrictionExperimentMovement(movement) {
       if (o !== remotePulley && o.userData.role) o.userData.role = `driving-pulley-${o.userData.role}`;
     });
     root.add(remotePulley);
+    // The shaft fills the pulley hub's bore (radius 0.116).
     const stub = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.06, 0.62, 24).rotateX(Math.PI / 2),
+      new THREE.CylinderGeometry(0.114, 0.114, 0.62, 32).rotateX(Math.PI / 2),
       b.largeAxle.material,
     );
     stub.position.set(remoteCenter.x, remoteCenter.y, g.beltPlaneZ - 0.12);

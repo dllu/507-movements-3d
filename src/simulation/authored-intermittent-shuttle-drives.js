@@ -227,7 +227,19 @@ function intermittentShuttleDrive(movement) {
   );
   shuttleBar.position.set(1.045, 0.38, 0);
   shuttleBar.userData.role = 'sewing-machine-or-printing-press-output-slide';
-  const sliderJoint = cylinderAlongZ(0.14, 0.58, darkMaterial, 28);
+  // Brown's lug under the bar's left end: a round eye on the link pin with
+  // a neck leaning up to the right into the bar's underside, one piece with
+  // the bar and in its plane. The pin is fast in the lug and turns in the
+  // link eye (bore 0.154) in front.
+  const shuttleLug = new THREE.Mesh(plate(polygonClipping.difference(
+    polygonClipping.union(
+      poly(circle([0, 0], 0.24, 96)),
+      poly([[-0.17, 0], [0.17, 0], [0.36, 0.30], [-0.10, 0.30]]),
+    ),
+    poly(circle([0, 0], 0.1515, 96)),
+  ), -0.139, 0.139), outputMaterial);
+  shuttleLug.userData.role = 'shuttle-bar-lug-carrying-link-pin';
+  const sliderJoint = cylinderAlongZ(0.15, 0.58, darkMaterial, 28);
   sliderJoint.position.z = 0.28;
   sliderJoint.userData.role = 'output-rod-to-slider-pin';
   const outputIndex = new THREE.Mesh(
@@ -237,7 +249,7 @@ function intermittentShuttleDrive(movement) {
   outputIndex.position.set(-0.47, 0.38, 0.20);
   outputIndex.userData.role =
     'white-index-making-output-strokes-and-dwells-legible';
-  outputSlider.add(shuttleBar, sliderJoint, outputIndex);
+  outputSlider.add(shuttleBar, shuttleLug, sliderJoint, outputIndex);
   root.add(markShadows(outputSlider));
 
   const fixedFrame = new THREE.Group();

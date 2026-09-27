@@ -141,7 +141,14 @@ test('movement 213 is a single face-pin friction stop, not two meshing gears', (
   assert.ok(roles.includes(
     'split-rim-five-teeth-six-gaps-and-uncut-stop-arc',
   ));
-  assert.ok(roles.includes('split-ring-static-friction-interface'));
+  assert.ok(roles.includes('fixed-friction-stud-drum-gripped-by-split-ring'));
+  // The split ring grips the fixed stud: the stud fills the ring's bore.
+  const drum = model.root.userData.blocks.frictionDrum;
+  const bore = model.root.userData.geometry?.stopInnerRadius;
+  if (Number.isFinite(bore)) {
+    const gap = bore - drum.geometry.parameters.radiusTop;
+    assert.ok(gap >= 0 && gap <= 0.003, `stud fills the split-ring bore (gap ${gap})`);
+  }
   assert.equal(
     roles.some((role) => /belt|pulley|geneva-slot|continuous-gear-mesh/.test(
       role,

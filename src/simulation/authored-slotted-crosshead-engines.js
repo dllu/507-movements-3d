@@ -486,18 +486,22 @@ function slottedCrossheadPillarEngine(movement) {
   fixedFrame.userData.role =
     'fixed-engine-framing-with-two-pillar-guides-D-D';
 
+  // The official animation's guide travel ends at y 6.4, but the pillars
+  // themselves run on up to the underside of the crossbeam (source y 7),
+  // as Brown draws their capitals meeting it.
+  const pillarTopY = 7 * sourceScale;
   const guidePosts = [-1, 1].map((side) => {
     const post = new THREE.Mesh(
       new THREE.BoxGeometry(
         guideOuterX - guideInnerX,
-        guideTopY - guideBottomY,
+        pillarTopY - guideBottomY,
         frameDepth,
       ),
       frameMaterial,
     );
     post.position.set(
       side * (guideInnerX + guideOuterX) / 2,
-      (guideTopY + guideBottomY) / 2,
+      (pillarTopY + guideBottomY) / 2,
       frameCenterZ,
     );
     post.userData.fixed = true;

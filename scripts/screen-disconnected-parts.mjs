@@ -32,10 +32,10 @@ const value = (name) => args.find((arg) => arg.startsWith(`${name}=`))?.slice(na
 // Fluid volumes: translucent non-see-through materials, or roles naming a
 // medium in a fluid state (column, volume, jet ...). Plain medium words are
 // not enough: "water-wheel", "steam-cylinder" and "downstream-log" are solid.
-export const FLUID = /meniscus|(water|steam|mercury|quicksilver|liquid|fluid|air|gas|oil)-(column|volume|load|payload|core|space|cavity|film|stream|jet|spray|flow|surface|seat-volume|in-|inside|under|between|through|returning|escaping|entering|filling|leaving|rising|falling|level|body|charge|fill)|(^|-)(jets?|spray|plume|smoke|flame|particles?|bubbles?|drops|droplets?|sparks?|live-steam|exhaust-steam)(-|$)|ink-trace|traced?-(curve|path)|glow|shadow|envelope|highlight|ghost/i;
+export const FLUID = /meniscus|(water|steam|mercury|quicksilver|liquid|fluid|air|gas|oil)-(column|volume|load|payload|core|space|cavity|film|stream|jet|spray|flow|surface|seat-volume|in-|inside|under|between|through|returning|escaping|entering|filling|leaving|rising|falling|level|body|charge|fill|expelled|lifted|delivered|pumped|forced|drawn)|(^|-)(jets?|spray|plume|smoke|flame|particles?|bubbles?|drops|droplets?|sparks?|live-steam|exhaust-steam)(-|$)|ink-trace|traced?-(curve|path)|glow|shadow|envelope|highlight|ghost/i;
 // A role ending in a medium word ("...-water") is fluid unless it names a
 // solid carrying or standing in that medium ("pipe-standing-in-water").
-const SOLID_NOUN = /(^|-)(standing|immersed|submerged|dipping|resting)(-|$)|(^|-)in-(water|steam|mercury|quicksilver|liquid)$/i;
+const SOLID_NOUN = /(^|-)(rotating|stationary|sealed|above|receiving|standing|immersed|dipping|resting)(-|$)|(^|-)in-(water|steam|mercury|quicksilver|liquid)$/i;
 export const isMediumSuffix = (role) => /(^|-)(water|steam|mercury|quicksilver|liquid)$/i.test(role) && !SOLID_NOUN.test(role);
 export const isFluidRole = (role) => FLUID.test(role) || isMediumSuffix(role);
 // A plain copy of a geometry's shape; custom geometry classes (laid rope)

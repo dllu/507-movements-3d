@@ -649,6 +649,9 @@ function directActionEngineParallelMotion(movement) {
     planeZ: connectingPlaneZ,
     role: 'fourteen-unit-connecting-rod-P-C',
     width: 0.46 * sourceScale,
+    // Eyes bored to their own pins (P, C) with 0.004 running clearance.
+    startBoreRadius: 0.24 * sourceScale + 0.004,
+    boreRadius: 0.25 * sourceScale + 0.004,
   });
   root.add(connectingParts.rod);
 
@@ -680,11 +683,13 @@ function directActionEngineParallelMotion(movement) {
     planeZ: barBCPlaneZ,
     role: 'fifteen-unit-rigid-bar-B-C',
     width: 0.42 * sourceScale,
+    startBoreRadius: 0.22 * sourceScale + 0.004,
+    boreRadius: 0.25 * sourceScale + 0.004,
   });
   const pointAAnchor = new THREE.Object3D();
   pointAAnchor.position.set(midpointDistance, 0, barBCPlaneZ);
   pointAAnchor.userData.role = 'analytic-exact-midpoint-A-of-B-C';
-  barBCParts.rod.userData.addPinEye(midpointDistance, 0.23 * sourceScale + 0.006);
+  barBCParts.rod.userData.addPinEye(midpointDistance, 0.23 * sourceScale + 0.004);
   barBCParts.rod.add(pointAAnchor);
   root.add(barBCParts.rod);
 
@@ -696,6 +701,9 @@ function directActionEngineParallelMotion(movement) {
     planeZ: radiusPlaneZ,
     role: 'seven-point-five-unit-fixed-radius-bar-F-A',
     width: 0.40 * sourceScale,
+    // Turns on fixed pin F; pin A is rigid with this bar.
+    startBoreRadius: 0.22 * sourceScale + 0.004,
+    boreRadius: 0.23 * sourceScale + 0.0015,
   });
   root.add(radiusParts.rod);
 
@@ -1633,6 +1641,9 @@ function jogglingPillarParallelMotion(movement) {
     planeZ: radiusPlaneZ,
     role: 'corrected-four-point-seven-eight-nine-nine-five-six-unit-radius-bar-E-A',
     width: 0.42 * sourceScale,
+    // Eyes bored to fixed pin E and common pin A with 0.004 running clearance.
+    startBoreRadius: 0.24 * sourceScale + 0.004,
+    boreRadius: 0.23 * sourceScale + 0.004,
   });
   root.add(radiusParts.rod);
 

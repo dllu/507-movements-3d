@@ -11204,12 +11204,14 @@ function splitRimFacePinWindingStop() {
   driverSquare.userData.role = 'winding-arbor-square';
   driver.userData.rotor.add(driverSquare);
 
+  // Brown's split ring grips a fixed round stud by its own spring: the stud
+  // fills the ring's bore (0.002 friction fit), with no separate band.
   const frictionDrum = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      stopInnerRadius - 0.075,
-      stopInnerRadius - 0.075,
+      stopInnerRadius - 0.002,
+      stopInnerRadius - 0.002,
       0.24,
-      64,
+      96,
     ),
     frameMaterial,
   );
@@ -11220,23 +11222,7 @@ function splitRimFacePinWindingStop() {
     stopWheelPlaneZ - 0.1,
   );
   frictionDrum.userData.fixed = true;
-  frictionDrum.userData.role = 'fixed-undercut-friction-stud-drum';
-  const frictionBand = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      stopInnerRadius - 0.055,
-      0.026,
-      10,
-      64,
-    ),
-    brassMaterial,
-  );
-  frictionBand.position.set(
-    stopWheelCenter.x,
-    stopWheelCenter.y,
-    stopWheelPlaneZ + 0.025,
-  );
-  frictionBand.userData.fixed = true;
-  frictionBand.userData.role = 'split-ring-static-friction-interface';
+  frictionDrum.userData.role = 'fixed-friction-stud-drum-gripped-by-split-ring';
   const stopWheelStud = makeShaft({
     axis: Z_AXIS,
     length: 1.42,
@@ -11319,7 +11305,6 @@ function splitRimFacePinWindingStop() {
     stopWheel,
     driverShaft,
     frictionDrum,
-    frictionBand,
     stopWheelStud,
     activeContactMarker,
     stopContactMarker,
@@ -11567,8 +11552,8 @@ function splitRimFacePinWindingStop() {
       frictionRetention: {
         active: frictionHeld,
         angularSlip: 0,
-        fixedStudRadius: stopInnerRadius - 0.075,
-        method: 'self-sprung-split-rim-on-undercut-fixed-stud',
+        fixedStudRadius: stopInnerRadius - 0.002,
+        method: 'self-sprung-split-rim-gripping-fixed-stud',
       },
       inputTravel,
       limit: {
@@ -11772,7 +11757,6 @@ function splitRimFacePinWindingStop() {
     facePin,
     facePinCap,
     feet,
-    frictionBand,
     frictionDrum,
     stopContactMarker,
     stopShoulderHighlights,

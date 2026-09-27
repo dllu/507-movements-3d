@@ -51,13 +51,18 @@ export function makeWaterGovernorSolids(){
   add(name+'Stud',new THREE.BoxGeometry(.09,2*half+Math.abs(extension),.09),name+'Stud',PALETTE.ink,[.43,center+extension/2,0]);
   families[name+'Stud']=name+'Loose';
  }
- for(const [name,apexY,reach]of [['inputShaft',bevel.root.userData.parameters.topApex[1],2.286],['outputShaft',apex,2.484]]){
+ // Each horizontal gear is keyed to its shaft: a sleeve fills the gear bore
+ // and Brown's short hub stands against the gear back, both rigid with the
+ // shaft (the gear body keeps the shared bevel bore).
+ const bore=bevel.root.userData.parameters.bore;
+ for(const [name,apexY,reach,gear,back,color]of [['inputShaft',bevel.root.userData.parameters.topApex[1],2.286,'upperInput',-.793,PALETTE.driver],['outputShaft',apex,2.484,'gateOutput',-.863,PALETTE.accent]]){
   group(name).position.y=apexY;
-  add(name,xGeometry(disk(.10,-reach,-.58,96)),name,PALETTE.ink);
-  add(name+'Bearing',xGeometry(ring(.106,.18,-1.03,-.91,96)),'fixed',PALETTE.frame,[0,apexY,0]);
+  add(name,xGeometry(disk(.10,-reach,-.538,96)),name,PALETTE.ink);
+  add(gear+'Sleeve',xGeometry(ring(.10,bore,back,-.538,96)),name,color);
+  add(gear+'Hub',xGeometry(ring(.10,.18,back-.12,back,96)),name,color);
  }
  const update=makeWaterGovernorUpdater(root,g);
- Object.assign(root.userData,{parts,blocks,families,geometry:g,selectorOffset,hideGround:true,sourceScale:.018,reconstructionNote:'Unregistered source assembly driven by native hinge coordinates. Depths, rear cheeks, shaft bearings and stud-root extensions are inferred. The water gate and remote shaft supports are outside the engraving.'});
+ Object.assign(root.userData,{parts,blocks,families,geometry:g,selectorOffset,hideGround:true,sourceScale:.018,reconstructionNote:'Unregistered source assembly driven by native hinge coordinates. Depths, rear cheeks, keyed gear hubs and stud-root extensions are inferred. The water gate and remote shaft supports are outside the engraving.'});
  update({spindle:0,leftSpread:g.initialSpread,rightSpread:g.initialSpread,sleeveY:initial.sleeveY,upper:0,lower:0,output:0,qpos:Array(9).fill(0)});markShadows(root);
  return{root,update,dispose:()=>disposeObject3D(root)};
 }

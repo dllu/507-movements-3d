@@ -42,10 +42,12 @@ export function makeSilkTraverseAssembly(bundle) {
  contact.root.rotation.z=phase;contact.root.position.z=screwZ;root.add(contact.root);
  const carrier=contact.root.getObjectByName('carrier'),wheel=contact.root.getObjectByName('wheel');
  for(const [name,mesh]of Object.entries(contact.parts)){parts[name]=mesh;families[name]=name==='tappet'?'fixed':'screw';}
- add('disk',plate(round(155*scale),-.4,-.28),PALETTE.driver,'carrier',carrier);
+ // The screw frame is secured on the face of the disk: rails and bearing
+ // blocks bed on the disk's front face at z -0.19.
+ add('disk',plate(round(155*scale),-.4,-.19),PALETTE.driver,'carrier',carrier);
  for(const side of [-1,1]){
-  const rail=add('channelRail'+side,new THREE.BoxGeometry(4.02,.10,.36),PALETTE.frame,'carrier',carrier);
-  rail.position.set(-.04,side*.21,0);
+  const rail=add('channelRail'+side,new THREE.BoxGeometry(4.02,.10,.37),PALETTE.frame,'carrier',carrier);
+  rail.position.set(-.04,side*.21,-.005);
  }
  for(const [name,x]of [['lower',-2.04],['upper',1.96]]){
   const outline=poly([[-.19,-.26],[.19,-.26],[.19,.26],[-.19,.26]]);

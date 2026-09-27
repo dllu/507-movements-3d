@@ -643,11 +643,16 @@ function reciprocatingWellLift(movement) {
   support.add(topBeam);
   // Pass 64: Brown draws no bar behind the two chain wheels; their axles
   // end as plain stubs.
+  // Pass 80: Brown's central post rises from the bottom line of his
+  // elevation to the tappet block, so it stands on the well floor (it ended
+  // in mid-air at y -0.63, leaving the frame carried by nothing).
+  const tappetStandTop = 0.825;
+  const tappetStandBottom = wellFloorY;
   const tappetStand = new THREE.Mesh(
-    new THREE.BoxGeometry(0.18, 1.45, 0.22),
+    new THREE.BoxGeometry(0.18, tappetStandTop - tappetStandBottom, 0.22),
     frameMaterial,
   );
-  tappetStand.position.set(0, 0.10, 0.30);
+  tappetStand.position.set(0, (tappetStandTop + tappetStandBottom) / 2, 0.30);
   support.add(tappetStand);
 
   const windRotor = addRole(new THREE.Group(),
@@ -1146,7 +1151,13 @@ function reciprocatingWellLift(movement) {
       Math.sin(state.carrierAngle) * 0.11, -Math.cos(state.carrierAngle) * 0.11, 0));
     // The arm's lower end bears on the crank pin's surface.
     const armDirection = stepFoot.clone().sub(tappetCrank).normalize();
-    setRodBetween(selectorLink, tappetCrank.clone().addScaledVector(armDirection, 0.086), stepFoot);
+    // Pass 80: the arm's slanted end face stops where its upper edge meets
+    // the step's underside, so it bears on the step without entering it.
+    const stepAxisCos = Math.abs(armDirection.x * Math.sin(state.carrierAngle)
+      - armDirection.y * Math.cos(state.carrierAngle));
+    const endSetback = 0.045 * Math.sqrt(Math.max(0, 1 - stepAxisCos ** 2)) / Math.max(stepAxisCos, 0.2);
+    setRodBetween(selectorLink, tappetCrank.clone().addScaledVector(armDirection, 0.086),
+      stepFoot.clone().addScaledVector(armDirection, -endSetback));
     root.userData.updateSolids?.(state);
   };
 

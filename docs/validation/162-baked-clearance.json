@@ -18,9 +18,9 @@
     "assumptions": "Source-proportioned ideal governor hinges, inferred effective masses and selector/stud depths. Passive finite pin/stud and gear-backing contact; ideal equal-ratio bevel constraints and inferred output friction. No water-wheel, gate inertia or hydraulic feedback."
   },
   "poses": 133,
-  "meshes": 183,
-  "pairs": 14216,
-  "queries": 65134128,
+  "meshes": 185,
+  "pairs": 14578,
+  "queries": 65440028,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers at 129 off-key interpolated times and four seam poses, using the original visible solids and baked joint motion. Same rigid-family joins excluded. Includes soft-contact penetration and native gear-constraint errors; only named native contact pairs may overlap, by at most .002 world units.",
@@ -31,7 +31,7 @@
     },
     {
       "file": "src/simulation/baked/assets/162.json.gz",
-      "sha256": "91da7a9c66f18edc28d26622ae7826f5a3f1289f59ac0aec80e1d44a017a0700"
+      "sha256": "0a174b3fbc29836f7909734f3d743a85202818e776773f0bb342f743e0b85173"
     },
     {
       "file": "src/simulation/baked/playback.js",
@@ -43,7 +43,7 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/solids.js",
-      "sha256": "e91fbb0d4b8e586e62b0eec2b51382b5871b22361a06abde17646c2880395867"
+      "sha256": "bc5a03070aa87a6f5ef4217a4454ddc0d260158b748d5e132eb3cb629a45db9f"
     },
     {
       "file": "src/simulation/mujoco-water-governor/update-solids.js",
@@ -59,15 +59,15 @@
     },
     {
       "file": "src/simulation/mujoco-water-governor/bevel-train.js",
-      "sha256": "dd67587fc8de97882b567d318a5f435bacac5057cdfb8fef94d56648f7e2f5c8"
+      "sha256": "04e0124eed28e162bc3553f5bc7cef01aea7f9c17207d7f3f91e3fe5f18cd05a"
     },
     {
       "file": "src/simulation/bevel-geometry.js",
-      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+      "sha256": "9dfaf2b3b969a16ce7a6cabadee57fa6bb6d1e51b9e61f6f9f511ed77dba365c"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",
-      "sha256": "ceff170c96f730cbc20d61b8c93f2eb922c386aa3daad8e4fa9c61e9b0d60a42"
+      "sha256": "8f39335894306bfe77f2d3562e6c2e7ac867dead2e078f2d1da4da7151998b99"
     }
   ]
 }

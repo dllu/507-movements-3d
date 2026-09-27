@@ -519,6 +519,15 @@ function latheTailstockScrewFeed(movement) {
   centerShank.position.x = (quillNose.x + centerTip.x + 0.52) / 2;
   centerShank.userData.role = 'tailstock-center-rigid-shank';
   quill.add(centerShank);
+  // The centre's shank is seated in a short plug filling the quill bore at
+  // its nose; the plug stops 0.07 inside, clear of the screw end when the
+  // quill is fully withdrawn.
+  const centerSocketLength = 0.07;
+  const centerSocket = cylinderAlongX(0.265, centerSocketLength,
+    drivenMaterial, 48);
+  centerSocket.position.x = quillNose.x + centerSocketLength / 2;
+  centerSocket.userData.role = 'quill-nose-plug-seating-center-shank';
+  quill.add(centerSocket);
   const centerCone = new THREE.Mesh(
     new THREE.ConeGeometry(0.32, 1.04, 36),
     drivenMaterial,

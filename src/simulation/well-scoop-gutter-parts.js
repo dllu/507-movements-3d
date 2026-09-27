@@ -32,7 +32,10 @@ export function correctWaterLiftParts(root,id) {
     replace(b.worm.userData.thread,helicalThread(profile,threadAngles(profile,96)));
     b.worm.userData.threadCaps.forEach(o=>o.visible=false);
     // The step lies wholly below the worm's lower end (it had enclosed it).
-    replace(b.selectorBearing,horizontalTurned([[-.11,.080],[-.11,.17],[-.006,.17],[-.006,.080]]));
+    // Pass 80: a solid step disc: the shaft's end rests on its top and the
+    // arm from the tappet meets its underside (the arm had ended in a 0.08
+    // bore through the step, touching nothing).
+    replace(b.selectorBearing,new THREE.CylinderGeometry(.17,.17,.104,96).translate(0,-.058,0));
     d.updateSolids=state=>{b.selectorBearing.rotation.z=state.carrierAngle;};
     for(const [trough,sign]of [[b.leftTrough,-1],[b.rightTrough,1]]){trough.position.x=sign*2.64;trough.position.y=-.80;trough.rotation.z=0;}
     b.well.material.opacity=.10;

@@ -27,7 +27,13 @@ test('162 serialized adaptive bake follows native ball and pin positions, includ
 test('162 instanced teeth, repeat phase, bounds and exact restart survive many cycles',()=>{
  const v=makeWaterGovernorModel(bundle);try{
   let meshes=0,instances=0;v.root.traverse(o=>{if(o.isMesh){meshes++;assert.equal(o.material.fog,false);}if(o.isInstancedMesh){instances++;assert.equal(o.count,30);}});
-  assert.equal(meshes,38);assert.equal(instances,5);
+  // Two horizontal gears each carry a bore sleeve and Brown's back hub, keyed to their shafts.
+  assert.equal(meshes,40);assert.equal(instances,5);
+  for(const [gear,shaft]of [['upperInput','inputShaft'],['gateOutput','outputShaft']])for(const part of ['Sleeve','Hub']){
+   const mesh=v.root.getObjectByName(gear+part);assert.equal(mesh.parent.name,'body:'+shaft,'the hub turns with its shaft');
+   const p=mesh.geometry.attributes.position;let inner=Infinity;for(let i=0;i<p.count;i++)inner=Math.min(inner,Math.hypot(p.getY(i),p.getZ(i)));
+   assert.ok(Math.abs(inner-.10)<.002,'the hub bore fits the .10 shaft');
+  }
   const initial=JSON.stringify(v.root.userData.state);
   const snapshot=()=>{v.root.updateMatrixWorld(true);const matrices=[];v.root.traverse(o=>{if(o.isMesh)matrices.push(...o.matrixWorld.elements);});return matrices;};
   const t=bundle.loopStart+.41*bundle.period;v.update(t);const reference=snapshot();v.update(t+100*bundle.period);const repeated=snapshot();assert.ok(Math.max(...reference.map((x,i)=>Math.abs(x-repeated[i])))<1e-9);

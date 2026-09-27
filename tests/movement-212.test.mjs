@@ -738,7 +738,12 @@ test('movement 212 renders every rigid pose and terminal contact while movement 
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 17, 'the undrawn frame is presented away');
+  // The undrawn frame and its loose shaft bearings are presented away.
+  assert.ok(meshCount >= 15, 'the undrawn frame is presented away');
+  const roles212 = [];
+  model.root.traverse((object) => { if (object.isMesh && object.userData.role) roles212.push(object.userData.role); });
+  assert.ok(!roles212.some((role) => /^fixed-(?:driver-A|stop-wheel-B)-bearing$/.test(role)),
+    'no bearing ring hangs on a shaft without a frame');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

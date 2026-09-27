@@ -128,8 +128,10 @@ export function quadrantCatchParts() {
   const eyeNeck = union(P(circlePoints([400, 43], 10, 48)), P([[378, 42], [396, 36], [404, 50], [384, 56]]));
   upper.parts.quadrant = { planes: 'X', poly: union(polygonClipping.intersection(upperWingTrace, rim), eyeNeck) };
   // Front boss on the wing's rim, inside its drawn outline: its outer face is
-  // concentric with the upper shaft and holds the lower stud at the top.
-  upper.parts.catchBoss = { planes: 'M', poly: sector(PU, catchBossRadii[0], rimRadius, catchBossSpan[0], catchBossSpan[1], 256) };
+  // concentric with the upper shaft and holds the lower stud at the top. It is
+  // cast on the wing, standing from the wing's face (X) through A to M; no
+  // part of the lower handle shares A or X at that radius.
+  upper.parts.catchBoss = { planes: 'XAM', poly: sector(PU, catchBossRadii[0], rimRadius, catchBossSpan[0], catchBossSpan[1], 256) };
   upper.eye = [400, 43];
   return { upper, lower, noseR };
 }

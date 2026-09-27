@@ -411,8 +411,11 @@ function handRockedPinionAndPumpRacks(movement) {
   pinionRotor.remove(pinionRotor.children[3]);
   pinionRotor.userData.role = 'rigid-pinion-and-handle-rotor';
   // The handle is carried on the pinion's front face, so it sweeps in front
-  // of both racks and their guides instead of through them.
-  const handleZ = 0.62;
+  // of both racks and their guides instead of through them. These parts sit
+  // in the pinion rotor's frame (the pinion group stands at z 0.28): the boss
+  // seats on the pinion's front face (world z 0.50) and the handle bar and
+  // grip clear the guide fronts (world z 0.51).
+  const handleZ = 0.34;
   const handleBossPoint = sourceHandleRoot.clone().multiplyScalar(
     0.6 / sourceHandleRoot.length(),
   );
@@ -428,12 +431,12 @@ function handRockedPinionAndPumpRacks(movement) {
   );
   handle.userData.role = 'manual-handle-rigid-to-pinion';
   pinionRotor.add(handle);
-  const handleBoss = cylinderAlongZ(0.14, 0.16, driverMaterial, 32);
-  handleBoss.position.set(handleBossPoint.x, handleBossPoint.y, 0.56);
+  const handleBoss = cylinderAlongZ(0.14, 0.22, driverMaterial, 32);
+  handleBoss.position.set(handleBossPoint.x, handleBossPoint.y, 0.33);
   handleBoss.userData.role = 'handle-boss-on-pinion-face';
   pinionRotor.add(handleBoss);
   const handleGrip = cylinderAlongZ(0.145, 0.54, darkMaterial, 32);
-  handleGrip.position.set(sourceHandleGrip.x, sourceHandleGrip.y, 0.72);
+  handleGrip.position.set(sourceHandleGrip.x, sourceHandleGrip.y, 0.51);
   handleGrip.userData.role = 'manual-handle-grip';
   pinionRotor.add(handleGrip);
   const handleGripCap = cylinderAlongZ(0.09, 0.055, whiteMaterial, 30);

@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-cylinder-spiral-scribers.js",
-      "sha256": "b1e5cfd39fa05a166b48f40ae49878bfc7432b3425595cf944a7767d6e8c6e12"
+      "sha256": "01c3bfc0d0a0ef7fbf884d58c99c8edf4c7d0b24a3266ec512b52b561087a4f6"
     },
     {
       "file": "src/simulation/authored-dynamometers.js",
@@ -46,7 +46,7 @@
     {
       "id": 368,
       "poses": 33,
-      "queries": 562103,
+      "queries": 562096,
       "penetrations": 0,
       "maxDepth": 0,
       "worst": null,

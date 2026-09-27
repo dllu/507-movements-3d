@@ -167,7 +167,9 @@ function condensateWater(root, stateAtTime, cycleDuration, liftScale) {
   const b = root.userData.blocks;
   const material = waterVolumeMaterial({ opacity: 0.5 });
   material.side = THREE.DoubleSide;
-  const annulus = [0.405, 0.655], seatTop = 1.70, seatBore = [0.405, 0.475];
+  // Pass 80: the seat now rises to the cover (y 1.78); the pool stands
+  // 0.005 above its top face so the two are not coplanar.
+  const annulus = [0.405, 0.655], seatTop = 1.785, seatBore = [0.405, 0.475];
   const area = Math.PI * (annulus[1] ** 2 - annulus[0] ** 2);
   // Stored volume from the discharge history (inflow = mean discharge).
   const samples = 512, flows = [];

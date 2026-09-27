@@ -192,3 +192,4 @@ Lane p77-dc found two classification bugs that produced false floats:
 
 After the fixes, 473 (ropes and the tub pipe) screens clean.
 - **Instanced meshes were skipped.** Generated teeth drawn as an `InstancedMesh` (e.g. 195's face teeth) are now merged per phase into one geometry in the mesh's frame, so they join the part they belong to; they are excluded only from the open-end check. 195 now screens clean.
+- **Solids named after the water they hold.** Roles such as `fixed-force-pump-cylinder-above-water` (450's barrel) or `…-trough-receiving-raised-water` end in a medium word but are solids; the suffix rule now also excludes roles with `above`, `receiving`, `rotating`, `stationary` or `sealed`. Media such as `fixed-outer-tub-water` or `hand-pump-reservoir-water` stay fluid.

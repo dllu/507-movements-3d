@@ -1333,7 +1333,9 @@ function cylinderEscapement(movement) {
       }
       return [];
     },
-    arbors: [{ center: W, radius: 10 * s, z0: -0.3, z1: 0.2, role: 'escape-wheel-arbor' }],
+    // The arbor passes through the web's bore (radius 10 s) and stands just
+    // proud of both faces of the recessed web.
+    arbors: [{ center: W, radius: 10 * s, z0: webZ[0] - 0.12, z1: webZ[0] + 0.2, role: 'escape-wheel-arbor' }],
     fit: is294
       ? new THREE.Box3(new THREE.Vector3(-1.1, axisRadius - 1.1, zOf(512)), new THREE.Vector3(1.1, axisRadius + 1.1, zOf(18)))
       : new THREE.Box3(new THREE.Vector3(-4.4, axisRadius - 2.4, webZ[0] - 0.05), new THREE.Vector3(4.4, axisRadius + 1.6, headZ[1] + 0.05)),

@@ -88,7 +88,10 @@ export function createDiagonalCatchAssembly(){
    const p=o.geometry.parameters;o.geometry.dispose();
    o.geometry=new THREE.CylinderGeometry(.06,.06,p.height,40);o.material=steel;
   }else if(/fixed-round-head$/.test(o.userData.role??''))o.material=steel;
-  else if(/-bored-rod-eye$/.test(o.userData.role??''))o.material=rodSteel;
+  else if(/-bored-rod-eye$/.test(o.userData.role??'')){
+   // Brown's eye (outer r .14) runs on its .06 pin with a .002 running fit.
+   o.geometry.dispose();o.geometry=ring(.062,.14,-.035,.035,64);o.material=rodSteel;
+  }
  });
  const groups={upper:b.upperHandle,lower:b.lowerHandle,catch:b.catchGroup,piston:b.pistonGroup,
   upperWeight:b.upperWeightAssembly,lowerWeight:b.lowerWeightAssembly,catchWeight:b.catchWeightAssembly};

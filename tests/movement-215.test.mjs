@@ -848,7 +848,7 @@ test('movement 215 renders separated carrier and locking planes with nominal pro
   model.root.traverse((object) => {
     if (object.isMesh) meshCount += 1;
   });
-  assert.ok(meshCount >= 10, 'the undrawn frame, strip, indices and markers are presented away');
+  assert.ok(meshCount >= 8, 'the undrawn frame, bearings, strip, indices and markers are presented away');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);
   assert.ok(model.cameraDirection.z > model.cameraDirection.x);

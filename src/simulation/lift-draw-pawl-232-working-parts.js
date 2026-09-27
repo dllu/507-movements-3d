@@ -15,8 +15,14 @@ export function finishLiftDrawPawl232(model){
  const d=model.root.userData,b=d.blocks,g=d.geometry,oldUpdate=model.update,oldState=d.stateAtCycleCoordinate;
  // Bevels must not close bores or enlarge the square tooth working section.
  unexpanded(b.wheel.userData.body);unexpanded(b.pawlBody,[[g.shortLinkLength,0,.076]]);
- unexpanded(b.inputLeverBody,[[g.shortLinkLength,0,.076]]);
- const frameShape=b.framePlate.geometry.parameters.shapes,frameRegion=clip.difference(clip.union(poly(frameShape.getPoints(48).map(p=>p.toArray())),poly(circle(g.retainingPivot.toArray(),.14,96))),...frameShape.holes.map(h=>poly(h.getPoints(48).map(p=>p.toArray()))),poly(circle(g.retainingPivot.toArray(),.070,96)));b.framePlate.geometry.dispose();b.framePlate.geometry=plate(frameRegion,-.07,.07);
+ // Handle B's rounded end runs on the wheel shaft (r .105) with a .0005
+ // running fit; the end is rounded out to r .16 to leave a wall round the bore.
+ {const lever=b.inputLeverBody,{shapes,options}=lever.geometry.parameters;
+  const region=clip.difference(clip.union(poly(shapes.getPoints(48).map(p=>p.toArray())),poly(circle([0,0],.16,96))),
+   poly(circle([0,0],.1055,96)),poly(circle([g.shortLinkLength,0],.076,96)));
+  lever.geometry.dispose();lever.geometry=plate(region,-options.depth/2,options.depth/2);}
+ const frameShape=b.framePlate.geometry.parameters.shapes,frameRegion=clip.difference(clip.union(poly(frameShape.getPoints(48).map(p=>p.toArray())),poly(circle(g.retainingPivot.toArray(),.14,96))),...frameShape.holes.filter(h=>h.getPoints(8)[0].length()>.3).map(h=>poly(h.getPoints(48).map(p=>p.toArray()))),poly(circle(g.retainingPivot.toArray(),.070,96)),poly(circle([0,0],.1055,96)));b.framePlate.geometry.dispose();b.framePlate.geometry=plate(frameRegion,-.07,.07);
+ // Carrier A journals on the wheel shaft (r .105) with a .0005 running fit.
  const wheelIndex=b.wheel.userData.index;wheelIndex.geometry.dispose();wheelIndex.geometry=new T.BoxGeometry(.045,.8,.012);wheelIndex.position.set(0,-1.15,.196);
  b.framePlate.position.z=.49;b.inputLever.position.z=.70;
  const oldCoupler=b.coupler;oldCoupler.visible=false;

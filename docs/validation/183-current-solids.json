@@ -5,44 +5,36 @@
   ],
   "poses": 65,
   "sources": {
-    "factory": "5da80aa05fa432ee017d0aee85efacdffe744e005d33bc4856faffcf218c4ad5",
-    "parts": "72597021ec00c24e2fa24b30d7d6339babfd134bdd3c239d450d9106d8cb60d2",
-    "motion": "ca70d3ce7815f15f2c65bf3365aea71ae6d4f430112e163bb8bb2621c0ee6a52"
+    "factory": "2e50f54383bfea149948634775c200df74d6a73771bb8ce1cf58ea87d0659338",
+    "parts": "af043a4197d95a2651e811a612bb5d1e7b927a7590e755843b481ff6bc2c93cc",
+    "motion": "a1fc3bbf3d947dfeddc1b6a50e24b62fe3d8be376d8896e3550ac79e36618a37"
   },
   "results": {
     "183": {
-      "meshes": 20,
+      "meshes": 35,
       "worstPenetration": 0.0005486135450288128,
       "pairs": {
         "upper-handle-stud/lower-handle-lip": {
           "depth": 0.0005486135450288128,
           "time": 14.34375
         },
-        "source-width-sectioned-piston-rod/projecting-piston-rod-tappet": {
-          "depth": 1.6689300497141346e-8,
-          "time": 0
-        },
         "upper-handle-catchBoss/lower-handle-stud": {
-          "depth": 0.00008621565405691762,
-          "time": 6.1875
+          "depth": 0.0000871410690235589,
+          "time": 8.71875
         }
       }
     },
     "184": {
-      "meshes": 21,
+      "meshes": 36,
       "worstPenetration": 0.0005486135450288128,
       "pairs": {
         "upper-handle-stud/lower-handle-lip": {
           "depth": 0.0005486135450288128,
           "time": 14.34375
         },
-        "source-width-sectioned-piston-rod/projecting-piston-rod-tappet": {
-          "depth": 1.6689300497141346e-8,
-          "time": 2.25
-        },
         "upper-handle-catchBoss/lower-handle-stud": {
-          "depth": 0.00008621565405691762,
-          "time": 6.1875
+          "depth": 0.0000871410690235589,
+          "time": 8.71875
         }
       }
     }

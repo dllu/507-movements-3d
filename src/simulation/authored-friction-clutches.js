@@ -318,7 +318,8 @@ function springBiasedOverrunningPulley(movement) {
   const looseHub = new THREE.Mesh(
     annularExtrusionGeometry({
       depth: rearWebDepth,
-      innerRadius: shaftRadius + 0.055,
+      // Free on the shaft with a 0.003 running fit.
+      innerRadius: shaftRadius + 0.003,
       outerRadius: looseHubOuterRadius,
     }),
     driverMaterial,
@@ -354,7 +355,8 @@ function springBiasedOverrunningPulley(movement) {
   const carrier = new THREE.Mesh(
     lobedCarrierGeometry({
       baseRadius: carrierBaseRadius,
-      boreRadius: shaftRadius + 0.025,
+      // Keyed to the shaft: the bore is the shaft radius.
+      boreRadius: shaftRadius,
       depth: carrierDepth,
       lobeAmplitude: carrierLobeAmplitude,
       lobeCount: pivotCount,

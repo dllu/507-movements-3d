@@ -65,7 +65,8 @@ export function correctFriction280(model){
  // A real bored rod bridges the front plane of both link pins.
  b.connectingRod.visible=false;const link=mesh(root,boredPlanarLinkGeometry({length:C,width:.17,eyeRadius:.23,boreRadius:.174,depth:.16}),b.wheelDisk.material,'bored-coupler-closing-handle-to-travelling-jaw');b.finiteCoupler=link;
  replace(b.lowerLinkPin,new T.CylinderGeometry(.17,.17,1.90,48));b.lowerLinkPin.position.z=.30;
- replace(b.upperLinkPin,new T.CylinderGeometry(.15,.15,1.0,48));
+ // Both coupler eyes (bore .174) run on their pins with a small running fit.
+ replace(b.upperLinkPin,new T.CylinderGeometry(.171,.171,1.0,48));
  const ratchetCarrier=mesh(b.wheelRotor,bore(g.ratchetRootRadius,.235,.05),b.wheelDisk.material,'rear-web-carrying-backstop-ratchet');ratchetCarrier.rotation.x=Math.PI/2;ratchetCarrier.position.z=.60;b.ratchetCarrier=ratchetCarrier;
  d.stateAtTime=state;d.legacyGroundedFourBar=d.fourBar;delete d.fourBar;
  d.geometry={...g,movingJawPivotRadius:P,relativeReleaseAngle:released,shoeContactPoint:V(...tip),inputPowerAngle:power,engageJawAngle:engageAngle};

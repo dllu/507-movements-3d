@@ -19,7 +19,7 @@ test('angular coverage separates a bore from a link end short of its pin', () =>
 test('fluid roles are fluid, solid parts named after a medium are not', () => {
   for (const role of ['live-steam-in-valve-chest', 'hand-pump-reservoir-water', 'long-column-mercury-meniscus', 'water-column-in-pipe'])
     assert.ok(isFluidRole(role), role);
-  for (const role of ['plate-elevation-upstream-frame-log', 'fixed-water-wheel-horizontal-axle', 'fixed-upper-front-cutaway-steam-cylinder', 'left-air-pump-piston', 'shaft-exhaust-pipe-standing-in-water', 'float-immersed-in-mercury'])
+  for (const role of ['plate-elevation-upstream-frame-log', 'fixed-water-wheel-horizontal-axle', 'fixed-upper-front-cutaway-steam-cylinder', 'left-air-pump-piston', 'shaft-exhaust-pipe-standing-in-water', 'float-immersed-in-mercury', 'fixed-force-pump-cylinder-above-water', 'upper-left-discharge-trough-receiving-raised-water'])
     assert.ok(!isFluidRole(role), role);
 });
 

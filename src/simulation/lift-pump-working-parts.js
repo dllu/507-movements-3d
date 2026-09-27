@@ -34,6 +34,44 @@ export function portedBarrel(inner, outer, low, high, portY, portHalfHeight, sid
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
 }
 
+// Pass 80: a finite cylinder wall pierced by a ROUND side port for a pipe
+// that runs through the wall (its axis along x, on the `side` of the
+// barrel). The hole's staircase edge lies inside the pipe wall (hole radius
+// between the pipe's bore and outside radii), so the pipe seals the port
+// with no open gap round it.
+export function roundPortedBarrel(inner, outer, low, high, portY, holeRadius, side, n = 192) {
+  const levels = [low];
+  const y0 = portY - holeRadius - .03, y1 = portY + holeRadius + .03, rows = Math.ceil((y1 - y0) / .0125);
+  for (let k = 0; k <= rows; k++) levels.push(y0 + (y1 - y0) * k / rows);
+  levels.push(high);
+  const rows2 = levels.length - 1, mid = (inner + outer) / 2;
+  const active = (i,j) => {
+    if (j < 0 || j >= rows2) return false;
+    const theta = (((i % n) + n) % n + .5) * 2 * Math.PI / n, y = (levels[j] + levels[j + 1]) / 2;
+    return !(Math.cos(theta) * side > 0 && (mid * Math.sin(theta)) ** 2 + (y - portY) ** 2 < holeRadius ** 2);
+  };
+  const point = (r,y,i) => new THREE.Vector3(r*Math.cos(i*2*Math.PI/n),y,r*Math.sin(i*2*Math.PI/n));
+  const positions = [];
+  const face = (p, normal) => {
+    const cross = p[1].clone().sub(p[0]).cross(p[2].clone().sub(p[0]));
+    if(cross.dot(normal)<0)p.reverse();
+    for(const k of [0,1,2,0,2,3])positions.push(...p[k].toArray());
+  };
+  for(let j=0;j<rows2;j++)for(let i=0;i<n;i++)if(active(i,j)) {
+    const a=levels[j],b=levels[j+1],theta=(i+.5)*2*Math.PI/n;
+    for(const [r,sign] of [[outer,1],[inner,-1]])face([
+      point(r,a,i),point(r,a,i+1),point(r,b,i+1),point(r,b,i),
+    ],new THREE.Vector3(sign*Math.cos(theta),0,sign*Math.sin(theta)));
+    for(const [next,y,sign] of [[j-1,a,-1],[j+1,b,1]])if(!active(i,next))face([
+      point(inner,y,i),point(outer,y,i),point(outer,y,i+1),point(inner,y,i+1),
+    ],new THREE.Vector3(0,sign,0));
+    for(const [next,k,sign] of [[i-1,i,-1],[i+1,i+1,1]])if(!active(next,j))face([
+      point(inner,a,k),point(outer,a,k),point(outer,b,k),point(inner,b,k),
+    ],new THREE.Vector3(-sign*Math.sin(k*2*Math.PI/n),0,sign*Math.cos(k*2*Math.PI/n)));
+  }
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));g.computeVertexNormals();return g;
+}
+
 // Brown's clack valve: a flat plate with a raised dome, hinged at one edge.
 // `side` is +1 when the plate runs toward +x from its hinge. The pin, a bored
 // lug on the plate and two journals standing on the seat make the hinge; the
@@ -70,7 +108,10 @@ export function correctLiftPumpParts(root, id) {
   for(const o of root.children)if(o.userData.role?.includes('source-water') ||
     (!o.userData.role && o.geometry?.type==='TorusGeometry' && o.position.y < -1.8))o.visible=false;
   const shellBottom=modern?-1.37:-1.39,shellTop=modern?2.03:2.53;
-  replace(b.barrel,portedBarrel(.70,.78,shellBottom,shellTop,modern?1.48:2.18,modern?.34:.30,modern?1:-1));
+  // Pass 80: 449's rising main passes through a round port that it fills
+  // (0.24 bore, 0.30 outside), where a larger square port left a gap round it.
+  replace(b.barrel,modern?roundPortedBarrel(.70,.78,shellBottom,shellTop,1.487,.27,1)
+    :portedBarrel(.70,.78,shellBottom,shellTop,2.18,.30,-1));
   b.barrel.position.y=0;
   const p=b.suctionPipe.geometry.parameters;
   replace(b.suctionPipe,horizontalTurned([

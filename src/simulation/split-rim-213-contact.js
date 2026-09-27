@@ -58,8 +58,10 @@ export function finishSplitRim213(root,legacyUpdate){
  // The display loop opens at Brown's pose (third index in progress, slot at the
  // top, the pin between the middle teeth); state queries keep phase time.
  d.displayTimeOffset=d.canonicalTimes.sourcePose;
- // The static friction band reads as Brown's single inner circle, not a brass ring.
- b.frictionBand.material=b.frictionDrum.material;
+ // The fixed stud fills the displayed ring's bore (0.002 friction fit), so the
+ // split ring visibly grips it and reads as Brown's single inner circle.
+ {const r=innerR-.002,p=b.frictionDrum.geometry.parameters;b.frictionDrum.geometry.dispose();
+  b.frictionDrum.geometry=new THREE.CylinderGeometry(r,r,p.height,128);}
  const update=displayTime=>{const time=displayTime+d.displayTimeOffset;legacyUpdate(time);const s=d.stateAtTime(time);b.stopWheel.userData.rotor.rotation.z=s.stopWheelAngle;b.stopWheel.userData.angularSpeed=s.stopWheelAngularSpeed;b.activeContactMarker.visible=s.engagement.active;if(s.engagement.active){b.activeContactMarker.position.x=s.engagement.contactPoint.x;b.activeContactMarker.position.y=s.engagement.contactPoint.y;}d.contacts.facePinTooth=s.engagement.active?s.engagement:null;d.kinematics=s;};
  markShadows(root);d.fidelity='authored';update(0);return{root,update,cameraDirection:new THREE.Vector3(.2,.15,15)};
 }

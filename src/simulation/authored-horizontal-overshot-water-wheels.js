@@ -59,12 +59,13 @@ function horizontalOvershotWaterWheel(movement) {
   // Brown draws about sixteen narrow boards.
   const bladeCount = 16;
   const bladePitch = FULL_TURN / bladeCount;
-  const bladeInnerRadius = 0.54;
+  const bladeInnerRadius = 0.52;
   const bladeOuterRadius = 2.72;
   const bladeCenterRadius = (bladeInnerRadius + bladeOuterRadius) / 2;
   const bladeRadialLength = bladeOuterRadius - bladeInnerRadius;
   const sourcePoseBladeOffset = 0;
-  const hubRadius = 0.48;
+  // Pass 80: the hub fills the support ring and the boards butt on it.
+  const hubRadius = 0.52;
   const shaftRadius = 0.19;
   // Pass 70: the runner turns clockwise seen from above (spin -1 about +y).
   // The jet strikes the right-hand floats a little in front of the shaft,

@@ -164,7 +164,10 @@ export function correctEjectorTrapParts(root,id,update) {
     replace(b.outletPipeB,horizontalRing(.68,.76,-.725,.725,64));
     // The conical shoulder reaches a conformal finite seat at the existing
     // maximum prescribed lift. It previously missed the toroidal seat entirely.
-    replace(b.annularSeat,horizontalTurned([[1.10,.90],[1.70,.74],[1.70,.48],[1.50,.48],[1.10,.80]]));b.annularSeat.position.y=0;b.annularSeat.rotation.set(0,0,0);
+    // Pass 80: the seat's outer flank runs on up to the cover's bore edge
+    // (0.745 at its underside, y 1.78), so a a is cast on at inlet A (it
+    // stood 0.08 clear); its working cone and 0.48 throat are unchanged.
+    replace(b.annularSeat,horizontalTurned([[1.10,.90],[1.78,.745],[1.78,.48],[1.50,.48],[1.10,.80]]));b.annularSeat.position.y=0;b.annularSeat.rotation.set(0,0,0);
     // Brown's D: a slender hollow stem closed at the top, the collar a a that
     // closes on the seat, a narrow waist (the letter D) and a dished foot
     // flaring out to the flange that clamps the diaphragm. The seat-closing

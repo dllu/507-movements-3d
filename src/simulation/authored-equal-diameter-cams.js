@@ -61,7 +61,8 @@ function makeRoller({
   rotor.userData.role = `${role}-free-rolling-rotor`;
   roller.add(rotor);
 
-  const tread = new THREE.Mesh(ring(radius * 0.4, radius, -depth / 2, depth / 2, 96), drivenMaterial);
+  // The tread runs on its axle (radius * 0.34) with a small running fit.
+  const tread = new THREE.Mesh(ring(radius * 0.35, radius, -depth / 2, depth / 2, 96), drivenMaterial);
   tread.userData.role = `${role}-tread`;
   rotor.add(tread);
 
