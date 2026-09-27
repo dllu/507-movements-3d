@@ -117,7 +117,7 @@ test('movement 453 source record distinguishes Brown evidence from reconstructed
     false,
   );
   assert.match(dynamics.checkValveModel,
-    /suction check opens only while its volume increases.*delivery check.*decreases/);
+    /suction flap.*opens only while its bellows expands.*discharge flap.*opens only while its bellows compresses/);
   assert.match(dynamics.flowModel,
     /exactly opposite vertical plate velocities.*suction flow exactly equals.*delivery flow/);
   assert.equal(plate.imageWidth, 525);
@@ -317,11 +317,11 @@ test('movement 453 beam, pin, and bellows kinematics are smooth and analytically
   disposeModel(model.root);
 });
 
-test('movement 453 update maps every dependent transform while the chest, standard, pivot, and bottom plates stay fixed', () => {
+test('movement 453 update maps every dependent transform while the chest, channel, post, pivot and flap hinges stay fixed', () => {
   const model = createMovementModel(catalog.movements[452]);
   const { blocks, geometry, stateAtTime, update } = model.root.userData;
   const fixedBlocks = [blocks.base, blocks.valveChest, blocks.standard,
-    blocks.pivotAxle, blocks.leftBottomPlate, blocks.rightBottomPlate,
+    blocks.pivotAxle, blocks.chestBottom, blocks.chestPartitions, blocks.suctionChannel,
     blocks.leftSuctionValve, blocks.rightSuctionValve,
     blocks.leftDeliveryValve, blocks.rightDeliveryValve];
   const fixedPositions = fixedBlocks.map((block) => block.position.clone());
@@ -343,22 +343,18 @@ test('movement 453 update maps every dependent transform while the chest, standa
     near(blocks.rightConnectingRod.scale.y,
       geometry.connectingRodLength, 4e-16,
     `right displayed rod length at ${phase}`);
-    near(blocks.leftSuctionValve.userData.disk.position.y,
-      blocks.leftSuctionValve.userData.closedDiskY
-        + state.leftSuctionValveLift,
-    0, `left suction disk at ${phase}`);
-    near(blocks.leftDeliveryValve.userData.disk.position.y,
-      blocks.leftDeliveryValve.userData.closedDiskY
-        + state.leftDeliveryValveLift,
-    0, `left delivery disk at ${phase}`);
-    near(blocks.rightSuctionValve.userData.disk.position.y,
-      blocks.rightSuctionValve.userData.closedDiskY
-        + state.rightSuctionValveLift,
-    0, `right suction disk at ${phase}`);
-    near(blocks.rightDeliveryValve.userData.disk.position.y,
-      blocks.rightDeliveryValve.userData.closedDiskY
-        + state.rightDeliveryValveLift,
-    0, `right delivery disk at ${phase}`);
+    near(blocks.leftSuctionValve.rotation.z,
+      blocks.leftSuctionValve.userData.sign * geometry.maximumFlapAngle * state.leftSuctionValveOpen,
+    0, `left suction flap at ${phase}`);
+    near(blocks.leftDeliveryValve.rotation.z,
+      blocks.leftDeliveryValve.userData.sign * geometry.maximumFlapAngle * state.leftDeliveryValveOpen,
+    0, `left delivery flap at ${phase}`);
+    near(blocks.rightSuctionValve.rotation.z,
+      blocks.rightSuctionValve.userData.sign * geometry.maximumFlapAngle * state.rightSuctionValveOpen,
+    0, `right suction flap at ${phase}`);
+    near(blocks.rightDeliveryValve.rotation.z,
+      blocks.rightDeliveryValve.userData.sign * geometry.maximumFlapAngle * state.rightDeliveryValveOpen,
+    0, `right delivery flap at ${phase}`);
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
       fixedPositions[index],
@@ -392,4 +388,35 @@ test('movement 453 produces finite render bounds and movement 507 remains the ne
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model453.root);
   disposeModel(model507.root);
+});
+
+test('movement 453 closed flaps lap Brown’s channel mouths and partition ports and open into the right chambers', () => {
+  const model = createMovementModel(catalog.movements[452]);
+  const { blocks, geometry, update } = model.root.userData;
+  const c = geometry.chest;
+  update(0);
+  model.root.updateMatrixWorld(true);
+  for (const [key, side] of [['leftSuctionValve', -1], ['rightSuctionValve', 1]]) {
+    const box = new THREE.Box3().setFromObject(blocks[key].userData.disk);
+    near(box.min.y, c.floorHigh, 1e-6, `${key} rests on the floor`);
+    assert.ok(Math.min(Math.abs(box.min.x), Math.abs(box.max.x)) < c.mouthInner - 0.04, `${key} laps the inner edge`);
+    assert.ok(Math.max(Math.abs(box.min.x), Math.abs(box.max.x)) > c.mouthOuter + 0.04, `${key} laps the outer edge`);
+    // The section removes the front half; the back half shows the lap.
+    assert.ok(box.min.z < -c.channelDepth - 0.04, `${key} laps the depth`);
+    assert.equal(Math.sign((box.min.x + box.max.x) / 2), side);
+  }
+  for (const [key, side] of [['leftDeliveryValve', -1], ['rightDeliveryValve', 1]]) {
+    const box = new THREE.Box3().setFromObject(blocks[key].userData.disk);
+    near(side < 0 ? box.min.x : -box.max.x, -c.partitionInner, 1e-6, `${key} lies on the partition face`);
+    assert.ok(box.min.y < c.portLow - 0.04 && box.max.y > c.portHigh + 0.04, `${key} laps the port height`);
+    assert.ok(box.min.z < -c.portDepth - 0.04, `${key} laps the port depth`);
+  }
+  // Opening swings each flap away from its seat into the flow.
+  update(geometry.cycleDuration * 0.25);
+  model.root.updateMatrixWorld(true);
+  const leftDelivery = new THREE.Box3().setFromObject(blocks.leftDeliveryValve.userData.disk);
+  const rightSuction = new THREE.Box3().setFromObject(blocks.rightSuctionValve.userData.disk);
+  assert.ok(leftDelivery.max.x > -c.partitionInner + 0.2, 'left discharge flap swings into the central chamber');
+  assert.ok(rightSuction.max.y > c.floorHigh + 0.2, 'right suction flap lifts off its mouth');
+  disposeModel(model.root);
 });

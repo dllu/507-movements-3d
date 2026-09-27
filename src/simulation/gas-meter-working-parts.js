@@ -70,7 +70,7 @@ export function correctGasMeterParts(root,id,update) {
   b.leverStand=add(root,plate(stand,-.06,.06),b.housingFloor.material,'finite-bored-regulator-fulcrum-stand');b.leverStand.position.copy(g.leverPivot);b.leverStand.position.z=.55;
  } else if(id===483){
   replace(b.housingShell,new THREE.BoxGeometry(6.18,5.08,.08));b.housingShell.position.z=-1.25;
-  replace(b.roof,horizontalPlate(clip.difference(rect(3.175,1.29),poly(circle([0,.46],.205,64))),-.10,.10));
+  replace(b.roof,horizontalPlate(clip.difference(rect(3.175,1.29),poly(circle([0,.46],.205,64)),poly(circle([-2.45,.35],.205,64))),-.10,.10));
   const holes=[slot([-1.94,-.61],[1.94,-.61],.10)];
   for(const tube of[b.inletTube,b.leftBranchTube,b.rightBranchTube,b.outletTube])replace(tube.mesh,curvedPipeWall(tube.curve,tube===b.inletTube||tube===b.outletTube?.14:.11,tube===b.inletTube||tube===b.outletTube?.20:.16,72,24));
   for(const[tube,side,port]of[[b.leftBranchTube,-1,-.76],[b.rightBranchTube,1,.76]]){
@@ -85,23 +85,39 @@ export function correctGasMeterParts(root,id,update) {
    elbow.userData.role='fixed-branch-elbow-fitting';tube.mesh.parent.add(elbow);
    const crossing=tube.curve.getPoints(120).filter(p=>p.y>.64&&p.y<1.17);for(const p of crossing)holes.push(poly(circle([p.x,-p.z],.18,32)));
   }
-  holes.push(slot([0,.10],[0,-1.5],.23));
+  // Pass 70: the common outlet no longer runs forward through the floor and
+  // out of the open case front (the crosshead bar slid through it). The
+  // exhaust leaves the central port through a passage cored in the seat
+  // block (Brown's thick board) to the foot of his tall left column, which
+  // stands on the board and rises through the roof.
+  {const path=new THREE.LineCurve3(new THREE.Vector3(-2.45,1.18,-.35),new THREE.Vector3(-2.45,3.40,-.35));
+   b.outletTube.curve=path;replace(b.outletTube.mesh,curvedPipeWall(path,.14,.20,8,40));}
   replace(b.galleryFloor,horizontalPlate(clip.difference(rect(2.96,1.11),...holes),-.065,.065));
   for(const p of[b.leftFixedPlate,b.rightFixedPlate])replace(p,plate(clip.difference(rect(.67,1.24),poly(circle([0,0],.24,64))),-.08,.08).rotateY(Math.PI/2));
-  replace(b.valvePortPlate,horizontalPlate(clip.difference(rect(1.125,.58),...[-.76,0,.76].map(x=>poly(circle([x,0],.16,64)))),-.07,.07));
+  // The seat block is Brown's thick board: it stands on the floor (y .975-1.18),
+  // carries the chest walls, and runs left under the outlet column. Its top
+  // layer carries the three ports; its lower layer is cored with the exhaust
+  // passage from the central port to the foot of the column.
+  {const outline=poly([[-2.70,-.50],[1.26,-.50],[1.26,.58],[-2.70,.58]]),ports=[-.76,0,.76].map(x=>poly(circle([x,0],.16,64)));
+   const passage=clip.union(poly(circle([0,0],.16,64)),slot([0,0],[0,.35],.09),slot([0,.35],[-2.45,.35],.09),poly(circle([-2.45,.35],.14,64)));
+   const top=horizontalPlate(clip.difference(outline,...ports,poly(circle([-2.45,.35],.14,64))),.021,.07),low=horizontalPlate(clip.difference(outline,ports[0],ports[2],passage),-.135,.02);
+   replace(b.valvePortPlate,mergePassageParts([top,low]));}
   for(const p of b.valvePorts){replace(p,horizontalRing(.13,.16,-.08,.08,48));p.position.y=1.10;}
   replace(b.valveBTop,new THREE.BoxGeometry(1.32,.16,.82));
   for(let i=0;i<2;i++){const p=b.valveBSkirts[i];replace(p,new THREE.BoxGeometry(.12,.33,.82));p.position.set(i? .60:-.60,.105,0);}
   b.valveCrossSkirts=[];for(const z of[-.35,.35]){const p=add(b.valveB,new THREE.BoxGeometry(1.08,.33,.12),b.valveBTop.material,'finite-front-or-rear-D-valve-skirt');p.position.set(0,.105,z);b.valveCrossSkirts.push(p);}
   replace(b.exhaustCavity,new THREE.BoxGeometry(1.04,.30,.56));b.exhaustCavity.position.y=.10;
-  replace(b.valveChest,mergePassageParts([new THREE.BoxGeometry(.08,.92,1.34).translate(-1.22,0,0),new THREE.BoxGeometry(.08,.92,1.34).translate(1.22,0,0),plate(clip.difference(rect(1.18,.46),slot([0,.20],[0,.60],.24)),-.67,-.59),new THREE.BoxGeometry(2.36,.92,.08).translate(0,0,.77),horizontalPlate(clip.difference(rect(1.26,.81),slot([-.47,-.42],[.47,-.42],.065),slot([-.42,-.58],[.42,-.58],.11),poly(circle([0,.41],.23,64))),.38,.46)]));
-  for(const p of b.valveGuides){replace(p,slottedGuide(1.45,.22,0,0,.45,.064,.08));p.position.z=.42;}
+  replace(b.valveChest,mergePassageParts([new THREE.BoxGeometry(.08,.89,1.34).translate(-1.22,.015,0),new THREE.BoxGeometry(.08,.89,1.34).translate(1.22,.015,0),plate(clip.difference(rect(1.18,.46),slot([0,.20],[0,.60],.24)),-.67,-.59),new THREE.BoxGeometry(2.36,.92,.08).translate(0,0,.77),horizontalPlate(clip.difference(rect(1.26,.81),slot([-.16,-.33],[.16,-.33],.21),poly(circle([0,.41],.23,64))),.38,.46)]));
+  // Pass 70: stem, slot plate and rocker stand in three planes (z .20, .33,
+  // .45) so the arm and its pin never cross the stem, tie or guides.
+  for(const p of b.valveGuides){replace(p,slottedGuide(1.45,.16,0,0,.45,.064,.08));p.position.z=.20;}
+  b.valveBStem.position.z=.20;
   const pivot=b.rockerFulcrum.position;
   replace(b.rockerArm,plate(clip.difference(clip.union(slot([0,-g.valveRockerArmSceneUnit],[0,0],.09),poly(circle([0,0],.19,64))),poly(circle([0,0],.134,64)),poly(circle([0,-g.valveRockerArmSceneUnit],.054,48))),-.06,.06));b.rockerArm.position.set(0,0,0);
   b.valveRockerConnector.visible=false;
-  b.rockerPin=add(b.valveRocker,new THREE.CylinderGeometry(.05,.05,.40,40),b.rockerFulcrum.material,'finite-rocker-tip-pin-in-valve-stem-slot');b.rockerPin.rotation.x=Math.PI/2;b.rockerPin.position.y=-g.valveRockerArmSceneUnit;
-  b.stemSlot=add(b.valveB,plate(clip.difference(rect(.10,.30),slot([0,-.21],[0,.16],.054)),-.04,.04),b.valveBTop.material,'finite-vertical-lost-motion-slot-on-valve-stem');b.stemSlot.position.set(0,.72,.58);
-  b.stemSlotTie=add(b.valveB,new THREE.CylinderGeometry(.03,.03,.20,32),b.valveBTop.material,'rigid-stem-to-lost-motion-slot-tie');b.stemSlotTie.rotation.x=Math.PI/2;b.stemSlotTie.position.set(0,.98,.50);
+  b.rockerPin=add(b.valveRocker,new THREE.CylinderGeometry(.05,.05,.27,40),b.rockerFulcrum.material,'finite-rocker-tip-pin-in-valve-stem-slot');b.rockerPin.rotation.x=Math.PI/2;b.rockerPin.position.set(0,-g.valveRockerArmSceneUnit,-.025);
+  b.stemSlot=add(b.valveB,plate(clip.difference(rect(.10,.30),slot([0,-.21],[0,.16],.054)),-.04,.04),b.valveBTop.material,'finite-vertical-lost-motion-slot-on-valve-stem');b.stemSlot.position.set(0,.72,.33);
+  b.stemSlotTie=add(b.valveB,new THREE.CylinderGeometry(.03,.03,.09,32),b.valveBTop.material,'rigid-stem-to-lost-motion-slot-tie');b.stemSlotTie.rotation.x=Math.PI/2;b.stemSlotTie.position.set(0,.98,.265);
   replace(b.outletFlange,horizontalRing(.14,.31,-.16,.16,64));
   const stand=clip.difference(clip.union(slot([0,-1.54],[0,0],.09),poly(circle([0,0],.19,64))),poly(circle([0,0],.134,64)));
   b.rockerStand=add(root,plate(stand,-.06,.06),b.base.material,'finite-rear-stand-for-meter-rocker');b.rockerStand.position.set(0,pivot.y,-.82);

@@ -14,7 +14,9 @@ for(const id of [448,449])test(`${id} finite bucket, valve, rod and fixed-wall i
     [b.deliveryFlap,b.deliveryFlapSeat],[b.deliveryFlap,b.deliveryBell],
     [b.deliveryFlap,b.deliveryPipe],[b.deliveryFlap,b.flapHinge],[b.flapLug,b.flapHinge],
     [b.flapLug,b.deliveryFlapSeat],[b.flapLug,b.deliveryBell],
-    ...b.flapBearings.flatMap(o=>[[b.flapHinge,o],[b.flapLug,o],[b.deliveryFlap,o]]));
+    ...b.flapBearings.flatMap(o=>[[b.flapHinge,o],[b.flapLug,o],[b.deliveryFlap,o]]),
+    [b.footFlapLug,b.footValveSeat],[b.footFlapLug,b.barrel],[b.footValveDisk,b.barrel],[b.footFlapHinge,b.footValveSeat],
+    ...b.footFlapBearings.flatMap(o=>[[b.footFlapHinge,o],[b.footFlapLug,o],[b.footValveDisk,o]]));
   else pairs.push([b.connectingRod,b.barrel],[b.connectingRod,b.yoke],
     [b.lever.children[1],b.leverSupport],[b.lever.children[2],b.connectingRod],[b.jointPin,b.connectingRod]);
   const data=pairs.map(([moving,fixed])=>({moving,fixed,points:surfacePoints(moving.geometry),surface:solidSurface(fixed.geometry)}));
@@ -30,6 +32,14 @@ for(const id of [448,449])test(`${id} finite bucket, valve, rod and fixed-wall i
     }
   }
   assert.equal(d.hideGround,true);assert.equal(d.animationTiming.targetCycleDuration,d.geometry.cycleDuration);
+  if(id===449){
+    // Pass 70: the closed lower flap lies flat on its seat ring and laps the bore.
+    model.update(d.geometry.cycleDuration*.5);model.root.updateMatrixWorld(true);
+    assert.equal(b.footFlapPivot.rotation.z,0);
+    const flap=new THREE.Box3().setFromObject(b.footValveDisk),seat=new THREE.Box3().setFromObject(b.footValveSeat);
+    assert.ok(Math.abs(flap.min.y-seat.max.y)<1e-6,'closed flap seats on the ring');
+    assert.ok(flap.min.x<-.32-.05&&flap.max.x>.32+.05,'flap laps the bore');
+  }
 });
 
 for(const id of [448,449])test(`${id} water passages are open through the rendered barrel and valve seats`,()=>{

@@ -13843,11 +13843,11 @@
       "id": 370,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-68 lane, integrated by primary agent",
-        "reviewPass": 68,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p68-review.md",
-        "note": "Pass 68: The mirror sits a little higher on the bar than Brown's."
+        "evidence": "docs/p70-b-review.md",
+        "note": "Pass 70: Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13863,7 +13863,8 @@
         "docs/pass53-user-review.md",
         "docs/p54-marks-review.md",
         "docs/p67-mech-review.md",
-        "docs/p68-review.md"
+        "docs/p68-review.md",
+        "docs/p70-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13871,8 +13872,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The mirror sits a little higher on the bar than Brown's.",
-      "limits": "Mirror and ratchet behind the bar as drawn; indexing and the carrier stroke are prescribed; the telescoping follower is illustrative; no polishing load.",
+      "visibleFlaws": "Relative to the rails the mirror still sits somewhat higher than Brown's (0.59 of the way down the bar against 0.73).",
+      "limits": "Mirror and ratchet behind the bar as drawn; indexing and the carrier stroke are prescribed; the telescoping follower is illustrative; no polishing load. The mirror axle crosses the rail's depth, which bounds the mirror's position.",
       "assessment": "minor"
     },
     {
@@ -14560,11 +14561,11 @@
       "id": 389,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-pawls-review.md",
-        "note": "Pass 69: The upper stop sits one tooth higher than drawn, and the eccentric's throw is 20 px against Brown's 14 (both needed for the full ratchet stroke)."
+        "evidence": "docs/p70-b-review.md",
+        "note": "Pass 70: The upper stop sits one tooth higher than drawn, and the eccentric's throw is 18.7 px against Brown's 14 (both forced by the full ratchet stroke with Brown's 12 px teeth)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14584,7 +14585,8 @@
         "docs/p55-geo-b-review.md",
         "docs/p60-loops-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-pawls-review.md"
+        "docs/p69-pawls-review.md",
+        "docs/p70-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14592,7 +14594,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The upper stop sits one tooth higher than drawn, and the eccentric's throw is 20 px against Brown's 14 (both needed for the full ratchet stroke).",
+      "visibleFlaws": "The upper stop sits one tooth higher than drawn, and the eccentric's throw is 18.7 px against Brown's 14 (both forced by the full ratchet stroke with Brown's 12 px teeth).",
       "limits": "Both curved pawls seat fully in the tooth roots on every engagement. Minimal undrawn rear spine and bridges carry the two fixed pins; the eccentric rocks over half a turn; lowering is the lifting played backward, with the stop held off by hand.",
       "assessment": "minor"
     },
@@ -14954,11 +14956,11 @@
       "id": 399,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-misc-review.md",
-        "note": "Pass 69: At the loose starting pose the two nuts sit at different heights (they level only when tightened), where Brown draws them level."
+        "evidence": "docs/p70-b-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14974,7 +14976,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/pass53-user-review.md",
-        "docs/p69-misc-review.md"
+        "docs/p69-misc-review.md",
+        "docs/p70-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14982,9 +14985,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "At the loose starting pose the two nuts sit at different heights (they level only when tightened), where Brown draws them level.",
+      "visibleFlaws": "",
       "limits": "Adjustment motion prescribed; screw preload, tensile capacity, friction and load transfer through the chain link unvalidated.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 400,
@@ -15068,11 +15071,11 @@
       "id": 402,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-pawls-review.md",
-        "note": "Pass 69: The bar from the pivot toward the wheel hub, drawn partly hidden behind the wheel, is not modelled."
+        "evidence": "docs/p70-b-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15089,7 +15092,8 @@
         "docs/pass53-user-review.md",
         "docs/p56-d-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-pawls-review.md"
+        "docs/p69-pawls-review.md",
+        "docs/p70-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15097,9 +15101,9 @@
         "note": "Baked pallet geometry and prescribed motion; rejected geometric continuation was not MuJoCo."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The bar from the pivot toward the wheel hub, drawn partly hidden behind the wheel, is not modelled.",
-      "limits": "Wheel and anchor are single plates in one plane; the wheel's motion is baked from pallet contact (lock, impulse, drop); lever and balance timing prescribed; the lower pallet recoils slightly.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Wheel and anchor are single plates in one plane; the drawn bar is read as a fixed bridge carrying both arbors (see-through); wheel motion baked from pallet contact; lever and balance timing prescribed; the lower pallet recoils slightly.",
+      "assessment": "reasonable"
     },
     {
       "id": 403,
@@ -15437,11 +15441,11 @@
       "id": 412,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-pawls-review.md",
-        "note": "Pass 69: The pawl eye pins stand as short stubs because the drumhead is omitted."
+        "evidence": "docs/p70-b-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15458,7 +15462,8 @@
         "docs/m6-402-507-review.md",
         "docs/p64-audit-review.md",
         "docs/pass53-user-review.md",
-        "docs/p69-pawls-review.md"
+        "docs/p69-pawls-review.md",
+        "docs/p70-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15466,9 +15471,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The pawl eye pins stand as short stubs because the drumhead is omitted.",
-      "limits": "Six notches in the outer rim with separate top and bottom pawls locking it both ways; mode changes prescribed at rest.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Drumhead (carrier of the pawls) omitted as in Brown's plan; the pawl pins end flush in their eyes. Six notches; top and bottom pawls lock both ways; mode changes prescribed at rest.",
+      "assessment": "reasonable"
     },
     {
       "id": 413,
@@ -15547,11 +15552,11 @@
       "id": 415,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-gears-review.md",
-        "note": "Pass 69: Brown's pawls lie flatter than the model's, and the wheel is still the older thick dark disc."
+        "evidence": "docs/p70-b-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15570,7 +15575,8 @@
         "docs/p57-d-review.md",
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-gears-review.md"
+        "docs/p69-gears-review.md",
+        "docs/p70-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15578,9 +15584,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown's pawls lie flatter than the model's, and the wheel is still the older thick dark disc.",
-      "limits": "Crank E is Brown's bent Z-crank turning half a turn to switch pawls; selection is prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Crank E is Brown's bent Z-crank turning half a turn to switch pawls; selection prescribed; nearly radial pawls clear the rim by 0.054 when lifted.",
+      "assessment": "reasonable"
     },
     {
       "id": 416,
@@ -16121,11 +16127,11 @@
       "id": 430,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-water-review.md",
-        "note": "Pass 69: The falling spill is thinner in side view than Brown's broad spray."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16144,7 +16150,8 @@
         "docs/p56-d-review.md",
         "docs/p64-fix-c1-review.md",
         "docs/p66-audit-review.md",
-        "docs/p69-water-review.md"
+        "docs/p69-water-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16152,9 +16159,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The falling spill is thinner in side view than Brown's broad spray.",
-      "limits": "Bent, slanted buckets measured from the plate; illustrative water, not a conserved volume; torque, losses and speed are prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Bent, slanted buckets measured from the plate; the spill is one broad sheet hugging the rim; illustrative water, not a conserved volume; torque, losses and speed are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 431,
@@ -16234,11 +16241,11 @@
       "id": 433,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-water-review.md",
-        "note": "Pass 69: The shed water falls under the left and front of the runner, where Brown's is under the right and front."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16259,7 +16266,8 @@
         "docs/p57-d-review.md",
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-water-review.md"
+        "docs/p69-water-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16267,19 +16275,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The shed water falls under the left and front of the runner, where Brown's is under the right and front.",
-      "limits": "One continuous stream from the spout to the floats (shared water-stream helper); prescribed jet, no solved flow.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The runner turns clockwise from above so the broken water falls under the right and front as drawn; the jet slants 35° off the boards' motion; the passing boards sweep through the falling spray; prescribed jet, no solved flow.",
+      "assessment": "reasonable"
     },
     {
       "id": 434,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-water-review.md",
-        "note": "Pass 69: The passage water sheets soften the vane edges a little in plan."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16295,7 +16303,8 @@
         "docs/p53-fix-d-review.md",
         "docs/p54-water-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-water-review.md"
+        "docs/p69-water-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16303,19 +16312,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The passage water sheets soften the vane edges a little in plan.",
-      "limits": "Brown's 8 guides and 18 buckets curving opposite ways; prescribed flow and speed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Brown's 8 guides and 18 buckets curving opposite ways; passage sheets sit below the vane tops; prescribed flow and speed.",
+      "assessment": "reasonable"
     },
     {
       "id": 435,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-water-review.md",
-        "note": "Pass 69: The passage water sheets soften the vane edges a little in plan."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16332,7 +16341,8 @@
         "docs/p54-water-review.md",
         "docs/p55-water-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-water-review.md"
+        "docs/p69-water-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16340,19 +16350,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The passage water sheets soften the vane edges a little in plan.",
-      "limits": "Guide curvature and radii per the plate; prescribed flow.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Guide curvature and radii per the plate; the four passages over the support arms end at the eye with no fall; prescribed flow.",
+      "assessment": "reasonable"
     },
     {
       "id": 436,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-water-review.md",
-        "note": "Pass 69: The casing corner rings and the vane-row edge rings remain."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16372,7 +16382,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-water-review.md"
+        "docs/p69-water-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16380,9 +16391,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The casing corner rings and the vane-row edge rings remain.",
+      "visibleFlaws": "",
       "limits": "Helical guides and runner blades bending opposite ways (16 and 28); the runner turns counter-clockwise from above as the drawn blades require; the chute is open; prescribed flow; torque sign and whirl are diagnostics only.",
-      "assessment": "minor"
+      "assessment": "reasonable"
     },
     {
       "id": 437,
@@ -16506,11 +16517,11 @@
       "id": 440,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w1-review.md",
-        "note": "Pass 69: From the plate's camera the water in the raised half is hidden behind its tall wedge walls; in far and rotated views the flume's upper end ends in free space (Brown breaks it off)."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: In wide or rotated views the flume's upper end ends in free space (Brown breaks it off)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16529,7 +16540,8 @@
         "docs/p56-d-review.md",
         "docs/p60-supports-review.md",
         "docs/p62-supports-b-review.md",
-        "docs/p69-w1-review.md"
+        "docs/p69-w1-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16537,8 +16549,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "From the plate's camera the water in the raised half is hidden behind its tall wedge walls; in far and rotated views the flume's upper end ends in free space (Brown breaks it off).",
-      "limits": "Tipping threshold, timing and water load are prescribed.",
+      "visibleFlaws": "In wide or rotated views the flume's upper end ends in free space (Brown breaks it off).",
+      "limits": "The camera shows the water in the raised half through each fill; tipping threshold, timing and water load are prescribed.",
       "assessment": "minor"
     },
     {
@@ -16586,11 +16598,11 @@
       "id": 442,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w1-review.md",
-        "note": "Pass 69: The pour from the top pot into the trough is a short drop and barely reads."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16609,7 +16621,8 @@
         "docs/pass53-user-review.md",
         "docs/p54-water-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w1-review.md"
+        "docs/p69-w1-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16617,9 +16630,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The pour from the top pot into the trough is a short drop and barely reads.",
-      "limits": "Pot filling and wheel speed are prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The trough is at Brown's height and each pour is a visible sheet; pot filling and wheel speed are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 443,
@@ -16671,11 +16684,11 @@
       "id": 444,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w2-review.md",
-        "note": "Pass 69: The ram body, trough and head box are simplified boxes; the tail water also tints the inside of the sectioned neck."
+        "evidence": "docs/p70-a-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16695,7 +16708,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-water-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w2-review.md"
+        "docs/p69-w2-review.md",
+        "docs/p70-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16703,9 +16717,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The ram body, trough and head box are simplified boxes; the tail water also tints the inside of the sectioned neck.",
-      "limits": "Valve timing, hammer pressure and air compression are prescribed (mass-balanced); no tank outflow is drawn.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Valve timing, hammer pressure and air compression are prescribed (mass-balanced); the tank's outflow channel is not drawn.",
+      "assessment": "reasonable"
     },
     {
       "id": 445,
@@ -16832,11 +16846,11 @@
       "id": 448,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w2-review.md",
-        "note": "Pass 69: Brown's wider pump head is drawn as the plain barrel."
+        "evidence": "docs/p70-a-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16853,7 +16867,8 @@
         "docs/p55-water-review.md",
         "docs/p57-d-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w2-review.md"
+        "docs/p69-w2-review.md",
+        "docs/p70-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16861,19 +16876,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown's wider pump head is drawn as the plain barrel.",
-      "limits": "Primed incompressible volume model; check lifts prescribed; the spout stream thins and fades with the flow.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Primed volume model; check lifts prescribed; the head water level is fixed; the spout stream thins and fades with the flow.",
+      "assessment": "reasonable"
     },
     {
       "id": 449,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w2-review.md",
-        "note": "Pass 69: The lower check is a lifting disk where Brown draws a hinged flap."
+        "evidence": "docs/p70-a-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16890,7 +16905,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p57-d-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w2-review.md"
+        "docs/p69-w2-review.md",
+        "docs/p70-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16898,9 +16914,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The lower check is a lifting disk where Brown draws a hinged flap.",
-      "limits": "Primed incompressible volume model; check lifts prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Primed incompressible volume model; check lifts and the hinged flap's angles are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 450,
@@ -16943,11 +16959,11 @@
       "id": 451,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w2-review.md",
-        "note": "Pass 69: A small cap closes the unused central outlet, which Brown leaves open."
+        "evidence": "docs/p70-a-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16965,7 +16981,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p57-d-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w2-review.md"
+        "docs/p69-w2-review.md",
+        "docs/p70-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16973,9 +16990,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "A small cap closes the unused central outlet, which Brown leaves open.",
-      "limits": "Air cushion prescribed; air not drawn.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The dip tube stands full to the side mouth's level while the side riser delivers (either outlet may deliver, per the caption); the air cushion is prescribed and air is not drawn; the dip-tube column ignores flow losses.",
+      "assessment": "reasonable"
     },
     {
       "id": 452,
@@ -17017,11 +17034,11 @@
       "id": 453,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w2-review.md",
-        "note": "Pass 69: The valve chest and suction bend are 3D tubes rather than Brown's flat chest and semicircular channel; the beam post is not drawn."
+        "evidence": "docs/p70-a-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17037,7 +17054,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-cutaway-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w2-review.md"
+        "docs/p69-w2-review.md",
+        "docs/p70-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17045,9 +17063,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The valve chest and suction bend are 3D tubes rather than Brown's flat chest and semicircular channel; the beam post is not drawn.",
-      "limits": "Bellows water and check timing prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Bellows water and flap timing are prescribed; the riser's run behind the post, beyond Brown's break, is reconstructed; the bellows skins are clamped 0.05 into the chest top and top plates.",
+      "assessment": "reasonable"
     },
     {
       "id": 454,
@@ -17171,11 +17189,11 @@
       "id": 457,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w1-review.md",
-        "note": "Pass 69: At the top dwell the water drains from the upright bucket; emptying by tipping is not modelled."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: The tipped bucket's spill falls back down the well (Brown draws no receiving vessel), and the tip is brisk because the dwell is short."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17193,7 +17211,8 @@
         "docs/p64-fix-c2-review.md",
         "docs/p65-b-review.md",
         "docs/p66-audit-review.md",
-        "docs/p69-w1-review.md"
+        "docs/p69-w1-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17201,19 +17220,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "At the top dwell the water drains from the upright bucket; emptying by tipping is not modelled.",
-      "limits": "One clean cutaway on the camera plane with plain cut faces; internal parts whole; no translucency, tints or colour signals.",
+      "visibleFlaws": "The tipped bucket's spill falls back down the well (Brown draws no receiving vessel), and the tip is brisk because the dwell is short.",
+      "limits": "The raised bucket tips about its ears to empty; one clean cutaway on the camera plane; the spill follows the tipped bucket's capacity and the timing is prescribed.",
       "assessment": "minor"
     },
     {
       "id": 458,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w1-review.md",
-        "note": "Pass 69: At the top dwell the water drains from the upright bucket; emptying by tipping is not modelled."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: The tipped bucket's spill falls back down the shaft (Brown draws no receiving vessel), and the tip is brisk because the dwell is short."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17232,7 +17251,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p57-d-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w1-review.md"
+        "docs/p69-w1-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17240,8 +17260,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "At the top dwell the water drains from the upright bucket; emptying by tipping is not modelled.",
-      "limits": "One clean cutaway on the camera plane with plain cut faces; internal parts whole; no translucency, tints or colour signals.",
+      "visibleFlaws": "The tipped bucket's spill falls back down the shaft (Brown draws no receiving vessel), and the tip is brisk because the dwell is short.",
+      "limits": "The raised bucket tips about its ears to empty; one clean cutaway on the camera plane; the spill follows the tipped bucket's capacity and the timing is prescribed.",
       "assessment": "minor"
     },
     {
@@ -17293,11 +17313,11 @@
       "id": 460,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w1-review.md",
-        "note": "Pass 69: The low scoop hangs steeper than Brown's (about 56° against 33°)."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17311,7 +17331,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p54-water-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w1-review.md"
+        "docs/p69-w1-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17319,19 +17340,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The low scoop hangs steeper than Brown's (about 56° against 33°).",
-      "limits": "The fill schedule is prescribed; the 87° beam stroke is needed for a full drain over the spout.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The fill schedule is prescribed; a 79° beam stroke is needed for a full drain; the lift to the channel is 0.67.",
+      "assessment": "reasonable"
     },
     {
       "id": 461,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w3-review.md",
-        "note": "Pass 69: The second serpentine's pour from the free diagonal arcs over the right boxes into the pool; Brown draws only the top jet."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17351,7 +17372,8 @@
         "docs/p55-geo-b-review.md",
         "docs/p60-loops-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-w3-review.md"
+        "docs/p69-w3-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17359,9 +17381,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The second serpentine's pour from the free diagonal arcs over the right boxes into the pool; Brown draws only the top jet.",
-      "limits": "Rebuilt on the plate's lattice of two interleaved serpentines; every flap spans its pipe and seats on a rib; water is a prescribed conserved shift register of equal parcels, not solved flow; pipes are cut open along their front walls; the posts' cross-head is inferred.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Rebuilt on the plate's lattice of two interleaved serpentines; every flap spans its pipe and seats on a rib; water is a prescribed conserved shift register of equal parcels, not solved flow; pipes are cut open along their front walls; the posts' cross-head is inferred. The second serpentine joins the top pipe through a hidden port and pours through the one jet; its parcel waits in the top pipe during the other half-swing.",
+      "assessment": "reasonable"
     },
     {
       "id": 462,
@@ -17449,11 +17471,11 @@
       "id": 464,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w3-review.md",
-        "note": "Pass 69: After each run the bowl refills and the lower vessel empties over 2.5 s with no flow drawn (demonstration reset)."
+        "evidence": "docs/p70-c-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17471,7 +17493,8 @@
         "docs/p55-water-review.md",
         "docs/p60-loops-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-w3-review.md"
+        "docs/p69-w3-review.md",
+        "docs/p70-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17479,9 +17502,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "After each run the bowl refills and the lower vessel empties over 2.5 s with no flow drawn (demonstration reset).",
-      "limits": "While running, drain equals jet, so basin level and air pressure hold.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Steady play as Brown draws it: the drain equals the jet and the levels and air pressure are held at the plate pose (a real run would lower the bowl and raise the foot).",
+      "assessment": "reasonable"
     },
     {
       "id": 465,
@@ -17648,11 +17671,11 @@
       "id": 469,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w4-review.md",
-        "note": "Pass 69: The air vessel is a box rather than Brown's bottle; the bevels are smaller than his head and face gears; the tube is thinner than his duct."
+        "evidence": "docs/p70-a-review.md",
+        "note": "Pass 70: Brown's face gear on the wheel is drawn as a bevel."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17671,7 +17694,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-w4-review.md"
+        "docs/p69-w4-review.md",
+        "docs/p70-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17679,8 +17703,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The air vessel is a box rather than Brown's bottle; the bevels are smaller than his head and face gears; the tube is thinner than his duct.",
-      "limits": "The screw rises at Brown's 47.6° over the warm wall with his bevel drive; bubbles pass through the paddles; air transport and thermal run-down are prescribed; the walls stand 0.2 above the water.",
+      "visibleFlaws": "Brown's face gear on the wheel is drawn as a bevel.",
+      "limits": "Bubbles pass through the paddles; air transport and thermal run-down are prescribed; the walls stand 0.2 above the water.",
       "assessment": "minor"
     },
     {
@@ -18191,11 +18215,11 @@
       "id": 483,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
+        "reviewPass": 70,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w4-review.md",
-        "note": "Pass 69: The common outlet pipe stands out of the case front toward the viewer, and the crosshead bar slides through it (0.064)."
+        "evidence": "docs/p70-a-review.md",
+        "note": "Pass 70: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18217,7 +18241,8 @@
         "docs/p57-d-review.md",
         "docs/p64-fix-c2-review.md",
         "docs/p66-audit-review.md",
-        "docs/p69-w4-review.md"
+        "docs/p69-w4-review.md",
+        "docs/p70-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18225,9 +18250,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The common outlet pipe stands out of the case front toward the viewer, and the crosshead bar slides through it (0.064).",
-      "limits": "Linkage overlaps up to 0.06; skin deformation is prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The outlet is Brown's tall left column fed through the cored seat board; skin deformation is prescribed; the dial-work is not drawn (Brown omits it); the spring hooks overlap their pin and stud by up to 0.03.",
+      "assessment": "reasonable"
     },
     {
       "id": 484,

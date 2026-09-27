@@ -86,32 +86,8 @@ export function correctFlexiblePumpParts(root,id) {
     planarLever(body,outline,[{x:0,y:0,inner:.224,outer:.32}],.38);body.position.x=0;
     for(const [rod,top]of[[b.leftConnectingRod,b.leftTopPlate],[b.rightConnectingRod,b.rightTopPlate]]){normalizedLink(rod,g.connectingRodLength);plateJoint(top,rod.material,.13,g.linkEyeHeight);}
     for(const mesh of lever.children)if(mesh.geometry?.type==='CylinderGeometry'&&Math.abs(mesh.position.x)===g.beamPinHalfSpan)replace(mesh,new THREE.CylinderGeometry(.13,.13,.96,32));
-    for(const bottom of[b.leftBottomPlate,b.rightBottomPlate]){
-      const section=polygonClipping.difference(poly(circle([0,0],.97,128)),poly(circle([0,-.34],.18,64)),poly(circle([0,.20],.18,64)));
-      replace(bottom,horizontalPlate(section,-.07,.07));
-    }
-    // The discharge riser belongs behind the beam and its fulcrum.
-    const pipe=b.commonDischarge.shell,curve=new THREE.CatmullRomCurve3([new THREE.Vector3(0,.43,.20),new THREE.Vector3(.5,1,-.7),new THREE.Vector3(.5,2,-1.18),new THREE.Vector3(.5,4.12,-1.18)]);
-    replace(pipe,curvedPipeWall(curve,.245,.29,72));pipe.userData.curve=curve;replace(b.commonDischarge.water,new THREE.TubeGeometry(curve,72,.17,14,false));
-    for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.y===4.12)o.position.set(.5,4.12,-1.18);
-    for(const key of['commonSuction','leftSuctionBranch','rightSuctionBranch','leftDeliveryBranch','rightDeliveryBranch']){const pipe=b[key].shell;replace(pipe,curvedPipeWall(pipe.userData.curve,pipe.geometry.parameters.radius-.045,pipe.geometry.parameters.radius,72));}
-    replace(b.chestBottom,horizontalPlate(polygonClipping.difference(poly([[-2.67,-.92],[2.67,-.92],[2.67,.92],[-2.67,.92]]),poly([[-.95,-.78],[.95,-.78],[.95,-.28],[-.95,-.28]])),-.06,.06));
-    replace(b.valveChest,horizontalPlate(polygonClipping.difference(poly([[-2.625,-.86],[2.625,-.86],[2.625,.86],[-2.625,.86]]),poly([[-2.56,-.795],[2.56,-.795],[2.56,.795],[-2.56,.795]])),-.38,.38));
-    for(const key of['leftSuctionValve','rightSuctionValve','leftDeliveryValve','rightDeliveryValve']){
-      const valve=b[key],[body,seat]=valve.children;
-      const side=Math.sign(valve.position.x),suction=key.includes('Suction'),branch=b[key.replace('Valve','Branch')];
-      const path=branch.shell.userData.curve,points=path.points;
-      const start=points[0].clone(),end=points[points.length-1].clone();
-      const inletSide=suction?-side:side;
-      replace(body,pumpPortedWall(.255,.31,-.40,.40,[{side:inletSide,y:-.23,halfHeight:.145,halfWidth:.145},{side:-inletSide,y:.23,halfHeight:.145,halfWidth:.145}]));
-      const low=valve.position.clone().add(new THREE.Vector3(inletSide*.28,-.23,0)),high=valve.position.clone().add(new THREE.Vector3(-inletSide*.28,.23,0));
-      const lowPre=low.clone().add(new THREE.Vector3(inletSide*.22,0,0)),highPost=high.clone().add(new THREE.Vector3(-inletSide*.22,0,0));
-      if(!suction)highPost.x=high.x+(end.x-high.x)*.4;
-      const lower=new THREE.CatmullRomCurve3([start,lowPre,low]),upper=new THREE.CatmullRomCurve3([high,highPost,end]);
-      replace(branch.shell,mergePassageParts([curvedPipeWall(lower,.09,.13,32),curvedPipeWall(upper,.09,.13,32)]));
-      replace(branch.water,new THREE.TubeGeometry(new THREE.CatmullRomCurve3([start,lowPre,low,valve.position.clone(),high,highPost,end]),64,.075,12,false));
-      replace(seat,horizontalRing(.16,.255,-.05,0));seat.rotation.set(0,0,0);seat.position.y=-.085;
-    }
+    // Pass 70: the chest, channel, riser, post and flap checks are built in
+    // authored-lantern-bellows-pumps.js to Brown's section.
     d.updateSolids=()=>{b.leftConnectingRod.position.z=.34;b.rightConnectingRod.position.z=.34;};
   }else{
     const curve=body.geometry.parameters.path,left=[],right=[];

@@ -78,7 +78,7 @@ export function correctTemperatureAirMachine(root){
   b.wheelHub.rotation.set(0,0,0);b.wheelHub.position.set(0,0,0);
   replace(b.wheelHub,ring(.06,.16,hubBack,hubFront,96));
   b.wheelSpokes=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3,spoke=new THREE.Mesh(new THREE.BoxGeometry(.68,.08,.10),b.wheelRims[0].material);spoke.position.set(.47*Math.cos(a),.47*Math.sin(a),g.wheelPlaneZ);spoke.rotation.z=a;spoke.userData.role='finite-wheel-spoke-joining-hub-to-blades';b.waterWheelRotor.add(spoke);return spoke;});
-  replace(b.airConduit,curvedPipeWall(d.pressurePipeCurve,.074,.10,320));
-  d.solidReview={qualification:'Solid Archimedean flight, finite barrel, box air vessel (the casing enters through a fitted hole in its wall), rigid filleted air tube and bored wheel hub on a stub axle. Two pairs of equal finite 45-degree bevels share apexes on the inclined shaft S, use bored hubs and clear shaft ends; their Tredgold teeth and thermal motion are reconstructed. Heat transfer, buoyancy, pressure, torque and passive startup are not solved.'};
+  replace(b.airConduit,curvedPipeWall(d.pressurePipeCurve,g.airDuctRadius-.035,g.airDuctRadius,320,32));
+  d.solidReview={qualification:'Solid Archimedean flight, finite barrel, flask-shaped air vessel (the casing enters through a fitted hole in its side), broad rigid filleted air duct and bored wheel hub on a stub axle. Two pairs of enlarged finite 45-degree mitre bevels share apexes on the inclined shaft S, use bored hubs and clear shaft ends; their Tredgold teeth and thermal motion are reconstructed. Heat transfer, buoyancy, pressure, torque and passive startup are not solved.'};
   finish(root);
 }

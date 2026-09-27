@@ -534,11 +534,12 @@ function dryGasMeter(movement) {
     );
     plate.position.y = bellowsCenterY;
     plate.userData.role = `${role}-gas-tight-moving-plate`;
+    // Pass 70: the rod stops inside the crosshead bar, below the valve seat.
     const flagRod = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.06, 1.43, 20),
+      new THREE.CylinderGeometry(0.06, 0.06, 1.38, 20),
       darkMaterial,
     );
-    flagRod.position.y = 0.33;
+    flagRod.position.y = 0.305;
     flagRod.position.z = 0.61;
     flagRod.userData.role = rodRole;
     assembly.add(plate, flagRod);
@@ -568,9 +569,10 @@ function dryGasMeter(movement) {
     ),
     darkMaterial,
   ), 'common-horizontal-bellows-crosshead-bar');
+  // Pass 70: the bar rides in the gallery-floor slot, clear of the seat.
   crossheadBar.position.set(
     (rightMovingPlateMidpointX + leftMovingPlateMidpointX) / 2,
-    0.99,
+    0.96,
     0.61,
   );
   commonCrosshead.add(crossheadBar);
@@ -674,10 +676,13 @@ function dryGasMeter(movement) {
     new THREE.Vector3(rightFixedPlateX, bellowsCenterY, 0),
   ], 0.16, pipeMaterial, 'fixed-branch-between-B-and-chamber-A-prime');
   root.add(leftBranchTube.mesh, rightBranchTube.mesh);
+  // Pass 70: the common exhaust leaves the central port through a passage
+  // cored in the seat board and rises through the roof as Brown's tall left
+  // column (see correctGasMeterParts).
   const outletTube = makeTube([
-    new THREE.Vector3(centerPortX, portPlateY - 0.06, 0),
-    new THREE.Vector3(0, 0.98, 0.45),
-    new THREE.Vector3(0, 1.00, 1.86),
+    new THREE.Vector3(-2.45, 1.18, -0.35),
+    new THREE.Vector3(-2.45, 2.30, -0.35),
+    new THREE.Vector3(-2.45, 3.40, -0.35),
   ], 0.20, pipeMaterial, 'fixed-unlettered-common-outlet-from-B');
   root.add(outletTube.mesh);
   const outletFlange = cylinderBetween(
@@ -688,7 +693,8 @@ function dryGasMeter(movement) {
     'fixed-front-outlet-flange',
     32,
   );
-  root.add(outletFlange);
+  // Pass 70: no forward flange; the outlet leaves through the roof.
+  outletFlange.visible = false;
 
   const valveGuides = [-1, 1].map((side, index) => {
     const guide = new THREE.Mesh(
@@ -702,7 +708,7 @@ function dryGasMeter(movement) {
     root.add(guide);
     return guide;
   });
-  const rockerPivot = new THREE.Vector3(0, 2.52, 0.43);
+  const rockerPivot = new THREE.Vector3(0, 2.52, 0.45);
   const valveRocker = addRole(new THREE.Group(),
     'fixed-pivot-valve-reversing-rocker');
   valveRocker.position.copy(rockerPivot);
@@ -829,8 +835,10 @@ function dryGasMeter(movement) {
       new THREE.Vector3(leftPortX, 1.30, 0.06),
       new THREE.Vector3(-0.38, 1.48, 0.12),
       new THREE.Vector3(centerPortX, 1.27, 0.14),
-      new THREE.Vector3(0, 1.00, 0.64),
-      new THREE.Vector3(0, 1.00, 2.08),
+      new THREE.Vector3(0, 1.04, -0.20),
+      new THREE.Vector3(-1.26, 1.04, -0.35),
+      new THREE.Vector3(-2.45, 1.10, -0.35),
+      new THREE.Vector3(-2.45, 3.40, -0.35),
     ],
     APrimeToOutlet: [
       new THREE.Vector3(2.18, bellowsCenterY, 0.10),
@@ -839,8 +847,10 @@ function dryGasMeter(movement) {
       new THREE.Vector3(rightPortX, 1.30, 0.06),
       new THREE.Vector3(0.38, 1.48, 0.12),
       new THREE.Vector3(centerPortX, 1.27, 0.14),
-      new THREE.Vector3(0, 1.00, 0.64),
-      new THREE.Vector3(0, 1.00, 2.08),
+      new THREE.Vector3(0, 1.04, -0.20),
+      new THREE.Vector3(-1.26, 1.04, -0.35),
+      new THREE.Vector3(-2.45, 1.10, -0.35),
+      new THREE.Vector3(-2.45, 3.40, -0.35),
     ],
   };
   const flowPaths = {};
@@ -875,10 +885,11 @@ function dryGasMeter(movement) {
   // on the crosshead and on the rocker's tip pin, instead of a zigzag wire
   // whose lower end hung in front of the crosshead.
   const crossheadSpringStud = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.035, 0.035, 0.10, 16).rotateX(Math.PI / 2),
+    new THREE.CylinderGeometry(0.035, 0.035, 0.09, 16),
     darkMaterial,
   ), 'crosshead-stud-carrying-over-center-spring');
-  crossheadSpringStud.position.set(0, 1.00, 0.72);
+  // Pass 70: the stud stands on the bar's top face, in the slot line.
+  crossheadSpringStud.position.set(0, 1.065, 0.61);
   commonCrosshead.add(crossheadSpringStud);
   const overCenterSpringCoil = addRole(new THREE.Mesh(new THREE.BufferGeometry(), valveMaterial),
     'over-center-coil-spring-from-crosshead-stud-to-rocker-pin');
@@ -976,10 +987,10 @@ function dryGasMeter(movement) {
     updateSpring(
       new THREE.Vector3(
         state.commonPlateDisplacementSceneUnit,
-        1.00,
-        0.72,
+        1.10,
+        0.61,
       ),
-      rockerEndpoint,
+      rockerEndpoint.clone().setZ(0.545),
     );
 
     countInputRotor.rotation.z = -FULL_TURN * state.fillEventsElapsed;

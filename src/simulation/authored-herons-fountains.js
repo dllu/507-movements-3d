@@ -126,53 +126,30 @@ function heronsFountain(movement) {
     };
   };
 
+  // Pass 70: the loop shows the fountain in steady play, as Brown draws it
+  // playing, instead of a run followed by a reset whose flows were not drawn
+  // (the bowl refilled and the foot emptied with no water moving). The drain
+  // carries exactly the jet's return, so the upper basin, the shared air
+  // volume and its pressure hold; the slow fall of the bowl and rise of the
+  // foot over a real run (0.24 of volume in some nine seconds at this rate)
+  // are held at the source pose's levels, a disclosed large-vessel
+  // approximation. The operating law (stateAtTransferProgress) is unchanged.
+  const steadyTransferProgress = 0.35;
+  const steadyTransferProgressRate = 1 / (operationEndPhase * cycleDuration);
   const stateAtPhase = (unwrappedPhase) => {
-    const rawPhase = positiveModulo(unwrappedPhase, 1);
-    const phase = [0, operationEndPhase, resetStartPhase].find(
-      (boundary) => Math.abs(rawPhase - boundary) < 1e-12,
-    ) ?? rawPhase;
-    let transferProgress;
-    let transferProgressRate = 0;
-    let flowFraction = 0;
-    let regime;
-    if (phase < operationEndPhase) {
-      const local = phase / operationEndPhase;
-      transferProgress = smootherStep(local);
-      transferProgressRate = smootherStepDerivative(local)
-        / (operationEndPhase * cycleDuration);
-      flowFraction = smootherStepDerivative(local) / 1.875;
-      regime = 'physical-pour-drain-air-compression-and-fountain-operation';
-    } else if (phase < resetStartPhase) {
-      transferProgress = 1;
-      regime = 'physical-flow-complete-before-demonstration-reset';
-    } else {
-      const local = (phase - resetStartPhase) / (1 - resetStartPhase);
-      transferProgress = 1 - smootherStep(local);
-      transferProgressRate = -smootherStepDerivative(local)
-        / ((1 - resetStartPhase) * cycleDuration);
-      regime = 'nonphysical-hidden-level-reset-for-looping-demonstration';
-    }
-    const hydraulic = stateAtTransferProgress(transferProgress);
-    const drainFlowRate = phase < operationEndPhase
-      ? lowerTransfer * transferProgressRate
-      : 0;
-    const jetFlowRate = phase < operationEndPhase
-      ? intermediateTransfer * transferProgressRate
-      : 0;
-    const externalPourFlowRate = phase < operationEndPhase
-      ? externalPourTransfer * transferProgressRate
-      : 0;
+    const phase = positiveModulo(unwrappedPhase, 1);
+    const hydraulic = stateAtTransferProgress(steadyTransferProgress);
     return {
       ...hydraulic,
-      drainFlowRate,
-      externalPourFlowRate,
-      flowFraction,
-      jetFlowRate,
+      drainFlowRate: lowerTransfer * steadyTransferProgressRate,
+      externalPourFlowRate: externalPourTransfer * steadyTransferProgressRate,
+      flowFraction: 1,
+      jetFlowRate: intermediateTransfer * steadyTransferProgressRate,
+      levelsHeldInSteadyPlay: true,
       phase,
-      physicalFlowsVisible: flowFraction > 1e-4
-        && phase < operationEndPhase,
-      regime,
-      transferProgressRate,
+      physicalFlowsVisible: true,
+      regime: 'steady-play-drain-equals-jet-levels-held',
+      transferProgressRate: 0,
     };
   };
 
@@ -562,7 +539,7 @@ function heronsFountain(movement) {
       lossesBubbleFlowFreeSurfaceSloshPipeInertiaJetBreakupEvaporationAndHeatTransferModeled:
         false,
       resetDisclosure:
-        'The physical operating interval stops before the hidden-stream reset. During reset only vessel levels and pressure return smoothly to the initial demonstration state; no reverse water or air flow is depicted or claimed.',
+        'No reset: the loop shows steady play. Drain equals jet, so the upper basin, air volume and pressure hold; the slow fall of the bowl and rise of the foot over a real run are held at the source-pose levels (a disclosed large-vessel approximation).',
       waterModel:
         'During the physical interval, lower gain equals right-drain transfer and intermediate loss equals jet transfer; the two are equal, so the upper basin level and the shared air volume and pressure stay constant with no external pour.',
     },
@@ -573,7 +550,7 @@ function heronsFountain(movement) {
     motion: {
       cycleDuration,
       motionType:
-        'finite-volume-conserving-operating-stroke-followed-by-disclosed-flow-hidden-C2-reset',
+        'steady-play-with-drain-equal-to-jet-and-levels-held',
     },
     sourceAnimation: {
       available: false,
@@ -611,7 +588,7 @@ function heronsFountain(movement) {
         engravingEvidence:
           'Brown shows an open rectangular upper basin, a right-hand downpipe reaching the lower vessel, a left pneumatic return rising from that vessel to the intermediate bowl, and a central riser passing from the intermediate water through the upper basin to a two-sided fountain spray.',
         reconstructionDisclosure:
-          'Brown gives no vessel capacities, fill fractions, air pressure, pipe bores, flow rates, loss coefficients, jet height, duration or reset. Vessel dimensions, a 1.22-atmosphere initial shared pressure, ideal isothermal gas law, finite transfer volumes, a twelve-and-a-half-second explanatory cycle, colors and the explicitly nonphysical hidden-flow reset are independently engineered.',
+          'Brown gives no vessel capacities, fill fractions, air pressure, pipe bores, flow rates, loss coefficients, jet height, duration or reset. Vessel dimensions, a 1.22-atmosphere initial shared pressure, ideal isothermal gas law, finite transfer volumes, a twelve-and-a-half-second explanatory cycle, colors and the steady-play loop with held levels are independently engineered.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 464',

@@ -56,8 +56,8 @@ test('movement 433 is a horizontal sixteen-board runner rigidly fixed to a verti
   assert.equal(data.archetype, ARCHETYPE);
   assert.equal(data.fidelity, 'authored');
   assert.match(data.mechanism, /elevated flume sends a falling jet.*scoop-like radial blades/);
-  assert.match(data.mechanism, /tangent to the wheel at impact/);
-  assert.match(data.mechanism, /positive torque about the vertical shaft/);
+  assert.match(data.mechanism, /runs with the floats at impact, slanting inward/);
+  assert.match(data.mechanism, /clockwise \(negative-about-y\) torque about the vertical shaft/);
   assert.match(data.mechanism, /rotate as one body about the vertical axis/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
@@ -115,7 +115,7 @@ test('movement 433 records the sparse static source honestly and discloses uncer
   assert.equal(dynamics.fluidPressureViscosityTurbulenceSplashLeakageBladeImpactBearingFrictionRunnerInertiaGeneratorLoadAndSpeedResponseModeled,
     false);
   assert.match(dynamics.jetMomentumDiagnostic,
-    /horizontal component is exactly tangent.*y-axis moment is positive/);
+    /horizontal component follows the floats’ motion at impact with an inward slant.*y-axis moment is negative/);
   assert.match(dynamics.smoothBladeHandoff,
     /two neighboring scoop indices.*complementary quintic weights/);
   assert.equal(plate.imageWidth, 525);
@@ -168,9 +168,11 @@ test('movement 433 every scoop and the vertical shaft rotate as one rigid horizo
   for (let sample = -10000; sample <= 20000; sample += 1) {
     const inputAngle = FULL_TURN * sample / 10000;
     const state = stateAtInputAngle(inputAngle);
-    sameAngle(state.wheelAngle, inputAngle, 5e-15,
-      'positive y-axis runner coordinate');
-    assert.ok(state.wheelAngularSpeed > 0);
+    // Pass 70: the runner turns clockwise seen from above (negative about y),
+    // so the struck water is carried round the right and front, as drawn.
+    sameAngle(state.wheelAngle, -inputAngle, 5e-15,
+      'negative y-axis runner coordinate');
+    assert.ok(state.wheelAngularSpeed < 0);
     for (const blade of state.blades) {
       sameAngle(blade.worldAngle,
         blade.localAngle + state.wheelAngle, 5e-15,
@@ -183,7 +185,7 @@ test('movement 433 every scoop and the vertical shaft rotate as one rigid horizo
   disposeModel(model.root);
 });
 
-test('movement 433 falling jet has an exactly tangential horizontal component and positive shaft torque', () => {
+test('movement 433 falling jet runs with the floats, slants inward and drives the runner clockwise', () => {
   const model = createMovementModel(catalog.movements[432]);
   const { geometry, stateAtInputAngle } = model.root.userData;
   const source = stateAtInputAngle(0);
@@ -192,27 +194,30 @@ test('movement 433 falling jet has an exactly tangential horizontal component an
     0,
     -Math.sin(geometry.impactAngle),
   );
-  const tangent = new THREE.Vector3(
-    -Math.sin(geometry.impactAngle),
+  // Direction of float motion at the strike: the runner turns clockwise.
+  const motion = new THREE.Vector3(
+    Math.sin(geometry.impactAngle),
     0,
-    -Math.cos(geometry.impactAngle),
+    Math.cos(geometry.impactAngle),
   );
   const horizontalForce = source.jetForce.clone();
   horizontalForce.y = 0;
+  const slant = Math.hypot(1, 0.7);
 
   near(source.jetDirection.length(), 1, 2.3e-16, 'unit jet direction');
   assert.ok(source.jetDirection.y < 0, 'jet falls downward');
-  near(horizontalForce.clone().normalize().dot(tangent), 1, 2.3e-16,
-    'horizontal jet component follows positive tangent');
-  near(horizontalForce.dot(radial), 0, 1.8e-15,
-    'jet has no radial horizontal component');
+  near(horizontalForce.clone().normalize().dot(motion), 1 / slant, 1e-12,
+    'horizontal jet component runs with the floats');
+  near(horizontalForce.clone().normalize().dot(radial), -0.7 / slant, 1e-12,
+    'and slants inward toward the shaft');
   near(source.tangentialJetForceNormalized,
-    source.jetForce.dot(tangent), 0, 'tangential force projection');
+    source.jetForce.dot(motion), 1e-12, 'tangential force projection');
   const reconstructedTorque = new THREE.Vector3()
     .crossVectors(source.impactPoint, source.jetForce).y;
   near(source.impulseTorqueNormalized, reconstructedTorque, 0,
     'exact y-axis jet moment');
-  assert.ok(source.impulseTorqueNormalized > 28.9);
+  assert.ok(source.impulseTorqueNormalized < -18.9, 'clockwise drive');
+  assert.ok(source.impulseTorqueNormalized * source.wheelAngularSpeed > 0, 'torque drives the runner its way');
   for (const angle of [-8, -1, 0, 0.7, 2.8, 9]) {
     near(stateAtInputAngle(angle).impulseTorqueNormalized,
       source.impulseTorqueNormalized, 0,

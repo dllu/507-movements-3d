@@ -311,7 +311,7 @@ function jonvalTurbine(movement) {
     ),
     frameMaterial,
   );
-  guideDrum.geometry.dispose();guideDrum.geometry=horizontalRing(shaftRadius+.004,annulusInnerRadius-.08,-(rowHeight+.18)/2,(rowHeight+.18)/2);
+  guideDrum.geometry.dispose();guideDrum.geometry=horizontalRing(shaftRadius+.004,annulusInnerRadius+.01,-(rowHeight+.18)/2,(rowHeight+.18)/2);
   guideDrum.position.y = guideRowCenterY;
   guideDrum.userData.role =
     'fixed-central-drum-carrying-radial-guide-shutes';
@@ -323,8 +323,10 @@ function jonvalTurbine(movement) {
     guideGroup.rotation.y = angle;
     guideGroup.userData.role =
       `fixed-radially-arranged-shute-${guideIndex + 1}-of-sixteen`;
+    // Pass 70: the shutes run from the drum out to the trunk wall, as
+    // Brown's section draws them, so no water bypasses them.
     const guide = new THREE.Mesh(helicalVaneGeometry({
-      inner: annulusInnerRadius, outer: annulusOuterRadius,
+      inner: annulusInnerRadius, outer: annulusOuterRadius + 0.235,
       top: guideRowCenterY + rowHeight / 2, bottom: guideRowCenterY - rowHeight / 2,
       sweep: guideSweepAtDepth, thickness: vaneThickness,
     }), guideMaterial);
@@ -334,10 +336,9 @@ function jonvalTurbine(movement) {
     fixedGuideAssembly.add(guideGroup);
     fixedShuteGroups.push(guideGroup);
   }
-  for (const height of [
-    guideRowCenterY - rowHeight / 2,
-    guideRowCenterY + rowHeight / 2,
-  ]) {
+  // Pass 70: Brown draws no boundary rings on either vane row; the shutes
+  // root in the drum and the buckets in the runner hub below.
+  for (const height of []) {
     for (const radius of [annulusInnerRadius, annulusOuterRadius]) {
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(radius, 0.075, 9, 96),
@@ -389,10 +390,7 @@ function jonvalTurbine(movement) {
     runnerBucketGroups.push(bucketGroup);
     runnerBucketProfiles.push(points.map((point) => point.clone()));
   }
-  for (const height of [
-    runnerRowCenterY - rowHeight / 2,
-    runnerRowCenterY + rowHeight / 2,
-  ]) {
+  for (const height of []) {
     for (const radius of [annulusInnerRadius, annulusOuterRadius]) {
       const ring = new THREE.Mesh(
         new THREE.TorusGeometry(radius, 0.075, 9, 96),
@@ -404,6 +402,13 @@ function jonvalTurbine(movement) {
       runner.add(ring);
     }
   }
+  const runnerBucketHub = new THREE.Mesh(
+    horizontalRing(shaftRadius - 0.004, annulusInnerRadius + 0.01, -rowHeight / 2, rowHeight / 2),
+    runnerMaterial,
+  );
+  runnerBucketHub.position.y = runnerRowCenterY;
+  runnerBucketHub.userData.role = 'runner-c-hub-carrying-helical-buckets';
+  runner.add(runnerBucketHub);
   const runnerFloor = new THREE.Mesh(
     new THREE.CylinderGeometry(annulusOuterRadius, annulusOuterRadius,
       0.14, 72),
@@ -473,7 +478,9 @@ function jonvalTurbine(movement) {
   casing.userData.role = 'fixed-trunk-or-casing-b-around-both-vane-rows';
   root.add(casing);
   const casingRings = [];
-  for (const height of [-2.03, 3.33]) {
+  // Pass 70: Brown's trunk walls end plainly under the cover and on the
+  // floor; no corner rings.
+  for (const height of []) {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(annulusOuterRadius + 0.30, 0.12, 10, 104),
       frameMaterial,

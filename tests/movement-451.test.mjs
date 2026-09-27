@@ -58,7 +58,8 @@ test('movement 451 adds one globular air chamber and two source-shown takeoffs t
   assert.equal(blocks.compressedAir.parent, model.root);
   assert.equal(blocks.selectedOutlet.parent, model.root);
   assert.equal(blocks.alternativeOutlet.parent, model.root);
-  assert.equal(blocks.alternativeCap.parent, model.root);
+  assert.equal(blocks.alternativeOutletWater.parent, model.root);
+  assert.equal(blocks.alternativeCap, undefined, 'Brown leaves the central takeoff open');
   assert.equal(metering.selectedOutlet, 'side-riser');
   assert.equal(metering.unselectedOutlet, 'central-dip-tube');
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
@@ -78,7 +79,7 @@ test('movement 451 adds one globular air chamber and two source-shown takeoffs t
     'selected-side-outlet-from-air-chamber',
     'constant-flow-through-selected-air-chamber-outlet',
     'unselected-alternative-dip-tube-outlet',
-    'cap-marking-alternative-outlet-not-simultaneously-active',
+    'standing-water-in-open-central-dip-tube',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -172,7 +173,7 @@ test('movement 451 output is exactly constant and only one of the two drawn outl
     near(state.selectedOutletFlowRate, state.outputFlowRate, 0,
       `selected side flow at ${sample}`);
     near(state.unselectedOutletFlowRate, 0, 0,
-      `capped central takeoff at ${sample}`);
+      `standing central takeoff at ${sample}`);
     near(state.selectedOutletFlowRate + state.unselectedOutletFlowRate,
       state.outputFlowRate, 0,
     `outlets do not double count at ${sample}`);
@@ -296,7 +297,7 @@ test('movement 451 update maps the pulse, chamber inventory, air scale, and link
     stateAtTime,
     update,
   } = model.root.userData;
-  const fixedBlocks = [blocks.alternativeCap, blocks.alternativeOutlet,
+  const fixedBlocks = [blocks.alternativeOutletWater, blocks.alternativeOutlet,
     blocks.barrel, blocks.barrelRails, blocks.base, blocks.chamberNeck,
     blocks.chamberShell, blocks.deliveryValveSeat,
     blocks.pumpDeliveryPipe, blocks.selectedOutlet, blocks.sourceWell,
@@ -353,4 +354,22 @@ test('movement 507 remains the next authored frontier', () => {
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model451.root);
   disposeModel(model507.root);
+});
+
+test('movement 451 open central dip tube stands full to the side mouth level without overflowing', () => {
+  const model = createMovementModel(catalog.movements[450]);
+  const { blocks, dipTubeWaterTop, chamberEnvelope, geometry, update } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  const tube = new THREE.Box3().setFromObject(blocks.alternativeOutlet);
+  const water = new THREE.Box3().setFromObject(blocks.alternativeOutletWater);
+  const side = new THREE.Box3().setFromObject(blocks.selectedOutlet);
+  assert.ok(Math.abs(water.max.y - side.max.y) < 0.02, 'same air pressure lifts both takeoffs to one level');
+  assert.ok(water.max.y < tube.max.y - 0.5, 'the open top stays dry');
+  assert.equal(water.max.y, dipTubeWaterTop);
+  for (let i = 0; i <= 32; i += 1) {
+    update(geometry.cycleDuration * i / 32);
+    assert.ok(chamberEnvelope.level > water.min.y + 0.3, 'dip-tube foot stays submerged');
+    assert.ok(chamberEnvelope.level < dipTubeWaterTop, 'column stands above the chamber level');
+  }
+  disposeModel(model.root);
 });

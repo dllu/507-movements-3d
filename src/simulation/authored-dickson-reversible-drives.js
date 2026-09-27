@@ -265,11 +265,17 @@ function dicksonReversibleDrive(movement) {
   const bToCShiftDuration = 0.75;
   const bToCShiftEnd = bToCShiftStart + bToCShiftDuration;
   const selectorAmplitude = 0.42;
-  const maximumPawlLiftAngle = 0.48;
+  // Brown's lifted B lies about 47 degrees above the horizontal against the
+  // engaged C's 16, so the full lift is about 0.52 rad.
+  const maximumPawlLiftAngle = 0.52;
   const overrunLiftFraction = 0.24;
-  const wheelOuterRadius = 2.12;
+  // Brown's wheel D is a slim rim (outer/inner about 169/159 px) round a
+  // plain face.
+  const wheelOuterRadius = 1.95;
   const wheelInnerRadius = 1.82;
-  const pawlContactPhase = 0.55;
+  // Brown's engaged C meets the rim about 15 degrees above the horizontal and
+  // lies nearly flat (16-17 degrees), a steep wedge.
+  const pawlContactPhase = 0.28;
   const bPawlPivot = new THREE.Vector3(-0.42, 0.10, 0.54);
   const cPawlPivot = new THREE.Vector3(0.42, 0.10, 0.54);
   const bSeatedContact = new THREE.Vector3(
@@ -616,12 +622,13 @@ function dicksonReversibleDrive(movement) {
     metalness: 0.17,
     roughness: 0.50,
   });
-  const wheelMaterial = matte(PALETTE.driven, {
+  // Brown draws wheel D as a plain light disc: a slim rim round an opaque
+  // web, no spokes.
+  const wheelMaterial = matte(0xe0e1da, {
     metalness: 0.20,
     roughness: 0.48,
   });
-  // Brown draws wheel D as a plain disc: an opaque web, no spokes.
-  const wheelBackMaterial = matte(PALETTE.driven, {
+  const wheelBackMaterial = matte(0xe0e1da, {
     metalness: 0.12,
     roughness: 0.56,
     side: THREE.DoubleSide,
@@ -676,7 +683,7 @@ function dicksonReversibleDrive(movement) {
     new THREE.CircleGeometry(wheelInnerRadius - 0.07, 96),
     wheelBackMaterial,
   );
-  wheelWeb.position.z = -0.10;
+  wheelWeb.position.z = 0.17;
   wheelWeb.userData.role = 'translucent-wheel-D-web';
   wheelRotor.add(wheelWeb);
   for (let index = 0; index < 4; index += 1) {
@@ -690,7 +697,7 @@ function dicksonReversibleDrive(movement) {
     wheelRotor.add(spoke);
   }
   const wheelHub = cylinderAlongZ(0.31, 0.34, wheelMaterial, 40);
-  wheelHub.position.z = -0.08;
+  wheelHub.position.z = 0.0;
   wheelHub.userData.role = 'wheel-D-hub-fast-with-smooth-rim';
   wheelRotor.add(wheelHub);
   const wheelIndex = new THREE.Mesh(
@@ -829,9 +836,11 @@ function dicksonReversibleDrive(movement) {
   const inputRodEye = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.045, 16, 48), leverMaterial);
   inputRodEye.userData.role = 'rod-D-eye-round-lever-tail-pin';
   root.add(inputRodEye);
-  const leverInputPin = cylinderAlongZ(0.11, inputRodZ + 0.06 - 0.095, whiteMaterial, 24);
+  // The pin stands from lever A's back face (from z 0.26, just inside it), in front of wheel
+  // D's web, to the rod's eye.
+  const leverInputPin = cylinderAlongZ(0.11, inputRodZ + 0.06 - 0.26, whiteMaterial, 24);
   leverInputPin.position.copy(inputPinLocal);
-  leverInputPin.position.z = (inputRodZ + 0.06 + 0.095) / 2;
+  leverInputPin.position.z = (inputRodZ + 0.06 + 0.26) / 2;
   leverInputPin.userData.role = 'white-input-pin-on-tail-of-lever-A';
   leverRotor.add(leverInputPin);
 

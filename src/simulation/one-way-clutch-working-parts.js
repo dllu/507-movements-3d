@@ -18,7 +18,7 @@ export function correctAxialPinParts(model){
 }
 export function correctDicksonParts(model){
  const {root}=model,d=root.userData,b=d.blocks,g=d.geometry;
- replace(b.wheelRing,bore(g.wheelOuterRadius,g.wheelInnerRadius,.78,768).rotateX(Math.PI/2));b.wheelRing.position.z=.24;
+ replace(b.wheelRing,bore(g.wheelOuterRadius,g.wheelInnerRadius,.48,768).rotateX(Math.PI/2));b.wheelRing.position.z=.40;
  for(const[name,pawl,pivot,angle]of[['B',b.bPawl,g.bPawlPivot,g.bSeatedAngle],['C',b.cPawl,g.cPawlPivot,g.cSeatedAngle]]){
   const body=pawl.children[0],outline=body.geometry.parameters.shapes.extractPoints(16).shape.map(p=>p.toArray()),c=Math.cos(angle),s=Math.sin(angle),center=[-c*pivot.x-s*pivot.y,s*pivot.x-c*pivot.y];
   const region=clip.difference(clip.intersection(poly(outline),poly(circle(center,g.wheelInnerRadius,768))),poly(circle([0,0],.083,96)));replace(body,plate(region,-.075,.075));
@@ -27,9 +27,9 @@ export function correctDicksonParts(model){
   pawl.userData.contact.visible=false;
  }
  for(const[name,outer,length]of[['fixed-rear-bearing',.26,.44],['wheel-D-hub-fast-with-smooth-rim',.31,.34],['lever-A-loose-hub-on-wheel-D-shaft',.28,.30]])replace(role(root,name),bore(outer,.109,length));
- const lever=role(root,'T-shaped-rigid-body-of-lever-A'),shape=lever.geometry.parameters.shapes.extractPoints(16).shape.map(p=>p.toArray());replace(lever,plate(clip.difference(poly(shape),poly(circle([0,0],.109,96))),-.095,.095));
+ const lever=role(root,'T-shaped-rigid-body-of-lever-A'),shape=lever.geometry.parameters.shapes.extractPoints(16).shape.map(p=>p.toArray());replace(lever,plate(clip.difference(poly(shape),poly(circle([0,0],.27,96))),-.095,.095));
  for(const o of b.wheelRotor.children)if(o.userData.role==='wheel-D-spoke-fast-with-rim-and-hub'){const half=g.wheelInnerRadius*1.025;replace(o,plate(clip.difference(poly([[-half,-.0425],[half,-.0425],[half,.0425],[-half,.0425]]),poly(circle([0,0],.109,96))),-.05,.05));}
- replace(role(root,'translucent-wheel-D-web'),bore(g.wheelInnerRadius-.004,.109,.03).rotateX(Math.PI/2));
+ replace(role(root,'translucent-wheel-D-web'),bore(g.wheelInnerRadius-.004,.30,.03).rotateX(Math.PI/2));
  d.workingPartsReview={qualification:'Both opposed pawls now have finite faces in the rim working band and bored hinges. Selection and overrun are prescribed; cord tension, self-wedging friction and load capacity remain unqualified.'};return model;
 }
 export function correctOscillatingDrum(model){

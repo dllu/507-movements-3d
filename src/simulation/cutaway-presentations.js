@@ -161,15 +161,17 @@ export const CUTAWAY_SPECS = {
     hide: [/^fixed-cutaway-.*outline$/, unnamedDarkTorus],
   },
   451: {
-    cut: [/^fixed-(suction-pipe|solid-piston-force-pump-cylinder|air-chamber-inlet-neck|pump-to-air-chamber-delivery-pipe|suction-check-seat|pump-delivery-check-seat)/, 'globular-outlet-air-chamber', 'selected-side-outlet-from-air-chamber',
+    cut: [/^fixed-(suction-pipe|solid-piston-force-pump-cylinder|air-chamber-inlet-neck|pump-to-air-chamber-delivery-pipe|suction-check-seat|pump-delivery-check-seat)/, 'globular-outlet-air-chamber', 'selected-side-outlet-from-air-chamber', 'unselected-alternative-dip-tube-outlet',
       'solid-piston-feeding-air-chamber-on-downstroke', 'suction-check-opening-on-upstroke', 'delivery-check-opening-on-piston-downstroke'],
     water: [/water/, 'constant-flow-through-selected-air-chamber-outlet'],
     hide: [/^fixed-cutaway-.*outline$/, unnamedDarkTorus, 'elastic-air-cushion-maintaining-constant-outlet'],
   },
   453: {
-    plane: {point: new THREE.Vector3(0, 0, 0.55)},
-    cut: ['fixed-common-valve-chest-beneath-both-bellows', (mesh, role) => !role && mesh.geometry.type === 'ExtrudeGeometry',
-      /pipe|branch/, mesh => [].concat(mesh.material)[0].transparent && /check-opening/.test(roleOf(mesh))],
+    // Pass 70: Brown's section on the mid-plane: the flat chest, its ported
+    // partitions, the semicircular channel, both pipes and the four flaps
+    // (which turn about z, so the plane stays put).
+    cut: ['fixed-common-valve-chest-beneath-both-bellows', 'fixed-valve-chest-floor-with-channel-mouths',
+      'fixed-ported-partitions-round-central-discharge-chamber', 'fixed-semicircular-suction-channel-under-chest', /pipe/, /check-opening/],
     water: [/^water-/],
     solid: [/flexible-lantern-bellows/],
   },

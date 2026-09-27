@@ -6,6 +6,7 @@ import {portedBarrel} from './lift-pump-working-parts.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {PALETTE,matte} from './primitives.js';
 import {waterFountainGeometry,waterJetMaterial,waterVolumeMaterial} from './water-volume.js';
+import {WaterStream,ballisticPath,waterStreamMaterial} from './water-stream.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const rectangle=(w,h,cx=0,cy=0)=>poly([[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx+w/2,cy+h/2],[cx-w/2,cy+h/2]]);
 const add=(parent,geometry,material,role)=>{const mesh=new THREE.Mesh(geometry,material);mesh.userData.role=role;parent.add(mesh);return mesh;};
@@ -86,8 +87,24 @@ export function correctFountain(root){
    const onset=Math.min(1,(state.flowFraction??1)/.25),head=Math.max(.02,state.idealJetHeight)*onset*onset*(3-2*onset);
    b.fountainSprays.forEach(spray=>{spray.scale.setScalar(Math.max(1e-3,head));spray.position.y=section.spireTipY;});
    section.update(state,b.jetColumn.material.opacity);
+   for(const thread of threads)thread.update((state.phase??0)*g.cycleDuration);
  };
- d.reconstructionNote='Three connected vessel paths and a finite circular bowl follow the engraving. Water transfer, isothermal pressure and jet head remain ideal prescribed laws; the hidden-flow loop reset is nonphysical. The gas enclosure capacity ignores wall/pipe displacement, and jets are illustrative paths, not solved fluid trajectories.';
+ // Pass 70: Brown's plume is a willow of threads rising from the spire tip
+ // and falling back on both sides; drawn as thin ballistic streams in the
+ // cut plane whose streaks run with the water (the fountain plays steadily).
+ const threadHead=Math.max(.02,d.stateAtTime(0).idealJetHeight),threadG=9.81;
+ const threads=[-15,-10,-5,5,10,15].map((deg,i)=>{
+   const a=THREE.MathUtils.degToRad(deg),v=Math.sqrt(2*threadG*threadHead);
+   const origin=new THREE.Vector3(0,section.spireTipY,-.12);
+   const thread=new WaterStream(ballisticPath({origin,velocity:new THREE.Vector3(v*Math.sin(a),v*Math.cos(a),0),gravity:threadG,
+     endY:section.spireTipY-.3*threadHead,samples:28}),{width:.012,thickness:.012,widthExponent:.5,
+     spread:{start:.55,width:2.2,thickness:2.2},fadeOut:.35,cyclePeriod:g.cycleDuration,streakRate:2.4,opacity:.5});
+   thread.userData.role=`fountain-thread-${i+1}-from-spire-tip`;
+   section.group.add(thread);
+   return thread;
+ });
+ for(const spray of b.fountainSprays)spray.material.opacity=.3;
+ d.reconstructionNote='Three connected vessel paths and a finite circular bowl follow the engraving. Water transfer, isothermal pressure and jet head remain ideal prescribed laws; the loop shows steady play with the vessel levels held. The gas enclosure capacity ignores wall/pipe displacement, and jets are illustrative paths, not solved fluid trajectories.';
  finish(root,8);
 }
 
@@ -105,8 +122,18 @@ function sectionFountain(root){
  for(const o of[b.lowerVessel,b.intermediateVessel,b.topBasin,b.rightDrainOuter,b.leftAirPipe,b.airCore,b.centralRiser,b.nozzle])hide(o);
  // Flows toggled by the playback keep their visibility state; only their
  // 3D volumes stop drawing. The plume gets its own material.
- const sprayMaterial=waterJetMaterial();
- for(const spray of b.fountainSprays)spray.material=sprayMaterial;
+ // Pass 70: the plume carries the shared streaming-water look, its streaks
+ // running up the column and out along the falling crown (the fountain plays
+ // steadily through the loop).
+ const sprayMaterial=waterStreamMaterial({opacity:.48});
+ for(const texture of [sprayMaterial.map,sprayMaterial.normalMap]){texture.center.set(.5,.5);texture.rotation=Math.PI/2;texture.repeat.set(1,3);}
+ const tint=new THREE.Color(PALETTE.fluid);
+ for(const spray of b.fountainSprays){
+   spray.material=sprayMaterial;
+   const colors=spray.geometry.attributes.color;
+   for(let i=0;i<colors.count;i++)colors.setXYZ(i,tint.r,tint.g,tint.b);
+   colors.needsUpdate=true;
+ }
  b.jetColumn.material.visible=false;b.rightDrainWater.material.visible=false;
  const back=-.35,cut=0,wall=.07;
  // Solid mass and its hollows (plate coordinates of the reconstruction).
@@ -150,10 +177,14 @@ function sectionFountain(root){
  group.traverse(o=>{if(o.isMesh){o.castShadow=false;o.receiveShadow=false;for(const m of[].concat(o.material))m.fog=false;}});
  d.localClippingEnabled=true;
  d.sectionFrame={group,spireTipY:spireTip};
- return{spireTipY:spireTip,update(state,opacity){
+ return{group,spireTipY:spireTip,update(state,opacity){
    footMaterial.clippingPlanes[0].constant=state.lowerWaterSurfaceY;
    bowlMaterial.clippingPlanes[0].constant=state.intermediateWaterSurfaceY;
-   sprayMaterial.opacity=Math.min(.5,opacity+.05);
+   sprayMaterial.opacity=Math.min(.3,opacity);
+   // Streaks scroll one tile per second along the plume (seamless: the
+   // 12.5 s loop holds a whole number of half-tiles at this rate).
+   const scroll=-THREE.MathUtils.euclideanModulo((state.phase??0)*g.cycleDuration*.8,1);
+   sprayMaterial.map.offset.x=scroll;sprayMaterial.normalMap.offset.x=scroll;
  }};
 }
 

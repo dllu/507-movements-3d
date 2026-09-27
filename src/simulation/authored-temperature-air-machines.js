@@ -75,26 +75,49 @@ function filletedPipePath(points, radii) {
   return path;
 }
 
-// Brown's air vessel at the foot of the screw: a box standing on the cold
-// cistern's floor, the screw casing entering its right wall through a hole
-// that fits the casing, the air tube rising from a hole in its roof.
-function airBottleGeometry({x0, x1, z, floorY, roofY, wall, casingHole, pipeBore, pipeX}) {
+// Brown's air vessel at the foot of the screw: a bottle standing on the cold
+// cistern's floor. Straight sides rise to rounded shoulders that close in on
+// a short neck carrying the air duct; the front and back are flat (a flask),
+// the screw casing enters the right side through a hole that fits it, and
+// the neck's top plate is bored for the duct.
+function airBottleGeometry({x0, x1, z, floorY, shoulderY, neckY, roofY, neckHalf, wall, casingHole, pipeBore, pipeX}) {
   const parts = [];
+  // Outline from the left shoulder foot round the neck to the right foot.
+  const shoulder = (left, right, half, low, top, neckTop) => {
+    const points = [];
+    for (let i = 0; i <= 24; i += 1) {
+      const a = Math.PI / 2 * i / 24;
+      points.push([pipeX - half - (pipeX - half - left) * Math.cos(a), low + (top - low) * Math.sin(a)]);
+    }
+    points.push([pipeX - half, neckTop], [pipeX + half, neckTop]);
+    for (let i = 24; i >= 0; i -= 1) {
+      const a = Math.PI / 2 * i / 24;
+      points.push([pipeX + half + (right - pipeX - half) * Math.cos(a), low + (top - low) * Math.sin(a)]);
+    }
+    return points;
+  };
+  const outlineRegion = polygonClipping.union(poly([[x0, floorY], [x1, floorY], [x1, shoulderY], [x0, shoulderY]]),
+    poly(shoulder(x0, x1, neckHalf, shoulderY, neckY, roofY)));
+  // Front and back walls: the bottle's outline.
+  for (const [low, high] of [[z - wall, z], [-z, -z + wall]]) parts.push(plate(outlineRegion, low, high));
   const rectXY = (a, b, c, d) => poly([[a, c], [b, c], [b, d], [a, d]]);
-  // Front and back walls (XY plates).
-  for (const [low, high] of [[z - wall, z], [-z, -z + wall]]) parts.push(plate(rectXY(x0, x1, floorY, roofY), low, high));
-  // Left and right walls: YZ plates extruded along x (plate x -> world -z, plate y -> world y).
-  const yz = (holes = []) => polygonClipping.difference(poly([[-z + wall, floorY], [z - wall, floorY], [z - wall, roofY], [-z + wall, roofY]]), ...holes);
+  // Shoulder band and neck walls, extruded through the depth between them.
+  const band = polygonClipping.difference(
+    polygonClipping.intersection(outlineRegion, rectXY(x0 - 1, x1 + 1, shoulderY, roofY)),
+    poly(shoulder(x0 + wall, x1 - wall, neckHalf - wall, shoulderY - 1e-3, neckY - wall, roofY + 1)));
+  parts.push(plate(band, -z + wall, z - wall));
+  // Left and right sides: YZ plates extruded along x (plate x -> world -z, plate y -> world y).
+  const yz = (holes = []) => polygonClipping.difference(poly([[-z + wall, floorY], [z - wall, floorY], [z - wall, shoulderY], [-z + wall, shoulderY]]), ...holes);
   const alongX = (polys, low, high) => plate(polys, low, high).rotateY(Math.PI / 2);
   parts.push(alongX(yz(), x0, x0 + wall));
   const hole = poly(Array.from({length: 96}, (_, i) => [
     casingHole.z * Math.cos(i * Math.PI / 48), casingHole.y + casingHole.halfHeight * Math.sin(i * Math.PI / 48)]));
   parts.push(alongX(yz([hole]), x1 - wall, x1));
-  // Floor and roof (XZ plates extruded along y; plate y -> world -z).
-  const xz = (holes = []) => polygonClipping.difference(poly([[x0 + wall, -z + wall], [x1 - wall, -z + wall], [x1 - wall, z - wall], [x0 + wall, z - wall]]), ...holes);
+  // Floor, and the neck's top plate bored for the duct (XZ plates; plate y -> world -z).
   const alongY = (polys, low, high) => plate(polys, low, high).rotateX(-Math.PI / 2);
-  parts.push(alongY(xz(), floorY, floorY + wall));
-  parts.push(alongY(xz([poly(circle([pipeX, 0], pipeBore, 64))]), roofY - wall, roofY));
+  parts.push(alongY(poly([[x0 + wall, -z + wall], [x1 - wall, -z + wall], [x1 - wall, z - wall], [x0 + wall, z - wall]]), floorY, floorY + wall));
+  parts.push(alongY(polygonClipping.difference(poly([[pipeX - neckHalf, -z], [pipeX + neckHalf, -z], [pipeX + neckHalf, z], [pipeX - neckHalf, z]]),
+    poly(circle([pipeX, 0], pipeBore, 64))), roofY - wall, roofY));
   return mergePassageParts(parts);
 }
 
@@ -220,8 +243,12 @@ function temperatureAirMachine(movement) {
   const screwFlightTurns = 6;
   const screwPitch = screwLength / screwFlightTurns;
   const screwRadius = 0.30;
-  const screwBevelPitchRadius = 0.32;
-  const outputBevelPitchRadius = 0.32;
+  // Pass 70: Brown's head gears are large (about half the wheel's radius);
+  // the hub pair is as large as the paddles in front of the wheel allow.
+  // Both pairs stay 1:1 mitres, so wheel and screw still turn together.
+  const headBevelScale = 1.5, hubBevelScale = 1.3;
+  const screwBevelPitchRadius = 0.32 * headBevelScale;
+  const outputBevelPitchRadius = 0.32 * headBevelScale;
   const wheelCenterX = 1.30;
   const transferShaftLength = (wheelCenterX - transferCenter.x) / transferShaftDirection.x;
   const wheelCenter = transferCenter.clone().addScaledVector(transferShaftDirection, transferShaftLength);
@@ -379,18 +406,18 @@ function temperatureAirMachine(movement) {
     shaftHubPhase: hubPair.phaseA,
     wheelPhase: hubPair.phaseB,
   };
-  const inputBevel=makeTemperatureBevel({axis:inputAxisLocal,phase:headPair.phaseA,color:PALETTE.driver,role:'screw-shaft-input-bevel'});
+  const inputBevel=makeTemperatureBevel({axis:inputAxisLocal,phase:headPair.phaseA,color:PALETTE.driver,role:'screw-shaft-input-bevel',scale:headBevelScale});
   inputBevel.position.y=screwLength/2+bevelApexExtension;
   screwRotor.add(inputBevel);
-  const outputBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,1),phase:headPair.phaseB,color:PALETTE.driven,role:'transfer-shaft-S-head-bevel'});
+  const outputBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,1),phase:headPair.phaseB,color:PALETTE.driven,role:'transfer-shaft-S-head-bevel',scale:headBevelScale});
   transferShaftRotor.add(outputBevel);
-  const shaftHubBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,-1),phase:hubPair.phaseA,color:PALETTE.driven,role:'transfer-shaft-S-wheel-end-bevel'});
+  const shaftHubBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,-1),phase:hubPair.phaseA,color:PALETTE.driven,role:'transfer-shaft-S-wheel-end-bevel',scale:hubBevelScale});
   shaftHubBevel.position.z=transferShaftLength;
   transferShaftRotor.add(shaftHubBevel);
-  const wheelBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,-1),phase:hubPair.phaseB,color:PALETTE.driver,role:'water-wheel-hub-bevel'});
+  const wheelBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,-1),phase:hubPair.phaseB,color:PALETTE.driver,role:'water-wheel-hub-bevel',scale:hubBevelScale});
   waterWheelRotor.add(wheelBevel);
   const transferShaft = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.065, 0.065, transferShaftLength - 0.36, 48),
+    new THREE.CylinderGeometry(0.065, 0.065, transferShaftLength - 0.36 * hubBevelScale, 48),
     screwShaftMaterial,
   ), 'inclined-transfer-shaft-S');
   transferShaft.rotation.x = Math.PI / 2;
@@ -451,17 +478,19 @@ function temperatureAirMachine(movement) {
 
   // Air vessel round the screw's foot, standing on the cold cistern floor.
   const bottleFloorY = tankBottomY + 0.07;
-  const bottleRoofY = 0.0;
-  const bottleX0 = -3.62, bottleX1 = -2.62, bottleHalfDepth = 0.45;
+  const bottleShoulderY = -0.10, bottleNeckY = 0.22, bottleRoofY = 0.32, bottleNeckHalf = 0.26;
+  const bottleX0 = -3.62, bottleX1 = -2.62, bottleHalfDepth = 0.45, airDuctRadius = 0.19;
   const bottlePipeX = (bottleX0 + bottleX1) / 2;
   const casingRadius = screwRadius + 0.055;
   const casingAtWallY = screwLowerPoint.y + (bottleX1 - screwLowerPoint.x) * screwAxis.y / screwAxis.x;
   receiver.geometry = airBottleGeometry({
-    x0: bottleX0, x1: bottleX1, z: bottleHalfDepth, floorY: bottleFloorY, roofY: bottleRoofY, wall: 0.05,
+    x0: bottleX0, x1: bottleX1, z: bottleHalfDepth, floorY: bottleFloorY, shoulderY: bottleShoulderY, neckY: bottleNeckY,
+    roofY: bottleRoofY, neckHalf: bottleNeckHalf, wall: 0.05,
     casingHole: {y: casingAtWallY, z: casingRadius + 0.003, halfHeight: casingRadius / screwAxis.x + 0.035},
-    pipeBore: 0.074, pipeX: bottlePipeX,
+    pipeBore: airDuctRadius - 0.006, pipeX: bottlePipeX,
   });
 
+  // Brown's duct is broad: about a fifth of the bottle's width.
   const pipeTopY = 2.20, pipeRightX = 2.65, pipeBottomY = -1.75;
   const outletPoint = new THREE.Vector3(wheelCenter.x + 0.45, -1.30, wheelPlaneZ);
   const pipePoints = [
@@ -473,7 +502,7 @@ function temperatureAirMachine(movement) {
     new THREE.Vector3(outletPoint.x, pipeBottomY, wheelPlaneZ),
     outletPoint.clone(),
   ];
-  const pressurePipeCurve = filletedPipePath(pipePoints, [0.30, 0.30, 0.30, 0.20, 0.20]);
+  const pressurePipeCurve = filletedPipePath(pipePoints, [0.40, 0.40, 0.40, 0.28, 0.28]);
   const bubbleRiseEnd = new THREE.Vector3(
     outletPoint.x,
     waterTopY - 0.04,
@@ -497,7 +526,7 @@ function temperatureAirMachine(movement) {
   });
   conduitMaterial.depthWrite = false;
   const airConduit = addRole(new THREE.Mesh(
-    new THREE.TubeGeometry(pressurePipeCurve, 260, 0.090, 14, false),
+    new THREE.TubeGeometry(pressurePipeCurve, 260, airDuctRadius, 24, false),
     conduitMaterial,
   ), 'air-pipe-ascending-crossing-descending-to-wheel-underside');
   root.add(airConduit);
@@ -744,6 +773,7 @@ function temperatureAirMachine(movement) {
 
   const sourceState = stateAtPhase(0.24);
   const geometry = {
+    airDuctRadius,
     airPathLength,
     bevelApexExtension,
     bevelApex: transferCenter.clone(),
@@ -915,7 +945,7 @@ function temperatureAirMachine(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.86, groundY - 0.02, -1.20),
-    new THREE.Vector3(3.30, 2.36, 1.20),
+    new THREE.Vector3(3.30, 2.42, 1.20),
   );
   root.userData.cameraDistanceScale = 1.00;
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.4, 11.8);

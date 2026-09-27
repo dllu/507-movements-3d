@@ -172,6 +172,9 @@ test('movement 415 seats only the selected pawl on D’s exact inner circle and 
   let maximumBGap = -Infinity;
   let maximumCGap = -Infinity;
 
+  // Brown's pawls lie nearly radial (C about 16 degrees against its 15-degree
+  // contact), so the fully lifted pawl (about 47 degrees) clears the rim by
+  // about 0.054 at its tip.
   for (let sample = 0; sample <= 48000; sample += 1) {
     const state = stateAtTime(geometry.cycleDuration * sample / 48000);
     minimumBGap = Math.min(minimumBGap, state.bPawlContactGap);
@@ -188,7 +191,7 @@ test('movement 415 seats only the selected pawl on D’s exact inner circle and 
       near(Math.hypot(state.bPawlTipWorld.x, state.bPawlTipWorld.y),
         geometry.wheelInnerRadius, 8e-16,
         'B tip on D inner circle');
-      assert.ok(state.cPawlContactGap > 0.09);
+      assert.ok(state.cPawlContactGap > 0.05);
     }
     if (state.drivingPawl === 'C') {
       near(state.cPawlContactGap, 0, 4e-16,
@@ -196,18 +199,19 @@ test('movement 415 seats only the selected pawl on D’s exact inner circle and 
       near(Math.hypot(state.cPawlTipWorld.x, state.cPawlTipWorld.y),
         geometry.wheelInnerRadius, 8e-16,
         'C tip on D inner circle');
-      assert.ok(state.bPawlContactGap > 0.09);
+      assert.ok(state.bPawlContactGap > 0.05);
     }
   }
   near(minimumBGap, 0, 4e-16, 'minimum B gap');
   near(minimumCGap, 0, 4e-16, 'minimum C gap');
-  assert.ok(maximumBGap > 0.09);
-  assert.ok(maximumCGap > 0.09);
+  assert.ok(maximumBGap > 0.05);
+  assert.ok(maximumCGap > 0.05);
   const midShift = stateAtTime(
     geometry.cToBShiftStart + geometry.cToBShiftDuration / 2,
   );
-  assert.ok(midShift.bPawlContactGap > 0.04);
-  assert.ok(midShift.cPawlContactGap > 0.04);
+  // Half-lifted, the nearly radial pawls are both clear (about 0.016).
+  assert.ok(midShift.bPawlContactGap > 0.012);
+  assert.ok(midShift.cPawlContactGap > 0.012);
   disposeModel(model.root);
 });
 

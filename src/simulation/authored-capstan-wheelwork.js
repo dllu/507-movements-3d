@@ -1094,10 +1094,12 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
     );
     mesh.userData.role = `${name}-locking-pawl-riding-the-drumhead`;
     group.add(mesh);
-    const pin = new THREE.Mesh(new THREE.CylinderGeometry(pinRadius, pinRadius, g.gearDepth + 0.3, 32), pinMaterial);
-    pin.userData.role = `${name}-pawl-eye-pin-on-drumhead`;
+    // The drumhead that carries the pin is omitted from Brown's plan, so the
+    // pin ends flush with the pawl's eye faces rather than standing proud.
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(pinRadius, pinRadius, g.gearDepth - 0.08, 32), pinMaterial);
+    pin.userData.role = `${name}-pawl-eye-pin-flush-in-eye`;
     b.spindleRotor.add(pin);
-    pin.position.set(px, g.gearPlaneY + 0.15, pz);
+    pin.position.set(px, g.gearPlaneY, pz);
     group.userData.role = `${name}-locking-pawl`;
     b.spindleRotor.add(group);
     return {group, mesh, pin, pivot};

@@ -548,24 +548,47 @@ function overshotWaterWheel(movement) {
   // falls as a curtain to the tail floor, whitening where it lands.
   const rimSpeed = inputAngularSpeed * wheelRadius;
   const spillAngle = THREE.MathUtils.degToRad(-8);
-  const curtainTop = new THREE.Vector3(Math.cos(spillAngle), Math.sin(spillAngle), 0)
-    .multiplyScalar(wheelRadius + 0.16);
   const tailFloorY = -3.07;
-  const dischargeWater = new WaterStream(ballisticPath({
-    origin: curtainTop,
-    velocity: new THREE.Vector3(Math.sin(spillAngle), -Math.cos(spillAngle), 0).multiplyScalar(rimSpeed * 0.55),
-    endY: tailFloorY + 0.03, samples: 28,
+  // Pass 70: Brown's spill is a broad spray, not a thin jet. Its inner edge
+  // hugs the wheel's outer circle (the water leaves every descending bucket
+  // over the lower-right quadrant) and its outer edge stays about 1.1 R out,
+  // so it widens as the rim falls away: about 0.15 R at the spill and 0.4 R
+  // on the pit floor. The curtain is one continuous sheet whose centre and
+  // thickness follow those two edges; its fall speed is free fall from the
+  // rim's downward speed.
+  const clearRadius = 2.88;
+  const outerX = 3.1;
+  // Smooth maximum of the rim circle and the floor-level edge, so the sheet
+  // has no crease where the two meet.
+  const innerXAt = (y) => {
+    const rim = Math.sqrt(Math.max(0, clearRadius ** 2 - y * y)) + 0.02;
+    return (rim + 1.98 + Math.hypot(rim - 1.98, 0.35)) / 2;
+  };
+  const curtainTopY = Math.sin(spillAngle) * (wheelRadius + 0.16);
+  const curtainSamples = 28;
+  const curtainPoints = [], curtainHalf = [];
+  for (let i = 0; i <= curtainSamples; i += 1) {
+    const y = curtainTopY + (tailFloorY + 0.03 - curtainTopY) * i / curtainSamples;
+    const inner = innerXAt(y);
+    curtainPoints.push(new THREE.Vector3((inner + outerX) / 2, y, 0));
+    curtainHalf.push((outerX - inner) / 2);
+  }
+  const fallSpeed0 = rimSpeed * 0.55;
+  const dischargeWater = new WaterStream(guidedPath(curtainPoints, {
+    samples: curtainSamples,
+    speedAt: (u) => Math.sqrt(fallSpeed0 ** 2 + 2 * gravity * u * (curtainTopY - tailFloorY)),
   }), {
     width: 0.44, thickness: 0.07, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.1,
-    spread: {start: 0.1, width: 1.05, thickness: 3.6}, fadeIn: 0.12, foam: {start: 0.8, amount: 0.55},
-    cyclePeriod, streakRate: 1.4, opacity: 0.42,
+    spread: {start: 0.1, width: 1.05, thickness: 1}, fadeIn: 0.1, fadeOut: 0.06,
+    foam: {start: 0.7, amount: 0.7}, section: (i, u, [a]) => [a, curtainHalf[i]],
+    cyclePeriod, streakRate: 1.4, streakAcross: 7, opacity: 0.32, radialSegments: 20,
   });
   dischargeWater.userData.role = 'water-spilled-from-descending-buckets-falling-to-tail-floor';
   root.add(dischargeWater);
   const tailSplash = new WaterSpray({
     origin: dischargeWater.path.points.at(-1).clone().setY(tailFloorY + 0.02),
     velocity: new THREE.Vector3(0.2, 1.3, 0), spread: 0.8, count: 28, lifetime: 0.42, radius: 0.04,
-    cyclePeriod, seed: 431, originSpread: new THREE.Vector3(0.15, 0, 0.4),
+    cyclePeriod, seed: 431, originSpread: new THREE.Vector3(0.5, 0, 0.4),
   });
   tailSplash.userData.role = 'splash-of-spilled-water-on-tail-floor';
   root.add(tailSplash);

@@ -9,7 +9,7 @@ import {
 } from './primitives.js';
 import {waterFountainGeometry, waterJetMaterial, waterVolumeMaterial} from './water-volume.js';
 import {WaterStream, ballisticPath, guidedPath, joinPaths} from './water-stream.js';
-import {latheSectionGeometry} from './cutaway-section.js';
+import {latheSectionGeometry, sectionMeshInPlace} from './cutaway-section.js';
 
 // Water in the back half of a sphere of radius R (section plane z = 0) up
 // to a level y: curved wall, level surface and the flat cut face. Fixed
@@ -980,22 +980,86 @@ function hydraulicRam(movement) {
     neckWater.userData.role = 'water-filling-neck-under-and-over-delivery-check';
     neckWater.renderOrder = 1;
     root.add(neckWater);
+    // Pass 70: Brown's shapes. The head box's bottom runs down in a filleted
+    // shoulder into the drive pipe, which falls straight, turns on one round
+    // elbow and runs level into the ram body (it used to sag like a hose).
+    // The neck stands on a flange and the waste seat on a raised collar.
+    const pipeX = reservoir.position.x, pipeY = -1.35, elbowR = 0.45, shoulderTop = reservoir.position.y - 0.07, shoulderLow = shoulderTop - 0.30;
+    const drivePath = new THREE.CurvePath();
+    drivePath.add(new THREE.LineCurve3(new THREE.Vector3(pipeX, shoulderLow, 0), new THREE.Vector3(pipeX, pipeY + elbowR, 0)));
+    class DriveElbow extends THREE.Curve {
+      getPoint(t, target = new THREE.Vector3()) {
+        const a = Math.PI / 2 * t;
+        return target.set(pipeX + elbowR - elbowR * Math.cos(a), pipeY + elbowR - elbowR * Math.sin(a), 0);
+      }
+    }
+    drivePath.add(new DriveElbow());
+    drivePath.add(new THREE.LineCurve3(new THREE.Vector3(pipeX + elbowR, pipeY, 0), new THREE.Vector3(bodyX0, pipeY, 0)));
+    drivePipe.geometry.dispose();
+    drivePipe.geometry = curvedPipeWall(drivePath, .14, .19, 160, 32);
+    drivePipe.userData.curve = drivePath;
+    const fillet = Array.from({length: 17}, (_, i) => {
+      const a = Math.PI / 2 * i / 16;
+      return [shoulderLow + 0.26 * Math.sin(a), 0.45 - 0.26 * Math.cos(a)];
+    });
+    const shoulder = new THREE.Mesh(latheSectionGeometry([[shoulderLow, .14], [shoulderTop, .14], [shoulderTop, .45],
+      ...fillet.reverse()].map(([y, r]) => [r, y]), {segments: 64, phiStart: 0, phiLength: Math.PI * 2}), frameMaterial);
+    shoulder.position.x = pipeX;
+    shoulder.userData.role = 'fixed-filleted-shoulder-of-head-box-into-drive-pipe';
+    root.add(shoulder);
+    const neckFlange = new THREE.Mesh(latheSectionGeometry([[.30, bodyY1], [.44, bodyY1], [.44, bodyY1 + .07], [.30, bodyY1 + .07]], {segments: 64}), darkMaterial);
+    neckFlange.position.x = chamberCenter.x;
+    neckFlange.userData.role = 'fixed-flange-joining-neck-to-ram-body';
+    root.add(neckFlange);
+    const wasteCollar = new THREE.Mesh(latheSectionGeometry([[.34, bodyY1], [.50, bodyY1], [.34, bodyY1 + .10]], {segments: 64, phiStart: 0, phiLength: Math.PI * 2}), darkMaterial);
+    wasteCollar.position.x = 1.58;
+    wasteCollar.userData.role = 'fixed-raised-collar-round-waste-seat';
+    root.add(wasteCollar);
+    // Brown draws the ram body, drive pipe and riser in section too: cut
+    // them on the drawing plane so the current inside them shows.
+    // The head box and tank are cut on the same plane (their walls and water
+    // used to run on in front of it with no front wall to hold the water).
+    for (const mesh of [ramBody, drivePipe, shoulder, wasteCollar, wasteSeat, outputPipe, ...tankParts, reservoirBottom, ...reservoirWalls]) sectionMeshInPlace(mesh, root);
+    const bodyWater = new THREE.Mesh(new THREE.BoxGeometry(bodyX1 - bodyX0 - 2 * t, bodyY1 - bodyY0 - 2 * t, bodyZ - t)
+      .translate((bodyX0 + bodyX1) / 2, (bodyY0 + bodyY1) / 2, -(bodyZ - t) / 2), waterVolumeMaterial({opacity: 0.4}));
+    bodyWater.userData.role = 'water-filling-ram-body';
+    bodyWater.renderOrder = 1;
+    root.add(bodyWater);
+    root.userData.blocks.bodyWater = bodyWater;
+    root.userData.blocks.shoulder = shoulder;
+    root.userData.blocks.neckFlange = neckFlange;
+    root.userData.blocks.wasteCollar = wasteCollar;
     const flow = {cyclePeriod: cycleDuration, streakRate: 1, opacity: 0.36, radialSegments: 16};
     const riserWater = new WaterStream(guidedPath([new THREE.Vector3(chamberCenter.x, -0.20, 0),
       new THREE.Vector3(chamberCenter.x, jetBaseY, 0)], {speed: 1, samples: 6}), {...flow, width: .12, thickness: .12});
     riserWater.userData.role = 'water-driven-up-riser-by-air-cushion';
     root.add(riserWater);
-    const driveStream = new WaterStream(guidedPath(drivePipe.userData.curve, {speed: 1, samples: 48}),
+    const streamPath = new THREE.CurvePath();
+    streamPath.add(new THREE.LineCurve3(new THREE.Vector3(pipeX, reservoir.position.y + 0.07, 0), new THREE.Vector3(pipeX, shoulderLow, 0)));
+    for (const piece of drivePath.curves) streamPath.add(piece);
+    const driveStream = new WaterStream(guidedPath(streamPath, {speed: 1, samples: 64}),
       {...flow, width: .135, thickness: .135});
     driveStream.userData.role = 'water-current-in-drive-pipe';
+    // Cut on the drawing plane with the pipes that carry them.
+    const sectionPlane = new THREE.Plane(new THREE.Vector3(0, 0, -1), 0);
+    for (const stream of [driveStream, riserWater]) stream.material.clippingPlanes = [sectionPlane];
+    reservoirWater.material = reservoirWater.material.clone();
+    reservoirWater.material.clippingPlanes = [sectionPlane];reservoirWater.material.side = THREE.DoubleSide;
+    root.userData.localClippingEnabled = true;
     root.add(driveStream);
     // Head supply: Brown's trough pours into the head box from the left.
     const chute = new THREE.Group();
     chute.userData.role = 'fixed-supply-trough-pouring-into-head-box';
     const slope = Math.atan2(0.30, 0.95);
-    for (const [w, h, d, y, z] of [[1.0, .05, .44, 0, 0], [1.0, .16, .04, .08, -.2], [1.0, .16, .04, .08, .2]]) {
-      const part = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), frameMaterial);
-      part.position.set(0, y, z);
+    // Pass 70: one U-section channel whose sides are cut back obliquely at
+    // the mouth, as Brown draws the spout end, instead of three loose boxes.
+    {
+      const side = poly([[-0.5, -0.025], [0.5, -0.025], [0.5, 0.02], [0.36, 0.16], [-0.5, 0.16]]);
+      const part = new THREE.Mesh(mergePassageParts([
+        new THREE.BoxGeometry(1.0, 0.05, 0.36),
+        plate(side, 0.18, 0.22), plate(side, -0.22, -0.18),
+      ]), frameMaterial);
+      part.userData.role = 'fixed-u-section-supply-trough';
       chute.add(part);
     }
     chute.rotation.z = -slope;
@@ -1022,10 +1086,19 @@ function hydraulicRam(movement) {
     // Retired: the air cushion volume (air is not drawn), the cylinder that
     // stood in for the vessel water, and the old riser and drive columns.
     for (const retired of [compressedAir, outputWater, driveWater, chamberWater]) retired.removeFromParent();
-    // Tail water fills the tank from its back wall to the section plane.
     tankWater.geometry.dispose();
-    tankWater.geometry = new THREE.BoxGeometry(2.58 - (-3.35), tankWaterLevel - tankFloorTop, 1.8);
-    tankWater.position.set((2.58 - 3.35) / 2, (tankWaterLevel + tankFloorTop) / 2, 0);
+    // Pass 70: it is cut on the drawing plane like the tank, and stops at the
+    // ram body and the sectioned neck, so it no longer tints their insides
+    // (the neck's own water shows there alone).
+    {
+      const tankRect = poly([[-3.35, tankFloorTop], [2.58, tankFloorTop], [2.58, tankWaterLevel], [-3.35, tankWaterLevel]]);
+      const around = polygonClipping.difference(tankRect,
+        poly([[bodyX0, tankFloorTop - 1], [bodyX1, tankFloorTop - 1], [bodyX1, bodyY1], [bodyX0, bodyY1]]),
+        poly([[chamberCenter.x - .30, bodyY1 - .01], [chamberCenter.x + .30, bodyY1 - .01], [chamberCenter.x + .30, tankWaterLevel + 1], [chamberCenter.x - .30, tankWaterLevel + 1]]));
+      // Like the tank itself it is cut on the drawing plane (z = 0).
+      tankWater.geometry = mergePassageParts([plate(tankRect, -0.9, -bodyZ), plate(around, -bodyZ, 0)]);
+    }
+    tankWater.position.set(0, 0, 0);
     tankWater.material = waterVolumeMaterial({opacity: 0.3});
     tankWater.renderOrder = 1;
     tankWater.userData.role = 'tail-water-filling-sectioned-lower-tank';

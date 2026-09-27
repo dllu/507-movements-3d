@@ -41,7 +41,7 @@ export function correctCapstanWheelwork(root){
  root.userData.minimumDisplayCycleSeconds=12;
  root.userData.displayTreatment.mechanicalGeometryOmitted=true;
  root.userData.displayTreatment.function='Source plan view of the base wheel-work; inferred upper capstan and selector hardware are omitted.';
- root.userData.reconstructionNote='Base wheel-work: locked input and barrel turn together; with the carrier held, the barrel reverses at one-third input speed. Mode changes occur at rest. The drumhead and locking hardware are omitted; tooth counts and shaft fits are reconstructed.';
+ root.userData.reconstructionNote='Base wheel-work: locked input and barrel turn together; with the carrier held, the barrel reverses at one-third input speed. Mode changes occur at rest. The drumhead that carries the locking pawls is omitted, so their eye pins end flush in the eyes; tooth counts and shaft fits are reconstructed.';
  root.traverse(o=>{for(const m of(Array.isArray(o.material)?o.material:[o.material]))if(m)m.fog=false;});
 }
 export function correctEntwistleGearing(root){

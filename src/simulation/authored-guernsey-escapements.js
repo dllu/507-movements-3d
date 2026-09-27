@@ -1,6 +1,7 @@
 import { correctGuernseyWorkingParts } from './guernsey-working-parts.js';
 import * as THREE from 'three';
 import {rebuildGuernseyAnchor} from './guernsey-anchor.js';
+import {makeSeeThrough} from './see-through-part.js';
 import {guernseyAnchorBake} from './baked/guernsey-anchor-402.js';
 import {plate, poly, circle, capsule, polygonClipping} from './finite-plate-geometry.js';
 import {
@@ -1167,6 +1168,47 @@ export function createAuthoredGuernseyEscapementMovement(movement) {
   if (movement.id !== 402) return null;
   const model = guernseyCounterOscillatingEscapement(movement);
   rebuildGuernseyAnchor(model, {THREE, plate, poly, circle, capsule, clip: polygonClipping, bake: guernseyAnchorBake});
+  addGuernseyBridge(model.root);
   markShadows(model.root);
   return model;
+}
+
+// Brown draws a bar from the anchor's pivot boss down to a round boss on the
+// escape wheel's centre, in front of the wheel: the teeth it covers are
+// dotted. It is read as the fixed bridge (cock) that carries the two fixed
+// arbors. It lies in front of every moving part, so it takes the shared
+// see-through style and the arbors end flush in its bores.
+function addGuernseyBridge(root) {
+  const find = (role) => {
+    let found = null;
+    root.traverse((o) => { if (o.userData.role === role) found = o; });
+    return found;
+  };
+  const leverArbor = find('fixed-axis-lever-B-arbor');
+  const wheelArbor = find('fixed-axis-escape-wheel-arbor');
+  const pivot = [leverArbor.position.x, leverArbor.position.y];
+  const hub = [wheelArbor.position.x, wheelArbor.position.y];
+  const back = 0.67, front = 0.77;
+  const shape = polygonClipping.difference(
+    polygonClipping.union(
+      capsule(pivot, hub, 0.10, 24),
+      poly(circle(pivot, 0.22, 72)),
+      poly(circle(hub, 0.42, 120)),
+    ),
+    poly(circle(pivot, 0.07, 48)),
+    poly(circle(hub, 0.075, 48)),
+  );
+  const bridge = new THREE.Mesh(plate(shape, back, front), matte(PALETTE.frame, {metalness: 0.2, roughness: 0.55}));
+  bridge.userData.role = 'fixed-bridge-carrying-lever-and-escape-wheel-arbors';
+  bridge.material.fog = false;
+  makeSeeThrough(bridge);
+  root.add(bridge);
+  // Each fixed arbor runs from its rear bearing to the bridge's front face.
+  for (const arbor of [leverArbor, wheelArbor]) {
+    const radius = arbor.geometry.parameters.radiusTop;
+    const low = arbor.position.z - arbor.geometry.parameters.height / 2;
+    arbor.geometry.dispose();
+    arbor.geometry = new THREE.CylinderGeometry(radius, radius, front - low, 28);
+    arbor.position.z = (front + low) / 2;
+  }
 }

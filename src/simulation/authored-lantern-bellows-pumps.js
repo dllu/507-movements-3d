@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import { correctFlexiblePumpParts } from './flexible-pump-working-parts.js';
+import {horizontalRing as solidRing, horizontalTurned, horizontalPlate} from './horizontal-turbine-solids.js';
+import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
+import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -62,12 +65,14 @@ function doubleLanternBellowsPump(movement) {
   const bellowsWaterRadius = 0.67;
   const bellowsEffectiveArea = Math.PI * bellowsWaterRadius ** 2;
   const maximumValveLift = 0.15;
-  const groundY = -2.26;
+  const groundY = -3.00;
+  const maximumFlapAngle = THREE.MathUtils.degToRad(35);
+  // Hinge axes of Brown's four flap checks (see the chest below).
   const valveSeats = Object.freeze({
-    leftDelivery: new THREE.Vector3(-0.40, -0.10, 0.55),
-    leftSuction: new THREE.Vector3(-1.25, -0.64, 0.55),
-    rightDelivery: new THREE.Vector3(0.40, -0.10, 0.55),
-    rightSuction: new THREE.Vector3(1.25, -0.64, 0.55),
+    leftDelivery: new THREE.Vector3(-0.43, -0.37, 0),
+    leftSuction: new THREE.Vector3(-1.51, -1.07, 0),
+    rightDelivery: new THREE.Vector3(0.43, -0.37, 0),
+    rightSuction: new THREE.Vector3(1.51, -1.07, 0),
   });
 
   const stateAtInputAngle = (
@@ -271,26 +276,6 @@ function doubleLanternBellowsPump(movement) {
   base.position.set(0, groundY + 0.075, 0);
   root.add(base);
 
-  const valveChest = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(5.25, 0.76, 1.72),
-    shellMaterial,
-  ), 'fixed-common-valve-chest-beneath-both-bellows');
-  valveChest.position.set(0, -0.55, 0.02);
-  root.add(valveChest);
-  const chestBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(5.34, 0.12, 1.84),
-    frameMaterial,
-  );
-  chestBottom.position.set(0, -0.96, 0.02);
-  root.add(chestBottom);
-
-  const standard = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.30, 4.15, 0.34),
-    frameMaterial,
-  ), 'fixed-central-standard-carrying-rocking-beam-pivot');
-  standard.position.set(0, 1.14, -0.72);
-  root.add(standard);
-
   const beam = addRole(new THREE.Group(),
     'single-common-rocking-lever-driving-bellows-in-opposition');
   beam.position.copy(beamPivot);
@@ -349,24 +334,7 @@ function doubleLanternBellowsPump(movement) {
   ), 'right-moving-lantern-bellows-top-plate');
   root.add(leftTopPlate, rightTopPlate);
 
-  const bottomPlateGeometry = new THREE.CylinderGeometry(
-    0.97,
-    0.97,
-    0.14,
-    48,
-  );
-  const leftBottomPlate = addRole(new THREE.Mesh(
-    bottomPlateGeometry,
-    frameMaterial,
-  ), 'fixed-left-lantern-bellows-bottom-plate');
-  leftBottomPlate.position.set(bellowsCenterXs.left, -0.18, 0);
-  root.add(leftBottomPlate);
-  const rightBottomPlate = addRole(new THREE.Mesh(
-    bottomPlateGeometry,
-    frameMaterial,
-  ), 'fixed-right-lantern-bellows-bottom-plate');
-  rightBottomPlate.position.set(bellowsCenterXs.right, -0.18, 0);
-  root.add(rightBottomPlate);
+  // Pass 70: the bellows stand directly on the chest top (no separate plates).
 
   const rodGeometry = new THREE.CylinderGeometry(0.085, 0.085, 1, 24);
   const leftConnectingRod = addRole(new THREE.Mesh(
@@ -427,110 +395,186 @@ function doubleLanternBellowsPump(movement) {
   const leftBellows = makeBellows('left');
   const rightBellows = makeBellows('right');
 
-  const addPipePair = (points, role, waterRole, outerRadius = 0.24) => {
-    const shell = makeTube(points, outerRadius, shellMaterial, role);
-    const water = makeTube(
-      points,
-      outerRadius * 0.60,
-      waterMaterial,
-      waterRole,
-    );
-    root.add(shell, water);
-    return { shell, water };
+  // Pass 70: Brown's flat valve chest and semicircular suction channel,
+  // drawn as plane sections (extrusions through the depth), with four hinged
+  // flap checks, a flared discharge riser and his hanging beam post.
+  //   chest     outer x ±2.85, y -1.25..-0.11, z ±0.86 (walls 0.13)
+  //   channel   circular arc about (0, -0.78): water between r 1.06 and 1.49
+  //             below the chest floor, depth ±0.40, walls to r 0.93 / 1.66
+  //   mouths    floor openings x ±(0.95..1.41), z ±0.40, under the suction flaps
+  //   centre    partitions at x ±(0.50..0.60) with ports y -0.95..-0.45,
+  //             z ±0.33, closed by the discharge flaps on their inner faces
+  const chest = Object.freeze({
+    halfWidth: 2.85, inner: 2.72, halfDepth: 0.86, innerDepth: 0.73,
+    topLow: -0.25, topHigh: bellowsFloorY, floorLow: -1.25, floorHigh: -1.12,
+    partitionInner: 0.50, partitionOuter: 0.60, portLow: -0.95, portHigh: -0.45, portDepth: 0.33,
+    channelCenterY: -0.78, channelInner: 1.06, channelOuter: 1.49, channelWall: 0.17,
+    domeInner: 0.93, channelDepth: 0.40, channelPlateDepth: 0.52,
+    mouthInner: 0.95, mouthOuter: 1.41, bossHalfWidth: 0.30, bossLow: -2.46, bossHigh: -2.28,
+    suctionInner: 0.20, suctionOuter: 0.28, suctionBottom: -2.95,
+    riserInner: 0.25, riserOuter: 0.33, riserStraightTop: 1.90,
+  });
+  const rect = (x0, y0, x1, y1) => poly([[x0, y0], [x1, y0], [x1, y1], [x0, y1]]);
+  const belowFloor = rect(-3, -4, 3, chest.floorLow);
+  const ringAbout = (inner, outer) => polygonClipping.difference(
+    poly(circle([0, chest.channelCenterY], outer, 256)),
+    poly(circle([0, chest.channelCenterY], inner, 256)));
+  const plumbingMaterial = frameMaterial;
+
+  const valveChest = addRole(new THREE.Mesh(mergePassageParts([
+    plate(polygonClipping.union(rect(-chest.halfWidth, chest.floorHigh, -chest.inner, chest.topLow),
+      rect(chest.inner, chest.floorHigh, chest.halfWidth, chest.topLow)), -chest.halfDepth, chest.halfDepth),
+    ...[-1, 1].map(side => new THREE.BoxGeometry(2 * chest.inner, chest.topLow - chest.floorHigh, chest.halfDepth - chest.innerDepth)
+      .translate(0, (chest.floorHigh + chest.topLow) / 2, side * (chest.innerDepth + chest.halfDepth) / 2)),
+    horizontalPlate(polygonClipping.difference(
+      rect(-chest.halfWidth, -chest.halfDepth, chest.halfWidth, chest.halfDepth),
+      poly(circle([bellowsCenterXs.left, 0], 0.45, 128)),
+      poly(circle([bellowsCenterXs.right, 0], 0.45, 128)),
+      poly(circle([0, 0], chest.partitionInner, 128))), chest.topLow, chest.topHigh),
+  ]), plumbingMaterial), 'fixed-common-valve-chest-beneath-both-bellows');
+  root.add(valveChest);
+  const chestBottom = addRole(new THREE.Mesh(horizontalPlate(polygonClipping.difference(
+    rect(-chest.halfWidth, -chest.halfDepth, chest.halfWidth, chest.halfDepth),
+    rect(-chest.mouthOuter, -chest.channelDepth, -chest.mouthInner, chest.channelDepth),
+    rect(chest.mouthInner, -chest.channelDepth, chest.mouthOuter, chest.channelDepth)),
+  chest.floorLow, chest.floorHigh), plumbingMaterial), 'fixed-valve-chest-floor-with-channel-mouths');
+  root.add(chestBottom);
+  const partitionParts = (side) => {
+    const x = side * (chest.partitionInner + chest.partitionOuter) / 2, w = chest.partitionOuter - chest.partitionInner;
+    const box = (y0, y1, z0, z1) => new THREE.BoxGeometry(w, y1 - y0, z1 - z0).translate(x, (y0 + y1) / 2, (z0 + z1) / 2);
+    return [box(chest.portHigh, chest.topLow, -chest.innerDepth, chest.innerDepth),
+      box(chest.floorHigh, chest.portLow, -chest.innerDepth, chest.innerDepth),
+      box(chest.portLow, chest.portHigh, chest.portDepth, chest.innerDepth),
+      box(chest.portLow, chest.portHigh, -chest.innerDepth, -chest.portDepth)];
   };
-  const commonSuction = addPipePair([
-    new THREE.Vector3(0, -2.16, 0.55),
-    new THREE.Vector3(0, -1.52, 0.55),
-    new THREE.Vector3(0, -1.05, 0.55),
-  ], 'common-suction-pipe-below-valve-chest',
-  'water-in-common-suction-pipe', 0.29);
-  const leftSuctionBranch = addPipePair([
-    new THREE.Vector3(0, -1.05, 0.55),
-    new THREE.Vector3(-0.68, -0.91, 0.55),
-    valveSeats.leftSuction,
-    new THREE.Vector3(-1.73, -0.24, 0.34),
-  ], 'left-suction-branch-through-left-inlet-check',
-  'water-passing-to-left-bellows-on-expansion', 0.22);
-  const rightSuctionBranch = addPipePair([
-    new THREE.Vector3(0, -1.05, 0.55),
-    new THREE.Vector3(0.68, -0.91, 0.55),
-    valveSeats.rightSuction,
-    new THREE.Vector3(1.73, -0.24, 0.34),
-  ], 'right-suction-branch-through-right-inlet-check',
-  'water-passing-to-right-bellows-on-expansion', 0.22);
-  const leftDeliveryBranch = addPipePair([
-    new THREE.Vector3(-1.73, -0.24, -0.20),
-    new THREE.Vector3(-1.15, -0.02, 0.20),
-    valveSeats.leftDelivery,
-    new THREE.Vector3(0, 0.43, 0.20),
-  ], 'left-delivery-branch-through-left-outlet-check',
-  'water-expelled-from-left-bellows-on-compression', 0.22);
-  const rightDeliveryBranch = addPipePair([
-    new THREE.Vector3(1.73, -0.24, -0.20),
-    new THREE.Vector3(1.15, -0.02, 0.20),
-    valveSeats.rightDelivery,
-    new THREE.Vector3(0, 0.43, 0.20),
-  ], 'right-delivery-branch-through-right-outlet-check',
-  'water-expelled-from-right-bellows-on-compression', 0.22);
-  const commonDischarge = addPipePair([
-    new THREE.Vector3(0, 0.43, 0.20),
-    new THREE.Vector3(0, 1.40, 0.08),
-    new THREE.Vector3(0, 2.72, -0.12),
-    new THREE.Vector3(0, 4.12, -0.12),
-  ], 'common-upright-discharge-pipe-behind-rocking-beam',
-  'water-in-common-discharge-riser', 0.29);
+  const chestPartitions = addRole(new THREE.Mesh(mergePassageParts([...partitionParts(-1), ...partitionParts(1)]), plumbingMaterial),
+    'fixed-ported-partitions-round-central-discharge-chamber');
+  root.add(chestPartitions);
 
-  const suctionMouth = horizontalRing(0.30, 0.055, darkMaterial);
-  suctionMouth.position.set(0, -2.16, 0.55);
-  root.add(suctionMouth);
-  const dischargeMouth = horizontalRing(0.30, 0.055, darkMaterial);
-  dischargeMouth.position.set(0, 4.12, -0.12);
-  root.add(dischargeMouth);
+  const channelSection = polygonClipping.union(
+    polygonClipping.difference(polygonClipping.intersection(ringAbout(chest.channelOuter, chest.channelOuter + chest.channelWall), belowFloor),
+      rect(-chest.bossHalfWidth, -4, chest.bossHalfWidth, -2.0)),
+    polygonClipping.intersection(ringAbout(chest.domeInner, chest.channelInner), belowFloor));
+  const channelCover = polygonClipping.intersection(poly(circle([0, chest.channelCenterY], chest.channelOuter + chest.channelWall, 256)), belowFloor);
+  const suctionChannel = addRole(new THREE.Mesh(mergePassageParts([
+    plate(channelSection, -chest.channelDepth, chest.channelDepth),
+    plate(channelCover, chest.channelDepth, chest.channelPlateDepth),
+    plate(channelCover, -chest.channelPlateDepth, -chest.channelDepth),
+    horizontalPlate(polygonClipping.difference(rect(-chest.bossHalfWidth, -chest.channelPlateDepth, chest.bossHalfWidth, chest.channelPlateDepth),
+      poly(circle([0, 0], chest.suctionInner, 96))), chest.bossLow, chest.bossHigh),
+  ]), plumbingMaterial), 'fixed-semicircular-suction-channel-under-chest');
+  root.add(suctionChannel);
+  const suctionPipe = addRole(new THREE.Mesh(solidRing(chest.suctionInner, chest.suctionOuter, chest.suctionBottom, chest.bossLow),
+    plumbingMaterial), 'common-suction-pipe-below-valve-chest');
+  root.add(suctionPipe);
 
-  const valveBodyMaterial = shellMaterial.clone();
-  valveBodyMaterial.opacity = 0.42;
-  const makeCheckValve = (position, material, role) => {
+  // The riser flares into the chest top over the central chamber, rises,
+  // leans right as Brown draws it, then turns back through the post and
+  // rises behind it out of the plate.
+  const flare = (centerR, semiR) => Array.from({length: 17}, (_, i) => {
+    const t = Math.PI / 2 * i / 16;
+    return [0.30 - 0.41 * Math.cos(t), centerR - semiR * Math.sin(t)];
+  });
+  const riserProfile = [...flare(chest.partitionInner, chest.partitionInner - chest.riserInner),
+    [chest.riserStraightTop + 0.01, chest.riserInner], [chest.riserStraightTop + 0.01, chest.riserOuter],
+    ...flare(0.62, 0.62 - chest.riserOuter).reverse()];
+  riserProfile[0][0] = chest.topHigh;riserProfile.at(-1)[0] = chest.topHigh;
+  const riserBend = new THREE.CurvePath();
+  riserBend.add(new THREE.CubicBezierCurve3(new THREE.Vector3(0, chest.riserStraightTop, 0), new THREE.Vector3(0, 2.30, 0),
+    new THREE.Vector3(0.22, 2.45, 0), new THREE.Vector3(0.22, 2.45, -0.45)));
+  riserBend.add(new THREE.LineCurve3(new THREE.Vector3(0.22, 2.45, -0.45), new THREE.Vector3(0.22, 2.45, -0.90)));
+  // Behind the post it turns up again and rises out of the plate.
+  class RiserElbow extends THREE.Curve {
+    getPoint(t, target = new THREE.Vector3()) {
+      const a = Math.PI / 2 * t;
+      return target.set(0.22, 2.80 - 0.35 * Math.cos(a), -0.90 - 0.35 * Math.sin(a));
+    }
+  }
+  riserBend.add(new RiserElbow());
+  riserBend.add(new THREE.LineCurve3(new THREE.Vector3(0.22, 2.80, -1.25), new THREE.Vector3(0.22, 4.55, -1.25)));
+  const dischargeShell = addRole(new THREE.Mesh(mergePassageParts([
+    horizontalTurned(riserProfile.slice().reverse()), curvedPipeWall(riserBend, chest.riserInner, chest.riserOuter, 160, 40)]), plumbingMaterial),
+  'common-upright-discharge-pipe-behind-rocking-beam');
+  dischargeShell.userData.curve = riserBend;
+  root.add(dischargeShell);
+
+  // Brown's post hangs from above the plate and carries the beam fulcrum;
+  // the riser passes through a bore in it.
+  const standard = addRole(new THREE.Mesh(plate(polygonClipping.difference(rect(-0.47, 1.86, 0.47, 4.60),
+    poly(circle([0.22, 2.45], chest.riserOuter + 0.005, 96))), -0.80, -0.50), frameMaterial),
+  'fixed-hanging-post-carrying-rocking-beam-pivot');
+  root.add(standard);
+
+  // Water: one body from the suction pipe through the channel and mouths to
+  // the chest, its three chambers, ports and bellows openings, and one body
+  // up the riser. It is all primed and incompressible.
+  const channelWater = polygonClipping.union(
+    polygonClipping.intersection(ringAbout(chest.channelInner, chest.channelOuter), belowFloor),
+    rect(-chest.bossHalfWidth, chest.bossHigh, chest.bossHalfWidth, -2.15),
+    rect(-chest.mouthOuter, chest.floorLow - 0.02, -chest.mouthInner, chest.floorHigh),
+    rect(chest.mouthInner, chest.floorLow - 0.02, chest.mouthOuter, chest.floorHigh));
+  const chestWaterSection = polygonClipping.difference(rect(-chest.inner, chest.floorHigh, chest.inner, chest.topLow),
+    rect(-chest.partitionOuter, chest.floorHigh - 1, -chest.partitionInner, chest.topLow + 1),
+    rect(chest.partitionInner, chest.floorHigh - 1, chest.partitionOuter, chest.topLow + 1));
+  const suctionWater = addRole(new THREE.Mesh(mergePassageParts([
+    new THREE.CylinderGeometry(chest.suctionInner, chest.suctionInner, chest.bossHigh - chest.suctionBottom, 64)
+      .translate(0, (chest.bossHigh + chest.suctionBottom) / 2, 0),
+    plate(channelWater, -chest.channelDepth + 0.005, chest.channelDepth - 0.005),
+  ]), waterMaterial), 'water-in-common-suction-pipe');
+  const chestWater = addRole(new THREE.Mesh(mergePassageParts([
+    plate(chestWaterSection, -chest.innerDepth + 0.005, chest.innerDepth - 0.005),
+    ...[-1, 1].map(side => new THREE.BoxGeometry(chest.partitionOuter - chest.partitionInner, chest.portHigh - chest.portLow, 2 * chest.portDepth)
+      .translate(side * (chest.partitionInner + chest.partitionOuter) / 2, (chest.portLow + chest.portHigh) / 2, 0)),
+    ...[bellowsCenterXs.left, bellowsCenterXs.right].map(x => new THREE.CylinderGeometry(0.45, 0.45, bellowsFloorY + 0.05 - chest.topLow, 64)
+      .translate(x, (bellowsFloorY + 0.05 + chest.topLow) / 2, 0)),
+  ]), waterMaterial), 'water-filling-valve-chest-chambers');
+  const riserWaterProfile = [[chest.topLow, 0], ...flare(chest.partitionInner, chest.partitionInner - chest.riserInner).map(([y, r]) => [y, r - 0.005]),
+    [chest.riserStraightTop, chest.riserInner - 0.005], [chest.riserStraightTop, 0]];
+  riserWaterProfile[1] = [chest.topLow, chest.partitionInner - 0.005];
+  const dischargeWater = addRole(new THREE.Mesh(mergePassageParts([
+    horizontalTurned(riserWaterProfile), new THREE.TubeGeometry(riserBend, 160, chest.riserInner - 0.005, 32, false)]), waterMaterial),
+  'water-in-common-discharge-riser');
+  root.add(suctionWater, chestWater, dischargeWater);
+  const commonSuction = {shell: suctionPipe, water: suctionWater};
+  const commonDischarge = {shell: dischargeShell, water: dischargeWater};
+
+  // Four flap checks, each a plate extruded through the depth with a bored
+  // hinge boss on a fixed pin carried by two journals. Suction flaps lie on
+  // the floor over the channel mouths, hinged at their outer ends; discharge
+  // flaps hang on the inner faces of the partitions, hinged at the top.
+  const flapShape = (body, arm, boss = 0.04, bore = 0.018) => polygonClipping.difference(
+    polygonClipping.union(body, arm, poly(circle([0, 0], boss, 64))), poly(circle([0, 0], bore, 48)));
+  const makeFlap = ({pivot, shape, halfDepth, journalDepth, journal, material, role, sign}) => {
     const valve = addRole(new THREE.Group(), role);
-    valve.position.copy(position);
-    const body = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.31, 0.31, 0.42, 32, 1, true),
-      valveBodyMaterial,
-    );
-    valve.add(body);
-    const seat = horizontalRing(0.23, 0.045, darkMaterial);
-    seat.position.y = -0.10;
-    valve.add(seat);
-    const disk = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.22, 0.22, 0.07, 30),
-      material,
-    );
-    disk.position.y = -0.05;
-    valve.add(disk);
-    valve.userData.disk = disk;
-    valve.userData.closedDiskY = -0.05;
-    root.add(valve);
+    valve.position.copy(pivot);
+    const flap = new THREE.Mesh(plate(shape, -halfDepth, halfDepth), material);
+    flap.userData.role = `${role}-flap`;
+    valve.add(flap);
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 2 * journalDepth[1], 24).rotateX(Math.PI / 2), darkMaterial);
+    pin.userData.role = `${role}-fixed-hinge-pin`;pin.position.copy(pivot);
+    const journals = new THREE.Mesh(mergePassageParts([-1, 1].map(s => new THREE.BoxGeometry(...journal.size)
+      .translate(journal.offset[0], journal.offset[1], s * (journalDepth[0] + journalDepth[1]) / 2))), plumbingMaterial);
+    journals.userData.role = `${role}-fixed-hinge-journals`;journals.position.copy(pivot);
+    root.add(valve, pin, journals);
+    valve.userData.disk = flap;valve.userData.sign = sign;valve.userData.pin = pin;valve.userData.journals = journals;
     return valve;
   };
-  const leftSuctionValve = makeCheckValve(
-    valveSeats.leftSuction,
-    suctionValveMaterial,
-    'left-suction-check-opening-only-while-left-bellows-expands',
-  );
-  const rightSuctionValve = makeCheckValve(
-    valveSeats.rightSuction,
-    suctionValveMaterial,
-    'right-suction-check-opening-only-while-right-bellows-expands',
-  );
-  const leftDeliveryValve = makeCheckValve(
-    valveSeats.leftDelivery,
-    deliveryValveMaterial,
-    'left-delivery-check-opening-only-while-left-bellows-compresses',
-  );
-  const rightDeliveryValve = makeCheckValve(
-    valveSeats.rightDelivery,
-    deliveryValveMaterial,
-    'right-delivery-check-opening-only-while-right-bellows-compresses',
-  );
+  const suctionFlap = (side) => makeFlap({
+    pivot: new THREE.Vector3(side * 1.51, chest.floorHigh + 0.05, 0),
+    shape: flapShape(rect(side > 0 ? -0.61 : 0.05, -0.05, side > 0 ? -0.05 : 0.61, 0), rect(side > 0 ? -0.05 : 0, -0.05, side > 0 ? 0 : 0.05, 0)),
+    halfDepth: 0.45, journalDepth: [0.47, 0.53], journal: {size: [0.12, 0.09, 0.06], offset: [0, -0.005]},
+    material: suctionValveMaterial, sign: side > 0 ? -1 : 1,
+    role: `${side < 0 ? 'left' : 'right'}-suction-check-opening-only-while-${side < 0 ? 'left' : 'right'}-bellows-expands`,
+  });
+  const deliveryFlap = (side) => makeFlap({
+    pivot: new THREE.Vector3(side * 0.43, -0.37, 0),
+    shape: flapShape(rect(side > 0 ? 0.02 : -0.07, -0.63, side > 0 ? 0.07 : -0.02, 0), rect(side > 0 ? 0 : -0.07, -0.04, side > 0 ? 0.07 : 0, 0)),
+    halfDepth: 0.38, journalDepth: [0.39, 0.45], journal: {size: [0.10, 0.08, 0.06], offset: [side * 0.02, 0]},
+    material: deliveryValveMaterial, sign: side > 0 ? -1 : 1,
+    role: `${side < 0 ? 'left' : 'right'}-delivery-check-opening-only-while-${side < 0 ? 'left' : 'right'}-bellows-compresses`,
+  });
+  const leftSuctionValve = suctionFlap(-1), rightSuctionValve = suctionFlap(1);
+  const leftDeliveryValve = deliveryFlap(-1), rightDeliveryValve = deliveryFlap(1);
 
   const updateBellows = (bellows, fixedX, topCenter, topY) => {
     const bottom = new THREE.Vector3(fixedX, bellowsFloorY, 0);
@@ -578,18 +622,9 @@ function doubleLanternBellowsPump(movement) {
       state.rightTopPlateCenter,
       state.rightBellowsTopY,
     );
-    leftSuctionValve.userData.disk.position.y =
-      leftSuctionValve.userData.closedDiskY
-        + state.leftSuctionValveLift;
-    rightSuctionValve.userData.disk.position.y =
-      rightSuctionValve.userData.closedDiskY
-        + state.rightSuctionValveLift;
-    leftDeliveryValve.userData.disk.position.y =
-      leftDeliveryValve.userData.closedDiskY
-        + state.leftDeliveryValveLift;
-    rightDeliveryValve.userData.disk.position.y =
-      rightDeliveryValve.userData.closedDiskY
-        + state.rightDeliveryValveLift;
+    for (const [valve, open] of [[leftSuctionValve, state.leftSuctionValveOpen],
+      [rightSuctionValve, state.rightSuctionValveOpen], [leftDeliveryValve, state.leftDeliveryValveOpen],
+      [rightDeliveryValve, state.rightDeliveryValveOpen]]) valve.rotation.z = valve.userData.sign * maximumFlapAngle * open;
     root.userData.updateSolids?.(state);
   };
 
@@ -607,7 +642,9 @@ function doubleLanternBellowsPump(movement) {
     cycleDuration,
     groundY,
     inputAngularSpeed,
+    maximumFlapAngle,
     maximumValveLift,
+    chest,
     topPlateHalfThickness,
     valveSeats,
   };
@@ -621,24 +658,21 @@ function doubleLanternBellowsPump(movement) {
     blocks: {
       base,
       chestBottom,
+      chestPartitions,
+      chestWater,
+      suctionChannel,
       beam,
       commonDischarge,
       commonSuction,
       leftBellows,
-      leftBottomPlate,
       leftConnectingRod,
-      leftDeliveryBranch,
       leftDeliveryValve,
-      leftSuctionBranch,
       leftSuctionValve,
       leftTopPlate,
       pivotAxle,
       rightBellows,
-      rightBottomPlate,
       rightConnectingRod,
-      rightDeliveryBranch,
       rightDeliveryValve,
-      rightSuctionBranch,
       rightSuctionValve,
       rightTopPlate,
       standard,
@@ -658,7 +692,7 @@ function doubleLanternBellowsPump(movement) {
       fullAirRarefactionWaterPressureValveImpactLeakageBellowsElasticityAndLeverForceModeled:
         false,
       checkValveModel:
-        'Four reconstructed vertical lift checks use disjoint C2 cubic stroke lobes. Each bellows suction check opens only while its volume increases, its delivery check opens only while volume decreases, and every disk is seated at reversal.',
+        'Four hinged flap checks, as Brown draws them, swing through disjoint C2 cubic stroke lobes. Each suction flap lies on the chest floor over a mouth of the semicircular suction channel and opens only while its bellows expands; each discharge flap hangs on a partition of the central discharge chamber and opens only while its bellows compresses; every flap is seated at reversal.',
       flowModel:
         'Both primed bellows use the same effective area. The central beam gives exactly opposite vertical plate velocities, so at every moving instant the expanding side suction flow exactly equals the compressing side delivery flow. Pressure losses, leakage, trapped air and pipe compliance are omitted.',
     },
@@ -710,9 +744,9 @@ function doubleLanternBellowsPump(movement) {
           'the valves work as in the ordinary force pump',
         ],
         engravingEvidence:
-          'Brown’s section shows one centrally pivoted beam with a vertical rod to each bellows top, a tall distended left bellows, a short compressed right bellows, a shared lower valve chest and suction stem, and a central upright discharge passage.',
+          'Brown’s section shows one centrally pivoted beam with a vertical rod to each bellows top, a tall distended left bellows, a short compressed right bellows, a flat valve chest divided round a central discharge chamber, a semicircular suction channel under it with the suction pipe at its foot, four flap valves, a flared central discharge pipe and the post carrying the beam, broken off above.',
         reconstructionDisclosure:
-          'Brown gives no bellows diameter, stroke, pleat count, rod length, valve lift, exact flap geometry, water pressure, leakage, elasticity, applied force or timing. Those dimensions, vertical poppet-style checks, transparent cutaway, colors and 5.4-second harmonic beam cycle are independently engineered. The single beam, opposed bellows states, two checks per chamber, common suction and common discharge are source-grounded.',
+          'Brown gives no bellows diameter, stroke, pleat count, rod length, valve lift, exact flap geometry, water pressure, leakage, elasticity, applied force or timing. Those dimensions, flap proportions and hinge journals, the riser turning back through the post above Brown’s break, the cutaway, colors and 5.4-second harmonic beam cycle are independently engineered. The single beam, opposed bellows states, two checks per chamber, common suction and common discharge are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 453',
@@ -730,8 +764,8 @@ function doubleLanternBellowsPump(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.65, groundY, -1.55),
-    new THREE.Vector3(3.90, 4.25, 1.55),
+    new THREE.Vector3(-3.65, groundY, -1.65),
+    new THREE.Vector3(3.90, 4.60, 1.55),
   );
   root.userData.cameraDistanceScale = 1.06;
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.8, 10.8);

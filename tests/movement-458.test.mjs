@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { bailHang } from '../src/simulation/well-bucket-working-parts.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -58,8 +59,12 @@ test('movement 458 has one fixed-axis sheave, one continuous rope, and exactly t
   assert.equal(blocks.rightRopeLeg.parent, blocks.continuousRope);
   assert.equal(blocks.leftBucket.bucket.parent, model.root);
   assert.equal(blocks.rightBucket.bucket.parent, model.root);
-  assert.equal(blocks.leftBucket.water.parent, blocks.leftBucket.bucket);
-  assert.equal(blocks.rightBucket.water.parent, blocks.rightBucket.bucket);
+  // The water rides in each bucket's tipper (it turns about the ears).
+  for (const side of [blocks.leftBucket, blocks.rightBucket]) {
+    let holder = side.water;
+    while (holder && holder !== side.bucket) holder = holder.parent;
+    assert.equal(holder, side.bucket);
+  }
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.pulleySpinIndependent, false);
@@ -172,7 +177,13 @@ test('movement 458 follows the source 40/10/40/10 exchange with the empty side p
     'left-bucket-filling-low-right-bucket-emptying-high');
   near(exchange.ropeSpeed, 0, 0, 'rope stopped for exchange');
   near(exchange.leftWaterFraction, 0.5, 2e-15, 'left half filled');
-  near(exchange.rightWaterFraction, 0.5, 2e-15, 'right half emptied');
+  // Pass 70: the raised bucket empties by tipping; at mid-dwell it is held
+  // tipped and empty, earlier it spills as it tips.
+  near(exchange.rightWaterFraction, 0, 0, 'right emptied by tipping');
+  assert.ok(exchange.rightBucketTilt > THREE.MathUtils.degToRad(100));
+  const rightPouring = atPhase(0.42);
+  assert.ok(rightPouring.rightWaterFraction > 0 && rightPouring.rightWaterFraction < 1);
+  assert.ok(rightPouring.rightWaterFractionRate < 0 && rightPouring.rightBucketTilt > 0);
 
   assert.equal(returning.mode,
     'right-empty-pulled-down-raising-left-full-bucket');
@@ -185,7 +196,9 @@ test('movement 458 follows the source 40/10/40/10 exchange with the empty side p
   assert.equal(reset.mode,
     'left-bucket-emptying-high-right-bucket-filling-low');
   near(reset.ropeSpeed, 0, 0, 'rope stopped for reset');
-  near(reset.leftWaterFraction, 0.5, 2e-15, 'left half emptied');
+  near(reset.leftWaterFraction, 0, 0, 'left emptied by tipping');
+  assert.ok(reset.leftBucketTilt > THREE.MathUtils.degToRad(100));
+  near(atPhase(0).leftBucketTilt, 0, 0, 'upright again at the loop seam');
   near(reset.rightWaterFraction, 0.5, 2e-15, 'right half filled');
   assert.deepEqual(timeline.stages, [
     'left empty down / right full up',
@@ -213,8 +226,10 @@ test('movement 458 preserves one constant rope length and exactly opposite bucke
       `reported rope length at ${sample}`);
     near(state.leftBailY + state.rightBailY, bailSum, 3e-16,
       `opposed bail travel at ${sample}`);
-    near(state.leftBucketCenter.y + state.rightBucketCenter.y,
-      source.leftBucketCenter.y + source.rightBucketCenter.y, 7e-16,
+    // Less the hang-back of a bucket tipped past 50 degrees (bailHang).
+    near(state.leftBucketCenter.y - bailHang(state.leftBucketTilt, geometry.bucketHandleRise).y
+      + state.rightBucketCenter.y - bailHang(state.rightBucketTilt, geometry.bucketHandleRise).y,
+      source.leftBucketCenter.y + source.rightBucketCenter.y, 1e-12,
     `opposed bucket travel at ${sample}`);
     near(state.leftBucketCenter.x, -geometry.pulleyRadius, 0,
       `left tangent x at ${sample}`);

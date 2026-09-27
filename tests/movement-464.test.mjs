@@ -109,7 +109,7 @@ test('movement 464 source record preserves Brown’s three paths and identifies 
     claim.includes('central tube')));
   assert.match(evidence.engravingEvidence, /open rectangular upper basin/i);
   assert.match(evidence.reconstructionDisclosure, /no vessel capacities/i);
-  assert.match(evidence.reconstructionDisclosure, /nonphysical hidden-flow reset/i);
+  assert.match(evidence.reconstructionDisclosure, /steady-play loop with held levels/i);
   disposeModel(model.root);
 });
 
@@ -233,43 +233,33 @@ test('movement 464 vessel levels follow their volumes and move in the source-pre
   disposeModel(model.root);
 });
 
-test('movement 464 physical flow rates have the same exact volume balance as the cumulative transfers', () => {
+test('movement 464 plays steadily through the loop: drain equals jet, levels and pressure hold, no reset', () => {
   const { model } = movementModel();
-  const { geometry, stateAtPhase } = model.root.userData;
+  const { geometry, stateAtPhase, stateAtTransferProgress, sourcePose } = model.root.userData;
+  const held = stateAtTransferProgress(sourcePose.transferProgress);
 
-  for (const phase of [0.05, 0.18, 0.36, 0.54, 0.68]) {
+  for (let index = 0; index <= 50; index += 1) {
+    const phase = index / 50;
     const state = stateAtPhase(phase);
-    assert.ok(state.transferProgressRate > 0);
-    assert.ok(state.flowFraction > 0);
-    assert.equal(state.physicalFlowsVisible, true);
-    near(state.drainFlowRate,
-      geometry.lowerTransfer * state.transferProgressRate, 1e-12,
-      `drain rate at phase ${phase}`);
-    near(state.jetFlowRate,
-      geometry.intermediateTransfer * state.transferProgressRate, 1e-12,
-      `jet rate at phase ${phase}`);
-    near(state.externalPourFlowRate,
-      geometry.externalPourTransfer * state.transferProgressRate, 1e-12,
-      `pour rate at phase ${phase}`);
-    near(state.drainFlowRate,
-      state.jetFlowRate + state.externalPourFlowRate, 1e-12,
+    assert.equal(state.physicalFlowsVisible, true, `jet plays at phase ${phase}`);
+    assert.equal(state.flowFraction, 1);
+    assert.ok(state.drainFlowRate > 0 && state.jetFlowRate > 0);
+    near(state.drainFlowRate, state.jetFlowRate + state.externalPourFlowRate, 1e-12,
       `rate balance at phase ${phase}`);
+    near(state.externalPourFlowRate, 0, 0, 'no external pour');
+    // Levels and pressure are held at the source pose (disclosed).
+    near(state.lowerWaterSurfaceY, held.lowerWaterSurfaceY, 1e-12, `foot level held at ${phase}`);
+    near(state.intermediateWaterSurfaceY, held.intermediateWaterSurfaceY, 1e-12, `bowl level held at ${phase}`);
+    near(state.topWaterSurfaceY, held.topWaterSurfaceY, 1e-12, `basin level held at ${phase}`);
+    near(state.sharedGasPressure, held.sharedGasPressure, 1e-9, `pressure held at ${phase}`);
+    assert.equal(state.transferProgressRate, 0);
+    assert.match(state.regime, /steady-play/);
   }
-  const hold = stateAtPhase(0.76);
-  const reset = stateAtPhase(0.90);
-  near(hold.drainFlowRate, 0, 1e-12, 'hold drain stopped');
-  near(reset.drainFlowRate, 0, 1e-12, 'reset drain hidden');
-  near(reset.jetFlowRate, 0, 1e-12, 'reset jet hidden');
-  near(reset.externalPourFlowRate, 0, 1e-12, 'reset pour hidden');
-  assert.ok(reset.transferProgressRate < 0);
-  assert.equal(reset.physicalFlowsVisible, false);
-  assert.match(reset.regime, /nonphysical-hidden-level-reset/);
-  assert.match(model.root.userData.dynamics.resetDisclosure,
-    /no reverse water or air flow is depicted or claimed/);
+  assert.match(model.root.userData.dynamics.resetDisclosure, /No reset: the loop shows steady play/);
   disposeModel(model.root);
 });
 
-test('movement 464 operating and hidden-reset schedule is C2 at every boundary and closes exactly', () => {
+test('movement 464 steady-play schedule is C2 everywhere and closes exactly', () => {
   const { model } = movementModel();
   const { geometry, stateAtPhase } = model.root.userData;
   const boundaries = [0, geometry.operationEndPhase, geometry.resetStartPhase];

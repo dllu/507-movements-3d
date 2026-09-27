@@ -56,7 +56,7 @@ export function correctWaterLiftParts(root,id) {
     b.basin.visible=false;
     // The basin water between the two banks, from its surface to the floor
     // (it was a thin surface sheet).
-    {const top=-1.5,left=y=>-2.2+.28*(-.55-y)/1.87,right=y=>1.25+.25*(.9-y)/3.32;
+    {const top=-1.27,left=y=>-2.2+.28*(-.55-y)/1.87,right=y=>1.25+.25*(.9-y)/3.32;
      replace(b.basinWater,plate(poly([[left(-2.42),-2.42],[right(-2.42),-2.42],[right(top),top],[left(top),top]]),-1.2,1.2));b.basinWater.position.set(0,0,0);b.basinWater.material=waterVolumeMaterial();b.basinWater.renderOrder=1;}
     const outline=poly([[-.62,-.06],[.02,.12],[2.82,-.31],[3.43,-.08],[3.24,-.92],[2.56,-1.20],[1.78,-.88],[.12,-.31],[-.62,-.31]]);
     const bosses=clip.union(outline,poly(circle([0,0],.23,64)),poly(circle([g.scoopConnectionRadius,0],.18,64)),poly([[g.scoopConnectionRadius-.12,-.45],[g.scoopConnectionRadius+.12,-.45],[g.scoopConnectionRadius+.12,0],[g.scoopConnectionRadius-.12,0]]));

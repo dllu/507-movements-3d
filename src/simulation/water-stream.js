@@ -41,6 +41,9 @@ import { PALETTE } from './primitives.js';
 //     fadeIn, fadeOut      path fractions over which alpha ramps
 //     foam                 {start, amount}: whitening toward the end (strike)
 //     radialSegments       section vertices (default 12)
+//     section              optional (i, u, [a, b]) => [a, b]: final say on
+//                          the half-width / half-thickness at sample i (a
+//                          curtain bounded by a wheel rim, say); opt-in
 //     cyclePeriod          playback loop period: the texture scroll rate is
 //                          rounded so the flow detail loops seamlessly
 //     streakRate           texture tiles per second of flight (default 2)
@@ -333,6 +336,7 @@ export class WaterStream extends THREE.Mesh {
     opacity = 0.5,
     material = null,
     minThickness = 0.006,
+    section = null,
   } = {}) {
     const n = path.points.length;
     const ring = radialSegments + 1;
@@ -363,7 +367,7 @@ export class WaterStream extends THREE.Mesh {
     this.renderOrder = 2;
     this.userData.waterStream = true;
     this.options = {width, thickness, widthAxis, widthExponent, spread, fadeIn, fadeOut, foam,
-      radialSegments, minThickness, streakAcross};
+      radialSegments, minThickness, streakAcross, section};
     this.flow = flow;
     this.path = path;
     const rate = cyclePeriod ? Math.max(1, Math.round(streakRate * cyclePeriod)) / cyclePeriod : streakRate;
@@ -412,6 +416,7 @@ export class WaterStream extends THREE.Mesh {
       a *= 1 + ((spread.width ?? 1) - 1) * s;
       b *= 1 + ((spread.thickness ?? 1) - 1) * s;
     }
+    if (this.options.section) return this.options.section(i, i / (speeds.length - 1), [a, b]);
     return [a, b];
   }
 

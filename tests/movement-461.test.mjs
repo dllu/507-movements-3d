@@ -63,11 +63,16 @@ test('movement 461 is Brown\'s lattice: six horizontals, six parallel diagonals,
   const lowest = geometry.rightBoxes[1].clone().sub(geometry.lowerMouth);
   near(lowest.x, geometry.diagonal.x, 1e-12, 'lowest diagonal rises from the pool at the same slant');
   near(Math.atan2(geometry.diagonal.y, geometry.diagonal.x) * 180 / Math.PI, 35.6, 0.5, 'diagonal slant');
-  // The two serpentines use disjoint boxes and rows: odd rows pour from the
-  // open top pipe, even rows from the free diagonal.
+  // The two serpentines use disjoint boxes and rows; both pour from the open
+  // top pipe (Brown's one jet): the even one joins it through a port where the
+  // highest diagonal crosses behind it, below that diagonal's open vent.
   const [odd, even] = geometry.paths;
   assert.ok(odd.points.at(-1).equals(geometry.topOutlet));
-  assert.ok(even.points.at(-1).equals(geometry.freeTop));
+  assert.ok(even.points.at(-1).equals(geometry.topOutlet));
+  assert.ok(even.points.at(-2).equals(geometry.topJunction));
+  near(geometry.topJunction.y, geometry.rowLevels[5], 1e-12, 'port on the top pipe');
+  const vent = geometry.freeTop.clone().sub(geometry.topJunction);
+  near(Math.atan2(vent.y, vent.x), Math.atan2(geometry.diagonal.y, geometry.diagonal.x), 1e-12, 'vent stub continues the diagonal');
   assert.ok(odd.points[0].equals(geometry.lowerMouth));
   assert.ok(even.points[0].equals(geometry.scoopMouth));
   for (const path of geometry.paths) {
@@ -124,12 +129,15 @@ test('movement 461 flaps close the whole bore against a seat rib and pocketed hi
   }
 }));
 
-test('movement 461 conserves water: each serpentine holds three parcels, and what it pours is what it scooped', () => withModel((model, data) => {
+test('movement 461 conserves water: what each serpentine pours is what it scooped', () => withModel((model, data) => {
   const { geometry } = data;
   for (let sample = 0; sample <= 1200; sample += 1) {
     const state = data.stateAtTime(geometry.cycleDuration * sample / 1200);
     state.serpentines.forEach((serpentine, pathIndex) => {
-      near(serpentine.conduitLength + serpentine.poured - serpentine.scooped, 3 * geometry.parcelLength, 1e-9,
+      // Water in the pipes at the start of the half (the even serpentine also
+      // holds its parcel waiting in the top pipe through the left-down swing).
+      const held = pathIndex === 1 && state.half === 0 ? 4 : 3;
+      near(serpentine.conduitLength + serpentine.poured - serpentine.scooped, held * geometry.parcelLength, 1e-9,
         `serpentine ${pathIndex} inventory at ${sample}`);
     });
     // Parcels never overlap one another and never cross a closed flap.
@@ -146,12 +154,14 @@ test('movement 461 conserves water: each serpentine holds three parcels, and wha
       });
     }
   }
-  // Each serpentine's exchange half scoops and pours one parcel.
+  // The odd serpentine scoops and pours on the left-down swing; the even one
+  // pours then too (through the top jet) and scoops on the right-down swing.
   const endA = data.stateAtInputAngle(Math.PI - 1e-9);
   const endB = data.stateAtInputAngle(FULL_TURN - 1e-9);
   near(endA.serpentines[0].poured, geometry.parcelLength, 1e-6, 'odd serpentine pours one parcel on the left-down swing');
   near(endA.serpentines[0].scooped, geometry.parcelLength, 1e-6, 'odd serpentine scoops one parcel on the left-down swing');
-  near(endB.serpentines[1].poured, geometry.parcelLength, 1e-6, 'even serpentine pours on the right-down swing');
+  near(endA.serpentines[1].poured, geometry.parcelLength, 1e-6, 'even serpentine pours on the left-down swing');
+  near(endB.serpentines[1].poured, 0, 0, 'even serpentine does not pour on the right-down swing');
   near(endB.serpentines[1].scooped, geometry.parcelLength, 1e-6, 'even serpentine scoops on the right-down swing');
 }));
 
@@ -200,34 +210,28 @@ test('movement 461 water is drawn per compartment, one parcel at most in each, c
   });
 }));
 
-test('movement 461 poured streams leave the open ends and clear the lattice', () => withModel((model, data) => {
+test('movement 461 both serpentines pour through Brown\'s one top jet, clear of the lattice', () => withModel((model, data) => {
   const { blocks, geometry } = data;
-  const [topJet, freeJet] = blocks.dischargeJets;
-  let topSeen = 0, freeSeen = 0;
+  const jets = blocks.dischargeJets;
+  const seen = [0, 0];
   for (let sample = 0; sample <= 400; sample += 1) {
     const time = geometry.cycleDuration * sample / 400;
     model.update(time);
-    if (topJet.visible) topSeen += 1;
-    if (freeJet.visible) {
-      freeSeen += 1;
-      const P = freeJet.geometry.attributes.position.array;
+    jets.forEach((jet, index) => {
+      if (!jet.visible) return;
+      seen[index] += 1;
+      // Brown's spray: only on the left-down swing, and left of the lattice.
+      assert.ok(time < geometry.cycleDuration / 2 + 0.4, `jet ${index} pours on the left-down swing at ${sample}`);
+      const P = jet.geometry.attributes.position.array;
       const theta = blocks.swingingGutter.rotation.z;
       for (let k = 0; k < P.length; k += 3) {
         const local = new THREE.Vector3(P[k] - geometry.gutterPivot.x, P[k + 1] - geometry.gutterPivot.y, 0)
           .applyAxisAngle(new THREE.Vector3(0, 0, 1), -theta);
-        for (const box of geometry.rightBoxes) {
-          assert.ok(!(Math.abs(local.x - box.x) < 0.23 && Math.abs(local.y - box.y) < 0.25), `free-top stream clears the right boxes at ${sample}`);
-        }
+        assert.ok(local.x < geometry.topOutlet.x + 0.05, `jet ${index} leaves the open left end at ${sample}`);
       }
-    }
+    });
   }
-  assert.ok(topSeen > 0 && freeSeen > 0);
-  // The top jet is Brown's spray: it pours on the left-down swing only.
-  for (let sample = 0; sample <= 200; sample += 1) {
-    const time = geometry.cycleDuration * sample / 200;
-    model.update(time);
-    if (topJet.visible) assert.ok(time < geometry.cycleDuration / 2 + 0.4);
-  }
+  assert.ok(seen[0] > 0 && seen[1] > 0);
 }));
 
 test('movement 461 lattice is one rigid pendulum about the fixed axis', () => withModel((model, data) => {

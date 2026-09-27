@@ -106,5 +106,5 @@ test('402 effective camera, scene flags, separate balances and buffers remain st
   assert.ok(a.min.z>z.max.z);
  }
  const after=counts();assert.equal(after.n,before.n);assert.deepEqual(after.g,before.g);
- r.traverse(o=>{for(const mat of[o.material].flat().filter(Boolean))assert.equal(mat.fog,false);if(o.isMesh)assert.equal(o.castShadow,true);});
+ r.traverse(o=>{for(const mat of[o.material].flat().filter(Boolean))assert.equal(mat.fog,false);if(o.isMesh)assert.equal(o.castShadow,!o.userData.seeThrough);});
 });

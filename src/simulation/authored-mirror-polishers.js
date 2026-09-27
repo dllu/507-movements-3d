@@ -141,7 +141,9 @@ function mirrorPolishingCompoundMotion(movement) {
   const guidePinOffset = 0.43;
   const guidePinRadius = 0.09;
   const longBarWidth = 0.58;
-  const longBarLength = 5.38;
+  // Brown's bar ends at the lower rail's bottom edge near the top of the
+  // stroke (his pose): 1.05 x the eye-to-rail distance there.
+  const longBarLength = 4.82;
   const mirrorDistanceFromTopEye = 2.85;
   const mirrorSize = 1.10;
   const mirrorThickness = 0.08;

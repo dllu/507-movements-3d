@@ -257,11 +257,16 @@ function eccentricPawlJack(movement) {
   const drivePieces = bladePieces(driveBlade.upper, driveBlade.lower);
   const eccentricDiskRadius = 31 * PLATE_SCALE;
   const eccentricStrapRadius = 35 * PLATE_SCALE;
-  const eccentricity = 0.34;
+  // Brown's throw is 14 px (0.24). The rocking eccentric is a slider crank
+  // on the lifting nose, so its nose travel is little more than twice the
+  // throw; the stroke Brown's 12 px teeth need (pitch + stop ride-out +
+  // lifting-nose ride-down) takes 0.32 (18.7 px), the least that keeps the
+  // strap clear of the tooth tips over the widened rock.
+  const eccentricity = 0.32;
   const shaftRadius = 0.15;
-  // Brown's eccentric shaft is at (287, 197); it sits a little right so the
+  // Brown's eccentric shaft is at (287, 197); it sits 3.5 px right so the
   // strap clears the tooth tips over the whole rock.
-  const shaftPlate = new THREE.Vector3(plateX(287) + 0.045, plateY(197), 0);
+  const shaftPlate = new THREE.Vector3(plateX(287) + 0.06, plateY(197), 0);
 
   // Brown's upper stop: a tapered blade with a slight upward bow, ending in
   // an eye on its pin (276, 121); nose at (243, 91). Plate pixels about the pin.
@@ -275,7 +280,7 @@ function eccentricPawlJack(movement) {
   const stopPinRadius = 4 * PLATE_SCALE;
 
   const seatingOvertravel = 0.24;
-  const returnUndershoot = 0.23;
+  const returnUndershoot = 0.20;
 
   const tipHeight = (center, x) => center.y + Math.sqrt(drivePawlLength ** 2 - (center.x - x) ** 2);
   const centerAt = (shaft, phi) => new THREE.Vector3(shaft.x + eccentricity * Math.sin(phi), shaft.y - eccentricity * Math.cos(phi), 0);
@@ -316,7 +321,10 @@ function eccentricPawlJack(movement) {
 
   // Brown draws the stop nose three teeth above the lifting nose; it sits one
   // pitch higher so the lifting horn, rising through its full ratchet
-  // stroke, passes clear beneath the stop's eye.
+  // stroke, passes clear beneath the stop's eye. With the stop on Brown's
+  // tooth, the horn (Brown's outline, 26 px below the eye at rest) rises and
+  // turns into the eye by about 0.05 once the rack has risen one pitch,
+  // whatever the throw or tooth depth (checked for throws 0.24-0.34 and tooth depths 6-12 px).
   const stopBaseToothIndex = 4;
   const stopSeatY = driveReferenceY + stopBaseToothIndex * toothPitch;
   const holdingOffset = new THREE.Vector3((276 - 243) * PLATE_SCALE, (91 - 121) * PLATE_SCALE, 0);
@@ -815,7 +823,7 @@ function eccentricPawlJack(movement) {
         engravingEvidence:
           'the plate shows a load head on a vertically guided one-sided rack whose teeth have flat undersides, a circular eccentric strap with an integral curved pointed lifting pawl, and a separately fixed-pivot curved upper pawl, both noses sitting in tooth roots',
         reconstructionDisclosure:
-          'no official animation is available; the rocking eccentric, stroke, contact rides, timing, reversed lowering strokes, materials, depth and camera are independently engineered; the eccentric throw (20 px against Brown\'s 14 px), the shaft 2.6 px right, the noses sharpened to a 16–22 degree wedge and the stop one pitch higher than drawn are what the full ratchet stroke needs',
+          'no official animation is available; the rocking eccentric, stroke, contact rides, timing, reversed lowering strokes, materials, depth and camera are independently engineered; the eccentric throw (18.7 px against Brown\'s 14 px), the shaft 3.5 px right, the noses sharpened to a 16–22 degree wedge and the stop one pitch higher than drawn are what the full ratchet stroke needs',
       },
       officialPage: movement.sourceUrl,
       primaryScan: {

@@ -392,24 +392,67 @@ function fourneyronTurbine(movement) {
     root.add(tube);
     flowPathTubes.push(tube);
   }
-  // Pass 69: the water is drawn as one continuous sheet per guide passage
-  // (water-stream.js), along the streamline above to the rim, where it is
-  // thrown off with its exit speed and falls; streaks scroll with the flow.
+  // Pass 70: the water fills every passage and is drawn as one continuous
+  // sheet per passage that keeps clear of the vanes on both sides, so the
+  // vane edges stay crisp in plan. Eight fixed sheets come down from the
+  // central inlet and run along the mid-line of the guide passages to the
+  // guide ring; eighteen sheets ride with the runner along the mid-line of
+  // the bucket passages and are thrown off the rim as short falling sheets.
+  // Each sheet is narrower than its passage (about half its clear width)
+  // and lies below the vane tops. Streaks scroll with the flow.
   const flowSpeed = 2.2;
-  const flowSheets = flowCurves.map((curve, index) => {
-    const along = guidedPath(new THREE.CatmullRomCurve3(curve.points.slice(0, -1), false, 'centripetal'),
-      {speed: flowSpeed, samples: 36});
-    const n = along.points.length;
-    const exit = along.points[n - 1].clone().sub(along.points[n - 2]).normalize().multiplyScalar(flowSpeed);
-    const sheet = new WaterStream(joinPaths(along, ballisticPath({
-      origin: along.points[n - 1], velocity: exit, endY: -0.6, samples: 10,
-    })), {
-      width: 0.22, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
-      fadeIn: 0.06, fadeOut: 0.14, cyclePeriod: cycleDuration, streakRate: 1.4,
-      opacity: 0.32,
+  const sheetHeight = 0.17;
+  const guidePassageHalfWidth = (radius) => {
+    // Clear width square to the guide at this radius, halved, less a margin.
+    const drdTheta = (guideOuterRadius - guideInnerRadius) / guideSweep;
+    const slope = Math.atan(radius / drdTheta);
+    const clear = (FULL_TURN * radius / fixedGuideCount) * Math.cos(slope) - 0.076;
+    return Math.max(0.1, 0.27 * clear);
+  };
+  const flowSheets = Array.from({length: fixedGuideCount}, (_, index) => {
+    const passage = index * FULL_TURN / fixedGuideCount + FULL_TURN / fixedGuideCount / 2;
+    const inner = guideAngleAt(passage, 0);
+    const points = [
+      polarPoint(0.5, inner + 0.32, 0.40),
+      polarPoint(0.8, inner + 0.16, 0.22),
+      ...Array.from({length: 9}, (_, k) => {
+        const progress = k / 8;
+        return polarPoint(THREE.MathUtils.lerp(guideInnerRadius, guideOuterRadius, progress),
+          guideAngleAt(passage, progress), sheetHeight);
+      }),
+      polarPoint(runnerInnerRadius - 0.02, guideAngleAt(passage, 1) - 0.07, sheetHeight),
+    ];
+    const path = guidedPath(new THREE.CatmullRomCurve3(points, false, 'centripetal'),
+      {speed: flowSpeed, samples: 40});
+    const sheet = new WaterStream(path, {
+      width: 0.2, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
+      section: (i, u, [, b]) => {
+        const p = path.points[i];
+        return [guidePassageHalfWidth(Math.hypot(p.x, p.z)), b];
+      },
+      fadeIn: 0.06, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.3,
     });
     sheet.userData.role = `water-sheet-through-guide-passage-${index + 1}`;
     root.add(sheet);
+    return sheet;
+  });
+  const runnerSheets = Array.from({length: runnerBucketCount}, (_, index) => {
+    const passage = sourcePoseBucketOffset + (index + 0.5) * runnerBucketPitch;
+    const along = guidedPath(new THREE.CatmullRomCurve3(Array.from({length: 9}, (_, k) => {
+      const progress = k / 8;
+      return polarPoint(THREE.MathUtils.lerp(runnerInnerRadius, runnerOuterRadius, progress),
+        bucketAngleAt(passage, progress), sheetHeight);
+    }), false, 'centripetal'), {speed: flowSpeed, samples: 20});
+    const n = along.points.length;
+    const exit = along.points[n - 1].clone().sub(along.points[n - 2]).normalize().multiplyScalar(flowSpeed);
+    const sheet = new WaterStream(joinPaths(along, ballisticPath({
+      origin: along.points[n - 1], velocity: exit, endY: -0.4, samples: 8,
+    })), {
+      width: 0.19, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
+      fadeOut: 0.3, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.3,
+    });
+    sheet.userData.role = `water-sheet-through-runner-bucket-passage-${index + 1}`;
+    runner.add(sheet);
     return sheet;
   });
   const updateWater = collectWaterStreams(root);
@@ -488,6 +531,7 @@ function fourneyronTurbine(movement) {
       flowMarkers: flowMarkers.map(({ marker }) => marker),
       flowPathTubes,
       flowSheets,
+      runnerSheets,
       guideBoundary,
       guideFloor,
       rotationMarker,

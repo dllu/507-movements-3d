@@ -1129,12 +1129,15 @@ function airChamberForcePump(movement) {
     frameMaterial,
   ), 'unselected-alternative-dip-tube-outlet');
   root.add(alternativeOutlet);
-  const alternativeCap = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.25, 0.25, 0.10, 32),
-    valveMaterial,
-  ), 'cap-marking-alternative-outlet-not-simultaneously-active');
-  alternativeCap.position.set(chamberCenter.x, 3.20, 0);
-  root.add(alternativeCap);
+  // Pass 70: Brown leaves the central takeoff open (no cap). With the side
+  // riser delivering, the air pressure holds water in the dip tube only up to
+  // the side mouth's level, below its open top, so it stands full as a second
+  // takeoff (and pressure column) without discharging.
+  const alternativeOutletWater = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.145, 0.145, 1, 24),
+    waterMaterial,
+  ), 'standing-water-in-open-central-dip-tube');
+  root.add(alternativeOutletWater);
 
   const inletMarkers = Array.from({ length: 5 }, (_, index) => {
     const marker = addRole(new THREE.Mesh(
@@ -1262,8 +1265,8 @@ function airChamberForcePump(movement) {
     archetype:
       'two-check-force-pump-with-globular-outlet-air-chamber-pulsed-downstroke-charge-and-single-selected-constant-flow-outlet',
     blocks: {
-      alternativeCap,
       alternativeOutlet,
+      alternativeOutletWater,
       barrel,
       barrelRails,
       base,
@@ -1309,7 +1312,7 @@ function airChamberForcePump(movement) {
       fullPressureWaveHeatTransferValveImpactLeakageCavitationAndAppliedLeverForceModeled:
         false,
       outletSelection:
-        'Brown shows two possible takeoff locations. Both fixed pipes are reconstructed, but the side riser alone is selected for flow; the central dip-tube alternative is visibly capped so output is never double-counted.',
+        'Brown shows two possible takeoff locations. Both fixed pipes are reconstructed, but the side riser alone is selected for flow. The central dip tube is left open as Brown draws it: the chamber pressure holds its water at the side mouth’s level, below its top, so it stands full without discharging and output is never double-counted.',
       pumpModel:
         'The underlying two-check solid-piston force pump preserves Movement 450’s upstroke suction and downstroke delivery sequence.',
     },
@@ -1369,7 +1372,7 @@ function airChamberForcePump(movement) {
         engravingEvidence:
           'Brown’s section shows the same right-hand solid-piston, two-check force pump and hand lever, connected at lower left to a large globular air chamber. It also shows a side U-shaped riser and a central top-entering dip tube as alternative chamber outlets.',
         reconstructionDisclosure:
-          'Brown gives no bore, stroke, chamber volume, initial air charge, pressure, outlet diameter, choice of active outlet, flow rate, loss, heat-transfer law, or timing. Those values, exact mass-balanced inventory, isothermal relation, selected-side-outlet convention, cap, rigid linkage, transparent cutaway, colors, tracers, and 5.2-second cycle are independently engineered. The Movement 450 pump cycle, globular chamber, downstroke air compression, upstroke air expansion, constant flow, and two possible takeoffs are source-grounded.',
+          'Brown gives no bore, stroke, chamber volume, initial air charge, pressure, outlet diameter, choice of active outlet, flow rate, loss, heat-transfer law, or timing. Those values, exact mass-balanced inventory, isothermal relation, selected-side-outlet convention, standing dip-tube column, rigid linkage, transparent cutaway, colors, tracers, and 5.2-second cycle are independently engineered. The Movement 450 pump cycle, globular chamber, downstroke air compression, upstroke air expansion, constant flow, and two possible takeoffs are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 451',

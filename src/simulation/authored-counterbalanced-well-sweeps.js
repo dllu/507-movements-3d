@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
-import {correctWellBucketParts} from './well-bucket-working-parts.js';
+import {bailHang,correctWellBucketParts,tippedEmptying} from './well-bucket-working-parts.js';
 import {LaidRopeGeometry} from './laid-rope.js';
 import {
   PALETTE,
@@ -42,6 +42,8 @@ function counterbalancedWellSweep(movement) {
   const lowBeamAngle = THREE.MathUtils.degToRad(10);
   const ropeLength = 3.00;
   const bucketHeight = 0.78;
+  // Bucket shell radii at the mouth and floor (well-bucket-working-parts).
+  const bucketDims = {height: bucketHeight, top: 0.40, bottom: 0.30};
   const bucketHandleRise = .40;
   const emptyBucketWeight = 25;
   const fullBucketWeight = 100;
@@ -91,6 +93,7 @@ function counterbalancedWellSweep(movement) {
     let beamProfile;
     let waterProfile;
     let mode;
+    let bucketTilt = 0;
     if (phase < descentEndPhase) {
       beamProfile = easedTransition(
         phase,
@@ -131,13 +134,18 @@ function counterbalancedWellSweep(movement) {
     } else {
       beamProfile = { firstDerivativeByPhase: 0,
         secondDerivativeByPhase: 0, value: highBeamAngle };
-      waterProfile = easedTransition(
-        phase,
-        ascentEndPhase,
-        1,
-        1,
-        0,
-      );
+      // Pass 70: the operator empties the raised bucket by tipping it about
+      // its ears; what stays in it is what the tipped bucket still holds.
+      const span = 1 - ascentEndPhase;
+      const u = (phase - ascentEndPhase) / span;
+      const held = (x) => tippedEmptying(x, bucketDims).fraction;
+      const h = 1e-4;
+      waterProfile = {
+        value: held(u),
+        firstDerivativeByPhase: (held(u + h) - held(u - h)) / (2 * h * span),
+        secondDerivativeByPhase: (held(u + h) - 2 * held(u) + held(u - h)) / (h * h * span * span),
+      };
+      bucketTilt = tippedEmptying(u, bucketDims).tilt;
       mode = 'bucket-held-at-top-while-emptying';
     }
     const beamAngle = beamProfile.value;
@@ -174,6 +182,9 @@ function counterbalancedWellSweep(movement) {
     ropeBottom.y -= ropeLength;
     const bucketCenter = ropeBottom.clone();
     bucketCenter.y -= bucketHeight / 2 + bucketHandleRise;
+    // Tipped far over, the bail falls to the pour side on its ears and the
+    // bucket hangs back from the rope by that much.
+    bucketCenter.add(bailHang(bucketTilt, bucketHandleRise));
     const counterweightCenter = new THREE.Vector3(
       beamPivot.x + counterweightMomentArm * Math.cos(beamAngle),
       beamPivot.y + counterweightMomentArm * Math.sin(beamAngle),
@@ -198,6 +209,7 @@ function counterbalancedWellSweep(movement) {
       beamAngularSpeed,
       bucketCenter,
       bucketGravityTorque,
+      bucketTilt,
       bucketWaterFraction,
       bucketWaterFractionRate,
       bucketWeight,

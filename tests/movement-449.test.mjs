@@ -54,7 +54,8 @@ test('movement 449 has a stuffing-box rod, valved bucket, lower check, and upwar
   assert.equal(blocks.pumpRod.parent, model.root);
   assert.equal(blocks.piston.parent, model.root);
   assert.equal(blocks.pistonValveDisk.parent, blocks.piston);
-  assert.equal(blocks.footValveDisk.parent, model.root);
+  assert.equal(blocks.footFlapPivot.parent, model.root);
+  assert.equal(blocks.footValveDisk.parent, blocks.footFlapPivot, 'lower check is a hinged flap');
   assert.equal(blocks.deliveryPipe.parent, model.root);
   assert.equal(blocks.deliveryFlapSeat.parent, model.root);
   assert.equal(blocks.deliveryFlapPivot.parent, model.root);
@@ -81,7 +82,7 @@ test('movement 449 has a stuffing-box rod, valved bucket, lower check, and upwar
     'fixed-stuffing-box-sealing-sliding-piston-rod',
     'piston-rod-sliding-through-stuffing-box',
     'moving-valved-bucket-in-modern-lift-pump',
-    'lower-check-opening-on-upstroke',
+    'lower-check-flap-opening-on-upstroke',
     'bucket-check-opening-on-downstroke',
     'fixed-high-level-delivery-riser',
     'fixed-upward-delivery-flap-seat',
@@ -284,9 +285,9 @@ test('movement 449 update maps piston, rod, checks, and upward flap exactly whil
     update(time);
     near(blocks.piston.position.y, state.pistonY, 0,
       `piston transform at ${phase}`);
-    near(blocks.footValveDisk.position.y,
-      geometry.footValveSeatY + 0.08 + state.footValveLift, 0,
-    `foot check transform at ${phase}`);
+    near(blocks.footFlapPivot.rotation.z,
+      geometry.maximumFootFlapAngle * state.footValveOpen, 0,
+    `lower flap transform at ${phase}`);
     near(blocks.pistonValveDisk.position.y,
       geometry.pistonThickness / 2 + 0.07 + state.pistonValveLift, 0,
     `bucket check transform at ${phase}`);

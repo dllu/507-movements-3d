@@ -394,10 +394,11 @@ function commonLiftPump(movement) {
   ), 'vertical-pump-rod-driving-bucket');
   root.add(pumpRod);
 
+  // Pass 70: the spout leaves the wall of Brown's wider pump head.
   const spoutCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.66, 2.18, 0),
-    new THREE.Vector3(-1.02, 2.13, 0),
-    new THREE.Vector3(-1.35, 1.88, 0),
+    new THREE.Vector3(-0.98, 2.18, 0),
+    new THREE.Vector3(-1.30, 2.12, 0),
+    new THREE.Vector3(-1.62, 1.92, 0),
     new THREE.Vector3(-2.12, 1.78, 0),
   ], false, 'centripetal');
   const spout = addRole(new THREE.Mesh(
@@ -702,6 +703,10 @@ function modernLiftingPump(movement) {
   const deliveryFlapY = 2.73;
   const maximumValveLift = 0.16;
   const maximumDeliveryFlapAngle = THREE.MathUtils.degToRad(34);
+  // Pass 70: Brown's lower check is a flap hinged at its left edge, like
+  // the delivery flap, not a lifting disk.
+  const maximumFootFlapAngle = THREE.MathUtils.degToRad(30);
+  const footFlapHingeX = -0.40;
   const pumpRodLength = 3.18;
   const groundY = -2.54;
 
@@ -753,6 +758,7 @@ function modernLiftingPump(movement) {
         * Math.max(0, cosine) ** 2 * sine * inputSpeed,
       deliveryValveOpen: upstrokeValveOpen,
       dischargeFlowRate,
+      footFlapAngle: maximumFootFlapAngle * upstrokeValveOpen,
       footValveLift: maximumValveLift * upstrokeValveOpen,
       footValveOpen: upstrokeValveOpen,
       inputAcceleration,
@@ -909,11 +915,16 @@ function modernLiftingPump(movement) {
   ), 'fixed-lower-check-valve-seat');
   footValveSeat.position.y = footValveSeatY;
   root.add(footValveSeat);
+  const footFlapPivot = addRole(new THREE.Group(),
+    'lower-check-flap-hinge-pivot');
+  footFlapPivot.position.set(footFlapHingeX, footValveSeatY + 0.08, 0);
+  root.add(footFlapPivot);
   const footValveDisk = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.44, 0.44, 0.09, 40),
+    new THREE.CylinderGeometry(0.40, 0.40, 0.09, 64),
     valveMaterial,
-  ), 'lower-check-opening-on-upstroke');
-  root.add(footValveDisk);
+  ), 'lower-check-flap-opening-on-upstroke');
+  footValveDisk.position.x = -footFlapHingeX;
+  footFlapPivot.add(footValveDisk);
 
   const piston = addRole(new THREE.Group(),
     'moving-valved-bucket-in-modern-lift-pump');
@@ -1029,8 +1040,7 @@ function modernLiftingPump(movement) {
     piston.position.y = state.pistonY;
     pistonValveDisk.position.y = pistonThickness / 2 + 0.07
       + state.pistonValveLift;
-    footValveDisk.position.y = footValveSeatY + 0.08
-      + state.footValveLift;
+    footFlapPivot.rotation.z = state.footFlapAngle;
     pumpRod.position.y = (state.rodBottomY + state.rodTopY) / 2;
     deliveryFlapPivot.rotation.z = state.deliveryFlapAngle;
     setVerticalExtent(
@@ -1056,6 +1066,7 @@ function modernLiftingPump(movement) {
     groundY,
     inputAngularSpeed,
     maximumDeliveryFlapAngle,
+    maximumFootFlapAngle,
     maximumValveLift,
     pistonAmplitude,
     pistonCenterY,
@@ -1082,6 +1093,7 @@ function modernLiftingPump(movement) {
       deliveryFlapSeat,
       deliveryPipe,
       deliveryWater,
+      footFlapPivot,
       footValveDisk,
       footValveSeat,
       lowerChamberWater,

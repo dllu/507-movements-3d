@@ -133,7 +133,10 @@ test('movement 399 closed male threads have the same physical handedness and dec
 test('movement 399 matched thread law shortens both interfaces by exactly pitch times turns', () => {
   const model = createMovementModel(catalog.movements[398]);
   const data = model.root.userData;
-  const { geometry, stateAtTime, timeline } = data;
+  const { geometry, timeline } = data;
+  // Mechanism clock (loose at zero); playback zero is Brown's tight pose at
+  // geometry.sourceTime.
+  const stateAtTime = (t) => data.stateAtTime(t - geometry.sourceTime);
   const loose = stateAtTime(0);
 
   for (let sample = -20000; sample <= 40000; sample += 1) {
@@ -165,7 +168,10 @@ test('movement 399 matched thread law shortens both interfaces by exactly pitch 
 test('movement 399 reaches loose and tight limits smoothly and reverses without a jump', () => {
   const model = createMovementModel(catalog.movements[398]);
   const data = model.root.userData;
-  const { geometry, stateAtTime, timeline } = data;
+  const { geometry, timeline } = data;
+  // Mechanism clock (loose at zero); playback zero is Brown's tight pose at
+  // geometry.sourceTime.
+  const stateAtTime = (t) => data.stateAtTime(t - geometry.sourceTime);
   const looseStart = stateAtTime(0);
   const tight = stateAtTime(timeline.cycleDuration / 2);
   const looseEnd = stateAtTime(timeline.cycleDuration);
@@ -177,8 +183,8 @@ test('movement 399 reaches loose and tight limits smoothly and reverses without 
     'tight turns');
   near(tight.halfSeparation, geometry.tightSeparation, 3e-16,
     'tight separation');
-  near(looseStart.adjustmentTurnRate, 0, 0, 'loose-start rate');
-  near(tight.adjustmentTurnRate, 0, 1e-16, 'tight reversal rate');
+  near(looseStart.adjustmentTurnRate, 0, 2e-16, 'loose-start rate');
+  near(tight.adjustmentTurnRate, 0, 2e-16, 'tight reversal rate');
   near(looseEnd.adjustmentTurnRate, 0, 2e-16, 'loose-end rate');
   near(looseEnd.halfSeparation, looseStart.halfSeparation, 0,
     'cycle separation closure');
@@ -211,7 +217,9 @@ test('movement 399 analytic separation and nut rates agree with finite differenc
       / (2 * epsilon);
     const turnRate = (after.adjustmentTurns - before.adjustmentTurns)
       / (2 * epsilon);
-    near(state.separationRate, separationRate, 1e-10,
+    // Central differences of a ~2.2 separation over 2 x 2e-6 carry up to
+    // ulp(2.2) / 4e-6 ~ 1.1e-10 of round-off.
+    near(state.separationRate, separationRate, 2.5e-10,
       'analytic separation rate');
     near(state.adjustmentTurnRate, turnRate, 5e-10,
       'analytic turn rate');

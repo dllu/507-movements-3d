@@ -404,24 +404,86 @@ function warrenCentralDischargeTurbine(movement) {
     root.add(tube);
     flowPathTubes.push(tube);
   }
-  // Pass 69: the water is drawn as one continuous sheet per representative
-  // passage (water-stream.js) along the streamline above; past the runner's
-  // eye it falls freely down round the hub. Streaks scroll with the flow.
+  // Pass 70: the water fills every passage and is drawn as one continuous
+  // sheet per passage that keeps clear of the vanes on both sides, so the
+  // vane edges stay crisp in plan. Sixteen fixed sheets come in from the
+  // supply round the rim along the mid-line of the guide passages (their
+  // width follows the passage's clear width, which narrows sharply where the
+  // guides turn tangential); twenty sheets ride with the runner along the
+  // mid-line of the bucket passages and drop through the open eye. Sheets
+  // lie below the vane tops. Streaks scroll with the flow.
   const flowSpeed = 2.2;
-  const flowSheets = flowCurves.map((curve, index) => {
-    const along = guidedPath(new THREE.CatmullRomCurve3(curve.points.slice(0, -2), false, 'centripetal'),
-      {speed: flowSpeed, samples: 36});
-    const n = along.points.length;
-    const exit = along.points[n - 1].clone().sub(along.points[n - 2]).normalize().multiplyScalar(flowSpeed);
-    exit.y = Math.min(exit.y, 0);
-    const sheet = new WaterStream(joinPaths(along, ballisticPath({
-      origin: along.points[n - 1], velocity: exit, endY: -1.0, samples: 10,
-    })), {
-      width: 0.22, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
-      fadeIn: 0.08, fadeOut: 0.16, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.32,
+  const sheetHeight = 0.17;
+  // Half the clear width square to a vane family at radius r, less a
+  // margin: pitch * cos(vane angle from radial) - thickness.
+  const clearHalfWidth = (angleAtRadius, count, thickness, radius) => {
+    const h = 1e-3;
+    const slope = Math.atan(radius * Math.abs(angleAtRadius(radius + h) - angleAtRadius(radius - h)) / (2 * h));
+    const clear = (FULL_TURN * radius / count) * Math.cos(slope) - thickness;
+    return Math.max(0.035, 0.28 * clear);
+  };
+  const guideAngleAtRadius = (radius) => guideAngleAt(0,
+    THREE.MathUtils.clamp((radius - guideInnerRadius) / (guideOuterRadius - guideInnerRadius), 0, 1));
+  const bucketAngleAtRadius = (radius) => bucketAngleAt(0,
+    THREE.MathUtils.clamp((radius - runnerInnerRadius) / (runnerOuterRadius - runnerInnerRadius), 0, 1));
+  const flowSheets = Array.from({length: fixedGuideCount}, (_, index) => {
+    const passage = (index + 0.5) * FULL_TURN / fixedGuideCount;
+    const points = [
+      polarPoint(3.78, guideAngleAt(passage, 1), 0.24),
+      ...Array.from({length: 13}, (_, k) => {
+        const s = 1 - k / 12;
+        return polarPoint(THREE.MathUtils.lerp(guideInnerRadius, guideOuterRadius, s),
+          guideAngleAt(passage, s), sheetHeight);
+      }),
+      polarPoint(runnerOuterRadius + 0.02, guideAngleAt(passage, 0) - 0.05, sheetHeight),
+    ];
+    const path = guidedPath(new THREE.CatmullRomCurve3(points, false, 'centripetal'),
+      {speed: flowSpeed, samples: 40});
+    const sheet = new WaterStream(path, {
+      width: 0.2, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
+      section: (i, u, [, b]) => {
+        const p = path.points[i];
+        const r = Math.hypot(p.x, p.z);
+        return [r > guideOuterRadius ? 0.2 : clearHalfWidth(guideAngleAtRadius, fixedGuideCount, 0.076, r), b];
+      },
+      fadeIn: 0.08, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.3,
     });
     sheet.userData.role = `water-sheet-through-guide-passage-${index + 1}`;
     root.add(sheet);
+    return sheet;
+  });
+  const armAngles = [0, 1, 2, 3].map((k) => Math.PI / 4 + k * Math.PI / 2);
+  const runnerSheets = Array.from({length: runnerBucketCount}, (_, index) => {
+    const passage = sourcePoseBucketOffset + (index + 0.5) * runnerBucketPitch;
+    const along = guidedPath(new THREE.CatmullRomCurve3(Array.from({length: 11}, (_, k) => {
+      const s = 1 - k / 10;
+      return polarPoint(THREE.MathUtils.lerp(runnerInnerRadius, runnerOuterRadius, s),
+        bucketAngleAt(passage, s), sheetHeight);
+    }), false, 'centripetal'), {speed: flowSpeed, samples: 20});
+    const n = along.points.length;
+    const eyeAngle = bucketAngleAt(passage, 0);
+    // Over a support arm the water would land on it, so that passage's
+    // sheet ends at the eye; elsewhere it drops through the open eye.
+    const overArm = armAngles.some((a) => Math.abs(Math.atan2(Math.sin(eyeAngle - a), Math.cos(eyeAngle - a))) < 0.2);
+    // Thrown inward fast enough to clear the foundation ring (inner radius
+    // 1.38) as it falls through the eye.
+    const exit = along.points[n - 1].clone().setY(0).normalize().multiplyScalar(-1.9)
+      .addScaledVector(along.points[n - 1].clone().sub(along.points[n - 2]).setY(0).normalize(), 0.4);
+    exit.y = 0;
+    const path = overArm ? along : joinPaths(along, ballisticPath({
+      origin: along.points[n - 1], velocity: exit, endY: -1.0, samples: 10,
+    }));
+    const sheet = new WaterStream(path, {
+      width: 0.2, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
+      section: (i, u, [a, b]) => {
+        const p = path.points[i];
+        const r = Math.hypot(p.x, p.z);
+        return [r < runnerInnerRadius - 0.01 ? a : clearHalfWidth(bucketAngleAtRadius, runnerBucketCount, 0.064, r), b];
+      },
+      fadeOut: overArm ? 0.12 : 0.3, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.3,
+    });
+    sheet.userData.role = `water-sheet-through-runner-bucket-passage-${index + 1}`;
+    runner.add(sheet);
     return sheet;
   });
   const updateWater = collectWaterStreams(root);
@@ -508,6 +570,7 @@ function warrenCentralDischargeTurbine(movement) {
       centralDischarge,
       fixedGuideAssembly,
       flowSheets,
+      runnerSheets,
       fixedGuideVanes,
       flowMarkers: flowMarkers.map(({ marker }) => marker),
       flowPathTubes,

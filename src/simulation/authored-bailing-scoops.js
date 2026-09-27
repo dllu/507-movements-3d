@@ -109,21 +109,23 @@ function bailingScoop(movement) {
   const scoopPivot = new THREE.Vector3(-2.40, 0.15, 0);
   const beamPivot = new THREE.Vector3(1.30, 1.25, 0);
   const lowBeamAngle = Math.PI + 0.32;
-  // Pass 69 (p69-w1): the beam swings far enough (87 degrees) that the
+  // Pass 69 (p69-w1): the beam swings far enough (79 degrees since pass 70) that the
   // raised scoop's floor slopes down to its pivot end, so the water it
   // lifted can run out; at the old 20-degree swing the raised bucket stayed
   // below its outlet and could never empty.
-  // Pass 69 (p69-w1): the beam swings far enough (87 degrees) that the
-  // raised scoop's floor slopes down to its pivot end, so the water it
-  // lifted can run out; at the old 20-degree swing the raised bucket stayed
-  // below its outlet and could never empty.
-  const highBeamAngle = Math.PI - 1.2;
+  const highBeamAngle = Math.PI - 1.05;
   const notchRadii = Object.freeze([1.30, 1.47, 1.65, 1.83, 2.00]);
   const selectedNotchIndex = 2;
   const selectedNotchRadius = notchRadii[selectedNotchIndex];
-  // Pass 69: the connection sits lower so the low scoop dips its mouth
-  // well under the pit water, which stands a full level below the channel.
-  const sourceScoopConnection = new THREE.Vector3(-0.37, -1.12, 0);
+  // Pass 70: the low scoop hangs at Brown's slant: its pin line 25 degrees
+  // below level and its top edge about 33 (they were 32 and 41), with the
+  // pitman still hanging plumb from the middle notch as he draws it and the
+  // mouth just under the pit water, which now stands 0.67 below the channel.
+  // The pitman takes hold 2.45 from the pivot, and the 79-degree beam stroke
+  // still raises the floor to 26 degrees, past the slope (24) that drains it
+  // to the spout.
+  const sourceScoopConnection = new THREE.Vector3(-2.40 + 2.45 * Math.cos(-25 * Math.PI / 180),
+    0.15 + 2.45 * Math.sin(-25 * Math.PI / 180), 0);
   const scoopConnectionRadius = sourceScoopConnection.distanceTo(scoopPivot);
   const selectedSourceNotch = beamPivot.clone().add(new THREE.Vector3(
     Math.cos(lowBeamAngle) * selectedNotchRadius,

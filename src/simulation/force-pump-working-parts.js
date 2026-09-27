@@ -4,6 +4,7 @@ import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {capsule,circle,poly,plate,polygonClipping} from './finite-plate-geometry.js';
+import {latheSectionGeometry} from './cutaway-section.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
 
 function risingElbow(startX,axisX,entryY,radius){
@@ -110,7 +111,11 @@ export function correctForcePumpParts(root,id){
     const side=new THREE.CatmullRomCurve3([[x,.95],[x-.40,.95],[x-.78,.88],[x-1.10,.90],[x-1.35,1.08],[x-1.46,1.40],[x-1.47,1.80],[x-1.47,2.75]].map(([px,py])=>new THREE.Vector3(px,py,0)),false,'centripetal');
     replace(b.selectedOutlet,curvedPipeWall(side,.17,.24,80));replace(b.selectedOutletWater,new THREE.TubeGeometry(side,80,.15,14,false));output=side;
     const dip=new THREE.LineCurve3(new THREE.Vector3(x,1.25,0),new THREE.Vector3(x,4.10,0));
-    replace(b.alternativeOutlet,curvedPipeWall(dip,.145,.20,32));b.alternativeCap.position.set(x,4.15,0);
+    replace(b.alternativeOutlet,curvedPipeWall(dip,.145,.20,32));
+    // Pass 70: the open dip tube's water stands at the side mouth's level
+    // (the same air pressure lifts both takeoffs), from its foot in the
+    // chamber water; nothing rises above that level, so its open top is dry.
+    {const foot=1.25,top=2.75;replace(b.alternativeOutletWater,latheSectionGeometry([[0,foot],[.145,foot],[.145,top],[0,top]],{segments:64}).translate(0,0,-.004));b.alternativeOutletWater.position.set(x,0,0);d.dipTubeWaterTop=top;}
     for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.x===x)o.visible=false;
   }
   d.updateSolids=state=>{

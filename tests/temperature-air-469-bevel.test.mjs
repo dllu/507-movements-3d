@@ -61,7 +61,8 @@ test('469 actual bevel teeth, bodies and hubs clear with sustained close engagem
       const distance=Math.min(separation(a,z,.01),separation(z,a,.01));
       assert.ok(distance>=0,`${name} finite bevel intersection at sample ${i}: ${distance}`);
       const flankDistance=Math.min(separation(aTeeth,zTeeth,.01),separation(zTeeth,aTeeth,.01));
-      assert.ok(flankDistance<.0012,`${name} tooth flanks too far apart at sample ${i}: ${flankDistance}`);
+      // Pass 70: the pairs are enlarged about their apexes, so the backlash scales too.
+      assert.ok(flankDistance<.0012*b[first].userData.scale,`${name} tooth flanks too far apart at sample ${i}: ${flankDistance}`);
     }
   }
 });
@@ -79,7 +80,8 @@ test('469 finite shaft ends and bevel bores clear adjacent parts',()=>{
   const meshPart=mesh=>({root:mesh,points:surfacePoints(mesh.geometry),surface:solidSurface(mesh.geometry)});
   assert.ok(separation(meshPart(b.screwShaft),meshPart(b.transferShaft))>.05,'finite perpendicular shaft ends do not cross');
   const input=packed(b.inputBevel),barrel=meshPart(b.screwBarrel);
-  assert.ok(Math.min(separation(input,barrel),separation(barrel,input))>.1-1e-8,'input bevel is above the barrel mouth');
+  // Pass 70: Brown's larger head bevel comes closer to the barrel mouth.
+  assert.ok(Math.min(separation(input,barrel),separation(barrel,input))>.04,'input bevel is above the barrel mouth');
   const hub=packed(b.shaftHubBevel),axle=meshPart(b.fixedWheelAxle);
   assert.ok(Math.min(separation(hub,axle),separation(axle,hub))>.02,'shaft S bevel clears the wheel stub axle');
 });

@@ -7,13 +7,15 @@ export const TEMPERATURE_BEVEL={teeth:24,pitchRadius:.32,innerDistance:.20,outer
 
 // Shared Tredgold straight-bevel surfaces, with the apex at the group origin.
 // The host shaft supplies rotation; phase only establishes tooth/space alignment.
-export function makeTemperatureBevel({axis,phase,color,role}){
+// `scale` enlarges the whole gear about its apex (the bore stays on the shaft).
+export function makeTemperatureBevel({axis,phase,color,role,scale=1}){
+  const spec={...TEMPERATURE_BEVEL};for(const key of['pitchRadius','innerDistance','outerDistance','toothHeight'])spec[key]*=scale;
   const root=new THREE.Group(),rotor=new THREE.Group();root.quaternion.setFromUnitVectors(new THREE.Vector3(0,0,1),axis);root.add(rotor);rotor.rotation.z=phase;
-  const toothGeometry=bevelToothGeometry({...TEMPERATURE_BEVEL,flankSegments:24,tipSegments:8}),material=matte(color,{metalness:.24,roughness:.48});
-  const body=new THREE.Mesh(bevelBodyGeometry(toothGeometry,TEMPERATURE_BEVEL.boreRadius),material);body.userData.role='bored-conical-bevel-body';rotor.add(body);
-  const hub=new THREE.Mesh(ring(TEMPERATURE_BEVEL.boreRadius,.11,.18,.39,128),material);hub.userData.role='bored-bevel-shaft-hub';rotor.add(hub);
-  const teeth=Array.from({length:TEMPERATURE_BEVEL.teeth},(_,i)=>{const tooth=new THREE.Mesh(toothGeometry,material);tooth.rotation.z=i*2*Math.PI/TEMPERATURE_BEVEL.teeth;tooth.userData.bevelTooth=true;tooth.userData.toothIndex=i;rotor.add(tooth);return tooth;});
-  root.userData={role,rotor,body,hub,toothMeshes:teeth,phase,...TEMPERATURE_BEVEL,toothProfile:'back-cone-involute-approximation'};
+  const toothGeometry=bevelToothGeometry({...spec,flankSegments:24,tipSegments:8}),material=matte(color,{metalness:.24,roughness:.48});
+  const body=new THREE.Mesh(bevelBodyGeometry(toothGeometry,spec.boreRadius),material);body.userData.role='bored-conical-bevel-body';rotor.add(body);
+  const hub=new THREE.Mesh(ring(spec.boreRadius,.11*scale,.18*scale,.39*scale,128),material);hub.userData.role='bored-bevel-shaft-hub';rotor.add(hub);
+  const teeth=Array.from({length:spec.teeth},(_,i)=>{const tooth=new THREE.Mesh(toothGeometry,material);tooth.rotation.z=i*2*Math.PI/spec.teeth;tooth.userData.bevelTooth=true;tooth.userData.toothIndex=i;rotor.add(tooth);return tooth;});
+  root.userData={role,rotor,body,hub,toothMeshes:teeth,phase,...spec,scale,toothProfile:'back-cone-involute-approximation'};
   return root;
 }
 

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {replaceWithLaidRope} from './laid-rope.js';
 import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
-import {correctWellBucketParts} from './well-bucket-working-parts.js';
+import {bailHang,correctWellBucketParts,tippedEmptying} from './well-bucket-working-parts.js';
 import {
   PALETTE,
   makePulley,
@@ -83,6 +83,22 @@ function twoBucketWellPulley(movement) {
     };
   };
 
+  // Pass 70: the raised bucket is emptied by tipping it about its ears;
+  // what stays in it is what the tipped bucket still holds.
+  const bucketDims = {height: bucketHeight, top: bucketRadius, bottom: bucketRadius * 0.76};
+  const tippedProfile = (phase, startPhase, endPhase) => {
+    const span = endPhase - startPhase;
+    const u = (phase - startPhase) / span;
+    const held = (x) => tippedEmptying(x, bucketDims).fraction;
+    const h = 1e-4;
+    return {
+      firstDerivativeByPhase: (held(u + h) - held(u - h)) / (2 * h * span),
+      secondDerivativeByPhase: (held(u + h) - 2 * held(u) + held(u - h)) / (h * h * span * span),
+      tilt: tippedEmptying(u, bucketDims).tilt,
+      value: held(u),
+    };
+  };
+
   const stateAtInputAngle = (
     inputAngle,
     inputSpeed = inputAngularSpeed,
@@ -128,12 +144,10 @@ function twoBucketWellPulley(movement) {
         0,
         1,
       );
-      rightWaterProfile = transition(
+      rightWaterProfile = tippedProfile(
         phase,
         outwardEndPhase,
         exchangeDwellEndPhase,
-        1,
-        0,
       );
       mode = 'left-bucket-filling-low-right-bucket-emptying-high';
     } else if (phase < returnEndPhase) {
@@ -154,12 +168,10 @@ function twoBucketWellPulley(movement) {
     } else {
       ropeProfile = { firstDerivativeByPhase: 0,
         secondDerivativeByPhase: 0, value: 0 };
-      leftWaterProfile = transition(
+      leftWaterProfile = tippedProfile(
         phase,
         returnEndPhase,
         1,
-        1,
-        0,
       );
       rightWaterProfile = transition(
         phase,
@@ -187,6 +199,8 @@ function twoBucketWellPulley(movement) {
       rightBailY - bucketHandleRise - bucketHeight / 2,
       0,
     );
+    leftBucketCenter.add(bailHang(leftWaterProfile.tilt ?? 0, bucketHandleRise));
+    rightBucketCenter.add(bailHang(rightWaterProfile.tilt ?? 0, bucketHandleRise));
     const leftVerticalLength = pulleyCenter.y - leftBailY;
     const rightVerticalLength = pulleyCenter.y - rightBailY;
     const pulleyAngle = ropeDisplacement / pulleyRadius;
@@ -218,6 +232,7 @@ function twoBucketWellPulley(movement) {
       leftBucketVelocityY: -ropeSpeed,
       leftBucketWeight,
       leftVerticalLength,
+      leftBucketTilt: leftWaterProfile.tilt ?? 0,
       leftWaterFraction,
       leftWaterFractionAcceleration,
       leftWaterFractionRate:
@@ -234,6 +249,7 @@ function twoBucketWellPulley(movement) {
       rightBucketVelocityY: ropeSpeed,
       rightBucketWeight,
       rightVerticalLength,
+      rightBucketTilt: rightWaterProfile.tilt ?? 0,
       rightWaterFraction,
       rightWaterFractionAcceleration,
       rightWaterFractionRate:

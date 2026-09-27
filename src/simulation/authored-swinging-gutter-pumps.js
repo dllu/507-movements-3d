@@ -13,8 +13,10 @@ import { PALETTE, markShadows, matte } from './primitives.js';
 // serpentines. The first rises from an open pipe end under water through the
 // odd rows and pours from the open left end of the top pipe (Brown's jet);
 // the second starts at the scoop box on the right of the lowest row, climbs
-// the even rows and leaves by the free diagonal at the top. Every box holds a
-// one-way flap across the pipe that enters it.
+// the even rows and joins the top pipe through a port where the highest
+// diagonal passes behind it, so it too pours from Brown's one jet (the
+// diagonal's stub above the port is an open vent). Every box holds a one-way
+// flap across the pipe that enters it.
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -166,6 +168,11 @@ function swingingGutterPump(movement) {
   const elbows = leftBoxes.map((box, k) => v2(box.x, rowLevels[k]));
   const topOutlet = v2(-2.30, rowLevels[5]);
   const freeTop = leftBoxes[4].clone().addScaledVector(diagonal, 0.95);
+  // Pass 70: the highest diagonal passes behind the top pipe; at the crossing
+  // a port joins it to the top pipe, so the even serpentine too delivers
+  // through Brown's one jet at the top pipe's open left end. The diagonal's
+  // stub above the crossing stays open at its top (a vent, as drawn).
+  const topJunction = leftBoxes[4].clone().addScaledVector(diagonal, (rowLevels[5] - leftBoxes[4].y) / diagonal.y);
   const lowerMouth = rightBoxes[1].clone().sub(diagonal);
   const rightBoxHalf = [0.23, 0.25];
   const leftBoxHalf = 0.22;
@@ -207,9 +214,11 @@ function swingingGutterPump(movement) {
   const evenPoints = [scoopMouth, rightBoxes[0]];
   const evenLayers = ['front'];
   for (const k of [0, 2, 4]) {
-    evenPoints.push(elbows[k], leftBoxes[k], k < 4 ? rightBoxes[k + 2] : freeTop);
+    evenPoints.push(elbows[k], leftBoxes[k], k < 4 ? rightBoxes[k + 2] : topJunction);
     evenLayers.push('front', 'front', 'back');
   }
+  evenPoints.push(topOutlet);
+  evenLayers.push('front');
   const paths = [makePath(oddPoints, oddLayers), makePath(evenPoints, evenLayers)];
 
   // Flaps: one per box that a pipe enters, hinged on the upper wall of the
@@ -277,26 +286,40 @@ function swingingGutterPump(movement) {
   const parcelLength = 0.7;
   const parcelGap = 0.002;
   const exitSpeedFractions = [0.8, 0.8];
+  // Pass 70: the even serpentine delivers into the top pipe. On its exchange
+  // half its top parcel climbs the highest diagonal and through the port into
+  // the top pipe, where it waits just past the junction; on the other half
+  // (the left-down swing, when the top pipe slopes to its open end) it runs
+  // out of Brown's jet ahead of the odd serpentine's parcel. So both pour on
+  // the left-down swing, one jet, and every horizontal run is still made
+  // while it slopes toward its left end.
+  const junctionStation = paths[1].stations.at(-2);
   const registers = paths.map((path, pathIndex) => {
     const flaps = flapFrames.filter((frame) => frame.path === pathIndex);
     const rest = flaps.map((frame) => frame.station - flapThickness / 2 - parcelGap);
     const scoopRest = parcelLength + 0.05;
-    const from = rest[4];
     const outEnd = path.total + parcelLength;
+    const wait = pathIndex === 1 ? junctionStation + parcelLength + 0.05 : null;
+    const from = pathIndex === 1 ? wait : rest[4];
     const dest = from + (outEnd - from) / exitSpeedFractions[pathIndex];
     // The right scoop's slot is under the pool only while the swing is past
     // seven degrees, so its intake is confined to that part of the half.
     const intake = pathIndex === 0 ? [PARCEL_START, PARCEL_SPAN] : [0.22, 0.56];
     const exchange = [
-      [rest[0], rest[1]], [rest[2], rest[3]], [from, dest], [0, scoopRest, ...intake],
+      [rest[0], rest[1]], [rest[2], rest[3]], pathIndex === 1 ? [rest[4], wait] : [from, dest], [0, scoopRest, ...intake],
     ];
     const transfer = [[rest[1], rest[2]], [rest[3], rest[4]], [scoopRest, rest[0]]];
+    if (pathIndex === 1) transfer.push([wait, dest]);
     const exchangeHalf = pathIndex === 0 ? 0 : 1;
+    // Both serpentines pour on the left-down swing (half 0): the odd one on
+    // its exchange move 2, the even one on its transfer move 3.
+    const pourHalf = 0;
+    const pourMove = pathIndex === 0 ? 2 : 3;
     const window = [
       inverseParcelProfile((path.total - from) / (dest - from)),
       inverseParcelProfile(exitSpeedFractions[pathIndex]),
-    ].map((u) => (exchangeHalf + u) * cycleDuration / 2);
-    return { dest, exchange, exchangeHalf, from, rest, scoopRest, transfer, window };
+    ].map((u) => (pourHalf + u) * cycleDuration / 2);
+    return { dest, exchange, exchangeHalf, from, pourHalf, pourMove, rest, scoopRest, transfer, wait, window };
   });
   flapFrames.forEach((frame) => {
     const order = flapFrames.filter((other) => other.path === frame.path).indexOf(frame);
@@ -346,7 +369,7 @@ function swingingGutterPump(movement) {
       for (const parcel of own) {
         conduitLength += Math.max(0, Math.min(total, parcel.head) - Math.max(0, parcel.tail));
       }
-      const pouring = exchanging ? own[2] : null;
+      const pouring = register.pourHalf === half ? own[register.pourMove] : null;
       const scooping = exchanging ? own[3] : null;
       return {
         conduitLength,
@@ -484,8 +507,10 @@ function swingingGutterPump(movement) {
   swingingGutter.add(braces);
 
   // Pipe and box walls (2D profiles extruded through each layer).
+  const ventStub = { a: topJunction, b: freeTop, layer: 'back' };
   const bands = (layer, radius) => {
     const shapes = [];
+    if (ventStub.layer === layer) shapes.push(capsule(xy(ventStub.a), xy(ventStub.b), radius, 12));
     for (const path of paths) {
       path.lengths.forEach((_, i) => {
         if (path.layers[i] === layer) shapes.push(capsule(xy(path.points[i]), xy(path.points[i + 1]), radius, 12));
@@ -545,11 +570,17 @@ function swingingGutterPump(movement) {
     const { z0, z1, plate: [p0, p1] } = layers[layer];
     conduit[`${layer}Walls`] = addRole(new THREE.Mesh(plate(walls, z0, z1), wallMaterial), `finite-${layer}-layer-pipe-walls-with-flap-seats`);
     const backShape = layer === 'front'
-      ? clip.difference(outline, boxOutlines, ...openEnds)
+      ? clip.difference(outline, boxOutlines, ...openEnds, poly(circle(xy(topJunction), boreHalfWidth, 40)))
       : clip.union(clip.difference(outline, ...openEnds), boxOutlines);
     conduit[`${layer}Back`] = addRole(new THREE.Mesh(plate(backShape, p0, p1), timberMaterial), `finite-${layer}-layer-pipe-back-plate`);
   }
   const boxRing = clip.difference(boxOutlines, boxInteriors);
+  // The port's short collar bridging the gap between the two layers at the
+  // top junction (hidden behind the top pipe in Brown's view).
+  conduit.junctionCollar = addRole(new THREE.Mesh(
+    plate(clip.difference(poly(circle(xy(topJunction), boreHalfWidth + wallThickness, 40)), poly(circle(xy(topJunction), boreHalfWidth, 40))),
+      layers.back.z1, layers.front.plate[0]), wallMaterial),
+  'port-collar-joining-top-diagonal-to-top-pipe');
   conduit.boxBackWalls = addRole(new THREE.Mesh(
     plate(clip.difference(boxRing, mouths.back, scoopOpening), layers.back.z0, layers.back.z1), wallMaterial),
   'box-walls-ported-for-diagonals');
@@ -611,7 +642,7 @@ function swingingGutterPump(movement) {
       // The two open ends that meet the pipe obliquely (the lower mouth in
       // the pool and the free top) fade their last sliver of water in or
       // out with its length, instead of switching on a slanting face.
-      fadeEnd: pathIndex === 0 && index === 0 ? 'low' : (pathIndex === 1 && index === boundaries.length - 2 ? 'high' : null),
+      fadeEnd: pathIndex === 0 && index === 0 ? 'low' : null,
       low,
       path: pathIndex,
     }));
@@ -672,12 +703,13 @@ function swingingGutterPump(movement) {
   // Poured streams. Brown's rows are about a foot apart (0.9 units), so a
   // unit is about a third of a metre and gravity about three times the
   // helper's unit-metre value. The top jet breaks into the spray Brown draws
-  // and is spent within the plate; the free diagonal throws its water clear
-  // over the right boxes into the pool.
+  // and is spent within the plate. Both serpentines pour through it, on
+  // alternate half-swings (pass 70; the even one used to throw its water from
+  // the free diagonal back over the right boxes into the pool).
   const gravity = v2(0, -3 * STREAM_GRAVITY);
   const outlets = [
     { direction: v2(-1, 0), point: topOutlet, sprayLife: 0.3, zCentre: (layers.front.z0 + layers.front.z1) / 2 },
-    { direction: diagonal.clone().normalize(), point: freeTop, sprayLife: 2, zCentre: (layers.back.z0 + layers.back.z1) / 2 },
+    { direction: v2(-1, 0), point: topOutlet, sprayLife: 0.3, zCentre: (layers.front.z0 + layers.front.z1) / 2 },
   ];
   const jetMaterial = waterStreamMaterial({ opacity: 0.55 });
   const dischargeJets = outlets.map((_, index) => {
@@ -697,7 +729,7 @@ function swingingGutterPump(movement) {
     const radius = rotateLocal(outlet.point, theta);
     target.origin.copy(radius).add(gutterPivot);
     target.origin.z = outlet.zCentre;
-    const u = THREE.MathUtils.clamp(angle / Math.PI - register.exchangeHalf, 0, 1);
+    const u = THREE.MathUtils.clamp(angle / Math.PI - register.pourHalf, 0, 1);
     const outflow = (register.dest - register.from) * parcelProfile(u).d1 * inputAngularSpeed / Math.PI;
     target.velocity.set(-radius.y * omega, radius.x * omega, 0)
       .addScaledVector(rotateLocal(outlet.direction, theta), outflow);
@@ -838,6 +870,7 @@ function swingingGutterPump(movement) {
     flapThickness,
     freeTop,
     gutterPivot,
+    topJunction,
     inputAngularSpeed,
     layers,
     leftBoxes,

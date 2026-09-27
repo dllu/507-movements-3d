@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { ring, plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { makeCellWaterGeometry, updateClippedCell } from './clipped-fluid-cell.js';
 import { waterVolume } from './water-volume.js';
+import { WaterStream, collectWaterStreams } from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -145,7 +146,13 @@ function eisachPotWheel(movement) {
   const streamVelocityX = 1.30;
   const representativeCurrentForce = 6.20;
   const currentDriveTorque = wheelRadius * representativeCurrentForce;
-  const dischargeTroughY = 1.98;
+  // Pass 70: Brown's trough lies about halfway between the wheel top and the
+  // axle, well below the top pots, so their pour falls visibly into it (it
+  // was 0.1 below the pot mouths). The spokes are all in the rear rim plane
+  // and the pots' inner faces stay beyond r = 1.9, so the trough runs
+  // through the wheel clear of both.
+  const dischargeTroughY = 1.40;
+  const dischargeTroughX = 0.10;
   const groundY = -2.75;
   const derivativeMaximum = 1.875;
 
@@ -363,10 +370,20 @@ function eisachPotWheel(movement) {
     potWaters.push(potWater);
     pot.userData.parts = { shell };
 
-    const discharge = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.085, 0.065, 1, 14),
-      paleWaterMaterial,
-    );
+    // One continuous falling stream per pot, re-shaped in place each frame
+    // (no allocation) from the inverted pot's mouth to the trough water.
+    const dischargePath = {
+      points: Array.from({length: 17}, (_, k) => new THREE.Vector3(0, -k * 0.05, 0)),
+      speeds: new Array(17).fill(1),
+      times: Array.from({length: 17}, (_, k) => k * 0.02),
+    };
+    const discharge = new WaterStream(dischargePath, {
+      // A sheet as wide as the pot's mouth, pouring over its whole length.
+      width: 0.42, thickness: 0.05, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.2,
+      spread: {start: 0.4, width: 1.12, thickness: 1.8}, fadeIn: 0.12,
+      foam: {start: 0.85, amount: 0.45}, cyclePeriod: cycleDuration, streakRate: 1.6, opacity: 0.45,
+    });
+    discharge.userData.dischargePath = dischargePath;
     discharge.userData.role =
       `pot-${index + 1}-discharge-into-upper-trough`;
     root.add(discharge);
@@ -451,7 +468,7 @@ function eisachPotWheel(movement) {
   }
 
   const dischargeTrough = new THREE.Group();
-  dischargeTrough.position.set(wheelCenter.x, dischargeTroughY, 1.50);
+  dischargeTrough.position.set(dischargeTroughX, dischargeTroughY, 1.50);
   dischargeTrough.rotation.y = Math.PI/2;
   dischargeTrough.rotation.z = 0;
   dischargeTrough.userData.role =
@@ -459,7 +476,7 @@ function eisachPotWheel(movement) {
   root.add(dischargeTrough);
   const troughLength = 4.36;
   const troughBottom = new THREE.Mesh(
-    new THREE.BoxGeometry(troughLength, 0.10, .44),
+    new THREE.BoxGeometry(troughLength, 0.10, .90),
     frameMaterial,
   );
   dischargeTrough.add(troughBottom);
@@ -468,18 +485,18 @@ function eisachPotWheel(movement) {
       new THREE.BoxGeometry(troughLength, 0.08, .04),
       frameMaterial,
     );
-    side.position.set(0, 0.04, sign * .20);
+    side.position.set(0, 0.04, sign * .43);
     dischargeTrough.add(side);
     return side;
   });
   const troughWater = new THREE.Mesh(
-    new THREE.BoxGeometry(troughLength - 0.18, .02, .35),
+    new THREE.BoxGeometry(troughLength - 0.18, .02, .80),
     waterMaterial,
   );
   troughWater.position.y = 0.065;
   troughWater.userData.role = 'raised-water-flow-in-discharge-trough';
   dischargeTrough.add(troughWater);
-  const troughSupports = [wheelCenter.x-.25, wheelCenter.x+.25].map((x) => {
+  const troughSupports = [dischargeTroughX-.25, dischargeTroughX+.25].map((x) => {
     const support = new THREE.Mesh(
       new THREE.BoxGeometry(
         0.22,
@@ -505,25 +522,38 @@ function eisachPotWheel(movement) {
   };
 
   const updateDischarge = (stream, potState) => {
-    const mouth = potState.pivotPosition;
-    const streamTopY = mouth.y - 0.05;
-    const streamLength = Math.max(
-      0.08,
-      streamTopY - dischargeTroughY - 0.10,
-    );
     stream.visible = potState.dischargeFlow > 0.01;
-    stream.position.set(
-      mouth.x - 0.16,
-      streamTopY - streamLength / 2,
-      -0.44,
-    );
-    const width = 0.34 + 0.66 * potState.dischargeFlow;
-    stream.scale.set(width, streamLength, width);
+    if (!stream.visible) return;
+    // The water leaves the downturned mouth with the pot's own velocity
+    // (the wheel turns counter-clockwise, so leftward at the top) and falls
+    // freely onto the trough water.
+    const mouth = potState.pivotPosition;
+    const path = stream.userData.dischargePath;
+    const vx = -inputAngularSpeed * (mouth.y - wheelCenter.y);
+    const vy = inputAngularSpeed * (mouth.x - wheelCenter.x);
+    const x0 = mouth.x, y0 = mouth.y - 0.08, z0 = 0;
+    const landY = dischargeTroughY + 0.08;
+    const g = 9.81;
+    // Time to fall to the trough water: y0 + vy t - g t^2 / 2 = landY.
+    const tEnd = (vy + Math.sqrt(vy * vy + 2 * g * (y0 - landY))) / g;
+    const n = path.points.length - 1;
+    for (let k = 0; k <= n; k += 1) {
+      const t = tEnd * k / n;
+      path.points[k].set(x0 + vx * t, y0 + vy * t - 0.5 * g * t * t, z0);
+      path.speeds[k] = Math.hypot(vx, vy - g * t);
+      path.times[k] = t;
+    }
+    stream.flow = 0.35 + 0.65 * potState.dischargeFlow;
+    stream.setPath(path);
+    // The pour fades in and out with the flow instead of switching on.
+    stream.material.opacity = 0.45 * THREE.MathUtils.smoothstep(potState.dischargeFlow, 0.01, 0.4);
   };
 
+  const updateWaterStreams = collectWaterStreams(root);
   const update = (time) => {
     const state = stateAtTime(time);
     wheel.rotation.z = state.wheelAngle;
+    updateWaterStreams(time);
     for (let index = 0; index < potCount; index += 1) {
       const potState = state.potStates[index];
       updatePotWater(potWaters[index], potState);

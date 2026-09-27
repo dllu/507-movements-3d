@@ -102,10 +102,49 @@ export function correctLiftPumpParts(root, id) {
       bearing.position.copy(b.deliveryFlapPivot.position);bearing.position.z=sign*.10;
       bearing.userData.role='fixed-outlet-flap-journal';root.add(bearing);return bearing;
     });
+    // Pass 70: the lower check is Brown's hinged flap. It closes flat on the
+    // seat ring (0.08 lap over the 0.32 bore) and turns on a pin carried by
+    // two journals standing on the seat, with the same bored lug as the
+    // delivery flap.
+    // The hinge sits inside the suction pipe's rim (r 0.465), so its boss
+    // stays clear of the pipe top under the seat; the journals stand at
+    // z ±0.31, where the round flap has already turned away from the pin.
+    {const pivot=b.footFlapPivot,pin=new THREE.Mesh(new THREE.CylinderGeometry(.025,.025,.68,32),b.flapHinge.material);
+     pin.rotation.x=Math.PI/2;pin.userData.role='lower-flap-hinge-pin';pivot.add(pin);
+     const footLugOutline=polygonClipping.difference(polygonClipping.union(poly(circle([0,0],.042,64)),
+       poly([[0,-.02],[.20,-.015],[.20,.04],[0,.04]])),poly(circle([0,0],.028,64)));
+     const footLug=new THREE.Mesh(plate(footLugOutline,-.06,.06),b.footValveDisk.material);footLug.userData.role='bored-lower-flap-lug';pivot.add(footLug);
+     b.footFlapHinge=pin;b.footFlapLug=footLug;
+     // A shallow recess in the seat ring's top clears the lug's boss; the ring
+     // stays whole beneath it and round the bore, so nothing bypasses the flap.
+     {const top=.08-b.footValveDisk.geometry.parameters.height/2,x=pivot.position.x,ring=polygonClipping.difference(poly(circle([0,0],.70,128)),poly(circle([0,0],.32,128)));
+      replace(b.footValveSeat,mergePassageParts([horizontalPlate(ring,top-.10,top-.031),horizontalPlate(polygonClipping.difference(ring,poly([[x-.08,-.071],[x+.075,-.071],[x+.075,.071],[x-.08,.071]])),top-.030,top)]));}
+     b.footFlapBearings=[-1,1].map(sign=>{
+       const bearing=new THREE.Mesh(plate(polygonClipping.difference(polygonClipping.union(poly(circle([0,0],.05,64)),capsule([0,0],[-.12,-.02],.03,16)),poly(circle([0,0],.028,64))),-.025,.025),b.footValveSeat.material);
+       bearing.position.copy(pivot.position);bearing.position.z=sign*.31;
+       bearing.userData.role='fixed-lower-flap-journal';root.add(bearing);return bearing;
+     });}
     // Old ornamental end rims overlap the newly widened chamber.
     for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.x===1.45)o.visible=false;
   } else {
     b.pumpRod.visible=false; // The long link meets the yoke crown directly.
+    // Pass 70: Brown's wider pump head. The barrel rises to a shoulder just
+    // above the bucket's highest stroke, then the head (1.43 times the bore)
+    // carries the side spout and ends in an open top with a flange. The water
+    // above the bucket continues into the head, which stands full to the
+    // spout level.
+    const shoulderY=1.97,headTop=2.75,headInner=1.0,headOuter=1.08;
+    replace(b.barrel,mergePassageParts([
+      // Pieces overlap slightly rather than share faces, so the section's
+      // welded cut stays consistently wound.
+      horizontalRing(.70,.78,shellBottom,shoulderY-.075),
+      horizontalRing(.70,headOuter,shoulderY-.08,shoulderY),
+      portedBarrel(headInner,headOuter,shoulderY-.005,headTop-.075,2.20,.23,-1),
+      horizontalRing(headInner,1.24,headTop-.08,headTop),
+    ]));
+    d.pumpHead={shoulderY,headTop,headInner,headOuter};
+    const headWater=new THREE.Mesh(new THREE.CylinderGeometry(headInner-.05,headInner-.05,g.spoutWaterLevelY-shoulderY,96).translate(0,(g.spoutWaterLevelY+shoulderY)/2,0),b.upperChamberWater.material);
+    headWater.userData.role='water-standing-in-pump-head-at-spout-level';root.add(headWater);b.headWater=headWater;
     const linkGeometry=boredPlanarLinkGeometry({length:g.connectingRodLength,width:.10,eyeRadius:.15,boreRadius:.075,depth:.08});
     linkGeometry.translate(-g.connectingRodLength/2,0,0).rotateZ(Math.PI/2).scale(1,1/g.connectingRodLength,1);
     replace(b.connectingRod,linkGeometry);
@@ -114,7 +153,8 @@ export function correctLiftPumpParts(root, id) {
     replace(rodPin,new THREE.CylinderGeometry(.07/.70,.07/.70,.75/.70,40));
     const jointPin=new THREE.Mesh(new THREE.CylinderGeometry(.07,.07,.65,40),b.pumpRod.material);
     jointPin.rotation.x=Math.PI/2;jointPin.position.set(0,.62,.1);b.piston.add(jointPin);b.jointPin=jointPin;
-    const supportProfile=polygonClipping.difference(poly([[.59,2.43],[.97,2.43],[1.10,3.18],[.99,3.44],[.67,3.44],[.55,3.18]]),poly(circle([g.leverPivot.x,g.leverPivot.y],.195,96)));
+    // The lever bracket rises from the head's top flange to the pivot.
+    const supportProfile=polygonClipping.difference(poly([[.97,2.75],[1.22,2.75],[1.12,3.10],[1.08,3.40],[.95,3.46],[.69,3.46],[.56,3.30],[.56,3.08],[.72,2.93],[.90,2.85]]),poly(circle([g.leverPivot.x,g.leverPivot.y],.195,96)));
     const support=new THREE.Mesh(plate(supportProfile,-.30,-.20),b.base.material);
     support.userData.role='fixed-bored-lever-bracket';root.add(support);b.leverSupport=support;
     replace(b.spout,curvedPipeWall(b.spout.geometry.parameters.path,.19,.25,72));
@@ -132,14 +172,17 @@ export function correctLiftPumpParts(root, id) {
   // trough from the side).
   const shells=[b.barrel,b.suctionPipe,modern?b.spout:null,b.deliveryPipe,b.deliveryBell,b.topCover,b.stuffingBox?.children[0],
     b.pistonBody,b.pistonValveSeat,b.pistonValveDisk,b.footValveSeat,b.footValveDisk,
-    b.deliveryFlapSeat,b.deliveryFlap,b.flapHinge,b.flapLug].filter(Boolean);
+    b.deliveryFlapSeat,b.deliveryFlap,b.flapHinge,b.flapLug,b.footFlapHinge,b.footFlapLug].filter(Boolean);
   if(b.flapBearings)b.flapBearings[1].visible=false; // its cut-away half would float in front of the section
-  const waters=[b.suctionWater,b.lowerChamberWater,b.upperChamberWater,b.spoutWater,b.deliveryWater].filter(Boolean);
+  if(b.footFlapBearings)b.footFlapBearings[1].visible=false;
+  const waters=[b.suctionWater,b.lowerChamberWater,b.upperChamberWater,b.headWater,b.spoutWater,b.deliveryWater].filter(Boolean);
   for(const mesh of shells)sectionMeshInPlace(mesh,root);
   if(!modern){b.spout.material=b.barrel.material[0];b.spout.castShadow=b.spout.receiveShadow=true;}
   for(const mesh of waters){const m=mesh.material;sectionMeshInPlace(mesh,root);mesh.material=[m,m];}
   for(const rails of [b.barrelRearFrame,b.barrelRails])if(rails)rails.visible=false;
-  d.updateSolids=()=>{if(!modern)b.connectingRod.position.z=.27;};
+  d.updateSolids=state=>{if(!modern){b.connectingRod.position.z=.27;
+    // The bucket water stops where the head water (with its neck) begins.
+    const bottom=state.pistonTopY+.04,top=d.pumpHead.shoulderY;b.upperChamberWater.position.y=(bottom+top)/2;b.upperChamberWater.scale.y=Math.max(.001,top-bottom);b.upperChamberWater.visible=top>bottom;}};
   d.animationTiming.targetCycleDuration=g.cycleDuration;
   d.minimumDisplayCycleSeconds=g.cycleDuration;
   d.hideGround=true;

@@ -66,19 +66,35 @@ function horizontalOvershotWaterWheel(movement) {
   const sourcePoseBladeOffset = 0;
   const hubRadius = 0.48;
   const shaftRadius = 0.19;
-  // The jet strikes the far side of the runner, so its spout climbs across
-  // Brown's view to the upper right with its open trough facing the viewer.
-  const impactAngle = THREE.MathUtils.degToRad(112.5);
-  const impactRadius = 2.12;
+  // Pass 70: the runner turns clockwise seen from above (spin -1 about +y).
+  // The jet strikes the right-hand floats a little in front of the shaft,
+  // travelling toward the viewer and obliquely inward (a real spout plays
+  // on the boards at a slant), so its spout climbs away across Brown's view
+  // to the upper right and the floats carry the broken water round the
+  // near side: Brown's spray falls under the right and front of the runner.
+  // (Pass 69 struck the far side with the runner turning the other way,
+  // which shed the water under the left.) The source camera looks in from
+  // 31 degrees round from +z; the strike is 10 degrees in front of that
+  // view's right.
+  const spin = -1;
+  const impactAngle = THREE.MathUtils.degToRad(21);
+  const impactRadius = 1.7;
   const impactHeight = 0.34;
   const jetForceMagnitudeNormalized = 18;
   const jetDownwardRatio = 0.86;
+  // Inward (toward the shaft) horizontal slant of the jet per unit of its
+  // tangential component.
+  const jetInwardRatio = 0.7;
 
   const impactRadial = horizontalRadial(impactAngle);
-  const impactTangent = horizontalTangent(impactAngle);
+  // Direction of float motion at the strike (clockwise from above).
+  const impactTangent = horizontalTangent(impactAngle).multiplyScalar(spin);
   const impactPoint = impactRadial.clone().multiplyScalar(impactRadius);
   impactPoint.y = impactHeight;
-  const jetDirection = impactTangent.clone()
+  // Horizontal direction of the jet: along the float motion, slanted in.
+  const jetHorizontal = impactTangent.clone()
+    .addScaledVector(impactRadial, -jetInwardRatio).normalize();
+  const jetDirection = jetHorizontal.clone()
     .add(new THREE.Vector3(0, -jetDownwardRatio, 0))
     .normalize();
   const jetForce = jetDirection.clone()
@@ -88,12 +104,22 @@ function horizontalOvershotWaterWheel(movement) {
     .crossVectors(impactPoint, jetForce).y;
   // Brown's spout mouth sits well below the overhead beam, about two-fifths
   // of the way up from the runner.
+  // The mouth is placed so the free jet, leaving along the spout axis at the
+  // speed the spout's own fall gives it (v^2 = 2 g L sin(slope)), lands on
+  // the strike point: drop = reach tan(slope) + g reach^2 / (2 v^2 cos^2).
+  const spoutRun = 1.62, spoutRise = 1.22, spoutExtensionLength = 1.4;
+  const spoutSlope = Math.atan2(spoutRise, spoutRun);
+  const spoutFallLength = Math.hypot(spoutRun, spoutRise) + spoutExtensionLength;
+  const spoutExitSpeedSquared = 2 * 9.81 * spoutFallLength * Math.sin(spoutSlope);
+  const jetReach = 1.5;
+  const jetDrop = jetReach * Math.tan(spoutSlope)
+    + 9.81 * jetReach ** 2 / (2 * spoutExitSpeedSquared * Math.cos(spoutSlope) ** 2);
   const nozzlePoint = impactPoint.clone()
-    .addScaledVector(impactTangent, -2.2)
-    .add(new THREE.Vector3(0, 1.72, 0));
+    .addScaledVector(jetHorizontal, -jetReach)
+    .add(new THREE.Vector3(0, jetDrop, 0));
   const flumeUpstreamPoint = nozzlePoint.clone()
-    .addScaledVector(impactTangent, -1.62)
-    .add(new THREE.Vector3(0, 1.22, 0));
+    .addScaledVector(jetHorizontal, -spoutRun)
+    .add(new THREE.Vector3(0, spoutRise, 0));
 
   const jetSharesAtWheelAngle = (wheelAngle) => {
     const coordinate = THREE.MathUtils.euclideanModulo(
@@ -120,9 +146,9 @@ function horizontalOvershotWaterWheel(movement) {
     inputSpeed = inputAngularSpeed,
     inputAcceleration = 0,
   ) => {
-    const wheelAngle = inputAngle;
-    const wheelAngularSpeed = inputSpeed;
-    const wheelAngularAcceleration = inputAcceleration;
+    const wheelAngle = spin * inputAngle;
+    const wheelAngularSpeed = spin * inputSpeed;
+    const wheelAngularAcceleration = spin * inputAcceleration;
     const jetSharing = jetSharesAtWheelAngle(wheelAngle);
     const blades = [];
     for (let bladeIndex = 0; bladeIndex < bladeCount; bladeIndex += 1) {
@@ -365,7 +391,7 @@ function horizontalOvershotWaterWheel(movement) {
   );
   // Brown's spout is a long, narrow open trough (a floor and two side walls)
   // running up out of his frame.
-  const spoutExtension = 1.4;
+  const spoutExtension = spoutExtensionLength;
   {
     const length = flume.geometry.parameters.width + spoutExtension;
     const parts = [new THREE.BoxGeometry(length, .05, .56).translate(-spoutExtension / 2, -.075, 0),
@@ -454,24 +480,24 @@ function horizontalOvershotWaterWheel(movement) {
   // Most of the water leaves soon after the strike; what the floats carry on
   // round is shed further downstream in thinner sheets (Brown's spray under
   // the near blades), so there are three spills of falling flow.
-  const spills = [[0.35, 1.0], [1.6, 0.6], [2.4, 0.5]].map(([turn, flow], index) => {
-    const angle = impactAngle + turn;
+  const spills = [[0.3, 1.0], [0.75, 0.6], [1.2, 0.45]].map(([turn, flow], index) => {
+    const angle = impactAngle + spin * turn;
     const radial = horizontalRadial(angle);
-    const tangent = horizontalTangent(angle);
+    const tangent = horizontalTangent(angle).multiplyScalar(spin);
     const start = radial.clone().multiplyScalar(bladeOuterRadius + 0.06).setY(-0.02);
     const velocity = tangent.clone().multiplyScalar(rimSpeed * 0.3)
       .addScaledVector(radial, 0.35).add(new THREE.Vector3(0, -0.3, 0));
     const stream = new WaterStream(ballisticPath({origin: start, velocity, endY: -1.55, samples: 24}), {
-      width: 0.3, thickness: 0.03, widthAxis: tangent, widthExponent: 0.3, flow,
+      width: 0.2, thickness: 0.025, widthAxis: tangent, widthExponent: 0.3, flow,
       spread: {start: 0.15, width: 1.8, thickness: 1.3}, fadeIn: 0.1, fadeOut: 0.7,
-      cyclePeriod: cycleDuration, streakRate: 1.5, opacity: 0.42,
+      cyclePeriod: cycleDuration, streakRate: 1.5, streakAcross: 5, opacity: 0.32,
     });
     stream.userData.role = index === 0 ? 'spray-falling-from-struck-blades'
       : `spray-shed-downstream-from-carried-blades-${index}`;
     root.add(stream);
     // Brown's broken drops falling beside the sheet.
     const drops = new WaterSpray({
-      origin: start.clone().setY(-0.08), velocity, spread: 0.35, count: 12, lifetime: 0.55,
+      origin: start.clone().setY(-0.08), velocity, spread: 0.35, count: 20, lifetime: 0.55,
       radius: 0.028, cyclePeriod: cycleDuration, seed: 4330 + index, originSpread: tangent.clone().multiplyScalar(0.35),
     });
     drops.userData.role = `drops-falling-from-blade-tips-${index + 1}`;
@@ -613,7 +639,7 @@ function horizontalOvershotWaterWheel(movement) {
       fluidPressureViscosityTurbulenceSplashLeakageBladeImpactBearingFrictionRunnerInertiaGeneratorLoadAndSpeedResponseModeled:
         false,
       jetMomentumDiagnostic:
-        'A fixed normalized force follows the reconstructed falling jet at the illustrated contact point. Its horizontal component is exactly tangent to the runner and its y-axis moment is positive; runner speed remains prescribed.',
+        'A fixed normalized force follows the reconstructed falling jet at the illustrated contact point. Its horizontal component follows the floats’ motion at impact with an inward slant (0.7 of radial per unit tangential, as a spout plays obliquely on the boards) and its y-axis moment is negative (clockwise from above, the runner’s sense); runner speed remains prescribed.',
       smoothBladeHandoff:
         'The visual jet engagement is partitioned between the two neighboring scoop indices with complementary quintic weights, preserving unit total engagement and zero-slope handoff rather than popping between blades.',
     },
@@ -621,12 +647,12 @@ function horizontalOvershotWaterWheel(movement) {
     geometry,
     jetSharesAtWheelAngle,
     mechanism:
-      'A fixed elevated flume sends a falling jet obliquely onto the upper faces of scoop-like radial blades carried by a horizontal runner. The jet’s horizontal component is tangent to the wheel at impact, so its momentum produces positive torque about the vertical shaft; water then spills downward into the surrounding basin. All sixteen scoops, hub, shaft, and visible marker rotate as one body about the vertical axis, while the flume, jet contact point, basin, and upper and lower bearings remain fixed.',
+      'A fixed elevated flume sends a falling jet obliquely onto the upper faces of scoop-like radial blades carried by a horizontal runner. The jet’s horizontal component runs with the floats at impact, slanting inward, so its momentum produces clockwise (negative-about-y) torque about the vertical shaft; water then spills downward into the surrounding basin. All sixteen scoops, hub, shaft, and visible marker rotate as one body about the vertical axis, while the flume, jet contact point, basin, and upper and lower bearings remain fixed.',
     motion: {
       bladePitch,
       cycleDuration,
       inputAngularSpeed,
-      rotationDirectionViewedFromAbove: 'positive-about-y',
+      rotationDirectionViewedFromAbove: 'clockwise-negative-about-y',
       wheelRevolutionsPerCycle: 1,
     },
     sourceAnimation: {
@@ -666,7 +692,7 @@ function horizontalOvershotWaterWheel(movement) {
         engravingEvidence:
           'Brown’s perspective engraving shows a horizontal radial scoop runner fixed to a vertical shaft supported above, an elevated oblique flume at upper right, a falling jet striking the runner near its outer radius, and water spilling below the blade tips.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, exact scoop count, blade curvature, jet velocity, impact angle, shaft speed, direction arrow, materials, losses, efficiency, bearing friction, inertia, or load. Twelve equal scoop assemblies, positive rotation direction, dimensions, tangent-force diagnostic, smooth two-blade engagement display, colors, basin, and 5.4-second cycle are independently engineered; the horizontal runner, vertical shaft, upper bearing, elevated flume, falling outer-radius jet, and downward discharge are source-grounded.',
+          'Brown gives no dimensions, exact scoop count, blade curvature, jet velocity, impact angle, shaft speed, direction arrow, materials, losses, efficiency, bearing friction, inertia, or load. Sixteen equal boards, clockwise rotation direction (chosen so the broken water falls under the right and front as drawn), dimensions, tangent-force diagnostic, smooth two-blade engagement display, colors, basin, and 5.4-second cycle are independently engineered; the horizontal runner, vertical shaft, upper bearing, elevated flume, falling outer-radius jet, and downward discharge are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 433',
@@ -677,7 +703,7 @@ function horizontalOvershotWaterWheel(movement) {
       jetTorque:
         'tau_y=(impactPoint cross jetForce).y>0 with the horizontal force component tangent to the runner',
       runnerAttachment:
-        'bladeWorldAngle=bladeLocalAngle+wheelAngle and shaftAngle=wheelAngle',
+        'bladeWorldAngle=bladeLocalAngle+wheelAngle and shaftAngle=wheelAngle=-inputAngle',
       smoothJetHandoff:
         'two neighboring blade shares sum exactly to one at every wheel angle',
     },

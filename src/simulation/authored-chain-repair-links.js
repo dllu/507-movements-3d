@@ -278,7 +278,9 @@ function makeSwivelNut({
   return markShadows(nut);
 }
 
-const CHAIN = {looseSeparation: 2.5, threadPitch: 0.20};
+// Tight, the halves stand 2 x (nut half-height + 0.005) apart, so the two
+// swivel nuts sit level as Brown draws them; loose is two turns (0.40) wider.
+const CHAIN = {looseSeparation: 2.41, threadPitch: 0.20};
 
 function chainRepairLink(movement) {
   const root = new THREE.Group();
@@ -352,12 +354,17 @@ function chainRepairLink(movement) {
   rightNut.position.x = legSpacing / 2;
   root.add(leftNut, rightNut);
 
+  // Playback time zero is Brown's pose: the link made up tight with both
+  // nuts level. It then loosens two turns and tightens back
+  // (tight -> loose at half cycle -> tight). sourceTime is where that pose
+  // falls on a loose-start clock.
+  const sourceTime = cycleDuration / 2;
   const stateAtTime = (time) => {
     const cycleCoordinate = time / cycleDuration;
     const cyclePhase = positiveModulo(cycleCoordinate, 1);
     const adjustmentTurns = maximumAdjustmentTurns * 0.5
-      * (1 - Math.cos(FULL_TURN * cycleCoordinate));
-    const adjustmentTurnRate = maximumAdjustmentTurns * Math.PI
+      * (1 + Math.cos(FULL_TURN * cycleCoordinate));
+    const adjustmentTurnRate = -maximumAdjustmentTurns * Math.PI
       * Math.sin(FULL_TURN * cycleCoordinate) / cycleDuration;
     const halfSeparation = looseSeparation
       - threadPitch * adjustmentTurns;
@@ -442,8 +449,8 @@ function chainRepairLink(movement) {
     root.userData.kinematics = state;
   };
 
-  const looseState = stateAtTime(0);
-  const tightState = stateAtTime(cycleDuration / 2);
+  const looseState = stateAtTime(cycleDuration / 2);
+  const tightState = stateAtTime(0);
   root.userData = {
     archetype:
       'two-piece-chain-repair-link-with-cross-coupled-opposed-screws-and-captured-swivel-nuts',
@@ -506,6 +513,7 @@ function chainRepairLink(movement) {
       nutCaptureOffset,
       nutReceiverOffsetMagnitude,
       screwLength,
+      sourceTime,
       threadPitch,
       tightSeparation,
     },
@@ -514,7 +522,7 @@ function chainRepairLink(movement) {
     motion: {
       cycleDuration,
       demonstration:
-        'loose -> two matched tightening turns -> tight -> two matched loosening turns -> loose',
+        'tight (Brown\u2019s pose, nuts level) -> two matched loosening turns -> loose -> two matched tightening turns -> tight',
       sourcePrescribesMotion: false,
     },
     sourceAnimation: {
@@ -554,8 +562,9 @@ function chainRepairLink(movement) {
     stateAtTime,
     timeline: {
       cycleDuration,
-      loosePoses: [0, 1],
-      tightPose: 0.5,
+      loosePoses: [0.5],
+      tightPoses: [0, 1],
+      sourceTime,
     },
     transmission: {
       axialLaw:

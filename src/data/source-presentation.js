@@ -575,7 +575,7 @@ export default {
   },
   399: {
     remove: ['(?:left-upper|right-lower)-carried-white-swivel-nut-rotation-index'],
-    note: 'Face view of the two U-shaped halves joined by the two swivel nuts; no white rotation indices are drawn.',
+    note: 'Face view of the two U-shaped halves joined by the two swivel nuts, made up tight with both nuts level as drawn, then loosened two turns and tightened back; no white rotation indices are drawn.',
   },
   368: {
     camera: [0, 0.03, 1],
@@ -714,7 +714,7 @@ export default {
   },
   402: {
     remove: ['fixed-rear-bearing-frame-bar-\\d', '.*-white-balance-angular-index', 'white-escape-wheel-angular-index', '.*-balance-spoke-[23]', 'visible-active-escape-tooth-pallet-contact'],
-    note: 'Face view of the two open balance rims, each joined to its arbor by one slim two-armed bar as in a watch balance, crossing so both racks show, with their pinions, the lever B carrying both toothed sectors, and anchor A as one plate (a curved upper arm to its pointed pallet, a lower arm to its block pallet) working the fifteen-tooth escape wheel in its own plane; no frame bars or white indices are drawn.',
+    note: 'Face view of the two open balance rims, each joined to its arbor by one slim two-armed bar as in a watch balance, crossing so both racks show, with their pinions, the lever B carrying both toothed sectors, and anchor A as one plate (a curved upper arm to its pointed pallet, a lower arm to its block pallet) working the fifteen-tooth escape wheel in its own plane, and the bar Brown draws in front of the wheel from the anchor pivot to the wheel\'s centre as the fixed bridge carrying both arbors, see-through where it covers the teeth he dots; no frame bars or white indices are drawn.',
   },
   403: {
     remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', 'laid-out-(?:chord-line|versed-sine)', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],
@@ -758,7 +758,7 @@ export default {
   },
   415: {
     remove: ['fixed-coaxial-wheel-and-lever-bearing-frame', 'wheel-D-spoke-fast-with-rim-and-hub', 'white-wheel-D-intermittent-rotation-index', 'white-lever-A-oscillation-index', 'selectable-(?:left-pawl-B|right-pawl-C)-white-rim-contact-index', 'white-input-slider-joint-index'],
-    note: 'The plain disc wheel D, lever A with its pawls B and C and crank E, and the rod D running off to the right to the slider that drives it in its guide, just beyond Brown\'s crop; no frame, spokes or white indices are drawn.',
+    note: 'The plain light disc wheel D with its slim rim, lever A with its pawls B and C (engaged C lying nearly flat, lifted B at about 47 degrees) and crank E, and the rod D running off to the right to the slider that drives it in its guide, just beyond Brown\'s crop; no frame, spokes or white indices are drawn.',
   },
   416: {
     camera: [0.2, 0.06, 1],
@@ -832,7 +832,7 @@ export default {
   433: {
     camera: [0.6, 0.42, 1],
     remove: ['falling-jet-motion-marker-\\d+'],
-    note: 'Raised side view of the flat-bladed runner on its hanging shaft, the open spout climbing out of the picture to the upper right and its jet striking the far blades, as Brown draws it; no floor disc, basin or jet beads. The water runs down the spout and falls as one continuous sheet on its projectile path; the broken water drops from the floats as thin falling sheets and drops.',
+    note: 'Raised side view of the flat-bladed runner on its hanging shaft, the open spout climbing away out of the picture to the upper right and its jet striking the near right-hand blades, as Brown draws it; the runner turns clockwise seen from above, so the broken water falls under its right and front; no floor disc, basin or jet beads. The water runs down the spout and falls as one continuous sheet on its projectile path; the broken water drops from the floats as thin falling sheets and drops.',
   },
   434: {
     camera: [0, 1, 0.12],
@@ -865,9 +865,9 @@ export default {
     note: 'The pulley, rope, bucket with its projecting valve stem, counterweight and water stream; no gallows frame, ground, striking anvil, white pulley stripe or rope marker is drawn. No flow beads in the falling stream.',
   },
   440: {
-    camera: [-0.12, 0.55, 1],
+    camera: [-0.18, 1.0, 1],
     remove: ['visible-trough-angle-index', 'fixed-(?:left|right)-trough-travel-stop', 'continuous-inlet-flow-marker-\\d+'],
-    note: 'View of the wedge-shaped double trough on its pivot standard, braces and open plank frame under the inlet flume, which Brown breaks off and which ends just beyond the crop with its water; no angle index or travel-stop blocks are drawn. No flow beads in the falling stream. The view is from a little to the left and above, so the raised half and its water show. The flume water and its fall are one continuous stream landing beside the divider foot in the raised half; each half empties from its open outer end in one falling stream as it tips.',
+    note: 'View of the wedge-shaped double trough on its pivot standard, braces and open plank frame under the inlet flume, which Brown breaks off and which ends just beyond the crop with its water; no angle index or travel-stop blocks are drawn. No flow beads in the falling stream. The view is from the left and well above, so the water standing in the raised half shows over its front wall; the flume ends cleanly just past the crop. The flume water and its fall are one continuous stream landing beside the divider foot in the raised half; each half empties from its open outer end in one falling stream as it tips.',
   },
   441: {
     camera: [0, 0.01, 1],
@@ -940,7 +940,7 @@ export default {
   },
   461: {
     camera: [0, 0.02, 1],
-    note: 'Elevation of the swinging lattice as Brown draws it: six horizontal pipes with square boxes at their right ends and tilted boxes under their left ends, six parallel diagonals passing behind them from each left box to the right box two rows up, the crossed braces on the axis, the two dotted posts and the pool; the pipes are cut open along their front walls to show the water and flaps.',
+    note: 'Elevation of the swinging lattice as Brown draws it: six horizontal pipes with square boxes at their right ends and tilted boxes under their left ends, six parallel diagonals passing behind them from each left box to the right box two rows up, the crossed braces on the axis, the two dotted posts and the pool; the pipes are cut open along their front walls to show the water and flaps. The highest diagonal joins the top pipe through a port where it passes behind it (its stub above stays open), so both serpentines pour through Brown’s one jet.',
   },
   462: {
     remove: ['fixed-frame-supporting-upper-powered-chain-wheel'],
@@ -952,7 +952,7 @@ export default {
   },
   464: {
     remove: ['external-water-pour-into-open-upper-basin'],
-    note: 'Sectional elevation of the open basin on its two legs, the bowl in its air chamber, the pipes and the central nozzle throwing a plume of spray; Brown draws no stream being poured into the basin.',
+    note: 'Sectional elevation of the open basin on its two legs, the bowl in its air chamber, the pipes and the central nozzle throwing a willow plume of spray, playing steadily through the loop (no reset); Brown draws no stream being poured into the basin.',
   },
   465: {
     remove: ['left-operator-pressure-pad', 'right-operator-pressure-pad'],

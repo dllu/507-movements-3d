@@ -265,7 +265,7 @@ test('movement 460 moving the pitman outward through the shown notches strictly 
     assert.ok(high.scoopAngle > low.scoopAngle);
   }
   near(geometry.notchLiftHeights[geometry.selectedNotchIndex],
-    3.3108806611294552, 2e-12, 'selected middle-notch lift');
+    2.929978116815363, 2e-12, 'selected middle-notch lift');
   // The raised scoop's floor falls toward the spout, so it can empty.
   const high = stateAtInputAngleForNotch(FULL_TURN * geometry.liftEndPhase);
   assert.ok(high.scoopAngle > Math.atan2(0.78, 1.76), 'raised floor slopes down to the pivot end');

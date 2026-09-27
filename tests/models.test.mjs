@@ -59914,6 +59914,8 @@ test('all 507 movement records construct, animate, and occupy finite 3D space', 
       ...object.quaternion.toArray(),
       ...object.scale.toArray(),
       Number(object.visible),
+      // Flowing water animates its streak texture rather than a transform.
+      ...(object.material?.map?.offset ? object.material.map.offset.toArray() : []),
     ]);
     let previous = snapshot();
     let animated = false;

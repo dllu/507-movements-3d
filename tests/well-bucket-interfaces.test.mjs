@@ -13,9 +13,11 @@ for(const [id,factory] of [[457,createAuthoredCounterbalancedWellSweepMovement],
   const pairs=id===457?[[b.pivotAxle,b.workingBeam],[b.ropePin,b.workingBeam],...b.forks.map(f=>[b.workingBeam,f]),[b.workingBeam,b.trunk]]:
     [[b.fixedAxle,b.pulley.userData.hub],[b.fixedAxle,b.hanger],...[b.upperArc,b.leftRopeLeg,b.rightRopeLeg].flatMap(r=>[b.pulley.userData.tread,b.pulley.userData.hub,...b.pulley.userData.spokes].map(p=>[r,p]))];
   for(const {bucket,water} of buckets){
-    pairs.push([water,bucket.children[0]],[water,bucket.children[1]]);
+    // Body, floor, rim and bail (the first three tip about the ears to empty).
+    const parts=bucket.userData.parts;
+    pairs.push([water,parts[0]],[water,parts[1]]);
     const walls=id===457?[b.well,b.wellRim,b.base]:[b.shaftWell];
-    for(const child of bucket.children.slice(0,4))for(const wall of walls)pairs.push([child,wall]);
+    for(const child of parts)for(const wall of walls)pairs.push([child,wall]);
   }
   const surfaces=new Map(pairs.map(([,fixed])=>[fixed,solidSurface(fixed.geometry)]));
   for(let i=0;i<=64;i++){

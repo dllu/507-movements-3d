@@ -3,35 +3,195 @@ import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {horizontalTurned,horizontalPlate} from './horizontal-turbine-solids.js';
 import {plate,poly,circle,capsule,polygonClipping as clip} from './finite-plate-geometry.js';
 import {matte,PALETTE} from './primitives.js';
+import {WaterStream} from './water-stream.js';
+import {ConvexHull} from 'three/addons/math/ConvexHull.js';
 const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 
-// A closed tapered wall and floor, with an actual open mouth.
+// Interior of the open tapered bucket (shared with bucketParts): wall
+// thickness, floor top and the full-water surface 0.05 below the rim.
+function bucketInterior(height,top,bottom){
+  const low=-height/2,high=height/2,thickness=.035,base=low+.060,full=high-.05;
+  const radiusAt=y=>bottom+(top-bottom)*(y-low)/height-thickness-.008;
+  return {low,high,base,full,radiusAt};
+}
+// Area of the part of a disc of radius r with z >= d.
+const segmentArea=(r,d)=>d>=r?0:d<=-r?Math.PI*r*r:r*r*Math.acos(d/r)-d*Math.sqrt(r*r-d*d);
+// Water volume below the level plane cos(t) y - sin(t) z = c in the bucket
+// frame, where t is the tip about the ear axis (x) toward +z.
+function tiltedVolume(interior,tilt,c,slices=48){
+  const {base,high,radiusAt}=interior,cs=Math.cos(tilt),sn=Math.sin(tilt),dy=(high-base)/slices;
+  if(Math.abs(sn)<1e-9){
+    // Upright: the exact frustum below the level.
+    const top=Math.min(high,Math.max(base,c)),a=radiusAt(base),b=radiusAt(top);
+    return Math.PI*(top-base)*(a*a+a*b+b*b)/3;
+  }
+  let v=0;
+  for(let i=0;i<slices;i++){
+    const y=base+(i+.5)*dy,r=radiusAt(y);
+    v+=(Math.abs(sn)<1e-9?(y<=c?Math.PI*r*r:0):segmentArea(r,(cs*y-c)/sn))*dy;
+  }
+  return v;
+}
+const fullVolume=interior=>tiltedVolume(interior,0,interior.full);
+// Level of the lowest point of the lip when tipped by `tilt`.
+const lipLevel=(interior,tilt)=>Math.cos(tilt)*interior.high-Math.sin(tilt)*interior.radiusAt(interior.high);
+// Fraction of a full bucket the tipped bucket can still hold (1 upright).
+export function bucketCapacityAtTilt(tilt,{height,top,bottom}){
+  const interior=bucketInterior(height,top,bottom);
+  if(tilt<=0)return 1;
+  return Math.min(1,tiltedVolume(interior,tilt,lipLevel(interior,tilt))/fullVolume(interior));
+}
+// The operator tips the raised bucket about its ears to empty it over the
+// top dwell `u` in [0, 1]: tip up to `maxTilt` over the first 62 %, hold,
+// and right it again over the last 30 %. The water it keeps is what the
+// tipped bucket can still hold (it spills over the lip), so it is emptied
+// by the tipping, not drained.
+export function tippedEmptying(u,dims,maxTilt=THREE.MathUtils.degToRad(118)){
+  const ease=x=>{x=Math.min(1,Math.max(0,x));return x*x*x*(x*(6*x-15)+10);};
+  const tilt=u<.62?maxTilt*ease(u/.62):u<.7?maxTilt:maxTilt*(1-ease((u-.7)/.3));
+  const fraction=u<.62?bucketCapacityAtTilt(tilt,dims):0;
+  return {tilt,fraction};
+}
+
+// The bail's turn on the ears for a given tip (zero up to 50 degrees), and
+// the resulting offset of the bucket centre that keeps the bail's crown on
+// the rope.
+export function bailSwing(tilt){
+  return (tilt-THREE.MathUtils.degToRad(60))*THREE.MathUtils.smoothstep(tilt,THREE.MathUtils.degToRad(50),THREE.MathUtils.degToRad(70));
+}
+export function bailHang(tilt,handleRise,target=new THREE.Vector3()){
+  const bail=bailSwing(tilt);
+  return target.set(0,handleRise*(1-Math.cos(bail)),-handleRise*Math.sin(bail));
+}
+
+// A closed tapered wall and floor, with an actual open mouth. The body,
+// floor, rim and water hang in a tipper that turns about the ears (the
+// bail's pivots, along x at the rim); the bail stays hanging on the rope.
 function bucketParts(bucket,water,height,top,bottom,handleRise){
-  const [body,floor,,handle]=bucket.children;
+  const [body,floor,rim,handle]=bucket.children;
   const low=-height/2,high=height/2,thickness=.035;
   replace(body,horizontalTurned([[low,bottom],[high,top],[high,top-thickness],[low+.055,bottom-thickness]]));
   replace(floor,new THREE.CylinderGeometry(bottom,bottom,.055,48));floor.position.y=low+.0275;
   const points=[[-top,high],[-top*.74,high+handleRise*.76],[0,high+handleRise],[top*.74,high+handleRise*.76],[top,high]].map(([x,y])=>new THREE.Vector3(x,y,0));
   replace(handle,new THREE.TubeGeometry(new THREE.CatmullRomCurve3(points),48,.035,12,false));
-  replace(water,new THREE.CylinderGeometry(1,1,1,48));
-  const unit=water.geometry.attributes.position.array.slice(),position=water.geometry.attributes.position;
-  const base=low+.060,maxDepth=height-.11;
-  const radiusAt=y=>bottom+(top-bottom)*(y-low)/height-thickness-.008;
-  const volumeAt=h=>{const a=radiusAt(base),b=radiusAt(base+h);return Math.PI*h*(a*a+a*b+b*b)/3;};
-  water.userData.fullVolume=volumeAt(maxDepth);
-  const update=fraction=>{
-    let lo=0,hi=maxDepth;
-    for(let i=0;i<32;i++){const mid=(lo+hi)/2;if(volumeAt(mid)<fraction*water.userData.fullVolume)lo=mid;else hi=mid;}
-    const depth=fraction===0?0:(lo+hi)/2;
-    for(let i=0;i<position.count;i++){
-      const y=base+(unit[3*i+1]+.5)*depth;
-      const r=radiusAt(y);
-      position.setXYZ(i,unit[3*i]*r,y,unit[3*i+2]*r);
-    }
-    water.position.y=0;water.scale.set(1,1,1);water.visible=fraction>1e-5;
-    position.needsUpdate=true;water.geometry.computeVertexNormals();water.geometry.computeBoundingSphere();
+  const tipper=new THREE.Group();tipper.position.y=high;tipper.userData.role='bucket-tipping-about-its-ears';
+  const inner=new THREE.Group();inner.position.y=-high;tipper.add(inner);
+  for(const part of [body,floor,rim,water].filter(Boolean))inner.add(part);
+  bucket.add(tipper);
+  // The bail also turns freely on the ears. Past about 60 degrees of tip the
+  // far half of the rim would swing up through the upright bail, so the bail
+  // falls toward the pour side, and since the rope holds the bail's crown,
+  // the bucket hangs back from it by that much.
+  const bailPivot=new THREE.Group();bailPivot.position.y=high;bailPivot.userData.role='bail-turning-on-the-ears';
+  handle.position.y-=high;bailPivot.add(handle);bucket.add(bailPivot);
+  // The water is the bucket interior (a 48-sided frustum) below the level
+  // plane: written as triangles into one fixed buffer. Upright it is the
+  // frustum up to the level; tipped it is the convex hull of the interior's
+  // corners below the plane and the edges' crossings of it (exact for the
+  // polyhedral interior), so a nearly empty tipped bucket holds only a thin
+  // wedge at the lip.
+  const sides=48,maxTriangles=6*sides+64;
+  const geometry=new THREE.BufferGeometry();
+  const P=new Float32Array(maxTriangles*9),N=new Float32Array(maxTriangles*9);
+  geometry.setAttribute('position',new THREE.BufferAttribute(P,3));
+  geometry.setAttribute('normal',new THREE.BufferAttribute(N,3));
+  replace(water,geometry);
+  const position=geometry.attributes.position,normal=geometry.attributes.normal;
+  const interior=bucketInterior(height,top,bottom),{base,radiusAt}=interior,rimY=interior.high-.01;
+  const full=fullVolume(interior);
+  water.userData.fullVolume=full;
+  const cosines=Array.from({length:sides},(_,i)=>Math.cos(2*Math.PI*i/sides)),sines=Array.from({length:sides},(_,i)=>Math.sin(2*Math.PI*i/sides));
+  const a=new THREE.Vector3(),b=new THREE.Vector3(),e=new THREE.Vector3(),f=new THREE.Vector3(),nrm=new THREE.Vector3();
+  let count=0;
+  const tri=(p0,p1,p2)=>{
+    if(count>=maxTriangles)return;
+    e.subVectors(p1,p0);f.subVectors(p2,p0);nrm.crossVectors(e,f);
+    const l=nrm.length();if(l<1e-12)return;nrm.multiplyScalar(1/l);
+    const o=count*9;
+    for(const [k,p] of [[0,p0],[1,p1],[2,p2]]){P[o+3*k]=p.x;P[o+3*k+1]=p.y;P[o+3*k+2]=p.z;N[o+3*k]=nrm.x;N[o+3*k+1]=nrm.y;N[o+3*k+2]=nrm.z;}
+    count++;
   };
+  const finish=()=>{
+    const cx=0,cy=base,cz=0;
+    for(let i=count*9;i<P.length;i+=3){P[i]=cx;P[i+1]=cy;P[i+2]=cz;N[i]=0;N[i+1]=1;N[i+2]=0;}
+    position.needsUpdate=true;normal.needsUpdate=true;geometry.computeBoundingSphere();
+  };
+  const ring=(y,i,target)=>target.set(cosines[i]*radiusAt(y),y,sines[i]*radiusAt(y));
+  const c0=new THREE.Vector3(),c1=new THREE.Vector3(),p0=new THREE.Vector3(),p1=new THREE.Vector3(),q0=new THREE.Vector3(),q1=new THREE.Vector3();
+  const update=(fraction,tilt=0)=>{
+    tipper.rotation.x=tilt;
+    // (The factory's bucket centre already hangs back by bailHang.)
+    bailPivot.rotation.x=bailSwing(tilt);
+    water.position.set(0,0,0);water.scale.set(1,1,1);water.visible=fraction>1e-4;
+    count=0;
+    if(!water.visible){finish();return;}
+    const cs=Math.cos(tilt),sn=Math.sin(tilt);
+    // Level plane holding the water: bisect between the lowest point of the
+    // interior and the lip.
+    let lo=Math.min(cs*base-sn*radiusAt(base),cs*interior.high-sn*radiusAt(interior.high)),hi=lipLevel(interior,tilt);
+    if(tilt===0){lo=base;hi=interior.full;}
+    for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(tiltedVolume(interior,tilt,mid)<fraction*full)lo=mid;else hi=mid;}
+    const c=(lo+hi)/2;
+    if(tilt===0){
+      const level=Math.min(rimY,c);
+      c0.set(0,base,0);c1.set(0,level,0);
+      for(let i=0;i<sides;i++){
+        const j=(i+1)%sides;
+        ring(base,i,p0);ring(base,j,p1);ring(level,i,q0);ring(level,j,q1);
+        tri(p0,q0,q1);tri(p0,q1,p1);tri(c0,p0,p1);tri(c1,q1,q0);
+      }
+      finish();return;
+    }
+    // Tipped: hull of the interior corners below the plane and the edge
+    // crossings of the plane.
+    const level=(p)=>cs*p.y-sn*p.z-c;
+    const points=[];
+    const cross=(u,v)=>{const du=level(u),dv=level(v);if((du<0)!==(dv<0)){const t=du/(du-dv);points.push(u.clone().lerp(v,t));}};
+    for(let i=0;i<sides;i++){
+      const j=(i+1)%sides;
+      ring(base,i,p0);ring(base,j,p1);ring(rimY,i,q0);ring(rimY,j,q1);
+      if(level(p0)<=0)points.push(p0.clone());
+      if(level(q0)<=0)points.push(q0.clone());
+      cross(p0,q0);cross(p0,p1);cross(q0,q1);
+    }
+    if(points.length>=4){
+      const hull=new ConvexHull().setFromPoints(points);
+      for(const face of hull.faces){
+        const h=face.edge;
+        tri(h.prev.head().point,h.head().point,h.next.head().point);
+      }
+    }
+    finish();
+  };
+  update.tipper=tipper;update.interior=interior;
+  bucket.userData.parts=[body,floor,rim,handle];
   return update;
+}
+
+// The pour from a tipped bucket's lip: one continuous stream re-shaped in
+// place each frame (no allocation), falling freely from the lip to `endY`.
+function makePour(root,parts,endY,dims,rateAt,cyclePeriod){
+  const n=18,path={points:Array.from({length:n+1},(_,k)=>new THREE.Vector3(0,-k*.05,0)),speeds:new Array(n+1).fill(1),times:Array.from({length:n+1},(_,k)=>k*.02)};
+  const stream=new WaterStream(path,{width:.13,thickness:.05,widthAxis:new THREE.Vector3(1,0,0),widthExponent:.5,
+    fadeIn:.05,foam:{start:.9,amount:.35},cyclePeriod,streakRate:1.6,opacity:.5});
+  stream.userData.role='water-poured-from-tipped-bucket';stream.visible=false;root.add(stream);
+  // Peak spill rate over the dwell, to scale the stream.
+  let peak=1e-9;for(let i=0;i<=200;i++)peak=Math.max(peak,-rateAt(i/200));
+  const lip=new THREE.Vector3(),axis=new THREE.Vector3();
+  return (flowRate,time)=>{
+    const flow=Math.max(0,-flowRate)/peak;
+    stream.visible=flow>.002;
+    // The pour fades in and out with the spill rate instead of switching on.
+    stream.material.opacity=.5*THREE.MathUtils.smoothstep(flow,.002,.3);
+    if(!stream.visible)return;
+    const tipper=parts.tipper;tipper.updateWorldMatrix(true,false);
+    lip.set(0,0,dims.top).applyMatrix4(tipper.matrixWorld);
+    axis.set(0,1,0).transformDirection(tipper.matrixWorld);
+    const vx=0,vy=.6*axis.y,vz=.6*Math.max(.3,axis.z),g=9.81;
+    const tEnd=(vy+Math.sqrt(vy*vy+2*g*Math.max(.01,lip.y-endY)))/g;
+    for(let k=0;k<=n;k++){const t=tEnd*k/n;path.points[k].set(lip.x+vx*t,lip.y+vy*t-.5*g*t*t,lip.z+vz*t);path.speeds[k]=Math.hypot(vy-g*t,vz);path.times[k]=t;}
+    stream.flow=.3+.7*flow;stream.setPath(path);stream.update(time??0);
+  };
 }
 
 export function correctWellBucketParts(root,id){
@@ -69,6 +229,8 @@ export function correctWellBucketParts(root,id){
       return upper;
     });
     const water=bucketParts(b.bucket,b.bucketWater,g.bucketHeight,.40,.30,g.bucketHandleRise);
+    const dims={height:g.bucketHeight,top:.40,bottom:.30},span=1-g.ascentEndPhase;
+    const pour=makePour(root,water,-2.12,dims,u=>(tippedEmptying(u+1e-4,dims).fraction-tippedEmptying(u-1e-4,dims).fraction)/2e-4,g.cycleDuration);
     const ground=clip.difference(poly([[-3.75,-1.35],[3.35,-1.35],[3.35,1.35],[-3.75,1.35]]),poly(circle([g.wellCenterX,0],1.135,128)));
     replace(b.base,horizontalPlate(ground,.39,.46));b.base.position.set(0,0,0);
     replace(b.well,horizontalTurned([[g.wellBottomY,1.075],[g.wellBottomY,1.135],[g.wellRimY,1.135],[g.wellRimY,1.075]]));b.well.position.y=0;
@@ -76,7 +238,8 @@ export function correctWellBucketParts(root,id){
     replace(b.wellWater,new THREE.CylinderGeometry(1.05,1.05,.85,64));b.wellWater.position.y=-2.55;
     b.operatorArrow.visible=false;b.well.material.opacity=.12;
     // The rope terminates on the bail, rather than continuing through it.
-    d.updateWorkingParts=state=>{water(state.bucketWaterFraction);b.operatorArrow.visible=false;};
+    d.updateWorkingParts=state=>{water(state.bucketWaterFraction,state.bucketTilt??0);
+      pour(state.bucketWaterFractionRate*g.cycleDuration*span,state.phase*g.cycleDuration);b.operatorArrow.visible=false;};
     b.workingBeam=body;b.ropePin=pin;
   }else{
     const rotor=b.pulley.userData.rotor,tread=b.pulley.userData.tread,R=g.pulleyRadius;
@@ -100,7 +263,14 @@ export function correctWellBucketParts(root,id){
     replace(b.shaftWell,plate(clip.difference(poly([[-1.70,-1],[1.70,-1],[1.70,1],[-1.70,1]]),poly([[-1.58,-1.01],[1.58,-1.01],[1.58,.88],[-1.58,.88]])),-1.56,1.56).rotateX(Math.PI/2));
     const left=bucketParts(b.leftBucket.bucket,b.leftBucket.water,g.bucketHeight,g.bucketRadius,g.bucketRadius*.76,g.bucketHandleRise);
     const right=bucketParts(b.rightBucket.bucket,b.rightBucket.water,g.bucketHeight,g.bucketRadius,g.bucketRadius*.76,g.bucketHandleRise);
-    d.updateWorkingParts=state=>{left(state.leftWaterFraction);right(state.rightWaterFraction);};
+    const dims={height:g.bucketHeight,top:g.bucketRadius,bottom:g.bucketRadius*.76};
+    const rateAt=u=>(tippedEmptying(u+1e-4,dims).fraction-tippedEmptying(u-1e-4,dims).fraction)/2e-4;
+    const pours=[left,right].map(parts=>makePour(root,parts,-2.10,dims,rateAt,g.cycleDuration));
+    // Both emptying dwells last a tenth of the cycle.
+    const perU=g.cycleDuration*(g.exchangeDwellEndPhase-g.outwardEndPhase);
+    d.updateWorkingParts=state=>{left(state.leftWaterFraction,state.leftBucketTilt??0);right(state.rightWaterFraction,state.rightBucketTilt??0);
+      pours[0]((state.leftBucketTilt?state.leftWaterFractionRate:0)*perU,state.phase*g.cycleDuration);
+      pours[1]((state.rightBucketTilt?state.rightWaterFractionRate:0)*perU,state.phase*g.cycleDuration);};
     b.base.visible=false;
   }
   d.hideGround=true;d.minimumDisplayCycleSeconds=g.cycleDuration;

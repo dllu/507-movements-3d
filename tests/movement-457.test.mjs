@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { bailHang } from '../src/simulation/well-bucket-working-parts.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -54,7 +55,10 @@ test('movement 457 is an unequal-arm well sweep with one vertical rope, bucket, 
   assert.equal(blocks.counterweight.parent, blocks.beam);
   assert.equal(blocks.rope.parent, model.root);
   assert.equal(blocks.bucket.parent, model.root);
-  assert.equal(blocks.bucketWater.parent, blocks.bucket);
+  // The water rides in the bucket's tipper (it turns about the ears).
+  let holder = blocks.bucketWater;
+  while (holder && holder !== blocks.bucket) holder = holder.parent;
+  assert.equal(holder, blocks.bucket);
   assert.equal(blocks.support.parent, model.root);
   assert.equal(blocks.pivotAxle.parent, model.root);
   assert.equal(blocks.well.parent, model.root);
@@ -171,8 +175,16 @@ test('movement 457 demonstration orders empty descent, filling, full ascent, and
   assert.equal(empty.mode, 'bucket-held-at-top-while-emptying');
   near(empty.beamAngle, geometry.highBeamAngle, 0, 'top dwell');
   near(empty.beamAngularSpeed, 0, 0, 'stationary while emptying');
-  near(empty.bucketWaterFraction, 0.5, 2e-14, 'half emptied');
-  assert.ok(empty.bucketWaterFractionRate < 0);
+  // Pass 70: the raised bucket is emptied by tipping it about its ears: at
+  // mid-dwell it is held tipped past the lip and empty; earlier in the dwell
+  // it spills as it tips, keeping what the tipped bucket can hold.
+  near(empty.bucketWaterFraction, 0, 0, 'emptied by tipping');
+  assert.ok(empty.bucketTilt > THREE.MathUtils.degToRad(100), 'held tipped');
+  const pouring = atPhase(geometry.ascentEndPhase + 0.2 * (1 - geometry.ascentEndPhase));
+  assert.ok(pouring.bucketWaterFraction > 0 && pouring.bucketWaterFraction < 1, 'spilling while it tips');
+  assert.ok(pouring.bucketWaterFractionRate < 0);
+  assert.ok(pouring.bucketTilt > 0);
+  near(atPhase(0).bucketTilt, 0, 0, 'upright again for the descent');
   assert.deepEqual(timeline.stages, [
     'empty bucket pulled downward',
     'bucket fills at well bottom',
@@ -196,9 +208,13 @@ test('movement 457 rope stays vertical and constant-length while the upright buc
     `constant rope length at ${sample}`);
     near(state.bucketCenter.x, state.ropeBottom.x, 0,
       `upright bucket x at ${sample}`);
-    near(state.bucketCenter.y,
+    // Tipped past 50 degrees at the top, the bail falls to the pour side on
+    // its ears and the bucket hangs back from the rope (bailHang).
+    const hang = bailHang(state.bucketTilt, geometry.bucketHandleRise);
+    near(state.bucketCenter.y - hang.y,
       state.ropeBottom.y - (geometry.bucketHeight / 2 + geometry.bucketHandleRise),
-    0, `bucket hanger offset at ${sample}`);
+    1e-12, `bucket hanger offset at ${sample}`);
+    near(state.bucketCenter.z - hang.z, state.ropeBottom.z, 1e-12, `bucket hang z at ${sample}`);
     assert.ok(Math.abs(state.bucketCenter.x - geometry.wellCenterX) + 0.40
       < 1.08,
     `bucket clears well mouth at ${sample}`);
