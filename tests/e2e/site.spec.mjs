@@ -199,3 +199,20 @@ test('long source text and model notes remain accessible in the square panel', a
   await expect(reconstruction).toHaveAttribute('open', '');
   await expect(reconstruction.locator('p')).not.toBeEmpty();
 });
+
+test('page geometry is identical across movements at a given window size', async ({ page }) => {
+  // Short and long titles, two- and three-digit neighbours, the first movement.
+  for (const [width, height] of [[1440, 900], [542, 700], [390, 844], [844, 390]]) {
+    await page.setViewportSize({ width, height });
+    const layouts = [];
+    for (const id of ['001', '011', '300', '371']) {
+      await page.goto(`/#/movement/${id}`);
+      await expect(page.locator('.detail-layout')).toBeVisible();
+      layouts.push(await page.evaluate(() => ['.header-inner', '.detail-heading', '.detail-layout', '.simulation-toolbar', '.detail-sequence']
+        .map(selector => { const r = document.querySelector(selector).getBoundingClientRect(); return [r.x, r.y, r.width, r.height].map(Math.round).join(','); })
+        .join('|')));
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth && document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+    }
+    expect(new Set(layouts).size, `${width}x${height}: ${layouts.join(' / ')}`).toBe(1);
+  }
+});

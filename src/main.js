@@ -194,7 +194,7 @@ async function detailView(movement) {
         <div class="detail-heading">
           <div class="detail-title">
             <p class="eyebrow">No. ${movement.id} <span aria-hidden="true">·</span> ${escapeHtml(movement.category)}</p>
-            <h1>${escapeHtml(movement.title)}</h1>
+            <h1 title="${escapeHtml(movement.title)}">${escapeHtml(movement.title)}</h1>
           </div>
           <nav class="detail-sequence" aria-label="Movement navigation">
             ${previous ? `<a class="sequence-link" href="#/movement/${previous.number}" rel="prev" aria-label="Previous movement, ${previous.id}: ${escapeHtml(previous.title)}"><span class="sequence-arrow" aria-hidden="true">←</span><span class="sequence-number">${previous.id}</span></a>` : '<span class="sequence-link is-disabled" aria-hidden="true"><span class="sequence-arrow">←</span></span>'}
@@ -244,13 +244,6 @@ async function detailView(movement) {
 
   document.title = `${movement.number} · ${movement.title} — 507 Movements`;
   app.innerHTML = appShell(content, 'catalog', 'detail');
-  // The header, heading and toolbar align to the 3:2 (or 2:3) composition,
-  // whose width depends on the viewport; publish it as a CSS variable.
-  const layout = document.querySelector('.detail-layout');
-  const frameObserver = new ResizeObserver(([entry]) => {
-    document.documentElement.style.setProperty('--frame-width', `${Math.round(entry.contentRect.width)}px`);
-  });
-  frameObserver.observe(layout);
   const onSequenceKey = (event) => {
     if (event.target.closest?.('input, select, textarea, canvas') || event.metaKey || event.ctrlKey || event.altKey) return;
     if (event.key === 'ArrowLeft' && previous) location.hash = `/movement/${previous.number}`;
@@ -269,9 +262,7 @@ async function detailView(movement) {
     if (event.key.toLowerCase() === 'r') engine?.resetView();
   };
   activeCleanup = () => {
-    frameObserver.disconnect();
     document.removeEventListener('keydown', onSequenceKey);
-    document.documentElement.style.removeProperty('--frame-width');
     abortController.abort();
     engine?.renderer.domElement.removeEventListener('keydown', onCanvasKeyDown);
     engine?.dispose();
