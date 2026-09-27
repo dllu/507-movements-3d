@@ -388,3 +388,31 @@ test('movement 388 closes one opposed roller revolution before movement 507 rema
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 388 models Brown\'s inner face circle as a raised hub boss on each roller face', () => {
+  const model = createMovementModel(catalog.movements[387]);
+  model.update(0);
+  const bosses = [];
+  model.root.traverse((object) => {
+    if (object.userData.role === 'toothed-feed-roller-raised-hub-boss') bosses.push(object);
+  });
+  assert.equal(bosses.length, 2);
+  const teeth = [];
+  model.root.traverse((object) => {
+    if (object.userData.role === 'radial-work-gripping-feed-tooth') teeth.push(object);
+  });
+  const toothBox = new THREE.Box3();
+  teeth.forEach((tooth) => toothBox.expandByObject(tooth));
+  const tipRadius = (toothBox.max.x - toothBox.min.x) / 2;
+  for (const boss of bosses) {
+    boss.geometry.computeBoundingBox();
+    const box = boss.geometry.boundingBox;
+    const radius = (box.max.x - box.min.x) / 2;
+    // Brown's circle lies at about three quarters of the tip radius.
+    near(radius / tipRadius, 0.74, 0.03, 'boss rim radius ratio');
+    const worldBox = new THREE.Box3().setFromObject(boss);
+    const proud = boss.userData.side > 0 ? worldBox.max.z - toothBox.max.z : toothBox.min.z - worldBox.min.z;
+    assert.ok(proud > 0.02 && proud < 0.1, `boss stands shallowly proud of the face: ${proud}`);
+  }
+  disposeModel(model.root);
+});

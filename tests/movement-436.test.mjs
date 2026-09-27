@@ -46,7 +46,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 436 stacks twelve fixed radial shutes above eighteen tangential curved runner buckets in casing b', () => {
+test('movement 436 stacks sixteen fixed radial helical shutes above twenty-eight tangential helical runner buckets in casing b', () => {
   const movement = catalog.movements[435];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -59,19 +59,19 @@ test('movement 436 stacks twelve fixed radial shutes above eighteen tangential c
   assert.equal(movement.fidelity, 'authored');
   assert.equal(data.archetype, ARCHETYPE);
   assert.equal(data.fidelity, 'authored');
-  assert.match(data.mechanism, /twelve stationary shutes arranged radially around a fixed central drum/);
-  assert.match(data.mechanism, /Immediately below.*eighteen moving buckets in wheel c/);
+  assert.match(data.mechanism, /sixteen stationary helical shutes arranged radially around a fixed central drum/);
+  assert.match(data.mechanism, /Immediately below.*twenty-eight moving helical buckets in wheel c/);
   assert.match(data.mechanism, /exceed the shutes in number.*slight tangent/);
-  assert.match(data.mechanism, /exact parabolic sweep/);
+  assert.match(data.mechanism, /parabola in depth/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.fixedUpperShutesRotate, false);
   assert.equal(degreesOfFreedom.runnerAndShaftIndependent, false);
-  assert.equal(geometry.fixedShuteCount, 12);
-  assert.equal(geometry.runnerBucketCount, 18);
+  assert.equal(geometry.fixedShuteCount, 16);
+  assert.equal(geometry.runnerBucketCount, 28);
   assert.ok(geometry.runnerBucketCount > geometry.fixedShuteCount);
-  assert.equal(blocks.fixedShuteGroups.length, 12);
-  assert.equal(blocks.runnerBucketGroups.length, 18);
+  assert.equal(blocks.fixedShuteGroups.length, 16);
+  assert.equal(blocks.runnerBucketGroups.length, 28);
   assert.equal(blocks.flowPathTubes.length, 6);
   assert.equal(blocks.flowMarkers.length, 24);
   for (const guide of blocks.fixedShuteGroups) {
@@ -103,13 +103,13 @@ test('movement 436 stacks twelve fixed radial shutes above eighteen tangential c
   });
   assert.deepEqual(belts, []);
   assert.equal(roles.filter((role) =>
-    /^fixed-radially-arranged-shute-\d+-of-twelve$/.test(role)).length, 12);
+    /^fixed-radially-arranged-shute-\d+-of-sixteen$/.test(role)).length, 16);
   assert.equal(roles.filter((role) =>
-    /^tangential-parabolic-runner-bucket-\d+-of-eighteen$/.test(role)).length,
-  18);
+    /^tangential-helical-runner-bucket-\d+-of-twenty-eight$/.test(role)).length,
+  28);
   for (const role of [
     'stationary-upper-jonval-shute-row-a',
-    'clockwise-lower-jonval-runner-c',
+    'counterclockwise-lower-jonval-runner-c',
     'fixed-trunk-or-casing-b-around-both-vane-rows',
     'vertical-shaft-fast-on-jonval-runner-c',
     'tailwater-basin-below-axial-runner-discharge',
@@ -141,7 +141,7 @@ test('movement 436 preserves Brown’s detailed Jonval caption and discloses all
   assert.equal(dynamics.fluidPressureViscosityTurbulenceLeakageCavitationBladeLoadingBearingFrictionRunnerInertiaGeneratorLoadAndSpeedResponseModeled,
     false);
   assert.match(dynamics.angularMomentumDiagnostic,
-    /guide-exit minus runner-discharge specific angular momentum.*negative \(clockwise\)/);
+    /guide-exit minus runner-discharge specific angular momentum.*positive \(counter-clockwise\)/);
   assert.match(dynamics.markerContinuity,
     /continuously downward through both stacked rows.*fades to zero/);
   assert.equal(plate.imageWidth, 525);
@@ -155,7 +155,7 @@ test('movement 436 preserves Brown’s detailed Jonval caption and discloses all
   assert.match(evidence.engravingEvidence,
     /sloping inlet.*downward flow arrow.*stationary upper vane row a.*lower runner row c/);
   assert.match(evidence.reconstructionDisclosure,
-    /Twelve fixed shutes, eighteen parabolic runner buckets.*independently engineered/);
+    /Sixteen fixed shutes and twenty-eight runner buckets.*independently engineered/);
   disposeModel(model.root);
 });
 
@@ -189,38 +189,61 @@ test('movement 436 source pose spaces all runner buckets uniformly in the row be
   disposeModel(model.root);
 });
 
-test('movement 436 bucket centerlines have a slight initial tangent and an exact nonzero parabolic sweep', () => {
+test('movement 436 vanes are helical: shutes and buckets turn along opposite parabolas in depth, buckets at a slight tangent', () => {
   const model = createMovementModel(catalog.movements[435]);
   const {
+    blocks,
     geometry,
+    guideSweepAtDepth,
     runnerBucketProfiles,
+    runnerSweepAtDepth,
     runnerSweepOffsetAtProgress,
   } = model.root.userData;
   const radialTravel = geometry.annulusOuterRadius
     - geometry.annulusInnerRadius;
   const step = 1e-4;
-  const initialSlope = (
+  const slope = (
     runnerSweepOffsetAtProgress(step)
       - runnerSweepOffsetAtProgress(0)
   ) / (radialTravel * step);
-  near(initialSlope, -Math.tan(geometry.runnerTangentAngle)
-    - geometry.runnerParabolicCamber * step / radialTravel,
-  2e-13, 'slight tangent at bucket entrance');
-  const midpointSecondDerivative = (
-    runnerSweepOffsetAtProgress(0.5 + step)
-      - 2 * runnerSweepOffsetAtProgress(0.5)
-      + runnerSweepOffsetAtProgress(0.5 - step)
-  ) / step ** 2;
-  near(midpointSecondDerivative, -2 * geometry.runnerParabolicCamber,
-    1.5e-8, 'exact parabolic curvature');
-  assert.notEqual(midpointSecondDerivative, 0);
+  near(slope, -Math.tan(geometry.runnerTangentAngle), 2e-12,
+    'slight tangent instead of radial');
+  // Brown's section: shutes a run straight down and bend toward +theta at
+  // their foot; buckets c take the water axially and bend it back.
+  near(guideSweepAtDepth(0), 0, 0, 'shute axial at its top');
+  near(runnerSweepAtDepth(0), 0, 0, 'bucket axial at its top');
+  const second = (f) => (f(0.5 + step) - 2 * f(0.5) + f(0.5 - step)) / step ** 2;
+  near(second(guideSweepAtDepth), 2 * geometry.guideHelixSweep, 1e-6, 'shute parabola');
+  near(second(runnerSweepAtDepth), -2 * geometry.runnerHelixSweep, 1e-6, 'bucket parabola');
+  assert.ok(guideSweepAtDepth(1) > 0 && runnerSweepAtDepth(1) < 0, 'opposite bends');
+  // Every radial line of a rendered vane turns by the same sweep (a helicoid):
+  // sample the mid-surface of shute 1 and bucket 1 in their own frames.
+  const vaneOf = (group) => group.children.find((m) => m.isMesh);
+  for (const [vane, sweep, top, bottom, plan] of [
+    [vaneOf(blocks.fixedShuteGroups[0]), guideSweepAtDepth,
+      geometry.guideRowCenterY + geometry.rowHeight / 2, geometry.guideRowCenterY - geometry.rowHeight / 2, () => 0],
+    [vaneOf(blocks.runnerBucketGroups[0]), runnerSweepAtDepth,
+      geometry.runnerRowCenterY + geometry.rowHeight / 2, geometry.runnerRowCenterY - geometry.rowHeight / 2,
+      (r) => runnerSweepOffsetAtProgress((r - geometry.annulusInnerRadius) / radialTravel)],
+  ]) {
+    const p = vane.geometry.attributes.position;
+    let checked = 0;
+    for (let i = 0; i < p.count; i += 1) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i), r = Math.hypot(x, z);
+      const depth = (top - y) / (top - bottom);
+      const theta = Math.atan2(-z, x) - sweep(depth) + plan(r) / r;
+      assert.ok(Math.abs(theta) <= 0.036 / r + 1e-5, 'vertex lies on the helicoid within half the thickness');
+      checked += 1;
+    }
+    assert.ok(checked > 100);
+  }
   assert.equal(runnerBucketProfiles.length, geometry.runnerBucketCount);
   for (const profile of runnerBucketProfiles) {
     assert.equal(profile.length, 13);
     for (let index = 0; index < profile.length; index += 1) {
       const progress = index / (profile.length - 1);
       near(profile[index].z, runnerSweepOffsetAtProgress(progress), 0,
-        'rendered profile follows diagnostic parabola');
+        'profile follows the tangent line');
       near(profile[index].y, geometry.runnerRowCenterY, 0,
         'profile stays within runner row');
     }
@@ -228,16 +251,16 @@ test('movement 436 bucket centerlines have a slight initial tangent and an exact
   disposeModel(model.root);
 });
 
-test('movement 436 runner c and its vertical shaft rotate clockwise as one body under fixed row a', () => {
+test('movement 436 runner c and its vertical shaft rotate counter-clockwise as one body under fixed row a', () => {
   const model = createMovementModel(catalog.movements[435]);
   const { geometry, stateAtInputAngle } = model.root.userData;
 
   for (let sample = -10000; sample <= 20000; sample += 1) {
     const inputAngle = FULL_TURN * sample / 10000;
     const state = stateAtInputAngle(inputAngle);
-    sameAngle(state.runnerAngle, -inputAngle, 5e-15,
-      'clockwise runner coordinate');
-    assert.ok(state.runnerAngularSpeed < 0);
+    sameAngle(state.runnerAngle, inputAngle, 5e-15,
+      'counter-clockwise runner coordinate');
+    assert.ok(state.runnerAngularSpeed > 0);
     for (const bucket of state.runnerBuckets) {
       sameAngle(bucket.worldAngle,
         bucket.localAngle + state.runnerAngle, 5e-15,
@@ -252,7 +275,7 @@ test('movement 436 runner c and its vertical shaft rotate clockwise as one body 
   disposeModel(model.root);
 });
 
-test('movement 436 guide whirl and runner de-whirl give exact clockwise angular-momentum torque', () => {
+test('movement 436 guide whirl and runner de-whirl give exact counter-clockwise angular-momentum torque', () => {
   const model = createMovementModel(catalog.movements[435]);
   const { geometry, stateAtInputAngle } = model.root.userData;
   const state = stateAtInputAngle(0);
@@ -261,14 +284,14 @@ test('movement 436 guide whirl and runner de-whirl give exact clockwise angular-
   near(state.guideExitVelocity.y, -geometry.guideExitAxialSpeed, 0,
     'downward guide-exit speed');
   near(state.guideExitVelocity.dot(positiveTangent),
-    -geometry.guideExitClockwiseWhirlSpeed, 0,
-    'clockwise guide-exit whirl');
+    geometry.guideExitWhirlSpeed, 0,
+    'counter-clockwise guide-exit whirl');
   near(state.runnerDischargeVelocity.y,
     -geometry.runnerDischargeAxialSpeed, 0,
     'downward runner discharge speed');
   near(state.runnerDischargeVelocity.dot(positiveTangent),
-    -geometry.runnerDischargeClockwiseWhirlSpeed, 0,
-    'small residual clockwise whirl');
+    geometry.runnerDischargeWhirlSpeed, 0,
+    'small residual counter-clockwise whirl');
   const inletMomentum = new THREE.Vector3()
     .crossVectors(state.guideExitPoint, state.guideExitVelocity).y;
   const outletMomentum = new THREE.Vector3()
@@ -284,8 +307,8 @@ test('movement 436 guide whirl and runner de-whirl give exact clockwise angular-
   near(state.runnerTorqueNormalized,
     geometry.massFlowNormalized * (inletMomentum - outletMomentum),
     0, 'Euler angular-momentum torque');
-  near(state.runnerTorqueNormalized, -3.5519999999999996, 1e-15,
-    'reconstructed clockwise torque');
+  near(state.runnerTorqueNormalized, 3.5519999999999996, 1e-15,
+    'reconstructed counter-clockwise torque');
   disposeModel(model.root);
 });
 

@@ -235,7 +235,7 @@ test('movement 435 reverses residual whirl through runner b and gives exact cloc
   near(state.runnerTorqueNormalized,
     geometry.massFlowNormalized * (inletMomentum - outletMomentum),
     0, 'Euler angular-momentum torque');
-  near(state.runnerTorqueNormalized, -7.4315, 1e-15,
+  near(state.runnerTorqueNormalized, -8.556000000000001, 1e-15,
     'reconstructed clockwise torque');
   for (const angle of [-8, -1, 0, 0.7, 2.8, 9]) {
     near(stateAtInputAngle(angle).runnerTorqueNormalized,

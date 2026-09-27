@@ -298,13 +298,14 @@ test('movement 465 renderer maps beam, sliders, pistons, pitmans, valves, and wa
         -.65
           + 0.075 * pump.deliveryOpenAmount,
         1e-12, `delivery check ${index} at phase ${phase}`);
-      assert.equal(assembly.inletWater.visible,
-        pump.inletOpenAmount > 1e-4);
-      assert.equal(assembly.deliveryWater.visible,
-        pump.deliveryOpenAmount > 1e-4);
+      // Suction and delivery pipes stand full; the check disks pulse.
+      assert.equal(assembly.inletWater.visible, true);
+      assert.equal(assembly.deliveryWater.visible, true);
     });
-    assert.equal(blocks.commonOutletWater.visible,
-      state.totalDeliveryOpenAmount > 1e-4);
+    assert.equal(blocks.commonOutletWater.visible, true);
+    // The delivery is not capped: it bends back and discharges into the well.
+    assert.equal(blocks.deliveryDischarge.visible, true);
+    assert.ok(blocks.deliveryDischarge.path.points.at(-1).y <= geometry.reservoirSurfaceY + 1e-9);
     vectorNear(blocks.beamAxle.position, fixedAxle, 0,
       'central beam axle remains fixed');
   }

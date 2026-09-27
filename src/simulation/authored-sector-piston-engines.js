@@ -1,562 +1,442 @@
 import * as THREE from 'three';
+import { PALETTE, markShadows, matte } from './primitives.js';
+import { fitPistonGuide } from './piston-guide-parts.js';
+import { latheSectionGeometry } from './cutaway-section.js';
 import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
-
-import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
-import { annularSector } from './steam-engine-parts.js';
-import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+  arcPoints,
+  circlePolygon,
+  filletPath,
+  multiArea,
+  partPlate,
+  piecesContaining,
+  polygonClipping,
+  ringPolygon,
+  safeClip,
+  exhaustElbowGeometry,
+  sectionPlate,
+  steamVolume,
+} from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
+const DEG = Math.PI / 180;
 
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function makeTubeThrough(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points,
-    false,
-    'centripetal',
-  );
-  const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, points.length * 4, radius, 10, false),
-    material,
-  );
-  tube.userData.role = role;
-  return tube;
-}
-
+// Movement 422, oscillating piston engine (pass 69 rebuild).
+//
+// One sector chamber A is centred on rock-shaft C. The vane piston B, keyed
+// to C, divides it into two working spaces. Above the chamber a fixed curved
+// tongue closes its top; over the tongue run two passages from the valve
+// face, one down round each end of the tongue into the corner of the chamber
+// beside the side wall (Brown's two arrows). The D slide valve on the face
+// admits chest steam to one passage while its hollow joins the other passage
+// to the central exhaust port, which leaves through the back of the casting
+// (Brown's small oval under D). The valve runs a quarter-cycle ahead of B,
+// as in an ordinary engine, so the space behind B always takes steam and the
+// space ahead of it always exhausts.
 function sectorPistonEngine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const rockshaftCenter = new THREE.Vector3(0, -1.18, 0.30);
-  const pistonCenterAngle = Math.PI / 2;
-  const officialRightPose = Math.atan2(4.602524, 1.953656);
-  const pistonAngularAmplitude = pistonCenterAngle - officialRightPose;
-  const sectorHalfAngle = (2.012233 - 1.12936) / 2;
-  const sectorRightAngle = pistonCenterAngle - sectorHalfAngle;
-  const sectorLeftAngle = pistonCenterAngle + sectorHalfAngle;
-  const innerCylinderRadius = 0.42;
-  const outerCylinderRadius = 2.31;
-  const pistonSealRadius = 2.30;
-  const radialSealClearance = outerCylinderRadius - pistonSealRadius;
-  const angularEndClearance = sectorHalfAngle - pistonAngularAmplitude;
-  const pistonVaneInnerRadius = 0.26;
-  const pistonVaneLength = pistonSealRadius - pistonVaneInnerRadius;
-  const valveTravelAmplitude = 0.30;
-  const valveCenter = new THREE.Vector3(0, 1.96, 0.34);
-  const outputCrankRadius = 0.72;
-  const outputCrankOffset = -Math.PI / 2;
+  // Brown draws B upright at mid-stroke (swinging anticlockwise, steam
+  // entering by the right passage, as his right arrow shows).
+  const sourceInputAngle = Math.PI / 2;
 
-  const stateAtInputAngle = (
-    inputAngle,
-    inputSpeed = inputAngularSpeed,
-    inputAcceleration = 0,
-  ) => {
-    const cosine = Math.cos(inputAngle);
+  // Geometry in the units of the official canvas reconstruction (rock-shaft C
+  // at the origin, sector radius 5), with Brown's plate as the check.
+  const hubRadius = 0.6;
+  const boreRadius = 0.625;
+  const shaftRadius = 0.4;
+  const chamberRadius = 5.0;
+  const tongueOuterRadius = 5.3;
+  const passageOuterRadius = 5.75;
+  const tongueHalfSpan = (115.3 - 64.7) / 2 * DEG;
+  const wallAxisAngle = 119.6 * DEG; // side-wall direction (left wall)
+  const wallOffset = 0.2; // side walls stand 0.2 off C, tangent to the hub
+  const wallThickness = 0.35;
+  const pistonAngularAmplitude = 23.0 * DEG;
+  const vaneHalfWidth = 0.12;
+  const vaneTipRadius = chamberRadius - 0.02;
+  const depth = 1.4;
+  const zBack = -depth;
+  const backThickness = 0.22;
+  const valveFaceY = 6.0;
+  const portInner = 0.45;
+  const portOuter = 0.65;
+  const valveHalfLength = 0.65;
+  const valveHollowHalfWidth = 0.45;
+  const valveTravelAmplitude = 0.22;
+  const valveHeight = 0.6;
+  const chestInnerHalfWidth = 0.92;
+  const chestInnerTop = 6.95;
+  const chestOuterHalfWidth = 1.2;
+  const chestOuterTop = 7.25;
+  const exhaustHalfWidth = 0.12;
+  const exhaustBottom = 5.45;
+  const rodY = 6.5;
+  const rodZ = -depth / 2;
+  const rodRadius = 0.07;
+  const rodLength = 2.45;
+
+  // Left wall: points s*u + offset*n, u along the wall, n outward (to the left).
+  const wallPoint = (side, s, offset) => {
+    const u = [Math.cos(wallAxisAngle), Math.sin(wallAxisAngle)];
+    const n = [-Math.sin(wallAxisAngle), Math.cos(wallAxisAngle)];
+    const x = s * u[0] + offset * n[0];
+    const y = s * u[1] + offset * n[1];
+    return [side < 0 ? x : -x, y];
+  };
+  const wallAtRadius = (side, radius, offset) => wallPoint(
+    side,
+    Math.sqrt(radius ** 2 - offset ** 2),
+    offset,
+  );
+
+  const stateAtInputAngle = (inputAngle, inputSpeed = inputAngularSpeed) => {
     const sine = Math.sin(inputAngle);
-    const pistonAngle = pistonCenterAngle
-      - pistonAngularAmplitude * cosine;
-    const pistonAngularSpeed = pistonAngularAmplitude
-      * sine * inputSpeed;
-    const pistonAngularAcceleration = pistonAngularAmplitude * (
-      cosine * inputSpeed ** 2 + sine * inputAcceleration
-    );
-    const pistonRadial = new THREE.Vector3(
-      Math.cos(pistonAngle),
-      Math.sin(pistonAngle),
-      0,
-    );
-    const pistonTangent = new THREE.Vector3(
-      -pistonRadial.y,
-      pistonRadial.x,
-      0,
-    );
-    const pistonTip = rockshaftCenter.clone().addScaledVector(
-      pistonRadial,
-      pistonSealRadius,
-    );
-    const pistonTipVelocity = pistonTangent.clone().multiplyScalar(
-      pistonSealRadius * pistonAngularSpeed,
-    );
-    const pistonTipAcceleration = pistonTangent.clone().multiplyScalar(
-      pistonSealRadius * pistonAngularAcceleration,
-    ).addScaledVector(
-      pistonRadial,
-      -pistonSealRadius * pistonAngularSpeed ** 2,
-    );
+    const cosine = Math.cos(inputAngle);
+    const pistonAngle = Math.PI / 2 - pistonAngularAmplitude * cosine;
+    const pistonAngularSpeed = pistonAngularAmplitude * sine * inputSpeed;
+    // D leads B by a quarter cycle: it uncovers the right port (steam to the
+    // space right of B) while B swings anticlockwise, and the left port while
+    // B swings clockwise.
     const valveX = -valveTravelAmplitude * sine;
-    const valveSpeed = -valveTravelAmplitude * cosine * inputSpeed;
-    const valveAcceleration = valveTravelAmplitude * (
-      sine * inputSpeed ** 2 - cosine * inputAcceleration
-    );
-    const clockwisePortOpening = Math.max(0, sine);
-    const counterclockwisePortOpening = Math.max(0, -sine);
-    const outputCrankAngle = pistonAngle + outputCrankOffset;
-    const outputCrankPin = rockshaftCenter.clone().add(
-      new THREE.Vector3(
-        outputCrankRadius * Math.cos(outputCrankAngle),
-        outputCrankRadius * Math.sin(outputCrankAngle),
-        0,
-      ),
+    const leftAdmission = THREE.MathUtils.clamp(valveX, 0, portOuter - portInner);
+    const rightAdmission = THREE.MathUtils.clamp(-valveX, 0, portOuter - portInner);
+    const leftExhaust = Math.max(0, Math.min(-portInner, valveHollowHalfWidth + valveX)
+      - Math.max(-portOuter, -valveHollowHalfWidth + valveX));
+    const rightExhaust = Math.max(0, Math.min(portOuter, valveHollowHalfWidth + valveX)
+      - Math.max(portInner, -valveHollowHalfWidth + valveX));
+    const pressure = (admission, exhaust) => THREE.MathUtils.clamp(
+      0.5 + (admission - exhaust) / 0.08,
+      0,
+      1,
     );
     return {
-      admissionSide: pistonAngularSpeed > 1e-10
-        ? 'clockwise-side-of-B'
-        : pistonAngularSpeed < -1e-10
-          ? 'counterclockwise-side-of-B'
-          : 'valve-lap-at-reversal',
-      angularLeftClearance: sectorLeftAngle - pistonAngle,
-      angularRightClearance: pistonAngle - sectorRightAngle,
-      clockwisePortOpening,
-      counterclockwisePortOpening,
-      exhaustSide: pistonAngularSpeed > 1e-10
-        ? 'counterclockwise-side-of-B'
-        : pistonAngularSpeed < -1e-10
-          ? 'clockwise-side-of-B'
-          : 'both-ports-lapped-at-reversal',
-      inputAcceleration,
       inputAngle,
-      inputSpeed,
-      outputCrankAngle,
-      outputCrankAngularAcceleration: pistonAngularAcceleration,
-      outputCrankAngularSpeed: pistonAngularSpeed,
-      outputCrankPin,
       pistonAngle,
-      pistonAngularAcceleration,
       pistonAngularSpeed,
-      pistonRadial,
-      pistonTangent,
-      pistonTip,
-      pistonTipAcceleration,
-      pistonTipVelocity,
-      portOpeningSum: clockwisePortOpening + counterclockwisePortOpening,
-      radialSealClearance,
-      valveAcceleration,
-      valvePhaseConstraintResidual:
-        valveX + valveTravelAmplitude * sine,
-      valveSpeed,
       valveX,
+      leftAdmission,
+      rightAdmission,
+      leftExhaust,
+      rightExhaust,
+      leftPressure: pressure(leftAdmission, leftExhaust),
+      rightPressure: pressure(rightAdmission, rightExhaust),
+      drivenSide: pistonAngularSpeed > 1e-9 ? 'right-of-B' : pistonAngularSpeed < -1e-9 ? 'left-of-B' : 'reversal',
+      pistonTip: new THREE.Vector3(
+        vaneTipRadius * Math.cos(pistonAngle),
+        vaneTipRadius * Math.sin(pistonAngle),
+        0,
+      ),
     };
   };
-
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
     return {
-      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
+      ...stateAtInputAngle(sourceInputAngle + inputAngularSpeed * cycleTime),
       cycleTime,
       phase: cycleTime / cycleDuration,
     };
   };
 
-  const geometry = {
-    angularEndClearance,
-    cycleDuration,
-    innerCylinderRadius,
-    inputAngularSpeed,
-    outerCylinderRadius,
-    outputCrankOffset,
-    outputCrankRadius,
-    pistonAngularAmplitude,
-    pistonAngularStroke: pistonAngularAmplitude * 2,
-    pistonCenterAngle,
-    pistonSealRadius,
-    pistonVaneInnerRadius,
-    pistonVaneLength,
-    radialSealClearance,
-    rockshaftCenter: rockshaftCenter.clone(),
-    sectorHalfAngle,
-    sectorLeftAngle,
-    sectorRightAngle,
-    valveCenter: valveCenter.clone(),
-    valveTravelAmplitude,
+  // ---- fixed outlines -----------------------------------------------------
+  // Round the corner where a straight side wall (offset `offset` off C)
+  // meets a circle of radius R about C with a fillet of radius rho lying
+  // inside both. Returns the fillet arc from the wall to the circle.
+  const wallCircleFillet = (side, offset, R, rho, count = 14) => {
+    const centerS = Math.sqrt((R - rho) ** 2 - (offset - rho) ** 2);
+    const center = wallPoint(side, centerS, offset - rho);
+    const onWall = wallPoint(side, centerS, offset);
+    const onCircle = [center[0] * R / (R - rho), center[1] * R / (R - rho)];
+    const a0 = Math.atan2(onWall[1] - center[1], onWall[0] - center[0]);
+    let sweep = Math.atan2(onCircle[1] - center[1], onCircle[0] - center[0]) - a0;
+    while (sweep > Math.PI) sweep -= FULL_TURN;
+    while (sweep < -Math.PI) sweep += FULL_TURN;
+    return arcPoints(center, rho, a0, a0 + sweep, count);
   };
+  const boreLeft = wallAtRadius(-1, boreRadius, wallOffset);
+  const boreRight = wallAtRadius(1, boreRadius, wallOffset);
+  const cavityCornerRight = wallCircleFillet(1, wallOffset, passageOuterRadius, 0.45);
+  const cavityCornerLeft = wallCircleFillet(-1, wallOffset, passageOuterRadius, 0.45).reverse();
+  const angleOf = ([x, y]) => Math.atan2(y, x);
+  const wedge = ringPolygon([
+    boreRight,
+    ...cavityCornerRight,
+    ...arcPoints([0, 0], passageOuterRadius, angleOf(cavityCornerRight.at(-1)), angleOf(cavityCornerLeft[0]), 64).slice(1, -1),
+    ...cavityCornerLeft,
+    boreLeft,
+    [0, 0], // closed by the bore itself (unioned below), so no sliver is left
+  ]);
+  const tongueCap = (angle) => circlePolygon(
+    [((chamberRadius + tongueOuterRadius) / 2) * Math.cos(angle),
+      ((chamberRadius + tongueOuterRadius) / 2) * Math.sin(angle)],
+    (tongueOuterRadius - chamberRadius) / 2,
+    32,
+  );
+  const tongue = polygonClipping.union(
+    ringPolygon([
+      ...arcPoints([0, 0], tongueOuterRadius, Math.PI / 2 - tongueHalfSpan, Math.PI / 2 + tongueHalfSpan, 64),
+      ...arcPoints([0, 0], chamberRadius, Math.PI / 2 + tongueHalfSpan, Math.PI / 2 - tongueHalfSpan, 64),
+    ]),
+    tongueCap(Math.PI / 2 - tongueHalfSpan),
+    tongueCap(Math.PI / 2 + tongueHalfSpan),
+    ringPolygon([[-portInner, 5.1], [portInner, 5.1], [portInner, valveFaceY], [-portInner, valveFaceY]]),
+  );
+  const risers = [-1, 1].map((side) => ringPolygon([
+    [side * portInner, 5.45], [side * portOuter, 5.45],
+    [side * portOuter, valveFaceY], [side * portInner, valveFaceY],
+  ]));
+  const workingCavity = polygonClipping.difference(
+    polygonClipping.union(wedge, ...risers, circlePolygon([0, 0], boreRadius, 96)),
+    tongue,
+  );
+  const exhaustChannel = polygonClipping.union(
+    ringPolygon([[-exhaustHalfWidth, exhaustBottom], [exhaustHalfWidth, exhaustBottom],
+      [exhaustHalfWidth, valveFaceY], [-exhaustHalfWidth, valveFaceY]]),
+    circlePolygon([0, exhaustBottom], exhaustHalfWidth, 32),
+  );
+  const chestCavity = ringPolygon([[-chestInnerHalfWidth, valveFaceY], [chestInnerHalfWidth, valveFaceY],
+    [chestInnerHalfWidth, chestInnerTop], [-chestInnerHalfWidth, chestInnerTop]]);
+  const chestRightWall = ringPolygon([[chestInnerHalfWidth, valveFaceY], [chestOuterHalfWidth, valveFaceY],
+    [chestOuterHalfWidth, chestInnerTop], [chestInnerHalfWidth, chestInnerTop]]);
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.24,
-    roughness: 0.54,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.30,
-    roughness: 0.43,
-  });
-  const pistonMaterial = matte(PALETTE.driver, {
-    metalness: 0.20,
-    roughness: 0.48,
-  });
-  const valveMaterial = matte(PALETTE.driven, {
-    metalness: 0.23,
-    roughness: 0.45,
-  });
-  const steamMaterial = matte(0xd47b61, {
-    opacity: 0.18,
-    roughness: 0.62,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const exhaustMaterial = matte(0x4a93a8, {
-    opacity: 0.15,
-    roughness: 0.64,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
-
-  const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(5.50, 0.25, 1.82),
-    frameMaterial,
+  // Outer contour of casing A: foot, flared neck, walls a constant thickness
+  // off the chamber sides, rounded shoulders and the valve chest.
+  const outerOffset = wallOffset + wallThickness;
+  const shoulderRadius = passageOuterRadius + wallThickness;
+  const neckHalfWidth = 1.3;
+  const neckMeet = (side) => wallPoint(
+    side,
+    (outerOffset * Math.sin(wallAxisAngle) - neckHalfWidth) / Math.cos(wallAxisAngle),
+    outerOffset,
   );
-  foundation.position.set(0, -1.70, -0.22);
-  foundation.userData.role = 'fixed-foundation-of-sector-cylinder-A';
-  root.add(foundation);
-
-  const cylinderA = new THREE.Group();
-  cylinderA.position.copy(rockshaftCenter);
-  cylinderA.userData.role = 'fixed-annular-sector-cylinder-A';
-  const sectorBack = new THREE.Mesh(
-    new THREE.RingGeometry(
-      innerCylinderRadius,
-      outerCylinderRadius,
-      72,
-      1,
-      sectorRightAngle,
-      sectorLeftAngle - sectorRightAngle,
-    ),
-    steamMaterial,
-  );
-  sectorBack.position.z = -0.36;
-  sectorBack.userData.role = 'cutaway-back-of-sector-steam-space';
-  cylinderA.add(sectorBack);
-  const innerArc = boredJournal(0.42, 0.282, 0.30, frameMaterial);
-  innerArc.position.z = -0.55;
-  innerArc.userData.role = 'inner-curved-wall-of-sector-cylinder-A';
-  const outerArc = new THREE.Mesh(annularSector(2.31, 2.50,
-    sectorRightAngle - 0.0125, sectorLeftAngle + 0.0125, 0.68), frameMaterial);
-  outerArc.userData.role = 'outer-curved-wall-of-sector-cylinder-A';
-  cylinderA.add(innerArc, outerArc);
-  for (const [angle, role] of [
-    [sectorRightAngle, 'clockwise-end-wall-of-sector-cylinder-A'],
-    [sectorLeftAngle, 'counterclockwise-end-wall-of-sector-cylinder-A'],
-  ]) {
-    const wall = new THREE.Mesh(annularSector(0.40, 2.50,
-      angle - 0.0125, angle + 0.0125, 1.04), frameMaterial);
-    wall.position.z = -0.18;
-    wall.userData.role = role;
-    cylinderA.add(wall);
-  }
-  const bearingFoot = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.36, 0.30), frameMaterial);
-  bearingFoot.position.set(0, -0.48, -0.55);
-  cylinderA.add(bearingFoot);
-  root.add(cylinderA);
-
-  const rockshaftRotor = new THREE.Group();
-  rockshaftRotor.position.copy(rockshaftCenter);
-  rockshaftRotor.userData.role =
-    'rock-shaft-C-with-rigid-sector-piston-B';
-  const pistonVane = new THREE.Mesh(
-    annularSector(0.26, pistonSealRadius - 0.08, -0.018, 0.018, 0.61),
-    pistonMaterial,
-  );
-
-  pistonVane.userData.role = 'radial-oscillating-piston-B';
-  rockshaftRotor.add(pistonVane);
-  const pistonSeal = new THREE.Mesh(
-    annularSector(2.13, pistonSealRadius, -0.018, 0.018, 0.61),
-    pistonMaterial,
-  );
-
-  pistonSeal.userData.role = 'outer-sealing-head-of-piston-B';
-  rockshaftRotor.add(pistonSeal);
-  const shaftC = cylinderAlongZ(0.28, 1.28, darkMaterial, 40);
-  shaftC.position.z = 0.02;
-  shaftC.userData.role = 'fixed-axis-rock-shaft-C';
-  rockshaftRotor.add(shaftC);
-  const outputCrankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(outputCrankRadius, 0.12, 0.18),
-    valveMaterial,
-  );
-  outputCrankArm.position.set(0, -outputCrankRadius / 2, 0.52);
-  outputCrankArm.rotation.z = -Math.PI / 2;
-  outputCrankArm.userData.role =
-    'output-crank-on-C-for-connection-to-rotary-train';
-  rockshaftRotor.add(outputCrankArm);
-  const outputCrankPin = new THREE.Mesh(
-    new THREE.SphereGeometry(0.13, 24, 18),
-    darkMaterial,
-  );
-  outputCrankPin.position.set(0, -outputCrankRadius, 0.52);
-  outputCrankPin.userData.role = 'output-crank-pin-on-C';
-  rockshaftRotor.add(outputCrankPin);
-  root.add(rockshaftRotor);
-
-  const fixedValveChest = new THREE.Group();
-  fixedValveChest.userData.role = 'fixed-slide-valve-chest-above-A';
-  const chest = new THREE.Mesh(plate(polygonClipping.difference(
-    poly([[-0.90, -0.40], [0.90, -0.40], [0.90, 0.40], [-0.90, 0.40]]),
-    poly([[-0.70, -0.21], [0.70, -0.21], [0.70, 0.21], [-0.70, 0.21]]),
-    poly([[0.69, -0.055], [0.91, -0.055], [0.91, 0.055], [0.69, 0.055]])
-  ), -0.38, 0.38), frameMaterial);
-  chest.position.copy(valveCenter);
-  chest.userData.role = 'fixed-valve-D-chest';
-  fixedValveChest.add(chest);
-  // The seat lies inside the chest cavity on its floor (no faces shared
-  // with the chest walls, so nothing flickers as a comb along the side).
-  const valveGuide = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.04, 0.60), frameMaterial);
-  valveGuide.position.copy(valveCenter).add(new THREE.Vector3(0, -0.19, 0));
-  valveGuide.userData.role = 'horizontal-guide-for-slide-valve-D';
-  fixedValveChest.add(valveGuide);
-  // The chest is cut on the same front plane; its back cover stays.
-  const chestBack = new THREE.Mesh(new THREE.BoxGeometry(1.80, 0.80, 0.04), frameMaterial);
-  chestBack.position.copy(valveCenter).add(new THREE.Vector3(0, 0, -0.36));
-  chestBack.userData.role = 'solid-back-cover-of-valve-D-chest';
-  fixedValveChest.add(chestBack);
-  root.add(fixedValveChest);
-
-  const slideValveD = new THREE.Group();
-  slideValveD.position.copy(valveCenter);
-  slideValveD.userData.role =
-    'horizontally-reciprocating-slide-valve-D';
-  const valveBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.76, 0.34, 0.66),
-    valveMaterial,
-  );
-  valveBlock.userData.role = 'working-block-of-slide-valve-D';
-  slideValveD.add(valveBlock);
-  const valveStem = new THREE.Mesh(
-    new THREE.BoxGeometry(2.15, 0.10, 0.14),
-    valveMaterial,
-  );
-  valveStem.position.x = 1.15;
-  valveStem.userData.role = 'external-stem-of-slide-valve-D';
-  slideValveD.add(valveStem);
-  const valveIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.09, 0.40, 0.70),
-    whiteMaterial,
-  );
-  valveIndex.userData.role = 'white-valve-D-position-index';
-  slideValveD.add(valveIndex);
-  root.add(slideValveD);
-
-  const rightPortPoint = rockshaftCenter.clone().add(
-    new THREE.Vector3(
-      outerCylinderRadius * Math.cos(sectorRightAngle),
-      outerCylinderRadius * Math.sin(sectorRightAngle),
-      0.04,
-    ),
-  );
-  const leftPortPoint = rockshaftCenter.clone().add(
-    new THREE.Vector3(
-      outerCylinderRadius * Math.cos(sectorLeftAngle),
-      outerCylinderRadius * Math.sin(sectorLeftAngle),
-      0.04,
-    ),
-  );
-  const rightPassage = makeTubeThrough([
-    rightPortPoint,
-    rightPortPoint.clone().add(new THREE.Vector3(0.28, 0.32, 0)),
-    new THREE.Vector3(0.48, 1.65, 0.04),
-    new THREE.Vector3(0.40, valveCenter.y - 0.30, 0.04),
-  ], 0.075, frameMaterial, 'clockwise-steam-passage-from-D-to-A');
-  const leftPassage = makeTubeThrough([
-    leftPortPoint,
-    leftPortPoint.clone().add(new THREE.Vector3(-0.28, 0.32, 0)),
-    new THREE.Vector3(-0.48, 1.65, 0.04),
-    new THREE.Vector3(-0.40, valveCenter.y - 0.30, 0.04),
-  ], 0.075, frameMaterial, 'counterclockwise-steam-passage-from-D-to-A');
-  root.add(rightPassage, leftPassage);
-
-  // Brown's cast casing A: a vase-shaped wall standing off the sector's end
-  // walls (the side passages lie between), shouldered into the valve chest
-  // and flanged into a foot round the boss of C.
-  const casingSide = (points) => [...points, ...points.slice().reverse().map(([x, y]) => [-x, y])];
-  const wallPoint = (r, offset) => {
-    const a = sectorHalfAngle;
-    return [offset * Math.cos(a) + r * Math.sin(a),
-      rockshaftCenter.y - offset * Math.sin(a) + r * Math.cos(a)];
+  const chestShoulderY = Math.sqrt(shoulderRadius ** 2 - chestOuterHalfWidth ** 2);
+  const shoulderRight = wallCircleFillet(1, outerOffset, shoulderRadius, 0.9);
+  const shoulderLeft = wallCircleFillet(-1, outerOffset, shoulderRadius, 0.9).reverse();
+  const neckFillet = (side) => {
+    // concave fillet between the vertical neck side and the outer wall line
+    const vertices = [[side * neckHalfWidth, -0.35], neckMeet(side), wallPoint(side, 4, outerOffset)];
+    return filletPath(vertices, [0, 0.55, 0], 10).slice(1, -1);
   };
-  const casingOuter = casingSide([
-    [1.30, -1.84], [1.30, -1.52], [0.74, -1.52], [0.66, -1.22],
-    wallPoint(0.75, 0.47), wallPoint(1.6, 0.47), wallPoint(2.4, 0.47),
-    [1.52, 1.10], [1.40, 1.40], [1.08, 1.56], [0.90, 1.56],
-  ].reverse());
-  const casingInner = casingSide([
-    [0.50, -0.86], wallPoint(0.95, 0.34), wallPoint(1.6, 0.34), wallPoint(2.4, 0.34),
-    [1.39, 1.09], [1.29, 1.33], [1.00, 1.46], [0.30, 1.46],
-  ].reverse());
-  const casingA = new THREE.Mesh(plate(polygonClipping.difference(
-    poly(casingOuter), poly(casingInner),
-    poly(circle([rockshaftCenter.x, rockshaftCenter.y], 0.40, 96)),
-  ), -0.40, 0.64), frameMaterial);
-  casingA.userData.role = 'cast-vase-casing-of-sector-cylinder-A-with-foot';
+  const outerOutline = ringPolygon([
+    [-2.3, -0.9], [2.3, -0.9], [2.3, -0.35], [neckHalfWidth, -0.35],
+    ...neckFillet(1),
+    ...shoulderRight,
+    ...arcPoints([0, 0], shoulderRadius, angleOf(shoulderRight.at(-1)), Math.atan2(chestShoulderY, chestOuterHalfWidth), 24).slice(1),
+    [chestOuterHalfWidth, chestOuterTop], [-chestOuterHalfWidth, chestOuterTop],
+    ...arcPoints([0, 0], shoulderRadius, Math.atan2(chestShoulderY, -chestOuterHalfWidth), angleOf(shoulderLeft[0]), 24).slice(0, -1),
+    ...shoulderLeft,
+    ...neckFillet(-1).reverse(),
+    [-neckHalfWidth, -0.35], [-2.3, -0.35],
+  ]);
+  const allVoids = polygonClipping.union(workingCavity, exhaustChannel, chestCavity, chestRightWall);
+  const casingOutline = polygonClipping.difference(outerOutline, allVoids);
+
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.24, roughness: 0.54 });
+  const backMaterial = matte(0x7d8786, { metalness: 0.18, roughness: 0.6 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.3, roughness: 0.43 });
+  const pistonMaterial = matte(PALETTE.driver, { metalness: 0.2, roughness: 0.48 });
+  const valveMaterial = matte(PALETTE.driven, { metalness: 0.23, roughness: 0.45 });
+
+  const casingA = sectionPlate(casingOutline, zBack, 0, frameMaterial,
+    'sectioned-cast-casing-A-with-sector-chamber-tongue-passages-and-chest');
   root.add(casingA);
-  // One clean half-section: the casing keeps its solid back cover and is
-  // cut on the plane of its front face, so B, C and the chamber show
-  // through the cut without an open frame behind them.
-  const casingBack = new THREE.Mesh(plate(polygonClipping.difference(
-    poly(casingOuter),
-    poly(circle([rockshaftCenter.x, rockshaftCenter.y], 0.40, 96)),
-  ), -0.40, -0.28), frameMaterial);
-  casingBack.userData.role = 'solid-back-cover-of-sector-casing-A';
-  root.add(casingBack);
+  // The chest's right wall carries the valve-rod bore, so it is built across
+  // the section with a round hole for the rod.
+  const chestWallGeometry = (() => {
+    // shape in (-z, y), extruded along +x
+    const shape = new THREE.Shape([
+      new THREE.Vector2(0, valveFaceY), new THREE.Vector2(depth, valveFaceY),
+      new THREE.Vector2(depth, chestInnerTop), new THREE.Vector2(0, chestInnerTop),
+    ]);
+    shape.holes.push(new THREE.Path().absarc(-rodZ, rodY, rodRadius + 0.012, 0, FULL_TURN, true));
+    const geometry = new THREE.ExtrudeGeometry(shape, {
+      depth: chestOuterHalfWidth - chestInnerHalfWidth,
+      bevelEnabled: false,
+      curveSegments: 24,
+    });
+    geometry.applyMatrix4(new THREE.Matrix4().set(
+      0, 0, 1, chestInnerHalfWidth,
+      0, 1, 0, 0,
+      -1, 0, 0, 0,
+      0, 0, 0, 1,
+    ));
+    return geometry;
+  })();
+  const chestWallCut = frameMaterial.clone();
+  chestWallCut.color.multiplyScalar(0.84);
+  const chestRodWall = new THREE.Mesh(chestWallGeometry, [frameMaterial, chestWallCut]);
+  chestRodWall.userData.role = 'sectioned-right-wall-of-valve-chest-with-rod-bore';
+  root.add(chestRodWall);
+  const gland = new THREE.Mesh(latheSectionGeometry(
+    [[rodRadius + 0.012, 0], [0.2, 0], [0.2, 0.08], [0.15, 0.08], [0.15, 0.26], [rodRadius + 0.012, 0.26]],
+    { segments: 40, phiStart: 0, phiLength: FULL_TURN },
+  ), [frameMaterial, frameMaterial]);
+  gland.rotation.z = -Math.PI / 2;
+  gland.position.set(chestOuterHalfWidth, rodY, rodZ);
+  gland.userData.role = 'stuffing-box-of-valve-rod-on-chest';
+  root.add(gland);
 
-  const clockwiseAdmissionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 22, 16),
-    steamMaterial,
+  const backCover = sectionPlate(polygonClipping.difference(
+    outerOutline,
+    circlePolygon([0, 0], shaftRadius + 0.01, 64),
+    circlePolygon([0, exhaustBottom + 0.06], exhaustHalfWidth, 32),
+  ), zBack - backThickness, zBack, backMaterial, 'solid-back-of-casing-A-with-exhaust-outlet-and-shaft-bore');
+  // The back is not cut: all its faces take the wall shade.
+  backCover.material = [backMaterial, backMaterial];
+  root.add(backCover);
+  const exhaustPipe = new THREE.Mesh(exhaustElbowGeometry([0, exhaustBottom + 0.06], zBack - backThickness,
+    exhaustHalfWidth, 0.04, { back: 0.2, drop: 0.5 }), backMaterial);
+  exhaustPipe.userData.role = 'exhaust-pipe-from-the-port-under-D';
+  root.add(exhaustPipe);
+
+  // ---- rock shaft C with vane B ---------------------------------------------
+  const rockshaft = new THREE.Group();
+  rockshaft.userData.role = 'rock-shaft-C-with-keyed-vane-piston-B';
+  const vaneOutline = polygonClipping.union(
+    circlePolygon([0, 0], hubRadius, 96),
+    ringPolygon([
+      [0.3, -vaneHalfWidth], [Math.sqrt(vaneTipRadius ** 2 - vaneHalfWidth ** 2), -vaneHalfWidth],
+      ...arcPoints([0, 0], vaneTipRadius, -Math.asin(vaneHalfWidth / vaneTipRadius),
+        Math.asin(vaneHalfWidth / vaneTipRadius), 8).slice(1, -1),
+      [Math.sqrt(vaneTipRadius ** 2 - vaneHalfWidth ** 2), vaneHalfWidth], [0.3, vaneHalfWidth],
+    ]),
   );
-  clockwiseAdmissionIndicator.position.copy(rightPortPoint);
-  clockwiseAdmissionIndicator.userData.role =
-    'clockwise-chamber-admission-indicator';
-  root.add(clockwiseAdmissionIndicator);
-  const counterclockwiseAdmissionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.12, 22, 16),
-    exhaustMaterial,
+  const vaneOutlineWithoutShaft = polygonClipping.difference(vaneOutline, circlePolygon([0, 0], shaftRadius, 64));
+  const pistonB = partPlate(vaneOutlineWithoutShaft, zBack + 0.01, -0.01, pistonMaterial,
+    'vane-piston-B-with-hub-keyed-to-C');
+  rockshaft.add(pistonB);
+  const shaftBackZ = zBack - backThickness - 0.8;
+  const shaftC = new THREE.Mesh(latheSectionGeometry(
+    [[0, shaftBackZ], [shaftRadius, shaftBackZ], [shaftRadius, -0.005], [0, -0.005]],
+    { segments: 48, phiStart: 0, phiLength: FULL_TURN },
+  ), darkMaterial);
+  // lathe axis (local y) turned onto z
+  shaftC.rotation.x = Math.PI / 2;
+  shaftC.userData.role = 'rock-shaft-C-through-back-of-casing';
+  rockshaft.add(shaftC);
+  root.add(rockshaft);
+
+  // ---- slide valve D ----------------------------------------------------------
+  const valveD = new THREE.Group();
+  valveD.userData.role = 'slide-valve-D-on-port-face';
+  const valveOutline = ringPolygon(filletPath([
+    [-valveHalfLength, valveFaceY + 0.004], [-valveHollowHalfWidth, valveFaceY + 0.004],
+    ...arcPoints([0, valveFaceY], valveHollowHalfWidth, Math.PI, 0, 24).map(([x, y]) => [x, valveFaceY + 0.004 + (y - valveFaceY) * 0.62]).slice(1, -1),
+    [valveHollowHalfWidth, valveFaceY + 0.004], [valveHalfLength, valveFaceY + 0.004],
+    [valveHalfLength, valveFaceY + valveHeight], [-valveHalfLength, valveFaceY + valveHeight],
+  ], [0, 0, ...Array(23).fill(0), 0, 0, 0.1, 0.1], 6));
+  const valveBody = partPlate(valveOutline, zBack + 0.1, -0.1, valveMaterial, 'D-slide-valve-body-with-exhaust-hollow');
+  valveD.add(valveBody);
+  const valveRod = new THREE.Mesh(new THREE.CylinderGeometry(rodRadius, rodRadius, rodLength, 24), valveMaterial);
+  valveRod.rotation.z = Math.PI / 2;
+  valveRod.position.set(valveHalfLength + rodLength / 2, rodY, rodZ);
+  valveRod.userData.role = 'valve-rod-of-D-through-stuffing-box';
+  valveD.add(valveRod);
+  root.add(valveD);
+
+  // ---- steam --------------------------------------------------------------------
+  const steamZ0 = zBack + 0.015;
+  const steamZ1 = -0.015;
+  const leftSteam = steamVolume('steam-in-left-working-space-of-A', steamZ0, steamZ1);
+  const rightSteam = steamVolume('steam-in-right-working-space-of-A', steamZ0, steamZ1);
+  const chestSteam = steamVolume('live-steam-in-valve-chest', steamZ0, steamZ1);
+  const exhaustSteam = steamVolume('exhaust-steam-in-D-hollow-and-exhaust-port', steamZ0, steamZ1);
+  root.add(leftSteam, rightSteam, chestSteam, exhaustSteam);
+  const leftProbe = [-(portInner + portOuter) / 2, valveFaceY - 0.2];
+  const rightProbe = [(portInner + portOuter) / 2, valveFaceY - 0.2];
+  const rotate = (multi, angle) => {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return multi.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [x * c - y * s, x * s + y * c])));
+  };
+  const translateX = (multi, dx) => multi.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [x + dx, y])));
+  // For splitting the chamber, B is taken up into the tongue it seals on.
+  const vaneSplitter = polygonClipping.union(
+    circlePolygon([0, 0], boreRadius + 0.001, 64),
+    ringPolygon([[0, -vaneHalfWidth], [chamberRadius + 0.12, -vaneHalfWidth],
+      [chamberRadius + 0.12, vaneHalfWidth], [0, vaneHalfWidth]]),
   );
-  counterclockwiseAdmissionIndicator.position.copy(leftPortPoint);
-  counterclockwiseAdmissionIndicator.userData.role =
-    'counterclockwise-chamber-admission-indicator';
-  root.add(counterclockwiseAdmissionIndicator);
+  const valveEnvelope = ringPolygon([[-valveHalfLength, valveFaceY], [valveHalfLength, valveFaceY],
+    [valveHalfLength, valveFaceY + valveHeight], [-valveHalfLength, valveFaceY + valveHeight]]);
+  const valveHollow = ringPolygon([
+    [-valveHollowHalfWidth, valveFaceY],
+    ...arcPoints([0, valveFaceY], valveHollowHalfWidth, Math.PI, 0, 24)
+      .map(([x, y]) => [x, valveFaceY + (y - valveFaceY) * 0.62]).slice(1, -1),
+    [valveHollowHalfWidth, valveFaceY],
+  ]);
+  const steamReport = {};
+  const updateSteam = (state) => {
+    const spaces = safeClip('difference', workingCavity, rotate(vaneSplitter, state.pistonAngle));
+    const left = piecesContaining(spaces, [leftProbe]);
+    const right = piecesContaining(spaces, [rightProbe]);
+    leftSteam.userData.setRegion(left, state.leftPressure);
+    rightSteam.userData.setRegion(right, state.rightPressure);
+    chestSteam.userData.setRegion(safeClip('difference', chestCavity, translateX(valveEnvelope, state.valveX)), 1);
+    exhaustSteam.userData.setRegion(safeClip('union', exhaustChannel, translateX(valveHollow, state.valveX)), 0);
+    steamReport.leftArea = multiArea(left);
+    steamReport.rightArea = multiArea(right);
+    steamReport.spaceCount = spaces.length;
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
-    rockshaftRotor.rotation.z = state.pistonAngle;
-    slideValveD.position.x = valveCenter.x + state.valveX;
-    clockwiseAdmissionIndicator.scale.setScalar(
-      0.55 + 0.75 * state.clockwisePortOpening,
-    );
-    counterclockwiseAdmissionIndicator.scale.setScalar(
-      0.55 + 0.75 * state.counterclockwisePortOpening,
-    );
+    rockshaft.rotation.z = state.pistonAngle;
+    valveD.position.x = state.valveX;
+    updateSteam(state);
   };
 
   const sourceState = stateAtTime(0);
   root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'fixed-annular-sector-cylinder-with-radial-vane-piston-keyed-to-rockshaft-and-quadrature-slide-valve',
+    animationTiming: { authoredCyclePeriod: cycleDuration, targetCycleDuration: 2 },
+    archetype: 'fixed-sector-chamber-with-vane-piston-on-rockshaft-and-D-slide-valve-over-two-passages',
     blocks: {
-      clockwiseAdmissionIndicator,
-      counterclockwiseAdmissionIndicator,
-      cylinderA,
-      fixedValveChest,
-      foundation,
-      innerArc,
-      leftPassage,
-      outerArc,
-      outputCrankArm,
-      outputCrankPin,
-      pistonSeal,
-      pistonVane,
-      rightPassage,
-      rockshaftRotor,
-      sectorBack,
-      shaftC,
-      slideValveD,
-      valveBlock,
-      valveStem,
+      casingA, chestRodWall, gland, backCover, rockshaft, pistonB, shaftC, valveD, valveBody, valveRod,
+      leftSteam, rightSteam, chestSteam, exhaustSteam,
     },
-    degreesOfFreedom: {
-      independentPrescribedInputs: 1,
-      operatingDegreesOfFreedom: 1,
-      pistonAngleIndependent: false,
-      slideValvePositionIndependent: false,
-    },
+    degreesOfFreedom: { independentPrescribedInputs: 1, operatingDegreesOfFreedom: 1 },
     dynamics: {
-      downstreamCrankLinkAndFlywheelModeled: false,
-      pressureExpansionLeakageFrictionInertiaAndValveLapModeled: false,
-      sourceSpecifiesAbsoluteDimensionsTimingMaterialsPressuresOrLoads: false,
-      valveIndicators:
-        'port spheres show which chamber is admitted; they are not pressure or mass-flow solutions',
+      steamSpaces: 'Each working space is the part of the chamber, passage and riser on one side of B, recomputed from B each frame; its steam is live while D uncovers its port to the chest and exhaust while the D hollow joins it to the exhaust port.',
+      pressureForcesLeakageAndThermodynamicsModeled: false,
     },
     fidelity: 'authored',
-    geometry,
-    mechanism:
-      'Fixed cylinder A is an annular sector centered on rock-shaft C. Radial vane piston B is rigidly keyed to C and oscillates between the sector end walls with constant radial seal clearance. Horizontal slide-valve D runs in exact quadrature with B’s displacement so alternate ports admit steam on the side that drives each half-stroke. The visible crank on C rocks with the shaft; Brown’s undrawn downstream rotary linkage is not invented.',
-    motion: {
-      cycleDuration,
-      inputAngularSpeed,
-      pistonAngularStroke: pistonAngularAmplitude * 2,
-      valveStroke: valveTravelAmplitude * 2,
+    geometry: {
+      hubRadius, boreRadius, chamberRadius, tongueOuterRadius, passageOuterRadius, tongueHalfSpan,
+      wallAxisAngle, wallOffset, pistonAngularAmplitude, vaneHalfWidth, vaneTipRadius, depth,
+      portInner, portOuter, valveHalfLength, valveHollowHalfWidth, valveTravelAmplitude, valveFaceY,
+      cycleDuration, inputAngularSpeed, casingOutline, workingCavity, exhaustChannel, chestCavity,
     },
+    mechanism: 'Sector chamber A is centred on rock-shaft C; vane piston B keyed to C divides it into two working spaces. A fixed curved tongue closes the top of the chamber, and the two passages from the valve face run over it and down round its ends into the chamber corners. The D slide valve admits chest steam to the passage behind B and joins the passage ahead of B, through its hollow, to the exhaust port that leaves through the back of the casting. D leads B by a quarter cycle.',
+    motion: { cycleDuration, inputAngularSpeed, pistonAngularStroke: 2 * pistonAngularAmplitude, valveStroke: 2 * valveTravelAmplitude },
     sourceAnimation: {
       available: true,
       independentlyReconstructed: true,
       officialCanvasCyclePeriod: 4,
-      officialCanvasCyclesPerMinute: 15,
-      officialCanvasModelPresent: true,
-      reason:
-        'The official Movement 422 page embeds a three-part Canvas construction showing fixed sector A, B/C rocking from approximately 67 to 113 degrees, and horizontal D moving one quarter-cycle ahead. It was inspected for topology, phase, and relative proportions only.',
-      sourcePrescribedAbsoluteTiming: false,
+      reason: 'The official Movement 422 page draws one sector chamber whose top is a curved tongue with rounded ends; the two passages from the valve face pass over the tongue and turn down round its ends into the chamber corners, the centre port under D leads to a round exhaust opening, and B rocks between about 67 and 113 degrees with D a quarter cycle ahead. It was studied for topology, proportions and phase only.',
     },
-    sourcePose: {
-      pistonAngle: sourceState.pistonAngle,
-      pistonTip: sourceState.pistonTip.clone(),
-      valveX: sourceState.valveX,
-    },
+    sourcePose: { pistonAngle: sourceState.pistonAngle, valveX: sourceState.valveX },
     sourceReference: {
-      brownPlate422: {
-        cylinderAApproximateBoundsPixels: [122, 145, 405, 487],
-        imageHeight: 525,
-        imageWidth: 525,
-        measurementUncertaintyPixels: 12,
-        pistonBApproximateBoundsPixels: [250, 205, 282, 421],
-        rockshaftCApproximateCenterPixels: [264, 440],
-        slideValveDApproximateBoundsPixels: [212, 87, 415, 174],
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'A has the profile of a sector',
-          'B is the oscillating piston',
-          'B is attached to rock-shaft C',
-          'steam acts alternately on the two sides of B',
-          'D is a slide valve like that of a reciprocating engine',
-          'C is connected with a crank to produce rotary motion',
-        ],
-        engravingEvidence:
-          'Brown’s cutaway plate shows a fixed curved sector chamber A, a thin radial vane B rising from the bottom rock-shaft C, two passages from the chamber ends, and horizontal slide-valve D in the chest above.',
-        officialCanvasEvidence:
-          'The official embedded construction places B at endpoint vectors (1.953656,4.602524) and (-1.953656,4.602524), bounds A by approximately 64.7 and 115.3 degrees, gives D 0.6 unit total travel, and phases D one quarter-cycle ahead of B displacement.',
-        reconstructionDisclosure:
-          'Brown gives no absolute dimensions, vane thickness, sealing clearances, port areas, pressure cycle, crank linkage geometry, speed, materials, or loads. The scaled annular-sector cutaway, harmonic law corroborated by the official model, port indicators, output crank stub, supports, and four-second display cycle are independently engineered.',
-      },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 422',
+      brownPlate422: { imageWidth: 525, imageHeight: 525, rockshaftCApproximateCenterPixels: [264, 440], chestTopPixels: 87, pixelsPerUnit: 48.4 },
+      reconstructionDisclosure: 'Brown gives no dimensions, port areas, lap, depth of the casting or pressures. The passage widths, zero-lap valve, casting depth, exhaust outlet through the back and the four-second cycle are engineered; the crank Brown mentions but does not draw is not built.',
     },
     stateAtInputAngle,
     stateAtTime,
-    transmission: {
-      pistonLaw:
-        'pistonAngle=pi/2-amplitude*cos(inputAngle)',
-      rigidKeying:
-        'outputCrankAngle=pistonAngle+fixedOffset',
-      valveLaw:
-        'valveX=-valveAmplitude*sin(inputAngle)',
-      valvePhase:
-        'D displacement is in quadrature with B displacement and changes sign with B velocity',
-    },
+    steamReport,
     update,
   };
   root.userData.cameraDirection = new THREE.Vector3(0.8, 0.3, 14);
-  markShadows(root);
-  foundation.receiveShadow = true;
   root.userData.cameraFov = 8;
+  // Built in the official trace's units; shown at the earlier model scale.
+  root.scale.setScalar(0.46);
+  update(0);
+  markShadows(root);
+  for (const steam of [leftSteam, rightSteam, chestSteam, exhaustSteam]) {
+    steam.castShadow = false;
+    steam.receiveShadow = false;
+  }
   fitPistonGuide(root, update, cycleDuration);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 
 export function createAuthoredSectorPistonEngineMovement(movement) {

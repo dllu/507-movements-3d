@@ -1,5 +1,6 @@
 import {correctEjectorTrapParts} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
+import { WaterStream, guidedPath } from './water-stream.js';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
@@ -678,6 +679,7 @@ function rayExpansionSteamTrap(movement) {
           * Math.sqrt(state.flowFraction),
       );
     }
+    root.userData.updateWorkingParts?.(time, state);
   };
 
   const geometry = {
@@ -868,6 +870,49 @@ function rayExpansionSteamTrap(movement) {
   root.userData.cameraDirection = new THREE.Vector3(8.7, 4.4, 11.8);
   root.userData.groundFloorY = -2.60;
   correctEjectorTrapParts(root,478,update);
+  {
+    // The water shows what the trap passes: while the contracted pipe
+    // leaves valve a open, condensate runs out of A's end through the gap,
+    // falls to the bottom of sphere C and down its outlet; the stream
+    // thins to nothing as the expanding pipe closes the gap (no column
+    // switched on or tinted with the flow).
+    const b = root.userData.blocks;
+    outletWaterCore.visible = false;
+    outletWaterCore.material = outletWaterCore.material.clone();
+    outletWaterCore.material.visible = false;
+    const sphereCentre = new THREE.Vector3(sphereCenter.x, sphereCenter.y, 0);
+    const z = -0.085;
+    const pathFor = (pipeEndX) => {
+      const x = Math.min(pipeEndX + 0.07, -0.02);
+      const wallY = (px) => sphereCentre.y - Math.sqrt(1.06 ** 2 - (px - sphereCentre.x) ** 2) + 0.07;
+      return guidedPath([
+        new THREE.Vector3(x, pipeAxisY - 0.19, z),
+        new THREE.Vector3(x, wallY(x) + 0.18, z),
+        new THREE.Vector3(x + 0.12, wallY(x + 0.12), z),
+        new THREE.Vector3(sphereCentre.x, -0.86, z),
+        new THREE.Vector3(sphereCentre.x, -2.40, z),
+      ], { speedAt: (u) => 0.8 + 2.2 * u, samples: 40 });
+    };
+    const drain = new WaterStream(pathFor(coolPipeEndX), {
+      width: 0.06, thickness: 0.06, cyclePeriod: cycleDuration, streakRate: 1.5, opacity: 0.5,
+    });
+    drain.userData.role = 'condensate-falling-through-sphere-C-and-its-outlet';
+    root.add(drain);
+    b.condensateDrain = drain;
+    const working = root.userData.updateWorkingParts;
+    root.userData.updateWorkingParts = (time, state, ...rest) => {
+      working?.(time, state, ...rest);
+      const flow = THREE.MathUtils.clamp(state.flowFraction, 0, 1);
+      drain.visible = flow > 1e-3;
+      if (!drain.visible) return;
+      drain.flow = -1;
+      drain.setPath(pathFor(state.pipeEndX));
+      drain.setFlow(Math.max(0.02, flow));
+      // A trickle is faint as well as thin, so it fades out as the gap shuts.
+      drain.material.opacity = 0.5 * THREE.MathUtils.smoothstep(flow, 0, 0.12);
+      drain.update(time);
+    };
+  }
   // Brown draws a flat section; a narrow view keeps it flat.
   root.userData.cameraDirection.set(0.1, 0.12, 15);
   root.userData.cameraFov = 10;

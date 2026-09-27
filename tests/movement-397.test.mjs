@@ -25,11 +25,17 @@ test('397 both crank branches traverse the same single-valued crescent, forward 
   assert.ok(states[0].slotLocalPoint.distanceTo(states[1].slotLocalPoint)<1e-12);
  }
 });
-test('397 circular middle groove supplies a real dwell while the input continues moving',()=>{
- let count=0;
- for(let i=0;i<4096;i++){const s=d.stateAtTime(T*i/4096);if(!s.dwellActive)continue;count++;near(s.rockerAngle,0,1e-12);near(s.rockerAngularSpeed,0,1e-12);near(s.sliderVelocity,0,1e-12);}
- assert.ok(count/4096>.29&&count/4096<.32);
- assert.ok(d.motion.outputStroke>4.5);
+test('397 plain crescent gives a near-rest while the input continues moving, then a full stroke',()=>{
+ let count=0,maxAngle=0,peak=0;
+ for(let i=0;i<4096;i++){const s=d.stateAtTime(T*i/4096);peak=Math.max(peak,Math.abs(s.rockerAngularSpeed));if(!s.dwellActive)continue;count++;maxAngle=Math.max(maxAngle,Math.abs(s.rockerAngle));}
+ // The rocker nearly rests (under a twentieth of the crank speed) for about a quarter of the turn,
+ assert.ok(count/4096>.25&&count/4096<.45,`near-rest fraction ${count/4096}`);
+ // creeping only a few degrees there, against a swing of about sixty.
+ assert.ok(maxAngle<.12,`creep ${maxAngle}`);
+ assert.ok(peak>10*(2*Math.PI/T)*.05);
+ assert.ok(d.motion.outputStroke>4.0);
+ // No hooks: the slot is one circular arc with rounded ends.
+ const law=d.openCrescentLaw;for(let i=0;i<=64;i++){const q=law.pointAtRadius(law.low+(law.high-law.low)*i/64);near(q.distanceTo(law.arcCenter),law.arcRadius,1e-9,'slot centreline on one arc');}
 });
 test('397 rounded-end closure is continuous and agrees with independent velocity differences',()=>{
  const h=1e-5;

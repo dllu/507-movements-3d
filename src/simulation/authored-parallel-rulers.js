@@ -1211,13 +1211,7 @@ function graduatedArcParallelRuler(movement) {
   const cycleRate = FULL_TURN / demonstrationPeriod;
   const linkLength = 1.60;
   const minimumLinkAngle = THREE.MathUtils.degToRad(116);
-  const maximumLinkAngle = THREE.MathUtils.degToRad(145);
   const sourceLinkAngle = THREE.MathUtils.degToRad(119);
-  const meanLinkAngle = (minimumLinkAngle + maximumLinkAngle) / 2;
-  const linkAngleAmplitude = (maximumLinkAngle - minimumLinkAngle) / 2;
-  const sourcePhaseAngle = Math.acos(
-    (meanLinkAngle - sourceLinkAngle) / linkAngleAmplitude,
-  );
   const bladeLength = 4.82;
   const bladeWidth = 0.48;
   const bladeThickness = 0.14;
@@ -1234,6 +1228,33 @@ function graduatedArcParallelRuler(movement) {
   // slightly to keep one unambiguous scale crossing throughout the travel.
   const arcRadius = 1.28;
   const arcSweep = THREE.MathUtils.degToRad(103);
+  // The brass arc lies between the upper blade and the links, so the right
+  // link's upper-blade pin crosses its plane: closing the ruler brings that
+  // pin against the arc's outer edge. The arc is therefore the closing stop,
+  // and the demonstration closes only to the angle that leaves the pin just
+  // clear of it (about 141.6 degrees; the old 145 ran the pin through the arc).
+  const arcStopClearance = 0.012;
+  const throughPinRadius = 0.085;
+  const arcCentreX = arcPivot.x - arcRadius;
+  const rightPinArcDistance = (angle) => Math.hypot(
+    lowerPivotXs[1] + linkLength * Math.cos(angle) - arcCentreX,
+    linkLength * Math.sin(angle),
+  );
+  let maximumLinkAngle;
+  {
+    let open = THREE.MathUtils.degToRad(125), closed = THREE.MathUtils.degToRad(150);
+    const stop = arcRadius + throughPinRadius + arcStopClearance;
+    for (let i = 0; i < 60; i += 1) {
+      const middle = (open + closed) / 2;
+      if (rightPinArcDistance(middle) >= stop) open = middle; else closed = middle;
+    }
+    maximumLinkAngle = open;
+  }
+  const meanLinkAngle = (minimumLinkAngle + maximumLinkAngle) / 2;
+  const linkAngleAmplitude = (maximumLinkAngle - minimumLinkAngle) / 2;
+  const sourcePhaseAngle = Math.acos(
+    (meanLinkAngle - sourceLinkAngle) / linkAngleAmplitude,
+  );
   const arcParameterAtRise = rise => Math.asin(THREE.MathUtils.clamp(rise / arcRadius, 0, 1)) / arcSweep;
   const arcXAtParameter = parameter => arcPivot.x + arcRadius * (Math.cos(parameter * arcSweep) - 1);
   const arcRiseAtParameter = parameter => arcRadius * Math.sin(parameter * arcSweep);

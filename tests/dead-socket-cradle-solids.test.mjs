@@ -97,6 +97,8 @@ test('417 rod B and head A clear the rotating shaft, collar, standard D, slide b
 
 test('419 bored connecting rod spans both actual crank pins and clears wheel faces',()=>{
  const {root,update}=createMovementModel(catalog[418]),b=root.userData.blocks;
+ assert.equal(b.inputCrankArm,undefined);assert.equal(b.outputCrankArm,undefined);
+ for(const wheel of [b.inputWheelA,b.outputWheelB])wheel.traverse(o=>{assert.ok(!/indicator|quadrant/i.test(o.userData.role??''));assert.notEqual(o,wheel.userData.hub);});
  for(let i=0;i<=128;i++){
   update(i*4/128);root.updateMatrixWorld(true);
   for(const pin of [b.inputPinMarker,b.outputPinMarker]){
@@ -104,7 +106,8 @@ test('419 bored connecting rod spans both actual crank pins and clears wheel fac
    assert.ok(bounds(pin).min.z<bounds(b.connectingRodBody).min.z);
    assert.ok(bounds(pin).max.z>bounds(b.connectingRodBody).max.z);
   }
-  assert.ok(bounds(b.connectingRodBody).min.z>bounds(b.outputCrankArm).max.z);
+  // Plain wheels: the rod clears both wheel faces; only the pins reach it.
+  for(const wheel of [b.inputWheelA,b.outputWheelB])assert.ok(bounds(b.connectingRodBody).min.z>bounds(wheel.userData.tread).max.z);
   assert.ok(bounds(b.cradleBed).max.z<bounds(b.inputWheelA).min.z);
  }
 });

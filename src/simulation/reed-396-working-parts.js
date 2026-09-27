@@ -1,5 +1,5 @@
 import {reed396ContactBake as bake} from './baked/reed-396-contact.js';
-import {reed396, reed396Profiles, reed396Pose, rotate396} from './reed-396-contact.js';
+import {reed396, reed396EngageAngle, reed396Profiles, reed396Pose, rotate396} from './reed-396-contact.js';
 import * as THREE from 'three';
 import {capsule, circle, poly, plate, ring, polygonClipping as clip} from './finite-plate-geometry.js';
 import {markShadows} from './primitives.js';
@@ -11,10 +11,6 @@ const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = g
 export function finishReed396Parts(model) {
   const {root} = model, d = root.userData, b = d.blocks, g = d.geometry;
   const direct = b.chronometerPalletJ, staff = b.balance.userData.hub;
-  const collar = clip.difference(clip.union(poly(circle([0, 0], .24, 96)), capsule([0, 0], [.50, 0], .065, 24)), poly(circle([0, 0], .181, 96)));
-  const directBridge = new THREE.Mesh(plate(collar, .19, .31), direct.material);
-  directBridge.userData.role = 'rigid-collared-attachment-of-chronometer-pallet-j';
-  b.balance.add(directBridge);
   b.balance.userData.directContactIndex.visible = false;
   b.lever.userData.palletFIndex.visible = false;
   b.lever.userData.palletGIndex.visible = false;
@@ -54,17 +50,40 @@ export function finishReed396Parts(model) {
   for(const spoke of b.balance.children.filter(o=>o.userData.role==='balance-wheel-B-spoke'))replace(spoke,new THREE.BoxGeometry(g.balanceRadius*1.94,.10,.12));
   const profiles = reed396Profiles();
   replace(b.escapeWheel.userData.toothedRim, plate(clip.difference(poly(profiles.wheel), poly(circle([0, 0], g.wheelInnerRadius, 128))), -.14, .14));
-  const palletNecks=[];
-  for (const [name,pallet] of [['G',b.palletG],['F',b.palletF],['J',direct]]) {
-    replace(pallet, plate(poly(profiles.pallets[name]), name==='J'?-.06:-.08, name==='J'?.06:.08));
-    pallet.position.set(0,0,0);pallet.rotation.set(0,0,0);
-    const center=name==='J'?[.5,-.055]:profiles.pallets[name].reduce((a,p)=>[a[0]+p[0]/4,a[1]+p[1]/4],[0,0]);
-    const neck = new THREE.Mesh(ring(0,name==='J'?.021:.025,name==='J'?.06:.08,name==='J'?.25:.40,48),pallet.material);
-    neck.position.set(...center,0);neck.userData.role=`pallet-${name}-rigid-depth-attachment`;
-    pallet.parent.add(neck);palletNecks.push(neck);
-  }
-  const crosspiece=b.lever.userData.crosspiece;
-  replace(crosspiece,plate(capsule(palletNecks[0].position.toArray().slice(0,2),palletNecks[1].position.toArray().slice(0,2),.06,32),.28,.52));crosspiece.position.set(0,0,0);crosspiece.rotation.set(0,0,0);
+  // Pallets g and f and the anchor-like cross-piece h are one plate in the
+  // escape wheel's plane, as Brown draws it: a bracket round staff c whose
+  // two arms end in the pallets. The lever arm, fork and tail sit above it
+  // on the same staff.
+  const hull = (points) => {
+    const pts = [...points].sort((p, q) => p[0] - q[0] || p[1] - q[1]), cross = (o, a, c) => (a[0] - o[0]) * (c[1] - o[1]) - (a[1] - o[1]) * (c[0] - o[0]);
+    const half = (list) => { const out = []; for (const p of list) { while (out.length >= 2 && cross(out.at(-2), out.at(-1), p) <= 0) out.pop(); out.push(p); } return out.slice(0, -1); };
+    return [...half(pts), ...half([...pts].reverse())];
+  };
+  const barLeft = -.20, barRight = .12, reach = .98, armInner = .78;
+  const anchorShape = clip.difference(clip.union(
+    poly(profiles.pallets.G), poly(profiles.pallets.F),
+    poly(hull([...profiles.pallets.G, [barLeft, armInner], [barRight, armInner], [barRight, reach], [barLeft, reach]])),
+    poly(hull([...profiles.pallets.F, [barLeft, -armInner], [barRight, -armInner], [barRight, -reach], [barLeft, -reach]])),
+    poly([[barLeft, -reach], [barRight, -reach], [barRight, reach], [barLeft, reach]]),
+    poly(circle([0, 0], .27, 96)),
+  ), poly(circle([0, 0], .173, 96)));
+  replace(b.palletG, plate(anchorShape, -.08, .08));
+  b.palletG.position.set(0, 0, 0); b.palletG.rotation.set(0, 0, 0);
+  b.palletG.userData.role = 'one-piece-anchor-cross-piece-h-with-pallets-g-and-f';
+  b.palletF.parent?.remove(b.palletF);
+  b.palletF = b.palletG; d.blocks.palletF = b.palletG;
+  const crosspiece = b.lever.userData.crosspiece;
+  crosspiece.parent?.remove(crosspiece);
+  b.lever.userData.crosspiece = b.palletG;
+  // Chronometer pallet j and its arm are one plate on staff b, in the wheel's
+  // plane, standing reed396.jOffset behind roller pin i.
+  const jArm = clip.difference(clip.union(
+    poly(profiles.pallets.J), capsule([0, 0], [.52, -.0575], .055, 24), poly(circle([0, 0], .25, 96)),
+  ), poly(circle([0, 0], .183, 96)));
+  replace(direct, plate(jArm.map((polygon) => polygon.map((ring) => ring.map((q) => rotate396(q, reed396.jOffset)))), -.06, .06));
+  direct.position.set(0, 0, 0); direct.rotation.set(0, 0, 0);
+  direct.userData.role = 'chronometer-impulse-pallet-j-with-its-arm-on-balance-staff';
+  const directBridge = direct, palletNecks = [];
   d.workingParts396 = {directBridge, webs, bearingParts,palletNecks,profiles};
   const originalUpdate=model.update, nominalState=d.stateAtTime, count=bake.samples.length-1;
   d.nominalStateAtTime396=nominalState;
@@ -80,26 +99,26 @@ export function finishReed396Parts(model) {
     const palletGPoint=point(profiles.pallets.G[0],pose.leverAngle,[2.18,0]),palletFPoint=point(profiles.pallets.F[0],pose.leverAngle,[2.18,0]);
     return {...old,...pose,wheelAngle,wheelAngularSpeed,finiteContactPallet:pallet??null,finiteContactMode:mode,
       activeLockPallet:stable?pallet.toLowerCase():null,stableLock:stable,lockContact:stable?{pallet:pallet.toLowerCase(),stable:true,pointCoincidenceError:null}:null,
-      palletGPoint,palletFPoint,balancePinPoint:point([g.rollerRadius*.78,0],pose.balanceAngle,g.balanceCenter.toArray()),chronometerPalletPoint:point([.658,-.0575],pose.balanceAngle,g.balanceCenter.toArray()),
+      palletGPoint,palletFPoint,balancePinPoint:point([g.rollerRadius*.78,0],pose.balanceAngle,g.balanceCenter.toArray()),chronometerPalletPoint:point([.658,-.0575],pose.balanceAngle+reed396.jOffset,g.balanceCenter.toArray()),
       leverImpulseActive,directImpulseActive,impulseActive,impulseType:leverImpulseActive?'lever-transmitted-impulse-through-g-C-e-i':directImpulseActive?'direct-chronometer-impulse-to-j':null,
       wheelStepProgress:Math.max(0,Math.min(1,((Math.PI/8-old.halfBeatIndex*reed396.pitch/2)-wheelAngle)/(reed396.pitch/2))),unlockedOnceThisHalfBeat:wheelAngle<Math.PI/8-old.halfBeatIndex*reed396.pitch/2-1e-8,relockedOnceThisHalfBeat:stable&&pallet===(old.leverImpulseBeat?'F':'G'),forcePath:leverImpulseActive?['escape-wheel-A-tooth','lever-impulse-pallet-g','crooked-lever-C-and-fork-e','roller-pin-i','balance-B']:directImpulseActive?['escape-wheel-A-tooth','chronometer-impulse-pallet-j','balance-B']:[],
       stage:stable?`finite-lock-on-${pallet}`:impulseActive?`finite-${pallet}-impulse`:mode?'finite-detent-withdrawal':'prescribed-free-drop'};
   }
   d.stateAtTime=state;
-  model.update=time=>{originalUpdate(time);const s=state(time);b.escapeWheel.rotation.z=s.wheelAngle;b.lever.rotation.z=s.leverAngle;b.balance.rotation.z=s.balanceAngle;d.kinematics=s;d.contacts={wheelLock:{active:s.stableLock,pallet:s.activeLockPallet,stable:s.stableLock,finiteGeometry:true},leverImpulseG:{active:s.leverImpulseActive,forcePath:s.leverImpulseActive?s.forcePath:[],palletPoint:s.palletGPoint},directChronometerImpulseJ:{active:s.directImpulseActive,forcePath:s.directImpulseActive?s.forcePath:[],palletPoint:s.chronometerPalletPoint},forkEToRollerPinI:{active:false,qualified:false,prescribedPickup:Math.abs(s.leverAngularSpeed)>0,pinPoint:s.balancePinPoint}};};
+  model.update=time=>{originalUpdate(time);const s=state(time);b.escapeWheel.rotation.z=s.wheelAngle;b.lever.rotation.z=s.leverAngle;b.balance.rotation.z=s.balanceAngle;d.kinematics=s;d.contacts={wheelLock:{active:s.stableLock,pallet:s.activeLockPallet,stable:s.stableLock,finiteGeometry:true},leverImpulseG:{active:s.leverImpulseActive,forcePath:s.leverImpulseActive?s.forcePath:[],palletPoint:s.palletGPoint},directChronometerImpulseJ:{active:s.directImpulseActive,forcePath:s.directImpulseActive?s.forcePath:[],palletPoint:s.chronometerPalletPoint},forkEToRollerPinI:{active:s.forkEngaged,kinematicSlot:true,pinPoint:s.balancePinPoint}};};
   d.update=model.update;
-  d.motion.finiteWorkingLaw='offline finite-pallet continuation, short contact arcs and bounded prescribed free drop';
+  d.motion.finiteWorkingLaw='lever C follows roller pin i in the slot of fork e and rests on a banking pin otherwise; offline finite-pallet continuation, short contact arcs and bounded prescribed free drop';
   d.nominalDynamics396=d.dynamics;
-  d.dynamics={type:'baked finite-pallet kinematic continuation',finitePalletGeometry:true,passiveForcesSolved:false,forkContactSolved:false,detentOnlyFQualified:false,sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces:false,idealizations:['Prescribed balance and lever coordinates','Bounded prescribed free-drop speed','Rigid ideal sharp tooth and pallet faces','F withdrawal can receive work; strict detent-only action remains unresolved','Fork, spring, friction and impact forces not solved']};
-  d.timeline.finiteLeverMove=[[.36,.66],[.464,.764]];
-  d.transmission.qualification='G/J contact reactions assist their respective coordinates, but F detent-only behavior and the fork force path remain unqualified.';
+  d.dynamics={type:'baked finite-pallet kinematic continuation',finitePalletGeometry:true,passiveForcesSolved:false,forkContactSolved:false,detentOnlyFQualified:false,sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces:false,idealizations:['Prescribed balance vibration; lever angle is the fork-slot constraint on roller pin i','Bounded prescribed free-drop speed','Rigid ideal sharp tooth and pallet faces','F withdrawal can receive work; strict detent-only action remains unresolved','Fork, spring, friction and impact forces not solved (the fork is a kinematic slot)']};
+  {const phase=Math.acos(reed396EngageAngle/reed396.balanceAmplitude)/Math.PI;d.timeline.finiteLeverMove=[[phase,1-phase],[phase,1-phase]];}
+  d.transmission.qualification='G/J contact reactions assist their respective coordinates; the fork carries the lever by its slot. F detent-only behaviour remains unqualified.';
   model.update(0);
 
   d.hideGround = true;
   d.minimumDisplayCycleSeconds = 6;
   d.cameraDistanceScale = 1.02;
   model.cameraDirection = new THREE.Vector3(.6, 1.2, 16);
-  d.reconstructionNote = 'Attached finite F/G and J pallets now meet the escape wheel through a baked contact continuation: short impulse arcs, free drop and alternating locks. Pallet shapes and event timing are reconstructed. F can receive work during withdrawal, so its strict detent-only action remains unresolved. Balance/lever timing, unloaded drop speed, fork coupling and spring forces remain prescribed; passive dynamics are not solved.';
+  d.reconstructionNote = 'One-piece anchor (cross-piece h with pallets g and f) and the pallet j arm meet the escape wheel in its own plane through a baked contact continuation: short impulse arcs, free drop and alternating locks. Lever C follows roller pin i in the slot of fork e. Pallet shapes, j\'s angle on its staff and event timing are reconstructed. F can receive work during withdrawal, so its strict detent-only action remains unresolved. Balance timing, unloaded drop speed and spring forces remain prescribed; passive dynamics are not solved.';
   root.traverse(o => { if (o.isMesh) for (const material of [].concat(o.material)) material.fog = false; });
   markShadows(root);
   return model;

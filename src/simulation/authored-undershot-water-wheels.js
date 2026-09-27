@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
 import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
+import {waterVolumeMaterial} from './water-volume.js';
+import {WaterStream,collectWaterStreams,guidedPath} from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -280,60 +282,129 @@ function undershotWaterWheel(movement) {
   frontPedestalFooting.userData.role = 'front-bearing-pedestal-footing';
   root.add(frontPedestalFooting);
 
-  const channelBed = new THREE.Mesh(
-    new THREE.BoxGeometry(9.05, 0.28, 1.72),
-    frameMaterial,
-  );
-  channelBed.position.set(0, channelBottomY - 0.16, -0.25);
+  // Pass 69 (p69-w1): Brown's section, not a flat box. The headwater stands
+  // at axle level behind the sluice leaf, runs out beneath its lower edge and
+  // drops down the curved apron into the tail race under the wheel, where the
+  // tail surface lies well below the axle and the floats dip into it. The bed
+  // is one extruded profile (flat head floor, curved apron, deeper tail floor)
+  // and the water is one continuous extruded body over it: head pond, the
+  // opening under the leaf and the tail race share one outline, so no water
+  // stands on both sides of the leaf at one level and none leaks round it.
+  const channelHalfWidth = 0.62;
+  const headFloorY = -2.57;
+  const headSurfaceY = -0.04;
+  const gateX = -4.0;
+  const gateHalfThickness = 0.29;
+  const leafBottomY = -1.66;
+  const leafTopY = 0.59;
+  const raceLeftX = -6.0, raceRightX = 4.0;
+  const apronStartX = -3.0, apronEndX = -1.2;
+  const bedY = (x) => {
+    if (x <= apronStartX) return headFloorY;
+    if (x <= apronEndX) {
+      const u = (x - apronStartX) / (apronEndX - apronStartX);
+      return headFloorY + (channelBottomY - 0.52 - headFloorY) * (1 - Math.cos(Math.PI * u)) / 2;
+    }
+    return channelBottomY - 0.52 - 0.18 * (x - apronEndX) / (raceRightX - apronEndX);
+  };
+  const tailSurfaceY = (x) => {
+    const x0 = gateX + gateHalfThickness, x1 = -1.3;
+    if (x >= x1) return waterSurfaceY;
+    const u = (x - x0) / (x1 - x0);
+    return leafBottomY - 0.02 + (waterSurfaceY - leafBottomY + 0.02) * (1 - Math.cos(Math.PI * u)) / 2;
+  };
+  const sampleXs = (x0, x1, count) => Array.from({length: count + 1}, (_, i) => x0 + (x1 - x0) * i / count);
+  const bedProfile = [
+    ...sampleXs(raceLeftX, raceRightX, 72).map((x) => [x, bedY(x)]),
+    [raceRightX, -4.32], [raceLeftX, -4.32],
+  ];
+  const channelBed = new THREE.Mesh(plate([[bedProfile.slice().reverse()]], -1.0, 1.0), frameMaterial);
   channelBed.userData.role = 'fixed-bottom-sluice-channel-bed';
   root.add(channelBed);
+  const waterOutline = [
+    ...sampleXs(raceLeftX, raceRightX, 72).map((x) => [x, bedY(x) + 0.004]),
+    [raceRightX, waterSurfaceY],
+    ...sampleXs(raceRightX, gateX + gateHalfThickness, 36).slice(1).map((x) => [x, tailSurfaceY(x)]),
+    [gateX + gateHalfThickness, leafBottomY - 0.004],
+    [gateX - gateHalfThickness, leafBottomY - 0.004],
+    [gateX - gateHalfThickness, headSurfaceY],
+    [raceLeftX, headSurfaceY],
+  ];
   const channelWater = new THREE.Mesh(
-    new THREE.BoxGeometry(8.90, waterDepth, 1.22),
-    waterMaterial,
+    plate([[waterOutline]], -channelHalfWidth, channelHalfWidth),
+    waterVolumeMaterial({opacity: 0.42}),
   );
-  channelWater.position.set(
-    0,
-    (waterSurfaceY + channelBottomY) / 2,
-    0.05,
-  );
+  channelWater.renderOrder = 1;
   channelWater.userData.role =
     'left-to-right-lower-stream-driving-paddle-bottoms';
   root.add(channelWater);
+  // The same water moving: one continuous guided sheet just under the free
+  // surface, from the head pond, down through the opening under the leaf and
+  // along the tail race past the dipping floats. Its streaks carry the flow.
+  const streamPoints = [
+    new THREE.Vector3(gateX - 0.9, leafBottomY - 0.3, 0),
+    new THREE.Vector3(gateX, leafBottomY - 0.34, 0),
+    ...sampleXs(gateX + 0.6, raceRightX - 0.08, 12).map((x) => new THREE.Vector3(x, tailSurfaceY(x) - 0.2, 0)),
+  ];
+  const flowSheet = new WaterStream(guidedPath(streamPoints, {
+    speedAt: (u) => 1.2 + 3.4 * Math.min(1, u * 3), samples: 60,
+  }), {
+    width: channelHalfWidth - 0.03, thickness: 0.16, widthAxis: new THREE.Vector3(0, 0, 1),
+    widthExponent: 0, fadeIn: 0.1, fadeOut: 0.05, cyclePeriod: cycleDuration, streakRate: 0.8, opacity: 0.32,
+  });
+  flowSheet.userData.role = 'flow-under-sluice-leaf-down-apron-to-tail-race';
+  root.add(flowSheet);
+  const updateWater = collectWaterStreams(root);
 
-  const gateTower = new THREE.Mesh(
-    new THREE.BoxGeometry(0.62, 5.74, 1.42),
-    frameMaterial,
-  );
-  gateTower.position.set(-3.62, -0.25, -0.20);
+  // Sluice: Brown draws two slotted posts with the leaf sliding between them,
+  // its lower edge raised to meter the flow, and the lifting screw rising in
+  // the slot through a cap to the curved double handle. Each side of the race
+  // carries a pair of posts (upstream and downstream of the leaf); the leaf's
+  // edges run in the slot between them, which is why the leaf shows between
+  // the posts in elevation.
+  const postTopY = 4.0;
+  const postWidth = 0.32;
+  const gatePosts = [];
+  for (const zSide of [-1, 1]) for (const xSide of [-1, 1]) {
+    const x0 = gateX + xSide * (gateHalfThickness + 0.01), x1 = x0 + xSide * postWidth;
+    const post = new THREE.Mesh(plate([[[[Math.min(x0, x1), headFloorY], [Math.max(x0, x1), headFloorY],
+      [Math.max(x0, x1), postTopY], [Math.min(x0, x1), postTopY]]]], zSide < 0 ? -0.98 : channelHalfWidth,
+    zSide < 0 ? -channelHalfWidth : 0.98), frameMaterial);
+    post.userData.role = 'sluice-side-jamb';
+    root.add(post);
+    gatePosts.push(post);
+  }
+  const gateTower = new THREE.Mesh(plate([[[[gateX - 0.64, postTopY], [gateX + 0.64, postTopY],
+    [gateX + 0.64, postTopY + 0.36], [gateX - 0.64, postTopY + 0.36]]]], -0.98, 0.98), frameMaterial);
   gateTower.userData.role = 'fixed-vertical-sluice-gate-frame';
-  gateTower.geometry.dispose();gateTower.geometry=plate(polygonClipping.difference(poly([[-.31,-2.87],[.31,-2.87],[.31,2.87],[-.31,2.87]]),poly([[-.4,-2.86],[.4,-2.86],[.4,2.4],[-.4,2.4]])),-.71,.71);
   root.add(gateTower);
-  for(const z of[-.86,.86]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.62,5.74,.18),frameMaterial);jamb.position.set(-3.62,-.25,z);jamb.userData.role='sluice-side-jamb';root.add(jamb);}
-  const gateLeaf = new THREE.Mesh(
-    new THREE.BoxGeometry(0.72, 1.42, 1.12),
-    darkMaterial,
-  );
-  gateLeaf.position.set(-3.61, -1.26, 0.02);
+  const gateLeaf = new THREE.Mesh(plate([[[[gateX - gateHalfThickness, leafBottomY], [gateX + gateHalfThickness, leafBottomY],
+    [gateX + gateHalfThickness, leafTopY], [gateX - gateHalfThickness, leafTopY]]]], -0.97, 0.97),
+  matte(PALETTE.muted, {metalness: 0.12, roughness: 0.6}));
   gateLeaf.userData.role = 'raised-sluice-gate-metering-bottom-flow';
   root.add(gateLeaf);
-  const gateScrew = cylinderAlongZ(0.10, 3.28, darkMaterial, 20);
-  gateScrew.rotation.set(0, 0, 0);
-  gateScrew.position.set(-3.61, 1.19, 0.55);
+  const gateScrew = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 5.02 - leafTopY, 20), darkMaterial);
+  gateScrew.position.set(gateX, (5.02 + leafTopY) / 2, 0);
   gateScrew.userData.role = 'vertical-sluice-gate-lifting-screw';
   root.add(gateScrew);
-  const gateHandle = new THREE.Mesh(
-    new THREE.BoxGeometry(1.38, 0.11, 0.11),
-    paddleMaterial,
-  );
-  gateHandle.position.set(-3.61, 2.67, 0.56);
+  const handleY = postTopY + 0.5;
+  const nut = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.26, 32), paddleMaterial);
+  nut.position.set(gateX, postTopY + 0.49, 0);
+  nut.userData.role = 'sluice-handle-nut-on-lifting-screw';
+  root.add(nut);
+  const handleCurve = new THREE.CatmullRomCurve3([
+    [-1.95, 0.62], [-1.55, 0.72], [-1.1, 0.52], [-0.6, 0.2], [-0.25, 0.02],
+    [0.25, 0.02], [0.6, 0.2], [1.1, 0.52], [1.55, 0.72], [1.95, 0.62],
+  ].map(([x, y]) => new THREE.Vector3(gateX + x * 0.9, handleY - 0.02 + y * 0.9, 0)), false, 'centripetal');
+  const gateHandle = new THREE.Mesh(new THREE.TubeGeometry(handleCurve, 64, 0.075, 12, false), paddleMaterial);
   gateHandle.userData.role = 'sluice-gate-handwheel-cross-handle';
   root.add(gateHandle);
   for (const side of [-1, 1]) {
     const knob = new THREE.Mesh(
-      new THREE.SphereGeometry(0.13, 20, 12),
+      new THREE.SphereGeometry(0.075, 20, 12),
       paddleMaterial,
     );
-    knob.position.set(-3.61 + side * 0.68, 2.67, 0.56);
+    knob.position.copy(handleCurve.getPoint(side < 0 ? 0 : 1));
     knob.userData.role = `sluice-handle-${side < 0 ? 'left' : 'right'}-knob`;
     root.add(knob);
   }
@@ -365,6 +436,7 @@ function undershotWaterWheel(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     rotor.rotation.z = state.wheelAngle;
+    updateWater(time);
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 1.18, 1);
     for (let markerIndex = 0; markerIndex < flowMarkers.length;
       markerIndex += 1) {
@@ -497,12 +569,12 @@ function undershotWaterWheel(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.62, -3.56, -1.08),
-    new THREE.Vector3(4.62, 3.02, 1.50),
+    new THREE.Vector3(-6.0, -4.32, -1.08),
+    new THREE.Vector3(4.0, 5.1, 1.08),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(5.1, 3.7, 12.0);
-  root.userData.groundFloorY = -3.56;
+  root.userData.groundFloorY = -4.32;
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite supports and water-path geometry; water is a prescribed visual envelope. No free-surface flow, sealing, energy balance or speed response is solved.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});

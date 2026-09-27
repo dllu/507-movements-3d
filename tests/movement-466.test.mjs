@@ -323,6 +323,10 @@ test('movement 466 analytic ram velocity matches finite-difference lift during d
 test('movement 466 renderer follows the exact pump and ram states and closes after relief return', () => {
   const { model } = movementModel();
   const { blocks, geometry, stateAtTime } = model.root.userData;
+  model.update(0);
+  blocks.reservoirWater.updateMatrixWorld(true);
+  const reservoirTop = new THREE.Box3().setFromObject(blocks.reservoirWater).max.y;
+  const releaseClosedY = blocks.releaseValve.position.y;
 
   for (const phase of [0, 0.19, 0.38, 0.57, 0.80, 0.92, 1]) {
     const time = phase * geometry.cycleDuration;
@@ -345,10 +349,15 @@ test('movement 466 renderer follows the exact pump and ram states and closes aft
       (geometry.initialLoadHeight - state.loadCompression)
         / geometry.initialLoadHeight,
       1e-12, `load compression at phase ${phase}`);
-    assert.equal(blocks.inletWater.visible,
-      state.inletOpenAmount > 1e-4);
-    assert.equal(blocks.reliefWater.visible,
-      state.reliefOpenAmount > 1e-4);
+    // The inlet passage stands full; the cistern gives up exactly the water
+    // pumped under the ram and gets it back through the release valve.
+    assert.equal(blocks.inletWater.visible, true);
+    blocks.reservoirWater.updateMatrixWorld(true);
+    const top = new THREE.Box3().setFromObject(blocks.reservoirWater).max.y;
+    near(top, reservoirTop - state.retainedPressVolume / model.root.userData.cisternArea, 1e-6,
+      `cistern level conserves water at phase ${phase}`);
+    assert.ok(blocks.releaseValve.position.y - releaseClosedY >= -1e-12, `release valve seated or lifted at phase ${phase}`);
+    if (state.reliefReturnFlowRate <= 0) near(blocks.releaseValve.position.y, releaseClosedY, 1e-12, `release valve shut while pumping at phase ${phase}`);
   }
   const closure = stateAtTime(geometry.cycleDuration);
   near(closure.phase, 0, 1e-12, 'cycle phase closure');

@@ -605,6 +605,7 @@ function singleLiftCounterweightedGasometer(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     bellA.position.y = bellMinimumY + state.bellLiftSceneUnit;
+    root.userData.waterSealUpdate?.(bellA.position.y);
     const gasTopY = bellA.position.y + bellLocalShoulderY;
     const gasHeight = gasTopY - internalWaterSurfaceY;
     gasCylinder.scale.y = gasHeight;
@@ -1321,6 +1322,7 @@ function centerGuidedGasometer(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     bellA.position.y = state.bellY;
+    root.userData.waterSealUpdate?.(state.bellY);
     const gasTopY = state.bellY + bellLocalShoulderY;
     const gasHeight = gasTopY - internalWaterSurfaceY;
     gasAnnulus.scale.y = gasHeight;

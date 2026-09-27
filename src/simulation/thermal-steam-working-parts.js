@@ -72,27 +72,13 @@ export function correctTemperatureAirMachine(root){
   const thread={inner:.065,outer:g.screwRadius,low:-g.screwLength/2,high:g.screwLength/2,lead:-g.screwPitch/(2*Math.PI),width:.045,phase:g.screwLength/2};
   replace(b.screwFlight,helicalThread(thread,threadAngles(thread,72)).rotateX(Math.PI/2));
   replace(b.screwBarrel,ring(.307,.355,-g.screwLength/2,g.screwLength/2,128).rotateX(-Math.PI/2));
-  const beta=Math.atan2(g.gearCenterDirection.y,g.gearCenterDirection.x);
-  b.transferPinion.position.z=b.wheelGear.position.z;b.transferPinion.rotation.z=beta;b.wheelGear.rotation.z=beta+Math.PI;
-  const gearRotor=b.wheelGear.userData.rotor,gearBody=gearRotor.children[0],shape=gearBody.geometry.parameters.shapes;
-  const gearOutline=poly(shape.getPoints().map(p=>p.toArray()));
-  replace(gearBody,plate(polygonClipping.difference(gearOutline,poly(circle([0,0],.072,128))),-.12,.12));
-  const pinionRotor=b.transferPinion.userData.rotor,pinionBody=pinionRotor.children[0];
-  replace(pinionBody,plate(polygonClipping.difference(poly(pinionBody.geometry.parameters.shapes.getPoints().map(p=>p.toArray())),poly(circle([0,0],.067,128))),-.11,.11));
-  replace(pinionRotor.children[1],ring(.067,.11,-.15,.15,128).rotateX(-Math.PI/2));
-  const gearHub=gearRotor.children[1];replace(gearHub,ring(.072,g.wheelGearPitchRadius*.19,-.162,.162,96).rotateX(-Math.PI/2));
-  const hub=b.waterWheelRotor.children.find(o=>o.geometry?.type==='CylinderGeometry');replace(hub,ring(.072,.16,-.48,.35,96).rotateX(-Math.PI/2));
-  b.wheelSpokes=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3,spoke=new THREE.Mesh(new THREE.BoxGeometry(.68,.08,.10),b.wheelRims[0].material);spoke.position.set(.47*Math.cos(a),.47*Math.sin(a),.18);spoke.rotation.z=a;spoke.userData.role='finite-wheel-spoke-joining-hub-to-blades';b.waterWheelRotor.add(spoke);return spoke;});
-  const collectorProfile=[[-.22,.078],[-.22,.105],[-.06,.4],[.20,.4],[.20,.36],[-.06,.36]];
-  replace(b.receiver,turned(collectorProfile,128).rotateX(-Math.PI/2));b.receiver.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),g.screwAxis);
-  replace(b.airConduit,curvedPipeWall(d.pressurePipeCurve,.074,.10,260));
-  // A gland opening follows the inclined barrel through the finite cistern wall.
-  const wall=b.coldTank.children.find(o=>o.userData.role==='natural-temperature-left-cistern-end-wall-right');
-  const wallX=wall.position.x,yAtWall=g.screwLowerPoint.y+(wallX-g.screwLowerPoint.x)*g.screwAxis.y/g.screwAxis.x;
-  const opening=poly(circle([yAtWall,0],.36,128).map(([y,z])=>[yAtWall+(y-yAtWall)/g.screwAxis.x,z]));
-  const wallPlan=polygonClipping.difference(poly([[g.tankBottomY,-g.tankDepth/2],[g.tankTopY,-g.tankDepth/2],[g.tankTopY,g.tankDepth/2],[g.tankBottomY,g.tankDepth/2]]),opening),wallGeometry=plate(wallPlan,-.07,.07),vertices=wallGeometry.attributes.position;
-  for(let i=0;i<vertices.count;i++){const y=vertices.getX(i),z=vertices.getY(i),x=vertices.getZ(i);vertices.setXYZ(i,x,y+x*g.screwAxis.y/g.screwAxis.x,z);}
-  wallGeometry.computeVertexNormals();replace(wall,wallGeometry);wall.position.set(wallX,0,0);b.barrelGlandWall=wall;
-  d.solidReview={qualification:'Solid Archimedean flight, finite barrel/collector/conduit, coplanar phased spur gears and bored wheel hubs. Equal finite 45-degree bevels share an apex, use bored hubs and clear shaft ends; their Tredgold teeth and thermal motion are reconstructed. Heat transfer, buoyancy, pressure, torque and passive startup are not solved.'};
+  // Pass 69: the wheel's bored hub runs from the back of its hub bevel to the
+  // back rim, on the fixed stub axle; six spokes carry the blades.
+  const hubFront=-.39,hubBack=g.wheelPlaneZ-.25;
+  b.wheelHub.rotation.set(0,0,0);b.wheelHub.position.set(0,0,0);
+  replace(b.wheelHub,ring(.06,.16,hubBack,hubFront,96));
+  b.wheelSpokes=Array.from({length:6},(_,i)=>{const a=i*Math.PI/3,spoke=new THREE.Mesh(new THREE.BoxGeometry(.68,.08,.10),b.wheelRims[0].material);spoke.position.set(.47*Math.cos(a),.47*Math.sin(a),g.wheelPlaneZ);spoke.rotation.z=a;spoke.userData.role='finite-wheel-spoke-joining-hub-to-blades';b.waterWheelRotor.add(spoke);return spoke;});
+  replace(b.airConduit,curvedPipeWall(d.pressurePipeCurve,.074,.10,320));
+  d.solidReview={qualification:'Solid Archimedean flight, finite barrel, box air vessel (the casing enters through a fitted hole in its wall), rigid filleted air tube and bored wheel hub on a stub axle. Two pairs of equal finite 45-degree bevels share apexes on the inclined shaft S, use bored hubs and clear shaft ends; their Tredgold teeth and thermal motion are reconstructed. Heat transfer, buoyancy, pressure, torque and passive startup are not solved.'};
   finish(root);
 }

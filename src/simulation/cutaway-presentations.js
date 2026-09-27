@@ -230,31 +230,47 @@ export const CUTAWAY_SPECS = {
   },
   473: {
     // Brown draws the outer tub and the rising bell as whole hooped vessels.
+    // Pass 69: both are coopered barrels (built in water-sealed-pump-parts.js):
+    // Brown's five hoops on the tub and three on the bell follow the staves.
     prepare(root) {
-      const tub = wholeTube(findRole(root, 'front-cutaway-outer-water-tub'), {wallFraction: 0.08});
-      const shell = findRole(root, 'front-cutaway-inverted-bell-shell');
-      shell.geometry.computeBoundingBox();
-      wholeTube(shell, {wallFraction: 0.1, y1: shell.geometry.boundingBox.max.y - 0.09});
-      const roof = findRole(root, 'closed-roof-of-inverted-bell');
-      roof.material = shell.material;
+      const barrels = root.userData.barrels;
+      const tub = findRole(root, 'front-cutaway-outer-water-tub'), shell = findRole(root, 'front-cutaway-inverted-bell-shell');
+      tub.material = solidMaterial([].concat(tub.material)[0]);
+      root.userData.blocks.tubBottom.material = tub.material;
+      shell.material = solidMaterial([].concat(shell.material)[0]);
+      findRole(root, 'closed-roof-of-inverted-bell').material = shell.material;
       const tubBand = cutFaceMaterial(tub.material, 0.78), bellBand = cutFaceMaterial(shell.material, 0.78);
+      const tubHoops = [];
       root.traverse(o => {
         const role = o.userData?.role ?? '';
-        if (/^outer-tub-hoop-/.test(role)) hoopBand(o, 1.03, tubBand);
-        if (/^moving-bell-hoop-/.test(role)) hoopBand(o, 0.68, bellBand);
-        // The rim bead stays a torus (the water seal is shaped round it).
-        if (role === 'submerged-open-bell-rim-water-seal') o.material = shell.material;
+        if (/^outer-tub-hoop-/.test(role)) tubHoops.push(o);
+        if (/^moving-bell-hoop-/.test(role)) hoopBand(o, barrels.bellOuter(o.position.y), bellBand);
+        if (role === 'submerged-open-bell-rim-water-seal') {
+          o.material = shell.material;
+          const {radius, tube, radialSegments, tubularSegments} = o.geometry.parameters;
+          o.geometry.dispose();o.geometry = new THREE.TorusGeometry(barrels.bellOuter(-barrels.bellHalf) + radius - 0.63, tube, radialSegments, tubularSegments);
+        }
       });
+      const low = barrels.tubMid - barrels.tubHalf + 0.10, span = 2 * barrels.tubHalf - 0.20;
+      const hoopAt = (hoop, fraction) => {const y = low + span * fraction;hoopBand(hoop, barrels.tubOuter(y), tubBand);hoop.position.y = y;};
+      hoopAt(tubHoops[0], 0);hoopAt(tubHoops[1], 1);
+      for (const fraction of [0.3, 0.55, 0.8]) {
+        const hoop = new THREE.Mesh(new THREE.TorusGeometry(1, 0.048, 9, 56), tubBand);
+        hoop.userData.role = `outer-tub-hoop-at-${fraction}`;
+        hoopAt(hoop, fraction);hoop.castShadow = true;hoop.receiveShadow = true;
+        tubHoops[0].parent.add(hoop);
+      }
     },
     hide: ['carbonic-acid-gas-column-from-deep-shaft', 'trapped-gas-inside-water-sealed-bell'],
   },
   // Pass 56: the boxes of 445/446 are already rear half-sections (z <= 0);
-  // the revolved water (stream, film, spreading bell, cone and column) and
+  // the revolved water (stream, cone, column, film and falling sheet, one
+  // body since pass 69) and
   // the fixed plate on its stem are cut on the same plane, so no water hangs
   // outside the cut boxes.
   445: {
     cut: ['fixed-circular-plate-concentric-with-upper-orifice', 'fixed-flared-stem-of-circular-plate'],
-    water: ['unobstructed-descending-stream', 'thin-water-film-over-fixed-plate', 'water-spreading-over-plate-and-descending-in-lower-box', 'self-forming-water-cone-on-fixed-circular-plate', 'water-cone-crown-entering-orifice', 'checked-water-column-rising-through-orifice', 'raised-water-column-spraying-in-upper-box'],
+    water: ['falling-stream-cone-and-plate-sheet-as-one-water-body', 'raised-water-column-spraying-in-upper-box'],
   },
   475: {
     cut: ['stationary-cutaway-mixing-chamber-D', 'stationary-suction-pipe-B-rising-from-bilge', 'stationary-vertical-discharge-pipe-C'],
@@ -456,8 +472,8 @@ export const CUTAWAY_SPECS = {
         position.needsUpdate = true;box.geometry.computeBoundingBox();box.geometry.computeBoundingSphere();
       }
     },
-    cut: ['sectioned-back-half-cylinder-wall', 'lower-cylinder-flange', 'fixed-cylinder-head-half-around-trunk-opening', 'fixed-annular-stuffing-box-around-moving-trunk',
-      'vertical-sliding-piston', 'cutaway-side-of-hollow-trunk-attached-to-piston', 'open-upper-rim-of-moving-trunk'],
+    // The piston and trunk are built already sectioned (closed under the pin).
+    cut: ['sectioned-back-half-cylinder-wall', 'lower-cylinder-flange', 'fixed-cylinder-head-half-around-trunk-opening', 'fixed-annular-stuffing-box-around-moving-trunk'],
   },
 };
 

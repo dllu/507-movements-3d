@@ -61,15 +61,17 @@ test('movement 469 is the two-temperature cistern proposal with one reversed scr
   assert.equal(blocks.screwRotor.parent, blocks.screwMount);
   assert.equal(blocks.screwFlight.parent, blocks.screwRotor);
   assert.equal(blocks.inputBevel.parent, blocks.screwRotor);
-  assert.equal(blocks.outputShaftRotor.parent, model.root);
-  assert.equal(blocks.transferPinion.parent, blocks.outputShaftRotor);
+  assert.equal(blocks.transferShaftRotor.parent.parent, model.root);
+  assert.equal(blocks.outputBevel.parent, blocks.transferShaftRotor);
+  assert.equal(blocks.shaftHubBevel.parent, blocks.transferShaftRotor);
+  assert.equal(blocks.transferShaft.parent, blocks.transferShaftRotor);
   assert.equal(blocks.waterWheelRotor.parent, blocks.waterWheelAssembly);
-  assert.equal(blocks.wheelGear.parent, blocks.waterWheelRotor);
+  assert.equal(blocks.wheelBevel.parent, blocks.waterWheelRotor);
   assert.equal(blocks.airConduit.parent, model.root);
   assert.equal(blocks.airBubbles.length, data.geometry.bubbleCount);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.screwAndWheelIndependent, false);
-  assert.equal(degreesOfFreedom.transferPinionAndWheelIndependent, false);
+  assert.equal(degreesOfFreedom.transferShaftAndWheelIndependent, false);
   assert.equal(energyAudit.selfSustainingClaimAccepted, false);
   assert.equal(energyAudit.externalHeatRequiredToRestoreGradient, true);
   assert.equal(energyAudit.thermalResetIsPartOfHistoricalMachine, false);
@@ -103,7 +105,7 @@ test('movement 469 source record preserves Brown’s screw direction, full air r
   assert.ok(evidence.explicitInBrownDescription.some((claim) =>
     claim.includes('maintaining the temperature difference is not given')));
   assert.match(evidence.engravingEvidence, /two open cisterns/i);
-  assert.match(evidence.reconstructionDisclosure, /exact 18:54 spur stage/i);
+  assert.match(evidence.reconstructionDisclosure, /two pairs of 24-tooth shared-apex mitre bevels/i);
   assert.match(evidence.reconstructionDisclosure, /explicitly adds external heat/i);
   disposeModel(model.root);
 });
@@ -139,47 +141,37 @@ test('movement 469 screw flight has a consistent pitch and operates opposite the
   disposeModel(model.root);
 });
 
-test('movement 469 bevel and spur pitch relations derive every wheel speed from the screw', () => {
+test('movement 469 two mitre pairs on the inclined shaft derive every wheel speed from the screw', () => {
   const { model } = movementModel();
   const { geometry, stateAtPhase } = model.root.userData;
 
-  near(geometry.transferCenter.distanceTo(geometry.wheelCenter),
-    geometry.transferPinionPitchRadius + geometry.wheelGearPitchRadius,
-    1e-12, 'external spur center distance');
-  near(geometry.wheelGearPitchRadius / geometry.transferPinionPitchRadius,
-    geometry.wheelGearTeeth / geometry.transferPinionTeeth,
-    1e-12, 'spur pitch and tooth-count ratio');
+  // Head apex, shaft S and hub apex: S is perpendicular to the screw, lies
+  // in the engraving plane and meets the wheel axis at the hub apex.
+  near(geometry.transferShaftDirection.dot(geometry.screwAxis), 0, 1e-12, 'S perpendicular to screw');
+  near(geometry.transferShaftDirection.z, 0, 1e-12, 'S in engraving plane');
+  vectorNear(geometry.transferCenter.clone().addScaledVector(geometry.transferShaftDirection, geometry.transferShaftLength),
+    geometry.wheelCenter, 1e-12, 'S reaches the wheel axis');
+  vectorNear(geometry.screwUpperPoint.clone().addScaledVector(geometry.screwAxis, geometry.bevelApexExtension),
+    geometry.transferCenter, 1e-12, 'head apex on the screw axis');
   near(geometry.screwAxis.dot(new THREE.Vector3(0, 0, 1)),
-    0, 1e-12, 'bevel axes are perpendicular');
+    0, 1e-12, 'screw and wheel axes are perpendicular');
 
   for (const phase of [0.07, 0.19, 0.36, 0.52, 0.64]) {
     const state = stateAtPhase(phase);
     near(
       state.screwAngularVelocity * geometry.screwBevelPitchRadius
-        + state.bevelOutputAngularVelocity
+        - state.bevelOutputAngularVelocity
           * geometry.outputBevelPitchRadius,
       0,
       2e-12,
-      `bevel no slip at ${phase}`,
+      `head mitre no slip at ${phase}`,
     );
-    near(
-      state.bevelOutputAngularVelocity
-        * geometry.transferPinionPitchRadius
-        + state.waterWheelAngularVelocity
-          * geometry.wheelGearPitchRadius,
-      0,
-      2e-12,
-      `spur no slip at ${phase}`,
-    );
+    near(state.bevelOutputAngularVelocity + state.waterWheelAngularVelocity,
+      0, 2e-12, `hub mitre no slip at ${phase}`);
     near(state.waterWheelAngularVelocity / state.screwAngularVelocity,
-      geometry.screwBevelPitchRadius / geometry.outputBevelPitchRadius
-        * geometry.transferPinionPitchRadius
-          / geometry.wheelGearPitchRadius,
-      1e-12,
-      `complete train ratio at ${phase}`,
-    );
-    assert.ok(state.waterWheelAngularVelocity < 0,
-      `left-side bubbles require clockwise wheel motion at ${phase}`);
+      -1, 1e-12, `complete train ratio at ${phase}`);
+    assert.ok(state.waterWheelAngularVelocity > 0,
+      `right-side bubbles require counterclockwise wheel motion at ${phase}`);
   }
   disposeModel(model.root);
 });
@@ -326,8 +318,8 @@ test('movement 469 renderer applies all constrained rotor angles, smooth bubble 
     model.update(phase * geometry.cycleDuration);
     near(blocks.screwRotor.rotation.y, state.screwAngle, 1e-12,
       `screw render angle at ${phase}`);
-    near(blocks.outputShaftRotor.rotation.z, state.bevelOutputAngle, 1e-12,
-      `bevel render angle at ${phase}`);
+    near(blocks.transferShaftRotor.rotation.z, state.bevelOutputAngle, 1e-12,
+      `shaft S render angle at ${phase}`);
     near(blocks.waterWheelRotor.rotation.z, state.waterWheelAngle, 1e-12,
       `wheel render angle at ${phase}`);
     blocks.airBubbles.forEach((bubble, index) => {
@@ -356,7 +348,7 @@ test('movement 469 renderer applies all constrained rotor angles, smooth bubble 
   disposeModel(model.root);
 });
 
-test('movement 469 six screw turns close both the equal bevel pair and 3:1 spur stage without an orientation jump', () => {
+test('movement 469 whole screw turns close both mitre pairs and the wheel without an orientation jump', () => {
   const { model } = movementModel();
   const { geometry, stateAtPhase } = model.root.userData;
   const start = stateAtPhase(0);
@@ -364,9 +356,8 @@ test('movement 469 six screw turns close both the equal bevel pair and 3:1 spur 
 
   near(geometry.totalScrewTurns % 1, 0, 1e-12,
     'integer screw turns');
-  near(geometry.totalScrewTurns
-    * geometry.transferPinionTeeth / geometry.wheelGearTeeth % 1,
-  0, 1e-12, 'integer water-wheel turns');
+  near(Math.abs(completed.waterWheelAngle - start.waterWheelAngle) / FULL_TURN,
+    geometry.totalScrewTurns, 1e-9, 'integer water-wheel turns');
   near(Math.sin(completed.screwAngle), Math.sin(start.screwAngle),
     1e-12, 'screw sine closes');
   near(Math.cos(completed.screwAngle), Math.cos(start.screwAngle),

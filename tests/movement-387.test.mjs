@@ -491,3 +491,27 @@ test('movement 387 closes one complete tide cycle before movement 507 remains au
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 387 shows the tide as a shallow surface layer and the boat at Brown\'s length', () => {
+  const model = createMovementModel(catalog.movements[386]);
+  const data = model.root.userData;
+  const { blocks, geometry, stateAtTime } = data;
+  for (const time of [0, data.timeline.events.lowDwellStarts]) {
+    model.update(time);
+    const state = stateAtTime(time);
+    model.root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(blocks.water);
+    near(box.max.y, state.waterLevel, 1e-6, 'water surface');
+    // Brown draws surface lines only: a shallow layer, not a block to the bed.
+    const depth = box.max.y - box.min.y;
+    assert.ok(depth < 0.4, `water layer depth ${depth}`);
+    assert.ok(box.min.y > data.groundFloorY, 'water does not reach the bed');
+    // The hull floats in the layer: its keel lies inside it.
+    const hull = new THREE.Box3().setFromObject(blocks.floatAssembly.children.find(
+      (child) => child.userData.role === 'floating-open-boat-hull'));
+    assert.ok(hull.min.y < state.waterLevel && hull.min.y > box.min.y, 'keel lies within the surface layer');
+  }
+  const shape = blocks.floatAssembly.userData.hullShape;
+  // Brown's boat is about 0.31 of the ladder's length.
+  near((shape.stern - shape.bow) / geometry.ladderLength, 0.31, 0.02, 'boat length ratio');
+});

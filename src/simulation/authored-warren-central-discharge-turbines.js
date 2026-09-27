@@ -6,6 +6,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -38,10 +39,21 @@ function warrenCentralDischargeTurbine(movement) {
   const fixedGuideCount = 16;
   const runnerBucketCount = 20;
   const runnerBucketPitch = FULL_TURN / runnerBucketCount;
-  const guideInnerRadius = 2.26;
+  // Plate radii (px 213 outer, 155 bold ring, 115 runner eye, 34 hub):
+  // the guides a fill the outer quarter, the runner b a narrow ring inside.
+  const guideInnerRadius = 2.53;
   const guideOuterRadius = 3.45;
-  const runnerInnerRadius = 1.45;
-  const runnerOuterRadius = 2.14;
+  const runnerInnerRadius = 1.86;
+  const runnerOuterRadius = 2.43;
+  const hubRadius = 0.55;
+  // Plate-measured vane turns (radians). Guides: nearly radial at the rim,
+  // bending hard to run tangentially (clockwise) into the runner. Buckets:
+  // steepest at the eye, straightening toward their outer edge.
+  const guideTurn = 0.305;
+  const bucketTurn = 0.175;
+  const guideBend = (s) => (Math.exp(-4 * s) - Math.exp(-4)) / (1 - Math.exp(-4));
+  const guideAngleAt = (base, s) => base - guideTurn * guideBend(s);
+  const bucketAngleAt = (base, s) => base + bucketTurn * (1 - s) ** 1.6;
   const runnerBucketCenterRadius =
     (runnerInnerRadius + runnerOuterRadius) / 2;
   const sourcePoseBucketOffset = 0;
@@ -238,8 +250,8 @@ function warrenCentralDischargeTurbine(movement) {
         guideInnerRadius,
         progress,
       );
-      const angle = baseAngle + 0.43 * (1 - progress) ** 1.1;
-      return polarPoint(radius, angle, 0.21);
+      // progress runs from the rim (0) in to the runner (1).
+      return polarPoint(radius, guideAngleAt(baseAngle, 1 - progress), 0.21);
     });
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -291,9 +303,8 @@ function warrenCentralDischargeTurbine(movement) {
         runnerInnerRadius,
         progress,
       );
-      const angle = localAngle - 0.09 * (1 - progress)
-        + 0.34 * progress ** 1.25;
-      return polarPoint(radius, angle, 0.20);
+      // progress runs from the outer edge (0) in to the eye (1).
+      return polarPoint(radius, bucketAngleAt(localAngle, 1 - progress), 0.20);
     });
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -311,7 +322,7 @@ function warrenCentralDischargeTurbine(movement) {
     runnerBuckets.push(bucket);
   }
   const runnerDisk = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.59, 0.59, 0.26, 48),
+    new THREE.CylinderGeometry(hubRadius, hubRadius, 0.26, 48),
     runnerMaterial,
   );
   runnerDisk.position.y = 0.08;
@@ -325,20 +336,21 @@ function warrenCentralDischargeTurbine(movement) {
   runnerHub.userData.role = 'warren-runner-output-hub-below-disk';
   runner.add(runnerHub);
   const runnerShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1.84, 32),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 2.32, 32),
     darkMaterial,
   );
-  runnerShaft.position.y = -1.10;
+  // Its end shows in the hub's centre, as Brown's sectioned shaft does.
+  runnerShaft.position.y = -0.86;
   runnerShaft.userData.role = 'vertical-output-shaft-of-inner-runner-b';
   runner.add(runnerShaft);
   const runnerSupportArms = [];
   for (let armIndex = 0; armIndex < 4; armIndex += 1) {
     const angle = Math.PI / 4 + armIndex * Math.PI / 2;
     const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(1.56, 0.28, 0.15),
+      new THREE.BoxGeometry(runnerInnerRadius - 0.02, 0.28, 0.15),
       runnerMaterial,
     );
-    arm.position.copy(horizontalRadial(angle).multiplyScalar(.78));
+    arm.position.copy(horizontalRadial(angle).multiplyScalar((runnerInnerRadius - 0.02) / 2));
     arm.position.y = -.12;
     arm.rotation.y = angle;
     arm.userData.role =
@@ -362,15 +374,20 @@ function warrenCentralDischargeTurbine(movement) {
   for (let pathIndex = 0; pathIndex < representativePathCount;
     pathIndex += 1) {
     const baseAngle = pathIndex * FULL_TURN / representativePathCount;
+    // Mid-passage streamline: in from the supply round the rim, bent
+    // clockwise by the guides, on through the runner with its whirl taken
+    // out, and down through the open eye round the hub.
+    const passage = baseAngle + FULL_TURN / fixedGuideCount / 2;
     const points = [
-      polarPoint(3.72, baseAngle + 0.58, 0.38),
-      polarPoint(3.30, baseAngle + 0.41, 0.29),
-      polarPoint(2.64, baseAngle + 0.18, 0.23),
-      polarPoint(2.20, baseAngle, 0.21),
-      polarPoint(1.70, baseAngle - 0.06, 0.20),
-      polarPoint(1.18, baseAngle + 0.10, 0.18),
-      polarPoint(1.08, baseAngle + 0.34, -0.12),
-      polarPoint(.98, baseAngle + 0.38, -1.10),
+      polarPoint(3.78, guideAngleAt(passage, 1) + 0.02, 0.24),
+      polarPoint(guideOuterRadius, guideAngleAt(passage, 1), 0.17),
+      polarPoint(3.0, guideAngleAt(passage, 0.5), 0.17),
+      polarPoint(2.7, guideAngleAt(passage, 0.18), 0.17),
+      polarPoint(guideInnerRadius, guideAngleAt(passage, 0), 0.17),
+      polarPoint(2.15, guideAngleAt(passage, 0) - 0.22, 0.17),
+      polarPoint(runnerInnerRadius, guideAngleAt(passage, 0) - 0.32, 0.17),
+      polarPoint(1.62, guideAngleAt(passage, 0) - 0.36, -0.30),
+      polarPoint(1.5, guideAngleAt(passage, 0) - 0.37, -1.10),
     ];
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -387,6 +404,27 @@ function warrenCentralDischargeTurbine(movement) {
     root.add(tube);
     flowPathTubes.push(tube);
   }
+  // Pass 69: the water is drawn as one continuous sheet per representative
+  // passage (water-stream.js) along the streamline above; past the runner's
+  // eye it falls freely down round the hub. Streaks scroll with the flow.
+  const flowSpeed = 2.2;
+  const flowSheets = flowCurves.map((curve, index) => {
+    const along = guidedPath(new THREE.CatmullRomCurve3(curve.points.slice(0, -2), false, 'centripetal'),
+      {speed: flowSpeed, samples: 36});
+    const n = along.points.length;
+    const exit = along.points[n - 1].clone().sub(along.points[n - 2]).normalize().multiplyScalar(flowSpeed);
+    exit.y = Math.min(exit.y, 0);
+    const sheet = new WaterStream(joinPaths(along, ballisticPath({
+      origin: along.points[n - 1], velocity: exit, endY: -1.0, samples: 10,
+    })), {
+      width: 0.22, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
+      fadeIn: 0.08, fadeOut: 0.16, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.32,
+    });
+    sheet.userData.role = `water-sheet-through-guide-passage-${index + 1}`;
+    root.add(sheet);
+    return sheet;
+  });
+  const updateWater = collectWaterStreams(root);
   const flowMarkers = [];
   const markersPerPath = 3;
   for (let pathIndex = 0; pathIndex < representativePathCount;
@@ -438,6 +476,7 @@ function warrenCentralDischargeTurbine(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
+    updateWater(time);
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 1.30, 1);
     for (const entry of flowMarkers) {
       const progress = THREE.MathUtils.euclideanModulo(
@@ -468,6 +507,7 @@ function warrenCentralDischargeTurbine(movement) {
       casingFloor,
       centralDischarge,
       fixedGuideAssembly,
+      flowSheets,
       fixedGuideVanes,
       flowMarkers: flowMarkers.map(({ marker }) => marker),
       flowPathTubes,

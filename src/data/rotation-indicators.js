@@ -129,7 +129,7 @@ export default {
   415: ['single-smooth-internal-friction-rim-of-wheel-D', 'translucent-wheel-D-web', 'wheel-D-hub-fast-with-smooth-rim'],
   416: ['plain-flywheel-disc-web-fast-on-crankshaft', 'heavy-flywheel-rim-fast-on-crankshaft', 'flywheel-hub-fast-on-crankshaft'],
   426: ['hub-C-fast-on-main-shaft-B'],
-  428: ['working-roller-A-[123]'],
+  428: ['roller-A-[123]-rolling-on-rubber'],
   439: ['grooved-pulley-wheel', 'single-rope-pitch-groove'],
   471: ['crank-A-disk'],
   472: ['sliding-leather-faced-friction-wheel-N'],

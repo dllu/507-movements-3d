@@ -4256,7 +4256,7 @@
       "title": "Oscillating piston engine",
       "description": "422. Oscillating piston engine. The profile of the cylinder A, is of the form of a sector. The piston, B, is attached to a rock-shaft, C, and steam is admitted to the cylinder to operate on one and the other side of piston alternately, by means of a slide-valve, D, substantially like that of an ordinary reciprocating engine. The rock-shaft is connected with a crank to produce rotary motion.",
       "category": "Steam engines",
-      "archetype": "fixed-annular-sector-cylinder-with-radial-vane-piston-keyed-to-rockshaft-and-quadrature-slide-valve",
+      "archetype": "fixed-sector-chamber-with-vane-piston-on-rockshaft-and-D-slide-valve-over-two-passages",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_422.html"
     },
@@ -4266,7 +4266,7 @@
       "title": "Root’s patent double-quadrant engine",
       "description": "423. Root’s patent double-quadrant engine. This is on the same principle as 422; but two single-acting pistons, B, B, are used, and both connected with one crank, D. The steam is admitted to act on the outer sides of the two pistons alternately by means of one induction valve, a, and is exhausted through the space between the pistons. The piston and crank connections are such that the steam acts on each piston during about two-thirds of the revolution of the crank, and hence there are no dead points.",
       "category": "Steam engines",
-      "archetype": "opposed-single-acting-quadrant-piston-four-bars-sharing-one-continuous-crank-with-overlapping-power-strokes",
+      "archetype": "two-single-acting-vane-pistons-on-one-crank-in-one-open-casing-with-rocking-plug-valve",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_423.html"
     },
@@ -4296,7 +4296,7 @@
       "title": "Another form of rotary engine…",
       "description": "426. Another form of rotary engine, in which there are two stationary abutments, D, D, within the cylinder, and the two pistons, A, A, in order to enable them to pass the abutments, are made to slide radially in grooves in the hub, C, of the main shaft, B. The steam acts on both pistons at once, to produce the rotation of the hub and shaft. The induction and eduction are indicated by arrows.",
       "category": "Steam engines",
-      "archetype": "two-opposed-rounded-pistons-sliding-radially-in-rotating-hub-against-two-stationary-port-abutments",
+      "archetype": "two-radially-sliding-pistons-in-rotating-hub-between-two-abutments-with-two-ported-necks",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_426.html"
     },
@@ -4316,7 +4316,7 @@
       "title": "india-rubber rotary engine in which the cylinder has a flexible lining…",
       "description": "428. The india-rubber rotary engine in which the cylinder has a flexible lining, E, of india-rubber, and rollers, A, A, are substituted for pistons, said rollers being attached to arms radiating from the main shaft, B. The steam acting between the india-rubber and the surrounding rigid portion of the cylinder presses the india-rubber against the rollers, and causes them to revolve around the cylinder and turn the shaft.",
       "category": "Steam engines",
-      "archetype": "three-arm-clockwise-rotor-with-counterspinning-rollers-deforming-fixed-material-rubber-liner",
+      "archetype": "three-arm-clockwise-rotor-with-counterspinning-rollers-on-a-steam-deformed-rubber-lining",
       "fidelity": "authored",
       "sourceUrl": "https://507movements.com/mm_428.html"
     },

@@ -14,29 +14,24 @@ function guideStroke(curve,radius) {
   return clip.union(...points.slice(1).map((p,i)=>capsule(points[i],p,radius,8)));
 }
 
-// Brown draws each guide b as a D-shaped plate, straight on the side facing
-// the wheel and rounded outboard, with the closed groove cut through it.
-function guideOutline(curve) {
-  const xs=[],ys=[];
-  for(let i=0;i<192;i+=1){const p=curve.getPoint(i/192);xs.push(p.x);ys.push(p.y);}
-  const margin=.30,x0=Math.min(...xs)-margin,x1=Math.max(...xs)+margin,
-    y0=Math.min(...ys)-margin,y1=Math.max(...ys)+margin;
-  const outboard=(x0+x1)/2<0?-1:1,big=Math.min(.95,(x1-x0)*.62),small=.10;
-  const corners=[[x0,y0,Math.PI],[x1,y0,1.5*Math.PI],[x1,y1,0],[x0,y1,.5*Math.PI]];
-  const points=[];
-  for(const [cx,cy,start] of corners){
-    const r=Math.sign(cx-(x0+x1)/2)===outboard?big:small;
-    const ox=cx+(cx===x0?r:-r),oy=cy+(cy===y0?r:-r);
-    for(let i=0;i<=16;i+=1){const a=start+Math.PI/2*i/16;points.push([ox+r*Math.cos(a),oy+r*Math.sin(a)]);}
-  }
-  return poly(points);
+// Brown draws each guide b as a D-shaped plate: straight on the side facing
+// the wheel, bowed outboard, following the closed groove round at an even
+// margin. The plate is the pin locus filled and buffered by that margin.
+function guideLoop(curve) {
+  return poly(Array.from({length:192},(_,i)=>{const p=curve.getPoint(i/192);return[p.x,p.y];}));
+}
+function guideOutline(curve,margin=.24) {
+  return clip.union(guideLoop(curve),guideStroke(curve,margin));
 }
 
-// Swept finite pin opening, including the sharp branch junctions. A solid tube
-// on the centerline is not a slot. The small radial allowance covers the sampled
-// centerline chords and the polygonal circular offsets.
+// The groove is sunk into the face of guide b, not cut through it: the front
+// plate carries the swept pin opening, and a floor plate closes it behind so
+// the island inside the groove is part of the same casting.
 export function guideChannelGeometry(curve,low,high) {
   return plate(clip.difference(guideOutline(curve),guideStroke(curve,.125)),low,high);
+}
+export function guideFloorGeometry(curve,low,high) {
+  return plate(guideOutline(curve),low,high);
 }
 
 export function guideLipGeometry(curve,low,high) {
@@ -46,19 +41,27 @@ export function guideLipGeometry(curve,low,high) {
 export function correctWeightedRackInterfaces(root) {
   const d=root.userData,b=d.blocks,g=d.geometry;
   for (const guide of [b.leftGuide,b.rightGuide]) {
-    const geometry=guideChannelGeometry(guide.userData.centerline,g.guidePlaneZ-.13,g.guidePlaneZ+.13);
-    replace(guide.userData.casting,geometry);
-    // The dark lip surrounds the same opening, rather than plugging it.
-    const lip=guideLipGeometry(guide.userData.centerline,g.guidePlaneZ+.13,g.guidePlaneZ+.142);
-    replace(guide.userData.slot,lip);guide.userData.slot.position.z=0;
+    const casting=guide.userData.casting,floorZ=g.guidePlaneZ-.02;
+    replace(casting,guideChannelGeometry(guide.userData.centerline,floorZ,g.guidePlaneZ+.13));
+    // The groove floor: the same casting, a shade darker as a sunk recess.
+    const floorMaterial=casting.material.clone();floorMaterial.color.multiplyScalar(.72);
+    const floor=new THREE.Mesh(guideFloorGeometry(guide.userData.centerline,g.guidePlaneZ-.13,floorZ),floorMaterial);
+    floor.userData.role=`${guide.userData.role}-groove-floor`;floor.castShadow=floor.receiveShadow=true;
+    guide.add(floor);guide.userData.floor=floor;
+    // No dark lip: Brown's groove edge is ink, not a part.
+    guide.remove(guide.userData.slot);guide.userData.slot.geometry.dispose();
   }
   for(const rack of[b.leftRack,b.rightRack]) {
     const boss=rack.userData.pivotBoss;
     replace(boss,boredAxialCylinder(.20,.089,g.rackDepth*1.38));
     // The lower straight bar also surrounds the axle instead of filling the eye.
     const body=rack.userData.body;
-    if(body)replace(body,plate(clip.difference(poly([[-g.rackBodyWidth/2,0],[g.rackBodyWidth/2,0],
-      [g.rackBodyWidth/2,g.rackBodyLength],[-g.rackBodyWidth/2,g.rackBodyLength]]),poly(circle([0,0],.089,48))),-g.rackDepth/2,g.rackDepth/2));
+    // The bar runs out to the teeth's root line (pitch line 0.26 from the
+    // pivot axis, dedendum 0.071), so the teeth stand on the rack itself.
+    const inward=-rack.userData.side,outer=-g.rackBodyWidth/2,inner=.26-.071+.004,
+      x0=inward*outer,x1=inward*inner,lo=Math.min(x0,x1),hi=Math.max(x0,x1);
+    if(body)replace(body,plate(clip.difference(poly([[lo,0],[hi,0],
+      [hi,g.rackBodyLength],[lo,g.rackBodyLength]]),poly(circle([0,0],.089,48))),-g.rackDepth/2,g.rackDepth/2));
     if(body)body.position.y=0;
   }
   const guide=b.fixedFrame.children.find(o=>o.userData.role==='fixed-piston-rod-guide-collar');
@@ -71,7 +74,7 @@ export function correctWeightedRackInterfaces(root) {
     replace(b.crossheadBeam,plate(clip.difference(beamOutline,...pivots.map(x=>poly(circle([x,0],.0875,64)))),-.10,.10));b.crossheadBeam.position.z=-.30;
     for(const rack of[b.leftRack,b.rightRack]){
       replace(rack.userData.pivotBore,new THREE.CylinderGeometry(.085,.085,.94,32));rack.userData.pivotBore.position.z=-.10;
-      replace(rack.userData.guidePin,new THREE.CylinderGeometry(.115,.115,1.30,32));rack.userData.guidePin.position.z=-.05;
+      replace(rack.userData.guidePin,new THREE.CylinderGeometry(.115,.115,.64,32));rack.userData.guidePin.position.z=-.14;
     }
     const base=b.fixedFrame.children.find(o=>o.userData.role==='fixed-machine-bed');
     base.position.y=g.crossheadLowY-.65;

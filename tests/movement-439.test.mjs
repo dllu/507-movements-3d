@@ -127,7 +127,7 @@ test('movement 439 preserves Brown’s detailed operating sequence and discloses
   assert.equal(dynamics.fluidPressureSplashLeakageValveImpactRopeElasticityPulleyInertiaBearingFrictionBucketMassCounterweightMassAndDynamicAccelerationModeled,
     false);
   assert.match(dynamics.fillDrainMotionSchedule,
-    /quintic zero-velocity, zero-acceleration ramps.*fill at the top.*counterweight return/);
+    /quintic zero-velocity, zero-acceleration ramps.*counterweight return.*fills the bucket at one steady rate whenever the valve is shut/);
   assert.match(dynamics.ropeMarkerContinuity,
     /one analytic rope path.*straight-to-arc tangents match exactly/);
   assert.equal(plate.imageWidth, 525);
@@ -154,7 +154,10 @@ test('movement 439 reconstructed source pose places the empty bucket high and co
   near(sourcePose.counterweightAttachmentY, geometry.bottomAttachmentY, 0,
     'source counterweight low');
   near(sourcePose.pulleyAngle, 0, 0, 'source pulley angle');
-  near(sourcePose.waterFill, 0, 0, 'source bucket empty');
+  // The stream never stops: under the spout the bucket already holds the
+  // water it gained since its valve reseated at the bottom (pass 69).
+  near(sourcePose.waterFill, (1 - geometry.drainEndPhase) / (1 - (geometry.drainEndPhase - geometry.descendEndPhase)), 1e-12,
+    'source bucket part filled by the running stream');
   near(sourcePose.valveLift, 0, 0, 'source valve closed');
   near(sourcePose.totalRopeLength, geometry.sourceTotalRopeLength, 0,
     'source rope length');
@@ -173,12 +176,22 @@ test('movement 439 fill, descent, ground-opened drain, and counterweight return 
   } = model.root.userData;
   const stateAtPhase = (phase) => stateAtInputAngle(FULL_TURN * phase);
 
-  near(waterFillAtPhase(0), 0, 0, 'cycle begins empty');
-  near(waterFillAtPhase(
-    (geometry.fillStartPhase + geometry.fillEndPhase) / 2,
-  ), 0.5, 1.5e-15, 'bucket half fills at upper station');
-  near(waterFillAtPhase(geometry.fillEndPhase), 1, 0,
-    'bucket full before descent');
+  // Pass 69: constant inflow fills the bucket whenever its valve is shut,
+  // from the reseat at the bottom (fillStartPhase) through the return and
+  // the top dwell to the arrival at the anvil (fillEndPhase).
+  near(waterFillAtPhase(geometry.fillStartPhase), 0, 0, 'empty when the valve reseats');
+  const fillSpan = 1 - (geometry.fillStartPhase - geometry.fillEndPhase);
+  near(waterFillAtPhase(geometry.fillStartPhase + fillSpan / 2), 0.5, 1e-12, 'half full half-way through the fill');
+  near(waterFillAtPhase(geometry.fillEndPhase - 1e-9), 1, 1e-6, 'full on arrival at the anvil');
+  let previousFill = waterFillAtPhase(geometry.fillStartPhase);
+  for (let k = 1; k <= 200; k += 1) {
+    const fill = waterFillAtPhase(geometry.fillStartPhase + fillSpan * k / 200 - 1e-9);
+    assert.ok(fill >= previousFill - 1e-12, 'fill never falls while the valve is shut');
+    near(fill - previousFill, fillSpan / 200 / fillSpan, 1e-6, 'constant inflow rate');
+    previousFill = fill;
+  }
+  assert.ok(waterFillAtPhase(geometry.descendStartPhase) > 0.5,
+    'outweighs the counterweight before it descends');
   near(stateAtPhase(
     (geometry.descendStartPhase + geometry.descendEndPhase) / 2,
   ).bucketAttachmentY,

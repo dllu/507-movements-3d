@@ -105,10 +105,9 @@ export function sectionFourWayCockParts(root){
  const byRole=role=>{let found=null;root.traverse(o=>{if(!found&&o.userData?.role===role)found=o;});return found;};
  // Channels are .14 deep below the cut face; the plug is solid behind them.
  const depth=d.plugChannelDepth=.14;
- for(const role of['close-fitting-rotary-cock-plug','second-plate-figure-close-fitting-plug'])
-  byRole(role).geometry=mergePassageParts([plate(disk,-g.plugDepth/2,-depth),plate(open,-depth,g.plugDepth/2)]);
- for(const role of['fixed-annular-four-port-cock-body-surrounding-turning-plug','second-plate-figure-annular-cock-body']){
-  const body=byRole(role);body.geometry=plate(annulus,-g.bodyDepth/2,g.bodyDepth/2);
+ byRole('close-fitting-rotary-cock-plug').geometry=mergePassageParts([plate(disk,-g.plugDepth/2,-depth),plate(open,-depth,g.plugDepth/2)]);
+ {
+  const body=byRole('fixed-annular-four-port-cock-body-surrounding-turning-plug');body.geometry=plate(annulus,-g.bodyDepth/2,g.bodyDepth/2);
   body.material=body.material.clone();body.material.color.set(0x59605f);
  }
 }

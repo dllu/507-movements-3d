@@ -134,7 +134,7 @@ function makePawl({
   contact.position.x = pawlLength;
   contact.userData.role = `${role}-white-rim-contact-index`;
   pawl.add(contact);
-  const cordEye = cylinderAlongZ(0.065, 0.22, whiteMaterial, 20);
+  const cordEye = cylinderAlongZ(0.065, 0.22, material, 20);
   cordEye.position.x = pawlLength * 0.58;
   cordEye.userData.role = `${role}-cord-eye`;
   pawl.add(cordEye);
@@ -228,9 +228,11 @@ function constantLengthCordRoute(start, end, materialLength, sagSide) {
     0,
     (materialLength / 2) ** 2 - halfChord ** 2,
   ));
+  // Sag sideways in the wheel's plane, square to the (possibly sloping) chord.
+  const planar = Math.hypot(chord.x, chord.y);
   const perpendicular = new THREE.Vector3(
-    -chord.y / chordLength,
-    chord.x / chordLength,
+    -chord.y / planar,
+    chord.x / planar,
     0,
   ).multiplyScalar(sag * sagSide);
   const bend = start.clone().add(end).multiplyScalar(0.5).add(perpendicular);
@@ -290,8 +292,23 @@ function dicksonReversibleDrive(movement) {
     cSeatedContact.x - cPawlPivot.x,
   );
   const pawlCordEyeRadius = pawlLength * 0.58;
-  const selectorCenter = new THREE.Vector3(0, 0.55, 0.82);
-  const selectorHornRadius = 0.20;
+  // Crank E as Brown draws it: a small bent crank standing on lever A's hub,
+  // its journal running up the lever's centre line (in the plane of the
+  // wheel), a short web, and a pin rising from the web's end. Both cords are
+  // tied to the top of the pin. E turns half a turn about its journal: with
+  // the pin to the right (Brown's pose) C's cord slackens and B's draws B off
+  // the rim; with it to the left the reverse.
+  const selectorCenter = new THREE.Vector3(0, 0.275, 0.47);
+  const selectorHornRadius = 0.24; // crank throw
+  const crankJournalTop = 0.52;
+  const crankPinTop = 0.80;
+  const cordEyeZ = 0.64;
+  const crankTurn = (angle) => Math.PI / 2 * (1 - angle / selectorAmplitude);
+  const crankPinPoint = (angle) => {
+    const turn = crankTurn(angle);
+    return new THREE.Vector3(selectorHornRadius * Math.cos(turn), crankPinTop,
+      selectorCenter.z + selectorHornRadius * Math.sin(turn));
+  };
   const inputPinLocal = new THREE.Vector3(0, -1.48, 0.35);
   const inputGuideY = -1.39;
   const inputRodLength = 2.60;
@@ -453,21 +470,15 @@ function dicksonReversibleDrive(movement) {
     const bCordEyeLocal = bPawlPivot.clone().add(new THREE.Vector3(
       pawlCordEyeRadius * Math.cos(bPawlAngle),
       pawlCordEyeRadius * Math.sin(bPawlAngle),
-      selectorCenter.z - bPawlPivot.z,
+      cordEyeZ - bPawlPivot.z,
     ));
     const cCordEyeLocal = cPawlPivot.clone().add(new THREE.Vector3(
       pawlCordEyeRadius * Math.cos(cPawlAngle),
       pawlCordEyeRadius * Math.sin(cPawlAngle),
-      selectorCenter.z - cPawlPivot.z,
+      cordEyeZ - cPawlPivot.z,
     ));
-    const bCrankPinLocal = selectorCenter.clone().add(rotatePoint(
-      new THREE.Vector3(-selectorHornRadius, 0, 0),
-      selectorAngle,
-    ));
-    const cCrankPinLocal = selectorCenter.clone().add(rotatePoint(
-      new THREE.Vector3(selectorHornRadius, 0, 0),
-      selectorAngle,
-    ));
+    const bCrankPinLocal = crankPinPoint(selectorAngle);
+    const cCrankPinLocal = bCrankPinLocal.clone();
     const inputPin = rotatePoint(inputPinLocal, leverAngle);
     const inputVerticalOffset = inputGuideY - inputPin.y;
     const inputSliderX = inputPin.x + Math.sqrt(
@@ -527,8 +538,11 @@ function dicksonReversibleDrive(movement) {
   }
   const bCordMaterialLength = maximumBCordChord + 0.035;
   const cCordMaterialLength = maximumCCordChord + 0.035;
+  // Playback time zero is Brown's pose: lever A upright in the middle of a
+  // C-selected stroke, crank E with its pin to the right.
+  const sourceTime = cOscillationStart + halfStrokeDuration / 2;
   const stateAtTime = (time) => {
-    const state = basicStateAtTime(time);
+    const state = basicStateAtTime(time + sourceTime);
     const bCord = constantLengthCordRoute(
       state.bCrankPinLocal,
       state.bCordEyeLocal,
@@ -551,6 +565,8 @@ function dicksonReversibleDrive(movement) {
   };
 
   const geometry = {
+    sourceTime,
+    crankThrow: selectorHornRadius,
     bCordMaterialLength,
     bOscillationEnd,
     bOscillationStart,
@@ -736,22 +752,26 @@ function dicksonReversibleDrive(movement) {
   const selectorRotor = new THREE.Group();
   selectorRotor.position.copy(selectorCenter);
   selectorRotor.userData.role = 'small-reversing-crank-E-on-lever-A';
-  const selectorHub = cylinderAlongZ(0.12, 0.23, darkMaterial, 28);
-  selectorHub.userData.role = 'crank-E-pivot';
+  const crankRadius = 0.035;
+  const journalLength = crankJournalTop - selectorCenter.y;
+  const selectorHub = new THREE.Mesh(new THREE.CylinderGeometry(crankRadius, crankRadius, journalLength + crankRadius, 24), darkMaterial);
+  selectorHub.position.y = (journalLength + crankRadius) / 2;
+  selectorHub.userData.role = 'crank-E-journal-running-up-lever-A';
   selectorRotor.add(selectorHub);
-  const selectorArm = new THREE.Mesh(
-    new THREE.BoxGeometry(selectorHornRadius * 2, 0.075, 0.075),
-    pawlMaterial,
-  );
-  selectorArm.userData.role = 'two-ended-cord-crank-E-arm';
+  const selectorArm = new THREE.Mesh(new THREE.CylinderGeometry(crankRadius, crankRadius, selectorHornRadius, 24).rotateZ(Math.PI / 2), darkMaterial);
+  selectorArm.position.set(selectorHornRadius / 2, journalLength, 0);
+  selectorArm.userData.role = 'crank-E-web';
   selectorRotor.add(selectorArm);
-  for (const side of [-1, 1]) {
-    const pin = cylinderAlongZ(0.055, 0.18, whiteMaterial, 18);
-    pin.position.x = side * selectorHornRadius;
-    pin.userData.role = side < 0
-      ? 'crank-E-pin-to-pawl-B-cord'
-      : 'crank-E-pin-to-pawl-C-cord';
-    selectorRotor.add(pin);
+  const pinLength = crankPinTop - crankJournalTop;
+  const crankPin = new THREE.Mesh(new THREE.CylinderGeometry(crankRadius, crankRadius, pinLength + crankRadius, 24), darkMaterial);
+  crankPin.position.set(selectorHornRadius, journalLength + (pinLength - crankRadius) / 2, 0);
+  crankPin.userData.role = 'crank-E-pin-carrying-both-cords';
+  selectorRotor.add(crankPin);
+  for (const [x, y] of [[0, journalLength], [selectorHornRadius, journalLength]]) {
+    const elbow = new THREE.Mesh(new THREE.SphereGeometry(crankRadius, 20, 12), darkMaterial);
+    elbow.position.set(x, y, 0);
+    elbow.userData.role = 'crank-E-bend';
+    selectorRotor.add(elbow);
   }
   leverRotor.add(selectorRotor);
 
@@ -819,7 +839,8 @@ function dicksonReversibleDrive(movement) {
     const state = stateAtTime(time);
     wheelRotor.rotation.z = state.wheelAngle;
     leverRotor.rotation.z = state.leverAngle;
-    selectorRotor.rotation.z = state.selectorAngle;
+    // E turns about its journal (lever A's centre line, local y).
+    selectorRotor.rotation.y = -crankTurn(state.selectorAngle);
     bPawl.rotation.z = state.bPawlAngle;
     cPawl.rotation.z = state.cPawlAngle;
     bCord.userData.setRoute(state.bCord);

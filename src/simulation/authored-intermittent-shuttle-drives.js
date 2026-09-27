@@ -341,7 +341,7 @@ function intermittentShuttleDrive(movement) {
     return {
       cycleCoordinate,
       cyclePhase,
-      dwellActive: /dwell/.test(rockerState.stage),
+      dwellActive: /rest/.test(rockerState.stage),
       inputAngle,
       inputAngularSpeed: crankAngularSpeed,
       inputPinWorld,
@@ -434,7 +434,7 @@ function intermittentShuttleDrive(movement) {
       output:
         'A finite connecting rod joins the rocker top pin to a carriage constrained to one horizontal guide line.',
       rocker:
-        'The rocker has one fixed bottom pivot and one rotational coordinate with a circular-arc dwell and smooth rounded-end reversals.',
+        'The rocker has one fixed bottom pivot and one rotational coordinate; the plain crescent gives a near-rest while the pin runs along it and a swing out and back on the other half turn.',
       slot:
         'One open crescent has monotone radius about the rocker pivot; the pin radius selects a station and its polar angle determines the rocker angle. The same finite slot is traversed forward and backward.',
     },
@@ -446,7 +446,7 @@ function intermittentShuttleDrive(movement) {
       independentPrescribedInputs: 1,
       inputs: ['constant-speed crank angle'],
       note:
-        'The positive grooved cam closes the chain; during each dwell the pin continues around the slot while rocker and output remain exactly stationary.',
+        'The slot closes the chain; while the pin runs along the crescent the rocker and shuttle nearly rest (a few degrees of creep, because the arc is slightly flatter than the crank circle).',
       storedEnergyStates: 0,
     },
     dynamics: {
@@ -454,7 +454,7 @@ function intermittentShuttleDrive(movement) {
         'rigid crank, roller, grooved rocker, rod, carriage, and frame',
         'ideal centerline closure with .0015 finite roller/slot running clearance',
         'constant input angular speed',
-        'circular middle arc and quintic radial-end blends preserve continuous velocity and acceleration',
+        'a single circular arc slightly flatter than the crank circle meets the pin-radius circles at a finite angle at its ends, so rocker velocity stays continuous without end hooks',
         'inertia, friction, impact, elastic deformation, and load omitted',
       ],
       sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
@@ -516,7 +516,7 @@ function intermittentShuttleDrive(movement) {
           'also applied to three-revolution cylinder printing presses',
         ],
         reconstructionDisclosure:
-          'Brown supplies no animation, dimensions, slot coordinates, dwell fractions, crank direction, or speed. The open crescent uses an ideal circular middle arc with short radial-end blends; dimensions, end continuation, centerline constraint, six-second timing and the resulting dwell fraction are reconstructed. No two-dwell motion is imposed independently of the groove.',
+          'Brown supplies no animation, dimensions, slot coordinates, dwell fractions, crank direction, or speed. The open crescent is one plain circular arc (sagitta 0.8 crank radius) with rounded ends, as drawn; dimensions, end continuation, centerline constraint, six-second timing and the resulting dwell fraction are reconstructed. No two-dwell motion is imposed independently of the groove.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 397',
@@ -542,7 +542,7 @@ function intermittentShuttleDrive(movement) {
       slotLaw:
         'worldPin=O+R(theta)*q; q is fixed in the slotted rocker',
       stageSequence:
-        'circular-arc dwell -> rounded end -> working stroke and return through the same open crescent',
+        'near-rest along the crescent -> rounded end -> working stroke and return through the same open crescent',
     },
     update,
   };
@@ -555,7 +555,7 @@ function intermittentShuttleDrive(movement) {
   root.userData.groundFloorY = -2.48;
   root.userData.hideGround=true;root.userData.minimumDisplayCycleSeconds=cycleDuration;
   root.traverse(o=>{for(const m of [].concat(o.material??[]))m.fog=false;});
-  root.userData.reconstructionNote = 'The source shows an open crescent, not a closed cam loop. Its circular dwell arc and rounded open ends are reconstructed analytically; the pin follows the ideal channel centerline. Motion is prescribed, without solved friction, loads or clearance backlash.';
+  root.userData.reconstructionNote = 'The source shows an open crescent, not a closed cam loop. It is one plain circular arc with rounded ends (no hooks), slightly flatter than the crank circle so the near-rest is entered and left without a knock; the pin follows the ideal channel centerline. Motion is prescribed, without solved friction, loads or clearance backlash.';
   root.userData.openCrescentLaw=openLaw;
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };

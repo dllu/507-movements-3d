@@ -25,3 +25,18 @@ export function temperatureBevelPhases(screwAxis,screwMountQuaternion){
   const a=contactDirection.clone().applyQuaternion(inputBasis.clone().invert()),b=contactDirection.clone().applyQuaternion(outputBasis.clone().invert());
   return{inputAxis,outputAxis,contactDirection,inputPhase:Math.atan2(a.y,a.x),outputPhase:Math.atan2(b.y,b.x)+Math.PI/TEMPERATURE_BEVEL.teeth};
 }
+
+// Tooth phases for any shared-apex mitre pair. Each gear's axis points from
+// the common apex into its body; `parentQuaternion` is the world orientation
+// of the gear's parent at zero shaft angle and `axis` is given in that parent
+// frame (as passed to makeTemperatureBevel). Gear A puts a tooth on the pitch
+// contact line and gear B a space. The pair then stays in mesh when each
+// turns about its own axis by equal and opposite angles.
+export function mitreBevelPhases(a,b){
+  const z=new THREE.Vector3(0,0,1);
+  const world=({axis,parentQuaternion})=>({axis:axis.clone().applyQuaternion(parentQuaternion),basis:parentQuaternion.clone().multiply(new THREE.Quaternion().setFromUnitVectors(z,axis))});
+  const A=world(a),B=world(b),contact=A.axis.clone().add(B.axis).normalize();
+  const local=basis=>contact.clone().applyQuaternion(basis.clone().invert());
+  const pa=local(A.basis),pb=local(B.basis);
+  return{contact,phaseA:Math.atan2(pa.y,pa.x),phaseB:Math.atan2(pb.y,pb.x)+Math.PI/TEMPERATURE_BEVEL.teeth};
+}

@@ -1,630 +1,555 @@
 import * as THREE from 'three';
-import {circle, plate, poly, polygonClipping, ring} from './finite-plate-geometry.js';
-import {castFootGeometry} from './rotary-engine-cast-feet.js';
-import {portedCasingGeometry, roundPortPipeGeometry, squarePortHole} from './round-port-pipes.js';
+import { PALETTE, markShadows, matte } from './primitives.js';
+import { fitPistonGuide } from './piston-guide-parts.js';
+import { latheSectionGeometry } from './cutaway-section.js';
 import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
+  angleOf,
+  arcBetween,
+  circlePolygon,
+  convexHull,
+  farRadiusAlongRay,
+  lineCircleFillet,
+  multiArea,
+  partPlate,
+  polygonClipping,
+  ringPolygon,
+  safeClip,
+  sectionPlate,
+  steamVolume,
+} from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
+const DEG = Math.PI / 180;
+const wrap = (angle) => THREE.MathUtils.euclideanModulo(angle, FULL_TURN);
 
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function wrappedAngle(angle) {
-  return THREE.MathUtils.euclideanModulo(angle + Math.PI, FULL_TURN)
-    - Math.PI;
-}
-
-function makeLiningGeometry(nodeCount) {
-  const positions = new Float32Array(nodeCount * 4 * 3);
-  const indices = [];
-  for (let index = 0; index < nodeCount; index += 1) {
-    const next = (index + 1) % nodeCount;
-    const innerBack = index * 4;
-    const outerBack = innerBack + 1;
-    const innerFront = innerBack + 2;
-    const outerFront = innerBack + 3;
-    const nextInnerBack = next * 4;
-    const nextOuterBack = nextInnerBack + 1;
-    const nextInnerFront = nextInnerBack + 2;
-    const nextOuterFront = nextInnerBack + 3;
-    indices.push(
-      innerFront, nextInnerFront, nextOuterFront,
-      innerFront, nextOuterFront, outerFront,
-      innerBack, outerBack, nextOuterBack,
-      innerBack, nextOuterBack, nextInnerBack,
-      innerBack, nextInnerBack, nextInnerFront,
-      innerBack, nextInnerFront, innerFront,
-      outerBack, outerFront, nextOuterFront,
-      outerBack, nextOuterFront, nextOuterBack,
-    );
-  }
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-  for(let i=0;i<indices.length;i+=3)[indices[i+1],indices[i+2]]=[indices[i+2],indices[i+1]];
-  geometry.setIndex(indices);
-  return geometry;
-}
-
+// Movement 428, the india-rubber rotary engine (pass 69 rebuild).
+//
+// The rubber lining E is clamped into the middle of each port neck, so it
+// divides the space between itself and the rigid bore into an upper and a
+// lower half. Each neck has two channels, one either side of the clamp: the
+// left neck's upper channel and the right neck's lower channel admit steam,
+// the other two exhaust (Brown's two arrows both run clockwise, away from the
+// admitting necks). Each roller A presses the rubber against the bore and so
+// seals the steam space. Behind the leading roller of each half the steam
+// presses the rubber in, taut, against the rollers (the rubber here takes the
+// outward face of the convex hull of its clamp and the rollers it rests on),
+// so the space grows as the roller moves on: the steam expands and drives the
+// arms B clockwise. When a roller rolls past the far channel, the space
+// behind it opens to the exhaust and the rubber falls back against the bore.
+// The rollers roll on the rubber without slip, turning the other way.
 function rubberLinedRotaryEngine(movement) {
   const root = new THREE.Group();
-  const cycleDuration = 4;
-  const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const rollerCount = 3;
-  const armRadius = 2;
-  const rollerRadius = 0.5;
-  const rollerSpinRatio = armRadius / rollerRadius;
-  const linerContactRadius = armRadius + rollerRadius;
-  const linerRestRadius = 2.93;
-  const linerIndentationDepth = linerRestRadius - linerContactRadius;
-  const linerInfluenceHalfAngle = 0.78;
-  const linerThickness = 0.105;
-  const linerNodeCount = 720;
-  const housingInnerRadius = 3.10;
-  const housingOuterRadius = 3.48;
-  const sourcePoseFirstRollerAngle = Math.PI;
-  const materialAngles = Array.from(
-    { length: linerNodeCount },
-    (_, index) => FULL_TURN * index / linerNodeCount,
-  );
+  const cycleDuration = 6; // one turn of B; three power impulses per half
+  const rotorAngularSpeed = -FULL_TURN / cycleDuration; // clockwise
+  const sourceRotorAngle = 182 * DEG; // Brown: rollers at about 182, 62, -58 degrees
 
-  const carrierAngleAtInput = (inputAngle) => -inputAngle;
-  const rollerCenterAngleAtInput = (rollerIndex, inputAngle) =>
-    sourcePoseFirstRollerAngle
-      + rollerIndex * FULL_TURN / rollerCount
-      + carrierAngleAtInput(inputAngle);
+  const boreRadius = 3.0;
+  const rubberThickness = 0.13;
+  const rubberRestInner = boreRadius - rubberThickness;
+  // Rolling without slip turns each roller 5.25 times per turn of B, so its
+  // quadrant cue repeats exactly at the loop seam.
+  const rollerTurnsPerRotorTurn = 5.25;
+  const rollerRadius = rubberRestInner / (rollerTurnsPerRotorTurn + 1);
+  const rollerPathRadius = rubberRestInner - rollerRadius;
+  const casingRadius = 3.5;
+  const neckHalfHeight = 0.9;
+  const neckEnd = 4.25;
+  const channelInner = 0.3;
+  const channelOuter = 0.62;
+  const vTipRadius = 3.3; // inner surface of the rubber at the clamp
+  const vRimAngle = 5.0 * DEG;
+  const depth = 1.3;
+  const zBack = -depth;
+  const backThickness = 0.2;
+  const armLayer = [-1.25, -1.05];
+  const rollerLayer = [-1.0, -0.07];
+  const hubRadius = 0.78;
+  const shaftRadius = 0.42;
+  const pinRadius = 0.15;
+  const samples = 360;
+  const blowdownAngle = 10 * DEG;
+  const mouthAngle = Math.asin(channelOuter / boreRadius); // far edge of a channel mouth
+  const halves = [
+    { name: 'upper', inlet: Math.PI, inletChannel: 'left-upper', exhaustChannel: 'right-upper' },
+    { name: 'lower', inlet: 0, inletChannel: 'right-lower', exhaustChannel: 'left-lower' },
+  ];
 
-  const linerIndentationWeight = (angleDifference) => {
-    const distance = Math.abs(wrappedAngle(angleDifference));
-    if (distance >= linerInfluenceHalfAngle) return 0;
-    const cosine = Math.cos(
-      Math.PI * distance / (2 * linerInfluenceHalfAngle),
-    );
-    return cosine ** 4;
-  };
-
-  const linerRadiusAtWorldAngle = (worldAngle, inputAngle) => {
-    let indentationWeight = 0;
-    for (let rollerIndex = 0; rollerIndex < rollerCount;
-      rollerIndex += 1) {
-      const rollerAngle = rollerCenterAngleAtInput(
-        rollerIndex,
-        inputAngle,
-      );
-      indentationWeight = Math.max(
-        indentationWeight,
-        linerIndentationWeight(worldAngle - rollerAngle),
-      );
+  // ---- rest shape of the rubber (inner surface, polar) -------------------------
+  const restInner = (theta) => {
+    for (const neck of [0, Math.PI]) {
+      const delta = Math.abs(wrap(theta - neck + Math.PI) - Math.PI);
+      if (delta < vRimAngle) {
+        // straight V legs from the rim point to the clamp tip
+        const rim = [rubberRestInner * Math.cos(vRimAngle), rubberRestInner * Math.sin(vRimAngle)];
+        const tip = [vTipRadius, 0];
+        const dx = rim[0] - tip[0];
+        const dy = rim[1] - tip[1];
+        const c = Math.cos(delta);
+        const s = Math.sin(delta);
+        // ray r*(c,s) meets tip + k*(dx,dy)
+        const denominator = c * dy - s * dx;
+        const r = (tip[0] * dy - tip[1] * dx) / denominator;
+        return r;
+      }
     }
-    return linerRestRadius - linerIndentationDepth * indentationWeight;
+    return rubberRestInner;
   };
+  const sampleAngles = Array.from({ length: samples }, (_, i) => i / samples * FULL_TURN);
+  const restRadii = sampleAngles.map(restInner);
 
-  const stateAtInputAngle = (
-    inputAngle,
-    inputSpeed = inputAngularSpeed,
-    inputAcceleration = 0,
-  ) => {
-    const carrierAngle = carrierAngleAtInput(inputAngle);
-    const carrierAngularSpeed = -inputSpeed;
-    const carrierAngularAcceleration = -inputAcceleration;
-    const rollerAngularSpeed = -carrierAngularSpeed * rollerSpinRatio;
-    const rollerAngularAcceleration = -carrierAngularAcceleration
-      * rollerSpinRatio;
-    const rollerWorldAngle = rollerSpinRatio * inputAngle;
-    const rollerLocalAngle = rollerWorldAngle - carrierAngle;
-    const rollers = [];
-    for (let rollerIndex = 0; rollerIndex < rollerCount;
-      rollerIndex += 1) {
-      const centerAngle = rollerCenterAngleAtInput(
-        rollerIndex,
-        inputAngle,
-      );
-      const radial = new THREE.Vector3(
-        Math.cos(centerAngle),
-        Math.sin(centerAngle),
-        0,
-      );
-      const tangent = new THREE.Vector3(-radial.y, radial.x, 0);
-      const center = radial.clone().multiplyScalar(armRadius);
-      const centerVelocity = tangent.clone().multiplyScalar(
-        armRadius * carrierAngularSpeed,
-      );
-      const centerAcceleration = tangent.clone().multiplyScalar(
-        armRadius * carrierAngularAcceleration,
-      ).addScaledVector(
-        radial,
-        -armRadius * carrierAngularSpeed ** 2,
-      );
-      const contactPoint = radial.clone().multiplyScalar(
-        linerContactRadius,
-      );
-      const rollerSurfaceVelocityAtContact = tangent.clone()
-        .multiplyScalar(rollerRadius * rollerAngularSpeed);
-      const rollingContactVelocity = centerVelocity.clone().add(
-        rollerSurfaceVelocityAtContact,
-      );
-      const linerRadiusAtContact = linerRadiusAtWorldAngle(
-        centerAngle,
-        inputAngle,
-      );
-      rollers.push({
-        center,
-        centerAcceleration,
-        centerAngle,
-        centerVelocity,
-        contactPoint,
-        index: rollerIndex,
-        linerContactResidual:
-          linerRadiusAtContact - linerContactRadius,
-        linerRadiusAtContact,
-        localSpinAngle: rollerLocalAngle,
-        radial,
-        rollerAngularAcceleration,
-        rollerAngularSpeed,
-        rollerSurfaceVelocityAtContact,
-        rollingContactVelocity,
-        rollingWithoutSlipResidual: rollingContactVelocity.length(),
-        tangent,
-        worldSpinAngle: rollerWorldAngle,
+  const rollerCenters = (rotorAngle) => [0, 1, 2].map((k) => {
+    const angle = rotorAngle + k * FULL_TURN / 3;
+    return { index: k, angle, center: [rollerPathRadius * Math.cos(angle), rollerPathRadius * Math.sin(angle)] };
+  });
+  const circleSamples = (center, radius, count = 20) => Array.from({ length: count }, (_, i) => {
+    const a = i / count * FULL_TURN;
+    return [center[0] + radius * Math.cos(a), center[1] + radius * Math.sin(a)];
+  });
+
+  // Spans of each half: [startU, endU] measured clockwise from its inlet, the
+  // supports the rubber rests on there, and the steam pressure (1 live, 0
+  // exhausted).
+  const spansAt = (rotorAngle) => {
+    const rollers = rollerCenters(rotorAngle);
+    const spans = [];
+    for (const half of halves) {
+      // A roller still just short of the clamp (u slightly negative) already
+      // bears on the rubber this half presses in, so it counts as a support.
+      const lead = 25 * DEG;
+      const u = (angle) => wrap(half.inlet - angle + lead) - lead;
+      const ordered = rollers.map((roller) => ({ ...roller, u: u(roller.angle) })).sort((a, b) => a.u - b.u);
+      const tip = [vTipRadius * Math.cos(half.inlet), vTipRadius * Math.sin(half.inlet)];
+      const sealIndex = ordered.findIndex((roller) => roller.u >= mouthAngle);
+      const first = ordered[sealIndex];
+      spans.push({
+        half: half.name,
+        kind: 'admission',
+        key: `roller-${first.index}`,
+        from: 0,
+        to: Math.min(first.u, Math.PI),
+        pressure: 1,
+        supports: [tip, ...ordered.slice(0, sealIndex + 1).map((roller) => roller.center)],
       });
+      if (first.u < Math.PI) {
+        const second = ordered[(sealIndex + 1) % 3];
+        const secondU = second.u > first.u ? second.u : second.u + FULL_TURN;
+        const past = secondU - (Math.PI - mouthAngle);
+        const pressure = past <= 0 ? 1 : 1 - THREE.MathUtils.smootherstep(past / blowdownAngle, 0, 1);
+        spans.push({
+          half: half.name,
+          kind: past <= 0 ? 'expanding-sealed-pocket' : 'exhausting',
+          key: secondU < Math.PI ? `roller-${second.index}` : `end-${half.name}`,
+          from: first.u,
+          to: Math.min(secondU, Math.PI),
+          pressure,
+          supports: [first.center, second.center],
+        });
+        if (secondU < Math.PI) {
+          spans.push({ half: half.name, kind: 'exhausted', key: `end-${half.name}`, from: secondU, to: Math.PI, pressure: 0, supports: [] });
+        }
+      }
+      for (const span of spans.filter((s) => s.half === half.name)) {
+        span.inlet = half.inlet;
+        span.thetaFrom = half.inlet - span.from;
+        span.thetaTo = half.inlet - span.to;
+      }
     }
-    const linerMaterialRadii = materialAngles.map((materialAngle) =>
-      linerRadiusAtWorldAngle(materialAngle, inputAngle));
-    return {
-      carrierAngle,
-      carrierAngularAcceleration,
-      carrierAngularSpeed,
-      inputAcceleration,
-      inputAngle,
-      inputSpeed,
-      linerMaterialRadii,
-      rollerAngularAcceleration,
-      rollerAngularSpeed,
-      rollerLocalAngle,
-      rollers,
-    };
+    return { rollers, spans };
+  };
+
+  const innerRadiiAt = (rotorAngle, out = new Float64Array(samples)) => {
+    const { spans } = spansAt(rotorAngle);
+    for (let i = 0; i < samples; i += 1) out[i] = restRadii[i];
+    for (const span of spans) {
+      if (!(span.pressure > 1e-4) || !span.supports.length) continue;
+      const points = span.supports.flatMap((support, index) => (
+        index === 0 && span.kind === 'admission' ? [support]
+          // circumscribed polygon, so the sampled rubber never cuts a roller
+          : circleSamples(support, rollerRadius / Math.cos(Math.PI / 48) + 0.002, 48)
+      ));
+      const hull = convexHull(points);
+      for (let i = 0; i < samples; i += 1) {
+        const u = wrap(span.inlet - sampleAngles[i]);
+        if (u < span.from - 1e-9 || u > span.to + 1e-9) continue;
+        const far = farRadiusAlongRay(hull, sampleAngles[i]);
+        if (!Number.isFinite(far)) continue;
+        const target = Math.min(far, restRadii[i]);
+        out[i] = restRadii[i] - span.pressure * (restRadii[i] - target);
+      }
+    }
+    return out;
   };
 
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
+    const rotorAngle = sourceRotorAngle + rotorAngularSpeed * cycleTime;
     return {
-      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
       cycleTime,
       phase: cycleTime / cycleDuration,
+      rotorAngle,
+      rotorAngularSpeed,
+      // rolling without slip on the rubber: absolute roller angle
+      rollerAngle: -rotorAngularSpeed * (rollerPathRadius / rollerRadius) * cycleTime,
+      ...spansAt(rotorAngle),
     };
   };
 
-  const geometry = {
-    armRadius,
-    cycleDuration,
-    housingInnerRadius,
-    housingOuterRadius,
-    inputAngularSpeed,
-    linerContactRadius,
-    linerIndentationDepth,
-    linerInfluenceHalfAngle,
-    linerNodeCount,
-    linerRestRadius,
-    linerThickness,
-    materialAngles: [...materialAngles],
-    rollerCount,
-    rollerRadius,
-    rollerSpinRatio,
-    sourcePoseFirstRollerAngle,
+  // ---- casing -------------------------------------------------------------------
+  const footTop = -3.1;
+  const footBottom = -3.52;
+  const footHalfWidth = 2.9;
+  const circle = { center: [0, 0], radius: casingRadius };
+  const neckFillet = (sideX, lineY) => lineCircleFillet(
+    { point: [sideX * neckEnd, lineY], direction: [1, 0], side: lineY > 0 ? 1 : -1 },
+    circle, 0.55, { hint: [sideX * 3.6, lineY + Math.sign(lineY) * 0.6] },
+  );
+  const footFillet = (sideX) => lineCircleFillet(
+    { point: [sideX * footHalfWidth, footTop], direction: [1, 0], side: 1 },
+    circle, 0.6, { hint: [sideX * 2.2, -2.5] },
+  );
+  const rightFoot = footFillet(1);
+  const rightNeckLow = neckFillet(1, -neckHalfHeight);
+  const rightNeckHigh = neckFillet(1, neckHalfHeight);
+  const leftNeckHigh = neckFillet(-1, neckHalfHeight);
+  const leftNeckLow = neckFillet(-1, -neckHalfHeight);
+  const leftFoot = footFillet(-1);
+  const outerOutline = ringPolygon([
+    [-footHalfWidth, footBottom], [footHalfWidth, footBottom], [footHalfWidth, footTop],
+    ...rightFoot.points,
+    ...arcBetween([0, 0], casingRadius, angleOf(rightFoot.onCircle), angleOf(rightNeckLow.onCircle)).slice(1, -1),
+    ...rightNeckLow.points.slice().reverse(),
+    [neckEnd, -neckHalfHeight], [neckEnd, neckHalfHeight],
+    ...rightNeckHigh.points,
+    ...arcBetween([0, 0], casingRadius, angleOf(rightNeckHigh.onCircle), angleOf(leftNeckHigh.onCircle)).slice(1, -1),
+    ...leftNeckHigh.points.slice().reverse(),
+    [-neckEnd, neckHalfHeight], [-neckEnd, -neckHalfHeight],
+    ...leftNeckLow.points,
+    ...arcBetween([0, 0], casingRadius, angleOf(leftNeckLow.onCircle), angleOf(leftFoot.onCircle)).slice(1, -1),
+    ...leftFoot.points.slice().reverse(),
+    [-footHalfWidth, footTop],
+  ]);
+
+  // rubber rest outer surface to size the clamp faces
+  const restOuterTipRadius = vTipRadius + rubberThickness / Math.sin(Math.atan2(
+    rubberRestInner * Math.sin(vRimAngle), vTipRadius - rubberRestInner * Math.cos(vRimAngle),
+  ));
+  const clampFace = restOuterTipRadius + 0.004;
+  const neckCavity = (sideX) => polygonClipping.union(
+    ringPolygon([[sideX * (boreRadius - 0.2), channelInner], [sideX * (neckEnd + 0.1), channelInner],
+      [sideX * (neckEnd + 0.1), channelOuter], [sideX * (boreRadius - 0.2), channelOuter]]),
+    ringPolygon([[sideX * (boreRadius - 0.2), -channelOuter], [sideX * (neckEnd + 0.1), -channelOuter],
+      [sideX * (neckEnd + 0.1), -channelInner], [sideX * (boreRadius - 0.2), -channelInner]]),
+    ringPolygon([[sideX * (boreRadius - 0.2), -channelInner], [sideX * clampFace, -channelInner],
+      [sideX * clampFace, channelInner], [sideX * (boreRadius - 0.2), channelInner]]),
+  );
+  const cavity = polygonClipping.union(circlePolygon([0, 0], boreRadius, 240), neckCavity(-1), neckCavity(1));
+  const casingOutline = polygonClipping.difference(outerOutline, cavity);
+
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.24, roughness: 0.54 });
+  const backMaterial = matte(0x7d8786, { metalness: 0.18, roughness: 0.6 });
+  const rubberMaterial = matte(0x2f2b29, { metalness: 0.02, roughness: 0.86 });
+  const armMaterial = matte(PALETTE.driven, { metalness: 0.22, roughness: 0.46 });
+  const rollerMaterial = matte(PALETTE.driver, { metalness: 0.2, roughness: 0.48 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.3, roughness: 0.43 });
+
+  const casing = sectionPlate(casingOutline, zBack, 0, frameMaterial,
+    'sectioned-round-casing-with-two-channel-necks-and-foot');
+  root.add(casing);
+  const backCover = sectionPlate(polygonClipping.difference(outerOutline, circlePolygon([0, 0], shaftRadius + 0.01, 64)),
+    zBack - backThickness, zBack, backMaterial, 'solid-back-of-casing');
+  backCover.material = [backMaterial, backMaterial];
+  root.add(backCover);
+
+  // ---- rubber lining E (deforming) ----------------------------------------------------
+  const rubberGeometry = new THREE.BufferGeometry();
+  const rubberPositions = new Float32Array(samples * 8 * 3);
+  const rubberNormals = new Float32Array(samples * 8 * 3);
+  rubberGeometry.setAttribute('position', new THREE.BufferAttribute(rubberPositions, 3).setUsage(THREE.DynamicDrawUsage));
+  rubberGeometry.setAttribute('normal', new THREE.BufferAttribute(rubberNormals, 3).setUsage(THREE.DynamicDrawUsage));
+  const rubberIndex = [];
+  // vertex blocks: 0 front-inner, 1 front-outer, 2 back-inner, 3 back-outer,
+  // 4 inner-side front, 5 inner-side back, 6 outer-side front, 7 outer-side back
+  const v = (block, i) => block * samples + (i % samples);
+  for (let i = 0; i < samples; i += 1) {
+    const j = i + 1;
+    rubberIndex.push(v(0, i), v(1, i), v(1, j), v(0, i), v(1, j), v(0, j)); // front (+z)
+    rubberIndex.push(v(2, i), v(3, j), v(3, i), v(2, i), v(2, j), v(3, j)); // back
+    rubberIndex.push(v(4, i), v(4, j), v(5, j), v(4, i), v(5, j), v(5, i)); // inner side (faces centre)
+    rubberIndex.push(v(6, i), v(7, j), v(6, j), v(6, i), v(7, i), v(7, j)); // outer side
+  }
+  rubberGeometry.setIndex(rubberIndex);
+  const rubberZ = [zBack + 0.004, -0.004];
+  const rubber = new THREE.Mesh(rubberGeometry, rubberMaterial);
+  rubber.userData.role = 'india-rubber-lining-E-pressed-in-against-rollers';
+  rubber.userData.deformingMesh = true;
+  root.add(rubber);
+  const innerRadii = new Float64Array(samples);
+  const innerPoints = Array.from({ length: samples }, () => [0, 0]);
+  const outerPoints = Array.from({ length: samples }, () => [0, 0]);
+  const updateRubber = (rotorAngle) => {
+    innerRadiiAt(rotorAngle, innerRadii);
+    for (let i = 0; i < samples; i += 1) {
+      innerPoints[i][0] = innerRadii[i] * Math.cos(sampleAngles[i]);
+      innerPoints[i][1] = innerRadii[i] * Math.sin(sampleAngles[i]);
+    }
+    for (let i = 0; i < samples; i += 1) {
+      const a = innerPoints[(i + samples - 2) % samples];
+      const b = innerPoints[(i + 2) % samples];
+      let nx = b[1] - a[1];
+      let ny = -(b[0] - a[0]);
+      const length = Math.hypot(nx, ny) || 1;
+      nx /= length; ny /= length;
+      if (nx * innerPoints[i][0] + ny * innerPoints[i][1] < 0) { nx = -nx; ny = -ny; }
+      outerPoints[i][0] = innerPoints[i][0] + nx * rubberThickness;
+      outerPoints[i][1] = innerPoints[i][1] + ny * rubberThickness;
+      // keep the outer face on or inside the bore (it rests there)
+      const r = Math.hypot(outerPoints[i][0], outerPoints[i][1]);
+      const limit = restInner(sampleAngles[i]) === rubberRestInner ? boreRadius - 0.002 : Infinity;
+      if (r > limit) { outerPoints[i][0] *= limit / r; outerPoints[i][1] *= limit / r; }
+      const set = (block, point, z, n) => {
+        const k = v(block, i) * 3;
+        rubberPositions[k] = point[0]; rubberPositions[k + 1] = point[1]; rubberPositions[k + 2] = z;
+        rubberNormals[k] = n[0]; rubberNormals[k + 1] = n[1]; rubberNormals[k + 2] = n[2];
+      };
+      set(0, innerPoints[i], rubberZ[1], [0, 0, 1]);
+      set(1, outerPoints[i], rubberZ[1], [0, 0, 1]);
+      set(2, innerPoints[i], rubberZ[0], [0, 0, -1]);
+      set(3, outerPoints[i], rubberZ[0], [0, 0, -1]);
+      set(4, innerPoints[i], rubberZ[1], [-nx, -ny, 0]);
+      set(5, innerPoints[i], rubberZ[0], [-nx, -ny, 0]);
+      set(6, outerPoints[i], rubberZ[1], [nx, ny, 0]);
+      set(7, outerPoints[i], rubberZ[0], [nx, ny, 0]);
+    }
+    rubberGeometry.attributes.position.needsUpdate = true;
+    rubberGeometry.attributes.normal.needsUpdate = true;
+    rubberGeometry.computeBoundingSphere();
   };
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.25,
-    roughness: 0.54,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.34,
-    roughness: 0.42,
-  });
-  const rotorMaterial = matte(PALETTE.driven, {
-    metalness: 0.22,
-    roughness: 0.46,
-  });
-  const rollerMaterial = matte(PALETTE.driver, {
-    metalness: 0.20,
-    roughness: 0.43,
-  });
-  const rubberMaterial = matte(0x263d38, {
-    metalness: 0.02,
-    roughness: 0.88,
-    side: THREE.DoubleSide,
-  });
-  const witnessMaterial = matte(PALETTE.white, { roughness: 0.48 });
-  const inletMaterial = matte(PALETTE.driver, {
-    opacity: 0.25,
-    roughness: 0.62,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const exhaustMaterial = matte(PALETTE.fluid, {
-    opacity: 0.25,
-    roughness: 0.62,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-
-  const rearHousing = new THREE.Mesh(
-    new THREE.RingGeometry(
-      housingInnerRadius,
-      housingOuterRadius,
-      96,
-    ),
-    frameMaterial,
-  );
-  // Brown's casing is round but blends in concave fillets into the two port
-  // necks; the bore stays the exact circle the liner E rests on.
-  const portHalfHeight = 0.52;
-  // The front lips lie in front of the port pipes, so they stay whole.
-  const cutRing = (inner, outer, low, high) => plate(polygonClipping.difference(
-    poly(circle([0,0],outer,1024)), poly(circle([0,0],inner,1024))), low, high);
-  // Pass 56: each port is a round bored pipe; its bore opens through the wall
-  // to the space outside E by a square hole in the wall's middle layer only.
-  const portZ = 0.24, portBore = 0.24;
-  rearHousing.geometry.dispose();rearHousing.geometry=portedCasingGeometry(polygonClipping.difference(
-    poly(circle([0,0],housingOuterRadius,1024)),
-    poly(circle([0,0],housingInnerRadius,1024))),-0.42,0.90,portZ,portBore,
-    [squarePortHole([-1,0],housingInnerRadius-0.1,housingOuterRadius+0.1,portBore),
-      squarePortHole([1,0],housingInnerRadius-0.1,housingOuterRadius+0.1,portBore)]);
-  rearHousing.position.z = 0;
-  rearHousing.userData.role =
-    'fixed-rigid-cylinder-surrounding-flexible-lining';
-  root.add(rearHousing);
-  const innerHousingWall = new THREE.Mesh(
-    new THREE.TorusGeometry(housingInnerRadius, 0.095, 10, 96),
-    frameMaterial,
-  );
-  innerHousingWall.geometry.dispose();innerHousingWall.geometry=cutRing(housingInnerRadius,housingInnerRadius+0.095,0.90,0.94);
-  innerHousingWall.position.z = 0;
-  innerHousingWall.userData.role =
-    'fixed-inner-wall-containing-steam-outside-liner-E';
-  root.add(innerHousingWall);
-  const outerHousingWall = new THREE.Mesh(
-    new THREE.TorusGeometry(housingOuterRadius, 0.12, 10, 96),
-    frameMaterial,
-  );
-  outerHousingWall.geometry.dispose();outerHousingWall.geometry=cutRing(housingOuterRadius-0.12,housingOuterRadius,0.90,0.94);
-  outerHousingWall.position.z = 0;
-  outerHousingWall.userData.role = 'fixed-outer-cylinder-wall';
-  root.add(outerHousingWall);
-
-  // Brown stands the casing on one cast foot with concave flanks, not a bed slab.
-  const foundation = new THREE.Mesh(
-    castFootGeometry({casingRadius: housingOuterRadius, padHalfWidth: 3.05, neckHalfWidth: 2.25, footY: -housingOuterRadius - 0.30}, -0.42, 0.90),
-    frameMaterial,
-  );
-  foundation.userData.role = 'fixed-cast-foot-under-cylinder';
-  root.add(foundation);
-  for (const side of [-1, 1]) {
-    // Each port is a round bored pipe run into the casing wall up to its bore.
-    const port = new THREE.Mesh(
-      roundPortPipeGeometry(new THREE.Vector3(side * housingInnerRadius, 0, portZ),
-        new THREE.Vector3(side * 4.39, 0, portZ), portBore, portHalfHeight),
-      frameMaterial,
-    );
-    port.userData.role = side < 0
-      ? 'left-induction-port-to-space-outside-rubber-liner'
-      : 'right-eduction-port-from-space-outside-rubber-liner';
-    root.add(port);
-    const passage = new THREE.Mesh(
-      new THREE.BoxGeometry(1.47, 0.52, 0.58),
-      side < 0 ? inletMaterial : exhaustMaterial,
-    );
-    passage.position.set(side * 3.70, 0, 0.35);
-    passage.userData.role = side < 0
-      ? 'induction-steam-path-indicator'
-      : 'eduction-steam-path-indicator';
-    root.add(passage);
-  }
-
-  const highPressureArc = new THREE.Mesh(
-    new THREE.RingGeometry(2.66, 3.04, 72, 1, 0.20, 2.58),
-    inletMaterial,
-  );
-  highPressureArc.position.z = 0.02;
-  highPressureArc.userData.role =
-    'illustrative-high-pressure-steam-outside-flexible-liner';
-  const exhaustArc = new THREE.Mesh(
-    new THREE.RingGeometry(2.66, 3.04, 48, 1, 4.92, 1.12),
-    exhaustMaterial,
-  );
-  exhaustArc.position.z = 0.02;
-  exhaustArc.userData.role =
-    'illustrative-eduction-region-outside-flexible-liner';
-  root.add(highPressureArc, exhaustArc);
-
+  // ---- arms B and rollers A ---------------------------------------------------------------
   const rotor = new THREE.Group();
-  rotor.userData.role =
-    'three-arm-carrier-fast-on-main-shaft-B-turning-clockwise';
-  root.add(rotor);
-  const centralHub = cylinderAlongZ(0.48, 0.70, rotorMaterial, 40);
-  centralHub.position.z = 0.28;
-  centralHub.userData.role = 'central-carrier-hub-fast-on-shaft-B';
-  rotor.add(centralHub);
-  // Pass 57: B runs back through a bore in the back head (Brown's view only
-  // removes the front head) into a blind bearing boss on its outer face.
-  const shaftB = cylinderAlongZ(0.27, 1.639, darkMaterial, 36);
-  shaftB.position.z = (1.10 - 0.539) / 2;
-  shaftB.userData.role = 'main-shaft-B-in-fixed-cylinder-bearings';
-  // The carrier hub and arms are fast on B, so B turns with them.
+  rotor.userData.role = 'arms-B-on-main-shaft-carrying-rollers-A';
+  const armOutline = polygonClipping.union(
+    circlePolygon([0, 0], hubRadius, 64),
+    ...[0, 1, 2].map((k) => {
+      const a = k * FULL_TURN / 3;
+      const c = Math.cos(a);
+      const s = Math.sin(a);
+      const pts = [[0.2, -0.36], [rollerPathRadius, -0.2], [rollerPathRadius, 0.2], [0.2, 0.36]];
+      return ringPolygon(pts.map(([x, y]) => [x * c - y * s, x * s + y * c]));
+    }),
+    ...[0, 1, 2].map((k) => circlePolygon([
+      rollerPathRadius * Math.cos(k * FULL_TURN / 3), rollerPathRadius * Math.sin(k * FULL_TURN / 3),
+    ], 0.3, 32)),
+  );
+  const arms = partPlate(polygonClipping.difference(armOutline, circlePolygon([0, 0], shaftRadius, 48)),
+    armLayer[0], armLayer[1], armMaterial, 'three-armed-spider-B');
+  rotor.add(arms);
+  const shaftB = new THREE.Mesh(latheSectionGeometry(
+    [[0, zBack - backThickness - 0.8], [shaftRadius, zBack - backThickness - 0.8], [shaftRadius, -0.01], [0, -0.01]],
+    { segments: 48, phiStart: 0, phiLength: FULL_TURN },
+  ), darkMaterial);
+  shaftB.rotation.x = Math.PI / 2;
+  shaftB.userData.role = 'main-shaft-B';
   rotor.add(shaftB);
-  const backHead = new THREE.Mesh(plate(polygonClipping.difference(poly(circle([0,0],housingInnerRadius-0.0005,1024)),
-    poly(circle([0,0],0.274,96))),-0.42,-0.30), frameMaterial);
-  backHead.userData.role = 'fixed-back-head-closing-cylinder';
-  const backBoss = new THREE.Mesh(plate(polygonClipping.difference(poly(circle([0,0],0.50,96)),poly(circle([0,0],0.274,96))),-0.54,-0.42), frameMaterial);
-  backBoss.userData.role = 'fixed-back-bearing-boss-for-shaft-B';
-  const backBossCap = new THREE.Mesh(plate(poly(circle([0,0],0.50,96)),-0.60,-0.54), frameMaterial);
-  backBossCap.userData.role = 'fixed-back-bearing-boss-cap';
-  for (const part of [backHead, backBoss, backBossCap]) {part.castShadow = true;part.receiveShadow = true;root.add(part);}
-
-  const rollerParts = [];
-  for (let rollerIndex = 0; rollerIndex < rollerCount;
-    rollerIndex += 1) {
-    const localAngle = sourcePoseFirstRollerAngle
-      + rollerIndex * FULL_TURN / rollerCount;
-    const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(armRadius, 0.22, 0.20),
-      rotorMaterial,
-    );
-    arm.position.set(
-      Math.cos(localAngle) * armRadius / 2,
-      Math.sin(localAngle) * armRadius / 2,
-      -0.10,
-    );
-    arm.rotation.z = localAngle;
-    arm.userData.role = `radial-arm-${rollerIndex + 1}-from-B-to-A`;
-    rotor.add(arm);
-
-    const rollerGroup = new THREE.Group();
-    rollerGroup.position.set(
-      Math.cos(localAngle) * armRadius,
-      Math.sin(localAngle) * armRadius,
-      0,
-    );
-    rollerGroup.userData.role =
-      `roller-A-${rollerIndex + 1}-counterspinning-on-radial-arm`;
-    const roller = cylinderAlongZ(
-      rollerRadius,
-      0.80,
-      rollerMaterial,
-      44,
-    );
-    roller.geometry.dispose();roller.geometry=ring(0.164,rollerRadius,-0.40,0.40,256);
-    roller.rotation.set(0,0,0);roller.position.z = 0.46;
-    roller.userData.role = `working-roller-A-${rollerIndex + 1}`;
-    rollerGroup.add(roller);
-    // The axle stands in front of its arm's face.
-    const rollerPin = cylinderAlongZ(0.16, 0.98, darkMaterial, 28);
-    rollerPin.position.z = 0.50;
-    rollerPin.userData.role = `roller-A-${rollerIndex + 1}-axle-pin`;
-    rollerGroup.add(rollerPin);
-    const spinMarker = new THREE.Mesh(
-      new THREE.BoxGeometry(0.67, 0.09, 0.10),
-      witnessMaterial,
-    );
-    spinMarker.position.set(0.18, 0, 0.91);
-    spinMarker.userData.role =
-      `visible-spin-marker-on-roller-A-${rollerIndex + 1}`;
-    rollerGroup.add(spinMarker);
-    rotor.add(rollerGroup);
-    rollerParts.push({ arm, roller, rollerGroup, rollerPin, spinMarker });
+  const rollers = [];
+  for (let k = 0; k < 3; k += 1) {
+    const a = k * FULL_TURN / 3;
+    const center = [rollerPathRadius * Math.cos(a), rollerPathRadius * Math.sin(a)];
+    // the pin starts inside the arm (no face flush with the arm's back)
+    const pinBack = armLayer[0] + 0.03;
+    const pinFront = -0.04;
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(pinRadius, pinRadius, pinFront - pinBack, 24), darkMaterial);
+    pin.rotation.x = Math.PI / 2;
+    pin.position.set(center[0], center[1], (pinBack + pinFront) / 2);
+    pin.userData.role = `roller-A-${k + 1}-pin-on-arm`;
+    rotor.add(pin);
+    const roller = new THREE.Group();
+    roller.position.set(center[0], center[1], 0);
+    roller.userData.role = `roller-A-${k + 1}`;
+    const body = new THREE.Mesh(latheSectionGeometry(
+      [[pinRadius + 0.01, rollerLayer[0]], [rollerRadius, rollerLayer[0]], [rollerRadius, rollerLayer[1]], [pinRadius + 0.01, rollerLayer[1]]],
+      { segments: 64, phiStart: 0, phiLength: FULL_TURN },
+    ), rollerMaterial);
+    body.rotation.x = Math.PI / 2;
+    body.userData.role = `roller-A-${k + 1}-rolling-on-rubber`;
+    roller.add(body);
+    rotor.add(roller);
+    rollers.push(roller);
   }
+  root.add(rotor);
+  // the rollers take the shared quadrant cue from src/data/rotation-indicators.js
 
-  const liningGeometry = makeLiningGeometry(linerNodeCount);
-  const linerE = new THREE.Mesh(liningGeometry, rubberMaterial);
-  linerE.userData.role =
-    'flexible-india-rubber-cylinder-lining-E-with-fixed-material-angles';
-  root.add(linerE);
-
-  const materialWitnesses = [];
-  const witnessStride = 60;
-  for (let nodeIndex = 0; nodeIndex < linerNodeCount;
-    nodeIndex += witnessStride) {
-    const materialAngle = materialAngles[nodeIndex];
-    const witness = new THREE.Mesh(
-      new THREE.BoxGeometry(0.14, 0.045, 0.075),
-      witnessMaterial,
-    );
-    witness.rotation.z = materialAngle + Math.PI / 2;
-    witness.position.z = 0.80;
-    witness.userData.role =
-      `fixed-angular-material-witness-on-liner-E-${nodeIndex}`;
-    root.add(witness);
-    materialWitnesses.push({ materialAngle, nodeIndex, witness });
+  // ---- steam ------------------------------------------------------------------------------
+  const steamZ = [zBack + 0.012, -0.012];
+  // One steam volume per span, keyed by the roller that closes it (or by
+  // the half it ends in), so each changes shape smoothly as B turns.
+  const steamKeys = ['roller-0', 'roller-1', 'roller-2', 'end-upper', 'end-lower'];
+  const steamMeshes = steamKeys.map((key) => {
+    const mesh = steamVolume(`steam-space-between-rubber-and-bore-${key}`, steamZ[0], steamZ[1]);
+    root.add(mesh);
+    return mesh;
+  });
+  // The cavity seen from the shaft: first boundary crossing along each
+  // sample ray (bore, clamp face or channel end), plus the few channel
+  // corners no ray reaches (static pieces, assigned to the span holding them).
+  const steamCavity = polygonClipping.intersection(cavity, outerOutline);
+  const cavityRings = steamCavity.flatMap((polygon) => polygon);
+  const cavityRadius = sampleAngles.map((angle) => {
+    const dx = Math.cos(angle);
+    const dy = Math.sin(angle);
+    let best = Infinity;
+    for (const ring of cavityRings) {
+      for (let i = 0; i + 1 < ring.length; i += 1) {
+        const a = ring[i];
+        const b = ring[i + 1];
+        const ex = b[0] - a[0];
+        const ey = b[1] - a[1];
+        const denominator = dx * ey - dy * ex;
+        if (Math.abs(denominator) < 1e-12) continue;
+        const t = (a[0] * ey - a[1] * ex) / denominator;
+        const u = (a[0] * dy - a[1] * dx) / denominator;
+        if (t > 1e-6 && u >= -1e-9 && u <= 1 + 1e-9) best = Math.min(best, t);
+      }
+    }
+    return best;
+  });
+  // The spans reach out only to the bore (and into the clamp notch); the four
+  // channels beyond the bore are drawn as their own steady volumes: the
+  // admitting channels always live, the exhausting ones faint.
+  for (let i = 0; i < samples; i += 1) {
+    const nearNeck = Math.abs(Math.sin(sampleAngles[i])) < Math.sin(vRimAngle) * 0.999;
+    if (!nearNeck) cavityRadius[i] = Math.min(cavityRadius[i], boreRadius);
   }
-
-  const writeLiningGeometry = (state) => {
-    const positions = liningGeometry.getAttribute('position');
-    const backZ = 0.12;
-    const frontZ = 0.72;
-    for (let nodeIndex = 0; nodeIndex < linerNodeCount;
-      nodeIndex += 1) {
-      const materialAngle = materialAngles[nodeIndex];
-      const cosine = Math.cos(materialAngle);
-      const sine = Math.sin(materialAngle);
-      const innerRadius = state.linerMaterialRadii[nodeIndex];
-      const outerRadius = innerRadius + linerThickness;
-      const offset = nodeIndex * 4;
-      positions.setXYZ(offset,
-        cosine * innerRadius, sine * innerRadius, backZ);
-      positions.setXYZ(offset + 1,
-        cosine * outerRadius, sine * outerRadius, backZ);
-      positions.setXYZ(offset + 2,
-        cosine * innerRadius, sine * innerRadius, frontZ);
-      positions.setXYZ(offset + 3,
-        cosine * outerRadius, sine * outerRadius, frontZ);
+  const starRegion = ringPolygon(sampleAngles.map((angle, i) => [cavityRadius[i] * Math.cos(angle), cavityRadius[i] * Math.sin(angle)]));
+  const channelMeshes = safeClip('difference', steamCavity, starRegion)
+    .filter((polygon) => multiArea([polygon]) > 1e-4)
+    .map((polygon) => {
+      const ring = polygon[0];
+      const cx = ring.reduce((sum, p) => sum + p[0], 0) / ring.length;
+      const cy = ring.reduce((sum, p) => sum + p[1], 0) / ring.length;
+      const admitting = (cx < 0 && cy > 0) || (cx > 0 && cy < 0);
+      const name = `${cx < 0 ? 'left' : 'right'}-${cy > 0 ? 'upper' : 'lower'}`;
+      const mesh = steamVolume(`steam-in-${name}-${admitting ? 'admission' : 'exhaust'}-channel`, steamZ[0], steamZ[1]);
+      mesh.userData.setRegion([polygon], admitting ? 1 : 0);
+      root.add(mesh);
+      return mesh;
+    });
+  const hiddenCorners = [];
+  const steamReport = { spans: [] };
+  // Steam is drawn in intervals cut at every roller (sealing or not), each
+  // keyed by the roller that ends it, so no volume ever jumps: a roller
+  // entering a half starts a new interval from nothing.
+  const drawIntervals = (rollers, spans) => {
+    const intervals = [];
+    for (const half of halves) {
+      const own = spans.filter((span) => span.half === half.name);
+      const cuts = rollers.map((roller) => ({ index: roller.index, u: wrap(half.inlet - roller.angle) }))
+        .filter((cut) => cut.u > 1e-9 && cut.u < Math.PI).sort((a, b) => a.u - b.u);
+      let from = 0;
+      for (const cut of [...cuts, { index: -1, u: Math.PI }]) {
+        const middle = (from + cut.u) / 2;
+        const source = own.find((span) => middle >= span.from - 1e-9 && middle <= span.to + 1e-9) ?? own.at(-1);
+        intervals.push({
+          half: half.name,
+          kind: source.kind,
+          key: cut.index >= 0 ? `roller-${cut.index}` : `end-${half.name}`,
+          from,
+          to: cut.u,
+          pressure: source.pressure,
+          inlet: half.inlet,
+          thetaFrom: half.inlet - from,
+          thetaTo: half.inlet - cut.u,
+        });
+        from = cut.u;
+      }
     }
-    positions.needsUpdate = true;
-    liningGeometry.computeVertexNormals();
-    liningGeometry.computeBoundingBox();
-    liningGeometry.computeBoundingSphere();
-    for (const { materialAngle, nodeIndex, witness } of materialWitnesses) {
-      const witnessRadius = state.linerMaterialRadii[nodeIndex]
-        + linerThickness + 0.025;
-      witness.position.set(
-        Math.cos(materialAngle) * witnessRadius,
-        Math.sin(materialAngle) * witnessRadius,
-        0.80,
-      );
-    }
+    return intervals;
+  };
+  const updateSteam = (rollers, spans) => {
+    steamReport.spans = [];
+    const used = new Set();
+    drawIntervals(rollers, spans).forEach((span) => {
+      const mesh = steamMeshes[steamKeys.indexOf(span.key)];
+      used.add(mesh);
+      const region = [];
+      // an exhausted space has the rubber back on the bore: its thin band
+      // fades out with the pressure
+      const visibility = THREE.MathUtils.smoothstep(span.pressure, 0, 0.15);
+      if (span.to - span.from > 1e-4 && visibility > 1e-3) {
+        const outer = [];
+        const inner = [];
+        const step = FULL_TURN / samples;
+        const i0 = Math.ceil(span.thetaTo / step);
+        const i1 = Math.floor(span.thetaFrom / step);
+        for (let k = i0; k <= i1; k += 1) {
+          const i = ((k % samples) + samples) % samples;
+          const angle = k * step;
+          outer.push([cavityRadius[i] * Math.cos(angle), cavityRadius[i] * Math.sin(angle)]);
+          inner.push(outerPoints[i]);
+        }
+        if (outer.length >= 2) region.push([[...outer, ...inner.reverse(), outer[0]]]);
+        for (const corner of hiddenCorners) {
+          const u = wrap(span.inlet - corner.angle);
+          if (u >= span.from && u <= span.to) region.push(corner.polygon);
+        }
+      }
+      mesh.userData.setRegion(region, span.pressure, visibility);
+      steamReport.spans.push({ half: span.half, kind: span.kind, key: span.key, pressure: span.pressure, area: mesh.userData.area, from: span.from, to: span.to });
+    });
+    for (const mesh of steamMeshes) if (!used.has(mesh)) mesh.userData.setRegion([], 0);
   };
 
   const update = (time) => {
     const state = stateAtTime(time);
-    rotor.rotation.z = state.carrierAngle;
-    for (let rollerIndex = 0; rollerIndex < rollerCount;
-      rollerIndex += 1) {
-      rollerParts[rollerIndex].rollerGroup.rotation.z =
-        state.rollers[rollerIndex].localSpinAngle;
-    }
-    writeLiningGeometry(state);
+    rotor.rotation.z = state.rotorAngle;
+    for (const roller of rollers) roller.rotation.z = state.rollerAngle - state.rotorAngle;
+    updateRubber(state.rotorAngle);
+    updateSteam(state.rollers, state.spans);
   };
 
-  const sourceState = stateAtInputAngle(0);
   root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'three-arm-clockwise-rotor-with-counterspinning-rollers-deforming-fixed-material-rubber-liner',
-    blocks: {
-      centralHub,
-      exhaustArc,
-      foundation,
-      highPressureArc,
-      innerHousingWall,
-      linerE,
-      materialWitnesses: materialWitnesses.map(({ witness }) => witness),
-      outerHousingWall,
-      rearHousing,
-      rollerArms: rollerParts.map(({ arm }) => arm),
-      rollerGroups: rollerParts.map(({ rollerGroup }) => rollerGroup),
-      rollerPins: rollerParts.map(({ rollerPin }) => rollerPin),
-      rollersA: rollerParts.map(({ roller }) => roller),
-      rotor,
-      shaftB,
-      spinMarkers: rollerParts.map(({ spinMarker }) => spinMarker),
-    },
-    degreesOfFreedom: {
-      independentPrescribedInputs: 1,
-      linerMaterialNodeRadiiIndependent: false,
-      operatingDegreesOfFreedom: 1,
-      rollerSpinIndependent: false,
-    },
+    animationTiming: { authoredCyclePeriod: cycleDuration, targetCycleDuration: 6 },
+    archetype: 'three-arm-clockwise-rotor-with-counterspinning-rollers-on-a-steam-deformed-rubber-lining',
+    blocks: { casing, backCover, rubber, rotor, arms, shaftB, rollers, steamMeshes, channelMeshes },
+    degreesOfFreedom: { independentPrescribedInputs: 1, operatingDegreesOfFreedom: 1 },
     dynamics: {
-      elasticConstitutiveLawMembraneTensionPressureFlowCutoffLeakageFrictionInertiaAndLoadsModeled:
-        false,
-      linerModel:
-        'The stationary-material rubber lining is represented by fixed angular nodes with a smooth compact-support radial indentation at every roller. This is a kinematically constrained explanatory envelope, not a finite-element membrane or thermodynamic solution.',
-      pressureArcs:
-        'The translucent induction and eduction regions explain Brown’s arrows but do not assert unprovided valve timing or solve steam pressure.',
-      rollingContact:
-        'Each roller is assigned the exact no-slip angular speed for a stationary lining at its radial contact point.',
+      rubberShape: 'Where steam stands behind the rubber it is drawn taut against the rollers (outward face of the convex hull of its clamp and supporting rollers); where the space is exhausted it lies on the bore. Blowdown after a roller passes the exhaust channel is a smooth 10-degree fade, not a flow solution.',
+      pressureForcesElasticityLeakageAndFrictionModeled: false,
     },
     fidelity: 'authored',
-    geometry,
-    linerIndentationWeight,
-    linerRadiusAtWorldAngle,
-    mechanism:
-      'Three rollers A replace rigid pistons and are carried clockwise on three arms fast to main shaft B. The fixed-material india-rubber cylinder lining E deforms radially inward only where each roller passes, remaining exactly tangent at the roller’s outer radial point. Every roller counterspins at arm-radius divided by roller-radius times the carrier speed, so its instantaneous surface velocity at E is zero. Brown describes steam outside E driving the rollers; this prescribed radial-contact illustration does not solve the asymmetric pressure and deformation needed to generate shaft torque.',
-    motion: {
-      carrierDirection: 'clockwise',
-      carrierRevolutionsPerCycle: 1,
+    geometry: {
       cycleDuration,
-      inputAngularSpeed,
-      rollerAbsoluteDirection: 'counterclockwise',
-      rollerAbsoluteRevolutionsPerCarrierRevolution: rollerSpinRatio,
+      boreRadius, rubberThickness, rollerRadius, rollerPathRadius, casingRadius, channelInner, channelOuter,
+      vTipRadius, vRimAngle, mouthAngle, depth, samples, cavity, casingOutline,
     },
+    innerRadiiAt,
+    restRadii,
+    sampleAngles,
+    mechanism: 'Rubber lining E is clamped into the middle of each neck, between the neck’s two channels, dividing the steam space behind it into halves. Steam from the left neck’s upper channel and the right neck’s lower channel presses the rubber in against the rollers A behind the leading roller of each half; the rollers seal the space by pinching the rubber on the bore, so the space expands as B turns clockwise. Past the far neck’s channel the space exhausts and the rubber returns to the bore.',
+    motion: { cycleDuration, rotorAngularSpeed, rollerAngularSpeed: -rotorAngularSpeed * rollerPathRadius / rollerRadius },
     sourceAnimation: {
       available: false,
-      officialCanvasModelPresent: false,
-      officialPageMarksAnimationUnavailable: true,
-      reason:
-        'The official Movement 428 page exposes only Brown’s static engraving and description; unlike neighboring animated pages, it contains no Canvas construction or source timing.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourcePose: {
-      carrierAngle: sourceState.carrierAngle,
-      linerMaterialRadii: [...sourceState.linerMaterialRadii],
-      rollerCenters: sourceState.rollers.map(({ center }) => center.clone()),
-      rollerContactPoints: sourceState.rollers.map(
-        ({ contactPoint }) => contactPoint.clone(),
-      ),
+      reason: 'The official Movement 428 page has no animation; the working was reconstructed from Brown’s plate and caption.',
     },
     sourceReference: {
-      brownPlate428: {
-        imageHeight: 525,
-        imageWidth: 525,
-        mainShaftBApproximateCenterPixels: [260, 282],
-        measurementUncertaintyPixels: 14,
-        rollerAApproximateCentersPixels: [
-          [145, 259],
-          [319, 148],
-          [329, 369],
-        ],
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'the cylinder has a flexible lining E of india-rubber',
-          'rollers A replace pistons',
-          'the rollers are attached to arms radiating from main shaft B',
-          'steam acts between the india-rubber and the surrounding rigid cylinder',
-          'steam presses the india-rubber against the rollers',
-          'the rollers revolve around the cylinder and turn the shaft',
-        ],
-        engravingEvidence:
-          'Brown’s cutaway visibly contains three circular rollers labeled A, three arms meeting shaft B, a continuously shaded flexible lining labeled E, a surrounding rigid casing, a left induction arrow, a right eduction arrow, and a clockwise rotor arrow.',
-        reconstructionDisclosure:
-          'Brown provides no absolute dimensions, exact arm lengths or angular spacing, roller radii, elastic material law, liner attachment detail, pressure, port timing, speed, friction, inertia, or loads. Equal 120-degree arms, a 4:1 ideal rolling ratio, the smooth fixed-material radial liner field, axial depths, supports, colors, and four-second demonstration cycle are independently engineered. The labeled topology, three visible rollers, clockwise direction, flexible-liner contact, and pressure side are source-grounded.',
-      },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 428',
+      brownPlate428: { imageWidth: 525, imageHeight: 525, shaftBCenterPixels: [262, 258], borePixels: 160, rollerPathPixels: 118, rollerRadiusPixels: 22 },
+      reconstructionDisclosure: 'Brown does not say which channels admit and which exhaust; his two clockwise arrows, the bulged rubber behind the top and bottom rollers and the rubber lying on the bore elsewhere fix the arrangement used. The clamp into each neck follows his V-shaped rubber at the necks. Dimensions, the taut-hull rubber law, the blowdown fade and the six-second turn are engineered.',
     },
-    stateAtInputAngle,
+    spansAt,
     stateAtTime,
-    transmission: {
-      fixedMaterialLiner:
-        'each liner node keeps a constant world polar angle and changes radius smoothly',
-      linerContactConstraint:
-        'linerRadius(rollerCenterAngle)=armRadius+rollerRadius',
-      rollerNoSlip:
-        'rollerAngularSpeed=-(armRadius/rollerRadius)*carrierAngularSpeed',
-    },
+    steamReport,
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.48, -3.96, -1.04),
-    new THREE.Vector3(4.48, 3.66, 1.42),
-  );
-  root.userData.cameraDistanceScale = 1.03;
-  root.userData.cameraDirection = new THREE.Vector3(5.2, 3.8, 11.9);
-  root.userData.groundFloorY = -3.96;
-  root.userData.hideGround=true;
-  root.userData.solidReview={rollerBoreRadius:0.164,
-    qualification:'Bored rollers with rear carrier arms; closed rigid casing and outward-wound, finer finite liner mesh. Liner deformation is prescribed; its radial contact supplies no independently validated steam-driven torque or elastic response.'};
-  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
-  markShadows(root);
-  foundation.receiveShadow = true;
+  root.userData.cameraDirection = new THREE.Vector3(0.08, 0.05, 1);
+  root.userData.cameraFov = 8;
   update(0);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  markShadows(root);
+  for (const mesh of [...steamMeshes, ...channelMeshes]) { mesh.castShadow = false; mesh.receiveShadow = false; }
+  rubber.castShadow = true;
+  fitPistonGuide(root, update, cycleDuration);
+  return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 
 export function createAuthoredRubberLinedRotaryEngineMovement(movement) {

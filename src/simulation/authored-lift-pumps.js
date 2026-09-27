@@ -6,6 +6,7 @@ import {
   matte,
 } from './primitives.js';
 import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
+import {WaterStream, ballisticPath, guidedPath, joinPaths} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -643,13 +644,45 @@ function commonLiftPump(movement) {
   root.userData.cameraDirection = new THREE.Vector3(6.3, 4.5, 10.8);
   root.userData.groundFloorY = groundY;
   correctLiftPumpParts(root, movement.id);
+  // Pass 69: the water leaving the spout lip is one continuous falling
+  // stream whose section follows the discharge (it used to snap between
+  // hidden and 45 per cent size at the start and end of each upstroke).
+  const lip = spoutCurve.getPointAt(1), lipDirection = spoutCurve.getTangentAt(1);
+  // It runs through the spout (where the pipe hides it) and on from the lip,
+  // so no separate tube of spout water switches on and off.
+  const spill = new WaterStream(joinPaths(guidedPath(spoutCurve, {speed: 1.1, samples: 24}), ballisticPath({
+    origin: lip,
+    velocity: lipDirection.clone().multiplyScalar(1.1),
+    endY: lip.y - 1.75,
+    samples: 24,
+  })), {width: 0.15, thickness: 0.15, fadeOut: 0.3, cyclePeriod: cycleDuration, streakRate: 1, opacity: 0.4});
+  spill.userData.role = 'water-falling-from-spout-lip-on-each-upstroke';
+  root.add(spill);
+  dischargeStream.removeFromParent();
+  spoutWater.removeFromParent();
+  const baseUpdate = update;
+  const liveUpdate = (time) => {
+    baseUpdate(time);
+    const state = stateAtTime(time);
+    const fraction = THREE.MathUtils.clamp(state.dischargeFlowRate / (barrelArea * 0.30), 0, 1);
+    // Near zero discharge the thinning stream also fades, so it never
+    // blinks on or off at the ends of the upstroke.
+    spill.setFlow(Math.max(1e-3, fraction));
+    spill.material.opacity = 0.4 * THREE.MathUtils.smoothstep(fraction, 0, 0.12);
+    spill.visible = spill.material.opacity > 0;
+    spill.update(time);
+  };
+  root.userData.update = liveUpdate;
+  root.userData.blocks.spill = spill;
   markShadows(root);
+  spill.castShadow = false;
+  spill.receiveShadow = false;
   base.receiveShadow = true;
-  update(0);
+  liveUpdate(0);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
-    update,
+    update: liveUpdate,
   };
 }
 

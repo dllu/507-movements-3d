@@ -125,7 +125,13 @@ function mirrorPolishingCompoundMotion(movement) {
   // The whole crank side stands in front of the bar: the shaft ends at the
   // eye crank in front of the bar face, so the bar can sweep past the shaft
   // axis. Front to back: handle crank, upper rail, eccentric, eye crank, bar;
-  // the lower rail lies behind the bar, as Brown draws both rails.
+  // the lower rail lies behind the bar, as Brown draws both rails, and the
+  // click carrier, ratchet and mirror lie behind the lower rail, so Brown's
+  // mirror and ratchet stand behind the bar and pass behind the rail and its
+  // pins at the bottom of each stroke. The mirror sits 2.85 below the top
+  // eye (Brown: about 3.6 crank radii, here 4.0) so that its axle, which
+  // crosses the rail's depth, always stays above the rail; Brown's own
+  // proportions would carry it through the rail.
   const crankPlaneZ = 0;
   const barPlaneZ = 0.10;
   const crankCenter = new THREE.Vector3(0, 2.32, 0);
@@ -136,7 +142,7 @@ function mirrorPolishingCompoundMotion(movement) {
   const guidePinRadius = 0.09;
   const longBarWidth = 0.58;
   const longBarLength = 5.38;
-  const mirrorDistanceFromTopEye = 3.30;
+  const mirrorDistanceFromTopEye = 2.85;
   const mirrorSize = 1.10;
   const mirrorThickness = 0.08;
   const ratchetToothCount = 12;
@@ -148,15 +154,18 @@ function mirrorPolishingCompoundMotion(movement) {
   // upward: the wheel turns clockwise in the plate (clickHand -1, angles
   // counterclockwise positive), its tooth tips pointing counterclockwise.
   const clickHand = -1;
-  const carrierBaseAngle = THREE.MathUtils.degToRad(142);
+  // The carrier swings 160 -> 130 degrees, so its pivot (where the eccentric
+  // rod's click stem passes the bar's plane) always stays beside the bar.
+  const carrierBaseAngle = THREE.MathUtils.degToRad(160);
   const carrierPivotRadius = 0.68;
   const pawlContactRadius = ratchetOuterRadius;
   const pawlMaximumLift = 0.105;
   const eccentricity = 0.18;
-  const mirrorRotorZ = 0.15;
-  // World depths: ratchet/click plane, carrier-pivot follower joint and the
-  // shaft eccentric, all in front of the bar (face at z 0.18).
-  const clickPlaneZ = 0.38;
+  const mirrorRotorZ = -0.60;
+  // World depths: the ratchet/click plane behind the lower rail (rail back
+  // face at z -0.21); the carrier-pivot follower joint and the shaft
+  // eccentric in front of the bar (face at z 0.18).
+  const clickPlaneZ = -0.37;
   const followerLowerZ = 0.56;
   const eccentricPlaneZ = 0.43;
 
@@ -392,10 +401,10 @@ function mirrorPolishingCompoundMotion(movement) {
   upperRail.userData.role = 'fixed-upper-rail-carrying-crankshaft-bearing';
   root.add(upperRail);
   const lowerRail = new THREE.Mesh(
-    new THREE.BoxGeometry(4.75, 0.34, 0.48),
+    new THREE.BoxGeometry(4.75, 0.34, 0.20),
     frameMaterial,
   );
-  lowerRail.position.set(0, guidePoint.y, -0.17);
+  lowerRail.position.set(0, guidePoint.y, -0.11);
   lowerRail.userData.fixed = true;
   lowerRail.userData.role = 'fixed-lower-rail-carrying-bar-guide-pins';
   root.add(lowerRail);
@@ -407,13 +416,13 @@ function mirrorPolishingCompoundMotion(movement) {
   root.add(crankBearing);
 
   const guidePins = [-1, 1].map((side) => {
-    // The pins stand from the lower rail only through the bar's depth, so
-    // the mirror and ratchet in front of the bar pass over them.
-    const pin = cylinderAlongZ(guidePinRadius, 0.30, darkMaterial, 28);
+    // The pins stand from the lower rail forward through the bar's depth;
+    // the mirror and ratchet pass behind the rail.
+    const pin = cylinderAlongZ(guidePinRadius, 0.35, darkMaterial, 28);
     pin.position.set(
       guidePoint.x + side * guidePinOffset,
       guidePoint.y,
-      0.05,
+      0.025,
     );
     pin.userData.fixed = true;
     pin.userData.role = 'one-of-two-fixed-lower-rail-bar-guide-pins';
@@ -421,8 +430,8 @@ function mirrorPolishingCompoundMotion(movement) {
     return pin;
   });
   const railFasteners = [-1.92, 1.92].map((x) => {
-    const fastener = cylinderAlongZ(0.075, 0.54, darkMaterial, 24);
-    fastener.position.set(x, guidePoint.y, -0.08);
+    const fastener = cylinderAlongZ(0.075, 0.24, darkMaterial, 24);
+    fastener.position.set(x, guidePoint.y, -0.11);
     fastener.userData.fixed = true;
     fastener.userData.role = 'lower-rail-fastener';
     root.add(fastener);

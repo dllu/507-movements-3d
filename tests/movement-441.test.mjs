@@ -370,7 +370,10 @@ test('movement 441 update keeps bucket water level, binds all rotating parts, an
       sameAngle(blocks.buckets[index].rotation.z,
         bucketState.bucketLocalAngle, 2e-15,
         `bucket local angle ${index} at ${phase}`);
-      assert.equal(blocks.bucketWaters[index].visible,
+      // Pass 69: the shown water is the load clipped at the tipped bucket's
+      // lowest rim point, so it can be less than (never more than) the load.
+      if (blocks.bucketWaters[index].visible) assert.ok(bucketState.bucketFill > 0.01);
+      if (Math.abs(bucketState.bucketTipAngle) < 1e-9) assert.equal(blocks.bucketWaters[index].visible,
         bucketState.bucketFill > 0.01);
       assert.equal(blocks.floatWaters[index].visible,
         bucketState.floatWaterFill > 0.015);

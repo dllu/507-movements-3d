@@ -50,7 +50,10 @@ function dischargeJet(root,mouthY,bore,outer,role,sector={}) {
   const crownRadius=r0+(outer+.05+thickness-r0)/s0;
   const jet=add(root,waterFountainGeometry({nozzleY:-.04,apexY:apex,columnRadius,crownRadius,fallY,crownThickness:thickness,fadeStart:.5,crownAlpha:.8,...sector}),waterJetMaterial({opacity:.42}),role);
   jet.renderOrder=2;jet.position.y=mouthY;
-  return fraction=>{jet.visible=fraction>1e-3;jet.scale.y=Math.max(1e-4,fraction);};
+  // A trickle is faint as well as short, so the sheet fades in and out
+  // with the discharge rather than switching on at the lip.
+  const opacity=jet.material.opacity;
+  return fraction=>{jet.visible=fraction>1e-4;jet.scale.y=Math.max(1e-4,fraction);jet.material.opacity=opacity*THREE.MathUtils.smoothstep(fraction,0,.15);};
 }
 
 export function correctEjectorTrapParts(root,id,update) {
@@ -99,9 +102,11 @@ export function correctEjectorTrapParts(root,id,update) {
       d.updateWorkingParts=(time,state)=>{
         jet(state.dischargeFraction);
         const level=state.waterLevelY;
-        inB.scale.y=Math.max(1e-4,Math.min(level,dBottom)-bilge);inB.visible=level>bilge+1e-3;
-        inD.visible=level>dBottom+1e-3;if(inD.visible)sweepD(level);
-        inC.scale.y=Math.max(1e-4,Math.min(level,outlet)-dTop);inC.visible=level>dTop+1e-3;
+        // The columns never switch on: empty, each collapses to a flat
+        // ring at its foot, and it grows from there as the level rises.
+        inB.scale.y=Math.max(1e-4,Math.min(level,dBottom)-bilge);inB.visible=true;
+        inD.visible=true;sweepD(Math.max(level,dBottom));
+        inC.scale.y=Math.max(1e-4,Math.min(level,outlet)-dTop);inC.visible=true;
         const r=level<dBottom?rB:level<dTop?rD(level):rC;
         surface.position.y=level;surface.scale.set(r,1,r);surface.visible=level>bilge+1e-3;
       };

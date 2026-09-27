@@ -1,817 +1,365 @@
 import * as THREE from 'three';
-import { addBackCover } from './cutaway-back-plates.js';
+import { PALETTE, markShadows, matte } from './primitives.js';
+import { fitPistonGuide } from './piston-guide-parts.js';
 import { latheSectionGeometry } from './cutaway-section.js';
-import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {plate,poly,circle,polygonClipping,ring} from './finite-plate-geometry.js';
 import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
-import {castFootGeometry} from './rotary-engine-cast-feet.js';
+  angleOf,
+  arcBetween,
+  arcPoints,
+  bandPolygon,
+  circlePolygon,
+  lineCircleFillet,
+  multiArea,
+  partPlate,
+  pointInPolygon,
+  polygonClipping,
+  ringPolygon,
+  safeClip,
+  sectionPlate,
+  steamVolume,
+} from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
-const HALF_TURN = Math.PI;
+const DEG = Math.PI / 180;
 
-const FOLLOWER_NOSE_ARC = [
-  4,
-  2.5,
-  0,
-  0.5,
-  5.759587,
-  0.523599,
-];
-
-const POSITIVE_FIXED_PROFILE = [
-  [4, 0.127285, 1.149067, 4.997495, 0.147787, 2.297989],
-  [4, -1.200599, 2.641283, 3, 2.297989, 3.649761],
-  [4, 3.092475, 1.587961, 2.000003, 5.180658, 0.149044],
-  [4, -3.092475, -1.587961, 2.000003, 2.039065, 3.290637],
-  [4, 0, 0, 4, 2.841732, 3.092387],
-];
-
-const NEGATIVE_FIXED_PROFILE = [
-  [4, -0.127285, -1.149067, 4.997495, 3.28938, 5.439581],
-  [4, 1.200599, -2.641283, 3, 5.439581, 0.508169],
-  [4, -3.092475, -1.587961, 2.000003, 2.039065, 3.290637],
-  [4, 3.092475, 1.587961, 2.000003, 5.180658, 0.149044],
-  [4, 0, 0, 4, 5.983325, 6.23398],
-];
-
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function makeTubeThrough(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points,
-    false,
-    'centripetal',
-  );
-  const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, points.length * 4, radius, 10, false),
-    material,
-  );
-  tube.userData.role = role;
-  return tube;
-}
-
-function arcPoints(radius, startAngle, endAngle, z, count = 72) {
-  const points = [];
-  for (let index = 0; index <= count; index += 1) {
-    const angle = THREE.MathUtils.lerp(
-      startAngle,
-      endAngle,
-      index / count,
-    );
-    points.push(new THREE.Vector3(
-      radius * Math.cos(angle),
-      radius * Math.sin(angle),
-      z,
-    ));
-  }
-  return points;
-}
-
-function normalizedAngle(angle) {
-  return THREE.MathUtils.euclideanModulo(angle, FULL_TURN);
-}
-
-function angleInArc(angle, arc) {
-  if (arc[0] === 6) return true;
-  const candidate = normalizedAngle(angle);
-  const start = normalizedAngle(arc[4]);
-  const end = normalizedAngle(arc[5]);
-  if (candidate === start || candidate === end) return true;
-  const between = start > end
-    ? candidate > start || candidate < end
-    : candidate > start && candidate < end;
-  return arc[0] === 2 ? !between : between;
-}
-
-function pointOnArc(arc, angle) {
-  return new THREE.Vector2(
-    arc[1] + Math.cos(angle) * arc[3],
-    arc[2] + Math.sin(angle) * arc[3],
-  );
-}
-
-function arcStartPoint(arc) {
-  return pointOnArc(arc, arc[4]);
-}
-
-function arcEndPoint(arc) {
-  return pointOnArc(arc, arc[5]);
-}
-
-function transformArcToRadialGuide(arc, guideAngle) {
-  const cosine = Math.cos(guideAngle);
-  const sine = Math.sin(guideAngle);
-  return [
-    arc[0],
-    arc[1] * cosine + arc[2] * sine,
-    -arc[1] * sine + arc[2] * cosine,
-    arc[3],
-    arc[4] - guideAngle,
-    arc[5] - guideAngle,
-  ];
-}
-
-function xIntersectionAtY(y, arc, chooseMinimum) {
-  const offsetY = y - arc[2];
-  const radicand = arc[3] ** 2 - offsetY ** 2;
-  if (radicand < 0) return Number.NaN;
-  const offsetX = Math.sqrt(Math.max(0, radicand));
-  const candidates = [
-    new THREE.Vector2(arc[1] - offsetX, y),
-    new THREE.Vector2(arc[1] + offsetX, y),
-  ].filter((point) => angleInArc(
-    Math.atan2(point.y - arc[2], point.x - arc[1]),
-    arc,
-  ));
-  if (candidates.length === 0) return Number.NaN;
-  if (candidates.length === 1) return candidates[0].x;
-  return chooseMinimum
-    ? Math.min(candidates[0].x, candidates[1].x)
-    : Math.max(candidates[0].x, candidates[1].x);
-}
-
-function exactSourceCamRoot(guideAngle, fixedProfile) {
-  const follower = FOLLOWER_NOSE_ARC;
-  let rootDistance = 5;
-  let activeConstraint = 'guide-limit';
-  const restrict = (candidate, label) => {
-    if (candidate > 0 && candidate < rootDistance) {
-      rootDistance = candidate;
-      activeConstraint = label;
-    }
-  };
-
-  for (let index = 0; index < fixedProfile.length; index += 1) {
-    const fixed = transformArcToRadialGuide(
-      fixedProfile[index],
-      guideAngle,
-    );
-    for (const [endpointName, endpoint] of [
-      ['follower-start', arcStartPoint(follower)],
-      ['follower-end', arcEndPoint(follower)],
-    ]) {
-      const fixedX = xIntersectionAtY(endpoint.y, fixed, true);
-      if (Number.isFinite(fixedX)) {
-        restrict(
-          fixedX - endpoint.x,
-          `${index}:${endpointName}-on-fixed-arc`,
-        );
-      }
-    }
-    for (const [endpointName, endpoint] of [
-      ['fixed-start', arcStartPoint(fixed)],
-      ['fixed-end', arcEndPoint(fixed)],
-    ]) {
-      const followerX = xIntersectionAtY(endpoint.y, follower, false);
-      if (Number.isFinite(followerX)) {
-        restrict(
-          endpoint.x - followerX,
-          `${index}:${endpointName}-on-follower-arc`,
-        );
-      }
-    }
-
-    if (follower[3] < fixed[3]) {
-      const radiusDifference = fixed[3] - follower[3];
-      const centerYDifference = follower[2] - fixed[2];
-      if (Math.abs(centerYDifference) <= radiusDifference) {
-        const contactAngle = Math.asin(
-          centerYDifference / radiusDifference,
-        );
-        if (angleInArc(contactAngle, follower)
-          && angleInArc(contactAngle, fixed)) {
-          restrict(
-            fixed[1] + radiusDifference * Math.cos(contactAngle)
-              - follower[1],
-            `${index}:internal-arc-tangency`,
-          );
-        }
-      }
-    }
-
-    const centerYDifference = follower[2] - fixed[2];
-    const radiusSum = follower[3] + fixed[3];
-    if (Math.abs(centerYDifference) <= radiusSum) {
-      const contactAngle = Math.asin(centerYDifference / radiusSum);
-      if (angleInArc(Math.PI - contactAngle, fixed)
-        && angleInArc(FULL_TURN - contactAngle, follower)) {
-        restrict(
-          fixed[1] - radiusSum * Math.cos(contactAngle) - follower[1],
-          `${index}:external-arc-tangency`,
-        );
-      }
-    }
-  }
-  return { activeConstraint, rootDistance };
-}
-
+// Movement 426, rotary engine with two stationary abutments D and two
+// pistons A sliding radially in grooves in hub C (pass 69 rebuild).
+//
+// The working space between hub C and the cast cylinder is closed at the two
+// abutments D, where the cylinder closes on the hub, and so forms an upper
+// and a lower chamber. Each side of the casing has two ports, one either side
+// of its abutment, run out through the neck as two separate channels: steam
+// enters each chamber just past one abutment (the right neck's upper channel
+// and the left neck's lower channel) and leaves just before the other (the
+// left neck's upper channel and the right neck's lower channel), as Brown's
+// arrows show. Each piston A, kept out against the cylinder wall, divides its
+// chamber: steam behind it drives it and hub C anticlockwise while the space
+// ahead of it exhausts. Both pistons are driven at once.
 function radialPistonRotaryEngine(movement) {
   const root = new THREE.Group();
-  const sourceCanvasControlPeriod = 4;
-  const sourceHubAdvancePerControlPeriod = 1.5 * Math.PI;
-  const inputAngularSpeed = sourceHubAdvancePerControlPeriod
-    / sourceCanvasControlPeriod;
-  const cycleDuration = FULL_TURN / inputAngularSpeed;
-  const sourceScale = 0.48;
-  const sourceHubRadius = 4;
-  const sourceFollowerNoseCenter = 2.5;
-  const sourceFollowerNoseRadius = 0.5;
-  const sourcePistonBodyEnd = 2.933013;
-  const sourcePistonHalfWidth = 0.25;
-  const hubRadius = sourceHubRadius * sourceScale;
-  const followerNoseCenter = sourceFollowerNoseCenter * sourceScale;
-  const followerNoseRadius = sourceFollowerNoseRadius * sourceScale;
-  const pistonBodyEnd = sourcePistonBodyEnd * sourceScale;
-  const pistonHalfWidth = sourcePistonHalfWidth * sourceScale;
-  const shaftRadius = sourceScale;
-  const cylinderInnerRadius = 7 * sourceScale;
-  const cylinderOuterRadius = 7 * sourceScale;
+  const cycleDuration = 16 / 3; // one turn of C (as before, 1.5 pi per 4 s)
+  const rotorAngularSpeed = FULL_TURN / cycleDuration; // anticlockwise
+  const sourceRotorAngle = Math.atan2(438 - 94, 243 - 280); // Brown: A nearly upright
 
-  const sourceRadialRootAtInputAngle = (inputAngle) => {
-    const canonicalAngle = THREE.MathUtils.euclideanModulo(
-      inputAngle,
-      HALF_TURN,
-    );
-    const positive = exactSourceCamRoot(
-      canonicalAngle,
-      POSITIVE_FIXED_PROFILE,
-    );
-    const negative = exactSourceCamRoot(
-      canonicalAngle + HALF_TURN,
-      NEGATIVE_FIXED_PROFILE,
-    );
-    const averagedSourceRoot = (
-      positive.rootDistance + negative.rootDistance
-    ) / 2;
-    return {
-      activeNegativeConstraint: negative.activeConstraint,
-      activePositiveConstraint: positive.activeConstraint,
-      canonicalAngle,
-      negativeSourceRoot: negative.rootDistance,
-      positiveSourceRoot: positive.rootDistance,
-      sourceRoot: Math.max(1, averagedSourceRoot),
-      sourceSymmetryRoundingDifference:
-        positive.rootDistance - negative.rootDistance,
-    };
+  // Units of the official canvas reconstruction (hub radius 4), which is a
+  // trace of Brown's plate.
+  const hubRadius = 4.0;
+  const shaftRadius = 0.7;
+  const grooveInner = 1.0;
+  const pistonHalfWidth = 0.25;
+  const pistonLength = 2.7;
+  const tipClearance = 0.01;
+  const casingRadius = 7.0;
+  const depth = 1.6;
+  const zBack = -depth;
+  const backThickness = 0.25;
+
+  // Cylinder wall of the upper chamber (arcs of the official trace): from the
+  // right abutment, a fillet up into the large arc over the top, a smaller
+  // arc down the left side, and the left abutment where the wall closes on C.
+  const upperWall = [
+    ...arcPoints([3.092475, 1.587961], 2.000003, 5.180658, 0.149044 + FULL_TURN, 24),
+    ...arcPoints([0.127285, 1.149067], 4.997495, 0.147787, 2.297989, 64).slice(1),
+    ...arcPoints([-1.200599, 2.641283], 3, 2.297989, 3.649761, 30).slice(1),
+    ...arcPoints([0, 0], hubRadius, 2.841732, 3.092387, 12).slice(1),
+  ];
+  const chamberProfile = [...upperWall, ...upperWall.map(([x, y]) => [-x, -y])];
+  const chamberPolygon = ringPolygon(chamberProfile);
+
+  // ---- piston travel: largest radius at which the round end of A clears the wall
+  const distanceToProfile = (point) => {
+    let best = Infinity;
+    for (let i = 0; i < chamberProfile.length; i += 1) {
+      const a = chamberProfile[i];
+      const b = chamberProfile[(i + 1) % chamberProfile.length];
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+      const t = THREE.MathUtils.clamp(((point[0] - a[0]) * dx + (point[1] - a[1]) * dy) / (dx * dx + dy * dy), 0, 1);
+      best = Math.min(best, Math.hypot(point[0] - a[0] - t * dx, point[1] - a[1] - t * dy));
+    }
+    return best;
   };
-
-  const radialRootAtInputAngle = (inputAngle) => (
-    sourceRadialRootAtInputAngle(inputAngle).sourceRoot * sourceScale
-  );
-
-  const derivativeStep = 2e-5;
-  const radialDerivativesAtInputAngle = (inputAngle) => {
-    const center = radialRootAtInputAngle(inputAngle);
-    const before = radialRootAtInputAngle(inputAngle - derivativeStep);
-    const after = radialRootAtInputAngle(inputAngle + derivativeStep);
-    return {
-      radialPosition: center,
-      radialPositionPrime: (after - before) / (2 * derivativeStep),
-      radialPositionSecond: (after - 2 * center + before)
-        / derivativeStep ** 2,
-    };
-  };
-
-  let sourceMinimumRoot = Infinity;
-  let sourceMaximumRoot = -Infinity;
-  let sourceMaximumSymmetryRoundingDifference = 0;
-  for (let sample = 0; sample < 8192; sample += 1) {
-    const sourceState = sourceRadialRootAtInputAngle(
-      HALF_TURN * sample / 8192,
-    );
-    sourceMinimumRoot = Math.min(
-      sourceMinimumRoot,
-      sourceState.sourceRoot,
-    );
-    sourceMaximumRoot = Math.max(
-      sourceMaximumRoot,
-      sourceState.sourceRoot,
-    );
-    sourceMaximumSymmetryRoundingDifference = Math.max(
-      sourceMaximumSymmetryRoundingDifference,
-      Math.abs(sourceState.sourceSymmetryRoundingDifference),
-    );
+  const tableSize = 720;
+  const tipTable = new Float64Array(tableSize);
+  for (let i = 0; i < tableSize; i += 1) {
+    const angle = i / tableSize * FULL_TURN;
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    let low = hubRadius - pistonHalfWidth - 0.003;
+    let high = 7;
+    for (let iteration = 0; iteration < 26; iteration += 1) {
+      const mid = (low + high) / 2;
+      const inside = pointInPolygon([mid * c, mid * s], chamberPolygon[0])
+        && distanceToProfile([mid * c, mid * s]) >= pistonHalfWidth + tipClearance;
+      if (inside) low = mid; else high = mid;
+    }
+    // over the abutments the round end stands just inside the hub face
+    tipTable[i] = Math.max(low, hubRadius - pistonHalfWidth - 0.003);
   }
-
-  const stateAtInputAngle = (
-    inputAngle,
-    inputSpeed = inputAngularSpeed,
-    inputAcceleration = 0,
-  ) => {
-    const sourceCam = sourceRadialRootAtInputAngle(inputAngle);
-    const radial = radialDerivativesAtInputAngle(inputAngle);
-    const cosine = Math.cos(inputAngle);
-    const sine = Math.sin(inputAngle);
-    const unitRadial = new THREE.Vector3(cosine, sine, 0);
-    const unitTangent = new THREE.Vector3(-sine, cosine, 0);
-    const positivePistonRoot = unitRadial.clone().multiplyScalar(
-      radial.radialPosition,
-    );
-    const positivePistonRootPrime = unitTangent.clone().multiplyScalar(
-      radial.radialPosition,
-    ).addScaledVector(unitRadial, radial.radialPositionPrime);
-    const positivePistonRootSecond = unitRadial.clone().multiplyScalar(
-      radial.radialPositionSecond - radial.radialPosition,
-    ).addScaledVector(
-      unitTangent,
-      2 * radial.radialPositionPrime,
-    );
-    const positivePistonRootVelocity = positivePistonRootPrime.clone()
-      .multiplyScalar(inputSpeed);
-    const positivePistonRootAcceleration = positivePistonRootSecond.clone()
-      .multiplyScalar(inputSpeed ** 2)
-      .addScaledVector(positivePistonRootPrime, inputAcceleration);
-    const negativePistonRoot = positivePistonRoot.clone().multiplyScalar(-1);
-    const negativePistonRootPrime = positivePistonRootPrime.clone()
-      .multiplyScalar(-1);
-    const negativePistonRootSecond = positivePistonRootSecond.clone()
-      .multiplyScalar(-1);
-    const negativePistonRootVelocity = positivePistonRootVelocity.clone()
-      .multiplyScalar(-1);
-    const negativePistonRootAcceleration = positivePistonRootAcceleration
-      .clone().multiplyScalar(-1);
-    const noseCenterRadius = radial.radialPosition + followerNoseCenter;
-    const noseOuterRadius = noseCenterRadius + followerNoseRadius;
-    const positiveNoseCenter = unitRadial.clone().multiplyScalar(
-      noseCenterRadius,
-    );
-    const negativeNoseCenter = positiveNoseCenter.clone().multiplyScalar(-1);
-    const positiveOuterTip = unitRadial.clone().multiplyScalar(
-      noseOuterRadius,
-    );
-    const negativeOuterTip = positiveOuterTip.clone().multiplyScalar(-1);
-    const relativeRadialSpeed = radial.radialPositionPrime * inputSpeed;
-    const relativeRadialAcceleration = radial.radialPositionSecond
-      * inputSpeed ** 2
-      + radial.radialPositionPrime * inputAcceleration;
-
-    return {
-      activeNegativeConstraint: sourceCam.activeNegativeConstraint,
-      activePositiveConstraint: sourceCam.activePositiveConstraint,
-      bothPistonsPressurized: true,
-      canonicalCamAngle: sourceCam.canonicalAngle,
-      inputAcceleration,
-      inputAngle,
-      inputSpeed,
-      negativeNoseCenter,
-      negativeOuterTip,
-      negativePistonRoot,
-      negativePistonRootAcceleration,
-      negativePistonRootPrime,
-      negativePistonRootSecond,
-      negativePistonRootVelocity,
-      negativeSourceRoot: sourceCam.negativeSourceRoot,
-      noseCenterRadius,
-      noseOuterRadius,
-      positiveNoseCenter,
-      positiveOuterTip,
-      positivePistonRoot,
-      positivePistonRootAcceleration,
-      positivePistonRootPrime,
-      positivePistonRootSecond,
-      positivePistonRootVelocity,
-      positiveSourceRoot: sourceCam.positiveSourceRoot,
-      radialPosition: radial.radialPosition,
-      radialPositionPrime: radial.radialPositionPrime,
-      radialPositionSecond: radial.radialPositionSecond,
-      relativeRadialAcceleration,
-      relativeRadialSpeed,
-      rotorAngle: inputAngle,
-      rotorAngularAcceleration: inputAcceleration,
-      rotorAngularSpeed: inputSpeed,
-      sourceCamControlPhase:
-        inputAngle / sourceHubAdvancePerControlPeriod,
-      sourceRadialPosition: sourceCam.sourceRoot,
-      sourceSymmetryRoundingDifference:
-        sourceCam.sourceSymmetryRoundingDifference,
-      unitRadial,
-      unitTangent,
-    };
+  // light smoothing of the sampled cam, never beyond the clear position
+  // (nor beyond it between samples)
+  const smoothed = Float64Array.from(tipTable, (_, i) => Math.min(
+    tipTable[(i + tableSize - 1) % tableSize], tipTable[i], tipTable[(i + 1) % tableSize],
+    (tipTable[(i + tableSize - 1) % tableSize] + 2 * tipTable[i] + tipTable[(i + 1) % tableSize]) / 4));
+  const tipCenterRadius = (angle) => {
+    const x = THREE.MathUtils.euclideanModulo(angle, FULL_TURN) / FULL_TURN * tableSize;
+    const i = Math.floor(x);
+    const f = x - i;
+    return smoothed[i % tableSize] * (1 - f) + smoothed[(i + 1) % tableSize] * f;
   };
 
-  // Brown draws the diametral pistons A standing nearly upright, reaching the
-  // casing wall top and bottom (plate tips ≈(243,94) and (280,438)); the
-  // cycle starts from that pose rather than at the retracted abutment pass.
-  const sourceRotorAngle = Math.atan2(438 - 94, 243 - 280);
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
-    return {
-      ...stateAtInputAngle(sourceRotorAngle + inputAngularSpeed * cycleTime),
-      cycleTime,
-      phase: cycleTime / cycleDuration,
-    };
+    const rotorAngle = sourceRotorAngle + rotorAngularSpeed * cycleTime;
+    const pistons = [0, 1].map((k) => {
+      const angle = rotorAngle + k * Math.PI;
+      const tip = tipCenterRadius(angle);
+      return { angle, tipCenterRadius: tip, outerRadius: tip + pistonHalfWidth, extension: tip + pistonHalfWidth - hubRadius };
+    });
+    return { cycleTime, phase: cycleTime / cycleDuration, rotorAngle, rotorAngularSpeed, pistons };
   };
 
-  const geometry = {
-    cycleDuration,
-    cylinderInnerRadius,
-    cylinderOuterRadius,
-    derivativeStep,
-    followerNoseCenter,
-    followerNoseRadius,
-    hubRadius,
-    inputAngularSpeed,
-    pistonBodyEnd,
-    pistonHalfWidth,
-    shaftRadius,
-    sourceCanvasControlPeriod,
-    sourceFollowerNoseCenter,
-    sourceFollowerNoseRadius,
-    sourceHubAdvancePerControlPeriod,
-    sourceHubRadius,
-    sourceMaximumRoot,
-    sourceMaximumSymmetryRoundingDifference,
-    sourceMinimumRoot,
-    sourcePistonBodyEnd,
-    sourcePistonHalfWidth,
-    sourceRotorAngle,
-    sourceScale,
+  // ---- casing ---------------------------------------------------------------------
+  // Outline of the official trace of Brown's casing: a circle of radius 7
+  // with a neck each side, each flank a radius-2 arc from the neck-end
+  // corner tangent into the circle, on a foot whose flanks are radius-1.5
+  // arcs from the plate.
+  const neckEnd = 7.5;
+  const flank = (center, from, to) => arcPoints(center, 2, from, to, 20);
+  const angleFrom = (center, point) => Math.atan2(point[1] - center[1], point[0] - center[0]);
+  const leftUpperCenter = [-7.658534, 4.727246];
+  const leftLowerCenter = [-8.823681, -1.772754];
+  const rightLowerCenter = [7.658534, -4.727246];
+  const rightUpperCenter = [8.823681, 1.772754];
+  const onCircle = (center) => {
+    const d = Math.hypot(...center);
+    return [center[0] * casingRadius / d, center[1] * casingRadius / d];
   };
-
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.24,
-    roughness: 0.54,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.34,
-    roughness: 0.41,
-  });
-  const hubMaterial = matte(PALETTE.driven, {
-    metalness: 0.21,
-    roughness: 0.46,
-  });
-  const pistonMaterial = matte(PALETTE.driver, {
-    metalness: 0.20,
-    roughness: 0.46,
-  });
-  const steamMaterial = matte(0xe66f4a, {
-    opacity: 0.21,
-    roughness: 0.60,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const exhaustMaterial = matte(0x4a93a8, {
-    opacity: 0.18,
-    roughness: 0.64,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
-
-  // Join the same source arcs used by the radial solver into the actual
-  // closed chamber. Their printed endpoints differ by source rounding only.
-  const chamberArcs = [POSITIVE_FIXED_PROFILE[2], POSITIVE_FIXED_PROFILE[0],
-    POSITIVE_FIXED_PROFILE[1], POSITIVE_FIXED_PROFILE[4], POSITIVE_FIXED_PROFILE[3],
-    NEGATIVE_FIXED_PROFILE[0], NEGATIVE_FIXED_PROFILE[1], NEGATIVE_FIXED_PROFILE[4]];
-  const chamberClearanceScale = 1.00002;
-  const chamberOutline = chamberArcs.flatMap(arc => {
-    const sweep = normalizedAngle(arc[5]-arc[4]), count=Math.ceil(sweep/0.004);
-    return Array.from({length:count},(_,i)=>pointOnArc(arc,arc[4]+sweep*i/count)
-      .multiplyScalar(sourceScale*chamberClearanceScale).toArray());
-  });
-  const rectangle = (left,bottom,right,top)=>poly([[left,bottom],[right,bottom],[right,top],[left,top]]);
-  const shell = polygonClipping.difference(poly(circle([0,0],cylinderOuterRadius,512)),poly(chamberOutline));
-  const leftRegion = rectangle(-5,-0.9,-1.8,0.9), rightRegion = rectangle(1.8,-0.9,5,0.9);
-  const abutmentSections = {left:polygonClipping.intersection(shell,leftRegion),right:polygonClipping.intersection(shell,rightRegion)};
-  const remainingShell = polygonClipping.difference(shell,leftRegion,rightRegion);
-  const topSection = polygonClipping.intersection(remainingShell,rectangle(-5,0,5,5));
-  const bottomSection = polygonClipping.intersection(remainingShell,rectangle(-5,-5,5,0));
-  const topHousingBack = new THREE.Mesh(plate(topSection,-0.24,0.83),frameMaterial);
-  topHousingBack.userData.role = 'fixed-upper-body-of-cylinder';
-  const bottomHousingBack = new THREE.Mesh(plate(bottomSection,-0.24,0.83),frameMaterial);
-  bottomHousingBack.userData.role = 'fixed-lower-body-of-cylinder';
-  const upperInnerWall = new THREE.Mesh(plate(topSection,0.83,0.87),frameMaterial);
-  upperInnerWall.userData.role = 'fixed-upper-inner-wall-of-cylinder';
-  const lowerInnerWall = new THREE.Mesh(plate(bottomSection,0.83,0.87),frameMaterial);
-  lowerInnerWall.userData.role = 'fixed-lower-inner-wall-of-cylinder';
-  root.add(topHousingBack,bottomHousingBack,upperInnerWall,lowerInnerWall);
-
-  // Brown stands the casing on one cast foot with concave flanks, not a bed slab.
-  const foundation = new THREE.Mesh(
-    castFootGeometry({casingRadius: cylinderOuterRadius, padHalfWidth: 2.75, neckHalfWidth: 2.0, footY: -cylinderOuterRadius - 0.28}, -0.24, 0.83),
-    frameMaterial,
-  );
-  foundation.userData.role = 'fixed-cast-foot-under-cylinder';
-  root.add(foundation);
-
-  const makeStationaryAbutment = (side) => {
-    const group = new THREE.Group();
-    group.userData.role = side < 0
-      ? 'left-stationary-abutment-D'
-      : 'right-stationary-abutment-D';
-    const section=side<0?abutmentSections.left:abutmentSections.right;
-    const body = new THREE.Mesh(plate(section,-0.24,0.83),frameMaterial);
-    body.userData.role = side < 0 ? 'left-fixed-port-body' : 'right-fixed-port-body';
-    const nose = new THREE.Mesh(plate(section,0.83,0.87),frameMaterial);
-    nose.userData.role = side < 0 ? 'left-inward-contact-nose-of-D' : 'right-inward-contact-nose-of-D';
-    // Brown's port D: a flanged passage carried out through the casing wall.
-    const portSection = polygonClipping.difference(
-      rectangle(cylinderOuterRadius-0.25,-0.46,cylinderOuterRadius+0.80,0.46),
-      rectangle(cylinderOuterRadius-0.30,-0.15,cylinderOuterRadius+0.85,0.15),
-    ).map(polygon => polygon.map(ringPoints => ringPoints.map(([x, y]) => [side * x, y])));
-    const port = new THREE.Mesh(plate(portSection,-0.24,0.83),frameMaterial);
-    port.userData.role = side < 0 ? 'left-steam-port-D-passage' : 'right-steam-port-D-passage';
-    group.add(body,nose,port);
-    return { body, group, nose };
+  const footArcRight = arcPoints([4.5, -5.5], 1.5, 270 * DEG, 209.2 * DEG, 16);
+  const footArcLeft = arcPoints([-4.5, -5.5], 1.5, -29.2 * DEG, -90 * DEG, 16);
+  const outerOutline = ringPolygon([
+    [-6, -8], [6, -8], [6, -7],
+    ...footArcRight,
+    ...arcBetween([0, 0], casingRadius, angleOf(footArcRight.at(-1)), angleOf(onCircle(rightLowerCenter))).slice(1, -1),
+    ...flank(rightLowerCenter, angleFrom(rightLowerCenter, onCircle(rightLowerCenter)), angleFrom(rightLowerCenter, [neckEnd, -2.73354])),
+    [neckEnd, 0.273464],
+    ...flank(rightUpperCenter, angleFrom(rightUpperCenter, [neckEnd, 0.273464]), angleFrom(rightUpperCenter, onCircle(rightUpperCenter)) + (angleFrom(rightUpperCenter, onCircle(rightUpperCenter)) > angleFrom(rightUpperCenter, [neckEnd, 0.273464]) ? -FULL_TURN : 0)).slice(1),
+    ...arcBetween([0, 0], casingRadius, angleOf(onCircle(rightUpperCenter)), angleOf(onCircle(leftUpperCenter))).slice(1, -1),
+    ...flank(leftUpperCenter, angleFrom(leftUpperCenter, onCircle(leftUpperCenter)), angleFrom(leftUpperCenter, [-neckEnd, 2.73354])),
+    [-neckEnd, -0.273464],
+    ...flank(leftLowerCenter, angleFrom(leftLowerCenter, [-neckEnd, -0.273464]), angleFrom(leftLowerCenter, onCircle(leftLowerCenter))).slice(1),
+    ...arcBetween([0, 0], casingRadius, angleOf(onCircle(leftLowerCenter)), angleOf(footArcLeft[0])).slice(1, -1),
+    ...footArcLeft,
+    [-6, -7],
+  ]);
+  // Two channels in each neck (Brown's "two valves on each side"): on the
+  // left, the upper one runs straight into the upper chamber just above D,
+  // the lower one bends down round D into the lower chamber just below it.
+  const straightChannel = bandPolygon([[-neckEnd - 0.05, 1.977], [-5.4, 1.977], [-3.2, 1.977]], 0.35);
+  const bentChannel = bandPolygon([
+    [-neckEnd - 0.05, 0.977], [-6.137, 0.977],
+    ...arcPoints([-6.137265, -0.372754], 1.35, Math.PI / 2, 25 * DEG, 24).slice(1),
+    [-4.62, -0.35], [-3.9, -0.95],
+  ], 0.35);
+  const mirror = (multi) => multi.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [-x, -y])));
+  const channels = {
+    leftEduction: straightChannel,
+    leftInduction: bentChannel,
+    rightEduction: mirror(straightChannel),
+    rightInduction: mirror(bentChannel),
   };
-  const leftAbutment = makeStationaryAbutment(-1);
-  const rightAbutment = makeStationaryAbutment(1);
-  root.add(leftAbutment.group, rightAbutment.group);
+  const cavity = polygonClipping.intersection(polygonClipping.union(chamberPolygon, ...Object.values(channels)), outerOutline);
+  const casingOutline = polygonClipping.difference(outerOutline, cavity);
 
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.24, roughness: 0.54 });
+  const backMaterial = matte(0x7d8786, { metalness: 0.18, roughness: 0.6 });
+  const hubMaterial = matte(PALETTE.driven, { metalness: 0.2, roughness: 0.5 });
+  const pistonMaterial = matte(PALETTE.driver, { metalness: 0.2, roughness: 0.48 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.3, roughness: 0.43 });
+
+  const casing = sectionPlate(casingOutline, zBack, 0, frameMaterial,
+    'sectioned-cylinder-with-abutments-D-and-two-channels-in-each-neck');
+  root.add(casing);
+  const back = sectionPlate(polygonClipping.difference(outerOutline, circlePolygon([0, 0], shaftRadius + 0.01, 48)),
+    zBack - backThickness, zBack, backMaterial, 'solid-back-of-cylinder');
+  back.material = [backMaterial, backMaterial];
+  root.add(back);
+
+  // ---- hub C with grooves, shaft B and pistons A ------------------------------------------
   const rotor = new THREE.Group();
   rotor.userData.role = 'hub-C-fast-on-main-shaft-B';
-  const hubC = cylinderAlongZ(hubRadius, 0.64, hubMaterial, 72);
-  const hubBore=shaftRadius+0.004, grooveHalfWidth=pistonHalfWidth+0.004;
-  const hubFront=plate(polygonClipping.difference(poly(circle([0,0],hubRadius,512)),
-    poly(circle([0,0],hubBore,128)),rectangle(-hubRadius-0.01,-grooveHalfWidth,hubRadius+0.01,grooveHalfWidth)),0.18,0.42);
-  const hubBack=ring(hubBore,hubRadius,-0.22,0.18,512);
-  hubFront.deleteAttribute('uv');hubBack.deleteAttribute('color');
-  hubC.geometry.dispose();hubC.geometry=mergeGeometries([hubBack,hubFront]);hubBack.dispose();hubFront.dispose();
-  hubC.rotation.set(0,0,0);hubC.position.z = 0;
-  hubC.userData.role = 'rotating-hub-C-with-two-opposed-radial-grooves';
+  const grooves = [0, Math.PI].map((a) => {
+    const c = Math.cos(a);
+    const s = Math.sin(a);
+    return ringPolygon([[grooveInner, -pistonHalfWidth - 0.01], [hubRadius + 0.1, -pistonHalfWidth - 0.01],
+      [hubRadius + 0.1, pistonHalfWidth + 0.01], [grooveInner, pistonHalfWidth + 0.01]]
+      .map(([x, y]) => [x * c - y * s, x * s + y * c]));
+  });
+  const hubC = partPlate(polygonClipping.difference(circlePolygon([0, 0], hubRadius - 0.004, 192),
+    ...grooves, circlePolygon([0, 0], shaftRadius, 48)), zBack + 0.01, -0.01, hubMaterial,
+  'hub-C-with-two-radial-grooves');
   rotor.add(hubC);
-  const groove = new THREE.Mesh(
-    new THREE.BoxGeometry(2 * hubRadius - 0.10, 0.25, 0.12),
-    darkMaterial,
-  );
-  groove.geometry.dispose();
-  groove.geometry=plate(polygonClipping.difference(rectangle(-hubRadius+0.05,-grooveHalfWidth,hubRadius-0.05,grooveHalfWidth),
-    poly(circle([0,0],hubBore,128))),0.17,0.18);
-  groove.position.z = 0;
-  groove.userData.role = 'diametral-guide-groove-in-hub-C';
-  rotor.add(groove);
-
-  const makeRadialPiston = (side) => {
-    const group = new THREE.Group();
-    group.rotation.z = side < 0 ? Math.PI : 0;
-    group.userData.role = side < 0
-      ? 'negative-radial-sliding-piston-A'
-      : 'positive-radial-sliding-piston-A';
-    const body = new THREE.Mesh(
-      new THREE.BoxGeometry(pistonBodyEnd, 2 * pistonHalfWidth, 0.54),
-      pistonMaterial,
-    );
-    body.position.set(pistonBodyEnd / 2, 0, 0.46);
-    body.userData.role = side < 0
-      ? 'negative-guided-body-of-piston-A'
-      : 'positive-guided-body-of-piston-A';
-    group.add(body);
-    const nose = cylinderAlongZ(
-      followerNoseRadius,
-      0.68,
-      pistonMaterial,
-      30,
-    );
-    const noseArc=Array.from({length:129},(_,i)=>{
-      const angle=-Math.PI/6+i*Math.PI/3/128;
-      return [followerNoseRadius*Math.cos(angle),followerNoseRadius*Math.sin(angle)];
-    });
-    nose.geometry.dispose();nose.geometry=plate(poly(noseArc),0.19,0.73);
-    nose.rotation.set(0,0,0);nose.position.set(followerNoseCenter, 0, 0);
-    nose.userData.role = side < 0
-      ? 'negative-rounded-cam-nose-of-piston-A'
-      : 'positive-rounded-cam-nose-of-piston-A';
-    group.add(nose);
-    const marker = cylinderAlongZ(0.07, 0.012, whiteMaterial, 20);
-    marker.position.set(pistonBodyEnd - 0.08, 0, 0.736);
-    marker.userData.role = side < 0
-      ? 'negative-piston-A-motion-marker'
-      : 'positive-piston-A-motion-marker';
-    group.add(marker);
-    rotor.add(group);
-    return { body, group, marker, nose };
-  };
-  const positivePiston = makeRadialPiston(1);
-  const negativePiston = makeRadialPiston(-1);
+  const shaftB = new THREE.Mesh(latheSectionGeometry(
+    [[0, zBack - backThickness - 0.8], [shaftRadius, zBack - backThickness - 0.8], [shaftRadius, -0.012], [0, -0.012]],
+    { segments: 48, phiStart: 0, phiLength: FULL_TURN },
+  ), darkMaterial);
+  shaftB.rotation.x = Math.PI / 2;
+  shaftB.userData.role = 'main-shaft-B';
+  rotor.add(shaftB);
   root.add(rotor);
+  const pistonOutline = polygonClipping.union(
+    ringPolygon([[-pistonLength, -pistonHalfWidth], [0, -pistonHalfWidth], [0, pistonHalfWidth], [-pistonLength, pistonHalfWidth]]),
+    circlePolygon([0, 0], pistonHalfWidth, 32),
+  );
+  const pistons = [0, 1].map((k) => {
+    const piston = partPlate(pistonOutline, zBack + 0.02, -0.02, pistonMaterial,
+      k === 0 ? 'radially-sliding-piston-A-1' : 'radially-sliding-piston-A-2');
+    root.add(piston);
+    return piston;
+  });
 
-  const shaftB = cylinderAlongZ(shaftRadius, 1.22, darkMaterial, 36);
-  shaftB.position.z = 0.42;
-  shaftB.userData.role = 'main-shaft-B-through-hub-C';
-  root.add(shaftB);
-
-  const positivePowerIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 22, 14),
-    steamMaterial,
-  );
-  positivePowerIndicator.userData.role =
-    'simultaneous-steam-action-indicator-on-positive-piston-A';
-  const negativePowerIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.14, 22, 14),
-    steamMaterial,
-  );
-  negativePowerIndicator.userData.role =
-    'simultaneous-steam-action-indicator-on-negative-piston-A';
-  root.add(positivePowerIndicator, negativePowerIndicator);
-
-  const inductionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.19, 22, 14),
-    steamMaterial,
-  );
-  inductionIndicator.position.set(-3.85, 0.66, 0.42);
-  inductionIndicator.userData.role = 'induction-arrow-side-indicator';
-  const eductionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.19, 22, 14),
-    exhaustMaterial,
-  );
-  eductionIndicator.position.set(3.85, -0.66, 0.42);
-  eductionIndicator.userData.role = 'eduction-arrow-side-indicator';
-  root.add(inductionIndicator, eductionIndicator);
+  // ---- steam -------------------------------------------------------------------------------
+  const steamZ = [zBack + 0.015, -0.015];
+  // One steam volume per body of steam, so each changes shape smoothly: a
+  // body is born behind a piston as it passes the first abutment of a
+  // chamber, grows while it drives, and after the piston leaves the chamber
+  // it is the space ahead of the next piston, blown down and swept out.
+  // Keyed by (chamber, piston it was born behind).
+  const chambers = [
+    { name: 'upper', start: -3 * DEG, end: 163 * DEG, induction: [6.5, -0.977], eduction: [-6.5, 1.977] },
+    { name: 'lower', start: 177 * DEG, end: 343 * DEG, induction: [-6.5, 0.977], eduction: [6.5, -1.977] },
+  ];
+  const steamMeshes = [];
+  for (const chamber of chambers) {
+    chamber.meshes = [0, 1].map((k) => {
+      const mesh = steamVolume(`steam-in-${chamber.name}-chamber-born-behind-piston-A-${k + 1}`, ...steamZ);
+      root.add(mesh);
+      steamMeshes.push(mesh);
+      return mesh;
+    });
+  }
+  const blowdownAngle = 10 * DEG;
+  const hubSplitter = circlePolygon([0, 0], hubRadius + 0.012, 192);
+  const pistonSplitter = polygonClipping.union(pistonOutline,
+    ringPolygon([[0, -pistonHalfWidth], [0.6, -pistonHalfWidth], [0.6, pistonHalfWidth], [0, pistonHalfWidth]]));
+  const place = (multi, radius, angle) => {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return multi.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [(x + radius) * c - y * s, (x + radius) * s + y * c])));
+  };
+  // The four channels are drawn as their own steady volumes; each chamber is
+  // split by its piston into the body behind it and the body ahead of it.
+  const channelOnly = Object.fromEntries(Object.entries(channels).map(([name, channel]) => [name,
+    safeClip('difference', polygonClipping.intersection(channel, outerOutline), chamberPolygon)]));
+  const channelMeshes = Object.entries(channelOnly).map(([name, region]) => {
+    const mesh = steamVolume(`steam-in-${name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`)}-channel`, ...steamZ);
+    mesh.userData.setRegion(region, /Induction/.test(name) ? 1 : 0);
+    root.add(mesh);
+    steamMeshes.push(mesh);
+    return mesh;
+  });
+  const steamReport = { pieces: [] };
+  const updateSteam = (state) => {
+    const pieces = safeClip('difference', chamberPolygon, hubSplitter,
+      ...state.pistons.map((p) => place(pistonSplitter, p.tipCenterRadius, p.angle)));
+    steamReport.pieces = [];
+    const assigned = new Map(steamMeshes.filter((mesh) => !channelMeshes.includes(mesh))
+      .map((mesh) => [mesh, { region: [], pressure: 0 }]));
+    for (const chamber of chambers) {
+      const span = THREE.MathUtils.euclideanModulo(chamber.end - chamber.start, FULL_TURN);
+      const progress = state.pistons.map((p) => THREE.MathUtils.euclideanModulo(p.angle - chamber.start, FULL_TURN));
+      const inside = progress[0] <= span ? 0 : 1; // the piston working in this chamber
+      const other = 1 - inside;
+      const mine = pieces.filter((piece) => {
+        const ring = piece[0];
+        const cx = ring.reduce((sum, q) => sum + q[0], 0) / ring.length;
+        const cy = ring.reduce((sum, q) => sum + q[1], 0) / ring.length;
+        piece.progress = THREE.MathUtils.euclideanModulo(Math.atan2(cy, cx) - chamber.start, FULL_TURN);
+        return piece.progress <= span + 4 * DEG || piece.progress > FULL_TURN - 4 * DEG;
+      });
+      for (const piece of mine) {
+        const at = piece.progress > FULL_TURN - 4 * DEG ? 0 : piece.progress;
+        let key;
+        let pressure;
+        if (mine.length === 1) {
+          // both pistons over the abutments: the whole chamber is open from
+          // inlet to exhaust (the dead point); it is the body just driven
+          const toEnd = progress.map((q) => Math.abs(THREE.MathUtils.euclideanModulo(q - span + Math.PI, FULL_TURN) - Math.PI));
+          key = toEnd[0] < toEnd[1] ? 0 : 1;
+          pressure = 1;
+        } else if (at < progress[inside]) {
+          key = inside; // behind the working piston: live
+          pressure = 1;
+        } else {
+          key = other; // ahead of it: blown down and swept to the eduction
+          pressure = 1 - THREE.MathUtils.smootherstep(progress[inside] / blowdownAngle, 0, 1);
+        }
+        const slot = assigned.get(chamber.meshes[key]);
+        slot.region.push(piece);
+        slot.pressure = pressure;
+        steamReport.pieces.push({ chamber: chamber.name, behind: key === inside && mine.length > 1, pressure, area: multiArea([piece]) });
+      }
+    }
+    for (const [mesh, { region, pressure }] of assigned) mesh.userData.setRegion(region, pressure);
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
     rotor.rotation.z = state.rotorAngle;
-    positivePiston.group.position.x = state.radialPosition;
-    negativePiston.group.position.x = -state.radialPosition;
-    positivePowerIndicator.position.copy(state.positiveOuterTip);
-    positivePowerIndicator.position.z = 0.78;
-    negativePowerIndicator.position.copy(state.negativeOuterTip);
-    negativePowerIndicator.position.z = 0.78;
-    const simultaneousPulse = 0.82 + 0.10 * Math.cos(2 * state.inputAngle);
-    positivePowerIndicator.scale.setScalar(simultaneousPulse);
-    negativePowerIndicator.scale.setScalar(simultaneousPulse);
+    state.pistons.forEach((p, k) => {
+      pistons[k].position.set(p.tipCenterRadius * Math.cos(p.angle), p.tipCenterRadius * Math.sin(p.angle), 0);
+      pistons[k].rotation.z = p.angle;
+    });
+    updateSteam(state);
   };
 
-  const sourceState = stateAtInputAngle(sourceRotorAngle);
+  let minTip = Infinity;
+  let maxTip = -Infinity;
+  for (let i = 0; i < tableSize; i += 1) { minTip = Math.min(minTip, smoothed[i]); maxTip = Math.max(maxTip, smoothed[i]); }
   root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'two-opposed-rounded-pistons-sliding-radially-in-rotating-hub-against-two-stationary-port-abutments',
-    blocks: {
-      bottomHousingBack,
-      leftAbutmentBody: leftAbutment.body,
-      rightAbutmentBody: rightAbutment.body,
-      eductionIndicator,
-      foundation,
-      groove,
-      hubC,
-      inductionIndicator,
-      leftAbutment: leftAbutment.group,
-      leftAbutmentNose: leftAbutment.nose,
-      lowerInnerWall,
-      negativePiston: negativePiston.group,
-      negativePistonBody: negativePiston.body,
-      negativePistonNose: negativePiston.nose,
-      negativePowerIndicator,
-      positivePiston: positivePiston.group,
-      positivePistonBody: positivePiston.body,
-      positivePistonNose: positivePiston.nose,
-      positivePowerIndicator,
-      rightAbutment: rightAbutment.group,
-      rightAbutmentNose: rightAbutment.nose,
-      rotor,
-      shaftB,
-      topHousingBack,
-      upperInnerWall,
-    },
-    degreesOfFreedom: {
-      independentPrescribedInputs: 1,
-      negativePistonRadialPositionIndependent: false,
-      operatingDegreesOfFreedom: 1,
-      positivePistonRadialPositionIndependent: false,
-    },
+    animationTiming: { authoredCyclePeriod: cycleDuration, targetCycleDuration: cycleDuration },
+    archetype: 'two-radially-sliding-pistons-in-rotating-hub-between-two-abutments-with-two-ported-necks',
+    blocks: { casing, back, rotor, hubC, shaftB, pistons, steamMeshes },
+    degreesOfFreedom: { independentPrescribedInputs: 1, operatingDegreesOfFreedom: 1 },
     dynamics: {
-      bothPistonsActTogether: true,
-      camFollowerAssumption:
-        'Each A is a massless radial follower constrained by the fixed arc profile; contact force, leakage, and impact are not solved.',
-      pressureExpansionCutoffLeakageFrictionInertiaAndLoadsModeled: false,
-      sourceCoordinateRegularization:
-        'The two source cam solutions are averaged to enforce the intended exact 180-degree symmetry, and a sub-microunit undershoot is clamped at the radius-1 retracted stop; their maximum disagreement is about one source microunit of coordinate rounding.',
-      sourceSpecifiesAbsoluteDimensionsTimingMaterialsPressuresOrLoads: false,
+      steam: 'Steam volumes are the actual pieces of the working space after hub C and the two pistons divide it: pieces joined to an induction channel are live, pieces joined to an eduction channel exhaust; while both pistons pass the abutments each chamber is briefly open from inlet to exhaust (the engine’s dead point).',
+      pistonOutwardForce: 'The pistons are kept against the cylinder wall; the steam or spring that does it is not modelled.',
     },
     fidelity: 'authored',
-    geometry,
-    mechanism:
-      'Two stationary abutments D remain fixed at the opposed cylinder ports. Hub C rotates with main shaft B and carries exactly two opposed radial grooves. The two pistons A slide in those grooves; each rounded nose is placed by the official fixed multi-arc cam envelope, not a sinusoidal approximation. Their equal radial positions and 180-degree separation enforce the intended symmetry, and both receive steam action together while retracting far enough to pass the fixed abutments.',
-    motion: {
+    geometry: {
       cycleDuration,
-      hubDirection: 'counterclockwise',
-      inputAngularSpeed,
-      radialMaximum: sourceMaximumRoot * sourceScale,
-      radialMinimum: sourceMinimumRoot * sourceScale,
-      shaftRevolutionsPerCycle: 1,
+      hubRadius, pistonHalfWidth, pistonLength, grooveInner, casingRadius, depth, minTipCenter: minTip, maxTipCenter: maxTip,
+      chamberProfile, cavity, casingOutline, channels,
     },
+    mechanism: 'Hub C on shaft B turns anticlockwise inside a cylinder that closes on it at the two abutments D. Pistons A slide in radial grooves in C and follow the cylinder wall. Each neck carries two channels, one either side of its abutment: steam enters each chamber just past one abutment and is educted just before the other, so both pistons are driven at once.',
+    motion: { cycleDuration, rotorAngularSpeed },
     sourceAnimation: {
       available: true,
       independentlyReconstructed: true,
-      officialCanvasControlPeriod: sourceCanvasControlPeriod,
-      officialCanvasCyclesPerMinute: 15,
-      officialCanvasModelPresent: true,
-      officialHubAdvancePerControlPeriod: sourceHubAdvancePerControlPeriod,
-      officialShaftRevolutionPeriod: cycleDuration,
-      reason:
-        'The official Movement 426 page embeds an eight-part Canvas construction. Its radius-4 hub, opposed radial guide lines, rounded piston profile, two multi-arc fixed cam envelopes, stationary abutments, and 1.5-pi shaft advance per four-second control interval were extracted and independently reconstructed.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourcePose: {
-      negativeOuterTip: sourceState.negativeOuterTip.clone(),
-      negativePistonRoot: sourceState.negativePistonRoot.clone(),
-      positiveOuterTip: sourceState.positiveOuterTip.clone(),
-      positivePistonRoot: sourceState.positivePistonRoot.clone(),
-      radialPosition: sourceState.radialPosition,
-      rotorAngle: sourceState.rotorAngle,
-      sourceRadialPosition: sourceState.sourceRadialPosition,
+      reason: 'The official Movement 426 page traces the cylinder wall (the arcs used here), two channels in each neck — one straight into the chamber above the left abutment, one bent round it into the chamber below — and pistons that follow the wall. Its geometry numbers were used as a trace of Brown’s plate; the code is independent.',
     },
     sourceReference: {
-      brownPlate426: {
-        cylinderApproximateCenterPixels: [265, 267],
-        hubCApproximateRadiusPixels: 107,
-        imageHeight: 525,
-        imageWidth: 525,
-        leftAbutmentDApproximateTipPixels: [158, 273],
-        mainShaftBApproximateCenterPixels: [264, 268],
-        measurementUncertaintyPixels: 12,
-        pistonAApproximateTipPixels: [[243, 94], [280, 438]],
-        rightAbutmentDApproximateTipPixels: [369, 264],
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'there are two stationary abutments D, D',
-          'there are two pistons A, A',
-          'the pistons slide radially',
-          'the radial grooves are in hub C',
-          'hub C is on main shaft B',
-          'radial sliding lets A pass the fixed abutments',
-          'steam acts on both pistons at once',
-          'the arrows indicate induction and eduction',
-        ],
-        engravingEvidence:
-          'Brown’s cutaway shows central shaft B, circular hub C, two diametrically opposed radial piston blades A, fixed inward abutments D at the left and right ports, and paired flow arrows around the chamber.',
-        officialCanvasEvidence:
-          'The official model gives hub radius 4, shaft radius 1, piston body coordinates x=0..2.933013 and y=+/-0.25, a rounded nose centered at x=2.5 with radius 0.5, two exact opposed rotating guide lines, and fixed cam envelopes composed of five circular arcs for each piston. The hub advances 1.5*pi radians per Canvas control cycle.',
-        reconstructionDisclosure:
-          'Brown gives no absolute scale, axial depth, port timing, pressure cycle, speed, materials, contact loading, sealing clearance, inertia, or loads. Housing depth, supports, colors, and flow indicators are independently engineered. The radial displacement comes from a direct port of the official arc-contact construction, with only the roughly one-microunit mirrored-coordinate discrepancy averaged and the equally tiny retracted-stop undershoot clamped.',
-      },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 426',
+      reconstructionDisclosure: 'Brown does not say how the pistons are kept against the wall or show the channels beyond the necks. Piston length, groove depth, casing depth and the round piston ends are engineered.',
     },
-    sourceRadialRootAtInputAngle,
-    stateAtInputAngle,
     stateAtTime,
-    transmission: {
-      opposedSymmetry:
-        'negativePistonRoot=-positivePistonRoot and both use one common radial cam coordinate',
-      radialCamClosure:
-        'the rounded 0.5-radius A nose advances along the rotating radial guide to the first positive endpoint or arc-tangency constraint of the fixed five-arc envelope',
-      sourceSpeedLaw:
-        'hubAngle=(1.5*pi/4)*time, so one shaft revolution takes 16/3 seconds at the official control rate',
-    },
+    steamReport,
+    tipCenterRadius,
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.15, -3.70, -1.00),
-    new THREE.Vector3(4.15, 3.56, 1.40),
-  );
-  root.userData.cameraDistanceScale = 1.01;
-  root.userData.cameraDirection = new THREE.Vector3(5.2, 3.8, 12.4);
-  root.userData.groundFloorY = -4.46;
-  root.userData.hideGround = true;
-  root.userData.solidReview = { chamberOutline, chamberArcs, chamberClearanceScale, hubBore, grooveHalfWidth,
-    qualification: 'The source solver arcs now bound the closed working chamber; source 60-degree nose caps replace full rollers and actual radial hub slots receive the blades. Small geometric running clearance is inferred. Passive outward loading, sealing, steam pressure and friction remain unmodeled.' };
-  root.traverse(object=>{for(const material of object.material?[].concat(object.material):[]) material.fog=false;});
-  markShadows(root);
-  foundation.receiveShadow = true;
+  root.userData.cameraDirection = new THREE.Vector3(0.08, 0.05, 1);
+  root.userData.cameraFov = 8;
+  // Built in the official trace's units; shown at the earlier model scale.
+  root.scale.setScalar(0.48);
   update(0);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  markShadows(root);
+  for (const mesh of steamMeshes) { mesh.castShadow = false; mesh.receiveShadow = false; }
+  fitPistonGuide(root, update, cycleDuration);
+  return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 
 export function createAuthoredRadialPistonRotaryEngineMovement(movement) {
   if (movement.id !== 426) return null;
-  const model = radialPistonRotaryEngine(movement);
-  // Pass 55: Brown's face section removes only the front cover; the back
-  // cover closes the casing, and each steam port D is a whole round pipe
-  // rather than two flat slabs (a pipe drawn in section).
-  addBackCover(model.root, ['fixed-upper-body-of-cylinder', 'fixed-lower-body-of-cylinder',
-    'fixed-cast-foot-under-cylinder', 'left-fixed-port-body', 'right-fixed-port-body']);
-  model.root.traverse((object) => {
-    const role = object.userData?.role;
-    if (role !== 'left-steam-port-D-passage' && role !== 'right-steam-port-D-passage') return;
-    object.geometry.computeBoundingBox();
-    const box = object.geometry.boundingBox, length = box.max.x - box.min.x;
-    const center = box.getCenter(new THREE.Vector3());
-    const pipe = latheSectionGeometry([[0.30, -length / 2], [0.46, -length / 2], [0.46, length / 2], [0.30, length / 2]],
-      { phiStart: 0, phiLength: Math.PI * 2, segments: 48 });
-    pipe.rotateZ(-Math.PI / 2).translate(center.x, center.y, center.z);
-    object.geometry.dispose();
-    object.geometry = pipe;
-  });
-  return model;
+  return radialPistonRotaryEngine(movement);
 }

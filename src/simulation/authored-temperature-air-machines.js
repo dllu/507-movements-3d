@@ -1,4 +1,6 @@
-import {makeTemperatureBevel,temperatureBevelPhases} from './temperature-bevel-pair.js';
+import {makeTemperatureBevel,mitreBevelPhases} from './temperature-bevel-pair.js';
+import {plate, poly, circle, polygonClipping} from './finite-plate-geometry.js';
+import {mergePassageParts} from './finite-fluid-passages.js';
 import { correctTemperatureAirMachine } from './thermal-steam-working-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
@@ -43,6 +45,57 @@ function cylinderAlongZ(radius, length, material, segments = 30) {
   );
   mesh.rotation.x = Math.PI / 2;
   return mesh;
+}
+
+// A rigid pipe centreline: straight runs joined by circular fillets of the
+// given radius (one per interior corner), as Brown draws the air tube.
+function filletedPipePath(points, radii) {
+  const path = new THREE.CurvePath();
+  let start = points[0].clone();
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const corner = points[i];
+    const inDir = corner.clone().sub(points[i - 1]).normalize();
+    const outDir = points[i + 1].clone().sub(corner).normalize();
+    const turn = Math.acos(THREE.MathUtils.clamp(inDir.dot(outDir), -1, 1));
+    const radius = radii[i - 1];
+    const cut = radius * Math.tan(turn / 2);
+    const a = corner.clone().addScaledVector(inDir, -cut);
+    const b = corner.clone().addScaledVector(outDir, cut);
+    path.add(new THREE.LineCurve3(start, a));
+    const normal = outDir.clone().sub(inDir.clone().multiplyScalar(inDir.dot(outDir))).normalize();
+    const center = a.clone().addScaledVector(normal, radius);
+    const u = a.clone().sub(center), v = inDir.clone().multiplyScalar(radius);
+    const arc = new THREE.Curve();
+    arc.getPoint = (t, target = new THREE.Vector3()) => target.copy(center)
+      .addScaledVector(u, Math.cos(t * turn)).addScaledVector(v, Math.sin(t * turn));
+    path.add(arc);
+    start = b;
+  }
+  path.add(new THREE.LineCurve3(start, points.at(-1).clone()));
+  return path;
+}
+
+// Brown's air vessel at the foot of the screw: a box standing on the cold
+// cistern's floor, the screw casing entering its right wall through a hole
+// that fits the casing, the air tube rising from a hole in its roof.
+function airBottleGeometry({x0, x1, z, floorY, roofY, wall, casingHole, pipeBore, pipeX}) {
+  const parts = [];
+  const rectXY = (a, b, c, d) => poly([[a, c], [b, c], [b, d], [a, d]]);
+  // Front and back walls (XY plates).
+  for (const [low, high] of [[z - wall, z], [-z, -z + wall]]) parts.push(plate(rectXY(x0, x1, floorY, roofY), low, high));
+  // Left and right walls: YZ plates extruded along x (plate x -> world -z, plate y -> world y).
+  const yz = (holes = []) => polygonClipping.difference(poly([[-z + wall, floorY], [z - wall, floorY], [z - wall, roofY], [-z + wall, roofY]]), ...holes);
+  const alongX = (polys, low, high) => plate(polys, low, high).rotateY(Math.PI / 2);
+  parts.push(alongX(yz(), x0, x0 + wall));
+  const hole = poly(Array.from({length: 96}, (_, i) => [
+    casingHole.z * Math.cos(i * Math.PI / 48), casingHole.y + casingHole.halfHeight * Math.sin(i * Math.PI / 48)]));
+  parts.push(alongX(yz([hole]), x1 - wall, x1));
+  // Floor and roof (XZ plates extruded along y; plate y -> world -z).
+  const xz = (holes = []) => polygonClipping.difference(poly([[x0 + wall, -z + wall], [x1 - wall, -z + wall], [x1 - wall, z - wall], [x0 + wall, z - wall]]), ...holes);
+  const alongY = (polys, low, high) => plate(polys, low, high).rotateX(-Math.PI / 2);
+  parts.push(alongY(xz(), floorY, floorY + wall));
+  parts.push(alongY(xz([poly(circle([pipeX, 0], pipeBore, 64))]), roofY - wall, roofY));
+  return mergePassageParts(parts);
 }
 
 function createTank({
@@ -129,7 +182,7 @@ function temperatureAirMachine(movement) {
   const cycleDuration = 13.8;
   const operationEndPhase = 0.68;
   const thermalResetStartPhase = 0.82;
-  const totalScrewTurns = 6;
+  const totalScrewTurns = 4;
   const initialColdTemperatureKelvin = 293.15;
   const initialWarmTemperatureKelvin = 313.15;
   const equilibriumTemperatureKelvin = (
@@ -139,39 +192,44 @@ function temperatureAirMachine(movement) {
     initialWarmTemperatureKelvin - initialColdTemperatureKelvin;
   const ambientPressurePascal = 101325;
   const referenceAirVolumeCubicMeter = 0.0001;
-  const tankBottomY = -1.18;
+  // Pass 69: Brown's proportions and gearing. The cisterns are as deep as
+  // Brown draws them; the screw rises at his 47.6 degrees and ends above the
+  // cold cistern (it used to run through both cistern walls). A mitre pair
+  // at its head turns an inclined shaft S that crosses above the warm
+  // cistern's wall to the wheel's hub, where a second mitre pair turns the
+  // wheel, as the plate shows (no spur gear is drawn). The air vessel stands
+  // on the cold cistern's floor round the screw's foot, and the rigid air
+  // tube rises from it, crosses high above and descends into the warm
+  // cistern to an upturned mouth under the right of the wheel.
+  const tankBottomY = -2.10;
   const tankTopY = 0.74;
   const waterTopY = 0.54;
-  const tankDepth = 1.74;
+  const tankDepth = 2.10;
   const coldTankCenterX = -2.15;
   const warmTankCenterX = 1.55;
   const coldTankWidth = 3.35;
   const warmTankWidth = 3.25;
-  const screwLowerPoint = new THREE.Vector3(-2.72, -0.76, 0);
-  const screwUpperPoint = new THREE.Vector3(0.10, 1.10, 0);
-  const screwAxis = screwUpperPoint.clone().sub(screwLowerPoint).normalize();
-  const screwLength = screwLowerPoint.distanceTo(screwUpperPoint);
+  const screwInclination = THREE.MathUtils.degToRad(47.6);
+  const screwAxis = new THREE.Vector3(Math.cos(screwInclination), Math.sin(screwInclination), 0);
+  const transferShaftDirection = new THREE.Vector3(screwAxis.y, -screwAxis.x, 0);
+  const bevelApexExtension = .56;
+  const transferCenter = new THREE.Vector3(-0.60, 1.483, 0);
+  const screwLength = 3.2;
+  const screwUpperPoint = transferCenter.clone().addScaledVector(screwAxis, -bevelApexExtension);
+  const screwLowerPoint = screwUpperPoint.clone().addScaledVector(screwAxis, -screwLength);
   const screwFlightTurns = 6;
   const screwPitch = screwLength / screwFlightTurns;
   const screwRadius = 0.30;
   const screwBevelPitchRadius = 0.32;
   const outputBevelPitchRadius = 0.32;
-  const transferPinionTeeth = 18;
-  const wheelGearTeeth = 54;
-  const transferPinionPitchRadius = 0.34;
-  const wheelGearPitchRadius = transferPinionPitchRadius
-    * wheelGearTeeth / transferPinionTeeth;
-  const gearCenterDirection = new THREE.Vector3(0.74, -0.673, 0)
-    .normalize();
-  const bevelApexExtension = .56;
-  const transferCenter = screwUpperPoint.clone().addScaledVector(screwAxis,bevelApexExtension);
-  const wheelCenter = transferCenter.clone().addScaledVector(
-    gearCenterDirection,
-    transferPinionPitchRadius + wheelGearPitchRadius,
-  );
+  const wheelCenterX = 1.30;
+  const transferShaftLength = (wheelCenterX - transferCenter.x) / transferShaftDirection.x;
+  const wheelCenter = transferCenter.clone().addScaledVector(transferShaftDirection, transferShaftLength);
+  const gearCenterDirection = transferShaftDirection.clone();
   const waterWheelRadius = 0.84;
   const waterWheelBladeCount = 14;
-  const wheelMeshPhase = Math.PI / wheelGearTeeth;
+  const wheelPlaneZ = -0.62;
+  const wheelMeshPhase = 0;
   const waterRaisingRotationSign = 1;
   const operatingScrewRotationSign = -1;
   const bubbleCount = 14;
@@ -283,49 +341,17 @@ function temperatureAirMachine(movement) {
   ), 'right-handed-air-conveying-screw-flight');
   screwRotor.add(screwFlight);
 
-  const bevelLayout=temperatureBevelPhases(screwAxis,screwMount.quaternion);
-  const inputBevel=makeTemperatureBevel({axis:bevelLayout.inputAxis,phase:bevelLayout.inputPhase,color:PALETTE.driver,role:'screw-shaft-input-bevel'});
-  inputBevel.position.y=screwLength/2+bevelApexExtension;
-  screwRotor.add(inputBevel);
-
-  const receiver = addRole(new THREE.Mesh(
-    new THREE.SphereGeometry(0.38, 38, 24),
-    matte(PALETTE.driven, {
-      metalness: 0.18,
-      roughness: 0.52,
-      transparent: true,
-      opacity: 0.64,
-    }),
-  ), 'submerged-air-receiver-at-lower-screw-end');
-  receiver.position.copy(screwLowerPoint);
-  root.add(receiver);
-
-  const outputShaftRotor = addRole(new THREE.Group(),
-    'orthogonal-bevel-output-and-transfer-pinion');
-  outputShaftRotor.position.copy(transferCenter);
-  root.add(outputShaftRotor);
-  const outputBevel=makeTemperatureBevel({axis:bevelLayout.outputAxis,phase:bevelLayout.outputPhase,color:PALETTE.driven,role:'orthogonal-output-bevel'});
-  outputShaftRotor.add(outputBevel);
-
-  const transferPinion = addRole(makeGear({
-    color: PALETTE.accent,
-    depth: 0.22,
-    radius: transferPinionPitchRadius,
-    teeth: transferPinionTeeth,
-    addendum: 2*transferPinionPitchRadius/transferPinionTeeth,
-    dedendum: 2.5*transferPinionPitchRadius/transferPinionTeeth,
-  }), 'bevel-output-transfer-pinion');
-  transferPinion.position.z = 0.18;
-  outputShaftRotor.add(transferPinion);
-
-  const outputAxle = cylinderAlongZ(
-    0.065,
-    0.68,
-    screwShaftMaterial,
-    22,
-  );
-  outputAxle.position.z=-.48;
-  outputShaftRotor.add(outputAxle);
+  // Inclined transfer shaft S: its own frame has +z along S from the apex
+  // at the screw's head to the apex at the wheel's hub.
+  const transferShaftMount = addRole(new THREE.Group(),
+    'inclined-transfer-shaft-S-mount');
+  transferShaftMount.position.copy(transferCenter);
+  const transferShaftQuaternion = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), transferShaftDirection);
+  transferShaftMount.quaternion.copy(transferShaftQuaternion);
+  root.add(transferShaftMount);
+  const transferShaftRotor = addRole(new THREE.Group(),
+    'inclined-transfer-shaft-S-from-screw-head-to-wheel-hub');
+  transferShaftMount.add(transferShaftRotor);
 
   const waterWheelAssembly = addRole(new THREE.Group(),
     'warm-cistern-water-wheel-assembly');
@@ -335,22 +361,56 @@ function temperatureAirMachine(movement) {
     'geared-bubble-driven-water-wheel-rotor');
   waterWheelAssembly.add(waterWheelRotor);
 
-  const wheelGear = addRole(makeGear({
-    color: PALETTE.brass,
-    depth: 0.24,
-    radius: wheelGearPitchRadius,
-    teeth: wheelGearTeeth,
-    addendum: 2*transferPinionPitchRadius/transferPinionTeeth,
-    dedendum: 2.5*transferPinionPitchRadius/transferPinionTeeth,
-  }), 'water-wheel-ring-gear');
-  wheelGear.position.z = -0.56;
-  waterWheelRotor.add(wheelGear);
+  const inputAxisLocal = new THREE.Vector3(0, -1, 0);
+  const headPair = mitreBevelPhases(
+    {axis: inputAxisLocal, parentQuaternion: screwMount.quaternion},
+    {axis: new THREE.Vector3(0, 0, 1), parentQuaternion: transferShaftQuaternion},
+  );
+  const hubPair = mitreBevelPhases(
+    {axis: new THREE.Vector3(0, 0, -1), parentQuaternion: transferShaftQuaternion},
+    {axis: new THREE.Vector3(0, 0, -1), parentQuaternion: new THREE.Quaternion()},
+  );
+  const bevelLayout = {
+    inputAxis: inputAxisLocal.clone(),
+    headContact: headPair.contact.clone(),
+    hubContact: hubPair.contact.clone(),
+    inputPhase: headPair.phaseA,
+    outputPhase: headPair.phaseB,
+    shaftHubPhase: hubPair.phaseA,
+    wheelPhase: hubPair.phaseB,
+  };
+  const inputBevel=makeTemperatureBevel({axis:inputAxisLocal,phase:headPair.phaseA,color:PALETTE.driver,role:'screw-shaft-input-bevel'});
+  inputBevel.position.y=screwLength/2+bevelApexExtension;
+  screwRotor.add(inputBevel);
+  const outputBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,1),phase:headPair.phaseB,color:PALETTE.driven,role:'transfer-shaft-S-head-bevel'});
+  transferShaftRotor.add(outputBevel);
+  const shaftHubBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,-1),phase:hubPair.phaseA,color:PALETTE.driven,role:'transfer-shaft-S-wheel-end-bevel'});
+  shaftHubBevel.position.z=transferShaftLength;
+  transferShaftRotor.add(shaftHubBevel);
+  const wheelBevel=makeTemperatureBevel({axis:new THREE.Vector3(0,0,-1),phase:hubPair.phaseB,color:PALETTE.driver,role:'water-wheel-hub-bevel'});
+  waterWheelRotor.add(wheelBevel);
+  const transferShaft = addRole(new THREE.Mesh(
+    new THREE.CylinderGeometry(0.065, 0.065, transferShaftLength - 0.36, 48),
+    screwShaftMaterial,
+  ), 'inclined-transfer-shaft-S');
+  transferShaft.rotation.x = Math.PI / 2;
+  transferShaft.position.z = transferShaftLength / 2;
+  transferShaftRotor.add(transferShaft);
+
+  const receiver = addRole(new THREE.Mesh(
+    new THREE.BufferGeometry(),
+    matte(PALETTE.driven, {
+      metalness: 0.18,
+      roughness: 0.52,
+    }),
+  ), 'submerged-air-receiver-at-lower-screw-end');
+  root.add(receiver);
 
   const wheelMaterial = matte(PALETTE.driver, {
     metalness: 0.24,
     roughness: 0.48,
   });
-  const wheelRims = [0.08, 0.48].map((z, index) => {
+  const wheelRims = [wheelPlaneZ - 0.20, wheelPlaneZ + 0.20].map((z, index) => {
     const rim = addRole(new THREE.Mesh(
       new THREE.TorusGeometry(waterWheelRadius, 0.064, 10, 72),
       wheelMaterial,
@@ -363,65 +423,63 @@ function temperatureAirMachine(movement) {
   for (let index = 0; index < waterWheelBladeCount; index += 1) {
     const angle = index * FULL_TURN / waterWheelBladeCount;
     const blade = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 0.12, 0.42),
+      new THREE.BoxGeometry(0.34, 0.12, 0.36),
       wheelMaterial,
     ), `water-wheel-bubble-blade-${index + 1}`);
     blade.position.set(
       Math.cos(angle) * waterWheelRadius * 0.76,
       Math.sin(angle) * waterWheelRadius * 0.76,
-      0.28,
+      wheelPlaneZ,
     );
     blade.rotation.z = angle;
     waterWheelRotor.add(blade);
     wheelBlades.push(blade);
   }
-  const wheelHub = cylinderAlongZ(0.16, 0.70, screwShaftMaterial, 30);
+  const wheelHub = cylinderAlongZ(0.16, 0.48, screwShaftMaterial, 30);
+  wheelHub.position.z = wheelPlaneZ;
   waterWheelRotor.add(wheelHub);
+  // The wheel turns on a stub axle carried by the warm cistern's back wall.
+  const axleBack = -tankDepth / 2, axleFront = -0.10;
   const fixedWheelAxle = addRole(cylinderAlongZ(
-    0.068,
-    tankDepth + 0.28,
+    0.055,
+    axleFront - axleBack,
     screwShaftMaterial,
     24,
   ), 'fixed-water-wheel-horizontal-axle');
+  fixedWheelAxle.position.z = (axleFront + axleBack) / 2;
   waterWheelAssembly.add(fixedWheelAxle);
 
-  const outletPoint = new THREE.Vector3(
-    wheelCenter.x - 0.56,
-    -0.70,
-    0.54,
-  );
+  // Air vessel round the screw's foot, standing on the cold cistern floor.
+  const bottleFloorY = tankBottomY + 0.07;
+  const bottleRoofY = 0.0;
+  const bottleX0 = -3.62, bottleX1 = -2.62, bottleHalfDepth = 0.45;
+  const bottlePipeX = (bottleX0 + bottleX1) / 2;
+  const casingRadius = screwRadius + 0.055;
+  const casingAtWallY = screwLowerPoint.y + (bottleX1 - screwLowerPoint.x) * screwAxis.y / screwAxis.x;
+  receiver.geometry = airBottleGeometry({
+    x0: bottleX0, x1: bottleX1, z: bottleHalfDepth, floorY: bottleFloorY, roofY: bottleRoofY, wall: 0.05,
+    casingHole: {y: casingAtWallY, z: casingRadius + 0.003, halfHeight: casingRadius / screwAxis.x + 0.035},
+    pipeBore: 0.074, pipeX: bottlePipeX,
+  });
+
+  const pipeTopY = 2.20, pipeRightX = 2.65, pipeBottomY = -1.75;
+  const outletPoint = new THREE.Vector3(wheelCenter.x + 0.45, -1.30, wheelPlaneZ);
   const pipePoints = [
-    screwLowerPoint.clone().addScaledVector(screwAxis,-.22),
-    screwLowerPoint.clone().addScaledVector(screwAxis,-.32),
-    new THREE.Vector3(-3.18, -0.38, -0.30),
-    new THREE.Vector3(-3.22, 0.72, -0.38),
-    new THREE.Vector3(-2.92, 1.73, -0.38),
-    new THREE.Vector3(-2.45, 1.92, -0.38),
-    new THREE.Vector3(0.10, 1.92, -0.38),
-    new THREE.Vector3(2.56, 1.86, -0.38),
-    new THREE.Vector3(2.86, 1.52, -0.32),
-    new THREE.Vector3(2.88, 0.28, -0.18),
-    new THREE.Vector3(2.70, -0.68, 0.02),
-    new THREE.Vector3(1.82, -0.88, 0.36),
-    new THREE.Vector3(outletPoint.x, -0.89, outletPoint.z),
+    new THREE.Vector3(bottlePipeX, bottleRoofY, 0),
+    new THREE.Vector3(bottlePipeX, pipeTopY, 0),
+    new THREE.Vector3(pipeRightX, pipeTopY, 0),
+    new THREE.Vector3(pipeRightX, pipeBottomY, 0),
+    new THREE.Vector3(outletPoint.x, pipeBottomY, 0),
+    new THREE.Vector3(outletPoint.x, pipeBottomY, wheelPlaneZ),
     outletPoint.clone(),
   ];
-  const pressurePipeCurve = new THREE.CatmullRomCurve3(
-    pipePoints,
-    false,
-    'centripetal',
-  );
+  const pressurePipeCurve = filletedPipePath(pipePoints, [0.30, 0.30, 0.30, 0.20, 0.20]);
   const bubbleRiseEnd = new THREE.Vector3(
-    wheelCenter.x - 0.44,
-    waterTopY + 0.32,
-    0.24,
+    outletPoint.x,
+    waterTopY - 0.04,
+    wheelPlaneZ,
   );
-  const bubbleRiseCurve = new THREE.CubicBezierCurve3(
-    outletPoint.clone(),
-    outletPoint.clone().add(new THREE.Vector3(0, 0.38, 0)),
-    bubbleRiseEnd.clone().add(new THREE.Vector3(-0.02, -0.40, 0)),
-    bubbleRiseEnd.clone(),
-  );
+  const bubbleRiseCurve = new THREE.LineCurve3(outletPoint.clone(), bubbleRiseEnd.clone());
   const airPath = new THREE.CurvePath();
   airPath.add(pressurePipeCurve);
   airPath.add(bubbleRiseCurve);
@@ -443,7 +501,6 @@ function temperatureAirMachine(movement) {
     conduitMaterial,
   ), 'air-pipe-ascending-crossing-descending-to-wheel-underside');
   root.add(airConduit);
-
   const airBubbleMaterial = new THREE.MeshBasicMaterial({
     color: 0xbfefff,
     depthWrite: false,
@@ -543,18 +600,19 @@ function temperatureAirMachine(movement) {
       * totalScrewTurns * FULL_TURN * rotationProgressRate;
     const screwAngularAcceleration = operatingScrewRotationSign
       * totalScrewTurns * FULL_TURN * rotationProgressAcceleration;
-    const bevelOutputAngle = -screwAngle
+    // Head mitre pair: the input bevel turns by -screwAngle about its axis
+    // (down the screw), so shaft S turns by +screwAngle about +S. Hub mitre
+    // pair: S's lower bevel turns by -angle about -S, so the wheel bevel
+    // turns by +angle about -z, i.e. the wheel by -angle about +z.
+    const bevelOutputAngle = screwAngle
       * screwBevelPitchRadius / outputBevelPitchRadius;
-    const bevelOutputAngularVelocity = -screwAngularVelocity
+    const bevelOutputAngularVelocity = screwAngularVelocity
       * screwBevelPitchRadius / outputBevelPitchRadius;
-    const bevelOutputAngularAcceleration = -screwAngularAcceleration
+    const bevelOutputAngularAcceleration = screwAngularAcceleration
       * screwBevelPitchRadius / outputBevelPitchRadius;
-    const waterWheelAngle = wheelMeshPhase - bevelOutputAngle
-      * transferPinionPitchRadius / wheelGearPitchRadius;
-    const waterWheelAngularVelocity = -bevelOutputAngularVelocity
-      * transferPinionPitchRadius / wheelGearPitchRadius;
-    const waterWheelAngularAcceleration = -bevelOutputAngularAcceleration
-      * transferPinionPitchRadius / wheelGearPitchRadius;
+    const waterWheelAngle = wheelMeshPhase - bevelOutputAngle;
+    const waterWheelAngularVelocity = -bevelOutputAngularVelocity;
+    const waterWheelAngularAcceleration = -bevelOutputAngularAcceleration;
     const airAxialDisplacement = screwPitch * screwAngle / FULL_TURN;
     const airAxialVelocity = screwPitch * screwAngularVelocity / FULL_TURN;
     const airTransportDistance = -airAxialDisplacement;
@@ -618,7 +676,10 @@ function temperatureAirMachine(movement) {
       / state.coldTemperatureKelvin;
     const radiusScale = Math.cbrt(volumeRatio);
     const endFadeDistance = airPathLength * 0.045;
-    const fade = smootherStep(Math.min(
+    // Bubbles swell in and out with the screw's speed instead of switching
+    // on at a threshold (pass 69: no pop when the start begins or ends).
+    const speedFade = smootherStep(Math.abs(state.screwAngularVelocity) / 0.6);
+    const fade = speedFade * smootherStep(Math.min(
       pathDistance / endFadeDistance,
       (airPathLength - pathDistance) / endFadeDistance,
       1,
@@ -632,8 +693,7 @@ function temperatureAirMachine(movement) {
       radiusScale,
       // Air inside the opaque pressure pipe is not seen; only the bubbles
       // rising free through the warm bath are.
-      visible: Math.abs(state.screwAngularVelocity) > 0.018
-        && fade > 0.015
+      visible: fade > 1e-4
         && pathDistance > warmBathEntryDistance,
       volumeRatio,
       warmProgress,
@@ -660,7 +720,7 @@ function temperatureAirMachine(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     screwRotor.rotation.y = state.screwAngle;
-    outputShaftRotor.rotation.z = state.bevelOutputAngle;
+    transferShaftRotor.rotation.z = state.bevelOutputAngle;
     waterWheelRotor.rotation.z = state.waterWheelAngle;
     airBubbles.forEach((bubble, index) => {
       const bubbleState = bubbleStateAt(index, state);
@@ -719,8 +779,8 @@ function temperatureAirMachine(movement) {
     thermalResetStartPhase,
     totalScrewTurns,
     transferCenter: transferCenter.clone(),
-    transferPinionPitchRadius,
-    transferPinionTeeth,
+    transferShaftDirection: transferShaftDirection.clone(),
+    transferShaftLength,
     warmBathEntryDistance,
     warmTankCenterX,
     warmTankWidth,
@@ -729,9 +789,9 @@ function temperatureAirMachine(movement) {
     waterWheelBladeCount,
     waterWheelRadius,
     wheelCenter: wheelCenter.clone(),
-    wheelGearPitchRadius,
-    wheelGearTeeth,
     wheelMeshPhase,
+    wheelPlaneZ,
+    screwInclination,
   };
 
   root.userData = {
@@ -746,9 +806,8 @@ function temperatureAirMachine(movement) {
       fixedWheelAxle,
       inputBevel,
       outputBevel,
-      outputAxle,
-      outputShaftRotor,
       receiver,
+      shaftHubBevel,
       screwBarrel,
       screwFlight,
       screwMount,
@@ -756,13 +815,15 @@ function temperatureAirMachine(movement) {
       screwShaft,
       thermometerColumns,
       thermometerGroups,
-      transferPinion,
+      transferShaft,
+      transferShaftRotor,
       warmTank: warmTankParts.tank,
       warmWater: warmTankParts.water,
       waterWheelAssembly,
       waterWheelRotor,
+      wheelBevel,
       wheelBlades,
-      wheelGear,
+      wheelHub,
       wheelRims,
     },
     bubbleRiseCurve,
@@ -771,7 +832,7 @@ function temperatureAirMachine(movement) {
       independentPrescribedInputs: 1,
       screwAndWheelIndependent: false,
       thermalGradientIsMechanicalDegreeOfFreedom: false,
-      transferPinionAndWheelIndependent: false,
+      transferShaftAndWheelIndependent: false,
       wheelOperatingDegreesOfFreedom: 1,
     },
     dynamics: {
@@ -792,7 +853,7 @@ function temperatureAirMachine(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'The inclined right-handed Archimedean screw is first turned opposite its water-raising direction, carrying air downward into a submerged receiver. Pressurized air rises through the external tube, crosses above the cisterns, descends to the underside of the warm-bath wheel, and bubbles upward on the wheel’s left side. A right-angle bevel pair and an external 18:54 gear mesh constrain wheel and screw speeds. The displayed temperature difference is finite and must be restored by an external heat source.',
+      'The inclined right-handed Archimedean screw is first turned opposite its water-raising direction, carrying air downward into the air vessel standing round its foot. Pressurized air rises through the rigid external tube from the vessel’s roof, crosses above the cisterns, descends to an upturned mouth under the right of the warm-bath wheel, and bubbles upward on the wheel’s right side. A mitre pair at the screw’s head drives an inclined shaft over the warm cistern’s wall, and a second mitre pair at the wheel’s hub turns the wheel, so wheel and screw turn at equal speed. The displayed temperature difference is finite and must be restored by an external heat source.',
     motion: {
       cycleDuration,
       motionType:
@@ -835,7 +896,7 @@ function temperatureAirMachine(movement) {
         engravingEvidence:
           'Brown shows two open cisterns, an inclined enclosed screw at left, intersecting geared members above, a bladed wheel in the right bath, and one high external air conduit descending beneath that wheel.',
         reconstructionDisclosure:
-          'Brown gives no screw hand, pitch, gear tooth counts, bath temperatures, air quantity, pressure, conduit section, heat-transfer law, torque, loss data or timing. A right-handed six-flight screw, two 24-tooth shared-apex bevels with Tredgold profiles, an exact 18:54 spur stage, 293.15/313.15 K initial baths, ideal-gas marker expansion, finite-gradient run-down, colors and a 13.8-second loop are independently engineered. The last loop branch explicitly adds external heat and is not attributed to the historical proposal.',
+          'Brown gives no screw hand, pitch, gear tooth counts, bath temperatures, air quantity, pressure, conduit section, heat-transfer law, torque, loss data or timing. A right-handed six-flight screw, two pairs of 24-tooth shared-apex mitre bevels with Tredgold profiles on an inclined shaft, 293.15/313.15 K initial baths, ideal-gas marker expansion, finite-gradient run-down, colors and a 13.8-second loop are independently engineered. The last loop branch explicitly adds external heat and is not attributed to the historical proposal.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 469',
@@ -846,17 +907,15 @@ function temperatureAirMachine(movement) {
       airTransport:
         'axial air displacement=pitch*screw angle/(2*pi); negative operating screw angle carries air toward the submerged lower receiver',
       bevelMesh:
-        'screw omega*input bevel pitch radius + output omega*output bevel pitch radius = 0',
+        'head mitre: shaft S omega about +S = screw omega; hub mitre: wheel omega about +z = -shaft S omega',
       bubbleTorque:
-        'air exits below the left side of the warm-bath wheel; upward buoyancy there has the same negative-z torque sign as the constrained wheel rotation',
-      spurMesh:
-        'output omega*18 + wheel omega*54 = 0, equivalently equal and opposite pitch-line velocities',
+        'air exits below the right side of the warm-bath wheel; upward buoyancy there has the same positive-z torque sign as the constrained wheel rotation',
     },
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.86, -1.39, -1.10),
-    new THREE.Vector3(3.30, 2.12, 1.10),
+    new THREE.Vector3(-3.86, groundY - 0.02, -1.20),
+    new THREE.Vector3(3.30, 2.36, 1.20),
   );
   root.userData.cameraDistanceScale = 1.00;
   root.userData.cameraDirection = new THREE.Vector3(6.8, 4.4, 11.8);

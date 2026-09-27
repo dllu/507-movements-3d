@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {WaterStream,collectWaterStreams} from './water-stream.js';
+import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
 import { curvedFloatChannel, portedFloatHub } from './water-lifting-solids.js';
 import { horizontalTurned } from './horizontal-turbine-solids.js';
 import { ring, capsule, plate } from './finite-plate-geometry.js';
@@ -345,6 +347,9 @@ function persianIrrigationWheel(movement) {
   );
   hollowShaft.geometry.dispose();
   hollowShaft.geometry = portedFloatHub(hollowShaftInnerRadius, hollowShaftOuterRadius, hollowShaftLength, channel.port, floatCount, floatDepth);
+  // The ported hub turns with the floats and is one piece with them; Brown
+  // draws it light, not as a black ring.
+  hollowShaft.material = wheelMaterial;
   hollowShaft.userData.role =
     'rotating-hollow-shaft-receiving-float-lifted-water';
   wheel.add(hollowShaft);
@@ -473,10 +478,10 @@ function persianIrrigationWheel(movement) {
     arm.add(suspensionPin);
     hinge.userData.role = `free-bucket-suspension-pivot-${index + 1}`;
     bucket.add(hinge);
-    const bucketWater = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.255, 0.20, 1, 26),
-      waterMaterial,
-    );
+    // Pass 69: a level body inscribed in the tapered bucket and clipped at
+    // its lowest rim point, so a tipped bucket pours rather than holding a
+    // disc of water through its staves.
+    const bucketWater = new THREE.Mesh(makeCellWaterGeometry(), waterMaterial);
     bucketWater.userData.role =
       `gravity-level-water-load-in-bucket-${index + 1}`;
     bucket.add(bucketWater);
@@ -494,10 +499,18 @@ function persianIrrigationWheel(movement) {
       standoff.position.set(-.23,y,(trip.pin.z-bucketPlaneZ)/2);bucket.add(standoff);
     }
 
-    const spill = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.085, 0.065, 1, 14),
-      paleWaterMaterial,
-    );
+    // Pass 69 (p69-w1): each tipped bucket pours from its lip as one
+    // continuous stream that falls under gravity (recomputed in place as the
+    // bucket travels), not a stiff vertical rod.
+    const spillPath = {
+      points: Array.from({length: 17}, () => new THREE.Vector3()),
+      speeds: new Array(17).fill(1), times: new Array(17).fill(0),
+    };
+    const spill = new WaterStream(spillPath, {
+      width: 0.16, thickness: 0.07, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.4,
+      fadeOut: 0.35, cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.5,
+    });
+    spill.spillPath = spillPath;
     spill.userData.role = `high-level-bucket-discharge-stream-${index + 1}`;
     root.add(spill);
     bucketSpills.push(spill);
@@ -642,25 +655,43 @@ function persianIrrigationWheel(movement) {
   receiverBridge.position.set(.10,highDeliveryY,1.00);
   receiverBridge.userData.role='fixed-receiver-to-standard-bridge';root.add(receiverBridge);
 
+  const payloadHalfDepth = 0.12, payloadFloor = -0.59, payloadRim = -0.16, payloadRise = 0.34;
+  const payloadHalfWidth = (y) => {
+    const r = 0.20 + 0.07 * (y + 0.64) / 0.5;
+    return Math.sqrt(Math.max(0.001, r * r - payloadHalfDepth ** 2)) - 0.01;
+  };
+  const payloadOutline = [[-payloadHalfWidth(payloadFloor), payloadFloor], [payloadHalfWidth(payloadFloor), payloadFloor],
+    [payloadHalfWidth(payloadRim), payloadRim], [-payloadHalfWidth(payloadRim), payloadRim]];
   const updateBucketWater = (water, fill, bucketTipAngle) => {
-    const waterDepth = 0.34 * fill;
-    water.visible = fill > 0.01;
-    water.position.set(0, -0.59 + waterDepth / 2, 0);
-    water.rotation.z = -bucketTipAngle;
-    water.scale.set(1, Math.max(waterDepth, 0.001), 1);
+    const c = Math.cos(bucketTipAngle), sn = Math.sin(bucketTipAngle);
+    const ys = payloadOutline.map(([x, y]) => x * sn + y * c);
+    const rimLimit = Math.min(ys[2], ys[3]) - Math.min(...ys);
+    const level = Math.min(fill, Math.max(0, rimLimit - 0.01) / payloadRise);
+    updateClippedCell(water, payloadOutline, bucketTipAngle, level, payloadRise, 2 * payloadHalfDepth);
+    water.visible = level > 0.01;
   };
 
   const updateSpill = (spill, bucketState) => {
-    const lip=rotateVector2(new THREE.Vector2(-.27,-.14),bucketState.bucketTipAngle);
-    const streamTopY=bucketState.pivotPosition.y+lip.y;
-    const streamLength=Math.max(.001,streamTopY-highDeliveryY-.065);
-    spill.visible=bucketState.dischargeFlow>.01;
-    spill.position.set(bucketState.pivotPosition.x+lip.x,streamTopY-streamLength/2,bucketPlaneZ);
-    const width=.22+.45*bucketState.dischargeFlow;
-    spill.scale.set(width,streamLength,width);
+    spill.visible = bucketState.dischargeFlow > .004;
+    if (!spill.visible) return;
+    const lip = rotateVector2(new THREE.Vector2(-.27, -.14), bucketState.bucketTipAngle);
+    const x0 = bucketState.pivotPosition.x + lip.x, y0 = bucketState.pivotPosition.y + lip.y;
+    const vx = -0.35 * Math.cos(bucketState.bucketTipAngle), g = 9.81;
+    const tEnd = Math.min(1, bucketState.dischargeFlow / 0.3) * Math.sqrt(2 * Math.max(0.05, y0 - highDeliveryY) / g);
+    const {points, speeds, times} = spill.spillPath;
+    for (let i = 0; i < points.length; i += 1) {
+      const t = tEnd * i / (points.length - 1);
+      points[i].set(x0 + vx * t, y0 - 0.5 * g * t * t, bucketPlaneZ);
+      speeds[i] = Math.hypot(vx, g * t) + 0.3;
+      times[i] = t;
+    }
+    spill.flow = 0.25 + 0.75 * bucketState.dischargeFlow;
+    spill.setPath(spill.spillPath);
   };
 
+  const updateStreams = collectWaterStreams(root);
   const update = (time) => {
+    updateStreams(time);
     const state = stateAtTime(time);
     wheel.rotation.z = state.wheelAngle;
     for (let index = 0; index < floatCount; index += 1) {

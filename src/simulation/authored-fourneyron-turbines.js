@@ -6,6 +6,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import {WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -35,13 +36,24 @@ function fourneyronTurbine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 5.6;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const fixedGuideCount = 6;
-  const runnerBucketCount = 16;
+  // Brown's plan: eight curved guides A inside the heavy ring and eighteen
+  // buckets on the outer wheel B, the guides to about seven-tenths of the
+  // wheel's radius (plate radii 72-142 px and 142-205 px).
+  const fixedGuideCount = 8;
+  const runnerBucketCount = 18;
   const runnerBucketPitch = FULL_TURN / runnerBucketCount;
-  const guideInnerRadius = 0.56;
-  const guideOuterRadius = 1.72;
-  const runnerInnerRadius = 1.84;
+  const guideInnerRadius = 1.07;
+  const guideOuterRadius = 2.02;
+  const guideBoundaryRadius = 2.10;
+  const runnerInnerRadius = 2.19;
   const runnerOuterRadius = 3.05;
+  // Plate-measured vane turn (radians) from root to tip: the guides sweep
+  // clockwise outward (about 40 degrees), the buckets the opposite way
+  // (about 17 degrees, mostly near the rim).
+  const guideSweep = 0.70;
+  const bucketSweep = 0.30;
+  const guideAngleAt = (base, progress) => base + guideSweep * (1 - (0.92 * progress + 0.08 * progress ** 2));
+  const bucketAngleAt = (base, progress) => base + bucketSweep * (0.3 * progress + 0.7 * progress ** 2);
   const runnerBucketCenterRadius =
     (runnerInnerRadius + runnerOuterRadius) / 2;
   const sourcePoseBucketOffset = 0;
@@ -208,7 +220,7 @@ function fourneyronTurbine(movement) {
     new THREE.CylinderGeometry(guideOuterRadius, guideOuterRadius, 0.14, 72),
     frameMaterial,
   );
-  guideFloor.geometry.dispose();guideFloor.geometry=horizontalRing(.40,1.765,-.24,-.10);guideFloor.position.y=0;
+  guideFloor.geometry.dispose();guideFloor.geometry=horizontalRing(.40,guideBoundaryRadius+.045,-.24,-.10);guideFloor.position.y=0;
   guideFloor.userData.role = 'fixed-floor-beneath-inner-guide-passages';
   fixedGuideAssembly.add(guideFloor);
   const centralInlet = new THREE.Mesh(
@@ -218,6 +230,8 @@ function fourneyronTurbine(movement) {
   centralInlet.position.y = 0.22;
   centralInlet.userData.role = 'central-water-inlet-to-fixed-guides';
   fixedGuideAssembly.add(centralInlet);
+  // The water enters as the continuous sheets below; the shaft fills the centre.
+  centralInlet.visible = false;
   const fixedGuideVanes = [];
   for (let guideIndex = 0; guideIndex < fixedGuideCount; guideIndex += 1) {
     const baseAngle = guideIndex * FULL_TURN / fixedGuideCount;
@@ -228,8 +242,7 @@ function fourneyronTurbine(movement) {
         guideOuterRadius,
         progress,
       );
-      const angle = baseAngle + 0.58 * (1 - progress) ** 1.25;
-      return polarPoint(radius, angle, 0.18);
+      return polarPoint(radius, guideAngleAt(baseAngle, progress), 0.18);
     });
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -240,7 +253,7 @@ function fourneyronTurbine(movement) {
       curve,
       0.075,
       guideMaterial,
-      `fixed-curved-guide-shute-${guideIndex + 1}-of-six`,
+      `fixed-curved-guide-shute-${guideIndex + 1}-of-eight`,
     );
     vane.geometry.dispose();vane.geometry=horizontalVane(points,.038,-.10,.45);
     fixedGuideAssembly.add(vane);
@@ -251,7 +264,7 @@ function fourneyronTurbine(movement) {
     new THREE.TorusGeometry(guideOuterRadius, 0.09, 10, 96),
     guideMaterial,
   );
-  guideBoundary.geometry.dispose();guideBoundary.geometry=horizontalRing(1.68,1.765,-.10,-.06);guideBoundary.rotation.set(0,0,0);guideBoundary.position.y=0;
+  guideBoundary.geometry.dispose();guideBoundary.geometry=horizontalRing(guideBoundaryRadius-.045,guideBoundaryRadius+.045,-.10,-.04);guideBoundary.rotation.set(0,0,0);guideBoundary.position.y=0;
   guideBoundary.userData.role = 'fixed-outer-boundary-of-guide-ring-A';
   fixedGuideAssembly.add(guideBoundary);
 
@@ -289,9 +302,7 @@ function fourneyronTurbine(movement) {
         runnerOuterRadius,
         progress,
       );
-      const angle = localAngle + 0.24 * (1 - progress) ** 1.2
-        - 0.07 * progress;
-      return polarPoint(radius, angle, 0.21);
+      return polarPoint(radius, bucketAngleAt(localAngle, progress), 0.21);
     });
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -302,7 +313,7 @@ function fourneyronTurbine(movement) {
       curve,
       0.070,
       runnerMaterial,
-      `curved-outer-runner-bucket-${bucketIndex + 1}-of-sixteen`,
+      `curved-outer-runner-bucket-${bucketIndex + 1}-of-eighteen`,
     );
     bucket.geometry.dispose();bucket.geometry=horizontalVane(points,.032,-.05,.45);
     runner.add(bucket);
@@ -316,10 +327,11 @@ function fourneyronTurbine(movement) {
   runnerHub.userData.role = 'rotating-runner-output-hub-below-fixed-guides';
   runner.add(runnerHub);
   const runnerShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 0.69, 32),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1.18, 32),
     runnerMaterial,
   );
-  runnerShaft.position.y = -0.535;
+  // The shaft rises through the guides' open centre: Brown's small circle.
+  runnerShaft.position.y = -0.29;
   runnerShaft.userData.role = 'vertical-output-shaft-of-outer-runner';
   runner.add(runnerShaft);
   const runnerSupportArms = [];
@@ -352,14 +364,18 @@ function fourneyronTurbine(movement) {
   const flowPathTubes = [];
   for (let pathIndex = 0; pathIndex < fixedGuideCount; pathIndex += 1) {
     const baseAngle = pathIndex * FULL_TURN / fixedGuideCount;
+    // Mid-passage streamline: down from the centre, out between two guides,
+    // on through the turning buckets with its whirl reduced, off the rim.
+    const passage = baseAngle + FULL_TURN / fixedGuideCount / 2;
     const points = [
-      polarPoint(0.34, baseAngle + 0.70, 0.58),
-      polarPoint(0.78, baseAngle + 0.53, 0.38),
-      polarPoint(1.35, baseAngle + 0.24, 0.27),
-      polarPoint(1.79, baseAngle, 0.22),
-      polarPoint(2.36, baseAngle - 0.12, 0.20),
-      polarPoint(3.10, baseAngle - 0.16, 0.18),
-      polarPoint(3.48, baseAngle - 0.14, 0.08),
+      polarPoint(0.36, passage + guideSweep + 0.45, 0.52),
+      polarPoint(0.72, passage + guideSweep + 0.2, 0.26),
+      polarPoint(guideInnerRadius, guideAngleAt(passage, 0), 0.17),
+      polarPoint((guideInnerRadius + guideOuterRadius) / 2, guideAngleAt(passage, 0.5), 0.17),
+      polarPoint(guideOuterRadius, guideAngleAt(passage, 1), 0.17),
+      polarPoint(2.62, passage - 0.13, 0.17),
+      polarPoint(runnerOuterRadius, passage - 0.2, 0.17),
+      polarPoint(3.48, passage - 0.24, 0.02),
     ];
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -376,6 +392,27 @@ function fourneyronTurbine(movement) {
     root.add(tube);
     flowPathTubes.push(tube);
   }
+  // Pass 69: the water is drawn as one continuous sheet per guide passage
+  // (water-stream.js), along the streamline above to the rim, where it is
+  // thrown off with its exit speed and falls; streaks scroll with the flow.
+  const flowSpeed = 2.2;
+  const flowSheets = flowCurves.map((curve, index) => {
+    const along = guidedPath(new THREE.CatmullRomCurve3(curve.points.slice(0, -1), false, 'centripetal'),
+      {speed: flowSpeed, samples: 36});
+    const n = along.points.length;
+    const exit = along.points[n - 1].clone().sub(along.points[n - 2]).normalize().multiplyScalar(flowSpeed);
+    const sheet = new WaterStream(joinPaths(along, ballisticPath({
+      origin: along.points[n - 1], velocity: exit, endY: -0.6, samples: 10,
+    })), {
+      width: 0.22, thickness: 0.05, widthAxis: 'horizontal', widthExponent: 0.5,
+      fadeIn: 0.06, fadeOut: 0.14, cyclePeriod: cycleDuration, streakRate: 1.4,
+      opacity: 0.32,
+    });
+    sheet.userData.role = `water-sheet-through-guide-passage-${index + 1}`;
+    root.add(sheet);
+    return sheet;
+  });
+  const updateWater = collectWaterStreams(root);
   const flowMarkers = [];
   const markersPerPath = 4;
   for (let pathIndex = 0; pathIndex < fixedGuideCount; pathIndex += 1) {
@@ -416,6 +453,7 @@ function fourneyronTurbine(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
+    updateWater(time);
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 1.24, 1);
     for (const entry of flowMarkers) {
       const progress = THREE.MathUtils.euclideanModulo(
@@ -449,6 +487,7 @@ function fourneyronTurbine(movement) {
       fixedGuideVanes,
       flowMarkers: flowMarkers.map(({ marker }) => marker),
       flowPathTubes,
+      flowSheets,
       guideBoundary,
       guideFloor,
       rotationMarker,
@@ -476,7 +515,7 @@ function fourneyronTurbine(movement) {
     flowCurves,
     geometry,
     mechanism:
-      'Water enters centrally and passes outward through six stationary curved shutes in guide assembly A. The guides give the water clockwise whirl before it meets sixteen curved buckets in the separate outer runner B. The runner turns clockwise as it removes most of that whirl, and the water then discharges radially around the circumference. The inner guide disk, guide vanes, inlet, floor, and flow field remain fixed; only the outer bucket ring, its concealed support arms, output hub, shaft, and marker rotate together.',
+      'Water enters centrally and passes outward through eight stationary curved shutes in guide assembly A. The guides give the water clockwise whirl before it meets eighteen oppositely curved buckets in the separate outer runner B. The runner turns clockwise as it removes most of that whirl, and the water then discharges radially around the circumference. The inner guide disk, guide vanes, inlet, floor, and flow field remain fixed; only the outer bucket ring, its concealed support arms, output hub, shaft, and marker rotate together.',
     motion: {
       cycleDuration,
       inputAngularSpeed,
@@ -503,10 +542,10 @@ function fourneyronTurbine(movement) {
     },
     sourceReference: {
       brownPlate434: {
-        approximateFixedGuideCount: 6,
-        approximateGuideOuterRadiusPixels: 143,
-        approximateOuterRunnerBucketCount: 16,
-        approximateRunnerOuterRadiusPixels: 207,
+        approximateFixedGuideCount: 8,
+        approximateGuideOuterRadiusPixels: 142,
+        approximateOuterRunnerBucketCount: 18,
+        approximateRunnerOuterRadiusPixels: 205,
         centerApproximatePixels: [252, 255],
         imageHeight: 525,
         imageWidth: 525,
@@ -520,9 +559,9 @@ function fourneyronTurbine(movement) {
           'water discharges at the circumference',
         ],
         engravingEvidence:
-          'Brown’s plan shows about six broad curved guide passages inside a heavy fixed boundary, a distinct annular outer runner with about sixteen oppositely curved bucket passages, outward flow arrows, and clockwise arrows at the right-hand circumference.',
+          'Brown’s plan shows eight curved guides (plate radii 72-136 px) inside a heavy fixed boundary (142 px), a distinct annular outer runner (to 205 px) with eighteen oppositely curved buckets, outward flow arrows, and clockwise arrows at the right-hand circumference.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, exact guide or bucket counts, vane profiles, height, flow rate, head, velocity triangles, shaft arrangement, rotational speed, materials, losses, leakage, efficiency, inertia, or load. Six fixed guides, sixteen runner buckets, blade curves, velocity values, lower support arms, dimensions, colors, and a 5.6-second cycle are independently engineered; the fixed inner guides A, separate revolving outer runner B, central-to-circumferential flow, and clockwise direction are source-grounded.',
+          'Brown gives no dimensions, exact guide or bucket counts, vane profiles, height, flow rate, head, velocity triangles, shaft arrangement, rotational speed, materials, losses, leakage, efficiency, inertia, or load. The plate-measured counts and vane sweeps are kept; blade thickness and height, velocity values, lower support arms, dimensions, colors, and a 5.6-second cycle are independently engineered; the fixed inner guides A, separate revolving outer runner B, central-to-circumferential flow, and clockwise direction are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 434',

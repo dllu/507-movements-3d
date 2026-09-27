@@ -52,7 +52,10 @@ function heronsFountain(movement) {
   const topBasinBottomY = 3.85;
   const topWaterVolume = 1.05;
   const nozzleY = 4.40;
-  const lowerTransfer = 0.32;
+  // Running, the right drain carries exactly the jet's return (the upper
+  // basin level holds and the shared air volume and pressure stay constant),
+  // so no undrawn extra pour is needed and no water appears from nowhere.
+  const lowerTransfer = 0.24;
   const intermediateTransfer = 0.24;
   const externalPourTransfer = lowerTransfer - intermediateTransfer;
   const initialLowerGasVolume = lowerCapacity - lowerInitialWaterVolume;
@@ -470,7 +473,7 @@ function heronsFountain(movement) {
     fountainSprays.forEach((spray) => {
       spray.visible = streamsVisible;
     });
-    externalPour.visible = streamsVisible;
+    externalPour.visible = streamsVisible && externalPourTransfer > 0;
     const flowOpacity = 0.20 + 0.48 * state.flowFraction;
     activeDrainMaterial.opacity = flowOpacity;
     activeJetMaterial.opacity = flowOpacity;
@@ -561,7 +564,7 @@ function heronsFountain(movement) {
       resetDisclosure:
         'The physical operating interval stops before the hidden-stream reset. During reset only vessel levels and pressure return smoothly to the initial demonstration state; no reverse water or air flow is depicted or claimed.',
       waterModel:
-        'During the physical interval, lower gain equals right-drain transfer, intermediate loss equals jet transfer, and the smaller external pour exactly supplies their difference so upper-basin volume remains constant.',
+        'During the physical interval, lower gain equals right-drain transfer and intermediate loss equals jet transfer; the two are equal, so the upper basin level and the shared air volume and pressure stay constant with no external pour.',
     },
     fidelity: 'authored',
     geometry,

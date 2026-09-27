@@ -493,8 +493,11 @@ function selfRockingCradle(movement) {
   const fixedAxleFrame = new THREE.Group();
   fixedAxleFrame.userData.role =
     'fixed-rear-frame-carrying-A-and-B-axes';
-  const axleBack = -.33, axleFront = .54;
-  for (const center of [inputCenter, outputCenter]) {
+  // Each stub meets the back face of its plain wheel (its journal is not
+  // shown), so the wheel faces stay plain as Brown draws them.
+  const axleBack = -.33;
+  for (const [center, wheelWidth] of [[inputCenter, .34], [outputCenter, .42]]) {
+    const axleFront = center.z - wheelWidth / 2 - .002;
     const axle = cylinderAlongZ(.11,axleFront-axleBack,groundMaterial,28);
     axle.position.copy(center);
     axle.position.z = (axleFront+axleBack)/2;
@@ -505,61 +508,40 @@ function selfRockingCradle(movement) {
   }
   root.add(fixedAxleFrame);
 
-  const inputWheelA = makePulley({
-    color: PALETTE.driver,
-    grooves: 0,
-    radius: 0.66,
-    // Brown draws A and B as plain discs turning on the fixed axles.
-    spokes: 0,
-    bore: .114,
-    width: 0.34,
-  });
+  // Brown draws A and B as plain wheels, each carrying only the crank pin
+  // on which the connecting rod rides: no hub, crank arm or face marks.
+  const rodPlaneZ = .76, pinOuterZ = .87;
+  const plainWheel = (color, radius, width, role) => {
+    const wheel = makePulley({ color, grooves: 0, radius, spokes: 0, width,
+      rotationIndicator: false });
+    wheel.userData.hub.removeFromParent();
+    wheel.userData.role = role;
+    return wheel;
+  };
+  const crankPin = (wheel, radius, width, role) => {
+    const faceZ = width / 2, outerZ = pinOuterZ - wheel.position.z;
+    const pin = new THREE.Mesh(
+      new THREE.CylinderGeometry(.07,.07,outerZ-faceZ,32),
+      pinMaterial,
+    );
+    pin.rotation.x=Math.PI/2;
+    pin.position.set(radius, 0, (faceZ+outerZ)/2);
+    pin.userData.role = role;
+    wheel.userData.rotor.add(pin);
+    return pin;
+  };
+  const inputWheelA = plainWheel(PALETTE.driver, 0.66, 0.34,
+    'continuously-rotating-crank-wheel-A');
   inputWheelA.position.copy(inputCenter);
-  inputWheelA.userData.role = 'continuously-rotating-crank-wheel-A';
-  const inputCrankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(inputCrankRadius, 0.11, 0.19),
-    rodMaterial,
-  );
-  inputCrankArm.position.x = inputCrankRadius / 2;
-  inputCrankArm.position.z = 0.24;
-  inputCrankArm.userData.role = 'eccentric-crank-arm-on-wheel-A';
-  inputWheelA.userData.rotor.add(inputCrankArm);
-  const inputPinMarker = new THREE.Mesh(
-    new THREE.CylinderGeometry(.07,.07,.48,32),
-    pinMaterial,
-  );
-  inputPinMarker.rotation.x=Math.PI/2;
-  inputPinMarker.position.set(inputCrankRadius, 0, .39);
-  inputPinMarker.userData.role = 'crank-pin-of-wheel-A';
-  inputWheelA.userData.rotor.add(inputPinMarker);
+  const inputPinMarker = crankPin(inputWheelA, inputCrankRadius, 0.34,
+    'crank-pin-of-wheel-A');
   root.add(inputWheelA);
 
-  const outputWheelB = makePulley({
-    color: PALETTE.driven,
-    grooves: 1,
-    radius: outputWheelRadius,
-    spokes: 0,
-    bore: .114,
-    width: 0.42,
-  });
+  const outputWheelB = plainWheel(PALETTE.driven, outputWheelRadius, 0.42,
+    'larger-fixed-axis-oscillating-wheel-B');
   outputWheelB.position.copy(outputCenter);
-  outputWheelB.userData.role =
-    'larger-fixed-axis-oscillating-wheel-B';
-  const outputCrankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(outputPinRadius, 0.12, 0.21),
-    rodMaterial,
-  );
-  outputCrankArm.position.set(outputPinRadius / 2, 0, 0.29);
-  outputCrankArm.userData.role = 'eccentric-output-arm-on-wheel-B';
-  outputWheelB.userData.rotor.add(outputCrankArm);
-  const outputPinMarker = new THREE.Mesh(
-    new THREE.CylinderGeometry(.07,.07,.48,32),
-    pinMaterial,
-  );
-  outputPinMarker.rotation.x=Math.PI/2;
-  outputPinMarker.position.set(outputPinRadius, 0, .39);
-  outputPinMarker.userData.role = 'oscillating-pin-of-wheel-B';
-  outputWheelB.userData.rotor.add(outputPinMarker);
+  const outputPinMarker = crankPin(outputWheelB, outputPinRadius, 0.42,
+    'oscillating-pin-of-wheel-B');
   root.add(outputWheelB);
 
   const {rod:connectingRod,body:connectingRodBody,startAnchor:rodStart,endAnchor:rodEnd}=makeBoredLinkRod({
@@ -571,7 +553,6 @@ function selfRockingCradle(movement) {
     connectingRod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);
   };
   root.add(connectingRod);
-  // The plain discs and their hubs are lathed with a bore round the fixed axles.
 
   const cradleE = new THREE.Group();
   cradleE.userData.role = 'rolling-self-rocking-cradle-E';
@@ -643,8 +624,8 @@ function selfRockingCradle(movement) {
     setSpin(inputWheelA, state.inputAngle);
     setSpin(outputWheelB, state.outputAngle);
     connectingRod.userData.setEndpoints(
-      state.inputPin.clone().setZ(.94),
-      state.outputPin.clone().setZ(.94),
+      state.inputPin.clone().setZ(rodPlaneZ),
+      state.outputPin.clone().setZ(rodPlaneZ),
     );
     cradleE.position.copy(state.cradleCenter);
     cradleE.rotation.z = state.cradleAngle;
@@ -685,10 +666,8 @@ function selfRockingCradle(movement) {
       flexibleBandC,
       flexibleBandD,
       ground, cradleLoad,
-      inputCrankArm,
       inputPinMarker,
       inputWheelA,
-      outputCrankArm,
       outputPinMarker,
       outputWheelB,
       rockerShoe,

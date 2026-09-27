@@ -39,8 +39,12 @@ for(const[id,create]of factories)test(`${id}: finite working walls, mating profi
         assert.ok(solidSurface(b[side+'PackingBody'].geometry).inside(new THREE.Vector3(0,0,.18)),'rear packing web joins the two sides');
       }
     }else if(id===428){
-      for(let i=0;i<3;i++)pairs.push([b.rollersA[i],b.rollerArms[i]],[b.rollersA[i],b.rollerPins[i]],[b.rollersA[i],b.rearHousing]);
-      assert.ok(!solidSurface(b.rollersA[0].geometry).inside(new THREE.Vector3(0,0,0)),'roller axle is genuinely bored');
+      // pass 69: rollers on their pins at the arm ends, inside the casing
+      const rollerBodies=b.rollers.map(roller=>roller.children[0]);
+      const pins=[];model.root.traverse(o=>{if(/^roller-A-\d-pin-on-arm$/.test(o.userData.role))pins.push(o);});
+      for(let i=0;i<3;i++)pairs.push([rollerBodies[i],b.arms],[rollerBodies[i],pins[i]],[rollerBodies[i],b.casing],[rollerBodies[i],b.backCover]);
+      pairs.push([b.arms,b.casing],[b.arms,b.backCover],[b.shaftB,b.backCover]);
+      assert.ok(!solidSurface(rollerBodies[0].geometry).inside(new THREE.Vector3(0,-.5,0)),'roller is genuinely bored');
     }else{
       pairs.push([b.leftPiston,b.rightPiston],[b.leftShaft,b.leftPiston],[b.rightShaft,b.rightPiston]);
       for(const moving of[b.leftPiston,b.rightPiston,...b.leftPackingStrips,...b.rightPackingStrips])pairs.push([moving,b.rearHousing]);
@@ -53,26 +57,33 @@ for(const[id,create]of factories)test(`${id}: finite working walls, mating profi
 });
 
 
-test('428: rendered finite liner remains outside each roller and within contact tessellation tolerance',()=>{
+test('428: the rendered, deforming rubber lining stays outside each roller and inside the bore, touching both',()=>{
   const model=createAuthoredRubberLinedRotaryEngineMovement({id:428});
   try{
-    const b=model.root.userData.blocks;let maximumContactGap=0;
+    const u=model.root.userData,b=u.blocks,g=u.geometry;let maximumContactGap=0;
     for(let frame=0;frame<=64;frame++){
-      model.update(frame*4/64);model.root.updateMatrixWorld(true);
-      const positions=b.linerE.geometry.attributes.position,count=positions.count/4;
-      for(const roller of b.rollersA){
-        const center=roller.getWorldPosition(new THREE.Vector3());let minimumGap=Infinity;
+      model.update(frame*g.cycleDuration/64);model.root.updateMatrixWorld(true);
+      const positions=b.rubber.geometry.attributes.position,count=g.samples;
+      // vertex block 0 is the inner face at the front
+      const inner=i=>new THREE.Vector3().fromBufferAttribute(positions,i%count);
+      const outer=i=>new THREE.Vector3().fromBufferAttribute(positions,count+(i%count));
+      for(const roller of b.rollers){
+        const center=roller.getWorldPosition(new THREE.Vector3()).applyMatrix4(model.root.matrixWorld.clone().invert());let minimumGap=Infinity;
         for(let i=0;i<count;i++){
-          const a=new THREE.Vector3().fromBufferAttribute(positions,i*4).applyMatrix4(b.linerE.matrixWorld);
-          const c=new THREE.Vector3().fromBufferAttribute(positions,((i+1)%count)*4).applyMatrix4(b.linerE.matrixWorld);
-          const dx=c.x-a.x,dy=c.y-a.y,t=Math.max(0,Math.min(1,((center.x-a.x)*dx+(center.y-a.y)*dy)/(dx*dx+dy*dy)));
-          const gap=Math.hypot(a.x+t*dx-center.x,a.y+t*dy-center.y)-.5;
-          assert.ok(gap>-2e-7,`liner penetrates circular roller by ${-gap}`);minimumGap=Math.min(minimumGap,gap);
+          const a=inner(i),c=inner(i+1),dx=c.x-a.x,dy=c.y-a.y,t=Math.max(0,Math.min(1,((center.x-a.x)*dx+(center.y-a.y)*dy)/(dx*dx+dy*dy)));
+          const gap=Math.hypot(a.x+t*dx-center.x,a.y+t*dy-center.y)-g.rollerRadius;
+          assert.ok(gap>-0.006,`rubber enters roller by ${-gap}`);minimumGap=Math.min(minimumGap,gap);
         }
-        maximumContactGap=Math.max(maximumContactGap,minimumGap);
+        // away from the necks, where the rubber dips into its clamp
+        if(Math.abs(Math.sin(Math.atan2(center.y,center.x)))>Math.sin(10*Math.PI/180))maximumContactGap=Math.max(maximumContactGap,minimumGap);
+      }
+      for(let i=0;i<count;i++){
+        const p=outer(i),r=Math.hypot(p.x,p.y),a=Math.atan2(p.y,p.x);
+        const nearNeck=Math.min(Math.abs(Math.sin(a)))<Math.sin(g.vRimAngle+0.02)&&Math.abs(Math.cos(a))>0.9;
+        if(!nearNeck)assert.ok(r<=g.boreRadius+1e-6,'rubber inside the bore');
       }
     }
-    // The 256-sided roller adds at most 0.000038 of radial chord error.
-    assert.ok(maximumContactGap<0.00012,`liner mesh contact gap ${maximumContactGap}`);
+    // every roller keeps the rubber pinched on the bore
+    assert.ok(maximumContactGap<0.01,`rubber contact gap ${maximumContactGap}`);
   }finally{disposeObject3D(model.root);}
 });

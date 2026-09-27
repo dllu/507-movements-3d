@@ -1,1011 +1,496 @@
 import * as THREE from 'three';
+import { PALETTE, markShadows, matte } from './primitives.js';
+import { fitPistonGuide } from './piston-guide-parts.js';
+import { latheSectionGeometry } from './cutaway-section.js';
+import { engineRod } from './steam-engine-parts.js';
 import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
-
-import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
-import { engineRod, annularSector } from './steam-engine-parts.js';
-import { capsule, plate, polygonClipping, sector, spline } from './finite-plate-geometry.js';
+  arcPoints,
+  bandPolygon,
+  circlePolygon,
+  multiArea,
+  partPlate,
+  piecesContaining,
+  polygonClipping,
+  ringPolygon,
+  safeClip,
+  exhaustElbowGeometry,
+  sectionPlate,
+  steamVolume,
+} from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
+const DEG = Math.PI / 180;
 
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(delta.y, delta.x);
-  return beam;
-}
-
-function makeTubeThrough(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points,
-    false,
-    'centripetal',
-  );
-  const tube = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, points.length * 4, radius, 10, false),
-    material,
-  );
-  tube.userData.role = role;
-  return tube;
-}
-
-function arcPoints(center, radius, startAngle, endAngle, z, count = 72) {
-  const points = [];
-  for (let index = 0; index <= count; index += 1) {
-    const angle = THREE.MathUtils.lerp(
-      startAngle,
-      endAngle,
-      index / count,
-    );
-    points.push(new THREE.Vector3(
-      center.x + radius * Math.cos(angle),
-      center.y + radius * Math.sin(angle),
-      z,
-    ));
-  }
-  return points;
-}
-
-function crossZ(left, right) {
-  return left.x * right.y - left.y * right.x;
-}
-
-function normalizeAngle(angle) {
-  return THREE.MathUtils.euclideanModulo(angle, FULL_TURN);
-}
-
+// Movement 423, Root's double-quadrant engine (pass 69 rebuild from Brown's
+// plate).
+//
+// One open working cavity holds both pistons B. Each B is a vane on its own
+// pivot; its outer side works in a quadrant closed by a curved wall and an
+// end wall, its inner side faces the common space between the pistons in
+// which crank D turns. Nothing divides that space: it is the exhaust. The
+// top quadrant's steam passage runs over its curved wall (Brown's hatched
+// bar) and turns down round the bar's end into the corner; the bottom
+// quadrant's passage runs down the right wall behind the end wall and enters
+// at the bottom corner. Valve a is a rocking plug with two hollows: the upper
+// joins the inlet to one passage, or to both at mid-travel, while the lower
+// joins the other passage to the port that opens into the space between the
+// pistons. The plug rocks a quarter-turn out of phase with the overlap of the
+// two power strokes, so each B takes steam through its whole working stroke
+// (about 212 degrees of the crank's turn) and both take it where the strokes
+// overlap: there is no dead point.
 function doubleQuadrantEngine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
 
-  // These are the coordinates used by the official Movement 423 Canvas model.
-  const sourceCrankPin = new THREE.Vector3(-0.395084, 1.133097, 0);
-  const crankCenter = new THREE.Vector3(0, 0, 0);
-  const crankRadius = sourceCrankPin.length();
-  const sourceCrankAngle = Math.atan2(
-    sourceCrankPin.y,
-    sourceCrankPin.x,
-  );
-  const topFixedPivot = new THREE.Vector3(-3.509319, 0, 0);
-  const bottomFixedPivot = new THREE.Vector3(3.509319, 0, 0);
-  const connectingRodLength = 3;
-  const sourceTopPerimeterPoint = new THREE.Vector3(
-    -0.154641,
-    2.999355,
-    0,
-  );
-  const sourceBottomPerimeterPoint = new THREE.Vector3(
-    0.154641,
-    -2.999355,
-    0,
-  );
-  const pistonRockerRadius = topFixedPivot.distanceTo(
-    sourceTopPerimeterPoint,
-  );
-  const groundPivotSpacing = topFixedPivot.distanceTo(bottomFixedPivot);
+  // Units: Brown's plate at 44.4 px per unit, origin at the crank centre D.
+  const crankRadius = 1.3;
+  const rodLength = 3.58;
+  const rockerRadius = 4.3; // wrist pins
+  const vaneRadius = 5.0; // tip of B
+  const arcRadius = 5.02; // curved wall of each quadrant
+  const lugAngle = 8.5 * DEG; // B leads its wrist pin
+  const pivotTop = [-3.6, 0];
+  const pivotBottom = [3.6, 0];
+  const hubRadius = 0.5;
+  const boreRadius = 0.52;
+  const vaneHalfWidth = 0.1;
+  const sourceCrankAngle = Math.atan2(-1.126, 0.676); // Brown's pose
+  const depth = 1.2;
+  const zBack = -depth;
+  const backThickness = 0.2;
+  const valveCenter = [2.88, 2.36];
+  const valveBore = 0.96;
+  const plugRadius = 0.95;
+  const plugHubRadius = 0.5;
+  const valveAmplitude = 18 * DEG;
+  const valvePhase = 196 * DEG; // alpha = A sin(i - 196 deg), i clockwise crank turn
+  const portHalf = Math.asin(0.14 / 0.96); // channel half-width 0.14 at the bore
+  const lap = 1 * DEG;
+  const portAngles = { inlet: 90 * DEG, top: 163 * DEG, bottom: -56 * DEG };
+  const openCenter = 7 * DEG;
+  // Upper hollow X (always over the inlet) reaches the top port for
+  // alpha > -a0 and the bottom port for alpha < +a0; lower hollow Y (always
+  // over the exhaust port) reaches the top port for alpha < -a0 and the
+  // bottom port for alpha > +a0. The lands between them are exactly a port
+  // wide plus a one-degree lap either side.
+  const hollowX = [portAngles.bottom + portHalf - openCenter, portAngles.top - portHalf + openCenter];
+  const hollowY = [portAngles.top + portHalf + openCenter + 2 * lap, portAngles.bottom + FULL_TURN - portHalf - openCenter - 2 * lap];
 
-  const sourceValvePivot = new THREE.Vector3(3.209319, 2.071104, 0);
-  const sourceValvePose0End = new THREE.Vector3(4.160491, 2.379766, 0);
-  const sourceValvePose1End = new THREE.Vector3(4.160180, 1.761484, 0);
-  const sourceValvePose0Angle = Math.atan2(
-    sourceValvePose0End.y - sourceValvePivot.y,
-    sourceValvePose0End.x - sourceValvePivot.x,
-  );
-  const sourceValvePose1Angle = Math.atan2(
-    sourceValvePose1End.y - sourceValvePivot.y,
-    sourceValvePose1End.x - sourceValvePivot.x,
-  );
-  const valveCenterAngle = (
-    sourceValvePose0Angle + sourceValvePose1Angle
-  ) / 2;
-  const valveAngularAmplitude = (
-    sourceValvePose0Angle - sourceValvePose1Angle
-  ) / 2;
-  const valveBladeLength = (
-    sourceValvePivot.distanceTo(sourceValvePose0End)
-      + sourceValvePivot.distanceTo(sourceValvePose1End)
-  ) / 2;
-
-  const solveRockerAtInputAngle = (fixedPivot, inputAngle) => {
-    const crankAngle = sourceCrankAngle - inputAngle;
-    const crankRadial = new THREE.Vector3(
-      Math.cos(crankAngle),
-      Math.sin(crankAngle),
-      0,
-    );
-    const crankTangent = new THREE.Vector3(
-      -crankRadial.y,
-      crankRadial.x,
-      0,
-    );
-    const crankPin = crankCenter.clone().addScaledVector(
-      crankRadial,
-      crankRadius,
-    );
-    const crankPinPrime = crankTangent.clone().multiplyScalar(-crankRadius);
-    const crankPinSecond = crankRadial.clone().multiplyScalar(-crankRadius);
-
-    const pivotToCrank = crankPin.clone().sub(fixedPivot);
-    const centerDistance = pivotToCrank.length();
-    const centerDirection = pivotToCrank.clone().multiplyScalar(
-      1 / centerDistance,
-    );
-    const positiveNormal = new THREE.Vector3(
-      -centerDirection.y,
-      centerDirection.x,
-      0,
-    );
-    const intersectionAlong = (
-      pistonRockerRadius ** 2
-        - connectingRodLength ** 2
-        + centerDistance ** 2
-    ) / (2 * centerDistance);
-    const intersectionHeight = Math.sqrt(Math.max(
-      0,
-      pistonRockerRadius ** 2 - intersectionAlong ** 2,
-    ));
-    const intersectionBase = fixedPivot.clone()
-      .addScaledVector(centerDirection, intersectionAlong);
-
-    // The official add_c_rod_r construction selects this positive-normal
-    // intersection for both B pistons throughout the complete cycle.
-    const wristPin = intersectionBase.clone().addScaledVector(
-      positiveNormal,
-      intersectionHeight,
-    );
-    const pistonRadial = wristPin.clone().sub(fixedPivot)
-      .multiplyScalar(1 / pistonRockerRadius);
-    const pistonTangent = new THREE.Vector3(
-      -pistonRadial.y,
-      pistonRadial.x,
-      0,
-    );
-    const connectingRodVector = wristPin.clone().sub(crankPin);
-    const angularConstraintDenominator = pistonRockerRadius
-      * connectingRodVector.dot(pistonTangent);
-    const pistonAnglePrime = connectingRodVector.dot(crankPinPrime)
-      / angularConstraintDenominator;
-    const wristPinPrime = pistonTangent.clone().multiplyScalar(
-      pistonRockerRadius * pistonAnglePrime,
-    );
-    const connectingRodVectorPrime = wristPinPrime.clone().sub(
-      crankPinPrime,
-    );
-    const pistonAngleSecond = (
-      connectingRodVector.dot(crankPinSecond)
-        + pistonRockerRadius
-          * connectingRodVector.dot(pistonRadial)
-          * pistonAnglePrime ** 2
-        - connectingRodVectorPrime.lengthSq()
-    ) / angularConstraintDenominator;
-    const wristPinSecond = pistonTangent.clone().multiplyScalar(
-      pistonRockerRadius * pistonAngleSecond,
-    ).addScaledVector(
-      pistonRadial,
-      -pistonRockerRadius * pistonAnglePrime ** 2,
-    );
-    const connectingRodVectorSecond = wristPinSecond.clone().sub(
-      crankPinSecond,
-    );
-    const connectingRodAngle = Math.atan2(
-      connectingRodVector.y,
-      connectingRodVector.x,
-    );
-    const connectingRodAnglePrime = crossZ(
-      connectingRodVector,
-      connectingRodVectorPrime,
-    ) / connectingRodLength ** 2;
-    const connectingRodAngleSecond = crossZ(
-      connectingRodVector,
-      connectingRodVectorSecond,
-    ) / connectingRodLength ** 2;
-
-    return {
-      angularConstraintDenominator,
-      assemblyInnerMargin:
-        centerDistance - Math.abs(
-          pistonRockerRadius - connectingRodLength,
-        ),
-      assemblyOuterMargin:
-        pistonRockerRadius + connectingRodLength - centerDistance,
-      branchCross: crossZ(
-        centerDirection,
-        wristPin.clone().sub(intersectionBase),
-      ),
-      centerDirection,
-      centerDistance,
-      connectingRodAngle,
-      connectingRodAnglePrime,
-      connectingRodAngleSecond,
-      connectingRodLengthResidual:
-        connectingRodVector.length() - connectingRodLength,
-      connectingRodVector,
-      connectingRodVectorPrime,
-      connectingRodVectorSecond,
-      crankAngle,
-      crankPin,
-      crankPinPrime,
-      crankPinSecond,
-      intersectionAlong,
-      intersectionBase,
-      intersectionHeight,
-      pistonAngle: Math.atan2(pistonRadial.y, pistonRadial.x),
-      pistonAnglePrime,
-      pistonAngleSecond,
-      pistonRadial,
-      pistonRadiusResidual:
-        wristPin.distanceTo(fixedPivot) - pistonRockerRadius,
-      pistonTangent,
-      wristPin,
-      wristPinPrime,
-      wristPinSecond,
-    };
+  const rockerAt = (pivot, crankAngle) => {
+    const crankPin = [crankRadius * Math.cos(crankAngle), crankRadius * Math.sin(crankAngle)];
+    const dx = crankPin[0] - pivot[0];
+    const dy = crankPin[1] - pivot[1];
+    const distance = Math.hypot(dx, dy);
+    const ex = dx / distance;
+    const ey = dy / distance;
+    const along = (rockerRadius ** 2 - rodLength ** 2 + distance ** 2) / (2 * distance);
+    const height = Math.sqrt(Math.max(0, rockerRadius ** 2 - along ** 2));
+    const wrist = [pivot[0] + ex * along - ey * height, pivot[1] + ey * along + ex * height];
+    const pinAngle = Math.atan2(wrist[1] - pivot[1], wrist[0] - pivot[0]);
+    return { crankPin, wrist, pinAngle, vaneAngle: pinAngle + lugAngle };
   };
-
-  const findRateRoot = (fixedPivot, lower, upper) => {
-    let low = lower;
-    let high = upper;
-    let lowRate = solveRockerAtInputAngle(
-      fixedPivot,
-      low,
-    ).pistonAnglePrime;
-    for (let iteration = 0; iteration < 80; iteration += 1) {
-      const middle = (low + high) / 2;
-      const middleRate = solveRockerAtInputAngle(
-        fixedPivot,
-        middle,
-      ).pistonAnglePrime;
-      if (lowRate * middleRate <= 0) {
-        high = middle;
-      } else {
-        low = middle;
-        lowRate = middleRate;
-      }
-    }
-    return (low + high) / 2;
-  };
-
-  const topOuterReversalInputAngle = findRateRoot(
-    topFixedPivot,
-    -0.02,
-    0.02,
-  );
-  const topInnerReversalInputAngle = findRateRoot(
-    topFixedPivot,
-    Math.PI,
-    Math.PI * 1.5,
-  );
-  const bottomInnerReversalInputAngle = findRateRoot(
-    bottomFixedPivot,
-    0,
-    Math.PI / 2,
-  );
-  const bottomOuterReversalInputAngle = findRateRoot(
-    bottomFixedPivot,
-    Math.PI - 0.02,
-    Math.PI + 0.02,
-  );
-  const powerStrokeAngularSpan = topInnerReversalInputAngle
-    - topOuterReversalInputAngle;
-  const returnStrokeAngularSpan = FULL_TURN - powerStrokeAngularSpan;
-  const totalPowerOverlapAngularSpan = 2 * powerStrokeAngularSpan
-    - FULL_TURN;
-  const topOuterAngle = solveRockerAtInputAngle(
-    topFixedPivot,
-    topOuterReversalInputAngle,
-  ).pistonAngle;
-  const topInnerAngle = solveRockerAtInputAngle(
-    topFixedPivot,
-    topInnerReversalInputAngle,
-  ).pistonAngle;
-  const bottomInnerAngle = solveRockerAtInputAngle(
-    bottomFixedPivot,
-    bottomInnerReversalInputAngle,
-  ).pistonAngle;
-  const bottomOuterAngle = solveRockerAtInputAngle(
-    bottomFixedPivot,
-    bottomOuterReversalInputAngle,
-  ).pistonAngle;
-  const pistonAngularStroke = topOuterAngle - topInnerAngle;
-
-  const stateAtInputAngle = (
-    inputAngle,
-    inputSpeed = inputAngularSpeed,
-    inputAcceleration = 0,
-  ) => {
-    const top = solveRockerAtInputAngle(topFixedPivot, inputAngle);
-    const bottom = solveRockerAtInputAngle(bottomFixedPivot, inputAngle);
-    const crankAngle = sourceCrankAngle - inputAngle;
-    const crankAngularSpeed = -inputSpeed;
-    const crankAngularAcceleration = -inputAcceleration;
-    const crankPinVelocity = top.crankPinPrime.clone().multiplyScalar(
-      inputSpeed,
-    );
-    const crankPinAcceleration = top.crankPinSecond.clone()
-      .multiplyScalar(inputSpeed ** 2)
-      .addScaledVector(top.crankPinPrime, inputAcceleration);
-
-    const finishRockerState = (rocker) => {
-      const pistonAngularSpeed = rocker.pistonAnglePrime * inputSpeed;
-      const pistonAngularAcceleration = rocker.pistonAngleSecond
-        * inputSpeed ** 2
-        + rocker.pistonAnglePrime * inputAcceleration;
-      const wristPinVelocity = rocker.wristPinPrime.clone().multiplyScalar(
-        inputSpeed,
-      );
-      const wristPinAcceleration = rocker.wristPinSecond.clone()
-        .multiplyScalar(inputSpeed ** 2)
-        .addScaledVector(rocker.wristPinPrime, inputAcceleration);
-      const connectingRodVelocity = wristPinVelocity.clone().sub(
-        crankPinVelocity,
-      );
-      const connectingRodAcceleration = wristPinAcceleration.clone().sub(
-        crankPinAcceleration,
-      );
-      return {
-        ...rocker,
-        connectingRodAcceleration,
-        connectingRodAccelerationConstraintResidual:
-          connectingRodVelocity.lengthSq()
-            + rocker.connectingRodVector.dot(connectingRodAcceleration),
-        connectingRodAngularAcceleration:
-          rocker.connectingRodAngleSecond * inputSpeed ** 2
-            + rocker.connectingRodAnglePrime * inputAcceleration,
-        connectingRodAngularSpeed:
-          rocker.connectingRodAnglePrime * inputSpeed,
-        connectingRodVelocity,
-        connectingRodVelocityConstraintResidual:
-          rocker.connectingRodVector.dot(connectingRodVelocity),
-        pistonAngularAcceleration,
-        pistonAngularSpeed,
-        wristPinAcceleration,
-        wristPinVelocity,
-      };
+  const stateAtInputAngle = (inputAngle) => {
+    const crankAngle = sourceCrankAngle - inputAngle; // clockwise
+    const top = rockerAt(pivotTop, crankAngle);
+    const bottom = rockerAt(pivotBottom, crankAngle);
+    const ahead = 1e-3;
+    const topNext = rockerAt(pivotTop, crankAngle - ahead);
+    const bottomNext = rockerAt(pivotBottom, crankAngle - ahead);
+    const valveAngle = valveAmplitude * Math.sin(inputAngle - valvePhase);
+    const overlap = (a0, a1, b0, b1) => Math.max(0, Math.min(a1, b1) - Math.max(a0, b0));
+    const norm = (angle, base) => base + THREE.MathUtils.euclideanModulo(angle - base, FULL_TURN);
+    const opening = (port, hollow) => {
+      const start = hollow[0] + valveAngle;
+      const end = hollow[1] + valveAngle;
+      const center = norm(port, start - portHalf);
+      return overlap(center - portHalf, center + portHalf, start, end);
     };
-
-    const topPiston = finishRockerState(top);
-    const bottomPiston = finishRockerState(bottom);
-    const sine = Math.sin(inputAngle);
-    const topPowerActive = top.pistonAnglePrime <= 0;
-    const bottomPowerActive = bottom.pistonAnglePrime <= 0;
-    const topInductionOpening = Math.max(0, sine);
-    const bottomInductionOpening = Math.max(0, -sine);
-    const valveAngle = valveCenterAngle - valveAngularAmplitude * sine;
-    const valveAngularSpeed = -valveAngularAmplitude
-      * Math.cos(inputAngle) * inputSpeed;
-    const valveAngularAcceleration = valveAngularAmplitude * (
-      sine * inputSpeed ** 2
-        - Math.cos(inputAngle) * inputAcceleration
-    );
-
+    const pressure = (live, exhaust) => THREE.MathUtils.clamp(0.5 + (live - exhaust) / (4 * DEG), 0, 1);
+    const topLive = opening(portAngles.top, hollowX);
+    const topExhaust = opening(portAngles.top, hollowY);
+    const bottomLive = opening(portAngles.bottom, hollowX);
+    const bottomExhaust = opening(portAngles.bottom, hollowY);
     return {
-      bottomInductionOpening,
-      bottomPiston,
-      bottomPowerActive,
-      crankAngle,
-      crankAngularAcceleration,
-      crankAngularSpeed,
-      crankPin: top.crankPin.clone(),
-      crankPinAcceleration,
-      crankPinClosureResidual: top.crankPin.distanceTo(bottom.crankPin),
-      crankPinVelocity,
-      inductionOpeningSum: topInductionOpening + bottomInductionOpening,
-      inductionValveRoute: sine > 1e-12
-        ? 'top-outer-side'
-        : sine < -1e-12
-          ? 'bottom-outer-side'
-          : 'changeover-lap',
-      inputAcceleration,
       inputAngle,
-      inputSpeed,
-      poweredPistonCount:
-        Number(topPowerActive) + Number(bottomPowerActive),
-      topInductionOpening,
-      topPiston,
-      topPowerActive,
+      crankAngle,
+      crankPin: top.crankPin,
+      top: { ...top, powered: topNext.vaneAngle < top.vaneAngle },
+      bottom: { ...bottom, powered: bottomNext.vaneAngle < bottom.vaneAngle },
       valveAngle,
-      valveAngularAcceleration,
-      valveAngularSpeed,
-      valvePhaseConstraintResidual:
-        valveAngle - valveCenterAngle + valveAngularAmplitude * sine,
+      topLive, topExhaust, bottomLive, bottomExhaust,
+      topPressure: pressure(topLive, topExhaust),
+      bottomPressure: pressure(bottomLive, bottomExhaust),
     };
   };
-
   const stateAtTime = (time) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
-    return {
-      ...stateAtInputAngle(inputAngularSpeed * cycleTime),
-      cycleTime,
-      phase: cycleTime / cycleDuration,
-    };
+    return { ...stateAtInputAngle(inputAngularSpeed * cycleTime), cycleTime, phase: cycleTime / cycleDuration };
   };
+  // swept ranges of B
+  let topMin = Infinity; let topMax = -Infinity; let bottomMin = Infinity; let bottomMax = -Infinity;
+  for (let i = 0; i < 720; i += 1) {
+    const state = stateAtInputAngle(i / 720 * FULL_TURN);
+    topMin = Math.min(topMin, state.top.vaneAngle); topMax = Math.max(topMax, state.top.vaneAngle);
+    bottomMin = Math.min(bottomMin, state.bottom.vaneAngle); bottomMax = Math.max(bottomMax, state.bottom.vaneAngle);
+  }
 
-  const geometry = {
-    bottomFixedPivot: bottomFixedPivot.clone(),
-    bottomInnerAngle,
-    bottomInnerReversalInputAngle: normalizeAngle(
-      bottomInnerReversalInputAngle,
-    ),
-    bottomOuterAngle,
-    bottomOuterReversalInputAngle: normalizeAngle(
-      bottomOuterReversalInputAngle,
-    ),
-    connectingRodLength,
-    crankCenter: crankCenter.clone(),
-    crankRadius,
-    cycleDuration,
-    groundPivotSpacing,
-    inputAngularSpeed,
-    pistonAngularStroke,
-    pistonRockerRadius,
-    powerStrokeAngularSpan,
-    powerStrokeFraction: powerStrokeAngularSpan / FULL_TURN,
-    returnStrokeAngularSpan,
-    sourceCrankAngle,
-    sourceCrankPin: sourceCrankPin.clone(),
-    sourceBottomPerimeterPoint: sourceBottomPerimeterPoint.clone(),
-    sourceTopPerimeterPoint: sourceTopPerimeterPoint.clone(),
-    sourceValvePivot: sourceValvePivot.clone(),
-    sourceValvePose0Angle,
-    sourceValvePose0End: sourceValvePose0End.clone(),
-    sourceValvePose1Angle,
-    sourceValvePose1End: sourceValvePose1End.clone(),
-    topFixedPivot: topFixedPivot.clone(),
-    topInnerAngle,
-    topInnerReversalInputAngle: normalizeAngle(
-      topInnerReversalInputAngle,
-    ),
-    topOuterAngle,
-    topOuterReversalInputAngle: normalizeAngle(
-      topOuterReversalInputAngle,
-    ),
-    totalPowerOverlapAngularSpan,
-    totalPowerOverlapFraction: totalPowerOverlapAngularSpan / FULL_TURN,
-    valveAngularAmplitude,
-    valveBladeLength,
-    valveCenterAngle,
+  // ---- fixed outlines ---------------------------------------------------------
+  const add = (a, b) => [a[0] + b[0], a[1] + b[1]];
+  const polar = (center, radius, angle) => [center[0] + radius * Math.cos(angle), center[1] + radius * Math.sin(angle)];
+  // End wall of a quadrant: a line parallel to axis angle psi, `offset` to
+  // its anticlockwise side, clear of B at the top of its swing.
+  const wallPoint = (pivot, psi, offset, s) => [
+    pivot[0] + s * Math.cos(psi) - offset * Math.sin(psi),
+    pivot[1] + s * Math.sin(psi) + offset * Math.cos(psi),
+  ];
+  const wallAtRadius = (pivot, psi, offset, radius) => wallPoint(pivot, psi, offset, Math.sqrt(radius ** 2 - offset ** 2));
+  const quadrant = (pivot, fromAngle, psi, offset, radius, hub = 0) => {
+    const end = wallAtRadius(pivot, psi, offset, radius);
+    const endAngle = Math.atan2(end[1] - pivot[1], end[0] - pivot[0]);
+    return ringPolygon([
+      polar(pivot, hub, fromAngle),
+      ...arcPoints(pivot, radius, fromAngle, endAngle, 48),
+      wallAtRadius(pivot, psi, offset, Math.max(hub, Math.abs(offset) + 1e-3)),
+    ]);
   };
+  const topWallAxis = 93 * DEG;
+  const bottomWallAxis = -92 * DEG;
+  const wallOffset = 0.13;
+  const topInnerEnd = 26.7 * DEG; // curved wall meets the wedge under a
+  const bottomInnerEnd = -161 * DEG; // curved wall meets the lower-left wall
+  const barEnd = 88.5 * DEG;
+  const barOuter = 5.25;
+  const passageOuter = 5.55;
+  const wallThickness = 0.28;
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.24,
-    roughness: 0.54,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.33,
-    roughness: 0.42,
-  });
-  const pistonMaterial = matte(PALETTE.driven, {
-    metalness: 0.20,
-    roughness: 0.47,
-  });
-  const rodMaterial = matte(PALETTE.driver, {
-    metalness: 0.21,
-    roughness: 0.46,
-  });
-  const valveMaterial = matte(0xd9a62b, {
-    metalness: 0.23,
-    roughness: 0.43,
-  });
-  const steamMaterial = matte(0xe66f4a, {
-    opacity: 0.20,
-    roughness: 0.60,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const exhaustMaterial = matte(0x4a93a8, {
-    opacity: 0.17,
-    roughness: 0.64,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
-
-  const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(10.40, 0.28, 1.65),
-    frameMaterial,
+  const topQuadrant = quadrant(pivotTop, topInnerEnd, topWallAxis, wallOffset, passageOuter, 0);
+  const bar = polygonClipping.union(
+    ringPolygon([
+      ...arcPoints(pivotTop, barOuter, topInnerEnd - 2 * DEG, barEnd, 40),
+      ...arcPoints(pivotTop, arcRadius, barEnd, topInnerEnd - 2 * DEG, 40),
+    ]),
+    circlePolygon(polar(pivotTop, (arcRadius + barOuter) / 2, barEnd), (barOuter - arcRadius) / 2, 24),
   );
-  foundation.position.set(0, -5.02, -0.20);
-  foundation.userData.role = 'fixed-foundation-of-double-quadrant-engine';
-  root.add(foundation);
-
-  const leftPedestal = beamBetween(
-    new THREE.Vector3(-4.72, -4.90, -0.10),
-    new THREE.Vector3(-4.12, 0.18, -0.10),
-    0.34,
-    0.75,
-    frameMaterial,
-  );
-  leftPedestal.userData.role = 'left-fixed-cylinder-frame';
-  root.add(leftPedestal);
-  const rightPedestal = beamBetween(
-    new THREE.Vector3(4.70, -4.90, -0.10),
-    new THREE.Vector3(4.23, 0.28, -0.10),
-    0.34,
-    0.75,
-    frameMaterial,
-  );
-  rightPedestal.userData.role = 'right-fixed-cylinder-frame';
-  root.add(rightPedestal);
-
-  const topSectorStart = topInnerAngle - 0.08;
-  const topSectorEnd = topOuterAngle + 0.10;
-  const bottomSectorStart = bottomInnerAngle - 0.10;
-  const bottomSectorEnd = bottomOuterAngle + 0.08;
-  const chamberOuterRadius = pistonRockerRadius + 0.38;
-  const chamberInnerRadius = 0.57;
-  const quadrantWallThickness = 0.30;
-  const castingFront = 0.16;
-  const castingBack = -0.45;
-  const backWallDepth = 0.17;
-  const footTop = -4.88;
-
-  // Brown's closed cast casing: one thick sectioned wall from the foot up
-  // round the left pivot boss, over the top quadrant, round valve a and the
-  // right pivot boss, down to the foot. It stands outside every piston sweep.
-  const casingPath = spline([
-    [-4.62, -4.88], [-4.20, -3.00], [-3.86, -1.50], [-4.55, -0.80],
-    [-4.76, 0.00], [-4.50, 0.80], [-3.86, 1.40], [-3.72, 3.00],
-    [-3.66, 5.45], [-2.52, 5.70], [-0.77, 5.30], [0.77, 4.45],
-    [1.64, 3.68], [2.20, 3.12], [2.90, 3.36], [3.90, 3.12],
-    [4.46, 2.30], [4.40, 1.50], [4.62, 0.80], [4.78, 0.00],
-    [4.56, -1.00], [4.70, -3.00], [4.86, -4.88],
+  const bottomQuadrant = quadrant(pivotBottom, bottomInnerEnd, bottomWallAxis, wallOffset, arcRadius, 0);
+  const valveOnBore = (angle, radius = valveBore) => polar(valveCenter, radius, angle);
+  const topChannel = bandPolygon([
+    polar(pivotTop, (barOuter + passageOuter) / 2, 30 * DEG),
+    polar(pivotTop, (barOuter + passageOuter) / 2, 28 * DEG),
+    [1.45, 2.66], valveOnBore(portAngles.top, 1.45), valveOnBore(portAngles.top, 1.2),
+    valveOnBore(portAngles.top, valveBore - 0.1),
+  ], 0.14);
+  const bottomPassageLine = [
+    valveOnBore(portAngles.bottom, valveBore - 0.1), valveOnBore(portAngles.bottom, 1.2),
+    [3.72, 1.12], [4.1, 0.66], [4.32, 0.0],
+    [4.25, -0.8], wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.45, 1.6),
+    wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.45, 4.4),
+  ];
+  const smoothLine = (points, count = 72) => new THREE.SplineCurve(points.map((p) => new THREE.Vector2(...p)))
+    .getSpacedPoints(count).map((p) => [p.x, p.y]);
+  // The passage turns in under the end of the end wall into the corner.
+  const bottomMouth = ringPolygon([
+    wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.6, 4.2),
+    wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.6, 4.88),
+    wallPoint(pivotBottom, bottomWallAxis, 0, 4.88),
+    wallPoint(pivotBottom, bottomWallAxis, 0, 4.62),
+    wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.3, 4.62),
+    wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.3, 4.2),
   ]);
-  const aboveFoot = [[[[-9, footTop], [9, footTop], [9, 9], [-9, 9], [-9, footTop]]]];
-  const offsetSector = (center, inner, outer, start, end) => sector(inner, outer, start, end, 160)
-    .map(polygon => polygon.map(ring => ring.map(([x, y]) => [x + center.x, y + center.y])));
-  // Each quadrant's curved cylinder wall is a solid band of the casting. The
-  // top band runs on past its end wall to the casing's left side; the bottom
-  // band runs on past its piston's sweep down into the foot, as Brown draws.
-  const topWallOutline = polygonClipping.intersection(offsetSector(topFixedPivot,
-    chamberOuterRadius, chamberOuterRadius + quadrantWallThickness, topSectorStart,
-    THREE.MathUtils.degToRad(94)), aboveFoot);
-  const bottomWallOutline = polygonClipping.intersection(offsetSector(bottomFixedPivot,
-    chamberOuterRadius, chamberOuterRadius + quadrantWallThickness, bottomSectorStart,
-    THREE.MathUtils.degToRad(-94)), aboveFoot);
-  const topCylinderWall = new THREE.Mesh(plate(topWallOutline, castingBack, castingFront), frameMaterial);
-  topCylinderWall.userData.role = 'fixed-curved-wall-of-top-quadrant-cylinder';
-  const bottomCylinderWall = new THREE.Mesh(plate(bottomWallOutline, castingBack, castingFront), frameMaterial);
-  bottomCylinderWall.userData.role = 'fixed-curved-wall-of-bottom-quadrant-cylinder';
-  root.add(topCylinderWall, bottomCylinderWall);
-
-  // Brown's hatched cast webs: the wedge under valve a that closes the top
-  // wall's inner end, and the shelf under the left boss that carries the
-  // bottom wall's inner end back to the casing. Both lie outside the sweeps.
-  const valveWeb = [[[[1.10, 1.44], [1.92, 1.02], [2.64, 1.55], [2.62, 2.90],
-    [1.62, 3.02], [1.10, 1.44]]]];
-  const leftShelf = [[[[-4.10, -1.40], [-1.28, -1.40], [-1.28, -1.70], [-4.10, -1.70],
-    [-4.10, -1.40]]]];
-  const casingOutline = polygonClipping.difference(polygonClipping.intersection(polygonClipping.union(
-    ...casingPath.slice(1).map((point, index) => capsule(casingPath[index], point, 0.15, 8)),
-    valveWeb, leftShelf,
-  ), aboveFoot), topWallOutline, bottomWallOutline);
-  const casingWall = new THREE.Mesh(plate(casingOutline, castingBack, castingFront), frameMaterial);
-  casingWall.userData.role = 'fixed-closed-cast-casing-wall-round-both-quadrants';
-  root.add(casingWall);
-  // The back of the sectioned casting closes both quadrant cylinders and
-  // the common space behind the pistons.
-  const casingBackWall = new THREE.Mesh(plate(polygonClipping.intersection(
-    [[[...casingPath, casingPath[0]]]], aboveFoot,
-  ), castingBack - backWallDepth, castingBack), matte(0x8c9696, {
-    metalness: 0.18,
-    roughness: 0.60,
-  }));
-  casingBackWall.userData.role = 'fixed-back-wall-of-sectioned-casing';
-  root.add(casingBackWall);
-
-  const topChamberBack = new THREE.Mesh(
-    new THREE.RingGeometry(
-      chamberInnerRadius,
-      chamberOuterRadius,
-      64,
-      1,
-      topSectorStart,
-      topSectorEnd - topSectorStart,
+  const bottomPassage = polygonClipping.union(bandPolygon(smoothLine(bottomPassageLine), 0.15), bottomMouth);
+  const inletBore = ringPolygon([[valveCenter[0] - 0.17, valveCenter[1]], [valveCenter[0] + 0.17, valveCenter[1]],
+    [valveCenter[0] + 0.17, 4.5], [valveCenter[0] - 0.17, 4.5]]);
+  const wedgeTip = [1.24, 1.28];
+  const wedgeRight = valveOnBore(205 * DEG);
+  const blockCorner = valveOnBore(243 * DEG);
+  const central = ringPolygon([
+    [-3.38, -0.2], pivotTop, polar(pivotTop, arcRadius, topInnerEnd), wedgeTip, wedgeRight,
+    ...arcPoints(valveCenter, valveBore, 205 * DEG, 243 * DEG, 12).slice(1, -1),
+    blockCorner, [blockCorner[0], 0.45], [3.3, 0.45], pivotBottom,
+    polar(pivotBottom, arcRadius, bottomInnerEnd), [-1.24, -1.65], [-3.38, -1.91],
+  ]);
+  const workingCavity = polygonClipping.difference(
+    polygonClipping.union(
+      topQuadrant, bottomQuadrant, central, topChannel, bottomPassage,
+      circlePolygon(pivotTop, boreRadius, 32), circlePolygon(pivotBottom, boreRadius, 32),
+      circlePolygon(valveCenter, valveBore, 64), inletBore,
     ),
-    steamMaterial,
+    bar,
   );
-  topChamberBack.position.copy(topFixedPivot);
-  topChamberBack.position.z = -0.38;
-  topChamberBack.userData.role = 'cutaway-top-outer-steam-space';
-  root.add(topChamberBack);
-  const bottomChamberBack = new THREE.Mesh(
-    new THREE.RingGeometry(
-      chamberInnerRadius,
-      chamberOuterRadius,
-      64,
-      1,
-      bottomSectorStart,
-      bottomSectorEnd - bottomSectorStart,
-    ),
-    steamMaterial,
+
+  // Outer contour: the cavity walls thickened, the hub bosses, the valve
+  // housing with its flanged inlet and the lower-left wall with its packing.
+  const outerTop = quadrant(pivotTop, 18 * DEG, topWallAxis, wallOffset + wallThickness + 0.1, passageOuter + wallThickness, 0);
+  const outerBottom = quadrant(pivotBottom, bottomInnerEnd - 3 * DEG, bottomWallAxis, wallOffset + 0.88, arcRadius + wallThickness, 0);
+  const outerOutline = polygonClipping.union(
+    outerTop, outerBottom, central,
+    bandPolygon(smoothLine(bottomPassageLine), 0.15 + wallThickness),
+    ringPolygon([wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.88, 4.0), wallPoint(pivotBottom, bottomWallAxis, wallOffset + 0.88, 5.16),
+      wallPoint(pivotBottom, bottomWallAxis, -0.3, 5.16), wallPoint(pivotBottom, bottomWallAxis, -0.3, 4.0)]),
+    circlePolygon(pivotTop, 1.0, 64), circlePolygon(pivotBottom, 0.95, 64),
+    circlePolygon(valveCenter, 1.3, 96),
+    ringPolygon([[valveCenter[0] - 0.45, valveCenter[1]], [valveCenter[0] + 0.45, valveCenter[1]],
+      [valveCenter[0] + 0.45, 3.95], [valveCenter[0] - 0.45, 3.95]]),
+    ringPolygon([[valveCenter[0] - 0.8, 3.95], [valveCenter[0] + 0.72, 3.95],
+      [valveCenter[0] + 0.72, 4.35], [valveCenter[0] - 0.8, 4.35]]),
+    ringPolygon([[-3.94, -2.19], [-1.3, -1.93], [-1.0, -1.6], [-3.38, -1.6], [-3.38, -0.4], [-3.94, -0.4]]),
+    ringPolygon([[-1.24, -1.65], polar(pivotBottom, arcRadius + wallThickness, bottomInnerEnd - 3 * DEG), [-1.1, -1.95]]),
+    // Brown's hatched wedge under a and the block beside the exhaust port
+    ringPolygon([polar(pivotTop, arcRadius, topInnerEnd - 3 * DEG), wedgeTip, wedgeRight, [2.2, 2.9], [0.6, 2.9]]),
+    ringPolygon([[blockCorner[0] - 0.05, 0.3], [4.2, 0.3], [4.2, 1.6], [blockCorner[0] - 0.05, 1.6]]),
   );
-  bottomChamberBack.position.copy(bottomFixedPivot);
-  bottomChamberBack.position.z = -0.38;
-  bottomChamberBack.userData.role = 'cutaway-bottom-outer-steam-space';
-  root.add(bottomChamberBack);
+  const casingOutline = polygonClipping.difference(outerOutline, workingCavity)
+    .filter((polygon) => multiArea([polygon]) > 1e-3)
+    .map(([outer, ...holes]) => [outer, ...holes.filter((hole) => multiArea([[hole]]) > 5e-3)]);
+  // Brown's cast frame behind the casing, down to its base plate.
+  const px = ([x, y]) => [(x - 270) / 44.4, (265 - y) / 44.4];
+  const frame = ringPolygon([
+    [22, 510], [502, 510], [502, 490], [486, 490], [470, 300], [440, 270], [300, 270], [110, 300],
+    [78, 322], [72, 380], [26, 490], [22, 490],
+  ].map(px));
+  const exhaustOutlet = [-2.35, -1.05];
+  const backOutline = polygonClipping.difference(
+    polygonClipping.union(outerOutline, frame),
+    circlePolygon(exhaustOutlet, 0.3, 48),
+    circlePolygon([0, 0], 0.26, 48),
+    circlePolygon(pivotTop, 0.21, 40),
+    circlePolygon(pivotBottom, 0.21, 40),
+    circlePolygon(valveCenter, 0.14, 32),
+  );
 
-  const topEndWall = new THREE.Mesh(annularSector(chamberInnerRadius, chamberOuterRadius,
-    topSectorEnd - 0.015, topSectorEnd + 0.015, castingFront - castingBack), frameMaterial);
-  topEndWall.position.copy(topFixedPivot);
-  topEndWall.position.z = (castingFront + castingBack) / 2;
-  topEndWall.userData.role = 'top-quadrant-cylinder-end-wall';
-  const bottomEndWall = new THREE.Mesh(annularSector(chamberInnerRadius, chamberOuterRadius,
-    bottomSectorStart - 0.015, bottomSectorStart + 0.015, castingFront - castingBack), frameMaterial);
-  bottomEndWall.position.copy(bottomFixedPivot);
-  bottomEndWall.position.z = (castingFront + castingBack) / 2;
-  bottomEndWall.userData.role = 'bottom-quadrant-cylinder-end-wall';
-  root.add(topEndWall, bottomEndWall);
+  const frameMaterial = matte(PALETTE.frame, { metalness: 0.24, roughness: 0.54 });
+  const backMaterial = matte(0x7d8786, { metalness: 0.18, roughness: 0.6 });
+  const darkMaterial = matte(PALETTE.ink, { metalness: 0.33, roughness: 0.42 });
+  const pistonMaterial = matte(PALETTE.driven, { metalness: 0.2, roughness: 0.47 });
+  const rodMaterial = matte(PALETTE.driver, { metalness: 0.21, roughness: 0.46 });
+  const valveMaterial = matte(0xd9a62b, { metalness: 0.23, roughness: 0.43 });
 
-  const makePistonRocker = (fixedPivot, rolePrefix, z) => {
-    const group = new THREE.Group();
-    group.position.copy(fixedPivot);
-    group.userData.role = `${rolePrefix}-single-acting-piston-B`;
-    // A flat plate, tapering only as much as the end wall beside the hub
-    // allows at the stroke's end, so B reads as Brown's parallel-sided bar.
-    const arm = new THREE.Mesh(plate([[[[0.42, -0.035], [pistonRockerRadius, -0.15],
-      [pistonRockerRadius, 0.15], [0.42, 0.035], [0.42, -0.035]]]], -0.23, 0.23), pistonMaterial);
-    arm.position.set(0, 0, z);
-    arm.userData.role = `${rolePrefix}-radial-body-of-piston-B`;
-    group.add(arm);
-    const hub = boredJournal(0.55, 0.313, 0.46, pistonMaterial);
-    hub.position.z = z;
-    hub.userData.role = `${rolePrefix}-bored-piston-hub`;
-    group.add(hub);
-    const sealingHead = new THREE.Mesh(
-      annularSector(pistonRockerRadius - 0.40, chamberOuterRadius - 0.19, -0.068, 0.068, 0.58),
-      pistonMaterial,
+  const casing = sectionPlate(casingOutline, zBack, 0, frameMaterial,
+    'sectioned-casing-of-both-quadrants-with-passages-and-valve-housing');
+  root.add(casing);
+  const back = sectionPlate(backOutline, zBack - backThickness, zBack, backMaterial,
+    'cast-frame-and-back-of-casing-with-exhaust-outlet');
+  back.material = [backMaterial, backMaterial];
+  root.add(back);
+  const exhaustPipe = new THREE.Mesh(exhaustElbowGeometry(exhaustOutlet, zBack - backThickness, 0.3, 0.06), backMaterial);
+  exhaustPipe.userData.role = 'exhaust-pipe-from-the-space-between-the-pistons';
+  root.add(exhaustPipe);
+
+  // ---- pistons B ----------------------------------------------------------------
+  const vaneOutline = (extra = 0) => polygonClipping.union(
+    circlePolygon([0, 0], extra > 0 ? boreRadius + 0.006 : hubRadius, extra > 0 ? 32 : 64),
+    ringPolygon([[0.2, -vaneHalfWidth], [vaneRadius + extra, -vaneHalfWidth],
+      [vaneRadius + extra, vaneHalfWidth], [0.2, vaneHalfWidth]]),
+  );
+  const pinRadius = 0.12;
+  const lugOutline = (() => {
+    const pin = [rockerRadius * Math.cos(-lugAngle), rockerRadius * Math.sin(-lugAngle)];
+    return polygonClipping.union(
+      ringPolygon([[rockerRadius - 0.55, 0], [rockerRadius + 0.3, 0], [pin[0] + 0.25, pin[1]], [pin[0] - 0.3, pin[1] + 0.05]]),
+      circlePolygon(pin, 0.24, 32),
     );
-    sealingHead.position.set(0, 0, z);
-    sealingHead.userData.role = `${rolePrefix}-outer-sealing-head-of-piston-B`;
-    group.add(sealingHead);
-    // Starts in front of the curved cylinder wall the piston head sweeps past.
-    const wristBearing = cylinderAlongZ(0.22, 0.975, whiteMaterial, 28);
-    wristBearing.position.set(pistonRockerRadius, 0, 0.6875);
-    wristBearing.userData.role = `${rolePrefix}-piston-wrist-bearing`;
-    group.add(wristBearing);
-    return { arm, group, sealingHead, wristBearing };
+  })();
+  const makePiston = (pivot, name) => {
+    const group = new THREE.Group();
+    group.position.set(pivot[0], pivot[1], 0);
+    group.userData.role = `${name}-single-acting-piston-B`;
+    const vane = partPlate(polygonClipping.difference(vaneOutline(), circlePolygon([0, 0], 0.2, 32)),
+      zBack + 0.01, -0.01, pistonMaterial, `${name}-vane-of-piston-B`);
+    const lug = partPlate(lugOutline, zBack + 0.01, zBack + 0.3, pistonMaterial, `${name}-wrist-lug-of-piston-B`);
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(pinRadius, pinRadius, 0.9, 24), darkMaterial);
+    pin.rotation.x = Math.PI / 2;
+    pin.position.set(rockerRadius * Math.cos(-lugAngle), rockerRadius * Math.sin(-lugAngle), zBack + 0.3 + 0.45 - 0.01);
+    pin.userData.role = `${name}-wrist-pin-of-piston-B`;
+    const spindle = new THREE.Mesh(latheSectionGeometry(
+      [[0, zBack - backThickness - 0.5], [0.2, zBack - backThickness - 0.5], [0.2, -0.012], [0, -0.012]],
+      { segments: 32, phiStart: 0, phiLength: FULL_TURN },
+    ), darkMaterial);
+    spindle.rotation.x = Math.PI / 2;
+    spindle.userData.role = `${name}-pivot-spindle-of-piston-B`;
+    group.add(vane, lug, pin, spindle);
+    root.add(group);
+    return { group, vane, lug, pin };
   };
+  const topPiston = makePiston(pivotTop, 'top');
+  const bottomPiston = makePiston(pivotBottom, 'bottom');
 
-  const topPistonParts = makePistonRocker(
-    topFixedPivot,
-    'top',
-    0,
+  // ---- crank D and rods ------------------------------------------------------------
+  const crank = new THREE.Group();
+  crank.userData.role = 'common-crank-D';
+  const crankArm = partPlate(polygonClipping.union(
+    circlePolygon([0, 0], 0.36, 40), circlePolygon([crankRadius, 0], 0.26, 32),
+    ringPolygon([[0, -0.2], [crankRadius, -0.15], [crankRadius, 0.15], [0, 0.2]]),
+  ), zBack + 0.35, zBack + 0.55, darkMaterial, 'arm-of-common-crank-D');
+  const crankShaft = new THREE.Mesh(latheSectionGeometry(
+    [[0, zBack - backThickness - 0.6], [0.25, zBack - backThickness - 0.6], [0.25, zBack + 0.36], [0, zBack + 0.36]],
+    { segments: 32, phiStart: 0, phiLength: FULL_TURN },
+  ), darkMaterial);
+  crankShaft.rotation.x = Math.PI / 2;
+  crankShaft.userData.role = 'shaft-of-crank-D-through-the-back';
+  const crankPin = new THREE.Mesh(new THREE.CylinderGeometry(pinRadius, pinRadius, 0.62, 24), darkMaterial);
+  crankPin.rotation.x = Math.PI / 2;
+  crankPin.position.set(crankRadius, 0, zBack + 0.55 + 0.3);
+  crankPin.userData.role = 'common-crank-pin-of-both-rods';
+  crank.add(crankArm, crankShaft, crankPin);
+  root.add(crank);
+  const topRod = engineRod(rodLength, 0.16, 0.24, pinRadius + 0.005, 0.18, rodMaterial, 'top-connecting-rod');
+  const bottomRod = engineRod(rodLength, 0.16, 0.24, pinRadius + 0.005, 0.18, rodMaterial, 'bottom-connecting-rod');
+  root.add(topRod, bottomRod);
+  const topRodZ = zBack + 0.66;
+  const bottomRodZ = zBack + 0.88;
+
+  // ---- valve a ---------------------------------------------------------------------------
+  const plugOutline = polygonClipping.difference(
+    circlePolygon([0, 0], plugRadius, 96),
+    ringPolygon([...arcPoints([0, 0], plugRadius + 0.01, hollowX[0], hollowX[1], 48),
+      ...arcPoints([0, 0], plugHubRadius, hollowX[1], hollowX[0], 48)]),
+    ringPolygon([...arcPoints([0, 0], plugRadius + 0.01, hollowY[0], hollowY[1], 48),
+      ...arcPoints([0, 0], plugHubRadius, hollowY[1], hollowY[0], 48)]),
   );
-  const bottomPistonParts = makePistonRocker(
-    bottomFixedPivot,
-    'bottom',
-    0,
+  const valveA = new THREE.Group();
+  valveA.position.set(valveCenter[0], valveCenter[1], 0);
+  valveA.userData.role = 'rocking-plug-valve-a';
+  const plug = partPlate(polygonClipping.difference(plugOutline, circlePolygon([0, 0], 0.13, 24)),
+    zBack + 0.01, -0.01, valveMaterial, 'plug-of-valve-a-with-inlet-and-exhaust-hollows');
+  const valveSpindle = new THREE.Mesh(latheSectionGeometry(
+    [[0, zBack - backThickness - 0.4], [0.13, zBack - backThickness - 0.4], [0.13, -0.012], [0, -0.012]],
+    { segments: 24, phiStart: 0, phiLength: FULL_TURN },
+  ), darkMaterial);
+  valveSpindle.rotation.x = Math.PI / 2;
+  valveSpindle.userData.role = 'spindle-of-valve-a';
+  valveA.add(plug, valveSpindle);
+  root.add(valveA);
+
+  // ---- steam -------------------------------------------------------------------------------
+  const steamZ = [zBack + 0.012, -0.012];
+  const topSteam = steamVolume('steam-behind-top-piston-B', ...steamZ);
+  const bottomSteam = steamVolume('steam-behind-bottom-piston-B', ...steamZ);
+  const inletSteam = steamVolume('live-steam-in-inlet-and-valve-hollow', ...steamZ);
+  const exhaustSteam = steamVolume('exhaust-steam-between-the-pistons', ...steamZ);
+  root.add(topSteam, bottomSteam, inletSteam, exhaustSteam);
+  const transform = (multi, center, angle) => {
+    const c = Math.cos(angle);
+    const s = Math.sin(angle);
+    return multi.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [center[0] + x * c - y * s, center[1] + x * s + y * c])));
+  };
+  const vaneSplitter = vaneOutline(0.12);
+  // The plug as a splitter covers its running clearance, so the lands shut
+  // the ports exactly at the bore.
+  const plugSplitter = polygonClipping.difference(
+    circlePolygon([0, 0], valveBore + 0.004, 64),
+    ringPolygon([...arcPoints([0, 0], valveBore + 0.01, hollowX[0], hollowX[1], 28),
+      ...arcPoints([0, 0], plugHubRadius, hollowX[1], hollowX[0], 12)]),
+    ringPolygon([...arcPoints([0, 0], valveBore + 0.01, hollowY[0], hollowY[1], 20),
+      ...arcPoints([0, 0], plugHubRadius, hollowY[1], hollowY[0], 8)]),
   );
-  root.add(topPistonParts.group, bottomPistonParts.group);
-
-  const topPivotShaft = cylinderAlongZ(0.31, 1.18, darkMaterial, 32);
-  topPivotShaft.position.copy(topFixedPivot);
-  topPivotShaft.position.z = 0.18;
-  topPivotShaft.userData.role = 'fixed-axis-of-top-single-acting-piston-B';
-  const bottomPivotShaft = cylinderAlongZ(0.31, 1.18, darkMaterial, 32);
-  bottomPivotShaft.position.copy(bottomFixedPivot);
-  bottomPivotShaft.position.z = 0.30;
-  bottomPivotShaft.userData.role =
-    'fixed-axis-of-bottom-single-acting-piston-B';
-  root.add(topPivotShaft, bottomPivotShaft);
-
-  const crankRotor = new THREE.Group();
-  crankRotor.position.copy(crankCenter);
-  crankRotor.userData.role = 'continuously-rotating-common-crank-D';
-  // Brown's dotted circle round D is notation (the crank's sweep, or a
-  // flywheel hidden behind the casing); it is not drawn.
-  // The throw and pin run in front of the bottom cylinder's end wall.
-  const crankArm = new THREE.Mesh(
-    new THREE.BoxGeometry(crankRadius, 0.24, 0.30),
-    rodMaterial,
-  );
-  crankArm.position.set(crankRadius / 2, 0, 0.48);
-  crankArm.userData.role = 'arm-of-common-crank-D';
-  crankRotor.add(crankArm);
-  const commonCrankPin = cylinderAlongZ(0.23, 1.07, whiteMaterial, 28);
-  commonCrankPin.position.set(crankRadius, 0, 0.855);
-  commonCrankPin.userData.role =
-    'single-common-crank-pin-D-shared-by-both-connecting-rods';
-  crankRotor.add(commonCrankPin);
-  // The crankshaft turns with D and ends behind the connecting rods.
-  const crankShaft = cylinderAlongZ(0.28, 0.98, darkMaterial, 32);
-  crankShaft.position.set(0, 0, 0.13);
-  crankShaft.userData.role = 'shaft-of-common-crank-D';
-  crankRotor.add(crankShaft);
-  root.add(crankRotor);
-
-  const topConnectingRod = engineRod(connectingRodLength, 0.20, 0.34, 0.235, 0.16,
-    rodMaterial, 'top-connecting-rod-from-B-to-common-crank-pin-D');
-  const bottomConnectingRod = engineRod(connectingRodLength, 0.20, 0.34, 0.235, 0.16,
-    rodMaterial, 'bottom-connecting-rod-from-B-to-common-crank-pin-D');
-  root.add(topConnectingRod, bottomConnectingRod);
-
-  const valveChest = cylinderAlongZ(0.92, 0.42, frameMaterial, 40);
-  valveChest.position.copy(sourceValvePivot);
-  valveChest.position.z = -0.20;
-  valveChest.userData.role = 'fixed-chest-of-single-induction-valve-a';
-  root.add(valveChest);
-  const inductionValveA = new THREE.Group();
-  inductionValveA.position.copy(sourceValvePivot);
-  inductionValveA.userData.role =
-    'single-rocking-induction-valve-a-for-both-outer-spaces';
-  const valveBlade = new THREE.Mesh(
-    new THREE.BoxGeometry(valveBladeLength, 0.34, 0.48),
-    valveMaterial,
-  );
-  valveBlade.position.set(valveBladeLength / 2, 0, 0.36);
-  valveBlade.userData.role = 'port-selecting-blade-of-induction-valve-a';
-  inductionValveA.add(valveBlade);
-  // The valve spindle stands in front of its chest face.
-  const valveHub = cylinderAlongZ(0.23, 0.66, darkMaterial, 30);
-  valveHub.position.z = 0.35;
-  valveHub.userData.role = 'fixed-axis-of-induction-valve-a';
-  inductionValveA.add(valveHub);
-  root.add(inductionValveA);
-
-  const topAdmissionPassage = makeTubeThrough([
-    sourceValvePivot.clone().add(new THREE.Vector3(-0.42, 0.42, -0.04)),
-    new THREE.Vector3(1.38, 3.18, -0.04),
-    new THREE.Vector3(-0.64, 4.47, -0.04),
-    topFixedPivot.clone().add(new THREE.Vector3(0.45, 4.45, -0.04)),
-  ], 0.13, frameMaterial,
-  'top-passage-from-single-induction-valve-a-to-outer-steam-space');
-  // Brown draws the right-hand passage as a double wall in the casting: an
-  // inner wall runs from under valve a's chest down round the right pivot
-  // boss, about 0.2 inside the casing, and stops short of the foot so the
-  // passage turns under its end into the bottom quadrant's outer steam
-  // space. (It replaces the p57 round pipe; the top passage is the gap
-  // between the casing and the top quadrant wall.)
-  const rightPassageInnerPath = spline([
-    [3.91, 1.48], [4.18, 0.80], [4.34, 0.00], [4.12, -1.00],
-    [4.18, -2.00], [4.26, -3.00], [4.36, -4.10],
-  ]);
-  const bottomAdmissionPassage = new THREE.Mesh(plate(polygonClipping.union(
-    ...rightPassageInnerPath.slice(1).map((point, index) =>
-      capsule(rightPassageInnerPath[index], point, 0.09, 8)),
-  ), castingBack, castingFront), frameMaterial);
-  bottomAdmissionPassage.userData.role =
-    'inner-wall-of-right-passage-from-induction-valve-a-to-bottom-outer-steam-space';
-  root.add(bottomAdmissionPassage);
-
-  const inletPipe = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.22, 1.18, 24),
-    frameMaterial,
-  );
-  inletPipe.position.set(sourceValvePivot.x, sourceValvePivot.y + 1.40, -0.04);
-  inletPipe.userData.role = 'steam-inlet-to-single-induction-valve-a';
-  root.add(inletPipe);
-
-  const centralExhaustSpace = new THREE.Mesh(
-    new THREE.CircleGeometry(1.62, 48),
-    exhaustMaterial,
-  );
-  centralExhaustSpace.position.set(0, -0.54, -0.43);
-  centralExhaustSpace.scale.set(1.0, 1.42, 1);
-  centralExhaustSpace.userData.role =
-    'common-central-exhaust-space-between-the-two-pistons';
-  root.add(centralExhaustSpace);
-  const exhaustPipe = makeTubeThrough([
-    new THREE.Vector3(-1.02, -1.22, -0.18),
-    new THREE.Vector3(-2.02, -2.78, -0.18),
-    new THREE.Vector3(-2.18, -4.42, -0.18),
-    new THREE.Vector3(-2.20, -4.92, -0.18),
-  ], 0.17, frameMaterial,
-  'exhaust-passage-from-common-space-between-pistons');
-  // Brown draws no separate exhaust pipe; the common space exhausts through
-  // the casting, so the pipe is not added to the scene.
-
-  const topAdmissionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 24, 16),
-    steamMaterial,
-  );
-  topAdmissionIndicator.position.set(-0.72, 4.36, 0.14);
-  topAdmissionIndicator.userData.role =
-    'top-outer-side-induction-opening-indicator';
-  const bottomAdmissionIndicator = new THREE.Mesh(
-    new THREE.SphereGeometry(0.18, 24, 16),
-    steamMaterial,
-  );
-  bottomAdmissionIndicator.position.set(3.58, -4.05, 0.14);
-  bottomAdmissionIndicator.userData.role =
-    'bottom-outer-side-induction-opening-indicator';
-  root.add(topAdmissionIndicator, bottomAdmissionIndicator);
+  const probes = {
+    top: polar(pivotTop, (barOuter + passageOuter) / 2, 60 * DEG),
+    bottom: smoothLine(bottomPassageLine)[50],
+    inlet: [valveCenter[0], 4.3],
+    exhaust: exhaustOutlet,
+  };
+  const valveZone = polygonClipping.union(circlePolygon(valveCenter, valveBore + 0.02, 48), inletBore);
+  const steamReport = {};
+  const updateSteam = (state) => {
+    const spaces = safeClip('difference', workingCavity,
+      transform(vaneSplitter, pivotTop, state.top.vaneAngle),
+      transform(vaneSplitter, pivotBottom, state.bottom.vaneAngle),
+      transform(plugSplitter, valveCenter, state.valveAngle));
+    const inlet = piecesContaining(spaces, [probes.inlet]);
+    const exhaust = piecesContaining(spaces, [probes.exhaust]);
+    const topWithInlet = inlet.some((p) => piecesContaining([p], [probes.top]).length);
+    const bottomWithInlet = inlet.some((p) => piecesContaining([p], [probes.bottom]).length);
+    // Each steam volume keeps to its own region so it changes shape smoothly:
+    // the valve bore (inlet pipe and the two plug hollows) apart from the
+    // top space, the bottom space and the space between the pistons. The
+    // passages show the valve's port-opening pressure (live while joined to
+    // the inlet hollow, exhausted while joined to the exhaust hollow).
+    const outside = safeClip('difference', spaces, valveZone);
+    const inside = safeClip('intersection', spaces, valveZone);
+    const withProbe = (pieces, probe) => piecesContaining(pieces, [probe]);
+    inletSteam.userData.setRegion(withProbe(inside, probes.inlet), 1);
+    exhaustSteam.userData.setRegion([
+      ...withProbe(outside, probes.exhaust),
+      ...inside.filter((piece) => !withProbe([piece], probes.inlet).length),
+    ], 0);
+    topSteam.userData.setRegion(withProbe(outside, probes.top), state.topPressure);
+    bottomSteam.userData.setRegion(withProbe(outside, probes.bottom), state.bottomPressure);
+    steamReport.pieceCount = spaces.length;
+    steamReport.topJoinedToInlet = topWithInlet;
+    steamReport.bottomJoinedToInlet = bottomWithInlet;
+    steamReport.topJoinedToExhaust = exhaust.some((p) => piecesContaining([p], [probes.top]).length);
+    steamReport.bottomJoinedToExhaust = exhaust.some((p) => piecesContaining([p], [probes.bottom]).length);
+    steamReport.inletArea = multiArea(inlet);
+    steamReport.exhaustArea = multiArea(exhaust);
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
-    crankRotor.rotation.z = state.crankAngle;
-    topPistonParts.group.rotation.z = state.topPiston.pistonAngle;
-    bottomPistonParts.group.rotation.z = state.bottomPiston.pistonAngle;
-    inductionValveA.rotation.z = state.valveAngle;
-
-    const crankTop = state.crankPin.clone();
-    crankTop.z = 0.75;
-    const topWrist = state.topPiston.wristPin.clone();
-    topWrist.z = 0.75;
-    topConnectingRod.userData.setEndpoints(crankTop, topWrist);
-    const crankBottom = state.crankPin.clone();
-    crankBottom.z = 1.05;
-    const bottomWrist = state.bottomPiston.wristPin.clone();
-    bottomWrist.z = 1.05;
-    bottomConnectingRod.userData.setEndpoints(crankBottom, bottomWrist);
-
-    topAdmissionIndicator.scale.setScalar(
-      0.58 + 1.05 * state.topInductionOpening,
+    topPiston.group.rotation.z = state.top.vaneAngle;
+    bottomPiston.group.rotation.z = state.bottom.vaneAngle;
+    crank.rotation.z = state.crankAngle;
+    topRod.userData.setEndpoints(
+      new THREE.Vector3(state.crankPin[0], state.crankPin[1], topRodZ),
+      new THREE.Vector3(state.top.wrist[0], state.top.wrist[1], topRodZ),
     );
-    bottomAdmissionIndicator.scale.setScalar(
-      0.58 + 1.05 * state.bottomInductionOpening,
+    bottomRod.userData.setEndpoints(
+      new THREE.Vector3(state.crankPin[0], state.crankPin[1], bottomRodZ),
+      new THREE.Vector3(state.bottom.wrist[0], state.bottom.wrist[1], bottomRodZ),
     );
+    valveA.rotation.z = state.valveAngle;
+    updateSteam(state);
   };
 
-  const sourceState = stateAtInputAngle(0);
+  let poweredOverlap = 0;
+  let topPoweredCount = 0;
+  for (let i = 0; i < 720; i += 1) {
+    const state = stateAtInputAngle(i / 720 * FULL_TURN);
+    if (state.top.powered) topPoweredCount += 1;
+    if (state.top.powered && state.bottom.powered) poweredOverlap += 1;
+  }
   root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'opposed-single-acting-quadrant-piston-four-bars-sharing-one-continuous-crank-with-overlapping-power-strokes',
-    blocks: {
-      bottomAdmissionIndicator,
-      bottomAdmissionPassage,
-      bottomChamberBack,
-      bottomConnectingRod,
-      bottomCylinderWall,
-      casingBackWall,
-      casingWall,
-      bottomEndWall,
-      bottomPiston: bottomPistonParts.group,
-      bottomPistonArm: bottomPistonParts.arm,
-      bottomPistonSeal: bottomPistonParts.sealingHead,
-      bottomPivotShaft,
-      centralExhaustSpace,
-      commonCrankPin,
-      crankArm,
-      crankRotor,
-      crankShaft,
-      foundation,
-      inductionValveA,
-      inletPipe,
-      leftPedestal,
-      rightPedestal,
-      topAdmissionIndicator,
-      topChamberBack,
-      topConnectingRod,
-      topCylinderWall,
-      topEndWall,
-      topPiston: topPistonParts.group,
-      topPistonArm: topPistonParts.arm,
-      topPistonSeal: topPistonParts.sealingHead,
-      topPivotShaft,
-      valveBlade,
-      valveChest,
-    },
-    degreesOfFreedom: {
-      bottomPistonAngleIndependent: false,
-      independentPrescribedInputs: 1,
-      inductionValveAngleIndependent: false,
-      operatingDegreesOfFreedom: 1,
-      topPistonAngleIndependent: false,
-    },
+    animationTiming: { authoredCyclePeriod: cycleDuration, targetCycleDuration: 3 },
+    archetype: 'two-single-acting-vane-pistons-on-one-crank-in-one-open-casing-with-rocking-plug-valve',
+    blocks: { casing, back, topPiston, bottomPiston, crank, topRod, bottomRod, valveA, plug, topSteam, bottomSteam, inletSteam, exhaustSteam },
+    degreesOfFreedom: { independentPrescribedInputs: 1, operatingDegreesOfFreedom: 1 },
     dynamics: {
-      commonCentralSpaceExhausted: true,
-      crankFlywheelInertiaAndLoadsModeled: false,
-      powerStrokeClassification:
-        'A piston is on its forward power stroke where its rocker angle decreases with increasing clockwise crank input; this reproduces the source linkage duration but is not a pressure solution.',
-      pressureExpansionCutoffLeakageFrictionAndValveFlowModeled: false,
-      sourceSpecifiesAbsoluteDimensionsTimingMaterialsPressuresOrLoads: false,
-      valveIndicators:
-        'The two translucent markers show the single induction valve’s selected outer passage; they are not separate valves or pressure solutions.',
+      steam: 'Steam volumes are the actual connected pieces of the casting’s one working cavity after the two pistons and the valve plug divide it: pieces joined to the inlet are live, pieces joined to the space between the pistons are exhaust.',
+      pressureForcesLeakageAndThermodynamicsModeled: false,
     },
     fidelity: 'authored',
-    geometry,
-    mechanism:
-      'Root’s double-quadrant engine uses two opposed single-acting piston rockers B. Each B is a 4.5-unit rocker joined by its own 3-unit connecting rod to the very same pin of continuously rotating crank D. Exact positive-branch circle-circle closure leaves one operating degree of freedom. The asymmetric four-bars give each forward power stroke about 221 degrees—about two-thirds of a turn—with two overlap intervals and therefore no crank dead point. One rocking induction valve a alternately selects the outer steam spaces; the central space between both pistons is the common exhaust.',
-    motion: {
-      crankDirection: 'clockwise',
-      crankRevolutionsPerCycle: 1,
-      cycleDuration,
-      inputAngularSpeed,
-      pistonAngularStroke,
-      powerStrokeAngularSpan,
-      powerStrokeFraction: powerStrokeAngularSpan / FULL_TURN,
-      totalPowerOverlapAngularSpan,
+    geometry: {
+      crankRadius, rodLength, rockerRadius, vaneRadius, arcRadius, lugAngle, pivotTop, pivotBottom, valveCenter,
+      valveAmplitude, openCenter, hollowX, hollowY, portAngles, portHalf, topInnerEnd, bottomInnerEnd, barEnd,
+      topWallAxis, bottomWallAxis, wallOffset, topMin, topMax, bottomMin, bottomMax,
+      powerStrokeFraction: topPoweredCount / 720,
+      overlapFraction: poweredOverlap / 720,
+      workingCavity, casingOutline, depth,
     },
+    mechanism: 'Two single-acting vane pistons B on their own pivots share one open cavity with crank D between them. Each works on its outer side in a quadrant closed by a curved wall and an end wall; the space between the pistons is not walled off and is the exhaust. Rocking plug valve a joins the inlet to the top passage (over the top quadrant’s curved wall and round its end), to the bottom passage (down the right wall into the bottom corner), or to both at mid-travel, and joins the idle passage to the port into the space between the pistons.',
+    motion: { cycleDuration, inputAngularSpeed },
     sourceAnimation: {
       available: true,
       independentlyReconstructed: true,
-      officialCanvasCyclePeriod: 4,
-      officialCanvasCyclesPerMinute: 15,
-      officialCanvasModelPresent: true,
-      reason:
-        'The official Movement 423 page embeds an eight-part Canvas construction. Its fixed pivots, common crank pin, 3-unit rods, 4.5-unit piston rockers, positive circle-intersection branches, clockwise crank direction, and rocking valve endpoints were extracted and independently reconstructed.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourcePose: {
-      bottomPistonAngle: sourceState.bottomPiston.pistonAngle,
-      bottomWristPin: sourceState.bottomPiston.wristPin.clone(),
-      crankAngle: sourceState.crankAngle,
-      crankPin: sourceState.crankPin.clone(),
-      topPistonAngle: sourceState.topPiston.pistonAngle,
-      topWristPin: sourceState.topPiston.wristPin.clone(),
-      valveAngle: sourceState.valveAngle,
+      reason: 'The official Movement 423 page draws the same arrangement (two pivoted pistons on one crank, the passage over the top quadrant turning round the end of its wall, the passage down the right side round the right pivot, and a rocking valve under the inlet). It was studied for topology only; the proportions here are measured from Brown’s plate, whose pose (bottom B at the end of its stroke, rods and crank in line) the linkage reproduces.',
     },
     sourceReference: {
-      brownPlate423: {
-        bottomFixedPivotApproximatePixels: [428, 274],
-        bottomPistonWristApproximatePixels: [382, 452],
-        commonCrankCenterApproximatePixels: [272, 270],
-        commonCrankPinApproximatePixels: [304, 320],
-        imageHeight: 525,
-        imageWidth: 525,
-        measurementUncertaintyPixels: 12,
-        topFixedPivotApproximatePixels: [108, 269],
-        topPistonWristApproximatePixels: [272, 130],
-        valveAApproximateCenterPixels: [391, 159],
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'the engine works on the same principle as 422',
-          'two single-acting pistons B, B are used',
-          'both pistons connect with one crank D',
-          'one induction valve a admits steam to the outer sides alternately',
-          'the space between the pistons is the exhaust',
-          'each piston receives steam for about two-thirds of a crank revolution',
-          'the overlapping action leaves no dead points',
-        ],
-        engravingEvidence:
-          'Brown’s cutaway plate shows opposed curved quadrant chambers, two outer piston pivots, two rods converging on one central crank pin D, one induction valve a at upper right, and an open common space between the pistons.',
-        officialCanvasEvidence:
-          'The official model places the fixed B pivots at (-3.509319,0) and (3.509319,0), gives each B a 4.5-unit radius and each connecting rod a 3-unit length, rotates one 1.2-unit crank clockwise from pin (-0.395084,1.133097), selects the positive circle-intersection branch for both rods, and rocks valve a between endpoint angles approximately +17.98 and -18.04 degrees.',
-        reconstructionDisclosure:
-          'Brown gives no absolute dimensions, port section, cutoff law, pressure history, speed, materials, flywheel inertia, loads, or sealing details. Housing thickness, cutaway depth, supports, colors, and admission/exhaust indicators are independently engineered; the linkage coordinates and valve phase come from the official model.',
-      },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 423',
+      brownPlate423: { imageWidth: 525, imageHeight: 525, pixelsPerUnit: 44.4, crankCenterPixels: [270, 265], leftPivotPixels: [107, 267], rightPivotPixels: [425, 272], valveCenterPixels: [398, 160] },
+      reconstructionDisclosure: 'Brown gives no dimensions or valve details. The plug’s two hollows, its open-centre lap, the exhaust outlet through the back of the casting, the casting depth and the four-second turn are engineered. The pivots are set symmetric about D (Brown’s differ by about 0.1 unit).',
     },
     stateAtInputAngle,
     stateAtTime,
-    transmission: {
-      bottomClosure:
-        '|bottomWrist-bottomPivot|=4.5 and |bottomWrist-commonCrankPin|=3 on the positive circle-intersection branch',
-      commonCrank:
-        'both connecting rods terminate at the identical crank pin D=O+r[cos(sourceAngle-inputAngle),sin(sourceAngle-inputAngle)]',
-      inductionValveLaw:
-        'valveAngle=sourcePoseMean-sourceHalfStroke*sin(inputAngle)',
-      noDeadPointCondition:
-        'topPistonAnglePrime<=0 or bottomPistonAnglePrime<=0 for every crank angle; overlap=2*powerStrokeSpan-2*pi',
-      topClosure:
-        '|topWrist-topPivot|=4.5 and |topWrist-commonCrankPin|=3 on the positive circle-intersection branch',
-    },
+    steamReport,
     update,
   };
-  root.userData.cameraDirection = new THREE.Vector3(0.7, 0.3, 15);
-  markShadows(root);
-  foundation.receiveShadow = true;
+  root.userData.cameraDirection = new THREE.Vector3(0.8, 0.3, 14);
   root.userData.cameraFov = 8;
+  update(0);
+  markShadows(root);
+  for (const steam of [topSteam, bottomSteam, inletSteam, exhaustSteam]) { steam.castShadow = false; steam.receiveShadow = false; }
   fitPistonGuide(root, update, cycleDuration);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  return { cameraDirection: root.userData.cameraDirection, root, update };
 }
 
 export function createAuthoredDoubleQuadrantEngineMovement(movement) {

@@ -1,5 +1,8 @@
 import { correctGuernseyWorkingParts } from './guernsey-working-parts.js';
 import * as THREE from 'three';
+import {rebuildGuernseyAnchor} from './guernsey-anchor.js';
+import {guernseyAnchorBake} from './baked/guernsey-anchor-402.js';
+import {plate, poly, circle, capsule, polygonClipping} from './finite-plate-geometry.js';
 import {
   PALETTE,
   makeGear,
@@ -1162,5 +1165,8 @@ function guernseyCounterOscillatingEscapement(movement) {
 
 export function createAuthoredGuernseyEscapementMovement(movement) {
   if (movement.id !== 402) return null;
-  return guernseyCounterOscillatingEscapement(movement);
+  const model = guernseyCounterOscillatingEscapement(movement);
+  rebuildGuernseyAnchor(model, {THREE, plate, poly, circle, capsule, clip: polygonClipping, bake: guernseyAnchorBake});
+  markShadows(model.root);
+  return model;
 }

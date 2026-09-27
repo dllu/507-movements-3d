@@ -265,7 +265,8 @@ function reactionFerry(movement) {
   deck.position.set(1.58, 0.37, 0);
   boat.add(deck);
   const cockpitFrames = [1.12, 1.96].map((x) => {
-    const frame = horizontalRing(0.34, 0.055, darkMaterial);
+    // The well coamings are deck timber, not black outlines.
+    const frame = horizontalRing(0.34, 0.055, deckMaterial);
     frame.scale.z = 1.36;
     frame.position.set(x, 0.46, 0);
     boat.add(frame);
@@ -489,6 +490,10 @@ function reactionFerry(movement) {
   markShadows(root);
   nearBank.receiveShadow = true;
   farBank.receiveShadow = true;
+  // Pass 69 (p69-w1): in Brown's plan the river reads as clear water; the
+  // boat's and banks' shadows thrown two units down onto the bed read as a
+  // second, ghost boat drifting beside the real one, so the bed takes none.
+  riverBed.receiveShadow = false;
   update(0);
   correctReactionFerry(root);
   return {

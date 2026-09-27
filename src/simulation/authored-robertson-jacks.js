@@ -738,8 +738,10 @@ function robertsonJack(movement) {
     baseWater.position.y = cavity.minY + 0.01 + baseWaterHeight / 2;
     thumbScrew.rotation.x = state.thumbScrewAngle;
     thumbScrew.position.x = thumbScrewClosedX - state.thumbScrewRetreat;
-    returnWater.visible = state.returnFlowRate > 1e-5;
-    returnWaterMaterial.opacity = 0.16 + 0.50 * state.screwOpenAmount;
+    // The return passage stands full of water; the thumb-screw's retreat,
+    // not water switching on, shows the metered return.
+    returnWater.visible = true;
+    returnWaterMaterial.opacity = 0.5;
   };
 
   const sourceState = stateAtPhase(sourcePhase);

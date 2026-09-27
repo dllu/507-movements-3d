@@ -494,3 +494,30 @@ test('movement 351 closes one shaft revolution and leaves movement 507 authored'
   disposeModel(model.root);
   disposeModel(model507.root);
 });
+
+test('movement 351 runs the rack teeth up to the top collar, which clears the pinion at every pose', () => {
+  const model = createMovementModel(catalog.movements[350]);
+  const { blocks, geometry, stampTripParts } = model.root.userData;
+  const tipRadius = stampTripParts.mesh.tipRadius;
+  const teeth = blocks.rackTeeth.filter((tooth) => tooth.visible);
+  assert.equal(teeth.length, geometry.sectorToothCount);
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const collar = new THREE.Box3().setFromObject(blocks.topRodCap);
+  const toothTop = Math.max(...teeth.map((tooth) => new THREE.Box3().setFromObject(tooth).max.y));
+  const gap = collar.min.y - toothTop;
+  // Brown's teeth reach the collar: no plain stretch of rod between them.
+  assert.ok(gap > 0 && gap < geometry.rackToothPitch / 2, `top tooth to collar gap ${gap}`);
+  const centre = worldPosition(blocks.pinion ?? blocks.inputShaft);
+  let minimum = Infinity;
+  for (let index = 0; index <= 512; index += 1) {
+    model.update(geometry.cyclePeriod * index / 512);
+    model.root.updateMatrixWorld(true);
+    const box = new THREE.Box3().setFromObject(blocks.topRodCap);
+    const dx = Math.max(box.min.x - centre.x, 0, centre.x - box.max.x);
+    const dy = Math.max(box.min.y - centre.y, 0, centre.y - box.max.y);
+    minimum = Math.min(minimum, Math.hypot(dx, dy) - tipRadius);
+  }
+  assert.ok(minimum > 0.005, `top collar clears the pinion tip circle: ${minimum}`);
+  disposeModel(model.root);
+});

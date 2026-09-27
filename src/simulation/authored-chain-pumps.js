@@ -2,6 +2,8 @@ import {correctChainPump} from './chain-weir-working-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
+import { WaterStream, ballisticPath, collectWaterStreams, guidedPath, joinPaths } from './water-stream.js';
+import { plate, poly, circle, polygonClipping as clip } from './finite-plate-geometry.js';
 import {
   PALETTE,
   markShadows,
@@ -446,6 +448,7 @@ function chainPump(movement) {
         carrierState.tangent,
       );
     });
+    root.userData.updateStreams?.(time);
   };
 
   const sourceState = stateAtInputAngle(0);
@@ -580,16 +583,89 @@ function chainPump(movement) {
     update,
   };
   correctChainPump(root);
+  {
+    // Delivery, as Brown draws it: the short spout on the riser head ends in
+    // a lip at the left, and the lifted water pours from it on to the flume
+    // below and to the left, whose open end lets it fall back into the pool.
+    // The pump lifts theoreticalFlowRate continuously, so the spout sheet,
+    // the pour and the flume sheet run steadily (streaks moving with the
+    // water); there is no standing water left in the spout.
+    const b = root.userData.blocks, g = root.userData.geometry;
+    const lipX = -1.92, spoutRight = g.leftLegX + g.cylinderInnerRadius + 0.075;
+    const spoutLength = spoutRight - lipX, spoutCentre = (spoutRight + lipX) / 2;
+    const floor = b.dischargeTrough.children[0];
+    const floorTop = floor.position.y + 0.045;
+    const floorShape = clip.difference(
+      poly([[-spoutLength / 2, -0.36], [spoutLength / 2, -0.36], [spoutLength / 2, 0.36], [-spoutLength / 2, 0.36]]),
+      poly(circle([g.leftLegX - spoutCentre, 0], g.cylinderInnerRadius, 96)),
+    );
+    floor.geometry.dispose();
+    floor.geometry = plate(floorShape, -0.045, 0.045).rotateX(Math.PI / 2);
+    floor.position.x = spoutCentre;
+    for (const rail of b.dischargeTrough.children.slice(1)) {
+      if (rail === b.dischargeWater) continue;
+      rail.geometry.dispose();
+      rail.geometry = new THREE.BoxGeometry(spoutLength, 0.24, 0.055);
+      rail.position.x = spoutCentre;
+    }
+    const endWall = addRole(new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.24, 0.835), floor.material), 'closed-right-end-of-riser-spout');
+    endWall.position.set(spoutRight - 0.0275, floor.position.y + 0.075, 0);
+    b.dischargeTrough.add(endWall);
+    // The riser stands full to the spout's water surface, where it spills.
+    const columnBottom = g.cylinderBottomY + 0.04, columnTop = floorTop + 0.07;
+    b.cylinderWater.geometry.dispose();
+    b.cylinderWater.geometry = new THREE.CylinderGeometry(g.cylinderInnerRadius * 0.94, g.cylinderInnerRadius * 0.94, columnTop - columnBottom, 32);
+    b.cylinderWater.position.y = (columnTop + columnBottom) / 2;
+    b.dischargeWater.visible = false;
+    b.dischargeWater.material = b.dischargeWater.material.clone();
+    b.dischargeWater.material.visible = false;
+    // Brown's flume: an open timber trough below the lip, closed at its
+    // right end and open at the left.
+    const flumeLeft = -2.96, flumeRight = -1.55, flumeFloorTop = 0.70;
+    const flume = addRole(new THREE.Group(), 'receiving-flume-under-spout-lip');
+    // Floor between the sides and short of the end wall (no coincident faces).
+    const flumeFloor = new THREE.Mesh(new THREE.BoxGeometry(flumeRight - 0.055 - flumeLeft, 0.10, 0.725), floor.material);
+    flumeFloor.position.set((flumeLeft + flumeRight - 0.055) / 2, flumeFloorTop - 0.05, 0);
+    flume.add(flumeFloor);
+    for (const z of [-0.39, 0.39]) {
+      const side = new THREE.Mesh(new THREE.BoxGeometry(flumeRight - flumeLeft, 0.34, 0.055), floor.material);
+      side.position.set((flumeLeft + flumeRight) / 2, flumeFloorTop + 0.07, z);
+      flume.add(side);
+    }
+    const flumeEnd = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.34, 0.725), floor.material);
+    flumeEnd.position.set(flumeRight - 0.0275, flumeFloorTop + 0.07, 0);
+    flume.add(flumeEnd);
+    root.add(flume);
+    b.flume = flume;
+    const sheet = { width: 0.30, widthAxis: new THREE.Vector3(0, 0, 1), cyclePeriod: g.cycleDuration, opacity: 0.5 };
+    const spoutY = floorTop + 0.05;
+    const lip = new THREE.Vector3(lipX, spoutY, 0);
+    const spoutStream = addRole(new WaterStream(joinPaths(
+      guidedPath([new THREE.Vector3(g.leftLegX - 0.1, spoutY, 0), lip], { speed: 1.2, samples: 12 }),
+      ballisticPath({ origin: lip, velocity: new THREE.Vector3(-1.2, 0, 0), endY: flumeFloorTop + 0.04, samples: 16 }),
+    ), { ...sheet, thickness: 0.045, widthExponent: 0.3, streakRate: 1.5 }), 'continuous-delivery-sheet-over-spout-lip');
+    root.add(spoutStream);
+    const landing = spoutStream.path.points.at(-1);
+    const flumeY = flumeFloorTop + 0.04;
+    const flumeLip = new THREE.Vector3(flumeLeft, flumeY, 0);
+    const flumeStream = addRole(new WaterStream(joinPaths(
+      guidedPath([new THREE.Vector3(landing.x + 0.08, flumeY, 0), flumeLip], { speed: 1.0, samples: 12 }),
+      ballisticPath({ origin: flumeLip, velocity: new THREE.Vector3(-1.0, 0, 0), endY: g.reservoirSurfaceY, samples: 20 }),
+    ), { ...sheet, thickness: 0.04, widthExponent: 0.3, streakRate: 1.5 }), 'flume-sheet-returning-to-the-pool');
+    root.add(flumeStream);
+    b.deliveryStreams = [spoutStream, flumeStream];
+    root.userData.updateStreams = collectWaterStreams(root);
+  }
   // Brown rules water round the lower wheel: the pump stands in a body of
   // water that submerges the return wheel and the chain intake.
   reservoir.visible = true;
   reservoir.geometry.dispose();
-  reservoir.geometry = waterVolumeGeometry({ xMin: -3.0, xMax: 1.6, surfaceY: 0, bottomY: groundY - reservoirSurfaceY, zMin: -0.7, zMax: 0.58 });
+  reservoir.geometry = waterVolumeGeometry({ xMin: -3.45, xMax: 1.6, surfaceY: 0, bottomY: groundY - reservoirSurfaceY, zMin: -0.7, zMax: 0.58 });
   reservoir.position.set(0, reservoirSurfaceY, 0);
   reservoir.material = waterVolumeMaterial();
   reservoir.renderOrder = 1;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.10, -2.20, -.76),
+    new THREE.Vector3(-3.50, -2.20, -.76),
     new THREE.Vector3(1.70, 3.61, .60),
   );
   root.userData.cameraDistanceScale = 1.06;

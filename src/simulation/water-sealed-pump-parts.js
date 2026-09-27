@@ -6,14 +6,33 @@ const replace=(o,g)=>{o.geometry.dispose();o.geometry=g;};
 const rectangle=(w,h)=>poly([[-w/2,-h/2],[w/2,-h/2],[w/2,h/2],[-w/2,h/2]]);
 const smooth=x=>{const t=Math.max(0,Math.min(1,x));return t*t*t*(10+t*(-15+6*t));};
 
+// Pass 69: Brown's two tubs are coopered barrels. The bell bellies out at
+// mid-height and draws in towards its roof and rim; the outer tub is wider at
+// its mouth than at its foot. Radii are functions of height in each vessel's
+// own frame (bell: about its centre; tub: world y).
+export function waterSealedPumpBarrels(g){
+ const bellHalf=g.bellHeight/2,tubMid=(g.outerTubTopY+g.outerTubBottomY)/2,tubHalf=(g.outerTubTopY-g.outerTubBottomY)/2;
+ const bellOuter=y=>.575+.065*(1-(y/bellHalf)**2),bellWall=.063;
+ const tubOuter=y=>1.00+.03*(y-tubMid)/tubHalf+.02*(1-((y-tubMid)/tubHalf)**2),tubWall=.08;
+ return{bellOuter,bellInner:y=>bellOuter(y)-bellWall,tubOuter,tubInner:y=>tubOuter(y)-tubWall,bellHalf,tubMid,tubHalf};
+}
+// Same winding as a plain [axial, radial] wall ring: inner foot, outer face
+// upwards, inner face back down.
+const barrelProfile=(outer,inner,low,high,n=24)=>{const o=[],i=[];for(let k=0;k<=n;k++){const y=low+(high-low)*k/n;o.push([y,outer(y)]);i.push([y,inner(y)]);}return[i[0],...o,...i.slice(1).reverse()];};
+
 export function correctWaterSealedPump(root){
  const d=root.userData,b=d.blocks,g=d.geometry;
+ const barrels=d.barrels=waterSealedPumpBarrels(g);
  // Full finite shells remain transparent so the two check routes can be inspected.
- replace(b.tubShell,horizontalRing(g.outerTubInnerRadius,1.03,g.outerTubBottomY,g.outerTubTopY));b.tubShell.position.y=0;
- replace(b.tubBottom,horizontalRing(.09,1.03,g.outerTubBottomY-.13,g.outerTubBottomY));b.tubBottom.position.y=0;
+ replace(b.tubShell,horizontalTurned(barrelProfile(barrels.tubOuter,barrels.tubInner,g.outerTubBottomY,g.outerTubTopY)));b.tubShell.position.y=0;
+ replace(b.tubBottom,horizontalRing(.09,barrels.tubOuter(g.outerTubBottomY),g.outerTubBottomY-.13,g.outerTubBottomY));b.tubBottom.position.y=0;
+ // The tub's bottom is its own staves' wood, flush with the foot (no dark rim).
+ b.tubBottom.material=b.tubShell.material;
  replace(b.foundation,horizontalPlate(clip.difference(rectangle(4.95,1.72),poly(circle([0,0],.09,64))),-1.08,-.90));b.foundation.position.y=0;
- replace(b.bellShell,horizontalTurned([[-g.bellHeight/2,g.bellInnerRadius],[-g.bellHeight/2,.675],[g.bellHeight/2,.63],[g.bellHeight/2,g.bellInnerRadius]]));
- replace(b.bellRoof,horizontalRing(.082,g.bellOuterRadius,-g.bellRoofThickness/2,g.bellRoofThickness/2));
+ replace(b.bellShell,horizontalTurned(barrelProfile(barrels.bellOuter,barrels.bellInner,-g.bellHeight/2,g.bellHeight/2)));
+ // The head is set inside the staves' top, its edge following their inner face.
+ {const top=g.bellHeight/2,low=top-g.bellRoofThickness,c=b.bellRoof.position.y,n=6,edge=[];for(let k=0;k<=n;k++){const y=low+(top-low)*k/n;edge.push([y-c,barrels.bellInner(y)]);}
+  replace(b.bellRoof,horizontalTurned([[low-c,.082],...edge,[top-c,.082]]));}
  replace(b.inletPipe,horizontalRing(.055,.085,g.inletPipeBottomY,g.inletPipeTopY-.0275));b.inletPipe.position.y=0;
  replace(b.lowerInletValveSeat,horizontalRing(.055,.15,-.0275,.0275));
  replace(b.upperOutletPipe,horizontalRing(.052,.078,g.bellHeight/2-.10,g.bellHeight/2+.2225));b.upperOutletPipe.position.y=0;
@@ -34,11 +53,14 @@ export function correctWaterSealedPump(root){
  }
  // Water occupies the annulus outside the bell and the central bore, not its wall.
  const outerHeight=g.externalWaterLineY-g.outerTubBottomY;
- replace(b.outerWater,horizontalRing(.70,.905,-outerHeight/2,outerHeight/2));
- replace(b.outerWaterSurface,new THREE.RingGeometry(.70,.905,64));
- replace(b.internalWaterSurface,new THREE.RingGeometry(.09,g.bellInnerRadius-.003,64));
- b.innerWater=new THREE.Mesh(horizontalRing(.09,g.bellInnerRadius-.003,0,1),b.outerWater.material);root.add(b.innerWater);b.innerWater.userData.role='water-below-internal-hydrostatic-interface';
- b.underRimWater=new THREE.Mesh(horizontalRing(g.bellInnerRadius-.003,.70,0,1),b.outerWater.material);root.add(b.underRimWater);b.underRimWater.userData.role='water-below-moving-bell-rim';
+ // Radii follow the barrels: inside the bell's narrowest bore, outside its
+ // widest belly and its hoops and inside the tub's narrow foot, so no water enters a wall.
+ const bellBore=barrels.bellInner(g.bellHeight/2)-.003,bellBelly=barrels.bellOuter(0)+.035,tubFoot=barrels.tubInner(g.outerTubBottomY)-.005;
+ replace(b.outerWater,horizontalRing(bellBelly,tubFoot,-outerHeight/2,outerHeight/2));
+ replace(b.outerWaterSurface,new THREE.RingGeometry(bellBelly,tubFoot,64));
+ replace(b.internalWaterSurface,new THREE.RingGeometry(.09,bellBore,64));
+ b.innerWater=new THREE.Mesh(horizontalRing(.09,bellBore,0,1),b.outerWater.material);root.add(b.innerWater);b.innerWater.userData.role='water-below-internal-hydrostatic-interface';
+ b.underRimWater=new THREE.Mesh(horizontalRing(bellBore,bellBelly,0,1),b.outerWater.material);root.add(b.underRimWater);b.underRimWater.userData.role='water-below-moving-bell-rim';
  // Ideal check thresholds determine the event; finite display lift eases at each event.
  const event=(low,high,key)=>{for(let i=0;i<48;i++){const mid=(low+high)/2;if(d.gasStateAtPhase(mid)[key])high=mid;else low=mid;}return(high+low)/2;};
  const exhaust=event(1e-8,.5,'upperOutletValveOpen'),intake=event(.50000001,1-1e-8,'lowerInletValveOpen');

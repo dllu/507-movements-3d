@@ -1,947 +1,274 @@
-import {finishParsons394} from './reversing-transmission-working-parts.js';
 import * as THREE from 'three';
-import {circle, plate, poly, polygonClipping} from './finite-plate-geometry.js';
-import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
+import {circle, plate, poly, polygonClipping as clip} from './finite-plate-geometry.js';
+import {PALETTE, markShadows, matte} from './primitives.js';
+
+// Movement 394, C. Parsons's endless rack. The plate shows an oblong frame
+// toothed all round its inside (two straight rows joined by two toothed
+// semicircular ends), a small pinion meshing with the upper row, a larger
+// concentric flange behind the pinion whose top runs hidden in the rack
+// (Brown's dashed arc), and the rod running off to the right to a collar.
+//
+// Reconstruction: the pinion turns on a fixed shaft at constant speed. Its
+// centre, seen from the rack, runs round a stadium path whose straight parts
+// lie one pinion pitch radius inside the straight rows and whose ends are
+// concentric with the toothed ends. Every rack tooth therefore meshes once per
+// cycle: along the upper row the rack runs left (Brown's arrow), round the
+// right end the pinion rolls inside a toothed semicircle exactly as a planet
+// in a fixed internal gear (the rack translates, never turns), along the lower
+// row the rack runs right, and round the left end back again. The rack also
+// shifts up and down by 2e while the pinion goes round each end; the
+// oscillating cylinder the rod belongs to allows that.
+//
+// Tooth forms: the pinion is a true involute (25 degree pressure angle, stub
+// addendum 0.6m, dedendum 0.8m); the straight rows are the conjugate straight-
+// flanked rack of the same module and pressure angle; the ends are internal
+// involute gears of the same module. With 10 pinion teeth and 14-tooth
+// internal ends (a tooth difference of four) the stub form is what clears
+// internal tip interference; this is checked with exact polygons.
+//
+// The two concentric flanges of different diameters sit behind the pinion
+// and run against two stepped rebates ("grooves on its side") in the back of
+// the rack, which hold the pinion at its working depth all round the path.
 
 const FULL_TURN = Math.PI * 2;
+const involuteFunction = (angle) => Math.tan(angle) - angle;
 
-function positiveModulo(value, modulus) {
-  return ((value % modulus) + modulus) % modulus;
+// Closed outline of an external involute gear, tooth centred on +x.
+export function involuteGearOutline({teeth, module, pressureAngle, tipRadius,
+  rootRadius, pitchThickness, flankSamples = 18}) {
+  const pitchRadius = teeth * module / 2;
+  const baseRadius = pitchRadius * Math.cos(pressureAngle);
+  const halfAtBase = pitchThickness / (2 * pitchRadius)
+    + involuteFunction(pressureAngle);
+  const start = Math.max(baseRadius, rootRadius);
+  const flank = [];
+  for (let i = 0; i <= flankSamples; i += 1) {
+    const radius = start + (tipRadius - start) * i / flankSamples;
+    const pressure = Math.acos(Math.min(1, baseRadius / radius));
+    flank.push([radius, halfAtBase - involuteFunction(pressure)]);
+  }
+  const points = [];
+  const halfSpace = Math.PI / teeth;
+  const low = flank[0][1];
+  const tip = flank.at(-1)[1];
+  const at = (radius, angle) => [radius * Math.cos(angle), radius * Math.sin(angle)];
+  for (let k = 0; k < teeth; k += 1) {
+    const c = k * FULL_TURN / teeth;
+    for (let i = 0; i < 4; i += 1) points.push(at(rootRadius, c - halfSpace + (halfSpace - low) * i / 4));
+    if (rootRadius < baseRadius) points.push(at(rootRadius, c - low));
+    for (const [radius, angle] of flank) points.push(at(radius, c - angle));
+    for (let i = 1; i < 4; i += 1) points.push(at(tipRadius, c - tip + 2 * tip * i / 4));
+    for (const [radius, angle] of [...flank].reverse()) points.push(at(radius, c + angle));
+    if (rootRadius < baseRadius) points.push(at(rootRadius, c + low));
+    for (let i = 1; i < 4; i += 1) points.push(at(rootRadius, c + low + (halfSpace - low) * i / 4));
+  }
+  return points;
 }
 
-function quinticState(parameter) {
-  const u = THREE.MathUtils.clamp(parameter, 0, 1);
+const stadium = (halfStraight, radius, count = 96) => {
+  const points = [];
+  for (let i = 0; i <= count; i += 1) {
+    const a = -Math.PI / 2 + Math.PI * i / count;
+    points.push([halfStraight + radius * Math.cos(a), radius * Math.sin(a)]);
+  }
+  for (let i = 0; i <= count; i += 1) {
+    const a = Math.PI / 2 + Math.PI * i / count;
+    points.push([-halfStraight + radius * Math.cos(a), radius * Math.sin(a)]);
+  }
+  return points;
+};
+
+export function parsonsDesign() {
+  const pinionTeeth = 10;
+  const endTeeth = 14; // full-circle count of each toothed semicircular end
+  const straightPitches = 14; // pitches along each straight row
+  const module = 0.13;
+  const pressureAngle = 25 * Math.PI / 180;
+  const addendum = 0.6 * module;
+  const dedendum = 0.8 * module;
+  const backlash = 0.02 * module;
+  const pitch = Math.PI * module;
+  const pinionPitchRadius = pinionTeeth * module / 2;
+  const endPitchRadius = endTeeth * module / 2;
+  const halfStraight = straightPitches * pitch / 2;
+  const eccentricity = endPitchRadius - pinionPitchRadius;
+  const bandOuterRadius = endPitchRadius + dedendum + 0.52;
+  const largeFlangeRadius = 1.0;
+  const smallFlangeRadius = 0.85;
+  const rebateClearance = 0.01;
+  const pathLength = 4 * halfStraight + FULL_TURN * eccentricity;
   return {
-    acceleration: 60 * u * (1 - u) * (1 - 2 * u),
-    rate: 30 * u ** 2 * (1 - u) ** 2,
-    value: u ** 3 * (10 + u * (-15 + 6 * u)),
+    addendum, backlash, bandOuterRadius, dedendum, eccentricity, endPitchRadius,
+    endTeeth, halfStraight, largeFlangeRadius, module, pathLength, pinionPitchRadius,
+    pinionTeeth, pitch, pressureAngle, rebateClearance, smallFlangeRadius, straightPitches,
+    rackToothCount: 2 * straightPitches + endTeeth,
+    pinionTurnsPerCycle: pathLength / (FULL_TURN * pinionPitchRadius),
   };
 }
 
-function cylinderAlongZ(radius, length, material, segments = 32) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function centeredExtrusion(shape, depth, bevelSize = 0.006) {
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: bevelSize > 0,
-    bevelSegments: 1,
-    bevelSize,
-    bevelThickness: bevelSize,
-    curveSegments: 12,
-    depth,
-    steps: 1,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  return geometry;
-}
-
-function stadiumFrameAtDistance(distance, halfStraight, halfHeight) {
-  const straightLength = 2 * halfStraight;
-  const arcLength = Math.PI * halfHeight;
-  const perimeter = 2 * straightLength + 2 * arcLength;
-  let s = positiveModulo(distance, perimeter);
-  let point;
-  let tangent;
-  if (s < straightLength) {
-    point = new THREE.Vector2(halfStraight - s, halfHeight);
-    tangent = new THREE.Vector2(-1, 0);
-  } else if ((s -= straightLength) < arcLength) {
-    const angle = Math.PI / 2 + s / halfHeight;
-    point = new THREE.Vector2(
-      -halfStraight + halfHeight * Math.cos(angle),
-      halfHeight * Math.sin(angle),
-    );
-    tangent = new THREE.Vector2(-Math.sin(angle), Math.cos(angle));
-  } else if ((s -= arcLength) < straightLength) {
-    point = new THREE.Vector2(-halfStraight + s, -halfHeight);
-    tangent = new THREE.Vector2(1, 0);
-  } else {
-    s -= straightLength;
-    const angle = -Math.PI / 2 + s / halfHeight;
-    point = new THREE.Vector2(
-      halfStraight + halfHeight * Math.cos(angle),
-      halfHeight * Math.sin(angle),
-    );
-    tangent = new THREE.Vector2(-Math.sin(angle), Math.cos(angle));
-  }
-  return {
-    inwardNormal: new THREE.Vector2(-tangent.y, tangent.x),
-    perimeter,
-    point,
-    tangent,
-  };
-}
-
-class StadiumCurve extends THREE.Curve {
-  constructor(halfStraight, halfHeight, z) {
-    super();
-    this.halfStraight = halfStraight;
-    this.halfHeight = halfHeight;
-    this.perimeter = 4 * halfStraight + FULL_TURN * halfHeight;
-    this.z = z;
-  }
-
-  getPoint(parameter, target = new THREE.Vector3()) {
-    const frame = stadiumFrameAtDistance(
-      parameter * this.perimeter,
-      this.halfStraight,
-      this.halfHeight,
-    );
-    return target.set(frame.point.x, frame.point.y, this.z);
-  }
-
-  getPointAt(parameter, target = new THREE.Vector3()) {
-    return this.getPoint(parameter, target);
-  }
-
-  getTangent(parameter, target = new THREE.Vector3()) {
-    const frame = stadiumFrameAtDistance(
-      parameter * this.perimeter,
-      this.halfStraight,
-      this.halfHeight,
-    );
-    return target.set(frame.tangent.x, frame.tangent.y, 0);
-  }
-
-  getTangentAt(parameter, target = new THREE.Vector3()) {
-    return this.getTangent(parameter, target);
-  }
-
-  getLength() {
-    return this.perimeter;
-  }
-
-  getLengths(divisions = 200) {
-    return Array.from(
-      { length: divisions + 1 },
-      (_, index) => this.perimeter * index / divisions,
-    );
-  }
-
-  getUtoTmapping(value) {
-    return value;
-  }
-}
-
-class PlanarArcCurve3 extends THREE.Curve {
-  constructor(center, radius, startAngle, sweep, z) {
-    super();
-    this.center = center.clone();
-    this.radius = radius;
-    this.startAngle = startAngle;
-    this.sweep = sweep;
-    this.z = z;
-  }
-
-  getPoint(parameter, target = new THREE.Vector3()) {
-    const angle = this.startAngle + this.sweep * parameter;
-    return target.set(
-      this.center.x + this.radius * Math.cos(angle),
-      this.center.y + this.radius * Math.sin(angle),
-      this.z,
-    );
-  }
-
-  getPointAt(parameter, target = new THREE.Vector3()) {
-    return this.getPoint(parameter, target);
-  }
-}
-
-function makeEndlessRack({
-  circularPitch,
-  darkMaterial,
-  depth,
-  frameMaterial,
-  halfHeight,
-  halfStraight,
-  toothCount,
-  toothHeight,
-  toothMaterial,
-  whiteMaterial,
-}) {
-  const rack = new THREE.Group();
-  rack.userData.role =
-    'rigid-reciprocating-oblong-endless-internal-rack';
-  const pitchCurve = new StadiumCurve(halfStraight, halfHeight, 0);
-  const outerCurve = new StadiumCurve(
-    halfStraight,
-    halfHeight + toothHeight + 0.16,
-    -0.03,
-  );
-  const outerRim = new THREE.Mesh(
-    new THREE.TubeGeometry(outerCurve, 196, 0.13, 12, true),
-    frameMaterial,
-  );
-  outerRim.userData.role = 'closed-oblong-body-of-endless-rack';
-  rack.add(outerRim);
-  const rearTopWeb = new THREE.Mesh(
-    new THREE.BoxGeometry(halfStraight * 2, 0.16, depth * 0.72),
-    frameMaterial,
-  );
-  rearTopWeb.position.set(0, halfHeight + toothHeight + 0.11, -0.03);
-  rearTopWeb.userData.role = 'upper-straight-web-of-endless-rack';
-  rack.add(rearTopWeb);
-  const rearBottomWeb = rearTopWeb.clone();
-  rearBottomWeb.position.y *= -1;
-  rearBottomWeb.userData.role = 'lower-straight-web-of-endless-rack';
-  rack.add(rearBottomWeb);
-
-  const toothGeometry = new THREE.BoxGeometry(
-    circularPitch * 0.57,
-    toothHeight,
-    depth,
-  );
-  const teeth = [];
-  const toothFrames = [];
-  for (let index = 0; index < toothCount; index += 1) {
-    const distance = (index + 0.5) * circularPitch;
-    const frame = stadiumFrameAtDistance(
-      distance,
-      halfStraight,
-      halfHeight,
-    );
-    const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
-    tooth.position.set(frame.point.x, frame.point.y, 0.03);
-    tooth.rotation.z = Math.atan2(frame.tangent.y, frame.tangent.x);
-    tooth.userData.index = index;
-    tooth.userData.pitchDistance = distance;
-    tooth.userData.role =
-      'inward-facing-tooth-of-closed-endless-rack';
-    rack.add(tooth);
-    teeth.push(tooth);
-    toothFrames.push(frame);
-  }
-
-  const translationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.065, 0.44, 0.040),
-    whiteMaterial,
-  );
-  translationIndex.position.set(
-    halfStraight + halfHeight + toothHeight + 0.13,
-    0,
-    depth / 2 + 0.08,
-  );
-  translationIndex.userData.role =
-    'white-index-showing-rack-reciprocation-and-small-cross-shift';
-  rack.add(translationIndex);
-
-  const inputRod = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.11, 0.11, 2.25, 24),
-    darkMaterial,
-  );
-  inputRod.rotation.z = Math.PI / 2;
-  inputRod.position.x = halfStraight + halfHeight + 1.14;
-  inputRod.userData.role =
-    'reciprocating-input-rod-rigid-with-endless-rack';
-  rack.add(inputRod);
-  const pistonHead = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.38, 0.38, 0.24, 36),
-    frameMaterial,
-  );
-  pistonHead.rotation.z = Math.PI / 2;
-  pistonHead.position.x = halfStraight + halfHeight + 2.20;
-  pistonHead.userData.role = 'input-rod-end-collar';
-  rack.add(pistonHead);
-
-  rack.userData.inputRod = inputRod;
-  rack.userData.outerRim = outerRim;
-  rack.userData.pitchCurve = pitchCurve;
-  rack.userData.pistonHead = pistonHead;
-  rack.userData.teeth = teeth;
-  rack.userData.toothFrames = toothFrames;
-  rack.userData.translationIndex = translationIndex;
-  return markShadows(rack);
-}
-
-function makePinionAndFlanges({
-  darkMaterial,
-  depth,
-  gearMaterial,
-  largeFlangeRadius,
-  largePlaneZ,
-  pitchRadius,
-  smallFlangeRadius,
-  smallPlaneZ,
-  toothCount,
-  toothHeight,
-  whiteMaterial,
-}) {
-  const rotor = new THREE.Group();
-  rotor.userData.role =
-    'fixed-axis-pinion-with-two-fast-concentric-unequal-guide-flanges';
-  const angularPitch = FULL_TURN / toothCount;
-  const rootRadius = pitchRadius - toothHeight / 2;
-  const outerRadius = pitchRadius + toothHeight / 2;
-  const shape = new THREE.Shape();
-  let first = true;
-  for (let tooth = 0; tooth < toothCount; tooth += 1) {
-    for (const [offset, radius] of [
-      [-0.50, rootRadius],
-      [-0.27, outerRadius],
-      [0.27, outerRadius],
-      [0.50, rootRadius],
-    ]) {
-      const angle = (tooth + offset) * angularPitch;
-      const x = radius * Math.cos(angle);
-      const y = radius * Math.sin(angle);
-      if (first) {
-        shape.moveTo(x, y);
-        first = false;
-      } else shape.lineTo(x, y);
+// The air inside the toothed band: the region the band does not occupy.
+export function parsonsRackVoid(g) {
+  const {addendum, backlash, dedendum, endPitchRadius: H, halfStraight: L,
+    pitch, pressureAngle, module} = g;
+  const tan = Math.tan(pressureAngle);
+  const tipY = H - addendum;
+  const rootY = H + dedendum;
+  const parts = [poly([[-L, -tipY], [L, -tipY], [L, tipY], [-L, tipY]])];
+  // Straight rows: a tooth space is centred on every pitch mark from -L to L.
+  for (let k = 0; k <= g.straightPitches; k += 1) {
+    const x = -L + k * pitch;
+    const halfAtTip = pitch / 4 + backlash / 2 + addendum * tan;
+    const halfAtRoot = pitch / 4 + backlash / 2 - dedendum * tan;
+    for (const s of [1, -1]) {
+      const pts = [[x - halfAtTip, s * (tipY - 1e-4)], [x + halfAtTip, s * (tipY - 1e-4)],
+        [x + halfAtRoot, s * rootY], [x - halfAtRoot, s * rootY]];
+      const clipped = clip.intersection(poly(pts), poly([[-L, -2 * H], [L, -2 * H], [L, 2 * H], [-L, 2 * H]]));
+      if (clipped.length) parts.push(clipped);
     }
   }
-  shape.closePath();
-  const pinion = new THREE.Mesh(
-    centeredExtrusion(shape, depth, 0.007),
-    gearMaterial,
-  );
-  pinion.position.z = 0.09;
-  pinion.userData.role = 'fourteen-tooth-output-pinion';
-  rotor.add(pinion);
-  const hub = cylinderAlongZ(0.18, 1.55, darkMaterial, 32);
-  hub.position.z = 0.10;
-  hub.userData.role = 'output-shaft-hub-fast-with-pinion-and-flanges';
-  rotor.add(hub);
-  const shaft = cylinderAlongZ(0.095, 2.02, darkMaterial, 28);
-  shaft.position.z = 0.10;
-  shaft.userData.role = 'fixed-center-output-shaft';
-  rotor.add(shaft);
-
-  const largeFlange = cylinderAlongZ(
-    largeFlangeRadius,
-    0.11,
-    gearMaterial,
-    52,
-  );
-  largeFlange.position.z = largePlaneZ;
-  largeFlange.userData.role =
-    'larger-concentric-flange-driving-one-pitch-right-handoff';
-  rotor.add(largeFlange);
-
-  const smallFlange = cylinderAlongZ(
-    smallFlangeRadius,
-    0.12,
-    gearMaterial,
-    40,
-  );
-  smallFlange.position.z = smallPlaneZ;
-  smallFlange.userData.role =
-    'smaller-concentric-flange-driving-three-pitch-left-handoff';
-  rotor.add(smallFlange);
-
-  const spinIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(pitchRadius * 0.58, 0.055, 0.036),
-    whiteMaterial,
-  );
-  spinIndex.position.set(pitchRadius * 0.34, 0, smallPlaneZ + 0.15);
-  spinIndex.userData.role =
-    'white-index-making-unidirectional-pinion-spin-legible';
-  rotor.add(spinIndex);
-
-  rotor.userData.angularPitch = angularPitch;
-  rotor.userData.hub = hub;
-  rotor.userData.largeFlange = largeFlange;
-  rotor.userData.outerRadius = outerRadius;
-  rotor.userData.pinion = pinion;
-  rotor.userData.pitchRadius = pitchRadius;
-  rotor.userData.rootRadius = rootRadius;
-  rotor.userData.shaft = shaft;
-  rotor.userData.smallFlange = smallFlange;
-  rotor.userData.spinIndex = spinIndex;
-  rotor.userData.toothCount = toothCount;
-  return markShadows(rotor);
+  // Toothed ends: the internal gear's spaces are the teeth of a 14-tooth
+  // external "cutter" of the same module, a space centred at each junction.
+  const cutter = involuteGearOutline({teeth: g.endTeeth, module, pressureAngle,
+    tipRadius: H + dedendum, rootRadius: H - addendum, pitchThickness: pitch / 2 + backlash / 2})
+    .map(([x, y]) => [-y, x]); // rotate +90 degrees: a space at the top junction
+  for (const side of [1, -1]) {
+    const moved = cutter.map(([x, y]) => [side * L + x, y]);
+    const half = side > 0
+      ? poly([[L, -2 * H], [L + 2 * H, -2 * H], [L + 2 * H, 2 * H], [L, 2 * H]])
+      : poly([[-L - 2 * H, -2 * H], [-L, -2 * H], [-L, 2 * H], [-L - 2 * H, 2 * H]]);
+    parts.push(clip.intersection(poly(moved), half));
+  }
+  return clip.union(...parts);
 }
 
-function makeCrossoverGroove({
-  center,
-  centerRadius,
-  flangeRadius,
-  frameMaterial,
-  name,
-  startAngle,
-  sweep,
-  z,
-}) {
-  const groove = new THREE.Group();
-  groove.userData.role = `${name}-side-groove-for-concentric-flange`;
-  const outerRadius = centerRadius + flangeRadius;
-  const innerRadius = Math.abs(flangeRadius - centerRadius);
-  const outerRailCurve = new PlanarArcCurve3(
-    center,
-    outerRadius,
-    startAngle,
-    sweep,
-    z,
-  );
-  const innerStartAngle = flangeRadius > centerRadius
-    ? startAngle + Math.PI
-    : startAngle;
-  const innerRailCurve = new PlanarArcCurve3(
-    center,
-    innerRadius,
-    innerStartAngle,
-    sweep,
-    z,
-  );
-  const rails = [outerRailCurve, innerRailCurve].map((curve, index) => {
-    const rail = new THREE.Mesh(
-      new THREE.TubeGeometry(curve, 72, 0.055, 10, false),
-      frameMaterial,
-    );
-    rail.userData.edge = index === 0 ? 'outer' : 'inner';
-    rail.userData.role = `${name}-groove-${rail.userData.edge}-wall`;
-    groove.add(rail);
-    return rail;
-  });
-  groove.userData.center = center.clone();
-  groove.userData.centerRadius = centerRadius;
-  groove.userData.flangeRadius = flangeRadius;
-  groove.userData.innerRadius = innerRadius;
-  groove.userData.outerRadius = outerRadius;
-  groove.userData.rails = rails;
-  return markShadows(groove);
+export function parsonsPinionOutline(g) {
+  return involuteGearOutline({teeth: g.pinionTeeth, module: g.module, pressureAngle: g.pressureAngle,
+    tipRadius: g.pinionPitchRadius + g.addendum, rootRadius: g.pinionPitchRadius - g.dedendum,
+    pitchThickness: g.pitch / 2 - g.backlash / 2});
+}
+
+// Pinion centre on its stadium path (rack frame) at path distance s, running
+// clockwise: right along the upper row, down round the right end, left along
+// the lower row and up round the left end.
+export function parsonsPathPoint(g, distance) {
+  const {halfStraight: L, eccentricity: e} = g;
+  let s = ((distance % g.pathLength) + g.pathLength) % g.pathLength;
+  if (s < 2 * L) return {x: -L + s, y: e, vx: 1, vy: 0, segment: 'upper-row'};
+  s -= 2 * L;
+  const arc = Math.PI * e;
+  if (s < arc) {
+    const a = Math.PI / 2 - s / e;
+    return {x: L + e * Math.cos(a), y: e * Math.sin(a), vx: Math.sin(a), vy: -Math.cos(a), segment: 'right-end'};
+  }
+  s -= arc;
+  if (s < 2 * L) return {x: L - s, y: -e, vx: -1, vy: 0, segment: 'lower-row'};
+  s -= 2 * L;
+  const a = -Math.PI / 2 - s / e;
+  return {x: -L + e * Math.cos(a), y: e * Math.sin(a), vx: Math.sin(a), vy: -Math.cos(a), segment: 'left-end'};
 }
 
 function parsonsEndlessRackDrive(movement) {
   const root = new THREE.Group();
+  const g = parsonsDesign();
+  const cycleDuration = 16;
+  const speed = g.pathLength / cycleDuration; // pinion-centre path speed = omega * r
+  const omega = speed / g.pinionPitchRadius;
+  // Brown's pose: the pinion on the upper row a little right of centre.
+  const sourceDistance = g.halfStraight + 0.7;
 
-  // Movement 394 has no official animation.  The phase allocation below is
-  // engineered from the stated topology: the straight internal rack runs
-  // each advance five tooth pitches, while unequal coaxial flanges roll in
-  // the two side grooves to carry one and three tooth phases respectively.
-  const pinionToothCount = 14;
-  const pinionPitchRadius = 0.72;
-  const pinionAngularPitch = FULL_TURN / pinionToothCount;
-  const circularPitch = pinionPitchRadius * pinionAngularPitch;
-  const workingPitchesPerStroke = 5;
-  const workingStroke = workingPitchesPerStroke * circularPitch;
-  const guideHalfStraight = workingStroke / 2;
-  const crossShiftRadius = 0.10;
-  const largeHandoffPitches = 1;
-  const smallHandoffPitches = 3;
-  const largeFlangeRadius = crossShiftRadius * pinionToothCount
-    / (2 * largeHandoffPitches);
-  const smallFlangeRadius = crossShiftRadius * pinionToothCount
-    / (2 * smallHandoffPitches);
-  const rackPitchHalfHeight = pinionPitchRadius + crossShiftRadius;
-  const endlessRackToothCount = 46;
-  const rackHalfStraight = (
-    endlessRackToothCount * circularPitch
-      - FULL_TURN * rackPitchHalfHeight
-  ) / 4;
-  const toothHeight = 0.22;
-  const rackDepth = 0.34;
-  const cycleDuration = 8;
-  const topEnd = 0.38;
-  const largeCrossoverEnd = 0.50;
-  const bottomEnd = 0.88;
-  const largePlaneZ = -0.42;
-  const smallPlaneZ = 0.62;
-  const outputAdvancePerCycle = (
-    2 * workingPitchesPerStroke
-      + largeHandoffPitches + smallHandoffPitches
-  ) * pinionAngularPitch;
+  const rackMaterial = matte(PALETTE.driver, {metalness: 0.13, roughness: 0.58});
+  const pinionMaterial = matte(PALETTE.driven, {metalness: 0.17, roughness: 0.53});
+  const flangeMaterial = matte(0x9dbfd0, {metalness: 0.17, roughness: 0.55});
+  const steelMaterial = matte(PALETTE.ink, {metalness: 0.26, roughness: 0.45});
 
-  const driverMaterial = matte(PALETTE.driver, {
-    metalness: 0.13,
-    roughness: 0.58,
-  });
-  const driverDarkMaterial = matte(0xb84431, {
-    metalness: 0.17,
-    roughness: 0.53,
-  });
-  const drivenMaterial = matte(PALETTE.driven, {
-    metalness: 0.17,
-    roughness: 0.53,
-  });
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.12,
-    roughness: 0.68,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.26,
-    roughness: 0.45,
-  });
-  const brassMaterial = matte(PALETTE.brass, {
-    metalness: 0.22,
-    roughness: 0.48,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.42 });
+  // Rack: toothed band in front, two stepped rebates behind, rod and collar.
+  const rack = new THREE.Group();
+  rack.userData.role = 'endless-rack-with-rod-reciprocating-and-shifting';
+  const outer = poly(stadium(g.halfStraight, g.bandOuterRadius));
+  const band = new THREE.Mesh(plate(clip.difference(outer, parsonsRackVoid(g)), -0.15, 0.15), rackMaterial);
+  band.userData.role = 'endless-rack-band-toothed-all-round-inside';
+  const largeEdge = g.eccentricity + g.largeFlangeRadius + g.rebateClearance;
+  const smallEdge = g.eccentricity + g.smallFlangeRadius + g.rebateClearance;
+  const largeRebate = new THREE.Mesh(plate(clip.difference(outer, poly(stadium(g.halfStraight, largeEdge))), -0.27, -0.15), rackMaterial);
+  largeRebate.userData.role = 'rack-side-groove-rebate-for-large-flange';
+  const smallRebate = new THREE.Mesh(plate(clip.difference(outer, poly(stadium(g.halfStraight, smallEdge))), -0.39, -0.27), rackMaterial);
+  smallRebate.userData.role = 'rack-side-groove-rebate-for-small-flange';
+  const rodStart = g.halfStraight + g.bandOuterRadius - 0.12;
+  const rodLength = 2.35;
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, rodLength, 48).rotateZ(Math.PI / 2), rackMaterial);
+  rod.position.set(rodStart + rodLength / 2, 0, -0.12);
+  rod.userData.role = 'input-rod-from-oscillating-cylinder';
+  const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.30, 64).rotateZ(Math.PI / 2), rackMaterial);
+  collar.position.set(rodStart + rodLength + 0.15, 0, -0.12);
+  collar.userData.role = 'input-rod-end-collar';
+  rack.add(band, largeRebate, smallRebate, rod, collar);
+  root.add(markShadows(rack));
 
-  const phaseState = (unwrappedPhase) => {
-    const phase = positiveModulo(unwrappedPhase, 1);
-    let stage;
-    let progress;
-    let motion;
-    let relativeShaftCenter;
-    let relativeCenterDerivativeByProgress;
-    let outputWithinCycle;
-    let outputDerivativeByProgress;
-    let activeRadius;
-    if (phase < topEnd) {
-      stage = 'upper-internal-rack-working-left-stroke';
-      progress = phase / topEnd;
-      motion = quinticState(progress);
-      relativeShaftCenter = new THREE.Vector2(
-        -guideHalfStraight + workingStroke * motion.value,
-        crossShiftRadius,
-      );
-      relativeCenterDerivativeByProgress = new THREE.Vector2(
-        workingStroke * motion.rate,
-        0,
-      );
-      outputWithinCycle = workingPitchesPerStroke
-        * pinionAngularPitch * motion.value;
-      outputDerivativeByProgress = workingPitchesPerStroke
-        * pinionAngularPitch * motion.rate;
-      activeRadius = pinionPitchRadius;
-    } else if (phase < largeCrossoverEnd) {
-      stage = 'right-groove-large-flange-one-pitch-handoff';
-      progress = (phase - topEnd) / (largeCrossoverEnd - topEnd);
-      motion = quinticState(progress);
-      const angle = Math.PI / 2 - Math.PI * motion.value;
-      relativeShaftCenter = new THREE.Vector2(
-        guideHalfStraight + crossShiftRadius * Math.cos(angle),
-        crossShiftRadius * Math.sin(angle),
-      );
-      relativeCenterDerivativeByProgress = new THREE.Vector2(
-        Math.PI * crossShiftRadius * Math.sin(angle) * motion.rate,
-        -Math.PI * crossShiftRadius * Math.cos(angle) * motion.rate,
-      );
-      outputWithinCycle = (
-        workingPitchesPerStroke
-          + largeHandoffPitches * motion.value
-      ) * pinionAngularPitch;
-      outputDerivativeByProgress = largeHandoffPitches
-        * pinionAngularPitch * motion.rate;
-      activeRadius = largeFlangeRadius;
-    } else if (phase < bottomEnd) {
-      stage = 'lower-internal-rack-working-right-stroke';
-      progress = (phase - largeCrossoverEnd)
-        / (bottomEnd - largeCrossoverEnd);
-      motion = quinticState(progress);
-      relativeShaftCenter = new THREE.Vector2(
-        guideHalfStraight - workingStroke * motion.value,
-        -crossShiftRadius,
-      );
-      relativeCenterDerivativeByProgress = new THREE.Vector2(
-        -workingStroke * motion.rate,
-        0,
-      );
-      outputWithinCycle = (
-        workingPitchesPerStroke + largeHandoffPitches
-          + workingPitchesPerStroke * motion.value
-      ) * pinionAngularPitch;
-      outputDerivativeByProgress = workingPitchesPerStroke
-        * pinionAngularPitch * motion.rate;
-      activeRadius = pinionPitchRadius;
-    } else {
-      stage = 'left-groove-small-flange-three-pitch-handoff';
-      progress = (phase - bottomEnd) / (1 - bottomEnd);
-      motion = quinticState(progress);
-      const angle = -Math.PI / 2 - Math.PI * motion.value;
-      relativeShaftCenter = new THREE.Vector2(
-        -guideHalfStraight + crossShiftRadius * Math.cos(angle),
-        crossShiftRadius * Math.sin(angle),
-      );
-      relativeCenterDerivativeByProgress = new THREE.Vector2(
-        Math.PI * crossShiftRadius * Math.sin(angle) * motion.rate,
-        -Math.PI * crossShiftRadius * Math.cos(angle) * motion.rate,
-      );
-      outputWithinCycle = (
-        2 * workingPitchesPerStroke + largeHandoffPitches
-          + smallHandoffPitches * motion.value
-      ) * pinionAngularPitch;
-      outputDerivativeByProgress = smallHandoffPitches
-        * pinionAngularPitch * motion.rate;
-      activeRadius = smallFlangeRadius;
-    }
-    const phaseWidth = stage === 'upper-internal-rack-working-left-stroke'
-      ? topEnd
-      : stage === 'right-groove-large-flange-one-pitch-handoff'
-        ? largeCrossoverEnd - topEnd
-        : stage === 'lower-internal-rack-working-right-stroke'
-          ? bottomEnd - largeCrossoverEnd
-          : 1 - bottomEnd;
-    const relativeCenterVelocity = relativeCenterDerivativeByProgress
-      .multiplyScalar(1 / (phaseWidth * cycleDuration));
-    const rackVelocity = relativeCenterVelocity.clone().multiplyScalar(-1);
-    const rackPosition = relativeShaftCenter.clone().multiplyScalar(-1);
-    const outputAngularSpeed = outputDerivativeByProgress
-      / (phaseWidth * cycleDuration);
-    return {
-      activeRadius,
-      outputAngularSpeed,
-      outputWithinCycle,
-      phase,
-      progress,
-      rackPosition,
-      rackVelocity,
-      relativeCenterSpeed: relativeCenterVelocity.length(),
-      relativeCenterVelocity,
-      relativeShaftCenter,
-      stage,
-    };
-  };
-
-  const rackCarrier = makeEndlessRack({
-    circularPitch,
-    darkMaterial,
-    depth: rackDepth,
-    frameMaterial: driverMaterial,
-    halfHeight: rackPitchHalfHeight,
-    halfStraight: rackHalfStraight,
-    toothCount: endlessRackToothCount,
-    toothHeight,
-    toothMaterial: driverDarkMaterial,
-    whiteMaterial,
-  });
-  root.add(rackCarrier);
-
-  const largeGroove = makeCrossoverGroove({
-    center: new THREE.Vector2(guideHalfStraight, 0),
-    centerRadius: crossShiftRadius,
-    flangeRadius: largeFlangeRadius,
-    frameMaterial: darkMaterial,
-    name: 'right-large-flange',
-    startAngle: Math.PI / 2,
-    sweep: -Math.PI,
-    z: largePlaneZ,
-  });
-  const smallGroove = makeCrossoverGroove({
-    center: new THREE.Vector2(-guideHalfStraight, 0),
-    centerRadius: crossShiftRadius,
-    flangeRadius: smallFlangeRadius,
-    frameMaterial: darkMaterial,
-    name: 'left-small-flange',
-    startAngle: -Math.PI / 2,
-    sweep: -Math.PI,
-    z: smallPlaneZ,
-  });
-  rackCarrier.add(largeGroove, smallGroove);
-
-  const outputRotor = makePinionAndFlanges({
-    darkMaterial,
-    depth: 0.40,
-    gearMaterial: drivenMaterial,
-    largeFlangeRadius,
-    largePlaneZ,
-    pitchRadius: pinionPitchRadius,
-    smallFlangeRadius,
-    smallPlaneZ,
-    toothCount: pinionToothCount,
-    toothHeight,
-    whiteMaterial,
-  });
-  root.add(outputRotor);
-
-  const fixedFrame = new THREE.Group();
-  fixedFrame.userData.role =
-    'fixed-output-bearing-and-reciprocating-rod-guide-frame';
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(7.35, 0.24, 1.92),
-    frameMaterial,
-  );
-  base.position.set(0.72, -1.82, -0.30);
-  base.userData.role = 'fixed-Parsons-device-machine-bed';
-  fixedFrame.add(base);
-  const bearingPost = new THREE.Mesh(
-    new THREE.BoxGeometry(0.25, 1.66, 0.32),
-    frameMaterial,
-  );
-  bearingPost.position.set(0, -0.91, -0.82);
-  bearingPost.userData.role = 'fixed-central-pinion-bearing-standard';
-  fixedFrame.add(bearingPost);
-  const rodGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(0.58, 0.74, 1.05),
-    frameMaterial,
-  );
-  rodGuide.position.set(rackHalfStraight + rackPitchHalfHeight + 2.26,
-    0, -0.13);
-  rodGuide.userData.role = 'fixed-guide-for-reciprocating-input-rod';
-  fixedFrame.add(rodGuide);
-  root.add(markShadows(fixedFrame));
+  // Pinion with its two concentric flanges and shaft, on a fixed axis.
+  const rotor = new THREE.Group();
+  rotor.userData.role = 'fixed-axis-output-pinion-with-two-concentric-flanges';
+  const pinion = new THREE.Mesh(plate(poly(parsonsPinionOutline(g)), -0.13, 0.13), pinionMaterial);
+  pinion.userData.role = 'ten-tooth-involute-output-pinion';
+  const largeFlange = new THREE.Mesh(plate(poly(circle([0, 0], g.largeFlangeRadius, 256)), -0.25, -0.17), flangeMaterial);
+  largeFlange.userData.role = 'large-concentric-flange-running-in-rack-side-groove';
+  const smallFlange = new THREE.Mesh(plate(poly(circle([0, 0], g.smallFlangeRadius, 256)), -0.37, -0.29), flangeMaterial);
+  smallFlange.userData.role = 'small-concentric-flange-running-in-rack-side-groove';
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.22, 48).rotateX(Math.PI / 2), pinionMaterial);
+  hub.position.z = -0.24;
+  hub.userData.role = 'hub-joining-pinion-and-flanges';
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.8, 40).rotateX(Math.PI / 2), steelMaterial);
+  shaft.position.z = -0.37 - 0.4;
+  shaft.userData.role = 'fixed-axis-output-shaft-running-back';
+  rotor.add(pinion, largeFlange, smallFlange, hub, shaft);
+  root.add(markShadows(rotor));
 
   const stateAtTime = (time) => {
-    const cycles = Math.floor(time / cycleDuration);
-    const cycleTime = positiveModulo(time, cycleDuration);
-    const phase = cycleTime / cycleDuration;
-    const phaseData = phaseState(phase);
-    const outputAngle = cycles * outputAdvancePerCycle
-      + phaseData.outputWithinCycle;
-    const upperMeshActive = phaseData.stage
-      === 'upper-internal-rack-working-left-stroke';
-    const lowerMeshActive = phaseData.stage
-      === 'lower-internal-rack-working-right-stroke';
-    const largeFlangeActive = phaseData.stage
-      === 'right-groove-large-flange-one-pitch-handoff';
-    const smallFlangeActive = phaseData.stage
-      === 'left-groove-small-flange-three-pitch-handoff';
-    const activeRollingResidual = phaseData.relativeCenterSpeed
-      - phaseData.activeRadius * phaseData.outputAngularSpeed;
+    const distance = sourceDistance + speed * time;
+    const point = parsonsPathPoint(g, distance);
+    // A tooth points at the upper junction contact when distance = 0.
+    const pinionAngle = Math.PI / 2 + distance / g.pinionPitchRadius;
     return {
-      ...phaseData,
-      activeRollingResidual,
-      cycleTime,
-      cycles,
-      largeFlangeActive,
-      lowerMeshActive,
-      outputAngle,
-      smallFlangeActive,
-      upperMeshActive,
+      segment: point.segment,
+      pathDistance: distance,
+      pinionCenterInRack: new THREE.Vector2(point.x, point.y),
+      rackPosition: new THREE.Vector2(-point.x, -point.y),
+      rackVelocity: new THREE.Vector2(-speed * point.vx, -speed * point.vy),
+      outputAngle: pinionAngle,
+      outputAngularSpeed: omega,
     };
   };
 
   const update = (time) => {
     const state = stateAtTime(time);
-    rackCarrier.position.set(
-      state.rackPosition.x,
-      state.rackPosition.y,
-      0,
-    );
-    outputRotor.rotation.z = state.outputAngle;
-    root.userData.contacts = {
-      largeFlangeToRightSideGroove: {
-        active: state.largeFlangeActive,
-        centerError: state.largeFlangeActive
-          ? state.relativeShaftCenter.clone().add(state.rackPosition).length()
-          : null,
-        rollingSpeedError: state.largeFlangeActive
-          ? state.activeRollingResidual
-          : null,
-      },
-      lowerRackToPinion: {
-        active: state.lowerMeshActive,
-        pitchLineVelocityError: state.lowerMeshActive
-          ? state.rackVelocity.x
-            - pinionPitchRadius * state.outputAngularSpeed
-          : null,
-      },
-      smallFlangeToLeftSideGroove: {
-        active: state.smallFlangeActive,
-        centerError: state.smallFlangeActive
-          ? state.relativeShaftCenter.clone().add(state.rackPosition).length()
-          : null,
-        rollingSpeedError: state.smallFlangeActive
-          ? state.activeRollingResidual
-          : null,
-      },
-      upperRackToPinion: {
-        active: state.upperMeshActive,
-        pitchLineVelocityError: state.upperMeshActive
-          ? state.rackVelocity.x
-            + pinionPitchRadius * state.outputAngularSpeed
-          : null,
-      },
-    };
+    rack.position.set(state.rackPosition.x, state.rackPosition.y, 0);
+    rotor.rotation.z = state.outputAngle;
     root.userData.kinematics = state;
   };
 
   root.userData = {
-    archetype:
-      'parsons-oblong-endless-internal-rack-pinion-with-unequal-concentric-flange-groove-handoffs',
-    blocks: {
-      fixedFrame,
-      largeGroove,
-      outputRotor,
-      rackCarrier,
-      smallGroove,
-    },
-    constraintResiduals: {
-      closedRackPitchPerimeter:
-        4 * rackHalfStraight + FULL_TURN * rackPitchHalfHeight
-          - endlessRackToothCount * circularPitch,
-      largeFlangePitchHandoff:
-        Math.PI * crossShiftRadius / largeFlangeRadius
-          - largeHandoffPitches * pinionAngularPitch,
-      outputCycleClosure: outputAdvancePerCycle - FULL_TURN,
-      rackPinionPitchIdentity:
-        circularPitch - pinionPitchRadius * pinionAngularPitch,
-      smallFlangePitchHandoff:
-        Math.PI * crossShiftRadius / smallFlangeRadius
-          - smallHandoffPitches * pinionAngularPitch,
-    },
-    constraints: {
-      endlessRack:
-        'Forty-six equal-pitch inward teeth form one closed oblong rack, with upper and lower straight working runs joined by semicircular ends.',
-      fixedOutput:
-        'The fourteen-tooth pinion and both unequal concentric flanges are fast on one fixed-center output shaft.',
-      handoff:
-        'At each stroke reversal the straight teeth leave mesh at zero speed and one side groove carries its matching flange through the exact tooth phase needed by the opposite rack run.',
-      sideGrooves:
-        'Groove walls are offset from the shaft-center crossover locus by the radius of their matching concentric flange.',
-    },
-    degreesOfFreedom: {
-      dependentCoordinates: [
-        'small transverse rack shift at each reversal',
-        'pinion/output angle',
-        'large-flange right groove phase',
-        'small-flange left groove phase',
-      ],
-      independentPrescribedInputs: 1,
-      inputs: ['one closed reciprocating trajectory of the rack input rod'],
-      note:
-        'The output angle is selected by exactly one upper mesh, lower mesh, large-flange groove, or small-flange groove segment.',
-      storedEnergyStates: 0,
-    },
-    dynamics: {
-      idealizations: [
-        'rigid rack, pinion, flanges, shaft, and frame',
-        'common circular pitch and zero backlash on straight rack meshes',
-        'no-slip rolling phase transfer in the side grooves',
-        'quintic zero-speed acceleration at all four contact handoffs',
-        'inertia, tooth compliance, friction losses, and oscillating-cylinder forces omitted',
-      ],
-      sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
-      type: 'dimensionless kinematic reconstruction',
-    },
+    archetype: movement.archetype,
     fidelity: 'authored',
-    geometry: {
-      bottomEnd,
-      circularPitch,
-      crossShiftRadius,
-      endlessRackToothCount,
-      guideHalfStraight,
-      largeCrossoverEnd,
-      largeFlangeRadius,
-      largeHandoffPitches,
-      largePlaneZ,
-      outputAdvancePerCycle,
-      pinionAngularPitch,
-      pinionPitchRadius,
-      pinionToothCount,
-      rackDepth,
-      rackHalfStraight,
-      rackPitchHalfHeight,
-      smallFlangeRadius,
-      smallHandoffPitches,
-      smallPlaneZ,
-      toothHeight,
-      topEnd,
-      workingPitchesPerStroke,
-      workingStroke,
-    },
-    mechanism:
-      'one-oblong-endless-internal-rack-reciprocates-around-one-fixed-axis-fourteen-tooth-pinion-with-upper-and-lower-straight-meshes-alternating-through-two-side-groove-handoffs-engaging-two-fast-concentric-flanges-of-different-diameters',
-    motion: {
-      inputCycleDuration: cycleDuration,
-      outputDirection: 'counterclockwise only',
-      outputTurnsPerReciprocation: 1,
-      rackPath:
-        'left on upper mesh, right large-flange crossover, right on lower mesh, left small-flange crossover',
-    },
-    sourceAnimation: {
-      available: false,
-      independentlyReconstructed: true,
-      officialCanvasModelPresent: false,
-      reason:
-        'The official Movement 394 page marks Animated unavailable and contains no canvas model.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourceReference: {
-      brownPlate394: {
-        endlessRackApproximateBoundsPixels: [39, 199, 384, 328],
-        imageHeight: 525,
-        imageWidth: 525,
-        inputRodCenterlinePixelsY: 271,
-        measurementUncertaintyPixels: 10,
-        pinionCenterPixels: [244, 254],
-        pinionOuterRadiusPixels: 43,
-        visibleInnerRackToothCountApproximate: 44,
-      },
-      constructionEvidence: {
-        engravingEvidence:
-          'The plate shows an oblong closed inward-toothed rack fixed to a right-hand reciprocating rod, one central pinion, and an irregular paired side-groove envelope surrounding the pinion shaft.',
-        explicitInBrownDescription: [
-          'C. Parsons patent device',
-          'reciprocating motion converted into rotary',
-          'one endless rack',
-          'grooves on the rack side',
-          'one pinion with two concentric flanges of different diameters',
-          'substitute for a crank in an oscillating-cylinder engine',
-        ],
-        reconstructionDisclosure:
-          'No official animation, dimensions, groove profile, or tooth-phase allocation is supplied. The one-plus-three-pitch unequal-flange handoffs are independently engineered and explicitly tested while preserving the stated topology and unidirectional conversion.',
-      },
-      officialPage: movement.sourceUrl,
-      plate: 'Brown 1868, Movement 394',
-    },
+    mechanism: 'one-oblong-endless-rack-toothed-all-round-inside-reciprocated-by-a-rod-turning-one-fixed-axis-ten-tooth-involute-pinion-continuously-held-in-depth-by-two-concentric-flanges-in-stepped-side-grooves',
+    blocks: {rack, band, largeRebate, smallRebate, rod, collar, rotor, pinion, largeFlange, smallFlange, hub, shaft},
+    geometry: {...g, cycleDuration, mechanismCyclePeriod: cycleDuration, sourceDistance, pathSpeed: speed},
     stateAtTime,
-    timeline: {
-      bottomRackWorking: [largeCrossoverEnd, bottomEnd],
-      cycleDuration,
-      largeFlangeCrossover: [topEnd, largeCrossoverEnd],
-      smallFlangeCrossover: [bottomEnd, 1],
-      topRackWorking: [0, topEnd],
-    },
-    transmission: {
-      activeSequence:
-        'upper rack:5 pitches -> large flange:1 pitch -> lower rack:5 pitches -> small flange:3 pitches',
-      flangeLaw:
-        'Delta theta = semicircular shaft-center travel / flange radius = pi*delta/r_flange',
-      outputClosure:
-        '(5+1+5+3)*(2*pi/14)=2*pi per reciprocation',
-      rackMeshLaw:
-        'upper: omega=-xDot/R; lower: omega=+xDot/R',
-    },
     update,
+    reconstructionNote:
+      'Kinematic reconstruction: constant pinion speed, rack translating so the pinion centre traces a stadium in the rack frame; all 42 rack teeth mesh once per cycle. The flanges bound the mesh depth against over-engagement only; retention against the separating tooth force is not solved (prescribed path). Brown gives no dimensions, tooth counts or animation; counts are chosen for the plate proportions and a working involute internal mesh.',
+    sourceAnimation: {available: false, officialPage: movement.sourceUrl},
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.65, -2.18, -1.18),
-    new THREE.Vector3(5.85, 2.10, 1.22),
-  );
-  root.userData.cameraDistanceScale = 1.07;
-  root.userData.cameraDirection = new THREE.Vector3(8.2, 4.6, 12.8);
-  root.userData.groundFloorY = -1.95;
+  root.userData.hideGround = true;
+  root.userData.cameraDirection = new THREE.Vector3(0, 0, 1);
+  const bounds = new THREE.Box3();
+  for (let i = 0; i <= 64; i += 1) {
+    update(cycleDuration * i / 64);
+    root.updateMatrixWorld(true);
+    bounds.union(new THREE.Box3().setFromObject(root));
+  }
+  root.userData.cameraFitBounds = bounds.expandByScalar(0.05);
+  root.userData.cameraDistanceScale = 1.05;
   update(0);
-  const finished = finishParsons394(root, update);
-  addParsonsBackBar(root, frameMaterial);
-  return finished;
-}
-
-// Pass 57: Brown draws no frame. The pinion shaft and the input rod are
-// carried on one plain back bar behind the rack: a bored boss takes the rear
-// end of the pinion shaft, a bracket standing forward from the bar carries a
-// guide slotted for the rod's small transverse shift, and a pillar with a
-// foot grounds the bar. The parts are added after the camera fit, so the
-// default framing stays on Brown's subject.
-function addParsonsBackBar(root, material) {
-  const barFront = -0.93, barBack = -1.05, floorY = root.userData.groundFloorY;
-  const guideX0 = 4.67, guideX1 = 4.89, rodShift = 0.10, rodRadius = 0.11;
-  const parts = [];
-  const add = (geometry, role) => {
-    const mesh = new THREE.Mesh(geometry, material);
-    mesh.userData.role = role;mesh.castShadow = true;mesh.receiveShadow = true;
-    root.add(mesh);parts.push(mesh);
-    return mesh;
-  };
-  const box = (x0, x1, y0, y1, z0, z1) => new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0)
-    .translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
-  add(box(-0.45, guideX1, -0.30, 0.30, barBack, barFront), 'fixed-back-bar-carrying-pinion-shaft-and-rod-guide');
-  add(new THREE.LatheGeometry([new THREE.Vector2(0.096, 0), new THREE.Vector2(0.22, 0), new THREE.Vector2(0.22, 0.13), new THREE.Vector2(0.096, 0.13), new THREE.Vector2(0.096, 0)], 48)
-    .rotateX(Math.PI / 2).translate(0, 0, barFront), 'fixed-bored-boss-for-pinion-shaft-rear-end');
-  // Guide: a block round the rod with a vertical slot for the shift, on an
-  // arm running back to the bar (shape x = -world z, shape y = world y).
-  const slot = polygonClipping.union(
-    ...[-rodShift, rodShift].map((y) => poly(circle([0, y], rodRadius + 0.005, 48))),
-    poly([[-(rodRadius + 0.005), -rodShift], [rodRadius + 0.005, -rodShift], [rodRadius + 0.005, rodShift], [-(rodRadius + 0.005), rodShift]]));
-  const guideShape = polygonClipping.difference(polygonClipping.union(
-    poly([[-0.24, -0.42], [0.24, -0.42], [0.24, 0.42], [-0.24, 0.42]]),
-    poly([[0.20, -0.16], [-barFront, -0.16], [-barFront, 0.16], [0.20, 0.16]])), slot);
-  add(plate(guideShape, guideX0, guideX1).rotateY(Math.PI / 2), 'fixed-slotted-rod-guide-on-back-bar');
-  add(box(2.10, 2.50, floorY + 0.10, -0.30, barBack, barFront), 'fixed-back-bar-pillar');
-  add(box(1.85, 2.75, floorY, floorY + 0.10, barBack - 0.20, barFront + 0.20), 'fixed-back-bar-foot');
-  root.userData.blocks.backBar = parts;
+  return {root, update, cameraDirection: root.userData.cameraDirection};
 }
 
 export function createAuthoredParsonsRackMovement(movement) {

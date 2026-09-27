@@ -8,7 +8,8 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
+import {waterJetGeometry, waterJetMaterial, waterVolumeMaterial} from './water-volume.js';
+import {WaterStream,collectWaterStreams,guidedPath,ballisticPath,joinPaths} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -296,11 +297,16 @@ function barkerReactionMill(movement) {
   inletHopper.userData.role =
     'fixed-open-hopper-feeding-central-hollow-shaft';
   root.add(inletHopper);
+  // Pass 69 (p69-w1): the water standing in the funnel is a real body up to
+  // a free surface (it was an open cone film that hardly showed).
+  const funnelWaterTopY = 0.12;
+  const funnelInnerRadiusAt = (y) => 0.304 + (0.78 - 0.304) * (y + 0.38) / 0.76 - 0.006;
   const inletWaterBowl = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.70, 0.24, 0.46, 40, 1, true),
-    waterMaterial,
+    horizontalTurned([[-0.38, 0], [-0.38, funnelInnerRadiusAt(-0.38)], [funnelWaterTopY, funnelInnerRadiusAt(funnelWaterTopY)], [funnelWaterTopY, 0]]),
+    waterVolumeMaterial({opacity: 0.45}),
   );
-  inletWaterBowl.position.y = 4.05;
+  inletWaterBowl.renderOrder = 1;
+  inletWaterBowl.position.y = 4.04;
   inletWaterBowl.userData.role = 'water-in-fixed-inlet-hopper';
   root.add(inletWaterBowl);
   const upperBearing = new THREE.Mesh(
@@ -342,33 +348,42 @@ function barkerReactionMill(movement) {
   bearingBracket.position.set(1.76, 3.54, -0.32);
   bearingBracket.userData.role = 'fixed-horizontal-upper-bearing-bracket';
   root.add(bearingBracket);
-  const flumeStart = new THREE.Vector3(3.54, 5.42, 0.28);
-  const flumeEnd = new THREE.Vector3(0.52, 4.58, 0.10);
-  const inletFlume = boxBetween(
-    flumeStart,
-    flumeEnd,
-    0.78,
-    0.20,
-    frameMaterial,
-    'fixed-elevated-flume-pouring-into-hopper',
-  );
+  const flumeStart = new THREE.Vector3(3.54, 5.95, 0.28);
+  const flumeEnd = new THREE.Vector3(0.66, 5.08, 0.10);
+  // The flume is an open trough (floor and two sides), as Brown draws it,
+  // and its water is one continuous stream: it runs down the trough floor,
+  // leaves the lip with the trough speed and falls on a projectile path
+  // into the water standing in the funnel.
+  const flumeDirection = flumeEnd.clone().sub(flumeStart);
+  const flumeLength = flumeDirection.length();
+  flumeDirection.normalize();
+  const flumeParts = [
+    [flumeLength, 0.05, 0.78, -0.075, 0],
+    [flumeLength, 0.22, 0.06, 0.0, 0.36],
+    [flumeLength, 0.22, 0.06, 0.0, -0.36],
+  ].map(([l, h, w, y, z]) => new THREE.BoxGeometry(l, h, w).translate(0, y, z).toNonIndexed());
+  const inletFlume = new THREE.Mesh(mergeGeometries(flumeParts), frameMaterial);
+  flumeParts.forEach((part) => part.dispose());
+  inletFlume.position.copy(flumeStart).add(flumeEnd).multiplyScalar(0.5);
+  inletFlume.quaternion.setFromUnitVectors(new THREE.Vector3(1, 0, 0), flumeDirection);
+  inletFlume.userData.role = 'fixed-elevated-flume-pouring-into-hopper';
   root.add(inletFlume);
-  const inletStreamCurve = new THREE.QuadraticBezierCurve3(
-    flumeEnd,
-    new THREE.Vector3(0.32, 4.42, 0.08),
-    new THREE.Vector3(0, 4.13, 0),
-  );
-  const jetMaterial = waterJetMaterial();
-  const inletStream = new THREE.Mesh(
-    waterJetGeometry(inletStreamCurve, {
-      radius: 0.07, endRadius: 0.09, width: 0.16, endWidth: 0.12, segments: 32,
-      widthAxis: new THREE.Vector3(0, 0, 1),
-    }),
-    jetMaterial,
-  );
-  inletStream.renderOrder = 2;
+  inletFlume.updateMatrix();
+  const onFlumeFloor = (along) => new THREE.Vector3(along, -0.05 + 0.045, 0).applyMatrix4(inletFlume.matrix);
+  const flumeSpeed = 1.1;
+  const flumeLip = onFlumeFloor(flumeLength / 2);
+  const inletStream = new WaterStream(joinPaths(
+    guidedPath([onFlumeFloor(-flumeLength / 2 + 0.05), flumeLip], {speed: flumeSpeed, samples: 20}),
+    ballisticPath({origin: flumeLip, velocity: flumeDirection.clone().multiplyScalar(flumeSpeed),
+      endY: 4.04 + funnelWaterTopY - 0.02, samples: 24}),
+  ), {
+    width: 0.3, thickness: 0.045, widthAxis: new THREE.Vector3(0, 0, 1).applyQuaternion(inletFlume.quaternion),
+    widthExponent: 0.35, foam: {start: 0.9, amount: 0.4}, cyclePeriod: cycleDuration, streakRate: 1.1, opacity: 0.5,
+  });
   inletStream.userData.role = 'water-falling-from-flume-into-shaft-hopper';
   root.add(inletStream);
+  const jetMaterial = waterJetMaterial();
+  const inletStreamCurve = new THREE.CatmullRomCurve3(inletStream.path.points.filter((_, i) => i % 4 === 0), false, 'centripetal');
   const inletMarkers = [];
   for (let markerIndex = 0; markerIndex < 5; markerIndex += 1) {
     const marker = new THREE.Mesh(
@@ -426,7 +441,9 @@ function barkerReactionMill(movement) {
     return jet;
   });
 
+  const updateWater = collectWaterStreams(root);
   const update = (time) => {
+    updateWater(time);
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
     const inletPhase = THREE.MathUtils.euclideanModulo(time / 0.68, 1);

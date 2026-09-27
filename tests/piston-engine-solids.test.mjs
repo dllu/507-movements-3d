@@ -6,6 +6,7 @@ import {createAuthoredEccentricRotaryEngineMovement} from '../src/simulation/aut
 import {createAuthoredRadialPistonRotaryEngineMovement} from '../src/simulation/authored-radial-piston-rotary-engines.js';
 import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
+import {pointInMulti} from '../src/simulation/steam-section-kit.js';
 
 function clearCycle(model,pairs) {
   const surfaces=new Map(),points=new Map();
@@ -39,12 +40,13 @@ for(const[id,create]of factories)test(`${id}: actual working piston, chamber and
         for(const moving of[b.eccentricPiston,b.sealShoe,b.abutmentNose,b.abutmentStem])pairs.push([fixed,moving]);
       for(const moving of[b.abutmentNose,b.abutmentStem])pairs.push([moving,b.eccentricPiston],[moving,b.sealShoe]);
     }else{
-      const fixed=[b.topHousingBack,b.bottomHousingBack,b.leftAbutmentBody,b.rightAbutmentBody,b.leftAbutmentNose,b.rightAbutmentNose,b.upperInnerWall,b.lowerInnerWall];
-      for(const wall of fixed)for(const moving of[b.hubC,b.positivePistonBody,b.negativePistonBody,b.positivePistonNose,b.negativePistonNose])pairs.push([wall,moving]);
-      for(const moving of[b.positivePistonBody,b.negativePistonBody,b.positivePistonNose,b.negativePistonNose])for(const guide of[b.hubC,b.groove,b.shaftB])pairs.push([moving,guide]);
+      // 426 (pass 69): the pistons slide in the grooves of C and follow the
+      // cylinder wall between the two abutments.
+      for(const piston of b.pistons)pairs.push([piston,b.casing],[piston,b.hubC],[piston,b.back],[piston,b.shaftB]);
+      pairs.push([b.pistons[0],b.pistons[1]],[b.hubC,b.casing]);
       const hub=solidSurface(b.hubC.geometry);
-      assert.ok(!hub.inside(new THREE.Vector3(1,0,.3)),'radial groove is cut into the hub');
-      assert.ok(hub.inside(new THREE.Vector3(1,0,0)),'rear hub web remains behind the groove');
+      assert.ok(!hub.inside(new THREE.Vector3(2,0,-.8)),'radial groove is cut into the hub');
+      assert.ok(hub.inside(new THREE.Vector3(0,2,-.8)),'hub is solid between the grooves');
     }
     assert.equal(u.hideGround,true);model.root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])assert.equal(material.fog,false);});
     clearCycle(model,pairs);
@@ -69,22 +71,19 @@ test('425/426: corrected finite working surfaces retain near contact across the 
           if(fromTop>.072&&!(fromTop>portNear-.01&&fromTop<portFar+.01))assert.ok(wall.distance(contact)<.000032,'piston reaches the working chamber outside the abutment opening and the two port windows');
         }
       }else{
-        const surfaces=[b.topHousingBack,b.bottomHousingBack,b.leftAbutmentBody,b.rightAbutmentBody].map(mesh=>solidSurface(mesh.geometry));
+        // 426: each piston's round end runs just clear of the cylinder wall
+        // everywhere outside the port mouths.
+        const wall=solidSurface(b.casing.geometry);
         for(let frame=0;frame<=64;frame++){
-          model.update(frame*u.geometry.cycleDuration/64);model.root.updateMatrixWorld(true);
-          for(const nose of[b.positivePistonNose,b.negativePistonNose]){
-            const at=angle=>{
-              const p=new THREE.Vector3(u.geometry.followerNoseRadius*Math.cos(angle),u.geometry.followerNoseRadius*Math.sin(angle),.46).applyMatrix4(nose.matrixWorld);
-              return Math.min(...surfaces.map(surface=>surface.distance(p)));
-            };
-            let best=0,gap=Infinity;
-            for(let i=0;i<=128;i++){const angle=-Math.PI/6+i*Math.PI/384,distance=at(angle);if(distance<gap){gap=distance;best=angle;}}
-            // Refine only the best local bracket; avoids mistaking angular
-            // sample spacing for a real opening between the finite surfaces.
-            let low=Math.max(-Math.PI/6,best-Math.PI/384),high=Math.min(Math.PI/6,best+Math.PI/384);
-            for(let i=0;i<24;i++){const a=low+(high-low)/3,c=high-(high-low)/3;if(at(a)<at(c))high=c;else low=a;}
-            gap=Math.min(gap,at((low+high)/2));
-            assert.ok(gap>.00002&&gap<.000060,'both source nose caps remain next to the actual fixed working profile');
+          const time=frame*u.geometry.cycleDuration/64;model.update(time);model.root.updateMatrixWorld(true);
+          const state=u.stateAtTime(time);
+          for(const p of state.pistons){
+            const center=new THREE.Vector3(p.tipCenterRadius*Math.cos(p.angle),p.tipCenterRadius*Math.sin(p.angle),-.8);
+            const local=center; // casing sits unscaled in the model root
+            const gap=wall.distance(local)-u.geometry.pistonHalfWidth;
+            const atMouth=[.05,.2,.4,.6].some(extra=>Object.values(u.geometry.channels).some(channel=>pointInMulti(
+              [(p.outerRadius+extra)*Math.cos(p.angle),(p.outerRadius+extra)*Math.sin(p.angle)],channel)));
+            if(!atMouth)assert.ok(gap>0&&gap<.04,`round end of A runs just clear of the wall (${gap})`);
           }
         }
       }

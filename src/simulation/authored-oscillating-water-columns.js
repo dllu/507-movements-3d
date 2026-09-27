@@ -671,6 +671,97 @@ function dectolOscillatingColumn(movement) {
     parts.markerTravelTurns = turn;
   };
 
+  // Pass 69: the falling stream, the cone with its crown and checked column,
+  // the film over the plate and the sheet falling from its rim were separate
+  // translucent pieces that overlapped or parted (a flared stream foot over a
+  // thin column, discs at the joins). They are now ONE revolved water body
+  // whose profile is rebuilt in place each frame: its radius at each height
+  // is the widest of stream, column and cone there, and it runs on without a
+  // break over the plate and down the sheet into the lower box. Inside the
+  // full upper box the rising column is water within water and is not drawn;
+  // its heave shows only as the crown at the surface.
+  const BODY = 72, SHEET = 18, SEGMENTS = 56;
+  const bodyProfile = Array.from({length: BODY + 3 + 2 * SHEET + 2}, () => new THREE.Vector2());
+  const waterBody = addRole(new THREE.Mesh(new THREE.LatheGeometry(bodyProfile, SEGMENTS), streamMaterial.clone()),
+    'falling-stream-cone-and-plate-sheet-as-one-water-body');
+  waterBody.material.opacity = 0.46;
+  // Rewritten in place each frame: keep the load-time crease pass (which
+  // re-grids lathes) off this one.
+  waterBody.geometry.userData.latheCreased = true;
+  root.add(waterBody);
+  const radiusBelowTop = (y, cone) => {
+    // Cone (concave, drawn in) and its round crown, then the checked column.
+    const {coneTopY, radial, crownR, crownTopY, columnTopY, columnScale} = cone;
+    let r = 0;
+    if (y <= coneTopY) {
+      const t = THREE.MathUtils.clamp((y - plateTopY) / Math.max(1e-6, coneTopY - plateTopY), 0, 1);
+      r = (crownRadius + (0.40 - crownRadius) * (1 - t) ** 2.2) * radial;
+    } else if (y <= crownTopY) r = Math.sqrt(Math.max(0, crownR ** 2 - (y - coneTopY) ** 2));
+    if (y <= columnTopY && y >= coneTopY) {
+      const s = THREE.MathUtils.clamp((y - crownTopY) / Math.max(1e-6, columnTopY - crownTopY), 0, 1);
+      r = Math.max(r, (0.16 - 0.04 * s) * columnScale);
+    }
+    return r;
+  };
+  const updateWaterBody = (state) => {
+    const coneScale = state.coneFraction, radial = 0.90 + 0.10 * coneScale;
+    const coneTopY = plateTopY + coneBodyHeight * coneScale;
+    const crownGate = THREE.MathUtils.smoothstep(coneScale, 0.12, 0.22);
+    const crownR = crownRadius * radial * crownGate, crownTopY = coneTopY + crownR;
+    const columnFraction = state.upperColumnFraction;
+    const columnTopY = Math.min(chamberFloorY, Math.max(crownTopY, upperColumnTopY(columnFraction)));
+    const cone = {coneTopY, radial, crownR, crownTopY, columnTopY, columnScale: 0.84 + 0.16 * columnFraction};
+    const relativeDownFlow = state.downwardFlowRate / supplyFlowRate;
+    const jetLength = Math.max(1e-6, chamberFloorY - columnTopY);
+    const jetRadial = THREE.MathUtils.clamp(0.56 + 0.44 * relativeDownFlow, 0.40, 1.05);
+    // Where the stream lands on the cone or column its foot matches them;
+    // falling freely it spreads to meet the plate.
+    const landing = radiusBelowTop(columnTopY - 1e-4, cone);
+    const freeFall = THREE.MathUtils.smoothstep(landing, 0.30 * jetRadial, 0.05);
+    const jetRadius = (y) => {
+      const u = (chamberFloorY - y) / jetLength;
+      const foot = freeFall * 0.30 + (1 - freeFall) * Math.max(0.12, landing / jetRadial);
+      return Math.min(orificeRadius - 0.012,
+        jetRadial * (0.24 * (1 - u) + foot * u - 0.10 * Math.sin(Math.PI * u) ** 1.4));
+    };
+    let k = 0;
+    bodyProfile[k++].set(0, chamberFloorY);
+    for (let i = 0; i <= BODY; i += 1) {
+      const y = chamberFloorY + (plateTopY + 0.004 - chamberFloorY) * i / BODY;
+      const r = y > columnTopY ? jetRadius(y) : radiusBelowTop(y, cone);
+      bodyProfile[k++].set(Math.max(r, 0.02), y);
+    }
+    // Film over the plate out to its rim, then the sheet falling from it; its
+    // thickness follows the downward discharge.
+    const half = 0.006 + 0.008 * Math.min(1.5, Math.max(0, relativeDownFlow));
+    bodyProfile[k++].set(plateRadius + 0.012, plateTopY + 0.004 + 2 * half);
+    for (let i = 0; i < SHEET; i += 1) {
+      const t = (i + 1) / SHEET, y = THREE.MathUtils.lerp(plateTopY, lowerWaterY, t);
+      bodyProfile[k++].set(curtainRadius(t) + half, y);
+    }
+    for (let i = SHEET - 1; i >= 0; i -= 1) {
+      const t = (i + 1) / SHEET, y = THREE.MathUtils.lerp(plateTopY, lowerWaterY, t);
+      bodyProfile[k++].set(curtainRadius(t) - half, y);
+    }
+    bodyProfile[k++].set(plateRadius + 0.004, plateTopY - plateThickness - 0.004);
+    while (k < bodyProfile.length) bodyProfile[k++].copy(bodyProfile[k - 2]);
+    const pos = waterBody.geometry.attributes.position.array;
+    let n = 0;
+    for (let i = 0; i <= SEGMENTS; i += 1) {
+      const phi = i / SEGMENTS * Math.PI * 2, sin = Math.sin(phi), cos = Math.cos(phi);
+      for (const p of bodyProfile) { pos[n++] = p.x * sin; pos[n++] = p.y; pos[n++] = p.x * cos; }
+    }
+    waterBody.geometry.attributes.position.needsUpdate = true;
+    waterBody.geometry.computeVertexNormals();
+    waterBody.geometry.computeBoundingSphere();
+  };
+  for (const retired of [fallingJet, film, spillCurtain, waterCone, coneCrown, risingColumn]) retired.removeFromParent();
+  const baseUpdate = update;
+  const liveUpdate = (time) => {
+    baseUpdate(time);
+    updateWaterBody(stateAtTime(time));
+  };
+
   const sourceState = stateAtInputAngle(0);
   const archetype = movement.id === 446
     ? 'dectol-fixed-oscillating-water-column-raised-cone-checking-state'
@@ -859,11 +950,13 @@ function dectolOscillatingColumn(movement) {
     marker.castShadow = false;
     marker.receiveShadow = false;
   }
-  update(0);
+  root.userData.update = liveUpdate;
+  root.userData.blocks.waterBody = waterBody;
+  liveUpdate(0);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
-    update,
+    update: liveUpdate,
   };
 }
 

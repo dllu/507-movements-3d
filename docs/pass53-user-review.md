@@ -634,3 +634,27 @@ pin is off-centre; 368's rack and pinion teeth should face the default camera
 its pawl is on the wrong side. Lanes p67-horology and p67-mech fix these.
 
 Follow-up the same day: 387's grey railings on the right are disconnected, and it should be shown once (the animation already shows both of Brown's states); 388's toothed top roller has far too skinny, pointed teeth. Lane p67-b fixes these.
+
+## User review of 389–436, 2026-09-26
+
+The user reported: 389's pawls touch only at the tip (they must seat fully in
+the ratchet root; Brown's curvature ensures it); 391's rack teeth float and its
+guides should be curved; 393's lower support is not flush; 394 needs redoing
+(involute pinion, compatible rack, all teeth used); 395 should be one animated
+view; 396's pin clips the fork and its escapement must be one extruded shape
+without hidden pins; 397's groove end notches are undrawn; 398's groove should
+be derived so the driven wheel turns fully at varying speed; 399's chain links
+show gaps; 400 is oversmoothed; 402's escapement is wrong; 412's notched outer
+wheel and separate pawls were fused into a frame; 414's pinion tapers the
+wrong way and its scroll gear is too loose, long-toothed and dark; 415's crank
+E is perpendicular to the plate's; 419's wheels should be plain with crank
+pins; 420's hand must pull (not push) the rope; the engines 421, 422, 423, 426
+and 428 need to work (closed piston, correct chambers, openings, two valves a
+side, deforming rubber); 430's vanes must be slanted and bent; 433's water is
+disjoint segments; 434's and 435's blade curvature, counts and radii must
+match; 436's lower blades must be helical and its inlet is blocked. Water
+effects in general need a better approach than segments (a full fluid
+simulation was too slow). Lanes p69-pawls, p69-gears, p69-misc, p69-engines
+and p69-water address these.
+
+Follow-up: all the water movements need a closer look. 455's centre is a leaky hexagon where Brown draws a mutilated cylinder sealed by two circular-arc valves; 461's valves do not fit tightly and its water is not conserved. Lanes p69-w1 to p69-w4 closely review all ~50 water, pump and gas movements.

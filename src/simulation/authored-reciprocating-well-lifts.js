@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
+import {WaterStream,collectWaterStreams} from './water-stream.js';
+import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
 import {replaceWithLaidRope} from './laid-rope.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
@@ -329,10 +331,13 @@ function reciprocatingWellLift(movement) {
       rightWaterProfile = transitionProfile(
         phase, 0, exchangeLeftEndPhase, 0, 1);
       const middle = exchangeLeftEndPhase / 2;
+      // Pass 69: the struck bucket tips its mouth outward over its trough
+      // (bottom swinging in toward the stand), as Brown draws the left one
+      // pouring; it used to tip the other way and spill back into the well.
       leftTiltProfile = phase < middle
-        ? transitionProfile(phase, 0, middle, 0, -maximumBucketTilt)
+        ? transitionProfile(phase, 0, middle, 0, maximumBucketTilt)
         : transitionProfile(phase, middle, exchangeLeftEndPhase,
-          -maximumBucketTilt, 0);
+          maximumBucketTilt, 0);
     } else if (phase < rightLiftEndPhase) {
       leftWaterProfile = fixedProfile(0);
       rightWaterProfile = fixedProfile(1);
@@ -344,9 +349,9 @@ function reciprocatingWellLift(movement) {
       const middle = (rightLiftEndPhase + exchangeRightEndPhase) / 2;
       rightTiltProfile = phase < middle
         ? transitionProfile(phase, rightLiftEndPhase, middle,
-          0, maximumBucketTilt)
+          0, -maximumBucketTilt)
         : transitionProfile(phase, middle, exchangeRightEndPhase,
-          maximumBucketTilt, 0);
+          -maximumBucketTilt, 0);
     } else {
       leftWaterProfile = fixedProfile(1);
       rightWaterProfile = fixedProfile(0);
@@ -918,25 +923,47 @@ function reciprocatingWellLift(movement) {
       darkMaterial,
     );
     bucket.add(handle);
-    const water = addRole(new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        bucketRadius * 0.77,
-        bucketRadius * 0.70,
-        1,
-        30,
-      ),
-      waterMaterial,
-    ), `${side}-bucket-water-payload`);
+    // Pass 69 (p69-w1): the payload is a level-surfaced body inscribed in
+    // the tapered bucket and clipped by the world-horizontal surface, which
+    // can never stand above the lowest point of the rim: as the struck
+    // bucket tips, what no longer fits pours out (it used to stay upright
+    // while the bucket tipped and poke through the staves).
+    const water = addRole(new THREE.Mesh(makeCellWaterGeometry(), waterVolumeMaterial({opacity: 0.5})), `${side}-bucket-water-payload`);
+    water.renderOrder = 1;
     bucket.add(water);
     return { body, bucket, water };
   };
   const leftBucket = makeBucket('left');
   const rightBucket = makeBucket('right');
 
+  // The delivery troughs are open boxes (floor, two sides and an inner end,
+  // open at the outer end), so the poured water has somewhere to go.
+  const troughGeometry = (() => {
+    const parts = [
+      [1.25, 0.05, 1.05, 0, -0.075, 0],
+      [1.25, 0.20, 0.06, 0, 0, 0.495],
+      [1.25, 0.20, 0.06, 0, 0, -0.495],
+      [0.06, 0.20, 0.93, 0.595, 0, 0],
+    ].map(([w, h, d, x, y, z]) => new THREE.BoxGeometry(w, h, d).translate(x, y, z).toNonIndexed());
+    const merged = mergeGeometries(parts);
+    parts.forEach((part) => part.dispose());
+    return merged;
+  })();
   const makeTrough = (side) => {
     const sign = side === 'left' ? -1 : 1;
+    const geometry = sign < 0 ? troughGeometry : troughGeometry.clone().scale(-1, 1, 1);
+    if (sign > 0) {
+      const index = geometry.attributes.position;
+      // mirrored: restore outward winding
+      for (let i = 0; i < index.count; i += 3) {
+        const x = index.getX(i + 1), y = index.getY(i + 1), z = index.getZ(i + 1);
+        index.setXYZ(i + 1, index.getX(i + 2), index.getY(i + 2), index.getZ(i + 2));
+        index.setXYZ(i + 2, x, y, z);
+      }
+      geometry.computeVertexNormals();
+    }
     const trough = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(1.25, 0.20, 1.05),
+      geometry,
       matte(PALETTE.muted, { metalness: 0.12, roughness: 0.64 }),
     ), `${side}-delivery-trough-receiving-the-tipped-high-bucket`);
     trough.position.set(sign * 2.30, -0.22, ropeZ);
@@ -946,6 +973,13 @@ function reciprocatingWellLift(movement) {
   };
   const leftTrough = makeTrough('left');
   const rightTrough = makeTrough('right');
+  const troughWaterGeometry = new THREE.BoxGeometry(1.2, 0.05, 0.92).translate(0, -0.02, 0);
+  const leftTroughWater = new THREE.Mesh(troughWaterGeometry, waterVolumeMaterial({opacity: 0.45}));
+  leftTroughWater.userData.role = 'water-running-in-left-trough';
+  leftTrough.add(leftTroughWater);
+  const rightTroughWater = new THREE.Mesh(troughWaterGeometry, waterVolumeMaterial({opacity: 0.45}));
+  rightTroughWater.userData.role = 'water-running-in-right-trough';
+  rightTrough.add(rightTroughWater);
 
   const tappet = addRole(new THREE.Group(),
     'central-vibrating-tappet-struck-by-each-ascending-bucket');
@@ -1005,14 +1039,59 @@ function reciprocatingWellLift(movement) {
   ), 'arm-linking-vibrating-tappet-to-traversing-worm-step');
   root.add(selectorLink);
 
-  const updateBucketWater = (bucket, fraction, tilt) => {
-    const height = 0.52 * fraction;
-    bucket.water.visible = height > 1e-5;
-    bucket.water.scale.y = Math.max(0.001, height);
-    bucket.water.position.y = -bucketHandleRise - bucketHeight
-      + 0.07 + height / 2;
-    bucket.water.rotation.z = -tilt;
+  const payloadHalfDepth = 0.15, payloadFloorY = -bucketHandleRise - bucketHeight + 0.045;
+  const payloadRimY = -bucketHandleRise - 0.02, payloadFullRise = 0.52;
+  const payloadHalfWidthAt = (y) => {
+    const r = bucketRadius * 0.76 - 0.03 + (bucketRadius * 0.24) * (y - (-bucketHandleRise - bucketHeight)) / bucketHeight;
+    return Math.sqrt(Math.max(0.001, r * r - payloadHalfDepth * payloadHalfDepth)) - 0.01;
   };
+  const payloadOutline = [
+    [-payloadHalfWidthAt(payloadFloorY), payloadFloorY], [payloadHalfWidthAt(payloadFloorY), payloadFloorY],
+    [payloadHalfWidthAt(payloadRimY), payloadRimY], [-payloadHalfWidthAt(payloadRimY), payloadRimY],
+  ];
+  const lowestRimLip = new THREE.Vector3();
+  const updateBucketWater = (bucket, fraction, tilt) => {
+    const c = Math.cos(tilt), sn = Math.sin(tilt);
+    const ys = payloadOutline.map(([x, y]) => x * sn + y * c);
+    const rimLimit = Math.min(ys[2], ys[3]) - Math.min(...ys);
+    const fill = Math.min(fraction, Math.max(0, rimLimit - 0.01) / payloadFullRise);
+    updateClippedCell(bucket.water, payloadOutline, tilt, fill, payloadFullRise, 2 * payloadHalfDepth);
+    const lip = ys[2] < ys[3] ? payloadOutline[2] : payloadOutline[3];
+    lowestRimLip.set(lip[0] * c - lip[1] * sn, lip[0] * sn + lip[1] * c, 0);
+    return lowestRimLip;
+  };
+  // Each tipping bucket pours over its lowest lip into the open trough below
+  // as one stream whose flow follows the emptying rate, recomputed in place.
+  const pourSamples = 16;
+  const makePour = (side) => {
+    const path = {points: Array.from({length: pourSamples + 1}, () => new THREE.Vector3()),
+      speeds: new Array(pourSamples + 1).fill(1), times: new Array(pourSamples + 1).fill(0)};
+    const pour = new WaterStream(path, {width: 0.2, thickness: 0.05, widthAxis: new THREE.Vector3(0, 0, 1),
+      widthExponent: 0.4, foam: {start: 0.85, amount: 0.4}, cyclePeriod: 9, streakRate: 1.4, opacity: 0.5});
+    pour.pourPath = path;
+    pour.userData.role = `${side}-tipped-bucket-pouring-into-trough`;
+    root.add(pour);
+    return pour;
+  };
+  const pours = {left: makePour('left'), right: makePour('right')};
+  const troughTopY = -0.80 - 0.04; // the trough floor
+  const updatePour = (pour, bucket, lip, rate, sign) => {
+    const flow = Math.min(1, Math.max(0, -rate) / 2.1);
+    pour.visible = flow > 0.004;
+    if (!pour.visible) return;
+    const x0 = bucket.bucket.position.x + lip.x, y0 = bucket.bucket.position.y + lip.y;
+    const vx = sign * 1.5, g = 9.81, tEnd = Math.min(1, flow / 0.3) * Math.sqrt(2 * Math.max(0.02, y0 - troughTopY) / g);
+    const {points, speeds, times} = pour.pourPath;
+    for (let i = 0; i <= pourSamples; i += 1) {
+      const t = tEnd * i / pourSamples;
+      points[i].set(x0 + vx * t, y0 - 0.5 * g * t * t, ropeZ);
+      speeds[i] = Math.hypot(vx, g * t) + 0.4;
+      times[i] = t;
+    }
+    pour.flow = Math.max(0.004, flow);
+    pour.setPath(pour.pourPath);
+  };
+  const updateStreams = collectWaterStreams(root);
 
   const wheelPhase = Math.PI / (2 * wheelTeeth);
   const update = (time) => {
@@ -1037,16 +1116,14 @@ function reciprocatingWellLift(movement) {
     leftBucket.bucket.rotation.z = state.leftBucketTilt;
     rightBucket.bucket.position.copy(state.rightBucketPivot);
     rightBucket.bucket.rotation.z = state.rightBucketTilt;
-    updateBucketWater(
-      leftBucket,
-      state.leftWaterFraction,
-      state.leftBucketTilt,
-    );
-    updateBucketWater(
-      rightBucket,
-      state.rightWaterFraction,
-      state.rightBucketTilt,
-    );
+    const leftLip = updateBucketWater(leftBucket, state.leftWaterFraction, state.leftBucketTilt).clone();
+    updatePour(pours.left, leftBucket, leftLip, state.leftWaterFractionRate, -1);
+    const rightLip = updateBucketWater(rightBucket, state.rightWaterFraction, state.rightBucketTilt);
+    updatePour(pours.right, rightBucket, rightLip, state.rightWaterFractionRate, 1);
+    for (const [trough, water, pour] of [[leftTrough, leftTroughWater, pours.left], [rightTrough, rightTroughWater, pours.right]]) {
+      water.visible = pour.visible;
+    }
+    updateStreams(time);
     tappet.rotation.z = state.tappetAngle;
     selectorBearing.position.copy(state.lowerBearing);
     // The crank point sits above the pivot, so the arm to the worm step

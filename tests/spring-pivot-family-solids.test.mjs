@@ -64,8 +64,9 @@ test('420 actual striker/lip and underside spring shoe remain close without cros
   clear(results);assert.ok(results[0].min<.0015);assert.ok(results[4].min<.0003);
   m.update(g.strikeTime);m.root.updateMatrixWorld(true);
   assert.ok(b.strikerFace.getWorldPosition(new THREE.Vector3()).distanceTo(m.root.userData.stateAtTime(g.strikeTime).hammerHeadCenter)<1e-14);
-  // An upward spring reaction produces the required return torque, throughout the stroke.
-  for(let i=0;i<=64;i++){const s=m.root.userData.stateAtTime(4*i/64);assert.ok(s.springContact.x-g.pivot.x>0);assert.ok(s.returnSpringTorque>0);}
+  // An upward spring reaction produces the return torque whenever the lever bears on the spring;
+  // raised by the pull cord, the lever lifts off the spring at its free length.
+  for(let i=0;i<=64;i++){const s=m.root.userData.stateAtTime(4*i/64);assert.ok(s.springTip.x-g.pivot.x>0);assert.ok(s.springOnLever?s.returnSpringTorque>0:s.returnSpringTorque===0);}
   const radial=g.strikeHeadCenter.clone().sub(g.pivot);
   const reaction=g.strikeHeadCenter.clone().sub(new THREE.Vector3(g.bellCenterX-g.bellLipRadius,g.bellBaseY,g.pivot.z)).normalize();
   assert.ok(radial.x*reaction.y-radial.y*reaction.x>.8,'lip reaction opposes the downward striking torque');

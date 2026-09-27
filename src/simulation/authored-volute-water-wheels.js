@@ -1,7 +1,10 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping,rotate,plate,sector} from './finite-plate-geometry.js';
 import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
+import {waterVolumeMaterial} from './water-volume.js';
+import {WaterStream,collectWaterStreams,guidedPath,ballisticPath} from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -394,19 +397,46 @@ function voluteWaterWheel(movement) {
     frameMaterial,
     'fixed-inner-wall-of-scroll-casing-b',
   );
-  const scrollWater = makeTube(
-    scrollFlowCurve,
-    0.17,
-    waterMaterial,
-    'clockwise-water-confined-around-runner-by-volute-b',
-  );
   outerScrollWall.geometry.dispose();outerScrollWall.geometry=horizontalVane(scrollOuterWallCurve.getPoints(192),.10,-.74,.73);
   // The volute opens directly onto the runner around its inner perimeter. A full inner wall would isolate the driving water.
   innerScrollWall.geometry.dispose();innerScrollWall.geometry=horizontalVane(scrollInnerWallCurve.getPoints(192).map(p=>{const r=Math.hypot(p.x,p.z),safe=Math.max(r,runnerOuterRadius+.16);return p.clone().multiplyScalar(safe/r);}),.045,-.78,-.73);
   const scrollOuter=scrollOuterWallCurve.getPoints(192).map(p=>[p.x,-p.z]);
   const scrollInner=scrollOuter.map(p=>{const r=Math.hypot(...p);return p.map(v=>v*(runnerOuterRadius+.15)/r);}).reverse();
   const scrollFloor=new THREE.Mesh(horizontalPlate(poly([...scrollOuter,...scrollInner]),-.78,-.74),frameMaterial);scrollFloor.userData.role='fixed-open-annular-volute-floor';root.add(scrollFloor);
-  root.add(outerScrollWall, innerScrollWall, scrollWater);
+  // Pass 69 (p69-w1): the water fills the scroll passage from its floor to a
+  // level over the vanes, between the outer wall and the runner, and fills
+  // the vane ring itself, so it acts on the vanes all round as Brown says.
+  // It was a round hose along the passage centreline.
+  const scrollWaterTopY = 0.44;
+  const outerWaterFace = scrollOuterWallCurve.getPoints(192).map((p) => {
+    const r = Math.hypot(p.x, p.z), inner = r - 0.10 - 0.004;
+    return [p.x * inner / r, -p.z * inner / r];
+  });
+  const passageInner = outerWaterFace.map(([x, y]) => {
+    const r = Math.hypot(x, y);
+    return [x * runnerInnerRadius / r, y * runnerInnerRadius / r];
+  }).reverse();
+  const scrollWater = new THREE.Mesh(horizontalPlate(polygonClipping.union(
+    poly([...outerWaterFace, ...passageInner]),
+    polygonClipping.difference(poly(circle([0, 0], runnerOuterRadius + 0.12, 192)), poly(circle([0, 0], runnerInnerRadius, 192))),
+  ), -0.74, scrollWaterTopY), waterVolumeMaterial({opacity: 0.36}));
+  scrollWater.renderOrder = 1;
+  scrollWater.userData.role = 'clockwise-water-confined-around-runner-by-volute-b';
+  // Its circulation: one sheet along the passage just under the surface. The
+  // passage narrows round the scroll, so the water speeds up (continuity) and
+  // the sheet narrows with it.
+  const passageWidthAt = (u) => voluteRadiusAtProgress(u) + voluteWallHalfGap - 0.10 - runnerOuterRadius;
+  const scrollSheet = new WaterStream(guidedPath(Array.from({length: 49}, (_, i) => {
+    const u = i / 48 * 0.97;
+    const radius = (voluteRadiusAtProgress(u) + voluteWallHalfGap - 0.10 + runnerOuterRadius) / 2;
+    return cylindricalPoint(radius, voluteStartAngle - voluteSweepAngle * u, scrollWaterTopY - 0.1);
+  }), {speedAt: (u) => 1.6 * passageWidthAt(0) / passageWidthAt(u * 0.97), samples: 96}), {
+    width: passageWidthAt(0) * 0.42, thickness: 0.05, widthExponent: 1,
+    widthAxis: (i, p) => new THREE.Vector3(p.x, 0, p.z).normalize(),
+    fadeOut: 0.1, cyclePeriod: cycleDuration, streakRate: 0.7, opacity: 0.3,
+  });
+  scrollSheet.userData.role = 'clockwise-circulation-sheet-in-volute-b';
+  root.add(outerScrollWall, innerScrollWall, scrollWater, scrollSheet);
   // Brown's cast scroll b has a flange round its outer wall with bolt lugs.
   const flangeRing = (offset) => scrollOuterWallCurve.getPoints(192).map(p => {
     const r = Math.hypot(p.x, p.z);
@@ -431,23 +461,33 @@ function voluteWaterWheel(movement) {
     voluteStartTangent.z).normalize();
   const inletUpstream = voluteStart.clone()
     .addScaledVector(inletDirection, -1.95);
-  const inletFlume = boxBetween(
-    inletUpstream,
-    voluteStart,
-    0.88,
-    0.22,
-    frameMaterial,
-    'fixed-tangential-inlet-to-volute-casing-b',
-  );
+  // The inlet is an open duct as deep as the scroll: a floor and two walls
+  // continuing the passage along its tangent (it was a solid bar with a film
+  // of water on its top). Its outer wall carries on the scroll's outer wall;
+  // its inner wall meets the scroll end at the tongue beside the runner.
+  const inletRadial = new THREE.Vector3(voluteStart.x, 0, voluteStart.z).normalize();
+  const inletOuterFace = voluteStartRadius + voluteWallHalfGap - 0.10;
+  const inletInnerFace = runnerOuterRadius + 0.15;
+  const inletQuad = (r0, r1) => {
+    const corners = [];
+    for (const [along, r] of [[0, r0], [1, r0], [1, r1], [0, r1]]) {
+      const base = along ? voluteStart : inletUpstream;
+      const q = new THREE.Vector3(base.x, 0, base.z).addScaledVector(inletRadial, r - voluteStartRadius);
+      corners.push([q.x, -q.z]);
+    }
+    return poly(corners);
+  };
+  const inletFlume = new THREE.Mesh(mergeGeometries([
+    horizontalPlate(inletQuad(inletInnerFace, inletOuterFace), -0.78, -0.74),
+    horizontalPlate(inletQuad(inletOuterFace, inletOuterFace + 0.10), -0.78, 0.73),
+    horizontalPlate(inletQuad(inletInnerFace - 0.10, inletInnerFace), -0.78, 0.73),
+  ].map((g) => g.index ? g.toNonIndexed() : g)), frameMaterial);
+  inletFlume.userData.role = 'fixed-tangential-inlet-to-volute-casing-b';
   root.add(inletFlume);
-  const inletWater = boxBetween(
-    inletUpstream.clone().add(new THREE.Vector3(0, 0.15, 0)),
-    voluteStart.clone().add(new THREE.Vector3(0, 0.15, 0)),
-    0.54,
-    0.11,
-    paleWaterMaterial,
-    'water-entering-scroll-tangentially',
-  );
+  const inletWater = new THREE.Mesh(horizontalPlate(inletQuad(inletInnerFace + 0.004, inletOuterFace - 0.004), -0.74, scrollWaterTopY),
+    waterVolumeMaterial({opacity: 0.36}));
+  inletWater.renderOrder = 1;
+  inletWater.userData.role = 'water-entering-scroll-tangentially';
   root.add(inletWater);
 
   const scrollMarkers = [];
@@ -522,9 +562,30 @@ function voluteWaterWheel(movement) {
   const bearingBeam=new THREE.Mesh(horizontalPlate(polygonClipping.difference(poly([[-3.50,-.14],[3.50,-.14],[3.50,.14],[-3.50,.14]]),poly(circle([0,0],shaftRadius+.004,128))),3.14,3.30),frameMaterial);bearingBeam.userData.role='bored-upper-bearing-crossbeam';root.add(bearingBeam);
   const bearingPosts=[];for(const x of[-3.42,3.42]){const post=new THREE.Mesh(new THREE.BoxGeometry(.16,4.82,.22),frameMaterial);post.position.set(x,.75,0);post.userData.role='upper-bearing-support-post';root.add(post);bearingPosts.push(post);}
 
+  // The escaping water: below each inclined bucket c a sheet leaves the
+  // open floor and falls away. Its shape is steady in the runner's frame, so
+  // it turns with the runner; it fades as it drops out of the picture (Brown
+  // draws no tailrace).
+  const escapeStreams = [];
+  for (let pathIndex = 0; pathIndex < lowerBucketCount; pathIndex += 1) {
+    const angle = sourcePoseBucketOffset + pathIndex * lowerBucketPitch - 0.3;
+    const origin = cylindricalPoint(1.0, angle, -0.74);
+    const stream = new WaterStream(ballisticPath({
+      origin, velocity: horizontalTangent(angle).multiplyScalar(-0.5).add(new THREE.Vector3(0, -0.6, 0)),
+      endY: -1.62, samples: 24, // above the (unpresented) foundation disc
+    }), {
+      width: 0.34, thickness: 0.05, widthAxis: horizontalRadial(angle), widthExponent: 0.2,
+      fadeOut: 0.6, spread: {start: 0.4, width: 1.3, thickness: 2}, cyclePeriod: cycleDuration, streakRate: 1.2, opacity: 0.36,
+    });
+    stream.userData.role = `water-falling-from-escape-opening-under-bucket-c-${pathIndex + 1}`;
+    runner.add(stream);
+    escapeStreams.push(stream);
+  }
+  const updateWater = collectWaterStreams(root);
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
+    updateWater(time);
     const scrollPhase = THREE.MathUtils.euclideanModulo(time / 1.42, 1);
     for (let markerIndex = 0; markerIndex < scrollMarkers.length;
       markerIndex += 1) {

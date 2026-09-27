@@ -64,23 +64,43 @@ function makeSegmentedLeafSpring(segmentCount, radius, material) {
   return spring;
 }
 
-function compactStrikePulse(unitTime) {
-  if (unitTime <= 0 || unitTime >= 1) {
-    return {
-      acceleration: 0,
-      position: 0,
-      velocity: 0,
-    };
+const quintic = (u) => {
+  const x = THREE.MathUtils.clamp(u, 0, 1);
+  return x ** 3 * (10 - 15 * x + 6 * x ** 2);
+};
+// Ease-out with zero start and end speed that stays ahead of u^2: the
+// released hand rises faster than the falling hammer's tail.
+const leadingEase = (u) => {
+  const x = THREE.MathUtils.clamp(u, 0, 1);
+  return 6 * x ** 2 - 8 * x ** 3 + 3 * x ** 4;
+};
+
+// Catenary of length `length` hanging between a and b (x-y plane, a.x != b.x).
+// A rope that is exactly taut is the straight chord.
+function catenaryPoints(a, b, length, count) {
+  const chord = a.distanceTo(b);
+  const points = [];
+  if (length - chord < 1e-6) {
+    for (let i = 0; i <= count; i++) points.push(a.clone().lerp(b, i / count));
+    return points;
   }
-  const u = unitTime;
-  const oneMinus = 1 - u;
-  return {
-    acceleration: 384 * u * (
-      1 - 6 * u + 10 * u ** 2 - 5 * u ** 3
-    ),
-    position: 64 * u ** 3 * oneMinus ** 3,
-    velocity: 192 * u ** 2 * oneMinus ** 2 * (1 - 2 * u),
-  };
+  const [p, q] = a.x < b.x ? [a, b] : [b, a];
+  const h = q.x - p.x, v = q.y - p.y;
+  const ratio = Math.sqrt(length ** 2 - v ** 2) / h;
+  let low = 1e-9, high = 50;
+  for (let i = 0; i < 200; i++) {
+    const mid = (low + high) / 2;
+    if (Math.sinh(mid) / mid < ratio) low = mid; else high = mid;
+  }
+  const scale = h / (low + high); // h / (2 xi)
+  const x0 = (p.x + q.x) / 2 - scale * Math.atanh(v / length);
+  const c = p.y - scale * Math.cosh((p.x - x0) / scale);
+  for (let i = 0; i <= count; i++) {
+    const t = a.x < b.x ? i / count : 1 - i / count;
+    const x = p.x + h * t;
+    points.push(new THREE.Vector3(x, scale * Math.cosh((x - x0) / scale) + c, a.z));
+  }
+  return points;
 }
 
 function bellRingAngle(
@@ -108,9 +128,20 @@ function bellRingAngle(
 function springReturnBellHammer(movement) {
   const root = new THREE.Group();
   const cycleDuration = 4;
-  const strikeWindowStart = 0.55;
-  const strikeWindowDuration = 1.10;
-  const strikeTime = strikeWindowStart + strikeWindowDuration / 2;
+  // The ringer pulls the cord down, lifting the head; lets go, so the hammer
+  // falls by its own weight onto the lip; the spring then lifts it clear.
+  const pullStart = 0.30;
+  const pullEnd = 1.40;
+  const releaseTime = 1.55;
+  const fallDuration = 0.34;
+  const strikeTime = releaseTime + fallDuration;
+  const handSettleStart = strikeTime + 0.10;
+  const handSettleEnd = 3.30;
+  const reboundDecay = 7;
+  const reboundFrequency = 11;
+  const reboundFadeStart = 0.9;
+  const reboundFadeEnd = 1.3;
+  const liftAngle = THREE.MathUtils.degToRad(62);
   const restAngle = THREE.MathUtils.degToRad(38);
   const strikeAngle = THREE.MathUtils.degToRad(18);
   const angularStroke = restAngle - strikeAngle;
@@ -142,20 +173,103 @@ function springReturnBellHammer(movement) {
   const springRestContactY = pivot.y
     + springContactRadius * Math.sin(restAngle) - 0.1752 * Math.cos(restAngle);
 
+  // Rope: tied to the tail end, held by the ringer's hand on a fixed line
+  // just left of the tail. Taut (straight, full length) only while the hand
+  // pulls; otherwise it hangs as a slack catenary.
+  const pullCordLength = 3.35;
+  const tailDirection = Math.PI - restAngle;
+  const tailTipAt = (angle) => new THREE.Vector3(
+    pivot.x + Math.cos(angle + tailDirection) * hammerTailLength,
+    pivot.y + Math.sin(angle + tailDirection) * hammerTailLength,
+    pivot.z,
+  );
+  // The ringer stands a little to the left, so the slack cord sags to the
+  // left of its chord rather than looping below the fist.
+  const handX = pivot.x - hammerTailLength - 0.30;
+  // The cord enters the top of the (0.75-scale) fist this far above its centre.
+  const gripEntry = 0.15 * 0.75;
+  const restSlack = 0.03;
+  const handYFor = (angle, slack) => {
+    const tip = tailTipAt(angle);
+    return tip.y - gripEntry
+      - Math.sqrt((pullCordLength - slack) ** 2 - (tip.x - handX) ** 2);
+  };
+  const handRestY = handYFor(restAngle, restSlack);
+  const handLowY = handYFor(liftAngle, 0);
+  // Released, the hand relaxes upward just ahead of the rising tail, so the
+  // cord goes slack at once and never tightens again until the next pull.
+  const releaseSlackRamp = 0.08;
+  const handYAt = (t) => {
+    if (t < pullStart) return handRestY;
+    if (t < releaseTime) return handRestY + (handLowY - handRestY) * quintic((t - pullStart) / (pullEnd - pullStart));
+    return handYFor(angleAfterRelease(t), restSlack * leadingEase((t - releaseTime) / releaseSlackRamp));
+  };
+  const handPoint = (t) => new THREE.Vector3(handX, handYAt(t), pivot.z);
+  const gripPoint = (t) => handPoint(t).add(new THREE.Vector3(0, gripEntry, 0));
+  // While the hand pulls, the taut cord fixes the lever angle.
+  const pulledAngle = (hand) => {
+    if (tailTipAt(restAngle).distanceTo(hand) <= pullCordLength) return restAngle; // hand = grip entry
+    let low = restAngle, high = liftAngle;
+    for (let i = 0; i < 80; i++) {
+      const mid = (low + high) / 2;
+      if (tailTipAt(mid).distanceTo(hand) > pullCordLength) low = mid; else high = mid;
+    }
+    return (low + high) / 2;
+  };
+  const reboundDeviation = (tau) => {
+    const fade = 1 - quintic((tau - reboundFadeStart) / (reboundFadeEnd - reboundFadeStart));
+    return (restAngle - strikeAngle) * Math.exp(-reboundDecay * tau) * fade * (
+      Math.cos(reboundFrequency * tau)
+      + reboundDecay / reboundFrequency * Math.sin(reboundFrequency * tau));
+  };
+  const angleAfterRelease = (t) => {
+    if (t < strikeTime) {
+      return liftAngle - (liftAngle - strikeAngle) * ((t - releaseTime) / fallDuration) ** 2;
+    }
+    const tau = t - strikeTime;
+    return tau >= reboundFadeEnd ? restAngle : restAngle - reboundDeviation(tau);
+  };
+  const angleAt = (t) => {
+    if (t < pullStart) return restAngle;
+    if (t < releaseTime) return pulledAngle(gripPoint(t));
+    return angleAfterRelease(t);
+  };
+  const springContactAt = (angle) => pivot.clone()
+    .add(new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0).multiplyScalar(springContactRadius))
+    .add(new THREE.Vector3(Math.sin(angle), -Math.cos(angle), 0).multiplyScalar(0.1752));
+  // Above this angle the leaf spring has reached its free length and the
+  // lever lifts off it.
+  let springFreeAngle = restAngle;
+  {
+    let low = restAngle, high = liftAngle;
+    for (let i = 0; i < 80; i++) {
+      const mid = (low + high) / 2;
+      if (springPreload + springRestContactY - springContactAt(mid).y > 0) low = mid; else high = mid;
+    }
+    springFreeAngle = (low + high) / 2;
+  }
+
   const stateAtCycleTime = (unwrappedTime) => {
     const cycleTime = THREE.MathUtils.euclideanModulo(
       unwrappedTime,
       cycleDuration,
     );
-    const unitStrikeTime = (
-      cycleTime - strikeWindowStart
-    ) / strikeWindowDuration;
-    const pulse = compactStrikePulse(unitStrikeTime);
-    const hammerAngle = restAngle - angularStroke * pulse.position;
-    const hammerAngularSpeed = -angularStroke
-      * pulse.velocity / strikeWindowDuration;
-    const hammerAngularAcceleration = -angularStroke
-      * pulse.acceleration / strikeWindowDuration ** 2;
+    const step = 1e-5;
+    const hammerAngle = angleAt(cycleTime);
+    const onFallEdge = Math.abs(cycleTime - strikeTime) < step;
+    const before = angleAt(Math.max(0, cycleTime - step));
+    const after = angleAt(Math.min(cycleDuration, cycleTime + step));
+    const hammerAngularSpeed = onFallEdge
+      ? (hammerAngle - before) / step
+      : (after - before) / (2 * step);
+    const hammerAngularAcceleration = onFallEdge
+      ? 0
+      : (after - 2 * hammerAngle + before) / step ** 2;
+    const hand = handPoint(cycleTime);
+    const grip = gripPoint(cycleTime);
+    const tailTip = tailTipAt(hammerAngle);
+    const cordSpan = tailTip.distanceTo(grip);
+    const cordTaut = pullCordLength - cordSpan < 1e-9;
     const radial = new THREE.Vector3(
       Math.cos(hammerAngle),
       Math.sin(hammerAngle),
@@ -175,20 +289,14 @@ function springReturnBellHammer(movement) {
       radial,
       -hammerArmLength * hammerAngularSpeed ** 2,
     );
-    const tailEnd = pivot.clone().addScaledVector(
-      radial,
-      -hammerTailLength,
-    );
-    const springContact = pivot.clone().addScaledVector(
-      radial,
-      springContactRadius,
-    );
-    springContact.addScaledVector(tangent, -0.1752);
+    const springContact = springContactAt(hammerAngle);
     const springDeflection = springRestContactY - springContact.y;
-    const springCompression = springPreload + springDeflection;
+    const springCompression = Math.max(0, springPreload + springDeflection);
+    const springOnLever = hammerAngle <= springFreeAngle;
+    const springTip = springOnLever ? springContact.clone() : springContactAt(springFreeAngle);
     const returnSpringForce = springStiffness * springCompression;
     const returnSpringTorque = returnSpringForce
-      * (springContact.x - pivot.x);
+      * (springTip.x - pivot.x);
     const bellAngle = bellRingAngle(
       cycleTime,
       strikeTime,
@@ -204,7 +312,11 @@ function springReturnBellHammer(movement) {
     return {
       bellAngle,
       contactClearance,
+      cordSpan,
+      cordTaut,
       cycleTime,
+      gripPosition: grip,
+      handPosition: hand,
       hammerAngle,
       hammerAngularAcceleration,
       hammerAngularSpeed,
@@ -214,16 +326,16 @@ function springReturnBellHammer(movement) {
       hammerHeadVelocity,
       isImpact,
       phase: cycleTime / cycleDuration,
-      pulseAcceleration: pulse.acceleration,
-      pulsePosition: pulse.position,
-      pulseVelocity: pulse.velocity,
       returnSpringForce,
       returnSpringTorque,
       springCompression,
       springContact,
       springDeflection,
       springElasticEnergy: 0.5 * springStiffness * springCompression ** 2,
-      tailEnd,
+      springOnLever,
+      springTip,
+      tailEnd: tailTip,
+      tailTip,
     };
   };
 
@@ -253,8 +365,13 @@ function springReturnBellHammer(movement) {
     strikeHeadCenter: strikeHeadCenter.clone(),
     strikerRadius,
     strikeTime,
-    strikeWindowDuration,
-    strikeWindowStart,
+    pullStart,
+    pullEnd,
+    releaseTime,
+    fallDuration,
+    liftAngle,
+    pullCordLength,
+    springFreeAngle,
   };
 
   const frameMaterial = matte(PALETTE.frame, {
@@ -338,7 +455,6 @@ function springReturnBellHammer(movement) {
   );
   // Brown's hammer is a bent lever: the pull tail runs level to the left
   // from the pivot while the arm rises to the head (at the rest pose).
-  const tailDirection = Math.PI - restAngle;
   hammerTail.position.set(Math.cos(tailDirection) * hammerTailLength / 2,
     Math.sin(tailDirection) * hammerTailLength / 2, 0);
   hammerTail.rotation.z = tailDirection - Math.PI;
@@ -364,30 +480,21 @@ function springReturnBellHammer(movement) {
   root.add(hammer);
 
   // Brown draws a twisted pull cord hanging from the end of the tail, just
-  // past the end of the plank. It is tied into the tail end and hangs
-  // plumb; its top rides with the tail, so it needs no lay travel.
+  // past the end of the plank; it runs off the bottom of the plate to the
+  // ringer's hand below the default view. The cord can only pull: it is a
+  // straight taut chord while the hand hauls the tail down, and a slack
+  // catenary of the same length whenever the hammer is free.
   const pullCordRadius = 0.035;
-  // Brown's cord runs off the bottom of the plate; it continues past the
-  // plank end to a ringer's hand just below the default view.
-  const pullCordLength = 3.35;
   const pullCordMaterial = matte(PALETTE.belt, { roughness: 0.78 });
-  const pullCordPath = (hammerAngle) => {
-    const angle = hammerAngle + tailDirection;
-    const tip = new THREE.Vector3(
-      pivot.x + Math.cos(angle) * hammerTailLength,
-      pivot.y + Math.sin(angle) * hammerTailLength,
-      pivot.z,
-    );
-    const hangX = tip.x - 0.05;
-    return new THREE.CatmullRomCurve3([
-      new THREE.Vector3(tip.x + 0.03, tip.y, tip.z),
-      new THREE.Vector3(tip.x - 0.035, tip.y - 0.012, tip.z),
-      new THREE.Vector3(hangX, tip.y - 0.13, tip.z),
-      new THREE.Vector3(hangX, tip.y - pullCordLength * 0.5, tip.z),
-      new THREE.Vector3(hangX, tip.y - pullCordLength, tip.z),
-    ], false, 'centripetal');
+  const pullCordPath = (state) => {
+    const tip = state.tailTip;
+    const tieIn = tip.clone().add(new THREE.Vector3(
+      Math.cos(state.hammerAngle + tailDirection),
+      Math.sin(state.hammerAngle + tailDirection), 0).multiplyScalar(-0.03));
+    const points = catenaryPoints(tip, state.gripPosition, pullCordLength, 40);
+    return new THREE.CatmullRomCurve3([tieIn, ...points], false, 'centripetal');
   };
-  const pullCord = makeLaidRopeMesh(pullCordPath(restAngle), pullCordMaterial, {
+  const pullCord = makeLaidRopeMesh(pullCordPath(stateAtCycleTime(0)), pullCordMaterial, {
     radius: pullCordRadius,
   });
   pullCord.userData.role = 'twisted-pull-cord-hanging-from-hammer-tail';
@@ -396,8 +503,8 @@ function springReturnBellHammer(movement) {
   pullHand.scale.setScalar(0.75);
   pullHand.userData.role = 'ringer-hand-on-pull-cord-below-plate';
   root.add(pullHand);
-  const placePullHand = (hammerAngle) => {
-    pullHand.position.copy(pullCordPath(hammerAngle).getPoint(1));
+  const placePullHand = (state) => {
+    pullHand.position.copy(state.handPosition);
   };
 
   const springHeel = new THREE.Mesh(
@@ -500,14 +607,15 @@ function springReturnBellHammer(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     hammer.rotation.z = state.hammerAngle;
-    pullCord.userData.setCurve(pullCordPath(state.hammerAngle), 0);
-    placePullHand(state.hammerAngle);
-    springContactPad.position.copy(state.springContact);
+    const cordCurve = pullCordPath(state);
+    pullCord.userData.setCurve(cordCurve, 0);
+    placePullHand(state);
+    springContactPad.position.copy(state.springTip);
     returnLeafSpring.userData.setCurve(
       springBase,
       springBase.clone().add(new THREE.Vector3(0.52, 0.02, 0)),
-      state.springContact.clone().add(new THREE.Vector3(-0.46, -0.42, 0)),
-      state.springContact,
+      state.springTip.clone().add(new THREE.Vector3(-0.46, -0.42, 0)),
+      state.springTip,
     );
     bellPivot.rotation.z = state.bellAngle;
   };
@@ -535,6 +643,7 @@ function springReturnBellHammer(movement) {
       hammerTail,
       pivotStand,
       pullCord,
+      pullHand,
       returnLeafSpring,
       springContactPad,
       springHeel,
@@ -552,16 +661,14 @@ function springReturnBellHammer(movement) {
       bellResponse:
         'small finite-duration damped display rotation begins at the strike event; it is a legibility cue rather than an elastic shell solution',
       hammerMotion:
-        'prescribed compact-support strike pulse; spring force is reported quasi-statically and is not integrated as a free dynamic state',
+        'prescribed: the taut cord fixes the lever angle while the hand pulls; after release a constant-acceleration fall stands in for gravity, and a damped rebound for the spring lift; spring force is reported quasi-statically and is not integrated as a free dynamic state',
       sourceSpecifiesAbsoluteDimensionsTimingMaterialsSpringRateOrLoads: false,
     },
     fidelity: 'authored',
     geometry,
     mechanism:
-      'A rigid external hammer pivots in one fixed bearing. An abstract actuation pulse rotates it to one exact bell-lip contact pose. The preloaded curved leaf spring remains beneath the right-hand lever, gains compression on approach, and returns the hammer to its clear rest angle, leaving the bell untouched throughout the long ringing dwell.',
+      'A rigid external hammer pivots in one fixed bearing and rests clear of the bell on a preloaded leaf spring under its right-hand lever. A hand pulls the cord on the tail, raising the head (the lever lifts off the spring). Released, the cord goes slack and the hammer falls by its own weight onto the bell lip, compressing the spring, which immediately lifts it back to the clear rest angle, leaving the bell free to ring.',
     motion: {
-      clearDwellDuration:
-        cycleDuration - strikeWindowDuration,
       cycleDuration,
       hammerAngularStroke: angularStroke,
       strikeTime,
@@ -600,7 +707,7 @@ function springReturnBellHammer(movement) {
         engravingEvidence:
           'Brown’s plate shows an external rectangular-headed hammer on a fixed pivot, a long left actuating tail, a curved leaf spring fixed below the right-hand lever, and a separate bell to the right.',
         reconstructionDisclosure:
-          'Brown gives no actuator, dimensions, spring characteristic, impact speed, bell material model, or timing. The compact-support strike pulse, exact tangent contact pose, linear quasi-static spring readout, tiny damped bell rotation, frame, proportions, and four-second display cycle are independently engineered.',
+          'Brown gives no actuator, dimensions, spring characteristic, impact speed, bell material model, or timing. The pull, release, constant-acceleration fall and damped spring rebound schedule, exact tangent contact pose, linear quasi-static spring readout, tiny damped bell rotation, frame, proportions, and four-second display cycle are independently engineered.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 420',
@@ -612,8 +719,8 @@ function springReturnBellHammer(movement) {
         'distance from striker center to rotated bell lip centerline minus both contact radii',
       springCompression:
         'preload+restContactHeight-currentContactHeight',
-      strikePulse:
-        '64*u^3*(1-u)^3 within the finite strike window; zero outside',
+      cord:
+        'taut (span = cord length) only while the hand pulls; a slack catenary of the same length otherwise',
     },
     update,
   };

@@ -41,20 +41,21 @@ test('441 actual bucket, float and trip meshes clear the receiver and fixed supp
   }
 }));
 
-test('441 discharge columns start at the tilted mouth and land inside the receiving trough',()=>fixture((model,d)=>{
-  const b=d.blocks,g=d.geometry;
+test('441 discharge streams start at the tilted mouth and fall into the receiving trough',()=>fixture((model,d)=>{
+  const b=d.blocks,g=d.geometry;let seen=0;
   for(let i=0;i<=512;i++) {
     model.update(g.cycleDuration*i/512);model.root.updateMatrixWorld(true);
     for(let j=0;j<b.bucketSpills.length;j++) {
-      const spill=b.bucketSpills[j];if(!spill.visible)continue;
+      const spill=b.bucketSpills[j];if(!spill.visible)continue;seen++;
+      const pts=spill.spillPath.points;
       const lip=new THREE.Vector3(-.27,-.14,0).applyMatrix4(b.buckets[j].matrixWorld);
-      assert.ok(Math.abs(spill.position.x-lip.x)<1e-10);
-      assert.ok(Math.abs(spill.position.y+spill.scale.y/2-lip.y)<1e-10);
-      const bottom=new THREE.Vector3(spill.position.x,spill.position.y-spill.scale.y/2,spill.position.z);
-      b.deliveryTrough.worldToLocal(bottom);
-      assert.ok(Math.abs(bottom.x)+.085*spill.scale.x<1.85/2);
-      assert.ok(Math.abs(bottom.z)+.085*spill.scale.z<.28);
-      assert.ok(Math.abs(bottom.y-.065)<1e-10);
+      assert.ok(Math.hypot(pts[0].x-lip.x,pts[0].y-lip.y)<1e-6,'stream starts at the tipped lip');
+      for(const p of pts){
+        const q=b.deliveryTrough.worldToLocal(p.clone().applyMatrix4(spill.matrixWorld));
+        assert.ok(q.y>=-1e-6,'the stream ends at the trough bottom, never below it');
+        if(q.y<.3)assert.ok(Math.abs(q.x)<1.85/2,'where it reaches the trough it lands inside it');
+      }
     }
   }
+  assert.ok(seen>0);
 }));

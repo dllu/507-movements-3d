@@ -67,8 +67,12 @@ test('movement 444 has fixed seats, a weighted waste disk, a delivery check, and
   assert.equal(blocks.deliverySeat.parent, blocks.deliveryValve);
   assert.equal(blocks.deliveryDisk.parent, blocks.deliveryValve);
   assert.equal(blocks.airChamberShell.parent, model.root);
-  assert.equal(blocks.chamberWater.parent, model.root);
-  assert.equal(blocks.compressedAir.parent, model.root);
+  // Pass 69: the vessel water is a spherical segment of the globe; the air
+  // is not drawn, and the old cylinder that poked through the globe is gone.
+  assert.equal(blocks.vesselWater.parent, model.root);
+  assert.equal(blocks.chamberWater.parent, null);
+  assert.equal(blocks.compressedAir.parent, null);
+  assert.equal(blocks.ramBody.parent, model.root);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.wasteValveIndependent, false);
@@ -90,9 +94,11 @@ test('movement 444 has fixed seats, a weighted waste disk, a delivery check, and
     'fixed-low-head-supply-reservoir',
     'right-weight-held-open-waste-impulse-valve',
     'left-delivery-check-valve-opening-only-after-waste-closure',
-    'globular-air-chamber-smoothing-intermittent-delivery',
-    'elastic-compressed-air-cushion-maintaining-uniform-efflux',
-    'continuous-uniform-upward-efflux-from-air-cushion',
+    'globular-air-vessel-drawn-in-section',
+    'water-in-globular-air-vessel-below-the-air',
+    'water-driven-up-riser-by-air-cushion',
+    'supply-water-pouring-from-trough-into-head-box',
+    'fixed-ram-body-box-under-delivery-and-waste-valves',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -305,7 +311,7 @@ test('movement 444 update moves only valve disks and stems while chamber renderi
   const fixedBlocks = [blocks.base, blocks.reservoir, blocks.drivePipe,
     blocks.chamberNeck, blocks.airChamberShell, blocks.deliveryValve,
     blocks.deliverySeat, blocks.wasteValve, blocks.wasteSeat,
-    blocks.wasteOutlet, blocks.outputPipe, blocks.outputWater];
+    blocks.ramBody, blocks.outputPipe];
   const fixedPositions = fixedBlocks.map((block) => block.position.clone());
   const sourceWasteValvePosition = blocks.wasteValve.position.clone();
 
@@ -324,13 +330,15 @@ test('movement 444 update moves only valve disks and stems while chamber renderi
     `fixed waste seat group at ${phase}`);
     near(blocks.deliveryDisk.position.y, .04 + state.deliveryValveLift, 0,
       `moving delivery disk at ${phase}`);
-    near(blocks.chamberWater.scale.y, state.chamberWaterHeight, 0,
-      `chamber water height at ${phase}`);
-    near(blocks.compressedAir.scale.x,
-      Math.cbrt(state.chamberAirVolume / geometry.sourceAirVolume),
-    0, `air cushion volume scale at ${phase}`);
-    assert.equal(blocks.wasteWater.visible,
-      state.wasteValveOpen > 0.01);
+    // The drawn segment holds the vessel's share of water by volume.
+    const R = geometry.chamberRadius - 0.04, P = blocks.vesselWater.geometry.attributes.position.array;
+    let top = -Infinity;
+    for (let i = 1; i < P.length; i += 3) top = Math.max(top, P[i]);
+    const h = top + R;
+    near(Math.PI * h * h * (3 * R - h) / 3 / (4 / 3 * Math.PI * R ** 3),
+      state.chamberWaterVolume / geometry.chamberTotalInternalVolume, 1e-5,
+      `vessel water level at ${phase}`);
+    assert.equal(blocks.efflux.visible, state.wasteValveOpen > 0);
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
       fixedPositions[index],

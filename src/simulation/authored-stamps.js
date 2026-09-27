@@ -1206,8 +1206,7 @@ function carryRackOnFiniteTeeth(model) {
 // Brown draws a broad rod (about three-quarters of the pinion's pitch radius)
 // between two broad collars, the rack teeth running only from just below the
 // pinion up to the top collar, and the rod continuing above that collar off
-// the plate. At the raised pose each collar sits about three pitch radii from
-// the pinion axis, and the six-sided head below the lower collar is about one
+// the plate. The six-sided head below the lower collar is about one
 // pitch radius tall, flat-topped and widest a third of the way down. The rod
 // is widened away from its teeth, the collars broadened, the head reshaped
 // and recentred, the unused rack teeth hidden and the rod ended a short stub
@@ -1222,17 +1221,23 @@ function matchBrownStampProportions(model) {
   const centerX = (left + right) / 2;
   const collarWidth = 2.35;
   const topCollarHeight = 0.64;
-  // Brown's top collar overhangs the rod on the pinion side, so it must stay
-  // above the pinion's tip circle even at the stamp's lowered rest; the rack
-  // teeth (all in mesh phase) run on up to it as he draws them.
-  const collarRight = centerX + collarWidth / 2;
-  const tipRadius = d.stampTripParts.mesh.tipRadius;
-  const pinionTopAtCollar = g.wheelCenter.y
-    + Math.sqrt(Math.max(0, tipRadius ** 2 - (g.wheelCenter.x - collarRight) ** 2));
-  const restDisplacement = d.stampCarriedContact.restDisplacement;
-  const topCollarBottom = pinionTopAtCollar - restDisplacement + 0.06;
+  // Brown runs the rack teeth up to the top collar. At the lowered rest the
+  // top tooth waits just below the pinion axis for pickup, so that collar
+  // then stands level with the pinion: any part of it reaching past the
+  // rod's toothed face would enter the pinion (Brown's collar also overhangs
+  // that side, which his plate cannot do at rest). The top collar therefore
+  // overhangs only the plain side, as far as Brown's does (0.6 of the rod's
+  // width), and on the pinion side ends flush with the rod's toothed face,
+  // the teeth standing out beyond it; it sits Brown's third of a pitch above
+  // the top tooth.
+  const topCollarLeft = left - 0.6 * rodWidth;
+  // (Set 0.005 inside the rod face so the two faces are not coplanar.)
+  const topCollarRight = right - 0.005;
+  const topTooth = b.rackTeeth.find(tooth => tooth.userData.index === 0);
+  const topToothTop = topTooth.position.y + g.rackToothPitch / 4;
+  const topCollarBottom = topToothTop + g.rackToothPitch / 3;
   const workingTeeth = b.rackTeeth.filter(tooth => tooth.userData.index >= -g.sectorToothCount
-    && tooth.position.y + g.rackToothPitch / 2 < topCollarBottom - 0.02);
+    && tooth.userData.index <= 0);
   for (const tooth of b.rackTeeth) tooth.visible = workingTeeth.includes(tooth);
   const rodTop = topCollarBottom + topCollarHeight + 0.55;
   const rodBottom = g.rackBarBottomY;
@@ -1240,8 +1245,8 @@ function matchBrownStampProportions(model) {
   b.rackBar.geometry = new THREE.BoxGeometry(rodWidth, rodTop - rodBottom, g.rackDepth * 0.72);
   b.rackBar.position.set(centerX, (rodTop + rodBottom) / 2, b.rackBar.position.z);
   b.topRodCap.geometry.dispose();
-  b.topRodCap.geometry = new THREE.BoxGeometry(collarWidth, topCollarHeight, 0.51);
-  b.topRodCap.position.set(centerX, topCollarBottom + topCollarHeight / 2, b.topRodCap.position.z);
+  b.topRodCap.geometry = new THREE.BoxGeometry(topCollarRight - topCollarLeft, topCollarHeight, 0.51);
+  b.topRodCap.position.set((topCollarLeft + topCollarRight) / 2, topCollarBottom + topCollarHeight / 2, b.topRodCap.position.z);
   b.lowerCollar.geometry.dispose();
   b.lowerCollar.geometry = new THREE.BoxGeometry(collarWidth, 0.72, 0.68);
   b.lowerCollar.position.x = centerX;

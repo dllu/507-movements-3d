@@ -65,7 +65,6 @@ test('movement 389 is an eccentric-strap lifting pawl, linear rack, and separate
     blocks.drivingPawl,
     blocks.eccentricRotor,
     blocks.eccentricShaftPin,
-    blocks.eccentricStrap,
     blocks.frame,
     blocks.holdingPawl,
     blocks.rack,
@@ -79,11 +78,14 @@ test('movement 389 is an eccentric-strap lifting pawl, linear rack, and separate
     ...blocks.frameScaleTicks,
   ]) assert.equal(index.parent, null);
   assert.equal(blocks.eccentricDisk.parent, blocks.eccentricRotor);
+  // Strap and curved lifting pawl are one forging.
+  assert.equal(blocks.eccentricStrap, blocks.driveBody);
+  assert.equal(blocks.driveBody.parent, blocks.drivingPawl);
   assert.equal(blocks.holdingPawlBody.parent, blocks.holdingPawl);
   assert.equal(blocks.holdingPivotPin.parent, blocks.holdingPawl);
   assert.equal(blocks.rackBody.parent, blocks.rack);
   assert.equal(blocks.rackSaddle.parent, blocks.rack);
-  assert.equal(blocks.rackTeeth.length, 18);
+  assert.equal(blocks.rackTeeth.length, 19);
   assert.equal(blocks.frameScaleTicks.length, 4);
 
   const roles = [];
@@ -100,7 +102,7 @@ test('movement 389 is an eccentric-strap lifting pawl, linear rack, and separate
     'fixed-cast-jack-frame-and-rack-guide',
     'continuously-rotating-eccentric-driver',
     'offset-eccentric-disk',
-    'eccentric-following-circular-pawl-strap',
+    'eccentric-strap-with-integral-curved-lifting-pawl',
     'rigid-eccentric-strap-lifting-pawl',
     'lifting-pawl-rack-working-nose',
     'upper-fixed-pivot-load-holding-stop-pawl',
@@ -134,14 +136,14 @@ test('movement 389 records that no official animation exists and separates evide
 
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
-  assert.equal(plate.measurementUncertaintyPixels, 7);
+  assert.equal(plate.measurementUncertaintyPixels, 3);
   assert.deepEqual(plate.eccentricShaftPixels, [287, 197]);
   assert.deepEqual(plate.eccentricOuterCenterPixels, [289, 211]);
   assert.equal(plate.eccentricOuterRadiusPixels, 35);
-  assert.deepEqual(plate.drivePawlNosePixels, [244, 137]);
-  assert.deepEqual(plate.holdingPawlPivotPixels, [275, 121]);
-  assert.deepEqual(plate.holdingPawlNosePixels, [244, 89]);
-  assert.equal(plate.rackToothPitchPixels, 17);
+  assert.deepEqual(plate.drivePawlNosePixels, [243, 137.5]);
+  assert.deepEqual(plate.holdingPawlPivotPixels, [276, 121]);
+  assert.deepEqual(plate.holdingPawlNosePixels, [243, 91]);
+  assert.equal(plate.rackToothPitchPixels, 16.4);
   assert.equal(plate.rackToothTipX, 255);
   assert.equal(evidence.explicitInBrownDescription.length, 3);
   assert.match(evidence.engravingEvidence, /vertically guided/);
@@ -151,88 +153,64 @@ test('movement 389 records that no official animation exists and separates evide
   disposeModel(model.root);
 });
 
-test('movement 389 closes the eccentric orbit, rigid strap pawl, and constructed one-pitch follower stroke', () => {
+test('movement 389 closes the rocking eccentric orbit, rigid strap pawl, and constructed ratchet stroke', () => {
   const model = createMovementModel(catalog.movements[388]);
   const data = model.root.userData;
   const { constraintResiduals, geometry, stateAtTime, timeline } = data;
 
   assert.ok(geometry.eccentricity > 0);
-  assert.ok(geometry.drivePowerFraction > 0.4);
-  assert.ok(geometry.drivePowerFraction < geometry.transferFraction);
+  assert.ok(geometry.engageFraction > 0 && geometry.engageFraction < 0.5);
+  assert.ok(geometry.transferFraction > 0.5 && geometry.transferFraction < 1);
   near(geometry.followerHighY - geometry.followerLowY,
-    geometry.toothPitch + geometry.seatingOvertravel + geometry.returnUndershoot, 1e-16, 'follower travel includes finite handoff clearance');
+    geometry.toothPitch + geometry.seatingOvertravel + geometry.returnUndershoot, 1e-9, 'follower travel covers pitch, overtravel and undershoot');
   for (const [name, residual] of Object.entries(constraintResiduals)) {
-    near(residual, 0, 3e-16, name);
+    near(residual, 0, 1e-9, name);
   }
-
-  for (let sample = -7200; sample <= 14400; sample += 1) {
-    const state = stateAtTime(timeline.cycleDuration * sample / 7200);
+  // The strap never swings into the tooth tips.
+  let minimumStrapClearance = Infinity;
+  for (let sample = -3600; sample <= 7200; sample += 1) {
+    const state = stateAtTime(timeline.cycleDuration * sample / 3600);
     vectorNear(
       state.camCenter,
       new THREE.Vector3(
-        geometry.eccentricShaft.x
-          - geometry.eccentricity * Math.cos(state.eccentricAngle),
-        geometry.eccentricShaft.y
-          + geometry.eccentricity * Math.sin(state.eccentricAngle),
+        geometry.eccentricShaft.x + geometry.eccentricity * Math.sin(state.eccentricAngle),
+        geometry.eccentricShaft.y - geometry.eccentricity * Math.cos(state.eccentricAngle),
         0,
       ),
-      3e-16,
+      1e-12,
       'eccentric center orbit',
     );
-    near(state.camCenter.distanceTo(geometry.eccentricShaft),
-      geometry.eccentricity, 4e-16,
-      'constant eccentricity');
-    near(state.drivePawlLength, geometry.drivePawlLength, 5e-16,
-      'rigid strap pawl length');
-    assert.ok(state.driveClearance >= -1e-15);
+    assert.ok(state.eccentricAngle >= geometry.rockStart - 1e-12 && state.eccentricAngle <= geometry.rockEnd + 1e-12);
+    near(state.camCenter.distanceTo(geometry.eccentricShaft), geometry.eccentricity, 1e-12, 'constant eccentricity');
+    near(state.drivePawlLength, geometry.drivePawlLength, 1e-12, 'rigid strap pawl length');
+    assert.ok(state.driveClearance >= 0);
+    minimumStrapClearance = Math.min(minimumStrapClearance,
+      state.camCenter.x - geometry.eccentricStrapRadius - geometry.rootX - geometry.toothDepth);
   }
+  assert.ok(minimumStrapClearance > 0.02, `strap clears the teeth: ${minimumStrapClearance}`);
   disposeModel(model.root);
 });
 
-test('movement 389 advances exactly one rack tooth on each of three eccentric power strokes', () => {
+test('movement 389 advances exactly one rack tooth on each of three eccentric strokes', () => {
   const model = createMovementModel(catalog.movements[388]);
   const data = model.root.userData;
-  const { geometry, crankStateAtTime: stateAtTime, timeline } = data;
-  const epsilon = 1e-8;
+  const { geometry, stateAtTime, timeline } = data;
 
-  for (let strokeIndex = 0; strokeIndex < geometry.liftStrokeCount;
-    strokeIndex += 1) {
-    const strokeStart = strokeIndex * timeline.strokeDuration;
-    const start = stateAtTime(strokeStart);
-    const powerEnd = stateAtTime(
-      strokeStart
-        + timeline.strokeDuration * geometry.drivePowerFraction,
-    );
-    const returnMiddle = stateAtTime(
-      strokeStart + timeline.strokeDuration
-        * (geometry.transferFraction + 1) / 2,
-    );
-    const strokeEnd = stateAtTime(
-      strokeStart + timeline.strokeDuration - epsilon,
-    );
-    near(start.rackDisplacement,
-      strokeIndex * geometry.toothPitch, 2e-15,
-      `stroke ${strokeIndex} starts on stored pitch`);
-    near(powerEnd.rackDisplacement,
-      (strokeIndex + 1) * geometry.toothPitch + geometry.seatingOvertravel, 3e-15,
+  for (let strokeIndex = 0; strokeIndex < geometry.liftStrokeCount; strokeIndex += 1) {
+    const at = (u) => stateAtTime((strokeIndex + u) * timeline.strokeDuration);
+    const start = at(0), peak = at(0.5), returnMiddle = at((geometry.transferFraction + 1) / 2), strokeEnd = at(1 - 1e-9);
+    near(start.rackDisplacement, strokeIndex * geometry.toothPitch, 1e-12, `stroke ${strokeIndex} starts on stored pitch`);
+    near(peak.rackDisplacement, (strokeIndex + 1) * geometry.toothPitch + geometry.seatingOvertravel, 1e-9,
       `stroke ${strokeIndex} power overtravel before seating`);
-    near(returnMiddle.rackDisplacement,
-      (strokeIndex + 1) * geometry.toothPitch, 0,
-      `stroke ${strokeIndex} rack held through return`);
-    near(strokeEnd.rackDisplacement,
-      (strokeIndex + 1) * geometry.toothPitch, 0,
-      `stroke ${strokeIndex} retained output`);
-    assert.equal(powerEnd.drivingEngaged, true);
-    near(powerEnd.drivingContactError, 0, 5e-16,
-      `stroke ${strokeIndex} drive contact closure`);
+    near(returnMiddle.rackDisplacement, (strokeIndex + 1) * geometry.toothPitch, 1e-12, `stroke ${strokeIndex} rack held through return`);
+    near(strokeEnd.rackDisplacement, (strokeIndex + 1) * geometry.toothPitch, 1e-12, `stroke ${strokeIndex} retained output`);
+    assert.equal(peak.drivingEngaged, true);
+    near(peak.drivingContactError, 0, 1e-12, `stroke ${strokeIndex} drive contact closure`);
     assert.equal(returnMiddle.drivingEngaged, false);
     assert.ok(returnMiddle.driveClearance > 0);
     assert.equal(returnMiddle.holdingEngaged, true);
-    near(returnMiddle.holdingContactError, 0, 3e-16,
-      `stroke ${strokeIndex} upper stop closure`);
-    near(returnMiddle.holdingToothSeatY,
-      geometry.stopSeatY, 8e-16,
-      `stroke ${strokeIndex} next stop tooth at fixed seat`);
+    near(returnMiddle.holdingContactError, 0, 1e-12, `stroke ${strokeIndex} upper stop closure`);
+    near(returnMiddle.holdingToothSeatY, geometry.stopSeatY, 1e-12, `stroke ${strokeIndex} next stop tooth at fixed seat`);
   }
   disposeModel(model.root);
 });
@@ -240,39 +218,29 @@ test('movement 389 advances exactly one rack tooth on each of three eccentric po
 test('movement 389 power contact is exact while the upper stop ratchets and then alone holds return load', () => {
   const model = createMovementModel(catalog.movements[388]);
   const data = model.root.userData;
-  const { geometry, crankStateAtTime: stateAtTime, timeline, transmission } = data;
+  const { geometry, stateAtTime, timeline, transmission } = data;
 
   assert.match(transmission.driveFollowerLaw, /camCenter/);
   assert.match(transmission.holdingLaw, /alone prevents rack descent/);
   assert.match(transmission.indexingLaw, /exactly one additional pitch/);
-  for (let strokeIndex = 0; strokeIndex < geometry.liftStrokeCount;
-    strokeIndex += 1) {
+  for (let strokeIndex = 0; strokeIndex < geometry.liftStrokeCount; strokeIndex += 1) {
     for (let sample = 1; sample < 2000; sample += 1) {
-      const localPhase = geometry.drivePowerFraction * sample / 2000;
-      const state = stateAtTime(
-        (strokeIndex + localPhase) * timeline.strokeDuration,
-      );
+      const u = geometry.engageFraction + (0.5 - geometry.engageFraction) * sample / 2000;
+      const state = stateAtTime((strokeIndex + u) * timeline.strokeDuration);
       assert.equal(state.drivingEngaged, true);
-      near(state.driveClearance, 0, 0,
-        'driving nose seated laterally');
-      near(state.drivingContactError, 0, 9e-16,
-        'driving nose on moving material tooth seat');
-      near(state.driveNose.x, geometry.rackFaceX, 0,
-        'driving nose on rack face');
-      assert.ok(state.rackSpeed >= -2e-14);
+      near(state.driveClearance, 0, 0, 'driving nose seated laterally');
+      near(state.drivingContactError, 0, 1e-12, 'driving nose on moving material tooth seat');
+      near(state.driveNose.x, geometry.rackFaceX, 0, 'driving nose in the root');
+      assert.ok(state.rackSpeed >= -1e-9);
       assert.ok(state.holdingAngle <= geometry.holdingBaseAngle + 1e-15);
     }
     for (let sample = 1; sample < 1000; sample += 1) {
-      const localPhase = geometry.transferFraction
-        + (1 - geometry.transferFraction) * sample / 1000;
-      const state = stateAtTime(
-        (strokeIndex + localPhase) * timeline.strokeDuration,
-      );
+      const u = geometry.transferFraction + (1 - geometry.transferFraction) * sample / 1000;
+      const state = stateAtTime((strokeIndex + u) * timeline.strokeDuration);
       assert.equal(state.drivingEngaged, false);
       assert.equal(state.holdingEngaged, true);
       near(state.rackSpeed, 0, 0, 'held rack return speed');
-      near(state.holdingContactError, 0, 3e-16,
-        'upper holding contact closure');
+      near(state.holdingContactError, 0, 1e-12, 'upper holding contact closure');
       assert.ok(state.driveClearance >= 0);
     }
   }
@@ -287,7 +255,7 @@ test('movement 389 lowers the rack by the lifting strokes reversed, never droppi
   const lowered = stateAtTime(timeline.events.bottomDwellStarts);
 
   assert.match(timeline.note, /lowering strokes/);
-  assert.match(transmission.resetLaw, /reverses the eccentric/);
+  assert.match(transmission.resetLaw, /rocks the eccentric the other way/);
   near(timeline.resetDuration, timeline.operatingDuration, 0, 'lowering takes as long as lifting');
   near(raised.rackDisplacement,
     geometry.liftStrokeCount * geometry.toothPitch, 0,
@@ -334,8 +302,8 @@ test('movement 389 renderer binds rack, eccentric, strap, both pawls, and contac
       'rendered eccentric rotation');
     vectorNear(
       new THREE.Vector3(
-        blocks.eccentricStrap.position.x,
-        blocks.eccentricStrap.position.y,
+        blocks.drivingPawl.position.x,
+        blocks.drivingPawl.position.y,
         0,
       ),
       state.camCenter,

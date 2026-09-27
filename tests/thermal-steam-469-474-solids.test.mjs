@@ -21,13 +21,18 @@ for(const [id,factory]of [[469,airMachine],[474,aeolipile]])test(`${id}: pure st
   model.root.traverse(o=>{for(const m of o.material?[].concat(o.material):[])assert.equal(m.fog,false);});
 });
 
-test('469: solid flight, barrel gland, coplanar spur mesh and bored wheel axle',()=>{
-  const m=airMachine({id:469}),d=m.root.userData,b=d.blocks;
+test('469: solid flight, casing fitted through the air vessel wall, bored wheel hub and open air tube',()=>{
+  const m=airMachine({id:469}),d=m.root.userData,b=d.blocks,g=d.geometry;
   assert.equal(b.screwFlight.geometry.userData.thread.inner,.065);assert.equal(b.screwFlight.geometry.userData.thread.outer,.30);
-  assert.equal(b.transferPinion.position.z,b.wheelGear.position.z);assert.equal(b.wheelSpokes.length,6);
-  for(const [name,a,z]of [['gears',b.transferPinion.userData.rotor.children[0],b.wheelGear.userData.rotor.children[0]],['barrel gland',b.screwBarrel,b.barrelGlandWall],['wheel bore',b.fixedWheelAxle,b.wheelGear.userData.rotor.children[0]]])assert.ok(separation(m,a,z)>-2e-6,name);
-  const conduit=solidSurface(b.airConduit.geometry);
+  assert.equal(b.wheelSpokes.length,6);
+  for(const [name,a,z]of [['casing through vessel wall',b.screwBarrel,b.receiver],['wheel bore',b.fixedWheelAxle,b.wheelHub],['wheel bevel bore',b.fixedWheelAxle,b.wheelBevel.userData.body]])assert.ok(separation(m,a,z,24)>-2e-6,name);
+  const conduit=solidSurface(b.airConduit.geometry),vessel=solidSurface(b.receiver.geometry);
   for(let i=1;i<100;i++)assert.equal(conduit.inside(d.pressurePipeCurve.getPointAt(i/100)),false,'open air pipe');
+  // The tube's mouth opens into the vessel: its bore is not closed by the roof.
+  assert.equal(vessel.inside(d.pressurePipeCurve.getPointAt(0).clone().add(new THREE.Vector3(0,-.025,0))),false,'roof bored for the air tube');
+  // The screw casing runs clear of both cistern walls (it no longer passes through them).
+  const walls=[b.coldTank,b.warmTank].flatMap(t=>t.children.filter(o=>/end-wall-(left|right)$/.test(o.userData.role)));
+  for(const wall of walls)assert.ok(separation(m,b.screwBarrel,wall,8)>.02,wall.userData.role);
   assert.ok(d.geometry.bubbleBaseRadius<.074);
 });
 

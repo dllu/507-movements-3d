@@ -84,9 +84,7 @@ test('movement 445 is the all-fixed D’Ectol apparatus in its free-descent sour
     'fixed-circular-plate-concentric-with-upper-orifice',
     'fixed-flared-stem-of-circular-plate',
     'constant-supply-water-at-fixed-head',
-    'unobstructed-descending-stream',
-    'water-spreading-over-plate-and-descending-in-lower-box',
-    'self-forming-water-cone-on-fixed-circular-plate',
+    'falling-stream-cone-and-plate-sheet-as-one-water-body',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });

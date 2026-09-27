@@ -327,7 +327,7 @@ export default {
     note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so a plain thin sea-bottom surface (Brown draws none; the caption has the weight detach on striking bottom) rises from below for the probe to strike, and the dropped weight sinks out of the bottom of the view with it as the rod is hauled in. A fresh bored weight is then slid up the rod from below the view past the retracted catch, the catch is set under it and it is let down onto the nose, so the rod never leaves the view; no reload gear or hand is shown.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so a plain thin sea-bottom surface (Brown draws none; the caption has the weight detach on striking bottom) rises from below for the probe to strike. The view then holds on the bottom while the rod is hauled up out of it on its line, leaving the spent weight lying there; above the view a second bored weight is threaded on and the catch set under it, and the rod comes back down into view with that weight already seated while the view rises with it, so the bottom and the spent weight sink away. The two weights alternate, so the loop is two soundings long; no reload gear or hand is shown and nothing moves in view without its drawn cause.',
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
@@ -529,7 +529,7 @@ export default {
   },
   351: {
     remove: ['fixed-stamp-machine-base', 'fixed-anvil-below-falling-stamp', 'fixed-workpiece-at-lower-impact-stop', '(?:upper|lower)-C-shaped-rack-guide-open-to-teeth', 'fixed-bearing-for-horizontal-pinion-shaft'],
-    note: 'The broad rack rod between its two broad collars, cut with eight teeth for the pinion\'s eight, the stamp head below and the mutilated pinion on its cut shaft; no base, anvil, workpiece, rod guides, bearing or back bar is drawn, so none is shown.',
+    note: 'The broad rack rod between its two broad collars, cut with eight teeth for the pinion\'s eight running up to the top collar, which overhangs only the plain side so it clears the pinion when the stamp rests (Brown\'s also overhangs the teeth), the stamp head below and the mutilated pinion on its cut shaft; no base, anvil, workpiece, rod guides, bearing or back bar is drawn, so none is shown.',
   },
   355: {
     camera: [7, 10, 12],
@@ -652,15 +652,15 @@ export default {
     note: 'The two long upright pins, the toggle links and the small pear weight hung from the apex. Brown crops the pins; their sockets stand on bored blocks on the door top and on the wall beside the opening, and the door hangs on plain knuckle hinges. No lintel, jamb, trim, handle or white indices are drawn.',
   },
   387: {
-    note: 'Side elevation of the one wharf ladder, level at high water as in Brown\'s upper figure; the animation carries it down to the boat at low water, his lower figure, so it is not drawn twice. The wharf rail panels (posts with ball finials, top and bottom rails, crossed braces) are joined to the fixed ladder posts. The factory omits the undrawn white rail and tread indices.',
+    note: 'Side elevation of the one wharf ladder, level at high water as in Brown\'s upper figure; the animation carries it down to the boat at low water, his lower figure, so it is not drawn twice. The wharf rail panels (posts with ball finials, top and bottom rails, crossed braces) are joined to the fixed ladder posts. The tide is a shallow translucent surface layer, fading with depth, for Brown\'s surface lines, and the dinghy is his length, about 0.31 of the ladder. The factory omits the undrawn white rail and tread indices.',
   },
   388: {
     remove: ['white-.*', 'fixed-planer-feed-roller-bearing-frame'],
-    note: 'The smooth and toothed rollers and the board between them, seen in section through the shafts; Brown draws no bearings, standard or foot, so the shafts end as plain stubs. No white indices are drawn.',
+    note: 'The smooth and toothed rollers and the board between them, seen in section through the shafts; the toothed roller\'s shallow raised hub boss gives Brown\'s inner face circle. Brown draws no bearings, standard or foot, so the shafts end as plain stubs. No white indices are drawn.',
   },
   389: {
-    remove: ['white-.*', 'fixed-front-rack-guide-strap', 'wide-jack-foot'],
-    note: 'Section of the cast jack stand, flaring into stepped feet either side of the rack, with the eccentric strap pawl and upper stop; the white indices, the front rack straps cut away by the section and the sole plate are not drawn. The eccentric shaft and stop-pawl pin run in bearing bosses carried by a rear spine and bridges from the stand, kept behind the rack and pawls so the default view still reads as the plate.',
+    remove: ['white-.*', 'fixed-front-rack-guide-strap', 'wide-jack-foot', 'fixed-rear-rack-guide-cheek'],
+    note: 'Section of the cast jack stand, flaring into stepped feet either side of the rack, with Brown\'s curved strap pawl and upper stop, both noses seated in the root under a tooth\'s flat face; the white indices, the front rack straps cut away by the section, the rear guide cheek and the sole plate are not drawn. The eccentric shaft and stop-pawl pin run in bearing bosses carried by a rear spine and bridges, kept behind the rack and pawls so the default view still reads as the plate.',
   },
   390: {
     remove: ['fixed-two-shaft-rectifier-bearing-frame', 'white-.*', 'piece-A-rigid-radial-web', '.*-fixed-material-marker'],
@@ -679,20 +679,19 @@ export default {
     note: 'The upright spindle and its head, bent carrier, ball joint and cup on the lens, which rests on the table plank; no overhead standard or bearing is drawn.',
   },
   394: {
-    remove: ['fixed-Parsons-device-machine-bed', 'fixed-central-pinion-bearing-standard', 'connected-input-guide-support', 'fixed-guide-for-reciprocating-input-rod', 'white-.*', 'finite-open-flange-guide-(?:working-wall|mouth)', 'guide-wall-to-rack-attachment', 'guide-attachment-spacer-outside-pinion-sweep', 'fixed-back-bar-carrying-pinion-shaft-and-rod-guide', 'fixed-bored-boss-for-pinion-shaft-rear-end', 'fixed-slotted-rod-guide-on-back-bar', 'fixed-back-bar-pillar', 'fixed-back-bar-foot'],
-    note: 'The endless rack, flanged pinion and the rod with its end collar; no bed, standards, rod guide or white indices are drawn. The flange-guide walls (Brown\'s side grooves, hidden in his face view) and their attachments are not shown: they drew a black D-loop and bar inside the rack that the plate lacks.',
+    note: 'Face view of the endless rack, toothed all round its inside, with the ten-tooth pinion on the upper row and the larger of its two concentric flanges behind it, its top running hidden in the rack as Brown dashes it; the smaller flange and the stepped side grooves lie behind. The rod runs off right to its end collar. Brown draws no frame, so the pinion shaft ends as a plain stub behind.',
   },
   396: {
     remove: ['fixed-watch-escapement-base', 'rear-watch-plate-bearing-standard', '(?:escape-wheel-a|balance-b|lever-c)-fixed-bearing-boss', 'white-.*'],
-    note: 'The wheel A, plain-rimmed balance B, straight lever C with its crook d and banking pins l; no watch plate, its bearing bosses or white indices are drawn, so the staffs end as plain stubs.',
+    note: 'The wheel A, plain-rimmed balance B, straight lever C with its crook d and banking pins l, the one-piece anchor-like cross-piece h whose two arms end in pallets g and f in the wheel\'s plane, and the roller pin i working in the slot of fork e; no watch plate, its bearing bosses or white indices are drawn, so the staffs end as plain stubs.',
   },
   397: {
     remove: ['white-.*', 'fixed-machine-base', 'fixed-horizontal-shuttle-guide-rail', 'fixed-rear-standard-to-(?:crank-bearing|shuttle-guide)', 'fixed-shuttle-guide-bracket', 'fixed-shuttle-guide-channel-(?:back|top-lip|bottom-lip)', 'fixed-crank-bearing-boss'],
     note: 'The flat shuttle bar, its link, the slotted S-rocker on its grounded foot pivot (Brown hatches the ground under it) and the crank; no machine base, pillar, crank bearing or table guide is drawn.',
   },
   398: {
-    remove: ['fixed-mechanism-bearing-support', 'fixed-base-for-cam-guides-and-output-shaft', 'white-.*'],
-    note: 'The cam C, crosshead in its guide and the plain output disc with its crank; no base, legs, rear frame or white indices are drawn, so both shafts end as plain stubs.',
+    remove: ['white-.*'],
+    note: 'The cam C with its three-sided groove, the roller crosshead in its guide, the rod and the plain output disc with its crank. The groove is re-derived from the slider-crank so the disc turns fully round at varying speed (three turns per cam turn). No base, legs, rear frame or white indices are drawn, so both shafts end as plain stubs.',
   },
   386: {
     camera: [0.08, 0.05, 1],
@@ -702,7 +701,7 @@ export default {
   395: {
     camera: [0, 0.02, 1],
     remove: ['white-.*', '.*-fixed-external-port-pipe', 'explanatory-fixed-pipe-flow-indices', 'passage-[AB]-flow-direction-index', 'plug-operating-stem', 'quarter-turn-operating-handle', 'fixed-ninety-degree-handle-travel-reference'],
-    note: 'Brown\'s two sections of the plug in its bored body, the upper figure and, below left, the same cock a quarter turn clockwise; steam enters at the top, the cylinder ports are right and left and the exhaust is below. No pipes, handle or flow markers are drawn.',
+    note: 'One section of the plug in its bored body: Brown\'s two figures are its two positions a quarter turn apart, which the single animated plug turns through. Steam enters at the top, the cylinder ports are right and left and the exhaust is below. No pipes, handle or flow markers are drawn.',
   },
   400: {
     camera: [0, 0.08, 1],
@@ -714,8 +713,8 @@ export default {
     note: 'The faceplate wheel, tangent slide A, B, pitman and treadle; no floor or standards are drawn.',
   },
   402: {
-    remove: ['fixed-rear-bearing-frame-bar-\\d', '.*-white-balance-angular-index', 'white-escape-wheel-angular-index', '.*-balance-spoke-[23]', 'escape-wheel-spoke-\\d', 'visible-active-escape-tooth-pallet-contact'],
-    note: 'Face view of the two open balance rims, each joined to its arbor by one slim two-armed bar as in a watch balance, crossing so both racks show, with their pinions, the lever B carrying both toothed sectors and anchor A, and the escape wheel; no frame bars or white indices are drawn.',
+    remove: ['fixed-rear-bearing-frame-bar-\\d', '.*-white-balance-angular-index', 'white-escape-wheel-angular-index', '.*-balance-spoke-[23]', 'visible-active-escape-tooth-pallet-contact'],
+    note: 'Face view of the two open balance rims, each joined to its arbor by one slim two-armed bar as in a watch balance, crossing so both racks show, with their pinions, the lever B carrying both toothed sectors, and anchor A as one plate (a curved upper arm to its pointed pallet, a lower arm to its block pallet) working the fifteen-tooth escape wheel in its own plane; no frame bars or white indices are drawn.',
   },
   403: {
     remove: ['(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-end-index-[12]', '(?:left|right)-sloping-rule-guided-by-(?:left|right)-chord-pin-pin-contact-working-edge', 'laid-out-(?:chord-line|versed-sine)', '(?:left|right)-fixed-chord-end-guide-pin-white-cap'],
@@ -755,8 +754,7 @@ export default {
     note: 'Edge-on elevation of the adjustable wheel A (in section in the plate) with nut B on its bolt, over the V-grooved wheel with its hub nut and crank handle, both shafts running off to the right; no frame is drawn.',
   },
   414: {
-    remove: ['white-input-shaft-rotation-index'],
-    note: 'Face view of scroll plate A with the sliding pinion B on its feathered shaft; no shaft index is drawn.',
+    note: 'Face view of scroll plate A, its toothed band wound 2 3/8 close turns from the inner end at 9 o\'clock to the cut outer end, with the tapered pinion B (small end toward A\'s centre) sliding on the feathered shaft that crosses in front. Brown draws no frame; the shaft is cropped by the view.',
   },
   415: {
     remove: ['fixed-coaxial-wheel-and-lever-bearing-frame', 'wheel-D-spoke-fast-with-rim-and-hub', 'white-wheel-D-intermittent-rotation-index', 'white-lever-A-oscillation-index', 'selectable-(?:left-pawl-B|right-pawl-C)-white-rim-contact-index', 'white-input-slider-joint-index'],
@@ -780,16 +778,13 @@ export default {
     note: 'Side elevation of the hammer on its bracket with the under-lever return spring on the plank, and the bell with its canon loop; Brown draws no post, arm or hanger for the bell, so none is shown.',
   },
   421: {
-    remove: ['marine-trunk-engine-foundation', 'rear-crankshaft-support-column', 'rear-crankshaft-bearing-arm', 'high-pressure-upper-annular-chamber-indicator', 'lower-expansive-exhaust-chamber-indicator'],
-    note: 'The sectioned cylinder, trunk piston, pitman and crank on its bare shaft; Brown\'s dotted crank-pin circle is notation and is not drawn, nor are the foundation, the crankshaft standard and bearing (the shaft axis is a fixed ideal constraint) or steam tints.',
+    note: 'The sectioned cylinder with its head, stuffing box and bottom, the trunk piston closed under the pitman pin, the pitman and the crank on its bare shaft; Brown\'s dotted crank-pin circle is notation and is not drawn, nor is a crankshaft standard (the shaft axis is a fixed ideal constraint). A port in the head and one in the bottom carry the steam; translucent steam shows high-pressure steam above the piston on the down-stroke and the same steam working expansively below it on the up-stroke.',
   },
   422: {
-    remove: ['fixed-foundation-of-sector-cylinder-A', '(?:counter)?clockwise-steam-passage-from-D-to-A', '(?:counter)?clockwise-chamber-admission-indicator', 'white-valve-D-position-index', 'cutaway-back-of-sector-steam-space'],
-    note: 'Section of the vase-shaped casing A with its side passages, foot and the boss of rock shaft C, the sector chamber with piston B, and slide valve D in its chest above; no bed plate, loose pipes or steam markers are drawn.',
+    note: 'Section of casing A on its foot: the sector chamber with vane piston B on rock shaft C, the curved tongue closing its top, the two passages from the valve face running over the tongue and down round its ends into the chamber corners, and slide valve D in its chest with the exhaust port under it; translucent steam fills the space behind B and the chest, the exhausting space is faint.',
   },
   423: {
-    remove: ['left-fixed-cylinder-frame', 'right-fixed-cylinder-frame', '(?:top|bottom)-outer-side-induction-opening-indicator', 'cutaway-(?:top|bottom)-outer-steam-space', 'common-central-exhaust-space-between-the-two-pistons'],
-    note: 'Section of Root\'s double-quadrant engine: the closed cast casing on its foot enclosing both quadrant chambers, the two pistons B on their pivots, the common crank D and valve a; Brown\'s dotted circle round D is notation and is not drawn, nor are legs, steam tints or steam markers.',
+    note: 'Section of Root\'s double-quadrant engine on its cast frame: one open cavity holding both single-acting pistons B on their pivots with the common crank D between them, the top passage over the curved wall of the upper quadrant turning down round its end, the right passage down behind the end wall of the lower quadrant, and the rocking plug valve a under the inlet; the space between the pistons is not walled off and exhausts through the back. Brown\'s dotted crank circle is notation and is not drawn. Translucent steam fills the spaces joined to the inlet; exhausting spaces are faint.',
   },
   424: {
     camera: [0, 0, 1],
@@ -803,8 +798,7 @@ export default {
   },
   426: {
     camera: [0.08, 0.05, 1],
-    remove: ['(?:positive|negative)-piston-A-motion-marker', 'simultaneous-steam-action-indicator-on-(?:positive|negative)-piston-A', '(?:induction|eduction)-arrow-side-indicator'],
-    note: 'Front elevation of the casing on its cast foot, drum B and the diametral pistons A standing upright against the casing wall, as Brown draws them; no bed slab, motion markers or steam spheres are drawn.',
+    note: 'Section of the cylinder on its cast foot with the two abutments D where it closes on hub C, and two channels in each neck, one either side of its abutment; pistons A slide in the grooves of C and follow the cylinder wall. Translucent steam fills the spaces joined to the induction channels; the spaces joined to the eduction channels are faint.',
   },
   427: {
     camera: [0.08, 0.05, 1],
@@ -813,8 +807,7 @@ export default {
   },
   428: {
     camera: [0.08, 0.05, 1],
-    remove: ['visible-spin-marker-on-roller-A-[123]', 'fixed-angular-material-witness-on-liner-E-\\d+', '(?:induction|eduction)-steam-path-indicator', 'illustrative-(?:high-pressure-steam|eduction-region)-outside-flexible-liner'],
-    note: 'Front elevation of the round casing filleted into its two open port necks and standing on its cast foot, arms B and rollers A, as Brown draws it; no bed slab, spin markers, liner witnesses or steam tints are drawn.',
+    note: 'Section of the round casing on its cast foot with its two port necks, each with two channels either side of the clamp that holds the india-rubber lining E; arms B carry rollers A that pinch E against the bore. Translucent steam fills the space behind the rubber where it is pressed in against the rollers; exhausting spaces are faint.',
   },
   429: {
     camera: [0.08, 0.05, 1],
@@ -824,7 +817,7 @@ export default {
   430: {
     camera: [0.08, 0.05, 1],
     remove: ['falling-feed-water-droplet-\\d+', 'shaft-connected-bearing-pedestal', 'fixed-overshot-wheel-foundation'],
-    note: 'Side elevation of the overshot wheel under the headrace, in its masonry pit whose breast falls from the flume and curves close round the lower left of the wheel to the tail floor, as Brown draws it. Brown draws no bearing or pedestal, so the shaft ends as a plain stub. No rotation marker is drawn. The feed pours as one sheet; no droplet beads ride it.',
+    note: 'Side elevation of the overshot wheel under the headrace, in its masonry pit whose breast falls from the flume and curves close round the lower left of the wheel to the tail floor, as Brown draws it. Brown draws no bearing or pedestal, so the shaft ends as a plain stub. No rotation marker is drawn. Brown’s buckets are bent, slanted boards holding the water down the descending side. The feed runs along the headrace and pours off its end as one continuous sheet on a projectile path into the buckets; the spilled water falls from the lower right as one sheet to the tail floor; no droplet beads ride either.',
   },
   431: {
     camera: [0.08, 0.05, 1],
@@ -839,32 +832,32 @@ export default {
   433: {
     camera: [0.6, 0.42, 1],
     remove: ['falling-jet-motion-marker-\\d+'],
-    note: 'Raised side view of the flat-bladed runner on its hanging shaft, the open spout climbing out of the picture to the upper right and its spray striking the far blades, as Brown draws it; no floor disc, basin or jet beads.',
+    note: 'Raised side view of the flat-bladed runner on its hanging shaft, the open spout climbing out of the picture to the upper right and its jet striking the far blades, as Brown draws it; no floor disc, basin or jet beads. The water runs down the spout and falls as one continuous sheet on its projectile path; the broken water drops from the floats as thin falling sheets and drops.',
   },
   434: {
     camera: [0, 1, 0.12],
     remove: ['continuous-center-to-circumference-water-path-\\d+', 'outward-flow-marker-path-\\d+-particle-\\d+', 'circumferential-outward-water-discharge'],
-    note: 'Plan of the turbine wheel A inside the guide ring B, as Brown draws it. Streamline tubes, flow particles and the hose-like discharge ring of the offline model are flow notation and are not presented.',
+    note: 'Plan of the eight fixed curved guides A inside the heavy ring and the outer wheel B with eighteen oppositely curved buckets, in Brown’s proportions. Streamline tubes, flow particles and the hose-like discharge ring of the offline model are flow notation and are not presented; the water shows as one continuous translucent sheet per guide passage, thrown off the rim.',
   },
   435: {
     camera: [0, 1, 0.12],
     remove: ['continuous-outer-guide-to-central-discharge-path-\\d+', 'inward-flow-marker-path-\\d+-particle-\\d+', 'circumferential-water-supply-to-fixed-outer-guides', 'water-discharging-downward-at-turbine-center'],
-    note: 'Plan of the inner guides b and outer wheel a, as Brown draws it. Streamline tubes, flow particles and the hose-like supply ring of the offline model are flow notation and are not presented; nor is the ring of discharge water that hung free below the runner centre (Brown leaves the centre open).',
+    note: 'Plan of the fixed outer guides a (radial at the rim, bending to run tangentially into the wheel) and the inner wheel b, in Brown’s proportions, with the shaft end in the hub. The water shows as one continuous translucent sheet per representative passage, falling through the open centre. Streamline tubes, flow particles and the hose-like supply ring of the offline model are flow notation and are not presented; nor is the ring of discharge water that hung free below the runner centre (Brown leaves the centre open).',
   },
   436: {
     camera: [0.04, 0.02, 1],
     remove: ['continuous-axial-flow-path-through-guide-a-and-runner-c-\\d+', 'downward-flow-marker-path-\\d+-particle-\\d+'],
-    note: 'Sectional elevation of the case b under its top cover, the broad chute entering at upper right, wheel a and the step c on its bridge, as Brown draws it; no overhead beam, base disc or tailwater disc is drawn. Flow paths and particles are notation and are not presented.',
+    note: 'Sectional elevation of the case b under its top cover, the broad chute entering at upper right, the helical shutes a over the helical wheel c and the step on its bridge, as Brown draws it; the trunk wall is open across the chute mouth. No overhead beam, base disc or tailwater disc is drawn. Flow paths and particles are notation and are not presented; the water runs down the chute as one continuous sheet into the trunk, which stands full over the shutes (both cut on the section plane).',
   },
   437: {
     camera: [0, 1, 0.12],
-    remove: ['fixed-foundation-under-volute-wheel', 'fixed-upper-bearing-of-volute-wheel-shaft', 'bored-upper-bearing-crossbeam', 'upper-bearing-support-post', 'clockwise-volute-flow-marker-\\d+', 'lower-escape-flow-marker-path-\\d+-particle-\\d+', 'water-escaping-down-through-inclined-bucket-opening-\\d+'],
-    note: 'Plan of the scroll case and wheel with its guides a and floats c, as Brown draws it; no foundation or upper bearing bridge is drawn. Flow markers and the thin escape-path tubes under the runner are notation and are not presented; the volute water stays.',
+    remove: ['fixed-foundation-under-volute-wheel', 'fixed-upper-bearing-of-volute-wheel-shaft', 'bored-upper-bearing-crossbeam', 'upper-bearing-support-post', 'clockwise-volute-flow-marker-\\d+', 'lower-escape-flow-marker-path-\\d+-particle-\\d+', 'water-escaping-down-through-inclined-bucket-opening-\\d+', 'tailwater-basin-below-inclined-outlet-buckets'],
+    note: 'Plan of the scroll case and wheel with its guides a and floats c, as Brown draws it; no foundation or upper bearing bridge is drawn. Flow markers and the thin escape-path tubes under the runner are notation and are not presented. The water fills the scroll passage and the vane ring to one level, fed through the open inlet duct, and falls away in sheets below the bucket openings; the free-floating tailwater disc is not presented (Brown draws no tailrace).',
   },
   438: {
-    camera: [0.08, 0.05, 1],
+    camera: [0.08, 0.2, 1],
     remove: ['visible-reaction-mill-shaft-rotation-marker', 'inlet-water-marker-\\d+', 'tangential-exhaust-marker-arm-\\d+-particle-\\d+'],
-    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn. The arms throw continuous water jets; the flow beads of the offline model are not presented.",
+    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn. The arms throw continuous water jets; the flow beads of the offline model are not presented. The view is a little from above, as Brown's open funnel shows; the flume is an open trough whose water pours from its lip in one continuous stream into the water standing in the funnel.",
   },
   439: {
     camera: [0.08, 0.35, 1],
@@ -872,9 +865,9 @@ export default {
     note: 'The pulley, rope, bucket with its projecting valve stem, counterweight and water stream; no gallows frame, ground, striking anvil, white pulley stripe or rope marker is drawn. No flow beads in the falling stream.',
   },
   440: {
-    camera: [0.2, 0.24, 1],
+    camera: [-0.12, 0.55, 1],
     remove: ['visible-trough-angle-index', 'fixed-(?:left|right)-trough-travel-stop', 'continuous-inlet-flow-marker-\\d+'],
-    note: 'Nearly side-on view, a little from above, of the wedge-shaped double trough on its pivot standard, braces and open plank frame under the inlet flume, which Brown breaks off and which ends just beyond the crop with its water; no angle index or travel-stop blocks are drawn. No flow beads in the falling stream.',
+    note: 'View of the wedge-shaped double trough on its pivot standard, braces and open plank frame under the inlet flume, which Brown breaks off and which ends just beyond the crop with its water; no angle index or travel-stop blocks are drawn. No flow beads in the falling stream. The view is from a little to the left and above, so the raised half and its water show. The flume water and its fall are one continuous stream landing beside the divider foot in the raised half; each half empties from its open outer end in one falling stream as it tips.',
   },
   441: {
     camera: [0, 0.01, 1],
@@ -889,7 +882,7 @@ export default {
   443: {
     camera: [-0.3, 0.5, 1],
     remove: ['fixed-archimedes-screw-base', 'fixed-stream-bed-around-lower-water-wheel', 'axial-driving-stream-marker-\\d+', 'visible-one-to-one-screw-rotation-index', 'fixed-oblique-bearing-support-\\d', 'finite-bearing-to-post-bridge-\\d', 'fixed-oblique-screw-bearing-\\d'],
-    note: 'The oblique screw casing with its spiral passage, the solid paddle disc at its lower end in the ruled stream, the bracket holding the top of the shaft and the trough. Brown draws no base slab, bed box, posts, bearing collars round the casing, stream markers or rotation stripe.',
+    note: 'The oblique screw casing with its spiral passage, the solid paddle disc at its lower end in the ruled stream, the bracket holding the top of the shaft and the trough. Brown draws no base slab, bed box, posts, bearing collars round the casing, stream markers or rotation stripe. Brown dots the spiral inside the casing, so the casing takes the shared see-through style: the flight and the water pocket trapped in each turn show as they climb, and the lifted water pours from the open top in one stream into the trough.',
   },
   444: {
     camera: [0, 0.02, 1],
@@ -933,8 +926,7 @@ export default {
   },
   455: {
     camera: [0, 0.01, 1],
-    remove: ['fixed-old-rotary-pump-foundation', 'fixed-casing-foot-not-drawn-by-brown', 'white-rotor-rotation-index'],
-    note: 'Sectional elevation of the casing, folding valves and apertures; no foundation, feet or white rotor index is drawn.',
+    note: 'Sectional elevation of the casing with its abutment, the mutilated drum and its two segment valves, and the round apertures; the factory builds no foundation, feet or rotor index.',
   },
   456: {
     camera: [0, 0.01, 1],
@@ -948,8 +940,7 @@ export default {
   },
   461: {
     camera: [0, 0.02, 1],
-    remove: ['fixed-foundation-below-swinging-gutter-water-lift'],
-    note: 'Elevation of the serpentine swinging gutters, drawn as slender pipes with elbow boxes, over the ruled water they dip into; no foundation slab or water block is drawn.',
+    note: 'Elevation of the swinging lattice as Brown draws it: six horizontal pipes with square boxes at their right ends and tilted boxes under their left ends, six parallel diagonals passing behind them from each left box to the right box two rows up, the crossed braces on the axis, the two dotted posts and the pool; the pipes are cut open along their front walls to show the water and flaps.',
   },
   462: {
     remove: ['fixed-frame-supporting-upper-powered-chain-wheel'],
@@ -970,7 +961,7 @@ export default {
   466: {
     camera: [0, 0.03, 1],
     remove: ['fixed-foundation-under-hydrostatic-press-and-hand-pump', 'modeled-relief-return-valve-for-lowering-press', 'active-return-water-from-relief-valve-to-reservoir'],
-    note: 'Sectional elevation of the press, ram cylinder, pipe, hand pump and open reservoir, the reservoir standing on the ground beside the press; no foundation slab or relief valve is drawn.',
+    note: 'Sectional elevation of the press, ram cylinder, pipe, hand pump and open reservoir, the reservoir standing on the ground beside the press; no foundation slab is drawn. The ram is let down through a screw-down release valve on the pressure pipe inside the cistern (its T handle above the water, like Brown\'s T beside the weighted valve), so the cistern level falls as the ram rises and recovers as it is let down.',
   },
   467: {
     camera: [0, 0.02, 1],

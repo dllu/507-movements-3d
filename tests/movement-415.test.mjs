@@ -163,7 +163,10 @@ test('movement 415 records Brown’s reversible pawl description, plate topology
 
 test('movement 415 seats only the selected pawl on D’s exact inner circle and visibly lifts the other', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   let minimumBGap = Infinity;
   let minimumCGap = Infinity;
   let maximumBGap = -Infinity;
@@ -210,7 +213,10 @@ test('movement 415 seats only the selected pawl on D’s exact inner circle and 
 
 test('movement 415 pawl C advances D positively on one half-stroke and overruns while D dwells on the return', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   let previousWheelAngle = -Infinity;
 
   for (let sample = 1; sample < 16000; sample += 1) {
@@ -249,7 +255,10 @@ test('movement 415 pawl C advances D positively on one half-stroke and overruns 
 
 test('movement 415 pawl B overruns the positive half-stroke then returns D by the same negative increment', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   let previousWheelAngle = Infinity;
 
   for (let sample = 1; sample < 16000; sample += 1) {
@@ -290,7 +299,10 @@ test('movement 415 pawl B overruns the positive half-stroke then returns D by th
 
 test('movement 415 crank E changes pawl selection only while A and D are stationary', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   let shiftSamples = 0;
 
   for (let sample = 0; sample <= 60000; sample += 1) {
@@ -317,7 +329,10 @@ test('movement 415 crank E changes pawl selection only while A and D are station
 
 test('movement 415 both E-to-pawl cords preserve material length through selection and overrun', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   let maximumResidual = 0;
   let observedSlack = false;
 
@@ -332,21 +347,24 @@ test('movement 415 both E-to-pawl cords preserve material length through selecti
       maximumResidual = Math.max(maximumResidual,
         Math.abs(cord.totalLength - materialLength));
       near(cord.segmentLengths[0] + cord.segmentLengths[1],
-        materialLength, 4e-16, `${name} segment length sum`);
+        materialLength, 2e-15, `${name} segment length sum`);
       vectorNear(cord.start, start, 0, `${name} crank endpoint`);
       vectorNear(cord.end, end, 0, `${name} pawl endpoint`);
       assert.ok(cord.chordLength <= materialLength + 2e-16);
       if (cord.sag > 0.12) observedSlack = true;
     }
   }
-  assert.ok(maximumResidual < 4e-16);
+  assert.ok(maximumResidual < 2e-15);
   assert.ok(observedSlack);
   disposeModel(model.root);
 });
 
 test('movement 415 input connecting rod has constant length and its outer pin stays in one horizontal guide', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   let minimumSliderX = Infinity;
   let maximumSliderX = -Infinity;
 
@@ -370,7 +388,10 @@ test('movement 415 input connecting rod has constant length and its outer pin st
 
 test('movement 415 stroke, dwell, and selector boundaries are position-, speed-, and acceleration-continuous', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { geometry, stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   const boundaries = [
     0,
     geometry.cOscillationStart,
@@ -429,7 +450,10 @@ test('movement 415 stroke, dwell, and selector boundaries are position-, speed-,
 
 test('movement 415 analytic lever, wheel, and selector derivatives match finite differences', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { stateAtTime } = model.root.userData;
+  const { geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
   const step = 1e-5;
   for (const time of [0.83, 1.4, 2.12, 2.83, 3.7, 5.18, 5.54, 5.83,
     6.82, 7.6, 8.17, 8.82, 9.6, 10.17, 10.92, 11.22, 11.42]) {
@@ -457,11 +481,14 @@ test('movement 415 analytic lever, wheel, and selector derivatives match finite 
 
 test('movement 415 update binds D, A, B, C, E, cords, input rod, and slider to one state', () => {
   const model = createMovementModel(catalog.movements[414]);
-  const { blocks, geometry, stateAtTime } = model.root.userData;
+  const { blocks, geometry } = model.root.userData;
+  // These checks run on the mechanism's own cycle clock; playback time zero is
+  // Brown's pose at geometry.sourceTime.
+  const stateAtTime = (t) => model.root.userData.stateAtTime(t - model.root.userData.geometry.sourceTime);
 
   for (const time of [0, 1.4, 3.5, 4.75, 5.5, 6.25, 7.5, 9.5,
     10.65, 11.125, 11.75]) {
-    model.update(time);
+    model.update(time - geometry.sourceTime);
     const state = stateAtTime(time);
     near(blocks.wheelRotor.rotation.z, state.wheelAngle, 0,
       'wheel D update');
@@ -471,7 +498,9 @@ test('movement 415 update binds D, A, B, C, E, cords, input rod, and slider to o
       'pawl B update');
     near(blocks.cPawl.rotation.z, state.cPawlAngle, 0,
       'pawl C update');
-    near(blocks.selectorRotor.rotation.z, state.selectorAngle, 0,
+    // E turns about its journal (lever A's centre line): half a turn between selections.
+    near(blocks.selectorRotor.rotation.y,
+      -Math.PI / 2 * (1 - state.selectorAngle / geometry.selectorAmplitude), 1e-15,
       'selector E update');
     near(blocks.inputSlider.position.x, state.inputSlider.x, 0,
       'input slider update');

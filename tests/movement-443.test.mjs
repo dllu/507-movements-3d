@@ -307,7 +307,7 @@ test('movement 443 each individual flow marker resets only while invisibly C2-fa
     update(resetRevolution * geometry.shaftRevolutionDuration);
     assert.equal(blocks.waterPockets[index].visible, false);
     near(blocks.waterPockets[index].scale.x, 0, 0,
-      `rendered marker ${index} has zero reset scale`);
+      `rendered pocket ${index} has zero reset scale`);
   }
   const source = stateAtInputAngle(0);
   const closure = stateAtInputAngle(FULL_TURN * geometry.helixTurns);
@@ -355,11 +355,18 @@ test('movement 443 update binds the rotor and flow markers while fixed casing su
     sameAngle(blocks.rotor.rotation.y, state.screwAngle, 2e-15,
       `rotor update at ${shaftRevolutions} revolutions`);
     state.waterPocketStates.forEach((pocket, index) => {
-      vectorNear(blocks.waterPockets[index].position,
-        pocket.localPosition, 0,
-      `flow marker ${index} position at ${shaftRevolutions}`);
-      near(blocks.waterPockets[index].scale.x, pocket.scale, 0,
-        `flow marker ${index} scale at ${shaftRevolutions}`);
+      // Pass 69: each pocket is an annular sector of the passage centred on
+      // the gravity-low line at the pocket's axial coordinate.
+      const mesh = blocks.waterPockets[index];
+      const lowLine = Math.atan2(pocket.localPosition.z, pocket.localPosition.x);
+      vectorNear(mesh.position, new THREE.Vector3(geometry.pocketCentreRadius * Math.cos(lowLine),
+        pocket.localPosition.y, geometry.pocketCentreRadius * Math.sin(lowLine)), 1e-15,
+        `pocket ${index} axial position at ${shaftRevolutions}`);
+      const facing = new THREE.Vector3(1, 0, 0).applyEuler(mesh.rotation);
+      const radial = new THREE.Vector3(pocket.localPosition.x, 0, pocket.localPosition.z).normalize();
+      vectorNear(facing, radial, 1e-12, `pocket ${index} faces the low line at ${shaftRevolutions}`);
+      near(mesh.scale.x, pocket.scale, 0,
+        `pocket ${index} fade at ${shaftRevolutions}`);
       assert.equal(blocks.waterPockets[index].visible,
         pocket.scale > 0.002);
     });

@@ -8,6 +8,7 @@ import {
 import { boredRollGeometry, boredBlockGeometry, finishProcessPresentation } from './textile-planer-working-parts.js';
 import { plate, poly } from './finite-plate-geometry.js';
 import { boredPlanarLinkGeometry } from './bored-planar-link.js';
+import { boredLatheGeometry } from './bored-lathe-geometry.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -132,13 +133,36 @@ function makeToothedFeedRoller({
   const rotor = new THREE.Group();
   root.add(rotor);
 
-  // The body runs out to the tooth valleys; Brown's inner circle is its face.
+  // The body runs out to the tooth valleys.
   const valleyRadius = rootRadius;
   const core = cylinderAlongZ(valleyRadius, rollerWidth, material, 64);
   core.geometry.dispose();
   core.geometry = boredRollGeometry(valleyRadius, rollerWidth, 0.152, 160);
   core.userData.role = 'toothed-feed-roller-root-cylinder';
   rotor.add(core);
+
+  // Brown's inner circle on the roller face (about 0.74 of the tip radius) is
+  // the edge of a shallow raised hub boss on each face, chamfered so that its
+  // rim reads in the face-on view as a circle.
+  const bossRadius = toothTipRadius * 0.74;
+  const bosses = [];
+  for (const side of [-1, 1]) {
+    const face = rollerWidth / 2;
+    const profile = [
+      { radial: bossRadius, axial: face - 0.01 },
+      { radial: bossRadius, axial: face + 0.014 },
+      { radial: bossRadius - 0.035, axial: face + 0.045 },
+    ].map(({ radial, axial }) => ({ radial, axial: side * axial }));
+    const boss = new THREE.Mesh(
+      boredLatheGeometry(side > 0 ? profile : profile.reverse(), 0.152, 128),
+      material,
+    );
+    boss.rotation.x = Math.PI / 2;
+    boss.userData.role = 'toothed-feed-roller-raised-hub-boss';
+    boss.userData.side = side;
+    rotor.add(boss);
+    bosses.push(boss);
+  }
 
   const toothPitch = FULL_TURN / toothCount;
   const teeth = [];
@@ -166,6 +190,7 @@ function makeToothedFeedRoller({
     rotor,
     whiteMaterial,
   });
+  root.userData.bosses = bosses;
   root.userData.core = core;
   root.userData.faceIndexes = faceIndexes;
   root.userData.rotor = rotor;

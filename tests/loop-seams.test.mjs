@@ -20,6 +20,7 @@ export const LOOP_SEAM_ALLOWLIST = new Map([
   [73, 'Ratchet click: strong spring C rides over the ratchet tooth crest and drops in behind it (about 3%) once per index, mid-cycle; a sprung stop, not a loop reset.'],
   [191, 'Brown\'s progressive scroll gears: the driven scroll returns from its fastest to its slowest radius at the radial step once per turn, at the loop point; the drive is continuous.'],
   [217, 'Heart cam: the roller lever reverses at the cam\'s point once per turn, at the loop point; the cam turns continuously.'],
+  [428, 'India-rubber engine: the translucent steam volume is split between the two rollers and hands over from one to the other once per half-turn; the combined steam shape and all motion are continuous (docs/p69-engines-review.md).'],
   [63, 'Owned by a separate lane (spring-carried drop reverses at the loop point); recorded in docs/p60-loops-review.md, not edited here.'],
 ]);
 

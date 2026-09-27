@@ -7,7 +7,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
+import {STREAM_GRAVITY,WaterSpray,WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -410,6 +410,8 @@ function horizontalOvershotWaterWheel(movement) {
   }
   flumeWater.position.y -= .15;
   root.add(flumeWater);
+  // The continuous stream below carries the spout's water now.
+  flumeWater.visible = false;
 
   const jetControlPoint = nozzlePoint.clone().lerp(impactPoint, 0.50)
     .add(new THREE.Vector3(0, 0.30, 0));
@@ -418,64 +420,74 @@ function horizontalOvershotWaterWheel(movement) {
     jetControlPoint,
     impactPoint,
   );
-  const jet = makeTube(
-    jetCurve,
-    0.15,
-    waterMaterial,
-    'falling-tangential-jet-striking-horizontal-scoop-wheel',
-  );
-  // Brown draws the jet as a sheet of water leaving the spout mouth: one
-  // translucent sheet across the trough width that follows the fall, not a
-  // bundle of streamline tubes.
-  const jetAcross = new THREE.Vector3()
-    .crossVectors(impactTangent, new THREE.Vector3(0, 1, 0)).normalize();
-  // The visible sheet stops where it reaches the floats' upper edges
-  // (y = 0.41, with the sheet's half-thickness) instead of running on through them to the impact point.
-  let jetEndT = 1;
-  for (let lo = 0, hi = 1, i = 0; i < 40; i++) {
-    const mid = (lo + hi) / 2;
-    if (jetCurve.getPoint(mid).y > 0.53) lo = mid; else hi = mid;
-    jetEndT = (lo + hi) / 2;
-  }
-  class JetToFloats extends THREE.Curve {
-    getPoint(t, target = new THREE.Vector3()) {
-      return jetCurve.getPoint(t * jetEndT, target);
-    }
-  }
-  jet.geometry.dispose();
-  jet.geometry = waterJetGeometry(new JetToFloats(), {
-    radius: 0.045, endRadius: 0.06, width: 0.2, endWidth: 0.3,
-    widthAxis: jetAcross, segments: 40,
+  // Pass 69: the water is ONE continuous swept body (water-stream.js): it
+  // runs down the spout floor, leaves the mouth along the spout axis and
+  // falls on a true projectile path onto the floats. Its speed is what the
+  // spout's own fall gives it (frictionless, v = sqrt(2 g h)), so the jet
+  // sags only as much as gravity makes it and strikes where it lands.
+  const jetAcross = new THREE.Vector3(0, 0, 1).applyQuaternion(flume.quaternion);
+  const spoutAxis = nozzlePoint.clone().sub(flumeUpstreamPoint).normalize();
+  const spoutFloorNormal = new THREE.Vector3(0, 1, 0).applyQuaternion(flume.quaternion);
+  const streamSurfaceOffset = -0.015;
+  const mouth = nozzlePoint.clone().addScaledVector(spoutFloorNormal, streamSurfaceOffset);
+  const spoutLength = nozzlePoint.distanceTo(flumeUpstreamPoint) + spoutExtension;
+  const launchSpeed = Math.sqrt(2 * STREAM_GRAVITY * spoutLength * -spoutAxis.y);
+  const flumeStreamPath = guidedPath([
+    flumeUpstreamPoint.clone().addScaledVector(spoutAxis, -spoutExtension + 0.05)
+      .addScaledVector(spoutFloorNormal, streamSurfaceOffset),
+    mouth,
+  ], {speed: launchSpeed, samples: 10});
+  const fallPath = ballisticPath({
+    origin: mouth, velocity: spoutAxis.clone().multiplyScalar(launchSpeed), endY: 0.53, samples: 30,
   });
-  jet.material = waterJetMaterial({ opacity: 0.5 });
-  // The jet ends on the struck floats. The spent water leaves their lower
-  // edges as the falling spray Brown draws under the runner: a sheet that
-  // starts just below the floats (whose undersides are at y = -0.09) and
-  // thins out as it falls, so no water passes through the floats.
-  // The spray is flung off the floats' outer ends downstream of the strike
-  // (the water runs out along the float as the runner turns), so seen from
-  // behind it falls outside the runner rather than lining up under the jet
-  // as if the jet had run straight on through the floats and hub.
-  const spillStart = impactPoint.clone().addScaledVector(impactTangent, 0.35)
-    .addScaledVector(impactRadial, bladeOuterRadius + 0.08 - impactRadius).setY(-0.02);
-  const spillCurve = new THREE.QuadraticBezierCurve3(
-    spillStart,
-    spillStart.clone().addScaledVector(impactTangent, 0.3)
-      .addScaledVector(impactRadial, 0.1).setY(-0.55),
-    spillStart.clone().addScaledVector(impactTangent, 0.5)
-      .addScaledVector(impactRadial, 0.35).setY(-1.45),
-  );
-  const spill = new THREE.Mesh(
-    waterJetGeometry(spillCurve, {
-      radius: 0.06, endRadius: 0.1, width: 0.3, endWidth: 0.55,
-      widthAxis: jetAcross, segments: 32, fadeStart: 0.25, flare: 1.5,
-    }),
-    jet.material,
-  );
-  spill.renderOrder = 2;
-  spill.userData.role = 'spray-falling-from-struck-blades';
-  root.add(spill);
+  const strike = fallPath.points.at(-1).clone();
+  const jet = new WaterStream(joinPaths(flumeStreamPath, fallPath), {
+    width: 0.2, thickness: 0.032, widthAxis: jetAcross, widthExponent: 0.25,
+    foam: {start: 0.9, amount: 0.55}, cyclePeriod: cycleDuration, streakRate: 1.2, opacity: 0.55,
+  });
+  jet.userData.role = 'falling-tangential-jet-striking-horizontal-scoop-wheel';
+  // The broken jet leaves the struck floats as spray: the water runs out
+  // along the float as the runner carries it on, so it is thrown off the
+  // floats' outer ends downstream of the strike with their rim speed and
+  // falls, spreading and thinning, below the runner.
+  const rimSpeed = inputAngularSpeed * bladeOuterRadius;
+  // Most of the water leaves soon after the strike; what the floats carry on
+  // round is shed further downstream in thinner sheets (Brown's spray under
+  // the near blades), so there are three spills of falling flow.
+  const spills = [[0.35, 1.0], [1.6, 0.6], [2.4, 0.5]].map(([turn, flow], index) => {
+    const angle = impactAngle + turn;
+    const radial = horizontalRadial(angle);
+    const tangent = horizontalTangent(angle);
+    const start = radial.clone().multiplyScalar(bladeOuterRadius + 0.06).setY(-0.02);
+    const velocity = tangent.clone().multiplyScalar(rimSpeed * 0.3)
+      .addScaledVector(radial, 0.35).add(new THREE.Vector3(0, -0.3, 0));
+    const stream = new WaterStream(ballisticPath({origin: start, velocity, endY: -1.55, samples: 24}), {
+      width: 0.3, thickness: 0.03, widthAxis: tangent, widthExponent: 0.3, flow,
+      spread: {start: 0.15, width: 1.8, thickness: 1.3}, fadeIn: 0.1, fadeOut: 0.7,
+      cyclePeriod: cycleDuration, streakRate: 1.5, opacity: 0.42,
+    });
+    stream.userData.role = index === 0 ? 'spray-falling-from-struck-blades'
+      : `spray-shed-downstream-from-carried-blades-${index}`;
+    root.add(stream);
+    // Brown's broken drops falling beside the sheet.
+    const drops = new WaterSpray({
+      origin: start.clone().setY(-0.08), velocity, spread: 0.35, count: 12, lifetime: 0.55,
+      radius: 0.028, cyclePeriod: cycleDuration, seed: 4330 + index, originSpread: tangent.clone().multiplyScalar(0.35),
+    });
+    drops.userData.role = `drops-falling-from-blade-tips-${index + 1}`;
+    root.add(drops);
+    return stream;
+  });
+  const spill = spills[0];
   root.add(jet);
+  const impactSpray = new WaterSpray({
+    origin: strike.clone().setY(0.56),
+    velocity: impactTangent.clone().multiplyScalar(0.9).add(new THREE.Vector3(0, 1.3, 0)),
+    spread: 0.9, count: 28, lifetime: 0.36, radius: 0.035, cyclePeriod: cycleDuration, seed: 433,
+  });
+  impactSpray.userData.role = 'splash-where-jet-strikes-floats';
+  root.add(impactSpray);
+  const updateWater = collectWaterStreams(root);
   const jetMarkers = [];
   for (let markerIndex = 0; markerIndex < 9; markerIndex += 1) {
     const marker = new THREE.Mesh(
@@ -529,6 +541,7 @@ function horizontalOvershotWaterWheel(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     rotor.rotation.y = state.wheelAngle;
+    updateWater(time);
     const jetPhase = THREE.MathUtils.euclideanModulo(time / 0.82, 1);
     for (let markerIndex = 0; markerIndex < jetMarkers.length;
       markerIndex += 1) {
@@ -577,6 +590,7 @@ function horizontalOvershotWaterWheel(movement) {
       foundation,
       hub,
       hubRing,
+      impactSpray,
       jet,
       jetMarkers,
       lowerBearing,
@@ -585,6 +599,7 @@ function horizontalOvershotWaterWheel(movement) {
       rotor,
       shaft,
       spill,
+      spills,
       splashBasin,
       upperBearing,
     },

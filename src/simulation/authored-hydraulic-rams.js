@@ -1,13 +1,58 @@
 import * as THREE from 'three';
 import {horizontalRing,horizontalPlate} from './horizontal-turbine-solids.js';
-import {poly,circle,polygonClipping} from './finite-plate-geometry.js';
+import {poly,circle,plate,polygonClipping} from './finite-plate-geometry.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {
   PALETTE,
   markShadows,
   matte,
 } from './primitives.js';
-import {waterFountainGeometry, waterJetMaterial} from './water-volume.js';
+import {waterFountainGeometry, waterJetMaterial, waterVolumeMaterial} from './water-volume.js';
+import {WaterStream, ballisticPath, guidedPath, joinPaths} from './water-stream.js';
+import {latheSectionGeometry} from './cutaway-section.js';
+
+// Water in the back half of a sphere of radius R (section plane z = 0) up
+// to a level y: curved wall, level surface and the flat cut face. Fixed
+// vertex count, rewritten in place by setLevel.
+function sectionedSphereWater(R, material, SEG = 32, PROFILE = 32) {
+  const tris = SEG * PROFILE * 2 + SEG + 2 * PROFILE + 1;
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(tris * 9), 3));
+  geometry.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(tris * 9), 3));
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.renderOrder = 1;
+  const P = geometry.attributes.position.array;
+  const ring = [], cut = [];
+  mesh.setLevel = (level) => {
+    const y = THREE.MathUtils.clamp(level, -R + 1e-4, R - 1e-4);
+    const stop = Math.acos(-y / R);
+    let k = 0;
+    const put = (a, b, c) => { for (const v of [a, b, c]) { P[k++] = v[0]; P[k++] = v[1]; P[k++] = v[2]; } };
+    const at = (j, i) => {
+      const t = stop * j / PROFILE, r = R * Math.sin(t), h = -R * Math.cos(t);
+      const phi = Math.PI / 2 + Math.PI * i / SEG;
+      return [r * Math.sin(phi), h, r * Math.cos(phi)];
+    };
+    for (let j = 0; j < PROFILE; j += 1) for (let i = 0; i < SEG; i += 1) {
+      const a = at(j, i), b = at(j + 1, i), c = at(j + 1, i + 1), d = at(j, i + 1);
+      put(a, c, b); put(a, d, c);
+    }
+    ring.length = 0;
+    for (let i = 0; i <= SEG; i += 1) ring.push(at(PROFILE, i));
+    const centre = [0, ring[0][1], 0];
+    for (let i = 0; i < SEG; i += 1) put(centre, ring[i], ring[i + 1]);
+    cut.length = 0;
+    for (let j = 0; j <= PROFILE; j += 1) cut.push(at(j, 0));
+    for (let j = PROFILE; j >= 0; j -= 1) cut.push(at(j, SEG));
+    const middle = [0, (-R + y) / 2, 0];
+    for (let q = 0; q < cut.length - 1; q += 1) put(middle, cut[q], cut[q + 1]);
+    geometry.attributes.position.needsUpdate = true;
+    geometry.computeVertexNormals();
+    geometry.computeBoundingSphere();
+  };
+  mesh.setLevel(0);
+  return mesh;
+}
 
 const FULL_TURN = Math.PI * 2;
 
@@ -421,7 +466,7 @@ function hydraulicRam(movement) {
     new THREE.Vector3(-3.05, 1.08, 0),
     new THREE.Vector3(-3.05, -1.16, 0),
     new THREE.Vector3(-1.25, -1.35, 0),
-    new THREE.Vector3(1.30, -1.35, 0),
+    new THREE.Vector3(-0.37, -1.35, 0),
   ];
   const drivePipe = makeTube(
     drivePathPoints,
@@ -851,8 +896,176 @@ function hydraulicRam(movement) {
     update,
     wasteValveOpenAtPhase,
   };
+  // Pass 69 water review. The air vessel's water is a spherical segment of
+  // the globe (it used to be a cylinder poking out through the globe), its
+  // level set from the mass-balanced water volume; the neck, riser and drive
+  // pipe run full; air is not drawn. The supply trough keeps the head box
+  // topped up, and the tail water fills the sectioned tank round the ram.
+  const liveWater = [];
+  {
+    const R = chamberRadius - 0.04;
+    const vesselWater = sectionedSphereWater(R, waterVolumeMaterial({opacity: 0.42}));
+    vesselWater.userData.role = 'water-in-globular-air-vessel-below-the-air';
+    vesselWater.position.copy(chamberCenter);
+    root.add(vesselWater);
+    const sphereVolume = 4 / 3 * Math.PI * R ** 3;
+    const setVesselLevel = (fraction) => {
+      // Height h of the spherical segment holding `fraction` of the vessel.
+      let h = 2 * R * fraction;
+      for (let i = 0; i < 30; i += 1) {
+        const f = Math.PI * h * h * (3 * R - h) / 3 - fraction * sphereVolume;
+        h = THREE.MathUtils.clamp(h - f / (Math.PI * h * (2 * R - h)), 1e-4, 2 * R - 1e-4);
+      }
+      vesselWater.setLevel(-R + h);
+    };
+    // Brown draws the vessel in section: its back half, cut on the plane of
+    // the drawing like the tank and head box.
+    airChamberShell.geometry.dispose();
+    const neckR = 0.30, riserR = 0.17, outer = chamberRadius, inner = chamberRadius - 0.04;
+    const arcPoints = (r, from, to) => Array.from({length: 49}, (_, i) => {
+      const y = from + (to - from) * i / 48;
+      return [Math.sqrt(Math.max(0, r * r - y * y)), y];
+    });
+    const bottomOuter = -Math.sqrt(outer ** 2 - neckR ** 2), topOuter = Math.sqrt(outer ** 2 - riserR ** 2);
+    const bottomInner = -Math.sqrt(inner ** 2 - neckR ** 2), topInner = Math.sqrt(inner ** 2 - riserR ** 2);
+    const angle = (r, y) => Math.asin(y / r);
+    const shellProfile = [
+      ...Array.from({length: 65}, (_, i) => {
+        const a = angle(outer, bottomOuter) + (angle(outer, topOuter) - angle(outer, bottomOuter)) * i / 64;
+        return [outer * Math.cos(a), outer * Math.sin(a)];
+      }),
+      ...Array.from({length: 65}, (_, i) => {
+        const a = angle(inner, topInner) + (angle(inner, bottomInner) - angle(inner, topInner)) * i / 64;
+        return [inner * Math.cos(a), inner * Math.sin(a)];
+      }),
+    ];
+    void arcPoints;
+    airChamberShell.geometry = latheSectionGeometry(shellProfile, {segments: 64});
+    airChamberShell.material = [frameMaterial, frameMaterial];
+    airChamberShell.userData.role = 'globular-air-vessel-drawn-in-section';
+    // Brown's ram body: the drive pipe runs into a closed box under the
+    // vessel. Its top is pierced under the neck (delivery check) and under
+    // the waste valve's seat, so the current really reaches both valves.
+    const bodyX0 = -0.40, bodyX1 = 1.95, bodyY0 = -1.62, bodyY1 = -1.077, bodyZ = 0.37, t = 0.07;
+    const topPlate = polygonClipping.difference(
+      poly([[bodyX0, -bodyZ], [bodyX1, -bodyZ], [bodyX1, bodyZ], [bodyX0, bodyZ]]),
+      poly(circle([chamberCenter.x, 0], 0.26, 96)), poly(circle([1.58, 0], 0.235, 96)));
+    const leftWall = polygonClipping.difference(
+      poly([[-bodyZ, bodyY0], [bodyZ, bodyY0], [bodyZ, bodyY1], [-bodyZ, bodyY1]]),
+      poly(circle([0, -1.35], 0.14, 64)));
+    const leftGeometry = plate(leftWall, bodyX0, bodyX0 + t);
+    leftGeometry.rotateY(Math.PI / 2);
+    const ramBody = new THREE.Mesh(mergePassageParts([
+      horizontalPlate(topPlate, bodyY1 - t, bodyY1),
+      horizontalPlate(poly([[bodyX0, -bodyZ], [bodyX1, -bodyZ], [bodyX1, bodyZ], [bodyX0, bodyZ]]), bodyY0, bodyY0 + t),
+      new THREE.BoxGeometry(bodyX1 - bodyX0 - 2 * t, bodyY1 - bodyY0 - 2 * t, t).translate((bodyX0 + bodyX1) / 2, (bodyY0 + bodyY1) / 2, -bodyZ + t / 2),
+      new THREE.BoxGeometry(bodyX1 - bodyX0 - 2 * t, bodyY1 - bodyY0 - 2 * t, t).translate((bodyX0 + bodyX1) / 2, (bodyY0 + bodyY1) / 2, bodyZ - t / 2),
+      leftGeometry,
+      new THREE.BoxGeometry(t, bodyY1 - bodyY0 - 2 * t, 2 * bodyZ).translate(bodyX1 - t / 2, (bodyY0 + bodyY1) / 2, 0),
+    ]), darkMaterial);
+    ramBody.userData.role = 'fixed-ram-body-box-under-delivery-and-waste-valves';
+    root.add(ramBody);
+    wasteBody.removeFromParent();
+    wasteOutlet.removeFromParent();
+    // The neck rises from the body's top to the vessel, drawn in section
+    // like the vessel so the delivery check inside it shows.
+    chamberNeck.geometry.dispose();
+    chamberNeck.geometry = latheSectionGeometry([[.26, bodyY1], [.30, bodyY1], [.30, -0.44], [.26, -0.44]], {segments: 48});
+    chamberNeck.position.set(chamberCenter.x, 0, 0);
+    deliverySeat.geometry.dispose();
+    deliverySeat.geometry = horizontalRing(.17, .258, -.06, 0);
+    const neckWater = new THREE.Mesh(latheSectionGeometry([[0, bodyY1], [.255, bodyY1], [.255, -0.46], [0, -0.46]], {segments: 48}),
+      waterVolumeMaterial({opacity: 0.4}));
+    neckWater.position.set(chamberCenter.x, 0, 0);
+    neckWater.userData.role = 'water-filling-neck-under-and-over-delivery-check';
+    neckWater.renderOrder = 1;
+    root.add(neckWater);
+    const flow = {cyclePeriod: cycleDuration, streakRate: 1, opacity: 0.36, radialSegments: 16};
+    const riserWater = new WaterStream(guidedPath([new THREE.Vector3(chamberCenter.x, -0.20, 0),
+      new THREE.Vector3(chamberCenter.x, jetBaseY, 0)], {speed: 1, samples: 6}), {...flow, width: .12, thickness: .12});
+    riserWater.userData.role = 'water-driven-up-riser-by-air-cushion';
+    root.add(riserWater);
+    const driveStream = new WaterStream(guidedPath(drivePipe.userData.curve, {speed: 1, samples: 48}),
+      {...flow, width: .135, thickness: .135});
+    driveStream.userData.role = 'water-current-in-drive-pipe';
+    root.add(driveStream);
+    // Head supply: Brown's trough pours into the head box from the left.
+    const chute = new THREE.Group();
+    chute.userData.role = 'fixed-supply-trough-pouring-into-head-box';
+    const slope = Math.atan2(0.30, 0.95);
+    for (const [w, h, d, y, z] of [[1.0, .05, .44, 0, 0], [1.0, .16, .04, .08, -.2], [1.0, .16, .04, .08, .2]]) {
+      const part = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), frameMaterial);
+      part.position.set(0, y, z);
+      chute.add(part);
+    }
+    chute.rotation.z = -slope;
+    chute.position.set(-3.86, 2.50, 0);
+    root.add(chute);
+    const lip = new THREE.Vector3(-3.86 + 0.5 * Math.cos(slope), 2.50 - 0.5 * Math.sin(slope) + .06, 0);
+    const along = guidedPath([new THREE.Vector3(-3.86 - 0.5 * Math.cos(slope), 2.50 + 0.5 * Math.sin(slope) + .06, 0), lip], {speed: 0.9, samples: 8});
+    const velocity = new THREE.Vector3(Math.cos(slope), -Math.sin(slope), 0).multiplyScalar(0.9);
+    const surface = reservoir.position.y + reservoirWater.position.y + 0.32;
+    const pour = ballisticPath({origin: lip, velocity, endY: surface - 0.05, samples: 16});
+    const supply = new WaterStream(joinPaths(along, pour), {...flow, width: .16, thickness: .05,
+      widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.2, foam: {start: 0.85, amount: 0.3}});
+    supply.userData.role = 'supply-water-pouring-from-trough-into-head-box';
+    root.add(supply);
+    // Waste efflux: leaves under the lifted disk into the tail water, its
+    // section following the valve opening.
+    // It spills up past the lifted disk's rim and mixes into the tail water.
+    const efflux = new WaterStream(guidedPath([new THREE.Vector3(1.90, -1.10, 0), new THREE.Vector3(1.98, -0.95, 0),
+      new THREE.Vector3(2.10, -0.82, 0)], {speed: 1, samples: 12}),
+      {...flow, opacity: 0.26, width: .08, thickness: .08, fadeOut: 0.6});
+    efflux.userData.role = 'waste-efflux-into-tail-water-while-valve-open';
+    root.add(efflux);
+    wasteWater.removeFromParent();
+    // Retired: the air cushion volume (air is not drawn), the cylinder that
+    // stood in for the vessel water, and the old riser and drive columns.
+    for (const retired of [compressedAir, outputWater, driveWater, chamberWater]) retired.removeFromParent();
+    // Tail water fills the tank from its back wall to the section plane.
+    tankWater.geometry.dispose();
+    tankWater.geometry = new THREE.BoxGeometry(2.58 - (-3.35), tankWaterLevel - tankFloorTop, 1.8);
+    tankWater.position.set((2.58 - 3.35) / 2, (tankWaterLevel + tankFloorTop) / 2, 0);
+    tankWater.material = waterVolumeMaterial({opacity: 0.3});
+    tankWater.renderOrder = 1;
+    tankWater.userData.role = 'tail-water-filling-sectioned-lower-tank';
+    liveWater.push(riserWater, driveStream, supply, efflux, vesselWater, neckWater, tankWater);
+    // Streaks in the drive pipe advance with the drive current: surging while
+    // the waste valve is open, checked when it shuts (seamless each cycle).
+    const TRAVEL = 480, travel = new Float64Array(TRAVEL + 1);
+    for (let i = 1; i <= TRAVEL; i += 1) travel[i] = travel[i - 1] + driveFlowSpeedAtPhase((i - 0.5) / TRAVEL);
+    const driveTravel = (time) => {
+      const cycles = Math.floor(time / cycleDuration), u = (time / cycleDuration - cycles) * TRAVEL;
+      const i = Math.min(TRAVEL - 1, Math.floor(u));
+      const f = travel[i] + (travel[i + 1] - travel[i]) * (u - i);
+      return cycleDuration * (cycles + f / travel[TRAVEL]);
+    };
+    const base = update;
+    const fill = (time) => {
+      base(time);
+      const state = stateAtTime(time);
+      setVesselLevel(state.chamberWaterVolume / chamberTotalInternalVolume);
+      riserWater.update(time);
+      supply.update(time);
+      driveStream.update(driveTravel(time));
+      efflux.update(time);
+      efflux.setFlow(Math.max(1e-3, state.wasteValveOpen));
+      efflux.material.opacity = 0.26 * THREE.MathUtils.smoothstep(state.wasteValveOpen, 0, 0.2);
+      efflux.visible = efflux.material.opacity > 0;
+    };
+    root.userData.update = fill;
+    root.userData.blocks.vesselWater = vesselWater;
+    root.userData.blocks.airChamberShell = airChamberShell;
+    root.userData.blocks.ramBody = ramBody;
+    root.userData.blocks.neckWater = neckWater;
+    root.userData.blocks.riserWater = riserWater;
+    root.userData.blocks.supply = supply;
+    root.userData.blocks.efflux = efflux;
+    root.userData.blocks.chute = chute;
+  }
+  const liveUpdate = root.userData.update;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.08, groundY, -1.92),
+    new THREE.Vector3(-4.40, groundY, -1.92),
     new THREE.Vector3(4.08, 4.10, 1.92),
   );
   root.userData.cameraDistanceScale = 1.10;
@@ -864,11 +1077,12 @@ function hydraulicRam(movement) {
   root.userData.minimumDisplayCycleSeconds=cycleDuration;
   markShadows(root);
   base.receiveShadow = true;
-  update(0);
+  root.traverse(object => { if (object.material?.transparent) { object.castShadow = false; object.receiveShadow = false; } });
+  liveUpdate(0);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
-    update,
+    update: liveUpdate,
   };
 }
 

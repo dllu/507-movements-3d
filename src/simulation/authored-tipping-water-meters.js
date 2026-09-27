@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {WaterStream,collectWaterStreams,guidedPath,ballisticPath,joinPaths} from './water-stream.js';
 import {poly,circle,plate,turned,polygonClipping} from './finite-plate-geometry.js';
 import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
 import {
@@ -307,7 +308,7 @@ function tippingWaterMeter(movement) {
     roughness: 0.50,
   });
   const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.68,
+    opacity: 0.5,
     roughness: 0.29,
     side: THREE.DoubleSide,
     transparent: true,
@@ -396,6 +397,7 @@ function tippingWaterMeter(movement) {
     darkMaterial,
   );
   underBrace.geometry.dispose();underBrace.geometry=plate(polygonClipping.difference(poly([[-1.61,-.09],[1.61,-.09],[1.61,.09],[-1.61,.09]]),poly(circle([0,-(floorLocalY-.17)],.204,128))),-.21,.21);
+  underBrace.material = troughMaterial; // part of the trough, not a black strip
   underBrace.position.y = floorLocalY - 0.17;
   underBrace.userData.role = 'rigid-trough-underframe-centered-on-axis';
   trough.add(underBrace);
@@ -515,7 +517,10 @@ function tippingWaterMeter(movement) {
     Math.sin(flumeAngle),
     0,
   );
-  const flumeOutlet = new THREE.Vector3(streamX, streamOutletY, 0);
+  // The lip stands a little right of the axis: the slow sheet leaving it
+  // curves down to land just beside the divider foot on the raised side.
+  const flumeLipX = streamX + 0.12;
+  const flumeOutlet = new THREE.Vector3(flumeLipX, streamOutletY, 0);
   const flumeCenter = flumeOutlet.clone().addScaledVector(
     flumeDirection,
     flumeLength / 2,
@@ -554,19 +559,24 @@ function tippingWaterMeter(movement) {
   flumeWater.userData.role = 'water-running-down-the-inlet-flume';
   flume.add(flumeWater);
 
-  const fallingWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.105, 0.105, 1, 20),
-    waterMaterial,
-  );
-  fallingWater.position.set(
-    streamX,
-    (streamOutletY + streamBottomY) / 2,
-    0,
-  );
-  fallingWater.scale.y = streamOutletY - streamBottomY;
+  // Pass 69 (p69-w1): the flume water and its fall are one continuous
+  // stream: it runs down the flume floor, leaves the lip slowly and falls on
+  // a projectile path past the swinging divider top into the raised half.
+  flume.updateMatrix();
+  const onFlumeFloor = (along) => new THREE.Vector3(along, 0.075, 0).applyMatrix4(flume.matrix);
+  const lipSpeed = 0.3;
+  const fallingWater = new WaterStream(joinPaths(
+    guidedPath([onFlumeFloor(flumeLength / 2 - 0.05), onFlumeFloor(-flumeLength / 2)], {speed: lipSpeed, samples: 24}),
+    ballisticPath({origin: onFlumeFloor(-flumeLength / 2), velocity: flumeDirection.clone().multiplyScalar(-lipSpeed),
+      endY: 0.8, samples: 24}),
+  ), {
+    width: 0.3, thickness: 0.03, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.4,
+    foam: {start: 0.92, amount: 0.4}, cyclePeriod: cycleDuration, streakRate: 1.2, opacity: 0.5,
+  });
   fallingWater.userData.role =
     'fixed-location-continuous-water-fall-over-moving-divider';
   root.add(fallingWater);
+  flumeWater.visible = false; // the stream above carries the flume's water
   const streamMarkers = [];
   for (let index = 0; index < 8; index += 1) {
     const marker = new THREE.Mesh(
@@ -578,12 +588,23 @@ function tippingWaterMeter(movement) {
     streamMarkers.push(marker);
   }
 
+  // Each emptying half pours from its open outer end as one stream whose
+  // flow follows the drain rate; the pour is recomputed in place (no
+  // allocation) as the trough swings, so it always falls under gravity.
+  const spillSamples = 20;
   const makeSpill = (side) => {
-    const spill = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.11, 0.085, 1, 16),
-      paleWaterMaterial,
-    );
+    const path = {
+      points: Array.from({length: spillSamples + 1}, () => new THREE.Vector3()),
+      speeds: new Array(spillSamples + 1).fill(1),
+      times: new Array(spillSamples + 1).fill(0),
+    };
+    const spill = new WaterStream(path, {
+      width: 0.34, thickness: 0.05, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.35,
+      spread: {start: 0.55, width: 1.4, thickness: 2.2}, fadeOut: 0.3, cyclePeriod: cycleDuration,
+      streakRate: 1.3, opacity: 0.46,
+    });
     spill.userData.role = `${side}-outer-end-emptying-stream`;
+    spill.spillPath = path;
     root.add(spill);
     return spill;
   };
@@ -596,23 +617,34 @@ function tippingWaterMeter(movement) {
     updateClippedCell(water,[[minimumX,floorTopLocalY+.004],[maximumX,floorTopLocalY+.004],[maximumX,floorTopLocalY+sideWallHeight-.02],[minimumX,floorTopLocalY+sideWallHeight-.02]],angle,fill,maximumWaterDepth,troughWidth-2*sideWallThickness-.02);
   };
 
-  const updateSpill = (spill, outlet, flow) => {
-    const streamLength = Math.max(0.10, outlet.y - groundY - 0.08);
-    spill.visible = flow > 0.002;
-    spill.position.set(outlet.x, outlet.y - streamLength / 2, 0);
-    // The stream thins to a thread as the flow starts and stops, so it
-    // never appears or vanishes at full thickness.
-    const widthScale = Math.min(1, flow / 0.15) * (0.36 + 0.64 * flow);
-    spill.scale.set(widthScale, streamLength, widthScale);
+  const updateSpill = (spill, outlet, flow, side, angle) => {
+    spill.visible = flow > 0.004;
+    if (!spill.visible) return;
+    const speed = 0.9;
+    const vx = side * speed * Math.cos(angle), vy = speed * Math.sin(angle) * side;
+    const g = 9.81, dropY = outlet.y - groundY;
+    // The pour emerges from the lip as the flow starts (no full-length pop).
+    const tEnd = Math.min(1, flow / 0.3) * (vy + Math.sqrt(vy * vy + 2 * g * dropY)) / g;
+    const {points, speeds, times} = spill.spillPath;
+    for (let i = 0; i <= spillSamples; i += 1) {
+      const t = tEnd * i / spillSamples;
+      points[i].set(outlet.x + vx * t, outlet.y + vy * t - 0.5 * g * t * t, 0);
+      speeds[i] = Math.hypot(vx, vy - g * t);
+      times[i] = t;
+    }
+    spill.flow = Math.max(0.004, flow);
+    spill.setPath(spill.spillPath);
   };
 
+  const updateStreams = collectWaterStreams(root);
   const update = (time) => {
     const state = stateAtTime(time);
     trough.rotation.z = state.troughAngle;
     updateWater(leftWater, -1, state.leftFill, state.troughAngle);
     updateWater(rightWater, 1, state.rightFill, state.troughAngle);
-    updateSpill(leftSpill, state.leftOutletPoint, state.leftDrainFlow);
-    updateSpill(rightSpill, state.rightOutletPoint, state.rightDrainFlow);
+    updateSpill(leftSpill, state.leftOutletPoint, state.leftDrainFlow, -1, state.troughAngle);
+    updateSpill(rightSpill, state.rightOutletPoint, state.rightDrainFlow, 1, state.troughAngle);
+    updateStreams(time);
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 0.72, 1);
     for (let index = 0; index < streamMarkers.length; index += 1) {
       const progress = THREE.MathUtils.euclideanModulo(

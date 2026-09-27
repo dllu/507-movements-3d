@@ -46,7 +46,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 434 keeps six inner guide shutes fixed while a separate sixteen-bucket outer runner revolves', () => {
+test('movement 434 keeps eight inner guide shutes fixed while a separate eighteen-bucket outer runner revolves', () => {
   const movement = catalog.movements[433];
   const model = createMovementModel(movement);
   const data = model.root.userData;
@@ -59,20 +59,21 @@ test('movement 434 keeps six inner guide shutes fixed while a separate sixteen-b
   assert.equal(movement.fidelity, 'authored');
   assert.equal(data.archetype, ARCHETYPE);
   assert.equal(data.fidelity, 'authored');
-  assert.match(data.mechanism, /six stationary curved shutes in guide assembly A/);
-  assert.match(data.mechanism, /sixteen curved buckets in the separate outer runner B/);
+  assert.match(data.mechanism, /eight stationary curved shutes in guide assembly A/);
+  assert.match(data.mechanism, /eighteen oppositely curved buckets in the separate outer runner B/);
   assert.match(data.mechanism, /discharges radially around the circumference/);
   assert.match(data.mechanism, /only the outer bucket ring.*rotate together/);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.fixedGuideVanesRotate, false);
   assert.equal(degreesOfFreedom.runnerAndOutputShaftIndependent, false);
-  assert.equal(geometry.fixedGuideCount, 6);
-  assert.equal(geometry.runnerBucketCount, 16);
-  assert.equal(blocks.fixedGuideVanes.length, 6);
-  assert.equal(blocks.runnerBuckets.length, 16);
-  assert.equal(blocks.flowPathTubes.length, 6);
-  assert.equal(blocks.flowMarkers.length, 24);
+  assert.equal(geometry.fixedGuideCount, 8);
+  assert.equal(geometry.runnerBucketCount, 18);
+  assert.equal(blocks.fixedGuideVanes.length, 8);
+  assert.equal(blocks.runnerBuckets.length, 18);
+  assert.equal(blocks.flowPathTubes.length, 8);
+  assert.equal(blocks.flowMarkers.length, 32);
+  assert.equal(blocks.flowSheets.length, 8);
   for (const guide of blocks.fixedGuideVanes) {
     assert.equal(guide.parent, blocks.fixedGuideAssembly);
   }
@@ -101,9 +102,9 @@ test('movement 434 keeps six inner guide shutes fixed while a separate sixteen-b
   });
   assert.deepEqual(belts, []);
   assert.equal(roles.filter((role) =>
-    /^fixed-curved-guide-shute-\d+-of-six$/.test(role)).length, 6);
+    /^fixed-curved-guide-shute-\d+-of-eight$/.test(role)).length, 8);
   assert.equal(roles.filter((role) =>
-    /^curved-outer-runner-bucket-\d+-of-sixteen$/.test(role)).length, 16);
+    /^curved-outer-runner-bucket-\d+-of-eighteen$/.test(role)).length, 18);
   for (const role of [
     'fixed-inner-fourneyron-guide-assembly-A',
     'clockwise-outer-fourneyron-runner-B',
@@ -143,15 +144,15 @@ test('movement 434 preserves Brown’s stated Fourneyron topology and discloses 
   assert.equal(plate.imageWidth, 525);
   assert.equal(plate.imageHeight, 525);
   assert.deepEqual(plate.centerApproximatePixels, [252, 255]);
-  assert.equal(plate.approximateFixedGuideCount, 6);
-  assert.equal(plate.approximateOuterRunnerBucketCount, 16);
-  assert.equal(plate.approximateGuideOuterRadiusPixels, 143);
-  assert.equal(plate.approximateRunnerOuterRadiusPixels, 207);
+  assert.equal(plate.approximateFixedGuideCount, 8);
+  assert.equal(plate.approximateOuterRunnerBucketCount, 18);
+  assert.equal(plate.approximateGuideOuterRadiusPixels, 142);
+  assert.equal(plate.approximateRunnerOuterRadiusPixels, 205);
   assert.equal(evidence.explicitInBrownDescription.length, 4);
   assert.match(evidence.engravingEvidence,
-    /six broad curved guide passages.*sixteen oppositely curved bucket passages/);
+    /eight curved guides.*eighteen oppositely curved buckets/);
   assert.match(evidence.reconstructionDisclosure,
-    /Six fixed guides, sixteen runner buckets.*independently engineered/);
+    /plate-measured counts and vane sweeps are kept.*independently engineered/);
   disposeModel(model.root);
 });
 
@@ -233,7 +234,7 @@ test('movement 434 guide and discharge velocity triangles give exact clockwise r
   near(state.runnerTorqueNormalized,
     geometry.massFlowNormalized * (inletMomentum - outletMomentum),
     0, 'Euler angular-momentum torque');
-  near(state.runnerTorqueNormalized, -5.188000000000001, 1e-15,
+  near(state.runnerTorqueNormalized, -6.3605, 1e-14,
     'reconstructed clockwise torque');
   for (const angle of [-8, -1, 0, 0.7, 2.8, 9]) {
     near(stateAtInputAngle(angle).runnerTorqueNormalized,

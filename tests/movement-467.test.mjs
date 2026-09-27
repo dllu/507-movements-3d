@@ -356,7 +356,8 @@ test('movement 467 renderer moves only the outer cylinder assembly and maps cham
     near(blocks.thumbScrew.position.x,
       screwClosedX - state.thumbScrewRetreat, 1e-12,
       `thumb-screw axial position at phase ${phase}`);
-    assert.equal(blocks.returnWater.visible, state.returnFlowRate > 1e-5);
+    // The return passage stands full; the screw's retreat shows the return.
+    assert.equal(blocks.returnWater.visible, true);
     vectorNear(blocks.plunger.position, state.plungerPin, 1e-12,
       `plunger at phase ${phase}`);
     near(blocks.pumpLever.rotation.z, state.leverAngle, 1e-12,

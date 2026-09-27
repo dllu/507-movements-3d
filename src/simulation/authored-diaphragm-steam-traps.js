@@ -3,6 +3,7 @@ import {fitPistonGuide} from './piston-guide-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -120,6 +121,97 @@ function flangedCastCasing(root) {
   b.outletPipeB.material = material;
   // Brown ends A and B as broken pipe; the dark mouth rims are not drawn.
   for (const rim of [b.inletTopRim, b.outletBottomRim]) rim.removeFromParent();
+}
+
+
+// Condensate in the rear half-section: every body is a half lathe (z <= 0)
+// on the casing's axis, like the casing itself.
+const HALF_LATHE_SEGMENTS = 48;
+function halfLatheBuffer(pointCount) {
+  const geometry = new THREE.BufferGeometry();
+  const count = (HALF_LATHE_SEGMENTS + 1) * pointCount;
+  geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(count * 3), 3));
+  const index = [];
+  for (let i = 0; i < HALF_LATHE_SEGMENTS; i += 1) {
+    for (let j = 0; j < pointCount - 1; j += 1) {
+      const a = i * pointCount + j, b = a + pointCount;
+      index.push(a, b, a + 1, a + 1, b, b + 1);
+    }
+  }
+  geometry.setIndex(index);
+  return geometry;
+}
+function writeHalfLathe(geometry, profile) {
+  const position = geometry.attributes.position;
+  for (let i = 0; i <= HALF_LATHE_SEGMENTS; i += 1) {
+    const phi = Math.PI / 2 + Math.PI * i / HALF_LATHE_SEGMENTS;
+    const sin = Math.sin(phi), cos = Math.cos(phi);
+    for (let j = 0; j < profile.length; j += 1) {
+      const [r, y] = profile[j];
+      position.setXYZ(i * profile.length + j, r * sin, y, r * cos);
+    }
+  }
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  geometry.computeBoundingSphere();
+  geometry.computeBoundingBox();
+}
+
+// Hoard & Wiggin's trap passes water of condensation, so the water is shown:
+// it gathers in A on the shut seat while steam keeps D hot, and when D has
+// cooled and dropped it runs out through the opened seat, down the outside of
+// D and its diaphragm flange, across the floor of the box and out through B.
+// The coil feeds A at the mean discharge rate, so the stored water in A rises
+// while the seat is shut and falls while it drains, closing every cycle.
+function condensateWater(root, stateAtTime, cycleDuration, liftScale) {
+  const b = root.userData.blocks;
+  const material = waterVolumeMaterial({ opacity: 0.5 });
+  material.side = THREE.DoubleSide;
+  const annulus = [0.405, 0.655], seatTop = 1.70, seatBore = [0.405, 0.475];
+  const area = Math.PI * (annulus[1] ** 2 - annulus[0] ** 2);
+  // Stored volume from the discharge history (inflow = mean discharge).
+  const samples = 512, flows = [];
+  for (let i = 0; i < samples; i += 1) flows.push(stateAtTime(cycleDuration * i / samples).flowFraction);
+  const mean = flows.reduce((sum, f) => sum + f, 0) / samples;
+  const stored = [0];
+  for (let i = 1; i <= samples; i += 1) stored.push(stored[i - 1] + (mean - flows[i - 1]));
+  const lowest = Math.min(...stored), highest = Math.max(...stored);
+  const levelRange = 0.62, lowestLevel = seatTop + 0.08;
+  const levelAt = (time) => {
+    const u = THREE.MathUtils.euclideanModulo(time, cycleDuration) / cycleDuration * samples;
+    const k = Math.min(samples - 1, Math.floor(u)), w = u - k;
+    const v = stored[k] * (1 - w) + stored[k + 1] * w;
+    return lowestLevel + levelRange * (v - lowest) / (highest - lowest);
+  };
+  const addWater = (geometry, role, own = false) => {
+    const mesh = new THREE.Mesh(geometry, own ? material.clone() : material);
+    mesh.userData.role = role;
+    mesh.renderOrder = 1;
+    mesh.castShadow = false;
+    root.add(mesh);
+    return mesh;
+  };
+  const seatWater = addWater(halfLatheBuffer(5), 'condensate-sealing-the-seat-bore-of-A');
+  writeHalfLathe(seatWater.geometry, [[seatBore[0], 1.50], [seatBore[1], 1.50], [seatBore[1], seatTop], [seatBore[0], seatTop], [seatBore[0], 1.50]]);
+  const pool = addWater(halfLatheBuffer(5), 'condensate-gathering-in-A-on-the-seat');
+  const film = addWater(halfLatheBuffer(10), 'condensate-running-down-D-to-the-box-floor', true);
+  const outlet = addWater(halfLatheBuffer(5), 'condensate-leaving-through-B', true);
+  writeHalfLathe(outlet.geometry, [[0.001, -1.70], [0.66, -1.70], [0.66, -3.18], [0.001, -3.18], [0.001, -1.70]]);
+  const store = { area, levelAt, levelRange, lowestLevel, mean };
+  const update = (time, state) => {
+    const level = levelAt(time);
+    writeHalfLathe(pool.geometry, [[annulus[0], seatTop], [annulus[1], seatTop], [annulus[1], level], [annulus[0], level], [annulus[0], seatTop]]);
+    const lift = state.valveLiftMetre * liftScale;
+    // Over D's shoulder edge, its waist and dished foot to the flange rim,
+    // down to the floor and in to the mouth of B.
+    writeHalfLathe(film.geometry, [[0.82, 1.10], [0.815, 0.775 + lift], [0.83, 0.62 + lift], [0.90, 0.30 + lift],
+      [0.995, 0.08 + lift], [1.025, -0.07 + lift], [1.03, -1.40], [1.02, -1.665], [0.85, -1.672], [0.70, -1.69]]);
+    const flow = THREE.MathUtils.clamp(state.flowFraction, 0, 1);
+    film.material.opacity = material.opacity * THREE.MathUtils.smoothstep(flow, 0, 0.25);
+    outlet.material.opacity = material.opacity * THREE.MathUtils.smoothstep(flow, 0, 0.25);
+  };
+  Object.assign(b, { condensateFilm: film, condensateOutlet: outlet, condensatePool: pool, condensateSeat: seatWater });
+  return { store, update };
 }
 
 function thermalDiaphragmSteamTrap(movement) {
@@ -811,6 +903,15 @@ function thermalDiaphragmSteamTrap(movement) {
   root.userData.groundFloorY = -3.34;
   correctEjectorTrapParts(root,477,update);
   flangedCastCasing(root);
+  {
+    const condensate = condensateWater(root, stateAtTime, cycleDuration, liftDisplayScaleSceneUnitPerMetre);
+    const working = root.userData.updateWorkingParts;
+    root.userData.updateWorkingParts = (time, state) => {
+      working?.(time, state);
+      condensate.update(time, state);
+    };
+    root.userData.condensateStore = condensate.store;
+  }
   fitPistonGuide(root, update, cycleDuration);
   // Brown draws a flat section; a narrow view keeps the cut case flat.
   root.userData.cameraDirection.set(0.05, 0.08, 15);

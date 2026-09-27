@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
+import {WaterStream,collectWaterStreams,guidedPath} from './water-stream.js';
 import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
 import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
 import {
@@ -70,7 +71,7 @@ function breastWaterWheel(movement) {
   const fillTravelAngle = THREE.MathUtils.degToRad(18);
   const drainStartTravelAngle = THREE.MathUtils.degToRad(86);
   const drainEndTravelAngle = THREE.MathUtils.degToRad(112);
-  const breastStartAngle = THREE.MathUtils.degToRad(13);
+  const breastStartAngle = THREE.MathUtils.degToRad(-9);
   const breastEndAngle = THREE.MathUtils.degToRad(-110);
   const breastInnerRadius = 2.78;
   const breastOuterRadius = 3.22;
@@ -396,39 +397,34 @@ function breastWaterWheel(movement) {
   root.add(shaft);
   const bearingParts=wheelBearings(root,shaft,frameMaterial,-3.29);
 
+  // Pass 69 (p69-w1): Brown's hatched ground is one masonry section: the
+  // level headrace floor ends at a lip just below the axle, from which the
+  // breast curves close round the wheel to the bottom and the tail bed runs
+  // away to the left. The headrace no longer ends against a breast wall that
+  // rose above it (which had blocked the inlet and let the feed pass through
+  // masonry); the water now enters the open cells between the lip and the
+  // headwater surface. The front cheek is cut away on the camera plane as
+  // Brown draws it; the rear cheek closes the cells behind.
   const breastChannelRails = [];
-  const channelSegmentCount = 24;
-  const segmentAngle = (breastEndAngle - breastStartAngle)
-    / channelSegmentCount;
-  const channelCenterRadius = (breastInnerRadius + breastOuterRadius) / 2;
-  const channelRadialThickness = breastOuterRadius - breastInnerRadius;
-  for (const face of [-1, 1]) {
-    for (let segmentIndex = 0; segmentIndex < channelSegmentCount;
-      segmentIndex += 1) {
-      const angle = breastStartAngle
-        + (segmentIndex + 0.5) * segmentAngle;
-      const rail = new THREE.Mesh(
-        new THREE.BoxGeometry(
-          Math.abs(segmentAngle) * channelCenterRadius * 1.08,
-          channelRadialThickness,
-          0.18,
-        ),
-        frameMaterial,
-      );
-      rail.position.set(
-        channelCenterRadius * Math.cos(angle),
-        channelCenterRadius * Math.sin(angle),
-        face * 0.64,
-      );
-      rail.rotation.z = angle + Math.PI / 2;
-      rail.userData.role =
-        `fixed-${face < 0 ? 'rear' : 'front'}-breast-channel-segment-${segmentIndex + 1}`;
-      root.add(rail);
-      breastChannelRails.push(rail);
-    }
-  }
-  const breastFloor=new THREE.Mesh(plate(sector(breastInnerRadius,breastOuterRadius,breastEndAngle,0,256),-.55,.55),frameMaterial);breastFloor.userData.role='full-width-curved-breast-floor';root.add(breastFloor);
-  const innerCheeks=[];for(const face of[-1,1]){const material=frameMaterial.clone();if(face>0){material.transparent=true;material.opacity=.24;material.depthWrite=false;}const cheek=new THREE.Mesh(plate(sector(1.80,breastOuterRadius,breastEndAngle,breastStartAngle,256),face<0?-.69:.60,face<0?-.60:.69),material);cheek.userData.role='stationary-breast-side-cheek';root.add(cheek);innerCheeks.push(cheek);}
+  const lipY = breastInnerRadius * Math.sin(breastStartAngle);
+  const headSurfaceY = 0.42;
+  const tailSurfaceY = -2.07;
+  const raceLeftX = -4.45, raceRightX = 5.9;
+  const tailBedLeftY = -3.05;
+  const arc = (radius, from, to, count) => Array.from({length: count + 1}, (_, i) => {
+    const angle = from + (to - from) * i / count;
+    return [radius * Math.cos(angle), radius * Math.sin(angle)];
+  });
+  const breastArc = arc(breastInnerRadius, breastStartAngle, breastEndAngle, 96);
+  const masonryOutline = [[raceRightX, lipY], ...breastArc, [raceLeftX, tailBedLeftY], [raceLeftX, -3.6], [raceRightX, -3.6]];
+  const breastFloor = new THREE.Mesh(plate([[masonryOutline]], -0.9, 0.9), frameMaterial);
+  breastFloor.userData.role = 'masonry-headrace-floor-curved-breast-and-tail-bed';
+  root.add(breastFloor);
+  const innerCheeks = [];
+  const cheek = new THREE.Mesh(plate(sector(1.80, breastInnerRadius, breastEndAngle, breastStartAngle, 256), -.69, -.60), frameMaterial);
+  cheek.userData.role = 'stationary-breast-side-cheek';
+  root.add(cheek);
+  innerCheeks.push(cheek);
   const channelWater = makeTube(
     arcPoints(
       wheelOuterRadius + 0.08,
@@ -443,68 +439,58 @@ function breastWaterWheel(movement) {
   );
   channelWater.visible=false;root.add(channelWater);
 
-  const headrace = new THREE.Mesh(
-    new THREE.BoxGeometry(2.56, 0.24, 1.42),
-    frameMaterial,
-  );
-  headrace.position.set(4.28, -0.03, -0.18);
-  headrace.rotation.z = 0.035;
-  headrace.userData.role = 'fixed-headrace-nearly-level-with-wheel-axle';
-  root.add(headrace);
-  const headraceWater = new THREE.Mesh(
-    new THREE.BoxGeometry(2.44, 0.16, 1.04),
-    paleWaterMaterial,
-  );
-  headraceWater.position.set(4.28, 0.14, 0.03);
-  headraceWater.rotation.z = 0.035;
+  const headrace = breastFloor;
+  const channelHalfWidth = 0.55;
+  const inletTopAngle = Math.asin(headSurfaceY / breastInnerRadius);
+  const headraceWater = new THREE.Mesh(plate([[[
+    [raceRightX, lipY + 0.003], ...arc(breastInnerRadius, breastStartAngle, inletTopAngle, 24), [raceRightX, headSurfaceY],
+  ]]], -channelHalfWidth, channelHalfWidth), waterVolumeMaterial({opacity: 0.42}));
+  headraceWater.renderOrder = 1;
   headraceWater.userData.role =
     'headwater-entering-breast-wheel-nearly-at-axle-level';
   root.add(headraceWater);
 
-  const gateTower = new THREE.Mesh(
-    new THREE.BoxGeometry(0.58, 4.58, 1.40),
-    frameMaterial,
-  );
-  gateTower.position.set(4.02, 1.47, -0.20);
+  // Sluice: two slotted posts each side of the race with the hatched plank
+  // leaf running between them, raised just clear of the headwater.
+  const gateX = 4.16, leafHalf = 0.11, postWidth = 0.26, postTopY = 2.78;
+  const leafBottomY = headSurfaceY + 0.06;
+  const gateTower = new THREE.Group();
   gateTower.userData.role = 'fixed-breast-wheel-inlet-sluice-frame';
-  gateTower.geometry.dispose();gateTower.geometry=new THREE.BoxGeometry(.58,.30,1.78);gateTower.position.y=3.61;
+  for (const zSide of [-1, 1]) for (const xSide of [-1, 1]) {
+    const x0 = gateX + xSide * (leafHalf + 0.01), x1 = x0 + xSide * postWidth;
+    const post = new THREE.Mesh(plate([[[[Math.min(x0, x1), lipY], [Math.max(x0, x1), lipY],
+      [Math.max(x0, x1), postTopY], [Math.min(x0, x1), postTopY]]]], zSide < 0 ? -0.86 : channelHalfWidth,
+    zSide < 0 ? -channelHalfWidth : 0.86), frameMaterial);
+    post.userData.role = 'sluice-side-jamb';
+    gateTower.add(post);
+  }
   root.add(gateTower);
-  for(const z of[-.84,.84]){const jamb=new THREE.Mesh(new THREE.BoxGeometry(.58,4.58,.18),frameMaterial);jamb.position.set(4.02,1.47,z);jamb.userData.role='sluice-side-jamb';root.add(jamb);}
-  const gateLeaf = new THREE.Mesh(
-    new THREE.BoxGeometry(0.68, 1.64, 1.12),
-    darkMaterial,
-  );
-  gateLeaf.position.set(4.01, 1.24, 0.03);
+  const leafMaterial = matte(PALETTE.muted, {metalness: 0.12, roughness: 0.6});
+  const gateLeaf = new THREE.Mesh(plate([[[[gateX - leafHalf, leafBottomY], [gateX + leafHalf, leafBottomY],
+    [gateX + leafHalf, postTopY], [gateX - leafHalf, postTopY]]]], -0.85, 0.85), leafMaterial);
   gateLeaf.userData.role = 'partly-raised-breast-wheel-inlet-gate';
   root.add(gateLeaf);
-  const gateStem = new THREE.Mesh(
-    new THREE.BoxGeometry(0.13, 3.68, 0.13),
-    darkMaterial,
-  );
-  gateStem.position.set(4.01, 2.42, 0.56);
+  const gateStem = new THREE.Mesh(plate([[[[gateX - leafHalf, postTopY], [gateX + leafHalf, postTopY],
+    [gateX + leafHalf, 4.1], [gateX - leafHalf, 4.1]]]], -0.2, 0.2), leafMaterial);
   gateStem.userData.role = 'vertical-breast-wheel-gate-stem';
   root.add(gateStem);
 
+  // The feed: the headwater running under the leaf and over the lip into
+  // the open cells, one continuous sheet whose streaks carry the flow.
   const feedPathPoints = [
-    new THREE.Vector3(4.46, 0.16, 0.16),
-    new THREE.Vector3(3.74, 0.13, 0.16),
-    new THREE.Vector3(3.18, 0.19, 0.16),
-    new THREE.Vector3(
-      (wheelOuterRadius + 0.03) * Math.cos(inletAngle),
-      (wheelOuterRadius + 0.03) * Math.sin(inletAngle),
-      0.16,
-    ),
+    new THREE.Vector3(raceRightX - 0.1, 0.12, 0),
+    new THREE.Vector3(gateX, 0.1, 0),
+    new THREE.Vector3(3.1, 0.02, 0),
+    new THREE.Vector3(2.62, -0.28, 0),
+    new THREE.Vector3(2.38, -0.62, 0),
   ];
-  // The feed is a sheet of water the width of the headrace water, spilling
-  // over the sill into the cells (a flattened tube, not a round hose).
-  const feedWater = new THREE.Mesh(
-    new THREE.TubeGeometry(new THREE.CatmullRomCurve3(
-      feedPathPoints.map((point) => point.clone().setZ(0)), false, 'centripetal'), 48, 0.09, 16, false)
-      .scale(1, 1, 0.46 / 0.09).translate(0, 0, 0.16),
-    waterMaterial,
-  );
+  const feedWater = new WaterStream(guidedPath(feedPathPoints, {speedAt: (u) => 1.2 + 1.6 * u, samples: 40}), {
+    width: channelHalfWidth - 0.04, thickness: 0.16, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0,
+    fadeIn: 0.06, fadeOut: 0.12, cyclePeriod: cycleDuration, streakRate: 0.8, opacity: 0.34,
+  });
   feedWater.userData.role = 'inlet-stream-turning-from-headrace-into-breast-cells';
   root.add(feedWater);
+  const updateWater = collectWaterStreams(root);
   const feedCurve = new THREE.CatmullRomCurve3(
     feedPathPoints,
     false,
@@ -521,26 +507,23 @@ function breastWaterWheel(movement) {
     flowMarkers.push(marker);
   }
 
-  // The discharged water runs away left as a shallow body on the race
-  // floor, the width of the floats, not a hose-like tube.
-  const tailrace = new THREE.Mesh(
-    waterVolumeGeometry({ xMin: -4.34, xMax: -1.0, surfaceY: -2.92, bottomY: -3.29, zMin: 0.06 - floatAxialWidth / 2, zMax: 0.06 + floatAxialWidth / 2 }),
-    waterVolumeMaterial(),
-  );
+  // Tail water: its surface stands against the lower wheel as Brown rules
+  // it, filling the bottom of the breast pit and running away left over the
+  // tail bed; the emptying cells discharge into it.
+  const tailMeetAngle = -Math.acos(Math.sqrt(breastInnerRadius ** 2 - tailSurfaceY ** 2) / breastInnerRadius);
+  const tailrace = new THREE.Mesh(plate([[[
+    [raceLeftX, tailSurfaceY], [breastInnerRadius * Math.cos(tailMeetAngle), tailSurfaceY],
+    ...arc(breastInnerRadius - 0.003, tailMeetAngle, breastEndAngle, 48).slice(1), [raceLeftX, tailBedLeftY + 0.003],
+  ]]], -channelHalfWidth, channelHalfWidth), waterVolumeMaterial({opacity: 0.42}));
   tailrace.renderOrder = 1;
   tailrace.userData.role = 'free-tailwater-after-breast-cell-discharge';
   root.add(tailrace);
-  const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(9.20, 0.30, 1.82),
-    frameMaterial,
-  );
-  foundation.position.set(0.16, -3.44, -0.27);
-  foundation.userData.role = 'fixed-breast-wheel-race-foundation';
-  root.add(foundation);
+  const foundation = breastFloor;
 
   const update = (time) => {
     const state = stateAtTime(time);
     rotor.rotation.z = state.wheelAngle;
+    updateWater(time);
     for (let bucketIndex = 0; bucketIndex < floatCount;
       bucketIndex += 1) {
       const bucketState = state.bucketCells[bucketIndex];
@@ -682,12 +665,12 @@ function breastWaterWheel(movement) {
     waterFillAtWorldAngle,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-4.76, -3.66, -1.10),
-    new THREE.Vector3(5.65, 4.32, 1.52),
+    new THREE.Vector3(-4.45, -3.6, -0.9),
+    new THREE.Vector3(5.9, 4.1, 0.9),
   );
   root.userData.cameraDistanceScale = 1.05;
   root.userData.cameraDirection = new THREE.Vector3(5.0, 3.6, 12.2);
-  root.userData.groundFloorY = -3.66;
+  root.userData.groundFloorY = -3.6;
   root.userData.hideGround=true;
   root.userData.solidReview={qualification:'Finite supports and water-path geometry; water is a prescribed visual envelope. No free-surface flow, sealing, energy balance or speed response is solved.'};
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});

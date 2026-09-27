@@ -7,9 +7,11 @@ import {
   setSpin,
 } from './primitives.js';
 
-import { boredCylinderGeometry, boredJournal, fitPistonGuide } from './piston-guide-parts.js';
+import { boredCylinderGeometry, fitPistonGuide } from './piston-guide-parts.js';
 import { engineRod, annularSector } from './steam-engine-parts.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { cutFaceMaterial, latheSectionGeometry } from './cutaway-section.js';
+import { STEAM_COLORS, STEAM_OPACITY, steamMaterial } from './steam-section-kit.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -31,10 +33,18 @@ function trunkEngine(movement) {
   const pitmanLength = crankRadius * (7.45 / 1.5);
   const sourceCrankAngle = 0;
   const pistonRadius = 1.115;
-  const pistonThickness = 0.24;
-  const trunkOuterRadius = 0.50;
-  const trunkLength = 1.42;
+  // Brown's piston is a deep hollow casting: its top ledge is level with the
+  // pitman pin, which lies in a closed round socket at the foot of the trunk,
+  // and the body runs 0.55 below the pin.
+  const pistonTopAbovePin = 0.05;
+  const pistonBottomBelowPin = 0.55;
+  const pistonThickness = pistonTopAbovePin + pistonBottomBelowPin;
+  const trunkOuterRadius = 0.65;
+  const trunkInnerRadius = 0.53;
+  const socketRadius = 0.40;
+  const trunkLength = 1.72;
   const cylinderHeadY = 1.12;
+  const headUndersideY = cylinderHeadY - 0.11;
   const cylinderBottomY = -0.90;
   const cylinderRadius = 1.20;
   const lowerEffectiveArea = Math.PI * pistonRadius ** 2;
@@ -95,10 +105,8 @@ function trunkEngine(movement) {
       .sub(crankPinVelocity);
     const relativePinAcceleration = pistonPinAcceleration.clone()
       .sub(crankPinAcceleration);
-    const upperChamberHeight = cylinderHeadY
-      - pistonThickness / 2 - pistonY;
-    const lowerChamberHeight = pistonY
-      - pistonThickness / 2 - cylinderBottomY;
+    const upperChamberHeight = headUndersideY - pistonTopAbovePin - pistonY;
+    const lowerChamberHeight = pistonY - pistonBottomBelowPin - cylinderBottomY;
     return {
       crankAcceleration,
       crankAngle,
@@ -173,6 +181,8 @@ function trunkEngine(movement) {
     trunkLength,
     trunkCrossSectionArea,
     trunkOuterRadius,
+    trunkInnerRadius,
+    socketRadius,
     upperEffectiveArea,
   };
 
@@ -192,41 +202,11 @@ function trunkEngine(movement) {
     metalness: 0.23,
     roughness: 0.43,
   });
-  // Brown sections the cylinder and trunk: their back halves are solid
-  // interior walls, not glass.
-  const shellMaterial = matte(0x6f7b7b, {
-    metalness: 0.20,
-    roughness: 0.52,
-    side: THREE.DoubleSide,
-  });
-  const highSteamMaterial = matte(0xde6b52, {
-    opacity: 0.16,
-    roughness: 0.62,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const expansiveSteamMaterial = matte(0x4a93a8, {
-    opacity: 0.15,
-    roughness: 0.64,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.40 });
-
-  const foundation = new THREE.Mesh(
-    new THREE.BoxGeometry(3.36, 0.22, 1.92),
-    frameMaterial,
-  );
-  foundation.position.set(0, -1.16, -0.20);
-  foundation.userData.role = 'marine-trunk-engine-foundation';
-  root.add(foundation);
 
   const fixedCylinder = new THREE.Group();
   fixedCylinder.userData.role = 'fixed-cutaway-steam-cylinder';
   const cylinderHeight = cylinderHeadY - cylinderBottomY;
-  // A round cast barrel, sectioned by one clean front window so the piston
-  // and trunk show as in Brown's section while the piston stays enclosed
-  // when the view is turned.
+  // A round cast barrel, sectioned on the camera plane.
   const barrelInnerRadius = pistonRadius + 0.015;
   const barrelOuterRadius = cylinderRadius + 0.14;
   const sectionHalfAngle = THREE.MathUtils.degToRad(64);
@@ -241,62 +221,44 @@ function trunkEngine(movement) {
       frontAngle + FULL_TURN - sectionHalfAngle, cylinderHeight),
     frameMaterial,
   );
-  backShell.position.set(
-    0,
-    (cylinderHeadY + cylinderBottomY) / 2,
-    0,
-  );
+  backShell.position.set(0, (cylinderHeadY + cylinderBottomY) / 2, 0);
   backShell.userData.role = 'sectioned-back-half-cylinder-wall';
   fixedCylinder.add(backShell);
-  const lowerFlange = new THREE.Mesh(
-    new THREE.BoxGeometry(2.84, 0.20, 2.84),
-    frameMaterial,
-  );
-  lowerFlange.position.set(0, cylinderBottomY - 0.10, 0);
+  // Heads in plan (x, -z) extruded up y, each with one steam port on the
+  // section plane: the upper port admits the high-pressure steam above the
+  // piston, the lower one takes it below and exhausts it. Brown draws no
+  // valve gear or pipes, so none is built beyond the ports.
+  const portX = 0.93;
+  const portRadius = 0.1;
+  const headPlan = (outerPolygon, holes) => {
+    const geometry = plate(polygonClipping.difference(outerPolygon, ...holes), 0, 1);
+    geometry.rotateX(-Math.PI / 2); // plan y -> world -z, extrusion z -> world y
+    return geometry;
+  };
+  const upperHead = new THREE.Mesh(headPlan(
+    poly(circle([0, 0], barrelOuterRadius, 128)),
+    [poly(circle([0, 0], trunkOuterRadius + 0.07, 96)), poly(circle([portX, 0], portRadius, 40))],
+  ), frameMaterial);
+  upperHead.scale.y = 0.22;
+  upperHead.position.y = cylinderHeadY - 0.11;
+  upperHead.userData.role = 'fixed-cylinder-head-half-around-trunk-opening';
+  fixedCylinder.add(upperHead);
+  const lowerFlange = new THREE.Mesh(headPlan(
+    poly([[-1.42, -1.42], [1.42, -1.42], [1.42, 1.42], [-1.42, 1.42]]),
+    [poly(circle([portX, 0], portRadius, 40))],
+  ), frameMaterial);
+  lowerFlange.scale.y = 0.2;
+  lowerFlange.position.y = cylinderBottomY - 0.2;
   lowerFlange.userData.role = 'lower-cylinder-flange';
   fixedCylinder.add(lowerFlange);
-  for (const side of [-1, 1]) {
-    const headHalf = new THREE.Mesh(
-      side > 0
-        ? barrelAlongY(trunkOuterRadius + 0.07, frontAngle + sectionHalfAngle, Math.PI / 2, 0.22)
-        : barrelAlongY(trunkOuterRadius + 0.07, Math.PI / 2,
-          frontAngle + FULL_TURN - sectionHalfAngle, 0.22),
-      frameMaterial,
-    );
-    headHalf.position.set(0, cylinderHeadY, 0);
-    headHalf.userData.role =
-      'fixed-cylinder-head-half-around-trunk-opening';
-    fixedCylinder.add(headHalf);
-  }
   const stuffingBox = new THREE.Mesh(
-    boredCylinderGeometry(0.68, trunkOuterRadius + 0.008, 0.22), darkMaterial,
+    boredCylinderGeometry(0.86, trunkOuterRadius + 0.008, 0.22), darkMaterial,
   );
   stuffingBox.position.set(0, cylinderHeadY + 0.13, 0);
   stuffingBox.userData.role =
     'fixed-annular-stuffing-box-around-moving-trunk';
   fixedCylinder.add(stuffingBox);
   root.add(fixedCylinder);
-
-  const rearCrankSupport = new THREE.Group();
-  rearCrankSupport.userData.role = 'fixed-upper-crankshaft-support';
-  for (const side of [-1, 1]) {
-    const post = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 3.86, 0.24),
-      frameMaterial,
-    );
-    post.position.set(side * 1.54, 0.80, -0.72);
-    post.userData.role = 'rear-crankshaft-support-column';
-    rearCrankSupport.add(post);
-    const arm = new THREE.Mesh(
-      new THREE.BoxGeometry(1.39, 0.18, 0.24),
-      frameMaterial,
-    );
-    // Stops short of the turning crankshaft (these supports are not drawn).
-    arm.position.set(side * 0.86, crankCenter.y, -0.72);
-    arm.userData.role = 'rear-crankshaft-bearing-arm';
-    rearCrankSupport.add(arm);
-  }
-  root.add(rearCrankSupport);
 
   const crankWheel = new THREE.Group();
   crankWheel.userData.rotor = new THREE.Group();
@@ -315,93 +277,110 @@ function trunkEngine(movement) {
   crankAxle.position.z = -0.50;
   crankAxle.userData.role = 'horizontal-crankshaft-turning-with-crank';
   crankWheel.userData.rotor.add(crankAxle);
-  const crankPinMarker = cylinderAlongZ(0.085, 0.43, whiteMaterial);
+  const crankPinMarker = cylinderAlongZ(0.085, 0.43, darkMaterial);
   crankPinMarker.position.set(crankRadius, 0, -0.12);
-  crankPinMarker.userData.role = 'white-upper-crank-pin';
+  crankPinMarker.userData.role = 'upper-crank-pin';
   crankWheel.userData.rotor.add(crankPinMarker);
   root.add(crankWheel);
-  // Brown's dotted crank-pin circle is notation for the pin's path; it is
-  // not drawn.
 
+  // Piston and trunk: one casting, turned, sectioned on the camera plane.
+  // Its profile (radius, height above the pin) closes under the pin in a
+  // round socket, with Brown's annular core pocket inside the body; the
+  // profile is split at the pocket so each half is a simple ring.
   const pistonAndTrunk = new THREE.Group();
   pistonAndTrunk.userData.role =
     'single-translating-piston-and-attached-hollow-trunk';
-  // The piston is cut by the same front section as the barrel, so it never
-  // stands proud of the casing when the view is turned.
-  const sectionWedgeReach = 3;
-  const pistonGeometry = plate(polygonClipping.difference(
-    poly(circle([0, 0], pistonRadius, 128)),
-    poly([[0, 0], [-sectionWedgeReach * Math.sin(sectionHalfAngle), -sectionWedgeReach * Math.cos(sectionHalfAngle)],
-      [0, -sectionWedgeReach], [sectionWedgeReach * Math.sin(sectionHalfAngle), -sectionWedgeReach * Math.cos(sectionHalfAngle)]]),
-    poly([[-0.22, -pistonRadius - 1], [0.22, -pistonRadius - 1], [0.22, 0.16], [-0.22, 0.16]]),
-  ), -pistonThickness / 2, pistonThickness / 2);
-  pistonGeometry.rotateX(-Math.PI / 2);
-  const piston = new THREE.Mesh(pistonGeometry, pistonMaterial);
-  piston.userData.role = 'vertical-sliding-piston';
-  pistonAndTrunk.add(piston);
-  for (const side of [-1, 1]) {
-    const trunkSide = new THREE.Mesh(
-      annularSector(0.40, trunkOuterRadius,
-        (side < 0 ? Math.PI : 0) - 0.65, (side < 0 ? Math.PI : 0) + 0.65, trunkLength),
-      pistonMaterial,
-    );
-    trunkSide.rotation.x = -Math.PI / 2;
-    trunkSide.position.y = trunkLength / 2;
-    trunkSide.userData.role =
-      'cutaway-side-of-hollow-trunk-attached-to-piston';
-    pistonAndTrunk.add(trunkSide);
+  const socket = Array.from({ length: 17 }, (_, i) => {
+    const a = -Math.PI / 2 * i / 16;
+    return [socketRadius * Math.cos(a), socketRadius * Math.sin(a)];
+  });
+  const pistonProfile = poly([
+    [0, -pistonBottomBelowPin], [pistonRadius, -pistonBottomBelowPin], [pistonRadius, pistonTopAbovePin],
+    [trunkOuterRadius, pistonTopAbovePin], [trunkOuterRadius, trunkLength], [trunkInnerRadius, trunkLength],
+    [trunkInnerRadius, 0.02], [socketRadius, 0.02], ...socket.slice(1),
+  ]);
+  const pocket = poly([[0.72, -0.40], [0.95, -0.40], [0.95, -0.10], [0.72, -0.10]]);
+  const split = 0.835;
+  const innerHalf = polygonClipping.difference(polygonClipping.intersection(pistonProfile,
+    poly([[0, -2], [split, -2], [split, 3], [0, 3]])), pocket);
+  const outerHalf = polygonClipping.difference(polygonClipping.intersection(pistonProfile,
+    poly([[split, -2], [2, -2], [2, 3], [split, 3]])), pocket);
+  const pistonCut = cutFaceMaterial(pistonMaterial);
+  for (const [half, role] of [[innerHalf, 'trunk-and-closed-pin-socket-of-piston'], [outerHalf, 'vertical-sliding-piston']]) {
+    for (const [ring] of half) {
+      const mesh = new THREE.Mesh(latheSectionGeometry(ring.slice(0, -1), { segments: 96 }), [pistonMaterial, pistonCut]);
+      mesh.userData.role = role;
+      mesh.userData.cutawaySection = true;
+      pistonAndTrunk.add(mesh);
+    }
   }
-  const trunkBack = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      trunkOuterRadius - 0.05,
-      trunkOuterRadius - 0.05,
-      trunkLength,
-      40,
-      1,
-      true,
-      Math.PI / 2,
-      Math.PI,
-    ),
-    shellMaterial,
-  );
-  trunkBack.position.set(0, trunkLength / 2, -0.03);
-  trunkBack.userData.role = 'open-front-hollow-trunk-shell';
-  pistonAndTrunk.add(trunkBack);
-  const trunkTopRim = new THREE.Mesh(
-    boredCylinderGeometry(trunkOuterRadius, trunkOuterRadius - 0.10, 0.07), pistonMaterial,
-  );
-  trunkTopRim.position.set(0, trunkLength, 0);
-  trunkTopRim.userData.role = 'open-upper-rim-of-moving-trunk';
-  pistonAndTrunk.add(trunkTopRim);
-  const pistonPinMarker = cylinderAlongZ(0.085, 0.56, whiteMaterial, 28);
-  pistonPinMarker.position.z = -0.18;
-  pistonPinMarker.userData.role =
-    'white-pitman-pin-directly-in-piston-at-trunk-bottom';
+  const piston = pistonAndTrunk.children.find((child) => child.userData.role === 'vertical-sliding-piston');
+  const trunkBack = pistonAndTrunk.children.find((child) => child.userData.role === 'trunk-and-closed-pin-socket-of-piston');
+  // Gudgeon pin across the socket, held in the trunk's back wall.
+  const pistonPinMarker = cylinderAlongZ(0.085, trunkInnerRadius + 0.06, darkMaterial, 28);
+  pistonPinMarker.position.z = -(trunkInnerRadius + 0.06) / 2;
+  pistonPinMarker.userData.role = 'pitman-pin-in-piston-socket';
   pistonAndTrunk.add(pistonPinMarker);
-  const pistonPinSeat = boredJournal(0.16, 0.088, 0.13, pistonMaterial);
-  pistonPinSeat.position.z = -0.20;
-  pistonPinSeat.userData.role = 'bored-rear-piston-pin-seat';
-  pistonAndTrunk.add(pistonPinSeat);
   root.add(pistonAndTrunk);
 
   const pitman = engineRod(pitmanLength, 0.10, 0.145, 0.088, 0.12,
     pitmanMaterial, 'constant-length-pitman-entering-hollow-trunk');
   root.add(pitman);
 
-  const upperSteam = new THREE.Mesh(
-    boredCylinderGeometry(1.09, trunkOuterRadius + 0.015, 1),
-    highSteamMaterial,
-  );
-  upperSteam.userData.role =
-    'high-pressure-upper-annular-chamber-indicator';
-  root.add(upperSteam);
-  const lowerSteam = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.90, 0.90, 1, 48),
-    expansiveSteamMaterial,
-  );
-  lowerSteam.userData.role =
-    'lower-expansive-exhaust-chamber-indicator';
-  root.add(lowerSteam);
+  // ---- steam: back-half lathe volumes of the two working spaces and ports --
+  const steamLathe = (profile, role) => {
+    const mesh = new THREE.Mesh(latheSectionGeometry(profile, { segments: 64 }), steamMaterial('live'));
+    mesh.userData.role = role;
+    mesh.userData.steamVolume = true;
+    mesh.renderOrder = 2;
+    return mesh;
+  };
+  const upperSteam = steamLathe([[trunkOuterRadius + 0.012, 0], [barrelInnerRadius - 0.004, 0],
+    [barrelInnerRadius - 0.004, 1], [trunkOuterRadius + 0.012, 1]], 'steam-above-piston-round-the-trunk');
+  const lowerSteam = steamLathe([[0, 0], [barrelInnerRadius - 0.004, 0], [barrelInnerRadius - 0.004, 1], [0, 1]],
+    'steam-below-piston');
+  const portSteam = (y0, y1, role) => {
+    const r = portRadius - 0.006;
+    const mesh = new THREE.Mesh(latheSectionGeometry([[0, 0], [r, 0], [r, y1 - y0], [0, y1 - y0]], { segments: 24 }),
+      steamMaterial('live'));
+    mesh.position.set(portX, y0, 0);
+    mesh.userData.role = role;
+    mesh.userData.steamVolume = true;
+    mesh.renderOrder = 2;
+    return mesh;
+  };
+  const upperPortSteam = portSteam(headUndersideY, cylinderHeadY + 0.11, 'steam-in-upper-port');
+  const lowerPortSteam = portSteam(cylinderBottomY - 0.2, cylinderBottomY, 'steam-in-lower-port');
+  root.add(upperSteam, lowerSteam, upperPortSteam, lowerPortSteam);
+  const live = new THREE.Color(STEAM_COLORS.live);
+  const exhausted = new THREE.Color(STEAM_COLORS.exhaust);
+  const setPressure = (mesh, pressure) => {
+    mesh.material.color.copy(exhausted).lerp(live, pressure);
+    mesh.material.opacity = THREE.MathUtils.lerp(STEAM_OPACITY.exhaust, STEAM_OPACITY.live, pressure);
+    mesh.userData.pressure = pressure;
+  };
+  // Steam cycle (Brown's caption): on the down-stroke high-pressure steam
+  // fills the annulus above the piston while the space below exhausts; on
+  // the up-stroke that steam passes below and works expansively on the full
+  // area, the two spaces together growing as the piston rises.
+  const bdc = stateAtCrankAngle(-Math.PI / 2);
+  const expansionStartVolume = bdc.upperChamberVolume + bdc.lowerChamberVolume;
+  const steamStateAt = (state) => {
+    const upstroke = state.pistonSpeed > 0;
+    const expansive = Math.min(1, expansionStartVolume / (state.upperChamberVolume + state.lowerChamberVolume));
+    // soften the valve events over about 12 degrees of crank either side of
+    // the dead centres
+    const fromDead = Math.abs(Math.cos(state.crankAngle));
+    const blend = THREE.MathUtils.smoothstep(fromDead, 0, Math.sin(THREE.MathUtils.degToRad(12)));
+    const upper = upstroke ? THREE.MathUtils.lerp(1, expansive, blend) : 1;
+    const lower = upstroke ? expansive * blend : 0;
+    return {
+      stroke: upstroke ? 'up-expansive-below' : 'down-high-pressure-above',
+      upperPressure: upper,
+      lowerPressure: lower,
+      expansionRatio: 1 / expansive,
+    };
+  };
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -411,19 +390,15 @@ function trunkEngine(movement) {
       state.crankPin.clone().setZ(0),
       state.pistonPin.clone().setZ(0),
     );
-    upperSteam.position.set(
-      0,
-      state.pistonY + pistonThickness / 2
-        + state.upperChamberHeight / 2,
-      0,
-    );
-    upperSteam.scale.y = state.upperChamberHeight;
-    lowerSteam.position.set(
-      0,
-      cylinderBottomY + state.lowerChamberHeight / 2,
-      0,
-    );
-    lowerSteam.scale.y = state.lowerChamberHeight;
+    upperSteam.position.y = state.pistonY + pistonTopAbovePin;
+    upperSteam.scale.y = Math.max(1e-3, state.upperChamberHeight);
+    lowerSteam.position.y = cylinderBottomY;
+    lowerSteam.scale.y = Math.max(1e-3, state.lowerChamberHeight);
+    const steam = steamStateAt(state);
+    setPressure(upperSteam, steam.upperPressure);
+    setPressure(upperPortSteam, steam.upperPressure);
+    setPressure(lowerSteam, steam.lowerPressure);
+    setPressure(lowerPortSteam, steam.lowerPressure);
   };
 
   const sourceState = stateAtTime(0);
@@ -440,16 +415,17 @@ function trunkEngine(movement) {
       crankPinMarker,
       crankWheel,
       fixedCylinder,
-      foundation,
+      lowerFlange,
+      lowerPortSteam,
       lowerSteam,
       piston,
       pistonAndTrunk,
       pistonPinMarker,
       pitman,
-      rearCrankSupport,
       stuffingBox,
       trunkBack,
-      trunkTopRim,
+      upperHead,
+      upperPortSteam,
       upperSteam,
     },
     degreesOfFreedom: {
@@ -469,7 +445,7 @@ function trunkEngine(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'A continuously rotating upper crank drives one exact in-line slider-crank pitman. The pitman descends inside the open-front hollow trunk and pins directly to the piston at the trunk’s lower end. Piston and trunk translate as one rigid member; the trunk passes through the fixed annular stuffing box in the cylinder head.',
+      'A continuously rotating upper crank drives one exact in-line slider-crank pitman. The pitman descends inside the hollow trunk and pins directly to the piston in a closed round socket at the trunk’s foot. Piston and trunk are one casting and translate together; the trunk passes through the fixed annular stuffing box in the cylinder head. High-pressure steam enters by the port in the head and drives the piston down on the annulus round the trunk; on the up-stroke it passes by the port in the bottom to the space below and works expansively on the full area.',
     motion: {
       crankSpeed: inputAngularSpeed,
       cycleDuration,
@@ -525,13 +501,14 @@ function trunkEngine(movement) {
         officialCanvasEvidence:
           'The official embedded construction uses a 1.5-unit crank throw, a 7.45-unit pitman, one vertical centerline slider, a three-unit-wide cutaway trunk, and a four-second display cycle at 15 cycles per minute.',
         reconstructionDisclosure:
-          'Brown gives no absolute dimensions, crank speed, piston and trunk diameters, clearance volumes, pressures, cutoff, valve timing, materials, or loads. The scaled geometry, exact analytic slider law, cutaway shell, chamber-volume indicators, effective-area calculation, supports, and display timing are independently engineered.',
+          'Brown gives no absolute dimensions, crank speed, piston and trunk diameters, clearance volumes, pressures, cutoff, valve timing, materials, or loads. The scaled geometry, exact analytic slider law, the two head ports (Brown draws no valve gear or pipes, so none is built), the isothermal expansion shading of the steam, and display timing are independently engineered.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 421',
     },
     stateAtCrankAngle,
     stateAtTime,
+    steamStateAt,
     transmission: {
       pistonGuide: 'pistonPin=(0,pistonY)',
       pitmanConstraint: '|pistonPin-crankPin|=pitmanLength',
@@ -543,7 +520,10 @@ function trunkEngine(movement) {
   };
   root.userData.cameraDirection = new THREE.Vector3(0.8, 0.4, 14);
   markShadows(root);
-  foundation.receiveShadow = true;
+  for (const steam of [upperSteam, lowerSteam, upperPortSteam, lowerPortSteam]) {
+    steam.castShadow = false;
+    steam.receiveShadow = false;
+  }
   root.userData.cameraFov = 8;
   fitPistonGuide(root, update, cycleDuration);
   return {

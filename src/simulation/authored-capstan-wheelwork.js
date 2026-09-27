@@ -759,8 +759,10 @@ function capstanWheelwork(movement) {
     };
   }
 
+  let afterUpdate = null;
   function update(time) {
     const state = stateAtTime(time);
+    afterUpdate?.(state);
     spindleRotor.rotation.y = state.sunAngle;
     barrelRotor.rotation.y = state.annulusAngle;
     carrierRotor.rotation.y = state.carrierAngle;
@@ -938,7 +940,10 @@ function capstanWheelwork(movement) {
   root.userData.groundFloorY = 0;
   correctCapstanWheelwork(root);
   broadenCarrierWeb(root);
-  addSourceBandAndLevers(root, frameMaterial);
+  afterUpdate = addNotchedRimAndLockingPawls(root, matte(PALETTE.brass, {
+    metalness: 0.24,
+    roughness: 0.45,
+  }), darkMaterial);
   // Brown draws no white rotation indices on the wheels.
   const blocks = root.userData.blocks;
   blocks.annulusIndex.visible = false;
@@ -989,50 +994,153 @@ function broadenCarrierWeb(root) {
   arm.userData.role = 'three-lobed-bored-common-planet-carrier';
 }
 
-// Brown's plan draws a band close outside the annulus whose two ends leave it
-// tangentially as flat levers ending in eyes, the lower one hooked. The caption
-// does not explain them, so they are presented as one fixed, non-working
-// strap in the plate's positions.
-function addSourceBandAndLevers(root, material) {
-  const g = root.userData.geometry;
-  const bandInner = g.annulusOuterRadius + 0.12;
-  const bandOuter = bandInner + 0.14;
-  const eyes = [[2.92, -3.70], [2.84, 3.48]];
-  const outline = clip.union(
-    clip.difference(poly(circle([0, 0], bandOuter, 180)),
-      poly(circle([0, 0], bandInner, 180))),
-    capsule([-0.25, -bandOuter + 0.05], [1.05, -3.52], 0.11, 24),
-    capsule([1.05, -3.52], eyes[0], 0.065, 24),
-    capsule([-0.10, bandOuter - 0.05], [0.45, 3.45], 0.08, 24),
-    capsule([-0.62, 3.45], eyes[1], 0.07, 24),
-    capsule([-0.62, 3.45], [-0.84, 3.66], 0.07, 24),
-    ...eyes.map(eye => poly(circle(eye, 0.21, 48))),
-  );
-  const strap = clip.difference(outline,
-    ...eyes.map(eye => poly(circle(eye, 0.095, 48))));
-  // Plate (right, down) axes are the screen axes of the plan camera
-  // (1, 12, 3); the root is turned -90 degrees about y: local (x, z) = (Z, -X).
+// Brown's plan: the barrel's wheel has an outer rim with six notches, and two
+// pawls with eyed ends lie along it, the upper one's nose in the top notch,
+// the lower (hooked) one's nose in the bottom notch. Each nose bears on the
+// steep face of a ratchet-shaped notch and the two faces are opposed, so the
+// pair locks the barrel to the drumhead that carries their eye pins: single
+// purchase. Lifted clear, they unlock it and the wheel-work acts. The pawls
+// therefore ride the drumhead (spindle); the drumhead itself is omitted.
+export const CAPSTAN_PLATE = Object.freeze({
+  center: [262, 272],
+  rimRadiusPixels: 192,
+  upperEye: [438, 68],
+  lowerEye: [424, 477],
+  eyeRadiusPixels: 19,
+  pinRadiusPixels: 7,
+});
+function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
+  const g = root.userData.geometry, b = root.userData.blocks;
+  pawlMaterial.fog = false;
+  const rimInner = g.annulusOuterRadius;
+  const rimOuter = 3.13;
+  const scale = rimOuter / CAPSTAN_PLATE.rimRadiusPixels;
+  // The notches are cut in the rim ring only, clear of the annulus body.
+  const notchDepth = rimOuter - rimInner - 0.008;
+  const notchWidth = 10 * Math.PI / 180;
+  const clearance = 0.006;
+  const liftAngle = 0.09;
+  const deg = Math.PI / 180;
+  // Plate (right, up) about Brown's centre in model units; polar angle psi
+  // counterclockwise on the plate, which is positive barrel rotation.
+  const polar = (radius, psi) => [radius * Math.cos(psi), radius * Math.sin(psi)];
+  const platePoint = ([x, y]) => [(x - CAPSTAN_PLATE.center[0]) * scale, (CAPSTAN_PLATE.center[1] - y) * scale];
+  // Plate (right, up) -> root-local (x, z) through the plan camera (1, 12, 3)
+  // and the root's -90 degree turn (see correctCapstanWheelwork).
   const view = Math.hypot(1, 3);
-  const local = strap.map(polygon => polygon.map(ring =>
-    ring.map(([right, down]) => {
-      const X = (3 * right + down) / view;
-      const Z = (-right + 3 * down) / view;
-      return [Z, -X];
-    })));
-  const band = new THREE.Mesh(
-    plate(local, -g.gearDepth / 2 + 0.04, g.gearDepth / 2 - 0.04)
-      .rotateX(Math.PI / 2),
-    material,
+  const toLocal = ([right, up]) => {
+    const down = -up, X = (3 * right + down) / view, Z = (-right + 3 * down) / view;
+    return [Z, -X];
+  };
+  const localPolygons = (polygons) => polygons.map((polygon) => polygon.map((ring) => ring.map(toLocal)));
+  const extrude = (polygons, low, high) => plate(localPolygons(polygons), low, high).rotateX(Math.PI / 2);
+  // A notch: a steep radial face at psiStep, a short floor, then a ramp back
+  // to the rim; `toward` is the side (+1 or -1 in psi) the ramp runs to.
+  const notch = (psiStep, toward, radialScale = 1, turn = 0) => {
+    const s = (psi) => psiStep + toward * psi + turn;
+    const outside = rimOuter + 0.4;
+    return [
+      polar(outside * radialScale, s(0)),
+      polar((rimOuter - notchDepth) * radialScale, s(0)),
+      polar((rimOuter - notchDepth) * radialScale, s(0.35 * notchWidth)),
+      polar(rimOuter * radialScale, s(notchWidth)),
+      polar(outside * radialScale, s(notchWidth)),
+    ];
+  };
+  // Six notches, 60 degrees apart, alternately facing: the top one's steep
+  // face is on its left, the bottom one's on its left as seen on the plate.
+  const notches = Array.from({length: 6}, (_, k) => {
+    const center = (90 + 60 * k) * deg, even = k % 2 === 0;
+    return {center, step: center + (even ? 1 : -1) * notchWidth / 2, toward: even ? -1 : 1};
+  });
+  const rimShape = clip.difference(
+    clip.difference(poly(circle([0, 0], rimOuter, 360)), poly(circle([0, 0], rimInner, 360))),
+    ...notches.map((n) => poly(notch(n.step, n.toward))),
   );
-  band.position.y = g.gearPlaneY;
-  band.userData.role = 'fixed-outside-band-with-two-eyed-levers';
-  root.add(band);
-  root.userData.blocks.outsideBand = band;
+  let rimMaterial = pawlMaterial;
+  b.annulusGear.traverse((o) => { if (o.isMesh && rimMaterial === pawlMaterial) rimMaterial = o.material; });
+  const rim = new THREE.Mesh(extrude(rimShape, -g.gearDepth / 2, g.gearDepth / 2), rimMaterial);
+  rim.position.y = g.gearPlaneY;
+  rim.userData.role = 'barrel-wheel-rim-with-six-locking-notches';
+  b.barrelRotor.add(rim);
+
+  const makePawl = (name, eyePixels, notchSpec, bladeEdges, extra) => {
+    const pivot = platePoint(eyePixels);
+    const eyeRadius = CAPSTAN_PLATE.eyeRadiusPixels * scale, pinRadius = CAPSTAN_PLATE.pinRadiusPixels * scale;
+    // The nose fills its notch less a running clearance on every face.
+    const eps = clearance / rimOuter;
+    const nose = clip.intersection(
+      poly(notch(notchSpec.step, notchSpec.toward, 1, -notchSpec.toward * eps)),
+      poly(notch(notchSpec.step, notchSpec.toward, 1, notchSpec.toward * eps)),
+      poly(notch(notchSpec.step, notchSpec.toward, (rimOuter + clearance) / rimOuter)),
+      poly(circle([0, 0], rimOuter + 0.2, 360)),
+    );
+    const blade = poly(bladeEdges.map(platePoint));
+    const outline = clip.difference(
+      clip.union(nose, clip.difference(
+        clip.union(blade, poly(circle(pivot, eyeRadius, 64)), ...(extra ?? []).map((part) => part(platePoint, scale))),
+        poly(circle([0, 0], rimOuter + clearance, 360)),
+      )),
+      poly(circle(pivot, pinRadius + 0.004, 48)),
+    );
+    const group = new THREE.Group();
+    const [px, pz] = toLocal(pivot);
+    group.position.set(px, g.gearPlaneY, pz);
+    // Pivot-relative outline, so the group turns the pawl about its eye.
+    const mesh = new THREE.Mesh(
+      extrude(outline.map((polygon) => polygon.map((ring) => ring.map(([x, y]) => [x - pivot[0], y - pivot[1]]))),
+        -g.gearDepth / 2 + 0.04, g.gearDepth / 2 - 0.04),
+      pawlMaterial,
+    );
+    mesh.userData.role = `${name}-locking-pawl-riding-the-drumhead`;
+    group.add(mesh);
+    const pin = new THREE.Mesh(new THREE.CylinderGeometry(pinRadius, pinRadius, g.gearDepth + 0.3, 32), pinMaterial);
+    pin.userData.role = `${name}-pawl-eye-pin-on-drumhead`;
+    b.spindleRotor.add(pin);
+    pin.position.set(px, g.gearPlaneY + 0.15, pz);
+    group.userData.role = `${name}-locking-pawl`;
+    b.spindleRotor.add(group);
+    return {group, mesh, pin, pivot};
+  };
+  // Upper pawl: flat blade from its eye to a nose in the top notch.
+  const upper = makePawl('upper', CAPSTAN_PLATE.upperEye, notches[0],
+    [[266, 70], [276, 63], [424, 58], [436, 86], [415, 77], [300, 86]]);
+  // Lower pawl: blade from its eye to a nose in the bottom notch, then the
+  // hooked tail curving down to the left.
+  const hook = (pt, sc) => {
+    const path = [[268, 478], [248, 478], [233, 484], [222, 493], [214, 504]].map(pt);
+    return clip.union(...path.slice(1).map((q, i) => capsule(path[i], q, 6.5 * sc, 16)));
+  };
+  const lower = makePawl('lower', CAPSTAN_PLATE.lowerEye, notches[3],
+    [[252, 470], [300, 466], [412, 458], [428, 497], [300, 490], [262, 486]], [hook]);
+  const pawls = [
+    {...upper, liftSign: -1},
+    {...lower, liftSign: 1},
+  ];
+  b.lockingPawls = pawls.map((p) => p.group);
+  // The pawls orbit with the drumhead during the wheel-work, so the view
+  // frames their eyes' circle.
+  const reach = Math.max(...pawls.map((p) => Math.hypot(...p.pivot))) + CAPSTAN_PLATE.eyeRadiusPixels * scale + 0.05;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.95, 0.25, -3.95),
-    new THREE.Vector3(3.95, 1.14, 3.95),
+    new THREE.Vector3(-reach, 0.25, -reach),
+    new THREE.Vector3(reach, 1.14, reach),
   );
-  return band;
+  b.notchedRim = rim;
+  g.lockingPawls = {rimOuter, rimInner, notchDepth, notchWidth, clearance, liftAngle, notches: notches.map((n) => ({...n}))};
+  const pawlLiftAt = (state) => liftAngle * (1 - state.directClutchEngagement);
+  const baseState = root.userData.stateAtTime;
+  root.userData.stateAtTime = (time) => {
+    const state = baseState(time);
+    state.pawlLift = pawlLiftAt(state);
+    state.pawlsLocked = state.directClutchEngagement === 1;
+    return state;
+  };
+  return (state) => {
+    // The pawls are the lock: engaged with the direct (single-purchase)
+    // coupling, lifted clear of the rim for the wheel-work.
+    const lift = pawlLiftAt(state);
+    for (const pawl of pawls) pawl.group.rotation.y = pawl.liftSign * lift;
+  };
 }
 
 export function createAuthoredCapstanWheelworkMovement(movement) {

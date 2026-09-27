@@ -3,6 +3,9 @@ import {applyCutawayFor} from './cutaway-presentations.js';
 import {horizontalRing,horizontalPlate,horizontalVane,horizontalTurned} from './horizontal-turbine-solids.js';
 import {poly,circle,polygonClipping,rotate,plate} from './finite-plate-geometry.js';
 import {mergePassageParts,curvedPipeWall} from './finite-fluid-passages.js';
+import {latheSectionGeometry} from './cutaway-section.js';
+import {waterVolumeMaterial} from './water-volume.js';
+import {WaterStream,collectWaterStreams,guidedPath} from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -45,12 +48,51 @@ function horizontalBoxBetween(start, end, height, thickness, material) {
   return box;
 }
 
+
+// A helical (screw-like) vane between two radii and heights: at depth
+// fraction d (0 top, 1 foot) every radial line of the vane is turned by
+// sweep(d) about y; planOffset(r) (length, along -z at angle 0) leans the
+// line at a slight tangent. Constant tangential thickness. Local frame: the
+// vane's root line lies along +x.
+function helicalVaneGeometry({inner, outer, top, bottom, sweep, thickness, planOffset = () => 0, radialSteps = 8, depthSteps = 16}) {
+  const positions = [], indices = [];
+  const point = (r, d, side) => {
+    const theta = sweep(d) - planOffset(r) / r + side * thickness / (2 * r);
+    return [r * Math.cos(theta), top + (bottom - top) * d, -r * Math.sin(theta)];
+  };
+  const grid = (rows, cols, at, expected) => {
+    const base = positions.length / 3;
+    for (let i = 0; i <= rows; i += 1) for (let j = 0; j <= cols; j += 1) positions.push(...at(i / rows, j / cols));
+    const quads = [];
+    for (let i = 0; i < rows; i += 1) for (let j = 0; j < cols; j += 1) {
+      const a = base + i * (cols + 1) + j, b = a + cols + 1;
+      quads.push([a, b, a + 1], [b, b + 1, a + 1]);
+    }
+    const [a, b, c] = quads[0].map(k => new THREE.Vector3().fromArray(positions, k * 3));
+    const normal = b.clone().sub(a).cross(c.clone().sub(a));
+    const flip = normal.dot(expected(a)) < 0;
+    for (const [x, y, z] of quads) indices.push(...(flip ? [x, z, y] : [x, y, z]));
+  };
+  const lerpR = u => inner + (outer - inner) * u;
+  const tangentAt = (p, side) => new THREE.Vector3(p.z, 0, -p.x).normalize().multiplyScalar(-side);
+  for (const side of [-1, 1]) grid(radialSteps, depthSteps, (u, d) => point(lerpR(u), d, side), p => tangentAt(p, -side));
+  for (const [r, sign] of [[inner, -1], [outer, 1]]) grid(1, depthSteps, (u, d) => point(r, d, 2 * u - 1), p => new THREE.Vector3(p.x, 0, p.z).multiplyScalar(sign));
+  for (const [d, sign] of [[0, 1], [1, -1]]) grid(1, radialSteps, (u, v) => point(lerpR(v), d, 2 * u - 1), () => new THREE.Vector3(0, sign, 0));
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.setIndex(indices);
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
 function jonvalTurbine(movement) {
   const root = new THREE.Group();
   const cycleDuration = 5.7;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
-  const fixedShuteCount = 12;
-  const runnerBucketCount = 18;
+  // Brown's section shows about eight shutes and fourteen buckets across the
+  // near half of the drum.
+  const fixedShuteCount = 16;
+  const runnerBucketCount = 28;
   const runnerBucketPitch = FULL_TURN / runnerBucketCount;
   const annulusInnerRadius = 0.72;
   const annulusOuterRadius = 2.48;
@@ -61,21 +103,30 @@ function jonvalTurbine(movement) {
   const rowHeight = 0.68;
   const guidePitchAngle = THREE.MathUtils.degToRad(24);
   const runnerTangentAngle = THREE.MathUtils.degToRad(10);
-  const runnerParabolicCamber = 0.24;
+  // Helical (screw-like) vane surfaces: every radial line of a vane turns
+  // by the same angle as it descends, following a parabola in depth.
+  // Brown's shutes a run straight down and bend toward +theta (right on the
+  // near face) at their foot; the buckets c take the water nearly axially
+  // and bend it back the other way.
+  const guideHelixSweep = 0.34;
+  const runnerHelixSweep = 0.30;
+  const vaneThickness = 0.07;
   const sourcePoseBucketOffset = 0;
   const shaftRadius = 0.20;
   const massFlowNormalized = 1;
   const guideExitAxialSpeed = 3.62;
-  const guideExitClockwiseWhirlSpeed = 2.42;
+  const guideExitWhirlSpeed = 2.42;
   const runnerDischargeAxialSpeed = 4.28;
-  const runnerDischargeClockwiseWhirlSpeed = 0.20;
+  const runnerDischargeWhirlSpeed = 0.20;
 
   const runnerSweepOffsetAtProgress = (progress) => {
     const clamped = THREE.MathUtils.clamp(progress, 0, 1);
     const radialTravel = annulusOuterRadius - annulusInnerRadius;
-    return -Math.tan(runnerTangentAngle) * radialTravel * clamped
-      - runnerParabolicCamber * clamped ** 2;
+    return -Math.tan(runnerTangentAngle) * radialTravel * clamped;
   };
+  // Vane turn (radians about y) at depth fraction 0 (top) .. 1 (foot).
+  const guideSweepAtDepth = (depth) => guideHelixSweep * THREE.MathUtils.clamp(depth, 0, 1) ** 2;
+  const runnerSweepAtDepth = (depth) => -runnerHelixSweep * THREE.MathUtils.clamp(depth, 0, 1) ** 2;
 
   const guideExitPoint = horizontalRadial(0)
     .multiplyScalar(runnerBucketCenterRadius);
@@ -83,7 +134,7 @@ function jonvalTurbine(movement) {
   const guideExitVelocity = new THREE.Vector3(0, -guideExitAxialSpeed, 0)
     .addScaledVector(
       horizontalTangent(0),
-      -guideExitClockwiseWhirlSpeed,
+      guideExitWhirlSpeed,
     );
   const runnerDischargePoint = horizontalRadial(0)
     .multiplyScalar(runnerBucketCenterRadius);
@@ -94,7 +145,7 @@ function jonvalTurbine(movement) {
     0,
   ).addScaledVector(
     horizontalTangent(0),
-    -runnerDischargeClockwiseWhirlSpeed,
+    runnerDischargeWhirlSpeed,
   );
   const inletSpecificAngularMomentumY = new THREE.Vector3()
     .crossVectors(guideExitPoint, guideExitVelocity).y;
@@ -108,9 +159,11 @@ function jonvalTurbine(movement) {
     inputSpeed = inputAngularSpeed,
     inputAcceleration = 0,
   ) => {
-    const runnerAngle = -inputAngle;
-    const runnerAngularSpeed = -inputSpeed;
-    const runnerAngularAcceleration = -inputAcceleration;
+    // Counter-clockwise seen from above: the direction the helical shutes
+    // whirl the water, as Brown's vane curves require.
+    const runnerAngle = inputAngle;
+    const runnerAngularSpeed = inputSpeed;
+    const runnerAngularAcceleration = inputAcceleration;
     const runnerBuckets = [];
     for (let bucketIndex = 0; bucketIndex < runnerBucketCount;
       bucketIndex += 1) {
@@ -191,7 +244,8 @@ function jonvalTurbine(movement) {
     cycleDuration,
     fixedShuteCount,
     guideExitAxialSpeed,
-    guideExitClockwiseWhirlSpeed,
+    guideExitWhirlSpeed,
+    guideHelixSweep,
     guidePitchAngle,
     guideRowCenterY,
     inputAngularSpeed,
@@ -201,8 +255,8 @@ function jonvalTurbine(movement) {
     runnerBucketCount,
     runnerBucketPitch,
     runnerDischargeAxialSpeed,
-    runnerDischargeClockwiseWhirlSpeed,
-    runnerParabolicCamber,
+    runnerDischargeWhirlSpeed,
+    runnerHelixSweep,
     runnerRowCenterY,
     runnerTangentAngle,
     shaftRadius,
@@ -268,23 +322,14 @@ function jonvalTurbine(movement) {
     const guideGroup = new THREE.Group();
     guideGroup.rotation.y = angle;
     guideGroup.userData.role =
-      `fixed-radially-arranged-shute-${guideIndex + 1}-of-twelve`;
-    const guide = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        annulusOuterRadius - annulusInnerRadius,
-        rowHeight,
-        0.09,
-      ),
-      guideMaterial,
-    );
-    guide.position.set(
-      (annulusInnerRadius + annulusOuterRadius) / 2,
-      guideRowCenterY,
-      0,
-    );
-    guide.rotation.x = -guidePitchAngle;
+      `fixed-radially-arranged-shute-${guideIndex + 1}-of-sixteen`;
+    const guide = new THREE.Mesh(helicalVaneGeometry({
+      inner: annulusInnerRadius, outer: annulusOuterRadius,
+      top: guideRowCenterY + rowHeight / 2, bottom: guideRowCenterY - rowHeight / 2,
+      sweep: guideSweepAtDepth, thickness: vaneThickness,
+    }), guideMaterial);
     guide.userData.role =
-      `pitched-flow-surface-of-fixed-shute-${guideIndex + 1}`;
+      `helical-flow-surface-of-fixed-shute-${guideIndex + 1}`;
     guideGroup.add(guide);
     fixedGuideAssembly.add(guideGroup);
     fixedShuteGroups.push(guideGroup);
@@ -307,7 +352,7 @@ function jonvalTurbine(movement) {
 
   const runner = new THREE.Group();
   runner.userData.role =
-    'clockwise-lower-jonval-runner-c';
+    'counterclockwise-lower-jonval-runner-c';
   root.add(runner);
   const runnerBucketGroups = [];
   const runnerBucketProfiles = [];
@@ -317,7 +362,7 @@ function jonvalTurbine(movement) {
     const bucketGroup = new THREE.Group();
     bucketGroup.rotation.y = angle;
     bucketGroup.userData.role =
-      `tangential-parabolic-runner-bucket-${bucketIndex + 1}-of-eighteen`;
+      `tangential-helical-runner-bucket-${bucketIndex + 1}-of-twenty-eight`;
     const points = Array.from({ length: 13 }, (_, pointIndex) => {
       const progress = pointIndex / 12;
       const radius = THREE.MathUtils.lerp(
@@ -331,19 +376,15 @@ function jonvalTurbine(movement) {
         runnerSweepOffsetAtProgress(progress),
       );
     });
-    for (let segmentIndex = 0; segmentIndex < points.length - 1;
-      segmentIndex += 1) {
-      const segment = horizontalBoxBetween(
-        points[segmentIndex],
-        points[segmentIndex + 1],
-        rowHeight,
-        0.075,
-        runnerMaterial,
-      );
-      segment.userData.role =
-        `parabolic-bucket-${bucketIndex + 1}-segment-${segmentIndex + 1}`;
-      bucketGroup.add(segment);
-    }
+    const bucketVane = new THREE.Mesh(helicalVaneGeometry({
+      inner: annulusInnerRadius, outer: annulusOuterRadius,
+      top: runnerRowCenterY + rowHeight / 2, bottom: runnerRowCenterY - rowHeight / 2,
+      sweep: runnerSweepAtDepth, thickness: vaneThickness,
+      planOffset: (radius) => runnerSweepOffsetAtProgress(
+        (radius - annulusInnerRadius) / (annulusOuterRadius - annulusInnerRadius)),
+    }), runnerMaterial);
+    bucketVane.userData.role = `helical-bucket-${bucketIndex + 1}`;
+    bucketGroup.add(bucketVane);
     runner.add(bucketGroup);
     runnerBucketGroups.push(bucketGroup);
     runnerBucketProfiles.push(points.map((point) => point.clone()));
@@ -393,7 +434,7 @@ function jonvalTurbine(movement) {
   );
   rotationMarker.position.set(1.90, runnerRowCenterY - 0.02, 0);
   rotationMarker.userData.role =
-    'visible-clockwise-marker-on-runner-c';
+    'visible-rotation-marker-on-runner-c';
   runner.add(rotationMarker);
   rotationMarker.visible = false; // Brown draws no index stripe on the runner.
 
@@ -410,7 +451,24 @@ function jonvalTurbine(movement) {
   );
   // Brown's trunk b rises well above the wheel to the top cover and runs down
   // past the runner to the bridge carrying step c.
-  casing.geometry.dispose();casing.geometry=horizontalRing(annulusOuterRadius+.24,annulusOuterRadius+.30,-2.80,2.80);
+  // Brown's chute opens into the trunk: the wall is cut away across the
+  // chute mouth (floor to roof, full chute width) so the water can enter.
+  {
+    const inner = annulusOuterRadius + .24, outer = annulusOuterRadius + .30;
+    const mouthLow = 1.02 - 0.65, mouthHigh = 3.30 - 0.65;
+    const half = Math.asin(1.0 / inner);
+    const arc = (radius, from, to, n = 96) => Array.from({length: n + 1}, (_, i) => {
+      const a = from + (to - from) * i / n;
+      return [radius * Math.cos(a), radius * Math.sin(a)];
+    });
+    const wall = poly([...arc(outer, half, FULL_TURN - half), ...arc(inner, FULL_TURN - half, half)]);
+    casing.geometry.dispose();
+    casing.geometry = mergePassageParts([
+      horizontalRing(inner, outer, -2.80, mouthLow),
+      horizontalPlate(wall, mouthLow, mouthHigh),
+      horizontalRing(inner, outer, mouthHigh, 2.80),
+    ]);
+  }
   casing.position.y = 0.65;
   casing.userData.role = 'fixed-trunk-or-casing-b-around-both-vane-rows';
   root.add(casing);
@@ -509,6 +567,35 @@ function jonvalTurbine(movement) {
   inletWater.visible = false;
   inletWater.userData.role = 'water-descending-inlet-flume-into-casing';
   root.add(inletWater);
+  // Pass 69: the working water. A continuous sheet (water-stream.js) runs
+  // down the chute floor through the opened mouth into trunk b, which
+  // stands full of water over shute row a up to the chute floor. Both are
+  // cut on the section plane like the casing: the stream fills the chute's
+  // back half and the trunk water is its back half with a flat cut face.
+  const chuteRise = Math.tan(0.45);
+  const chuteX0 = annulusOuterRadius + 0.35;
+  const chuteSurface = (x) => new THREE.Vector3(x, 1.16 + (x - chuteX0) * chuteRise + 0.155, -0.45);
+  const trunkWaterLevel = 1.46;
+  const chuteStream = new WaterStream(guidedPath([
+    chuteSurface(chuteX0 + 3.45),
+    chuteSurface(chuteX0),
+    new THREE.Vector3(chuteX0 - 0.7, 1.30, -0.45),
+  ], {speed: 2.6, samples: 30}), {
+    width: 0.45, thickness: 0.15, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0,
+    fadeOut: 0.12, cyclePeriod: cycleDuration, streakRate: 1.1, opacity: 0.5,
+  });
+  chuteStream.userData.role = 'water-running-down-chute-into-trunk-b';
+  root.add(chuteStream);
+  const trunkWater = new THREE.Mesh(
+    latheSectionGeometry([[shaftRadius + 0.012, guideRowCenterY + rowHeight / 2 + 0.005],
+      [annulusOuterRadius + 0.235, guideRowCenterY + rowHeight / 2 + 0.005],
+      [annulusOuterRadius + 0.235, trunkWaterLevel], [shaftRadius + 0.012, trunkWaterLevel]], {segments: 96}),
+    waterVolumeMaterial({opacity: 0.28}),
+  );
+  trunkWater.renderOrder = 1;
+  trunkWater.userData.role = 'water-standing-in-trunk-b-over-shute-row-a';
+  root.add(trunkWater);
+  const updateWater = collectWaterStreams(root);
   const lowerBasin = new THREE.Mesh(
     new THREE.CylinderGeometry(3.02, 3.02, 0.24, 80),
     waterMaterial,
@@ -544,14 +631,14 @@ function jonvalTurbine(movement) {
     const baseAngle = pathIndex * FULL_TURN / representativePathCount;
     const radius = runnerBucketCenterRadius;
     const points = [
-      cylindricalPoint(radius, baseAngle + 0.34, 1.70),
-      cylindricalPoint(radius, baseAngle + 0.24, 1.18),
-      cylindricalPoint(radius, baseAngle + 0.10, 0.60),
+      cylindricalPoint(radius, baseAngle - 0.34, 1.70),
+      cylindricalPoint(radius, baseAngle - 0.24, 1.18),
+      cylindricalPoint(radius, baseAngle - 0.10, 0.60),
       cylindricalPoint(radius, baseAngle, 0.05),
-      cylindricalPoint(radius, baseAngle - 0.06, -0.38),
-      cylindricalPoint(radius, baseAngle - 0.03, -0.82),
-      cylindricalPoint(radius, baseAngle + 0.02, -1.34),
-      cylindricalPoint(radius, baseAngle + 0.02, -1.64),
+      cylindricalPoint(radius, baseAngle + 0.06, -0.38),
+      cylindricalPoint(radius, baseAngle + 0.03, -0.82),
+      cylindricalPoint(radius, baseAngle - 0.02, -1.34),
+      cylindricalPoint(radius, baseAngle - 0.02, -1.64),
     ];
     const curve = new THREE.CatmullRomCurve3(
       points,
@@ -591,6 +678,7 @@ function jonvalTurbine(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
+    updateWater(time);
     const flowPhase = THREE.MathUtils.euclideanModulo(time / 1.18, 1);
     for (const entry of flowMarkers) {
       const progress = THREE.MathUtils.euclideanModulo(
@@ -615,6 +703,8 @@ function jonvalTurbine(movement) {
       'jonval-axial-flow-turbine-with-fixed-radial-upper-shutes-and-more-numerous-tangential-parabolic-lower-runner-buckets',
     blocks: {
       casing,
+      chuteStream,
+      trunkWater,
       casingPosts,
       casingRings,
       fixedGuideAssembly,
@@ -644,7 +734,7 @@ function jonvalTurbine(movement) {
     },
     dynamics: {
       angularMomentumDiagnostic:
-        'Normalized runner torque equals mass flow times guide-exit minus runner-discharge specific angular momentum about y. The pitched fixed shutes supply clockwise whirl and runner c removes most of it, producing exact negative (clockwise) torque.',
+        'Normalized runner torque equals mass flow times guide-exit minus runner-discharge specific angular momentum about y. The helical fixed shutes supply counter-clockwise whirl and runner c removes most of it, producing exact positive (counter-clockwise) torque.',
       fluidPressureViscosityTurbulenceLeakageCavitationBladeLoadingBearingFrictionRunnerInertiaGeneratorLoadAndSpeedResponseModeled:
         false,
       markerContinuity:
@@ -654,16 +744,18 @@ function jonvalTurbine(movement) {
     flowCurves,
     geometry,
     mechanism:
-      'Water enters trunk b and descends axially through twelve stationary shutes arranged radially around a fixed central drum. Their pitched flow surfaces impart clockwise whirl. Immediately below, the water crosses eighteen moving buckets in wheel c; these buckets exceed the shutes in number, begin at a slight tangent rather than radially, and follow an exact parabolic sweep in this reconstruction. Runner c removes most of the water’s whirl and turns clockwise with its vertical shaft, while the casing, upper shute row a, bearings, inlet, and flow field remain fixed.',
+      'Water enters trunk b and descends axially through sixteen stationary helical shutes arranged radially around a fixed central drum. Their screw-like flow surfaces, straight at the top and bent at the foot, impart counter-clockwise whirl. Immediately below, the water crosses twenty-eight moving helical buckets in wheel c; these buckets exceed the shutes in number, are set at a slight tangent rather than radially, and bend the water back along a parabola in depth. Runner c removes most of the water’s whirl and turns counter-clockwise (seen from above) with its vertical shaft, while the casing, upper shute row a, bearings, inlet, and flow field remain fixed.',
     motion: {
       cycleDuration,
       inputAngularSpeed,
       runnerBucketPitch,
-      runnerDirectionViewedFromAbove: 'clockwise',
+      runnerDirectionViewedFromAbove: 'counterclockwise',
       runnerRevolutionsPerCycle: 1,
     },
     runnerBucketProfiles,
     runnerSweepOffsetAtProgress,
+    guideSweepAtDepth,
+    runnerSweepAtDepth,
     sourceAnimation: {
       available: false,
       officialCanvasModelPresent: false,
@@ -705,7 +797,7 @@ function jonvalTurbine(movement) {
         engravingEvidence:
           'Brown’s section shows a sloping inlet at upper right, a downward flow arrow within trunk b, a stationary upper vane row a, a distinct lower runner row c on the central shaft, an upper shaft bearing, and discharge beneath the runner.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, total shute or bucket counts, exact blade curve, vane pitch, flow rate, head, velocity triangles, shaft speed, rotation direction, materials, losses, leakage, efficiency, inertia, or load. Twelve fixed shutes, eighteen parabolic runner buckets, clockwise handedness, pitch and tangent angles, velocities, dimensions, colors, transparent cutaway, and a 5.7-second cycle are independently engineered; the stacked axial-flow layout, fixed radial shutes around a drum in casing b, more numerous tangential curved buckets on runner c, central shaft, and downward discharge are source-grounded.',
+          'Brown gives no dimensions, total shute or bucket counts, exact blade curve, vane pitch, flow rate, head, velocity triangles, shaft speed, rotation direction, materials, losses, leakage, efficiency, inertia, or load. Sixteen fixed shutes and twenty-eight runner buckets (counted from the near half of Brown’s section), the helical parabolic vane sweeps and the counter-clockwise handedness they imply, tangent angle, velocities, dimensions, colors, transparent cutaway, and a 5.7-second cycle are independently engineered; the stacked axial-flow layout, fixed radial shutes around a drum in casing b, more numerous tangential curved buckets on runner c, central shaft, and downward discharge are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 436',
@@ -714,11 +806,11 @@ function jonvalTurbine(movement) {
     stateAtTime,
     transmission: {
       angularMomentum:
-        'tau_y=massFlow*(cross(r_guideExit,v_guideExit).y-cross(r_runnerExit,v_runnerExit).y)<0',
+        'tau_y=massFlow*(cross(r_guideExit,v_guideExit).y-cross(r_runnerExit,v_runnerExit).y)>0',
       bucketGeometry:
-        'runner transverse offset is tangentSlope*radialTravel plus a nonzero quadratic term',
+        'helicoidal vanes: every radial line turns by sweep(depth)=±k*depth^2 about y; runner vanes also lean at a slight tangent (plan offset tangentSlope*radialTravel)',
       rowSequence:
-        'fixed radial shutes a above, more numerous rotating tangential parabolic buckets c immediately below',
+        'fixed radial helical shutes a above, more numerous rotating tangential helical buckets c immediately below',
     },
     update,
   };

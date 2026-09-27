@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import {circle, plate, poly, polygonClipping, ring} from './finite-plate-geometry.js';
 import {sphereFaceSupport} from './sphere-face-support.js';
+import {creaseIndexedNormals} from './crease-normals.js';
 import {
   PALETTE,
   markShadows,
@@ -314,6 +315,9 @@ function makeCompoundCam({
       axialContactTriangles.push(indices.map(j => [finiteVertices.getX(j), finiteVertices.getY(j), finiteVertices.getZ(j)]));
     }
   }
+  // The four walls share each station's corner vertices; crease them so the
+  // flat front face, rim, back and bore shade flat instead of as one blob.
+  creaseIndexedNormals(frontGeometry);
   const axialFace = new THREE.Mesh(frontGeometry, driverMaterial);
   axialFace.userData.role =
     'front-extension-of-same-prominence-driving-carrier-forward';

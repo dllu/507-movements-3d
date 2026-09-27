@@ -8,7 +8,7 @@ import {
 
 import {fitPistonGuide,boredCylinderGeometry} from './piston-guide-parts.js';
 import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
-import {pawlPolygon,clearRackPawl,boundedRetreat,firstClearRetreat} from './lifting-jack-contact.js';
+import {bladePieces,clearRackPieces,cubicPoints,easeClick,restingContinuation,sampleTable} from './lifting-jack-contact.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -16,13 +16,9 @@ function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
 }
 
-function quinticState(parameter) {
+function quintic(parameter) {
   const u = THREE.MathUtils.clamp(parameter, 0, 1);
-  return {
-    acceleration: 60 * u * (1 - u) * (1 - 2 * u),
-    rate: 30 * u ** 2 * (1 - u) ** 2,
-    value: u ** 3 * (10 + u * (-15 + 6 * u)),
-  };
+  return u ** 3 * (10 + u * (-15 + 6 * u));
 }
 
 function cylinderAlongZ(radius, length, material, segments = 32) {
@@ -34,78 +30,47 @@ function cylinderAlongZ(radius, length, material, segments = 32) {
   return cylinder;
 }
 
-function refineExtremum(fn, approximateAngle, maximize, halfWidth) {
-  let lower = approximateAngle - halfWidth;
-  let upper = approximateAngle + halfWidth;
-  for (let iteration = 0; iteration < 80; iteration += 1) {
-    const first = lower + (upper - lower) / 3;
-    const second = upper - (upper - lower) / 3;
-    const firstValue = fn(first);
-    const secondValue = fn(second);
-    const moveLower = maximize
-      ? firstValue < secondValue
-      : firstValue > secondValue;
-    if (moveLower) lower = first;
-    else upper = second;
-  }
-  return (lower + upper) / 2;
-}
+// Brown's plate 389 is 525 px square; the rack body (x 207–243) is 0.60 wide.
+const PLATE_SCALE = 0.60 / 35;
+const GROUND_Y = -1.17;
+const plateX = (x) => (x - 225) * PLATE_SCALE;
+const plateY = (y) => GROUND_Y + (464 - y) * PLATE_SCALE;
 
-function findPeriodicExtrema(fn) {
-  const samples = 2048;
-  const step = FULL_TURN / samples;
-  let minimum = { angle: 0, value: fn(0) };
-  let maximum = { angle: 0, value: fn(0) };
-  for (let index = 1; index < samples; index += 1) {
-    const angle = index * step;
-    const value = fn(angle);
-    if (value < minimum.value) minimum = { angle, value };
-    if (value > maximum.value) maximum = { angle, value };
-  }
-  const lowAngle = refineExtremum(
-    fn,
-    minimum.angle,
-    false,
-    step * 1.4,
-  );
-  let highAngle = refineExtremum(
-    fn,
-    maximum.angle,
-    true,
-    step * 1.4,
-  );
-  while (highAngle <= lowAngle) highAngle += FULL_TURN;
-  return {
-    highAngle,
-    highValue: fn(highAngle),
-    lowAngle,
-    lowValue: fn(lowAngle),
-  };
+// A traced pawl blade in plate pixels about its pivot (y up), rotated so the
+// local +x axis runs from the pivot through the tip, and scaled to model units.
+function bladeInLocalFrame(tip, upper, lower) {
+  const angle = Math.atan2(tip[1], tip[0]);
+  const c = Math.cos(-angle), s = Math.sin(-angle);
+  const map = ([x, y]) => [(c * x - s * y) * PLATE_SCALE, (s * x + c * y) * PLATE_SCALE];
+  return {length: Math.hypot(...tip) * PLATE_SCALE, upper: upper.map(map), lower: lower.map(map)};
 }
 
 function makeVerticalRatchetRack({
   bodyMaterial,
   bodyWidth,
+  bottomY,
   depth,
   driveReferenceY,
-  rackLength,
   saddleMaterial,
   toothDepth,
+  toothIndices,
   toothMaterial,
   toothPitch,
+  topY,
   whiteMaterial,
 }) {
   const group = new THREE.Group();
   group.userData.role = 'vertically-guided-load-bearing-ratchet-rack';
 
   const body = new THREE.Mesh(
-    new THREE.BoxGeometry(bodyWidth, rackLength, depth),
+    new THREE.BoxGeometry(bodyWidth, topY - bottomY, depth),
     bodyMaterial,
   );
-  body.position.y = -0.755 + rackLength / 2;
+  body.position.y = (topY + bottomY) / 2;
   body.userData.role = 'vertical-jack-rack-bar';
   group.add(body);
 
+  // Brown's teeth: a flat underside for the pawl noses, a sloping back.
   const toothShape = new THREE.Shape();
   toothShape.moveTo(0, -toothPitch / 2);
   toothShape.lineTo(toothDepth, -toothPitch / 2);
@@ -121,7 +86,7 @@ function makeVerticalRatchetRack({
 
   const teeth = [];
   const toothSeatOffsets = [];
-  for (let toothIndex = -13; toothIndex <= 4; toothIndex += 1) {
+  for (const toothIndex of toothIndices) {
     const tooth = new THREE.Mesh(toothGeometry, toothMaterial);
     const seatY = driveReferenceY + toothIndex * toothPitch;
     tooth.position.set(bodyWidth / 2, seatY + toothPitch / 2, 0);
@@ -133,23 +98,18 @@ function makeVerticalRatchetRack({
     toothSeatOffsets.push(seatY);
   }
 
+  // The jack head: Brown's trapezoid in section, a turned frustum seated
+  // directly on the rack top.
   const saddle = new THREE.Group();
-  saddle.position.set(0, -0.755 + rackLength + 0.040, 0);
   saddle.userData.role = 'jack-load-saddle';
-  const saddleStem = new THREE.Mesh(
-    new THREE.BoxGeometry(0.22, 0.48, depth * 0.92),
+  const headHeight = plateY(32) - plateY(54);
+  const head = new THREE.Mesh(
+    new THREE.CylinderGeometry((278 - 190) * PLATE_SCALE / 2, (270 - 200) * PLATE_SCALE / 2, headHeight, 64),
     saddleMaterial,
   );
-  saddleStem.position.y = 0.18;
-  saddleStem.userData.role = 'jack-saddle-stem';
-  saddle.add(saddleStem);
-  const saddlePlate = new THREE.Mesh(
-    new THREE.BoxGeometry(1.12, 0.24, 1.05),
-    saddleMaterial,
-  );
-  saddlePlate.position.y = 0.48;
-  saddlePlate.userData.role = 'jack-load-bearing-top-plate';
-  saddle.add(saddlePlate);
+  head.position.y = topY + headHeight / 2;
+  head.userData.role = 'jack-load-bearing-top-plate';
+  saddle.add(head);
   group.add(saddle);
 
   const liftIndex = new THREE.Mesh(
@@ -161,6 +121,7 @@ function makeVerticalRatchetRack({
   group.add(liftIndex);
 
   group.userData.body = body;
+  group.userData.head = head;
   group.userData.liftIndex = liftIndex;
   group.userData.saddle = saddle;
   group.userData.teeth = teeth;
@@ -170,21 +131,21 @@ function makeVerticalRatchetRack({
 
 function makeJackFrame({
   rackBodyWidth,
-  rackGuideTop,
+  rackTopY,
   material,
+  rightInnerX,
   toothPitch,
   whiteMaterial,
 }) {
   const group = new THREE.Group();
   group.userData.role = 'fixed-cast-jack-frame-and-rack-guide';
 
-  // Brown draws the cast stand in section: a hollow column whose two
-  // hatched walls flare concavely into stepped feet either side of the rack,
-  // the right wall stopping below the eccentric.  A thin sole plate ties the
-  // two walls on the ground line.
+  // Brown draws the cast stand in section: two hatched walls either side of
+  // the rack flare concavely into stepped feet; the right wall stops below
+  // the eccentric.  Outlines are his, in plate pixels.
   const standDepth = 1.0;
   const standBackZ = -0.55;
-  const groundY = -1.17;
+  const groundY = GROUND_Y;
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(3.02, 0.12, standDepth),
     material,
@@ -194,35 +155,33 @@ function makeJackFrame({
   group.add(base);
 
   const guideBack = new THREE.Mesh(
-    new THREE.BoxGeometry(rackBodyWidth + 0.42, rackGuideTop + 0.82, 0.24),
+    new THREE.BoxGeometry(rackBodyWidth + 0.42, rackTopY - groundY, 0.24),
     material,
   );
-  guideBack.position.set(0, (rackGuideTop - 0.62) / 2, -0.47);
+  guideBack.position.set(0, (rackTopY + groundY) / 2, -0.47);
   guideBack.userData.role = 'fixed-rear-rack-guide-cheek';
   group.add(guideBack);
 
   const wallProfile = (side) => {
-    // side -1: left wall (inner edge beside the rack body); side 1: right
-    // wall (inner edge clear of the tooth tips).
-    const inner = side < 0 ? -0.33 : 0.54;
-    const top = side < 0 ? 2.3 : 1.12;
-    const neck = side < 0 ? 0.19 : 0.26;
-    const bottom = groundY + 0.12;
-    const x = (offset) => inner + side * offset;
     const shape = new THREE.Shape();
-    shape.moveTo(x(0), bottom);
-    shape.lineTo(x(0), top);
-    shape.lineTo(x(neck), top);
-    shape.lineTo(x(neck + 0.03), 0.42);
-    shape.quadraticCurveTo(x(neck + 0.05), -0.52, x(0.67), -0.60);
-    shape.lineTo(x(0.80), -0.60);
-    shape.lineTo(x(0.80), -0.84);
-    shape.lineTo(x(1.02), -0.84);
-    shape.lineTo(x(1.02), bottom);
+    const p = (x, y) => new THREE.Vector2(plateX(x), plateY(y));
+    const inner = side < 0 ? -rackBodyWidth / 2 - 0.004 : rightInnerX;
+    const outline = side < 0
+      ? {top: [190, 187], upper: [186, 395], control: [181, 447], toe: [132, 447], step: [132, 460], foot: [110, 460]}
+      : {top: [276, 240], upper: [281, 390], control: [286, 447], toe: [335, 447], step: [335, 460], foot: [360, 460]};
+    const top = p(...outline.top);
+    shape.moveTo(inner, GROUND_Y);
+    shape.lineTo(inner, top.y);
+    shape.lineTo(top.x, top.y);
+    shape.lineTo(p(...outline.upper).x, p(...outline.upper).y);
+    shape.quadraticCurveTo(p(...outline.control).x, p(...outline.control).y, p(...outline.toe).x, p(...outline.toe).y);
+    shape.lineTo(p(...outline.step).x, p(...outline.step).y);
+    shape.lineTo(p(...outline.foot).x, p(...outline.foot).y);
+    shape.lineTo(p(...outline.foot).x, GROUND_Y);
     shape.closePath();
     const geometry = new THREE.ExtrudeGeometry(shape, {
       bevelEnabled: false,
-      curveSegments: 18,
+      curveSegments: 24,
       depth: standDepth,
     });
     geometry.translate(0, 0, standBackZ);
@@ -260,94 +219,159 @@ function makeJackFrame({
 function eccentricPawlJack(movement) {
   const root = new THREE.Group();
 
-  // Movement 389 has no official animation or dimensions.  The geometry is
-  // proportioned from Brown's plate and closed as an eccentric strap whose
-  // rigid pawl nose is constrained to the rack face. Follower travel includes
-  // tooth pitch, finite-pawl overtravel and return undershoot.
-  const rackFaceX = 0.49;
-  const eccentricShaft = new THREE.Vector3(1.23, 2.02, 0);
-  const eccentricity = 0.16;
-  const drivePawlLength = 1.20;
-  const eccentricDiskRadius = 0.48;
-  const eccentricStrapRadius = 0.512;
+  // Movement 389 has no official animation or dimensions.  Everything is
+  // measured from Brown's plate: the rack teeth (flat undersides, sloping
+  // backs), the eccentric strap with its integral curved lifting pawl and the
+  // separately pivoted upper stop.  Both pawl noses seat in the root corner
+  // under a tooth's flat face.  The eccentric is rocked by a hand lever (not
+  // drawn) over the right half of its turn, so the strap never swings into
+  // the teeth.  The stroke is what the ratchet needs: one pitch, plus the
+  // overtravel for the stop nose to ride out over a tooth and drop in, plus
+  // the undershoot for the lifting nose to do the same on its return.
   const rackBodyWidth = 0.60;
+  const rootX = rackBodyWidth / 2;
+  const rackFaceX = rootX;
   const rackDepth = 0.54;
-  const toothDepth = .21;
+  const toothDepth = 0.21;
+  const toothPitch = 16.4 * PLATE_SCALE;
+  const mechanismZ = 0.14;
+  const mechanismHalfDepth = 0.11;
   const liftStrokeCount = 3;
-  const strokeDuration = 2.2;
+  const strokeDuration = 2.4;
   const operatingDuration = liftStrokeCount * strokeDuration;
-  const raisedDwellDuration = 0.7;
+  const raisedDwellDuration = 0.8;
   const resetDuration = operatingDuration;
-  const bottomDwellDuration = 0.5;
+  const bottomDwellDuration = 0.6;
   const cycleDuration = operatingDuration + raisedDwellDuration
     + resetDuration + bottomDwellDuration;
-  const returnClearance = 0.24;
-  const parkFraction=.75;
 
-  const camCenterAtAngle = (angle) => new THREE.Vector3(
-    eccentricShaft.x - eccentricity * Math.cos(angle),
-    eccentricShaft.y + eccentricity * Math.sin(angle),
-    0,
-  );
-  const driveNoseAtAngle = (angle, clearance = 0) => {
-    const camCenter = camCenterAtAngle(angle);
-    const x = rackFaceX + clearance;
-    const horizontal = camCenter.x - x;
-    const vertical = Math.sqrt(
-      drivePawlLength ** 2 - horizontal ** 2,
-    );
-    return new THREE.Vector3(x, camCenter.y + vertical, 0);
-  };
-  const engagedNoseY = (angle) => driveNoseAtAngle(angle).y;
-  const followerExtrema = findPeriodicExtrema(engagedNoseY);
-  const followerExcursion=followerExtrema.highValue-followerExtrema.lowValue;
-  const seatingOvertravel=.10, returnUndershoot=.04;
-  const toothPitch=followerExcursion-seatingOvertravel-returnUndershoot;
-  const driveReferenceY=followerExtrema.lowValue+returnUndershoot;
-  const rackLength=driveReferenceY+5*toothPitch+0.875;
-  let startLow=followerExtrema.lowAngle,startHigh=followerExtrema.highAngle;
-  for(let i=0;i<60;i++){const mid=(startLow+startHigh)/2;if(engagedNoseY(mid)<driveReferenceY)startLow=mid;else startHigh=mid;}
-  const cycleStartAngle=(startLow+startHigh)/2;
-  const drivePowerAngle=followerExtrema.highAngle-cycleStartAngle;
-  const drivePowerFraction=drivePowerAngle/FULL_TURN;
-  let seatLow=followerExtrema.highAngle,seatHigh=followerExtrema.lowAngle+FULL_TURN;
-  for(let i=0;i<60;i++){const mid=(seatLow+seatHigh)/2;if(engagedNoseY(mid)>driveReferenceY+toothPitch)seatLow=mid;else seatHigh=mid;}
-  const transferFraction=((seatLow+seatHigh)/2-cycleStartAngle)/FULL_TURN;
-  const returnEndFraction=(followerExtrema.lowAngle+FULL_TURN-cycleStartAngle)/FULL_TURN;
-  const returnRetreat=phase=>returnClearance*Math.sin(Math.PI*THREE.MathUtils.clamp((phase-transferFraction)/(returnEndFraction-transferFraction),0,1))**2;
-  const parkedClearance=returnRetreat(parkFraction);
-  const parkedAngle=cycleStartAngle+FULL_TURN*parkFraction;
-  const rackTriangles=Array.from({length:18},(_,i)=>{
-    const y=driveReferenceY+(i-13)*toothPitch;
-    return [[rackBodyWidth/2,y],[rackBodyWidth/2+toothDepth,y],[rackBodyWidth/2,y+toothPitch]];
+  // Brown's lifting pawl: a curved horn from the top of the strap, its upper
+  // (outer) edge sweeping down tangent to the strap's right side and its
+  // lower edge hollowed, meeting in a sharp nose. Plate pixels about the
+  // strap centre (289, 211), y up.
+  const driveTipPx = [243 - 289, 211 - 137.5];
+  const driveBlade = bladeInLocalFrame(driveTipPx,
+    cubicPoints(driveTipPx, [-27.7, 65.4], [35, 54], [35, 0], 20),
+    cubicPoints(driveTipPx, [-35.3, 64.5], [-12, 50], [-4, 34.8], 20));
+  const drivePawlLength = driveBlade.length;
+  const drivePieces = bladePieces(driveBlade.upper, driveBlade.lower);
+  const eccentricDiskRadius = 31 * PLATE_SCALE;
+  const eccentricStrapRadius = 35 * PLATE_SCALE;
+  const eccentricity = 0.34;
+  const shaftRadius = 0.15;
+  // Brown's eccentric shaft is at (287, 197); it sits a little right so the
+  // strap clears the tooth tips over the whole rock.
+  const shaftPlate = new THREE.Vector3(plateX(287) + 0.045, plateY(197), 0);
+
+  // Brown's upper stop: a tapered blade with a slight upward bow, ending in
+  // an eye on its pin (276, 121); nose at (243, 91). Plate pixels about the pin.
+  const stopTipPx = [243 - 276, 121 - 91];
+  const stopBlade = bladeInLocalFrame(stopTipPx,
+    cubicPoints(stopTipPx, [-21.6, 26.3], [2, 21], [9.4, 3.4], 16),
+    cubicPoints(stopTipPx, [-25.6, 23.3], [-14, 13.5], [-7.4, 6.7], 16));
+  const holdingPawlLength = stopBlade.length;
+  const stopPieces = bladePieces(stopBlade.upper, stopBlade.lower);
+  const stopEyeRadius = 10 * PLATE_SCALE;
+  const stopPinRadius = 4 * PLATE_SCALE;
+
+  const seatingOvertravel = 0.24;
+  const returnUndershoot = 0.23;
+
+  const tipHeight = (center, x) => center.y + Math.sqrt(drivePawlLength ** 2 - (center.x - x) ** 2);
+  const centerAt = (shaft, phi) => new THREE.Vector3(shaft.x + eccentricity * Math.sin(phi), shaft.y - eccentricity * Math.cos(phi), 0);
+  // Lowest nose on the rack face over the rock: the start of each stroke.
+  let rockLow = -0.6, rockLowHigh = 1.2;
+  const rawTip = (phi) => tipHeight(centerAt(shaftPlate, phi), rootX);
+  for (let i = 0; i < 80; i += 1) {
+    const a = rockLow + (rockLowHigh - rockLow) / 3, b = rockLowHigh - (rockLowHigh - rockLow) / 3;
+    if (rawTip(a) < rawTip(b)) rockLowHigh = b; else rockLow = a;
+  }
+  const rockStart = (rockLow + rockLowHigh) / 2;
+  // Vertical placement: the seated nose is Brown's (243, 137.5).
+  const driveReferenceY = plateY(137.5);
+  const eccentricShaft = shaftPlate.clone();
+  eccentricShaft.y += driveReferenceY - returnUndershoot - rawTip(rockStart);
+  const camCenterAtAngle = (phi) => centerAt(eccentricShaft, phi);
+  const engagedNoseY = (phi) => tipHeight(camCenterAtAngle(phi), rootX);
+  const followerLowY = engagedNoseY(rockStart);
+  let rockEnd;
+  {
+    let a = rockStart, b = rockStart + Math.PI * 1.2;
+    const target = driveReferenceY + toothPitch + seatingOvertravel;
+    for (let i = 0; i < 80; i += 1) {
+      const mid = (a + b) / 2;
+      if (engagedNoseY(mid) < target) a = mid; else b = mid;
+    }
+    rockEnd = (a + b) / 2;
+  }
+  const followerHighY = engagedNoseY(rockEnd);
+  const rockAngle = (u) => rockStart + (rockEnd - rockStart) * (1 - Math.cos(FULL_TURN * u)) / 2;
+  const rockRate = (u) => (rockEnd - rockStart) * Math.PI * Math.sin(FULL_TURN * u);
+
+  const toothIndices = Array.from({length: 19}, (_, i) => i - 14);
+  const rackTriangles = toothIndices.map((i) => {
+    const y = driveReferenceY + i * toothPitch;
+    return [[rootX, y], [rootX + toothDepth, y], [rootX, y + toothPitch]];
   });
-  const driveOutline=pawlPolygon(drivePawlLength);
-  const stopBaseToothIndex = 3;
+
+  // Brown draws the stop nose three teeth above the lifting nose; it sits one
+  // pitch higher so the lifting horn, rising through its full ratchet
+  // stroke, passes clear beneath the stop's eye.
+  const stopBaseToothIndex = 4;
   const stopSeatY = driveReferenceY + stopBaseToothIndex * toothPitch;
-  const holdingPawlLength = 0.82;
-  const holdingVerticalOffset = 0.48;
-  const holdingHorizontalOffset = Math.sqrt(
-    holdingPawlLength ** 2 - holdingVerticalOffset ** 2,
-  );
-  const holdingPivot = new THREE.Vector3(
-    rackFaceX + holdingHorizontalOffset,
-    stopSeatY - holdingVerticalOffset,
-    0,
-  );
-  const holdingBaseAngle = Math.atan2(
-    holdingVerticalOffset,
-    -holdingHorizontalOffset,
-  );
-  const holdOutline=pawlPolygon(holdingPawlLength);
-  const crestRetreat=firstClearRetreat(a=>clearRackPawl(holdOutline,holdingPivot,holdingBaseAngle-a,rackTriangles,toothPitch-1e-7),0,.85);
+  const holdingOffset = new THREE.Vector3((276 - 243) * PLATE_SCALE, (91 - 121) * PLATE_SCALE, 0);
+  const holdingPivot = new THREE.Vector3(rootX, stopSeatY, 0).add(holdingOffset);
+  const holdingBaseAngle = Math.atan2(-holdingOffset.y, -holdingOffset.x);
+  const holdingVerticalOffset = -holdingOffset.y;
+
+  // Drive pose for a nose clearance c off the rack face.
+  const drivePose = (phi, clearance) => {
+    const center = camCenterAtAngle(phi);
+    const x = rootX + clearance;
+    const nose = new THREE.Vector3(x, tipHeight(center, x), 0);
+    return {center, nose, angle: Math.atan2(nose.y - center.y, nose.x - center.x)};
+  };
+  const driveClear = (phi, lift) => (clearance) => {
+    const pose = drivePose(phi, clearance);
+    return clearRackPieces(drivePieces, pose.center, pose.angle, rackTriangles, lift);
+  };
+  const holdingClear = (lift) => (retreat) => clearRackPieces(stopPieces, holdingPivot, holdingBaseAngle - retreat, rackTriangles, lift);
+
+  // Rack displacement within a stroke is w above the stored pitch.
+  const strokePhaseForNose = (target, rising) => {
+    let a = rising ? 0 : 0.5, b = rising ? 0.5 : 1;
+    for (let i = 0; i < 70; i += 1) {
+      const mid = (a + b) / 2, y = engagedNoseY(rockAngle(mid));
+      if ((y < target) === rising) a = mid; else b = mid;
+    }
+    return (a + b) / 2;
+  };
+  const engageFraction = strokePhaseForNose(driveReferenceY, true);
+  const transferFraction = strokePhaseForNose(driveReferenceY + toothPitch, false);
+
+  // Each pawl rests on the rack profile (gravity or spring toward the teeth)
+  // and is pushed out by it; the resting coordinate is followed pose by pose
+  // so it stays on its own tooth. Its one click into the next root is eased.
+  // Lifting pawl: from handing over the load (seated) through its return and
+  // the next approach until it is seated again, the rack standing one pitch up.
+  const tableSamples = 720;
+  const driveSpan = 1 - transferFraction + engageFraction;
+  const driveU = (i) => positiveModulo(transferFraction + driveSpan * i / tableSamples, 1);
+  const driveTable = easeClick(restingContinuation(
+    (i) => driveClear(rockAngle(driveU(i)), toothPitch), tableSamples, 0, 0.6, 0.0005, 0), Math.round(tableSamples * 0.16 / driveSpan));
+  // Upper stop: from the start of the power stroke through overtravel and
+  // settling, the rack w above its stored pitch.
+  const stopSpan = transferFraction - engageFraction;
+  const stopW = (i) => engagedNoseY(rockAngle(engageFraction + stopSpan * i / tableSamples)) - driveReferenceY;
+  const stopTable = easeClick(restingContinuation(
+    (i) => holdingClear(stopW(i)), tableSamples, 0, 0.9, 0.0005, 0), Math.round(tableSamples * 0.18 / stopSpan));
+  const tableGap = (value) => value <= 0 ? 0 : value + 0.002 * Math.min(1, value / 0.01);
+  const driveClearanceAt = (u) => tableGap(sampleTable(driveTable.values, positiveModulo(u - transferFraction, 1) / driveSpan));
+  const holdingRetreatAt = (u) => tableGap(sampleTable(stopTable.values, (u - engageFraction) / stopSpan));
 
   const rackMaterial = matte(PALETTE.driven, {
     metalness: 0.14,
     roughness: 0.58,
-  });
-  const toothMaterial = matte(PALETTE.ink, {
-    metalness: 0.26,
-    roughness: 0.47,
   });
   const driverMaterial = matte(PALETTE.driver, {
     metalness: 0.16,
@@ -370,10 +394,14 @@ function eccentricPawlJack(movement) {
     roughness: 0.43,
   });
 
+  const rackTopY = plateY(54);
+  const rackBottomY = plateY(374);
+  const rightInnerX = rootX + toothDepth + 0.03;
   const frame = makeJackFrame({
     material: frameMaterial,
     rackBodyWidth,
-    rackGuideTop: 2.2,
+    rackTopY,
+    rightInnerX,
     toothPitch,
     whiteMaterial,
   });
@@ -382,13 +410,16 @@ function eccentricPawlJack(movement) {
   const rack = makeVerticalRatchetRack({
     bodyMaterial: rackMaterial,
     bodyWidth: rackBodyWidth,
+    bottomY: rackBottomY,
     depth: rackDepth,
     driveReferenceY,
-    rackLength,
     saddleMaterial: rackMaterial,
     toothDepth,
-    toothMaterial,
+    toothIndices,
+    // The teeth are cut in the rack bar itself.
+    toothMaterial: rackMaterial,
     toothPitch,
+    topY: rackTopY,
     whiteMaterial,
   });
   root.add(rack);
@@ -397,179 +428,125 @@ function eccentricPawlJack(movement) {
   eccentricRotor.position.copy(eccentricShaft);
   eccentricRotor.userData.role = 'continuously-rotating-eccentric-driver';
   root.add(eccentricRotor);
-  const eccentricDisk = cylinderAlongZ(
-    eccentricDiskRadius,
-    0.44,
+  const eccentricDisk = new THREE.Mesh(
+    plate(clip.difference(poly(circle([eccentricity, 0], eccentricDiskRadius, 96)), poly(circle([0, 0], shaftRadius, 64))),
+      mechanismZ - mechanismHalfDepth + 0.01, mechanismZ + mechanismHalfDepth - 0.01),
     driverMaterial,
-    56,
   );
-  eccentricDisk.geometry.dispose();
-  eccentricDisk.geometry=plate(clip.difference(poly(circle([0,0],eccentricDiskRadius,96)),poly(circle([eccentricity,0],.134,64))),-.22,.22);
-  eccentricDisk.rotation.x=0;
-  eccentricDisk.position.x = -eccentricity;
   eccentricDisk.userData.role = 'offset-eccentric-disk';
   eccentricRotor.add(eccentricDisk);
   const eccentricIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.38, 0.055, 0.035),
     whiteMaterial,
   );
-  eccentricIndex.position.set(-eccentricity + 0.19, 0, 0.245);
+  eccentricIndex.position.set(eccentricity + 0.19, 0, 0.3);
   eccentricIndex.userData.role = 'white-eccentric-disk-spin-index';
   eccentricRotor.add(eccentricIndex);
 
-  const eccentricShaftPin = cylinderAlongZ(0.13, 0.84, pinMaterial, 28);
-  eccentricShaftPin.position.set(
-    eccentricShaft.x,
-    eccentricShaft.y,
-    0,
-  );
+  const eccentricShaftPin = cylinderAlongZ(shaftRadius - 0.004, 0.84, pinMaterial, 28);
+  eccentricShaftPin.position.set(eccentricShaft.x, eccentricShaft.y, -0.12);
   eccentricShaftPin.userData.role = 'fixed-eccentric-input-shaft';
   root.add(eccentricShaftPin);
 
-  const eccentricStrap = new THREE.Mesh(plate(clip.difference(poly(circle([0,0],.54,96)),poly(circle([0,0],eccentricDiskRadius+.004,96))),-.14,.14),pawlMaterial);
-  eccentricStrap.userData.role='eccentric-following-circular-pawl-strap';
-  root.add(eccentricStrap);
-  const drivingPawl=new THREE.Group();
-  drivingPawl.userData.role='rigid-eccentric-strap-lifting-pawl';
-  const driveBody=new THREE.Mesh(plate(clip.difference(poly(driveOutline),poly(circle([0,0],eccentricDiskRadius+.004,96))),-.09,.09),pawlMaterial);
-  driveBody.userData.role='finite-pointed-eccentric-strap-pawl';
+  // Strap and lifting pawl are one forging: the strap ring and Brown's horn.
+  const driveOutline = [...driveBlade.upper, [0, 0], ...[...driveBlade.lower].reverse()];
+  const strapShape = clip.difference(
+    clip.union(poly(circle([0, 0], eccentricStrapRadius, 128)), poly(driveOutline)),
+    poly(circle([0, 0], eccentricDiskRadius + 0.004, 128)),
+  );
+  const driveBody = new THREE.Mesh(plate(strapShape, mechanismZ - mechanismHalfDepth, mechanismZ + mechanismHalfDepth), pawlMaterial);
+  driveBody.userData.role = 'eccentric-strap-with-integral-curved-lifting-pawl';
+  const drivingPawl = new THREE.Group();
+  drivingPawl.userData.role = 'rigid-eccentric-strap-lifting-pawl';
   drivingPawl.add(driveBody);
-  drivingPawl.userData.setEndpoints=(a,b)=>{drivingPawl.position.copy(a);drivingPawl.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);};
+  drivingPawl.userData.setEndpoints = (a, b) => {
+    drivingPawl.position.set(a.x, a.y, 0);
+    drivingPawl.rotation.z = Math.atan2(b.y - a.y, b.x - a.x);
+  };
   root.add(drivingPawl);
-  const drivingNose=new THREE.Object3D();
-  drivingNose.userData.role='lifting-pawl-rack-working-nose';
+  const eccentricStrap = driveBody;
+  const drivingNose = new THREE.Object3D();
+  drivingNose.userData.role = 'lifting-pawl-rack-working-nose';
   root.add(drivingNose);
-  const holdingPawl=new THREE.Group();holdingPawl.position.copy(holdingPivot);
-  holdingPawl.userData.role='upper-fixed-pivot-load-holding-stop-pawl';
-  const holdingPawlBody=new THREE.Mesh(plate(clip.difference(clip.union(poly(holdOutline),poly(circle([0,0],.17,64))),poly(circle([0,0],.124,64))),-.09,.09),pawlMaterial);
-  holdingPawlBody.userData.role='upper-stop-pawl-rigid-body';holdingPawl.add(holdingPawlBody);
-  const holdingPivotPin=cylinderAlongZ(.12,.84,pinMaterial,32);
-  holdingPivotPin.userData.role='upper-stop-pawl-fixed-pivot-pin';holdingPawl.add(holdingPivotPin);root.add(holdingPawl);
-  const fixedSupports=[];
-  for(const [pivot,radius] of [[eccentricShaft,.134],[holdingPivot,.124]]){
-    const journal=new THREE.Mesh(boredCylinderGeometry(radius+.08,radius,.24),frameMaterial);
-    journal.rotation.x=Math.PI/2;journal.position.set(pivot.x,pivot.y,-.43);
-    journal.userData.role='fixed-bored-jack-pawl-support';root.add(journal);fixedSupports.push(journal);
-    const bridge=new THREE.Mesh(new THREE.BoxGeometry(pivot.x-radius-.07,.16,.24),frameMaterial);
-    bridge.position.set((pivot.x-radius-.07)/2,pivot.y,-.51);bridge.userData.role='fixed-rear-pawl-support-bridge';root.add(bridge);fixedSupports.push(bridge);
+
+  const holdingPawl = new THREE.Group();
+  holdingPawl.position.copy(holdingPivot);
+  holdingPawl.userData.role = 'upper-fixed-pivot-load-holding-stop-pawl';
+  const stopOutline = [...stopBlade.upper, [0, 0], ...[...stopBlade.lower].reverse()];
+  const holdingPawlBody = new THREE.Mesh(plate(clip.difference(
+    clip.union(poly(stopOutline), poly(circle([0, 0], stopEyeRadius, 64))),
+    poly(circle([0, 0], stopPinRadius + 0.004, 48)),
+  ), mechanismZ - mechanismHalfDepth, mechanismZ + mechanismHalfDepth), pawlMaterial);
+  holdingPawlBody.userData.role = 'upper-stop-pawl-rigid-body';
+  holdingPawl.add(holdingPawlBody);
+  const holdingPivotPin = cylinderAlongZ(stopPinRadius, 0.84, pinMaterial, 32);
+  holdingPivotPin.position.z = -0.12;
+  holdingPivotPin.userData.role = 'upper-stop-pawl-fixed-pivot-pin';
+  holdingPawl.add(holdingPivotPin);
+  root.add(holdingPawl);
+
+  // Minimal undrawn supports behind the stand: bored bosses for the two
+  // fixed pins, carried by bridges from a spine behind the rack.
+  const fixedSupports = [];
+  for (const [pivot, radius] of [[eccentricShaft, shaftRadius], [holdingPivot, stopPinRadius]]) {
+    const journal = new THREE.Mesh(boredCylinderGeometry(radius + 0.08, radius + 0.004, 0.24), frameMaterial);
+    journal.rotation.x = Math.PI / 2;
+    journal.position.set(pivot.x, pivot.y, -0.43);
+    journal.userData.role = 'fixed-bored-jack-pawl-support';
+    root.add(journal);
+    fixedSupports.push(journal);
+    const bridge = new THREE.Mesh(new THREE.BoxGeometry(pivot.x - radius - 0.07, 0.16, 0.24), frameMaterial);
+    bridge.position.set((pivot.x - radius - 0.07) / 2, pivot.y, -0.51);
+    bridge.userData.role = 'fixed-rear-pawl-support-bridge';
+    root.add(bridge);
+    fixedSupports.push(bridge);
   }
-  const supportSpine=new THREE.Mesh(new THREE.BoxGeometry(.25,holdingPivot.y+.6,.24),frameMaterial);
-  supportSpine.position.set(-.12,(holdingPivot.y-.6)/2,-.51);supportSpine.userData.role='fixed-rear-pawl-support-spine';root.add(supportSpine);fixedSupports.push(supportSpine);
-  for(const y of [.35,1.15]){
-    const cheek=new THREE.Mesh(new THREE.BoxGeometry(.44,.18,.12),frameMaterial);cheek.position.set(-.04,y,.35);cheek.userData.role='fixed-front-rack-guide-strap';root.add(cheek);fixedSupports.push(cheek);
-    const web=new THREE.Mesh(new THREE.BoxGeometry(.12,.18,.88),frameMaterial);web.position.set(-.39,y,-.03);web.userData.role='fixed-rack-guide-strap-web';root.add(web);fixedSupports.push(web);
+  const spineTop = holdingPivot.y + 0.08;
+  const supportSpine = new THREE.Mesh(new THREE.BoxGeometry(0.25, spineTop - GROUND_Y, 0.24), frameMaterial);
+  supportSpine.position.set(-0.12, (spineTop + GROUND_Y) / 2, -0.51);
+  supportSpine.userData.role = 'fixed-rear-pawl-support-spine';
+  root.add(supportSpine);
+  fixedSupports.push(supportSpine);
+  for (const y of [0.35, 1.15]) {
+    const cheek = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.18, 0.12), frameMaterial);
+    cheek.position.set(-0.04, y, 0.35);
+    cheek.userData.role = 'fixed-front-rack-guide-strap';
+    root.add(cheek);
+    fixedSupports.push(cheek);
   }
 
   const driveContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.060, 18, 12),
     whiteMaterial,
   );
-  driveContactMarker.position.z = 0.16;
+  driveContactMarker.position.z = 0.3;
   driveContactMarker.userData.role = 'white-active-lifting-pawl-contact-index';
   root.add(driveContactMarker);
   const stopContactMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.055, 18, 12),
     whiteMaterial,
   );
-  stopContactMarker.position.z = 0.16;
+  stopContactMarker.position.z = 0.3;
   stopContactMarker.userData.role = 'white-active-upper-stop-contact-index';
   root.add(stopContactMarker);
 
-  const followerDerivativeAtAngle = (angle) => {
-    const camCenter = camCenterAtAngle(angle);
-    const horizontal = camCenter.x - rackFaceX;
-    const vertical = Math.sqrt(
-      drivePawlLength ** 2 - horizontal ** 2,
-    );
-    const centerXDerivative = eccentricity * Math.sin(angle);
-    const centerYDerivative = eccentricity * Math.cos(angle);
-    return centerYDerivative
-      - horizontal * centerXDerivative / vertical;
-  };
-
   const holdingTipAtAngle = (angle) => holdingPivot.clone().add(
-    new THREE.Vector3(
-      holdingPawlLength * Math.cos(angle),
-      holdingPawlLength * Math.sin(angle),
-      0,
-    ),
+    new THREE.Vector3(holdingPawlLength * Math.cos(angle), holdingPawlLength * Math.sin(angle), 0),
   );
+  const noseRate = (phi, phiRate) => {
+    const center = camCenterAtAngle(phi), h = center.x - rootX;
+    return (eccentricity * Math.sin(phi) - h * eccentricity * Math.cos(phi) / Math.sqrt(drivePawlLength ** 2 - h * h)) * phiRate;
+  };
 
   const rawStateAtTime = (time) => {
     const wrappedTime = positiveModulo(time, cycleDuration);
     const raisedDwellStarts = operatingDuration;
     const resetStarts = raisedDwellStarts + raisedDwellDuration;
     const bottomDwellStarts = resetStarts + resetDuration;
-    let rackDisplacement;
-    let rackSpeed = 0;
-    let rackAcceleration = 0;
-    let eccentricAngle = cycleStartAngle;
-    let eccentricAngularSpeed = 0;
-    let driveClearance = 0;
-    let drivingEngaged = false;
-    let holdingEngaged = true;
-    let holdingAngle = holdingBaseAngle;
-    let stage;
-    let strokeIndex = liftStrokeCount;
-    let strokePhase = 0;
-    let strokeProgress = 1;
-
-    if (wrappedTime < operatingDuration) {
-      const strokeCoordinate = wrappedTime / strokeDuration;
-      strokeIndex = Math.min(
-        liftStrokeCount - 1,
-        Math.floor(strokeCoordinate),
-      );
-      strokePhase = strokeCoordinate - strokeIndex;
-      const parked=strokeIndex===liftStrokeCount-1&&strokePhase>parkFraction;
-      if(parked)strokePhase=parkFraction;
-      eccentricAngle = cycleStartAngle
-        + FULL_TURN * strokePhase;
-      eccentricAngularSpeed = parked?0:FULL_TURN / strokeDuration;
-      if (strokePhase <= drivePowerFraction + 1e-12) {
-        const engagedNose = driveNoseAtAngle(eccentricAngle);
-        const withinStroke = engagedNose.y - driveReferenceY;
-        strokeProgress = THREE.MathUtils.clamp(
-          withinStroke / (toothPitch+seatingOvertravel),
-          0,
-          1,
-        );
-        rackDisplacement = strokeIndex * toothPitch + withinStroke;
-        rackSpeed = followerDerivativeAtAngle(eccentricAngle)
-          * eccentricAngularSpeed;
-        drivingEngaged = true;
-        holdingEngaged = strokeProgress <= 1e-12;
-        const retreat=withinStroke<toothPitch-1e-7
-          ?firstClearRetreat(a=>clearRackPawl(holdOutline,holdingPivot,holdingBaseAngle-a,rackTriangles,rackDisplacement),0,.85)
-          :withinStroke-toothPitch<.08
-            ?crestRetreat+1.1*(withinStroke-toothPitch)
-            :(crestRetreat+.088)*(1-quinticState((withinStroke-toothPitch-.08)/(seatingOvertravel-.08)).value);
-        holdingAngle=holdingBaseAngle-retreat;
-        stage = 'eccentric-power-stroke-lifting-rack';
-      } else if(strokePhase<transferFraction) {
-        const withinStroke=engagedNoseY(eccentricAngle)-driveReferenceY;
-        rackDisplacement=strokeIndex*toothPitch+withinStroke;
-        rackSpeed=followerDerivativeAtAngle(eccentricAngle)*eccentricAngularSpeed;
-        drivingEngaged=true;holdingEngaged=false;holdingAngle=holdingBaseAngle;
-        stage='overtravel-settling-onto-seated-upper-stop';
-      } else {
-        driveClearance = returnRetreat(strokePhase);
-        rackDisplacement = (strokeIndex + 1) * toothPitch;
-        strokeProgress = 1;
-        holdingEngaged = true;
-        stage = 'lifting-pawl-return-upper-stop-holding';
-      }
-    } else if (wrappedTime < resetStarts) {
-      rackDisplacement = liftStrokeCount * toothPitch;
-      eccentricAngle = parkedAngle;
-      driveClearance=parkedClearance;
-      holdingEngaged = true;
-      stage = 'three-pitch-raised-load-dwell';
-    } else if (wrappedTime < bottomDwellStarts) {
-      // Lowering: the operator reverses the eccentric, so the lifting strokes
-      // play backward. The strap pawl lets the rack down one pitch per turn
-      // while the stop pawl is held clear of each descending tooth; every pose
-      // is a lifting pose, so the finite clearances carry over unchanged.
+    if (wrappedTime >= resetStarts && wrappedTime < bottomDwellStarts) {
+      // Lowering: the operator rocks the eccentric the other way round, so
+      // the lifting strokes play backward. The strap pawl lets the rack down
+      // one pitch per rock while the stop pawl is held off each tooth.
       const mirrored = rawStateAtTime(operatingDuration - (wrappedTime - resetStarts));
       return {
         ...mirrored,
@@ -577,126 +554,110 @@ function eccentricPawlJack(movement) {
         rackSpeed: -mirrored.rackSpeed,
         stage: `lowering-reversed-${mirrored.stage}`,
       };
-    } else {
-      return {...rawStateAtTime(0), eccentricAngularSpeed: 0, rackSpeed: 0, rackAcceleration: 0, stage: 'lowered-jack-dwell'};
     }
-
-    const camCenter = camCenterAtAngle(eccentricAngle);
-    if(!drivingEngaged)driveClearance=boundedRetreat(clearance=>{
-      const tip=driveNoseAtAngle(eccentricAngle,clearance);
-      return clearRackPawl(driveOutline,camCenter,Math.atan2(tip.y-camCenter.y,tip.x-camCenter.x),rackTriangles,rackDisplacement);
-    },driveClearance,.62);
-    if(!holdingEngaged)holdingAngle=holdingBaseAngle-boundedRetreat(retreat=>clearRackPawl(holdOutline,holdingPivot,holdingBaseAngle-retreat,rackTriangles,rackDisplacement),holdingBaseAngle-holdingAngle,.85);
-    const driveNose = driveNoseAtAngle(
-      eccentricAngle,
-      driveClearance,
-    );
+    let strokeIndex, strokePhase;
+    if (wrappedTime < operatingDuration) {
+      const coordinate = wrappedTime / strokeDuration;
+      strokeIndex = Math.min(liftStrokeCount - 1, Math.floor(coordinate));
+      strokePhase = coordinate - strokeIndex;
+    } else if (wrappedTime < resetStarts) {
+      strokeIndex = liftStrokeCount - 1;
+      strokePhase = 1;
+    } else {
+      strokeIndex = 0;
+      strokePhase = 0;
+    }
+    const dwell = wrappedTime >= operatingDuration;
+    const phi = rockAngle(strokePhase);
+    const phiRate = dwell ? 0 : rockRate(strokePhase) / strokeDuration;
+    const noseY = engagedNoseY(phi);
+    const w = noseY - driveReferenceY;
+    const rising = strokePhase <= 0.5;
+    let rackDisplacement, rackSpeed = 0, driveClearance = 0, holdingRetreat = 0;
+    let drivingEngaged = false, holdingEngaged = true, stage;
+    if (rising && w > 0) {
+      rackDisplacement = strokeIndex * toothPitch + w;
+      rackSpeed = noseRate(phi, phiRate);
+      drivingEngaged = true;
+      holdingRetreat = holdingRetreatAt(strokePhase);
+      holdingEngaged = holdingRetreat === 0;
+      stage = 'eccentric-power-stroke-lifting-rack';
+    } else if (!rising && w > toothPitch) {
+      rackDisplacement = strokeIndex * toothPitch + w;
+      rackSpeed = noseRate(phi, phiRate);
+      drivingEngaged = true;
+      holdingRetreat = holdingRetreatAt(strokePhase);
+      holdingEngaged = false;
+      stage = 'overtravel-settling-onto-seated-upper-stop';
+    } else if (rising) {
+      rackDisplacement = strokeIndex * toothPitch;
+      driveClearance = driveClearanceAt(strokePhase);
+      stage = 'lifting-pawl-nose-sliding-into-root';
+    } else {
+      rackDisplacement = (strokeIndex + 1) * toothPitch;
+      driveClearance = driveClearanceAt(strokePhase);
+      stage = 'lifting-pawl-return-upper-stop-holding';
+    }
+    const pose = drivePose(phi, driveClearance);
+    const holdingAngle = holdingBaseAngle - holdingRetreat;
     const holdingTip = holdingTipAtAngle(holdingAngle);
-    const completedStrokeCount = Math.round(
-      rackDisplacement / toothPitch,
-    );
+    const completedStrokeCount = Math.round(rackDisplacement / toothPitch - (drivingEngaged ? 0.5 : 0));
     const driveMaterialToothIndex = -strokeIndex;
-    const driveToothSeatY = driveReferenceY
-      + driveMaterialToothIndex * toothPitch + rackDisplacement;
-    const holdingMaterialToothIndex = stopBaseToothIndex
-      - completedStrokeCount;
-    const holdingToothSeatY = driveReferenceY
-      + holdingMaterialToothIndex * toothPitch + rackDisplacement;
+    const driveToothSeatY = driveReferenceY + driveMaterialToothIndex * toothPitch + rackDisplacement;
+    const holdingMaterialToothIndex = stopBaseToothIndex - Math.round(rackDisplacement / toothPitch - 0.5 + 1e-9);
+    const holdingToothSeatY = driveReferenceY + holdingMaterialToothIndex * toothPitch + rackDisplacement;
     return {
-      camCenter,
+      camCenter: pose.center,
       completedStrokeCount,
       driveClearance,
       driveMaterialToothIndex,
-      driveNose,
-      drivePawlLength: camCenter.distanceTo(driveNose),
+      driveNose: pose.nose,
+      drivePawlLength: pose.center.distanceTo(pose.nose),
+      drivePawlAngle: pose.angle,
       driveToothSeatY,
-      drivingContactError: drivingEngaged
-        ? driveNose.y - driveToothSeatY
-        : null,
+      drivingContactError: drivingEngaged ? pose.nose.y - driveToothSeatY : null,
       drivingEngaged,
-      eccentricAngle,
-      eccentricAngularSpeed,
-      eccentricRotorAngle: positiveModulo(-eccentricAngle, FULL_TURN),
+      eccentricAngle: phi,
+      eccentricAngularSpeed: phiRate,
+      eccentricRotorAngle: phi - Math.PI / 2,
       holdingAngle,
       holdingContactError: holdingEngaged
-        ? holdingTip.distanceTo(
-          new THREE.Vector3(rackFaceX, stopSeatY, 0),
-        )
+        ? holdingTip.distanceTo(new THREE.Vector3(rootX, holdingToothSeatY, 0))
         : null,
       holdingEngaged,
       holdingMaterialToothIndex,
+      holdingRetreat,
       holdingTip,
       holdingToothSeatY,
-      rackAcceleration,
+      rackAcceleration: 0,
       rackDisplacement,
       rackSpeed,
-      stage,
+      stage: dwell ? (wrappedTime < resetStarts ? 'three-pitch-raised-load-dwell' : 'lowered-jack-dwell') : stage,
       stopSeatY,
       strokeIndex,
       strokePhase,
-      strokeProgress,
     };
   };
-
-  // The operator's crank starts and stops smoothly: a cosine speed ramp at
-  // each end of the lifting run (and of the reversed lowering run) replaces
-  // the old instant start at full speed and the stop at the parked pose, so
-  // the loop from the lowered dwell into the next lift has no sudden start.
-  const parkTime = (liftStrokeCount - 1 + parkFraction) * strokeDuration;
-  const easeTime = operatingDuration - parkTime;
-  const easedDrive = (u) => {
-    const ramp = (w) => ({s: w / 2 - easeTime / (2 * Math.PI) * Math.sin(Math.PI * w / easeTime),
-      rate: (1 - Math.cos(Math.PI * w / easeTime)) / 2});
-    if (u < easeTime) return ramp(Math.max(0, u));
-    if (u > operatingDuration - easeTime) {
-      const end = ramp(Math.max(0, operatingDuration - u));
-      return {s: parkTime - end.s, rate: end.rate};
-    }
-    return {s: u - easeTime / 2, rate: 1};
-  };
-  const stateAtTime = (time) => {
-    const wrappedTime = positiveModulo(time, cycleDuration);
-    const resetStarts = operatingDuration + raisedDwellDuration;
-    let drive = null, sign = 1;
-    if (wrappedTime < operatingDuration) drive = easedDrive(wrappedTime);
-    else if (wrappedTime >= resetStarts && wrappedTime < resetStarts + resetDuration) {
-      drive = easedDrive(operatingDuration - (wrappedTime - resetStarts));
-      sign = -1;
-    }
-    if (!drive) return rawStateAtTime(time);
-    const state = rawStateAtTime(drive.s);
-    return {
-      ...state,
-      eccentricAngularSpeed: sign * state.eccentricAngularSpeed * drive.rate,
-      rackSpeed: sign * state.rackSpeed * drive.rate,
-      stage: sign < 0 ? `lowering-reversed-${state.stage}` : state.stage,
-    };
-  };
+  const stateAtTime = rawStateAtTime;
 
   const update = (time) => {
     const state = stateAtTime(time);
     rack.position.y = state.rackDisplacement;
     rack.userData.velocity = new THREE.Vector3(0, state.rackSpeed, 0);
     eccentricRotor.rotation.z = state.eccentricRotorAngle;
-    eccentricRotor.userData.angularSpeed = -state.eccentricAngularSpeed;
-    eccentricStrap.position.x = state.camCenter.x;
-    eccentricStrap.position.y = state.camCenter.y;
+    eccentricRotor.userData.angularSpeed = state.eccentricAngularSpeed;
     drivingPawl.userData.setEndpoints(state.camCenter, state.driveNose);
-    // The strap and its pawl are one rigid forging turning together about
-    // the eccentric.
-    eccentricStrap.rotation.z = drivingPawl.rotation.z;
     drivingPawl.userData.endpoints = {
       end: state.driveNose.clone(),
       start: state.camCenter.clone(),
     };
-    drivingNose.position.x = state.driveNose.x;
-    drivingNose.position.y = state.driveNose.y;
+    drivingNose.position.set(state.driveNose.x, state.driveNose.y, mechanismZ);
     holdingPawl.rotation.z = state.holdingAngle;
     driveContactMarker.visible = state.drivingEngaged;
     driveContactMarker.position.x = state.driveNose.x;
     driveContactMarker.position.y = state.driveNose.y;
     stopContactMarker.visible = state.holdingEngaged;
-    stopContactMarker.position.x = rackFaceX;
+    stopContactMarker.position.x = rootX;
     stopContactMarker.position.y = stopSeatY;
     root.userData.contacts = {
       drivingPawlToRack: {
@@ -715,9 +676,6 @@ function eccentricPawlJack(movement) {
     root.userData.kinematics = state;
   };
 
-  const firstPowerEnd = rawStateAtTime(
-    strokeDuration * drivePowerFraction,
-  );
   root.userData = {
     archetype:
       'eccentric-strap-lifting-pawl-linear-ratchet-rack-upper-holding-stop-jack',
@@ -739,6 +697,7 @@ function eccentricPawlJack(movement) {
       holdingPivotPin,
       rack,
       rackBody: rack.userData.body,
+      rackHead: rack.userData.head,
       rackLiftIndex: rack.userData.liftIndex,
       rackSaddle: rack.userData.saddle,
       rackTeeth: rack.userData.teeth,
@@ -746,73 +705,72 @@ function eccentricPawlJack(movement) {
     },
     constraintResiduals: {
       driveFollowerStrokeBudget:
-        followerExtrema.highValue - followerExtrema.lowValue - toothPitch - seatingOvertravel - returnUndershoot,
-      firstPowerStrokeRackAdvance:
-        firstPowerEnd.rackDisplacement - toothPitch - seatingOvertravel,
+        followerHighY - followerLowY - toothPitch - seatingOvertravel - returnUndershoot,
       holdingPawlSeatedLength: holdingPivot.distanceTo(
-        new THREE.Vector3(rackFaceX, stopSeatY, 0),
+        new THREE.Vector3(rootX, stopSeatY, 0),
       ) - holdingPawlLength,
-      lowFollowerLinkLength: camCenterAtAngle(
-        followerExtrema.lowAngle,
-      ).distanceTo(driveNoseAtAngle(followerExtrema.lowAngle))
-        - drivePawlLength,
+      lowFollowerLinkLength: camCenterAtAngle(rockStart)
+        .distanceTo(new THREE.Vector3(rootX, followerLowY, 0)) - drivePawlLength,
     },
     degreesOfFreedom: {
       independentPrescribedInputs: 1,
       inputs: [
-        'continuous eccentric-shaft angle during each lifting stroke',
+        'rocking eccentric-shaft angle during each lifting stroke',
       ],
       note:
-        'the eccentric center, rigid strap pawl and rack-face constraint determine one follower excursion; the upper pawl stores each one-pitch ratchet advance during the lifting-pawl return',
+        'the eccentric centre, rigid strap pawl and rack-face root constraint determine the lift; each pawl otherwise rests on the rack profile (its free swing is found by contact), and the upper pawl stores each one-pitch ratchet advance during the lifting-pawl return',
       storedEnergyStates: 0,
     },
     dynamics: {
       idealizations: [
-        'the eccentric disk turns about one fixed shaft inside a finite strap with 0.004 nominal running clearance',
-        'the lifting pawl is rigid from strap center to rack nose and is laterally spring-retracted only on its return',
-        'the upper stop follows a prescribed continuous clearance branch, reseats during overtravel, and carries the settled rack during lifting-pawl return; gravity, preload and handoff forces are not solved',
-        'rack, saddle and load are rigid; pivots are frictionless and tooth impact, deformation, force, friction and inertia are omitted',
-        'three lifting strokes followed by three reversed lowering strokes (the stop pawl held clear by hand), plus all dimensions, timing, easing, materials, depth and camera, are reconstruction decisions',
+        'the eccentric disk turns about one fixed shaft inside its strap with 0.004 running clearance',
+        'the lifting pawl is one rigid forging with the strap; its free swing about the eccentric is set by resting on the rack profile',
+        'the upper stop swings on a fixed pin and rests on the rack profile; each click into the next root is eased over the rest of the overtravel',
+        'rack, head and load are rigid; pivots are frictionless and tooth impact, deformation, force, friction and inertia are omitted',
+        'three lifting strokes followed by three reversed lowering strokes (the stop pawl held off by hand), plus the rocking range, timing, materials, depth and camera, are reconstruction decisions',
       ],
       sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
       treatment:
-        'geometrically closed eccentric-follower power strokes with exact one-pitch ratchet storage, then the same strokes reversed to let the rack down a pitch at a time',
+        'geometrically closed eccentric-follower power strokes with both noses seated in the tooth roots and contact-found ratchet rides, then the same strokes reversed to let the rack down a pitch at a time',
     },
     fidelity: 'authored',
     geometry: {
       drivePawlLength,
       seatingOvertravel,
       returnUndershoot,
-      rackToothCount: 18,
-      cycleStartAngle,
-      returnEndFraction,
-      followerExcursion,
+      rackToothCount: toothIndices.length,
+      rockStart,
+      rockEnd,
+      engageFraction,
       transferFraction,
-      drivePowerAngle,
-      drivePowerFraction,
+      driveClick: {index: driveTable.clickIndex, crest: driveTable.crest, jump: driveTable.jump},
+      stopClick: {index: stopTable.clickIndex, crest: stopTable.crest, jump: stopTable.jump},
       driveReferenceY,
       eccentricDiskRadius,
       eccentricShaft: eccentricShaft.clone(),
       eccentricStrapRadius,
       eccentricity,
-      followerHighAngle: followerExtrema.highAngle,
-      followerHighY: followerExtrema.highValue,
-      followerLowAngle: followerExtrema.lowAngle,
-      followerLowY: followerExtrema.lowValue,
+      followerHighY,
+      followerLowY,
       holdingBaseAngle,
       holdingPawlLength,
       holdingVerticalOffset,
       holdingPivot: holdingPivot.clone(),
       liftStrokeCount,
+      mechanismZ,
       rackBodyWidth,
       rackDepth,
       rackFaceX,
-      rackLength,
-      returnClearance,
+      rootX,
+      rackTopY,
+      rackBottomY,
       stopBaseToothIndex,
       stopSeatY,
       toothDepth,
       toothPitch,
+      drivePieces,
+      stopPieces,
+      rackTriangles,
     },
     mechanism:
       'one-fixed-shaft-eccentric-disk-one-circular-strap-and-rigid-lifting-pawl-one-vertical-ratchet-rack-one-separate-upper-load-holding-stop-pawl',
@@ -826,26 +784,26 @@ function eccentricPawlJack(movement) {
     },
     sourceReference: {
       brownPlate389: {
-        drivePawlNosePixels: [244, 137],
+        drivePawlNosePixels: [243, 137.5],
         eccentricOuterCenterPixels: [289, 211],
         eccentricOuterRadiusPixels: 35,
         eccentricShaftPixels: [287, 197],
-        holdingPawlNosePixels: [244, 89],
-        holdingPawlPivotPixels: [275, 121],
+        holdingPawlNosePixels: [243, 91],
+        holdingPawlPivotPixels: [276, 121],
         imageHeight: 525,
         imageWidth: 525,
-        measurementUncertaintyPixels: 7,
+        measurementUncertaintyPixels: 3,
         rackBodyEdgesPixels: {
-          leftX: 208,
+          leftX: 207,
           rightX: 243,
         },
-        rackToothPitchPixels: 17,
+        rackToothPitchPixels: 16.4,
         rackToothTipX: 255,
         saddleExtentPixels: {
           maximumX: 278,
-          maximumY: 55,
+          maximumY: 54,
           minimumX: 190,
-          minimumY: 31,
+          minimumY: 32,
         },
       },
       constructionEvidence: {
@@ -855,9 +813,9 @@ function eccentricPawlJack(movement) {
           'the upper pawl is specifically a stop',
         ],
         engravingEvidence:
-          'the plate shows a load saddle on a vertically guided one-sided rack, a lower circular eccentric strap with an integral pointed lifting pawl, and a separately fixed-pivot upper pawl bearing on the same tooth row',
+          'the plate shows a load head on a vertically guided one-sided rack whose teeth have flat undersides, a circular eccentric strap with an integral curved pointed lifting pawl, and a separately fixed-pivot curved upper pawl, both noses sitting in tooth roots',
         reconstructionDisclosure:
-          'no official animation is available; eccentricity, rigid follower closure, tooth pitch, pawl lift and clearance, three-stroke timing, reversed lowering strokes, absolute geometry, materials, depth, indexes, and camera are independently engineered',
+          'no official animation is available; the rocking eccentric, stroke, contact rides, timing, reversed lowering strokes, materials, depth and camera are independently engineered; the eccentric throw (20 px against Brown\'s 14 px), the shaft 2.6 px right, the noses sharpened to a 16–22 degree wedge and the stop one pitch higher than drawn are what the full ratchet stroke needs',
       },
       officialPage: movement.sourceUrl,
       primaryScan: {
@@ -866,19 +824,9 @@ function eccentricPawlJack(movement) {
       },
     },
     stateAtTime,
-    // Mechanism state against uniform crank time (no start/stop easing),
-    // and the playback time at which the eased lifting run reaches it.
     crankStateAtTime: rawStateAtTime,
-    playbackTimeAtCrankTime: (crankTime) => {
-      let low = 0, high = operatingDuration;
-      for (let i = 0; i < 60; i += 1) {
-        const middle = (low + high) / 2;
-        if (easedDrive(middle).s < crankTime) low = middle; else high = middle;
-      }
-      return (low + high) / 2;
-    },
+    playbackTimeAtCrankTime: (crankTime) => crankTime,
     timeline: {
-      easeTime,
       bottomDwellDuration,
       cycleDuration,
       demonstrationPeriod: cycleDuration,
@@ -894,27 +842,21 @@ function eccentricPawlJack(movement) {
       resetDuration,
       strokeDuration,
       note:
-        'three true eccentric lifting strokes are followed by a raised dwell and three lowering strokes, the lifting strokes played backward with the eccentric reversed, so the rack comes down one pitch per turn on the strap pawl while the stop pawl is held clear by hand',
+        'three rocking lifting strokes are followed by a raised dwell and three lowering strokes, the lifting strokes played backward, so the rack comes down one pitch per rock on the strap pawl while the stop pawl is held off by hand',
     },
     transmission: {
       driveFollowerLaw:
-        'camCenter=(Sx-e*cos(theta), Sy+e*sin(theta)); the rigid pawl nose lies on rackFaceX at the positive circle-intersection ordinate',
+        'camCenter=(Sx+e*sin(phi), Sy-e*cos(phi)) with phi rocking between rockStart and rockEnd; the rigid pawl nose sits in the root corner on the rack face',
       holdingLaw:
-        'the upper stop lifts over one rising tooth during the power stroke, reseats in the next gap, and alone prevents rack descent during lifting-pawl return',
+        'the upper stop rides up the back of the rising tooth, drops into the next root during overtravel, and alone prevents rack descent during lifting-pawl return',
       indexingLaw:
-        'one follower excursion covers rack pitch plus seating overtravel and return undershoot; each completed eccentric turn stores exactly one additional pitch',
+        'one follower excursion covers the rack pitch plus seating overtravel and return undershoot; each rock stores exactly one additional pitch',
       resetLaw:
-        'lowering reverses the eccentric: the strap pawl carries the rack down one pitch per turn and the stop pawl is held clear of each descending tooth (the prescribed lifting clearances, time-reversed)',
+        'lowering rocks the eccentric the other way: the strap pawl carries the rack down one pitch per rock and the stop pawl is held off each descending tooth (the lifting poses, time-reversed)',
     },
   };
 
   update(0);
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-1.62, -1.31, -1.02),
-    new THREE.Vector3(2.62, 7.82, 1.18),
-  );
-  root.userData.cameraDistanceScale = 1.22;
-  root.userData.groundFloorY = -1.18;
   fitPistonGuide(root, update, cycleDuration);
   root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);

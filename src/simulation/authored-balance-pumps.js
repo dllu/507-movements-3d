@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {correctBalancePumps} from './fountain-balance-working-parts.js';
 import { waterVolumeGeometry, waterVolumeMaterial } from './water-volume.js';
+import { WaterStream, ballisticPath, collectWaterStreams } from './water-stream.js';
+import { curvedPipeWall } from './finite-fluid-passages.js';
+import { horizontalTurned } from './horizontal-turbine-solids.js';
 import {
   PALETTE,
   markShadows,
@@ -621,19 +624,14 @@ function balancePumps(movement) {
         + 0.075 * pumpState.inletOpenAmount;
       assembly.deliveryValve.position.y = cylinderTopY + 0.09
         + 0.075 * pumpState.deliveryOpenAmount;
-      assembly.inletWater.visible = pumpState.inletOpenAmount > 1e-4;
-      assembly.deliveryWater.visible = pumpState.deliveryOpenAmount > 1e-4;
-      assembly.inletWaterMaterial.opacity = 0.16
-        + 0.48 * pumpState.inletOpenAmount;
-      assembly.deliveryWaterMaterial.opacity = 0.16
-        + 0.48 * pumpState.deliveryOpenAmount;
+      // The suction and delivery pipes stand full of water; the pulses are
+      // the check disks lifting, not water appearing in the pipes.
+      assembly.inletWater.visible = true;
+      assembly.deliveryWater.visible = true;
     });
-    commonOutletWater.visible = state.totalDeliveryOpenAmount > 1e-4;
-    commonOutletMaterial.opacity = 0.16 + 0.42 * Math.min(
-      1,
-      state.totalDeliveryOpenAmount,
-    );
+    commonOutletWater.visible = true;
     root.userData.updateWorkingParts?.(state);
+    root.userData.updateStreams?.(time);
   };
 
   const sourceState = stateAtInputAngle(-Math.PI / 4);
@@ -814,6 +812,39 @@ function balancePumps(movement) {
         }
       });
     }
+  }
+  {
+    // The joined delivery is not capped: just above the Y it bends back
+    // under the deck and discharges down between the pumps into the well
+    // (Brown does not draw where the delivery main goes; the demonstration
+    // returns the lifted water to the well, so what the pumps lift arrives).
+    const b = root.userData.blocks;
+    b.commonOutlet.geometry.dispose();
+    b.commonOutlet.geometry = horizontalTurned([[-0.36, 0.19], [-0.36, 0.23], [-0.06, 0.125], [-0.06, 0.072]]);
+    const bendTop = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.90, 0.55), new THREE.Vector3(0, 1.05, 0.52), new THREE.Vector3(0, 1.17, 0.36),
+      new THREE.Vector3(0, 1.19, 0.12), new THREE.Vector3(0, 1.12, -0.07), new THREE.Vector3(0, 0.98, -0.12),
+    ]);
+    const deliveryBend = addRole(new THREE.Mesh(curvedPipeWall(bendTop, 0.072, 0.125, 64), b.commonOutlet.material),
+      'common-delivery-bend-discharging-into-well');
+    root.add(deliveryBend);
+    b.deliveryBend = deliveryBend;
+    b.commonOutletWater.geometry.dispose();
+    b.commonOutletWater.geometry = new THREE.CylinderGeometry(0.066, 0.066, 0.28, 18);
+    b.commonOutletWater.position.y = 0.76;
+    b.commonOutletWater.material.opacity = 0.5;
+    b.pumpAssemblies.forEach(({ deliveryWaterMaterial, inletWaterMaterial }) => {
+      deliveryWaterMaterial.opacity = 0.5;
+      inletWaterMaterial.opacity = 0.5;
+    });
+    const mouth = new THREE.Vector3(0, 0.975, -0.121);
+    const discharge = addRole(new WaterStream(ballisticPath({
+      origin: mouth, velocity: new THREE.Vector3(0, -0.9, 0), endY: reservoirSurfaceY, samples: 24,
+    }), { width: 0.06, thickness: 0.06, cyclePeriod: cycleDuration, streakRate: 2, opacity: 0.5 }),
+    'delivered-water-falling-back-into-well');
+    root.add(discharge);
+    b.deliveryDischarge = discharge;
+    root.userData.updateStreams = collectWaterStreams(root);
   }
   markShadows(root);
   foundation.receiveShadow = true;

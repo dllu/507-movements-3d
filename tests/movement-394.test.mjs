@@ -1,386 +1,92 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
-import * as THREE from 'three';
+import polygonClipping from 'polygon-clipping';
 import { createMovementModel } from '../src/simulation/registry.js';
+import {
+  parsonsDesign, parsonsPathPoint, parsonsPinionOutline, parsonsRackVoid,
+} from '../src/simulation/authored-parsons-racks.js';
 
-const catalog = JSON.parse(await readFile(
-  new URL('../src/data/movements.json', import.meta.url),
-  'utf8',
-));
-const FULL_TURN = Math.PI * 2;
-
-function near(actual, expected, tolerance, message) {
-  assert.ok(
-    Math.abs(actual - expected) <= tolerance,
-    `${message}: expected ${expected}, received ${actual}`,
-  );
-}
-
-function disposeModel(root) {
-  const geometries = new Set();
-  const materials = new Set();
-  root.traverse((object) => {
-    if (object.geometry) geometries.add(object.geometry);
-    if (Array.isArray(object.material)) {
-      object.material.forEach((material) => materials.add(material));
-    } else if (object.material) materials.add(object.material);
+const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
+const g = parsonsDesign();
+const area = (mp) => mp.reduce((sum, polygon) => sum + polygon.reduce((total, ring, index) => {
+  let a = 0;
+  for (let j = 0; j < ring.length - 1; j += 1) a += ring[j][0] * ring[j + 1][1] - ring[j + 1][0] * ring[j][1];
+  return total + (index ? -1 : 1) * Math.abs(a) / 2;
+}, 0), 0);
+const stadium = (L, R, n = 96) => {
+  const p = [];
+  for (let i = 0; i <= n; i += 1) { const a = -Math.PI / 2 + Math.PI * i / n; p.push([L + R * Math.cos(a), R * Math.sin(a)]); }
+  for (let i = 0; i <= n; i += 1) { const a = Math.PI / 2 + Math.PI * i / n; p.push([-L + R * Math.cos(a), R * Math.sin(a)]); }
+  return p;
+};
+const band = polygonClipping.difference([[stadium(g.halfStraight, g.bandOuterRadius)]], parsonsRackVoid(g));
+const pinion = parsonsPinionOutline(g);
+const posed = (s, grow = 0) => {
+  const p = parsonsPathPoint(g, s), a = Math.PI / 2 + s / g.pinionPitchRadius;
+  return pinion.map(([x, y]) => {
+    const r = Math.hypot(x, y), k = (r + grow) / r;
+    return [k * (x * Math.cos(a) - y * Math.sin(a)) + p.x, k * (x * Math.sin(a) + y * Math.cos(a)) + p.y];
   });
-  geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((material) => material.dispose());
-}
+};
 
-test('movement 394 is one closed endless rack, one fixed-axis pinion, two side grooves, and two unequal concentric flanges', () => {
-  const movement = catalog.movements[393];
-  const model = createMovementModel(movement);
-  const data = model.root.userData;
-  const { blocks, degreesOfFreedom } = data;
-
-  assert.equal(movement.id, 394);
-  assert.equal(movement.number, '394');
-  assert.equal(movement.category, 'Rack & pinion');
-  assert.equal(
-    movement.archetype,
-    'parsons-oblong-endless-internal-rack-pinion-with-unequal-concentric-flange-groove-handoffs',
-  );
-  assert.equal(movement.fidelity, 'authored');
-  assert.equal(data.fidelity, 'authored');
-  assert.equal(data.archetype, movement.archetype);
-  assert.match(data.mechanism, /one-oblong-endless-internal-rack/);
-  assert.match(data.mechanism, /one-fixed-axis-fourteen-tooth-pinion/);
-  assert.match(data.mechanism, /upper-and-lower-straight-meshes-alternating/);
-  assert.match(data.mechanism, /two-side-groove-handoffs/);
-  assert.match(data.mechanism, /two-fast-concentric-flanges-of-different-diameters/);
-  assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
-  assert.equal(degreesOfFreedom.storedEnergyStates, 0);
-  assert.match(degreesOfFreedom.inputs[0], /rack input rod/);
-  assert.match(degreesOfFreedom.note, /exactly one upper mesh/);
-
-  for (const component of [
-    blocks.fixedFrame,
-    blocks.outputRotor,
-    blocks.rackCarrier,
-  ]) assert.equal(component.parent, model.root);
-  assert.equal(blocks.largeGroove.parent, blocks.rackCarrier);
-  assert.equal(blocks.smallGroove.parent, blocks.rackCarrier);
-  assert.equal(blocks.rackCarrier.userData.teeth.length, 46);
-  assert.equal(blocks.outputRotor.userData.toothCount, 14);
-  assert.notEqual(
-    blocks.outputRotor.userData.largeFlange.geometry,
-    blocks.outputRotor.userData.smallFlange.geometry,
-  );
-
-  const roles = [];
-  const belts = [];
-  model.root.traverse((object) => {
-    if (object.userData.role) roles.push(object.userData.role);
-    if (object.userData.isBelt) belts.push(object);
-  });
-  assert.deepEqual(belts, []);
-  for (const role of [
-    'rigid-reciprocating-oblong-endless-internal-rack',
-    'closed-oblong-body-of-endless-rack',
-    'inward-facing-tooth-of-closed-endless-rack',
-    'fixed-axis-pinion-with-two-fast-concentric-unequal-guide-flanges',
-    'fourteen-tooth-output-pinion',
-    'larger-concentric-flange-driving-one-pitch-right-handoff',
-    'smaller-concentric-flange-driving-three-pitch-left-handoff',
-    'right-large-flange-side-groove-for-concentric-flange',
-    'left-small-flange-side-groove-for-concentric-flange',
-  ]) assert.ok(roles.includes(role), role);
-  // Brown draws no white indices; the source presentation detaches them.
-  assert.ok(!roles.some((role) => /^white-/.test(role)), 'no white indices remain');
-  disposeModel(model.root);
-});
-
-test('movement 394 preserves Brown topology and explicitly discloses unavailable animation and engineered groove phases', () => {
-  const movement = catalog.movements[393];
-  const model = createMovementModel(movement);
-  const data = model.root.userData;
-  const { dynamics, sourceAnimation, sourceReference } = data;
-  const plate = sourceReference.brownPlate394;
-  const evidence = sourceReference.constructionEvidence;
-
-  assert.equal(movement.sourceUrl, 'https://507movements.com/mm_394.html');
-  assert.equal(sourceReference.officialPage, movement.sourceUrl);
-  assert.match(movement.description, /C\. Parsons.*patent device/);
-  assert.match(movement.description, /reciprocating motion into rotary/);
-  assert.match(movement.description, /endless rack provided with grooves/);
-  assert.match(movement.description, /two concentric flanges of different diameters/);
-  assert.equal(sourceAnimation.available, false);
-  assert.equal(sourceAnimation.officialCanvasModelPresent, false);
-  assert.equal(sourceAnimation.independentlyReconstructed, true);
-  assert.equal(sourceAnimation.sourcePrescribedAbsoluteTiming, false);
-  assert.match(sourceAnimation.reason, /marks Animated unavailable/);
-  assert.equal(
-    dynamics.sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces,
-    false,
-  );
-  assert.equal(dynamics.idealizations.length, 5);
-
-  assert.equal(plate.imageWidth, 525);
-  assert.equal(plate.imageHeight, 525);
-  assert.equal(plate.measurementUncertaintyPixels, 10);
-  assert.deepEqual(plate.endlessRackApproximateBoundsPixels,
-    [39, 199, 384, 328]);
-  assert.deepEqual(plate.pinionCenterPixels, [244, 254]);
-  assert.equal(plate.pinionOuterRadiusPixels, 43);
-  assert.equal(plate.inputRodCenterlinePixelsY, 271);
-  assert.equal(plate.visibleInnerRackToothCountApproximate, 44);
-  assert.equal(evidence.explicitInBrownDescription.length, 6);
-  assert.match(evidence.engravingEvidence, /oblong closed inward-toothed rack/);
-  assert.match(evidence.reconstructionDisclosure, /No official animation/);
-  assert.match(evidence.reconstructionDisclosure, /one-plus-three-pitch/);
-  disposeModel(model.root);
-});
-
-test('movement 394 gives its endless rack one exact common pitch around the complete oblong', () => {
+test('394 is an endless rack toothed all round inside, one ten-tooth involute pinion and two concentric flanges', () => {
   const model = createMovementModel(catalog.movements[393]);
-  const data = model.root.userData;
-  const { geometry } = data;
-  const rack = data.blocks.rackCarrier;
-  const pitchCurve = rack.userData.pitchCurve;
-
-  near(pitchCurve.getLength(),
-    geometry.endlessRackToothCount * geometry.circularPitch,
-    2e-15, 'closed rack pitch perimeter');
-  near(geometry.circularPitch,
-    geometry.pinionPitchRadius * geometry.pinionAngularPitch,
-    0, 'rack-pinion common circular pitch');
-  for (let index = 1; index < rack.userData.teeth.length; index += 1) {
-    near(
-      rack.userData.teeth[index].userData.pitchDistance
-        - rack.userData.teeth[index - 1].userData.pitchDistance,
-      geometry.circularPitch,
-      2e-15,
-      'successive endless-rack tooth pitch',
-    );
-  }
-  near(
-    pitchCurve.getLength()
-      - rack.userData.teeth.at(-1).userData.pitchDistance
-      + rack.userData.teeth[0].userData.pitchDistance,
-    geometry.circularPitch,
-    2e-15,
-    'closing tooth pitch',
-  );
-  disposeModel(model.root);
+  const d = model.root.userData;
+  assert.equal(d.fidelity, 'authored');
+  assert.equal(g.pinionTeeth, 10);
+  assert.equal(g.rackToothCount, 2 * g.straightPitches + g.endTeeth);
+  assert.ok(g.largeFlangeRadius > g.pinionPitchRadius + g.addendum, 'large flange overhangs the pinion teeth');
+  assert.ok(g.smallFlangeRadius < g.largeFlangeRadius);
+  for (const block of ['band', 'largeRebate', 'smallRebate', 'rod', 'collar', 'pinion', 'largeFlange', 'smallFlange'])
+    assert.ok(d.blocks[block], block);
+  // The common pitch closes round the whole pitch line and the pinion path.
+  const pitchLine = 4 * g.halfStraight + 2 * Math.PI * g.endPitchRadius;
+  assert.ok(Math.abs(pitchLine / g.pitch - g.rackToothCount) < 1e-12);
+  assert.ok(Math.abs(g.pinionTurnsPerCycle * g.pinionTeeth - (2 * g.straightPitches + g.endTeeth - g.pinionTeeth)) < 1e-12);
 });
 
-test('movement 394 selects exactly one upper mesh, large-flange groove, lower mesh, or small-flange groove', () => {
-  const model = createMovementModel(catalog.movements[393]);
-  const data = model.root.userData;
-  const { geometry, stateAtTime, timeline, transmission } = data;
-  assert.match(transmission.activeSequence,
-    /upper rack:5 pitches.*large flange:1 pitch.*lower rack:5 pitches.*small flange:3 pitches/);
-
-  for (let sample = 0; sample < 16000; sample += 1) {
-    const state = stateAtTime(
-      timeline.cycleDuration * (sample + 0.5) / 16000,
-    );
-    assert.equal([
-      state.upperMeshActive,
-      state.largeFlangeActive,
-      state.lowerMeshActive,
-      state.smallFlangeActive,
-    ].filter(Boolean).length, 1);
-    if (state.upperMeshActive) {
-      near(state.rackPosition.y, -geometry.crossShiftRadius, 0,
-        'upper working rack level');
-      assert.ok(state.rackVelocity.x <= 0);
-    } else if (state.lowerMeshActive) {
-      near(state.rackPosition.y, geometry.crossShiftRadius, 0,
-        'lower working rack level');
-      assert.ok(state.rackVelocity.x >= 0);
-    } else if (state.largeFlangeActive) {
-      assert.match(state.stage, /right-groove-large-flange/);
-    } else assert.match(state.stage, /left-groove-small-flange/);
-  }
-  disposeModel(model.root);
-});
-
-test('movement 394 closes both rack meshes and both unequal-flange rolling handoffs without slip', () => {
-  const model = createMovementModel(catalog.movements[393]);
-  const data = model.root.userData;
-  const { geometry, stateAtTime, timeline, transmission } = data;
-  assert.match(transmission.rackMeshLaw, /upper: omega=-xDot\/R/);
-  assert.match(transmission.flangeLaw, /pi\*delta\/r_flange/);
-
-  for (let sample = -12000; sample <= 24000; sample += 1) {
-    const state = stateAtTime(
-      timeline.cycleDuration * sample / 12000,
-    );
-    near(state.activeRollingResidual, 0, 5e-16,
-      'active pitch/flange rolling residual');
-    if (state.upperMeshActive) {
-      near(
-        state.rackVelocity.x
-          + geometry.pinionPitchRadius * state.outputAngularSpeed,
-        0,
-        5e-16,
-        'upper rack no-slip velocity',
-      );
-    } else if (state.lowerMeshActive) {
-      near(
-        state.rackVelocity.x
-          - geometry.pinionPitchRadius * state.outputAngularSpeed,
-        0,
-        5e-16,
-        'lower rack no-slip velocity',
-      );
-    } else if (state.largeFlangeActive) {
-      near(
-        state.relativeCenterSpeed,
-        geometry.largeFlangeRadius * state.outputAngularSpeed,
-        5e-16,
-        'large flange no-slip velocity',
-      );
-    } else {
-      near(
-        state.relativeCenterSpeed,
-        geometry.smallFlangeRadius * state.outputAngularSpeed,
-        5e-16,
-        'small flange no-slip velocity',
-      );
+test('394 involute pinion clears the finite rack band all round the path and stays in working contact', () => {
+  let worst = 0, loosest = 0;
+  for (let i = 0; i < 1200; i += 1) {
+    const s = g.pathLength * i / 1200;
+    worst = Math.max(worst, area(polygonClipping.intersection([[posed(s)]], band)));
+    if (i % 12 === 0) {
+      // Grown radially by 0.012 the pinion must touch the band: it never floats out of mesh.
+      loosest = Math.max(loosest, area(polygonClipping.intersection([[posed(s, 0.012)]], band)) > 0 ? 0 : 1);
     }
   }
-  disposeModel(model.root);
+  assert.equal(worst, 0, `pinion/band overlap ${worst}`);
+  assert.equal(loosest, 0, 'pinion stays within 0.012 of the rack teeth everywhere');
 });
 
-test('movement 394 unequal flange radii produce their exact one- and three-tooth crossover advances', () => {
+test('394 every rack tooth meshes: the pinion runs both rows and both toothed ends once per cycle', () => {
   const model = createMovementModel(catalog.movements[393]);
-  const data = model.root.userData;
-  const { blocks, constraintResiduals, geometry, transmission } = data;
-  assert.ok(geometry.largeFlangeRadius > geometry.smallFlangeRadius);
-  near(
-    geometry.largeFlangeRadius / geometry.smallFlangeRadius,
-    3,
-    5e-16,
-    'three-to-one flange diameter ratio',
-  );
-  near(
-    Math.PI * geometry.crossShiftRadius / geometry.largeFlangeRadius,
-    geometry.largeHandoffPitches * geometry.pinionAngularPitch,
-    6e-17,
-    'large flange one-pitch handoff',
-  );
-  near(
-    Math.PI * geometry.crossShiftRadius / geometry.smallFlangeRadius,
-    geometry.smallHandoffPitches * geometry.pinionAngularPitch,
-    3e-16,
-    'small flange three-pitch handoff',
-  );
-  assert.equal(blocks.largeGroove.userData.flangeRadius,
-    geometry.largeFlangeRadius);
-  assert.equal(blocks.smallGroove.userData.flangeRadius,
-    geometry.smallFlangeRadius);
-  near(
-    blocks.largeGroove.userData.outerRadius
-      - blocks.largeGroove.userData.centerRadius,
-    geometry.largeFlangeRadius,
-    2e-16,
-    'large groove outer-wall offset',
-  );
-  near(
-    blocks.smallGroove.userData.outerRadius
-      - blocks.smallGroove.userData.centerRadius,
-    geometry.smallFlangeRadius,
-    2e-16,
-    'small groove outer-wall offset',
-  );
-  near(constraintResiduals.largeFlangePitchHandoff, 0, 6e-17,
-    'reported large-flange closure');
-  near(constraintResiduals.smallFlangePitchHandoff, 0, 3e-16,
-    'reported small-flange closure');
-  assert.match(transmission.outputClosure, /5\+1\+5\+3/);
-  disposeModel(model.root);
+  const d = model.root.userData, T = d.geometry.cycleDuration;
+  const seen = new Set();
+  let prev = d.stateAtTime(0);
+  for (let i = 1; i <= 800; i += 1) {
+    const s = d.stateAtTime(T * i / 800);
+    seen.add(s.segment);
+    assert.ok(s.outputAngle > prev.outputAngle, 'pinion never reverses');
+    assert.ok(s.rackPosition.distanceTo(prev.rackPosition) < 0.1, 'rack moves continuously');
+    if (s.segment === 'upper-row') assert.ok(s.rackVelocity.x < 0, 'rack runs left on the upper row (Brown\'s arrow)');
+    if (s.segment === 'lower-row') assert.ok(s.rackVelocity.x > 0);
+    prev = s;
+  }
+  assert.deepEqual([...seen].sort(), ['left-end', 'lower-row', 'right-end', 'upper-row']);
+  const a = d.stateAtTime(1.3), b = d.stateAtTime(1.3 + T);
+  assert.ok(a.rackPosition.distanceTo(b.rackPosition) < 1e-9, 'rack closes each cycle');
+  assert.ok(Math.abs((b.outputAngle - a.outputAngle) * g.pinionTeeth / (2 * Math.PI) - 32) < 1e-9, 'pinion tooth phase closes');
 });
 
-test('movement 394 converts one rack reciprocation into exactly one nonreversing pinion turn', () => {
-  const model = createMovementModel(catalog.movements[393]);
-  const data = model.root.userData;
-  const { constraintResiduals, stateAtTime, timeline } = data;
-  for (const [name, residual] of Object.entries(constraintResiduals)) {
-    near(residual, 0, 3e-16, name);
+test('394 flanges clear their rebates and the band while bounding the mesh depth', () => {
+  const large = polygonClipping.difference([[stadium(g.halfStraight, g.bandOuterRadius)]], [[stadium(g.halfStraight, g.eccentricity + g.largeFlangeRadius + g.rebateClearance)]]);
+  const small = polygonClipping.difference([[stadium(g.halfStraight, g.bandOuterRadius)]], [[stadium(g.halfStraight, g.eccentricity + g.smallFlangeRadius + g.rebateClearance)]]);
+  const disc = (r, c) => Array.from({length: 256}, (_, i) => [c.x + r * Math.cos(i * Math.PI / 128), c.y + r * Math.sin(i * Math.PI / 128)]);
+  for (let i = 0; i < 400; i += 1) {
+    const c = parsonsPathPoint(g, g.pathLength * i / 400);
+    assert.equal(area(polygonClipping.intersection([[disc(g.largeFlangeRadius, c)]], large)), 0);
+    assert.equal(area(polygonClipping.intersection([[disc(g.smallFlangeRadius, c)]], small)), 0);
   }
-
-  let previousAngle = -Infinity;
-  for (let sample = -16000; sample <= 32000; sample += 1) {
-    const state = stateAtTime(timeline.cycleDuration * sample / 16000);
-    assert.ok(state.outputAngle >= previousAngle - 4e-15);
-    assert.ok(state.outputAngularSpeed >= -1e-15);
-    previousAngle = state.outputAngle;
-  }
-  for (let cycle = -8; cycle <= 8; cycle += 1) {
-    const start = stateAtTime(timeline.cycleDuration * (cycle + 0.137));
-    const end = stateAtTime(timeline.cycleDuration * (cycle + 1.137));
-    near(end.outputAngle - start.outputAngle, FULL_TURN, 5e-15,
-      'one output turn per rack cycle');
-    near(end.rackPosition.distanceTo(start.rackPosition), 0, 3e-15,
-      'rack trajectory closes');
-    near(end.rackVelocity.distanceTo(start.rackVelocity), 0, 4e-15,
-      'rack velocity closes');
-  }
-  disposeModel(model.root);
-});
-
-test('movement 394 update keeps the fixed shaft at the active groove center and reports only the active contact', () => {
-  const model = createMovementModel(catalog.movements[393]);
-  const data = model.root.userData;
-  const { blocks, stateAtTime, timeline } = data;
-
-  for (const phase of [0.17, 0.44, 0.68, 0.94]) {
-    const time = timeline.cycleDuration * phase;
-    const expected = stateAtTime(time);
-    model.update(time);
-    near(blocks.rackCarrier.position.x, expected.rackPosition.x, 0,
-      'rack x visual update');
-    near(blocks.rackCarrier.position.y, expected.rackPosition.y, 0,
-      'rack y visual update');
-    near(blocks.outputRotor.rotation.z, expected.outputAngle, 0,
-      'pinion angle visual update');
-    near(
-      expected.relativeShaftCenter.clone()
-        .add(expected.rackPosition).length(),
-      0,
-      0,
-      'fixed shaft expressed in moving-rack coordinates',
-    );
-    const contacts = [
-      data.contacts.upperRackToPinion,
-      data.contacts.largeFlangeToRightSideGroove,
-      data.contacts.lowerRackToPinion,
-      data.contacts.smallFlangeToLeftSideGroove,
-    ];
-    assert.equal(contacts.filter(({ active }) => active).length, 1);
-    for (const contact of contacts) {
-      if (!contact.active) continue;
-      if ('pitchLineVelocityError' in contact) {
-        near(contact.pitchLineVelocityError, 0, 5e-16,
-          'updated rack mesh closure');
-      } else {
-        near(contact.centerError, 0, 0,
-          'updated flange groove center closure');
-        near(contact.rollingSpeedError, 0, 5e-16,
-          'updated flange rolling closure');
-      }
-    }
-  }
-  disposeModel(model.root);
-});
-
-test('movement 394 factory is isolated before movement 507', () => {
-  const model394 = createMovementModel(catalog.movements[393]);
-  const model507 = createMovementModel(catalog.movements[506]);
-  assert.equal(model394.root.userData.fidelity, 'authored');
-  assert.equal(
-    model394.root.userData.archetype,
-    'parsons-oblong-endless-internal-rack-pinion-with-unequal-concentric-flange-groove-handoffs',
-  );
-  assert.equal(catalog.movements[506].id, 507);
-  assert.equal(catalog.movements[506].fidelity, 'authored');
-  assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
-  assert.equal(model507.root.userData.fidelity, 'authored');
-  disposeModel(model394.root);
-  disposeModel(model507.root);
 });

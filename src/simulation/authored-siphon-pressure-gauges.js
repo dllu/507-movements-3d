@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {mercuryMaterial as sharedMercuryMaterial} from './cutaway-section.js';
 import {correctMercuryInstrument} from './mercury-instrument-parts.js';
 import {serifNumeralGeometry} from './serif-numerals.js';
 import {
@@ -107,10 +108,12 @@ function siphonPressureGauge(movement) {
   const scaleInkMaterial = matte(PALETTE.ink, {
     roughness: 0.54,
   });
-  const mercuryMaterial = matte(PALETTE.muted, {
-    metalness: 0.82,
-    roughness: 0.16,
-  });
+  // Pass 69: silvery mercury from the shared material (the old dark metal
+  // read as grey paint), a shade deeper so it stands out behind the glass.
+  const mercuryMaterial = sharedMercuryMaterial();
+  mercuryMaterial.color.setHex(0x98a1a6);
+  mercuryMaterial.metalness = 0.55;
+  mercuryMaterial.roughness = 0.18;
   const glassMaterial = matte(0xb9dae4, {
     opacity: 0.27,
     roughness: 0.16,

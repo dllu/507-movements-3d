@@ -43,9 +43,14 @@ function selfActingWeir(movement) {
   const upperThickness = 0.26;
   const lowerThickness = 0.26;
   const upperPivotFromBottom = 0.62;
-  const lowerPivotFromBottom = 0.30;
+  // The lower leaf stands on the bed when closed, so the closed weir does
+  // not leak under it. Its pivot lies on its upstream face: turned back
+  // against the stream, both of its bottom corners rise off the bed (none
+  // digs in) and open the scour passage beneath it.
+  const lowerPivotFromBottom = 0.35;
+  const lowerCentreOffset = lowerThickness / 2;
   const upperPivot = new THREE.Vector3(upperThickness / 2, 1.40, 0);
-  const lowerPivot = new THREE.Vector3(-lowerThickness / 2, 0.30, 0);
+  const lowerPivot = new THREE.Vector3(-lowerThickness, 0.30, 0);
   const upperTopLocal = upperLength - upperPivotFromBottom;
   const lowerTopLocal = lowerLength - lowerPivotFromBottom;
   const gateWidth = 2.40;
@@ -85,7 +90,7 @@ function selfActingWeir(movement) {
     const contactRadius = fromLowerPivot.length();
     const polarAngle = Math.atan2(fromLowerPivot.y, fromLowerPivot.x);
     const faceOffsetRatio = THREE.MathUtils.clamp(
-      (lowerThickness / 2) / contactRadius,
+      (lowerCentreOffset + lowerThickness / 2) / contactRadius,
       -1,
       1,
     );
@@ -95,7 +100,7 @@ function selfActingWeir(movement) {
     const lowerNormal = panelDownstreamNormal(lowerAngle);
     const lowerFaceReference = lowerPivot.clone().addScaledVector(
       lowerNormal,
-      lowerThickness / 2,
+      lowerCentreOffset + lowerThickness / 2,
     );
     const lowerFaceOffset = contactPoint.clone().sub(lowerFaceReference);
     const lowerContactCoordinate = lowerFaceOffset.dot(lowerAxis);
@@ -124,11 +129,12 @@ function selfActingWeir(movement) {
       contact.upperAxis,
       upperTopLocal,
     );
-    const lowerBottomCenter = lowerPivot.clone().addScaledVector(
+    const lowerCentre = lowerPivot.clone().addScaledVector(contact.lowerNormal, lowerCentreOffset);
+    const lowerBottomCenter = lowerCentre.clone().addScaledVector(
       contact.lowerAxis,
       -lowerPivotFromBottom,
     );
-    const lowerTopCenter = lowerPivot.clone().addScaledVector(
+    const lowerTopCenter = lowerCentre.clone().addScaledVector(
       contact.lowerAxis,
       lowerTopLocal,
     );
@@ -136,7 +142,7 @@ function selfActingWeir(movement) {
       ...contact,
       bedPassageHorizontalOpening: Math.max(
         0,
-        lowerBottomCenter.x - lowerPivot.x,
+        lowerBottomCenter.x - (lowerPivot.x + lowerCentreOffset),
       ),
       contactDrive,
       lowerBottomCenter,
@@ -349,7 +355,7 @@ function selfActingWeir(movement) {
       new THREE.BoxGeometry(0.055, 0.075, gateWidth + 0.09),
       darkMaterial,
     ), `lower-leaf-transverse-reinforcement-${index + 1}`);
-    rail.position.set(lowerThickness / 2 + 0.025, y, 0);
+    rail.position.set(lowerCentreOffset + lowerThickness / 2 + 0.025, y, 0);
     lowerLeaf.add(rail);
     return rail;
   });
@@ -440,7 +446,7 @@ function selfActingWeir(movement) {
     sedimentMaterial,
   ), 'bed-deposit-reduced-by-open-scouring-sluice');
   sedimentBank.scale.set(1.45, 1, 1);
-  sedimentBank.position.set(0.82, channelFloorY - 0.045, 0);
+  sedimentBank.position.set(0.82, channelFloorY, 0);
   root.add(sedimentBank);
 
   const update = (time) => {
@@ -468,6 +474,7 @@ function selfActingWeir(movement) {
     gateWidth,
     groundY,
     lowerLength,
+    lowerCentreOffset,
     lowerPivot,
     lowerPivotFromBottom,
     lowerThickness,
@@ -591,14 +598,18 @@ function selfActingWeir(movement) {
     update,
   };
   correctWeir(root);
+  // Keep the lower leaf's battens on its upstream face, which carries its
+  // pivot.
+  lowerReinforcements.forEach((rail) => { rail.position.x = -0.025; });
   // The shared correction bores the leaves at its thin-board thickness;
   // rebuild them as Brown's planks with the same bored pivot bosses.
   for (const [body, length, offset, thickness] of [
     [upperBody, upperBodyHeight, (-upperPivotFromBottom + notchBottomLocal) / 2, upperThickness],
     [lowerBody, lowerLength, (lowerTopLocal - lowerPivotFromBottom) / 2, lowerThickness],
   ]) {
-    const plank = poly([[-thickness / 2, offset - length / 2], [thickness / 2, offset - length / 2],
-      [thickness / 2, offset + length / 2], [-thickness / 2, offset + length / 2]]);
+    const x0 = body === lowerBody ? lowerCentreOffset : 0;
+    const plank = poly([[x0 - thickness / 2, offset - length / 2], [x0 + thickness / 2, offset - length / 2],
+      [x0 + thickness / 2, offset + length / 2], [x0 - thickness / 2, offset + length / 2]]);
     body.geometry.dispose();
     body.geometry = plate(polygonClipping.difference(polygonClipping.union(plank,
       poly(circle([0, 0], 0.16, 64))), poly(circle([0, 0], 0.097, 64))),
@@ -642,8 +653,8 @@ function selfActingWeir(movement) {
       const ua = state.upperAngle, la = state.lowerAngle;
       const lowerAxis = new THREE.Vector2(-Math.sin(la), Math.cos(la));
       const upperAxis = new THREE.Vector2(-Math.sin(ua), Math.cos(ua));
-      const lowerTopUp = onLeaf(lowerPivot, la, -lowerThickness / 2, lowerTopLocal);
-      const lowerTopDown = onLeaf(lowerPivot, la, lowerThickness / 2, lowerTopLocal);
+      const lowerTopUp = onLeaf(lowerPivot, la, lowerCentreOffset - lowerThickness / 2, lowerTopLocal);
+      const lowerTopDown = onLeaf(lowerPivot, la, lowerCentreOffset + lowerThickness / 2, lowerTopLocal);
       const upperBottomUp = onLeaf(upperPivot, ua, -upperThickness / 2, -upperPivotFromBottom);
       // Where the upper leaf's upstream face meets the lower leaf's
       // downstream face (the bearing contact); when the two faces are
@@ -751,7 +762,7 @@ function selfActingWeir(movement) {
     };
     bedFlow.geometry.dispose();
     bedFlow.geometry = new THREE.BoxGeometry(1, 1, gateWidth);
-    bedFlow.material = water;
+    bedFlow.material = water.clone();
     bedFlow.renderOrder = 1;
     const shared = root.userData.updateWorkingParts;
     root.userData.updateWorkingParts = (state) => {
@@ -760,16 +771,20 @@ function selfActingWeir(movement) {
       updateNappe(state);
       if (bedFlow.visible) {
         const la = state.lowerAngle;
-        const lowerBottomUp = onLeaf(lowerPivot, la, -lowerThickness / 2, -lowerPivotFromBottom);
-        const lowerBottomDown = onLeaf(lowerPivot, la, lowerThickness / 2, -lowerPivotFromBottom);
+        const lowerBottomUp = onLeaf(lowerPivot, la, lowerCentreOffset - lowerThickness / 2, -lowerPivotFromBottom);
+        const lowerBottomDown = onLeaf(lowerPivot, la, lowerCentreOffset + lowerThickness / 2, -lowerPivotFromBottom);
         const x0 = lowerBottomUp.x, x1 = Math.max(0, lowerBottomDown.x);
-        const top = Math.min(lowerBottomUp.y, lowerBottomDown.y);
+        const top = Math.min(lowerBottomUp.y, lowerBottomDown.y) - 0.001;
         bedFlow.scale.set(Math.max(0.001, x1 - x0), Math.max(0.001, top - channelFloorY), 1);
+        // The scour sheet thickens from nothing as the passage opens.
+        bedFlow.material.opacity = water.opacity * THREE.MathUtils.smoothstep(top - channelFloorY, 0, 0.02);
         bedFlow.position.set((x0 + x1) / 2, (top + channelFloorY) / 2, 0);
       }
     };
+    // The bed's top is the channel floor the water and the closed lower
+    // leaf stand on.
     const bed = addRole(new THREE.Mesh(plate(poly([[-3.45, channelFloorY - 0.16], [3.45, channelFloorY - 0.16],
-      [3.45, channelFloorY - 0.045], [-3.45, channelFloorY - 0.045]]), -gateWidth / 2, gateWidth / 2),
+      [3.45, channelFloorY], [-3.45, channelFloorY]]), -gateWidth / 2, gateWidth / 2),
     matte(PALETTE.frame, { roughness: 0.7 })), 'fixed-channel-bed-under-weir');
     bed.material.fog = false;
     root.add(bed);

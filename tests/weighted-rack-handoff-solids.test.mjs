@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import * as T from 'three';
 import {createAuthoredAlternatingWeightedRackMovement as create} from '../src/simulation/authored-alternating-weighted-racks.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
-const m=create({id:391}),d=m.root.userData,b=d.blocks;
+const m=create({id:391}),d=m.root.userData,b=d.blocks,sourceShift=d.geometry.sourcePhase*d.timeline.cycleDuration,stateAt=t=>d.stateAtTime(t-sourceShift),updateAt=t=>m.update(t-sourceShift);
 const find=role=>{let result;m.root.traverse(o=>{if(o.userData.role===role)result=o});return result};
 const cache=new Map(),get=o=>{if(!cache.has(o))cache.set(o,{points:surfacePoints(o.geometry),solid:solidSurface(o.geometry)});return cache.get(o);};
 function gap(a,c){const field=get(c).solid,tr=c.matrixWorld.clone().invert().multiply(a.matrixWorld);let minimum=Infinity;
@@ -36,8 +36,8 @@ test('391 guide pins, bored pivots, weights and lowered input interfaces remain 
 });
 test('391 changes the plain lower lever arm while preserving working tooth dimensions and phase',()=>{
  assert.equal(d.geometry.rackRootExtension,.60);assert.equal(d.finiteInterfaceReview.toothProfile.addendum,.065);
- assert.equal(b.leftRack.userData.teeth.length,17);assert.equal(b.rightRack.userData.teeth.length,17);assert.equal(d.geometry.pinionToothCount,20);
- assert.ok(Math.abs(d.geometry.crossheadLowY+b.leftRack.userData.teeth[0].position.y-(-2.76+.24))<1e-12);
+ assert.equal(b.leftRack.userData.teeth.length,14);assert.equal(b.rightRack.userData.teeth.length,14);assert.equal(d.geometry.pinionToothCount,20);
+ assert.ok(Math.abs(d.geometry.crossheadLowY+b.leftRack.userData.teeth[0].position.y-(-3.265+.24))<1e-12);
  assert.ok(d.geometry.crossheadHighY<-1.39,'upper pivot remains well below the pinion');
  assert.ok(get(b.outputGear.userData.wheel).solid.inside(new T.Vector3(.30,0,0)),'pinion is a finite solid');
 });
@@ -51,17 +51,17 @@ test('391 input rod remains inside its fixed guide and pivot pins span the cross
  }
 });
 test('391 handoff positions and rates are continuous, with the prescribed dwell selection disclosed',()=>{
- for(const t of[0,3.36,4,7.36,8]){const before=d.stateAtTime(t-1e-7),after=d.stateAtTime(t+1e-7);for(const key of['crossheadY','crossheadVelocity','outputAngle','outputAngularSpeed'])assert.ok(Math.abs(after[key]-before[key])<1e-6,`${key} at ${t}`);for(const rack of['leftRack','rightRack']){assert.ok(Math.abs(after[rack].rackAngle-before[rack].rackAngle)<1e-6);assert.ok(after[rack].guidePin.distanceTo(before[rack].guidePin)<1e-6);}}
+ for(const t of[0,3.36,4,7.36,8]){const before=stateAt(t-1e-7),after=stateAt(t+1e-7);for(const key of['crossheadY','crossheadVelocity','outputAngle','outputAngularSpeed'])assert.ok(Math.abs(after[key]-before[key])<1e-6,`${key} at ${t}`);for(const rack of['leftRack','rightRack']){assert.ok(Math.abs(after[rack].rackAngle-before[rack].rackAngle)<1e-6);assert.ok(after[rack].guidePin.distanceTo(before[rack].guidePin)<1e-6);}}
  assert.match(d.finiteInterfaceReview.qualification,/dwells.*prescribed.*not a passive force solution/);
 });
 test('391 playback retains scene objects and geometry buffers',()=>{
  const before=[];m.root.traverse(o=>before.push([o,o.geometry]));for(let i=0;i<65;i++)m.update(i/8);const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,before);
 });
-test('391 output stays unbounded across repeated piston cycles and its face mark closes after five',()=>{
+test('391 output stays unbounded across repeated piston cycles and turns once per cycle',()=>{
  for(let cycle=-3;cycle<=7;cycle++){
-  const t=8*cycle,a=d.stateAtTime(t-1e-7),c=d.stateAtTime(t+1e-7);assert.ok(Math.abs(c.outputAngle-a.outputAngle)<1e-6,'no output-index jump at piston reset');
-  assert.ok(Math.abs(d.stateAtTime(t+8).outputAngle-d.stateAtTime(t).outputAngle-.8*2*Math.PI)<2e-14);
+  const t=8*cycle,a=stateAt(t-1e-7),c=stateAt(t+1e-7);assert.ok(Math.abs(c.outputAngle-a.outputAngle)<1e-6,'no output-index jump at piston reset');
+  assert.ok(Math.abs(stateAt(t+8).outputAngle-stateAt(t).outputAngle-2*Math.PI)<2e-14);
  }
- const a=d.stateAtTime(1.23),c=d.stateAtTime(41.23);assert.ok(Math.abs(c.outputAngle-a.outputAngle-4*2*Math.PI)<2e-14);assert.ok(Math.abs(c.crossheadY-a.crossheadY)<2e-14);
- for(const t of[3.36,4]){const a=d.stateAtTime(t-1e-6),b=d.stateAtTime(t),c=d.stateAtTime(t+1e-6);assert.ok(Math.abs((c.elbowAssist.leverAngle-a.elbowAssist.leverAngle)/2e-6)<1e-5,'prescribed lever returns with zero endpoint speed');}
+ const a=stateAt(1.23),c=stateAt(41.23);assert.ok(Math.abs(c.outputAngle-a.outputAngle-5*2*Math.PI)<2e-13);assert.ok(Math.abs(c.crossheadY-a.crossheadY)<2e-14);
+ for(const t of[3.36,4]){const a=stateAt(t-1e-6),b=stateAt(t),c=stateAt(t+1e-6);assert.ok(Math.abs((c.elbowAssist.leverAngle-a.elbowAssist.leverAngle)/2e-6)<1e-5,'prescribed lever returns with zero endpoint speed');}
 });

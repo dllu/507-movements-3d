@@ -117,8 +117,18 @@ test('movement 463 both pivots are below panel center and the closed lower leaf 
   near(closed.lowerAngle, 0, 1e-14, 'closed lower angle');
   near(closed.upperBottomCenter.x, geometry.upperPivot.x, 1e-12,
     'closed upper centerline is vertical');
-  near(closed.lowerBottomCenter.x, geometry.lowerPivot.x, 1e-12,
+  near(closed.lowerBottomCenter.x, geometry.lowerPivot.x + geometry.lowerCentreOffset, 1e-12,
     'closed lower centerline is vertical');
+  // The closed lower leaf stands on the bed (no leak under it), and turned
+  // back both bottom corners lift off the bed.
+  near(closed.lowerBottomCenter.y, geometry.channelFloorY, 1e-12, 'closed lower leaf seats on the bed');
+  for (let drive = 0.01; drive <= 1; drive += 0.01) {
+    const open = stateAtDrive(drive);
+    for (const side of [-1, 1]) {
+      const corner = open.lowerBottomCenter.clone().addScaledVector(open.lowerNormal, side * geometry.lowerThickness / 2);
+      assert.ok(corner.y >= geometry.channelFloorY - 1e-12, `lower corner never digs into the bed at ${drive}`);
+    }
+  }
   const upperBottomY = geometry.upperPivot.y
     - geometry.upperPivotFromBottom;
   const lowerTopY = geometry.lowerPivot.y + geometry.lowerTopLocal;
@@ -325,7 +335,7 @@ test('movement 463 renderer follows the contact solution, changes flow routes, a
     assert.equal(blocks.notchFlow.visible,
       state.notchFlowFraction / 0.48 > 1e-3);
     assert.equal(blocks.bedFlow.visible,
-      state.contactDrive > .05 && state.lowerBottomCenter.y - geometry.lowerThickness/2*Math.abs(Math.sin(state.lowerAngle)) - geometry.channelFloorY > .02);
+      state.contactDrive > 1e-4 && state.lowerBottomCenter.y - geometry.lowerThickness/2*Math.abs(Math.sin(state.lowerAngle)) - geometry.channelFloorY > 1e-4);
     near(blocks.sedimentBank.scale.x,
       1.45 * state.sedimentRemainingFraction, 1e-12,
       `sediment render scale at phase ${phase}`);

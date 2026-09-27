@@ -338,7 +338,9 @@ test('movement 464 renderer maps all three levels, pressure jet height, and flow
     assert.equal(blocks.centralRiserWater.visible,
       state.physicalFlowsVisible);
     assert.equal(blocks.jetColumn.visible, state.physicalFlowsVisible);
-    assert.equal(blocks.externalPour.visible, state.physicalFlowsVisible);
+    // Drain equals jet: no external pour is needed or drawn.
+    assert.equal(blocks.externalPour.visible, false);
+    near(geometry.externalPourTransfer, 0, 0, 'no external pour');
     assert.ok(blocks.fountainSprays.every(({ visible }) =>
       visible === state.physicalFlowsVisible));
   }

@@ -22,15 +22,26 @@ test('396 actual finite contact normals resist the wheel and assist G and J; F r
  for(let i=1;i<bake.samples.length-1;i++){const t=bake.times[i],s=d.stateAtTime(t);if(!s.impulseActive)continue;const c=reed396Contact(s.wheelAngle,reed396Obstacles(s,p.pallets),p.teeth),[x,y]=c.point,[nx,ny]=c.normal,name=s.finiteContactPallet,center=name==='J'?-2.34:2.18,torque=-((x-center)*ny-y*nx),speed=name==='J'?s.balanceAngularSpeed:s.leverAngularSpeed,st=stats[name];assert.ok(Math.abs(c.gap)<2e-7);assert.ok(x*ny-y*nx>.5);assert.ok(torque*speed>=-1e-10);st.count++;st.minWheel=Math.min(st.minWheel,x*ny-y*nx);st.minPower=Math.min(st.minPower,torque*speed);}
  assert.ok(stats.G.count>50);assert.ok(stats.J.count>=5);assert.equal(d.dynamics.detentOnlyFQualified,false);assert.equal(d.dynamics.forkContactSolved,false);assert.match(d.reconstructionNote,/detent-only.*unresolved/);console.log(stats);
 });
-test('396 pallets have real rigid attachments; curved wheel webs and balance spokes join their rims',()=>{
+test('396 the anchor and pallet j are single plates in the wheel plane; webs and spokes join their rims',()=>{
  const m=make({id:396}),d=m.root.userData,b=d.blocks,p=d.workingParts396,x=audit();m.update(0);m.root.updateMatrixWorld(true);
- for(let i=0;i<3;i++)assert.ok(x.both([b.palletG,b.palletF,b.chronometerPalletJ][i],p.palletNecks[i])<1e-6);
- for(let i=0;i<2;i++)assert.ok(x.both(p.palletNecks[i],b.lever.userData.crosspiece)<1e-6);
- assert.ok(x.both(p.palletNecks[2],p.directBridge)<1e-6);
- const crook=b.lever.children.find(o=>o.userData.role==='lever-C-principal-arm-with-crook-d-around-wheel-staff');assert.ok(x.both(crook,b.lever.userData.crosspiece)<1e-6);
+ // No hidden necks, pins or cross-pieces: g, f and h are one extruded plate.
+ assert.equal(b.palletF,b.palletG);assert.equal(p.palletNecks.length,0);
+ assert.equal(b.lever.children.filter(o=>/pallet|crosspiece|depth-attachment/.test(o.userData.role??'')&&!/^white/.test(o.userData.role)).length,1);
+ const anchor=b.palletG.geometry.userData.plate;assert.equal(anchor.polygons.length,1);assert.deepEqual([anchor.low,anchor.high],[-.08,.08]);
+ const j=b.chronometerPalletJ.geometry.userData.plate;assert.equal(j.polygons.length,1);
+ // The anchor is bored for staff c and the staff passes through it.
+ assert.ok(x.both(b.palletG,b.lever.userData.pivotHub)>-1e-6);
  for(const web of p.webs){assert.ok(x.both(web,b.escapeWheel.userData.toothedRim)<1e-6);assert.ok(x.both(web,b.escapeWheel.userData.hub)<1e-6);}
  for(const spoke of b.balance.children.filter(o=>o.userData.role==='balance-wheel-B-spoke'))assert.ok(x.both(spoke,b.balance.userData.rim)<1e-6);
  for(const {boss,post}of p.bearingParts)assert.ok(x.both(boss,post)<1e-6);
+});
+test('396 roller pin i stays in the slot of fork e and never cuts it',()=>{
+ const m=make({id:396}),d=m.root.userData,b=d.blocks,x=audit(),fork=b.lever.userData.forkProngs[0];let engaged=0,minGap=Infinity;
+ for(let i=0;i<=1600;i++){const t=4*i/1600;m.update(t);m.root.updateMatrixWorld(true);const s=d.stateAtTime(t);
+  const gap=x.both(b.rollerPin,fork);minGap=Math.min(minGap,gap);assert.ok(gap>-1e-5,`pin into fork at ${t}: ${gap}`);
+  if(s.forkEngaged){engaged++;const local=b.lever.worldToLocal(b.rollerPin.getWorldPosition(new THREE.Vector3()));assert.ok(Math.abs(local.y)<1e-6,`pin on slot centre at ${t}`);}
+ }
+ assert.ok(engaged>200);console.log({engaged,minGap});
 });
 test('396 one-tooth indexing, finite contact metadata and retained buffers survive repeated cycles',()=>{
  const m=make({id:396}),d=m.root.userData,objects=[];m.root.traverse(o=>{if(o.isMesh)objects.push([o,o.geometry.attributes.position.array])});

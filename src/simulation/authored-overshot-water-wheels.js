@@ -1,12 +1,12 @@
 import * as THREE from 'three';
 import {ring,plate,poly,sector,polygonClipping} from './finite-plate-geometry.js';
-import {wheelBearings,makeCellWaterGeometry,updateCellWater} from './water-wheel-solids.js';
+import {wheelBearings} from './water-wheel-solids.js';
 import {
   PALETTE,
   markShadows,
   matte,
 } from './primitives.js';
-import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
+import {WaterSpray,WaterStream,ballisticPath,collectWaterStreams,guidedPath,joinPaths} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -57,6 +57,113 @@ function makeTube(points, radius, material, role) {
   return tube;
 }
 
+
+// Bucket partition (Brown's dotted bent boards): polar corners (radius,
+// angle ahead of the partition's root), measured on the plate.
+const PARTITION = [[2.02, 0], [2.33, 0.06], [2.62, 0.30]];
+const PARTITION_HALF_THICKNESS = 0.03;
+function partitionCenterline(rootAngle = 0) {
+  return PARTITION.map(([r, a]) => new THREE.Vector2(r * Math.cos(rootAngle + a), r * Math.sin(rootAngle + a)));
+}
+// Offset a polyline sideways by `d` (left of travel positive), mitred.
+function offsetPolyline(points, d) {
+  return points.map((p, i) => {
+    const prev = points[Math.max(0, i - 1)], next = points[Math.min(points.length - 1, i + 1)];
+    const n0 = i > 0 ? new THREE.Vector2(-(p.y - prev.y), p.x - prev.x).normalize() : null;
+    const n1 = i < points.length - 1 ? new THREE.Vector2(-(next.y - p.y), next.x - p.x).normalize() : null;
+    if (!n0) return p.clone().addScaledVector(n1, d);
+    if (!n1) return p.clone().addScaledVector(n0, d);
+    const m = n0.clone().add(n1).normalize();
+    return p.clone().addScaledVector(m, d / Math.max(0.3, m.dot(n0)));
+  });
+}
+function bucketPartitionOutline() {
+  const line = partitionCenterline(0);
+  const left = offsetPolyline(line, PARTITION_HALF_THICKNESS);
+  const right = offsetPolyline(line, -PARTITION_HALF_THICKNESS);
+  // The root runs along the board's slant to the sole ring's face (r 2.02),
+  // so the board stands on the ring without overlapping it.
+  for (const face of [left, right]) {
+    const d = face[1].clone().sub(face[0]).normalize();
+    const pd = face[0].dot(d), c = face[0].lengthSq() - 2.02 * 2.02;
+    face[0].addScaledVector(d, -(pd - Math.sqrt(Math.max(0, pd * pd - c))));
+  }
+  return [...right, ...left.reverse()].map(p => [p.x, p.y]);
+}
+
+// Water held in the pocket between two bent partitions, clipped by a level
+// surface that never rises above the lower lip tip (the pocket's spill
+// point). Reuses the mesh's buffers.
+const CELL_CLEARANCE = 0.012;
+function bentCellWaterGeometry() {
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * 240), 3));
+  g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(3 * 240), 3));
+  return g;
+}
+function updateBentCellWater(mesh, {lowerRoot, upperRoot, fill, origin, width}) {
+  const inset = PARTITION_HALF_THICKNESS + CELL_CLEARANCE;
+  const upper = offsetPolyline(partitionCenterline(upperRoot), -inset);
+  const lower = offsetPolyline(partitionCenterline(lowerRoot), inset);
+  const sole = 2.02 + CELL_CLEARANCE;
+  // Where each offset board face (its first, slanted run) meets the sole.
+  const onSole = (line) => {
+    const d = line[1].clone().sub(line[0]).normalize();
+    const pd = line[0].dot(d), c = line[0].lengthSq() - sole * sole;
+    return line[0].clone().addScaledVector(d, -pd + Math.sqrt(Math.max(0, pd * pd - c)));
+  };
+  lower[0] = onSole(lower);
+  upper[0] = onSole(upper);
+  const outline = [];
+  const steps = 6;
+  const a0 = Math.atan2(lower[0].y, lower[0].x);
+  let a1 = Math.atan2(upper[0].y, upper[0].x);
+  while (a1 < a0) a1 += Math.PI * 2;
+  for (let i = 0; i <= steps; i += 1) {
+    const a = a0 + (a1 - a0) * i / steps;
+    outline.push(new THREE.Vector2(sole * Math.cos(a), sole * Math.sin(a)));
+  }
+  outline.push(upper[1], upper[2], lower[2], lower[1]);
+  let minY = Infinity;
+  for (const p of outline) minY = Math.min(minY, p.y);
+  const spillY = Math.min(upper[2].y, lower[2].y);
+  const level = minY + Math.max(0, Math.min(1, fill)) * Math.max(0, spillY - minY);
+  const clipped = [];
+  for (let i = 0; i < outline.length; i += 1) {
+    const a = outline[i], b = outline[(i + 1) % outline.length];
+    if (a.y <= level) clipped.push(a);
+    if ((a.y < level && b.y > level) || (a.y > level && b.y < level)) {
+      clipped.push(new THREE.Vector2(a.x + (b.x - a.x) * (level - a.y) / (b.y - a.y), level));
+    }
+  }
+  const g = mesh.geometry, p = g.attributes.position;
+  let count = 0;
+  const vertex = (v, z) => { if (count < p.count) p.setXYZ(count++, v.x - origin.x, v.y - origin.y, z); };
+  if (clipped.length >= 3 && level > minY + 1e-4) {
+    // Counter-clockwise outline so the side walls wind outward.
+    if (THREE.ShapeUtils.isClockWise(clipped)) clipped.reverse();
+    const faces = THREE.ShapeUtils.triangulateShape(clipped, []);
+    for (const face of faces) {
+      const [i, j, k] = THREE.ShapeUtils.area(face.map(f => clipped[f])) >= 0 ? face : [face[0], face[2], face[1]];
+      vertex(clipped[i], width / 2); vertex(clipped[j], width / 2); vertex(clipped[k], width / 2);
+      vertex(clipped[i], -width / 2); vertex(clipped[k], -width / 2); vertex(clipped[j], -width / 2);
+    }
+    for (let i = 0; i < clipped.length; i += 1) {
+      const a = clipped[i], b = clipped[(i + 1) % clipped.length];
+      vertex(a, -width / 2); vertex(b, -width / 2); vertex(b, width / 2);
+      vertex(a, -width / 2); vertex(b, width / 2); vertex(a, width / 2);
+    }
+  }
+  // Park unused vertices on the water (or the pocket's lowest point) so the
+  // body's bounds never reach back to its local origin.
+  let rest = outline[0];
+  for (const q of outline) if (q.y < rest.y) rest = q;
+  const px = count ? p.getX(0) : rest.x - origin.x, py = count ? p.getY(0) : rest.y - origin.y, pz = count ? p.getZ(0) : 0;
+  for (let i = count; i < p.count; i += 1) p.setXYZ(i, px, py, pz);
+  p.needsUpdate = true; g.setDrawRange(0, count); g.computeVertexNormals(); g.computeBoundingSphere();
+  mesh.visible = fill > .002; mesh.position.set(0, 0, 0); mesh.scale.set(1, 1, 1);
+}
+
 function overshotWaterWheel(movement) {
   const root = new THREE.Group();
   const cycleDuration = 6;
@@ -71,10 +178,14 @@ function overshotWaterWheel(movement) {
   const shaftRadius = 0.22;
   const inletAngle = THREE.MathUtils.degToRad(67);
   const fillTravelAngle = THREE.MathUtils.degToRad(16);
-  const drainStartTravelAngle = THREE.MathUtils.degToRad(137);
-  const drainEndTravelAngle = THREE.MathUtils.degToRad(164);
+  // The bent buckets spill over their lower lips from just below the
+  // horizontal (Brown's falling water at the right) and are empty by about
+  // 48 degrees below it, as their pocket geometry dictates.
+  const drainStartTravelAngle = THREE.MathUtils.degToRad(72);
+  const drainEndTravelAngle = THREE.MathUtils.degToRad(115);
   const sourcePoseBucketOffset = inletAngle;
   const gravity = 9.81;
+  const cyclePeriod = cycleDuration;
 
   const waterFillAtWorldAngle = (worldAngle) => {
     const clockwiseTravel = THREE.MathUtils.euclideanModulo(
@@ -302,26 +413,18 @@ function overshotWaterWheel(movement) {
     bucket.rotation.z = localAngle;
     bucket.userData.role =
       `overshot-retaining-bucket-${bucketIndex + 1}-of-twelve`;
+    // Brown's buckets are bent boards: a short start rising from the sole
+    // at a slant, then a long lip bent back toward the following bucket so
+    // the pocket holds its water down the descending side.
     const divider = new THREE.Mesh(
-      new THREE.BoxGeometry(
-        bucketRadialDepth,
-        0.09,
-        bucketAxialWidth,
-      ),
+      plate(poly(bucketPartitionOutline()), -bucketAxialWidth / 2, bucketAxialWidth / 2),
       bucketMaterial,
     );
+    divider.geometry.translate(-bucketCenterRadius, 0, 0);
     divider.userData.role =
-      `radial-divider-of-bucket-${bucketIndex + 1}`;
+      `bent-slanted-partition-of-bucket-${bucketIndex + 1}`;
     bucket.add(divider);
-    const hookedLip = new THREE.Mesh(
-      new THREE.BoxGeometry(0.13, 0.38, bucketAxialWidth),
-      bucketMaterial,
-    );
-    hookedLip.position.set(bucketRadialDepth / 2 - 0.04, -0.15, 0);
-    hookedLip.rotation.z = -0.16;
-    hookedLip.userData.role =
-      `outer-retaining-lip-of-bucket-${bucketIndex + 1}`;
-    bucket.add(hookedLip);
+    const hookedLip = null;
     rotor.add(bucket);
 
     const waterLoad = new THREE.Group();
@@ -333,7 +436,7 @@ function overshotWaterWheel(movement) {
     waterLoad.userData.role =
       `gravity-level-water-load-in-bucket-${bucketIndex + 1}`;
     const waterBody = new THREE.Mesh(
-      makeCellWaterGeometry(),
+      bentCellWaterGeometry(),
       waterMaterial,
     );
     waterBody.position.z = 0.02;
@@ -381,51 +484,94 @@ function overshotWaterWheel(movement) {
   foundation.userData.role = 'fixed-overshot-wheel-foundation';
   root.add(foundation);
 
+  // Brown's headrace ends just right of the wheel's crown.
+  const flumeLength = 4.575;
   const flume = new THREE.Mesh(
-    new THREE.BoxGeometry(5.45, 0.22, 1.40),
+    new THREE.BoxGeometry(flumeLength, 0.22, 1.40),
     frameMaterial,
   );
-  flume.position.set(-1.55, 3.43, -0.18);
+  flume.position.set(-4.275 + flumeLength / 2, 3.43, -0.18);
   flume.rotation.z = -0.045;
   flume.userData.role = 'fixed-top-feed-headrace-flume';
   root.add(flume);
   const flumeWater = new THREE.Mesh(
-    new THREE.BoxGeometry(5.15, 0.12, 1.02),
+    new THREE.BoxGeometry(flumeLength - 0.3, 0.12, 1.02),
     paleWaterMaterial,
   );
-  flumeWater.position.set(-1.60, 3.54, 0.04);
+  flumeWater.position.set(flume.position.x - 0.05, 3.54, 0.04);
   flumeWater.rotation.z = -0.045;
   flumeWater.userData.role = 'water-flowing-along-top-headrace';
+  // The continuous feed stream below carries the headrace water now.
+  flumeWater.visible = false;
   root.add(flumeWater);
 
-  const feedPathPoints = [
-    new THREE.Vector3(1.10, 3.46, 0.14),
-    new THREE.Vector3(1.34, 3.21, 0.14),
-    new THREE.Vector3(1.50, 2.86, 0.14),
-    new THREE.Vector3(
-      bucketCenterRadius * Math.cos(inletAngle),
-      bucketCenterRadius * Math.sin(inletAngle),
-      0.14,
-    ),
-  ];
-  // The feed is one translucent sheet of water the width of the flume water
-  // pouring off its end into the buckets (not a round hose).
-  const feedWater = new THREE.Mesh(
-    waterJetGeometry(new THREE.CatmullRomCurve3(
-      feedPathPoints.map((point) => point.clone().setZ(0)), false, 'centripetal'), {
-      radius: 0.07, endRadius: 0.09, width: 0.44, endWidth: 0.46,
-      widthAxis: new THREE.Vector3(0, 0, 1), segments: 48, fadeStart: 0.88, flare: 1.15,
-    }).translate(0, 0, 0.14),
-    waterJetMaterial(),
-  );
-  feedWater.renderOrder = 2;
+  // Pass 69: the feed is ONE continuous swept body (water-stream.js): it runs
+  // along the headrace, leaves its end with the channel speed and falls on a
+  // projectile path into the bucket mouths just past the crown. The channel
+  // speed is the one whose parabola lands at the filling position.
+  flume.updateMatrix();
+  const flumePoint = (x) => new THREE.Vector3(x, 0.11 + 0.055, 0).applyMatrix4(flume.matrix).setZ(0);
+  const headStart = flumePoint(-flumeLength / 2 + 0.3);
+  const lip = flumePoint(flumeLength / 2);
+  const flumeDirection = lip.clone().sub(headStart).normalize();
+  const mouthRadius = 2.62;
+  const feedLanding = (speed) => ballisticPath({
+    origin: lip, velocity: flumeDirection.clone().multiplyScalar(speed),
+    stop: (point) => Math.hypot(point.x, point.y) <= mouthRadius, samples: 24,
+  });
+  const targetAngle = inletAngle - fillTravelAngle / 3;
+  let lowSpeed = 0.05, highSpeed = 6;
+  for (let i = 0; i < 40; i += 1) {
+    const mid = (lowSpeed + highSpeed) / 2;
+    const end = feedLanding(mid).points.at(-1);
+    if (Math.atan2(end.y, end.x) > targetAngle) lowSpeed = mid; else highSpeed = mid;
+  }
+  const feedSpeed = (lowSpeed + highSpeed) / 2;
+  const feedWater = new WaterStream(joinPaths(
+    guidedPath([headStart, lip], {speed: feedSpeed, samples: 16}),
+    feedLanding(feedSpeed),
+  ), {
+    width: 0.42, thickness: 0.055, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.15,
+    foam: {start: 0.93, amount: 0.5}, cyclePeriod, streakRate: 0.9, opacity: 0.5,
+  });
   feedWater.userData.role = 'continuous-top-fed-water-stream-onto-wheel';
   root.add(feedWater);
-  const feedCurve = new THREE.CatmullRomCurve3(
-    feedPathPoints,
-    false,
-    'centripetal',
-  );
+  const feedEnd = feedWater.path.points.at(-1);
+  const feedSplash = new WaterSpray({
+    origin: feedEnd, velocity: new THREE.Vector3(0.5, 0.9, 0), spread: 0.5, count: 16,
+    lifetime: 0.3, radius: 0.03, cyclePeriod, seed: 430, originSpread: new THREE.Vector3(0, 0, 0.35),
+  });
+  feedSplash.userData.role = 'splash-where-feed-enters-buckets';
+  root.add(feedSplash);
+  // The buckets spill over their lower lips once past the horizontal; the
+  // spilled water leaves the wheel's edge with the rim's downward speed and
+  // falls as a curtain to the tail floor, whitening where it lands.
+  const rimSpeed = inputAngularSpeed * wheelRadius;
+  const spillAngle = THREE.MathUtils.degToRad(-8);
+  const curtainTop = new THREE.Vector3(Math.cos(spillAngle), Math.sin(spillAngle), 0)
+    .multiplyScalar(wheelRadius + 0.16);
+  const tailFloorY = -3.07;
+  const dischargeWater = new WaterStream(ballisticPath({
+    origin: curtainTop,
+    velocity: new THREE.Vector3(Math.sin(spillAngle), -Math.cos(spillAngle), 0).multiplyScalar(rimSpeed * 0.55),
+    endY: tailFloorY + 0.03, samples: 28,
+  }), {
+    width: 0.44, thickness: 0.07, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.1,
+    spread: {start: 0.1, width: 1.05, thickness: 3.6}, fadeIn: 0.12, foam: {start: 0.8, amount: 0.55},
+    cyclePeriod, streakRate: 1.4, opacity: 0.42,
+  });
+  dischargeWater.userData.role = 'water-spilled-from-descending-buckets-falling-to-tail-floor';
+  root.add(dischargeWater);
+  const tailSplash = new WaterSpray({
+    origin: dischargeWater.path.points.at(-1).clone().setY(tailFloorY + 0.02),
+    velocity: new THREE.Vector3(0.2, 1.3, 0), spread: 0.8, count: 28, lifetime: 0.42, radius: 0.04,
+    cyclePeriod, seed: 431, originSpread: new THREE.Vector3(0.15, 0, 0.4),
+  });
+  tailSplash.userData.role = 'splash-of-spilled-water-on-tail-floor';
+  root.add(tailSplash);
+  const updateWater = collectWaterStreams(root);
+  const feedPathPoints = feedWater.path.points;
+  const feedCurve = new THREE.CatmullRomCurve3(feedPathPoints.filter((_, i) => i % 4 === 0), false, 'centripetal');
   const droplets = [];
   for (let dropletIndex = 0; dropletIndex < 7; dropletIndex += 1) {
     const droplet = new THREE.Mesh(
@@ -475,12 +621,14 @@ function overshotWaterWheel(movement) {
   const update = (time) => {
     const state = stateAtTime(time);
     rotor.rotation.z = state.wheelAngle;
+    updateWater(time);
     for (let bucketIndex = 0; bucketIndex < bucketCount;
       bucketIndex += 1) {
       const bucketState = state.buckets[bucketIndex];
       const parts = bucketParts[bucketIndex];
       parts.waterLoad.rotation.z = -state.wheelAngle;
-      updateCellWater(parts.waterBody,{angle:bucketState.worldAngle-Math.PI/bucketCount,halfAngle:Math.PI/bucketCount-.035,inner:2.09,outer:2.57,fill:bucketState.waterFill,origin:bucketState.center,width:.96});
+      updateBentCellWater(parts.waterBody, {lowerRoot: bucketState.worldAngle - FULL_TURN / bucketCount,
+        upperRoot: bucketState.worldAngle, fill: bucketState.waterFill, origin: bucketState.center, width: .96});
     }
     const flowPhase = THREE.MathUtils.euclideanModulo(
       time / 0.82,
@@ -513,7 +661,10 @@ function overshotWaterWheel(movement) {
       bucketGroups: bucketParts.map(({ bucket }) => bucket),
       bucketWaterBodies: bucketParts.map(({ waterBody }) => waterBody),
       bucketWaterLoads: bucketParts.map(({ waterLoad }) => waterLoad),
+      dischargeWater,
+      feedSplash,
       feedWater,
+      tailSplash,
       flume,
       flumeWater,
       foundation,

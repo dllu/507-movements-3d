@@ -72,7 +72,7 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
   assert.equal(transmission.oneShotRelease, true);
   assert.equal(transmission.automaticReset, false);
   assert.equal(transmission.catchDetainedAfterTrip, true);
-  assert.match(transmission.loopReset, /fresh-weight-slid-up-from-below/);
+  assert.match(transmission.loopReset, /re-armed-above-view-with-second-weight-lowered-back-seated/);
   assert.equal(blocks.resetSling, undefined, 'no reload sling');
   assert.equal(
     blocks.probeAssembly.userData.role,
@@ -296,47 +296,72 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
   assert.ok(
     recovered.catchSupportPosition.y > recovered.weightUpperOpeningY,
   );
-  assert.equal(recovered.stage, 'fresh-weight-slid-up-past-retracted-catch');
+  assert.equal(recovered.stage, 'fresh-weight-brought-under-rod-above-view');
   disposeModel(model.root);
 });
 
-test('movement 247 re-arms in view: bottom sinks away, fresh weight slid up from below onto the reset catch', () => {
+test('movement 247 re-arms out of view: the rod leaves, the view holds on the bottom, the rod returns with its weight seated', () => {
   const model = createMovementModel(catalog.movements[246]);
   const { geometry, stateAtTime, timeline, transmission, displayFrame247, blocks } =
     model.root.userData;
   assert.equal(transmission.automaticReset, false);
 
-  const rising = stateAtTime((timeline.rodRecovered + timeline.freshWeightRaised) / 2);
+  const rising = stateAtTime((timeline.freshWeightAtRod + timeline.freshWeightRaised) / 2);
   const setting = stateAtTime((timeline.detentReleased + timeline.catchSet) / 2);
   const armed = stateAtTime((timeline.weightSeated + timeline.cycleClosure) / 2);
   assert.equal(rising.stage, 'fresh-weight-slid-up-past-retracted-catch');
   assert.equal(rising.detentLatched, true);
-  assert.equal(rising.weightOnSeabed, false);
-  near(rising.bodyPositionY, geometry.hauledBodyY, 0, 'rod hauled in');
+  near(rising.bodyPositionY, geometry.rearmBodyY, 0, 'rod hauled up for re-arming');
   assert.equal(setting.detentLatched, false);
   assert.ok(setting.catchAngle < 0);
   assert.equal(setting.catchToWeightContactActive, false);
   assert.equal(armed.catchAngle, 0);
   assert.equal(armed.catchToWeightContactActive, true);
 
-  // The rod never leaves Brown's pose in view, the weight is never hidden,
-  // and nothing jumps.
+  // The view: the plate's crop at the narrowest portrait aspect in use.
   const fit = model.root.userData.cameraFitBounds;
-  let previous = null;
-  for (let sample = 0; sample <= 2000; sample += 1) {
-    const time = timeline.cycleClosure * sample / 2000;
+  const view = { minY: 1.6, maxY: 9.8, halfWidth: 11.5 };
+  assert.ok(fit.min.y > view.minY && fit.max.y < view.maxY);
+  const inView = (box) => box.max.y > view.minY && box.min.y < view.maxY
+    && box.max.x > -view.halfWidth && box.min.x < view.halfWidth;
+  const weights = [blocks.weightAssembly, blocks.spareWeightAssembly];
+  const previous = weights.map(() => null);
+  const period = model.root.userData.animationTiming.authoredCyclePeriod;
+  near(period, 2 * timeline.cycleClosure, 0, 'two soundings per loop');
+  for (let sample = 0; sample <= 4000; sample += 1) {
+    const time = period * sample / 4000;
     model.update(time);
     model.root.updateMatrixWorld(true);
-    assert.equal(blocks.weightAssembly.visible, true);
-    near(displayFrame247.position.y + stateAtTime(time).bodyPositionY,
-      geometry.recoveredBodyY, 1e-9, `rod fixed in view at ${time}`);
-    const box = new THREE.Box3().setFromObject(blocks.weightAssembly);
-    // The fresh weight starts where the spent one lies, well below the view.
-    if (previous) assert.ok(Math.abs(box.min.y - previous.min.y) < 0.05, `weight continuous at ${time}`);
-    if (time > timeline.rodRecovered - 1e-9 && time < timeline.rodRecovered + 1e-3) {
-      assert.ok(box.max.y < fit.min.y - 2, `weight handover below view at ${time}`);
-    }
-    previous = box;
+    const state = model.root.userData.kinematics;
+    const t = state.cycleTime;
+    const rod = new THREE.Box3().setFromObject(blocks.housingTop)
+      .union(new THREE.Box3().setFromObject(blocks.probeFoot));
+    const seabed = displayFrame247.position.y + geometry.seabedY;
+    let shown = inView(rod) || (seabed > view.minY && seabed < view.maxY);
+    weights.forEach((weight, index) => {
+      assert.equal(weight.visible, true);
+      const box = new THREE.Box3().setFromObject(weight);
+      // Every weight moves continuously (no pops, even out of view).
+      if (previous[index]) {
+        assert.ok(box.min.distanceTo(previous[index].min) < 1, `weight ${index} continuous at ${time}`);
+      }
+      previous[index] = box;
+      if (!inView(box)) return;
+      shown = true;
+      // A weight in view is always seated on the rod, falling, or lying
+      // on the bottom: never lifted or carried by nothing.
+      const onRod = Math.abs(box.getCenter(new THREE.Vector3()).y
+        - (displayFrame247.position.y + state.weightCenterY)) < 1e-9
+        && weight === model.root.userData.activeWeightAssembly
+        && (t < timeline.supportRelease + 1 || t >= timeline.weightSeated);
+      const onBottom = Math.abs(box.min.y - seabed) < 0.2;
+      const falling = t >= timeline.supportRelease && t < timeline.weightImpact;
+      assert.ok(onRod || onBottom || falling, `weight ${index} in view unsupported at ${time}`);
+      if (t >= timeline.rodRecovered && t < timeline.weightSeated && weight === model.root.userData.activeWeightAssembly) {
+        assert.fail(`fresh weight in view before it is seated at ${time}`);
+      }
+    });
+    assert.ok(shown, `view not empty at ${time}`);
   }
   disposeModel(model.root);
 });
@@ -364,7 +389,7 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
     geometry.catchSupportLocal.y,
     0,
   );
-  for (const time of [0, 2.7, 3.4, 3.8, 4.35, 5.4, 7.4, 8.6, 9.25, 10.2]) {
+  for (const time of [0, 2.7, 3.4, 3.8, 4.35, 5.4, 6.9, 7.5, 8.2, 9.0, 9.8, 10.5, 14.0, 18.0, 20.0]) {
     model.update(time);
     model.root.updateMatrixWorld(true);
     const state = stateAtTime(time);
@@ -374,8 +399,11 @@ test('movement 247 renderer exposes the cutaway, rigid catch, moving weight, and
       `rendered probe offset at ${time}`);
     near(blocks.catchAssembly.rotation.z, state.catchAngle, 0,
       `rendered catch angle at ${time}`);
-    near(blocks.weightAssembly.position.y, state.weightCenterY, 0,
+    const active = model.root.userData.activeWeightAssembly;
+    near(active.position.y, state.weightCenterY, 0,
       `rendered weight position at ${time}`);
+    near(active.position.x, state.weightCenterX, 0,
+      `rendered weight sideways position at ${time}`);
     vectorNear(
       localSupport.clone().applyMatrix4(blocks.catchAssembly.matrixWorld),
       state.catchSupportPosition.clone()
@@ -415,11 +443,15 @@ test('movement 247 reported rates close away from edge release and leave movemen
     3.8,
     4.35,
     5.2,
-    7.4,
-    7.9,
-    8.9,
-    9.25,
-    10.2,
+    6.3,
+    6.9,
+    7.2,
+    7.5,
+    7.7,
+    8.2,
+    9.0,
+    9.8,
+    10.5,
   ]) {
     const before = stateAtTime(time - step);
     const state = stateAtTime(time);
@@ -460,7 +492,8 @@ test('movement 247 reported rates close away from edge release and leave movemen
   ]) {
     near(end[key], start[key], 0, `closed ${key}`);
   }
-  near(animationTiming.authoredCyclePeriod, 11.1, 0,
+  // Two soundings per display loop: the two weights swap roles.
+  near(animationTiming.authoredCyclePeriod, 2 * 11.1, 0,
     'authored cycle duration');
   near(animationTiming.targetCycleDuration, 2, 0,
     'display cycle duration');

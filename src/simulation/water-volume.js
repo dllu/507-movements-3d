@@ -121,7 +121,9 @@ export function waterJetGeometry(curve, {
     for (let j = 0; j < radialSegments; j += 1) {
       const a = i * ring + j;
       const b = a + ring;
-      indices.push(a, b, a + 1, b, b + 1, a + 1);
+      // Counter-clockwise seen from outside, so the faces agree with the
+      // outward normals (DoubleSide would otherwise flip them and darken).
+      indices.push(a, a + 1, b, b, a + 1, b + 1);
     }
   }
   // A sector (a jet cut on a section plane) is closed by flat cut faces from

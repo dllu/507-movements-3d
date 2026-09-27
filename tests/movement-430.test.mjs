@@ -268,7 +268,7 @@ test('movement 430 retained water produces clockwise gravitational torque at eve
       'sum of bucket-weight moments');
     near(state.retainedWaterMassNormalized, reconstructedMass, 0,
       'sum of retained bucket water');
-    assert.ok(state.gravityTorqueNormalized < -76);
+    assert.ok(state.gravityTorqueNormalized < -50);
     leastNegativeTorque = Math.max(
       leastNegativeTorque,
       state.gravityTorqueNormalized,

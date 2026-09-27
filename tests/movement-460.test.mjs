@@ -61,7 +61,9 @@ test('movement 460 is a fixed-pivot scoop and rocking beam joined by one double-
   assert.equal(blocks.pitmanBars.length, 2);
   assert.ok(blocks.pitmanBars.every((bar) => bar.parent === blocks.pitman));
   assert.equal(blocks.scoopSidePlates.length, 2);
-  assert.equal(blocks.scoopFloor.length, 4);
+  // Pass 69: two more floor boards carry the water under the trunnion to
+  // the spout over the ridge.
+  assert.equal(blocks.scoopFloor.length, 6);
   assert.equal(blocks.scoopWater.parent, blocks.scoop);
   assert.equal(geometry.notchRadii.length, 5);
   assert.equal(geometry.selectedNotchIndex, 2);
@@ -217,9 +219,12 @@ test('movement 460 exact four-bar closure holds throughout all five selectable n
       `pitman length notch ${notchIndex} sample ${sample}`);
       near(state.pitmanLength, geometry.pitmanLength, 2e-15,
         `reported pitman notch ${notchIndex} sample ${sample}`);
-      assert.ok(state.circleClosureError < 1.3e-15);
+      assert.ok(state.circleClosureError < 2e-15); // machine precision for the pass-69 geometry
       assert.equal(state.assemblyMode, 'open-lower-circle-intersection');
-      assert.ok(Math.abs(state.outputDenominator) > 1.8,
+      // Pass 69: the full-drain stroke (the raised floor must slope to the
+      // spout) brings the outermost notch nearer toggle, but every notch
+      // keeps a clear margin from it.
+      assert.ok(Math.abs(state.outputDenominator) > 1.2,
         `configuration avoids toggle at notch ${notchIndex}`);
       assert.ok(Number.isFinite(state.inputToOutputInstantaneousRatio));
     }
@@ -260,7 +265,10 @@ test('movement 460 moving the pitman outward through the shown notches strictly 
     assert.ok(high.scoopAngle > low.scoopAngle);
   }
   near(geometry.notchLiftHeights[geometry.selectedNotchIndex],
-    0.8381888859707952, 2e-15, 'selected middle-notch lift');
+    3.3108806611294552, 2e-12, 'selected middle-notch lift');
+  // The raised scoop's floor falls toward the spout, so it can empty.
+  const high = stateAtInputAngleForNotch(FULL_TURN * geometry.liftEndPhase);
+  assert.ok(high.scoopAngle > Math.atan2(0.78, 1.76), 'raised floor slopes down to the pivot end');
   disposeModel(model.root);
 });
 
@@ -372,9 +380,11 @@ test('movement 460 renderer maps the solved pins and rigid links while both grou
       near(blocks.scoopWater.rotation.z, -state.scoopAngle, 0,
         `horizontal clipped water at ${phase}`);
     }
-    assert.equal(blocks.dischargeStream.visible,
-      state.dischargeFlowRate > 1e-4
-        && state.outletPoint.y > blocks.deliveryWater.position.y);
+    // Pass 69: one continuous stream from the scoop floor over the spout
+    // into the upper channel, shown while the raised scoop empties.
+    assert.equal(blocks.dischargeStream.visible, state.dischargeFlowRate > 0.01 * 1.875
+      / ((geometry.dischargeEndPhase - geometry.liftEndPhase) * geometry.cycleDuration));
+    if (blocks.dischargeStream.visible) assert.ok(state.outletPoint.y > -0.60, 'spout above the channel water');
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
       fixedPositions[index],

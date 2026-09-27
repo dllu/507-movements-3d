@@ -5,7 +5,8 @@ import {
   matte,
 } from './primitives.js';
 
-import {boredCylinderGeometry,fitPistonGuide} from './piston-guide-parts.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {plate,poly,polygonClipping as clip} from './finite-plate-geometry.js';
 import {helicalThread,threadAngles} from './mujoco-screw/thread-geometry.js';
 
@@ -87,12 +88,10 @@ function makeLinkHalf({
   archCrownY,
   archSpringY,
   colorMaterial,
-  darkMaterial,
   halfName,
   legSpacing,
   sign,
   screwLength,
-  threadMaterial,
   threadPitch,
 }) {
   const half = new THREE.Group();
@@ -103,8 +102,17 @@ function makeLinkHalf({
     archCrownY,
     sign,
   );
+  // The bar is a closed solid: both leg ends are capped flat, so no hollow
+  // tube end shows where a leg meets its nut or screw.
+  const caps = [curve.getPoint(0), curve.getPoint(1)].map((end) =>
+    new THREE.CircleGeometry(0.18, 16)
+      .rotateX(sign > 0 ? Math.PI / 2 : -Math.PI / 2)
+      .translate(end.x, end.y, end.z));
   const body = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 112, 0.18, 16, false),
+    mergeGeometries([
+      new THREE.TubeGeometry(curve, 112, 0.18, 16, false),
+      ...caps,
+    ]),
     colorMaterial,
   );
   body.userData.role = `${halfName}-unbroken-u-shaped-body`;
@@ -120,16 +128,18 @@ function makeLinkHalf({
     material: colorMaterial,
     pitch: threadPitch,
     rolePrefix: `${halfName}-${screwSide}`,
-    threadMaterial,
+    threadMaterial: colorMaterial,
   });
   screw.position.x = screwX;
   half.add(screw);
 
+  // The journal runs on from the leg through the nut's end bar to the head,
+  // in the leg's own colour so it reads as one bar.
   const swivelJournal = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.145, 0.145, 0.38, 28),
-    darkMaterial,
+    new THREE.CylinderGeometry(0.145, 0.145, 0.36, 28),
+    colorMaterial,
   );
-  swivelJournal.position.set(swivelX, -sign * 0.19, 0);
+  swivelJournal.position.set(swivelX, -sign * 0.18, 0);
   swivelJournal.userData.role =
     `${halfName}-${swivelSide}-captive-swivel-journal`;
   half.add(swivelJournal);
@@ -138,7 +148,7 @@ function makeLinkHalf({
     colorMaterial,
   );
 
-  swivelHead.position.set(swivelX, -sign*.375, 0);
+  swivelHead.position.set(swivelX, -sign*(NUT.endBarHeight+.005+.035), 0);
   swivelHead.userData.role =
     `${halfName}-${swivelSide}-axial-swivel-retaining-head`;
   half.add(swivelHead);
@@ -153,65 +163,100 @@ function makeLinkHalf({
   return markShadows(half);
 }
 
-function makeOvalNutShape() {
-  const shape = new THREE.Shape();
-  shape.absellipse(0, 0, 0.52, 0.92, 0, FULL_TURN, false, 0);
-  const hole = new THREE.Path();
-  hole.absellipse(0, 0, 0.29, 0.66, 0, FULL_TURN, true, 0);
-  shape.holes.push(hole);
-  return shape;
+// Brown's swivel nut is an oblong closed loop seen face on: two side bars
+// and two end bars. One end bar is plainly bored for its own half's swivel
+// journal; the other is bored and threaded for the opposite half's screw.
+const NUT = {
+  halfWidth: 0.56, halfHeight: 1.0, outerCorner: 0.30,
+  windowHalfWidth: 0.30, windowHalfHeight: 0.68, windowCorner: 0.08,
+  halfDepth: 0.26, journalBore: 0.149, threadBore: 0.194,
+};
+NUT.endBarHeight = NUT.halfHeight - NUT.windowHalfHeight;
+NUT.endBarCenter = (NUT.halfHeight + NUT.windowHalfHeight) / 2;
+NUT.blockHalfWidth = NUT.halfWidth - NUT.outerCorner;
+
+function roundedRectangle(halfWidth, halfHeight, radius, segments = 12) {
+  const points = [];
+  const corners = [[1, 1], [-1, 1], [-1, -1], [1, -1]];
+  corners.forEach(([sx, sy], corner) => {
+    const cx = sx * (halfWidth - radius), cy = sy * (halfHeight - radius);
+    for (let i = 0; i <= segments; i++) {
+      const angle = corner * Math.PI / 2 + i * Math.PI / 2 / segments;
+      points.push([cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]);
+    }
+  });
+  return poly(points);
+}
+
+function circlePoints(radius, segments = 64) {
+  return Array.from({length: segments}, (_, i) => {
+    const angle = FULL_TURN * i / segments;
+    return [radius * Math.cos(angle), radius * Math.sin(angle)];
+  });
+}
+
+// End bar: the loop's flat end between its rounded corners, bored along the
+// nut axis (y). Built in the x-z plane and extruded along y.
+function nutEndBarGeometry(bore) {
+  const w = NUT.blockHalfWidth, d = NUT.halfDepth;
+  const section = clip.difference(
+    poly([[-w, -d], [w, -d], [w, d], [-w, d]]),
+    poly(circlePoints(bore)),
+  );
+  return plate(section, -NUT.endBarHeight / 2, NUT.endBarHeight / 2)
+    .rotateX(-Math.PI / 2);
 }
 
 function makeSwivelNut({
   brassMaterial,
   captiveSign,
-  darkMaterial,
   name,
   whiteMaterial,
 }) {
   const nut = new THREE.Group();
   nut.userData.role = `${name}-captured-rotating-swivel-nut`;
 
-  const outline=makeOvalNutShape();
-  const outer=poly(outline.getPoints(64).map(p=>[p.x,p.y]));
-  const inner=poly(outline.holes[0].getPoints(64).map(p=>[p.x,p.y]));
-  const handleGeometry=plate(clip.difference(outer,inner,poly([[-.195,-1],[.195,-1],[.195,1],[-.195,1]])),-.11,.11);
+  // Side bars and rounded corners: the loop outline less its window and the
+  // two end-bar blocks, which abut it flush at x = +/-blockHalfWidth.
+  const w = NUT.blockHalfWidth;
+  const handleGeometry = plate(clip.difference(
+    roundedRectangle(NUT.halfWidth, NUT.halfHeight, NUT.outerCorner),
+    roundedRectangle(NUT.windowHalfWidth, NUT.windowHalfHeight, NUT.windowCorner),
+    poly([[-w, -2], [w, -2], [w, 2], [-w, 2]]),
+  ), -NUT.halfDepth, NUT.halfDepth);
   const handle = new THREE.Mesh(handleGeometry, brassMaterial);
   handle.userData.role = `${name}-oval-hand-grip-and-nut-cage`;
   nut.add(handle);
 
-  const captiveOffset = captiveSign * 0.68;
-  const bearingOffset = captiveSign * .49;
-  const receiverOffset = -captiveSign * 0.50;
+  const captiveOffset = captiveSign * (NUT.halfHeight + 0.005);
+  const bearingOffset = captiveSign * NUT.endBarCenter;
+  const receiverOffset = -captiveSign * NUT.endBarCenter;
   const captiveBearing = new THREE.Mesh(
-    boredCylinderGeometry(.30,.149,.26),
+    nutEndBarGeometry(NUT.journalBore),
     brassMaterial,
   );
   captiveBearing.position.y = bearingOffset;
   captiveBearing.userData.role = `${name}-swivel-bearing-captured-on-own-half`;
   nut.add(captiveBearing);
-  const captiveBore = new THREE.Mesh(
-    boredCylinderGeometry(.151,.149,.25),
-    darkMaterial,
-  );
-  captiveBore.position.y = bearingOffset;
-  captiveBore.userData.role = `${name}-visible-captive-journal-bore`;
-  nut.add(captiveBore);
 
   const threadedBarrel = new THREE.Mesh(
-    boredCylinderGeometry(.30,.194,.50),
+    nutEndBarGeometry(NUT.threadBore),
     brassMaterial,
   );
   threadedBarrel.position.y = receiverOffset;
   threadedBarrel.userData.role = `${name}-internally-threaded-receiver-barrel`;
   nut.add(threadedBarrel);
+  const low = -NUT.endBarHeight / 2, high = NUT.endBarHeight / 2;
+  // Phase the female thread so it interleaves with the entering male screw.
+  const phase = -captiveSign * (CHAIN.looseSeparation - NUT.halfHeight - 0.005
+    - NUT.endBarCenter) + CHAIN.threadPitch / 2;
+  const profile = {inner:.144,outer:.194,low,high,width:.091,lead:-CHAIN.threadPitch/FULL_TURN,phase};
   const threadedBore = new THREE.Mesh(
-    helicalThread({inner:.144,outer:.194,low:-.25,high:.25,width:.091,lead:-.20/FULL_TURN,phase:-captiveSign*.48+.10},
-      threadAngles({low:-.25,high:.25,width:.091,lead:-.20/FULL_TURN,phase:-captiveSign*.48+.10},64)).rotateX(-Math.PI/2),
-    darkMaterial,
+    helicalThread(profile, threadAngles(profile,64)).rotateX(-Math.PI/2),
+    brassMaterial,
   );
   threadedBore.position.y = receiverOffset;
-  threadedBore.userData.threadProfile={inner:.144,outer:.194,low:-.25,high:.25,width:.091,lead:-.20/FULL_TURN,phase:-captiveSign*.48+.10};
+  threadedBore.userData.threadProfile = profile;
   threadedBore.userData.role = `${name}-visible-female-thread-bore`;
   nut.add(threadedBore);
 
@@ -219,12 +264,11 @@ function makeSwivelNut({
     new THREE.SphereGeometry(0.085, 18, 12),
     whiteMaterial,
   );
-  index.position.set(0.48, 0, 0.16);
+  index.position.set(0.48, 0, NUT.halfDepth + 0.05);
   index.userData.role = `${name}-white-swivel-nut-rotation-index`;
   nut.add(index);
 
   nut.userData.captiveBearing = captiveBearing;
-  nut.userData.captiveBore = captiveBore;
   nut.userData.captiveOffset = captiveOffset;
   nut.userData.handle = handle;
   nut.userData.index = index;
@@ -234,6 +278,8 @@ function makeSwivelNut({
   return markShadows(nut);
 }
 
+const CHAIN = {looseSeparation: 2.5, threadPitch: 0.20};
+
 function chainRepairLink(movement) {
   const root = new THREE.Group();
 
@@ -242,18 +288,17 @@ function chainRepairLink(movement) {
   // Consequently the two captured swivel nuts counter-rotate in world space
   // while advancing the same amount and preserving a compatible separation.
   const legSpacing = 2.32;
-  const archSpringY = 1.18;
-  const archCrownY = 2.08;
-  const looseSeparation = 1.66;
-  const threadPitch = 0.20;
+  const archSpringY = 0.75;
+  const archCrownY = 1.65;
+  const { looseSeparation, threadPitch } = CHAIN;
   const maximumAdjustmentTurns = 2;
   const tightSeparation = looseSeparation
     - threadPitch * maximumAdjustmentTurns;
-  const screwLength = .78;
+  const screwLength = .98;
   const cycleDuration = 8;
-  const nutCaptureOffset = 0.68;
-  const nutReceiverOffsetMagnitude = 0.50;
-  const barrelLength = 0.50;
+  const nutCaptureOffset = NUT.halfHeight + 0.005;
+  const nutReceiverOffsetMagnitude = NUT.endBarCenter;
+  const barrelLength = NUT.endBarHeight;
 
   const topMaterial = matte(PALETTE.driver, {
     metalness: 0.24,
@@ -267,40 +312,26 @@ function chainRepairLink(movement) {
     metalness: 0.35,
     roughness: 0.42,
   });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.30,
-    roughness: 0.40,
-  });
-  // Steel grey rather than near-white, so the exposed threads do not read
-  // as white stripes the plate lacks.
-  const threadMaterial = matte(PALETTE.muted, {
-    metalness: 0.42,
-    roughness: 0.34,
-  });
   const whiteMaterial = matte(PALETTE.white, { roughness: 0.45 });
 
   const topHalf = makeLinkHalf({
     archCrownY,
     archSpringY,
     colorMaterial: topMaterial,
-    darkMaterial,
     halfName: 'upper',
     legSpacing,
     sign: 1,
     screwLength,
-    threadMaterial,
     threadPitch,
   });
   const bottomHalf = makeLinkHalf({
     archCrownY,
     archSpringY,
     colorMaterial: bottomMaterial,
-    darkMaterial,
     halfName: 'lower',
     legSpacing,
     sign: -1,
     screwLength,
-    threadMaterial,
     threadPitch,
   });
   root.add(topHalf, bottomHalf);
@@ -308,14 +339,12 @@ function chainRepairLink(movement) {
   const leftNut = makeSwivelNut({
     brassMaterial,
     captiveSign: 1,
-    darkMaterial,
     name: 'left-upper-carried',
     whiteMaterial,
   });
   const rightNut = makeSwivelNut({
     brassMaterial,
     captiveSign: -1,
-    darkMaterial,
     name: 'right-lower-carried',
     whiteMaterial,
   });

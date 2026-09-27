@@ -53,7 +53,8 @@ export function correctWeir(root){
  d.updateWorkingParts=state=>{
   b.notchFlow.visible=state.contactDrive<1e-8;
   const lowest=state.lowerBottomCenter.y-g.lowerThickness/2*Math.abs(Math.sin(state.lowerAngle)),gap=lowest-g.channelFloorY;
-  b.bedFlow.position.set(0,g.channelFloorY+gap/2,0);b.bedFlow.scale.set(1,Math.max(.001,gap*.25),Math.max(.001,gap*.25));b.bedFlow.visible=state.contactDrive>.05&&gap>.02;
+  b.bedFlow.position.set(0,g.channelFloorY+gap/2,0);b.bedFlow.scale.set(1,Math.max(.001,gap*.25),Math.max(.001,gap*.25));// The scour passage fills from nothing as the leaf lifts off the bed.
+  b.bedFlow.visible=state.contactDrive>1e-4&&gap>1e-4;
  };
  d.reconstructionNote='The upper-leaf angle follows a prescribed flood cycle; the lower angle solves the finite panel-edge contact geometry. Bored pivots permit that motion. Head volumes and flow streams are schematic; pressure, inertia, friction, stability and automatic reopening/reclosure are not dynamically validated.';
  finish(root,12);

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { curvedPipeWall } from './finite-fluid-passages.js';
 
 const tube = (radius, bore, height, segments = 72) => boredLatheGeometry([
   { radial: radius, axial: -height / 2 },
@@ -66,18 +67,69 @@ export function correctGasometerWorkingParts(root, id) {
   replace(b.bellCrown, crown(bellRadius, 0.05, counterweighted ? 0 : 0.43));
   const pipes = b.gasPipes.map(group => group.children.find(mesh => mesh.userData.role?.endsWith('pipe-shell')));
   for (const pipe of pipes) {
-    if (counterweighted) pipe.position.y = (-2.48 + 0.475) / 2;
-    replace(pipe, tube(counterweighted ? 0.16 : 0.155, 0.12, counterweighted ? 2.955 : 2.60, 48));
+    if (counterweighted) {
+      // Pass 69: Brown's two pipes pass down through the floor and turn
+      // outward under the tank (left pipe to the left, right to the right),
+      // one bent pipe each instead of a straight stub ending below the floor.
+      const x = pipe.position.x, side = Math.sign(x), top = 0.475, bendRadius = 0.25;
+      const bendTop = b.tankBottom.position.y - 0.09 - 0.02, runY = bendTop - bendRadius;
+      const path = new THREE.CurvePath();
+      path.add(new THREE.LineCurve3(new THREE.Vector3(x, top, 0), new THREE.Vector3(x, bendTop, 0)));
+      const bend = new THREE.Curve();
+      bend.getPoint = (t, target = new THREE.Vector3()) => target.set(
+        x + side * bendRadius * (1 - Math.cos(t * Math.PI / 2)), bendTop - bendRadius * Math.sin(t * Math.PI / 2), 0);
+      path.add(bend);
+      path.add(new THREE.LineCurve3(new THREE.Vector3(x + side * bendRadius, runY, 0), new THREE.Vector3(side * 3.0, runY, 0)));
+      pipe.position.set(0, 0, 0);
+      replace(pipe, curvedPipeWall(path, 0.12, 0.16, 160, 48));
+      pipe.userData.flowPath = path;
+    } else replace(pipe, tube(0.155, 0.12, 2.60, 48));
   }
   const parts = { pipes };
+  // Pass 69: the water is one connected body. The inner water stands at the
+  // gas-depressed level right up to the bell's inner face, the outer water
+  // at atmospheric level from the bell's outer face to the tank wall, and a
+  // ring under the bell's rim joins them; the pipes and (480) the guide tubes
+  // are excluded, and the gap between sleeve a and tube b, open to the air
+  // at the top, holds water at the outer level. The old volumes left dry
+  // gaps round the skirt and under its rim and filled the pipe bores.
+  const g = root.userData.geometry, gap = 0.004;
+  const floorTop = b.tankBottom.position.y + 0.09 + gap;
+  const tankInner = tankRadius - 0.055 - gap;
+  const bellInner = bellRadius - (counterweighted ? 0.05 : 0.05);
+  const pipeHoles = (counterweighted ? [-0.48, 0.48] : [-0.68, 0.68]).map(x => poly(circle([x, 0], (counterweighted ? 0.16 : 0.155) + gap, 64)));
+  const annulus = (inner, outer, holes = []) => polygonClipping.difference(poly(circle([0, 0], outer, 128)),
+    ...(inner > 0 ? [poly(circle([0, 0], inner, 128))] : []), ...holes);
+  const prism = (polys, low, high) => plate(polys, low, high).rotateX(-Math.PI / 2);
+  const waterMaterial = b.outerAnnularWater.material;
+  const inner = counterweighted ? b.innerWater : b.innerAnnularWater;
+  replace(b.outerAnnularWater, prism(annulus(bellRadius + gap, tankInner), floorTop, g.externalWaterSurfaceY));
+  b.outerAnnularWater.position.set(0, 0, 0);
+  b.outerAnnularWater.rotation.set(0, 0, 0);
+  // 480: sleeve a ends in a rim bead (radius 0.4455, tube 0.045) kept dry.
+  const sleeveRimOuter = 0.4455 + 0.045 + gap;
+  replace(inner, prism(annulus(counterweighted ? 0 : sleeveRimOuter, bellInner - gap, pipeHoles), floorTop, g.internalWaterSurfaceY));
+  inner.position.set(0, 0, 0);
+  inner.rotation.set(0, 0, 0);
+  const moving = [];
+  const movingWater = (polys, role, topOf) => {
+    const mesh = addMesh(root, prism(polys, 0, 1), waterMaterial, role);
+    mesh.position.y = floorTop;
+    moving.push([mesh, topOf]);
+    return mesh;
+  };
+  b.underRimWater = movingWater(annulus(bellInner - gap, bellRadius + gap),
+    'water-annulus-under-bell-rim-joining-inner-and-outer-water', bellY => bellY + g.bellLocalRimY);
+  if (!counterweighted) {
+    b.underSleeveWater = movingWater(annulus(0.351 - gap, sleeveRimOuter),
+      'water-annulus-under-sleeve-a', bellY => bellY + g.movingTubeLocalBottomY - 0.045 - gap);
+    b.sleeveGapWater = addMesh(root, prism(annulus(0.297 + gap, 0.351 - gap), floorTop, g.externalWaterSurfaceY), waterMaterial,
+      'water-annulus-in-gap-between-tubes-a-and-b-at-atmospheric-level');
+  }
+  root.userData.waterSealUpdate = bellY => {
+    for (const [mesh, topOf] of moving) mesh.scale.y = Math.max(1e-4, topOf(bellY) - floorTop);
+  };
   if (counterweighted) {
-    // Narrower cistern leaves the source's external hanging weights outside it
-    // over their complete descent, while preserving both constant rope laws.
-    replace(b.outerAnnularWater, tube(2.30, 2.085, 2.02).rotateX(-Math.PI / 2));
-    const waterTop = b.innerWater.position.y + 0.96;
-    const waterBottom = b.tankBottom.position.y + 0.10;
-    replace(b.innerWater, new THREE.CylinderGeometry(1.89, 1.89, waterTop - waterBottom, 64));
-    b.innerWater.position.y = (waterTop + waterBottom) / 2;
     parts.axles = []; parts.grooves = []; parts.hubs = [];
     b.pulleys.forEach((pulley, i) => {
       const r = 0.46, c = 0.058;

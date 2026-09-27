@@ -395,7 +395,12 @@ test('movement 475 water level rises through B, D and C, holds while running and
   let state = at(0.04);
   assert.equal(state.stage, 'purging-air-from-D-and-C');
   near(state.waterLevelY, -2.91, 1e-12, 'water at the bilge during purge');
-  assert.equal(inB.visible || inD.visible || inC.visible, false);
+  // Empty, the columns collapse to flat rings at their feet (no pop on
+  // filling) rather than switching off.
+  near(inB.scale.y, 1e-4, 1e-12, 'B empty during purge');
+  near(inC.scale.y, 1e-4, 1e-12, 'C empty during purge');
+  inD.geometry.computeBoundingBox();
+  near(inD.geometry.boundingBox.max.y - inD.geometry.boundingBox.min.y, 0, 1e-6, 'D empty during purge');
   assert.equal(blocks.dischargeJet.visible, false, 'no discharge before the water reaches C');
   let previous = -Infinity;
   for (const phase of [0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4]) {

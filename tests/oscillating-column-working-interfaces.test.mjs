@@ -7,7 +7,8 @@ const phases=[0,.10,.18,.28,.40,.52,.60,.64,.70,.76,.77,.78,.80,.84,.88,.92,.96,
 for(const id of[445,446]){
  test(`${id}: finite fluid envelopes and tracers stay out of fixed walls`,()=>{
   const m=make({id}),d=m.root.userData,b=d.blocks,p=d.oscillatingColumnParts;
-  const fluids=[b.coneCrown,b.fallingJet,b.lowerWater,b.nozzleWater,b.outletWater,b.reservoirWater,b.risingColumn,b.spillCurtain,b.topPlume,b.waterCone,p.film,...b.descendingMarkers,...b.risingMarkers,...b.outletMarkers];
+  // Pass 69: stream, cone, column, film and sheet are one revolved body.
+  const fluids=[b.waterBody,b.lowerWater,b.nozzleWater,b.outletWater,b.reservoirWater,b.topPlume,...b.descendingMarkers,...b.risingMarkers,...b.outletMarkers];
   const samples=new Map(fluids.map(mesh=>[mesh,surfacePoints(mesh.geometry)])),solids=new Map(p.fixed.map(mesh=>[mesh,solidSurface(mesh.geometry)]));
   // Extra sections through long outlet-fluid triangles catch the thin side port.
   for(const tri of surfaceTriangles(b.outletWater.geometry))for(const[a,c]of[[tri.a,tri.b],[tri.b,tri.c],[tri.c,tri.a]])for(let i=1;i<48;i++){

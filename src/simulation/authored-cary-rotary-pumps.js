@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { latheSectionGeometry } from './cutaway-section.js';
-import { caryFollowerLaw, correctCaryPump } from './rotary-pump-contact.js';
+import { caryFollowerLaw, caryWallRadius, correctCaryPump } from './rotary-pump-contact.js';
+import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { waterVolumeMaterial } from './water-volume.js';
+import { WaterStream, ballisticPath, guidedPath, joinPaths } from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -627,13 +630,60 @@ function caryRotaryPump(movement) {
     pipe.userData.role = 'whole-round-suction-pipe-F';
     inletF.add(pipe);
   }
+  // Pass 69: the working water. The crescent between drum B and the chamber
+  // wall is always full (a primed pump); the pistons sweep it from L round
+  // the top to M. Suction pipe F and discharge pipe H run full, and H spills
+  // from its gooseneck in a falling stream (Brown's downward arrow).
+  const liveWater = [];
+  {
+    const g = root.userData.geometry;
+    const wall = Array.from({ length: 720 }, (_, i) => {
+      const a = i * FULL_TURN / 720, r = caryWallRadius(a, g.pistonLength);
+      return [r * Math.cos(a), r * Math.sin(a)];
+    });
+    const packing = root.userData.blocks.portSeparatorE.geometry.userData.plate.polygons;
+    const chamber = polygonClipping.difference(poly(wall), poly(circle([0, 0], g.drumOuterRadius, 720)), packing)
+      .filter(polygon => Math.abs(polygon[0].reduce((sum, p, i, ring) => {
+        const q = ring[(i + 1) % ring.length]; return sum + p[0] * q[1] - q[0] * p[1];
+      }, 0)) > 0.02);
+    const chamberWater = addRole(new THREE.Mesh(plate(chamber, -g.casingDepth / 2 + 0.004, g.casingDepth / 2 - 0.004),
+      waterVolumeMaterial({ opacity: 0.34 })), 'water-filling-crescent-chamber-between-drum-B-and-casing');
+    chamberWater.renderOrder = 1;
+    root.add(chamberWater);
+    liveWater.push(chamberWater);
+    const flow = { radialSegments: 20, cyclePeriod: g.cycleDuration, streakRate: 1, opacity: 0.34 };
+    const inlet = new WaterStream(guidedPath([new THREE.Vector3(-0.85, -3.05, 0), new THREE.Vector3(-0.85, -1.58, 0)],
+      { speed: 1, samples: 6 }), { ...flow, width: 0.245, thickness: 0.245 });
+    inlet.userData.role = 'water-rising-in-suction-pipe-F-to-port-L';
+    const pipeCurve = dischargeH.shell.userData.curve;
+    const outletAngle = -Math.PI / 3;
+    const throat = new THREE.Vector3(1.68 * Math.cos(outletAngle), 1.68 * Math.sin(outletAngle), 0);
+    const spout = pipeCurve.getPointAt(1), spoutDirection = pipeCurve.getTangentAt(1);
+    const inPipe = joinPaths(guidedPath([throat, pipeCurve.getPointAt(0)], { speed: 1.4, samples: 2 }),
+      guidedPath(pipeCurve, { speed: 1.4, samples: 96 }));
+    const fall = ballisticPath({ origin: spout, velocity: spoutDirection.clone().multiplyScalar(1.4), duration: 0.42, samples: 16 });
+    const discharge = new WaterStream(joinPaths(inPipe, fall), {
+      ...flow, width: 0.28, thickness: 0.28, widthExponent: 0.5, fadeOut: 0.06,
+    });
+    discharge.userData.role = 'water-driven-from-port-M-through-H-and-falling-from-its-spout';
+    root.add(inlet, discharge);
+    liveWater.push(inlet, discharge);
+  }
+  const drive = update;
+  const updateWithWater = (time) => {
+    drive(time);
+    for (const stream of liveWater) stream.update?.(time);
+  };
+  root.userData.update = updateWithWater;
+
   markShadows(root);
+  for (const object of liveWater) { object.castShadow = false; object.receiveShadow = false; }
   base.receiveShadow = true;
-  update(0);
+  updateWithWater(0);
   return {
     cameraDirection: root.userData.cameraDirection,
     root,
-    update,
+    update: updateWithWater,
   };
 }
 

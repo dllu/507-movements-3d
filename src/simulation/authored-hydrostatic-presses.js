@@ -566,9 +566,9 @@ function hydrostaticPress(movement) {
       + 0.07 * state.inletOpenAmount;
     deliveryValve.position.y = -0.15
       + 0.07 * state.deliveryOpenAmount;
-    reliefValve.position.y = 0.42 + 0.10 * state.reliefOpenAmount;
-    inletWater.visible = state.inletOpenAmount > 1e-4;
-    reliefWater.visible = state.reliefOpenAmount > 1e-4;
+    // The inlet passage stands full of water (no pop as the check lifts).
+    inletWater.visible = true;
+    root.userData.updateRelease?.(state);
     ramAssembly.position.y = state.ramLift;
     root.userData.updateSolids?.(state);
     const currentLoadHeight = initialLoadHeight - state.loadCompression;
@@ -765,6 +765,54 @@ function hydrostaticPress(movement) {
     reservoirWater.geometry.dispose();
     reservoirWater.geometry = new THREE.BoxGeometry(2.05, waterTop - floorY - 0.12, 0.62);
     reservoirWater.position.y = (waterTop + floorY + 0.12) / 2;
+    // Conservation: the cistern (2.0 x 1.76 inside) gives up exactly the
+    // water pumped under the ram, and gets it back when the ram is let down.
+    // The let-down is by a screw-down release valve on the pressure pipe
+    // inside the cistern (its T handle stands above the water, as Brown's T
+    // stands beside the weighted valve), so the returning water flows
+    // straight back under the surface.
+    const cisternArea = 2.0 * 1.76;
+    const bottom = floorY + 0.12;
+    const levelAt = (state) => waterTop - state.retainedPressVolume / cisternArea;
+    const releaseX = 0.80, pipeTop = -0.10;
+    reliefValve.visible = false;
+    reliefWater.visible = false;
+    reliefValve.material = reliefValve.material.clone();
+    reliefValve.material.visible = false;
+    reliefWater.material.visible = false;
+    const valveBody = addRole(new THREE.Mesh(boredCylinderGeometry(0.075, 0.028, 0.12), frameMaterial),
+      'release-valve-body-on-pressure-pipe');
+    valveBody.position.set(releaseX, pipeTop + 0.06, 0);
+    root.add(valveBody);
+    const release = addRole(new THREE.Group(), 'screw-down-release-valve-stem-and-t-handle');
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.60, 16), brassMaterial);
+    stem.position.y = 0.30;
+    release.add(stem);
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.26, 16), brassMaterial);
+    handle.rotation.x = Math.PI / 2;
+    handle.position.y = 0.60;
+    release.add(handle);
+    release.position.set(releaseX, pipeTop + 0.02, 0);
+    root.add(release);
+    const returnWater = addRole(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.09, 0.08, 18), waterMaterial.clone()),
+      'release-water-returning-under-the-cistern-surface');
+    returnWater.position.set(releaseX, pipeTop + 0.16, 0);
+    returnWater.renderOrder = 2;
+    root.add(returnWater);
+    Object.assign(root.userData.blocks, { releaseValve: release, releaseValveBody: valveBody, returnWater });
+    root.userData.updateRelease = (state) => {
+      const level = levelAt(state);
+      reservoirWater.scale.y = (level - bottom) / (waterTop - bottom);
+      reservoirWater.position.y = (level + bottom) / 2;
+      // The valve is screwed open and shut again over the let-down, its lift
+      // following the return flow.
+      const flow = state.reliefReturnFlowRate / (maximumDeliveredVolume / ((1 - reliefStartPhase) * cycleDuration) * 1.875);
+      release.position.y = pipeTop + 0.02 + 0.05 * THREE.MathUtils.clamp(flow, 0, 1);
+      returnWater.visible = true;
+      returnWater.material.opacity = 0.5 * THREE.MathUtils.clamp(flow, 0, 1);
+      returnWater.scale.set(1, Math.max(1e-3, THREE.MathUtils.clamp(flow, 0, 1)), 1);
+    };
+    root.userData.cisternArea = cisternArea;
   }
   markShadows(root);
   foundation.receiveShadow = true;

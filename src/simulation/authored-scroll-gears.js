@@ -1,10 +1,8 @@
-import {correctVariableFaceGear} from './variable-face-gear-parts.js';
 import * as THREE from 'three';
-import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
+import {circle, plate, poly, polygonClipping as clip} from './finite-plate-geometry.js';
+import {involuteGearOutline} from './authored-parsons-racks.js';
+import {PALETTE, markShadows, matte} from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -30,74 +28,106 @@ function smootherStepIntegral(value) {
     + 2.5 * bounded ** 4;
 }
 
-function cylinderAlongZ(radius, length, material, segments = 48) {
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, length, segments),
-    material,
-  );
-  cylinder.rotation.x = Math.PI / 2;
-  return cylinder;
-}
-
-function annularDiskAlongZ({
-  depth,
-  innerRadius,
-  material,
-  outerRadius,
-}) {
-  const shape = new THREE.Shape();
-  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
-  shape.holes.push(hole);
-  const geometry = new THREE.ExtrudeGeometry(shape, {
-    bevelEnabled: true,
-    bevelSegments: 1,
-    bevelSize: Math.min(0.018, depth * 0.10),
-    bevelThickness: Math.min(0.018, depth * 0.10),
-    curveSegments: 96,
-    depth,
-  });
-  geometry.translate(0, 0, -depth / 2);
-  return new THREE.Mesh(geometry, material);
-}
-
-function beamBetween(start, end, width, depth, material) {
-  const delta = end.clone().sub(start);
-  const beam = new THREE.Mesh(
-    new THREE.BoxGeometry(delta.length(), width, depth),
-    material,
-  );
-  beam.position.copy(start).add(end).multiplyScalar(0.5);
-  beam.rotation.z = Math.atan2(delta.y, delta.x);
-  return beam;
+// One face tooth of scroll A: a prism running radially across its band (u
+// from 0 at the band's inner edge to length at the outer edge). Its working
+// part is straight-flanked about a pitch plane that falls outward to follow
+// pinion B's taper; below the working depth it stands on straight sides, so
+// the tooth is taller at the band's inner edge and never spreads into its
+// neighbours.
+function faceToothGeometry({length, pitchHalf, tan, pitchZ, addendum, dedendum}) {
+  const tipHalf = pitchHalf - addendum * tan;
+  const rootHalf = pitchHalf + dedendum * tan;
+  const profile = (u) => {
+    const zp = pitchZ(u);
+    return [[-rootHalf, 0], [-rootHalf, zp - dedendum], [-tipHalf, zp + addendum],
+      [tipHalf, zp + addendum], [rootHalf, zp - dedendum], [rootHalf, 0]];
+  };
+  const p0 = profile(0).map(([y, z]) => new THREE.Vector3(0, y, z));
+  const p1 = profile(length).map(([y, z]) => new THREE.Vector3(length, y, z));
+  const triangles = [];
+  const n = p0.length;
+  for (let i = 0; i < n; i += 1) {
+    const j = (i + 1) % n;
+    triangles.push([p0[i], p1[i], p1[j]], [p0[i], p1[j], p0[j]]);
+  }
+  for (let i = 1; i < n - 1; i += 1) triangles.push([p0[0], p0[i + 1], p0[i]], [p1[0], p1[i], p1[i + 1]]);
+  const centroid = new THREE.Vector3(length / 2, 0, pitchZ(length / 2) / 2);
+  const positions = [];
+  const normal = new THREE.Vector3();
+  for (const [a, b, c] of triangles) {
+    normal.subVectors(b, a).cross(new THREE.Vector3().subVectors(c, a));
+    const ordered = normal.dot(new THREE.Vector3().subVectors(a, centroid)) < 0 ? [a, c, b] : [a, b, c];
+    for (const v of ordered) positions.push(v.x, v.y, v.z);
+  }
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 function scrollGear(movement) {
   const root = new THREE.Group();
-  const cycleDuration = 10;
-  const rampDuration = 0.75;
-  const cruiseDuration = 2.50;
+  // Timing: forward throw, dwell at the inner end, reverse throw, dwell.
+  const cycleDuration = 12;
+  const rampDuration = 0.9;
+  const cruiseDuration = 3.2;
   const oneWayMotionDuration = rampDuration * 2 + cruiseDuration;
-  const innerDwellDuration = 1;
-  const outerDwellDuration = 1;
+  const innerDwellDuration = 0.5;
+  const outerDwellDuration = cycleDuration - 2 * oneWayMotionDuration - innerDwellDuration;
   const reverseStartTime = oneWayMotionDuration + innerDwellDuration;
   const outerDwellStartTime = reverseStartTime + oneWayMotionDuration;
-  const scrollOuterRadius = 2.06;
-  const scrollInnerRadius = 0.92;
-  const scrollSweep = FULL_TURN * 1.65;
-  const spiralLeadPerRadian = (
-    scrollOuterRadius - scrollInnerRadius
-  ) / scrollSweep;
+
+  // Brown's scroll (measured on the plate at 60 px per unit): an Archimedean
+  // band whose turns touch, band width = lead per turn = 25 px, wound
+  // counterclockwise outward 2 3/8 turns from its inner end at 9 o'clock
+  // (inner edge radius 48 px) to its cut outer end at half past four.
+  const bandWidth = 25 / 60;
+  const innerEdgeStart = 48 / 60;
+  const innerEndAngle = Math.PI;
+  const turns = 2.375;
+  const outerEndAngle = innerEndAngle + turns * FULL_TURN;
+  const spiralLeadPerRadian = bandWidth / FULL_TURN;
+  const bandCenterRadius = (angle) => innerEdgeStart + bandWidth / 2
+    + spiralLeadPerRadian * (angle - innerEndAngle);
+  // Pinion B meshes at 6 o'clock on the band; the throw runs from the outer
+  // turn (Brown's pose) inward until B sits a quarter turn short of the inner
+  // end, where it still has a full band under it.
   const contactWorldAngle = -Math.PI / 2;
-  const spiralMaximumLocalAngle = contactWorldAngle;
-  const spiralMinimumLocalAngle = contactWorldAngle - scrollSweep;
-  const pinionPitchRadius = 0.42;
-  const pinionFaceLength = 0.46;
-  const plateFaceZ = 0.16;
-  const pinionAxisZ = plateFaceZ - pinionPitchRadius;
-  const pinionTeeth = 18;
-  const scrollToothCount = 108;
+  const contactStartLocalAngle = outerEndAngle - Math.PI / 4; // 6 o'clock, unwrapped
+  const contactStopLocalAngle = innerEndAngle + Math.PI / 2;
+  const scrollSweep = contactStartLocalAngle - contactStopLocalAngle;
+  // B's large end runs meshOffset outside the band centreline, 0.08 short
+  // of the band's outer edge (the band curves away under B's ends); the
+  // kinematic pitch spiral is the band centreline shifted out by that much.
+  const meshOffset = bandWidth / 2 - 0.08;
+  const scrollOuterRadius = bandCenterRadius(contactStartLocalAngle) + meshOffset;
+  const scrollInnerRadius = bandCenterRadius(contactStopLocalAngle) + meshOffset;
+  const spiralMaximumLocalAngle = contactStartLocalAngle;
+  const spiralMinimumLocalAngle = contactStopLocalAngle;
+
+  // Pinion B: 24 involute teeth, tapered with its small end toward A's centre
+  // (as Brown draws it), the taper matching A's radial speed gradient at the
+  // middle of the throw. Its face spans one band.
+  const pinionTeeth = 24;
+  const pinionPitchRadius = 0.72;
+  const toothModule = 2 * pinionPitchRadius / pinionTeeth;
+  const circularPitch = Math.PI * toothModule;
+  // Short of the band width: the band curves away under B's ends.
+  const pinionFaceLength = bandWidth - 0.1;
+  // Brown's B narrows toward A's centre by about a sixth across its face
+  // (80 to 94 px). It meshes at full depth at its large end; the flat face
+  // teeth and the cone agree only there, the small end running shallower.
+  const taperSlope = 0.3;
+  const addendum = toothModule;
+  const dedendum = 1.25 * toothModule;
+  const pressureAngle = 20 * Math.PI / 180;
+  const tan = Math.tan(pressureAngle);
+  // A's band face is z = 0 and its pitch plane plateFaceZ; B's axis runs
+  // one large-end pitch radius in front of that.
+  const plateFaceZ = dedendum + 0.01;
+  const pitchZ = () => plateFaceZ;
+  const pinionAxisZ = plateFaceZ + pinionPitchRadius;
+
   const rolledDistance = scrollOuterRadius * scrollSweep
     - spiralLeadPerRadian * scrollSweep ** 2 / 2;
   const pinionMaximumAngle = rolledDistance / pinionPitchRadius;
@@ -107,295 +137,125 @@ function scrollGear(movement) {
     scrollOuterRadius - spiralLeadPerRadian * plateAngle;
   const spiralLocalAngleAtPlateAngle = (plateAngle) =>
     contactWorldAngle - plateAngle;
-  const geometry = {
-    contactWorldAngle,
-    cruiseDuration,
-    cruisePinionAngularSpeed,
-    cycleDuration,
-    innerDwellDuration,
-    outerDwellDuration,
-    pinionAxisZ,
-    pinionFaceLength,
-    pinionMaximumAngle,
-    pinionPitchRadius,
-    pinionTeeth,
-    plateFaceZ,
-    rampDuration,
-    reverseStartTime,
-    rolledDistance,
-    scrollInnerRadius,
-    scrollOuterRadius,
-    scrollSweep,
-    scrollToothCount,
-    spiralLeadPerRadian,
-    spiralMaximumLocalAngle,
-    spiralMinimumLocalAngle,
-  };
+  const plateAngleAtRolled = (distance) => (scrollOuterRadius
+    - Math.sqrt(scrollOuterRadius ** 2 - 2 * spiralLeadPerRadian * distance)) / spiralLeadPerRadian;
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.28,
-    roughness: 0.50,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.30,
-    roughness: 0.43,
-  });
-  const driverMaterial = matte(PALETTE.driver, {
-    metalness: 0.18,
-    roughness: 0.50,
-  });
-  const drivenMaterial = matte(PALETTE.driven, {
-    metalness: 0.19,
-    roughness: 0.51,
-  });
-  const accentMaterial = matte(PALETTE.accent, {
-    metalness: 0.26,
-    roughness: 0.46,
-  });
-  const whiteMaterial = matte(PALETTE.white, { roughness: 0.39 });
-  const plateMaterial = matte(PALETTE.driven, {
-    metalness: 0.08,
-    opacity: 0.24,
-    roughness: 0.65,
-    transparent: true,
-  });
-  plateMaterial.depthWrite = false;
-  plateMaterial.side = THREE.DoubleSide;
+  const scrollMaterial = matte(PALETTE.driven, {metalness: 0.12, roughness: 0.56});
+  const pinionMaterial = matte(PALETTE.driver, {metalness: 0.16, roughness: 0.52});
+  const steelMaterial = matte(PALETTE.ink, {metalness: 0.3, roughness: 0.45});
 
-  const fixedFrame = new THREE.Group();
-  fixedFrame.userData.role =
-    'fixed-right-angle-scroll-gear-support-frame';
-  root.add(fixedFrame);
-  const base = new THREE.Mesh(
-    new THREE.BoxGeometry(5.60, 0.22, 2.24),
-    frameMaterial,
-  );
-  base.position.set(0, -2.77, -0.38);
-  base.userData.role = 'fixed-scroll-gear-foundation';
-  fixedFrame.add(base);
-  const rearStandard = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 4.75, 0.38),
-    frameMaterial,
-  );
-  rearStandard.position.set(-2.48, -0.22, -0.85);
-  rearStandard.userData.role = 'fixed-rear-scroll-plate-standard';
-  fixedFrame.add(rearStandard);
-  const scrollBearingArm = beamBetween(
-    new THREE.Vector3(-2.48, 0, -0.85),
-    new THREE.Vector3(-0.30, 0, -0.85),
-    0.25,
-    0.32,
-    frameMaterial,
-  );
-  scrollBearingArm.userData.role = 'fixed-scroll-axis-bearing-arm';
-  fixedFrame.add(scrollBearingArm);
-  const scrollBearing = cylinderAlongZ(0.31, 0.42, frameMaterial, 36);
-  scrollBearing.position.z = -0.77;
-  scrollBearing.userData.role = 'fixed-scroll-plate-axis-bearing';
-  fixedFrame.add(scrollBearing);
-  const lowerPinionBearing = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.24, 0.40, 32),
-    frameMaterial,
-  );
-  lowerPinionBearing.position.set(0, -2.44, pinionAxisZ);
-  lowerPinionBearing.userData.role = 'fixed-lower-pinion-shaft-bearing';
-  fixedFrame.add(lowerPinionBearing);
-  const upperPinionBearing = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.24, 0.24, 0.40, 32),
-    frameMaterial,
-  );
-  upperPinionBearing.position.set(0, 2.42, pinionAxisZ);
-  upperPinionBearing.userData.role = 'fixed-upper-pinion-shaft-bearing';
-  fixedFrame.add(upperPinionBearing);
-
+  // Scroll plate A: a web cut to the outline of its last turn, the raised
+  // spiral band on it, the face teeth on the band, and a boss behind.
   const scrollRotor = new THREE.Group();
-  scrollRotor.userData.role =
-    'variable-speed-scroll-plate-A-output-rotor';
+  scrollRotor.userData.role = 'variable-speed-scroll-plate-A-output-rotor';
   root.add(scrollRotor);
-  const scrollBackplate = annularDiskAlongZ({
-    depth: 0.13,
-    innerRadius: 0.56,
-    material: plateMaterial,
-    outerRadius: 2.24,
-  });
-  scrollBackplate.position.z = 0.02;
-  scrollBackplate.userData.role =
-    'translucent-scroll-plate-A-supporting-web';
-  scrollRotor.add(scrollBackplate);
-  const scrollOuterRim = new THREE.Mesh(
-    new THREE.TorusGeometry(2.22, 0.055, 10, 96),
-    darkMaterial,
-  );
-  scrollOuterRim.position.z = 0.02;
-  scrollOuterRim.userData.role = 'scroll-plate-A-outer-rim';
-  scrollRotor.add(scrollOuterRim);
-  const scrollHub = cylinderAlongZ(0.34, 0.56, darkMaterial, 40);
-  scrollHub.position.z = -0.05;
-  scrollHub.userData.role = 'scroll-plate-A-central-hub';
-  scrollRotor.add(scrollHub);
-  const scrollShaft = cylinderAlongZ(0.14, 2.18, darkMaterial, 36);
-  scrollShaft.position.z = -0.30;
-  scrollShaft.userData.role = 'scroll-plate-A-output-shaft';
-  scrollRotor.add(scrollShaft);
-
-  const spiralPoints = [];
-  const spiralPointCount = 420;
-  for (let index = 0; index <= spiralPointCount; index += 1) {
-    const fraction = index / spiralPointCount;
-    const localAngle = THREE.MathUtils.lerp(
-      spiralMinimumLocalAngle,
-      spiralMaximumLocalAngle,
-      fraction,
-    );
-    const radius = scrollInnerRadius
-      + spiralLeadPerRadian * (
-        localAngle - spiralMinimumLocalAngle
-      );
-    spiralPoints.push(new THREE.Vector3(
-      Math.cos(localAngle) * radius,
-      Math.sin(localAngle) * radius,
-      plateFaceZ,
-    ));
+  const polar = (r, a) => [r * Math.cos(a), r * Math.sin(a)];
+  const innerEdge = (a) => innerEdgeStart + spiralLeadPerRadian * (a - innerEndAngle);
+  const samples = 600;
+  const webPoints = [];
+  for (let i = 0; i <= samples; i += 1) {
+    const a = outerEndAngle - FULL_TURN + FULL_TURN * i / samples;
+    webPoints.push(polar(innerEdge(a) + bandWidth, a));
   }
-  const spiralCurve = new THREE.CatmullRomCurve3(
-    spiralPoints,
-    false,
-    'centripetal',
-  );
-  spiralCurve.arcLengthDivisions = 1600;
-  const spiralRail = new THREE.Mesh(
-    new THREE.TubeGeometry(spiralCurve, 540, 0.115, 10, false),
-    drivenMaterial,
-  );
-  spiralRail.userData.role =
-    'single-finite-archimedean-scroll-rack-on-plate-A';
-  scrollRotor.add(spiralRail);
-  const scrollTeeth = Array.from({ length: scrollToothCount }, (_, index) => {
-    const fraction = (index + 0.5) / scrollToothCount;
-    const point = spiralCurve.getPointAt(fraction);
-    const tangent = spiralCurve.getTangentAt(fraction).normalize();
-    const tooth = new THREE.Mesh(
-      new THREE.BoxGeometry(0.065, 0.31, 0.12),
-      index % 6 === 0 ? accentMaterial : darkMaterial,
-    );
-    tooth.position.copy(point);
-    tooth.position.z += 0.075;
-    tooth.rotation.z = Math.atan2(tangent.y, tangent.x);
-    tooth.userData.role = `scroll-rack-face-tooth-${index + 1}`;
-    tooth.userData.scrollTooth = true;
-    tooth.userData.pathFraction = fraction;
-    scrollRotor.add(tooth);
-    return tooth;
-  });
-  const scrollRotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, 0.72, 0.035),
-    whiteMaterial,
-  );
-  scrollRotationIndex.position.set(2.09, 0, 0.31);
-  scrollRotationIndex.rotation.z = Math.PI / 2;
-  scrollRotationIndex.userData.role =
-    'white-scroll-plate-A-output-rotation-index';
-  scrollRotor.add(scrollRotationIndex);
+  const web = new THREE.Mesh(plate(poly(webPoints), -0.2, -0.06), scrollMaterial);
+  web.userData.role = 'scroll-plate-A-web-cut-to-its-outer-turn';
+  const bandPoints = [];
+  const gap = 0.006;
+  for (let i = 0; i <= samples * 2; i += 1) {
+    const a = innerEndAngle + (outerEndAngle - innerEndAngle) * i / (samples * 2);
+    bandPoints.push(polar(innerEdge(a) + bandWidth - gap, a));
+  }
+  for (let i = samples * 2; i >= 0; i -= 1) {
+    const a = innerEndAngle + (outerEndAngle - innerEndAngle) * i / (samples * 2);
+    bandPoints.push(polar(innerEdge(a), a));
+  }
+  const spiralRail = new THREE.Mesh(plate(poly(bandPoints), -0.06, 0), scrollMaterial);
+  spiralRail.userData.role = 'single-finite-archimedean-scroll-band-on-plate-A';
+  // A bored boss behind the web, keyed to the shaft that runs through it.
+  const scrollHub = new THREE.Mesh(plate(clip.difference(poly(circle([0, 0], 0.34, 96)), poly(circle([0, 0], 0.154, 96))), -0.4, -0.2), scrollMaterial);
+  scrollHub.userData.role = 'scroll-plate-A-boss-behind';
+  const scrollShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.76, 40).rotateX(Math.PI / 2), steelMaterial);
+  scrollShaft.position.z = -0.6;
+  scrollShaft.userData.role = 'scroll-plate-A-output-shaft';
+  scrollRotor.add(web, spiralRail, scrollHub, scrollShaft);
 
+  // Face teeth, one per circular pitch of B along the band centreline,
+  // counted from Brown's contact point (a tooth there at the start).
+  const toothLength = bandWidth - gap - 0.012;
+  const toothGeometry = faceToothGeometry({length: toothLength, pitchHalf: circularPitch * 0.24, tan,
+    pitchZ: (u) => pitchZ(u + 0.006), addendum: addendum * 0.9, dedendum: addendum});
+  const teethGeometries = [];
+  const scrollTeeth = [];
+  const margin = circularPitch * 0.4;
+  for (let k = -40; k < 400; k += 1) {
+    const theta = plateAngleAtRolled(k * circularPitch);
+    if (!Number.isFinite(theta)) continue;
+    const local = contactStartLocalAngle - theta;
+    // Keep whole teeth on the band between its two ends.
+    const r = bandCenterRadius(local) + meshOffset;
+    if (local - margin / r < innerEndAngle || local + margin / r > outerEndAngle) continue;
+    const g = toothGeometry.clone();
+    g.translate(r - meshOffset - bandWidth / 2 + 0.006, 0, 0);
+    g.rotateZ(local);
+    teethGeometries.push(g);
+    scrollTeeth.push({index: k, localAngle: local, radius: r});
+  }
+  const teethMesh = new THREE.Mesh(mergeGeometries(teethGeometries), scrollMaterial);
+  teethGeometries.forEach((g) => g.dispose());
+  toothGeometry.dispose();
+  teethMesh.userData.role = 'scroll-plate-A-face-teeth-along-the-band';
+  scrollRotor.add(teethMesh);
+
+  // Input shaft with its feather, and pinion B sliding on it.
   const pinionShaftRotor = new THREE.Group();
   pinionShaftRotor.position.z = pinionAxisZ;
-  pinionShaftRotor.userData.role =
-    'uniform-input-feathered-radial-pinion-shaft';
+  pinionShaftRotor.userData.role = 'uniform-input-feathered-radial-pinion-shaft';
   root.add(pinionShaftRotor);
-  const pinionShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.13, 0.13, 5.30, 36),
-    darkMaterial,
-  );
+  const shaftRadius = 0.15;
+  const pinionShaft = new THREE.Mesh(new THREE.CylinderGeometry(shaftRadius, shaftRadius, 7.5, 48), steelMaterial);
+  pinionShaft.position.y = -0.5;
   pinionShaft.userData.role = 'long-radial-pinion-input-shaft';
   pinionShaftRotor.add(pinionShaft);
-  const shaftFeather = new THREE.Mesh(
-    new THREE.BoxGeometry(0.105, 4.22, 0.075),
-    accentMaterial,
-  );
-  shaftFeather.position.x = 0.125;
-  shaftFeather.userData.role =
-    'longitudinal-feather-key-on-input-shaft';
+  const featherTop = -0.55;
+  const featherBottom = -(scrollOuterRadius + bandWidth / 2) - 0.25;
+  const shaftFeather = new THREE.Mesh(new THREE.BoxGeometry(0.07, featherTop - featherBottom, 0.06), steelMaterial);
+  shaftFeather.position.set(0, (featherTop + featherBottom) / 2, shaftRadius + 0.02);
+  shaftFeather.userData.role = 'longitudinal-feather-key-on-input-shaft';
   pinionShaftRotor.add(shaftFeather);
-  const shaftRotationIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.075, 0.54, 0.035),
-    whiteMaterial,
-  );
-  shaftRotationIndex.position.set(0.145, 2.02, 0);
-  shaftRotationIndex.userData.role =
-    'white-input-shaft-rotation-index';
-  pinionShaftRotor.add(shaftRotationIndex);
 
   const slidingPinion = new THREE.Group();
-  slidingPinion.userData.role =
-    'pinion-B-sliding-axially-on-shaft-feather';
+  slidingPinion.userData.role = 'pinion-B-sliding-axially-on-shaft-feather';
   pinionShaftRotor.add(slidingPinion);
-  const pinionBody = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      pinionPitchRadius + 0.07,
-      pinionPitchRadius * 0.66,
-      pinionFaceLength,
-      54,
-    ),
-    driverMaterial,
-  );
-  pinionBody.userData.role = 'bevel-like-sliding-pinion-B-body';
+  // Built along local z (small end at -z), scaled for the taper, then turned
+  // so local z runs down the shaft (world -y): the large end lies outward.
+  const outline = involuteGearOutline({teeth: pinionTeeth, module: toothModule, pressureAngle,
+    tipRadius: pinionPitchRadius + addendum, rootRadius: pinionPitchRadius - dedendum,
+    pitchThickness: circularPitch * 0.48});
+  // A tooth space faces A (world -z) at zero input angle.
+  const spin = -Math.PI / 2 - Math.PI / pinionTeeth;
+  const rotated = outline.map(([x, y]) => [x * Math.cos(spin) - y * Math.sin(spin), x * Math.sin(spin) + y * Math.cos(spin)]);
+  const bore = clip.union(poly(circle([0, 0], shaftRadius + 0.006, 96)),
+    poly([[-0.045, 0], [0.045, 0], [0.045, shaftRadius + 0.06], [-0.045, shaftRadius + 0.06]].map(([x, y]) => [x, y])));
+  // Local +y becomes world +z after the turn below, so the keyway faces the feather.
+  const pinionGeometry = plate(clip.difference(poly(rotated), bore), -pinionFaceLength / 2, pinionFaceLength / 2);
+  const position = pinionGeometry.attributes.position;
+  for (let i = 0; i < position.count; i += 1) {
+    const x = position.getX(i), y = position.getY(i), z = position.getZ(i), r = Math.hypot(x, y);
+    if (r < 0.3) continue;
+    const f = 1 + (z - pinionFaceLength / 2) * taperSlope / pinionPitchRadius;
+    position.setXY(i, x * f, y * f);
+  }
+  pinionGeometry.computeVertexNormals();
+  pinionGeometry.rotateX(Math.PI / 2);
+  const pinionBody = new THREE.Mesh(pinionGeometry, pinionMaterial);
+  pinionBody.userData.role = 'tapered-involute-sliding-pinion-B';
   slidingPinion.add(pinionBody);
-  const pinionHub = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.22, 0.22, 0.70, 34),
-    darkMaterial,
-  );
-  pinionHub.position.y = -0.12;
-  pinionHub.userData.role =
-    'pinion-B-hub-with-longitudinal-keyway';
+  const hubRadius = 0.46;
+  const hubGeometry = plate(clip.difference(poly(circle([0, 0], hubRadius, 96)), bore), 0, 0.09).rotateX(Math.PI / 2);
+  const pinionHub = new THREE.Mesh(hubGeometry, pinionMaterial);
+  pinionHub.position.y = -pinionFaceLength / 2;
+  pinionHub.userData.role = 'pinion-B-hub-collar-with-keyway';
   slidingPinion.add(pinionHub);
-  const pinionTeethMeshes = Array.from({ length: pinionTeeth }, (_, index) => {
-    const angle = FULL_TURN * index / pinionTeeth;
-    const tooth = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.12, 0.075),
-      darkMaterial,
-    );
-    tooth.position.set(
-      Math.cos(angle) * (pinionPitchRadius + 0.025),
-      pinionFaceLength / 2 - 0.045,
-      Math.sin(angle) * (pinionPitchRadius + 0.025),
-    );
-    tooth.rotation.y = -angle;
-    tooth.userData.role = `pinion-B-face-tooth-${index + 1}`;
-    slidingPinion.add(tooth);
-    return tooth;
-  });
-  const pinionRotationIndex = new THREE.Mesh(
-    new THREE.SphereGeometry(0.065, 18, 12),
-    whiteMaterial,
-  );
-  pinionRotationIndex.position.set(
-    0,
-    pinionFaceLength / 2 + 0.02,
-    pinionPitchRadius,
-  );
-  pinionRotationIndex.userData.role =
-    'white-sliding-pinion-B-rotation-index';
-  slidingPinion.add(pinionRotationIndex);
-
-  const contactMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 20, 14),
-    whiteMaterial,
-  );
-  contactMarker.userData.role =
-    'white-moving-scroll-pinion-pitch-contact';
-  root.add(contactMarker);
-  const radialTravelGuide = new THREE.Mesh(
-    new THREE.BoxGeometry(0.045, scrollOuterRadius - scrollInnerRadius, 0.04),
-    frameMaterial,
-  );
-  radialTravelGuide.position.set(
-    0,
-    -(scrollOuterRadius + scrollInnerRadius) / 2,
-    plateFaceZ + 0.31,
-  );
-  radialTravelGuide.userData.role =
-    'fixed-radial-line-of-pinion-B-scroll-contact-travel';
-  root.add(radialTravelGuide);
 
   function inputStateAtTime(cycleTime) {
     const rampDisplacement = cruisePinionAngularSpeed
@@ -512,7 +372,8 @@ function scrollGear(movement) {
       * plateAngularSpeed;
     const contactRadiusAcceleration = -spiralLeadPerRadian
       * plateAngularAcceleration;
-    const pinionCenterY = -contactRadius - pinionFaceLength / 2;
+    // B's large end sits on the pitch spiral; its face runs inward from there.
+    const pinionCenterY = -contactRadius + pinionFaceLength / 2;
     const pinionSlideSpeed = -contactRadiusSpeed;
     const pinionSlideAcceleration = -contactRadiusAcceleration;
     const spiralLocalAngle = spiralLocalAngleAtPlateAngle(plateAngle);
@@ -573,153 +434,51 @@ function scrollGear(movement) {
   function update(time) {
     const state = stateAtTime(time);
     scrollRotor.rotation.z = state.plateAngle;
-    pinionShaftRotor.rotation.y = state.pinionAngle;
+    // Rolling at the lower contact: A's face moves +x, so B turns about -y.
+    pinionShaftRotor.rotation.y = -state.pinionAngle;
     slidingPinion.position.y = state.pinionCenterY;
-    contactMarker.position.copy(state.pitchContact);
+    root.userData.kinematics = state;
   }
 
-  const sourceState = stateAtTime(0);
-  const archetype =
-    'archimedean-face-scroll-driven-by-feather-keyed-axially-sliding-radial-pinion-with-reciprocal-radius-speed-law';
+  const geometry = {
+    bandWidth, circularPitch, contactWorldAngle, contactStartLocalAngle, cruiseDuration, cruisePinionAngularSpeed,
+    cycleDuration, innerDwellDuration, innerEdgeStart, innerEndAngle, outerDwellDuration, outerEndAngle,
+    pinionAxisZ, pinionFaceLength, pinionMaximumAngle, pinionPitchRadius, pinionTeeth, plateFaceZ,
+    rampDuration, reverseStartTime, rolledDistance, scrollInnerRadius, scrollOuterRadius, scrollSweep,
+    scrollToothCount: scrollTeeth.length, spiralLeadPerRadian, spiralMaximumLocalAngle, spiralMinimumLocalAngle,
+    taperSlope, toothModule, turns, mechanismCyclePeriod: cycleDuration,
+  };
   root.userData = {
-    archetype,
-    blocks: {
-      base,
-      contactMarker,
-      fixedFrame,
-      pinionBody,
-      pinionHub,
-      pinionRotationIndex,
-      pinionShaft,
-      pinionShaftRotor,
-      pinionTeethMeshes,
-      radialTravelGuide,
-      scrollBackplate,
-      scrollBearing,
-      scrollHub,
-      scrollOuterRim,
-      scrollRotationIndex,
-      scrollRotor,
-      scrollShaft,
-      scrollTeeth,
-      shaftFeather,
-      shaftRotationIndex,
-      slidingPinion,
-      spiralRail,
-    },
-    degreesOfFreedom: {
-      independentPrescribedInputs: 1,
-      operatingDegreesOfFreedom: 1,
-      pinionAxialPositionIndependent: false,
-      simultaneouslyActiveInputs: 1,
-      storedEnergyStates: 0,
-    },
-    dynamics: {
-      backlashElasticityInertiaLoadsAndForcesModeled: false,
-      sourceSpecifiesAbsoluteDimensionsTimingMaterialsLoadsOrForces: false,
-    },
+    archetype: movement.archetype,
     fidelity: 'authored',
+    blocks: {pinionBody, pinionHub, pinionShaft, pinionShaftRotor, scrollHub, scrollRotor, scrollShaft,
+      shaftFeather, slidingPinion, spiralRail, teethMesh, web, workingScrollTeeth: [teethMesh]},
     geometry,
-    mechanism:
-      'Uniform rotation of the vertical radial shaft is transmitted through its longitudinal feather to pinion B while leaving B free to slide axially. B rolls against one finite Archimedean face-scroll on plate A. Forward plate rotation carries the contact from the outer radius to the inner radius, so the exact instantaneous speed gain pinionPitchRadius/contactRadius increases; reverse rotation retraces the same scroll outward and the gain decreases.',
-    motion: {
-      cycleDuration,
-      innerDwellDuration,
-      oneWayMotionDuration,
-      outerDwellDuration,
-      reverseStartTime,
-    },
-    sourceAnimation: {
-      available: false,
-      independentlyReconstructed: true,
-      officialCanvasModelPresent: false,
-      reason:
-        'The official Movement 414 page marks its Animated control unavailable and supplies only Brown’s static plate.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourcePose: {
-      contactRadius: sourceState.contactRadius,
-      pinionCenterY: sourceState.pinionCenterY,
-      setting:
-        'outer scroll end at the lower radial pinion shaft, with B at its lowest feather-guided position as in Brown’s plate',
-    },
-    sourceReference: {
-      brownPlate414: {
-        imageHeight: 525,
-        imageWidth: 525,
-        measurementUncertaintyPixels: 12,
-        pinionBApproximateBoundsPixels: [205, 332, 327, 405],
-        radialShaftApproximateBoundsPixels: [243, 38, 291, 482],
-        scrollPlateAApproximateBoundsPixels: [92, 108, 413, 374],
-        scrollTrackInnerEndApproximatePixels: [207, 315],
-        scrollTrackOuterEndApproximatePixels: [385, 349],
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'the device consists of a scroll gear and sliding pinion',
-          'the scroll plate is A',
-          'pinion B slides',
-          'B moves on a feather on its shaft',
-          'A has increasing velocity in one direction',
-          'A has decreasing velocity when motion is reversed',
-        ],
-        engravingEvidence:
-          'The plate shows one finite spiral band of transverse face teeth on vertical plate A, a straight radial shaft crossing its center line, and a conical pinion B at the lower intersection whose hub can travel along that shaft.',
-        reconstructionDisclosure:
-          'Brown fixes the face-scroll topology, feather-guided axial slide, and opposite speed trends but gives no scroll equation, dimensions, tooth counts, input speed, timing, or end treatment. The finite Archimedean scroll, 18 pinion teeth, 108 displayed rack teeth, radii, smooth acceleration ramps, dwells, and reversals are independently engineered; the exact integrated rolling constraint is retained throughout.',
-      },
-      officialPage: movement.sourceUrl,
-      plate: 'Brown 1868, Movement 414',
-    },
-    stateAtTime,
+    scrollTeeth,
+    motion: {cycleDuration, innerDwellDuration, oneWayMotionDuration, outerDwellDuration, reverseStartTime},
+    mechanism: 'Uniform rotation of the radial shaft drives pinion B through its feather while B slides along it; B rolls on the Archimedean face scroll of plate A, so as the contact runs inward the plate speeds up (gain r_B/contact radius), and on reversal it runs outward and slows.',
     transmission: {
-      accelerationConstraint:
-        'pinionRadius*pinionAcceleration=contactRadius*plateAcceleration-lead*plateSpeed^2',
-      integratedRollingConstraint:
-        'pinionRadius*pinionAngle=outerRadius*plateAngle-(lead/2)*plateAngle^2',
-      instantaneousSpeedConstraint:
-        'pinionRadius*pinionSpeed=contactRadius*plateSpeed',
-      pinionSlideConstraint:
-        'pinion center y=-contact radius-pinion face length/2',
-      scrollConstraint:
-        'contact radius=outer radius-lead*plate angle',
+      integratedRollingConstraint: 'pinionRadius*pinionAngle=outerRadius*plateAngle-(lead/2)*plateAngle^2',
+      instantaneousSpeedConstraint: 'pinionRadius*pinionSpeed=contactRadius*plateSpeed',
+      scrollConstraint: 'contact radius=outer radius-lead*plate angle',
     },
+    reconstructionNote: 'Scroll proportions measured on Brown\'s plate: touching turns, 2 3/8 turns, inner end at 9 o\'clock, outer end cut at half past four. B is a 24-tooth involute pinion tapered toward A\'s centre; its taper matches the plate\'s radial speed gradient only at mid-throw, so off that radius the face mesh relies on backlash (straight-flanked face teeth, 0.16 pitch play). Motion, the feather slide and the reversals are prescribed; loads are not modelled.',
+    sourceAnimation: {available: false, officialPage: movement.sourceUrl},
+    stateAtTime,
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.92, -2.89, -1.25),
-    new THREE.Vector3(2.72, 2.68, 1.25),
-  );
-  root.userData.cameraDistanceScale = 1.01;
-  root.userData.cameraDirection = new THREE.Vector3(2.8, -3, -12);
-  root.userData.groundFloorY = -2.89;
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
+  root.userData.cameraDirection = new THREE.Vector3(0, 0, 1);
   markShadows(root);
-  base.receiveShadow = true;
-  contactMarker.castShadow = false;
+  root.traverse((o) => { for (const m of [].concat(o.material ?? [])) m.fog = false; });
   update(0);
-  correctVariableFaceGear(root, 414);
-  // Brown cuts the scroll teeth on the face of wheel A: a solid web
-  // behind the spiral band joins both turns to the hub.
-  const scrollWeb = annularDiskAlongZ({
-    depth: 0.10,
-    innerRadius: 0.34,
-    material: matte(0x9fb6c1, { metalness: 0.12, roughness: 0.55 }),
-    // A plain margin beyond the outermost tooth so the scroll's end never
-    // reads as overhanging the wheel in oblique views.
-    outerRadius: 2.36,
-  });
-  scrollWeb.position.z = 0.509;
-  scrollWeb.userData.role = 'scroll-wheel-A-face-web-joining-spiral-to-hub';
-  scrollWeb.castShadow = true;
-  scrollWeb.receiveShadow = true;
-  scrollWeb.material.fog = false;
-  scrollRotor.add(scrollWeb);
-  root.userData.blocks.scrollWeb = scrollWeb;
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  root.updateMatrixWorld(true);
+  const bounds = new THREE.Box3().setFromObject(scrollRotor);
+  bounds.expandByPoint(new THREE.Vector3(0, 3.2, 0)).expandByPoint(new THREE.Vector3(0, -4.2, 0));
+  root.userData.cameraFitBounds = bounds.expandByScalar(0.05);
+  root.userData.cameraDistanceScale = 1.02;
+  return {cameraDirection: root.userData.cameraDirection, root, update};
 }
 
 export function createAuthoredScrollGearMovement(movement) {

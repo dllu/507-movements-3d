@@ -68,7 +68,9 @@ test('movement 432 uses sixteen moving float boards and a fixed close-fitting br
   assert.equal(blocks.floatBoards.length, 16);
   assert.equal(blocks.bucketWaterBodies.length, 16);
   assert.equal(blocks.bucketWaterLoads.length, 16);
-  assert.equal(blocks.breastChannelRails.length, 48);
+  // Pass 69: the breast is one masonry section (no segmented rails).
+  assert.equal(blocks.breastChannelRails.length, 0);
+  assert.equal(blocks.breastFloor.userData.role, 'masonry-headrace-floor-curved-breast-and-tail-bed');
   for (const floatBoard of blocks.floatBoards) {
     assert.equal(floatBoard.parent, blocks.rotor);
   }
@@ -99,7 +101,8 @@ test('movement 432 uses sixteen moving float boards and a fixed close-fitting br
   assert.equal(roles.filter((role) =>
     /^breast-wheel-spoke-\d+-of-eight$/.test(role)).length, 8);
   for (const role of [
-    'fixed-headrace-nearly-level-with-wheel-axle',
+    'masonry-headrace-floor-curved-breast-and-tail-bed',
+    'headwater-entering-breast-wheel-nearly-at-axle-level',
     'water-confined-between-wheel-floats-and-close-fitting-breast-channel',
     'free-tailwater-after-breast-cell-discharge',
     'clockwise-breast-wheel-with-float-board-cells',

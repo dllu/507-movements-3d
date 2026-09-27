@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { horizontalPlate } from './horizontal-turbine-solids.js';
 import { mergePassageParts } from './finite-fluid-passages.js';
 import { circle, plate, poly, polygonClipping } from './finite-plate-geometry.js';
+import { waterVolumeMaterial } from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -33,7 +34,9 @@ function doubleActingPump(movement) {
   const pistonRadius = 0.772;
   const boreHalfWidth = 0.79;
   const casingHalfDepth = 0.62;
-  const pistonHalfDepth = 0.53;
+  // Piston and flaps fill the section's depth (back plate to cut face) with a
+  // running clearance: a narrower piston would leave a bypass round it.
+  const pistonHalfDepth = casingHalfDepth - 0.006;
   const chamberWaterRadius = boreHalfWidth;
   const chamberArea = 2 * boreHalfWidth * 2 * pistonHalfDepth;
   const lowerChamberEndY = sy(442);
@@ -358,6 +361,59 @@ function doubleActingPump(movement) {
   const upperDischargeValve4 = makeValve('upperDischarge4', dischargeValveMaterial,
     'number-4-upper-discharge-check');
 
+  // Pass 69: seats. Every flap opens to the left, so reverse flow presses it
+  // to the right: a lip on that side of each flap's free end (on the jacket
+  // top for 4 and 1, on the lower cover for 3 and 2) takes it and closes the
+  // port; Brown's round stops on the left limit the opening.
+  const seatLips = addRole(new THREE.Mesh(wall(
+    rect(212.5, 134, 216, 145),
+    rect(374.5, 128, 376.5, 137),
+    rect(202.5, 434, 206, 442),
+    rect(374.5, 434, 377.5, 442),
+  ), frameMaterial), 'fixed-seat-lips-closing-flaps-1-to-4');
+  root.add(seatLips);
+
+  // Pass 69: the primed pump is full of water. The passages A and B and the
+  // spaces round the flaps are one fixed body; the two chambers follow the
+  // piston (their volumes change as it sweeps, what one gains the passages
+  // give and the other passes on).
+  const waterMaterial = waterVolumeMaterial({ opacity: 0.34 });
+  const inside = poly(px([
+    [122, 42], [122, 417],
+    ...arcPoints(147, 417, 25, Math.PI, 0.5 * Math.PI, 16),
+    [378, 442], [378, 500], [408, 500], [408, 145],
+    ...arcPoints(377, 145, 31, 0, -0.5 * Math.PI, 16),
+    [185, 114], ...arcPoints(185, 84, 30, 0.5 * Math.PI, Math.PI, 16).slice(1), [155, 42],
+  ]));
+  const solids = [
+    rect(150, 145, 216, 408), rect(330, 145, 376, 408), rect(368, 137, 376, 145), rect(368, 408, 376, 415),
+    rect(147, 442, 378, 452), rect(185, 104, 377, 114),
+    rect(212.5, 134, 216, 145), rect(374.5, 128, 376.5, 137), rect(202.5, 434, 206, 442), rect(374.5, 434, 377.5, 442),
+  ];
+  const chamber = rect(216, 114, 330, 442);
+  const passageWater = addRole(new THREE.Mesh(
+    plate(polygonClipping.difference(inside, ...solids, chamber), -casingHalfDepth + 0.004, casingHalfDepth - 0.004),
+    waterMaterial,
+  ), 'water-filling-passages-A-B-and-valve-ports');
+  passageWater.renderOrder = 1;
+  root.add(passageWater);
+  const chamberBox = () => {
+    const geometry = new THREE.BoxGeometry(sx(330) - sx(216), 1, 2 * (casingHalfDepth - 0.004));
+    geometry.translate((sx(216) + sx(330)) / 2, 0.5, 0);
+    return geometry;
+  };
+  const upperChamberWater = addRole(new THREE.Mesh(chamberBox(), waterMaterial),
+    'water-in-upper-chamber-above-piston');
+  const lowerChamberWater = addRole(new THREE.Mesh(chamberBox(), waterMaterial),
+    'water-in-lower-chamber-below-piston');
+  for (const water of [upperChamberWater, lowerChamberWater]) { water.renderOrder = 1; root.add(water); }
+  const setChamberWater = (state) => {
+    upperChamberWater.position.y = state.pistonTopY + 0.004;
+    upperChamberWater.scale.y = Math.max(1e-4, upperChamberEndY - state.pistonTopY - 0.004);
+    lowerChamberWater.position.y = lowerChamberEndY;
+    lowerChamberWater.scale.y = Math.max(1e-4, state.pistonBottomY - 0.004 - lowerChamberEndY);
+  };
+
   const flapAngleFor = (open) => -maximumFlapAngle * open;
   const update = (time) => {
     const state = stateAtTime(time);
@@ -368,6 +424,7 @@ function doubleActingPump(movement) {
     lowerSuctionValve2.userData.disk.rotation.z = flapAngleFor(state.lowerSuction2Open);
     lowerDischargeValve3.userData.disk.rotation.z = flapAngleFor(state.lowerDischarge3Open);
     upperDischargeValve4.userData.disk.rotation.z = flapAngleFor(state.upperDischarge4Open);
+    setChamberWater(state);
   };
   const sourceState = stateAtInputAngle(0);
   const geometry = {
@@ -529,6 +586,8 @@ function doubleActingPump(movement) {
   });
   markShadows(root);
   base.receiveShadow = true;
+  for (const water of [passageWater, upperChamberWater, lowerChamberWater]) { water.castShadow = false; water.receiveShadow = false; }
+  root.userData.blocks = { ...(root.userData.blocks ?? {}), passageWater, upperChamberWater, lowerChamberWater, seatLips };
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

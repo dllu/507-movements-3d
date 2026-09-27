@@ -104,12 +104,18 @@ function buildBroadHollowFrame(root, bx, by, shaftCenter) {
   // Pump D rises through a round-cornered gap in the pocket's top wall.
   const pocketWindow = polygonClipping.union(rect(150, 718, 336, 888),
     rect(203, 690, 309, 720));
-  // Reservoir C: a recessed channel along the hollow arm's mid-line.
-  const centre = spline(map([[740, 212], [741, 300], [727, 410], [685, 443],
+  // Reservoir C: a closed passage along the hollow arm's mid-line, inside
+  // the casting (pass 69: it used to be a groove open on the front face,
+  // stopping blind above the arm's foot, so the reservoir leaked and was cut
+  // off from pump D). It now opens through the top of the arm's tab into the
+  // valve chest standing on it, runs down the S-arm, through its foot and
+  // along the hollow bed, and rises into the bed top under pump D's bored
+  // foot, so pump, reservoir and chest form one sealed path.
+  const centre = spline(map([[740, 188], [740, 212], [741, 300], [727, 410], [685, 443],
     [630, 473], [598, 515], [578, 565], [572, 610], [580, 660], [598, 712],
-    [615, 745]]));
-  // The channel stops inside the S-arm above its foot; running on to the
-  // foot it crossed the arm's edge and cut a break through the casting.
+    [615, 745], [631, 790], [645, 840], [650, 880], [642, 912], [615, 928],
+    [560, 931], [420, 931], [300, 930], [272, 925], [259, 910], [256, 895],
+    [256, 884]]));
   const channelHalfWidth = 0.05;
   const sides = [[], []];
   centre.forEach((point, index) => {
@@ -121,13 +127,14 @@ function buildBroadHollowFrame(root, bx, by, shaftCenter) {
     sides[1].push([point[0] - normal[0] * channelHalfWidth, point[1] - normal[1] * channelHalfWidth]);
   });
   const channel = poly([...sides[0], ...sides[1].reverse()]);
-  const recess = half - 0.07;
+  const passageHalfDepth = 0.18;
   const front = polygonClipping.difference(body, pocketWindow);
   const frame = blocks.hollowReservoirFrame;
   frame.geometry.dispose();
   frame.geometry = mergePassageParts([
-    plate(front, -half, recess),
-    plate(polygonClipping.difference(front, channel), recess, half),
+    plate(front, -half, -passageHalfDepth),
+    plate(polygonClipping.difference(front, channel), -passageHalfDepth, passageHalfDepth),
+    plate(front, passageHalfDepth, half),
     // The pocket's back wall stands behind pump D.
     plate(polygonClipping.intersection(body, rect(115, 700, 352, 888)), -0.52, -half),
   ]);
@@ -136,11 +143,13 @@ function buildBroadHollowFrame(root, bx, by, shaftCenter) {
   frame.scale.set(1, 1, 1);
   const air = blocks.reservoirAir;
   air.geometry.dispose();
-  air.geometry = plate(channel, recess + 0.005, recess + 0.02);
+  air.geometry = plate(channel, -passageHalfDepth + 0.01, passageHalfDepth - 0.01);
   air.position.set(0, 0, 0);
   air.rotation.set(0, 0, 0);
   air.scale.set(1, 1, 1);
   air.material.opacity = 0.35;
+  // The air sealed inside the closed casting is not seen.
+  air.visible = false;
   const material = frame.material;
   const extra = [];
   const add = (geometry, role) => {
@@ -206,9 +215,10 @@ function buildBroadHollowFrame(root, bx, by, shaftCenter) {
     new THREE.Vector3(2.36, geometry.hammerCylinderInnerTopY + 0.07, 0),
   ], 0.04, portMaterial, 'valve-chest-port-passage-to-top-of-cylinder-B', 16);
   root.add(upperPort);
-  // Pump D stands on a closed foot on the bed.
-  const pumpFoot = add(new THREE.CylinderGeometry(0.40, 0.40, 1, 64),
-    'closed-foot-of-pump-D-on-frame-bed');
+  // Pump D stands on a foot bored through to the reservoir passage in the
+  // bed: it delivers down into C.
+  const pumpFoot = add(boredLatheGeometry([{radial: 0.40, axial: -0.5}, {radial: 0.40, axial: 0.5}], 0.07, 64),
+    'bored-foot-of-pump-D-delivering-into-bed-of-C');
   const footTop = geometry.pumpCylinderInnerBottomY - 0.08;
   pumpFoot.scale.y = footTop - by(888);
   pumpFoot.position.set(geometry.pumpAxisX, (footTop + by(888)) / 2, geometry.pumpAxisZ);

@@ -51,18 +51,14 @@ test('456: stationary cam has a shaft bore and finite followers remain close to 
   }
 });
 
-test('455: finite bored hinge eyes clear pins and relieved rotor cheeks',()=>{
+test('455: segment valves clear the drum, the casing and its abutment over a cycle',()=>{
   const m=oldPump({id:455}),b=m.root.userData.blocks;
   for(const v of b.valves){
-    const bore=solidSurface(v.blade.geometry);
-    assert.equal(bore.inside(new THREE.Vector3(.13,0,0)),false);
-    const result=separation(m,v.blade,b.rotorBody,120);
-    assert.ok(result.minimum>=-2e-6,`vane/rotor ${JSON.stringify(result)}`);
+    const drum=separation(m,v.blade,b.rotorBody,120);
+    assert.ok(drum.minimum>=-2e-6,`valve/drum ${JSON.stringify(drum)}`);
+    const casing=separation(m,v.blade,b.casing,240);
+    assert.ok(casing.minimum>=-2e-6,`valve/casing ${JSON.stringify(casing)}`);
   }
-  const lip=separation(m,b.valves[0].flexibleLip,b.casing,360);
-  assert.ok(lip.minimum>=-2e-6,`sealing lip/casing ${JSON.stringify(lip)}`);
-  // The previous abutment penetration is now a strict finite-clearance check.
-  const abutment=separation(m,b.valves[0].flexibleLip,b.abutment,180);
-  assert.ok(abutment.minimum>=0,`abutment clearance ${JSON.stringify(abutment)}`);
-  assert.match(m.root.userData.solidReview.qualification,/Finite polygon contact.*prescribed hold and quintic return/);
+  const drum=separation(m,b.rotorBody,b.casing,90);
+  assert.ok(drum.minimum>=-2e-6,`drum/casing ${JSON.stringify(drum)}`);
 });

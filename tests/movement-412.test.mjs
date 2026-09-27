@@ -440,3 +440,57 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model412.root);
   disposeModel(model507.root);
 });
+
+import {solidSurface as rimSolid, surfacePoints as pawlPoints} from './helpers/solid-surface.mjs';
+function pawlRimGap(model) {
+  const b = model.root.userData.blocks, rim = b.notchedRim, surface = rimSolid(rim.geometry);
+  model.root.updateMatrixWorld(true);
+  let minimum = Infinity;
+  for (const group of b.lockingPawls) {
+    const mesh = group.children[0], transform = rim.matrixWorld.clone().invert().multiply(mesh.matrixWorld);
+    for (const point of pawlPoints(mesh.geometry)) {
+      const p = point.clone().applyMatrix4(transform);
+      if (surface.box.distanceToPoint(p) > 0.05) continue;
+      minimum = Math.min(minimum, surface.signedDistance(p, 0.05));
+    }
+  }
+  return minimum;
+}
+
+test('movement 412 rim has six notches and two separately pivoted pawls that lock it both ways', () => {
+  const model = createMovementModel(catalog.movements[411]);
+  const { blocks, geometry, stateAtTime, timeline } = model.root.userData;
+  assert.equal(geometry.lockingPawls.notches.length, 6);
+  assert.equal(blocks.notchedRim.parent, blocks.barrelRotor);
+  assert.equal(blocks.lockingPawls.length, 2);
+  for (const pawl of blocks.lockingPawls) assert.equal(pawl.parent, blocks.spindleRotor);
+  // Engaged, each nose sits in its notch with running clearance only.
+  model.update(0);
+  const seated = pawlRimGap(model);
+  assert.ok(seated >= -1e-6 && seated < 0.012, `seated clearance ${seated}`);
+  const noseDepth = geometry.lockingPawls.rimOuter - geometry.lockingPawls.notchDepth;
+  assert.ok(noseDepth < geometry.lockingPawls.rimOuter - 0.09 && noseDepth > geometry.lockingPawls.rimInner);
+  // The opposed steep faces lock the barrel to the drumhead in both senses.
+  const barrel = blocks.barrelRotor.rotation.y;
+  for (const turn of [0.02, -0.02]) {
+    blocks.barrelRotor.rotation.y = barrel + turn;
+    assert.ok(pawlRimGap(model) < -0.01, `rim turned ${turn} must meet a nose`);
+  }
+  // Every sampled pose over the demonstration is clear; lifted pawls clear
+  // the whole rim while the wheel-work turns the barrel against the drumhead.
+  for (let i = 0; i <= 96; i += 1) {
+    const time = timeline.cycleDuration * i / 96;
+    model.update(time);
+    const state = stateAtTime(time);
+    assert.ok(pawlRimGap(model) >= -1e-6, `pawl into rim at ${time}`);
+    if (state.stage === 'unlocked-triple-purchase-compound-drive') {
+      assert.equal(state.pawlLift, geometry.lockingPawls.liftAngle);
+      const liftedGap = pawlRimGap(model);
+      assert.ok(liftedGap > 0.02, `lifted pawl clearance ${liftedGap} at ${time}`);
+    }
+    if (Math.abs(state.sunAngle - state.annulusAngle) % (2 * Math.PI) > 1e-9
+      && Math.abs(Math.abs(state.sunAngle - state.annulusAngle) % (2 * Math.PI) - 2 * Math.PI) > 1e-9) {
+      assert.equal(state.pawlsLocked, false, 'the pawls never hold while drumhead and barrel differ');
+    }
+  }
+});

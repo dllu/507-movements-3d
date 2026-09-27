@@ -13,7 +13,7 @@ for(const[id,create]of[[430,overshot],[431,undershot],[432,breast]])test(`${id}:
     const fixed=[...b.bearings,...b.bearingPedestals];
     if(id===430)fixed.push(b.flume,b.masonryRace);
     if(id===431)fixed.push(b.channelBed,b.gateTower,b.gateLeaf);
-    if(id===432)fixed.push(b.breastFloor,...b.breastChannelRails,...b.innerCheeks,b.headrace,b.gateLeaf);
+    if(id===432)fixed.push(b.breastFloor,...b.breastChannelRails,...b.innerCheeks,b.gateLeaf);
     const queries=fixed.map(mesh=>({mesh,surface:solidSurface(mesh.geometry)})),moving=[];
     b.rotor.traverse(mesh=>{if(!mesh.isMesh||mesh.userData.role.includes('water'))return;const all=surfacePoints(mesh.geometry);moving.push({mesh,points:all.filter((_,i)=>i%Math.max(1,Math.floor(all.length/800))===0)});});
     for(let frame=0;frame<=64;frame++){

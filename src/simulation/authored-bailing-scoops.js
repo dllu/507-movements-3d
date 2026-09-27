@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import {correctWaterLiftParts} from './well-scoop-gutter-parts.js';
+import {WaterStream,collectWaterStreams,guidedPath,ballisticPath,joinPaths} from './water-stream.js';
 import {
   PALETTE,
   markShadows,
@@ -108,11 +109,21 @@ function bailingScoop(movement) {
   const scoopPivot = new THREE.Vector3(-2.40, 0.15, 0);
   const beamPivot = new THREE.Vector3(1.30, 1.25, 0);
   const lowBeamAngle = Math.PI + 0.32;
-  const highBeamAngle = Math.PI - 0.02;
+  // Pass 69 (p69-w1): the beam swings far enough (87 degrees) that the
+  // raised scoop's floor slopes down to its pivot end, so the water it
+  // lifted can run out; at the old 20-degree swing the raised bucket stayed
+  // below its outlet and could never empty.
+  // Pass 69 (p69-w1): the beam swings far enough (87 degrees) that the
+  // raised scoop's floor slopes down to its pivot end, so the water it
+  // lifted can run out; at the old 20-degree swing the raised bucket stayed
+  // below its outlet and could never empty.
+  const highBeamAngle = Math.PI - 1.2;
   const notchRadii = Object.freeze([1.30, 1.47, 1.65, 1.83, 2.00]);
   const selectedNotchIndex = 2;
   const selectedNotchRadius = notchRadii[selectedNotchIndex];
-  const sourceScoopConnection = new THREE.Vector3(-0.15, -0.65, 0);
+  // Pass 69: the connection sits lower so the low scoop dips its mouth
+  // well under the pit water, which stands a full level below the channel.
+  const sourceScoopConnection = new THREE.Vector3(-0.37, -1.12, 0);
   const scoopConnectionRadius = sourceScoopConnection.distanceTo(scoopPivot);
   const selectedSourceNotch = beamPivot.clone().add(new THREE.Vector3(
     Math.cos(lowBeamAngle) * selectedNotchRadius,
@@ -121,7 +132,8 @@ function bailingScoop(movement) {
   ));
   const pitmanLength = selectedSourceNotch.distanceTo(sourceScoopConnection);
   const intakeLipLocal = new THREE.Vector3(3.43, -0.08, 0);
-  const outletLocal = new THREE.Vector3(0.20, -0.04, 0);
+  // The spout beyond the pivot, over the ridge (Brown's beak).
+  const outletLocal = new THREE.Vector3(-0.58, -0.21, 0);
   const groundY = -1.92;
 
   const solveOutput = (
@@ -444,6 +456,8 @@ function bailingScoop(movement) {
     return plate;
   });
   const floorPoints = [
+    new THREE.Vector3(-0.58, -0.24, 0),
+    new THREE.Vector3(0.0, -0.24, 0),
     new THREE.Vector3(0.15, -0.08, 0),
     new THREE.Vector3(1.78, -0.88, 0),
     new THREE.Vector3(2.56, -1.20, 0),
@@ -550,11 +564,43 @@ function bailingScoop(movement) {
     return bar;
   });
 
-  const dischargeStream = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.055, 0.07, 1, 14),
-    waterMaterial,
-  ), 'intermittent-discharge-from-raised-scoop-to-left-channel');
+  // The source pose dips the scoop's mouth into the pit water. The
+  // discharge at the high dwell (the scoop is then still): the lifted
+  // water runs down the scoop floor, under the trunnion and out of the spout
+  // over the ridge, falling into the upper channel; one continuous stream
+  // whose flow follows the emptying rate.
+  const highState = stateAtInputAngle(FULL_TURN * (liftEndPhase + dischargeEndPhase) / 2);
+  const highPoint = (x, y) => scoopPivot.clone().add(rotateLocal(new THREE.Vector3(x, y, 0), highState.scoopAngle));
+  const spoutLip = highPoint(-0.58, -0.17);
+  const spoutDirection = highPoint(-0.58, -0.17).sub(highPoint(0, -0.17)).normalize();
+  const dischargeFullPath = joinPaths(
+    guidedPath([highPoint(2.2, -0.96), highPoint(1.78, -0.80), highPoint(0.95, -0.42), highPoint(0.15, -0.02),
+      highPoint(0.0, -0.17), spoutLip], {speedAt: (u) => 0.4 + 1.0 * u, samples: 32}),
+    ballisticPath({origin: spoutLip, velocity: spoutDirection.clone().multiplyScalar(1.4), endY: -0.60, samples: 16}),
+  );
+  const dischargePath = {points: dischargeFullPath.points.map((point) => point.clone()),
+    speeds: dischargeFullPath.speeds.slice(), times: dischargeFullPath.times.slice()};
+  // The run-off starts at the bucket and advances along the floor as the
+  // flow starts (sampled in place from the full path; no allocation).
+  const setDischargeReach = (fraction) => {
+    const last = dischargeFullPath.points.length - 1, count = dischargePath.points.length - 1;
+    for (let i = 0; i <= count; i += 1) {
+      const u = Math.max(0.02, fraction) * last * i / count, k = Math.min(last - 1, Math.floor(u)), w = u - k;
+      dischargePath.points[i].lerpVectors(dischargeFullPath.points[k], dischargeFullPath.points[k + 1], w);
+      dischargePath.speeds[i] = dischargeFullPath.speeds[k] * (1 - w) + dischargeFullPath.speeds[k + 1] * w;
+      dischargePath.times[i] = dischargeFullPath.times[k] * (1 - w) + dischargeFullPath.times[k + 1] * w;
+    }
+  };
+  const dischargeStream = addRole(new WaterStream(joinPaths(
+    guidedPath([highPoint(2.2, -0.96), highPoint(1.78, -0.80), highPoint(0.95, -0.42), highPoint(0.15, -0.02),
+      highPoint(0.0, -0.17), spoutLip], {speedAt: (u) => 0.4 + 1.0 * u, samples: 32}),
+    ballisticPath({origin: spoutLip, velocity: spoutDirection.multiplyScalar(1.4), endY: -0.60, samples: 16}),
+  ), {width: 0.3, thickness: 0.05, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.3,
+    foam: {start: 0.9, amount: 0.4}, cyclePeriod: cycleDuration, streakRate: 1.2, opacity: 0.5}),
+  'intermittent-discharge-from-raised-scoop-to-left-channel');
   root.add(dischargeStream);
+  const maximumDischargeRate = 1.875 / ((dischargeEndPhase - liftEndPhase) * cycleDuration);
+  const updateStreams = collectWaterStreams(root);
 
   const update = (time) => {
     const state = stateAtTime(time);
@@ -571,19 +617,14 @@ function bailingScoop(movement) {
     scoopWater.scale.y = Math.max(0.001, state.waterFraction);
     scoopWater.position.y = -1.11 + 0.21 * state.waterFraction;
     root.userData.updateSolids?.(state);
-    const streamTop = state.outletPoint.clone();
-    streamTop.x -= 0.08;
-    streamTop.z = 0;
-    const streamBottom = new THREE.Vector3(
-      streamTop.x,
-      deliveryWater.position.y,
-      0,
-    );
-    dischargeStream.visible = state.dischargeFlowRate > 1e-4
-      && streamTop.y > streamBottom.y;
+    const dischargeFlow = Math.min(1, state.dischargeFlowRate / maximumDischargeRate);
+    dischargeStream.visible = dischargeFlow > 0.004;
     if (dischargeStream.visible) {
-      setRodBetween(dischargeStream, streamBottom, streamTop);
+      setDischargeReach(Math.min(1, dischargeFlow / 0.3));
+      dischargeStream.flow = Math.max(0.004, dischargeFlow);
+      dischargeStream.setPath(dischargePath);
     }
+    updateStreams(time);
   };
 
   const sourceState = stateAtInputAngle(0);

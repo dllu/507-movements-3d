@@ -10,7 +10,7 @@ import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 for(const[id,create]of[[439,wheel],[440,outward],[444,inward]])test(`${id}: actual moving walls and shafts clear stationary guides, supports and bores`,()=>{
   const model=create({id}),u=model.root.userData,b=u.blocks;
   try{
-    const fixed=id===439?[b.ground,b.strikeAnvil,b.hanger,b.frameBeam,b.framePost,b.flume,b.pulleyShaft]:id===440?[b.axle,...b.bearingRings,...b.supportPosts,...b.braces,b.leftStop,b.rightStop,b.base]:[b.deliverySeat,b.wasteSeat,b.chamberNeck,b.wasteBody,b.drivePipe,b.wasteOutlet];
+    const fixed=id===439?[b.ground,b.strikeAnvil,b.hanger,b.frameBeam,b.framePost,b.flume,b.pulleyShaft]:id===440?[b.axle,...b.bearingRings,...b.supportPosts,...b.braces,b.leftStop,b.rightStop,b.base]:[b.deliverySeat,b.wasteSeat,b.chamberNeck,b.ramBody,b.drivePipe];
     const targets=[];for(const group of fixed)group.traverse(mesh=>{if(mesh.isMesh&&!mesh.material.transparent)targets.push({mesh,surface:solidSurface(mesh.geometry)});});
     const moving=[];(id===439?b.bucket:id===440?b.trough:b.wasteValve).traverse(mesh=>{if(mesh.isMesh&&!mesh.material.transparent&&mesh!==b.wasteSeat){const all=surfacePoints(mesh.geometry);moving.push({mesh,points:all.filter((_,i)=>i%Math.max(1,Math.floor(all.length/900))===0)});}});
     if(id===439)for(const group of[b.pulley,b.counterweight])group.traverse(mesh=>{if(mesh.isMesh)moving.push({mesh,points:surfacePoints(mesh.geometry)});});

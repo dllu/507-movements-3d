@@ -3,8 +3,9 @@ import {applyCutawayFor} from './cutaway-presentations.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { helicalThread, threadAngles } from './mujoco-screw/thread-geometry.js';
 import { horizontalRing } from './horizontal-turbine-solids.js';
-import { ring } from './finite-plate-geometry.js';
-import { waterVolume } from './water-volume.js';
+import { ring, plate, sector } from './finite-plate-geometry.js';
+import { waterVolume, waterVolumeMaterial } from './water-volume.js';
+import {WaterStream,collectWaterStreams,ballisticPath,solveBallisticSpeed} from './water-stream.js';
 import { makeSeeThrough } from './see-through-part.js';
 import {
   PALETTE,
@@ -400,12 +401,21 @@ function streamDrivenArchimedesScrew(movement) {
     paddles.push(paddle);
   }
 
+  // Pass 69 (p69-w1): each pocket is the water actually trapped in one turn
+  // of the spiral passage, lying along the low side of the casing between
+  // two turns of the flight (an annular sector of the passage), not a bead.
+  // It clears the flight: its axial half-length (0.3 pitch) is less than the
+  // flight's nearest approach across its angular spread (0.5 - 0.12 pitch).
+  const pocketHalfAngle = 0.75;
+  const pocketCentreRadius = (centralShaftRadius + 0.012 + casingRadius - 0.052) / 2;
+  // Built about its own centre so it fades in and out in place.
+  const pocketGeometry = plate(sector(centralShaftRadius + 0.012, casingRadius - 0.052, -pocketHalfAngle, pocketHalfAngle, 48),
+    -0.3 * screwPitch, 0.3 * screwPitch).rotateX(Math.PI / 2).translate(-pocketCentreRadius, 0, 0);
+  const pocketMaterial = waterVolumeMaterial({opacity: 0.55});
   const waterPockets = [];
   for (let index = 0; index < waterPocketCount; index += 1) {
-    const pocket = new THREE.Mesh(
-      new THREE.SphereGeometry(0.14, 18, 12),
-      paleWaterMaterial,
-    );
+    const pocket = new THREE.Mesh(pocketGeometry, pocketMaterial);
+    pocket.renderOrder = 3;
     pocket.userData.role =
       `gravity-low-water-pocket-advancing-one-pitch-per-revolution-${index + 1}`;
     screwAssembly.add(pocket);
@@ -589,24 +599,34 @@ function streamDrivenArchimedesScrew(movement) {
   troughWater.position.y = 0.11;
   troughWater.userData.role = 'raised-water-leaving-upper-trough';
   dischargeTrough.add(troughWater);
-  const dischargeCurve = new THREE.CatmullRomCurve3([
-    upperEnd.clone(),
-    upperEnd.clone().add(new THREE.Vector3(-0.18, -0.18, 0)),
-    new THREE.Vector3(upperEnd.x - 0.42, dischargeTroughY + 0.22, 0),
-  ], false, 'centripetal');
-  const upperDischarge = new THREE.Mesh(
-    new THREE.TubeGeometry(dischargeCurve, 28, 0.10, 12, false),
-    paleWaterMaterial,
-  );
+  // The lifted water leaves the open top of the passage as one continuous
+  // stream falling on a projectile path into the trough.
+  const dischargeOrigin = upperEnd.clone().add(new THREE.Vector3(-0.05, -0.2, 0));
+  const dischargeTarget = new THREE.Vector3(upperEnd.x - 0.75, dischargeTroughY + 0.13, 0);
+  const dischargeDirection = new THREE.Vector3(-1, 0.15, 0).normalize();
+  const dischargeSpeed = solveBallisticSpeed({origin: dischargeOrigin, direction: dischargeDirection, target: dischargeTarget}) ?? 1;
+  const upperDischarge = new WaterStream(ballisticPath({
+    origin: dischargeOrigin, velocity: dischargeDirection.clone().multiplyScalar(dischargeSpeed),
+    endY: dischargeTarget.y, samples: 24,
+  }), {
+    width: 0.22, thickness: 0.07, widthAxis: new THREE.Vector3(0, 0, 1), widthExponent: 0.4,
+    foam: {start: 0.85, amount: 0.45}, cyclePeriod: shaftRevolutionDuration, streakRate: 1.5, opacity: 0.5,
+  });
   upperDischarge.userData.role =
     'continuous-water-discharge-from-top-of-spiral-passage';
   root.add(upperDischarge);
+  troughWater.material = waterVolumeMaterial({opacity: 0.45});
+  const updateStreams = collectWaterStreams(root);
 
   const update = (time) => {
     const state = stateAtTime(time);
+    updateStreams(time);
     rotor.rotation.y = state.screwAngle;
     state.waterPocketStates.forEach((pocketState, index) => {
-      waterPockets[index].position.copy(pocketState.localPosition);
+      const lowLine = Math.atan2(pocketState.localPosition.z, pocketState.localPosition.x);
+      waterPockets[index].position.set(pocketCentreRadius * Math.cos(lowLine), pocketState.localPosition.y,
+        pocketCentreRadius * Math.sin(lowLine));
+      waterPockets[index].rotation.y = -lowLine;
       waterPockets[index].scale.setScalar(pocketState.scale);
       waterPockets[index].visible = pocketState.scale > 0.002;
     });
@@ -653,6 +673,7 @@ function streamDrivenArchimedesScrew(movement) {
     transportCycleDuration,
     upperEnd: upperEnd.clone(),
     waterPocketCount,
+    pocketCentreRadius,
     waterPocketFadeFraction,
     waterPocketRadius,
     waterWheelCenter: waterWheelCenter.clone(),
@@ -811,5 +832,17 @@ function streamDrivenArchimedesScrew(movement) {
 
 export function createAuthoredStreamDrivenArchimedesScrewMovement(movement) {
   if (movement.id !== 443) return null;
-  return applyCutawayFor(streamDrivenArchimedesScrew(movement), movement.id);
+  const model = applyCutawayFor(streamDrivenArchimedesScrew(movement), movement.id);
+  // Brown dots the spiral passage inside the closed casing, so the casing
+  // (made whole by the cutaway spec) takes the shared see-through style and
+  // the flight and the water pockets it lifts show through it.
+  model.root.traverse((object) => {
+    // The flight is inside the (really opaque) casing: it throws no shadow
+    // of its own through the see-through wall.
+    if (object.userData.role === 'five-turn-helical-water-lifting-passage') object.castShadow = false;
+    if (object.userData.role !== 'transparent-rotating-oblique-screw-casing') return;
+    makeSeeThrough(object);
+    object.castShadow = true; // the real casing is opaque: it shades as a whole tube
+  });
+  return model;
 }

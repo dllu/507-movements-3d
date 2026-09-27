@@ -360,21 +360,21 @@ function alternatingWeightedRackDrive(movement) {
   const pinionToothCount = 20;
   const pinionAngularPitch = FULL_TURN / pinionToothCount;
   const circularPitch = pinionPitchRadius * pinionAngularPitch;
-  const stroke = 8 * circularPitch;
+  const stroke = 10 * circularPitch;
   const outputAdvancePerCycle = 2 * stroke / pinionPitchRadius;
   const rackPitchesPerStroke = stroke / circularPitch;
   const rackRootExtension = .60;
-  const crossheadLowY = -2.76-rackRootExtension;
+  const crossheadLowY = -3.265-rackRootExtension;
   const crossheadHighY = crossheadLowY + stroke;
   const rackPivotHalfSpacing = pinionPitchRadius + 0.26;
-  const rackBodyLength = 4.36+rackRootExtension;
+  const rackBodyLength = 3.63+rackRootExtension;
   const rackBodyWidth = 0.26;
   const rackDepth = 0.37;
   const rackToothHeight = 0.26;
-  const rackToothCount = 17;
+  const rackToothCount = 14;
   const guideArm = 0.68;
-  const guideY = 4.08+rackRootExtension;
-  const outwardRackAngle = 0.205;
+  const guideY = 3.35+rackRootExtension;
+  const outwardRackAngle = 0.17;
   const guidePlaneZ = -0.34;
   const rackPlaneZ = 0.12;
   const gearPlaneZ = 0.18;
@@ -408,6 +408,27 @@ function alternatingWeightedRackDrive(movement) {
     roughness: 0.42,
   });
 
+  // Idle-rack attitude.  At each guide corner the crosshead dwells while the
+  // racks exchange: the working rack swings out by the corner angle (larger
+  // at the top, where the pivots are closer to the wheel and a larger swing
+  // is needed to lift the teeth clear) while the other swings in.  On its
+  // return stroke the idle rack's pin then bows further outward along
+  // Brown's curved outer side of guide b, a sin^2 bulge that leaves and
+  // rejoins the corner angles with zero rate.
+  const topCornerAngle = 0.135;
+  const bottomCornerAngle = 0.07;
+  const bowAngle = outwardRackAngle;
+  const bowState = (u, fromAngle, toAngle, duration) => {
+    const ramp = quinticState(u);
+    const lift = bowAngle - (fromAngle + toAngle) / 2;
+    return {
+      angle: fromAngle + (toAngle - fromAngle) * ramp.value
+        + lift * Math.sin(Math.PI * u) ** 2,
+      rate: ((toAngle - fromAngle) * ramp.rate
+        + lift * Math.PI * Math.sin(2 * Math.PI * u)) / duration,
+    };
+  };
+
   const phaseState = (unwrappedPhase) => {
     const phase = positiveModulo(unwrappedPhase, 1);
     let stage;
@@ -416,9 +437,11 @@ function alternatingWeightedRackDrive(movement) {
     let crossheadVelocityPerPhase = 0;
     let crossheadAccelerationPerPhase2 = 0;
     let leftOutwardFraction;
-    let leftOutwardRatePerPhase = 0;
     let rightOutwardFraction;
-    let rightOutwardRatePerPhase = 0;
+    let leftAngle;
+    let leftRate = 0;
+    let rightAngle;
+    let rightRate = 0;
     let outputWithinCycle;
     let outputAngularSpeedPerPhase = 0;
 
@@ -432,6 +455,9 @@ function alternatingWeightedRackDrive(movement) {
         stroke * motion.acceleration / ascentEnd ** 2;
       leftOutwardFraction = 1;
       rightOutwardFraction = 0;
+      ({angle: leftAngle, rate: leftRate} = bowState(stageProgress,
+        bottomCornerAngle, topCornerAngle, ascentEnd));
+      rightAngle = 0;
       outputWithinCycle = (crossheadY - crossheadLowY)
         / pinionPitchRadius;
       outputAngularSpeedPerPhase = crossheadVelocityPerPhase
@@ -443,11 +469,12 @@ function alternatingWeightedRackDrive(movement) {
       const switchState = quinticState(stageProgress);
       crossheadY = crossheadHighY;
       leftOutwardFraction = 1-switchState.value;
-      leftOutwardRatePerPhase = -switchState.rate
-        / (topCrossoverEnd - ascentEnd);
       rightOutwardFraction = switchState.value;
-      rightOutwardRatePerPhase = switchState.rate
+      leftAngle = topCornerAngle * leftOutwardFraction;
+      leftRate = -topCornerAngle * switchState.rate
         / (topCrossoverEnd - ascentEnd);
+      rightAngle = topCornerAngle * rightOutwardFraction;
+      rightRate = -leftRate;
       outputWithinCycle = stroke / pinionPitchRadius;
     } else if (phase < descentEnd) {
       stage = 'left-rack-A-working-downstroke';
@@ -461,6 +488,9 @@ function alternatingWeightedRackDrive(movement) {
         / (descentEnd - topCrossoverEnd) ** 2;
       leftOutwardFraction = 0;
       rightOutwardFraction = 1;
+      leftAngle = 0;
+      ({angle: rightAngle, rate: rightRate} = bowState(stageProgress,
+        topCornerAngle, bottomCornerAngle, descentEnd - topCrossoverEnd));
       outputWithinCycle = stroke / pinionPitchRadius
         - (crossheadY - crossheadHighY) / pinionPitchRadius;
       outputAngularSpeedPerPhase = -crossheadVelocityPerPhase
@@ -471,9 +501,11 @@ function alternatingWeightedRackDrive(movement) {
       const switchState = quinticState(stageProgress);
       crossheadY = crossheadLowY;
       leftOutwardFraction = switchState.value;
-      leftOutwardRatePerPhase = switchState.rate / (1 - descentEnd);
       rightOutwardFraction = 1-switchState.value;
-      rightOutwardRatePerPhase = -switchState.rate / (1 - descentEnd);
+      leftAngle = bottomCornerAngle * leftOutwardFraction;
+      leftRate = bottomCornerAngle * switchState.rate / (1 - descentEnd);
+      rightAngle = bottomCornerAngle * rightOutwardFraction;
+      rightRate = -leftRate;
       outputWithinCycle = 2 * stroke / pinionPitchRadius;
     }
 
@@ -481,13 +513,15 @@ function alternatingWeightedRackDrive(movement) {
       crossheadAccelerationPerPhase2,
       crossheadVelocityPerPhase,
       crossheadY,
+      leftAngle,
       leftOutwardFraction,
-      leftOutwardRatePerPhase,
+      leftRate,
       outputAngularSpeedPerPhase,
       outputWithinCycle,
       phase,
+      rightAngle,
       rightOutwardFraction,
-      rightOutwardRatePerPhase,
+      rightRate,
       stage,
       stageProgress,
     };
@@ -498,11 +532,10 @@ function alternatingWeightedRackDrive(movement) {
     const outwardFraction = side < 0
       ? phaseData.leftOutwardFraction
       : phaseData.rightOutwardFraction;
-    const outwardRate = side < 0
-      ? phaseData.leftOutwardRatePerPhase
-      : phaseData.rightOutwardRatePerPhase;
-    const rackAngle = -side * outwardRackAngle * outwardFraction;
-    const rackAngularRatePerPhase = -side * outwardRackAngle * outwardRate;
+    const outwardAngle = side < 0 ? phaseData.leftAngle : phaseData.rightAngle;
+    const outwardRate = side < 0 ? phaseData.leftRate : phaseData.rightRate;
+    const rackAngle = -side * outwardAngle;
+    const rackAngularRatePerPhase = -side * outwardRate;
     const pivot = new THREE.Vector2(
       side * rackPivotHalfSpacing,
       phaseData.crossheadY,
@@ -642,7 +675,7 @@ function alternatingWeightedRackDrive(movement) {
     side: -1,
     toothCount: rackToothCount,
     toothHeight: rackToothHeight,
-    toothMaterial: driverDarkMaterial,
+    toothMaterial: driverMaterial,
     whiteMaterial,
   });
   const rightRack = makeRack({
@@ -657,14 +690,14 @@ function alternatingWeightedRackDrive(movement) {
     side: 1,
     toothCount: rackToothCount,
     toothHeight: rackToothHeight,
-    toothMaterial: driverDarkMaterial,
+    toothMaterial: driverMaterial,
     whiteMaterial,
   });
   leftRack.position.z = rackPlaneZ;
   rightRack.position.z = rackPlaneZ;
   root.add(leftRack, rightRack);
 
-  const elbowPivot = new THREE.Vector3(1.48, 5.13-(Math.PI*pinionPitchRadius-stroke), 0.13);
+  const elbowPivot = new THREE.Vector3(1.48, crossheadHighY + guideY + 1.36, 0.13);
   const elbowLever = new THREE.Group();
   elbowLever.position.copy(elbowPivot);
   elbowLever.userData.role =
@@ -694,7 +727,7 @@ function alternatingWeightedRackDrive(movement) {
   elbowLever.add(leverContactIndex);
   root.add(markShadows(elbowLever));
 
-  const springAnchor = new THREE.Vector3(2.95, 4.82-(Math.PI*pinionPitchRadius-stroke), 0.13);
+  const springAnchor = new THREE.Vector3(2.95, crossheadHighY + guideY + 1.05, 0.13);
   // Spring d runs in front of lever C (z 0.64), clear of C's link and stop.
   const springPlaneZ = 0.64;
   // A short fixed stud at spring d's far end (Brown's small circle).
@@ -707,7 +740,11 @@ function alternatingWeightedRackDrive(movement) {
 
   // Angle of C's free link (see makeSelectorLinkSchedule), built on first use.
   let linkSchedule = null;
-  const stateAtTime = (time) => {
+  // Time zero shows Brown's pose: mid-descent, rack A vertical and working,
+  // A1 bowed outward on its return branch and C at rest.
+  const sourcePhase = 0.71;
+  const stateAtTime = (playbackTime) => {
+    const time = playbackTime + sourcePhase * cycleDuration;
     const cycles = Math.floor(time / cycleDuration);
     const cycleTime = positiveModulo(time, cycleDuration);
     const phase = cycleTime / cycleDuration;
@@ -728,7 +765,13 @@ function alternatingWeightedRackDrive(movement) {
       cycleDuration,
     );
     contactState.linkAngle = linkSchedule.angleAt(cycleTime, contactState);
-    const topAssistActive = phaseData.stage === 'top-zero-speed-guide-crossover-with-elbow-assist' && contactState.contact;
+    // C carries A1's pin over the upper angle: it pushes through the top
+    // crossover and on into the start of the descent, while A1 is still
+    // swinging outward onto its bowed return branch, until the link lets go.
+    const topAssistActive = contactState.contact
+      && (phaseData.stage === 'top-zero-speed-guide-crossover-with-elbow-assist'
+        || (phaseData.stage === 'left-rack-A-working-downstroke'
+          && rightPose.rackAngularRatePerPhase < 0));
     const assistProgress = topAssistActive ? phaseData.stageProgress : 0;
     const leftRackPhaseError = wrappedSignedAngle(
       (phaseData.outputWithinCycle + (phaseData.crossheadY - crossheadLowY)
@@ -856,8 +899,8 @@ function alternatingWeightedRackDrive(movement) {
       springAnchorBoss,
     },
     constraintResiduals: {
-      pitchesPerStroke: rackPitchesPerStroke - 8,
-      outputCycleClosure: 5*outputAdvancePerCycle - 4*FULL_TURN,
+      pitchesPerStroke: rackPitchesPerStroke - 10,
+      outputCycleClosure: outputAdvancePerCycle - FULL_TURN,
       rackPitchIdentity:
         circularPitch - pinionPitchRadius * pinionAngularPitch,
     },
@@ -909,7 +952,7 @@ function alternatingWeightedRackDrive(movement) {
       guideY,
       outwardRackAngle,
       outputAdvancePerCycle,
-      markedClosureCycles: 5,
+      markedClosureCycles: 1,
       pinionAngularPitch,
       pinionPitchRadius,
       pinionToothCount,
@@ -921,6 +964,9 @@ function alternatingWeightedRackDrive(movement) {
       rackPivotHalfSpacing,
       rackToothCount,
       rackToothHeight,
+      sourcePhase,
+      topCornerAngle,
+      bottomCornerAngle,
       stroke,
       topCrossoverEnd,
     },
@@ -928,7 +974,7 @@ function alternatingWeightedRackDrive(movement) {
       'one-piston-rod-crosshead-reciprocates-two-weighted-pivoted-racks-A-and-A1-whose-end-pins-follow-opposed-fixed-closed-guide-grooves-b-so-A1-meshes-on-ascent-and-A-meshes-on-descent-to-turn-one-cog-wheel-continuously-counterclockwise-while-spring-d-returns-elbow-lever-C-at-the-right-upper-corner',
     motion: {
       outputDirection: 'counterclockwise only, with zero speed at guide crossovers',
-      outputTurnsPerInputCycle: .8,
+      outputTurnsPerInputCycle: 1,
       rackExchange:
         'top and bottom exchanges occur while the piston and cog wheel are instantaneously stationary',
       strokeLaw:
@@ -982,10 +1028,10 @@ function alternatingWeightedRackDrive(movement) {
     transmission: {
       activeMeshLaw:
         'theta=DeltaY/R on rack A1 ascent; theta=theta_top-DeltaY/R on rack A descent',
-      fullCycleLaw: 'Delta theta = 2 stroke / R = 1.6 pi; the marked wheel closes after five piston cycles and four counterclockwise turns',
+      fullCycleLaw: 'Delta theta = 2 stroke / R = 2 pi; the wheel makes one counterclockwise turn per piston cycle',
       guideLaw:
         'inner branch means rack angle zero and exact mesh; outer branch means rack angle is displaced outward by 0.205 rad',
-      pitchLaw: 'p=2*pi*R/N and stroke=8*p; five piston cycles advance the wheel by four turns',
+      pitchLaw: 'p=2*pi*R/N and stroke=10*p; one piston cycle advances the wheel by one turn',
     },
     update,
   };

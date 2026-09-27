@@ -57,15 +57,17 @@ test('460 bored pitman and scoop clear their pins, banks, receiver and actual su
   for(let i=1;i<d.geometry.notchRadii.length;i++)assert.equal(surface.inside(new THREE.Vector3((d.geometry.notchRadii[i-1]+d.geometry.notchRadii[i])/2,.03,0)),true,'adjacent notches retain material');
 }));
 
-test('461 connected passages, water markers, flaps and pivot clear finite channel walls and supports',()=>fixture(gutter,461,(m,d)=>{
-  const b=d.blocks,pairs=[];
-  for(const o of meshes(b.swingingGutter))for(const f of[b.base,b.pivotAxle,b.journal,...meshes(b.support)])pairs.push([o,f]);
-  for(const{flap,mount}of b.flaps)for(const f of[b.conduitWalls,b.conduitBack,mount.children[1]])pairs.push([flap,f]);
-  for(const water of b.waterSlugs)pairs.push([water,b.conduitWalls],[water,b.conduitBack]);
+test('461 flaps, pins, braces and axle clear the finite two-layer pipe and box walls across the swing',()=>fixture(gutter,461,(m,d)=>{
+  const b=d.blocks,c=b.conduit,pairs=[];
+  const walls=[c.frontWalls,c.frontBack,c.backWalls,c.backBack,c.boxBackWalls,c.boxMiddleWalls,c.boxFrontWalls];
+  for(const{flap,pin}of b.flaps){for(const w of walls)pairs.push([flap,w]);pairs.push([flap,pin]);}
+  for(const w of [...walls,b.braces])for(const f of[b.pivotAxle,b.crossHead,...b.posts])pairs.push([w,f]);
   sweep(m,d,pairs);
-  const surface=solidSurface(b.conduitWalls.geometry);
-  for(const p of d.geometry.localPathPoints)assert.equal(surface.inside(p),false,'every junction is an actual passage');
-  for(const p of d.geometry.junctionLocalPoints)assert.equal(solidSurface(b.conduitBack.geometry).inside(p.clone().setZ(-.20)),true,'finite chamber back remains');
+  const front=solidSurface(c.frontWalls.geometry),back=solidSurface(c.backWalls.geometry);
+  for(const path of d.geometry.paths)path.points.forEach((p,i)=>{
+    const layer=path.layers[Math.min(i,path.layers.length-1)],z=(d.geometry.layers[layer].z0+d.geometry.layers[layer].z1)/2;
+    assert.equal((layer==='front'?front:back).inside(p.clone().setZ(z)),false,'every centre-line corner is an open passage');
+  });
 }));
 
 test('460 water remains inside its finite V floor and side plates at every fill pose',()=>fixture(scoop,460,(m,d)=>{

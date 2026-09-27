@@ -301,8 +301,9 @@ test('movement 448 update maps linkage, piston, checks, and water extents exactl
       `rod piston endpoint at ${phase}`);
     vectorNear(endpoints.lever, state.leverPin.clone().setZ(.27), 8e-16,
       `rod lever endpoint at ${phase}`);
-    assert.equal(blocks.spoutWater.visible,
-      state.dischargeFlowRate > 0.002);
+    // Pass 69: one stream runs through the spout and falls from its lip,
+    // present exactly while the upstroke discharges.
+    assert.equal(blocks.spill.visible, state.dischargeFlowRate > 0);
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
       fixedPositions[index],

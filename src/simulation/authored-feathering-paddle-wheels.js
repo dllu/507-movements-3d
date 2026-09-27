@@ -283,7 +283,7 @@ function featheringPaddleWheel(movement) {
     armBar.position.x = armRadiusSceneUnit / 2;
     const pivot = addRole(new THREE.Mesh(
       new THREE.CylinderGeometry(0.18, 0.18, 1.68, 24),
-      darkMaterial,
+      mainMaterial, // the arm's own pivot journal, not a black disc
     ), `bucket-pivot-on-arm-b-${index + 1}`);
     pivot.rotation.x = Math.PI / 2;
     pivot.position.set(armRadiusSceneUnit, 0, -.60);
@@ -366,13 +366,13 @@ function featheringPaddleWheel(movement) {
     crank.userData.addPinEye(0, .184, .24);
     const bucketPivotBoss = addRole(new THREE.Mesh(
       boredCylinderGeometry(.24, .184, .04),
-      darkMaterial,
+      bucketMaterial // part of bucket a and crank c (not a black disc),
     ), `bucket-a-pivot-boss-${index + 1}`);
     bucketPivotBoss.rotation.x = Math.PI / 2;
     bucketPivotBoss.position.z = .125;
     const crankEndBoss = addRole(new THREE.Mesh(
       boredCylinderGeometry(.15, .109, .04),
-      darkMaterial,
+      bucketMaterial,
     ), `crank-c-control-end-${index + 1}`);
     crankEndBoss.rotation.x = Math.PI / 2;
     crankEndBoss.position.set(eccentricOffsetSceneUnit, 0, .125);
@@ -389,7 +389,7 @@ function featheringPaddleWheel(movement) {
 
   const bearing = addRole(new THREE.Mesh(
     boredCylinderGeometry(.52, mainShaftRadiusSceneUnit + .004, .18).rotateX(Math.PI / 2),
-    darkMaterial,
+    supportMaterial // Brown's plain hub ring, not a black rim,
   ), 'fixed-main-shaft-front-bearing');
   bearing.position.copy(rotorCenter);
   bearing.position.z = 0.93;

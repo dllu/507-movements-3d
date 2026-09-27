@@ -2,354 +2,149 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
+import polygonClipping from 'polygon-clipping';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { oldRotaryPumpSections } from '../src/simulation/authored-old-rotary-pumps.js';
 
-const catalog = JSON.parse(await readFile(
-  new URL('../src/data/movements.json', import.meta.url),
-  'utf8',
-));
-
-const ARCHETYPE =
-  'old-two-hinged-vane-rotary-pump-with-fixed-abutment-lower-inlet-and-upper-outlet';
+const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
+const movement = catalog.movements[454];
+const model = createMovementModel(movement);
+const data = model.root.userData;
+const { blocks, geometry: g } = data;
 const FULL_TURN = Math.PI * 2;
 
-function near(actual, expected, tolerance, message) {
-  assert.ok(
-    Math.abs(actual - expected) <= tolerance,
-    `${message}: expected ${expected}, received ${actual}`,
-  );
-}
+const inside = (p, ring) => {
+  let c = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j];
+    if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / (b[1] - a[1]) + a[0]) c = !c;
+  }
+  return c;
+};
+const insideMulti = (p, multi) => multi.some(([outer, ...holes]) => inside(p, outer) && !holes.some(h => inside(p, h)));
+const rot = ([x, y], a) => [x * Math.cos(a) - y * Math.sin(a), x * Math.sin(a) + y * Math.cos(a)];
+const areaOf = multi => multi.reduce((sum, [outer, ...holes]) => {
+  const ringArea = ring => Math.abs(ring.reduce((s, p, i) => {
+    const q = ring[(i + 1) % ring.length]; return s + p[0] * q[1] - q[0] * p[1];
+  }, 0) / 2);
+  return sum + ringArea(outer) - holes.reduce((h, ring) => h + ringArea(ring), 0);
+}, 0);
 
-function vectorNear(actual, expected, tolerance, message) {
-  near(actual.distanceTo(expected), 0, tolerance, message);
-}
-
-function angleNear(actual, expected, tolerance, message) {
-  const error = THREE.MathUtils.euclideanModulo(
-    actual - expected + Math.PI,
-    FULL_TURN,
-  ) - Math.PI;
-  near(error, 0, tolerance, message);
-}
-
-function disposeModel(root) {
-  const geometries = new Set();
-  const materials = new Set();
-  root.traverse((object) => {
-    if (object.geometry) geometries.add(object.geometry);
-    if (Array.isArray(object.material)) {
-      object.material.forEach((material) => materials.add(material));
-    } else if (object.material) materials.add(object.material);
-  });
-  geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((material) => material.dispose());
-}
-
-test('movement 455 has one fixed circular casing, one two-valve rotor, two ports, and one fixed closing abutment', () => {
-  const movement = catalog.movements[454];
-  const model = createMovementModel(movement);
-  const data = model.root.userData;
-  const { blocks, degreesOfFreedom, geometry } = data;
-
+test('455 is one casing with its abutment, a two-valve mutilated drum and two round ports', () => {
   assert.equal(movement.id, 455);
-  assert.equal(movement.number, '455');
-  assert.equal(movement.title, 'Old rotary pump');
-  assert.equal(movement.archetype, ARCHETYPE);
-  assert.equal(movement.fidelity, 'authored');
-  assert.equal(data.archetype, ARCHETYPE);
-  assert.equal(data.fidelity, 'authored');
-  assert.equal(blocks.casing.parent, model.root);
+  assert.equal(data.archetype, movement.archetype);
   assert.equal(blocks.rotor.parent, model.root);
-  assert.equal(blocks.abutment.parent, model.root);
-  assert.equal(blocks.inlet.parent, model.root);
-  assert.equal(blocks.outlet.parent, model.root);
   assert.equal(blocks.valves.length, 2);
-  assert.equal(blocks.valves[0].carrier.parent, blocks.rotor);
-  assert.equal(blocks.valves[1].carrier.parent, blocks.rotor);
-  assert.equal(blocks.valves[0].hinge.parent, blocks.valves[0].carrier);
-  assert.equal(blocks.valves[1].hinge.parent, blocks.valves[1].carrier);
-  near(blocks.valves[1].carrier.rotation.z, Math.PI, 0,
-    'diametrically opposite second carrier');
-  assert.equal(geometry.valveCount, 2);
-  assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
-  assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
-  assert.equal(degreesOfFreedom.valve1Independent, false);
-  assert.equal(degreesOfFreedom.valve2Independent, false);
-
+  for (const [i, valve] of blocks.valves.entries()) {
+    assert.equal(valve.carrier.parent, blocks.rotor);
+    assert.equal(valve.hinge.parent, valve.carrier);
+    assert.equal(valve.carrier.rotation.z, i * Math.PI);
+  }
   const roles = [];
-  model.root.traverse((object) => {
-    if (object.userData.role) roles.push(object.userData.role);
-  });
-  for (const role of [
-    'fixed-circular-outer-cylinder-casing',
-    'central-two-valve-rotor-turning-clockwise',
-    'hinged-sweeping-valve-1',
-    'hinged-sweeping-valve-2',
-    'fixed-lower-side-abutment-folding-each-passing-valve',
-    'fixed-lower-aperture-water-entrance',
-    'fixed-upper-aperture-water-exit',
-  ]) assert.ok(roles.includes(role), role);
-  disposeModel(model.root);
+  model.root.traverse(o => o.userData.role && roles.push(o.userData.role));
+  for (const role of ['fixed-outer-cylinder-with-abutment-and-port-pipes', 'mutilated-hollow-drum-with-two-chordal-flats',
+    'segment-valve-1-with-drum-radius-arc-back', 'segment-valve-2-with-drum-radius-arc-back',
+    'water-filling-annulus-between-drum-and-casing', 'water-rising-in-lower-entrance-pipe', 'water-leaving-by-upper-exit-pipe'])
+    assert.ok(roles.includes(role), role);
+  assert.ok(!roles.some(r => /foundation|foot|index|hexagon/.test(r)), 'no undrawn base, feet, index or hexagonal rotor');
 });
 
-test('movement 455 source record preserves the port, wall-fit, and abutment claims while disclosing the fold reconstruction', () => {
-  const movement = catalog.movements[454];
-  const model = createMovementModel(movement);
-  const { dynamics, sourceAnimation, sourceReference } = model.root.userData;
-  const evidence = sourceReference.constructionEvidence;
-  const plate = sourceReference.brownPlate455;
-
-  assert.equal(movement.sourceUrl, 'https://507movements.com/mm_455.html');
-  assert.equal(sourceReference.officialPage, movement.sourceUrl);
-  assert.match(movement.description, /Old rotary pump/);
-  assert.match(movement.description,
-    /Lower aperture entrance.*upper for exit/);
-  assert.match(movement.description,
-    /Central part revolves with its valves/);
-  assert.match(movement.description,
-    /fit accurately to inner surface of outer cylinder/);
-  assert.match(movement.description,
-    /projection.*abutment to close the valves/);
-  assert.equal(sourceAnimation.available, false);
-  assert.equal(sourceAnimation.officialCanvasModelPresent, false);
-  assert.equal(sourceAnimation.officialPageMarksAnimationUnavailable, true);
-  assert.equal(sourceAnimation.sourcePrescribedAbsoluteTiming, false);
-  assert.equal(
-    dynamics.fullFluidPressureLeakageValveImpactFrictionTorqueAndCavitationModeled,
-    false,
-  );
-  assert.match(dynamics.flowModel,
-    /captioned direction only.*not a pressure-resolved performance prediction/);
-  assert.match(dynamics.valveContactModel,
-    /baked polygon-contact closing branch.*positive contact moment arm.*prescribed hold and quintic return/);
-  assert.equal(plate.imageWidth, 525);
-  assert.equal(plate.imageHeight, 525);
-  assert.deepEqual(plate.approximateCasingCenterPixels, [276, 250]);
-  assert.deepEqual(plate.approximateRotorLeftHingePixels, [191, 237]);
-  assert.deepEqual(plate.approximateRotorRightHingePixels, [354, 244]);
-  assert.deepEqual(plate.approximateAbutmentCenterPixels, [344, 349]);
-  assert.deepEqual(plate.approximateLowerEntranceCenterPixels, [259, 438]);
-  assert.deepEqual(plate.approximateUpperExitCenterPixels, [434, 116]);
-  assert.equal(evidence.explicitInBrownDescription.length, 5);
-  assert.match(evidence.engravingEvidence,
-    /circular fixed casing.*two opposite hinge pins.*bottom inlet arrow.*upper-right outlet arrow.*hatched fixed wedge/);
-  assert.match(evidence.reconstructionDisclosure,
-    /no casing depth, rotor speed, valve fold law.*independently engineered/);
-  disposeModel(model.root);
-});
-
-test('movement 455 source pose has two fully extended wall-fitting valves and clockwise transport', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { geometry, sourcePose, stateAtInputAngle } = model.root.userData;
-  const source = stateAtInputAngle(0);
-
-  assert.equal(sourcePose.clockwise, true);
-  near(sourcePose.rotorAngle, 0, 0, 'source rotor angle');
-  assert.deepEqual(sourcePose.valveFoldFractions, [0, 0]);
-  near(sourcePose.valveHingeAngles[1] - sourcePose.valveHingeAngles[0],
-    Math.PI, 0, 'source hinges opposite');
-  assert.equal(source.clockwise, true);
-  assert.ok(source.rotorAngularSpeed < 0);
-  assert.equal(source.foldedValveIndex, null);
-  for (const valve of source.valves) {
-    assert.equal(valve.sealedToCasing, true);
-    near(valve.flapAngle, 0, 0, 'source blade radial');
-    near(valve.tipRadius, geometry.casingInnerRadius, 4e-16,
-      'source blade reaches wall');
+test('455 folded valves close the mutilated drum into a perfect cylinder', () => {
+  const { valve, recess } = oldRotaryPumpSections();
+  const drum = blocks.rotorBody.geometry.userData.plate.polygons;
+  const valves = [0, Math.PI].map(a => valve.map(p => rot(p, a)));
+  // The valve back is an arc of the drum radius.
+  const back = valve.filter(p => Math.hypot(...p) > g.rotorRadius - 1e-9);
+  assert.ok(back.length > 60, 'valve back sampled on the drum circle');
+  for (const p of back) assert.ok(Math.abs(Math.hypot(...p) - g.rotorRadius) < 1e-9);
+  // Just inside the drum circle every direction is metal (drum or folded
+  // valve), just outside none is: the closed rotor is a whole cylinder,
+  // except the small relief groove (under 4 degrees) that clears each
+  // valve heel's swing just ahead of its knuckle, and a hairline at each
+  // valve's free edge.
+  let leaks = 0;
+  for (let i = 0; i < 3600; i += 1) {
+    const a = i * FULL_TURN / 3600;
+    const offset = h => THREE.MathUtils.euclideanModulo(a - h + Math.PI, FULL_TURN) - Math.PI;
+    const near = [0, Math.PI].some(h => offset(h) > -0.07 && offset(h) < 0.01) || [g.flatSpan, Math.PI + g.flatSpan].some(h => Math.abs(offset(h)) < 0.02);
+    const within = [(g.rotorRadius - 0.01) * Math.cos(a), (g.rotorRadius - 0.01) * Math.sin(a)];
+    const beyond = [(g.rotorRadius + 0.002) * Math.cos(a), (g.rotorRadius + 0.002) * Math.sin(a)];
+    const metal = insideMulti(within, drum) || valves.some(v => inside(within, v));
+    assert.ok(!insideMulti(beyond, drum) && !valves.some(v => inside(beyond, v)), `nothing proud of the cylinder at ${i}`);
+    if (!metal) { leaks += 1; assert.ok(near, `closed cylinder whole at ${(a * 180 / Math.PI).toFixed(1)} degrees`); }
   }
-  disposeModel(model.root);
+  assert.ok(leaks < 70, `groove and hairlines only: ${leaks}`);
+  // The recess is exactly the valve plus running clearance.
+  assert.ok(valve.every(p => inside(p, recess) || Math.hypot(...p) >= g.rotorRadius - 1e-9));
 });
 
-test('movement 455 rotor keeps its valves diametrically opposite and wall-sealed outside the abutment sector', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { geometry, stateAtInputAngle } = model.root.userData;
-  for (let sample = 0; sample < 30000; sample += 1) {
-    const state = stateAtInputAngle(FULL_TURN * sample / 30000);
-    angleNear(
-      state.valves[1].hingeAngle - state.valves[0].hingeAngle,
-      Math.PI,
-      0,
-      `opposite hinges at ${sample}`,
-    );
-    for (const valve of state.valves) {
-      near(valve.hingePoint.length(), geometry.rotorRadius, 4e-16,
-        `fixed hinge radius at ${sample}`);
-      if (valve.sealedToCasing) {
-        near(valve.tipRadius, geometry.casingInnerRadius, 7e-16,
-          `wall fit outside abutment at ${sample}`);
-        near(valve.flapAngle, 0, 0,
-          `radial valve outside abutment at ${sample}`);
+test('455 valves stay inside the chamber, bear on the bore away from the abutment, and one always seals', () => {
+  const { valve } = oldRotaryPumpSections();
+  const pivot = g.pivot;
+  let previous = null;
+  for (let i = 0; i <= 3600; i += 1) {
+    const state = data.stateAtTime(g.cycleDuration * i / 3600);
+    const sealing = state.valves.filter(v => Math.abs(v.tipRadius - (g.casingInnerRadius - g.tipClearance)) < 1e-6);
+    assert.ok(sealing.length >= 1, `a valve bears on the bore at ${i}`);
+    for (const v of state.valves) {
+      assert.ok(v.open >= 0 && v.open <= g.maximumOpen + 1e-12);
+      const world = valve.map(p => rot(rot([p[0] - pivot[0], p[1] - pivot[1]], -v.open).map((x, k) => x + pivot[k]), v.hingeAngle));
+      for (const p of world) {
+        assert.ok(Math.hypot(...p) <= g.casingInnerRadius - g.tipClearance + 1e-9, `inside bore at ${i}`);
+        assert.ok(!inside(p, g.abutmentRing), `clear of abutment at ${i}`);
       }
+      assert.ok(!inside(g.abutmentCorner, world), `abutment corner outside valve at ${i}`);
+      if (previous) assert.ok(Math.abs(v.open - previous[v.index]) < 0.02, `continuous opening at ${i}`);
+    }
+    previous = state.valves.map(v => v.open);
+  }
+  const a = data.stateAtTime(0), b = data.stateAtTime(g.cycleDuration);
+  for (const k of [0, 1]) assert.ok(Math.abs(a.valves[k].open - b.valves[k].open) < 1e-9, 'seamless loop');
+  // Each valve is folded home while its recess passes the abutment corner.
+  const cornerAngle = Math.atan2(g.abutmentCorner[1], g.abutmentCorner[0]);
+  for (let i = 0; i < 720; i += 1) {
+    const state = data.stateAtTime(g.cycleDuration * i / 720);
+    for (const v of state.valves) {
+      const behind = THREE.MathUtils.euclideanModulo(cornerAngle - v.hingeAngle, FULL_TURN);
+      if (behind > 0.12 && behind < g.flatSpan - 0.12) assert.ok(v.open < THREE.MathUtils.degToRad(12), `valve folded past the corner at ${i}`);
     }
   }
-  disposeModel(model.root);
 });
 
-test('movement 455 each folding valve remains inside the fixed abutment clearance envelope and they never fold together', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { geometry, stateAtInputAngle } = model.root.userData;
-  let foldedSamples = 0;
-  let fullyFoldedSamples = 0;
-  for (let sample = 0; sample < 60000; sample += 1) {
-    const state = stateAtInputAngle(FULL_TURN * sample / 60000);
-    const folded = state.valves.filter(({ closedByAbutment }) =>
-      closedByAbutment);
-    assert.ok(folded.length <= 1,
-      `at most one vane in the closing/return sequence at ${sample}`);
-    for (const valve of folded) {
-      foldedSamples += 1;
-      assert.ok(valve.tipRadius <= valve.abutmentInnerRadius + 1e-14,
-        `valve tip clears fixed wedge at ${sample}`);
-      assert.ok(valve.tipRadius <= geometry.casingInnerRadius + 1e-14);
-      if (valve.foldFraction === 1) {
-        fullyFoldedSamples += 1;
-        near(valve.flapAngle, geometry.maximumFoldAngle, 0,
-          `full fold angle at ${sample}`);
-        assert.ok(valve.tipRadius < geometry.casingInnerRadius - 0.4);
+test('455 water in the chamber is conserved: recess water plus the valve inside it fills the recess', () => {
+  const { recessInDrum, valve } = oldRotaryPumpSections();
+  const pivot = g.pivot;
+  const recessArea = areaOf(recessInDrum);
+  for (let i = 0; i < 240; i += 1) {
+    const time = g.cycleDuration * i / 240;
+    model.update(time);
+    const state = data.stateAtTime(time);
+    for (const [k, water] of blocks.pocketWater.entries()) {
+      const open = state.valves[k].open;
+      const moved = valve.map(p => rot([p[0] - pivot[0], p[1] - pivot[1]], -open).map((x, j) => x + pivot[j]));
+      const valveInside = areaOf(polygonClipping.intersection([[[...moved, moved[0]]]], recessInDrum));
+      // Water area from the front cap of the in-place buffer.
+      const P = water.geometry.attributes.position.array, count = water.geometry.drawRange.count;
+      let waterArea = 0;
+      for (let t = 0; t < Math.min(count, P.length / 3); t += 3) {
+        if (Math.abs(P[3 * t + 2] - P[3 * t + 5]) > 1e-9 || Math.abs(P[3 * t + 2] - P[3 * t + 8]) > 1e-9) continue;
+        if (P[3 * t + 2] < 0) continue;
+        waterArea += Math.abs((P[3 * t + 3] - P[3 * t]) * (P[3 * t + 7] - P[3 * t + 1]) - (P[3 * t + 6] - P[3 * t]) * (P[3 * t + 4] - P[3 * t + 1])) / 2;
       }
+      assert.ok(Math.abs(waterArea + valveInside - recessArea) < 0.02 * recessArea,
+        `recess ${k} at ${i}: water ${waterArea} + valve ${valveInside} vs ${recessArea}`);
     }
   }
-  assert.ok(foldedSamples > 0);
-  assert.ok(fullyFoldedSamples > 0);
-  disposeModel(model.root);
 });
 
-test('movement 455 contact closure and release remain continuous with a smooth prescribed return', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { foldProfileAtHingeAngle, geometry } = model.root.userData;
-  for(let i=0;i<=3600;i++){
-    const angle=-i*Math.PI/1800,before=foldProfileAtHingeAngle(angle-1e-8),after=foldProfileAtHingeAngle(angle+1e-8);
-    assert.ok(Math.abs(before.fraction-after.fraction)<1e-6,'continuous finite contact branch');
+test('455 only the drum and its valves move', () => {
+  const fixed = [blocks.casing, blocks.rearCover, blocks.annulusWater];
+  const before = fixed.map(b => b.matrixWorld.clone());
+  for (const phase of [0.1, 0.37, 0.8]) {
+    model.update(g.cycleDuration * phase);
+    model.root.updateMatrixWorld(true);
+    fixed.forEach((b, k) => assert.ok(b.matrixWorld.equals(before[k])));
+    assert.ok(Math.abs(blocks.rotor.rotation.z - data.stateAtTime(g.cycleDuration * phase).rotorAngle) < 1e-12);
   }
-  for(const degrees of [145,178]){
-    const profile=foldProfileAtHingeAngle(-degrees*Math.PI/180);
-    near(profile.fractionDerivativeByTravel,0,1e-12,'zero return endpoint speed');
-    near(profile.fractionSecondDerivativeByTravel,0,1e-12,'zero return endpoint acceleration');
-  }
-  const midHoldAngle=geometry.abutmentStartAngle-(geometry.foldInTravel+geometry.foldHoldEndTravel)/2;
-  near(foldProfileAtHingeAngle(midHoldAngle).fraction,1,0,'closed hold');
-  disposeModel(model.root);
-});
-
-test('movement 455 second valve repeats the first valve fold exactly one half-turn later', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { stateAtInputAngle } = model.root.userData;
-  for (let sample = 0; sample <= 20000; sample += 1) {
-    const angle = Math.PI * sample / 20000;
-    const first = stateAtInputAngle(angle).valves[0];
-    const secondLater = stateAtInputAngle(angle + Math.PI).valves[1];
-    near(secondLater.foldFraction, first.foldFraction, 2e-13, // steeper square-block branch
-      `half-turn fold repeat at ${sample}`);
-    near(secondLater.flapAngle, first.flapAngle, 4e-14,
-      `half-turn flap-angle repeat at ${sample}`);
-    near(secondLater.tipRadius, first.tipRadius, 3e-14,
-      `half-turn tip repeat at ${sample}`);
-  }
-  disposeModel(model.root);
-});
-
-test('movement 455 flap angular speed and acceleration match the C2 profile derivatives', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { geometry, stateAtInputAngle } = model.root.userData;
-  const step = 1e-6;
-  for (const angle of [0.24, 0.36, 1.27, 1.45]) {
-    const before = stateAtInputAngle(angle - step).valves[0];
-    const state = stateAtInputAngle(angle).valves[0];
-    const after = stateAtInputAngle(angle + step).valves[0];
-    const numericSpeed = (after.flapAngle - before.flapAngle)
-      / (2 * step) * geometry.inputAngularSpeed;
-    near(state.flapAngularSpeed, numericSpeed, 3e-9,
-      `flap speed at ${angle}`);
-    const numericAcceleration = (
-      after.flapAngularSpeed - before.flapAngularSpeed
-    ) / (2 * step) * geometry.inputAngularSpeed;
-    near(state.flapAngularAcceleration, numericAcceleration, 2e-8,
-      `flap acceleration at ${angle}`);
-  }
-  disposeModel(model.root);
-});
-
-test('movement 455 schematic swept-rate diagnostic follows sealing fraction without claiming pressure performance', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { geometry, stateAtInputAngle } = model.root.userData;
-  for (let sample = 0; sample <= 16000; sample += 1) {
-    const state = stateAtInputAngle(FULL_TURN * sample / 16000);
-    assert.ok(state.activeSealFactor >= 1 - 1e-14);
-    assert.ok(state.activeSealFactor <= 2 + 1e-14);
-    near(state.schematicSweptFlowRate,
-      geometry.sweptVolumePerRadian
-        * geometry.inputAngularSpeed * state.activeSealFactor,
-    2e-15, `schematic sweep diagnostic at ${sample}`);
-  }
-  const source = stateAtInputAngle(0);
-  near(source.activeSealFactor, 2, 0, 'two source seals');
-  near(source.schematicSweptFlowRate,
-    2 * geometry.sweptVolumePerRadian * geometry.inputAngularSpeed,
-  0, 'source sweep diagnostic');
-  disposeModel(model.root);
-});
-
-test('movement 455 renderer rotates only the rotor and dependent hinges while casing, ports, and abutment remain fixed', () => {
-  const model = createMovementModel(catalog.movements[454]);
-  const { blocks, geometry, stateAtTime, update } = model.root.userData;
-  const fixedBlocks = [blocks.base, blocks.casing, blocks.abutment,
-    blocks.inlet, blocks.outlet, blocks.frontCover];
-  const fixedPositions = fixedBlocks.map((block) => block.position.clone());
-  const rotationVector = (block) => new THREE.Vector3(
-    block.rotation.x,
-    block.rotation.y,
-    block.rotation.z,
-  );
-  const fixedRotations = fixedBlocks.map(rotationVector);
-
-  for (const phase of [0, 0.08, 0.16, 0.25, 0.5, 0.58, 0.66,
-    0.75, 1]) {
-    const time = geometry.cycleDuration * phase;
-    const state = stateAtTime(time);
-    update(time);
-    near(blocks.rotor.rotation.z, state.rotorAngle, 0,
-      `rotor angle at ${phase}`);
-    state.valves.forEach((valve, index) => near(
-      blocks.valves[index].hinge.rotation.z,
-      valve.flapAngle,
-      0,
-      `valve ${index + 1} fold at ${phase}`,
-    ));
-    fixedBlocks.forEach((block, index) => {
-      vectorNear(block.position, fixedPositions[index], 0,
-        `fixed position at ${phase}`);
-      vectorNear(rotationVector(block), fixedRotations[index], 0,
-        `fixed orientation at ${phase}`);
-    });
-  }
-  const source = stateAtTime(0);
-  const closure = stateAtTime(geometry.cycleDuration);
-  angleNear(closure.rotorAngle, source.rotorAngle, 0,
-    'rotor pose closure');
-  assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, 6);
-  assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
-  disposeModel(model.root);
-});
-
-test('movement 455 has finite render bounds and movement 507 remains the next authored frontier', () => {
-  const movement455 = catalog.movements[454];
-  const movement507 = catalog.movements[506];
-  const model455 = createMovementModel(movement455);
-  const model507 = createMovementModel(movement507);
-  model455.root.updateMatrixWorld(true);
-  const bounds = new THREE.Box3().setFromObject(model455.root);
-
-  for (const value of [bounds.min.x, bounds.min.y, bounds.min.z,
-    bounds.max.x, bounds.max.y, bounds.max.z]) assert.ok(Number.isFinite(value));
-  assert.ok(bounds.max.x > bounds.min.x);
-  assert.ok(bounds.max.y > bounds.min.y);
-  assert.ok(bounds.max.z > bounds.min.z);
-  assert.equal(movement455.fidelity, 'authored');
-  assert.equal(movement507.id, 507);
-  assert.equal(movement507.fidelity, 'authored');
-  assert.equal(movement507.archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
-  assert.equal(model507.root.userData.fidelity, 'authored');
-  assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
-  disposeModel(model455.root);
-  disposeModel(model507.root);
+  assert.ok(data.stateAtTime(0).rotorAngularSpeed < 0, 'clockwise, entrance round the left to the exit');
 });

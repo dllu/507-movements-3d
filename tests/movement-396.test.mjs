@@ -84,12 +84,11 @@ test('movement 396 is Reed’s one escape wheel, one balance, and opposite-side 
     'balance-staff-b',
     'balance-roller-h',
     'roller-impulse-pin-i',
-    'chronometer-impulse-pallet-j-fast-on-balance-staff',
+    'chronometer-impulse-pallet-j-with-its-arm-on-balance-staff',
     'pivoted-crooked-lever-C-with-anchor-crosspiece-h',
     'lever-C-principal-arm-with-crook-d-around-wheel-staff',
-    'lever-fork-e-prong-around-roller-pin-i',
-    'chronometer-detent-only-pallet-f',
-    'combined-detent-and-lever-impulse-pallet-g',
+    'lever-fork-e-slot-around-roller-pin-i',
+    'one-piece-anchor-cross-piece-h-with-pallets-g-and-f',
     'lever-guard-pin-k-against-balance-roller-h',
     'fixed-banking-pin-l',
   ]) assert.ok(roles.includes(role), role);
@@ -189,8 +188,10 @@ test('movement 396 follows patent figures 1-3: g unlocks, supports the lever imp
     timeline.balancePeriod * halfPhase / 2,
   );
   const before = sample(0.20);
-  const impulse = sample(0.40);
+  // The fork pin, not a timetable, now decides when g unlocks.
+  const impulse = Array.from({length: 2000}, (_, i) => sample(i / 2000)).find((s) => s.leverImpulseActive);
   const after = sample(0.80);
+  assert.ok(impulse, 'a lever impulse occurs');
 
   assert.equal(before.halfBeatIndex, 0);
   assert.equal(before.activeLockPallet, 'g');
@@ -222,8 +223,9 @@ test('movement 396 follows patent figures 3-4-1: f unlocks, j receives direct im
     timeline.balancePeriod * (1 + halfPhase) / 2,
   );
   const before = sample(0.20);
-  const impulse = sample(0.535);
+  const impulse = Array.from({length: 4000}, (_, i) => sample(i / 4000)).find((s) => s.directImpulseActive);
   const after = sample(0.90);
+  assert.ok(impulse, 'a direct impulse occurs');
 
   assert.equal(before.halfBeatIndex, 1);
   assert.equal(before.activeLockPallet, 'f');

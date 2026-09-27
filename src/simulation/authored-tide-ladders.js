@@ -360,10 +360,11 @@ function makeFloatAssembly({
   // and the floating posts stepped on a thwart a little forward of
   // midships (about 42% of the boat from its bow). Pass 67: the posts
   // stand inboard of the rails and the boat hangs low under the stringers,
-  // so it is 2.1 long and about 1.1 broad, near Brown's size beside the
-  // ladder.
+  // so its beam need only take the posts. Pass 68: it is 1.68 long, Brown's
+  // 0.31 of the ladder's length (85 px beside 275 px on the upper figure),
+  // with the posts at 43% from the bow as he draws them.
   const posts = endFrame.userData.posts;
-  const bow = -0.88, stern = 1.22, wall = 0.05, sheerY = -0.42, depth = 0.5;
+  const bow = -0.72, stern = 0.96, wall = 0.05, sheerY = -0.42, depth = 0.5;
   const center = (bow + stern) / 2, half = (stern - bow) / 2;
   // As Brown draws it, the boat lies well below the stringers' ends, so its
   // beam need only take the posts; the thwart at the widest station reaches
@@ -372,7 +373,7 @@ function makeFloatAssembly({
   const thwartS = Math.max(Math.abs(0.12 - center), Math.abs(-0.12 - center)) / half;
   const beam = (postOuterZ + 0.1 + wall) / Math.sqrt(1 - thwartS ** 4);
   const shape = boatHullShape({
-    bow, stern, beam, sheerY, sheerRise: 0.3, sternRise: 0.04, depth, wall,
+    bow, stern, beam, sheerY, sheerRise: 0.16, sternRise: 0.04, depth, wall,
     transomWidth: 0.62, transomDepth: 0.55,
   });
   const hull = new THREE.Mesh(openBoatHullGeometry(shape), floatMaterial);
@@ -521,12 +522,25 @@ function selfAdjustingWharfLadder(movement) {
   });
   root.add(floatAssembly);
 
-  // The tide is a body of water from its surface (the mesh origin, which
-  // follows the level) down to the bed at the wharf foot, not a thin sheet.
-  const water = new THREE.Mesh(
-    new THREE.BoxGeometry(7.2, 1, railHalfWidth * 2 + 2.8).translate(0, -0.5, 0),
-    waterVolumeMaterial(),
-  );
+  // Brown draws the tide only as a few surface lines, so it is shown as a
+  // shallow surface layer (the mesh origin follows the level): clear at the
+  // surface and fading out with depth just below the boat's keel, rather
+  // than a deep block down to the bed.
+  const waterSheetDepth = 0.26;
+  const waterGeometry = new THREE.BoxGeometry(7.2, waterSheetDepth, railHalfWidth * 2 + 2.8)
+    .translate(0, -waterSheetDepth / 2, 0);
+  {
+    const position = waterGeometry.attributes.position;
+    const colors = new Float32Array(position.count * 4);
+    for (let index = 0; index < position.count; index += 1) {
+      const depthFraction = -position.getY(index) / waterSheetDepth;
+      colors.set([1, 1, 1, 1 - depthFraction], index * 4);
+    }
+    waterGeometry.setAttribute('color', new THREE.BufferAttribute(colors, 4));
+  }
+  const waterMaterial = waterVolumeMaterial({opacity: 0.5});
+  waterMaterial.vertexColors = true;
+  const water = new THREE.Mesh(waterGeometry, waterMaterial);
   water.renderOrder = 1;
   // It runs into the slot between the wharf posts.
   water.position.x = dockLower.x + 0.18 - 3.6;
@@ -764,7 +778,6 @@ function selfAdjustingWharfLadder(movement) {
     const state = stateAtTime(time);
     floatAssembly.position.copy(state.floatLower);
     water.position.y = state.waterLevel;
-    water.scale.y = Math.max(0.001, state.waterLevel - tideBedY);
 
     for (let index = 0; index < 2; index += 1) {
       const side = index === 0 ? -1 : 1;

@@ -295,7 +295,8 @@ function eisachPotWheel(movement) {
     wheel.add(rim);
     return rim;
   });
-  const hub = cylinderAlongZ(0.44, rimDepth + 0.28, darkMaterial, 36);
+  // Hub and spokes are one rigid wheel with the rims (not black bars).
+  const hub = cylinderAlongZ(0.44, rimDepth + 0.28, wheelMaterial, 36);
   hub.geometry.dispose();
   hub.geometry = ring(.184,.44,-.80,.80);
   hub.rotation.set(0,0,0);
@@ -318,7 +319,7 @@ function eisachPotWheel(movement) {
     for (const z of [-rimDepth / 2]) {
       const spoke = new THREE.Mesh(
         new THREE.BoxGeometry(wheelRadius * 1.78, 0.075, 0.075),
-        darkMaterial,
+        wheelMaterial,
       );
       spoke.geometry.dispose();
       spoke.geometry = plate(polygonClipping.difference(poly([[-wheelRadius*.89,-.0375],[wheelRadius*.89,-.0375],[wheelRadius*.89,.0375],[-wheelRadius*.89,.0375]]),poly(circle([0,0],.184,128))),-.0375,.0375);

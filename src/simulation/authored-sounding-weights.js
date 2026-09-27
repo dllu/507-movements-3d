@@ -278,20 +278,31 @@ function seabedTriggeredSoundingWeight(movement) {
     catchFullyRetracted: 4.6,
     weightImpact: 5.3,
     probeDecompressed: 5.6,
-    // Loop reset. The view follows the rod throughout, so the rod stays in
-    // Brown's pose while it is hauled in: the bottom, with the spent weight
-    // left on it, sinks out of the bottom of the view. A fresh bored weight
-    // is then slid up along the rod's line from below, over the probe foot
-    // and past the still-retracted catch nose; the detent is released, the
-    // catch swings its nose out under the weight, and the weight is let
-    // down onto it. The re-armed rod is then lowered toward the bottom,
-    // which is still out of view. Nothing fades and nothing jumps in view.
-    rodRecovered: 7.2,
-    freshWeightRaised: 9.3,
-    detentReleased: 9.3,
-    catchSet: 9.8,
-    weightSeated: 10.3,
-    reloadedDescentBegins: 10.3,
+    // Loop reset. Until the probe has decompressed the view follows the rod.
+    // Then it holds on the bottom: the rod is hauled up out of the top of
+    // the view on its line, leaving the spent weight lying on the bottom in
+    // view. Above the view a fresh bored weight (the second of two that
+    // alternate) is brought to the rod, slid up over the probe foot and
+    // past the still-retracted catch nose; the detent is released, the
+    // catch swings its nose out under it and it is let down onto the nose.
+    // The re-armed rod is then lowered back into view with its weight
+    // seated while the view rises with it, so the bottom and the spent
+    // weight sink out of the bottom of the view as the rod settles into
+    // Brown's pose. Below the view the spent weight is carried aside to be
+    // the next fresh one, and the rod is lowered on toward the bottom with
+    // the view following it. Nothing fades, nothing jumps and nothing is
+    // lifted in view, and the view is never empty.
+    rodRecovered: 6.8,
+    freshWeightAtRod: 7.05,
+    freshWeightRaised: 7.4,
+    detentReleased: 7.4,
+    catchSet: 7.6,
+    weightSeated: 7.8,
+    reloadedDescentBegins: 7.8,
+    viewRiseBegins: 8.5,
+    rodSettled: 9.6,
+    spentWeightCleared: 10.0,
+    finalLoweringBegins: 10.0,
     cycleClosure: cyclePeriod,
   });
 
@@ -331,19 +342,35 @@ function seabedTriggeredSoundingWeight(movement) {
     + weightOpeningHalfHeight;
   const loadedWeightCenterY = recoveredBodyY
     + loadedWeightCenterRelativeY;
-  // How far the rod is hauled above its recovered pose while it is
-  // re-armed. The view follows the rod, so this is how far the bottom and
-  // the spent weight sink below Brown's pose: far enough that both are
-  // below the view at any aspect.
+  // How far the rod is hauled above its recovered pose once the re-armed
+  // rod has settled into Brown's pose in view: the view follows the rod, so
+  // this is how far the bottom and the spent weight have sunk below it, far
+  // enough that both are below the view at any aspect.
   const haulClearance = 4.5;
   const hauledBodyY = recoveredBodyY + haulClearance;
   const groundedWeightCenterY = seabedY + weightOpeningHalfHeight;
-  // The fresh weight starts on the rod's line well below the view, where
-  // the spent weight then lies (so that nothing jumps, even out of view),
-  // and is raised to this height above its seat, clear of the catch nose
-  // as it swings out.
-  const freshWeightStartDisplayY = groundedWeightCenterY - haulClearance;
-  const freshWeightStartRelativeY = freshWeightStartDisplayY - recoveredBodyY;
+  // While the rod is re-armed the view holds on the bottom (display offset
+  // bottomViewOffsetY) and the rod is hauled up to rearmBodyY, where the
+  // fresh weight can be brought under its foot wholly above the view.
+  const bottomViewOffsetY = recoveredBodyY - seabedContactBodyY;
+  const rearmBodyY = 13.0;
+  // The fresh weight arrives on the rod's line just below the probe foot,
+  // from where it waits (parked, clear of the view at any aspect, beside
+  // the rod's line); it is raised to this height above its seat, clear of
+  // the catch nose as it swings out.
+  const freshWeightStartRelativeY = probeFootContactLocalY
+    - weightOpeningHalfHeight - 0.25;
+  const freshWeightStartDisplayY = rearmBodyY + freshWeightStartRelativeY
+    + bottomViewOffsetY;
+  const spareWeightParkX = -16;
+  const spareWeightParkY = rearmBodyY + freshWeightStartRelativeY;
+  // Below the view the spent weight is lifted just clear of the bottom and
+  // carried aside to the park.
+  const spentWeightCarryY = groundedWeightCenterY + 0.3;
+  // The re-armed rod enters the view from above at this display height and
+  // settles into Brown's pose.
+  const rearmDisplayY = rearmBodyY + bottomViewOffsetY;
+  const displayRiseOffsetY = recoveredBodyY - hauledBodyY;
   const freshWeightLift = 0.12;
   const freshWeightRaisedRelativeY = loadedWeightCenterRelativeY
     + freshWeightLift;
@@ -416,6 +443,30 @@ function seabedTriggeredSoundingWeight(movement) {
   const modelGravity = 2 * (releaseWeightCenterY - groundedWeightCenterY)
     / fallDuration ** 2;
 
+  // The re-armed rod's height in the view while it is lowered back in.
+  const rodDisplayStateForTime = (cycleTime) => transitionState(
+    cycleTime,
+    timeline.reloadedDescentBegins,
+    timeline.rodSettled,
+    rearmDisplayY,
+    recoveredBodyY,
+  );
+  // The display offset during the reset, when the view does not simply
+  // follow the rod: held on the bottom, then rising with the re-armed rod
+  // until the bottom is well below the view.
+  const displayOffsetStateForTime = (cycleTime) => {
+    if (cycleTime < timeline.viewRiseBegins) {
+      return { acceleration: 0, value: bottomViewOffsetY, velocity: 0 };
+    }
+    return transitionState(
+      cycleTime,
+      timeline.viewRiseBegins,
+      timeline.rodSettled,
+      bottomViewOffsetY,
+      displayRiseOffsetY,
+    );
+  };
+
   const bodyStateForTime = (cycleTime, catchAngleState) => {
     if (cycleTime < timeline.loadedDwellEnd) {
       return { acceleration: 0, value: recoveredBodyY, velocity: 0 };
@@ -458,15 +509,29 @@ function seabedTriggeredSoundingWeight(movement) {
         timeline.probeDecompressed,
         timeline.rodRecovered,
         seabedContactBodyY,
-        hauledBodyY,
+        rearmBodyY,
       );
     }
     if (cycleTime < timeline.reloadedDescentBegins) {
+      return { acceleration: 0, value: rearmBodyY, velocity: 0 };
+    }
+    if (cycleTime < timeline.rodSettled) {
+      // The rod's display height and the display offset are prescribed; the
+      // rod's own height is their difference.
+      const display = rodDisplayStateForTime(cycleTime);
+      const offset = displayOffsetStateForTime(cycleTime);
+      return {
+        acceleration: display.acceleration - offset.acceleration,
+        value: display.value - offset.value,
+        velocity: display.velocity - offset.velocity,
+      };
+    }
+    if (cycleTime < timeline.finalLoweringBegins) {
       return { acceleration: 0, value: hauledBodyY, velocity: 0 };
     }
     return transitionState(
       cycleTime,
-      timeline.reloadedDescentBegins,
+      timeline.finalLoweringBegins,
       timeline.cycleClosure,
       hauledBodyY,
       recoveredBodyY,
@@ -525,13 +590,14 @@ function seabedTriggeredSoundingWeight(movement) {
         velocity: 0,
       };
     }
-    // A fresh weight is slid up the rod from below (by hand, unseen),
-    // held while the catch is set beneath it, and let down onto the catch.
+    // Above the view, a fresh weight is brought under the rod's foot
+    // (weightCenterXForTime), slid up the rod, held while the catch is set
+    // beneath it, and let down onto the catch.
     if (cycleTime < timeline.weightSeated) {
       const relative = cycleTime < timeline.freshWeightRaised
         ? transitionState(
           cycleTime,
-          timeline.rodRecovered,
+          timeline.freshWeightAtRod,
           timeline.freshWeightRaised,
           freshWeightStartRelativeY,
           freshWeightRaisedRelativeY,
@@ -561,6 +627,54 @@ function seabedTriggeredSoundingWeight(movement) {
     };
   };
 
+  // The fresh weight's sideways travel from its park to the rod's line.
+  const weightCenterXForTime = (cycleTime) => (
+    cycleTime >= timeline.rodRecovered && cycleTime < timeline.freshWeightAtRod
+      ? transitionState(
+        cycleTime,
+        timeline.rodRecovered,
+        timeline.freshWeightAtRod,
+        spareWeightParkX,
+        0,
+      ).value
+      : 0
+  );
+  // The other of the two weights: parked beside the rod's line (the next
+  // fresh weight) until the rod is recovered; after that, the spent weight,
+  // lying on the bottom until the bottom is below the view, then lifted
+  // clear and carried aside to the park, all out of view.
+  const parkPosition = new THREE.Vector3(spareWeightParkX, spareWeightParkY, 0);
+  const otherWeightPositionForTime = (cycleTime) => {
+    if (cycleTime < timeline.rodRecovered
+      || cycleTime >= timeline.spentWeightCleared) {
+      return parkPosition.clone();
+    }
+    if (cycleTime < timeline.rodSettled) {
+      return new THREE.Vector3(0, groundedWeightCenterY, 0);
+    }
+    const span = timeline.spentWeightCleared - timeline.rodSettled;
+    const lift = timeline.rodSettled + span * 0.2;
+    const aside = timeline.rodSettled + span * 0.7;
+    if (cycleTime < lift) {
+      return new THREE.Vector3(0, transitionState(cycleTime,
+        timeline.rodSettled, lift, groundedWeightCenterY, spentWeightCarryY).value, 0);
+    }
+    if (cycleTime < aside) {
+      return new THREE.Vector3(transitionState(cycleTime,
+        lift, aside, 0, spareWeightParkX).value, spentWeightCarryY, 0);
+    }
+    return new THREE.Vector3(spareWeightParkX, transitionState(cycleTime,
+      aside, timeline.spentWeightCleared, spentWeightCarryY, spareWeightParkY).value, 0);
+  };
+  const displayOffsetYForTime = (cycleTime, bodyY) => (
+    cycleTime >= timeline.probeDecompressed
+      && cycleTime < timeline.finalLoweringBegins
+      ? (cycleTime < timeline.reloadedDescentBegins
+        ? bottomViewOffsetY
+        : displayOffsetStateForTime(cycleTime).value)
+      : recoveredBodyY - bodyY
+  );
+
   const stageAtTime = (cycleTime) => {
     if (cycleTime < timeline.loadedDwellEnd) return 'loaded-dwell';
     if (cycleTime < timeline.seabedContact) return 'descent';
@@ -573,7 +687,10 @@ function seabedTriggeredSoundingWeight(movement) {
       return 'probe-decompression-with-detent-held';
     }
     if (cycleTime < timeline.rodRecovered) {
-      return 'rod-recovery-bottom-and-spent-weight-sink-from-view';
+      return 'rod-hauled-up-out-of-view-spent-weight-left-on-bottom';
+    }
+    if (cycleTime < timeline.freshWeightAtRod) {
+      return 'fresh-weight-brought-under-rod-above-view';
     }
     if (cycleTime < timeline.freshWeightRaised) {
       return 'fresh-weight-slid-up-past-retracted-catch';
@@ -583,6 +700,12 @@ function seabedTriggeredSoundingWeight(movement) {
     }
     if (cycleTime < timeline.weightSeated) {
       return 'fresh-weight-let-down-onto-catch';
+    }
+    if (cycleTime < timeline.rodSettled) {
+      return 're-armed-rod-lowered-into-view-bottom-sinks-away';
+    }
+    if (cycleTime < timeline.spentWeightCleared) {
+      return 'spent-weight-carried-aside-below-view';
     }
     return 're-armed-rod-lowered-toward-bottom-out-of-view';
   };
@@ -693,8 +816,15 @@ function seabedTriggeredSoundingWeight(movement) {
       supportRadialClearance: boreRadius - supportRadialReach,
       supportRadialReach,
       weightAcceleration: weight.acceleration,
+      weightCenterX: weightCenterXForTime(cycleTime),
       weightCenterY: weight.value,
       weightExternallySupported: weight.externallySupported,
+      displayOffsetY: displayOffsetYForTime(cycleTime, body.value),
+      otherWeightPosition: otherWeightPositionForTime(cycleTime),
+      spentWeightOnSeabed: cycleTime >= timeline.rodRecovered
+        && cycleTime < timeline.rodSettled,
+      // The sounding's index, consistent with cycleTime's own modulo.
+      soundingParity: positiveModulo(Math.round((time - cycleTime) / cyclePeriod), 2),
       weightLowerOpeningY,
       weightOnSeabed,
       weightUpperOpeningY,
@@ -1056,6 +1186,13 @@ function seabedTriggeredSoundingWeight(movement) {
     freshWeightStartRelativeY,
     haulClearance,
     hauledBodyY,
+    bottomViewOffsetY,
+    displayRiseOffsetY,
+    rearmBodyY,
+    rearmDisplayY,
+    spareWeightParkX,
+    spareWeightParkY,
+    spentWeightCarryY,
     probeFootContactLocalY,
     recoveredBodyY,
     releaseAngle,
@@ -1080,7 +1217,7 @@ function seabedTriggeredSoundingWeight(movement) {
     catchType: 'single-pivot-bell-crank-with-radial-support-nose',
     input: 'bottom-projecting-seabed-probe',
     loopReset:
-      'view-follows-rod-bottom-sinks-away-fresh-weight-slid-up-from-below-onto-reset-catch',
+      'view-holds-on-bottom-rod-hauled-out-and-re-armed-above-view-with-second-weight-lowered-back-seated-as-bottom-sinks-away',
     oneShotRelease: true,
     output: 'detachable-bored-sounding-weight',
     probeDegreeOfFreedom: 'one-vertical-prismatic-slide-relative-to-rod',
@@ -1266,27 +1403,49 @@ export function createAuthoredSoundingWeightMovement(movement) {
     const bridge = model.root.userData.releaseWorkingParts?.bridge;
     if (bridge) bridge.position.z = 0.42;
     // Brown draws the instrument alone, filling the plate, with no sea
-    // bottom. Display it in the rod's own frame, as if the view follows the
-    // rod throughout: the rod stays where the plate draws it while the
-    // contact line rises to meet the probe, and after release the line and
-    // the dropped weight sink out of the bottom of the view as the rod is
-    // hauled in. A fresh weight is then slid up onto the rod from below the
-    // view and the catch set under it; the re-armed rod is lowered toward
-    // the bottom while the bottom is still out of view. Relative motion,
-    // contacts and all model-frame kinematics are unchanged; only this
-    // display frame is offset.
+    // bottom. Display it in a moving frame, as if the view follows the rod:
+    // the rod stays where the plate draws it while the contact line rises to
+    // meet the probe and the weight drops. The view then holds on the bottom
+    // while the rod is hauled up out of it on its line, leaving the spent
+    // weight on the bottom in view; above the view the second of two
+    // alternating weights is threaded on and the catch set under it, and
+    // the re-armed rod is lowered back into view with its weight already
+    // seated while the view rises with it, so the bottom and the spent
+    // weight sink out of the bottom of the view. Below the view the spent
+    // weight is carried aside to wait as the next fresh weight, so the two
+    // weights swap roles each sounding and the display loop is two
+    // soundings long. Relative motion, contacts and all model-frame
+    // kinematics are unchanged; only this display frame is offset.
     const { root } = model;
     const displayFrame = new THREE.Group();
     displayFrame.userData.role = 'rod-following-display-frame';
     for (const child of [...root.children]) displayFrame.add(child);
     root.add(displayFrame);
-    const { recoveredBodyY } = root.userData.geometry;
+    const { weightAssembly } = root.userData.blocks;
+    const spareWeight = weightAssembly.clone(true);
+    spareWeight.userData.role = 'second-alternating-bored-sounding-weight';
+    displayFrame.add(spareWeight);
+    root.userData.blocks.spareWeightAssembly = spareWeight;
+    const weights = [weightAssembly, spareWeight];
+    const { timeline } = root.userData;
     const frameUpdate = model.update;
     model.update = (time) => {
       frameUpdate(time);
-      displayFrame.position.y = recoveredBodyY
-        - root.userData.kinematics.bodyPositionY;
+      const state = root.userData.kinematics;
+      displayFrame.position.y = state.displayOffsetY;
+      // Before recovery the working weight is this sounding's; after it,
+      // the fresh one is the other weight, which is next sounding's.
+      const own = state.soundingParity;
+      const working = state.cycleTime < timeline.rodRecovered ? own : 1 - own;
+      weights[working].position.set(state.weightCenterX, state.weightCenterY, 0);
+      weights[1 - working].position.copy(state.otherWeightPosition);
+      root.userData.activeWeightAssembly = weights[working];
     };
+    const periodSeconds = timeline.cycleClosure;
+    // Two soundings make one seamless loop (the weights swap roles); keep
+    // each sounding at its former eight-second display pace.
+    root.userData.animationTiming = { authoredCyclePeriod: 2 * periodSeconds };
+    root.userData.minimumDisplayCycleSeconds = 16;
     root.userData.displayFrame247 = displayFrame;
     // Fit the plate pose: rod broken off above the weight, weight, window
     // and probe foot, with the contact line just in view at its highest
@@ -1299,6 +1458,7 @@ export function createAuthoredSoundingWeightMovement(movement) {
     root.traverseVisible((object) => {
       if (!object.geometry) return;
       if (object.userData.role === 'sea-bottom-contact-plane') return;
+      for (let node = object; node; node = node.parent) if (node === spareWeight) return;
       fitBounds.union(partBounds.setFromObject(object, true));
     });
     const { loadedWeightCenterY, weightOuterRadius } = root.userData.geometry;

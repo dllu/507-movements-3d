@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import {createAuthoredMangleWheelMovement as mangle} from '../src/simulation/authored-mangle-wheels.js';
-import {createAuthoredParsonsRackMovement as parsons} from '../src/simulation/authored-parsons-racks.js';
 import {solidSurface,surfacePoints,surfaceTriangles} from './helpers/solid-surface.mjs';
 const fields=new WeakMap(),samples=new WeakMap(),faces=new WeakMap();
 const field=g=>{if(!fields.has(g))fields.set(g,solidSurface(g));return fields.get(g);};
@@ -32,7 +31,7 @@ function usefulFace(m,id){
  }
  return best;
 }
-for(const[id,create,cycle]of[[371,mangle,27],[394,parsons,8]])test(`${id} actual finite teeth clear in both directions through both terminal transfers`,()=>{
+for(const[id,create,cycle]of[[371,mangle,27]])test(`${id} actual finite teeth clear in both directions through both terminal transfers`,()=>{
  const m=create({id}),b=m.root.userData.blocks,pinion=id===371?b.pinion.userData.rotor.children[0]:b.outputRotor.userData.pinion;
  const teeth=id===371?[...b.frontFaceTeeth,...b.rearFaceTeeth]:b.rackCarrier.userData.teeth;
  const targets=id===371?[b.wheelBody,...teeth]:[b.rackCarrier.userData.outerRim,...teeth];let gap=Infinity;
@@ -55,16 +54,8 @@ test('371 finite working faces supply opposing input and useful output moments o
  const data=m.root.userData.finiteToothProfiles.data;assert.ok(data.profiles.every(p=>Math.min(...p.heights.flat())>.006));
  let count=0;m.root.traverseVisible(o=>{if(o.isMesh)count+=(o.geometry.index?.count??o.geometry.attributes.position.count)/3;});assert.ok(count<150000,`${count} triangles`);
 });
-test('394 generated straight flanks retain actual useful normal moments, with bounded handoff backlash',()=>{
- const m=parsons({id:394});let maximum=0;
- for(const phase of Array.from({length:128},(_,i)=>.005+.37*(i%64)/63+(i>=64?.5:0))){
-  m.update(8*phase);m.root.updateMatrixWorld(true);const witness=usefulFace(m,394);maximum=Math.max(maximum,witness.gap);
-  assert.ok(witness.gap<.008,JSON.stringify({phase,...witness}));assert.ok(witness.outputMoment>.03);assert.ok(witness.inputMoment<0);
- }
- console.log({parsonsUsefulFaceMaximum:maximum});assert.match(m.root.userData.reconstructionNote,/normal alone supplies no shaft torque/);
-});
 test('generated profiles preserve continuous prescribed motion and perform no per-frame mesh allocation',()=>{
- for(const[id,create,cycle]of[[371,mangle,27],[394,parsons,8]]){
+ for(const[id,create,cycle]of[[371,mangle,27]]){
   const m=create({id}),d=m.root.userData,objects=[];m.root.traverse(o=>objects.push([o,o.geometry]));
   for(let i=0;i<=128;i++){const s=d.stateAtTime(cycle*i/128),a=d.stateAtTime(cycle*i/128-1e-7),b=d.stateAtTime(cycle*i/128+1e-7);assert.ok(Number.isFinite(s.wheelAngle??s.outputAngle));const delta=(b.wheelAngle??b.outputAngle)-(a.wheelAngle??a.outputAngle);assert.ok(Math.abs(Math.atan2(Math.sin(delta),Math.cos(delta)))<1e-5);m.update(cycle*i/128);}
   const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,objects);

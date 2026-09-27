@@ -260,19 +260,28 @@ function eccentricLensPolisher(movement) {
     new THREE.BoxGeometry(0.42, tableBottomY - legBottomY, 0.34),
     frameMaterial,
   );
-  tableLeg.position.set(-1.86, (tableBottomY + legBottomY) / 2, 1.30);
+  // Leg and brace stand flush with the plank's front edge (z = 3.35 / 2).
+  tableLeg.position.set(-1.86, (tableBottomY + legBottomY) / 2, 1.675 - 0.17);
   tableLeg.userData.role = 'fixed-work-table-leg';
   frame.add(tableLeg);
-  const braceStart = new THREE.Vector3(-1.65, tableBottomY - 1.55, 1.30);
-  const braceEnd = new THREE.Vector3(0.90, tableBottomY - 0.02, 1.30);
-  const braceLength = braceStart.distanceTo(braceEnd);
+  // The brace is a straight strut whose ends are cut to sit flush on the
+  // leg's inner face and on the plank's underside, as Brown draws it.
+  const legFaceX = -1.86 + 0.21;
+  const braceAngle = Math.atan2(1.55, 2.55);
+  const braceWidth = 0.22;
+  const braceFootY = tableBottomY - 1.55 - braceWidth / (2 * Math.cos(braceAngle));
+  const braceHeadX = 0.90 + braceWidth / (2 * Math.sin(braceAngle));
+  const braceShape = new THREE.Shape([
+    new THREE.Vector2(legFaceX, braceFootY),
+    new THREE.Vector2(braceHeadX, tableBottomY),
+    new THREE.Vector2(braceHeadX - braceWidth / Math.sin(braceAngle), tableBottomY),
+    new THREE.Vector2(legFaceX, braceFootY + braceWidth / Math.cos(braceAngle)),
+  ]);
   const tableBrace = new THREE.Mesh(
-    new THREE.BoxGeometry(braceLength, 0.22, 0.26),
+    new THREE.ExtrudeGeometry(braceShape, { depth: 0.26, bevelEnabled: false })
+      .translate(0, 0, 1.675 - 0.26),
     frameMaterial,
   );
-  tableBrace.position.copy(braceStart).add(braceEnd).multiplyScalar(0.5);
-  tableBrace.rotation.z = Math.atan2(braceEnd.y - braceStart.y,
-    braceEnd.x - braceStart.x);
   tableBrace.userData.role = 'fixed-work-table-diagonal-brace';
   frame.add(tableBrace);
   const rearPost = new THREE.Mesh(

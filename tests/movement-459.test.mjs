@@ -181,7 +181,10 @@ test('movement 459 alternates contact-driven trips, free crossings, and right an
   assert.equal(leftDump.engagedWheel, null);
   near(leftDump.ropeSpeed, 0, 0, 'rope held while the worm crosses');
   near(leftDump.selectorX, 0, 2e-16, 'worm crossing center');
-  assert.ok(leftDump.leftBucketTilt < -0.7 * geometry.maximumBucketTilt,
+  // Pass 69: positive (counterclockwise) tilt swings the left bucket's
+  // bottom in and its mouth out over the left trough; the old negative sign
+  // tipped it back over the well.
+  assert.ok(leftDump.leftBucketTilt > 0.7 * geometry.maximumBucketTilt,
     'left bucket tipping outward');
   assert.ok(leftDump.leftWaterFraction < 0.9 && leftDump.rightWaterFraction > 0.1);
 
@@ -199,7 +202,7 @@ test('movement 459 alternates contact-driven trips, free crossings, and right an
   assert.equal(rightDump.engagedWheel, null);
   near(rightDump.ropeSpeed, 0, 0, 'rope held for right dump');
   near(rightDump.selectorX, 0, 2e-16, 'worm returning through center');
-  assert.ok(rightDump.rightBucketTilt > 0.7 * geometry.maximumBucketTilt,
+  assert.ok(rightDump.rightBucketTilt < -0.7 * geometry.maximumBucketTilt,
     'right bucket tipping outward');
 
   assert.equal(leftLift.mode,

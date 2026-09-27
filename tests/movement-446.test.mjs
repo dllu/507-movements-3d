@@ -77,9 +77,7 @@ test('movement 446 is the same all-fixed D’Ectol apparatus at the raised check
     'fixed-upper-box-floor-with-round-orifice',
     'fixed-lower-box-top-with-round-opening',
     'fixed-circular-plate-concentric-with-upper-orifice',
-    'self-forming-water-cone-on-fixed-circular-plate',
-    'water-cone-crown-entering-orifice',
-    'checked-water-column-rising-through-orifice',
+    'falling-stream-cone-and-plate-sheet-as-one-water-body',
     'raised-water-column-spraying-in-upper-box',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);

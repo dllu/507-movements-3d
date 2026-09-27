@@ -7,7 +7,8 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import {waterJetGeometry, waterJetMaterial} from './water-volume.js';
+import {waterJetGeometry, waterJetMaterial, waterVolumeMaterial} from './water-volume.js';
+import {WaterStream,collectWaterStreams,ballisticPath} from './water-stream.js';
 
 const FULL_TURN = Math.PI * 2;
 
@@ -88,8 +89,6 @@ function waterBucketReciprocator(movement) {
   const bucketValveTipOffset = -1.20;
   const valveMaximumLift = 0.24;
   const strikeAnvilY = bottomAttachmentY + bucketValveTipOffset + valveMaximumLift;
-  const fillStartPhase = 0.02;
-  const fillEndPhase = 0.25;
   const descendStartPhase = 0.25;
   const descendEndPhase = 0.52;
   const valveOpenStartPhase = 0.515;
@@ -102,21 +101,18 @@ function waterBucketReciprocator(movement) {
   const ropeMarkerDistanceFromCounter =
     pulleyCenter.y - bottomAttachmentY + 0.22 * ropeArcLength;
 
+  // Pass 69 (p69-w1): the stream never stops, so the bucket gains water at
+  // one steady rate whenever its valve is shut: from the moment the valve
+  // reseats at the bottom, through the counterweighted rise and the dwell
+  // under the spout (until it outweighs the counterweight), and on through
+  // the loaded descent. Only the open valve at the bottom empties it, faster
+  // than the stream refills it. (It used to fill only at the top and ride up
+  // empty under the running stream, which lost that water.)
+  const fillTravel = 1 - (drainEndPhase - descendEndPhase);
   const waterFillAtPhase = (phaseValue) => {
-    const phase = THREE.MathUtils.euclideanModulo(phaseValue, 1);
-    if (phase < fillStartPhase) return 0;
-    if (phase < fillEndPhase) {
-      return smoothStep5(
-        (phase - fillStartPhase) / (fillEndPhase - fillStartPhase),
-      );
-    }
-    if (phase < descendEndPhase) return 1;
-    if (phase < drainEndPhase) {
-      return 1 - smoothStep5(
-        (phase - descendEndPhase) / (drainEndPhase - descendEndPhase),
-      );
-    }
-    return 0;
+    const sinceReseat = THREE.MathUtils.euclideanModulo(phaseValue - drainEndPhase, 1);
+    if (sinceReseat < fillTravel) return sinceReseat / fillTravel;
+    return 1 - smoothStep5((sinceReseat - fillTravel) / (1 - fillTravel));
   };
 
   const valveLiftAtPhase = (phaseValue) => Math.max(0,
@@ -282,8 +278,8 @@ function waterBucketReciprocator(movement) {
     descendEndPhase,
     descendStartPhase,
     drainEndPhase,
-    fillEndPhase,
-    fillStartPhase,
+    fillEndPhase: descendEndPhase,
+    fillStartPhase: drainEndPhase,
     inputAngularSpeed,
     pulleyCenter: pulleyCenter.clone(),
     pulleyOuterRadius,
@@ -447,13 +443,49 @@ function waterBucketReciprocator(movement) {
   bucketBottom.position.y = -1.03;
   bucketBottom.userData.role = 'bucket-bottom-around-lifting-valve';
   bucket.add(bucketBottom);
-  const bucketWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.54, 0.42, 0.76, 34),
-    waterMaterial,
-  );
-  bucketWater.position.y = -0.57;
+  // The water in the bucket fills the tapered shell exactly: its section
+  // follows the staved wall at every level (a scaled cylinder used to poke
+  // through the shell when part full).
+  const bucketWaterGeometry = new THREE.CylinderGeometry(1, 1, 1, 34, 1).translate(0, 0.5, 0);
+  const bucketWaterBase = bucketWaterGeometry.attributes.position.array.slice();
+  const bucketWaterFloorY = -0.98, bucketWaterFullRise = 0.78;
+  const bucketInnerRadiusAt = (y) => 0.45 + 0.14 * (y + 1.05) - 0.006;
+  const bucketWater = new THREE.Mesh(bucketWaterGeometry, waterVolumeMaterial({opacity: 0.5}));
+  bucketWater.renderOrder = 1;
+  const setBucketWaterLevel = (fill) => {
+    const top = bucketWaterFloorY + bucketWaterFullRise * fill;
+    const positions = bucketWaterGeometry.attributes.position;
+    for (let i = 0; i < positions.count; i += 1) {
+      const t = bucketWaterBase[i * 3 + 1];
+      const y = bucketWaterFloorY + (top - bucketWaterFloorY) * t;
+      const radius = bucketInnerRadiusAt(y);
+      positions.setXYZ(i, bucketWaterBase[i * 3] * radius, y, bucketWaterBase[i * 3 + 2] * radius);
+    }
+    positions.needsUpdate = true;
+    bucketWaterGeometry.computeBoundingSphere();
+  };
   bucketWater.userData.role = 'variable-water-load-in-bucket';
   bucket.add(bucketWater);
+  // The discharge: while the struck valve stands open, the load runs out
+  // through the bottom opening round the stem as one stream whose flow
+  // follows the drain rate, and falls away below.
+  const drainPath = {points: Array.from({length: 21}, () => new THREE.Vector3()),
+    speeds: new Array(21).fill(1.6), times: new Array(21).fill(0)};
+  const setDrainLength = (fraction) => {
+    const tEnd = 0.34 * Math.max(0.01, fraction);
+    for (let i = 0; i <= 20; i += 1) {
+      const t = tEnd * i / 20;
+      drainPath.points[i].set(0, -1.09 - 1.6 * t - 4.905 * t * t, 0);
+      drainPath.speeds[i] = 1.6 + 9.81 * t;
+      drainPath.times[i] = t;
+    }
+  };
+  setDrainLength(1);
+  const drainStream = new WaterStream(drainPath, {width: 0.13, thickness: 0.13, widthExponent: 0.5, fadeOut: 0.45, spread: {start: 0.5, width: 1.6, thickness: 1.6},
+    cyclePeriod: cycleDuration, streakRate: 1.4, opacity: 0.46});
+  drainStream.userData.role = 'water-draining-through-opened-bottom-valve';
+  bucket.add(drainStream);
+  const updateWater = collectWaterStreams(root);
   // Brown's bail: an arched iron handle from two ears on the shell up to the
   // rope's end. Its plane is turned 50 degrees from the drawing plane so the
   // falling stream beside the rope clears the wire.
@@ -625,12 +657,18 @@ function waterBucketReciprocator(movement) {
     counterweight.position.y = state.counterweightAttachmentY;
     valve.position.y = state.valveLift;
     bucketWater.visible = state.waterFill > 0.002;
-    bucketWater.scale.set(
-      0.72 + 0.28 * state.waterFill,
-      0.06 + 0.94 * state.waterFill,
-      0.72 + 0.28 * state.waterFill,
-    );
-    bucketWater.position.y = -0.94 + 0.37 * state.waterFill;
+    setBucketWaterLevel(Math.max(0.002, state.waterFill));
+    const sinceReseat = THREE.MathUtils.euclideanModulo(state.phase - drainEndPhase, 1);
+    const drainU = (sinceReseat - fillTravel) / (1 - fillTravel);
+    const drainRate = drainU > 0 && drainU < 1 ? 30 * drainU * drainU * (1 - drainU) * (1 - drainU) / 1.875 : 0;
+    drainStream.visible = drainRate > 0.004;
+    if (drainStream.visible) {
+      // The discharge emerges from the opening as the valve opens.
+      setDrainLength(Math.min(1, drainRate / 0.3));
+      drainStream.flow = Math.max(0.004, drainRate);
+      drainStream.setPath(drainPath);
+    }
+    updateWater(time);
     updateStrand(
       leftRopeStrand,
       counterweightRopeX,
@@ -645,7 +683,7 @@ function waterBucketReciprocator(movement) {
     );
     ropeMarker.position.copy(state.ropeMarker.position);
     layRope(state.counterweightAttachmentY, state.bucketAttachmentY);
-    const streamBottom = state.bucketAttachmentY - .90 + .70 * state.waterFill;
+    const streamBottom = state.bucketAttachmentY + bucketWaterFloorY + bucketWaterFullRise * state.waterFill;
     const streamLength = 1.80 - streamBottom;
     fallingWater.position.y = (1.80 + streamBottom) / 2;
     fallingWater.scale.y = streamLength / 4.70;
@@ -712,7 +750,7 @@ function waterBucketReciprocator(movement) {
     },
     dynamics: {
       fillDrainMotionSchedule:
-        'The demonstration uses quintic zero-velocity, zero-acceleration ramps: fill at the top, loaded descent, ground-triggered valve opening and drain at the bottom, counterweight return, then top dwell. Valve lift is derived from finite stem contact with the anvil; threshold impact and coupled rigid-body dynamics are not integrated.',
+        'The demonstration uses quintic zero-velocity, zero-acceleration ramps for the motion: loaded descent, ground-triggered valve opening and drain at the bottom, counterweight return, then top dwell. The unbroken stream fills the bucket at one steady rate whenever the valve is shut (during the return, the top dwell and the descent), so fill at the top continues the fill begun at the bottom; only the open valve empties it. Valve lift is derived from finite stem contact with the anvil; threshold impact and coupled rigid-body dynamics are not integrated.',
       fluidPressureSplashLeakageValveImpactRopeElasticityPulleyInertiaBearingFrictionBucketMassCounterweightMassAndDynamicAccelerationModeled:
         false,
       ropeMarkerContinuity:

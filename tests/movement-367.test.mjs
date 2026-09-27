@@ -445,3 +445,26 @@ test('movement 367 returns exactly to its source-measured pose before movement 5
   disposeModel(model507.root);
   disposeModel(model367.root);
 });
+
+test('movement 367 closes only until the right link pin meets the brass arc, which is the closing stop', () => {
+  const model = createMovementModel(catalog.movements[366]);
+  const { blocks, geometry } = model.root.userData;
+  const pin = blocks.parallelLinks[1].userData.pivotBosses
+    .find((boss) => boss.userData.end === 'upper-blade');
+  const pinRadius = pin.geometry.parameters.radiusTop;
+  const centre = new THREE.Vector3(geometry.arcPivot.x - geometry.arcRadius, 0, geometry.arcPivot.z);
+  let minimumClearance = Infinity;
+  for (let index = 0; index <= 400; index += 1) {
+    model.update(geometry.demonstrationPeriod * index / 400);
+    const position = model.root.userData.currentState.upperLinkPoints[1];
+    near(pin.position.x, geometry.linkLength, 0, 'pin at the upper-blade end of the link');
+    const distance = Math.hypot(position.x - centre.x, position.z - centre.z);
+    const angle = Math.atan2(position.z - centre.z, position.x - centre.x);
+    if (angle >= 0 && angle <= geometry.arcSweep) {
+      minimumClearance = Math.min(minimumClearance, distance - pinRadius - geometry.arcRadius);
+    }
+  }
+  assert.ok(minimumClearance > 0.005, `pin clears the arc: ${minimumClearance}`);
+  assert.ok(minimumClearance < 0.02, `the arc is the closing stop: ${minimumClearance}`);
+  disposeModel(model.root);
+});

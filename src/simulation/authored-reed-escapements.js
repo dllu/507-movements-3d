@@ -1,4 +1,12 @@
 import {finishReed396Parts} from './reed-396-working-parts.js';
+import {reed396} from './reed-396-contact.js';
+import {plate as extrudePlate, polygonClipping as clip} from './finite-plate-geometry.js';
+
+// Roller pin i stands this far from balance staff b: far enough that, in the
+// fork, it carries lever C exactly from one banking pin to the other.
+const PIN_ORBIT = reed396.pinOrbit;
+const circlePoints = (radius, count, cx = 0, from = 0, to = FULL_TURN) => Array.from({length: count + 1},
+  (_, i) => [cx + radius * Math.cos(from + (to - from) * i / count), radius * Math.sin(from + (to - from) * i / count)]);
 import * as THREE from 'three';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import {
@@ -190,13 +198,18 @@ function makeBalance({
   hub.userData.role = 'balance-staff-b';
   balance.add(hub);
 
-  const roller = cylinderAlongZ(rollerRadius, 0.16, darkMaterial, 40);
-  roller.position.z = 0.48;
+  // Roller h: a small boss on staff b with one arm out to pin i.
+  const rollerShape = clip.difference(clip.union(
+    [[circlePoints(0.30, 64)]],
+    [[[[0, -0.09], [PIN_ORBIT, -0.09], ...circlePoints(0.09, 24, PIN_ORBIT, -Math.PI / 2, Math.PI / 2), [PIN_ORBIT, 0.09], [0, 0.09], [0, -0.09]]]],
+  ), [[circlePoints(0.183, 64)]]);
+  const roller = new THREE.Mesh(extrudePlate(rollerShape, 0.40, 0.56), darkMaterial);
+  void rollerRadius;
   roller.userData.role = 'balance-roller-h';
   balance.add(roller);
   const rollerPin = cylinderAlongZ(rollerPinRadius, 0.24,
     whiteMaterial, 24);
-  rollerPin.position.set(rollerRadius * 0.78, 0, 0.58);
+  rollerPin.position.set(PIN_ORBIT, 0, 0.58);
   rollerPin.userData.role = 'roller-impulse-pin-i';
   balance.add(rollerPin);
   const directPallet = new THREE.Mesh(
@@ -249,7 +262,7 @@ function makeLever({
     'pivoted-crooked-lever-C-with-anchor-crosspiece-h';
 
   const forkCenterWorld = balanceCenter.clone().add(
-    new THREE.Vector2(rollerRadius * 0.78, 0),
+    new THREE.Vector2(PIN_ORBIT, 0),
   );
   const forkCenterLocal = forkCenterWorld.clone().sub(leverPivot);
   // Brown draws lever C straight along the line of centres, bowing in one
@@ -312,43 +325,33 @@ function makeLever({
     'chronometer-detent-only-pallet-f',
   );
 
-  // The fork works on the part of pin i standing proud of roller h, so it
-  // lies above the roller rather than cutting through it.
-  const forkBack = 0.077;
-  const forkFront = 0.317;
-  const forkLength = forkBack + forkFront;
-  const forkGap = 0.22;
-  const forkProngs = [-1, 1].map((side) => {
-    const prong = new THREE.Mesh(
-      new THREE.BoxGeometry(forkLength, 0.075, 0.10),
-      material,
-    );
-    prong.position.set(
-      forkCenterLocal.x + (forkFront - forkBack) / 2,
-      forkCenterLocal.y + side * forkGap,
-      0.64,
-    );
-    prong.userData.side = side;
-    prong.userData.role = 'lever-fork-e-prong-around-roller-pin-i';
-    lever.add(prong);
-    return prong;
-  });
-  const forkBridge = new THREE.Mesh(
-    new THREE.BoxGeometry(0.10, forkGap * 2 + 0.075, 0.10),
-    material,
+  // Fork e is one plate working on the part of pin i standing proud of
+  // roller h. Its slot runs along the lever through staff c and is the pin's
+  // width plus a running clearance, from just past the pin's deepest reach
+  // (on the line of centres) to a mouth beyond its exit, so the pin drives
+  // the lever bank to bank without ever cutting a prong.
+  const slotHalf = 0.072 + 0.008;
+  const prong = 0.07;
+  const deepest = forkCenterLocal.x + 0.072 + 0.012;
+  const mouth = forkCenterLocal.x - 0.18;
+  const chamfer = 0.06;
+  const back = deepest + 0.09;
+  const forkShape = clip.difference(
+    [[[[mouth, -slotHalf - prong], [back, -slotHalf - prong], [back, slotHalf + prong], [mouth, slotHalf + prong], [mouth, -slotHalf - prong]]]],
+    [[[[mouth - 0.1, -slotHalf], [deepest, -slotHalf], [deepest, slotHalf], [mouth - 0.1, slotHalf], [mouth - 0.1, -slotHalf]]]],
+    // Chamfered horns let the pin swing in and out of the mouth.
+    ...[-1, 1].map((side) => [[[[mouth - 0.01, side * (slotHalf - 0.01)], [mouth + chamfer, side * (slotHalf - 0.01)], [mouth - 0.01, side * (slotHalf + chamfer)], [mouth - 0.01, side * (slotHalf - 0.01)]]]]),
   );
-  forkBridge.position.set(
-    forkCenterLocal.x + forkFront + 0.05,
-    forkCenterLocal.y,
-    0.64,
-  );
-  forkBridge.userData.role = 'lever-fork-e-bridge';
-  lever.add(forkBridge);
+  const fork = new THREE.Mesh(extrudePlate(forkShape, 0.59, 0.69), material);
+  fork.userData.role = 'lever-fork-e-slot-around-roller-pin-i';
+  lever.add(fork);
+  const forkProngs = [fork];
+  const forkBridge = fork;
   // The guard pin stands on the lever's centre line just clear of the
   // roller's edge, level with the roller and below the proud part of pin i.
   const guardPin = cylinderAlongZ(0.052, 0.12, darkMaterial, 20);
   guardPin.position.set(
-    forkCenterLocal.x - rollerRadius * 0.78 + rollerRadius + 0.072,
+    forkCenterLocal.x - PIN_ORBIT + rollerRadius + 0.072,
     forkCenterLocal.y,
     0.46,
   );
@@ -416,7 +419,7 @@ function reedHybridEscapement(movement) {
     0,
   );
   const balanceRadius = 2.24;
-  const rollerRadius = 0.42;
+  const rollerRadius = 0.60;
   const rollerPinRadius = 0.072;
   const leverMoveStart = 0.36;
   const wheelAdvanceStart = 0.44;
@@ -629,7 +632,7 @@ function reedHybridEscapement(movement) {
       };
     }
     const balancePinPoint = balanceCenter.clone().add(rotate2(
-      new THREE.Vector2(rollerRadius * 0.78, 0),
+      new THREE.Vector2(PIN_ORBIT, 0),
       balanceState.angle,
     ));
     const chronometerPalletPoint = balanceCenter.clone().add(rotate2(

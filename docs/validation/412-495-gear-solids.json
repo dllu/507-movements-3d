@@ -2,7 +2,7 @@
   "sources": [
     {
       "file": "src/simulation/authored-capstan-wheelwork.js",
-      "sha256": "6f59fa51c12ae9ecf920026e8ed8fe6b4ac39a7f3be879e6a69c45364b71e6de"
+      "sha256": "e03e9315743ee002d6bee858fd11b69454242e18ccbf265526fb4a562e6b064d"
     },
     {
       "file": "src/simulation/authored-entwistle-gearing.js",
