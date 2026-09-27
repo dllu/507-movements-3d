@@ -120,6 +120,7 @@ const RISER_UPPER_X = 1.60;
 const RISER_UPPER_Y = 2.42;
 const BOILER_RIM_RADIUS = 1.82;
 const LID_PORT_RADIUS = 0.12;
+const LID_UNDERSIDE_Y = 0.34;
 function straightenSourceRisers(root) {
   const d = root.userData;
   const b = d.blocks;
@@ -166,9 +167,12 @@ function straightenSourceRisers(root) {
     core.geometry = new THREE.TubeGeometry(full, 128, 0.045, 12, false);
   }
   // Flare the finite boiler shell out to Brown's wide lidded rim.
+  // The shell's mouth ends flush under the lid (lid underside y 0.34, same
+  // radius), so no ledge or overlap shows a shadow seam round the bowl.
   const outer = [[-1.40, 0.48], [-1.30, 0.95], [-1.02, 1.42], [-0.53, 1.70],
-    [0.08, 1.80], [0.38, BOILER_RIM_RADIUS]];
+    [0.08, 1.80], [LID_UNDERSIDE_Y, BOILER_RIM_RADIUS]];
   const inner = outer.map(([y, r]) => [y + 0.06, r - 0.07]);
+  inner[inner.length - 1][0] = LID_UNDERSIDE_Y;
   b.boiler.geometry.dispose();
   b.boiler.geometry = turned(
     [[-1.40, 0], ...outer, ...inner.reverse(), [-1.34, 0]],
@@ -206,7 +210,7 @@ function straightenSourceRisers(root) {
     leg.geometry = cappedTubeGeometry(curve, 0.115, 64);
   });
   const lid = polygonClipping.difference(
-    poly(circle([0, 0], BOILER_RIM_RADIUS + 0.01, 256)),
+    poly(circle([0, 0], BOILER_RIM_RADIUS, 256)),
     ...[-1, 1].map((side) =>
       poly(circle([side * portCenterX, 0], LID_PORT_RADIUS, 96))),
   );

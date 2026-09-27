@@ -290,11 +290,14 @@ function oldRotaryPump(movement) {
   const rotorBody = named(new THREE.Mesh(plate(drumSection, -ROTOR_HALF_DEPTH, ROTOR_HALF_DEPTH), rotorMaterial),
     'mutilated-hollow-drum-with-two-chordal-flats');
   rotor.add(rotorBody);
-  // Rear end web closing the hollow drum, part of the rotor casting (Brown
-  // leaves the bore blank: the web is plain, behind the section). Its hub
-  // carries the shaft, which runs out through the rear cover and its
-  // bearing boss and ends a little beyond it.
-  const rotorRearWeb = named(new THREE.Mesh(plate(bore, -ROTOR_HALF_DEPTH, -ROTOR_HALF_DEPTH + 0.06), rotorMaterial),
+  // Rear end web closing the hollow drum, part of the rotor casting. It is
+  // needed: it carries the drum on the shaft and takes the driving torque
+  // (Brown draws no shaft in the section, so the drive is behind it). Its
+  // hub carries the shaft, which runs out through the rear cover and its
+  // bearing boss and ends a little beyond it. Brown leaves the bore blank,
+  // as he leaves the case back blank: both lie behind the section plane,
+  // so the web's face takes the same plain finish as the rear cover.
+  const rotorRearWeb = named(new THREE.Mesh(plate(bore, -ROTOR_HALF_DEPTH, -ROTOR_HALF_DEPTH + 0.06), paperMaterial),
     'rotor-rear-end-web-behind-hollow-drum');
   rotor.add(rotorRearWeb);
   const shaftBack = -CASING_HALF_DEPTH - 0.46;

@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { LaidRopeGeometry } from './laid-rope.js';
-import { makeCrownRatchetGeometry, capstanPawlDimensions, capstanPawlProfile, capstanPawlReleasePhase } from './capstan-pawl-contact.js';
+import { makeCrownRatchetGeometry, capstanPawlDimensions, capstanPawlProfile, capstanPawlReleasePhase, capstanPawlSeatPhase, capstanPawlSeatedPitch } from './capstan-pawl-contact.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
 import { capstanHeadGeometry, capstanSocketRimGeometry, capstanPackingProgress, capstanPawlGeometry } from './capstan-finite-parts.js';
@@ -89,6 +89,7 @@ function commonCapstan(movement) {
   const handSpikeLength = 5.85;
   const headRadius = 1.30;
   const operatingPeriod = 8;
+  // Mean hauling rate over the cycle (one turn per period).
   const operatingAngularSpeed = FULL_TURN / operatingPeriod;
 
   const ratchetToothCount = 18;
@@ -101,10 +102,40 @@ function commonCapstan(movement) {
   const ratchetHighHeight = pawlDimensions.highHeight;
   // Brown's pawl swings in the plane of his drawing: flat against the front
   // of the lower capstan on a radial pivot pin, its nose hanging down and
-  // toward the recoil side onto the crown teeth. At the displayed start the
-  // nose has just dropped past a crest (release phase measured from it).
+  // toward the recoil side onto the crown teeth. Brown draws it holding: its
+  // nose seated in the root of a tooth against the face. Each cycle opens in
+  // that pose, hauls one turn and a little more, then eases off: the load
+  // backs the capstan until the nose, sliding down the ramp it landed on,
+  // seats in the root against the face again (tooth phases are measured
+  // from the crest release).
   const pawlFreefallFraction = pawlDimensions.releaseFraction;
-  const pawlInitialReleasePhase = pawlFreefallFraction + 0.02;
+  const pawlInitialReleasePhase = capstanPawlSeatPhase;
+  const pawlHaulEndPhase = pawlFreefallFraction + 0.035;
+  const recoilTeeth = pawlHaulEndPhase - capstanPawlSeatPhase;
+  const haulAngle = (ratchetToothCount + recoilTeeth) * FULL_TURN / ratchetToothCount;
+  const recoilAngle = recoilTeeth * FULL_TURN / ratchetToothCount;
+  const haulDuration = 6.9, haulRamp = 0.8, recoilDuration = 0.6;
+  const haulPeakSpeed = haulAngle / (haulDuration - haulRamp);
+  // Smooth start and stop: the speed eases in and out over haulRamp.
+  const rampIntegral = x => x ** 3 - x ** 4 / 2;
+  const rampRate = x => 3 * x ** 2 - 2 * x ** 3;
+  const cycleAngle = (cycleTime) => {
+    if (cycleTime <= haulDuration) {
+      const t = cycleTime;
+      if (t < haulRamp) return { angle: haulPeakSpeed * haulRamp * rampIntegral(t / haulRamp), rate: haulPeakSpeed * rampRate(t / haulRamp), stage: 'haul' };
+      const left = haulDuration - t;
+      if (left < haulRamp) return { angle: haulAngle - haulPeakSpeed * haulRamp * rampIntegral(left / haulRamp), rate: haulPeakSpeed * rampRate(left / haulRamp), stage: 'haul' };
+      return { angle: haulPeakSpeed * (haulRamp / 2 + t - haulRamp), rate: haulPeakSpeed, stage: 'haul' };
+    }
+    const u = Math.min(1, (cycleTime - haulDuration) / recoilDuration);
+    const smooth = u ** 3 * (10 + u * (-15 + 6 * u));
+    const smoothRate = 30 * u ** 2 * (1 - u) ** 2 / recoilDuration;
+    return {
+      angle: haulAngle - recoilAngle * smooth,
+      rate: -recoilAngle * smoothRate,
+      stage: u < 1 ? 'recoil' : 'held',
+    };
+  };
   const pawlPivotAzimuth = pawlDimensions.pivotAzimuth;
   const pawlPlaneRadius = pawlDimensions.planeRadius;
   const pawlPivotHeight = pawlDimensions.pivotHeight;
@@ -129,10 +160,15 @@ function commonCapstan(movement) {
     };
   };
 
-  // azimuthRadian is the world azimuth of the pawl's radial pivot pin.
-  const pawlClosureAtAzimuth = (azimuthRadian) => {
+  // azimuthRadian is the world azimuth of the pawl's radial pivot pin. The
+  // seated branch is the pawl lying below the crest line (after a drop, and
+  // while the capstan backs off onto the tooth face).
+  const pawlClosureAtAzimuth = (azimuthRadian, { seated = false } = {}) => {
     const toothSurface = toothSurfaceAtAzimuth(azimuthRadian);
-    const finite = capstanPawlProfile(toothSurface.toothPhase - capstanPawlReleasePhase);
+    const releasePhase = toothSurface.toothPhase - capstanPawlReleasePhase;
+    const finite = seated
+      ? { phase: 1, pitch: capstanPawlSeatedPitch(releasePhase), airborneClearance: 0, falling: false }
+      : capstanPawlProfile(releasePhase);
     const pawlPitchAngleRadian = finite.pitch;
     const verticalDifference = pawlLength * Math.sin(pawlPitchAngleRadian);
     const pawlTipHeight = pawlPivotHeight + verticalDifference;
@@ -165,23 +201,29 @@ function commonCapstan(movement) {
     wrapAngle,
   });
   const cablePathLength = cableCurve.getLength();
-  const cableSpeed = barrelRadius * operatingAngularSpeed;
 
   const stateAtTime = (time) => {
-    const operatingAngleRadian = operatingAngularSpeed * time;
+    const cycleTime = positiveModulo(time, operatingPeriod);
+    const cycle = cycleAngle(cycleTime);
+    const operatingAngleRadian = FULL_TURN * Math.round((time - cycleTime) / operatingPeriod) + cycle.angle;
     const capstanRotationY = -operatingAngleRadian;
     const pawlWorldAzimuthRadian = pawlPivotAzimuth + operatingAngleRadian;
-    const pawlClosure = pawlClosureAtAzimuth(pawlWorldAzimuthRadian);
+    // Hauling from the seat, the nose rides the tooth it is seated on up to
+    // its first crest below the crest line; backing off it stays there.
+    const seated = cycle.stage !== 'haul'
+      || cycle.angle < (-capstanPawlSeatPhase + pawlFreefallFraction) * ratchetToothPitch;
+    const pawlClosure = pawlClosureAtAzimuth(pawlWorldAzimuthRadian, { seated });
     return {
-      cableDistanceHauled: cableSpeed * time,
-      cableSpeed,
-      capstanAngularVelocityY: -operatingAngularSpeed,
+      cableDistanceHauled: barrelRadius * operatingAngleRadian,
+      cableSpeed: barrelRadius * cycle.rate,
+      capstanAngularVelocityY: -cycle.rate,
       capstanRotationY,
-      cycleTime: positiveModulo(time, operatingPeriod),
+      cycleTime,
       operatingAngleRadian,
       pawlClosure,
       pawlWorldAzimuthRadian,
-      phase: positiveModulo(time, operatingPeriod) / operatingPeriod,
+      phase: cycleTime / operatingPeriod,
+      stage: cycle.stage,
     };
   };
 
@@ -473,6 +515,12 @@ function commonCapstan(movement) {
     pawlThickness: pawlDimensions.thickness,
     pawlReleasePhase: capstanPawlReleasePhase,
     pawlInitialReleasePhase,
+    pawlHaulEndPhase,
+    pawlSeatPhase: capstanPawlSeatPhase,
+    haulAngle,
+    haulDuration,
+    recoilAngle,
+    recoilDuration,
     pawlLength,
     pawlPivotAzimuth,
     pawlPivotHeight,
@@ -535,13 +583,13 @@ function commonCapstan(movement) {
       ratchetBaseCoordinates: 0,
     },
     dynamics: {
-      finiteContactResidual: 'Finite nose/crown clearance follows a baked triangle-contact envelope with a prescribed smooth crest release. Gravity, impact, reverse load response and rope friction are not dynamically solved.',
+      finiteContactResidual: 'Finite nose/crown clearance follows a baked triangle-contact envelope with a prescribed smooth crest release, and a second baked branch for the nose sliding back down into the tooth root. Gravity, impact, reverse load response and rope friction are not dynamically solved.',
       cableLayContinuity:
-        'The laid cable follows one arc-length Curve3 whose free-span endpoint and barrel-wrap start share position and tangent; its lay advances by the hauled distance, so the rope moves at constant speed through that transition.',
+        'The laid cable follows one arc-length Curve3 whose free-span endpoint and barrel-wrap start share position and tangent; its lay advances by the hauled distance, so the rope moves at the barrel surface speed, without a jump, through that transition.',
       helixPackingDisclosure:
         'The three displayed turns use a 0.42-unit axial packing rise with a short smooth lead into constant pitch. Cable translation is exactly r_barrel times capstan angular speed; the small displayed helix makes the rope lay azimuth differ from rigid surface azimuth by less than 0.09 percent at the steepest packing point.',
       idealRatchetContact:
-        'In the hauling direction the capstan-mounted pawl climbs each fixed tooth ramp on its finite rounded nose, passes its high vertical edge, falls continuously under the prescribed release schedule (as it swings down about its radial pin the nose also moves forward, so it lands a little up the next ramp), and recontacts that ramp. Reverse motion meets that high face after at most one tooth of backlash; the reverse load response is not dynamically solved.',
+        'In the hauling direction the capstan-mounted pawl climbs each fixed tooth ramp on its finite rounded nose, passes its high vertical edge, falls continuously under the prescribed release schedule (as it swings down about its radial pin the nose also moves forward, so it lands about a third of a tooth up the next ramp), and recontacts that ramp. Each cycle ends with the hands easing off: the capstan backs about 0.4 of a tooth (8 degrees) while the nose slides down that ramp and seats in the root against the tooth face, the held pose Brown draws and the displayed start. The recoil and hold are prescribed; the reverse load response is not dynamically solved.',
     },
     fidelity: 'authored',
     geometry,
@@ -595,7 +643,7 @@ function commonCapstan(movement) {
         knowltonPatentCorroboration:
           'David Knowlton’s 1857 ship-capstan patent explicitly places a ratchet around the top of the fixed capstan base and suitable pawls on the outside of the barrel, independently confirming Brown’s moving-pawl/fixed-ratchet topology.',
         reconstructionDisclosure:
-          'The source fixes the component topology, rigid head/barrel relation, hauling direction, moving-pawl/fixed-ratchet relation, and one-way purpose. Exact dimensions, eighteen-tooth count, tooth and pawl profiles, three-turn display, line packing, constant operating speed, colors, and rope lay are independently engineered and exposed.',
+          'The source fixes the component topology, rigid head/barrel relation, hauling direction, moving-pawl/fixed-ratchet relation, and one-way purpose. Exact dimensions, eighteen-tooth count, tooth and pawl profiles, three-turn display, line packing, the haul, ease-off and hold cycle, colors, and rope lay are independently engineered and exposed.',
       },
       knowlton1857PatentUrl:
         'https://patents.google.com/patent/US17971A/en',

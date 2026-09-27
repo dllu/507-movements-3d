@@ -148,3 +148,11 @@ test('455 only the drum and its valves move', () => {
   }
   assert.ok(data.stateAtTime(0).rotorAngularSpeed < 0, 'clockwise, entrance round the left to the exit');
 });
+
+test('455 the drum web stays (it carries the drum on the shaft) and takes the rear cover’s plain finish, so the bore reads blank as on the plate', () => {
+  assert.equal(blocks.rotorRearWeb.parent, blocks.rotor);
+  assert.equal(blocks.rotorRearWeb.material, blocks.rearCover.material);
+  assert.notEqual(blocks.rotorBody.material, blocks.rearCover.material);
+  const web = new THREE.Box3().setFromObject(blocks.rotorRearWeb), shaft = new THREE.Box3().setFromObject(blocks.shaft);
+  assert.ok(shaft.max.z >= web.min.z - 1e-9, 'shaft reaches the web hub');
+});

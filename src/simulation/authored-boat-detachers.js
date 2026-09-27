@@ -127,6 +127,7 @@ function boatDetachingHook(movement) {
   // Tackle hook: a round-bar J in a vertical plane turned 55 degrees from the
   // drawing, its bend round the tongue and its shank up to the block.
   const hookYaw = THREE.MathUtils.degToRad(55);
+  const blockYaw = Math.atan2(0.28, 1);
   const hookU = new THREE.Vector3(Math.cos(hookYaw), 0, -Math.sin(hookYaw));
   const hookBendRadius = 0.31;
   const hookBarRadius = 0.11;
@@ -143,8 +144,8 @@ function boatDetachingHook(movement) {
     for (let i = 1; i <= 6; i++) points.push([hookBendRadius, hookBillTop * i / 6]);
     return points;
   })();
-  // The shank continues up in an S to the swivel under the block.
-  const hookNeck = [[-hookBendRadius, hookShankTop], [-0.2, 0.5], [-0.07, 0.6], [0, 0.68], [0, 0.74]];
+  // The shank continues up in an S to the forged eye under the block.
+  const hookNeck = [[-hookBendRadius, hookShankTop], [-0.2, 0.47], [-0.07, 0.56], [0, 0.62], [0, 0.64]];
 
   const hookNeckSegments = hookNeck.slice(1).map((p, i) => [
     new THREE.Vector3(hookNeck[i][0], hookNeck[i][1], 0), new THREE.Vector3(p[0], p[1], 0)]);
@@ -364,18 +365,112 @@ function boatDetachingHook(movement) {
   const hookPoint = addRole(new THREE.Mesh(new THREE.SphereGeometry(hookBarRadius, 16, 12), hookMaterial), 'tackle-hook-point');
   hookPoint.position.set(hookBendRadius, hookBillTop, 0);
   const hookTopCap = hookPoint.clone();
-  hookTopCap.userData = { role: 'tackle-hook-swivel-cap' };
+  hookTopCap.userData = { role: 'tackle-hook-shank-to-eye-boss' };
   hookTopCap.position.set(0, hookNeck.at(-1)[1], 0);
   hookFrame.add(hookPoint, hookTopCap);
-  const swivel = addRole(new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.16, 32), hookMaterial), 'tackle-hook-swivel');
-  swivel.position.y = hookNeck.at(-1)[1] + 0.06;
-  hookFrame.add(swivel);
-  const blockBottom = swivel.position.y + 0.08;
+  // Brown's stropped block: a rope strop lies in a score round the shell, in
+  // the plane across the sheave (between the two falls). Below the shell its
+  // legs are seized together and its bight passes through the forged eye of
+  // the hook, which hangs from it.
+  const stropRadius = 0.05, eyeBarRadius = 0.07, stropGap = 0.003;
+  const hookEyeRadius = eyeBarRadius + stropRadius + stropGap;
+  const hookEyeCenterY = hookNeck.at(-1)[1] + hookEyeRadius;
+  // The block turns on the hook's axis so that its strop faces the viewer
+  // edge-on down the middle of the shell, as Brown draws it; the eye is
+  // forged square to the strop's bight.
+  const blockFrame = addRole(new THREE.Group(), 'tackle-block-frame');
+  blockFrame.quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), blockYaw);
+  tackle.add(blockFrame);
+  const hookEye = addRole(new THREE.Mesh(new THREE.TorusGeometry(hookEyeRadius, eyeBarRadius, 16, 48), hookMaterial),
+    'tackle-hook-forged-eye');
+  hookEye.position.y = hookEyeCenterY;
+  blockFrame.add(hookEye);
+  // The bight wraps the eye's top bar (axis along the hook plane).
+  const eyeTopBarY = hookEyeCenterY + hookEyeRadius;
+  const bightRadius = eyeBarRadius + stropRadius;
+  const seizingLow = eyeTopBarY + 0.2, seizingHigh = seizingLow + 0.09;
   const blockRadii = [0.5, 0.64, 0.3];
-  const block = addRole(new THREE.Mesh(new THREE.SphereGeometry(1, 48, 32), blockMaterial), 'tackle-lower-block-shell');
-  block.scale.set(...blockRadii);
-  block.position.y = blockBottom + blockRadii[1] - 0.02;
-  hookFrame.add(block);
+  const blockBottom = seizingHigh + 0.06;
+  const blockCenterY = blockBottom + blockRadii[1];
+  // Strop centreline: half sunk in its score.
+  const stropLift = stropRadius * 0.45;
+  const stropOnShell = t => {
+    // t from 0 (crown) to PI (arse); z = across the sheave (+ side).
+    const e = new THREE.Vector2(blockRadii[2] * Math.sin(t), blockRadii[1] * Math.cos(t));
+    const n = new THREE.Vector2(Math.sin(t) / blockRadii[2], Math.cos(t) / blockRadii[1]).normalize();
+    return e.addScaledVector(n, stropLift).add(new THREE.Vector2(0, blockCenterY));
+  };
+  // Leave the shell where the leg heads straight for the seizing.
+  const seizeTop = new THREE.Vector2(stropRadius, seizingHigh);
+  const aim = t => {
+    const p = stropOnShell(t), tangent = stropOnShell(t + 1e-5).sub(p), toSeize = seizeTop.clone().sub(p);
+    return tangent.x * toSeize.y - tangent.y * toSeize.x;
+  };
+  let leaveT = Math.PI / 2;
+  for (let i = 1; i <= 4000; i++) {
+    const t = Math.PI / 2 + Math.PI / 2 * i / 4000;
+    if (Math.sign(aim(t)) !== Math.sign(aim(Math.PI / 2))) { leaveT = t; break; }
+  }
+  const halfStrop = [];
+  for (let i = 0; i <= 60; i++) halfStrop.push(stropOnShell(leaveT * i / 60));
+  for (let i = 1; i <= 6; i++) halfStrop.push(stropOnShell(leaveT).lerp(seizeTop, i / 6));
+  for (let i = 1; i <= 3; i++) halfStrop.push(new THREE.Vector2(stropRadius, seizingHigh - (seizingHigh - seizingLow) * i / 3));
+  // From the seizing each leg runs straight to its tangent on the bight,
+  // which wraps the eye's top bar.
+  const legFoot = new THREE.Vector2(stropRadius, seizingLow - eyeTopBarY);
+  const tangentAngle = Math.atan2(legFoot.y, legFoot.x) - Math.acos(bightRadius / legFoot.length());
+  const bightPoint = a => new THREE.Vector2(bightRadius * Math.cos(a), eyeTopBarY + bightRadius * Math.sin(a));
+  for (let i = 1; i <= 6; i++) halfStrop.push(new THREE.Vector2(stropRadius, seizingLow).lerp(bightPoint(tangentAngle), i / 6));
+  for (let i = 1; i < 32; i++) halfStrop.push(bightPoint(tangentAngle + (-Math.PI / 2 - tangentAngle) * i / 32));
+  const stropPoints = [...halfStrop, ...halfStrop.slice(1).reverse().map(p => new THREE.Vector2(-p.x, p.y))]
+    .map(p => new THREE.Vector3(0, p.y, p.x));
+  stropPoints.pop();
+  const strop = addRole(new THREE.Mesh(new LaidRopeGeometry(stropPoints, 600, stropRadius, 8, true), ropeMaterial),
+    'rope-strop-round-block-shell-and-hook-eye');
+  blockFrame.add(strop);
+  // The seizing binds the two legs just above the eye.
+  const seizing = addRole(new THREE.Mesh(new THREE.CylinderGeometry(1, 1, seizingHigh - seizingLow - 0.01, 40), ropeMaterial),
+    'strop-seizing-above-hook-eye');
+  seizing.scale.set(stropRadius + 0.012, 1, 2 * stropRadius + 0.012);
+  seizing.position.y = (seizingHigh + seizingLow) / 2;
+  blockFrame.add(seizing);
+  // The shell, with the strop's score sunk round it across the sheave: the
+  // score is cut exactly clear of the strop's own path, so it runs out under
+  // the arse where the legs leave the shell.
+  const shellGeometry = new THREE.SphereGeometry(1, 256, 96);
+  {
+    const position = shellGeometry.attributes.position, p = new THREE.Vector3(), q = new THREE.Vector2();
+    const scoreRadius = stropRadius + stropGap;
+    const path = halfStrop.map(v => new THREE.Vector2(v.x, v.y - blockCenterY));
+    const pathDistance = (z, y) => {
+      q.set(Math.abs(z), y);
+      let best = Infinity;
+      for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1], d = path[i].clone().sub(a);
+        const t = THREE.MathUtils.clamp(q.clone().sub(a).dot(d) / d.lengthSq(), 0, 1);
+        best = Math.min(best, q.distanceTo(a.clone().addScaledVector(d, t)));
+      }
+      return best;
+    };
+    const clear = v => Math.hypot(v.x, pathDistance(v.z, v.y)) >= scoreRadius;
+    for (let i = 0; i < position.count; i++) {
+      p.fromBufferAttribute(position, i).multiply(new THREE.Vector3(...blockRadii));
+      if (Math.abs(p.x) < scoreRadius && !clear(p)) {
+        const n = new THREE.Vector3(p.x / blockRadii[0] ** 2, p.y / blockRadii[1] ** 2, p.z / blockRadii[2] ** 2).normalize();
+        let low = 0, high = 2 * scoreRadius;
+        for (let k = 0; k < 30; k++) {
+          const mid = (low + high) / 2;
+          if (clear(p.clone().addScaledVector(n, -mid))) high = mid; else low = mid;
+        }
+        p.addScaledVector(n, -high);
+      }
+      position.setXYZ(i, p.x, p.y, p.z);
+    }
+    shellGeometry.computeVertexNormals();
+  }
+  const block = addRole(new THREE.Mesh(shellGeometry, blockMaterial), 'tackle-lower-block-shell');
+  block.position.y = blockCenterY;
+  blockFrame.add(block);
   // The falls run on well past every rotated view before ending.
   const fallTop = block.position.y + 14;
   const falls = [-0.2, 0.2].map((u, index) => {
@@ -383,7 +478,7 @@ function boatDetachingHook(movement) {
     const rope = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(start, new THREE.Vector3(u, fallTop, 0)), 200, 0.06, 8, false),
       ropeMaterial), `tackle-fall-lead-beyond-plate-${index + 1}`);
     rope.userData.beyondPlateCrop = true;
-    hookFrame.add(rope);
+    blockFrame.add(rope);
     return rope;
   });
 
@@ -420,7 +515,7 @@ function boatDetachingHook(movement) {
     animationTiming: { authoredCyclePeriod: cycleDuration, targetCycleDuration: cycleDuration },
     archetype: 'paired-eye-lever-boat-detachers-with-hinged-load-tongues',
     blocks: {
-      block, collar, falls, hookBar, hookFrame, hookPoint, lever, leverBody, leverEye, leverFulcrumPin, releaseRope,
+      block, blockFrame, collar, falls, hookBar, hookEye, hookFrame, hookPoint, seizing, strop, lever, leverBody, leverEye, leverFulcrumPin, releaseRope,
       shank, standard, standardBar, tackle, thread, tongue, tongueBar, tongueEye, tongueHingePin, tongueTip,
     },
     degreesOfFreedom: { releaseInputs: 1, leverCoordinates: 1, tongueCoordinates: 1, hookCoordinates: 1, standardCoordinates: 0 },

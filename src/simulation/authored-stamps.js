@@ -1225,13 +1225,22 @@ function matchBrownStampProportions(model) {
   // top tooth waits just below the pinion axis for pickup, so that collar
   // then stands level with the pinion, facing its blank root disk (the teeth
   // are round the far side then, and later the collar rides above them).
-  // Pass 72 (p72-c): so the collar overhangs the pinion side too, by 0.30 of
-  // the rod's width: out to the rack teeth's tips, just short of the root
-  // disk (0.306 from the rod face at rest). Brown's overhang there (0.78 of
-  // the rod's width) would enter that disk at rest. The plain side keeps
-  // Brown's 0.6. It sits Brown's third of a pitch above the top tooth.
+  // Pass 72 (p72-c): the collar's full depth overhangs the pinion side by
+  // 0.30 of the rod's width: out to the rack teeth's tips, just short of the
+  // root disk (0.306 from the rod face at rest). Brown's overhang there (0.78
+  // of the rod's width) would enter that disk at rest, so pass 83 carries it
+  // out only on the collar's back part, behind the pinion's rear face (the
+  // pinion passes in front of it at rest). Face on, the collar has Brown's
+  // outline. The plain side keeps Brown's 0.6. It sits Brown's third of a
+  // pitch above the top tooth.
   const topCollarLeft = left - 0.6 * rodWidth;
   const topCollarRight = right + 0.30 * rodWidth;
+  const topCollarBackRight = right + 0.78 * rodWidth;
+  const rackZ = b.rack.position.z;
+  const collarFrontZ = 0.255;
+  const collarBackZ = -0.44;
+  // 0.02 clear of the pinion's rear face.
+  const collarStepZ = g.gearPlaneZ - g.gearDepth / 2 - 0.02 - rackZ;
   const topTooth = b.rackTeeth.find(tooth => tooth.userData.index === 0);
   const topToothTop = topTooth.position.y + g.rackToothPitch / 4;
   const topCollarBottom = topToothTop + g.rackToothPitch / 3;
@@ -1244,8 +1253,26 @@ function matchBrownStampProportions(model) {
   b.rackBar.geometry = new THREE.BoxGeometry(rodWidth, rodTop - rodBottom, g.rackDepth * 0.72);
   b.rackBar.position.set(centerX, (rodTop + rodBottom) / 2, b.rackBar.position.z);
   b.topRodCap.geometry.dispose();
-  b.topRodCap.geometry = new THREE.BoxGeometry(topCollarRight - topCollarLeft, topCollarHeight, 0.51);
-  b.topRodCap.position.set((topCollarLeft + topCollarRight) / 2, topCollarBottom + topCollarHeight / 2, b.topRodCap.position.z);
+  // An L-section (x across, z in depth) extruded through the collar height.
+  const collarCenterX = (topCollarLeft + topCollarBackRight) / 2;
+  const collarSection = new THREE.Shape([
+    [topCollarLeft, collarBackZ], [topCollarBackRight, collarBackZ],
+    [topCollarBackRight, collarStepZ], [topCollarRight, collarStepZ],
+    [topCollarRight, collarFrontZ], [topCollarLeft, collarFrontZ],
+  ].map(([x, z]) => new THREE.Vector2(x - collarCenterX, z)));
+  const collarGeometry = new THREE.ExtrudeGeometry(collarSection, { depth: topCollarHeight, bevelEnabled: false });
+  // Shape y becomes depth (z) and the extrusion runs down y.
+  collarGeometry.rotateX(Math.PI / 2);
+  collarGeometry.translate(0, topCollarHeight / 2, 0);
+  collarGeometry.computeVertexNormals();
+  const sectionBox = (x0, x1, z0, z1) => ({ min: [x0 - collarCenterX, -topCollarHeight / 2, z0],
+    max: [x1 - collarCenterX, topCollarHeight / 2, z1] });
+  collarGeometry.userData.solidBoxes = [
+    sectionBox(topCollarLeft, topCollarRight, collarBackZ, collarFrontZ),
+    sectionBox(topCollarRight, topCollarBackRight, collarBackZ, collarStepZ),
+  ];
+  b.topRodCap.geometry = collarGeometry;
+  b.topRodCap.position.set(collarCenterX, topCollarBottom + topCollarHeight / 2, b.topRodCap.position.z);
   b.lowerCollar.geometry.dispose();
   b.lowerCollar.geometry = new THREE.BoxGeometry(collarWidth, 0.72, 0.68);
   b.lowerCollar.position.x = centerX;

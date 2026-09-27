@@ -35,7 +35,7 @@ test('391 the link bears end-on on the roller, pushes the rack outward and balan
  console.log({selectorAssistSamples:count,maxGap,minRackTorque,maxRackTorque});
 });
 test('391 the rising rack loads the spring before the outward assist, then C returns to rest',()=>{
- const loading=stateAt(2.8),assist=stateAt(3.5),released=stateAt(5.0),end=stateAt(5.4);
+ const loading=stateAt(2.8),assist=stateAt(3.5),released=stateAt(5.1),end=stateAt(5.4);
  assert.ok(loading.elbowAssist.loading&&!loading.elbowAssist.active&&loading.rightRack.engaged);
  assert.ok(loading.elbowAssist.springDeflection>THREE_DEGREES*9,'C swings well round against spring d');
  assert.ok(assist.elbowAssist.active&&!assist.elbowAssist.loading);

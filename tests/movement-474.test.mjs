@@ -505,3 +505,15 @@ test('movement 474 has finite fitted bounds and movement 507 remains the next au
   disposeModel(model474.root);
   disposeModel(model507.root);
 });
+
+test('movement 474 bowl mouth ends flush under the lid with no ledge or overlap at the joint', () => {
+  const { model } = movementModel();
+  const { blocks } = model.root.userData;
+  model.root.updateMatrixWorld(true);
+  const bowl = new THREE.Box3().setFromObject(blocks.boiler);
+  const lid = new THREE.Box3().setFromObject(blocks.boilerLid);
+  near(bowl.max.y, lid.min.y, 1e-6, 'bowl mouth meets the lid underside');
+  const radius = (box) => Math.max(box.max.x, -box.min.x, box.max.z, -box.min.z);
+  near(radius(lid), radius(bowl), 1e-3, 'lid edge flush with the bowl mouth');
+  disposeModel(model.root);
+});

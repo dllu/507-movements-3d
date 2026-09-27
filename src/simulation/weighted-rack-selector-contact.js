@@ -22,8 +22,9 @@ export const selectorGeometry = Object.freeze({
   restAngle: 0, stopRadius: .045, springStud: [0, -.33],
   rollerRadius: .10,
   // The roller stands straight under the link pin (C at rest), so the
-  // hanging link is met end-on: C's pivot is 0.44 right of rack A1's axis.
-  lugX: .44 + (-R + R * Math.cos(pinPhi)), lugAboveGuide: -.15,
+  // hanging link is met end-on: C's pivot is 0.38 right of rack A1's axis,
+  // which keeps the roller within A1's width on its front face.
+  lugX: .38 + (-R + R * Math.cos(pinPhi)), lugAboveGuide: -.75,
 });
 const g = selectorGeometry;
 // The knob's centre under the short arm's end (Brown's small circle).
@@ -126,7 +127,9 @@ export function installWeightedRackSelector(root) {
   linkPin.position.set(...g.linkPin, .345);
   // Rack A1's top lug and its roller, standing forward to the link's plane.
   const rackAdd = (geometry, material, role) => add(geometry, material, role, b.rightRack);
-  const lug = rackAdd(plate(clip.difference(clip.union(capsule([0, G.guideY - .10], [lx, ly], .10, 32), poly(circle([lx, ly], .15, 64))), poly(circle([lx, ly], .056, 64))), -.125, .125),
+  // The roller's axle stands in A1's front face; a thin collar seats it
+  // there, within the rack's width and behind C's plate.
+  const lug = rackAdd(plate(clip.difference(poly(circle([lx, ly], .085, 64)), poly(circle([lx, ly], .056, 64))), .18, .222),
     b.rightRack.userData.body.material, 'upper-rack-lug-carrying-roller-for-link-of-C');
   const roller = rackAdd(boredLatheGeometry([{axial: -.06, radial: g.rollerRadius}, {axial: .06, radial: g.rollerRadius}], .058, 64), b.rightRack.userData.pivotBore.material, 'upper-rack-lug-roller-under-link-of-C');
   roller.rotation.x = Math.PI / 2; roller.position.set(lx, ly, .43);

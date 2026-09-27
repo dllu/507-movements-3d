@@ -77,3 +77,13 @@ test('483 turning valve B exhausts each port through its cavity and admits it ou
   }
  }finally{disposeObject3D(m.root);}
 });
+test('483 ducts show only as short drops under the shelf: in the case they are either within 0.4 of the shelf or inside their board',()=>{
+ const m=e({id:483}),d=m.root.userData,b=d.blocks,L=d.geometry.layout;
+ try{m.root.updateMatrixWorld(true);
+  const boards=b.fixedBoards.map(o=>new T.Box3().setFromObject(o));
+  for(const r of b.ductRuns){for(let i=0;i<=400;i++){const p=r.curve.getPointAt(i/400);if(p.z<L.backZ)continue;
+   const underShelf=p.y>=L.shelfBottomY-0.4,inBoard=boards.some(x=>x.containsPoint(p));
+   assert.ok(underShelf||inBoard,`${r.mesh.userData.role} exposed at ${p.toArray().map(v=>v.toFixed(2))}`);}
+   const end=r.curve.getPointAt(1);assert.ok(Math.abs(end.x-r.face)<1e-6&&end.y<L.bellowsHalfHeight,`${r.mesh.userData.role} opens through its board face`);}
+ }finally{disposeObject3D(m.root);}
+});

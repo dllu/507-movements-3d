@@ -397,45 +397,74 @@ function dryGasMeter(movement) {
   // Dial-work case: the plain box Brown draws at the upper right.
   const dialCase = addMesh(fixedCase, boxBetween(L.seatEndX, L.wallInnerX, py(165), L.roofBottomY, 1.45, L.frontZ), caseMaterial, 'fixed-dial-work-case-at-upper-right');
 
-  // Ducts from the four seat ports down to the fixed boards of their spaces.
+  // Ducts from the four seat ports to the fixed boards of their spaces.
   const ductRuns = [];
-  // Each duct drops from its port to its own level, runs straight back into
-  // the thick back wall, along a passage cored inside the wall, and forward
-  // again out of the wall into the top edge of its board: [level at the port,
-  // level at the board, depth of the cored passage]. Three passages share one
-  // layer of the wall; the passage of A' inner crosses them in a second,
-  // deeper layer. The levels keep every pair of ducts clear, and the duct of
-  // A' inner stays above the pins of the plate of A' that pass beneath its
-  // port. Inside the wall the duct is a liner in a close bore, so nothing of
-  // it shows outside the case.
+  // Pass 83: each duct drops only a little below the shelf, to one of two
+  // levels, and runs straight back into the thick back wall. Inside the wall
+  // it runs in a passage cored in one of two layers and leaves the wall's
+  // front face level with its board, straight into that board: the fixed
+  // boards run back to the wall, and a passage cored in the board turns out
+  // of the board's face into its measuring space. Nothing of a duct shows
+  // between the shelf and the boards but the short drops and elbows under
+  // the shelf. The front duct of each pair under the shelf lies lower, so
+  // no drop meets a run; in the wall, the two ducts of a layer are routed
+  // round each other (A outer goes up over A' outer's entry). Inside the
+  // wall and the boards each duct is a liner in a close bore.
   const layerZ = [-2.06, -2.24];
   const bore = 0.075;
+  const boardPassageZ = -0.60;
+  // [level under the shelf, level in the board, layer, in-wall route]
   const ductRoute = {
-    'A-outer': [3.30, 3.30, 0], 'A-inner': [2.82, 2.82, 0],
-    'A-prime-inner': [3.14, 2.66, 1], 'A-prime-outer': [2.98, 2.98, 0],
+    'A-outer': [3.29, 2.20, 1, (x, bx) => [[x, 3.29], [x, 3.60], [bx, 3.60], [bx, 2.20]]],
+    'A-inner': [3.10, 2.30, 0, (x, bx) => [[x, 3.10], [bx, 3.10], [bx, 2.30]]],
+    'A-prime-inner': [3.10, 1.90, 0, (x, bx) => [[x, 3.10], [x, 1.90], [bx, 1.90]]],
+    'A-prime-outer': [3.29, 2.30, 1, (x, bx) => [[x, 3.29], [x, 2.30], [bx, 2.30]]],
+  };
+  // Board of each space: its x span and the face that opens into the space.
+  const boardSpans = {
+    'A-outer': [-L.wallInnerX, -L.endBoardFaceX, -L.endBoardFaceX],
+    'A-inner': [-L.innerBoardFaceX, -L.partitionHalf, -L.innerBoardFaceX],
+    'A-prime-inner': [L.partitionHalf, L.innerBoardFaceX, L.innerBoardFaceX],
+    'A-prime-outer': [L.endBoardFaceX, L.wallInnerX, L.endBoardFaceX],
   };
   const entries = [[], []];
   const channels = [[], []];
+  const boardPassages = {};
   spaces.forEach((space) => {
     const [pxk, pzk] = space.port;
-    const [portY, boardY, layer] = ductRoute[space.key];
+    const [portY, boardY, layer, route] = ductRoute[space.key];
     const runZ = layerZ[layer];
-    const boardZ = -0.85;
+    const face = boardSpans[space.key][2];
+    const wallRun = route(pxk, space.board);
     const points = [
       new THREE.Vector3(pxk, L.shelfBottomY + 0.02, pzk),
       new THREE.Vector3(pxk, portY, pzk),
-      new THREE.Vector3(pxk, portY, runZ),
-      ...(portY === boardY ? [] : [new THREE.Vector3(pxk, boardY, runZ)]),
-      new THREE.Vector3(space.board, boardY, runZ),
-      new THREE.Vector3(space.board, boardY, boardZ),
-      new THREE.Vector3(space.board, L.bellowsHalfHeight, boardZ),
+      ...wallRun.map(([x, y]) => new THREE.Vector3(x, y, runZ)),
+      new THREE.Vector3(space.board, boardY, boardPassageZ),
+      new THREE.Vector3(face, boardY, boardPassageZ),
     ];
     const curve = roundedPolyline(points, 0.1);
-    const mesh = addMesh(fixedCase, curvedPipeWall(curve, 0.05, 0.07, 160, 16), pipeMaterial, `fixed-duct-from-seat-port-to-${space.key}`);
-    ductRuns.push({curve, layer, mesh, points});
+    const mesh = addMesh(fixedCase, curvedPipeWall(curve, 0.05, 0.07, 200, 16), pipeMaterial, `fixed-duct-from-seat-port-to-${space.key}`);
+    ductRuns.push({curve, layer, mesh, points, boardY, face});
     entries[layer].push(poly(circle([pxk, portY], bore, 32)), poly(circle([space.board, boardY], bore, 32)));
-    const run = [[pxk, portY], ...(portY === boardY ? [] : [[pxk, boardY]]), [space.board, boardY]];
-    for (let i = 1; i < run.length; i += 1) channels[layer].push(capsule(run[i - 1], run[i], bore, 24));
+    for (let i = 1; i < wallRun.length; i += 1) channels[layer].push(capsule(wallRun[i - 1], wallRun[i], bore, 24));
+    boardPassages[space.key] = {boardY, face};
+  });
+  // The fixed boards run back to the wall, each with its cored passage.
+  spaces.forEach((space, k) => {
+    const [x0, x1] = boardSpans[space.key];
+    const {boardY, face} = boardPassages[space.key];
+    const outline = planRect(x0, x1, L.backZ, L.bellowsHalfDepth);
+    const passage = clip.union(
+      planCapsule([space.board, L.backZ - 0.1], [space.board, boardPassageZ], bore),
+      planCapsule([space.board, boardPassageZ], [face + Math.sign(face - space.board) * 0.1, boardPassageZ], bore));
+    const board = fixedBoards[k];
+    board.geometry.dispose();
+    board.geometry = mergePassageParts([
+      horizontalPlate(outline, -L.bellowsHalfHeight, boardY - bore),
+      horizontalPlate(clip.difference(outline, passage), boardY - bore, boardY + bore),
+      horizontalPlate(outline, boardY + bore, L.bellowsHalfHeight),
+    ]);
   });
   const inletBore = poly(circle([2.2, 4.6], 0.10, 32));
   const wallFace = poly([[-L.wallInnerX, L.floorTopY], [L.wallInnerX, L.floorTopY], [L.wallInnerX, L.roofBottomY], [-L.wallInnerX, L.roofBottomY]]);
@@ -633,7 +662,7 @@ function dryGasMeter(movement) {
       'Two bellows chambers A and A′ stand either side of a central partition. Each is closed at both ends by fixed boards and divided by its moving plate into an outer and an inner measuring space, so the plate is driven one way by gas admitted on one side while the other side is emptied. Each plate works a flag on a vertical flag rod; an arm on top of each flag rod drives, through a link, a crank pin on the spindle of valve B, the two pins a quarter turn apart, so the plates keep a quarter stroke apart and the spindle turns continuously. B is a D-shaped cup turning on a seat in the shelf with one port for each measuring space round a central exhaust port: the ports under the cup are open to the exhaust, which runs through a passage in the shelf to the tall outlet column; the ports outside it admit the gas that fills the case. Each revolution of the spindle passes the four space volumes; the dial-work in the box at the upper right counts revolutions.',
     motion: {spindleTurnsPerCycle: 1, valveBRotation: 'continuous, with the crank spindle'},
     reconstruction:
-      'Brown’s plate shows one elevation. The flag and crank linkage, the left flag rod behind chamber A, the four port ducts and their passages cored in the thick back wall, the cored exhaust passage, the inlet through the back of the case and the rounded-rectangle bellows section are inferred; the crank radius, arm and link lengths are chosen so both rocking flag rods can turn one crank, and the port angles are derived from the plate motion so each space exhausts while it closes.',
+      'Brown’s plate shows one elevation. The flag and crank linkage, the left flag rod behind chamber A, the four port ducts, their passages cored in the thick back wall and in the fixed boards (which run back to that wall), the cored exhaust passage, the inlet through the back of the case and the rounded-rectangle bellows section are inferred; the crank radius, arm and link lengths are chosen so both rocking flag rods can turn one crank, and the port angles are derived from the plate motion so each space exhausts while it closes.',
     sourceAnimation: {
       available: false,
       officialPageMarksAnimationUnavailable: true,

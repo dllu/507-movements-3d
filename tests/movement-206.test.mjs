@@ -770,3 +770,26 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   disposeModel(nextModel.root);
   disposeModel(model.root);
 });
+
+test('movement 206 left band tapers and hugs the tips at its square end, as Brown draws it', () => {
+  const model = createMovementModel(catalog.movements[205]);
+  const { leftPawlBody, leftPawlContactFinger, ratchet, ratchetBody } = model.root.userData.blocks;
+  model.update(0, 0);
+  model.root.updateMatrixWorld(true);
+  const tipRadius = Math.max(...ratchet.userData.profilePoints.map((point) => point.length()));
+  const inverse = ratchetBody.matrixWorld.clone().invert();
+  const finger = leftPawlContactFinger.getWorldPosition(new THREE.Vector3()).applyMatrix4(inverse);
+  const fingerAngle = Math.atan2(finger.y, finger.x);
+  const positions = leftPawlBody.geometry.attributes.position;
+  const point = new THREE.Vector3();
+  let outer = 0;
+  for (let index = 0; index < positions.count; index += 1) {
+    point.fromBufferAttribute(positions, index).applyMatrix4(leftPawlBody.matrixWorld).applyMatrix4(inverse);
+    // The square end lies just past the nose, away from the pivot.
+    if (Math.atan2(point.y, point.x) > fingerAngle + 0.025) {
+      outer = Math.max(outer, Math.hypot(point.x, point.y));
+    }
+  }
+  // Pass 83: the square end stands about 0.25 outside the tips (it stood 0.35 out).
+  assert.ok(outer - tipRadius < 0.28 && outer - tipRadius > 0.15, `left band end ${outer - tipRadius} outside the tips`);
+});

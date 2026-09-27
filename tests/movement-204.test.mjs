@@ -743,6 +743,14 @@ test('movement 204 runtime keeps the contact generator fixed and remains distinc
   const view = model.cameraDirection.clone().normalize();
   assert.ok(driverAxis.dot(view) > 0.25 && -drivenAxis.dot(view) > 0.25,
     'upper right and lower left end faces both face the viewer');
+  // Pass 83: both visible end faces sit at the lateral extremes, where a wide
+  // lens turns them edge-on. A 3 degree lens keeps the parallel-view
+  // openings (about 0.42 and 0.43, Brown's 0.42 and 0.43-0.49) within 0.02.
+  assert.ok(model.root.userData.cameraFov <= 3);
+  assert.ok(driverAxis.dot(view) > 0.41 && driverAxis.dot(view) < 0.44,
+    `upper end ellipse ${driverAxis.dot(view)}`);
+  assert.ok(-drivenAxis.dot(view) > 0.42 && -drivenAxis.dot(view) < 0.46,
+    `lower end ellipse ${-drivenAxis.dot(view)}`);
 
   const nextMovement = catalog.movements[204];
   const nextModel = createMovementModel(nextMovement);

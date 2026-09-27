@@ -602,6 +602,9 @@ function modelBrownHorse(blocks) {
   // folded into it.
   replaceGeometry(blocks.torso, figureGeometry('horse-body'));
   blocks.torso.userData.role = 'engraved-horse-body-neck-and-head';
+  // Pass 83: the mane's locks are the body's second material group, in the
+  // tail's hair colour.
+  const bodyMaterial = blocks.torso.material;
   for (const part of [blocks.neck, blocks.head, blocks.muzzle, ...blocks.ears]) part.visible = false;
   blocks.eye.position.set(-1.125, 0.625, 0.066);
   blocks.eye.scale.setScalar(0.62);
@@ -618,7 +621,7 @@ function modelBrownHorse(blocks) {
     const hoof = blocks.hooves[index];
     replaceGeometry(leg, bendingLimbGeometry(front ? 'horse-foreleg' : 'horse-hindleg',
       { kneeDepth: 0.43, filletRadius: 0.2 }));
-    leg.material = [blocks.torso.material, hoof.material];
+    leg.material = [bodyMaterial, hoof.material];
     leg.userData.role = front ? 'horse-foreleg-forearm-knee-cannon-pastern-and-hoof'
       : 'horse-hind-leg-gaskin-hock-cannon-pastern-and-hoof';
     lower.parent.remove(lower);
@@ -637,6 +640,7 @@ function modelBrownHorse(blocks) {
   blocks.tailPivot.position.set(0.765, 0.19, 0);
   replaceGeometry(blocks.tail, figureGeometry('horse-tail'));
   blocks.tail.userData.role = 'engraved-horse-flowing-tail';
+  blocks.torso.material = [bodyMaterial, blocks.tail.material];
 }
 
 // Plate 376 draws the horse's back rising about 24 degrees toward its head.

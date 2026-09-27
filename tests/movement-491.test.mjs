@@ -143,11 +143,10 @@ test('movement 491 head, barrel, hand-spike, and pawl carrier share one angle wh
     model.root.updateMatrixWorld(true);
     near(blocks.capstanRotor.rotation.y, state.capstanRotationY, 0,
       `rendered rigid capstan ${time}`);
-    near(state.capstanRotationY,
-      -geometry.operatingAngularSpeed * time, 0,
+    near(state.capstanRotationY, -state.operatingAngleRadian, 0,
       `capstan working direction ${time}`);
     near(state.pawlWorldAzimuthRadian,
-      geometry.pawlPivotAzimuth + geometry.operatingAngularSpeed * time, 0,
+      geometry.pawlPivotAzimuth + state.operatingAngleRadian, 0,
       `carried pawl azimuth ${time}`);
     near(blocks.pawl.rotation.z,
       state.pawlClosure.pawlPitchAngleRadian, 0,
@@ -269,7 +268,7 @@ test('movement 491 ratchet rises only in the hauling direction and presents a hi
   assert.match(transmission.oneWayConstraint,
     /forward pawl azimuth rises.*reverse travel is arrested.*vertical tooth face/s);
   assert.match(dynamics.idealRatchetContact,
-    /climbs each fixed tooth ramp.*falls continuously.*Reverse motion.*backlash/s);
+    /climbs each fixed tooth ramp.*falls continuously.*seats in the root against the tooth face/s);
   disposeModel(model.root);
 });
 
@@ -278,13 +277,15 @@ test('movement 491 hauls its one laid cable at barrel surface speed smoothly thr
   const { blocks, cableRoute, dynamics, geometry, stateAtTime,
     transmission } = model.root.userData;
 
-  for (const time of [0, 0.19, 0.83, 1.77, 3.15, 5.62, 8.29]) {
+  for (const time of [0, 0.19, 0.83, 1.77, 3.15, 5.62, 7.1, 7.8, 8.29]) {
     const state = stateAtTime(time);
-    near(state.cableSpeed,
-      geometry.barrelRadius * geometry.operatingAngularSpeed,
-      0, `cable surface speed ${time}`);
-    near(state.cableDistanceHauled, state.cableSpeed * time, 0,
+    near(state.cableDistanceHauled,
+      geometry.barrelRadius * state.operatingAngleRadian, 1e-12,
       `hauled distance ${time}`);
+    const h = 1e-6;
+    near(state.cableSpeed, (stateAtTime(time + h).cableDistanceHauled
+      - stateAtTime(time - h).cableDistanceHauled) / (2 * h), 1e-6,
+    `cable surface speed ${time}`);
     model.update(time);
     near(blocks.cable.geometry.userData.travel, state.cableDistanceHauled,
       0, `laid cable travel ${time}`);
@@ -312,7 +313,7 @@ test('movement 491 hauls its one laid cable at barrel surface speed smoothly thr
   assert.match(sourceText,
     /cable\.geometry\.setTravel\(state\.cableDistanceHauled\)/);
   assert.match(dynamics.cableLayContinuity,
-    /one arc-length Curve3.*share position and tangent.*constant speed/s);
+    /one arc-length Curve3.*share position and tangent.*barrel surface speed/s);
   disposeModel(model.root);
 });
 
@@ -342,5 +343,39 @@ test('movement 491 remains in finite swept bounds and leaves spinning movement 5
   assert.equal(next.number, '507');
   assert.equal(next.archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
   assert.equal(next.fidelity, 'authored');
+  disposeModel(model.root);
+});
+
+test('movement 491 hauls one turn per cycle, then eases back until the pawl seats in a tooth root as Brown draws it', () => {
+  const { model } = movementModel();
+  const { geometry, stateAtTime } = model.root.userData;
+  const period = geometry.operatingPeriod;
+  // One net turn per cycle; the capstan only turns back in the short recoil.
+  near(stateAtTime(period).operatingAngleRadian - stateAtTime(0).operatingAngleRadian, 2 * Math.PI, 1e-9, 'one turn');
+  let previous = stateAtTime(0), backward = 0;
+  for (let i = 1; i <= 8000; i++) {
+    const state = stateAtTime(period * i / 8000);
+    const step = state.operatingAngleRadian - previous.operatingAngleRadian;
+    if (step < -1e-12) { backward -= step; assert.equal(state.stage, 'recoil'); }
+    // The pose is continuous through every stage change and the loop seam.
+    assert.ok(Math.abs(state.pawlClosure.pawlPitchAngleRadian - previous.pawlClosure.pawlPitchAngleRadian) < 0.03,
+      `pawl jump at ${i}`);
+    previous = state;
+  }
+  near(backward, geometry.recoilAngle, 1e-6, 'recoil angle');
+  assert.ok(geometry.recoilAngle < geometry.ratchetToothPitch * 0.45, 'recoil is less than half a tooth');
+  const start = stateAtTime(0), end = stateAtTime(period - 1e-9);
+  near(end.pawlClosure.pawlPitchAngleRadian, start.pawlClosure.pawlPitchAngleRadian, 1e-6, 'loop seam pawl');
+  near(end.operatingAngleRadian - 2 * Math.PI, start.operatingAngleRadian, 1e-6, 'loop seam capstan');
+  assert.equal(stateAtTime(period - 0.1).stage, 'held');
+  // Held (and at the displayed start) the nose is seated at the root.
+  for (const time of [0, period - 0.1]) {
+    const state = stateAtTime(time);
+    const surface = model.root.userData.toothSurfaceAtAzimuth(state.pawlWorldAzimuthRadian);
+    const offset = ((surface.toothPhase - geometry.pawlReleasePhase - geometry.pawlSeatPhase) % 1 + 1.5) % 1 - 0.5;
+    near(offset, 0, 1e-6, `seat phase ${time}`);
+    const noseBottom = state.pawlClosure.pawlTipHeight - geometry.pawlTipRadius;
+    assert.ok(noseBottom - geometry.ratchetLowHeight < 0.05, `nose down in the root ${noseBottom}`);
+  }
   disposeModel(model.root);
 });

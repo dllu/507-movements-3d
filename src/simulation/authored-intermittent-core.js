@@ -7644,8 +7644,15 @@ function sharedPivotDoubleStrokeRatchet() {
   // The extrusion bevel grows the outline by its bevel size, so the drawn
   // nose radius is the finger radius less that bevel.
   const pawlNoseOutlineRadius = pawlFingerRadius - Math.min(0.025, 0.13 * 0.12);
+  // Brown's short left band tapers and hugs the tips at its square end: it
+  // ends about 0.1 inside a band of the right one's section.
+  const leftBandEndHalfWidth = 0.09;
+  const leftBandClearance = 0.05;
   const hookedPawlOutline = (right) => {
     const pivot = sharedPawlPivotAtRockerAngle(handleMeanAngle);
+    const endHalfWidth = right ? pawlBandHalfWidth : leftBandEndHalfWidth;
+    const bandRadius = right ? pawlArcRadius
+      : ratchetOuterRadius + leftBandEndHalfWidth + leftBandClearance;
     const orbitRadius = right
       ? rightContactOrbitRadius
       : leftContactOrbitRadius;
@@ -7692,8 +7699,8 @@ function sharedPivotDoubleStrokeRatchet() {
       .addScaledVector(faceNormal, pawlNoseFaceBias)
       .normalize();
     const noseNormal = new THREE.Vector2(-noseDirection.y, noseDirection.x);
-    const innerRadius = pawlArcRadius - pawlBandHalfWidth;
-    const outerRadius = pawlArcRadius + pawlBandHalfWidth;
+    const innerRadius = bandRadius - endHalfWidth;
+    const outerRadius = bandRadius + endHalfWidth;
     // Where each nose flank meets the band's inner edge.
     const flankBase = (side) => {
       const start = contact.clone().addScaledVector(
@@ -7745,7 +7752,7 @@ function sharedPivotDoubleStrokeRatchet() {
       const fraction = THREE.MathUtils.clamp(
         (angle - endAngle) / (pivotAngle - endAngle), 0, 1);
       return THREE.MathUtils.lerp(
-        pawlArcRadius,
+        bandRadius,
         pivotRadius,
         THREE.MathUtils.lerp(Math.sin(Math.PI / 2 * fraction), smoothStep01(fraction), riseProfile),
       );
@@ -7753,8 +7760,10 @@ function sharedPivotDoubleStrokeRatchet() {
     // The band narrows into the pin eye.
     const halfWidthAt = (angle) => {
       const fraction = (angle - endAngle) / (pivotAngle - endAngle);
+      const bandHalfWidth = THREE.MathUtils.lerp(endHalfWidth, pawlBandHalfWidth,
+        smoothStep01(THREE.MathUtils.clamp(fraction / 0.6, 0, 1)));
       return THREE.MathUtils.lerp(
-        pawlBandHalfWidth,
+        bandHalfWidth,
         0.09,
         smoothStep01(THREE.MathUtils.clamp((fraction - 0.8) / 0.2, 0, 1)),
       );

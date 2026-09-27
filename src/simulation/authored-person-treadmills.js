@@ -541,12 +541,13 @@ function externalPersonTreadmill(movement) {
     foot.userData.role = 'person-foot-above-peripheral-step';
     knee.add(foot);
     foot.geometry.dispose();
-    // The shoe keeps the old sole box: a flat sole at y = -0.05 and the
-    // 0.28 x 0.11 footprint that rests on the boards.
+    // The shoe keeps the old sole: flat at y = -0.05 with the 0.28 x 0.11
+    // footprint that rests on the boards; its upper (pass 83) rises round
+    // the ankle under the trouser cuff.
     foot.geometry = figureGeometry('man-shoe', (position) => {
       for (let i = 0; i < position.length; i += 3) {
         position[i] = THREE.MathUtils.clamp(position[i], -0.14, 0.14);
-        position[i + 1] = THREE.MathUtils.clamp(position[i + 1], -0.05, 0.02);
+        position[i + 1] = THREE.MathUtils.clamp(position[i + 1], -0.05, 0.1);
         position[i + 2] = THREE.MathUtils.clamp(position[i + 2], -0.055, 0.055);
       }
     });

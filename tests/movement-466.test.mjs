@@ -199,25 +199,35 @@ test('movement 466 cumulative delivery counts only downward plunger strokes', ()
     pumpKinematics,
   } = model.root.userData;
 
+  // Stroke 0 is Brown's pose: the lever on its plate slope at mid-stroke,
+  // going down. Bottom at pi/2, top at 3pi/2, the next rest pose at 2pi.
   for (let cycle = 0; cycle < geometry.pumpCycleCount; cycle += 1) {
-    const topAngle = cycle * FULL_TURN;
-    const bottomAngle = topAngle + Math.PI;
-    const nextTopAngle = topAngle + FULL_TURN;
+    const restAngle = cycle * FULL_TURN;
+    const bottomAngle = restAngle + Math.PI / 2;
+    const topAngle = restAngle + 1.5 * Math.PI;
+    const nextRestAngle = restAngle + FULL_TURN;
+    const lowerHalf = pumpKinematics(restAngle).piston.y
+      - pumpKinematics(bottomAngle).piston.y;
     near(deliveredLengthAtStrokeAngle(
-      topAngle,
-      pumpKinematics(topAngle),
+      restAngle,
+      pumpKinematics(restAngle),
     ), cycle * geometry.pumpStrokeLength, 2e-11,
-    `delivery at top of cycle ${cycle}`);
+    `delivery at Brown's rest pose of cycle ${cycle}`);
     near(deliveredLengthAtStrokeAngle(
       bottomAngle,
       pumpKinematics(bottomAngle),
-    ), (cycle + 1) * geometry.pumpStrokeLength, 2e-11,
+    ), cycle * geometry.pumpStrokeLength + lowerHalf, 2e-11,
     `delivery at bottom of cycle ${cycle}`);
     near(deliveredLengthAtStrokeAngle(
-      nextTopAngle,
-      pumpKinematics(nextTopAngle),
-    ), (cycle + 1) * geometry.pumpStrokeLength, 2e-11,
+      topAngle,
+      pumpKinematics(topAngle),
+    ), cycle * geometry.pumpStrokeLength + lowerHalf, 2e-11,
     `suction return adds no delivery in cycle ${cycle}`);
+    near(deliveredLengthAtStrokeAngle(
+      nextRestAngle,
+      pumpKinematics(nextRestAngle),
+    ), (cycle + 1) * geometry.pumpStrokeLength, 2e-11,
+    `delivery back at Brown's rest pose after cycle ${cycle}`);
   }
   near(geometry.maximumDeliveredVolume,
     geometry.pumpCycleCount * geometry.pumpPlungerArea
@@ -397,4 +407,30 @@ test('movement 466 has finite render bounds and movement 507 remains the next au
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model466.root);
   disposeModel(model507.root);
+});
+
+test('movement 466 starts on Brown’s lever slope and models his thin line as a pull-only cord to the ball', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtPhase, cordState } = model.root.userData;
+  const rest = stateAtPhase(0);
+  near(rest.leverAngle, geometry.pumpLeverRestAngle, 1e-12, 'lever on the plate slope at phase 0');
+  assert.ok(rest.leverAngle < -0.2, 'the plate lever slopes down to the grip');
+  near(rest.fulcrum.x, (315 - 262) / 72, 1e-9, 'fulcrum at the plate pin');
+  near(rest.ramLift, 0, 1e-12, 'ram down at Brown’s pose');
+  for (const phase of [0.80, 0.83, 0.999]) near(stateAtPhase(phase).leverAngle, geometry.pumpLeverRestAngle, 1e-9, `hold/let-down lever on plate slope at ${phase}`);
+  let maximumSagWhilePumping = 0, maximumSag = 0;
+  for (let i = 0; i <= 400; i += 1) {
+    const phase = i / 400;
+    model.update(phase * geometry.cycleDuration);
+    const cord = cordState();
+    assert.ok(cord.chord <= geometry.cordLength + 1e-12, `cord never stretched at ${phase}`);
+    if (phase < geometry.operationEndPhase) maximumSagWhilePumping = Math.max(maximumSagWhilePumping, cord.sag);
+    maximumSag = Math.max(maximumSag, cord.sag);
+    const length = blocks.ballCord.geometry.attributes.position.count;
+    assert.ok(length > 0);
+  }
+  assert.ok(geometry.cordSpreadWhilePumping < 0.01, `pin swing barely changes the span: ${geometry.cordSpreadWhilePumping}`);
+  assert.ok(maximumSagWhilePumping < 0.08, `cord nearly taut while pumping: ${maximumSagWhilePumping}`);
+  assert.ok(maximumSag > maximumSagWhilePumping, 'cord slackens when the ball is lifted');
+  disposeModel(model.root);
 });

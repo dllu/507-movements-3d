@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { capstanPawlSamples, capstanPawlReleasePhase } from './capstan-pawl-profile.js';
-export { capstanPawlReleasePhase };
+import { capstanPawlSamples, capstanPawlReleasePhase, capstanPawlSeatPhase, capstanPawlRecoilSamples } from './capstan-pawl-profile.js';
+export { capstanPawlReleasePhase, capstanPawlSeatPhase };
 const FULL_TURN = 2 * Math.PI;
 function appendTriangle(positions, first, second, third) {
   for (const point of [first, second, third]) {
@@ -140,4 +140,19 @@ export function capstanPawlProfile(phase) {
   const pitch = p0+(p1-p0)*alpha, contactPitch = c0+(c1-c0)*alpha;
   const airborneClearance = Math.max(0,capstanPawlDimensions.length*(Math.sin(pitch)-Math.sin(contactPitch)));
   return {phase:coordinate/(capstanPawlSamples.length-1),pitch,contactPitch,airborneClearance,falling:airborneClearance > 1e-7};
+}
+
+// The pawl lying on the ratchet below the crest line: after it has dropped
+// and while the capstan backs off, its nose slides down the ramp until it
+// seats in the root against the tooth face at capstanPawlSeatPhase (< 0,
+// measured from the crest release). Phase is folded into [seat, 1 + seat).
+export function capstanPawlSeatedPitch(phase) {
+  const seat = capstanPawlSeatPhase;
+  // Rounding may put the seat itself a hair below the fold; keep it there.
+  const w = ((phase - seat) % 1 + 1) % 1, v = (w > 1 - 1e-7 ? 0 : w) + seat;
+  if (v >= 0) return capstanPawlProfile(v).contactPitch;
+  const n = capstanPawlRecoilSamples.length - 1;
+  const coordinate = Math.min(n, Math.max(0, n * (1 - v / seat)));
+  const i = Math.min(n - 1, Math.floor(coordinate)), alpha = coordinate - i;
+  return capstanPawlRecoilSamples[i] + (capstanPawlRecoilSamples[i + 1] - capstanPawlRecoilSamples[i]) * alpha;
 }

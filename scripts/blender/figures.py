@@ -301,13 +301,27 @@ def build_walker(OUT):
     b.sphere((0.02, -0.93, 0), 1.0, scale=(0.06, 0.13, 0.062))         # calf
     p = process(b.obj('leg'), 0.007, smooth=0.6, smooth_iter=8, target_tris=3600)
     res['leg'] = export(p, OUT + 'man-leg.json')
+    # --- laced shoe (pass 83), in the foot frame: flat sole at y = -0.05
+    # with the 0.28 x 0.11 footprint, toe toward -x, the ankle at
+    # (0.035, 0.05). A rounded toe box, the vamp rising over the instep and
+    # the heel counter and quarters closing round the ankle, where the
+    # trouser cuff comes down over them.
     b = Builder()
-    b.capsule((-0.075, -0.035, 0), (0.07, -0.028, 0), 0.03, 0.028)
-    b.box((-0.01, -0.043, 0), (0.25, 0.014, 0.1))
-    b.sphere((-0.085, -0.032, 0), 1.0, scale=(0.055, 0.018, 0.05))
-    b.sphere((0.075, -0.02, 0), 1.0, scale=(0.06, 0.03, 0.045))
-    b.sphere((0.0, -0.02, 0), 1.0, scale=(0.09, 0.035, 0.048))
-    p = process(b.obj('shoe'), 0.004, smooth=0.5, smooth_iter=4, target_tris=700)
+    # upper lofted from overlapping sections: (x, top height, half-width)
+    upper = [(-0.128, -0.022, 0.030), (-0.105, -0.008, 0.043), (-0.075, 0.008, 0.050),
+             (-0.04, 0.022, 0.052), (-0.01, 0.038, 0.050), (0.02, 0.058, 0.048),
+             (0.045, 0.072, 0.047), (0.07, 0.07, 0.046), (0.095, 0.058, 0.045),
+             (0.115, 0.045, 0.042), (0.128, 0.028, 0.036)]
+    for i in range(len(upper) - 1):
+        for k in range(6):
+            f = k / 6
+            x, top, w = [upper[i][j] * (1 - f) + upper[i + 1][j] * f for j in range(3)]
+            b.sphere((x, (top - 0.05) / 2, 0), 1.0, scale=(0.018, (top + 0.05) / 2, w))
+    b.sphere((upper[-1][0], (upper[-1][1] - 0.05) / 2, 0), 1.0, scale=(0.018, (upper[-1][1] + 0.05) / 2, upper[-1][2]))
+    b.box((0.0, -0.044, 0), (0.25, 0.012, 0.104))                         # welt and sole
+    for x in (-0.125, 0.125):
+        b.cylinder((x, -0.05, 0), (x, -0.038, 0), 0.052 if x > 0 else 0.046)
+    p = process(b.obj('shoe'), 0.004, smooth=0.8, smooth_iter=10, target_tris=1100)
     res['shoe'] = export(p, OUT + 'man-shoe.json')
     return res
 
@@ -329,8 +343,12 @@ def build_horse(OUT):
     for s in (-1, 1):
         b.sphere((-0.42, -0.13, s * 0.15), 1, scale=(0.13, 0.22, 0.09))   # shoulder / elbow
         b.sphere((0.36, -0.06, s * 0.15), 1, scale=(0.21, 0.26, 0.10))    # thigh / stifle
+        # upper arm from the point of the shoulder back and down to the
+        # elbow, which is centred on the foreleg's pivot (-0.425, -0.265,
+        # +-0.22), so the forearm's top turns inside it at any swing.
+        path(b, [(-0.52, -0.02, s * 0.14), (-0.425, -0.265, s * 0.21)], [0.08, 0.116], zs=0.8, n=6)
     path(b, [(-0.46, 0.14, 0), (-0.74, 0.40, 0), (-0.96, 0.63, 0), (-1.05, 0.74, 0)], [0.24, 0.17, 0.12, 0.095])
-    # mane ridge along the crest
+    # crest along the top of the neck, which carries the mane
     path(b, [(-0.42, 0.36, 0), (-0.66, 0.53, 0), (-0.90, 0.72, 0), (-1.02, 0.80, 0)], [0.05, 0.05, 0.045, 0.03], zs=0.5, n=5)
     # head: jowl, face, muzzle with the nose dropped
     path(b, [(-1.06, 0.71, 0), (-1.15, 0.58, 0), (-1.23, 0.46, 0), (-1.27, 0.40, 0)], [0.105, 0.088, 0.078, 0.074], zs=0.72)
@@ -340,8 +358,32 @@ def build_horse(OUT):
         b.capsule((-1.02, 0.80, s * 0.05), (-0.99, 0.97, s * 0.07), 0.034, 0.008)   # ears
     b.sphere((0.74, 0.20, 0), 0.05)
     o = b.obj('horse')
-    p = process(o, 0.01, smooth=0.8, smooth_iter=10, target_tris=4200)
-    res['body'] = export(p, OUT + 'horse-body.json')
+    p = with_material(process(o, 0.01, smooth=0.8, smooth_iter=10, target_tris=4200), 0)
+    # Brown's mane: a jagged row of hair locks standing up and back along
+    # the crest from the poll to the withers (second material, the tail's).
+    mb = Builder()
+    crest = [(-1.0, 0.80), (-0.90, 0.735), (-0.66, 0.545), (-0.44, 0.375)]
+    def crest_at(t):
+        f = t * (len(crest) - 1); i = min(int(f), len(crest) - 2); a = f - i
+        return [crest[i][k] * (1 - a) + crest[i + 1][k] * a for k in range(2)]
+    count = 23
+    for k in range(count):
+        t = (k + 0.5) / count
+        p0 = crest_at(max(0.0, t - 0.01)); p1 = crest_at(min(1.0, t + 0.01))
+        ax, ay = p1[0] - p0[0], p1[1] - p0[1]; n = math.hypot(ax, ay); ax, ay = ax / n, ay / n
+        nx, ny = -ay, ax                          # up from the crest
+        if ny < 0: nx, ny = -nx, -ny
+        back = 0.8                                # locks sweep toward the withers
+        dx, dy = nx + back * ax, ny + back * ay; m = math.hypot(dx, dy); dx, dy = dx / m, dy / m
+        length = (0.09, 0.13, 0.105, 0.145, 0.115)[k % 5] * (0.7 + 0.3 * math.sin(math.pi * t))
+        base = crest_at(t)
+        bx, by = base[0] - 0.012 * nx, base[1] - 0.012 * ny
+        side = (0.012, -0.01, 0.006, -0.014, 0.0)[k % 5]
+        mb.capsule((bx, by, 0.0), (bx + length * dx, by + length * dy, side), 0.034, 0.005, seg=16)
+    mane = mb.obj('mane')
+    for v in mane.data.vertices: v.co.z *= 0.55
+    mane = with_material(process(mane, 0.004, smooth=0.4, smooth_iter=3, target_tris=1800), 1)
+    res['body'] = export_grouped(union_with(p, mane), OUT + 'horse-body.json')
     # legs: each is one continuous limb hanging from the shoulder/hip pivot
     # (y = 0) through the knee or hock (the factory's bend pivot, y = -0.43),
     # cannon, fetlock and sloping pastern to the hoof, whose sole lies at
@@ -364,7 +406,6 @@ def build_horse(OUT):
         b.sphere((0.008, -0.735, 0), 1, scale=(0.05, 0.046, 0.04))          # fetlock
         b.sphere((0.04, -0.75, 0), 0.016)                                   # ergot
         path(b, [(0.006, -0.745, 0), (-0.014, -0.765, 0), (-0.03, -0.782, 0)], [0.036, 0.034, 0.036], zs=0.9, n=6)
-    import math
     # foreleg: forearm with its muscle to the front, flat knee
     b = Builder()
     path(b, [(0.0, 0.03, 0), (-0.008, -0.16, 0), (0.0, -0.33, 0), (0.0, -0.41, 0)], [0.085, 0.07, 0.05, 0.045], zs=0.78, n=8)

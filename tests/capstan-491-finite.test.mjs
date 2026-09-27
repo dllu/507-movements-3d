@@ -94,14 +94,15 @@ test('491 the pawl turns about the radial pin Brown draws, flat against the lowe
 test('491 finite pawl clears every tooth pose and its nose stays engaged over the working ramp', () => {
   const field = solidSurface(b.ratchet.geometry), points = surfacePoints(b.pawlBar.geometry);
   let minimum = Infinity, maximumWorkingGap = 0;
-  for (let i = 0; i <= 1024; i++) {
-    const phase = i/1024, angle = g.ratchetPhaseOffset + (g.pawlReleasePhase + phase)*g.ratchetToothPitch - g.pawlPivotAzimuth;
-    model.update(angle/g.operatingAngularSpeed); root.updateMatrixWorld(true);
+  // Every playback pose of a whole cycle: hauling, the recoil and the hold.
+  for (let i = 0; i <= 2048; i++) {
+    const time = g.operatingPeriod * i / 2048, state = root.userData.stateAtTime(time);
+    model.update(time); root.updateMatrixWorld(true);
     const transform = b.ratchet.matrixWorld.clone().invert().multiply(b.pawlBar.matrixWorld);
     let gap = Infinity;
     for (const p of points) gap = Math.min(gap, field.signedDistance(p.clone().applyMatrix4(transform)));
     minimum = Math.min(minimum, gap);
-    if (phase >= g.pawlFreefallFraction + 0.01) maximumWorkingGap = Math.max(maximumWorkingGap, gap);
+    if (!state.pawlClosure.falling) maximumWorkingGap = Math.max(maximumWorkingGap, gap);
   }
   console.log('491 finite pawl clearance', {minimum, maximumWorkingGap});
   assert.ok(minimum > 0, `pawl into ratchet ${minimum}`);
@@ -114,9 +115,8 @@ test('491 the moving pawl clears the lower capstan, its pin and pin head through
   for (const [moving,fixed,minimum] of pairs) {
     const field = solidSurface(fixed.geometry), points = surfacePoints(moving.geometry);
     let worst=Infinity;
-    for (let i=0;i<=96;i++) {
-      const angle=g.ratchetPhaseOffset+i/96*g.ratchetToothPitch;
-      model.update(angle/g.operatingAngularSpeed); root.updateMatrixWorld(true);
+    for (let i=0;i<=192;i++) {
+      model.update(g.operatingPeriod*i/192); root.updateMatrixWorld(true);
       const transform=fixed.matrixWorld.clone().invert().multiply(moving.matrixWorld);
       for (const p of points) worst=Math.min(worst,field.signedDistance(p.clone().applyMatrix4(transform)));
     }
@@ -169,4 +169,22 @@ test('491 the finite crest release is periodic and continuous with a genuine air
   assert.ok(maximumStep < 0.006, `no pose jump: ${maximumStep}`);
   assert.ok(maximumAir > 0.01 && maximumAir < 0.20);
   assert.ok(Math.abs(fn(start-1e-9).pawlTipHeight - fn(start+1e-9).pawlTipHeight) < 1e-6);
+});
+
+test('491 held, the nose sits in the root against the tooth face, which stops any further recoil', () => {
+  const field = solidSurface(b.ratchet.geometry), points = surfacePoints(b.pawlBar.geometry);
+  const held = root.userData.stateAtTime(0);
+  const gapAt = back => {
+    b.capstanRotor.rotation.y = held.capstanRotationY + back; b.pawl.rotation.z = held.pawlClosure.pawlPitchAngleRadian;
+    root.updateMatrixWorld(true);
+    const transform = b.ratchet.matrixWorld.clone().invert().multiply(b.pawlBar.matrixWorld);
+    let best = Infinity; for (const p of points) best = Math.min(best, field.signedDistance(p.clone().applyMatrix4(transform)));
+    return best;
+  };
+  const seated = gapAt(0), backed = gapAt(0.004);
+  console.log('491 held pawl', { seated, backedOff: backed });
+  assert.ok(seated > 0 && seated < 0.002, `seated clear but touching ${seated}`);
+  // Turning the capstan back a quarter of a degree drives the pawl into the face.
+  assert.ok(backed < 0, `recoil blocked ${backed}`);
+  model.update(0);
 });

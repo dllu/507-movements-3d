@@ -3918,7 +3918,7 @@
       "fastestPart": "left-curved-pawl-driving-while-common-pin-rises",
       "motionBounds": {
         "min": [
-          -2.738967527455703,
+          -2.6433675836907495,
           -2.380000034364541,
           -0.09500000238418585
         ],
@@ -7162,7 +7162,7 @@
     "377": {
       "peakAngularSpeed": 30.125528812066722,
       "peakVisibleAngularSpeed": 27.744959699054224,
-      "sustainedVisibleAngularSpeed": 8.01439500883041,
+      "sustainedVisibleAngularSpeed": 8.87803696050464,
       "floorY": -2.0799999986588955,
       "fastestPart": "person-knee-pivot",
       "motionBounds": {
@@ -7426,8 +7426,8 @@
       }
     },
     "391": {
-      "peakAngularSpeed": 4.237308801217988,
-      "peakVisibleAngularSpeed": 4.237308801217988,
+      "peakAngularSpeed": 4.237308801220208,
+      "peakVisibleAngularSpeed": 4.237308801220208,
       "sustainedVisibleAngularSpeed": 1.9126794344970917,
       "floorY": -4.950815410119306,
       "fastestPart": "short-link-swinging-on-pin-in-C",
@@ -7439,7 +7439,7 @@
         ],
         "max": [
           3.0500000014901163,
-          5.106005742361774,
+          4.506005742374363,
           0.7699999952316284
         ]
       }
@@ -8851,9 +8851,9 @@
       }
     },
     "466": {
-      "peakAngularSpeed": 3.0787183951745662,
-      "peakVisibleAngularSpeed": 3.0787183951745662,
-      "sustainedVisibleAngularSpeed": 1.284251301286098,
+      "peakAngularSpeed": 3.0445939336850847,
+      "peakVisibleAngularSpeed": 3.0445939336850847,
+      "sustainedVisibleAngularSpeed": 1.3202092967746646,
       "floorY": -3.0833332538604736,
       "fastestPart": "human-operated-hand-lever",
       "motionBounds": {
@@ -8863,8 +8863,8 @@
           -1.5555555820465088
         ],
         "max": [
-          3.4118419826539634,
-          3.3437913837461166,
+          3.411840830765665,
+          3.3437776275305753,
           0.7638888955116272
         ]
       }
@@ -9326,39 +9326,39 @@
       }
     },
     "491": {
-      "peakAngularSpeed": 6.6517297629664895,
-      "peakVisibleAngularSpeed": 3.253572864868418,
-      "sustainedVisibleAngularSpeed": 0.7853981633979796,
+      "peakAngularSpeed": 10.473364725223682,
+      "peakVisibleAngularSpeed": 5.1437015607469405,
+      "sustainedVisibleAngularSpeed": 1.0527536712469463,
       "floorY": -1.850000009536743,
       "fastestPart": "gravity-pawl-riding-fixed-circular-ratchet",
       "motionBounds": {
         "min": [
-          -3.076277314100572,
+          -3.077308305715376,
           -1.850000009536743,
-          -3.076277314100572
+          -3.077318890293239
         ],
         "max": [
           16.049999237060547,
           1.7610600006580353,
-          3.076277314100572
+          3.077318890293239
         ]
       }
     },
     "492": {
       "peakAngularSpeed": 1.8192099655817984,
-      "peakVisibleAngularSpeed": 1.0010148395914318,
-      "sustainedVisibleAngularSpeed": 0.475615488387877,
+      "peakVisibleAngularSpeed": 0.9916154357993163,
+      "sustainedVisibleAngularSpeed": 0.4711495186056842,
       "floorY": -4.6066245165076,
       "fastestPart": "hinged-tongue",
       "motionBounds": {
         "min": [
           -1.523845659542987,
           -4.6066245165076,
-          -0.6942483510177162
+          -0.6124099658530011
         ],
         "max": [
           19.07053380477142,
-          19.411925150553355,
+          19.787925554911265,
           0.4000000059604645
         ]
       }

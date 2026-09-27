@@ -31722,13 +31722,17 @@ function skewHyperboloidFrictionDrive() {
     root.userData.kinematics = state;
   };
   correctSkewFrictionParts(root);
-  // A long lens keeps both end faces open, as in Brown's near-parallel view;
-  // a wide lens foreshortens the far-side end faces toward edge-on.
-  root.userData.cameraFov = 8;
+  // A long lens keeps both end faces open, as in Brown's near-parallel view.
+  // The visible ends (upper right, lower left) lie at the lateral extremes,
+  // where perspective turns them toward edge-on: at 8 degrees they rendered
+  // 0.36 and 0.41 against the 0.40 and 0.45 of a parallel view.  Three
+  // degrees keeps nearly all of the parallel-view opening.
+  root.userData.cameraFov = 3;
   update(0);
-  // Turned 1.5 degrees toward the driver's end so both end ellipses open
-  // about as Brown draws them (0.40 and 0.45 against his 0.42 and 0.47).
-  return finish(root, update, new THREE.Vector3(0.35, 2.3, 13.2));
+  // Turned 2.5 degrees toward the driver's end.  The two visible ellipses
+  // (0.40 upper, 0.42 lower against Brown's 0.42 and 0.43-0.49) share the
+  // fixed sum set by the shaft angle; yawing further trades one for the other.
+  return finish(root, update, new THREE.Vector3(0.58, 2.3, 13.2));
 }
 
 const SPLIT_CAM_IDLE_FLANK_SHIFT = 0.07;

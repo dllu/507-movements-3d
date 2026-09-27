@@ -23,7 +23,10 @@ test('movement 492 is the one detaching hook Brown draws: standard, tongue, leve
   assert.equal(b.leverEye.parent, b.lever);
   assert.equal(b.tongueBar.parent, b.tongue);
   assert.equal(b.hookBar.parent, b.hookFrame);
-  assert.equal(b.block.parent, b.hookFrame);
+  assert.equal(b.block.parent, b.blockFrame);
+  assert.equal(b.blockFrame.parent, b.tackle);
+  assert.equal(b.strop.parent, b.blockFrame);
+  assert.equal(b.strop.geometry.type, 'LaidRopeGeometry');
   const roles = [];
   model.root.traverse(o => roles.push(o.userData.role ?? ''));
   assert.equal(roles.filter(r => /deck|rail|crossbar|hand|white|index/.test(r)).length, 0, 'nothing Brown does not draw');
@@ -97,4 +100,29 @@ test('movement 492 renders the solved poses, keeps the rope on its eye and close
     previous = s;
   }
   assert.ok(maxStep < 0.01, `smooth motion ${maxStep}`);
+});
+
+test('movement 492 block is stropped: the strop lies in its score, bears on the hook eye and is seized above it', async () => {
+  const { solidSurface } = await import('./helpers/solid-surface.mjs');
+  const curve = b.strop.geometry.parameters.path, radius = b.strop.geometry.parameters.radius;
+  const shell = solidSurface(b.block.geometry), toShell = new THREE.Matrix4().copy(b.block.matrix).invert();
+  const eye = b.hookEye.geometry.parameters, eyeCenter = b.hookEye.position;
+  let shellGap = Infinity, eyeGap = Infinity, onShell = 0;
+  for (let i = 0; i < 4000; i++) {
+    const p = curve.getPointAt(i / 4000);
+    const d = shell.signedDistance(p.clone().applyMatrix4(toShell)) - radius;
+    shellGap = Math.min(shellGap, d);
+    if (d < 0.01) onShell++;
+    // The eye is a torus in the block frame's xy plane.
+    const q = p.clone().sub(eyeCenter), ring = Math.hypot(q.x, q.y) - eye.radius;
+    eyeGap = Math.min(eyeGap, Math.hypot(ring, q.z) - eye.tube - radius);
+  }
+  console.log('492 strop', { shellGap, eyeGap, onShell });
+  assert.ok(shellGap > -0.004, `strop into the shell ${shellGap}`);
+  assert.ok(onShell > 2000, 'the strop runs round the shell in its score');
+  assert.ok(Math.abs(eyeGap) < 0.004, `bight bears on the hook eye ${eyeGap}`);
+  // The seizing binds both legs.
+  const seizingY = b.seizing.position.y, legs = [];
+  for (let i = 0; i < 4000; i++) { const p = curve.getPointAt(i / 4000); if (Math.abs(p.y - seizingY) < 0.005) legs.push(p); }
+  assert.ok(legs.length >= 2 && legs.every(p => Math.abs(p.x) < 1e-6 && Math.abs(Math.abs(p.z) - radius) < 0.01), 'legs side by side in the seizing');
 });

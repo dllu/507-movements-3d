@@ -497,8 +497,7 @@ test('movement 351 closes one shaft revolution and leaves movement 507 authored'
 
 test('movement 351 runs the rack teeth up to the top collar, which overhangs both sides and clears the pinion at every pose', () => {
   const model = createMovementModel(catalog.movements[350]);
-  const { blocks, geometry, stampTripParts } = model.root.userData;
-  const tipRadius = stampTripParts.mesh.tipRadius;
+  const { blocks, geometry } = model.root.userData;
   const teeth = blocks.rackTeeth.filter((tooth) => tooth.visible);
   assert.equal(teeth.length, geometry.sectorToothCount);
   model.update(0);
@@ -508,11 +507,22 @@ test('movement 351 runs the rack teeth up to the top collar, which overhangs bot
   const gap = collar.min.y - toothTop;
   // Brown's teeth reach the collar: no plain stretch of rod between them.
   assert.ok(gap > 0 && gap < geometry.rackToothPitch / 2, `top tooth to collar gap ${gap}`);
-  // Pass 72: the collar overhangs the pinion side (to the rack teeth's
-  // tips). At rest it stands level with the pinion's blank root disk, which
-  // it must clear; it may enter the tip circle only where no tooth is.
-  assert.ok(collar.max.x > Math.max(...teeth.map((tooth) => new THREE.Box3().setFromObject(tooth).max.x)) - 0.03,
-    'the collar reaches out to the rack teeth tips');
+  // Face on, the collar overhangs the pinion side by Brown's 0.78 of the rod
+  // width. Its full depth reaches the rack teeth's tips; the rest of the
+  // overhang is carried only behind the pinion's rear face.
+  const rodBox = new THREE.Box3().setFromObject(blocks.rackBar);
+  const rodWidth = rodBox.max.x - rodBox.min.x;
+  const rodFace = Math.max(...teeth.map((tooth) => new THREE.Box3().setFromObject(tooth).min.x));
+  assert.ok(Math.abs((collar.max.x - rodFace) / rodWidth - 0.78) < 0.03,
+    `pinion-side overhang ${(collar.max.x - rodFace) / rodWidth} of the rod width`);
+  const solidBoxes = blocks.topRodCap.geometry.userData.solidBoxes;
+  assert.equal(solidBoxes.length, 2);
+  const localBoxes = solidBoxes.map(({ min, max }) => new THREE.Box3(
+    new THREE.Vector3(...min), new THREE.Vector3(...max)));
+  assert.ok(localBoxes[0].max.x + blocks.topRodCap.position.x
+    > Math.max(...teeth.map((tooth) => new THREE.Box3().setFromObject(tooth).max.x)) - 0.03,
+  'the full-depth collar reaches out to the rack teeth tips');
+  const pinionRear = geometry.gearPlaneZ - geometry.gearDepth / 2;
   const centre = worldPosition(blocks.pinion ?? blocks.inputShaft);
   const rootRadius = geometry.gearRootRadius;
   let minimumRoot = Infinity;
@@ -520,7 +530,11 @@ test('movement 351 runs the rack teeth up to the top collar, which overhangs bot
   for (let index = 0; index <= 1024; index += 1) {
     model.update(geometry.cyclePeriod * index / 1024);
     model.root.updateMatrixWorld(true);
-    const box = new THREE.Box3().setFromObject(blocks.topRodCap);
+    const boxes = localBoxes.map((box) => box.clone().applyMatrix4(blocks.topRodCap.matrixWorld));
+    // Only the full-depth part may face the pinion root disk in its plane;
+    // the back step lies wholly behind the pinion's rear face.
+    assert.ok(boxes[1].max.z < pinionRear - 0.015, 'the back step clears the pinion rear face');
+    const box = boxes[0];
     const dx = Math.max(box.min.x - centre.x, 0, centre.x - box.max.x);
     const dy = Math.max(box.min.y - centre.y, 0, centre.y - box.max.y);
     minimumRoot = Math.min(minimumRoot, Math.hypot(dx, dy) - rootRadius);
@@ -528,9 +542,12 @@ test('movement 351 runs the rack teeth up to the top collar, which overhangs bot
       const positions = tooth.geometry.attributes.position;
       for (let i = 0; i < positions.count; i += 1) {
         point.fromBufferAttribute(positions, i).applyMatrix4(tooth.matrixWorld);
-        assert.ok(!(point.x > box.min.x + 1e-6 && point.x < box.max.x - 1e-6
-          && point.y > box.min.y + 1e-6 && point.y < box.max.y - 1e-6),
-        `pinion tooth inside the top collar at ${index}`);
+        for (const solid of boxes) {
+          assert.ok(!(point.x > solid.min.x + 1e-6 && point.x < solid.max.x - 1e-6
+            && point.y > solid.min.y + 1e-6 && point.y < solid.max.y - 1e-6
+            && point.z > solid.min.z + 1e-6 && point.z < solid.max.z - 1e-6),
+          `pinion tooth inside the top collar at ${index}`);
+        }
       }
     }
   }

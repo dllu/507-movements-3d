@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
 import {cutFaceMaterial, latheSectionGeometry} from './cutaway-section.js';
 import {curvedPipeWall} from './finite-fluid-passages.js';
+import {makeCurveTubeBuffer} from './curve-tube-buffer.js';
 import {circle, plate, poly, polygonClipping as clip} from './finite-plate-geometry.js';
 import {waterVolumeMaterial} from './water-volume.js';
 import {
@@ -149,7 +150,9 @@ function hydrostaticPress(movement) {
     brownExampleRamDiameter / brownExamplePumpDiameter
   ) ** 2;
 
-  // Lever angle theta = rest + A cos(stroke). The rod pin R stays on the
+  // Lever angle theta = rest - A sin(stroke): stroke 0 is Brown's pose, the
+  // lever on its plate slope at mid-stroke going down (delivery), so the rest,
+  // hold and let-down poses all show the plate. The rod pin R stays on the
   // barrel axis; the fulcrum E = R - L1 (cos, sin) theta lies on the swing
   // link's circle about its foot P, so E.y = P.y + sqrt(Ls^2 - dx^2).
   const pumpKinematics = (
@@ -157,12 +160,12 @@ function hydrostaticPress(movement) {
     strokeAngularVelocity = 0,
     strokeAngularAcceleration = 0,
   ) => {
-    const leverAngle = pumpLeverRestAngle + pumpLeverAmplitude * Math.cos(strokeAngle);
+    const leverAngle = pumpLeverRestAngle - pumpLeverAmplitude * Math.sin(strokeAngle);
     const leverAngularVelocity = -pumpLeverAmplitude
-      * Math.sin(strokeAngle) * strokeAngularVelocity;
-    const leverAngularAcceleration = -pumpLeverAmplitude * (
-      Math.cos(strokeAngle) * strokeAngularVelocity ** 2
-      + Math.sin(strokeAngle) * strokeAngularAcceleration
+      * Math.cos(strokeAngle) * strokeAngularVelocity;
+    const leverAngularAcceleration = pumpLeverAmplitude * (
+      Math.sin(strokeAngle) * strokeAngularVelocity ** 2
+      - Math.cos(strokeAngle) * strokeAngularAcceleration
     );
     const L1 = pumpLeverPinRadius, w = leverAngularVelocity, alpha = leverAngularAcceleration;
     const cosine = Math.cos(leverAngle), sine = Math.sin(leverAngle);
@@ -194,14 +197,19 @@ function hydrostaticPress(movement) {
     };
   };
 
-  const topPumpState = pumpKinematics(0);
-  const bottomPumpState = pumpKinematics(Math.PI);
+  // Top of stroke at 3pi/2, bottom at pi/2; stroke 0 is mid-downstroke.
+  const topPumpState = pumpKinematics(1.5 * Math.PI);
+  const bottomPumpState = pumpKinematics(0.5 * Math.PI);
+  const restPumpState = pumpKinematics(0);
   const pumpStrokeLength = topPumpState.piston.y
     - bottomPumpState.piston.y;
   const maximumDeliveredVolume = pumpCycleCount
     * pumpPlungerArea * pumpStrokeLength;
   const maximumRamLift = maximumDeliveredVolume / ramArea;
   const nominalPistonSpeed = pumpStrokeLength * 4.2;
+  // Downward travel counted from the top of the first stroke (angle -pi/2),
+  // less the half stroke already made at Brown's rest pose.
+  const restDelivery = topPumpState.piston.y - restPumpState.piston.y;
 
   const deliveredLengthAtStrokeAngle = (unclampedStrokeAngle, pump) => {
     const strokeAngle = THREE.MathUtils.clamp(
@@ -212,12 +220,13 @@ function hydrostaticPress(movement) {
     if (Math.abs(strokeAngle - maximumStrokeAngle) < 1e-10) {
       return pumpCycleCount * pumpStrokeLength;
     }
-    const completedCycles = Math.floor(strokeAngle / FULL_TURN);
-    const withinCycle = positiveModulo(strokeAngle, FULL_TURN);
+    const fromTop = strokeAngle + 0.5 * Math.PI;
+    const completedCycles = Math.floor(fromTop / FULL_TURN);
+    const withinCycle = positiveModulo(fromTop, FULL_TURN);
     const currentDelivery = withinCycle <= Math.PI
       ? topPumpState.piston.y - pump.piston.y
       : pumpStrokeLength;
-    return completedCycles * pumpStrokeLength + currentDelivery;
+    return completedCycles * pumpStrokeLength + currentDelivery - restDelivery;
   };
 
   const stateAtPhase = (unwrappedPhase) => {
@@ -470,8 +479,59 @@ function hydrostaticPress(movement) {
   poly(circle([0, 0], boreRadius, 32)), poly(circle([L1, 0], boreRadius, 32)));
   const leverBar = addRole(new THREE.Mesh(plate(leverOutline, -0.05, 0.05), pumpMaterial), 'hand-lever-flat-bar-with-turned-grip');
   pumpLever.add(leverBar);
-  const leverAxle = addRole(zPin(pinRadius, -0.12, 0.06), 'fulcrum-pin-joining-lever-and-swing-link');
+  const leverAxle = addRole(zPin(pinRadius, -0.12, 0.085), 'fulcrum-pin-joining-lever-and-swing-link');
   pumpLever.add(leverAxle);
+
+  // --- Brown's thin line from the lever's end pin down to the ball: a cord
+  // looped on the fulcrum pin in front of the lever and tied into the ball.
+  // It carries no load; its length is the longest pin-to-ball span while
+  // pumping, so it is just taut there, and it bows slightly when shorter.
+  // The slack bows toward the viewer (out of the plate), so the front view
+  // keeps Brown's straight line; the tie point on the ball is chosen so the
+  // pin's swing changes the span as little as the ball allows.
+  const cordRadius = 0.8 * S, cordZ = 0.068;
+  const cordLoopRadius = pinRadius + cordRadius;
+  const cordLoop = addRole(new THREE.Mesh(new THREE.TorusGeometry(cordLoopRadius, cordRadius, 10, 40), darkMaterial), 'cord-loop-on-fulcrum-pin');
+  cordLoop.position.z = cordZ;
+  root.add(cordLoop);
+  const ballRadius = 11.5 * S, ballRestCenter = new THREE.Vector2(X(305), Y(290) + 26 * S + ballRadius);
+  const ballSectionRadius = Math.sqrt(ballRadius ** 2 - cordZ ** 2);
+  const cordSpan = (fulcrum, tie) => {
+    const direction = new THREE.Vector2(tie.x - fulcrum.x, tie.y - fulcrum.y).normalize();
+    return new THREE.Vector2(fulcrum.x, fulcrum.y).addScaledVector(direction, cordLoopRadius).distanceTo(tie);
+  };
+  const cordSamples = Array.from({length: 73}, (_, i) => pumpKinematics(FULL_TURN * i / 72).fulcrum);
+  let cordTieAngle = 0, cordSpread = Infinity;
+  for (let i = 0; i <= 90; i += 1) {
+    const angle = THREE.MathUtils.degToRad(i * 0.5);
+    const tie = ballRestCenter.clone().add(new THREE.Vector2(Math.sin(angle), Math.cos(angle)).multiplyScalar(ballSectionRadius));
+    const spans = cordSamples.map((fulcrum) => cordSpan(fulcrum, tie));
+    const spread = Math.max(...spans) - Math.min(...spans);
+    if (spread < cordSpread) [cordSpread, cordTieAngle] = [spread, angle];
+  }
+  const cordTieOffset = new THREE.Vector2(Math.sin(cordTieAngle), Math.cos(cordTieAngle)).multiplyScalar(ballSectionRadius);
+  const cordLength = Math.max(...cordSamples.map((fulcrum) => cordSpan(fulcrum, ballRestCenter.clone().add(cordTieOffset))));
+  const cordTube = makeCurveTubeBuffer({segments: 32, sides: 8, radius: cordRadius});
+  const ballCord = addRole(new THREE.Mesh(cordTube.geometry, darkMaterial), 'thin-cord-from-lever-end-pin-to-ball-weight');
+  root.add(ballCord);
+  const cordCurve = new THREE.QuadraticBezierCurve3(new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3());
+  const updateCord = (fulcrum, ballLift) => {
+    const tie = ballRestCenter.clone().add(cordTieOffset);
+    tie.y += ballLift;
+    const direction = new THREE.Vector2(tie.x - fulcrum.x, tie.y - fulcrum.y).normalize();
+    const top = new THREE.Vector2(fulcrum.x, fulcrum.y).addScaledVector(direction, cordLoopRadius);
+    const chord = top.distanceTo(tie);
+    // Parabolic bow of sag h keeps the arc length: L = d + 8h^2/(3d).
+    const sag = Math.sqrt(Math.max(0, 3 * chord * (cordLength - chord) / 8));
+    cordLoop.position.x = fulcrum.x;
+    cordLoop.position.y = fulcrum.y;
+    cordCurve.v0.set(top.x, top.y, cordZ);
+    cordCurve.v2.set(tie.x, tie.y, cordZ);
+    cordCurve.v1.set((top.x + tie.x) / 2, (top.y + tie.y) / 2, cordZ + 2 * sag);
+    cordCurve.updateArcLengths();
+    cordTube.update(cordCurve);
+    return {chord, sag};
+  };
 
   // --- Plunger, crosshead (with a mortise the lever passes through) and pin. ---
   const pumpCrosshead = addRole(new THREE.Group(), 'small-pump-vertical-crosshead');
@@ -561,6 +621,7 @@ function hydrostaticPress(movement) {
   const maximumReliefFlowRate = maximumDeliveredVolume / ((1 - reliefStartPhase) * cycleDuration) * 1.875;
   const safetyValveRestY = Y(290);
   const levelAt = (state) => waterTop - state.retainedPressVolume / cisternArea;
+  let lastCord = null;
   const update = (time) => {
     const state = stateAtTime(time);
     pumpLever.position.copy(state.fulcrum);
@@ -581,6 +642,7 @@ function hydrostaticPress(movement) {
     // exactly the water held under the ram and recovers it.
     const flow = THREE.MathUtils.clamp(state.reliefReturnFlowRate / maximumReliefFlowRate, 0, 1);
     safetyValve.position.y = safetyValveRestY + 3 * S * flow;
+    lastCord = updateCord(state.fulcrum, safetyValve.position.y - safetyValveRestY);
     const level = levelAt(state);
     reservoirWater.scale.y = level - waterBottom;
     releaseWater.visible = returnStream.visible = flow > 1e-4;
@@ -588,12 +650,15 @@ function hydrostaticPress(movement) {
     returnStream.scale.y = Y(320) - level;
   };
 
-  const sourceState = stateAtPhase(0.47);
+  const sourceState = stateAtPhase(0);
   const geometry = {
     areaRatio,
     brownExampleForceRatio,
     brownExamplePumpDiameter,
     brownExampleRamDiameter,
+    cordLength,
+    cordSpreadWhilePumping: cordSpread,
+    cordTieAngle,
     cycleDuration,
     diameterRatio,
     fixedHeadUndersideY,
@@ -635,7 +700,9 @@ function hydrostaticPress(movement) {
     archetype:
       'hand-pumped-hydrostatic-press-with-pascal-area-force-ratio-volume-displacement-and-relief-return',
     blocks: {
+      ballCord,
       ballWeight,
+      cordLoop,
       columns,
       compressibleLoad,
       crossheadPin: crossheadPinMesh,
@@ -675,6 +742,7 @@ function hydrostaticPress(movement) {
       valveChest,
     },
     cisternArea,
+    cordState: () => lastCord,
     degreesOfFreedom: {
       independentPrescribedInputs: 1,
       operatingDegreesOfFreedom: 1,
@@ -738,7 +806,7 @@ function hydrostaticPress(movement) {
         engravingEvidence:
           'Brown sections a deep flanged ram cylinder with a hollow round-ended ram under a fluted bowl, platen and four bales, a domed head on two columns, a small pipe to a valve chest on the cistern wall carrying a ball weight and a T, a tall pump barrel with stuffing box, suction chamber, suction pipe and pointed rose standing in the cistern, and a hand lever pinned through the plunger’s crosshead.',
         reconstructionDisclosure:
-          'Brown gives no check-valve positions inside the chest, lever closure, stroke count, speed, load stiffness or timing. The plate’s 4:1 diameter ratio, the swing link from the T lug to the lever end, the chest passages, the dead-weight safety valve used for let-down, twelve strokes, ideal Pascal and volume relations, colors and a 12.5-second cycle are independently engineered; Brown’s 1:30 example is retained separately and exactly. Brown’s thin line from the lever end to the ball is not modelled.',
+          'Brown gives no check-valve positions inside the chest, lever closure, stroke count, speed, load stiffness or timing. The plate’s 4:1 diameter ratio, the swing link from the T lug to the lever end, the chest passages, the dead-weight safety valve used for let-down, twelve strokes, ideal Pascal and volume relations, colors and a 12.5-second cycle are independently engineered; Brown’s 1:30 example is retained separately and exactly. Brown’s thin line from the lever end to the ball is read as a light cord looped on the fulcrum pin and tied into the ball; Brown does not say what it is for, so it carries no load, is just taut while pumping and bows when the ball is lifted to let the ram down.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 466',
