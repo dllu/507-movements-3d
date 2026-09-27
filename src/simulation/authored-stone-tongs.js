@@ -8,7 +8,7 @@ import {
 
 import {fitPistonGuide} from './piston-guide-parts.js';
 import {makeBoredLinkRod} from './bored-link-rod.js';
-import {plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
+import {capsule,plate,poly,circle,polygonClipping as clip} from './finite-plate-geometry.js';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 
 function addRole(object, role) {
@@ -116,6 +116,14 @@ function stoneLiftingTongs(movement) {
     sourceBaselineScene - sourceGroundY * sourceScale;
   const sourcePhaseLandmarks = [0, 0.2, 0.4, 0.5, 0.7, 0.9, 1];
   const jawPivotRestY = 4.25;
+  // One flat chain: the two tongs cross at the fulcrum in two thin planes
+  // either side of the stone's centre plane, each link lies in the plane of
+  // the opposite tong (the rhombus side it never touches), and the shackle
+  // strap and hoist rope hang in the centre plane between the two links.
+  const tongPlaneZ = 0.12;
+  const tongDepth = 0.18;
+  const linkDepth = 0.14;
+  const strapDepth = 0.08;
   const memberLength = 1.8;
   const openJawAngle = THREE.MathUtils.degToRad(35);
   const closedJawAngle = Math.PI / 4;
@@ -293,9 +301,9 @@ function stoneLiftingTongs(movement) {
   // seats), each in the plane of its own tong: the stone is one solid built
   // of five stacked layers whose outline is Brown's, with a V-socket at the
   // left seat in the left tong's layer and at the right seat in the right's.
-  // Layer z ranges are world depths (the stone body sits at z -0.48): the
-  // left tong works at z 0.13 and the right at -0.13, so the middle layer
-  // carries both sockets.
+  // The stone is centred on z 0, the plane of the shackle and hoist rope, so
+  // the pull passes straight through its centre of gravity. The left tong
+  // works at z +tongPlaneZ and the right at -tongPlaneZ.
   const socketDepth = 0.085;
   const socketHalfWidth = 0.095;
   const stoneOutlineWithSockets = (sockets) => {
@@ -312,16 +320,14 @@ function stoneLiftingTongs(movement) {
   };
   const stoneHalfDepth = 3.25 / 2;
   const stoneLayers = [
-    [-stoneHalfDepth - 0.48, -0.33, []],
-    [-0.33, -0.07, [1]],
-    [-0.07, 0.07, [-1, 1]],
-    [0.07, 0.33, [-1]],
-    [0.33, stoneHalfDepth - 0.48, []],
-  ].map(([low, high, sockets]) => plate(stoneOutlineWithSockets(sockets), low + 0.48, high + 0.48));
+    [-stoneHalfDepth, -0.26, []],
+    [-0.26, 0, [1]],
+    [0, 0.26, [-1]],
+    [0.26, stoneHalfDepth, []],
+  ].map(([low, high, sockets]) => plate(stoneOutlineWithSockets(sockets), low, high));
   const stoneBody = addRole(new THREE.Mesh(mergeGeometries(stoneLayers), stoneMaterial),
     'source-profiled-lifted-stone');
   stoneLayers.forEach((layer) => layer.dispose());
-  stoneBody.position.z = -0.48;
   stone.add(stoneBody);
   // Brown draws the stone already hanging in the nippers. The canvas cycle
   // also opens the tongs while the stone is down, so the stone needs a
@@ -335,7 +341,7 @@ function stoneLiftingTongs(movement) {
     new THREE.BoxGeometry(5.0, groundBedThickness, 4.2),
     groundBedMaterial,
   ), 'flat-ground-bed-the-stone-rests-on-while-the-tongs-open');
-  groundBed.position.set(0, sourceBaselineScene - groundBedThickness / 2, -0.48);
+  groundBed.position.set(0, sourceBaselineScene - groundBedThickness / 2, 0);
   root.add(groundBed);
   const stoneContactSockets = [
     leftStoneContactRest,
@@ -348,7 +354,7 @@ function stoneLiftingTongs(movement) {
     socket.position.set(
       point.x * sourceScale,
       point.y * sourceScale,
-      index === 0 ? 0.13 : -0.13,
+      index === 0 ? tongPlaneZ : -tongPlaneZ,
     );
     socket.visible=false;
     stone.add(socket);
@@ -368,73 +374,83 @@ function stoneLiftingTongs(movement) {
     [-3.359, 0.460],
     [leftBiteLocal.x, leftBiteLocal.y],
   ];
+  const armLength = memberLength * sourceScale;
+  const fulcrumPinRadius = 0.15;
+  const sidePinRadius = 0.105;
+  const shacklePinRadius = 0.12;
+  const pinClearance = 0.004;
+  // Each tong is one flat forged bar: the straight upper arm, the eye on the
+  // common fulcrum, the curved gripping arm and its inward point are a single
+  // extruded outline, so the arm, the eye and the curve meet without gaps.
   const makeJawParts = (jaw, side, material) => {
-    const {rod:upperArm}=makeBoredLinkRod({bodyMaterial:material,depth:.18,length:memberLength*sourceScale,planeZ:0,role:`${side}-tong-upper-arm`,width:.20,startBoreRadius:.154,boreRadius:.109});
-    jaw.add(upperArm);
-    const curvePoints = sourceLeftCurve.map(([x, y]) => new THREE.Vector3(
-      x * sourceScale,
-      (side === 'left' ? y : -y) * sourceScale,
-      0,
-    ));
-    const finalPoint=curvePoints.at(-1).clone();
-    const tipDirection=new THREE.Vector3(Math.SQRT1_2,side==='left'?-Math.SQRT1_2:Math.SQRT1_2,0);
-    curvePoints[0]=curvePoints[1].clone().normalize().multiplyScalar(.29);
-    curvePoints[curvePoints.length-1].addScaledVector(tipDirection,-.24);
-    const curvedJaw = tubeThrough(
-      curvePoints,
-      0.125,
-      material,
-      `${side}-curved-gripping-arm`,
+    const sign = side === 'left' ? 1 : -1;
+    const finalPoint = new THREE.Vector3(leftBiteLocal.x * sourceScale,
+      sign * leftBiteLocal.y * sourceScale, 0);
+    const tipDirection = new THREE.Vector3(Math.SQRT1_2, -sign * Math.SQRT1_2, 0);
+    // The bar stops 0.24 short of the seat; the tapered point carries on to
+    // an apex 0.05 inside the stone's side, in its V socket.
+    const barEnd = finalPoint.clone().addScaledVector(tipDirection, -0.24);
+    const curvePoints = sourceLeftCurve.map(([x, y]) =>
+      new THREE.Vector3(x * sourceScale, sign * y * sourceScale, 0));
+    curvePoints[curvePoints.length - 1] = barEnd;
+    const curve = new THREE.CatmullRomCurve3(curvePoints, false, 'centripetal');
+    const centreline = curve.getPoints(40).map((p) => [p.x, p.y]);
+    const jawHalfWidth = 0.12;
+    const normal = [-tipDirection.y, tipDirection.x];
+    const apex = finalPoint.clone().addScaledVector(tipDirection, 0.05);
+    const nib = poly([
+      [barEnd.x + normal[0] * jawHalfWidth, barEnd.y + normal[1] * jawHalfWidth],
+      [apex.x, apex.y],
+      [barEnd.x - normal[0] * jawHalfWidth, barEnd.y - normal[1] * jawHalfWidth],
+    ]);
+    const outline = clip.union(
+      capsule([0, 0], [armLength, 0], 0.10, 24),
+      poly(circle([0, 0], fulcrumPinRadius + pinClearance + 0.06, 96)),
+      poly(circle([armLength, 0], sidePinRadius + pinClearance + 0.05, 96)),
+      ...centreline.slice(1).map((point, index) =>
+        capsule(centreline[index], point, jawHalfWidth, 16)),
+      nib,
     );
-    jaw.add(curvedJaw);
-    const biteTip = addRole(new THREE.Mesh(
-      new THREE.ConeGeometry(0.145, 0.38, 20),
-      darkMaterial,
-    ), `${side}-inward-stone-biting-point`);
-    // The point's apex sits 0.05 inside the stone's side, in its socket.
-    biteTip.position.copy(finalPoint).addScaledVector(tipDirection, -0.19 + 0.05);
-    biteTip.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      tipDirection,
-    );
-    jaw.add(biteTip);
-    const sidePivotCollar = addRole(new THREE.Mesh(
-      new THREE.TorusGeometry(0.18, 0.055, 10, 36),
-      material,
-    ), `${side}-upper-link-pivot-collar`);
-    sidePivotCollar.position.x = memberLength * sourceScale;
-    sidePivotCollar.visible=false;
-    jaw.add(sidePivotCollar);
+    const body = plate(clip.difference(outline,
+      poly(circle([0, 0], fulcrumPinRadius + pinClearance, 96)),
+      poly(circle([armLength, 0], sidePinRadius + pinClearance, 96))),
+    -tongDepth / 2, tongDepth / 2);
+    const tongBody = addRole(new THREE.Mesh(body, material),
+      `${side}-tong-arm-eye-curved-jaw-and-point`);
+    jaw.add(tongBody);
+    // The seat point stays fixed in the tong (its index is not drawn).
     const biteMarker = addRole(new THREE.Mesh(
       new THREE.SphereGeometry(0.060, 18, 12),
       contactMaterial,
     ), `${side}-white-bite-contact-index`);
     biteMarker.position.copy(finalPoint);
-    biteMarker.position.z = 0;
     jaw.add(biteMarker);
     return {
       biteMarker,
-      biteTip,
-      curvedJaw,
-      sidePivotCollar,
-      upperArm,
+      biteTip: tongBody,
+      curvedJaw: tongBody,
+      tongBody,
+      upperArm: tongBody,
     };
   };
   const leftJawParts = makeJawParts(leftJaw, 'left', leftMaterial);
   const rightJawParts = makeJawParts(rightJaw, 'right', rightMaterial);
 
   const makeUpperLink=(material,z,role)=>{
-    const {rod}=makeBoredLinkRod({bodyMaterial:material,depth:.14,length:memberLength*sourceScale,planeZ:z,role,width:.18,startBoreRadius:.109,boreRadius:.124});
+    const {rod}=makeBoredLinkRod({bodyMaterial:material,depth:linkDepth,length:armLength,planeZ:z,role,width:.18,
+      startBoreRadius:sidePinRadius+pinClearance,boreRadius:shacklePinRadius+pinClearance});
     rod.userData.setEndpoints=(a,b)=>{rod.position.set(a.x,a.y,0);rod.rotation.z=Math.atan2(b.y-a.y,b.x-a.x);};
     return rod;
   };
-  const leftUpperLink=makeUpperLink(leftMaterial,.38,'left-link-from-jaw-arm-to-common-shackle');
-  const rightUpperLink=makeUpperLink(rightMaterial,-.38,'right-link-from-jaw-arm-to-common-shackle');
+  // Each link lies in the plane of the tong it does not touch.
+  const leftUpperLink=makeUpperLink(leftMaterial,-tongPlaneZ,'left-link-from-jaw-arm-to-common-shackle');
+  const rightUpperLink=makeUpperLink(rightMaterial,tongPlaneZ,'right-link-from-jaw-arm-to-common-shackle');
   root.add(leftUpperLink, rightUpperLink);
 
+  const pinLength = 2 * tongPlaneZ + tongDepth + 0.06;
   const jawPivotPin = cylinderAlongZ(
-    0.15,
-    1.18,
+    fulcrumPinRadius,
+    pinLength,
     darkMaterial,
     'common-crossed-tong-fulcrum-pin',
     26,
@@ -442,8 +458,8 @@ function stoneLiftingTongs(movement) {
   root.add(jawPivotPin);
   const sidePivotPins = [0, 1].map((_, index) => {
     const pin = cylinderAlongZ(
-      0.105,
-      1.04,
+      sidePinRadius,
+      pinLength,
       darkMaterial,
       `upper-jaw-to-link-pin-${index + 1}`,
       22,
@@ -452,8 +468,8 @@ function stoneLiftingTongs(movement) {
     return pin;
   });
   const shacklePivotPin = cylinderAlongZ(
-    0.12,
-    1.52,
+    shacklePinRadius,
+    2 * tongPlaneZ + linkDepth + 0.06,
     darkMaterial,
     'common-upper-link-shackle-pin',
     24,
@@ -468,20 +484,27 @@ function stoneLiftingTongs(movement) {
     return marker;
   });
 
+  // Brown's shackle is a straight strap from the common link pin up to an eye
+  // through which the hoist rope is tied, all in the stone's centre plane.
   const shackle = addRole(new THREE.Group(),
     'upper-shackle-receiving-the-single-hoist-pull');
   root.add(shackle);
-  const shackleRing = addRole(new THREE.Mesh(
-    new THREE.TorusGeometry(0.28, 0.082, 11, 44),
-    shackleMaterial,
-  ), 'hoist-shackle-ring');
-  shackleRing.position.y = 0.36;
-  shackle.add(shackleRing);
-  const shackleStem=addRole(new THREE.Mesh(plate(clip.difference(clip.union(poly(circle([0,0],.16,64)),poly([[-.08,0],[.08,0],[.08,.22],[-.08,.22]])),poly(circle([0,0],.124,64))),-.06,.06),shackleMaterial),'shackle-neck-above-common-link-pin');
+  const strapLength = 1.0;
+  const ropeEyeBore = 0.075;
+  const shackleStem = addRole(new THREE.Mesh(plate(clip.difference(clip.union(
+    poly(circle([0, 0], shacklePinRadius + pinClearance + 0.07, 96)),
+    capsule([0, 0], [0, strapLength], 0.08, 24),
+    poly(circle([0, strapLength], ropeEyeBore + 0.07, 96))),
+  poly(circle([0, 0], shacklePinRadius + pinClearance, 96)),
+  poly(circle([0, strapLength], ropeEyeBore, 96))), -strapDepth / 2, strapDepth / 2), shackleMaterial),
+  'shackle-strap-from-common-link-pin-to-rope-eye');
   shackle.add(shackleStem);
+  const shackleRing = shackleStem;
 
-  const fixedHoistPoint = new THREE.Vector3(0, 6.75, 0.62);
-  const shackleRopePointLocal = new THREE.Vector3(0, 0.72, 0);
+  // The rope rises straight past the top of Brown's plate (camera crop).
+  const fixedHoistPoint = new THREE.Vector3(0, 10.5, 0);
+  // The rope is seized to the crown of the strap's top eye.
+  const shackleRopePointLocal = new THREE.Vector3(0, strapLength + ropeEyeBore + 0.07, 0);
   // Brown draws the hoist rope laid: the shared three-strand rope.
   const hoistRope = addRole(makeDynamicCable({
     laid: true,
@@ -491,13 +514,8 @@ function stoneLiftingTongs(movement) {
   }), 'single-hoist-rope-pulling-the-common-shackle');
   hoistRope.userData.isBelt = false;
   hoistRope.userData.isHoistRope = true;
+  hoistRope.userData.beyondPlateCrop = true;
   root.add(hoistRope);
-  const fixedHoistEye = addRole(new THREE.Mesh(
-    new THREE.TorusGeometry(0.20, 0.063, 10, 38),
-    darkMaterial,
-  ), 'fixed-overhead-hoist-eye');
-  fixedHoistEye.position.copy(fixedHoistPoint);
-  root.add(fixedHoistEye);
 
   const sourceToScene = (point, z) => new THREE.Vector3(
     point.x * sourceScale,
@@ -517,33 +535,33 @@ function stoneLiftingTongs(movement) {
     );
     leftJaw.position.copy(jawPivotScene);
     rightJaw.position.copy(jawPivotScene);
-    leftJaw.position.z = 0.13;
-    rightJaw.position.z = -0.13;
+    leftJaw.position.z = tongPlaneZ;
+    rightJaw.position.z = -tongPlaneZ;
     leftJaw.rotation.z = state.leftJawAngle;
     rightJaw.rotation.z = state.rightJawAngle;
     stone.position.y = sourceVerticalOriginScene
       + state.stoneLift * sourceScale;
 
-    const leftLinkPivotScene = sourceToScene(state.leftLinkPivot, 0.13);
-    const rightLinkPivotScene = sourceToScene(state.rightLinkPivot, -0.13);
+    const leftLinkPivotScene = sourceToScene(state.leftLinkPivot, 0);
+    const rightLinkPivotScene = sourceToScene(state.rightLinkPivot, 0);
     const shacklePivotScene = sourceToScene(state.shacklePivot, 0);
     leftUpperLink.userData.setEndpoints(
       leftLinkPivotScene,
-      shacklePivotScene.clone().setZ(0.13),
+      shacklePivotScene.clone(),
     );
     rightUpperLink.userData.setEndpoints(
       rightLinkPivotScene,
-      shacklePivotScene.clone().setZ(-0.13),
+      shacklePivotScene.clone(),
     );
     jawPivotPin.position.copy(jawPivotScene);
     sidePivotPins[0].position.copy(leftLinkPivotScene);
     sidePivotPins[1].position.copy(rightLinkPivotScene);
     shacklePivotPin.position.copy(shacklePivotScene);
-    pivotMarkers[0].position.copy(jawPivotScene).setZ(0.63);
-    pivotMarkers[1].position.copy(leftLinkPivotScene).setZ(0.63);
-    pivotMarkers[2].position.copy(rightLinkPivotScene).setZ(0.63);
-    pivotMarkers[3].position.copy(shacklePivotScene).setZ(0.63);
-    shackle.position.copy(shacklePivotScene).setZ(0.62);
+    pivotMarkers[0].position.copy(jawPivotScene).setZ(0.3);
+    pivotMarkers[1].position.copy(leftLinkPivotScene).setZ(0.3);
+    pivotMarkers[2].position.copy(rightLinkPivotScene).setZ(0.3);
+    pivotMarkers[3].position.copy(shacklePivotScene).setZ(0.3);
+    shackle.position.copy(shacklePivotScene);
     leftJawParts.biteMarker.visible = state.biteContact;
     rightJawParts.biteMarker.visible = state.biteContact;
 
@@ -584,7 +602,6 @@ function stoneLiftingTongs(movement) {
     archetype:
       'weight-tightened-rhombus-link-stone-lifting-tongs',
     blocks: {
-      fixedHoistEye,
       groundBed,
       hoistRope,
       jawPivotPin,
@@ -666,7 +683,7 @@ function stoneLiftingTongs(movement) {
         officialCanvasEvidence:
           'The official inline mm_494 model supplies four 1.8-unit rhombus members, 35- and 45-degree jaw poses, exact bite seats at (-2,1)/(2,1), a 0.480709-unit rigid stone lift, phases 0/.2/.4/.5/.7/.9, and 15 cycles per minute.',
         reconstructionDisclosure:
-          'Source-space pivot, bite, outline, phase, and travel values are preserved. Curved-jaw centerline solids, layer separation at the crossed fulcrum, extrusion depths, materials, bite markers, hoist eye, camera, and ideal virtual-work annotation are original 3D engineering choices.',
+          'Source-space pivot, bite, outline, phase, and travel values are preserved. Single-outline tong plates (arm, eye, curved jaw and point in one extrusion), layer separation at the crossed fulcrum (tongs at z +-0.12, each link in the plane of the tong it never touches, strap and hoist rope in the stone’s centre plane so the pull passes through its centre of gravity), extrusion depths, materials, bite markers, camera, and ideal virtual-work annotation are original 3D engineering choices.',
       },
       fidlerArchivePageUrl:
         'https://archive.org/details/notesonbuildingc02fidliala/page/n244/mode/2up',
@@ -688,8 +705,8 @@ function stoneLiftingTongs(movement) {
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.85, groundFloorY, -2.25),
-    new THREE.Vector3(2.85, 6.56, 1.75),
+    new THREE.Vector3(-2.85, groundFloorY, -2.15),
+    new THREE.Vector3(2.85, 6.9, 2.15),
   );
   root.userData.cameraDistanceScale = 1.03;
   root.userData.cameraDirection = new THREE.Vector3(1.8, 1.5, 11);

@@ -450,3 +450,20 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model440.root);
   disposeModel(model507.root);
 });
+
+test('movement 440 pooled water uses the shared translucent water material, dense enough to read blue over the trough', () => {
+  const model = createMovementModel(catalog.movements[439]);
+  const roles = ['left-variable-water-load-with-horizontal-free-surface', 'right-variable-water-load-with-horizontal-free-surface'];
+  let found = 0;
+  model.root.traverse((mesh) => {
+    if (!roles.includes(mesh.userData.role)) return;
+    found += 1;
+    assert.equal(mesh.material.transparent, true);
+    assert.equal(mesh.material.depthWrite, false);
+    assert.ok(mesh.material.opacity >= 0.7 && mesh.material.opacity < 0.9);
+    assert.ok(mesh.material.roughness < 0.25, 'glossy water');
+    assert.equal(mesh.renderOrder, 1);
+  });
+  assert.equal(found, 2);
+  disposeModel(model.root);
+});

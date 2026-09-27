@@ -28,13 +28,23 @@ function setRodBetween(mesh, start, end) {
   mesh.quaternion.setFromUnitVectors(Y_AXIS, delta.normalize());
 }
 
-// Brown draws these as laid ropes: the shared three-strand rope, rebuilt
-// along its straight run, its lay fixed from the upper end.
+// Brown draws these as laid ropes: the shared three-strand rope, its lay
+// fixed from the upper end. Every rope here is taut and of constant length,
+// so it is built once along local -Y and then carried rigidly by its
+// transform from the upper end towards the lower one.
+const ROPE_DOWN = new THREE.Vector3(0, -1, 0);
 function setRopeBetween(mesh, start, end, radius) {
-  mesh.position.set(0, 0, 0);
-  mesh.quaternion.identity();
+  const delta = end.clone().sub(start);
+  const length = delta.length();
+  if (mesh.userData.rigidRopeLength === undefined) {
+    replaceWithLaidRope(mesh, new THREE.LineCurve3(
+      new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, -length, 0)),
+    {radius, tubularSegments: 32});
+    mesh.userData.rigidRopeLength = length;
+  }
+  mesh.position.copy(start);
   mesh.scale.set(1, 1, 1);
-  replaceWithLaidRope(mesh, new THREE.LineCurve3(start.clone(), end.clone()), {radius, tubularSegments: 32});
+  mesh.quaternion.setFromUnitVectors(ROPE_DOWN, delta.normalize());
 }
 
 function waterSealedBellPump(movement) {
@@ -463,7 +473,7 @@ function waterSealedBellPump(movement) {
       24,
     ),
     darkMaterial,
-  ), 'shaft-exhaust-pipe-through-water');
+  ), 'shaft-exhaust-pipe-standing-in-tub');
   inletPipe.position.y = (inletPipeTopY + inletPipeBottomY) / 2;
   root.add(inletPipe);
   const inletGasColumn = addRole(new THREE.Mesh(
@@ -608,6 +618,7 @@ function waterSealedBellPump(movement) {
   // the suspension ropes still pass freely through the lug eyes (bore 0.068).
   const suspensionRopeRadius = 0.045;
   const pullRopeRadius = 0.05;
+  const pullRopeLength = leverPivotY - 0.20;
   const leftSuspensionRope = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.026, 0.026, 1, 12),
     ropeMaterial,
@@ -664,14 +675,16 @@ function waterSealedBellPump(movement) {
       state.rightBellLug,
       suspensionRopeRadius,
     );
+    // Each pull rope keeps its length: the grip hangs below its lever end
+    // and rises and falls with it (at y 0.20 when the levers stand level).
     const leftGrip = new THREE.Vector3(
       state.leftOuterEnd.x,
-      0.20,
+      state.leftOuterEnd.y - pullRopeLength,
       state.leftOuterEnd.z,
     );
     const rightGrip = new THREE.Vector3(
       state.rightOuterEnd.x,
-      0.20,
+      state.rightOuterEnd.y - pullRopeLength,
       state.rightOuterEnd.z,
     );
     setRopeBetween(leftPullRope, state.leftOuterEnd, leftGrip, pullRopeRadius);

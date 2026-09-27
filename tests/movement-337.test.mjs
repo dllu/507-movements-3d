@@ -418,10 +418,8 @@ test('movement 337 renderer binds B, midpoint C, D, and both fixed pivots', () =
     'beam, short rod, radius rod and front piston rod occupy depth');
   const drawnRoles = [];
   model.root.traverse((object) => drawnRoles.push(object.userData.role ?? ''));
-  // The one plain column carrying radius pin F's wall flange (so the flange
-  // does not float) is the only support added below the plate's crop.
-  assert.equal(drawnRoles.some((role) => /bed-rail|upright|guide-rail|piston-head|foot/.test(role)
-    && !role.startsWith('fixed-floor-column-carrying-radius-pin-F-flange')), false,
+  // Pin F is a bare short stub: no bracket or column carries it.
+  assert.equal(drawnRoles.some((role) => /bed-rail|upright|standard|guide-rail|piston-head|foot|floor-column|bracket-of-radius-pin-F/.test(role)), false,
     'Brown draws no engine bed, standards, piston guides or piston head');
   assert.ok(model.cameraDirection.x > 0);
   assert.ok(model.cameraDirection.y > 0);

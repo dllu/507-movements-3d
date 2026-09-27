@@ -43,7 +43,7 @@ test('490 retains GPU buffers while matching the shared laid-rope surface throug
   assert.equal(data.animationTiming.targetCycleDuration, data.geometry.cycleDuration);
 });
 
-test('490 fixed-length rope ends follow actual tiller clamps throughout the helm cycle', () => {
+test('490 taut rope ends follow actual tiller clamps throughout the helm cycle', () => {
   const model = createAuthoredRopeSteeringMovement({id: 490});
   const data = model.root.userData;
   const clamps = data.blocks.tiller.children.filter(o => o.userData.role === 'fixed-rope-end-clamp-on-tiller');
@@ -59,7 +59,9 @@ test('490 fixed-length rope ends follow actual tiller clamps throughout the helm
         `rope disconnected from rendered clamp at pose ${i}`);
     }
   }
-  // Cubic interpolation and arc-length quadrature leave a small numerical
-  // residual; the previous taut path varied by more than one percent.
-  assert.ok((Math.max(...lengths) - Math.min(...lengths)) / Math.min(...lengths) < 1e-5);
+  // The rope is drawn taut: an ordinary tiller lengthens the taut path by at
+  // most the reported stretch (under two percent) as the helm goes over.
+  const growth = Math.max(...lengths) - Math.min(...lengths);
+  assert.ok(growth <= data.geometry.maximumTautStretch + 1e-3, `path growth ${growth}`);
+  assert.ok(growth / Math.min(...lengths) < 0.02);
 });

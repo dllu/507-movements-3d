@@ -4,6 +4,8 @@ import { conicalStudCut as savedCut } from '../data/conical-stud-profile.js';
 import { creaseIndexedNormals } from './crease-normals.js';
 
 const turn = 2 * Math.PI;
+/** Crown sag of the round stud heads at their rim. */
+export const conicalStudCrownSag = 0.03;
 const cache = new Map();
 
 export const conicalStudParameters = Object.freeze({
@@ -238,8 +240,13 @@ export function conicalStudHeadGeometry(parameters, index) {
   for (const back of [false, true]) {
     for (const [i, { u, v }] of points.entries()) {
       const angle = stud.angle + u / stud.radius, height = stud.height + v;
-      const radius = back ? parameters.centerDistance - motion.meanRadius
-        - motion.slope * height - parameters.studBack : cut.caps[index][i];
+      const pitch = parameters.centerDistance - motion.meanRadius - motion.slope * height;
+      // Round (button) heads: a shallow crown, highest at the stud's axis,
+      // so a head at the silhouette reads as Brown's round stud and not as
+      // a square block. The crown only removes material inside the cut cap.
+      const crown = pitch + parameters.studFront
+        - conicalStudCrownSag * (u * u + v * v) / parameters.studRadius ** 2;
+      const radius = back ? pitch - parameters.studBack : Math.min(cut.caps[index][i], crown);
       positions.push(radius * Math.cos(angle), radius * Math.sin(angle), height);
     }
   }

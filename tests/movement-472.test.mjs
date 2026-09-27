@@ -559,3 +559,16 @@ test('movement 472 has finite fitted render bounds and movement 507 remains the 
   disposeModel(model472.root);
   disposeModel(model507.root);
 });
+
+test('movement 472 disk M is driven at right angles by the leather-faced wheel on shaft E', () => {
+  const model = createMovementModel(catalog.movements[471]);
+  const { geometry } = model.root.userData;
+  let tyre = null;
+  model.root.traverse((o) => { if (o.userData.role === 'leather-face-of-friction-wheel-N-bearing-on-disk-M') tyre = o; });
+  assert.ok(tyre, 'leather face on the friction wheel');
+  assert.equal(tyre.parent.userData.role, 'sliding-leather-faced-friction-wheel-N');
+  tyre.geometry.computeBoundingBox();
+  const size = tyre.geometry.boundingBox.getSize(new THREE.Vector3());
+  near(size.x / 2, geometry.frictionWheelRadius, 2e-3, 'tyre radius is the rolling radius');
+  disposeModel(model.root);
+});

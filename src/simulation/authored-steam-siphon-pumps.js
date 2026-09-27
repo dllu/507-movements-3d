@@ -1,5 +1,6 @@
 import {correctEjectorTrapParts, ejectorOperatingStage} from './ejector-trap-working-parts.js';
 import * as THREE from 'three';
+import {applyCutawayFor} from './cutaway-presentations.js';
 import {
   PALETTE,
   markShadows,
@@ -123,7 +124,9 @@ function lansdellSteamSiphonPump(movement) {
     * mixedSpeedMetrePerSecond;
 
   const forkCenter = new THREE.Vector3(0, 1.26, 0);
-  const nozzleTip = new THREE.Vector3(0, 0.91, 0);
+  // Brown's A rises through the crotch and ends well up inside the fork,
+  // about two thirds of a leg's width above the crotch, short of C's neck.
+  const nozzleTip = new THREE.Vector3(0, 1.40, 0);
   const dischargeTop = new THREE.Vector3(0, 3.48, 0);
   const branchShellCurves = [-1, 1].map((side) =>
     new THREE.CatmullRomCurve3([
@@ -526,5 +529,5 @@ function lansdellSteamSiphonPump(movement) {
 
 export function createAuthoredSteamSiphonPumpMovement(movement) {
   if (movement.id !== 476) return null;
-  return lansdellSteamSiphonPump(movement);
+  return applyCutawayFor(lansdellSteamSiphonPump(movement), movement.id);
 }

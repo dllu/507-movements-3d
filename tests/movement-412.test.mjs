@@ -476,8 +476,9 @@ test('movement 412 rim has six notches and two separately pivoted pawls that loc
     blocks.barrelRotor.rotation.y = barrel + turn;
     assert.ok(pawlRimGap(model) < -0.01, `rim turned ${turn} must meet a nose`);
   }
-  // Every sampled pose over the demonstration is clear; lifted pawls clear
-  // the whole rim while the wheel-work turns the barrel against the drumhead.
+  // Every sampled pose over the demonstration is clear; lifted pawls ride on
+  // the rim's outer face (running clearance only, never hovering) while the
+  // wheel-work turns the barrel against the drumhead.
   for (let i = 0; i <= 96; i += 1) {
     const time = timeline.cycleDuration * i / 96;
     model.update(time);
@@ -486,7 +487,8 @@ test('movement 412 rim has six notches and two separately pivoted pawls that loc
     if (state.stage === 'unlocked-triple-purchase-compound-drive') {
       assert.equal(state.pawlLift, geometry.lockingPawls.liftAngle);
       const liftedGap = pawlRimGap(model);
-      assert.ok(liftedGap > 0.02, `lifted pawl clearance ${liftedGap} at ${time}`);
+      // 0.006 on the plain rim; slightly more while the nose bridges a notch.
+      assert.ok(liftedGap >= -1e-6 && liftedGap < 0.015, `lifted pawl riding clearance ${liftedGap} at ${time}`);
     }
     if (Math.abs(state.sunAngle - state.annulusAngle) % (2 * Math.PI) > 1e-9
       && Math.abs(Math.abs(state.sunAngle - state.annulusAngle) % (2 * Math.PI) - 2 * Math.PI) > 1e-9) {

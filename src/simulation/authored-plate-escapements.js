@@ -485,7 +485,7 @@ function annular290(movement) {
   const pieces = union([
     [circlePoints([0, 0], ringOuter, 160), circlePoints([0, 0], ringInner, 160)],
     [filletedJoint(248.5, 268, 172, 140, 10, true)],
-    [rect(256, 66.5, 258.5, 142)],
+    [rect(256, 65, 258.5, 142)],
     [filletedJoint(248.5, 268.5, 390, 640, 14, false)],
     [tab(1)],
     [tab(-1)],
@@ -787,10 +787,14 @@ function free291(movement) {
   // plane and its lip reaches forward over the passing spring, which runs
   // in front of the post and on past the end of A to the stud.
   const detentOutline = [P(133, 192), P(326, 194.5), P(326, 151), P(347, 151), P(347, 195.8), P(440, 196), P(440, 202), P(133, 201)];
-  // Stop d where Brown draws it: x 188-199, its bottom on his ink line at
-  // y 215. The tips pass 2 px above that edge at d's face (x 188), so a tip
-  // locks against it at (188, 213), as Brown draws the tip at d's corner.
-  const dx = tune.dx ?? 188;
+  // Stop d: its bottom on Brown's ink line at y 215, 11 px wide. Brown draws
+  // it at x 188-199, but there the roller's periphery (which overlaps the
+  // tip circle, as his roller does) caught the tooth under it 0.11 before a
+  // tip reached d, so the wheel rested on the roller and d never locked.
+  // Set 7 px nearer the roller (x 181-192), the tip locks on d's face and
+  // the tooth under the roller stands about 1 px clear of it, so the
+  // balance swings free of the wheel except at unlocking and impulse.
+  const dx = tune.dx ?? 181;
   const stopD = [P(dx, 201.5), P(dx + 11, 201.5), P(dx + 11, tune.stopBottom ?? 215), P(dx, tune.stopBottom ?? 215)];
   const localB = (points) => points.map(([x, y]) => [x - b[0], y - b[1]]);
   const balance = new THREE.Group();
@@ -870,7 +874,8 @@ function free291(movement) {
       materials.rocker.add(plateMesh(localB(strip(bend, face)), [], springZ[0], springZ[1], detentMaterial, 'light-passing-spring-held-length'));
       materials.rocker.add(plateMesh(localB(strip(along(P(347, 0)[0]), springEnd)), [], springZ[0], springZ[1], detentMaterial, 'passing-spring-end-f'));
       materials.rocker.add(passing);
-      const block = plateMesh([P(444, 178), P(484, 178), P(484, 219), P(444, 219)], [], -0.3, frontZ[1], materials.frame, 'fixed-block-b');
+      // A is screwed into b: the block's face stands at A's root (x 440).
+      const block = plateMesh([P(440, 178), P(484, 178), P(484, 219), P(440, 219)], [], -0.3, frontZ[1], materials.frame, 'fixed-block-b');
       const screw = arborMesh(P(464, 198.5), 8 * s, frontZ[1], frontZ[1] + 0.05, materials.frame, 'screw-at-b');
       const arbor = arborMesh(O, 5 * s, -0.3, frontZ[1] + 0.06, materials.arbor, 'balance-arbor');
       return [block, screw, arbor];

@@ -7,8 +7,12 @@ import {applyDisplayTiming} from '../src/simulation/display-timing.js';
 
 for(const id of [450,451])test(`${id} actual moving piston, rod journals and check valves clear the fixed solids`,()=>{
   const m=createAuthoredForcePumpMovement({id}),d=m.root.userData,b=d.blocks;
-  const pairs=[[b.pistonBody,b.barrel],[b.pumpRod,b.barrel],[b.sliderLink,b.barrel],
-    [b.lever.children[1],b.pivotSupport],[b.lever.children[2],b.sliderLink],[b.jointPin,b.sliderLink],
+  // Handle pinned to the rod clevis; its fulcrum rides a swing link pinned
+  // in a lug on the barrel (Brown's 450; 451 is the same pump).
+  const pairs=[[b.pistonBody,b.barrel],[b.pumpRod,b.barrel],[b.rodClevis,b.barrel],[b.swingLink,b.barrel],
+    [b.swingLink,b.pivotSupport],[b.swingLink,b.lugPin],[b.swingLink,b.lever.children[0]],[b.swingLink,b.lever.children[1]],
+    [b.lever.children[0],b.rodClevis],[b.lever.children[2],b.rodClevis],[b.lever.children[1],b.lever.children[0]],
+    [b.lever.children[0],id===450?b.deliveryPipe:b.barrel],
     [b.suctionValveDisk,b.suctionValveSeat],[b.deliveryValveDisk,b.deliveryValveSeat],
     [b.deliveryValveDisk,id===450?b.deliveryValveBody:b.chamberNeck]];
   const data=pairs.map(([moving,fixed])=>({moving,fixed,points:surfacePoints(moving.geometry),surface:solidSurface(fixed.geometry)}));

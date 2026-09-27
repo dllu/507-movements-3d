@@ -8,31 +8,29 @@ const add=(p,g,m,role)=>{const o=new THREE.Mesh(g,m);o.userData.role=role;p.add(
 const rect=(x,z)=>poly([[-x,-z],[x,-z],[x,z],[-x,z]]);
 const slot=(a,b,r)=>capsule(a,b,r,32);
 const sheet=(shape,low,high)=>plate(shape,low,high);
-function slottedGuide(width,depth,centerX,centerZ,travel,r,thickness){return horizontalPlate(clip.difference(rect(width/2,depth/2),slot([centerX-travel,-centerZ],[centerX+travel,-centerZ],r)),-thickness/2,thickness/2);}
 
 export function correctGasMeterParts(root,id,update) {
  const d=root.userData,b=d.blocks,g=d.geometry;
  if(id===481){
   replace(b.caseShell,horizontalRing(g.caseRadiusSceneUnit-.055,g.caseRadiusSceneUnit,-g.caseDepthSceneUnit/2,g.caseDepthSceneUnit/2,96));
-  replace(b.drumShell,horizontalRing(g.drumRadiusSceneUnit-.045,g.drumRadiusSceneUnit,-g.drumDepthSceneUnit/2,g.drumDepthSceneUnit/2,96));
   replace(b.journal,mergePassageParts([horizontalRing(.12,.34,-.67,-.50,64),horizontalRing(.12,.34,.50,.67,64)]));
   replace(b.axle,mergePassageParts([horizontalRing(.080,.115,-1.05,-.78,64),horizontalRing(.080,.115,.78,1.05,64)]));
+  // Pipe a enters along the axis through the front journal and turns up in
+  // the central well, its mouth just above Brown's water line and inside
+  // the innermost hook.
   const curve=d.flowPaths.centralInletCurve;
-  curve.points=[new THREE.Vector3(0,0,1.52),new THREE.Vector3(0,0,.92),new THREE.Vector3(0,0,.30),new THREE.Vector3(0,.12,.03),new THREE.Vector3(0,.285,0)];curve.updateArcLengths();
+  curve.points=[new THREE.Vector3(0,0,1.52),new THREE.Vector3(0,0,.92),new THREE.Vector3(0,0,.30),new THREE.Vector3(0,.14,.03),new THREE.Vector3(0,g.waterSurfaceY+.06,0)];curve.updateArcLengths();
   replace(b.centralInletPipeA,curvedPipeWall(curve,.040,.055,80,24));
   for(const marker of b.flowMarkers)replace(marker,new THREE.SphereGeometry(.025,16,12));
   b.caseWater.material.opacity=.10;
-  const headMaterial=b.drumShell.material.clone();headMaterial.opacity=.08;headMaterial.depthWrite=false;
+  const headMaterial=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.08,depthWrite:false,side:THREE.DoubleSide});
+  // The drum heads are whole discs apart from the journal bore: gas enters
+  // each chamber B through the hooked mouths round pipe a and leaves through
+  // the gaps in the shell, not through ports in the heads.
   b.drumHeads=[];
-  for(const[slots,z]of[[b.rearInletSlots,-.52],[b.frontOutletSlots,.52]]){
-   // Gas enters each chamber B through the hooked mouth of its partitions
-   // round pipe a, so the rear head is whole (its old slots read as loose
-   // chips); the front head keeps its peripheral outlets.
-   const holes=z<0?[]:slots.map(o=>{const p=o.geometry.parameters,a=o.rotation.z;return poly([[-p.width/2,-p.height/2],[p.width/2,-p.height/2],[p.width/2,p.height/2],[-p.width/2,p.height/2]].map(([x,y])=>[o.position.x+x*Math.cos(a)-y*Math.sin(a),o.position.y+x*Math.sin(a)+y*Math.cos(a)]));});
-   const head=add(b.drum,plate(clip.difference(poly(circle([0,0],g.drumRadiusSceneUnit,128)),poly(circle([0,0],.34,64)),...holes),z-.025,z+.025),headMaterial,'finite-ported-drum-head');b.drumHeads.push(head);
-   for(const o of slots)o.visible=false;
+  for(const z of[-.52,.52]){
+   const head=add(b.drum,plate(clip.difference(poly(circle([0,0],g.drumRadiusSceneUnit,128)),poly(circle([0,0],.34,64))),z-.025,z+.025),headMaterial,'finite-ported-drum-head');b.drumHeads.push(head);
   }
-  for(const group of b.partitions)for(const o of group.children){if(o.geometry.type!=='BoxGeometry')continue;const p=o.geometry.parameters;replace(o,new THREE.BoxGeometry(p.width,p.height,1.0));}
   replace(b.rearCaseHead,plate(clip.difference(poly(circle([0,0],g.caseRadiusSceneUnit,128)),poly(circle([0,0],.12,64))),-.025,.025));
  } else if(id===482){
   // Complete finite rectangular mercury channels; liquid remains an envelope.
@@ -68,60 +66,6 @@ export function correctGasMeterParts(root,id,update) {
   const cupTie=add(b.cupH,new THREE.CylinderGeometry(.060,.060,.51,32),b.leverBar.material,'rigid-cup-roof-to-sliding-pin-seat');cupTie.position.set(g.cupConnectorX,1.205,.54);
   const stand=clip.difference(clip.union(slot([0,-2.73],[0,0],.10),poly(circle([0,0],.22,64))),poly(circle([0,0],.164,64)));
   b.leverStand=add(root,plate(stand,-.06,.06),b.housingFloor.material,'finite-bored-regulator-fulcrum-stand');b.leverStand.position.copy(g.leverPivot);b.leverStand.position.z=.55;
- } else if(id===483){
-  replace(b.housingShell,new THREE.BoxGeometry(6.18,5.08,.08));b.housingShell.position.z=-1.25;
-  replace(b.roof,horizontalPlate(clip.difference(rect(3.175,1.29),poly(circle([0,.46],.205,64)),poly(circle([-2.45,.35],.205,64))),-.10,.10));
-  const holes=[slot([-1.94,-.61],[1.94,-.61],.10)];
-  for(const tube of[b.inletTube,b.leftBranchTube,b.rightBranchTube,b.outletTube])replace(tube.mesh,curvedPipeWall(tube.curve,tube===b.inletTube||tube===b.outletTube?.14:.11,tube===b.inletTube||tube===b.outletTube?.20:.16,72,24));
-  for(const[tube,side,port]of[[b.leftBranchTube,-1,-.76],[b.rightBranchTube,1,.76]]){
-   // Pass 57: the branch runs down behind and outside the bellows end plate
-   // (radius 0.11, no Catmull overshoot through the case side) and ends at an
-   // elbow fitting whose short stub enters the plate's bore, so nothing pokes
-   // through the side panel.
-   tube.curve.points=[new THREE.Vector3(port,1.10,0),new THREE.Vector3(port,.92,-.05),new THREE.Vector3(side*1.70,.66,-.85),new THREE.Vector3(side*2.55,.32,-.92),new THREE.Vector3(side*2.87,0,-.72),new THREE.Vector3(side*2.87,-.30,-.18),new THREE.Vector3(side*2.87,-.45,0)];tube.curve.curveType='centripetal';tube.curve.updateArcLengths();replace(tube.mesh,curvedPipeWall(tube.curve,.07,.11,96,24));
-   const stub=new THREE.Mesh(curvedPipeWall(new THREE.LineCurve3(new THREE.Vector3(side*2.87,-.45,0),new THREE.Vector3(side*2.45,-.45,0)),.07,.11,4,24),tube.mesh.material);
-   stub.userData.role='fixed-branch-stub-into-bellows-end-plate';tube.mesh.parent.add(stub);
-   const elbow=new THREE.Mesh(new THREE.SphereGeometry(.12,32,16),tube.mesh.material);elbow.position.set(side*2.87,-.45,0);
-   elbow.userData.role='fixed-branch-elbow-fitting';tube.mesh.parent.add(elbow);
-   const crossing=tube.curve.getPoints(120).filter(p=>p.y>.64&&p.y<1.17);for(const p of crossing)holes.push(poly(circle([p.x,-p.z],.18,32)));
-  }
-  // Pass 70: the common outlet no longer runs forward through the floor and
-  // out of the open case front (the crosshead bar slid through it). The
-  // exhaust leaves the central port through a passage cored in the seat
-  // block (Brown's thick board) to the foot of his tall left column, which
-  // stands on the board and rises through the roof.
-  {const path=new THREE.LineCurve3(new THREE.Vector3(-2.45,1.18,-.35),new THREE.Vector3(-2.45,3.40,-.35));
-   b.outletTube.curve=path;replace(b.outletTube.mesh,curvedPipeWall(path,.14,.20,8,40));}
-  replace(b.galleryFloor,horizontalPlate(clip.difference(rect(2.96,1.11),...holes),-.065,.065));
-  for(const p of[b.leftFixedPlate,b.rightFixedPlate])replace(p,plate(clip.difference(rect(.67,1.24),poly(circle([0,0],.24,64))),-.08,.08).rotateY(Math.PI/2));
-  // The seat block is Brown's thick board: it stands on the floor (y .975-1.18),
-  // carries the chest walls, and runs left under the outlet column. Its top
-  // layer carries the three ports; its lower layer is cored with the exhaust
-  // passage from the central port to the foot of the column.
-  {const outline=poly([[-2.70,-.50],[1.26,-.50],[1.26,.58],[-2.70,.58]]),ports=[-.76,0,.76].map(x=>poly(circle([x,0],.16,64)));
-   const passage=clip.union(poly(circle([0,0],.16,64)),slot([0,0],[0,.35],.09),slot([0,.35],[-2.45,.35],.09),poly(circle([-2.45,.35],.14,64)));
-   const top=horizontalPlate(clip.difference(outline,...ports,poly(circle([-2.45,.35],.14,64))),.021,.07),low=horizontalPlate(clip.difference(outline,ports[0],ports[2],passage),-.135,.02);
-   replace(b.valvePortPlate,mergePassageParts([top,low]));}
-  for(const p of b.valvePorts){replace(p,horizontalRing(.13,.16,-.08,.08,48));p.position.y=1.10;}
-  replace(b.valveBTop,new THREE.BoxGeometry(1.32,.16,.82));
-  for(let i=0;i<2;i++){const p=b.valveBSkirts[i];replace(p,new THREE.BoxGeometry(.12,.33,.82));p.position.set(i? .60:-.60,.105,0);}
-  b.valveCrossSkirts=[];for(const z of[-.35,.35]){const p=add(b.valveB,new THREE.BoxGeometry(1.08,.33,.12),b.valveBTop.material,'finite-front-or-rear-D-valve-skirt');p.position.set(0,.105,z);b.valveCrossSkirts.push(p);}
-  replace(b.exhaustCavity,new THREE.BoxGeometry(1.04,.30,.56));b.exhaustCavity.position.y=.10;
-  replace(b.valveChest,mergePassageParts([new THREE.BoxGeometry(.08,.89,1.34).translate(-1.22,.015,0),new THREE.BoxGeometry(.08,.89,1.34).translate(1.22,.015,0),plate(clip.difference(rect(1.18,.46),slot([0,.20],[0,.60],.24)),-.67,-.59),new THREE.BoxGeometry(2.36,.92,.08).translate(0,0,.77),horizontalPlate(clip.difference(rect(1.26,.81),slot([-.16,-.33],[.16,-.33],.21),poly(circle([0,.41],.23,64))),.38,.46)]));
-  // Pass 70: stem, slot plate and rocker stand in three planes (z .20, .33,
-  // .45) so the arm and its pin never cross the stem, tie or guides.
-  for(const p of b.valveGuides){replace(p,slottedGuide(1.45,.16,0,0,.45,.064,.08));p.position.z=.20;}
-  b.valveBStem.position.z=.20;
-  const pivot=b.rockerFulcrum.position;
-  replace(b.rockerArm,plate(clip.difference(clip.union(slot([0,-g.valveRockerArmSceneUnit],[0,0],.09),poly(circle([0,0],.19,64))),poly(circle([0,0],.134,64)),poly(circle([0,-g.valveRockerArmSceneUnit],.054,48))),-.06,.06));b.rockerArm.position.set(0,0,0);
-  b.valveRockerConnector.visible=false;
-  b.rockerPin=add(b.valveRocker,new THREE.CylinderGeometry(.05,.05,.27,40),b.rockerFulcrum.material,'finite-rocker-tip-pin-in-valve-stem-slot');b.rockerPin.rotation.x=Math.PI/2;b.rockerPin.position.set(0,-g.valveRockerArmSceneUnit,-.025);
-  b.stemSlot=add(b.valveB,plate(clip.difference(rect(.10,.30),slot([0,-.21],[0,.16],.054)),-.04,.04),b.valveBTop.material,'finite-vertical-lost-motion-slot-on-valve-stem');b.stemSlot.position.set(0,.72,.33);
-  b.stemSlotTie=add(b.valveB,new THREE.CylinderGeometry(.03,.03,.09,32),b.valveBTop.material,'rigid-stem-to-lost-motion-slot-tie');b.stemSlotTie.rotation.x=Math.PI/2;b.stemSlotTie.position.set(0,.98,.265);
-  replace(b.outletFlange,horizontalRing(.14,.31,-.16,.16,64));
-  const stand=clip.difference(clip.union(slot([0,-1.54],[0,0],.09),poly(circle([0,0],.19,64))),poly(circle([0,0],.134,64)));
-  b.rockerStand=add(root,plate(stand,-.06,.06),b.base.material,'finite-rear-stand-for-meter-rocker');b.rockerStand.position.set(0,pivot.y,-.82);
-  replace(b.rockerFulcrum,new THREE.CylinderGeometry(.13,.13,1.50,48));b.rockerFulcrum.position.z=-.20;
  }
  d.minimumDisplayCycleSeconds=g.cycleDuration;d.workingPartsReview={status:'bounded-finite-interfaces',residual:'The original drum/bellows motion and gas/mercury pressure laws remain prescribed or quasi-static. Passive pressure-driven dynamics, sealing, leakage and complete fluid occupancy are not solved.'};
  fitPistonGuide(root,update,g.cycleDuration);d.cameraDirection=new THREE.Vector3(1.8,1.2,15);

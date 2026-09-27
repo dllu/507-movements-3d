@@ -32,11 +32,13 @@ test('494 actual pointed jaws clear the stone until contact and all crossed-join
  const model=createMovementModel(catalog[493]),b=model.root.userData.blocks;
  const mesh=o=>o.children.find(c=>c.geometry);
  sweep(model,checks([
-  [b.leftJawParts.curvedJaw,[b.stoneBody]], [b.rightJawParts.curvedJaw,[b.stoneBody]],
-  [b.leftJawParts.biteTip,[b.stoneBody]], [b.rightJawParts.biteTip,[b.stoneBody]],
-  [b.jawPivotPin,[mesh(b.leftJawParts.upperArm),mesh(b.rightJawParts.upperArm),b.leftJawParts.curvedJaw,b.rightJawParts.curvedJaw]],
-  [b.sidePivotPins[0],[mesh(b.leftJawParts.upperArm),mesh(b.leftUpperLink)]],
-  [b.sidePivotPins[1],[mesh(b.rightJawParts.upperArm),mesh(b.rightUpperLink)]],
+  // Each tong is one plate: arm, fulcrum eye, curved jaw and pointed nib.
+  [b.leftJawParts.tongBody,[b.stoneBody,b.rightJawParts.tongBody,mesh(b.leftUpperLink),mesh(b.rightUpperLink)]],
+  [b.rightJawParts.tongBody,[b.stoneBody,mesh(b.leftUpperLink),mesh(b.rightUpperLink)]],
+  [mesh(b.leftUpperLink),[mesh(b.rightUpperLink),b.shackleStem]], [mesh(b.rightUpperLink),[b.shackleStem]],
+  [b.jawPivotPin,[b.leftJawParts.tongBody,b.rightJawParts.tongBody]],
+  [b.sidePivotPins[0],[b.leftJawParts.tongBody,mesh(b.leftUpperLink)]],
+  [b.sidePivotPins[1],[b.rightJawParts.tongBody,mesh(b.rightUpperLink)]],
   [b.shacklePivotPin,[mesh(b.leftUpperLink),mesh(b.rightUpperLink),b.shackleStem]],
  ]),4);
  assert.equal(model.root.userData.hideGround,true);

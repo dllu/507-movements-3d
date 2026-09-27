@@ -267,9 +267,13 @@ function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, in
   'pressure-pipe-down-back-of-case-in-section');
   const foot = aboutPipeAxis([[1340, 600], [1366, 600], [1366, 610], [1340, 610]], caseMaterials,
     'pipe-foot-flange-in-section');
-  const glass = aboutGaugeAxis([[1213, axisY], [1217, axisY], [1217, 236], [1213, 236]],
+  // Brown carries the glass and the dial plate across the whole case: both
+  // run out into the case wall (its inner face is row 223), where they are
+  // seated behind the front lip, so neither hangs free inside the case; they
+  // end 1 px inside the wall so their rims do not share its face.
+  const glass = aboutGaugeAxis([[1213, axisY], [1217, axisY], [1217, 222], [1213, 222]],
     [glassMaterial, glassMaterial], 'front-glass-in-section');
-  const dial = aboutGaugeAxis([[1221, axisY - 1.6], [1224, axisY - 1.6], [1224, 262], [1221, 262]],
+  const dial = aboutGaugeAxis([[1221, axisY - 1.6], [1224, axisY - 1.6], [1224, 222], [1221, 222]],
     dialMaterials, 'dial-plate-in-section');
   // Pass 58: the moving train is complete from disk A to the pointer.
   // The pointer spindle runs on the gauge axis from the pointer, just behind
@@ -415,6 +419,9 @@ function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, in
   const lugPinAt = (bow) => new THREE.Vector3(X(diskX(0, bow) - 2 - 4) - L(1.8), Y(axisY), 0);
   const pinAt = (angle) => new THREE.Vector3(pinLocal[0], pinLocal[1], 0).applyAxisAngle(Z_AXIS, angle).add(sectorPivot);
   const rodLength = lugPinAt(bowAt(0)).distanceTo(pinAt(0));
+  // The rod is one rigid bar of constant length between its two eyes; it is
+  // built once and carried by its transform, not reshaped every frame.
+  rodStrip.setPoints([[L(2), 0], [rodLength - L(2), 0]]);
   const solveSector = (bow) => {
     const lug = lugPinAt(bow);
     let lower = 0, upper = 1.6;
@@ -438,9 +445,8 @@ function brownSectionView({ frameMaterial, diaphragmMaterial, sectorMaterial, in
     sectorE.rotation.z = sectorAngle;
     spindleGroup.rotation.x = needleZero - crownRatio * sectorAngle;
     const lugPin = lugPinAt(bow), pin = pinAt(sectorAngle);
-    const toward = pin.clone().sub(lugPin).normalize();
-    const a = lugPin.clone().addScaledVector(toward, L(2)), b = pin.clone().addScaledVector(toward, -L(2));
-    rodStrip.setPoints([[a.x, a.y], [b.x, b.y]]);
+    rod.position.set(lugPin.x, lugPin.y, rodZ);
+    rod.rotation.z = Math.atan2(pin.y - lugPin.y, pin.x - lugPin.x);
     rodEyes[0].position.set(lugPin.x, lugPin.y, 0);
     rodEyes[1].position.set(pin.x, pin.y, 0);
     group.userData.sectionState = { sectorAngle, needleAngle: spindleGroup.rotation.x, rodLength: lugPin.distanceTo(pin) };

@@ -20,7 +20,7 @@ export function correctSkewFrictionParts(root) {
     replace(p.body, geometry);
     p.body.userData.exactRuledHyperboloid = false;
     p.body.userData.nominalRuledHyperboloid = true;
-    for (const cap of p.endCaps) replace(cap, annulus(g.radiusAtAxial(g.bodyHalfLength - 0.035) - 0.002, 0.12, 80));
+    for (const cap of p.endCaps) replace(cap, annulus(wheel.userData.radiusAtAxial(g.bodyHalfLength - 0.035) - 0.002, 0.12, 80));
     // Brown's axles are plain round stubs, about an eighth of the end
     // diameter across, standing about a third of it clear of each end face.
     // Each stub starts 0.001 off its end face, so no faces coincide.
@@ -32,10 +32,11 @@ export function correctSkewFrictionParts(root) {
     // old diagnostic nodes, but show rotation with flush end-face inlays.
     p.materialStripe.visible = false;
     for (const index of p.endFaceIndexes) {
-      replace(index, new THREE.PlaneGeometry(g.endRadius * 0.6, 0.07));
+      const endRadius = wheel.userData.endRadius;
+      replace(index, new THREE.PlaneGeometry(endRadius * 0.6, 0.07));
       const phase = index.userData.markerPhase, side = Math.sign(index.position.z);
-      index.position.set(Math.cos(phase) * g.endRadius * 0.52,
-        Math.sin(phase) * g.endRadius * 0.52, side * (g.bodyHalfLength + 0.085));
+      index.position.set(Math.cos(phase) * endRadius * 0.52,
+        Math.sin(phase) * endRadius * 0.52, side * (g.bodyHalfLength + 0.085));
       index.material = index.material.clone();
       index.material.side = THREE.DoubleSide;
       index.material.polygonOffset = true;
@@ -57,9 +58,10 @@ export function correctSkewFrictionParts(root) {
     for (const material of [object.material].flat().filter(Boolean)) material.fog = false;
   });
   root.userData.hideGround = true;
-  root.userData.minimumDisplayCycleSeconds = 6;
+  // The loop closes after 2.5 driver turns; play it at the authored speed.
+  root.userData.minimumDisplayCycleSeconds = g.closureCyclePeriod;
   root.userData.finiteFriction = { bore, shaftRadius: 0.095, radialAllowance,
-    axialSegments: 128, angularSegments: 96, contactLaw: 'prescribed equal counterrotation',
+    axialSegments: 128, angularSegments: 96, contactLaw: 'prescribed 5:4 counterrotation',
     validatedDynamics: false };
-  root.userData.reconstructionNote = 'Equal skew-shaft hyperboloids roll transversely while sliding along their common generator. The 1:−1 speed ratio is prescribed; friction, preload and available driving torque are not simulated. Finite mesh facets have a small running clearance. Shaft angle, dimensions and supporting frame are inferred.';
+  root.userData.reconstructionNote = 'Unequal skew-shaft hyperboloids (the lower one larger, as drawn) roll transversely while sliding along their common generator. The 5:4 speed ratio sin(alpha1)/sin(alpha2) is prescribed; friction, preload and available driving torque are not simulated. Finite mesh facets have a small running clearance. Shaft angle, dimensions and supporting frame are inferred.';
 }

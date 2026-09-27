@@ -118,7 +118,14 @@ export function correctFlexiblePumpParts(root,id) {
   }
   // Correct the old horizontally oriented collar to share the Z-axis fulcrum.
   const collar=root.children.find(o=>o.geometry?.type==='TorusGeometry'&&o.position.distanceTo(pivot)<1e-8);
-  if(collar){replace(collar,new THREE.TorusGeometry(lantern?.27:.26,.035,12,48));collar.rotation.set(0,0,0);collar.position.z=.23;}
+  if(collar&&lantern){replace(collar,new THREE.TorusGeometry(.27,.035,12,48));collar.rotation.set(0,0,0);collar.position.z=.23;}
+  else if(collar){
+    // 454: the collar grips the 0.21 fulcrum pin and seats on the lever's
+    // front face (z 0.115); the fixed pin ends flush in the collar.
+    const tube=.035,front=.115,pinRadius=.21,back=-.35;collar.rotation.set(0,0,0);collar.position.z=front+tube;
+    replace(collar,new THREE.TorusGeometry(pinRadius+tube,tube,12,48));
+    replace(b.pivotAxle,new THREE.CylinderGeometry(pinRadius,pinRadius,collar.position.z-back,48));b.pivotAxle.position.z=(collar.position.z+back)/2;
+  }
   d.solidReview={qualification:'Finite lever bores, link eyes, pipe walls, chamber openings and valve seats. Bellows/diaphragm deformation and check timing remain prescribed; pipe junction sealing, flexible stresses and passive fluid/contact dynamics are not solved.'};
   finish(root);
 }

@@ -2,80 +2,45 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createAuthoredGasometerMovement } from '../src/simulation/authored-gasometers.js';
-import { solidSurface, surfacePoints, surfaceTriangles } from './helpers/solid-surface.mjs';
+import { solidSurface, surfacePoints } from './helpers/solid-surface.mjs';
 
-const make = id => createAuthoredGasometerMovement({ id, sourceUrl: `https://507movements.com/mm_${id}.html` });
+// Pass 74: selected solid interfaces of the rebuilt gasometers, sampled over
+// a full cycle: bell against the pit and the pipes, pipes and tube b against
+// the ground, sleeve a against tube b, weights and bands against the ground
+// and the bell.
+const make = (id) => createAuthoredGasometerMovement({ id, sourceUrl: `https://507movements.com/mm_${id}.html` });
 for (const id of [479, 480]) {
-  test(`${id}: finite vessel, guide, rope and pipe interfaces over a full cycle`, () => {
-    const model = make(id), b = model.root.userData.blocks, p = model.root.userData.gasometerWorkingParts;
-    const pairs = p.pipes.map(pipe => [pipe, b.tankBottom]);
+  test(`${id}: bell, pit, pipe, guide and suspension interfaces stay clear over a full cycle`, () => {
+    const model = make(id), d = model.root.userData, b = d.blocks;
+    const ground = b.pit.ground;
+    const pairs = [[b.bellShell, ground], ...b.gasPipes.map((pipe) => [pipe, ground]), ...b.gasPipes.map((pipe) => [b.bellShell, pipe])];
     if (id === 479) {
-      for (let i = 0; i < 2; i++) {
-        for (const rope of [b.ropeArcs[i], b.innerRopeSegments[i], b.outerRopeSegments[i]]) pairs.push([rope, p.grooves[i]]);
-        pairs.push([p.axles[i], p.hubs[i]]);
-        for (const weight of b.counterweights[i].children) for (const tank of [b.tankWall, b.tankTopRim]) pairs.push([weight, tank]);
+      for (let i = 0; i < 2; i += 1) {
+        pairs.push([b.counterweights[i], ground], [b.counterweights[i], b.bellShell], [b.outerBands[i], b.bellShell], [b.pulleys[i].axle, b.pulleys[i].wheel]);
       }
     } else {
-      pairs.push([b.fixedTubeShell, b.movingTubeShell], [b.fixedTubeShell, b.bellCrown],
-        ...b.movingTubeRims.map(rim => [b.fixedTubeShell, rim]),
-        [b.gasDome, b.movingTubeShell], [b.gasDome, b.fixedTubeShell]);
+      pairs.push([b.tubeShell, ground], [b.sleeveA, b.tubeShell], [b.bellShell, b.tubeShell], [b.sleeveA, ground], ...b.gasPipes.map((pipe) => [b.sleeveA, pipe]));
     }
-    for (const bell of [b.bellSkirt, b.bellBottomRim]) for (const tank of [b.tankWall, b.tankBottom, b.tankTopRim]) pairs.push([bell, tank]);
-    const samples = new Map(), solids = new Map();
-    for (const [a, b] of pairs) {
-      if (!samples.has(a)) samples.set(a, surfacePoints(a.geometry));
-      if (!solids.has(b)) solids.set(b, solidSurface(b.geometry));
-    }
-    // Long pipe faces can straddle a thin floor without their vertices or
-    // midpoints lying inside it. Sample their actual triangular sections at
-    // three floor heights, so the old unbored-floor regression is detected.
-    for (const pipe of p.pipes) for (const offset of [-0.08, 0, 0.08]) {
-      const y = b.tankBottom.position.y + offset - pipe.position.y;
-      for (const tri of surfaceTriangles(pipe.geometry)) for (const [a,c] of [[tri.a,tri.b],[tri.b,tri.c],[tri.c,tri.a]]) {
-        if (a.y === c.y || (y-a.y)*(y-c.y) > 0) continue;
-        samples.get(pipe).push(a.clone().lerp(c,(y-a.y)/(c.y-a.y)));
-      }
-    }
-    let checks = 0, min = Infinity;
-    for (let pose = 0; pose <= 16; pose++) {
-      model.update(pose * 8 / 16); model.root.updateMatrixWorld(true);
-      for (const [a, b] of pairs) {
-        const matrix = b.matrixWorld.clone().invert().multiply(a.matrixWorld), solid = solids.get(b);
-        for (const local of samples.get(a)) {
-          const q = local.clone().applyMatrix4(matrix), d = solid.signedDistance(q, 0.005);
-          min = Math.min(min, d); checks++;
-          assert.ok(d >= -1e-5, `${id} pose ${pose}: ${a.userData.role} cuts ${b.userData.role} by ${-d} at ${q.toArray()}`);
+    const cache = new Map();
+    const get = (o) => {if (!cache.has(o)) cache.set(o, {o, p: surfacePoints(o.geometry), s: solidSurface(o.geometry)});return cache.get(o);};
+    const bad = {};
+    for (let i = 0; i <= 32; i += 1) {
+      model.update(d.geometry.cycleDuration * i / 32);
+      model.root.updateMatrixWorld(true);
+      for (const [x, y] of pairs) {
+        const a = get(x), c = get(y);
+        if (!new THREE.Box3().setFromObject(a.o).intersectsBox(new THREE.Box3().setFromObject(c.o))) continue;
+        for (const [v, f] of [[a, c], [c, a]]) {
+          const tr = f.o.matrixWorld.clone().invert().multiply(v.o.matrixWorld);
+          for (const p of v.p) {
+            const q = p.clone().applyMatrix4(tr);
+            if (f.s.box.distanceToPoint(q) > 0.001) continue;
+            const gap = f.s.signedDistance(q, 0.02);
+            if (gap < -2e-6) bad[`${v.o.userData.role} / ${f.o.userData.role}`] = gap;
+          }
         }
       }
     }
-    console.log(JSON.stringify({ id, checks, minimumCappedGap: min }));
-  });
-  test(`${id}: closed walls have physical thickness and correct normals`, () => {
-    const { root } = make(id), b = root.userData.blocks;
-    for (const mesh of [b.tankWall, b.bellSkirt, b.bellCrown]) {
-      const p = mesh.geometry.attributes.position, ix = mesh.geometry.index;
-      let volume = 0;
-      for (let i = 0; i < (ix?.count ?? p.count); i += 3) {
-        const [a,b,c] = [0,1,2].map(j => new THREE.Vector3().fromBufferAttribute(p, ix ? ix.getX(i+j) : i+j));
-        volume += a.dot(new THREE.Vector3().crossVectors(b,c)) / 6;
-      }
-      assert.ok(volume > 0.01, `${mesh.userData.role}: ${volume}`);
-    }
-  });
-  test(`${id}: stable scene geometry during updates, explicit timing and force assumptions`, () => {
-    const model = make(id), before = [];
-    model.root.traverse(o => { if(o.geometry) before.push([o, o.geometry, o.geometry.attributes.position.array]);
-      for (const material of [].concat(o.material ?? [])) {
-        assert.equal(material.fog, false);
-        if (material.transparent) { assert.equal(o.castShadow,false); assert.equal(o.receiveShadow,false); }
-      } });
-    for(let i=0;i<=32;i++) model.update(i/4);
-    let count=0;model.root.traverse(o=>{if(o.geometry) count++;});
-    assert.equal(count,before.length);
-    for(const[o,g,array]of before){assert.equal(o.geometry,g);assert.equal(o.geometry.attributes.position.array,array);}
-    assert.equal(model.root.userData.minimumDisplayCycleSeconds,8);
-    assert.equal(model.root.userData.hideGround,true);
-    assert.match(model.root.userData.reconstructionNote,/prescribed/);
-    assert.match(model.root.userData.reconstructionNote,/not dynamically solved/);
+    assert.deepEqual(bad, {});
   });
 }

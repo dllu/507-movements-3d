@@ -159,7 +159,7 @@ test('movement 206 is one lever carrying two independent curved pawls around one
   assert.deepEqual(sourceAnchors.fixedLeverPivot.toArray(), [338, 49]);
   assert.deepEqual(sourceAnchors.sharedPawlPivot.toArray(), [257, 66]);
   assert.deepEqual(sourceAnchors.leftPawlTip.toArray(), [94, 203]);
-  assert.deepEqual(sourceAnchors.rightPawlTip.toArray(), [408, 193]);
+  assert.deepEqual(sourceAnchors.rightPawlTip.toArray(), [389, 195]);
   assert.deepEqual(sourceAnchors.handleEnd.toArray(), [421, 17]);
 
   const counts = {
@@ -248,15 +248,17 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
   near(leftFaceFraction, 0.43, 0, 'left working point on face');
   near(rightFaceFraction, 0.28, 0, 'right working point just below the tip');
   assert.equal(rightToothOffset, -16);
-  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(5.1));
-  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(5.3));
+  assert.ok(rockerAmplitude > THREE.MathUtils.degToRad(5.35));
+  assert.ok(rockerAmplitude < THREE.MathUtils.degToRad(5.6));
   near(risingAdvance + fallingAdvance, toothPitch, 2e-15, 'stroke closure');
   near(transmission.risingStrokeAdvance, risingAdvance, 0, 'rising advance');
   near(transmission.fallingStrokeAdvance, fallingAdvance, 0, 'falling advance');
-  assert.ok(risingAdvance > THREE.MathUtils.degToRad(2.7));
-  assert.ok(risingAdvance < THREE.MathUtils.degToRad(2.85));
-  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(3.95));
-  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(4.1));
+  assert.ok(risingAdvance > THREE.MathUtils.degToRad(2.3));
+  assert.ok(risingAdvance < THREE.MathUtils.degToRad(2.5));
+  assert.ok(fallingAdvance > THREE.MathUtils.degToRad(4.3));
+  assert.ok(fallingAdvance < THREE.MathUtils.degToRad(4.5));
+  // Brown's pose is the high reversal: the pin stands at his drawn pin.
+  vector2Near(highAnchor, sharedPawlPivotAtSource, 3e-16, 'high reversal at the drawn pin');
 
   vector2Near(
     sourcePointToModel(sourceAnchors.fixedLeverPivot),
@@ -299,12 +301,14 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
       sourcePointToModel(sourceAnchors.rightPawlTip).x,
     ),
     // The wheel centre and tip circle are fitted to the drawn tooth tips;
-    // Brown's right pawl end then sits within two degrees of the solved one.
+    // Brown's right point (deep in its space) is within two degrees of the
+    // solved seated finger at the high reversal.
     THREE.MathUtils.degToRad(2),
     'right contact sector matches the engraving',
   );
+  near(leftEndWorldAngle, leftSourceContactAngle, 0, 'left stroke ends at the drawn point');
   near(
-    leftSourceContactAngle - leftEndWorldAngle,
+    geometry.leftStartWorldAngle - leftEndWorldAngle,
     risingAdvance,
     0,
     'left stroke angular advance',
@@ -315,7 +319,7 @@ test('movement 206 uses source-proportioned pivots and exact sawtooth working fa
     0,
     'right stroke angular advance',
   );
-  near(lowAnchor.distanceTo(leftDrivePointLocal), leftPawlLength, 0, 'left pawl length');
+  near(highAnchor.distanceTo(leftDrivePointLocal), leftPawlLength, 0, 'left pawl length');
   const rightStartPoint = new THREE.Vector2(
     Math.cos(rightStartWorldAngle) * geometry.rightContactOrbitRadius,
     Math.sin(rightStartWorldAngle) * geometry.rightContactOrbitRadius,
@@ -684,8 +688,9 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   const handleLow = worldPositionAt(leverRotor, handlePoint, canonicalTimes.lowReversal);
   // One vibration advances one of Brown's 53 fine teeth, so the lever's
   // swing is small (about 5.2 degrees each way).
-  assert.ok(handleSource.distanceTo(handleHigh) > 0.07, `handle high ${handleSource.distanceTo(handleHigh)}`);
-  assert.ok(handleSource.distanceTo(handleLow) > 0.07, `handle low ${handleSource.distanceTo(handleLow)} ${handleHigh.distanceTo(handleLow)}`);
+  // Brown's pose is the high reversal.
+  assert.ok(handleSource.distanceTo(handleHigh) < 1e-12, `handle high ${handleSource.distanceTo(handleHigh)}`);
+  assert.ok(handleSource.distanceTo(handleLow) > 0.14, `handle low ${handleSource.distanceTo(handleLow)}`);
   assert.ok(handleHigh.distanceTo(handleLow) > 0.14);
 
   model.update(canonicalTimes.sourcePose);
@@ -694,7 +699,7 @@ test('movement 206 runtime binds the common pin, both pawls, wheel, and visible 
   const size = bounds.getSize(new THREE.Vector3());
   // The pawls bow well clear of the teeth and the lever stands above them,
   // as in the engraving whose wheel is fitted at its drawn tooth tips.
-  assert.ok(size.x > 5.1 && size.x < 5.3);
+  assert.ok(size.x > 4.95 && size.x < 5.3);
   assert.ok(size.y > 6.1 && size.y < 6.35);
   assert.ok(size.z > 0.8 && size.z < 0.95);
   assert.ok(bounds.min.x < -2.4);

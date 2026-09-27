@@ -919,8 +919,16 @@ function steamHammer(movement) {
     cylinderOuterRadius,
     crossbarTopY: cylinderInnerBottomY - 0.08,
   });
+  // Brown stands both standards' feet and the anvil on one continuous base
+  // line running past the feet; it is a thin bed plate under all three.
+  const bedThickness = 0.05;
+  foundation.geometry.dispose();
+  foundation.geometry = new THREE.BoxGeometry(4.13, bedThickness, 2 * STANDARD_HALF_DEPTH);
+  foundation.position.set(0.065, groundY - bedThickness / 2, 0);
+  foundation.userData.role = 'continuous-base-plate-under-standards-and-anvil';
+  foundation.visible = true;
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-2.15, groundY - 0.02, -1.06),
+    new THREE.Vector3(-2.15, groundY - bedThickness - 0.02, -1.06),
     new THREE.Vector3(2.70, 3.34, 1.06),
   );
   root.userData.cameraDistanceScale = 1.00;

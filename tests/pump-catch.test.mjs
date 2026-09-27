@@ -60,10 +60,13 @@ test('086 production has exact candidate pose, rigid geometry and live rope pari
  indexPumpCatchHardware(candidate);
  assert.deepEqual(u.source,v.source);
  // Production prunes the undrawn hardware, lengthens the pump rod to the rope
- // end and opens the band; every other part matches the qualified candidate.
+ // end, opens the band and runs the plinth slab left to abut post B as Brown
+ // draws it; every other part matches the qualified candidate.
  assert.deepEqual(u.families,Object.fromEntries(Object.entries(v.families).filter(([n])=>!u.prunedHardware.includes(n))));
  assert.deepEqual(u.geometry,v.geometry);assert.deepEqual(u.completeHardware,v.completeHardware);
- const reshaped=new Set(['pumpOutputRod','inputDriveRope']);
+ const reshaped=new Set(['pumpOutputRod','inputDriveRope','basePlinth']);
+ const plinth=new THREE.Box3().setFromObject(u.parts.basePlinth),post=new THREE.Box3().setFromObject(u.parts.overheadPost);
+ assert.ok(Math.abs(plinth.min.x-post.max.x)<1e-6,'plinth slab abuts post B');
  for(const time of poses){
   const expected=motion.sample(time);assert.deepEqual(u.stateAtTime(time),expected);model.update(time);candidate.setState(expected);
   for(const [name,mesh]of Object.entries(u.parts)){

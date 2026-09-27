@@ -508,15 +508,14 @@ test('movement 415 update binds D, A, B, C, E, cords, input rod, and slider to o
       'selector E update');
     near(blocks.inputSlider.position.x, state.inputSlider.x, 0,
       'input slider update');
-    // Pin-to-slider-pin distance is the constant rod length; the rendered
-    // shank runs from the eye round the lever pin to the slider's face.
+    // Pin-to-guided-point distance is the constant rod length; flat bar D
+    // turns on the lever-tail pin and points at its guided point.
     near(state.inputPin.distanceTo(state.inputSlider), geometry.inputRodLength, 1e-12,
       'input rod pin-to-pin length');
-    const shankEnd = state.inputSlider.clone().setZ(0).add(new THREE.Vector3(-0.176, 0, 0));
-    const shankStart = state.inputPin.clone().setZ(0).addScaledVector(
-      shankEnd.clone().sub(state.inputPin.clone().setZ(0)).normalize(), 0.206);
-    near(blocks.inputRod.scale.y, shankStart.distanceTo(shankEnd), 1e-12,
-      'input rod rendered shank');
+    near(blocks.inputRod.position.x, state.inputPin.x, 0, 'bar D eye on lever pin x');
+    near(blocks.inputRod.position.y, state.inputPin.y, 0, 'bar D eye on lever pin y');
+    near(blocks.inputRod.rotation.z, Math.atan2(state.inputSlider.y - state.inputPin.y,
+      state.inputSlider.x - state.inputPin.x), 0, 'bar D points at its guided point');
     near(blocks.bCord.userData.renderedLength,
       geometry.bCordMaterialLength, 4e-16,
       'B cord rendered length');
@@ -544,4 +543,19 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model415.root);
   disposeModel(model507.root);
+});
+
+test('movement 415 draws flat bar D running past the crop with no undrawn guide', () => {
+  const model = createMovementModel(catalog.movements[414]);
+  const roles = [];
+  model.root.traverse((object) => { if (object.isMesh) roles.push(object.userData.role ?? ''); });
+  assert.equal(roles.some((role) => /guide|slider-block/.test(role)), false);
+  const bar = model.root.userData.blocks.inputRod;
+  bar.geometry.computeBoundingBox();
+  const box = bar.geometry.boundingBox;
+  assert.ok(box.max.z - box.min.z < 0.1 && box.max.y - box.min.y < 0.33, 'flat bar section');
+  model.root.updateMatrixWorld(true);
+  const worldBox = new THREE.Box3().setFromObject(bar);
+  assert.ok(worldBox.max.x > model.root.userData.cameraFitBounds.max.x + 1, 'bar runs past the crop');
+  disposeModel(model.root);
 });

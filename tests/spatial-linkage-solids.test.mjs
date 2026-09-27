@@ -26,9 +26,8 @@ test('489 ring seats on the eccentric and its bored cranks clear their actual dr
  sweep(m,select(m.root,/control-pin-at-end/),select(m.root,/rigid-arm-bar-b/),4);
  sweep(m,select(m.root,/bucket-pivot-on-arm|control-pin-at-end/),select(m.root,/bored-constant-length-shank|pivot-boss|crank-c-control-end|vertical-broad-face-of-bucket|blind-paddle/),4);
 });
-test('492 the transverse tongue end exits the closed eye without crossing its metal',()=>{
+test('492 the tongue end slides out of the closed eye without crossing its metal',()=>{
  const m=createMovementModel(catalog[491]);
- sweep(m,select(m.root,/curved-tongue-body/),select(m.root,/upper-eye-locking-tongue|boat-fixed-standard-plate/),10,128);
- sweep(m,select(m.root,/tongue-locking-stud|tongue-end-offset-neck/),select(m.root,/upper-eye-locking-tongue|upper-arm-of-release-lever/),10,128);
- sweep(m,select(m.root,/fixed-upper-tongue-hinge-pin|fixed-middle-lever-fulcrum-pin/),select(m.root,/curved-tongue-body|upper-arm-of-release-lever|lower-rope-arm/),10);
+ sweep(m,select(m.root,/curved-tongue-body|rounded-tongue-end/),select(m.root,/upper-eye-locking-tongue|boat-fixed-standard-plate/),10,128);
+ sweep(m,select(m.root,/tongue-hinge-pin-at-standard-top-shank|lever-fulcrum-pin-at-standard-middle-shank/),select(m.root,/tongue-hinge-eye|bent-lever-arms/),10);
 });

@@ -42,19 +42,26 @@ export function capstanPackingProgress(progress, wrapAngle) {
   return integral / (wrapAngle - lead/2);
 }
 
-export function capstanPawlArmGeometry(length, lead) {
-  const outline = polygonClipping.union(poly(circle([0,0],0.105,64)),capsule([0,0],[length-0.035,0],0.03,24));
-  const geometry = plate(polygonClipping.difference(outline,poly(circle([0,0],0.060,48))),-0.045,0.045);
-  const positions = geometry.attributes.position;
-  for (let i=0;i<positions.count;i++) {
-    const u=Math.max(0,Math.min(1,(positions.getX(i)-0.12)/(length-0.12-0.035)));
-    positions.setZ(i,positions.getZ(i)+lead*u);
+// Brown's pawl: a flat dog with a round boss on the radial pivot pin,
+// tapering to a rounded nose. Outline in pawl-local x (along the pawl) and y;
+// the plate is extruded through the pawl thickness along local z (radial).
+export function capstanPawlOutline({ length, bossRadius, noseRadius }, count = 48) {
+  // Brown's dog is curved: its back bulges away from the teeth and it
+  // tapers from the boss to the rounded nose.
+  const bulge = 0.06, steps = 24, left = [], right = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps, x = u * length, y = bulge * Math.sin(Math.PI * u);
+    const slope = bulge * Math.PI / length * Math.cos(Math.PI * u), n = Math.hypot(1, slope);
+    const w = 0.085 * (1 - u) + noseRadius * u;
+    left.push([x - slope * w / n, y + w / n]); right.push([x + slope * w / n, y - w / n]);
   }
-  geometry.computeVertexNormals(); return geometry;
+  const union = polygonClipping.union(poly([...left, ...right.reverse()]),
+    poly(circle([0, 0], bossRadius, count)), poly(circle([length, 0], noseRadius, count)));
+  return union[0][0].slice(0, -1);
 }
 
-export function capstanPawlCheekGeometry(low, high) {
-  const outline = polygonClipping.union(poly(circle([0,0],0.115,64)),
-    poly([[-0.25,-0.20],[0.03,-0.20],[0.085,-0.06],[-0.04,0.06],[-0.25,-0.05]]));
-  return plate(polygonClipping.difference(outline,poly(circle([0,0],0.060,48))),low,high);
+export function capstanPawlGeometry(dimensions) {
+  const outline = poly(capstanPawlOutline(dimensions));
+  return plate(polygonClipping.difference(outline, poly(circle([0, 0], dimensions.boreRadius, 48))),
+    -dimensions.thickness / 2, dimensions.thickness / 2);
 }

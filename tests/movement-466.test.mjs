@@ -65,12 +65,13 @@ test('movement 466 is one hand pump hydraulically linked to a much larger solid 
   assert.equal(blocks.fixedHead.parent, blocks.pressFrame);
   assert.equal(blocks.inletValve.parent, model.root);
   assert.equal(blocks.deliveryValve.parent, model.root);
-  // Brown draws no relief valve: the presentation detaches it and its
-  // return water, while the relief law still lowers the ram.
-  assert.equal(blocks.reliefValve.parent, null);
-  assert.equal(blocks.reliefWater.parent, null);
-  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes(
-    'modeled-relief-return-valve-for-lowering-press'));
+  // Pass 73: Brown's plate. The lever's fulcrum rides a swing link from the
+  // T lug, and the ball weight loads a real safety valve on the chest.
+  assert.equal(blocks.swingLink.parent, model.root);
+  assert.equal(blocks.safetyValve.parent, model.root);
+  assert.equal(blocks.ballWeight.parent, blocks.safetyValve);
+  assert.equal(blocks.valveChest.parent, model.root);
+  assert.equal(blocks.compressibleLoad.children.length, 4);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
   assert.equal(degreesOfFreedom.operatingDegreesOfFreedom, 1);
   assert.equal(degreesOfFreedom.pumpAndRamIndependent, false);
@@ -92,20 +93,17 @@ test('movement 466 source record preserves Brown’s pump, pipe, solid ram, squa
   assert.equal(sourceAnimation.officialPageMarksAnimationUnavailable, true);
   assert.equal(sourceAnimation.sourcePrescribedAbsoluteTiming, false);
   assert.equal(sourceAnimation.sourcePrescribedNormalizedTiming, false);
-  assert.deepEqual(plate.approximatePressFrameBoundsPixels,
-    [28, 58, 221, 404]);
-  assert.deepEqual(plate.approximatePumpCylinderBoundsPixels,
-    [334, 189, 65, 223]);
-  assert.deepEqual(plate.approximateHandLeverBoundsPixels,
-    [307, 134, 203, 71]);
+  assert.equal(plate.pixelToModel, 'x=(px-262)/72, y=(280-py)/72');
+  assert.deepEqual(plate.crossheadPinPixels, [366, 155]);
+  assert.deepEqual(plate.swingLinkFootPixels, [324.5, 265.5]);
   assert.ok(evidence.explicitInBrownDescription.some((claim) =>
     claim.includes('small pipe')));
   assert.ok(evidence.explicitInBrownDescription.some((claim) =>
     claim.includes('solid ram')));
   assert.ok(evidence.explicitInBrownDescription.some((claim) =>
     claim.includes('squared diameters')));
-  assert.match(evidence.engravingEvidence, /small lever pump/i);
-  assert.match(evidence.reconstructionDisclosure, /visible 5:1 diameter ratio/i);
+  assert.match(evidence.engravingEvidence, /ball weight.*tall pump barrel/i);
+  assert.match(evidence.reconstructionDisclosure, /4:1 diameter ratio/i);
   disposeModel(model.root);
 });
 
@@ -116,8 +114,8 @@ test('movement 466 obeys the exact Pascal area-force law and preserves Brown’s
   near(geometry.diameterRatio,
     geometry.ramRadius / geometry.pumpPlungerRadius, 1e-12,
     'modeled diameter ratio');
-  near(geometry.diameterRatio, 5, 1e-12,
-    'visible modeled diameter ratio');
+  near(geometry.diameterRatio, 4, 1e-12,
+    'plate ram-to-plunger diameter ratio');
   near(geometry.areaRatio,
     geometry.ramArea / geometry.pumpPlungerArea, 1e-12,
     'piston area ratio');
@@ -139,24 +137,26 @@ test('movement 466 obeys the exact Pascal area-force law and preserves Brown’s
   disposeModel(model.root);
 });
 
-test('movement 466 hand lever retains one exact pitman length while the small plunger remains on its vertical axis', () => {
+test('movement 466 hand lever keeps its swing-link closure while the plunger stays on its vertical axis', () => {
   const { model } = movementModel();
   const { geometry, pumpKinematics } = model.root.userData;
 
   for (let sample = 0; sample <= 240; sample += 1) {
     const strokeAngle = FULL_TURN * sample / 60;
     const state = pumpKinematics(strokeAngle);
-    near(state.leverPin.distanceTo(state.crosshead),
-      geometry.pumpPitmanLength, 2e-12,
-      `pitman closure at ${strokeAngle}`);
+    near(state.leverPin.distanceTo(state.fulcrum),
+      geometry.pumpLeverPinRadius, 2e-12,
+      `rigid lever between fulcrum and crosshead pin at ${strokeAngle}`);
+    near(state.fulcrum.distanceTo(new THREE.Vector3(geometry.swingLinkFoot.x, geometry.swingLinkFoot.y, 0)),
+      geometry.swingLinkLength, 2e-12,
+      `swing link closure at ${strokeAngle}`);
     near(state.crosshead.x, geometry.pumpSliderX, 1e-12,
       `crosshead slider axis at ${strokeAngle}`);
     near(state.piston.x, geometry.pumpSliderX, 1e-12,
       `plunger slider axis at ${strokeAngle}`);
     near(state.crosshead.y - state.piston.y,
       geometry.pumpPistonRodOffset, 1e-12,
-      `rigid plunger rod at ${strokeAngle}`);
-    assert.ok(Math.abs(state.horizontalOffset) < geometry.pumpPitmanLength);
+      `rigid plunger at ${strokeAngle}`);
     assert.ok(state.piston.y > geometry.pumpCylinderBottomY);
     assert.ok(state.piston.y < geometry.pumpCylinderTopY);
   }
@@ -222,7 +222,7 @@ test('movement 466 cumulative delivery counts only downward plunger strokes', ()
   near(geometry.maximumDeliveredVolume,
     geometry.pumpCycleCount * geometry.pumpPlungerArea
       * geometry.pumpStrokeLength,
-    1e-12, 'ten-stroke delivered volume');
+    1e-12, 'twelve-stroke delivered volume');
   disposeModel(model.root);
 });
 
@@ -326,7 +326,7 @@ test('movement 466 renderer follows the exact pump and ram states and closes aft
   model.update(0);
   blocks.reservoirWater.updateMatrixWorld(true);
   const reservoirTop = new THREE.Box3().setFromObject(blocks.reservoirWater).max.y;
-  const releaseClosedY = blocks.releaseValve.position.y;
+  const releaseClosedY = blocks.safetyValve.position.y;
 
   for (const phase of [0, 0.19, 0.38, 0.57, 0.80, 0.92, 1]) {
     const time = phase * geometry.cycleDuration;
@@ -338,11 +338,8 @@ test('movement 466 renderer follows the exact pump and ram states and closes aft
       `crosshead at phase ${phase}`);
     vectorNear(blocks.pumpPiston.position, state.piston, 1e-12,
       `plunger at phase ${phase}`);
-    near(blocks.pumpPitman.scale.y, geometry.pumpPitmanLength, 1e-12,
-      `pitman length at phase ${phase}`);
-    near(blocks.pumpPistonRod.scale.y,
-      geometry.pumpPistonRodOffset, 1e-12,
-      `plunger rod length at phase ${phase}`);
+    vectorNear(blocks.pumpLever.position, state.fulcrum, 1e-12,
+      `lever fulcrum rides the swing link at phase ${phase}`);
     near(blocks.ramAssembly.position.y, state.ramLift, 1e-12,
       `large ram lift at phase ${phase}`);
     near(blocks.compressibleLoad.scale.y,
@@ -350,14 +347,14 @@ test('movement 466 renderer follows the exact pump and ram states and closes aft
         / geometry.initialLoadHeight,
       1e-12, `load compression at phase ${phase}`);
     // The inlet passage stands full; the cistern gives up exactly the water
-    // pumped under the ram and gets it back through the release valve.
+    // pumped under the ram and gets it back through the lifted weighted valve.
     assert.equal(blocks.inletWater.visible, true);
     blocks.reservoirWater.updateMatrixWorld(true);
     const top = new THREE.Box3().setFromObject(blocks.reservoirWater).max.y;
     near(top, reservoirTop - state.retainedPressVolume / model.root.userData.cisternArea, 1e-6,
       `cistern level conserves water at phase ${phase}`);
-    assert.ok(blocks.releaseValve.position.y - releaseClosedY >= -1e-12, `release valve seated or lifted at phase ${phase}`);
-    if (state.reliefReturnFlowRate <= 0) near(blocks.releaseValve.position.y, releaseClosedY, 1e-12, `release valve shut while pumping at phase ${phase}`);
+    assert.ok(blocks.safetyValve.position.y - releaseClosedY >= -1e-12, `weighted valve seated or lifted at phase ${phase}`);
+    if (state.reliefReturnFlowRate <= 0) near(blocks.safetyValve.position.y, releaseClosedY, 1e-12, `weighted valve shut while pumping at phase ${phase}`);
   }
   const closure = stateAtTime(geometry.cycleDuration);
   near(closure.phase, 0, 1e-12, 'cycle phase closure');

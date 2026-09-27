@@ -44,6 +44,47 @@ function positiveC2Lobe(value) {
   return Math.max(0, value) ** 3;
 }
 
+
+// Brown's handle (450, and 451 "same as above") is pinned directly to the
+// top of the piston rod; its left end rides on a swing link whose lower pin
+// sits in a lug cast on the barrel. The rod stays on the barrel axis, so the
+// link closure is exact: the handle end E lies a rod-pin radius L behind the
+// rod pin R, and |E - lug| equals the link length.
+function swingLinkHandleState(cycleAngle, inputSpeed, inputAcceleration,
+  {amplitude, rodX, rodPinRadius: L, lugPin, swingLinkLength, rodOffset}) {
+  const sine = Math.sin(cycleAngle), cosine = Math.cos(cycleAngle);
+  const leverAngle = amplitude * sine;
+  const leverAngularSpeed = amplitude * cosine * inputSpeed;
+  const leverAngularAcceleration = amplitude * (
+    -sine * inputSpeed ** 2 + cosine * inputAcceleration);
+  const ct = Math.cos(leverAngle), st = Math.sin(leverAngle);
+  const w = leverAngularSpeed, alpha = leverAngularAcceleration;
+  const dx = L * (1 - ct), dx1 = L * st * w, dx2 = L * (ct * w ** 2 + st * alpha);
+  const h = Math.sqrt(swingLinkLength ** 2 - dx ** 2);
+  const h1 = -dx * dx1 / h;
+  const h2 = -(dx1 ** 2 + dx * dx2) / h - (dx * dx1) ** 2 / h ** 3;
+  const rodPinY = lugPin.y + h + L * st;
+  const velocity = h1 + L * ct * w;
+  const acceleration = h2 + L * (-st * w ** 2 + ct * alpha);
+  const leverPin = new THREE.Vector3(rodX, rodPinY, 0);
+  return {
+    leverAngle,
+    leverAngularAcceleration,
+    leverAngularSpeed,
+    leverPivot: new THREE.Vector3(rodX - L * ct, lugPin.y + h, 0),
+    leverPin,
+    leverPinAcceleration: new THREE.Vector3(0, acceleration, 0),
+    leverPinVelocity: new THREE.Vector3(0, velocity, 0),
+    pistonAcceleration: acceleration,
+    pistonRodJoint: leverPin.clone(),
+    pistonRodJointAcceleration: acceleration,
+    pistonRodJointVelocity: velocity,
+    pistonVelocity: velocity,
+    pistonY: rodPinY - rodOffset,
+    swingLinkAngle: Math.atan2(h, dx),
+  };
+}
+
 function ordinaryForcePump(movement) {
   const root = new THREE.Group();
   const cycleDuration = 5.2;
@@ -52,8 +93,10 @@ function ordinaryForcePump(movement) {
   const leverAmplitude = THREE.MathUtils.degToRad(14);
   const leverRodPinRadius = 1.02;
   const handleLength = 3.65;
-  const sliderLinkLength = 0.48;
-  const pistonRodJointOffset = 2.04;
+  const lugPin = new THREE.Vector3(-1.02, 2.22, 0);
+  const swingLinkLength = leverPivot.y - lugPin.y;
+  const pistonRodJointOffset = 2.52;
+  const rodClevisDrop = 0.30;
   const pistonThickness = 0.24;
   const pistonRadius = 0.68;
   const barrelWaterRadius = 0.68;
@@ -75,52 +118,16 @@ function ordinaryForcePump(movement) {
     const cycleAngle = FULL_TURN * phase;
     const sine = Math.sin(cycleAngle);
     const cosine = Math.cos(cycleAngle);
-    const leverAngle = leverAmplitude * sine;
-    const leverAngularSpeed = leverAmplitude * cosine * inputSpeed;
-    const leverAngularAcceleration = leverAmplitude * (
-      -sine * inputSpeed ** 2 + cosine * inputAcceleration
-    );
-    const leverPin = new THREE.Vector3(
-      leverPivot.x + leverRodPinRadius * Math.cos(leverAngle),
-      leverPivot.y + leverRodPinRadius * Math.sin(leverAngle),
-      0,
-    );
-    const leverPinVelocity = new THREE.Vector3(
-      -leverRodPinRadius * Math.sin(leverAngle) * leverAngularSpeed,
-      leverRodPinRadius * Math.cos(leverAngle) * leverAngularSpeed,
-      0,
-    );
-    const leverPinAcceleration = new THREE.Vector3(
-      -leverRodPinRadius * (
-        Math.cos(leverAngle) * leverAngularSpeed ** 2
-          + Math.sin(leverAngle) * leverAngularAcceleration
-      ),
-      leverRodPinRadius * (
-        -Math.sin(leverAngle) * leverAngularSpeed ** 2
-          + Math.cos(leverAngle) * leverAngularAcceleration
-      ),
-      0,
-    );
-    const verticalProjection = Math.sqrt(
-      sliderLinkLength ** 2 - leverPin.x ** 2,
-    );
-    const pistonRodJoint = new THREE.Vector3(
-      0,
-      leverPin.y - verticalProjection,
-      0,
-    );
-    const pistonRodJointVelocity = leverPinVelocity.y
-      + leverPin.x * leverPinVelocity.x / verticalProjection;
-    const pistonRodJointAcceleration = leverPinAcceleration.y
-      + (
-        leverPinVelocity.x ** 2
-          + leverPin.x * leverPinAcceleration.x
-      ) / verticalProjection
-      + (leverPin.x * leverPinVelocity.x) ** 2
-        / verticalProjection ** 3;
-    const pistonY = pistonRodJoint.y - pistonRodJointOffset;
-    const pistonVelocity = pistonRodJointVelocity;
-    const pistonAcceleration = pistonRodJointAcceleration;
+    const handle = swingLinkHandleState(cycleAngle, inputSpeed,
+      inputAcceleration, {amplitude: leverAmplitude, rodX: 0,
+        rodPinRadius: leverRodPinRadius, lugPin, swingLinkLength,
+        rodOffset: pistonRodJointOffset});
+    const {
+      leverAngle, leverAngularAcceleration, leverAngularSpeed, leverPin,
+      leverPinAcceleration, leverPinVelocity, pistonRodJoint,
+      pistonRodJointAcceleration, pistonRodJointVelocity, pistonY,
+      pistonVelocity, pistonAcceleration,
+    } = handle;
     const pistonBottomY = pistonY - pistonThickness / 2;
     const pistonTopY = pistonY + pistonThickness / 2;
     const suctionValveOpen = positiveC2Lobe(cosine);
@@ -158,6 +165,8 @@ function ordinaryForcePump(movement) {
       leverPin,
       leverPinAcceleration,
       leverPinVelocity,
+      leverPivot: handle.leverPivot,
+      swingLinkAngle: handle.swingLinkAngle,
       mode,
       phase,
       pistonAcceleration,
@@ -312,7 +321,7 @@ function ordinaryForcePump(movement) {
   root.add(cylinderWater);
 
   const lever = addRole(new THREE.Group(),
-    'hand-lever-rocking-about-fixed-left-pivot');
+    'hand-lever-pinned-to-rod-top-rocking-on-swing-link');
   lever.position.copy(leverPivot);
   root.add(lever);
   const leverCurve = new THREE.CatmullRomCurve3([
@@ -344,22 +353,18 @@ function ordinaryForcePump(movement) {
   handleKnob.position.set(handleLength, -1.06, 0);
   lever.add(handleKnob);
 
+  // Brown's lug on the barrel side and the swing link carrying the handle's
+  // left end (their plate geometry is built in correctForcePumpParts).
   const pivotSupport = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, 1, 20),
+    new THREE.BufferGeometry(),
     darkMaterial,
-  ), 'fixed-short-support-locating-lever-pivot');
-  setCylinderBetween(
-    pivotSupport,
-    new THREE.Vector3(-0.72, 2.25, 0),
-    leverPivot,
-  );
+  ), 'fixed-force-pump-cylinder-lug-carrying-swing-link-pin');
   root.add(pivotSupport);
-
-  const sliderLink = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.07, 1, 20),
+  const swingLink = addRole(new THREE.Mesh(
+    new THREE.BufferGeometry(),
     darkMaterial,
-  ), 'short-rigid-link-from-lever-to-centerline-pump-rod');
-  root.add(sliderLink);
+  ), 'swing-link-carrying-handle-fulcrum-from-barrel-lug');
+  root.add(swingLink);
   const pumpRod = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.065, 0.065, 1, 20),
     darkMaterial,
@@ -415,29 +420,25 @@ function ordinaryForcePump(movement) {
     return marker;
   });
 
-  const sliderLinkEndpoints = () => {
-    sliderLink.updateMatrixWorld(true);
+  const swingLinkEndpoints = () => {
+    swingLink.updateMatrixWorld(true);
     return {
-      lever: new THREE.Vector3(0, 0.5, 0)
-        .applyMatrix4(sliderLink.matrixWorld),
-      slider: new THREE.Vector3(0, -0.5, 0)
-        .applyMatrix4(sliderLink.matrixWorld),
+      lug: new THREE.Vector3(0, 0, 0).applyMatrix4(swingLink.matrixWorld),
+      handle: new THREE.Vector3(swingLinkLength, 0, 0)
+        .applyMatrix4(swingLink.matrixWorld),
     };
   };
 
   const update = (time) => {
     const state = stateAtTime(time);
     piston.position.y = state.pistonY;
+    lever.position.copy(state.leverPivot);
     lever.rotation.z = state.leverAngle;
-    setCylinderBetween(
-      sliderLink,
-      state.pistonRodJoint,
-      state.leverPin,
-    );
+    swingLink.rotation.z = state.swingLinkAngle;
     setCylinderBetween(
       pumpRod,
       new THREE.Vector3(0, state.pistonTopY, 0),
-      state.pistonRodJoint,
+      state.pistonRodJoint.clone().setY(state.pistonRodJoint.y - rodClevisDrop),
     );
     suctionValveDisk.position.y = suctionValveSeatY + 0.08
       + state.suctionValveLift;
@@ -477,8 +478,10 @@ function ordinaryForcePump(movement) {
     pistonRadius,
     pistonRodJointOffset,
     pistonThickness,
-    sliderLinkLength,
+    lugPin: lugPin.clone(),
+    rodClevisDrop,
     suctionValveSeatY,
+    swingLinkLength,
   };
   root.userData = {
     animationTiming: {
@@ -504,8 +507,8 @@ function ordinaryForcePump(movement) {
       pistonBody,
       pivotSupport,
       pumpRod,
-      sliderLink,
       sourceWater,
+      swingLink,
       sourceWell,
       suctionPipe,
       suctionValveDisk,
@@ -532,14 +535,14 @@ function ordinaryForcePump(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'A hand lever drives a solid piston through a short rigid slider link and vertical rod. As the piston rises, the suction check opens and the outlet check shuts, drawing water from the lower source into the single cylinder chamber. As the piston descends, suction shuts and the outlet check opens, forcing the displaced water around the side branch and upward through the retained delivery column. Unlike the two preceding lift pumps, no water passes through the piston.',
+      'A hand lever pinned to the top of the vertical piston rod rocks on a swing link hung from a lug on the barrel, driving the solid piston. As the piston rises, the suction check opens and the outlet check shuts, drawing water from the lower source into the single cylinder chamber. As the piston descends, suction shuts and the outlet check opens, forcing the displaced water around the side branch and upward through the retained delivery column. Unlike the two preceding lift pumps, no water passes through the piston.',
     motion: {
       cycleDuration,
       inputAngularSpeed,
       motionType:
         'lever-driven-solid-piston-with-alternating-upstroke-suction-and-downstroke-force-delivery',
     },
-    sliderLinkEndpoints,
+    swingLinkEndpoints,
     sourceAnimation: {
       available: false,
       officialCanvasModelPresent: false,
@@ -577,9 +580,9 @@ function ordinaryForcePump(movement) {
           'water may be delivered to any distance or elevation',
         ],
         engravingEvidence:
-          'Brown’s section shows a lower suction tube and check below the vertical cylinder, a solid piston and rod, a rocking right-hand lever with a short left support, and a low side passage curving into a separate outlet-check chamber and tall left riser.',
+          'Brown’s section shows a lower suction tube and check below the vertical cylinder, a solid piston and rod, a right-hand lever pinned to the rod top whose left end rides on a swing link pinned to a lug on the barrel, and a low side passage curving into a separate outlet-check chamber and tall left riser.',
         reconstructionDisclosure:
-          'Brown gives no bore, stroke, lever dimensions, linkage closure, check lift, source level, delivery height, pressure, flow loss, leakage, or timing. Those values, the exact rigid slider link, C2 valve lobes, primed incompressible volume model, transparent cutaway, colors, tracers, and 5.2-second cycle are independently engineered. The above-water cylinder, solid piston, two checks, upstroke suction, downstroke forced delivery, and elevated riser are source-grounded.',
+          'Brown gives no bore, stroke, lever dimensions, linkage closure, check lift, source level, delivery height, pressure, flow loss, leakage, or timing. Those values, the exact swing-link closure, C2 valve lobes, primed incompressible volume model, transparent cutaway, colors, tracers, and 5.2-second cycle are independently engineered. The above-water cylinder, solid piston, two checks, upstroke suction, downstroke forced delivery, and elevated riser are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 450',
@@ -590,7 +593,7 @@ function ordinaryForcePump(movement) {
       checkValveInterlock:
         'suctionOpen=max(cos(phi),0)^3 and deliveryOpen=max(-cos(phi),0)^3, so their product is identically zero.',
       rigidLink:
-        'The short lever-pin-to-centerline-slider distance is exact; the vertical rod offset to the solid piston is constant.',
+        'The rod pin stays on the barrel axis and the swing link from the barrel lug to the handle end keeps its exact length; the vertical rod offset to the solid piston is constant.',
       volumeBalance:
         'dV_cylinder/dt=Q_suction-Q_delivery exactly, where Q_suction=A*max(v_piston,0) and Q_delivery=A*max(-v_piston,0).',
     },
@@ -623,8 +626,10 @@ function airChamberForcePump(movement) {
   const leverAmplitude = THREE.MathUtils.degToRad(14);
   const leverRodPinRadius = 1.02;
   const handleLength = 3.58;
-  const sliderLinkLength = 0.48;
-  const pistonRodJointOffset = 2.04;
+  const lugPin = new THREE.Vector3(pumpX - 1.02, 2.10, 0);
+  const swingLinkLength = leverPivot.y - lugPin.y;
+  const pistonRodJointOffset = 2.52;
+  const rodClevisDrop = 0.30;
   const pistonThickness = 0.24;
   const pistonRadius = 0.68;
   const barrelWaterRadius = 0.68;
@@ -645,65 +650,11 @@ function airChamberForcePump(movement) {
     inputSpeed = inputAngularSpeed,
     inputAcceleration = 0,
   ) => {
-    const sine = Math.sin(cycleAngle);
-    const cosine = Math.cos(cycleAngle);
-    const leverAngle = leverAmplitude * sine;
-    const leverAngularSpeed = leverAmplitude * cosine * inputSpeed;
-    const leverAngularAcceleration = leverAmplitude * (
-      -sine * inputSpeed ** 2 + cosine * inputAcceleration
-    );
-    const leverPin = new THREE.Vector3(
-      leverPivot.x + leverRodPinRadius * Math.cos(leverAngle),
-      leverPivot.y + leverRodPinRadius * Math.sin(leverAngle),
-      0,
-    );
-    const leverPinVelocity = new THREE.Vector3(
-      -leverRodPinRadius * Math.sin(leverAngle) * leverAngularSpeed,
-      leverRodPinRadius * Math.cos(leverAngle) * leverAngularSpeed,
-      0,
-    );
-    const leverPinAcceleration = new THREE.Vector3(
-      -leverRodPinRadius * (
-        Math.cos(leverAngle) * leverAngularSpeed ** 2
-          + Math.sin(leverAngle) * leverAngularAcceleration
-      ),
-      leverRodPinRadius * (
-        -Math.sin(leverAngle) * leverAngularSpeed ** 2
-          + Math.cos(leverAngle) * leverAngularAcceleration
-      ),
-      0,
-    );
-    const horizontalOffset = leverPin.x - pumpX;
-    const horizontalVelocity = leverPinVelocity.x;
-    const horizontalAcceleration = leverPinAcceleration.x;
-    const verticalProjection = Math.sqrt(
-      sliderLinkLength ** 2 - horizontalOffset ** 2,
-    );
-    const pistonRodJoint = new THREE.Vector3(
-      pumpX,
-      leverPin.y - verticalProjection,
-      0,
-    );
-    const pistonVelocity = leverPinVelocity.y
-      + horizontalOffset * horizontalVelocity / verticalProjection;
-    const pistonAcceleration = leverPinAcceleration.y
-      + (horizontalVelocity ** 2
-        + horizontalOffset * horizontalAcceleration)
-        / verticalProjection
-      + (horizontalOffset * horizontalVelocity) ** 2
-        / verticalProjection ** 3;
-    return {
-      leverAngle,
-      leverAngularAcceleration,
-      leverAngularSpeed,
-      leverPin,
-      leverPinAcceleration,
-      leverPinVelocity,
-      pistonAcceleration,
-      pistonRodJoint,
-      pistonVelocity,
-      pistonY: pistonRodJoint.y - pistonRodJointOffset,
-    };
+    const handle = swingLinkHandleState(cycleAngle, inputSpeed,
+      inputAcceleration, {amplitude: leverAmplitude, rodX: pumpX,
+        rodPinRadius: leverRodPinRadius, lugPin, swingLinkLength,
+        rodOffset: pistonRodJointOffset});
+    return handle;
   };
 
   const pistonTopDeadY = sliderStateAtCycleAngle(Math.PI / 2).pistonY;
@@ -980,7 +931,7 @@ function airChamberForcePump(movement) {
   root.add(cylinderWater);
 
   const lever = addRole(new THREE.Group(),
-    'hand-lever-rocking-about-fixed-pivot');
+    'hand-lever-pinned-to-rod-top-rocking-on-swing-link');
   lever.position.copy(leverPivot);
   root.add(lever);
   const leverCurve = new THREE.CatmullRomCurve3([
@@ -1012,21 +963,18 @@ function airChamberForcePump(movement) {
   handleKnob.position.set(handleLength, -1.04, 0);
   lever.add(handleKnob);
 
+  // Brown's lug on the barrel side and the swing link carrying the handle's
+  // left end (their plate geometry is built in correctForcePumpParts).
   const pivotSupport = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, 1, 20),
+    new THREE.BufferGeometry(),
     darkMaterial,
-  ), 'fixed-short-support-locating-lever-pivot');
-  setCylinderBetween(
-    pivotSupport,
-    new THREE.Vector3(pumpX - 0.70, 2.21, 0),
-    leverPivot,
-  );
+  ), 'fixed-solid-piston-force-pump-cylinder-lug-carrying-swing-link-pin');
   root.add(pivotSupport);
-  const sliderLink = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.07, 0.07, 1, 20),
+  const swingLink = addRole(new THREE.Mesh(
+    new THREE.BufferGeometry(),
     darkMaterial,
-  ), 'short-rigid-lever-to-centerline-slider-link');
-  root.add(sliderLink);
+  ), 'swing-link-carrying-handle-fulcrum-from-barrel-lug');
+  root.add(swingLink);
   const pumpRod = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.065, 0.065, 1, 20),
     darkMaterial,
@@ -1158,29 +1106,25 @@ function airChamberForcePump(movement) {
     return marker;
   });
 
-  const sliderLinkEndpoints = () => {
-    sliderLink.updateMatrixWorld(true);
+  const swingLinkEndpoints = () => {
+    swingLink.updateMatrixWorld(true);
     return {
-      lever: new THREE.Vector3(0, 0.5, 0)
-        .applyMatrix4(sliderLink.matrixWorld),
-      slider: new THREE.Vector3(0, -0.5, 0)
-        .applyMatrix4(sliderLink.matrixWorld),
+      lug: new THREE.Vector3(0, 0, 0).applyMatrix4(swingLink.matrixWorld),
+      handle: new THREE.Vector3(swingLinkLength, 0, 0)
+        .applyMatrix4(swingLink.matrixWorld),
     };
   };
 
   const update = (time) => {
     const state = stateAtTime(time);
     piston.position.set(pumpX, state.pistonY, 0);
+    lever.position.copy(state.leverPivot);
     lever.rotation.z = state.leverAngle;
-    setCylinderBetween(
-      sliderLink,
-      state.pistonRodJoint,
-      state.leverPin,
-    );
+    swingLink.rotation.z = state.swingLinkAngle;
     setCylinderBetween(
       pumpRod,
       new THREE.Vector3(pumpX, state.pistonTopY, 0),
-      state.pistonRodJoint,
+      state.pistonRodJoint.clone().setY(state.pistonRodJoint.y - rodClevisDrop),
     );
     suctionValveDisk.position.set(
       pumpX,
@@ -1254,7 +1198,9 @@ function airChamberForcePump(movement) {
     pistonThickness,
     pistonTopDeadY,
     pumpX,
-    sliderLinkLength,
+    lugPin: lugPin.clone(),
+    rodClevisDrop,
+    swingLinkLength,
     suctionValveSeatY,
   };
   root.userData = {
@@ -1288,7 +1234,7 @@ function airChamberForcePump(movement) {
       pumpRod,
       selectedOutlet,
       selectedOutletWater,
-      sliderLink,
+      swingLink,
       sourceWater,
       sourceWell,
       suctionPipe,
@@ -1332,7 +1278,7 @@ function airChamberForcePump(movement) {
       motionType:
         'solid-piston-force-pump-pulse-charging-isothermal-air-chamber-with-continuous-selected-outlet',
     },
-    sliderLinkEndpoints,
+    swingLinkEndpoints,
     sourceAnimation: {
       available: false,
       officialCanvasModelPresent: false,

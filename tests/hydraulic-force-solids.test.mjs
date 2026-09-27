@@ -5,16 +5,17 @@ import {disposeObject3D} from '../src/simulation/dispose-model.js';
 import{createAuthoredHydrostaticPressMovement as a}from'../src/simulation/authored-hydrostatic-presses.js';
 import{createAuthoredRobertsonJackMovement as c}from'../src/simulation/authored-robertson-jacks.js';
 import{solidSurface,surfacePoints}from'./helpers/solid-surface.mjs';
-for(const[id,create]of[[466,a]])test(`${id} selected working solids and newly opened passages clear through the complete cycle`,()=>{
-const m=create({id}),d=m.root.userData,b=d.blocks,pairs=[];
-const meshes=o=>{const out=[];o.traverseVisible(x=>{if(x.geometry&&!x.userData.role?.match(/water|discharge/))out.push(x);});return out;};
-for(const o of[b.pumpPiston,b.pumpPistonRod,b.pumpCrosshead,b.pumpPitman])for(const f of[b.pumpCylinder,b.leverStand,b.inletValve,b.checkSeats[0]])pairs.push([o,f]);
-const pin=b.pumpLever.children.find(o=>o.geometry?.type==='CylinderGeometry');pairs.push([b.pumpPitman,pin],[b.pumpPitman,b.crossheadPin],[b.pumpLever.children[0],id===466?b.leverAxle:b.pumpLeverAxle]);
-for(let i=0;i<2;i++)pairs.push([[b.inletValve,b.deliveryValve][i],b.checkSeats[i]]);
-for(const o of[b.ramPiston,b.ramRod,b.movingPlaten])for(const f of[b.ramCylinder,b.ramFloor,...meshes(b.pressFrame)])pairs.push([o,f]);pairs.push([b.ramCylinderWater,b.ramPiston],[b.pressureWater,b.ramCylinder]);
-for(const f of[b.pumpCylinder,b.inletPipe])pairs.push([b.inletValve,f]);
-for(const f of[b.deliveryChamber,b.deliveryIntake,b.deliveryCap])pairs.push([b.deliveryValve,f]);pairs.push([b.pumpPiston,b.deliveryIntake]);
-pairs.push([b.pressureWater,b.pumpReservoir.children.find(o=>o.position.x===.62)]);
+// Pass 73: Brown's plate. Plunger, crosshead, lever, swing link and pins,
+// the three valves and the ram assembly against what they pass.
+test('466 selected working solids and newly opened passages clear through the complete cycle',()=>{
+const m=a({id:466}),d=m.root.userData,b=d.blocks,pairs=[];
+const barrel=b.pumpCylinder.children,cylinder=b.ramCylinder.children,chest=b.valveChest.children,crosshead=b.pumpCrosshead.children.filter(o=>o.userData.role==='crosshead-block');
+for(const o of[...b.pumpPiston.children,...crosshead,b.inletValve])for(const f of barrel)pairs.push([o,f]);
+for(const o of crosshead)pairs.push([o,b.leverBar],[o,b.swingLink]);
+pairs.push([b.crossheadPin,b.leverBar],[b.leverAxle,b.leverBar],[b.leverAxle,b.swingLink],[b.lugPin,b.swingLink],[b.swingLink,b.lug],[b.swingLink,b.leverBar],[b.swingLink,b.ballWeight]);
+for(const o of[b.deliveryValve,...b.safetyValve.children])for(const f of chest)pairs.push([o,f]);
+for(const o of[b.ramBody,b.ramPiston,b.movingPlaten])for(const f of[...cylinder,...b.columns,b.headPlate])pairs.push([o,f]);
+for(const o of b.compressibleLoad.children)for(const f of b.columns)pairs.push([o,f]);
 const cache=new Map(),get=o=>{if(!cache.has(o))cache.set(o,{o,p:surfacePoints(o.geometry),s:solidSurface(o.geometry)});return cache.get(o);};let bad={};
 for(let i=0;i<=64;i++){m.update(d.geometry.cycleDuration*i/64);m.root.updateMatrixWorld(true);for(const [aa,cc]of pairs){const a=get(aa),c=get(cc);if(!new T.Box3().setFromObject(a.o).intersectsBox(new T.Box3().setFromObject(c.o)))continue;for(const [v,f]of[[a,c],[c,a]]){const tr=f.o.matrixWorld.clone().invert().multiply(v.o.matrixWorld);for(const p of v.p){const q=p.clone().applyMatrix4(tr);if(f.s.box.distanceToPoint(q)>.001)continue;const gap=f.s.signedDistance(q,.02),key=`${v.o.userData.role||v.o.id} / ${f.o.userData.role||f.o.id}`;if(gap<-.000002&&gap<(bad[key]?.gap||0))bad[key]={i,gap,p:q.toArray()};}}}}
 disposeObject3D(m.root);assert.deepEqual(bad,{});});
@@ -60,11 +61,19 @@ test('467 actual conical return tip seats and retracts from the conical bore',()
   } finally {disposeObject3D(m.root);}
 });
 
-test('466 the rendered water ends at the moving piston underside and above the cylinder floor',()=>{
-  const m=a({id:466}),d=m.root.userData,b=d.blocks;
-  try {for(let i=0;i<=128;i++){
-    m.update(i*d.geometry.cycleDuration/128);m.root.updateMatrixWorld(true);
-    const water=new T.Box3().setFromObject(b.ramCylinderWater),piston=new T.Box3().setFromObject(b.ramPiston),floor=new T.Box3().setFromObject(b.ramFloor);
-    assert.ok(Math.abs(water.max.y-piston.min.y)<1e-6);assert.ok(Math.abs(water.min.y-floor.max.y)<1e-6);
-  }}finally{disposeObject3D(m.root);}
+test('466 the press water fills the bore below the gland and grows by exactly the ram displacement',()=>{
+  const m=a({id:466}),d=m.root.userData,b=d.blocks,g=d.geometry;
+  const volume=geometry=>{const p=geometry.attributes.position,idx=geometry.index.array;let v=0;const A=new T.Vector3(),B=new T.Vector3(),C=new T.Vector3();
+    for(let i=0;i<idx.length;i+=3){A.fromBufferAttribute(p,idx[i]);B.fromBufferAttribute(p,idx[i+1]);C.fromBufferAttribute(p,idx[i+2]);v+=A.dot(B.clone().cross(C))/6;}return Math.abs(v);};
+  try {
+    m.update(0);const v0=2*volume(b.ramCylinderWater.geometry);
+    for(let i=0;i<=64;i++){
+      const t=i*g.cycleDuration/64,state=d.stateAtTime(t);m.update(t);
+      b.ramCylinderWater.geometry.computeBoundingBox();const box=b.ramCylinderWater.geometry.boundingBox;
+      assert.ok(Math.abs(box.max.y-(280-335)/72)<1e-6&&Math.abs(box.min.y-(280-481.8)/72)<1e-6,`water within the bore at ${i}`);
+      // Half section: twice the rendered volume is the whole water body.
+      const grown=2*volume(b.ramCylinderWater.geometry)-v0;
+      assert.ok(Math.abs(grown-g.ramArea*state.ramLift)<0.005*g.ramArea*g.maximumRamLift,`displacement ${grown} vs ${g.ramArea*state.ramLift} at ${i}`);
+    }
+  }finally{disposeObject3D(m.root);}
 });

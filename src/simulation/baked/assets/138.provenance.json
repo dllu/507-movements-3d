@@ -58,7 +58,7 @@
       },
       {
         "file": "package-lock.json",
-        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+        "sha256": "68bc451f26abd26209c5fff06754f288ce49b36351584d144a7a73640ae63c18"
       }
     ],
     "geometrySources": [
@@ -87,5 +87,5 @@
   },
   "samples": 9301,
   "bytes": 406571,
-  "assetSha256": "03a8eb7d25223271e4020f6b47065e2425d6853bb2c423b0a8abfec0f852dc90"
+  "assetSha256": "fbbff3aeec865210986360729b63e92bbcd17db61a4001e5495632a51a359553"
 }

@@ -336,11 +336,11 @@ function warrenCentralDischargeTurbine(movement) {
   runnerHub.userData.role = 'warren-runner-output-hub-below-disk';
   runner.add(runnerHub);
   const runnerShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 2.32, 32),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1.60, 32),
     darkMaterial,
   );
   // Its end shows in the hub's centre, as Brown's sectioned shaft does.
-  runnerShaft.position.y = -0.86;
+  runnerShaft.position.y = -0.50;
   runnerShaft.userData.role = 'vertical-output-shaft-of-inner-runner-b';
   runner.add(runnerShaft);
   const runnerSupportArms = [];
@@ -529,12 +529,8 @@ function warrenCentralDischargeTurbine(movement) {
     'fixed-foundation-below-warren-plan-view-turbine';
   root.add(casingFloor);
 
-  const shaftBearing=new THREE.Mesh(horizontalRing(.234,.36,-1.98,-1.78),frameMaterial);shaftBearing.userData.role='bored-output-shaft-lower-bearing';root.add(shaftBearing);
-  // Four-armed step-bearing spider hung from the foundation's underside: every
-  // arm runs from the bearing collar to the foundation (outside the central
-  // discharge), so no bracket ends in mid-air when the plan view is rotated.
-  const bearingBridge=new THREE.Group();bearingBridge.userData.role='lower-shaft-bearing-support-spider';root.add(bearingBridge);
-  for(let i=0;i<4;i++){const a=Math.PI/4+i*Math.PI/2,dir=horizontalRadial(a),from=dir.clone().multiplyScalar(.33).setY(-1.88),to=dir.clone().multiplyScalar(2.7).setY(-.60),span=to.clone().sub(from),arm=new THREE.Mesh(new THREE.BoxGeometry(span.length(),.14,.18),frameMaterial);arm.position.copy(from).add(to).multiplyScalar(.5);arm.quaternion.setFromUnitVectors(new THREE.Vector3(1,0,0),span.normalize());arm.userData.role='lower-bearing-spider-arm-to-foundation';bearingBridge.add(arm);}
+  // Brown's plan draws no step bearing or bracket under the wheel, so the
+  // shaft ends as a plain stub below the hub (its bearing is an ideal fixed axis).
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
@@ -562,8 +558,6 @@ function warrenCentralDischargeTurbine(movement) {
     archetype:
       'warren-inward-flow-turbine-with-fixed-outer-guides-and-clockwise-inner-runner-discharging-centrally',
     blocks: {
-      shaftBearing,
-      bearingBridge,
       runnerBackplate,
       guideFloor,
       casingFloor,
@@ -648,7 +642,7 @@ function warrenCentralDischargeTurbine(movement) {
         engravingEvidence:
           'Brown’s plan shows about sixteen broad curved fixed passages in outer annulus a, about twenty finer oppositely curved passages in inner annular runner b, four arms on b, inward arrows through a, a reversed-whirl arrow in b, and a central outlet.',
         reconstructionDisclosure:
-          'Brown gives no dimensions, exact guide or bucket counts, vane profiles, height, flow rate, head, velocity triangles, shaft arrangement, rotational speed, materials, losses, leakage, efficiency, inertia, or load. Sixteen fixed guides, twenty runner buckets, curves, velocity values, hidden lower support and shaft, dimensions, colors, and a 5.8-second cycle are independently engineered; the fixed outer guides a, separate revolving inner wheel b, inward flow, and central discharge are source-grounded.',
+          'Brown gives no dimensions, exact guide or bucket counts, vane profiles, height, flow rate, head, velocity triangles, shaft arrangement, rotational speed, materials, losses, leakage, efficiency, inertia, or load. Sixteen fixed guides, twenty runner buckets, curves, velocity values, shaft stub, dimensions, colors, and a 5.8-second cycle are independently engineered; the fixed outer guides a, separate revolving inner wheel b, inward flow, and central discharge are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 435',

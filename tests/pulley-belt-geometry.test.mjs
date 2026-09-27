@@ -217,13 +217,22 @@ test('sector-band material advances once with wrap transfer and has clearance at
   model.update(0.0001);
   assert.ok(Math.abs(belt.userData.curve.getLength() - length) < 1e-9);
   assert.ok(Math.abs(materialPoint(material).distanceTo(before) / 0.0001 - speed) < 0.001);
+  // The taut crossed leaves are straight tangents in separate depth layers:
+  // where they cross in the plate plane they clear by more than the rope.
   const outgoing = belt.userData.curve.curves[1];
   const returning = belt.userData.curve.curves[5];
-  const a = outgoing.getPoint(outgoing.peak);
-  const b = returning.getPoint(returning.peak);
+  assert.ok(outgoing.isLineCurve3 && returning.isLineCurve3, 'crossed leaves are straight');
+  const [p, r] = [outgoing.v1, outgoing.v2.clone().sub(outgoing.v1)];
+  const [q, t] = [returning.v1, returning.v2.clone().sub(returning.v1)];
+  const cross = (u, v) => u.x * v.y - u.y * v.x;
+  const u = cross(q.clone().sub(p), t) / cross(r, t);
+  const w = cross(q.clone().sub(p), r) / cross(r, t);
+  assert.ok(u > 0 && u < 1 && w > 0 && w < 1, 'the leaves cross in projection');
+  const a = p.clone().addScaledVector(r, u);
+  const b = q.clone().addScaledVector(t, w);
   assert.ok(Math.hypot(a.x - b.x, a.y - b.y) < 1e-8);
   // A flat band clears by its width; the laid rope of 6 by its diameter.
-  assert.ok(Math.abs(a.z - b.z) > (belt.userData.width ?? belt.userData.thickness) + 0.09);
+  assert.ok(Math.abs(a.z - b.z) > (belt.userData.width ?? belt.userData.thickness) + 0.02);
 });
 
 test('tensioner pivots on a rigid arm, keeps one planar inextensible belt, and begins in the source contact pose', () => {

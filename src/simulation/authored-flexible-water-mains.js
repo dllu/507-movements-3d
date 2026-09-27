@@ -121,12 +121,16 @@ const FIGURE = {
   logHalfWidth: 0.12,
   logCenterY: -0.52,
   logCenterZ: 0.76,
-  logGap: 0.16,
-  tieTopY: -0.28,
+  // Pass 74: the figure only ever flexes one way (0-23 degrees, the
+  // upstream log ends swinging clear), so the log ends need only clear the
+  // other frame's hinge-strap legs (half width 0.075).
+  logGap: 0.09,
+  tieTopY: -0.20,
   pinRadius: 0.055,
   pinBore: 0.059,
-  upstreamPlateZ: [0.885, 0.925],
-  downstreamPlateZ: [0.595, 0.635],
+  // Hinge straps lie flat on the logs' outer / inner faces (0.88 / 0.64).
+  upstreamPlateZ: [0.88, 0.92],
+  downstreamPlateZ: [0.60, 0.64],
 };
 
 function lathedAlongX(profile, bore, material, role) {
@@ -166,7 +170,7 @@ function buildPlateJointFigure(materials, name) {
     { axial: f.upstreamEnd, radial: 0.34 },
     { axial: f.upstreamEnd + 0.20, radial: 0.34 },
     { axial: f.upstreamEnd + 0.20, radial: f.pipeOuter },
-    { axial: -ballEnd - 0.004, radial: f.pipeOuter },
+    { axial: -ballEnd + 0.012, radial: f.pipeOuter },
   ], f.pipeInner, materials.pipe, `plate-${name}-collared-upstream-pipe`));
   upstream.add(addRole(new THREE.Mesh(ballGeometry, materials.ball),
     `plate-${name}-hollow-pipe-ball`));
@@ -234,15 +238,21 @@ function buildPlateJointFigure(materials, name) {
         group.add(bolt);
       }
     }
-    const tieBottom = f.logCenterY + 0.02;
+    // Pass 74: the cross tie is framed into both logs (0.01 into each) from
+    // their bottoms, and its top is a saddle the pipe lies in.
+    const tieBottom = f.logCenterY - f.logHalfWidth;
+    const tieHalf = f.logCenterZ - f.logHalfWidth + 0.01;
+    const saddle = clip.difference(
+      poly([[-tieHalf, tieBottom], [tieHalf, tieBottom], [tieHalf, f.tieTopY], [-tieHalf, f.tieTopY]]),
+      poly(circle([0, 0], f.pipeOuter, 96)));
+    // Plate x -> world -z, plate y -> world y, extrusion -> world x.
     const tie = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(0.22, f.tieTopY - tieBottom,
-        2 * (f.logCenterZ - f.logHalfWidth) - 0.004),
+      plate(saddle, -0.11, 0.11).rotateY(Math.PI / 2),
       materials.wood,
     ), `plate-${name}-frame-cross-tie`);
-    tie.position.set(tieX, (f.tieTopY + tieBottom) / 2, 0);
+    tie.position.x = tieX;
     group.add(tie);
-    const strapRadius = f.pipeOuter + 0.036;
+    const strapRadius = f.pipeOuter + 0.03;
     const hoop = addRole(new THREE.Mesh(
       plate(sector(strapRadius - 0.03, strapRadius + 0.03, 0, Math.PI, 40),
         -0.03, 0.03),
@@ -253,10 +263,11 @@ function buildPlateJointFigure(materials, name) {
     group.add(hoop);
     for (const z of [-1, 1]) {
       const leg = addRole(new THREE.Mesh(
-        new THREE.CylinderGeometry(0.03, 0.03, -f.tieTopY, 12),
+        new THREE.CylinderGeometry(0.03, 0.03, -f.tieTopY + 0.02, 12),
         materials.strap,
       ), `plate-${name}-pipe-strap-leg`);
-      leg.position.set(tieX, f.tieTopY / 2, z * strapRadius);
+      // From the hoop's ends into the saddle's top.
+      leg.position.set(tieX, (f.tieTopY - 0.02) / 2, z * strapRadius);
       group.add(leg);
     }
     for (const z of [-1, 1]) {
@@ -273,8 +284,10 @@ function buildPlateJointFigure(materials, name) {
 
   // Transverse trunnion pin through the ball centre, carried by the socket.
   for (const z of [-1, 1]) {
-    const inner = f.socketOuter;
-    const outer = f.upstreamPlateZ[1] + 0.035;
+    // Pass 74: the pin is set into the socket's boss (below) and its head
+    // bears on the outer strap.
+    const inner = f.upstreamPlateZ[0] - 0.02;
+    const outer = f.upstreamPlateZ[1];
     const pin = addRole(new THREE.Mesh(
       new THREE.CylinderGeometry(f.pinRadius, f.pinRadius, outer - inner, 24),
       materials.iron,
@@ -289,6 +302,16 @@ function buildPlateJointFigure(materials, name) {
     head.rotation.x = Math.PI / 2;
     head.position.z = z * (outer + 0.02);
     downstream.add(head);
+    // Pass 74: a boss cast on the socket carries the pin out through the
+    // inner strap to the outer strap's face, so the knuckle is continuous.
+    const bossStart = f.socketOuter - 0.03, bossEnd = f.upstreamPlateZ[0];
+    const boss = addRole(new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.09, bossEnd - bossStart, 32),
+      materials.iron,
+    ), `plate-${name}-socket-trunnion-boss`);
+    boss.rotation.x = Math.PI / 2;
+    boss.position.z = z * (bossStart + bossEnd) / 2;
+    downstream.add(boss);
   }
   figure.userData.upstream = upstream;
   figure.userData.downstream = downstream;

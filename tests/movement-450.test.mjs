@@ -84,8 +84,11 @@ test('movement 450 has an above-water cylinder, solid piston, and exactly two ex
     'single-water-chamber-below-solid-piston',
     'fixed-suction-pipe',
     'fixed-delivery-pipe-to-any-distance-or-elevation',
-    'hand-lever-rocking-about-fixed-left-pivot',
-    'short-rigid-link-from-lever-to-centerline-pump-rod',
+    'hand-lever-pinned-to-rod-top-rocking-on-swing-link',
+    'swing-link-carrying-handle-fulcrum-from-barrel-lug',
+    'fixed-force-pump-cylinder-lug-carrying-swing-link-pin',
+    'fixed-swing-link-pin-in-barrel-lug',
+    'rod-top-clevis-straddling-handle',
   ]) assert.ok(roles.includes(role), role);
   disposeModel(model.root);
 });
@@ -194,19 +197,22 @@ test('movement 450 two check valves are mutually exclusive and C2 at each revers
   disposeModel(model.root);
 });
 
-test('movement 450 short lever-slider link and vertical piston-rod offset remain exact', () => {
+test('movement 450 swing-link handle closure and vertical piston-rod offset remain exact', () => {
   const model = createMovementModel(catalog.movements[449]);
   const { geometry, stateAtInputAngle } = model.root.userData;
   for (let sample = -16000; sample <= 32000; sample += 1) {
     const state = stateAtInputAngle(FULL_TURN * sample / 16000);
     near(state.pistonRodJoint.x, 0, 0,
-      `slider joint on barrel centerline at ${sample}`);
-    near(state.leverPin.distanceTo(state.pistonRodJoint),
-      geometry.sliderLinkLength, 3e-16,
-    `short rigid-link length at ${sample}`);
+      `rod pin on barrel axis at ${sample}`);
+    near(state.leverPin.distanceTo(state.leverPivot),
+      geometry.leverRodPinRadius, 3e-15,
+      `rigid handle between fulcrum and rod pin at ${sample}`);
+    near(state.leverPivot.distanceTo(geometry.lugPin),
+      geometry.swingLinkLength, 3e-15,
+      `swing link length from barrel lug at ${sample}`);
     near(state.pistonRodJoint.y - state.pistonY,
-      geometry.pistonRodJointOffset, 5e-16,
-    `fixed vertical rod offset at ${sample}`);
+      geometry.pistonRodJointOffset, 5e-15,
+      `fixed vertical rod offset at ${sample}`);
   }
   disposeModel(model.root);
 });
@@ -263,7 +269,7 @@ test('movement 450 update maps solid piston, lever linkage, two checks, and flow
   const {
     blocks,
     geometry,
-    sliderLinkEndpoints,
+    swingLinkEndpoints,
     stateAtTime,
     update,
   } = model.root.userData;
@@ -289,16 +295,17 @@ test('movement 450 update maps solid piston, lever linkage, two checks, and flow
     near(blocks.deliveryValveDisk.position.y,
       geometry.deliveryValveSeatY + 0.08 + state.deliveryValveLift, 0,
     `delivery check transform at ${phase}`);
-    near(blocks.sliderLink.scale.y, geometry.sliderLinkLength, 3e-16,
-      `rendered short-link length at ${phase}`);
     near(blocks.pumpRod.scale.y,
-      geometry.pistonRodJointOffset - geometry.pistonThickness / 2,
+      geometry.pistonRodJointOffset - geometry.pistonThickness / 2
+        - geometry.rodClevisDrop,
     5e-16, `rendered pump-rod length at ${phase}`);
-    const endpoints = sliderLinkEndpoints();
-    vectorNear(endpoints.slider, state.pistonRodJoint.clone().setZ(.26), 8e-16,
-      `rendered slider endpoint at ${phase}`);
-    vectorNear(endpoints.lever, state.leverPin.clone().setZ(.26), 8e-16,
-      `rendered lever endpoint at ${phase}`);
+    const endpoints = swingLinkEndpoints();
+    vectorNear(endpoints.lug, geometry.lugPin, 1e-15,
+      `swing link on its lug pin at ${phase}`);
+    vectorNear(endpoints.handle, state.leverPivot, 1e-14,
+      `swing link on the handle fulcrum at ${phase}`);
+    vectorNear(blocks.lever.position, state.leverPivot, 0,
+      `handle fulcrum rides on the swing link at ${phase}`);
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
       fixedPositions[index],

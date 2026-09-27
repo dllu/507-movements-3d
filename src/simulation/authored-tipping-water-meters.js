@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import {WaterStream,collectWaterStreams,guidedPath,ballisticPath,joinPaths} from './water-stream.js';
 import {poly,circle,plate,turned,polygonClipping} from './finite-plate-geometry.js';
 import {makeCellWaterGeometry,updateClippedCell} from './clipped-fluid-cell.js';
+import {waterVolumeMaterial} from './water-volume.js';
 import {
   PALETTE,
   markShadows,
@@ -409,17 +410,24 @@ function tippingWaterMeter(movement) {
   angleIndicator.userData.role = 'visible-trough-angle-index';
   trough.add(angleIndicator);
 
+  // The water standing in each half is the shared translucent water body
+  // (clear, glossy, drawn after the trough so its walls show through).
+  // Orange (the trough) is complementary to the water's blue: a thin tint
+  // over it mixes to grey, so the standing water is a denser clear blue.
+  const cellWaterMaterial = waterVolumeMaterial({color: 0x3aa6c8, opacity: 0.78});
   const leftWater = new THREE.Mesh(
     makeCellWaterGeometry(),
-    waterMaterial,
+    cellWaterMaterial,
   );
+  leftWater.renderOrder = 1;
   leftWater.userData.role =
     'left-variable-water-load-with-horizontal-free-surface';
   trough.add(leftWater);
   const rightWater = new THREE.Mesh(
     makeCellWaterGeometry(),
-    waterMaterial,
+    cellWaterMaterial,
   );
+  rightWater.renderOrder = 1;
   rightWater.userData.role =
     'right-variable-water-load-with-horizontal-free-surface';
   trough.add(rightWater);

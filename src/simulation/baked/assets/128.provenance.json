@@ -54,7 +54,7 @@
       },
       {
         "file": "package-lock.json",
-        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+        "sha256": "68bc451f26abd26209c5fff06754f288ce49b36351584d144a7a73640ae63c18"
       }
     ],
     "options": {
@@ -68,5 +68,5 @@
   },
   "samples": 17991,
   "bytes": 413124,
-  "assetSha256": "35381b6e1bbe539e48e368ac24247aa85502e76c12e6a32659a3b2ca3794a9c6"
+  "assetSha256": "0aec5f2b63c8d467428814a144e7c3427d1e5e84305081491c4ead84176af95c"
 }

@@ -399,3 +399,28 @@ test('movement 476 has finite fitted bounds and movement 507 remains the distinc
   disposeModel(model476.root);
   disposeModel(model507.root);
 });
+
+test('movement 476 shows Brown\'s section: the fork is cut, A rises inside it, and the water rises through the cut', () => {
+  const { model } = movementModel();
+  const data = model.root.userData;
+  const { cutawayPresentation, geometry, stateAtTime } = data;
+  assert.ok(cutawayPresentation.cut.includes('stationary-suction-pipe-B-1-of-two-to-fork'));
+  assert.ok(cutawayPresentation.water.includes('water-rising-in-B-fork-and-C'));
+  assert.equal(data.localClippingEnabled, true);
+  // A's nozzle stands inside the fork, well above the crotch, on C's axis.
+  assert.ok(geometry.nozzleTip.y > 1.2 && geometry.nozzleTip.y < 1.75);
+  const [water] = data.blocks.waterFill;
+  const period = geometry.cycleDuration;
+  let previous = -Infinity;
+  for (const phase of [0, 0.1, 0.2, 0.3, 0.4]) {
+    model.update(phase * period);
+    const level = water.userData.waterLevelY;
+    const state = stateAtTime(phase * period);
+    near(level, -2.86 + (3.42 + 2.86) * state.levelFraction, 1e-9, `level at ${phase}`);
+    assert.ok(level >= previous, 'the water rises while the siphon starts');
+    previous = level;
+    const planes = [].concat(water.material)[0].clippingPlanes;
+    assert.equal(planes.length, 2, 'section plane and level plane');
+  }
+  disposeModel(model.root);
+});

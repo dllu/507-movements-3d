@@ -1,4 +1,5 @@
 import {correctEpicyclicGuide,finishPistonGuides} from './piston-guide-329-331-parts.js';
+import { spokedWheelGeometry } from './spoked-wheel.js';
 import * as THREE from 'three';
 import {
   PALETTE,
@@ -1027,6 +1028,34 @@ function EpicyclicPistonRodGuide(movement) {
   update(0);
   markShadows(root);
   correctEpicyclicGuide(root);
+  {
+    // Brown draws wheel B as a four-spoked cog: a toothed rim, four plain
+    // straight spokes and a hub on the carrier pin, the spokes standing at
+    // about 30 and 120 degrees in his pose.
+    const blocks = root.userData.blocks;
+    const body = blocks.planetGearBody;
+    const R = planetPitchRadius;
+    update(0);
+    root.updateMatrixWorld(true);
+    const e = body.matrixWorld.elements;
+    const sourceLocalXAngle = Math.atan2(e[1], e[0]);
+    const outline = body.geometry.parameters.shapes.getPoints().map((point) => [point.x, point.y]);
+    body.geometry.dispose();
+    body.geometry = spokedWheelGeometry({
+      outline,
+      spokes: 4,
+      rimInnerRadius: 0.76 * R,
+      spokeWidth: 0.13 * R,
+      hubRadius: 0.21 * R,
+      hubFillet: 0.03 * R,
+      rimFillet: 0.03 * R,
+      boreRadius: 0.078,
+      thickness: planetGearDepth,
+      phase: Math.PI / 6 - sourceLocalXAngle,
+    });
+    body.userData.role = 'four-spoked-cog-wheel-B-body';
+    body.userData.noRotationIndicator = true;
+  }
   finishPistonGuides(root,update);
   // Brown crops the flywheel and shows only the cylinder cover; the view
   // frames the whole flywheel, the A-frame legs and the whole cylinder down

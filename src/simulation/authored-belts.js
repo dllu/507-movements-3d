@@ -933,41 +933,59 @@ function oscillatingSector() {
   };
   const toRight = crossedTangent(rightCenter, -1);
   const fromLeft = crossedTangent(leftCenter, 1);
-  const crossingFraction = -toRight.upper.x / (toRight.lower.x - toRight.upper.x);
+  // The rope is pulled taut, so both crossed leaves are straight tangents.
+  // They clear each other at the crossing because the two sector wraps lie
+  // side by side across the sector's width: the leaf from the left pulley to
+  // the sector's right end runs in front (as Brown draws it), the other
+  // behind. Only the lower span changes depth, along a straight line in the
+  // plate plane.
+  const layer = 0.065;
+  const front = (point) => point.clone().setZ(beltZ + layer);
+  const back = (point) => point.clone().setZ(beltZ - layer);
+  const lowerSpan = (start, end) => {
+    const span = new THREE.Curve();
+    span.getPoint = (t, target = new THREE.Vector3()) => {
+      const blend = t * t * (3 - 2 * t);
+      return target.copy(start).lerp(end, t).setZ(start.z + (end.z - start.z) * blend);
+    };
+    span.getTangent = (t, target = new THREE.Vector3()) => target
+      .subVectors(end, start).setZ((end.z - start.z) * 6 * t * (1 - t)).normalize();
+    return span;
+  };
   const makeBeltCurve = (angle) => {
-    const leftAttachment = worldAttachment(leftAttachmentLocal, angle);
-    const rightAttachment = worldAttachment(rightAttachmentLocal, angle);
-    const rightTangent = toRight.lower;
-    const leftTangent = fromLeft.lower;
+    const leftAttachment = back(worldAttachment(leftAttachmentLocal, angle));
+    const rightAttachment = front(worldAttachment(rightAttachmentLocal, angle));
+    const rightTangent = back(toRight.lower);
+    const leftTangent = front(fromLeft.lower);
     const rightArc = circularArcThrough(
-      rightCenter,
+      back(rightCenter),
       rightTangent,
-      rightBottom,
+      back(rightBottom),
       Z_AXIS,
-      rightTangent.clone().sub(toRight.upper).normalize(),
+      rightTangent.clone().sub(back(toRight.upper)).normalize(),
     );
     const leftArc = circularArcThrough(
-      leftCenter,
-      leftBottom,
+      front(leftCenter),
+      front(leftBottom),
       leftTangent,
       Z_AXIS,
       leftBottom.clone().sub(rightBottom).normalize(),
     );
     const leftSectorArc = circularArcThrough(
-      sectorContactCenter, leftAttachment, toRight.upper, Z_AXIS,
-      new THREE.Vector3().crossVectors(Z_AXIS, leftAttachment.clone().sub(sectorContactCenter)),
+      back(sectorContactCenter), leftAttachment, back(toRight.upper), Z_AXIS,
+      new THREE.Vector3().crossVectors(Z_AXIS, leftAttachment.clone().sub(back(sectorContactCenter))),
     );
     const rightSectorArc = circularArcThrough(
-      sectorContactCenter, fromLeft.upper, rightAttachment, Z_AXIS,
-      fromLeft.upper.clone().sub(leftTangent).normalize(),
+      front(sectorContactCenter), front(fromLeft.upper), rightAttachment, Z_AXIS,
+      fromLeft.upper.clone().sub(fromLeft.lower).normalize(),
     );
     const curve = new THREE.CurvePath();
     curve.add(leftSectorArc);
-    curve.add(new BowedSpanCurve3(toRight.upper, rightTangent, 0.13, Z_AXIS, crossingFraction));
+    curve.add(new THREE.LineCurve3(back(toRight.upper), rightTangent));
     curve.add(rightArc);
-    curve.add(new THREE.LineCurve3(rightBottom, leftBottom));
+    curve.add(lowerSpan(back(rightBottom), front(leftBottom)));
     curve.add(leftArc);
-    curve.add(new BowedSpanCurve3(leftTangent, fromLeft.upper, -0.13, Z_AXIS, 1 - crossingFraction));
+    curve.add(new THREE.LineCurve3(leftTangent, front(fromLeft.upper)));
     curve.add(rightSectorArc);
     return {
       curve,
@@ -1023,7 +1041,7 @@ function oscillatingSector() {
       sectorAngularSpeed: angularSpeed,
       sectorRadius,
     };
-    root.userData.crossoverClearance = 0.26;
+    root.userData.crossoverClearance = 2 * layer;
     root.userData.attachments = {
       left: path.leftAttachment,
       right: path.rightAttachment,

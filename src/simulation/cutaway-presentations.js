@@ -205,11 +205,7 @@ export const CUTAWAY_SPECS = {
     // Brown draws the two barrels, covers and check chambers as exteriors.
     solid: [/transparent-single-acting-pump-cylinder$/, 'bored-pump-rod-cover', 'finite-delivery-check-chamber'],
   },
-  466: {
-    cut: ['closed-ram-cylinder-floor', 'open-water-reservoir-feeding-small-hand-pump', 'fixed-lower-wall-of-pump-cistern', 'fixed-floor-of-pump-cistern',
-      'finite-delivery-check-chamber', 'closed-delivery-chamber-floor', 'bored-delivery-chamber-outlet', 'small-pressure-pipe-from-pump-to-large-ram-cylinder'],
-    water: ['pressurized-water-under-large-solid-ram', 'pressurized-water-column-linking-small-and-large-cylinders'],
-  },
+
   470: {
     // Brown draws the cylinder and its valve chest as exteriors: the whole
     // cylinder wall (ported under the chest) and the closed chest are built
@@ -279,6 +275,13 @@ export const CUTAWAY_SPECS = {
     water: [/^water-/, 'free-water-surface-in-B-D-C'],
     hide: ['suction-B-to-chamber-D-joint', 'chamber-D-to-discharge-C-joint'],
   },
+  476: {
+    // Brown draws the forked pipe in section with jet pipe A turned up
+    // inside the fork: the fork wall is cut on z = 0; A stays whole; the
+    // water rising through B, the fork and C is cut on the same plane.
+    cut: ['stationary-suction-pipe-B-1-of-two-to-fork'],
+    water: ['water-rising-in-B-fork-and-C'],
+  },
   477: {
     // The casing is already a clean half-section on z = 0; valve D and its
     // working liquid are cut on the same plane.
@@ -292,24 +295,28 @@ export const CUTAWAY_SPECS = {
     hide: ['front-cutaway-rim-of-sphere-C', 'fixed-bottom-outlet-rim', 'condensate-inside-expanding-pipe-A'],
   },
   479: {
-    cut: ['transparent-fixed-side-wall-of-tank-B', 'fixed-bottom-of-water-tank-B', 'fixed-top-rim-of-tank-B', 'open-bottomed-cylindrical-skirt-of-A',
-      'closed-domed-crown-of-vessel-A', 'inlet-pipe-shell', 'outlet-pipe-shell'],
+    // Pass 74: Brown's section through the masonry pit B, bell A and the two
+    // pipes; pulleys, bands and weights C stay whole in front.
+    cut: ['fixed-ground-and-masonry-pit-forming-tank-B',
+      'open-bottomed-domed-vessel-A', 'fixed-left-gas-inlet-through-bottom-of-B', 'fixed-right-gas-outlet-through-bottom-of-B'],
     water: [/water-(annulus|column)/],
-    hide: [/gas-(volume|core)/],
   },
   480: {
-    cut: ['transparent-fixed-side-wall-of-tank-B', 'fixed-bottom-of-water-tank-B', 'fixed-top-rim-of-tank-B', 'open-bottomed-cylindrical-skirt-of-A',
-      'closed-domed-crown-of-vessel-A-around-guide-sleeve', 'fixed-hollow-shell-of-central-tube-b', 'visible-top-rim-of-fixed-tube-b', 'fixed-base-securing-tube-b-to-tank',
-      'lower-sliding-rim-of-tube-a', 'upper-crown-fastening-rim-of-tube-a', 'sliding-outer-shell-of-integral-tube-a-around-b',
-      'left-outlet-pipe-shell', 'right-inlet-pipe-shell', 'left-outlet-opening-above-inner-water', 'right-inlet-opening-above-inner-water'],
-    water: [/water-annulus/],
-    hide: [/gas-(volume|core)/],
+    cut: ['fixed-ground-and-masonry-pit-forming-tank-B',
+      'open-bottomed-domed-vessel-A-around-sleeve-a', 'sliding-sleeve-a-secured-within-A', 'fixed-hollow-shell-of-central-tube-b',
+      'fixed-left-gas-outlet-through-bottom-of-B', 'fixed-right-gas-inlet-through-bottom-of-B'],
+    water: [/water-annulus|water-column/],
   },
   481: {
     // Brown's section is across the drum axis: case and drum are cut just
-    // behind the front drum head, so the spiral partitions show whole.
+    // behind the front drum head, so the partitions and their stretches of
+    // shell (with the four outlet gaps) show whole. The front journal, axle
+    // stub and the axial run of pipe a are cut too, so the turned-up end of a
+    // stands clear at the centre as Brown draws it.
     plane: {point: new THREE.Vector3(0, 0, 0.48)},
-    cut: ['transparent-stationary-shell-of-case-A', /^stationary-case-rim-/, 'transparent-cylindrical-shell-of-drum', /^rotating-drum-rim-/, 'finite-ported-drum-head'],
+    cut: ['transparent-stationary-shell-of-case-A', /^stationary-case-rim-/, 'finite-ported-drum-head',
+      'hollow-rotating-journal-surrounding-central-inlet-pipe-a', 'fixed-horizontal-axis-through-hollow-journal',
+      'stationary-central-pipe-a-through-journal-turned-above-water'],
     water: ['stationary-water-volume-above-drum-centerline'],
     solid: ['transparent-rear-head-of-case-A'],
     hide: [/^gas-displacing-water-in-compartment-/, 'stationary-level-water-surface-line'],
@@ -332,25 +339,6 @@ export const CUTAWAY_SPECS = {
     cutMercury: true,
     mercuryBehindWalls: true,
     hide: [/^section-face-of-/, 'regulated-outlet-gas-acting-on-inner-surface-of-H'],
-  },
-  483: {
-    // The case is a cabinet shown with its front panel removed: solid back
-    // and side panels between the corner posts; the valve chest round B is
-    // cut on z = 0 so the slide valve shows.
-    prepare(root) {
-      const post = findRole(root, 'fixed-case-corner-post-1'), back = findRole(root, 'transparent-cutaway-dry-meter-case');
-      back.material = solidMaterial([].concat(post.material)[0]);
-      for (const x of [-3.08, 3.08]) {
-        const side = new THREE.Mesh(new THREE.BoxGeometry(0.12, 4.98, 2.20), back.material);
-        side.position.set(x, 0.50, -0.05);
-        side.userData.role = 'solid-side-panel-of-dry-meter-case';
-        side.castShadow = true;side.receiveShadow = true;
-        post.parent.add(side);
-      }
-    },
-    cut: ['fixed-inlet-pressure-chest-around-B'],
-    solid: ['fixed-central-partition-between-A-and-A-prime'],
-    hide: [/^measured-gas-volume-inside-/, 'moving-exhaust-cavity-beneath-D-slide-B'],
   },
   497: {
     // Brown's section is across the shaft: the volute is cut just in front of
@@ -401,7 +389,7 @@ export const CUTAWAY_SPECS = {
     plane: {point: new THREE.Vector3(0, 0, 0.6)},
     cut: [/cistern-end-wall-(left|right)$/],
     water: [/-water-body$/],
-    solid: ['transparent-inclined-screw-barrel', 'submerged-air-receiver-at-lower-screw-end', 'air-pipe-ascending-crossing-descending-to-wheel-underside'],
+    solid: ['transparent-inclined-screw-barrel', 'submerged-air-receiver-at-lower-screw-end', 'air-pipe-ascending-crossing-descending-to-wheel-underside', 'air-pipe-mouth-hood-fitted-under-wheel'],
     colors: {'transparent-inclined-screw-barrel': 0x7e8584},
     // Brown shows the screw's spiral inside its tube: the barrel is cut in
     // half on its axis plane facing the camera (a back half-tube with plain

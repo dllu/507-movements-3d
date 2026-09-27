@@ -35,12 +35,13 @@ test('204 actual closed facets remain near opposed contact through rotation, wit
       assert.ok(gap < 0.002, `actual closest surface pair gap ${gap}`);
       assert.ok(a.normal.dot(c.normal) < -0.994, 'actual triangle normals oppose');
       const va = g.driverAxis.clone().multiplyScalar(1.08).cross(a.point.clone().sub(g.driverOrigin));
-      const vc = g.drivenAxis.clone().multiplyScalar(-1.08).cross(c.point.clone().sub(g.drivenOrigin));
+      const vc = g.drivenAxis.clone().multiplyScalar(root.userData.transmission.drivenAngularSpeed).cross(c.point.clone().sub(g.drivenOrigin));
       const relative = va.sub(vc);
       maxNormalVelocity = Math.max(maxNormalVelocity, Math.abs(relative.dot(a.normal)));
-      // Facet normals deviate about 1.1 degrees; the bound is 2% of the 0.82 sliding speed.
-      assert.ok(Math.abs(relative.dot(a.normal)) < 0.017, `facet normal velocity ${relative.dot(a.normal)}`);
-      assert.ok(Math.abs(relative.x) > 0.818 && Math.abs(relative.x) < 0.825);
+      // Facet normals deviate about 1.1 degrees; the bound is 2% of the 0.74 sliding speed.
+      const sliding = root.userData.transmission.nominalLongitudinalSlidingSpeed;
+      assert.ok(Math.abs(relative.dot(a.normal)) < 0.02 * sliding, `facet normal velocity ${relative.dot(a.normal)}`);
+      assert.ok(Math.abs(Math.abs(relative.x) - sliding) < 0.004, `sliding ${relative.x} vs ${sliding}`);
       assert.ok(Math.hypot(relative.y, relative.z) < 0.003);
       // Transverse friction can oppose the input and drive the output. Normal
       // pressure alone supplies no ideal shaft torque; no preload is solved.
@@ -147,5 +148,5 @@ test('204 visible indexes are flush end inlays, diagnostics hidden, and buffers 
   assert.deepEqual(after, objects); assert.deepEqual(afterAttributes, attributes);
   assert.equal(root.userData.hideGround, true);
   assert.equal(root.userData.finiteFriction.validatedDynamics, false);
-  assert.equal(root.userData.minimumDisplayCycleSeconds, 6);
+  assert.equal(root.userData.minimumDisplayCycleSeconds, g.closureCyclePeriod);
 });

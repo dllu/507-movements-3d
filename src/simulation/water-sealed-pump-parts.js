@@ -37,6 +37,16 @@ export function correctWaterSealedPump(root){
  replace(b.lowerInletValveSeat,horizontalRing(.055,.15,-.0275,.0275));
  replace(b.upperOutletPipe,horizontalRing(.052,.078,g.bellHeight/2-.10,g.bellHeight/2+.2225));b.upperOutletPipe.position.y=0;
  replace(b.upperOutletValveSeat,horizontalRing(.052,.14,-.0225,.0225));
+ // Each check disk is a wing-guided lift valve: four guide wings under it run
+ // in the bore of its seat and pipe (0.002 clear of the bore at the corners),
+ // so the lifted disk stays carried on its guide instead of hovering.
+ const guide=(disk,bore,halfThickness,length,role)=>{
+  const half=Math.sqrt((bore-.002)**2-.006**2),wings=new THREE.Group();
+  for(const turn of[0,Math.PI/2]){const wing=new THREE.Mesh(new THREE.BoxGeometry(2*half,length,.012),disk.material);wing.rotation.y=turn;wing.position.y=-halfThickness-length/2;wing.userData.role=`${role}-${turn?2:1}`;wings.add(wing);}
+  disk.add(wings);return wings.children;
+ };
+ b.upperCheckGuide=guide(b.upperOutletValveDisk,.052,.021,.20,'upper-check-disk-guide-wing');
+ b.lowerCheckGuide=guide(b.lowerInletValveDisk,.055,.0225,.20,'lower-check-disk-guide-wing');
  // Relocate the frame behind the two crossing lever planes.
  replace(b.crosshead,plate(clip.difference(clip.union(rectangle(2.36,.22),...[-1,1].map(side=>poly(circle([side*g.leverPivotX,.03],.17,64)))),...[-1,1].map(side=>poly(circle([side*g.leverPivotX,.03],.099,64)))),-.26,.26));
  b.crosshead.position.z=-.65;

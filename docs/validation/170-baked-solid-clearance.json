@@ -1,5 +1,5 @@
 {
-  "bakedAssetHash": "13ae0cfd13fc8719eec94493f74af90e7cd2a987e292e9c88e3a1ba9cd03f21e",
+  "bakedAssetHash": "6688f4462aa0626772ed1c60296f065a7360048e5311638e68557a6b3c0cb2f2",
   "movement": 170,
   "status": "baked-solid-diagnostic",
   "parameters": {
@@ -21,14 +21,14 @@
   "poses": 129,
   "meshes": 83,
   "pairs": 2229,
-  "queries": 48881488,
+  "queries": 55854136,
   "intersections": {},
   "unexpected": {},
   "method": "Bidirectional visible vertices, edge midpoints and triangle centers over the settled native cycle, phased near the engraving. Same rigid-family joins excluded. No cross-family overlap above 1e-6 world units is permitted.",
   "sources": [
     {
       "file": "src/simulation/baked/assets/170.json.gz",
-      "sha256": "13ae0cfd13fc8719eec94493f74af90e7cd2a987e292e9c88e3a1ba9cd03f21e"
+      "sha256": "6688f4462aa0626772ed1c60296f065a7360048e5311638e68557a6b3c0cb2f2"
     },
     {
       "file": "src/simulation/baked/crossed-governor.js",
@@ -44,7 +44,7 @@
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/solids.js",
-      "sha256": "aac993c54f9e6b4bdbd6932ef8aa8a70ca6e91e6dca7cd5edb6ee2790a3731da"
+      "sha256": "b736892ab28dd5af2a8962b152ad84ab8cb82ce324004f3db16423cc0b689b34"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/update-solids.js",
@@ -52,7 +52,7 @@
     },
     {
       "file": "src/simulation/bevel-geometry.js",
-      "sha256": "e3cf7e9633fc7fd5544511cac880b634a14da420ea0074c5d6d3010c486b263d"
+      "sha256": "9dfaf2b3b969a16ce7a6cabadee57fa6bb6d1e51b9e61f6f9f511ed77dba365c"
     },
     {
       "file": "src/simulation/mujoco-crossed-governor/physics.js",
@@ -72,7 +72,7 @@
     },
     {
       "file": "src/simulation/primitives.js",
-      "sha256": "315bd86af67a6d451ef4de426b67db3140f5d3bee28e91a1c5171afc4196b5fb"
+      "sha256": "c09dbdfc48b4680ae1194d6b1471ff33d437bc8e8a28f6b290044eba746c9367"
     },
     {
       "file": "tests/helpers/solid-surface.mjs",

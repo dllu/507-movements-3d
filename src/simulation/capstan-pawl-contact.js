@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { capstanPawlSamples } from './capstan-pawl-profile.js';
+import { capstanPawlSamples, capstanPawlReleasePhase } from './capstan-pawl-profile.js';
+export { capstanPawlReleasePhase };
 const FULL_TURN = 2 * Math.PI;
 function appendTriangle(positions, first, second, third) {
   for (const point of [first, second, third]) {
@@ -107,18 +108,31 @@ export function makeCrownRatchetGeometry({
 }
 
 
+// Brown draws the pawl flat against the front of the lower capstan, swinging
+// in the plane of the drawing: its pivot pin is radial, and the pawl lies in
+// the tangent plane of the lower part with its nose hanging down onto the
+// upward-facing crown teeth. Rotor-local frame: pivot at azimuth +Z, the pawl
+// extends along +X (the recoil direction there) and turns about +Z.
 export const capstanPawlDimensions = Object.freeze({
-  pivotRadius: 1.23, pivotHeight: -1.04, length: 0.47, tipRadius: 0.07, tipLead: 0.12,
-  innerRadius: 1.37, outerRadius: 1.79, lowHeight: -1.50,
-  highHeight: -1.27, bottomHeight: -1.61, toothCount: 18,
+  pivotAzimuth: Math.PI / 2, planeRadius: 1.165, thickness: 0.09, pivotHeight: -1.0,
+  length: 0.56, noseRadius: 0.05, bossRadius: 0.12, boreRadius: 0.06, pinRadius: 0.055,
+  innerRadius: 1.15, outerRadius: 1.45, lowHeight: -1.50,
+  highHeight: -1.27, bottomHeight: -1.61, toothCount: 18, releaseFraction: 0.125, clearance: 0.0005,
 });
 
-export const capstanPawlLeadAngle = Math.atan2(capstanPawlDimensions.tipLead,
-  capstanPawlDimensions.pivotRadius + capstanPawlDimensions.length*Math.cos(Math.asin(
-    (capstanPawlDimensions.highHeight+capstanPawlDimensions.tipRadius+0.00012-capstanPawlDimensions.pivotHeight)/capstanPawlDimensions.length)));
+// Rotor-local 3D point of a pawl-local point (x along the pawl, y up, z out
+// of the pawl plane) for pawl angle beta about the radial pivot axis.
+export function capstanPawlLocalToRotor(x, y, z, beta, target = new THREE.Vector3()) {
+  const d = capstanPawlDimensions, c = Math.cos(beta), s = Math.sin(beta);
+  const u = x*c - y*s, v = x*s + y*c, radial = d.planeRadius + z;
+  const a = d.pivotAzimuth;
+  // Tangential +X at azimuth a=+Z is world +X; radial is (cos a, sin a).
+  return target.set(radial*Math.cos(a) + u*Math.sin(a), d.pivotHeight + v, radial*Math.sin(a) - u*Math.cos(a));
+}
 
-// The offline table follows actual crown triangles. Two columns retain the
-// contact envelope separately from the prescribed continuous drop trajectory.
+// The offline table follows actual crown triangles, indexed by the pivot's
+// tooth phase measured from the crest release. Two columns retain the
+// contact envelope separately from the prescribed continuous drop.
 export function capstanPawlProfile(phase) {
   const coordinate = ((phase % 1 + 1) % 1) * (capstanPawlSamples.length-1);
   const i = Math.floor(coordinate), alpha = coordinate-i;

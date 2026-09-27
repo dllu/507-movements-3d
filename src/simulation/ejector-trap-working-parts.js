@@ -135,10 +135,30 @@ export function correctEjectorTrapParts(root,id,update) {
     b.suctionBranches[1].visible=false;b.dischargePipe.visible=false;
     replace(b.steamPipe,curvedPipeWall(d.flowPaths.steamPipeCurve,.092,.17,92,32));
     Object.assign(b.steamPipe.material,{transparent:false,opacity:1});
-    // The opaque fork hides the water inside; its working shows as the
-    // discharge issuing from the open mouth of C while the siphon runs.
-    const jet=dischargeJet(root,3.42,.38,.46,'free-discharge-issuing-from-mouth-of-C');b.dischargeJet=root.children.at(-1);
-    d.updateWorkingParts=(time,state)=>jet(state.dischargeFraction);
+    // Brown draws the fork in section with A turned up inside it: the fork
+    // is cut on z = 0 (cutaway presentation) and the water rising through
+    // both legs B, round nozzle A and up C shows through the cut, as in 475.
+    // The water is one body filling the fork's bore (the same mirrored sweep
+    // as the wall, so the legs merge into C with no internal faces); its
+    // level is a clipping plane, so nothing is rebuilt per frame. It stands
+    // below the mouths of B while the steam purges the air, rises to the
+    // mouth of C, fills the fork while the siphon discharges, and falls
+    // back at shut-off.
+    const footY=-2.86,mouthY=3.42;
+    const water=add(root,mirroredForkWall(halfCurve,.004,.372,{segments:220,sides:48}),waterVolumeMaterial({color:0x8fd3ee,opacity:.62}),'water-rising-in-B-fork-and-C');
+    water.renderOrder=1;b.waterFill=[water];
+    const levelPlane=new THREE.Plane(new THREE.Vector3(0,-1,0),footY);
+    const jet=dischargeJet(root,mouthY,.38,.46,'free-discharge-issuing-from-mouth-of-C',{thetaStart:Math.PI,thetaLength:Math.PI});b.dischargeJet=root.children.at(-1);
+    d.localClippingEnabled=true;
+    d.updateWorkingParts=(time,state)=>{
+      jet(state.dischargeFraction);
+      const level=footY+(mouthY-footY)*state.levelFraction;
+      levelPlane.constant=level;
+      for(const m of[].concat(water.material))if(!m.clippingPlanes?.includes(levelPlane))m.clippingPlanes=[...(m.clippingPlanes??[]),levelPlane];
+      // Always drawn: at the foot of B the level plane clips it all away,
+      // so it grows from nothing instead of switching on.
+      water.userData.waterLevelY=level;
+    };
   } else if(id===477) {
     replace(b.inletPipeA,horizontalRing(.66,.74,-1.04,1.04,64));
     replace(b.outletPipeB,horizontalRing(.68,.76,-.725,.725,64));

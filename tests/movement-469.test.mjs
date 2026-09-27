@@ -67,6 +67,7 @@ test('movement 469 is the two-temperature cistern proposal with one reversed scr
   assert.equal(blocks.transferShaft.parent, blocks.transferShaftRotor);
   assert.equal(blocks.waterWheelRotor.parent, blocks.waterWheelAssembly);
   assert.equal(blocks.faceGear.parent, blocks.waterWheelRotor);
+  assert.equal(blocks.wheelHood.parent, model.root);
   assert.equal(blocks.airConduit.parent, model.root);
   assert.equal(blocks.airBubbles.length, data.geometry.bubbleCount);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
@@ -448,4 +449,31 @@ test('movement 469 has finite render bounds and movement 507 remains the next au
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model469.root);
   disposeModel(model507.root);
+});
+
+// Pass 74: the pipe ends in a hood fitted closely under the wheel: its lips
+// are arcs concentric with the wheel 0.02 outside the rims, it spans the
+// rims, and the pipe's end meets its right wall at the bored hole.
+test('movement 469 air pipe ends in a hood fitted closely under the wheel', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, pressurePipeCurve } = model.root.userData;
+  blocks.wheelHood.geometry.computeBoundingBox();
+  const box = blocks.wheelHood.geometry.boundingBox;
+  const rimOuter = geometry.waterWheelRadius + 0.064;
+  const c = geometry.wheelCenter;
+  const positions = blocks.wheelHood.geometry.attributes.position;
+  let nearest = Infinity;
+  for (let i = 0; i < positions.count; i += 1) {
+    const x = positions.getX(i), y = positions.getY(i);
+    nearest = Math.min(nearest, Math.hypot(x - c.x, y - c.y) - rimOuter);
+  }
+  assert.ok(nearest > 0.015 && nearest < 0.025, `hood lip clearance ${nearest}`);
+  assert.ok(box.min.z < geometry.wheelPlaneZ - 0.2 - 0.064 && box.max.z > geometry.wheelPlaneZ + 0.2 + 0.064,
+    'hood spans both rims');
+  const end = pressurePipeCurve.getPointAt(1);
+  near(end.x, box.max.x, 1e-6, 'pipe meets the hood wall');
+  assert.ok(end.y > box.min.y + geometry.airDuctRadius && end.z > box.min.z && end.z < box.max.z);
+  assert.ok(box.max.z < -geometry.tankDepth / 2 + 0.14 + 0.2 + 1 && box.min.z > -geometry.tankDepth / 2 + 0.14,
+    'hood clears the back wall');
+  disposeModel(model.root);
 });

@@ -147,7 +147,7 @@ test('movement 491 head, barrel, hand-spike, and pawl carrier share one angle wh
       -geometry.operatingAngularSpeed * time, 0,
       `capstan working direction ${time}`);
     near(state.pawlWorldAzimuthRadian,
-      geometry.operatingAngularSpeed * time, 0,
+      geometry.pawlPivotAzimuth + geometry.operatingAngularSpeed * time, 0,
       `carried pawl azimuth ${time}`);
     near(blocks.pawl.rotation.z,
       state.pawlClosure.pawlPitchAngleRadian, 0,
@@ -189,24 +189,29 @@ test('movement 491 pawl has rigid closure to the finite contact profile and a co
     near(closure.verticalDifference,
       closure.pawlTipHeight - geometry.pawlPivotHeight, 2e-16,
       `vertical closure ${sample}`);
+    // The pawl swings in the tangent plane about its radial pin.
     near(Math.hypot(
-      closure.radialProjection,
+      closure.tangentialProjection,
       closure.verticalDifference,
-    ), geometry.pawlLength, 2e-16, `rigid pawl length ${sample}`);
+    ), geometry.pawlLength, 2e-15, `rigid pawl length ${sample}`);
+    assert.ok(closure.tangentialProjection > 0, 'nose trails toward recoil');
     near(closure.pawlTipRadius,
-      Math.hypot(geometry.pawlPivotRadius + closure.radialProjection, geometry.pawlTipLead), 0,
+      Math.hypot(geometry.pawlPlaneRadius, closure.tangentialProjection), 0,
       `tip radius ${sample}`);
     assert.ok(closure.pawlTipRadius >= geometry.ratchetInnerRadius);
     assert.ok(closure.pawlTipRadius <= geometry.ratchetOuterRadius);
     assert.ok(closure.airborneClearance >= -2e-16);
     if (closure.contactingRamp) {
-      near(closure.airborneClearance, 0, 0,
+      // Resting means within the model's own 1e-7 airborne threshold (the
+      // baked table lifts a few rows by nanometres so playback never cuts a crest).
+      near(closure.airborneClearance, 0, 1e-7,
         `pawl-to-ramp contact ${sample}`);
     }
   }
 
   const phaseEpsilon = 1e-8;
-  const toothStart = geometry.ratchetPhaseOffset - geometry.pawlLeadAngle;
+  const toothStart = geometry.ratchetPhaseOffset
+    + geometry.pawlReleasePhase * geometry.ratchetToothPitch;
   const beforeEdge = pawlClosureAtAzimuth(
     toothStart - phaseEpsilon * geometry.ratchetToothPitch,
   );
@@ -214,13 +219,16 @@ test('movement 491 pawl has rigid closure to the finite contact profile and a co
   const afterEdge = pawlClosureAtAzimuth(
     toothStart + phaseEpsilon * geometry.ratchetToothPitch,
   );
-  near(beforeEdge.pawlTipHeight, geometry.ratchetHighHeight + geometry.pawlTipRadius + 0.00012,
-    3e-7, 'approach high edge');
-  near(atEdge.pawlTipHeight, geometry.ratchetHighHeight + geometry.pawlTipRadius + 0.00012, 3e-7,
-    'continuous release at high edge');
-  near(afterEdge.pawlTipHeight, geometry.ratchetHighHeight + geometry.pawlTipRadius + 0.00012,
-    3e-7, 'continuous freefall after high edge');
-  assert.equal(atEdge.falling, false);
+  // The nose rolls over the crest, so it is released just above it.
+  assert.ok(atEdge.pawlTipHeight > geometry.ratchetHighHeight);
+  assert.ok(atEdge.pawlTipHeight < geometry.ratchetHighHeight + geometry.pawlTipRadius);
+  near(beforeEdge.pawlTipHeight, atEdge.pawlTipHeight, 3e-6, 'approach high edge');
+  near(afterEdge.pawlTipHeight, atEdge.pawlTipHeight, 3e-6,
+    'continuous freefall after high edge');
+  // Approaching the crest the nose rides it (within the sub-millimetre
+  // playback lift that keeps interpolation off the rolling crest).
+  assert.ok(beforeEdge.airborneClearance < 1e-3);
+  assert.equal(afterEdge.falling, true);
   const landing = pawlClosureAtAzimuth(
     toothStart
       + (geometry.pawlFreefallFraction + 1e-10)

@@ -129,25 +129,33 @@ function makeCornerPin({
   darkMaterial,
   pinRadius,
   pinSpan,
+  retainedFrontZ,
   role,
   whiteMaterial,
 }) {
   const pin = new THREE.Group();
   pin.userData.axis = Z_AXIS.clone();
   pin.userData.role = role;
-  const shaft = cylinderAlongZ(pinRadius, pinSpan, darkMaterial, 32);
+  // The retaining ring's bore grips the pin (major radius = pin radius +
+  // tube radius) and it seats on the front link's face; the pin ends flush
+  // in the ring rather than standing proud with a loose ring around it.
+  const tube = pinRadius * 0.22;
+  const ringZ = retainedFrontZ + tube;
+  const back = -pinSpan / 2;
+  const shaft = cylinderAlongZ(pinRadius, ringZ - back, darkMaterial, 32);
+  shaft.position.z = (ringZ + back) / 2;
   shaft.userData.role = `${role}-through-shaft`;
   const frontRing = new THREE.Mesh(
-    new THREE.TorusGeometry(pinRadius * 1.48, pinRadius * 0.22, 10, 36),
+    new THREE.TorusGeometry(pinRadius + tube, tube, 10, 36),
     accentMaterial,
   );
-  frontRing.position.z = pinSpan / 2 + 0.018;
+  frontRing.position.z = ringZ;
   frontRing.userData.role = `${role}-front-retaining-ring`;
   const frontIndex = new THREE.Mesh(
     new THREE.SphereGeometry(pinRadius * 0.48, 22, 14),
     whiteMaterial,
   );
-  frontIndex.position.z = pinSpan / 2 + 0.028;
+  frontIndex.position.z = ringZ + 0.01;
   frontIndex.userData.role = `${role}-white-motion-index`;
   pin.add(frontIndex, frontRing, shaft);
   pin.userData.blocks = { frontIndex, frontRing, shaft };
@@ -503,6 +511,7 @@ function rhombusRectilinearConverter(movement) {
       darkMaterial,
       pinRadius,
       pinSpan,
+      retainedFrontZ: frontLinkPlaneZ + linkDepth / 2,
       role: `shared-through-pin-${label}`,
       whiteMaterial,
     });

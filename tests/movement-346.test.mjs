@@ -114,7 +114,13 @@ test('movement 346 is the fixed-cylinder table engine with two side rods', () =>
   assert.ok(pistonRadius < boreRadius && boreRadius - pistonRadius < 0.02,
     'the round piston fits its bore');
   assert.equal(blocks.guideRails.length, 2);
-  assert.equal(blocks.guideStandards.length, 2);
+  // The tapered outer loop is one flat bar in the rails' own plane, depth
+  // and material (no second offset rod reading as a rim).
+  assert.equal(blocks.guideStandards, undefined);
+  const loopBox = new THREE.Box3().setFromObject(blocks.guideArch);
+  const railBox = new THREE.Box3().setFromObject(blocks.guideRails[0]);
+  assert.ok(Math.abs(loopBox.min.z - railBox.min.z) < 1e-6 && Math.abs(loopBox.max.z - railBox.max.z) < 1e-6);
+  assert.equal(blocks.guideArch.material, blocks.guideRails[0].material);
   // Brown's table-like base is one solid plinth, not two legs.
   assert.equal(blocks.tableLegs.length, 1);
   assert.equal(blocks.tableLegs[0], blocks.tablePlinth);

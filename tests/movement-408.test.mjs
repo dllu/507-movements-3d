@@ -353,3 +353,17 @@ test('movement 507 remains the next authored frontier', () => {
   assert.equal(movement507.fidelity, 'authored');
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
 });
+
+test('movement 408 head carries two long clamp slots concentric with the joint', () => {
+  const model = createMovementModel(catalog.movements[407]);
+  const { blocks } = model.root.userData;
+  assert.equal(blocks.headSlotSpans.length, 2);
+  for (const [start, end] of blocks.headSlotSpans) {
+    assert.ok(end - start > THREE.MathUtils.degToRad(100), 'each slot is a long arc');
+  }
+  for (const leg of Object.values(blocks.legs)) {
+    const angle = THREE.MathUtils.euclideanModulo(Math.atan2(leg.clamp.position.y, leg.clamp.position.x), 2 * Math.PI);
+    assert.ok(blocks.headSlotSpans.some(([start, end]) => angle > start + 0.1 && angle < end - 0.1),
+      'each clamp screw stands inside its slot');
+  }
+});

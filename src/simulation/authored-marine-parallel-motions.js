@@ -1479,6 +1479,8 @@ function sideLeverMarineParallelMotion(movement) {
     sideLeverParts.rightAnchor, sideLeverParts.hiddenInputAnchor);
   root.add(sideLever);
 
+  // Every eye is bored to its own pin plus a 0.005 running clearance, so the
+  // pins at A-lever, C, D, E and F visibly bear in their eyes.
   const leftLinkParts = makeRigidRod({
     bodyMaterial: greenMaterial,
     depth: 0.16,
@@ -1486,6 +1488,7 @@ function sideLeverMarineParallelMotion(movement) {
     length: leftLinkLength,
     planeZ: 0.36,
     role: 'left-parallel-motion-link-through-C',
+    boreRadius: 0.22 * sourceScale + 0.005,
     width: 0.34 * sourceScale,
   });
   const pointCAnchor = new THREE.Object3D();
@@ -1502,6 +1505,7 @@ function sideLeverMarineParallelMotion(movement) {
     length: rightLinkLength,
     planeZ: 0.39,
     role: 'right-link-to-crosshead-E',
+    boreRadius: 0.24 * sourceScale + 0.005,
     width: 0.34 * sourceScale,
   });
   root.add(rightLinkParts.rod);
@@ -1513,6 +1517,8 @@ function sideLeverMarineParallelMotion(movement) {
     length: parallelBarLength,
     planeZ: 0.66,
     role: 'four-unit-parallel-bar-E-D',
+    startBoreRadius: 0.24 * sourceScale + 0.005,
+    boreRadius: 0.22 * sourceScale + 0.005,
     width: 0.34 * sourceScale,
   });
   root.add(parallelBarParts.rod);
@@ -1524,6 +1530,8 @@ function sideLeverMarineParallelMotion(movement) {
     length: radiusBarLength,
     planeZ: 0.91,
     role: 'fixed-length-radius-bar-F-C',
+    startBoreRadius: 0.25 * sourceScale + 0.005,
+    boreRadius: 0.22 * sourceScale + 0.005,
     width: 0.34 * sourceScale,
   });
   root.add(radiusBarParts.rod);

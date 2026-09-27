@@ -12,6 +12,8 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
+import { figureGeometry } from './figure-meshes.js';
+import { makeGripFist } from './hauling-hand.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -391,11 +393,24 @@ function externalPersonTreadmill(movement) {
     object.rotation.z += LEAN_ANGLE;
   };
   for (const part of [torso, head, cap]) applyLean(part);
+  // The jacket, head and cap are Blender models (scripts/blender/figures.py)
+  // in the person frame; they replace the lathe jacket, sphere head and
+  // cap, whose neck and band are part of the new meshes.
+  for (const [part, name] of [[torso, 'man-jacket'], [head, 'man-head'], [cap, 'man-cap']]) {
+    part.geometry.dispose();
+    part.geometry = figureGeometry(name);
+    part.position.set(0, 0, 0);
+    part.scale.set(1, 1, 1);
+    part.rotation.set(0, 0, LEAN_ANGLE);
+  }
+  neck.visible = false;
+  capBand.visible = false;
   const arms = [];
   // He faces the drum and reaches up to a rail just above and in front of
   // his cap: Brown's topmost horizontal line along the drum.
   const leanedHead = leanPoint(0, 0.80 * FIGURE_SCALE);
-  const handRailY = personCenterOfMass.y + leanedHead.y + 0.25 * FIGURE_SCALE;
+  // Brown's hands grip the rail at the height of the cap's crown.
+  const handRailY = personCenterOfMass.y + leanedHead.y + 0.12 * FIGURE_SCALE;
   const handRailX = personCenterOfMass.x + leanedHead.x - 0.18 * FIGURE_SCALE;
   for (const side of [-1, 1]) {
     const shoulder = new THREE.Vector3(
@@ -441,6 +456,22 @@ function externalPersonTreadmill(movement) {
       joint.userData.role = point === hand ? 'person-hand-gripping-rail' : 'person-arm-joint';
       arm.add(joint);
     }
+    // Blender sleeve from the shoulder out to a wide elbow and up to the
+    // wrist, and a closed fist round the rail, thumb inboard and the back of
+    // the hand toward the viewer (the far hand is its mirror image).
+    arm.geometry.dispose();
+    arm.geometry = figureGeometry(side > 0 ? 'man-arm-left' : 'man-arm-right');
+    for (const joint of [...arm.children]) {
+      if (joint.userData.role === 'person-arm-joint') arm.remove(joint);
+      else joint.visible = false;
+    }
+    const fist = makeGripFist(0.059, 0.75, skinMaterial);
+    fist.position.copy(hand);
+    fist.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(
+      new THREE.Vector3(0, 0, 1), new THREE.Vector3(0, -1, 0), new THREE.Vector3(1, 0, 0)));
+    if (side > 0) fist.scale.x *= -1;
+    fist.userData.role = 'person-hand-gripping-rail';
+    arm.add(fist);
     applyLean(arm);
     arm.userData.side = side;
     arm.userData.role = 'person-arm-holding-fixed-safety-rail';
@@ -513,6 +544,8 @@ function externalPersonTreadmill(movement) {
     upperLeg.position.y = -upperLegLength / 2;
     upperLeg.userData.role = 'person-upper-leg';
     legRoot.add(upperLeg);
+    upperLeg.geometry.dispose();
+    upperLeg.geometry = figureGeometry('man-thigh');
     upperLegs.push(upperLeg);
     const knee = new THREE.Group();
     knee.position.y = -upperLegLength;
@@ -536,6 +569,16 @@ function externalPersonTreadmill(movement) {
     foot.position.set(-0.035, -lowerLegLength - 0.05, 0);
     foot.userData.role = 'person-foot-above-peripheral-step';
     knee.add(foot);
+    foot.geometry.dispose();
+    // The shoe keeps the old sole box: a flat sole at y = -0.05 and the
+    // 0.28 x 0.11 footprint that rests on the boards.
+    foot.geometry = figureGeometry('man-shoe', (position) => {
+      for (let i = 0; i < position.length; i += 3) {
+        position[i] = THREE.MathUtils.clamp(position[i], -0.14, 0.14);
+        position[i + 1] = THREE.MathUtils.clamp(position[i + 1], -0.05, 0.02);
+        position[i + 2] = THREE.MathUtils.clamp(position[i + 2], -0.055, 0.055);
+      }
+    });
     feet.push(foot);
   }
 

@@ -527,8 +527,27 @@ function selfAdjustingWharfLadder(movement) {
   // surface and fading out with depth just below the boat's keel, rather
   // than a deep block down to the bed.
   const waterSheetDepth = 0.26;
-  const waterGeometry = new THREE.BoxGeometry(7.2, waterSheetDepth, railHalfWidth * 2 + 2.8)
-    .translate(0, -waterSheetDepth / 2, 0);
+  // In plan the layer stops at the wharf's masonry face (under the fixed
+  // posts' fronts) and runs only into the recessed slot between them, so no
+  // water lies across the pier face or wraps its sides.
+  const waterHalfZ = railHalfWidth + 1.4;
+  const wharfFaceX = dockLower.x - wharfPostWidth / 2 - 0.03;
+  const wharfRecessX = dockLower.x + 0.18;
+  const wharfRecessHalfZ = railHalfWidth + wharfPostOffset - wharfPostWidth / 2 - 0.01;
+  const waterLeftX = wharfRecessX - 7.2;
+  const waterGeometry = new THREE.ExtrudeGeometry(new THREE.Shape([
+    [waterLeftX, -waterHalfZ], [wharfFaceX, -waterHalfZ], [wharfFaceX, -wharfRecessHalfZ],
+    [wharfRecessX, -wharfRecessHalfZ], [wharfRecessX, wharfRecessHalfZ], [wharfFaceX, wharfRecessHalfZ],
+    [wharfFaceX, waterHalfZ], [waterLeftX, waterHalfZ],
+  ].map(([x, z]) => new THREE.Vector2(x, z))), { bevelEnabled: false, depth: waterSheetDepth });
+  // Shape (x, z) extruded along +w; map w to -y (surface at the mesh origin).
+  waterGeometry.applyMatrix4(new THREE.Matrix4().set(
+    1, 0, 0, 0,
+    0, 0, -1, 0,
+    0, 1, 0, 0,
+    0, 0, 0, 1,
+  ));
+  waterGeometry.computeVertexNormals();
   {
     const position = waterGeometry.attributes.position;
     const colors = new Float32Array(position.count * 4);
@@ -542,8 +561,6 @@ function selfAdjustingWharfLadder(movement) {
   waterMaterial.vertexColors = true;
   const water = new THREE.Mesh(waterGeometry, waterMaterial);
   water.renderOrder = 1;
-  // It runs into the slot between the wharf posts.
-  water.position.x = dockLower.x + 0.18 - 3.6;
   water.userData.role = 'moving-tide-water-level-reference';
   water.castShadow = false;
   water.receiveShadow = true;

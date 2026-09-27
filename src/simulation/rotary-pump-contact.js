@@ -6,20 +6,33 @@ import {portedCasingGeometry,squarePortHole} from './round-port-pipes.js';
 // Cary's pistons c, c are one rigid bar through the drum. Its two rollers
 // bear on opposite sides of the fixed heart cam a, so the cam has constant
 // width through the axle: r(t)+r(t+pi)=2*CARY_MEAN_RADIUS. A retracted dwell
-// at E (bottom) therefore pairs with an extended dwell at the top, joined by
-// harmonic flanks; the chamber wall is the matching curve traced by the bar
-// ends, so the chamber is eccentric about the drum as Brown draws it.
-const CARY_DWELL=20*Math.PI/180,CARY_MEAN_RADIUS=.89,CARY_LIFT=.36;
+// at E (bottom) therefore pairs with an extended dwell at the top; the
+// chamber wall is the matching curve traced by the bar ends, so the chamber
+// is eccentric about the drum as Brown draws it.
+// Pass 73: the flanks are a heart cam's uniform rise (Archimedean spirals),
+// entered and left through short cycloidal ramps so the bar's velocity stays
+// continuous. The steep spirals meet the E dwell in Brown's heart notch and
+// the top dwell in its rounded point, instead of an egg-shaped harmonic cam.
+const CARY_DWELL=20*Math.PI/180,CARY_MEAN_RADIUS=.89,CARY_LIFT=.36,CARY_RAMP=.12;
+export const CARY_ROLLER_RADIUS=.13;
+// Normalised rise y(u) on [0,1]: cycloidal ramps of width f at both ends
+// joined by a uniform-velocity middle; returns y, dy/du and d2y/du2.
+function heartRise(u){
+  const f=CARY_RAMP,v=1/(1-f),k=Math.PI/f;
+  if(u<f)return {y:v/2*(u-Math.sin(k*u)/k),first:v/2*(1-Math.cos(k*u)),second:v/2*k*Math.sin(k*u)};
+  if(u>1-f){const r=heartRise(1-u);return {y:1-r.y,first:r.first,second:-r.second};}
+  return {y:v*f/2+v*(u-f),first:v,second:0};
+}
 export function caryFollowerLaw(angle) {
   const signed=THREE.MathUtils.euclideanModulo(angle+Math.PI/2+Math.PI,2*Math.PI)-Math.PI;
   const s=Math.abs(signed),sign=Math.sign(signed),span=Math.PI-2*CARY_DWELL;
   if(s<=CARY_DWELL)return {radius:CARY_MEAN_RADIUS-CARY_LIFT,first:0,second:0};
   if(s>=Math.PI-CARY_DWELL)return {radius:CARY_MEAN_RADIUS+CARY_LIFT,first:0,second:0};
-  const u=(s-CARY_DWELL)/span,k=Math.PI/span;
+  const rise=heartRise((s-CARY_DWELL)/span);
   return {
-    radius:CARY_MEAN_RADIUS-CARY_LIFT*Math.cos(Math.PI*u),
-    first:CARY_LIFT*k*Math.sin(Math.PI*u)*sign,
-    second:CARY_LIFT*k*k*Math.cos(Math.PI*u),
+    radius:CARY_MEAN_RADIUS-CARY_LIFT+2*CARY_LIFT*rise.y,
+    first:2*CARY_LIFT*rise.first/span*sign,
+    second:2*CARY_LIFT*rise.second/span**2,
   };
 }
 // Chamber wall: the envelope of the bar-end sealing heads (half-width
@@ -34,7 +47,7 @@ const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;}
 
 export function correctCaryPump(root) {
   const d=root.userData,b=d.blocks,g=d.geometry;
-  const rollerRadius=.11,outline=[];
+  const rollerRadius=CARY_ROLLER_RADIUS,outline=[];
   for(let i=0;i<2048;i++){
     const a=i*2*Math.PI/2048,{radius:r,first:rp}=caryFollowerLaw(a),c=Math.cos(a),s=Math.sin(a),length=Math.hypot(r,rp);
     outline.push([r*c-rollerRadius*(r*c+rp*s)/length,r*s-rollerRadius*(r*s-rp*c)/length]);
@@ -43,7 +56,9 @@ export function correctCaryPump(root) {
   const camBack=-g.casingDepth*.38,camFront=.10;
   replace(b.fixedHeartCam,plate(polygonClipping.difference(poly(outline),poly(circle([0,0],.234,256))),camBack,camFront));
   const outlineLine=root.children.find(o=>o.userData.role==='fixed-heart-cam-contact-outline');
-  replace(outlineLine,new THREE.BufferGeometry().setFromPoints([...outline,outline[0]].map(([x,y])=>new THREE.Vector3(x,y,camFront+.001))));
+  // Pass 73: no ink outline is drawn round the cam (whole parts, not
+  // engraving notation).
+  root.remove(outlineLine);outlineLine.geometry.dispose();
   const slots=poly([[-1.8,-.14],[1.8,-.14],[1.8,.14],[-1.8,.14]]);
   replace(b.drumShell,plate(polygonClipping.difference(poly(circle([0,0],g.drumOuterRadius,512)),poly(circle([0,0],g.drumInnerRadius,512)),slots),-g.casingDepth*.415,g.casingDepth*.415));
   const spider=polygonClipping.union(poly(circle([0,0],.35,128)),poly([[-1.42,-.08],[1.42,-.08],[1.42,.08],[-1.42,.08]]),poly([[-.08,-1.42],[.08,-1.42],[.08,1.42],[-.08,1.42]]));
@@ -62,7 +77,7 @@ export function correctCaryPump(root) {
     const half=g.pistonLength/2,width=2*g.camMeanRadius,near=-half,far=-half-width;
     const slotNear=-(g.camMinimumRadius+half),slotFar=-(g.camMaximumRadius+half),slotHalf=.245;
     const body=polygonClipping.union(
-      poly([[far,-.075],[near,-.075],[near,.075],[far,.075]]),
+      poly([[far,-.05],[near,-.05],[near,.05],[far,.05]]),
       capsule([slotFar,0],[slotNear,0],slotHalf+.09,96));
     const bridge=new THREE.Mesh(plate(polygonClipping.difference(body,capsule([slotFar,0],[slotNear,0],slotHalf,96)),.12,g.casingDepth*.38),b.pistons[0].blade.material);
     bridge.userData.role='rigid-bridge-joining-pistons-c-c-into-one-bar';

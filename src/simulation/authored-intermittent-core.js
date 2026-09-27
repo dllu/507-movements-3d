@@ -7279,7 +7279,9 @@ function sharedPivotDoubleStrokeRatchet() {
   const sourceFixedLeverPivot = new THREE.Vector2(338, 49);
   const sourceSharedPawlPivot = new THREE.Vector2(257, 66);
   const sourceLeftPawlTip = new THREE.Vector2(94, 203);
-  const sourceRightPawlTip = new THREE.Vector2(408, 193);
+  // Brown's right point reaches deep into a tooth space (39 degrees about
+  // the wheel centre, 166 px out), under the band's square end.
+  const sourceRightPawlTip = new THREE.Vector2(389, 195);
   const sourceHandleEnd = new THREE.Vector2(421, 17);
   const sourcePointToModel = (point) => new THREE.Vector2(
     (point.x - sourceWheelCenter.x) * sourceScale,
@@ -7303,7 +7305,10 @@ function sharedPivotDoubleStrokeRatchet() {
     sharedPawlPivotAtSource.y - fixedLeverPivot.y,
     sharedPawlPivotAtSource.x - fixedLeverPivot.x,
   );
-  const handleMeanAngle = pawlCarrierMeanAngle + Math.PI;
+  // Brown draws the lever at its high reversal: the left pawl has just
+  // finished its rising stroke at his left point and the right pawl is
+  // seated at his right point, ready for the falling stroke.
+  const sourceHandleAngle = pawlCarrierMeanAngle + Math.PI;
   const handleLength = sourcePointToModel(sourceHandleEnd).distanceTo(
     fixedLeverPivot,
   );
@@ -7316,7 +7321,7 @@ function sharedPivotDoubleStrokeRatchet() {
   const rightToothOffset = -16;
   const cyclesPerSecond = 0.3;
   const inputCyclePeriod = 1 / cyclesPerSecond;
-  const initialCyclePhase = 0.25;
+  const initialCyclePhase = 0.5;
 
   const unmountedOuterEnd = new THREE.Vector2(
     Math.cos(toothOuterEndPhase * toothPitch) * ratchetOuterRadius,
@@ -7442,25 +7447,22 @@ function sharedPivotDoubleStrokeRatchet() {
   };
   const calibrationAtAmplitude = (rockerAmplitude) => {
     const lowAnchor = sharedPawlPivotAtRockerAngle(
-      handleMeanAngle + rockerAmplitude,
+      sourceHandleAngle + 2 * rockerAmplitude,
     );
-    const highAnchor = sharedPawlPivotAtRockerAngle(
-      handleMeanAngle - rockerAmplitude,
-    );
-    const leftPawlLength = lowAnchor.distanceTo(leftDrivePointLocal);
-    const leftEndWorldAngle = constrainedContactAngleAt({
-      anchor: highAnchor,
-      expectedAngle: leftSourceContactAngle - toothPitch * 0.36,
+    const highAnchor = sharedPawlPivotAtRockerAngle(sourceHandleAngle);
+    // Both pawls are seated at Brown's points with the pin at his high
+    // reversal; each stroke is solved back to the low reversal.
+    const leftPawlLength = highAnchor.distanceTo(leftDrivePointLocal);
+    const leftEndWorldAngle = leftSourceContactAngle;
+    const leftStartWorldAngle = constrainedContactAngleAt({
+      anchor: lowAnchor,
+      expectedAngle: leftSourceContactAngle + toothPitch * 0.36,
       orbitRadius: leftContactOrbitRadius,
       pawlLength: leftPawlLength,
     });
-    const risingAdvance = leftSourceContactAngle - leftEndWorldAngle;
-    const rightStartWorldAngle = rightDrivePointLocalAngle - risingAdvance;
-    const rightStartPoint = new THREE.Vector2(
-      Math.cos(rightStartWorldAngle) * rightContactOrbitRadius,
-      Math.sin(rightStartWorldAngle) * rightContactOrbitRadius,
-    );
-    const rightPawlLength = highAnchor.distanceTo(rightStartPoint);
+    const risingAdvance = leftStartWorldAngle - leftEndWorldAngle;
+    const rightStartWorldAngle = rightDrivePointLocalAngle;
+    const rightPawlLength = highAnchor.distanceTo(rightDrivePointLocal);
     const rightEndWorldAngle = constrainedContactAngleAt({
       anchor: lowAnchor,
       expectedAngle: rightStartWorldAngle - toothPitch * 0.64,
@@ -7473,6 +7475,7 @@ function sharedPivotDoubleStrokeRatchet() {
       highAnchor,
       leftEndWorldAngle,
       leftPawlLength,
+      leftStartWorldAngle,
       lowAnchor,
       rightEndWorldAngle,
       rightPawlLength,
@@ -7503,27 +7506,26 @@ function sharedPivotDoubleStrokeRatchet() {
     highAnchor,
     leftEndWorldAngle,
     leftPawlLength,
+    leftStartWorldAngle,
     lowAnchor,
     rightEndWorldAngle,
     rightPawlLength,
     rightStartWorldAngle,
     risingAdvance,
   } = calibration;
+  const handleMeanAngle = sourceHandleAngle + rockerAmplitude;
   const pawlAngleBetween = (anchor, point) => Math.atan2(
     point.y - anchor.y,
     point.x - anchor.x,
   );
   const leftStartPawlAngle = pawlAngleBetween(
     lowAnchor,
-    leftDrivePointLocal,
-  );
-  const leftEndPawlAngle = pawlAngleBetween(
-    highAnchor,
     new THREE.Vector2(
-      Math.cos(leftEndWorldAngle) * leftContactOrbitRadius,
-      Math.sin(leftEndWorldAngle) * leftContactOrbitRadius,
+      Math.cos(leftStartWorldAngle) * leftContactOrbitRadius,
+      Math.sin(leftStartWorldAngle) * leftContactOrbitRadius,
     ),
   );
+  const leftEndPawlAngle = pawlAngleBetween(highAnchor, leftDrivePointLocal);
   const rightStartPawlAngle = pawlAngleBetween(
     highAnchor,
     new THREE.Vector2(
@@ -7652,7 +7654,7 @@ function sharedPivotDoubleStrokeRatchet() {
       anchor: pivot,
       expectedAngle: right
         ? (rightStartWorldAngle + rightEndWorldAngle) / 2
-        : (leftSourceContactAngle + leftEndWorldAngle) / 2,
+        : (leftStartWorldAngle + leftEndWorldAngle) / 2,
       orbitRadius,
       pawlLength,
     });
@@ -7977,7 +7979,7 @@ function sharedPivotDoubleStrokeRatchet() {
       : rightContactOrbitRadius;
     const expectedActiveWorldAngle = leftDriving
       ? THREE.MathUtils.lerp(
-        leftSourceContactAngle,
+        leftStartWorldAngle,
         leftEndWorldAngle,
         easedHalfFraction,
       )
@@ -8215,12 +8217,14 @@ function sharedPivotDoubleStrokeRatchet() {
     risingStart: 0,
     sourcePose: initialCyclePhase,
   };
+  // The source pose is the high reversal (cycle phase 0.5).
   root.userData.canonicalTimes = {
-    fallingMidpoint: inputCyclePeriod * 0.5,
+    fallingMidpoint: inputCyclePeriod * 0.25,
     fullWheelClosure: inputCyclePeriod * toothCount,
-    highReversal: inputCyclePeriod * 0.25,
-    lowReversal: inputCyclePeriod * 0.75,
+    highReversal: 0,
+    lowReversal: inputCyclePeriod * 0.5,
     nextSourcePose: inputCyclePeriod,
+    risingMidpoint: inputCyclePeriod * 0.75,
     sourcePose: 0,
   };
   root.userData.geometry = {
@@ -8242,6 +8246,7 @@ function sharedPivotDoubleStrokeRatchet() {
     leftPawlLength,
     leftPawlPlaneZ,
     leftResetSwing,
+    leftStartWorldAngle,
     leftSourceContact: leftSourceContact.clone(),
     leftSourceContactAngle,
     leftStartPawlAngle,
@@ -8270,6 +8275,7 @@ function sharedPivotDoubleStrokeRatchet() {
     rockerAmplitude,
     rockerPlaneZ,
     sharedPawlPivotAtSource: sharedPawlPivotAtSource.clone(),
+    sourceHandleAngle,
     toothCount,
     toothOuterEndPhase,
     toothOuterStartPhase,

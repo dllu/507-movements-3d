@@ -4,6 +4,7 @@ import { circle, plate, poly, polygonClipping as clip } from './finite-plate-geo
 import { mergePassageParts } from './finite-fluid-passages.js';
 import { portedCasingGeometry, roundPortPipeGeometry } from './round-port-pipes.js';
 import { waterVolumeMaterial } from './water-volume.js';
+import { applyRotationIndicator } from './rotation-indicator.js';
 import { WaterStream, guidedPath } from './water-stream.js';
 
 // Movement 455, Brown's old rotary pump.
@@ -28,6 +29,7 @@ const CASING_HALF_DEPTH = 0.38;
 const ROTOR_RADIUS = 1.33; // Brown: drum about 0.565 of the bore
 const ROTOR_HALF_DEPTH = 0.36;
 const ROTOR_WALL = 0.18;
+const SHAFT_RADIUS = 0.22;
 const FLAT_SPAN = deg(52); // angular span of each chordal flat
 const KNUCKLE = 0.075; // hinge knuckle radius, tangent inside the drum
 const CLEAR = 0.006; // running clearance of knuckle, flats and abutment
@@ -255,12 +257,20 @@ function oldRotaryPump(movement) {
   ]), frameMaterial), 'fixed-outer-cylinder-with-abutment-and-port-pipes');
   root.add(casing);
   // Brown's section shows the blank back of the case; the front cover is cut away.
+  // Pass 73: the cover has real thickness and carries a bearing boss on its
+  // outside, so the rotor shaft runs through a journal, not an empty hole.
   const rearCover = named(new THREE.Mesh(
-    plate(clip.difference(poly(circle([0, 0], CASING_INNER, 512)), poly(circle([0, 0], 0.224, 96)), poly(abutmentRing)),
-      -CASING_HALF_DEPTH - 0.012, -CASING_HALF_DEPTH),
+    plate(clip.difference(poly(circle([0, 0], CASING_INNER, 512)), poly(circle([0, 0], SHAFT_RADIUS + 0.004, 96)), poly(abutmentRing)),
+      -CASING_HALF_DEPTH - 0.06, -CASING_HALF_DEPTH),
     paperMaterial,
   ), 'fixed-rear-cover-of-casing');
   root.add(rearCover);
+  const rearBearing = named(new THREE.Mesh(
+    plate(clip.difference(poly(circle([0, 0], 0.42, 96)), poly(circle([0, 0], SHAFT_RADIUS + 0.004, 96))),
+      -CASING_HALF_DEPTH - 0.26, -CASING_HALF_DEPTH - 0.06),
+    frameMaterial,
+  ), 'fixed-bearing-boss-on-rear-cover-carrying-rotor-shaft');
+  root.add(rearBearing);
 
   // Rotor: the mutilated hollow drum.
   const rotor = named(new THREE.Group(), 'central-mutilated-drum-rotor-turning-clockwise');
@@ -280,14 +290,18 @@ function oldRotaryPump(movement) {
   const rotorBody = named(new THREE.Mesh(plate(drumSection, -ROTOR_HALF_DEPTH, ROTOR_HALF_DEPTH), rotorMaterial),
     'mutilated-hollow-drum-with-two-chordal-flats');
   rotor.add(rotorBody);
-  // Rear end web closing the hollow drum; Brown leaves the bore blank.
-  const rotorRearWeb = named(new THREE.Mesh(plate(bore, -ROTOR_HALF_DEPTH, -ROTOR_HALF_DEPTH + 0.06), paperMaterial),
+  // Rear end web closing the hollow drum, part of the rotor casting (Brown
+  // leaves the bore blank: the web is plain, behind the section). Its hub
+  // carries the shaft, which runs out through the rear cover and its
+  // bearing boss and ends a little beyond it.
+  const rotorRearWeb = named(new THREE.Mesh(plate(bore, -ROTOR_HALF_DEPTH, -ROTOR_HALF_DEPTH + 0.06), rotorMaterial),
     'rotor-rear-end-web-behind-hollow-drum');
   rotor.add(rotorRearWeb);
-  const shaft = named(new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.4, 32), darkMaterial),
-    'rotor-shaft-behind-rear-web');
+  const shaftBack = -CASING_HALF_DEPTH - 0.46;
+  const shaft = named(new THREE.Mesh(new THREE.CylinderGeometry(SHAFT_RADIUS, SHAFT_RADIUS, -ROTOR_HALF_DEPTH - shaftBack, 48), darkMaterial),
+    'rotor-shaft-through-rear-cover-bearing');
   shaft.rotation.x = Math.PI / 2;
-  shaft.position.z = -ROTOR_HALF_DEPTH - 0.2;
+  shaft.position.z = (-ROTOR_HALF_DEPTH + shaftBack) / 2;
   rotor.add(shaft);
 
   const valveGeometry = plate(poly(sections.valve), -ROTOR_HALF_DEPTH, ROTOR_HALF_DEPTH);
@@ -344,7 +358,7 @@ function oldRotaryPump(movement) {
   root.userData = {
     animationTiming: { authoredCyclePeriod: CYCLE, targetCycleDuration: 2 },
     archetype: 'old-two-hinged-vane-rotary-pump-with-fixed-abutment-lower-inlet-and-upper-outlet',
-    blocks: { abutment: casing, annulusWater, casing, inletWater, outletWater, pocketWater, rearCover, rotor, rotorBody, rotorRearWeb, shaft, valves },
+    blocks: { abutment: casing, annulusWater, casing, inletWater, outletWater, pocketWater, rearBearing, rearCover, rotor, rotorBody, rotorRearWeb, shaft, valves },
     degreesOfFreedom: { independentPrescribedInputs: 1, operatingDegreesOfFreedom: 1, valve1Independent: false, valve2Independent: false },
     fidelity: 'authored',
     geometry: {
@@ -381,6 +395,9 @@ function oldRotaryPump(movement) {
   root.userData.hideGround = true;
   root.userData.minimumDisplayCycleSeconds = CYCLE;
   markShadows(root);
+  // The shaft end, seen from behind, is featureless: it takes the shared
+  // quadrant cue so its turning reads.
+  applyRotationIndicator(shaft, { axis: 'auto' });
   for (const object of [rearCover, rotorRearWeb, annulusWater, inletWater, outletWater, ...pocketWater]) {
     object.receiveShadow = false;
     object.castShadow = false;

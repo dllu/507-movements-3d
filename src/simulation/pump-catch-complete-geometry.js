@@ -19,7 +19,9 @@ export function makePumpCatchCompleteGeometry(){
     radius=(s.center[0]-s.visibleRope.x)/s.scale,ropeRadius=s.visibleRope.width/(2*s.scale),ropeLength=4.75,z=-.49,
     bedRadius=radius-ropeRadius,renderBedRadius=bedRadius-.000003,segments=1024,
     floor=(s.center[1]-s.base.top)/s.scale,bottom=(s.center[1]-s.base.bottom)/s.scale,
-    baseLeft=(s.base.left-s.center[0])/s.scale,baseRight=(s.base.right-s.center[0])/s.scale;
+    // Brown's plinth slab abuts post B at the ground line, so its left
+    // end meets the post's right face instead of stopping short of it.
+    baseLeft=(Math.min(s.base.left,s.post.right)-s.center[0])/s.scale,baseRight=(s.base.right-s.center[0])/s.scale;
   const add=(name,geometry,family,color=PALETTE.muted,position=[0,0,0],group=u.blocks[family])=>{
     const mesh=new THREE.Mesh(geometry,matte(color,{metalness:.2,roughness:.58}));mesh.name=name;mesh.position.fromArray(position);
     group.add(mesh);u.parts[name]=mesh;u.families[name]=family;return mesh;

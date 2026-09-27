@@ -658,3 +658,19 @@ simulation was too slow). Lanes p69-pawls, p69-gears, p69-misc, p69-engines
 and p69-water address these.
 
 Follow-up: all the water movements need a closer look. 455's centre is a leaky hexagon where Brown draws a mutilated cylinder sealed by two circular-arc valves; 461's valves do not fit tightly and its water is not conserved. Lanes p69-w1 to p69-w4 closely review all ~50 water, pump and gas movements.
+
+## User review, 2026-09-26 (disconnected parts; 466–494)
+
+The user asked for a pass fixing all movements with disconnected parts, and
+reported: 494's tong linkage is disconnected and spread in depth so the chain
+hangs far from the stone's centre of gravity (flatten it); 492 differs from
+the engraving and needs reworking; 491's pawl pivots about the wrong axis;
+490's rope must be taut; 483 may not be what the engraving draws; each of
+481's four compartments has a gap on its outer side; all gas meters and pumps
+need a closer look; 474's handles are not joined at the bottom, lie
+perpendicular to the plate, and its legs lack end caps; 469's right
+compartment is off, its bottom tube should mate closely with the wheel, and
+its right gear should be a cylindrical pinion and crown gear; 468's geometry
+is sloppy with gaps; 466's blocks float. Lanes p74-a, p74-b, p74-c and the
+fix lane for 466 address these; lane p74-screen builds an automated
+disconnected-parts screen over all 507 movements.

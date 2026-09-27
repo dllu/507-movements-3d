@@ -69,8 +69,8 @@ test('movement 481 is one stationary water case A around one four-compartment re
   assert.equal(blocks.centralInletPipeA.parent, model.root);
   assert.equal(blocks.drum.parent, model.root);
   assert.equal(blocks.partitions.length, geometry.chamberCount);
-  assert.equal(blocks.rearInletSlots.length, geometry.chamberCount);
-  assert.equal(blocks.frontOutletSlots.length, geometry.chamberCount);
+  assert.equal(blocks.chamberMouths.length, geometry.chamberCount);
+  assert.equal(blocks.peripheralOutletSlots.length, geometry.chamberCount);
   assert.equal(blocks.gasPockets.length, geometry.chamberCount);
   assert.equal(blocks.flowMarkers.length, geometry.markersPerPath);
 
@@ -121,7 +121,7 @@ test('movement 481 preserves Brown’s unavailable source and all named wet-mete
     [365, 349]);
   assert.equal(evidence.explicitInBrownDescription.length, 7);
   assert.match(evidence.engravingEvidence,
-    /four curved drum partitions.*counterclockwise peripheral direction arrow/s);
+    /four curved drum partitions.*gap on its outer side.*counterclockwise peripheral direction arrow/s);
   assert.match(evidence.historicalCorroboration,
     /Bureau of Standards Circular 309.*four-compartment approximately helical drum/s);
   assert.match(evidence.historicalCorroboration,
@@ -215,7 +215,8 @@ test('movement 481 quarter-staggered chambers sequentially fill, seal, discharge
       const chamber = state.chamberStates[index];
       near(chamber.localPhase,
         THREE.MathUtils.euclideanModulo(
-          state.phase + index / geometry.chamberCount,
+          state.phase + index / geometry.chamberCount
+            + geometry.stagePhaseOffset,
           1,
         ), 0, `quarter phase ${index} at sample ${sample}`);
       near(chamber.chamberGasVolumeCubicMetre,
@@ -232,7 +233,7 @@ test('movement 481 quarter-staggered chambers sequentially fill, seal, discharge
   assert.match(dynamics.chamberCycle,
     /quarter-cycle staggered.*filled.*sealed.*discharged.*refilled with water/s);
   assert.match(transmission.chamberPhaseEquation,
-    /u_i=mod\(theta\/\(2\*pi\)\+i\/4,1\)/);
+    /u_i=mod\(theta\/\(2\*pi\)\+i\/4\+u_0,1\)/);
   disposeModel(model.root);
 });
 
@@ -255,7 +256,7 @@ test('movement 481 water is level above the horizontal axis and the turned inlet
     0, 'horizontal drum axis');
   assert.equal(motion.drumDirectionViewedFromFront, 'counterclockwise');
   assert.match(dynamics.waterSeal,
-    /filled above the drum center.*ports alternately emerge and submerge/s);
+    /filled above the drum center.*alternately emerge and submerge/s);
   disposeModel(model.root);
 });
 
@@ -274,7 +275,7 @@ test('movement 481 rotating rear and front ports follow the exact drum angle whi
       `drum renderer at ${time}`);
     for (let index = 0; index < geometry.chamberCount; index += 1) {
       const chamber = state.chamberStates[index];
-      const inletWorld = blocks.rearInletSlots[index].getWorldPosition(
+      const inletWorld = blocks.chamberMouths[index].getWorldPosition(
         new THREE.Vector3(),
       );
       near(inletWorld.x,
@@ -283,7 +284,7 @@ test('movement 481 rotating rear and front ports follow the exact drum angle whi
         4e-15, `inlet port x ${index} at ${time}`);
       near(inletWorld.y, chamber.inletPortY, 4e-15,
         `inlet port y ${index} at ${time}`);
-      const outletWorld = blocks.frontOutletSlots[index].getWorldPosition(
+      const outletWorld = blocks.peripheralOutletSlots[index].getWorldPosition(
         new THREE.Vector3(),
       );
       near(outletWorld.x,
@@ -300,6 +301,43 @@ test('movement 481 rotating rear and front ports follow the exact drum angle whi
     vectorNear(blocks.caseWater.position, waterPosition, 0,
       `water fixed at ${time}`);
   }
+  disposeModel(model.root);
+});
+
+test('movement 481 compartments have Brown’s outer gaps and the outlet stage opens as the gap leaves the water', () => {
+  const { model } = movementModel();
+  const { blocks, geometry, stateAtTime } = model.root.userData;
+  // Each chamber wall is one solid carrying its own stretch of shell; the
+  // shell is interrupted once per compartment (four outlet gaps).
+  model.update(0);
+  model.root.updateMatrixWorld(true);
+  const raycaster = new THREE.Raycaster();
+  const wallMeshes = blocks.partitions.flatMap((group) => group.children);
+  const hits = [];
+  const samples = 720;
+  for (let sample = 0; sample < samples; sample += 1) {
+    const angle = 2 * Math.PI * sample / samples;
+    const radial = new THREE.Vector3(Math.cos(angle), Math.sin(angle), 0);
+    raycaster.set(radial.clone().multiplyScalar(geometry.drumRadiusSceneUnit + 0.3), radial.clone().negate());
+    raycaster.far = 0.4;
+    hits.push(raycaster.intersectObjects(wallMeshes, false).length > 0);
+  }
+  const gaps = hits.filter((hit, index) => hit && !hits[(index + 1) % samples]).length;
+  assert.equal(gaps, 4, 'four outer gaps in the drum shell');
+  // Each gap centre is open: nothing of the drum at the shell radius there.
+  for (const slot of blocks.peripheralOutletSlots) {
+    const p = slot.getWorldPosition(new THREE.Vector3());
+    const radial = p.clone().setZ(0).normalize();
+    raycaster.set(radial.clone().multiplyScalar(geometry.drumRadiusSceneUnit + 0.3), radial.clone().negate());
+    raycaster.far = 0.4;
+    assert.equal(raycaster.intersectObjects(wallMeshes, false).length, 0);
+  }
+  // Discharge starts exactly when a chamber's gap rises out of the water.
+  const emergenceTime = geometry.cycleDuration
+    * THREE.MathUtils.euclideanModulo(0.5 - geometry.stagePhaseOffset, 1);
+  const chamber0 = stateAtTime(emergenceTime).chamberStates[0];
+  near(chamber0.localPhase, 0.5, 1e-9, 'chamber 0 starts discharging');
+  near(chamber0.outletPortY, geometry.waterSurfaceY, 1e-9, 'its gap is at the water line');
   disposeModel(model.root);
 });
 

@@ -371,3 +371,10 @@ test('movement 507 remains the next authored frontier and does not reuse movemen
   disposeModel(model435.root);
   disposeModel(model507.root);
 });
+
+test('movement 435 draws no undrawn bearing spider or collar under the plan', () => {
+  const model = createMovementModel(catalog.movements[434]);
+  const roles = [];
+  model.root.traverse((object) => { if (object.isMesh) roles.push(object.userData.role ?? ''); });
+  assert.equal(roles.some((role) => /spider|lower-bearing|shaft-lower-bearing/.test(role)), false);
+});

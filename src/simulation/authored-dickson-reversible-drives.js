@@ -8,7 +8,6 @@ import {
 } from './primitives.js';
 
 const FULL_TURN = Math.PI * 2;
-const Y_AXIS = new THREE.Vector3(0, 1, 0);
 
 function smootherStep(value) {
   const bounded = THREE.MathUtils.clamp(value, 0, 1);
@@ -143,17 +142,6 @@ function makePawl({
   return pawl;
 }
 
-function updateCylinderBetween(cylinder, start, end) {
-  const delta = end.clone().sub(start);
-  const length = delta.length();
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    Y_AXIS,
-    delta.clone().multiplyScalar(1 / length),
-  );
-  cylinder.scale.set(1, length, 1);
-}
-
 // Brown's cords from crank E are laid cord: one continuous laid rope along
 // the constant-material-length route (crank pin, sag point, pawl eye). Its
 // start is tied to the crank pin, so arc length from there is a material
@@ -206,18 +194,6 @@ function makeDynamicCord(material, role) {
     cord.userData.renderedLength = path.straight ? route.start.distanceTo(route.end) : 2 * path.halfAngle * path.radius;
   };
   return cord;
-}
-
-function makeDynamicRod(material) {
-  const rod = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.075, 0.075, 1, 20),
-    material,
-  );
-  rod.userData.role = 'constant-length-input-connecting-rod';
-  rod.userData.setEndpoints = (start, end) => {
-    updateCylinderBetween(rod, start, end);
-  };
-  return rod;
 }
 
 function constantLengthCordRoute(start, end, materialLength, sagSide) {
@@ -800,42 +776,41 @@ function dicksonReversibleDrive(movement) {
   fixedShaft.userData.role = 'fixed-common-shaft-for-wheel-D-and-lever-A';
   root.add(fixedShaft);
 
-  const inputRod = makeDynamicRod(leverMaterial);
+  // Rod D is Brown's flat bar: an eye round the lever-tail pin and a straight
+  // bar running out past the plate's right edge. Its far end is guided
+  // horizontally (inputGuideY) beyond the crop; Brown draws no guide, so none
+  // is modelled - inputSlider is only the invisible guided point.
+  const inputRodZ = 0.80;
+  const inputRodHalfWidth = 0.07;
+  const inputRodThickness = 0.06;
+  const inputRodEyeRadius = 0.16;
+  const inputRodOverrun = 1.6;
+  const inputRodRenderedLength = inputRodLength + inputRodOverrun;
+  const inputRod = new THREE.Mesh(
+    (() => {
+      const neck = Math.sqrt(inputRodEyeRadius ** 2 - inputRodHalfWidth ** 2);
+      const neckAngle = Math.asin(inputRodHalfWidth / inputRodEyeRadius);
+      const shape = new THREE.Shape();
+      shape.moveTo(neck, inputRodHalfWidth);
+      shape.lineTo(inputRodRenderedLength, inputRodHalfWidth);
+      shape.lineTo(inputRodRenderedLength, -inputRodHalfWidth);
+      shape.lineTo(neck, -inputRodHalfWidth);
+      shape.absarc(0, 0, inputRodEyeRadius, -neckAngle, neckAngle - FULL_TURN, true);
+      const hole = new THREE.Path();
+      hole.absarc(0, 0, 0.112, 0, FULL_TURN, false);
+      shape.holes.push(hole);
+      return new THREE.ExtrudeGeometry(shape, { depth: inputRodThickness, bevelEnabled: false, curveSegments: 48 })
+        .translate(0, 0, -inputRodThickness / 2);
+    })(),
+    leverMaterial,
+  );
+  inputRod.userData.role = 'rod-D-flat-bar-with-eye-running-past-crop';
+  inputRod.position.z = inputRodZ;
   root.add(inputRod);
   const inputSlider = new THREE.Group();
-  inputSlider.position.y = inputGuideY;
-  inputSlider.userData.role = 'horizontally-guided-oscillating-input-slider';
-  const sliderBlock = new THREE.Mesh(
-    new THREE.BoxGeometry(0.34, 0.27, 0.34),
-    frameMaterial,
-  );
-  sliderBlock.userData.role = 'input-slider-block';
-  inputSlider.add(sliderBlock);
-  const sliderPin = cylinderAlongZ(0.105, 0.48, whiteMaterial, 24);
-  sliderPin.userData.role = 'white-input-slider-joint-index';
-  inputSlider.add(sliderPin);
+  inputSlider.position.set(0, inputGuideY, inputRodZ);
+  inputSlider.userData.role = 'invisible-guided-point-of-rod-D-beyond-crop';
   root.add(inputSlider);
-  // Rod D runs in front of the rim of wheel D (Brown draws it crossing over
-  // the rim) to the slider that drives it, just beyond the plate's crop. The
-  // slider runs between the two bars of a fixed channel guide.
-  const inputRodZ = 0.80;
-  inputSlider.position.z = inputRodZ;
-  const inputGuide = new THREE.Group();
-  inputGuide.userData.role = 'fixed-horizontal-input-slider-guide';
-  for (const side of [-1, 1]) {
-    const bar = new THREE.Mesh(new THREE.BoxGeometry(1.70, 0.10, 0.34), frameMaterial);
-    bar.position.set(2.65, inputGuideY + side * 0.186, inputRodZ);
-    bar.userData.role = 'input-slider-guide-bar';
-    inputGuide.add(bar);
-  }
-  const guideEnd = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.472, 0.34), frameMaterial);
-  guideEnd.position.set(3.55, inputGuideY, inputRodZ);
-  guideEnd.userData.role = 'input-slider-guide-end-bridge';
-  inputGuide.add(guideEnd);
-  root.add(inputGuide);
-  const inputRodEye = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.045, 16, 48), leverMaterial);
-  inputRodEye.userData.role = 'rod-D-eye-round-lever-tail-pin';
-  root.add(inputRodEye);
   // The pin stands from lever A's back face (from z 0.26, just inside it), in front of wheel
   // D's web, to the rod's eye.
   const leverInputPin = cylinderAlongZ(0.11, inputRodZ + 0.06 - 0.26, whiteMaterial, 24);
@@ -854,14 +829,12 @@ function dicksonReversibleDrive(movement) {
     cPawl.rotation.z = state.cPawlAngle;
     bCord.userData.setRoute(state.bCord);
     cCord.userData.setRoute(state.cCord);
-    {
-      // Rod D ends in an eye round the lever-tail pin and butts on the slider.
-      const pin = state.inputPin.clone().setZ(inputRodZ);
-      const end = state.inputSlider.clone().setZ(inputRodZ).add(new THREE.Vector3(-0.176, 0, 0));
-      const along = end.clone().sub(pin).normalize();
-      inputRodEye.position.copy(pin);
-      inputRod.userData.setEndpoints(pin.addScaledVector(along, 0.206), end);
-    }
+    // Rod D's eye turns on the lever-tail pin; the bar points at its guided point.
+    inputRod.position.set(state.inputPin.x, state.inputPin.y, inputRodZ);
+    inputRod.rotation.z = Math.atan2(
+      state.inputSlider.y - state.inputPin.y,
+      state.inputSlider.x - state.inputPin.x,
+    );
     inputSlider.position.x = state.inputSlider.x;
     const bContactScale = state.bPawlContactGap < 1e-7 ? 1.28 : 0.72;
     const cContactScale = state.cPawlContactGap < 1e-7 ? 1.28 : 0.72;
@@ -997,5 +970,9 @@ function dicksonReversibleDrive(movement) {
 
 export function createAuthoredDicksonReversibleDriveMovement(movement) {
   if (movement.id !== 415) return null;
-  return finishOneWayFamily(correctDicksonParts(dicksonReversibleDrive(movement)), 415);
+  const model = finishOneWayFamily(correctDicksonParts(dicksonReversibleDrive(movement)), 415);
+  // Brown crops flat bar D a little beyond wheel D's rim; the bar itself runs
+  // on past the frame, so the fit stops at his crop.
+  model.root.userData.cameraFitBounds.max.x = 2.45;
+  return model;
 }

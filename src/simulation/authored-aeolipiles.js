@@ -2,6 +2,7 @@ import { correctAeolipile } from './thermal-steam-working-parts.js';
 import { circle, plate, poly, polygonClipping, turned } from './finite-plate-geometry.js';
 import { curvedPipeWall, mergePassageParts } from './finite-fluid-passages.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   markShadows,
@@ -25,6 +26,70 @@ function makeTube(curve, radius, material, role, tubularSegments = 72) {
   );
   tube.userData.role = role;
   return tube;
+}
+
+// Tube with hemispherical end caps, so no open rim shows at a free end. The
+// caps' rings follow the tube's own Frenet frames, so they weld to its ends.
+function cappedTubeGeometry(curve, radius, tubularSegments, radialSegments = 16) {
+  const tube = new THREE.TubeGeometry(
+    curve, tubularSegments, radius, radialSegments, false);
+  const frames = curve.computeFrenetFrames(tubularSegments, false);
+  const rings = 8;
+  const caps = [0, tubularSegments].map((index) => {
+    const end = index / tubularSegments;
+    const center = curve.getPointAt(end);
+    const N = frames.normals[index], B = frames.binormals[index];
+    const outward = frames.tangents[index].clone().multiplyScalar(index ? 1 : -1);
+    const positions = [], normals = [], indices = [];
+    for (let ring = 0; ring <= rings; ring += 1) {
+      const theta = Math.PI / 2 * ring / rings;
+      for (let j = 0; j <= radialSegments; j += 1) {
+        const v = j / radialSegments * FULL_TURN;
+        const n = N.clone().multiplyScalar(-Math.cos(v)).addScaledVector(B, Math.sin(v));
+        const normal = n.clone().multiplyScalar(Math.cos(theta))
+          .addScaledVector(outward, Math.sin(theta));
+        normals.push(...normal.toArray());
+        positions.push(...center.clone().addScaledVector(normal, radius).toArray());
+      }
+    }
+    const row = radialSegments + 1;
+    for (let ring = 0; ring < rings; ring += 1) {
+      for (let j = 0; j < radialSegments; j += 1) {
+        const a0 = ring * row + j, a1 = a0 + 1, b0 = a0 + row, b1 = b0 + 1;
+        // The last ring closes on the pole: one triangle per segment.
+        const pole = ring === rings - 1;
+        if (index) indices.push(a0, b1, a1, ...(pole ? [] : [a0, b0, b1]));
+        else indices.push(a0, a1, b1, ...(pole ? [] : [a0, b1, b0]));
+      }
+    }
+    const cap = new THREE.BufferGeometry();
+    cap.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    cap.setIndex(indices);
+    cap.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+    cap.setAttribute('uv', new THREE.Float32BufferAttribute(
+      new Float32Array(positions.length / 3 * 2), 2));
+    return cap.toNonIndexed();
+  });
+  return mergeGeometries([tube.toNonIndexed(), ...caps]);
+}
+
+// Straight bars joined by quadratic fillets at the interior corners.
+function filletedPolyline(points, fillet) {
+  const path = new THREE.CurvePath();
+  let from = points[0].clone();
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const corner = points[i];
+    const inDir = corner.clone().sub(points[i - 1]);
+    const outDir = points[i + 1].clone().sub(corner);
+    const r = Math.min(fillet, inDir.length() / 2, outDir.length() / 2);
+    const enter = corner.clone().addScaledVector(inDir.normalize(), -r);
+    const leave = corner.clone().addScaledVector(outDir.normalize(), r);
+    path.add(new THREE.LineCurve3(from, enter));
+    path.add(new THREE.QuadraticBezierCurve3(enter, corner.clone(), leave));
+    from = leave;
+  }
+  path.add(new THREE.LineCurve3(from, points[points.length - 1].clone()));
+  return path;
 }
 
 function cylinderBetween(start, end, radius, material, role, sides = 32) {
@@ -112,17 +177,33 @@ function straightenSourceRisers(root) {
   b.boilerRim.geometry.dispose();
   b.boilerRim.geometry = new THREE.TorusGeometry(
     BOILER_RIM_RADIUS + 0.02, 0.075, 10, 96);
-  const handleCurves = [-1, 1].map((side) =>
-    new THREE.CubicBezierCurve3(
-      new THREE.Vector3(side * 1.76, 0.10, -0.18),
-      new THREE.Vector3(side * 2.34, 0.08, -0.18),
-      new THREE.Vector3(side * 2.30, -0.72, -0.18),
-      new THREE.Vector3(side * 1.60, -0.78, -0.18),
-    ));
+  // Brown's handles are strap loops lying along the rim (tangential), not
+  // radial ears: the right one leaves the rim at the front, runs back and
+  // out, drops forward and returns into the flank lower down; the left one
+  // is the same loop turned half round, so its top bar shows above the rim
+  // running back to the riser. Both ends are sunk into the boiler wall.
+  const handlePoints = [
+    [1.73, 0.30, 0.38], [1.88, 0.33, 0.33], [2.10, 0.42, -0.22],
+    [1.95, -0.28, -0.04], [1.74, -0.50, 0.42], [1.58, -0.55, 0.46],
+  ];
   b.boilerHandles.forEach((handle, index) => {
+    const turn = index ? 1 : -1;
+    const curve = filletedPolyline(handlePoints.map(([x, y, z]) =>
+      new THREE.Vector3(turn * x, y, turn * z)), 0.26);
     handle.geometry.dispose();
-    handle.geometry = new THREE.TubeGeometry(
-      handleCurves[index], 48, 0.085, 10, false);
+    handle.geometry = cappedTubeGeometry(curve, 0.085, 96);
+  });
+  // Cap the free feet of the four cabriole legs; their heads are sunk in
+  // the flank.
+  b.standLegs.forEach((leg, index) => {
+    const angle = Math.PI / 4 + index * Math.PI / 2;
+    const curve = new THREE.CatmullRomCurve3(
+      [[1.30, -1.06], [1.66, -1.27], [1.84, -1.62], [1.83, -1.98],
+        [2.08, -2.16]].map(([radius, height]) => new THREE.Vector3(
+        Math.cos(angle) * radius, height, Math.sin(angle) * radius)),
+      false, 'centripetal');
+    leg.geometry.dispose();
+    leg.geometry = cappedTubeGeometry(curve, 0.115, 64);
   });
   const lid = polygonClipping.difference(
     poly(circle([0, 0], BOILER_RIM_RADIUS + 0.01, 256)),

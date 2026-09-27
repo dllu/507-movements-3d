@@ -499,7 +499,7 @@ function springReturnBellHammer(movement) {
   });
   pullCord.userData.role = 'twisted-pull-cord-hanging-from-hammer-tail';
   root.add(pullCord);
-  const pullHand = makeHaulingHand(new THREE.Vector3(0, 1, 0), pullCordRadius / 0.75);
+  const pullHand = makeHaulingHand(new THREE.Vector3(0, 1, 0), pullCordRadius / 0.75, { clearance: 0.05 });
   pullHand.scale.setScalar(0.75);
   pullHand.userData.role = 'ringer-hand-on-pull-cord-below-plate';
   root.add(pullHand);

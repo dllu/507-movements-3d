@@ -72,7 +72,7 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
   assert.equal(transmission.oneShotRelease, true);
   assert.equal(transmission.automaticReset, false);
   assert.equal(transmission.catchDetainedAfterTrip, true);
-  assert.match(transmission.loopReset, /re-armed-above-view-with-second-weight-lowered-back-seated/);
+  assert.match(transmission.loopReset, /fixed-bottom.*spent-weight-settles-into-bottom.*re-armed-far-above-view/);
   assert.equal(blocks.resetSling, undefined, 'no reload sling');
   assert.equal(
     blocks.probeAssembly.userData.role,
@@ -87,9 +87,12 @@ test('movement 247 is one seabed probe, one detained catch, and one detachable s
     'detachable-bored-spherical-sounding-weight-with-front-section-cutaway',
   );
   assert.equal(blocks.seabed.userData.fixed, true);
-  // The sea bottom is a plain thin surface, not a slab.
+  // The sea bottom is a plain fixed block of soft bottom, deep enough to
+  // hold a wholly buried spent weight.
   const bed = new THREE.Box3().setFromObject(blocks.seabedSlab);
-  assert.ok(bed.max.y - bed.min.y <= 0.05);
+  const { weightOpeningHalfHeight, buriedWeightCenterY } = model.root.userData.geometry;
+  assert.ok(buriedWeightCenterY + weightOpeningHalfHeight < bed.max.y);
+  assert.ok(buriedWeightCenterY - weightOpeningHalfHeight > bed.min.y);
   near(bed.max.y, model.root.userData.geometry.seabedY, 1e-6, 'bed top is the contact plane');
   disposeModel(model.root);
 });
@@ -296,11 +299,11 @@ test('movement 247 detent holds the catch clear while the light rod is recovered
   assert.ok(
     recovered.catchSupportPosition.y > recovered.weightUpperOpeningY,
   );
-  assert.equal(recovered.stage, 'fresh-weight-brought-under-rod-above-view');
+  assert.equal(recovered.stage, 'fresh-weight-slid-up-past-retracted-catch');
   disposeModel(model.root);
 });
 
-test('movement 247 re-arms out of view: the rod leaves, the view holds on the bottom, the rod returns with its weight seated', () => {
+test('movement 247 re-arms far above view in a fixed world: the bottom never moves and no weight pops in any view', () => {
   const model = createMovementModel(catalog.movements[246]);
   const { geometry, stateAtTime, timeline, transmission, displayFrame247, blocks } =
     model.root.userData;
@@ -318,12 +321,16 @@ test('movement 247 re-arms out of view: the rod leaves, the view holds on the bo
   assert.equal(armed.catchAngle, 0);
   assert.equal(armed.catchToWeightContactActive, true);
 
-  // The view: the plate's crop at the narrowest portrait aspect in use.
+  // The default view (the fit) holds Brown's rod pose and the bottom's
+  // surface; "any view" is taken as the fit zoomed out three times.
   const fit = model.root.userData.cameraFitBounds;
-  const view = { minY: 1.6, maxY: 9.8, halfWidth: 11.5 };
-  assert.ok(fit.min.y > view.minY && fit.max.y < view.maxY);
-  const inView = (box) => box.max.y > view.minY && box.min.y < view.maxY
-    && box.max.x > -view.halfWidth && box.min.x < view.halfWidth;
+  assert.ok(fit.min.y < geometry.seabedY && fit.min.y > geometry.seabedY - 0.2);
+  const fitHeight = fit.max.y - fit.min.y;
+  const center = (fit.max.y + fit.min.y) / 2;
+  // Three times the fit height at a 16:9 aspect.
+  const wide = { minY: center - 1.5 * fitHeight, maxY: center + 1.5 * fitHeight,
+    halfWidth: 1.5 * fitHeight * 16 / 9 };
+  const bedBox = new THREE.Box3().setFromObject(blocks.seabedSlab);
   const weights = [blocks.weightAssembly, blocks.spareWeightAssembly];
   const previous = weights.map(() => null);
   const period = model.root.userData.animationTiming.authoredCyclePeriod;
@@ -332,12 +339,14 @@ test('movement 247 re-arms out of view: the rod leaves, the view holds on the bo
     const time = period * sample / 4000;
     model.update(time);
     model.root.updateMatrixWorld(true);
+    // The world is fixed: the bottom never moves.
+    assert.equal(displayFrame247.position.y, 0);
+    near(new THREE.Box3().setFromObject(blocks.seabedSlab).max.y, bedBox.max.y, 0, 'fixed bottom');
     const state = model.root.userData.kinematics;
     const t = state.cycleTime;
     const rod = new THREE.Box3().setFromObject(blocks.housingTop)
       .union(new THREE.Box3().setFromObject(blocks.probeFoot));
-    const seabed = displayFrame247.position.y + geometry.seabedY;
-    let shown = inView(rod) || (seabed > view.minY && seabed < view.maxY);
+    let shown = rod.max.y > fit.min.y && rod.min.y < fit.max.y;
     weights.forEach((weight, index) => {
       assert.equal(weight.visible, true);
       const box = new THREE.Box3().setFromObject(weight);
@@ -346,22 +355,20 @@ test('movement 247 re-arms out of view: the rod leaves, the view holds on the bo
         assert.ok(box.min.distanceTo(previous[index].min) < 1, `weight ${index} continuous at ${time}`);
       }
       previous[index] = box;
-      if (!inView(box)) return;
-      shown = true;
+      if (box.max.y > bedBox.max.y && box.max.y > fit.min.y && box.min.y < fit.max.y) shown = true;
+      if (box.max.y < wide.minY || box.min.y > wide.maxY || box.min.x > wide.halfWidth
+        || box.max.x < -wide.halfWidth || bedBox.containsBox(box)) return;
       // A weight in view is always seated on the rod, falling, or lying
-      // on the bottom: never lifted or carried by nothing.
-      const onRod = Math.abs(box.getCenter(new THREE.Vector3()).y
-        - (displayFrame247.position.y + state.weightCenterY)) < 1e-9
+      // on (or settling into) the bottom: never lifted or carried by nothing.
+      const onRod = Math.abs(box.getCenter(new THREE.Vector3()).y - state.weightCenterY) < 1e-9
         && weight === model.root.userData.activeWeightAssembly
         && (t < timeline.supportRelease + 1 || t >= timeline.weightSeated);
-      const onBottom = Math.abs(box.min.y - seabed) < 0.2;
+      const onBottom = box.min.y < bedBox.max.y + 0.2
+        && Math.abs(box.getCenter(new THREE.Vector3()).x) < 1e-9;
       const falling = t >= timeline.supportRelease && t < timeline.weightImpact;
       assert.ok(onRod || onBottom || falling, `weight ${index} in view unsupported at ${time}`);
-      if (t >= timeline.rodRecovered && t < timeline.weightSeated && weight === model.root.userData.activeWeightAssembly) {
-        assert.fail(`fresh weight in view before it is seated at ${time}`);
-      }
     });
-    assert.ok(shown, `view not empty at ${time}`);
+    assert.ok(shown, `view empty at ${time}`);
   }
   disposeModel(model.root);
 });
@@ -447,11 +454,12 @@ test('movement 247 reported rates close away from edge release and leave movemen
     6.9,
     7.2,
     7.5,
-    7.7,
-    8.2,
+    8.0,
+    8.5,
     9.0,
     9.8,
     10.5,
+    11.2,
   ]) {
     const before = stateAtTime(time - step);
     const state = stateAtTime(time);
@@ -493,7 +501,7 @@ test('movement 247 reported rates close away from edge release and leave movemen
     near(end[key], start[key], 0, `closed ${key}`);
   }
   // Two soundings per display loop: the two weights swap roles.
-  near(animationTiming.authoredCyclePeriod, 2 * 11.1, 0,
+  near(animationTiming.authoredCyclePeriod, 2 * timeline.cycleClosure, 0,
     'authored cycle duration');
   near(animationTiming.targetCycleDuration, 2, 0,
     'display cycle duration');

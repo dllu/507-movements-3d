@@ -1019,7 +1019,6 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
   const notchDepth = rimOuter - rimInner - 0.008;
   const notchWidth = 10 * Math.PI / 180;
   const clearance = 0.006;
-  const liftAngle = 0.09;
   const deg = Math.PI / 180;
   // Plate (right, up) about Brown's centre in model units; polar angle psi
   // counterclockwise on the plate, which is positive barrel rotation.
@@ -1102,7 +1101,29 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
     pin.position.set(px, g.gearPlaneY, pz);
     group.userData.role = `${name}-locking-pawl`;
     b.spindleRotor.add(group);
-    return {group, mesh, pin, pivot};
+    // Lifted, the pawl rests on the rim's outer face with running clearance
+    // (it is held up, not thrown clear): the smallest turn about the eye that
+    // brings every point of the outline out to rimOuter + clearance.
+    const ringPoints = outline.flatMap((polygon) => polygon.flatMap((ring) => ring.flatMap((p, i) => {
+      const q = ring[(i + 1) % ring.length];
+      return Array.from({length: 8}, (_, k) => [p[0] + (q[0] - p[0]) * k / 8, p[1] + (q[1] - p[1]) * k / 8]);
+    })));
+    const innermost = (angle) => {
+      const c = Math.cos(angle), s = Math.sin(angle);
+      let r = Infinity;
+      for (const [x, y] of ringPoints) {
+        const dx = x - pivot[0], dy = y - pivot[1];
+        r = Math.min(r, Math.hypot(pivot[0] + c * dx - s * dy, pivot[1] + s * dx + c * dy));
+      }
+      return r;
+    };
+    const outward = innermost(0.01) > innermost(-0.01) ? 1 : -1;
+    let lo = 0, hi = 0.3;
+    for (let i = 0; i < 60; i += 1) {
+      const mid = (lo + hi) / 2;
+      if (innermost(outward * mid) < rimOuter + clearance) lo = mid; else hi = mid;
+    }
+    return {group, mesh, pin, pivot, liftAngle: hi};
   };
   // Upper pawl: flat blade from its eye to a nose in the top notch.
   const upper = makePawl('upper', CAPSTAN_PLATE.upperEye, notches[0],
@@ -1128,7 +1149,9 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
     new THREE.Vector3(reach, 1.14, reach),
   );
   b.notchedRim = rim;
-  g.lockingPawls = {rimOuter, rimInner, notchDepth, notchWidth, clearance, liftAngle, notches: notches.map((n) => ({...n}))};
+  const liftAngles = pawls.map((p) => p.liftAngle);
+  const liftAngle = Math.max(...liftAngles);
+  g.lockingPawls = {rimOuter, rimInner, notchDepth, notchWidth, clearance, liftAngle, liftAngles, notches: notches.map((n) => ({...n}))};
   const pawlLiftAt = (state) => liftAngle * (1 - state.directClutchEngagement);
   const baseState = root.userData.stateAtTime;
   root.userData.stateAtTime = (time) => {
@@ -1139,9 +1162,9 @@ function addNotchedRimAndLockingPawls(root, pawlMaterial, pinMaterial) {
   };
   return (state) => {
     // The pawls are the lock: engaged with the direct (single-purchase)
-    // coupling, lifted clear of the rim for the wheel-work.
-    const lift = pawlLiftAt(state);
-    for (const pawl of pawls) pawl.group.rotation.y = pawl.liftSign * lift;
+    // coupling, lifted out of the notches onto the rim for the wheel-work.
+    const fraction = 1 - state.directClutchEngagement;
+    for (const pawl of pawls) pawl.group.rotation.y = pawl.liftSign * pawl.liftAngle * fraction;
   };
 }
 

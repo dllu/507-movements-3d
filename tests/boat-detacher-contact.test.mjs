@@ -1,49 +1,34 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import * as THREE from 'three';
 import {createAuthoredBoatDetacherMovement} from '../src/simulation/authored-boat-detachers.js';
 import {surfacePoints,solidSurface} from './helpers/solid-surface.mjs';
-const make=()=>createAuthoredBoatDetacherMovement({id:492});
-function clearance(a,points,b,surface){const t=b.matrixWorld.clone().invert().multiply(a.matrixWorld);let minimum=Infinity;
- for(const p of points){const q=p.clone().applyMatrix4(t);if(surface.box.distanceToPoint(q)>.01)continue;minimum=Math.min(minimum,surface.signedDistance(q,.01));}return minimum;}
-function data(o){return{mesh:o,points:surfacePoints(o.geometry),surface:solidSurface(o.geometry)};}
-function gap(a,b){return clearance(a.mesh,a.points,b.mesh,b.surface);}
+const model=createAuthoredBoatDetacherMovement({id:492});
+const {blocks:b,geometry:g}=model.root.userData;
+function clearance(a,points,target,surface){const t=target.matrixWorld.clone().invert().multiply(a.matrixWorld);let minimum=Infinity;
+ for(const p of points){const q=p.clone().applyMatrix4(t);if(surface.box.distanceToPoint(q)>.02)continue;minimum=Math.min(minimum,surface.signedDistance(q,.02));}return minimum;}
+function sweep(pairs,samples=160){
+ const prepared=pairs.map(([a,c,min])=>[a,surfacePoints(a.geometry),c,solidSurface(c.geometry),min]);
+ for(let i=0;i<=samples;i++){model.update(g.cycleDuration*i/samples);model.root.updateMatrixWorld(true);
+  for(const [a,points,c,surface,min] of prepared){const gap=clearance(a,points,c,surface);assert.ok(gap>min,`${a.userData.role} / ${c.userData.role} at ${i}: ${gap}`);}}
+}
+const mesh=o=>o.isMesh?o:o.children.find(c=>c.isMesh);
 
-test('492 finite tongue and hook clear each other through release and reverse demonstration',()=>{
- const m=make(),u=m.root.userData.blocks.units[0];
- const moving=[u.tongueBody,u.lockingStud,...u.tongue.children.filter(o=>o.userData.role==='tongue-end-offset-neck')].map(data);
- const targets=[u.tackleHook,u.tackleHeadRing,u.upperEye,u.standardPlate].map(data);
- for(let i=0;i<=256;i++){
-  m.update(10*i/256);m.root.updateMatrixWorld(true);
-  for(const a of moving)for(const b of targets){
-   assert.ok(gap(a,b)>=-1e-6,`${a.mesh.userData.role} enters ${b.mesh.userData.role} at ${i}/256`);
-   assert.ok(gap(b,a)>=-1e-6,`${b.mesh.userData.role} enters ${a.mesh.userData.role} at ${i}/256`);
-  }
- }
+test('492 tongue, lever eye, hook and standard never cross through the release and reset',()=>{
+ sweep([[b.tongueBar,b.leverEye,0],[b.tongueTip,b.leverEye,0],[b.tongueBar,b.hookBar,0],[b.tongueEye,b.hookBar,0],
+  [b.tongueBar,b.standardBar,0.01],[b.tongueEye,b.standardBar,0.01],[b.leverBody,b.standardBar,0.01],[b.leverEye,b.tongueEye,0],
+  [b.hookBar,b.standardBar,0],[b.tongueBar,b.leverBody,0]]);
 });
-test('492 locked hook carries upward load and the retained eye blocks tongue rotation',()=>{
- const m=make(),u=m.root.userData.blocks.units[0],tongue=data(u.tongueBody),hook=data(u.tackleHook),stud=data(u.lockingStud),eye=data(u.upperEye);
- m.update(0);m.root.updateMatrixWorld(true);
- assert.ok(Math.abs(gap(tongue,hook))<1e-6,'the seat actually meets the tongue rather than floating below it');
- u.tackleHookAssembly.position.y=.015;m.root.updateMatrixWorld(true);
- assert.ok(gap(tongue,hook)<-.005,'upward tackle motion must be blocked by the locked tongue');
- m.update(0);u.tongue.rotation.z=-.10;m.root.updateMatrixWorld(true);
- assert.ok(Math.min(gap(stud,eye),gap(eye,stud))<-.003,'the eye captures the tongue before a significant load-driven rotation');
- // An upward force on this seat acts left of the hinge: its moment is
- // clockwise, matching the corrected release direction.
- const p=tongue.points.reduce((a,b)=>b.y<a.y?b:a).clone().applyMatrix4(u.tongueBody.matrixWorld);
- const pivot=u.tongue.getWorldPosition(new THREE.Vector3());
- assert.ok(p.x-pivot.x<-.25);
- assert.ok(m.root.userData.geometry.tongueReleaseAngle<0);
+
+test('492 pins pass through the bored standard, tongue eye and lever',()=>{
+ const pins=[b.tongueHingePin,b.leverFulcrumPin].map(p=>p.children.find(c=>/shank/.test(c.userData.role)));
+ sweep([[pins[0],b.standardBar,0],[pins[0],b.tongueEye,0],[pins[1],b.standardBar,0],[pins[1],b.leverBody,0]],40);
 });
-test('492 released tongue permits upward tackle withdrawal after losing capture',()=>{
- const m=make(),u=m.root.userData.blocks.units[0];
- const tongue=data(u.tongueBody),hook=data(u.tackleHook);
- m.update(5.8);
- for(let i=0;i<=32;i++){
-  u.tackleHookAssembly.position.y=m.root.userData.geometry.tackleHookLift+1.5*i/32;
-  m.root.updateMatrixWorld(true);
-  assert.ok(gap(tongue,hook)>=-1e-6);
-  assert.ok(gap(hook,tongue)>=-1e-6);
- }
+
+test('492 locked hook bears on the tongue and the locked tongue bears on the eye',()=>{
+ model.update(0);model.root.updateMatrixWorld(true);
+ const tongue=surfacePoints(b.tongueBar.geometry);
+ const hookGap=clearance(b.tongueBar,tongue,b.hookBar,solidSurface(b.hookBar.geometry));
+ const eyeGap=clearance(b.tongueBar,tongue,b.leverEye,solidSurface(b.leverEye.geometry));
+ assert.ok(hookGap>0&&hookGap<0.02,`hook seat ${hookGap}`);
+ assert.ok(eyeGap>0&&eyeGap<0.02,`eye seat ${eyeGap}`);
 });

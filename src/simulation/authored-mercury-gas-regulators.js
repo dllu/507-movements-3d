@@ -37,10 +37,17 @@ function addDomedCover(root, material, rodX) {
     polygonClipping.intersection(shell, poly([[-4, 0], [rodX, 0], [rodX, 5], [-4, 5]])),
     polygonClipping.intersection(shell, poly([[rodX, 0], [4, 0], [4, 5], [rodX, 5]])),
   ];
+  // The lid is closed at both ends: without end plates the vault is an
+  // open tunnel, and from the front (cut on the section plane) it read as a
+  // thin arch with the background showing through beneath it.
+  const endPlate = poly([[3.02, baseY - 0.06], ...arc(2.98, 0.78), [-3.02, baseY - 0.06]]);
+  const endThickness = 0.18;
   const geometries = [
-    ...halves.map(half => plate(half, -1.20, -hole)),
+    ...halves.map(half => plate(half, -1.20 + endThickness, -hole)),
     plate(polygonClipping.difference(shell, slot), -hole, hole),
-    ...halves.map(half => plate(half, hole, 1.20)),
+    ...halves.map(half => plate(half, hole, 1.20 - endThickness)),
+    plate(endPlate, -1.20, -1.20 + endThickness),
+    plate(endPlate, 1.20 - endThickness, 1.20),
   ];
   const cover = new THREE.Group();
   geometries.forEach(geometry => cover.add(new THREE.Mesh(geometry, material)));

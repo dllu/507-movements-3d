@@ -3,7 +3,7 @@ import test from 'node:test';
 import * as THREE from 'three';
 import {createAuthoredOldRotaryPumpMovement as oldPump} from '../src/simulation/authored-old-rotary-pumps.js';
 import {createAuthoredCaryRotaryPumpMovement as caryPump} from '../src/simulation/authored-cary-rotary-pumps.js';
-import {caryFollowerLaw} from '../src/simulation/rotary-pump-contact.js';
+import {caryFollowerLaw,CARY_ROLLER_RADIUS} from '../src/simulation/rotary-pump-contact.js';
 import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 
 const separation=(model,a,b,steps=180)=>{
@@ -42,7 +42,7 @@ test('456: stationary cam has a shaft bore and finite followers remain close to 
   assert.equal(surface.inside(new THREE.Vector3(.23,0,0)),false);
   for(let i=0;i<360;i++){
     const angle=i*Math.PI/180,{radius,first}=caryFollowerLaw(angle),n=new THREE.Vector3(radius*Math.cos(angle)+first*Math.sin(angle),radius*Math.sin(angle)-first*Math.cos(angle),0).normalize();
-    const center=new THREE.Vector3(radius*Math.cos(angle),radius*Math.sin(angle),0),contact=center.addScaledVector(n,-.11);
+    const center=new THREE.Vector3(radius*Math.cos(angle),radius*Math.sin(angle),0),contact=center.addScaledVector(n,-CARY_ROLLER_RADIUS);
     assert.ok(surface.distance(contact)<2e-5,`roller offset at ${i}`);
   }
   for(const degrees of [-18,0,18]){

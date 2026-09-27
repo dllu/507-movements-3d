@@ -887,17 +887,30 @@ function grimshawCompressedAirHammer(movement) {
     'sliding-leather-faced-friction-wheel-N');
   frictionWheelAssembly.position.copy(frictionWheelCenter);
   root.add(frictionWheelAssembly);
+  // Brown draws the wheel on shaft E with a milled face bearing on the
+  // underside of disk M: an orange driving wheel on the shaft with a brown
+  // leather tyre whose rim carries disk M round at right angles.
+  const frictionTyreThickness = 0.045;
   const frictionWheel = new THREE.Mesh(
     new THREE.CylinderGeometry(
-      frictionWheelRadius,
-      frictionWheelRadius,
+      frictionWheelRadius - frictionTyreThickness,
+      frictionWheelRadius - frictionTyreThickness,
       0.16,
-      36,
+      48,
     ),
-    darkMaterial,
+    driveMaterial,
   );
   frictionWheel.rotation.z = Math.PI / 2;
   frictionWheelAssembly.add(frictionWheel);
+  const frictionTyre = addRole(new THREE.Mesh(
+    boredLatheGeometry([
+      {radial: frictionWheelRadius, axial: -0.085},
+      {radial: frictionWheelRadius, axial: 0.085},
+    ], frictionWheelRadius - frictionTyreThickness, 96),
+    matte(0x7a4a2a, { roughness: 0.82 }),
+  ), 'leather-face-of-friction-wheel-N-bearing-on-disk-M');
+  frictionTyre.rotation.z = Math.PI / 2;
+  frictionWheelAssembly.add(frictionTyre);
   const frictionWheelIndex = new THREE.Mesh(
     new THREE.BoxGeometry(0.18, 0.048, 0.10),
     matte(PALETTE.white, { roughness: 0.48 }),
@@ -1457,6 +1470,13 @@ function grimshawCompressedAirHammer(movement) {
     valveKinematicsAtHammerPhase,
   };
   correctHammerWorkingParts(root, 472);
+  // The shared correction bores the friction wheel to its full radius; keep
+  // the leather tyre as its bearing face (bored wheel body inside it).
+  frictionWheel.geometry.dispose();
+  frictionWheel.geometry = boredLatheGeometry([
+    {radial: frictionWheelRadius - frictionTyreThickness, axial: -0.08},
+    {radial: frictionWheelRadius - frictionTyreThickness, axial: 0.08},
+  ], 0.087, 96);
   buildBroadHollowFrame(root, bx, by, shaftCenter);
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(bx(78), groundY - 0.02, -1.10),

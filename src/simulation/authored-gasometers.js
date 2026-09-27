@@ -1,1549 +1,442 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
-import {
-  PALETTE,
-  makePulley,
-  markShadows,
-  matte,
-  setSpin,
-} from './primitives.js';
+import {PALETTE, markShadows, matte} from './primitives.js';
+import {boredLatheGeometry} from './bored-lathe-geometry.js';
+import {circle, plate, poly, polygonClipping as clip} from './finite-plate-geometry.js';
+import {horizontalPlate} from './horizontal-turbine-solids.js';
+import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
+import {applyRotationIndicator} from './rotation-indicator.js';
 
-import { correctGasometerWorkingParts } from './gasometer-working-parts.js';
-import { boredLatheGeometry } from './bored-lathe-geometry.js';
+// Movements 479 and 480, Brown's two gasometers, rebuilt in pass 74 from
+// the plates. Both are sections through a bell A standing in a water-filled
+// tank B that Brown draws as a masonry pit sunk in the ground: a hatched
+// coping at ground level, a lining wall round the pit and a floor, under
+// which the two gas pipes run out in a channel. The bells are taller than
+// they are wide, as drawn. Scene units: 1 unit = 105 plate pixels at twice
+// the plate's size (k = 0.0095 unit per 2x pixel), measured from the plates.
 
 const FULL_TURN = Math.PI * 2;
+const K = 0.0095;
 
-function cylinderBetween(start, end, radius, material, role, sides = 36) {
-  const direction = end.clone().sub(start);
-  const cylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, direction.length(), sides),
-    material,
-  );
-  cylinder.position.copy(start).add(end).multiplyScalar(0.5);
-  cylinder.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    direction.normalize(),
-  );
-  cylinder.userData.role = role;
-  return cylinder;
+const planCircle = ([x, z], r, n = 96) => poly(circle([x, -z], r, n));
+const annulus = (inner, outer, holes = []) => clip.difference(planCircle([0, 0], outer, 160),
+  ...(inner > 0 ? [planCircle([0, 0], inner, 160)] : []), ...holes);
+const squareWithHole = (half, hole, holes = []) => clip.difference(
+  poly([[-half, -half], [half, -half], [half, half], [-half, half]]), planCircle([0, 0], hole, 160), ...holes);
+
+function addMesh(parent, geometry, material, role) {
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.userData.role = role;
+  parent.add(mesh);
+  return mesh;
 }
 
-function annularPrism(innerRadius, outerRadius, height, material, role) {
-  const shape = new THREE.Shape();
-  shape.absarc(0, 0, outerRadius, 0, FULL_TURN, false);
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, innerRadius, 0, FULL_TURN, true);
-  shape.holes.push(hole);
-  const prism = new THREE.Mesh(
-    new THREE.ExtrudeGeometry(shape, {
-      bevelEnabled: false,
-      curveSegments: 64,
-      depth: height,
-      steps: 1,
-    }),
-    material,
-  );
-  prism.geometry.translate(0, 0, -height / 2);
-  prism.rotation.x = Math.PI / 2;
-  prism.userData.role = role;
-  return prism;
-}
-
-function upperHemisphere(radius, verticalScale, material, role) {
-  const hemisphere = new THREE.Mesh(
-    new THREE.SphereGeometry(
-      radius,
-      64,
-      24,
-      0,
-      FULL_TURN,
-      0,
-      Math.PI / 2,
-    ),
-    material,
-  );
-  hemisphere.scale.y = verticalScale;
-  hemisphere.userData.role = role;
-  return hemisphere;
-}
-
-function ropeArc(center, radius, material, role) {
+// Thin-walled bell: cylindrical skirt from its open rim (local y = 0) to the
+// shoulder, closed by a spherical cap of the given rise (optionally with a
+// central opening for a sleeve).
+function bellGeometry({radius, wall, skirtHeight, rise, opening = 0}) {
+  const sphere = (radius * radius + rise * rise) / (2 * rise);
+  const center = skirtHeight + rise - sphere;
+  const capY = (r, s) => center + Math.sqrt(Math.max(0, s * s - r * r));
+  const inner = radius - wall;
   const points = [];
-  for (let index = 0; index <= 40; index += 1) {
-    const angle = index * Math.PI / 40;
-    points.push(new THREE.Vector3(
-      center.x + radius * Math.cos(angle),
-      center.y + radius * Math.sin(angle),
-      center.z,
-    ));
+  // outer meridian from rim to cap top (or opening), inner back down.
+  points.push(new THREE.Vector2(inner, 0), new THREE.Vector2(radius, 0), new THREE.Vector2(radius, skirtHeight));
+  const steps = 40;
+  for (let i = 1; i <= steps; i += 1) {
+    const r = THREE.MathUtils.lerp(radius, opening, i / steps);
+    points.push(new THREE.Vector2(Math.max(r, 1e-4), capY(r, sphere)));
   }
-  const arc = new THREE.Mesh(
-    new THREE.TubeGeometry(
-      new THREE.CatmullRomCurve3(points),
-      80,
-      0.052,
-      9,
-      false,
-    ),
-    material,
-  );
-  arc.userData.role = role;
-  return arc;
+  const innerSphere = sphere - wall;
+  for (let i = steps; i >= 1; i -= 1) {
+    const r = THREE.MathUtils.lerp(inner, opening, i / steps);
+    points.push(new THREE.Vector2(Math.max(r, 1e-4), capY(r, innerSphere)));
+  }
+  points.push(new THREE.Vector2(inner, skirtHeight - 0.001), new THREE.Vector2(inner, 0));
+  const geometry = new THREE.LatheGeometry(points, 128);
+  return {capY: (r) => capY(r, sphere), geometry, innerCapY: (r) => capY(r, innerSphere)};
 }
 
-// Brown draws both gasometers as flat sections; a narrow field of view keeps
-// the elevation flat instead of looking down into the tank.
-function presentFlatSection(root) {
-  root.userData.cameraDirection.set(0.15, 0.3, 15);
+// Brown's tank B is a pit in the ground: one solid block of masonry and
+// earth with the round pit sunk in it, a floor, and under the floor a
+// channel along which each pipe runs out to the edge of the block.
+function buildPit(root, material, {pitRadius, groundY, floorY, slabHalf, channelHeight, pipes, pipeOuter, tubeHole, footRadius = 0, footHeight = 0}) {
+  const floorThickness = 0.14;
+  const channelTop = floorY - floorThickness, channelBottom = channelTop - channelHeight;
+  const baseBottom = channelBottom - 0.45;
+  const square = poly([[-slabHalf, -slabHalf], [slabHalf, -slabHalf], [slabHalf, slabHalf], [-slabHalf, slabHalf]]);
+  const tube = tubeHole ? [planCircle([0, 0], tubeHole + 0.004, 64)] : [];
+  const pipeHoles = pipes.map((x) => planCircle([x, 0], pipeOuter + 0.004, 64));
+  const slot = (x) => {
+    const side = Math.sign(x), w = pipeOuter + 0.02;
+    const x0 = x - side * w, x1 = side * (slabHalf + 0.01);
+    return poly([[Math.min(x0, x1), -w], [Math.max(x0, x1), -w], [Math.max(x0, x1), w], [Math.min(x0, x1), w]]);
+  };
+  const channel = clip.union(...pipes.map((x) => clip.union(slot(x), planCircle([x, 0], pipeOuter + 0.02, 64))));
+  const ground = addMesh(root, mergePassageParts([
+    horizontalPlate(clip.difference(square, planCircle([0, 0], pitRadius, 160)), floorY, groundY),
+    horizontalPlate(clip.difference(square, ...pipeHoles, ...tube), channelTop, floorY),
+    horizontalPlate(clip.difference(square, channel, ...tube), channelBottom, channelTop),
+    horizontalPlate(clip.difference(square, ...tube), baseBottom + footHeight, channelBottom),
+    // (the flanged foot of tube b is let into the underside of the ground)
+    horizontalPlate(clip.difference(square, ...(footRadius ? [planCircle([0, 0], footRadius + 0.004, 96)] : tube)), baseBottom, baseBottom + footHeight),
+  ].filter((part) => part.attributes.position.count > 0)), material, 'fixed-ground-and-masonry-pit-forming-tank-B');
+  return {baseBottom, channelBottom, channelTop, ground};
+}
+
+// A gas pipe rising through the floor, bent out along the channel to the
+// edge of the ground block.
+function pipePath(x, topY, runY, endX, bend) {
+  const side = Math.sign(endX - x);
+  const path = new THREE.CurvePath();
+  path.add(new THREE.LineCurve3(new THREE.Vector3(x, topY, 0), new THREE.Vector3(x, runY + bend, 0)));
+  const arc = new THREE.Curve();
+  arc.getPoint = (t, target = new THREE.Vector3()) => target.set(
+    x + side * bend * (1 - Math.cos(t * Math.PI / 2)), runY + bend - bend * Math.sin(t * Math.PI / 2), 0);
+  path.add(arc);
+  path.add(new THREE.LineCurve3(new THREE.Vector3(x + side * bend, runY, 0), new THREE.Vector3(endX, runY, 0)));
+  return path;
+}
+
+// One connected water body: outside the bell at the free level, inside it
+// at the level held down by the gas pressure, a ring under the bell's rim
+// joining them (it follows the rim), and any extra rings supplied.
+function buildWater(root, material, {floorY, pitRadius, bellRadius, bellWall, outerLevel, innerLevel, innerHoles, innerCore = 0}) {
+  const gap = 0.004;
+  const prism = (polys, low, high) => horizontalPlate(polys, low, high);
+  const outer = addMesh(root, prism(annulus(bellRadius + gap, pitRadius - gap), floorY + gap, outerLevel), material, 'outer-water-annulus-at-atmospheric-level');
+  const inner = addMesh(root, prism(annulus(innerCore, bellRadius - bellWall - gap, innerHoles), floorY + gap, innerLevel), material, 'inner-water-column-depressed-by-gas-pressure');
+  const underRim = addMesh(root, prism(annulus(bellRadius - bellWall - gap, bellRadius + gap), 0, 1), material, 'water-annulus-under-bell-rim-joining-inner-and-outer-water');
+  underRim.position.y = floorY + gap;
+  return {inner, outer, underRim};
+}
+
+function presentSection(root) {
+  root.userData.cameraDirection = new THREE.Vector3(0.15, 0.3, 15);
   root.userData.cameraFov = 10;
-}
-
-// Plate 479 hangs plain ball weights C from plain disc pulleys; the stacked
-// adjustment disks, pulley spokes and white face indices are not drawn.
-function presentCounterweightedSection(root) {
-  const blocks = root.userData.blocks;
-  for (const weight of blocks.counterweights) {
-    const [core, ...rest] = weight.children.filter((child) =>
-      child.userData.role?.startsWith('main-mass')
-      || child.userData.role?.startsWith('removable-pressure-adjustment-disk'));
-    core.geometry.dispose();
-    core.geometry = new THREE.SphereGeometry(0.40, 48, 32);
-    for (const disk of rest) {
-      disk.removeFromParent();
-      disk.geometry.dispose();
-    }
-    weight.userData.adjustmentDisks = [];
-  }
-  for (const pulley of blocks.pulleys) {
-    const rotor = pulley.userData.rotor;
-    for (const child of [...rotor.children]) {
-      const white = child.material?.color?.getHex() === PALETTE.white;
-      if (child.userData.role === 'radial-pulley-spoke' || white) {
-        child.removeFromParent();
-        child.geometry.dispose();
-      }
-    }
-    const web = new THREE.Mesh(
-      boredLatheGeometry([
-        { axial: -0.06, radial: 0.345 },
-        { axial: 0.06, radial: 0.345 },
-      ], 0.1196, 96),
-      pulley.userData.tread.material,
-    );
-    web.rotation.x = Math.PI / 2;
-    web.userData.role = 'plain-pulley-web';
-    rotor.add(web);
-  }
-  // Plate 479 draws each suspension as a heavy flat band lapping a
-  // flat-faced pulley between flanges, not a thin round cord in a groove.
-  // The band's centre line stays on the rope pitch radius.
-  const radius = 0.46, bandWidth = 0.2, bandThickness = 0.1;
-  const face = radius - bandThickness / 2;
-  for (const pulley of blocks.pulleys) {
-    const tread = pulley.userData.tread;
-    tread.geometry.dispose();
-    tread.geometry = boredLatheGeometry([
-      { radial: face + 0.07, axial: -0.14 },
-      { radial: face + 0.07, axial: -0.11 },
-      { radial: face, axial: -0.11 },
-      { radial: face, axial: 0.11 },
-      { radial: face + 0.07, axial: 0.11 },
-      { radial: face + 0.07, axial: 0.14 },
-    ], 0.34, 96);
-  }
-  const lap = new THREE.Shape();
-  lap.absarc(0, 0, radius + bandThickness / 2, 0, Math.PI, false);
-  lap.absarc(0, 0, face + 0.001, Math.PI, 0, true);
-  blocks.ropeArcs.forEach((arc, index) => {
-    const center = blocks.pulleys[index].position;
-    arc.geometry.dispose();
-    arc.geometry = new THREE.ExtrudeGeometry(lap, { depth: bandWidth, bevelEnabled: false, curveSegments: 48 })
-      .translate(center.x, center.y, center.z - bandWidth / 2);
-    arc.userData.role = arc.userData.role.replace('semicircular-contact-arc', 'flat-band-lap');
+  root.userData.hideGround = true;
+  root.userData.minimumDisplayCycleSeconds = 8;
+  root.traverse((object) => {
+    for (const material of [].concat(object.material ?? [])) material.fog = false;
   });
-  for (const run of [...blocks.innerRopeSegments, ...blocks.outerRopeSegments]) {
-    run.geometry.dispose();
-    run.geometry = new THREE.BoxGeometry(bandThickness, 1, bandWidth);
-    run.userData.flatBand = true;
-  }
-  presentFlatSection(root);
 }
 
+function fitBounds(root, update, period) {
+  const box = new THREE.Box3();
+  for (let i = 0; i <= 32; i += 1) {
+    update(period * i / 32);
+    root.updateMatrixWorld(true);
+    root.traverse((object) => {if (object.isMesh && object.visible) box.union(new THREE.Box3().setFromObject(object));});
+  }
+  update(0);
+  root.userData.cameraFitBounds = box.expandByScalar(0.03);
+  root.userData.cameraDistanceScale = 1.02;
+}
+
+// ---------------------------------------------------------------- 479
 function singleLiftCounterweightedGasometer(movement) {
   const root = new THREE.Group();
   const cycleDuration = 8;
+  const px = (value) => (value - 510) * K;
+  const py = (value) => 0.20 + (605 - value) * K;
+
+  // Plate 479 (2x pixels): water at 605, ground at 525, pit floor at 945,
+  // pit walls at 275/740, bell skirt at 300/720 from its rim at 655 to its
+  // shoulder at 190, crown at 125; pulleys centred at y 92, radius 60; balls
+  // centred near y 445, radius 55-60; pipes 450-475 and 520-548, tops 598.
+  const waterY = py(605);
+  const groundY = py(525);
+  const floorY = py(945);
+  const pitRadius = (740 - 275) / 2 * K;
+  const bellRadius = 2.0, bellWall = 0.05;
+  const skirtHeight = (655 - 190) * K, rise = (190 - 125) * K;
+  const topRimY = py(655);
+  const strokeSceneUnit = 1.7;
+  const pulleyRadius = 60 * K;
+  const pulleyCenters = [-1, 1].map((side) => new THREE.Vector3(side * (bellRadius - bellWall / 2 + pulleyRadius), py(92), 0));
+  const ballRadius = 0.55;
+  const topBallY = py(445);
+  const pipeXs = [-0.35, 0.35];
+  const pipeOuter = 0.125, pipeInner = 0.085, pipeTopY = py(598);
+  const bandWidth = 0.2, bandThickness = 0.1;
+
+  // Quasi-static balance: the bell's weight less the counterweights is
+  // carried by the gas pressure on the bell's area, which holds the water
+  // inside the bell below the free level by h = p / (rho g).
   const sceneUnitsPerMetre = 8 / 3;
-
-  // Exposed SI reconstruction. Brown specifies the topology and qualitative
-  // action but no size, mass, gas state, pressure, timing, or guide details.
-  const bellRadiusMetre = 0.75;
-  const bellAreaSquareMetre = Math.PI * bellRadiusMetre ** 2;
-  const bellMassKilogram = 300;
-  const counterweightCount = 2;
-  const counterweightMassKilogram = 60;
-  const gravityMetrePerSecondSquared = 9.80665;
-  const waterDensityKilogramPerCubicMetre = 998;
-  const atmosphericPressurePascal = 101325;
-  const gasTemperatureKelvin = 293.15;
-  const universalGasConstantJoulePerMoleKelvin = 8.314462618;
-  const physicalStrokeMetre = 0.45;
-  const minimumGasVolumeCubicMetre = 0.70;
-
-  const residualSupportedMassKilogram = bellMassKilogram
-    - counterweightCount * counterweightMassKilogram;
-  const gasGaugePressurePascal = residualSupportedMassKilogram
-    * gravityMetrePerSecondSquared / bellAreaSquareMetre;
-  const gasAbsolutePressurePascal = atmosphericPressurePascal
-    + gasGaugePressurePascal;
-  const waterLevelDifferenceMetre = gasGaugePressurePascal
-    / (waterDensityKilogramPerCubicMetre
-      * gravityMetrePerSecondSquared);
-  const maximumGasVolumeCubicMetre = minimumGasVolumeCubicMetre
-    + bellAreaSquareMetre * physicalStrokeMetre;
-  const pressureChangePerAddedKilogramEachCounterweightPascal =
-    -counterweightCount * gravityMetrePerSecondSquared
-    / bellAreaSquareMetre;
-
-  const externalWaterSurfaceY = 0.20;
-  const internalWaterSurfaceY = externalWaterSurfaceY
-    - waterLevelDifferenceMetre * sceneUnitsPerMetre;
-  const bellMinimumY = -0.05;
-  const bellStrokeSceneUnit = physicalStrokeMetre * sceneUnitsPerMetre;
-  const bellLocalRimY = -1.35;
-  const bellLocalShoulderY = 0.95;
-  const bellLocalRopeAttachmentY = 1.23;
-  const highestBellRimY = bellMinimumY + bellStrokeSceneUnit
-    + bellLocalRimY;
-  const minimumInternalSealDepthMetre = (
-    internalWaterSurfaceY - highestBellRimY
-  ) / sceneUnitsPerMetre;
-
-  const pulleyRadiusSceneUnit = 0.46;
-  const pulleyCenters = [
-    new THREE.Vector3(-2.48, 3.35, 0),
-    new THREE.Vector3(2.48, 3.35, 0),
-  ];
-  const baseCounterweightY = 1.15;
-  const counterweightTopOffsetY = 0.48;
-  const constantRopeLengthSceneUnit = pulleyCenters[0].y
-    - (bellMinimumY + bellLocalRopeAttachmentY)
-    + Math.PI * pulleyRadiusSceneUnit
-    + pulleyCenters[0].y
-    - (baseCounterweightY + counterweightTopOffsetY);
-  const maximumVolumeFlowCubicMetrePerSecond = bellAreaSquareMetre
-    * physicalStrokeMetre * Math.PI / cycleDuration;
+  const bellAreaSquareMetre = Math.PI * (bellRadius / sceneUnitsPerMetre) ** 2;
+  const bellMassKilogram = 300, counterweightMassKilogram = 110, gravity = 9.80665, waterDensity = 998;
+  const gaugePressurePascal = (bellMassKilogram - 2 * counterweightMassKilogram) * gravity / bellAreaSquareMetre;
+  const headSceneUnit = gaugePressurePascal / (waterDensity * gravity) * sceneUnitsPerMetre;
+  const innerWaterY = waterY - headSceneUnit;
 
   const stateAtTime = (time) => {
-    const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
-    const phase = cycleTime / cycleDuration;
-    const angle = FULL_TURN * phase;
-    const fillFraction = 0.5 * (1 - Math.cos(angle));
-    const fillFractionRatePerSecond = Math.PI / cycleDuration
-      * Math.sin(angle);
-    const bellLiftMetre = physicalStrokeMetre * fillFraction;
-    const bellVelocityMetrePerSecond = physicalStrokeMetre
-      * fillFractionRatePerSecond;
-    const bellLiftSceneUnit = bellLiftMetre * sceneUnitsPerMetre;
-    const gasVolumeCubicMetre = minimumGasVolumeCubicMetre
-      + bellAreaSquareMetre * bellLiftMetre;
-    const netGasVolumeFlowCubicMetrePerSecond = bellAreaSquareMetre
-      * bellVelocityMetrePerSecond;
-    const inletGasVolumeFlowCubicMetrePerSecond = Math.max(
-      0,
-      netGasVolumeFlowCubicMetrePerSecond,
-    );
-    const outletGasVolumeFlowCubicMetrePerSecond = Math.max(
-      0,
-      -netGasVolumeFlowCubicMetrePerSecond,
-    );
-    const gasMoles = gasAbsolutePressurePascal * gasVolumeCubicMetre
-      / (universalGasConstantJoulePerMoleKelvin
-        * gasTemperatureKelvin);
-    const netMolarFlowMolePerSecond = gasAbsolutePressurePascal
-      * netGasVolumeFlowCubicMetrePerSecond
-      / (universalGasConstantJoulePerMoleKelvin
-        * gasTemperatureKelvin);
-    const flowFraction = maximumVolumeFlowCubicMetrePerSecond > 0
-      ? Math.abs(netGasVolumeFlowCubicMetrePerSecond)
-        / maximumVolumeFlowCubicMetrePerSecond
-      : 0;
-    const rising = netGasVolumeFlowCubicMetrePerSecond > 1e-14;
-    const falling = netGasVolumeFlowCubicMetrePerSecond < -1e-14;
+    const phase = THREE.MathUtils.euclideanModulo(time / cycleDuration, 1);
+    const descent = strokeSceneUnit * 0.5 * (1 - Math.cos(FULL_TURN * phase));
+    const descentRate = strokeSceneUnit * 0.5 * Math.sin(FULL_TURN * phase) * FULL_TURN / cycleDuration;
+    const bellY = topRimY - descent;
     return {
-      bellLiftMetre,
-      bellLiftSceneUnit,
-      bellVelocityMetrePerSecond,
-      counterweightY: baseCounterweightY - bellLiftSceneUnit,
-      cycleTime,
-      falling,
-      fillFraction,
-      fillFractionRatePerSecond,
-      flowFraction,
-      gasMoles,
-      gasVolumeCubicMetre,
-      inletGasVolumeFlowCubicMetrePerSecond,
-      inletMarkerTravelTurns: phase <= 0.5 ? 2 * fillFraction : 2,
-      netGasVolumeFlowCubicMetrePerSecond,
-      netMolarFlowMolePerSecond,
-      outletGasVolumeFlowCubicMetrePerSecond,
-      outletMarkerTravelTurns: phase < 0.5 ? 0 : 2 * (1 - fillFraction),
-      phase,
-      pulleyAngularDisplacementRadian:
-        bellLiftSceneUnit / pulleyRadiusSceneUnit,
-      rising,
-    };
-  };
-
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.24,
-    roughness: 0.48,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.30,
-    roughness: 0.42,
-  });
-  const bellMaterial = matte(PALETTE.driven, {
-    metalness: 0.22,
-    opacity: 0.64,
-    roughness: 0.35,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  bellMaterial.depthWrite = false;
-  const tankMaterial = matte(PALETTE.frame, {
-    metalness: 0.18,
-    opacity: 0.29,
-    roughness: 0.42,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  tankMaterial.depthWrite = false;
-  const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.41,
-    roughness: 0.25,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  waterMaterial.depthWrite = false;
-  const gasMaterial = matte(PALETTE.driver, {
-    opacity: 0.18,
-    roughness: 0.24,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  gasMaterial.depthWrite = false;
-  const ropeMaterial = matte(PALETTE.ink, {
-    metalness: 0.08,
-    roughness: 0.67,
-  });
-  const weightMaterial = matte(PALETTE.driver, {
-    metalness: 0.24,
-    roughness: 0.43,
-  });
-  const markerMaterial = matte(PALETTE.white, {
-    opacity: 0.90,
-    roughness: 0.25,
-    transparent: true,
-  });
-  markerMaterial.depthWrite = false;
-
-  const tankB = new THREE.Group();
-  tankB.userData.role = 'fixed-water-seal-tank-B';
-  const tankWall = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.70, 2.70, 2.20, 72, 1, true),
-    tankMaterial,
-  );
-  tankWall.position.y = -0.88;
-  tankWall.userData.role = 'transparent-fixed-side-wall-of-tank-B';
-  const tankBottom = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.70, 2.70, 0.18, 72),
-    frameMaterial,
-  );
-  tankBottom.position.y = -2.03;
-  tankBottom.userData.role = 'fixed-bottom-of-water-tank-B';
-  const tankTopRim = new THREE.Mesh(
-    new THREE.TorusGeometry(2.70, 0.095, 12, 72),
-    darkMaterial,
-  );
-  tankTopRim.rotation.x = Math.PI / 2;
-  tankTopRim.position.y = 0.22;
-  tankTopRim.userData.role = 'fixed-top-rim-of-tank-B';
-  tankB.add(tankWall, tankBottom, tankTopRim);
-  root.add(tankB);
-
-  const outerAnnularWater = annularPrism(
-    1.93,
-    2.58,
-    2.02,
-    waterMaterial,
-    'outer-water-annulus-at-atmospheric-level',
-  );
-  outerAnnularWater.position.y = externalWaterSurfaceY - 1.01;
-  const innerWater = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.89, 1.89, 1.92, 64),
-    waterMaterial,
-  );
-  innerWater.position.y = internalWaterSurfaceY - 0.96;
-  innerWater.userData.role =
-    'inner-water-column-depressed-by-constant-gas-pressure-head';
-  root.add(outerAnnularWater, innerWater);
-
-  const bellA = new THREE.Group();
-  bellA.userData.role =
-    'one-open-bottomed-inverted-vessel-A-rising-in-water-tank';
-  const bellSkirt = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.00, 2.00, 2.30, 72, 1, true),
-    bellMaterial,
-  );
-  bellSkirt.position.y = (bellLocalRimY + bellLocalShoulderY) / 2;
-  bellSkirt.userData.role = 'open-bottomed-cylindrical-skirt-of-A';
-  const bellCrown = upperHemisphere(
-    2.00,
-    0.43,
-    bellMaterial,
-    'closed-domed-crown-of-vessel-A',
-  );
-  bellCrown.position.y = bellLocalShoulderY;
-  const bellBottomRim = new THREE.Mesh(
-    new THREE.TorusGeometry(2.00, 0.075, 10, 72),
-    darkMaterial,
-  );
-  bellBottomRim.rotation.x = Math.PI / 2;
-  bellBottomRim.position.y = bellLocalRimY;
-  bellBottomRim.userData.role =
-    'submerged-open-lower-rim-maintaining-water-seal';
-  const bellCrownBand = new THREE.Mesh(
-    new THREE.TorusGeometry(2.00, 0.070, 10, 72),
-    darkMaterial,
-  );
-  bellCrownBand.rotation.x = Math.PI / 2;
-  bellCrownBand.position.y = bellLocalShoulderY;
-  bellCrownBand.userData.role = 'crown-to-skirt-seam-of-A';
-  const bellRopeLugs = [-1, 1].map((side, index) => {
-    const lug = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.28, 0.34),
-      darkMaterial,
-    );
-    lug.position.set(
-      side * 2.00,
-      bellLocalRopeAttachmentY,
-      0,
-    );
-    lug.userData.role = `rope-lug-on-A-${index + 1}`;
-    bellA.add(lug);
-    return lug;
-  });
-  bellA.add(bellSkirt, bellCrown, bellBottomRim, bellCrownBand);
-  root.add(bellA);
-
-  const gasCylinder = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.80, 1.80, 1, 64),
-    gasMaterial,
-  );
-  gasCylinder.userData.role =
-    'variable-height-gas-volume-between-inner-water-and-A-crown';
-  const gasDome = upperHemisphere(
-    1.80,
-    0.40,
-    gasMaterial,
-    'gas-volume-inside-domed-crown-of-A',
-  );
-  gasDome.position.y = bellLocalShoulderY;
-  bellA.add(gasDome);
-  root.add(gasCylinder);
-
-  const pipeCentersX = [-0.48, 0.48];
-  const gasPipes = pipeCentersX.map((x, index) => {
-    const pipe = new THREE.Group();
-    pipe.userData.role = index === 0
-      ? 'fixed-left-gas-inlet-through-bottom-of-B'
-      : 'fixed-right-gas-outlet-through-bottom-of-B';
-    const shell = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.16, 0.16, 2.55, 36, 1, true),
-      frameMaterial,
-    );
-    shell.position.set(x, -0.80, 0);
-    const bore = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.085, 0.085, 2.58, 28),
-      gasMaterial,
-    );
-    bore.position.set(x, -0.80, 0);
-    shell.userData.role = `${index === 0 ? 'inlet' : 'outlet'}-pipe-shell`;
-    bore.userData.role = `${index === 0 ? 'inlet' : 'outlet'}-gas-core`;
-    pipe.add(shell, bore);
-    root.add(pipe);
-    return { bore, pipe, shell };
-  });
-
-  // Each post stands just outboard of and behind the axle end, clear of
-  // the tank's rim flange and of the hanging weight.
-  const guidePosts = pulleyCenters.map((center, index) => {
-    const postX = center.x + Math.sign(center.x) * 0.07;
-    const post = cylinderBetween(
-      new THREE.Vector3(postX, -2.04, -0.50),
-      new THREE.Vector3(postX, center.y, -0.50),
-      0.10,
-      frameMaterial,
-      `fixed-pulley-guide-post-${index + 1}`,
-      28,
-    );
-    root.add(post);
-    return post;
-  });
-  const pulleys = pulleyCenters.map((center, index) => {
-    const pulley = makePulley({
-      axis: new THREE.Vector3(0, 0, 1),
-      color: PALETTE.accent,
-      grooves: 1,
-      radius: pulleyRadiusSceneUnit,
-      spokes: 4,
-      width: 0.28,
-    });
-    pulley.position.copy(center);
-    pulley.userData.role = `fixed-axis-counterweight-pulley-${index + 1}`;
-    root.add(pulley);
-    return pulley;
-  });
-
-  const counterweights = pulleyCenters.map((center, sideIndex) => {
-    const side = sideIndex === 0 ? -1 : 1;
-    const group = new THREE.Group();
-    group.position.set(
-      center.x + side * pulleyRadiusSceneUnit,
-      baseCounterweightY,
-      0,
-    );
-    group.userData.role = `counterweight-C-${sideIndex + 1}`;
-    const core = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.38, 0.38, 0.70, 40),
-      weightMaterial,
-    );
-    core.userData.role = `main-mass-of-counterweight-C-${sideIndex + 1}`;
-    group.add(core);
-    const adjustmentDisks = [-0.30, 0, 0.30].map((offset, index) => {
-      const disk = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.45, 0.45, 0.12, 40),
-        darkMaterial,
-      );
-      disk.position.y = offset;
-      disk.userData.role =
-        `removable-pressure-adjustment-disk-${index + 1}-on-C-${sideIndex + 1}`;
-      group.add(disk);
-      return disk;
-    });
-    group.userData.adjustmentDisks = adjustmentDisks;
-    root.add(group);
-    return group;
-  });
-
-  const ropeArcs = pulleyCenters.map((center, index) => {
-    const arc = ropeArc(
-      center,
-      pulleyRadiusSceneUnit,
-      ropeMaterial,
-      `fixed-semicircular-contact-arc-on-pulley-${index + 1}`,
-    );
-    root.add(arc);
-    return arc;
-  });
-  const innerRopeSegments = [];
-  const outerRopeSegments = [];
-  for (let index = 0; index < 2; index += 1) {
-    const inner = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.052, 0.052, 1, 14),
-      ropeMaterial,
-    );
-    inner.userData.role = `taut-inner-rope-segment-${index + 1}-to-A`;
-    const outer = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.052, 0.052, 1, 14),
-      ropeMaterial,
-    );
-    outer.userData.role = `taut-outer-rope-segment-${index + 1}-to-C`;
-    root.add(inner, outer);
-    innerRopeSegments.push(inner);
-    outerRopeSegments.push(outer);
-  }
-
-  const inletFlowCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-0.48, -2.48, 0.02),
-    new THREE.Vector3(-0.48, -1.30, 0.02),
-    new THREE.Vector3(-0.48, 0.43, 0.02),
-    new THREE.Vector3(-0.68, 0.72, 0.12),
-    new THREE.Vector3(-0.92, 0.91, 0.20),
-  ], false, 'centripetal');
-  const outletFlowCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.92, 0.91, -0.20),
-    new THREE.Vector3(0.68, 0.72, -0.12),
-    new THREE.Vector3(0.48, 0.43, -0.02),
-    new THREE.Vector3(0.48, -1.30, -0.02),
-    new THREE.Vector3(0.48, -2.48, -0.02),
-  ], false, 'centripetal');
-  const markersPerPath = 7;
-  const inletMarkers = [];
-  const outletMarkers = [];
-  for (let index = 0; index < markersPerPath; index += 1) {
-    const inletMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.082, 18, 12),
-      markerMaterial,
-    );
-    inletMarker.userData.role = `inlet-gas-marker-${index + 1}`;
-    const outletMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.082, 18, 12),
-      markerMaterial,
-    );
-    outletMarker.userData.role = `outlet-gas-marker-${index + 1}`;
-    root.add(inletMarker, outletMarker);
-    inletMarkers.push(inletMarker);
-    outletMarkers.push(outletMarker);
-  }
-
-  const markerProgress = (turns, markerIndex) =>
-    THREE.MathUtils.euclideanModulo(
-      turns + markerIndex / markersPerPath,
-      1,
-    );
-  const update = (time) => {
-    const state = stateAtTime(time);
-    bellA.position.y = bellMinimumY + state.bellLiftSceneUnit;
-    root.userData.waterSealUpdate?.(bellA.position.y);
-    const gasTopY = bellA.position.y + bellLocalShoulderY;
-    const gasHeight = gasTopY - internalWaterSurfaceY;
-    gasCylinder.scale.y = gasHeight;
-    gasCylinder.position.y = (gasTopY + internalWaterSurfaceY) / 2;
-    for (let index = 0; index < counterweights.length; index += 1) {
-      counterweights[index].position.y = state.counterweightY;
-      setSpin(
-        pulleys[index],
-        (index === 0 ? 1 : -1)
-          * state.pulleyAngularDisplacementRadian,
-      );
-      const center = pulleyCenters[index];
-      const side = index === 0 ? -1 : 1;
-      const innerX = center.x - side * pulleyRadiusSceneUnit;
-      const outerX = center.x + side * pulleyRadiusSceneUnit;
-      const attachmentY = bellA.position.y + bellLocalRopeAttachmentY;
-      const weightTopY = state.counterweightY + counterweightTopOffsetY;
-      const innerLength = center.y - attachmentY;
-      const outerLength = center.y - weightTopY;
-      innerRopeSegments[index].position.set(
-        innerX,
-        (center.y + attachmentY) / 2,
-        0,
-      );
-      innerRopeSegments[index].scale.y = innerLength;
-      outerRopeSegments[index].position.set(
-        outerX,
-        (center.y + weightTopY) / 2,
-        0,
-      );
-      outerRopeSegments[index].scale.y = outerLength;
-    }
-
-    for (let index = 0; index < markersPerPath; index += 1) {
-      const inletProgress = markerProgress(
-        state.inletMarkerTravelTurns,
-        index,
-      );
-      const outletProgress = markerProgress(
-        state.outletMarkerTravelTurns,
-        index,
-      );
-      inletMarkers[index].position.copy(
-        inletFlowCurve.getPointAt(inletProgress),
-      );
-      outletMarkers[index].position.copy(
-        outletFlowCurve.getPointAt(outletProgress),
-      );
-      const inletFade = state.rising
-        ? Math.sin(Math.PI * inletProgress) ** 0.55
-          * Math.sqrt(state.flowFraction)
-        : 0;
-      const outletFade = state.falling
-        ? Math.sin(Math.PI * outletProgress) ** 0.55
-          * Math.sqrt(state.flowFraction)
-        : 0;
-      inletMarkers[index].scale.setScalar(inletFade);
-      outletMarkers[index].scale.setScalar(outletFade);
-    }
-  };
-
-  const geometry = {
-    atmosphericPressurePascal,
-    baseCounterweightY,
-    bellAreaSquareMetre,
-    bellLocalRimY,
-    bellLocalRopeAttachmentY,
-    bellLocalShoulderY,
-    bellMassKilogram,
-    bellMinimumY,
-    bellRadiusMetre,
-    bellStrokeSceneUnit,
-    counterweightCount,
-    counterweightMassKilogram,
-    counterweightTopOffsetY,
-    constantRopeLengthSceneUnit,
-    cycleDuration,
-    externalWaterSurfaceY,
-    gasAbsolutePressurePascal,
-    gasGaugePressurePascal,
-    gasTemperatureKelvin,
-    gravityMetrePerSecondSquared,
-    highestBellRimY,
-    internalWaterSurfaceY,
-    markersPerPath,
-    maximumGasVolumeCubicMetre,
-    maximumVolumeFlowCubicMetrePerSecond,
-    minimumGasVolumeCubicMetre,
-    minimumInternalSealDepthMetre,
-    physicalStrokeMetre,
-    pressureChangePerAddedKilogramEachCounterweightPascal,
-    pulleyCenters: pulleyCenters.map((center) => center.clone()),
-    pulleyRadiusSceneUnit,
-    residualSupportedMassKilogram,
-    sceneUnitsPerMetre,
-    universalGasConstantJoulePerMoleKelvin,
-    waterDensityKilogramPerCubicMetre,
-    waterLevelDifferenceMetre,
-  };
-
-  root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'single-lift-water-sealed-gasometer-with-open-bottom-bell-twin-bottom-gas-pipes-and-two-equal-counterweight-rope-pulley-constraints',
-    blocks: {
-      bellA,
-      bellBottomRim,
-      bellCrown,
-      bellCrownBand,
-      bellRopeLugs,
-      bellSkirt,
-      counterweights,
-      gasCylinder,
-      gasDome,
-      gasPipes: gasPipes.map(({ pipe }) => pipe),
-      guidePosts,
-      hollowGasRegion: [gasCylinder, gasDome],
-      innerRopeSegments,
-      innerWater,
-      inletMarkers,
-      outerAnnularWater,
-      outerRopeSegments,
-      outletMarkers,
-      pulleys,
-      ropeArcs,
-      tankB,
-      tankBottom,
-      tankTopRim,
-      tankWall,
-    },
-    degreesOfFreedom: {
-      bellVerticalTranslation: 1,
-      counterweightTranslationsSlavedByRopes: 2,
-      independentOperatingCoordinates: 1,
-      pulleyRotationsSlavedByNoSlip: 2,
-    },
-    dynamics: {
-      assumptionScope:
-        'The motion prescribes a smooth fill-and-withdraw cycle and uses quasi-static force balance. Bell and water inertia, guide friction, rope elasticity and mass, pulley inertia, gas temperature change, water slosh, leakage, skirt buoyancy detail, and pipe pressure losses are not integrated.',
-      gasInventory:
-        'At constant modeled pressure and temperature, n=p_abs*V/(R*T) and dn/dt=p_abs*A_bell*dy/dt/(R*T). Positive flow enters through the left pipe while A rises; equal returned volume leaves through the right pipe while A descends.',
-      pressureRegulation:
-        'p_gauge*A_bell=(m_bell-2*m_C)*g. Adding equal mass to both C weights reduces delivered pressure by 2*g/A_bell pascals per kilogram; removing it raises pressure.',
-      markerContinuity:
-        'Each visible marker advances from integrated admitted or withdrawn gas volume, is sampled at equal arc-length with getPointAt, fades at the pipe endpoints, and is hidden on the inactive pipe.',
-      ropeConstraint:
-        'For each inextensible rope, innerVerticalLength+pi*pulleyRadius+outerVerticalLength is constant. A rise shortens the inner leg, lengthens the C leg equally, lowers C by the same distance, and turns each pulley by ropeTravel/radius without slip.',
-      waterSeal:
-        'The constant gauge pressure depresses the water inside A by p_gauge/(rho_water*g); the highest open rim remains below that inner surface, so gas cannot bypass the water seal.',
-    },
-    fidelity: 'authored',
-    flowPaths: {
-      inletFlowCurve,
-      markerProgress,
-      outletFlowCurve,
-    },
-    geometry,
-    mechanism:
-      'A is one closed-top, open-bottom bell immersed in fixed water tank B. Gas enters through the left of two separate bottom pipes, displaces the gas volume, and raises A while its lower rim remains submerged; withdrawal through the right pipe reverses that motion. Two independent, taut ropes attached to opposite sides of A pass over equal fixed pulleys to equal counterweights C,C. Every rise of A lowers each C by the same distance and turns the two pulleys in opposite senses. The residual bell weight establishes the nearly constant gas pressure, while adding counterweight lowers that pressure and removing it raises pressure.',
-    motion: {
-      bellDirection: new THREE.Vector3(0, 1, 0),
-      counterweightDirections: [
-        new THREE.Vector3(0, -1, 0),
-        new THREE.Vector3(0, -1, 0),
-      ],
-      leftPulleySenseOnRise: 'counterclockwise',
-      rightPulleySenseOnRise: 'clockwise',
-    },
-    sourceAnimation: {
-      available: false,
-      officialCanvasModelPresent: false,
-      officialPageMarksAnimationUnavailable: true,
-      reason:
-        'The official Movement 479 HTML marks Animated unavailable and supplies only Brown’s engraving and caption.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourceReference: {
-      accumTreatiseUrl:
-        'https://classic-literature.net/friedrich-christian-accum-1769-1838/a-practical-treatise-on-gas-light-exhibiting-a-summary-description-of-the-apparatus-and-machinery-best-calculated-for-illuminating-streets-houses-and-manufactories-with-carburetted-hydrogen-or-coal-gas-with-remarks-on-the-utility-safety-and-general-nature-of-this-new-branch-of-civil-economy-by-friedrich-christian-accum-1769-1838/',
-      brownPlate479: {
-        approximateBellCrownPixels: [258, 79],
-        approximateExternalWaterLevelPixels: [261, 309],
-        approximateLeftCounterweightPixels: [92, 220],
-        approximateLeftPipeTopPixels: [233, 302],
-        approximateRightCounterweightPixels: [421, 220],
-        approximateRightPipeTopPixels: [275, 301],
-        imageHeight: 525,
-        imageWidth: 525,
-        measurementUncertaintyPixels: 15,
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'A is open-bottomed and arranged in water tank B',
-          'A is partly counterbalanced by two weights C,C',
-          'one bottom pipe admits gas and the other removes it',
-          'A rises as gas enters and descends as gas leaves',
-          'adding or reducing C weights regulates pressure',
-        ],
-        engravingEvidence:
-          'Brown’s section shows a single domed bell with both lower edges submerged, two separate bottom pipes ending beneath the crown, and mirror-image vertical ropes passing over two upper pulleys to hanging C weights.',
-        historicalCorroboration:
-          'F. C. Accum’s early gas-light treatise describes an inverted vessel in a water cistern, counterpoise adjustment, and the internal-versus-external water-level difference as the pressure head. Modern Canadian bell-prover procedure likewise sets reference pressure by adjusting the counterweight.',
-        reconstructionDisclosure:
-          'The A-in-B water seal, two gas pipes, twin C counterweights, rise-on-entry, descent-on-withdrawal, and weight pressure adjustment are source-grounded. Circular 3D form, guides, dimensions, masses, pressure, gas state, streamline shape, colors, and timing are independently engineered and exposed.',
-      },
-      measurementCanadaBellPressureUrl:
-        'https://ised-isde.canada.ca/site/measurement-canada/en/laws-and-requirements/gs-eng-09-011-procedures-calibration-certification-and-use-gas-measuring-apparatus-working-level',
-      officialPage: movement.sourceUrl,
-      plate: 'Brown 1868, Movement 479',
-    },
-    stateAtTime,
-    thermodynamics: {
-      constantPressureInventoryEquation:
-        'V=V_min+A_bell*y; n=p_abs*V/(R*T); dn/dt=p_abs*A_bell*dy/dt/(R*T)',
-      pressureHeadEquation:
-        'Delta_h=p_gauge/(rho_water*g)',
-    },
-    transmission: {
-      counterweightEquation: 'y_C=y_C0-y_A',
-      leftPulleyEquation: 'theta_left=+y_A/r_pulley',
-      pressureEquation:
-        'p_gauge=(m_bell-2*m_C)*g/A_bell',
-      rightPulleyEquation: 'theta_right=-y_A/r_pulley',
-    },
-    update,
-  };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.50, -2.55, -2.90),
-    new THREE.Vector3(3.50, 4.15, 2.90),
-  );
-  root.userData.cameraDistanceScale = 1.05;
-  root.userData.cameraDirection = new THREE.Vector3(8.5, 4.7, 10.5);
-  root.userData.groundFloorY = -2.55;
-  correctGasometerWorkingParts(root, 479);
-  presentCounterweightedSection(root);
-  markShadows(root);
-  tankWall.castShadow = false;
-  outerAnnularWater.castShadow = false;
-  innerWater.castShadow = false;
-  root.traverse(object => {
-    if (object.material?.transparent) {
-      object.castShadow = false;
-      object.receiveShadow = false;
-    }
-  });
-  update(0);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
-}
-
-function centerGuidedGasometer(movement) {
-  const root = new THREE.Group();
-  const cycleDuration = 8;
-  const sceneUnitsPerMetre = 2.7;
-
-  // Brown gives the topology but no dimensions, load, pressure, gas state,
-  // or timing. These SI values expose one coherent reconstruction.
-  const bellRadiusMetre = 0.72;
-  const bellAreaSquareMetre = Math.PI * bellRadiusMetre ** 2;
-  const bellMassKilogram = 235;
-  const gravityMetrePerSecondSquared = 9.80665;
-  const waterDensityKilogramPerCubicMetre = 998;
-  const atmosphericPressurePascal = 101325;
-  const gasTemperatureKelvin = 293.15;
-  const universalGasConstantJoulePerMoleKelvin = 8.314462618;
-  const physicalStrokeMetre = 0.36;
-  const minimumGasVolumeCubicMetre = 0.62;
-  const gasGaugePressurePascal = bellMassKilogram
-    * gravityMetrePerSecondSquared / bellAreaSquareMetre;
-  const gasAbsolutePressurePascal = atmosphericPressurePascal
-    + gasGaugePressurePascal;
-  const waterLevelDifferenceMetre = gasGaugePressurePascal
-    / (waterDensityKilogramPerCubicMetre
-      * gravityMetrePerSecondSquared);
-  const maximumGasVolumeCubicMetre = minimumGasVolumeCubicMetre
-    + bellAreaSquareMetre * physicalStrokeMetre;
-  const maximumVolumeFlowCubicMetrePerSecond = bellAreaSquareMetre
-    * physicalStrokeMetre * Math.PI / cycleDuration;
-
-  const externalWaterSurfaceY = 0.15;
-  const internalWaterSurfaceY = externalWaterSurfaceY
-    - waterLevelDifferenceMetre * sceneUnitsPerMetre;
-  const tankBottomY = -2.04;
-  const bellMinimumY = -0.10;
-  const bellStrokeSceneUnit = physicalStrokeMetre * sceneUnitsPerMetre;
-  const bellLocalRimY = -1.35;
-  const bellLocalShoulderY = 0.85;
-  const highestBellRimY = bellMinimumY + bellStrokeSceneUnit
-    + bellLocalRimY;
-  const minimumInternalSealDepthMetre = (
-    internalWaterSurfaceY - highestBellRimY
-  ) / sceneUnitsPerMetre;
-
-  const fixedTubeOuterRadiusMetre = 0.11;
-  const movingTubeInnerRadiusMetre = 0.13;
-  const movingTubeOuterRadiusMetre = 0.165;
-  const fixedTubeOuterRadiusSceneUnit = fixedTubeOuterRadiusMetre
-    * sceneUnitsPerMetre;
-  const movingTubeInnerRadiusSceneUnit = movingTubeInnerRadiusMetre
-    * sceneUnitsPerMetre;
-  const movingTubeOuterRadiusSceneUnit = movingTubeOuterRadiusMetre
-    * sceneUnitsPerMetre;
-  const guideRadialClearanceMetre = movingTubeInnerRadiusMetre
-    - fixedTubeOuterRadiusMetre;
-  const fixedTubeBottomY = tankBottomY;
-  const fixedTubeTopY = 3.50;
-  const fixedTubeLengthSceneUnit = fixedTubeTopY - fixedTubeBottomY;
-  const movingTubeLocalBottomY = -1.31;
-  const movingTubeLocalTopY = 1.73;
-  const movingTubeLengthSceneUnit = movingTubeLocalTopY
-    - movingTubeLocalBottomY;
-
-  const stateAtTime = (time) => {
-    const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
-    const phase = cycleTime / cycleDuration;
-    const angle = FULL_TURN * phase;
-    const fillFraction = 0.5 * (1 - Math.cos(angle));
-    const fillFractionRatePerSecond = Math.PI / cycleDuration
-      * Math.sin(angle);
-    const bellLiftMetre = physicalStrokeMetre * fillFraction;
-    const bellVelocityMetrePerSecond = physicalStrokeMetre
-      * fillFractionRatePerSecond;
-    const bellLiftSceneUnit = bellLiftMetre * sceneUnitsPerMetre;
-    const bellY = bellMinimumY + bellLiftSceneUnit;
-    const movingTubeBottomY = bellY + movingTubeLocalBottomY;
-    const movingTubeTopY = bellY + movingTubeLocalTopY;
-    const guideOverlapSceneUnit = Math.max(
-      0,
-      Math.min(fixedTubeTopY, movingTubeTopY)
-        - Math.max(fixedTubeBottomY, movingTubeBottomY),
-    );
-    const gasVolumeCubicMetre = minimumGasVolumeCubicMetre
-      + bellAreaSquareMetre * bellLiftMetre;
-    const netGasVolumeFlowCubicMetrePerSecond = bellAreaSquareMetre
-      * bellVelocityMetrePerSecond;
-    const inletGasVolumeFlowCubicMetrePerSecond = Math.max(
-      0,
-      netGasVolumeFlowCubicMetrePerSecond,
-    );
-    const outletGasVolumeFlowCubicMetrePerSecond = Math.max(
-      0,
-      -netGasVolumeFlowCubicMetrePerSecond,
-    );
-    const gasMoles = gasAbsolutePressurePascal * gasVolumeCubicMetre
-      / (universalGasConstantJoulePerMoleKelvin
-        * gasTemperatureKelvin);
-    const netMolarFlowMolePerSecond = gasAbsolutePressurePascal
-      * netGasVolumeFlowCubicMetrePerSecond
-      / (universalGasConstantJoulePerMoleKelvin
-        * gasTemperatureKelvin);
-    const flowFraction = Math.abs(netGasVolumeFlowCubicMetrePerSecond)
-      / maximumVolumeFlowCubicMetrePerSecond;
-    const rising = netGasVolumeFlowCubicMetrePerSecond > 1e-14;
-    const falling = netGasVolumeFlowCubicMetrePerSecond < -1e-14;
-    return {
-      bellLiftMetre,
-      bellLiftSceneUnit,
-      bellVelocityMetrePerSecond,
       bellY,
-      cycleTime,
-      falling,
-      fillFraction,
-      fillFractionRatePerSecond,
-      flowFraction,
-      gasMoles,
-      gasVolumeCubicMetre,
-      guideOverlapSceneUnit,
-      inletGasVolumeFlowCubicMetrePerSecond,
-      inletMarkerTravelTurns: phase <= 0.5 ? 2 * fillFraction : 2,
-      movingTubeBottomY,
-      movingTubeTopY,
-      netGasVolumeFlowCubicMetrePerSecond,
-      netMolarFlowMolePerSecond,
-      outletGasVolumeFlowCubicMetrePerSecond,
-      outletMarkerTravelTurns: phase < 0.5
-        ? 0
-        : 2 * (1 - fillFraction),
+      counterweightY: topBallY + descent,
+      falling: descentRate > 0,
+      gasVolumeSceneUnit3: Math.PI * (bellRadius - bellWall) ** 2 * (bellY + skirtHeight - innerWaterY),
       phase,
-      rising,
+      pulleyAngle: descent / pulleyRadius,
+      rising: descentRate < 0,
+      volumeRateSceneUnit3PerSecond: -Math.PI * (bellRadius - bellWall) ** 2 * descentRate,
     };
   };
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.23,
-    roughness: 0.47,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.31,
-    roughness: 0.42,
-  });
-  const bellMaterial = matte(PALETTE.driven, {
-    metalness: 0.20,
-    opacity: 0.61,
-    roughness: 0.34,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  bellMaterial.depthWrite = false;
-  const guideMaterial = matte(PALETTE.accent, {
-    metalness: 0.27,
-    roughness: 0.40,
-  });
-  const tankMaterial = matte(PALETTE.frame, {
-    metalness: 0.18,
-    opacity: 0.28,
-    roughness: 0.43,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  tankMaterial.depthWrite = false;
-  const waterMaterial = matte(PALETTE.fluid, {
-    opacity: 0.42,
-    roughness: 0.25,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
+  const masonry = matte(0xa9a296, {roughness: 0.9});
+  const bellMaterial = matte(PALETTE.driven, {metalness: 0.2, roughness: 0.45, side: THREE.DoubleSide});
+  const metal = matte(PALETTE.frame, {metalness: 0.25, roughness: 0.45});
+  const waterMaterial = matte(PALETTE.fluid, {opacity: 0.42, roughness: 0.2, transparent: true, side: THREE.DoubleSide});
   waterMaterial.depthWrite = false;
-  const gasMaterial = matte(PALETTE.driver, {
-    opacity: 0.17,
-    roughness: 0.24,
-    side: THREE.DoubleSide,
-    transparent: true,
+  const pulleyMaterial = matte(PALETTE.accent, {metalness: 0.2, roughness: 0.45});
+  const bandMaterial = matte(PALETTE.ink, {metalness: 0.05, roughness: 0.7});
+  const weightMaterial = matte(PALETTE.driver, {metalness: 0.24, roughness: 0.43});
+
+  const pit = buildPit(root, masonry, {pitRadius, groundY, floorY, slabHalf: 4.3, channelHeight: 0.32, pipes: pipeXs, pipeOuter});
+  const pipeRunY = (pit.channelTop + pit.channelBottom) / 2;
+  const gasPipes = pipeXs.map((x, index) => {
+    const path = pipePath(x, pipeTopY, pipeRunY, Math.sign(x) * 4.3, pit.channelTop - pipeRunY - 0.01);
+    const mesh = addMesh(root, curvedPipeWall(path, pipeInner, pipeOuter, 160, 40), metal,
+      index === 0 ? 'fixed-left-gas-inlet-through-bottom-of-B' : 'fixed-right-gas-outlet-through-bottom-of-B');
+    mesh.userData.flowPath = path;
+    return mesh;
   });
-  gasMaterial.depthWrite = false;
-  const markerMaterial = matte(PALETTE.white, {
-    opacity: 0.92,
-    roughness: 0.24,
-    transparent: true,
-  });
-  markerMaterial.depthWrite = false;
 
-  const tankB = new THREE.Group();
-  tankB.userData.role = 'fixed-water-seal-tank-B';
-  const tankWall = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.66, 2.66, 2.20, 72, 1, true),
-    tankMaterial,
-  );
-  tankWall.position.y = -0.91;
-  tankWall.userData.role = 'transparent-fixed-side-wall-of-tank-B';
-  const tankBottom = new THREE.Mesh(
-    new THREE.CylinderGeometry(2.66, 2.66, 0.18, 72),
-    frameMaterial,
-  );
-  tankBottom.position.y = tankBottomY;
-  tankBottom.userData.role = 'fixed-bottom-of-water-tank-B';
-  const tankTopRim = new THREE.Mesh(
-    new THREE.TorusGeometry(2.66, 0.095, 12, 72),
-    darkMaterial,
-  );
-  tankTopRim.rotation.x = Math.PI / 2;
-  tankTopRim.position.y = 0.20;
-  tankTopRim.userData.role = 'fixed-top-rim-of-tank-B';
-  tankB.add(tankWall, tankBottom, tankTopRim);
-  root.add(tankB);
-
-  const outerWaterHeight = externalWaterSurfaceY - (tankBottomY + 0.10);
-  const outerAnnularWater = annularPrism(
-    2.02,
-    2.55,
-    outerWaterHeight,
-    waterMaterial,
-    'outer-water-annulus-at-atmospheric-level',
-  );
-  outerAnnularWater.position.y = (
-    externalWaterSurfaceY + tankBottomY + 0.10
-  ) / 2;
-  const innerWaterHeight = internalWaterSurfaceY - (tankBottomY + 0.10);
-  const innerAnnularWater = annularPrism(
-    movingTubeOuterRadiusSceneUnit + 0.03,
-    1.88,
-    innerWaterHeight,
-    waterMaterial,
-    'inner-water-annulus-depressed-by-bell-gas-pressure',
-  );
-  innerAnnularWater.position.y = (
-    internalWaterSurfaceY + tankBottomY + 0.10
-  ) / 2;
-  root.add(outerAnnularWater, innerAnnularWater);
-
-  const fixedTubeB = new THREE.Group();
-  fixedTubeB.userData.role =
-    'fixed-central-tube-b-guiding-integral-moving-sleeve-a';
-  const fixedTubeShell = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      fixedTubeOuterRadiusSceneUnit,
-      fixedTubeOuterRadiusSceneUnit,
-      fixedTubeLengthSceneUnit,
-      42,
-      1,
-      true,
-    ),
-    frameMaterial,
-  );
-  fixedTubeShell.position.y = (fixedTubeTopY + fixedTubeBottomY) / 2;
-  fixedTubeShell.userData.role = 'fixed-hollow-shell-of-central-tube-b';
-  const fixedTubeTopRim = new THREE.Mesh(
-    new THREE.TorusGeometry(
-      fixedTubeOuterRadiusSceneUnit,
-      0.045,
-      9,
-      42,
-    ),
-    darkMaterial,
-  );
-  fixedTubeTopRim.rotation.x = Math.PI / 2;
-  fixedTubeTopRim.position.y = fixedTubeTopY;
-  fixedTubeTopRim.userData.role = 'visible-top-rim-of-fixed-tube-b';
-  const fixedTubeBase = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.48, 0.58, 0.24, 42),
-    darkMaterial,
-  );
-  fixedTubeBase.position.y = tankBottomY - 0.03;
-  fixedTubeBase.userData.role = 'fixed-base-securing-tube-b-to-tank';
-  fixedTubeB.add(fixedTubeShell, fixedTubeTopRim, fixedTubeBase);
-  root.add(fixedTubeB);
-
+  const bell = bellGeometry({radius: bellRadius, wall: bellWall, skirtHeight, rise});
   const bellA = new THREE.Group();
-  bellA.userData.role =
-    'one-open-bottomed-vessel-A-constrained-by-central-telescoping-guide';
-  const bellSkirt = new THREE.Mesh(
-    new THREE.CylinderGeometry(1.98, 1.98, 2.20, 72, 1, true),
-    bellMaterial,
-  );
-  bellSkirt.position.y = (bellLocalRimY + bellLocalShoulderY) / 2;
-  bellSkirt.userData.role = 'open-bottomed-cylindrical-skirt-of-A';
-  const bellCrown = upperHemisphere(
-    1.98,
-    0.44,
-    bellMaterial,
-    'closed-domed-crown-of-vessel-A-around-guide-sleeve',
-  );
-  bellCrown.position.y = bellLocalShoulderY;
-  const bellBottomRim = new THREE.Mesh(
-    new THREE.TorusGeometry(1.98, 0.075, 10, 72),
-    darkMaterial,
-  );
-  bellBottomRim.rotation.x = Math.PI / 2;
-  bellBottomRim.position.y = bellLocalRimY;
-  bellBottomRim.userData.role =
-    'submerged-open-lower-rim-maintaining-water-seal';
-  const bellCrownBand = new THREE.Mesh(
-    new THREE.TorusGeometry(1.98, 0.067, 10, 72),
-    darkMaterial,
-  );
-  bellCrownBand.rotation.x = Math.PI / 2;
-  bellCrownBand.position.y = bellLocalShoulderY;
-  bellCrownBand.userData.role = 'crown-to-skirt-seam-of-A';
-
-  const movingTubeA = new THREE.Group();
-  movingTubeA.userData.role =
-    'central-tube-a-permanently-secured-within-vessel-A';
-  const movingTubeShell = new THREE.Mesh(
-    new THREE.CylinderGeometry(
-      movingTubeOuterRadiusSceneUnit,
-      movingTubeOuterRadiusSceneUnit,
-      movingTubeLengthSceneUnit,
-      42,
-      1,
-      true,
-    ),
-    guideMaterial,
-  );
-  movingTubeShell.position.y = (
-    movingTubeLocalTopY + movingTubeLocalBottomY
-  ) / 2;
-  movingTubeShell.userData.role =
-    'sliding-outer-shell-of-integral-tube-a-around-b';
-  const movingTubeRims = [
-    movingTubeLocalBottomY,
-    movingTubeLocalTopY,
-  ].map((y, index) => {
-    const rim = new THREE.Mesh(
-      new THREE.TorusGeometry(
-        movingTubeOuterRadiusSceneUnit,
-        0.045,
-        9,
-        42,
-      ),
-      darkMaterial,
-    );
-    rim.rotation.x = Math.PI / 2;
-    rim.position.y = y;
-    rim.userData.role = index === 0
-      ? 'lower-sliding-rim-of-tube-a'
-      : 'upper-crown-fastening-rim-of-tube-a';
-    movingTubeA.add(rim);
-    return rim;
-  });
-  movingTubeA.add(movingTubeShell);
-  bellA.add(
-    bellSkirt,
-    bellCrown,
-    bellBottomRim,
-    bellCrownBand,
-    movingTubeA,
-  );
+  bellA.userData.role = 'one-open-bottomed-inverted-vessel-A-rising-in-water-tank';
+  const bellShell = addMesh(bellA, bell.geometry, bellMaterial, 'open-bottomed-domed-vessel-A');
   root.add(bellA);
 
-  const gasAnnulus = annularPrism(
-    movingTubeOuterRadiusSceneUnit + 0.05,
-    1.78,
-    1,
-    gasMaterial,
-    'variable-height-annular-gas-volume-around-central-guide',
-  );
-  // Bake the helper's horizontal orientation into this dynamic mesh so its
-  // local Y scale changes height, rather than stretching the annulus in Z.
-  gasAnnulus.geometry.rotateX(Math.PI / 2);
-  gasAnnulus.rotation.x = 0;
-  const gasDome = upperHemisphere(
-    1.78,
-    0.40,
-    gasMaterial,
-    'gas-volume-under-domed-crown-of-A',
-  );
-  gasDome.position.y = bellLocalShoulderY;
-  bellA.add(gasDome);
-  root.add(gasAnnulus);
+  const water = buildWater(root, waterMaterial, {floorY, pitRadius, bellRadius, bellWall, outerLevel: waterY, innerLevel: innerWaterY,
+    innerHoles: pipeXs.map((x) => planCircle([x, 0], pipeOuter + 0.004, 64))});
 
-  const gasPipeCentersX = [-0.68, 0.68];
-  const pipeBottomY = -2.48;
-  const pipeTopY = 0.12;
-  const gasPipes = gasPipeCentersX.map((x, index) => {
-    const pipe = new THREE.Group();
-    pipe.userData.role = index === 0
-      ? 'fixed-left-gas-outlet-through-bottom-of-B'
-      : 'fixed-right-gas-inlet-through-bottom-of-B';
-    const shell = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        0.155,
-        0.155,
-        pipeTopY - pipeBottomY,
-        34,
-        1,
-        true,
-      ),
-      frameMaterial,
-    );
-    shell.position.set(x, (pipeTopY + pipeBottomY) / 2, 0);
-    shell.userData.role = index === 0
-      ? 'left-outlet-pipe-shell'
-      : 'right-inlet-pipe-shell';
-    const bore = new THREE.Mesh(
-      new THREE.CylinderGeometry(
-        0.082,
-        0.082,
-        pipeTopY - pipeBottomY + 0.02,
-        26,
-      ),
-      gasMaterial,
-    );
-    bore.position.copy(shell.position);
-    bore.userData.role = index === 0
-      ? 'left-outlet-gas-core'
-      : 'right-inlet-gas-core';
-    const topRim = new THREE.Mesh(
-      new THREE.TorusGeometry(0.155, 0.035, 8, 34),
-      darkMaterial,
-    );
-    topRim.rotation.x = Math.PI / 2;
-    topRim.position.set(x, pipeTopY, 0);
-    topRim.userData.role = index === 0
-      ? 'left-outlet-opening-above-inner-water'
-      : 'right-inlet-opening-above-inner-water';
-    pipe.add(shell, bore, topRim);
-    root.add(pipe);
-    return { bore, pipe, shell, topRim };
+  // Pulleys: plain flanged discs on short axle stubs, as Brown draws them.
+  const tread = pulleyRadius - bandThickness / 2;
+  const pulleys = pulleyCenters.map((center, index) => {
+    const group = new THREE.Group();
+    group.position.copy(center);
+    group.userData.role = `fixed-axis-counterweight-pulley-${index + 1}`;
+    const rotor = new THREE.Group();
+    group.add(rotor);
+    const wheel = addMesh(rotor, boredLatheGeometry([
+      {radial: tread + 0.07, axial: -0.16}, {radial: tread + 0.07, axial: -0.11},
+      {radial: tread, axial: -0.11}, {radial: tread, axial: 0.11},
+      {radial: tread + 0.07, axial: 0.11}, {radial: tread + 0.07, axial: 0.16},
+    ], 0.075, 96), pulleyMaterial, 'plain-flanged-pulley-disc');
+    wheel.rotation.x = Math.PI / 2;
+    applyRotationIndicator(wheel);
+    const axle = addMesh(group, new THREE.CylinderGeometry(0.07, 0.07, 0.44, 40), metal, `counterweight-pulley-axle-${index + 1}`);
+    axle.rotation.x = Math.PI / 2;
+    root.add(group);
+    return {axle, group, rotor, wheel};
   });
 
-  const inletFlowCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(0.68, pipeBottomY - 0.12, 0.03),
-    new THREE.Vector3(0.68, -1.25, 0.03),
-    new THREE.Vector3(0.68, pipeTopY, 0.03),
-    new THREE.Vector3(0.78, 0.40, 0.10),
-    new THREE.Vector3(1.02, 0.62, 0.19),
-  ], false, 'centripetal');
-  const outletFlowCurve = new THREE.CatmullRomCurve3([
-    new THREE.Vector3(-1.02, 0.62, -0.19),
-    new THREE.Vector3(-0.78, 0.40, -0.10),
-    new THREE.Vector3(-0.68, pipeTopY, -0.03),
-    new THREE.Vector3(-0.68, -1.25, -0.03),
-    new THREE.Vector3(-0.68, pipeBottomY - 0.12, -0.03),
-  ], false, 'centripetal');
-  const markersPerPath = 7;
-  const inletMarkers = [];
-  const outletMarkers = [];
-  for (let index = 0; index < markersPerPath; index += 1) {
-    const inletMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.082, 18, 12),
-      markerMaterial,
-    );
-    inletMarker.userData.role = `right-inlet-gas-marker-${index + 1}`;
-    const outletMarker = new THREE.Mesh(
-      new THREE.SphereGeometry(0.082, 18, 12),
-      markerMaterial,
-    );
-    outletMarker.userData.role = `left-outlet-gas-marker-${index + 1}`;
-    root.add(inletMarker, outletMarker);
-    inletMarkers.push(inletMarker);
-    outletMarkers.push(outletMarker);
-  }
-  const markerProgress = (turns, markerIndex) =>
-    THREE.MathUtils.euclideanModulo(
-      turns + markerIndex / markersPerPath,
-      1,
-    );
+  const counterweights = pulleyCenters.map((center, index) => {
+    const side = Math.sign(center.x);
+    const ball = addMesh(root, new THREE.SphereGeometry(ballRadius, 48, 32), weightMaterial, `counterweight-C-${index + 1}`);
+    ball.position.set(center.x + side * pulleyRadius, topBallY, 0);
+    return ball;
+  });
+
+  // Flat bands: one leg down to the crown just inside the shoulder, a lap
+  // over the pulley, the other leg down to the ball.
+  const lapShape = new THREE.Shape();
+  lapShape.absarc(0, 0, tread + bandThickness, 0, Math.PI, false);
+  lapShape.absarc(0, 0, tread, Math.PI, 0, true);
+  const bandLaps = pulleyCenters.map((center, index) => {
+    const lap = addMesh(root, new THREE.ExtrudeGeometry(lapShape, {depth: bandWidth, bevelEnabled: false, curveSegments: 48}).translate(0, 0, -bandWidth / 2),
+      bandMaterial, `flat-band-lap-on-pulley-${index + 1}`);
+    lap.position.copy(center);
+    return lap;
+  });
+  const bandLeg = (role) => addMesh(root, new THREE.BoxGeometry(bandThickness, 1, bandWidth), bandMaterial, role);
+  const innerBands = [0, 1].map((index) => bandLeg(`taut-inner-band-${index + 1}-to-A`));
+  const outerBands = [0, 1].map((index) => bandLeg(`taut-outer-band-${index + 1}-to-C`));
+  const legX = (center, sign) => center.x + sign * (tread + bandThickness / 2);
+  const attachX = bellRadius - bellWall / 2;
+  // The band end rests on the crown at its inner edge, where the crown is highest.
+  const attachLocalY = bell.capY(attachX - bandThickness / 2);
 
   const update = (time) => {
     const state = stateAtTime(time);
     bellA.position.y = state.bellY;
-    root.userData.waterSealUpdate?.(state.bellY);
-    const gasTopY = state.bellY + bellLocalShoulderY;
-    const gasHeight = gasTopY - internalWaterSurfaceY;
-    gasAnnulus.scale.y = gasHeight;
-    gasAnnulus.position.y = (gasTopY + internalWaterSurfaceY) / 2;
-    for (let index = 0; index < markersPerPath; index += 1) {
-      const inletProgress = markerProgress(
-        state.inletMarkerTravelTurns,
-        index,
-      );
-      const outletProgress = markerProgress(
-        state.outletMarkerTravelTurns,
-        index,
-      );
-      inletMarkers[index].position.copy(
-        inletFlowCurve.getPointAt(inletProgress),
-      );
-      outletMarkers[index].position.copy(
-        outletFlowCurve.getPointAt(outletProgress),
-      );
-      const inletFade = state.rising
-        ? Math.sin(Math.PI * inletProgress) ** 0.55
-          * Math.sqrt(state.flowFraction)
-        : 0;
-      const outletFade = state.falling
-        ? Math.sin(Math.PI * outletProgress) ** 0.55
-          * Math.sqrt(state.flowFraction)
-        : 0;
-      inletMarkers[index].scale.setScalar(inletFade);
-      outletMarkers[index].scale.setScalar(outletFade);
-    }
+    water.underRim.scale.y = Math.max(1e-4, state.bellY - floorY - 0.008);
+    pulleyCenters.forEach((center, index) => {
+      const side = Math.sign(center.x);
+      pulleys[index].rotor.rotation.z = side * state.pulleyAngle;
+      counterweights[index].position.y = state.counterweightY;
+      const innerX = legX(center, -side), outerX = legX(center, side);
+      const attachY = state.bellY + attachLocalY;
+      const ballTop = state.counterweightY + ballRadius;
+      innerBands[index].position.set(innerX, (center.y + attachY) / 2, 0);
+      innerBands[index].scale.y = center.y - attachY;
+      outerBands[index].position.set(outerX, (center.y + ballTop) / 2, 0);
+      outerBands[index].scale.y = center.y - ballTop;
+    });
   };
 
   const geometry = {
-    atmosphericPressurePascal,
-    bellAreaSquareMetre,
-    bellLocalRimY,
-    bellLocalShoulderY,
-    bellMassKilogram,
-    bellMinimumY,
-    bellRadiusMetre,
-    bellStrokeSceneUnit,
-    cycleDuration,
-    externalWaterSurfaceY,
-    fixedTubeBottomY,
-    fixedTubeLengthSceneUnit,
-    fixedTubeOuterRadiusMetre,
-    fixedTubeOuterRadiusSceneUnit,
-    fixedTubeTopY,
-    gasAbsolutePressurePascal,
-    gasGaugePressurePascal,
-    gasTemperatureKelvin,
-    gravityMetrePerSecondSquared,
-    guideRadialClearanceMetre,
-    highestBellRimY,
-    internalWaterSurfaceY,
-    markersPerPath,
-    maximumGasVolumeCubicMetre,
-    maximumVolumeFlowCubicMetrePerSecond,
-    minimumGasVolumeCubicMetre,
-    minimumInternalSealDepthMetre,
-    movingTubeInnerRadiusMetre,
-    movingTubeInnerRadiusSceneUnit,
-    movingTubeLengthSceneUnit,
-    movingTubeLocalBottomY,
-    movingTubeLocalTopY,
-    movingTubeOuterRadiusMetre,
-    movingTubeOuterRadiusSceneUnit,
-    physicalStrokeMetre,
-    pipeBottomY,
-    pipeTopY,
-    sceneUnitsPerMetre,
-    tankBottomY,
-    universalGasConstantJoulePerMoleKelvin,
-    waterDensityKilogramPerCubicMetre,
-    waterLevelDifferenceMetre,
+    ballRadius, bandThickness, bandWidth, bellMassKilogram, bellRadius, bellWall, counterweightMassKilogram, cycleDuration,
+    floorY, gaugePressurePascal, groundY, headSceneUnit, innerWaterY, pipeTopY, pipeXs, pitRadius, pulleyCenters, pulleyRadius,
+    rise, skirtHeight, strokeSceneUnit, topBallY, topRimY, waterY,
+  };
+  root.userData = {
+    animationTiming: {authoredCyclePeriod: cycleDuration, targetCycleDuration: 4},
+    archetype: movement.archetype,
+    blocks: {bandLaps, bellA, bellShell, counterweights, gasPipes, innerBands, outerBands, pit, pulleys, water},
+    fidelity: 'authored',
+    geometry,
+    mechanism: 'The open-bottomed vessel A stands in the water of tank B, a masonry pit, and is partly balanced by the two weights C on bands over two pulleys. Gas enters through the left pipe and leaves through the right, both rising through the floor of B above the water; as gas enters, A rises and the weights fall, and the reverse. The water inside A stands below the free level by the head of the gas pressure, which is set by the weight of A less the weights C.',
+    reconstruction: 'Proportions are measured on Brown’s plate. The pit is round in plan and the ground is shown as a square block; the pipes run out in a channel under the floor. Brown’s pose is the top of the stroke; the bell falls 1.7 units and returns. Pressure is quasi-static.',
+    sourceAnimation: {available: false, reason: 'The official Movement 479 page marks Animated unavailable.'},
+    sourceReference: {officialPage: movement.sourceUrl, plate: 'Brown 1868, Movement 479', pixelScale: 'x=(px2-510)*0.0095, y=0.20+(605-py2)*0.0095 (2x pixels)'},
+    stateAtTime,
+    update,
+  };
+  root.userData.workingPartsReview = {status: 'measured-proportions', residual: 'Gas flow and pressure transients are not solved; the fill cycle is prescribed.'};
+  update(0);
+  presentSection(root);
+  fitBounds(root, update, cycleDuration);
+  markShadows(root);
+  for (const mesh of [water.inner, water.outer, water.underRim]) {mesh.castShadow = false;mesh.receiveShadow = false;}
+  return {cameraDirection: root.userData.cameraDirection, root, update};
+}
+
+// ---------------------------------------------------------------- 480
+function centerGuidedGasometer(movement) {
+  const root = new THREE.Group();
+  const cycleDuration = 8;
+  const px = (value) => (value - 487) * K;
+  const py = (value) => 0.20 + (560 - value) * K;
+
+  // Plate 480 (2x pixels): water at 560, ground at 495, pit floor at 900,
+  // pit walls at 200/770; bell skirt 240/725 from its rim at 690 to its
+  // shoulder at 240, crown rising to 150 where it meets sleeve a (walls
+  // 430-445 / 520-535); tube b 455-520 from y 50 down through the floor to
+  // its foot at 1000; pipes 375-400 and 575-600, tops at 510.
+  const waterY = py(560);
+  const groundY = py(495);
+  const floorY = py(900);
+  const pitRadius = (770 - 200) / 2 * K;
+  const bellRadius = (725 - 240) / 2 * K, bellWall = 0.05;
+  const skirtHeight = (690 - 240) * K;
+  const sleeveOuter = (535 - 430) / 2 * K, sleeveInner = (520 - 445) / 2 * K;
+  const tubeOuter = (520 - 455) / 2 * K, tubeInner = tubeOuter - 0.05;
+  // Crown: a spherical cap through the shoulder and the sleeve at y 150.
+  const capAtSleeve = (240 - 150) * K;
+  const capCenter = (sleeveOuter ** 2 + capAtSleeve ** 2 - bellRadius ** 2) / (2 * capAtSleeve);
+  const sphere = Math.hypot(bellRadius, capCenter);
+  const rise = capCenter + sphere;
+  const midRimY = py(690);
+  const amplitude = 0.85;
+  const tubeTopY = py(50), tubeBottomY = py(1000);
+  const pipeXs = [px(387.5), px(587.5)];
+  const pipeOuter = 0.12, pipeInner = 0.08, pipeTopY = py(510);
+
+  const sceneUnitsPerMetre = 8 / 3;
+  const bellAreaSquareMetre = Math.PI * (bellRadius / sceneUnitsPerMetre) ** 2;
+  const bellMassKilogram = 100, gravity = 9.80665, waterDensity = 998;
+  const gaugePressurePascal = bellMassKilogram * gravity / bellAreaSquareMetre;
+  const headSceneUnit = gaugePressurePascal / (waterDensity * gravity) * sceneUnitsPerMetre;
+  const innerWaterY = waterY - headSceneUnit;
+
+  const stateAtTime = (time) => {
+    const phase = THREE.MathUtils.euclideanModulo(time / cycleDuration, 1);
+    const bellY = midRimY + amplitude * Math.sin(FULL_TURN * phase);
+    const rate = amplitude * Math.cos(FULL_TURN * phase) * FULL_TURN / cycleDuration;
+    return {bellY, falling: rate < 0, phase, rising: rate > 0,
+      volumeRateSceneUnit3PerSecond: Math.PI * ((bellRadius - bellWall) ** 2 - sleeveOuter ** 2) * rate};
   };
 
-  root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'center-guided-water-sealed-gasometer-with-open-bottom-bell-integral-sliding-sleeve-a-fixed-tube-b-and-opposed-bottom-gas-pipes',
-    blocks: {
-      bellA,
-      bellBottomRim,
-      bellCrown,
-      bellCrownBand,
-      bellSkirt,
-      fixedTubeB,
-      fixedTubeBase,
-      fixedTubeShell,
-      fixedTubeTopRim,
-      gasAnnulus,
-      gasDome,
-      gasPipes: gasPipes.map(({ pipe }) => pipe),
-      innerAnnularWater,
-      inletMarkers,
-      movingTubeA,
-      movingTubeRims,
-      movingTubeShell,
-      outerAnnularWater,
-      outletMarkers,
-      tankB,
-      tankBottom,
-      tankTopRim,
-      tankWall,
-    },
-    degreesOfFreedom: {
-      bellAndIntegralTubeVerticalTranslation: 1,
-      independentOperatingCoordinates: 1,
-      lateralTranslationsConstrainedByGuide: 2,
-      movingTubeSeparateMotionRelativeToBell: 0,
-    },
-    dynamics: {
-      assumptionScope:
-        'The gas flow prescribes a smooth fill-and-withdraw cycle and the pressure balance is quasi-static. Bell and water inertia, guide friction, gas-temperature change, water slosh, leakage, skirt buoyancy detail, and pipe losses are not integrated.',
-      gasInventory:
-        'At constant modeled pressure and temperature, V=V_min+A_bell*y and n=p_abs*V/(R*T). Gas entering through the right pipe raises A; gas leaving through the left pipe lowers it.',
-      guideConstraint:
-        'Tube a is a rigid child of vessel A and remains coaxial with fixed tube b. Its exposed radial clearance is positive and its axial overlap remains equal to the full sleeve length throughout the modeled stroke.',
-      markerContinuity:
-        'Markers advance from integrated admitted or withdrawn volume, use getPointAt for equal arc-length sampling, fade at both pipe endpoints, and remain hidden on the inactive pipe.',
-      pressureBalance:
-        'With no counterweights shown in Movement 480, the reconstruction uses p_gauge*A_bell=m_bell*g; the resulting internal water depression is p_gauge/(rho_water*g).',
-      waterSeal:
-        'The open lower rim of A stays below the depressed internal water surface at every lift, so the annular water path around tube a remains a gas seal.',
-    },
-    fidelity: 'authored',
-    flowPaths: {
-      inletFlowCurve,
-      markerProgress,
-      outletFlowCurve,
-    },
-    geometry,
-    mechanism:
-      'One closed-top, open-bottom vessel A rises and falls in water tank B. A central tube a is permanently secured within A, so it translates with the bell and slides coaxially over the taller fixed tube b anchored at the center of the tank. This telescoping pair guides A without the ropes, pulleys, or counterweights used in Movement 479. The right bottom pipe admits gas above the depressed inner water surface and raises A; the left bottom pipe withdraws gas and lowers A. The submerged bell rim preserves the water seal throughout the stroke.',
-    motion: {
-      bellDirection: new THREE.Vector3(0, 1, 0),
-      fixedTubeBMotion: 'none',
-      movingTubeAMotion: 'rigidly identical to vessel A',
-    },
-    sourceAnimation: {
-      available: false,
-      officialCanvasModelPresent: false,
-      officialPageMarksAnimationUnavailable: true,
-      reason:
-        'The official Movement 480 HTML marks Animated unavailable and supplies only Brown’s engraving and caption.',
-      sourcePrescribedAbsoluteTiming: false,
-    },
-    sourceReference: {
-      brownPlate480: {
-        approximateBellCrownPixels: [261, 128],
-        approximateFixedTubeBPixels: [246, 213],
-        approximateLeftOutletTopPixels: [191, 279],
-        approximateMovingTubeAPixels: [276, 215],
-        approximateRightInletTopPixels: [319, 279],
-        approximateWaterLevelPixels: [263, 283],
-        imageHeight: 525,
-        imageWidth: 525,
-        measurementUncertaintyPixels: 15,
-      },
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'the apparatus is another kind of gasometer',
-          'the moving vessel is A',
-          'central tube a is permanently secured within A',
-          'tube a slides on fixed tube b',
-          'fixed tube b stands in the center of the tank',
-        ],
-        engravingEvidence:
-          'Brown’s section shows one domed open-bottom bell A in water tank B, a narrow moving sleeve a surrounding a taller fixed central tube b, no external counterweight gear, and two distinct bottom pipes whose arrows show right-side admission and left-side withdrawal.',
-        reconstructionDisclosure:
-          'The A-in-B water seal, integral sleeve a, fixed central tube b, absence of counterweights, and two pipe directions are source-grounded. Circular 3D form, guide clearance, dimensions, bell mass, pressure, gas state, colors, streamline shape, and timing are independently engineered and exposed.',
-      },
-      officialPage: movement.sourceUrl,
-      plate: 'Brown 1868, Movement 480',
-      publicDomainBookScanUrl:
-        'https://upload.wikimedia.org/wikipedia/commons/c/c3/Five_hundred_and_seven_mechanial_movements%2C_embracing_all_those_which_are_most_important_in_dynamics%2C_hydraulics%2C_hydrostatics%2C_pneumatics%2C_steam_engines%2C_mill_and_other_gearing_.._%28IA_fivehundredseven02brow%29.pdf',
-    },
-    stateAtTime,
-    thermodynamics: {
-      constantPressureInventoryEquation:
-        'V=V_min+A_bell*y; n=p_abs*V/(R*T); dn/dt=p_abs*A_bell*dy/dt/(R*T)',
-      pressureHeadEquation:
-        'Delta_h=p_gauge/(rho_water*g)',
-    },
-    transmission: {
-      guideEquation:
-        'x_a=x_b=0; z_a=z_b=0; y_a=y_A; clearance=r_a_inner-r_b_outer>0',
-      pressureEquation: 'p_gauge=m_bell*g/A_bell',
-      volumeEquation: 'V=V_min+A_bell*y_A',
-    },
-    update,
-  };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.05, -2.72, -2.85),
-    new THREE.Vector3(3.05, 3.72, 2.85),
-  );
-  root.userData.cameraDistanceScale = 1.04;
-  root.userData.cameraDirection = new THREE.Vector3(8.3, 4.4, 10.4);
-  root.userData.groundFloorY = -2.72;
-  correctGasometerWorkingParts(root, 480);
-  presentFlatSection(root);
-  markShadows(root);
-  tankWall.castShadow = false;
-  outerAnnularWater.castShadow = false;
-  innerAnnularWater.castShadow = false;
-  root.traverse(object => {
-    if (object.material?.transparent) {
-      object.castShadow = false;
-      object.receiveShadow = false;
-    }
+  const masonry = matte(0xa9a296, {roughness: 0.9});
+  const bellMaterial = matte(PALETTE.driven, {metalness: 0.2, roughness: 0.45, side: THREE.DoubleSide});
+  const sleeveMaterial = matte(PALETTE.accent, {metalness: 0.25, roughness: 0.42, side: THREE.DoubleSide});
+  const metal = matte(PALETTE.frame, {metalness: 0.25, roughness: 0.45});
+  const waterMaterial = matte(PALETTE.fluid, {opacity: 0.42, roughness: 0.2, transparent: true, side: THREE.DoubleSide});
+  waterMaterial.depthWrite = false;
+
+  const pit = buildPit(root, masonry, {pitRadius, groundY, floorY, slabHalf: 4.3, channelHeight: 0.30, pipes: pipeXs, pipeOuter, tubeHole: tubeOuter,
+    footRadius: tubeOuter + 0.30, footHeight: 0.06});
+  const pipeRunY = (pit.channelTop + pit.channelBottom) / 2;
+  const gasPipes = pipeXs.map((x, index) => {
+    const path = pipePath(x, pipeTopY, pipeRunY, Math.sign(x) * 4.3, pit.channelTop - pipeRunY - 0.01);
+    const mesh = addMesh(root, curvedPipeWall(path, pipeInner, pipeOuter, 160, 40), metal,
+      index === 0 ? 'fixed-left-gas-outlet-through-bottom-of-B' : 'fixed-right-gas-inlet-through-bottom-of-B');
+    mesh.userData.flowPath = path;
+    return mesh;
   });
-  update(0);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
+
+  // Fixed tube b, from its foot in the ground up through the floor to above
+  // the bell, with the flanged foot Brown draws.
+  const tubeB = new THREE.Group();
+  tubeB.userData.role = 'fixed-central-tube-b-guiding-integral-moving-sleeve-a';
+  const bottomOfTube = pit.baseBottom;
+  const tubeShell = addMesh(tubeB, boredLatheGeometry([
+    {radial: tubeOuter + 0.30, axial: bottomOfTube}, {radial: tubeOuter + 0.30, axial: bottomOfTube + 0.06},
+    {radial: tubeOuter, axial: bottomOfTube + 0.06}, {radial: tubeOuter, axial: tubeTopY},
+  ], tubeInner, 96), metal, 'fixed-hollow-shell-of-central-tube-b');
+  root.add(tubeB);
+
+  // Bell A with its integral sleeve a.
+  const bell = bellGeometry({radius: bellRadius, wall: bellWall, skirtHeight, rise, opening: sleeveOuter});
+  const bellA = new THREE.Group();
+  bellA.userData.role = 'one-open-bottomed-inverted-vessel-A-with-integral-sleeve-a';
+  const bellShell = addMesh(bellA, bell.geometry, bellMaterial, 'open-bottomed-domed-vessel-A-around-sleeve-a');
+  const sleeveTop = skirtHeight + capAtSleeve;
+  const sleeveA = addMesh(bellA, boredLatheGeometry([
+    {radial: sleeveOuter, axial: 0}, {radial: sleeveOuter, axial: sleeveTop},
+  ], sleeveInner, 96), sleeveMaterial, 'sliding-sleeve-a-secured-within-A');
+  root.add(bellA);
+
+  const holes = pipeXs.map((x) => planCircle([x, 0], pipeOuter + 0.004, 64));
+  const water = buildWater(root, waterMaterial, {floorY, pitRadius, bellRadius, bellWall, outerLevel: waterY, innerLevel: innerWaterY,
+    innerHoles: holes, innerCore: sleeveOuter + 0.004});
+  // Between a and b the water stands at the free level (the gap is open to
+  // the air at the top of a); under a's lower end a ring joins it.
+  const gap = 0.004;
+  const sleeveGapWater = addMesh(root, horizontalPlate(annulus(tubeOuter + gap, sleeveInner - gap), floorY + gap, waterY), waterMaterial,
+    'water-annulus-in-gap-between-tubes-a-and-b-at-atmospheric-level');
+  const underSleeveWater = addMesh(root, horizontalPlate(annulus(sleeveInner - gap, sleeveOuter + gap), 0, 1), waterMaterial, 'water-annulus-under-sleeve-a');
+  underSleeveWater.position.y = floorY + gap;
+
+  const update = (time) => {
+    const state = stateAtTime(time);
+    bellA.position.y = state.bellY;
+    const lift = Math.max(1e-4, state.bellY - floorY - 2 * gap);
+    water.underRim.scale.y = lift;
+    underSleeveWater.scale.y = lift;
+  };
+
+  const geometry = {
+    amplitude, bellMassKilogram, bellRadius, bellWall, cycleDuration, floorY, gaugePressurePascal, groundY, headSceneUnit,
+    innerWaterY, midRimY, pipeTopY, pipeXs, pitRadius, rise, skirtHeight, sleeveInner, sleeveOuter, sleeveTop, tubeInner,
+    tubeOuter, tubeTopY, waterY,
+  };
+  root.userData = {
+    animationTiming: {authoredCyclePeriod: cycleDuration, targetCycleDuration: 4},
+    archetype: movement.archetype,
+    blocks: {bellA, bellShell, gasPipes, pit, sleeveA, sleeveGapWater, tubeB, tubeShell, underSleeveWater, water},
+    fidelity: 'authored',
+    geometry,
+    mechanism: 'Vessel A carries the central sleeve a, which slides on the fixed tube b standing in the centre of the masonry tank B, so A rises and falls square without counterweights. Gas enters by the right pipe and leaves by the left, both rising through the floor of B above the water. The water inside A stands below the free level by the head of the gas pressure, set by the weight of A; between a and b, open to the air at the top, it stands at the free level.',
+    reconstruction: 'Proportions are measured on Brown’s plate. The pit is round in plan and the ground is shown as a square block; the pipes run out in a channel under the floor and b stands on a flanged foot in the ground. Brown’s pose is mid-stroke. Pressure is quasi-static.',
+    sourceAnimation: {available: false, reason: 'The official Movement 480 page marks Animated unavailable.'},
+    sourceReference: {officialPage: movement.sourceUrl, plate: 'Brown 1868, Movement 480', pixelScale: 'x=(px2-487)*0.0095, y=0.20+(560-py2)*0.0095 (2x pixels)'},
+    stateAtTime,
     update,
   };
+  root.userData.workingPartsReview = {status: 'measured-proportions', residual: 'Gas flow and pressure transients are not solved; the fill cycle is prescribed.'};
+  update(0);
+  presentSection(root);
+  fitBounds(root, update, cycleDuration);
+  markShadows(root);
+  for (const mesh of [water.inner, water.outer, water.underRim, sleeveGapWater, underSleeveWater]) {mesh.castShadow = false;mesh.receiveShadow = false;}
+  return {cameraDirection: root.userData.cameraDirection, root, update};
 }
 
 export function createAuthoredGasometerMovement(movement) {

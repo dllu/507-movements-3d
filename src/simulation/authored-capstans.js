@@ -1,9 +1,9 @@
 import * as THREE from 'three';
 import { LaidRopeGeometry } from './laid-rope.js';
-import { makeCrownRatchetGeometry, capstanPawlLeadAngle, capstanPawlDimensions, capstanPawlProfile } from './capstan-pawl-contact.js';
+import { makeCrownRatchetGeometry, capstanPawlDimensions, capstanPawlProfile, capstanPawlReleasePhase } from './capstan-pawl-contact.js';
 import { boredLatheGeometry } from './bored-lathe-geometry.js';
 import { plate, poly, circle, polygonClipping } from './finite-plate-geometry.js';
-import { capstanHeadGeometry, capstanSocketRimGeometry, capstanPackingProgress, capstanPawlArmGeometry, capstanPawlCheekGeometry } from './capstan-finite-parts.js';
+import { capstanHeadGeometry, capstanSocketRimGeometry, capstanPackingProgress, capstanPawlGeometry } from './capstan-finite-parts.js';
 import {
   PALETTE,
   markShadows,
@@ -93,18 +93,24 @@ function commonCapstan(movement) {
 
   const ratchetToothCount = 18;
   const ratchetToothPitch = FULL_TURN / ratchetToothCount;
-  const ratchetInnerRadius = 1.37;
-  const ratchetOuterRadius = 1.79;
-  const ratchetBottomHeight = -1.61;
-  const ratchetLowHeight = -1.50;
-  const ratchetHighHeight = -1.27;
-  const pawlInitialToothPhase = 0.30;
-  const ratchetPhaseOffset = -pawlInitialToothPhase
-    * ratchetToothPitch;
-  const pawlFreefallFraction = 0.40;
-  const pawlPivotRadius = 1.23;
-  const pawlPivotHeight = -1.04;
-  const pawlLength = 0.47;
+  const pawlDimensions = capstanPawlDimensions;
+  const ratchetInnerRadius = pawlDimensions.innerRadius;
+  const ratchetOuterRadius = pawlDimensions.outerRadius;
+  const ratchetBottomHeight = pawlDimensions.bottomHeight;
+  const ratchetLowHeight = pawlDimensions.lowHeight;
+  const ratchetHighHeight = pawlDimensions.highHeight;
+  // Brown's pawl swings in the plane of his drawing: flat against the front
+  // of the lower capstan on a radial pivot pin, its nose hanging down and
+  // toward the recoil side onto the crown teeth. At the displayed start the
+  // nose has just dropped past a crest (release phase measured from it).
+  const pawlFreefallFraction = pawlDimensions.releaseFraction;
+  const pawlInitialReleasePhase = pawlFreefallFraction + 0.02;
+  const pawlPivotAzimuth = pawlDimensions.pivotAzimuth;
+  const pawlPlaneRadius = pawlDimensions.planeRadius;
+  const pawlPivotHeight = pawlDimensions.pivotHeight;
+  const pawlLength = pawlDimensions.length;
+  const ratchetPhaseOffset = pawlPivotAzimuth
+    - (capstanPawlReleasePhase + pawlInitialReleasePhase) * ratchetToothPitch;
 
   const toothSurfaceAtAzimuth = (azimuthRadian) => {
     const unwrappedToothCoordinate =
@@ -123,27 +129,29 @@ function commonCapstan(movement) {
     };
   };
 
+  // azimuthRadian is the world azimuth of the pawl's radial pivot pin.
   const pawlClosureAtAzimuth = (azimuthRadian) => {
     const toothSurface = toothSurfaceAtAzimuth(azimuthRadian);
-    const finite = capstanPawlProfile(toothSurface.toothPhase + capstanPawlLeadAngle / ratchetToothPitch);
+    const finite = capstanPawlProfile(toothSurface.toothPhase - capstanPawlReleasePhase);
     const pawlPitchAngleRadian = finite.pitch;
     const verticalDifference = pawlLength * Math.sin(pawlPitchAngleRadian);
     const pawlTipHeight = pawlPivotHeight + verticalDifference;
     const falling = finite.falling;
     const fallProgress = Math.min(1, finite.phase / pawlFreefallFraction);
-    const radialProjection = pawlLength
+    // The nose trails the pivot tangentially, in the pawl's own plane.
+    const tangentialProjection = pawlLength
       * Math.cos(pawlPitchAngleRadian);
-    const pawlTipRadius = Math.hypot(pawlPivotRadius + radialProjection, capstanPawlDimensions.tipLead);
+    const pawlTipRadius = Math.hypot(pawlPlaneRadius, tangentialProjection);
     return {
       airborneClearance: finite.airborneClearance,
-      finiteTipRadius: capstanPawlDimensions.tipRadius,
+      finiteTipRadius: pawlDimensions.noseRadius,
       contactingRamp: !falling,
       fallProgress,
       falling,
       pawlPitchAngleRadian,
       pawlTipHeight,
       pawlTipRadius,
-      radialProjection,
+      tangentialProjection,
       toothSurface,
       verticalDifference,
     };
@@ -162,7 +170,7 @@ function commonCapstan(movement) {
   const stateAtTime = (time) => {
     const operatingAngleRadian = operatingAngularSpeed * time;
     const capstanRotationY = -operatingAngleRadian;
-    const pawlWorldAzimuthRadian = operatingAngleRadian;
+    const pawlWorldAzimuthRadian = pawlPivotAzimuth + operatingAngleRadian;
     const pawlClosure = pawlClosureAtAzimuth(pawlWorldAzimuthRadian);
     return {
       cableDistanceHauled: cableSpeed * time,
@@ -237,13 +245,7 @@ function commonCapstan(movement) {
     ratchetMaterial,
   ), 'stationary-circular-crown-ratchet-on-base');
   fixedBase.add(ratchet);
-  const ratchetInnerBand = addRole(new THREE.Mesh(
-    new THREE.TorusGeometry(1.24, 0.09, 10, 72),
-    darkMaterial,
-  ), 'fixed-inner-band-supporting-circular-ratchet');
-  ratchetInnerBand.rotation.x = Math.PI / 2;
-  ratchetInnerBand.position.y = -1.55;
-  fixedBase.add(ratchetInnerBand);
+  // Brown draws no band under the ratchet; the ring is let into the deck.
 
   const fixedSpindle = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.14, 0.14, 2.98, 64),
@@ -272,10 +274,11 @@ function commonCapstan(movement) {
   ), 'rotating-waisted-capstan-barrel');
   capstanRotor.add(barrelBody);
   const lowerCollar = addRole(new THREE.Mesh(
-    boredLatheGeometry([{ radial: 1.10, axial: -0.13 }, { radial: 1.10, axial: 0.13 }], 0.15, 128),
+    // Brown's lower drum runs down behind the teeth to just above the deck.
+    boredLatheGeometry([{ radial: 1.10, axial: -0.345 }, { radial: 1.10, axial: 0.345 }], 0.152, 128),
     driverMaterial,
   ), 'rotating-lower-capstan-collar-carrying-pawl');
-  lowerCollar.position.y = -1.20;
+  lowerCollar.position.y = -1.245;
   capstanRotor.add(lowerCollar);
 
   const drumHead = addRole(new THREE.Mesh(
@@ -343,39 +346,46 @@ function commonCapstan(movement) {
 
   const pawlPivotAssembly = addRole(new THREE.Group(),
     'pawl-pivot-attached-to-rotating-lower-capstan');
+  // Local +Z is the radial pivot axis (the pivot sits at azimuth +Z) and
+  // local +X the recoil direction along which the pawl hangs.
   pawlPivotAssembly.position.set(
-    pawlPivotRadius,
+    pawlPlaneRadius * Math.cos(pawlPivotAzimuth),
     pawlPivotHeight,
-    0,
+    pawlPlaneRadius * Math.sin(pawlPivotAzimuth),
   );
+  pawlPivotAssembly.rotation.y = Math.PI / 2 - pawlPivotAzimuth;
   capstanRotor.add(pawlPivotAssembly);
   const pawl = addRole(new THREE.Group(),
     'gravity-pawl-riding-fixed-circular-ratchet');
   pawlPivotAssembly.add(pawl);
   const pawlBar = addRole(new THREE.Mesh(
-    capstanPawlArmGeometry(pawlLength, capstanPawlDimensions.tipLead),
+    capstanPawlGeometry(pawlDimensions),
     pawlMaterial,
-  ), 'rigid-pawl-from-rotating-pivot-to-ratchet');
-  pawlBar.position.x = 0;
+  ), 'flat-pawl-swinging-on-radial-pin-to-ratchet');
   pawl.add(pawlBar);
+  // Nose-centre reference (not drawn; source presentation removes it).
   const pawlTip = addRole(new THREE.Mesh(
-    new THREE.SphereGeometry(capstanPawlDimensions.tipRadius, 40, 28),
+    new THREE.SphereGeometry(pawlDimensions.noseRadius, 40, 28),
     markerMaterial,
   ), 'white-pawl-tip-contact-marker');
-  pawlTip.position.set(pawlLength, 0, capstanPawlDimensions.tipLead);
+  pawlTip.position.set(pawlLength, 0, 0);
   pawl.add(pawlTip);
+  // The radial pin is driven into the lower capstan and carries a small head
+  // outside the pawl.
+  const pinInner = 1.05 - pawlPlaneRadius, pinOuter = pawlDimensions.thickness / 2 + 0.025;
   const pawlPivotPin = addRole(cylinderAlongZ(
-    0.055,
-    0.34,
+    pawlDimensions.pinRadius,
+    pinOuter - pinInner,
     darkMaterial,
     48,
   ), 'pawl-pivot-pin-fast-to-capstan-lower-part');
+  pawlPivotPin.position.z = (pinOuter + pinInner) / 2;
   pawlPivotAssembly.add(pawlPivotPin);
-  const pawlMountCheeks = [[-0.15,-0.09],[0.09,0.15]].map(([low,high],index) => {
-    const cheek = addRole(new THREE.Mesh(capstanPawlCheekGeometry(low,high),driverMaterial),
-      `finite-bored-pawl-mount-cheek-${index+1}`);
-    pawlPivotAssembly.add(cheek); return cheek;
-  });
+  const pawlPinHead = addRole(cylinderAlongZ(0.085, 0.025, darkMaterial, 48),
+    'pawl-pivot-pin-head');
+  pawlPinHead.position.z = pawlDimensions.thickness / 2 + 0.0175;
+  pawlPivotAssembly.add(pawlPinHead);
+  const pawlMountCheeks = [];
 
   // Brown hatches the cable as a laid rope; its moving lay shows the haul,
   // so it carries no painted markers.
@@ -457,13 +467,14 @@ function commonCapstan(movement) {
     operatingAngularSpeed,
     operatingPeriod,
     pawlFreefallFraction,
-    pawlTipRadius: capstanPawlDimensions.tipRadius,
-    pawlTipLead: capstanPawlDimensions.tipLead,
-    pawlLeadAngle: capstanPawlLeadAngle,
-    pawlInitialToothPhase,
+    pawlTipRadius: pawlDimensions.noseRadius,
+    pawlThickness: pawlDimensions.thickness,
+    pawlReleasePhase: capstanPawlReleasePhase,
+    pawlInitialReleasePhase,
     pawlLength,
+    pawlPivotAzimuth,
     pawlPivotHeight,
-    pawlPivotRadius,
+    pawlPlaneRadius,
     ratchetBottomHeight,
     ratchetHighHeight,
     ratchetInnerRadius,
@@ -504,9 +515,9 @@ function commonCapstan(movement) {
       pawlPivotAssembly,
       pawlPivotPin,
       pawlMountCheeks,
+      pawlPinHead,
       pawlTip,
       ratchet,
-      ratchetInnerBand,
       rotationIndex,
       socketMarkers,
     },
@@ -528,12 +539,12 @@ function commonCapstan(movement) {
       helixPackingDisclosure:
         'The three displayed turns use a 0.42-unit axial packing rise with a short smooth lead into constant pitch. Cable translation is exactly r_barrel times capstan angular speed; the small displayed helix makes the rope lay azimuth differ from rigid surface azimuth by less than 0.09 percent at the steepest packing point.',
       idealRatchetContact:
-        'In the hauling direction the capstan-mounted pawl climbs each fixed tooth ramp on its finite rounded nose, passes its high vertical edge, falls continuously under the prescribed release schedule, and recontacts the next ramp. Reverse motion meets that high face after at most one tooth of backlash; the reverse load response is not dynamically solved.',
+        'In the hauling direction the capstan-mounted pawl climbs each fixed tooth ramp on its finite rounded nose, passes its high vertical edge, falls continuously under the prescribed release schedule (as it swings down about its radial pin the nose also moves forward, so it lands a little up the next ramp), and recontacts that ramp. Reverse motion meets that high face after at most one tooth of backlash; the reverse load response is not dynamically solved.',
     },
     fidelity: 'authored',
     geometry,
     mechanism:
-      'One through hand-spike turns a single rigid head and waisted barrel around the fixed vertical spindle. The visible cable is hauled tangentially onto the barrel. A pawl pivot carried by the rotating lower collar travels around a stationary eighteen-tooth crown ratchet on the base: it rides up the ramps in the hauling direction and catches a steep tooth face against recoil.',
+      'One through hand-spike turns a single rigid head and waisted barrel around the fixed vertical spindle. The visible cable is hauled tangentially onto the barrel. A flat pawl lies against the front of the rotating lower capstan and turns on a radial pin, swinging in the plane Brown draws; carried round a stationary eighteen-tooth crown ratchet on the base, its nose trails the pin, rides up the ramps in the hauling direction and catches a steep tooth face against recoil.',
     motion: {
       capstanAxis: Y_AXIS.clone(),
       haulingDirectionAtVisibleTangent: new THREE.Vector3(-1, 0, 0),

@@ -88,7 +88,7 @@ test('movement 204 is one tangent pair of ruled hyperboloidal friction wheels on
   assert.equal(model.root.userData.archetype, movement.archetype);
   assert.equal(
     model.root.userData.mechanism,
-    'equal-external-one-sheet-hyperboloidal-friction-axodes-on-nonparallel-nonintersecting-shafts',
+    'unequal-external-one-sheet-hyperboloidal-friction-axodes-on-nonparallel-nonintersecting-shafts',
   );
   assert.equal(
     model.root.userData.variant,
@@ -126,7 +126,7 @@ test('movement 204 is one tangent pair of ruled hyperboloidal friction wheels on
 
   assert.equal(transmission.contactLineCount, 1);
   assert.equal(transmission.externalTangency, true);
-  assert.equal(transmission.equalMagnitudeCounterRotation, true);
+  assert.equal(transmission.equalMagnitudeCounterRotation, false);
   assert.equal(transmission.transverseRollingWithoutSlip, true);
   assert.equal(transmission.longitudinalSliding, true);
   assert.equal(transmission.pureRollingAlongContactLine, false);
@@ -187,28 +187,25 @@ test('movement 204 constructs two disjoint one-sheet hyperboloids around nonpara
     contactLineDirection,
     contactLineOrigin,
     drivenAxis,
+    drivenAxode,
     drivenOrigin,
     driverAxis,
+    driverAxode,
     driverOrigin,
-    endRadius,
-    generatorAngle,
     instantaneousScrewAxisPoint,
-    radiusAtAxial,
     relativeAngularVelocityVector,
     relativeTwistConstant,
     relativeTwistPitch,
     shaftAngle,
     surfaceResidual,
-    throatRadius,
   } = geometry;
 
-  near(THREE.MathUtils.radToDeg(shaftAngle), 50, 1e-14, 'shaft angle');
-  near(
-    THREE.MathUtils.radToDeg(generatorAngle),
-    25,
-    1e-14,
-    'generator angle',
-  );
+  // Brown draws the lower roller larger and shorter: unequal axodes.
+  near(THREE.MathUtils.radToDeg(driverAxode.generatorAngle), 22.5, 1e-13, 'driver generator angle');
+  near(Math.sin(driverAxode.generatorAngle) / Math.sin(drivenAxode.generatorAngle), 0.8, 1e-15,
+    'speed ratio sin(alpha1)/sin(alpha2)');
+  near(shaftAngle, driverAxode.generatorAngle + drivenAxode.generatorAngle, 1e-15, 'shaft angle');
+  assert.ok(THREE.MathUtils.radToDeg(shaftAngle) > 50.5 && THREE.MathUtils.radToDeg(shaftAngle) < 51.5);
   near(driverAxis.length(), 1, 1e-15, 'driver axis unit length');
   near(drivenAxis.length(), 1, 1e-15, 'driven axis unit length');
   near(driverAxis.dot(drivenAxis), Math.cos(shaftAngle), 1e-15, 'axis dot product');
@@ -230,39 +227,26 @@ test('movement 204 constructs two disjoint one-sheet hyperboloids around nonpara
 
   vector3Near(contactLineOrigin, new THREE.Vector3(), 1e-15, 'contact-line origin');
   vector3Near(contactLineDirection, X_AXIS, 1e-15, 'common contact generator');
-  vector3Near(
-    contactLineDirection,
-    driverAxis.clone().add(drivenAxis).normalize(),
-    1e-15,
-    'contact generator is the acute axis bisector',
-  );
-  near(
-    driverAxis.angleTo(contactLineDirection),
-    generatorAngle,
-    1e-15,
-    'driver axis-to-generator angle',
-  );
-  near(
-    drivenAxis.angleTo(contactLineDirection),
-    generatorAngle,
-    1e-15,
-    'driven axis-to-generator angle',
-  );
-  near(throatRadius, axisOffset / 2, 1e-15, 'symmetric throat radius');
+  for (const axode of [driverAxode, drivenAxode]) {
+    near(axode.axis.angleTo(contactLineDirection), axode.generatorAngle, 1e-15,
+      `${axode.role} axis-to-generator angle`);
+    near(axode.endRadius, Math.hypot(axode.throatRadius, bodyHalfLength * Math.tan(axode.generatorAngle)),
+      1e-15, `${axode.role} end radius`);
+  }
+  // Tangency along the whole generator: a1 / a2 = tan(alpha1) / tan(alpha2).
+  near(driverAxode.throatRadius + drivenAxode.throatRadius, axisOffset, 1e-15, 'throats span the offset');
+  near(driverAxode.throatRadius / drivenAxode.throatRadius,
+    Math.tan(driverAxode.generatorAngle) / Math.tan(drivenAxode.generatorAngle), 1e-15, 'throat ratio');
+  const diameterRatio = drivenAxode.endRadius / driverAxode.endRadius;
+  assert.ok(diameterRatio > 1.25 && diameterRatio < 1.35, `lower roller about Brown's 1.27 larger: ${diameterRatio}`);
   near(
     contactHalfLength,
-    bodyHalfLength / Math.cos(generatorAngle),
+    bodyHalfLength / Math.cos(driverAxode.generatorAngle),
     1e-15,
     'finite common-generator half length',
   );
-  near(
-    endRadius,
-    Math.hypot(throatRadius, bodyHalfLength * Math.tan(generatorAngle)),
-    1e-15,
-    'hyperboloid end radius',
-  );
 
-  for (const wheel of [blocks.driver, blocks.driven]) {
+  for (const [wheel, axode] of [[blocks.driver, driverAxode], [blocks.driven, drivenAxode]]) {
     assert.equal(wheel.userData.profile.length, geometry.profileSampleCount + 1);
     wheel.userData.profile.forEach((sample, index) => {
       const axial = THREE.MathUtils.lerp(
@@ -271,57 +255,47 @@ test('movement 204 constructs two disjoint one-sheet hyperboloids around nonpara
         index / geometry.profileSampleCount,
       );
       near(sample.y, axial, 1e-15, `profile axial sample ${index}`);
-      near(sample.x, radiusAtAxial(axial), 1e-15, `profile radius ${index}`);
-      assert.ok(sample.x >= throatRadius);
+      near(sample.x, axode.radiusAtAxial(axial), 1e-15, `profile radius ${index}`);
+      assert.ok(sample.x >= axode.throatRadius);
     });
-    near(wheel.userData.profile[0].x, endRadius, 1e-15, 'negative-end radius');
-    near(wheel.userData.profile.at(-1).x, endRadius, 1e-15, 'positive-end radius');
+    near(wheel.userData.profile[0].x, axode.endRadius, 1e-15, 'negative-end radius');
+    near(wheel.userData.profile.at(-1).x, axode.endRadius, 1e-15, 'positive-end radius');
   }
 
   model.root.updateMatrixWorld(true);
-  for (const [wheel, origin, axis] of [
-    [blocks.driver, driverOrigin, driverAxis],
-    [blocks.driven, drivenOrigin, drivenAxis],
+  for (const [wheel, axode] of [
+    [blocks.driver, driverAxode],
+    [blocks.driven, drivenAxode],
   ]) {
     for (const endpoint of wheel.userData.generatorEndpoints) {
       const worldEndpoint = wheel.userData.rotor.localToWorld(endpoint.clone());
       near(
-        Math.abs(surfaceResidual(worldEndpoint, origin, axis)),
+        Math.abs(surfaceResidual(worldEndpoint, axode)),
         0,
-        2e-15,
+        4e-15,
         'painted generator endpoint remains on its hyperboloid',
       );
-      near(
-        Math.abs(worldEndpoint.clone().sub(origin).dot(axis)),
-        bodyHalfLength,
-        1e-14,
-        'painted generator reaches an end plane',
+      assert.ok(
+        Math.abs(worldEndpoint.clone().sub(axode.origin).dot(axode.axis)) <= bodyHalfLength + 1e-14,
+        'painted generator stays within the body',
       );
     }
   }
 
-  // For these symmetric bodies, F_driver + F_driven is a positive
-  // quadratic away from y=z=0.  Therefore their solid interiors cannot
-  // overlap; equality occurs only on the one common generator.
-  const zCoefficient = 1 - Math.tan(generatorAngle) ** 2;
-  assert.ok(zCoefficient > 0);
+  // No point lies strictly inside both solids; both surfaces vanish only on
+  // the common generator.
   for (let xIndex = -8; xIndex <= 8; xIndex += 1) {
-    for (let yIndex = -8; yIndex <= 8; yIndex += 1) {
-      for (let zIndex = -8; zIndex <= 8; zIndex += 1) {
+    for (let yIndex = -12; yIndex <= 12; yIndex += 1) {
+      for (let zIndex = -12; zIndex <= 12; zIndex += 1) {
         const point = new THREE.Vector3(
           xIndex * contactHalfLength / 8,
-          yIndex * 1.5 / 8,
-          zIndex * 1.5 / 8,
+          yIndex * 1.5 / 12,
+          zIndex * 1.5 / 12,
         );
-        const driverResidual = surfaceResidual(point, driverOrigin, driverAxis);
-        const drivenResidual = surfaceResidual(point, drivenOrigin, drivenAxis);
-        near(
-          driverResidual + drivenResidual,
-          2 * (point.y ** 2 + zCoefficient * point.z ** 2),
-          1e-14,
-          'noninterpenetration residual identity',
-        );
-        assert.ok(driverResidual >= -1e-14 || drivenResidual >= -1e-14);
+        const driverResidual = surfaceResidual(point, driverAxode);
+        const drivenResidual = surfaceResidual(point, drivenAxode);
+        assert.ok(driverResidual >= -1e-14 || drivenResidual >= -1e-14,
+          `interiors overlap at ${point.toArray()}`);
       }
     }
   }
@@ -357,7 +331,7 @@ test('movement 204 constructs two disjoint one-sheet hyperboloids around nonpara
   );
   near(
     relativeTwistPitch,
-    throatRadius * Math.tan(generatorAngle),
+    transmission.nominalLongitudinalSlidingSpeed / relativeAngularVelocityVector.length(),
     1e-15,
     'relative screw pitch',
   );
@@ -405,17 +379,17 @@ test('movement 204 nominal smooth axodes have exact tangency, transverse rolling
       lineParameter,
     );
     vector3Near(contact.point, expectedPoint, 1e-15, `contact point ${index}`);
-    const expectedAxial = lineParameter * Math.cos(geometry.generatorAngle);
-    const expectedRadius = geometry.radiusAtAxial(expectedAxial);
+    const driverAxial = lineParameter * Math.cos(geometry.driverAxode.generatorAngle);
+    const drivenAxial = lineParameter * Math.cos(geometry.drivenAxode.generatorAngle);
     maxima.axial = Math.max(
       maxima.axial,
-      Math.abs(contact.driverAxial - expectedAxial),
-      Math.abs(contact.drivenAxial - expectedAxial),
+      Math.abs(contact.driverAxial - driverAxial),
+      Math.abs(contact.drivenAxial - drivenAxial),
     );
     maxima.radial = Math.max(
       maxima.radial,
-      Math.abs(contact.driverRadialDistance - expectedRadius),
-      Math.abs(contact.drivenRadialDistance - expectedRadius),
+      Math.abs(contact.driverRadialDistance - geometry.driverAxode.radiusAtAxial(driverAxial)),
+      Math.abs(contact.drivenRadialDistance - geometry.drivenAxode.radiusAtAxial(drivenAxial)),
     );
     maxima.surfaceResidual = Math.max(
       maxima.surfaceResidual,
@@ -462,7 +436,7 @@ test('movement 204 nominal smooth axodes have exact tangency, transverse rolling
   }
 
   assert.ok(maxima.axial <= 1e-15, `maximum axial error ${maxima.axial}`);
-  assert.ok(maxima.radial <= 5e-16, `maximum radial error ${maxima.radial}`);
+  assert.ok(maxima.radial <= 1e-15, `maximum radial error ${maxima.radial}`);
   assert.ok(
     maxima.surfaceResidual <= 4e-15,
     `maximum surface residual ${maxima.surfaceResidual}`,
@@ -475,16 +449,19 @@ test('movement 204 nominal smooth axodes have exact tangency, transverse rolling
     maxima.normalVelocity <= 6e-16,
     `maximum normal velocity ${maxima.normalVelocity}`,
   );
-  assert.equal(maxima.transverseRolling, 0);
-  assert.equal(maxima.transverseVelocityMatch, 0);
-  assert.equal(maxima.relativeOffGenerator, 0);
-  assert.equal(maxima.longitudinalVariation, 0);
-  assert.ok(transmission.nominalLongitudinalSlidingSpeed > 0.821);
-  assert.ok(transmission.nominalLongitudinalSlidingSpeed < 0.822);
+  // Unequal axodes: exact up to floating-point round-off.
+  assert.ok(maxima.transverseRolling <= 1e-15, `transverse rolling ${maxima.transverseRolling}`);
+  assert.ok(maxima.transverseVelocityMatch <= 1e-15, `transverse match ${maxima.transverseVelocityMatch}`);
+  assert.ok(maxima.relativeOffGenerator <= 1e-15, `off generator ${maxima.relativeOffGenerator}`);
+  assert.ok(maxima.longitudinalVariation <= 1e-15, `sliding variation ${maxima.longitudinalVariation}`);
+  // Uniform sliding w1 * c * sin(alpha1) along the generator.
+  near(transmission.nominalLongitudinalSlidingSpeed,
+    transmission.driverAngularSpeed * geometry.axisOffset * Math.sin(geometry.driverAxode.generatorAngle),
+    1e-15, 'nominal sliding speed');
   disposeModel(model.root);
 });
 
-test('movement 204 keeps its exact 1-to-1 counterrotation and painted surface speeds through 32,769 states', () => {
+test('movement 204 keeps its exact 5-to-4 counterrotation and painted surface speeds through 32,769 states', () => {
   const model = createMovementModel(catalog.movements[203]);
   const {
     blocks,
@@ -517,14 +494,14 @@ test('movement 204 keeps its exact 1-to-1 counterrotation and painted surface sp
     if (index % 2048 === 0) finiteStateNumbers(state, `state[${index}]`);
     maxima.angle = Math.max(
       maxima.angle,
-      Math.abs(state.drivenAngle + driverAngle),
+      Math.abs(state.drivenAngle + 0.8 * driverAngle),
     );
     maxima.ratio = Math.max(
       maxima.ratio,
-      Math.abs(state.drivenAngularSpeed + inputAngularVelocity),
+      Math.abs(state.drivenAngularSpeed + 0.8 * inputAngularVelocity),
       state.drivenAngularVelocityVector.clone().addScaledVector(
         geometry.drivenAxis,
-        inputAngularVelocity,
+        0.8 * inputAngularVelocity,
       ).length(),
       state.driverAngularVelocityVector.clone().addScaledVector(
         geometry.driverAxis,
@@ -541,8 +518,8 @@ test('movement 204 keeps its exact 1-to-1 counterrotation and painted surface sp
       maxima.transverse,
       state.maximumTransverseRollingError,
     );
-    const expectedSlidingSpeed = 2 * Math.abs(inputAngularVelocity)
-      * geometry.throatRadius * Math.sin(geometry.generatorAngle);
+    const expectedSlidingSpeed = Math.abs(inputAngularVelocity)
+      * geometry.axisOffset * Math.sin(geometry.driverAxode.generatorAngle);
     maxima.sliding = Math.max(
       maxima.sliding,
       Math.abs(state.longitudinalSlidingSpeed - expectedSlidingSpeed),
@@ -552,12 +529,13 @@ test('movement 204 keeps its exact 1-to-1 counterrotation and painted surface sp
       Math.abs(state.relativeTwistPitch - geometry.relativeTwistPitch),
     );
   }
-  assert.equal(maxima.angle, 0);
-  assert.equal(maxima.ratio, 0);
-  assert.ok(maxima.surface <= 4e-16, `maximum state surface residual ${maxima.surface}`);
-  assert.ok(maxima.normal <= 3e-16, `maximum state normal error ${maxima.normal}`);
-  assert.equal(maxima.transverse, 0);
-  assert.ok(maxima.sliding <= 4e-16, `maximum sliding-rate error ${maxima.sliding}`);
+  // The 4:5 ratio sin(alpha1)/sin(alpha2) = 0.8 is exact up to round-off.
+  assert.ok(maxima.angle <= 1e-14, `angle ${maxima.angle}`);
+  assert.ok(maxima.ratio <= 1e-15, `ratio ${maxima.ratio}`);
+  assert.ok(maxima.surface <= 4e-15, `maximum state surface residual ${maxima.surface}`);
+  assert.ok(maxima.normal <= 1e-15, `maximum state normal error ${maxima.normal}`);
+  assert.ok(maxima.transverse <= 1e-15, `transverse ${maxima.transverse}`);
+  assert.ok(maxima.sliding <= 1e-15, `maximum sliding-rate error ${maxima.sliding}`);
   assert.equal(maxima.pitch, 0);
 
   const stoppedState = stateAtDriverAngle(1.37, 0);
@@ -616,7 +594,7 @@ test('movement 204 keeps its exact 1-to-1 counterrotation and painted surface sp
           `${name} painted generator velocity ${endpointIndex} at phase ${phase}`,
         );
         near(
-          Math.abs(geometry.surfaceResidual(current, origin, axis)),
+          Math.abs(geometry.surfaceResidual(current, name === 'driver' ? geometry.driverAxode : geometry.drivenAxode)),
           0,
           2e-14,
           `${name} painted generator stays on surface at phase ${phase}`,
@@ -723,13 +701,20 @@ test('movement 204 runtime keeps the contact generator fixed and remains distinc
       indexObject,
       canonicalTimes.quarterInputTurn,
     );
+    // Five driver turns bring the driven roller round exactly four times.
     const closure = indexWorldPosition(
       indexObject,
-      canonicalTimes.oneInputTurn,
+      5 * canonicalTimes.oneInputTurn,
     );
     assert.ok(source.distanceTo(quarter) > 0.8, 'painted end-face index makes spin visible');
-    vector3Near(closure, source, 2e-15, 'painted end-face index closes after one turn');
+    vector3Near(closure, source, 1e-13, 'painted end-face index closes after five driver turns');
   }
+  // The display loop closes where the half-turn-symmetric quadrant cue
+  // repeats on both rollers: 2.5 driver turns, 2 driven turns.
+  const loopState = stateAtTime(geometry.closureCyclePeriod);
+  near(transmission.cyclePeriod, geometry.closureCyclePeriod, 0, 'display loop period');
+  near(loopState.driverAngle / Math.PI, 5, 1e-13, 'driver half turns per loop');
+  near(loopState.drivenAngle / Math.PI, -4, 1e-13, 'driven half turns per loop');
 
   model.update(canonicalTimes.sourcePose);
   model.root.updateMatrixWorld(true);

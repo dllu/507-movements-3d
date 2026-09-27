@@ -124,7 +124,7 @@
       },
       {
         "file": "package-lock.json",
-        "sha256": "aa5964c7737733ebdf5ca4089bb8dbe5232a30f979a2ec0756747a9ba851d52f"
+        "sha256": "68bc451f26abd26209c5fff06754f288ce49b36351584d144a7a73640ae63c18"
       }
     ],
     "maximumLoopSeamPixels": 1.2789769243681803e-11
@@ -153,5 +153,5 @@
   },
   "samples": 3412,
   "bytes": 2572783,
-  "assetSha256": "46977bf2b6298141b5bad312ffe1743173b61b7ea918f4a529871a0d877d4012"
+  "assetSha256": "dbbb4d275368c2ed974e9417186eb0d1629f937d2a6279e40e87ca788952d24b"
 }

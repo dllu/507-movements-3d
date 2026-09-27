@@ -1,5 +1,6 @@
 import {makeCrossedGovernorUpdater} from './update-solids.js';
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {plate, poly, circle, capsule, ring, disk, sector, polygonClipping as clip} from '../finite-plate-geometry.js';
 import {PALETTE, matte, markShadows} from '../primitives.js';
 import {disposeObject3D} from '../dispose-model.js';
@@ -28,7 +29,24 @@ export function makeCrossedGovernorSolids() {
   add('pivotForkRear', plate(forkStem, -.29, -.21), 'rotor', PALETTE.ink);
   add('crossPin', disk(.10, -.30, .30, 96), 'rotor', PALETTE.ink);
   const arcRadius = 127 * g.scale;
-  add('spreadBow', plate(sector(arcRadius - .075, arcRadius + .075, -Math.PI / 2 - .66, -Math.PI / 2 + .66, 128), .22, .32), 'rotor', PALETTE.brass);
+  // Brown's bow is fixed across the spindle (his hatched band) and the two
+  // arms pass through it. It is a deep band spanning both arm planes: the
+  // spindle passes through a square seat in its middle, and each arm swings
+  // radially through its own window, whose angular extent covers the baked
+  // spread range (0.517-0.761 rad) plus the arm's half-width and clearance.
+  // The bow's ends reach just past the windows.
+  const bowInner = arcRadius - .075, bowOuter = arcRadius + .075, bowEnd = .86, window = [.475, .805];
+  const bow = sector(bowInner, bowOuter, -Math.PI / 2 - bowEnd, -Math.PI / 2 + bowEnd, 128);
+  const armWindow = sign => sector(bowInner - .01, bowOuter + .01,
+    -Math.PI / 2 + sign * (sign < 0 ? window[1] : window[0]), -Math.PI / 2 + sign * (sign < 0 ? window[0] : window[1]), 32);
+  const spindleSeat = poly([[-.10, -arcRadius - .2], [.10, -arcRadius - .2], [.10, -arcRadius + .2], [-.10, -arcRadius + .2]]);
+  const armSpan = g.layer + .06 + .01, seat = .10, core = g.layer - .06 - .01, back = armSpan + .025;
+  const bowLayers = [
+    [bow, -back, -armSpan], [clip.difference(bow, armWindow(-1)), -armSpan, -seat],
+    [clip.difference(bow, armWindow(-1), spindleSeat), -seat, -core], [clip.difference(bow, spindleSeat), -core, core],
+    [clip.difference(bow, armWindow(1), spindleSeat), core, seat], [clip.difference(bow, armWindow(1)), seat, armSpan],
+    [bow, armSpan, back]];
+  add('spreadBow', mergeGeometries(bowLayers.map(([profile, low, high]) => plate(profile, low, high))), 'rotor', PALETTE.brass);
   for (const sign of [-1, 1]) {
     const name = sign < 0 ? 'left' : 'right', arm = group(name + 'Arm', rotor), link = group(name + 'Link', rotor);
     const z = sign * g.layer, linkZ = sign * .275;

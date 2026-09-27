@@ -51,9 +51,12 @@ const THREE_DEGREES=Math.PI/60;
 test('391 C and its link move continuously through contact entry, release and the link\'s fall; playback retains buffers',()=>{
  let prior=stateAt(0),maximumStep=0,maximumLinkStep=0,maximumSwing=0;for(let i=1;i<=8192;i++){const next=stateAt(i/1024);maximumStep=Math.max(maximumStep,Math.abs(next.elbowAssist.leverAngle-prior.elbowAssist.leverAngle));maximumLinkStep=Math.max(maximumLinkStep,Math.abs(next.elbowAssist.linkAngle-prior.elbowAssist.linkAngle));maximumSwing=Math.max(maximumSwing,next.elbowAssist.springDeflection);assert.ok(next.elbowAssist.gap>-1e-8);prior=next;}
  // The 13-pitch stroke runs the pins 1.3 times faster than the old 10-pitch
- // stroke, so the per-sample bound scales with it (0.0035 * 1.3).
- assert.ok(maximumStep<.0046,`no branch jump: ${maximumStep}`);assert.ok(maximumLinkStep<.005,`link never jumps: ${maximumLinkStep}`);
- assert.ok(maximumSwing>THREE_DEGREES*10&&maximumSwing<THREE_DEGREES*13,`C swings about 33 degrees: ${maximumSwing}`);
+ // stroke, so the per-sample bound scales with it (0.0035 * 1.3). Pass 73
+ // hangs C 0.31 lower (Brown's pivot stands just above guide b), so the
+ // link meets the roller earlier and C swings further (about 45 degrees)
+ // and a little faster; a branch jump would be far larger than these bounds.
+ assert.ok(maximumStep<.0046,`no branch jump: ${maximumStep}`);assert.ok(maximumLinkStep<.0054,`link never jumps: ${maximumLinkStep}`);
+ assert.ok(maximumSwing>THREE_DEGREES*14&&maximumSwing<THREE_DEGREES*16,`C swings about 45 degrees: ${maximumSwing}`);
  for(const [a,c]of[[1.5,2.8],[3.5,4.0]]){let lo=a,hi=c;const first=stateAt(lo).elbowAssist.contact;for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(stateAt(mid).elbowAssist.contact===first)lo=mid;else hi=mid;}
   for(const key of['leverAngle','linkAngle'])assert.ok(Math.abs(stateAt(hi+1e-7).elbowAssist[key]-stateAt(lo-1e-7).elbowAssist[key])<1e-5,key);}
  // The link hangs straight down when free and is met end-on.

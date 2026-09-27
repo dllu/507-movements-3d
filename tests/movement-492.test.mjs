@@ -4,518 +4,97 @@ import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
 
-const catalog = JSON.parse(await readFile(
-  new URL('../src/data/movements.json', import.meta.url),
-  'utf8',
-));
-const sourceText = await readFile(
-  new URL(
-    '../src/simulation/authored-boat-detachers.js',
-    import.meta.url,
-  ),
-  'utf8',
-);
+const catalog = JSON.parse(await readFile(new URL('../src/data/movements.json', import.meta.url), 'utf8'));
+const ARCHETYPE = 'paired-eye-lever-boat-detachers-with-hinged-load-tongues';
+const movement = catalog.movements[491];
+const model = createMovementModel(movement);
+const { blocks: b, geometry: g, stateAtTime } = model.root.userData;
+const near = (actual, expected, tolerance, message) =>
+  assert.ok(Math.abs(actual - expected) <= tolerance, `${message}: expected ${expected}, received ${actual}`);
+const rotate2 = (v, a) => new THREE.Vector2(v.x * Math.cos(a) - v.y * Math.sin(a), v.x * Math.sin(a) + v.y * Math.cos(a));
 
-const ARCHETYPE =
-  'paired-eye-lever-boat-detachers-with-hinged-load-tongues';
-
-function movementModel() {
-  const movement = catalog.movements[491];
-  return { model: createMovementModel(movement), movement };
-}
-
-function near(actual, expected, tolerance, message) {
-  assert.ok(
-    Math.abs(actual - expected) <= tolerance,
-    `${message}: expected ${expected}, received ${actual}`,
-  );
-}
-
-function vectorNear(actual, expected, tolerance, message) {
-  near(actual.distanceTo(expected), 0, tolerance, message);
-}
-
-// Each cable is one laid rope along a straight-piece polyline.
-function cablePolyline(cable) {
-  const rope = cable.userData.mesh;
-  assert.equal(rope.visible, true, `${cable.userData.role} is drawn`);
-  assert.equal(rope.geometry.type, 'LaidRopeGeometry');
-  cable.updateWorldMatrix(true, true);
-  const pieces = rope.geometry.parameters.path.curves;
-  return [pieces[0].v1, ...pieces.map((piece) => piece.v2)]
-    .map((point) => point.clone().applyMatrix4(rope.matrixWorld));
-}
-
-function cableEndpoints(cable) {
-  const points = cablePolyline(cable);
-  return { end: points.at(-1), start: points[0] };
-}
-
-function cablePoints(cable) {
-  return cablePolyline(cable);
-}
-
-function disposeModel(root) {
-  const geometries = new Set();
-  const materials = new Set();
-  root.traverse((object) => {
-    if (object.geometry) geometries.add(object.geometry);
-    if (Array.isArray(object.material)) {
-      object.material.forEach((material) => materials.add(material));
-    } else if (object.material) materials.add(object.material);
-  });
-  geometries.forEach((geometry) => geometry.dispose());
-  materials.forEach((material) => material.dispose());
-}
-
-test('movement 492 has one eye-lever detacher at each boat end and no belt', () => {
-  const { model, movement } = movementModel();
-  const { blocks, degreesOfFreedom, geometry } = model.root.userData;
-
+test('movement 492 is the one detaching hook Brown draws: standard, tongue, lever, tackle hook and ropes', () => {
   assert.equal(movement.id, 492);
-  assert.equal(movement.number, '492');
-  assert.equal(movement.title, 'Boat-detaching hook (Brown & Level’s)');
-  assert.equal(movement.category, 'Ropes, belts & pulleys');
   assert.equal(movement.archetype, ARCHETYPE);
-  assert.equal(movement.fidelity, 'authored');
   assert.equal(model.root.userData.archetype, ARCHETYPE);
   assert.equal(model.root.userData.fidelity, 'authored');
-  assert.equal(blocks.units.length, 2);
-  assert.deepEqual(
-    blocks.units.map(({ unitZ }) => unitZ),
-    geometry.unitZPositions,
-  );
-  assert.equal(blocks.releaseCords.length, 2);
-  assert.equal(degreesOfFreedom.independentReleaseInputs, 1);
-  assert.equal(degreesOfFreedom.leverCoordinatesPerUnit, 1);
-  assert.equal(degreesOfFreedom.tongueCoordinatesPerUnit, 1);
-  assert.equal(degreesOfFreedom.tackleHookFreeAfterReleasePerUnit, 1);
-  assert.equal(degreesOfFreedom.unitsCommandedSynchronously, true);
-
-  for (const unit of blocks.units) {
-    assert.equal(unit.standard.parent, unit.unit);
-    assert.equal(unit.lever.parent, unit.unit);
-    assert.equal(unit.tongue.parent, unit.unit);
-    assert.notEqual(unit.lever, unit.tongue);
-    assert.equal(unit.upperEye.parent, unit.lever);
-    assert.equal(unit.lowerEye.parent, unit.lever);
-    assert.equal(unit.lockingStud.parent, unit.tongue);
-    assert.equal(unit.tonguePivotPin.parent, unit.unit);
-    assert.equal(unit.leverPivotPin.parent, unit.unit);
-    assert.equal(unit.tackleHookAssembly.parent, unit.unit);
-    assert.equal(unit.tackleHook.parent, unit.tackleHookAssembly);
-    assert.equal(unit.fallRope.parent, unit.unit);
-    assert.notEqual(unit.tackleHookAssembly, unit.tongue);
-  }
-  // Brown's plate draws one detacher with its rope running off to the right:
-  // source presentation detaches the second end unit, its rope and the
-  // reconstructed common pull bar, which the model still retains.
-  assert.equal(blocks.units[0].unit.parent, model.root);
-  assert.equal(blocks.units[1].unit.parent, null);
-  assert.equal(blocks.pullBar.parent, null);
-  assert.equal(blocks.pullBarGrip.parent, null);
-  assert.equal(blocks.releaseCords[0].parent, model.root);
-  assert.equal(blocks.releaseCords[1].parent, null);
-  assert.ok(blocks.releaseCords.every((cord) => cord.userData.isReleaseRope));
-  assert.ok(model.root.userData.sourcePresentation.removedRoles.includes(
-    'boat-detaching-apparatus-2'));
-
-  const belts = [];
-  model.root.traverse((object) => {
-    if (object.userData.isBelt) belts.push(object);
-  });
-  assert.deepEqual(belts, []);
-  assert.doesNotMatch(sourceText, /makeBelt|beltPath|pulley/i);
-  disposeModel(model.root);
+  for (const part of [b.standard, b.tongue, b.lever, b.tackle, b.releaseRope]) assert.equal(part.parent, model.root);
+  for (const part of [b.standardBar, b.collar, b.shank, b.thread, b.tongueHingePin, b.leverFulcrumPin]) assert.equal(part.parent, b.standard);
+  assert.equal(b.leverEye.parent, b.lever);
+  assert.equal(b.tongueBar.parent, b.tongue);
+  assert.equal(b.hookBar.parent, b.hookFrame);
+  assert.equal(b.block.parent, b.hookFrame);
+  const roles = [];
+  model.root.traverse(o => roles.push(o.userData.role ?? ''));
+  assert.equal(roles.filter(r => /deck|rail|crossbar|hand|white|index/.test(r)).length, 0, 'nothing Brown does not draw');
+  assert.match(movement.description, /tongue hinged to its upper end enters an eye in the level.*fulcrum at the middle of the standard/s);
 });
 
-test('movement 492 records Brown, unavailable animation, and period detaching-hook evidence', () => {
-  const { model, movement } = movementModel();
-  const { sourceAnimation, sourceReference } = model.root.userData;
-  const evidence = sourceReference.constructionEvidence;
-  const plate = sourceReference.brownPlate492;
-
-  assert.equal(movement.sourceUrl, 'https://507movements.com/mm_492.html');
-  assert.equal(sourceReference.officialPage, movement.sourceUrl);
-  assert.match(movement.description,
-    /upright standard is secured to the boat.*tongue hinged to its upper end.*eye in the level.*fulcrum at the middle.*each end of the boat.*hooks of the tackles hook into the tongues.*rope attached to the lower end of each lever.*detaches the boat/s);
-  assert.equal(sourceAnimation.available, false);
-  assert.equal(sourceAnimation.officialCanvasModelPresent, false);
-  assert.equal(sourceAnimation.officialPageMarksAnimationUnavailable, true);
-  assert.equal(sourceAnimation.sourcePrescribedAbsoluteTiming, false);
-  assert.match(sourceAnimation.reason,
-    /no canvas model or animation library.*Animated unavailable/s);
-  assert.equal(plate.imageWidth, 525);
-  assert.equal(plate.imageHeight, 525);
-  assert.deepEqual(plate.approximateTongueHingePixels, [247, 151]);
-  assert.deepEqual(plate.approximateLeverFulcrumPixels, [248, 239]);
-  assert.deepEqual(plate.approximateLowerRopeEyePixels, [368, 422]);
-  assert.deepEqual(plate.approximateTackleHookBoundsPixels,
-    [181, 34, 284, 217]);
-  assert.equal(evidence.explicitInBrownDescription.length, 9);
-  assert.match(evidence.engravingEvidence,
-    /threaded standard with two hinge centers.*upper hinged tongue.*tackle hook around its load nose.*separate bent lever.*middle fulcrum.*lower rope eye/s);
-  assert.match(evidence.britishPatentNotice,
-    /British application 3228.*7 December 1866.*detaching hook.*Samuel Brown and Leon Level/s);
-  assert.match(evidence.frankLeslieCorroboration,
-    /24 February 1866.*one oarsman amidships.*instantly disconnected.*two davits/s);
-  assert.match(evidence.relatedPatentScope,
-    /companion equal-fall lowering brake rather than this hook.*paired tackle falls.*one operator/s);
-  assert.match(evidence.reconstructionDisclosure,
-    /only one locked elevation.*exact eye clearance.*common pull bar.*didactic reset.*independently engineered/s);
-  disposeModel(model.root);
+test('movement 492 keeps Brown\'s pin, eye, rope-eye and hook positions', () => {
+  const plate = model.root.userData.sourceReference.brownPlate492;
+  const scene = ([x, y]) => new THREE.Vector2((x - plate.leverFulcrumPixels[0]) / plate.pixelsPerUnit,
+    (plate.leverFulcrumPixels[1] - y) / plate.pixelsPerUnit);
+  near(g.hingeCenter.y, scene(plate.tongueHingePixels).y, 1e-12, 'hinge height');
+  near(g.eyeCenterRest.distanceTo(scene(plate.leverEyePixels)), 0, 1e-12, 'lever eye');
+  near(g.ropeEyeRest.distanceTo(scene(plate.lowerRopeEyePixels)), 0, 1e-12, 'rope eye');
+  near(g.hookThroatX, scene([plate.hookThroatXPixels, 0]).x, 1e-12, 'hook throat');
 });
 
-test('movement 492 lever eye clears the locked tongue stud at the exact chord angle', () => {
-  const { model } = movementModel();
-  const {
-    geometry,
-    leverEyeCenterAtAngle,
-    stateAtTime,
-    tongueStudCenterAtAngle,
-    transmission,
-  } = model.root.userData;
-  const radius = geometry.upperEyeVector.length();
-
-  vectorNear(
-    leverEyeCenterAtAngle(0),
-    geometry.lockedStudCenter,
-    0,
-    'locked eye and tongue stud are concentric',
-  );
-  vectorNear(
-    tongueStudCenterAtAngle(0),
-    geometry.lockedStudCenter,
-    0,
-    'locked tongue carries the same stud center',
-  );
-  near(
-    geometry.eyeClearDistance,
-    geometry.upperEyeInnerRadius + geometry.tongueStudRadius,
-    0,
-    'clearance distance is the sum of eye and stud radii',
-  );
-
-  for (let sample = 0; sample <= 300; sample += 1) {
-    const angle = geometry.leverReleaseAngle * sample / 300;
-    const centerDistance = leverEyeCenterAtAngle(angle)
-      .distanceTo(geometry.lockedStudCenter);
-    near(
-      centerDistance,
-      2 * radius * Math.sin(angle / 2),
-      5e-16,
-      `eye-center chord at sample ${sample}`,
-    );
+test('movement 492 eye slides straight off the tongue end without bearing on it', () => {
+  // The tongue end lies along the chord of the eye's travel, so the eye's
+  // upper wall only moves away from the tongue while the eye slides off.
+  const upward = new THREE.Vector2(-g.tongueEndDirection.y, g.tongueEndDirection.x);
+  if (upward.y < 0) upward.negate();
+  const axisPoint = g.eyeCenterRest.clone().addScaledVector(upward, g.eyeInnerHalfWidth - g.tongueRadius - g.restGap);
+  for (let i = 0; i <= 200; i++) {
+    const angle = g.leverReleaseAngle * i / 200;
+    const eye = rotate2(g.eyeCenterRest, angle);
+    const offset = eye.clone().sub(axisPoint);
+    const across = offset.dot(upward);
+    // Upper wall stays above the tongue, lower wall below it.
+    assert.ok(across + g.eyeInnerHalfWidth - g.tongueRadius >= g.restGap - 1e-12, `upper wall ${i}`);
+    assert.ok(g.eyeInnerHalfWidth - g.tongueRadius - across > 0, `lower wall ${i}`);
   }
-  near(
-    leverEyeCenterAtAngle(geometry.leverEyeClearAngle)
-      .distanceTo(geometry.lockedStudCenter),
-    geometry.eyeClearDistance,
-    3e-16,
-    'exact tangent-clear angle',
-  );
-  assert.ok(
-    leverEyeCenterAtAngle(geometry.leverEyeClearAngle - 1e-7)
-      .distanceTo(geometry.lockedStudCenter)
-      < geometry.eyeClearDistance,
-  );
-  assert.ok(
-    leverEyeCenterAtAngle(geometry.leverEyeClearAngle + 1e-7)
-      .distanceTo(geometry.lockedStudCenter)
-      > geometry.eyeClearDistance,
-  );
+  const released = rotate2(g.eyeCenterRest, g.leverReleaseAngle).sub(axisPoint).dot(g.tongueEndDirection);
+  assert.ok(released - g.eyeHalfLength > g.tongueTipBeyondEye + g.tongueRadius, 'eye fully clear of the tongue end');
+  // The locked load on the upper wall is radial to the lever: no opening moment.
+  const radial = g.eyeCenterRest.clone().normalize();
+  assert.ok(Math.abs(radial.dot(upward)) > 0.95);
+});
 
-  for (let sample = 0; sample <= 4000; sample += 1) {
-    const state = stateAtTime(geometry.cycleDuration * sample / 4000);
-    if (state.tongueProgress > 1e-12) {
-      assert.ok(
-        state.leverAngleRadian >= geometry.leverEyeClearAngle,
-        `tongue cannot move through a captured eye at sample ${sample}`,
-      );
-      assert.ok(state.currentStudClearance >= 0);
+test('movement 492 releases in Brown\'s order: eye off, tongue out of the hook, hook away', () => {
+  let leverDone = false, tongueStarted = false, exited = false;
+  for (let i = 0; i <= 1000; i++) {
+    const s = stateAtTime(g.cycleDuration * i / 1000);
+    if (s.phase < 0.6) {
+      if (s.tongueProgress > 0) { tongueStarted = true; assert.ok(s.leverProgress > 1 - 1e-9, `tongue waits for the eye ${i}`); }
+      if (s.leverProgress > 1 - 1e-9) leverDone = true;
+      if (!s.engaged) exited = true;
     }
-    if (state.hookProgress > 1e-12) {
-      assert.ok(state.tongueProgress > 0.98);
-      assert.ok(state.tongueToTackleSeparation > 0.72);
-    }
+    assert.ok(s.hookLift >= -1e-9, `hook never drops below its locked seat ${i}`);
+    if (s.tongueProgress === 0) near(s.hookLift, 0, 1e-12, `hook seated while tongue locked ${i}`);
   }
-  assert.match(transmission.releaseCondition,
-    /distance\(center_eye,center_stud\)>=r_eye_inner\+r_stud/);
-  disposeModel(model.root);
+  assert.ok(leverDone && tongueStarted && exited);
+  assert.ok(g.tongueExitAngle < -Math.PI / 3 && g.tongueExitAngle > -Math.PI * 0.75, 'tongue swings up out of the hook');
 });
 
-test('movement 492 renders two synchronous rigid levers and tongues about separate fixed pivots', () => {
-  const { model } = movementModel();
-  const {
-    blocks,
-    geometry,
-    leverEyeCenterAtAngle,
-    leverRopeEyeCenterAtAngle,
-    stateAtTime,
-    tongueNoseCenterAtAngle,
-    tongueStudCenterAtAngle,
-  } = model.root.userData;
-
-  model.update(0);
-  model.root.updateMatrixWorld(true);
-  const fixedObjects = blocks.units.flatMap((unit) => [
-    unit.standard,
-    unit.tonguePivotPin,
-    unit.leverPivotPin,
-  ]);
-  const fixedMatrices = fixedObjects.map(
-    (object) => object.matrixWorld.clone(),
-  );
-
-  for (const time of [0, 1.37, 2.41, 3, 3.83, 4.8, 5.8, 7.62,
-    8.4, 9.17, 10]) {
-    const state = stateAtTime(time);
-    model.update(time);
-    model.root.updateMatrixWorld(true);
-    blocks.units.forEach((unit) => {
-      near(unit.lever.rotation.z, state.leverAngleRadian, 0,
-        `rendered lever angle for unit ${unit.unitIndex + 1} at ${time}`);
-      near(unit.tongue.rotation.z, state.tongueAngleRadian, 0,
-        `rendered tongue angle for unit ${unit.unitIndex + 1} at ${time}`);
-      near(unit.tackleHookAssembly.position.y, state.tackleLift, 0,
-        `rendered tackle lift for unit ${unit.unitIndex + 1} at ${time}`);
-
-      const global = (point, z) => new THREE.Vector3(
-        geometry.unitCenterX + point.x,
-        point.y,
-        unit.unitZ + z,
-      );
-      vectorNear(
-        unit.upperEye.getWorldPosition(new THREE.Vector3()),
-        global(leverEyeCenterAtAngle(state.leverAngleRadian),
-          geometry.latchPlaneZ),
-        8e-16,
-        `upper eye rigid closure at ${time}`,
-      );
-      vectorNear(
-        unit.lowerEye.getWorldPosition(new THREE.Vector3()),
-        global(leverRopeEyeCenterAtAngle(state.leverAngleRadian),
-          geometry.mechanismPlaneZ),
-        8e-16,
-        `lower eye rigid closure at ${time}`,
-      );
-      vectorNear(
-        unit.lockingStud.getWorldPosition(new THREE.Vector3()),
-        global(tongueStudCenterAtAngle(state.tongueAngleRadian),
-          geometry.latchPlaneZ),
-        8e-16,
-        `tongue stud rigid closure at ${time}`,
-      );
-      vectorNear(
-        unit.tongueNoseMarker.getWorldPosition(new THREE.Vector3()),
-        global(tongueNoseCenterAtAngle(state.tongueAngleRadian),
-          geometry.tonguePlaneZ),
-        8e-16,
-        `tongue nose rigid closure at ${time}`,
-      );
-      vectorNear(
-        unit.tackleThroatMarker.getWorldPosition(new THREE.Vector3()),
-        global(state.tackleThroatCenter, geometry.tacklePlaneZ),
-        8e-16,
-        `tackle throat translation at ${time}`,
-      );
-    });
-    fixedObjects.forEach((object, index) => {
-      assert.ok(object.matrixWorld.equals(fixedMatrices[index]),
-        `fixed support ${index} moved at ${time}`);
-    });
+test('movement 492 renders the solved poses, keeps the rope on its eye and closes its loop', () => {
+  for (const time of [0, 1.7, 2.9, 3.6, 4.4, 5.3, 6.6, 7.9, 9.4, 10]) {
+    const s = stateAtTime(time);
+    model.update(time); model.root.updateMatrixWorld(true);
+    near(b.lever.rotation.z, s.leverAngle, 0, `lever ${time}`);
+    near(b.tongue.rotation.z, s.tongueAngle, 0, `tongue ${time}`);
+    near(b.tackle.position.y, s.throatHeight, 0, `hook ${time}`);
+    const eye = new THREE.Vector3(s.ropeEyeCenter.x, s.ropeEyeCenter.y, g.mechanismZ);
+    near(b.releaseRope.position.distanceTo(eye), 0.2, 1e-9, `rope seized at the eye rim ${time}`);
   }
-  disposeModel(model.root);
-});
-
-test('movement 492 preserves the load path until pull, then releases in the source order', () => {
-  const { model } = movementModel();
-  const { dynamics, geometry, stateAtTime, transmission } =
-    model.root.userData;
-  const locked = stateAtTime(0);
-  const eyeOpen = stateAtTime(3);
-  const tongueOpen = stateAtTime(4.8);
-  const tackleAway = stateAtTime(5.8);
-  const tackleReturned = stateAtTime(7);
-  const tongueReturned = stateAtTime(8.4);
-  const reset = stateAtTime(9.6);
-
-  near(locked.leverAngleRadian, 0, 0, 'initial lever angle');
-  near(locked.tongueAngleRadian, 0, 0, 'initial tongue angle');
-  near(locked.tackleLift, 0, 0, 'initial tackle lift');
-  near(locked.tongueToTackleSeparation, 0, 0,
-    'tackle initially bears on tongue');
-  assert.ok(locked.currentStudClearance < 0);
-
-  near(eyeOpen.leverAngleRadian, geometry.leverReleaseAngle, 0,
-    'lever eye first rotates open');
-  near(eyeOpen.tongueAngleRadian, 0, 0,
-    'tongue waits for eye clearance');
-  near(eyeOpen.tackleLift, 0, 0,
-    'tackle waits for tongue release');
-  assert.ok(eyeOpen.currentStudClearance > 0);
-
-  near(tongueOpen.tongueAngleRadian, geometry.tongueReleaseAngle, 0,
-    'tongue then swings free');
-  assert.ok(tongueOpen.tongueToTackleSeparation > 0.72);
-  near(tackleAway.tackleLift, geometry.tackleHookLift, 0,
-    'unloaded tackle finally departs');
-
-  near(tackleReturned.tackleLift, 0, 0,
-    'didactic reset returns tackle first');
-  near(tackleReturned.tongueAngleRadian,
-    geometry.tongueReleaseAngle, 0,
-    'tongue remains open while tackle returns');
-  near(tongueReturned.tongueAngleRadian, 0, 0,
-    'reset reseats tongue second');
-  near(tongueReturned.leverAngleRadian,
-    geometry.leverReleaseAngle, 0,
-    'eye remains open until tongue is seated');
-  near(reset.leverAngleRadian, 0, 0,
-    'lever eye relocks last');
-  assert.ok(reset.currentStudClearance < 0);
-
-  assert.match(dynamics.loadPath,
-    /tackle hook bears on its hinged tongue.*locking stud lies inside.*lever reacts at the middle fulcrum.*standard transfers the load to the boat deck.*removes only the lock/s);
-  assert.match(dynamics.didacticResetDisclosure,
-    /first half.*working release.*second half.*reset.*not a claim of automatic reattachment/s);
-  assert.equal(transmission.resetOrder,
-    'working release: lever then tongue then tackle; didactic reset: tackle then tongue then lever');
-  disposeModel(model.root);
-});
-
-test('movement 492 release ropes remain attached to both lower eyes and one common pull bar', () => {
-  const { model } = movementModel();
-  const { blocks, geometry, stateAtTime } = model.root.userData;
-
-  for (const time of [0, 1.9, 3, 5.8, 8.4, 9.17, 10]) {
-    const state = stateAtTime(time);
-    model.update(time);
-    model.root.updateMatrixWorld(true);
-    near(blocks.pullBar.position.x, state.pullBarX, 0,
-      `common pull bar at ${time}`);
-    near(blocks.pullBarGrip.position.x, state.pullBarX, 0,
-      `common pull grip at ${time}`);
-
-    blocks.units.forEach((unit, index) => {
-      const release = cableEndpoints(blocks.releaseCords[index]);
-      const eyeCenter = new THREE.Vector3(
-        geometry.unitCenterX + state.ropeEyeCenter.x,
-        state.ropeEyeCenter.y,
-        unit.unitZ + geometry.mechanismPlaneZ,
-      );
-      // The rope is bent through the lower eye's bore (0.126) round its bar.
-      assert.ok(release.start.distanceTo(eyeCenter) < 0.40,
-        `release rope starts at lower eye ${index + 1} at ${time}`);
-      assert.ok(Math.min(...cablePoints(blocks.releaseCords[index])
-        .map((point) => point.distanceTo(eyeCenter))) < 0.126 - 0.045,
-      `release rope passes through lower eye ${index + 1} at ${time}`);
-      // The rope runs taut and straight from the eye to the lead sheave; the
-      // common bar grips it on that line, at its own unit's station.
-      near(release.end.x, state.pullBarX, 2e-14, `release rope ends at common bar ${index + 1} at ${time}`);
-      near(release.end.y, blocks.pullBar.position.y, 2e-14, `common bar on the rope line ${index + 1} at ${time}`);
-      assert.ok(Math.abs(release.end.z - unit.unitZ) < 0.4 && Math.abs(release.end.z) < 1.775, `rope within the bar at its unit ${index + 1}`);
-      const points = cablePoints(blocks.releaseCords[index]);
-      const straight = points.slice(-13), direction = straight.at(-1).clone().sub(straight[0]).normalize();
-      for (const point of straight) {
-        const offset = point.clone().sub(straight[0]);
-        assert.ok(offset.sub(direction.clone().multiplyScalar(offset.dot(direction))).length() < 1e-9,
-          `release rope straight from the eye ${index + 1} at ${time}`);
-      }
-
-      const fall = cableEndpoints(unit.fallRope);
-      vectorNear(
-        fall.start,
-        new THREE.Vector3(
-          geometry.unitCenterX - 0.73,
-          3.88 + state.tackleLift,
-          unit.unitZ + geometry.tacklePlaneZ,
-        ),
-        2e-14,
-        `tackle fall rises with the hook ${index + 1} at ${time}`,
-      );
-      const ringCenter = new THREE.Vector3(
-        geometry.unitCenterX - 0.73,
-        2.92 + state.tackleLift,
-        unit.unitZ + geometry.tacklePlaneZ,
-      );
-      assert.ok(Math.min(...cablePoints(unit.fallRope)
-        .map((point) => point.distanceTo(ringCenter))) < 0.31 - 0.10 - 0.055,
-      `tackle fall passes through the hook eye ${index + 1} at ${time}`);
-    });
+  const a = stateAtTime(0), z = stateAtTime(g.cycleDuration);
+  for (const key of ['leverAngle', 'tongueAngle', 'throatHeight']) near(a[key], z[key], 1e-12, `${key} loop`);
+  let maxStep = 0, previous = stateAtTime(0);
+  for (let i = 1; i <= 4000; i++) {
+    const s = stateAtTime(g.cycleDuration * i / 4000);
+    maxStep = Math.max(maxStep, Math.abs(s.throatHeight - previous.throatHeight), Math.abs(s.tongueAngle - previous.tongueAngle));
+    previous = s;
   }
-  assert.match(model.root.userData.dynamics.synchronization,
-    /same scalar release coordinate.*Two distinct release ropes.*one visibly disclosed reconstructed pull bar.*one operator amidships/s);
-  disposeModel(model.root);
-});
-
-test('movement 492 closes smoothly, remains in finite bounds, and leaves movement 507 as the frontier', () => {
-  const { model } = movementModel();
-  const { geometry, stateAtTime } = model.root.userData;
-  const initial = stateAtTime(0);
-  const closure = stateAtTime(geometry.cycleDuration);
-  for (const key of [
-    'leverAngleRadian',
-    'tongueAngleRadian',
-    'tackleLift',
-    'pullBarX',
-    'lockedStudClearance',
-    'currentStudClearance',
-    'tongueToTackleSeparation',
-  ]) {
-    near(closure[key], initial[key], 0, `${key} exact cycle closure`);
-  }
-  vectorNear(closure.upperEyeCenter, initial.upperEyeCenter, 0,
-    'upper-eye exact cycle closure');
-  vectorNear(closure.ropeEyeCenter, initial.ropeEyeCenter, 0,
-    'rope-eye exact cycle closure');
-  vectorNear(closure.tongueStudCenter, initial.tongueStudCenter, 0,
-    'stud exact cycle closure');
-
-  const derivativeTolerance = 3e-6;
-  const step = 1e-4;
-  for (const [key, boundaries] of [
-    ['leverProgress', [1.2, 3, 8.4, 9.6]],
-    ['tongueProgress', [3, 4.8, 7, 8.4]],
-    ['hookProgress', [4.6, 5.8, 6.2, 7]],
-  ]) {
-    for (const boundary of boundaries) {
-      const center = stateAtTime(boundary)[key];
-      const leftSlope = (center - stateAtTime(boundary - step)[key])
-        / step;
-      const rightSlope = (stateAtTime(boundary + step)[key] - center)
-        / step;
-      near(leftSlope, rightSlope, derivativeTolerance,
-        `${key} C1 boundary at ${boundary}`);
-    }
-  }
-
-  const swept = new THREE.Box3();
-  for (let sample = 0; sample <= 480; sample += 1) {
-    model.update(geometry.cycleDuration * sample / 480);
-    model.root.updateMatrixWorld(true);
-    // The rope leads and hands beyond Brown's crop are outside the framed plate.
-    model.root.traverse((object) => {
-      if (!object.isMesh) return;
-      for (let parent = object; parent; parent = parent.parent) if (parent.userData.beyondPlateCrop) return;
-      swept.union(new THREE.Box3().setFromObject(object));
-    });
-  }
-  assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
-  assert.ok(Number.isFinite(swept.min.x));
-  assert.ok(Number.isFinite(swept.max.z));
-  assert.ok(model.root.userData.cameraDistanceScale >= 1);
-  assert.ok(model.root.userData.groundFloorY <= swept.min.y);
-
-  const next = catalog.movements[506];
-  const nextModel = createMovementModel(next);
-  assert.equal(next.id, 507);
-  assert.equal(next.number, '507');
-  assert.match(next.title, /very slow motion/);
-  assert.equal(next.archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
-  assert.equal(next.fidelity, 'authored');
-  assert.equal(nextModel.root.userData.fidelity, 'authored');
-  assert.notEqual(nextModel.root.userData.archetype, ARCHETYPE);
-  disposeModel(nextModel.root);
-  disposeModel(model.root);
+  assert.ok(maxStep < 0.01, `smooth motion ${maxStep}`);
 });

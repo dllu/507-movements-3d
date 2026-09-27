@@ -54,20 +54,25 @@ function selfActingWeir(movement) {
   const upperTopLocal = upperLength - upperPivotFromBottom;
   const lowerTopLocal = lowerLength - lowerPivotFromBottom;
   const gateWidth = 2.40;
-  const notchWidth = 0.70;
-  const notchDepth = 0.78;
+  // The upper leaf is a plain plank, as Brown draws it in both figures:
+  // the ordinary flow spills over its whole top edge as one sheet across
+  // the channel (Brown's caption speaks of a notch; the plate draws none,
+  // so the 'notch' here is the full-width crest).
+  const notchWidth = gateWidth;
+  const notchDepth = 0;
   const notchBottomLocal = upperTopLocal - notchDepth;
   const notchBottomY = upperPivot.y + notchBottomLocal;
   const maximumUpperAngle = THREE.MathUtils.degToRad(40);
   const cycleDuration = 12;
   // Ordinary head over the notch sill: enough for the overflow to fall as a
   // visible sheet, well below the notch depth.
-  const ordinaryWaterLevel = notchBottomY + 0.24;
-  const floodWaterLevel = upperPivot.y + upperTopLocal - 0.18;
+  const ordinaryCrestHead = 0.14;
+  const floodCrestHead = 0.26;
+  const ordinaryWaterLevel = notchBottomY + ordinaryCrestHead;
+  const floodWaterLevel = notchBottomY + floodCrestHead;
   const downstreamWaterLevel = 0.46;
   const channelFloorY = -0.05;
   const groundY = -0.22;
-  const crestFreeboard = 0.06;
   const ordinaryNotchHead = ordinaryWaterLevel - notchBottomY;
   const ordinaryNotchFlowFraction = 0.48;
   const riseEndPhase = 0.28;
@@ -196,16 +201,15 @@ function selfActingWeir(movement) {
       0,
       1,
     );
-    // The turned upper leaf lowers its top and its notch sill. The head
-    // water can never stand above the leaf's upstream top edge: it spills
-    // over the sill instead, so the scheduled level is capped just under
-    // that edge.
+    // The turned upper leaf lowers its crest. The head over the crest can
+    // never exceed the flood head: the water spills over the lowered crest
+    // instead, so the scheduled level falls with it.
     const upstreamCornerY = (localY) => upperPivot.y
       - (upperThickness / 2) * Math.sin(gate.upperAngle)
       + localY * Math.cos(gate.upperAngle);
     const upperTopEdgeY = upstreamCornerY(upperTopLocal);
     const notchSillY = upstreamCornerY(notchBottomLocal);
-    waterLevel = Math.min(waterLevel, upperTopEdgeY - crestFreeboard);
+    waterLevel = Math.min(waterLevel, upperTopEdgeY + floodCrestHead);
     // Notch discharge follows the head over the (possibly lowered) sill as
     // a sharp-crested weir, q ~ h^(3/2), scaled so the ordinary head gives
     // the ordinary flow.
@@ -301,25 +305,11 @@ function selfActingWeir(movement) {
   const upperBody = addRole(new THREE.Mesh(
     new THREE.BoxGeometry(upperThickness, upperBodyHeight, gateWidth),
     upperMaterial,
-  ), 'upper-leaf-full-width-body-below-overflow-notch');
+  ), 'upper-leaf-plain-full-width-plank-overflowed-at-its-crest');
   upperBody.position.y = (-upperPivotFromBottom + notchBottomLocal) / 2;
   upperLeaf.add(upperBody);
-  const shoulderWidth = (gateWidth - notchWidth) / 2;
-  const upperShoulders = [-1, 1].map((sign, index) => {
-    const shoulder = addRole(new THREE.Mesh(
-      new THREE.BoxGeometry(upperThickness, notchDepth, shoulderWidth),
-      upperMaterial,
-    ), index === 0
-      ? 'upper-leaf-left-notch-shoulder'
-      : 'upper-leaf-right-notch-shoulder');
-    shoulder.position.set(
-      0,
-      notchBottomLocal + notchDepth / 2,
-      sign * (notchWidth / 2 + shoulderWidth / 2),
-    );
-    upperLeaf.add(shoulder);
-    return shoulder;
-  });
+  // A plain plank: no notch shoulders.
+  const upperShoulders = [];
   const upperReinforcements = [-0.34, 0.30, 0.94].map((y, index) => {
     const rail = addRole(new THREE.Mesh(
       new THREE.BoxGeometry(0.055, 0.075, gateWidth + 0.09),
@@ -533,7 +523,7 @@ function selfActingWeir(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'Two unequal leaves pivot below their centers across a left-to-right stream. At ordinary head they stand vertical and overlap, while water passes through the upper notch. Rising head turns the much larger upper leaf downstream; its upstream bottom edge slides along and pushes the lower leaf upstream, opening a bed-level scouring passage. Falling head permits the same contact-coupled pair to return vertical.',
+      'Two unequal leaves pivot below their centers across a left-to-right stream. At ordinary head they stand vertical and overlap, while a shallow sheet spills over the full width of the crest of the plain upper leaf. Rising head turns the much larger upper leaf downstream; its upstream bottom edge slides along and pushes the lower leaf upstream, opening a bed-level scouring passage. Falling head permits the same contact-coupled pair to return vertical.',
     motion: {
       cycleDuration,
       motionType:
@@ -598,6 +588,16 @@ function selfActingWeir(movement) {
     update,
   };
   correctWeir(root);
+  // Brown's section draws the pivots only as pins through the leaves; the
+  // channel walls that would carry them lie in front of and behind the
+  // section plane. The fixed pins therefore end flush with the leaf ends
+  // (the channel-wall planes that also bound the water), with no stub
+  // bearings standing out in open air.
+  for (const assembly of [upperPivotAssembly, lowerPivotAssembly]) {
+    assembly.axle.geometry.dispose();
+    assembly.axle.geometry = new THREE.CylinderGeometry(0.095, 0.095, gateWidth, 32);
+    for (const bearing of assembly.bearings) bearing.visible = false;
+  }
   // Keep the lower leaf's battens on its upstream face, which carries its
   // pivot.
   lowerReinforcements.forEach((rail) => { rail.position.x = -0.025; });
@@ -631,8 +631,8 @@ function selfActingWeir(movement) {
     const onLeaf = (pivot, angle, x, y) => new THREE.Vector2(
       pivot.x + x * Math.cos(angle) - y * Math.sin(angle),
       pivot.y + x * Math.sin(angle) + y * Math.cos(angle));
-    const headSection = Array.from({ length: 7 }, () => new THREE.Vector2());
-    const headTriangles = 5;
+    const headSection = Array.from({ length: 8 }, () => new THREE.Vector2());
+    const headTriangles = 6;
     const headPositions = new Float32Array((2 * headTriangles + 2 * headSection.length) * 9);
     upstreamWater.geometry.dispose();
     upstreamWater.geometry = new THREE.BufferGeometry();
@@ -666,11 +666,16 @@ function selfActingWeir(movement) {
         const t = (d.x * upperAxis.y - d.y * upperAxis.x) / det;
         if (t < 0) corner = lowerTopDown.clone().addScaledVector(lowerAxis, t);
       }
-      const surface = lineAtY(corner, upperAxis, state.waterLevel);
+      // Up the upper leaf's upstream face to its crest, then straight up to
+      // the free surface standing over the crest (the head that spills);
+      // the water never overhangs the turned leaf's downstream side.
+      const upperTopUp = onLeaf(upperPivot, ua, -upperThickness / 2, upperTopLocal);
+      const faceTop = lineAtY(corner, upperAxis, Math.min(upperTopUp.y, state.waterLevel - 0.002));
+      const surface = new THREE.Vector2(faceTop.x, state.waterLevel);
       const section = [
         new THREE.Vector2(headLeftX, channelFloorY),
         lineAtY(lowerTopUp, lowerAxis, channelFloorY),
-        lowerTopUp, lowerTopDown, corner, surface,
+        lowerTopUp, lowerTopDown, corner, faceTop, surface,
         new THREE.Vector2(headLeftX, state.waterLevel),
       ];
       section.forEach((point, index) => headSection[index].copy(point));
@@ -703,7 +708,7 @@ function selfActingWeir(movement) {
     // the notch crest of the (possibly turning) upper leaf and dwindles to
     // nothing as the flow stops, rather than switching off.
     const ordinaryNotchFraction = 0.48;
-    const ordinarySheetHalfDepth = (ordinaryWaterLevel - notchBottomY) / 2 - 0.015;
+    const ordinarySheetHalfDepth = (ordinaryWaterLevel - notchBottomY) / 2;
     const sheetHalfWidth = notchWidth / 2 - 0.02;
     const nappe = Array.from({ length: 12 }, () => new THREE.Vector3());
     const nappeCurve = new THREE.CatmullRomCurve3(nappe);
@@ -713,7 +718,8 @@ function selfActingWeir(movement) {
         radius: halfDepth, endRadius: halfDepth * 0.5,
         // At a trickle the sheet draws in to a thin thread and vanishes.
         width: sheetHalfWidth * Math.min(1, flow / 0.35),
-        endWidth: sheetHalfWidth * 1.15 * Math.min(1, flow / 0.35),
+        // The spray flares the sheet; it stays inside the channel width.
+        endWidth: sheetHalfWidth / 1.35 * Math.min(1, flow / 0.35),
         widthAxis: new THREE.Vector3(0, 0, 1), segments: 80, radialSegments: 24,
         fadeStart: 0.86, flare: 1.35,
       };
@@ -721,7 +727,7 @@ function selfActingWeir(movement) {
     const layNappe = (state, flow) => {
       const ua = state.upperAngle;
       const halfDepth = ordinarySheetHalfDepth * flow ** (2 / 3);
-      const lift = halfDepth + 0.02;
+      const lift = halfDepth + 0.004;
       const approach = onLeaf(upperPivot, ua, -upperThickness / 2 - 0.12, notchBottomLocal + lift);
       const up = onLeaf(upperPivot, ua, -upperThickness / 2, notchBottomLocal + lift);
       const crest = onLeaf(upperPivot, ua, 0, notchBottomLocal + lift);
@@ -729,14 +735,18 @@ function selfActingWeir(movement) {
       const landY = downstreamWaterLevel - 0.10;
       // A turned leaf leans its downstream face out under the sheet; the
       // water leaving its sloping crest is thrown at least clear of it.
-      const throwX = Math.max(1.26 * Math.max(0.12, flow ** (1 / 3)),
-        (down.y - landY) * Math.tan(Math.abs(ua)) + 0.30);
+      // The sheet lands inside the drawn tail water, short of its end.
+      const throwX = Math.min(3.05 - down.x, Math.max(1.26 * Math.max(0.12, flow ** (1 / 3)),
+        (down.y - landY) * Math.tan(Math.abs(ua)) + 0.30));
       nappe[0].set(approach.x, approach.y, 0);
       nappe[1].set(up.x, up.y, 0);
       nappe[2].set(crest.x, crest.y, 0);
+      // The sheet leaves the crest along its slope and falls on a parabola.
+      const slope = Math.max(Math.tan(ua), -(down.y - landY) / throwX);
+      const drop = down.y + slope * throwX - landY;
       for (let i = 0; i <= 8; i += 1) {
         const u = i / 8;
-        nappe[3 + i].set(down.x + throwX * u, down.y - (down.y - landY) * u * u, 0);
+        nappe[3 + i].set(down.x + throwX * u, down.y + slope * throwX * u - drop * u * u, 0);
       }
       nappeCurve.updateArcLengths();
     };
@@ -792,7 +802,7 @@ function selfActingWeir(movement) {
   }
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.65, groundY - 0.02, -1.86),
-    new THREE.Vector3(3.65, 3.58, 1.86),
+    new THREE.Vector3(3.65, 3.64, 1.86),
   );
   root.userData.cameraDistanceScale = 1.04;
   // Brown's flat section: near-orthographic so the head volumes read as panels.

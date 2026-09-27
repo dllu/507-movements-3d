@@ -29,7 +29,10 @@ function doubleActingPump(movement) {
   const sx = (px) => (px - 272.5) * PX;
   const sy = (py) => (276.5 - py) * PX;
   const pistonCenterY = 0;
-  const pistonAmplitude = 1.05;
+  // Pass 73: a shorter stroke and longer rod keep the rod's plain top end
+  // standing clear above the gland at the bottom of the stroke, as Brown
+  // draws it, with the top of the stroke unchanged.
+  const pistonAmplitude = 0.90;
   const pistonThickness = 0.64;
   const pistonRadius = 0.772;
   const boreHalfWidth = 0.79;
@@ -41,7 +44,7 @@ function doubleActingPump(movement) {
   const chamberArea = 2 * boreHalfWidth * 2 * pistonHalfDepth;
   const lowerChamberEndY = sy(442);
   const upperChamberEndY = sy(114);
-  const rodLength = 3.70;
+  const rodLength = 3.85;
   const rodRadius = 0.085;
   const stuffingBoxY = sy(104);
   const maximumValveLift = 0.16;
@@ -586,6 +589,10 @@ function doubleActingPump(movement) {
   });
   markShadows(root);
   base.receiveShadow = true;
+  // Pass 73: the rear section face takes no shadows. Light slipping past the
+  // gland notch and rod bore printed pale rectangles on it, seen through the
+  // cylinder water.
+  backPlate.receiveShadow = false;
   for (const water of [passageWater, upperChamberWater, lowerChamberWater]) { water.castShadow = false; water.receiveShadow = false; }
   root.userData.blocks = { ...(root.userData.blocks ?? {}), passageWater, upperChamberWater, lowerChamberWater, seatLips };
   update(0);

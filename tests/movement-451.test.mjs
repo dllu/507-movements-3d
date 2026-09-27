@@ -271,19 +271,22 @@ test('movement 451 force-pump checks remain mutually exclusive and C2 at reversa
   disposeModel(model.root);
 });
 
-test('movement 451 keeps its rigid lever-slider closure exact', () => {
+test('movement 451 swing-link handle closure and vertical piston-rod offset remain exact', () => {
   const model = createMovementModel(catalog.movements[450]);
   const { geometry, stateAtInputAngle } = model.root.userData;
-  for (let sample = -12000; sample <= 24000; sample += 1) {
-    const state = stateAtInputAngle(FULL_TURN * sample / 12000);
+  for (let sample = -16000; sample <= 32000; sample += 1) {
+    const state = stateAtInputAngle(FULL_TURN * sample / 16000);
     near(state.pistonRodJoint.x, geometry.pumpX, 0,
-      `slider remains on pump axis at ${sample}`);
-    near(state.leverPin.distanceTo(state.pistonRodJoint),
-      geometry.sliderLinkLength, 3e-16,
-    `rigid slider link at ${sample}`);
+      `rod pin on barrel axis at ${sample}`);
+    near(state.leverPin.distanceTo(state.leverPivot),
+      geometry.leverRodPinRadius, 3e-15,
+      `rigid handle between fulcrum and rod pin at ${sample}`);
+    near(state.leverPivot.distanceTo(geometry.lugPin),
+      geometry.swingLinkLength, 3e-15,
+      `swing link length from barrel lug at ${sample}`);
     near(state.pistonRodJoint.y - state.pistonY,
-      geometry.pistonRodJointOffset, 5e-16,
-    `constant rod offset at ${sample}`);
+      geometry.pistonRodJointOffset, 5e-15,
+      `fixed vertical rod offset at ${sample}`);
   }
   disposeModel(model.root);
 });
@@ -293,7 +296,7 @@ test('movement 451 update maps the pulse, chamber inventory, air scale, and link
   const {
     blocks,
     geometry,
-    sliderLinkEndpoints,
+    swingLinkEndpoints,
     stateAtTime,
     update,
   } = model.root.userData;
@@ -315,13 +318,13 @@ test('movement 451 update maps the pulse, chamber inventory, air scale, and link
     `piston transform at ${phase}`);
     near(blocks.lever.rotation.z, state.leverAngle, 0,
       `lever transform at ${phase}`);
-    near(blocks.sliderLink.scale.y, geometry.sliderLinkLength, 3e-16,
-      `slider-link length at ${phase}`);
-    const endpoints = sliderLinkEndpoints();
-    vectorNear(endpoints.slider, state.pistonRodJoint.clone().setZ(.26), 8e-16,
-      `slider endpoint at ${phase}`);
-    vectorNear(endpoints.lever, state.leverPin.clone().setZ(.26), 8e-16,
-      `lever endpoint at ${phase}`);
+    const endpoints = swingLinkEndpoints();
+    vectorNear(endpoints.lug, geometry.lugPin, 1e-15,
+      `swing link on its lug pin at ${phase}`);
+    vectorNear(endpoints.handle, state.leverPivot, 1e-14,
+      `swing link on the handle fulcrum at ${phase}`);
+    vectorNear(blocks.lever.position, state.leverPivot, 0,
+      `handle fulcrum rides on the swing link at ${phase}`);
     near(blocks.compressedAir.scale.x, 1, 0, `fixed chamber envelope at ${phase}`);
     const envelope = model.root.userData.chamberEnvelope;
     near(envelope.volumeTo(envelope.level) / envelope.total,

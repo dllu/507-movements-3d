@@ -2118,9 +2118,13 @@ function singleThreeLeggedGravityEscapement(movement) {
   const fixedFrame = new THREE.Group();
   fixedFrame.userData.role = 'fixed-three-legged-escapement-frame';
   root.add(fixedFrame);
+  // The crossbar carries the two gravity-arm bearings: its lower face
+  // (0.08 below its centre line) overlaps the bearing tops (0.15 above the
+  // arm arbors), so the bearings are seated in it rather than hanging clear.
+  const crossbarY = palletPivotY + 0.22;
   const topCrossbar = beamBetween(
-    new THREE.Vector3(-2.35, palletPivotY + 0.42, -0.76),
-    new THREE.Vector3(2.35, palletPivotY + 0.42, -0.76),
+    new THREE.Vector3(-2.35, crossbarY, -0.76),
+    new THREE.Vector3(2.35, crossbarY, -0.76),
     0.16,
     0.18,
     frameMaterial,
@@ -2139,7 +2143,7 @@ function singleThreeLeggedGravityEscapement(movement) {
   wheelBearingBracket.userData.role = 'single-wheel-bearing-bracket';
   fixedFrame.add(wheelBearingBracket);
   const suspensionBracket = beamBetween(
-    new THREE.Vector3(0, palletPivotY + 0.42, -0.72),
+    new THREE.Vector3(0, crossbarY, -0.72),
     new THREE.Vector3(0, pendulumPivot.y, -0.72),
     0.11,
     0.14,

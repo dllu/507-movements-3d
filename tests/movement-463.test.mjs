@@ -59,9 +59,22 @@ test('movement 463 is one unequal two-leaf self-acting weir with a notch and a b
   assert.equal(blocks.lowerLeaf.parent, model.root);
   assert.equal(blocks.upperBody.parent, blocks.upperLeaf);
   assert.equal(blocks.lowerBody.parent, blocks.lowerLeaf);
-  assert.equal(blocks.upperShoulders.length, 2);
-  assert.ok(blocks.upperShoulders.every((part) =>
-    part.parent === blocks.upperLeaf));
+  // Brown draws the upper leaf as a plain plank: no notch shoulders; the
+  // ordinary sheet spills over its full-width crest.
+  assert.equal(blocks.upperShoulders.length, 0);
+  assert.equal(geometry.notchDepth, 0);
+  assert.equal(geometry.notchWidth, geometry.gateWidth);
+  blocks.upperBody.geometry.computeBoundingBox();
+  const plank = blocks.upperBody.geometry.boundingBox;
+  assert.ok(Math.abs(plank.max.y - geometry.upperTopLocal) < 1e-6, 'plank reaches the crest');
+  assert.ok(Math.abs(plank.max.z - plank.min.z - geometry.gateWidth) < 1e-6, 'plank spans the channel');
+  // The fixed pivot pins end flush with the leaf ends; no stub bearings.
+  for (const assembly of [blocks.upperPivotAssembly, blocks.lowerPivotAssembly]) {
+    assembly.axle.geometry.computeBoundingBox();
+    const size = assembly.axle.geometry.boundingBox.getSize(new THREE.Vector3());
+    assert.ok(Math.abs(size.y - geometry.gateWidth) < 1e-6, 'pin length equals leaf width');
+    assert.ok(assembly.bearings.every((bearing) => !bearing.visible));
+  }
   assert.equal(blocks.upperContactEdge.parent, blocks.upperLeaf);
   assert.equal(blocks.notchFlow.parent, model.root);
   assert.equal(blocks.bedFlow.parent, model.root);
@@ -229,15 +242,18 @@ test('movement 463 schedule demonstrates ordinary notch overflow, flood opening,
   assert.match(opening.regime, /rising-head/);
   near(scour.contactDrive, 1, 1e-12, 'fully open scour state');
   // Brown's open weir spills over its lowered, turned upper leaf: the head
-  // never stands above the leaf's upstream top edge and the notch overflow
-  // follows the head over the lowered sill.
+  // always stands over the crest (the sheet never stops), never more than
+  // the flood head above it, and the overflow follows the head over the
+  // lowered crest.
   assert.ok(scour.notchFlowFraction > ordinary.notchFlowFraction);
+  const floodHead = geometry.floodWaterLevel - geometry.notchBottomY;
   for (let i = 0; i <= 200; i += 1) {
     const state = stateAtPhase(i / 200);
     const topEdgeY = geometry.upperPivot.y
       - (geometry.upperThickness / 2) * Math.sin(state.upperAngle)
       + geometry.upperTopLocal * Math.cos(state.upperAngle);
-    assert.ok(state.waterLevel < topEdgeY, `head below turned leaf top at ${i / 200}`);
+    assert.ok(state.waterLevel > topEdgeY, `head over the crest at ${i / 200}`);
+    assert.ok(state.waterLevel <= topEdgeY + floodHead + 1e-12, `head at most the flood head at ${i / 200}`);
   }
   near(scour.bedFlowFraction, 1, 1e-12, 'full bed flow');
   assert.ok(scour.sedimentRemainingFraction < ordinary.sedimentRemainingFraction);

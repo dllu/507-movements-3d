@@ -1,8 +1,8 @@
 import * as THREE from 'three';
+import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
 import {portedBarrel} from './lift-pump-working-parts.js';
 import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
-import {boredPlanarLinkGeometry} from './bored-planar-link.js';
 import {capsule,circle,poly,plate,polygonClipping} from './finite-plate-geometry.js';
 import {latheSectionGeometry} from './cutaway-section.js';
 const replace=(mesh,geometry)=>{mesh.geometry.dispose();mesh.geometry=geometry;};
@@ -56,18 +56,41 @@ export function correctForcePumpParts(root,id){
   replace(b.suctionPipe,horizontalTurned([[-p.height/2,p.radiusBottom-.045],[-p.height/2,p.radiusBottom],
     [p.height/2,p.radiusTop],[p.height/2,p.radiusTop-.045]]));
   replace(b.suctionValveSeat,horizontalRing(.30,.704,-.065,.035));b.suctionValveSeat.rotation.set(0,0,0);
-  // The short driven link and its pins occupy a distinct front layer.
-  const link=boredPlanarLinkGeometry({length:g.sliderLinkLength,width:.075,eyeRadius:.115,boreRadius:.063,depth:.07});
-  link.translate(-g.sliderLinkLength/2,0,0).rotateZ(Math.PI/2).scale(1,1/g.sliderLinkLength,1);replace(b.sliderLink,link);
-  const pivot=b.lever.children[1],rodPin=b.lever.children[2];
-  replace(pivot,new THREE.CylinderGeometry(.18,.18,.70,40));
-  // Clone scale varies in legacy factories; normalize the working rod pin.
-  rodPin.scale.set(1,1,1);replace(rodPin,new THREE.CylinderGeometry(.06,.06,.70,40));
-  const jointPin=new THREE.Mesh(new THREE.CylinderGeometry(.06,.06,.58,40),b.pumpRod.material);
-  jointPin.rotation.x=Math.PI/2;jointPin.userData.role='piston-rod-link-axle';root.add(jointPin);b.jointPin=jointPin;
-  const foot=[pumpX-.70,air?2.21:2.25],pivotPoint=[g.leverPivot.x,g.leverPivot.y];
-  const bracket=polygonClipping.difference(polygonClipping.union(capsule(foot,pivotPoint,.10,24),poly(circle(pivotPoint,.23,96))),poly(circle(pivotPoint,.184,96)));
-  replace(b.pivotSupport,plate(bracket,-.30,-.20));b.pivotSupport.position.set(0,0,0);b.pivotSupport.rotation.set(0,0,0);b.pivotSupport.scale.set(1,1,1);
+  // Brown's handle is a flat bar pinned straight to the rod top; its left
+  // end rides on a swing link hung from a lug cast on the barrel side
+  // (Movement 450; 451 is "the same as above"). Layers along z: handle
+  // +-0.10, rod clevis cheeks at +-0.12..0.18, swing link -0.20..-0.13,
+  // lug -0.31..-0.21 grown out of the barrel wall; pins pass through bores.
+  const L1=g.leverRodPinRadius,Ls=g.swingLinkLength,bore=.063;
+  const path=b.lever.children[0].geometry.parameters.path.getPoints(96).map(p=>[p.x,p.y]);
+  const bar=polygonClipping.union(...path.slice(1).map((p,i)=>capsule(path[i],p,.085,16)),
+    poly(circle([0,0],.15,64)),poly(circle([L1,0],.15,64)));
+  replace(b.lever.children[0],plate(polygonClipping.difference(bar,poly(circle([0,0],bore,48)),poly(circle([L1,0],bore,48))),-.10,.10));
+  b.lever.children[0].userData.role='hand-lever-flat-bar-pinned-to-rod-top';
+  const zPin=(mesh,radius,low,high)=>{const geometry=new THREE.CylinderGeometry(radius,radius,high-low,32).rotateX(Math.PI/2).translate(0,0,(low+high)/2);
+    mesh.scale.set(1,1,1);mesh.rotation.set(0,0,0);replace(mesh,geometry);};
+  const fulcrumPin=b.lever.children[1],rodPin=b.lever.children[2];
+  fulcrumPin.position.set(0,0,0);zPin(fulcrumPin,.06,-.21,.11);fulcrumPin.userData.role='handle-fulcrum-pin-through-swing-link';
+  zPin(rodPin,.06,-.19,.19);rodPin.userData.role='rod-top-pin-through-handle-and-clevis';
+  // Swing link, in its own frame: lug pin at the origin, handle pin at +x.
+  // 450 draws a straight link; 451 draws it bowed outward.
+  const bow=air?.10:0,centre=Array.from({length:25},(_,i)=>[Ls*i/24,bow*Math.sin(Math.PI*i/24)]);
+  const linkShape=polygonClipping.union(...centre.slice(1).map((p,i)=>capsule(centre[i],p,.05,12)),
+    poly(circle([0,0],.115,64)),poly(circle([Ls,0],.115,64)));
+  replace(b.swingLink,plate(polygonClipping.difference(linkShape,poly(circle([0,0],bore,48)),poly(circle([Ls,0],bore,48))),-.20,-.13));
+  b.swingLink.position.set(g.lugPin.x,g.lugPin.y,0);
+  const lowerPin=new THREE.Mesh(new THREE.BufferGeometry(),b.pumpRod.material);zPin(lowerPin,.06,-.32,-.12);
+  lowerPin.position.set(g.lugPin.x,g.lugPin.y,0);lowerPin.userData.role='fixed-swing-link-pin-in-barrel-lug';root.add(lowerPin);b.lugPin=lowerPin;
+  // The lug: a boss round the pin swept down into the barrel's outer wall.
+  const P=[g.lugPin.x,g.lugPin.y],wallX=pumpX-.70;
+  const lug=polygonClipping.difference(polygonClipping.union(poly(circle(P,.13,64)),
+    poly([[P[0],P[1]+.13],[wallX,P[1]+.02],[wallX,P[1]-.42],[P[0]+.10,P[1]-.30],[P[0],P[1]-.13]])),poly(circle(P,bore,48)));
+  replace(b.pivotSupport,plate(lug,-.31,-.21));b.pivotSupport.position.set(0,0,0);b.pivotSupport.rotation.set(0,0,0);b.pivotSupport.scale.set(1,1,1);
+  // Clevis on the rod top: a crosshead below the handle and two bored cheeks.
+  const cheek=polygonClipping.difference(polygonClipping.union(poly(circle([0,0],.11,64)),poly([[-.11,-.30],[.11,-.30],[.11,0],[-.11,0]])),poly(circle([0,0],bore,48)));
+  const clevisGeometry=mergeGeometries([plate(cheek,.12,.18),plate(cheek,-.18,-.12),
+    plate(poly([[-.11,-.36],[.11,-.36],[.11,-.24],[-.11,-.24]]),-.179,.179)]);
+  const clevis=new THREE.Mesh(clevisGeometry,b.pumpRod.material);clevis.userData.role='rod-top-clevis-straddling-handle';root.add(clevis);b.rodClevis=clevis;
   let inlet,output,liquid,gas;
   if(!air){
     const axisX=-1.48;inlet=risingElbow(-.54,axisX,-.72,.40);
@@ -119,7 +142,7 @@ export function correctForcePumpParts(root,id){
     for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.x===x)o.visible=false;
   }
   d.updateSolids=state=>{
-    b.sliderLink.position.z=.26;jointPin.position.copy(state.pistonRodJoint);jointPin.position.z=.10;
+    clevis.position.copy(state.pistonRodJoint);
     if(air){
       const level=liquid.levelAt(state.chamberWaterVolume/g.chamberTotalInternalVolume);
       liquid.update(liquid.low,level);gas.update(level,gas.high);d.chamberEnvelope.level=level;

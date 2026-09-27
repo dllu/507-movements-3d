@@ -484,3 +484,19 @@ test('movement 482 fits every regulator pose and leaves spinning movement 507 as
   assert.equal(next.fidelity, 'authored');
   disposeModel(model.root);
 });
+
+test('movement 482 domed cover is closed at its rear end, so the section shows its inside', () => {
+  const { model } = movementModel();
+  const cover = model.root.userData.blocks.domedCover;
+  model.root.updateMatrixWorld(true);
+  let rearEnd = false;
+  cover.traverse((mesh) => {
+    if (!mesh.isMesh) return;
+    mesh.geometry.computeBoundingBox();
+    const box = mesh.geometry.boundingBox;
+    // A full-height end plate spanning the arch from its flange to its crown.
+    if (box.max.z <= -1.0 && box.max.x - box.min.x > 5.9 && box.max.y - box.min.y > 0.8) rearEnd = true;
+  });
+  assert.ok(rearEnd, 'rear end plate of the cover');
+  disposeModel(model.root);
+});

@@ -122,6 +122,38 @@ function airBottleGeometry({x0, x1, z, floorY, shoulderY, neckY, roofY, neckHalf
   return mergePassageParts(parts);
 }
 
+// Pass 74: the pipe's mouth under the wheel. A box open at the top, whose
+// front, back and side walls end in arcs concentric with the wheel; the pipe
+// enters the right wall through a hole of its own bore.
+function wheelHoodGeometry({cx, cy, xL, xR, yBottom, arcRadius, zC, halfWidth, wall, pipeY, pipeBore}) {
+  const arcY = (x) => cy - Math.sqrt(arcRadius ** 2 - (x - cx) ** 2);
+  const profile = (a, b) => {
+    const points = [[a, yBottom], [b, yBottom]];
+    for (let i = 0; i <= 48; i += 1) {
+      const x = b + (a - b) * i / 48;
+      points.push([x, arcY(x)]);
+    }
+    return poly(points);
+  };
+  const parts = [];
+  const outline = profile(xL, xR);
+  parts.push(plate(outline, zC + halfWidth - wall, zC + halfWidth));
+  parts.push(plate(outline, zC - halfWidth, zC - halfWidth + wall));
+  parts.push(plate(profile(xL, xL + wall), zC - halfWidth + wall, zC + halfWidth - wall));
+  // Right wall across the depth (plate x -> world -z, extrusion -> world x).
+  const rightTop = arcY(xR - wall);
+  const right = polygonClipping.difference(
+    poly([[-(zC + halfWidth - wall), yBottom], [-(zC - halfWidth + wall), yBottom],
+      [-(zC - halfWidth + wall), rightTop], [-(zC + halfWidth - wall), rightTop]]),
+    poly(circle([-zC, pipeY], pipeBore, 64)));
+  parts.push(plate(right, xR - wall, xR).rotateY(Math.PI / 2));
+  // Floor (plate y -> world -z, extrusion -> world y).
+  parts.push(plate(poly([[xL + wall, -(zC + halfWidth - wall)], [xR - wall, -(zC + halfWidth - wall)],
+    [xR - wall, -(zC - halfWidth + wall)], [xL + wall, -(zC - halfWidth + wall)]]),
+  yBottom, yBottom + wall).rotateX(-Math.PI / 2));
+  return mergePassageParts(parts);
+}
+
 function createTank({
   centerX,
   tankWidth,
@@ -224,11 +256,12 @@ function temperatureAirMachine(movement) {
   // wheel, as the plate shows (no spur gear is drawn). The air vessel stands
   // on the cold cistern's floor round the screw's foot, and the rigid air
   // tube rises from it, crosses high above and descends into the warm
-  // cistern to an upturned mouth under the right of the wheel.
+  // cistern to a hood fitted under the wheel.
   const tankBottomY = -2.10;
   const tankTopY = 0.74;
   const waterTopY = 0.54;
-  const tankDepth = 2.10;
+  // Pass 74: just deep enough front to back for the hood behind the wheel.
+  const tankDepth = 2.20;
   const coldTankCenterX = -2.15;
   const warmTankCenterX = 1.55;
   const coldTankWidth = 3.35;
@@ -566,24 +599,38 @@ function temperatureAirMachine(movement) {
   });
 
   // Brown's duct is broad: about a fifth of the bottle's width.
-  const pipeTopY = 2.20, pipeRightX = 2.65, pipeBottomY = -1.75;
-  const outletPoint = new THREE.Vector3(wheelCenter.x + 0.45, -1.30, wheelPlaneZ);
+  // Pass 74: it descends close beside the wheel, turns in under it and ends
+  // in a broad hood whose lips are arcs concentric with the wheel, 0.02 clear
+  // of its rims (Brown's stepped chamber under the wheel), so the air has no
+  // way out but up into the paddles.
+  const pipeTopY = 2.20, pipeRightX = 2.50, pipeBottomY = -1.52;
+  const hoodSpec = {
+    cx: wheelCenter.x, cy: wheelCenter.y, xL: wheelCenter.x - 0.30, xR: wheelCenter.x + 0.40,
+    yBottom: -1.80, arcRadius: waterWheelRadius + 0.064 + 0.02, zC: wheelPlaneZ, halfWidth: 0.32,
+    wall: 0.035, pipeY: pipeBottomY, pipeBore: airDuctRadius - 0.035,
+  };
+  const outletPoint = new THREE.Vector3(hoodSpec.xR, pipeBottomY, wheelPlaneZ);
   const pipePoints = [
     new THREE.Vector3(bottlePipeX, bottleRoofY, 0),
     new THREE.Vector3(bottlePipeX, pipeTopY, 0),
     new THREE.Vector3(pipeRightX, pipeTopY, 0),
     new THREE.Vector3(pipeRightX, pipeBottomY, 0),
-    new THREE.Vector3(outletPoint.x, pipeBottomY, 0),
-    new THREE.Vector3(outletPoint.x, pipeBottomY, wheelPlaneZ),
+    new THREE.Vector3(pipeRightX, pipeBottomY, wheelPlaneZ),
     outletPoint.clone(),
   ];
-  const pressurePipeCurve = filletedPipePath(pipePoints, [0.40, 0.40, 0.40, 0.28, 0.28]);
-  const bubbleRiseEnd = new THREE.Vector3(
-    outletPoint.x,
-    waterTopY - 0.04,
-    wheelPlaneZ,
-  );
-  const bubbleRiseCurve = new THREE.LineCurve3(outletPoint.clone(), bubbleRiseEnd.clone());
+  const pressurePipeCurve = filletedPipePath(pipePoints, [0.40, 0.40, 0.28, 0.28]);
+  const wheelHood = addRole(new THREE.Mesh(wheelHoodGeometry(hoodSpec)),
+    'air-pipe-mouth-hood-fitted-under-wheel');
+  root.add(wheelHood);
+  // The air leaves the pipe inside the hood and rises on the wheel's right.
+  const bubbleRiseX = wheelCenter.x + 0.24;
+  const bubbleRiseCurve = new THREE.CurvePath();
+  bubbleRiseCurve.add(new THREE.QuadraticBezierCurve3(outletPoint.clone(),
+    new THREE.Vector3(bubbleRiseX, pipeBottomY, wheelPlaneZ),
+    new THREE.Vector3(bubbleRiseX, pipeBottomY + 0.16, wheelPlaneZ)));
+  bubbleRiseCurve.add(new THREE.LineCurve3(
+    new THREE.Vector3(bubbleRiseX, pipeBottomY + 0.16, wheelPlaneZ),
+    new THREE.Vector3(bubbleRiseX, waterTopY - 0.04, wheelPlaneZ)));
   const airPath = new THREE.CurvePath();
   airPath.add(pressurePipeCurve);
   airPath.add(bubbleRiseCurve);
@@ -605,6 +652,7 @@ function temperatureAirMachine(movement) {
     conduitMaterial,
   ), 'air-pipe-ascending-crossing-descending-to-wheel-underside');
   root.add(airConduit);
+  wheelHood.material = conduitMaterial;
   const airBubbleMaterial = new THREE.MeshBasicMaterial({
     color: 0xbfefff,
     depthWrite: false,
@@ -929,6 +977,7 @@ function temperatureAirMachine(movement) {
       receiver,
       faceGear,
       facePinion,
+      wheelHood,
       screwBarrel,
       screwFlight,
       screwMount,
@@ -973,7 +1022,7 @@ function temperatureAirMachine(movement) {
     fidelity: 'authored',
     geometry,
     mechanism:
-      'The inclined right-handed Archimedean screw is first turned opposite its water-raising direction, carrying air downward into the air vessel standing round its foot. Pressurized air rises through the rigid external tube from the vessel’s roof, crosses above the cisterns, descends to an upturned mouth under the right of the warm-bath wheel, and bubbles upward on the wheel’s right side. A mitre pair at the screw’s head drives an inclined shaft over the warm cistern’s wall, and a pinion on that shaft turns the face gear on the wheel’s front, so the wheel makes one turn to the screw’s four. The displayed temperature difference is finite and must be restored by an external heat source.',
+      'The inclined right-handed Archimedean screw is first turned opposite its water-raising direction, carrying air downward into the air vessel standing round its foot. Pressurized air rises through the rigid external tube from the vessel’s roof, crosses above the cisterns, descends beside the warm-bath wheel into a hood fitted closely under it, and bubbles upward on the wheel’s right side. A mitre pair at the screw’s head drives an inclined shaft over the warm cistern’s wall, and a pinion on that shaft turns the face gear on the wheel’s front, so the wheel makes one turn to the screw’s four. The displayed temperature difference is finite and must be restored by an external heat source.',
     motion: {
       cycleDuration,
       motionType:
@@ -1029,7 +1078,7 @@ function temperatureAirMachine(movement) {
       bevelMesh:
         'head mitre: shaft S omega about +S = screw omega; face gear: wheel omega about +z = -(12/48) shaft S omega',
       bubbleTorque:
-        'air exits below the right side of the warm-bath wheel; upward buoyancy there has the same positive-z torque sign as the constrained wheel rotation',
+        'air exits into the hood under the warm-bath wheel and rises on its right side; upward buoyancy there has the same positive-z torque sign as the constrained wheel rotation',
     },
     update,
   };

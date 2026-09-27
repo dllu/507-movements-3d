@@ -113,8 +113,8 @@ export default {
     note: 'The lazy tongs with their input and output rods; no white depth indices are drawn on the pins.',
   },
   145: {
-    remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-rear-flange-carrying-beam-shaft', 'fixed-bearing-(?:post|ring)-behind-flywheel(?:-hub)?', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index'],
-    note: 'Side elevation of the spoked flywheel in its pit, the tied rod to the small standard, the upright rod and the one-armed beam turning on the hatched shaft at its right end; no beam column, wheel post, rail or index marks are drawn, and none are shown (p60 support policy). The ground is one solid with the pit, cut in section on the wheel plane; the wheel shaft and the beam\'s fixed shaft end as short plain stubs just behind the hub and the beam.',
+    remove: ['fixed-rear-column-supporting-beam-axis-clear-of-slider', 'fixed-foot-of-rear-beam-pivot-column', 'fixed-rear-flange-carrying-beam-shaft', 'fixed-bearing-(?:post|ring)-behind-flywheel(?:-hub)?', 'fixed-horizontal-rail-for-reciprocating-small-standard', 'white-index-showing-.*', '.*-white-depth-index', 'bearing-ring-at-moving-standard-wrist'],
+    note: 'Side elevation of the spoked flywheel in its pit, the tied rod to the small standard, the upright rod and the one-armed beam turning on the hatched shaft at its right end; no beam column, wheel post, rail or index marks are drawn, and none are shown (p60 support policy). The ground is one solid with the pit, cut in section on the wheel plane; the wheel shaft and the beam\'s fixed shaft end as short plain stubs just behind the hub and the beam. Each pin\'s retaining ring grips its pin and seats on the face of the link it retains; the standard\'s wrist has no loose spacer ring between the standard and the rod.',
   },
   149: {
     note: 'The two cams, the two levers on their common pivot and the two rods broken off below; no rear bearing bar, rod guides or slides are drawn, and none are shown (p60 support policy). The rods end cleanly at Brown\'s break; the lever pivot and cam shafts end as short plain stubs.',
@@ -327,7 +327,7 @@ export default {
     note: 'The pantograph arms, the round fixed point C, tracer B and pencil A over a blank ground; no drawing board or traced figures are drawn.',
   },
   247: {
-    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is; the view follows the lowered rod, so a plain thin sea-bottom surface (Brown draws none; the caption has the weight detach on striking bottom) rises from below for the probe to strike. The view then holds on the bottom while the rod is hauled up out of it on its line, leaving the spent weight lying there; above the view a second bored weight is threaded on and the catch set under it, and the rod comes back down into view with that weight already seated while the view rises with it, so the bottom and the spent weight sink away. The two weights alternate, so the loop is two soundings long; no reload gear or hand is shown and nothing moves in view without its drawn cause.',
+    note: 'Front section through the rod, the weight and the catch, with the probe foot below, framed as the plate is with the fixed sea bottom\'s surface just below the foot (Brown draws none; the caption has the weight detach on striking bottom). The world is fixed: the loaded rod is lowered onto the bottom, the probe trips the catch and the weight drops, and the rod is hauled up out of the view on its line, leaving the spent weight on the bottom, where it settles slowly into the soft bottom until it is buried. Far above the view the second of two alternating weights (the one buried in the previous sounding, re-used only while wholly inside the bottom) is threaded on and the catch set under it, and the rod is lowered back into Brown\'s pose with it seated. The loop is two soundings long; no reload gear or hand is shown and nothing moves in view without its drawn cause',
   },
   248: {
     remove: ['raised-grip-rib-on-nut-B', 'white-rotation-index-on-nut-B'],
@@ -512,12 +512,10 @@ export default {
     note: 'Brown draws the cylinder, standard F, the parallel motion and the broken diagonal frame member; the member runs on to its bolting flange past the plate, and the p56 bed bar, column and shaft pedestal are not shown (p60 support policy).',
   },
   337: {
-    remove: ['fixed-floor-column-carrying-radius-pin-F-flange'],
-    note: 'Brown draws the beam, parallel bars and the fixed radius pin F with no frame; F\'s flange reads as bolted to unmodelled engine framing, and the p56 floor column under it is not shown (p60 support policy).',
+    note: 'Brown draws the beam, parallel bars and the fixed radius pin F with no frame; F is a short bare pin through the radius rod\'s eye (an ideal fixed pivot) with no bracket or column behind it.',
   },
   338: {
-    remove: ['fixed-floor-column-carrying-radius-pin-F-flange'],
-    note: 'Brown draws the beam, parallel bars and the fixed radius pin F with no frame; F\'s flange reads as bolted to unmodelled engine framing, and the p56 floor column under it is not shown (p60 support policy).',
+    note: 'Brown draws the beam, parallel bars and the fixed radius pin F with no frame; F is a short bare pin through the radius rod\'s eye (an ideal fixed pivot) with no bracket or column behind it.',
   },
   348: {
     remove: ['fixed-shaft-pedestal-leg-\\d', 'fixed-base', 'fixed-base-edge', 'fixed-external-guide-rail-(left|right)', 'fixed-external-guide-support-\\d', 'fixed-external-guide-top-bridge', 'fixed-rear-shaft-bearing-bridge', 'rod-B-circular-pin-sliding-in-explicit-vertical-guide', 'guide-pin-white-center-index', 'disk-A-white-rotation-index', 'rod-B-white-rocking-index'],
@@ -757,8 +755,8 @@ export default {
     note: 'Face view of scroll plate A, its toothed band wound 2 3/8 close turns from the inner end at 9 o\'clock to the cut outer end, with the tapered pinion B (small end toward A\'s centre) sliding on the feathered shaft that crosses in front. Brown draws no frame; the shaft is cropped by the view.',
   },
   415: {
-    remove: ['fixed-coaxial-wheel-and-lever-bearing-frame', 'wheel-D-spoke-fast-with-rim-and-hub', 'white-wheel-D-intermittent-rotation-index', 'white-lever-A-oscillation-index', 'selectable-(?:left-pawl-B|right-pawl-C)-white-rim-contact-index', 'white-input-slider-joint-index'],
-    note: 'The plain light disc wheel D with its slim rim, lever A with its pawls B and C (engaged C lying nearly flat, lifted B at about 47 degrees) and crank E, and the rod D running off to the right to the slider that drives it in its guide, just beyond Brown\'s crop; no frame, spokes or white indices are drawn.',
+    remove: ['fixed-coaxial-wheel-and-lever-bearing-frame', 'wheel-D-spoke-fast-with-rim-and-hub', 'white-wheel-D-intermittent-rotation-index', 'white-lever-A-oscillation-index', 'selectable-(?:left-pawl-B|right-pawl-C)-white-rim-contact-index'],
+    note: 'The plain light disc wheel D with its slim rim, lever A with its pawls B and C (engaged C lying nearly flat, lifted B at about 47 degrees) and crank E, and the flat bar D with its eye on the lever-tail pin running straight off to the right past Brown\'s crop; no frame, guide, spokes or white indices are drawn.',
   },
   416: {
     camera: [0.2, 0.06, 1],
@@ -851,8 +849,8 @@ export default {
   },
   438: {
     camera: [0.08, 0.2, 1],
-    remove: ['visible-reaction-mill-shaft-rotation-marker', 'inlet-water-marker-\\d+', 'tangential-exhaust-marker-arm-\\d+-particle-\\d+'],
-    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn. The arms throw continuous water jets; the flow beads of the offline model are not presented. The view is a little from above, as Brown's open funnel shows; the flume is an open trough whose water pours from its lip in one continuous stream into the water standing in the funnel.",
+    remove: ['visible-reaction-mill-shaft-rotation-marker', 'inlet-water-marker-\\d+', 'tangential-exhaust-marker-arm-\\d+-particle-\\d+', 'tangential-outlet-collar-\\d-of-four'],
+    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn. The bent nozzles end as plain open pipe ends, as Brown draws them, with no collars on their mouths. The arms throw continuous water jets; the flow beads of the offline model are not presented. The view is a little from above, as Brown's open funnel shows; the flume is an open trough whose water pours from its lip in one continuous stream into the water standing in the funnel.",
   },
   439: {
     camera: [0.08, 0.35, 1],
@@ -955,9 +953,9 @@ export default {
   },
   466: {
     camera: [0, 0.03, 1],
-    remove: ['fixed-foundation-under-hydrostatic-press-and-hand-pump', 'modeled-relief-return-valve-for-lowering-press', 'active-return-water-from-relief-valve-to-reservoir'],
-    note: 'Sectional elevation of the press, ram cylinder, pipe, hand pump and open reservoir, the reservoir standing on the ground beside the press; no foundation slab is drawn. The ram is let down through a screw-down release valve on the pressure pipe inside the cistern (its T handle above the water, like Brown\'s T beside the weighted valve), so the cistern level falls as the ram rises and recovers as it is let down.',
+    note: 'Sectional elevation on Brown\'s plate: the domed head on two columns, four bales on the platen and fluted bowl of the hollow round-ended ram in its deep flanged cylinder, the small pipe to the valve chest on the cistern wall with its ball-weighted safety valve and T lug, the swing link carrying the lever\'s fulcrum, the plunger crosshead, and the tall pump barrel with suction pipe and rose standing in the cistern. The ram is let down by lifting the weighted valve, so the cistern level falls as the ram rises and recovers as it comes down.',
   },
+
   467: {
     camera: [0, 0.02, 1],
     remove: ['fixed-ground-plate-under-robertson-jack'],
@@ -984,7 +982,7 @@ export default {
   },
   476: {
     remove: ['fixed-water-source-basin-under-two-B-mouths', 'water-surface-feeding-both-suction-branches', 'steam-inside-A-to-unobstructed-central-nozzle', 'upward-steam-jet-on-centerline-of-C', 'unbroken-water-current-\\d-of-four-through-B-fork-C', 'steam-A-marker-\\d+', 'water-path-\\d-marker-\\d+'],
-    note: 'The forked ejector B, C and steam pipe A as opaque round pipes (Brown dashes A where it runs behind B); no water basin or surface is drawn. The streamline tubes, steam core and flow markers of the offline model are flow notation and are not presented.',
+    note: 'The forked ejector B, C in section on the plane facing the camera, as Brown draws it, with steam pipe A whole: it runs behind the right leg B (Brown dashes it there), enters at the crotch and turns up inside the fork into C. The water rising through both legs, round A and up C shows through the cut; no water basin or surface is drawn. The streamline tubes, steam core and flow markers of the offline model are flow notation and are not presented.',
   },
   473: {
     remove: ['water-sealed-air-pump-foundation'],
@@ -1003,24 +1001,21 @@ export default {
     note: 'Section of pipe A clamped at B, sphere C, the plunger valve a and loaded elbow lever D with stop screw b; no flow beads or condensate guide lines are drawn.',
   },
   479: {
-    remove: ['(?:inlet|outlet)-gas-marker-\\d+', 'fixed-pulley-guide-post-[12]'],
-    note: 'Section of bell A in tank B with the two pipes, and bands over the two pulleys to weights C; no flow beads or pulley posts are drawn (the pulley axles end as plain stubs).',
+    note: 'Section of bell A in the masonry pit B with the two pipes, and flat bands over the two pulleys to the weights C; no pulley posts are drawn (the pulley axles end as plain stubs).',
   },
   480: {
-    remove: ['(?:right-inlet|left-outlet)-gas-marker-\\d+', 'fixed-base-securing-tube-b-to-tank'],
-    note: 'Section of bell A in tank B on the central telescoping tubes a and b with the two pipes; tube b passes through the tank floor as Brown draws it. No flow beads are drawn.',
+    note: 'Section of bell A in the masonry pit B on the central sleeve a sliding on the fixed tube b, with the two pipes; tube b passes through the floor to its foot in the ground as Brown draws it.',
   },
   481: {
-    remove: ['dial-work-registering-known-volume-per-drum-revolution', 'fixed-bottom-base-rail', 'visible-index-on-front-face-of-drum', 'central-inlet-gas-marker-\\d+'],
-    note: 'End section of case A on its saddle, the drum compartments B and the turned-up pipe a; no register dial, base rail or drum index is drawn. No gas-flow beads.',
+    remove: ['dial-work-registering-known-volume-per-drum-revolution', 'fixed-bottom-base-rail', 'central-inlet-gas-marker-\\d+'],
+    note: 'End section of case A on its saddle, the drum compartments B, each with its gap on the outer side, and the turned-up pipe a; no register dial or base rail is drawn. No gas-flow beads.',
   },
   482: {
     remove: ['regulated-gas-flow-marker-\\d+'],
     note: 'Section of the regulator under its domed cover, cup H and valve D in their quicksilver channels, lever d and inlet E; no flow beads are drawn. The separate view of valve D is not modelled.',
   },
   483: {
-    remove: ['fixed-dial-work-register-housing', 'register-dial-\\d-.*', 'moving-pointer-of-register-dial-\\d', 'tick-\\d-of-register-dial-\\d', 'fill-count-input-wheel-driving-dial-work', '(?:inletToA|inletToAPrime|AToOutlet|APrimeToOutlet)-gas-marker-\\d+'],
-    note: 'Section of the meter with the two bellows chambers A, A′ and the slide valve B; the dial-work the caption mentions is not drawn. No gas-flow beads.',
+    note: 'Elevation of the meter with its front removed: the two double bellows A, A′ with their moving plates, the flag rods, valve B turning under its C bracket, the outlet column and the plain dial-work box. The dials themselves are not drawn. No gas-flow beads.',
   },
   484: {
     remove: ['white-index-marker-rigidly-fixed-to-helical-ribbon', 'rigid-load-wheel-on-output-shaft', 'axial-current-marker-path-\\d-\\d', 'fixed-positive-x-current-direction-arrow-\\d'],
@@ -1063,11 +1058,10 @@ export default {
   491: {
     camera: [0.02, 0.04, 1],
     remove: ['white-pawl-tip-contact-marker', 'white-rotation-index-on-capstan-head', 'fixed-circular-base-plinth', 'fixed-wide-capstan-base-foot'],
-    note: 'Side elevation of the capstan, pawl and bars with the ratchet on the ground line, as Brown draws it; the hauled cable runs straight on past his crop and ends cleanly. No plinth, bollard, cable beads or indices are drawn.',
+    note: 'Side elevation of the capstan, pawl and bars with the ratchet on the ground line, as Brown draws it; the pawl lies flat against the front of the lower drum and swings on a radial pin in the plane of the drawing; the hauled cable runs straight on past his crop and ends cleanly. No plinth, bollard, cable beads or indices are drawn.',
   },
   492: {
-    remove: ['fixed-boat-deck-carrying-fore-and-aft-standards', 'fixed-boat-side-rail-(1|2)', 'boat-detaching-apparatus-2', 'release-rope-attached-to-lower-lever-2', 'release-rope-lead-beyond-plate-2', 'fixed-release-rope-lead-sheave-and-toggle-2', 'reconstructed-common-crossbar-pulling-both-release-ropes', 'common-pull-grip-for-one-operator', 'white-index-showing-release-pull-direction', 'white-lever-fulcrum-index-\\d', 'hand-holding-tackle-fall-1', 'fixed-release-rope-lead-sheave-and-toggle-1'],
-    note: 'One disengaging hook, its tongue and eye lever on the threaded standard, the release rope running straight off to the right and the tackle fall running straight up, both ending cleanly past the plate; no second end unit, common pull bar, boat deck, rails, lead sheave, toggle or hauling hand are drawn.',
+    note: 'One detaching hook as Brown draws it: the threaded standard with its tongue hinged at the top and the bent lever on the middle fulcrum, the tongue passing through the throat of the tackle hook into the rectangular eye at the lever top, the tackle block cropped at the top with its falls running straight up past the plate, and the release rope running straight off to the right. No boat, second unit or pull gear is drawn.',
   },
   494: {
     remove: ['white-rhombus-pivot-index-\\d', '(?:left|right)-white-bite-contact-index'],

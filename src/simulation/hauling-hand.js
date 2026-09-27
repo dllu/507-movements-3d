@@ -1,78 +1,75 @@
 import * as THREE from 'three';
 import { LaidRopeGeometry } from './laid-rope.js';
 import { PALETTE, markShadows, matte } from './primitives.js';
+import { figureGeometry, figureMeshInfo } from './figure-meshes.js';
 
-// Plate 12's hauling hand: a fist bored for the rope (no rope overlap), a
-// thumb over the fingers, a forearm and cuff entering from the lower left,
-// and the loose rope tail hanging below the fist. The group origin is the
-// rope's effort end; local +X runs up the rope toward the pulley.
-export function makeHaulingHand(ropeDirection, ropeRadius, { armDirection: armDirectionOption, tailPoints: tailOption } = {}) {
+// Plate 12's hauling hand, modelled in Blender (scripts/blender/figures.py):
+// a closed fist whose four fingers wrap the rope, the thumb curling over the
+// index end, the back of the hand running down toward a wrist on the rope's
+// far side, and a forearm with a ruffled cuff entering from the lower left.
+// The fist's rope channel is refitted to each rope so the fingers close on
+// it without overlapping it. The group origin is the rope's effort end;
+// local +X runs up the rope toward the pulley.
+const HAND_SCALE = 1.65;
+const CHANNEL_FALLOFF = 0.05;
+
+function fitRopeChannel(bakedRadius, radius) {
+  const change = radius - bakedRadius;
+  // Wide enough that the radial refit stays monotonic (no folded skin).
+  const falloff = Math.max(CHANNEL_FALLOFF, 1.6 * Math.abs(change));
+  return (position) => {
+    for (let i = 0; i < position.length; i += 3) {
+      const y = position[i + 1];
+      const z = position[i + 2];
+      const r = Math.hypot(y, z);
+      if (r < 1e-9) continue;
+      const weight = THREE.MathUtils.clamp(1 - (r - bakedRadius) / falloff, 0, 1);
+      const scale = (r + change * weight) / r;
+      position[i + 1] = y * scale;
+      position[i + 2] = z * scale;
+    }
+  };
+}
+
+// The same fist closed on a round bar or rail of `radius` (in the fist's own
+// units after `scale`): grip frame +X along the bar, wrist toward +Y and
+// -X, back of the hand toward +Z.
+export function makeGripFist(radius, scale, material) {
+  const { channelRadius } = figureMeshInfo('hand-fist');
+  const fist = new THREE.Mesh(
+    figureGeometry('hand-fist', fitRopeChannel(channelRadius, radius / scale)), material);
+  fist.scale.setScalar(scale);
+  fist.name = 'grip-fist';
+  return fist;
+}
+
+export function makeHaulingHand(ropeDirection, ropeRadius, { armDirection: armDirectionOption, tailPoints: tailOption, clearance = 0.005 } = {}) {
   const hand = new THREE.Group();
   hand.name = 'plate-12-hauling-hand';
   const skin = matte(0xe2b48e, { roughness: 0.8 });
   const grip = new THREE.Group();
   grip.rotation.z = Math.atan2(ropeDirection.y, ropeDirection.x);
-  const bore = ropeRadius + 0.014;
-  const section = new THREE.Shape();
-  const [y0, y1, z0, z1, r] = [-0.12, 0.2, -0.115, 0.115, 0.07];
-  section.moveTo(y0 + r, z0);
-  section.lineTo(y1 - r, z0);
-  section.quadraticCurveTo(y1, z0, y1, z0 + r);
-  section.lineTo(y1, z1 - r);
-  section.quadraticCurveTo(y1, z1, y1 - r, z1);
-  section.lineTo(y0 + r, z1);
-  section.quadraticCurveTo(y0, z1, y0, z1 - r);
-  section.lineTo(y0, z0 + r);
-  section.quadraticCurveTo(y0, z0, y0 + r, z0);
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, bore, 0, Math.PI * 2, true);
-  section.holes.push(hole);
-  const fistLength = 0.3;
-  const fistGeometry = new THREE.ExtrudeGeometry(section, {
-    depth: fistLength - 0.06, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.012,
-    bevelSegments: 3, curveSegments: 20,
-  });
-  // Cyclic axis swap: extrusion (z) -> grip X, shape x -> Y, shape y -> Z.
-  fistGeometry.translate(0, 0, -(fistLength - 0.06) / 2);
-  fistGeometry.applyMatrix4(new THREE.Matrix4().set(
-    0, 0, 1, 0,
-    1, 0, 0, 0,
-    0, 1, 0, 0,
-    0, 0, 0, 1));
-  const fist = new THREE.Mesh(fistGeometry, skin);
+  const { channelRadius, wrist: wristLocal } = figureMeshInfo('hand-fist');
+  // The fingers close on the rope with a small clearance (more where the
+  // rope still curves inside the fist).
+  const bore = (ropeRadius + clearance) / HAND_SCALE;
+  const fist = new THREE.Mesh(figureGeometry('hand-fist', fitRopeChannel(channelRadius, bore)), skin);
   fist.name = 'hand-fist';
-  // Knuckle ridges across the fingers on the side away from the wrist.
-  for (let i = 0; i < 4; i += 1) {
-    const knuckle = new THREE.Mesh(new THREE.SphereGeometry(0.045, 14, 10), skin);
-    knuckle.scale.set(1, 0.8, 0.9);
-    knuckle.position.set(-0.105 + i * 0.07, -0.115, 0.05);
-    knuckle.name = 'hand-knuckle';
-    grip.add(knuckle);
-  }
-  // An elongated sphere, not a capsule grip handle.
-  const thumb = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), skin);
-  thumb.scale.set(0.036, 0.1, 0.036);
-  thumb.position.set(0.12, 0.02, 0.118);
-  thumb.rotation.z = Math.PI / 2 - 0.5;
-  thumb.name = 'hand-thumb';
-  grip.add(fist, thumb);
-  // Brown's fist is about 0.45 of the sheave diameter; the rope bore scales
-  // with it, so the rope stays clear.
+  grip.add(fist);
   const body = new THREE.Group();
-  body.scale.setScalar(1.35);
+  body.scale.setScalar(HAND_SCALE);
   body.add(grip);
   hand.add(body);
-  // Forearm, leaving the heel of the fist steeply toward the lower left.
-  const wrist = new THREE.Vector3(-0.03, 0.17, 0).applyAxisAngle(new THREE.Vector3(0, 0, 1), grip.rotation.z);
+  // Forearm, leaving the wrist toward the lower left.
+  const wrist = new THREE.Vector3(...wristLocal).applyAxisAngle(new THREE.Vector3(0, 0, 1), grip.rotation.z);
   const armDirection = (armDirectionOption ?? new THREE.Vector3(-0.62, -0.78, 0)).clone().normalize();
-  const armLength = 0.5;
-  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.095, 0.115, armLength, 20), skin);
-  arm.position.copy(wrist).addScaledVector(armDirection, armLength / 2);
+  const arm = new THREE.Mesh(figureGeometry('hand-forearm'), skin);
+  arm.position.copy(wrist);
   arm.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), armDirection);
   arm.name = 'hand-forearm';
   const cuffMaterial = matte(0xe9e1d2, { roughness: 0.85 });
-  const cuff = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.17, 0.16, 20), cuffMaterial);
-  cuff.position.copy(wrist).addScaledVector(armDirection, armLength + 0.07);
+  const cuff = new THREE.Mesh(figureGeometry('hand-cuff'), cuffMaterial);
+  cuff.position.copy(wrist);
   cuff.quaternion.copy(arm.quaternion);
   cuff.name = 'hand-cuff';
   // The loose end of the rope below the fist, drooping toward vertical.

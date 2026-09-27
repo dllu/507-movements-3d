@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { flangeColumn, glandCylinder, pinWallBracket } from './beyond-crop-hardware.js';
+import { glandCylinder, pinWallBracket } from './beyond-crop-hardware.js';
 import { makeBoredLinkRod as makeRigidRod } from './bored-link-rod.js';
 import { boredJournal, fitPistonGuide } from './piston-guide-parts.js';
 import {
@@ -375,17 +375,12 @@ function midpointVibratingRodParallelMotion(movement) {
   radiusShaft.userData.fixed = true;
   radiusShaft.userData.role = 'fixed-pin-at-radius-pivot-F';
   fixedFrame.add(beamShaft, radiusShaft);
-  // Neither fixed pin floats: each runs back to a small flange on the engine
-  // framing behind the mechanism, hidden behind its boss in the plate view.
+  // Shaft O runs back to a small flange on the engine framing, hidden behind
+  // its boss in the plate view. Pin F is Brown's bare pin: a short stub
+  // through the radius rod's eye, with no bracket (an ideal fixed pivot).
   fixedFrame.add(
     pinWallBracket({ x: 0, y: 0, pinRadius: beamShaftRadius, zPin: 0.04 - 0.31, zWall: -0.55, beyondPlateCrop: true,
       flange: 0.5, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
-    pinWallBracket({ x: radiusPivotF.x, y: radiusPivotF.y, pinRadius: 0.23 * sourceScale, zPin: 0.53, zWall: -0.55, beyondPlateCrop: true,
-      flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F' }),
-    // F's small flange is carried at the head of a plain column standing on
-    // the engine-house floor (level with the cylinder's foot).
-    flangeColumn({ x: radiusPivotF.x, yTop: radiusPivotF.y + 0.08, yFloor: -7.9, zWall: -0.55, width: 0.24,
-      beyondPlateCrop: true, role: 'fixed-floor-column-carrying-radius-pin-F-flange' }),
   );
   root.add(fixedFrame);
 
@@ -1040,17 +1035,12 @@ function upperRadiusVibratingRodParallelMotion(movement) {
   radiusShaft.userData.fixed = true;
   radiusShaft.userData.role = 'fixed-pin-at-upper-radius-pivot-F';
   fixedFrame.add(beamShaft, radiusShaft);
-  // Neither fixed pin floats: each runs back to a small flange on the engine
-  // framing behind the mechanism, hidden behind its boss in the plate view.
+  // Shaft O runs back to a small flange on the engine framing, hidden behind
+  // its boss in the plate view. Pin F is Brown's bare pin: a short stub
+  // through the radius rod's eye, with no bracket (an ideal fixed pivot).
   fixedFrame.add(
     pinWallBracket({ x: 0, y: 0, pinRadius: beamShaftRadius, zPin: 0.04 - 0.31, zWall: -0.55, beyondPlateCrop: true,
       flange: 0.4, role: 'fixed-wall-bracket-of-beam-shaft-O' }),
-    pinWallBracket({ x: radiusPivotF.x, y: radiusPivotF.y, pinRadius: 0.20 * sourceScale, zPin: 0.53, zWall: -0.55, beyondPlateCrop: true,
-      flange: 0.16, role: 'fixed-wall-bracket-of-radius-pin-F' }),
-    // F's small flange is carried at the head of a plain column standing on
-    // the engine-house floor (level with the cylinder's foot).
-    flangeColumn({ x: radiusPivotF.x, yTop: radiusPivotF.y + 0.08, yFloor: -6.85, zWall: -0.55, width: 0.24,
-      beyondPlateCrop: true, role: 'fixed-floor-column-carrying-radius-pin-F-flange' }),
   );
   root.add(fixedFrame);
 
@@ -1109,6 +1099,10 @@ function upperRadiusVibratingRodParallelMotion(movement) {
     planeZ: 0.39,
     role: 'four-unit-vibrating-rod-L-R-U-centered-on-beam',
     width: 0.34 * sourceScale,
+    // Bores close round their pins (L 0.19, U 0.20 source units) so each
+    // eye sits concentric on its pin with running clearance only.
+    startBoreRadius: 0.19 * sourceScale + 0.006,
+    boreRadius: 0.20 * sourceScale + 0.006,
   });
   vibratingParts.rod.userData.addPinEye(vibratingRodHalfLength, 0.22 * sourceScale + 0.006);
   const vibratingMidpointAnchor = new THREE.Object3D();
@@ -1125,6 +1119,8 @@ function upperRadiusVibratingRodParallelMotion(movement) {
     planeZ: 0.70,
     role: 'four-point-two-five-four-five-five-unit-upper-radius-bar-F-U',
     width: 0.34 * sourceScale,
+    // The eyes close round fixed pin F and pin U (both 0.20 source units).
+    boreRadius: 0.20 * sourceScale + 0.006,
   });
   root.add(radiusParts.rod);
 

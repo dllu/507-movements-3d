@@ -543,9 +543,11 @@ function rollingCarriageFrictionExperiment(movement) {
     new THREE.BoxGeometry(1.68, 0.18, 0.58),
     wagonMaterial,
   );
+  // The bed sits directly on the chassis (chassis top = axle height + 0.285),
+  // not floating above it.
   wagonBed.position.set(
     largeWheelCenter.x,
-    leftCarriageWheelCenter.y + 0.42,
+    leftCarriageWheelCenter.y + 0.375,
     0.08,
   );
   wagonBed.userData.role = 'wagon-load-bed';
@@ -556,7 +558,7 @@ function rollingCarriageFrictionExperiment(movement) {
       new THREE.BoxGeometry(0.11, 0.55, 0.58),
       wagonMaterial,
     );
-    side.position.set(x, leftCarriageWheelCenter.y + 0.68, 0.08);
+    side.position.set(x, leftCarriageWheelCenter.y + 0.635, 0.08);
     side.rotation.z = x < largeWheelCenter.x ? -0.10 : 0.10;
     side.userData.role = 'raised-side-of-loaded-wagon';
     wagonSides.push(side);

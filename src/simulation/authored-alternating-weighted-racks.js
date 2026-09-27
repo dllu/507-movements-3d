@@ -10,6 +10,10 @@ import {
 
 const FULL_TURN = Math.PI * 2;
 
+// C's pivot stands this far above A1's upper guide corner. Brown hangs C
+// just above guide b; 1.05 (was 1.36) is as low as the link's two-force
+// strut still loads spring d before the corner and pushes A1 outward there.
+const ELBOW_PIVOT_RISE = 1.05;
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
 }
@@ -707,7 +711,7 @@ function alternatingWeightedRackDrive(movement) {
   rightRack.position.z = rackPlaneZ;
   root.add(leftRack, rightRack);
 
-  const elbowPivot = new THREE.Vector3(1.48, crossheadHighY + guideY + 1.36, 0.13);
+  const elbowPivot = new THREE.Vector3(1.48, crossheadHighY + guideY + ELBOW_PIVOT_RISE, 0.13);
   const elbowLever = new THREE.Group();
   elbowLever.position.copy(elbowPivot);
   elbowLever.userData.role =
@@ -737,7 +741,7 @@ function alternatingWeightedRackDrive(movement) {
   elbowLever.add(leverContactIndex);
   root.add(markShadows(elbowLever));
 
-  const springAnchor = new THREE.Vector3(2.95, crossheadHighY + guideY + 1.05, 0.13);
+  const springAnchor = new THREE.Vector3(2.95, crossheadHighY + guideY + ELBOW_PIVOT_RISE - 0.31, 0.13);
   // Spring d runs in front of lever C (z 0.64), clear of C's link and stop.
   const springPlaneZ = 0.64;
   // A short fixed stud at spring d's far end (Brown's small circle).

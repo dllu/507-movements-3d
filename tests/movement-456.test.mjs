@@ -257,7 +257,9 @@ test('movement 456 analytic piston radial velocity and acceleration match finite
     const after = stateAtInputAngle(angle + step).pistons[0];
     const numericVelocity = (after.camRadius - before.camRadius)
       / (2 * step) * geometry.inputAngularSpeed;
-    near(state.camRadiusVelocity, numericVelocity, 3e-10,
+    // Central differences at step 1e-6 are round-off limited (~eps/step)
+    // on the steeper heart-cam flanks.
+    near(state.camRadiusVelocity, numericVelocity, 1e-9,
       `radial velocity at ${angle}`);
     const numericAcceleration = (
       after.camRadiusVelocity - before.camRadiusVelocity

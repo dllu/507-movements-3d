@@ -72,8 +72,9 @@ test('movement 438 feeds four equally handed bent outlet arms through one centra
   assert.equal(blocks.nozzleCollars.length, 4);
   assert.equal(blocks.jetMarkers.length, 24);
   for (const rotating of [blocks.shaft, blocks.shaftWater,
-    blocks.lowerShaftCone, ...blocks.armPipes,
-    ...blocks.nozzleCollars]) assert.equal(rotating.parent, blocks.runner);
+    blocks.lowerShaftCone, ...blocks.armPipes]) assert.equal(rotating.parent, blocks.runner);
+  // Brown draws plain open pipe ends: the presentation removes the collars.
+  for (const collar of blocks.nozzleCollars) assert.equal(collar.parent, null);
   // Source presentation removes the white rotation marker Brown does not draw.
   assert.equal(blocks.rotationMarker.parent, null);
   for (const fixed of [blocks.inletHopper, blocks.inletWaterBowl,
@@ -91,7 +92,7 @@ test('movement 438 feeds four equally handed bent outlet arms through one centra
     /^hollow-radial-arm-with-bent-nozzle-\d+-of-four$/.test(role)).length,
   4);
   assert.equal(roles.filter((role) =>
-    /^tangential-outlet-collar-\d+-of-four$/.test(role)).length, 4);
+    /^tangential-outlet-collar-\d+-of-four$/.test(role)).length, 0);
   for (const role of [
     'central-rotating-hollow-water-supply-shaft',
     'fixed-open-hopper-feeding-central-hollow-shaft',

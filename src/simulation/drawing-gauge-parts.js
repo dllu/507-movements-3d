@@ -40,10 +40,18 @@ export function correctCentrolinead(root){
   stem.rotation.x=Math.PI/2;stem.position.z=.04-.445;leg.clamp.add(stem);
 
  }
+ // Brown's two clamp slots are long arcs concentric with the joint, about
+ // 125 degrees each (25-150 and 212-335 degrees from the blade), with
+ // rounded ends; each clamp screw stands in its slot.
+ const slotInner=.437,slotOuter=.507,slotMid=(slotInner+slotOuter)/2,slotHalf=(slotOuter-slotInner)/2;
+ const slotSpans=[[25,150],[212,335]].map(span=>span.map(THREE.MathUtils.degToRad));
  const slots=Object.values(b.legs).map(leg=>{
-  const angle=Math.atan2(leg.clamp.position.y,leg.clamp.position.x);
-  return sector(.44,.505,angle-.52,angle+.32,32);
+  const angle=THREE.MathUtils.euclideanModulo(Math.atan2(leg.clamp.position.y,leg.clamp.position.x),2*Math.PI);
+  const [a0,a1]=slotSpans.find(([lo,hi])=>angle>lo&&angle<hi);
+  return clip.union(sector(slotInner,slotOuter,a0,a1,96),
+   ...[a0,a1].map(a=>poly(circle([slotMid*Math.cos(a),slotMid*Math.sin(a)],slotHalf,32))));
  });
+ b.headSlotSpans=slotSpans;
  // The left opening and two real adjustment slots follow the engraved head.
  const headOutline=clip.difference(poly(circle([0,0],.58,96)),
   poly([[-.7,-.31],[-.20,0],[-.7,.31]]),poly(circle([0,0],.145,64)),...slots);

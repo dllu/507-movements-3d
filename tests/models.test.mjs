@@ -378,8 +378,12 @@ test('movement 6 uses one attached crossed belt to reverse both lower pulleys', 
       belt.userData.curve.curves[5],
     );
     assert.ok(crossing, 'the two long belt leaves cross in projection');
-    assert.ok(Math.abs(crossing.z - crossing.otherPoint.z) > 0.15,
-      'the crossed leaves bow to opposite sides rather than self-intersecting');
+    assert.ok(Math.abs(crossing.z - crossing.otherPoint.z) > 2 * 0.045 + 0.02,
+      'the crossed leaves run in separate depth layers rather than self-intersecting');
+    for (const index of [1, 5]) {
+      const leaf = belt.userData.curve.curves[index];
+      assert.ok(leaf.isLineCurve3, `crossed leaf ${index} is a straight taut tangent`);
+    }
 
     const state = model.root.userData.kinematics;
     lengths.push(state.beltLength);
@@ -37372,6 +37376,8 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
     sliderGuideRail,
     flywheelRotationIndex,
     beamMotionIndex,
+    // Pass 76: Brown draws no ring at the standard's wrist.
+    standardBearingRing,
   ]) assert.equal(undrawn.parent, null);
   assert.equal(flywheelRotor.parent, flywheelAssembly);
   for (const rotorPart of [
@@ -37390,7 +37396,6 @@ test('movement 145 closes one tied rod and rocking beam around a continuously ro
   ]) assert.equal(beamPart.parent, beamRotor);
   for (const standardPart of [
     sliderWristPin,
-    standardBearingRing,
     standardFoot,
     standardLeftBrace,
     standardRightBrace,

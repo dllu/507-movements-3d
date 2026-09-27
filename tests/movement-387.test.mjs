@@ -515,3 +515,21 @@ test('movement 387 shows the tide as a shallow surface layer and the boat at Bro
   // Brown's boat is about 0.31 of the ladder's length.
   near((shape.stern - shape.bow) / geometry.ladderLength, 0.31, 0.02, 'boat length ratio');
 });
+
+test('movement 387 tide layer stops at the wharf face and never lies across the pier', () => {
+  const model = createMovementModel(catalog.movements[386]);
+  let wall = null;
+  model.root.traverse((object) => { if (object.userData.role === 'fixed-wharf-wall') wall = object; });
+  model.root.updateMatrixWorld(true);
+  const wallBox = new THREE.Box3().setFromObject(wall);
+  const water = model.root.userData.blocks.water;
+  const position = water.geometry.attributes.position;
+  const point = new THREE.Vector3();
+  for (let index = 0; index < position.count; index += 1) {
+    point.fromBufferAttribute(position, index).applyMatrix4(water.matrixWorld);
+    if (point.x > wallBox.min.x + 1e-9) {
+      // Only the slot between the fixed posts, which the masonry leaves open.
+      assert.ok(Math.abs(point.z) < wallBox.max.z - 0.5, `water on pier face at ${point.toArray()}`);
+    }
+  }
+});

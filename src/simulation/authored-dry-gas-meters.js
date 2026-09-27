@@ -1,1264 +1,645 @@
-import {correctGasMeterParts} from './gas-meter-working-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
-import {
-  PALETTE,
-  markShadows,
-  matte,
-} from './primitives.js';
+import {plate, poly, circle, capsule, polygonClipping as clip} from './finite-plate-geometry.js';
+import {horizontalPlate, horizontalRing} from './horizontal-turbine-solids.js';
+import {curvedPipeWall, mergePassageParts} from './finite-fluid-passages.js';
+import {fitPistonGuide} from './piston-guide-parts.js';
+import {PALETTE, markShadows, matte} from './primitives.js';
+
+// Movement 483, Brown's dry gas meter, rebuilt element by element from the
+// plate (pass 74). Plate pixels (525 px image) map to scene units by
+// x = (px - 262) / 50, y = (330 - py) / 50; z is depth (+z toward the viewer).
+//
+// What Brown draws, left to right below the valve shelf:
+//   case wall | fixed end board | leather | moving plate (pins top and
+//   bottom) | leather | fixed inner board | central partition | fixed inner
+//   board | leather | moving plate (flags to a vertical rod) | leather |
+//   fixed end board | case wall.
+// Each chamber A, A' is therefore a closed double bellows: its moving plate
+// divides it into an outer and an inner measuring space. The left plate is
+// drawn at mid-stroke and the right plate at the end of its stroke (inner
+// leather closed up, outer drawn out), i.e. the two plates work a quarter
+// turn apart, as in every two-diaphragm dry meter.
+// Above the shelf Brown draws valve B (an inverted cup, sectioned), a C-shaped
+// bracket holding B's vertical spindle, a bar at the top running to the pin
+// of the vertical rod on the right, the tall outlet column on the left and a
+// plain box (the dial-work case) at the upper right.
+//
+// Reconstruction: each plate is worked through a flag (arm on a vertical flag
+// rod plus a short link to the plate's pin). Each flag rod has an arm at its
+// top, and a link from that arm to a crank pin on the spindle of B, so the two
+// rocking flag rods turn the spindle continuously; the crank pins are a
+// quarter turn apart. B is a D-shaped cup turning on a seat with a central
+// exhaust port and one port for each of the four measuring spaces: the
+// ports under the cup exhaust (to the outlet column through a passage cored
+// in the shelf), the ports outside it admit the gas that fills the case.
+// The right flag rod stands in front of the bellows as Brown draws it; the
+// left one stands behind the left chamber, where the plate's pins point.
 
 const FULL_TURN = Math.PI * 2;
+const px = (value) => (value - 262) / 50;
+const py = (value) => (330 - value) / 50;
 
-function addRole(object, role) {
-  object.userData.role = role;
-  return object;
+const LAYOUT = Object.freeze({
+  wallInnerX: 2.80,
+  wallOuterX: 3.24,
+  floorTopY: -3.14,
+  roofBottomY: 5.90,
+  backZ: -1.90,
+  frontZ: 2.20,
+  endBoardFaceX: 2.50,
+  innerBoardFaceX: 0.33,
+  partitionHalf: 0.04,
+  bellowsHalfHeight: 2.54,
+  bellowsHalfDepth: 1.10,
+  plateThickness: 0.26,
+  foldLeather: 0.88,
+  shelfTopY: 3.64,
+  shelfBottomY: 3.40,
+  shelfEndX: px(300),
+  seatEndX: px(340),
+  crankCenter: [0.56, 0],
+  crankRadius: 0.5,
+  valveOuterRadius: 0.70,
+  valveTopY: py(114),
+  portRadius: 0.40,
+  portHoleRadius: 0.085,
+  exhaustHoleRadius: 0.11,
+  columnCenter: [px(135), 0.6],
+  flagY: 2.80,
+});
+
+function circleIntersection(c0, r0, c1, r1, branch) {
+  const dx = c1[0] - c0[0], dz = c1[1] - c0[1];
+  const d = Math.hypot(dx, dz);
+  const a = (d * d + r0 * r0 - r1 * r1) / (2 * d);
+  const h = Math.sqrt(Math.max(0, r0 * r0 - a * a));
+  const ux = dx / d, uz = dz / d;
+  const mx = c0[0] + a * ux, mz = c0[1] + a * uz;
+  return branch === 0 ? [mx - h * uz, mz + h * ux] : [mx + h * uz, mz - h * ux];
 }
 
-function cylinderBetween(start, end, radius, material, role, sides = 24) {
-  const direction = end.clone().sub(start);
-  const mesh = new THREE.Mesh(
-    new THREE.CylinderGeometry(radius, radius, direction.length(), sides),
-    material,
-  );
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.quaternion.setFromUnitVectors(
-    new THREE.Vector3(0, 1, 0),
-    direction.normalize(),
-  );
-  mesh.userData.role = role;
-  return mesh;
+// A four-bar from the crank pin to a flag rod's top arm, and the flag from the
+// rod to its plate. Angles are measured in the xz plane from +x toward +z.
+const FLAG_LINKAGES = Object.freeze({
+  right: {
+    rod: [1.95, 1.30], armLength: 1.0,
+    crankOffset: 0, branch: 0,
+    flagOffset: THREE.MathUtils.degToRad(-16), flagArm: 1.035, flagLink: 0.67, pinSide: -1,
+  },
+  left: {
+    rod: [-1.90, -1.35], armLength: 1.0,
+    crankOffset: THREE.MathUtils.degToRad(85), branch: 0,
+    flagOffset: THREE.MathUtils.degToRad(-10.8), flagArm: 1.04, flagLink: 0.66, pinSide: 1,
+  },
+});
+
+// Link length that makes the crank-rocker symmetric: the two dead points of
+// the rocker fall exactly half a turn of the crank apart, so each measuring
+// space closes during exactly half a turn and B's half-round cavity can
+// exhaust it for exactly that half turn. (The rocker pin's chord between its
+// dead points then points at the crank centre: d^2 = l^2 + a^2 - r^2.)
+function symmetricLinkLength(spec, layout = LAYOUT) {
+  const d = Math.hypot(spec.rod[0] - layout.crankCenter[0], spec.rod[1] - layout.crankCenter[1]);
+  return Math.sqrt(d * d - spec.armLength ** 2 + layout.crankRadius ** 2);
 }
 
-function setUnitCylinderBetween(mesh, start, end) {
-  const direction = end.clone().sub(start);
-  const length = direction.length();
-  mesh.position.copy(start).add(end).multiplyScalar(0.5);
-  mesh.scale.set(1, length, 1);
-  if (length > 1e-12) {
-    mesh.quaternion.setFromUnitVectors(
-      new THREE.Vector3(0, 1, 0),
-      direction.multiplyScalar(1 / length),
-    );
+function linkageState(spec, crankAngle, layout = LAYOUT) {
+  const [ox, oz] = layout.crankCenter;
+  const pin = [ox + layout.crankRadius * Math.cos(crankAngle + spec.crankOffset),
+    oz + layout.crankRadius * Math.sin(crankAngle + spec.crankOffset)];
+  const armTip = circleIntersection(spec.rod, spec.armLength, pin, spec.linkLength, spec.branch);
+  const rockerAngle = Math.atan2(armTip[1] - spec.rod[1], armTip[0] - spec.rod[0]);
+  const flagAngle = rockerAngle + spec.flagOffset;
+  const flagTip = [spec.rod[0] + spec.flagArm * Math.cos(flagAngle), spec.rod[1] + spec.flagArm * Math.sin(flagAngle)];
+  const plateX = flagTip[0] + spec.pinSide * Math.sqrt(Math.max(0, spec.flagLink ** 2 - flagTip[1] ** 2));
+  return {armTip, crankPin: pin, flagAngle, flagTip, plateX, rockerAngle};
+}
+
+function superellipsePoints(halfHeight, halfDepth, count = 64, exponent = 4) {
+  const points = [];
+  for (let index = 0; index < count; index += 1) {
+    const t = FULL_TURN * index / count;
+    const c = Math.cos(t), s = Math.sin(t);
+    points.push([
+      halfHeight * Math.sign(c) * Math.abs(c) ** (2 / exponent),
+      halfDepth * Math.sign(s) * Math.abs(s) ** (2 / exponent),
+    ]);
   }
+  return points;
 }
 
-function makeTube(points, radius, material, role) {
-  const curve = new THREE.CatmullRomCurve3(
-    points.map((point) => point.clone()),
-    false,
-    'centripetal',
-  );
-  const mesh = new THREE.Mesh(
-    new THREE.TubeGeometry(curve, 72, radius, 16, false),
-    material,
-  );
-  mesh.userData.role = role;
-  return { curve, mesh };
-}
-
-function quinticStep(parameter) {
-  const clamped = THREE.MathUtils.clamp(parameter, 0, 1);
-  const u = clamped < 1e-12
-    ? 0
-    : clamped > 1 - 1e-12 ? 1 : clamped;
-  return u ** 3 * (10 + u * (-15 + 6 * u));
-}
-
-function quinticStepDerivative(parameter) {
-  const clamped = THREE.MathUtils.clamp(parameter, 0, 1);
-  const u = clamped < 1e-12
-    ? 0
-    : clamped > 1 - 1e-12 ? 1 : clamped;
-  return 30 * u ** 2 * (1 - u) ** 2;
-}
-
-function quinticStepSecondDerivative(parameter) {
-  const clamped = THREE.MathUtils.clamp(parameter, 0, 1);
-  const u = clamped < 1e-12
-    ? 0
-    : clamped > 1 - 1e-12 ? 1 : clamped;
-  return 60 * u * (1 - u) * (1 - 2 * u);
-}
-
-function createRectangularBellows({
-  fixedX,
-  frameMaterial,
-  material,
-  movingX,
-  role,
-}) {
-  const group = addRole(new THREE.Group(), role);
-  // Brown draws each chamber as a round leather bellows: a smooth waisted
-  // skin between the end boards, drawn in by one middle hoop, so its top and
-  // bottom outlines dip in two rounded folds. The skin is a surface of
-  // revolution about the stroke axis (flattened front-to-back to the boards'
-  // depth). Each fold's leather has a constant length: the waist is deep when
-  // the chamber is closed up and shallow when it is drawn out.
-  const stationFractions = [0, 0.5, 1];
-  const halfHeight = 1.10, halfDepth = 0.52;
-  const halfHeights = stationFractions.map(() => halfHeight);
-  const halfDepths = stationFractions.map(() => halfDepth);
-  const foldLeather = Math.hypot(0.5875, 0.12);
-  const profileSteps = 40, around = 72;
-  const rings = 2 * profileSteps + 1;
-  const positionArray = new Float32Array(rings * (around + 1) * 3);
+// One leather segment between two faces, drawn in by one V fold at its middle.
+// The leather has a constant slant length f on each side of the fold, so the
+// fold is deep when the segment is closed up and shallow when drawn out.
+function createLeatherSegment(material, role, layout = LAYOUT) {
+  const around = 64, rings = 33;
+  const section = superellipsePoints(layout.bellowsHalfHeight, layout.bellowsHalfDepth, around);
+  const positions = new Float32Array(rings * around * 3);
   const indices = [];
   for (let i = 0; i < rings - 1; i += 1) for (let j = 0; j < around; j += 1) {
-    const a = i * (around + 1) + j, b = a + 1, c = a + around + 2, d = a + around + 1;
-    indices.push(a, d, b, b, d, c);
+    const a = i * around + j, b = i * around + (j + 1) % around;
+    const c = (i + 1) * around + (j + 1) % around, d = (i + 1) * around + j;
+    indices.push(a, b, d, b, c, d);
   }
   const geometry = new THREE.BufferGeometry();
-  const positions = new THREE.BufferAttribute(positionArray, 3);
-  positions.setUsage(THREE.DynamicDrawUsage);
-  geometry.setAttribute('position', positions);
+  const attribute = new THREE.BufferAttribute(positions, 3);
+  attribute.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('position', attribute);
   geometry.setIndex(indices);
-  const skin = addRole(new THREE.Mesh(geometry, material),
-    `${role}-continuous-flexible-round-leather-skin`);
-  group.add(skin);
-
-  const stationFrames = stationFractions.map((_, index) => {
-    const frame = addRole(new THREE.Group(),
-      `${role}-${index === 1 ? 'middle-hoop' : 'end-hoop'}-${index + 1}`);
-    const hoop = new THREE.Mesh(
-      new THREE.LatheGeometry([
-        new THREE.Vector2(0.985, -0.035), new THREE.Vector2(1.035, -0.035),
-        new THREE.Vector2(1.035, 0.035), new THREE.Vector2(0.985, 0.035),
-        new THREE.Vector2(0.985, -0.035)], 72),
-      frameMaterial,
-    );
-    hoop.rotation.z = Math.PI / 2;
-    hoop.scale.set(halfHeight, 1, halfDepth);
-    frame.add(hoop);
-    group.add(frame);
-    return frame;
-  });
-
-  const update = (nextFixedX, nextMovingX) => {
-    const stationXs = stationFractions.map((fraction) =>
-      THREE.MathUtils.lerp(nextFixedX, nextMovingX, fraction));
-    stationFrames.forEach((frame, index) => {
-      frame.position.x = stationXs[index];
-    });
-    const halfFold = Math.abs(nextMovingX - nextFixedX) / 4;
-    const dip = Math.sqrt(Math.max(0, foldLeather ** 2 - halfFold ** 2)) / halfHeight;
+  const mesh = new THREE.Mesh(geometry, material);
+  mesh.userData.role = role;
+  const update = (x0, x1) => {
+    const length = Math.abs(x1 - x0);
+    const dip = Math.sqrt(Math.max(0, layout.foldLeather ** 2 - (length / 2) ** 2));
     let cursor = 0;
     for (let i = 0; i < rings; i += 1) {
       const u = i / (rings - 1);
-      const x = THREE.MathUtils.lerp(nextFixedX, nextMovingX, u);
-      const local = (u * 2) % 1;
-      const scale = 1 - dip * Math.sin(Math.PI * local) ** 1.6;
-      for (let j = 0; j <= around; j += 1) {
-        const angle = j / around * Math.PI * 2;
-        positionArray[cursor] = x;
-        positionArray[cursor + 1] = halfHeight * scale * Math.cos(angle);
-        positionArray[cursor + 2] = halfDepth * scale * Math.sin(angle);
+      const x = THREE.MathUtils.lerp(x0, x1, u);
+      const v = 1 - Math.abs(2 * u - 1);
+      const scale = 1 - dip / layout.bellowsHalfHeight * v;
+      for (let j = 0; j < around; j += 1) {
+        positions[cursor] = x;
+        positions[cursor + 1] = section[j][0] * scale;
+        positions[cursor + 2] = section[j][1] * scale;
         cursor += 3;
       }
     }
-    positions.needsUpdate = true;
+    attribute.needsUpdate = true;
     geometry.computeVertexNormals();
     geometry.computeBoundingBox();
     geometry.computeBoundingSphere();
+    return dip;
   };
-  update(fixedX, movingX);
-  return {
-    geometry,
-    group,
-    halfDepths,
-    halfHeights,
-    skin,
-    stationFractions,
-    stationFrames,
-    update,
+  return {mesh, update};
+}
+
+// Plan shapes are given in (x, z); horizontalPlate extrudes them upward.
+const planPoly = (points) => poly(points.map(([x, z]) => [x, -z]));
+const planCircle = ([x, z], r, n = 48) => poly(circle([x, -z], r, n));
+const planCapsule = ([x0, z0], [x1, z1], r) => capsule([x0, -z0], [x1, -z1], r, 24);
+const planRect = (x0, x1, z0, z1) => planPoly([[x0, z0], [x1, z0], [x1, z1], [x0, z1]]);
+
+function boxBetween(x0, x1, y0, y1, z0, z1) {
+  return new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0).translate((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2);
+}
+
+// A bar of given length along +x from the origin, with rounded eyes.
+function barGeometry(length, width, low, high, eyeRadius = width / 2, holes = []) {
+  const outline = clip.union(capsule([0, 0], [length, 0], width / 2, 24), poly(circle([0, 0], eyeRadius, 32)), poly(circle([length, 0], eyeRadius, 32)));
+  const cut = holes.length ? clip.difference(outline, ...holes.map(([x, r]) => poly(circle([x, 0], r, 24)))) : outline;
+  return horizontalPlate(cut, low, high);
+}
+
+function roundedPolyline(points, radius) {
+  const path = new THREE.CurvePath();
+  let start = points[0].clone();
+  for (let index = 1; index < points.length - 1; index += 1) {
+    const corner = points[index];
+    const inDir = corner.clone().sub(points[index - 1]).normalize();
+    const outDir = points[index + 1].clone().sub(corner).normalize();
+    const r = Math.min(radius, corner.distanceTo(points[index - 1]) / 2, corner.distanceTo(points[index + 1]) / 2);
+    const a = corner.clone().addScaledVector(inDir, -r);
+    const b = corner.clone().addScaledVector(outDir, r);
+    path.add(new THREE.LineCurve3(start, a));
+    path.add(new THREE.QuadraticBezierCurve3(a, corner.clone(), b));
+    start = b;
+  }
+  path.add(new THREE.LineCurve3(start, points.at(-1).clone()));
+  return path;
+}
+
+function valveBGeometry(layout = LAYOUT) {
+  // B seen in plan: a D (half disc) that also covers the central exhaust
+  // port; its cavity is a smaller D. Walls, top and a foot flange, as
+  // Brown's section shows (cup with a stepped foot).
+  const R = layout.valveOuterRadius;
+  const halfDisc = (radius) => {
+    const points = [];
+    for (let i = 0; i <= 48; i += 1) {
+      const t = -Math.PI / 2 + Math.PI * i / 48;
+      points.push([radius * Math.cos(t), radius * Math.sin(t)]);
+    }
+    return points;
   };
+  const outer = clip.union(planPoly(halfDisc(R)), planCircle([0, 0], 0.26, 48));
+  const flange = clip.union(planPoly(halfDisc(0.84)), planCircle([0, 0], 0.32, 48));
+  const cavity = clip.union(planPoly(halfDisc(0.58)), planCircle([0, 0], 0.17, 48));
+  const y0 = layout.shelfTopY, y1 = layout.valveTopY, yFlange = py(131);
+  return mergePassageParts([
+    horizontalPlate(clip.difference(flange, cavity), y0, yFlange),
+    horizontalPlate(clip.difference(outer, cavity), yFlange, y1 - 0.18),
+    horizontalPlate(outer, y1 - 0.18, y1),
+  ]);
 }
 
 function dryGasMeter(movement) {
+  const L = LAYOUT;
   const root = new THREE.Group();
   const cycleDuration = 8;
-  const strokePhaseFraction = 0.40;
-  const switchPhaseFraction = 0.10;
-  const strokeDurationSecond = strokePhaseFraction * cycleDuration;
-  const switchDurationSecond = switchPhaseFraction * cycleDuration;
-  const bellowsEffectiveAreaSquareMetre = 0.035;
-  const bellowsPhysicalStrokeMetre = 0.060;
-  const chamberStrokeVolumeCubicMetre = bellowsEffectiveAreaSquareMetre
-    * bellowsPhysicalStrokeMetre;
-  const chamberDeadVolumeCubicMetre = 0.00060;
-  const volumePerMeterCycleCubicMetre = 2
-    * chamberStrokeVolumeCubicMetre;
-  // Brown's two bellows nearly fill the case between its end boards.
-  const minimumBellowsLengthSceneUnit = 1.15;
-  const maximumBellowsLengthSceneUnit = 2.35;
-  const bellowsLengthStrokeSceneUnit = maximumBellowsLengthSceneUnit
-    - minimumBellowsLengthSceneUnit;
-  const bellowsLengthMidpointSceneUnit = (
-    minimumBellowsLengthSceneUnit + maximumBellowsLengthSceneUnit
-  ) / 2;
-  const sceneStrokePerPhysicalMetre = bellowsLengthStrokeSceneUnit
-    / bellowsPhysicalStrokeMetre;
-  const leftFixedPlateX = -2.65;
-  const rightFixedPlateX = 2.65;
-  const leftMovingPlateMidpointX = leftFixedPlateX
-    + bellowsLengthMidpointSceneUnit;
-  const rightMovingPlateMidpointX = rightFixedPlateX
-    - bellowsLengthMidpointSceneUnit;
-  const valveStrokeSceneUnit = 0.38;
-  const valveRockerArmSceneUnit = 0.76;
-  const fillsPerUnitsDialRevolution = 10;
-  const dialFillRatios = Object.freeze([10, 100, 1000]);
-  const markerPacketVolumeCubicMetre = chamberStrokeVolumeCubicMetre / 4;
-  const markersPerPath = 7;
-  const bellowsCenterY = -0.45;
+  const right = {...FLAG_LINKAGES.right, linkLength: symmetricLinkLength(FLAG_LINKAGES.right)};
+  const left = {...FLAG_LINKAGES.left, linkLength: symmetricLinkLength(FLAG_LINKAGES.left)};
+
+  const halfPlate = L.plateThickness / 2;
+  const spaces = [
+    {key: 'A-outer', side: 'left', port: null, board: -(L.endBoardFaceX + 0.15)},
+    {key: 'A-inner', side: 'left', port: null, board: -(L.innerBoardFaceX - 0.145)},
+    {key: 'A-prime-inner', side: 'right', port: null, board: L.innerBoardFaceX - 0.145},
+    {key: 'A-prime-outer', side: 'right', port: null, board: L.endBoardFaceX + 0.15},
+  ];
+  const spaceLengths = (leftX, rightX) => [
+    leftX - halfPlate + L.endBoardFaceX,
+    -L.innerBoardFaceX - (leftX + halfPlate),
+    rightX - halfPlate - L.innerBoardFaceX,
+    L.endBoardFaceX - (rightX + halfPlate),
+  ];
+  const bellowsArea = Math.PI * L.bellowsHalfHeight * L.bellowsHalfDepth * 0.93;
+
+  // Port timing from the kinematics: each space exhausts while it closes.
+  const samples = 720;
+  const lengthTable = [];
+  for (let i = 0; i <= samples; i += 1) {
+    const phi = FULL_TURN * i / samples;
+    lengthTable.push(spaceLengths(linkageState(left, phi).plateX, linkageState(right, phi).plateX));
+  }
+  const strokeLengths = spaces.map((_, k) => Math.max(...lengthTable.map((row) => row[k])) - Math.min(...lengthTable.map((row) => row[k])));
+  // Each space closes from the crank angle of its greatest length to that of
+  // its least; its port is set at the middle of that interval.
+  const closingCenter = spaces.map((_, k) => {
+    const column = lengthTable.slice(0, samples).map((row) => row[k]);
+    const iMax = column.indexOf(Math.max(...column)), iMin = column.indexOf(Math.min(...column));
+    const span = THREE.MathUtils.euclideanModulo(iMin - iMax, samples);
+    return FULL_TURN * (iMax + span / 2) / samples;
+  });
+  // Choose B's orientation on its spindle so that no port lies on the
+  // exhaust passage leading to the column.
+  const [ox, oz] = L.crankCenter;
+  const channelAngle = Math.atan2(L.columnCenter[1] - oz, L.columnCenter[0] - ox);
+  // Brown's pose at time zero: A' at the end of its stroke with its inner
+  // leather closed up (so A is at mid-stroke).
+  const rightColumn = lengthTable.slice(0, samples).map((row) => row[2]);
+  const crankAngleAtZero = FULL_TURN * rightColumn.indexOf(Math.min(...rightColumn)) / samples;
+  // Of the equally good orientations, B shows its round side to the viewer
+  // in Brown's pose, as his section of a cup.
+  let valveOffset = 0, bestScore = -Infinity;
+  for (let deg = 0; deg < 360; deg += 1) {
+    const offset = THREE.MathUtils.degToRad(deg);
+    const clearance = Math.min(...closingCenter.map((c) => Math.abs(Math.atan2(Math.sin(c + offset - channelAngle), Math.cos(c + offset - channelAngle)))));
+    const facing = Math.cos(crankAngleAtZero + offset - Math.PI / 2);
+    const score = Math.round(clearance * 1000) + 0.01 * facing;
+    if (score > bestScore) {bestScore = score;valveOffset = offset;}
+  }
+  spaces.forEach((space, k) => {
+    space.portAngle = closingCenter[k] + valveOffset;
+    space.port = [ox + L.portRadius * Math.cos(space.portAngle), oz + L.portRadius * Math.sin(space.portAngle)];
+  });
+  const portLapAngle = (L.portHoleRadius + 0.04) / L.portRadius;
+  const volumePerRevolution = strokeLengths.reduce((sum, stroke) => sum + stroke, 0) * bellowsArea;
 
   const stateAtTime = (time) => {
-    const completedCycles = Math.floor(time / cycleDuration);
-    const cycleTime = THREE.MathUtils.euclideanModulo(time, cycleDuration);
-    const phase = cycleTime / cycleDuration;
-    let chamberAFillFraction;
-    let chamberAFillFractionRatePerSecond = 0;
-    let chamberAFillFractionAccelerationPerSecondSquared = 0;
-    let valveNormalizedPosition;
-    let valveNormalizedVelocityPerSecond = 0;
-    let measuredVolumeWithinCycleCubicMetre;
-    let mode;
-    let valveSwitchProgress = 0;
-
-    if (phase < strokePhaseFraction) {
-      const parameter = phase / strokePhaseFraction;
-      chamberAFillFraction = quinticStep(parameter);
-      chamberAFillFractionRatePerSecond =
-        quinticStepDerivative(parameter) / strokeDurationSecond;
-      chamberAFillFractionAccelerationPerSecondSquared =
-        quinticStepSecondDerivative(parameter) / strokeDurationSecond ** 2;
-      valveNormalizedPosition = 1;
-      measuredVolumeWithinCycleCubicMetre =
-        chamberStrokeVolumeCubicMetre * chamberAFillFraction;
-      mode = 'A-filling-A-prime-discharging-through-B';
-    } else if (phase < strokePhaseFraction + switchPhaseFraction) {
-      const parameter = (phase - strokePhaseFraction)
-        / switchPhaseFraction;
-      valveSwitchProgress = quinticStep(parameter);
-      chamberAFillFraction = 1;
-      valveNormalizedPosition = 1 - 2 * valveSwitchProgress;
-      valveNormalizedVelocityPerSecond =
-        -2 * quinticStepDerivative(parameter) / switchDurationSecond;
-      measuredVolumeWithinCycleCubicMetre = chamberStrokeVolumeCubicMetre;
-      mode = 'dead-center-A-full-B-switching-to-A-prime-supply';
-    } else if (phase < 2 * strokePhaseFraction + switchPhaseFraction) {
-      const parameter = (phase - strokePhaseFraction - switchPhaseFraction)
-        / strokePhaseFraction;
-      const reverseFillProgress = quinticStep(parameter);
-      chamberAFillFraction = 1 - reverseFillProgress;
-      chamberAFillFractionRatePerSecond =
-        -quinticStepDerivative(parameter) / strokeDurationSecond;
-      chamberAFillFractionAccelerationPerSecondSquared =
-        -quinticStepSecondDerivative(parameter) / strokeDurationSecond ** 2;
-      valveNormalizedPosition = -1;
-      measuredVolumeWithinCycleCubicMetre = chamberStrokeVolumeCubicMetre
-        * (1 + reverseFillProgress);
-      mode = 'A-discharging-A-prime-filling-through-B';
-    } else {
-      const parameter = (phase
-        - 2 * strokePhaseFraction - switchPhaseFraction)
-        / switchPhaseFraction;
-      valveSwitchProgress = quinticStep(parameter);
-      chamberAFillFraction = 0;
-      valveNormalizedPosition = -1 + 2 * valveSwitchProgress;
-      valveNormalizedVelocityPerSecond =
-        2 * quinticStepDerivative(parameter) / switchDurationSecond;
-      measuredVolumeWithinCycleCubicMetre = volumePerMeterCycleCubicMetre;
-      mode = 'dead-center-A-prime-full-B-switching-to-A-supply';
-    }
-
-    const chamberAPrimeFillFraction = 1 - chamberAFillFraction;
-    const bellowsCoordinate = 2 * chamberAFillFraction - 1;
-    const bellowsCoordinateRatePerSecond = 2
-      * chamberAFillFractionRatePerSecond;
-    const bellowsCoordinateAccelerationPerSecondSquared = 2
-      * chamberAFillFractionAccelerationPerSecondSquared;
-    const chamberALengthSceneUnit = minimumBellowsLengthSceneUnit
-      + bellowsLengthStrokeSceneUnit * chamberAFillFraction;
-    const chamberAPrimeLengthSceneUnit = minimumBellowsLengthSceneUnit
-      + bellowsLengthStrokeSceneUnit * chamberAPrimeFillFraction;
-    const leftMovingPlateX = leftFixedPlateX + chamberALengthSceneUnit;
-    const rightMovingPlateX = rightFixedPlateX
-      - chamberAPrimeLengthSceneUnit;
-    const commonPlateDisplacementSceneUnit =
-      bellowsLengthStrokeSceneUnit * chamberAFillFraction
-      - bellowsLengthStrokeSceneUnit / 2;
-    const commonPlateVelocitySceneUnitPerSecond =
-      bellowsLengthStrokeSceneUnit
-      * chamberAFillFractionRatePerSecond;
-    const commonPlateAccelerationSceneUnitPerSecondSquared =
-      bellowsLengthStrokeSceneUnit
-      * chamberAFillFractionAccelerationPerSecondSquared;
-    const chamberADisplacementMetre = bellowsPhysicalStrokeMetre
-      * chamberAFillFraction;
-    const chamberAPrimeDisplacementMetre = bellowsPhysicalStrokeMetre
-      * chamberAPrimeFillFraction;
-    const chamberAVolumeCubicMetre = chamberDeadVolumeCubicMetre
-      + bellowsEffectiveAreaSquareMetre * chamberADisplacementMetre;
-    const chamberAPrimeVolumeCubicMetre = chamberDeadVolumeCubicMetre
-      + bellowsEffectiveAreaSquareMetre
-        * chamberAPrimeDisplacementMetre;
-    const chamberAVolumeRateCubicMetrePerSecond =
-      chamberStrokeVolumeCubicMetre
-      * chamberAFillFractionRatePerSecond;
-    const chamberAPrimeVolumeRateCubicMetrePerSecond =
-      -chamberAVolumeRateCubicMetrePerSecond;
-    const instantaneousThroughputCubicMetrePerSecond =
-      Math.abs(chamberAVolumeRateCubicMetrePerSecond);
-    const cumulativeMeasuredVolumeCubicMetre = completedCycles
-      * volumePerMeterCycleCubicMetre
-      + measuredVolumeWithinCycleCubicMetre;
-    const fillEventsElapsed = cumulativeMeasuredVolumeCubicMetre
-      / chamberStrokeVolumeCubicMetre;
-    const valveBShiftSceneUnit = valveStrokeSceneUnit
-      * valveNormalizedPosition;
-    const valveBVelocitySceneUnitPerSecond = valveStrokeSceneUnit
-      * valveNormalizedVelocityPerSecond;
-    const valveRockerAngleRadian = Math.asin(
-      valveBShiftSceneUnit / valveRockerArmSceneUnit,
-    );
-    const supplyToAFraction = (1 + valveNormalizedPosition) / 2;
-    const supplyToAPrimeFraction = 1 - supplyToAFraction;
-    const exhaustFromAFraction = supplyToAPrimeFraction;
-    const exhaustFromAPrimeFraction = supplyToAFraction;
-    const dialAnglesRadian = dialFillRatios.map((fillsPerRevolution) =>
-      -FULL_TURN * fillEventsElapsed / fillsPerRevolution);
+    const crankAngle = crankAngleAtZero + FULL_TURN * time / cycleDuration;
+    const leftState = linkageState(left, crankAngle);
+    const rightState = linkageState(right, crankAngle);
+    const lengths = spaceLengths(leftState.plateX, rightState.plateX);
+    const valveAngle = crankAngle + valveOffset;
+    const ports = spaces.map((space) => {
+      const relative = Math.atan2(Math.sin(space.portAngle - valveAngle), Math.cos(space.portAngle - valveAngle));
+      const fromEdge = Math.abs(relative) - Math.PI / 2;
+      return {
+        key: space.key,
+        state: fromEdge < -portLapAngle ? 'exhaust' : fromEdge > portLapAngle ? 'admit' : 'covered',
+        relative,
+      };
+    });
     return {
-      bellowsCoordinate,
-      bellowsCoordinateAccelerationPerSecondSquared,
-      bellowsCoordinateRatePerSecond,
-      chamberADisplacementMetre,
-      chamberAFillFraction,
-      chamberALengthSceneUnit,
-      chamberAPrimeDisplacementMetre,
-      chamberAPrimeFillFraction,
-      chamberAPrimeLengthSceneUnit,
-      chamberAPrimeVolumeCubicMetre,
-      chamberAPrimeVolumeRateCubicMetrePerSecond,
-      chamberAVolumeCubicMetre,
-      chamberAVolumeRateCubicMetrePerSecond,
-      commonPlateAccelerationSceneUnitPerSecondSquared,
-      commonPlateDisplacementSceneUnit,
-      commonPlateVelocitySceneUnitPerSecond,
-      completedCycles,
-      cumulativeMeasuredVolumeCubicMetre,
-      cycleTime,
-      dialAnglesRadian,
-      exhaustFromAFraction,
-      exhaustFromAPrimeFraction,
-      fillEventsElapsed,
-      instantaneousInletFlowCubicMetrePerSecond:
-        instantaneousThroughputCubicMetrePerSecond,
-      instantaneousOutletFlowCubicMetrePerSecond:
-        instantaneousThroughputCubicMetrePerSecond,
-      instantaneousThroughputCubicMetrePerSecond,
-      leftMovingPlateX,
-      markerTravelTurns: cumulativeMeasuredVolumeCubicMetre
-        / markerPacketVolumeCubicMetre,
-      measuredVolumeWithinCycleCubicMetre,
-      mode,
-      phase,
-      rightMovingPlateX,
-      supplyToAFraction,
-      supplyToAPrimeFraction,
-      totalTrappedChamberVolumeCubicMetre:
-        chamberAVolumeCubicMetre + chamberAPrimeVolumeCubicMetre,
-      valveBShiftSceneUnit,
-      valveBVelocitySceneUnitPerSecond,
-      valveNormalizedPosition,
-      valveNormalizedVelocityPerSecond,
-      valveRockerAngleRadian,
-      valveSwitchProgress,
+      crankAngle,
+      cumulativeMeasuredVolume: volumePerRevolution * time / cycleDuration,
+      left: leftState,
+      phase: THREE.MathUtils.euclideanModulo(time / cycleDuration, 1),
+      ports,
+      right: rightState,
+      spaceLengths: lengths,
+      spaceVolumes: lengths.map((length) => length * bellowsArea),
+      valveAngle,
     };
   };
 
-  const frameMaterial = matte(PALETTE.frame, {
-    metalness: 0.25,
-    roughness: 0.48,
-  });
-  const darkMaterial = matte(PALETTE.ink, {
-    metalness: 0.30,
-    roughness: 0.40,
-  });
-  const housingMaterial = matte(PALETTE.frame, {
-    metalness: 0.12,
-    opacity: 0.11,
-    roughness: 0.46,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  housingMaterial.depthWrite = false;
-  const bellowsAMaterial = matte(PALETTE.driven, {
-    metalness: 0.08,
-    opacity: 0.52,
-    roughness: 0.50,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  bellowsAMaterial.depthWrite = false;
-  const bellowsAPrimeMaterial = matte(PALETTE.accent, {
-    metalness: 0.08,
-    opacity: 0.54,
-    roughness: 0.48,
-    side: THREE.DoubleSide,
-    transparent: true,
-  });
-  bellowsAPrimeMaterial.depthWrite = false;
-  const plateAMaterial = matte(PALETTE.driven, {
-    metalness: 0.17,
-    roughness: 0.40,
-  });
-  const plateAPrimeMaterial = matte(PALETTE.accent, {
-    metalness: 0.17,
-    roughness: 0.40,
-  });
-  const valveMaterial = matte(PALETTE.driver, {
-    metalness: 0.23,
-    roughness: 0.38,
-  });
-  const gasAMaterial = matte(PALETTE.driven, {
-    opacity: 0.16,
-    roughness: 0.28,
-    transparent: true,
-  });
-  gasAMaterial.depthWrite = false;
-  const gasAPrimeMaterial = matte(PALETTE.accent, {
-    opacity: 0.16,
-    roughness: 0.28,
-    transparent: true,
-  });
-  gasAPrimeMaterial.depthWrite = false;
-  const pipeMaterial = matte(PALETTE.frame, {
-    metalness: 0.23,
-    roughness: 0.44,
-  });
-  const markerMaterial = matte(PALETTE.white, {
-    opacity: 0.95,
-    roughness: 0.22,
-    transparent: true,
-  });
-  markerMaterial.depthWrite = false;
+  // ---- materials
+  const caseMaterial = matte(PALETTE.frame, {metalness: 0.2, roughness: 0.55});
+  const boardMaterial = matte(PALETTE.muted, {metalness: 0.12, roughness: 0.6});
+  const leatherMaterial = matte(0x7b5b3e, {metalness: 0.02, roughness: 0.85, side: THREE.DoubleSide});
+  const backMaterial = matte(PALETTE.paper, {roughness: 0.95});
+  const plateAMaterial = matte(PALETTE.driven, {metalness: 0.17, roughness: 0.42});
+  const plateAPrimeMaterial = matte(PALETTE.accent, {metalness: 0.17, roughness: 0.42});
+  const valveMaterial = matte(PALETTE.driver, {metalness: 0.23, roughness: 0.38});
+  const ironMaterial = matte(PALETTE.ink, {metalness: 0.35, roughness: 0.4});
+  const pipeMaterial = matte(PALETTE.frame, {metalness: 0.25, roughness: 0.44});
 
-  const fixedHousing = addRole(new THREE.Group(),
-    'fixed-gas-tight-dry-meter-case');
-  const housingShell = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(6.18, 5.08, 2.42),
-    housingMaterial,
-  ), 'transparent-cutaway-dry-meter-case');
-  housingShell.position.y = 0.53;
-  const base = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(6.38, 0.22, 2.62),
-    frameMaterial,
-  ), 'fixed-dry-meter-base');
-  base.position.y = -2.05;
-  const roof = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(6.35, 0.20, 2.58),
-    frameMaterial,
-  ), 'fixed-dry-meter-roof');
-  roof.position.y = 3.05;
-  const housingPosts = [];
-  for (const x of [-3.08, 3.08]) {
-    for (const z of [-1.18, 1.18]) {
-      const post = new THREE.Mesh(
-        new THREE.BoxGeometry(0.16, 5.00, 0.16),
-        frameMaterial,
-      );
-      post.position.set(x, 0.50, z);
-      post.userData.role = `fixed-case-corner-post-${housingPosts.length + 1}`;
-      fixedHousing.add(post);
-      housingPosts.push(post);
-    }
-  }
-  const galleryFloor = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(5.92, 0.13, 2.22),
-    frameMaterial,
-  ), 'fixed-gallery-floor-separating-valve-work-from-bellows');
-  galleryFloor.position.y = 0.91;
-  const centerPartition = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, 2.72, 1.82),
-    housingMaterial,
-  ), 'fixed-central-partition-between-A-and-A-prime');
-  centerPartition.position.y = -0.54;
-  fixedHousing.add(
-    housingShell,
-    base,
-    roof,
-    galleryFloor,
-    centerPartition,
-  );
-  root.add(fixedHousing);
-
-  const initialState = stateAtTime(0);
-  const bellowsA = createRectangularBellows({
-    fixedX: leftFixedPlateX,
-    frameMaterial: darkMaterial,
-    material: bellowsAMaterial,
-    movingX: initialState.leftMovingPlateX,
-    role: 'bellows-like-measuring-chamber-A',
-  });
-  bellowsA.group.position.y = bellowsCenterY;
-  root.add(bellowsA.group);
-  const bellowsAPrime = createRectangularBellows({
-    fixedX: rightFixedPlateX,
-    frameMaterial: darkMaterial,
-    material: bellowsAPrimeMaterial,
-    movingX: initialState.rightMovingPlateX,
-    role: 'bellows-like-measuring-chamber-A-prime',
-  });
-  bellowsAPrime.group.position.y = bellowsCenterY;
-  root.add(bellowsAPrime.group);
-
-  const fixedPlateGeometry = new THREE.BoxGeometry(0.16, 2.48, 1.34);
-  const leftFixedPlate = addRole(new THREE.Mesh(
-    fixedPlateGeometry,
-    frameMaterial,
-  ), 'fixed-outer-end-plate-of-A');
-  leftFixedPlate.position.set(leftFixedPlateX, bellowsCenterY, 0);
-  const rightFixedPlate = addRole(new THREE.Mesh(
-    fixedPlateGeometry,
-    frameMaterial,
-  ), 'fixed-outer-end-plate-of-A-prime');
-  rightFixedPlate.position.set(rightFixedPlateX, bellowsCenterY, 0);
-  root.add(leftFixedPlate, rightFixedPlate);
-
-  const makeMovingAssembly = (midpointX, material, role, rodRole) => {
-    const assembly = addRole(new THREE.Group(), role);
-    assembly.position.x = midpointX;
-    const plate = new THREE.Mesh(
-      new THREE.BoxGeometry(0.16, 2.46, 1.32),
-      material,
-    );
-    plate.position.y = bellowsCenterY;
-    plate.userData.role = `${role}-gas-tight-moving-plate`;
-    // Pass 70: the rod stops inside the crosshead bar, below the valve seat.
-    const flagRod = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.06, 0.06, 1.38, 20),
-      darkMaterial,
-    );
-    flagRod.position.y = 0.305;
-    flagRod.position.z = 0.61;
-    flagRod.userData.role = rodRole;
-    assembly.add(plate, flagRod);
-    root.add(assembly);
-    return { assembly, flagRod, plate };
+  const addMesh = (parent, geometry, material, role) => {
+    const mesh = new THREE.Mesh(geometry, material);
+    mesh.userData.role = role;
+    parent.add(mesh);
+    return mesh;
   };
-  const movingA = makeMovingAssembly(
-    leftMovingPlateMidpointX,
-    plateAMaterial,
-    'moving-diaphragm-plate-of-A',
-    'flag-rod-from-A-to-common-meter-work',
-  );
-  const movingAPrime = makeMovingAssembly(
-    rightMovingPlateMidpointX,
-    plateAPrimeMaterial,
-    'moving-diaphragm-plate-of-A-prime',
-    'flag-rod-from-A-prime-to-common-meter-work',
-  );
 
-  const commonCrosshead = addRole(new THREE.Group(),
-    'rigid-common-crosshead-coupling-opposed-bellows-strokes');
-  const crossheadBar = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(
-      rightMovingPlateMidpointX - leftMovingPlateMidpointX,
-      0.13,
-      0.14,
-    ),
-    darkMaterial,
-  ), 'common-horizontal-bellows-crosshead-bar');
-  // Pass 70: the bar rides in the gallery-floor slot, clear of the seat.
-  crossheadBar.position.set(
-    (rightMovingPlateMidpointX + leftMovingPlateMidpointX) / 2,
-    0.96,
-    0.61,
-  );
-  commonCrosshead.add(crossheadBar);
-  root.add(commonCrosshead);
+  // ---- fixed case (front removed, as Brown shows it)
+  const fixedCase = new THREE.Group();
+  fixedCase.userData.role = 'fixed-gas-tight-dry-meter-case';
+  root.add(fixedCase);
+  const floor = addMesh(fixedCase, boxBetween(-L.wallOuterX, L.wallOuterX, L.floorTopY - 0.12, L.floorTopY, L.backZ - 0.1, L.frontZ), caseMaterial, 'fixed-dry-meter-floor');
+  const walls = [-1, 1].map((side) => addMesh(fixedCase,
+    boxBetween(side < 0 ? -L.wallOuterX : L.wallInnerX, side < 0 ? -L.wallInnerX : L.wallOuterX, L.floorTopY, L.roofBottomY, L.backZ - 0.1, L.frontZ),
+    caseMaterial, side < 0 ? 'fixed-left-case-wall' : 'fixed-right-case-wall'));
+  const backPanel = addMesh(fixedCase, boxBetween(-L.wallInnerX, L.wallInnerX, L.floorTopY, L.roofBottomY, L.backZ - 0.1, L.backZ), caseMaterial, 'fixed-back-panel-of-case');
+  const roof = addMesh(fixedCase, horizontalPlate(clip.difference(
+    planRect(-L.wallOuterX, L.wallOuterX, L.backZ - 0.1, L.frontZ),
+    planCircle(L.columnCenter, 0.205, 64)), L.roofBottomY, L.roofBottomY + 0.12), caseMaterial, 'fixed-dry-meter-roof');
 
-  const gasA = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1.78, 0.94),
-    gasAMaterial,
-  ), 'measured-gas-volume-inside-A');
-  gasA.position.y = bellowsCenterY;
-  const gasAPrime = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1.78, 0.94),
-    gasAPrimeMaterial,
-  ), 'measured-gas-volume-inside-A-prime');
-  gasAPrime.position.y = bellowsCenterY;
-  root.add(gasA, gasAPrime);
+  // Brown's thick shelf carries B's seat; the exhaust passage from B's
+  // central port to the outlet column is cored between its layers.
+  const portHoles = () => spaces.map((space) => planCircle(space.port, L.portHoleRadius, 32));
+  const rodBore = planCircle(left.rod, 0.075, 32);
+  const centerHole = planCircle(L.crankCenter, L.exhaustHoleRadius, 32);
+  const columnHole = planCircle(L.columnCenter, 0.14, 48);
+  const shelfOutline = planRect(-L.wallInnerX, L.shelfEndX, L.backZ, L.frontZ);
+  const seatOutline = planRect(L.shelfEndX, L.seatEndX, -1.0, 1.0);
+  const passage = clip.union(planCapsule(L.crankCenter, L.columnCenter, 0.075), planCircle(L.crankCenter, L.exhaustHoleRadius, 32), planCircle(L.columnCenter, 0.14, 48));
+  const shelf = addMesh(fixedCase, mergePassageParts([
+    horizontalPlate(clip.difference(shelfOutline, ...portHoles(), centerHole, columnHole, rodBore), L.shelfTopY - 0.08, L.shelfTopY),
+    horizontalPlate(clip.difference(shelfOutline, ...portHoles(), passage, rodBore), L.shelfTopY - 0.18, L.shelfTopY - 0.08),
+    horizontalPlate(clip.difference(shelfOutline, ...portHoles(), rodBore), L.shelfBottomY, L.shelfTopY - 0.18),
+    horizontalPlate(clip.difference(seatOutline, ...portHoles()), L.shelfTopY - 0.10, L.shelfTopY),
+  ]), caseMaterial, 'fixed-shelf-carrying-seat-of-B-with-cored-exhaust-passage');
 
-  const leftPortX = -0.76;
-  const centerPortX = 0;
-  const rightPortX = 0.76;
-  const portPlateY = 1.20;
-  const valvePortPlate = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(2.25, 0.14, 1.16),
-    frameMaterial,
-  ), 'fixed-three-port-seat-under-slide-valve-B');
-  valvePortPlate.position.set(0, portPlateY - 0.09, 0);
-  root.add(valvePortPlate);
-  const valvePorts = [
-    { role: 'left-port-to-bellows-A', x: leftPortX },
-    { role: 'central-common-exhaust-port', x: centerPortX },
-    { role: 'right-port-to-bellows-A-prime', x: rightPortX },
-  ].map(({ role, x }) => {
-    const port = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.18, 0.18, 0.16, 28),
-      darkMaterial,
-    );
-    port.position.set(x, portPlateY, 0);
-    port.userData.role = role;
-    root.add(port);
-    return port;
-  });
+  // Fixed boards and the central partition.
+  const boardGeometry = (x0, x1) => boxBetween(x0, x1, -L.bellowsHalfHeight, L.bellowsHalfHeight, -L.bellowsHalfDepth, L.bellowsHalfDepth);
+  const fixedBoards = [
+    addMesh(fixedCase, boardGeometry(-L.wallInnerX, -L.endBoardFaceX), boardMaterial, 'fixed-outer-end-board-of-A'),
+    addMesh(fixedCase, boardGeometry(-L.innerBoardFaceX, -L.partitionHalf), boardMaterial, 'fixed-inner-end-board-of-A'),
+    addMesh(fixedCase, boardGeometry(L.partitionHalf, L.innerBoardFaceX), boardMaterial, 'fixed-inner-end-board-of-A-prime'),
+    addMesh(fixedCase, boardGeometry(L.endBoardFaceX, L.wallInnerX), boardMaterial, 'fixed-outer-end-board-of-A-prime'),
+  ];
+  const partition = addMesh(fixedCase, boxBetween(-L.partitionHalf, L.partitionHalf, L.floorTopY, L.shelfBottomY, -L.bellowsHalfDepth, L.bellowsHalfDepth), boardMaterial, 'fixed-central-partition-between-A-and-A-prime');
 
-  const valveChest = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(2.52, 0.92, 1.34),
-    housingMaterial,
-  ), 'fixed-inlet-pressure-chest-around-B');
-  valveChest.position.set(0, 1.61, 0);
-  root.add(valveChest);
-  const valveB = addRole(new THREE.Group(),
-    'single-D-slide-valve-B-routing-both-bellows');
-  valveB.position.y = portPlateY + 0.04;
-  const valveBTop = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(1.10, 0.16, 0.82),
-    valveMaterial,
-  ), 'closed-top-of-D-slide-valve-B');
-  valveBTop.position.y = 0.35;
-  const valveBSkirts = [-1, 1].map((side, index) => {
-    const skirt = new THREE.Mesh(
-      new THREE.BoxGeometry(0.15, 0.62, 0.82),
-      valveMaterial,
-    );
-    skirt.position.set(side * 0.475, 0.10, 0);
-    skirt.userData.role = `lower-skirt-${index + 1}-of-B`;
-    valveB.add(skirt);
-    return skirt;
-  });
-  const exhaustCavity = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.80, 0.34, 0.62),
-    matte(PALETTE.driver, {
-      opacity: 0.17,
-      roughness: 0.24,
-      transparent: true,
-    }),
-  ), 'moving-exhaust-cavity-beneath-D-slide-B');
-  exhaustCavity.position.y = 0.17;
-  exhaustCavity.material.depthWrite = false;
-  const valveBStem = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.06, 0.06, 0.58, 20),
-    darkMaterial,
-  ), 'stem-of-slide-valve-B-worked-by-bellows');
-  valveBStem.position.set(0, 0.72, 0.42);
-  valveB.add(valveBTop, exhaustCavity, valveBStem);
-  root.add(valveB);
+  // Outlet column (Brown's tall pipe at the left) and the unseen inlet at the
+  // back of the case.
+  const columnCurve = new THREE.LineCurve3(new THREE.Vector3(L.columnCenter[0], L.shelfTopY, L.columnCenter[1]), new THREE.Vector3(L.columnCenter[0], py(5), L.columnCenter[1]));
+  const outletColumn = addMesh(fixedCase, curvedPipeWall(columnCurve, 0.14, 0.20, 8, 40), pipeMaterial, 'fixed-outlet-column-from-exhaust-of-B');
+  // The inlet enters through the back of the case behind the dial-work box.
+  const inletCurve = new THREE.LineCurve3(new THREE.Vector3(2.2, 4.6, L.backZ - 0.1), new THREE.Vector3(2.2, 4.6, L.backZ - 0.6));
+  const inletPipe = addMesh(fixedCase, curvedPipeWall(inletCurve, 0.10, 0.15, 4, 32), pipeMaterial, 'fixed-inlet-through-back-of-case');
+  // (the back panel is bored for it)
+  backPanel.geometry.dispose();
+  backPanel.geometry = plate(clip.difference(
+    poly([[-L.wallInnerX, L.floorTopY], [L.wallInnerX, L.floorTopY], [L.wallInnerX, L.roofBottomY], [-L.wallInnerX, L.roofBottomY]]),
+    poly(circle([2.2, 4.6], 0.11, 32))), L.backZ - 0.1, L.backZ);
+  backPanel.material = backMaterial;
 
-  const inletTube = makeTube([
-    new THREE.Vector3(0, 3.22, -0.46),
-    new THREE.Vector3(0, 2.48, -0.46),
-    new THREE.Vector3(0, 1.82, -0.38),
-  ], 0.20, pipeMaterial, 'fixed-unlettered-main-inlet-to-valve-chest');
-  root.add(inletTube.mesh);
-  const leftBranchTube = makeTube([
-    new THREE.Vector3(leftPortX, portPlateY - 0.05, 0),
-    new THREE.Vector3(-1.48, 0.72, -0.05),
-    new THREE.Vector3(leftFixedPlateX, 0.10, -0.02),
-    new THREE.Vector3(leftFixedPlateX, bellowsCenterY, 0),
-  ], 0.16, pipeMaterial, 'fixed-branch-between-B-and-chamber-A');
-  const rightBranchTube = makeTube([
-    new THREE.Vector3(rightPortX, portPlateY - 0.05, 0),
-    new THREE.Vector3(1.48, 0.72, -0.05),
-    new THREE.Vector3(rightFixedPlateX, 0.10, -0.02),
-    new THREE.Vector3(rightFixedPlateX, bellowsCenterY, 0),
-  ], 0.16, pipeMaterial, 'fixed-branch-between-B-and-chamber-A-prime');
-  root.add(leftBranchTube.mesh, rightBranchTube.mesh);
-  // Pass 70: the common exhaust leaves the central port through a passage
-  // cored in the seat board and rises through the roof as Brown's tall left
-  // column (see correctGasMeterParts).
-  const outletTube = makeTube([
-    new THREE.Vector3(-2.45, 1.18, -0.35),
-    new THREE.Vector3(-2.45, 2.30, -0.35),
-    new THREE.Vector3(-2.45, 3.40, -0.35),
-  ], 0.20, pipeMaterial, 'fixed-unlettered-common-outlet-from-B');
-  root.add(outletTube.mesh);
-  const outletFlange = cylinderBetween(
-    new THREE.Vector3(0, 1.00, 1.76),
-    new THREE.Vector3(0, 1.00, 2.08),
-    0.31,
-    darkMaterial,
-    'fixed-front-outlet-flange',
-    32,
-  );
-  // Pass 70: no forward flange; the outlet leaves through the roof.
-  outletFlange.visible = false;
+  // Dial-work case: the plain box Brown draws at the upper right.
+  const dialCase = addMesh(fixedCase, boxBetween(L.seatEndX, L.wallInnerX, py(165), L.roofBottomY, 1.45, L.frontZ), caseMaterial, 'fixed-dial-work-case-at-upper-right');
 
-  const valveGuides = [-1, 1].map((side, index) => {
-    const guide = new THREE.Mesh(
-      new THREE.BoxGeometry(1.45, 0.08, 0.09),
-      darkMaterial,
-    );
-    guide.position.set(0, 1.84 + index * 0.27, 0.44);
-    guide.userData.role = side < 0
-      ? 'lower-horizontal-guide-for-B-stem'
-      : 'upper-horizontal-guide-for-B-stem';
-    root.add(guide);
-    return guide;
-  });
-  const rockerPivot = new THREE.Vector3(0, 2.52, 0.45);
-  const valveRocker = addRole(new THREE.Group(),
-    'fixed-pivot-valve-reversing-rocker');
-  valveRocker.position.copy(rockerPivot);
-  const rockerArm = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(0.12, valveRockerArmSceneUnit, 0.12),
-    valveMaterial,
-  ), 'rigid-arm-of-valve-reversing-rocker');
-  rockerArm.position.y = -valveRockerArmSceneUnit / 2;
-  valveRocker.add(rockerArm);
-  root.add(valveRocker);
-  const rockerFulcrum = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.13, 0.13, 0.28, 24),
-    darkMaterial,
-  ), 'fixed-fulcrum-of-valve-reversing-rocker');
-  rockerFulcrum.rotation.x = Math.PI / 2;
-  rockerFulcrum.position.copy(rockerPivot);
-  root.add(rockerFulcrum);
-  const valveRockerConnector = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.045, 0.045, 1, 18),
-    valveMaterial,
-  ), 'sliding-link-from-rocker-to-stem-of-B');
-  root.add(valveRockerConnector);
-
-  const springSegmentCount = 12;
-  const overCenterSpringSegments = Array.from(
-    { length: springSegmentCount },
-    (_, index) => {
-      const segment = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.024, 0.024, 1, 12),
-        valveMaterial,
-      );
-      segment.userData.role =
-        `flexible-over-center-spring-segment-${index + 1}`;
-      root.add(segment);
-      return segment;
-    },
-  );
-
-  const registerHousing = addRole(new THREE.Mesh(
-    new THREE.BoxGeometry(1.92, 0.92, 0.18),
-    darkMaterial,
-  ), 'fixed-dial-work-register-housing');
-  registerHousing.position.set(2.04, 2.47, 1.23);
-  root.add(registerHousing);
-  const dialCentersX = [1.42, 2.04, 2.66];
-  const registerDials = [];
-  const registerPointers = [];
-  for (let index = 0; index < dialFillRatios.length; index += 1) {
-    const dial = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.25, 0.25, 0.055, 36),
-      matte(PALETTE.paper, { roughness: 0.66 }),
-    );
-    dial.rotation.x = Math.PI / 2;
-    dial.position.set(dialCentersX[index], 2.47, 1.35);
-    dial.userData.role =
-      `register-dial-${index + 1}-one-revolution-per-${dialFillRatios[index]}-fills`;
-    root.add(dial);
-    registerDials.push(dial);
-    const pointer = addRole(new THREE.Group(),
-      `moving-pointer-of-register-dial-${index + 1}`);
-    pointer.position.set(dialCentersX[index], 2.47, 1.40);
-    const hand = new THREE.Mesh(
-      new THREE.BoxGeometry(0.035, 0.21, 0.035),
-      valveMaterial,
-    );
-    hand.position.y = 0.085;
-    pointer.add(hand);
-    root.add(pointer);
-    registerPointers.push(pointer);
-    for (let tick = 0; tick < 10; tick += 1) {
-      const angle = FULL_TURN * tick / 10;
-      const mark = new THREE.Mesh(
-        new THREE.BoxGeometry(0.018, 0.055, 0.018),
-        darkMaterial,
-      );
-      mark.position.set(
-        dialCentersX[index] + 0.205 * Math.sin(angle),
-        2.47 + 0.205 * Math.cos(angle),
-        1.405,
-      );
-      mark.rotation.z = -angle;
-      mark.userData.role = `tick-${tick}-of-register-dial-${index + 1}`;
-      root.add(mark);
-    }
-  }
-
-  const countInputRotor = addRole(new THREE.Group(),
-    'fill-count-input-wheel-driving-dial-work');
-  countInputRotor.position.set(0.86, 2.47, 1.31);
-  const countWheel = new THREE.Mesh(
-    new THREE.CylinderGeometry(0.28, 0.28, 0.10, 28),
-    valveMaterial,
-  );
-  countWheel.rotation.x = Math.PI / 2;
-  const countIndex = new THREE.Mesh(
-    new THREE.BoxGeometry(0.045, 0.16, 0.04),
-    markerMaterial,
-  );
-  countIndex.position.set(0, 0.19, 0.065);
-  countInputRotor.add(countWheel, countIndex);
-  root.add(countInputRotor);
-
-  const pathDefinitions = {
-    inletToA: [
-      new THREE.Vector3(0, 3.18, -0.46),
-      new THREE.Vector3(0, 1.80, -0.38),
-      new THREE.Vector3(leftPortX, 1.37, -0.12),
-      new THREE.Vector3(-1.48, 0.70, -0.04),
-      new THREE.Vector3(leftFixedPlateX, bellowsCenterY, 0.05),
-      new THREE.Vector3(-2.18, bellowsCenterY, 0.10),
-    ],
-    inletToAPrime: [
-      new THREE.Vector3(0, 3.18, -0.46),
-      new THREE.Vector3(0, 1.80, -0.38),
-      new THREE.Vector3(rightPortX, 1.37, -0.12),
-      new THREE.Vector3(1.48, 0.70, -0.04),
-      new THREE.Vector3(rightFixedPlateX, bellowsCenterY, 0.05),
-      new THREE.Vector3(2.18, bellowsCenterY, 0.10),
-    ],
-    AToOutlet: [
-      new THREE.Vector3(-2.18, bellowsCenterY, 0.10),
-      new THREE.Vector3(leftFixedPlateX, bellowsCenterY, 0.05),
-      new THREE.Vector3(-1.48, 0.70, -0.04),
-      new THREE.Vector3(leftPortX, 1.30, 0.06),
-      new THREE.Vector3(-0.38, 1.48, 0.12),
-      new THREE.Vector3(centerPortX, 1.27, 0.14),
-      new THREE.Vector3(0, 1.04, -0.20),
-      new THREE.Vector3(-1.26, 1.04, -0.35),
-      new THREE.Vector3(-2.45, 1.10, -0.35),
-      new THREE.Vector3(-2.45, 3.40, -0.35),
-    ],
-    APrimeToOutlet: [
-      new THREE.Vector3(2.18, bellowsCenterY, 0.10),
-      new THREE.Vector3(rightFixedPlateX, bellowsCenterY, 0.05),
-      new THREE.Vector3(1.48, 0.70, -0.04),
-      new THREE.Vector3(rightPortX, 1.30, 0.06),
-      new THREE.Vector3(0.38, 1.48, 0.12),
-      new THREE.Vector3(centerPortX, 1.27, 0.14),
-      new THREE.Vector3(0, 1.04, -0.20),
-      new THREE.Vector3(-1.26, 1.04, -0.35),
-      new THREE.Vector3(-2.45, 1.10, -0.35),
-      new THREE.Vector3(-2.45, 3.40, -0.35),
-    ],
+  // Ducts from the four seat ports down to the fixed boards of their spaces.
+  const ductRuns = [];
+  // Each duct drops from its port to its own level, runs straight back
+  // through the back panel, across behind the case, and forward again
+  // through the panel into the top edge of its board: [level at the port,
+  // level at the board, depth behind the case]. The levels keep every pair
+  // of ducts 0.02 clear, and the duct of A' inner stays above the pins of
+  // the plate of A' that pass beneath its port.
+  const ductRoute = {
+    'A-outer': [3.30, 3.30, -2.20], 'A-inner': [2.82, 2.82, -2.20],
+    'A-prime-inner': [3.14, 2.66, -2.38], 'A-prime-outer': [2.98, 2.98, -2.20],
   };
-  const flowPaths = {};
-  const flowMarkerSets = {};
-  for (const [name, points] of Object.entries(pathDefinitions)) {
-    const curve = new THREE.CatmullRomCurve3(
-      points,
-      false,
-      'centripetal',
-    );
-    flowPaths[name] = curve;
-    flowMarkerSets[name] = Array.from(
-      { length: markersPerPath },
-      (_, index) => {
-        const marker = new THREE.Mesh(
-          new THREE.SphereGeometry(0.070, 17, 12),
-          markerMaterial,
-        );
-        marker.userData.role = `${name}-gas-marker-${index + 1}`;
-        root.add(marker);
-        return marker;
-      },
-    );
-  }
-  const markerProgress = (turns, markerIndex) =>
-    THREE.MathUtils.euclideanModulo(
-      turns + markerIndex / markersPerPath,
-      1,
-    );
+  const backPanelHoles = [];
+  spaces.forEach((space, k) => {
+    const [pxk, pzk] = space.port;
+    const [portY, boardY, runZ] = ductRoute[space.key];
+    const boardZ = -0.85;
+    const points = [
+      new THREE.Vector3(pxk, L.shelfBottomY + 0.02, pzk),
+      new THREE.Vector3(pxk, portY, pzk),
+      new THREE.Vector3(pxk, portY, runZ),
+      ...(portY === boardY ? [] : [new THREE.Vector3(pxk, boardY, runZ)]),
+      new THREE.Vector3(space.board, boardY, runZ),
+      new THREE.Vector3(space.board, boardY, boardZ),
+      new THREE.Vector3(space.board, L.bellowsHalfHeight, boardZ),
+    ];
+    const curve = roundedPolyline(points, 0.1);
+    const mesh = addMesh(fixedCase, curvedPipeWall(curve, 0.05, 0.07, 160, 16), pipeMaterial, `fixed-duct-from-seat-port-to-${space.key}`);
+    ductRuns.push({curve, mesh, points});
+    backPanelHoles.push([pxk, portY], [space.board, boardY]);
+  });
+  backPanel.geometry.dispose();
+  backPanel.geometry = plate(clip.difference(
+    poly([[-L.wallInnerX, L.floorTopY], [L.wallInnerX, L.floorTopY], [L.wallInnerX, L.roofBottomY], [-L.wallInnerX, L.roofBottomY]]),
+    poly(circle([2.2, 4.6], 0.11, 32)),
+    ...backPanelHoles.map((center) => poly(circle(center, 0.075, 32)))), L.backZ - 0.1, L.backZ);
 
-  // Pass 57: the over-centre spring is a close-wound coil hooked on a stud
-  // on the crosshead and on the rocker's tip pin, instead of a zigzag wire
-  // whose lower end hung in front of the crosshead.
-  const crossheadSpringStud = addRole(new THREE.Mesh(
-    new THREE.CylinderGeometry(0.035, 0.035, 0.09, 16),
-    darkMaterial,
-  ), 'crosshead-stud-carrying-over-center-spring');
-  // Pass 70: the stud stands on the bar's top face, in the slot line.
-  crossheadSpringStud.position.set(0, 1.065, 0.61);
-  commonCrosshead.add(crossheadSpringStud);
-  const overCenterSpringCoil = addRole(new THREE.Mesh(new THREE.BufferGeometry(), valveMaterial),
-    'over-center-coil-spring-from-crosshead-stud-to-rocker-pin');
-  root.add(overCenterSpringCoil);
-  for (const segment of overCenterSpringSegments) segment.visible = false;
-  class SpringCoil extends THREE.Curve {
-    constructor(start, end) {
-      super();
-      this.start = start;this.axis = end.clone().sub(start);
-      const helper = Math.abs(this.axis.z) < 0.9 * this.axis.length() ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
-      this.u = new THREE.Vector3().crossVectors(this.axis, helper).normalize();
-      this.v = new THREE.Vector3().crossVectors(this.axis, this.u).normalize();
-    }
-    getPoint(t, target = new THREE.Vector3()) {
-      // Straight leads over the first and last 8%, then 9 turns of radius 0.055.
-      const lead = 0.08, s = THREE.MathUtils.clamp((t - lead) / (1 - 2 * lead), 0, 1);
-      const radius = 0.055 * Math.sin(Math.PI / 2 * Math.min(1, Math.min(s, 1 - s) * 12));
-      const angle = 2 * Math.PI * 9 * s;
-      return target.copy(this.start).addScaledVector(this.axis, t)
-        .addScaledVector(this.u, radius * Math.cos(angle)).addScaledVector(this.v, radius * Math.sin(angle));
-    }
-  }
-  const updateSpring = (start, end) => {
-    // Same topology every frame: copy into the retained geometry in place.
-    const coil = new THREE.TubeGeometry(new SpringCoil(start, end), 360, 0.016, 8, false);
-    const kept = overCenterSpringCoil.geometry;
-    if (!kept.attributes.position) {
-      for (const name of ['position', 'normal', 'uv']) kept.setAttribute(name, coil.attributes[name].clone());
-      kept.setIndex(coil.index.clone());
-    } else {
-      kept.attributes.position.array.set(coil.attributes.position.array);kept.attributes.position.needsUpdate = true;
-      kept.attributes.normal.array.set(coil.attributes.normal.array);kept.attributes.normal.needsUpdate = true;
-    }
-    kept.computeBoundingBox();kept.computeBoundingSphere();
-    coil.dispose();
-    const direction = end.clone().sub(start);
-    const normal = new THREE.Vector3(-direction.y, direction.x, 0);
-    if (normal.lengthSq() < 1e-12) normal.set(1, 0, 0);
-    else normal.normalize();
-    const points = Array.from(
-      { length: springSegmentCount + 1 },
-      (_, index) => {
-        const fraction = index / springSegmentCount;
-        const point = start.clone().lerp(end, fraction);
-        if (index > 0 && index < springSegmentCount) {
-          point.addScaledVector(normal, index % 2 === 0 ? 0.075 : -0.075);
-        }
-        return point;
-      },
-    );
-    overCenterSpringSegments.forEach((segment, index) => {
-      setUnitCylinderBetween(segment, points[index], points[index + 1]);
+  // ---- bellows: leather, moving plates with their pins
+  const leather = [
+    createLeatherSegment(leatherMaterial, 'leather-of-A-outer-space'),
+    createLeatherSegment(leatherMaterial, 'leather-of-A-inner-space'),
+    createLeatherSegment(leatherMaterial, 'leather-of-A-prime-inner-space'),
+    createLeatherSegment(leatherMaterial, 'leather-of-A-prime-outer-space'),
+  ];
+  const bellowsA = new THREE.Group();
+  bellowsA.userData.role = 'bellows-like-measuring-chamber-A';
+  const bellowsAPrime = new THREE.Group();
+  bellowsAPrime.userData.role = 'bellows-like-measuring-chamber-A-prime';
+  bellowsA.add(leather[0].mesh, leather[1].mesh);
+  bellowsAPrime.add(leather[2].mesh, leather[3].mesh);
+  root.add(bellowsA, bellowsAPrime);
+
+  const pinGeometry = (sign) => mergePassageParts([
+    new THREE.CylinderGeometry(0.045, 0.045, L.flagY + 0.10 - L.bellowsHalfHeight, 20).translate(0, sign * (L.bellowsHalfHeight + (L.flagY + 0.10 - L.bellowsHalfHeight) / 2), 0),
+    new THREE.CylinderGeometry(0.085, 0.085, 0.07, 24).translate(0, sign * (L.flagY + 0.125), 0),
+  ]);
+  const makePlate = (material, role, parent) => {
+    const group = new THREE.Group();
+    group.userData.role = role;
+    const board = addMesh(group, boxBetween(-halfPlate, halfPlate, -L.bellowsHalfHeight, L.bellowsHalfHeight, -L.bellowsHalfDepth, L.bellowsHalfDepth), material, `${role}-board`);
+    const pins = [1, -1].map((sign) => addMesh(group, pinGeometry(sign), ironMaterial, `${role}-${sign > 0 ? 'upper' : 'lower'}-flag-pin`));
+    parent.add(group);
+    return {board, group, pins};
+  };
+  const movingA = makePlate(plateAMaterial, 'moving-plate-of-A', bellowsA);
+  const movingAPrime = makePlate(plateAPrimeMaterial, 'moving-plate-of-A-prime', bellowsAPrime);
+
+  // ---- flag rods, flags, top arms and links
+  const makeFlagRod = (spec, name, topY) => {
+    const group = new THREE.Group();
+    group.position.set(spec.rod[0], 0, spec.rod[1]);
+    group.userData.role = `rocking-flag-rod-of-${name}`;
+    const shaft = addMesh(group, new THREE.CylinderGeometry(0.055, 0.055, topY - L.floorTopY, 24).translate(0, (topY + L.floorTopY) / 2, 0), ironMaterial, `vertical-flag-rod-of-${name}`);
+    const flagArms = [1, -1].map((sign) => {
+      const arm = addMesh(group, barGeometry(spec.flagArm, 0.09, -0.04, 0.04, 0.09), ironMaterial, `${sign > 0 ? 'upper' : 'lower'}-flag-arm-of-${name}`);
+      arm.position.y = sign * (L.flagY - 0.10);
+      arm.userData.flagOffset = spec.flagOffset;
+      return arm;
     });
+    const topArm = addMesh(group, barGeometry(spec.armLength, 0.10, -0.04, 0.04, 0.10), ironMaterial, `top-arm-of-flag-rod-of-${name}`);
+    topArm.position.y = topY - 0.04;
+    // Joint pins standing on the arm tips, through the eyes of the links.
+    const jointPin = (x, z, y0, y1, role) => {
+      const sign = Math.sign(y1 - y0), height = Math.abs(y1 - y0);
+      const pin = addMesh(group, mergePassageParts([
+        new THREE.CylinderGeometry(0.035, 0.035, height, 20).translate(0, y0 + sign * height / 2, 0),
+        new THREE.CylinderGeometry(0.065, 0.065, 0.04, 24).translate(0, y1 + sign * 0.02, 0),
+      ]), ironMaterial, role);
+      pin.position.set(x, 0, z);
+      return pin;
+    };
+    const flagJointPins = [1, -1].map((sign) => jointPin(spec.flagArm * Math.cos(spec.flagOffset), spec.flagArm * Math.sin(spec.flagOffset),
+      sign * (L.flagY - 0.10), sign * (L.flagY + 0.06), `${sign > 0 ? 'upper' : 'lower'}-flag-joint-pin-of-${name}`));
+    const topJointPin = jointPin(spec.armLength, 0, topY - 0.04, topY + 0.12, `top-arm-joint-pin-of-${name}`);
+    root.add(group);
+    return {flagArms, flagJointPins, group, shaft, topArm, topJointPin};
   };
+  // A' works a crank pin on a disc at the top of the spindle; A works an
+  // eccentric sheave just below it, so neither rod sweeps over the other's
+  // pin and nothing stands on the spindle axis where a link passes over it.
+  const sheaveY = [5.24, 5.32], discY = [5.34, 5.42];
+  const rightTopY = discY[1], leftTopY = sheaveY[0] - 0.02;
+  const rodA = makeFlagRod(left, 'A', leftTopY);
+  const rodAPrime = makeFlagRod(right, 'A-prime', rightTopY);
+  const makeLink = (length, role, y, width = 0.08, holeRadius = 0.04) => {
+    const mesh = addMesh(root, barGeometry(length, width, -0.04, 0.04, width, [[0, holeRadius], [length, holeRadius + 0.015]]), ironMaterial, role);
+    mesh.position.y = y;
+    return mesh;
+  };
+  const flagLinksA = [1, -1].map((sign) => makeLink(left.flagLink, `${sign > 0 ? 'upper' : 'lower'}-flag-link-to-plate-of-A`, sign * (L.flagY), 0.10, 0.04));
+  const flagLinksAPrime = [1, -1].map((sign) => makeLink(right.flagLink, `${sign > 0 ? 'upper' : 'lower'}-flag-link-to-plate-of-A-prime`, sign * (L.flagY), 0.10, 0.04));
+  const crankLinkAPrime = makeLink(right.linkLength, 'link-from-flag-rod-of-A-prime-to-crank-of-B', rightTopY + 0.06, 0.1, 0.04);
+  // A's link is an eccentric rod: its far end is a strap round the sheave.
+  const sheaveRadius = 0.62;
+  const crankLinkA = addMesh(root, horizontalPlate(clip.difference(
+    clip.union(capsule([0, 0], [left.linkLength, 0], 0.05, 24), poly(circle([0, 0], 0.10, 32)), poly(circle([left.linkLength, 0], sheaveRadius + 0.10, 64))),
+    poly(circle([0, 0], 0.04, 24)), poly(circle([left.linkLength, 0], sheaveRadius + 0.005, 96))), sheaveY[0], sheaveY[1]),
+  ironMaterial, 'eccentric-rod-from-flag-rod-of-A-to-sheave-on-spindle-of-B');
+
+  // ---- valve B on its spindle, the C bracket and the crank
+  const spindle = new THREE.Group();
+  spindle.position.set(ox, 0, oz);
+  spindle.userData.role = 'turning-spindle-of-valve-B';
+  root.add(spindle);
+  const valveB = addMesh(spindle, valveBGeometry(), valveMaterial, 'D-cup-valve-B-turning-on-its-seat');
+  valveB.rotation.y = -valveOffset;
+  const spindleShaft = addMesh(spindle, new THREE.CylinderGeometry(0.06, 0.06, discY[0] - L.valveTopY, 24).translate(0, (discY[0] + L.valveTopY) / 2, 0), ironMaterial, 'spindle-shaft-of-B');
+  const crankDisc = addMesh(spindle, horizontalRing(0, 0.62, discY[0], discY[1], 64), ironMaterial, 'crank-disc-on-top-of-spindle');
+  const sheave = addMesh(spindle, horizontalPlate(planCircle([L.crankRadius * Math.cos(left.crankOffset), L.crankRadius * Math.sin(left.crankOffset)], sheaveRadius, 96), sheaveY[0], sheaveY[1]), ironMaterial, 'eccentric-sheave-on-spindle-of-B');
+  const crankPins = [
+    {offset: right.crankOffset, top: rightTopY + 0.14, role: 'crank-pin-for-link-from-A-prime'},
+  ].map(({offset, top, role}) => {
+    const pin = addMesh(spindle, mergePassageParts([
+      new THREE.CylinderGeometry(0.04, 0.04, top - discY[1], 20).translate(0, (top + discY[1]) / 2, 0),
+      new THREE.CylinderGeometry(0.075, 0.075, 0.06, 24).translate(0, top + 0.03, 0),
+    ]), ironMaterial, role);
+    pin.position.set(L.crankRadius * Math.cos(offset), 0, L.crankRadius * Math.sin(offset));
+    return pin;
+  });
+  // C bracket standing on the shelf left of B; its two jaws are the
+  // spindle's bearings.
+  // Brown's C: a back standing on the shelf, two jaws reaching over B and a
+  // round-ended opening between them.
+  const cX0 = px(234), cX1 = px(298), back = 0.26, topY = py(69), lowJawTop = py(98), lowJawBottom = py(106), upJawBottom = py(78);
+  const uCenterY = (lowJawTop + upJawBottom) / 2, uRadius = (upJawBottom - lowJawTop) / 2, uCenterX = cX0 + back + uRadius;
+  const cOutline = [[cX0, L.shelfTopY], [cX0 + back, L.shelfTopY], [cX0 + back, lowJawBottom], [cX1, lowJawBottom], [cX1, lowJawTop]];
+  for (let i = 0; i <= 16; i += 1) {
+    const t = -Math.PI / 2 - Math.PI * i / 16;
+    cOutline.push([uCenterX + uRadius * Math.cos(t), uCenterY + uRadius * Math.sin(t)]);
+  }
+  cOutline.push([cX1, upJawBottom], [cX1, topY]);
+  for (let i = 0; i <= 8; i += 1) {
+    const t = Math.PI / 2 + Math.PI / 2 * i / 8;
+    cOutline.push([cX0 + back + back * Math.cos(t), topY - back + back * Math.sin(t)]);
+  }
+  // The body is extruded front to back; the two jaws are horizontal plates
+  // bored for the spindle.
+  let cBracket;
+  {
+    const jawBore = (y0, y1) => horizontalPlate(clip.difference(planRect(cX0 + back + 0.02, cX1, -0.12, 0.12), planCircle([ox, oz], 0.075, 32)), y0, y1);
+    const body = plate(clip.difference(poly(cOutline),
+      poly([[cX0 + back + 0.01, lowJawBottom - 0.001], [cX1 + 0.01, lowJawBottom - 0.001], [cX1 + 0.01, lowJawTop + 0.001], [cX0 + back + 0.01, lowJawTop + 0.001]]),
+      poly([[cX0 + back + 0.01, upJawBottom - 0.001], [cX1 + 0.01, upJawBottom - 0.001], [cX1 + 0.01, topY + 0.001], [cX0 + back + 0.01, topY + 0.001]])), -0.12, 0.12);
+    cBracket = addMesh(fixedCase, mergePassageParts([body, jawBore(lowJawBottom, lowJawTop), jawBore(upJawBottom, topY)]), caseMaterial, 'fixed-C-bracket-carrying-spindle-of-B');
+  }
 
   const update = (time) => {
     const state = stateAtTime(time);
-    bellowsA.update(leftFixedPlateX, state.leftMovingPlateX);
-    bellowsAPrime.update(rightFixedPlateX, state.rightMovingPlateX);
-    movingA.assembly.position.x = state.leftMovingPlateX;
-    movingAPrime.assembly.position.x = state.rightMovingPlateX;
-    commonCrosshead.position.x = state.commonPlateDisplacementSceneUnit;
-    gasA.position.x = (leftFixedPlateX + state.leftMovingPlateX) / 2;
-    gasA.scale.x = Math.max(0.08, 0.92 * state.chamberALengthSceneUnit);
-    gasA.material.opacity = 0.045 + 0.24 * state.chamberAFillFraction;
-    gasAPrime.position.x = (
-      rightFixedPlateX + state.rightMovingPlateX
-    ) / 2;
-    gasAPrime.scale.x = Math.max(
-      0.08,
-      0.92 * state.chamberAPrimeLengthSceneUnit,
-    );
-    gasAPrime.material.opacity = 0.045
-      + 0.24 * state.chamberAPrimeFillFraction;
-
-    valveB.position.x = state.valveBShiftSceneUnit;
-    valveRocker.rotation.z = state.valveRockerAngleRadian;
-    const rockerEndpoint = new THREE.Vector3(
-      rockerPivot.x + valveRockerArmSceneUnit
-        * Math.sin(state.valveRockerAngleRadian),
-      rockerPivot.y - valveRockerArmSceneUnit
-        * Math.cos(state.valveRockerAngleRadian),
-      rockerPivot.z,
-    );
-    const valveStemPin = new THREE.Vector3(
-      state.valveBShiftSceneUnit,
-      valveB.position.y + 0.86,
-      rockerPivot.z,
-    );
-    setUnitCylinderBetween(
-      valveRockerConnector,
-      rockerEndpoint,
-      valveStemPin,
-    );
-    updateSpring(
-      new THREE.Vector3(
-        state.commonPlateDisplacementSceneUnit,
-        1.10,
-        0.61,
-      ),
-      rockerEndpoint.clone().setZ(0.545),
-    );
-
-    countInputRotor.rotation.z = -FULL_TURN * state.fillEventsElapsed;
-    registerPointers.forEach((pointer, index) => {
-      pointer.rotation.z = state.dialAnglesRadian[index];
-    });
-
-    const leftChamberPoint = new THREE.Vector3(
-      THREE.MathUtils.lerp(leftFixedPlateX, state.leftMovingPlateX, 0.58),
-      bellowsCenterY,
-      0.10,
-    );
-    const rightChamberPoint = new THREE.Vector3(
-      THREE.MathUtils.lerp(rightFixedPlateX, state.rightMovingPlateX, 0.58),
-      bellowsCenterY,
-      0.10,
-    );
-    flowPaths.inletToA.points.at(-1).copy(leftChamberPoint);
-    flowPaths.AToOutlet.points[0].copy(leftChamberPoint);
-    flowPaths.inletToAPrime.points.at(-1).copy(rightChamberPoint);
-    flowPaths.APrimeToOutlet.points[0].copy(rightChamberPoint);
-    Object.values(flowPaths).forEach((curve) => curve.updateArcLengths());
-
-    const maximumFlowCubicMetrePerSecond = chamberStrokeVolumeCubicMetre
-      * 1.875 / strokeDurationSecond;
-    const flowScale = state.instantaneousThroughputCubicMetrePerSecond
-      / maximumFlowCubicMetrePerSecond;
-    const activity = {
-      inletToA: state.chamberAVolumeRateCubicMetrePerSecond > 0
-        ? flowScale : 0,
-      inletToAPrime: state.chamberAPrimeVolumeRateCubicMetrePerSecond > 0
-        ? flowScale : 0,
-      AToOutlet: state.chamberAVolumeRateCubicMetrePerSecond < 0
-        ? flowScale : 0,
-      APrimeToOutlet: state.chamberAPrimeVolumeRateCubicMetrePerSecond < 0
-        ? flowScale : 0,
-    };
-    for (const [name, markers] of Object.entries(flowMarkerSets)) {
-      markers.forEach((marker, index) => {
-        const progress = markerProgress(state.markerTravelTurns, index);
-        marker.position.copy(flowPaths[name].getPointAt(progress));
-        const scale = Math.sin(Math.PI * progress) ** 0.52
-          * activity[name];
-        marker.scale.setScalar(scale);
-        marker.visible = scale > 1e-7;
-      });
+    const lx = state.left.plateX, rx = state.right.plateX;
+    leather[0].update(-L.endBoardFaceX, lx - halfPlate);
+    leather[1].update(lx + halfPlate, -L.innerBoardFaceX);
+    leather[2].update(L.innerBoardFaceX, rx - halfPlate);
+    leather[3].update(rx + halfPlate, L.endBoardFaceX);
+    movingA.group.position.x = lx;
+    movingAPrime.group.position.x = rx;
+    spindle.rotation.y = -state.crankAngle;
+    for (const [rod, spec, s, flagLinks, crankLink, topY] of [
+      [rodA, left, state.left, flagLinksA, crankLinkA, leftTopY],
+      [rodAPrime, right, state.right, flagLinksAPrime, crankLinkAPrime, rightTopY],
+    ]) {
+      rod.group.rotation.y = -s.rockerAngle;
+      for (const arm of rod.flagArms) arm.rotation.y = -spec.flagOffset;
+      for (const link of flagLinks) {
+        link.position.x = s.flagTip[0];
+        link.position.z = s.flagTip[1];
+        link.rotation.y = -Math.atan2(0 - s.flagTip[1], s.plateX - s.flagTip[0]);
+      }
+      crankLink.position.x = s.armTip[0];
+      crankLink.position.z = s.armTip[1];
+      crankLink.rotation.y = -Math.atan2(s.crankPin[1] - s.armTip[1], s.crankPin[0] - s.armTip[0]);
+      void topY;
     }
   };
 
   const geometry = {
-    bellowsCenterY,
-    bellowsEffectiveAreaSquareMetre,
-    bellowsLengthMidpointSceneUnit,
-    bellowsLengthStrokeSceneUnit,
-    bellowsPhysicalStrokeMetre,
-    chamberDeadVolumeCubicMetre,
-    chamberStrokeVolumeCubicMetre,
+    bellowsArea,
+    crankAngleAtZero,
     cycleDuration,
-    dialFillRatios,
-    fillsPerUnitsDialRevolution,
-    leftFixedPlateX,
-    leftMovingPlateMidpointX,
-    markerPacketVolumeCubicMetre,
-    markersPerPath,
-    maximumBellowsLengthSceneUnit,
-    minimumBellowsLengthSceneUnit,
-    rightFixedPlateX,
-    rightMovingPlateMidpointX,
-    sceneStrokePerPhysicalMetre,
-    strokeDurationSecond,
-    strokePhaseFraction,
-    switchDurationSecond,
-    switchPhaseFraction,
-    valveRockerArmSceneUnit,
-    valveStrokeSceneUnit,
-    volumePerMeterCycleCubicMetre,
+    layout: L,
+    linkages: {left, right},
+    portLapAngle,
+    spaces: spaces.map(({key, side, port, portAngle, board}) => ({key, side, port, portAngle, board})),
+    strokeLengths,
+    valveOffset,
+    volumePerRevolution,
   };
-
   root.userData = {
-    animationTiming: {
-      authoredCyclePeriod: cycleDuration,
-      targetCycleDuration: 2,
-    },
-    archetype:
-      'two-opposed-variable-volume-bellows-A-A-prime-dead-center-shifted-D-slide-valve-B-positive-displacement-dry-gas-meter-with-fill-count-dials',
+    animationTiming: {authoredCyclePeriod: cycleDuration, targetCycleDuration: 4},
+    archetype: movement.archetype ?? 'two-opposed-variable-volume-bellows-A-A-prime-dead-center-shifted-D-slide-valve-B-positive-displacement-dry-gas-meter-with-fill-count-dials',
     blocks: {
-      base,
-      bellowsA,
-      bellowsAPrime,
-      centerPartition,
-      commonCrosshead,
-      countInputRotor,
-      crossheadBar,
-      exhaustCavity,
-      fixedHousing,
-      galleryFloor,
-      gasA,
-      gasAPrime,
-      housingPosts,
-      housingShell,
-      inletTube,
-      leftBranchTube,
-      leftFixedPlate,
-      movingA,
-      movingAPrime,
-      outletFlange,
-      outletTube,
-      overCenterSpringSegments,
-      registerDials,
-      registerHousing,
-      registerPointers,
-      rightBranchTube,
-      rightFixedPlate,
-      rockerArm,
-      rockerFulcrum,
-      roof,
-      valveB,
-      valveBSkirts,
-      valveBStem,
-      valveBTop,
-      valveChest,
-      valveGuides,
-      valvePortPlate,
-      valvePorts,
-      valveRocker,
-      valveRockerConnector,
-    },
-    degreesOfFreedom: {
-      bellowsAAndAPrimeOpposedStroke: 1,
-      dialRotationSlavedToMeasuredVolume: 1,
-      independentOperatingCoordinates: 1,
-      valveBTranslationOccursOnlyAtDeadCenters: 1,
-    },
-    dynamics: {
-      deadCenterSwitching:
-        'Each measuring stroke uses a C2 quintic displacement. Both bellows stop with zero velocity and acceleration for a dedicated dwell while B moves through a separate C2 quintic shift; the gas flow is exactly zero throughout each valve change.',
-      historicalScope:
-        'Brown specifies two alternately filled bellows-like chambers and one B valve. Later standard dry meters commonly use four measuring spaces and two valves; that later topology is cited only as corroboration and is not substituted here.',
-      markerContinuity:
-        'Every white packet advances by the analytic accumulated positive-displacement volume. Separate inlet and exhaust paths use getPointAt arc-length sampling; their scale goes continuously to zero before routing changes at dead center.',
-      positiveDisplacement:
-        'A and A-prime exchange equal volume, so their total trapped volume is constant. Each completed fill contributes one exact chamber stroke volume and each full cycle contributes two.',
-      valveRouting:
-        'At the first B position, inlet-chest gas reaches A while the D-shaped cavity connects A-prime to the common exhaust. At the other position those connections reverse. B changes position only while both chamber rates are zero.',
+      backPanel, bellowsA, bellowsAPrime, cBracket, crankDisc, crankLinkA, crankLinkAPrime, crankPins, sheave,
+      dialCase, ductRuns, fixedBoards, fixedCase, flagLinksA, flagLinksAPrime, floor, inletPipe, leather,
+      movingA, movingAPrime, outletColumn, partition, rodA, rodAPrime, roof, shelf, spindle, spindleShaft,
+      valveB, walls,
     },
     fidelity: 'authored',
-    flowPaths: {
-      curves: flowPaths,
-      markerProgress,
-      markerSets: flowMarkerSets,
-    },
     geometry,
     mechanism:
-      'Two opposed bellows-like measuring chambers A and A-prime share one displacement coordinate: as A expands through one known stroke volume, A-prime contracts by exactly the same volume, then their roles reverse. A single D-shaped slide valve B works over two chamber ports and a central exhaust port like a steam-engine slide valve. It holds one routing position throughout each measuring stroke and shifts during a zero-flow dead-center dwell. The bellows crosshead and over-center spring visibly work B. Accumulated complete chamber fills drive three decimal dial pointers, so indicated volume is the known chamber capacity multiplied by the registered fill count.',
-    motion: {
-      firstStroke:
-        'A expands and fills while A-prime contracts and discharges',
-      secondStroke:
-        'A contracts and discharges while A-prime expands and fills',
-      valveAxis: new THREE.Vector3(1, 0, 0),
-    },
+      'Two bellows chambers A and A′ stand either side of a central partition. Each is closed at both ends by fixed boards and divided by its moving plate into an outer and an inner measuring space, so the plate is driven one way by gas admitted on one side while the other side is emptied. Each plate works a flag on a vertical flag rod; an arm on top of each flag rod drives, through a link, a crank pin on the spindle of valve B, the two pins a quarter turn apart, so the plates keep a quarter stroke apart and the spindle turns continuously. B is a D-shaped cup turning on a seat in the shelf with one port for each measuring space round a central exhaust port: the ports under the cup are open to the exhaust, which runs through a passage in the shelf to the tall outlet column; the ports outside it admit the gas that fills the case. Each revolution of the spindle passes the four space volumes; the dial-work in the box at the upper right counts revolutions.',
+    motion: {spindleTurnsPerCycle: 1, valveBRotation: 'continuous, with the crank spindle'},
+    reconstruction:
+      'Brown’s plate shows one elevation. The flag and crank linkage, the left flag rod behind chamber A, the four ducts behind the bellows, the cored exhaust passage, the inlet through the back of the case and the rounded-rectangle bellows section are inferred; the crank radius, arm and link lengths are chosen so both rocking flag rods can turn one crank, and the port angles are derived from the plate motion so each space exhausts while it closes.',
     sourceAnimation: {
       available: false,
-      officialCanvasModelPresent: false,
       officialPageMarksAnimationUnavailable: true,
-      reason:
-        'The official Movement 483 HTML marks Animated unavailable and supplies only Brown’s engraving and caption.',
-      sourcePrescribedAbsoluteTiming: false,
+      reason: 'The official Movement 483 page marks Animated unavailable and supplies only Brown’s engraving and caption.',
     },
-    sourceReference: {
-      brownPlate483: {
-        approximateBellowsACenterPixels: [188, 334],
-        approximateBellowsAPrimeCenterPixels: [382, 334],
-        approximateDialWorkHousingPixels: [399, 98],
-        approximateSlideValveBPixels: [293, 132],
-        approximateUpperWorkingLinkPixels: [345, 181],
-        imageHeight: 525,
-        imageWidth: 525,
-        measurementUncertaintyPixels: 16,
-      },
-      bureauOfStandardsCircular309Url:
-        'https://www.govinfo.gov/content/pkg/GOVPUB-C13-bcd86cede6b39b231bf2f405be30379b/pdf/GOVPUB-C13-bcd86cede6b39b231bf2f405be30379b.pdf',
-      constructionEvidence: {
-        explicitInBrownDescription: [
-          'the machine is a dry gas meter',
-          'there are two bellows-like chambers A and A-prime',
-          'A and A-prime are alternately filled with gas and discharged',
-          'one valve B works like a steam-engine slide valve and is worked by the chambers',
-          'known chamber capacity times the dial-registered number of fills gives gas quantity',
-        ],
-        engravingEvidence:
-          'Brown’s section shows two large side-by-side pleated chamber bodies, moving center plates and flag rods, a common upper working linkage, slide-valve B above its port face, an over-center-looking upper member, and a dial-work housing at upper right.',
-        historicalCorroboration:
-          'William Lyon and Charles W. Dickinson’s U.S. Patent 14,770 of April 29, 1856 describes metallic spring bellows of definite capacity, steam-engine-like slide valves worked by bellows levers and connections, and a registering wheel geared to indicate measured gas. Bureau of Standards Circular 309 (1926), pages 25–28, independently explains equal cyclic displacement, bellows-driven valves, and registered volume per cycle.',
-        historicalTopologyDisclosure:
-          'Patent 14,770 uses two pairs of bellows and plural slide valves, while the later Bureau circular describes four measuring chambers and two valves. Neither is claimed as Brown’s exact pictured machine; Brown’s explicit two chambers and singular B control this reconstruction.',
-        reconstructionDisclosure:
-          'The A/A-prime/B topology, alternation, bellows-worked valve, known-volume counting, and visible general arrangement are source-grounded. Chamber dimensions, physical capacity, dead volume, one-cap three-port D-valve interpretation, rigid opposed crosshead, over-center spring detail, C2 stroke-and-dwell timing, 10/100/1000-fill dials, pipes, colors, and camera are independently engineered and exposed.',
-      },
-      lyonDickinsonPatentUrl:
-        'https://patents.google.com/patent/US14770A/en',
-      officialPage: movement.sourceUrl,
-      plate: 'Brown 1868, Movement 483',
-    },
+    sourceReference: {officialPage: movement.sourceUrl, plate: 'Brown 1868, Movement 483', pixelScale: 'x=(px-262)/50, y=(330-py)/50'},
     stateAtTime,
-    transmission: {
-      chamberVolumeEquation:
-        'V_A=V_dead+A_eff*x; V_A_prime=V_dead+A_eff*(stroke-x)',
-      dialEquation:
-        'theta_dial_j=-2*pi*(V_measured/V_stroke)/fills_per_revolution_j',
-      meterEquation:
-        'V_measured=N_complete_fills*V_stroke; Delta_V_per_cycle=2*V_stroke',
-      opposedStrokeConstraint:
-        'x_A+x_A_prime=stroke and dV_A/dt=-dV_A_prime/dt',
-      valveConstraint:
-        'B is fixed at either routing limit during nonzero flow and follows a C2 quintic between limits only during dead-center dwell',
-    },
     update,
   };
-  root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.55, -2.25, -1.55),
-    new THREE.Vector3(3.55, 3.38, 2.32),
-  );
-  root.userData.cameraDistanceScale = 1.12;
-  root.userData.cameraDirection = new THREE.Vector3(8.8, 4.8, 12.5);
-  root.userData.groundFloorY = -2.25;
-  correctGasMeterParts(root,483,update);
-  // Brown's chambers A, A' are closed, opaque pleated bellows: draw the skin
-  // solid (its faceted folds shade as pleats) and the fold rings in a darker
-  // tone of the same leather rather than as black loose plates.
-  for (const [bellows, material] of [[bellowsA, bellowsAMaterial],
-    [bellowsAPrime, bellowsAPrimeMaterial]]) {
-    material.opacity = 1;
-    material.transparent = false;
-    material.depthWrite = true;
-    const ringMaterial = matte(
-      material.color.clone().multiplyScalar(0.72).getHex(),
-      { roughness: 0.5 },
-    );
-    for (const frame of bellows.stationFrames) {
-      frame.traverse((object) => {
-        if (object.isMesh) object.material = ringMaterial;
-      });
-    }
-  }
-  // Brown's plate is a flat front elevation: a long, narrow-angle view
-  // square to the case, so the roof and floor do not open out in perspective.
-  root.userData.cameraDirection = new THREE.Vector3(0.6, 0.5, 15);
-  root.userData.cameraFov = 10;
-  // The back of Brown's section is plain white paper.
-  housingShell.material = matte(PALETTE.paper, {
-    roughness: 0.95,
-    side: THREE.DoubleSide,
-  });
-  markShadows(root);
-  housingShell.receiveShadow = false;
-  housingShell.castShadow = false;
-  centerPartition.castShadow = false;
-  gasA.castShadow = false;
-  gasAPrime.castShadow = false;
-  bellowsA.skin.castShadow = false;
-  bellowsAPrime.skin.castShadow = false;
+  root.userData.minimumDisplayCycleSeconds = cycleDuration;
+  root.userData.workingPartsReview = {
+    status: 'kinematic-linkage-and-port-timing',
+    residual: 'Gas pressures and the resulting plate forces are not solved; the crank turns uniformly and the plates follow the linkage exactly.',
+  };
   update(0);
-  return {
-    cameraDirection: root.userData.cameraDirection,
-    root,
-    update,
-  };
+  markShadows(root);
+  fitPistonGuide(root, update, cycleDuration);
+  root.userData.cameraDirection = new THREE.Vector3(0.25, 0.45, 15);
+  root.userData.cameraFov = 10;
+  return {cameraDirection: root.userData.cameraDirection, root, update};
 }
 
 export function createAuthoredDryGasMeterMovement(movement) {

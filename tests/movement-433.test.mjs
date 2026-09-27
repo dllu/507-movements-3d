@@ -334,6 +334,13 @@ test('movement 433 update rotates only the runner while jet, flume, bearings, an
   disposeModel(model.root);
 });
 
+test('movement 433 spout is free of the overhead beam as Brown draws it', () => {
+  const model = createMovementModel(catalog.movements[432]);
+  const roles = [];
+  model.root.traverse((object) => { if (object.isMesh) roles.push(object.userData.role ?? ''); });
+  assert.equal(roles.some((role) => /brace|hanger|strut/.test(role)), false);
+});
+
 test('movement 507 remains the next authored frontier and does not reuse movement 433 horizontal-wheel geometry', () => {
   const movement433 = catalog.movements[432];
   const movement507 = catalog.movements[506];

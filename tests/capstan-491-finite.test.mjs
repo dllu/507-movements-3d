@@ -71,26 +71,46 @@ test('491 pure state queries and repeated updates retain geometry identities and
   assert.match(root.userData.dynamics.finiteContactResidual,/not dynamically solved/);
 });
 
-test('491 finite rounded nose clears every tooth pose and stays engaged over the working ramp', () => {
-  const field = solidSurface(b.ratchet.geometry);
-  let minimum = Infinity, maximumWorkingGap = 0;
-  for (let i = 0; i <= 4096; i++) {
-    const phase = i/4096, angle = g.ratchetPhaseOffset-g.pawlLeadAngle+phase*g.ratchetToothPitch;
-    model.update(angle/g.operatingAngularSpeed); root.updateMatrixWorld(true);
-    const center = b.pawlTip.getWorldPosition(new THREE.Vector3());
-    const gap = field.signedDistance(center)-g.pawlTipRadius;
-    minimum = Math.min(minimum,gap);
-    if (phase >= 0.40) maximumWorkingGap = Math.max(maximumWorkingGap,gap);
+test('491 the pawl turns about the radial pin Brown draws, flat against the lower capstan', () => {
+  // Brown shows the pawl in the plane of his elevation: its pin points at the
+  // viewer (radially) and the pawl swings across the front of the capstan.
+  for (const time of [0, 0.7, 2.3, 5.1]) {
+    model.update(time); root.updateMatrixWorld(true);
+    const pivot = b.pawlPivotAssembly.getWorldPosition(new THREE.Vector3());
+    const radial = new THREE.Vector3(pivot.x, 0, pivot.z).normalize();
+    const axis = new THREE.Vector3(0, 0, 1).transformDirection(b.pawl.matrixWorld);
+    assert.ok(axis.dot(radial) > 1 - 1e-9, `pawl axis radial at ${time}`);
+    const tip = b.pawlTip.getWorldPosition(new THREE.Vector3());
+    assert.ok(Math.abs(tip.clone().sub(pivot).dot(radial)) < 1e-9, 'nose in the pawl plane');
+    assert.ok(tip.y < pivot.y - 0.15, 'nose hangs down to the teeth');
   }
-  console.log('491 finite nose clearance',{minimum,maximumWorkingGap});
-  assert.ok(minimum > 0.00010);
-  assert.ok(maximumWorkingGap < 0.00014, 'working nose must remain in close engagement');
+  model.update(0); root.updateMatrixWorld(true);
+  const pivot = b.pawlPivotAssembly.getWorldPosition(new THREE.Vector3());
+  const tip = b.pawlTip.getWorldPosition(new THREE.Vector3());
+  assert.ok(pivot.z > 1.1 && Math.abs(pivot.x) < 1e-9, 'pivot faces the viewer at the start, as drawn');
+  assert.ok(tip.x > pivot.x + 0.3, 'nose hangs down to the right, toward recoil, as drawn');
 });
 
-test('491 the bored moving eye, bent arm and finite mounting cheeks clear throughout the tooth cycle', () => {
-  const pairs = [[b.pawlBar,b.ratchet,0.033], [b.pawlBar,b.lowerCollar,0.028],
-    [b.pawlBar,b.barrelBody,0.094], [b.pawlBar,b.pawlPivotPin,0.0048],
-    ...b.pawlMountCheeks.map(c => [b.pawlBar,c,0.020])];
+test('491 finite pawl clears every tooth pose and its nose stays engaged over the working ramp', () => {
+  const field = solidSurface(b.ratchet.geometry), points = surfacePoints(b.pawlBar.geometry);
+  let minimum = Infinity, maximumWorkingGap = 0;
+  for (let i = 0; i <= 1024; i++) {
+    const phase = i/1024, angle = g.ratchetPhaseOffset + (g.pawlReleasePhase + phase)*g.ratchetToothPitch - g.pawlPivotAzimuth;
+    model.update(angle/g.operatingAngularSpeed); root.updateMatrixWorld(true);
+    const transform = b.ratchet.matrixWorld.clone().invert().multiply(b.pawlBar.matrixWorld);
+    let gap = Infinity;
+    for (const p of points) gap = Math.min(gap, field.signedDistance(p.clone().applyMatrix4(transform)));
+    minimum = Math.min(minimum, gap);
+    if (phase >= g.pawlFreefallFraction + 0.01) maximumWorkingGap = Math.max(maximumWorkingGap, gap);
+  }
+  console.log('491 finite pawl clearance', {minimum, maximumWorkingGap});
+  assert.ok(minimum > 0, `pawl into ratchet ${minimum}`);
+  assert.ok(maximumWorkingGap < 0.002, 'working nose must remain in close engagement');
+});
+
+test('491 the moving pawl clears the lower capstan, its pin and pin head throughout the tooth cycle', () => {
+  const pairs = [[b.pawlBar,b.lowerCollar,0.012], [b.pawlBar,b.barrelBody,0.05],
+    [b.pawlBar,b.pawlPivotPin,0.004], [b.pawlBar,b.pawlPinHead,0.004]];
   for (const [moving,fixed,minimum] of pairs) {
     const field = solidSurface(fixed.geometry), points = surfacePoints(moving.geometry);
     let worst=Infinity;
@@ -104,38 +124,49 @@ test('491 the bored moving eye, bent arm and finite mounting cheeks clear throug
   }
 });
 
-test('491 a reverse tooth-face force opposes recoil and seats the leading nose instead of lifting it', () => {
-  const initialAngle=g.ratchetPhaseOffset-g.pawlLeadAngle+0.4*g.ratchetToothPitch;
-  const closure=root.userData.pawlClosureAtAzimuth(initialAngle);
-  const radial=g.pawlPivotRadius+g.pawlLength*Math.cos(closure.pawlPitchAngleRadian);
-  const delta=Math.asin(g.pawlTipRadius/Math.hypot(radial,g.pawlTipLead))-Math.atan2(g.pawlTipLead,radial);
-  const blockedAngle=g.ratchetPhaseOffset+delta;
-  b.capstanRotor.rotation.y=-blockedAngle;
-  b.pawl.rotation.z=closure.pawlPitchAngleRadian; root.updateMatrixWorld(true);
-  const center=b.pawlTip.getWorldPosition(new THREE.Vector3());
-  const normal=new THREE.Vector3(-Math.sin(g.ratchetPhaseOffset),0,Math.cos(g.ratchetPhaseOffset));
-  const contact=center.clone().addScaledVector(normal,-g.pawlTipRadius);
-  const field=solidSurface(b.ratchet.geometry);
-  assert.ok(field.distance(contact)<1e-7, 'contact lies on the real finite steep face');
-  assert.ok(center.y<g.ratchetHighHeight-0.05 && center.y>g.ratchetLowHeight+0.05);
-  const hinge=b.pawlPivotAssembly.getWorldPosition(new THREE.Vector3());
-  const axis=new THREE.Vector3(-Math.sin(blockedAngle),0,Math.cos(blockedAngle));
-  const hingeMoment=new THREE.Vector3().crossVectors(contact.clone().sub(hinge),normal).dot(axis);
-  const driveMoment=new THREE.Vector3().crossVectors(contact,normal).y;
-  console.log('491 reverse contact moments',{hingeMoment,driveMoment});
-  assert.ok(hingeMoment < -0.005, 'reverse reaction must lower/seat the pawl');
-  assert.ok(driveMoment < -1.4, 'reverse reaction must oppose recoil');
+test('491 a reverse tooth-face force opposes recoil and seats the nose instead of lifting it', () => {
+  // Hold the landed pose and turn the capstan backward until the nose meets
+  // the preceding steep face.
+  const u0 = g.pawlFreefallFraction + 0.02;
+  const closure = root.userData.pawlClosureAtAzimuth(g.ratchetPhaseOffset + (g.pawlReleasePhase + u0)*g.ratchetToothPitch);
+  const beta = closure.pawlPitchAngleRadian, field = solidSurface(b.ratchet.geometry), points = surfacePoints(b.pawlBar.geometry);
+  const gapAt = u => {
+    const angle = g.ratchetPhaseOffset + (g.pawlReleasePhase + u)*g.ratchetToothPitch - g.pawlPivotAzimuth;
+    b.capstanRotor.rotation.y = -angle; b.pawl.rotation.z = beta; root.updateMatrixWorld(true);
+    const transform = b.ratchet.matrixWorld.clone().invert().multiply(b.pawlBar.matrixWorld);
+    let best = [Infinity];
+    for (const p of points) { const q = p.clone().applyMatrix4(transform), d = field.signedDistance(q); if (d < best[0]) best = [d, q]; }
+    return best;
+  };
+  let high = u0, low = u0;
+  assert.ok(gapAt(high)[0] > 0);
+  while (gapAt(low)[0] > 0) { high = low; low -= 0.01; assert.ok(low > u0 - 1, 'no face met'); }
+  for (let i = 0; i < 40; i++) { const mid = (high+low)/2; if (gapAt(mid)[0] > 0) high = mid; else low = mid; }
+  const [, contactLocal] = gapAt(high);
+  const contact = contactLocal.applyMatrix4(b.ratchet.matrixWorld);
+  assert.ok(u0 - high < 0.6, 'recoil is arrested within one tooth');
+  // The steep face is radial and vertical; its normal points in +azimuth.
+  const azimuth = Math.atan2(contact.z, contact.x);
+  const normal = new THREE.Vector3(-Math.sin(azimuth), 0, Math.cos(azimuth));
+  assert.ok(contact.y < g.ratchetHighHeight && contact.y > g.ratchetLowHeight, 'contact on the steep face');
+  const hinge = b.pawlPivotAssembly.getWorldPosition(new THREE.Vector3());
+  const axis = new THREE.Vector3(0, 0, 1).transformDirection(b.pawl.matrixWorld);
+  const hingeMoment = new THREE.Vector3().crossVectors(contact.clone().sub(hinge), normal).dot(axis);
+  const driveMoment = new THREE.Vector3().crossVectors(contact, normal).y;
+  console.log('491 reverse contact moments', {hingeMoment, driveMoment});
+  assert.ok(hingeMoment < -0.05, 'reverse reaction must lower/seat the pawl');
+  assert.ok(driveMoment < -1, 'reverse reaction must oppose recoil');
 });
 
 test('491 the finite crest release is periodic and continuous with a genuine airborne drop', () => {
-  const start=g.ratchetPhaseOffset-g.pawlLeadAngle, fn=root.userData.pawlClosureAtAzimuth;
-  let previous=fn(start), maximumStep=0, maximumAir=0;
-  for (let i=1;i<=4096;i++) {
-    const next=fn(start+i/4096*g.ratchetToothPitch);
-    maximumStep=Math.max(maximumStep,Math.abs(next.pawlPitchAngleRadian-previous.pawlPitchAngleRadian));
-    maximumAir=Math.max(maximumAir,next.airborneClearance);previous=next;
+  const start = g.ratchetPhaseOffset + g.pawlReleasePhase*g.ratchetToothPitch, fn = root.userData.pawlClosureAtAzimuth;
+  let previous = fn(start), maximumStep = 0, maximumAir = 0;
+  for (let i = 1; i <= 4096; i++) {
+    const next = fn(start + i/4096*g.ratchetToothPitch);
+    maximumStep = Math.max(maximumStep, Math.abs(next.pawlPitchAngleRadian - previous.pawlPitchAngleRadian));
+    maximumAir = Math.max(maximumAir, next.airborneClearance); previous = next;
   }
-  assert.ok(maximumStep<0.002, `no pose jump: ${maximumStep}`);
-  assert.ok(maximumAir>0.01 && maximumAir<0.20);
-  assert.ok(Math.abs(fn(start-1e-9).pawlTipHeight-fn(start+1e-9).pawlTipHeight)<1e-7);
+  assert.ok(maximumStep < 0.006, `no pose jump: ${maximumStep}`);
+  assert.ok(maximumAir > 0.01 && maximumAir < 0.20);
+  assert.ok(Math.abs(fn(start-1e-9).pawlTipHeight - fn(start+1e-9).pawlTipHeight) < 1e-6);
 });

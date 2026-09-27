@@ -24,7 +24,9 @@ export function correctEpicyclicGuide(root){
   replace(b.carrierCrankPin,new THREE.CylinderGeometry(.0756,.0756,.59,40));b.carrierCrankPin.position.z=.075;
   replace(b.planetWristPin,new THREE.CylinderGeometry(.105,.105,.54,40));b.planetWristPin.position.z=.415;
   const body=b.planetGearB.userData.rotor.children[0];boredFlat(body,.078,g.planetGearDepth);b.planetGearBody=body;
-  const hub=b.planetGearB.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');replace(hub,tube(hub.geometry.parameters.radiusTop,.078,hub.geometry.parameters.height));b.planetHub=hub;
+  const hub=b.planetGearB.userData.rotor.children.find(o=>o.geometry?.type==='CylinderGeometry');// The hub's bore stands just clear of the wheel web's own .078 bore so the
+  // two bored faces do not coincide.
+  replace(hub,tube(hub.geometry.parameters.radiusTop,.0795,hub.geometry.parameters.height));b.planetHub=hub;
   replace(b.wristBoss,tube(.21,.108,.25));replace(b.wristRing,tube(.1512,.108,.045).rotateX(Math.PI/2));
   // Extend the engraving's cropped cylinder to contain the complete source
   // stroke as a closed bored barrel (Brown draws no opening) with a real

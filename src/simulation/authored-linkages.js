@@ -1643,8 +1643,10 @@ function rockingBeamTieRodFlywheelMotion() {
     const shaft = cylinderAlongZ(0.105, length, darkMaterial, 30);
     shaft.position.z = centerZ;
     shaft.userData.role = `${role}-shaft`;
+    // The retaining ring's bore grips the 0.105 pin (major radius = pin
+    // radius + tube radius) so it seats on the pin, not loose around it.
     const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(0.18, 0.047, 10, 32),
+      new THREE.TorusGeometry(0.152, 0.047, 10, 32),
       ringColor,
     );
     ring.position.z = centerZ + length / 2 + 0.018;
@@ -1659,6 +1661,19 @@ function rockingBeamTieRodFlywheelMotion() {
     assembly.userData.blocks = { index, ring, shaft };
     return assembly;
   };
+  // Seat a pin's retaining ring against the front face of the frontmost
+  // part it retains, and end the pin flush in the ring (no pin stub standing
+  // proud of the joint and no ring floating in front of the link).
+  const seatPinRing = (pin, retainedFrontZ) => {
+    const { ring, index, shaft } = pin.userData.blocks;
+    ring.position.z = retainedFrontZ + 0.047;
+    index.position.z = ring.position.z + 0.012;
+    const back = shaft.position.z - shaft.geometry.parameters.height / 2;
+    const length = ring.position.z - back;
+    shaft.geometry.dispose();
+    shaft.geometry = new THREE.CylinderGeometry(.105, .105, length, 30);
+    shaft.position.z = back + length / 2;
+  };
 
   // Brown's hatched shaft section: a short fixed shaft through the beam
   // eye, ending cleanly just behind the beam (no flange or column).
@@ -1669,8 +1684,7 @@ function rockingBeamTieRodFlywheelMotion() {
   });
   beamPivotPin.position.copy(beamPivot);
   beamPivotPin.userData.fixed = true;
-  beamPivotPin.userData.blocks.ring.position.z = 1.075;
-  beamPivotPin.userData.blocks.index.position.z = 1.09;
+  seatPinRing(beamPivotPin, beamPlaneZ + beamDepth / 2);
   const beamPivotFrontRing = new THREE.Mesh(
     new THREE.TorusGeometry(0.30, 0.075, 10, 40),
     accentMaterial,
@@ -1749,6 +1763,7 @@ function rockingBeamTieRodFlywheelMotion() {
     role: 'crank-pin-joining-wheel-to-primary-rod',
   });
   crankPin.position.copy(crankPinLocal);
+  seatPinRing(crankPin, primaryRodPlaneZ + primaryRodDepth / 2);
   crankPin.userData.crankRadius = crankRadius;
   const flywheelRotationIndex = new THREE.Mesh(
     new THREE.SphereGeometry(0.085, 18, 12),
@@ -1803,6 +1818,8 @@ function rockingBeamTieRodFlywheelMotion() {
     length: 0.58,
     role: 'through-pin-joining-upright-rod-to-left-beam-end',
   });
+  seatPinRing(tiePin, beamConnectorPlaneZ + beamConnectorDepth / 2);
+  seatPinRing(beamEndPin, beamPlaneZ + beamDepth / 2);
 
   const beamAssembly = new THREE.Group();
   beamAssembly.position.copy(beamPivot);
@@ -1875,6 +1892,12 @@ function rockingBeamTieRodFlywheelMotion() {
     sliderStandardCenterZ,
   );
   standardUpright.userData.role = 'moving-upright-of-small-standard';
+  // The upright runs down into its foot's channel and stands on the channel
+  // floor (floorY + 0.04) instead of hovering over the open slot.
+  const uprightBottomY = floorY + 0.04 - sourceSliderWrist.y * sourceScale;
+  standardUpright.geometry.dispose();
+  standardUpright.geometry = new THREE.BoxGeometry(0.44, -uprightBottomY, sliderStandardDepth);
+  standardUpright.position.y = uprightBottomY / 2;
   const standardFoot = new THREE.Mesh(
     new THREE.BoxGeometry(0.92, 0.14, 0.72),
     frameMaterial,
@@ -1918,6 +1941,7 @@ function rockingBeamTieRodFlywheelMotion() {
   sliderWristPin.userData.blocks.shaft.geometry.dispose();
   sliderWristPin.userData.blocks.shaft.geometry = new THREE.CylinderGeometry(.105,.105,1.10,30);
   sliderWristPin.userData.blocks.shaft.position.z = .02;
+  seatPinRing(sliderWristPin, primaryRodPlaneZ + primaryRodDepth / 2);
   slidingStandard.add(
     sliderWristPin,
     standardBearingRing,

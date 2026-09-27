@@ -114,7 +114,7 @@ function ropeSteering(movement) {
   const lowerGuideCenter = new THREE.Vector2(-1.03, -2.52);
   const rudderCenter = new THREE.Vector2(3.07, 0);
   const tillerLength = 2.90;
-  const maximumTillerAngle = THREE.MathUtils.degToRad(25);
+  const maximumTillerAngle = THREE.MathUtils.degToRad(20);
   const cycleDuration = 8;
   const cycleAngularFrequency = FULL_TURN / cycleDuration;
   const upperRopePlaneZ = drumRadius;
@@ -222,22 +222,13 @@ function ropeSteering(movement) {
     };
   };
 
-  // Equal slack bows retain one fixed-length rope without assigning an
-  // unsupported tension/friction law to the ordinary unquadranted tiller.
-  const freeRopeLength = .03 + Math.max(...Array.from({length:513}, (_, i) =>
-    branchRoutesAtTillerAngle(maximumTillerAngle * (2*i/512-1), false).totalFreeBranchLength));
-  const bowSamples = Array.from({length:65}, (_, i) => ({
-    slope: Math.PI * Math.sin(2*Math.PI*i/64), weight: i===0||i===64 ? 1 : i%2 ? 4 : 2,
-  }));
-  const bowedLength = (distance, amplitude) => bowSamples.reduce((sum, q) =>
-    sum + q.weight * Math.hypot(distance, amplitude*q.slope), 0) / 192;
-  const bowAmplitude = (distance, extra) => {
-    let low=0,high=1;
-    while(bowedLength(distance,high)<distance+extra)high*=2;
-    for(let i=0;i<32;i++){const mid=(low+high)/2;
-      if(bowedLength(distance,mid)<distance+extra)low=mid;else high=mid;}
-    return (low+high)/2;
-  };
+  // The rope is set up taut amidships and both branches stay straight. An
+  // ordinary unquadranted tiller lengthens the taut branch sum as the helm
+  // goes over; that small excess is taken as rope stretch (reported below)
+  // rather than drawn as slack.
+  const freeRopeLength = branchRoutesAtTillerAngle(0, false).totalFreeBranchLength;
+  const maximumTautStretch = Math.max(...Array.from({length:513}, (_, i) =>
+    branchRoutesAtTillerAngle(maximumTillerAngle * (2*i/512-1), false).totalFreeBranchLength)) - freeRopeLength;
   const neutralRoutes = branchRoutesAtTillerAngle(0);
   const neutralDifferentialLength = neutralRoutes.differentialLength;
   const positiveExtremeRoutes = branchRoutesAtTillerAngle(
@@ -545,25 +536,21 @@ function ropeSteering(movement) {
   root.add(rope);
   const buildContinuousRopeCurve = (routes) => {
     const points = [];
-    const slack = (freeRopeLength-routes.totalFreeBranchLength)/2;
-    const bowedBranch = route => {
-      const [start,end] = route.points;
-      const amplitude=bowAmplitude(start.distanceTo(end),slack), result=[];
-      for(let i=0;i<=32;i++){
-        const u=i/32,point=start.clone().lerp(end,u);
-        // The slack hangs under gravity (down, away from the plan view),
-        // not bowed up toward the viewer.
-        point.z-=amplitude*Math.sin(Math.PI*u)**2;
-        result.push(point);
-      }
-      result.push(...route.points.slice(2));
+    // Each free span is a straight taut run, sampled densely so the
+    // centripetal curve cannot bow between its ends.
+    const tautBranch = route => {
+      const [start,end] = route.points, result=[];
+      for(let i=0;i<=32;i++) result.push(start.clone().lerp(end,i/32));
+      const arcAndLead = route.points.slice(2), guideExit = arcAndLead.at(-2), drumContact = arcAndLead.at(-1);
+      result.push(...arcAndLead.slice(0, -1));
+      for(let i=1;i<=32;i++) result.push(guideExit.clone().lerp(drumContact,i/32));
       return result;
     };
-    for (const point of bowedBranch(routes.upper)) appendPoint(points, point);
+    for (const point of tautBranch(routes.upper)) appendPoint(points, point);
     for (let index = 1; index < helicalPoints.length; index += 1) {
       appendPoint(points, helicalPoints[index]);
     }
-    const reversedLower = bowedBranch(routes.lower).reverse();
+    const reversedLower = tautBranch(routes.lower).reverse();
     for (let index = 1; index < reversedLower.length; index += 1) {
       appendPoint(points, reversedLower[index]);
     }
@@ -616,6 +603,7 @@ function ropeSteering(movement) {
     neutralDifferentialLength,
     ropeRadius,
     freeRopeLength,
+    maximumTautStretch,
     rudderCenter,
     tillerLength,
     upperDrumContact,
@@ -662,7 +650,7 @@ function ropeSteering(movement) {
       continuity:
         'There is exactly one Curve3 centerline and one laid-rope mesh: upper tiller end to upper guide, continuous multi-turn barrel helix, lower guide, and lower tiller end. Every adjacent sampled section shares its endpoint.',
       historicalSlackDisclosure:
-        'The ordinary unquadranted tiller does not keep its taut branch-length sum constant. Reconstructed equal smooth slack bows preserve the ideal fixed free-rope length and differential payout. Bow shape and imposed guide rotation do not solve tension, friction or axial creep on the barrel.',
+        `The ordinary unquadranted tiller does not keep its taut branch-length sum constant. The rope is drawn taut and straight in every span, set up amidships; going hard over lengthens the taut sum by at most ${maximumTautStretch.toFixed(3)} (${(100*maximumTautStretch/freeRopeLength).toFixed(1)} percent at the 20-degree helm limit), taken as rope stretch. The tiller angle splits that excess equally between the branches through the differential payout; imposed guide rotation does not solve tension, friction or axial creep on the barrel.`,
       layTravel:
         'The rope is the shared three-strand laid rope. Its lay phase advances by the signed analytic drum payout, measured by arc length along the single uninterrupted rope curve, so the visible twist moves smoothly through free spans, guide arcs, and barrel turns without painted markers.',
       sourceProjectionDisclosure:

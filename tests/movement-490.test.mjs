@@ -279,7 +279,9 @@ test('movement 490 is one uninterrupted curve from one tiller end through all wr
   assert.match(dynamics.continuity,
     /exactly one Curve3 centerline and one laid-rope mesh.*upper guide.*barrel helix.*lower guide/s);
   assert.match(dynamics.historicalSlackDisclosure,
-    /equal smooth slack bows preserve the ideal fixed free-rope length.*do not solve tension, friction or axial creep/s);
+    /drawn taut and straight in every span.*taken as rope stretch.*does not solve tension, friction or axial creep/s);
+  assert.ok(geometry.maximumTautStretch / geometry.freeRopeLength < 0.02,
+    'the taut rope never needs more than two percent stretch');
   disposeModel(model.root);
 });
 
@@ -378,5 +380,29 @@ test('movement 490 fixed frame stays fixed, fits all helm angles, and leaves spi
   assert.equal(next.number, '507');
   assert.equal(next.archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
   assert.equal(next.fidelity, 'authored');
+  disposeModel(model.root);
+});
+
+test('movement 490 rope is taut: every free span is a straight line at every helm angle', () => {
+  const { model } = movementModel();
+  const { geometry, ropePathState } = model.root.userData;
+  for (const time of [0, 1.1, 2, 3.3, 4, 5.7, 6, 7.4]) {
+    model.update(time);
+    const state = model.root.userData.stateAtTime(time);
+    for (const route of [state.routes.upper, state.routes.lower]) {
+      const start = route.points[0], end = route.points[1];
+      const line = new THREE.Line3(start, end), closest = new THREE.Vector3();
+      // Sample the rendered centreline near the span and require collinearity.
+      for (let i = 0; i <= 400; i += 1) {
+        const p = ropePathState.curve.getPointAt(i / 400);
+        const t = line.closestPointToPointParameter(p, false);
+        if (t < 0.02 || t > 0.98) continue;
+        line.at(t, closest);
+        if (closest.distanceTo(p) > 0.2) continue;
+        assert.ok(closest.distanceTo(p) < 2e-3, `span sag ${closest.distanceTo(p)} at ${time}`);
+      }
+    }
+  }
+  assert.ok(geometry.maximumTautStretch > 0);
   disposeModel(model.root);
 });

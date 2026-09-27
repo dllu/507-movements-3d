@@ -97,6 +97,19 @@ test('movement 494 is two crossed tong bodies, two links, one shackle, and one s
   assert.equal(degreesOfFreedom.tongJawBodies, 2);
   assert.equal(degreesOfFreedom.upperLinks, 2);
 
+  // One flat chain directly above the stone's centre of gravity: the tongs
+  // cross in two thin planes either side of the stone's centre plane, each
+  // link lies in the other tong's plane, and the strap and rope hang in it.
+  const stoneBox = new THREE.Box3().setFromObject(blocks.stoneBody);
+  near((stoneBox.min.z + stoneBox.max.z) / 2, 0, 1e-6, 'stone centred on z 0');
+  near(blocks.leftJaw.position.z, -blocks.rightJaw.position.z, 0, 'tong planes symmetric');
+  assert.ok(Math.abs(blocks.leftJaw.position.z) <= 0.12 + 1e-9);
+  near(blocks.shackle.position.z, 0, 0, 'shackle in centre plane');
+  near(blocks.hoistRope.parent === model.root ? 0 : 1, 0, 0, 'rope on root');
+  for (const pin of [blocks.jawPivotPin, ...blocks.sidePivotPins, blocks.shacklePivotPin]) {
+    near(pin.position.z, 0, 0, `${pin.userData.role} centred`);
+  }
+
   const belts = [];
   const hoistRopes = [];
   model.root.traverse((object) => {
@@ -329,13 +342,13 @@ test('movement 494 renderer keeps the links closed and the 3D bite markers coinc
     );
     vectorNear(
       blocks.sidePivotPins[0].position,
-      scenePoint(state.leftLinkPivot, 0.13),
+      scenePoint(state.leftLinkPivot, 0),
       0,
       `left side pivot render ${time}`,
     );
     vectorNear(
       blocks.sidePivotPins[1].position,
-      scenePoint(state.rightLinkPivot, -0.13),
+      scenePoint(state.rightLinkPivot, 0),
       0,
       `right side pivot render ${time}`,
     );
@@ -412,7 +425,18 @@ test('movement 494 closes its hoist rope, swept bounds, and leaves spinning move
     model.root.updateMatrixWorld(true);
     swept.union(new THREE.Box3().setFromObject(model.root));
   }
-  assert.ok(model.root.userData.cameraFitBounds.containsBox(swept));
+  // The hoist rope runs on past Brown's crop; everything else is framed.
+  const framed = new THREE.Box3();
+  for (let sample = 0; sample <= 480; sample += 1) {
+    model.update(geometry.cycleDuration * sample / 480);
+    model.root.updateMatrixWorld(true);
+    model.root.traverse((object) => {
+      if (!object.isMesh) return;
+      for (let p = object; p; p = p.parent) if (p.userData.beyondPlateCrop) return;
+      framed.union(new THREE.Box3().setFromObject(object));
+    });
+  }
+  assert.ok(model.root.userData.cameraFitBounds.containsBox(framed));
   assert.ok(Number.isFinite(swept.min.x));
   assert.ok(Number.isFinite(swept.max.z));
   assert.ok(model.root.userData.groundFloorY <= swept.min.y);

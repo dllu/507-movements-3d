@@ -476,43 +476,41 @@ function tableEngine(movement) {
     fixedFrame.add(rail);
     return rail;
   });
-  const guideStandards = [-1, 1].map((side, index) => {
-    const start = new THREE.Vector3(
-      side * 1.30 * sourceScale,
-      sourceGuideMinimumY * sourceScale,
-      -0.17,
-    );
-    const end = new THREE.Vector3(
-      side * 0.91 * sourceScale,
-      14.33 * sourceScale,
-      -0.17,
-    );
-    const standard = beamBetween3D(
-      start,
-      end,
-      0.18 * sourceScale,
-      0.24,
-      frameEdgeMaterial,
-    );
-    standard.userData.role = `fixed-tapered-guide-standard-${index + 1}`;
-    fixedFrame.add(standard);
-    return standard;
+  // Brown's outer guide loop: one flat bar tapering from the cylinder cover
+  // up to a rounded top over the slot, in the same plane, depth and metal as
+  // the slotted rails it carries (one frame, not a second offset rod).
+  const guideLoopHalfWidth = 0.09;
+  const guideLoopPoints = (offset) => {
+    const legBottom = [1.30, sourceGuideMinimumY];
+    const legTop = [0.91, 14.33];
+    const legLength = Math.hypot(legBottom[0] - legTop[0], legBottom[1] - legTop[1]);
+    // Outward normal of the right leg (pointing away from the slot).
+    const nx = (legTop[1] - legBottom[1]) / legLength;
+    const ny = (legBottom[0] - legTop[0]) / legLength;
+    const right = [];
+    right.push([legBottom[0] + nx * offset, legBottom[1] + ny * offset]);
+    right.push([legTop[0] + offset, legTop[1]]);
+    const arc = [];
+    for (let index = 1; index < 32; index += 1) {
+      const angle = Math.PI * index / 32;
+      arc.push([(0.91 + offset) * Math.cos(angle), 14.33 + (0.91 + offset) * Math.sin(angle)]);
+    }
+    const left = right.slice().reverse().map(([x, y]) => [-x, y]);
+    return [...right, ...arc, ...left];
+  };
+  const guideLoopOuter = guideLoopPoints(guideLoopHalfWidth);
+  const guideLoopInner = guideLoopPoints(-guideLoopHalfWidth).reverse();
+  const guideLoopShape = new THREE.Shape([...guideLoopOuter, ...guideLoopInner]
+    .map(([x, y]) => new THREE.Vector2(x * sourceScale, y * sourceScale)));
+  const guideLoopGeometry = new THREE.ExtrudeGeometry(guideLoopShape, {
+    depth: 0.34,
+    bevelEnabled: false,
+    curveSegments: 1,
   });
-  const guideArchPoints = [];
-  for (let index = 0; index <= 16; index += 1) {
-    const angle = Math.PI - Math.PI * index / 16;
-    guideArchPoints.push(new THREE.Vector3(
-      0.91 * sourceScale * Math.cos(angle),
-      (14.33 + 0.91 * Math.sin(angle)) * sourceScale,
-      -0.17,
-    ));
-  }
-  const guideArch = tubeThrough(
-    guideArchPoints,
-    0.09 * sourceScale,
-    frameEdgeMaterial,
-  );
-  guideArch.userData.role = 'fixed-rounded-top-of-straight-slotted-guides';
+  guideLoopGeometry.translate(0, 0, -0.17);
+  const guideArch = new THREE.Mesh(guideLoopGeometry, frameMaterial);
+  guideArch.position.z = 0.19;
+  guideArch.userData.role = 'fixed-tapered-outer-guide-loop-with-rounded-top';
   // The slot's rounded end is the same bar as the two rails, bent through a
   // half-annulus that meets both rail tops flush (inner radius 0.535, outer
   // 0.785 source units, the rails' own inner and outer faces).
@@ -813,7 +811,6 @@ function tableEngine(movement) {
     guideSlotArch,
     guideFoot,
     guideRails,
-    guideStandards,
     inputCranks,
     pistonAssembly,
     pistonHead,
