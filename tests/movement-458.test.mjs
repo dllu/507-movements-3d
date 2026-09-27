@@ -106,7 +106,9 @@ test('movement 458 records the official canvas timing and explicitly corrects it
   assert.equal(sourceAnimation.runtimeModelFlagPresent, true);
   assert.equal(sourceAnimation.sourcePrescribedNormalizedTiming, true);
   assert.equal(sourceAnimation.sourcePrescribedAbsoluteTiming, false);
-  near(animationTiming.authoredCyclePeriod, 7.5, 0,
+  // Pass 72: the source's 0/.4/.5/.9 keyframes are recorded, but the top
+  // dwells are lengthened (3 s exchanges, 2.75 s dwells) for the emptying.
+  near(animationTiming.authoredCyclePeriod, 11.5, 0,
     'authored cycle period');
   near(animationTiming.targetCycleDuration, 2, 0,
     'viewer cycle duration');
@@ -160,10 +162,11 @@ test('movement 458 follows the source 40/10/40/10 exchange with the empty side p
   const model = createMovementModel(catalog.movements[457]);
   const { geometry, stateAtInputAngle, timeline } = model.root.userData;
   const atPhase = (phase) => stateAtInputAngle(FULL_TURN * phase);
-  const outward = atPhase(0.20);
-  const exchange = atPhase(0.45);
-  const returning = atPhase(0.70);
-  const reset = atPhase(0.95);
+  const inDwell = (start, end, u) => start + u * (end - start);
+  const outward = atPhase(geometry.outwardEndPhase / 2);
+  const exchange = atPhase(inDwell(geometry.outwardEndPhase, geometry.exchangeDwellEndPhase, 0.5));
+  const returning = atPhase((geometry.exchangeDwellEndPhase + geometry.returnEndPhase) / 2);
+  const reset = atPhase(inDwell(geometry.returnEndPhase, 1, 0.5));
 
   assert.equal(outward.mode,
     'left-empty-pulled-down-raising-right-full-bucket');
@@ -177,11 +180,14 @@ test('movement 458 follows the source 40/10/40/10 exchange with the empty side p
     'left-bucket-filling-low-right-bucket-emptying-high');
   near(exchange.ropeSpeed, 0, 0, 'rope stopped for exchange');
   near(exchange.leftWaterFraction, 0.5, 2e-15, 'left half filled');
-  // Pass 70: the raised bucket empties by tipping; at mid-dwell it is held
-  // tipped and empty, earlier it spills as it tips.
-  near(exchange.rightWaterFraction, 0, 0, 'right emptied by tipping');
-  assert.ok(exchange.rightBucketTilt > THREE.MathUtils.degToRad(100));
-  const rightPouring = atPhase(0.42);
+  // Pass 70/72: the raised bucket is drawn aside over the ground and empties
+  // by tipping; late in the dwell it is held tipped and empty, earlier it
+  // spills as it tips.
+  const exchangeLate = atPhase(inDwell(geometry.outwardEndPhase, geometry.exchangeDwellEndPhase, 0.7));
+  near(exchangeLate.rightWaterFraction, 0, 0, 'right emptied by tipping');
+  assert.ok(exchangeLate.rightBucketTilt > THREE.MathUtils.degToRad(100));
+  near(exchangeLate.rightBucketAside, 1, 0, 'right drawn aside');
+  const rightPouring = atPhase(inDwell(geometry.outwardEndPhase, geometry.exchangeDwellEndPhase, 0.4));
   assert.ok(rightPouring.rightWaterFraction > 0 && rightPouring.rightWaterFraction < 1);
   assert.ok(rightPouring.rightWaterFractionRate < 0 && rightPouring.rightBucketTilt > 0);
 
@@ -196,8 +202,10 @@ test('movement 458 follows the source 40/10/40/10 exchange with the empty side p
   assert.equal(reset.mode,
     'left-bucket-emptying-high-right-bucket-filling-low');
   near(reset.ropeSpeed, 0, 0, 'rope stopped for reset');
-  near(reset.leftWaterFraction, 0, 0, 'left emptied by tipping');
-  assert.ok(reset.leftBucketTilt > THREE.MathUtils.degToRad(100));
+  const resetLate = atPhase(inDwell(geometry.returnEndPhase, 1, 0.7));
+  near(resetLate.leftWaterFraction, 0, 0, 'left emptied by tipping');
+  assert.ok(resetLate.leftBucketTilt > THREE.MathUtils.degToRad(100));
+  near(resetLate.leftBucketAside, 1, 0, 'left drawn aside');
   near(atPhase(0).leftBucketTilt, 0, 0, 'upright again at the loop seam');
   near(reset.rightWaterFraction, 0.5, 2e-15, 'right half filled');
   assert.deepEqual(timeline.stages, [
@@ -206,9 +214,10 @@ test('movement 458 follows the source 40/10/40/10 exchange with the empty side p
     'right empty down / left full up',
     'right fills / left empties',
   ]);
-  near(geometry.outwardEndPhase, 0.4, 0, 'outward fraction');
+  near(geometry.outwardEndPhase * geometry.cycleDuration, 3, 1e-12, 'outward seconds');
   near(geometry.exchangeDwellEndPhase, 0.5, 0, 'exchange dwell end');
-  near(geometry.returnEndPhase, 0.9, 0, 'return fraction');
+  near((geometry.returnEndPhase - geometry.exchangeDwellEndPhase) * geometry.cycleDuration, 3, 1e-12, 'return seconds');
+  near((1 - geometry.returnEndPhase) * geometry.cycleDuration, 2.75, 1e-12, 'emptying dwell seconds');
   disposeModel(model.root);
 });
 
@@ -226,15 +235,35 @@ test('movement 458 preserves one constant rope length and exactly opposite bucke
       `reported rope length at ${sample}`);
     near(state.leftBailY + state.rightBailY, bailSum, 3e-16,
       `opposed bail travel at ${sample}`);
-    // Less the hang-back of a bucket tipped past 50 degrees (bailHang).
-    near(state.leftBucketCenter.y - bailHang(state.leftBucketTilt, geometry.bucketHandleRise).y
-      + state.rightBucketCenter.y - bailHang(state.rightBucketTilt, geometry.bucketHandleRise).y,
-      source.leftBucketCenter.y + source.rightBucketCenter.y, 1e-12,
-    `opposed bucket travel at ${sample}`);
-    near(state.leftBucketCenter.x, -geometry.pulleyRadius, 0,
-      `left tangent x at ${sample}`);
-    near(state.rightBucketCenter.x, geometry.pulleyRadius, 0,
-      `right tangent x at ${sample}`);
+    // Each bucket hangs from its bail: turned half round, a bucket tipped
+    // past 50 degrees hangs forward of it by bailHang (mirrored in z).
+    for (const [bail, center, tilt] of [[state.leftBail, state.leftBucketCenter, state.leftBucketTilt],
+      [state.rightBail, state.rightBucketCenter, state.rightBucketTilt]]) {
+      const hang = bailHang(tilt, geometry.bucketHandleRise);
+      near(center.x, bail.x, 0, `bucket under its bail x at ${sample}`);
+      near(center.y - hang.y, bail.y - geometry.bucketHeight / 2 - geometry.bucketHandleRise, 1e-12,
+        `bucket under its bail y at ${sample}`);
+      near(center.z + hang.z, bail.z, 1e-12, `bucket hang z at ${sample}`);
+    }
+    // Upright on its leg, each bail hangs at the rope's nominal height on the
+    // sheave's tangent; drawn aside, it keeps the same leg-plus-wrap length.
+    for (const [side, bail, bailY, aside, departure] of [
+      [-1, state.leftBail, state.leftBailY, state.leftBucketAside, state.leftRopeDepartureAngle],
+      [1, state.rightBail, state.rightBailY, state.rightBucketAside, state.rightRopeDepartureAngle]]) {
+      near(bail.z, 0, 0, `bail in the sheave plane at ${sample}`);
+      if (aside === 0) {
+        near(bail.x, side * geometry.pulleyRadius, 0, `tangent x at ${sample}`);
+        near(bail.y, bailY, 0, `nominal bail height at ${sample}`);
+        near(departure, Math.PI, 0, `side departure at ${sample}`);
+      } else {
+        const tangent = new THREE.Vector3(side * -geometry.pulleyRadius * Math.cos(departure),
+          geometry.pulleyRadius * Math.sin(departure), 0).add(new THREE.Vector3(0, 3.02, 0));
+        const leg = bail.distanceTo(tangent);
+        near(leg + departure * geometry.pulleyRadius, 3.02 - bailY + Math.PI * geometry.pulleyRadius, 1e-9,
+          `aside rope length at ${sample}`);
+        assert.ok(bail.y >= bailY, `drawn aside it rises at ${sample}`);
+      }
+    }
   }
   disposeModel(model.root);
 });
@@ -275,7 +304,8 @@ test('movement 458 derives the sole sheave angle, rate, and acceleration exactly
 test('movement 458 rope, sheave, buckets, and water are C2-stationary at all four handoffs', () => {
   const model = createMovementModel(catalog.movements[457]);
   const { stateAtInputAngle } = model.root.userData;
-  const boundaries = [0, 0.4, 0.5, 0.9];
+  const { geometry } = model.root.userData;
+  const boundaries = [0, geometry.outwardEndPhase, geometry.exchangeDwellEndPhase, geometry.returnEndPhase];
   for (const phase of boundaries) {
     const angle = FULL_TURN * phase;
     const state = stateAtInputAngle(angle);
@@ -315,7 +345,9 @@ test('movement 458 analytic bucket velocities and accelerations agree with finit
   const model = createMovementModel(catalog.movements[457]);
   const { geometry, stateAtInputAngle } = model.root.userData;
   const step = 1e-6;
-  for (const angle of [0.43, 1.18, 3.54, 4.83]) {
+  // Sampled on the rope strokes; at the dwells the bail's aside draw is a
+  // separate prescribed motion.
+  for (const angle of [0.43, 1.18, 3.54, 4.40]) {
     const before = stateAtInputAngle(angle - step);
     const state = stateAtInputAngle(angle);
     const after = stateAtInputAngle(angle + step);

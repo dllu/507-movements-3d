@@ -9,15 +9,16 @@ function packed(gear,teethOnly=false){
   const u=gear.userData,geometry=mergePassageParts((teethOnly?u.toothMeshes:[u.body,u.hub,...u.toothMeshes]).map(o=>{o.updateMatrix();return o.geometry.clone().applyMatrix4(o.matrix);}));
   return{root:u.rotor,surface:solidSurface(geometry),points:surfacePoints(geometry).filter((_,i)=>i%4===0)};
 }
+function near(a,b,t,msg){assert.ok(Math.abs(a-b)<=t,`${msg}: ${a} vs ${b}`);}
 function separation(a,z,limit=.1){
   const matrix=z.root.matrixWorld.clone().invert().multiply(a.root.matrixWorld);let minimum=Infinity;
   for(const q of a.points)minimum=Math.min(minimum,z.surface.signedDistance(q.clone().applyMatrix4(matrix),limit));
   return minimum;
 }
 
-const PAIRS=[['head','inputBevel','outputBevel','transferCenter'],['hub','shaftHubBevel','wheelBevel','wheelCenter']];
+const PAIRS=[['head','inputBevel','outputBevel','transferCenter']];
 
-test('469 both finite mitre pairs share their apexes and match outer pitch generators',()=>{
+test('469 the finite head mitre pair shares their apexes and match outer pitch generators',()=>{
   const m=createAuthoredTemperatureAirMachineMovement({id:469}),d=m.root.userData,b=d.blocks,g=d.geometry;
   for(const phase of [0,.15,.35,.55,.82]){
     m.update(phase*g.cycleDuration);m.root.updateMatrixWorld(true);
@@ -36,11 +37,11 @@ test('469 both finite mitre pairs share their apexes and match outer pitch gener
   }
 });
 
-test('469 pitch points of both mitre pairs move together in the rendered train',()=>{
+test('469 pitch points of the head mitre pair move together in the rendered train',()=>{
   const m=createAuthoredTemperatureAirMachineMovement({id:469}),d=m.root.userData,b=d.blocks,g=d.geometry,dt=1e-5;
   for(const phase of [.1,.3,.5]){
     for(const[name,first,second,apex]of PAIRS){
-      const contact=name==='head'?g.bevelLayout.headContact:g.bevelLayout.hubContact,P=g[apex].clone().addScaledVector(contact,.32*Math.SQRT2);
+      const contact=g.bevelLayout.headContact,P=g[apex].clone().addScaledVector(contact,.32*Math.SQRT2);
       m.update(phase*g.cycleDuration);m.root.updateMatrixWorld(true);
       const la=b[first].worldToLocal(P.clone()),lb=b[second].worldToLocal(P.clone());
       m.update(phase*g.cycleDuration+dt);m.root.updateMatrixWorld(true);
@@ -52,10 +53,10 @@ test('469 pitch points of both mitre pairs move together in the rendered train',
 
 test('469 actual bevel teeth, bodies and hubs clear with sustained close engagement',()=>{
   const m=createAuthoredTemperatureAirMachineMovement({id:469}),b=m.root.userData.blocks;
-  const gears=Object.fromEntries(['inputBevel','outputBevel','shaftHubBevel','wheelBevel'].map(k=>[k,[packed(b[k]),packed(b[k],true)]]));
+  const gears=Object.fromEntries(['inputBevel','outputBevel'].map(k=>[k,[packed(b[k]),packed(b[k],true)]]));
   for(let i=0;i<=48;i++){
     const angle=i*2*Math.PI/24/48;
-    b.screwRotor.rotation.y=angle;b.transferShaftRotor.rotation.z=angle;b.waterWheelRotor.rotation.z=-angle;m.root.updateMatrixWorld(true);
+    b.screwRotor.rotation.y=angle;b.transferShaftRotor.rotation.z=angle;b.waterWheelRotor.rotation.z=-angle*m.root.userData.geometry.faceGearRatio;m.root.updateMatrixWorld(true);
     for(const[name,first,second]of PAIRS){
       const[a,aTeeth]=gears[first],[z,zTeeth]=gears[second];
       const distance=Math.min(separation(a,z,.01),separation(z,a,.01));
@@ -70,7 +71,7 @@ test('469 actual bevel teeth, bodies and hubs clear with sustained close engagem
 test('469 finite shaft ends and bevel bores clear adjacent parts',()=>{
   const m=createAuthoredTemperatureAirMachineMovement({id:469}),b=m.root.userData.blocks;
   m.update(.3*m.root.userData.geometry.cycleDuration);m.root.updateMatrixWorld(true);
-  for(const gear of [b.inputBevel,b.outputBevel,b.shaftHubBevel,b.wheelBevel])for(const mesh of [gear.userData.body,gear.userData.hub]){
+  for(const gear of [b.inputBevel,b.outputBevel])for(const mesh of [gear.userData.body,gear.userData.hub]){
     const surface=solidSurface(mesh.geometry);
     for(const z of [.22,.26,.30,.33])for(let i=0;i<32;i++){
       const p=new THREE.Vector3(.065*Math.cos(i*Math.PI/16),.065*Math.sin(i*Math.PI/16),z);
@@ -82,6 +83,42 @@ test('469 finite shaft ends and bevel bores clear adjacent parts',()=>{
   const input=packed(b.inputBevel),barrel=meshPart(b.screwBarrel);
   // Pass 70: Brown's larger head bevel comes closer to the barrel mouth.
   assert.ok(Math.min(separation(input,barrel),separation(barrel,input))>.04,'input bevel is above the barrel mouth');
-  const hub=packed(b.shaftHubBevel),axle=meshPart(b.fixedWheelAxle);
-  assert.ok(Math.min(separation(hub,axle),separation(axle,hub))>.02,'shaft S bevel clears the wheel stub axle');
+  const shaft=meshPart(b.transferShaft),axle=meshPart(b.fixedWheelAxle);
+  assert.ok(Math.min(separation(shaft,axle),separation(axle,shaft))>.02,'shaft S end clears the wheel stub axle');
+});
+
+// Pass 72: Brown's wheel carries a face gear turned by a pinion on S.
+function packedParts(meshes,root){
+  const geometry=mergePassageParts(meshes.map(o=>{o.updateMatrix();return o.geometry.clone().applyMatrix4(o.matrix);}));
+  return{root,surface:solidSurface(geometry),points:surfacePoints(geometry).filter((_,i)=>i%2===0)};
+}
+
+test('469 face gear is generated by its pinion: rendered teeth clear with close engagement over a tooth period',()=>{
+  const m=createAuthoredTemperatureAirMachineMovement({id:469}),b=m.root.userData.blocks,g=m.root.userData.geometry;
+  assert.equal(b.faceGear.userData.toothMeshes.length,48);assert.equal(g.facePinionTeeth,12);
+  // The pinion axis lies on S, parallel to the wheel face, at one pinion
+  // pitch radius in front of the face gear's pitch plane.
+  near(g.faceGearRatio,12/48,1e-15,'ratio');near(g.faceGearPitchRadius/g.facePinionPitchRadius,4,1e-12,'pitch radii');
+  assert.ok(g.faceGearInnerRadius<g.facePinionCenterRadius&&g.facePinionCenterRadius<g.faceGearOuterRadius);
+  const pinion=packedParts([b.facePinion.userData.body],b.facePinion),teeth=packedParts(b.faceGear.userData.toothMeshes,b.faceGear),disk=packedParts([b.faceGear.userData.body],b.faceGear);
+  for(let i=0;i<=24;i++){
+    const angle=i*2*Math.PI/12/24;
+    b.transferShaftRotor.rotation.z=angle;b.waterWheelRotor.rotation.z=-g.faceGearRatio*angle;m.root.updateMatrixWorld(true);
+    const flank=Math.min(separation(pinion,teeth,.02),separation(teeth,pinion,.02));
+    assert.ok(flank>=0,`face pair intersects at sample ${i}: ${flank}`);
+    assert.ok(flank<.0025,`face pair disengages at sample ${i}: ${flank}`);
+    assert.ok(Math.min(separation(pinion,disk,.05),separation(disk,pinion,.05))>.004,`pinion clears the face-gear disk at ${i}`);
+  }
+});
+
+test('469 face-gear pitch points move together in the rendered train',()=>{
+  const m=createAuthoredTemperatureAirMachineMovement({id:469}),b=m.root.userData.blocks,g=m.root.userData.geometry,dt=1e-5;
+  const P=g.wheelCenter.clone().addScaledVector(g.transferShaftDirection,-g.faceGearPitchRadius).add(new THREE.Vector3(0,0,-g.facePinionPitchRadius));
+  for(const phase of [.1,.3,.5]){
+    m.update(phase*g.cycleDuration);m.root.updateMatrixWorld(true);
+    const la=b.facePinion.worldToLocal(P.clone()),lb=b.faceGear.worldToLocal(P.clone());
+    m.update(phase*g.cycleDuration+dt);m.root.updateMatrixWorld(true);
+    const va=b.facePinion.localToWorld(la).sub(P),vb=b.faceGear.localToWorld(lb).sub(P);
+    assert.ok(va.length()>1e-6,`moves at ${phase}`);assert.ok(va.distanceTo(vb)<1e-3*va.length(),`face pitch velocities agree at ${phase}`);
+  }
 });

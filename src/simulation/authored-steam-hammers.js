@@ -393,7 +393,12 @@ function steamHammer(movement) {
     };
   };
 
-  const stateAtTime = (time) => stateAtPhase(time / cycleDuration);
+  // Pass 72: the loop opens on Brown's pose (the hammer part-way up its
+  // steam lift), not on the bottom dwell.
+  const sourcePosePhase = 0.31;
+  const sourcePoseTimeOffset = sourcePosePhase * cycleDuration;
+  const stateAtTime = (time) =>
+    stateAtPhase((time + sourcePoseTimeOffset) / cycleDuration);
 
   const frameMaterial = matte(PALETTE.frame, {
     metalness: 0.20,
@@ -746,7 +751,7 @@ function steamHammer(movement) {
     );
   };
 
-  const sourceState = stateAtPhase(0.31);
+  const sourceState = stateAtPhase(sourcePosePhase);
   const geometry = {
     anvilTopY,
     ballisticDrop,
@@ -776,6 +781,8 @@ function steamHammer(movement) {
     releaseDuration,
     releaseEndDownwardSpeed,
     releaseEndPhase,
+    sourcePosePhase,
+    sourcePoseTimeOffset,
     staticSupportGaugePressure,
     topHoldEndPhase,
     handLeverPivot: handLeverPivot.clone(),

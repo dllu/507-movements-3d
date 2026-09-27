@@ -360,20 +360,30 @@ function alternatingWeightedRackDrive(movement) {
   const pinionToothCount = 20;
   const pinionAngularPitch = FULL_TURN / pinionToothCount;
   const circularPitch = pinionPitchRadius * pinionAngularPitch;
-  const stroke = 10 * circularPitch;
+  // Brown's guides stand about 2.15 gear tip diameters tall; a 13-pitch
+  // stroke (1.3 wheel turns, 26 teeth, per cycle) brings the grooves to that
+  // height. The crosshead's low point drops by the extra pitches and the
+  // racks gain as many teeth at their lower ends, while the guide pins sit
+  // that much higher on the racks: at the bottom corner everything above
+  // the crosshead stands where it did, and the grooves grow upward.
+  const extraStrokePitches = 3;
+  const stroke = (10 + extraStrokePitches) * circularPitch;
   const outputAdvancePerCycle = 2 * stroke / pinionPitchRadius;
   const rackPitchesPerStroke = stroke / circularPitch;
   const rackRootExtension = .60;
-  const crossheadLowY = -3.265-rackRootExtension;
+  const crossheadLowY = -3.265-rackRootExtension
+    - extraStrokePitches * circularPitch;
   const crossheadHighY = crossheadLowY + stroke;
   const rackPivotHalfSpacing = pinionPitchRadius + 0.26;
-  const rackBodyLength = 3.63+rackRootExtension;
+  const rackBodyLength = 3.63+rackRootExtension
+    + extraStrokePitches * circularPitch;
   const rackBodyWidth = 0.26;
   const rackDepth = 0.37;
   const rackToothHeight = 0.26;
-  const rackToothCount = 14;
+  const rackToothCount = 14 + extraStrokePitches;
   const guideArm = 0.68;
-  const guideY = 3.35+rackRootExtension;
+  const guideY = 3.35+rackRootExtension
+    + extraStrokePitches * circularPitch;
   const outwardRackAngle = 0.17;
   const guidePlaneZ = -0.34;
   const rackPlaneZ = 0.12;
@@ -742,7 +752,7 @@ function alternatingWeightedRackDrive(movement) {
   let linkSchedule = null;
   // Time zero shows Brown's pose: mid-descent, rack A vertical and working,
   // A1 bowed outward on its return branch and C at rest.
-  const sourcePhase = 0.71;
+  const sourcePhase = 0.67;
   const stateAtTime = (playbackTime) => {
     const time = playbackTime + sourcePhase * cycleDuration;
     const cycles = Math.floor(time / cycleDuration);
@@ -899,8 +909,9 @@ function alternatingWeightedRackDrive(movement) {
       springAnchorBoss,
     },
     constraintResiduals: {
-      pitchesPerStroke: rackPitchesPerStroke - 10,
-      outputCycleClosure: outputAdvancePerCycle - FULL_TURN,
+      pitchesPerStroke: rackPitchesPerStroke - 10 - extraStrokePitches,
+      outputCycleClosure: outputAdvancePerCycle
+        - FULL_TURN * (10 + extraStrokePitches) / 10,
       rackPitchIdentity:
         circularPitch - pinionPitchRadius * pinionAngularPitch,
     },
@@ -1028,16 +1039,16 @@ function alternatingWeightedRackDrive(movement) {
     transmission: {
       activeMeshLaw:
         'theta=DeltaY/R on rack A1 ascent; theta=theta_top-DeltaY/R on rack A descent',
-      fullCycleLaw: 'Delta theta = 2 stroke / R = 2 pi; the wheel makes one counterclockwise turn per piston cycle',
+      fullCycleLaw: 'Delta theta = 2 stroke / R = 2.6 pi; the wheel makes 1.3 counterclockwise turns (26 teeth) per piston cycle',
       guideLaw:
         'inner branch means rack angle zero and exact mesh; outer branch means rack angle is displaced outward by 0.205 rad',
-      pitchLaw: 'p=2*pi*R/N and stroke=10*p; one piston cycle advances the wheel by one turn',
+      pitchLaw: 'p=2*pi*R/N and stroke=13*p; one piston cycle advances the wheel by 26 teeth (1.3 turns)',
     },
     update,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.25, -3.95, -1.05),
-    new THREE.Vector3(3.30, 5.55, 1.05),
+    new THREE.Vector3(-3.25, -4.69, -1.05),
+    new THREE.Vector3(3.30, 6.29, 1.05),
   );
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(0.15, 0.12, 12);

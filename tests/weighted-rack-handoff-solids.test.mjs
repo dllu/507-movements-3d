@@ -36,8 +36,10 @@ test('391 guide pins, bored pivots, weights and lowered input interfaces remain 
 });
 test('391 changes the plain lower lever arm while preserving working tooth dimensions and phase',()=>{
  assert.equal(d.geometry.rackRootExtension,.60);assert.equal(d.finiteInterfaceReview.toothProfile.addendum,.065);
- assert.equal(b.leftRack.userData.teeth.length,14);assert.equal(b.rightRack.userData.teeth.length,14);assert.equal(d.geometry.pinionToothCount,20);
- assert.ok(Math.abs(d.geometry.crossheadLowY+b.leftRack.userData.teeth[0].position.y-(-3.265+.24))<1e-12);
+ assert.equal(b.leftRack.userData.teeth.length,17);assert.equal(b.rightRack.userData.teeth.length,17);assert.equal(d.geometry.pinionToothCount,20);
+ // The three teeth added below the old first tooth for the 13-pitch stroke
+ // leave the old working teeth (from index 3) exactly where they were.
+ assert.ok(Math.abs(d.geometry.crossheadLowY+b.leftRack.userData.teeth[3].position.y-(-3.265+.24))<1e-12);
  assert.ok(d.geometry.crossheadHighY<-1.39,'upper pivot remains well below the pinion');
  assert.ok(get(b.outputGear.userData.wheel).solid.inside(new T.Vector3(.30,0,0)),'pinion is a finite solid');
 });
@@ -57,11 +59,11 @@ test('391 handoff positions and rates are continuous, with the prescribed dwell 
 test('391 playback retains scene objects and geometry buffers',()=>{
  const before=[];m.root.traverse(o=>before.push([o,o.geometry]));for(let i=0;i<65;i++)m.update(i/8);const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,before);
 });
-test('391 output stays unbounded across repeated piston cycles and turns once per cycle',()=>{
+test('391 output stays unbounded across repeated piston cycles and turns 1.3 times (26 teeth) per cycle',()=>{
  for(let cycle=-3;cycle<=7;cycle++){
   const t=8*cycle,a=stateAt(t-1e-7),c=stateAt(t+1e-7);assert.ok(Math.abs(c.outputAngle-a.outputAngle)<1e-6,'no output-index jump at piston reset');
-  assert.ok(Math.abs(stateAt(t+8).outputAngle-stateAt(t).outputAngle-2*Math.PI)<2e-14);
+  assert.ok(Math.abs(stateAt(t+8).outputAngle-stateAt(t).outputAngle-2.6*Math.PI)<2e-14);
  }
- const a=stateAt(1.23),c=stateAt(41.23);assert.ok(Math.abs(c.outputAngle-a.outputAngle-5*2*Math.PI)<2e-13);assert.ok(Math.abs(c.crossheadY-a.crossheadY)<2e-14);
+ const a=stateAt(1.23),c=stateAt(41.23);assert.ok(Math.abs(c.outputAngle-a.outputAngle-5*2.6*Math.PI)<2e-13);assert.ok(Math.abs(c.crossheadY-a.crossheadY)<2e-14);
  for(const t of[3.36,4]){const a=stateAt(t-1e-6),b=stateAt(t),c=stateAt(t+1e-6);assert.ok(Math.abs((c.elbowAssist.leverAngle-a.elbowAssist.leverAngle)/2e-6)<1e-5,'prescribed lever returns with zero endpoint speed');}
 });

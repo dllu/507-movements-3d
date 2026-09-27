@@ -149,10 +149,11 @@ test('movement 457 demonstration orders empty descent, filling, full ascent, and
   const model = createMovementModel(catalog.movements[456]);
   const { geometry, stateAtInputAngle, timeline } = model.root.userData;
   const atPhase = (phase) => stateAtInputAngle(FULL_TURN * phase);
-  const descent = atPhase(0.175);
-  const fill = atPhase(0.425);
-  const ascent = atPhase(0.675);
-  const empty = atPhase(0.925);
+  const descent = atPhase(geometry.descentEndPhase / 2);
+  const fill = atPhase((geometry.descentEndPhase + geometry.fillEndPhase) / 2);
+  const ascent = atPhase((geometry.fillEndPhase + geometry.ascentEndPhase) / 2);
+  const dwellPhase = (u) => geometry.ascentEndPhase + u * (1 - geometry.ascentEndPhase);
+  const empty = atPhase(dwellPhase(0.7));
 
   assert.equal(descent.mode,
     'operator-pulling-empty-bucket-down-against-counterbalance');
@@ -175,12 +176,15 @@ test('movement 457 demonstration orders empty descent, filling, full ascent, and
   assert.equal(empty.mode, 'bucket-held-at-top-while-emptying');
   near(empty.beamAngle, geometry.highBeamAngle, 0, 'top dwell');
   near(empty.beamAngularSpeed, 0, 0, 'stationary while emptying');
-  // Pass 70: the raised bucket is emptied by tipping it about its ears: at
-  // mid-dwell it is held tipped past the lip and empty; earlier in the dwell
-  // it spills as it tips, keeping what the tipped bucket can hold.
+  // Pass 70/72: the raised bucket is drawn aside over the ground and emptied
+  // by tipping it about its ears: late in the dwell it is held tipped past
+  // the lip and empty; earlier it spills as it tips, keeping what the tipped
+  // bucket can hold.
   near(empty.bucketWaterFraction, 0, 0, 'emptied by tipping');
   assert.ok(empty.bucketTilt > THREE.MathUtils.degToRad(100), 'held tipped');
-  const pouring = atPhase(geometry.ascentEndPhase + 0.2 * (1 - geometry.ascentEndPhase));
+  near(empty.bucketAside, 1, 0, 'drawn aside while tipped');
+  const pouring = atPhase(dwellPhase(0.4));
+  near(pouring.bucketAside, 1, 0, 'drawn aside before it spills');
   assert.ok(pouring.bucketWaterFraction > 0 && pouring.bucketWaterFraction < 1, 'spilling while it tips');
   assert.ok(pouring.bucketWaterFractionRate < 0);
   assert.ok(pouring.bucketTilt > 0);
@@ -194,20 +198,22 @@ test('movement 457 demonstration orders empty descent, filling, full ascent, and
   disposeModel(model.root);
 });
 
-test('movement 457 rope stays vertical and constant-length while the upright bucket clears the well opening', () => {
+test('movement 457 rope keeps its length, hangs vertically except when the raised bucket is drawn aside, and the bucket clears the kerb', () => {
   const model = createMovementModel(catalog.movements[456]);
   const { geometry, stateAtInputAngle } = model.root.userData;
+  const kerbOuter = 1.135 + 0.08;
+  let asideSeen = 0;
   for (let sample = 0; sample < 24000; sample += 1) {
     const state = stateAtInputAngle(FULL_TURN * sample / 24000);
-    near(state.leftTip.x, state.ropeBottom.x, 0,
-      `vertical rope x at ${sample}`);
-    near(state.leftTip.z, state.ropeBottom.z, 0,
-      `vertical rope z at ${sample}`);
     near(state.leftTip.distanceTo(state.ropeBottom),
-      geometry.ropeLength, 4e-16,
+      geometry.ropeLength, 1e-12,
     `constant rope length at ${sample}`);
+    near(state.ropeBottom.x - state.leftTip.x,
+      geometry.ropeLength * Math.sin(state.ropeSwing), 1e-12, `rope swing at ${sample}`);
+    near(state.leftTip.z, state.ropeBottom.z, 0,
+      `rope in the beam plane at ${sample}`);
     near(state.bucketCenter.x, state.ropeBottom.x, 0,
-      `upright bucket x at ${sample}`);
+      `bucket x under the bail at ${sample}`);
     // Tipped past 50 degrees at the top, the bail falls to the pour side on
     // its ears and the bucket hangs back from the rope (bailHang).
     const hang = bailHang(state.bucketTilt, geometry.bucketHandleRise);
@@ -215,10 +221,24 @@ test('movement 457 rope stays vertical and constant-length while the upright buc
       state.ropeBottom.y - (geometry.bucketHeight / 2 + geometry.bucketHandleRise),
     1e-12, `bucket hanger offset at ${sample}`);
     near(state.bucketCenter.z - hang.z, state.ropeBottom.z, 1e-12, `bucket hang z at ${sample}`);
-    assert.ok(Math.abs(state.bucketCenter.x - geometry.wellCenterX) + 0.40
-      < 1.08,
-    `bucket clears well mouth at ${sample}`);
+    if (state.bucketAside === 0) {
+      near(state.ropeSwing, 0, 0, `vertical rope at ${sample}`);
+      assert.ok(Math.abs(state.bucketCenter.x - geometry.wellCenterX) + 0.40
+        < 1.08,
+      `bucket clears well mouth at ${sample}`);
+    } else {
+      asideSeen += 1;
+      assert.ok(state.phase >= geometry.ascentEndPhase, `aside only at the top at ${sample}`);
+      assert.ok(state.bucketCenter.y - geometry.bucketHeight / 2 > geometry.wellRimY + 0.08 + 0.1,
+        `drawn aside above the kerb at ${sample}`);
+      if (state.bucketWaterFractionRate < 0) {
+        near(state.bucketAside, 1, 0, `spills only when fully aside at ${sample}`);
+        assert.ok(state.bucketCenter.x - 0.13 > geometry.wellCenterX + kerbOuter,
+          `spill lands outside the kerb at ${sample}`);
+      }
+    }
   }
+  assert.ok(asideSeen > 1000);
   disposeModel(model.root);
 });
 
@@ -333,7 +353,10 @@ test('movement 457 renderer maps beam, rope, bucket water, and effort direction 
     if (expectedWaterVisible) {
       blocks.bucketWater.geometry.computeBoundingBox();
       assert.ok(blocks.bucketWater.geometry.boundingBox.max.y-blocks.bucketWater.geometry.boundingBox.min.y > 0);
-      assert.ok(blocks.bucketWater.geometry.boundingBox.max.y-blocks.bucketWater.geometry.boundingBox.min.y <= geometry.bucketHeight-.11+1e-7);
+      // Upright it stands to the full level; tipped, the wedge kept at the
+      // lip may run along the wall from the floor's top to under the rim.
+      assert.ok(blocks.bucketWater.geometry.boundingBox.max.y-blocks.bucketWater.geometry.boundingBox.min.y
+        <= geometry.bucketHeight-(state.bucketTilt > 0 ? .07 : .11)+1e-7);
     }
     fixedBlocks.forEach((block, index) => vectorNear(
       block.position,
@@ -349,7 +372,7 @@ test('movement 457 renderer maps beam, rope, bucket water, and effort direction 
     'bucket closure');
   near(closure.bucketWaterFraction, source.bucketWaterFraction, 0,
     'water closure');
-  assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, 8);
+  assert.equal(model.root.userData.animationTiming.authoredCyclePeriod, 10);
   assert.equal(model.root.userData.animationTiming.targetCycleDuration, 2);
   disposeModel(model.root);
 });

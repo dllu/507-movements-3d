@@ -25,7 +25,7 @@ test('469: solid flight, casing fitted through the air vessel wall, bored wheel 
   const m=airMachine({id:469}),d=m.root.userData,b=d.blocks,g=d.geometry;
   assert.equal(b.screwFlight.geometry.userData.thread.inner,.065);assert.equal(b.screwFlight.geometry.userData.thread.outer,.30);
   assert.equal(b.wheelSpokes.length,6);
-  for(const [name,a,z]of [['casing through vessel wall',b.screwBarrel,b.receiver],['wheel bore',b.fixedWheelAxle,b.wheelHub],['wheel bevel bore',b.fixedWheelAxle,b.wheelBevel.userData.body]])assert.ok(separation(m,a,z,24)>-2e-6,name);
+  for(const [name,a,z]of [['casing through vessel wall',b.screwBarrel,b.receiver],['wheel bore',b.fixedWheelAxle,b.wheelHub],['face-gear disk bore',b.fixedWheelAxle,b.faceGear.userData.body]])assert.ok(separation(m,a,z,24)>-2e-6,name);
   const conduit=solidSurface(b.airConduit.geometry),vessel=solidSurface(b.receiver.geometry);
   for(let i=1;i<100;i++)assert.equal(conduit.inside(d.pressurePipeCurve.getPointAt(i/100)),false,'open air pipe');
   // The tube's mouth opens into the vessel: its bore is not closed by the roof.

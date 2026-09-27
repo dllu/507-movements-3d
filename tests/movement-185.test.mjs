@@ -200,7 +200,9 @@ test('movement 185 is the source-scaled locomotive Stephenson link rather than a
   assert.ok(geometry.forwardLayerZ - geometry.backwardLayerZ > 0.45);
   near(geometry.linkSlotRadius / geometry.scale, 26, 1e-14,
     'source expansion-link radius ratio');
-  near(geometry.maximumReversingAngle, 0.45, 0,
+  // Pass 72: Brown's short quadrant; full gear keeps the die between the
+  // rod pins in his 1.29x link.
+  near(geometry.maximumReversingAngle, 0.22, 0,
     'source-scale reversing-sector sweep');
   near(
     geometry.reversingShortArmLength / geometry.scale,
@@ -270,7 +272,7 @@ test('movement 185 is the source-scaled locomotive Stephenson link rather than a
   assert.ok(source.dieSlotParameter < 0.03);
   assert.ok(
     Math.abs(source.dieSlotParameter)
-      < geometry.visibleLinkHalfAngle - 0.20,
+      < geometry.freeDieHalfAngle / 4,
   );
 
   disposeModel(model.root);
@@ -351,15 +353,17 @@ test('movement 185 closes both eccentric rods, suspension, curved die, rocker, a
   const sourceStroke = strokeAt(geometry.sourceSelector);
   const midStroke = strokeAt(0);
   const backwardStroke = strokeAt(1);
-  assert.ok(forwardStroke > 0.46);
-  assert.ok(backwardStroke > 0.40);
+  // Pass 72: in Brown's short (1.29x) link the die stops short of the rod
+  // pins in full gear, so the full-gear strokes are about twice mid gear's.
+  assert.ok(forwardStroke > 0.26);
+  assert.ok(backwardStroke > 0.23);
   assert.ok(backwardStroke > forwardStroke * 0.87);
   assert.ok(backwardStroke < forwardStroke * 0.90);
-  assert.ok(midStroke < Math.min(forwardStroke, backwardStroke) * 0.32);
+  assert.ok(midStroke < Math.min(forwardStroke, backwardStroke) * 0.55);
   assert.ok(sourceStroke > midStroke * 1.35);
-  assert.ok(sourceStroke < backwardStroke * 0.43);
-  assert.ok(ranges.get(-1).dieMinimum > 0.10);
-  assert.ok(ranges.get(1).dieMaximum < -0.11);
+  assert.ok(sourceStroke < backwardStroke * 0.75);
+  assert.ok(ranges.get(-1).dieMinimum > 0.02);
+  assert.ok(ranges.get(1).dieMaximum < -0.02);
   assert.ok(Math.abs(ranges.get(0).dieMinimum) < 0.051);
   assert.ok(Math.abs(ranges.get(0).dieMaximum) < 0.056);
 
@@ -384,7 +388,9 @@ test('movement 185 closes both eccentric rods, suspension, curved die, rocker, a
   const correlation = covariance / Math.sqrt(
     forwardVariance * backwardVariance,
   );
-  assert.ok(correlation < -0.94);
+  // Pass 72: the shared mid-gear (slip) component is now about half the
+  // full-gear stroke, so the reversed signals correlate less strongly.
+  assert.ok(correlation < -0.6);
 
   // Dense mixed-selector sampling catches a Newton branch change, the wrong
   // circle-circle die intersection, or any disconnected finite link.
@@ -481,12 +487,20 @@ test('movement 185 closes both eccentric rods, suspension, curved die, rocker, a
   assert.ok(dense.valveRod < 2.3e-16);
   assert.ok(dense.branchSeparation > 0.159);
   assert.ok(maximumIterations <= 6);
-  assert.ok(maximumLinkAngle > 0.57);
-  assert.ok(maximumLinkAngle < 0.58);
-  assert.ok(maximumSlotParameter > 0.235);
-  assert.ok(
-    maximumSlotParameter < geometry.visibleLinkHalfAngle - 0.048,
-  );
+  assert.ok(maximumLinkAngle > 0.49);
+  assert.ok(maximumLinkAngle < 0.50);
+  // Pass 72: Brown's link is 1.29x its pin spacing overall; the die block
+  // stays clear of the closed slot ends and between the eccentric-rod pins.
+  const halfSpacing = geometry.linkPinSpacing / 2;
+  near((2 * geometry.linkSlotRadius * Math.sin(geometry.visibleLinkHalfAngle)
+    + geometry.linkEndThickness) / geometry.linkPinSpacing, 1.29, 0.01,
+  'Brown link-to-pin-spacing ratio');
+  const pinSlotAngle = Math.asin(halfSpacing / Math.hypot(halfSpacing,
+    geometry.linkSlotCenterLocal.x - geometry.aheadLinkPinLocal.x));
+  assert.ok(maximumSlotParameter > 0.14);
+  assert.ok(maximumSlotParameter < geometry.freeDieHalfAngle);
+  assert.ok(maximumSlotParameter + geometry.dieHalfLength / geometry.linkSlotRadius
+    < pinSlotAngle, 'die block stays between the rod pins');
 
   // The selected die branch remains continuous at every fixed gear setting.
   for (const selector of [-1, -0.5, 0, 0.5, 1]) {
@@ -753,7 +767,8 @@ test('movement 185 rendered transforms keep every analytical joint visibly attac
   }
   const physicalSize = physicalBounds.getSize(new THREE.Vector3());
   assert.ok(physicalSize.x > 10.75, 'notched quadrant plate and eccentric straps span the plate width');
-  assert.ok(physicalSize.y > 6.0);
+  // Pass 72: Brown's notched quadrant is short.
+  assert.ok(physicalSize.y > 4.8);
   // The fixed rockshaft and reversing axis stop just proud of their arms;
   // the common eccentric shaft sets the depth.
   assert.ok(physicalSize.z > 2.65);

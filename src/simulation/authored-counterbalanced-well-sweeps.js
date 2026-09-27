@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
-import {bailHang,correctWellBucketParts,tippedEmptying} from './well-bucket-working-parts.js';
+import {asideEmptying,bailHang,correctWellBucketParts} from './well-bucket-working-parts.js';
 import {LaidRopeGeometry} from './laid-rope.js';
 import {
   PALETTE,
@@ -32,7 +32,10 @@ function smootherStepSecondDerivative(value) {
 
 function counterbalancedWellSweep(movement) {
   const root = new THREE.Group();
-  const cycleDuration = 8.0;
+  // Pass 72 (p72-c): 10 s, so the descent, fill and ascent keep their
+  // 2.8/1.2/2.8 s and the top dwell grows from 1.2 s to 3.2 s for drawing
+  // the bucket aside, tipping it out onto the ground and swinging it back.
+  const cycleDuration = 10.0;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
   const beamPivot = new THREE.Vector3(1.38, 2.00, 0);
   const longArmLength = 4.40;
@@ -50,9 +53,14 @@ function counterbalancedWellSweep(movement) {
   const counterbalanceEquivalentWeight = fullBucketWeight / 2;
   const counterweightActualWeight = counterbalanceEquivalentWeight
     * longArmLength / counterweightMomentArm;
-  const descentEndPhase = 0.35;
-  const fillEndPhase = 0.50;
-  const ascentEndPhase = 0.85;
+  const descentEndPhase = 0.28;
+  const fillEndPhase = 0.40;
+  const ascentEndPhase = 0.68;
+  // At the top the operator draws the bucket 1.0 toward the post, so its
+  // lip clears the well kerb (outer edge x -1.215) by about a quarter and
+  // the spill lands on the ground beside the well. The rope, tied round the
+  // tip eye, swings about the rope pin in the beam's plane.
+  const bucketAsideDistance = 1.0;
   const wellCenterX = -2.43;
   const wellRimY = .50;
   const wellBottomY = -3.02;
@@ -94,6 +102,7 @@ function counterbalancedWellSweep(movement) {
     let waterProfile;
     let mode;
     let bucketTilt = 0;
+    let bucketAside = 0;
     if (phase < descentEndPhase) {
       beamProfile = easedTransition(
         phase,
@@ -136,16 +145,17 @@ function counterbalancedWellSweep(movement) {
         secondDerivativeByPhase: 0, value: highBeamAngle };
       // Pass 70: the operator empties the raised bucket by tipping it about
       // its ears; what stays in it is what the tipped bucket still holds.
+      // Pass 72: first drawn aside over the ground (asideEmptying).
       const span = 1 - ascentEndPhase;
       const u = (phase - ascentEndPhase) / span;
-      const held = (x) => tippedEmptying(x, bucketDims).fraction;
+      const held = (x) => asideEmptying(x, bucketDims).fraction;
       const h = 1e-4;
       waterProfile = {
         value: held(u),
         firstDerivativeByPhase: (held(u + h) - held(u - h)) / (2 * h * span),
         secondDerivativeByPhase: (held(u + h) - 2 * held(u) + held(u - h)) / (h * h * span * span),
       };
-      bucketTilt = tippedEmptying(u, bucketDims).tilt;
+      ({tilt: bucketTilt, aside: bucketAside} = asideEmptying(u, bucketDims));
       mode = 'bucket-held-at-top-while-emptying';
     }
     const beamAngle = beamProfile.value;
@@ -178,8 +188,12 @@ function counterbalancedWellSweep(movement) {
       ),
       0,
     );
+    // Drawn aside, the rope swings about the rope pin at its constant
+    // length (its tie stays on the eye, in line with the rope).
+    const ropeSwing = Math.asin(bucketAsideDistance * bucketAside / ropeLength);
     const ropeBottom = leftTip.clone();
-    ropeBottom.y -= ropeLength;
+    ropeBottom.x += ropeLength * Math.sin(ropeSwing);
+    ropeBottom.y -= ropeLength * Math.cos(ropeSwing);
     const bucketCenter = ropeBottom.clone();
     bucketCenter.y -= bucketHeight / 2 + bucketHandleRise;
     // Tipped far over, the bail falls to the pour side on its ears and the
@@ -209,6 +223,7 @@ function counterbalancedWellSweep(movement) {
       beamAngularSpeed,
       bucketCenter,
       bucketGravityTorque,
+      bucketAside,
       bucketTilt,
       bucketWaterFraction,
       bucketWaterFractionRate,
@@ -229,6 +244,7 @@ function counterbalancedWellSweep(movement) {
       phase,
       quasistaticOperatorTorque,
       ropeBottom,
+      ropeSwing,
     };
   };
 
@@ -443,6 +459,7 @@ function counterbalancedWellSweep(movement) {
     const state = stateAtTime(time);
     beam.rotation.z = state.beamAngle;
     rope.position.copy(state.leftTip);
+    rope.rotation.z = state.ropeSwing;
     bucket.position.copy(state.bucketCenter);
     const waterHeight = 0.60 * state.bucketWaterFraction;
     bucketWater.visible = waterHeight > 1e-5;
@@ -483,6 +500,7 @@ function counterbalancedWellSweep(movement) {
     inputAngularSpeed,
     longArmLength,
     lowBeamAngle,
+    bucketAsideDistance,
     ropeLength,
     shortArmLength,
     wellBottomY,
@@ -571,7 +589,7 @@ function counterbalancedWellSweep(movement) {
         engravingEvidence:
           'Brown shows a very long timber sweep pivoted in a forked tree or post near its right end, a vertical rope and bucket at the elevated left tip above a shallow well mouth, and a bulky lashed counterweight on the short descending right arm.',
         reconstructionDisclosure:
-          'Brown gives no arm lengths, pivot height, rope length, bucket capacity, empty-bucket fraction, counterweight arm, motion path, fill timing, friction or absolute timing. Those values, the four-stage C2 demonstration, normalized torque calculation, transparent well, colors and 8-second cycle are independently engineered. The unequal lever, vertical rope, shallow well, short-arm counterweight and half-full-load assistance are source-grounded.',
+          'Brown gives no arm lengths, pivot height, rope length, bucket capacity, empty-bucket fraction, counterweight arm, motion path, fill timing, friction or absolute timing. Those values, the four-stage C2 demonstration, normalized torque calculation, transparent well, colors, 10-second cycle and the top-dwell draw aside onto the ground are independently engineered. The unequal lever, vertical rope, shallow well, short-arm counterweight and half-full-load assistance are source-grounded.',
       },
       officialPage: movement.sourceUrl,
       plate: 'Brown 1868, Movement 457',
@@ -595,7 +613,7 @@ function counterbalancedWellSweep(movement) {
       effortSigns:
         'Empty: W_empty<0.5 W_full, so gravity torque raises the bucket and the operator pulls down. Full: W_full>0.5 W_full, so the operator lifts against only the remaining half-load moment.',
       ropeConstraint:
-        'The rope remains vertical with constant length and the bucket center is a fixed bail-plus-half-height below its lower endpoint.',
+        'The rope keeps a constant length. It hangs vertically except at the top dwell, where the operator draws the bucket aside and the rope swings about the rope pin; the bucket center is a fixed bail-plus-half-height below its lower endpoint.',
     },
     update,
   };

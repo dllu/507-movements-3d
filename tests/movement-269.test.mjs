@@ -765,8 +765,6 @@ test('movement 269 gear tips stay clear of the closed end', () => {
   const { blocks, geometry, timeline, transmission } = model.root.userData;
   const closedEnd = [
     blocks.rightBridge,
-    ...blocks.rightJoggles,
-    blocks.driveRodNeck,
     blocks.driveRod,
   ];
   const pinionMeshes = [];
@@ -781,8 +779,15 @@ test('movement 269 gear tips stay clear of the closed end', () => {
     1e-12,
     'bridge inner face',
   );
-  // The whole closed end lies behind the pinion's rear face.
-  assert.ok(geometry.frameRightBridgeFront < -geometry.pinionDepth / 2 - 0.05);
+  // Brown draws the closed end flush with the rails, and the rod leaving
+  // its outer face in the frame's own material.
+  near(geometry.frameRightBridgeFront, geometry.frameDepth / 2, 1e-12, 'bridge front');
+  near(geometry.frameRightBridgeBack, -geometry.frameDepth / 2, 1e-12, 'bridge back');
+  model.root.updateMatrixWorld(true);
+  const rodBox = new THREE.Box3().setFromObject(blocks.driveRod, true);
+  const endBox = new THREE.Box3().setFromObject(blocks.rightBridge, true);
+  assert.ok(Math.abs(rodBox.min.x - (endBox.max.x - 0.01)) < 0.01, 'rod starts at the outer face');
+  assert.equal(blocks.driveRod.material, blocks.rightBridge.material);
   const boxes = (parts) => parts.map((part) => new THREE.Box3().setFromObject(part, true));
   const samples = 193;
   for (let index = 0; index < samples; index += 1) {

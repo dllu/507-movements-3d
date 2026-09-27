@@ -129,8 +129,9 @@ export function installWeightedRackSelector(root) {
   const axle = rackAdd(new T.CylinderGeometry(.055, .055, .45, 32), roller.material, 'upper-lug-roller-axle');
   axle.rotation.x = Math.PI / 2; axle.position.set(lx, ly, .245);
   // Spring d's stud just below the pivot, standing out to the spring's plane.
-  const stud = add(new T.CylinderGeometry(.055, .055, .34, 32).rotateX(Math.PI / 2), roller.material, 'elbow-spring-attachment-standoff', lever);
-  stud.position.set(...g.springStud, .40);
+  // Its back end stops just inside C's plate (not flush with C's rear face).
+  const stud = add(new T.CylinderGeometry(.055, .055, .33, 32).rotateX(Math.PI / 2), roller.material, 'elbow-spring-attachment-standoff', lever);
+  stud.position.set(...g.springStud, .405);
   // The fixed stop pin under the short arm's end (Brown's small knob).
   const stop = add(new T.CylinderGeometry(g.stopRadius, g.stopRadius, .20, 32).rotateX(Math.PI / 2), roller.material, 'fixed-stop-pin-under-short-arm-of-C', root);
   const [sx, sy] = rotate(stopCenter, g.restAngle);

@@ -57,21 +57,25 @@ function smoothstep01(value) {
 
 function screwPropeller(movement) {
   const root = new THREE.Group();
-  const bladeCount = 2;
+  // Pass 72 (p72-c): Brown draws four blades: two broad faces up and down,
+  // one seen edge-on crossing in front of the hub, and the tips of the one
+  // behind it peeping out upper left and lower right.
+  const bladeCount = 4;
   const radialSegments = 44;
   const chordSegments = 10;
   const rootRadiusSceneUnit = 0.42;
   const tipRadiusSceneUnit = 2.28;
-  // The displayed blades share the physical screw's pitch ratio
-  // (3.75 m pitch on a 3.60 m screw), so their faces lean as far round the
-  // shaft as the working screw's do.
-  const screwPitchSceneUnitPerTurn = 3.75 * (2 * tipRadiusSceneUnit) / 3.60;
+  // The displayed blades share the physical screw's pitch ratio. Pass 72:
+  // Brown's edge-on blade spans 240 px axially over ±190 px of height at a
+  // 470 px tip radius (plate at 1050 px), a 48 degree helix arc, so his
+  // pitch is about 1.93 diameters (6.95 m on a 3.60 m screw).
+  const screwPitchSceneUnitPerTurn = 6.95 * (2 * tipRadiusSceneUnit) / 3.60;
   const helicalLeadCoefficientSceneUnit =
     screwPitchSceneUnitPerTurn / FULL_TURN;
 
   const physicalDiameterMetre = 3.60;
   const physicalRadiusMetre = physicalDiameterMetre / 2;
-  const physicalScrewPitchMetrePerTurn = 3.75;
+  const physicalScrewPitchMetrePerTurn = 6.95;
   const waterDensityKilogramPerCubicMetre = 1000;
   const shaftSpeedRevolutionPerMinute = 90;
   const shaftSpeedRevolutionPerSecond =
@@ -109,16 +113,24 @@ function screwPropeller(movement) {
     usefulPropulsivePowerWatt / shaftInputPowerWatt;
 
   // Brown's blades are broad and flared: a narrow neck at the hub widening
-  // steadily to a broad, nearly square tip whose corners are only eased, the
-  // whole blade skewed a little round the shaft.
-  const chordAt = (radialFraction) => {
-    const corner = radialFraction > 0.94
-      ? 1 - 0.22 * ((radialFraction - 0.94) / 0.06) ** 2 : 1;
-    return (0.50 + 0.86 * radialFraction ** 1.25) * corner;
+  // to a broad tip whose corners are only eased. Pass 72: the edges are set
+  // by their helix angles, measured from his face-on blades as axial extents
+  // (x = pitch * angle / 2pi): the leading edge runs from -0.12 rad at the
+  // root to -0.31 rad, nearly straight up his left side; the trailing edge
+  // from 0.28 to 0.58 rad, flaring out on his right, so each blade spans at
+  // most 51 degrees and the four stand clear of one another.
+  const outerBlend = (radialFraction) => {
+    const rho = THREE.MathUtils.lerp(rootRadiusSceneUnit, tipRadiusSceneUnit, radialFraction) / tipRadiusSceneUnit;
+    const x = Math.min(1, Math.max(0, (rho - 0.25) / 0.55));
+    return x * x * (3 - 2 * x);
   };
-  const halfChordAngleAt = (radialFraction) => chordAt(radialFraction) / (2 * THREE.MathUtils.lerp(
-    rootRadiusSceneUnit, tipRadiusSceneUnit, radialFraction));
-  const skewAngleAt = (radialFraction) => 0.12 * radialFraction ** 1.5;
+  const tipCorner = (radialFraction) => (radialFraction > 0.94
+    ? 1 - 0.22 * ((radialFraction - 0.94) / 0.06) ** 2 : 1);
+  const leadingAngleAt = (radialFraction) => -(0.12 + 0.19 * outerBlend(radialFraction));
+  const trailingAngleAt = (radialFraction) => 0.28 + 0.30 * outerBlend(radialFraction);
+  const halfChordAngleAt = (radialFraction) => tipCorner(radialFraction)
+    * (trailingAngleAt(radialFraction) - leadingAngleAt(radialFraction)) / 2;
+  const skewAngleAt = (radialFraction) => (trailingAngleAt(radialFraction) + leadingAngleAt(radialFraction)) / 2;
   const bladeSurfacePointScene = (radialFraction, chordFraction) => {
     const radius = THREE.MathUtils.lerp(
       rootRadiusSceneUnit,
@@ -257,7 +269,7 @@ function screwPropeller(movement) {
   });
 
   const rotor = addRole(new THREE.Group(),
-    'single-rigid-two-blade-screw-propeller-rotor');
+    'single-rigid-four-blade-screw-propeller-rotor');
   rotor.position.set(0.30, 0.12, 0);
   root.add(rotor);
   const shaft = addRole(new THREE.Mesh(
@@ -270,7 +282,7 @@ function screwPropeller(movement) {
   const hub = addRole(new THREE.Mesh(
     new THREE.CylinderGeometry(0.43, 0.43, 1.08, 40),
     hubMaterial,
-  ), 'single-hub-fixing-two-helicoid-blades-to-shaft');
+  ), 'single-hub-fixing-four-helicoid-blades-to-shaft');
   hub.rotation.z = -Math.PI / 2;
   rotor.add(hub);
   const nose = addRole(new THREE.Mesh(
@@ -285,7 +297,7 @@ function screwPropeller(movement) {
   for (let index = 0; index < bladeCount; index += 1) {
     const assembly = addRole(new THREE.Group(),
       `rigid-helicoid-blade-assembly-${index + 1}`);
-    assembly.rotation.x = index * Math.PI;
+    assembly.rotation.x = index * FULL_TURN / bladeCount;
     const blade = addRole(new THREE.Mesh(
       bladeGeometry,
       bladeMaterial,
@@ -557,7 +569,7 @@ function screwPropeller(movement) {
     skewAngleAt,
     helicalAdvanceForRotation,
     mechanism:
-      'Two opposite broad blades and one shaft rotate as a single rigid body about the X axis. Every point of either blade lies on the same constant-lead helicoid x=(pitch/2pi)*phi, so a full turn advances the corresponding ideal screw by exactly one pitch and the local blade angle decreases with radius as atan(pitch/(2pi*r)). In water, finite slip replaces the literal nut constraint: shaft torque produces positive-X thrust while the accelerated wake travels negative X.',
+      'Four broad blades at quarter turns and one shaft rotate as a single rigid body about the X axis. Every point of every blade lies on the same constant-lead helicoid x=(pitch/2pi)*phi, so a full turn advances the corresponding ideal screw by exactly one pitch and the local blade angle decreases with radius as atan(pitch/(2pi*r)). In water, finite slip replaces the literal nut constraint: shaft torque produces positive-X thrust while the accelerated wake travels negative X.',
     motion: {
       acceleratedWaterDirection: new THREE.Vector3(-1, 0, 0),
       rotationAxis: new THREE.Vector3(1, 0, 0),
@@ -592,11 +604,11 @@ function screwPropeller(movement) {
           'the resulting vessel motion is parallel to the shaft axis',
         ],
         engravingEvidence:
-          'Brown’s oblique view shows two opposite broad swept blades merging into one cylindrical hub on one continuous transverse shaft; the changing face angle is visible from root to tip.',
+          'Brown’s oblique view shows four blades on one cylindrical hub on one continuous transverse shaft: two opposite broad swept blades face-on, one edge-on crossing in front of the hub and the tips of the fourth behind it; the changing face angle is visible from root to tip, and the edge-on blade gives a pitch of about 1.9 diameters.',
         ittcCorroboration:
           'The ITTC open-water procedure defines advance coefficient, thrust coefficient, torque coefficient, and open-water efficiency using propeller advance speed, rate, diameter, thrust, torque, and water density.',
         reconstructionDisclosure:
-          'The two-blade topology, common hub and shaft, screw-thread interpretation, axial result, and root-to-tip twist are source-grounded. Exact planform, constant pitch, handedness, direction, supports, physical scale, speed, open-water coefficients, water volume, wake contraction and swirl, colors, and timing are independently engineered and exposed.',
+          'The four-blade topology, common hub and shaft, pitch ratio, screw-thread interpretation, axial result, and root-to-tip twist are source-grounded. Exact planform, constant pitch, handedness, direction, supports, physical scale, speed, open-water coefficients, water volume, wake contraction and swirl, colors, and timing are independently engineered and exposed. The display is mirrored in depth so the screw is left-handed as Brown draws it (his edge-on front blade rises to the right); the recorded kinematics and thrust are those of the unmirrored right-hand model.',
       },
       ittcOpenWaterProcedureUrl:
         'https://ittc.info/media/1838/75-02-03-021.pdf',

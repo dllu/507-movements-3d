@@ -23,16 +23,17 @@ export function crownToothGeometry({
   outerRadius,
   baseFace,
   tipFace,
-}, { regenerate = false } = {}) {
+}, { regenerate = false, radialSteps = 24, angularSteps = 192, rotationSteps = 1200 } = {}) {
+  // The default sampling is the baked movement-26 key; callers may choose a
+  // coarser grid (it enters the cache key, not the baked profile's key).
+  const resolution = radialSteps === 24 && angularSteps === 192 && rotationSteps === 1200
+    ? '' : `:${radialSteps}x${angularSteps}x${rotationSteps}`;
   const key = JSON.stringify({ profile, pinionTeeth, pinionCenterX, crownTeeth,
     innerRadius, outerRadius, baseFace, tipFace });
-  if (!regenerate && cache.has(key)) return cache.get(key).clone();
-  const radialSteps = 24;
-  const angularSteps = 192;
-  const rotationSteps = 1200;
+  if (!regenerate && cache.has(key + resolution)) return cache.get(key + resolution).clone();
   const cuttingClearance = 0.0007;
   const pitch = 2 * Math.PI / crownTeeth;
-  const baked = !regenerate && crownCut?.key === key ? crownCut.heights : null;
+  const baked = !regenerate && !resolution && crownCut?.key === key ? crownCut.heights : null;
   const heights = baked ? Float64Array.from(baked) : new Float64Array((radialSteps + 1) * (angularSteps + 1)).fill(tipFace);
   if (!baked) {
     // Outside this range the shaper's addendum circle is behind the blank tip.
@@ -125,6 +126,6 @@ export function crownToothGeometry({
   creaseIndexedNormals(geometry);
   geometry.userData = { profileKey: key, cuttingClearance, radialSteps, angularSteps, rotationSteps,
     innerRadius, outerRadius, pitch, heights: Array.from(heights), surfaceCount };
-  cache.set(key, geometry);
+  cache.set(key + resolution, geometry);
   return geometry.clone();
 }

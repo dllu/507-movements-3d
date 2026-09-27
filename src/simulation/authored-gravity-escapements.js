@@ -1139,14 +1139,17 @@ function mudgeGravityEscapement(movement) {
       z1: forkBarZ1 - palletPlaneZ,
     });
     const forkPinFrontZ = pendulumPlaneZ + 0.12;
+    // The pin's back end stops a hair inside the fork bar's rear face, so
+    // the two faces are not coplanar.
+    const forkPinBackZ = forkBarZ0 + 0.004;
     const forkPin = cylinderAlongZ(
       forkPinRadius,
-      forkPinFrontZ - forkBarZ0,
+      forkPinFrontZ - forkPinBackZ,
       darkMaterial,
       24,
     );
     forkPin.position.set(forkPoint.x, forkPoint.y,
-      (forkPinFrontZ + forkBarZ0) / 2 - palletPlaneZ);
+      (forkPinFrontZ + forkPinBackZ) / 2 - palletPlaneZ);
     forkPin.userData.label = side > 0 ? 'P' : 'Q';
     forkPin.userData.role = `${sideName}-fork-pin-${side > 0 ? 'P' : 'Q'}`;
     group.add(forkPin);

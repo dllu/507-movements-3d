@@ -241,15 +241,30 @@ function locomotiveStephensonExpansionLinkValveGear() {
   const linkSuspensionPinLocal = new THREE.Vector2(0, 0);
   const linkPinSpacing = aheadLinkPinLocal.distanceTo(asternLinkPinLocal);
   const linkSlotRadius = 26 * scale;
-  const visibleLinkHalfAngle = 0.285;
+  // Pass 72: Brown's link is about 1.29 times its pin spacing overall (85
+  // px against 66 px). The slot's closed ends are centred at this half-angle
+  // and are linkEndThickness thick; the die is a short square block.
+  const linkEndThickness = 0.13;
+  const dieHalfLength = 0.10;
+  const visibleLinkHalfAngle = (1.29 * 8.183476 * scale / 2 - linkEndThickness / 2) / (26 * scale);
+  // Largest die-centre slot angle that keeps the die block clear of the
+  // closed ends (with 0.004 running clearance).
+  const freeDieHalfAngle = visibleLinkHalfAngle
+    - (linkEndThickness / 2 + dieHalfLength + 0.004) / (26 * scale);
   const linkSlotHalfWidth = 0.115;
   const reversingPivot = shaftCenter.clone().add(
     new THREE.Vector2(-38.5 * scale, 15 * scale),
   );
   const reversingShortArmLength = 9.5 * scale;
   const reversingLongArmLength = 20.8 * scale;
-  const maximumReversingAngle = 0.45;
-  const sourceSelector = -0.18;
+  // Pass 72: the die slips about +-0.06 rad in the slot (the lifting lug
+  // sits 0.48 left of the slot, as Brown draws it), so full gear stops short
+  // of the rod pins and the die stays between them and inside the shorter
+  // slot. Brown's notched quadrant is correspondingly short.
+  const maximumReversingAngle = 0.22;
+  // Brown's lever pose: the same reversing-arm angle (-0.081 rad) as before
+  // pass 72, now a larger fraction of the shorter quadrant.
+  const sourceSelector = -0.081 / 0.22;
   const sourceInputAngle = 0;
   const sourceUnitsPerPixel = linkSlotRadius / (
     sourceRasterShaftCenter.x - sourceRasterLinkCenter.x
@@ -503,7 +518,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
       );
     }
     const die = dieCandidates[0];
-    if (Math.abs(die.slotParameter) > visibleLinkHalfAngle - 0.018) {
+    if (Math.abs(die.slotParameter) > freeDieHalfAngle) {
       throw new RangeError('Movement 185 die left the visible slotted link.');
     }
     const rockerAngle = wrapAngle(
@@ -890,7 +905,7 @@ function locomotiveStephensonExpansionLinkValveGear() {
       color: PALETTE.accent,
       depth: 0.18,
       jointRadius: 0.001,
-      thickness: 0.13,
+      thickness: linkEndThickness,
     });
     bridge.userData.role = `${sign < 0 ? 'lower' : 'upper'}-closed-slot-end`;
     expansionLink.add(bridge);
@@ -1179,8 +1194,8 @@ function locomotiveStephensonExpansionLinkValveGear() {
   dieBlock.userData.role =
     'rectangular-die-block-captured-inside-curved-link-slot';
   const dieBody = new THREE.Mesh(
-    plate(clip.difference(poly([[-0.10, -0.145], [0.10, -0.145],
-      [0.10, 0.145], [-0.10, 0.145]]), poly(circle([0, 0], 0.09, 64))), -0.10, 0.10),
+    plate(clip.difference(poly([[-0.10, -dieHalfLength], [0.10, -dieHalfLength],
+      [0.10, dieHalfLength], [-0.10, dieHalfLength]]), poly(circle([0, 0], 0.09, 64))), -0.10, 0.10),
     darkMaterial,
   );
   dieBody.position.z = -0.44;
@@ -1397,6 +1412,9 @@ function locomotiveStephensonExpansionLinkValveGear() {
     valveGuideY,
     valveRodLength,
     visibleLinkHalfAngle,
+    freeDieHalfAngle,
+    linkEndThickness,
+    dieHalfLength,
   };
 
   const update = (time) => {

@@ -164,10 +164,11 @@ test('movement 216 preserves the source radii, sector spans, transition teeth, a
   near(geometry.pinionPitchRadius, 1, 0, 'pinion pitch radius');
   near(geometry.centralPitchRadius, 1, 0, 'external-sector pitch radius');
   near(geometry.ringPitchRadius, 3, 0, 'internal-ring pitch radius');
-  near(geometry.pinionRootRadius, 0.828125, 0, 'pinion root radius');
-  near(geometry.pinionOuterRadius, 1.1125, 0, 'pinion outer radius');
-  near(geometry.ringRootRadius, 3.1375, 0, 'ring root radius');
-  near(geometry.ringTipRadius, 2.859375, 0, 'ring tooth-tip radius');
+  // Brown's teeth are about half a pitch deep (0.2 of the 0.393 pitch).
+  near(geometry.pinionRootRadius, 0.875, 0, 'pinion root radius');
+  near(geometry.pinionOuterRadius, 1.075, 0, 'pinion outer radius');
+  near(geometry.ringRootRadius, 3.125, 0, 'ring root radius');
+  near(geometry.ringTipRadius, 2.925, 0, 'ring tooth-tip radius');
   near(geometry.ringOuterRadius, 3.4, 0, 'ring outside radius');
   near(geometry.shaftBoreRadius, 0.3, 0, 'source bore radius');
   near(geometry.sourceHubReferenceRadius, 0.4, 0,
@@ -199,18 +200,18 @@ test('movement 216 preserves the source radii, sector spans, transition teeth, a
   );
 
   const expectedCentralEntry = [
-    [5.83108, 0.828125],
+    [5.83108, 0.875],
     [5.83108, 0.894712],
     [-5.489355, 0.963494],
     [-5.83108, 0.939693],
-    [-5.83108, 0.828125],
+    [-5.83108, 0.875],
   ];
   const expectedRingEntry = [
-    [2.70197, 3.1375],
+    [2.70197, 3.125],
     [1.878461, 3.03707],
     [-1.439939, 2.973216],
     [-1.930156, 3.044792],
-    [-2.701976, 3.1375],
+    [-2.701976, 3.125],
   ];
   expectedCentralEntry.forEach(([degrees, radius], index) => {
     const [actualOffset, actualRadius] =
@@ -246,15 +247,20 @@ test('movement 216 preserves the source radii, sector spans, transition teeth, a
       `built external transition offset ${index}`,
     );
   });
-  // Brown's square teeth: every working tooth has parallel flanks.
+  // Brown's squarish teeth, about half a pitch wide: short involute working
+  // flanks, and a ring tooth that keeps its pitch-circle width to the root.
   const chordWidth = (profile, first, second) => profile[first].distanceTo(profile[second]);
+  const pitch = 2 * Math.PI / 16;
   const pinionTooth = geometry.centralToothProfiles[3];
-  near(chordWidth(pinionTooth, 0, 3), geometry.externalToothWidth, 1e-12, 'square external tooth root width');
-  near(chordWidth(pinionTooth, 1, 2), geometry.externalToothWidth, 1e-12, 'square external tooth tip width');
+  const half = pinionTooth.length / 2;
+  near(chordWidth(pinionTooth, half - 1, half), geometry.externalToothWidth, 1e-12, 'external tooth tip width');
+  assert.ok(geometry.externalToothWidth > 0.36 * pitch && geometry.externalToothWidth < 0.4 * pitch, 'external tip width');
+  assert.ok(chordWidth(pinionTooth, 0, pinionTooth.length - 1) > 0.42 * pitch, 'external root width');
   const ringTooth = geometry.ringToothProfiles[5];
-  near(chordWidth(ringTooth, 1, 2), geometry.ringToothTipWidth, 1e-12, 'internal tooth tip width');
-  near(chordWidth(ringTooth, 0, 3), geometry.ringToothRootWidth, 1e-12, 'internal tooth root width');
-  assert.ok(geometry.ringToothTipWidth / geometry.ringToothRootWidth > 0.85, 'internal flanks are near-parallel');
+  near(chordWidth(ringTooth, half - 1, half), geometry.ringToothTipWidth, 1e-12, 'internal tooth tip width');
+  near(chordWidth(ringTooth, 0, ringTooth.length - 1), geometry.ringToothRootWidth, 1e-12, 'internal tooth root width');
+  assert.ok(geometry.ringToothRootWidth > 0.47 * pitch && geometry.ringToothRootWidth < 0.5 * pitch, 'ring tooth near half a pitch');
+  assert.ok(geometry.ringToothTipWidth / geometry.ringToothRootWidth > 0.8, 'internal flanks are near-parallel');
 
   assert.deepEqual(
     sourceAnimation.keyframes.map(({ cpos, pinionDirection }) => (
@@ -466,9 +472,9 @@ test('movement 216 transition teeth remain collision-free and the rear carrier c
   }
 
   const radialMargins = radialEnvelopeMarginsAtInputAngle(0.37);
-  near(radialMargins.centralRootToPinionOuter, 0.059375, 2e-16,
+  near(radialMargins.centralRootToPinionOuter, 0.05, 2e-16,
     'inactive central root clears pinion outer radius');
-  near(radialMargins.ringRootToPinionOuter, 0.025, 3e-16,
+  near(radialMargins.ringRootToPinionOuter, 0.05, 3e-16,
     'inactive ring root clears pinion outer radius');
 
   model.root.updateMatrixWorld(true);

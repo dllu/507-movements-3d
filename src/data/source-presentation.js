@@ -1052,7 +1052,8 @@ export default {
   },
   488: {
     remove: ['fixed-bearing-pedestal-(1|2)', 'fixed-propeller-demonstration-base', 'fixed-water-volume-around-screw-propeller', 'fixed-axial-helical-wake-path-\\d', 'fixed-propeller-shaft-bearing-\\d', 'negative-x-wake-marker-\\d+-\\d+', 'fixed-(?:positive-x-vessel-thrust|negative-x-accelerated-water)-arrow-(?:shaft|head)', 'white-index-fixed-to-first-helicoid-blade', 'white-rotation-index-fixed-to-shaft'],
-    note: 'The screw propeller on its shaft; no pedestals, bearings, base, water, arrows or indices are drawn.',
+    scale: [1, 1, -1],
+    note: 'The four-bladed screw propeller on its shaft; no pedestals, bearings, base, water, arrows or indices are drawn. Mirrored in depth, so the screw is left-handed as Brown draws it: his edge-on front blade rises to the right across the hub.',
   },
   489: {
     camera: [0.05, 0.05, 1],

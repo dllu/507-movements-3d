@@ -53,7 +53,7 @@ function disposeModel(root) {
   materials.forEach((material) => material.dispose());
 }
 
-test('movement 488 is one shaft and hub carrying exactly two opposite screw blades', () => {
+test('movement 488 is one shaft and hub carrying four screw blades at quarter turns, as Brown draws', () => {
   const { model, movement } = movementModel();
   const { blocks, degreesOfFreedom, geometry } = model.root.userData;
 
@@ -64,8 +64,8 @@ test('movement 488 is one shaft and hub carrying exactly two opposite screw blad
   assert.equal(movement.fidelity, 'authored');
   assert.equal(model.root.userData.archetype, ARCHETYPE);
   assert.equal(model.root.userData.fidelity, 'authored');
-  assert.equal(geometry.bladeCount, 2);
-  assert.equal(blocks.bladeAssemblies.length, 2);
+  assert.equal(geometry.bladeCount, 4);
+  assert.equal(blocks.bladeAssemblies.length, 4);
   assert.equal(blocks.shaft.parent, blocks.rotor);
   assert.equal(blocks.hub.parent, blocks.rotor);
   assert.equal(blocks.nose.parent, blocks.rotor);
@@ -75,8 +75,8 @@ test('movement 488 is one shaft and hub carrying exactly two opposite screw blad
     assert.equal(assembly.parent, blocks.rotor);
     assert.equal(blade.parent, assembly);
     assert.equal(perimeter.length, 4);
-    near(assembly.rotation.x, index * Math.PI, 0,
-      `opposite blade phase ${index}`);
+    near(assembly.rotation.x, index * Math.PI / 2, 1e-15,
+      `quarter-turn blade phase ${index}`);
   });
 
   const forbidden = [];
@@ -110,7 +110,7 @@ test('movement 488 records Brown, unavailable animation, and ITTC model provenan
   assert.deepEqual(plate.approximateShaftExtentPixels, [96, 418]);
   assert.equal(evidence.explicitInBrownDescription.length, 4);
   assert.match(evidence.engravingEvidence,
-    /two opposite broad swept blades.*one cylindrical hub.*continuous transverse shaft/s);
+    /four blades on one cylindrical hub.*continuous transverse shaft.*two opposite broad swept blades face-on.*edge-on/s);
   assert.match(evidence.ittcCorroboration,
     /advance coefficient.*thrust coefficient.*torque coefficient.*open-water efficiency/s);
   assert.equal(sourceReference.ittcOpenWaterProcedureUrl,
@@ -382,5 +382,17 @@ test('movement 488 fits every propeller pose and leaves spinning movement 507 as
   assert.equal(next.number, '507');
   assert.equal(next.archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
   assert.equal(next.fidelity, 'authored');
+  disposeModel(model.root);
+});
+
+test('movement 488 four blades stand clear of one another and keep Brown\'s pitch ratio', () => {
+  const { model } = movementModel();
+  const { geometry, halfChordAngleAt } = model.root.userData;
+  // Brown's edge-on blade spans a 48 degree helix arc over one blade width,
+  // about 1.93 diameters of pitch.
+  near(geometry.physicalScrewPitchMetrePerTurn / geometry.physicalDiameterMetre, 1.93, 0.01, 'pitch ratio');
+  let widest = 0;
+  for (let i = 0; i <= 200; i += 1) widest = Math.max(widest, 2 * halfChordAngleAt(i / 200));
+  assert.ok(widest < FULL_TURN / geometry.bladeCount - 0.5, `blade span ${widest} leaves a gap`);
   disposeModel(model.root);
 });

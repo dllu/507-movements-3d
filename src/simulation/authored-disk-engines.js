@@ -164,68 +164,10 @@ function sphericalZoneGeometry(radius, halfAngle, segments = 28) {
   return geometry;
 }
 
-// Closed solid made by revolving a 2D region (axial a, radius b >= 0) about
-// X through the rear half-turn (z <= 0). The two cut faces lie in z = 0 and
-// face the viewer, so the part reads as Brown's section.
-function halfRevolvedRegionGeometry(polygons, segments = 96) {
-  const sidePositions = [], capPositions = [];
-  let positions = sidePositions;
-  const point = (a, b, phi) => [a, b * Math.cos(phi), b * Math.sin(phi)];
-  const pushTriangle = (p, q, r, outward) => {
-    const u = new THREE.Vector3(q[0] - p[0], q[1] - p[1], q[2] - p[2]);
-    const v = new THREE.Vector3(r[0] - p[0], r[1] - p[1], r[2] - p[2]);
-    const normal = u.cross(v);
-    if (normal.lengthSq() < 1e-20) return;
-    if (normal.dot(outward) < 0) positions.push(...p, ...r, ...q);
-    else positions.push(...p, ...q, ...r);
-  };
-  const phis = Array.from({length: segments + 1}, (_, i) => Math.PI + Math.PI * i / segments);
-  for (const [outer, ...holes] of polygons) {
-    const rings = [outer, ...holes].map((ring) => ring.slice(0, -1));
-    for (const ring of rings) {
-      for (let i = 0; i < ring.length; i++) {
-        const [a0, b0] = ring[i], [a1, b1] = ring[(i + 1) % ring.length];
-        // Outward normal of this boundary edge in the (a, b) plane; the
-        // centroid test below resolves ring orientation.
-        let na = b1 - b0, nb = -(a1 - a0);
-        const length = Math.hypot(na, nb);
-        if (length < 1e-12) continue;
-        na /= length; nb /= length;
-        const ma = (a0 + a1) / 2 + na * 1e-4, mb = (b0 + b1) / 2 + nb * 1e-4;
-        if (insideRegion(polygons, ma, mb)) { na = -na; nb = -nb; }
-        for (let j = 0; j < segments; j++) {
-          const phi = (phis[j] + phis[j + 1]) / 2;
-          const outward = new THREE.Vector3(na, nb * Math.cos(phi), nb * Math.sin(phi));
-          const p00 = point(a0, b0, phis[j]), p10 = point(a1, b1, phis[j]);
-          const p01 = point(a0, b0, phis[j + 1]), p11 = point(a1, b1, phis[j + 1]);
-          pushTriangle(p00, p10, p11, outward);
-          pushTriangle(p00, p11, p01, outward);
-        }
-      }
-    }
-    const contour = rings[0].map(([a, b]) => new THREE.Vector2(a, b));
-    const holeRings = rings.slice(1).map((ring) => ring.map(([a, b]) => new THREE.Vector2(a, b)));
-    const all = [...contour, ...holeRings.flat()];
-    positions = capPositions;
-    for (const [i, j, k] of THREE.ShapeUtils.triangulateShape(contour, holeRings)) {
-      for (const phi of [Math.PI, FULL_TURN]) {
-        pushTriangle(point(all[i].x, all[i].y, phi), point(all[j].x, all[j].y, phi),
-          point(all[k].x, all[k].y, phi), new THREE.Vector3(0, 0, 1));
-      }
-    }
-    positions = sidePositions;
-  }
-  // Group 0: revolved surfaces; group 1: the flat cut faces of the section.
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute([...sidePositions, ...capPositions], 3));
-  geometry.addGroup(0, sidePositions.length / 3, 0);
-  geometry.addGroup(sidePositions.length / 3, capPositions.length / 3, 1);
-  geometry.computeVertexNormals();
-  return geometry;
-}
-
-// Like halfRevolvedRegionGeometry, but the revolved region may change along
-// the half-turn: `intervals` is a list of {phi0, phi1, region} covering
+// Closed solid made by revolving 2D regions (axial a, radius b >= 0) about
+// X through the rear half-turn (z <= 0); the two cut faces lie in z = 0 and
+// face the viewer, so the part reads as Brown's section. The region may
+// change along the half-turn: `intervals` is a list of {phi0, phi1, region} covering
 // [pi, 2pi] in order. Where the region changes, the step between the two
 // regions is closed by flat radial faces (a port's walls, a divider's
 // faces), so the solid stays watertight. Only the end caps on z = 0 take
@@ -1406,82 +1348,62 @@ function diskEngine(movement) {
     mesh.rotation.set(0, 0, 0);
     mesh.material = [casingMaterial, sectionFaceMaterial];
   };
-  setGeometry(sphericalZone, halfRevolvedRegionGeometry(clip.intersection(casingRegion, zoneRegion)));
   sphericalZone.userData.role = 'fixed-rear-half-spherical-zone-and-outer-skin-section';
-  // Ports and steam chests (pass 71). Each conical head is pierced by two
-  // rectangular ports just clear of the diaphragm: the admission port above
-  // it and the eduction port below. Each side of the disk lies against one
-  // cone, so each cone's ports serve that side alone. The hollow behind each
-  // head is divided on the diaphragm's plane: the upper half is the steam
-  // chest feeding the admission ports, the lower half the eduction chest.
-  // Brown draws no pipes; the chests' supply and exhaust connections are
-  // taken to lie in the front half removed by his section.
+  // Ports (pass 71, reworked in pass 72). Each conical head is pierced by
+  // two rectangular ports just clear of the diaphragm: the admission port
+  // above it and the eduction port below. Each side of the disk lies against
+  // one cone, so each cone's ports serve that side alone.
+  // Pass 72: Brown's hollow behind each head is open, with the rod in it, and
+  // his section shows no chest there. Each port therefore opens into a steam
+  // passage cored inside the head wall: it runs up the middle of the wall to
+  // the solid corner where head, zone and outer skin meet, then straight out
+  // through the outer skin at the back, where the supply and exhaust pipes
+  // (not drawn by Brown) would join. The passages lie only in the ports'
+  // sectors near the diaphragm, so the section plane never meets them.
   const diaphragmPhi = 1.5 * Math.PI;
-  const portInner = 1.30, portOuter = 1.72;
+  const portInner = 1.75, portOuter = 2.0;
   const portNear = THREE.MathUtils.degToRad(4.5), portFar = THREE.MathUtils.degToRad(19);
-  const dividerHalf = 0.05 / 1.2;
-  const portCut = (side) => poly([
-    [side * (coneOffset + portInner * tanBeta - 0.03), portInner],
-    [side * (headOffset + portInner * tanBeta + 0.03), portInner],
-    [side * (headOffset + portOuter * tanBeta + 0.03), portOuter],
-    [side * (coneOffset + portOuter * tanBeta - 0.03), portOuter],
-  ]);
-  const chestRegion = (side) => clip.difference(headInterior(side),
-    rodOpening(side, (side < 0 ? 0.105 : 0.10) + 0.06));
-  const casingSolid = (hollows) => clip.difference(
-    rect(-casingEndX, 0, casingEndX, casingOuterRadius),
-    cavity, ...hollows,
-    halfDisk(centralBallRadius + 0.006),
-    rodOpening(-1, 0.105), rodOpening(1, 0.10),
+  const passageTop = 2.30;
+  const passageHalfWidth = 0.0225;
+  const wallMiddle = (radius) => (coneOffset + headOffset) / 2 + radius * tanBeta;
+  const portPassage = (side) => clip.union(
+    poly([
+      [side * (coneOffset + portInner * tanBeta - 0.03), portInner],
+      [side * wallMiddle(portInner), portInner],
+      [side * wallMiddle(portOuter), portOuter],
+      [side * (coneOffset + portOuter * tanBeta - 0.03), portOuter],
+    ]),
+    poly([
+      [side * (wallMiddle(portInner) - passageHalfWidth), portInner],
+      [side * (wallMiddle(portInner) + passageHalfWidth), portInner],
+      [side * (wallMiddle(passageTop) + passageHalfWidth), passageTop],
+      [side * (wallMiddle(passageTop) + passageHalfWidth), casingOuterRadius + 0.05],
+      [side * (wallMiddle(passageTop) - passageHalfWidth), casingOuterRadius + 0.05],
+      [side * (wallMiddle(passageTop) - passageHalfWidth), passageTop],
+    ]),
   );
-  const sleevedCasingRegion = casingSolid([chestRegion(-1), chestRegion(1)]);
-  const dividedCasingRegion = casingSolid([]);
+  const passages = clip.union(portPassage(-1), portPassage(1));
+  const portedIntervals = (region, ported) => [
+    { phi0: Math.PI, phi1: diaphragmPhi - portFar, region },
+    { phi0: diaphragmPhi - portFar, phi1: diaphragmPhi - portNear, region: ported },
+    { phi0: diaphragmPhi - portNear, phi1: diaphragmPhi + portNear, region },
+    { phi0: diaphragmPhi + portNear, phi1: diaphragmPhi + portFar, region: ported },
+    { phi0: diaphragmPhi + portFar, phi1: 2 * Math.PI, region },
+  ];
+  const zoneSection = clip.intersection(casingRegion, zoneRegion);
+  setGeometry(sphericalZone, revolvedRegionIntervalsGeometry(
+    portedIntervals(zoneSection, clip.difference(zoneSection, passages))));
   conicalHeads.forEach((head, index) => {
     const side = index === 0 ? -1 : 1;
     const halfPlane = side < 0 ? rect(-far, 0, 0, far) : rect(0, 0, far, far);
-    // The rod's conical passage runs through the hollow in a sleeve, so the
-    // chests never open to it.
-    const sleeved = clip.intersection(clip.difference(sleevedCasingRegion, zoneRegion), halfPlane);
-    const ported = clip.difference(sleeved, portCut(side));
-    const divided = clip.intersection(clip.difference(dividedCasingRegion, zoneRegion), halfPlane);
-    setGeometry(head, revolvedRegionIntervalsGeometry([
-      { phi0: Math.PI, phi1: diaphragmPhi - portFar, region: sleeved },
-      { phi0: diaphragmPhi - portFar, phi1: diaphragmPhi - portNear, region: ported },
-      { phi0: diaphragmPhi - portNear, phi1: diaphragmPhi - dividerHalf, region: sleeved },
-      { phi0: diaphragmPhi - dividerHalf, phi1: diaphragmPhi + dividerHalf, region: divided },
-      { phi0: diaphragmPhi + dividerHalf, phi1: diaphragmPhi + portNear, region: sleeved },
-      { phi0: diaphragmPhi + portNear, phi1: diaphragmPhi + portFar, region: ported },
-      { phi0: diaphragmPhi + portFar, phi1: 2 * Math.PI, region: sleeved },
-    ]));
+    const open = clip.intersection(clip.difference(casingRegion, zoneRegion), halfPlane);
+    setGeometry(head, revolvedRegionIntervalsGeometry(
+      portedIntervals(open, clip.difference(open, portPassage(side)))));
     head.userData.ports = { admission: [diaphragmPhi + portNear, diaphragmPhi + portFar],
-      eduction: [diaphragmPhi - portFar, diaphragmPhi - portNear], radial: [portInner, portOuter] };
+      eduction: [diaphragmPhi - portFar, diaphragmPhi - portNear], radial: [portInner, portOuter],
+      passage: { top: passageTop, halfWidth: passageHalfWidth } };
   });
-  // Steam in the chests: live above the divider, exhaust below.
   const chestSteam = [];
-  for (const side of [-1, 1]) {
-    const hollow = chestRegion(side);
-    const inset = (multi) => multi.map((polygon) => polygon.map((ring) => {
-      const cx = ring.reduce((sum, [a]) => sum + a, 0) / ring.length;
-      const cy = ring.reduce((sum, [, b]) => sum + b, 0) / ring.length;
-      return ring.map(([a, b]) => [cx + (a - cx) * 0.985, cy + (b - cy) * 0.985]);
-    }));
-    const chestShape = inset(hollow);
-    for (const [kind, phi0, phi1] of [
-      ['live', diaphragmPhi + dividerHalf + 0.02, 2 * Math.PI - 0.004],
-      ['exhaust', Math.PI + 0.004, diaphragmPhi - dividerHalf - 0.02],
-    ]) {
-      const geometry = revolvedRegionIntervalsGeometry([{ phi0, phi1, region: chestShape }]);
-      geometry.clearGroups();
-      const material = steamMaterial(kind);
-      material.side = THREE.DoubleSide;
-      const volume = new THREE.Mesh(geometry, material);
-      volume.userData.role = `steam-${kind === 'live' ? 'admission' : 'eduction'}-chest-behind-${side < 0 ? 'left' : 'right'}-head`;
-      volume.userData.steamVolume = true;
-      volume.renderOrder = 2;
-      fixedChamber.add(volume);
-      chestSteam.push(volume);
-    }
-  }
   root.userData.blocks.chestSteam = chestSteam;
   // The section solid replaces the former translucent shells, rib lines and
   // rings, the cradle and the white contact and roll indices.

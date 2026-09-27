@@ -31046,7 +31046,9 @@ function skewHyperboloidFrictionDrive() {
   const axisOffset = 1.8;
   const throatRadius = axisOffset / 2;
   const bodyHalfLength = 3.2;
-  const shaftHalfLength = bodyHalfLength + 0.78;
+  const stubRadius = 0.21;
+  const stubLength = 1.1;
+  const shaftHalfLength = bodyHalfLength + 0.085 + stubLength;
   const contactHalfLength = bodyHalfLength / Math.cos(generatorAngle);
   const endRadius = Math.sqrt(
     throatRadius ** 2
@@ -31636,6 +31638,8 @@ function skewHyperboloidFrictionDrive() {
     relativeTwistPitch,
     shaftAngle,
     shaftHalfLength,
+    stubLength,
+    stubRadius,
     surfaceNormal,
     surfaceResidual,
     throatRadius,
@@ -32647,12 +32651,13 @@ function compoundMutilatedExternalInternalGearReverser() {
   const pinionPitchRadius = 1;
   const centralPitchRadius = 1;
   const ringPitchRadius = 3;
-  const pinionRootRadius = 0.828125;
-  const pinionOuterRadius = 1.1125;
-  const centralRootRadius = 0.828125;
-  const centralOuterRadius = 1.1125;
-  const ringRootRadius = 3.1375;
-  const ringTipRadius = 2.859375;
+  // Brown's teeth are about as deep as they are wide, half a pitch each.
+  const pinionRootRadius = 0.875;
+  const pinionOuterRadius = 1.075;
+  const centralRootRadius = pinionRootRadius;
+  const centralOuterRadius = pinionOuterRadius;
+  const ringRootRadius = 3.125;
+  const ringTipRadius = 2.925;
   const ringOuterRadius = 3.4;
   const shaftBoreRadius = 0.3;
   const sourceHubReferenceRadius = 0.4;
@@ -32667,31 +32672,45 @@ function compoundMutilatedExternalInternalGearReverser() {
   const centralToothCenterPhase = pinionPitchAngle / 2;
   const ringToothCenterPhase = ringPitchAngle / 2;
 
-  // Source-derived radial and flank stations. Building the teeth from this
-  // compact construction preserves the proportions without shipping a copy
-  // of the animation's long sampled paths.
-  // Brown draws square teeth: near-parallel flanks (about 0.17 wide from
-  // root to tip) and a broad flat tip, instead of the animation's pointed
-  // tips. Root width and radii keep the source stations.
-  // Brown draws square teeth with parallel flanks. The pinion and the
-  // central sector share a constant-width tooth (0.15 wide, tip and root
-  // alike) and the internal ring a near-parallel one (0.155 at the tip,
-  // 0.175 at the root). These are about the widest square teeth for which
-  // the sampled pinion/sector outlines stay disjoint over the whole cycle.
-  const externalToothWidth = 0.15;
-  // Straight flanks need only their root and tip stations.
+  // Brown draws squarish teeth about half a pitch wide and half a pitch
+  // deep. Straight parallel flanks that wide jam in the 3:1 internal mesh,
+  // so the working flanks are short 14.5-degree involutes (conjugate at the
+  // prescribed 1:1 and 3:1 ratios, 0.015 backlash): about 0.19 wide at the
+  // pitch circle and 0.14-0.16 at the tip. Beyond its pitch circle the ring
+  // tooth keeps its pitch-circle width, so it reads square, not wedge-shaped.
+  const pressureAngle = THREE.MathUtils.degToRad(14.5);
+  const toothBacklash = 0.015;
+  const involute = (angle) => Math.tan(angle) - angle;
+  const circularPitch = fullTurn * pinionPitchRadius / pinionTeeth;
+  const externalToothThickness = circularPitch / 2 - toothBacklash / 2;
+  const internalToothThickness = circularPitch / 2 - toothBacklash / 2;
+  const flankRadii = (from, to, count = 7) => Array.from({ length: count }, (_, index) => from + (to - from) * index / (count - 1));
+  const externalHalfAngle = (radius) => {
+    const base = pinionPitchRadius * Math.cos(pressureAngle);
+    const at = Math.max(radius, base);
+    return externalToothThickness / (2 * pinionPitchRadius) + involute(pressureAngle) - involute(Math.acos(base / at));
+  };
+  const involuteInternalHalfAngle = (radius) => {
+    const base = ringPitchRadius * Math.cos(pressureAngle);
+    return internalToothThickness / (2 * ringPitchRadius) - involute(pressureAngle) + involute(Math.acos(Math.min(1, base / radius)));
+  };
+  const ringFormRadius = ringPitchRadius;
+  const internalHalfAngle = (radius) => radius <= ringFormRadius
+    ? involuteInternalHalfAngle(radius)
+    : Math.asin(ringFormRadius * Math.sin(involuteInternalHalfAngle(ringFormRadius)) / radius);
+  const externalFlank = flankRadii(pinionRootRadius, pinionOuterRadius);
   const externalToothLevels = [
-    [-1, pinionRootRadius], [-1, pinionOuterRadius],
-    [1, pinionOuterRadius], [1, pinionRootRadius],
-  ].map(([side, radius]) => [side * Math.asin(externalToothWidth / 2 / radius), radius]);
-  const ringToothTipWidth = 0.155;
-  const ringToothRootWidth = 0.175;
+    ...externalFlank.map((radius) => [-externalHalfAngle(radius), radius]),
+    ...externalFlank.slice().reverse().map((radius) => [externalHalfAngle(radius), radius]),
+  ];
+  const internalFlank = flankRadii(ringRootRadius, ringTipRadius);
   const internalToothLevels = [
-    [-ringToothRootWidth, ringRootRadius],
-    [-ringToothTipWidth, ringTipRadius],
-    [ringToothTipWidth, ringTipRadius],
-    [ringToothRootWidth, ringRootRadius],
-  ].map(([width, radius]) => [Math.sign(width) * Math.asin(Math.abs(width) / 2 / radius), radius]);
+    ...internalFlank.map((radius) => [-internalHalfAngle(radius), radius]),
+    ...internalFlank.slice().reverse().map((radius) => [internalHalfAngle(radius), radius]),
+  ];
+  const externalToothWidth = 2 * pinionOuterRadius * Math.sin(externalHalfAngle(pinionOuterRadius));
+  const ringToothTipWidth = 2 * ringTipRadius * Math.sin(internalHalfAngle(ringTipRadius));
+  const ringToothRootWidth = 2 * ringRootRadius * Math.sin(internalHalfAngle(ringRootRadius));
   // The four end teeth are asymmetric handoff profiles in the source, not
   // uniformly scaled copies of a working tooth. Their swept-back flanks let
   // the inactive sector pass the pinion without a solid intersection while

@@ -24,13 +24,13 @@
     ],
     "max": [
       7.15333324432373,
-      3.7044444563653736,
+      3.704444461481254,
       0.9599999761581421
     ]
   },
   "focus": [
     2.7377777099609375,
-    0.06222223771942992,
+    0.06222224027737022,
     -0.125
   ],
   "cameraDirection": [
@@ -42,14 +42,14 @@
   "closure": [
     2.6645352591003757e-13,
     1.555977569012157e-13,
-    -4.285460875053104e-13,
+    -4.340972026284362e-13,
     0
   ],
   "velocityClosure": [
     4.1105785442141496e-11,
     2.0080492824092744e-11
   ],
-  "refinements": 1342,
+  "refinements": 1344,
   "sources": [
     {
       "file": "scripts/bake-cord-treadle.mjs",
@@ -69,7 +69,7 @@
     },
     {
       "file": "src/simulation/mujoco-cord-treadle/ideal-cord-shape.js",
-      "sha256": "6c76ba4d985f24b93d1a36cea0e1b7d67265c048b7028aaec9365994d6dda6bd"
+      "sha256": "f9532a352244b260e0bef4c282dd7f096f367cef3b8dc9897d80b1d99d5cdda5"
     },
     {
       "file": "src/simulation/cord-treadle-motion.js",
@@ -85,7 +85,7 @@
     }
   ],
   "assumptions": "Native ideal massless cord and passive treadle; slack shape is a length-preserving geometric illustration, not finite-rope vibration.",
-  "samples": 3343,
-  "bytes": 507529,
-  "sha256": "72984c0a2f9654bf8be4052c8934ef3f0831823d4ba5896113b75bd058520f97"
+  "samples": 3345,
+  "bytes": 500250,
+  "sha256": "cc216a58af95ba1796394931693e9504671dce568b1150eac83c38632bec265a"
 }

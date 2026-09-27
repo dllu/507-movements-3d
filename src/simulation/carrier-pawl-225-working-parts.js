@@ -7,11 +7,11 @@ import { matte, PALETTE } from './primitives.js';
 
 // The rising edge is the positive-torque face. The long trailing edge used
 // by clockwise mechanisms (such as 284) would drive the opposite direction.
-export function carrierPawlFlank225({ outerRadius, rootRadius, pitch, noseRadius }) {
+export function carrierPawlFlank225({ outerRadius, rootRadius, pitch, noseRadius, flankFraction = 0.58 }) {
   const root = new THREE.Vector2(rootRadius, 0);
   const tip = new THREE.Vector2(outerRadius * Math.cos(0.16 * pitch), outerRadius * Math.sin(0.16 * pitch));
   const edge = tip.clone().sub(root), normal = new THREE.Vector2(edge.y, -edge.x).normalize();
-  const point = root.clone().lerp(tip, 0.58), clearance = 0.0002;
+  const point = root.clone().lerp(tip, flankFraction), clearance = 0.0002;
   const center = point.clone().addScaledVector(normal, noseRadius + clearance);
   return { root, tip, point, normal, center, radius: center.length(), angle: Math.atan2(center.y, center.x), clearance };
 }
@@ -38,14 +38,47 @@ export function carrierPawlBarClearance225(pivot, angle, wheelAngle, barOutline,
   return clearance;
 }
 
+// Largest pawl angle (the lift direction lowers it) at which the wheel-side
+// edge of the bar, given as hinge-local points ordered away from the hinge,
+// keeps at least `margin` from every point of the densified wheel outline.
+const denseWheel225 = new WeakMap();
+export function carrierPawlBarLiftLimit225(pivot, baseAngle, wheelAngle, edge, wheelOutline, margin) {
+  let dense = denseWheel225.get(wheelOutline);
+  if (!dense) {
+    dense = [];
+    for (let i = 0; i < wheelOutline.length; i++) {
+      const [ax, ay] = wheelOutline[i], [bx, by] = wheelOutline[(i + 1) % wheelOutline.length];
+      const n = Math.max(1, Math.ceil(Math.hypot(bx - ax, by - ay) / 0.006));
+      for (let k = 0; k < n; k++) dense.push([ax + (bx - ax) * k / n, ay + (by - ay) * k / n]);
+    }
+    denseWheel225.set(wheelOutline, dense);
+  }
+  const radii = edge.map(([x, y]) => Math.hypot(x, y)), polar = edge.map(([x, y]) => Math.atan2(y, x));
+  const cw = Math.cos(wheelAngle), sw = Math.sin(wheelAngle);
+  let limit = Infinity;
+  for (const [x, y] of dense) {
+    const px = cw * x - sw * y - pivot.x, py = sw * x + cw * y - pivot.y, rho = Math.hypot(px, py);
+    if (rho < radii[0] || rho > radii.at(-1)) continue;
+    let j = 1;
+    while (radii[j] < rho) j += 1;
+    const t = (rho - radii[j - 1]) / (radii[j] - radii[j - 1]), psi = polar[j - 1] + (polar[j] - polar[j - 1]) * t;
+    const local = Math.atan2(py, px) - baseAngle, wrapped = Math.atan2(Math.sin(local), Math.cos(local));
+    if (Math.abs(wrapped - psi) > 0.35) continue;
+    limit = Math.min(limit, baseAngle + wrapped - psi - margin / rho);
+  }
+  return limit;
+}
+
 export function installCarrierPawl225(root) {
   const { blocks: b, geometry: g } = root.userData;
   const replace = (mesh, geometry) => { mesh.geometry.dispose(); mesh.geometry = geometry; };
   const material = b.pawlBody.material, dark = matte(PALETTE.ink, { metalness: 0.22, roughness: 0.48 });
-  // Brown's pawl is a plain curved bar: one circular arc from the hinge to
-  // the nose, bowed enough (sagitta 0.44) that only its rounded tip drops
-  // into the tooth space, on the drive and while it drags back.
-  const sagitta = 0.44;
+  // Brown's pawl is a plain, gently curved bar that tapers from a broad hinge
+  // end to a slim rounded point: its centre line is one shallow circular arc
+  // (sagitta 0.17, about 6% of the length against Brown's 5%), and its
+  // wheel-side edge rises just clear of the tooth behind the nose while the
+  // pawl drives. On the return the bar's own edge lifts it over that tooth.
+  const sagitta = 0.17;
   const arcRadius = (g.pawlLength ** 2 / 4 + sagitta ** 2) / (2 * sagitta);
   const halfAngle = Math.asin(g.pawlLength / 2 / arcRadius);
   const curve = { getPoints: (n) => Array.from({ length: n + 1 }, (_, i) => {
@@ -54,21 +87,26 @@ export function installCarrierPawl225(root) {
   }) };
   // A single ordered perimeter avoids unions between tangent capsule arcs,
   // which can fail ring reconstruction under browser floating-point arithmetic.
-  // Brown's pawl is a plain flat bar whose own rounded tip (the working nose
-  // radius) drops into the tooth in the wheel's plane.
-  const points = curve.getPoints(24).map(p => [p.x, p.y]);
-  const noseRadius = g.pawlNoseRadius;
-  const widths = points.map(([x]) => noseRadius + 0.05 * Math.max(0, 1 - x / 0.25) ** 2);
-  const outline = points.map(([x, y], i) => [x, y + widths[i]]);
+  const points = curve.getPoints(32).map(p => [p.x, p.y]);
+  // Brown's bar thickens steadily from about 0.14 at the point to 0.33 at
+  // the hinge; the wheel-side half stays slim near the nose, so most of the
+  // taper is on the outer edge.
+  const noseRadius = g.pawlNoseRadius, hingeHalfWidth = 0.165;
+  const taper = (x, power) => noseRadius + (hingeHalfWidth - noseRadius) * Math.max(0, 1 - x / g.pawlLength) ** power;
+  const widths = points.map(([x]) => taper(x, 1.2));
+  const outerWidths = points.map(([x]) => taper(x, 0.55));
+  const wheelEdge = points.map(([x, y], i) => [x, y + widths[i]]);
+  const outline = [...wheelEdge];
   for (let i = 1; i <= 16; i++) {
     const angle = Math.PI / 2 - Math.PI * i / 16;
     outline.push([g.pawlLength + noseRadius * Math.cos(angle), noseRadius * Math.sin(angle)]);
   }
-  outline.push(...points.slice(0, -1).reverse().map(([x, y], i) => [x, y - widths[points.length - 2 - i]]));
+  outline.push(...points.slice(0, -1).reverse().map(([x, y], i) => [x, y - outerWidths[points.length - 2 - i]]));
   for (let i = 1; i < 32; i++) {
     const angle = -Math.PI / 2 - Math.PI * i / 32;
-    outline.push([0.14 * Math.cos(angle), 0.14 * Math.sin(angle)]);
+    outline.push([hingeHalfWidth * Math.cos(angle), hingeHalfWidth * Math.sin(angle)]);
   }
+  g.pawlWheelEdge = wheelEdge.filter(([x]) => x > 0.3);
   replace(b.pawlBody, plate([[outline, circle([0, 0], 0.074, 64)]], -0.065, 0.065));
   g.pawlOutline = outline;
   g.pawlBarSagitta = sagitta;

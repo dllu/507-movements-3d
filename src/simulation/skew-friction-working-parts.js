@@ -21,7 +21,13 @@ export function correctSkewFrictionParts(root) {
     p.body.userData.exactRuledHyperboloid = false;
     p.body.userData.nominalRuledHyperboloid = true;
     for (const cap of p.endCaps) replace(cap, annulus(g.radiusAtAxial(g.bodyHalfLength - 0.035) - 0.002, 0.12, 80));
-    for (const hub of p.endHubs) replace(hub, annulus(0.2, 0.34, 48));
+    // Brown's axles are plain round stubs, about an eighth of the end
+    // diameter across, standing about a third of it clear of each end face.
+    // Each stub starts 0.001 off its end face, so no faces coincide.
+    for (const hub of p.endHubs) {
+      replace(hub, annulus(g.stubRadius, g.stubLength - 0.001, 48));
+      hub.position.z = Math.sign(hub.position.z) * (g.bodyHalfLength + 0.0855 + g.stubLength / 2);
+    }
     // Generator stripes were finite rods on the working surfaces. Retain the
     // old diagnostic nodes, but show rotation with flush end-face inlays.
     p.materialStripe.visible = false;

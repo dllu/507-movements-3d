@@ -510,7 +510,9 @@ function tippingWaterMeter(movement) {
   const leftStop = makeStop('left', leftStopContact);
   const rightStop = makeStop('right', rightStopContact);
 
-  const flumeLength = 5.25;
+  // Pass 72 (p72-c): long enough that its cut upper end lies beyond the
+  // default crop on the page stage and on a 16:9 full-screen stage.
+  const flumeLength = 6.8;
   const flumeAngle = 0.35;
   const flumeDirection = new THREE.Vector3(
     Math.cos(flumeAngle),
@@ -549,7 +551,8 @@ function tippingWaterMeter(movement) {
 
   // Brown breaks the flume off beyond the plate's upper right. It carries
   // its water, a shallow sheet on the bottom that pours off the lower end
-  // as the fall, and ends cleanly just beyond the default crop (the p56 post
+  // as the fall, and ends cleanly just beyond the default crop, also on a
+  // 16:9 full-screen stage (the p56 post
   // and sill that held its upper end are not built; p62 support policy).
   const flumeWater = new THREE.Mesh(
     new THREE.BoxGeometry(flumeLength - 0.02, 0.06, 0.66),

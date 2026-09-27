@@ -1223,16 +1223,15 @@ function matchBrownStampProportions(model) {
   const topCollarHeight = 0.64;
   // Brown runs the rack teeth up to the top collar. At the lowered rest the
   // top tooth waits just below the pinion axis for pickup, so that collar
-  // then stands level with the pinion: any part of it reaching past the
-  // rod's toothed face would enter the pinion (Brown's collar also overhangs
-  // that side, which his plate cannot do at rest). The top collar therefore
-  // overhangs only the plain side, as far as Brown's does (0.6 of the rod's
-  // width), and on the pinion side ends flush with the rod's toothed face,
-  // the teeth standing out beyond it; it sits Brown's third of a pitch above
-  // the top tooth.
+  // then stands level with the pinion, facing its blank root disk (the teeth
+  // are round the far side then, and later the collar rides above them).
+  // Pass 72 (p72-c): so the collar overhangs the pinion side too, by 0.30 of
+  // the rod's width: out to the rack teeth's tips, just short of the root
+  // disk (0.306 from the rod face at rest). Brown's overhang there (0.78 of
+  // the rod's width) would enter that disk at rest. The plain side keeps
+  // Brown's 0.6. It sits Brown's third of a pitch above the top tooth.
   const topCollarLeft = left - 0.6 * rodWidth;
-  // (Set 0.005 inside the rod face so the two faces are not coplanar.)
-  const topCollarRight = right - 0.005;
+  const topCollarRight = right + 0.30 * rodWidth;
   const topTooth = b.rackTeeth.find(tooth => tooth.userData.index === 0);
   const topToothTop = topTooth.position.y + g.rackToothPitch / 4;
   const topCollarBottom = topToothTop + g.rackToothPitch / 3;

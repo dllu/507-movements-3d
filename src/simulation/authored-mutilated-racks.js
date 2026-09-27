@@ -200,10 +200,10 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   // Plate: the open left end is flush with the first tooth.
   const frameLeft = rackLayoutMinimum - circularPitch * 0.15;
   // Brown closes the frame a quarter pitch past the last rack tooth. The
-  // closed end is joggled back behind the pinion's rear face, and it stands
-  // clear of the gear tips at the stroke limit (0.05 running clearance), so
-  // in the front view the gear never crosses it. That clearance, set by the
-  // gear's radius, is what still makes the frame longer than Brown's.
+  // closed end is flush with the rails, as drawn, and it stands clear of the
+  // gear tips at the stroke limit (0.05 running clearance), so in the front
+  // view the gear never crosses it. That clearance, set by the gear's
+  // radius, is what still makes the frame longer than Brown's.
   const pinionShaftRadius = 0.06;
   const frameRightBridgeClearance = Math.max(
     circularPitch * 0.25,
@@ -215,11 +215,9 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   const frameRightBridgeWidth = 48 / rasterPixelsPerUnit;
   const frameRight = rackLayoutMaximum + frameRightBridgeClearance
     + frameRightBridgeWidth;
-  const frameRightBridgeFront = -0.3;
-  const frameRightBridgeBack = -0.42;
-  // Clearance of the rod cylinder past the gear tips at the stroke limit; the
-  // rod's joggled flat end bridges the gap behind the pinion.
-  const driveRodStart = contactCoordinateMaximum + pinionOuterRadius + 0.04;
+  // Plate: the rod leaves the closed end's outer face; it is buried 0.01
+  // in the bridge so no end face is coplanar with the bridge's.
+  const driveRodStart = frameRight - 0.01;
   // Plate frame half-height is 1.6 gear tip radii (102.5 px vs 64 px).
   const frameOuterHalfHeight = 1.58;
   const frameRailHeight = frameOuterHalfHeight - rackToothRootY;
@@ -227,6 +225,8 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     frameOuterHalfHeight + rackToothRootY
   ) / 2;
   const frameDepth = 0.42;
+  const frameRightBridgeFront = frameDepth / 2;
+  const frameRightBridgeBack = -frameDepth / 2;
   // Plate rod, collar and collar station, scaled by the 20.3 px tooth pitch.
   const driveRodLength = 1.8;
   const driveRodRadius = 0.35;
@@ -366,7 +366,9 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   rackFrame.userData.role =
     'continued-horizontal-reciprocating-frame-with-four-mutilated-rack-groups';
 
-  const frameRailLength = frameRight - frameLeft;
+  // The rails stop a hair inside the closed end's outer face, so the two
+  // are not coplanar there.
+  const frameRailLength = frameRight - 0.002 - frameLeft;
   const topRail = new THREE.Mesh(
     new THREE.BoxGeometry(
       frameRailLength,
@@ -376,7 +378,7 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     driverMaterial,
   );
   topRail.position.set(
-    (frameLeft + frameRight) / 2,
+    (frameLeft + frameRight - 0.002) / 2,
     frameRailCenterY,
     0,
   );
@@ -388,8 +390,10 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   const rightBridge = new THREE.Mesh(
     new THREE.BoxGeometry(
       frameRightBridgeWidth,
-      frameOuterHalfHeight * 2,
-      frameRightBridgeDepth,
+      // A hair inside the rails' outer and front/back faces, so the
+      // overlapping faces are not coplanar (no z-fighting).
+      frameOuterHalfHeight * 2 - 0.004,
+      frameRightBridgeDepth - 0.004,
     ),
     driverMaterial,
   );
@@ -399,22 +403,6 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     (frameRightBridgeFront + frameRightBridgeBack) / 2,
   );
   rightBridge.userData.role = 'closed-right-end-of-translating-rack-frame';
-  // Joggles: each rail's end steps back from its own depth to the bridge's.
-  // They lie outside the gear's tip circle (|y| >= rack root line).
-  const joggleDepth = -frameDepth / 2 - frameRightBridgeFront + 0.01;
-  const rightJoggles = [1, -1].map((side) => {
-    const joggle = new THREE.Mesh(
-      new THREE.BoxGeometry(frameRightBridgeWidth, frameRailHeight, joggleDepth),
-      driverMaterial,
-    );
-    joggle.position.set(
-      frameRight - frameRightBridgeWidth / 2,
-      side * frameRailCenterY,
-      frameRightBridgeFront + joggleDepth / 2 - 0.005,
-    );
-    joggle.userData.role = 'joggle-stepping-rail-back-to-closed-end';
-    return joggle;
-  });
 
   const makeRackToothGeometry = (rack, heightScale) => {
     const side = rack === 'upper' ? 1 : -1;
@@ -474,39 +462,18 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     }
   }
 
+  // Brown draws the rod and frame as one outline: the rod is part of the
+  // frame and shares its material.
   const driveRod = cylinderAlongX(
     driveRodRadius,
     driveRodLength,
-    darkMaterial,
+    driverMaterial,
     32,
   );
-  // Same visible rod end as before (frameRight + length - 0.04); the round
-  // rod begins only past the gear tips' reach at the stroke limit.
   const driveRodEnd = frameRight + driveRodLength - 0.04;
   driveRod.scale.y = (driveRodEnd - driveRodStart) / driveRodLength;
   driveRod.position.x = (driveRodStart + driveRodEnd) / 2;
   driveRod.userData.role = 'rectilinear-input-rod-rigid-with-rack-frame';
-  // The rod's flat end, joggled back like the bridge, joins it behind the
-  // gear; from the front it reads as the rod leaving the closed end.
-  const driveRodNeckLength = driveRodStart + 0.05 - (frameRight - 0.02);
-  const driveRodNeck = new THREE.Mesh(
-    // The rod start lies left of the frame end, so the signed length is
-    // negative; a box needs positive extents or it renders inside out.
-    new THREE.BoxGeometry(
-      Math.abs(driveRodNeckLength),
-      driveRodRadius * 2,
-      // A hair thinner than the bridge it runs into, so the faces inside
-      // the bridge are not coplanar with the bridge's (no z-fighting).
-      frameRightBridgeDepth - 0.006,
-    ),
-    darkMaterial,
-  );
-  driveRodNeck.position.set(
-    frameRight - 0.02 + driveRodNeckLength / 2,
-    0,
-    (frameRightBridgeFront + frameRightBridgeBack) / 2,
-  );
-  driveRodNeck.userData.role = 'joggled-flat-end-of-input-rod-behind-gear';
   const driveCollar = cylinderAlongX(
     driveCollarRadius,
     driveCollarWidth,
@@ -530,9 +497,7 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     topRail,
     bottomRail,
     rightBridge,
-    ...rightJoggles,
     ...rackTeeth,
-    driveRodNeck,
     driveRod,
     driveCollar,
     frameTranslationIndex,
@@ -603,10 +568,9 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   pinionRim.userData.role = 'annular-root-rim-of-complete-output-pinion';
   // The arms are part of the one-piece web.
   const pinionSpokes = [];
-  // The boss stands proud in front; behind, it stops short of the joggled
-  // closed end, which the hub overhangs at the stroke limit.
+  // The boss stands proud in front and a little behind the web.
   const pinionHubFront = pinionDepth * 0.71;
-  const pinionHubBack = frameRightBridgeFront + 0.03;
+  const pinionHubBack = -pinionDepth / 2 - 0.04;
   const pinionHub = cylinderAlongZ(
     pinionHubRadius,
     pinionHubFront - pinionHubBack,
@@ -615,10 +579,10 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
   );
   pinionHub.position.z = (pinionHubFront + pinionHubBack) / 2;
   pinionHub.userData.role = 'hub-fixed-to-alternating-output-shaft';
-  // The shaft runs back past the joggled closed end (its radius clears the
-  // bridge's inner face at the stroke limit) to the bearing behind it.
+  // The shaft runs back behind the frame (the closed end never reaches it)
+  // to the undrawn bearing behind the rack reliefs.
   const pinionShaftFront = 0.43;
-  const pinionShaftBack = frameRightBridgeBack - 0.14;
+  const pinionShaftBack = -0.56;
   const pinionShaft = cylinderAlongZ(
     pinionShaftRadius,
     pinionShaftFront - pinionShaftBack,
@@ -657,8 +621,8 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     frameMaterial,
   );
   // Undrawn (hidden by source presentation): the bearing sits behind the
-  // joggled closed end so the frame can pass in front of it.
-  const bearingZ = frameRightBridgeBack - 0.08;
+  // frame and its rack reliefs so the frame can pass in front of it.
+  const bearingZ = -0.5;
   bearingPost.position.set(0, -1.82 / 2, bearingZ - 0.17);
   bearingPost.userData.role = 'fixed-post-behind-moving-frame-holding-pinion';
   const bearingFoot = new THREE.Mesh(
@@ -878,8 +842,6 @@ function mutilatedRackFrameAlternatingSpurGear(movement) {
     rackFrame,
     rackTeeth,
     rightBridge,
-    rightJoggles,
-    driveRodNeck,
     topRail,
     upperContactMarker,
     upperRackTeeth,

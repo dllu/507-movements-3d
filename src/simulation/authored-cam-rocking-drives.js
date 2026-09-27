@@ -151,24 +151,32 @@ function makeOutputWheel({
   wheel.add(rim);
   const spokes = [];
 
-  const hub = cylinderAlongZ(0.31, 0.56, darkMaterial, 32);
-  hub.position.z = 0.10;
+  // Brown shows only the shaft end in the crank's eye: a plain shaft,
+  // standing just proud of the crank plate.
+  const hub = cylinderAlongZ(0.155, 0.70, darkMaterial, 32);
+  hub.position.z = 0.17;
   hub.userData.role = 'fixed-axis-output-wheel-hub';
   wheel.add(hub);
 
-  const crankStart = new THREE.Vector3(0, 0, 0.39);
-  const crankEnd = new THREE.Vector3(
-    crankVector.x,
-    crankVector.y,
-    0.39,
+  // Brown's crank is an eyed lever plate: a broad eye on the shaft
+  // tapering to a small eye at the pin (the hull of the two eyes).
+  const crankLength = Math.hypot(crankVector.x, crankVector.y);
+  const shaftEye = 0.30, pinEye = 0.20;
+  const tangent = Math.acos((shaftEye - pinEye) / crankLength);
+  const crankOutline = clip.union(
+    poly(circle([0, 0], shaftEye, 72)),
+    poly(circle([crankLength, 0], pinEye, 48)),
+    [[[shaftEye * Math.cos(tangent), shaftEye * Math.sin(tangent)],
+      [shaftEye * Math.cos(tangent), -shaftEye * Math.sin(tangent)],
+      [crankLength + pinEye * Math.cos(tangent), -pinEye * Math.sin(tangent)],
+      [crankLength + pinEye * Math.cos(tangent), pinEye * Math.sin(tangent)]]],
   );
-  const crankArm = beamBetween(
-    crankStart,
-    crankEnd,
-    0.18,
-    0.22,
-    matte(0x24485a, {metalness: 0.16, roughness: 0.55}),
+  const crankArm = new THREE.Mesh(
+    plate(crankOutline, 0.28, 0.50),
+    // A separate plate on the disc face, so it reads as Brown's outlined lever.
+    matte(PALETTE.brass, {metalness: 0.2, roughness: 0.5}),
   );
+  crankArm.rotation.z = Math.atan2(crankVector.y, crankVector.x);
   crankArm.userData.role = 'output-wheel-offset-crank-arm';
   wheel.add(crankArm);
   const crankPin = cylinderAlongZ(0.145, 0.64, darkMaterial, 30);

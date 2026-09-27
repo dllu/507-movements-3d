@@ -9,11 +9,12 @@ const cache = new Map();
 export const conicalStudParameters = Object.freeze({
   centerDistance: 1.8, radiusSlope: 0.42, axialAmplitude: 0.96,
   // Brown draws round stud heads nearly flush on the cone face. The toothed
-  // cone therefore carries stub teeth (addendum 0.45 module), so the stud
-  // body can sit close to its pitch cone and the round heads stand only a
-  // little proud while still entering the tooth spaces.
+  // cone therefore carries short stub teeth (addendum 0.15 module), so the
+  // stud body can sit close to its pitch cone and the round heads, faced
+  // parallel to the cone, stand only about 0.05 proud while still entering
+  // the tooth spaces.
   halfHeight: 1.1, teeth: 24, studCount: 20, studRadius: 0.055,
-  studFront: 0.03, studBack: 0.20, toothAddendumFactor: 0.45,
+  studFront: 0.025, studBack: 0.20, toothAddendumFactor: 0.15,
 });
 
 /** An end-to-end spiral with equal axial steps, as in the engraving.
@@ -174,13 +175,16 @@ export function conicalStudCut(parameters, { regenerate = false } = {}) {
   const pins = motion.studs.map((stud) => topology.points.map(({ u, v }) => ({
     angle: stud.angle + u / stud.radius, height: stud.height + v,
     base: centerDistance - motion.meanRadius - motion.slope * (stud.height + v) - studBack,
-    cap: stud.radius + studFront,
+    // The uncut head face runs parallel to the cone face, a fixed step past
+    // the local pitch cone, so no edge of a round head stands up higher.
+    cap: centerDistance - motion.meanRadius - motion.slope * (stud.height + v) + studFront,
   })));
   for (let sample = 0; sample < samples; sample += 1) {
     const output = turn * sample / samples, input = motion.inputAtOutput(output);
     const cosInput = Math.cos(input), sinInput = Math.sin(input);
     for (const [index, stud] of motion.studs.entries()) {
-      const blankRadius = centerDistance - stud.radius + studFront + parameters.studRadius;
+      const blankRadius = centerDistance - stud.radius + studFront
+        + parameters.studRadius * (1 + motion.slope);
       if (centerDistance ** 2 + stud.radius ** 2
         + 2 * centerDistance * stud.radius * Math.cos(stud.angle - output) > blankRadius ** 2) continue;
       for (const point of pins[index]) {

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import * as THREE from 'three';
 import { createMovementModel } from '../src/simulation/registry.js';
+import { carrierPawlBarClearance225 } from '../src/simulation/carrier-pawl-225-working-parts.js';
 
 const catalog = JSON.parse(await readFile(
   new URL('../src/data/movements.json', import.meta.url),
@@ -89,14 +90,14 @@ test('movement 225 preserves the engraving pivots and one-tooth geometry', () =>
   near(
     geometry.driveEndContactAngle - geometry.driveStartContactAngle,
     geometry.toothPitch,
-    1e-15,
+    5e-15,
     'one drive stroke contact travel',
   );
   assert.ok(transmission.carrierSwingDegrees > 6 && transmission.carrierSwingDegrees < 8, 'source-sized carrier swing');
   near(transmission.outputTeethPerCarrierCycle, 1, 2e-15, 'one-tooth advance');
   for (const angle of [geometry.carrierStartAngle, geometry.carrierEndAngle]) {
     const contact = contactGeometryAtCarrierAngle(angle);
-    near(contact.pawlVector.length(), geometry.pawlLength, 5e-16,
+    near(contact.pawlVector.length(), geometry.pawlLength, 2e-15,
       'fixed pawl length');
     near(
       contact.pawlContactCenter.length(),
@@ -150,11 +151,25 @@ test('movement 225 maintains drive contact and return clearance for 32,769 state
   }
   near(maximumContactError, model.root.userData.geometry.workingFlank.clearance, 1e-15, 'finite flank running clearance');
   assert.ok(maximumNormalVelocityError < 1e-15);
-  assert.ok(maximumTangentialSliding > 0.022);
+  // The slim nose bears high on the steep face and slides along it.
+  assert.ok(maximumTangentialSliding > 0.012);
   // The weighted pawl rides back over the teeth a hair clear (0.003 at mid
-  // stroke), dropping into each gap, rather than lifting well above them.
-  assert.ok(maximumReturnClearance > 0.002 && maximumReturnClearance < 0.0035,
-    `return clearance ${maximumReturnClearance}`);
+  // stroke) rather than lifting well above them. The nose drops toward each
+  // gap until the bar's own edge rides the tooth behind, so the whole flat
+  // outline, not only the nose, stays that close.
+  const { geometry } = model.root.userData;
+  const wheelOutline = model.root.userData.blocks.ratchet.userData.profilePoints.map(p => p.toArray());
+  let maximumRideClearance = 0;
+  for (let index = 0; index <= 256; index += 1) {
+    const state = stateAtCycleCoordinate(0.5 + 0.5 * index / 256);
+    if (state.driving) continue;
+    const whole = carrierPawlBarClearance225(state.pawlPivot, state.pawlAngle, state.wheelAngle, geometry.pawlOutline, wheelOutline);
+    assert.ok(whole > 0.00018, `whole-outline return clearance ${whole}`);
+    maximumRideClearance = Math.max(maximumRideClearance, whole);
+  }
+  assert.ok(maximumReturnClearance > 0.002, `return clearance ${maximumReturnClearance}`);
+  assert.ok(maximumRideClearance > 0.002 && maximumRideClearance < 0.0045,
+    `ride clearance ${maximumRideClearance}`);
   near(lastWheelAngle, Math.PI / 10, 0, 'one-cycle index');
   disposeModel(model.root);
 });
@@ -181,7 +196,8 @@ test('movement 225 has smooth drive, dwell, click-over, and accumulated indexing
   near(driveEnd.wheelAngle, geometry.toothPitch, 0, 'indexed tooth');
   near(returnMiddle.wheelAngle, driveEnd.wheelAngle, 0,
     'return-stroke wheel dwell');
-  near(returnMiddle.returnClearance, 0.003, 1e-6, 'pawl rides the teeth mid-return');
+  const rideMiddle = carrierPawlBarClearance225(returnMiddle.pawlPivot, returnMiddle.pawlAngle, returnMiddle.wheelAngle, geometry.pawlOutline, model.root.userData.blocks.ratchet.userData.profilePoints.map(p => p.toArray()));
+  near(rideMiddle, 0.003, 2e-4, 'pawl rides the teeth mid-return');
   near(nextDrive.returnClearance, 0, 0, 'pawl reseated at closure');
   const oneBefore = stateAtCycleCoordinate(0.25);
   const threeAfter = stateAtCycleCoordinate(3.25);

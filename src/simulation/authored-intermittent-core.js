@@ -7,7 +7,7 @@ import { crown237Return, crown237LiftAtTravel, crown237Triangles, crown237Closes
 import { finishSingleTooth241 } from './single-tooth-241-working-parts.js';
 import { installAlternatingPawl236 } from './alternating-pawl-236-working-parts.js';
 import { starTappetState, finishStarTappet } from './star-tappet-working-parts.js';
-import { carrierPawlFlank225, carrierPawlClearance225, installCarrierPawl225 } from './carrier-pawl-225-working-parts.js';
+import { carrierPawlFlank225, carrierPawlClearance225, carrierPawlBarLiftLimit225, installCarrierPawl225 } from './carrier-pawl-225-working-parts.js';
 import {finishLiftDrawPawl232} from './lift-draw-pawl-232-working-parts.js';
 import { finishGenevaWorkingParts } from './geneva-stop-working-parts.js';
 import { capsule as clipCapsule, circle as clipCircle, poly as clipPoly, polygonClipping } from './finite-plate-geometry.js';
@@ -7734,16 +7734,18 @@ function sharedPivotDoubleStrokeRatchet() {
     );
     const endAngle = unwrapToPivot(endCorner);
     const pivotRadius = pivot.length();
-    // Brown's bands bow well clear of the teeth and come down to them only
-    // at their working ends: the centreline rises steadily from the end
-    // radius to the pin, flattening as it reaches the eye.
+    // Brown's bands bow clear of the teeth and come down to them only at
+    // their working ends: the centreline rises from the end radius to the
+    // pin, flattening as it reaches the eye. The long right band keeps close
+    // round the teeth for its first part and rises in its middle, as drawn.
+    const riseProfile = right ? 1 : 0;
     const radiusAt = (angle) => {
       const fraction = THREE.MathUtils.clamp(
         (angle - endAngle) / (pivotAngle - endAngle), 0, 1);
       return THREE.MathUtils.lerp(
         pawlArcRadius,
         pivotRadius,
-        Math.sin(Math.PI / 2 * fraction),
+        THREE.MathUtils.lerp(Math.sin(Math.PI / 2 * fraction), smoothStep01(fraction), riseProfile),
       );
     };
     // The band narrows into the pin eye.
@@ -14268,8 +14270,10 @@ function vibratingCarrierSinglePawlRatchet(movement) {
   const carrierLength = carrierPivot.distanceTo(sourceTopPivot);
   const ratchetOuterRadius = 1.56;
   const ratchetRootRadius = 1.3;
-  const pawlNoseRadius = 0.09;
-  const workingFlank = carrierPawlFlank225({ outerRadius: ratchetOuterRadius, rootRadius: ratchetRootRadius, pitch: toothPitch, noseRadius: pawlNoseRadius });
+  // Brown's pawl end is a slim rounded point bearing high on the steep face,
+  // so the long back of the tooth behind stays under the nearly straight bar.
+  const pawlNoseRadius = 0.06;
+  const workingFlank = carrierPawlFlank225({ outerRadius: ratchetOuterRadius, rootRadius: ratchetRootRadius, pitch: toothPitch, noseRadius: pawlNoseRadius, flankFraction: 0.8 });
   const pawlContactCenterRadius = workingFlank.radius;
   const pawlLength = 2.64;
   const carrierMidAngle = Math.PI / 2;
@@ -14424,13 +14428,18 @@ function vibratingCarrierSinglePawlRatchet(movement) {
         const clearanceAt = (angle) => carrierPawlClearance225(pivot.clone().add(new THREE.Vector2(
           Math.cos(angle) * pawlLength, Math.sin(angle) * pawlLength)), wheelAngle, returnOutline(), pawlNoseRadius);
         let low = base - pawlReturnLift * 0.6, high = base + pawlReturnLift;
-        if (clearanceAt(low) >= target) return low;
-        if (clearanceAt(high) < target) return high;
-        for (let step = 0; step < 48; step += 1) {
-          const middle = (low + high) / 2;
-          if (clearanceAt(middle) >= target) high = middle; else low = middle;
+        let noseAngle;
+        if (clearanceAt(low) >= target) noseAngle = low;
+        else if (clearanceAt(high) < target) noseAngle = high;
+        else {
+          for (let step = 0; step < 48; step += 1) {
+            const middle = (low + high) / 2;
+            if (clearanceAt(middle) >= target) high = middle; else low = middle;
+          }
+          noseAngle = high;
         }
-        return high;
+        // The bar itself must also ride over the tooth behind the nose.
+        return Math.min(noseAngle, carrierPawlBarLiftLimit225(pivot, noseAngle, wheelAngle, root.userData.geometry.pawlWheelEdge, returnOutline(), 0.003));
       };
       pawlAngle = returnPawlAngle(local);
       // A 1e-6 central difference (bisection bracket ~1e-15 rad) keeps the

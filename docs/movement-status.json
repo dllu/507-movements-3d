@@ -1275,11 +1275,11 @@
       "id": 37,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-a-review.md",
-        "note": "Pass 65: At the silhouette one or two stud heads show as low buttons about 0.08–0.1 proud where Brown draws flush dots."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: At the silhouette the top one or two stud heads still show as small bumps about 0.05 proud where Brown draws flush dots."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1294,7 +1294,8 @@
         "docs/w4a-1-160-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p64-fix-gears-review.md",
-        "docs/p65-a-review.md"
+        "docs/p65-a-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1302,8 +1303,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "At the silhouette one or two stud heads show as low buttons about 0.08–0.1 proud where Brown draws flush dots.",
-      "limits": "Forced: a flush dot cannot enter a tooth space (radial engagement is about 0.07). The end-to-end hand-off is unresolved and the motion is prescribed.",
+      "visibleFlaws": "At the silhouette the top one or two stud heads still show as small bumps about 0.05 proud where Brown draws flush dots.",
+      "limits": "Forced: a driving stud must stand proud by its engagement plus the 0.012 body relief (engagement 0.036); the end-to-end hand-off is unresolved and the motion is prescribed.",
       "assessment": "minor"
     },
     {
@@ -2491,11 +2492,11 @@
       "id": 71,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-deep-mech-review.md",
-        "note": "Pass 64: The two rim slits sit about 20–35° clockwise of Brown's, and the upper one runs more steeply."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: The two rim slits sit about 20–35° clockwise of Brown's, and the upper one runs more steeply."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2514,7 +2515,8 @@
         "docs/pass53-user-review.md",
         "docs/p54-marks-review.md",
         "docs/p59-hidden-review.md",
-        "docs/p64-deep-mech-review.md"
+        "docs/p64-deep-mech-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2523,7 +2525,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "The two rim slits sit about 20–35° clockwise of Brown's, and the upper one runs more steeply.",
-      "limits": "The slits are the studs' swept channel through the rim; where they sit relative to the tappet is fixed by when each stud crosses the rim during the push. B's front plate is see-through where Brown dots the studs, tappet and rim interior; the slits are the studs' swept channel. Brown draws the notches at the static orbit/rim intersections; a working slit lies where its stud crosses the rim during the 55° push, 20–40° clockwise of that.",
+      "limits": "The slits are the studs' swept channel through the rim; where they sit relative to the tappet is fixed by when each stud crosses the rim during the push. B's front plate is see-through where Brown dots the studs, tappet and rim interior; the slits are the studs' swept channel. Brown draws the notches at the static orbit/rim intersections; a working slit lies where its stud crosses the rim during the 55° push, 20–40° clockwise of that. Shifting the display phase to align the slits would move the tappet 30° and the studs about 15° off the plate.",
       "assessment": "minor"
     },
     {
@@ -5082,11 +5084,11 @@
       "id": 137,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — primary agent",
-        "reviewPass": 51,
-        "reviewedOn": "2026-09-24",
-        "evidence": "docs/u2-cams-review.md",
-        "note": "Production capture inspected beside the plate: a smooth cam that keeps both rollers engaged through the turn; rebaked."
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
+        "reviewedOn": "2026-09-26",
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: Brown's dimples are softened into three rounded lobes: his traced edge varies ±13 px in width across the shaft, and a rigid fork on both rollers 212 px apart needs constant width."
       },
       "intersections": {
         "status": "known",
@@ -5103,15 +5105,16 @@
         "docs/u2-cams-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/m3-mujoco-cams-review.md",
-        "docs/m13-rebuilds-review.md"
+        "docs/m13-rebuilds-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "baked",
         "evidence": "src/simulation/baked/expansion-eccentric.js",
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
-      "updatedOn": "2026-09-24",
-      "visibleFlaws": "Brown's dimples are softened into three rounded lobes: they sit almost opposite each other, and a fork driven by both rollers spans one fixed width, so both cannot be kept (smaller rollers or play do not help).",
+      "updatedOn": "2026-09-26",
+      "visibleFlaws": "Brown's dimples are softened into three rounded lobes: his traced edge varies ±13 px in width across the shaft, and a rigid fork on both rollers 212 px apart needs constant width.",
       "limits": "Roller spread and hidden arcs inferred.",
       "assessment": "minor",
       "userReported": "2026-09-24"
@@ -5926,11 +5929,11 @@
       "id": 159,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 lane, integrated by primary agent",
-        "reviewPass": 62,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-supports-a-review.md",
-        "note": "Pass 62: The slack cord bows into one wide arc for part of the cycle (slack is forced by Brown's proportions: a taut cord puts the foot 133 px below the floor)."
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: The slack cord hangs in a deep sag under the crank pin for about a third of the turn (slack is forced: a taut cord puts the foot 133 px below the floor)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5948,7 +5951,8 @@
         "docs/pass53-user-review.md",
         "docs/p53-style-review.md",
         "docs/p54-geo-a-review.md",
-        "docs/p62-supports-a-review.md"
+        "docs/p62-supports-a-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5956,8 +5960,8 @@
         "note": "Production model-loader loads recorded offline MuJoCo motion; no live browser solve."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The slack cord bows into one wide arc for part of the cycle (slack is forced by Brown's proportions: a taut cord puts the foot 133 px below the floor).",
-      "limits": "The slack cord settles as a small loop above the bar; ropes are laid-rope meshes on computed paths, tension and slack not simulated.",
+      "visibleFlaws": "The slack cord hangs in a deep sag under the crank pin for about a third of the turn (slack is forced: a taut cord puts the foot 133 px below the floor).",
+      "limits": "The vertical run hangs straight and the slack is a gravity parabola in the diagonal run; laid-rope meshes on computed paths; tension not simulated.",
       "assessment": "minor"
     },
     {
@@ -6959,11 +6963,11 @@
       "id": 185,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-71 lane, integrated by primary agent",
-        "reviewPass": 71,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p71-e2-review.md",
-        "note": "Pass 71: The expansion link is too long (about 1.5× the pin spacing against Brown's 1.26×), so the die runs past the rod pins in full gear."
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6982,7 +6986,8 @@
         "docs/p56-b-review.md",
         "docs/p62-supports-a-review.md",
         "docs/p63-audit-review.md",
-        "docs/p71-e2-review.md"
+        "docs/p71-e2-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6990,9 +6995,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The expansion link is too long (about 1.5× the pin spacing against Brown's 1.26×), so the die runs past the rod pins in full gear.",
-      "limits": "The shaft runs forward in forward gear, backward in backward gear and stops in mid gear; coplanar links overlap by up to 0.06 at shared pins.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Brown's 1.29× link and square die, with the lifting lug 0.48 left of the slot as drawn, limit the die to ±0.147 rad, so full gear stops short of the pins and the full-gear valve stroke is about twice mid gear's (the forward/backward valve signals correlate at −0.66); the shaft direction follows the gear; coplanar links overlap by up to 0.09 at shared pins.",
+      "assessment": "reasonable"
     },
     {
       "id": 186,
@@ -7688,11 +7693,11 @@
       "id": 204,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-a-review.md",
-        "note": "Pass 65: The end ellipses are still a little narrower than Brown's (about 0.38 against 0.5) and the rollers slightly stubbier."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: The end ellipses are a little narrower than Brown's (about 0.38 against 0.43–0.49)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7705,7 +7710,8 @@
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
         "docs/p64-fix-gears-review.md",
-        "docs/p65-a-review.md"
+        "docs/p65-a-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7713,7 +7719,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The end ellipses are still a little narrower than Brown's (about 0.38 against 0.5) and the rollers slightly stubbier.",
+      "visibleFlaws": "The end ellipses are a little narrower than Brown's (about 0.38 against 0.43–0.49).",
       "limits": "Forced: for equal hyperboloids the projected length over diameter is at most cos²α/sinα, 1.5 at the 30° half-angle a 0.5 ellipse needs, while Brown draws about 1.9, so his drawing is geometrically inconsistent. Longitudinal sliding, friction and load are not solved.",
       "assessment": "minor"
     },
@@ -7757,11 +7763,11 @@
       "id": 206,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-a-review.md",
-        "note": "Pass 65: The right pawl end tapers slightly more than Brown's full-width square end."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: The right pawl band runs about 0.3 outside Brown's over its lower half, and its point bears on the tooth tips about 3.5° clockwise of Brown's, where his reaches deep into the space."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7782,7 +7788,8 @@
         "docs/m2-intermittent-review.md",
         "docs/m11-forced-intermittent-review.md",
         "docs/p64-fix-pawls-review.md",
-        "docs/p65-a-review.md"
+        "docs/p65-a-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7790,8 +7797,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The right pawl end tapers slightly more than Brown's full-width square end.",
-      "limits": "Teeth 0.33 deep (about twice Brown's) with 53 teeth; the wheel is refitted to the drawn tips; the right contact sector is within 2° of the plate.",
+      "visibleFlaws": "The right pawl band runs about 0.3 outside Brown's over its lower half, and its point bears on the tooth tips about 3.5° clockwise of Brown's, where his reaches deep into the space.",
+      "limits": "Teeth are 0.33 deep (about twice Brown's); the wheel is refitted to the drawn tips.",
       "assessment": "minor"
     },
     {
@@ -7831,11 +7838,11 @@
       "id": 208,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-deep-mech-review.md",
-        "note": "Pass 64: Brown's slots are closed at both ends; ours run open across the strip."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: Brown's slots are closed at both ends; ours run open across the strip."
       },
       "intersections": {
         "status": "known",
@@ -7855,7 +7862,8 @@
         "docs/m14-last-residuals-review.md",
         "docs/m15-final-review.md",
         "docs/p62-supports-a-review.md",
-        "docs/p64-deep-mech-review.md"
+        "docs/p64-deep-mech-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7864,7 +7872,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "Brown's slots are closed at both ends; ours run open across the strip.",
-      "limits": "The pinion is widened inward only (0.26 against Brown's 0.34), since the outer side would strike the neighbouring pin ring. Closed slot ends are impossible: at the mouths the engaged pins span −0.082…+0.40 along the shaft, so a closed outer end would be in the outer neighbouring ring's path and a closed inner end past the inner ring (+0.23). Closed slot ends are impossible: when the stopped pinion slides to a neighbouring ring, the pin that is in a slot (one always is, for continuous drive) must leave through that slot's end.",
+      "limits": "The pinion is widened inward only (0.26 against Brown's 0.34), since the outer side would strike the neighbouring pin ring. Closed slot ends are impossible: at the mouths the engaged pins span −0.082…+0.40 along the shaft, so a closed outer end would be in the outer neighbouring ring's path and a closed inner end past the inner ring (+0.23). Closed slot ends are impossible: when the stopped pinion slides to a neighbouring ring, the pin that is in a slot (one always is, for continuous drive) must leave through that slot's end. Even without shifting, the running pins drift −0.082 to +0.40 along the shaft at the slot mouths, so closed ends fail.",
       "assessment": "minor"
     },
     {
@@ -7941,11 +7949,11 @@
       "id": 211,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-deep-mech-review.md",
-        "note": "Pass 64: After the eleven teeth (88°, as drawn) the wheel is relieved at root depth for another 29° before its plain rim, so the cut arc spans about 137° against Brown's ~95°."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: After the eleven teeth (88°, as drawn) the wheel is relieved at root depth for another 29° before its plain rim, so the cut arc spans about 137° against Brown's ~95°."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7964,7 +7972,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m2-intermittent-review.md",
         "docs/p62-shapes-review.md",
-        "docs/p64-deep-mech-review.md"
+        "docs/p64-deep-mech-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7973,7 +7982,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "After the eleven teeth (88°, as drawn) the wheel is relieved at root depth for another 29° before its plain rim, so the cut arc spans about 137° against Brown's ~95°.",
-      "limits": "The 99° arc and the 16-position pinion are needed for a one-turn index; the tongue's working edge follows the pin's epicycloid, so it curves upward; Brown's arc does not close kinematically, so about 22° of relocking is prescribed. 45:18 positions at 5:2; one pinion turn takes 144° of wheel; about 30° of relocking is prescribed motion; the tongue's edge follows the pin's epicycloid.",
+      "limits": "The 99° arc and the 16-position pinion are needed for a one-turn index; the tongue's working edge follows the pin's epicycloid, so it curves upward; Brown's arc does not close kinematically, so about 22° of relocking is prescribed. 45:18 positions at 5:2; one pinion turn takes 144° of wheel; about 30° of relocking is prescribed motion; the tongue's edge follows the pin's epicycloid. The plate's own pitches (wheel 8°, pinion 20°) fix the ratio at 2.5, so one pinion turn takes 144° of wheel; Brown's 95° arc would need a ratio of about 3.8, which his tooth pitches contradict.",
       "assessment": "minor"
     },
     {
@@ -8125,11 +8134,11 @@
       "id": 216,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-a-review.md",
-        "note": "Pass 65: The teeth are square but slimmer than Brown's (about 40% of the pitch against about 50%)."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8148,7 +8157,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
         "docs/p64-fix-gears-review.md",
-        "docs/p65-a-review.md"
+        "docs/p65-a-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8156,9 +8166,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The teeth are square but slimmer than Brown's (about 40% of the pitch against about 50%).",
-      "limits": "Forced: wider teeth interfere in the 3:1 internal mesh and at the hand-off teeth; shortening the teeth did not help. The ring keeps 22 teeth over 165°.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The teeth are shallow 14.5° involutes that read square; the handoff teeth keep the source outlines at 0.8 width; the ring keeps 22 teeth over 165°; speed switches are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 217,
@@ -8450,11 +8460,11 @@
       "id": 225,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-a-review.md",
-        "note": "Pass 65: The bar bows more than Brown's (sagitta about 17% of its length against about 5%) and meets the wheel more steeply."
+        "evidence": "docs/p72-a-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8472,7 +8482,8 @@
         "docs/p55-geo-a-review.md",
         "docs/p56-b-review.md",
         "docs/p64-fix-pawls-review.md",
-        "docs/p65-a-review.md"
+        "docs/p65-a-review.md",
+        "docs/p72-a-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8480,9 +8491,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The bar bows more than Brown's (sagitta about 17% of its length against about 5%) and meets the wheel more steeply.",
-      "limits": "Forced: a flatter plain bar hits the tooth behind the nose during the drag-back. Return lift, gravity bias and load are prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The pawl is a shallow, tapered bowed bar with a slim nose bearing 80% up the steep face, not at the root as drawn; on the return the bar rides the tooth behind the nose, 0.003 clear, and the nose lifts up to 0.1; return lift, gravity bias and load are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 226,
@@ -10047,11 +10058,11 @@
       "id": 269,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-deep-mech-review.md",
-        "note": "Pass 64: The closed end stands about 2 pitches further from the last tooth than Brown's, so the frame is about 15% longer; the gear has 20 teeth against Brown's 18."
+        "evidence": "docs/p72-d-review.md",
+        "note": "Pass 72: The frame is about 15% longer than Brown's (the closed end stands about 2 pitches further from the last tooth); the gear has 20 teeth against his 18."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10073,7 +10084,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-geo-a-review.md",
         "docs/p61-spokes-review.md",
-        "docs/p64-deep-mech-review.md"
+        "docs/p64-deep-mech-review.md",
+        "docs/p72-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10081,8 +10093,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The closed end stands about 2 pitches further from the last tooth than Brown's, so the frame is about 15% longer; the gear has 20 teeth against Brown's 18.",
-      "limits": "The closed end and the rod's flat end are set back behind the gear so its tips pass in front of them at the stroke limit; handoff teeth are relieved at working depth and keep Brown's outline as a web behind the gear; the rod, which Brown breaks off, leaves the view at the stroke limit. Spoked web built by the shared filleted spoked-wheel builder. Gear chosen at the rack pitch Brown's 17 teeth need; its 3.5-pitch tip radius keeps it inside the yoke only if the stroke stops 0.6 pitch into each end group, so three upper-left teeth and one lower-right tooth never engage.",
+      "visibleFlaws": "The frame is about 15% longer than Brown's (the closed end stands about 2 pitches further from the last tooth); the gear has 20 teeth against his 18.",
+      "limits": "The closed end is flush with the rails and the rod leaves its outer face as drawn; the gear's 3.5-pitch tip radius needs 1.9 extra pitches past the last tooth so the gear never crosses the closed end.",
       "assessment": "minor"
     },
     {
@@ -12986,11 +12998,11 @@
       "id": 347,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-71 lane, integrated by primary agent",
-        "reviewPass": 71,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p71-e1-review.md",
-        "note": "Pass 71: The rod sleeves needed to keep the rod's passage out of the steam chests add a visible V inside each chest that Brown's plate doesn't have."
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13010,7 +13022,8 @@
         "docs/p56-c-review.md",
         "docs/p61-faces-review.md",
         "docs/p62-audit-review.md",
-        "docs/p71-e1-review.md"
+        "docs/p71-e1-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13018,9 +13031,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The rod sleeves needed to keep the rod's passage out of the steam chests add a visible V inside each chest that Brown's plate doesn't have.",
-      "limits": "Ports, chest dividers and rod sleeves are reconstructed (Brown shows none); supply and exhaust pipes lie in the cut-away front half; the steam is scripted (a live cell behind each contact line and a 24° blow-down); the intersection screen skips steam meshes; the shaft standard and base are cropped as in the plate.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The hollows behind the heads are open with the rod in them, as Brown's white wedges show; ports feed passages cored inside the head walls that exit at the back where undrawn pipes would join; the steam is scripted; the screen skips steam meshes; standard and base are cropped as in the plate.",
+      "assessment": "reasonable"
     },
     {
       "id": 348,
@@ -13135,11 +13148,11 @@
       "id": 351,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-68 lane, integrated by primary agent",
-        "reviewPass": 68,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p68-review.md",
-        "note": "Pass 68: The top collar is one-sided where Brown's is symmetric (his overhang would enter the pinion at rest)."
+        "evidence": "docs/p72-c-review.md",
+        "note": "Pass 72: On the pinion side the top collar stops at the teeth tips, shorter than Brown's (0.3 against 0.78 of the rod width)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13160,7 +13173,8 @@
         "docs/p64-fix-b1-review.md",
         "docs/p66-fix-review.md",
         "docs/p67-mech-review.md",
-        "docs/p68-review.md"
+        "docs/p68-review.md",
+        "docs/p72-c-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -13171,7 +13185,7 @@
         "note": "Offline MuJoCo rack/stamp study; timestep-dependent pickup not installed."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The top collar is one-sided where Brown's is symmetric (his overhang would enter the pinion at rest).",
+      "visibleFlaws": "On the pinion side the top collar stops at the teeth tips, shorter than Brown's (0.3 against 0.78 of the rod width).",
       "limits": "Eight rack teeth reach the collar, all driven by the pinion's eight. Pickup and release are a gravity-step projection; rebound and impact are not solved.",
       "assessment": "minor"
     },
@@ -14655,11 +14669,11 @@
       "id": 391,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-gears-review.md",
-        "note": "Pass 69: The guides are about 80% of Brown's height (a consistent stroke cannot fill them)."
+        "evidence": "docs/p72-d-review.md",
+        "note": "Pass 72: Lever C and spring d stand higher and reach further above the right guide than Brown's."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14678,7 +14692,8 @@
         "docs/p54-geo-b-review.md",
         "docs/p62-shapes-review.md",
         "docs/p63-a-review.md",
-        "docs/p69-gears-review.md"
+        "docs/p69-gears-review.md",
+        "docs/p72-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14686,8 +14701,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The guides are about 80% of Brown's height (a consistent stroke cannot fill them).",
-      "limits": "The racks and teeth are one piece; each groove is the exact locus of its rack pin; corner selection and the assist are prescribed, not force-solved.",
+      "visibleFlaws": "Lever C and spring d stand higher and reach further above the right guide than Brown's.",
+      "limits": "A 13-pitch stroke (1.3 wheel turns per cycle) matches Brown's guide height; each groove is the exact locus of its pin; corner selection and the assist are prescribed.",
       "assessment": "minor"
     },
     {
@@ -14770,11 +14785,11 @@
       "id": 394,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-gears-review.md",
-        "note": "Pass 69: Brown draws the rack teeth coarser than the pinion teeth; here one tooth size serves both."
+        "evidence": "docs/p72-d-review.md",
+        "note": "Pass 72: Brown's rack teeth are finer than his pinion's and box-shaped; here one module of 25° stub involute teeth serves both."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14795,7 +14810,8 @@
         "docs/p57-d-review.md",
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
-        "docs/p69-gears-review.md"
+        "docs/p69-gears-review.md",
+        "docs/p72-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14803,7 +14819,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown draws the rack teeth coarser than the pinion teeth; here one tooth size serves both.",
+      "visibleFlaws": "Brown's rack teeth are finer than his pinion's and box-shaped; here one module of 25° stub involute teeth serves both.",
       "limits": "Rebuilt with a 10-tooth involute pinion and a matching 42-tooth endless rack, every tooth meshing once per cycle; the flanges only stop the pinion going too deep, holding it in mesh against the tooth force is prescribed.",
       "assessment": "minor"
     },
@@ -14890,11 +14906,11 @@
       "id": 397,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-gears-review.md",
-        "note": "Pass 69: The slot's upper end runs past where Brown stops it, because the pin must reach that point."
+        "evidence": "docs/p72-d-review.md",
+        "note": "Pass 72: The slot's upper end runs past Brown's stop (the pin reaches 268 px from the pivot against his 238); the table lug is about 12 px left of Brown's (link 2.30 against 2.02)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14913,7 +14929,8 @@
         "docs/p55-geo-b-review.md",
         "docs/p64-fix-c1-review.md",
         "docs/p66-audit-review.md",
-        "docs/p69-gears-review.md"
+        "docs/p69-gears-review.md",
+        "docs/p72-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14921,19 +14938,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The slot's upper end runs past where Brown stops it, because the pin must reach that point.",
-      "limits": "One plain circular slot arc with rounded ends; a near-rest (at most 0.11 rad creep) rather than a true dwell.",
+      "visibleFlaws": "The slot's upper end runs past Brown's stop (the pin reaches 268 px from the pivot against his 238); the table lug is about 12 px left of Brown's (link 2.30 against 2.02).",
+      "limits": "The rocker stands upright at rest as drawn; one circular slot arc; near-rest, not a true dwell; the link must exceed the 2.22 drop of the top joint at the 65° swing.",
       "assessment": "minor"
     },
     {
       "id": 398,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-gears-review.md",
-        "note": "Pass 69: Brown's crank arm is longer than the r = 0.4 the derived groove allows."
+        "evidence": "docs/p72-d-review.md",
+        "note": "Pass 72: The crank throw is 0.40 against Brown's about 0.6, and the crank points up-right where Brown's points up-left (his pose is inconsistent with the roller on a lobe tip)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14951,7 +14968,8 @@
         "docs/p56-d-review.md",
         "docs/p64-fix-c1-review.md",
         "docs/p66-audit-review.md",
-        "docs/p69-gears-review.md"
+        "docs/p69-gears-review.md",
+        "docs/p72-d-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14959,7 +14977,7 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown's crank arm is longer than the r = 0.4 the derived groove allows.",
+      "visibleFlaws": "The crank throw is 0.40 against Brown's about 0.6, and the crank points up-right where Brown's points up-left (his pose is inconsistent with the roller on a lobe tip).",
       "limits": "The groove centreline is derived from the in-line slider-crank so the wheel makes three full turns per cam turn at varying speed (9:1 speed ratio); at the crank's dead centres the prescribed law picks the direction; the official 2D animation only rocks the wheel.",
       "assessment": "minor"
     },
@@ -15303,11 +15321,11 @@
       "id": 408,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-64 lane, integrated by primary agent",
-        "reviewPass": 64,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p64-fix-c2-review.md",
-        "note": "Pass 64: Two small guide pegs Brown doesn't draw stand on the instrument (the legs' motion bears on them)."
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15324,7 +15342,8 @@
         "docs/p53-no-hidden-lines-review.md",
         "docs/pass53-user-review.md",
         "docs/p54-marks-review.md",
-        "docs/p64-fix-c2-review.md"
+        "docs/p64-fix-c2-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15332,9 +15351,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Two small guide pegs Brown doesn't draw stand on the instrument (the legs' motion bears on them).",
-      "limits": "Manual instrument operation prescribed; drawing/gripping force, friction, elastic deflection and loaded joint behavior unvalidated. The pegs sit 0.02 off the straight leg faces to clear the leg bosses.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The pegs are the pins Brown's caption describes (\"a pin is inserted vertically for instrument to work against\"), which his instrument figure omits; they sit 0.02 off the leg faces; operation is manual.",
+      "assessment": "reasonable"
     },
     {
       "id": 409,
@@ -16533,11 +16552,11 @@
       "id": 440,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
-        "reviewPass": 70,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p70-c-review.md",
-        "note": "Pass 70: In wide or rotated views the flume's upper end ends in free space (Brown breaks it off)."
+        "evidence": "docs/p72-c-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16557,7 +16576,8 @@
         "docs/p60-supports-review.md",
         "docs/p62-supports-b-review.md",
         "docs/p69-w1-review.md",
-        "docs/p70-c-review.md"
+        "docs/p70-c-review.md",
+        "docs/p72-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16565,9 +16585,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "In wide or rotated views the flume's upper end ends in free space (Brown breaks it off).",
-      "limits": "The camera shows the water in the raised half through each fill; tipping threshold, timing and water load are prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The flume continues straight past Brown's break and ends cleanly beyond the default crop; its end shows only when zoomed well out. Tipping threshold, timing and water load are prescribed.",
+      "assessment": "reasonable"
     },
     {
       "id": 441,
@@ -17124,11 +17144,11 @@
       "id": 455,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-69 lane, integrated by primary agent",
-        "reviewPass": 69,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p69-w2-review.md",
-        "note": "Pass 69: A 4° relief groove beside each valve knuckle is a small leak path as it passes the abutment corner."
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17148,7 +17168,8 @@
         "docs/p54-water-review.md",
         "docs/p55-cutaway-review.md",
         "docs/p64-audit-review.md",
-        "docs/p69-w2-review.md"
+        "docs/p69-w2-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17156,9 +17177,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "A 4° relief groove beside each valve knuckle is a small leak path as it passes the abutment corner.",
-      "limits": "The rotor is a mutilated cylinder whose two circular-segment valves close it into a perfect cylinder; the chamber-limited opening is tabulated with the reopening eased over 40°; water pressure is not solved; the flats are 52° (Brown about 65°).",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The rotor is a mutilated cylinder whose two circular-segment valves close it into a perfect cylinder; the chamber-limited opening is tabulated with the reopening eased over 40°; water pressure is not solved; the flats are 52° (Brown about 65°). The 3.5° relief groove passes the corner without widening the flow path beyond the 0.006 running clearance.",
+      "assessment": "reasonable"
     },
     {
       "id": 456,
@@ -17205,11 +17226,11 @@
       "id": 457,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
-        "reviewPass": 70,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p70-c-review.md",
-        "note": "Pass 70: The tipped bucket's spill falls back down the well (Brown draws no receiving vessel), and the tip is brisk because the dwell is short."
+        "evidence": "docs/p72-c-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17228,7 +17249,8 @@
         "docs/p65-b-review.md",
         "docs/p66-audit-review.md",
         "docs/p69-w1-review.md",
-        "docs/p70-c-review.md"
+        "docs/p70-c-review.md",
+        "docs/p72-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17236,19 +17258,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The tipped bucket's spill falls back down the well (Brown draws no receiving vessel), and the tip is brisk because the dwell is short.",
-      "limits": "The raised bucket tips about its ears to empty; one clean cutaway on the camera plane; the spill follows the tipped bucket's capacity and the timing is prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The raised bucket is drawn aside, tipped and righted over a 3.2 s dwell; the pour lands on the ground just outside the kerb without a puddle; the operator's draw-aside, tip and timing are prescribed; the bail touches the rim at its ear hinges.",
+      "assessment": "reasonable"
     },
     {
       "id": 458,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
-        "reviewPass": 70,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p70-c-review.md",
-        "note": "Pass 70: The tipped bucket's spill falls back down the shaft (Brown draws no receiving vessel), and the tip is brisk because the dwell is short."
+        "evidence": "docs/p72-c-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17268,7 +17290,8 @@
         "docs/p57-d-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w1-review.md",
-        "docs/p70-c-review.md"
+        "docs/p70-c-review.md",
+        "docs/p72-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17276,9 +17299,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The tipped bucket's spill falls back down the shaft (Brown draws no receiving vessel), and the tip is brisk because the dwell is short.",
-      "limits": "The raised bucket tips about its ears to empty; one clean cutaway on the camera plane; the spill follows the tipped bucket's capacity and the timing is prescribed.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Each raised bucket is drawn aside over the kerb and pours onto the ground; the operator's draw-aside, tip and timing are prescribed; the dwell timing departs from the source keyframes; the bail touches the rim at its ear hinges.",
+      "assessment": "reasonable"
     },
     {
       "id": 459,
@@ -17687,11 +17710,11 @@
       "id": 469,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-70 lane, integrated by primary agent",
-        "reviewPass": 70,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p70-a-review.md",
-        "note": "Pass 70: Brown's face gear on the wheel is drawn as a bevel."
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17711,7 +17734,8 @@
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
         "docs/p69-w4-review.md",
-        "docs/p70-a-review.md"
+        "docs/p70-a-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17719,19 +17743,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "Brown's face gear on the wheel is drawn as a bevel.",
-      "limits": "Bubbles pass through the paddles; air transport and thermal run-down are prescribed; the walls stand 0.2 above the water.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Brown's face gear: a 12-tooth pinion drives a 48-tooth pinion-generated face gear (0.0007–0.002 flank gap) on a disk 0.18 in front of the paddles; bubbles pass through the paddles; air transport and run-down are prescribed; the walls stand 0.2 above the water.",
+      "assessment": "reasonable"
     },
     {
       "id": 470,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-71 lane, integrated by primary agent",
-        "reviewPass": 71,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p71-e2-review.md",
-        "note": "Pass 71: The loop starts with the hammer down, where Brown shows it raised."
+        "evidence": "docs/p72-b-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17752,7 +17776,8 @@
         "docs/p64-fix-c2-review.md",
         "docs/p65-c-review.md",
         "docs/p66-audit-review.md",
-        "docs/p71-e2-review.md"
+        "docs/p71-e2-review.md",
+        "docs/p72-b-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17760,9 +17785,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The loop starts with the hammer down, where Brown shows it raised.",
-      "limits": "Spool stroke ±0.058; the standard's depth is inferred. A 7.2% visibility pop of the steam chamber inside the closed barrel is not visible. Brown's low broad anvil block.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "The loop opens on Brown's pose with the hammer part-way up its lift; spool stroke ±0.058; the standard's depth is inferred; the hand lever tilts ±12° where Brown draws it level; a hidden 7.1% steam-chamber visibility pop; Brown's low broad anvil.",
+      "assessment": "reasonable"
     },
     {
       "id": 471,
@@ -18419,11 +18444,11 @@
       "id": 488,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-65 lane, integrated by primary agent",
-        "reviewPass": 65,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p65-c-review.md",
-        "note": "Pass 65: The blades are narrower in face than Brown's broad faces (a true helicoid cannot show both faces from one side view)."
+        "evidence": "docs/p72-c-review.md",
+        "note": "Pass 72: checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18439,7 +18464,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m17-audit-d-review.md",
         "docs/p64-fix-c2-review.md",
-        "docs/p65-c-review.md"
+        "docs/p65-c-review.md",
+        "docs/p72-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18447,9 +18473,9 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-26",
-      "visibleFlaws": "The blades are narrower in face than Brown's broad faces (a true helicoid cannot show both faces from one side view).",
-      "limits": "Prescribed rotor motion displayed at one turn per 4 s against a 90 rpm authored operating point; thrust, slip and loading not validated.",
-      "assessment": "minor"
+      "visibleFlaws": "",
+      "limits": "Brown's four blades at quarter turns with his measured pitch (about 1.93 diameters) and edge widths, displayed mirrored in depth to his handedness; prescribed rotor motion at one turn per 4 s against a 90 rpm operating point; thrust, slip and loading not validated.",
+      "assessment": "reasonable"
     },
     {
       "id": 489,
@@ -18868,11 +18894,11 @@
       "id": 500,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-62 lane, integrated by primary agent",
-        "reviewPass": 62,
+        "reviewer": "Claude Opus 5.5 — pass-72 lane, integrated by primary agent",
+        "reviewPass": 72,
         "reviewedOn": "2026-09-26",
-        "evidence": "docs/p62-shapes-review.md",
-        "note": "Pass 62: At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap)."
+        "evidence": "docs/p72-c-review.md",
+        "note": "Pass 72: At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap)."
       },
       "intersections": {
         "status": "known",
@@ -18892,7 +18918,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p56-d-review.md",
         "docs/p58-misc-review.md",
-        "docs/p62-shapes-review.md"
+        "docs/p62-shapes-review.md",
+        "docs/p72-c-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18901,7 +18928,7 @@
       },
       "updatedOn": "2026-09-26",
       "visibleFlaws": "At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap).",
-      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads.",
+      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads. Clearing both ±60° views with the half-gauge section needs a gap of about 7.3 against the present 1.86 (the plate's is about 0.2).",
       "assessment": "minor"
     },
     {

@@ -1,46 +1,46 @@
 {
   "movement": 159,
   "samples": 201,
-  "method": "Finite polyline capsule-distance checks, excluding local neighbors with less than four rope radii of material gap. Discrete curvature plus 1025 analytic Bezier-curvature samples per pose check local tubular folding. Not a continuous-time proof.",
-  "minimumNonlocalSelfClearance": 0.08469865693049516,
+  "method": "Finite polyline capsule-distance checks, excluding local neighbors with less than four rope radii of material gap. Discrete curvature plus 1025 analytic curvature samples of the quadratic sag Bezier per pose check local tubular folding. Not a continuous-time proof.",
+  "minimumNonlocalSelfClearance": 0.08678037367036104,
   "witness": {
-    "time": 12.800000000015611,
-    "i": 237,
-    "j": 243,
+    "time": 12.420000000013797,
+    "i": 5,
+    "j": 11,
     "points": [
       [
-        4.277317347200633,
-        -2.7091453192818014,
+        1.3993370767740148,
+        0.0026137859343674883,
         0.64
       ],
       [
-        4.26775278149412,
-        -2.7517475762212342,
+        1.4230484869510396,
+        -0.03404737782018849,
         0.64
       ],
       [
-        4.102867764031788,
-        -2.809475834031126,
+        1.5994248680744074,
+        -0.04599194549160156,
         0.64
       ],
       [
-        4.067422335083256,
-        -2.7839739545996904,
+        1.6245324425865255,
+        -0.010284698256038326,
         0.64
       ]
     ]
   },
-  "maximumRadiusTimesCurvature": 0.6412101279701725,
-  "maximumRadiusTimesAnalyticCurvature": 0.7118171301952612,
-  "minimumFloorClearance": 0.4910624151453251,
+  "maximumRadiusTimesCurvature": 0.6069869428133268,
+  "maximumRadiusTimesAnalyticCurvature": 0.6674223449759324,
+  "minimumFloorClearance": 0.9621661744478467,
   "sources": [
     {
       "file": "scripts/review-cord-treadle-ideal-shape.mjs",
-      "sha256": "1f703f2583df6c7d80f2842920789111c2bf2ebcac785298ba65dfa9086fb110"
+      "sha256": "be2ad7a85ed439b12960568861471f9e3e559adb4657853ce85f27674b5d6424"
     },
     {
       "file": "/dev/shm/159-ideal-shaped.json",
-      "sha256": "cbef2066508ddbb4f3908a6b6e98bfe155587d6057ad4f8288a04575f364d59d"
+      "sha256": "8186d055e6cd5ea721d97fac6b86a9e6eebbd7bf66aa338d4555a32158d4a19d"
     }
   ]
 }

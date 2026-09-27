@@ -495,7 +495,7 @@ test('movement 351 closes one shaft revolution and leaves movement 507 authored'
   disposeModel(model507.root);
 });
 
-test('movement 351 runs the rack teeth up to the top collar, which clears the pinion at every pose', () => {
+test('movement 351 runs the rack teeth up to the top collar, which overhangs both sides and clears the pinion at every pose', () => {
   const model = createMovementModel(catalog.movements[350]);
   const { blocks, geometry, stampTripParts } = model.root.userData;
   const tipRadius = stampTripParts.mesh.tipRadius;
@@ -508,16 +508,32 @@ test('movement 351 runs the rack teeth up to the top collar, which clears the pi
   const gap = collar.min.y - toothTop;
   // Brown's teeth reach the collar: no plain stretch of rod between them.
   assert.ok(gap > 0 && gap < geometry.rackToothPitch / 2, `top tooth to collar gap ${gap}`);
+  // Pass 72: the collar overhangs the pinion side (to the rack teeth's
+  // tips). At rest it stands level with the pinion's blank root disk, which
+  // it must clear; it may enter the tip circle only where no tooth is.
+  assert.ok(collar.max.x > Math.max(...teeth.map((tooth) => new THREE.Box3().setFromObject(tooth).max.x)) - 0.03,
+    'the collar reaches out to the rack teeth tips');
   const centre = worldPosition(blocks.pinion ?? blocks.inputShaft);
-  let minimum = Infinity;
-  for (let index = 0; index <= 512; index += 1) {
-    model.update(geometry.cyclePeriod * index / 512);
+  const rootRadius = geometry.gearRootRadius;
+  let minimumRoot = Infinity;
+  const point = new THREE.Vector3();
+  for (let index = 0; index <= 1024; index += 1) {
+    model.update(geometry.cyclePeriod * index / 1024);
     model.root.updateMatrixWorld(true);
     const box = new THREE.Box3().setFromObject(blocks.topRodCap);
     const dx = Math.max(box.min.x - centre.x, 0, centre.x - box.max.x);
     const dy = Math.max(box.min.y - centre.y, 0, centre.y - box.max.y);
-    minimum = Math.min(minimum, Math.hypot(dx, dy) - tipRadius);
+    minimumRoot = Math.min(minimumRoot, Math.hypot(dx, dy) - rootRadius);
+    for (const tooth of blocks.gearTeeth.filter((tooth) => tooth.visible)) {
+      const positions = tooth.geometry.attributes.position;
+      for (let i = 0; i < positions.count; i += 1) {
+        point.fromBufferAttribute(positions, i).applyMatrix4(tooth.matrixWorld);
+        assert.ok(!(point.x > box.min.x + 1e-6 && point.x < box.max.x - 1e-6
+          && point.y > box.min.y + 1e-6 && point.y < box.max.y - 1e-6),
+        `pinion tooth inside the top collar at ${index}`);
+      }
+    }
   }
-  assert.ok(minimum > 0.005, `top collar clears the pinion tip circle: ${minimum}`);
+  assert.ok(minimumRoot > 0.005, `top collar clears the pinion root disk: ${minimumRoot}`);
   disposeModel(model.root);
 });

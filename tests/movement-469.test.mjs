@@ -63,10 +63,10 @@ test('movement 469 is the two-temperature cistern proposal with one reversed scr
   assert.equal(blocks.inputBevel.parent, blocks.screwRotor);
   assert.equal(blocks.transferShaftRotor.parent.parent, model.root);
   assert.equal(blocks.outputBevel.parent, blocks.transferShaftRotor);
-  assert.equal(blocks.shaftHubBevel.parent, blocks.transferShaftRotor);
+  assert.equal(blocks.facePinion.parent, blocks.transferShaftRotor);
   assert.equal(blocks.transferShaft.parent, blocks.transferShaftRotor);
   assert.equal(blocks.waterWheelRotor.parent, blocks.waterWheelAssembly);
-  assert.equal(blocks.wheelBevel.parent, blocks.waterWheelRotor);
+  assert.equal(blocks.faceGear.parent, blocks.waterWheelRotor);
   assert.equal(blocks.airConduit.parent, model.root);
   assert.equal(blocks.airBubbles.length, data.geometry.bubbleCount);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
@@ -105,7 +105,7 @@ test('movement 469 source record preserves Brown’s screw direction, full air r
   assert.ok(evidence.explicitInBrownDescription.some((claim) =>
     claim.includes('maintaining the temperature difference is not given')));
   assert.match(evidence.engravingEvidence, /two open cisterns/i);
-  assert.match(evidence.reconstructionDisclosure, /two pairs of 24-tooth shared-apex mitre bevels/i);
+  assert.match(evidence.reconstructionDisclosure, /a pair of 24-tooth shared-apex mitre bevels.*48-tooth face gear/i);
   assert.match(evidence.reconstructionDisclosure, /explicitly adds external heat/i);
   disposeModel(model.root);
 });
@@ -141,7 +141,7 @@ test('movement 469 screw flight has a consistent pitch and operates opposite the
   disposeModel(model.root);
 });
 
-test('movement 469 two mitre pairs on the inclined shaft derive every wheel speed from the screw', () => {
+test('movement 469 head mitre and wheel face gear on the inclined shaft derive every wheel speed from the screw', () => {
   const { model } = movementModel();
   const { geometry, stateAtPhase } = model.root.userData;
 
@@ -166,10 +166,12 @@ test('movement 469 two mitre pairs on the inclined shaft derive every wheel spee
       2e-12,
       `head mitre no slip at ${phase}`,
     );
-    near(state.bevelOutputAngularVelocity + state.waterWheelAngularVelocity,
-      0, 2e-12, `hub mitre no slip at ${phase}`);
+    near(state.bevelOutputAngularVelocity * geometry.facePinionPitchRadius
+      + state.waterWheelAngularVelocity * geometry.faceGearPitchRadius,
+    0, 2e-12, `face gear no slip at ${phase}`);
     near(state.waterWheelAngularVelocity / state.screwAngularVelocity,
-      -1, 1e-12, `complete train ratio at ${phase}`);
+      -geometry.facePinionTeeth / geometry.faceGearTeeth, 1e-12,
+      `complete train ratio at ${phase}`);
     assert.ok(state.waterWheelAngularVelocity > 0,
       `right-side bubbles require counterclockwise wheel motion at ${phase}`);
   }
@@ -357,7 +359,10 @@ test('movement 469 whole screw turns close both mitre pairs and the wheel withou
   near(geometry.totalScrewTurns % 1, 0, 1e-12,
     'integer screw turns');
   near(Math.abs(completed.waterWheelAngle - start.waterWheelAngle) / FULL_TURN,
-    geometry.totalScrewTurns, 1e-9, 'integer water-wheel turns');
+    geometry.totalScrewTurns * geometry.faceGearRatio, 1e-9,
+    'integer water-wheel turns');
+  near((geometry.totalScrewTurns * geometry.faceGearRatio) % 1, 0, 1e-12,
+    'the wheel makes whole turns per loop');
   near(Math.sin(completed.screwAngle), Math.sin(start.screwAngle),
     1e-12, 'screw sine closes');
   near(Math.cos(completed.screwAngle), Math.cos(start.screwAngle),

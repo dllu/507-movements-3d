@@ -139,7 +139,8 @@ test('movement 470 powered lift derivatives are analytic and steam force closes 
   const timeStep = 1e-4;
 
   for (const phase of [0.12, 0.19, 0.28, 0.37, 0.44]) {
-    const time = phase * geometry.cycleDuration;
+    const time = phase * geometry.cycleDuration
+      - geometry.sourcePoseTimeOffset;
     const center = stateAtTime(time);
     const before = stateAtTime(time - timeStep);
     const after = stateAtTime(time + timeStep);
@@ -187,7 +188,8 @@ test('movement 470 exhaust release integrates smoothly into exact constant-gravi
   const timeStep = 1e-4;
   for (const phase of [geometry.releaseEndPhase + 0.01, 0.59, 0.62,
     geometry.impactPhase - 0.004]) {
-    const time = phase * geometry.cycleDuration;
+    const time = phase * geometry.cycleDuration
+      - geometry.sourcePoseTimeOffset;
     const center = stateAtTime(time);
     const before = stateAtTime(time - timeStep);
     const after = stateAtTime(time + timeStep);
@@ -313,7 +315,8 @@ test('movement 470 renderer moves only the rigid assembly and maps valve, chambe
   for (const phase of [0, 0.17, 0.36, 0.48, 0.535, 0.59,
     geometry.impactPhase, 0.88]) {
     const state = stateAtPhase(phase);
-    model.update(phase * geometry.cycleDuration);
+    model.update(phase * geometry.cycleDuration
+      - geometry.sourcePoseTimeOffset);
     near(blocks.movingAssembly.position.y, state.hammerLift, 1e-12,
       `moving assembly at ${phase}`);
     vectorNear(blocks.fixedCylinder.position, cylinderPosition, 1e-12,
@@ -423,4 +426,17 @@ test('movement 470 has finite render bounds and movement 507 remains the next au
   assert.notEqual(model507.root.userData.archetype, ARCHETYPE);
   disposeModel(model470.root);
   disposeModel(model507.root);
+});
+
+test('movement 470 loop opens on Brown’s raised-hammer pose', () => {
+  const { model } = movementModel();
+  const { geometry, stateAtPhase, stateAtTime } = model.root.userData;
+  const opening = stateAtTime(0);
+  const source = stateAtPhase(geometry.sourcePosePhase);
+  near(opening.hammerLift, source.hammerLift, 1e-12, 'opening lift');
+  assert.ok(opening.hammerLift > 0.4 * geometry.maximumLift,
+    `hammer raised at t=0 (${opening.hammerLift})`);
+  near(stateAtTime(geometry.cycleDuration).hammerLift, opening.hammerLift,
+    1e-12, 'loop seam');
+  disposeModel(model.root);
 });

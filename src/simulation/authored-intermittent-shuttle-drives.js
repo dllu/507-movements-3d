@@ -95,7 +95,7 @@ function makeSlottedRocker({
   const upperArm=new THREE.Mesh(plate(crescent.upper,.40,.64),rockerMaterial);
   upperArm.userData.role='rocker-upper-arm-to-output-joint';rocker.add(lowerArm,upperArm);
   // Let the bearing caps and rim stand proud of the arm's coincident surfaces.
-  const pivotHub = new THREE.Mesh(boredCylinderGeometry(.235,.144,.28),darkMaterial);pivotHub.rotation.x=Math.PI/2;
+  const pivotHub = new THREE.Mesh(boredCylinderGeometry(.235,.147,.28),darkMaterial);pivotHub.rotation.x=Math.PI/2;
   pivotHub.position.z = 0.52;
   pivotHub.userData.role = 'fixed-bottom-rocker-pivot-bearing';
   const topJoint = cylinderAlongZ(0.15, 0.66, darkMaterial, 28);
@@ -123,15 +123,28 @@ function intermittentShuttleDrive(movement) {
   // The source has one open crescent, not the previous synthesized closed loop.
   // Radius about the fixed rocker pivot selects a unique groove station.
   const cycleDuration = 6;
-  const crankCenter = new THREE.Vector2(0.78, 0.20);
+  // Plate: crank centre (381, 242) and pin (300, 195) px against the rocker
+  // pivot (327, 407), at 79.7 px per unit (pivot to top joint 3.75).
+  const crankCenter = new THREE.Vector2(0.68, 0.07);
   const rockerPivot = new THREE.Vector2(0, -2.00);
-  const crankRadius = 1.22;
+  const crankRadius = 1.18;
   const crankReferenceAngle = THREE.MathUtils.degToRad(150);
   const crankAngularSpeed = FULL_TURN / cycleDuration;
   const topJointRadius = 3.75;
-  const topJointLocal = new THREE.Vector2(0, topJointRadius);
-  const guideY = rockerPivot.y + topJointRadius + 0.08;
-  const connectingRodLength = 2.42;
+  // Brown draws the rocker upright while it rests (his pose). The slot's
+  // rest angle is a small lean, so the top joint is set back by it in the
+  // rocker's frame: at rest the joint stands straight over the pivot.
+  const restLean = crescent.parameters.restLean;
+  const topJointLocal = new THREE.Vector2(
+    topJointRadius * Math.sin(restLean),
+    topJointRadius * Math.cos(restLean),
+  );
+  // Plate: the link runs level from the top joint to the table lug 161 px
+  // (2.02 units) to its left, the joint about 0.03 above the top joint. At
+  // the full swing (about 65 degrees) the top joint falls 2.2 below the
+  // guide, so the link must be longer than that: 2.30 keeps it off vertical.
+  const guideY = rockerPivot.y + topJointRadius + 0.03;
+  const connectingRodLength = 2.30;
   const pinRadius = 0.12;
   const sourcePoseLawPhase = 0.35;
   const slotSampleCount = 513;
@@ -205,11 +218,14 @@ function intermittentShuttleDrive(movement) {
     'intermittently-reciprocating-horizontal-shuttle-carriage';
   // Brown draws the shuttle as one flat bar that runs from just behind the
   // link lug to beyond the rocker head.
+  // Plate: 290 px long and 14 px deep, running at rest from 3.2 left of the
+  // top joint to 0.69 right of it (fitted in the default view); with the
+  // longer link the joint rests 2.30 left of the top joint.
   const shuttleBar = new THREE.Mesh(
-    new THREE.BoxGeometry(4.34, 0.22, 0.28),
+    new THREE.BoxGeometry(3.89, 0.18, 0.28),
     outputMaterial,
   );
-  shuttleBar.position.set(1.10, 0.27, 0);
+  shuttleBar.position.set(1.045, 0.38, 0);
   shuttleBar.userData.role = 'sewing-machine-or-printing-press-output-slide';
   const sliderJoint = cylinderAlongZ(0.14, 0.58, darkMaterial, 28);
   sliderJoint.position.z = 0.28;
@@ -218,7 +234,7 @@ function intermittentShuttleDrive(movement) {
     new THREE.BoxGeometry(0.11, 0.32, 0.06),
     whiteMaterial,
   );
-  outputIndex.position.set(-1.95, 0.27, 0.20);
+  outputIndex.position.set(-0.47, 0.38, 0.20);
   outputIndex.userData.role =
     'white-index-making-output-strokes-and-dwells-legible';
   outputSlider.add(shuttleBar, sliderJoint, outputIndex);
@@ -250,7 +266,7 @@ function intermittentShuttleDrive(movement) {
       new THREE.BoxGeometry(guideLength, 0.075, 0.12),
       darkMaterial,
     );
-    guide.position.set(-.50, guideY + 0.27 + side * 0.15, .32);
+    guide.position.set(-.50, guideY + 0.38 + side * 0.15, .32);
     guide.userData.side = side;
     guide.userData.role = 'fixed-horizontal-shuttle-guide-rail';
     fixedFrame.add(guide);
@@ -273,8 +289,8 @@ function intermittentShuttleDrive(movement) {
     const lowerStandard = new THREE.Mesh(new THREE.BoxGeometry(0.24, crankCenter.y - 0.28 - (rockerPivot.y - 0.35), 0.16), frameMaterial);
     lowerStandard.position.set(standardX, (crankCenter.y - 0.28 + rockerPivot.y - 0.35) / 2, -0.28);
     lowerStandard.userData.role = 'fixed-rear-standard-to-crank-bearing';
-    const guideBottom = guideY + 0.27 - 0.23;
-    const guideTop = guideY + 0.27 + 0.23;
+    const guideBottom = guideY + 0.38 - 0.23;
+    const guideTop = guideY + 0.38 + 0.23;
     const upperStandard = new THREE.Mesh(new THREE.BoxGeometry(0.24, guideTop - (crankCenter.y + 0.28), 0.16), frameMaterial);
     upperStandard.position.set(standardX, (guideTop + crankCenter.y + 0.28) / 2, -0.28);
     upperStandard.userData.role = 'fixed-rear-standard-to-shuttle-guide';
@@ -289,10 +305,10 @@ function intermittentShuttleDrive(movement) {
     guideBack.position.set(guideCenterX, (guideTop + guideBottom) / 2, 0.10);
     guideBack.userData.role = 'fixed-shuttle-guide-channel-back';
     const topLip = new THREE.Mesh(new THREE.BoxGeometry(guideWidth, 0.08, 0.38), frameMaterial);
-    topLip.position.set(guideCenterX, guideY + 0.27 + 0.15, 0.35);
+    topLip.position.set(guideCenterX, guideY + 0.38 + 0.15, 0.35);
     topLip.userData.role = 'fixed-shuttle-guide-channel-top-lip';
     const bottomLip = new THREE.Mesh(new THREE.BoxGeometry(guideWidth, 0.08, 0.12), frameMaterial);
-    bottomLip.position.set(guideCenterX, guideY + 0.27 - 0.15, 0.22);
+    bottomLip.position.set(guideCenterX, guideY + 0.38 - 0.15, 0.22);
     bottomLip.userData.role = 'fixed-shuttle-guide-channel-bottom-lip';
     fixedFrame.add(sill, lug, lowerStandard, upperStandard, guideSpacer, guideBack, topLip, bottomLip);
   }
@@ -321,10 +337,11 @@ function intermittentShuttleDrive(movement) {
       topJointLocal,
       rockerState.angle,
     ));
+    const topJointAngle = rockerState.angle - restLean;
     const topJointVelocity = new THREE.Vector2(
-      -topJointRadius * Math.cos(rockerState.angle)
+      -topJointRadius * Math.cos(topJointAngle)
         * rockerState.angularSpeed,
-      -topJointRadius * Math.sin(rockerState.angle)
+      -topJointRadius * Math.sin(topJointAngle)
         * rockerState.angularSpeed,
     );
     const verticalDifference = guideY - topJointWorld.y;
@@ -548,7 +565,7 @@ function intermittentShuttleDrive(movement) {
   };
   root.userData.cameraFitBounds = new THREE.Box3(
     new THREE.Vector3(-3.45, -2.62, -0.72),
-    new THREE.Vector3(5.25, 2.50, 1.08),
+    new THREE.Vector3(5.85, 2.50, 1.08),
   );
   root.userData.cameraDistanceScale = 1.08;
   root.userData.cameraDirection = new THREE.Vector3(0.25, 0.2, 16);

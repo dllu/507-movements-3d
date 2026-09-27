@@ -3,48 +3,52 @@ const mix=(a,b,t)=>a.map((v,i)=>v+(b[i]-v)*t);
 const distance=(a,b)=>Math.hypot(...a.map((v,i)=>v-b[i]));
 // The massless/slack ideal has no unique shape. This is a geometric
 // illustration, not a prediction of equilibrium or finite-rope vibration.
-// Slack bows the outgoing run into one smooth arc toward the bar's downhill
-// side (the incoming run's side), then the cord comes down onto its eye from
-// above. The arc never doubles back, so the cord never curls into a loop or
-// crosses the bar in the plate view. `amplitude` is the arc's lateral reach
-// at mid-run.
-const LOOP_CLEARANCE=.18,LOOP_BLEND=.3,SMOOTHING=9;
-function chaikin(points,iterations){
- let result=points;
- for(let k=0;k<iterations;k++){const next=[result[0]];for(let i=0;i<result.length-1;i++){const a=result[i],b=result[i+1];next.push(mix(a,b,.25),mix(a,b,.75));}next.push(result.at(-1));result=next;}
- return result;
+// Pass 72: a real cord's own weight settles the slack. The vertical run from
+// the pulley hangs straight to the resting treadle's eye, and its weight
+// draws the cord over the free pulley, so the slack collects in the
+// diagonal run from the crank pin as a gravity sag: a parabola with a
+// vertical axis from the pin to the point where it meets the pulley
+// tangentially. `amplitude` is the sag, the vertical drop of the parabola's
+// Bezier control point below the chord's midpoint.
+const BEZIER_SAMPLES=96;
+const bezier=(p,c,e,t)=>[0,1].map(i=>(1-t)**2*p[i]+2*(1-t)*t*c[i]+t*t*e[i]);
+function sagRun(pin,g,sag,entryGuess){
+ const r=g.guideRadius,G=g.guide,at=a=>[G[0]+r*Math.cos(a),G[1]+r*Math.sin(a)];
+ const control=e=>[(pin[0]+e[0])/2,(pin[1]+e[1])/2-sag];
+ // End tangent (E - C) must be perpendicular to the radius (E - G).
+ const f=a=>{const e=at(a),c=control(e);return(e[0]-c[0])*(e[0]-G[0])+(e[1]-c[1])*(e[1]-G[1]);};
+ let low=entryGuess-1e-9,high=entryGuess-1e-9,fl=f(low);
+ if(Math.abs(fl)<1e-15)return{entryAngle:low,entry:at(low),control:control(at(low))};
+ // Bracket the root next to the taut tangent point, stepping away from it.
+ let step=.01,found=false;
+ for(let k=0;k<400&&!found;k++){for(const sign of [1,-1]){const a=entryGuess+sign*step*(k+1),fa=f(a);if(fa*fl<=0){if(sign>0){low=entryGuess;high=a;}else{low=a;high=entryGuess;}found=true;break;}}}
+ if(!found)throw Error('Cannot seat the sagging cord on its pulley');
+ let flo=f(low);for(let i=0;i<60;i++){const mid=(low+high)/2,fm=f(mid);if(fm*flo<=0)high=mid;else{low=mid;flo=fm;}}
+ const entryAngle=(low+high)/2,entry=at(entryAngle);return{entryAngle,entry,control:control(entry)};
 }
+function bezierTable(p,c,e){const pts=Array.from({length:BEZIER_SAMPLES+1},(_,i)=>bezier(p,c,e,i/BEZIER_SAMPLES)),table=[0];for(let i=1;i<pts.length;i++)table.push(table[i-1]+distance(pts[i-1],pts[i]));return{pts,table,length:table.at(-1)};}
 export function idealCordShape(disk,treadle,{segments=256,bakedAmplitude=null,geometry=cordTreadleParameters()}={}){
  if(!Number.isInteger(segments)||segments<8)throw new RangeError('At least eight rope segments required');
  if(bakedAmplitude!==null&&(!Number.isFinite(bakedAmplitude)||bakedAmplitude<0))throw new RangeError('Invalid baked amplitude');
  if(!Number.isFinite(disk)||!Number.isFinite(treadle))throw new RangeError('Finite mechanism angles required');
- const g=geometry,m=cordTreadleMetrics(disk,treadle,g),arc=-g.guideRadius*m.sweep;
- const slack=Math.max(0,g.cordLength-m.length),target=m.outgoing+slack;
- const p0=m.exit,p3=m.eye,run=[p3[0]-p0[0],p3[1]-p0[1]],runLength=Math.hypot(...run),direction=run.map(v=>v/runLength);
- // Bar direction running downhill from the eye toward the foot, and its
- // upward normal. The loop clearance fades in with the first slack so the
- // profile is continuous with the taut straight run.
- const downhill=[-Math.cos(treadle),-Math.sin(treadle)],up=[-Math.sin(treadle),Math.cos(treadle)];
- const clearance=LOOP_CLEARANCE*Math.min(1,slack/LOOP_BLEND),above=[p3[0]+up[0]*clearance,p3[1]+up[1]*clearance];
- // Lateral unit normal of the run on the bar's downhill side.
- let side=[-direction[1],direction[0]];if(side[0]*downhill[0]+side[1]*downhill[1]<0)side=side.map(v=>-v);
- const reach=Math.hypot(above[0]-p0[0],above[1]-p0[1]),mid=[p0[0]+(above[0]-p0[0])*.55,p0[1]+(above[1]-p0[1])*.55];
- const drop=[p0[0]+direction[0]*.15*reach,p0[1]+direction[1]*.15*reach];
- const polyline=amplitude=>chaikin([p0,drop,[mid[0]+side[0]*amplitude,mid[1]+side[1]*amplitude],above,p3],SMOOTHING);
- const polylineLength=points=>points.slice(1).reduce((sum,p,i)=>sum+distance(p,points[i]),0);
- const length=amplitude=>polylineLength(polyline(amplitude));
+ const g=geometry,m=cordTreadleMetrics(disk,treadle,g),r=g.guideRadius;
+ const slack=Math.max(0,g.cordLength-m.length);
+ // Taut: the straight incoming run and its pulley tangent point.
+ const shapeAt=sag=>{
+  if(sag<=0)return{entryAngle:m.entryAngle,entry:m.entry,control:mix(m.pin,m.entry,.5),...bezierTable(m.pin,mix(m.pin,m.entry,.5),m.entry)};
+  const seat=sagRun(m.pin,g,sag,m.entryAngle);return{...seat,...bezierTable(m.pin,seat.control,seat.entry)};
+ };
+ const arcOf=entryAngle=>{let sweep=m.exitAngle-entryAngle;while(sweep>=0)sweep-=Math.PI*2;while(sweep<-Math.PI*2)sweep+=Math.PI*2;return -r*sweep;};
+ const lengthAt=sag=>{const s=shapeAt(sag);return s.length+arcOf(s.entryAngle)+m.outgoing;};
  let amplitude=0;
- if(slack&&bakedAmplitude===null&&length(0)<target){let low=0,high=.1;while(length(high)<target){high*=2;if(high>32)throw Error('Cannot fit slack cord');}for(let i=0;i<48;i++){const middle=(low+high)/2;if(length(middle)<target)low=middle;else high=middle;}amplitude=(low+high)/2;}
+ if(slack&&bakedAmplitude===null){let low=0,high=.05;while(lengthAt(high)<g.cordLength){high*=2;if(high>32)throw Error('Cannot fit slack cord');}for(let i=0;i<48;i++){const middle=(low+high)/2;if(lengthAt(middle)<g.cordLength)low=middle;else high=middle;}amplitude=(low+high)/2;}
  else if(slack&&bakedAmplitude!==null)amplitude=bakedAmplitude;
- const path=slack?polyline(amplitude):[p0,p3];
- // Arc-length lookup over the smoothed profile controls material spacing.
- const table=[0];for(let i=1;i<path.length;i++)table.push(table[i-1]+distance(path[i-1],path[i]));
- const outgoingLength=table.at(-1);
- const atLength=s=>{let lo=0,hi=path.length-1;while(hi-lo>1){const mid=(lo+hi)>>1;if(table[mid]<s)lo=mid;else hi=mid;}const span=table[hi]-table[lo];return mix(path[lo],path[hi],span?Math.min(1,Math.max(0,(s-table[lo])/span)):0);};
- const total=m.incoming+arc+outgoingLength;
- const points=Array.from({length:segments+1},(_,i)=>{const s=total*i/segments;let p;if(s<=m.incoming)p=mix(m.pin,m.entry,s/m.incoming);else if(s<=m.incoming+arc){const a=m.entryAngle-(s-m.incoming)/g.guideRadius;p=[g.guide[0]+g.guideRadius*Math.cos(a),g.guide[1]+g.guideRadius*Math.sin(a)];}else p=atLength(s-m.incoming-arc);return[...p,.64];});
+ const run=shapeAt(amplitude),arc=arcOf(run.entryAngle),incoming=run.length;
+ const atLength=s=>{const {pts,table}=run;let lo=0,hi=pts.length-1;while(hi-lo>1){const mid=(lo+hi)>>1;if(table[mid]<s)lo=mid;else hi=mid;}const span=table[hi]-table[lo];return mix(pts[lo],pts[hi],span?Math.min(1,Math.max(0,(s-table[lo])/span)):0);};
+ const total=incoming+arc+m.outgoing;
+ const points=Array.from({length:segments+1},(_,i)=>{const s=total*i/segments;let p;if(s<=incoming)p=atLength(s);else if(s<=incoming+arc){const a=run.entryAngle-(s-incoming)/r;p=[g.guide[0]+r*Math.cos(a),g.guide[1]+r*Math.sin(a)];}else p=mix(m.exit,m.eye,(s-incoming-arc)/m.outgoing);return[...p,.64];});
  points[0]=[...m.pin,.64];points[segments]=[...m.eye,.64];
  const reference=cordTreadleMetrics(0,g.initialTreadle,g);
- const pulleyAngle=m.entryAngle-reference.entryAngle+(m.incoming-reference.incoming)/g.guideRadius;
- return{points,pulleyAngle,slack,amplitude,length:total,lengthError:outgoingLength-target,tendonExtension:Math.max(0,m.length-g.cordLength),controls:[p0,drop,p3]};
+ const pulleyAngle=run.entryAngle-reference.entryAngle+(incoming-reference.incoming)/r;
+ return{points,pulleyAngle,slack,amplitude,length:total,lengthError:total-Math.max(g.cordLength,m.length),tendonExtension:Math.max(0,m.length-g.cordLength),controls:[m.pin,run.control,run.entry,m.exit,m.eye],entryAngle:run.entryAngle};
 }

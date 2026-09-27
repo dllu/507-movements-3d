@@ -76,8 +76,8 @@ test('movement 391 is two weighted pivoted racks on one crosshead, two fixed gui
   assert.ok(blocks.crossheadBeam.parent === blocks.crosshead, 'blocks.crossheadBeam parent');
   // Brown's plate stops at the crosshead; the presentation detaches the input rod.
   assert.ok(blocks.pistonRod.parent === null, 'source presentation removes pistonRod');
-  assert.equal(blocks.leftRack.userData.teeth.length, 14);
-  assert.equal(blocks.rightRack.userData.teeth.length, 14);
+  assert.equal(blocks.leftRack.userData.teeth.length, 17);
+  assert.equal(blocks.rightRack.userData.teeth.length, 17);
   assert.equal(blocks.outputGear.userData.toothCount, 20);
 
   const roles = [];
@@ -300,7 +300,7 @@ test('movement 391 active rack pitch-line velocity and tooth phase close exactly
   disposeModel(model.root);
 });
 
-test('movement 391 advances one counterclockwise output turn per piston cycle without reversal', () => {
+test('movement 391 advances 1.3 counterclockwise output turns (26 teeth) per piston cycle without reversal', () => {
   const model = createMovementModel(catalog.movements[390]);
   const data = model.root.userData;
   const { constraintResiduals, geometry, stateAtTime, timeline,
@@ -309,25 +309,25 @@ test('movement 391 advances one counterclockwise output turn per piston cycle wi
   for (const [name, residual] of Object.entries(constraintResiduals)) {
     near(residual, 0, 0, name);
   }
-  near(geometry.rackPitchesPerStroke, 10, 1e-14,
-    'ten exact rack pitches per half-cycle');
-  near(geometry.stroke / geometry.pinionPitchRadius, Math.PI, 1e-14,
-    'half a turn per working stroke');
-  assert.match(transmission.fullCycleLaw, /2 pi/);
-  assert.match(transmission.pitchLaw, /stroke=10\*p/);
+  near(geometry.rackPitchesPerStroke, 13, 1e-13,
+    'thirteen exact rack pitches per half-cycle');
+  near(geometry.stroke / geometry.pinionPitchRadius, 1.3 * Math.PI, 1e-13,
+    '13 of 20 teeth per working stroke');
+  assert.match(transmission.fullCycleLaw, /2.6 pi/);
+  assert.match(transmission.pitchLaw, /stroke=13\*p/);
 
   let previousAngle = -Infinity;
   for (let sample = -16000; sample <= 32000; sample += 1) {
     const state = stateAtTime(timeline.cycleDuration * sample / 16000);
-    assert.ok(state.outputAngle >= previousAngle - 4e-15);
+    assert.ok(state.outputAngle >= previousAngle - 1e-14, `${state.outputAngle - previousAngle} at ${sample}`);
     assert.ok(state.outputAngularSpeed >= -1e-15);
     previousAngle = state.outputAngle;
   }
   for (let cycle = -8; cycle <= 8; cycle += 1) {
     const start = stateAtTime(timeline.cycleDuration * (cycle + 0.137));
     const end = stateAtTime(timeline.cycleDuration * (cycle + 1.137));
-    near(end.outputAngle - start.outputAngle, FULL_TURN, 1e-13,
-      'one counterclockwise output turn per cycle');
+    near(end.outputAngle - start.outputAngle, 1.3 * FULL_TURN, 1e-13,
+      '1.3 counterclockwise output turns (26 whole teeth) per cycle');
     near(end.crossheadY, start.crossheadY, 4e-15,
       'crosshead repeats after one cycle');
     near(end.leftRack.rackAngle, start.leftRack.rackAngle, 1e-15,

@@ -41,16 +41,36 @@ export function bucketCapacityAtTilt(tilt,{height,top,bottom}){
   if(tilt<=0)return 1;
   return Math.min(1,tiltedVolume(interior,tilt,lipLevel(interior,tilt))/fullVolume(interior));
 }
-// The operator tips the raised bucket about its ears to empty it over the
-// top dwell `u` in [0, 1]: tip up to `maxTilt` over the first 62 %, hold,
-// and right it again over the last 30 %. The water it keeps is what the
-// tipped bucket can still hold (it spills over the lip), so it is emptied
-// by the tipping, not drained.
-export function tippedEmptying(u,dims,maxTilt=THREE.MathUtils.degToRad(118)){
+// Pass 72 (p72-c): the operator first draws the raised bucket aside, clear
+// of the well kerb (over the first 18 % of the top dwell), then tips it about
+// its ears (18-66 %) so it spills steadily over the lip onto the ground
+// outside, holds it, rights it (72-88 %) and swings it back. While it spills
+// the water kept falls smoothly from full to empty and the tip is the one at
+// which the tipped bucket holds just that much (bucketCapacityAtTilt), so the
+// pour lasts about a third of the dwell instead of a brisk flick.
+export const ASIDE_OUT_END=.18,ASIDE_BACK_START=.88;
+const TIP_END=.66,RIGHT_START=.72;
+const capacityTiltCache=new Map();
+function tiltHolding(fraction,dims){
+  let lo=0,hi=Math.PI*.75;
+  for(let i=0;i<36;i++){const mid=(lo+hi)/2;if(bucketCapacityAtTilt(mid,dims)>fraction)lo=mid;else hi=mid;}
+  return (lo+hi)/2;
+}
+function spillLimits(dims){
+  const key=`${dims.height},${dims.top},${dims.bottom}`;
+  if(!capacityTiltCache.has(key))capacityTiltCache.set(key,{start:tiltHolding(1-1e-9,dims),end:tiltHolding(1e-9,dims)});
+  return capacityTiltCache.get(key);
+}
+export function asideEmptying(u,dims,maxTilt=THREE.MathUtils.degToRad(118)){
   const ease=x=>{x=Math.min(1,Math.max(0,x));return x*x*x*(x*(6*x-15)+10);};
-  const tilt=u<.62?maxTilt*ease(u/.62):u<.7?maxTilt:maxTilt*(1-ease((u-.7)/.3));
-  const fraction=u<.62?bucketCapacityAtTilt(tilt,dims):0;
-  return {tilt,fraction};
+  const aside=u<ASIDE_OUT_END?ease(u/ASIDE_OUT_END):u<ASIDE_BACK_START?1:1-ease((u-ASIDE_BACK_START)/(1-ASIDE_BACK_START));
+  if(u<ASIDE_OUT_END)return {aside,tilt:0,fraction:1};
+  if(u>=TIP_END)return {aside,fraction:0,tilt:u<RIGHT_START?maxTilt:maxTilt*(1-ease((u-RIGHT_START)/(ASIDE_BACK_START-RIGHT_START)))};
+  const {start,end}=spillLimits(dims),w=(u-ASIDE_OUT_END)/(TIP_END-ASIDE_OUT_END);
+  // Up to the lip, spill, then on past the empty tip.
+  if(w<.12)return {aside,tilt:start*ease(w/.12),fraction:1};
+  if(w<.80){const fraction=1-ease((w-.12)/.68);return {aside,fraction,tilt:fraction<=0?end:fraction>=1?start:tiltHolding(fraction,dims)};}
+  return {aside,fraction:0,tilt:end+(maxTilt-end)*ease((w-.80)/.20)};
 }
 
 // The bail's turn on the ears for a given tip (zero up to 50 degrees), and
@@ -122,7 +142,7 @@ function bucketParts(bucket,water,height,top,bottom,handleRise){
     tipper.rotation.x=tilt;
     // (The factory's bucket centre already hangs back by bailHang.)
     bailPivot.rotation.x=bailSwing(tilt);
-    water.position.set(0,0,0);water.scale.set(1,1,1);water.visible=fraction>1e-4;
+    water.position.set(0,0,0);water.scale.set(1,1,1);water.visible=fraction>1e-12; // (the last thin wedge shrinks away, no pop)
     count=0;
     if(!water.visible){finish();return;}
     const cs=Math.cos(tilt),sn=Math.sin(tilt);
@@ -187,9 +207,11 @@ function makePour(root,parts,endY,dims,rateAt,cyclePeriod){
     const tipper=parts.tipper;tipper.updateWorldMatrix(true,false);
     lip.set(0,0,dims.top).applyMatrix4(tipper.matrixWorld);
     axis.set(0,1,0).transformDirection(tipper.matrixWorld);
-    const vx=0,vy=.6*axis.y,vz=.6*Math.max(.3,axis.z),g=9.81;
+    // Out of the mouth, horizontally along the bucket's tipped axis.
+    const reach=Math.hypot(axis.x,axis.z)||1,out=.6*Math.max(.3,reach)/reach;
+    const vx=out*axis.x,vy=.6*axis.y,vz=out*axis.z,g=9.81;
     const tEnd=(vy+Math.sqrt(vy*vy+2*g*Math.max(.01,lip.y-endY)))/g;
-    for(let k=0;k<=n;k++){const t=tEnd*k/n;path.points[k].set(lip.x+vx*t,lip.y+vy*t-.5*g*t*t,lip.z+vz*t);path.speeds[k]=Math.hypot(vy-g*t,vz);path.times[k]=t;}
+    for(let k=0;k<=n;k++){const t=tEnd*k/n;path.points[k].set(lip.x+vx*t,lip.y+vy*t-.5*g*t*t,lip.z+vz*t);path.speeds[k]=Math.hypot(vx,vy-g*t,vz);path.times[k]=t;}
     stream.flow=.3+.7*flow;stream.setPath(path);stream.update(time??0);
   };
 }
@@ -230,7 +252,9 @@ export function correctWellBucketParts(root,id){
     });
     const water=bucketParts(b.bucket,b.bucketWater,g.bucketHeight,.40,.30,g.bucketHandleRise);
     const dims={height:g.bucketHeight,top:.40,bottom:.30},span=1-g.ascentEndPhase;
-    const pour=makePour(root,water,-2.12,dims,u=>(tippedEmptying(u+1e-4,dims).fraction-tippedEmptying(u-1e-4,dims).fraction)/2e-4,g.cycleDuration);
+    // Drawn aside over the ground, the bucket spills onto the ground's top
+    // (y .46) beside the well kerb, not back down the well.
+    const pour=makePour(root,water,.46,dims,u=>(asideEmptying(u+1e-4,dims).fraction-asideEmptying(u-1e-4,dims).fraction)/2e-4,g.cycleDuration);
     const ground=clip.difference(poly([[-3.75,-1.35],[3.35,-1.35],[3.35,1.35],[-3.75,1.35]]),poly(circle([g.wellCenterX,0],1.135,128)));
     replace(b.base,horizontalPlate(ground,.39,.46));b.base.position.set(0,0,0);
     replace(b.well,horizontalTurned([[g.wellBottomY,1.075],[g.wellBottomY,1.135],[g.wellRimY,1.135],[g.wellRimY,1.075]]));b.well.position.y=0;
@@ -257,16 +281,22 @@ export function correctWellBucketParts(root,id){
     const shape=clip.difference(clip.union(capsule([0,0],[0,1.17],.11,24),poly(circle([0,0],.225,64))),poly(circle([0,0],.174,64)));
     replace(hanger,plate(shape,-.075,.075));hanger.position.copy(g.pulleyCenter);hanger.position.z=-.40;
     b.hanger=hanger;
-    for(const post of b.frame.children.slice(0,2)){replace(post,new THREE.BoxGeometry(.20,4,.30));post.position.set(Math.sign(post.position.x)*1.86,1.40,-.55);}
-    replace(b.wellWater,new THREE.BoxGeometry(3.12,.94,1.72));b.wellWater.position.y=-2.56;
+    // Pass 72: the posts stand at the back of the roof boards (z -.71 to
+    // -.50), clear of a bucket drawn aside in front of them.
+    for(const post of b.frame.children.slice(0,2)){replace(post,new THREE.BoxGeometry(.20,4,.21));post.position.set(Math.sign(post.position.x)*1.86,1.40,-.605);}
+    // Pass 72: the water stands 0.12 higher (top y -1.97), since the buckets
+    // now hang 0.08 higher and the low one must still fill below it.
+    replace(b.wellWater,new THREE.BoxGeometry(3.12,1.06,1.72));b.wellWater.position.y=-2.50;
     // Replace the solid transparent block with finite side/rear walls.
     replace(b.shaftWell,plate(clip.difference(poly([[-1.70,-1],[1.70,-1],[1.70,1],[-1.70,1]]),poly([[-1.58,-1.01],[1.58,-1.01],[1.58,.88],[-1.58,.88]])),-1.56,1.56).rotateX(Math.PI/2));
     const left=bucketParts(b.leftBucket.bucket,b.leftBucket.water,g.bucketHeight,g.bucketRadius,g.bucketRadius*.76,g.bucketHandleRise);
     const right=bucketParts(b.rightBucket.bucket,b.rightBucket.water,g.bucketHeight,g.bucketRadius,g.bucketRadius*.76,g.bucketHandleRise);
     const dims={height:g.bucketHeight,top:g.bucketRadius,bottom:g.bucketRadius*.76};
-    const rateAt=u=>(tippedEmptying(u+1e-4,dims).fraction-tippedEmptying(u-1e-4,dims).fraction)/2e-4;
-    const pours=[left,right].map(parts=>makePour(root,parts,-2.10,dims,rateAt,g.cycleDuration));
-    // Both emptying dwells last a tenth of the cycle.
+    const rateAt=u=>(asideEmptying(u+1e-4,dims).fraction-asideEmptying(u-1e-4,dims).fraction)/2e-4;
+    // Drawn aside over the kerb, each raised bucket spills onto the ground's
+    // top beside its post, not back down the shaft.
+    const pours=[left,right].map(parts=>makePour(root,parts,g.groundTopY,dims,rateAt,g.cycleDuration));
+    // Both emptying dwells last the same fraction of the cycle.
     const perU=g.cycleDuration*(g.exchangeDwellEndPhase-g.outwardEndPhase);
     d.updateWorkingParts=state=>{left(state.leftWaterFraction,state.leftBucketTilt??0);right(state.rightWaterFraction,state.rightBucketTilt??0);
       pours[0]((state.leftBucketTilt?state.leftWaterFractionRate:0)*perU,state.phase*g.cycleDuration);

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
 import {replaceWithLaidRope} from './laid-rope.js';
 import {plate, poly, polygonClipping} from './finite-plate-geometry.js';
-import {bailHang,correctWellBucketParts,tippedEmptying} from './well-bucket-working-parts.js';
+import {asideEmptying,bailHang,correctWellBucketParts} from './well-bucket-working-parts.js';
 import {
   PALETTE,
   makePulley,
@@ -42,19 +42,33 @@ function setVerticalExtent(mesh, bottom, top) {
 
 function twoBucketWellPulley(movement) {
   const root = new THREE.Group();
-  const cycleDuration = 7.5;
+  // Pass 72 (p72-c): 11.5 s. Each 3 s rope exchange is kept; each top
+  // dwell grows from 0.75 s to 2.75 s, for drawing the raised bucket aside
+  // over the kerb, tipping it out onto the ground and swinging it back.
+  const cycleDuration = 11.5;
   const inputAngularSpeed = FULL_TURN / cycleDuration;
   const pulleyCenter = new THREE.Vector3(0, 3.02, 0);
   const pulleyRadius = 0.78;
   const maximumRopeDisplacement = 2.90;
   const bucketHandleRise = 0.54;
-  const leftHighBailY = 1.32;
+  // Pass 72: 0.08 higher than before, so the bucket drawn aside clears the
+  // kerb wall's top (y 0.10) as it passes over it.
+  const leftHighBailY = 1.40;
   const rightLowBailY = leftHighBailY - maximumRopeDisplacement;
   const bucketHeight = 0.78;
   const bucketRadius = 0.38;
-  const outwardEndPhase = 0.40;
+  const outwardEndPhase = 3 / 11.5;
   const exchangeDwellEndPhase = 0.50;
-  const returnEndPhase = 0.90;
+  const returnEndPhase = 8.75 / 11.5;
+  // Drawn aside, the raised bucket's bail goes out to x = ±1.86 in the
+  // sheave's plane (a rope leaning out of that plane would cross the sheave
+  // flange): over the ground outside the kerb wall (outer face |x| 1.70).
+  // The buckets hang turned half round (invisible upright), so each tips
+  // away from the viewer, its body swinging forward clear of the post and
+  // shelf behind, and its lip pours onto the ground's top (y -0.51) between
+  // the kerb wall and the ground's end.
+  const asideBailX = 1.86;
+  const groundTopY = -0.51;
   const emptyBucketWeight = 24;
   const waterPayloadWeight = 76;
   const groundY = -3.04;
@@ -89,14 +103,43 @@ function twoBucketWellPulley(movement) {
   const tippedProfile = (phase, startPhase, endPhase) => {
     const span = endPhase - startPhase;
     const u = (phase - startPhase) / span;
-    const held = (x) => tippedEmptying(x, bucketDims).fraction;
+    const held = (x) => asideEmptying(x, bucketDims).fraction;
     const h = 1e-4;
+    const {aside, tilt} = asideEmptying(u, bucketDims);
     return {
+      aside,
       firstDerivativeByPhase: (held(u + h) - held(u - h)) / (2 * h * span),
       secondDerivativeByPhase: (held(u + h) - 2 * held(u) + held(u - h)) / (h * h * span * span),
-      tilt: tippedEmptying(u, bucketDims).tilt,
+      tilt,
       value: held(u),
     };
+  };
+  // Drawn aside by `aside`, a raised bail moves straight out toward
+  // (±asideBailX, ·, 0). Its rope leaves the sheave on the tangent
+  // (in the sheave plane) and keeps its length, so the bail rises: its height
+  // is solved so that leg + wrapped arc equal the upright leg + half turn.
+  const tangentAngle = (x, y) => {
+    // Upper tangent point on the sheave for a leg ending at |x|, y (left side
+    // mirrored): measured from +x, pi for a vertical leg.
+    const px = -Math.abs(x), py = y - pulleyCenter.y, d = Math.hypot(px, py);
+    return Math.atan2(py, px) + 2 * Math.PI - Math.acos(pulleyRadius / d);
+  };
+  const legLength = (x, y) => {
+    const angle = tangentAngle(x, y);
+    return Math.hypot(Math.abs(x) + pulleyRadius * Math.cos(angle),
+      y - pulleyCenter.y - pulleyRadius * Math.sin(angle));
+  };
+  const asideBail = (side, aside, bailY) => {
+    const x = side * (pulleyRadius + (asideBailX - pulleyRadius) * aside);
+    if (!(aside > 0)) return {angle: Math.PI, bail: new THREE.Vector3(x, bailY, 0)};
+    const target = pulleyCenter.y - bailY + Math.PI * pulleyRadius;
+    let low = bailY - 0.01, high = pulleyCenter.y - 0.2;
+    for (let i = 0; i < 60; i += 1) {
+      const y = (low + high) / 2;
+      if (legLength(x, y) + tangentAngle(x, y) * pulleyRadius > target) low = y; else high = y;
+    }
+    const y = (low + high) / 2;
+    return {angle: tangentAngle(x, y), bail: new THREE.Vector3(x, y, 0)};
   };
 
   const stateAtInputAngle = (
@@ -189,18 +232,17 @@ function twoBucketWellPulley(movement) {
       + ropeProfile.firstDerivativeByPhase * phaseAcceleration;
     const leftBailY = leftHighBailY - ropeDisplacement;
     const rightBailY = rightLowBailY + ropeDisplacement;
-    const leftBucketCenter = new THREE.Vector3(
-      -pulleyRadius,
-      leftBailY - bucketHandleRise - bucketHeight / 2,
-      0,
-    );
-    const rightBucketCenter = new THREE.Vector3(
-      pulleyRadius,
-      rightBailY - bucketHandleRise - bucketHeight / 2,
-      0,
-    );
-    leftBucketCenter.add(bailHang(leftWaterProfile.tilt ?? 0, bucketHandleRise));
-    rightBucketCenter.add(bailHang(rightWaterProfile.tilt ?? 0, bucketHandleRise));
+    const leftAside = asideBail(-1, leftWaterProfile.aside ?? 0, leftBailY);
+    const rightAside = asideBail(1, rightWaterProfile.aside ?? 0, rightBailY);
+    const leftBucketCenter = leftAside.bail.clone();
+    leftBucketCenter.y -= bucketHandleRise + bucketHeight / 2;
+    const rightBucketCenter = rightAside.bail.clone();
+    rightBucketCenter.y -= bucketHandleRise + bucketHeight / 2;
+    // Turned half round, each bucket tips toward -z and hangs forward (+z)
+    // of its bail by bailHang.
+    const hangForward = (tilt) => bailHang(tilt, bucketHandleRise).multiply(new THREE.Vector3(1, 1, -1));
+    leftBucketCenter.add(hangForward(leftWaterProfile.tilt ?? 0));
+    rightBucketCenter.add(hangForward(rightWaterProfile.tilt ?? 0));
     const leftVerticalLength = pulleyCenter.y - leftBailY;
     const rightVerticalLength = pulleyCenter.y - rightBailY;
     const pulleyAngle = ropeDisplacement / pulleyRadius;
@@ -226,8 +268,11 @@ function twoBucketWellPulley(movement) {
       inputAcceleration,
       inputAngle: cycleAngle,
       inputSpeed,
+      leftBail: leftAside.bail,
       leftBailY,
+      leftBucketAside: leftWaterProfile.aside ?? 0,
       leftBucketCenter,
+      leftRopeDepartureAngle: leftAside.angle,
       leftBucketAccelerationY: -ropeAcceleration,
       leftBucketVelocityY: -ropeSpeed,
       leftBucketWeight,
@@ -243,8 +288,11 @@ function twoBucketWellPulley(movement) {
       pulleyAngularAcceleration,
       pulleyAngularSpeed,
       pulledEmptySide,
+      rightBail: rightAside.bail,
       rightBailY,
+      rightBucketAside: rightWaterProfile.aside ?? 0,
       rightBucketCenter,
+      rightRopeDepartureAngle: rightAside.angle,
       rightBucketAccelerationY: ropeAcceleration,
       rightBucketVelocityY: ropeSpeed,
       rightBucketWeight,
@@ -414,17 +462,30 @@ function twoBucketWellPulley(movement) {
     // again beside the laid rope.
     Object.defineProperty(piece, 'visible', { configurable: true, get: () => false, set: () => {} });
   }
-  const layRope = (leftY, rightY) => {
+  // The laid rope runs from the left bail up its leg, round the sheave
+  // between the two departure points, and down to the right bail. Upright
+  // legs leave at the sheave's sides; a bail drawn aside leaves higher, on
+  // the tangent.
+  const layRope = (state) => {
+    const from = state.leftRopeDepartureAngle, to = Math.PI - state.rightRopeDepartureAngle;
+    const points = Array.from({ length: 65 }, (_, index) => {
+      const angle = from + (to - from) * index / 64;
+      return new THREE.Vector3(pulleyCenter.x + pulleyRadius * Math.cos(angle),
+        pulleyCenter.y + pulleyRadius * Math.sin(angle), 0);
+    });
     const path = new THREE.CurvePath();
-    path.add(new THREE.LineCurve3(new THREE.Vector3(-pulleyRadius, leftY, 0), arcPoints[0].clone()));
-    path.add(arcCurve);
-    path.add(new THREE.LineCurve3(arcPoints.at(-1).clone(), new THREE.Vector3(pulleyRadius, rightY, 0)));
+    path.add(new THREE.LineCurve3(state.leftBail.clone(), points[0].clone()));
+    path.add(new THREE.CatmullRomCurve3(points, false, 'centripetal'));
+    path.add(new THREE.LineCurve3(points.at(-1).clone(), state.rightBail.clone()));
     replaceWithLaidRope(laidRope, path, {radius: 0.045, tubularSegments: 256});
   };
 
   const makeBucket = (side) => {
     const bucket = addRole(new THREE.Group(),
       `${side}-well-bucket-at-one-end-of-common-rope`);
+    // Turned half round about its axis (it looks the same upright), so it
+    // tips away from the viewer.
+    bucket.rotation.y = Math.PI;
     root.add(bucket);
     const body = new THREE.Mesh(
       new THREE.CylinderGeometry(
@@ -497,7 +558,7 @@ function twoBucketWellPulley(movement) {
     leftRopeLeg.position.x = -pulleyRadius;
     setVerticalExtent(rightRopeLeg, state.rightBailY, pulleyCenter.y);
     rightRopeLeg.position.x = pulleyRadius;
-    layRope(state.leftBailY, state.rightBailY);
+    layRope(state);
     leftBucket.bucket.position.copy(state.leftBucketCenter);
     rightBucket.bucket.position.copy(state.rightBucketCenter);
     updateBucketWater(leftBucket, state.leftWaterFraction);
@@ -519,6 +580,8 @@ function twoBucketWellPulley(movement) {
     emptyBucketWeight,
     exchangeDwellEndPhase,
     fixedArcLength,
+    asideBailX,
+    groundTopY,
     groundY,
     inputAngularSpeed,
     leftHighBailY,
@@ -669,7 +732,9 @@ function twoBucketWellPulley(movement) {
   {
     root.updateMatrixWorld(true);
     const post = new THREE.Box3().setFromObject(frame.children[0]);
-    const shelfLow = 0.96, shelfHigh = 1.14, shelfZ0 = post.min.z - 0.15, shelfZ1 = post.max.z + 0.15;
+    // Pass 72: the board stands only 0.05 proud of the post's front face, so
+    // the bucket drawn aside past it clears it.
+    const shelfLow = 0.96, shelfHigh = 1.14, shelfZ0 = post.min.z - 0.15, shelfZ1 = post.max.z + 0.05;
     const outline = polygonClipping.difference(
       poly([[post.min.x - 0.56, -shelfZ1], [post.max.x + 0.30, -shelfZ1], [post.max.x + 0.30, -shelfZ0], [post.min.x - 0.56, -shelfZ0]]),
       poly([[post.min.x - 0.001, -post.max.z - 0.001], [post.max.x + 0.001, -post.max.z - 0.001], [post.max.x + 0.001, -post.min.z + 0.001], [post.min.x - 0.001, -post.min.z + 0.001]]));
