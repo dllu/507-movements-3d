@@ -56,9 +56,12 @@ test('movement 450 has an above-water cylinder, solid piston, and exactly two ex
   assert.equal(blocks.pistonBody.parent, blocks.piston);
   assert.equal(blocks.pistonValveDisk, undefined);
   assert.equal(blocks.suctionValveSeat.parent, model.root);
-  assert.equal(blocks.suctionValveDisk.parent, model.root);
+  // Pass 82: both checks are clack flaps turning on hinge pivots.
+  assert.equal(blocks.suctionValveDisk.parent, blocks.suctionFlap.pivot);
+  assert.equal(blocks.suctionFlap.pivot.parent, model.root);
   assert.equal(blocks.deliveryValveSeat.parent, model.root);
-  assert.equal(blocks.deliveryValveDisk.parent, model.root);
+  assert.equal(blocks.deliveryValveDisk.parent, blocks.deliveryFlap.pivot);
+  assert.equal(blocks.deliveryFlap.pivot.parent, model.root);
   assert.equal(blocks.deliveryPipe.parent, model.root);
   assert.equal(blocks.lever.parent, model.root);
   assert.equal(degreesOfFreedom.independentPrescribedInputs, 1);
@@ -72,7 +75,7 @@ test('movement 450 has an above-water cylinder, solid piston, and exactly two ex
   model.root.traverse((object) => {
     const role = object.userData.role;
     if (role) roles.push(role);
-    if (role?.includes('check-opening-only')) valveRoles.push(role);
+    if (/^(suction|outlet)-check-opening-only-on-piston-(up|down)stroke$/.test(role ?? '')) valveRoles.push(role);
   });
   assert.deepEqual(valveRoles.sort(), [
     'outlet-check-opening-only-on-piston-downstroke',
@@ -289,11 +292,11 @@ test('movement 450 update maps solid piston, lever linkage, two checks, and flow
       `solid piston transform at ${phase}`);
     near(blocks.lever.rotation.z, state.leverAngle, 0,
       `lever transform at ${phase}`);
-    near(blocks.suctionValveDisk.position.y,
-      geometry.suctionValveSeatY + 0.08 + state.suctionValveLift, 0,
+    near(blocks.suctionFlap.pivot.rotation.z,
+      geometry.maximumFlapAngle * state.suctionValveOpen, 0,
     `suction check transform at ${phase}`);
-    near(blocks.deliveryValveDisk.position.y,
-      geometry.deliveryValveSeatY + 0.08 + state.deliveryValveLift, 0,
+    near(blocks.deliveryFlap.pivot.rotation.z,
+      geometry.maximumFlapAngle * state.deliveryValveOpen, 0,
     `delivery check transform at ${phase}`);
     near(blocks.pumpRod.scale.y,
       geometry.pistonRodJointOffset - geometry.pistonThickness / 2

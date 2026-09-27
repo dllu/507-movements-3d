@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import {mergeGeometries} from 'three/addons/utils/BufferGeometryUtils.js';
-import {roundPortedBarrel} from './lift-pump-working-parts.js';
+import {addDome,clackHinge,roundPortedBarrel} from './lift-pump-working-parts.js';
 import {horizontalRing,horizontalTurned} from './horizontal-turbine-solids.js';
 import {curvedPipeWall,mergePassageParts} from './finite-fluid-passages.js';
 import {capsule,circle,poly,plate,polygonClipping} from './finite-plate-geometry.js';
@@ -109,7 +109,12 @@ export function correctForcePumpParts(root,id){
     b.deliveryValveBody.position.set(axisX,g.deliveryValveSeatY,0);b.deliveryValveBody.scale.set(1,1,1);
     replace(b.deliveryValveSeat,horizontalRing(.245,.425,-.055,.035));b.deliveryValveSeat.rotation.set(0,0,0);
     output=new THREE.CurvePath();output.add(inlet);output.add(new THREE.LineCurve3(inlet.getPoint(1),upper.getPoint(0)));output.add(upper);
-    replace(b.deliveryWater,new THREE.TubeGeometry(output,128,.18,16,false));
+    // Pass 82: the valve chamber stands full of water round the flap (a
+    // turned body just inside the chamber's bore) between the rising elbow's
+    // water and the riser's, instead of a pipe-sized column through the flap.
+    const y0=inlet.getPoint(1).y,y1=upper.getPoint(0).y,cy=g.deliveryValveSeatY;
+    const chamberWater=new THREE.LatheGeometry([[0,y0],[.225,y0],[.415,cy-.23],[.415,cy+.30],[.225,y1],[0,y1]].map(([r,y])=>new THREE.Vector2(r,y)),64).translate(axisX,0,0);
+    replace(b.deliveryWater,mergeGeometries([new THREE.TubeGeometry(inlet,96,.18,16,false),chamberWater,new THREE.TubeGeometry(upper,24,.18,16,false)]));
   }else{
     const x=g.chamberCenter.x;g.chamberCenter.y=2.15;
     inlet=risingElbow(pumpX-.71,x,-.15,.55);
@@ -135,7 +140,7 @@ export function correctForcePumpParts(root,id){
     const outer=vessel(0);
     const inner=vessel(.055);
     replace(b.chamberShell,horizontalTurned([...outer,...inner.slice().reverse()]));b.chamberShell.position.set(x,0,0);b.chamberShell.scale.set(1,1,1);
-    b.deliveryValveSeat.position.x=x;b.deliveryValveDisk.position.x=x;
+    b.deliveryValveSeat.position.x=x;
     replace(b.deliveryValveSeat,horizontalRing(.24,.475,-.055,.035));b.deliveryValveSeat.rotation.set(0,0,0);
     const profile=[[.40,.453],[1.30,.453],...vessel(.077).filter(([y])=>y>1.31)];
     liquid=chamberContents(b.chamberWater,profile);gas=chamberContents(b.compressedAir,profile);
@@ -159,12 +164,38 @@ export function correctForcePumpParts(root,id){
     {const foot=1.25,top=2.75;replace(b.alternativeOutletWater,latheSectionGeometry([[0,foot],[.145,foot],[.145,top],[0,top]],{segments:64}).translate(0,0,-.004));b.alternativeOutletWater.position.set(x,0,0);d.dipTubeWaterTop=top;}
     for(const o of root.children)if(o.geometry?.type==='TorusGeometry'&&o.position.x===x)o.visible=false;
   }
+  // Pass 82: Brown draws both checks as clack flaps with a raised knob,
+  // tilted when open (450's suction, 451's delivery) and flat on the seat when
+  // shut (450's delivery, 451's suction). Each is now a flat plate hinged at
+  // its left edge on a pin carried by two journals standing on the seat ring
+  // (the shared p78 clack hinge), lying flat on its seat when shut and
+  // turning up to FLAP_OPEN when the flow opens it.
+  const FLAP_OPEN=THREE.MathUtils.degToRad(30);
+  const flap=(disk,seat,axisX,seatTop,radius,spec)=>{
+    replace(disk,new THREE.CylinderGeometry(radius,radius,.09,64));
+    const pivot=new THREE.Group();pivot.position.set(axisX-radius-.05,seatTop+.045,0);root.add(pivot);
+    disk.removeFromParent();disk.position.set(radius+.05,0,0);disk.rotation.set(0,0,0);disk.scale.set(1,1,1);pivot.add(disk);
+    const hinge=clackHinge({pivot,frame:root,side:1,disk,seatMaterial:seat.material,pinRadius:.025,
+      pinLength:2*spec.journalZ+.05,boss:.042,arm:.04,journal:spec.journal,journalZ:spec.journalZ});
+    const dome=addDome(disk,spec.dome);
+    return {pivot,dome,...hinge};
+  };
+  const suctionTop=g.suctionValveSeatY+.035;
+  b.suctionFlap=flap(b.suctionValveDisk,b.suctionValveSeat,pumpX,suctionTop,air?.43:.44,
+    {journalZ:.30,journal:{radius:.05,foot:[-.09,-.025],footRadius:.025},dome:.12});
+  b.deliveryFlap=air?flap(b.deliveryValveDisk,b.deliveryValveSeat,g.chamberCenter.x,g.deliveryValveSeatY+.035,.31,
+    {journalZ:.16,journal:{radius:.045,foot:[-.05,-.025],footRadius:.025},dome:.09})
+    :flap(b.deliveryValveDisk,b.deliveryValveSeat,-1.48,g.deliveryValveSeatY+.035,.30,
+    {journalZ:.115,journal:{radius:.04,foot:[-.025,-.025],footRadius:.025},dome:.09});
+  g.maximumFlapAngle=FLAP_OPEN;
   d.updateSolids=state=>{
     clevis.position.copy(state.pistonRodJoint);
+    for(const [f,disk,open] of [[b.suctionFlap,b.suctionValveDisk,state.suctionValveOpen],[b.deliveryFlap,b.deliveryValveDisk,state.deliveryValveOpen]]){
+      disk.position.set(disk.geometry.parameters.radiusTop+.05,0,0);f.pivot.rotation.z=FLAP_OPEN*open;
+    }
     if(air){
       const level=liquid.levelAt(state.chamberWaterVolume/g.chamberTotalInternalVolume);
       liquid.update(liquid.low,level);gas.update(level,gas.high);d.chamberEnvelope.level=level;
-      b.deliveryValveDisk.position.x=g.chamberCenter.x;
       b.inletMarkers.forEach((m,i)=>m.position.copy(inlet.getPointAt(THREE.MathUtils.euclideanModulo(i/b.inletMarkers.length+state.phase*2,1))));
       b.outletMarkers.forEach((m,i)=>m.position.copy(output.getPointAt(THREE.MathUtils.euclideanModulo(i/b.outletMarkers.length+state.phase,1))));
     }else b.deliveryMarkers.forEach((m,i)=>m.position.copy(output.getPointAt(THREE.MathUtils.euclideanModulo(i/b.deliveryMarkers.length+state.phase*2,1))));

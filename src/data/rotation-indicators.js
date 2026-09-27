@@ -69,6 +69,9 @@ export default {
   166: ['disk', 'hub'],
   // 171: the two plain eccentric sheaves (their straps carry lugs: no cue).
   171: ['eccentric-sheave-fast-on-common-crankshaft'],
+  // 195: the lower feed roll shows only its plain back face and hub (its
+  // face teeth are on the hidden side); the toothed upper wheel takes none.
+  195: ['lower-smooth-back-face', 'lower-feed-roll-wheel-hub'],
   198: ['(upper|lower)-fixed-guide-roller-for-main-frame'],
   204: ['(driving|driven)-one-sheet-hyperboloidal-friction-wheel-(pitch-surface|flat-end-face|shaft-hub)'],
   230: ['(upper-input|lower-output)-shaft-front-crank-disk'],

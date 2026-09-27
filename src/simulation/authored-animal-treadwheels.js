@@ -5,7 +5,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import { figureGeometry } from './figure-meshes.js';
+import { bendingLimbGeometry, figureGeometry } from './figure-meshes.js';
 
 const FULL_TURN = Math.PI * 2;
 const Z_AXIS = new THREE.Vector3(0, 0, 1);
@@ -605,20 +605,35 @@ function modelBrownHorse(blocks) {
   for (const part of [blocks.neck, blocks.head, blocks.muzzle, ...blocks.ears]) part.visible = false;
   blocks.eye.position.set(-1.125, 0.625, 0.066);
   blocks.eye.scale.setScalar(0.62);
+  // Pass 82: each leg is one continuous Blender limb from the shoulder or
+  // stifle through the knee or hock, cannon, fetlock and sloping pastern
+  // into the hoof (its own dark material), bent at the knee pivot round a
+  // fillet each frame. The separate cannon and hoof parts are gone; each
+  // hoof keeps an empty marker in the knee frame carrying its sole box for
+  // the tread contact.
   blocks.legRoots.forEach((legRoot, index) => {
     const front = index % 2 === 0;
-    const upper = blocks.upperLegs[index];
+    const leg = blocks.upperLegs[index];
     const lower = blocks.lowerLegs[index];
     const hoof = blocks.hooves[index];
-    // Every leg in the coat colour; the hooves stay dark.
-    upper.material = blocks.torso.material;
-    lower.material = blocks.torso.material;
-    replaceGeometry(upper, figureGeometry(front ? 'horse-forearm' : 'horse-gaskin'));
-    replaceGeometry(lower, figureGeometry('horse-cannon'));
-    const hoofPosition = hoof.position.clone();
-    replaceGeometry(hoof, figureGeometry('horse-hoof'));
-    hoof.position.copy(hoofPosition);
+    replaceGeometry(leg, bendingLimbGeometry(front ? 'horse-foreleg' : 'horse-hindleg',
+      { kneeDepth: 0.43, filletRadius: 0.2 }));
+    leg.material = [blocks.torso.material, hoof.material];
+    leg.userData.role = front ? 'horse-foreleg-forearm-knee-cannon-pastern-and-hoof'
+      : 'horse-hind-leg-gaskin-hock-cannon-pastern-and-hoof';
+    lower.parent.remove(lower);
+    lower.geometry.dispose();
+    const marker = new THREE.Object3D();
+    marker.position.copy(hoof.position);
+    marker.userData.role = 'horse-hoof-sole-marker';
+    marker.userData.soleBox = new THREE.Box3(new THREE.Vector3(-0.094, -0.05, -0.052), new THREE.Vector3(0.038, 0.035, 0.052));
+    hoof.parent.add(marker);
+    hoof.parent.remove(hoof);
+    hoof.geometry.dispose();
+    blocks.hooves[index] = marker;
   });
+  blocks.legs = blocks.upperLegs;
+  blocks.lowerLegs = [];
   blocks.tailPivot.position.set(0.765, 0.19, 0);
   replaceGeometry(blocks.tail, figureGeometry('horse-tail'));
   blocks.tail.userData.role = 'engraved-horse-flowing-tail';
@@ -678,8 +693,7 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
     // forehooves reach onto the rising side, where the tread face is nearly
     // vertical, so they are posed to stay just inside it instead.
     for (const hoof of [blocks.hooves[1], blocks.hooves[3]]) {
-      if (!hoof.geometry.boundingBox) hoof.geometry.computeBoundingBox();
-      const { min, max } = hoof.geometry.boundingBox;
+      const { min, max } = hoof.userData.soleBox;
       for (const x of [min.x, max.x]) for (const y of [min.y, max.y]) {
         corner.set(x, y, 0).applyMatrix4(hoof.matrixWorld);
         gap = Math.min(gap, treadFaceRadius - Math.hypot(corner.x, corner.y));
@@ -690,6 +704,8 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
   const baseUpdate = model.update;
   model.update = (time, ...rest) => {
     baseUpdate(time, ...rest);
+    const { legStates } = model.root.userData.currentState;
+    blocks.legs.forEach((leg, index) => leg.geometry.userData.setBend(legStates[index].lowerAngle));
     blocks.animal.position.copy(baseAnimalPosition);
     for (let iteration = 0; iteration < 3; iteration += 1) {
       const gap = lowestHoofGap() - hoofClearance;

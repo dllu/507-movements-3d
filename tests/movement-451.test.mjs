@@ -51,8 +51,11 @@ test('movement 451 adds one globular air chamber and two source-shown takeoffs t
   assert.equal(data.fidelity, 'authored');
   assert.equal(blocks.barrel.parent, model.root);
   assert.equal(blocks.piston.parent, model.root);
-  assert.equal(blocks.suctionValveDisk.parent, model.root);
-  assert.equal(blocks.deliveryValveDisk.parent, model.root);
+  // Pass 82: both checks are clack flaps turning on hinge pivots.
+  assert.equal(blocks.suctionValveDisk.parent, blocks.suctionFlap.pivot);
+  assert.equal(blocks.deliveryValveDisk.parent, blocks.deliveryFlap.pivot);
+  assert.equal(blocks.suctionFlap.pivot.parent, model.root);
+  assert.equal(blocks.deliveryFlap.pivot.parent, model.root);
   assert.equal(blocks.chamberShell.parent, model.root);
   assert.equal(blocks.chamberWater.parent, model.root);
   assert.equal(blocks.compressedAir.parent, model.root);

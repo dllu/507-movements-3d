@@ -93,6 +93,23 @@ export function createDiagonalCatchAssembly(){
    o.geometry.dispose();o.geometry=ring(.062,.14,-.035,.035,64);o.material=rodSteel;
   }
  });
+ // Each fixed shaft runs right through the bore of the body it carries and
+ // ends flush with that body's rearmost bored face, so no bore is left open
+ // behind (or pierced beyond) its hub, sleeve or back plate.
+ root.updateMatrixWorld(true);
+ const pinSteel=new THREE.MeshStandardMaterial({color:'#c3c7c1',roughness:.55,metalness:.15});
+ for(const [shaft,body]of [[b.upperPivotShaft,b.upperHandle],[b.lowerPivotShaft,b.lowerHandle],[b.catchPivotShaft,b.catchGroup]]){
+  let back=Infinity;
+  body.traverse(o=>{if(!o.isMesh||!o.visible)return;o.geometry.computeBoundingBox();
+   const box=o.geometry.boundingBox.clone().applyMatrix4(body.matrixWorld.clone().invert().multiply(o.matrixWorld));
+   if(box.min.x<=0&&box.max.x>=0&&box.min.y<=0&&box.max.y>=0)back=Math.min(back,body.position.z+box.min.z);});
+  const {radiusTop:radius,radialSegments,height}=shaft.geometry.parameters,top=shaft.position.z+height/2;
+  shaft.geometry.dispose();shaft.geometry=new THREE.CylinderGeometry(radius,radius,top-back,radialSegments);
+  shaft.position.z=(top+back)/2;
+  // One steel with its round head, so the flush rear end reads as the pin's
+  // end rather than as an open black bore.
+  shaft.material=pinSteel;
+ }
  const groups={upper:b.upperHandle,lower:b.lowerHandle,catch:b.catchGroup,piston:b.pistonGroup,
   upperWeight:b.upperWeightAssembly,lowerWeight:b.lowerWeightAssembly,catchWeight:b.catchWeightAssembly};
  for(const [name,object]of Object.entries(groups))object.name='body:'+name;

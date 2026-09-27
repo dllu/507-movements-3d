@@ -421,14 +421,10 @@ function heroAeolipile(movement) {
   const rotorMaterial = matte(PALETTE.driven, {
     metalness: 0.25,
     roughness: 0.43,
-    opacity: 0.88,
-    transparent: true,
   });
   const pipeMaterial = matte(PALETTE.brass, {
     metalness: 0.35,
     roughness: 0.38,
-    opacity: 0.86,
-    transparent: true,
   });
   const darkMaterial = matte(PALETTE.ink, {
     metalness: 0.35,

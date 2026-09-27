@@ -34,7 +34,7 @@ test('391 the link bears end-on on the roller, pushes the rack outward and balan
  assert.ok(count>45&&count<110,`assist spans the upper corner and ends early in the descent: ${count}`);
  console.log({selectorAssistSamples:count,maxGap,minRackTorque,maxRackTorque});
 });
-test('391 the rising rack loads the spring before the outward assist, then C returns to its stop pin',()=>{
+test('391 the rising rack loads the spring before the outward assist, then C returns to rest',()=>{
  const loading=stateAt(2.8),assist=stateAt(3.5),released=stateAt(5.0),end=stateAt(5.4);
  assert.ok(loading.elbowAssist.loading&&!loading.elbowAssist.active&&loading.rightRack.engaged);
  assert.ok(loading.elbowAssist.springDeflection>THREE_DEGREES*9,'C swings well round against spring d');
@@ -42,10 +42,15 @@ test('391 the rising rack loads the spring before the outward assist, then C ret
  assert.ok(!released.elbowAssist.contact&&released.elbowAssist.gap>.05&&end.elbowAssist.gap>released.elbowAssist.gap);
  assert.equal(released.elbowAssist.leverAngle,g.restAngle);
  updateAt(0);m.root.updateMatrixWorld(true);
- // The short arm's lower edge rests on the stop pin.
- const stop=b.elbowCam.worldToLocal(b.elbowRestStop.getWorldPosition(new T.Vector3()));stop.z=.30;
- let nearest=Infinity;for(const tri of surfaceTriangles(b.elbowCam.geometry))nearest=Math.min(nearest,tri.closestPointToPoint(stop,new T.Vector3()).distanceTo(stop));
- assert.ok(Math.abs(nearest-g.stopRadius)<.0003,`finite stop actually touches the short arm: ${nearest}`);
+ // Brown's knob under the short arm's tip is carried on C (pass 82): it stands
+ // on the boss hanging from the tip and swings with C, never floating free.
+ const knobAt=t=>{updateAt(t);m.root.updateMatrixWorld(true);return b.elbowCam.worldToLocal(b.elbowRestStop.getWorldPosition(new T.Vector3()));};
+ const rest=knobAt(0),swung=knobAt(2.8);
+ assert.ok(rest.distanceTo(swung)<1e-9,'knob is fixed in C');
+ assert.equal(b.elbowRestStop.parent,b.elbowLever);
+ const face=new T.Box3().setFromBufferAttribute(b.elbowCam.geometry.attributes.position).max.z;
+ assert.ok(Math.abs(rest.z-.04-face)<1e-6,'knob stands on C\'s front face');
+ assert.ok(solidSurface(b.elbowCam.geometry).signedDistance(new T.Vector3(rest.x,rest.y,.30),.2)<-.02,'knob centre lies inside the boss on C');
 });
 const THREE_DEGREES=Math.PI/60;
 test('391 C and its link move continuously through contact entry, release and the link\'s fall; playback retains buffers',()=>{

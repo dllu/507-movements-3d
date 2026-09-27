@@ -188,11 +188,11 @@
       "id": 6,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-figures-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -209,7 +209,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p61-spokes-review.md",
         "docs/p62-audit-review.md",
-        "docs/p75-figures-review.md"
+        "docs/p75-figures-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -398,11 +399,11 @@
       "id": 12,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-figures-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -420,7 +421,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
         "docs/p64-audit-review.md",
-        "docs/p75-figures-review.md"
+        "docs/p75-figures-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -436,11 +438,11 @@
       "id": 13,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-fa-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -457,7 +459,9 @@
         "docs/p57-a-review.md",
         "docs/p64-audit-review.md",
         "docs/p75-figures-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p81-fa-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -466,18 +470,18 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Ideal rope/sheave motion; elasticity, friction and unrestricted load swinging are not simulated. The hauling hand is a Blender-modelled fist wrapped round the rope; the rope and its loose tail overlap inside the fist; the wrist bend is stylized. The load's eye seats in the hook bowl.",
+      "limits": "Ideal rope/sheave motion; elasticity, friction and unrestricted load swinging are not simulated. The hauling hand is a Blender-modelled fist wrapped round the rope; the rope and its loose tail overlap inside the fist; the wrist bend is stylized. The load's eye seats in the hook bowl. No hand, as plate 13 draws; the fall leaves the sheave at the plate's 13° and runs straight past the crop, its capped end showing only when zoomed far out.",
       "assessment": "reasonable"
     },
     {
       "id": 14,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -494,7 +498,8 @@
         "docs/pass53-user-review.md",
         "docs/p55-ends-review.md",
         "docs/p64-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -547,11 +552,11 @@
       "id": 16,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -568,7 +573,8 @@
         "docs/p55-ends-review.md",
         "docs/p64-fix-belts-review.md",
         "docs/p66-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -584,11 +590,11 @@
       "id": 17,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -605,7 +611,8 @@
         "docs/p55-ends-review.md",
         "docs/p64-fix-belts-review.md",
         "docs/p66-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -1282,11 +1289,11 @@
       "id": 37,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-res-review.md",
-        "note": "Pass 75: Two round stud heads, not Brown's one, show at the silhouette in most phases."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -1303,7 +1310,8 @@
         "docs/p64-fix-gears-review.md",
         "docs/p65-a-review.md",
         "docs/p72-a-review.md",
-        "docs/p73-res-review.md"
+        "docs/p73-res-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2254,11 +2262,11 @@
       "id": 64,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2275,7 +2283,8 @@
         "docs/p57-a-review.md",
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2325,11 +2334,11 @@
       "id": 66,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2343,7 +2352,8 @@
         "docs/visual-review-pass-49.md",
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -2359,11 +2369,11 @@
       "id": 67,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -2381,7 +2391,8 @@
         "docs/p54-marks-review.md",
         "docs/p59-hidden-review.md",
         "docs/p62-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -3072,11 +3083,11 @@
       "id": 86,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p76-da-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-fa-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -3099,7 +3110,9 @@
         "docs/p59-fixes-review.md",
         "docs/p62-mujoco-review.md",
         "docs/p63-c-review.md",
-        "docs/p76-da-review.md"
+        "docs/p76-da-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p81-fa-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -3108,7 +3121,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Hangers from the guide crossbar carry the lower bed and pump barrel. The band ends past the crop and the pump rod hangs unguided below the plinth (Brown draws neither). From level views the plinth's edge hides the rope's passage through its hole.",
+      "limits": "Hangers from the guide crossbar carry the lower bed and pump barrel. The band ends past the crop and the pump rod hangs unguided below the plinth (Brown draws neither). From level views the plinth's edge hides the rope's passage through its hole. The band runs continue straight off-screen in every orbit (open lengths standing in for the omitted remote sheave).",
       "assessment": "reasonable"
     },
     {
@@ -4839,11 +4852,11 @@
       "id": 130,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -4859,7 +4872,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-fix-a1-review.md",
         "docs/p66-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -5395,11 +5409,11 @@
       "id": 145,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p76-da-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -5420,7 +5434,8 @@
         "docs/p56-b-review.md",
         "docs/p64-fix-a1-review.md",
         "docs/p66-audit-review.md",
-        "docs/p76-da-review.md"
+        "docs/p76-da-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6057,11 +6072,11 @@
       "id": 162,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6079,7 +6094,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6258,11 +6274,11 @@
       "id": 167,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6283,7 +6299,8 @@
         "docs/p64-fix-a1-review.md",
         "docs/p65-b-review.md",
         "docs/p66-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -6382,11 +6399,11 @@
       "id": 170,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p76-da-review.md",
-        "note": "Pass 75: The bow's ends reach about 0.3 rad past the arms at the drawn pose, against Brown's 0.1 rad, so they clear the full baked spread."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6405,7 +6422,8 @@
         "docs/pass53-user-review.md",
         "docs/p56-b-review.md",
         "docs/p64-audit-review.md",
-        "docs/p76-da-review.md"
+        "docs/p76-da-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6502,11 +6520,11 @@
       "id": 173,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6529,7 +6547,8 @@
         "docs/p60-loops-review.md",
         "docs/p62-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6804,11 +6823,11 @@
       "id": 181,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-fa-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6835,7 +6854,9 @@
         "docs/p62-auditfix-a-review.md",
         "docs/p63-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p81-fa-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6844,18 +6865,18 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Lower finger and upper arm sit about 20 px from each plate's outline because Brown's 181 and 182 draw the same catch inconsistently; one rigid part is a compromise between them. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The back-weights are invisible loads in the baked solve. The back-weight rod eyes fit their pins (0.062 bore on the 0.06 pin).",
+      "limits": "Lower finger and upper arm sit about 20 px from each plate's outline because Brown's 181 and 182 draw the same catch inconsistently; one rigid part is a compromise between them. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The back-weights are invisible loads in the baked solve. The back-weight rod eyes fit their pins (0.062 bore on the 0.06 pin). The fixed pins run through their bores and end flush at the rear faces.",
       "assessment": "reasonable"
     },
     {
       "id": 182,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6881,7 +6902,9 @@
         "docs/p62-auditfix-a-review.md",
         "docs/p63-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "baked",
@@ -6890,18 +6913,18 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Same rigid catch as 181, phase-shifted; lower finger and upper arm sit about 20 px from the plate because Brown's 181 and 182 disagree. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The back-weights are invisible loads in the baked solve. The back-weight rod eyes fit their pins (0.062 bore on the 0.06 pin).",
+      "limits": "Same rigid catch as 181, phase-shifted; lower finger and upper arm sit about 20 px from the plate because Brown's 181 and 182 disagree. Undrawn supports and extensions removed (pass 60); rods end straight and cleanly. The back-weights are invisible loads in the baked solve. The back-weight rod eyes fit their pins (0.062 bore on the 0.06 pin). The fixed pins run through their bores and end flush at the rear faces.",
       "assessment": "reasonable"
     },
     {
       "id": 183,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6924,7 +6947,8 @@
         "docs/p62-auditfix-a-review.md",
         "docs/p63-c-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -6944,11 +6968,11 @@
       "id": 184,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -6973,7 +6997,8 @@
         "docs/p62-auditfix-a-review.md",
         "docs/p63-c-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -7196,11 +7221,11 @@
       "id": 190,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7217,7 +7242,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-fix-a2-review.md",
         "docs/p66-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7387,11 +7413,11 @@
       "id": 195,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: Scalloped tooth spaces instead of square slots (a worm across the face generates slanted, curved spaces; square slots would span ≈77% of the pitch)."
+        "evidence": "docs/p81-fa-review.md",
+        "note": "Pass 81: Scalloped tooth spaces instead of square slots (a worm across the face generates slanted, curved spaces; square slots would span ≈77% of the pitch)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7407,7 +7433,9 @@
         "docs/visual-assessment-pass52.md",
         "docs/m1-belts-gears-review.md",
         "docs/p62-supports-a-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p81-fa-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7416,7 +7444,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "Scalloped tooth spaces instead of square slots (a worm across the face generates slanted, curved spaces; square slots would span ≈77% of the pitch).",
-      "limits": "Finite running gaps, backlash take-up, friction and loaded sharing unvalidated. The worm-to-wheel tooth gap is 0.0035 (the disconnected screen skips instanced teeth).",
+      "limits": "Finite running gaps, backlash take-up, friction and loaded sharing unvalidated. The worm-to-wheel tooth gap is 0.0035 (the disconnected screen skips instanced teeth). Both wheels carry Brown's hub; the lower plain face carries the shared rotation cue.",
       "assessment": "minor"
     },
     {
@@ -7613,11 +7641,11 @@
       "id": 201,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-a-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7638,7 +7666,8 @@
         "docs/p57-b-review.md",
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
-        "docs/p78-a-review.md"
+        "docs/p78-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7726,11 +7755,11 @@
       "id": 204,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-res-review.md",
-        "note": "Pass 75: The upper roller's end ellipse is a little narrow (0.38 against 0.42)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7745,7 +7774,8 @@
         "docs/p64-fix-gears-review.md",
         "docs/p65-a-review.md",
         "docs/p72-a-review.md",
-        "docs/p73-res-review.md"
+        "docs/p73-res-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -7797,11 +7827,11 @@
       "id": 206,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-res-review.md",
-        "note": "Pass 75: The left band's square end stands a little outside Brown's (about 0.1)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -7824,7 +7854,8 @@
         "docs/p64-fix-pawls-review.md",
         "docs/p65-a-review.md",
         "docs/p72-a-review.md",
-        "docs/p73-res-review.md"
+        "docs/p73-res-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8024,11 +8055,11 @@
       "id": 212,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8043,7 +8074,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8059,11 +8091,11 @@
       "id": 213,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-fa-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8085,7 +8117,9 @@
         "docs/p54-geo-a-review.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p81-fa-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8094,7 +8128,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Tips sit at 1.84, recessed about 14 px inside the uncut rim; the pin drives on filleted top corners through a Geneva-style index; friction retention, pickup impact and load are prescribed. The fixed stud fills the split-ring bore; the stop ring and ratchet are separate fixed arbors that touch only through the face pin.",
+      "limits": "Tips sit at 1.84, recessed about 14 px inside the uncut rim; the pin drives on filleted top corners through a Geneva-style index; friction retention, pickup impact and load are prescribed. The fixed stud fills the split-ring bore; the stop ring and ratchet are separate fixed arbors that touch only through the face pin. Brown's drawn face pin is kept, flush with the ring face, with the ratchet 0.03 behind the ring.",
       "assessment": "reasonable"
     },
     {
@@ -8137,11 +8171,11 @@
       "id": 215,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8159,7 +8193,8 @@
         "docs/m11-forced-intermittent-review.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8696,11 +8731,11 @@
       "id": 230,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-b-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8714,7 +8749,8 @@
         "docs/w4b-164-253-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
-        "docs/p78-b-review.md"
+        "docs/p78-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8730,11 +8766,11 @@
       "id": 231,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-b-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8750,7 +8786,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/m4-203-321-review.md",
         "docs/p64-audit-review.md",
-        "docs/p78-b-review.md"
+        "docs/p78-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -8766,11 +8803,11 @@
       "id": 232,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-fa-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -8786,7 +8823,9 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p81-fa-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -8798,7 +8837,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Short tip/contact corrected with inferred rocking A carrier; carrier lift, bias and holding prescribed after unsuccessful native trial. Handle B's eye (r 0.16) is fitted on its shaft, slightly fuller than the bar.",
+      "limits": "Short tip/contact corrected with inferred rocking A carrier; carrier lift, bias and holding prescribed after unsuccessful native trial. Handle B's eye (r 0.16) is fitted on its shaft, slightly fuller than the bar. Pawl C is one flat plate in the wheel's tooth plane drawing on the flank with its own finger; the retaining click is removed because Brown draws none, so the wheel dwells by prescribed friction; the band runs just outside the tips where Brown overlaps them.",
       "assessment": "reasonable"
     },
     {
@@ -9311,11 +9350,11 @@
       "id": 247,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: The sea bottom's surface shows at the lower edge of the default pose (Brown draws none), and the spent ball visibly sinks into the bottom."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -9341,7 +9380,8 @@
         "docs/p65-c-review.md",
         "docs/p66-247-review.md",
         "docs/p68-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10039,11 +10079,11 @@
       "id": 267,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10059,7 +10099,8 @@
         "docs/p54-marks-review.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10108,11 +10149,11 @@
       "id": 269,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-res-review.md",
-        "note": "Pass 75: The frame is about 15% longer than Brown's (the closed end stands about 2 pitches further from the last tooth); the gear has 20 teeth against his 18."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10136,7 +10177,8 @@
         "docs/p61-spokes-review.md",
         "docs/p64-deep-mech-review.md",
         "docs/p72-d-review.md",
-        "docs/p73-res-review.md"
+        "docs/p73-res-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10269,11 +10311,11 @@
       "id": 273,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p76-da-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10288,7 +10330,8 @@
         "docs/w4c-254-400-review.md",
         "docs/p61-a-review.md",
         "docs/p62-audit-review.md",
-        "docs/p76-da-review.md"
+        "docs/p76-da-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10371,11 +10414,11 @@
       "id": 276,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10394,7 +10437,8 @@
         "docs/p53-style-review.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10532,11 +10576,11 @@
       "id": 280,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-1-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10557,7 +10601,8 @@
         "docs/p55-geo-a-review.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-1-review.md"
+        "docs/p80-1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10648,11 +10693,11 @@
       "id": 283,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10667,7 +10712,8 @@
         "docs/w2f-274-333-review.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10721,11 +10767,11 @@
       "id": 285,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10744,7 +10790,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10798,11 +10845,11 @@
       "id": 287,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-b-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "known",
@@ -10816,7 +10863,8 @@
         "docs/w2f-274-333-review.md",
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
-        "docs/p78-b-review.md"
+        "docs/p78-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10904,11 +10952,11 @@
       "id": 290,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10927,7 +10975,8 @@
         "docs/p57-c-review.md",
         "docs/p61-horology-a-review.md",
         "docs/p62-audit-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -10943,11 +10992,11 @@
       "id": 291,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -10968,7 +11017,8 @@
         "docs/p61-horology-a-review.md",
         "docs/p62-horology-review.md",
         "docs/p63-b-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11094,11 +11144,11 @@
       "id": 295,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11118,7 +11168,8 @@
         "docs/p62-plate-esc-review.md",
         "docs/p63-b-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11632,11 +11683,11 @@
       "id": 309,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: Brown's B bottom edge drops into a small nib past x 124; here it turns up into the lifting face (the nib lies in the lifting tooth's path)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11660,7 +11711,8 @@
         "docs/p64-deep-horology-review.md",
         "docs/p67-horology-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -11676,11 +11728,11 @@
       "id": 310,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-fa-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -11699,7 +11751,9 @@
         "docs/pass53-user-review.md",
         "docs/p53-fix-c-review.md",
         "docs/p64-audit-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p81-fa-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12385,11 +12439,11 @@
       "id": 329,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12408,7 +12462,8 @@
         "docs/p64-fix-b1-review.md",
         "docs/p66-audit-review.md",
         "docs/p71-e1-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12457,11 +12512,11 @@
       "id": 331,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12478,7 +12533,8 @@
         "docs/p61-faces-review.md",
         "docs/p62-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12494,11 +12550,11 @@
       "id": 332,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12517,7 +12573,8 @@
         "docs/p57-c-review.md",
         "docs/p64-fix-b1-review.md",
         "docs/p66-audit-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12653,11 +12710,11 @@
       "id": 336,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-b-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12677,7 +12734,8 @@
         "docs/p57-c-review.md",
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
-        "docs/p78-b-review.md"
+        "docs/p78-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12693,11 +12751,11 @@
       "id": 337,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-b-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12718,7 +12776,8 @@
         "docs/p62-audit-review.md",
         "docs/p71-e1-review.md",
         "docs/p75-fa-review.md",
-        "docs/p78-b-review.md"
+        "docs/p78-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12734,11 +12793,11 @@
       "id": 338,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12758,7 +12817,8 @@
         "docs/p60-supports-review.md",
         "docs/p62-audit-review.md",
         "docs/p71-e1-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12774,11 +12834,11 @@
       "id": 339,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12795,7 +12855,8 @@
         "docs/visual-assessment-pass52.md",
         "docs/p64-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -12811,11 +12872,11 @@
       "id": 340,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -12836,7 +12897,8 @@
         "docs/p64-fix-b1-review.md",
         "docs/p66-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13045,11 +13107,11 @@
       "id": 346,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13069,7 +13131,8 @@
         "docs/p62-audit-review.md",
         "docs/p67-mech-review.md",
         "docs/p71-e1-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -13236,11 +13299,11 @@
       "id": 351,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-res-review.md",
-        "note": "Pass 75: On the pinion side the top collar stops at the teeth tips, shorter than Brown's (0.3 against 0.78 of the rod width)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13263,7 +13326,8 @@
         "docs/p67-mech-review.md",
         "docs/p68-review.md",
         "docs/p72-c-review.md",
-        "docs/p73-res-review.md"
+        "docs/p73-res-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "validation-only",
@@ -13883,11 +13947,11 @@
       "id": 368,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -13910,7 +13974,8 @@
         "docs/p67-mech-review.md",
         "docs/p73-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14072,11 +14137,11 @@
       "id": 373,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14100,7 +14165,8 @@
         "docs/p63-c-review.md",
         "docs/p76-da-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14187,11 +14253,11 @@
       "id": 376,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-figures-review.md",
-        "note": "Pass 75: The horse's mane is a ridge, not Brown's zigzag hair."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: The horse is stylized (the mane is a ridge), and the top of a raised foreleg shows as a rounded mass at the shoulder."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14213,7 +14279,9 @@
         "docs/p55-geo-a-review.md",
         "docs/p64-fix-c1-review.md",
         "docs/p66-audit-review.md",
-        "docs/p75-figures-review.md"
+        "docs/p75-figures-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14221,19 +14289,19 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The horse's mane is a ridge, not Brown's zigzag hair.",
-      "limits": "A Blender-modelled horse walking on the tread; the output axle carries bored bosses whose rims run into the lattice bars; the legs join the body by overlapping at the joints; hoof contact is approximate (up to 0.026 clearance).",
+      "visibleFlaws": "The horse is stylized (the mane is a ridge), and the top of a raised foreleg shows as a rounded mass at the shoulder.",
+      "limits": "Each leg is one continuous Blender limb (forearm or gaskin, knee or hock, cannon, fetlock, pastern and hoof); the leg tops sit inside the body by design; the gait is prescribed; the output axle carries bored bosses into the lattice bars.",
       "assessment": "minor"
     },
     {
       "id": 377,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-figures-review.md",
-        "note": "Pass 75: From behind, the raised leg still reads as seated (the gait, trouser seat and shins are unchanged)."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: The gait still reads somewhat seated from behind, and the shoes are thin sole-box slippers."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14257,7 +14325,9 @@
         "docs/p64-fix-c1-review.md",
         "docs/p65-b-review.md",
         "docs/p66-audit-review.md",
-        "docs/p75-figures-review.md"
+        "docs/p75-figures-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14265,8 +14335,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "From behind, the raised leg still reads as seated (the gait, trouser seat and shins are unchanged).",
-      "limits": "A Blender-modelled walker gripping the rail at cap-crown height; the leg joints have small gaps.",
+      "visibleFlaws": "The gait still reads somewhat seated from behind, and the shoes are thin sole-box slippers.",
+      "limits": "Each trouser leg is one continuous Blender limb bending at a modelled knee, so thigh and shin never part; the hip/seat and cuff/shoe overlaps are intended; balance is not checked.",
       "assessment": "minor"
     },
     {
@@ -14605,11 +14675,11 @@
       "id": 387,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14631,7 +14701,8 @@
         "docs/p62-supports-b-review.md",
         "docs/p67-b-review.md",
         "docs/p68-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14771,11 +14842,11 @@
       "id": 391,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-res-review.md",
-        "note": "Pass 75: Lever C and spring d still stand about 32 px higher above the right guide than Brown's."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: Lever C and spring d still stand about 32 px higher above the right guide than Brown's."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14796,7 +14867,9 @@
         "docs/p63-a-review.md",
         "docs/p69-gears-review.md",
         "docs/p72-d-review.md",
-        "docs/p73-res-review.md"
+        "docs/p73-res-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14805,7 +14878,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "Lever C and spring d still stand about 32 px higher above the right guide than Brown's.",
-      "limits": "C swings about 45°; any lower pivot breaks the link's spring loading and outward push at the corner; each groove is the exact locus of its pin; corner selection and the assist are prescribed.",
+      "limits": "C swings about 45°; any lower pivot breaks the link's spring loading and outward push at the corner; each groove is the exact locus of its pin; corner selection and the assist are prescribed. The stop knob is part of C's short arm; C's rest angle is prescribed (Brown draws no stop).",
       "assessment": "minor"
     },
     {
@@ -14850,11 +14923,11 @@
       "id": 393,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-b-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -14874,7 +14947,9 @@
         "docs/p63-audit-review.md",
         "docs/p69-misc-review.md",
         "docs/p73-audit-review.md",
-        "docs/p78-b-review.md"
+        "docs/p78-b-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -14883,7 +14958,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Working motion prescribed; polishing pressure, friction, elastic belt/pad response, wear and material removal unvalidated. The spindle axis is an ideal constraint. The pad is seated on the lens with a 0.004 display separation; friction-driven spin is prescribed.",
+      "limits": "Working motion prescribed; polishing pressure, friction, elastic belt/pad response, wear and material removal unvalidated. The spindle axis is an ideal constraint. The pad is seated on the lens with a 0.004 display separation; friction-driven spin is prescribed. The spindle ends in a square clamp block holding the carrier with a set-screw (proportions estimated from the plate).",
       "assessment": "reasonable"
     },
     {
@@ -15013,11 +15088,11 @@
       "id": 397,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: The slot's upper end runs past Brown's stop (the pin reaches 268 px from the pivot against his 238); the table lug is about 12 px left of Brown's (link 2.30 against 2.02)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15040,7 +15115,8 @@
         "docs/p72-d-review.md",
         "docs/p73-res-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15056,11 +15132,11 @@
       "id": 398,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-2-review.md",
-        "note": "Pass 80: The crank throw is 0.40 against Brown's about 0.6, and the crank points up-right where Brown's points up-left (his pose is inconsistent with the roller on a lobe tip)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15082,7 +15158,8 @@
         "docs/p72-d-review.md",
         "docs/p73-res-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-2-review.md"
+        "docs/p80-2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15437,11 +15514,11 @@
       "id": 408,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15460,7 +15537,8 @@
         "docs/p54-marks-review.md",
         "docs/p64-fix-c2-review.md",
         "docs/p72-b-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15588,11 +15666,11 @@
       "id": 412,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15612,7 +15690,8 @@
         "docs/p69-pawls-review.md",
         "docs/p70-b-review.md",
         "docs/p73-audit-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -15702,11 +15781,11 @@
       "id": 415,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -15727,7 +15806,8 @@
         "docs/p62-audit-review.md",
         "docs/p69-gears-review.md",
         "docs/p70-b-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16412,11 +16492,11 @@
       "id": 433,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-3-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16441,7 +16521,8 @@
         "docs/p70-c-review.md",
         "docs/p75-fa-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-3-review.md"
+        "docs/p80-3-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16495,11 +16576,11 @@
       "id": 435,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p75-fa-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p82-dev-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16518,7 +16599,9 @@
         "docs/p64-audit-review.md",
         "docs/p69-water-review.md",
         "docs/p70-c-review.md",
-        "docs/p75-fa-review.md"
+        "docs/p75-fa-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-dev-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16527,7 +16610,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "The shaft's bearing is an ideal fixed axis, not drawn; the shaft ends as a plain stub under the hub.",
+      "limits": "The undrawn foundation ring is removed, so the fixed guides have no drawn mounting (Brown shows none); the shaft's bearing is an ideal fixed axis and the shaft ends as a plain stub 0.44 below the hub; the flow sheets are prescribed illustrations.",
       "assessment": "reasonable"
     },
     {
@@ -16614,11 +16697,11 @@
       "id": 438,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb2-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16637,7 +16720,9 @@
         "docs/p55-water-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w1-review.md",
-        "docs/p73-fb2-review.md"
+        "docs/p73-fb2-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16646,7 +16731,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Jets are shaped water bodies that turn rigidly with the runner (correct for steady flow in the runner frame).",
+      "limits": "Jets are shaped water bodies that turn rigidly with the runner (correct for steady flow in the runner frame). The flume runs on straight past Brown's crop and ends off-view.",
       "assessment": "reasonable"
     },
     {
@@ -16697,11 +16782,11 @@
       "id": 440,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb2-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16723,7 +16808,8 @@
         "docs/p69-w1-review.md",
         "docs/p70-c-review.md",
         "docs/p72-c-review.md",
-        "docs/p73-fb2-review.md"
+        "docs/p73-fb2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -16781,11 +16867,11 @@
       "id": 442,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-3-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -16808,7 +16894,8 @@
         "docs/p70-c-review.md",
         "docs/p73-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-3-review.md"
+        "docs/p80-3-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17037,11 +17124,11 @@
       "id": 448,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-78 lane, integrated by primary agent",
-        "reviewPass": 78,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p78-b-review.md",
-        "note": "Pass 78: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17061,7 +17148,8 @@
         "docs/p69-w2-review.md",
         "docs/p70-a-review.md",
         "docs/p73-audit-review.md",
-        "docs/p78-b-review.md"
+        "docs/p78-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17077,11 +17165,11 @@
       "id": 449,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-3-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17103,7 +17191,8 @@
         "docs/p73-audit-review.md",
         "docs/p78-b-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-3-review.md"
+        "docs/p80-3-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17119,11 +17208,11 @@
       "id": 450,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-3-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p82-dev-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17143,7 +17232,9 @@
         "docs/p69-w2-review.md",
         "docs/p73-fb1-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-3-review.md"
+        "docs/p80-3-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-dev-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17152,18 +17243,18 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "The handle is pinned to a clevis on the rod top, and its left end rides a swing link pinned in a lug on the barrel; primed incompressible volume model; check lifts prescribed. The delivery elbow seals a round hole in the barrel wall; the suction pipe reaches its seat; the poppet discs lift without a guide.",
+      "limits": "The handle is pinned to a clevis on the rod top, and its left end rides a swing link pinned in a lug on the barrel; primed incompressible volume model. The delivery elbow seals a round hole in the barrel wall; the suction pipe reaches its seat. Both checks are Brown's clack flaps: a bored lug hinged on a pin in two journals on the seat ring, with a knob, flat on the seat when shut and turned up to 30° on a prescribed curve rather than a solved pressure balance; the valve chamber stands full of water; priming, leakage and seal forces are not modelled.",
       "assessment": "reasonable"
     },
     {
       "id": 451,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-3-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p82-dev-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17185,7 +17276,9 @@
         "docs/p70-a-review.md",
         "docs/p73-fb1-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-3-review.md"
+        "docs/p80-3-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-dev-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17194,18 +17287,18 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Brown draws no lower pin on 451's link; it is inferred from 450 ('same as above'); primed incompressible volume model; check lifts prescribed. The pump pipe seals the barrel; the valve box has a floor the pipe enters; the vessel's top opening fits the dip tube; unguided poppet lift; air pressure and flow are scripted.",
+      "limits": "Brown draws no lower pin on 451's link; it is inferred from 450 ('same as above'); primed incompressible volume model. The pump pipe seals the barrel; the valve box has a floor the pipe enters; the vessel's top opening fits the dip tube. Both checks are Brown's hinged clack flaps (a bored lug on a journalled pin, with a knob), flat when shut and turned up to 30° on a prescribed curve; playback starts half a cycle in so the default pose is Brown's downstroke (delivery flap open); air pressure and flow are scripted.",
       "assessment": "reasonable"
     },
     {
       "id": 452,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb1-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17222,7 +17315,8 @@
         "docs/m17-audit-d-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w2-review.md",
-        "docs/p73-fb1-review.md"
+        "docs/p73-fb1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17276,11 +17370,11 @@
       "id": 454,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p76-da-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17298,7 +17392,8 @@
         "docs/p56-d-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w2-review.md",
-        "docs/p76-da-review.md"
+        "docs/p76-da-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17314,11 +17409,11 @@
       "id": 455,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb1-review.md",
-        "note": "Pass 75: The drum's plain rear web shows orange inside the drum, where Brown's interior is blank paper."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17340,7 +17435,8 @@
         "docs/p64-audit-review.md",
         "docs/p69-w2-review.md",
         "docs/p72-b-review.md",
-        "docs/p73-fb1-review.md"
+        "docs/p73-fb1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17356,11 +17452,11 @@
       "id": 456,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb1-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17382,7 +17478,8 @@
         "docs/p57-d-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w2-review.md",
-        "docs/p73-fb1-review.md"
+        "docs/p73-fb1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17481,11 +17578,11 @@
       "id": 459,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-3-review.md",
-        "note": "Pass 80: The two star-wheel axles and their journals have no carrier (Brown draws none) and join the rest only through the worm's designed 0.054 clearance."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "known",
@@ -17514,7 +17611,8 @@
         "docs/p73-audit-review.md",
         "docs/p78-b-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-3-review.md"
+        "docs/p80-3-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17648,11 +17746,11 @@
       "id": 463,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb2-review.md",
-        "note": "Pass 75: The upper leaf is a plain plank, so the ordinary head stands 0.14 over its crest where Brown shows the water leaving below the leaf top (the caption's notch in the upper leaf)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17676,7 +17774,8 @@
         "docs/p65-c-review.md",
         "docs/p66-audit-review.md",
         "docs/p69-w3-review.md",
-        "docs/p73-fb2-review.md"
+        "docs/p73-fb2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17771,11 +17870,11 @@
       "id": 466,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb1-review.md",
-        "note": "Pass 75: Brown's thin line from the lever end to the ball is not modelled; the default pose shows the lever near the top of its stroke rather than Brown's downward slope."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17798,7 +17897,8 @@
         "docs/p65-c-review.md",
         "docs/p66-audit-review.md",
         "docs/p69-w3-review.md",
-        "docs/p73-fb1-review.md"
+        "docs/p73-fb1-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17856,11 +17956,11 @@
       "id": 468,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-c-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17881,7 +17981,8 @@
         "docs/p55-geo-b-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w3-review.md",
-        "docs/p74-c-review.md"
+        "docs/p74-c-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17897,11 +17998,11 @@
       "id": 469,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-c-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17923,7 +18024,8 @@
         "docs/p69-w4-review.md",
         "docs/p70-a-review.md",
         "docs/p72-b-review.md",
-        "docs/p74-c-review.md"
+        "docs/p74-c-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -17939,11 +18041,11 @@
       "id": 470,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -17967,7 +18069,8 @@
         "docs/p71-e2-review.md",
         "docs/p72-b-review.md",
         "docs/p73-audit-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18023,11 +18126,11 @@
       "id": 472,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb2-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18047,7 +18150,8 @@
         "docs/p55-cutaway-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w4-review.md",
-        "docs/p73-fb2-review.md"
+        "docs/p73-fb2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18063,11 +18167,11 @@
       "id": 473,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18089,7 +18193,8 @@
         "docs/p62-audit-review.md",
         "docs/p69-w4-review.md",
         "docs/p73-audit-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18105,11 +18210,11 @@
       "id": 474,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-c-review.md",
-        "note": "Pass 75: A faint dashed line runs round the bowl under the lid rim, and the risers show fine banding."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: A faint dashed line runs round the bowl under the lid rim, and the risers show fine banding."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18126,7 +18231,9 @@
         "docs/m6-402-507-review.md",
         "docs/p64-audit-review.md",
         "docs/pass53-user-review.md",
-        "docs/p74-c-review.md"
+        "docs/p74-c-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18135,7 +18242,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "A faint dashed line runs round the bowl under the lid rim, and the risers show fine banding.",
-      "limits": "Steady speed from an assumed pressure/nozzle/drag balance; the handles are strap loops running front to back along the rim, joined into the wall, drawn as round rod rather than flat strap; leg and handle ends are capped.",
+      "limits": "Steady speed from an assumed pressure/nozzle/drag balance; the handles are strap loops running front to back along the rim, joined into the wall, drawn as round rod rather than flat strap; leg and handle ends are capped. The globe, arms, trunnions and risers are opaque, hiding the steam passages.",
       "assessment": "minor"
     },
     {
@@ -18182,11 +18289,11 @@
       "id": 476,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb2-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18203,7 +18310,8 @@
         "docs/p55-water-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w3-review.md",
-        "docs/p73-fb2-review.md"
+        "docs/p73-fb2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18219,11 +18327,11 @@
       "id": 477,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-80 lane, integrated by primary agent",
-        "reviewPass": 80,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p80-3-review.md",
-        "note": "Pass 80: disconnection fixed; checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18245,7 +18353,8 @@
         "docs/p69-w3-review.md",
         "docs/p73-audit-review.md",
         "docs/p79-disconnected-triage.md",
-        "docs/p80-3-review.md"
+        "docs/p80-3-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18300,11 +18409,11 @@
       "id": 479,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-b-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18325,7 +18434,8 @@
         "docs/p64-fix-c1-review.md",
         "docs/p66-audit-review.md",
         "docs/p69-w4-review.md",
-        "docs/p74-b-review.md"
+        "docs/p74-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18341,11 +18451,11 @@
       "id": 480,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-b-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18364,7 +18474,8 @@
         "docs/p56-d-review.md",
         "docs/p64-audit-review.md",
         "docs/p69-w4-review.md",
-        "docs/p74-b-review.md"
+        "docs/p74-b-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18380,11 +18491,11 @@
       "id": 481,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-b-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p82-dev-review.md",
+        "note": "Pass 81: disconnection fixed; checked in default, rotated and phase captures beside the plate."
       },
       "intersections": {
         "status": "known",
@@ -18406,7 +18517,9 @@
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
         "docs/p69-w4-review.md",
-        "docs/p74-b-review.md"
+        "docs/p74-b-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-dev-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18415,18 +18528,18 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "",
-      "limits": "Each compartment wall is one bent sheet whose shell stretch stops short of the next wall, leaving the outer gaps Brown draws as chamber outlets; the water is one stationary body that the turning walls pass through; fill/discharge stages are an idealised quarter-cycle clock aligned to the gaps; drum torque is prescribed.",
+      "limits": "Each compartment wall is one bent sheet whose shell stretch stops short of the next wall, leaving the outer gaps Brown draws as chamber outlets; the water is one stationary body that the turning walls pass through; fill/discharge stages are an idealised quarter-cycle clock aligned to the gaps; drum torque is prescribed. Pipe a enters from behind through the rear case head and the drum's hollow rear journal (0.015 running clearance), rising to its mouth above the water inside the innermost hook; the drum's rear journal rides on pipe a; pipe a's run outside the case ends as a plain stub (Brown draws no supply).",
       "assessment": "reasonable"
     },
     {
       "id": 482,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p73-fb2-review.md",
-        "note": "Pass 75: The case layout departs from Brown's round section (mercury channels in the walls)."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "known",
@@ -18447,7 +18560,8 @@
         "docs/p62-shapes-review.md",
         "docs/p63-audit-review.md",
         "docs/p69-w4-review.md",
-        "docs/p73-fb2-review.md"
+        "docs/p73-fb2-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18463,11 +18577,11 @@
       "id": 483,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-b-review.md",
-        "note": "Pass 75: The left flag rod, which Brown does not draw, shows as a thin rod behind chamber A above the bellows and through the V notches; the crank disc and eccentric at the top are inferred where Brown shows only a bar and a knob."
+        "evidence": "docs/p82-dev-review.md",
+        "note": "Pass 81: The left flag rod, which Brown does not draw, shows as a thin rod behind chamber A above the bellows and through the V notches; the crank disc and eccentric at the top are inferred where Brown shows only a bar and a knob; the short in-case duct runs show under the shelf."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18491,7 +18605,9 @@
         "docs/p66-audit-review.md",
         "docs/p69-w4-review.md",
         "docs/p70-a-review.md",
-        "docs/p74-b-review.md"
+        "docs/p74-b-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-dev-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18499,8 +18615,8 @@
         "note": "Authored analytical/prescribed playback; no production MuJoCo import."
       },
       "updatedOn": "2026-09-27",
-      "visibleFlaws": "The left flag rod, which Brown does not draw, shows as a thin rod behind chamber A above the bellows and through the V notches; the crank disc and eccentric at the top are inferred where Brown shows only a bar and a knob.",
-      "limits": "Rebuilt element by element from the plate: double bellows, a turning cup valve B over four ports and a central exhaust, the tall outlet column; plate forces from gas pressure are not solved; the ducts, cored exhaust passage and inlet are inferred; the bellows section is a rounded rectangle.",
+      "visibleFlaws": "The left flag rod, which Brown does not draw, shows as a thin rod behind chamber A above the bellows and through the V notches; the crank disc and eccentric at the top are inferred where Brown shows only a bar and a knob; the short in-case duct runs show under the shelf.",
+      "limits": "Rebuilt element by element from the plate: double bellows, a turning cup valve B over four ports and a central exhaust, the tall outlet column; the four ducts run in cored passages inside a 0.50-thick back wall, with close-fitting tube liners, and the inlet is a short stub through a bored hole; plate forces from gas pressure are not solved; the ducts, passages, cored exhaust and inlet are inferred; the bellows section is a rounded rectangle.",
       "assessment": "minor"
     },
     {
@@ -18725,11 +18841,11 @@
       "id": 490,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-a-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18751,7 +18867,8 @@
         "docs/p59-audit-bd-review.md",
         "docs/p62-auditfix-a-review.md",
         "docs/p63-audit-review.md",
-        "docs/p74-a-review.md"
+        "docs/p74-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18767,11 +18884,11 @@
       "id": 491,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-a-review.md",
-        "note": "Pass 75: While hauling, the pawl nose lands about a third of a tooth up the next ramp rather than in the valley against the face as drawn (Brown shows the held pose)."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: While hauling, the pawl nose lands about a third of a tooth up the next ramp rather than in the valley against the face as drawn (Brown shows the held pose)."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18791,7 +18908,9 @@
         "docs/p64-fix-c1-review.md",
         "docs/p65-c-review.md",
         "docs/p66-audit-review.md",
-        "docs/p74-a-review.md"
+        "docs/p74-a-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18800,18 +18919,18 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "While hauling, the pawl nose lands about a third of a tooth up the next ramp rather than in the valley against the face as drawn (Brown shows the held pose).",
-      "limits": "The pawl is a curved flat dog turning on the radial pin Brown draws; its drop is prescribed (12.5% of a tooth); gravity, impact, friction and holding load are not solved.",
+      "limits": "The pawl is a curved flat dog turning on the radial pin Brown draws; its drop is prescribed (12.5% of a tooth); gravity, impact, friction and holding load are not solved. The cable lead ends off-view.",
       "assessment": "minor"
     },
     {
       "id": 492,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-a-review.md",
-        "note": "Pass 75: The tackle block is a plain wooden shell rather than Brown's stropped block."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: The tackle block is a plain wooden shell rather than Brown's stropped block."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18833,7 +18952,9 @@
         "docs/p59-audit-bd-review.md",
         "docs/p62-auditfix-a-review.md",
         "docs/p63-a-review.md",
-        "docs/p74-a-review.md"
+        "docs/p74-a-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -18842,7 +18963,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "The tackle block is a plain wooden shell rather than Brown's stropped block.",
-      "limits": "Rebuilt from the plate as one unit (Brown's second unit is off the plate); timing and the reverse reset are a staged demonstration; the hook rising stands in for the boat dropping; gravity and rope tension are not solved.",
+      "limits": "Rebuilt from the plate as one unit (Brown's second unit is off the plate); timing and the reverse reset are a staged demonstration; the hook rising stands in for the boat dropping; gravity and rope tension are not solved. The release rope and tackle falls end off-view.",
       "assessment": "minor"
     },
     {
@@ -18888,11 +19009,11 @@
       "id": 494,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 75,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p74-a-review.md",
-        "note": "Pass 75: checked in default, rotated and phase captures beside the plate."
+        "evidence": "docs/p81-audit-review.md",
+        "note": "Pass 81 audit: no disconnected, floating or undrawn parts found in default, rotated and phase captures beside the plate; prior flaws unchanged."
       },
       "intersections": {
         "status": "sampled-clear",
@@ -18910,7 +19031,8 @@
         "docs/p54-marks-review.md",
         "docs/p59-audit-bd-review.md",
         "docs/p62-audit-review.md",
-        "docs/p74-a-review.md"
+        "docs/p74-a-review.md",
+        "docs/p81-audit-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19109,11 +19231,11 @@
       "id": 500,
       "visual": {
         "status": "yes",
-        "reviewer": "Claude Opus 5.5 — pass-73–76 lane, integrated by primary agent",
-        "reviewPass": 77,
+        "reviewer": "Claude Opus 5.5 — pass-81/82 lane, integrated by primary agent",
+        "reviewPass": 81,
         "reviewedOn": "2026-09-27",
-        "evidence": "docs/p77-dc-review.md",
-        "note": "Pass 75: At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap)."
+        "evidence": "docs/p82-fig-review.md",
+        "note": "Pass 81: At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap)."
       },
       "intersections": {
         "status": "known",
@@ -19135,7 +19257,9 @@
         "docs/p58-misc-review.md",
         "docs/p62-shapes-review.md",
         "docs/p72-c-review.md",
-        "docs/p77-dc-review.md"
+        "docs/p77-dc-review.md",
+        "docs/p81-audit-review.md",
+        "docs/p82-fig-review.md"
       ],
       "mujoco": {
         "mode": "none",
@@ -19144,7 +19268,7 @@
       },
       "updatedOn": "2026-09-27",
       "visibleFlaws": "At rotations of 60° or more the section figure overlaps the gauge in projection (clearing it would need about 3× the plate's gap).",
-      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads. Clearing both ±60° views with the half-gauge section needs a gap of about 7.3 against the present 1.86 (the plate's is about 0.2). In the face view the pinion journal and sector pivot bearing are carried by nothing fixed; the section's dial and glass are seated in the case wall.",
+      "limits": "The face and section linkages agree at zero and full pressure; at mid pressure the face pointer leads. Clearing both ±60° views with the half-gauge section needs a gap of about 7.3 against the present 1.86 (the plate's is about 0.2). In the face view the pinion journal and sector pivot bearing are carried by nothing fixed; the section's dial and glass are seated in the case wall. Brown's stem and hex union nut are modelled below the case (sizes measured from the plate).",
       "assessment": "minor"
     },
     {

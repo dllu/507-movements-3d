@@ -29,7 +29,17 @@ export function finishSplitRim213(root,legacyUpdate){
    ...arc(innerR,Math.PI/2-innerHalf,Math.PI/2+innerHalf-2*Math.PI,512)];
  const shape=new THREE.Shape(displayOutline.map(p=>new THREE.Vector2(...p)));
  b.stopWheelBody.geometry.dispose();b.stopWheelBody.geometry=new THREE.ExtrudeGeometry(shape,{depth:g.stopWheelDepth,bevelEnabled:false,steps:1,curveSegments:1}).translate(0,0,-g.stopWheelDepth/2);
- b.facePin.geometry.dispose();b.facePin.geometry=new THREE.CylinderGeometry(g.facePinRadius,g.facePinRadius,.9,128);
+ // Brown's small circle in the ring's tooth space is the ratchet's own face
+ // pin. The ratchet runs just behind the ring (0.03 axial running gap), and
+ // the pin, turned in the ratchet's metal, rises from the ratchet's middle
+ // plane only through the ring's tooth band, ending flush with its front face.
+ {const gap=.03,ringBack=g.stopWheelPlaneZ-g.stopWheelDepth/2,ringFront=g.stopWheelPlaneZ+g.stopWheelDepth/2,
+   shift=ringBack-gap-(g.driverPlaneZ+g.driverDepth/2);
+  b.driverBody.position.z+=shift;b.driver.userData.rotor.traverse(o=>{if(o.userData.role==='winding-arbor-square')o.position.z+=shift;});
+  g.driverPlaneZ+=shift;g.axialClearance=gap;
+  const pinBack=g.driverPlaneZ;b.facePin.geometry.dispose();
+  b.facePin.geometry=new THREE.CylinderGeometry(g.facePinRadius,g.facePinRadius,ringFront-pinBack,128);
+  b.facePin.position.z=(ringFront+pinBack)/2;b.facePin.material=b.driverBody.material;}
  b.stopWheelOutline.visible=false;for(const part of [...b.stopToothHighlights,...b.stopShoulderHighlights])part.visible=false;
  g.stopRingOutline=bake.outline.map(p=>new THREE.Vector2(...p));g.stopOuterProfile=bake.outer.map(p=>new THREE.Vector2(...p));
  g.initialStopWheelAngle=bake.reverseAngles[0];g.finalStopWheelAngle=bake.initialAngle-5*g.stopPitchAngle;

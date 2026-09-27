@@ -60,8 +60,11 @@ for (const [id, create] of [[499, bourdon], [500, diaphragm]]) {
       for (let i = 1; i < 32; i++) assert.equal(shell.inside(curve.getPoint(i / 32)), false);
       for (const p of surfacePoints(core.geometry)) assert.ok(shell.signedDistance(p, .02) > -2e-6);
       const collar = solidSurface(b.inletCollar.geometry);
-      assert.equal(collar.inside(new T.Vector3(0, 0, 0)), false);
-      assert.equal(collar.inside(new T.Vector3(.35, 0, 0)), true);
+      // 500's collar is Brown's stem below the case (pass 82): a bored sleeve
+      // over the inlet pipe from the case down to the hex union nut.
+      const y = id === 499 ? 0 : -4.1;
+      assert.equal(collar.inside(new T.Vector3(0, y, 0)), false);
+      assert.equal(collar.inside(new T.Vector3(.35, y, 0)), true);
     } finally { disposeObject3D(model.root); }
   });
 

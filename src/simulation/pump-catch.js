@@ -10,11 +10,13 @@ import {disk} from './finite-plate-geometry.js';
 // hardware: the band's two runs leave the plate to the right and the pump
 // rope drops into the plinth. The production model keeps only what explains
 // the drawn motion (p60 support policy): the band runs straight on past the
-// right edge and ends cleanly, and the rope carries a plain pump rod that
+// right edge and ends cleanly far beyond it, and the rope carries a plain pump rod that
 // hangs below the plinth. The remote sheave, its stand and base, and the pump
 // crosshead, guides, beds, hangers and barrel are not built.
 const UNDRAWN_PARTS=/^(remote(?:Drive(?:Rim|Web|Hub)|InputShaft|BearingStandard|BearingLip|Base)|pump(?:Crosshead|LowerBed|Barrel(?:Gland|Foot|HangerLeft|HangerRight)?|Guide(?:Left|Right|Crossbar)|GuidePillar(?:Left|Right)))$/;
-export const PUMP_CATCH_BAND_END=5.3;
+// Far enough that the cleanly capped run ends stay outside the frame of
+// every orbit even at the maximum zoom-out (three times the fit distance).
+export const PUMP_CATCH_BAND_END=26;
 function pruneUndrawnHardware(model){
   const u=model.root.userData,removed=[];
   for(const [name,mesh] of Object.entries(u.parts))if(UNDRAWN_PARTS.test(name)){
@@ -30,10 +32,16 @@ function pruneUndrawnHardware(model){
   arc.getPoint=(t,target=new THREE.Vector3())=>{const a=-Math.PI/2-Math.PI*t;return target.set(radius*Math.cos(a),radius*Math.sin(a),z);};
   path.add(new THREE.LineCurve3(at(end,-radius),at(0,-radius)));path.add(arc);path.add(new THREE.LineCurve3(at(0,radius),at(end,radius)));
   const band=u.parts.inputDriveRope,travel=band.geometry.userData.travel??0;band.geometry.dispose();
-  band.geometry=new LaidRopeGeometry(path,768,ropeRadius,8,false,{travel});
+  band.geometry=new LaidRopeGeometry(path,Math.ceil(path.getLength()*68),ropeRadius,8,false,{travel});
   u.rearDrive={...u.rearDrive,bandEnd:end,bandLength:path.getLength(),openBand:true};
   u.prunedHardware=removed;
   return removed;
+}
+
+// The studied full-motion bounds, widened only to the open band's far ends.
+function bandMotionBounds(u){
+  const {min,max}=profile.motionBounds,{bandEnd,ropeRadius}=u.rearDrive;
+  return{min:[...min],max:[Math.max(max[0],bandEnd+ropeRadius+1e-6),max[1],max[2]]};
 }
 
 export function makePumpCatchDrive(){
@@ -42,7 +50,7 @@ export function makePumpCatchDrive(){
   indexPumpCatchHardware(model);
   Object.assign(u,{fidelity:'authored',mechanism:'cam-latched-loose-wheel-pump-drive',reconstructionStatus:'rebuilt',
     profile,motion,playbackPeriod:motion.displayPeriod,animationTiming:{authoredCyclePeriod:motion.displayPeriod},
-    minimumDisplayCycleSeconds:motion.displayPeriod,stateAtTime:motion.sample,sampledMotionBounds:profile.motionBounds,kinematics:{},
+    minimumDisplayCycleSeconds:motion.displayPeriod,stateAtTime:motion.sample,sampledMotionBounds:bandMotionBounds(u),kinematics:{},
     qualification:'Source-traced loose wheel, hooked catch and cam with complete winding, rear input and guided pump hardware. Motion follows the reviewed finite-contact trajectory.',
     idealConstraints:'The input shaft alone rotates continuously. Gravity, inertia, unilateral cam/catch/stop contact, a fixed-length massless rope and the guided load determine capture, lift, trip and return. The rear band, hidden winding width, head thickness, heel stop, bearing resistance, normalized load and output guides reconstruct details omitted by the engraving. The slack bow is an explicit massless display shape. Startup is retained before an eight-second physical cycle repeats in four display seconds.'});
   // Brown draws a front elevation cut at the ground line: the rope runs down

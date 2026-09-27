@@ -36,7 +36,14 @@ export function correctFeedWormAssembly(root,id){
    const center=new THREE.Mesh(boredLatheGeometry([{radial:face.innerRadius,axial:-.36},{radial:face.innerRadius,axial:0}],.074,64),old.material);
    const back=new THREE.Mesh(boredLatheGeometry([{radial:face.outerRadius,axial:-.364},{radial:face.outerRadius,axial:-.359}],.074,96),old.material);back.rotation.x=sign*Math.PI/2;rotor.add(back);b[side+'SmoothBack']=back;
    center.rotation.x=Math.PI/2;if(sign<0)center.rotation.x=-Math.PI/2;rotor.add(center);b[side+'BoredCenter']=center;
-   bored(b[side+'WheelHub'],.19,.074,.64,replaced);journals.push({shaft:b[side+'WheelShaft'],part:b[side+'WheelHub'],radius:.073,bore:.074});
+   // Brown draws the same hub on both wheels: a boss about a quarter of the
+   // wheel's radius with an inner circle half that size. It is turned in the
+   // wheel's own metal as a boss with a short raised collar on each face.
+   {const hub=b[side+'WheelHub'];replaced.add(hub.geometry);hub.material=old.material;
+    hub.geometry=boredLatheGeometry([{radial:.16,axial:-.32},{radial:.16,axial:-.28},{radial:.32,axial:-.28},
+     {radial:.32,axial:.28},{radial:.16,axial:.28},{radial:.16,axial:.32}],.074,96);hub.userData.boreRadius=.074;}
+   back.userData.role=side+'-smooth-back-face';center.userData.role=side+'-bored-wheel-centre';
+   journals.push({shaft:b[side+'WheelShaft'],part:b[side+'WheelHub'],radius:.073,bore:.074});
    mark(b[side+'Index'],side==='upper'?.0015:.3655,replaced);b[side+'WheelShaft'].scale.z=.4;b[side+'WheelShaft'].position.z=side==='upper'?-.18:.18;
   }
   for(const x of[b.frameFoot,b.framePost,b.lowerBearingArm,b.upperBearingArm,...b.wheelBearings,...b.wormBearings,...b.wormBearingPosts])x.visible=false;

@@ -2258,7 +2258,9 @@ function singleThreeLeggedGravityEscapement(movement) {
     new THREE.Vector3(-1.06, 0, 0),
     new THREE.Vector3(1.06, 0, 0),
     0.095,
-    0.075,
+    // Thinner than the vanes (0.075) so its ends bury inside them, with no
+    // coplanar faces to z-fight on the vane fronts.
+    0.055,
     darkMaterial,
   );
   flyBar.userData.role = 'fan-fly-crossarm';

@@ -1977,14 +1977,17 @@ function singleMovableHoist() {
   fixedPulley.position.copy(fixedCenter);
   movablePulley.position.copy(movableBase);
   const fixedArcCenter = fixedCenter.clone().setZ(ropeZ);
-  const freeContactAngle = Math.PI * 0.75;
+  // Plate 13's free fall leaves the sheave just above its left side and runs
+  // steeply down-left off the plate's left edge (about 13 degrees from vertical).
+  const effortDirection = new THREE.Vector3(Math.sin(THREE.MathUtils.degToRad(13)),
+    Math.cos(THREE.MathUtils.degToRad(13)), 0);
+  const freeContactAngle = Math.atan2(effortDirection.y, effortDirection.x) + Math.PI / 2;
   const freeContact = fixedArcCenter.clone().add(new THREE.Vector3(
     Math.cos(freeContactAngle) * fixedPitchRadius,
     Math.sin(freeContactAngle) * fixedPitchRadius,
     0,
   ));
   const fixedRightContact = fixedArcCenter.clone().add(new THREE.Vector3(fixedPitchRadius, 0, 0));
-  const effortDirection = new THREE.Vector3(1, 1, 0).normalize();
   const fixedArc = circularArcThrough(
     fixedArcCenter,
     freeContact,
@@ -1999,9 +2002,11 @@ function singleMovableHoist() {
     ceilingUnderside - 0.17,
     ropeZ,
   );
-  // The fall ends in plate 12's hauling hand just beyond Brown's crop of it,
-  // not in mid-air at the crop line.
-  const baseEffortLength = 1.3;
+  // Brown draws no hand: the fall runs straight past the plate's left crop
+  // (about 1.1 units below the sheave) and ends cleanly below the default
+  // frame, so the end never enters the default view at any hauling phase.
+  const cropEffortLength = 1.1;
+  const baseEffortLength = 6;
   const makeRopePath = (travel) => {
     const movableCenter = movableBase.clone().add(new THREE.Vector3(0, travel, ropeZ));
     const movableLeftContact = movableCenter.clone().add(new THREE.Vector3(-movablePitchRadius, 0, 0));
@@ -2040,6 +2045,8 @@ function singleMovableHoist() {
     laid: true,
   });
   rope.userData.mechanismRope = true;
+  // Only the fall's stretch beyond the plate's crop runs out of frame.
+  rope.userData.beyondPlateCropBelowY = freeContact.y - cropEffortLength * effortDirection.y;
   const weight = makeHoistLoad({ radius: 0.46, height: 0.62 });
   const fixedHanger = makeSheaveHanger({ radius: fixedPitchRadius, width: 0.3, openHook: true });
   fixedHanger.position.copy(fixedCenter);
@@ -2048,11 +2055,9 @@ function singleMovableHoist() {
   const movableHanger = makeSheaveHanger({ radius: movablePitchRadius, width: 0.32, direction: -1 });
   const anchorEye = new THREE.Mesh(new THREE.TorusGeometry(0.085, 0.025, 12, 40), matte(PALETTE.ink));
   anchorEye.position.copy(anchor).add(new THREE.Vector3(0, 0.085, 0));
-  const hand = makeHaulingHand(effortDirection, 0.04);
-  hand.userData.role = 'hauling-hand-beyond-plate-crop';
-  root.add(fixedPulley, movablePulley, rope, weight, fixedHanger, movableHanger, anchorEye, hand);
+  root.add(fixedPulley, movablePulley, rope, weight, fixedHanger, movableHanger, anchorEye);
   root.userData.blocks = { fixedPulley, movablePulley, fixedHanger, movableHanger,
-    rope, weight, support, anchorEye, hand };
+    rope, weight, support, anchorEye };
   root.userData.cameraFov = 18;
   root.userData.mechanism = 'single-movable-pulley-hoist';
   root.userData.fixedContact = {
@@ -2075,7 +2080,6 @@ function singleMovableHoist() {
     // Constant length measured from the free end: each arc-length coordinate
     // is a fixed piece of rope, so the lay is not shifted along the path.
     rope.userData.updateDistance(0);
-    hand.position.copy(path.effortEnd);
     movablePulley.position.copy(path.movableCenter).setZ(0);
     movableHanger.position.copy(movablePulley.position);
     // The load's eye wire rests in the bottom of the hook's bowl.
@@ -2111,13 +2115,21 @@ function singleMovableHoist() {
       supportingSegments: 2,
     };
   };
-  // Fit the swept silhouette including the hand and its tail.
+  // Fit the swept silhouette of everything but the free fall, plus the fall
+  // only as far as Brown's crop; the rest of it runs out of the frame.
   const fit = new THREE.Box3();
   for (let i = 0; i < 24; i += 1) {
     update(i * 2 * Math.PI / (0.66 * 24));
     root.updateMatrixWorld(true);
-    fit.union(new THREE.Box3().setFromObject(root, true));
+    for (const child of root.children) {
+      if (child !== rope) fit.union(new THREE.Box3().setFromObject(child, true));
+    }
+    const { curves } = rope.userData.curve;
+    for (const piece of curves.slice(1)) {
+      for (let k = 0; k <= 16; k += 1) fit.expandByPoint(piece.getPoint(k / 16));
+    }
   }
+  fit.expandByPoint(freeContact.clone().addScaledVector(effortDirection, -cropEffortLength));
   root.userData.cameraFitBounds = fit;
   update(0);
   return { root, update, cameraDirection: new THREE.Vector3(0.3, 0.15, 10) };

@@ -113,7 +113,8 @@ test('movement 213 is a single face-pin friction stop, not two meshing gears', (
   assert.equal(geometry.stopToothCenters.length, 5);
   assert.equal(blocks.stopToothHighlights.length, 5);
   assert.equal(blocks.stopShoulderHighlights.length, 2);
-  assert.ok(geometry.axialClearance > 0.33);
+  // The ratchet runs just behind the split ring; the face pin bridges only that gap.
+  assert.ok(geometry.axialClearance >= 0.02 && geometry.axialClearance <= 0.05);
   assert.equal(transmission.directRatchetToStopWheelMesh, false);
   assert.equal(transmission.frictionHeldBetweenIndexes, true);
   assert.equal(transmission.pinIndexesPerInputTurn, 1);

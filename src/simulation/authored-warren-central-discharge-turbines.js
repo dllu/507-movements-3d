@@ -336,11 +336,11 @@ function warrenCentralDischargeTurbine(movement) {
   runnerHub.userData.role = 'warren-runner-output-hub-below-disk';
   runner.add(runnerHub);
   const runnerShaft = new THREE.Mesh(
-    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1.60, 32),
+    new THREE.CylinderGeometry(shaftRadius, shaftRadius, 1.25, 32),
     darkMaterial,
   );
   // Its end shows in the hub's centre, as Brown's sectioned shaft does.
-  runnerShaft.position.y = -0.50;
+  runnerShaft.position.y = -0.325;
   runnerShaft.userData.role = 'vertical-output-shaft-of-inner-runner-b';
   runner.add(runnerShaft);
   const runnerSupportArms = [];
@@ -465,8 +465,7 @@ function warrenCentralDischargeTurbine(movement) {
     // Over a support arm the water would land on it, so that passage's
     // sheet ends at the eye; elsewhere it drops through the open eye.
     const overArm = armAngles.some((a) => Math.abs(Math.atan2(Math.sin(eyeAngle - a), Math.cos(eyeAngle - a))) < 0.2);
-    // Thrown inward fast enough to clear the foundation ring (inner radius
-    // 1.38) as it falls through the eye.
+    // Thrown inward so it falls clear through the open eye.
     const exit = along.points[n - 1].clone().setY(0).normalize().multiplyScalar(-1.9)
       .addScaledVector(along.points[n - 1].clone().sub(along.points[n - 2]).setY(0).normalize(), 0.4);
     exit.y = 0;
@@ -520,17 +519,10 @@ function warrenCentralDischargeTurbine(movement) {
   centralDischarge.userData.role =
     'water-discharging-downward-at-turbine-center';
   root.add(centralDischarge);
-  const casingFloor = new THREE.Mesh(
-    new THREE.CylinderGeometry(3.86, 3.86, 0.18, 88),
-    frameMaterial,
-  );
-  casingFloor.geometry.dispose();casingFloor.geometry=horizontalRing(1.38,3.86,-.63,-.45);casingFloor.position.y=0;
-  casingFloor.userData.role =
-    'fixed-foundation-below-warren-plan-view-turbine';
-  root.add(casingFloor);
-
-  // Brown's plan draws no step bearing or bracket under the wheel, so the
-  // shaft ends as a plain stub below the hub (its bearing is an ideal fixed axis).
+  // Brown's plan draws no foundation, step bearing or bracket under the
+  // wheel (pass 82 removed an undrawn foundation ring that carried nothing),
+  // so the fixed guides a stand as drawn and the shaft ends as a plain stub
+  // below the hub (its bearing is an ideal fixed axis).
   const update = (time) => {
     const state = stateAtTime(time);
     runner.rotation.y = state.runnerAngle;
@@ -560,7 +552,6 @@ function warrenCentralDischargeTurbine(movement) {
     blocks: {
       runnerBackplate,
       guideFloor,
-      casingFloor,
       centralDischarge,
       fixedGuideAssembly,
       flowSheets,
@@ -595,7 +586,7 @@ function warrenCentralDischargeTurbine(movement) {
     flowCurves,
     geometry,
     mechanism:
-      'Water arrives around the circumference and moves inward through sixteen stationary curved passages in the outer guide assembly a. It then enters twenty oppositely curved passages in the separate inner runner b, whose change of water angular momentum produces clockwise torque. Water leaves at the center and falls through the outlet. The outer guide rings, their vanes, supply annulus, foundation, and flow field remain fixed; only runner b, its concealed support arms, output hub, shaft, and marker rotate together.',
+      'Water arrives around the circumference and moves inward through sixteen stationary curved passages in the outer guide assembly a. It then enters twenty oppositely curved passages in the separate inner runner b, whose change of water angular momentum produces clockwise torque. Water leaves at the center and falls through the outlet. The outer guide rings, their vanes, supply annulus and flow field remain fixed; only runner b, its concealed support arms, output hub, shaft, and marker rotate together.',
     motion: {
       cycleDuration,
       inputAngularSpeed,
@@ -671,7 +662,6 @@ function warrenCentralDischargeTurbine(movement) {
   root.traverse(object=>{for(const material of object.material?[].concat(object.material):[])material.fog=false;});
   root.userData.minimumDisplayCycleSeconds = cycleDuration;
   markShadows(root);
-  casingFloor.receiveShadow = true;
   update(0);
   return {
     cameraDirection: root.userData.cameraDirection,

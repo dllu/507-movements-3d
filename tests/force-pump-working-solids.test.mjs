@@ -15,6 +15,14 @@ for(const id of [450,451])test(`${id} actual moving piston, rod journals and che
     [b.lever.children[0],id===450?b.deliveryPipe:b.barrel],
     [b.suctionValveDisk,b.suctionValveSeat],[b.deliveryValveDisk,b.deliveryValveSeat],
     [b.deliveryValveDisk,id===450?b.deliveryValveBody:b.chamberNeck]];
+  // Pass 82: both checks are hinged clack flaps (plate, knob, bored lug and
+  // pin on two journals standing on the seat ring).
+  for(const [f,seat,wall] of [[b.suctionFlap,b.suctionValveSeat,b.barrel],[b.deliveryFlap,b.deliveryValveSeat,id===450?b.deliveryValveBody:b.chamberNeck]]){
+    const moving=[f.pivot.children.find(o=>o.userData.role?.startsWith('suction-check')||o.userData.role?.startsWith('delivery-check')||o.userData.role?.startsWith('outlet-check')),f.dome,f.lug];
+    for(const o of moving)pairs.push([o,seat],[o,wall],[o,f.pin],...f.bearings.map(j=>[o,j]));
+    for(const j of f.bearings)pairs.push([f.pin,j]);
+    pairs.push([f.dome,b.pistonBody],[moving[0],b.pistonBody]);
+  }
   const data=pairs.map(([moving,fixed])=>({moving,fixed,points:surfacePoints(moving.geometry),surface:solidSurface(fixed.geometry)}));
   for(let i=0;i<=64;i++){
     m.update(i*d.geometry.cycleDuration/64);m.root.updateMatrixWorld(true);
@@ -65,4 +73,21 @@ test('451 rendered water and air stay inside the chamber and preserve the prescr
     assert.ok(Math.abs(renderedAir-(1-expected))<.004,`air fraction ${renderedAir}/${1-expected}`);
   }
   const after=[];m.root.traverse(o=>after.push([o,o.geometry]));assert.deepEqual(after,snapshot);
+});
+
+// Pass 82: each clack flap lies flat on its seat when shut (no lift, no gap)
+// and turns about its hinge pin, whose journals stand on the seat ring.
+for(const id of [450,451])test(`${id} clack flaps seat flat when shut and turn about their hinge pins`,()=>{
+  const m=createAuthoredForcePumpMovement({id}),d=m.root.userData,b=d.blocks,g=d.geometry;
+  const bottomY=mesh=>{mesh.updateMatrixWorld(true);return new THREE.Box3().setFromObject(mesh).min.y;};
+  let shut={suction:0,delivery:0},opened={suction:0,delivery:0};
+  for(let i=0;i<=64;i++){const t=g.cycleDuration*i/64,st=d.stateAtTime(t);m.update(t);m.root.updateMatrixWorld(true);
+    for(const [key,f,seat,open] of [['suction',b.suctionFlap,b.suctionValveSeat,st.suctionValveOpen],['delivery',b.deliveryFlap,b.deliveryValveSeat,st.deliveryValveOpen]]){
+      const disk=key==='suction'?b.suctionValveDisk:b.deliveryValveDisk,seatTop=new THREE.Box3().setFromObject(seat).max.y;
+      assert.ok(Math.abs(f.pivot.rotation.z-g.maximumFlapAngle*open)<1e-12);
+      if(open===0){shut[key]++;assert.ok(Math.abs(bottomY(disk)-seatTop)<2e-3,`${id} ${key} flat on its seat`);}
+      if(open>.99)opened[key]++;
+      for(const j of f.bearings.filter(j=>j.parent))assert.ok(Math.abs(j.position.x-f.pivot.position.x)<1e-9&&Math.abs(j.position.y-f.pivot.position.y)<1e-9,'journal on the hinge axis');
+    }}
+  assert.ok(shut.suction>8&&shut.delivery>8&&opened.suction>0&&opened.delivery>0);
 });

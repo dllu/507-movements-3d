@@ -83,8 +83,10 @@ test('movement 435 keeps sixteen outer guides a fixed around a separate twenty-b
     blocks.runnerShaft, blocks.rotationMarker, ...blocks.runnerSupportArms]) {
     assert.equal(rotating.parent, blocks.runner);
   }
-  for (const fixed of [blocks.fixedGuideAssembly, blocks.casingFloor])
-    assert.equal(fixed.parent, model.root);
+  assert.equal(blocks.fixedGuideAssembly.parent, model.root);
+  // Pass 82: Brown's plan draws no foundation under the turbine.
+  assert.equal(blocks.casingFloor, undefined);
+  model.root.traverse((object) => assert.ok(!/foundation/.test(object.userData.role ?? ''), object.userData.role));
   // Streamline tubes, flow particles and the hose-like supply ring are flow
   // notation, and the discharge ring hung free under the open centre; source
   // presentation does not show them.
@@ -318,7 +320,7 @@ test('movement 435 analytic outer-rim and inner-bucket motion matches finite dif
 test('movement 435 update rotates only runner b while guide a and inward flow remain fixed', () => {
   const model = createMovementModel(catalog.movements[434]);
   const { blocks, geometry, stateAtTime } = model.root.userData;
-  const fixedBlocks = [blocks.fixedGuideAssembly, blocks.casingFloor,
+  const fixedBlocks = [blocks.fixedGuideAssembly,
     blocks.outerSupplyRing, blocks.centralDischarge,
     ...blocks.flowPathTubes];
   const fixedTransforms = fixedBlocks.map((block) => ({

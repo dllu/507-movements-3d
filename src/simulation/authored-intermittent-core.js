@@ -14727,10 +14727,12 @@ function parallelogramLiftAndDrawPawlRatchet(movement) {
   const groundLength = 2.08;
   const shortLinkLength = 0.6;
   const upperGroundPivot = new THREE.Vector2(0, groundLength);
-  const wheelOuterRadius = 2.02;
-  const wheelRootRadius = 1.69;
+  // Brown's tip and root circles are 0.915 and 0.773 of A's pivot height, so
+  // pawl C's eye and band run clear outside the teeth in the wheel's plane.
+  const wheelOuterRadius = 1.90;
+  const wheelRootRadius = 1.61;
   const gapHalfAngle = toothPitch * 0.18;
-  const sourceHookRadius = 1.78;
+  const sourceHookRadius = 1.76;
   const sourceHookPolarAngle = THREE.MathUtils.degToRad(36);
   const workingHookLocal = new THREE.Vector2(
     Math.cos(sourceHookPolarAngle) * sourceHookRadius,

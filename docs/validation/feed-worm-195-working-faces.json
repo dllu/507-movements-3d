@@ -8,7 +8,7 @@
   "sources": [
     {
       "file": "src/simulation/feed-worm-assembly-parts.js",
-      "sha256": "2f2d7c54d881e9fddeb4758ec4149d9ffc0973aecd76faefa87e979594753a7d"
+      "sha256": "974f311ff099aee50bae8824206c35d13efc296c6f53c5d783d99702597d009b"
     },
     {
       "file": "src/data/face-worm-195.js",

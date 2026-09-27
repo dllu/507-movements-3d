@@ -76,13 +76,13 @@ export function roundPortedBarrel(inner, outer, low, high, portY, holeRadius, si
 // `side` is +1 when the plate runs toward +x from its hinge. The pin, a bored
 // lug on the plate and two journals standing on the seat make the hinge; the
 // journals stand where the round plate has already turned away from the pin.
-function addDome(disk,radius){
+export function addDome(disk,radius){
   const h=disk.geometry.parameters.height,profile=[[0,0],[0,radius]];
   for(let i=1;i<=24;i++){const a=i/24*Math.PI/2;profile.push([radius*Math.sin(a),i===24?0:radius*Math.cos(a)]);}
   const dome=new THREE.Mesh(horizontalTurned(profile),disk.material);
   dome.position.y=h/2-.0005;dome.userData.role=`${disk.userData.role}-raised-dome`;disk.add(dome);return dome;
 }
-function clackHinge({pivot,frame,side,disk,seatMaterial,pinRadius,pinLength,boss,arm,journal,journalZ}){
+export function clackHinge({pivot,frame,side,disk,seatMaterial,pinRadius,pinLength,boss,arm,journal,journalZ}){
   const flip=side<0?Math.PI:0;
   const pin=new THREE.Mesh(new THREE.CylinderGeometry(pinRadius,pinRadius,pinLength,32),seatMaterial);
   pin.rotation.x=Math.PI/2;pin.userData.role=`${disk.userData.role}-hinge-pin`;pivot.add(pin);

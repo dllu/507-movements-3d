@@ -156,13 +156,15 @@ export const CUTAWAY_SPECS = {
     // The piston and the checks with their seats lie inside the sectioned
     // barrel and valve chamber, so they are cut on the same plane.
     cut: [/^fixed-(suction-pipe|force-pump-cylinder|delivery-pipe|outlet-check-valve-chamber|suction-check-seat|outlet-check-seat)/,
-      'solid-force-pump-piston-with-no-through-valve', 'suction-check-opening-only-on-piston-upstroke', 'outlet-check-opening-only-on-piston-downstroke'],
+      // The two clack flaps with their knobs, hinge pins, lugs and journals
+      // turn about z on the plane, so they are cut on it too.
+      'solid-force-pump-piston-with-no-through-valve', /check-opening/],
     water: [/water/],
     hide: [/^fixed-cutaway-.*outline$/, unnamedDarkTorus],
   },
   451: {
     cut: [/^fixed-(suction-pipe|solid-piston-force-pump-cylinder|air-chamber-inlet-neck|pump-to-air-chamber-delivery-pipe|suction-check-seat|pump-delivery-check-seat)/, 'globular-outlet-air-chamber', 'selected-side-outlet-from-air-chamber', 'unselected-alternative-dip-tube-outlet',
-      'solid-piston-feeding-air-chamber-on-downstroke', 'suction-check-opening-on-upstroke', 'delivery-check-opening-on-piston-downstroke'],
+      'solid-piston-feeding-air-chamber-on-downstroke', /check-opening/],
     water: [/water/, 'constant-flow-through-selected-air-chamber-outlet'],
     hide: [/^fixed-cutaway-.*outline$/, unnamedDarkTorus, 'elastic-air-cushion-maintaining-constant-outlet'],
   },
@@ -310,9 +312,10 @@ export const CUTAWAY_SPECS = {
   481: {
     // Brown's section is across the drum axis: case and drum are cut just
     // behind the front drum head, so the partitions and their stretches of
-    // shell (with the four outlet gaps) show whole. The front journal, axle
-    // stub and the axial run of pipe a are cut too, so the turned-up end of a
-    // stands clear at the centre as Brown draws it.
+    // shell (with the four outlet gaps) show whole. The front journal and
+    // spindle stub are cut too. Pipe a comes in from the back, through the
+    // rear case head and the rear hollow journal, and turns up at the centre
+    // behind the plane, as Brown draws it.
     plane: {point: new THREE.Vector3(0, 0, 0.48)},
     cut: ['transparent-stationary-shell-of-case-A', /^stationary-case-rim-/, 'finite-ported-drum-head',
       'hollow-rotating-journal-surrounding-central-inlet-pipe-a', 'fixed-horizontal-axis-through-hollow-journal',

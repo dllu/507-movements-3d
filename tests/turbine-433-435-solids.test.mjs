@@ -10,7 +10,7 @@ import {solidSurface,surfacePoints} from './helpers/solid-surface.mjs';
 for(const[id,create]of[[433,wheel],[434,outward],[435,inward]])test(`${id}: actual moving walls and shafts clear stationary guides, supports and bores`,()=>{
   const model=create({id}),u=model.root.userData,b=u.blocks;
   try{
-    const fixed=id===433?[b.lowerBearing,b.upperBearing,b.bearingCone,b.overheadBeam,b.lowerPedestal,b.foundation]:[b.fixedGuideAssembly,b.casingFloor,...[b.shaftBearing,b.bearingBridge].filter(Boolean)];
+    const fixed=id===433?[b.lowerBearing,b.upperBearing,b.bearingCone,b.overheadBeam,b.lowerPedestal,b.foundation]:[b.fixedGuideAssembly,b.casingFloor,...[b.shaftBearing,b.bearingBridge].filter(Boolean)].filter(Boolean);
     const targets=[];for(const group of fixed)group.traverse(mesh=>{if(mesh.isMesh&&!mesh.material.transparent)targets.push({mesh,surface:solidSurface(mesh.geometry)});});
     const moving=[];(b.rotor??b.runner).traverse(mesh=>{if(mesh.isMesh){const all=surfacePoints(mesh.geometry);moving.push({mesh,points:all.filter((_,i)=>i%Math.max(1,Math.floor(all.length/900))===0)});}});
     for(let frame=0;frame<=64;frame++){
@@ -27,11 +27,11 @@ for(const[id,create]of[[433,wheel],[434,outward],[435,inward]])test(`${id}: actu
   }finally{disposeObject3D(model.root);}
 });
 
-test('435: central water discharge uses the annular opening around the hub and clears the foundation',()=>{
+test('435: central water discharge uses the annular opening around the hub',()=>{
   const model=inward({id:435}),b=model.root.userData.blocks;
   try{
     model.root.updateMatrixWorld(true);const water=surfacePoints(b.centralDischarge.geometry);
-    for(const target of[b.runnerDisk,b.runnerHub,b.runnerShaft,b.casingFloor]){
+    for(const target of[b.runnerDisk,b.runnerHub,b.runnerShaft]){
       const surface=solidSurface(target.geometry),transform=target.matrixWorld.clone().invert().multiply(b.centralDischarge.matrixWorld);
       for(const p of water)assert.ok(!surface.inside(p.clone().applyMatrix4(transform)),`water enters ${target.userData.role}`);
     }

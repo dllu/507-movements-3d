@@ -1,6 +1,7 @@
 import {correctElasticGaugeParts} from './elastic-gauge-working-parts.js';
 import * as THREE from 'three';
 import {applyCutawayFor} from './cutaway-presentations.js';
+import {horizontalRing} from './horizontal-turbine-solids.js';
 import {plate, poly, circle, capsule, sector as wedge, polygonClipping as clip} from './finite-plate-geometry.js';
 import {
   PALETTE,
@@ -623,7 +624,7 @@ function diaphragmPressureGauge(movement) {
   diaphragmBoss.rotation.x = Math.PI / 2;
 
   const inletPipePoints = [
-    new THREE.Vector3(0, -3.82, -0.73),
+    new THREE.Vector3(0, -5.27, -0.73),
     new THREE.Vector3(0, -3.20, -0.73),
     new THREE.Vector3(0, -2.48, -0.76),
     new THREE.Vector3(0, -1.40, -0.75),
@@ -932,7 +933,7 @@ function diaphragmPressureGauge(movement) {
     sectionView: sectionView.blocks,
   };
   root.userData.cameraFitBounds = new THREE.Box3(
-    new THREE.Vector3(-3.62, -4.18, -1.18),
+    new THREE.Vector3(-3.62, -5.35, -1.18),
     new THREE.Vector3(3.62, 3.62, 1.02),
   );
   root.userData.canonicalTimes = {
@@ -1038,6 +1039,37 @@ function diaphragmPressureGauge(movement) {
     pinionShaft.geometry.dispose();
     pinionShaft.geometry = new THREE.CylinderGeometry(0.056, 0.056, front - back, 48);
     pinionShaft.position.z = (front + back) / 2;
+  }
+  // Brown's face view hangs a round stem about a third of the dial across
+  // below the case, ending in a hex union nut (measured on the plate: stem
+  // 0.80 wide from the case rim to y = -4.90, nut 1.19 across and 0.37 deep).
+  // The stem sleeves the inlet pipe, which now runs down to the nut's face.
+  {
+    const { inletCollar } = root.userData.blocks;
+    const stemTop = -3.30;
+    const stemBottom = -4.90;
+    const nutBottom = -5.27;
+    inletCollar.geometry.dispose();
+    inletCollar.geometry = horizontalRing(0.17, 0.40, stemBottom, stemTop, 64);
+    inletCollar.position.set(0, 0, -0.73);
+    inletCollar.material = root.userData.blocks.outerRim.material;
+    inletCollar.userData.role = 'stem-below-gauge-case-over-inlet-pipe';
+    const hexNut = new THREE.Shape(Array.from({ length: 6 }, (_, index) => {
+      const angle = index * Math.PI / 3;
+      return new THREE.Vector2(0.62 * Math.cos(angle), 0.62 * Math.sin(angle));
+    }));
+    const bore = new THREE.Path();
+    bore.absarc(0, 0, 0.17, 0, Math.PI * 2, true);
+    hexNut.holes.push(bore);
+    const nutGeometry = new THREE.ExtrudeGeometry(hexNut, {
+      bevelEnabled: false, curveSegments: 48, depth: stemBottom - nutBottom,
+    });
+    nutGeometry.rotateX(Math.PI / 2).translate(0, stemBottom, 0);
+    const unionNut = addRole(new THREE.Mesh(nutGeometry, frameMaterial),
+      'hex-union-nut-at-foot-of-stem');
+    unionNut.position.z = -0.73;
+    root.add(unionNut);
+    root.userData.blocks.unionNut = unionNut;
   }
   // The sector's pivot sleeve stopped past the pointer plane, where the
   // pointer's counterweight swept through it; it now ends short of that plane.

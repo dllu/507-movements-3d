@@ -46,6 +46,9 @@ const LAYOUT = Object.freeze({
   floorTopY: -3.14,
   roofBottomY: 5.90,
   backZ: -1.90,
+  // The back wall is as thick as the side walls' 0.44 plus a little: the four
+  // port passages are cored inside it (see the ducts below).
+  backOuterZ: -2.40,
   frontZ: 2.20,
   endBoardFaceX: 2.50,
   innerBoardFaceX: 0.33,
@@ -346,13 +349,13 @@ function dryGasMeter(movement) {
   const fixedCase = new THREE.Group();
   fixedCase.userData.role = 'fixed-gas-tight-dry-meter-case';
   root.add(fixedCase);
-  const floor = addMesh(fixedCase, boxBetween(-L.wallOuterX, L.wallOuterX, L.floorTopY - 0.12, L.floorTopY, L.backZ - 0.1, L.frontZ), caseMaterial, 'fixed-dry-meter-floor');
+  const floor = addMesh(fixedCase, boxBetween(-L.wallOuterX, L.wallOuterX, L.floorTopY - 0.12, L.floorTopY, L.backOuterZ, L.frontZ), caseMaterial, 'fixed-dry-meter-floor');
   const walls = [-1, 1].map((side) => addMesh(fixedCase,
-    boxBetween(side < 0 ? -L.wallOuterX : L.wallInnerX, side < 0 ? -L.wallInnerX : L.wallOuterX, L.floorTopY, L.roofBottomY, L.backZ - 0.1, L.frontZ),
+    boxBetween(side < 0 ? -L.wallOuterX : L.wallInnerX, side < 0 ? -L.wallInnerX : L.wallOuterX, L.floorTopY, L.roofBottomY, L.backOuterZ, L.frontZ),
     caseMaterial, side < 0 ? 'fixed-left-case-wall' : 'fixed-right-case-wall'));
-  const backPanel = addMesh(fixedCase, boxBetween(-L.wallInnerX, L.wallInnerX, L.floorTopY, L.roofBottomY, L.backZ - 0.1, L.backZ), caseMaterial, 'fixed-back-panel-of-case');
+  const backPanel = addMesh(fixedCase, boxBetween(-L.wallInnerX, L.wallInnerX, L.floorTopY, L.roofBottomY, L.backOuterZ, L.backZ), caseMaterial, 'fixed-back-panel-of-case');
   const roof = addMesh(fixedCase, horizontalPlate(clip.difference(
-    planRect(-L.wallOuterX, L.wallOuterX, L.backZ - 0.1, L.frontZ),
+    planRect(-L.wallOuterX, L.wallOuterX, L.backOuterZ, L.frontZ),
     planCircle(L.columnCenter, 0.205, 64)), L.roofBottomY, L.roofBottomY + 0.12), caseMaterial, 'fixed-dry-meter-roof');
 
   // Brown's thick shelf carries B's seat; the exhaust passage from B's
@@ -386,13 +389,9 @@ function dryGasMeter(movement) {
   const columnCurve = new THREE.LineCurve3(new THREE.Vector3(L.columnCenter[0], L.shelfTopY, L.columnCenter[1]), new THREE.Vector3(L.columnCenter[0], py(5), L.columnCenter[1]));
   const outletColumn = addMesh(fixedCase, curvedPipeWall(columnCurve, 0.14, 0.20, 8, 40), pipeMaterial, 'fixed-outlet-column-from-exhaust-of-B');
   // The inlet enters through the back of the case behind the dial-work box.
-  const inletCurve = new THREE.LineCurve3(new THREE.Vector3(2.2, 4.6, L.backZ - 0.1), new THREE.Vector3(2.2, 4.6, L.backZ - 0.6));
+  const inletCurve = new THREE.LineCurve3(new THREE.Vector3(2.2, 4.6, L.backOuterZ), new THREE.Vector3(2.2, 4.6, L.backOuterZ - 0.3));
   const inletPipe = addMesh(fixedCase, curvedPipeWall(inletCurve, 0.10, 0.15, 4, 32), pipeMaterial, 'fixed-inlet-through-back-of-case');
-  // (the back panel is bored for it)
-  backPanel.geometry.dispose();
-  backPanel.geometry = plate(clip.difference(
-    poly([[-L.wallInnerX, L.floorTopY], [L.wallInnerX, L.floorTopY], [L.wallInnerX, L.roofBottomY], [-L.wallInnerX, L.roofBottomY]]),
-    poly(circle([2.2, 4.6], 0.11, 32))), L.backZ - 0.1, L.backZ);
+  // (the back panel is bored for it below)
   backPanel.material = backMaterial;
 
   // Dial-work case: the plain box Brown draws at the upper right.
@@ -400,20 +399,27 @@ function dryGasMeter(movement) {
 
   // Ducts from the four seat ports down to the fixed boards of their spaces.
   const ductRuns = [];
-  // Each duct drops from its port to its own level, runs straight back
-  // through the back panel, across behind the case, and forward again
-  // through the panel into the top edge of its board: [level at the port,
-  // level at the board, depth behind the case]. The levels keep every pair
-  // of ducts 0.02 clear, and the duct of A' inner stays above the pins of
-  // the plate of A' that pass beneath its port.
+  // Each duct drops from its port to its own level, runs straight back into
+  // the thick back wall, along a passage cored inside the wall, and forward
+  // again out of the wall into the top edge of its board: [level at the port,
+  // level at the board, depth of the cored passage]. Three passages share one
+  // layer of the wall; the passage of A' inner crosses them in a second,
+  // deeper layer. The levels keep every pair of ducts clear, and the duct of
+  // A' inner stays above the pins of the plate of A' that pass beneath its
+  // port. Inside the wall the duct is a liner in a close bore, so nothing of
+  // it shows outside the case.
+  const layerZ = [-2.06, -2.24];
+  const bore = 0.075;
   const ductRoute = {
-    'A-outer': [3.30, 3.30, -2.20], 'A-inner': [2.82, 2.82, -2.20],
-    'A-prime-inner': [3.14, 2.66, -2.38], 'A-prime-outer': [2.98, 2.98, -2.20],
+    'A-outer': [3.30, 3.30, 0], 'A-inner': [2.82, 2.82, 0],
+    'A-prime-inner': [3.14, 2.66, 1], 'A-prime-outer': [2.98, 2.98, 0],
   };
-  const backPanelHoles = [];
-  spaces.forEach((space, k) => {
+  const entries = [[], []];
+  const channels = [[], []];
+  spaces.forEach((space) => {
     const [pxk, pzk] = space.port;
-    const [portY, boardY, runZ] = ductRoute[space.key];
+    const [portY, boardY, layer] = ductRoute[space.key];
+    const runZ = layerZ[layer];
     const boardZ = -0.85;
     const points = [
       new THREE.Vector3(pxk, L.shelfBottomY + 0.02, pzk),
@@ -426,14 +432,22 @@ function dryGasMeter(movement) {
     ];
     const curve = roundedPolyline(points, 0.1);
     const mesh = addMesh(fixedCase, curvedPipeWall(curve, 0.05, 0.07, 160, 16), pipeMaterial, `fixed-duct-from-seat-port-to-${space.key}`);
-    ductRuns.push({curve, mesh, points});
-    backPanelHoles.push([pxk, portY], [space.board, boardY]);
+    ductRuns.push({curve, layer, mesh, points});
+    entries[layer].push(poly(circle([pxk, portY], bore, 32)), poly(circle([space.board, boardY], bore, 32)));
+    const run = [[pxk, portY], ...(portY === boardY ? [] : [[pxk, boardY]]), [space.board, boardY]];
+    for (let i = 1; i < run.length; i += 1) channels[layer].push(capsule(run[i - 1], run[i], bore, 24));
   });
+  const inletBore = poly(circle([2.2, 4.6], 0.10, 32));
+  const wallFace = poly([[-L.wallInnerX, L.floorTopY], [L.wallInnerX, L.floorTopY], [L.wallInnerX, L.roofBottomY], [-L.wallInnerX, L.roofBottomY]]);
+  const slab = (holes, z0, z1) => plate(clip.difference(wallFace, inletBore, ...holes), z0, z1);
   backPanel.geometry.dispose();
-  backPanel.geometry = plate(clip.difference(
-    poly([[-L.wallInnerX, L.floorTopY], [L.wallInnerX, L.floorTopY], [L.wallInnerX, L.roofBottomY], [-L.wallInnerX, L.roofBottomY]]),
-    poly(circle([2.2, 4.6], 0.11, 32)),
-    ...backPanelHoles.map((center) => poly(circle(center, 0.075, 32)))), L.backZ - 0.1, L.backZ);
+  backPanel.geometry = mergePassageParts([
+    slab([...entries[0], ...entries[1]], layerZ[0] + bore, L.backZ),
+    slab([...channels[0], ...entries[1]], layerZ[0] - bore, layerZ[0] + bore),
+    slab(entries[1], layerZ[1] + bore, layerZ[0] - bore),
+    slab(channels[1], layerZ[1] - bore, layerZ[1] + bore),
+    slab([], L.backOuterZ, layerZ[1] - bore),
+  ]);
 
   // ---- bellows: leather, moving plates with their pins
   const leather = [
@@ -619,7 +633,7 @@ function dryGasMeter(movement) {
       'Two bellows chambers A and A′ stand either side of a central partition. Each is closed at both ends by fixed boards and divided by its moving plate into an outer and an inner measuring space, so the plate is driven one way by gas admitted on one side while the other side is emptied. Each plate works a flag on a vertical flag rod; an arm on top of each flag rod drives, through a link, a crank pin on the spindle of valve B, the two pins a quarter turn apart, so the plates keep a quarter stroke apart and the spindle turns continuously. B is a D-shaped cup turning on a seat in the shelf with one port for each measuring space round a central exhaust port: the ports under the cup are open to the exhaust, which runs through a passage in the shelf to the tall outlet column; the ports outside it admit the gas that fills the case. Each revolution of the spindle passes the four space volumes; the dial-work in the box at the upper right counts revolutions.',
     motion: {spindleTurnsPerCycle: 1, valveBRotation: 'continuous, with the crank spindle'},
     reconstruction:
-      'Brown’s plate shows one elevation. The flag and crank linkage, the left flag rod behind chamber A, the four ducts behind the bellows, the cored exhaust passage, the inlet through the back of the case and the rounded-rectangle bellows section are inferred; the crank radius, arm and link lengths are chosen so both rocking flag rods can turn one crank, and the port angles are derived from the plate motion so each space exhausts while it closes.',
+      'Brown’s plate shows one elevation. The flag and crank linkage, the left flag rod behind chamber A, the four port ducts and their passages cored in the thick back wall, the cored exhaust passage, the inlet through the back of the case and the rounded-rectangle bellows section are inferred; the crank radius, arm and link lengths are chosen so both rocking flag rods can turn one crank, and the port angles are derived from the plate motion so each space exhausts while it closes.',
     sourceAnimation: {
       available: false,
       officialPageMarksAnimationUnavailable: true,

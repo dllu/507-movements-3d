@@ -376,10 +376,11 @@ function boatDetachingHook(movement) {
   block.scale.set(...blockRadii);
   block.position.y = blockBottom + blockRadii[1] - 0.02;
   hookFrame.add(block);
-  const fallTop = block.position.y + 4.2;
+  // The falls run on well past every rotated view before ending.
+  const fallTop = block.position.y + 14;
   const falls = [-0.2, 0.2].map((u, index) => {
     const start = new THREE.Vector3(u, block.position.y + blockRadii[1] * Math.sqrt(1 - (u / blockRadii[0]) ** 2) - 0.03, 0);
-    const rope = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(start, new THREE.Vector3(u, fallTop, 0)), 64, 0.06, 8, false),
+    const rope = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(start, new THREE.Vector3(u, fallTop, 0)), 200, 0.06, 8, false),
       ropeMaterial), `tackle-fall-lead-beyond-plate-${index + 1}`);
     rope.userData.beyondPlateCrop = true;
     hookFrame.add(rope);
@@ -388,9 +389,10 @@ function boatDetachingHook(movement) {
 
   // --- Release rope: seized to the lower eye, running straight off right.
   const ropeDirection = new THREE.Vector2(Math.cos(THREE.MathUtils.degToRad(-5)), Math.sin(THREE.MathUtils.degToRad(-5)));
-  const ropeLength = 5;
+  // It runs on straight well past every rotated view, so no cut end shows.
+  const ropeLength = 16;
   const releaseRope = addRole(new THREE.Mesh(new LaidRopeGeometry(new THREE.LineCurve3(new THREE.Vector3(0, 0, 0),
-    new THREE.Vector3(ropeDirection.x * ropeLength, ropeDirection.y * ropeLength, 0)), 96, 0.05, 8, false), ropeMaterial),
+    new THREE.Vector3(ropeDirection.x * ropeLength, ropeDirection.y * ropeLength, 0)), 300, 0.05, 8, false), ropeMaterial),
   'release-rope-attached-to-lower-lever');
   releaseRope.userData.beyondPlateCrop = true;
   root.add(releaseRope);

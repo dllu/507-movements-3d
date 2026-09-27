@@ -1,5 +1,7 @@
 # Blender models for the figures in movements 12-22, 247, 420 (hauling
-# hand), 376 (horse) and 377 (walker). Each part is built from overlapping
+# hand), 376 (horse) and 377 (walker). Pass 82: the walker's trouser legs
+# and the horse's legs are single continuous limbs, bent at the knee in the
+# factories. Each part is built from overlapping
 # primitives, unioned by a voxel remesh, smoothed, cut (the hand's rope
 # channel) and decimated to a few thousand triangles, then written as one
 # JSON file per part. Pack them with
@@ -124,6 +126,40 @@ def export(o, path, extra=None):
     if extra: data.update(extra)
     with open(path, 'w') as f: json.dump(data, f)
     return {'verts': len(verts), 'tris': len(tris), 'nonmanifold': nonmanifold}
+
+def export_grouped(o, path, extra=None):
+    # Triangles ordered by material index; 'groupStarts' gives the first
+    # triangle-index offset (in indices) of each material after the first.
+    bm = bmesh.new(); bm.from_mesh(o.data)
+    bmesh.ops.triangulate(bm, faces=bm.faces[:])
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-6)
+    bm.verts.index_update()
+    verts = [[round(c, 5) for c in v.co] for v in bm.verts]
+    faces = sorted(bm.faces, key=lambda f: f.material_index)
+    tris = [[v.index for v in f.verts] for f in faces]
+    mats = [f.material_index for f in faces]
+    starts = [3 * mats.index(m) for m in sorted(set(mats))[1:]]
+    nonmanifold = sum(1 for e in bm.edges if len(e.link_faces) != 2)
+    bm.free()
+    data = {'positions': verts, 'triangles': tris, 'groupStarts': starts}
+    if extra: data.update(extra)
+    with open(path, 'w') as f: json.dump(data, f)
+    return {'verts': len(verts), 'tris': len(tris), 'nonmanifold': nonmanifold, 'groupStarts': starts}
+
+def union_with(o, other):
+    b = o.modifiers.new('union', 'BOOLEAN')
+    b.operation = 'UNION'; b.object = other; b.solver = 'EXACT'
+    other.hide_set(True); other.hide_render = True
+    dg = bpy.context.evaluated_depsgraph_get()
+    me = bpy.data.meshes.new_from_object(o.evaluated_get(dg))
+    o.modifiers.clear(); o.data = me
+    return o
+
+def with_material(o, index, count=2):
+    for k in range(count):
+        o.data.materials.append(bpy.data.materials.get('fig%d' % k) or bpy.data.materials.new('fig%d' % k))
+    for poly in o.data.polygons: poly.material_index = index
+    return o
 
 
 def build_hand(OUT):
@@ -253,11 +289,18 @@ def build_walker(OUT):
         o = b.obj(name)
         p = process(o, 0.007, smooth=0.7, smooth_iter=8, target_tris=1400)
         res[name] = export(p, OUT + name+'.json')
-    # --- trouser legs (same envelopes as the old capsules), shoe
-    b = Builder(); b.chain([(0, 0.37, 0), (0, 0.0, 0.0), (0, -0.37, 0)], [0.09, 0.083, 0.07])
-    b.sphere((0, 0.37, 0), 0.09); b.sphere((0, -0.37, 0), 0.07)
-    p = process(b.obj('thigh'), 0.006, smooth=0.5, smooth_iter=6, target_tris=900)
-    res['thigh'] = export(p, OUT + 'man-thigh.json')
+    # --- one continuous trouser leg, modelled straight down -y from the hip
+    # pivot (y = 0) through the knee (y = -0.74) to the ankle (y = -1.44);
+    # the factory bends it at the knee (src/simulation/figure-meshes.js).
+    # Front (kneecap, shin) toward -x, calf and seat of the knee toward +x.
+    b = Builder()
+    b.chain([(0, 0, 0), (0, -0.36, 0), (0, -0.66, 0), (0, -0.74, 0), (0.008, -0.95, 0),
+             (0, -1.24, 0), (0, -1.40, 0), (0, -1.44, 0)],
+            [0.094, 0.09, 0.08, 0.077, 0.074, 0.064, 0.062, 0.06], seg=24)
+    b.sphere((-0.03, -0.74, 0), 1.0, scale=(0.05, 0.06, 0.055))        # kneecap
+    b.sphere((0.02, -0.93, 0), 1.0, scale=(0.06, 0.13, 0.062))         # calf
+    p = process(b.obj('leg'), 0.007, smooth=0.6, smooth_iter=8, target_tris=3600)
+    res['leg'] = export(p, OUT + 'man-leg.json')
     b = Builder()
     b.capsule((-0.075, -0.035, 0), (0.07, -0.028, 0), 0.03, 0.028)
     b.box((-0.01, -0.043, 0), (0.25, 0.014, 0.1))
@@ -299,41 +342,46 @@ def build_horse(OUT):
     o = b.obj('horse')
     p = process(o, 0.01, smooth=0.8, smooth_iter=10, target_tris=4200)
     res['body'] = export(p, OUT + 'horse-body.json')
-    # legs: upper parts hang from the hip/shoulder pivot (y=0) and end just above
-    # the knee/hock pivot at y=-0.43; the cannon hangs from that pivot.
-    b = Builder()
-    b.chain([(0, 0, 0), (-0.012, -0.16, 0), (0.0, -0.36, 0)], [0.088, 0.072, 0.036])
-    b.sphere((-0.02, -0.12, 0), 1, scale=(0.085, 0.12, 0.065))
-    p = process(b.obj('forearm'), 0.006, smooth=0.6, smooth_iter=6, target_tris=700)
-    res['fore'] = export(p, OUT + 'horse-forearm.json')
-    b = Builder()
-    b.chain([(0, 0, 0), (0.03, -0.14, 0), (0.0, -0.36, 0)], [0.095, 0.08, 0.036])
-    b.sphere((0.03, -0.10, 0), 1, scale=(0.1, 0.13, 0.07))
-    b.sphere((0.035, -0.34, 0), 0.034)   # point of the hock
-    p = process(b.obj('gaskin'), 0.006, smooth=0.6, smooth_iter=6, target_tris=700)
-    res['gaskin'] = export(p, OUT + 'horse-gaskin.json')
-    b = Builder()
-    b.chain([(0, 0, 0), (0.0, -0.27, 0), (0.006, -0.31, 0), (-0.03, -0.352, 0)], [0.031, 0.028, 0.037, 0.029])
-    p = process(b.obj('cannon'), 0.004, smooth=0.5, smooth_iter=5, target_tris=600)
-    res['cannon'] = export(p, OUT + 'horse-cannon.json')
-    b = Builder()
-    # hoof: a slanted truncated cone, toe forward (-x)
+    # legs: each is one continuous limb hanging from the shoulder/hip pivot
+    # (y = 0) through the knee or hock (the factory's bend pivot, y = -0.43),
+    # cannon, fetlock and sloping pastern to the hoof, whose sole lies at
+    # y = -0.86 with the toe forward (-x). The hoof is joined on exactly and
+    # carries the second material. The factory bends each leg at the knee.
+    def hoof():
+        hb = Builder(); bm = hb.bm
+        rings = [(-0.86, -0.073, 0.066, 0.052), (-0.775, -0.030, 0.042, 0.038)]
+        vs = []
+        for (y, cx, rx, rz) in rings:
+            vs.append([bm.verts.new((cx + rx * math.cos(2 * math.pi * k / 32), y, rz * math.sin(2 * math.pi * k / 32))) for k in range(32)])
+        for k in range(32):
+            bm.faces.new((vs[0][k], vs[0][(k + 1) % 32], vs[1][(k + 1) % 32], vs[1][k]))
+        bm.faces.new(list(reversed(vs[0]))); bm.faces.new(vs[1])
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        return with_material(hb.obj('hoof'), 1)
+    def lower_leg(b, hind):
+        # knee or hock, cannon, fetlock with its ergot, pastern
+        path(b, [(0.0, -0.44, 0), (0.002, -0.58, 0), (0.004, -0.70, 0)], [0.042 if hind else 0.040, 0.037, 0.039], zs=0.78, n=8)
+        b.sphere((0.008, -0.735, 0), 1, scale=(0.05, 0.046, 0.04))          # fetlock
+        b.sphere((0.04, -0.75, 0), 0.016)                                   # ergot
+        path(b, [(0.006, -0.745, 0), (-0.014, -0.765, 0), (-0.03, -0.782, 0)], [0.036, 0.034, 0.036], zs=0.9, n=6)
     import math
-    bm = b.bm
-    rings = [(-0.05, 0.062, 0.05), (0.03, 0.036, 0.034)]
-    vs = []
-    for (y, rx, rz) in rings:
-        ring = []
-        for k in range(24):
-            a = 2 * math.pi * k / 24
-            cx = 0.012 if y > 0 else -0.028
-            ring.append(bm.verts.new((cx + rx * math.cos(a), y, rz * math.sin(a))))
-        vs.append(ring)
-    for k in range(24):
-        bm.faces.new((vs[0][k], vs[0][(k + 1) % 24], vs[1][(k + 1) % 24], vs[1][k]))
-    bm.faces.new(list(reversed(vs[0]))); bm.faces.new(vs[1])
-    p = process(b.obj('hoof'), 0.004, smooth=0.3, smooth_iter=3, target_tris=400)
-    res['hoof'] = export(p, OUT + 'horse-hoof.json')
+    # foreleg: forearm with its muscle to the front, flat knee
+    b = Builder()
+    path(b, [(0.0, 0.03, 0), (-0.008, -0.16, 0), (0.0, -0.33, 0), (0.0, -0.41, 0)], [0.085, 0.07, 0.05, 0.045], zs=0.78, n=8)
+    b.sphere((-0.02, -0.12, 0), 1, scale=(0.08, 0.14, 0.064))               # forearm muscle
+    b.sphere((0.0, -0.43, 0), 1, scale=(0.05, 0.055, 0.042))                # knee (carpus)
+    lower_leg(b, False)
+    p = with_material(process(b.obj('foreleg'), 0.007, smooth=0.6, smooth_iter=8, target_tris=3200), 0)
+    res['fore'] = export_grouped(union_with(p, hoof()), OUT + 'horse-foreleg.json')
+    # hind leg: gaskin with its muscle to the rear, hock with its point
+    b = Builder()
+    path(b, [(0.0, 0.03, 0), (0.02, -0.16, 0), (0.004, -0.33, 0), (0.0, -0.41, 0)], [0.092, 0.074, 0.052, 0.046], zs=0.78, n=8)
+    b.sphere((0.03, -0.11, 0), 1, scale=(0.088, 0.14, 0.066))               # gaskin muscle
+    b.sphere((0.0, -0.43, 0), 1, scale=(0.052, 0.058, 0.044))               # hock
+    path(b, [(0.012, -0.30, 0), (0.042, -0.40, 0), (0.05, -0.425, 0)], [0.022, 0.024, 0.026], zs=0.8, n=6)   # tendon to the point of the hock
+    lower_leg(b, True)
+    p = with_material(process(b.obj('hindleg'), 0.007, smooth=0.6, smooth_iter=8, target_tris=3200), 0)
+    res['hind'] = export_grouped(union_with(p, hoof()), OUT + 'horse-hindleg.json')
     b = Builder()
     path(b, [(0, 0, 0), (0.1, -0.1, 0), (0.17, -0.3, 0), (0.2, -0.5, 0), (0.25, -0.64, 0)], [0.035, 0.05, 0.062, 0.05, 0.02], zs=0.55, n=6)
     p = process(b.obj('tail'), 0.006, smooth=0.6, smooth_iter=6, target_tris=700)

@@ -1,5 +1,6 @@
 import { correctLensPolisher } from './polishing-joint-parts.js';
 import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import {
   PALETTE,
   makeDynamicLink,
@@ -618,9 +619,70 @@ function eccentricLensPolisher(movement) {
   root.userData.cameraDirection = new THREE.Vector3(0.2, 0.4, 12);
   root.userData.groundFloorY = -3.26;
   correctLensPolisher(root);
+  fitCarrierClamp(root, darkMaterial);
   markShadows(root);
   update(0);
   return { root, update, cameraDirection: root.userData.cameraDirection };
+}
+
+// Brown's upright spindle ends in a squared clamp block: the bent carrier's
+// upper end passes straight through a mortise in it, is held by a set-screw
+// on the front face, and its tail stands out the far side (pass 82). The
+// spindle stops on the block's top, and the carrier no longer enters the
+// round spindle's side.
+function fitCarrierClamp(root, material) {
+  const blocks = root.userData.blocks;
+  const half = 0.19, bottom = 2.54, top = 3.08;
+  const slotY = 2.72, slotHalfHeight = 0.08, slotHalfDepth = 0.12;
+  const shaftTop = 4.20;
+  blocks.shaft.geometry.dispose();
+  blocks.shaft.geometry = new THREE.CylinderGeometry(0.11, 0.11, shaftTop - top, 28);
+  blocks.shaft.position.y = (shaftTop + top) / 2;
+  // The block is four bars round the carrier's mortise.
+  const pieces = [
+    [2 * half, top - (slotY + slotHalfHeight), 2 * half, (top + slotY + slotHalfHeight) / 2, 0],
+    [2 * half, slotY - slotHalfHeight - bottom, 2 * half, (bottom + slotY - slotHalfHeight) / 2, 0],
+    [2 * half, 2 * slotHalfHeight, half - slotHalfDepth, slotY, (half + slotHalfDepth) / 2],
+    [2 * half, 2 * slotHalfHeight, half - slotHalfDepth, slotY, -(half + slotHalfDepth) / 2],
+  ].map(([w, h, d, y, z]) => new THREE.BoxGeometry(w, h, d).translate(0, y, z).toNonIndexed());
+  const clampGeometry = mergeGeometries(pieces);
+  pieces.forEach((piece) => piece.dispose());
+  const clamp = new THREE.Mesh(clampGeometry, material);
+  clamp.userData.role = 'clamp-block-on-foot-of-upright-spindle';
+  blocks.shaftRotor.add(clamp);
+  const screwHead = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.05, 32), material);
+  screwHead.rotation.x = Math.PI / 2;
+  screwHead.position.set(0, slotY, half + 0.025);
+  screwHead.userData.role = 'set-screw-clamping-carrier-in-spindle-block';
+  blocks.shaftRotor.add(screwHead);
+  // The carrier: its tail through the mortise, then the bend down to the
+  // lower leg, all at the old lower bend.
+  const lowerBend = new THREE.Vector3(0.44, 2.24, 0);
+  const exit = new THREE.Vector3(0.28, slotY, 0);
+  blocks.bentArmUpper.userData.setEndpoints(exit, lowerBend);
+  const tail = makeDynamicLink({
+    color: PALETTE.driver,
+    depth: 2 * slotHalfDepth,
+    jointRadius: 0.055,
+    thickness: 2 * slotHalfHeight,
+  });
+  tail.userData.setEndpoints(new THREE.Vector3(-0.40, slotY, 0), exit);
+  tail.children[0].material = blocks.bentArmUpper.children[0].material;
+  for (const joint of tail.children.slice(1)) joint.material = tail.children[0].material;
+  // The tail ends square; the bend where it leaves the block is rounded to
+  // the strip's full thickness.
+  tail.children[1].visible = false;
+  tail.children[2].geometry.dispose();
+  tail.children[2].geometry = new THREE.CylinderGeometry(slotHalfHeight, slotHalfHeight, 2 * slotHalfDepth, 32)
+    .rotateX(Math.PI / 2);
+  // The lower bend is rounded the same way.
+  const lowerJoint = blocks.bentArmUpper.children[2];
+  lowerJoint.geometry.dispose();
+  lowerJoint.geometry = new THREE.CylinderGeometry(slotHalfHeight, slotHalfHeight, 2 * slotHalfDepth, 32)
+    .rotateX(Math.PI / 2);
+  tail.userData.role = 'carrier-tail-through-clamp-block';
+  blocks.shaftRotor.add(tail);
+  Object.assign(blocks, { carrierClamp: clamp, carrierSetScrew: screwHead, carrierTail: tail });
 }
 
 export function createAuthoredLensPolisherMovement(movement) {

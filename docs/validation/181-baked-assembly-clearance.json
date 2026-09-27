@@ -16,7 +16,7 @@
     },
     {
       "file": "src/simulation/baked/assets/181.json.gz",
-      "sha256": "6fd79d2bd6bbc52a020757db188ea33289f156ef31df1d992a2d7bc2cea80900"
+      "sha256": "c9bae71d16c27bc6692e029de524f7c879f93236aa0dcd33f340acde680d63b1"
     },
     {
       "file": "src/simulation/baked/diagonal-catch.js",

@@ -10,7 +10,7 @@ test('232 preserves the source parallelogram and explicitly infers A as a rockin
  assert.equal(d.sourceReference.plate232.frameLabel,'A');assert.equal(d.sourceReference.plate232.inputLabel,'B');assert.equal(d.sourceReference.plate232.pawlLabel,'C');
  assert.equal(b.framePlate.parent,b.carrier);assert.equal(b.carrier.parent,model.root);assert.equal(b.pawl.parent,model.root);assert.equal(b.inputLever.parent,model.root);
  assert.equal(d.carrierReconstruction.inferred,true);assert.equal(d.carrierReconstruction.passiveValidated,false);assert.match(d.reconstructionNote,/trial spring-driven MuJoCo did not validate passive selection/);
- assert.equal(g.toothCount,20);near(g.groundLength,2.08);near(g.shortLinkLength,.6);near(g.wheelRootRadius,1.69);near(g.wheelOuterRadius,2.02);
+ assert.equal(g.toothCount,20);near(g.groundLength,2.08);near(g.shortLinkLength,.6);near(g.wheelRootRadius,1.61);near(g.wheelOuterRadius,1.90);
 });
 
 test('232 lift, backward travel, drop, capture and draw are separate continuous stages',()=>{
@@ -33,22 +33,21 @@ test('232 exact inverse geometry closes both equal-link sides over repeated cycl
 
 test('232 wheel law comes from the actual finite rounded tip against the radial tooth flank',()=>{
  for(let cycle=0;cycle<3;cycle++)for(let i=0;i<=64;i++){const s=d.stateAtCycleCoordinate(cycle+.62+.3*i/64),q=s.contact.wheelPoint,tip=s.hookPoint,local=q.clone().rotateAround({x:0,y:0},-s.wheelAngle),flank=g.gapMountPhase-g.gapHalfAngle+(cycle+1)*pitch;
-  near(local.x,1.82*Math.cos(flank));near(local.y,1.82*Math.sin(flank));near(tip.distanceTo(q),g.workingTipRadius);
-  near(s.contact.outputMomentArm,-1.82);assert.equal(s.contact.forceSolved,false);
+  near(local.x,g.drawFaceRadius*Math.cos(flank));near(local.y,g.drawFaceRadius*Math.sin(flank));near(tip.distanceTo(q),g.workingTipRadius);
+  near(s.contact.outputMomentArm,-g.drawFaceRadius);assert.equal(s.contact.forceSolved,false);
  }
 });
 
 test('232 analytical position, speed and acceleration agree across the finite branch',()=>{
- const triples=[['carrierAngle','carrierAngularSpeed','carrierAngularAcceleration'],['inputAngle','inputAngularSpeed','inputAngularAcceleration'],['wheelAngle','wheelAngularSpeed','wheelAngularAcceleration'],['clickAngle','clickAngularSpeed','clickAngularAcceleration']];
+ const triples=[['carrierAngle','carrierAngularSpeed','carrierAngularAcceleration'],['inputAngle','inputAngularSpeed','inputAngularAcceleration'],['wheelAngle','wheelAngularSpeed','wheelAngularAcceleration']];
  for(let i=1;i<512;i++){const t=period*i/512,h=1e-5,s=d.stateAtTime(t),a=d.stateAtTime(t-h),z=d.stateAtTime(t+h);for(const[p,v,acc]of triples){near((z[p]-a[p])/(2*h),s[v],2e-7);near((z[v]-a[v])/(2*h),s[acc],2e-5);}}
  for(const c of[.16,.4,.56,.62,.92,1]){const a=d.stateAtCycleCoordinate(c-1e-8),z=d.stateAtCycleCoordinate(c+1e-8);for(const[p,v,acc]of triples){near(a[p],z[p],1e-8);near(a[v],z[v],1e-7);near(a[acc],z[acc],3e-4);}}
 });
 
-test('232 retaining click transfers after tip capture and returns after the draw',()=>{
- for(const c of[0,.08,.25,.48]){const s=d.stateAtCycleCoordinate(c);assert.equal(s.retainingClickEngaged,true);near(s.clickAngle,g.retainingRestAngle);}
- const capture=d.stateAtCycleCoordinate(.59);assert.ok(capture.contact);assert.equal(capture.wheelDwelling,true);assert.ok(capture.clickAngle>g.retainingRestAngle);
- const draw=d.stateAtCycleCoordinate(.77);near(draw.clickAngle,g.retainingRestAngle+g.retainingLift);assert.equal(draw.retainingClickEngaged,false);
- const reseat=d.stateAtCycleCoordinate(.96);assert.ok(reseat.contact);assert.equal(reseat.wheelDwelling,true);near(d.stateAtCycleCoordinate(1).clickAngle,g.retainingRestAngle);
+test('232 builds no retaining click (Brown draws none); the wheel dwells by friction between draws',()=>{
+ assert.equal(b.retainingClick,undefined);let click=0;model.root.traverse(o=>{if(/retaining-click/.test(o.userData.role??''))click++;});assert.equal(click,0);
+ for(const c of[0,.08,.25,.48,.59,.96]){const s=d.stateAtCycleCoordinate(c);assert.equal(s.wheelDwelling,true);near(s.wheelAngularSpeed,0);}
+ assert.equal(d.stateAtCycleCoordinate(.77).driving,true);assert.match(d.reconstructionNote,/Brown draws no click/);
 });
 
 test('232 rendered rotors, carrier, rods, pins and contact fields follow the public state',()=>{

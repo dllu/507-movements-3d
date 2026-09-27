@@ -12,7 +12,7 @@ import {
   markShadows,
   matte,
 } from './primitives.js';
-import { figureGeometry } from './figure-meshes.js';
+import { bendingLimbGeometry, figureGeometry } from './figure-meshes.js';
 import { makeGripFist } from './hauling-hand.js';
 
 const FULL_TURN = Math.PI * 2;
@@ -49,7 +49,9 @@ const FIGURE_SCALE = 1.2;
 const UPPER_LEG_LENGTH = 0.74;
 const LOWER_LEG_LENGTH = 0.70;
 const THIGH_RADIUS = 0.09;
-const SHIN_RADIUS = 0.075;
+// The knee fillet is wider than the trouser leg's inner half-width (0.08) at
+// the knee, so the bent leg never folds through itself.
+const KNEE_FILLET_RADIUS = 0.11;
 // Hip station relative to the drum axis; the standing leg is nearly
 // straight at the lowest planted board and the stepping knee rises high.
 const HIP_OFFSET = { x: 2.5, y: 0.75 };
@@ -478,45 +480,25 @@ function externalPersonTreadmill(movement) {
     arms.push(arm);
     person.add(arm);
   }
-  // Coplanar thigh and shin meet like a lay figure's knee: the shin's top
-  // sphere sits just below the thigh's knee ball. When the knee folds past
-  // a right angle, the shin's top slides down its own axis just far enough
-  // to stay clear of the thigh (the ankle end never moves), so the pivots
-  // and limb lengths stay exact.
-  const shinTopClearance = THIGH_RADIUS + SHIN_RADIUS + 0.006;
-  // The trouser cuff stops just above the ankle and the shoe's top just
-  // below it, so the shoe can turn on the ankle.
-  const shinBottomCenter = lowerLegLength - SHIN_RADIUS - 0.04;
-  const shinNominalCylinder = shinBottomCenter - shinTopClearance;
-  const placeShin = (lowerLeg, bend) => {
-    const interior = Math.PI - bend;
-    const top = interior >= Math.PI / 2
-      ? shinTopClearance
-      : shinTopClearance / Math.sin(interior);
-    const cylinder = shinBottomCenter - top;
-    lowerLeg.scale.y = (cylinder + 2 * SHIN_RADIUS)
-      / (shinNominalCylinder + 2 * SHIN_RADIUS);
-    lowerLeg.position.set(0, -(top + shinBottomCenter) / 2, 0);
-  };
   // Brown's striped trousers read darker than the jacket.
   const trouserMaterial = matte(0x4d5d6c, { metalness: 0.02, roughness: 0.8 });
-  // A trouser seat joins the two hips under the jacket's hem, inboard of
-  // the thighs (which swing outside half-width HIP_HALF_SPACING - radius).
-  const seatHalfWidth = HIP_HALF_SPACING - THIGH_RADIUS - 0.012;
-  const seatRadius = 0.12;
+  // A trouser seat joins the two hips under the jacket's hem. It lies on
+  // the hip axis and its rounded ends run into the tops of the trouser legs
+  // (pass 82), which turn about that axis, so the legs stay joined to it.
+  const seatHalfWidth = HIP_HALF_SPACING - 0.02;
+  const seatRadius = 0.105;
   const seat = new THREE.Mesh(
     new THREE.CapsuleGeometry(seatRadius, 2 * (seatHalfWidth - seatRadius), 8, 18)
       .rotateX(Math.PI / 2),
     trouserMaterial,
   );
   seat.scale.x = 0.95;
-  seat.position.set(0, -0.27 * FIGURE_SCALE + 0.03, 0);
+  seat.position.set(0, -0.27 * FIGURE_SCALE, 0);
   seat.userData.role = 'person-trouser-seat-joining-hips';
   person.add(seat);
   const legRoots = [];
   const kneePivots = [];
-  const upperLegs = [];
-  const lowerLegs = [];
+  const legs = [];
   const feet = [];
   for (let index = 0; index < 2; index += 1) {
     const legRoot = new THREE.Group();
@@ -534,34 +516,23 @@ function externalPersonTreadmill(movement) {
     legRoot.userData.role = 'person-hip-pivot';
     person.add(legRoot);
     legRoots.push(legRoot);
-    // Rounded limbs rather than boxes, like Brown's trousered legs.
-    // The thigh's rounded ends are centred on the hip and knee pivots, so
-    // its lower end is the knee.
-    const upperLeg = new THREE.Mesh(
-      new THREE.CapsuleGeometry(THIGH_RADIUS, upperLegLength, 8, 16),
+    // Pass 82: one continuous trouser leg (Blender, scripts/blender/figures.py)
+    // from the hip through a modelled knee to the ankle, hung from the hip
+    // pivot and bent at the knee pivot round a fillet each frame, so thigh,
+    // knee and shin never part. Its cuff runs down into the shoe's top.
+    const leg = new THREE.Mesh(
+      bendingLimbGeometry('man-leg', { kneeDepth: upperLegLength, filletRadius: KNEE_FILLET_RADIUS }),
       trouserMaterial,
     );
-    upperLeg.position.y = -upperLegLength / 2;
-    upperLeg.userData.role = 'person-upper-leg';
-    legRoot.add(upperLeg);
-    upperLeg.geometry.dispose();
-    upperLeg.geometry = figureGeometry('man-thigh');
-    upperLegs.push(upperLeg);
+    leg.userData.role = 'person-trouser-leg-hip-knee-and-shin';
+    legRoot.add(leg);
+    legs.push(leg);
     const knee = new THREE.Group();
     knee.position.y = -upperLegLength;
     knee.userData.index = index;
     knee.userData.role = 'person-knee-pivot';
     legRoot.add(knee);
     kneePivots.push(knee);
-    // The shin hangs in the thigh's plane, its top just under the knee
-    // (see placeShin); its lower end reaches the ankle.
-    const lowerLeg = new THREE.Mesh(
-      new THREE.CapsuleGeometry(SHIN_RADIUS, shinNominalCylinder, 8, 16),
-      trouserMaterial,
-    );
-    lowerLeg.userData.role = 'person-lower-leg';
-    knee.add(lowerLeg);
-    lowerLegs.push(lowerLeg);
     const foot = new THREE.Mesh(
       new THREE.BoxGeometry(0.28, 0.07, 0.11).translate(0, -0.015, 0),
       darkMaterial,
@@ -744,7 +715,7 @@ function externalPersonTreadmill(movement) {
       const leg = state.legStates[index];
       legRoots[index].rotation.z = leg.upperAngle;
       kneePivots[index].rotation.z = leg.lowerAngle;
-      placeShin(lowerLegs[index], leg.lowerAngle);
+      legs[index].geometry.userData.setBend(leg.lowerAngle);
       // A planted sole lies on its board (the ankle turns at most 59 degrees
       // then). In the air the sole's prescribed angle would turn the ankle
       // to 79 degrees; it is eased smoothly toward 63, as a real ankle
@@ -786,7 +757,6 @@ function externalPersonTreadmill(movement) {
       head,
       kneePivots,
       legRoots,
-      lowerLegs,
       outerLugs,
       pedestalPlank,
       person,
@@ -794,7 +764,7 @@ function externalPersonTreadmill(movement) {
       rearPedestal,
       torso,
       treadBoards,
-      upperLegs,
+      legs,
       wheelIndex,
       wheelRotor,
     },

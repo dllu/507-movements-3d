@@ -666,7 +666,7 @@ export default {
   },
   391: {
     remove: ['fixed-frame-carrying-guide-grooves-and-output-bearing', '(?:.*-)?white-.*', 'reciprocating-input-piston-rod'],
-    note: 'The D-shaped guides b, racks A, A1 on their weighted crosshead, cog wheel and elbow lever C: its curved arm, its short arm resting on a small stop pin, spring d, and the short link hung from C that bears on the top of A1. C, the stop and the spring\'s far end stand on bare fixed pins, as drawn; no frame, input rod or white indices are drawn.',
+    note: 'The D-shaped guides b, racks A, A1 on their weighted crosshead, cog wheel and elbow lever C: its curved arm, its short arm with the small knob under its tip, carried on C, spring d, and the short link hung from C that bears on the top of A1. C and the spring\'s far end stand on bare fixed pins, as drawn; no frame, input rod or white indices are drawn.',
   },
   392: {
     remove: ['fixed-gig-saw-machine-bed', 'white-.*', 'rear-saw-guide-standard', 'rear-standard-riser-to-spring-bracket', 'fixed-spring-bracket-arm', 'spring-bracket-clamp-stud', 'guide-cheek-to-rear-standard', 'fixed-crankshaft-bearing-standard', 'bored-fixed-crankshaft-journal'],
@@ -674,7 +674,7 @@ export default {
   },
   393: {
     remove: ['white-.*', 'fixed-overhead-bearing-standard', 'fixed-overhead-shaft-bearing-arm', 'fixed-bearing-around-upright-rotating-shaft'],
-    note: 'The upright spindle and its head, bent carrier, ball joint and cup on the lens, which rests on the table plank; no overhead standard or bearing is drawn.',
+    note: 'The upright spindle and its head, the clamp block on its foot with the set-screw holding the bent carrier, whose tail stands out through the block, the ball joint and cup on the lens, which rests on the table plank; no overhead standard or bearing is drawn.',
   },
   394: {
     note: 'Face view of the endless rack, toothed all round its inside, with the ten-tooth pinion on the upper row and the larger of its two concentric flanges behind it, its top running hidden in the rack as Brown dashes it; the smaller flange and the stepped side grooves lie behind. The rod runs off right to its end collar. Brown draws no frame, so the pinion shaft ends as a plain stub behind.',
@@ -850,7 +850,7 @@ export default {
   438: {
     camera: [0.08, 0.2, 1],
     remove: ['visible-reaction-mill-shaft-rotation-marker', 'inlet-water-marker-\\d+', 'tangential-exhaust-marker-arm-\\d+-particle-\\d+', 'tangential-outlet-collar-\\d-of-four'],
-    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn. The bent nozzles end as plain open pipe ends, as Brown draws them, with no collars on their mouths. The arms throw continuous water jets; the flow beads of the offline model are not presented. The view is a little from above, as Brown's open funnel shows; the flume is an open trough whose water pours from its lip in one continuous stream into the water standing in the funnel.",
+    note: "Elevation of the Barker's mill arms, hollow shaft and funnel, as Brown draws it; no white rotation marker is drawn. The bent nozzles end as plain open pipe ends, as Brown draws them, with no collars on their mouths. The arms throw continuous water jets; the flow beads of the offline model are not presented. The view is a little from above, as Brown's open funnel shows; the flume is an open trough whose water pours from its lip in one continuous stream into the water standing in the funnel. Brown crops the flume at the plate edge; beyond it the trough runs on straight along its own slope well past every rotated view (no undrawn trestle).",
   },
   439: {
     camera: [0.08, 0.35, 1],

@@ -9,7 +9,7 @@ import{solidSurface,surfacePoints}from'./helpers/solid-surface.mjs';
 for(const[id,create]of[[481,a],[482,c],[483,e]])test(`${id} selected finite passages, guides and neighboring moving interfaces clear through the cycle`,()=>{
 const m=create({id}),d=m.root.userData,b=d.blocks,pairs=[];
 const meshes=o=>{const list=[];o.traverseVisible(p=>{if(p.geometry)list.push(p);});return list;};
-if(id===481){for(const o of[b.centralInletPipeA,...b.flowMarkers])for(const f of[b.journal,b.axle,...b.drumHeads,...b.partitions.flatMap(meshes)])pairs.push([o,f]);for(const o of[...b.partitions.flatMap(meshes),...b.drumHeads])for(const f of[b.caseShell,b.rearCaseHead])pairs.push([o,f]);}
+if(id===481){for(const o of[b.centralInletPipeA,...b.flowMarkers])for(const f of[b.journal,b.axle,b.rearCaseHead,...b.drumHeads,...b.partitions.flatMap(meshes)])pairs.push([o,f]);for(const o of[...b.partitions.flatMap(meshes),...b.drumHeads])for(const f of[b.caseShell,b.rearCaseHead])pairs.push([o,f]);}
 if(id===482){for(const o of[...b.cupHSkirts,...b.cupCrossSkirts])for(const f of[b.outerMercuryChannels[0].trough,b.innerTroughWalls,b.innerMercuryChannel.children.find(o=>o.userData.role==='fixed-base-of-valve-D-mercury-seat')])pairs.push([o,f]);for(const o of[...b.valveCornerPosts,...b.valveSkirtFaces])for(const f of[b.innerTroughWalls,b.outerMercuryChannels[0].trough,b.innerMercuryChannel.children.find(o=>o.userData.role==='fixed-base-of-valve-D-mercury-seat')])pairs.push([o,f]);pairs.push([b.cupHGuideRod,b.guideBushing],[b.cupHGuideRod,b.housingRoof],[b.leverBar,b.leverFulcrum],[b.leverBar,b.leverStand]);for(let i=0;i<2;i++)pairs.push([[b.cupLeverPin,b.valveLeverPin][i],b.sliderSeats[i]]);}
 // Pass 74: Brown's elevation rebuilt — D-cup valve B on its spindle under the C
 // bracket, flag rods with arms, links, eccentric and crank, four ducts.
@@ -34,6 +34,29 @@ test('481 hollow journal and actual end-plate apertures retain material around t
   assert.equal(b.drumHeads[1].parent,null,'front drum head lies wholly in front of the section');
   {const surface=solidSurface(b.drumHeads[0].geometry);for(const p of[...b.chamberMouths,...b.peripheralOutletSlots])assert.equal(surface.inside(new T.Vector3(p.position.x*.97,p.position.y*.97,-.52)),true);assert.equal(surface.inside(new T.Vector3(1.2,0,-.52)),true);assert.equal(surface.inside(new T.Vector3(0,0,-.52)),false);}
   const outlet=d.flowPaths.centralInletCurve.getPoint(1);assert.ok(outlet.y-.040>d.geometry.waterSurfaceY,'complete inlet bore emerges above the water');
+ }finally{disposeObject3D(m.root);}
+});
+// Pass 82: pipe a is continuous from outside the rear case head, through the
+// head's bore and the rear hollow journal, along the axis to its turned-up
+// mouth in the central well, so the gas has a way in.
+test('481 pipe a runs from behind the case head through the rear journal to its turned-up mouth',()=>{
+ const m=a({id:481}),d=m.root.userData,b=d.blocks,curve=d.flowPaths.centralInletCurve;
+ try{
+  m.root.updateMatrixWorld(true);
+  const headZ=new T.Vector3().setFromMatrixPosition(b.rearCaseHead.matrixWorld).z,start=curve.getPoint(0),end=curve.getPoint(1);
+  assert.ok(start.z<headZ-.1&&Math.hypot(start.x,start.y)<1e-6,'pipe a starts on the axis outside the rear case head');
+  assert.ok(end.y>d.geometry.waterSurfaceY&&end.z<.48,'mouth above the water, behind the section');
+  const journal=new T.Box3().setFromObject(b.journal);assert.ok(journal.min.z<-.6&&start.z<journal.min.z,'rear journal lies on the pipe run');
+  for(let i=0;i<=200;i++){const p=curve.getPoint(i/200);if(p.z<-.25)assert.ok(Math.hypot(p.x,p.y)<1e-3,`axial run on the axis at ${p.z}`);}
+  const head=solidSurface(b.rearCaseHead.geometry);assert.equal(head.inside(new T.Vector3(.10,0,0)),false,'head bored for the pipe');assert.equal(head.inside(new T.Vector3(.2,0,0)),true);
+ }finally{disposeObject3D(m.root);}
+});
+// Pass 82: the port ducts run in passages cored inside the thick back wall;
+// nothing of them lies outside the case.
+test('483 port ducts stay inside the case and its back wall',()=>{
+ const m=e({id:483}),d=m.root.userData,b=d.blocks;
+ try{m.root.updateMatrixWorld(true);const wall=new T.Box3().setFromObject(b.backPanel);
+  for(const r of b.ductRuns){const box=new T.Box3().setFromObject(r.mesh);assert.ok(box.min.z>wall.min.z+.04,`${r.mesh.userData.role} inside the back wall`);}
  }finally{disposeObject3D(m.root);}
 });
 test('483 turning valve B exhausts each port through its cavity and admits it outside the cup', () => {

@@ -784,8 +784,10 @@ function airChamberForcePump(movement) {
     };
   };
 
+  // Brown's plate shows the downstroke (delivery flap open, suction shut),
+  // so playback starts half a cycle in.
   const stateAtTime = (time) => stateAtInputAngle(
-    inputAngularSpeed * time,
+    inputAngularSpeed * time + Math.PI,
     inputAngularSpeed,
     0,
   );

@@ -409,11 +409,13 @@ function commonCapstan(movement) {
   // with the cable's haul.
   const freeEnd = cableCurve.getPoint(0);
   const outward = cableCurve.getTangent(0).clone().negate().normalize();
-  const leadLength = 0.6;
+  // Pass 82: the lead runs on far enough that its end leaves every rotated
+  // view, instead of stopping at the old crop line.
+  const leadLength = 12;
   const leadCurve = new THREE.LineCurve3(
     freeEnd.clone().addScaledVector(outward, leadLength), freeEnd.clone());
   const cableLead = addRole(new THREE.Mesh(
-    new LaidRopeGeometry(leadCurve, 40, ropeRadius, 9, false),
+    new LaidRopeGeometry(leadCurve, 400, ropeRadius, 9, false),
     ropeMaterial,
   ), 'cable-lead-running-straight-past-plate-crop');
   cableLead.userData.beyondPlateCrop = true;

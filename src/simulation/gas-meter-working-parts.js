@@ -14,13 +14,20 @@ export function correctGasMeterParts(root,id,update) {
  if(id===481){
   replace(b.caseShell,horizontalRing(g.caseRadiusSceneUnit-.055,g.caseRadiusSceneUnit,-g.caseDepthSceneUnit/2,g.caseDepthSceneUnit/2,96));
   replace(b.journal,mergePassageParts([horizontalRing(.12,.34,-.67,-.50,64),horizontalRing(.12,.34,.50,.67,64)]));
-  replace(b.axle,mergePassageParts([horizontalRing(.080,.115,-1.05,-.78,64),horizontalRing(.080,.115,.78,1.05,64)]));
-  // Pipe a enters along the axis through the front journal and turns up in
-  // the central well, its mouth just above Brown's water line and inside
-  // the innermost hook.
+  // Pipe a is the fixed inlet: it enters through the rear case head (fixed
+  // in its bore), carries the drum's rear hollow journal as the journal turns
+  // round it, runs along the axis and turns up in the central well, its mouth
+  // just above Brown's water line and inside the innermost hook. Only the
+  // front spindle stub remains of the axle; the rear journal rides on a.
+  replace(b.axle,horizontalRing(.080,.115,.78,1.05,64));
+  const pipeOuter=.105,pipeInner=.080,bend=.20,start=-1.05,mouthY=g.waterSurfaceY+.06;
+  const pts=[];
+  for(let i=0;i<=12;i++)pts.push(new THREE.Vector3(0,0,start+(-bend-start)*i/12));
+  for(let i=1;i<=12;i++){const t=i/12*Math.PI/2;pts.push(new THREE.Vector3(0,bend-bend*Math.cos(t),-bend+bend*Math.sin(t)));}
+  for(let i=1;i<=6;i++)pts.push(new THREE.Vector3(0,bend+(mouthY-bend)*i/6,0));
   const curve=d.flowPaths.centralInletCurve;
-  curve.points=[new THREE.Vector3(0,0,1.52),new THREE.Vector3(0,0,.92),new THREE.Vector3(0,0,.30),new THREE.Vector3(0,.14,.03),new THREE.Vector3(0,g.waterSurfaceY+.06,0)];curve.updateArcLengths();
-  replace(b.centralInletPipeA,curvedPipeWall(curve,.040,.055,80,24));
+  curve.points=pts;curve.curveType='centripetal';curve.updateArcLengths();
+  replace(b.centralInletPipeA,curvedPipeWall(curve,pipeInner,pipeOuter,120,24));
   for(const marker of b.flowMarkers)replace(marker,new THREE.SphereGeometry(.025,16,12));
   b.caseWater.material.opacity=.10;
   const headMaterial=new THREE.MeshStandardMaterial({color:0xffffff,transparent:true,opacity:.08,depthWrite:false,side:THREE.DoubleSide});
@@ -31,7 +38,7 @@ export function correctGasMeterParts(root,id,update) {
   for(const z of[-.52,.52]){
    const head=add(b.drum,plate(clip.difference(poly(circle([0,0],g.drumRadiusSceneUnit,128)),poly(circle([0,0],.34,64))),z-.025,z+.025),headMaterial,'finite-ported-drum-head');b.drumHeads.push(head);
   }
-  replace(b.rearCaseHead,plate(clip.difference(poly(circle([0,0],g.caseRadiusSceneUnit,128)),poly(circle([0,0],.12,64))),-.025,.025));
+  replace(b.rearCaseHead,plate(clip.difference(poly(circle([0,0],g.caseRadiusSceneUnit,128)),poly(circle([0,0],.106,64))),-.025,.025));
  } else if(id===482){
   // Complete finite rectangular mercury channels; liquid remains an envelope.
   const outer=rect(2.26,1.10),outerBore=rect(2.14,1.0),inner=rect(1.80,.80),innerBore=rect(1.75,.75);

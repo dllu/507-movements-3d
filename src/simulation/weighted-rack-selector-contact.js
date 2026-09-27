@@ -3,14 +3,15 @@ import {boredLatheGeometry} from './bored-lathe-geometry.js';
 import {plate, poly, circle, capsule, polygonClipping as clip} from './finite-plate-geometry.js';
 
 // Brown's elbow lever C: a slim curved arm hanging from the pivot, a short
-// straight arm running left from it to a small stop pin, and a short link
+// straight arm running left from it to a small knob under its tip, and a short link
 // hung from a pin on the curved arm, whose lower end bears on the top of rack
-// A1. Spring d, hooked just below the pivot, pulls C round against the stop.
+// A1. Spring d, hooked just below the pivot, returns C to its rest angle
+// (prescribed: Brown draws no fixed stop for it).
 // The link is a two-force strut: when the rack's top lug roller meets its
 // rounded end, the link lines up between its pin and the roller, and the
 // rising rack swings C back against the spring. At the upper corner the
 // loaded spring pushes back down the link and carries the rack's pin outward
-// over the angle of guide b; C then comes back to its stop and the free link
+// over the angle of guide b; C then comes back to rest and the free link
 // falls back to hang from its pin.
 const R = 2, pinPhi = -.6;
 export const selectorGeometry = Object.freeze({
@@ -25,7 +26,7 @@ export const selectorGeometry = Object.freeze({
   lugX: .44 + (-R + R * Math.cos(pinPhi)), lugAboveGuide: -.15,
 });
 const g = selectorGeometry;
-// The stop pin sits under the short arm's end, touching its lower edge at rest.
+// The knob's centre under the short arm's end (Brown's small circle).
 const stopCenter = (() => {
   const [ex, ey] = g.shortArmEnd, length = Math.hypot(ex, ey), f = (length - .08) / length;
   // Offset square to the arm's edge (it rises slightly to the left).
@@ -42,7 +43,7 @@ const strutGap = (q, angle) => {
   const [px, py] = rotate(g.linkPin, angle);
   return Math.hypot(q.x - px, q.y - py) - strutLength;
 };
-// C rests at its stop until the roller comes within reach of the hanging
+// C rests at its rest angle until the roller comes within reach of the hanging
 // link; then C takes the angle at which the link spans exactly from its pin to
 // the roller (found by a monotone scan and bisection). No physics stepping.
 export function selectorState(rightPose, guideY, pivot) {
@@ -104,7 +105,10 @@ export function installWeightedRackSelector(root) {
   for (let i = 1; i < 24; i++) {const a = g.endAngle - Math.PI * i / 24; arm.push([tip[0] + g.tipHalfWidth * Math.cos(a), tip[1] + g.tipHalfWidth * Math.sin(a)]);}
   for (let i = n; i >= 0; i--) {const a = g.endAngle * i / n, w = halfAt(i); arm.push([-R + (R - w) * Math.cos(a), (R - w) * Math.sin(a)]);}
   const outline = clip.difference(clip.union(poly(arm), capsule([0, 0], g.shortArmEnd, g.shortArmHalfWidth, 32),
-    poly(circle([0, 0], g.bossRadius, 64)), poly(circle(g.linkPin, g.linkPinRadius + .035, 48))), poly(circle([0, 0], g.boreRadius, 64)));
+    poly(circle([0, 0], g.bossRadius, 64)), poly(circle(g.linkPin, g.linkPinRadius + .035, 48)),
+    // Brown's small knob under the short arm's tip is carried on C itself (pass 82):
+    // a boss hanging from the tip, not a pin floating on nothing.
+    poly(circle(stopCenter, g.stopRadius + .03, 48))), poly(circle([0, 0], g.boreRadius, 64)));
   const cam = lever.children[0]; cam.geometry.dispose();
   cam.geometry = plate(outline, .23, .37);
   cam.userData.role = 'elbow-lever-C-curved-arm-short-arm-and-bored-pivot';
@@ -132,10 +136,11 @@ export function installWeightedRackSelector(root) {
   // Its back end stops just inside C's plate (not flush with C's rear face).
   const stud = add(new T.CylinderGeometry(.055, .055, .33, 32).rotateX(Math.PI / 2), roller.material, 'elbow-spring-attachment-standoff', lever);
   stud.position.set(...g.springStud, .405);
-  // The fixed stop pin under the short arm's end (Brown's small knob).
-  const stop = add(new T.CylinderGeometry(g.stopRadius, g.stopRadius, .20, 32).rotateX(Math.PI / 2), roller.material, 'fixed-stop-pin-under-short-arm-of-C', root);
-  const [sx, sy] = rotate(stopCenter, g.restAngle);
-  stop.position.set(lever.position.x + sx, lever.position.y + sy, lever.position.z + .30);
+  // Brown's small knob under the short arm's tip: a stud standing out of the
+  // boss on C's front face, so it swings with C (Brown draws nothing fixed
+  // there to carry a separate stop pin).
+  const stop = add(new T.CylinderGeometry(g.stopRadius, g.stopRadius, .08, 32).rotateX(Math.PI / 2), roller.material, 'knob-under-tip-of-short-arm-of-C', lever);
+  stop.position.set(...stopCenter, .41);
   b.leverContactIndex.geometry.dispose(); b.leverContactIndex.geometry = new T.SphereGeometry(.028, 16, 10);
   d.updateSelectorContact = state => {
     const e = state.elbowAssist, p = e.point;

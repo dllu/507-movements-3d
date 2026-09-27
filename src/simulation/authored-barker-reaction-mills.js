@@ -348,8 +348,13 @@ function barkerReactionMill(movement) {
   bearingBracket.position.set(1.76, 3.54, -0.32);
   bearingBracket.userData.role = 'fixed-horizontal-upper-bearing-bracket';
   root.add(bearingBracket);
-  const flumeStart = new THREE.Vector3(3.54, 5.95, 0.28);
+  // Brown crops the flume at the plate edge. Pass 82: it runs on straight
+  // along its own line (Brown's slope through the old crop point 3.54, 5.95,
+  // 0.28) far enough that its upper end leaves every rotated view, instead
+  // of stopping in mid-air at the crop line; no undrawn trestle is added.
   const flumeEnd = new THREE.Vector3(0.66, 5.08, 0.10);
+  const flumeStart = flumeEnd.clone().add(
+    new THREE.Vector3(3.54, 5.95, 0.28).sub(flumeEnd).setLength(14));
   // The flume is an open trough (floor and two sides), as Brown draws it,
   // and its water is one continuous stream: it runs down the trough floor,
   // leaves the lip with the trough speed and falls on a projectile path

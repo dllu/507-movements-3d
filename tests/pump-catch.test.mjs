@@ -126,7 +126,7 @@ test('086 actual rope stays attached and constant in length, reuses its buffers 
  const model=makePumpCatchDrive(),u=model.root.userData,h=u.completeHardware,g=u.parts.pumpRope.geometry,
   arrays=Object.fromEntries(Object.entries(g.attributes).map(([key,a])=>[key,a.array])),indices=g.index.array,
   clamp=solidSurface(u.parts.wheelRopeClamp.geometry),head=solidSurface(u.parts.pumpOutputRod.geometry),
-  bounds=new THREE.Box3(new THREE.Vector3(...profile.motionBounds.min),new THREE.Vector3(...profile.motionBounds.max)),counts=new Set();
+  bounds=new THREE.Box3(new THREE.Vector3(...u.sampledMotionBounds.min),new THREE.Vector3(...u.sampledMotionBounds.max)),counts=new Set();
  for(const time of poses){
   model.update(time);assert.equal(u.parts.pumpRope.geometry,g);assert.equal(g.index.array,indices);
   for(const [key,a]of Object.entries(g.attributes))assert.equal(a.array,arrays[key]);
