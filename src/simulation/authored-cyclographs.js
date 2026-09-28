@@ -454,8 +454,12 @@ function cyclograph(movement) {
   brace.userData.role = 'third-straight-rule-fastened-across-as-brace';
   carriage.add(brace);
   const bracePins = [leftBracePoint, rightBracePoint].map((position, index) => {
-    const pin = cylinderAlongZ(0.085, .59, darkMaterial, 28);
-    pin.position.set(position.x, position.y, .225);
+    // p89: fastener 1's back end stops 0.01 inside the left rule instead of
+    // lying flush in its back face (the coplanar discs z-fought). Fastener 2
+    // already stands proud behind the right rule and is unchanged.
+    const low = index === 0 ? -0.06 : -0.07;
+    const pin = cylinderAlongZ(0.085, .52 - low, darkMaterial, 28);
+    pin.position.set(position.x, position.y, (.52 + low) / 2);
     pin.userData.role = `fixed-brace-fastener-${index + 1}`;
     carriage.add(pin);
     return pin;

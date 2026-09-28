@@ -2592,7 +2592,9 @@ function grasshopperBeamEngine(movement) {
   const crankPinAnchor = new THREE.Object3D();
   crankPinAnchor.position.set(crankRadius, 0, crankPlaneZ);
   crankPinAnchor.userData.role = 'analytic-crank-pin-P';
-  const crankPinLow = crankPlaneZ - 0.06;
+  // p89: the pin's back end stops 0.01 inside the crank arm (it lay flush in
+  // the arm's back face, and the coplanar discs z-fought).
+  const crankPinLow = crankPlaneZ - 0.05;
   const crankPinHigh = rodPlaneZ + rodHalfDepth + 0.04;
   const crankPin = cylinderAlongZ(workingPinRadius, crankPinHigh - crankPinLow,
     workingPinMaterial, 30);

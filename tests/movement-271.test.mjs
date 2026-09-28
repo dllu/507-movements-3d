@@ -581,3 +581,13 @@ test('movement 271 closes visibly after two vibrations and a smooth in-view retu
   disposeModel(model289.root);
   disposeModel(model.root);
 });
+
+test('movement 271 p89: the pulley axle ends 0.01 inside the strap back face', () => {
+  const model = createMovementModel(catalog.movements[270]);
+  model.update(0, 0); model.root.updateMatrixWorld(true);
+  const byRole = role => { let found = null; model.root.traverse(o => { if (!found && o.isMesh && (o.userData.role ?? o.parent?.userData.role) === role) found = o; }); assert.ok(found, role); return found; };
+  const box = mesh => new THREE.Box3().setFromObject(mesh);
+  const axle = box(byRole('fixed-left-pulley-axle')), strap = box(byRole('strap-from-table-end-carrying-pulley-axle'));
+  near(axle.min.z - strap.min.z, 0.01, 1e-6, 'axle back end');
+  near(axle.max.z, 0.22, 1e-6, 'axle front end unchanged');
+});

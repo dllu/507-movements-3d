@@ -507,13 +507,16 @@ function selfRecordingLevel(movement) {
   verticalAdjustmentKnob.userData.role =
     'drum-vertical-scale-locking-knob';
   carriage.add(verticalAdjustmentKnob);
+  // The knob's inner end stops 0.01 inside the guide (it lay in the
+  // guide's inner face and flickered); its outer end is unchanged.
+  const axialKnobLength = 0.25;
   const axialAdjustmentKnob = cylinderAlongX(
     0.14,
-    0.26,
+    axialKnobLength,
     accentMaterial,
     30,
   );
-  axialAdjustmentKnob.position.set(1.18, drumCenter.y, drumCenter.z);
+  axialAdjustmentKnob.position.set(1.185, drumCenter.y, drumCenter.z);
   axialAdjustmentKnob.userData.role =
     'drum-horizontal-paper-shift-locking-knob';
   carriage.add(axialAdjustmentKnob);
@@ -867,7 +870,7 @@ function selfRecordingLevel(movement) {
   for (const collar of [leftDrumCollar, rightDrumCollar]) {
     replaceGeometry(collar, boredCylinderGeometry(drumRadius * 0.72, 0.068, 0.12));
   }
-  replaceGeometry(axialAdjustmentKnob, boredCylinderGeometry(0.14, 0.068, 0.26));
+  replaceGeometry(axialAdjustmentKnob, boredCylinderGeometry(0.14, 0.068, axialKnobLength));
   const guideHalf = (guideTop - guideBottom) / 2;
   const guideOutline = poly([[-0.08,-guideHalf],[0.08,-guideHalf],[0.08,guideHalf],[-0.08,guideHalf]]);
   replaceGeometry(verticalDrumGuide, plate(polygonClipping.difference(guideOutline,

@@ -32,7 +32,7 @@
     },
     {
       "file": "src/simulation/silk-traverse-geometry.js",
-      "sha256": "2adbc01742a091986c20122b93abb5092832376aa25e6437e07956d2507c1a00"
+      "sha256": "76257ac2185bc0d71828a8a1c80f0e989ac0060d528d96c0eefbeb9f98d861c1"
     },
     {
       "file": "src/simulation/silk-traverse-kinematics.js",
@@ -43,6 +43,6 @@
       "sha256": "7d90b89cfa4e509d013d8e48c1127820d955265c28151cb668c08ab99fcee39d"
     }
   ],
-  "bytes": 505801,
-  "assetSha256": "df6db3904f62200a113655f6d0bec8298ce61941d2a89a76f81887835050bfca"
+  "bytes": 505819,
+  "assetSha256": "eaad3011f7f0e87f133622ecfc942b109a4a4f1b17f5a960feedb01851ae0b5c"
 }

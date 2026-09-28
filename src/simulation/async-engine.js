@@ -236,6 +236,9 @@ export class MovementEngine {
     key.shadow.camera.near = 0.5;
     key.shadow.camera.far = 28;
     key.shadow.bias = -0.0004;
+    // A texel is about 0.01 across; offsetting along the normal removes
+    // diagonal shadow acne on large flat faces.
+    key.shadow.normalBias = 0.02;
     this.scene.add(key);
     const fill = new THREE.DirectionalLight(0xb9d8e2, 1.15);
     fill.position.set(-6, 3, 4);

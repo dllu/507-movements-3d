@@ -427,3 +427,26 @@ test('movement 376 closes one wheel turn and eight gait cycles before movement 5
   disposeModel(model.root);
   disposeModel(model507.root);
 });
+
+function p89Box(model, role) {
+  const found = [];
+  model.root.traverse((object) => { if (object.isMesh && object.userData.role === role) found.push(object); });
+  assert.ok(found.length > 0, role);
+  return found.map((mesh) => new THREE.Box3().setFromObject(mesh));
+}
+
+test('376 axle bosses sit 0.005 inside both faces of the chord bars', () => {
+  const model = createMovementModel(catalog.movements[375]);
+  model.update(0); model.root.updateMatrixWorld(true);
+  const bars = p89Box(model, 'radial-cage-wheel-side-spoke');
+  const bosses = p89Box(model, 'axle-boss-joining-output-axle-to-lattice-bars');
+  assert.equal(bosses.length, 2);
+  for (const boss of bosses) {
+    const side = bars.filter((bar) => bar.min.z < boss.max.z && bar.max.z > boss.min.z);
+    assert.equal(side.length, 4);
+    for (const bar of side) {
+      assert.ok(Math.abs(boss.min.z - bar.min.z - 0.005) < 1e-4, `${boss.min.z} ${bar.min.z}`);
+      assert.ok(Math.abs(bar.max.z - boss.max.z - 0.005) < 1e-4, `${boss.max.z} ${bar.max.z}`);
+    }
+  }
+});

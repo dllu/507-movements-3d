@@ -87,7 +87,9 @@ function clearGuideGearFlanks(gear) {
 
 function openWheelBody(gear,boreRadius) {
   const rotor=gear.userData.rotor,body=rotor.children[0],hub=rotor.children[1];
-  const p=body.geometry.parameters,outline=p.shapes.getPoints(1);
+  const p=body.geometry.parameters,outline=p.shapes.getPoints(1),hp=hub.geometry.parameters;
+  // The web is bored clear 0.003 inside the longer hub, which alone carries
+  // the shaft bore (the two shared a coincident bore wall).
   if(outline.length>1&&outline[0].distanceTo(outline.at(-1))<1e-9)outline.pop();
   // Brown's wheels C are flat webs with four windows: one plate
   // (spoked-wheel.js), each window two spoke edges and an arc concentric
@@ -96,12 +98,12 @@ function openWheelBody(gear,boreRadius) {
   body.geometry.dispose();
   body.geometry=spokedWheelGeometry({outline,rimInnerRadius:gear.userData.rootRadius-.11,spokes:4,
     spokeWidth:gear.userData.radius*.17,hubRadius:gear.userData.radius*.30,rimFillet:gear.userData.radius*.05,
-    boreRadius,thickness:p.options.depth,arcSegments:192,
+    boreRadius:hp.radiusTop-.003,thickness:p.options.depth,arcSegments:192,
     // Brown's crossings stand as an X (within 6 degrees on both wheels) at
     // the opening pose.
     phase:THREE.MathUtils.degToRad(-3)});
   body.userData.noRotationIndicator=true;
-  const hp=hub.geometry.parameters;hub.geometry.dispose();
+  hub.geometry.dispose();
   hub.geometry=boredCylinderGeometry(hp.radiusTop,boreRadius,hp.height);
   gear.userData.sourceSpokeCount=4;
 }

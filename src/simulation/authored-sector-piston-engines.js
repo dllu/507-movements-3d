@@ -327,9 +327,12 @@ function sectorPistonEngine(movement) {
   ], [0, 0, ...Array(23).fill(0), 0, 0, 0.1, 0.1], 6));
   const valveBody = partPlate(valveOutline, zBack + 0.1, -0.1, valveMaterial, 'D-slide-valve-body-with-exhaust-hollow');
   valveD.add(valveBody);
-  const valveRod = new THREE.Mesh(new THREE.CylinderGeometry(rodRadius, rodRadius, rodLength, 24), valveMaterial);
+  // The rod's inner end runs 0.01 into D (its end cap lay in the plane where
+  // the chest steam meets D and flickered); its outer end is unchanged.
+  const rodInset = 0.01;
+  const valveRod = new THREE.Mesh(new THREE.CylinderGeometry(rodRadius, rodRadius, rodLength + rodInset, 24), valveMaterial);
   valveRod.rotation.z = Math.PI / 2;
-  valveRod.position.set(valveHalfLength + rodLength / 2, rodY, rodZ);
+  valveRod.position.set(valveHalfLength - rodInset + (rodLength + rodInset) / 2, rodY, rodZ);
   valveRod.userData.role = 'valve-rod-of-D-through-stuffing-box';
   valveD.add(valveRod);
   root.add(valveD);

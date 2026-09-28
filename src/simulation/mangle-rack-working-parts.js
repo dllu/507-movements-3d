@@ -61,7 +61,9 @@ function finish197(root) {
   // pinion shaft is driven from the front, so nothing passes through it.
   // The plate takes a pale tint of the frame's blue so the rack and guides
   // on its face stay legible, as on Brown's white plate.
-  const plateHalfWidth = g.outerFrameHalfWidth - 0.05, plateHalfHeight = g.outerFrameHalfHeight - 0.05;
+  // The plate ends on the members' inner faces (they are 0.11 wide), so its
+  // back face no longer overlaps theirs in one plane (it z-fought).
+  const plateHalfWidth = g.outerFrameHalfWidth - 0.055, plateHalfHeight = g.outerFrameHalfHeight - 0.055;
   const backPlate = mesh(plate(poly([[-plateHalfWidth, -plateHalfHeight], [plateHalfWidth, -plateHalfHeight],
     [plateHalfWidth, plateHalfHeight], [-plateHalfWidth, plateHalfHeight]]), -0.47, -0.384), 0x9db8c7, 'solid-plate-of-reciprocating-square-frame');
   b.rackAssembly.add(backPlate);

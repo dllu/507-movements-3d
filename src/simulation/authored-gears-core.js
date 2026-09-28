@@ -23,6 +23,7 @@ import {makePinnedEyeRod} from './pinned-eye-rod.js';
 import sectorPressTeeth from '../data/sector-press-teeth.js';
 import * as THREE from 'three';
 import { applyRotationIndicator } from './rotation-indicator.js';
+import { creaseLatheNormals } from './crease-normals.js';
 import sourcePresentation from '../data/source-presentation.js';
 import { makeFuseeMotion, fuseeParameters } from './fusee-motion.js';
 import { groovedFuseeGeometry } from './fusee-geometry.js';
@@ -778,17 +779,32 @@ function makeTriangularRollerCarrier({
   for (let index = 0; index < 3; index += 1) {
     const localPinAngle = index * Math.PI * 2 / 3;
     // Each roller turns on its carrier pin, so it is bored with running
-    // clearance and its hub stays within the roller face width.
+    // clearance. Its dark hub stands 0.01 proud of each drum face, and the
+    // drum is bored to the hub's outer radius, so the two no longer share
+    // end faces or a bore wall (they z-fought).
+    const rollerBore = pinRadius + 0.002, rollerWidth = 0.28;
     const roller = makePulley({
       axis: Z_AXIS,
-      bore: pinRadius + 0.002,
+      bore: rollerBore,
       color: PALETTE.brass,
       grooves: 0,
-      hubLength: 0.28,
+      hubLength: rollerWidth + 0.02,
       radius: rollerRadius,
       spokes: 0,
-      width: 0.28,
+      width: rollerWidth,
     });
+    {
+      const hubOuter = Math.max(rollerRadius * 0.26, rollerBore + 0.03);
+      const drum = roller.userData.tread;
+      drum.geometry.dispose();
+      drum.geometry = creaseLatheNormals(new THREE.LatheGeometry([
+        new THREE.Vector2(hubOuter, -rollerWidth / 2),
+        new THREE.Vector2(rollerRadius, -rollerWidth / 2),
+        new THREE.Vector2(rollerRadius, rollerWidth / 2),
+        new THREE.Vector2(hubOuter, rollerWidth / 2),
+        new THREE.Vector2(hubOuter, -rollerWidth / 2),
+      ], 80));
+    }
     roller.position.set(
       Math.cos(localPinAngle) * orbitRadius,
       Math.sin(localPinAngle) * orbitRadius,

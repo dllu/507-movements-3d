@@ -73,3 +73,18 @@ test('422: B keeps its tip under the tongue, and D admits steam behind B and exh
     assert.ok(u.blocks.exhaustSteam.userData.pressure === 0 && u.blocks.exhaustSteam.userData.area > 0);
   } finally { disposeObject3D(model.root); }
 });
+
+test('422: the valve rod starts inside D, not in the plane where the chest steam meets D', () => {
+  const model = createAuthoredSectorPistonEngineMovement(movement);
+  try {
+    const { valveRod } = model.root.userData.blocks;
+    valveRod.geometry.computeBoundingBox();
+    const halfLength = valveRod.geometry.boundingBox.max.y;
+    const inner = valveRod.position.x - halfLength;
+    const outer = valveRod.position.x + halfLength;
+    assert.ok(Math.abs(inner - 0.64) < 1e-6, `rod inner end ${inner}`);
+    assert.ok(Math.abs(outer - (0.65 + 2.45)) < 1e-6, `rod outer end ${outer}`);
+  } finally {
+    disposeObject3D(model.root);
+  }
+});

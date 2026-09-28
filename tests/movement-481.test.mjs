@@ -446,3 +446,20 @@ test('movement 481 fits every drum pose and leaves spinning movement 507 as the 
   assert.equal(next.fidelity, 'authored');
   disposeModel(model.root);
 });
+
+test('481: the partition sheets end on the drum heads\' inner faces, not in their rims', () => {
+  const { model } = movementModel();
+  let head = null;
+  const sheets = [];
+  model.root.traverse((o) => {
+    if (o.userData.role === 'finite-ported-drum-head') head = o;
+    if (/^hooked-sheet-of-partition-/.test(o.userData.role ?? '')) sheets.push(o);
+  });
+  assert.equal(sheets.length, 4);
+  head.geometry.computeBoundingBox();
+  const headInner = head.geometry.boundingBox.max.z + head.position.z;
+  for (const sheet of sheets) {
+    sheet.geometry.computeBoundingBox();
+    assert.ok(Math.abs(sheet.geometry.boundingBox.min.z - headInner) < 1e-6, 'sheet ends on the head inner face');
+  }
+});

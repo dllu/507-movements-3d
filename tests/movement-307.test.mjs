@@ -392,3 +392,25 @@ test('movement 307 renderer follows the prescribed two-system state and leaves m
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 307 p89: the plate is pocketed 0.003 inside pallets A and B, which alone carry the step faces', async () => {
+  const { polygonClipping: clip } = await import('../src/simulation/finite-plate-geometry.js');
+  const model = createMovementModel(catalog.movements[306]);
+  const { plate, plateCarrier, palletA, palletB } = model.root.userData.blocks;
+  const polygons = plate.geometry.userData.plate.polygons;
+  const area = mp => mp.reduce((s, poly) => s + poly.reduce((t, ring, k) => {
+    let a = 0; for (let i = 0; i < ring.length; i += 1) { const [x0, y0] = ring[i], [x1, y1] = ring[(i + 1) % ring.length]; a += x0 * y1 - x1 * y0; }
+    return t + (k ? -1 : 1) * Math.abs(a) / 2; }, 0), 0);
+  const square = (x, y, s = 0.001) => [[[x - s, y - s], [x + s, y - s], [x + s, y + s], [x - s, y + s]]];
+  const offset = plateCarrier.position;
+  palletA.geometry.computeBoundingBox(); palletB.geometry.computeBoundingBox();
+  const a = palletA.geometry.boundingBox, b = palletB.geometry.boundingBox;
+  // Just inside A's working corner and B's: no plate material (the pocket).
+  assert.equal(area(clip.intersection(polygons, square(a.min.x + offset.x + 0.0015, a.min.y + offset.y + 0.0015, 0.0005))), 0);
+  assert.equal(area(clip.intersection(polygons, square(b.max.x + offset.x - 0.0015, b.max.y + offset.y - 0.0015, 0.0005))), 0);
+  // The plate still fills A's footprint up to 0.003 of its inner faces,
+  // and runs on along the opening edge beyond A's end.
+  assert.ok(area(clip.intersection(polygons, square(a.max.x + offset.x - 0.0015, a.min.y + offset.y + 0.05, 0.001))) > 3.9e-6);
+  assert.ok(area(clip.intersection(polygons, square(a.max.x + offset.x + 0.01, a.min.y + offset.y + 0.002, 0.001))) > 3.9e-6);
+  disposeModel(model.root);
+});

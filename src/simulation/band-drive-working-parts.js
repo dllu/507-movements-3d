@@ -20,7 +20,9 @@ function boredBar(group, start, end, { width, depth, holes, eyes }) {
 export function correctCraneBrakeJoints(root) {
   const d = root.userData, b = d.blocks, g = d.geometry;
   const dark = b.wheelHub.material, pinRadius = .075, pinBore = .079, fulcrumBore = .119;
-  replace(b.wheelBody, bore(g.wheelRadius, .134, g.wheelDepth, 192));
+  // The drum is bored clear inside the hub (r .29), which alone carries the
+  // .134 bore; the two no longer share a coincident bore wall.
+  replace(b.wheelBody, bore(g.wheelRadius, .286, g.wheelDepth, 192));
   replace(b.wheelHub, bore(.29, .134, .62));
   const origin = [0, 0], lower = g.lowerArmLocal.toArray(), handle = g.handleLocal.toArray();
   const short = boredBar(b.leverShortArm, origin, lower, { width: .12, depth: .14,
@@ -40,9 +42,11 @@ export function correctCraneBrakeJoints(root) {
   replace(lowerRing, bore(.155, pinBore, .07).rotateX(Math.PI / 2)); lowerRing.position.z = .105;
   const lowerPin = mesh(b.lowerEndpointJoint, new THREE.CylinderGeometry(pinRadius, pinRadius, .56, 48).rotateX(Math.PI / 2), dark, 'lower-strap-pin-spanning-band-and-lever');
   lowerPin.position.z = -.12;
-  const upperEye = mesh(root, bore(.15, pinBore, g.bandDepth).rotateX(Math.PI / 2), b.brakeBand.material, 'bored-upper-brake-strap-eye');
+  // Strap eyes stand 0.003 proud of the strap faces instead of sharing them.
+  const eyeProud = .003;
+  const upperEye = mesh(root, bore(.15, pinBore, g.bandDepth + eyeProud * 2).rotateX(Math.PI / 2), b.brakeBand.material, 'bored-upper-brake-strap-eye');
   upperEye.position.set(g.upperBandEnd.x, g.upperBandEnd.y, g.bandPlaneZ);
-  const lowerEye = mesh(b.lowerEndpointJoint, bore(.15, pinBore, g.bandDepth).rotateX(Math.PI / 2), b.brakeBand.material, 'bored-lower-brake-strap-eye');
+  const lowerEye = mesh(b.lowerEndpointJoint, bore(.15, pinBore, g.bandDepth + eyeProud * 2).rotateX(Math.PI / 2), b.brakeBand.material, 'bored-lower-brake-strap-eye');
   lowerEye.position.z = g.bandPlaneZ - b.lever.position.z;
   replace(b.upperEndpointShaft.userData.rotor.children[0], new THREE.CylinderGeometry(pinRadius, pinRadius, .95, 48));
   replace(b.leverFulcrumShaft.userData.rotor.children[0], new THREE.CylinderGeometry(.115, .115, 1.24, 48)); b.leverFulcrumShaft.position.z = .16;

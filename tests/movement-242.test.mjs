@@ -491,3 +491,23 @@ test('movement 242 closes exactly and leaves movement 507 authored', () => {
   disposeModel(model.root);
   disposeModel(model289.root);
 });
+
+test('movement 242 p89: strap eyes stand proud of the strap and the drum is bored clear inside its hub', () => {
+  const model = createMovementModel(catalog.movements[241]);
+  model.update(0, 0); model.root.updateMatrixWorld(true);
+  const byRole = role => { let found = null; model.root.traverse(o => { if (!found && o.isMesh && (o.userData.role ?? o.parent?.userData.role) === role) found = o; }); assert.ok(found, role); return found; };
+  const box = mesh => new THREE.Box3().setFromObject(mesh);
+  const strap = box(byRole('constant-length-contracting-brake-strap'));
+  for (const eye of ['bored-upper-brake-strap-eye', 'bored-lower-brake-strap-eye']) {
+    const b = box(byRole(eye));
+    near(strap.min.z - b.min.z, 0.003, 1e-6, `${eye} back`);
+    near(b.max.z - strap.max.z, 0.003, 1e-6, `${eye} front`);
+  }
+  // Both are lathed about their local y axis.
+  const radii = mesh => { const p = mesh.geometry.attributes.position; let min = Infinity, max = 0;
+    for (let i = 0; i < p.count; i += 1) { const r = Math.hypot(p.getX(i), p.getZ(i)); min = Math.min(min, r); max = Math.max(max, r); } return { min, max }; };
+  const drum = radii(byRole('solid-brake-drum')), hub = radii(byRole('brake-wheel-hub'));
+  near(drum.min, 0.286, 1e-5, 'drum bore'); near(hub.min, 0.134, 1e-5, 'hub bore');
+  assert.ok(drum.min < hub.max, 'drum bore lies inside the hub');
+  disposeModel(model.root);
+});

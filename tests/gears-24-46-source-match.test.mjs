@@ -99,6 +99,14 @@ test('027 rollers are bored clear of their pins and their hubs stay within the f
       });
       assert.ok(box.max.z - center.z <= 0.14 + 0.03 && center.z - box.min.z <= 0.14 + 0.03,
         'roller hub overhangs its face width');
+      // p89: the hub stands 0.01 proud of both drum faces and the drum is
+      // bored to the hub's outer radius, so they share no face (z-fight).
+      const drum = roller.userData.tread, hub = roller.userData.hub;
+      const radial = (g) => { let lo = Infinity; const p = g.attributes.position; for (let i = 0; i < p.count; i++) lo = Math.min(lo, Math.hypot(p.getX(i), p.getZ(i))); return lo; };
+      const extent = (g) => { g.computeBoundingBox(); return g.boundingBox; };
+      assert.ok(Math.abs(radial(drum.geometry) - 0.067) < 1e-6, 'drum bored to the hub radius');
+      assert.ok(Math.abs(extent(hub.geometry).max.y - extent(drum.geometry).max.y - 0.01) < 1e-6);
+      assert.ok(Math.abs(extent(drum.geometry).min.y - extent(hub.geometry).min.y - 0.01) < 1e-6);
     }
   }
   // Negative control: an unbored sheave is solid on its axis.

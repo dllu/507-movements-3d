@@ -357,3 +357,18 @@ test('movement 507 remains the next authored review frontier', () => {
   disposeModel(model403.root);
   disposeModel(model507.root);
 });
+
+function p89Box(model, role) {
+  const found = [];
+  model.root.traverse((object) => { if (object.isMesh && object.userData.role === role) found.push(object); });
+  assert.ok(found.length > 0, role);
+  return found.map((mesh) => new THREE.Box3().setFromObject(mesh));
+}
+
+test('403 brace fastener 1 ends 0.01 inside the left rule, not flush in its back face', () => {
+  const model = createMovementModel(catalog.movements[402]);
+  model.update(0); model.root.updateMatrixWorld(true);
+  const [rule] = p89Box(model, 'left-sloping-rule-guided-by-left-chord-pin-straight-rigid-body');
+  const [pin] = p89Box(model, 'fixed-brace-fastener-1');
+  assert.ok(Math.abs(pin.min.z - (rule.min.z + 0.01)) < 1e-6, `${pin.min.z} ${rule.min.z}`);
+});

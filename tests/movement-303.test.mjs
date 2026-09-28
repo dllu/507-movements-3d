@@ -524,3 +524,12 @@ test('movement 303 closes in four authored seconds and leaves movement 507 autho
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 303 p89: the pallet arbor ends 0.01 inside the pendulum rod', () => {
+  const model = createMovementModel(catalog.movements[302]);
+  model.update(0, 0); model.root.updateMatrixWorld(true);
+  const byRole = role => { let found = null; model.root.traverse(o => { if (!found && o.isMesh && (o.userData.role ?? o.parent?.userData.role) === role) found = o; }); assert.ok(found, role); return found; };
+  const box = mesh => new THREE.Box3().setFromObject(mesh);
+  const arbor = box(byRole('Graham-pallet-arbor-to-pendulum')), rod = box(byRole('pendulum-rod-C'));
+  near(arbor.min.z - rod.min.z, 0.01, 1e-5, 'arbor rear end');
+});

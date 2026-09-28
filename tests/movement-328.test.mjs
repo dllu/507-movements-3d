@@ -562,3 +562,17 @@ test('movement 328 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+test('movement 328 p89: each wheel-C web is bored clear inside its hub', () => {
+  const model = createMovementModel(catalog.movements[327]);
+  // The web is extruded along z; the hub is lathed about its local y axis.
+  const radii = (mesh, lathe) => { const p = mesh.geometry.attributes.position; let min = Infinity, max = 0;
+    for (let i = 0; i < p.count; i += 1) { const r = Math.hypot(p.getX(i), lathe ? p.getZ(i) : p.getY(i)); min = Math.min(min, r); max = Math.max(max, r); } return { min, max }; };
+  let checked = 0;
+  model.root.traverse(o => {
+    if (!/-equal-toothed-wheel-C$/.test(o.userData.role ?? '')) return;
+    const [web, hub] = o.userData.rotor.children, w = radii(web), h = radii(hub, true);
+    near(w.min, h.max - 0.003, 1e-5, 'web bore'); assert.ok(h.min < w.min - 0.01, 'hub carries the shaft bore'); checked += 1;
+  });
+  assert.equal(checked, 2);
+});

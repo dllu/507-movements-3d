@@ -49,7 +49,8 @@ export function makeInternalRackGeometry(profile){
   pin(crank,side+'-wrist',[.37,.24],.245,.31+rodDepth+.015);
   pin(crank,side+'-top-pin',[-.075,.58],.245,.31+couplerDepth+.015);
   const rx=x+.38,ry=.675-d.orbit;
-  add(rack,side+'-rack-boss',poly(circle([rx,ry],.065,48)),-.006,.015,PALETTE.ink);
+  // The boss stands 0.003 behind the 0.0055 backing (at 0.006 it lay within depth tolerance and z-fought).
+  add(rack,side+'-rack-boss',poly(circle([rx,ry],.065,48)),-.0085,.015,PALETTE.ink);
   pin(rack,side+'-rack-pin',[rx,ry],-.006,.31+rodDepth+.015);
  }
  const coupler=new THREE.Group();frame.add(coupler);blocks.coupler=coupler;

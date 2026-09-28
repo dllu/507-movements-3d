@@ -562,3 +562,18 @@ test('movement 341 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+function p89Box(model, role) {
+  const found = [];
+  model.root.traverse((object) => { if (object.isMesh && object.userData.role === role) found.push(object); });
+  assert.ok(found.length > 0, role);
+  return found.map((mesh) => new THREE.Box3().setFromObject(mesh));
+}
+
+test('341 crank pin P ends 0.01 inside the crank arm, not flush in its back face', () => {
+  const model = createMovementModel(catalog.movements[340]);
+  model.update(0); model.root.updateMatrixWorld(true);
+  const [arm] = p89Box(model, 'crank-arm-to-P');
+  const [pin] = p89Box(model, 'common-working-pin-P');
+  assert.ok(Math.abs(pin.min.z - (arm.min.z + 0.01)) < 1e-6, `${pin.min.z} ${arm.min.z}`);
+});

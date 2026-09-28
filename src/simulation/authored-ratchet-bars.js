@@ -1044,8 +1044,10 @@ function alternatingPawlRatchetBar(movement) {
   // A plain strap bolted to the table's end carries the pulley's axle
   // behind the wheel.
   pulleyAxle.geometry.dispose();
-  pulleyAxle.geometry = new THREE.CylinderGeometry(0.07, 0.07, 0.52, 32).rotateX(Math.PI / 2);
-  pulleyAxle.position.z = -0.04;
+  // The axle's back end stops 0.01 inside the strap's back face (z -0.30)
+  // instead of lying flush with it; its front end is unchanged.
+  pulleyAxle.geometry = new THREE.CylinderGeometry(0.07, 0.07, 0.51, 32).rotateX(Math.PI / 2);
+  pulleyAxle.position.z = -0.035;
   const tableEndX = -5.346;
   const pulleyStrap = new THREE.Mesh(
     new THREE.BoxGeometry(tableEndX - pulleyCenter.x + 0.14, 0.2, 0.1),

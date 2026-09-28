@@ -60,8 +60,11 @@ function makeCrank({
   crank.add(shaft);
   // The arm is part of the eyed crank plate above.
   const arm = disk;
-  const pin = cylinderAlongZ(pinRadius, 0.38, darkMaterial, 28);
-  pin.position.set(crankRadius, 0, 0.42);
+  // p89: the pin stands on the eye's front face (z 0.38) instead of running
+  // down into the eye, whose radius it shares; the coincident walls z-fought.
+  // Its front end is unchanged (z 0.61).
+  const pin = cylinderAlongZ(pinRadius, 0.23, darkMaterial, 28);
+  pin.position.set(crankRadius, 0, 0.495);
   pin.userData.role = 'crank-pin-running-in-synthesized-curved-slot';
   crank.add(pin);
   const pinIndex = cylinderAlongZ(pinRadius * 0.62, 0.10,

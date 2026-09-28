@@ -534,3 +534,18 @@ test('movement 333 closes exactly and leaves movement 507 as the next draft', ()
   disposeModel(model507.root);
   disposeModel(model.root);
 });
+
+function p89Box(model, role) {
+  const found = [];
+  model.root.traverse((object) => { if (object.isMesh && object.userData.role === role) found.push(object); });
+  assert.ok(found.length > 0, role);
+  return found.map((mesh) => new THREE.Box3().setFromObject(mesh));
+}
+
+test('333 pin P ends 0.01 inside the rod eye, not flush in its back face', () => {
+  const model = createMovementModel(catalog.movements[332]);
+  model.update(0); model.root.updateMatrixWorld(true);
+  const [rod] = p89Box(model, 'left-P-rod-running-on-straight-past-the-plate');
+  const [pin] = p89Box(model, 'common-working-pin-P');
+  assert.ok(Math.abs(pin.min.z - (rod.min.z + 0.01)) < 1e-6, `${pin.min.z} ${rod.min.z}`);
+});

@@ -502,8 +502,10 @@ function wetGasMeter(movement) {
   const gasPockets = [];
   const gasPocketMaterials = [];
   for (let index = 0; index < chamberCount; index += 1) {
+    // The sheets end on the drum heads' inner faces (±0.495); running on
+    // into the heads, their shell arcs lay in the heads' rims and flickered.
     const partition = curvedPartition({
-      depth: 1.04,
+      depth: 0.99,
       index,
       material: partitionMaterial,
     });

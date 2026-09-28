@@ -27,7 +27,8 @@ export function makeSilkTraverseGeometry(){
  pin(root,'fixed-stud',[0,0],-.45,.08,.078);
  add(root,'visible-stud-cap',circleAt([0,0],.24),.08,.17,PALETTE.frame);
  pin(root,'fixed-sun-collar',[0,0],.06,.08,.16);
- pin(carrier,'planet-axle',k.orbit,-.18,.285,.078);
+ // The axle stands 0.01 proud of the disk's back face (it was flush and z-fought).
+ pin(carrier,'planet-axle',k.orbit,-.19,.285,.078);
  const hex=poly(circle(k.orbit,.115,6));add(carrier,'planet-axle-nut',hex,.285,.325,PALETTE.ink);
  const crank=clip.union(capsule([0,0],k.crank,.17,32),rect(-.17,-.20,.19,.23),circleAt(k.crank,.18));
  add(planet,'bolted-crank',bore(crank,[[0,0]],.081),.19,.27,PALETTE.accent);

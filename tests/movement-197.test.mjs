@@ -110,6 +110,15 @@ test('movement 197 matches Brown\'s moving square frame, eleven-pin rack, two en
   // driven from the front, so no carriage stands behind the solid frame plate.
   assert.equal(blocks.shaftSlider.parent, null);
   assert.equal(blocks.rackAssembly.children.filter((o) => o.userData.role === 'solid-plate-of-reciprocating-square-frame').length, 1);
+  {
+    // p89: the plate ends on the members' inner faces instead of running
+    // under them with a coplanar back face (it z-fought).
+    const plate = blocks.rackAssembly.children.find((o) => o.userData.role === 'solid-plate-of-reciprocating-square-frame');
+    plate.geometry.computeBoundingBox();
+    const box = plate.geometry.boundingBox;
+    assert.ok(Math.abs(box.max.x - (geometry.outerFrameHalfWidth - 0.055)) < 1e-6);
+    assert.ok(Math.abs(box.max.y - (geometry.outerFrameHalfHeight - 0.055)) < 1e-6);
+  }
   assert.equal(blocks.rackPlate.parent, blocks.rackAssembly);
   assert.equal(blocks.leftEndGuide.parent, blocks.rackAssembly);
   assert.equal(blocks.rightEndGuide.parent, blocks.rackAssembly);

@@ -2408,7 +2408,9 @@ function doubleParallelMotion(movement) {
   const jointPins = {
     M: pinOn(longLink, 'M', longLinkMidpointDistance, beamBack, 0.87),
     N: pinOn(centerLinkParts.rod, 'N', centerLinkMidpointDistance, 0.67, 0.89),
-    P: pinOn(leftPiston, 'P', 0, leftPistonPlaneZ - 0.05,
+    // p89: pin P's back end stops 0.01 inside the rod eye instead of lying
+    // flush in its back face (the coplanar discs z-fought).
+    P: pinOn(leftPiston, 'P', 0, leftPistonPlaneZ - 0.04,
       beamPlaneZ + beamHalfDepth + 0.02),
     Q: pinOn(centerLinkParts.rod, 'Q', centerLinkLength, 0.67, 1.08),
     W: pinOn(longLink, 'W', longLinkLength, beamBack, 0.68),

@@ -55,3 +55,11 @@ test('397 real bored rod eyes coincide with their finite pin axes',()=>{
   assert.ok(end.distanceTo(new THREE.Vector3(s.sliderJointWorld.x,s.sliderJointWorld.y,.8))<1e-12);
  }
 });
+
+test('397 crank pin stands on the crank eye\'s front face instead of sharing its wall', () => {
+  m.update(0); m.root.updateMatrixWorld(true);
+  const box = (role) => { let o; m.root.traverse((x) => { if (x.isMesh && x.userData.role === role) o = x; }); return new THREE.Box3().setFromObject(o); };
+  const eye = box('eyed-input-crank-arm'), pin = box('crank-pin-running-in-synthesized-curved-slot');
+  assert.ok(Math.abs(pin.min.z - eye.max.z) < 1e-6, `${pin.min.z} ${eye.max.z}`);
+  assert.ok(Math.abs(pin.max.z - 0.61) < 1e-6);
+});

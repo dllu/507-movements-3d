@@ -508,8 +508,10 @@ function grahamDeadbeatPendulumEscapement(movement) {
   // Anchor-local depth of the pendulum plane: world z -0.6, behind the wheel
   // arbor (rear end -0.5) and its bearing, in front of the rear supports.
   const pendulumZ = -0.85;
-  const anchorArbor = cylinderAlongZ(0.12, 0.84, darkMaterial, 28);
-  anchorArbor.position.z = -0.5;
+  // The arbor's rear end stops 0.01 inside the rod's back face (anchor-local
+  // z -0.92) instead of lying flush with it; its front end is unchanged.
+  const anchorArbor = cylinderAlongZ(0.12, 0.83, darkMaterial, 28);
+  anchorArbor.position.z = -0.495;
   anchorArbor.userData.role = 'Graham-pallet-arbor-to-pendulum';
   const pendulumRodLength = 7.35;
   const pendulumRod = beamBetween(

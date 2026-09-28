@@ -420,3 +420,19 @@ test('movement 507 remains the next authored frontier', () => {
   assert.equal(movement507.fidelity, 'authored');
   assert.equal(catalog.movements[506].archetype, 'carrier-driven-25000-to-1-slow-bevel-output-compound-planetary');
 });
+
+test('411: the paper-shift knob ends inside the drum guide, not in its face', () => {
+  const model = createMovementModel(catalog.movements.find((m) => m.id === 411));
+  const find = (role) => {
+    let found = null;
+    model.root.traverse((o) => { if (o.userData.role === role) found = o; });
+    return found;
+  };
+  const guide = find('vertical-drum-scale-adjustment-guide');
+  const knob = find('drum-horizontal-paper-shift-locking-knob');
+  const box = (o) => { o.updateMatrix(); o.geometry.computeBoundingBox(); return o.geometry.boundingBox.clone().applyMatrix4(o.matrix); };
+  const g = box(guide);
+  const k = box(knob);
+  assert.ok(Math.abs(k.min.x - (g.min.x + 0.01)) < 1e-6, 'knob inner end 0.01 inside the guide');
+  assert.ok(Math.abs(k.max.x - 1.31) < 1e-6, 'knob outer end unchanged');
+});

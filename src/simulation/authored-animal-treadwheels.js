@@ -733,7 +733,11 @@ export function createAuthoredAnimalTreadwheelMovement(movement) {
   const { wheelWidth } = model.root.userData.geometry;
   const latticeOffset = Math.abs(blocks.radialSpokes[0].userData.latticeOffset);
   const bossOuter = latticeOffset - 0.03;
-  const bossProfile = [[0.12, -0.03], [bossOuter, -0.03], [bossOuter, 0.03], [0.12, 0.03], [0.12, -0.03]]
+  // p89: the boss is 0.05 deep, its faces 0.005 inside both faces of the
+  // 0.06 chord bars (they lay in the bars' faces and z-fought); the bars
+  // cover its rim where they cross it, as they did from the default view.
+  const bossHalfDepth = 0.025;
+  const bossProfile = [[0.12, -bossHalfDepth], [bossOuter, -bossHalfDepth], [bossOuter, bossHalfDepth], [0.12, bossHalfDepth], [0.12, -bossHalfDepth]]
     .map(([r, y]) => new THREE.Vector2(r, y));
   blocks.axleBosses = [-1, 1].map((side) => {
     const boss = new THREE.Mesh(new THREE.LatheGeometry(bossProfile, 64), blocks.axle.material);

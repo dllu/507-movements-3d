@@ -1354,6 +1354,17 @@ function longStoppingToothEscapement(movement) {
     clip.union(poly(bottle), neckStrap, poly(circle([0, 0], eyeRadius, 64))),
     poly(openingPlate.map(toPivotFrame)),
     poly(circle([0, 0], 0.12, 48)),
+    // Pockets for the hardened pallets A and B: the plate's own step and
+    // opening-edge walls are cut back 0.003 inside each pallet, which alone
+    // carries those faces (they were coincident). Where a pallet face runs on
+    // into the plate's opening edge, the pocket ends exactly at that corner.
+    ...[1, -1].map(sign => {
+      const e = 0.003, x1 = sign > 0 ? 0.36 : 0.09, top = sign > 0 ? h + 0.11 : H + 0.09;
+      const pocket = [[-e, h - e], [x1, h - e], [x1, h + e], [x1 - e, h + e]];
+      if (sign > 0) pocket.push([x1 - e, top - e], [0.09 - e, top - e]);
+      pocket.push([0.09 - e, H + 0.09 - e], [e, H + 0.09 - e], [e, H], [-e, H]);
+      return poly(pocket.map(([x, y]) => toPivotFrame([sign * x, sign * y])));
+    }),
   );
   const plate = new THREE.Mesh(
     platePrism(plateOutline, -palletDepth / 2, palletDepth / 2),

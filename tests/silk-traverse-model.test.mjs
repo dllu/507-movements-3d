@@ -49,5 +49,7 @@ test('142 draws no undrawn guide stand; the stud cap clears the working gears',(
   assert.deepEqual(Object.keys(parts).filter(n=>/guide|post|bridge|cross-arm|rear-bearing|shoe|slider/.test(n)),[]);
   assert(parts['visible-stud-cap'].geometry.userData.plate.low>parts['planet-gear'].geometry.userData.depth/2);
   assert(parts['wrist-pin'].geometry.userData.plate.low>parts['visible-stud-cap'].geometry.userData.plate.high);
+  // p89: the planet axle stands proud of the disk's back face instead of flush (z-fight).
+  assert(Math.abs(parts['carrier-disk'].geometry.userData.plate.low-parts['planet-axle'].geometry.userData.plate.low-.01)<1e-6);
  }finally{v.dispose();}
 });
